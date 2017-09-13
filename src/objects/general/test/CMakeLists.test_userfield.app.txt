@@ -4,6 +4,8 @@
 
 if (HAVE_NCBI_C)
 
+    link_directories(${NCBI_C_LIBPATH})
+
     add_executable(test_userfield-app
         test_userfield
     )
@@ -11,7 +13,6 @@ if (HAVE_NCBI_C)
     set_target_properties(test_userfield-app PROPERTIES OUTPUT_NAME test_userfield)
 
     include_directories(SYSTEM ${NCBI_C_INCLUDE})
-    link_directories(${NCBI_C_LIBPATH})
 
     target_link_libraries(test_userfield-app
         general-lib

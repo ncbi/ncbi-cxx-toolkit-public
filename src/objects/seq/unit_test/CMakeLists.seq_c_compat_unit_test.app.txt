@@ -4,6 +4,8 @@
 
 if (HAVE_NCBI_C)
 
+link_directories(${NCBI_C_LIBPATH})
+
 add_executable(seq_c_compat_unit_test-app
     seq_c_compat_unit_test
 )
@@ -11,7 +13,6 @@ add_executable(seq_c_compat_unit_test-app
 set_target_properties(seq_c_compat_unit_test-app PROPERTIES OUTPUT_NAME seq_c_compat_unit_test)
 
 include_directories(SYSTEM ${BOOST_INCLUDE} ${NCBI_C_INCLUDE})
-link_directories(${NCBI_C_LIBPATH})
 
 target_link_libraries(seq_c_compat_unit_test-app
     seq test_boost xconnect

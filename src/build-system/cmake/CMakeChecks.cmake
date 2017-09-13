@@ -404,7 +404,7 @@ endif ()
 
 if (EXISTS "${NCBI_CTOOLKIT_PATH}/include64" AND EXISTS "${NCBI_CTOOLKIT_PATH}/lib64")
     set(NCBI_C_INCLUDE  "${NCBI_CTOOLKIT_PATH}/include64")
-    set(NCBI_C_LIBPATH  "-L${NCBI_CTOOLKIT_PATH}/lib64")
+    set(NCBI_C_LIBPATH  "${NCBI_CTOOLKIT_PATH}/lib64")
     set(NCBI_C_ncbi     "ncbi")
     if (APPLE)
         set(NCBI_C_ncbi ${NCBI_C_ncbi} -Wl,-framework,ApplicationServices)

@@ -1,15 +1,22 @@
 #
 #
 #
+
+link_directories(${NCBI_C_LIBPATH})
+
 add_library(xctools
     ctools asn_connection
 )
 include_directories(SYSTEM ${NCBI_C_INCLUDE})
-link_directories(${NCBI_C_LIBPATH})
+
+message(STATUS "NCBI_C_LIBPATH in ctools = ${NCBI_C_LIBPATH}")
+
 
 target_link_libraries(xctools
     ${NCBI_C_ncbi} connect xncbi
 )
+
+
 
 if (APPLE)
    target_link_libraries(xctools
