@@ -72,7 +72,7 @@ public:
     typedef function<void(ostream_type&, const TValue&)> TInserter;
 
 	Dt_ostream_iterator(ostream_type& ostr, const TElem *delim = nullptr,
-        TInserter fnIn = [](ostream& out, const TValue& v){ out << v;})
+        TInserter fnIn = [](ostream_type& out, const TValue& v){ out << v;})
 		: m_ostr(&ostr), m_delim(delim), m_fnIn(fnIn), m_first(true) {
 	}
     Dt_ostream_iterator& operator=(const TValue& value) {
