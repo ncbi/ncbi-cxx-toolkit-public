@@ -41,8 +41,11 @@
 BEGIN_NCBI_SCOPE
 
 
-NCBI_PARAM_DEF(bool, icache, async_write, true);
-typedef NCBI_PARAM_TYPE(icache, async_write) TICache_AsyncWrite;
+// If set to false, this parameter globally disables asynchronous writes for CAsyncWriteCache instances
+// (enabling synchronous writes instead).
+NCBI_PARAM_DECL(bool, ncbi, cache_async_write);
+NCBI_PARAM_DEF(bool, ncbi, cache_async_write, true);
+typedef NCBI_PARAM_TYPE(ncbi, cache_async_write) TCacheWriteAsync;
 
 
 struct SMeta
@@ -131,7 +134,7 @@ SDeferredWriter::SDeferredWriter(weak_ptr<CThreadPool> thread_pool, weak_ptr<ICa
 CThreadPool* s_CreateThreadPool()
 {
 #ifdef NCBI_THREADS
-    if (TICache_AsyncWrite::GetDefault()) {
+    if (TCacheWriteAsync::GetDefault()) {
         // XXX: Thread pool can only use single thread, as writer would be shared between threads otherwise.
         return new CThreadPool(numeric_limits<unsigned>::max(), 1, 1, CThread::fRunCloneRequestContext);
     }

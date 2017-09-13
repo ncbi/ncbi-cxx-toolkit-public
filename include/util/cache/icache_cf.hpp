@@ -38,6 +38,7 @@
 #include <corelib/plugin_manager.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 #include <util/cache/icache.hpp>
+#include <util/cache/cache_async.hpp>
 #include <util/error_codes.hpp>
 
 
@@ -181,6 +182,35 @@ public:
         }
 
     }
+
+    /// Create instance of TDriver
+    typename TParent::TInterface*
+    CreateInstance(const string& driver  = kEmptyStr,
+                   CVersionInfo version = TParent::GetDefaultDrvVers(),
+                   const TPluginManagerParamTree* params = 0) const final
+    {
+        if (auto main = x_CreateInstance(driver, version, params)) {
+
+            if (TParent::GetParamBool(params, "cache_write_async", false, false)) {
+
+                if (auto writer = x_CreateInstance(driver, version, params)) {
+
+                    auto gp = TParent::GetParamDouble(params, "cache_write_async_grace_period", false, 0.0);
+                    return new CAsyncWriteCache(main, writer, gp);
+                }
+            }
+
+            return main;
+        }
+
+        return nullptr;
+    }
+
+private:
+    virtual typename TParent::TInterface*
+    x_CreateInstance(const string& driver  = kEmptyStr,
+                   CVersionInfo version = TParent::GetDefaultDrvVers(),
+                   const TPluginManagerParamTree* params = 0) const = 0;
 };
 
 END_NCBI_SCOPE

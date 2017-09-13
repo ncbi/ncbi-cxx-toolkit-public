@@ -1084,14 +1084,15 @@ public:
     {
     }
 
-    virtual ICache* CreateInstance(
+private:
+    virtual ICache* x_CreateInstance(
                    const string&    driver  = kEmptyStr,
                    CVersionInfo     version = NCBI_INTERFACE_VERSION(ICache),
                    const TPluginManagerParamTree* params = 0) const;
 };
 
 
-ICache* CNetICacheCF::CreateInstance(
+ICache* CNetICacheCF::x_CreateInstance(
            const string&                  driver,
            CVersionInfo                   version,
            const TPluginManagerParamTree* params) const

@@ -180,6 +180,23 @@ protected:
     }
 
 
+    /// Utility function to get a double of parameter tree
+    /// Throws an exception when mandatory parameter is missing
+    /// (or returns the default value)
+    double GetParamDouble(const TPluginManagerParamTree* params,
+                          const string&                  param_name,
+                          bool                           /* mandatory */,
+                          double                         default_value) const
+    {
+        CConfig conf(params);
+        return conf.GetDouble(m_DriverName,
+                              param_name,
+                              CConfig::eErr_NoThrow,
+                              default_value);
+
+    }
+
+
 protected:
     CVersionInfo  m_DriverVersionInfo;
     string        m_DriverName;

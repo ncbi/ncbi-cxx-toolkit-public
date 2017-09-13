@@ -5168,8 +5168,9 @@ public:
     {
     }
 
+private:
     virtual
-    ICache* CreateInstance(
+    ICache* x_CreateInstance(
                    const string&    driver  = kEmptyStr,
                    CVersionInfo     version = NCBI_INTERFACE_VERSION(ICache),
                    const TPluginManagerParamTree* params = 0) const;
@@ -5236,7 +5237,7 @@ bool CBDB_Cache::SameCacheParams(const TCacheParams* params) const
 }
 
 
-ICache* CBDB_CacheReaderCF::CreateInstance(
+ICache* CBDB_CacheReaderCF::x_CreateInstance(
            const string&                  driver,
            CVersionInfo                   version,
            const TPluginManagerParamTree* params) const

@@ -100,12 +100,6 @@ private:
 };
 
 
-/// If set to false, this parameter globally disables asynchronous writes for CAsyncWriteCache instances
-/// (enabling synchronous writes instead).
-///
-NCBI_PARAM_DECL(bool, icache, async_write);
-
-
 END_NCBI_SCOPE
 
 #endif
