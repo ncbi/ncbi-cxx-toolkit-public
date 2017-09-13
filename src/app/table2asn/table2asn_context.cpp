@@ -115,7 +115,7 @@ void x_CorrectCollectionDates(CTable2AsnContext& context, objects::CBioSource& s
     if (!source.IsSetSubtype())
         return;
 
-    size_t p = context.m_cleanup.find_first_of("Dd");
+    size_t p = CTempString("dD").find_first_of(context.m_cleanup);
 
     for (auto subtype : source.SetSubtype())
     {
