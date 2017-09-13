@@ -140,7 +140,7 @@ public:
     void SetKeepRef(bool b){ m_KeepRef = b; }
     void SetUserData(void* p){ m_UserData = p; }
     static CRef<CDiscrepancySet> New(objects::CScope& scope);
-//    static string Format(const string& str, unsigned int count);
+    static string Format(const string& str, unsigned int count);
     static const char** GetTestSuiteKClark();
 
 protected:

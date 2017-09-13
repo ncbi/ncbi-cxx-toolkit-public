@@ -293,7 +293,7 @@ template<typename T> void CDiscrepancyVisitor<T>::Call(const T& obj, CDiscrepanc
 
 CRef<CDiscrepancySet> CDiscrepancySet::New(CScope& scope){ return CRef<CDiscrepancySet>(new CDiscrepancyContext(scope));}
 
-/*
+
 string CDiscrepancySet::Format(const string& s, unsigned int count)
 {
     string str = s;
@@ -316,7 +316,7 @@ string CDiscrepancySet::Format(const string& s, unsigned int count)
     }
     return str;
 }
-*/
+
 
 bool CDiscrepancyContext::AddTest(const string& name)
 {
