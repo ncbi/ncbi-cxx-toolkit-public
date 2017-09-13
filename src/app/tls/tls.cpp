@@ -377,6 +377,12 @@ int CTLSApp::Run(void)
     string suffix = ".bss";
     if (args["contigsinsuffix"]) {
         suffix = args["contigsinsuffix"].AsString();
+        if (NStr::StartsWith(suffix, "'") && NStr::EndsWith(suffix, "'")) {
+            suffix = suffix.substr(1, suffix.length() - 2);
+        }
+        if (NStr::StartsWith(suffix, "*")) {
+            suffix = suffix.substr(1);
+        }
     }
 
     string outdir = dir_name;
