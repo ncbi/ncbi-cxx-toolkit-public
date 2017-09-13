@@ -73,8 +73,11 @@ class NCBI_DISCREPANCY_EXPORT CReportItem : public CObject
 public:
     virtual ~CReportItem(void){}
     virtual string GetTitle(void) const = 0;
-    virtual string GetMsg(void) const = 0;
     virtual string GetStr(void) const = 0;
+    virtual string GetMsg(void) const = 0;
+    virtual string GetXml(void) const = 0;
+    virtual string GetObj(void) const = 0;
+    virtual size_t GetCount(void) const = 0;
     virtual TReportObjectList GetDetails(void) const = 0;
     virtual vector<CRef<CReportItem> > GetSubitems(void) const = 0;
     virtual bool CanAutofix(void) const = 0;
@@ -137,7 +140,7 @@ public:
     void SetKeepRef(bool b){ m_KeepRef = b; }
     void SetUserData(void* p){ m_UserData = p; }
     static CRef<CDiscrepancySet> New(objects::CScope& scope);
-    static string Format(const string& str, unsigned int count);
+//    static string Format(const string& str, unsigned int count);
     static const char** GetTestSuiteKClark();
 
 protected:

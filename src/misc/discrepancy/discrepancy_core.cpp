@@ -169,11 +169,15 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
     TReportItemList subs;
     bool autofix = false;
     bool fatal = m_Fatal;
+    string type;
     NON_CONST_ITERATE(TNodeMap, it, m_Map) {
         CRef<CReportItem> sub = it->second->Export(test, unique);
         fatal |= it->second->m_Fatal;
         fatal |= sub->IsFatal();
         autofix |= sub->CanAutofix();
+        if (type.empty()) {
+            type = sub->GetObj();
+        }
         subs.push_back(sub);
         if (!m_NoRec) {
             TReportObjectList details = sub->GetDetails();
@@ -190,7 +194,57 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
             }
         }
     }
-	CRef<CDiscrepancyItem> item(new CDiscrepancyItem(test, CDiscrepancySet::Format(m_Name, m_Count ? m_Count : objs.size()), m_Name));
+    string str = m_Name;
+    NStr::TruncateSpacesInPlace(str);
+    for (size_t n = NStr::Find(str, "[*"); n != NPOS; n = NStr::Find(str, "[*")) {
+        size_t k = NStr::Find(str, "*]");
+        if (k != NPOS) {
+            str.erase(n, k - n + 2);
+        }
+        else {
+            str.erase(n);
+        }
+    }
+    string msg = str;
+    string xml = str;
+    size_t count = m_Count ? m_Count : objs.size();
+
+    NStr::ReplaceInPlace(msg, "[n]", NStr::Int8ToString(count));
+    NStr::ReplaceInPlace(msg, "[n/2]", NStr::Int8ToString(count / 2));
+    NStr::ReplaceInPlace(msg, "[s]", count == 1 ? "" : "s");  // nouns
+    NStr::ReplaceInPlace(msg, "[S]", count == 1 ? "s" : "");  // verbs
+    NStr::ReplaceInPlace(msg, "[is]", count == 1 ? "is" : "are");
+    NStr::ReplaceInPlace(msg, "[does]", count == 1 ? "does" : "do");
+    NStr::ReplaceInPlace(msg, "[has]", count == 1 ? "has" : "have");
+
+    NStr::ReplaceInPlace(xml, "[n]", "##");
+    NStr::ReplaceInPlace(xml, "[n/2]", "##");
+    NStr::ReplaceInPlace(xml, "[s]", "s");
+    NStr::ReplaceInPlace(xml, "[S]", "");
+    NStr::ReplaceInPlace(xml, "[is]", "are");
+    NStr::ReplaceInPlace(xml, "[does]", "do");
+    NStr::ReplaceInPlace(xml, "[has]", "have");
+
+    size_t n = str.find("[n]");
+    if (n != string::npos) {
+        str = str.substr(n + 4);
+    }
+    else if ((n = str.find("[n/2]")) != string::npos) {
+        str = str.substr(n + 6);
+        count /= 2;
+    }
+    if (n != string::npos) {
+        if ((n = str.find("[s]")) != string::npos) {
+            type = str.substr(0, n) + "s";
+        }
+        else if (!str.find("CDS ")) {
+            type = "CDS";
+        }
+        else if ((n = str.find("s ")) != string::npos) {
+            type = str.substr(0, n) + "s";
+        }
+    }
+	CRef<CDiscrepancyItem> item(new CDiscrepancyItem(test, m_Name, msg, xml, type, count));
     item->m_Autofix = autofix;
     item->m_Fatal = fatal;
     item->m_Ext = m_Ext;
@@ -204,7 +258,7 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
 CRef<CReportItem> CReportItem::CreateReportItem(const string& test, const string& msg, bool autofix)
 {
     CRef<CDiscrepancyCase> t = CDiscrepancyConstructor::GetDiscrepancyConstructor(test)->Create();
-	CRef<CDiscrepancyItem> item(new CDiscrepancyItem(*t, msg, msg));
+	CRef<CDiscrepancyItem> item(new CDiscrepancyItem(*t, msg, msg, msg, kEmptyCStr, 0));
     item->m_Autofix = autofix;
     return CRef<CReportItem>((CReportItem*)item);
 }
@@ -239,7 +293,7 @@ template<typename T> void CDiscrepancyVisitor<T>::Call(const T& obj, CDiscrepanc
 
 CRef<CDiscrepancySet> CDiscrepancySet::New(CScope& scope){ return CRef<CDiscrepancySet>(new CDiscrepancyContext(scope));}
 
-
+/*
 string CDiscrepancySet::Format(const string& s, unsigned int count)
 {
     string str = s;
@@ -262,7 +316,7 @@ string CDiscrepancySet::Format(const string& s, unsigned int count)
     }
     return str;
 }
-
+*/
 
 bool CDiscrepancyContext::AddTest(const string& name)
 {

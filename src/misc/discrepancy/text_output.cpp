@@ -142,14 +142,19 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, size_t inden
             continue;
         }
         Indent(out, indent);
-        out << "<item";
+        out << "<category message=\"" << NStr::XmlEncode((*it)->GetXml()) << "\"";
+        out << " severity=" << ((*it)->IsFatal() ? "\"FATAL\"" : "\"normal\"");
+        if ((*it)->GetCount()) {
+            out << " count=\"" << NStr::Int8ToString((*it)->GetCount()) << "\"";
+        }
+        if (!(*it)->GetObj().empty()) {
+            out << " object=\"" << NStr::XmlEncode((*it)->GetObj()) << "\"";
+        }
         if ((*it)->CanAutofix()) {
             out << " autofix=\"true\"";
         }
-        if ((*it)->IsFatal()) {
-            out << " fatal=\"true\"";
-        }
-        out << " message=\"" << NStr::XmlEncode((*it)->GetMsg()) << "\">\n";
+        out << ">\n";
+
         TReportItemList subs = (*it)->GetSubitems();
         if (!subs.empty() && (ext || !subs[0]->IsExtended())) {
             RecursiveXML(out, subs, indent + XML_INDENT, ext);
@@ -162,7 +167,7 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, size_t inden
             }
         }
         Indent(out, indent);
-        out << "</item>\n";
+        out << "</category>\n";
     }
 }
 
@@ -175,7 +180,7 @@ void CDiscrepancyContext::OutputXML(ostream& out, bool ext)
 
     ITERATE(TDiscrepancyCaseMap, tst, tests) {
         Indent(out, XML_INDENT);
-        out << "<test name = \"" << NStr::XmlEncode(tst->first) << "\">\n";
+        out << "<test name=\"" << NStr::XmlEncode(tst->first) << "\">\n";
         TReportItemList rep = tst->second->GetReport();
         RecursiveXML(out, rep, XML_INDENT * 2, ext);
         Indent(out, XML_INDENT);
