@@ -1,18 +1,10 @@
 Magic-BLAST is a tool for mapping large next-generation RNA or DNA sequencing
-runs against a whole genome or transcriptome. Each alignment optimizes
-a composite score, taking into account simultaneously the two reads of
-a pair, and in case of RNA-seq, locating the candidate introns and adding
-up the score of all exons. This is very different from other versions of
-BLAST, where each exon is scored as a separate hit and read-pairing is
-ignored.
+runs against a whole genome or transcriptome. Unlike other BLAST nucleotide search programs, such as BLASTN or Megablast, Magic-BLAST produces spliced alignments and optimizes alignment scores for paired reads. 
 
 Magic-Blast incorporates within the NCBI BLAST code framework ideas
 developed in the NCBI Magic pipeline, in particular hit extensions by
 local walk and jump, which is faster than Smith-Waterman extension
-(http://www.ncbi.nlm.nih.gov/pubmed/26109056), and recursive clipping of
-mismatches near the edges of the reads, which avoids accumulating
-artefactual mismatches near splice sites and is needed to distinguish
-short indels from substitutions near the edges.
+(http://www.ncbi.nlm.nih.gov/pubmed/26109056).
 
 We call the whole next generation run (from Illumina, Roche-454, ABI, or
 another sequencing platform excluding SOLiD), a query. The input reads may
@@ -26,6 +18,9 @@ such as human, or transcript collections, such as all of RefSeq, Ensembl,
 or AceView. The procedure for creating a BLAST database is described below.
 
 The full list of options is listed when you use -help option.
+
+For more information, visit https://ncbi.github.io/magicblast/
+
 
 ===================
 
@@ -166,5 +161,4 @@ delimited fields:
 Thank you for testing this code and providing us with feedback. Please,
 let us know of any desired option, problem or difficulty.
 
-E-mail boratyng@ncbi.nlm.nih.gov or blast-help@ncbi.nlm.nih.gov with
-questions or comments.
+E-mail blast-help@ncbi.nlm.nih.gov with questions or comments.
