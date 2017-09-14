@@ -508,6 +508,7 @@ int CNCBITestConnStreamApp::Run(void)
     CConn_HttpStream ios(net_info, "User-Header: My header\r\n", 0, 0, 0, 0,
                          fHTTP_AutoReconnect | fHTTP_Flushable |
                          fHCC_UrlEncodeArgs/*obsolete now*/);
+    ConnNetInfo_Destroy(net_info);
 
     AutoPtr< char, ArrayDeleter<char> >  buf1(new char[kBufferSize + 1]);
     AutoPtr< char, ArrayDeleter<char> >  buf2(new char[kBufferSize + 2]);
@@ -682,8 +683,6 @@ int CNCBITestConnStreamApp::Run(void)
                               eReqMethod_Head,
                               "If-Modified-Since: "
                               "Fri, 25 Dec 2015 16:17:18 GMT");
-
-    ConnNetInfo_Destroy(net_info);
 
     if (!(modified >> ftpfile/*dummy*/))
         ftpfile.erase();
