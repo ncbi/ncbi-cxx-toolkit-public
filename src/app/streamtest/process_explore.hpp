@@ -205,16 +205,61 @@ public:
         }
 
 
+        /*
+        int num_gaps = bsx.IterateGaps([this, &bsx](CGapIndex& sgx) {
+
+            const string& type = sgx.GetGapType();
+            TSeqPos start = sgx.GetStart();
+            TSeqPos end = sgx.GetEnd();
+            *m_out << "Gap type: " << type << ", from: " << start << ", to: " << end << '\n';
+        });
+
+        *m_out << "Gap count " << num_gaps << '\n';
+        */
+
+
+        const vector<CRef<CGapIndex>>& gaps = bsx.GetGapIndices();
+        string gap_type = "";
+        int num_gaps = gaps.size();
+        int next_gap = 0;
+        TSeqPos gap_start = 0;
+        TSeqPos gap_end = 0;
+        bool has_gap = false;
+        if (num_gaps > 0) {
+            CRef<CGapIndex> sgr = gaps[next_gap];
+            gap_start = sgr->GetStart();
+            gap_end = sgr->GetEnd();
+            gap_type = sgr->GetGapType();
+            has_gap = true;
+            next_gap++;
+        }
+
         // IterateFeatures causes feature vector to be initialized by CFeat_CI, locations mapped to master
-        int num_feats = bsx.IterateFeatures([this, &bsx](CFeatureIndex& sfx) {
+        int num_feats = bsx.IterateFeatures([this, &bsx, gaps, num_gaps, &next_gap, &has_gap, &gap_start, &gap_end, &gap_type](CFeatureIndex& sfx) {
 
             // Alternative to passing &bsx reference in closure
             // CBioseqIndex& bsx = sfx.GetBioseqIndex();
 
+            TSeqPos feat_start = sfx.GetStart();
+
+            while (has_gap && gap_start < feat_start) {
+                *m_out << "Gap type: " << gap_type << ", from: " << gap_start << ", to: " << gap_end << '\n';
+                if (next_gap < num_gaps) {
+                    CRef<CGapIndex> sgr = gaps[next_gap];
+                    gap_start = sgr->GetStart();
+                    gap_end = sgr->GetEnd();
+                    gap_type = sgr->GetGapType();
+                    has_gap = true;
+                    next_gap++;
+                } else {
+                    has_gap = false;
+                }
+            }
+
             CSeqFeatData::ESubtype sbt = sfx.GetSubtype();
 
             // Print feature eSubtype number
-            *m_out << "Feature subtype: " << sbt << '\n';
+            *m_out << "Feature subtype: " << sbt << ", Start: " << feat_start << ", Stop: " << sfx.GetEnd() << '\n';
 
 
             if (bsx.IsNA()) {
