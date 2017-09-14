@@ -21203,9 +21203,7 @@ void TestOnePlasmid(const string& plasmid_name, bool expect_error)
 BOOST_AUTO_TEST_CASE(Test_VR_742)
 {
     TestOnePlasmid("plasmid", true);
-    TestOnePlasmid("something", true);
-    TestOnePlasmid("pSebaea microphylla", true);
-    TestOnePlasmid("unnamed X", true);
+    TestOnePlasmid("Sebaea microphylla", true);
 
     // these values are ok
     TestOnePlasmid("megaplasmid", false);

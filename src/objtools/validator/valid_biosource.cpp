@@ -1840,8 +1840,6 @@ static bool s_HadBadPlasmidName(const string& name, const string& taxname)
         NStr::Equal(name, "megaplasmid") || 
         s_IsUnnamed(name)) {
         return false;
-    } else if (name.c_str()[0] != 'p') {
-        return true;
     } else {
         return s_HasBadPlasmidChromLinkName(name, taxname);
     }
