@@ -789,6 +789,7 @@ void CBioseqIndex::x_InitGaps (void)
 
             TSeqPos start = gap_it.GetPosition();
             TSeqPos end = gap_it.GetEndPosition() - 1;
+            TSeqPos length = gap_it.GetLength();
 
             // attempt to find CSeq_gap info
             const CSeq_gap * pGap = NULL;
@@ -809,12 +810,14 @@ void CBioseqIndex::x_InitGaps (void)
                 CFastaOstream::GetGapModText(*pGap, gap_mod_text);
             }
             string type = gap_mod_text.gap_type;
-            vector<string> evidence = gap_mod_text.gap_linkage_evidences;
+            vector<string>& evidence = gap_mod_text.gap_linkage_evidences;
+
+            bool isUnknownLength = gap_it.IsUnknownLength();
 
             // feature name depends on what quals we use
             bool isAssemblyGap = ( ! type.empty() || ! evidence.empty() );
 
-            CRef<CGapIndex> sgx(new CGapIndex(start, end, type, evidence, isAssemblyGap, *this));
+            CRef<CGapIndex> sgx(new CGapIndex(start, end, length, type, evidence, isUnknownLength, isAssemblyGap, *this));
             m_GapList.push_back(sgx);
         }
     }
@@ -1358,14 +1361,18 @@ const vector<CRef<CFeatureIndex>>& CBioseqIndex::GetFeatureIndices(void)
 // Constructor
 CGapIndex::CGapIndex (TSeqPos start,
                       TSeqPos end,
-                      string type,
-                      vector<string> evidence,
+                      TSeqPos length,
+                      const string& type,
+                      const vector<string>& evidence,
+                      bool isUnknownLength,
                       bool isAssemblyGap,
                       CBioseqIndex& bsx)
     : m_Start(start),
       m_End(end),
+      m_Length(length),
       m_GapType(type),
       m_GapEvidence(evidence),
+      m_IsUnknownLength(isUnknownLength),
       m_IsAssemblyGap(isAssemblyGap),
       m_Bsx(&bsx)
 {
