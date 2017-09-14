@@ -21213,3 +21213,11 @@ BOOST_AUTO_TEST_CASE(Test_VR_742)
     TestOnePlasmid("unnamed2", false);
     TestOnePlasmid("unnamed234", false);
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_751)
+{
+    BOOST_CHECK_EQUAL(IsLikelyTaxname("Lasiurus scindicus"), true);
+    BOOST_CHECK_EQUAL(IsLikelyTaxname("Atlantic white-sided dolphin"), false);
+}
+

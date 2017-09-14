@@ -2036,7 +2036,7 @@ bool IsLikelyTaxname(const string& val)
     CTaxon1 taxon1;
     taxon1.Init();
     int taxid = taxon1.GetTaxIdByName(val.substr(0, pos));
-    if (taxid > 0) {
+    if (taxid > 0 || taxid < -1) {
         return true;
     } else {
         return false;
