@@ -179,9 +179,12 @@ void CDiscrepancyContext::OutputXML(ostream& out, bool ext)
     out << "<discrepancy_report>\n";
 
     ITERATE(TDiscrepancyCaseMap, tst, tests) {
+        TReportItemList rep = tst->second->GetReport();
+        if (rep.empty()) {
+            continue;
+        }
         Indent(out, XML_INDENT);
         out << "<test name=\"" << NStr::XmlEncode(tst->first) << "\">\n";
-        TReportItemList rep = tst->second->GetReport();
         RecursiveXML(out, rep, XML_INDENT * 2, ext);
         Indent(out, XML_INDENT);
         out << "</test>\n";
