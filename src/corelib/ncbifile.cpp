@@ -6413,12 +6413,12 @@ void CFileIO::CreateTemporary(const string& dir,
 #  if defined(NCBI_OS_UNIX)
     string pattern = x_dir + prefix + "XXXXXX";
     if (pattern.length() > PATH_MAX) {
-        NCBI_THROW(CFileErrnoException, eFileIO, "Too long pattern");
+        NCBI_THROW(CFileErrnoException, eFileIO, "Too long pattern '" + pattern + "'");
     }
     char filename[PATH_MAX+1];
     memcpy(filename, pattern.c_str(), pattern.length()+1);
     if ((m_Handle = mkstemp(filename)) == -1) {
-        NCBI_THROW(CFileErrnoException, eFileIO, "mkstemp(3) failed");
+        NCBI_THROW(CFileErrnoException, eFileIO, "mkstemp() failed for '" + pattern + "'");
     }
     m_Pathname.assign(filename, pattern.length());
     if (auto_remove == eRemoveASAP) {
@@ -6436,14 +6436,13 @@ void CFileIO::CreateTemporary(const string& dir,
         m_Handle = CreateFile(_T_XCSTRING(m_Pathname),
                               GENERIC_ALL, 0, NULL,
                               CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY, NULL);
-        if (m_Handle != INVALID_HANDLE_VALUE ||
-                ::GetLastError() != ERROR_FILE_EXISTS)
+        if (m_Handle != INVALID_HANDLE_VALUE || ::GetLastError() != ERROR_FILE_EXISTS)
             break;
         ofs++;
     }
     if (m_Handle == INVALID_HANDLE_VALUE) {
-        NCBI_THROW(CFileErrnoException, eFileIO,
-            "Unable to create temporary file");
+        NCBI_THROW(CFileErrnoException, eFileIO, 
+                   "Unable to create temporary file '" + m_Pathname + "'");
     }
 
 #  endif
