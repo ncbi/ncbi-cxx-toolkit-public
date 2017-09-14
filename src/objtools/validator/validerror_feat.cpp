@@ -7214,11 +7214,10 @@ void CValidError_feat::x_CheckCDSFrame
         && (cdregion.GetFrame() == CCdregion::eFrame_two || cdregion.GetFrame() == CCdregion::eFrame_three)) {
         // coding region should be 5' partial
         if (!(part_loc & eSeqlocPartial_Start)) {
-            EDiagSev sev = eDiag_Error;
             has_errors = true;
             other_than_mismatch = true;
             if (report_errors) {
-                PostErr (sev, eErr_SEQ_FEAT_SuspiciousFrame, 
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_SuspiciousFrame,
                          "Suspicious CDS location - frame > 1 but not 5' partial", feat);
             }
         } else if ((part_loc & eSeqlocPartial_Start) && !Is5AtEndSpliceSiteOrGap (location)) {
