@@ -56,7 +56,7 @@ public:
     /// @param writer
     ///    ICache instance used solely for write/store operations (in a separate thread, unless disabled)
     /// @param grace_period
-    ///    Seconds to wait for the write thread to wait before cancelling all its queued tasks.
+    ///    Seconds to wait for the write thread before cancelling all its queued tasks.
     ///    Zero means cancelling all queued tasks immediately,
     ///    already executing task (if any) will try to finish.
     CAsyncWriteCache(ICache* main, ICache* writer, double grace_period = 0.0);
