@@ -652,14 +652,15 @@ EIO_Status CConn_HttpStream::Fetch(const STimeout* timeout)
 }
 
 // NB:  must never be upcalled (directly or indirectly) from any stream ctor
-//      for SHTTP_StatusData may yet be unbuilt (and the text field invalid)!
+//      for SHTTP_StatusData may yet be unbuilt (and the header field invalid)!
 static EHTTP_HeaderParse s_ParseHttpHeader(const char*       header,
                                            SHTTP_StatusData& data)
 {
     int c, n;
+    data.header = header;
     if (sscanf(header, "%*s %u%n", &c, &n) < 1)
         return eHTTP_HeaderError;
-    const char* str = header + n;
+    const char* str = data.header.c_str() + n;
     str += strspn(str, " \t");
     const char* eol = strchr(str, '\n');
     if (!eol)
@@ -768,7 +769,7 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
                                                net_info,
                                                0, // user_header
                                                extra,
-                                               &m_CBData,
+                                               &m_CBD,
                                                extra  &&  extra->reset
                                                ? x_Reset : 0,
                                                extra  &&  extra->adjust
@@ -797,7 +798,7 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
                                                0, //net_info
                                                user_header.c_str(),
                                                extra,
-                                               &m_CBData,
+                                               &m_CBD,
                                                extra  &&  extra->reset
                                                ? x_Reset : 0,
                                                extra  &&  extra->adjust

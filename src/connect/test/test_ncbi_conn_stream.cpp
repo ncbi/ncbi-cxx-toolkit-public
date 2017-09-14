@@ -135,16 +135,6 @@ void CNCBITestConnStreamApp::Init(void)
 }
 
 
-extern "C" {
-EHTTP_HeaderParse x_IfModifiedSinceParseHeader(const char* http_header,
-                                               void*       /*user_data*/,
-                                               int         server_error)
-{
-    return server_error == 304 ? eHTTP_HeaderComplete : eHTTP_HeaderSuccess;
-}
-}
-
-
 int CNCBITestConnStreamApp::Run(void)
 {
     TFTP_Flags flag = 0;
@@ -687,19 +677,11 @@ int CNCBITestConnStreamApp::Run(void)
 
     LOG_POST(Info << "Test 10 of 10: HTTP If-Modified-Since");
 
-    if (!ConnNetInfo_ParseURL(net_info,
-                              "https://www.ncbi.nlm.nih.gov/Service"
-                              "/index.html")) {
-        ERR_POST(Fatal << "Cannot parse URL");
-    }
-    net_info->max_try = 1;
-    net_info->req_method = eReqMethod_Head;
-    net_info->debug_printout = eDebugPrintout_Data;
-
-    CConn_HttpStream modified(net_info,
+    CConn_HttpStream modified("https://www.ncbi.nlm.nih.gov/Service"
+                              "/index.html",
+                              eReqMethod_Head,
                               "If-Modified-Since: "
-                              "Fri, 25 Dec 2015 16:17:18 GMT",
-                              x_IfModifiedSinceParseHeader);
+                              "Fri, 25 Dec 2015 16:17:18 GMT");
 
     ConnNetInfo_Destroy(net_info);
 
@@ -709,7 +691,7 @@ int CNCBITestConnStreamApp::Run(void)
     if (!ftpfile.empty())
         ERR_POST(Fatal << "Non-empty response\n" << ftpfile);
     if (modified.GetStatusCode() != 304)
-        ERR_POST(Fatal << "Non-304 response code");
+        ERR_POST(Fatal << "Non-304 response");
 
     LOG_POST(Info << "Test 10 passed\n");
 

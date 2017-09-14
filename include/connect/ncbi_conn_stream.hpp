@@ -474,8 +474,9 @@ public:
 
 /// Helper class to fetch HTTP status code and text
 struct SHTTP_StatusData {
-    int    code;
-    string text;
+    int         code;
+    CTempString text;
+    string      header;
     SHTTP_StatusData(void) : code(0) { }
 };
 
@@ -573,10 +574,13 @@ public:
     EIO_Status    Fetch(const STimeout* timeout = kDefaultTimeout);
 
     /// Get the last seen HTTP status code
-    int           GetStatusCode(void) const { return m_StatusData.code; }
+    int               GetStatusCode(void) const { return m_StatusData.code; }
 
     /// Get the last seen HTTP status text
-    const string& GetStatusText(void) const { return m_StatusData.text; }
+    const CTempString GetStatusText(void) const { return m_StatusData.text; }
+
+    /// Get the entire HTTP header as received
+    const string&     GetHTTPHeader(void) const { return m_StatusData.header; }
 
 protected:
     // Chained callbacks
@@ -644,10 +648,13 @@ public:
     EIO_Status    Fetch(const STimeout* timeout = kDefaultTimeout);
 
     /// Get the last seen HTTP status code, if available
-    int           GetStatusCode(void) const { return m_CBData.status.code; }
+    int               GetStatusCode(void) const { return m_CBD.status.code; }
 
     /// Get the last seen HTTP status text, if available
-    const string& GetStatusText(void) const { return m_CBData.status.text; }
+    const CTempString GetStatusText(void) const { return m_CBD.status.text; }
+
+    /// Get the last seen HTTP status text, if available
+    const string&     GetHTTPHeader(void) const { return m_CBD.status.header; }
 
     /// Get underlying SOCK, if available after Fetch()
     SOCK          GetSOCK(void);
@@ -661,7 +668,7 @@ public:
 
 protected:
     // Chained callbacks
-    SSERVICE_CBData m_CBData;
+    SSERVICE_CBData m_CBD;
 
 private:
     // Interceptors
