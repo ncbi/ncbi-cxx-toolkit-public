@@ -75,7 +75,7 @@ private:
 class CNullDataValue : public CDataValue {
 public:
     ~CNullDataValue(void);
-    void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintASN(CNcbiOstream& out, int indent) const override;
     virtual string GetXmlString(void) const;
 };
 
@@ -92,7 +92,7 @@ public:
         {
         }
 
-    void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintASN(CNcbiOstream& out, int indent) const override;
     virtual string GetXmlString(void) const;
 
     const TValueType& GetValue(void) const
@@ -117,7 +117,7 @@ public:
         }
     ~CBitStringDataValue(void);
 
-    void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintASN(CNcbiOstream& out, int indent) const override;
     virtual string GetXmlString(void) const;
 };
 
@@ -129,7 +129,7 @@ public:
         }
     ~CIdDataValue(void);
 
-    void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintASN(CNcbiOstream& out, int indent) const override;
     virtual string GetXmlString(void) const;
 };
 
@@ -141,7 +141,7 @@ public:
         }
     ~CNamedDataValue(void);
 
-    void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintASN(CNcbiOstream& out, int indent) const override;
     virtual string GetXmlString(void) const;
 
     const string& GetName(void) const
@@ -171,7 +171,7 @@ public:
 
     ~CBlockDataValue(void);
 
-    void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintASN(CNcbiOstream& out, int indent) const override;
     virtual string GetXmlString(void) const;
 
     TValues& GetValues(void)

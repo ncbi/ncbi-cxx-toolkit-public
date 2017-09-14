@@ -40,12 +40,12 @@ BEGIN_NCBI_SCOPE
 class CStaticDataType : public CDataType {
     typedef CDataType CParent;
 public:
-    void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintASN(CNcbiOstream& out, int indent) const override;
     void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
-    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const;
-    void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
+    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const override;
+    void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const override;
 
-    TObjectPtr CreateDefault(const CDataValue& value) const;
+    TObjectPtr CreateDefault(const CDataValue& value) const override;
 
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     //virtual string GetDefaultCType(void) const;
@@ -58,12 +58,12 @@ class CNullDataType : public CStaticDataType {
     typedef CStaticDataType CParent;
 public:
     bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const;
+    TObjectPtr CreateDefault(const CDataValue& value) const override;
 
     CTypeRef GetTypeInfo(void);
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     virtual const char* GetDefaultCType(void) const;
-    virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetASNKeyword(void) const override;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent, const CDataMember* mem) const;
@@ -73,12 +73,12 @@ class CBoolDataType : public CStaticDataType {
     typedef CStaticDataType CParent;
 public:
     bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const;
+    TObjectPtr CreateDefault(const CDataValue& value) const override;
     virtual string GetDefaultString(const CDataValue& value) const;
 
     CTypeRef GetTypeInfo(void);
     virtual const char* GetDefaultCType(void) const;
-    virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetASNKeyword(void) const override;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual string GetSchemaTypeString(void) const;
@@ -92,12 +92,12 @@ class CRealDataType : public CStaticDataType {
 public:
     CRealDataType(void);
     bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const;
+    TObjectPtr CreateDefault(const CDataValue& value) const override;
     virtual string GetDefaultString(const CDataValue& value) const;
 
     const CTypeInfo* GetRealTypeInfo(void);
     virtual const char* GetDefaultCType(void) const;
-    virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetASNKeyword(void) const override;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual string GetSchemaTypeString(void) const;
@@ -114,14 +114,14 @@ public:
     CStringDataType(EType type = eStringTypeVisible);
 
     bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const;
+    TObjectPtr CreateDefault(const CDataValue& value) const override;
     virtual string GetDefaultString(const CDataValue& value) const;
 
     const CTypeInfo* GetRealTypeInfo(void);
     bool NeedAutoPointer(const CTypeInfo* typeInfo) const;
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     virtual const char* GetDefaultCType(void) const;
-    virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetASNKeyword(void) const override;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual string GetSchemaTypeString(void) const;
@@ -142,7 +142,7 @@ public:
     const CTypeInfo* GetRealTypeInfo(void);
     bool NeedAutoPointer(const CTypeInfo* typeInfo) const;
     AutoPtr<CTypeStrings> GetFullCType(void) const;
-    virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetASNKeyword(void) const override;
     virtual const char* GetDEFKeyword(void) const;
 };
 
@@ -154,7 +154,7 @@ public:
     bool NeedAutoPointer(const CTypeInfo* typeInfo) const;
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     virtual const char* GetDefaultCType(void) const;
-    virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetASNKeyword(void) const override;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent, const CDataMember* mem) const;
@@ -168,7 +168,7 @@ public:
     bool NeedAutoPointer(const CTypeInfo* typeInfo) const;
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     virtual const char* GetDefaultCType(void) const;
-    virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetASNKeyword(void) const override;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual string GetSchemaTypeString(void) const;
@@ -191,12 +191,12 @@ class CIntDataType : public CStaticDataType {
 public:
     CIntDataType(void);
     bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const;
+    TObjectPtr CreateDefault(const CDataValue& value) const override;
     virtual string GetDefaultString(const CDataValue& value) const;
 
     CTypeRef GetTypeInfo(void);
     virtual const char* GetDefaultCType(void) const;
-    virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetASNKeyword(void) const override;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual string GetSchemaTypeString(void) const;
@@ -208,13 +208,13 @@ public:
     CBigIntDataType(bool bAsnBigInt = false) : m_bAsnBigInt(bAsnBigInt) {
     }
     bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const;
+    TObjectPtr CreateDefault(const CDataValue& value) const override;
     virtual string GetDefaultString(const CDataValue& value) const;
 
     CTypeRef GetTypeInfo(void);
     virtual AutoPtr<CTypeStrings> GetFullCType(void) const;
     virtual const char* GetDefaultCType(void) const;
-    virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetASNKeyword(void) const override;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual string GetSchemaTypeString(void) const;
@@ -225,16 +225,16 @@ protected:
 class CAnyContentDataType : public CStaticDataType {
 public:
     bool CheckValue(const CDataValue& value) const;
-    void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintASN(CNcbiOstream& out, int indent) const override;
     void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
-    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const;
-    void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
+    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const override;
+    void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const override;
 
-    TObjectPtr CreateDefault(const CDataValue& value) const;
+    TObjectPtr CreateDefault(const CDataValue& value) const override;
 
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     virtual const char* GetDefaultCType(void) const;
-    virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetASNKeyword(void) const override;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
 };

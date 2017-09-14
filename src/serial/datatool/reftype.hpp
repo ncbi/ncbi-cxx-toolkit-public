@@ -42,17 +42,17 @@ class CReferenceDataType : public CDataType {
 public:
     CReferenceDataType(const string& n, bool ref_to_parent=false);
 
-    void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintASN(CNcbiOstream& out, int indent) const override;
     virtual string      GetSpecKeyword(void) const;
     void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
-    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const;
-    void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
+    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const override;
+    void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const override;
     void PrintDTDExtra(CNcbiOstream& out) const;
 
     void FixTypeTree(void) const;
     bool CheckType(void) const;
     bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const;
+    TObjectPtr CreateDefault(const CDataValue& value) const override;
     string GetDefaultString(const CDataValue& value) const;
 
     const CTypeInfo* GetRealTypeInfo(void);

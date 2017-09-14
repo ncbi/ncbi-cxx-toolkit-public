@@ -42,17 +42,17 @@ class CUniSequenceDataType : public CDataType {
 public:
     CUniSequenceDataType(const AutoPtr<CDataType>& elementType);
 
-    void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintASN(CNcbiOstream& out, int indent) const override;
     void PrintSpecDumpExtra(CNcbiOstream& out, int indent) const;
     void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
-    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const;
-    void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
+    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const override;
+    void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const override;
     void PrintDTDExtra(CNcbiOstream& out) const;
 
     void FixTypeTree(void) const;
     bool CheckType(void) const;
     bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const;
+    TObjectPtr CreateDefault(const CDataValue& value) const override;
     virtual string GetDefaultString(const CDataValue& value) const;
 
     CDataType* GetElementType(void)

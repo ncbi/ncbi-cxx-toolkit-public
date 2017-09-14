@@ -41,7 +41,7 @@ class CChoiceDataType : public CDataMemberContainerType
 {
     typedef CDataMemberContainerType CParent;
 public:
-    virtual void PrintASN(CNcbiOstream& out, int indent) const;
+    virtual void PrintASN(CNcbiOstream& out, int indent) const override;
     void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
 
     void FixTypeTree(void) const;
@@ -53,7 +53,7 @@ public:
     AutoPtr<CTypeStrings> GenerateCode(void) const;
     AutoPtr<CTypeStrings> GetRefCType(void) const;
     AutoPtr<CTypeStrings> GetFullCType(void) const;
-    virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetASNKeyword(void) const override;
     virtual string      GetSpecKeyword(void) const;
     virtual const char* GetDEFKeyword(void) const;
 };

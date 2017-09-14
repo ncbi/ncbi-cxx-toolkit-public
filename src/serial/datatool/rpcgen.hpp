@@ -51,12 +51,12 @@ public:
 
     // trivial definitions for CDataType's pure virtuals
     // (I *said* this was fake... ;-))
-    void       PrintASN(CNcbiOstream&, int)     const { }
+    void       PrintASN(CNcbiOstream&, int)     const  override { }
     void       PrintJSONSchema(CNcbiOstream&, int, list<string>&, bool) const override { }
-    void       PrintXMLSchema(CNcbiOstream&, int, bool)     const { }
-    void       PrintDTDElement(CNcbiOstream&, bool)   const { }
+    void       PrintXMLSchema(CNcbiOstream&, int, bool)     const  override { }
+    void       PrintDTDElement(CNcbiOstream&, bool)   const  override { }
     bool       CheckValue(const CDataValue&)    const { return false; }
-    TObjectPtr CreateDefault(const CDataValue&) const { return 0; }
+    TObjectPtr CreateDefault(const CDataValue&) const  override { return 0; }
 
 private:
     const CCodeGenerator& m_Generator; // source of all wisdom
