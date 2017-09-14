@@ -73,7 +73,7 @@ public:
     bool IsOpen() const override;
     void SetVersionRetention(EKeepVersions policy) override;
     EKeepVersions GetVersionRetention() const override;
-    void Store(const string& key, TBlobVersion version, const string& subkey, const void* data, size_t size, unsigned int time_to_live = 0, const string& owner = kEmptyStr);
+    void Store(const string& key, TBlobVersion version, const string& subkey, const void* data, size_t size, unsigned int time_to_live = 0, const string& owner = kEmptyStr) override;
     size_t GetSize(const string& key, TBlobVersion version, const string& subkey) override;
     void GetBlobOwner(const string& key, TBlobVersion version, const string& subkey, string* owner) override;
     bool Read(const string& key, TBlobVersion version, const string& subkey, void* buf, size_t buf_size) override;
