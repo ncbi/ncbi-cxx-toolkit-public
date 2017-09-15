@@ -118,9 +118,11 @@ CValidError_feat::~CValidError_feat(void)
 
 void CValidError_feat::SetTSE(CSeq_entry_Handle seh)
 {
-    m_GeneCache.Clear();
-    m_SeqCache.Clear();
-    m_TSE = seh;
+    if (!m_TSE || m_Imp.ShouldSubdivide()) {
+        m_GeneCache.Clear();
+        m_SeqCache.Clear();
+        m_TSE = seh;
+    }
 }
 
 
