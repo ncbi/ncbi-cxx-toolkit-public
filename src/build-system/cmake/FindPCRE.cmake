@@ -34,12 +34,12 @@ else(PCRE_INCLUDE_DIR AND PCRE_LIBRARIES)
 	if (WIN32)
 		find_library(PCRE_LIBRARY
 			NAMES
-			libpcre
+			pcre
 			HINTS
 			${PCRE_PKG_LIBRARY_DIRS}
 			PATHS
 			${CMAKE_PREFIX_PATH}
-			${LZO_ROOT}/lib
+			${PCRE_PKG_ROOT}/lib
 			)
 	else (WIN32)
 		find_library(PCRE_LIBRARY

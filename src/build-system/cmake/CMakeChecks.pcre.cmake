@@ -10,7 +10,7 @@ if (PCRE_FOUND)
     set(HAVE_LIBPCRE 1)
 endif()
 
-if (WIN32 AND NOT HAVE_LIBPCRE)
+if (WIN32 AND HAVE_LIBPCRE)
     set(USE_LOCAL_PCRE TRUE)
 endif()
 
