@@ -44,7 +44,8 @@ static Int2 s_BlastDynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk,
    const BlastScoringParameters* score_params, BlastInitHSP* init_hsp);
 static Int4 s_BlastAlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M,
    Int4* pej, Int4* pei, BlastGapAlignStruct* gap_align,
-   const BlastScoringParameters* score_params, Boolean reverse_sequence);
+   const BlastScoringParameters* score_params, Boolean reverse_sequence,
+   Int4 x_dropoff);
 
 static Int2 s_BlastProtGappedAlignment(EBlastProgramType program,
    BLAST_SequenceBlk* query_in, BLAST_SequenceBlk* subject_in,
@@ -2930,6 +2931,11 @@ s_BlastDynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk,
    Uint1 offset_adjustment;
    Uint1* query = query_blk->sequence;
    Uint1* subject = subject_blk->sequence;
+   Int4 x_dropoff =  gap_align->gap_x_dropoff;
+
+   if(init_hsp->ungapped_data->score < x_dropoff) {
+          x_dropoff = init_hsp->ungapped_data->score;
+   }
 
    /* If subject offset is not at the start of a full byte,
       s_BlastAlignPackedNucl won't work, so shift the alignment start
@@ -2955,7 +2961,7 @@ s_BlastDynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk,
    /* perform extension to left */
    score_left = s_BlastAlignPackedNucl(query, subject, q_length, s_length,
                       &private_q_start, &private_s_start, gap_align,
-                      score_params, TRUE);
+                      score_params, TRUE, x_dropoff);
    if (score_left < 0)
       return -1;
    gap_align->query_start = q_length - private_q_start;
@@ -2969,7 +2975,7 @@ s_BlastDynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk,
          subject+(s_length+3)/COMPRESSION_RATIO - 1,
          query_blk->length-q_length,
          subject_blk->length-s_length, &(gap_align->query_stop),
-         &(gap_align->subject_stop), gap_align, score_params, FALSE);
+         &(gap_align->subject_stop), gap_align, score_params, FALSE, x_dropoff);
       if (score_right < 0)
          return -1;
       gap_align->query_stop += q_length;
@@ -3004,7 +3010,7 @@ s_BlastAlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M,
 	Int4* b_offset, Int4* a_offset,
         BlastGapAlignStruct* gap_align,
         const BlastScoringParameters* score_params,
-        Boolean reverse_sequence)
+        Boolean reverse_sequence, Int4 x_dropoff)
 {
     Int4 i;                     /* sequence pointers and indices */
     Int4 a_index, a_base_pair;
@@ -3017,7 +3023,6 @@ s_BlastAlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M,
     Int4 gap_open;              /* alignment penalty variables */
     Int4 gap_extend;
     Int4 gap_open_extend;
-    Int4 x_dropoff;
 
     Int4* *matrix;              /* pointers to the score matrix */
     Int4* matrix_row;
@@ -3036,7 +3041,6 @@ s_BlastAlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M,
     gap_open = score_params->gap_open;
     gap_extend = score_params->gap_extend;
     gap_open_extend = gap_open + gap_extend;
-    x_dropoff = gap_align->gap_x_dropoff;
 
     if (x_dropoff < gap_open_extend)
         x_dropoff = gap_open_extend;
