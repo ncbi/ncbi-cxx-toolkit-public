@@ -131,6 +131,50 @@ void CDataMemberContainerType::PrintJSONSchema(CNcbiOstream& out, int indent, li
         return;
     }
 
+#if 0
+// allOf is kind of... wrong...
+// it is impossible to restrict additionalProperties
+// so, instance validation either fails or allows undefined elements
+// I do not know...  
+// I leave this code for future, in a hope that JSON schema will be improved.
+
+    bool hasUnnamedContainer = find_if(m_Members.begin(), m_Members.end(),
+        [](const TMembers::value_type& e) { return e->Notag() && e->GetType()->IsContainer();}) != m_Members.end();
+    if (hasUnnamedContainer) {
+        first = true;
+        PrintASNNewLine(out, indent++) << "\"definitions\": {";
+        ITERATE ( TMembers, i, m_Members ) {
+            const CDataMember& member = **i;
+            if (member.Notag() && member.GetType()->IsContainer()) {
+                if (!first) {
+                    out << ",";
+                } else {
+                    first = false;
+                }
+                PrintASNNewLine(out, indent++) << "\"" << "$" << member.GetName() << "\": {";
+                member.PrintJSONSchema(out, indent, req, true);
+                PrintASNNewLine(out, --indent) << "}";
+            }
+        }
+        PrintASNNewLine(out, --indent) << "},";
+        PrintASNNewLine(out, indent++) << "\"allOf\": [";
+        first = true;
+        ITERATE ( TMembers, i, m_Members ) {
+            const CDataMember& member = **i;
+            if (member.Notag() && member.GetType()->IsContainer()) {
+                if (!first) {
+                    out << ",";
+                } else {
+                    first = false;
+                }
+                PrintASNNewLine(out, indent) << "{\"$ref\": \"#/definitions/" << GetMemberName() << "/definitions/$" << member.GetName() << "\"}";
+            }
+        }
+        out << ",";
+        PrintASNNewLine(out, indent++) << "{";
+    }
+#endif
+
     if (!contents_only) {
         PrintASNNewLine(out, indent) << "\"type\": \"object\",";
         PrintASNNewLine(out, indent++) << "\"properties\": {";
@@ -143,6 +187,11 @@ void CDataMemberContainerType::PrintJSONSchema(CNcbiOstream& out, int indent, li
 // special case: null with attributes
             continue;
         }
+#if 0
+        if (member.Notag() && member.GetType()->IsContainer()) {
+            continue;
+        }
+#endif
         if (!first) {
             out << ",";
         } else {
@@ -182,6 +231,13 @@ void CDataMemberContainerType::PrintJSONSchema(CNcbiOstream& out, int indent, li
         out << ",";
         PrintASNNewLine(out, indent) << "\"additionalProperties\": false";
     }
+
+#if 0
+    if (hasUnnamedContainer) {
+        PrintASNNewLine(out, --indent) << "}";
+        PrintASNNewLine(out, --indent) << "]";
+    }
+#endif
     if (data && !data->Notag() && !data->Optional() && !data->Attlist()) {
         required.push_back(data->GetName());
     }
