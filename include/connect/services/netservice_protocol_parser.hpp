@@ -90,7 +90,7 @@ struct SNSProtoArgument {
 };
 
 enum {
-    kNSProtoMaxArgs = 20
+    kNSProtoMaxArgs = 30
 };
 
 template <class Extra>
