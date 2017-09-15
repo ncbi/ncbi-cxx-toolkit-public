@@ -551,15 +551,15 @@ private:
 public:
     // Getters
 
-     const TSeqPos GetStart (void) const { return m_Start; }
-     const TSeqPos GetEnd (void) const { return m_End; }
-     const TSeqPos GetLength (void) const { return m_Length; }
-     const string GetGapType (void) const { return m_GapType; }
-     const vector<string>& GetGapEvidence (void) const { return m_GapEvidence; }
-     bool IsUnknownLength (void) const { return m_IsUnknownLength; }
-     bool IsAssemblyGap (void) const { return m_IsAssemblyGap; }
+    TSeqPos GetStart (void) const { return m_Start; }
+    TSeqPos GetEnd (void) const { return m_End; }
+    TSeqPos GetLength (void) const { return m_Length; }
+    const string GetGapType (void) const { return m_GapType; }
+    const vector<string>& GetGapEvidence (void) const { return m_GapEvidence; }
+    bool IsUnknownLength (void) const { return m_IsUnknownLength; }
+    bool IsAssemblyGap (void) const { return m_IsAssemblyGap; }
 
-   // Get parent Bioseq index
+    // Get parent Bioseq index
     CWeakRef<CBioseqIndex> GetBioseqIndex (void) const { return m_Bsx; }
 
 private:
@@ -643,8 +643,8 @@ public:
     // Get feature subtype (e.g. CSeqFeatData::eSubtype_mRNA)
     CSeqFeatData::ESubtype GetSubtype (void) const { return m_Subtype; }
 
-     const TSeqPos GetStart (void) const { return m_Start; }
-     const TSeqPos GetEnd (void) const { return m_End; }
+    TSeqPos GetStart (void) const { return m_Start; }
+    TSeqPos GetEnd (void) const { return m_End; }
 
     // Get sequence letters under feature intervals
     string GetSequence (void);
