@@ -49,25 +49,13 @@ public:
     void Expand(CStackTrace::TStack& stack);
 
 private:
-    typedef void*               TStackFrame;
-    typedef vector<TStackFrame> TStack;
+    typedef list<unw_cursor_t> TFrames;
 
-    TStack m_Stack;
+    TFrames m_Frames;
 };
 
 
 CStackTraceImpl::CStackTraceImpl(void)
-{
-    m_Stack.resize(CStackTrace::s_GetStackTraceMaxDepth());
-}
-
-
-CStackTraceImpl::~CStackTraceImpl(void)
-{
-}
-
-
-void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
 {
     unw_cursor_t cursor;
     unw_context_t context;
@@ -78,6 +66,20 @@ void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
 
     // Unwind frames one by one, going up the frame stack.
     while (unw_step(&cursor) > 0) {
+        m_Frames.push_back(cursor);
+    }
+}
+
+
+CStackTraceImpl::~CStackTraceImpl(void)
+{
+}
+
+
+void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
+{
+    ITERATE(TFrames, it, m_Frames) {
+        unw_cursor_t cursor = *it;
         CStackTrace::SStackFrameInfo info;
         unw_word_t offset;
 
