@@ -118,11 +118,29 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
         {&CNCMessageHandler::x_FinishCommand,
             "A?", fNoCmdFlags, eNCNone, eProxyNone} },
     // Requests version of the server.
-    { "VERSION", {&CNCMessageHandler::x_DoCmd_Version,
-            "VERSION", fNoCmdFlags, eNCNone, eProxyNone} },
+    { "VERSION",
+        {&CNCMessageHandler::x_DoCmd_Version,
+            "VERSION", fNoCmdFlags, eNCNone, eProxyNone},
+        {
+          // Client IP for application requesting the info.
+          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application requesting the info.
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Requests some "health" information about the server.
-    { "HEALTH",  {&CNCMessageHandler::x_DoCmd_Health,
-            "HEALTH", fNoCmdFlags, eNCNone, eProxyNone} },
+    { "HEALTH",
+        {&CNCMessageHandler::x_DoCmd_Health,
+            "HEALTH", fNoCmdFlags, eNCNone, eProxyNone},
+        {
+          // Client IP for application requesting the info.
+          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application requesting the info.
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Check if blob exists. Command for "ICache" clients.
     { "HASB",
         {&CNCMessageHandler::x_DoCmd_HasBlob,
@@ -1177,7 +1195,14 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // to other servers and without searching for blob on them).
           { "local",   eNSPT_Int,  eNSPA_Optional },
           // Quorum to use for this operation.
-          { "qrum",    eNSPT_Int,  eNSPA_Optional } } },
+          { "qrum",    eNSPT_Int,  eNSPA_Optional },
+          // Client IP for application sending the command.
+          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application sending the command.
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Get meta information about the blob. Command for "ICache" clients.
     { "GETMETA",
         {&CNCMessageHandler::x_DoCmd_GetMeta,
@@ -1197,7 +1222,14 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // to other servers and without searching for blob on them).
           { "local",   eNSPT_Int,  eNSPA_Optional },
           // Quorum to use for this operation.
-          { "qrum",    eNSPT_Int,  eNSPA_Optional } } },
+          { "qrum",    eNSPT_Int,  eNSPA_Optional },
+          // Client IP for application sending the command.
+          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application sending the command.
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Prolong blob's life for a specific number of seconds from current time.
     // Command provides a minimum time this blob should be still available for.
     // If blob's expiration time was already later than that this command is
@@ -1362,16 +1394,29 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
             fNeedsAdminClient, eNCNone, eProxyNone},
         { 
           // Netcached.ini section name
-          { "section", eNSPT_Str,  eNSPA_Required }
-        }
-    },
+          { "section", eNSPT_Str,  eNSPA_Required },
+          // Client IP for application sending the command.
+          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application sending the command.
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
 
     { "PURGE",
         {&CNCMessageHandler::x_DoCmd_Purge,
             "PURGE",
             fNoCmdFlags, eNCNone, eProxyNone},
-          // Cache name.
-        { { "cache",     eNSPT_Str, eNSPA_Required } } },
+        { 
+            // Cache name.
+            { "cache",     eNSPT_Str, eNSPA_Required },
+          // Client IP for application sending the command.
+          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application sending the command.
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     { "COPY_PURGE",
         {&CNCMessageHandler::x_DoCmd_CopyPurge,
             "COPY_PURGE", fNoCmdFlags, eNCNone, eProxyNone },
@@ -1421,7 +1466,13 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "key",     eNSPT_Str,  eNSPA_Required },
           // Blob's subkey.
           { "subkey",  eNSPT_Str,  eNSPA_Optional },
-          { "local",   eNSPT_Int,  eNSPA_Optional }
+          { "local",   eNSPT_Int,  eNSPA_Optional },
+          // Client IP for application sending the command.
+          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application sending the command.
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
         } },
 // added in v6.11.0 (CXX-8737)
     { "BLIST2",
@@ -1467,7 +1518,13 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // blob bigger than this size
           { "fsize_ge",  eNSPT_Int,  eNSPA_Optional },
           // blob smaller than this size
-          { "fsize_lt",  eNSPT_Int,  eNSPA_Optional }
+          { "fsize_lt",  eNSPT_Int,  eNSPA_Optional },
+          // Client IP for application sending the command.
+          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application sending the command.
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
         } },
     { "PROXY_BLIST",
         {&CNCMessageHandler::x_DoCmd_GetBList,
