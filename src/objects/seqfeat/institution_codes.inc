@@ -5435,6 +5435,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "QCAZ\ts\tMuseo de Zoologia, Pontifica Universidad Catolica del Ecuador\t\t",
 "QCAZ:A\ts\tMuseo de Zoologia, Pontifica Universidad Catolica del Ecuador, Amphibian Collection",
 "QCAZ:R\ts\tMuseo de Zoologia, Pontifica Universidad Catolica del Ecuador, Reptile Collection",
+"QCC\tc\t Qatari Culture Collection\t\t",
 "QCNE\ts\tHerbario Nacional del Ecuador\t\t",
 "QD\ts\tOcean University of China\t\t",
 "QDC\ts\tQinghai Institute for Drug Control\t\t",
