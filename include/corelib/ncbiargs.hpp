@@ -1094,6 +1094,7 @@ protected:
     string    m_DetailedDescription;  ///< Program long description
     SIZE_TYPE m_UsageWidth;        ///< Maximum length of a usage line
     bool      m_AutoHelp;          ///< Special flag "-h" activated
+    friend class CCommandArgDescriptions;
 
 private:
 
