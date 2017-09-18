@@ -13,11 +13,9 @@ include(CMakeLists.seqfeatdata_unit_test.app.txt)
 include(CMakeLists.seqfeat_unit_test.app.txt)
 include(CMakeLists.seq_loc_unit_test.app.txt)
 
+if (HAVE_NCBI_C)
+
 include(CMakeLists.seq_c_compat_unit_test.app.txt)
-if (BUILD_SHARED_LIBS)
-    # NOTE:
-    # This library doesn't build in static mode.
-    # The reason is that in static mode linking xconnect and libncbi (C toolkit)
-    # since xconnect include  and libncbi also include...
+
 endif()
 
