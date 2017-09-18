@@ -80,6 +80,9 @@
 
 #include <misc/data_loaders_util/data_loaders_util.hpp>
 
+#include <objtools/format/flat_file_generator.hpp>
+
+
 #include <common/test_assert.h>  /* This header must go last */
 
 using namespace ncbi;
@@ -653,7 +656,15 @@ int CTbl2AsnApp::Run(void)
     }
 
     if (args["V"])
+    {
         m_context.m_validate = args["V"].AsString();
+        size_t p;
+        if ((p = m_context.m_validate.find("b")) != string::npos)
+        {
+            m_context.m_validate.erase(p);
+            m_context.m_make_flatfile = true;
+        }
+    }
 
     if (args["locus-tag-prefix"])
         m_context.m_locus_tag_prefix = args["locus-tag-prefix"].AsString();
@@ -979,6 +990,24 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         if (!m_context.m_discrepancy_file.empty())
         {
             m_validator->ReportDiscrepancies(submit.Empty() ? (CSerialObject&)*entry : (CSerialObject&)*submit, *m_context.m_scope, m_context.m_disc_eucariote, m_context.m_disc_lineage);
+        }
+
+        if (m_context.m_make_flatfile)
+        {
+            string ffname = GenerateOutputFilename(".ff");
+
+            CFlatFileConfig config;
+
+            config.BasicCleanup(false);
+
+            CFlatFileGenerator ffgenerator;
+
+            CNcbiOfstream outstream(ffname.c_str());
+
+            if (submit.Empty())
+                ffgenerator.Generate(entry_edit_handle, outstream);
+            else
+                ffgenerator.Generate(*submit, *m_context.m_scope, outstream);
         }
     }
 }

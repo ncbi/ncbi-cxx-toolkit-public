@@ -107,6 +107,7 @@ public:
     bool   m_allow_accession;
     bool   m_verbose;
     bool   m_augustus_fix;
+    bool   m_make_flatfile;
 
     CRef<objects::CSeq_descr>  m_descriptors;
     auto_ptr<objects::edit::CRemoteUpdater>   m_remote_updater;

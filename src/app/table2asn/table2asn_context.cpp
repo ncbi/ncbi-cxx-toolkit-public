@@ -204,6 +204,7 @@ CTable2AsnContext::CTable2AsnContext():
     m_allow_accession(false),
     m_verbose(false),
     m_augustus_fix(false),
+    m_make_flatfile(false),
     m_logger(0)
 {
 }
