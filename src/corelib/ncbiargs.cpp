@@ -4056,8 +4056,25 @@ void CCommandArgDescriptions::PrintUsageXml(CNcbiOstream& out) const
     for (d = m_Description.begin(); d != m_Description.end(); ++d) {
         out << "<command>" << endl;
         out << "<name>" << d->first << "</name>" << endl;
+        if (m_Aliases.find(d->first) != m_Aliases.end()) {
+            out << "<alias>" << (m_Aliases.find(d->first)->second) << "</alias>" << endl;
+        }
+        s_WriteXmlLine(out, "description", d->second->m_UsageDescription);
         x.PrintArguments(*(d->second));
         out << "</command>" << endl;
+    }
+    if (m_CmdGroups.size() > 1) {
+        out << "<command_groups>" << endl;
+        for (const string& g : m_CmdGroups) {
+            out << "<name>" << g << "</name>" << endl;
+            size_t group = x_GetCommandGroupIndex(g);
+            for (const string& c : m_Commands) {
+                if (m_Groups.find(c) != m_Groups.end() && m_Groups.find(c)->second == group) {
+                    out << "<command>" << c << "</command>" << endl;
+                }
+            }
+        }
+        out << "</command_groups>" << endl;
     }
 }
 ///////////////////////////////////////////////////////
