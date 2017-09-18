@@ -434,20 +434,16 @@ void CProteinMatchApp::x_ProcessSeqEntry(CRef<CSeq_entry> nuc_prot_set,
         nuc_prot_set->GetSet().GetNucFromNucProtSet(),
         local_nuc_acc);
     string local_nuc_acc_string = ""; 
-    string db_nuc_acc_string = "";
     if (success) {
         local_nuc_acc_string = local_nuc_acc->GetSeqIdString();
 
-        // Check to see if the nucleotide accession has been changed
+        // Check to see if the nucleotide id has been changed
         CRef<CSeq_id> prev_nuc_acc; 
         if (m_pMatchSetup->GetReplacedIdFromHist(
                     nuc_prot_set->GetSet().GetNucFromNucProtSet(),
                     prev_nuc_acc)) {
-            db_nuc_acc_string = prev_nuc_acc->GetSeqIdString();
-            new_nuc_accessions[db_nuc_acc_string] = local_nuc_acc_string;
-        }
-        else {
-            db_nuc_acc_string = local_nuc_acc_string; 
+            const string prev_nuc_acc_string = prev_nuc_acc->GetSeqIdString();
+            new_nuc_accessions[prev_nuc_acc_string] = local_nuc_acc_string;
         }
     } else {
         // NCBI_THROW ... Couldn't find a local nucleotide id
@@ -464,7 +460,7 @@ void CProteinMatchApp::x_ProcessSeqEntry(CRef<CSeq_entry> nuc_prot_set,
     x_GatherLocalProteinIds(nuc_prot_set->GetSet(), local_prot_ids[local_nuc_acc_string]);
 
     if (db_entry->IsSet()) {
-        x_GatherProteinAccessions(db_entry->GetSet(), prot_accessions[db_nuc_acc_string]);
+        x_GatherProteinAccessions(db_entry->GetSet(), prot_accessions[local_nuc_acc_string]);
     }
     x_RelabelNucSeq(nuc_prot_set); // Temporary - need to fix this
 
