@@ -729,8 +729,9 @@ void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force, bo
             }
             try {
                 COrgMod::TSubtype subtype = COrgMod::GetSubtypeValue((*it)->GetFieldName());
-                RemoveOrgMod(subtype);
-                
+                if (!NStr::IsBlank((*it)->GetSrcVal())) {
+                    RemoveOrgMod(subtype, (*it)->GetSrcVal());
+                }                
                 if (!NStr::IsBlank(sample_val)) {
                     CRef<COrgMod> mod(new COrgMod());
                     mod->SetSubtype(subtype);
@@ -740,7 +741,9 @@ void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force, bo
             } catch (...) {
                 try {
                     CSubSource::TSubtype subtype = CSubSource::GetSubtypeValue((*it)->GetFieldName());
-                    RemoveSubSource(subtype);
+                    if (!NStr::IsBlank((*it)->GetSrcVal())) {
+                        RemoveSubSource(subtype, (*it)->GetSrcVal());
+                    }
                     if (!NStr::IsBlank(sample_val)) {
                         CRef<CSubSource> sub(new CSubSource());
                         sub->SetSubtype(subtype);
@@ -1130,6 +1133,59 @@ bool CBioSource::ShouldIgnoreConflict(const string& label, string src_val, strin
 }
 
 
+void CompareValLists(TFieldDiffList& list, const string& val_name, bool is_local_copy, const vector<string>& list1, const vector<string>& list2)
+{
+    vector<bool> matched1;
+    for (size_t i = 0; i < list1.size(); i++) {
+        matched1.push_back(false);
+    }
+
+    vector<bool> matched2;
+    for (size_t i = 0; i < list2.size(); i++) {
+        matched2.push_back(false);
+    }
+    for (size_t i = 0; i < list1.size(); i++) {
+        bool found = false;
+        for (size_t j = 0; j < list2.size(); j++) {
+            if (matched2[j]) {
+                // already in use
+            } else if (CBioSource::ShouldIgnoreConflict(val_name, list1[i], list2[j], is_local_copy)) {
+                matched2[j] = true;
+                found = true;
+                break;
+            }
+        }
+        if (found) {
+            matched1[i] = true;
+        }
+    }
+    for (size_t i = 0; i < list1.size(); i++) {
+        if (!matched1[i]) {
+            bool reported = false;
+            for (size_t j = 0; j < list2.size(); j++) {
+                if (!matched2[j]) {
+                    CRef<CFieldDiff> diff(new CFieldDiff(val_name, list1[i], list2[j]));
+                    list.push_back(diff);
+                    reported = true;
+                    matched2[j] = true;
+                    break;
+                }
+            }
+            if (!reported) {
+                CRef<CFieldDiff> diff(new CFieldDiff(val_name, list1[i], ""));
+                list.push_back(diff);
+            }
+        }
+    }
+    for (size_t j = 0; j < list2.size(); j++) {
+        if (!matched2[j]) {
+            CRef<CFieldDiff> diff(new CFieldDiff(val_name, "", list2[j]));
+            list.push_back(diff);
+        }
+    }
+}
+
+
 void GetFieldDiffsFromNameValLists(TFieldDiffList& list,
                                    CBioSource::TNameValList& list1, 
                                    CBioSource::TNameValList& list2,
@@ -1137,29 +1193,41 @@ void GetFieldDiffsFromNameValLists(TFieldDiffList& list,
 {
     CBioSource::TNameValList::iterator it1 = list1.begin();
     CBioSource::TNameValList::iterator it2 = list2.begin();
+    vector<bool> matched;
 
     while (it1 != list1.end() && it2 != list2.end()) {
         int cmp = NStr::Compare(it1->first, it2->first);
-        if (cmp == 0) {
-            if (!CBioSource::ShouldIgnoreConflict(it1->first, it1->second, it2->second, is_local_copy)) {
-                CRef<CFieldDiff> diff(new CFieldDiff(it1->first, it1->second, it2->second));
-                list.push_back(diff);
-            }
-            it1++;
-            it2++;
-        } else if (cmp < 0) {
+        if (cmp < 0) {
             if (!CBioSource::ShouldIgnoreConflict(it1->first, it1->second, "", is_local_copy)) {
                 CRef<CFieldDiff> diff(new CFieldDiff(it1->first, it1->second, ""));
                 list.push_back(diff);
             }
             it1++;
-        } else {
-            // cmp > 0
+        } else if (cmp > 0) {
             if (!CBioSource::ShouldIgnoreConflict(it2->first, "", it2->second, is_local_copy)) {
                 CRef<CFieldDiff> diff(new CFieldDiff(it2->first, "", it2->second));
                 list.push_back(diff);
             }
             it2++;
+        } else {
+            // cmp == 0
+            const string& val_name = it1->first;
+            vector<string> v1;
+            vector<string> v2;
+            v1.push_back(it1->second);
+            v2.push_back(it2->second);
+            it1++;
+            it2++;
+            while (it1 != list1.end() && NStr::Equal(it1->first, val_name)) {
+                v1.push_back(it1->second);
+                it1++;
+            }
+            while (it2 != list2.end() && NStr::Equal(it2->first, val_name)) {
+                v2.push_back(it2->second);
+                it2++;
+            }
+
+            CompareValLists(list, val_name, is_local_copy, v1, v2);
         }
     }
     while (it1 != list1.end()) {
@@ -1515,6 +1583,29 @@ bool CBioSource::RemoveSubSource(int subtype)
 }
 
 
+bool CBioSource::RemoveSubSource(int subtype, const string& val)
+{
+    bool rval = false;
+
+    if (IsSetSubtype()) {
+        CBioSource::TSubtype::iterator it = SetSubtype().begin();
+        while (it != SetSubtype().end()) {
+            if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == subtype &&
+                (*it)->IsSetName() && NStr::Equal((*it)->GetName(), val)) {
+                it = SetSubtype().erase(it);
+                rval = true;
+            } else {
+                it++;
+            }
+        }
+        if (GetSubtype().empty()) {
+            ResetSubtype();
+        }
+    }
+    return rval;
+}
+
+
 bool CBioSource::RemoveOrgMod(int subtype)
 {
     bool rval = false;
@@ -1523,6 +1614,29 @@ bool CBioSource::RemoveOrgMod(int subtype)
         COrgName::TMod::iterator it = SetOrg().SetOrgname().SetMod().begin();
         while (it != SetOrg().SetOrgname().SetMod().end()) {
             if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == subtype) {
+                it = SetOrg().SetOrgname().SetMod().erase(it);
+                rval = true;
+            } else {
+                it++;
+            }
+        }
+        if (GetOrg().GetOrgname().GetMod().empty()) {
+            SetOrg().SetOrgname().ResetMod();
+        }
+    }
+    return rval;
+}
+
+
+bool CBioSource::RemoveOrgMod(int subtype, const string& val)
+{
+    bool rval = false;
+
+    if (IsSetOrg() && GetOrg().IsSetOrgname() && GetOrg().GetOrgname().IsSetMod()) {
+        COrgName::TMod::iterator it = SetOrg().SetOrgname().SetMod().begin();
+        while (it != SetOrg().SetOrgname().SetMod().end()) {
+            if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == subtype &&
+                (*it)->IsSetSubname() && NStr::Equal((*it)->GetSubname(), val)) {
                 it = SetOrg().SetOrgname().SetMod().erase(it);
                 rval = true;
             } else {

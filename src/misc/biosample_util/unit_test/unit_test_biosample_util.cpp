@@ -213,8 +213,10 @@ BOOST_AUTO_TEST_CASE(Test_UpdateWithBioSample)
     biosample->SetOrg().SetOrgname().SetDiv("BCT");
     unit_test_util::SetSubSource(*biosample, CSubSource::eSubtype_country, "Thailand");
     unit_test_util::SetSubSource(*biosample, CSubSource::eSubtype_isolation_source, "stool");
-    unit_test_util::SetOrgMod(*biosample, COrgMod::eSubtype_culture_collection, "TEST:TEST01");
-    unit_test_util::SetOrgMod(*biosample, COrgMod::eSubtype_culture_collection, "TEST:TEST02");
+    CRef<COrgMod> om1(new COrgMod(COrgMod::eSubtype_culture_collection, "TEST:TEST01"));
+    biosample->SetOrg().SetOrgname().SetMod().push_back(om1);
+    CRef<COrgMod> om2(new COrgMod(COrgMod::eSubtype_culture_collection, "TEST:TEST02"));
+    biosample->SetOrg().SetOrgname().SetMod().push_back(om2);
 
     src->UpdateWithBioSample(*biosample, true);
 
@@ -584,4 +586,45 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2189)
    
 }
 
+
+void CheckDiff(const CFieldDiff& diff, const string& dname, const string& src_val, const string& sample_val)
+{
+    BOOST_CHECK_EQUAL(diff.GetFieldName(), dname);
+    BOOST_CHECK_EQUAL(diff.GetSrcVal(), src_val);
+    BOOST_CHECK_EQUAL(diff.GetSampleVal(), sample_val);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_GB_7214)
+{
+    // need to report correctly when there are multiple qualifiers with the same name
+    CRef<CBioSource> src(new CBioSource());
+    src->SetOrg().SetTaxname("Bacteria");
+
+    CRef<CBioSource> smpl(new CBioSource());
+    smpl->Assign(*src);
+
+    CRef<COrgMod> om1(new COrgMod(COrgMod::eSubtype_isolate, "val1"));
+    CRef<COrgMod> om2(new COrgMod(COrgMod::eSubtype_isolate, "val2"));
+
+    CRef<COrgMod> om1_copy(new COrgMod());
+    om1_copy->Assign(*om1);
+    CRef<COrgMod> om2_copy(new COrgMod());
+    om2_copy->Assign(*om2);
+
+    // report two missing quals on sample
+    src->SetOrg().SetOrgname().SetMod().push_back(om1);
+    src->SetOrg().SetOrgname().SetMod().push_back(om2);
+
+    TFieldDiffList diff_list = src->GetBiosampleDiffs(*smpl);
+    BOOST_CHECK_EQUAL(diff_list.size(), 2);
+    CheckDiff(*diff_list[0], "isolate", "val1", "");
+    CheckDiff(*diff_list[1], "isolate", "val2", "");
+
+    // only one missing
+    smpl->SetOrg().SetOrgname().SetMod().push_back(om2_copy);
+    diff_list = src->GetBiosampleDiffs(*smpl);
+    BOOST_CHECK_EQUAL(diff_list.size(), 1);
+    CheckDiff(*diff_list[0], "isolate", "val1", "");
+}
 

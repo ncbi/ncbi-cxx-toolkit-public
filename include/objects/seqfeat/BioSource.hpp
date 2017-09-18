@@ -135,7 +135,9 @@ public:
     bool RemoveLineageSourceNotes();
 
     bool RemoveSubSource(int subtype);
+    bool RemoveSubSource(int subtype, const string& val);
     bool RemoveOrgMod(int subtype);
+    bool RemoveOrgMod(int subtype, const string& val);
 
     //If taxname starts with uncultured, set environmental-sample to true
     //If metagenomic, set environmental_sample
