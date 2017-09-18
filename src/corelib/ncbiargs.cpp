@@ -3649,6 +3649,7 @@ CArgDescriptions::CPrintUsageXml::CPrintUsageXml(const CArgDescriptions& desc, C
     s_WriteXmlLine(m_out, "version", 
         CNcbiApplication::Instance()->GetVersion().Print());
     s_WriteXmlLine(m_out, "description", desc.m_UsageDescription);
+    s_WriteXmlLine(m_out, "detailed_description", desc.m_DetailedDescription);
     m_out << "</" << "program" << ">" << endl;
 }
 CArgDescriptions::CPrintUsageXml::~CPrintUsageXml()
@@ -4060,6 +4061,7 @@ void CCommandArgDescriptions::PrintUsageXml(CNcbiOstream& out) const
             out << "<alias>" << (m_Aliases.find(d->first)->second) << "</alias>" << endl;
         }
         s_WriteXmlLine(out, "description", d->second->m_UsageDescription);
+        s_WriteXmlLine(out, "detailed_description", d->second->m_DetailedDescription);
         x.PrintArguments(*(d->second));
         out << "</command>" << endl;
     }
