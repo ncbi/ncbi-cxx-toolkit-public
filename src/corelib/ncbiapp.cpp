@@ -39,6 +39,7 @@
 #include <corelib/syslog.hpp>
 #include <corelib/error_codes.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#include <corelib/request_ctx.hpp>
 #ifdef HAVE_COMMON_NCBI_BUILD_VER_H
 #  include <common/ncbi_build_ver.h>
 #endif
@@ -515,6 +516,13 @@ void CNcbiApplication::x_TryMain(EAppDiagStream diag,
                 NCBI_RETHROW_SAME(e, "Application's execution failed");
             }
             catch (CException& e) {
+                CRef<CRequestContext> cur_ctx(&GetDiagContext().GetRequestContext());
+                if (cur_ctx != &e.GetRequestContext()) {
+                    GetDiagContext().SetRequestContext(&e.GetRequestContext());
+                    NCBI_REPORT_EXCEPTION_X(16,
+                                            "CException thrown", e);
+                    GetDiagContext().SetRequestContext(cur_ctx);
+                }
                 NCBI_REPORT_EXCEPTION_X(16,
                                         "Application's execution failed", e);
                 *got_exception = true;

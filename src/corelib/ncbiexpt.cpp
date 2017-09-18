@@ -41,6 +41,7 @@
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbi_param.hpp>
+#include <corelib/request_ctx.hpp>
 #include <corelib/error_codes.hpp>
 #include "ncbisys.hpp"
 #include <errno.h>
@@ -451,6 +452,22 @@ const string& CException::GetMsg(void) const
 }
 
 
+class CRequestContextRef
+{
+public:
+    CRequestContextRef(CRequestContext& ctx) : m_Context(&ctx) {}
+    CRequestContext& GetRequestContext(void) { return *m_Context; }
+private:
+    CRef<CRequestContext> m_Context;
+};
+
+
+CRequestContext& CException::GetRequestContext(void) const
+{
+    return m_RequestContext->GetRequestContext();
+}
+
+
 void CException::x_ReportToDebugger(void) const
 {
 #if defined(NCBI_OS_MSWIN)  &&  defined(_DEBUG)
@@ -495,6 +512,7 @@ void CException::x_Init(const CDiagCompileInfo& info,const string& message,
     if (!m_Predecessor && prev_exception) {
         m_Predecessor = prev_exception->x_Clone();
     }
+    m_RequestContext.reset(new CRequestContextRef(GetDiagContext().GetRequestContext()));
     x_GetStackTrace();
 }
 

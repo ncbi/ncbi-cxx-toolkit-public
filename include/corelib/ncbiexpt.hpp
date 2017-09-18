@@ -706,6 +706,9 @@ public:
 /// defines additional generic error codes for applications, and error
 /// reporting capabilities.
 
+class CRequestContextRef;
+class CRequestContext;
+
 class NCBI_XNCBI_EXPORT CException : public std::exception
 {
 public:
@@ -888,6 +891,9 @@ public:
     /// Unset flag (other flags are left as is)
     CException& UnsetFlag(EFlags flag) { m_Flags &= ~flag; return *this; }
 
+    /// Get the request context in which the exception was thrown.
+    CRequestContext& GetRequestContext(void) const;
+
 protected:
     /// Constructor for derived classes
     CException(const CDiagCompileInfo& info,
@@ -956,6 +962,8 @@ private:
     unique_ptr<CStackTrace> m_StackTrace; ///< Saved stack trace
 
     TFlags       m_Flags;            ///< Flags, hints, attributes
+
+    unique_ptr<CRequestContextRef> m_RequestContext;
 
     /// Private assignment operator to prohibit assignment.
     CException& operator= (const CException&);
