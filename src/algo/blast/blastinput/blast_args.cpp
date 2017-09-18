@@ -1493,7 +1493,7 @@ CMappingArgs::ExtractAlgorithmOptions(const CArgs& args,
             try {
                 opt.SetCutoffScore(NStr::StringToInt(s));
             }
-            catch (CException& e) {
+            catch (CException&) {
                 NCBI_THROW(CInputException, eInvalidInput,
                            (string)"Incorrectly formatted score threshold: " +
                            s + ". It must be either an integer or a linear "
