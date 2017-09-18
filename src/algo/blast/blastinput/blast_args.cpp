@@ -1582,14 +1582,14 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         
         arg_desc.AddDefaultKey(kArgDPenalty, "D_penalty",
                                 "Penalty for a nucleotide mismatch in D gene",
-                                CArgDescriptions::eInteger, "-4");
+                                CArgDescriptions::eInteger, "-2");
 
         arg_desc.SetConstraint(kArgDPenalty, 
                                new CArgAllowValuesBetween(-5, 0));
 
         arg_desc.AddDefaultKey(kArgJPenalty, "J_penalty",
                                 "Penalty for a nucleotide mismatch in J gene",
-                                CArgDescriptions::eInteger, "-3");
+                                CArgDescriptions::eInteger, "-2");
 
         arg_desc.SetConstraint(kArgJPenalty, 
                                new CArgAllowValuesBetween(-4, 0));
