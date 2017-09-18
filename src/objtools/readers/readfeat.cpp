@@ -105,7 +105,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 namespace {
     static const char * const kCdsFeatName = "CDS";
     // priorities, inherited from C toolkit
-    static Uint1 std_order[CSeq_id::e_MaxChoice] = {
+    static Uchar std_order[CSeq_id::e_MaxChoice] = {
         83,  /* 0 = not set */
         80,  /* 1 = local Object-id */
         70,  /* 2 = gibbsq */
@@ -137,10 +137,10 @@ CRef<CSeq_id> GetBestId(const CBioseq::TId& ids)
     CRef<CSeq_id> id;
     if (!ids.empty())
     {
-        Uint1 best_weight = UINT_MAX;
+        Uchar best_weight = UCHAR_MAX;
         ITERATE(CBioseq::TId, it, ids)
         {
-            Uint1 new_weight = std_order[(*it)->Which()];
+            Uchar new_weight = std_order[(*it)->Which()];
             if (new_weight < best_weight)
             {
                 id = *it;
@@ -462,10 +462,10 @@ private:
 
     bool m_need_check_strand;
     string m_real_seqid;
-    unsigned int m_line_num;
     CRef<CSeq_id> m_seq_id;
-    ILineErrorListener* m_pMessageListener;
     ILineReader* m_reader;
+    unsigned int m_line_num;
+    ILineErrorListener* m_pMessageListener;
 };
 
 typedef SStaticPair<const char *, CFeature_table_reader_imp::EQual> TQualKey;
