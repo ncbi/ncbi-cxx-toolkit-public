@@ -1871,30 +1871,30 @@ BOOST_AUTO_TEST_CASE(s_PtrToString)
 
 BOOST_AUTO_TEST_CASE(s_CommonSize)
 {
-    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("", ""),            0 );
-    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("123", ""),         0 );
-    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("123", "123"),      3 );
-    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("123", "12345"),    3 );
-    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("12367", "12345"),  3 );
-    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("123", "456"),      0 );
+    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("", ""),            0U );
+    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("123", ""),         0U );
+    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("123", "123"),      3U );
+    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("123", "12345"),    3U );
+    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("12367", "12345"),  3U );
+    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("123", "456"),      0U );
 
-    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("", ""),            0 );
-    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("123", ""),         0 );
-    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("123", "123"),      3 );
-    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("123", "12345"),    0 );
-    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("12345", "345"),    3 );
-    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("12345", "145"),    2 );
-    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("123", "456"),      0 );
+    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("", ""),            0U );
+    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("123", ""),         0U );
+    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("123", "123"),      3U );
+    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("123", "12345"),    0U );
+    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("12345", "345"),    3U );
+    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("12345", "145"),    2U );
+    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("123", "456"),      0U );
 
-    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("", ""),           0 );
-    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("", "123"),        0 );
-    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("123", ""),        0 );
-    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("123", "123"),     3 );
-    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("123", "456"),     0 );
-    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("123", "1234"),    3 );
-    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("1234", "123"),    0 );
-    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("1234", "234561"), 3 );
-    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("234561", "1234"), 1 );
+    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("", ""),           0U );
+    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("", "123"),        0U );
+    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("123", ""),        0U );
+    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("123", "123"),     3U );
+    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("123", "456"),     0U );
+    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("123", "1234"),    3U );
+    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("1234", "123"),    0U );
+    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("1234", "234561"), 3U );
+    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("234561", "1234"), 1U );
 }
 
 
@@ -3398,10 +3398,10 @@ BOOST_AUTO_TEST_CASE(s_Find)
     BOOST_CHECK_EQUAL(NStr::FindNoCase("abcd", "xyz"),                           NPOS);
     BOOST_CHECK_EQUAL(NStr::FindNoCase("abcd", "xyz", 0, NPOS, NStr::eLast),     NPOS);
     BOOST_CHECK_EQUAL(NStr::FindCase  ("abcd", "aBc", 0, NPOS, NStr::eLast),     NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindNoCase("abcd", "aBc", 0, NPOS, NStr::eLast),     0);
-    BOOST_CHECK_EQUAL(NStr::Find("abc abc abc", "bc", 2, 8, NStr::eFirst, NStr::eCase), 5); /* NCBI_FAKE_WARNING */
-    BOOST_CHECK_EQUAL(NStr::FindCase  ("abc abc abc", "bc", 2, 8, NStr::eFirst), 5);
-    BOOST_CHECK_EQUAL(NStr::FindCase  ("abc abc abc", "bc", 2, 8, NStr::eLast),  5);
+    BOOST_CHECK_EQUAL(NStr::FindNoCase("abcd", "aBc", 0, NPOS, NStr::eLast),     0U);
+    BOOST_CHECK_EQUAL(NStr::Find("abc abc abc", "bc", 2, 8, NStr::eFirst, NStr::eCase), 5U);
+    BOOST_CHECK_EQUAL(NStr::FindCase  ("abc abc abc", "bc", 2, 8, NStr::eFirst), 5U);
+    BOOST_CHECK_EQUAL(NStr::FindCase  ("abc abc abc", "bc", 2, 8, NStr::eLast),  5U);
 }
 
 
@@ -3411,55 +3411,55 @@ BOOST_AUTO_TEST_CASE(s_FindWord)
     BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "xyz"), NPOS);
     BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "abc"), NPOS);
     BOOST_CHECK_EQUAL(NStr::FindWord("xabc",    "abc"), NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("abc d",   "abc"), 0);
+    BOOST_CHECK_EQUAL(NStr::FindWord("abc d",   "abc"), 0U  );
     BOOST_CHECK_EQUAL(NStr::FindWord("xabc d",  "abc"), NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc:d", "abc"), 2);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc",   "abc"), 2);
-    BOOST_CHECK_EQUAL(NStr::FindWord("xabcx abc\ny abc,z", "abc"), 6);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc:d", "abc"), 2U  );
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc",   "abc"), 2U  );
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabcx abc\ny abc,z", "abc"), 6U);
 
     // NStr::eReverseSearch
     BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "xyz", f_CR), NPOS);
     BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "abc", f_CR), NPOS);
     BOOST_CHECK_EQUAL(NStr::FindWord("xabc",    "abc", f_CR), NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("ab abc",  "abc", f_CR), 3);
+    BOOST_CHECK_EQUAL(NStr::FindWord("ab abc",  "abc", f_CR), 3U);
     BOOST_CHECK_EQUAL(NStr::FindWord("x abcd",  "abc", f_CR), NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc:d", "abc", f_CR), 2);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc",   "abc", f_CR), 2);
-    BOOST_CHECK_EQUAL(NStr::FindWord("xabcx abc\ny abc,z", "abc", f_CR), 12);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc:d", "abc", f_CR), 2U);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc",   "abc", f_CR), 2U);
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabcx abc\ny abc,z", "abc", f_CR), 12U);
 
     // NStr::eNocase
     BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "xyz", f_NF), NPOS);
     BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "ABC", f_NF), NPOS);
     BOOST_CHECK_EQUAL(NStr::FindWord("xabc",    "ABC", f_NF), NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("abc d",   "ABC", f_NF), 0);
+    BOOST_CHECK_EQUAL(NStr::FindWord("abc d",   "ABC", f_NF), 0U  );
     BOOST_CHECK_EQUAL(NStr::FindWord("xabc d",  "ABC", f_NF), NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc:d", "ABC", f_NF), 2);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc",   "ABC", f_NF), 2);
-    BOOST_CHECK_EQUAL(NStr::FindWord("xabcx abc\ny abc,z", "ABC", f_NF), 6);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc:d", "ABC", f_NF), 2U  );
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc",   "ABC", f_NF), 2U  );
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabcx abc\ny abc,z", "ABC", f_NF), 6U);
 
     BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "xyz", f_NR), NPOS);
     BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "ABC", f_NR), NPOS);
     BOOST_CHECK_EQUAL(NStr::FindWord("xabc",    "ABC", f_NR), NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("ab abc",  "ABC", f_NR), 3);
+    BOOST_CHECK_EQUAL(NStr::FindWord("ab abc",  "ABC", f_NR), 3U  );
     BOOST_CHECK_EQUAL(NStr::FindWord("x abcd",  "ABC", f_NR), NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc:d", "ABC", f_NR), 2);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc",   "ABC", f_NR), 2);
-    BOOST_CHECK_EQUAL(NStr::FindWord("xabcx abc\ny abc,z", "ABC", f_NR), 12);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc:d", "ABC", f_NR), 2U  );
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc",   "ABC", f_NR), 2U  );
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabcx abc\ny abc,z", "ABC", f_NR), 12U);
 
     // "Word" with non-word characters
-    BOOST_CHECK_EQUAL(NStr::FindWord("a b c",         "a b c"), 0);
-    BOOST_CHECK_EQUAL(NStr::FindWord(" a b c ",       "a b c"), 1);
-    BOOST_CHECK_EQUAL(NStr::FindWord("  a b c  ",     "a b c"), 2);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x a b c y",     "a b c"), 2);
-    BOOST_CHECK_EQUAL(NStr::FindWord("a b a a b c d", "a b c"), 6);
+    BOOST_CHECK_EQUAL(NStr::FindWord("a b c",         "a b c"), 0U);
+    BOOST_CHECK_EQUAL(NStr::FindWord(" a b c ",       "a b c"), 1U);
+    BOOST_CHECK_EQUAL(NStr::FindWord("  a b c  ",     "a b c"), 2U);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x a b c y",     "a b c"), 2U);
+    BOOST_CHECK_EQUAL(NStr::FindWord("a b a a b c d", "a b c"), 6U);
     BOOST_CHECK_EQUAL(NStr::FindWord("a b 1a b c d",  "a b c"), NPOS);
     BOOST_CHECK_EQUAL(NStr::FindWord("x abc x",       " abc "), NPOS);
     BOOST_CHECK_EQUAL(NStr::FindWord("x abc abc x",   " abc "), NPOS);
     BOOST_CHECK_EQUAL(NStr::FindWord("x abc  abc x",  " abc "), NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x abc  abc ",   " abc "), 6);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x abc  abc  x", " abc "), 6);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x abc  abc ",   " abc "), 6U);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x abc  abc  x", " abc "), 6U);
     BOOST_CHECK_EQUAL(NStr::FindWord("x  abc abc  x", " abc "), NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x  abc+ abc +", " abc "), 7);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x  abc+ abc +", " abc "), 7U);
 }
 
 
@@ -3619,15 +3619,15 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
     {
 // wide string to string
         string w8test(CUtf8::AsUTF8(wss));
-        BOOST_CHECK_EQUAL(w8test.size(),4);
+        BOOST_CHECK_EQUAL(w8test.size(),4U);
         w8test = CUtf8::AsUTF8(wss);
-        BOOST_CHECK_EQUAL(w8test.size(),4);
+        BOOST_CHECK_EQUAL(w8test.size(),4U);
         w8test = CUtf8::AsUTF8(wss.c_str());
-        BOOST_CHECK_EQUAL(w8test.size(),2);
+        BOOST_CHECK_EQUAL(w8test.size(),2U);
 
         string w8test2( CUtf8::AsUTF8(wss.c_str()));
         BOOST_CHECK_EQUAL(w8test2,ssab);
-        BOOST_CHECK_EQUAL(w8test2.size(),2);
+        BOOST_CHECK_EQUAL(w8test2.size(),2U);
 
         string w8test3( CUtf8::AsUTF8( wss.c_str(), wss.size()));
         BOOST_CHECK_EQUAL(w8test3.size(),wss.size());
@@ -3649,15 +3649,15 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
         w8test = CUtf8::AsUTF8( sample.c_str(), eEncoding_ISO8859_1);
 
         w8test = CUtf8::AsUTF8(wss);
-        BOOST_CHECK_EQUAL(w8test.size(),4);
+        BOOST_CHECK_EQUAL(w8test.size(),4U);
         w8test = CUtf8::AsUTF8(wss.c_str());
-        BOOST_CHECK_EQUAL(w8test.size(),2);
+        BOOST_CHECK_EQUAL(w8test.size(),2U);
         w8test = CUtf8::AsUTF8(wss.c_str(), wss.size());
-        BOOST_CHECK_EQUAL(w8test.size(),4);
+        BOOST_CHECK_EQUAL(w8test.size(),4U);
         w8test = CUtf8::AsUTF8(wss.c_str());
-        BOOST_CHECK_EQUAL(w8test.size(),2);
+        BOOST_CHECK_EQUAL(w8test.size(),2U);
         w8test += CUtf8::AsUTF8(wss.c_str());
-        BOOST_CHECK_EQUAL(w8test.size(),4);
+        BOOST_CHECK_EQUAL(w8test.size(),4U);
     }
 
     BOOST_CHECK_EQUAL(u8str,u8sample);

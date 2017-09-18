@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(TestRangeAddition)
     CRangeCollection<TSeqPos> coll;
 
     coll += TSeqRange(10, 20);
-    BOOST_CHECK_EQUAL(coll.size(), 1);
+    BOOST_CHECK_EQUAL(coll.size(), 1U);
     {{
          CRangeCollection<TSeqPos>::const_iterator it = coll.begin();
          BOOST_CHECK(it != coll.end());
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(TestRangeAddition)
      }}
 
     coll += TSeqRange(30, 40);
-    BOOST_CHECK_EQUAL(coll.size(), 2);
+    BOOST_CHECK_EQUAL(coll.size(), 2U);
     {{
          CRangeCollection<TSeqPos>::const_iterator it = coll.begin();
          BOOST_CHECK(it != coll.end());
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(TestRangeAddition)
      }}
 
     coll += TSeqRange(50, 60);
-    BOOST_CHECK_EQUAL(coll.size(), 3);
+    BOOST_CHECK_EQUAL(coll.size(), 3U);
     {{
          CRangeCollection<TSeqPos>::const_iterator it = coll.begin();
          BOOST_CHECK(it != coll.end());
@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE(TestRangeAddition)
      }}
 
     coll += TSeqRange(55, 70);
-    BOOST_CHECK_EQUAL(coll.size(), 3);
+    BOOST_CHECK_EQUAL(coll.size(), 3U);
     {{
          CRangeCollection<TSeqPos>::const_iterator it = coll.begin();
          BOOST_CHECK(it != coll.end());
@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE(TestRangeAddition)
      }}
 
     coll += TSeqRange(35, 50);
-    BOOST_CHECK_EQUAL(coll.size(), 2);
+    BOOST_CHECK_EQUAL(coll.size(), 2U);
     {{
          CRangeCollection<TSeqPos>::const_iterator it = coll.begin();
          BOOST_CHECK(it != coll.end());
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(TestRangeSubtraction)
     CRangeCollection<TSeqPos> coll;
 
     coll += TSeqRange(0, 100);
-    BOOST_CHECK_EQUAL(coll.size(), 1);
+    BOOST_CHECK_EQUAL(coll.size(), 1U);
     {{
          CRangeCollection<TSeqPos>::const_iterator it = coll.begin();
          BOOST_CHECK(it != coll.end());
@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(TestRangeSubtraction)
      }}
 
     coll -= TSeqRange(50, 60);
-    BOOST_CHECK_EQUAL(coll.size(), 2);
+    BOOST_CHECK_EQUAL(coll.size(), 2U);
     {{
          CRangeCollection<TSeqPos>::const_iterator it = coll.begin();
          BOOST_CHECK(it != coll.end());
@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(TestRangeSubtraction)
      }}
 
     coll -= TSeqRange(40, 70);
-    BOOST_CHECK_EQUAL(coll.size(), 2);
+    BOOST_CHECK_EQUAL(coll.size(), 2U);
     {{
          CRangeCollection<TSeqPos>::const_iterator it = coll.begin();
          BOOST_CHECK(it != coll.end());
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(TestRangeSubtraction)
      }}
 
     coll -= TSeqRange(10, 20);
-    BOOST_CHECK_EQUAL(coll.size(), 3);
+    BOOST_CHECK_EQUAL(coll.size(), 3U);
     {{
          CRangeCollection<TSeqPos>::const_iterator it = coll.begin();
          BOOST_CHECK(it != coll.end());
@@ -176,10 +176,10 @@ BOOST_AUTO_TEST_CASE(TestRangeIntersection)
     for (TSeqPos p = 10;  p < 100;  p += 20) {
         coll += TSeqRange(p, p + 10);
     }
-    BOOST_CHECK_EQUAL(coll.size(), 5);
+    BOOST_CHECK_EQUAL(coll.size(), 5U);
 
     coll &= TSeqRange(35, 75);
-    BOOST_CHECK_EQUAL(coll.size(), 3);
+    BOOST_CHECK_EQUAL(coll.size(), 3U);
 
     CRangeCollection<TSeqPos>::const_iterator it = coll.begin();
     BOOST_CHECK(it != coll.end());
@@ -202,15 +202,15 @@ BOOST_AUTO_TEST_CASE(TestRangeIntersection)
     CRangeCollection<TSeqPos> coll2 = coll;
 
     coll &= TSeqRange(80,90);
-    BOOST_CHECK_EQUAL(coll.size(), 0);
+    BOOST_CHECK_EQUAL(coll.size(), 0U);
 
     it = coll.begin();
     BOOST_CHECK(it == coll.end());
 
-    BOOST_CHECK_EQUAL(coll2.size(), 3);
+    BOOST_CHECK_EQUAL(coll2.size(), 3U);
 
     coll2 &= TSeqRange(10,20);
-    BOOST_CHECK_EQUAL(coll2.size(), 0);
+    BOOST_CHECK_EQUAL(coll2.size(), 0U);
 
     it = coll2.begin();
     BOOST_CHECK(it == coll2.end());
@@ -227,10 +227,10 @@ BOOST_AUTO_TEST_CASE(TestRangeCollIntersection)
     for (TSeqPos p = 45;  p < 150;  p += 20) {
         coll2 += TSeqRange(p, p + 10);
     }
-    BOOST_CHECK_EQUAL(coll.size(), 5);
+    BOOST_CHECK_EQUAL(coll.size(), 5U);
 
     coll &= coll2;
-    BOOST_CHECK_EQUAL(coll.size(), 3);
+    BOOST_CHECK_EQUAL(coll.size(), 3U);
 
     CRangeCollection<TSeqPos>::const_iterator it = coll.begin();
     BOOST_CHECK(it != coll.end());
@@ -244,7 +244,3 @@ BOOST_AUTO_TEST_CASE(TestRangeCollIntersection)
     BOOST_CHECK(it != coll.end());
     BOOST_CHECK(*it == TSeqRange(90, 95));
 }
-
-
-
-

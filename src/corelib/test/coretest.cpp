@@ -1539,7 +1539,7 @@ BOOST_AUTO_TEST_CASE(TestHashTGi)
     
     // Test that all elements in test_items were hit and no additional 
     // items were added
-    NCBITEST_CHECK_EQUAL(test_items.size(), 6);
+    NCBITEST_CHECK_EQUAL(test_items.size(), 6U);
     NCBITEST_CHECK_EQUAL(test_items["Hi!"], true);
     NCBITEST_CHECK_EQUAL(test_items["Connitchiva!"], true);
     NCBITEST_CHECK_EQUAL(test_items["Hallo!"], true);
