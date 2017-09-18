@@ -1387,8 +1387,6 @@ bool CGff3Writer::xWriteAllChildren(
     const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
-    const auto& display_range = GetRange();
-
     feature::CFeatTree& featTree = fc.FeatTree();
     vector<CMappedFeat> vChildren;
     featTree.GetChildrenTo(mf, vChildren);
