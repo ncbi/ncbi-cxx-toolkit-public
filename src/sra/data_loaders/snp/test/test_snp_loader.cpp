@@ -60,11 +60,13 @@ static CRef<CScope> s_MakeScope(const string& file_name = kEmptyStr)
         s_LoaderName =
             CSNPDataLoader::RegisterInObjectManager(*om)
             .GetLoader()->GetName();
+        BOOST_CHECK_EQUAL(s_LoaderName, CSNPDataLoader::GetLoaderNameFromArgs());
     }
     else {
         s_LoaderName =
             CSNPDataLoader::RegisterInObjectManager(*om, file_name)
             .GetLoader()->GetName();
+        BOOST_CHECK_EQUAL(s_LoaderName, CSNPDataLoader::GetLoaderNameFromArgs(file_name));
     }
     CRef<CScope> scope(new CScope(*om));
     scope->AddDataLoader(s_LoaderName);
@@ -76,4 +78,11 @@ BOOST_AUTO_TEST_CASE(FetchSeq1)
 {
     CRef<CScope> scope =
         s_MakeScope("");
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchSeq2)
+{
+    CRef<CScope> scope =
+        s_MakeScope("NA000124713.8#1");
 }

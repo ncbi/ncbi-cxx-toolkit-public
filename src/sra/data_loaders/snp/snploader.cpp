@@ -102,6 +102,15 @@ string CSNPDataLoader::SLoaderParams::GetLoaderName(void) const
 }
 
 
+static CSNPDataLoader::SLoaderParams s_GetDefaultParams()
+{
+    CSNPDataLoader::SLoaderParams params;
+    NStr::Split(NCBI_PARAM_TYPE(SNP, ACCESSIONS)::GetDefault(), ",",
+                   params.m_VDBFiles);
+    return params;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CSNPDataLoader
 /////////////////////////////////////////////////////////////////////////////
@@ -123,9 +132,7 @@ CSNPDataLoader::TRegisterLoaderInfo CSNPDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
-    SLoaderParams params;
-    NStr::Split(NCBI_PARAM_TYPE(SNP, ACCESSIONS)::GetDefault(), ",",
-                   params.m_VDBFiles);
+    SLoaderParams params = s_GetDefaultParams();
     TMaker maker(params);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
@@ -194,7 +201,7 @@ CSNPDataLoader::TRegisterLoaderInfo CSNPDataLoader::RegisterInObjectManager(
 
 string CSNPDataLoader::GetLoaderNameFromArgs(void)
 {
-    return "CSNPDataLoader";
+    return GetLoaderNameFromArgs(s_GetDefaultParams());
 }
 
 
