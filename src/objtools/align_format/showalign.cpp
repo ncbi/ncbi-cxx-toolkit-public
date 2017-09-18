@@ -1010,11 +1010,12 @@ CAlignFormatUtil::SSeqURLInfo *CDisplaySeqalign::x_InitSeqUrl(TGi giToUse,string
     return seqUrlInfo;
 }
 
-void CDisplaySeqalign::x_InitAlignLinks(CAlignFormatUtil::SSeqURLInfo *seqUrlInfo,                                          
-                                          const list< CRef< CBlast_def_line > > &bdl_list,
-                                          CRef<objects::CSeq_id>  &seqID,                                          
-                                          int lnkDispParams)
+void CDisplaySeqalign::x_InitAlignLinks(SAlnDispParams *alnDispParams,                                          
+                                        const list< CRef< CBlast_def_line > > &bdl_list,                                          
+                                        int lnkDispParams)
 {
+    CAlignFormatUtil::SSeqURLInfo *seqUrlInfo = alnDispParams->seqUrlInfo;
+    CRef<CSeq_id>  seqID = alnDispParams->seqID;
     if(lnkDispParams & eDisplayResourcesLinks) {
         seqUrlInfo->segs = (lnkDispParams & eDisplayDownloadLink) ?  x_GetSegs(1) : "";
         int customLinkTypes = (lnkDispParams & eDisplayDownloadLink) ?  CAlignFormatUtil::eDownLoadSeq : CAlignFormatUtil::eLinkTypeDefault;                
@@ -1035,8 +1036,14 @@ void CDisplaySeqalign::x_InitAlignLinks(CAlignFormatUtil::SSeqURLInfo *seqUrlInf
         if(m_AlignOption&eLinkout && (seqUrlInfo->gi > ZERO_GI)){     	
             m_LinkoutInfo.cur_align = m_cur_align;
             m_LinkoutInfo.taxid = seqUrlInfo->taxid;
-            m_LinkoutInfo.subjRange = seqUrlInfo->seqRange;
-            m_LinkoutList = CAlignFormatUtil::GetFullLinkoutUrl(bdl_list,m_LinkoutInfo);
+            m_LinkoutInfo.subjRange = seqUrlInfo->seqRange;            
+            if(bdl_list.size() > 0) {
+                m_LinkoutList = CAlignFormatUtil::GetFullLinkoutUrl(bdl_list,m_LinkoutInfo);
+            }
+            else {                
+                m_LinkoutList = CAlignFormatUtil::GetFullLinkoutUrl(alnDispParams->ids,m_LinkoutInfo,false);
+            }
+            
         }        
     }                     
 }			
@@ -2117,6 +2124,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
 		alnDispParams = new SAlnDispParams();
 		alnDispParams->gi =  gi;
 		alnDispParams->seqID = FindBestChoice(ids, CSeq_id::WorstRank);		
+        alnDispParams->ids = bsp_handle.GetBioseqCore()->GetId();
 		alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID);//Just accession without db part like ref| or pdbd|
 		if(m_AlignOption&eHtml){
 			int taxid = 0;
@@ -2174,9 +2182,9 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CB
 	alnDispParams->seqID = FindBestChoice(bsp_handle.GetBioseqCore()->GetId(),CSeq_id::WorstRank);
 	alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID);
 	if(m_AlignOption&eHtml){           	            
-        const list<CRef<CSeq_id> >& ids = bsp_handle.GetBioseqCore()->GetId();
-        alnDispParams->seqUrlInfo = x_InitSeqUrl(alnDispParams->gi,alnDispParams->label,0,0,ids);    
-        alnDispParams->id_url = CAlignFormatUtil::GetIDUrl(alnDispParams->seqUrlInfo,&ids);        
+        alnDispParams->ids = bsp_handle.GetBioseqCore()->GetId();
+        alnDispParams->seqUrlInfo = x_InitSeqUrl(alnDispParams->gi,alnDispParams->label,0,0,alnDispParams->ids);    
+        alnDispParams->id_url = CAlignFormatUtil::GetIDUrl(alnDispParams->seqUrlInfo,&alnDispParams->ids);        
 	}			
 	alnDispParams->title = CDeflineGenerator().GenerateDefline(bsp_handle);			
 	return alnDispParams;
@@ -3697,7 +3705,7 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
                                                    *alnDispParams->seqID);
             }
             if(m_AlignTemplates != NULL) {
-                x_InitAlignLinks(alnDispParams->seqUrlInfo,bdl,alnDispParams->seqID,eDisplayResourcesLinks);
+                x_InitAlignLinks(alnDispParams,bdl,eDisplayResourcesLinks);
             }
 			delete alnDispParams;
 			firstDefline = alnDefLine;
@@ -3752,7 +3760,7 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
                          if(seqLength > k_GetSubseqThreshhold) {
                             linksDisplayOption += eDisplayDownloadLink;
                          }                                                                 
-                         x_InitAlignLinks(alnDispParams->seqUrlInfo,bdl,alnDispParams->seqID,linksDisplayOption);
+                         x_InitAlignLinks(alnDispParams,bdl,linksDisplayOption);
                          firstDefline = alnDefLine;
                     }
                     else {                        

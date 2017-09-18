@@ -2084,13 +2084,6 @@ static string s_MapLinkoutGenParam(string &url_link_tmpl,
     url_link = CAlignFormatUtil::MapProtocol(url_link);
     return url_link;
 }
-static string s_MapDisabledLink(string lnk_displ)
-{
-    const string kLinkDisabled = "<span class=\"ldsb\"><@lnk_displ@></span>";
-    string linkText = CAlignFormatUtil::MapTemplate(kLinkDisabled,"lnk_displ",lnk_displ);
-    return linkText;
-}
-
 
                                                                         
 static list<string> s_GetLinkoutUrl(int linkout,
@@ -2192,9 +2185,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
       linkout_list.push_back(url_link);        
     }
 
-    //if((linkout & eGenomicSeq) && !genomicSeqURL.empty()){  
     if((linkout & eGenomicSeq)){  //only for advanced view -> textlink = true
-    //if((linkout & eGenomeDataViewer)){  //only for advanced view -> textlink = true
         if(textLink) {
             url_link = kMapviewBlastHitParams;        
             lnk_displ = "Map Viewer";
@@ -2283,9 +2274,8 @@ static list<string> s_GetLinkoutUrl(int linkout,
         linkout_list.push_back(url_link);        
     }    
     if(linkout & eGenomeDataViewer){
-    //if(linkout & eGenomicSeq){
         url_link = CAlignFormatUtil::GetURLFromRegistry("GENOME_DATA_VIEWER");                        
-        lnk_displ = textLink ? "Genomic data viewer" : kGenomeDataViewerImg;            
+        lnk_displ = textLink ? "Genome Data Viewer" : kGenomeDataViewerImg;            
         
         lnkTitleInfo = "genomic data information";                
         url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,firstAcc,lnk_displ,lnkTitleInfo);
@@ -2442,10 +2432,12 @@ CAlignFormatUtil::GetBdlLinkoutInfo(CBioseq::TId& cur_id,
         }        
         if(linkout & eReprMicrobialGenomes){        
             s_AddLinkoutInfo(linkout_map,eReprMicrobialGenomes,cur_id);            
-        }            
+        }
+	/*            
         if(linkout & eGenomeDataViewer){        
             s_AddLinkoutInfo(linkout_map,eGenomeDataViewer,cur_id);            
-        }                    
+        } 
+	*/                   
 }
 
 void 
@@ -2639,6 +2631,22 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
                                         linkout_map,
                                         !is_na && bdl.size() > 1);
     }
+    return linkout_list;
+}
+
+
+list<string> CAlignFormatUtil::GetFullLinkoutUrl(CBioseq::TId& cur_id,                                             
+                                                 CAlignFormatUtil::SLinkoutInfo &linkoutInfo,
+                                                 bool getIdentProteins)                                                 
+{
+    list<string> linkout_list;
+    map<int, vector < CBioseq::TId > >  linkout_map;
+    
+    GetBdlLinkoutInfo(cur_id,linkout_map, linkoutInfo.linkoutdb, linkoutInfo.mv_build_name);
+    linkout_list = s_GetFullLinkoutUrl(cur_id,                          
+                                       linkoutInfo,                                       
+                                       linkout_map,
+                                       getIdentProteins);                                           
     return linkout_list;
 }
 
