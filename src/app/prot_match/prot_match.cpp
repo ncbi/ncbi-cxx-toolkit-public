@@ -439,11 +439,11 @@ void CProteinMatchApp::x_ProcessSeqEntry(CRef<CSeq_entry> nuc_prot_set,
         local_nuc_acc_string = local_nuc_acc->GetSeqIdString();
 
         // Check to see if the nucleotide accession has been changed
-        CRef<CSeq_id> db_nuc_acc; 
+        CRef<CSeq_id> prev_nuc_acc; 
         if (m_pMatchSetup->GetReplacedIdFromHist(
                     nuc_prot_set->GetSet().GetNucFromNucProtSet(),
-                    db_nuc_acc)) {
-            db_nuc_acc_string = previous_nuc_acc->GetSeqIdString();
+                    prev_nuc_acc)) {
+            db_nuc_acc_string = prev_nuc_acc->GetSeqIdString();
             new_nuc_accessions[db_nuc_acc_string] = local_nuc_acc_string;
         }
         else {
