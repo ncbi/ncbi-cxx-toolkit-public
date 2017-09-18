@@ -60,6 +60,7 @@
       <xs:element name="name" type="xs:string"/>
       <xs:element name="version" type="xs:string" minOccurs="0"/>
       <xs:element name="description" type="xs:string"/>
+      <xs:element name="detailed_description" type="xs:string"/>
     </xs:sequence>
     <xs:attribute name="type" use="required">
       <xs:simpleType>
@@ -99,6 +100,7 @@
       <xs:element name="name" type="xs:string"/>
       <xs:element name="alias" type="xs:string" minOccurs="0"/>
       <xs:element name="description" type="xs:string"/>
+      <xs:element name="detailed_description" type="xs:string"/>
       <xs:element ref="arguments"/>
     </xs:sequence>
   </xs:complexType>
