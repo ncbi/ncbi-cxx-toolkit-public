@@ -44,6 +44,7 @@
 #include <algo/blast/core/blast_stat.h>
 #include <objtools/align_format/ilinkoutdb.hpp>
 
+
 #ifdef _MSC_VER
 #define strcasecmp _stricmp
 #define strdup _strdup
@@ -169,7 +170,7 @@ static const char kReprMicrobialGenomesImg[] = "<img border=0 height=16 width=16
 static const string kReprMicrobialGenomesDispl =  "<div><@lnk@>-<span class=\"rlLink\">Genomic Sequence</span></div>";
 
 // .ncbirc alias: GENOME_DATA_VIEWER /genome/gdv/browser/?context=blast&id=NC_000019.10&alignid=<@label@>&rid=N9WGPH30015
-static const char kGenomeDataViewerUrl[] = "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/genome/gdv/browser/?context=blast&id=<@label@>&alignid=<@queryID@>&from=<@from@>&to=<@to@>&rid=<@rid@>&log$=map<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
+static const char kGenomeDataViewerUrl[] = "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/genome/gdv/browser/?context=blast&id=<@label@>&alignid=<@queryID@>&from=<@from@>&to=<@to@>&rid=<@rid@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
 static const char kGenomeDataViewerImg[] = "<img border=0 height=16 width=16 src=\"images/V.gif\" alt=\"View genome data for <@label@>\">";
 //For text link <@lnk@> is substituted by formatted url
@@ -210,9 +211,8 @@ static const char kEntrezSubseqTMUrl[] = "<@protocol@>//www.ncbi.nlm.nih.gov/<@d
 
 ///Default linkout order 
 //.ncbirc alias: LINKOUT_ORDER
-static const char kLinkoutOrderStr[] = "G,U,E,S,B,R,M"; 
+static const char kLinkoutOrderStr[] = "G,U,E,S,B,R,M,V"; 
 
-///Bl2seq ************fix this and test titles Irena
 // .ncbirc alias: BL2SEQ
 //static const char kBl2seqUrl[] = "<a href=\"blast.ncbi.nlm.nih.gov/Blast.cgi?QUERY=<@query@>&SUBJECTS=<@subject@>&EXPECT=10&SHOW_OVERVIEW=on&OLD_BLAST=false&NEW_VIEW=on\">Get TBLASTX alignments</a>";
 static const char kBl2seqUrl[] = "<a href=\"blast.ncbi.nlm.nih.gov/Blast.cgi?QUERY=<@query@>&SUBJECTS=<@subject@>&PROGRAM=tblastx&EXPECT=10&CMD=request&SHOW_OVERVIEW=on&OLD_BLAST=false&NEW_VIEW=on\">Get TBLASTX alignments</a>";
@@ -1257,6 +1257,7 @@ public:
                                                  const string& mv_build_name,
                                                  bool getIdentProteins);
     static list<string> GetFullLinkoutUrl(const list< CRef< objects::CBlast_def_line > > &bdl, SLinkoutInfo &linkoutInfo);
+    static list<string> GetFullLinkoutUrl(objects::CBioseq::TId& cur_id,SLinkoutInfo &linkoutInfo,bool getIdentProteins);
     static int GetMasterCoverage(const objects::CSeq_align_set& alnset);
 	static CRange<TSeqPos> GetSeqAlignCoverageParams(const objects::CSeq_align_set& alnset,int *masterCoverage,bool *flip);
 												

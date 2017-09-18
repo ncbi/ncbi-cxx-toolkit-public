@@ -536,7 +536,8 @@ protected:
     struct SAlnDispParams: public CObject {
         CAlignFormatUtil::SSeqURLInfo * seqUrlInfo;
         TGi gi;                         ///< gi used in defline
-        CRef<objects::CSeq_id> seqID;    ///< seqID used in defline
+        CRef<objects::CSeq_id> seqID;   ///< seqID used in defline
+        list<CRef<objects::CSeq_id> > ids;  ///
         string label;                   ///< sequence label
         string    id_url;                 ///< entrz, mapview etc id url
         string linkoutStr;              ///< string containing all linkout urls
@@ -721,7 +722,8 @@ protected:
         int taxid,const list<CRef<objects::CSeq_id> >& ids);
 
     string x_HTMLSeqIDLink(SAlnRowInfo *alnRoInfo, int row,TGi giToUse);
-    void x_InitAlignLinks(CAlignFormatUtil::SSeqURLInfo *seqUrlInfo,const list< CRef<objects::CBlast_def_line > > &bdl_list,CRef<objects::CSeq_id>  &seqID,int lnkDispPrarms);
+    void x_InitAlignLinks(SAlnDispParams *alnDispParams,const list< CRef<objects::CBlast_def_line > > &bdl_list,int lnkDispPrarms);
+
 
     ///get dumpgnl url to sequence record
     ///@param ids: id list
