@@ -49,6 +49,7 @@
       <xs:element ref="program"/>
       <xs:element ref="arguments"/>
       <xs:element ref="command" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element ref="command_groups" minOccurs="0"/>
     </xs:sequence>
   </xs:complexType>
 </xs:element>
@@ -96,7 +97,18 @@
   <xs:complexType>
     <xs:sequence>
       <xs:element name="name" type="xs:string"/>
+      <xs:element name="alias" type="xs:string" minOccurs="0"/>
+      <xs:element name="description" type="xs:string"/>
       <xs:element ref="arguments"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="command_groups">
+  <xs:complexType>
+    <xs:sequence minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="name" type="xs:string"/>
+      <xs:element name="command" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
   </xs:complexType>
 </xs:element>
@@ -123,7 +135,7 @@
     <xs:choice minOccurs="0">
       <xs:element name="Symbols">
         <xs:complexType>
-          <xs:choice>
+          <xs:choice maxOccurs="unbounded">
             <xs:element name="type" type="char_type"/>
             <xs:element name="value" maxOccurs="unbounded">
               <xs:simpleType>
@@ -221,6 +233,8 @@
         <xs:enumeration value="File_Out"/>
         <xs:enumeration value="File_IO"/>
         <xs:enumeration value="Directory"/>
+        <xs:enumeration value="DateTime"/>
+        <xs:enumeration value="DataSize"/>
       </xs:restriction>
     </xs:simpleType>
   </xs:attribute>
