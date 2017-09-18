@@ -2670,6 +2670,15 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+
+    // do not report forward slash
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = unit_test_util::BuildGoodSeq();
+    entry->SetSeq().SetId().front()->SetLocal().SetStr("a/b");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
 }
 
 

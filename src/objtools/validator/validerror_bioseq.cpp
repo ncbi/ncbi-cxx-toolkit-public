@@ -318,7 +318,7 @@ bool s_IsLegalSeqIdChar(const char ch)
     if (isalpha(ch) || isdigit(ch)) {
         return true;
     } else if (ch == '-' || ch == '_' || ch == '.' || ch == ':' ||
-        ch == '*' || ch == '#') {
+        ch == '*' || ch == '#' || ch == '/') {
         return true;
     } else {
         return false;
