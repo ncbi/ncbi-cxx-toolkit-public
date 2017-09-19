@@ -3776,7 +3776,6 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
                 }
             }
 
-            CRef<CDelta_seq> last = prot->SetInst().SetExt().SetDelta().Set().back();
             if (is_gap) {
                 AddGapToDeltaSeq(prot, unknown_length, 1);
             } else {
@@ -3847,8 +3846,13 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
     }
 
     // remove stop codon from end
-    CRef<CDelta_seq> end = prot->SetInst().SetExt().SetDelta().Set().back();
-    if (end->IsLiteral() && end->GetLiteral().IsSetSeq_data()) {
+    CRef<CDelta_seq> end;
+    if (!prot->SetInst().SetExt().SetDelta().Set().empty())
+    {
+        end = prot->SetInst().SetExt().SetDelta().Set().back();
+    }
+
+    if (end && end->IsLiteral() && end->GetLiteral().IsSetSeq_data()) {
         if (end->GetLiteral().GetSeq_data().IsIupacaa()) {
             string& last_seg = end->SetLiteral().SetSeq_data().SetIupacaa().Set();
             if (NStr::EndsWith(last_seg, "*")) {
