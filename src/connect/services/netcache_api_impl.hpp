@@ -97,7 +97,9 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
     virtual CNetServerConnection InitiateWriteCmd(CNetCacheWriter* nc_writer,
             const CNetCacheAPIParameters* parameters);
 
-    void AppendClientIPSessionID(string* cmd);
+    void AppendClientIPSessionID(string* cmd, CRequestContext& req);
+    void AppendHitID(string* cmd, CRequestContext& req);
+    void AppendClientIPSessionIDHitID(string* cmd);
     void AppendClientIPSessionIDPasswordAgeHitID(string* cmd,
             const CNetCacheAPIParameters* parameters);
     string MakeCmd(const char* cmd_base, const CNetCacheKey& key,

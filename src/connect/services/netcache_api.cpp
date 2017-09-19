@@ -257,8 +257,10 @@ SNetCacheAPIImpl::SNetCacheAPIImpl(SNetServerInPool* server,
 {
 }
 
-void s_AppendClientIPSessionID(string* cmd, const CRequestContext& req)
+void SNetCacheAPIImpl::AppendClientIPSessionID(string* cmd, CRequestContext& req)
 {
+    _ASSERT(cmd);
+
     cmd->append(" ip=\"");
     cmd->append(req.GetClientIP());
     cmd->append("\" sid=\"");
@@ -266,16 +268,13 @@ void s_AppendClientIPSessionID(string* cmd, const CRequestContext& req)
     cmd->append(1, '\"');
 }
 
-void SNetCacheAPIImpl::AppendClientIPSessionID(string* cmd)
-{
-    s_AppendClientIPSessionID(cmd, CDiagContext::GetRequestContext());
-}
-
 void SNetCacheAPIImpl::AppendClientIPSessionIDPasswordAgeHitID(string* cmd,
         const CNetCacheAPIParameters* parameters)
 {
+    _ASSERT(cmd);
+
     CRequestContext& req = CDiagContext::GetRequestContext();
-    s_AppendClientIPSessionID(cmd, req);
+    AppendClientIPSessionID(cmd, req);
 
     string password(parameters->GetPassword());
     if (!password.empty()) {
@@ -290,10 +289,24 @@ void SNetCacheAPIImpl::AppendClientIPSessionIDPasswordAgeHitID(string* cmd,
         cmd->append(NStr::NumericToString(max_age));
     }
 
+    AppendHitID(cmd, req);
+}
+
+void SNetCacheAPIImpl::AppendHitID(string* cmd, CRequestContext& req)
+{
+    _ASSERT(cmd);
+
     cmd->append(" ncbi_phid=\"");
     cmd->append(m_UseNextSubHitID ?
             req.GetNextSubHitID() : req.GetCurrentSubHitID());
     cmd->append(1, '\"');
+}
+
+void SNetCacheAPIImpl::AppendClientIPSessionIDHitID(string* cmd)
+{
+    CRequestContext& req = CDiagContext::GetRequestContext();
+    AppendClientIPSessionID(cmd, req);
+    AppendHitID(cmd, req);
 }
 
 string SNetCacheAPIImpl::MakeCmd(const char* cmd_base, const CNetCacheKey& key,
@@ -722,6 +735,8 @@ CNetServerMultilineCmdOutput CNetCacheAPI::GetBlobInfo(const string& blob_id,
     CNetCacheAPIParameters parameters(&m_Impl->m_DefaultParameters);
 
     parameters.LoadNamedParameters(optional);
+
+    m_Impl->AppendClientIPSessionIDHitID(&cmd);
 
     CNetServerMultilineCmdOutput output(m_Impl->ExecMirrorAware(key,
             cmd, true, &parameters));

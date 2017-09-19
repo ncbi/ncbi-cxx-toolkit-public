@@ -42,15 +42,21 @@ BEGIN_NCBI_SCOPE
 string SNetCacheAdminImpl::MakeAdminCmd(const char* cmd)
 {
     string result(cmd);
-    m_API->AppendClientIPSessionID(&result);
+    m_API->AppendClientIPSessionIDHitID(&result);
     return result;
 }
 
 void CNetCacheAdmin::ShutdownServer(EShutdownOption shutdown_option)
 {
-    string cmd(m_Impl->MakeAdminCmd("SHUTDOWN"));
+    string cmd("SHUTDOWN");
+
+    CRequestContext& req = CDiagContext::GetRequestContext();
+    m_Impl->m_API->AppendClientIPSessionID(&cmd, req);
+
     if (shutdown_option == eDrain)
         cmd += " drain=1";
+
+    m_Impl->m_API->AppendHitID(&cmd, req);
     m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
 
@@ -69,7 +75,7 @@ void CNetCacheAdmin::Purge(const string& cache_name)
 {
     string cmd("PURGE \"" + NStr::PrintableString(cache_name));
     cmd += '"';
-    m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
+    m_Impl->m_API->m_Service.ExecOnAllServers(m_Impl->MakeAdminCmd(cmd.c_str()));
 }
 
 void CNetCacheAdmin::PrintConfig(CNcbiOstream& output_stream)
