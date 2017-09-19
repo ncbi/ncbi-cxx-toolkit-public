@@ -157,6 +157,35 @@ CConstRef<CBioseq_set> CMatchSetup::GetDBNucProtSet(const CBioseq& nuc_seq)
 }
 
 
+CConstRef<CSeq_entry> CMatchSetup::GetDBEntry(const CSeq_id& nuc_id)
+{
+    CBioseq_Handle db_bsh = m_DBScope->GetBioseqHandle(nuc_id);
+    if (db_bsh) {
+        CBioseq_set_Handle bss_handle = db_bsh.GetParentBioseq_set();
+        if (bss_handle && 
+            bss_handle.IsSetClass() &&
+            bss_handle.GetClass() == CBioseq_set::eClass_nuc_prot) {
+            CRef<CSeq_entry> entry(new CSeq_entry());
+            entry->SetSet().Assign(*bss_handle.GetCompleteBioseq_set());
+            return entry;
+        } 
+        else {
+            CRef<CSeq_entry> entry(new CSeq_entry());
+            entry->SetSeq().Assign(*db_bsh.GetCompleteBioseq());
+            return entry;
+        }
+    }
+
+    NCBI_THROW(CProteinMatchException,
+               eInputError,
+               "Failed to find a valid database id");
+
+    return CConstRef<CSeq_entry>();
+
+}
+
+
+
 CConstRef<CSeq_entry> CMatchSetup::GetDBEntry(const CBioseq& nuc_seq)
 {
     CBioseq_Handle db_bsh;

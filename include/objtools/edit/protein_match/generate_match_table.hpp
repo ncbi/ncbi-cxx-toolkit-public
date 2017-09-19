@@ -54,7 +54,8 @@ public:
     void GenerateMatchTable(
         const map<string, list<string>>& local_prot_ids,
         const map<string, list<string>>& prot_accessions,
-        const map<string, string>& nuc_id_replacements,
+        const list<string>& current_nuc_accessions,
+        const map<string, string>& new_nuc_accessions,
         CObjectIStream& align_istr, 
         CObjectIStream& annot_istr);
 
@@ -77,7 +78,9 @@ private:
     void x_InitMatchTable(void);
 
     void x_AppendNucleotide(
-        const pair<string, bool>& nuc_match_info);
+        const string& accession,
+        const string& status);
+
     void x_AppendMatchedProtein(
         const SProtMatchInfo& prot_match_info);
 
@@ -100,7 +103,8 @@ private:
         const map<string, bool>& nuc_accessions,
         const map<string, list<string>>& local_prot_ids,
         const map<string, list<string>>& prot_accessions,
-        const map<string, string>& nuc_id_replacement_map);
+        const list<string>& current_nuc_accessions,
+        const map<string, string>& new_nuc_accessions);
 
     bool x_IsCdsComparison(const CSeq_annot& annot) const;
     bool x_IsGoodGloballyReciprocalBest(const CSeq_annot& annot) const;

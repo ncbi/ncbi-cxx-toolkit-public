@@ -51,6 +51,8 @@ public:
 
     CConstRef<CBioseq_set> GetDBNucProtSet(const CBioseq& nuc_seq);
 
+    CConstRef<CSeq_entry> GetDBEntry(const CSeq_id& nuc_id);
+
     CConstRef<CSeq_entry> GetDBEntry(const CBioseq& nuc_seq);
 
     bool UpdateNucSeqIds(CRef<CSeq_id> new_id,

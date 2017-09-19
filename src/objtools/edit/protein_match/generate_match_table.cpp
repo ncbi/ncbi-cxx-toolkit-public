@@ -72,7 +72,8 @@ bool CMatchTabulate::x_IsPerfectAlignment(const CSeq_align& align) const
 void CMatchTabulate::GenerateMatchTable(
     const map<string, list<string>>& local_prot_ids,
     const map<string, list<string>>& prot_accessions,
-    const map<string, string>& nuc_id_replacements,
+    const list<string>& current_nuc_accessions,
+    const map<string, string>& new_nuc_accessions,
     CObjectIStream& align_istr,
     CObjectIStream& annot_istr)
 {
@@ -82,19 +83,20 @@ void CMatchTabulate::GenerateMatchTable(
     }
 
     map<string, bool> nuc_match;
-    x_ProcessAlignments(align_istr, nuc_id_replacements, nuc_match);
+    x_ProcessAlignments(align_istr, new_nuc_accessions, nuc_match);
 
     x_ProcessProteins(annot_istr, 
         nuc_match, 
         local_prot_ids,
         prot_accessions,
-        nuc_id_replacements);
+        current_nuc_accessions,
+        new_nuc_accessions);
 }
 
 
 void CMatchTabulate::x_ProcessAlignments(
     CObjectIStream& istr,
-    const map<string, string>& nuc_id_replacements,
+    const map<string, string>& new_nuc_accessions,
     map<string, bool>& nuc_match) 
 {
     string prev_accession = "";
@@ -104,10 +106,11 @@ void CMatchTabulate::x_ProcessAlignments(
         string accession;
         if (x_FetchAccession(align, accession)) {
             if (!NStr::IsBlank(accession)) {
-                if (nuc_id_replacements.find(accession) != nuc_id_replacements.end()) {
-                    accession = nuc_id_replacements.at(accession); 
+            /*
+                if (new_nuc_accessions.find(accession) != new_nuc_accessions.end()) {
+                    accession = new_nuc_accessions.at(accession); 
                 }
-
+            */
                 if ((accession == prev_accession) ||
                     !x_IsPerfectAlignment(align)) {
                     nuc_match[accession] = false;
@@ -123,10 +126,11 @@ void CMatchTabulate::x_ProcessAlignments(
 
 void CMatchTabulate::x_ProcessProteins(
         CObjectIStream& istr,
-        const map<string, bool>& nuc_accessions,
+        const map<string, bool>& nuc_match,
         const map<string, list<string>>& local_prot_ids,
         const map<string, list<string>>& prot_accessions,
-        const map<string, string>& nuc_id_replacement_map)
+        const list<string>& current_nuc_accessions,
+        const map<string, string>& new_nuc_accessions)
 {
     map<string, set<string>> new_protein_skip;
     map<string, set<string>> dead_protein_skip;
@@ -141,11 +145,11 @@ void CMatchTabulate::x_ProcessProteins(
         }
 
         string nuc_acc = x_GetSubjectNucleotideAccession(comparison);
-       
-        if (nuc_id_replacement_map.find(nuc_acc) != nuc_id_replacement_map.end()) {
-            nuc_acc = nuc_id_replacement_map.at(nuc_acc);    
+/*       
+        if (new_nuc_accessions.find(nuc_acc) != new_nuc_accessions.end()) {
+            nuc_acc = new_nuc_accessions.at(nuc_acc);    
         }
-
+*/
         // Match by similarity
         if (x_IsGoodGloballyReciprocalBest(comparison)) { 
             const CSeq_feat& subject = x_GetSubject(comparison);
@@ -193,31 +197,56 @@ void CMatchTabulate::x_ProcessProteins(
         }
     }
 
-    for (const auto& key_val : nuc_accessions) {
-        x_AppendNucleotide(key_val); 
+    for (const auto& key_val : nuc_match) {
         const string nuc_accession = key_val.first;
+        const string displayed_nuc_accession = 
+            (new_nuc_accessions.find(nuc_accession) == new_nuc_accessions.end()) ?
+            nuc_accession :
+            new_nuc_accessions.at(nuc_accession);
+
+        const string& status = key_val.second ? "Same" : "Changed";
+        x_AppendNucleotide(displayed_nuc_accession, status); 
         if (match_map.find(nuc_accession) != match_map.end()) { 
             for (const SProtMatchInfo& match : match_map.at(nuc_accession)) {
                 x_AppendMatchedProtein(match);
             }
         }
 
-        for (const string local_id : local_prot_ids.at(nuc_accession)) {
-            if (new_protein_skip[nuc_accession].find(local_id) == new_protein_skip[nuc_accession].end()) {
-                new_protein_skip[nuc_accession].insert(local_id);
-                x_AppendNewProtein(nuc_accession, local_id);
+        if (local_prot_ids.find(nuc_accession) != local_prot_ids.end()) {
+            for (const string local_id : local_prot_ids.at(nuc_accession)) {
+                if (new_protein_skip[nuc_accession].find(local_id) == new_protein_skip[nuc_accession].end()) {
+                    new_protein_skip[nuc_accession].insert(local_id);
+                    x_AppendNewProtein(nuc_accession, local_id);
+                }
             }
         }
 
-        for (const string prot_accver : prot_accessions.at(nuc_accession)) {
-            if (dead_protein_skip[nuc_accession].find(prot_accver) == dead_protein_skip[nuc_accession].end()) {
-                dead_protein_skip[nuc_accession].insert(prot_accver);
-                vector<string> accver_vec;
-                NStr::Split(prot_accver, ".", accver_vec);
-                x_AppendDeadProtein(nuc_accession, accver_vec[0]);
+        if (prot_accessions.find(nuc_accession) != prot_accessions.end()) {
+            for (const string prot_accver : prot_accessions.at(nuc_accession)) {
+                if (dead_protein_skip[nuc_accession].find(prot_accver) == dead_protein_skip[nuc_accession].end()) {
+                    dead_protein_skip[nuc_accession].insert(prot_accver);
+                    vector<string> accver_vec;
+                    NStr::Split(prot_accver, ".", accver_vec);
+                    x_AppendDeadProtein(nuc_accession, accver_vec[0]);
+                }
             }
         }
     }
+
+    for (const string& nuc_accession : current_nuc_accessions) {
+        if (nuc_match.find(nuc_accession) == nuc_match.end()) {
+            x_AppendNucleotide(nuc_accession, "Dead");
+            if (prot_accessions.find(nuc_accession) != prot_accessions.end()) {
+                for (const string prot_accver : prot_accessions.at(nuc_accession)) {
+                    vector<string> accver_vec;
+                    NStr::Split(prot_accver, ".", accver_vec);
+                    x_AppendDeadProtein(nuc_accession, accver_vec[0]);
+                }
+            }
+        }
+    }
+
+
     return;
 }
 
@@ -545,11 +574,9 @@ void CMatchTabulate::x_AppendNucleotide(
 */
 
 void CMatchTabulate::x_AppendNucleotide(
-    const pair<string, bool>& match_info)
+    const string& accession, const string& status)
 {
-    const string status = match_info.second ? "Same" : "Changed";
-
-    x_AppendColumnValue("NA_Accession", match_info.first);
+    x_AppendColumnValue("NA_Accession", accession);
     x_AppendColumnValue("PROT_Accession", "---");
     x_AppendColumnValue("PROT_LocalID", "---");
     x_AppendColumnValue("Mol_type", "NUC");
