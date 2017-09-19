@@ -197,34 +197,47 @@ void CMatchTabulate::x_ProcessProteins(
         }
     }
 
-    for (const auto& key_val : nuc_match) {
-        const string nuc_accession = key_val.first;
-        const string displayed_nuc_accession = 
-            (new_nuc_accessions.find(nuc_accession) == new_nuc_accessions.end()) ?
-            nuc_accession :
-            new_nuc_accessions.at(nuc_accession);
+    for (const string& nuc_accession : current_nuc_accessions) {
 
-        const string& status = key_val.second ? "Same" : "Changed";
-        x_AppendNucleotide(displayed_nuc_accession, status); 
-        if (match_map.find(nuc_accession) != match_map.end()) { 
-            for (const SProtMatchInfo& match : match_map.at(nuc_accession)) {
-                x_AppendMatchedProtein(match);
+        auto match_it = nuc_match.find(nuc_accession);
+        if (match_it != nuc_match.end()) {
+            const string displayed_nuc_accession = 
+                (new_nuc_accessions.find(nuc_accession) == new_nuc_accessions.end()) ?
+                nuc_accession :
+                new_nuc_accessions.at(nuc_accession);
+
+            const string& status = match_it->second ? "Same" : "Changed";
+            x_AppendNucleotide(displayed_nuc_accession, status); 
+            if (match_map.find(nuc_accession) != match_map.end()) { 
+                for (const SProtMatchInfo& match : match_map.at(nuc_accession)) {
+                    x_AppendMatchedProtein(match);
+                }
             }
-        }
 
-        if (local_prot_ids.find(nuc_accession) != local_prot_ids.end()) {
-            for (const string local_id : local_prot_ids.at(nuc_accession)) {
-                if (new_protein_skip[nuc_accession].find(local_id) == new_protein_skip[nuc_accession].end()) {
-                    new_protein_skip[nuc_accession].insert(local_id);
-                    x_AppendNewProtein(nuc_accession, local_id);
+            if (local_prot_ids.find(nuc_accession) != local_prot_ids.end()) {
+                for (const string local_id : local_prot_ids.at(nuc_accession)) {
+                    if (new_protein_skip[nuc_accession].find(local_id) == new_protein_skip[nuc_accession].end()) {
+                        new_protein_skip[nuc_accession].insert(local_id);
+                        x_AppendNewProtein(nuc_accession, local_id);
+                    }
+                }
+            }
+
+            if (prot_accessions.find(nuc_accession) != prot_accessions.end()) {
+                for (const string prot_accver : prot_accessions.at(nuc_accession)) {
+                    if (dead_protein_skip[nuc_accession].find(prot_accver) == dead_protein_skip[nuc_accession].end()) {
+                        dead_protein_skip[nuc_accession].insert(prot_accver);
+                        vector<string> accver_vec;
+                        NStr::Split(prot_accver, ".", accver_vec);
+                        x_AppendDeadProtein(nuc_accession, accver_vec[0]);
+                    }
                 }
             }
         }
-
-        if (prot_accessions.find(nuc_accession) != prot_accessions.end()) {
-            for (const string prot_accver : prot_accessions.at(nuc_accession)) {
-                if (dead_protein_skip[nuc_accession].find(prot_accver) == dead_protein_skip[nuc_accession].end()) {
-                    dead_protein_skip[nuc_accession].insert(prot_accver);
+        else { // no alignment for nucleotide sequence - report as dead (MSS-676)
+            x_AppendNucleotide(nuc_accession, "Dead");
+            if (prot_accessions.find(nuc_accession) != prot_accessions.end()) {
+                for (const string prot_accver : prot_accessions.at(nuc_accession)) {
                     vector<string> accver_vec;
                     NStr::Split(prot_accver, ".", accver_vec);
                     x_AppendDeadProtein(nuc_accession, accver_vec[0]);
@@ -233,6 +246,7 @@ void CMatchTabulate::x_ProcessProteins(
         }
     }
 
+/*
     for (const string& nuc_accession : current_nuc_accessions) {
         if (nuc_match.find(nuc_accession) == nuc_match.end()) {
             x_AppendNucleotide(nuc_accession, "Dead");
@@ -245,8 +259,7 @@ void CMatchTabulate::x_ProcessProteins(
             }
         }
     }
-
-
+*/
     return;
 }
 
