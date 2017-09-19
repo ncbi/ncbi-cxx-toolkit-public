@@ -46,7 +46,7 @@
 /* #undef NCBI_EXPECTED_CXX_VER */
 
 #if defined(_NCBILCL_)  &&  defined(FORWARDING_NCBICONF_H) \
-    &&  !defined(NCBI_ALLOW_MISMATCHED_VERSIONS)
+    &&  !defined(NCBI_ALLOW_MISMATCHED_VERSIONS)  &&  !defined(CTRANSITION_NS)
 
 /* The last change to shared headers before this guard came along occurred
  * on Nov. 30, 2011. */
