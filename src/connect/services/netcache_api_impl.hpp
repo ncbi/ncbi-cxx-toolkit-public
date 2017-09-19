@@ -138,17 +138,13 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
 
 struct SNetCacheAdminImpl : public CObject
 {
-    SNetCacheAdminImpl(SNetCacheAPIImpl* nc_api_impl);
+    SNetCacheAdminImpl(SNetCacheAPIImpl* nc_api_impl) : m_API(nc_api_impl) {}
 
-    string MakeAdminCmd(const char* cmd);
+    void ExecOnAllServers(string cmd);
+    void PrintCmdOutput(string cmd, CNcbiOstream& output_stream, bool multiline_output = true);
 
     CNetCacheAPI m_API;
 };
-
-inline SNetCacheAdminImpl::SNetCacheAdminImpl(SNetCacheAPIImpl* nc_api_impl) :
-    m_API(nc_api_impl)
-{
-}
 
 class NCBI_XCONNECT_EXPORT SNetCacheMirrorTraversal : public IServiceTraversal
 {
