@@ -58,12 +58,19 @@ CSeqIdGuesser::CSeqIdGuesser(CSeq_entry_Handle entry) : m_SeqEntry(entry)
             }
         }
         ITERATE(CBioseq::TId, id, bi->GetCompleteBioseq()->GetId()) {
-            string label = "";
+            string label;
             (*id)->GetLabel(&label);
             x_AddIdString(label, *id);
-            label = "";
+
+            label.clear();
+            int version;
+            (*id)->GetLabel(&label, &version, CSeq_id::eContent);
+            x_AddIdString(label, *id);
+
+            label.clear();
             (*id)->GetLabel(&label, CSeq_id::eContent);
             x_AddIdString(label, *id);
+
             if ((*id)->IsGenbank()) {
                 size_t pos = NStr::Find(label, ".");
                 if (pos != string::npos) {
