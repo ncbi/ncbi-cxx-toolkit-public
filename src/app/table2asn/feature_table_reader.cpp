@@ -684,8 +684,8 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
         if (mrna.Empty())
             mrna = GetLinkedmRNA(cd_feature, bioseq, scope);
 
-        if (gene.Empty())
-            gene = GetLinkedGene(cd_feature, bioseq, scope);
+       // if (gene.Empty())
+       //     gene = GetLinkedGene(cd_feature, bioseq, scope);
 
         AssignLocalIdIfEmpty(cd_feature, m_local_id_counter);
 
