@@ -50,6 +50,100 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CAutoLowerCase
+{
+public:
+    CAutoLowerCase(const string& v) :
+        m_original(v)
+    {
+    }
+    CAutoLowerCase(CAutoLowerCase&& v): 
+        m_original(move(v.m_original)),
+        m_lowercase(move(v.m_lowercase))
+    {
+    }
+    CAutoLowerCase(string&& v):
+        m_original(move(v))
+    {
+    }
+    CAutoLowerCase& operator=(CAutoLowerCase&& v)
+    {
+        m_original = move(v.m_original);
+        m_lowercase = move(v.m_lowercase);
+        return *this;
+    }
+    CAutoLowerCase& operator=(string&& v)
+    {
+        m_original = move(v);
+        m_lowercase.clear();
+        m_uppercase.clear();
+        return *this;
+    }
+    CAutoLowerCase& operator=(const CTempString&);
+
+    const string& lowercase() const
+    {
+        if (m_lowercase.empty() && !m_original.empty())
+        {
+            m_lowercase = m_original;
+            NStr::ToLower(m_lowercase);
+        }
+        return m_lowercase;
+    }
+    const string& uppercase() const
+    {
+        if (m_uppercase.empty() && !m_original.empty())
+        {
+            m_uppercase = m_original;
+            NStr::ToUpper(m_uppercase);
+        }
+        return m_lowercase;
+    }
+    operator const string&() const
+    {
+        return m_original;
+    }
+    const string& original() const
+    {
+        return m_original;
+    }
+
+    CAutoLowerCase() {};
+private:
+    CAutoLowerCase(const CAutoLowerCase&); 
+    CAutoLowerCase& operator=(const CAutoLowerCase&);
+
+    string m_original;
+    mutable string m_lowercase;
+    mutable string m_uppercase;
+};
+
+class CMatchString
+{
+public:
+    CMatchString(const string& v) : m_original(v), m_has_weasel(false)
+    {
+    }
+    const CAutoLowerCase& original() const
+    {
+        return m_original;
+    }
+    const CAutoLowerCase& noweasel() const;
+    operator const string&() const
+    {
+        return m_original;
+    }
+    bool HasWeasel() const
+    {
+        noweasel();
+        return m_has_weasel;
+    }
+private:
+    CAutoLowerCase m_original;
+    mutable CAutoLowerCase m_noweasel;
+    mutable bool m_has_weasel;
+};
+
 /////////////////////////////////////////////////////////////////////////////
 class CString_constraint : public CString_constraint_Base
 {
