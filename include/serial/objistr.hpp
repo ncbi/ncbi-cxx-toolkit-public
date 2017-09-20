@@ -771,7 +771,7 @@ public:
         eOtherPointer
     };
 
-    void SkipPointer(TTypeInfo declaredType);
+    virtual void SkipPointer(TTypeInfo declaredType);
 
 #ifdef NCBI_STRICT_GI
     void ReadStd(TGi& data);

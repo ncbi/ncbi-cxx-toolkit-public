@@ -226,7 +226,7 @@ private:
     virtual string ReadOtherPointer(void) override;
     virtual void ReadOtherPointerEnd(void) override;
     virtual pair<TObjectPtr, TTypeInfo> ReadPointer(TTypeInfo declaredType) override;
-    virtual void SkipPointer(TTypeInfo declaredType);
+    virtual void SkipPointer(TTypeInfo declaredType) override;
 
     bool SkipRealValue(void);
 
