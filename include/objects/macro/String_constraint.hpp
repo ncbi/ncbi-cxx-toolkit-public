@@ -39,15 +39,11 @@
 #ifndef OBJECTS_MACRO_STRING_CONSTRAINT_HPP
 #define OBJECTS_MACRO_STRING_CONSTRAINT_HPP
 
-// generated includes
 #include <objects/macro/String_constraint_.hpp>
 #include <serial/iterator.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 
-// generated classes
-
 BEGIN_NCBI_SCOPE
-
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CAutoLowerCase
@@ -149,10 +145,8 @@ class CString_constraint : public CString_constraint_Base
 {
     typedef CString_constraint_Base Tparent;
 public:
-    // constructor
-    CString_constraint(void);
-    // destructor
-    ~CString_constraint(void);
+    CString_constraint() {}
+    ~CString_constraint() {}
 
     // get all string type data from object
     template <class T>
@@ -170,8 +164,6 @@ public:
     bool ReplaceStringConstraintPortionInString(string& val, const string& replace) const;
 
 private:
-    string m_digit_str, m_alpha_str;
-
     // Prohibit copy constructor and assignment operator
     CString_constraint(const CString_constraint& value);
     CString_constraint& operator=(const CString_constraint& value);
@@ -219,24 +211,8 @@ private:
     bool x_ReplaceContains(string& val, const string& replace) const;
 };
 
-/////////////////// CString_constraint inline methods
-
-// constructor
-inline
-CString_constraint::CString_constraint(void)
-{
-  m_digit_str = "0123456789";
-  m_alpha_str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-}
-
-
-/////////////////// end of CString_constraint inline methods
-
 
 END_objects_SCOPE // namespace ncbi::objects::
-
 END_NCBI_SCOPE
 
-
 #endif // OBJECTS_MACRO_STRING_CONSTRAINT_HPP
-/* Original file checksum: lines: 86, chars: 2538, CRC32: 9eb12277 */

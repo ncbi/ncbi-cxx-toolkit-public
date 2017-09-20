@@ -67,10 +67,8 @@ class CSuspect_rule : public CSuspect_rule_Base
 {
     typedef CSuspect_rule_Base Tparent;
 public:
-    // constructor
-    CSuspect_rule(void);
-    // destructor
-    ~CSuspect_rule(void);
+    CSuspect_rule() {}
+    ~CSuspect_rule() {}
  
     // C's MatchesSuspectProductRule()
     bool StringMatchesSuspectProductRule (const string& str) const;
@@ -98,22 +96,7 @@ private:
     string SummarizeFieldType(const CField_type&) const;
 };
 
-/////////////////// CSuspect_rule inline methods
-
-// constructor
-inline
-CSuspect_rule::CSuspect_rule(void)
-{
-}
-
-
-/////////////////// end of CSuspect_rule inline methods
-
-
 END_objects_SCOPE // namespace ncbi::objects::
-
 END_NCBI_SCOPE
 
-
 #endif // OBJECTS_MACRO_SUSPECT_RULE_HPP
-/* Original file checksum: lines: 86, chars: 2443, CRC32: 48b7bd55 */

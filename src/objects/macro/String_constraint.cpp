@@ -34,24 +34,13 @@
  *   'macro.asn'.
  */
 
-// standard includes
 #include <ncbi_pch.hpp>
-
-// generated includes
 #include <objects/macro/String_constraint.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 
-// generated classes
-
 BEGIN_NCBI_SCOPE
-
 BEGIN_objects_SCOPE // namespace ncbi::objects::
-
-// destructor
-CString_constraint::~CString_constraint(void)
-{
-}
 
 bool CString_constraint :: Empty() const
 {
@@ -180,24 +169,20 @@ bool CString_constraint::x_IsWeasel(const CTempString& str) const
     return false;
 };
 
-string CString_constraint :: x_SkipWeasel(const string& str) const
+
+string CString_constraint::x_SkipWeasel(const string& str) const
 {
-  if (str.empty()) {
-    return kEmptyStr;
-  }
-  string ret_str;
-  list<CTempString> arr;
-  arr = NStr::Split(str, " ", arr, 0);
+    string ret_str;
+    list<CTempString> arr;
+    arr = NStr::Split(str, " ", arr, 0);
 
-  bool found = false;
-  while (!arr.empty() && x_IsWeasel(arr.front())) {
-     arr.erase(arr.begin());
-     found = true;
-  }
+    bool found = false;
+    while (!arr.empty() && x_IsWeasel(arr.front())) {
+        arr.erase(arr.begin());
+        found = true;
+    }
   
-  ret_str = found ? NStr::Join(arr, " ") : str;
-
-  return ret_str;
+    return found ? NStr::Join(arr, " ") : str;
 };
 
 bool CString_constraint :: x_CaseNCompareEqual(string str1, string str2, size_t len1, bool case_sensitive) const
@@ -437,7 +422,7 @@ bool CString_constraint :: x_GetSpanFromHyphenInString(const string& str, size_t
 
 bool CString_constraint :: x_StringIsPositiveAllDigits(const string& str) const
 {
-   if (str.find_first_not_of(m_digit_str) != string::npos) {
+   if (str.find_first_not_of(digit_str) != string::npos) {
       return false;
    }
 
@@ -469,7 +454,7 @@ bool CString_constraint :: x_IsStringInSpan(const string& str, const string& fir
     }
   } 
   else if (x_StringIsPositiveAllDigits(second)) {
-    prefix_len = first.find_first_of(m_digit_str) + 1;
+    prefix_len = first.find_first_of(digit_str) + 1;
 
     new_str = CTempString(str).substr(prefix_len - 1);
     new_first = CTempString(first).substr(prefix_len - 1);
@@ -521,11 +506,11 @@ bool CString_constraint :: x_IsStringInSpan(const string& str, const string& fir
         /* determine whether there is a suffix */
         size_t idx1, idx2, idx_str;
         string suf1, suf2, sub_str;
-        idx1 = first.find_first_not_of(m_digit_str);
+        idx1 = first.find_first_not_of(digit_str);
         suf1 = CTempString(first).substr(prefix_len + idx1);
-        idx2 = second.find_first_not_of(m_digit_str);
+        idx2 = second.find_first_not_of(digit_str);
         suf2 = CTempString(second).substr(prefix_len + idx2);
-        idx_str = str.find_first_not_of(m_digit_str);
+        idx_str = str.find_first_not_of(digit_str);
         sub_str = CTempString(str).substr(prefix_len + idx_str);
         if (suf1 == suf2 && suf1 == sub_str) {
           /* suffixes match */
@@ -552,12 +537,12 @@ bool CString_constraint :: x_IsStringInSpanInList (const string& str, const stri
       return false;
   }
 
-  size_t idx = str.find_first_not_of(m_alpha_str);
+  size_t idx = str.find_first_not_of(alpha_str);
   if (idx == string::npos) {
      return false;
   }
 
-  idx = CTempString(str).substr(idx).find_first_not_of(m_digit_str);
+  idx = CTempString(str).substr(idx).find_first_not_of(digit_str);
 
   /* find ranges */
   size_t hyphen = list.find('-');
@@ -605,9 +590,9 @@ bool CString_constraint :: x_DoesSingleStringMatchConstraint(const string& str) 
     } else {
       
         string tmp_match = CanGetMatch_text() ? GetMatch_text() : kEmptyStr;
-        if (GetIgnore_weasel()) {
-            tmp_match = x_SkipWeasel(tmp_match);
-        }
+        //if (GetIgnore_weasel()) {
+        //    tmp_match = x_SkipWeasel(tmp_match);
+        //}
         if (GetMatch_location() != eString_location_inlist && CanGetIgnore_words()){
             rval = x_AdvancedStringMatch(str, tmp_match);
         } else {
@@ -770,5 +755,3 @@ bool CString_constraint::ReplaceStringConstraintPortionInString(string& val, con
 
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
-
-/* Original file checksum: lines: 57, chars: 1744, CRC32: 7f791d1c */

@@ -34,26 +34,12 @@
  *   'macro.asn'.
  */
 
-// standard includes
-#include <ncbi_pch.hpp>
 
-// generated includes
+#include <ncbi_pch.hpp>
 #include <objects/macro/Suspect_rule.hpp>
 
-// generated classes
-
 BEGIN_NCBI_SCOPE
-
 BEGIN_objects_SCOPE // namespace ncbi::objects::
-
-// destructor
-CSuspect_rule::~CSuspect_rule(void)
-{
-}
-
-
-static const char* alpha_str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-static const char* digit_str = "0123456789";
 
 
 static bool IsStringConstraintEmpty(const CString_constraint* constraint)

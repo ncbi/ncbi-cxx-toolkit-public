@@ -34,22 +34,15 @@
  *   'macro.asn'.
  */
 
-// standard includes
 #include <ncbi_pch.hpp>
-
-// generated includes
 #include <objects/macro/Search_func.hpp>
 
-// generated classes
+///// This file is included in macro__.cpp (sic!), so these statics are visible elsewhere
+static const char* digit_str = "0123456789";
+static const char* alpha_str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_objects_SCOPE // namespace ncbi::objects::
-
-// destructor
-CSearch_func::~CSearch_func(void)
-{
-}
 
 bool CSearch_func :: Empty() const
 {
@@ -299,14 +292,14 @@ bool CSearch_func :: x_ContainsThreeOrMoreNumbersTogether(const string& str) con
   string sch_str(str), strtmp;
   
   while (!sch_str.empty()) {
-      p = sch_str.find_first_of(m_digit_str);
+      p = sch_str.find_first_of(digit_str);
       if (p == string::npos) {
           break;
       }
       strtmp = CTempString(sch_str).substr(0, p);
       if (p && ( x_PrecededByOkPrefix(strtmp) 
                     || x_InWordBeforeCytochromeOrCoenzyme (strtmp))) {
-        p2 = sch_str.find_first_not_of(m_digit_str, p+1);
+        p2 = sch_str.find_first_not_of(digit_str, p+1);
         if (p2 != string::npos) {
             sch_str = CTempString(sch_str).substr(p2);
             num_digits = 0;
@@ -374,7 +367,7 @@ bool CSearch_func :: x_IsPrefixPlusNumbers(const string& str, const string& pref
        return false;
   }
 
-  size_t digit_len = str.find_first_not_of(m_digit_str, pattern_len);
+  size_t digit_len = str.find_first_not_of(digit_str, pattern_len);
   if (digit_len != string::npos && digit_len == str.size()) {
       return true;
   }

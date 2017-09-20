@@ -58,17 +58,13 @@ class CSearch_func : public CSearch_func_Base
 {
     typedef CSearch_func_Base Tparent;
 public:
-    // constructor
-    CSearch_func(void);
-    // destructor
-    ~CSearch_func(void);
+    CSearch_func() {}
+    ~CSearch_func() {}
 
     bool Empty() const;
     bool Match(const string& str) const;
 
 private:
-    string m_digit_str;
-
     // Prohibit copy constructor and assignment operator
     CSearch_func(const CSearch_func& value);
     CSearch_func& operator=(const CSearch_func& value);
@@ -106,23 +102,6 @@ private:
     bool x_ProductContainsTerm(const string& str, const string& pattern) const;
 };
 
-/////////////////// CSearch_func inline methods
-
-// constructor
-inline
-CSearch_func::CSearch_func(void)
-{
-  m_digit_str = "0123456789";
-}
-
-
-/////////////////// end of CSearch_func inline methods
-
-
 END_objects_SCOPE // namespace ncbi::objects::
-
 END_NCBI_SCOPE
-
-
 #endif // OBJECTS_MACRO_SEARCH_FUNC_HPP
-/* Original file checksum: lines: 86, chars: 2424, CRC32: f82e63c0 */
