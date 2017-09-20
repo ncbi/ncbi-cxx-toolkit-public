@@ -137,29 +137,6 @@ using namespace grid::netschedule;
 
 #define SERVER_PARAMS_ASK_MAX_COUNT 100
 
-inline
-void g_AppendHitID(string& cmd, const string& sub_hit_id)
-{
-    cmd += " ncbi_phid=\"";
-    cmd += sub_hit_id;
-    cmd += '"';
-}
-
-inline
-void g_AppendClientIPAndSessionID(string& cmd, const CRequestContext& req)
-{
-    if (req.IsSetClientIP()) {
-        cmd += " ip=\"";
-        cmd += req.GetClientIP();
-        cmd += '"';
-    }
-
-    cmd += " sid=\"";
-    cmd += NStr::PrintableString(req.GetSessionID());
-    cmd += '"';
-}
-
-
 inline string g_MakeBaseCmd(const string& cmd_name, const string& job_key)
 {
     string cmd(cmd_name);

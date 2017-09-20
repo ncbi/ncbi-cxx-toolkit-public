@@ -102,7 +102,7 @@ void SNetScheduleSubmitterImpl::AppendClientIPSessionIDHitID(string& cmd, const 
     }
 
     m_UseNextSubHitID.ProperCommand();
-    g_AppendHitID(cmd, m_UseNextSubHitID ? req.GetNextSubHitID() : req.GetCurrentSubHitID());
+    g_AppendHitID(cmd, req, m_UseNextSubHitID);
 }
 
 string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleNewJob& job,

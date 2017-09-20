@@ -33,6 +33,7 @@
 
 #include "srv_connections_impl.hpp"
 #include "balancing.hpp"
+#include <corelib/request_ctx.hpp>
 #include <connect/ncbi_connutil.h>
 
 #include <map>
@@ -446,6 +447,29 @@ private:
     bool m_ProperCommand = false;
     bool m_Allowed = true;
 };
+
+inline
+void g_AppendHitID(string& cmd, CRequestContext& req, bool use_next_sub_hit_id)
+{
+    auto sub_hit_id = use_next_sub_hit_id ? req.GetNextSubHitID() : req.GetCurrentSubHitID();
+    cmd += " ncbi_phid=\"";
+    cmd += sub_hit_id;
+    cmd += '"';
+}
+
+inline
+void g_AppendClientIPAndSessionID(string& cmd, const CRequestContext& req)
+{
+    if (req.IsSetClientIP()) {
+        cmd += " ip=\"";
+        cmd += req.GetClientIP();
+        cmd += '"';
+    }
+
+    cmd += " sid=\"";
+    cmd += req.GetSessionID();
+    cmd += '"';
+}
 
 END_NCBI_SCOPE
 

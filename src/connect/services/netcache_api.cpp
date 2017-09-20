@@ -261,11 +261,7 @@ void SNetCacheAPIImpl::AppendClientIPSessionID(string* cmd, CRequestContext& req
 {
     _ASSERT(cmd);
 
-    cmd->append(" ip=\"");
-    cmd->append(req.GetClientIP());
-    cmd->append("\" sid=\"");
-    cmd->append(req.GetSessionID());
-    cmd->append(1, '\"');
+    g_AppendClientIPAndSessionID(*cmd, req);
 }
 
 void SNetCacheAPIImpl::AppendClientIPSessionIDPasswordAgeHitID(string* cmd,
@@ -296,10 +292,7 @@ void SNetCacheAPIImpl::AppendHitID(string* cmd, CRequestContext& req)
 {
     _ASSERT(cmd);
 
-    cmd->append(" ncbi_phid=\"");
-    cmd->append(m_UseNextSubHitID ?
-            req.GetNextSubHitID() : req.GetCurrentSubHitID());
-    cmd->append(1, '\"');
+    g_AppendHitID(*cmd, req, m_UseNextSubHitID);
 }
 
 void SNetCacheAPIImpl::AppendClientIPSessionIDHitID(string* cmd)
