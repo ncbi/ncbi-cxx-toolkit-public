@@ -928,6 +928,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         m_context.ApplyCreateUpdateDates(*entry);
     }
 
+    m_context.ApplyComments(*entry);
     ProcessSecretFiles2Phase(*entry);
 
     // this methods do not remove entry nor change it. But create 'result' object which either

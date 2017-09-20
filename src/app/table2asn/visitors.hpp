@@ -11,6 +11,23 @@ BEGIN_NCBI_SCOPE
 namespace objects
 {
     template<typename _M>
+    void VisitAllBioseqs(objects::CSeq_entry& entry, _M m)
+    {
+        if (entry.IsSeq())
+        {
+            m(entry.SetSeq());
+        }
+        else
+            if (entry.IsSet() && !entry.GetSet().GetSeq_set().empty())
+            {
+                for (auto se : entry.SetSet().SetSeq_set())
+                {
+                    VisitAllBioseqs(*se, m);
+                }
+            }
+    };
+
+    template<typename _M>
     void VisitAllBioseqs(const objects::CSeq_entry& entry, _M m)
     {
         if (entry.IsSeq())
@@ -55,6 +72,30 @@ namespace objects
             }
     };
 
+    template<typename _M>
+    void VisitAllSeqDesc(objects::CSeq_entry& entry, _M m)
+    {
+        if (entry.IsSeq())
+        {
+            m(&entry.SetSeq(), entry.SetSeq().SetDescr());
+            if (entry.GetSeq().GetDescr().Get().empty())
+                entry.SetSeq().ResetDescr();
+        }
+        else
+            if (entry.IsSet() && !entry.GetSet().GetSeq_set().empty())
+            {
+                bool go_deep = m(0, entry.SetSet().SetDescr());
+                if (entry.GetSet().GetDescr().Get().empty())
+                    entry.SetSet().ResetDescr();
+
+                if (go_deep)
+                for (auto se : entry.SetSet().SetSeq_set())
+                {
+                    VisitAllSeqDesc(*se, m);
+                }
+            }
+    };
+
     template<typename _Mset, typename _Mseq>
     void VisitAllSetandSeq(objects::CSeq_entry& entry, _Mset mset, _Mseq mseq)
     {
@@ -65,29 +106,14 @@ namespace objects
         else
             if (entry.IsSet() && !entry.GetSet().GetSeq_set().empty())
             {
-                mset(entry.SetSet());
+                bool go_deep = mset(entry.SetSet());
+
+                if (go_deep)
                 for (auto se : entry.SetSet().SetSeq_set())
                 {
                     VisitAllSetandSeq(*se, mset, mseq);
                 }
             }
-    };
-
-    template<typename _M>
-    void VisitAllBioseqs(objects::CSeq_entry& entry, _M m)
-    {
-        if (entry.IsSeq())
-        {
-            m(entry.SetSeq());
-        }
-        else
-        if (entry.IsSet() && !entry.GetSet().GetSeq_set().empty())
-        {
-            for (auto se : entry.SetSet().SetSeq_set())
-            {
-                VisitAllBioseqs(*se, m);
-            }
-        }
     };
 
     template<typename _M>

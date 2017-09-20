@@ -351,12 +351,6 @@ void CMultiReader::ApplyAdditionalProperties(CSeq_entry& entry)
             if (m_context.m_taxid != 0)
                 org.SetTaxId(m_context.m_taxid);
         }
-        if (!m_context.m_Comment.empty())
-        {
-            CRef<CSeqdesc> comment_desc(new CSeqdesc());
-            comment_desc->SetComment(m_context.m_Comment);
-            entry.SetDescr().Set().push_back(comment_desc);
-        }
         break;
 
     case CSeq_entry::e_Set:

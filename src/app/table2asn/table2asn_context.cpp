@@ -790,10 +790,11 @@ void CTable2AsnContext::CorrectCollectionDates(objects::CSeq_entry& entry)
 
 
     VisitAllSetandSeq(entry, 
-        [this](CBioseq_set& bioseq_set)
+        [this](CBioseq_set& bioseq_set)->bool
         {
             x_CorrectCollectionDates(*this, bioseq_set);
-        },
+            return true;
+    },
         [this](CBioseq& bioseq)
         {
             x_CorrectCollectionDates(*this, bioseq);
@@ -801,5 +802,32 @@ void CTable2AsnContext::CorrectCollectionDates(objects::CSeq_entry& entry)
     );
 }
 
+void CTable2AsnContext::ApplyComments(objects::CSeq_entry& entry)
+{
+    if (m_Comment.empty())
+        return;
+
+    VisitAllSetandSeq(entry,
+        [this](CBioseq_set& bioseq_set)->bool
+        {
+            if (bioseq_set.IsSetClass() && bioseq_set.GetClass() == CBioseq_set::eClass_genbank)
+            {
+                return true; // let's go deeper               
+            }
+
+            CRef<CSeqdesc> comment_desc(new CSeqdesc());
+            comment_desc->SetComment(m_Comment);
+            bioseq_set.SetDescr().Set().push_back(comment_desc);
+
+            return false; // stop going deeper
+        },
+        [this](CBioseq& bioseq)
+        {
+            CRef<CSeqdesc> comment_desc(new CSeqdesc());
+            comment_desc->SetComment(m_Comment);
+            bioseq.SetDescr().Set().push_back(comment_desc);
+        }
+    );
+}
 
 END_NCBI_SCOPE
