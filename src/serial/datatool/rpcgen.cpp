@@ -56,9 +56,9 @@ class CClientPseudoTypeStrings : public CClassTypeStrings
 public:
     CClientPseudoTypeStrings(const CClientPseudoDataType& source);
 
-    void GenerateClassCode(CClassCode& code, CNcbiOstream& getters,
+    virtual void GenerateClassCode(CClassCode& code, CNcbiOstream& getters,
                            const string& methodPrefix, bool haveUserClass,
-                           const string& classPrefix) const;
+                           const string& classPrefix) const override;
 
 private:
     const CClientPseudoDataType& m_Source;

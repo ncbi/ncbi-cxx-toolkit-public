@@ -47,16 +47,16 @@ public:
     CClientPseudoDataType(const CCodeGenerator& generator,
                           const string& section_name,
                           const string& class_name);
-    AutoPtr<CTypeStrings> GenerateCode(void) const;
+    virtual AutoPtr<CTypeStrings> GenerateCode(void) const override;
 
     // trivial definitions for CDataType's pure virtuals
     // (I *said* this was fake... ;-))
-    void       PrintASN(CNcbiOstream&, int)     const  override { }
-    void       PrintJSONSchema(CNcbiOstream&, int, list<string>&, bool) const override { }
-    void       PrintXMLSchema(CNcbiOstream&, int, bool)     const  override { }
-    void       PrintDTDElement(CNcbiOstream&, bool)   const  override { }
-    bool       CheckValue(const CDataValue&)    const { return false; }
-    TObjectPtr CreateDefault(const CDataValue&) const  override { return 0; }
+    virtual void PrintASN(CNcbiOstream&, int)  const override { }
+    virtual void PrintJSONSchema(CNcbiOstream&, int, list<string>&, bool) const override { }
+    virtual void PrintXMLSchema(CNcbiOstream&, int, bool) const override { }
+    virtual void PrintDTDElement(CNcbiOstream&, bool) const override { }
+    virtual bool CheckValue(const CDataValue&) const override { return false; }
+    virtual TObjectPtr CreateDefault(const CDataValue&) const override { return 0; }
 
 private:
     const CCodeGenerator& m_Generator; // source of all wisdom

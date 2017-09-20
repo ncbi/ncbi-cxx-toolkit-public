@@ -40,14 +40,14 @@ BEGIN_NCBI_SCOPE
 class CStaticDataType : public CDataType {
     typedef CDataType CParent;
 public:
-    void PrintASN(CNcbiOstream& out, int indent) const override;
-    void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
-    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const override;
-    void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const override;
+    virtual void PrintASN(CNcbiOstream& out, int indent) const override;
+    virtual void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
+    virtual void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const override;
+    virtual void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const override;
 
-    TObjectPtr CreateDefault(const CDataValue& value) const override;
+    virtual TObjectPtr CreateDefault(const CDataValue& value) const override;
 
-    AutoPtr<CTypeStrings> GetFullCType(void) const;
+    virtual AutoPtr<CTypeStrings> GetFullCType(void) const override;
     //virtual string GetDefaultCType(void) const;
     virtual const char* GetDefaultCType(void) const = 0;
     virtual const char* GetXMLContents(void) const = 0;
@@ -57,50 +57,50 @@ public:
 class CNullDataType : public CStaticDataType {
     typedef CStaticDataType CParent;
 public:
-    bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const override;
+    virtual bool CheckValue(const CDataValue& value) const override;
+    virtual TObjectPtr CreateDefault(const CDataValue& value) const override;
 
-    CTypeRef GetTypeInfo(void);
-    AutoPtr<CTypeStrings> GetFullCType(void) const;
-    virtual const char* GetDefaultCType(void) const;
+    virtual CTypeRef GetTypeInfo(void) override;
+    virtual AutoPtr<CTypeStrings> GetFullCType(void) const override;
+    virtual const char* GetDefaultCType(void) const override;
     virtual const char* GetASNKeyword(void) const override;
-    virtual const char* GetDEFKeyword(void) const;
-    virtual const char* GetXMLContents(void) const;
-    virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent, const CDataMember* mem) const;
+    virtual const char* GetDEFKeyword(void) const override;
+    virtual const char* GetXMLContents(void) const override;
+    virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent, const CDataMember* mem) const override;
 };
 
 class CBoolDataType : public CStaticDataType {
     typedef CStaticDataType CParent;
 public:
-    bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const override;
-    virtual string GetDefaultString(const CDataValue& value) const;
+    virtual bool CheckValue(const CDataValue& value) const override;
+    virtual TObjectPtr CreateDefault(const CDataValue& value) const override;
+    virtual string GetDefaultString(const CDataValue& value) const override;
 
-    CTypeRef GetTypeInfo(void);
-    virtual const char* GetDefaultCType(void) const;
+    virtual CTypeRef GetTypeInfo(void) override;
+    virtual const char* GetDefaultCType(void) const override;
     virtual const char* GetASNKeyword(void) const override;
-    virtual const char* GetDEFKeyword(void) const;
-    virtual const char* GetXMLContents(void) const;
-    virtual string GetSchemaTypeString(void) const;
-    virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent, const CDataMember* mem) const;
+    virtual const char* GetDEFKeyword(void) const override;
+    virtual const char* GetXMLContents(void) const override;
+    virtual string GetSchemaTypeString(void) const override;
+    virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent, const CDataMember* mem) const override;
 
-    void PrintDTDExtra(CNcbiOstream& out) const;
+    virtual void PrintDTDExtra(CNcbiOstream& out) const override;
 };
 
 class CRealDataType : public CStaticDataType {
     typedef CStaticDataType CParent;
 public:
     CRealDataType(void);
-    bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const override;
-    virtual string GetDefaultString(const CDataValue& value) const;
+    virtual bool CheckValue(const CDataValue& value) const override;
+    virtual TObjectPtr CreateDefault(const CDataValue& value) const override;
+    virtual string GetDefaultString(const CDataValue& value) const override;
 
-    const CTypeInfo* GetRealTypeInfo(void);
-    virtual const char* GetDefaultCType(void) const;
+    virtual const CTypeInfo* GetRealTypeInfo(void) override;
+    virtual const char* GetDefaultCType(void) const override;
     virtual const char* GetASNKeyword(void) const override;
-    virtual const char* GetDEFKeyword(void) const;
-    virtual const char* GetXMLContents(void) const;
-    virtual string GetSchemaTypeString(void) const;
+    virtual const char* GetDEFKeyword(void) const override;
+    virtual const char* GetXMLContents(void) const override;
+    virtual string GetSchemaTypeString(void) const override;
 };
 
 class CStringDataType : public CStaticDataType {
@@ -113,18 +113,18 @@ public:
 
     CStringDataType(EType type = eStringTypeVisible);
 
-    bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const override;
-    virtual string GetDefaultString(const CDataValue& value) const;
+    virtual bool CheckValue(const CDataValue& value) const override;
+    virtual TObjectPtr CreateDefault(const CDataValue& value) const override;
+    virtual string GetDefaultString(const CDataValue& value) const override;
 
-    const CTypeInfo* GetRealTypeInfo(void);
-    bool NeedAutoPointer(const CTypeInfo* typeInfo) const;
-    AutoPtr<CTypeStrings> GetFullCType(void) const;
-    virtual const char* GetDefaultCType(void) const;
+    virtual const CTypeInfo* GetRealTypeInfo(void) override;
+    virtual bool NeedAutoPointer(const CTypeInfo* typeInfo) const override;
+    virtual AutoPtr<CTypeStrings> GetFullCType(void) const override;
+    virtual const char* GetDefaultCType(void) const override;
     virtual const char* GetASNKeyword(void) const override;
-    virtual const char* GetDEFKeyword(void) const;
-    virtual const char* GetXMLContents(void) const;
-    virtual string GetSchemaTypeString(void) const;
+    virtual const char* GetDEFKeyword(void) const override;
+    virtual const char* GetXMLContents(void) const override;
+    virtual string GetSchemaTypeString(void) const override;
     
     EType GetStringType(void) const
     {
@@ -139,39 +139,39 @@ class CStringStoreDataType : public CStringDataType {
 public:
     CStringStoreDataType(void);
 
-    const CTypeInfo* GetRealTypeInfo(void);
-    bool NeedAutoPointer(const CTypeInfo* typeInfo) const;
-    AutoPtr<CTypeStrings> GetFullCType(void) const;
+    virtual const CTypeInfo* GetRealTypeInfo(void) override;
+    virtual bool NeedAutoPointer(const CTypeInfo* typeInfo) const override;
+    virtual AutoPtr<CTypeStrings> GetFullCType(void) const override;
     virtual const char* GetASNKeyword(void) const override;
-    virtual const char* GetDEFKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const override;
 };
 
 class CBitStringDataType : public CStaticDataType {
     typedef CStaticDataType CParent;
 public:
-    bool CheckValue(const CDataValue& value) const;
-    const CTypeInfo* GetRealTypeInfo(void);
-    bool NeedAutoPointer(const CTypeInfo* typeInfo) const;
-    AutoPtr<CTypeStrings> GetFullCType(void) const;
-    virtual const char* GetDefaultCType(void) const;
+    virtual bool CheckValue(const CDataValue& value) const override;
+    virtual const CTypeInfo* GetRealTypeInfo(void) override;
+    virtual bool NeedAutoPointer(const CTypeInfo* typeInfo) const override;
+    virtual AutoPtr<CTypeStrings> GetFullCType(void) const override;
+    virtual const char* GetDefaultCType(void) const override;
     virtual const char* GetASNKeyword(void) const override;
-    virtual const char* GetDEFKeyword(void) const;
-    virtual const char* GetXMLContents(void) const;
-    virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent, const CDataMember* mem) const;
+    virtual const char* GetDEFKeyword(void) const override;
+    virtual const char* GetXMLContents(void) const override;
+    virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent, const CDataMember* mem) const override;
 };
 
 class COctetStringDataType : public CBitStringDataType {
     typedef CBitStringDataType CParent;
 public:
-    bool CheckValue(const CDataValue& value) const;
-    const CTypeInfo* GetRealTypeInfo(void);
-    bool NeedAutoPointer(const CTypeInfo* typeInfo) const;
-    AutoPtr<CTypeStrings> GetFullCType(void) const;
-    virtual const char* GetDefaultCType(void) const;
+    virtual bool CheckValue(const CDataValue& value) const override;
+    virtual const CTypeInfo* GetRealTypeInfo(void) override;
+    virtual bool NeedAutoPointer(const CTypeInfo* typeInfo) const override;
+    virtual AutoPtr<CTypeStrings> GetFullCType(void) const override;
+    virtual const char* GetDefaultCType(void) const override;
     virtual const char* GetASNKeyword(void) const override;
-    virtual const char* GetDEFKeyword(void) const;
-    virtual const char* GetXMLContents(void) const;
-    virtual string GetSchemaTypeString(void) const;
+    virtual const char* GetDEFKeyword(void) const override;
+    virtual const char* GetXMLContents(void) const override;
+    virtual string GetSchemaTypeString(void) const override;
     virtual bool IsCompressed(void) const;
 protected:
     virtual bool x_AsBitString(void) const;
@@ -180,26 +180,26 @@ protected:
 class CBase64BinaryDataType : public COctetStringDataType {
     typedef COctetStringDataType CParent;
 public:
-    virtual string GetSchemaTypeString(void) const;
-    virtual bool IsCompressed(void) const;
+    virtual string GetSchemaTypeString(void) const override;
+    virtual bool IsCompressed(void) const override;
 protected:
-    virtual bool x_AsBitString(void) const;
+    virtual bool x_AsBitString(void) const override;
 };
 
 class CIntDataType : public CStaticDataType {
     typedef CStaticDataType CParent;
 public:
     CIntDataType(void);
-    bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const override;
-    virtual string GetDefaultString(const CDataValue& value) const;
+    virtual bool CheckValue(const CDataValue& value) const override;
+    virtual TObjectPtr CreateDefault(const CDataValue& value) const override;
+    virtual string GetDefaultString(const CDataValue& value) const override;
 
-    CTypeRef GetTypeInfo(void);
-    virtual const char* GetDefaultCType(void) const;
+    virtual CTypeRef GetTypeInfo(void) override;
+    virtual const char* GetDefaultCType(void) const override;
     virtual const char* GetASNKeyword(void) const override;
-    virtual const char* GetDEFKeyword(void) const;
-    virtual const char* GetXMLContents(void) const;
-    virtual string GetSchemaTypeString(void) const;
+    virtual const char* GetDEFKeyword(void) const override;
+    virtual const char* GetXMLContents(void) const override;
+    virtual string GetSchemaTypeString(void) const override;
 };
 
 class CBigIntDataType : public CIntDataType {
@@ -207,36 +207,36 @@ class CBigIntDataType : public CIntDataType {
 public:
     CBigIntDataType(bool bAsnBigInt = false) : m_bAsnBigInt(bAsnBigInt) {
     }
-    bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const override;
-    virtual string GetDefaultString(const CDataValue& value) const;
+    virtual bool CheckValue(const CDataValue& value) const override;
+    virtual TObjectPtr CreateDefault(const CDataValue& value) const override;
+    virtual string GetDefaultString(const CDataValue& value) const override;
 
-    CTypeRef GetTypeInfo(void);
-    virtual AutoPtr<CTypeStrings> GetFullCType(void) const;
-    virtual const char* GetDefaultCType(void) const;
+    virtual CTypeRef GetTypeInfo(void) override;
+    virtual AutoPtr<CTypeStrings> GetFullCType(void) const override;
+    virtual const char* GetDefaultCType(void) const override;
     virtual const char* GetASNKeyword(void) const override;
-    virtual const char* GetDEFKeyword(void) const;
-    virtual const char* GetXMLContents(void) const;
-    virtual string GetSchemaTypeString(void) const;
+    virtual const char* GetDEFKeyword(void) const override;
+    virtual const char* GetXMLContents(void) const override;
+    virtual string GetSchemaTypeString(void) const override;
 protected:
     bool m_bAsnBigInt;
 };
 
 class CAnyContentDataType : public CStaticDataType {
 public:
-    bool CheckValue(const CDataValue& value) const;
-    void PrintASN(CNcbiOstream& out, int indent) const override;
-    void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
-    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const override;
-    void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const override;
+    virtual bool CheckValue(const CDataValue& value) const override;
+    virtual void PrintASN(CNcbiOstream& out, int indent) const override;
+    virtual void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
+    virtual void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const override;
+    virtual void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const override;
 
-    TObjectPtr CreateDefault(const CDataValue& value) const override;
+    virtual TObjectPtr CreateDefault(const CDataValue& value) const override;
 
-    AutoPtr<CTypeStrings> GetFullCType(void) const;
-    virtual const char* GetDefaultCType(void) const;
+    virtual AutoPtr<CTypeStrings> GetFullCType(void) const override;
+    virtual const char* GetDefaultCType(void) const override;
     virtual const char* GetASNKeyword(void) const override;
-    virtual const char* GetDEFKeyword(void) const;
-    virtual const char* GetXMLContents(void) const;
+    virtual const char* GetDEFKeyword(void) const override;
+    virtual const char* GetXMLContents(void) const override;
 };
 
 END_NCBI_SCOPE

@@ -43,16 +43,16 @@ class CStdTypeStrings : public CTypeStrings
 public:
     CStdTypeStrings(const string& type, const CComments& comments, bool full_ns_name);
 
-    EKind GetKind(void) const;
+    virtual EKind GetKind(void) const override;
 
-    string GetCType(const CNamespace& ns) const;
-    string GetPrefixedCType(const CNamespace& ns,
-                            const string& methodPrefix) const;
-    string GetRef(const CNamespace& ns) const;
-    string GetInitializer(void) const;
+    virtual string GetCType(const CNamespace& ns) const override;
+    virtual string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const override;
+    virtual string GetRef(const CNamespace& ns) const override;
+    virtual string GetInitializer(void) const override;
 
-    virtual void SetStorageType(const string& storage);
-    virtual string GetStorageType(const CNamespace& ns) const;
+    virtual void SetStorageType(const string& storage) override;
+    virtual string GetStorageType(const CNamespace& ns) const override;
 private:
     string m_CType;
     string m_Storage;
@@ -63,15 +63,15 @@ class CNullTypeStrings : public CTypeStrings
 {
 public:
     CNullTypeStrings(const CComments& comments);
-    EKind GetKind(void) const;
+    virtual EKind GetKind(void) const override;
 
-    bool HaveSpecialRef(void) const;
+    virtual bool HaveSpecialRef(void) const override;
 
-    string GetCType(const CNamespace& ns) const;
-    string GetPrefixedCType(const CNamespace& ns,
-                            const string& methodPrefix) const;
-    string GetRef(const CNamespace& ns) const;
-    string GetInitializer(void) const;
+    virtual string GetCType(const CNamespace& ns) const override;
+    virtual string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const override;
+    virtual string GetRef(const CNamespace& ns) const override;
+    virtual string GetInitializer(void) const override;
 
 };
 
@@ -81,12 +81,12 @@ class CStringTypeStrings : public CStdTypeStrings
 public:
     CStringTypeStrings(const string& type, const CComments& comments, bool full_ns_name);
 
-    EKind GetKind(void) const;
+    virtual EKind GetKind(void) const override;
 
-    string GetInitializer(void) const;
-    string GetResetCode(const string& var) const;
+    virtual string GetInitializer(void) const override;
+    virtual string GetResetCode(const string& var) const override;
 
-    void GenerateTypeCode(CClassContext& ctx) const;
+    virtual void GenerateTypeCode(CClassContext& ctx) const override;
 
 };
 
@@ -96,9 +96,9 @@ class CStringStoreTypeStrings : public CStringTypeStrings
 public:
     CStringStoreTypeStrings(const string& type, const CComments& comments, bool full_ns_name);
 
-    bool HaveSpecialRef(void) const;
+    virtual bool HaveSpecialRef(void) const override;
 
-    string GetRef(const CNamespace& ns) const;
+    virtual string GetRef(const CNamespace& ns) const override;
 
 };
 
@@ -108,12 +108,12 @@ class CAnyContentTypeStrings : public CStdTypeStrings
 public:
     CAnyContentTypeStrings(const string& type, const CComments& comments, bool full_ns_name);
 
-    EKind GetKind(void) const;
+    virtual EKind GetKind(void) const override;
 
-    string GetInitializer(void) const;
-    string GetResetCode(const string& var) const;
+    virtual string GetInitializer(void) const override;
+    virtual string GetResetCode(const string& var) const override;
 
-    void GenerateTypeCode(CClassContext& ctx) const;
+    virtual void GenerateTypeCode(CClassContext& ctx) const override;
 
 };
 
@@ -123,12 +123,12 @@ class CBitStringTypeStrings : public CStdTypeStrings
 public:
     CBitStringTypeStrings(const string& type, const CComments& comments);
 
-    EKind GetKind(void) const;
+    virtual EKind GetKind(void) const override;
 
-    string GetInitializer(void) const;
-    string GetResetCode(const string& var) const;
+    virtual string GetInitializer(void) const override;
+    virtual string GetResetCode(const string& var) const override;
 
-    void GenerateTypeCode(CClassContext& ctx) const;
+    virtual void GenerateTypeCode(CClassContext& ctx) const override;
 
 };
 

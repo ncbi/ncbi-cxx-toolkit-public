@@ -92,11 +92,11 @@ public:
                     const CComments& commnts);
 
 protected:
-    void GenerateClassCode(CClassCode& code,
+    virtual void GenerateClassCode(CClassCode& code,
                            CNcbiOstream& getters,
                            const string& methodPrefix,
                            bool haveUserClass,
-                           const string& classPrefix) const;
+                           const string& classPrefix) const override;
     bool x_IsNullType(TVariants::const_iterator i) const;
     bool x_IsNullWithAttlist(TVariants::const_iterator i, string& name) const;
 

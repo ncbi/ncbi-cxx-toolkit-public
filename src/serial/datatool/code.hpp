@@ -49,7 +49,7 @@ public:
     CClassCode(CClassContext& ownerClass, const string& className);
     virtual ~CClassCode(void);
 
-    const CNamespace& GetNamespace(void) const;
+    virtual const CNamespace& GetNamespace(void) const override;
 
     // DT added to avoid conflict with the standard Windows interfaces
     const string& GetClassNameDT(void) const
@@ -75,11 +75,11 @@ public:
             m_VirtualDestructor = v;
         }
 
-    string GetMethodPrefix(void) const;
+    virtual string GetMethodPrefix(void) const override;
     bool InternalClass(void) const;
-    TIncludes& HPPIncludes(void);
-    TIncludes& CPPIncludes(void);
-    void AddForwardDeclaration(const string& s, const CNamespace& ns);
+    virtual TIncludes& HPPIncludes(void) override;
+    virtual TIncludes& CPPIncludes(void) override;
+    virtual void AddForwardDeclaration(const string& s, const CNamespace& ns) override;
     void AddInitializer(const string& member, const string& init);
     void AddConstructionCode(const string& code);
     void AddDestructionCode(const string& code);
@@ -126,9 +126,9 @@ public:
     CNcbiOstream& GenerateUserHPP(CNcbiOstream& header) const;
     CNcbiOstream& GenerateUserCPP(CNcbiOstream& code) const;
 
-    void AddHPPCode(const CNcbiOstrstream& code);
-    void AddINLCode(const CNcbiOstrstream& code);
-    void AddCPPCode(const CNcbiOstrstream& code);
+    virtual void AddHPPCode(const CNcbiOstrstream& code) override;
+    virtual void AddINLCode(const CNcbiOstrstream& code) override;
+    virtual void AddCPPCode(const CNcbiOstrstream& code) override;
 
     void SetEmptyClassCode(void) {
         m_EmptyClassCode = true;

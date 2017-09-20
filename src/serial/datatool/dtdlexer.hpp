@@ -46,8 +46,8 @@ public:
     virtual ~DTDLexer(void);
 
 protected:
-    virtual TToken LookupToken(void);
-    virtual void LookupComments(void);
+    virtual TToken LookupToken(void) override;
+    virtual void LookupComments(void) override;
     virtual TToken LookupKeyword(void);
 
     bool   ProcessComment(bool sgml_type=false);

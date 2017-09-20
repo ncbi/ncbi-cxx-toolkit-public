@@ -61,16 +61,16 @@ public:
 
     void SetEnumNamespace(const CNamespace& ns);
 
-    EKind GetKind(void) const;
-    const string& GetEnumName(void) const;
+    virtual EKind GetKind(void) const override;
+    virtual const string& GetEnumName(void) const override;
 
-    string GetCType(const CNamespace& ns) const;
-    string GetPrefixedCType(const CNamespace& ns,
-                            const string& methodPrefix) const;
-    string GetRef(const CNamespace& ns) const;
-    string GetInitializer(void) const;
+    virtual string GetCType(const CNamespace& ns) const override;
+    virtual string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const override;
+    virtual string GetRef(const CNamespace& ns) const override;
+    virtual string GetInitializer(void) const override;
 
-    void GenerateTypeCode(CClassContext& ctx) const;
+    virtual void GenerateTypeCode(CClassContext& ctx) const override;
 
     void SetBitset(bool bitset) {
         m_IsBitset = bitset;
@@ -99,17 +99,17 @@ public:
                         const string& fileName,
                         const CComments& comments);
 
-    EKind GetKind(void) const;
-    const CNamespace& GetNamespace(void) const;
-    const string& GetEnumName(void) const;
+    virtual EKind GetKind(void) const override;
+    virtual const CNamespace& GetNamespace(void) const override;
+    virtual const string& GetEnumName(void) const override;
 
-    string GetCType(const CNamespace& ns) const;
-    string GetPrefixedCType(const CNamespace& ns,
-                            const string& methodPrefix) const;
-    string GetRef(const CNamespace& ns) const;
-    string GetInitializer(void) const;
+    virtual string GetCType(const CNamespace& ns) const override;
+    virtual string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const override;
+    virtual string GetRef(const CNamespace& ns) const override;
+    virtual string GetInitializer(void) const override;
 
-    void GenerateTypeCode(CClassContext& ctx) const;
+    virtual void GenerateTypeCode(CClassContext& ctx) const override;
 
 private:
     string m_EnumName;

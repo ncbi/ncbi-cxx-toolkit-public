@@ -71,7 +71,7 @@ public:
         {
         }
 
-    TTypeInfo GetTypeInfo(void);
+    virtual TTypeInfo GetTypeInfo(void) override;
 
 private:
     CDataType* m_Type;

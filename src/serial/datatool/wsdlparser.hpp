@@ -51,9 +51,9 @@ public:
     virtual ~WSDLParser(void);
 
 protected:
-    virtual void BuildDocumentTree(CDataTypeModule& module);
+    virtual void BuildDocumentTree(CDataTypeModule& module) override;
     virtual void BuildDataTree(AutoPtr<CFileModules>& modules,
-                               AutoPtr<CDataTypeModule>& module);
+                               AutoPtr<CDataTypeModule>& module) override;
 
     void ParseHeader(void);
 
@@ -79,7 +79,7 @@ protected:
     void ParseService(void);
     
     virtual AbstractLexer* CreateEntityLexer(
-        CNcbiIstream& in, const string& name, bool autoDelete=true);
+        CNcbiIstream& in, const string& name, bool autoDelete=true) override;
 
 private:
     void ProcessEndpointTypes(void);

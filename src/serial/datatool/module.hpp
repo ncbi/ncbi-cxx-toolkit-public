@@ -83,7 +83,7 @@ public:
     void AddImports(const string& module, const list<string>& types);
 
     void SetSubnamespace(const string& sub_ns);
-    virtual const CNamespace& GetNamespace(void) const;
+    virtual const CNamespace& GetNamespace(void) const override;
 
     void PrintSampleDEF(CNcbiOstream& out) const;
     virtual void PrintASN(CNcbiOstream& out) const;

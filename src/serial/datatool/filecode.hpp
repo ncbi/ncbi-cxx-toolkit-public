@@ -69,7 +69,7 @@ public:
     CFileCode(const CCodeGenerator* codeGenerator,const string& baseName);
     ~CFileCode(void);
 
-    const CNamespace& GetNamespace(void) const;
+    virtual const CNamespace& GetNamespace(void) const override;
 
     bool AddType(const CDataType* type);
 
@@ -93,13 +93,13 @@ public:
     string GetBaseHPPDefine(void) const;
     string GetUserHPPDefine(void) const;
 
-    string GetMethodPrefix(void) const;
-    TIncludes& HPPIncludes(void);
-    TIncludes& CPPIncludes(void);
-    void AddForwardDeclaration(const string& className, const CNamespace& ns);
-    void AddHPPCode(const CNcbiOstrstream& code);
-    void AddINLCode(const CNcbiOstrstream& code);
-    void AddCPPCode(const CNcbiOstrstream& code);
+    virtual string GetMethodPrefix(void) const override;
+    virtual TIncludes& HPPIncludes(void) override;
+    virtual TIncludes& CPPIncludes(void) override;
+    virtual void AddForwardDeclaration(const string& className, const CNamespace& ns) override;
+    virtual void AddHPPCode(const CNcbiOstrstream& code) override;
+    virtual void AddINLCode(const CNcbiOstrstream& code) override;
+    virtual void AddCPPCode(const CNcbiOstrstream& code) override;
 
     void UseQuotedForm(bool use);
     void CreateFileFolder(const string& fileName) const;

@@ -49,32 +49,32 @@ public:
                       const CComments& comments);
     ~CAliasTypeStrings(void);
 
-    EKind GetKind(void) const;
+    virtual EKind GetKind(void) const override;
 
-    string GetCType(const CNamespace& ns) const;
-    string GetPrefixedCType(const CNamespace& ns,
-                            const string& methodPrefix) const;
-    bool HaveSpecialRef(void) const;
-    string GetRef(const CNamespace& ns) const;
+    virtual string GetCType(const CNamespace& ns) const override;
+    virtual string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const override;
+    virtual bool HaveSpecialRef(void) const override;
+    virtual string GetRef(const CNamespace& ns) const override;
 
-    bool CanBeKey(void) const;
-    bool CanBeCopied(void) const;
+    virtual bool CanBeKey(void) const override;
+    virtual bool CanBeCopied(void) const override;
     // bool NeedSetFlag(void) const;
 
-    string NewInstance(const string& init, const string& place) const;
+    virtual string NewInstance(const string& init, const string& place) const override;
 
-    string GetInitializer(void) const;
-    string GetDestructionCode(const string& expr) const;
-    string GetIsSetCode(const string& var) const;
-    string GetResetCode(const string& var) const;
-    string GetDefaultCode(const string& var) const;
+    virtual string GetInitializer(void) const override;
+    virtual string GetDestructionCode(const string& expr) const override;
+    virtual string GetIsSetCode(const string& var) const override;
+    virtual string GetResetCode(const string& var) const override;
+    virtual string GetDefaultCode(const string& var) const override;
 
-    void GenerateCode(CClassContext& ctx) const;
-    void GenerateUserHPPCode(CNcbiOstream& out) const;
-    void GenerateUserCPPCode(CNcbiOstream& out) const;
+    virtual void GenerateCode(CClassContext& ctx) const override;
+    virtual void GenerateUserHPPCode(CNcbiOstream& out) const override;
+    virtual void GenerateUserCPPCode(CNcbiOstream& out) const override;
 
-    void GenerateTypeCode(CClassContext& ctx) const;
-    void GeneratePointerTypeCode(CClassContext& ctx) const;
+    virtual void GenerateTypeCode(CClassContext& ctx) const override;
+    virtual void GeneratePointerTypeCode(CClassContext& ctx) const override;
 
     string GetClassName(void) const;
     string GetExternalName(void) const;
@@ -104,32 +104,32 @@ public:
                          CTypeStrings& ref_type,
                          const CComments& comments);
 
-    EKind GetKind(void) const;
+    virtual EKind GetKind(void) const override;
 
-    string GetCType(const CNamespace& ns) const;
-    string GetPrefixedCType(const CNamespace& ns,
-                            const string& methodPrefix) const;
-    bool HaveSpecialRef(void) const;
-    string GetRef(const CNamespace& ns) const;
+    virtual string GetCType(const CNamespace& ns) const override;
+    virtual string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const override;
+    virtual bool HaveSpecialRef(void) const override;
+    virtual string GetRef(const CNamespace& ns) const override;
 
-    bool CanBeKey(void) const;
-    bool CanBeCopied(void) const;
+    virtual bool CanBeKey(void) const override;
+    virtual bool CanBeCopied(void) const override;
     // bool NeedSetFlag(void) const;
 
-    const CNamespace& GetNamespace(void) const;
+    virtual const CNamespace& GetNamespace(void) const override;
 
-    string GetInitializer(void) const;
-    string GetDestructionCode(const string& expr) const;
-    string GetIsSetCode(const string& var) const;
-    string GetResetCode(const string& var) const;
-    string GetDefaultCode(const string& var) const;
+    virtual string GetInitializer(void) const override;
+    virtual string GetDestructionCode(const string& expr) const override;
+    virtual string GetIsSetCode(const string& var) const override;
+    virtual string GetResetCode(const string& var) const override;
+    virtual string GetDefaultCode(const string& var) const override;
 
-    virtual void GenerateCode(CClassContext& ctx) const;
-    virtual void GenerateUserHPPCode(CNcbiOstream& out) const;
-    virtual void GenerateUserCPPCode(CNcbiOstream& out) const;
+    virtual void GenerateCode(CClassContext& ctx) const override;
+    virtual void GenerateUserHPPCode(CNcbiOstream& out) const override;
+    virtual void GenerateUserCPPCode(CNcbiOstream& out) const override;
 
-    virtual void GenerateTypeCode(CClassContext& ctx) const;
-    virtual void GeneratePointerTypeCode(CClassContext& ctx) const;
+    virtual void GenerateTypeCode(CClassContext& ctx) const override;
+    virtual void GeneratePointerTypeCode(CClassContext& ctx) const override;
 
 private:
     string m_ClassName;

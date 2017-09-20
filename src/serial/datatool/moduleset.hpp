@@ -77,7 +77,7 @@ public:
     void BeginXMLSchema(CNcbiOstream& out) const;
     void EndXMLSchema(CNcbiOstream& out) const;
 
-    const string& GetSourceFileName(void) const;
+    virtual const string& GetSourceFileName(void) const override;
     string GetFileNamePrefix(void) const;
 
     void AddModule(const AutoPtr<CDataTypeModule>& module);

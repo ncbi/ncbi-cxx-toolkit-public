@@ -42,28 +42,28 @@ class CReferenceDataType : public CDataType {
 public:
     CReferenceDataType(const string& n, bool ref_to_parent=false);
 
-    void PrintASN(CNcbiOstream& out, int indent) const override;
-    virtual string      GetSpecKeyword(void) const;
-    void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
-    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const override;
-    void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const override;
-    void PrintDTDExtra(CNcbiOstream& out) const;
+    virtual void PrintASN(CNcbiOstream& out, int indent) const override;
+    virtual string GetSpecKeyword(void) const override;
+    virtual void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
+    virtual void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const override;
+    virtual void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const override;
+    virtual void PrintDTDExtra(CNcbiOstream& out) const override;
 
-    void FixTypeTree(void) const;
-    bool CheckType(void) const;
-    bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const override;
-    string GetDefaultString(const CDataValue& value) const;
+    virtual void FixTypeTree(void) const override;
+    virtual bool CheckType(void) const override;
+    virtual bool CheckValue(const CDataValue& value) const override;
+    virtual TObjectPtr CreateDefault(const CDataValue& value) const override;
+    virtual string GetDefaultString(const CDataValue& value) const override;
 
-    const CTypeInfo* GetRealTypeInfo(void);
-    CTypeInfo* CreateTypeInfo(void);
+    virtual const CTypeInfo* GetRealTypeInfo(void) override;
+    virtual CTypeInfo* CreateTypeInfo(void) override;
 
-    AutoPtr<CTypeStrings> GenerateCode(void) const;
-    AutoPtr<CTypeStrings> GetRefCType(void) const;
-    AutoPtr<CTypeStrings> GetFullCType(void) const;
+    virtual AutoPtr<CTypeStrings> GenerateCode(void) const override;
+    virtual AutoPtr<CTypeStrings> GetRefCType(void) const override;
+    virtual AutoPtr<CTypeStrings> GetFullCType(void) const override;
 
-    virtual const CDataType* Resolve(void) const; // resolve or this
-    virtual CDataType* Resolve(void); // resolve or this
+    virtual const CDataType* Resolve(void) const override; // resolve or this
+    virtual CDataType* Resolve(void) override; // resolve or this
 
     const string& GetUserTypeName(void) const
         {

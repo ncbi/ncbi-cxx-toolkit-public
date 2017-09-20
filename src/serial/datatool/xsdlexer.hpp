@@ -49,8 +49,8 @@ public:
     TToken Skip(void);
 
 protected:
-    virtual TToken LookupToken(void);
-    virtual TToken LookupKeyword(void);
+    virtual TToken LookupToken(void) override;
+    virtual TToken LookupKeyword(void) override;
 
     TToken LookupLexeme(void);
     TToken LookupEndOfTag(void);

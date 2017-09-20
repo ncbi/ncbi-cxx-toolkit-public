@@ -51,8 +51,8 @@ public:
     virtual ~JSDParser(void);
 
 protected:
-    virtual void BeginDocumentTree(void);
-    virtual void BuildDocumentTree(CDataTypeModule& module);
+    virtual void BeginDocumentTree(void) override;
+    virtual void BuildDocumentTree(CDataTypeModule& module) override;
 
     void ParseRoot(void);
     void ParseObjectContent(DTDElement* owner);

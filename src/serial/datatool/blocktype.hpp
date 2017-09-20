@@ -129,19 +129,19 @@ class CDataMemberContainerType : public CDataType {
 public:
     typedef list< AutoPtr<CDataMember> > TMembers;
 
-    void PrintASN(CNcbiOstream& out, int indent) const override;
-    void PrintSpecDumpExtra(CNcbiOstream& out, int indent) const;
-    void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
-    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const override;
-    void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const override;
-    void PrintDTDExtra(CNcbiOstream& out) const;
+    virtual void PrintASN(CNcbiOstream& out, int indent) const override;
+    virtual void PrintSpecDumpExtra(CNcbiOstream& out, int indent) const override;
+    virtual void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
+    virtual void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const override;
+    virtual void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const override;
+    virtual void PrintDTDExtra(CNcbiOstream& out) const override;
 
-    void FixTypeTree(void) const;
-    bool CheckType(void) const;
+    virtual void FixTypeTree(void) const override;
+    virtual bool CheckType(void) const override;
 
     void AddMember(const AutoPtr<CDataMember>& member);
 
-    TObjectPtr CreateDefault(const CDataValue& value) const override;
+    virtual TObjectPtr CreateDefault(const CDataValue& value) const override;
 
     virtual const char* XmlMemberSeparator(void) const = 0;
 
@@ -164,14 +164,14 @@ protected:
 class CDataContainerType : public CDataMemberContainerType {
     typedef CDataMemberContainerType CParent;
 public:
-    CTypeInfo* CreateTypeInfo(void);
+    virtual CTypeInfo* CreateTypeInfo(void) override;
     
-    virtual const char* XmlMemberSeparator(void) const;
+    virtual const char* XmlMemberSeparator(void) const override;
 
-    AutoPtr<CTypeStrings> GenerateCode(void) const;
-    AutoPtr<CTypeStrings> GetFullCType(void) const;
-    AutoPtr<CTypeStrings> GetRefCType(void) const;
-    virtual string      GetSpecKeyword(void) const;
+    virtual AutoPtr<CTypeStrings> GenerateCode(void) const override;
+    virtual AutoPtr<CTypeStrings> GetFullCType(void) const override;
+    virtual AutoPtr<CTypeStrings> GetRefCType(void) const override;
+    virtual string      GetSpecKeyword(void) const override;
 
 protected:
     AutoPtr<CTypeStrings> AddMembers(AutoPtr<CClassTypeStrings>& code) const;
@@ -181,22 +181,22 @@ protected:
 class CDataSetType : public CDataContainerType {
     typedef CDataContainerType CParent;
 public:
-    bool CheckValue(const CDataValue& value) const;
+    virtual bool CheckValue(const CDataValue& value) const override;
 
     virtual const char* GetASNKeyword(void) const override;
-    virtual const char* GetDEFKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const override;
 
 protected:
-    CClassTypeInfo* CreateClassInfo(void);
+    virtual CClassTypeInfo* CreateClassInfo(void) override;
 };
 
 class CDataSequenceType : public CDataContainerType {
     typedef CDataContainerType CParent;
 public:
-    bool CheckValue(const CDataValue& value) const;
+    virtual bool CheckValue(const CDataValue& value) const override;
 
     virtual const char* GetASNKeyword(void) const override;
-    virtual const char* GetDEFKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const override;
 };
 
 class CWsdlDataType : public CDataContainerType {
@@ -222,14 +222,14 @@ public:
         return m_Type;
     }
 
-    virtual AutoPtr<CTypeStrings> GetFullCType(void) const;
+    virtual AutoPtr<CTypeStrings> GetFullCType(void) const override;
 
-    void       PrintASN(CNcbiOstream&, int)     const  override { }
-    void       PrintJSONSchema(CNcbiOstream&, int, list<string>&, bool)     const override { }
-    void       PrintXMLSchema(CNcbiOstream&, int, bool)     const  override { }
-    void       PrintDTDElement(CNcbiOstream&, bool)   const  override { }
-    bool       CheckValue(const CDataValue&)    const { return false; }
-    TObjectPtr CreateDefault(const CDataValue&) const  override { return 0; }
+    virtual void PrintASN(CNcbiOstream&, int)     const override { }
+    virtual void PrintJSONSchema(CNcbiOstream&, int, list<string>&, bool) const override { }
+    virtual void PrintXMLSchema(CNcbiOstream&, int, bool) const override { }
+    virtual void PrintDTDElement(CNcbiOstream&, bool) const override { }
+    virtual bool CheckValue(const CDataValue&) const override { return false; }
+    virtual TObjectPtr CreateDefault(const CDataValue&) const override { return 0; }
 
 private:
     EType m_Type;

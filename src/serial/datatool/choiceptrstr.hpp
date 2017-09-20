@@ -61,11 +61,11 @@ public:
     void AddVariant(const string& name, AutoPtr<CTypeStrings> type);
 
 protected:
-    void GenerateClassCode(CClassCode& code,
+    virtual void GenerateClassCode(CClassCode& code,
                            CNcbiOstream& getters,
                            const string& methodPrefix,
                            bool haveUserClass,
-                           const string& classPrefix) const;
+                           const string& classPrefix) const override;
 
 private:                             
     TVariants m_Variants;
@@ -78,7 +78,7 @@ public:
     CChoicePtrRefTypeStrings(CTypeStrings* type);
     CChoicePtrRefTypeStrings(AutoPtr<CTypeStrings> type);
 
-    string GetRef(const CNamespace& ns) const;
+    virtual string GetRef(const CNamespace& ns) const override;
 };
 
 

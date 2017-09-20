@@ -51,19 +51,19 @@ public:
             return m_DataTypeStr.get();
         }
 
-    void GenerateTypeCode(CClassContext& ctx) const;
+    virtual void GenerateTypeCode(CClassContext& ctx) const override;
 
-    EKind GetKind(void) const;
+    virtual EKind GetKind(void) const override;
 
-    string GetCType(const CNamespace& ns) const;
-    string GetPrefixedCType(const CNamespace& ns,
-                            const string& methodPrefix) const;
-    string GetRef(const CNamespace& ns) const;
+    virtual string GetCType(const CNamespace& ns) const override;
+    virtual string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const override;
+    virtual string GetRef(const CNamespace& ns) const override;
 
-    string GetInitializer(void) const;
-    string GetDestructionCode(const string& expr) const;
-    string GetIsSetCode(const string& var) const;
-    string GetResetCode(const string& var) const;
+    virtual string GetInitializer(void) const override;
+    virtual string GetDestructionCode(const string& expr) const override;
+    virtual string GetIsSetCode(const string& var) const override;
+    virtual string GetResetCode(const string& var) const override;
 
 private:
     AutoPtr<CTypeStrings> m_DataTypeStr;
@@ -77,17 +77,17 @@ public:
     CRefTypeStrings(AutoPtr<CTypeStrings> type);
     ~CRefTypeStrings(void);
 
-    EKind GetKind(void) const;
+    virtual EKind GetKind(void) const override;
 
-    string GetCType(const CNamespace& ns) const;
-    string GetPrefixedCType(const CNamespace& ns,
-                            const string& methodPrefix) const;
-    string GetRef(const CNamespace& ns) const;
+    virtual string GetCType(const CNamespace& ns) const override;
+    virtual string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const override;
+    virtual string GetRef(const CNamespace& ns) const override;
 
-    string GetInitializer(void) const;
-    string GetDestructionCode(const string& expr) const;
-    string GetIsSetCode(const string& var) const;
-    string GetResetCode(const string& var) const;
+    virtual string GetInitializer(void) const override;
+    virtual string GetDestructionCode(const string& expr) const override;
+    virtual string GetIsSetCode(const string& var) const override;
+    virtual string GetResetCode(const string& var) const override;
 };
 
 END_NCBI_SCOPE

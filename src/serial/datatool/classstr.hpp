@@ -118,12 +118,12 @@ public:
                       noPrefix,false,false,false,0,nonEmpty,CComments());
         }
 
-    string GetCType(const CNamespace& ns) const;
-    string GetPrefixedCType(const CNamespace& ns,
-                            const string& methodPrefix) const;
-    string GetRef(const CNamespace& ns) const;
+    virtual string GetCType(const CNamespace& ns) const override;
+    virtual string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const override;
+    virtual string GetRef(const CNamespace& ns) const override;
 
-    EKind GetKind(void) const;
+    virtual EKind GetKind(void) const override;
 
     void SetObject(bool isObject)
         {
@@ -148,11 +148,11 @@ public:
             m_HaveTypeInfo = haveTypeInfo;
         }
 
-    void GenerateTypeCode(CClassContext& ctx) const;
-    string GetResetCode(const string& var) const;
+    virtual void GenerateTypeCode(CClassContext& ctx) const override;
+    virtual string GetResetCode(const string& var) const override;
 
-    void GenerateUserHPPCode(CNcbiOstream& out) const;
-    void GenerateUserCPPCode(CNcbiOstream& out) const;
+    virtual void GenerateUserHPPCode(CNcbiOstream& out) const override;
+    virtual void GenerateUserCPPCode(CNcbiOstream& out) const override;
 
 protected:
     virtual void GenerateClassCode(CClassCode& code,
@@ -186,18 +186,18 @@ public:
                          const CComments& comments);
 
     string GetClassName(void) const;
-    string GetCType(const CNamespace& ns) const;
-    string GetPrefixedCType(const CNamespace& ns,
-                            const string& methodPrefix) const;
-    string GetRef(const CNamespace& ns) const;
+    virtual string GetCType(const CNamespace& ns) const override;
+    virtual string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const override;
+    virtual string GetRef(const CNamespace& ns) const override;
 
-    EKind GetKind(void) const;
-    const CNamespace& GetNamespace(void) const;
+    virtual EKind GetKind(void) const override;
+    virtual const CNamespace& GetNamespace(void) const override;
 
-    string GetResetCode(const string& var) const;
+    virtual string GetResetCode(const string& var) const override;
 
-    void GenerateTypeCode(CClassContext& ctx) const;
-    void GeneratePointerTypeCode(CClassContext& ctx) const;
+    virtual void GenerateTypeCode(CClassContext& ctx) const override;
+    virtual void GeneratePointerTypeCode(CClassContext& ctx) const override;
 
 private:
     string m_ClassName;
@@ -214,10 +214,10 @@ public:
                       const CComments& comments);
     ~CWsdlTypeStrings(void);
 
-    void GenerateTypeCode(CClassContext& ctx) const;
-    void GenerateClassCode( CClassCode& code, CNcbiOstream& setters,
+    virtual void GenerateTypeCode(CClassContext& ctx) const override;
+    virtual void GenerateClassCode( CClassCode& code, CNcbiOstream& setters,
         const string& methodPrefix, bool haveUserClass,
-        const string& classPrefix) const;
+        const string& classPrefix) const override;
 };
 
 END_NCBI_SCOPE

@@ -110,7 +110,7 @@ public:
     CEnumDataType(void);
     virtual bool IsInteger(void) const;
     virtual const char* GetASNKeyword(void) const override;
-    virtual const char* GetDEFKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const override;
     virtual string GetXMLContents(void) const;
 
     TValue& AddValue(const string& name, TEnumValueType value);
@@ -119,16 +119,16 @@ public:
             return m_Values;
         }
 
-    void PrintASN(CNcbiOstream& out, int indent) const override;
-    virtual void PrintSpecDumpExtra(CNcbiOstream& out, int indent) const;
-    void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
-    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const override;
-    void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const override;
-    void PrintDTDExtra(CNcbiOstream& out) const;
+    virtual void PrintASN(CNcbiOstream& out, int indent) const override;
+    virtual void PrintSpecDumpExtra(CNcbiOstream& out, int indent) const override;
+    virtual void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
+    virtual void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const override;
+    virtual void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const override;
+    virtual void PrintDTDExtra(CNcbiOstream& out) const override;
 
-    bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const override;
-    virtual string GetDefaultString(const CDataValue& value) const;
+    virtual bool CheckValue(const CDataValue& value) const override;
+    virtual TObjectPtr CreateDefault(const CDataValue& value) const override;
+    virtual string GetDefaultString(const CDataValue& value) const override;
     virtual string GetXmlValueName(const string& value) const;
 
     struct SEnumCInfo {
@@ -153,10 +153,10 @@ public:
 
 public:
 
-    CTypeInfo* CreateTypeInfo(void);
-    AutoPtr<CTypeStrings> GetRefCType(void) const;
-    AutoPtr<CTypeStrings> GetFullCType(void) const;
-    AutoPtr<CTypeStrings> GenerateCode(void) const;
+    virtual CTypeInfo* CreateTypeInfo(void) override;
+    virtual AutoPtr<CTypeStrings> GetRefCType(void) const override;
+    virtual AutoPtr<CTypeStrings> GetFullCType(void) const override;
+    virtual AutoPtr<CTypeStrings> GenerateCode(void) const override;
 
 private:
     TValues m_Values;
@@ -166,17 +166,17 @@ private:
 class CIntEnumDataType : public CEnumDataType {
     typedef CEnumDataType CParent;
 public:
-    virtual bool IsInteger(void) const;
+    virtual bool IsInteger(void) const override;
     virtual const char* GetASNKeyword(void) const override;
-    virtual const char* GetDEFKeyword(void) const;
-    virtual string GetXmlValueName(const string& value) const;
+    virtual const char* GetDEFKeyword(void) const override;
+    virtual string GetXmlValueName(const string& value) const override;
 };
 
 class CBigIntEnumDataType : public CIntEnumDataType {
     typedef CIntEnumDataType CParent;
 public:
     virtual const char* GetASNKeyword(void) const override;
-    virtual const char* GetDEFKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const override;
 };
 
 END_NCBI_SCOPE

@@ -58,8 +58,8 @@ public:
     };
 
 protected:
-    virtual void BeginDocumentTree(void);
-    virtual void BuildDocumentTree(CDataTypeModule& module);
+    virtual void BeginDocumentTree(void) override;
+    virtual void BuildDocumentTree(CDataTypeModule& module) override;
     void Reset(void);
     TToken GetNextToken(void);
 
@@ -121,10 +121,10 @@ protected:
 
     void BeginScope(DTDEntity* ent);
     void EndScope(void);
-    virtual DTDEntity* PushEntityLexer(const string& name);
-    virtual bool PopEntityLexer(void);
+    virtual DTDEntity* PushEntityLexer(const string& name) override;
+    virtual bool PopEntityLexer(void) override;
     virtual AbstractLexer* CreateEntityLexer(
-        CNcbiIstream& in, const string& name, bool autoDelete=true);
+        CNcbiIstream& in, const string& name, bool autoDelete=true) override;
 
 #if defined(NCBI_DTDPARSER_TRACE)
     virtual void PrintDocumentTree(void);

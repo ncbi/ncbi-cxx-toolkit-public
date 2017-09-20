@@ -142,7 +142,7 @@ public:
     bool Imported(const CDataType* type) const;
 
     // generation interface
-    const CMemoryRegistry& GetConfig(void) const;
+    virtual const CMemoryRegistry& GetConfig(void) const override;
     string GetFileNamePrefix(void) const;
     void UseQuotedForm(bool use);
     void CreateCvsignore(bool create);
@@ -154,7 +154,7 @@ public:
 
     void SetDefaultNamespace(const string& ns);
     void ResetDefaultNamespace(void);
-    const CNamespace& GetNamespace(void) const;
+    virtual const CNamespace& GetNamespace(void) const override;
 
     CDataType* ExternalResolve(const string& module, const string& type,
                                bool allowInternal = false) const;

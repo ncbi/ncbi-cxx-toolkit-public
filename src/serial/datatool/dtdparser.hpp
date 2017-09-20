@@ -74,7 +74,7 @@ public:
     };
         
     AutoPtr<CFileModules> Modules(const string& fileName);
-    virtual void EndCommentBlock(void);
+    virtual void EndCommentBlock(void) override;
 
 protected:
     void Module(AutoPtr<CFileModules>& modules, const string& name);
@@ -85,7 +85,7 @@ protected:
                                AutoPtr<CDataTypeModule>& module);
     void SkipConditionalSection(void);
 
-    virtual string GetLocation(void);
+    virtual string GetLocation(void) override;
 
     TToken GetNextToken(void);
     string GetNextTokenText(void);

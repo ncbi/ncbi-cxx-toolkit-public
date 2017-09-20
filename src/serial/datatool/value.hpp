@@ -75,8 +75,8 @@ private:
 class CNullDataValue : public CDataValue {
 public:
     ~CNullDataValue(void);
-    void PrintASN(CNcbiOstream& out, int indent) const override;
-    virtual string GetXmlString(void) const;
+    virtual void PrintASN(CNcbiOstream& out, int indent) const override;
+    virtual string GetXmlString(void) const override;
 };
 
 template<typename Type>
@@ -92,8 +92,8 @@ public:
         {
         }
 
-    void PrintASN(CNcbiOstream& out, int indent) const override;
-    virtual string GetXmlString(void) const;
+    virtual void PrintASN(CNcbiOstream& out, int indent) const override;
+    virtual string GetXmlString(void) const override;
 
     const TValueType& GetValue(void) const
         {
@@ -117,8 +117,8 @@ public:
         }
     ~CBitStringDataValue(void);
 
-    void PrintASN(CNcbiOstream& out, int indent) const override;
-    virtual string GetXmlString(void) const;
+    virtual void PrintASN(CNcbiOstream& out, int indent) const override;
+    virtual string GetXmlString(void) const override;
 };
 
 class CIdDataValue : public CStringDataValue {
@@ -129,8 +129,8 @@ public:
         }
     ~CIdDataValue(void);
 
-    void PrintASN(CNcbiOstream& out, int indent) const override;
-    virtual string GetXmlString(void) const;
+    virtual void PrintASN(CNcbiOstream& out, int indent) const override;
+    virtual string GetXmlString(void) const override;
 };
 
 class CNamedDataValue : public CDataValue {
@@ -141,8 +141,8 @@ public:
         }
     ~CNamedDataValue(void);
 
-    void PrintASN(CNcbiOstream& out, int indent) const override;
-    virtual string GetXmlString(void) const;
+    virtual void PrintASN(CNcbiOstream& out, int indent) const override;
+    virtual string GetXmlString(void) const override;
 
     const string& GetName(void) const
         {
@@ -158,7 +158,7 @@ public:
             return *m_Value;
         }
 
-    virtual bool IsComplex(void) const;
+    virtual bool IsComplex(void) const override;
 
 private:
     string m_Name;
@@ -171,8 +171,8 @@ public:
 
     ~CBlockDataValue(void);
 
-    void PrintASN(CNcbiOstream& out, int indent) const override;
-    virtual string GetXmlString(void) const;
+    virtual void PrintASN(CNcbiOstream& out, int indent) const override;
+    virtual string GetXmlString(void) const override;
 
     TValues& GetValues(void)
         {
@@ -183,7 +183,7 @@ public:
             return m_Values;
         }
 
-    virtual bool IsComplex(void) const;
+    virtual bool IsComplex(void) const override;
 
 private:
     TValues m_Values;

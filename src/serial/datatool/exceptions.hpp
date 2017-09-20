@@ -56,7 +56,7 @@ public:
         eIllegalCall,
         eForbidden
     };
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
         case eNotImplemented: return "eNotImplemented";
@@ -78,7 +78,7 @@ public:
         eType,
         eModule
     };
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
         case eType:   return "eType";
@@ -95,7 +95,7 @@ public:
     enum EErrCode {
         eAmbiguious
     };
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
         case eAmbiguious:    return "eAmbiguious";

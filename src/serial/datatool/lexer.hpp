@@ -60,8 +60,8 @@ public:
         }
 
 protected:
-    TToken LookupToken(void);
-    void LookupComments(void);
+    virtual TToken LookupToken(void) override;
+    virtual void LookupComments(void) override;
 
     void StartString(void);
     void AddStringChar(char c);

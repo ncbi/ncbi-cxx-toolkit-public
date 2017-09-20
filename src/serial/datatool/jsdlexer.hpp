@@ -47,11 +47,11 @@ public:
 
 protected:
     void SkipWhitespace(void);
-    virtual void LookupComments(void);
-    virtual TToken LookupToken(void);
+    virtual void LookupComments(void) override;
+    virtual TToken LookupToken(void) override;
     TToken LookupNumber(void);
     void LookupIdentifier(void);
-    TToken LookupKeyword(void);
+    virtual TToken LookupKeyword(void) override;
 };
 
 END_NCBI_SCOPE

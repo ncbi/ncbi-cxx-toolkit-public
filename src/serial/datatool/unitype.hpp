@@ -42,18 +42,18 @@ class CUniSequenceDataType : public CDataType {
 public:
     CUniSequenceDataType(const AutoPtr<CDataType>& elementType);
 
-    void PrintASN(CNcbiOstream& out, int indent) const override;
-    void PrintSpecDumpExtra(CNcbiOstream& out, int indent) const;
-    void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
-    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const override;
-    void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const override;
-    void PrintDTDExtra(CNcbiOstream& out) const;
+    virtual void PrintASN(CNcbiOstream& out, int indent) const override;
+    virtual void PrintSpecDumpExtra(CNcbiOstream& out, int indent) const override;
+    virtual void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
+    virtual void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const override;
+    virtual void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const override;
+    virtual void PrintDTDExtra(CNcbiOstream& out) const override;
 
-    void FixTypeTree(void) const;
-    bool CheckType(void) const;
-    bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const override;
-    virtual string GetDefaultString(const CDataValue& value) const;
+    virtual void FixTypeTree(void) const override;
+    virtual bool CheckType(void) const override;
+    virtual bool CheckValue(const CDataValue& value) const override;
+    virtual TObjectPtr CreateDefault(const CDataValue& value) const override;
+    virtual string GetDefaultString(const CDataValue& value) const override;
 
     CDataType* GetElementType(void)
         {
@@ -65,13 +65,13 @@ public:
         }
     void SetElementType(const AutoPtr<CDataType>& type);
 
-    CTypeInfo* CreateTypeInfo(void);
-    bool NeedAutoPointer(const CTypeInfo* typeInfo) const;
+    virtual CTypeInfo* CreateTypeInfo(void) override;
+    virtual bool NeedAutoPointer(const CTypeInfo* typeInfo) const override;
     
-    AutoPtr<CTypeStrings> GetFullCType(void) const;
-    virtual const char* GetASNKeyword(void) const;
-    virtual string      GetSpecKeyword(void) const;
-    virtual const char* GetDEFKeyword(void) const;
+    virtual AutoPtr<CTypeStrings> GetFullCType(void) const override;
+    virtual const char* GetASNKeyword(void) const override;
+    virtual string      GetSpecKeyword(void) const override;
+    virtual const char* GetDEFKeyword(void) const override;
 
     bool IsNonEmpty(void) const
         {
@@ -101,11 +101,11 @@ class CUniSetDataType : public CUniSequenceDataType {
 public:
     CUniSetDataType(const AutoPtr<CDataType>& elementType);
 
-    CTypeInfo* CreateTypeInfo(void);
+    virtual CTypeInfo* CreateTypeInfo(void) override;
     
-    AutoPtr<CTypeStrings> GetFullCType(void) const;
-    virtual const char* GetASNKeyword(void) const;
-    virtual const char* GetDEFKeyword(void) const;
+    virtual AutoPtr<CTypeStrings> GetFullCType(void) const override;
+    virtual const char* GetASNKeyword(void) const override;
+    virtual const char* GetDEFKeyword(void) const override;
 };
 
 END_NCBI_SCOPE

@@ -55,7 +55,7 @@ public:
                           const CDataType* dataType);
     ~CTemplate1TypeStrings(void);
 
-    EKind GetKind(void) const;
+    virtual EKind GetKind(void) const override;
 
     const string& GetTemplateName(void) const
         {
@@ -71,14 +71,14 @@ public:
             return m_Arg1Type.get();
         }
 
-    string GetCType(const CNamespace& ns) const;
-    string GetPrefixedCType(const CNamespace& ns,
-                            const string& methodPrefix) const;
-    string GetRef(const CNamespace& ns) const;
+    virtual string GetCType(const CNamespace& ns) const override;
+    virtual string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const override;
+    virtual string GetRef(const CNamespace& ns) const override;
 
-    string GetIsSetCode(const string& var) const;
+    virtual string GetIsSetCode(const string& var) const override;
 
-    void GenerateTypeCode(CClassContext& ctx) const;
+    virtual void GenerateTypeCode(CClassContext& ctx) const override;
 
 protected:
     void AddTemplateInclude(CClassContext::TIncludes& hpp) const;
@@ -104,8 +104,8 @@ public:
                     const CDataType* dataType);
     ~CSetTypeStrings(void);
 
-    string GetDestructionCode(const string& expr) const;
-    string GetResetCode(const string& var) const;
+    virtual string GetDestructionCode(const string& expr) const override;
+    virtual string GetResetCode(const string& var) const override;
 };
 
 class CListTypeStrings : public CTemplate1TypeStrings
@@ -119,11 +119,11 @@ public:
                      bool externalSet = false);
     ~CListTypeStrings(void);
 
-    string GetDestructionCode(const string& expr) const;
-    string GetResetCode(const string& var) const;
+    virtual string GetDestructionCode(const string& expr) const override;
+    virtual string GetResetCode(const string& var) const override;
 
 protected:
-    string GetRefTemplate(void) const;
+    virtual string GetRefTemplate(void) const override;
 
 private:
     bool m_ExternalSet;
@@ -145,12 +145,12 @@ public:
             return m_Arg2Type.get();
         }
 
-    string GetCType(const CNamespace& ns) const;
-    string GetPrefixedCType(const CNamespace& ns,
-                            const string& methodPrefix) const;
-    string GetRef(const CNamespace& ns) const;
+    virtual string GetCType(const CNamespace& ns) const override;
+    virtual string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const override;
+    virtual string GetRef(const CNamespace& ns) const override;
 
-    void GenerateTypeCode(CClassContext& ctx) const;
+    virtual void GenerateTypeCode(CClassContext& ctx) const override;
 
 private:
     AutoPtr<CTypeStrings> m_Arg2Type;
@@ -167,8 +167,8 @@ public:
                     const CDataType* dataType);
     ~CMapTypeStrings(void);
 
-    string GetDestructionCode(const string& expr) const;
-    string GetResetCode(const string& var) const;
+    virtual string GetDestructionCode(const string& expr) const override;
+    virtual string GetResetCode(const string& var) const override;
 };
 
 class CVectorTypeStrings : public CTypeStrings
@@ -181,16 +181,16 @@ public:
                        const CComments& comments);
     ~CVectorTypeStrings(void);
 
-    EKind GetKind(void) const;
+    virtual EKind GetKind(void) const override;
 
-    string GetCType(const CNamespace& ns) const;
-    string GetPrefixedCType(const CNamespace& ns,
-                            const string& methodPrefix) const;
-    string GetRef(const CNamespace& ns) const;
+    virtual string GetCType(const CNamespace& ns) const override;
+    virtual string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const override;
+    virtual string GetRef(const CNamespace& ns) const override;
 
-    void GenerateTypeCode(CClassContext& ctx) const;
+    virtual void GenerateTypeCode(CClassContext& ctx) const override;
 
-    string GetResetCode(const string& var) const;
+    virtual string GetResetCode(const string& var) const override;
 
 private:
     string m_CharType;

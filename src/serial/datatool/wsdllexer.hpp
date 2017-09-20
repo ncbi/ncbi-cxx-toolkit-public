@@ -50,7 +50,7 @@ public:
     }
 
 protected:
-    virtual TToken LookupKeyword(void);
+    virtual TToken LookupKeyword(void) override;
 
 private:
     bool m_UseXsd;

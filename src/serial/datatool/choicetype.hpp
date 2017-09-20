@@ -44,18 +44,18 @@ public:
     virtual void PrintASN(CNcbiOstream& out, int indent) const override;
     void PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only=false) const override;
 
-    void FixTypeTree(void) const;
-    bool CheckValue(const CDataValue& value) const;
+    virtual void FixTypeTree(void) const override;
+    virtual bool CheckValue(const CDataValue& value) const override;
 
-    virtual const char* XmlMemberSeparator(void) const;
+    virtual const char* XmlMemberSeparator(void) const override;
 
-    CTypeInfo* CreateTypeInfo(void);
-    AutoPtr<CTypeStrings> GenerateCode(void) const;
-    AutoPtr<CTypeStrings> GetRefCType(void) const;
-    AutoPtr<CTypeStrings> GetFullCType(void) const;
+    virtual CTypeInfo* CreateTypeInfo(void) override;
+    virtual AutoPtr<CTypeStrings> GenerateCode(void) const override;
+    virtual AutoPtr<CTypeStrings> GetRefCType(void) const override;
+    virtual AutoPtr<CTypeStrings> GetFullCType(void) const override;
     virtual const char* GetASNKeyword(void) const override;
-    virtual string      GetSpecKeyword(void) const;
-    virtual const char* GetDEFKeyword(void) const;
+    virtual string      GetSpecKeyword(void) const override;
+    virtual const char* GetDEFKeyword(void) const override;
 };
 
 END_NCBI_SCOPE
