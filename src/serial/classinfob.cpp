@@ -371,7 +371,7 @@ public:
 
     CPreReadHook(TPreReadFunction func);
 
-    void ReadObject(CObjectIStream& in, const CObjectInfo& object);
+    virtual void ReadObject(CObjectIStream& in, const CObjectInfo& object) override;
 
 private:
     TPreReadFunction m_PreRead;
@@ -397,7 +397,7 @@ public:
 
     CPostReadHook(TPostReadFunction func);
 
-    void ReadObject(CObjectIStream& in, const CObjectInfo& object);
+    virtual void ReadObject(CObjectIStream& in, const CObjectInfo& object) override;
 
 private:
     TPostReadFunction m_PostRead;
@@ -423,7 +423,7 @@ public:
 
     CPreWriteHook(TPreWriteFunction func);
 
-    void WriteObject(CObjectOStream& out, const CConstObjectInfo& object);
+    virtual void WriteObject(CObjectOStream& out, const CConstObjectInfo& object) override;
 
 private:
     TPreWriteFunction m_PreWrite;
@@ -449,7 +449,7 @@ public:
 
     CPostWriteHook(TPostWriteFunction func);
 
-    void WriteObject(CObjectOStream& out, const CConstObjectInfo& object);
+    virtual void WriteObject(CObjectOStream& out, const CConstObjectInfo& object) override;
 
 private:
     TPostWriteFunction m_PostWrite;

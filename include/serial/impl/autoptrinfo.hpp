@@ -49,7 +49,7 @@ class NCBI_XSERIAL_EXPORT CAutoPointerTypeInfo : public CPointerTypeInfo
 public:
     CAutoPointerTypeInfo(TTypeInfo type);
 
-    const string& GetModuleName(void) const;
+    virtual const string& GetModuleName(void) const override;
 
     static TTypeInfo GetTypeInfo(TTypeInfo base);
     static CTypeInfo* CreateTypeInfo(TTypeInfo base);

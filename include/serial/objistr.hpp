@@ -482,14 +482,14 @@ public:
     ///
     /// @return
     ///   string
-    virtual string GetStackTrace(void) const;
+    virtual string GetStackTrace(void) const override;
 
     /// Get current stream position as string.
     /// Useful for diagnostic and information messages.
     ///
     /// @return
     ///   string
-    virtual string GetPosition(void) const;
+    virtual string GetPosition(void) const override;
 
 //---------------------------------------------------------------------------
 // Local read hooks
@@ -817,7 +817,7 @@ public:
     // report unended block
     void Unended(const string& msg);
     // report unended object stack frame
-    virtual void UnendedFrame(void);
+    virtual void UnendedFrame(void) override;
     // report class member errors
     void DuplicatedMember(const CMemberInfo* memberInfo);
     bool ExpectedMember(const CMemberInfo* memberInfo);
@@ -1006,7 +1006,7 @@ protected:
     CObjectIStream(ESerialDataFormat format);
     CObjectIStream(CNcbiIstream& in, bool deleteIn = false);
     // reset state machine
-    virtual void ResetState(void);
+    virtual void ResetState(void) override;
 
     typedef size_t TObjectIndex;
     // low level readers
@@ -1019,7 +1019,7 @@ protected:
     void RegisterObject(TTypeInfo typeInfo);
     void RegisterObject(TObjectPtr object, TTypeInfo typeInfo);
     const CReadObjectInfo& GetRegisteredObject(TObjectIndex index);
-    virtual void x_SetPathHooks(bool set);
+    virtual void x_SetPathHooks(bool set) override;
     bool x_HavePathHooks() const;
     EFixNonPrint x_GetFixCharsMethodDefault(void) const;
     EFixNonPrint x_FixCharsMethod(void) const {

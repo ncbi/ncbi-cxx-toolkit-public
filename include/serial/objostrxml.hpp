@@ -82,7 +82,7 @@ public:
     ///
     /// @return
     ///   string
-    virtual string GetPosition(void) const;
+    virtual string GetPosition(void) const override;
 
     /// Set XML character encoding
     ///
@@ -267,112 +267,112 @@ public:
     ///
     /// @param flags
     ///   Formatting flag
-    virtual void SetFormattingFlags(TSerial_Format_Flags flags);
+    virtual void SetFormattingFlags(TSerial_Format_Flags flags) override;
 
-    virtual void WriteFileHeader(TTypeInfo type);
-    virtual void EndOfWrite(void);
+    virtual void WriteFileHeader(TTypeInfo type) override;
+    virtual void EndOfWrite(void) override;
 
 protected:
-    virtual void WriteBool(bool data);
-    virtual void WriteChar(char data);
-    virtual void WriteInt4(Int4 data);
-    virtual void WriteUint4(Uint4 data);
-    virtual void WriteInt8(Int8 data);
-    virtual void WriteUint8(Uint8 data);
-    virtual void WriteFloat(float data);
-    virtual void WriteDouble(double data);
+    virtual void WriteBool(bool data) override;
+    virtual void WriteChar(char data) override;
+    virtual void WriteInt4(Int4 data) override;
+    virtual void WriteUint4(Uint4 data) override;
+    virtual void WriteInt8(Int8 data) override;
+    virtual void WriteUint8(Uint8 data) override;
+    virtual void WriteFloat(float data) override;
+    virtual void WriteDouble(double data) override;
     void WriteDouble2(double data, unsigned digits);
-    virtual void WriteCString(const char* str);
+    virtual void WriteCString(const char* str) override;
     virtual void WriteString(const string& s,
-                             EStringType type = eStringTypeVisible);
-    virtual void WriteStringStore(const string& s);
+                             EStringType type = eStringTypeVisible) override;
+    virtual void WriteStringStore(const string& s) override;
     virtual void CopyString(CObjectIStream& in,
-                            EStringType type = eStringTypeVisible);
-    virtual void CopyStringStore(CObjectIStream& in);
+                            EStringType type = eStringTypeVisible) override;
+    virtual void CopyStringStore(CObjectIStream& in) override;
 
-    virtual void WriteNullPointer(void);
-    virtual void WriteObjectReference(TObjectIndex index);
-    virtual void WriteOtherBegin(TTypeInfo typeInfo);
-    virtual void WriteOtherEnd(TTypeInfo typeInfo);
-    virtual void WriteOther(TConstObjectPtr object, TTypeInfo typeInfo);
+    virtual void WriteNullPointer(void) override;
+    virtual void WriteObjectReference(TObjectIndex index) override;
+    virtual void WriteOtherBegin(TTypeInfo typeInfo) override;
+    virtual void WriteOtherEnd(TTypeInfo typeInfo) override;
+    virtual void WriteOther(TConstObjectPtr object, TTypeInfo typeInfo) override;
 
-    void WriteNull(void);
-    virtual void WriteAnyContentObject(const CAnyContentObject& obj);
-    virtual void CopyAnyContentObject(CObjectIStream& in);
+    virtual void WriteNull(void) override;
+    virtual void WriteAnyContentObject(const CAnyContentObject& obj) override;
+    virtual void CopyAnyContentObject(CObjectIStream& in) override;
 
-    virtual void WriteBitString(const CBitString& obj);
-    virtual void CopyBitString(CObjectIStream& in);
+    virtual void WriteBitString(const CBitString& obj) override;
+    virtual void CopyBitString(CObjectIStream& in) override;
 
     void WriteEscapedChar(char c);
     void WriteEncodedChar(const char*& src,
                           EStringType type = eStringTypeVisible);
 
     virtual void WriteEnum(const CEnumeratedTypeValues& values,
-                           TEnumValueType value);
+                           TEnumValueType value) override;
     virtual void CopyEnum(const CEnumeratedTypeValues& values,
-                          CObjectIStream& in);
+                          CObjectIStream& in) override;
     void WriteEnum(const CEnumeratedTypeValues& values,
                    TEnumValueType value, const string& valueName);
 
 #ifdef VIRTUAL_MID_LEVEL_IO
     virtual void WriteNamedType(TTypeInfo namedTypeInfo,
-                                TTypeInfo typeInfo, TConstObjectPtr object);
+                                TTypeInfo typeInfo, TConstObjectPtr object) override;
     virtual void CopyNamedType(TTypeInfo namedTypeInfo,
                                TTypeInfo typeInfo,
-                               CObjectStreamCopier& copier);
+                               CObjectStreamCopier& copier) override;
 
     virtual void WriteContainer(const CContainerTypeInfo* containerType,
-                                TConstObjectPtr containerPtr);
+                                TConstObjectPtr containerPtr) override;
 
     virtual void WriteClass(const CClassTypeInfo* objectType,
-                            TConstObjectPtr objectPtr);
+                            TConstObjectPtr objectPtr) override;
     virtual void WriteClassMember(const CMemberId& memberId,
                                   TTypeInfo memberType,
-                                  TConstObjectPtr memberPtr);
+                                  TConstObjectPtr memberPtr) override;
     virtual bool WriteClassMember(const CMemberId& memberId,
-                                  const CDelayBuffer& buffer);
+                                  const CDelayBuffer& buffer) override;
 
     virtual void WriteClassMemberSpecialCase(
         const CMemberId& memberId, TTypeInfo memberType,
-        TConstObjectPtr memberPtr, ESpecialCaseWrite how);
+        TConstObjectPtr memberPtr, ESpecialCaseWrite how) override;
 #endif
     void WriteContainerContents(const CContainerTypeInfo* containerType,
                                 TConstObjectPtr containerPtr);
     void WriteChoiceContents(const CChoiceTypeInfo* choiceType,
                              TConstObjectPtr choicePtr);
     // low level I/O
-    virtual void BeginNamedType(TTypeInfo namedTypeInfo);
-    virtual void EndNamedType(void);
+    virtual void BeginNamedType(TTypeInfo namedTypeInfo) override;
+    virtual void EndNamedType(void) override;
 
-    virtual void BeginContainer(const CContainerTypeInfo* containerType);
-    virtual void EndContainer(void);
-    virtual void BeginContainerElement(TTypeInfo elementType);
-    virtual void EndContainerElement(void);
+    virtual void BeginContainer(const CContainerTypeInfo* containerType) override;
+    virtual void EndContainer(void) override;
+    virtual void BeginContainerElement(TTypeInfo elementType) override;
+    virtual void EndContainerElement(void) override;
     void BeginArrayElement(TTypeInfo elementType);
     void EndArrayElement(void);
 
     void CheckStdXml(TTypeInfo classType);
 
-    virtual void BeginClass(const CClassTypeInfo* classInfo);
-    virtual void EndClass(void);
-    virtual void BeginClassMember(const CMemberId& id);
+    virtual void BeginClass(const CClassTypeInfo* classInfo) override;
+    virtual void EndClass(void) override;
+    virtual void BeginClassMember(const CMemberId& id) override;
     void BeginClassMember(TTypeInfo memberType,
                           const CMemberId& id);
-    virtual void EndClassMember(void);
+    virtual void EndClassMember(void) override;
 
-    virtual void BeginChoice(const CChoiceTypeInfo* choiceType);
-    virtual void EndChoice(void);
+    virtual void BeginChoice(const CChoiceTypeInfo* choiceType) override;
+    virtual void EndChoice(void) override;
     virtual void BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
-                                    const CMemberId& id);
-    virtual void EndChoiceVariant(void);
+                                    const CMemberId& id) override;
+    virtual void EndChoiceVariant(void) override;
 
     virtual void WriteBytes(const ByteBlock& block,
-                            const char* bytes, size_t length);
+                            const char* bytes, size_t length) override;
     virtual void WriteChars(const CharBlock& block,
-                            const char* chars, size_t length);
+                            const char* chars, size_t length) override;
 
     // Write current separator to the stream
-    virtual void WriteSeparator(void);
+    virtual void WriteSeparator(void) override;
 
 #if defined(NCBI_SERIAL_IO_TRACE)
     void TraceTag(const string& name);

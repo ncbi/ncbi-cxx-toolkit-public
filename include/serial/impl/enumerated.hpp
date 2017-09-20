@@ -59,29 +59,29 @@ public:
             return m_Values;
         }
 
-    virtual bool IsDefault(TConstObjectPtr object) const;
+    virtual bool IsDefault(TConstObjectPtr object) const override;
     virtual bool Equals(TConstObjectPtr , TConstObjectPtr,
-                        ESerialRecursionMode how = eRecursive) const;
-    virtual void SetDefault(TObjectPtr dst) const;
+                        ESerialRecursionMode how = eRecursive) const override;
+    virtual void SetDefault(TObjectPtr dst) const override;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src,
-                        ESerialRecursionMode how = eRecursive) const;
+                        ESerialRecursionMode how = eRecursive) const override;
 
-    virtual bool IsSigned(void) const;
+    virtual bool IsSigned(void) const override;
 
-    virtual Int4 GetValueInt4(TConstObjectPtr objectPtr) const;
-    virtual Uint4 GetValueUint4(TConstObjectPtr objectPtr) const;
-    virtual void SetValueInt4(TObjectPtr objectPtr, Int4 value) const;
-    virtual void SetValueUint4(TObjectPtr objectPtr, Uint4 value) const;
+    virtual Int4 GetValueInt4(TConstObjectPtr objectPtr) const override;
+    virtual Uint4 GetValueUint4(TConstObjectPtr objectPtr) const override;
+    virtual void SetValueInt4(TObjectPtr objectPtr, Int4 value) const override;
+    virtual void SetValueUint4(TObjectPtr objectPtr, Uint4 value) const override;
 
-    virtual Int8 GetValueInt8(TConstObjectPtr objectPtr) const;
-    virtual Uint8 GetValueUint8(TConstObjectPtr objectPtr) const;
-    virtual void SetValueInt8(TObjectPtr objectPtr, Int8 value) const;
-    virtual void SetValueUint8(TObjectPtr objectPtr, Uint8 value) const;
+    virtual Int8 GetValueInt8(TConstObjectPtr objectPtr) const override;
+    virtual Uint8 GetValueUint8(TConstObjectPtr objectPtr) const override;
+    virtual void SetValueInt8(TObjectPtr objectPtr, Int8 value) const override;
+    virtual void SetValueUint8(TObjectPtr objectPtr, Uint8 value) const override;
 
     virtual void GetValueString(TConstObjectPtr objectPtr,
-                                string& value) const;
+                                string& value) const override;
     virtual void SetValueString(TObjectPtr objectPtr,
-                                const string& value) const;
+                                const string& value) const override;
 
 protected:
     static TObjectPtr CreateEnum(TTypeInfo objectType,

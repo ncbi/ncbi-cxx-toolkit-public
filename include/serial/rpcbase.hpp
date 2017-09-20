@@ -94,22 +94,22 @@ protected:
         return string();
     }
 
-    virtual void x_WriteRequest(CObjectOStream& out, const CSerialObject& request)
+    virtual void x_WriteRequest(CObjectOStream& out, const CSerialObject& request) override
     {
         WriteRequest(out, dynamic_cast<const TRequest&>(request));
     }
 
-    virtual void x_ReadReply(CObjectIStream& in, CSerialObject& reply)
+    virtual void x_ReadReply(CObjectIStream& in, CSerialObject& reply) override
     {
         ReadReply(in, dynamic_cast<TReply&>(reply));
     }
 
-    virtual string x_GetAffinity(const CSerialObject& request) const
+    virtual string x_GetAffinity(const CSerialObject& request) const override
     {
         return GetAffinity(dynamic_cast<const TRequest&>(request));
     }
 
-    virtual void x_Connect(void);
+    virtual void x_Connect(void) override;
 
     /// Connect to a URL.  (Discouraged; please establish and use a
     /// suitable named service if possible.)

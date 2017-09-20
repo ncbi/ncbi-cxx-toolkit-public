@@ -70,7 +70,7 @@ public:
     ///
     /// @return
     ///   string
-    virtual string GetPosition(void) const;
+    virtual string GetPosition(void) const override;
 
     /// Set default encoding of 'string' objects
     /// If data encoding is different, string will be converted to
@@ -109,91 +109,91 @@ public:
     ///   Formatting type
     void SetBinaryDataFormat(EBinaryDataFormat fmt);
 
-    virtual string ReadFileHeader(void);
+    virtual string ReadFileHeader(void) override;
 
 protected:
 
-    virtual void EndOfRead(void);
+    virtual void EndOfRead(void) override;
 
-    virtual bool ReadBool(void);
-    virtual void SkipBool(void);
+    virtual bool ReadBool(void) override;
+    virtual void SkipBool(void) override;
 
-    virtual char ReadChar(void);
-    virtual void SkipChar(void);
+    virtual char ReadChar(void) override;
+    virtual void SkipChar(void) override;
 
-    virtual Int8 ReadInt8(void);
-    virtual Uint8 ReadUint8(void);
+    virtual Int8 ReadInt8(void) override;
+    virtual Uint8 ReadUint8(void) override;
 
-    virtual void SkipSNumber(void);
-    virtual void SkipUNumber(void);
+    virtual void SkipSNumber(void) override;
+    virtual void SkipUNumber(void) override;
 
-    virtual double ReadDouble(void);
+    virtual double ReadDouble(void) override;
 
-    virtual void SkipFNumber(void);
+    virtual void SkipFNumber(void) override;
 
     virtual void ReadString(string& s,
-                            EStringType type = eStringTypeVisible);
-    virtual void SkipString(EStringType type = eStringTypeVisible);
+                            EStringType type = eStringTypeVisible) override;
+    virtual void SkipString(EStringType type = eStringTypeVisible) override;
 
-    virtual void ReadNull(void);
-    virtual void SkipNull(void);
+    virtual void ReadNull(void) override;
+    virtual void SkipNull(void) override;
 
-    virtual void ReadAnyContentObject(CAnyContentObject& obj);
+    virtual void ReadAnyContentObject(CAnyContentObject& obj) override;
     void SkipAnyContent(void);
-    virtual void SkipAnyContentObject(void);
+    virtual void SkipAnyContentObject(void) override;
 
-    virtual void ReadBitString(CBitString& obj);
-    virtual void SkipBitString(void);
+    virtual void ReadBitString(CBitString& obj) override;
+    virtual void SkipBitString(void) override;
 
-    virtual void SkipByteBlock(void);
+    virtual void SkipByteBlock(void) override;
 
-    virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
+    virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values) override;
 
 #ifdef VIRTUAL_MID_LEVEL_IO
     virtual void ReadClassSequential(const CClassTypeInfo* classType,
-                                     TObjectPtr classPtr);
-    virtual void SkipClassSequential(const CClassTypeInfo* classType);
+                                     TObjectPtr classPtr) override;
+    virtual void SkipClassSequential(const CClassTypeInfo* classType) override;
 #endif
 
     // container
-    virtual void BeginContainer(const CContainerTypeInfo* containerType);
-    virtual void EndContainer(void);
-    virtual bool BeginContainerElement(TTypeInfo elementType);
-    virtual void EndContainerElement(void);
+    virtual void BeginContainer(const CContainerTypeInfo* containerType) override;
+    virtual void EndContainer(void) override;
+    virtual bool BeginContainerElement(TTypeInfo elementType) override;
+    virtual void EndContainerElement(void) override;
 
     // class
-    virtual void BeginClass(const CClassTypeInfo* classInfo);
-    virtual void EndClass(void);
+    virtual void BeginClass(const CClassTypeInfo* classInfo) override;
+    virtual void EndClass(void) override;
 
-    virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType);
+    virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType) override;
     virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType,
-                                          TMemberIndex pos);
-    virtual void EndClassMember(void);
-    virtual void UndoClassMember(void);
+                                          TMemberIndex pos) override;
+    virtual void EndClassMember(void) override;
+    virtual void UndoClassMember(void) override;
 
     // choice
-    virtual void BeginChoice(const CChoiceTypeInfo* choiceType);
-    virtual void EndChoice(void);
-    virtual TMemberIndex BeginChoiceVariant(const CChoiceTypeInfo* choiceType);
-    virtual void EndChoiceVariant(void);
+    virtual void BeginChoice(const CChoiceTypeInfo* choiceType) override;
+    virtual void EndChoice(void) override;
+    virtual TMemberIndex BeginChoiceVariant(const CChoiceTypeInfo* choiceType) override;
+    virtual void EndChoiceVariant(void) override;
 
     // byte block
-    virtual void BeginBytes(ByteBlock& block);
+    virtual void BeginBytes(ByteBlock& block) override;
     int GetHexChar(void);
     int GetBase64Char(void);
-    virtual size_t ReadBytes(ByteBlock& block, char* buffer, size_t count);
-    virtual void EndBytes(const ByteBlock& block);
+    virtual size_t ReadBytes(ByteBlock& block, char* buffer, size_t count) override;
+    virtual void EndBytes(const ByteBlock& block) override;
 
     // char block
-    virtual void BeginChars(CharBlock& block);
-    virtual size_t ReadChars(CharBlock& block, char* buffer, size_t count);
-    virtual void EndChars(const CharBlock& block);
+    virtual void BeginChars(CharBlock& block) override;
+    virtual size_t ReadChars(CharBlock& block, char* buffer, size_t count) override;
+    virtual void EndChars(const CharBlock& block) override;
 
-    virtual EPointerType ReadPointerType(void);
-    virtual TObjectIndex ReadObjectPointer(void);
-    virtual string ReadOtherPointer(void);
+    virtual EPointerType ReadPointerType(void) override;
+    virtual TObjectIndex ReadObjectPointer(void) override;
+    virtual string ReadOtherPointer(void) override;
 
-    virtual void ResetState(void);
+    virtual void ResetState(void) override;
 
 private:
 

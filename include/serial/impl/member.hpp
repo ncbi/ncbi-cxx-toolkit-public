@@ -190,7 +190,7 @@ public:
     void DefaultSkipMissingMember(CObjectIStream& in) const;
 
     virtual void UpdateDelayedBuffer(CObjectIStream& in,
-                                     TObjectPtr classPtr) const;
+                                     TObjectPtr classPtr) const override;
 
 private:
     // Create parent class object
@@ -222,7 +222,7 @@ private:
     void SetSkipFunction(TMemberSkipFunction func);
     void SetSkipMissingFunction(TMemberSkipFunction func);
 
-    void UpdateFunctions(void);
+    virtual void UpdateFunctions(void) override;
 
     friend class CMemberInfoFunctions;
 };

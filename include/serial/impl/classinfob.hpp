@@ -107,10 +107,10 @@ public:
     static void GetRegisteredModuleNames(TRegModules& modules);
     static void GetRegisteredClassNames(const string& module, TRegClasses& names);
 
-    const CObject* GetCObjectPtr(TConstObjectPtr objectPtr) const;
+    virtual const CObject* GetCObjectPtr(TConstObjectPtr objectPtr) const override;
 
     // iterators interface
-    virtual EMayContainType GetMayContainType(TTypeInfo type) const;
+    virtual EMayContainType GetMayContainType(TTypeInfo type) const override;
 
     // helping member iterator class (internal use)
     class CIterator : public CItemsInfo::CIterator

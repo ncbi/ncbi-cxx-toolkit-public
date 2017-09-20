@@ -48,20 +48,20 @@ class NCBI_XSERIAL_EXPORT CAliasTypeInfo : public CPointerTypeInfo
 public:
     CAliasTypeInfo(const string& name, TTypeInfo type);
 
-    bool IsDefault(TConstObjectPtr object) const;
-    bool Equals(TConstObjectPtr object1, TConstObjectPtr object2,
-                ESerialRecursionMode how = eRecursive) const;
-    void SetDefault(TObjectPtr dst) const;
-    void Assign(TObjectPtr dst, TConstObjectPtr src,
-                ESerialRecursionMode how = eRecursive) const;
+    virtual bool IsDefault(TConstObjectPtr object) const override;
+    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2,
+                ESerialRecursionMode how = eRecursive) const override;
+    virtual void SetDefault(TObjectPtr dst) const override;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src,
+                ESerialRecursionMode how = eRecursive) const override;
 
-    void Delete(TObjectPtr object) const;
-    void DeleteExternalObjects(TObjectPtr object) const;
+    virtual void Delete(TObjectPtr object) const override;
+    virtual void DeleteExternalObjects(TObjectPtr object) const override;
 
-    const CObject* GetCObjectPtr(TConstObjectPtr objectPtr) const;
-    TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
+    virtual const CObject* GetCObjectPtr(TConstObjectPtr objectPtr) const override;
+    virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const override;
 
-    bool IsParentClassOf(const CClassTypeInfo* classInfo) const;
+    virtual bool IsParentClassOf(const CClassTypeInfo* classInfo) const override;
 
     void SetDataOffset(TPointerOffsetType offset);
     TObjectPtr GetDataPtr(TObjectPtr objectPtr) const;

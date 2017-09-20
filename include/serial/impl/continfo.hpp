@@ -71,12 +71,12 @@ public:
 
     bool RandomElementsOrder(void) const;
     
-    virtual EMayContainType GetMayContainType(TTypeInfo type) const;
+    virtual EMayContainType GetMayContainType(TTypeInfo type) const override;
 
-    void Assign(TObjectPtr dst, TConstObjectPtr src,
-                ESerialRecursionMode how = eRecursive) const;
-    bool Equals(TConstObjectPtr object1, TConstObjectPtr object2,
-                ESerialRecursionMode how = eRecursive) const;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src,
+                ESerialRecursionMode how = eRecursive) const override;
+    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2,
+                ESerialRecursionMode how = eRecursive) const override;
 
     // iterators methods (private)
     class CConstIterator

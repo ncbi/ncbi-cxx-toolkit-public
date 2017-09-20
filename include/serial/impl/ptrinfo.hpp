@@ -66,14 +66,14 @@ public:
 
     TTypeInfo GetRealDataTypeInfo(TConstObjectPtr object) const;
 
-    virtual EMayContainType GetMayContainType(TTypeInfo type) const;
+    virtual EMayContainType GetMayContainType(TTypeInfo type) const override;
 
-    virtual bool IsDefault(TConstObjectPtr object) const;
+    virtual bool IsDefault(TConstObjectPtr object) const override;
     virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2,
-                        ESerialRecursionMode how = eRecursive) const;
-    virtual void SetDefault(TObjectPtr dst) const;
+                        ESerialRecursionMode how = eRecursive) const override;
+    virtual void SetDefault(TObjectPtr dst) const override;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src,
-                        ESerialRecursionMode how = eRecursive) const;
+                        ESerialRecursionMode how = eRecursive) const override;
 
     typedef TObjectPtr (*TGetDataFunction)(const CPointerTypeInfo* objectType,
                                            TObjectPtr objectPtr);
@@ -85,7 +85,7 @@ public:
 
     virtual CTypeInfo* SetTag(CAsnBinaryDefs::TLongTag tag,
                 CAsnBinaryDefs::ETagClass tagclass = CAsnBinaryDefs::eUniversal,
-                CAsnBinaryDefs::ETagType tagtype   = CAsnBinaryDefs::eAutomatic);
+                CAsnBinaryDefs::ETagType tagtype   = CAsnBinaryDefs::eAutomatic) override;
 
 protected:
     static TObjectPtr GetPointer(const CPointerTypeInfo* objectType,

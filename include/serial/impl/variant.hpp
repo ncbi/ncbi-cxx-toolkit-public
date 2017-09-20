@@ -168,7 +168,7 @@ public:
     void DefaultSkipVariant(CObjectIStream& in) const;
     
     virtual void UpdateDelayedBuffer(CObjectIStream& in,
-                                     TObjectPtr classPtr) const;
+                                     TObjectPtr classPtr) const override;
 
 private:
     // Create choice object
@@ -194,7 +194,7 @@ private:
     void SetCopyFunction(TVariantCopyFunction func);
     void SetSkipFunction(TVariantSkipFunction func);
 
-    void UpdateFunctions(void);
+    virtual void UpdateFunctions(void) override;
 
     friend class CVariantInfoFunctions;
 };

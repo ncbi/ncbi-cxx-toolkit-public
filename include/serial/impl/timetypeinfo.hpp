@@ -131,8 +131,8 @@ class CTimeTypeInfo : public CPrimitiveTypeInfoString
 {
 public:
     CTimeTypeInfo(void);
-    void GetValueString(TConstObjectPtr objectPtr, string& value) const;
-    void SetValueString(TObjectPtr objectPtr, const string& value) const;
+    virtual void GetValueString(TConstObjectPtr objectPtr, string& value) const override;
+    virtual void SetValueString(TObjectPtr objectPtr, const string& value) const override;
 private:
 };
 

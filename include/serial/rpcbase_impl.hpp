@@ -147,7 +147,7 @@ public:
         eOther
     };
 
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
 
     bool IsSetRetryContext(void) const { return m_RetryCtx; }
     /// Read retry related data.
@@ -158,7 +158,7 @@ public:
     NCBI_EXCEPTION_DEFAULT(CRPCClientException, CException);
 
 protected:
-    virtual void x_Assign(const CException& src)
+    virtual void x_Assign(const CException& src) override
     {
         CException::x_Assign(src);
         m_RetryCtx = dynamic_cast<const CRPCClientException&>(src).m_RetryCtx;

@@ -394,14 +394,14 @@ public:
     ///
     /// @return
     ///   string
-    virtual string GetStackTrace(void) const;
+    virtual string GetStackTrace(void) const override;
 
     /// Get current stream position as string.
     /// Useful for diagnostic and information messages.
     ///
     /// @return
     ///   string
-    virtual string GetPosition(void) const;
+    virtual string GetPosition(void) const override;
 
 //---------------------------------------------------------------------------
 // Local write hooks
@@ -578,7 +578,7 @@ public:
     // report error about unended block
     void Unended(const string& msg);
     // report error about unended object stack frame
-    virtual void UnendedFrame(void);
+    virtual void UnendedFrame(void) override;
 
     enum EFlags {
         fFlagNone                = 0,
@@ -781,7 +781,7 @@ protected:
     void RegisterObject(TTypeInfo typeInfo);
     void RegisterObject(TConstObjectPtr object, TTypeInfo typeInfo);
 
-    void x_SetPathHooks(bool set);
+    virtual void x_SetPathHooks(bool set) override;
     EFixNonPrint x_GetFixCharsMethodDefault(void) const;
     EFixNonPrint x_FixCharsMethod(void) const {
         return m_FixMethod;

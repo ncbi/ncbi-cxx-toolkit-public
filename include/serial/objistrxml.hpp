@@ -72,14 +72,14 @@ public:
     ///
     /// @return
     ///   TRUE if there is no more data
-    virtual bool EndOfData(void);
+    virtual bool EndOfData(void) override;
 
     /// Get current stream position as string.
     /// Useful for diagnostic and information messages.
     ///
     /// @return
     ///   string
-    virtual string GetPosition(void) const;
+    virtual string GetPosition(void) const override;
 
     /// Get XML character encoding
     ///
@@ -119,46 +119,46 @@ public:
             (GetFlags()&fFlagEnforcedStdXml) != 0;
     }
 
-    virtual string ReadFileHeader(void);
-    virtual string PeekNextTypeName(void);
+    virtual string ReadFileHeader(void) override;
+    virtual string PeekNextTypeName(void) override;
     void FindFileHeader(bool find_XMLDecl = true);
 
 protected:
-    EPointerType ReadPointerType(void);
-    TObjectIndex ReadObjectPointer(void);
-    string ReadOtherPointer(void);
+    EPointerType ReadPointerType(void) override;
+    TObjectIndex ReadObjectPointer(void) override;
+    string ReadOtherPointer(void) override;
 
-    virtual bool ReadBool(void);
-    virtual char ReadChar(void);
-    virtual Int4 ReadInt4(void);
-    virtual Uint4 ReadUint4(void);
-    virtual Int8 ReadInt8(void);
-    virtual Uint8 ReadUint8(void);
-    virtual double ReadDouble(void);
-    virtual void ReadNull(void);
-    virtual void ReadString(string& s,EStringType type = eStringTypeVisible);
-    virtual char* ReadCString(void);
-    TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
+    virtual bool ReadBool(void) override;
+    virtual char ReadChar(void) override;
+    virtual Int4 ReadInt4(void) override;
+    virtual Uint4 ReadUint4(void) override;
+    virtual Int8 ReadInt8(void) override;
+    virtual Uint8 ReadUint8(void) override;
+    virtual double ReadDouble(void) override;
+    virtual void ReadNull(void) override;
+    virtual void ReadString(string& s,EStringType type = eStringTypeVisible) override;
+    virtual char* ReadCString(void) override;
+    TEnumValueType ReadEnum(const CEnumeratedTypeValues& values) override;
 
     bool ReadAnyContent(const string& ns_prefix, string& value);
-    virtual void ReadAnyContentObject(CAnyContentObject& obj);
+    virtual void ReadAnyContentObject(CAnyContentObject& obj) override;
     bool SkipAnyContent(void);
-    virtual void SkipAnyContentObject(void);
+    virtual void SkipAnyContentObject(void) override;
 
-    virtual void ReadBitString(CBitString& obj);
-    virtual void SkipBitString(void);
+    virtual void ReadBitString(CBitString& obj) override;
+    virtual void SkipBitString(void) override;
 
-    virtual void StartDelayBuffer(void);
-    virtual CRef<CByteSource> EndDelayBuffer(void);
+    virtual void StartDelayBuffer(void) override;
+    virtual CRef<CByteSource> EndDelayBuffer(void) override;
 
-    virtual void SkipBool(void);
-    virtual void SkipChar(void);
-    virtual void SkipSNumber(void);
-    virtual void SkipUNumber(void);
-    virtual void SkipFNumber(void);
-    virtual void SkipString(EStringType type = eStringTypeVisible);
-    virtual void SkipNull(void);
-    virtual void SkipByteBlock(void);
+    virtual void SkipBool(void) override;
+    virtual void SkipChar(void) override;
+    virtual void SkipSNumber(void) override;
+    virtual void SkipUNumber(void) override;
+    virtual void SkipFNumber(void) override;
+    virtual void SkipString(EStringType type = eStringTypeVisible) override;
+    virtual void SkipNull(void) override;
+    virtual void SkipByteBlock(void) override;
 
     CTempString SkipTagName(CTempString tag, const char* s, size_t length);
     CTempString SkipTagName(CTempString tag, const char* s);
@@ -186,51 +186,51 @@ protected:
 #ifdef VIRTUAL_MID_LEVEL_IO
     virtual void ReadNamedType(TTypeInfo namedTypeInfo,
                                TTypeInfo typeInfo,
-                               TObjectPtr object);
+                               TObjectPtr object) override;
 
     virtual void ReadContainer(const CContainerTypeInfo* containerType,
-                               TObjectPtr containerPtr);
-    virtual void SkipContainer(const CContainerTypeInfo* containerType);
+                               TObjectPtr containerPtr) override;
+    virtual void SkipContainer(const CContainerTypeInfo* containerType) override;
 #endif
     void ReadContainerContents(const CContainerTypeInfo* containerType,
                                TObjectPtr containerPtr);
     void SkipContainerContents(const CContainerTypeInfo* containerType);
 
     // low level I/O
-    virtual void BeginNamedType(TTypeInfo namedTypeInfo);
-    virtual void EndNamedType(void);
+    virtual void BeginNamedType(TTypeInfo namedTypeInfo) override;
+    virtual void EndNamedType(void) override;
 
-    virtual void BeginContainer(const CContainerTypeInfo* containerType);
-    virtual void EndContainer(void);
-    virtual bool BeginContainerElement(TTypeInfo elementType);
-    virtual void EndContainerElement(void);
+    virtual void BeginContainer(const CContainerTypeInfo* containerType) override;
+    virtual void EndContainer(void) override;
+    virtual bool BeginContainerElement(TTypeInfo elementType) override;
+    virtual void EndContainerElement(void) override;
     void BeginArrayElement(TTypeInfo elementType);
     void EndArrayElement(void);
 
     void CheckStdXml(TTypeInfo classType);
 
-    virtual void BeginClass(const CClassTypeInfo* classInfo);
-    virtual void EndClass(void);
-    virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType);
+    virtual void BeginClass(const CClassTypeInfo* classInfo) override;
+    virtual void EndClass(void) override;
+    virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType) override;
     virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType,
-                                          TMemberIndex pos);
-    void EndClassMember(void);
-    virtual void UndoClassMember(void);
+                                          TMemberIndex pos) override;
+    virtual void EndClassMember(void) override;
+    virtual void UndoClassMember(void) override;
 
-    virtual void BeginChoice(const CChoiceTypeInfo* choiceType);
-    virtual void EndChoice(void);
-    virtual TMemberIndex BeginChoiceVariant(const CChoiceTypeInfo* choiceType);
-    virtual void EndChoiceVariant(void);
+    virtual void BeginChoice(const CChoiceTypeInfo* choiceType) override;
+    virtual void EndChoice(void) override;
+    virtual TMemberIndex BeginChoiceVariant(const CChoiceTypeInfo* choiceType) override;
+    virtual void EndChoiceVariant(void) override;
 
-    void BeginBytes(ByteBlock& );
+    virtual void BeginBytes(ByteBlock& ) override;
     int GetHexChar(void);
     int GetBase64Char(void);
-    size_t ReadBytes(ByteBlock& block, char* dst, size_t length);
+    virtual size_t ReadBytes(ByteBlock& block, char* dst, size_t length) override;
 
-    void BeginChars(CharBlock& );
-    size_t ReadChars(CharBlock& block, char* dst, size_t length);
+    virtual void BeginChars(CharBlock& ) override;
+    virtual size_t ReadChars(CharBlock& block, char* dst, size_t length) override;
 
-    virtual void ResetState(void);
+    virtual void ResetState(void) override;
 
 private:
     bool OutsideTag(void) const;

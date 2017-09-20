@@ -547,7 +547,7 @@ protected:
                 typename CObjectIStreamIterator<TR>::CData* pthis)
                     : m_This(pthis) {
             }
-            virtual void SkipObject(CObjectIStream& in, const CObjectTypeInfo& type) {
+            virtual void SkipObject(CObjectIStream& in, const CObjectTypeInfo& type) override {
                 m_This->x_AcceptData(in,CObjectInfo(type.GetTypeInfo()));
             }
         private:
@@ -596,7 +596,7 @@ protected:
             typename CObjectIStreamIterator<TR>::CData* pthis)
                 : m_This(pthis) {
         }
-        virtual void ReadObject(CObjectIStream& in, const CObjectInfo& type) {
+        virtual void ReadObject(CObjectIStream& in, const CObjectInfo& type) override {
             m_This->x_AcceptData(in,type);
         }
     private:
@@ -1712,7 +1712,7 @@ public:
         : m_Reader(thr)
     {
     }
-    virtual void Process(const TObject& obj);
+    virtual void Process(const TObject& obj) override;
 private:
     CIStreamIteratorThread_Base<TRoot,TObject>& m_Reader;
 };
@@ -1801,7 +1801,7 @@ protected:
     ~CIStreamObjectIteratorThread(void)
     {
     }
-    virtual void* Main(void)
+    virtual void* Main(void) override
     {
         this->m_Resume.Wait();
         // Enumerate objects of requested type
@@ -1831,7 +1831,7 @@ protected:
     ~CIStreamStdIteratorThread(void)
     {
     }
-    virtual void* Main(void)
+    virtual void* Main(void) override
     {
         this->m_Resume.Wait();
         // Enumerate objects of requested type

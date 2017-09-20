@@ -129,7 +129,7 @@ public:
     CGet1TypeInfoSource(CTypeRef::TGet1Proc getter, const CTypeRef& arg);
     ~CGet1TypeInfoSource(void);
 
-    virtual TTypeInfo GetTypeInfo(void);
+    virtual TTypeInfo GetTypeInfo(void) override;
 
 private:
     CTypeRef::TGet1Proc m_Getter;
@@ -143,7 +143,7 @@ public:
                         const CTypeRef& arg1, const CTypeRef& arg2);
     ~CGet2TypeInfoSource(void);
 
-    virtual TTypeInfo GetTypeInfo(void);
+    virtual TTypeInfo GetTypeInfo(void) override;
 
 private:
     CTypeRef::TGet2Proc m_Getter;

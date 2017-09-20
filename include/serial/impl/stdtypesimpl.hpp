@@ -101,8 +101,8 @@ public:
 
     CPrimitiveTypeInfoBool(void);
 
-    bool GetValueBool(TConstObjectPtr object) const;
-    void SetValueBool(TObjectPtr object, bool value) const;
+    virtual bool GetValueBool(TConstObjectPtr object) const override;
+    virtual void SetValueBool(TObjectPtr object, bool value) const override;
 };
 
 class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoChar : public CPrimitiveTypeInfo
@@ -113,10 +113,10 @@ public:
 
     CPrimitiveTypeInfoChar(void);
 
-    char GetValueChar(TConstObjectPtr object) const;
-    void SetValueChar(TObjectPtr object, char value) const;
-    void GetValueString(TConstObjectPtr object, string& value) const;
-    void SetValueString(TObjectPtr object, const string& value) const;
+    virtual char GetValueChar(TConstObjectPtr object) const override;
+    virtual void SetValueChar(TObjectPtr object, char value) const override;
+    virtual void GetValueString(TConstObjectPtr object, string& value) const override;
+    virtual void SetValueString(TObjectPtr object, const string& value) const override;
 };
 
 class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoInt : public CPrimitiveTypeInfo
@@ -139,14 +139,14 @@ public:
     void SetInt8Functions(TGetInt8Function, TSetInt8Function,
                           TGetUint8Function, TSetUint8Function);
 
-    Int4 GetValueInt4(TConstObjectPtr objectPtr) const;
-    Uint4 GetValueUint4(TConstObjectPtr objectPtr) const;
-    void SetValueInt4(TObjectPtr objectPtr, Int4 value) const;
-    void SetValueUint4(TObjectPtr objectPtr, Uint4 value) const;
-    Int8 GetValueInt8(TConstObjectPtr objectPtr) const;
-    Uint8 GetValueUint8(TConstObjectPtr objectPtr) const;
-    void SetValueInt8(TObjectPtr objectPtr, Int8 value) const;
-    void SetValueUint8(TObjectPtr objectPtr, Uint8 value) const;
+    virtual Int4 GetValueInt4(TConstObjectPtr objectPtr) const override;
+    virtual Uint4 GetValueUint4(TConstObjectPtr objectPtr) const override;
+    virtual void SetValueInt4(TObjectPtr objectPtr, Int4 value) const override;
+    virtual void SetValueUint4(TObjectPtr objectPtr, Uint4 value) const override;
+    virtual Int8 GetValueInt8(TConstObjectPtr objectPtr) const override;
+    virtual Uint8 GetValueUint8(TConstObjectPtr objectPtr) const override;
+    virtual void SetValueInt8(TObjectPtr objectPtr, Int8 value) const override;
+    virtual void SetValueUint8(TObjectPtr objectPtr, Uint8 value) const override;
     
 protected:
     TGetInt4Function m_GetInt4;
@@ -167,8 +167,8 @@ public:
 
     CPrimitiveTypeInfoDouble(void);
 
-    double GetValueDouble(TConstObjectPtr objectPtr) const;
-    void SetValueDouble(TObjectPtr objectPtr, double value) const;
+    virtual double GetValueDouble(TConstObjectPtr objectPtr) const override;
+    virtual void SetValueDouble(TObjectPtr objectPtr, double value) const override;
 };
 
 class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoFloat : public CPrimitiveTypeInfo
@@ -179,8 +179,8 @@ public:
 
     CPrimitiveTypeInfoFloat(void);
 
-    double GetValueDouble(TConstObjectPtr objectPtr) const;
-    void SetValueDouble(TObjectPtr objectPtr, double value) const;
+    virtual double GetValueDouble(TConstObjectPtr objectPtr) const override;
+    virtual void SetValueDouble(TObjectPtr objectPtr, double value) const override;
 };
 
 #if SIZEOF_LONG_DOUBLE != 0
@@ -192,12 +192,12 @@ public:
 
     CPrimitiveTypeInfoLongDouble(void);
 
-    double GetValueDouble(TConstObjectPtr objectPtr) const;
-    void SetValueDouble(TObjectPtr objectPtr, double value) const;
+    virtual double GetValueDouble(TConstObjectPtr objectPtr) const override;
+    virtual void SetValueDouble(TObjectPtr objectPtr, double value) const override;
 
-    virtual long double GetValueLDouble(TConstObjectPtr objectPtr) const;
+    virtual long double GetValueLDouble(TConstObjectPtr objectPtr) const override;
     virtual void SetValueLDouble(TObjectPtr objectPtr,
-                                 long double value) const;
+                                 long double value) const override;
 };
 #endif
 
@@ -214,16 +214,16 @@ public:
 
     CPrimitiveTypeInfoString(EType type = eStringTypeVisible);
 
-    char GetValueChar(TConstObjectPtr objectPtr) const;
-    void SetValueChar(TObjectPtr objectPtr, char value) const;
-    void GetValueString(TConstObjectPtr objectPtr, string& value) const;
-    void SetValueString(TObjectPtr objectPtr, const string& value) const;
+    virtual char GetValueChar(TConstObjectPtr objectPtr) const override;
+    virtual void SetValueChar(TObjectPtr objectPtr, char value) const override;
+    virtual void GetValueString(TConstObjectPtr objectPtr, string& value) const override;
+    virtual void SetValueString(TObjectPtr objectPtr, const string& value) const override;
     EType GetStringType(void) const
     {
         return m_Type;
     }
     bool IsStringStore(void) const;
-    virtual bool IsType(TTypeInfo type) const;
+    virtual bool IsType(TTypeInfo type) const override;
 private:
     EType m_Type;
 };
@@ -237,10 +237,10 @@ public:
 
     CPrimitiveTypeInfoCharPtr(void);
 
-    char GetValueChar(TConstObjectPtr objectPtr) const;
-    void SetValueChar(TObjectPtr objectPtr, char value) const;
-    void GetValueString(TConstObjectPtr objectPtr, string& value) const;
-    void SetValueString(TObjectPtr objectPtr, const string& value) const;
+    virtual char GetValueChar(TConstObjectPtr objectPtr) const override;
+    virtual void SetValueChar(TObjectPtr objectPtr, char value) const override;
+    virtual void GetValueString(TConstObjectPtr objectPtr, string& value) const override;
+    virtual void SetValueString(TObjectPtr objectPtr, const string& value) const override;
 };
 
 template<typename Char>
@@ -253,12 +253,12 @@ public:
 
     CCharVectorTypeInfo(void);
 
-    void GetValueString(TConstObjectPtr objectPtr, string& value) const;
-    void SetValueString(TObjectPtr objectPtr, const string& value) const;
-    void GetValueOctetString(TConstObjectPtr objectPtr,
-                             vector<char>& value) const;
-    void SetValueOctetString(TObjectPtr objectPtr,
-                             const vector<char>& value) const;
+    virtual void GetValueString(TConstObjectPtr objectPtr, string& value) const override;
+    virtual void SetValueString(TObjectPtr objectPtr, const string& value) const override;
+    virtual void GetValueOctetString(TConstObjectPtr objectPtr,
+                             vector<char>& value) const override;
+    virtual void SetValueOctetString(TObjectPtr objectPtr,
+                             const vector<char>& value) const override;
 };
 
 class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoAnyContent
@@ -268,10 +268,10 @@ class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoAnyContent
 public:
     CPrimitiveTypeInfoAnyContent(void);
 
-    void GetValueAnyContent(TConstObjectPtr objectPtr,
-                            CAnyContentObject& value) const;
-    void SetValueAnyContent(TObjectPtr objectPtr,
-                            const CAnyContentObject& value) const;
+    virtual void GetValueAnyContent(TConstObjectPtr objectPtr,
+                            CAnyContentObject& value) const override;
+    virtual void SetValueAnyContent(TObjectPtr objectPtr,
+                            const CAnyContentObject& value) const override;
 };
 
 class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoBitString
@@ -282,9 +282,9 @@ public:
     CPrimitiveTypeInfoBitString(void);
 
     virtual void GetValueBitString(TConstObjectPtr objectPtr,
-                                   CBitString& value) const;
+                                   CBitString& value) const override;
     virtual void SetValueBitString(TObjectPtr objectPtr,
-                                   const CBitString& value) const;
+                                   const CBitString& value) const override;
 };
 
 

@@ -105,12 +105,12 @@ public:
                              const void* variantPtr,
                              const CTypeRef& variantType);
 
-    virtual bool IsDefault(TConstObjectPtr object) const;
+    virtual bool IsDefault(TConstObjectPtr object) const override;
     virtual bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2,
-                        ESerialRecursionMode how = eRecursive) const;
-    virtual void SetDefault(TObjectPtr dst) const;
+                        ESerialRecursionMode how = eRecursive) const override;
+    virtual void SetDefault(TObjectPtr dst) const override;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src,
-                        ESerialRecursionMode how = eRecursive) const;
+                        ESerialRecursionMode how = eRecursive) const override;
 
     // iterators interface
     TMemberIndex GetIndex(TConstObjectPtr object) const;

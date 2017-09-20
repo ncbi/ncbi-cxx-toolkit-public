@@ -104,7 +104,7 @@ public:
     /// This method will be called at approriate time
     /// when the object of requested type is to be read
     virtual void ReadClassMember(CObjectIStream& in,
-                                 const CObjectInfoMI& member);
+                                 const CObjectInfoMI& member) override;
 
     /// Return true to invoke default reading method afterwards.
     /// Return false if no firther reading needs to be done.
@@ -138,7 +138,7 @@ public:
     /// This method will be called at approriate time
     /// when the object of requested type is to be read
     virtual void ReadChoiceVariant(CObjectIStream& in,
-                                   const CObjectInfoCV& variant);
+                                   const CObjectInfoCV& variant) override;
 
     /// Return true to invoke default reading method afterwards.
     /// Return false if no firther reading needs to be done.
@@ -587,7 +587,7 @@ template<typename TObject>
 class CSerial_FilterObjectsHook : public CSkipObjectHook
 {
 public:
-    void SkipObject(CObjectIStream& in, const CObjectTypeInfo& type)
+    virtual void SkipObject(CObjectIStream& in, const CObjectTypeInfo& type) override
     {
         if (type.GetTypeInfo()->IsCObject()) {
             TObjectPtr objectPtr = type.GetTypeInfo()->Create(/*in.GetMemoryPool()*/);
@@ -615,7 +615,7 @@ public:
         : m_processor(processor)
     {
     }
-    void ReadObject(CObjectIStream& in,const CObjectInfo& object)
+    virtual void ReadObject(CObjectIStream& in,const CObjectInfo& object) override
     {
         DefaultRead(in,object);
         TObject* obj = (TObject*)(object.GetObjectPtr()); 

@@ -441,7 +441,7 @@ class CCObjectClassInfo : public CVoidTypeInfo
 {
     typedef CTypeInfo CParent;
 public:
-    virtual bool IsParentClassOf(const CClassTypeInfo* classInfo) const;
+    virtual bool IsParentClassOf(const CClassTypeInfo* classInfo) const override;
 };
 
 TTypeInfo CObjectGetTypeInfo::GetTypeInfo(void)

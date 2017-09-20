@@ -126,106 +126,106 @@ public:
 
     virtual set<TTypeInfo> GuessDataType(set<TTypeInfo>& known_types,
                                          size_t max_length = 16,
-                                         size_t max_bytes  = 1024*1024);
+                                         size_t max_bytes  = 1024*1024) override;
 
-    virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
-    virtual void ReadNull(void);
+    virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values) override;
+    virtual void ReadNull(void) override;
 
-    virtual void ReadAnyContentObject(CAnyContentObject& obj);
+    virtual void ReadAnyContentObject(CAnyContentObject& obj) override;
     void SkipAnyContent(void);
-    virtual void SkipAnyContentObject(void);
-    virtual void SkipAnyContentVariant(void);
+    virtual void SkipAnyContentObject(void) override;
+    virtual void SkipAnyContentVariant(void) override;
 
-    virtual void ReadBitString(CBitString& obj);
-    virtual void SkipBitString(void);
+    virtual void ReadBitString(CBitString& obj) override;
+    virtual void SkipBitString(void) override;
 
 protected:
-    virtual bool ReadBool(void);
-    virtual char ReadChar(void);
-    virtual Int4 ReadInt4(void);
-    virtual Uint4 ReadUint4(void);
-    virtual Int8 ReadInt8(void);
-    virtual Uint8 ReadUint8(void);
-    virtual double ReadDouble(void);
-    virtual void ReadString(string& s,EStringType type = eStringTypeVisible);
+    virtual bool ReadBool(void) override;
+    virtual char ReadChar(void) override;
+    virtual Int4 ReadInt4(void) override;
+    virtual Uint4 ReadUint4(void) override;
+    virtual Int8 ReadInt8(void) override;
+    virtual Uint8 ReadUint8(void) override;
+    virtual double ReadDouble(void) override;
+    virtual void ReadString(string& s,EStringType type = eStringTypeVisible) override;
     virtual void ReadPackedString(string& s,
                                   CPackString& pack_string,
-                                  EStringType type);
-    virtual char* ReadCString(void);
-    virtual void ReadStringStore(string& s);
+                                  EStringType type) override;
+    virtual char* ReadCString(void) override;
+    virtual void ReadStringStore(string& s) override;
 
-    virtual void SkipBool(void);
-    virtual void SkipChar(void);
-    virtual void SkipSNumber(void);
-    virtual void SkipUNumber(void);
-    virtual void SkipFNumber(void);
-    virtual void SkipString(EStringType type = eStringTypeVisible);
-    virtual void SkipStringStore(void);
-    virtual void SkipNull(void);
-    virtual void SkipByteBlock(void);
+    virtual void SkipBool(void) override;
+    virtual void SkipChar(void) override;
+    virtual void SkipSNumber(void) override;
+    virtual void SkipUNumber(void) override;
+    virtual void SkipFNumber(void) override;
+    virtual void SkipString(EStringType type = eStringTypeVisible) override;
+    virtual void SkipStringStore(void) override;
+    virtual void SkipNull(void) override;
+    virtual void SkipByteBlock(void) override;
 
 #ifdef VIRTUAL_MID_LEVEL_IO
     virtual void ReadNamedType(TTypeInfo namedTypeInfo,
-                               TTypeInfo typeInfo, TObjectPtr object);
+                               TTypeInfo typeInfo, TObjectPtr object) override;
     virtual void SkipNamedType(TTypeInfo namedTypeInfo,
-                               TTypeInfo typeInfo);
+                               TTypeInfo typeInfo) override;
     virtual void ReadContainer(const CContainerTypeInfo* containerType,
-                               TObjectPtr containerPtr);
-    virtual void SkipContainer(const CContainerTypeInfo* containerType);
+                               TObjectPtr containerPtr) override;
+    virtual void SkipContainer(const CContainerTypeInfo* containerType) override;
 
     virtual void ReadClassSequential(const CClassTypeInfo* classType,
-                                     TObjectPtr classPtr);
+                                     TObjectPtr classPtr) override;
     virtual void ReadClassRandom(const CClassTypeInfo* classType,
-                                 TObjectPtr classPtr);
-    virtual void SkipClassSequential(const CClassTypeInfo* classType);
-    virtual void SkipClassRandom(const CClassTypeInfo* classType);
+                                 TObjectPtr classPtr) override;
+    virtual void SkipClassSequential(const CClassTypeInfo* classType) override;
+    virtual void SkipClassRandom(const CClassTypeInfo* classType) override;
 
     virtual void ReadChoiceSimple(const CChoiceTypeInfo* choiceType,
-                                  TObjectPtr choicePtr);
-    virtual void SkipChoiceSimple(const CChoiceTypeInfo* choiceType);
+                                  TObjectPtr choicePtr) override;
+    virtual void SkipChoiceSimple(const CChoiceTypeInfo* choiceType) override;
 
 #endif
 
     // low level I/O
-    virtual void BeginNamedType(TTypeInfo namedTypeInfo);
-    virtual void EndNamedType(void);
+    virtual void BeginNamedType(TTypeInfo namedTypeInfo) override;
+    virtual void EndNamedType(void) override;
 
-    virtual void BeginContainer(const CContainerTypeInfo* containerType);
-    virtual void EndContainer(void);
-    virtual bool BeginContainerElement(TTypeInfo elementType);
+    virtual void BeginContainer(const CContainerTypeInfo* containerType) override;
+    virtual void EndContainer(void) override;
+    virtual bool BeginContainerElement(TTypeInfo elementType) override;
 
-    virtual void BeginClass(const CClassTypeInfo* classInfo);
-    virtual void EndClass(void);
-    virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType);
+    virtual void BeginClass(const CClassTypeInfo* classInfo) override;
+    virtual void EndClass(void) override;
+    virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType) override;
     virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType,
-                                          TMemberIndex pos);
-    virtual void EndClassMember(void);
+                                          TMemberIndex pos) override;
+    virtual void EndClassMember(void) override;
 
-    virtual void BeginChoice(const CChoiceTypeInfo* choiceType);
-    virtual void EndChoice(void);
-    virtual TMemberIndex BeginChoiceVariant(const CChoiceTypeInfo* choiceType);
-    virtual void EndChoiceVariant(void);
+    virtual void BeginChoice(const CChoiceTypeInfo* choiceType) override;
+    virtual void EndChoice(void) override;
+    virtual TMemberIndex BeginChoiceVariant(const CChoiceTypeInfo* choiceType) override;
+    virtual void EndChoiceVariant(void) override;
 
-    virtual void BeginBytes(ByteBlock& block);
-    virtual size_t ReadBytes(ByteBlock& block, char* dst, size_t length);
-    virtual void EndBytes(const ByteBlock& block);
+    virtual void BeginBytes(ByteBlock& block) override;
+    virtual size_t ReadBytes(ByteBlock& block, char* dst, size_t length) override;
+    virtual void EndBytes(const ByteBlock& block) override;
 
-    virtual void BeginChars(CharBlock& block);
-    virtual size_t ReadChars(CharBlock& block, char* dst, size_t length);
-    virtual void EndChars(const CharBlock& block);
+    virtual void BeginChars(CharBlock& block) override;
+    virtual size_t ReadChars(CharBlock& block, char* dst, size_t length) override;
+    virtual void EndChars(const CharBlock& block) override;
 
 #if HAVE_NCBI_C
     friend class CObjectIStream::AsnIo;
 #endif
     void ResetThisState(void);
-    virtual void ResetState(void);
+    virtual void ResetState(void) override;
 
 private:
-    virtual EPointerType ReadPointerType(void);
-    virtual TObjectIndex ReadObjectPointer(void);
-    virtual string ReadOtherPointer(void);
-    virtual void ReadOtherPointerEnd(void);
-    virtual pair<TObjectPtr, TTypeInfo> ReadPointer(TTypeInfo declaredType);
+    virtual EPointerType ReadPointerType(void) override;
+    virtual TObjectIndex ReadObjectPointer(void) override;
+    virtual string ReadOtherPointer(void) override;
+    virtual void ReadOtherPointerEnd(void) override;
+    virtual pair<TObjectPtr, TTypeInfo> ReadPointer(TTypeInfo declaredType) override;
     virtual void SkipPointer(TTypeInfo declaredType);
 
     bool SkipRealValue(void);

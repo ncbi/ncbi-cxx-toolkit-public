@@ -64,16 +64,16 @@ public:
     CPrimitiveTypeInfo(size_t size, const string& name,
                        EPrimitiveValueType valueType, bool isSigned = true);
 
-    virtual bool IsDefault(TConstObjectPtr object) const;
+    virtual bool IsDefault(TConstObjectPtr object) const override;
     virtual bool Equals(TConstObjectPtr , TConstObjectPtr,
-                        ESerialRecursionMode how = eRecursive) const;
-    virtual void SetDefault(TObjectPtr dst) const;
+                        ESerialRecursionMode how = eRecursive) const override;
+    virtual void SetDefault(TObjectPtr dst) const override;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src,
-                        ESerialRecursionMode how = eRecursive) const;
+                        ESerialRecursionMode how = eRecursive) const override;
 
     EPrimitiveValueType GetPrimitiveValueType(void) const;
 
-    bool IsSigned(void) const;
+    virtual bool IsSigned(void) const;
 
     virtual bool GetValueBool(TConstObjectPtr objectPtr) const;
     virtual void SetValueBool(TObjectPtr objectPtr, bool value) const;

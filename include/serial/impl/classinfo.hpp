@@ -90,12 +90,12 @@ public:
     const CMemberInfo* GetMemberInfo(const CIterator& i) const;
     const CMemberInfo* GetMemberInfo(const CTempString& name) const;
 
-    virtual bool IsDefault(TConstObjectPtr object) const;
+    virtual bool IsDefault(TConstObjectPtr object) const override;
     virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2,
-                        ESerialRecursionMode how = eRecursive) const;
-    virtual void SetDefault(TObjectPtr dst) const;
+                        ESerialRecursionMode how = eRecursive) const override;
+    virtual void SetDefault(TObjectPtr dst) const override;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src,
-                        ESerialRecursionMode how = eRecursive) const;
+                        ESerialRecursionMode how = eRecursive) const override;
 
     bool RandomOrder(void) const;
     CClassTypeInfo* SetRandomOrder(bool random = true);
@@ -125,11 +125,11 @@ protected:
     void AssignMemberDefault(TObjectPtr object, const CMemberInfo* info) const;
     void AssignMemberDefault(TObjectPtr object, TMemberIndex index) const;
     
-    virtual bool IsType(TTypeInfo typeInfo) const;
-    virtual bool IsParentClassOf(const CClassTypeInfo* classInfo) const;
-    virtual EMayContainType CalcMayContainType(TTypeInfo typeInfo) const;
+    virtual bool IsType(TTypeInfo typeInfo) const override;
+    virtual bool IsParentClassOf(const CClassTypeInfo* classInfo) const override;
+    virtual EMayContainType CalcMayContainType(TTypeInfo typeInfo) const override;
 
-    virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
+    virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const override;
     void RegisterSubClasses(void) const;
 
 private:
