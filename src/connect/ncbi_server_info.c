@@ -277,11 +277,11 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 vhost = attr->type & SERV_VHOSTABLE ? str : 0;
                 ipv6  = 0;
             }
-            if (str != end
-                &&  !(str = SOCK_StringToHostPortEx(str, &host, &port, lazy))){
+            if (str == end)
+                port = 0;
+            else if (!(str = SOCK_StringToHostPortEx(str, &host, &port, lazy)))
                 return 0;
-            }
-            if (str != end)
+            else if (str != end)
                 return 0;
             if (!ipv6)
                 NcbiIPv4ToIPv6(&addr, host, 0);
@@ -301,13 +301,14 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 }
                 if (len > 1  &&  dot) {
                     tmp = strndup(vhost, len);
-                    assert(!tmp  ||  !SOCK_isipEx(tmp, 1/*fullquad*/));
-                    if (!tmp)
-                        vhost = 0;
-                    else if (SOCK_isip(tmp)/*NB: very unlikely*/)
-                        vhost = 0;
-                    else
+                    /*NB: NcbiIPToAddr() can parse full-quad IPv4, so !vhost*/
+                    assert(!tmp  ||  !SOCK_isipEx(tmp, 1/*full-quad*/));
+                    if (tmp) {
+                        if (SOCK_isip(tmp)/*NB: very unlikely*/)
+                            vhost = 0;
                         free((void*) tmp);
+                    } else
+                        vhost = 0;
                 } else
                     vhost = 0;
             }
@@ -534,7 +535,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
         while (*str  &&  isspace((unsigned char)(*str)))
             ++str;
     }
-    if (!*str  ||  !vhost  ||  secu  ||  (info->type & fSERV_Http)) {
+    if (!*str  &&  (!vhost  ||  secu  ||  (info->type & fSERV_Http))) {
         if (vhost) {
             if (len > 255)
                 len = 255;
