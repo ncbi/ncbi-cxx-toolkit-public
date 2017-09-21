@@ -1252,9 +1252,9 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Required },
+          { "ip",      eNSPT_Str,  eNSPA_Optchain },
           // Session ID for application sending the command.
-          { "sid",     eNSPT_Str,  eNSPA_Required },
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional },
           // request Hit ID
@@ -1325,7 +1325,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // drain: wait until all BLOBs are expired, then shutdown
-          { "drain",    eNSPT_Int,  eNSPA_Optional } } },
+          { "drain",    eNSPT_Int,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Get server statistics.
     { "GETSTAT",
         {&CNCMessageHandler::x_DoCmd_GetStat, "GETSTAT"},
@@ -1338,7 +1341,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Client IP for application sending the command.
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           // Session ID for application sending the command.
-          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Read full ini-file used by NetCache for configuration.
     { "GETCONF",
         {&CNCMessageHandler::x_DoCmd_GetConfig,      "GETCONF",
@@ -1353,7 +1359,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Client IP for application sending the command.
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           // Session ID for application sending the command.
-          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Get state information,  added in v6.8.6
     { "INFO",
         {&CNCMessageHandler::x_DoCmd_GetConfig,      "INFO",
@@ -1368,7 +1377,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Client IP for application sending the command.
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           // Session ID for application sending the command.
-          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Acknowledge alert,  added in v6.8.6
     { "ACKALERT",
         {&CNCMessageHandler::x_DoCmd_AckAlert,  "ACKALERT",
