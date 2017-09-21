@@ -113,6 +113,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 #ifdef FTDS_IN_USE
 #  if NCBI_FTDS_VERSION >= 95
 , m_OrigIntHandler(NULL)
+, m_CancelTimedOut(false)
 #  endif
 , m_OrigTimeout(0)
 , m_BaseTimeout(0)
@@ -130,7 +131,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
     } else {
         tds_version = GetCTLibContext().GetTDSVersion();
     }
-    
+
     switch (tds_version) {
         case 50:
             tds_version = CS_TDS_50;
@@ -1381,6 +1382,19 @@ int CTL_Connection::x_IntHandler(void* param)
         &&  ctl_conn != NULL) {
         CFastMutexGuard LOCK(ctl_conn->m_AsyncCancelMutex);
         CTL_CmdBase* cmd = ctl_conn->m_ActiveCmd;
+
+        if (cmd != NULL) {
+            if (cmd->WasCanceled()) {
+                // This is a very specific scenario: a cancel request due to
+                // a timeout has been sent however a response to that request
+                // did not come back within one loop over the poll() call i.e.
+                // 1 sec. It is memorized here to break the poll() loop later
+                // on in the CTLibContext::CTLIB_cterr_handler()
+                ctl_conn->SetCancelTimedOut(true);
+                return TDS_INT_CANCEL;
+            }
+        }
+
         ++ctl_conn->m_TotalTimeout;
         unsigned int max_timeout = 0;
         if (ctl_conn->IsOpen()) {

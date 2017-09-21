@@ -422,6 +422,19 @@ public:
 
     void DeferTimeout(void);
 
+#if defined(FTDS_IN_USE)  &&  NCBI_FTDS_VERSION >= 95
+    void SetCancelTimedOut(bool val)
+    {
+        m_CancelTimedOut = val;
+    }
+
+    bool GetCancelTimedOut(void) const
+    {
+        return m_CancelTimedOut;
+    }
+#endif
+
+
 protected:
     virtual CDB_LangCmd*     LangCmd     (const string&   lang_query);
     virtual CDB_RPCCmd*      RPC         (const string&   rpc_name);
@@ -529,6 +542,15 @@ private:
     static int x_IntHandler(void* param);
     typedef int (*FIntHandler)(void*);
     FIntHandler m_OrigIntHandler;
+
+    // The variable is used to handle the following scenarios:
+    // an SQL server request has timed out; this leads to sending a cancel
+    // request to the SQL server; the SQL server is supposed to answer to this
+    // within a short time. If the SQL server does not answer on the cancel
+    // request within one iteration over the poll() call i.e. 1 sec then this
+    // variable is set to true. It happens in CTL_Connection::x_IntHandler()
+    // and the checked in the CTLibContext::CTLIB_cterr_handler().
+    bool        m_CancelTimedOut;
 #  else
     static int x_TimeoutFunc(void* param, unsigned int total_timeout);
     int (*m_OrigTimeoutFunc)(void*, unsigned int);

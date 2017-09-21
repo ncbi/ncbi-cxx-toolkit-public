@@ -1286,6 +1286,16 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
 
             PassException(ex, server_name, user_name, msg->severity, params);
             if (ctl_conn != NULL && ctl_conn->IsOpen()) {
+#if NCBI_FTDS_VERSION >= 95
+                if (ctl_conn->GetCancelTimedOut()) {
+                    // This is the case when a cancel request was sent due to a
+                    // timeout but a response to it has not been received
+                    // within one loop over the poll() i.e. 1 sec. So reset the
+                    // flag and return CS_FAIL to break the poll() loop.
+                    ctl_conn->SetCancelTimedOut(false);
+                    return CS_FAIL;
+                }
+#endif
                 return CS_SUCCEED;
             } else {
                 return CS_FAIL;
