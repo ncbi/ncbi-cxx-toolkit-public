@@ -78,8 +78,6 @@ void CDBExceptionStorage::Accept(CDB_Exception const& e)
 {
     CFastMutexGuard mg(m_Mutex);
 
-    CDB_Exception* ex = e.Clone(); // for debugging ...
-
     // Sometimes the very same exception is pushed to the storage via different
     // paths. To avoid double output in a log file the accumulated list is
     // checked if there is this exception here already.
@@ -89,6 +87,7 @@ void CDBExceptionStorage::Accept(CDB_Exception const& e)
                 return;     // the same exception has already been registered
     }
 
+    CDB_Exception* ex = e.Clone(); // for debugging ...
     m_Exceptions.push_back(ex);
 }
 
