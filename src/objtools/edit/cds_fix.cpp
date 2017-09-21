@@ -639,14 +639,32 @@ void s_AdjustForUTR_SingleSide(CSeq_loc& mrna_loc, const CSeq_loc &utr_loc, cons
 
 void s_AdjustForUTR(const CSeq_feat& utr, int cd_start, int cd_stop, CSeq_loc& mrna_loc, bool& found5, bool& found3, CScope& scope)
 {
-    if ( utr.GetData().GetSubtype() == CSeqFeatData::eSubtype_5UTR )
-    {
+    if (utr.GetData().GetSubtype() == CSeqFeatData::eSubtype_5UTR && mrna_loc.GetStrand() == utr.GetLocation().GetStrand()) {
+        if (utr.GetLocation().GetStrand() == eNa_strand_minus) {
+            if (utr.GetLocation().GetStart(eExtreme_Positional) != cd_stop + 1) {
+                return;
+            }
+        }
+        else {
+            if (utr.GetLocation().GetStop(eExtreme_Positional) != cd_start - 1) {
+                return;
+            }
+        }
         found5 = true;
         s_AdjustForUTR_SingleSide(mrna_loc, utr.GetLocation(), *mrna_loc.GetId());
         mrna_loc.SetPartialStart( utr.GetLocation().IsPartialStart(eExtreme_Positional), eExtreme_Positional );        
     }
-    else if ( utr.GetData().GetSubtype() == CSeqFeatData::eSubtype_3UTR )
-    {
+    else if (utr.GetData().GetSubtype() == CSeqFeatData::eSubtype_3UTR  && mrna_loc.GetStrand() == utr.GetLocation().GetStrand()) {
+        if (utr.GetLocation().GetStrand() == eNa_strand_minus) {
+            if (utr.GetLocation().GetStop(eExtreme_Positional) != cd_start - 1) {
+                return;
+            }
+        }
+        else {
+            if (utr.GetLocation().GetStart(eExtreme_Positional) != cd_stop + 1) {
+                return;
+            }
+        }
         found3 = true;
         CRef<CSeq_loc> new_loc(new CSeq_loc);
         new_loc->Assign(utr.GetLocation());
@@ -707,6 +725,7 @@ CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope)
         bool found5 = false;
         int cd_start = cd_loc.GetStart(eExtreme_Positional);
         int cd_stop = cd_loc.GetStop(eExtreme_Positional);
+        //cd_loc.GetStrand();
  
         if (bsh) {      
             for (CFeat_CI utr(bsh, CSeqFeatData::e_Imp); utr; ++utr)
