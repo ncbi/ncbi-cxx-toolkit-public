@@ -181,12 +181,12 @@ void CProteinMatchApp::Init(void)
         "Binary_Dir", 
         "Directory containing C++ binaries, if not CWD",
         CArgDescriptions::eString);
-
+/*
     arg_desc->AddOptionalKey("outdir",
         "Output_Dir",
         "Output directory, if not specified write to CWD",
         CArgDescriptions::eString);
-
+*/
     arg_desc->AddFlag("keep-temps", "Retain temporary files");
 
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc,
@@ -205,7 +205,7 @@ int CProteinMatchApp::Run(void)
     const string bin_dir = args["bindir"] ? 
         args["bindir"].AsString() :
         CDir::GetCwd();
-
+/*
     string out_dir = CDir::GetCwd();
     if (args["outdir"]) {
         CDir outputdir(args["outdir"].AsString());
@@ -214,6 +214,7 @@ int CProteinMatchApp::Run(void)
         }
         out_dir = args["outdir"].AsString();
     }
+*/
 
 #ifdef NCBI_OS_MSWIN
     CBinRunner assm_assm_blastn(bin_dir, "assm_assm_blastn.exe");
@@ -233,9 +234,12 @@ int CProteinMatchApp::Run(void)
     
     unique_ptr<CObjectIStream> pInStream(x_InitObjectIStream(args));
 
-    const string table_file = CDirEntry::MakePath(
-        out_dir,
-        args["o"].AsString());
+    const string table_file = args["o"].AsString();
+    if (NStr::IsBlank(table_file)) {
+        NCBI_THROW(CProteinMatchException,
+            eInputError,
+            "Table filename not specified");
+    }
 
     CMatchTabulate match_tab(db_scope);
 
@@ -663,6 +667,7 @@ void CProteinMatchApp::x_GetSeqEntryFileNames(const string& file_stub,
 void CProteinMatchApp::x_GetSeqEntryFileNames(const string& file_stub,
     CProteinMatchApp::TEntryFilenameMap&  filename_map) const
 {
+
     filename_map["db_nuc_prot_set"]     = file_stub + ".db.asn";
     filename_map["db_nuc_seq"]          = file_stub + ".db_nuc.asn";
     filename_map["local_nuc_prot_set"]  = file_stub + ".local.asn";
