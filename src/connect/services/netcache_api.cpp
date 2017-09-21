@@ -768,6 +768,9 @@ void CNetCacheAPI::ProlongBlobLifetime(const string& blob_key, unsigned ttl,
 
     parameters.LoadNamedParameters(optional);
 
+    // XXX: A workaround for IP always required for PROLONG
+    if (!CDiagContext::GetRequestContext().IsSetClientIP()) cmd += " ip=\"\"";
+
     m_Impl->AppendClientIPSessionIDPasswordAgeHitID(&cmd, &parameters);
 
     m_Impl->ExecMirrorAware(key_obj, cmd, false, &parameters);
