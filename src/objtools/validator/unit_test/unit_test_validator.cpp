@@ -12395,7 +12395,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     legal_strings.push_back ("DDBJ");
     legal_strings.push_back ("EcoGene");
     legal_strings.push_back ("EMBL");
-    legal_strings.push_back ("ENSEMBL");
+    // legal_strings.push_back ("ENSEMBL");
+    legal_strings.push_back ("Ensembl");
     legal_strings.push_back ("ESTLIB");
     legal_strings.push_back ("FANTOM_DB");
     legal_strings.push_back ("FLYBASE");
