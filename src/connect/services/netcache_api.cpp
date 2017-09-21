@@ -769,6 +769,7 @@ void CNetCacheAPI::ProlongBlobLifetime(const string& blob_key, unsigned ttl,
     parameters.LoadNamedParameters(optional);
 
     // XXX: A workaround for IP always required for PROLONG
+    // TODO: Remove after all NetCache servers upgraded to 6.14.4 (CXX-9580)
     if (!CDiagContext::GetRequestContext().IsSetClientIP()) cmd += " ip=\"\"";
 
     m_Impl->AppendClientIPSessionIDPasswordAgeHitID(&cmd, &parameters);
