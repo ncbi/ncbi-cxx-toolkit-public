@@ -496,28 +496,36 @@ CDbtag::TDbtagGroup CDbtag::GetDBFlags (string& correct_caps) const
     
     ITERATE (TDbxrefTypeMap, it, sc_ApprovedDb) {
         if ( NStr::EqualNocase(db, it->first) ) {
-            correct_caps = it->first;
+            if ( correct_caps.empty() || ! NStr::EqualCase(db, correct_caps) ) {
+                correct_caps = it->first;
+            }
             rsult |= fGenBank;
         }
     }
 
     ITERATE (TDbxrefTypeMap, it, sc_ApprovedRefSeqDb) {
         if ( NStr::EqualNocase(db, it->first) ) {
-            correct_caps = it->first;
+            if ( correct_caps.empty() || ! NStr::EqualCase(db, correct_caps) ) {
+                correct_caps = it->first;
+            }
             rsult |= fRefSeq;
         }
     }
 
     ITERATE (TDbxrefTypeMap, it, sc_ApprovedSrcDb) {
         if ( NStr::EqualNocase(db, it->first) ) {
-            correct_caps = it->first;
+            if ( correct_caps.empty() || ! NStr::EqualCase(db, correct_caps) ) {
+                correct_caps = it->first;
+            }
             rsult |= fSrc;
         }
     }
 
     ITERATE (TDbxrefTypeMap, it, sc_ApprovedProbeDb) {
         if ( NStr::EqualNocase(db, it->first) ) {
-            correct_caps = it->first;
+            if ( correct_caps.empty() || ! NStr::EqualCase(db, correct_caps) ) {
+                correct_caps = it->first;
+            }
             rsult |= fProbe;
         }
     }
