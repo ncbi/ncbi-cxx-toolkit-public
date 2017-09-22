@@ -63,16 +63,16 @@ public:
         eMissingValue,    ///< Mandatory value was missing in the input
         eNullValue        ///< Data value is null
     };
-    virtual const char* GetErrCodeString(void) const override;
+    virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CSerialException,CException);
 
 public:
     // Combine steram frames info into single message
     void AddFrameInfo(string frame_info);
-    virtual void ReportExtra(ostream& out) const override;
+    virtual void ReportExtra(ostream& out) const;
 
 protected:
-    virtual void x_Assign(const CException& src) override;
+    virtual void x_Assign(const CException& src);
 
 private:
     string m_FrameStack;
@@ -88,7 +88,7 @@ public:
         eWrite,
         eUnknownMember
     };
-    virtual const char* GetErrCodeString(void) const override;
+    virtual const char* GetErrCodeString(void) const;
 
     NCBI_EXCEPTION_DEFAULT(CUnassignedMember,CSerialException);
 };
@@ -104,7 +104,7 @@ public:
     enum EErrCode {
         eFail
     };
-    virtual const char* GetErrCodeString(void) const override;
+    virtual const char* GetErrCodeString(void) const;
     static const char* GetName(size_t index,
                                const char* const names[], 
                                size_t namesCount);
@@ -132,13 +132,13 @@ public:
     CInvalidChoiceSelection(const CInvalidChoiceSelection& other);
     virtual ~CInvalidChoiceSelection(void) throw();
 
-    virtual const char* GetType(void) const override;
+    virtual const char* GetType(void) const;
     typedef int TErrCode;
     TErrCode GetErrCode(void) const;
 
 protected:
     CInvalidChoiceSelection(void);
-    virtual const CException* x_Clone(void) const override;
+    virtual const CException* x_Clone(void) const;
 };
 
 END_NCBI_SCOPE
