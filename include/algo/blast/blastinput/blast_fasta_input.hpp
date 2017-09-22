@@ -170,7 +170,6 @@ private:
     // for reading paired reads from two FASTA files
     CRef<ILineReader> m_SecondLineReader;
     string m_Sequence;
-    CTempString m_Line;
     /// Are paired sequences in the input
     bool m_IsPaired;
     /// Input format: FASTA, FASTQ, FASTC
