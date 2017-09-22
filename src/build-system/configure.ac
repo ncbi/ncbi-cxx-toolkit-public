@@ -5355,7 +5355,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
           ]])])
           eval "$ac_cpp $BOOST_INCLUDE conftest.$ac_ext" > conftest.sh \
              2>&AS_MESSAGE_LOG_FD
-          . ./conftest.sh
+          . ./conftest.sh 2>&AS_MESSAGE_LOG_FD
           rm -f conftest*
          ])
       AC_DEFINE_UNQUOTED(NCBI_EXPECTED_BOOST_VERSION,

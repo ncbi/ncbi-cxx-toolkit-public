@@ -34507,7 +34507,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
 _ACEOF
           eval "$ac_cpp $BOOST_INCLUDE conftest.$ac_ext" > conftest.sh \
              2>&5
-          . ./conftest.sh
+          . ./conftest.sh 2>&5
           rm -f conftest*
 
 fi
