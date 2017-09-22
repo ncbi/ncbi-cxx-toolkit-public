@@ -1189,6 +1189,7 @@ CNF	s	Croatian Mycological Society
 CNH	h	Canakkale Onsekiz Mart University		
 CNHM<CRO>	s	Croatian Natural History Museum, Botany Department		
 CNHM<USA-OH>	s	Cincinnati Museum of Natural History		
+CNHM<USA-OH>:ORNITH	s	Cincinnati Museum of Natural History, Ornithology collection
 CNHP	s	Beijing Natural History Museum		
 CNHS	s	Croydon Natural History and Scientific Society		
 CNM	s	Cheltenham Naturalists' Association		

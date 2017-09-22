@@ -1222,6 +1222,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CNH\th\tCanakkale Onsekiz Mart University\t\t",
 "CNHM<CRO>\ts\tCroatian Natural History Museum, Botany Department\t\t",
 "CNHM<USA-OH>\ts\tCincinnati Museum of Natural History\t\t",
+"CNHM<USA-OH>:ORNITH\ts\tCincinnati Museum of Natural History, Ornithology collection",
 "CNHP\ts\tBeijing Natural History Museum\t\t",
 "CNHS\ts\tCroydon Natural History and Scientific Society\t\t",
 "CNM\ts\tCheltenham Naturalists' Association\t\t",
