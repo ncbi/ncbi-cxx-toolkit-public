@@ -670,17 +670,24 @@ CShortReadFastaInputSource::x_ReadFastc(CBioseq_set& bioseq_set)
     seqdesc_last->SetUser().SetType().SetStr("Mapping");
     seqdesc_last->SetUser().AddField("has_pair", eLastSegment);
 
-    while (!m_LineReader->AtEOF()) {
-        ++(*m_LineReader);
-        m_Line = **m_LineReader;
-
-        // ignore empty lines
-        if (m_Line.empty()) {
-            continue;
-        }
+    if (m_LineReader->AtEOF()) {
+        return;
     }
 
-    if (id[0] != '>') {
+    ++(*m_LineReader);
+    m_Line = **m_LineReader;
+
+    // ignore empty lines
+    while (!m_LineReader->AtEOF() && m_Line.empty()) {
+        ++(*m_LineReader);
+        m_Line = **m_LineReader;
+    }
+
+    if (m_LineReader->AtEOF()) {
+        return;
+    }
+
+    if (m_Line[0] != '>') {
         NCBI_THROW(CInputException, eInvalidInput,
                    (string)"Missing defline before line: " +
                    NStr::IntToString(m_LineReader->GetLineNumber()));
@@ -688,12 +695,24 @@ CShortReadFastaInputSource::x_ReadFastc(CBioseq_set& bioseq_set)
 
     id = x_ParseDefline(m_Line);
 
+    if (m_LineReader->AtEOF()) {
+        NCBI_THROW(CInputException, eInvalidInput,
+                   (string)"No sequence data for defline: " + id +
+                   "\nTruncated file?");
+    }
+
     ++(*m_LineReader);
     m_Line = **m_LineReader;
     while (m_Line.empty() && !m_LineReader->AtEOF()) {
         ++(*m_LineReader);
         m_Line = **m_LineReader;
     }
+
+    if (m_Line[0] == '>' || (m_Line.empty() && m_LineReader->AtEOF())) {
+        NCBI_THROW(CInputException, eInvalidInput,
+                   (string)"No sequence data for defline: " + m_Line);
+    }
+
 
     // find '><' that separate reads of a pair
     size_t p = m_Line.find('>');

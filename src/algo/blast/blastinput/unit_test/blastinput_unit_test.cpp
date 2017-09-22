@@ -3158,6 +3158,44 @@ BOOST_AUTO_TEST_CASE(TestPairedReadsFromTwoASN1Files) {
     BOOST_REQUIRE_EQUAL(ref_flags.size(), count);
 }
 
+
+BOOST_AUTO_TEST_CASE(TestPairedReadsFromFastC) {
+
+    CNcbiIfstream istr("data/paired_reads.fastc");
+    BOOST_REQUIRE(istr);
+    unordered_map<string, int> ref_flags = {
+        {"lcl|read1.1", eFirstSegment},
+        {"lcl|read1.2", eLastSegment},
+        {"lcl|read2.1", eFirstSegment},
+        {"lcl|read2.2", eLastSegment},
+        {"lcl|read3.1", eFirstSegment},
+        {"lcl|read3.2", eLastSegment},
+    };
+    
+    CShortReadFastaInputSource input_source(istr,
+                                     CShortReadFastaInputSource::eFastc, true);
+    CBlastInputOMF input(&input_source, 1000);
+    CRef<CBioseq_set> queries(new CBioseq_set);
+    input.GetNextSeqBatch(*queries);
+    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 6u);
+
+    size_t count = 0;
+    for (auto it : queries->GetSeq_set()) {
+        string id = s_GetSequenceId(it->GetSeq());
+        int flags = s_GetSegmentFlags(it->GetSeq());
+        int expected = ref_flags.at(id);
+
+        BOOST_REQUIRE_MESSAGE(flags == expected, (string)"Segment flag for " +
+                id + " is different from expected " +
+                NStr::IntToString(flags) + " != " +
+                NStr::IntToString(expected));
+        count++;
+    }
+
+    BOOST_REQUIRE_EQUAL(ref_flags.size(), count);
+}
+
+
 BOOST_AUTO_TEST_SUITE_END() // end of short_reads test suite
 
 
