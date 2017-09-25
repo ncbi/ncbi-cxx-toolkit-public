@@ -296,32 +296,6 @@ CFlatFileConfig::CGenbankBlockCallback::notify(
     return unified_notify(block_text, ctx,  slash_item, fGenbankBlocks_Slash);
 }
 
-// -- constructor
-CFlatFileConfig::CFlatFileConfig(
-    TFormat format,
-    TMode mode,
-    TStyle style,
-    TFlags flags,
-    TView view,
-    TGffOptions gff_options,
-    TGenbankBlocks genbank_blocks,
-    CGenbankBlockCallback* pGenbankBlockCallback,
-    const ICanceled * pCanceledCallback,
-    bool basicCleanup, TCustom custom ) :
-    m_Format(format), m_Mode(mode), m_Style(style), 
-    m_Flags(flags), m_View(view),
-    m_RefSeqConventions(false), m_GffOptions(gff_options),
-    m_fGenbankBlocks(genbank_blocks),
-    m_GenbankBlockCallback(pGenbankBlockCallback),
-    m_pCanceledCallback(pCanceledCallback),
-    m_BasicCleanup(basicCleanup), m_Custom(custom)
-{
-    // FTable always requires master style
-    if (m_Format == eFormat_FTable) {
-        m_Style = eStyle_Master;
-    }
-    m_html_formatter.Reset(new CHTMLEmptyFormatter);
-}
 
 
 CFlatFileConfig::CFlatFileConfig(

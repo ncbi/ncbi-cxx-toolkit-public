@@ -372,20 +372,6 @@ public:
     };
 
     // constructor
-    NCBI_DEPRECATED
-    CFlatFileConfig(TFormat format,
-                    TMode   mode,
-                    TStyle  style,
-                    TFlags  flags,
-                    TView   view,
-                    TGffOptions gff_options_OBSOLETE,
-                    TGenbankBlocks genbank_blocks = fGenbankBlocks_All,
-                    CGenbankBlockCallback* pGenbankBlockCallback = NULL,
-                    const ICanceled * pCanceledCallback = NULL,
-                    bool basicCleanup = false,
-                    TCustom custom = 0 );
-
-    // constructor
     CFlatFileConfig(TFormat format = eFormat_GenBank,
                     TMode   mode = eMode_GBench,
                     TStyle  style = eStyle_Normal,
