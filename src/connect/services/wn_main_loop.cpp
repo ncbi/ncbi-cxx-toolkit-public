@@ -549,6 +549,7 @@ void SWorkerNodeJobContextImpl::x_RunJob()
 
 void* CMainLoopThread::Main()
 {
+    const auto kRetryDelay = static_cast<unsigned long>(TServConn_RetryDelay::GetDefault() * kMilliSecondsPerSecond);
     SetCurrentThreadName(m_ThreadName);
     CDeadline max_wait_for_servers(
             TWorkerNode_MaxWaitForServers::GetDefault());
@@ -592,7 +593,7 @@ void* CMainLoopThread::Main()
                 CDeadline(TWorkerNode_MaxWaitForServers::GetDefault());
         }
         catch (CNetSrvConnException& e) {
-            SleepMilliSec(s_GetRetryDelay());
+            SleepMilliSec(kRetryDelay);
             if (e.GetErrCode() == CNetSrvConnException::eConnectionFailure &&
                     !max_wait_for_servers.GetRemainingTime().IsZero())
                 continue;
@@ -607,7 +608,7 @@ void* CMainLoopThread::Main()
                 CGridGlobals::GetInstance().RequestShutdown(
                     CNetScheduleAdmin::eShutdownImmediate);
             } else {
-                SleepMilliSec(s_GetRetryDelay());
+                SleepMilliSec(kRetryDelay);
                 continue;
             }
         }

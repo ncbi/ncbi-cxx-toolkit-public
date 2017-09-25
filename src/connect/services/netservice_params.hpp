@@ -59,7 +59,7 @@ NCBI_PARAM_DECL(unsigned int, netservice_api, connection_max_retries);
 typedef NCBI_PARAM_TYPE(netservice_api, connection_max_retries)
     TServConn_ConnMaxRetries;
 
-NCBI_PARAM_DECL(string, netservice_api, retry_delay);
+NCBI_PARAM_DECL(double, netservice_api, retry_delay);
 typedef NCBI_PARAM_TYPE(netservice_api, retry_delay)
     TServConn_RetryDelay;
 
@@ -101,10 +101,6 @@ typedef NCBI_PARAM_TYPE(server, stop_on_job_errors)
 NCBI_PARAM_DECL(bool, server, allow_implicit_job_return);
 typedef NCBI_PARAM_TYPE(server, allow_implicit_job_return)
     TWorkerNode_AllowImplicitJobReturn;
-
-NCBI_XCONNECT_EXPORT unsigned long s_SecondsToMilliseconds(
-    const string& seconds, unsigned long default_value);
-NCBI_XCONNECT_EXPORT unsigned long s_GetRetryDelay();
 
 
 class NCBI_XCONNECT_EXPORT CConfigRegistry : public IRegistry
