@@ -98,7 +98,7 @@ public:
 private:
     CFastaOstreamEx* x_GetFastaOstream(CBioseq_Handle& handle);
     CObjectIStream* x_OpenIStream(const CArgs& args);
-    bool x_IsOtherFeat(const CSeq_feat& feat) const;
+    bool x_IsOtherFeat(const CSeq_feat_Handle& feat) const;
     void x_WriteScoreHeader(const CBioseq& bioseq, CNcbiOstream& ostream) const;
 
     // data
@@ -1080,12 +1080,12 @@ CFastaOstreamEx* CAsn2FastaApp::x_GetFastaOstream(CBioseq_Handle& bsh)
 
 
 //  --------------------------------------------------------------------------
-bool CAsn2FastaApp::x_IsOtherFeat(const CSeq_feat& feat) const
+bool CAsn2FastaApp::x_IsOtherFeat(const CSeq_feat_Handle& feat_handle) const
 //  --------------------------------------------------------------------------
 {
-    return !(feat.GetData().IsCdregion() ||
-            feat.GetData().IsGene() ||
-            feat.GetData().IsRna());
+    return !(feat_handle.GetData().IsCdregion() ||
+            feat_handle.GetData().IsGene() ||
+            feat_handle.GetData().IsRna());
 }
 
 //  --------------------------------------------------------------------------
@@ -1151,36 +1151,37 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
     // Iterate over features
     SAnnotSelector sel;
     sel.SetAdaptiveDepth(true);
-    sel.SetResolveAll();
     sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
-    sel.SetResolveDepth(100);
-    sel.ExcludeNamedAnnots("SNP");
+    sel.ExcludeNamedAnnots("SNP");    
 
     auto& scope = seh.GetScope();
 
-    for (CFeat_CI feat_it(seh, sel); feat_it; ++feat_it) {
+    for (CBioseq_CI bioseq_it(seh); bioseq_it; ++bioseq_it) {
+        CBioseq_Handle bsh = *bioseq_it;
+        if (!bsh) 
+            continue;
 
-        const CSeq_feat& feat = feat_it->GetOriginalFeature();
-        auto bsh = scope.GetBioseqHandle(feat.GetLocation());
         CFastaOstreamEx* fasta_os = x_GetFastaOstream(bsh);
 
-        if (feat.IsSetData() &&
-            feat.GetData().IsCdregion()) {
-        }
-
-        if (!feat.IsSetData() ||
-            (feat.GetData().IsCdregion() && !m_CDS) ||
-            (feat.GetData().IsGene() && !m_Gene) ||
-            (feat.GetData().IsRna() && !m_RNA) ||
-            (x_IsOtherFeat(feat) && !m_OtherFeats)) {
+        CFeat_CI feat_it(bsh, sel); 
+        for ( ; feat_it; ++feat_it) {
+        
+            if (!feat_it->IsSetData() ||
+                (feat_it->GetData().IsCdregion() && !m_CDS) ||
+                (feat_it->GetData().IsGene() && !m_Gene) ||
+                (feat_it->GetData().IsRna() && !m_RNA) ||
+                (x_IsOtherFeat(*feat_it) && !m_OtherFeats)) {
                 continue;
-        }
-        if ( m_DeflineOnly ) {
-            fasta_os->WriteFeatureTitle(feat, scope, m_TranslateCDS);
-        } else {
-            fasta_os->WriteFeature(feat, scope, m_TranslateCDS);
+            }
+            const CSeq_feat& feat = feat_it->GetMappedFeature();
+            if ( m_DeflineOnly ) {
+                fasta_os->WriteFeatureTitle(feat, scope, m_TranslateCDS);
+            } else {
+                fasta_os->WriteFeature(feat, scope, m_TranslateCDS);
+            }
         }
     }
+
     return true;
 }
 
