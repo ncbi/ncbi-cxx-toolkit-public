@@ -155,6 +155,14 @@ enum EInterruptOnSignal {
 };
 
 
+/// Can the action be retried?
+enum ERetriable {
+    eRetriable_No,      ///< It makes no sense to retry the action
+    eRetriable_Unknown, ///< It is unknown if the action can succeed if retried
+    eRetriable_Yes      ///< It makes sense to try again
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 /// Support for safe bool operators
 /////////////////////////////////////////////////////////////////////////////

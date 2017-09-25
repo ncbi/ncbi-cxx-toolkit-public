@@ -41,6 +41,7 @@
 
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbi_stack.hpp>
+#include <corelib/ncbimisc.hpp>
 #include <errno.h>
 #include <string.h>
 #include <typeinfo>
@@ -894,6 +895,12 @@ public:
     /// Get the request context in which the exception was thrown.
     CRequestContext& GetRequestContext(void) const;
 
+    /// Set the info about ability to retry an action caused the exception
+    void       SetRetriable(ERetriable retriable)  { m_Retriable = retriable; }
+
+    /// Retrieve info about ability to retry an action caused the exception
+    ERetriable GetRetriable(void)  const           { return m_Retriable; }
+
 protected:
     /// Constructor for derived classes
     CException(const CDiagCompileInfo& info,
@@ -962,6 +969,11 @@ private:
     unique_ptr<CStackTrace> m_StackTrace; ///< Saved stack trace
 
     TFlags       m_Flags;            ///< Flags, hints, attributes
+
+    ERetriable   m_Retriable;        ///< In some cases it is known for sure if
+                                     ///< an action caused the exception can be
+                                     ///< tried again or not. This member holds
+                                     ///< this information.
 
     unique_ptr<CRequestContextRef> m_RequestContext;
 

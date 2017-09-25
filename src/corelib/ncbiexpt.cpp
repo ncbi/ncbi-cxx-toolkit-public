@@ -165,7 +165,8 @@ CException::CException(const CDiagCompileInfo& info,
   m_Predecessor(0),
   m_InReporter(false),
   m_MainText(true),
-  m_Flags(flags)
+  m_Flags(flags),
+  m_Retriable(eRetriable_Unknown)
 {
     if (CompareDiagPostLevel(severity, eDiag_Critical) >= 0  &&
         s_AbortIfCritical->Get()) {
@@ -186,7 +187,8 @@ CException::CException(const CDiagCompileInfo& info,
   m_Predecessor(0),
   m_InReporter(false),
   m_MainText(true),
-  m_Flags(flags)
+  m_Flags(flags),
+  m_Retriable(eRetriable_Unknown)
 {
     if (CompareDiagPostLevel(severity, eDiag_Critical) >= 0  &&
         s_AbortIfCritical->Get()) {
@@ -206,7 +208,8 @@ CException::CException(const CDiagCompileInfo& info,
   m_Predecessor(0),
   m_InReporter(false),
   m_MainText(true),
-  m_Flags(args.GetFlags())
+  m_Flags(args.GetFlags()),
+  m_Retriable(eRetriable_Unknown)
 {
     if (CompareDiagPostLevel(m_Severity, eDiag_Critical) >= 0  &&
         s_AbortIfCritical->Get()) {
@@ -233,7 +236,8 @@ CException::CException(void)
   m_Predecessor(0),
   m_InReporter(false),
   m_MainText(true),
-  m_Flags(0)
+  m_Flags(0),
+  m_Retriable(eRetriable_Unknown)
 {
 // this only is called in case of multiple inheritance
 }
@@ -544,6 +548,7 @@ void CException::x_Assign(const CException& src)
         m_StackTrace.reset(new CStackTrace(*src.m_StackTrace));
     }
     m_Flags = src.m_Flags;
+    m_Retriable = src.m_Retriable;
 }
 
 
