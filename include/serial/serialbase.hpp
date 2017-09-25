@@ -158,7 +158,7 @@ public:
     /// Check if both objects contain the same values
     virtual bool Equals(const CSerialObject& object,
                         ESerialRecursionMode how = eRecursive) const;
-    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const override;
+    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
     void ThrowUnassigned(TMemberIndex index) const;
     void ThrowUnassigned(TMemberIndex index,
@@ -267,7 +267,7 @@ public:
     CAnyContentObject(const CAnyContentObject& other);
     virtual ~CAnyContentObject(void);
 
-    virtual const CTypeInfo* GetThisTypeInfo(void) const override {
+    virtual const CTypeInfo* GetThisTypeInfo(void) const {
         return GetTypeInfo();
     }
     static const CTypeInfo* GetTypeInfo(void);
@@ -879,7 +879,7 @@ void NCBISERSetPostWrite(const Class* /*object*/, CInfo* info) \
 // define for declaring specific function
 #define DECLARE_INTERNAL_TYPE_INFO() \
     typedef const NCBI_NS_NCBI::CTypeInfo* TTypeInfo; \
-    virtual TTypeInfo GetThisTypeInfo(void) const override { return GetTypeInfo(); } \
+    virtual TTypeInfo GetThisTypeInfo(void) const { return GetTypeInfo(); } \
     static  TTypeInfo GetTypeInfo(void)
 
 #define ENUM_METHOD_NAME(EnumName) \
