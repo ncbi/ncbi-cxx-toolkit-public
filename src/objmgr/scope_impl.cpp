@@ -87,12 +87,6 @@ BEGIN_SCOPE(objects)
 NCBI_PARAM_DECL(bool, OBJMGR, KEEP_EXTERNAL_FOR_EDIT);
 NCBI_PARAM_DEF(bool, OBJMGR, KEEP_EXTERNAL_FOR_EDIT, false);
 
-static bool sx_KeepExternalAnnotsForEdit(void)
-{
-    static CSafeStatic<NCBI_PARAM_TYPE(OBJMGR, KEEP_EXTERNAL_FOR_EDIT)> sx_Value;
-    return sx_Value->Get();
-}
-
 
 #define EXCLUDE_EDITED_BIOSEQ_ANNOT_SET
 
@@ -108,7 +102,8 @@ CScope_Impl::CScope_Impl(CObjectManager& objmgr)
       m_ObjMgr(0),
       m_Transaction(NULL),
       m_BioseqChangeCounter(0),
-      m_AnnotChangeCounter(0)
+      m_AnnotChangeCounter(0),
+      m_KeepExternalAnnotsForEdit(CScope::GetDefaultKeepExternalAnnotsForEdit())
 {
     TConfWriteLockGuard guard(m_ConfLock);
     x_AttachToOM(objmgr);
@@ -144,6 +139,38 @@ void CScope_Impl::x_DetachFromOM(void)
     ResetScope();
     m_ObjMgr->RevokeScope(*this);
     m_ObjMgr.Reset();
+}
+
+
+bool CScope::GetDefaultKeepExternalAnnotsForEdit()
+{
+    return NCBI_PARAM_TYPE(OBJMGR, KEEP_EXTERNAL_FOR_EDIT)::GetDefault();
+}
+
+
+void CScope::SetDefaultKeepExternalAnnotsForEdit(bool keep)
+{
+    NCBI_PARAM_TYPE(OBJMGR, KEEP_EXTERNAL_FOR_EDIT)::SetDefault(keep);
+}
+
+
+bool CScope::GetKeepExternalAnnotsForEdit() const
+{
+    return m_Impl->GetKeepExternalAnnotsForEdit();
+}
+
+
+void CScope::SetKeepExternalAnnotsForEdit(bool keep)
+{
+    m_Impl->SetKeepExternalAnnotsForEdit(keep);
+}
+
+
+void CScope_Impl::SetKeepExternalAnnotsForEdit(bool keep)
+{
+    TConfWriteLockGuard guard(m_ConfLock);
+    m_KeepExternalAnnotsForEdit = true;
+    x_ClearAnnotCache();
 }
 
 
@@ -2373,7 +2400,7 @@ void CScope_Impl::x_GetTSESetWithOrphanAnnots(TTSE_LockMatchSet& lock,
         CDataSource& ds = it->GetDataSource();
         TTSE_LockMatchSet_DS ds_lock;
         if ( excl_ds && it->m_EditDS == excl_ds &&
-             sx_KeepExternalAnnotsForEdit() ) {
+             GetKeepExternalAnnotsForEdit() ) {
             // add external annotations for edited sequences
             ds.GetTSESetWithExternalAnnots(bioseq->GetObjectInfo(),
                                            binfo->x_GetTSE_ScopeInfo().m_TSE_Lock,

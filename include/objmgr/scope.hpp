@@ -613,6 +613,11 @@ public:
 
     void UpdateAnnotIndex(void);
 
+    static bool GetDefaultKeepExternalAnnotsForEdit();
+    static void SetDefaultKeepExternalAnnotsForEdit(bool keep = true);
+    bool GetKeepExternalAnnotsForEdit() const;
+    void SetKeepExternalAnnotsForEdit(bool keep = true);
+
 protected:
     CScope_Impl& GetImpl(void);
 

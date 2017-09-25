@@ -51,6 +51,8 @@
 
 #include <objects/general/general__.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
+#include <objects/seq/seq__.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <serial/iterator.hpp>
 
 #include <corelib/test_boost.hpp>
@@ -278,11 +280,11 @@ SAnnotSelector s_GetSelector(CSeqFeatData::ESubtype subtype,
 }
 
 
-void s_CheckFeat(const SAnnotSelector& sel,
+void s_CheckFeat(CRef<CScope> scope,
+                 const SAnnotSelector& sel,
                  const string& str_id,
                  CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole())
 {
-    CRef<CScope> scope = s_InitScope();
     CRef<CSeq_id> seq_id(new CSeq_id(str_id));
     CRef<CSeq_loc> loc(new CSeq_loc);
     if ( range == CRange<TSeqPos>::GetWhole() ) {
@@ -299,6 +301,14 @@ void s_CheckFeat(const SAnnotSelector& sel,
     CBioseq_Handle bh = scope->GetBioseqHandle(*seq_id);
     BOOST_REQUIRE(bh);
     BOOST_CHECK(CFeat_CI(bh, range, sel));
+}
+
+
+void s_CheckFeat(const SAnnotSelector& sel,
+                 const string& str_id,
+                 CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole())
+{
+    s_CheckFeat(s_InitScope(), sel, str_id, range);
 }
 
 
@@ -597,6 +607,23 @@ BOOST_AUTO_TEST_CASE(CheckExtTRNA)
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("tRNA");
     s_CheckFeat(sel, "NT_026437.11");
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckExtTRNAEdit)
+{
+    LOG_POST("Checking ExtAnnot tRNA edited");
+    SAnnotSelector sel(CSeqFeatData::eSubtype_tRNA);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.AddNamedAnnots("tRNA");
+    CRef<CScope> scope = s_InitScope();
+    scope->SetKeepExternalAnnotsForEdit();
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("NT_026437.11"));
+    BOOST_REQUIRE(bh);
+    CBioseq_EditHandle bhe = bh.GetEditHandle();
+    BOOST_REQUIRE(bh);
+    BOOST_REQUIRE(bhe);
+    s_CheckFeat(scope, sel, "NT_026437.11");
 }
 
 

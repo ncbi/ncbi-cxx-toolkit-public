@@ -534,6 +534,12 @@ public:
                 CRef<CDataSource_ScopeInfo> ds2,
                 const CTSE_ScopeInfo* replaced_tse = 0);
 
+    bool GetKeepExternalAnnotsForEdit() const
+    {
+        return m_KeepExternalAnnotsForEdit;
+    }
+    void SetKeepExternalAnnotsForEdit(bool keep = true);
+
 private:
     // Get bioseq handles for sequences from the given TSE using the filter
     typedef vector<CBioseq_Handle> TBioseq_HandleSet;
@@ -623,6 +629,7 @@ private:
 
     int m_BioseqChangeCounter;
     int m_AnnotChangeCounter;
+    bool m_KeepExternalAnnotsForEdit;
 
     friend class CScope;
     friend class CHeapScope;
