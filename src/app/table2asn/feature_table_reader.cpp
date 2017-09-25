@@ -487,6 +487,67 @@ namespace
 #endif
     }
 
+
+    static CConstRef<CSeq_feat> s_GetGeneByXref(const CSeq_feat& feat, const CBioseq& bioseq) 
+    {
+
+        if (!bioseq.IsSetAnnot()) {
+            return CConstRef<CSeq_feat>();
+        }
+
+        // Attempt to match by locus tag 
+        const CGene_ref* pGene_ref = feat.GetGeneXref();
+        if (pGene_ref) {
+            if(pGene_ref->IsSetLocus_tag()) {
+                const string locus_tag = pGene_ref->GetLocus_tag();
+                for (CRef<CSeq_annot> pSeq_annot : bioseq.GetAnnot()) {
+                    if (pSeq_annot->IsFtable()) {
+                        const auto& ftable = pSeq_annot->GetData().GetFtable();
+                        for (CRef<CSeq_feat> table_feat : ftable) {
+                            if (table_feat->IsSetData() &&
+                                table_feat->GetData().IsGene() &&
+                                table_feat->GetData().GetGene().IsSetLocus_tag() &&
+                                table_feat->GetData().GetGene().GetLocus_tag() == locus_tag) {
+                                return table_feat;
+                            }
+                        }
+                    }
+                }
+            } 
+        } 
+       
+        // Attempt to match by id 
+        for (CRef<CSeqFeatXref> pXref : feat.GetXref()) {
+
+            if (pXref->IsSetData() && 
+               !pXref->GetData().IsGene()) {
+                continue;
+            }
+
+            if (pXref->IsSetId()) {
+                for (CRef<CSeq_annot> pSeq_annot : bioseq.GetAnnot()) {
+                    for (CRef<CSeq_annot> pSeq_annot : bioseq.GetAnnot()) {
+                        if (pSeq_annot->IsFtable()) {
+                            const auto& ftable = pSeq_annot->GetData().GetFtable();
+                            for (CRef<CSeq_feat> table_feat : ftable) {
+                                if (table_feat->IsSetData() &&
+                                    table_feat->GetData().IsGene() && 
+                                    table_feat->IsSetIds()) {
+                                    for (CRef<CFeat_id> feat_id : table_feat->GetIds()) {
+                                        if (pXref->GetId().Equals(*feat_id)) {
+                                            return table_feat;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return CConstRef<CSeq_feat>();
+    }
+
     CConstRef<CSeq_feat> GetLinkedGene(const CSeq_feat& cd_feature, const CBioseq& bioseq, CScope& scope)
     {
         return sequence::GetGeneForFeature(cd_feature, scope);
@@ -533,7 +594,8 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
     CConstRef<CSeq_entry> replacement = LocateProtein(m_replacement_protein, cd_feature);
 
     CConstRef<CSeq_feat> mrna = GetLinkedmRNA(cd_feature, bioseq, scope);
-    CConstRef<CSeq_feat> gene = GetLinkedGene(cd_feature, bioseq, scope);
+    //CConstRef<CSeq_feat> gene = GetLinkedGene(cd_feature, bioseq, scope);
+    CConstRef<CSeq_feat> gene = s_GetGeneByXref(cd_feature, bioseq);
 
     CRef<CBioseq> protein;
     bool was_extended = false;
@@ -684,31 +746,13 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
         if (mrna.Empty())
             mrna = GetLinkedmRNA(cd_feature, bioseq, scope);
 
-       // if (gene.Empty())
-       //     gene = GetLinkedGene(cd_feature, bioseq, scope);
-
         AssignLocalIdIfEmpty(cd_feature, m_local_id_counter);
-
-
-        //cd_feature.SetXref().clear();
-        if (gene.NotEmpty())
-        {
-            CSeq_feat& gene_feature = (CSeq_feat&)*gene;
-
-            AssignLocalIdIfEmpty(gene_feature, m_local_id_counter);
-            
-            //gene_feature.SetXref().clear();
-            gene_feature.AddSeqFeatXref(cd_feature.GetId());
-            cd_feature.AddSeqFeatXref(gene_feature.GetId());
-        }
 
         if (mrna.NotEmpty())
         {
             CSeq_feat& mrna_feature = (CSeq_feat&)*mrna;
 
             AssignLocalIdIfEmpty(mrna_feature, m_local_id_counter);
-
-            //const string& product = cd_feature.GetNamedQual("product");
 
             if (protein_name != kEmptyStr)
             {
