@@ -782,17 +782,19 @@ CScoreVector<Key, Score>::find(const Key& key)
 
 template <class Key, class Score>
 inline
-void CScoreVector<Key, Score>::insert(iterator hint, const value_type& v)
+typename CScoreVector<Key, Score>::iterator
+CScoreVector<Key, Score>::insert(iterator hint, const value_type& v)
 {
-    m_Data.insert(hint, v);
+    return m_Data.insert(hint, v);
 }
 
 
 template <class Key, class Score>
 inline
-void CScoreVector<Key, Score>::insert(const value_type& v)
+pair<typename CScoreVector<Key, Score>::iterator, bool>
+CScoreVector<Key, Score>::insert(const value_type& v)
 {
-    m_Data.insert(v);
+    return m_Data.insert(v);
 }
 
 

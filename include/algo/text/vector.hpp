@@ -174,8 +174,8 @@ public:
     const_iterator end() const;
     iterator find(const Key& key);
     const_iterator find(const Key& key) const;
-    void insert(const value_type& val);
-    void insert(iterator hint, const value_type& val);
+    pair<iterator, bool> insert(const value_type& val);
+    iterator insert(iterator hint, const value_type& val);
     void erase(iterator it);
     void erase(const key_type& v);
 
