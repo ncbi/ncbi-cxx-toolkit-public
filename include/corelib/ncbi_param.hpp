@@ -559,9 +559,6 @@ public:
     /// global default value.
     static void ResetThreadDefault(void);
 
-    /// @internal
-    static SSystemMutex& GetLock(void) { return s_GetLock(); }
-
 private:
     static SSystemMutex& s_GetLock(void);
 
