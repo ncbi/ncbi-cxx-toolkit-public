@@ -75,7 +75,7 @@ public:
         }
 
     const string GetVar(const string& section, const string& value, bool collect) const;
-    string GetFileNamePrefix(void) const;
+    virtual string GetFileNamePrefix(void) const override;
     
     void AddDefinition(const string& name, const AutoPtr<CDataType>& type);
     void AddExports(const TExports& exports);

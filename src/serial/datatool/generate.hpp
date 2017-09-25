@@ -143,14 +143,14 @@ public:
 
     // generation interface
     virtual const CMemoryRegistry& GetConfig(void) const override;
-    string GetFileNamePrefix(void) const;
+    virtual string GetFileNamePrefix(void) const override;
     void UseQuotedForm(bool use);
     void CreateCvsignore(bool create);
     void SetFileNamePrefix(const string& prefix);
-    EFileNamePrefixSource GetFileNamePrefixSource(void) const;
+    virtual EFileNamePrefixSource GetFileNamePrefixSource(void) const override;
     void SetFileNamePrefixSource(EFileNamePrefixSource source);
-    CDataType* InternalResolve(const string& moduleName,
-                               const string& typeName) const;
+    virtual CDataType* InternalResolve(const string& moduleName,
+                               const string& typeName) const override;
 
     void SetDefaultNamespace(const string& ns);
     void ResetDefaultNamespace(void);
