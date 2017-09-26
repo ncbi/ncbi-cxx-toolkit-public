@@ -661,7 +661,7 @@ int CTbl2AsnApp::Run(void)
         size_t p;
         if ((p = m_context.m_validate.find("b")) != string::npos)
         {
-            m_context.m_validate.erase(p);
+            m_context.m_validate.erase(p, 1);
             m_context.m_make_flatfile = true;
         }
     }
@@ -995,7 +995,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
         if (m_context.m_make_flatfile)
         {
-            string ffname = GenerateOutputFilename(".ff");
+            string ffname = GenerateOutputFilename(".gbf");
 
             CFlatFileConfig config;
 
