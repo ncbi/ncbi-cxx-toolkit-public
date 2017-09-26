@@ -208,7 +208,22 @@ public:
 
     string GetHeaderText(void) const;
 
-//#define HAVE_NEW_PILEUP_COLLECTOR
+#define HAVE_NEW_PILEUP_COLLECTOR
+
+#if defined HAVE_NEW_PILEUP_COLLECTOR
+// check availability of SSE intrinsics
+# if defined NCBI_COMPILER_GCC || defined NCBI_COMPILER_ICC
+// check availability of SSE 4
+#  ifndef __SSE4_1__
+#   undef HAVE_NEW_PILEUP_COLLECTOR
+#  endif
+# elif defined NCBI_COMPILER_MSVC
+// MSVC has intrinsics
+# else
+// no intrinsics by default
+#  undef HAVE_NEW_PILEUP_COLLECTOR
+# endif // compilers
+#endif
 
 #ifdef HAVE_NEW_PILEUP_COLLECTOR
 
