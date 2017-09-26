@@ -13,6 +13,7 @@ algo/blast/composition_adjustment
 algo/blast/dbindex
 algo/blast/format
 algo/blast/proteinkmer
+algo/blast/blast_sra_input
 -algo/blast/proteinkmer/demo
 algo/blast/igblast
 algo/dustmask$
