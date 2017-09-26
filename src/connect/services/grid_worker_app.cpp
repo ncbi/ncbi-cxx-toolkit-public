@@ -58,6 +58,37 @@ void g_GridWorker_TermHandler(int /*sig*/)
 
 BEGIN_NCBI_SCOPE
 
+class CDefaultWorkerNodeInitContext : public IWorkerNodeInitContext
+{
+public:
+    CDefaultWorkerNodeInitContext(CNcbiApplication& app)
+        : m_App(app)
+    {}
+
+    virtual ~CDefaultWorkerNodeInitContext() {}
+
+    virtual const IRegistry&        GetConfig() const
+    { return m_App.GetConfig(); }
+
+    virtual const CArgs&            GetArgs() const
+    { return m_App.GetArgs(); }
+
+    virtual const CNcbiEnvironment& GetEnvironment() const
+    { return m_App.GetEnvironment(); }
+
+    virtual IWorkerNodeCleanupEventSource* GetCleanupEventSource() const;
+
+    virtual CNetScheduleAPI GetNetScheduleAPI() const;
+
+    virtual CNetCacheAPI GetNetCacheAPI() const;
+
+private:
+    CNcbiApplication& m_App;
+
+    CDefaultWorkerNodeInitContext(const CDefaultWorkerNodeInitContext&);
+    CDefaultWorkerNodeInitContext& operator=(const CDefaultWorkerNodeInitContext&);
+};
+
 IWorkerNodeCleanupEventSource*
     CDefaultWorkerNodeInitContext::GetCleanupEventSource() const
 {
