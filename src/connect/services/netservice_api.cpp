@@ -387,44 +387,43 @@ void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
 
     if (IsForeignAddr(actual.host)) {
         union {
-            SFWDRequestReply rq;
-            char buffer[FWD_MAX_RR_SIZE + 1];
+            SFWDRequestReply rr;
+            char buf[FWD_MAX_RR_SIZE + 1];
         };
 
-        memset(buffer, 0, sizeof(buffer));
-        rq.host =                     actual.host;
-        rq.port = SOCK_HostToNetShort(actual.port);
-        rq.flag = SOCK_HostToNetShort(1);
-        _ASSERT(offsetof(SFWDRequestReply, text) +
-                sizeof(kXSiteFwd) < sizeof(buffer));
-        memcpy(rq.text, kXSiteFwd, sizeof(kXSiteFwd));
+        memset(buf, 0, sizeof(buf));
+        rr.host =                     actual.host;
+        rr.port = SOCK_HostToNetShort(actual.port);
+        rr.flag = SOCK_HostToNetShort(1);
+        _ASSERT(offsetof(SFWDRequestReply, text) + sizeof(kXSiteFwd)
+                < sizeof(buf));
+        memcpy(rr.text, kXSiteFwd, sizeof(kXSiteFwd));
 
         size_t len = 0;
 
         CConn_ServiceStream svc(kXSiteFwd);
-        if (svc.write((const char*) &rq.ticket/*0*/, sizeof(rq.ticket)) &&
-                svc.write(buffer, offsetof(SFWDRequestReply, text) +
-                        sizeof(kXSiteFwd))) {
-            svc.read(buffer, sizeof(buffer) - 1);
+        if (svc.write((const char*) &rr.ticket/*0*/, sizeof(rr.ticket))  &&
+            svc.write(buf, offsetof(SFWDRequestReply,text)+sizeof(kXSiteFwd))){
+            svc.read(buf, sizeof(buf) - 1);
             len = (size_t) svc.gcount();
-            _ASSERT(len < sizeof(buffer));
+            _ASSERT(len < sizeof(buf));
         }
 
-        memset(buffer + len, 0, sizeof(buffer) - len);
+        memset(buf + len, 0, sizeof(buf) - len);
 
         if (len < offsetof(SFWDRequestReply, text) ||
-            (rq.flag & 0xF0F0) || rq.port == 0) {
+            (rr.flag & 0xF0F0) || rr.port == 0) {
             const char* err;
             if (len == 0)
                 err = "Connection refused";
             else if (len < offsetof(SFWDRequestReply, text))
                 err = "Short response received";
-            else if (!(rq.flag & 0xF0F0))
-                err = rq.flag & 0x0F0F ? "Client rejected" : "Unknown error";
-            else if (NStr::strncasecmp(buffer, "NCBI", 4) == 0)
-                err = buffer;
-            else if (rq.text[0])
-                err = rq.text;
+            else if (!(rr.flag & 0xF0F0))
+                err = rr.flag & 0x0F0F ? "Client rejected" : "Unknown error";
+            else if (NStr::strncasecmp(buf, "NCBI", 4) == 0)
+                err = buf;
+            else if (rr.text[0])
+                err = rr.text;
             else
                 err = "Unspecified error";
             NCBI_THROW_FMT(CNetSrvConnException, eConnectionFailure,
@@ -432,9 +431,9 @@ void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
                            "cross-site connection proxy: " << err);
         }
 
-        if (rq.ticket != 0) {
-            actual.host =                     rq.host;
-            actual.port = SOCK_NetToHostShort(rq.port);
+        if (rr.ticket != 0) {
+            actual.host =                     rr.host;
+            actual.port = SOCK_NetToHostShort(rr.port);
         } else {
             SOCK sock;
             actual.port = 0;
@@ -447,7 +446,7 @@ void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
             }
             socket.Reset(sock, eTakeOwnership, eCopyTimeoutsToSOCK);
         }
-        ticket = rq.ticket;
+        ticket = rr.ticket;
     }
 
     if (actual.port) {
