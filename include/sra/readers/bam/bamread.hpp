@@ -58,8 +58,8 @@ struct AlignAccessAlignmentEnumerator;
 
 #include <sra/readers/bam/bamindex.hpp>
 
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
+BEGIN_NCBI_NAMESPACE;
+BEGIN_NAMESPACE(objects);
 
 class CSeq_entry;
 class CBioseq;
@@ -207,6 +207,218 @@ public:
     TSeqPos GetRefSeqLength(const string& str) const;
 
     string GetHeaderText(void) const;
+
+#define HAVE_NEW_PILEUP_COLLECTOR
+
+#ifdef HAVE_NEW_PILEUP_COLLECTOR
+
+    struct SPileupValues;
+
+    class NCBI_BAMREAD_EXPORT ICollectPileupCallback
+    {
+    public:
+        virtual ~ICollectPileupCallback();
+
+        // count and previously added values or zeros are multiple of 16
+        virtual void AddZerosBy16(TSeqPos count) = 0;
+        // count and previously added values or zeros are multiple of 16
+        virtual void AddValuesBy16(TSeqPos count, const SPileupValues& values) = 0;
+        // final add of less then 16 values
+        virtual void AddValuesTail(TSeqPos count, const SPileupValues& values) = 0;
+    };
+
+    struct NCBI_BAMREAD_EXPORT SPileupValues
+    {
+        typedef Uint4 TCount;
+        
+        enum {
+            kStat_A = 0,
+            kStat_C = 1,
+            kStat_G = 2,
+            kStat_T = 3,
+            kStat_Gap = 4,
+            kStat_Match = 5,
+            kNumStat = 6
+        };
+
+        TSeqPos m_RefFrom; // current values array start on ref sequence
+        TSeqPos m_RefToOpen; // current values array end on ref sequence
+        TSeqPos m_RefStop; // limit of pileup collection on ref sequence
+        CSimpleBufferT<TCount> cc[kNumStat];
+        
+        SPileupValues();
+        explicit SPileupValues(CRange<TSeqPos> ref_range);
+
+        void initialize(CRange<TSeqPos> ref_range);
+        void finalize(ICollectPileupCallback* callback);
+        
+        void add_match_graph_pos(TSeqPos pos)
+            {
+                cc[kStat_Match][pos] += 1;
+            }
+        void add_match_graph_range(TSeqPos pos, TSeqPos end)
+            {
+                for ( ; pos < end; ++pos ) {
+                    cc[kStat_Match][pos] += 1;
+                }
+            }
+        void add_gap_graph_range(TSeqPos pos, TSeqPos end)
+            {
+                _ASSERT(pos < end);
+                cc[kStat_Gap][pos] += 1;
+                cc[kStat_Gap][end] -= 1;
+            }
+        void add_base_graph_pos(TSeqPos pos, char b)
+            {
+                switch ( b ) {
+                case 'A': cc[kStat_A][pos] += 1; break;
+                case 'C': cc[kStat_C][pos] += 1; break;
+                case 'G': cc[kStat_G][pos] += 1; break;
+                case 'T': cc[kStat_T][pos] += 1; break;
+                case '=': cc[kStat_Match][pos] += 1; break;
+                    // others including N are unknown mismatch, no pileup information
+                }
+            }
+        void add_base_graph_pos_raw(TSeqPos pos, Uint1 b)
+            {
+                if ( 1 ) {
+                    if ( (b & (b-1)) == 0 ) {
+                        // at most 1 bit set
+                        // others including N (=15) are unknown mismatch, no pileup information
+                        cc[kStat_A][pos] += (b>>0)&1;
+                        cc[kStat_C][pos] += (b>>1)&1;
+                        cc[kStat_G][pos] += (b>>2)&1;
+                        cc[kStat_T][pos] += (b>>3)&1;
+                        cc[kStat_Match][pos] += !b;
+                    }
+                }
+                else {
+                    switch ( b ) {
+                    case 1: /* A */ cc[kStat_A][pos] += 1; break;
+                    case 2: /* C */ cc[kStat_C][pos] += 1; break;
+                    case 4: /* G */ cc[kStat_G][pos] += 1; break;
+                    case 8: /* T */ cc[kStat_T][pos] += 1; break;
+                    case 0: /* = */ cc[kStat_Match][pos] += 1; break;
+                        // others including N (=15) are unknown mismatch, no pileup information
+                    }
+                }
+            }
+        static char get_base(const CTempString& read, TSeqPos pos)
+            {
+                return read[pos];
+            }
+        static Uint1 get_base_raw(const CTempString& read, TSeqPos pos)
+            {
+                Uint1 b2 = read[pos/2];
+                return pos%2? b2&0xf: b2>>4;
+            }
+        void add_bases_graph_range(TSeqPos pos, TSeqPos end,
+                                   const CTempString& read, TSeqPos read_pos)
+            {
+                for ( ; pos < end; ++pos, ++read_pos ) {
+                    add_base_graph_pos(pos, get_base(read, read_pos));
+                }
+            }
+        void add_bases_graph_range_raw(TSeqPos pos, TSeqPos end,
+                                       const CTempString& read, TSeqPos read_pos)
+            {
+                for ( ; pos < end; ++pos, ++read_pos ) {
+                    add_base_graph_pos_raw(pos, get_base_raw(read, read_pos));
+                }
+            }
+
+        static const TSeqPos FLUSH_SIZE = 512;
+
+        void decode_gap(TSeqPos len);
+        void advance_current_beg(TSeqPos ref_pos, ICollectPileupCallback* callback);
+        void advance_current_end(TSeqPos ref_end);
+        // update pileup collection start, the alignments should be coming sorted by start
+        void update_current_ref_start(TSeqPos ref_pos, ICollectPileupCallback* callback)
+            {
+                if ( callback && ref_pos >= m_RefFrom+FLUSH_SIZE && 2*ref_pos >= m_RefFrom+m_RefToOpen ) {
+                    advance_current_beg(ref_pos, callback);
+                }
+            }
+        bool trim_ref_range(TSeqPos& ref_pos, TSeqPos& ref_end)
+            {
+                _ASSERT(ref_pos < m_RefStop);
+                if ( ref_end <= m_RefFrom ) {
+                    // completely before
+                    return false;
+                }
+                if ( ref_pos < m_RefFrom ) {
+                    ref_pos = m_RefFrom;
+                }
+                if ( ref_end > m_RefStop ) {
+                    ref_end = m_RefStop;
+                }
+                if ( ref_end > m_RefToOpen ) {
+                    advance_current_end(ref_end);
+                }
+                return true;
+            }
+        bool trim_ref_range(TSeqPos& ref_pos, TSeqPos& ref_end, TSeqPos& read_pos)
+            {
+                _ASSERT(ref_pos < m_RefStop);
+                if ( ref_end <= m_RefFrom ) {
+                    // completely before
+                    return false;
+                }
+                if ( ref_pos < m_RefFrom ) {
+                    // skip read
+                    read_pos += m_RefFrom - ref_pos;
+                    ref_pos = m_RefFrom;
+                }
+                if ( ref_end > m_RefStop ) {
+                    ref_end = m_RefStop;
+                }
+                if ( ref_end > m_RefToOpen ) {
+                    advance_current_end(ref_end);
+                }
+                return true;
+            }
+        void add_match_ref_range(TSeqPos ref_pos, TSeqPos ref_end)
+            {
+                if ( trim_ref_range(ref_pos, ref_end) ) {
+                    add_match_graph_range(ref_pos - m_RefFrom,
+                                          ref_end - m_RefFrom);
+                }
+            }
+        void add_gap_ref_range(TSeqPos ref_pos, TSeqPos ref_end)
+            {
+                if ( trim_ref_range(ref_pos, ref_end) ) {
+                    add_gap_graph_range(ref_pos - m_RefFrom,
+                                        ref_end - m_RefFrom);
+                }
+            }
+        void add_bases_ref_range(TSeqPos ref_pos, TSeqPos ref_end,
+                                 const CTempString& read, TSeqPos read_pos)
+            {
+                if ( trim_ref_range(ref_pos, ref_end, read_pos) ) {
+                    add_bases_graph_range(ref_pos - m_RefFrom,
+                                          ref_end - m_RefFrom,
+                                          read, read_pos);
+                }
+            }
+        void add_bases_ref_range_raw(TSeqPos ref_pos, TSeqPos ref_end,
+                                     const CTempString& read, TSeqPos read_pos)
+            {
+                if ( trim_ref_range(ref_pos, ref_end, read_pos) ) {
+                    add_bases_graph_range_raw(ref_pos - m_RefFrom,
+                                              ref_end - m_RefFrom,
+                                              read, read_pos);
+                }
+            }
+        
+        TCount get_max_count(int type, TSeqPos length) const;
+    };
+
+    size_t CollectPileup(SPileupValues& values,
+                         const string& ref_id,
+                         CRange<TSeqPos> graph_range,
+                         Uint1 map_quality = 0,
+                         ICollectPileupCallback* callback = 0) const;
+#endif //HAVE_NEW_PILEUP_COLLECTOR
 
 private:
     friend class CBamRefSeqIterator;
@@ -631,7 +843,128 @@ Uint4 CBamAlignIterator::GetRawCIGAROp(Uint2 index) const
 }
 
 
-END_SCOPE(objects)
-END_NCBI_SCOPE
+END_NAMESPACE(objects);
+
+#ifdef HAVE_NEW_PILEUP_COLLECTOR
+BEGIN_NAMESPACE(NFast);
+
+// fastest fill of count ints at dst with zeroes
+// dst and count must be aligned by 16
+void NCBI_BAMREAD_EXPORT fill_n_zeros_aligned16(int* dst, size_t count);
+// fastest fill of count chars at dst with zeroes
+// dst and count must be aligned by 16
+void NCBI_BAMREAD_EXPORT fill_n_zeros_aligned16(char* dst, size_t count);
+
+inline void fill_n_zeros_aligned16(unsigned* dst, size_t count)
+{
+    fill_n_zeros_aligned16(reinterpret_cast<int*>(dst), count);
+}
+
+// fastest fill of count ints at dst with zeroes
+void NCBI_BAMREAD_EXPORT fill_n_zeros(int* dst, size_t count);
+// fastest fill of count chars at dst with zeroes
+void NCBI_BAMREAD_EXPORT fill_n_zeros(char* dst, size_t count);
+
+// convert count unsigned chars to ints
+// src, dst, and count must be aligned by 16
+void NCBI_BAMREAD_EXPORT copy_n_bytes_aligned16(const char* src, size_t count, int* dst);
+
+// convert count ints to chars
+// src, dst, and count must be aligned by 16
+void NCBI_BAMREAD_EXPORT copy_n_aligned16(const int* src, size_t count, char* dst);
+
+// copy count ints
+// src, dst, and count must be aligned by 16
+void NCBI_BAMREAD_EXPORT copy_n_aligned16(const int* src, size_t count, int* dst);
+
+inline void copy_n_aligned16(const unsigned* src, size_t count, char* dst)
+{
+    copy_n_aligned16(reinterpret_cast<const int*>(src), count, dst);
+}
+
+inline void copy_n_aligned16(const unsigned* src, size_t count, int* dst)
+{
+    copy_n_aligned16(reinterpret_cast<const int*>(src), count, dst);
+}
+
+inline void copy_n_aligned16(const unsigned* src, size_t count, unsigned* dst)
+{
+    copy_n_aligned16(reinterpret_cast<const int*>(src), count, reinterpret_cast<int*>(dst));
+}
+
+// append count unitialized elements to dst vector
+// return pointer to appended elements for proper initialization
+// vector must have enough memory reserved
+template<class V, class A>
+V* append_uninitialized(vector<V, A>& dst, size_t count);
+
+// append count zeros to dst vector
+// vector must have enough memory reserved
+template<class V, class A>
+inline void append_zeros(vector<V, A>& dst, size_t count);
+
+// append count zeros to dst vector
+// vector must have enough memory reserved
+// dst.end() pointer and count must be aligned by 16
+template<class V, class A>
+inline void append_zeros_aligned16(vector<V, A>& dst, size_t count);
+
+#ifdef NCBI_COMPILER_GCC
+// fast implementation using internal layout of vector
+template<class V, class A>
+inline V* append_uninitialized(vector<V, A>& dst, size_t count)
+{
+    if ( sizeof(dst) == 3*sizeof(V*) ) {
+        V*& end_ptr = ((V**)&dst)[1];
+        V* ret = end_ptr;
+        end_ptr = ret + count;
+        return ret;
+    }
+    else {
+        // wrong vector size and probably layout
+        size_t size = dst.size();
+        dst.resize(size+count);
+        return dst.data()+size;
+    }
+}
+template<class V, class A>
+inline void append_zeros(vector<V, A>& dst, size_t count)
+{
+    fill_n_zeros(append_uninitialized(dst, count), count);
+}
+template<class V, class A>
+inline void append_zeros_aligned16(vector<V, A>& dst, size_t count)
+{
+    fill_n_zeros_aligned16(append_uninitialized(dst, count), count);
+}
+#else
+// default implementation
+template<class V, class A>
+inline V* append_uninitialized(vector<V, A>& dst, size_t count)
+{
+    size_t size = dst.size();
+    dst.resize(size+count);
+    return dst.data()+size;
+}
+template<class V, class A>
+inline void append_zeros(vector<V, A>& dst, size_t count)
+{
+    dst.resize(dst.size()+count);
+}
+template<class V, class A>
+inline void append_zeros_aligned16(vector<V, A>& dst, size_t count)
+{
+    dst.resize(dst.size()+count);
+}
+#endif
+
+// return max element from unsigned array
+// src and count must be aligned by 16
+unsigned NCBI_BAMREAD_EXPORT max_element_n_aligned16(const unsigned* src, size_t count);
+
+END_NAMESPACE(NFast);
+#endif //HAVE_NEW_PILEUP_COLLECTOR
+
+END_NCBI_NAMESPACE;
 
 #endif // SRA__READER__BAM__BAMREAD__HPP

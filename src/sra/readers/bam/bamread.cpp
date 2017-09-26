@@ -33,12 +33,15 @@
 #include <ncbi_pch.hpp>
 #include <sra/readers/bam/bamread.hpp>
 #include <sra/readers/ncbi_traces_path.hpp>
+#include <util/simple_buffer.hpp>
 
 #include <klib/rc.h>
 #include <klib/writer.h>
 #include <klib/text.h>
 #include <vfs/path.h>
 #include <vfs/manager.h>
+#include <kns/manager.h>
+#include <kns/http.h>
 #include <align/bam.h>
 #include <align/align-access.h>
 
@@ -61,6 +64,8 @@ DEFINE_BAM_REF_TRAITS(AlignAccessRefSeqEnumerator, );
 DEFINE_BAM_REF_TRAITS(AlignAccessAlignmentEnumerator, );
 DEFINE_BAM_REF_TRAITS(BAMFile, const);
 DEFINE_BAM_REF_TRAITS(BAMAlignment, const);
+SPECIALIZE_BAM_REF_TRAITS(KNSManager, );
+DEFINE_BAM_REF_TRAITS(KNSManager, );
 
 
 CBamException::CBamException(void)
@@ -331,6 +336,17 @@ string CSrzPath::FindAccPath(const string& acc, EMissing missing)
 }
 
 
+NCBI_PARAM_DECL(bool, BAM, CIGAR_IN_ALIGN_EXT);
+NCBI_PARAM_DEF(bool, BAM, CIGAR_IN_ALIGN_EXT, true);
+
+
+static bool s_GetCigarInAlignExt(void)
+{
+    static bool value = NCBI_PARAM_TYPE(BAM, CIGAR_IN_ALIGN_EXT)::GetDefault();
+    return value;
+}
+
+
 NCBI_PARAM_DECL(bool, BAM, USE_RAW_INDEX);
 NCBI_PARAM_DEF_EX(bool, BAM, USE_RAW_INDEX, false,
                   eParam_NoThread, BAM_USE_RAW_INDEX);
@@ -411,6 +427,24 @@ CBamMgr::CBamMgr(void)
         NCBI_THROW2(CBamException, eInitFailed,
                     "Cannot create AlignAccessMgr", rc);
     }
+    
+    if ( CNcbiApplication* app = CNcbiApplication::Instance() ) {
+        string host = app->GetConfig().GetString("CONN", "HTTP_PROXY_HOST", kEmptyStr);
+        int port = app->GetConfig().GetInt("CONN", "HTTP_PROXY_PORT", 0);
+        if ( !host.empty() && port != 0 ) {
+            CBamVFSManager vfs_mgr;
+            CBamRef<KNSManager> kns_mgr;
+            if ( rc_t rc = VFSManagerGetKNSMgr(vfs_mgr, kns_mgr.x_InitPtr()) ) {
+                NCBI_THROW2(CBamException, eInitFailed,
+                            "Cannot get KNSManager", rc);
+            }
+            if ( rc_t rc = KNSManagerSetHTTPProxyPath(kns_mgr, "%s:%d", host.c_str(), port) ) {
+                NCBI_THROW2(CBamException, eInitFailed,
+                            "Cannot set KNSManager proxy parameters", rc);
+            }
+            KNSManagerSetHTTPProxyEnabled(kns_mgr, true);
+        }
+    }
 }
 
 
@@ -487,12 +521,7 @@ static VPath* sx_GetVPath(const string& path)
     const char* c_path = path.c_str();
 #endif
 
-    CBamRef<VFSManager> mgr;
-    if ( rc_t rc = VFSManagerMake(mgr.x_InitPtr())) {
-        NCBI_THROW2(CBamException, eInitFailed,
-                    "Cannot create VFSManager object", rc);
-    }
-    
+    CBamVFSManager mgr;
     VPath* kpath;
     if ( rc_t rc = VFSManagerMakePath(mgr, &kpath, c_path) ) {
         NCBI_THROW2(CBamException, eInitFailed,
@@ -640,6 +669,296 @@ string CBamDb::GetHeaderText(void) const
     }
 }
 
+
+#ifdef HAVE_NEW_PILEUP_COLLECTOR
+CBamDb::ICollectPileupCallback::~ICollectPileupCallback()
+{
+}
+
+
+CBamDb::SPileupValues::SPileupValues()
+{
+}
+
+
+CBamDb::SPileupValues::SPileupValues(CRange<TSeqPos> ref_range)
+{
+    initialize(ref_range);
+}
+
+
+void CBamDb::SPileupValues::initialize(CRange<TSeqPos> ref_range)
+{
+    m_RefToOpen = m_RefFrom = ref_range.GetFrom();
+    m_RefStop = ref_range.GetToOpen();
+    TSeqPos len = ref_range.GetLength()+32;
+    for ( int i = 0; i < kNumStat; ++i ) {
+        cc[i].clear();
+        cc[i].resize(len);
+    }
+    cc[kStat_Gap][0] = 0;
+}
+
+
+void CBamDb::SPileupValues::decode_gap(TSeqPos len)
+{
+    // restore gap counts from delta encoding
+    TCount g = 0;
+    for ( TSeqPos i = 0; i <= len; ++i ) {
+        g += cc[kStat_Gap][i];
+        cc[kStat_Gap][i] = g;
+    }
+}
+
+
+void CBamDb::SPileupValues::advance_current_beg(TSeqPos ref_pos, ICollectPileupCallback* callback)
+{
+    if ( ref_pos > m_RefToOpen ) {
+        // gap must be filled with zeros
+        if ( ref_pos > m_RefToOpen+FLUSH_SIZE ) {
+            // gap is big enough to call AddZeros()
+            if ( m_RefToOpen != m_RefFrom ) {
+                // flush non-zero part
+                advance_current_beg(m_RefToOpen, callback);
+            }
+            _ASSERT(m_RefToOpen == m_RefFrom);
+            TSeqPos add_zeros = ref_pos-m_RefToOpen;
+            TSeqPos flush_zeros = add_zeros & ~15; // align
+            _ASSERT(flush_zeros%16 == 0);
+            callback->AddZerosBy16(flush_zeros);
+            m_RefToOpen = m_RefFrom += flush_zeros;
+            if ( ref_pos > m_RefToOpen ) {
+                advance_current_end(ref_pos);
+            }
+            return;
+        }
+        advance_current_end(ref_pos);
+    }
+    TSeqPos flush = ref_pos-m_RefFrom;
+    if ( ref_pos != m_RefStop ) {
+        flush &= ~15;
+    }
+    if ( flush ) {
+        decode_gap(flush);
+        TSeqPos total = m_RefToOpen-m_RefFrom;
+        if ( flush >= 16 ) {
+            _ASSERT(flush%16 == 0);
+            callback->AddValuesBy16(flush&~15, *this);
+            if ( TSeqPos copy = total-flush ) {
+                TCount gap_save = cc[kStat_Gap][total];
+                for ( int i = 0; i < kNumStat; ++i ) {
+                    NFast::copy_n_aligned16(cc[i].data()+flush, (copy+15)&~15, cc[i].data());
+                }
+                cc[kStat_Gap][flush] = gap_save;
+            }
+            m_RefFrom += flush;
+        }
+        else {
+            _ASSERT(ref_pos == m_RefStop);
+            callback->AddValuesTail(flush, *this);
+            m_RefFrom = m_RefStop;
+        }
+    }
+}
+
+
+void CBamDb::SPileupValues::advance_current_end(TSeqPos ref_end)
+{
+    _ASSERT(ref_end > m_RefToOpen);
+    _ASSERT(ref_end <= m_RefStop);
+    TSeqPos cur_pos = m_RefToOpen-m_RefFrom;
+    TSeqPos new_pos = (min(m_RefStop + 15, ref_end + FLUSH_SIZE) - m_RefFrom) & ~15;
+    TCount gap_save = cc[kStat_Gap][cur_pos];
+    for ( int i = 0; i < kNumStat; ++i ) {
+        NFast::fill_n_zeros_aligned16(cc[i].data()+cur_pos, new_pos-cur_pos);
+    }
+    cc[kStat_Gap][cur_pos] = gap_save;
+    cc[kStat_Gap][new_pos] = 0;
+    m_RefToOpen = min(m_RefStop, m_RefFrom + new_pos);
+}
+
+
+void CBamDb::SPileupValues::finalize(ICollectPileupCallback* callback)
+{
+    if ( m_RefToOpen < m_RefStop ) {
+        advance_current_end(m_RefStop);
+    }
+    _ASSERT(m_RefToOpen == m_RefStop);
+    decode_gap(m_RefStop - m_RefFrom);
+    if ( callback ) {
+        if ( TSeqPos flush = m_RefToOpen-m_RefFrom ) {
+            _ASSERT(flush < 16);
+            callback->AddValuesTail(flush, *this);
+            m_RefFrom += flush;
+        }
+    }
+}
+
+
+CBamDb::SPileupValues::TCount CBamDb::SPileupValues::get_max_count(int type, TSeqPos length) const
+{
+    return NFast::max_element_n_aligned16(cc[type].data(), (length+15)&~15);
+}
+
+
+size_t CBamDb::CollectPileup(SPileupValues& values,
+                             const string& ref_id,
+                             CRange<TSeqPos> graph_range,
+                             Uint1 min_quality,
+                             ICollectPileupCallback* callback) const
+{
+    values.initialize(graph_range);
+    
+    size_t count = 0;
+
+    CBamAlignIterator ait(*this, ref_id, graph_range.GetFrom(), graph_range.GetLength());
+    if ( CBamRawAlignIterator* rit = ait.GetRawIndexIteratorPtr() ) {
+        for( ; *rit; ++*rit ){
+            if ( min_quality > 0 && rit->GetMapQuality() < min_quality ) {
+                continue;
+            }
+            ++count;
+
+            TSeqPos ref_pos = rit->GetRefSeqPos();
+            values.update_current_ref_start(ref_pos, callback);
+            CTempString read_raw = rit->GetShortSequenceRaw();
+            TSeqPos read_pos = 0;
+            for ( Uint2 i = 0, count = rit->GetCIGAROpsCount(); i < count; ++i ) {
+                if ( ref_pos >= graph_range.GetToOpen() ) {
+                    // passed beyond the end of graph range
+                    break;
+                }
+                Uint4 op = rit->GetCIGAROp(i);
+                Uint4 seglen = op >> 4;
+                op &= 0xf;
+                
+                TSeqPos ref_end = ref_pos + seglen;
+                switch ( op ) {
+                case SBamAlignInfo::kCIGAR_eq: // =
+                    // match
+                    values.add_match_ref_range(ref_pos, ref_end);
+                    ref_pos += seglen;
+                    read_pos += seglen;
+                    break;
+                case SBamAlignInfo::kCIGAR_M: // M
+                case SBamAlignInfo::kCIGAR_X: // X
+                    // mismatch ('X') or
+                    // unspecified 'alignment match' ('M') that can be a mismatch too
+                    values.add_bases_ref_range_raw(ref_pos, ref_end, read_raw, read_pos);
+                    ref_pos += seglen;
+                    read_pos += seglen;
+                    break;
+                case SBamAlignInfo::kCIGAR_I: // I
+                case SBamAlignInfo::kCIGAR_S: // S
+                    read_pos += seglen;
+                    break;
+                case SBamAlignInfo::kCIGAR_N: // N
+                    // intron
+                    ref_pos += seglen;
+                    break;
+                case SBamAlignInfo::kCIGAR_D: // D
+                    // gap or intron
+                    values.add_gap_ref_range(ref_pos, ref_end);
+                    ref_pos += seglen;
+                    break;
+                default: // P
+                    break;
+                }
+            }
+        }
+    }
+    else {
+        for( ; ait; ++ait ){
+            if ( min_quality > 0 && ait.GetMapQuality() < min_quality ) {
+                continue;
+            }
+            ++count;
+
+            TSeqPos ref_pos = ait.GetRefSeqPos();
+            values.update_current_ref_start(ref_pos, callback);
+            _ASSERT((values.m_RefFrom-graph_range.GetFrom())%16 == 0);
+            _ASSERT((values.m_RefToOpen-values.m_RefFrom)%16 == 0 || values.m_RefToOpen == values.m_RefStop);
+            CTempString read = ait.GetShortSequence();
+            TSeqPos read_pos = ait.GetCIGARPos();
+            CTempString cigar = ait.GetCIGAR();
+            const char* ptr = cigar.data();
+            const char* end = ptr + cigar.size();
+            while ( ptr != end ) {
+                if ( ref_pos >= graph_range.GetToOpen() ) {
+                    // passed beyond the end of graph range
+                    break;
+                }
+                char type = *ptr;
+                TSeqPos seglen = 0;
+                for ( ; ++ptr != end; ) {
+                    char c = *ptr;
+                    if ( c >= '0' && c <= '9' ) {
+                        seglen = seglen*10+(c-'0');
+                    }
+                    else {
+                        break;
+                    }
+                }
+                if ( seglen == 0 ) {
+                    ERR_POST("Bad CIGAR length: "<<type<<"0 in "<<cigar);
+                    break;
+                }
+
+                TSeqPos ref_end = ref_pos + seglen;
+                if ( type == '=' ) {
+                    // match
+                    values.add_match_ref_range(ref_pos, ref_end);
+                    ref_pos += seglen;
+                    read_pos += seglen;
+                }
+                else if ( type == 'M' || type == 'X' ) {
+                    // mismatch ('X') or
+                    // unspecified 'alignment match' ('M') that can be a mismatch too
+                    values.add_bases_ref_range(ref_pos, ref_end, read, read_pos);
+                    ref_pos += seglen;
+                    read_pos += seglen;
+                }
+                else if ( type == 'S' ) {
+                    // soft clipping already accounted in seqpos
+                }
+                else if ( type == 'I' ) {
+                    read_pos += seglen;
+                }
+                else if ( type == 'N' ) {
+                    // intron
+                    ref_pos += seglen;
+                }
+                else if ( type == 'D' ) {
+                    // gap or intron
+                    values.add_gap_ref_range(ref_pos, ref_end);
+                    ref_pos += seglen;
+                }
+                else if ( type != 'P' ) {
+                    ERR_POST("Bad CIGAR char: "<<type<<" in "<<cigar);
+                    break;
+                }
+                _ASSERT((values.m_RefFrom-graph_range.GetFrom())%16 == 0);
+                _ASSERT((values.m_RefToOpen-values.m_RefFrom)%16 == 0 || values.m_RefToOpen == values.m_RefStop);
+            }
+        }
+    }
+    if ( count ) {
+        //values.update_current_ref_start(graph_range.GetToOpen(), callback);
+        if ( callback && graph_range.GetToOpen() != values.m_RefFrom ) {
+            TSeqPos flush = graph_range.GetToOpen() - values.m_RefFrom;
+            if ( flush & ~15 ) {
+                values.advance_current_beg(values.m_RefFrom+(flush&~15), callback);
+            }
+            if ( flush & 15 ) {
+                values.advance_current_beg(values.m_RefFrom+(flush&15), callback);
+            }
+            _ASSERT(values.m_RefFrom == graph_range.GetToOpen());
+        }
+        values.finalize(callback);
+    }
+    return count;
+}
+#endif // HAVE_NEW_PILEUP_COLLECTOR
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1282,7 +1601,7 @@ void CBamAlignIterator::GetRawCIGAR(vector<Uint4>& raw_cigar) const
             }
             const char* types = "MIDNSHP=X";
             const char* ptr = strchr(types, type);
-            unsigned op = ptr? ptr-types: 15;
+            unsigned op = ptr? unsigned(ptr-types): 15u;
             raw_cigar.push_back((len<<4)|(op));
         }
     }
@@ -1766,10 +2085,10 @@ CRef<CSeq_align> CBamAlignIterator::GetMatchAlign(void) const
     CDense_seg::TStarts& starts = denseg.SetStarts();
     CDense_seg::TLens& lens = denseg.SetLens();
 
-    TSeqPos segcount = 0;
+    int segcount = 0;
     if ( m_RawImpl ) {
         m_RawImpl->m_Iter.GetSegments(starts, lens);
-        segcount = lens.size();
+        segcount = int(lens.size());
     }
     else {
         TSeqPos refpos = GetRefSeqPos();
@@ -1830,7 +2149,7 @@ CRef<CSeq_align> CBamAlignIterator::GetMatchAlign(void) const
         CDense_seg::TStrands& strands = denseg.SetStrands();
         strands.reserve(2*segcount);
         TSeqPos end = GetShortSequenceLength();
-        for ( size_t i = 0; i < segcount; ++i ) {
+        for ( int i = 0; i < segcount; ++i ) {
             strands.push_back(eNa_strand_plus);
             strands.push_back(eNa_strand_minus);
             TSeqPos pos = starts[i*2+1];
@@ -1842,6 +2161,24 @@ CRef<CSeq_align> CBamAlignIterator::GetMatchAlign(void) const
     }
 
     denseg.SetNumseg(segcount);
+
+    if ( s_GetCigarInAlignExt() ) {
+        CRef<CUser_object> obj(new CUser_object);
+        CRef<CObject_id> id;
+        id = new CObject_id();
+        id->SetStr("Tracebacks");
+        obj->SetType(*id);
+        
+        CRef<CUser_field> field(new CUser_field());
+        id = new CObject_id();
+        id->SetStr("CIGAR");
+        field->SetLabel(*id);
+        field->SetData().SetStr(GetCIGAR());
+        obj->SetData().push_back(field);
+
+        align->SetExt().push_back(obj);
+    }
+    
     return align;
 }
 
@@ -1888,4 +2225,188 @@ CBamAlignIterator::ISpotIdDetector::~ISpotIdDetector(void)
 
 
 END_SCOPE(objects)
+
+#ifdef HAVE_NEW_PILEUP_COLLECTOR
+BEGIN_NAMESPACE(NFast);
+
+void fill_n_zeros_aligned16(int* dst, size_t count)
+{
+    _ASSERT(count%16 == 0);
+    _ASSERT(intptr_t(dst)%16 == 0);
+    __m128i zero = _mm_setzero_si128();
+    for ( auto dst_end = dst+count; dst < dst_end; dst += 16 ) {
+        _mm_store_si128((__m128i*)dst+0, zero);
+        _mm_store_si128((__m128i*)dst+1, zero);
+        _mm_store_si128((__m128i*)dst+2, zero);
+        _mm_store_si128((__m128i*)dst+3, zero);
+    }
+}
+
+/*
+void fill_n_zeros(int* dst, size_t count)
+{
+    __m128i zero = _mm_setzero_si128();
+    for ( auto dst_end = dst+count; dst < dst_end; dst += 16 ) {
+        _mm_store_si128((__m128i*)dst+0, zero);
+        _mm_store_si128((__m128i*)dst+1, zero);
+        _mm_store_si128((__m128i*)dst+2, zero);
+        _mm_store_si128((__m128i*)dst+3, zero);
+    }
+}
+*/
+
+void fill_n_zeros_aligned16(char* dst, size_t count)
+{
+    _ASSERT(count%16 == 0);
+    _ASSERT(intptr_t(dst)%16 == 0);
+    __m128i zero = _mm_setzero_si128();
+    for ( auto dst_end = dst+count; dst < dst_end; dst += 16 ) {
+        _mm_store_si128((__m128i*)dst, zero);
+    }
+}
+
+/*
+void fill_n_zeros(char* dst, size_t count)
+{
+    __m128i zero = _mm_setzero_si128();
+    for ( auto dst_end = dst+count; dst < dst_end; dst += 16 ) {
+        _mm_store_si128((__m128i*)dst, zero);
+    }
+}
+*/
+
+void copy_n_bytes_aligned16(const char* src, size_t count, int* dst)
+{
+    _ASSERT(count%16 == 0);
+    _ASSERT(intptr_t(src)%16 == 0);
+    _ASSERT(intptr_t(dst)%16 == 0);
+    __m128i mask = _mm_set_epi8(-128, -128, -128, 3,
+                                -128, -128, -128, 2,
+                                -128, -128, -128, 1,
+                                -128, -128, -128, 0);
+    for ( auto src_end = src+count; src < src_end; dst += 16, src += 16 ) {
+        uint32_t bb0 = ((const uint32_t*)src)[0];
+        uint32_t bb1 = ((const uint32_t*)src)[1];
+        uint32_t bb2 = ((const uint32_t*)src)[2];
+        uint32_t bb3 = ((const uint32_t*)src)[3];
+        __m128i ww0 = _mm_shuffle_epi8(_mm_cvtsi32_si128(bb0), mask);
+        __m128i ww1 = _mm_shuffle_epi8(_mm_cvtsi32_si128(bb1), mask);
+        __m128i ww2 = _mm_shuffle_epi8(_mm_cvtsi32_si128(bb2), mask);
+        __m128i ww3 = _mm_shuffle_epi8(_mm_cvtsi32_si128(bb3), mask);
+        _mm_store_si128((__m128i*)dst+0, ww0);
+        _mm_store_si128((__m128i*)dst+1, ww1);
+        _mm_store_si128((__m128i*)dst+2, ww2);
+        _mm_store_si128((__m128i*)dst+3, ww3);
+    }
+}
+
+
+void copy_n_aligned16(const int* src, size_t count, char* dst)
+{
+    _ASSERT(count%16 == 0);
+    _ASSERT(intptr_t(src)%16 == 0);
+    _ASSERT(intptr_t(dst)%16 == 0);
+    __m128i mask = _mm_set_epi8(-128, -128, -128, -128,
+                                -128, -128, -128, -128,
+                                -128, -128, -128, -128,
+                                12, 8, 4, 0);
+    for ( auto src_end = src+count; src < src_end; dst += 16, src += 16 ) {
+        __m128i ww0 = _mm_load_si128((const __m128i*)src+0);
+        __m128i ww1 = _mm_load_si128((const __m128i*)src+1);
+        __m128i ww2 = _mm_load_si128((const __m128i*)src+2);
+        __m128i ww3 = _mm_load_si128((const __m128i*)src+3);
+        ww0 = _mm_shuffle_epi8(ww0, mask);
+        ww1 = _mm_shuffle_epi8(ww1, mask);
+        ww2 = _mm_shuffle_epi8(ww2, mask);
+        ww3 = _mm_shuffle_epi8(ww3, mask);
+        ww0 = _mm_or_si128(ww0, _mm_slli_si128(ww1, 4));
+        ww2 = _mm_or_si128(ww2, _mm_slli_si128(ww3, 4));
+        ww0 = _mm_or_si128(ww0, _mm_slli_si128(ww2, 8));
+        _mm_store_si128((__m128i*)dst, ww0);
+    }
+}
+    
+
+void copy_n_aligned16(const int* src, size_t count, int* dst)
+{
+    _ASSERT(count%16 == 0);
+    _ASSERT(intptr_t(src)%16 == 0);
+    _ASSERT(intptr_t(dst)%16 == 0);
+    for ( auto src_end = src+count; src < src_end; dst += 16, src += 16 ) {
+        __m128i ww0 = _mm_load_si128((const __m128i*)src+0);
+        __m128i ww1 = _mm_load_si128((const __m128i*)src+1);
+        __m128i ww2 = _mm_load_si128((const __m128i*)src+2);
+        __m128i ww3 = _mm_load_si128((const __m128i*)src+3);
+        _mm_store_si128((__m128i*)dst+0, ww0);
+        _mm_store_si128((__m128i*)dst+1, ww1);
+        _mm_store_si128((__m128i*)dst+2, ww2);
+        _mm_store_si128((__m128i*)dst+3, ww3);
+    }
+}
+
+/*
+void copy_n(const int* src, size_t count, char* dst)
+{
+    for ( ; count && (intptr_t(dst)%4); ++dst, --count, ++src ) {
+        *dst = *src;
+    }
+    __m128i mask = _mm_set_epi8(128, 128, 128, 128,
+                                128, 128, 128, 128,
+                                128, 128, 128, 128,
+                                12, 8, 4, 0);
+    for ( ; count >= 4; dst += 4, count -= 4, src += 4 ) {
+        __m128i ww = _mm_load_si128((const __m128i*)src);
+        uint32_t bb = _mm_cvtsi128_si32(_mm_shuffle_epi8(ww, mask));
+        *(uint32_t*)dst = bb;
+    }
+    for ( ; count; ++dst, --count, ++src ) {
+        *dst = *src;
+    }
+}
+
+
+void copy_n(const int* src, size_t count, int* dst)
+{
+    for ( ; count && (intptr_t(dst)%16); ++dst, --count, ++src ) {
+        *dst = *src;
+    }
+    __m128i mask = _mm_set_epi8(128, 128, 128, 128,
+                                128, 128, 128, 128,
+                                128, 128, 128, 128,
+                                12, 8, 4, 0);
+    for ( ; count >= 4; dst += 4, count -= 4, src += 4 ) {
+        __m128i ww = _mm_load_si128((const __m128i*)src);
+        uint32_t bb = _mm_cvtsi128_si32(_mm_shuffle_epi8(ww, mask));
+        *(uint32_t*)dst = bb;
+    }
+    for ( ; count; ++dst, --count, ++src ) {
+        *dst = *src;
+    }
+}
+*/
+
+unsigned max_element_n_aligned16(const unsigned* src, size_t count)
+{
+    _ASSERT(count%16 == 0);
+    _ASSERT(intptr_t(src)%16 == 0);
+    __m128i max4 = _mm_setzero_si128();
+    for ( auto src_end = src+count; src < src_end; src += 16 ) {
+        __m128i ww0 = _mm_load_si128((const __m128i*)src+0);
+        __m128i ww1 = _mm_load_si128((const __m128i*)src+1);
+        __m128i ww2 = _mm_load_si128((const __m128i*)src+2);
+        __m128i ww3 = _mm_load_si128((const __m128i*)src+3);
+        ww0 = _mm_max_epu32(ww0, ww1);
+        ww2 = _mm_max_epu32(ww2, ww3);
+        ww0 = _mm_max_epu32(ww0, ww2);
+        max4 = _mm_max_epu32(max4, ww0);
+    }
+    max4 = _mm_max_epu32(max4, _mm_srli_si128(max4, 8));
+    max4 = _mm_max_epu32(max4, _mm_srli_si128(max4, 4));
+    return _mm_cvtsi128_si32(max4);
+}
+
+
+END_NAMESPACE(NFast);
+#endif // HAVE_NEW_PILEUP_COLLECTOR
+
 END_NCBI_SCOPE

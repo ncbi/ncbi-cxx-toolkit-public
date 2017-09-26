@@ -197,7 +197,7 @@ void CPagedFile::x_ReadPage(CPagedFilePage& page, TFilePos file_pos)
                     dst += cnt;
                 }
             }
-            double bytes = size-rem;
+            Uint8 bytes = size-rem;
             double seconds = sw.Elapsed();
             x_AddReadStatistics(bytes, seconds);
             if ( s_GetDebug() >= 5 ) {

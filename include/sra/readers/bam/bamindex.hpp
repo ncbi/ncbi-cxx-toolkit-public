@@ -691,7 +691,7 @@ struct NCBI_BAMREAD_EXPORT SBamAlignInfo
         }
     const char* get_read_name_end() const
         {
-            return get_read_name_ptr()+get_read_name_len();
+            return m_CIGARPtr;
         }
     const char* get_cigar_ptr() const
         {
@@ -699,7 +699,7 @@ struct NCBI_BAMREAD_EXPORT SBamAlignInfo
         }
     const char* get_cigar_end() const
         {
-            return get_cigar_ptr()+get_cigar_ops_count()*4;
+            return m_ReadPtr;
         }
     uint32_t get_cigar_op_data(uint16_t index) const
         {
@@ -760,6 +760,8 @@ struct NCBI_BAMREAD_EXPORT SBamAlignInfo
 
 private:
     const char* m_RecordPtr;
+    const char* m_CIGARPtr;
+    const char* m_ReadPtr;
     Uint4 m_RecordSize;
 };
 

@@ -64,7 +64,7 @@
 BEGIN_NCBI_SCOPE
 
 #define NCBI_USE_ERRCODE_X   BAMLoader
-NCBI_DEFINE_ERR_SUBCODE_X(17);
+NCBI_DEFINE_ERR_SUBCODE_X(18);
 
 BEGIN_SCOPE(objects)
 
@@ -936,12 +936,13 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
     auto& refseq = raw_db.GetIndex().GetRef(refseq_index);
     vector<Uint8> data_sizes = refseq.EstimateDataSizeByAlnStartPos(raw_db.GetRefSeqLength(refseq_index));
     vector<Uint4> over_ends = refseq.GetAlnOverEnds();
-    TSeqPos bin_count = data_sizes.size();
+    TSeqPos bin_count = TSeqPos(data_sizes.size());
     TSeqPos bin_size = CBamIndex::kMinBinSize;
     if ( GetDebugLevel() >= 2 ) {
         LOG_POST("Total cov: "<<accumulate(data_sizes.begin(), data_sizes.end(), Uint8(0)));
     }
     static const TSeqPos kZeroBlocks = 8;
+    static const TSeqPos kMaxChunkLength = 300*1024*1024;
 
     m_Chunks.clear();
     TSeqPos last_pos = 0;
@@ -995,7 +996,7 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
         }
         zero_count = 0;
         cur_data_size += data_sizes[i];
-        if ( cur_data_size >= kChunkDataSize ) {
+        if ( cur_data_size >= kChunkDataSize || pos+bin_size-last_pos >= kMaxChunkLength ) {
             // add chunk from last_pos to pos
             {
                 _ASSERT(last_pos <= pos);
@@ -1274,7 +1275,7 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
     }
 
     CBamRawDb* raw_db = 0;
-    Int4 refseq_index = -1;
+    size_t refseq_index = size_t(-1);
     if ( m_File->GetBamDb().UsesRawIndex() ) {
         raw_db = &m_File->GetBamDb().GetRawDb();
         refseq_index = raw_db->GetRefIndex(GetRefSeqId());
@@ -1557,7 +1558,7 @@ void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
         }
         if ( seq_chunk ) {
             if ( m_File->GetBamDb().UsesRawIndex() ) {
-                seq_chunk->x_SetLoadBytes(m_Chunks[range_id].GetAlignCount());
+                seq_chunk->x_SetLoadBytes(Uint4(m_Chunks[range_id].GetAlignCount()));
             }
             seq_chunk->x_AddBioseqPlace(kTSEId);
             split_info.AddChunk(*seq_chunk);
@@ -1662,6 +1663,280 @@ void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
     chunk_info.SetLoaded();
 }
 
+#define USE_NEW_PILEUP_COLLECTOR
+
+#if defined USE_NEW_PILEUP_COLLECTOR && !defined HAVE_NEW_PILEUP_COLLECTOR
+# undef USE_NEW_PILEUP_COLLECTOR
+#endif
+
+#ifdef USE_NEW_PILEUP_COLLECTOR
+
+static Uint8 total_pileup_range;
+static Uint8 total_pileup_aligns;
+static double total_pileup_time_collect;
+static double total_pileup_time_max;
+static double total_pileup_time_make;
+
+static struct STimePrinter {
+    ~STimePrinter() {
+        if ( total_pileup_range ) {
+            LOG_POST_X(18, Info<<"CBAMDataLoader: "
+                       "Total pileup bases: "<<total_pileup_range<<
+                       " aligns: "<<total_pileup_aligns<<
+                       " collect time: "<<total_pileup_time_collect<<
+                       " max: "<<total_pileup_time_max<<
+                       " make: "<<total_pileup_time_make);
+        }
+    }
+} s_TimePrinter;
+
+struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
+{
+    static const int kNumStat = CBamDb::SPileupValues::kNumStat;
+    typedef CBamDb::SPileupValues::TCount TCount;
+    
+    CRef<CSeq_id> ref_id;
+    CRange<TSeqPos> ref_range;
+    
+    CRef<CSeq_graph> graphs[kNumStat];
+    CByte_graph::TValues* byte_values[kNumStat];
+    CInt_graph::TValues* int_values[kNumStat];
+    TCount max_value[kNumStat];
+    
+    SPileupGraphCreator(const CSeq_id_Handle& ref_id,
+                        CRange<TSeqPos> ref_range)
+        : ref_id(SerialClone(*ref_id.GetSeqId())),
+          ref_range(ref_range)
+        {
+            for ( int k = 0; k < kNumStat; ++k ) {
+                byte_values[k] = 0;
+                int_values[k] = 0;
+                max_value[k] = 0;
+            }
+        }
+
+    void x_CreateGraph(int k)
+        {
+            _ASSERT(!graphs[k]);
+            CRef<CSeq_graph> graph(new CSeq_graph);
+            static const char* const titles[kNumStat] = {
+                "Number of A bases",
+                "Number of C bases",
+                "Number of G bases",
+                "Number of T bases",
+                "Number of inserts",
+                "Number of matches"
+            };
+            graph->SetTitle(titles[k]);
+            CSeq_interval& loc = graph->SetLoc().SetInt();
+            loc.SetId(*ref_id);
+            loc.SetFrom(ref_range.GetFrom());
+            loc.SetTo(ref_range.GetTo());
+            TSeqPos length = ref_range.GetLength();
+            graph->SetNumval(length);
+            graphs[k] = graph;
+        }
+    void x_FinalizeGraph(int k)
+        {
+            if ( !max_value[k] ) {
+                if ( graphs[k] ) {
+                    _ASSERT(byte_values[k]);
+                    _ASSERT(graphs[k]->GetGraph().IsByte());
+                    CByte_graph& data = graphs[k]->SetGraph().SetByte();
+                    data.SetMin(0);
+                    data.SetMax(0);
+                    data.SetAxis(0);
+                }
+            }
+            else if ( max_value[k] < 256 ) {
+                _ASSERT(byte_values[k]);
+                _ASSERT(graphs[k]->GetGraph().IsByte());
+                _ASSERT(graphs[k]->GetGraph().GetByte().GetValues().size() == ref_range.GetLength());
+                CByte_graph& data = graphs[k]->SetGraph().SetByte();
+                data.SetMin(0);
+                data.SetMax(max_value[k]);
+                data.SetAxis(0);
+            }
+            else {
+                _ASSERT(int_values[k]);
+                _ASSERT(graphs[k]->GetGraph().IsInt());
+                _ASSERT(graphs[k]->GetGraph().GetInt().GetValues().size() == ref_range.GetLength());
+                CInt_graph& data = graphs[k]->SetGraph().SetInt();
+                data.SetMin(0);
+                data.SetMax(max_value[k]);
+                data.SetAxis(0);
+            }
+        }
+
+    void Finalize()
+        {
+            if ( !GetSkipEmptyPileupGraphsParam() ) {
+                // make missing empty graphs
+                for ( int k = 0; k < kNumStat; ++k ) {
+                    if ( graphs[k] ) {
+                        // graph already created
+                        continue;
+                    }
+                    if ( k == CBamDb::SPileupValues::kStat_Match ) {
+                        // do not generate empty 'matches' graph
+                        continue;
+                    }
+                    x_CreateGraph(k);
+                    byte_values[k] = &graphs[k]->SetGraph().SetByte().SetValues();
+                    TSeqPos zeros = ref_range.GetLength();
+                    byte_values[k]->reserve(zeros);
+                    NFast::append_zeros_aligned16(*byte_values[k], zeros);
+                }
+            }
+            for ( int k = 0; k < kNumStat; ++k ) {
+                x_FinalizeGraph(k);
+            }
+        }
+
+    virtual void AddZerosBy16(TSeqPos len) override
+        {
+            for ( int k = 0; k < kNumStat; ++k ) {
+                if ( graphs[k] ) {
+                    if ( int_values[k] ) {
+                        NFast::append_zeros_aligned16(*int_values[k], len);
+                    }
+                    else {
+                        NFast::append_zeros_aligned16(*byte_values[k], len);
+                    }
+                }
+            }
+        }
+
+    bool x_UpdateMaxIsInt(int k, TCount max_added, const CBamDb::SPileupValues& values)
+        {
+            if ( !graphs[k] ) {
+                _ASSERT(!max_value[k]);
+                max_value[k] = max_added;
+                x_CreateGraph(k);
+                TSeqPos zeros = values.m_RefFrom-ref_range.GetFrom();
+                if ( max_added >= 256 ) {
+                    int_values[k] = &graphs[k]->SetGraph().SetInt().SetValues();
+                    int_values[k]->reserve(ref_range.GetLength());
+                    NFast::append_zeros_aligned16(*int_values[k], zeros);
+                    return true;
+                }
+                else {
+                    byte_values[k] = &graphs[k]->SetGraph().SetByte().SetValues();
+                    byte_values[k]->reserve(ref_range.GetLength());
+                    NFast::append_zeros_aligned16(*byte_values[k], zeros);
+                    return false;
+                }
+            }
+            else if ( max_added >= 256 ) {
+                max_value[k] = max(max_value[k], max_added);
+                if ( byte_values[k] ) {
+                    CRef<CInt_graph> int_graph(new CInt_graph);
+                    int_values[k] = &int_graph->SetValues();
+                    int_values[k]->reserve(ref_range.GetLength());
+                    size_t size = byte_values[k]->size();
+                    NFast::copy_n_bytes_aligned16(byte_values[k]->data(), size,
+                                                  NFast::append_uninitialized(*int_values[k], size));
+                    byte_values[k] = 0;
+                    graphs[k]->SetGraph().SetInt(*int_graph);
+                }
+                return true;
+            }
+            else if ( int_values[k] ) {
+                return true;
+            }
+            else {
+                max_value[k] = max(max_value[k], max_added);
+                return false;
+            }
+        }
+    virtual void AddValuesBy16(TSeqPos len, const CBamDb::SPileupValues& values) override
+        {
+            _ASSERT(len > 0);
+            _ASSERT(values.m_RefFrom >= ref_range.GetFrom());
+            _ASSERT(values.m_RefFrom+len <= ref_range.GetToOpen());
+            _ASSERT((values.m_RefFrom - ref_range.GetFrom())%16 == 0);
+            _ASSERT(len%16 == 0);
+            for ( int k = 0; k < kNumStat; ++k ) {
+                TCount max_added = values.get_max_count(k, len);
+                if ( max_added != 0 || graphs[k] ) {
+                    if ( x_UpdateMaxIsInt(k, max_added, values) ) {
+                        NFast::copy_n_aligned16(values.cc[k].data(), len,
+                                                NFast::append_uninitialized(*int_values[k], len));
+                    }
+                    else {
+                        NFast::copy_n_aligned16(values.cc[k].data(), len,
+                                                NFast::append_uninitialized(*byte_values[k], len));
+                    }
+                }
+            }
+        }
+    virtual void AddValuesTail(TSeqPos len, const CBamDb::SPileupValues& values) override
+        {
+            _ASSERT(len > 0);
+            _ASSERT(values.m_RefFrom >= ref_range.GetFrom());
+            _ASSERT(values.m_RefFrom+len <= ref_range.GetToOpen());
+            _ASSERT((values.m_RefFrom - ref_range.GetFrom())%16 == 0);
+            _ASSERT(len%16 == 0 || values.m_RefFrom+len == ref_range.GetToOpen());
+            for ( int k = 0; k < kNumStat; ++k ) {
+                TCount max_added = values.get_max_count(k, len);
+                if ( max_added != 0 || graphs[k] ) {
+                    if ( x_UpdateMaxIsInt(k, max_added, values) ) {
+                        std::copy_n(values.cc[k].data(), len,
+                                    NFast::append_uninitialized(*int_values[k], len));
+                    }
+                    else {
+                        std::copy_n(values.cc[k].data(), len,
+                                    NFast::append_uninitialized(*byte_values[k], len));
+                    }
+                }
+            }
+        }
+};
+
+void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
+{
+    CStopWatch sw;
+    if ( GetDebugLevel() >= 2 ) {
+        sw.Start();
+    }
+    size_t range_id = chunk_info.GetChunkId()/kChunkIdMul;
+    const CBamRefSeqChunkInfo& chunk = m_Chunks[range_id];
+    auto graph_range = GetChunkGraphRange(range_id);
+    CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
+    int min_quality = m_MinMapQuality;
+    _TRACE("Loading pileup "<<GetRefSeqId()<<" @ "<<chunk.GetRefSeqRange());
+    
+    SPileupGraphCreator gg(GetRefSeq_id(), graph_range);
+    CBamDb::SPileupValues ss;
+    size_t count = m_File->GetBamDb().CollectPileup(ss, GetRefSeqId(), graph_range, min_quality, &gg);
+
+    if ( count == 0 ) {
+        // zero pileup graphs
+        chunk_info.SetLoaded();
+        return;
+    }
+
+    gg.Finalize();
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    {
+        string name = m_File->GetAnnotName();
+        name += ' ';
+        name += PILEUP_NAME_SUFFIX;
+        CRef<CAnnotdesc> desc(new CAnnotdesc);
+        desc->SetName(name);
+        annot->SetDesc().Set().push_back(desc);
+    }
+    for ( int k = 0; k < ss.kNumStat; ++k ) {
+        if ( gg.graphs[k] ) {
+            annot->SetData().SetGraph().push_back(gg.graphs[k]);
+        }
+    }
+    chunk_info.x_LoadAnnot(place, *annot);
+
+    chunk_info.SetLoaded();
+}
+
+#else // !USE_NEW_PILEUP
 
 BEGIN_LOCAL_NAMESPACE;
 
@@ -1706,6 +1981,7 @@ struct SBaseStats
                 case 'G': cc[kStat_G][pos] += 1; break;
                 case 'T': cc[kStat_T][pos] += 1; break;
                 case '=': cc[kStat_Match][pos] += 1; break;
+                    // others including N are unknown mismatch, no pileup information
                 }
             }
         }
@@ -1718,6 +1994,7 @@ struct SBaseStats
                 case 4: /* G */ cc[kStat_G][pos] += 1; break;
                 case 8: /* T */ cc[kStat_T][pos] += 1; break;
                 case 0: /* = */ cc[kStat_Match][pos] += 1; break;
+                    // others including N (=15) are unknown mismatch, no pileup information
                 }
             }
         }
@@ -1754,10 +2031,14 @@ struct SBaseStats
             }
         }
 
+    TCount get_max_count(int type) const
+        {
+            return *max_element(cc[type].begin(), cc[type].end());
+        }
     void get_maxs(TCount (&c_max)[kNumStat]) const
         {
             for ( int k = 0; k < kNumStat; ++k ) {
-                c_max[k] = *max_element(cc[k].begin(), cc[k].end());
+                c_max[k] = get_max_count(k);
             }
         }
 };
@@ -1932,10 +2213,19 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
             }
         }
     }
+    if ( GetDebugLevel() >= 3 ) {
+        LOG_POST_X(11, Info<<"CBAMDataLoader: "
+                   "Collected pileup counts "<<GetRefSeqId()<<" @ "<<
+                   chunk.GetRefSeqRange()<<": "<<
+                   count<<" skipped: "<<skipped<<" in "<<sw.Elapsed());
+    }
+    if ( count == 0 ) {
+        // zero pileup graphs
+        chunk_info.SetLoaded();
+        return;
+    }
 
     ss.finish_add();
-    SBaseStats::TCount c_max[SBaseStats::kNumStat];
-    ss.get_maxs(c_max);
     
     CRef<CSeq_annot> annot(new CSeq_annot);
     {
@@ -1949,7 +2239,8 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
     size_t total_bytes = 0;
     CRef<CSeq_id> ref_id(SerialClone(*GetRefSeq_id().GetSeqId()));
     for ( int k = 0; k < SBaseStats::kNumStat; ++k ) {
-        if ( c_max[k] == 0 ) {
+        SBaseStats::TCount max = ss.get_max_count(k);
+        if ( max == 0 ) {
             if ( k == SBaseStats::kStat_Match ) {
                 // do not generate empty 'matches' graph
                 continue;
@@ -1975,11 +2266,11 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
         loc.SetTo(graph_range.GetTo());
         graph->SetNumval(graph_range.GetLength());
 
-        if ( c_max[k] < 256 ) {
+        if ( max < 256 ) {
             CByte_graph& data = graph->SetGraph().SetByte();
             data.SetValues().assign(ss.cc[k].begin(), ss.cc[k].end());
             data.SetMin(0);
-            data.SetMax(c_max[k]);
+            data.SetMax(max);
             data.SetAxis(0);
             total_bytes += graph_range.GetLength()*sizeof(data.GetValues()[0])+10000;
         }
@@ -1987,7 +2278,7 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
             CInt_graph& data = graph->SetGraph().SetInt();
             data.SetValues().assign(ss.cc[k].begin(), ss.cc[k].end());
             data.SetMin(0);
-            data.SetMax(c_max[k]);
+            data.SetMax(max);
             data.SetAxis(0);
             total_bytes += graph_range.GetLength()*sizeof(data.GetValues()[0])+10000;
         }
@@ -2005,6 +2296,7 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
 
     chunk_info.SetLoaded();
 }
+#endif // USE_NEW_PILEUP
 
 
 /////////////////////////////////////////////////////////////////////////////

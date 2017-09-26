@@ -542,7 +542,7 @@ vector<TSeqPos> SBamIndexRefIndex::GetAlnOverEnds(void) const
 {
     TSeqPos bin_size = kMinBinSize;
     vector<TSeqPos> starts = GetAlnOverStarts();
-    TSeqPos count = starts.size();
+    TSeqPos count = TSeqPos(starts.size());
     vector<TSeqPos> ends(count);
     TSeqPos si = 0, ei = 0;
     for ( ; ei < count; ++ei ) {
@@ -991,9 +991,9 @@ void CBamIndex::Read(const char* buffer_ptr, size_t buffer_size)
                        "Bad file magic: "<<NStr::PrintableString(string(header, header+4)));
     }
     
-    size_t n_ref = SBamUtil::MakeUint4(header+4);
+    uint32_t n_ref = SBamUtil::MakeUint4(header+4);
     m_Refs.resize(n_ref);
-    for ( size_t i = 0; i < n_ref; ++i ) {
+    for ( uint32_t i = 0; i < n_ref; ++i ) {
         buffer_ptr = m_Refs[i].Read(buffer_ptr, buffer_end, i);
     }
 
@@ -1485,7 +1485,7 @@ double CBamRawDb::GetEstimatedSecondsPerByte() const
     pair<Uint8, double> data_read_stat = m_File->GetReadStatistics();
     pair<Uint8, double> data_unzip_stat = m_File->GetUncompressStatistics();
     Uint8 read_bytes =
-        index_read_stat.first*index_read_weight +
+        Uint8(index_read_stat.first*index_read_weight) +
         data_read_stat.first +
         add_read_bytes;
     double read_seconds =
@@ -1761,7 +1761,7 @@ static inline int sx_GetStringLen(const char* beg, const char* end)
 {
     for ( const char* ptr = beg; ptr != end; ++ptr ) {
         if ( !*ptr ) {
-            return ptr-beg;
+            return int(ptr-beg);
         }
     }
     // no zero termination -> bad string
@@ -1866,6 +1866,8 @@ void SBamAlignInfo::Read(CBGZFStream& in)
 {
     m_RecordSize = SBamUtil::MakeUint4(in.Read(4));
     m_RecordPtr = in.Read(m_RecordSize);
+    m_CIGARPtr = get_read_name_ptr()+get_read_name_len();
+    m_ReadPtr = get_cigar_ptr()+get_cigar_ops_count()*4;
     _ASSERT(get_aux_data_ptr() <= get_aux_data_end());
 }
 
