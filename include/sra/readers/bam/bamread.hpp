@@ -208,7 +208,7 @@ public:
 
     string GetHeaderText(void) const;
 
-#define HAVE_NEW_PILEUP_COLLECTOR
+//#define HAVE_NEW_PILEUP_COLLECTOR
 
 #ifdef HAVE_NEW_PILEUP_COLLECTOR
 
