@@ -64,7 +64,7 @@ void CConfigRegistry::Reset(CConfig* config)
     m_SubConfigs.clear();
 }
 
-bool CConfigRegistry::x_Empty(TFlags flags) const
+bool CConfigRegistry::x_Empty(TFlags) const
 {
     NCBI_ALWAYS_TROUBLE("Not implemented");
     return false; // Not reached
@@ -102,7 +102,7 @@ const string& CConfigRegistry::x_Get(const string& section, const string& name, 
     }
 }
 
-bool CConfigRegistry::x_HasEntry(const string& section, const string& name, TFlags flags) const
+bool CConfigRegistry::x_HasEntry(const string& section, const string& name, TFlags) const
 {
     _ASSERT(m_Config);
 
@@ -120,13 +120,13 @@ bool CConfigRegistry::x_HasEntry(const string& section, const string& name, TFla
     return true;
 }
 
-const string& CConfigRegistry::x_GetComment(const string& section, const string& name, TFlags flags) const
+const string& CConfigRegistry::x_GetComment(const string&, const string&, TFlags) const
 {
     NCBI_ALWAYS_TROUBLE("Not implemented");
     return kEmptyStr; // Not reached
 }
 
-void CConfigRegistry::x_Enumerate(const string& section, list<string>& entries, TFlags flags) const
+void CConfigRegistry::x_Enumerate(const string&, list<string>&, TFlags) const
 {
     NCBI_ALWAYS_TROUBLE("Not implemented");
 }
