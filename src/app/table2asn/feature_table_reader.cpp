@@ -688,6 +688,12 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
 
         AssignLocalIdIfEmpty(cd_feature, m_local_id_counter);
 
+        if (gene.NotEmpty())
+        {
+            CSeq_feat& gene_feature = (CSeq_feat&)*gene;
+            AssignLocalIdIfEmpty(gene_feature, m_local_id_counter);
+        }
+
         if (mrna.NotEmpty())
         {
             CSeq_feat& mrna_feature = (CSeq_feat&)*mrna;
