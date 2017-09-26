@@ -126,7 +126,8 @@ CPagedFile::~CPagedFile()
 {
     if ( s_GetDebug() >= 1 && m_TotalReadBytes ) {
         LOG_POST("BGZF: Total read "<<m_TotalReadBytes/double(1<<20)<<" MB"
-                 " speed: "<<m_TotalReadBytes/(m_TotalReadSeconds*(1<<20))<<" MB/s");
+                 " speed: "<<m_TotalReadBytes/(m_TotalReadSeconds*(1<<20))<<" MB/s"
+                 " time: "<<m_TotalReadSeconds);
     }
 }
 
@@ -323,7 +324,8 @@ CBGZFFile::~CBGZFFile()
 {
     if ( s_GetDebug() >= 1 && m_TotalUncompressBytes ) {
         LOG_POST("BGZF: Total decompressed "<<m_TotalUncompressBytes/double(1<<20)<<" MB"
-                 " speed: "<<m_TotalUncompressBytes/(m_TotalUncompressSeconds*(1<<20))<<" MB/s");
+                 " speed: "<<m_TotalUncompressBytes/(m_TotalUncompressSeconds*(1<<20))<<" MB/s"
+                 " time: "<<m_TotalUncompressSeconds);
     }
 }
 
