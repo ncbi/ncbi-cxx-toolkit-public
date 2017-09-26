@@ -115,6 +115,18 @@ void CSDB_Exception::x_Assign(const CException& src)
     m_Context = sdb_src->m_Context;
 }
 
+ERetriable CSDB_Exception::GetRetriable(void) const
+{
+    ERetriable  retriable = CException::GetRetriable();
+
+    if (retriable == eRetriable_Unknown) {
+        const CException*   predecessor = GetPredecessor();
+        if (predecessor)
+            return predecessor->GetRetriable();
+    }
+    return retriable;
+}
+
 
 static EDB_Type
 s_ConvertType(ESDB_Type type)

@@ -899,7 +899,7 @@ public:
     void       SetRetriable(ERetriable retriable)  { m_Retriable = retriable; }
 
     /// Retrieve info about ability to retry an action caused the exception
-    ERetriable GetRetriable(void)  const           { return m_Retriable; }
+    virtual ERetriable GetRetriable(void)  const   { return m_Retriable; }
 
 protected:
     /// Constructor for derived classes

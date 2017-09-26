@@ -1293,6 +1293,10 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                     // within one loop over the poll() i.e. 1 sec. So reset the
                     // flag and return CS_FAIL to break the poll() loop.
                     ctl_conn->SetCancelTimedOut(false);
+
+                    // Inform the exception storage that the connection is not
+                    // in the retriable state
+                    GetCTLExceptionStorage().SetRetriable(eRetriable_No);
                     return CS_FAIL;
                 }
 #endif

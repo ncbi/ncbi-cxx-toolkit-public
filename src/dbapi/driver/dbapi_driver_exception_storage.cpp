@@ -58,7 +58,8 @@ struct SUnLock
 
 /////////////////////////////////////////////////////////////////////////////
 CDBExceptionStorage::CDBExceptionStorage(void)
-    : m_ClosingConnect(false)
+    : m_ClosingConnect(false),
+      m_Retriable(eRetriable_Unknown)
 {
 }
 
@@ -103,15 +104,30 @@ void CDBExceptionStorage::Handle(const CDBHandlerStack& handler,
         CFastMutexGuard mg(m_Mutex);
         TGuard guard(m_Exceptions);
 
-        handler.HandleExceptions(m_Exceptions, dbg_info, conn, par);
+        ERetriable retriable = m_Retriable;
+        m_Retriable = eRetriable_Unknown;
+
+        try {
+            handler.HandleExceptions(m_Exceptions, dbg_info, conn, par);
+        } catch (CException &  exc) {
+            exc.SetRetriable(retriable);
+            throw;
+        }
     }
+}
+
+void CDBExceptionStorage::SetRetriable(ERetriable retriable)
+{
+    if (m_Retriable == eRetriable_No)
+        return;
+    m_Retriable = retriable;
 }
 
 }
 
 void s_DelExceptionStorage(impl::CDBExceptionStorage* storage, void* /* data */)
 {
-	delete storage;
+    delete storage;
 }
 
 END_NCBI_SCOPE

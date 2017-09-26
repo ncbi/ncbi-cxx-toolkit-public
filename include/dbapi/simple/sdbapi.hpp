@@ -107,6 +107,9 @@ public:
 
     void ReportExtra(ostream& os) const;
 
+    /// Retrieve info about ability to retry an action caused the exception
+    virtual ERetriable GetRetriable(void)  const;
+
     // Standard exception boilerplate code.
     CSDB_Exception(const CDiagCompileInfo& info,
                    const CException* prev_exception,

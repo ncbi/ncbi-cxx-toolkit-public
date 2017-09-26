@@ -30,6 +30,7 @@
  */
 
 
+#include <corelib/ncbimisc.hpp>
 #include <dbapi/driver/public.hpp>
 
 
@@ -55,12 +56,15 @@ public:
                 const CDB_Exception::SContext* dbg_info = NULL,
                 const CConnection* conn = NULL, const CDBParams* par = NULL);
     void SetClosingConnect(bool value);
-    bool IsClosingConnect(void);
+    bool IsClosingConnect(void) const;
+    void SetRetriable(ERetriable retriable);
+    ERetriable GetRetriable(void)  const;
 
 private:
     CFastMutex                      m_Mutex;
     CDB_UserHandler::TExceptions    m_Exceptions;
     bool                            m_ClosingConnect;
+    ERetriable                      m_Retriable;
 };
 
 
@@ -72,11 +76,16 @@ CDBExceptionStorage::SetClosingConnect(bool value)
 }
 
 inline bool
-CDBExceptionStorage::IsClosingConnect(void)
+CDBExceptionStorage::IsClosingConnect(void) const
 {
     return m_ClosingConnect;
 }
 
+inline ERetriable
+CDBExceptionStorage::GetRetriable(void)  const
+{
+    return m_Retriable;
+}
 
 }
 
