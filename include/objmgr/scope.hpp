@@ -613,9 +613,44 @@ public:
 
     void UpdateAnnotIndex(void);
 
+    /// Return current application-wide KeepExternalAnnotsForEdit flag.
+    /// 
+    /// By default edited sequences lose their connection to external annotations.
+    /// This behavior can be changed for all newly created scopes by calling
+    /// SetDefaultKeepExternalAnnotsForEdit(true), and current application-wide
+    /// default can be retrieved by GetDefaultKeepExternalAnnotsForEdit().
+    /// @sa
+    ///   SetDefaultKeepExternalAnnotsForEdit(), SetKeepExternalAnnotsForEdit()
     static bool GetDefaultKeepExternalAnnotsForEdit();
+    
+    /// Set new application-wide KeepExternalAnnotsForEdit flag.
+    /// 
+    /// By default edited sequences lose their connection to external annotations.
+    /// This behavior can be changed for all newly created scopes by calling
+    /// SetDefaultKeepExternalAnnotsForEdit(true), and current application-wide
+    /// default can be retrieved by GetDefaultKeepExternalAnnotsForEdit().
+    /// @sa
+    ///   GetDefaultKeepExternalAnnotsForEdit(), SetKeepExternalAnnotsForEdit()
     static void SetDefaultKeepExternalAnnotsForEdit(bool keep = true);
+
+    /// Return this scope's KeepExternalAnnotsForEdit flag.
+    /// 
+    /// By default edited sequences lose their connection to external annotations.
+    /// This behavior can be changed for any scope by calling
+    /// SetKeepExternalAnnotsForEdit(true), and current scope's behavior
+    /// can be retrieved by GetKeepExternalAnnotsForEdit().
+    /// @sa
+    ///   SetDefaultKeepExternalAnnotsForEdit(), SetKeepExternalAnnotsForEdit()
     bool GetKeepExternalAnnotsForEdit() const;
+
+    /// Change this scope's KeepExternalAnnotsForEdit flag.
+    /// 
+    /// By default edited sequences lose their connection to external annotations.
+    /// This behavior can be changed for any scope by calling
+    /// SetKeepExternalAnnotsForEdit(true), and current scope's behavior
+    /// can be retrieved by GetKeepExternalAnnotsForEdit().
+    /// @sa
+    ///   GetDefaultKeepExternalAnnotsForEdit(), GetKeepExternalAnnotsForEdit()
     void SetKeepExternalAnnotsForEdit(bool keep = true);
 
 protected:
