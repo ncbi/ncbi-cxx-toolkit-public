@@ -4219,8 +4219,8 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
         if (cutoff_score_fun[1] != 0) {
             Int4 query_len =
                 query_info->contexts[query_idx * NUM_STRANDS].query_length;
-            cutoff_score = cutoff_score_fun[0] +
-                cutoff_score_fun[1] * query_len;
+            cutoff_score = (cutoff_score_fun[0] +
+                            cutoff_score_fun[1] * query_len) / 100;
         }
 
         /* save all chains and remove ones with scores lower than 
