@@ -823,7 +823,7 @@ void CEutilsClient::SearchHistory(const string& db,
 {
     ostringstream oss;
     s_SearchHistoryQuery(oss, db, term, web_env, retstart, m_RetMax);
-    oss << "&query_key=" << query_key << "idtype=acc";
+    oss << "&query_key=" << query_key << "&idtype=acc";
 
     x_Get("/entrez/eutils/esearch.fcgi", oss.str(), ostr);
 }
@@ -837,7 +837,7 @@ void CEutilsClient::SearchHistory(const string& db,
 {
     ostringstream oss;
     s_SearchHistoryQuery(oss, db, term, web_env, retstart, m_RetMax);
-    oss << "&query_key=" << query_key << "idtype=acc";
+    oss << "&query_key=" << query_key << "&idtype=acc";
 
     x_Get("/entrez/eutils/esearch.fcgi", oss.str(), ostr);
 }
