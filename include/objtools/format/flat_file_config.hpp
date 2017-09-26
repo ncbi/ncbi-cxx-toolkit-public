@@ -254,7 +254,6 @@ public:
     typedef EStyle          TStyle;
     typedef unsigned int    TFlags; // binary OR of "EFlags"
     typedef unsigned int    TView;
-    typedef unsigned int    TGffOptions;
     typedef unsigned int    TGenbankBlocks;
     typedef unsigned int    TCustom; // binary OR of "ECustom"
     
@@ -667,7 +666,6 @@ private:
     TFlags      m_Flags;  // custom flags
     TView       m_View;
     bool        m_RefSeqConventions;
-    TGffOptions m_GffOptions;
     TGenbankBlocks m_fGenbankBlocks;
     CRef<CGenbankBlockCallback> m_GenbankBlockCallback;
     const ICanceled * m_pCanceledCallback; // instance does NOT own it
