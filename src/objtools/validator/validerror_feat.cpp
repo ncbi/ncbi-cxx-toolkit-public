@@ -6279,16 +6279,22 @@ void CValidError_feat::x_ReportTranslationMismatches(const CCDSTranslationProble
         string msg =
             NStr::SizetToString(mismatches.size()) + " mismatches found.  " +
             "First mismatch at " + NStr::IntToString(mismatches.front().pos + 1) +
-            ", residue in protein [" + mismatches.front().prot_res + "]" +
-            " != translation [" + mismatches.front().transl_res + "]";
+            ", residue in protein [";
+        msg += mismatches.front().prot_res;
+        msg += "] != translation [";
+        msg += mismatches.front().transl_res;
+        msg += "]";
         if (!nuclocstr.empty()) {
             msg += " at " + nuclocstr;
         }
         nuclocstr = MapToNTCoords(feat, feat.GetProduct(), mismatches.back().pos);
         msg +=
             ".  Last mismatch at " + NStr::IntToString(mismatches.back().pos + 1) +
-            ", residue in protein [" + mismatches.back().prot_res + "]" +
-            " != translation [" + mismatches.back().transl_res + "]";
+            ", residue in protein [";
+        msg += mismatches.back().prot_res;
+        msg += "] != translation [";
+        msg += mismatches.back().transl_res;
+        msg += "]";
         if (!nuclocstr.empty()) {
             msg += " at " + nuclocstr;
         }
@@ -6318,9 +6324,12 @@ void CValidError_feat::x_ReportTranslationMismatches(const CCDSTranslationProble
                 if (far_product) {
                     msg += "(far) ";
                 }
-                msg +=  "Residue " + NStr::IntToString(mismatches[i].pos + 1) +
-                    " in protein [" + mismatches[i].prot_res + "]" +
-                    " != translation [" + mismatches[i].transl_res + "]";
+                msg += "Residue " + NStr::IntToString(mismatches[i].pos + 1) +
+                    " in protein [";
+                msg += mismatches[i].prot_res;
+                msg += "]  != translation [";
+                msg += mismatches[i].transl_res;
+                msg += "]";
                 if (!nuclocstr.empty()) {
                     msg += " at " + nuclocstr;
                 }

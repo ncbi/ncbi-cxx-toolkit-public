@@ -168,8 +168,8 @@ public:
     }
 
     typedef struct {
-        char prot_res;
-        char transl_res;
+        unsigned char prot_res;
+        unsigned char transl_res;
         TSeqPos pos;
     } STranslationMismatch;
     typedef vector<STranslationMismatch> TTranslationMismatches;
