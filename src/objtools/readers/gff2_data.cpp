@@ -609,11 +609,16 @@ bool CGff2Record::UpdateFeature(
     if (subtype == CSeqFeatData::eSubtype_gene) {
         return true;
     }
+    auto recType = Type();
+    NStr::ToLower(recType);
     const CSeq_loc& target = pFeature->GetLocation();
     CRef<CSeq_loc> pAddLoc = GetSeqLoc(flags, seqidresolve);
 
     if (target.IsInt()  &&  target.GetInt().GetFrom() <= SeqStart()  &&
             target.GetInt().GetTo() >= SeqStop() ) {
+        if (recType == "start_codon"  ||  recType == "stop_codon") {
+            return true;
+        }
         // indicates current feature location is a placeholder interval to be
         //  totally overwritten by the constituent sub-intervals
         pFeature->SetLocation().SetMix().AddSeqLoc(*pAddLoc);
@@ -628,8 +633,13 @@ bool CGff2Record::UpdateFeature(
             pFeature->SetLocation().SetMix().AddSeqLoc(*pOld);
         }
     }
-    if (!this->xUpdateFeatureData(flags, pFeature)) {
+    if (!xUpdateFeatureData(flags, pFeature)) {
         return false;
+    }
+    if (subtype == CSeqFeatData::eSubtype_cdregion  &&  recType == "cds") {
+        string cdsId;
+        GetAttribute("ID", cdsId);
+        pFeature->AddOrReplaceQualifier("ID", cdsId);
     }
     return true;
 }
@@ -1223,8 +1233,11 @@ bool CGff2Record::xInitFeatureData(
             }
         }
     }
-
-    if (!CSoMap::SoTypeToFeature(Type(), *pFeature)) {
+    auto recognizedType = Type();
+    if (recognizedType == "start_codon"  || recognizedType == "stop_codon") {
+        recognizedType = "cds";
+    }
+    if (!CSoMap::SoTypeToFeature(recognizedType, *pFeature)) {
         return false;
     }
 

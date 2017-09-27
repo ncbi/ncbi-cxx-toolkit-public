@@ -151,10 +151,6 @@ bool CGff3ReadRecord::AssignFromGff(
         m_strType = "misc_RNA";
         return true;
     }
-    if (m_strType == "start_codon"  ||  m_strType ==  "stop_codon") {
-        m_strType = "CDS";
-        return true;
-    }
     return true;
 }
 
@@ -251,7 +247,7 @@ bool CGff3Reader::x_UpdateAnnotFeature(
     if (type == "exon" || type == "five_prime_utr" || type == "three_prime_utr") {
         return xUpdateAnnotExon(record, pFeature, pAnnot, pEC);
     }
-    if (type == "cds") {
+    if (type == "cds"  ||  type == "start_codon"  || type == "stop_codon") {
         return xUpdateAnnotCds(record, pFeature, pAnnot, pEC);
     }
     if (type == "gene") {
