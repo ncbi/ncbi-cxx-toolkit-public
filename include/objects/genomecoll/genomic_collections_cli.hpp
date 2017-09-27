@@ -41,6 +41,7 @@
 
 #include <objects/genomecoll/genomic_collections_cli_.hpp>
 #include <objects/genomecoll/GCClient_GetAssemblyBySequ.hpp>
+#include <objects/genomecoll/GCClient_Error.hpp>
 #include <objects/genomecoll/cached_assembly.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -56,13 +57,10 @@ class CGCServiceException : public CException
 public:
     CGCServiceException(const CDiagCompileInfo& diag, const objects::CGCClient_Error& srv_error);
 
-    enum EErrCode
-    {
-        eErrorAssemblyNotFound,
-        eOther
-    };
-    NCBI_EXCEPTION_DEFAULT(CGCServiceException, CException);
+    //all error codes are taken from the CGCClient_Error_Base::EError_id, please refer to them
+    typedef objects::CGCClient_Error::EError_id EErrCode;
 
+    NCBI_EXCEPTION_DEFAULT(CGCServiceException, CException);
     const char* GetErrCodeString(void) const override;
 };
 

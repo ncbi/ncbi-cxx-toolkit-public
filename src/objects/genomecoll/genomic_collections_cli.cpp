@@ -56,24 +56,16 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
-static CGCServiceException::EErrCode s_RemapErrCode(const CGCClient_Error& srv_error)
-{
-    if (!srv_error.CanGetError_id())
-        return CGCServiceException::eOther;
-    return srv_error.GetError_id() == CGCClient_Error::eError_id_assembly_not_found ?
-           CGCServiceException::eErrorAssemblyNotFound :
-           CGCServiceException::eOther;
-}
 
 CGCServiceException::CGCServiceException(const CDiagCompileInfo& diag, const objects::CGCClient_Error& srv_error)
-    : CGCServiceException(diag, nullptr, s_RemapErrCode(srv_error), srv_error.GetDescription())
+    : CGCServiceException(diag, nullptr, 
+                          CGCServiceException::EErrCode(srv_error.CanGetError_id() ? srv_error.GetError_id() : CException::eInvalid), 
+                          srv_error.GetDescription())
 {}
 
 const char* CGCServiceException::GetErrCodeString(void) const
 {
-    static const map<int, const char*> codes = {{eErrorAssemblyNotFound, "eErrorAssemblyNotFound"}, {eOther, "eOther"}};
-    auto it = codes.find(GetErrCode());
-    return it == codes.end() ? CException::GetErrCodeString() : it->second;
+    return CGCClient_Error::ENUM_METHOD_NAME(EError_id)()->FindName((int)GetErrCode(), true).c_str();
 }
 
 static const STimeout kTimeout = {600, 0};
