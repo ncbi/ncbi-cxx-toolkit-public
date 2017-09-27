@@ -314,7 +314,7 @@ private:
     {
         if (wn) return fWorkerNode;
         if (try_config) return fNetSchedule | fConfigLoading;
-                        return fNetSchedule;
+        return fNetSchedule;
     }
 
 public:
