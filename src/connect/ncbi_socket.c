@@ -1074,7 +1074,7 @@ static unsigned int s_gethostbyname_(const char* hostname,
     CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\"", hostname));
 
 #ifdef NCBI_OS_DARWIN
-    if (strspn(hostname, ".0123456789") == strlen(hostname))
+    if (strspn(hostname, ".0123456789") == strlen(hostname)) {
         if (!SOCK_isip(hostname)) {
             host = 0;
             goto out;
