@@ -473,6 +473,9 @@ int CAsn2FlatApp::Run(void)
     if (args["no-external"]) {
         m_FFGenerator->SetAnnotSelector().SetExcludeExternal(true);
     }
+    else {
+        m_Scope->SetKeepExternalAnnotsForEdit();
+    }
     if( args["resolve-all"]) {
         m_FFGenerator->SetAnnotSelector().SetResolveAll();
     }
