@@ -157,7 +157,7 @@ public:
     } ETranslExceptType;
     typedef struct {
         ETranslExceptType problem;
-        char ex;
+        unsigned char ex;
         size_t prot_pos;
     } STranslExceptProblem;
     typedef vector<STranslExceptProblem> TTranslExceptProblems;

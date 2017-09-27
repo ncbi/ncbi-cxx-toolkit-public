@@ -181,14 +181,8 @@ CScope* scope)
 
     m_HasException = !report_errors;
 
-    string comment_text = "";
-    if (feat.IsSetComment()) {
-        comment_text = feat.GetComment();
-    }
-
     const CCdregion& cdregion = feat.GetData().GetCdregion();
     const CSeq_loc& location = feat.GetLocation();
-
 
     // check frame
     m_ProblemFlags |= x_CheckCDSFrame(feat, scope);
@@ -203,7 +197,6 @@ CScope* scope)
     string transl_prot;   // translated protein
     bool got_stop = false;
 
-    CBioseq_Handle bsh = scope->GetBioseqHandle(feat.GetLocation());
     try {
         transl_prot = TranslateCodingRegionForValidation(feat, *scope, m_AltStart);
     } catch (CException&) {

@@ -6327,7 +6327,7 @@ void CValidError_feat::x_ReportTranslationMismatches(const CCDSTranslationProble
                 msg += "Residue " + NStr::IntToString(mismatches[i].pos + 1) +
                     " in protein [";
                 msg += mismatches[i].prot_res;
-                msg += "]  != translation [";
+                msg += "] != translation [";
                 msg += mismatches[i].transl_res;
                 msg += "]";
                 if (!nuclocstr.empty()) {
