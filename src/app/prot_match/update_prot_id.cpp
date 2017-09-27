@@ -176,10 +176,15 @@ int CProtIdUpdateApp::Run(void)
 
     const TTypeInfo typeInfo = *matchingTypes.begin();
 
-    if (typeInfo == CSeq_entry::GetTypeInfo()) {
-        copier.Copy(CType<CSeq_entry>());
-    } else {
-        copier.Copy(CType<CBioseq_set>());
+    try {
+        if (typeInfo == CSeq_entry::GetTypeInfo()) {
+            copier.Copy(CType<CSeq_entry>());
+        } else {
+            copier.Copy(CType<CBioseq_set>());
+        }
+    }
+    catch(...) {
+        return 1;
     }
 
     return 0;
