@@ -231,8 +231,6 @@ public:
 
     static bool IsSyntheticConstruct (const CBioSource& src);
     bool IsArtificial (const CBioSource& src);
-    static bool IsOrganelle (int genome);
-    bool IsOrganelle (CBioseq_Handle seq);
     bool IsOtherDNA(const CBioseq_Handle& bsh) const;
     void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq_Handle& seq, bool report_abutting,
                         const string& prefix, const CSerialObject& obj);

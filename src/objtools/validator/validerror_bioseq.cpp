@@ -5915,12 +5915,12 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                 } else if (m_Imp.x_IsFarFetchFailure(feat.GetLocation())) {
                     m_Imp.SetFarFetchFailure();
                 } else if (feat.GetData().IsCdregion() && 
-                    m_Imp.IsOrganelle(m_CurrentHandle) &&
+                    IsOrganelle(m_CurrentHandle) &&
                     x_PartialAdjacentToIntron(feat.GetLocation())) {
                     // suppress
                 } else if ( x_IsPartialAtSpliceSiteOrGap(feat.GetLocation(), errtype, bad_seq, is_gap) ) {
                     if (!is_gap) {
-                        if (feat.GetData().IsCdregion() && m_Imp.IsOrganelle(m_Scope->GetBioseqHandle(feat.GetLocation()))) {
+                        if (feat.GetData().IsCdregion() && IsOrganelle(m_Scope->GetBioseqHandle(feat.GetLocation()))) {
                             PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
                                     "PartialLocation: " + parterrs[j] + " (organelle does not use standard splice site convention)",
                                     *(feat.GetSeq_feat()));
@@ -8680,7 +8680,7 @@ void CValidError_bioseq::CheckForMissingChromosome(CBioseq_Handle bsh)
         }
 
         // check for organelle
-        if (source.IsSetGenome() && CValidError_imp::IsOrganelle(source.GetGenome())) {
+        if (source.IsSetGenome() && IsOrganelle(source.GetGenome())) {
             report_missing_chromosome = false;
         }
         ++d;

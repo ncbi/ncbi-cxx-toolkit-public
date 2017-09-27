@@ -57,6 +57,8 @@
 #include <objects/taxon3/taxon3.hpp>
 #include <objects/taxon1/taxon1.hpp>
 #include <objtools/validator/utilities.hpp>
+#include <objtools/validator/splice_problems.hpp>
+#include <objtools/validator/translation_problems.hpp>
 
 #include <vector>
 #include <algorithm>
@@ -2527,21 +2529,20 @@ CBioseq_Handle GetCDSProductSequence(const CSeq_feat& feat, CScope* scope, const
 }
 
 
-vector<TSeqPos> GetMismatches(const CSeq_feat& feat, CBioseq_Handle prot_handle, const string& transl_prot)
+void CalculateEffectiveTranslationLengths(const string& transl_prot, const CSeqVector& prot_vec, size_t &len, size_t& prot_len)
 {
-    vector<TSeqPos> mismatches;
-    // can't check for mismatches unless there is a product
-    if (!prot_handle || !prot_handle.IsAa()) {
-        return mismatches;
-    }
-
-    CSeqVector prot_vec = prot_handle.GetSeqVector();
-    prot_vec.SetCoding(CSeq_data::e_Ncbieaa);
-    size_t prot_len = prot_vec.size();
-    size_t len = transl_prot.length();
+    len = transl_prot.length();
+    prot_len = prot_vec.size();
 
     if (NStr::EndsWith(transl_prot, "*") && (len == prot_len + 1)) { // ok, got stop
         --len;
+    }
+    while (len > 0) {
+        if (transl_prot[len - 1] == 'X') {  //remove terminal X
+            --len;
+        } else {
+            break;
+        }
     }
 
     // ignore terminal 'X' from partial last codon if present
@@ -2552,14 +2553,16 @@ vector<TSeqPos> GetMismatches(const CSeq_feat& feat, CBioseq_Handle prot_handle,
             break;
         }
     }
+}
 
-    while (len > 0) {
-        if (transl_prot[len - 1] == 'X') {  //remove terminal X
-            --len;
-        } else {
-            break;
-        }
-    }
+
+vector<TSeqPos> GetMismatches(const CSeq_feat& feat, const CSeqVector& prot_vec, const string& transl_prot)
+{
+    vector<TSeqPos> mismatches;
+    size_t prot_len;
+    size_t len;
+
+    CalculateEffectiveTranslationLengths(transl_prot, prot_vec, len, prot_len);
 
     if (len == prot_len)  {                // could be identical
         for (TSeqPos i = 0; i < len; ++i) {
@@ -2569,7 +2572,7 @@ vector<TSeqPos> GetMismatches(const CSeq_feat& feat, CBioseq_Handle prot_handle,
             if (t_res != p_res) {
                 if (i == 0) {
                     bool no_beg, no_end;
-                    FeatureHasEnds(feat, &(prot_handle.GetScope()), no_beg, no_end);
+                    FeatureHasEnds(feat, &(prot_vec.GetScope()), no_beg, no_end);
                     if (feat.IsSetPartial() && feat.GetPartial() && (!no_beg) && (!no_end)) {
                     } else if (t_res == '-') {
                     } else {
@@ -2582,6 +2585,21 @@ vector<TSeqPos> GetMismatches(const CSeq_feat& feat, CBioseq_Handle prot_handle,
         }
     }
     return mismatches;
+}
+
+
+vector<TSeqPos> GetMismatches(const CSeq_feat& feat, CBioseq_Handle prot_handle, const string& transl_prot)
+{
+    vector<TSeqPos> mismatches;
+    // can't check for mismatches unless there is a product
+    if (!prot_handle || !prot_handle.IsAa()) {
+        return mismatches;
+    }
+
+    CSeqVector prot_vec = prot_handle.GetSeqVector();
+    prot_vec.SetCoding(CSeq_data::e_Ncbieaa);
+
+    return GetMismatches(feat, prot_vec, transl_prot);
 }
 
 
@@ -2731,6 +2749,138 @@ bool IsTemporary(const CSeq_id& id)
         }
     }
     return false;
+}
+
+
+bool IsOrganelle(int genome)
+{
+    bool rval = false;
+    switch (genome) {
+    case CBioSource::eGenome_chloroplast:
+    case CBioSource::eGenome_chromoplast:
+    case CBioSource::eGenome_kinetoplast:
+    case CBioSource::eGenome_mitochondrion:
+    case CBioSource::eGenome_cyanelle:
+    case CBioSource::eGenome_nucleomorph:
+    case CBioSource::eGenome_apicoplast:
+    case CBioSource::eGenome_leucoplast:
+    case CBioSource::eGenome_proplastid:
+    case CBioSource::eGenome_hydrogenosome:
+    case CBioSource::eGenome_chromatophore:
+    case CBioSource::eGenome_plastid:
+        rval = true;
+        break;
+    default:
+        rval = false;
+        break;
+    }
+    return rval;
+}
+
+
+bool IsOrganelle(CBioseq_Handle seq)
+{
+    if (!seq) {
+        return false;
+    }
+    bool rval = false;
+    CSeqdesc_CI sd(seq, CSeqdesc::e_Source);
+    if (sd && sd->GetSource().IsSetGenome() && IsOrganelle(sd->GetSource().GetGenome())) {
+        rval = true;
+    }
+    return rval;
+}
+
+
+bool ConsistentWithA(Char ch)
+
+{
+    return (bool)(strchr("ANRMWHVD", ch) != NULL);
+}
+
+bool ConsistentWithC(Char ch)
+
+{
+    return (bool)(strchr("CNYMSHBV", ch) != NULL);
+}
+
+bool ConsistentWithG(Char ch)
+
+{
+    return (bool)(strchr("GNRKSBVD", ch) != NULL);
+}
+
+bool ConsistentWithT(Char ch)
+
+{
+    return (bool)(strchr("TNYKWHBD", ch) != NULL);
+}
+
+
+bool DoesCodingRegionHaveUnnecessaryException(const CSeq_feat& feat, CBioseq_Handle loc_handle, CScope& scope)
+{
+    CCDSTranslationProblems problems;
+    bool is_far = false;
+    CBioseq_Handle prot_handle;
+    if (feat.IsSetProduct()) {
+        prot_handle = scope.GetBioseqHandle(feat.GetProduct());
+    }
+
+    problems.CalculateTranslationProblems(feat,
+        loc_handle,
+        prot_handle,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        &scope);
+
+    return (problems.GetTranslationProblemFlags() & CCDSTranslationProblems::eCDSTranslationProblem_UnnecessaryException);
+}
+
+
+bool DoesmRNAHaveUnnecessaryException(const CSeq_feat& feat, CBioseq_Handle nuc, CScope& scope)
+{
+    size_t mismatches = 0;
+    CBioseq_Handle rna;
+    if (feat.IsSetProduct()) {
+        rna = scope.GetBioseqHandle(feat.GetProduct());
+    }
+
+    size_t problems = GetMRNATranslationProblems
+        (feat, mismatches, false,
+        nuc, rna, false, false, false, &scope);
+
+    return (problems & eMRNAProblem_UnnecessaryException);
+}
+
+
+bool DoesFeatureHaveUnnecessaryException(const CSeq_feat& feat, CScope& scope)
+{
+    if (!feat.IsSetExcept_text()) {
+        return false;
+    }
+    if (!feat.IsSetData()) {
+        return false;
+    }
+    CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetLocation());
+    CSpliceProblems splice_problems;
+    splice_problems.CalculateSpliceProblems(feat, true, sequence::IsPseudo(feat, scope), bsh);
+    if (splice_problems.IsExceptionUnnecessary()) {
+        return true;
+    }
+    if (feat.GetData().IsCdregion()) {
+        return DoesCodingRegionHaveUnnecessaryException(feat, bsh, scope);
+    } else if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+        return DoesmRNAHaveUnnecessaryException(feat, bsh, scope);
+    } else {
+        return false;
+    }
 }
 
 

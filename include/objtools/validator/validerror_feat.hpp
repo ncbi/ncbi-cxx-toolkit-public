@@ -47,6 +47,8 @@
 #include <objtools/validator/feature_match.hpp>
 #include <objtools/validator/gene_cache.hpp>
 #include <objtools/validator/validerror_base.hpp>
+#include <objtools/validator/translation_problems.hpp>
+#include <objtools/validator/splice_problems.hpp>
 
 #include <objmgr/util/feature.hpp>
 
@@ -102,9 +104,8 @@ class CTaxValidationAndCleanup;
 class CGeneCache;
 class CValidError_base;
 
-typedef Char(&TSpliceSite)[2];
-
 // =============================  Validate SeqFeat  ============================
+
 
 
 class NCBI_VALIDATOR_EXPORT CValidError_feat : private validator::CValidError_base
@@ -147,7 +148,6 @@ public:
     bool IsIntronShort(const CSeq_feat& feat);
     void ValidatemRNAGene (const CSeq_feat &feat);
     bool GetTSACDSOnMinusStrandErrors(const CSeq_feat& feat, const CBioseq& seq);
-    static void TranslateTripletIntrons (const CSeq_feat& feat, const CCdregion& cdr, bool &nonsense_intron, CSeq_loc& nonsense_intron_loc, CScope *scope);
 
 private:
 
@@ -172,70 +172,24 @@ private:
 
     void ValidateCdregion(const CCdregion& cdregion, const CSeq_feat& obj);
     void ValidateCdTrans(const CSeq_feat& feat, bool &nonsense_intron);
-    void x_ReportUnnecessaryAlternativeStartCodonException(const CSeq_feat& feat);
-    static void CheckForThreeBaseNonsense (const CSeq_feat& feat, const CSeq_id& id, const CCdregion& cdr, TSeqPos start, TSeqPos stop, ENa_strand strand, bool &nonsense_intron, CSeq_loc& intron_loc, CScope *scope);
-    void ValidateCdRegionTranslation (const CSeq_feat& feat, const string& transl_prot, bool report_errors, bool unclassified_except, bool& has_errors, bool& other_than_mismatch, bool &nonsense_intron);
-    void x_GetExceptionFlags
-        (const string& except_text,
-         bool& unclassified_except,
-         bool& mismatch_except,
-         bool& frameshift_except,
-         bool& rearrange_except,
-         bool& product_replaced,
-         bool& mixed_population,
-         bool& low_quality,
-         bool& rna_editing,
-         bool& transcript_or_proteomic);
-    void x_CheckCDSFrame
-        (const CSeq_feat& feat,
-         const bool report_errors,
-         bool& has_errors,
-         bool& other_than_mismatch);
-    CBioseq_Handle x_GetCDSProduct
-        (const CSeq_feat& feat,
-         bool report_errors,
-         size_t translation_length,
-         string& farstr,
-         bool& has_errors,
-         bool& other_than_mismatch);
+
+
+
+
+    void x_ReportTranslExceptProblems(const CCDSTranslationProblems::TTranslExceptProblems& problems, const CSeq_feat& feat, bool has_exception);
+    void x_ReportCDSTranslationProblems(const CSeq_feat& feat, const CCDSTranslationProblems& problems, bool far_product);
+
     CBioseq_Handle x_GetCDSProduct(const CSeq_feat& feat, bool& is_far);
     CBioseq_Handle x_GetRNAProduct(const CSeq_feat& feat, bool& is_far);
     CBioseq_Handle x_GetFeatureProduct(const CSeq_feat& feat, bool look_far, bool& is_far, bool& is_misplaced);
     CBioseq_Handle x_GetFeatureProduct(const CSeq_feat& feat, bool& is_far, bool& is_misplaced);
 
-    size_t x_CountTerminalXs(const string& transl_prot, bool skip_stop);
-    size_t x_CountTerminalXs(const CSeqVector& prot_vec);
+    void x_ReportTranslationMismatches(const CCDSTranslationProblems::TTranslationMismatches& mismatches, const CSeq_feat& feat, bool far_product);
 
-    void x_CheckTranslationMismatches
-        (const CSeq_feat& feat,
-         CBioseq_Handle prot_handle,
-         const string& transl_prot,
-         const string& gccode,
-         const string& farstr,
-         bool report_errors,
-         bool got_stop,
-         bool rna_editing,
-         bool mismatch_except,
-         bool unclassified_except,
-         size_t& len,
-         size_t& num_mismatches,
-         bool& no_product,
-         bool& show_stop,
-         bool& has_errors,
-         bool& other_than_mismatch);
     void ValidateCdsProductId(const CSeq_feat& feat);
     void ValidateCdConflict(const CCdregion& cdregion, const CSeq_feat& feat);
-    void ReportCdTransErrors(const CSeq_feat& feat,
-        bool show_stop, bool got_stop,
-        bool report_errors, bool& has_errors);
 
     EDiagSev x_SeverityForConsensusSplice(void);
-    void ValidateDonor (ENa_strand strand, TSeqPos stop, const CSeqVector& vec, TSeqPos seq_len,
-                        bool rare_consensus_not_expected, 
-                        const string& label, bool report_errors, bool &has_errors, const CSeq_feat& feat, bool is_last);
-    void ValidateAcceptor (ENa_strand strand, TSeqPos start, const CSeqVector& vec, TSeqPos seq_len,
-                           bool rare_consensus_not_expected, 
-                           const string& label, bool report_errors, bool &has_errors, const CSeq_feat& feat, bool is_first);
     void ValidateSplice(const CSeq_feat& feat, bool check_all = false);
     void ValidateBothStrands(const CSeq_feat& feat);
     static void x_FeatLocHasBadStrandBoth(const CSeq_feat& feat, bool& both, bool& both_rev);
@@ -247,7 +201,8 @@ private:
     void ValidateCDSPartial(const CSeq_feat& feat);
     bool x_ValidateCodeBreakNotOnCodon(const CSeq_feat& feat,const CSeq_loc& loc,
         const CCdregion& cdregion, bool report_erros);
-    void x_ValidateCdregionCodebreak(const CCdregion& cds, const CSeq_feat& feat);
+
+    void x_ValidateCdregionCodebreak(const CSeq_feat& feat);
 
     void ValidateProt(const CProt_ref& prot, const CSeq_feat& feat);
     void x_ValidateProteinName(const string& prot_name, const CSeq_feat& feat);
@@ -258,6 +213,8 @@ private:
     void ValidateAnticodon(const CSeq_loc& anticodon, const CSeq_feat& feat);
     void ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat, bool mustbemethionine);
     void ValidateMrnaTrans(const CSeq_feat& feat);
+    void ReportMRNATranslationProblems(size_t problems, const CSeq_feat& feat, size_t mismatches);
+
     void ValidateCommonMRNAProduct(const CSeq_feat& feat);
     void ValidateRnaProductType(const CRNA_ref& rna, const CSeq_feat& feat);
     void ValidateIntron(const CSeq_feat& feat);
@@ -307,26 +264,16 @@ private:
     bool IsOverlappingGenePseudo(const CSeq_feat& feat, CScope* scope);
     unsigned char Residue(unsigned char res);
 
-    static int CheckForRaggedEnd(const CSeq_feat& feat, CScope* scope);
-    static int CheckForRaggedEnd(const CSeq_loc&, const CCdregion& cdr, CScope* scope);
     bool SuppressCheck(const string& except_text);
     string MapToNTCoords(const CSeq_feat& feat, const CSeq_loc& product,
         TSeqPos pos);
 
-    bool Is5AtEndSpliceSiteOrGap(const CSeq_loc& loc);
-
     void ValidateCharactersInField (string value, string field_name, const CSeq_feat& feat);
     void x_ReportECNumFileStatus(const CSeq_feat& feat);
 
-    void ValidateSpliceCdregion(const CSeq_feat& feat, const CBioseq_Handle& bsh, ENa_strand strand, int num_parts, bool report_errors, bool& has_errors);
-    void ValidateSpliceMrna(const CSeq_feat& feat, const CBioseq_Handle& bsh, ENa_strand strand, int num_parts, bool report_errors, bool& has_errors);
-    void ValidateSpliceExon(const CSeq_feat& feat, const CBioseq_Handle& bsh, ENa_strand strand, int num_parts, bool report_errors, bool& has_errors);
-
-    void ValidateDonorAcceptorPair(ENa_strand strand, TSeqPos stop, const CSeqVector& vec_donor, TSeqPos seq_len_donor,
-                                     TSeqPos start, const CSeqVector& vec_acceptor,  TSeqPos seq_len_acceptor,
-                                     bool rare_consensus_not_expected, const string& label, bool report_errors, bool& has_errors, const CSeq_feat& feat);
-    bool ReadDonorSpliceSite(ENa_strand strand, TSeqPos stop, const CSeqVector& vec, TSeqPos seq_len, const string& label, bool report_errors, bool& has_errors, const CSeq_feat& feat, TSpliceSite site);
-    bool ReadAcceptorSpliceSite(ENa_strand strand, TSeqPos stop, const CSeqVector& vec, TSeqPos seq_len, const string& label, bool report_errors, bool& has_errors, const CSeq_feat& feat, TSpliceSite site);
+    void ReportSpliceProblems(const CSpliceProblems& problems, const string& label, const CSeq_feat& feat, bool rare_consensus_not_expected);
+    void ReportDonorSpliceSiteReadErrors(const CSpliceProblems::TSpliceProblem& problem, const string& label, const CSeq_feat& feat, bool rare_consensus_not_expected);
+    void ReportAcceptorSpliceSiteReadErrors(const CSpliceProblems::TSpliceProblem& problem, const string& label, const CSeq_feat& feat);
 
     bool x_CDS3primePartialTest(const CSeq_feat& feat);
     bool x_CDS5primePartialTest(const CSeq_feat& feat);

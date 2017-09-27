@@ -14466,6 +14466,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranslExceptAndRnaEditing)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    BOOST_CHECK_EQUAL(validator::DoesFeatureHaveUnnecessaryException(*cds, scope), true);
+
     CLEAR_ERRORS
 }
 
@@ -14558,6 +14560,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UnnecessaryException)
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    BOOST_CHECK_EQUAL(DoesFeatureHaveUnnecessaryException(*cds, scope), true);
+    BOOST_CHECK_EQUAL(DoesFeatureHaveUnnecessaryException(*mrna, scope), true);
 
     CLEAR_ERRORS
 
@@ -14591,6 +14595,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UnnecessaryException)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    BOOST_CHECK_EQUAL(DoesFeatureHaveUnnecessaryException(*cds, scope), true);
+    BOOST_CHECK_EQUAL(DoesFeatureHaveUnnecessaryException(*mrna, scope), true);
+    BOOST_CHECK_EQUAL(DoesFeatureHaveUnnecessaryException(*exon, scope), true);
     CLEAR_ERRORS
 }
 

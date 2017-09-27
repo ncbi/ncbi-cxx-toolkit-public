@@ -317,46 +317,6 @@ bool CValidError_imp::IsArtificial(const CBioSource& src)
 }
 
 
-bool CValidError_imp::IsOrganelle(int genome)
-{
-    bool rval = false;
-    switch (genome) {
-    case CBioSource::eGenome_chloroplast:
-    case CBioSource::eGenome_chromoplast:
-    case CBioSource::eGenome_kinetoplast:
-    case CBioSource::eGenome_mitochondrion:
-    case CBioSource::eGenome_cyanelle:
-    case CBioSource::eGenome_nucleomorph:
-    case CBioSource::eGenome_apicoplast:
-    case CBioSource::eGenome_leucoplast:
-    case CBioSource::eGenome_proplastid:
-    case CBioSource::eGenome_hydrogenosome:
-    case CBioSource::eGenome_chromatophore:
-    case CBioSource::eGenome_plastid:
-        rval = true;
-        break;
-    default:
-        rval = false;
-        break;
-    }
-    return rval;
-}
-
-
-bool CValidError_imp::IsOrganelle(CBioseq_Handle seq)
-{
-    if (!seq) {
-        return false;
-    }
-    bool rval = false;
-    CSeqdesc_CI sd(seq, CSeqdesc::e_Source);
-    if (sd && sd->GetSource().IsSetGenome() && IsOrganelle(sd->GetSource().GetGenome())) {
-        rval = true;
-    }
-    return rval;
-}
-
-
 static string x_RepairCountryName (string countryname)
 {
     if (! NStr::StartsWith (countryname, "USA:")) return countryname;
