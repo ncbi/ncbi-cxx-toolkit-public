@@ -862,6 +862,9 @@ protected:
     ///
     void x_FillSeqid(string& id, int row) const;
 
+    int x_GetLinkout(TGi gi);
+    int x_GetLinkout(const objects::CSeq_id &  id);
+
     ///print out features and fill master_feat_str if applicable
     ///@param feature: the feature info
     ///@param row: row num
@@ -975,7 +978,7 @@ protected:
     void x_DisplaySequenceIDForPairwise(SAlnRowInfo *alnRoInfo, int row, bool has_mismatch, CNcbiOstrstream &out);
     void x_DisplayInsertsForQueryAnchored(SAlnRowInfo *alnRoInfo, int row, CNcbiOstrstream &out);
     void x_DisplaySequenceLine(SAlnRowInfo *alnRoInfo, int row, int prev_stop,CNcbiOstrstream &out);
-    void x_DisplayMiddLine(SAlnRowInfo *alnRoInfo, int row, CNcbiOstrstream &out);
+    void x_DisplayMiddLine(SAlnRowInfo *alnRoInfo, int row, CNcbiOstrstream &out);    
 };
 
 
