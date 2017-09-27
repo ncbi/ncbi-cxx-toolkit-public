@@ -52,6 +52,10 @@
 #include <objects/seqalign/seqalign__.hpp>
 #include <util/sequtil/sequtil_manip.hpp>
 
+#ifdef HAVE_NEW_PILEUP_COLLECTOR
+#  include <immintrin.h>
+#endif
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
