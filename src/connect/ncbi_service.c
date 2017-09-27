@@ -180,7 +180,7 @@ static int/*bool*/ s_IsMapperConfigured(const char* service, const char* key)
 {
     char val[32];
     if (s_Fast)
-        return 0;
+        return 0/*false*/;
     ConnNetInfo_GetValue(service, key, val, sizeof(val), 0);
     return ConnNetInfo_Boolean(val);
 }
