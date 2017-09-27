@@ -131,6 +131,7 @@ private:
     bool                        m_RNA;
     bool                        m_OtherFeats;
     CArgValue::TStringArray     m_FeatureSelection;
+    bool                        m_ResolveAll;
 };
 
 // constructor
@@ -203,6 +204,10 @@ void CAsn2FastaApp::Init(void)
 
     // output
     {{
+
+        arg_desc->AddFlag("resolve-all", "Resolves all, e.g for contigs");
+
+
         arg_desc->AddFlag("show-mods", "Show FASTA header mods (e.g. [strain=abc])");
 
         arg_desc->AddOptionalKey("gap-mode", "GapMode", "\
@@ -494,6 +499,8 @@ int CAsn2FastaApp::Run(void)
         m_RNA   |= m_AllFeats;
         m_OtherFeats |= m_AllFeats;
     }
+
+    m_ResolveAll = args["resolve-all"];
 
     if ( args["batch"] ) {
         CGBReleaseFile in(*is.release());
@@ -1150,11 +1157,16 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
 
     // Iterate over features
     SAnnotSelector sel;
-    sel.SetAdaptiveDepth(true);
+    if (m_ResolveAll) {
+        sel.SetResolveAll();
+        sel.SetAdaptiveDepth(true);
+    }
     sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
     sel.ExcludeNamedAnnots("SNP");    
+    sel.SetExcludeExternal();
 
     auto& scope = seh.GetScope();
+
 
     for (CBioseq_CI bioseq_it(seh); bioseq_it; ++bioseq_it) {
         CBioseq_Handle bsh = *bioseq_it;
@@ -1165,7 +1177,6 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
 
         CFeat_CI feat_it(bsh, sel); 
         for ( ; feat_it; ++feat_it) {
-        
             if (!feat_it->IsSetData() ||
                 (feat_it->GetData().IsCdregion() && !m_CDS) ||
                 (feat_it->GetData().IsGene() && !m_Gene) ||
