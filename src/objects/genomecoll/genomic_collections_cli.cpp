@@ -56,6 +56,26 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
+static CGCServiceException::EErrCode s_RemapErrCode(const CGCClient_Error& srv_error)
+{
+    if (!srv_error.CanGetError_id())
+        return CGCServiceException::eOther;
+    return srv_error.GetError_id() == CGCClient_Error::eError_id_assembly_not_found ?
+           CGCServiceException::eErrorAssemblyNotFound :
+           CGCServiceException::eOther;
+}
+
+CGCServiceException::CGCServiceException(const CDiagCompileInfo& diag, const objects::CGCClient_Error& srv_error)
+    : CGCServiceException(diag, nullptr, s_RemapErrCode(srv_error), srv_error.GetDescription())
+{}
+
+const char* CGCServiceException::GetErrCodeString(void) const
+{
+    static const map<int, const char*> codes = {{eErrorAssemblyNotFound, "eErrorAssemblyNotFound"}, {eOther, "eOther"}};
+    auto it = codes.find(GetErrCode());
+    return it == codes.end() ? CException::GetErrCodeString() : it->second;
+}
+
 static const STimeout kTimeout = {600, 0};
 
 CGenomicCollectionsService::CGenomicCollectionsService()
@@ -104,9 +124,8 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc_, c
     try {
         return CCachedAssembly(AskGet_assembly_blob(req, &reply)).Assembly();
     } catch (CException& ex) {
-        if(reply.IsSrvr_error()) {
-            NCBI_THROW(CException, eUnknown, reply.GetSrvr_error().GetDescription());
-        }
+        if (reply.IsSrvr_error())
+            throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
         throw;
     }
 }
@@ -124,9 +143,8 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId, const 
     try {
         return CCachedAssembly(AskGet_assembly_blob(req, &reply)).Assembly();
     } catch (CException& ex) {
-        if(reply.IsSrvr_error()) {
-            NCBI_THROW(CException, eUnknown, reply.GetSrvr_error().GetDescription());
-        }
+        if (reply.IsSrvr_error())
+            throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
         throw;
     }
 }
@@ -144,9 +162,8 @@ string CGenomicCollectionsService::ValidateChrType(const string& chrType, const 
     try {
         return AskGet_chrtype_valid(req, &reply);
     } catch (CException& ex) {
-        if(reply.IsSrvr_error()) {
-            NCBI_THROW(CException, eUnknown, reply.GetSrvr_error().GetDescription());
-        }
+        if (reply.IsSrvr_error())
+            throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
         throw;
     }
 }
@@ -195,16 +212,12 @@ CRef<CGCClient_AssembliesForSequences> CGenomicCollectionsService::FindAssemblie
     LogRequest(req);
 
     try {
-        CRef<CGCClient_AssembliesForSequences> assm = AskGet_assembly_by_sequence(req, &reply);
-
-        return assm;
+        return AskGet_assembly_by_sequence(req, &reply);
     } catch (const CException& ex) {
-        if(reply.IsSrvr_error()) {
-            NCBI_REPORT_EXCEPTION(reply.GetSrvr_error().GetDescription(), ex);
-        }
+        if (reply.IsSrvr_error())
+            throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
         throw;
     }
-    return CRef<CGCClient_AssembliesForSequences>();
 }
 
 
@@ -219,13 +232,10 @@ CRef<CGCClient_EquivalentAssemblies> CGenomicCollectionsService::GetEquivalentAs
     LogRequest(req);
 
     try {
-        CRef<CGCClient_EquivalentAssemblies> assm = AskGet_equivalent_assemblies(req, &reply);
-
-        return assm;
+        return AskGet_equivalent_assemblies(req, &reply);
     } catch (const CException& ex) {
-        if(reply.IsSrvr_error()) {
-            NCBI_REPORT_EXCEPTION(reply.GetSrvr_error().GetDescription(), ex);
-        }
+        if (reply.IsSrvr_error())
+            throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
         throw;
     }
 }

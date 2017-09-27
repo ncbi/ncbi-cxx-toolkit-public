@@ -51,6 +51,21 @@ class CGCClient_AssemblyInfo;
 class CGCClient_AssemblySequenceInfo;
 class CGCClient_EquivalentAssemblies;
 
+class CGCServiceException : public CException
+{
+public:
+    CGCServiceException(const CDiagCompileInfo& diag, const objects::CGCClient_Error& srv_error);
+
+    enum EErrCode
+    {
+        eErrorAssemblyNotFound,
+        eOther
+    };
+    NCBI_EXCEPTION_DEFAULT(CGCServiceException, CException);
+
+    const char* GetErrCodeString(void) const override;
+};
+
 /////////////////////////////////////////////////////////////////////////////
 class CGenomicCollectionsService : public CGenomicCollectionsService_Base
 {
