@@ -55,6 +55,7 @@ def main(): #IGNORE:R0911
         shutil.copy(libdir + "libp11-kit-0.dll", installdir + "bin")
         shutil.copy(libdir + "msvcp120.dll", installdir + "bin")
         shutil.copy(libdir + "msvcr120.dll", installdir + "bin")
+        shutil.copy(libdir + "ncbi-vdb-md.dll", installdir + "bin")
         return launch_win_installer_build(installdir, blast_version)                
     if platform.startswith("Linux64"):
         return launch_rpm_build(installdir, blast_version)

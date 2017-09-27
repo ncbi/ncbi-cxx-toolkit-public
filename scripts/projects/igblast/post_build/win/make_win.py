@@ -49,7 +49,8 @@ def main():
              "libnettle-6-2.dll",
              "libp11-kit-0.dll",
              "msvcp120.dll",
-             "msvcr120.dll"
+             "msvcr120.dll",
+             "ncbi-vdb-md.dll"
             ]
     
     cwd = os.getcwd()

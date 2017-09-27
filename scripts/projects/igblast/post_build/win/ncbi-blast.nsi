@@ -70,6 +70,7 @@ Section "DefaultSection" SecDflt
   File "libp11-kit-0.dll"
   File "msvcp120.dll"
   File "msvcr120.dll"
+  File "ncbi-vdb-md.dll"
   
   SetOutPath "$INSTDIR\doc"
   File "README"
