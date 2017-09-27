@@ -963,14 +963,11 @@ void CDisplaySeqalign::x_PrintFeatures(SAlnRowInfo *alnRoInfo,
     }
     
 }
-
+    
 string CDisplaySeqalign::x_HTMLSeqIDLink(SAlnRowInfo *alnRoInfo, int row,TGi giToUse)
 {
-    const CBioseq_Handle& bsp_handle = m_AV->GetBioseqHandle(row);
-    int linkout = m_LinkoutDB 
-                ?
-                m_LinkoutDB->GetLinkout(m_AV->GetSeqId(row),m_MapViewerBuildName) 
-                : 0;                
+    const CBioseq_Handle& bsp_handle = m_AV->GetBioseqHandle(row);    
+    int linkout = x_GetLinkout(m_AV->GetSeqId(row));                            
     string urlLink = NcbiEmptyString;
     const list<CRef<CSeq_id> >& ids = bsp_handle.GetBioseqCore()->GetId();    
     CAlignFormatUtil::SSeqURLInfo *seqUrlInfo = x_InitSeqUrl(giToUse,alnRoInfo->seqidArray[row],linkout,alnRoInfo->taxid[row],ids);     
@@ -2098,6 +2095,45 @@ void CDisplaySeqalign::x_FillIdentityInfo(const string& sequence_standard,
     }  
 }
 
+int CDisplaySeqalign::x_GetLinkout(TGi gi)
+{
+    int linkout = 0;
+    if(m_AlignOption & eLinkout) {    
+        try {
+            linkout = m_LinkoutDB 
+                    ? m_LinkoutDB->GetLinkout(gi,m_MapViewerBuildName)
+                    : 0;
+        }
+        catch (const CException & e) {        
+            ERR_POST("Problem with linkoutdb: " + e.GetMsg());                
+            m_AlignOption &= ~eLinkout; //Remove linkout bit for the rest of sequences
+            linkout = 0;        
+        }    
+    }
+    return linkout;
+}
+
+
+
+int CDisplaySeqalign::x_GetLinkout(const objects::CSeq_id &  id)
+{
+    int linkout = 0;
+    if(m_AlignOption & eLinkout) {    
+        try {
+            linkout = m_LinkoutDB 
+                    ? m_LinkoutDB->GetLinkout(id,m_MapViewerBuildName)
+                    : 0;
+        }
+        catch (const CException & e) {        
+            ERR_POST("Problem with linkoutdb: " + e.GetMsg());                
+            m_AlignOption &= ~eLinkout; //Remove linkout bit for the rest of sequences
+            linkout = 0;        
+        }    
+    }
+    return linkout;
+}
+
+
 
 CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CRef< CBlast_def_line > &bdl,
                                                                         const CBioseq_Handle& bsp_handle,								                                        
@@ -2133,31 +2169,26 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
 			if(bdl->IsSetTaxid() &&  bdl->CanGetTaxid()){
 				taxid = bdl->GetTaxid();
 			}
-            
-            int linkout = m_LinkoutDB 
-                ? m_LinkoutDB->GetLinkout(gi,m_MapViewerBuildName)
-                : 0;
-                
+            int linkout = x_GetLinkout(gi);                        
             alnDispParams->seqUrlInfo = x_InitSeqUrl(gi_in_use_this_gi,alnDispParams->label,linkout,taxid,ids);    
             alnDispParams->id_url = CAlignFormatUtil::GetIDUrl(alnDispParams->seqUrlInfo,&ids);
 		}
 		
-		if(m_AlignOption&eLinkout && m_AlignTemplates == NULL){                    
-			int linkout = m_LinkoutDB 
-                ? m_LinkoutDB->GetLinkout(gi,m_MapViewerBuildName)
-                : 0;
-                
+		if(m_AlignOption&eLinkout && m_AlignTemplates == NULL){                    			
+            int linkout = x_GetLinkout(gi);                
 			string user_url = m_Reg->Get(m_BlastType,"TOOL_URL");
-			list<string> linkout_url =  CAlignFormatUtil::
+            if(linkout != 0) {
+			    list<string> linkout_url =  CAlignFormatUtil::
                                 GetLinkoutUrl(linkout, ids,
                                               m_Rid,
                                               m_CddRid, m_EntrezTerm,
                                               isNa, 
                                               firstGi,
                                               false, true, m_cur_align,m_PreComputedResID);                            
-			ITERATE(list<string>, iter_linkout, linkout_url){
-				alnDispParams->linkoutStr += *iter_linkout;
-			}
+			    ITERATE(list<string>, iter_linkout, linkout_url){
+				    alnDispParams->linkoutStr += *iter_linkout;
+			    }
+            }
 			if(seqLength > k_GetSubseqThreshhold){
 				alnDispParams->dumpGnlUrl = x_GetDumpgnlLink(ids);                                
 			}
@@ -3231,11 +3262,7 @@ bool CDisplaySeqalign::x_IsGeneInfoAvailable(SAlnInfo* aln_vec_info)
 
         ITERATE(CBlast_def_line_set::Tdata, iter, bdl)
         {
-            int linkout = m_LinkoutDB
-                ?
-                m_LinkoutDB->GetLinkout(*(*iter)->GetSeqid().front(),m_MapViewerBuildName)
-                : 0;
-                
+            int linkout = x_GetLinkout(*(*iter)->GetSeqid().front());                        
             if (linkout & eGene)
             {
                 return true;

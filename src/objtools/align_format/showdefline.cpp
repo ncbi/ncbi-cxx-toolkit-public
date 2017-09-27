@@ -287,7 +287,14 @@ void CShowBlastDefline::x_InitLinkOutInfo(SDeflineInfo* sdl,
 {
     string linkout_list;
     TGi cur_gi =  FindGi(cur_id);
-    sdl->linkout = m_LinkoutDB ? m_LinkoutDB->GetLinkout(cur_gi,m_MapViewerBuildName) : 0;    
+    try {
+        sdl->linkout = m_LinkoutDB ? m_LinkoutDB->GetLinkout(cur_gi,m_MapViewerBuildName) : 0;    
+    }
+    catch (const CException & e) {                
+        ERR_POST("Problem with linkoutdb: " + e.GetMsg());                
+        m_Option &= ~eLinkout; //Remove linkout bit for the rest of sequences
+        return;
+    }
     if(m_LinkoutOrder.empty()) {
         m_ConfigFile.reset(new CNcbiIfstream(".ncbirc"));
         m_Reg.reset(new CNcbiRegistry(*m_ConfigFile));        
