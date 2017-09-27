@@ -3676,24 +3676,24 @@ bool RetranslateCDS(const CSeq_feat& cds, CScope& scope)
         CRef<CSeq_inst> new_inst(new CSeq_inst());
         new_inst->Assign(new_protein->GetInst());
         peh.SetInst(*new_inst);
-    }
 
-    // If protein feature exists, update location
-    CFeat_CI f(prot_bsh, SAnnotSelector(CSeqFeatData::eSubtype_prot));
-    if (f) {
-        // This is necessary, to make sure that we are in "editing mode"
-        const CSeq_annot_Handle& annot_handle = f->GetAnnot();
-        CSeq_entry_EditHandle eh = annot_handle.GetParentEntry().GetEditHandle();
-        CSeq_feat_EditHandle feh(*f);
-        CRef<CSeq_feat> new_feat(new CSeq_feat());
-        new_feat->Assign(*(f->GetSeq_feat()));
-        if (new_feat->CanGetLocation() &&
-            new_feat->GetLocation().IsInt() &&
-            new_feat->GetLocation().GetInt().CanGetTo())
-        {
-            new_feat->SetLocation().SetInt().SetTo(
-                new_protein->GetLength() - 1);
-            feh.Replace(*new_feat);
+        // If protein feature exists, update location
+        CFeat_CI f(prot_bsh, SAnnotSelector(CSeqFeatData::eSubtype_prot));
+        if (f) {
+            // This is necessary, to make sure that we are in "editing mode"
+            const CSeq_annot_Handle& annot_handle = f->GetAnnot();
+            CSeq_entry_EditHandle eh = annot_handle.GetParentEntry().GetEditHandle();
+            CSeq_feat_EditHandle feh(*f);
+            CRef<CSeq_feat> new_feat(new CSeq_feat());
+            new_feat->Assign(*(f->GetSeq_feat()));
+            if (new_feat->CanGetLocation() &&
+                new_feat->GetLocation().IsInt() &&
+                new_feat->GetLocation().GetInt().CanGetTo())
+            {
+                new_feat->SetLocation().SetInt().SetTo(
+                    new_protein->GetLength() - 1);
+                feh.Replace(*new_feat);
+            }
         }
     }
 
