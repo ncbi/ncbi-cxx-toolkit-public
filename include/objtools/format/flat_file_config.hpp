@@ -193,23 +193,6 @@ public:
         fViewFirst        = 0x4
     };
 
-    enum EGffOptions {
-        // specifies special features of GFF(3) generation
-        fGffGenerateIdTags     = 1 << 0,
-        fGffGTFCompat          = 1 << 1, ///< Represent CDSs (and exons) per GTF.
-        fGffGTFOnly            = 1 << 2, ///< Omit all other features.
-        fGffShowSeq            = 1 << 3, ///< Show the actual sequence in a "##" comment.
-        // There are at least 3 flavours of GFF3, discounting multiple
-        // versions of each:
-        // - "Official specifications" by the Sequence Ontology group (SO),
-        //   see http://www.sequenceontology.org/gff3.shtml
-        // - GFF3 as modified by the Interoperability Working Group (IOWG),
-        //   see http://www.pathogenportal.org/gff3-usage-conventions.html
-        // - GFF3 as modified for exchange with Flybase. This alters
-        //   such critical information as how phase is represented.
-        fGffForFlybase         = 1 << 4, ///< Flybase flavour of GFF3.
-    };
-
     // These flags are used to select the GenBank sections to print or skip.
     enum FGenbankBlocks {
         // default is all sections
