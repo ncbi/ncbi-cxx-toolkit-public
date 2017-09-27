@@ -1050,7 +1050,9 @@ static int s_gethostname(char* name, size_t namesize, ESwitch log)
 }
 
 
-static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
+static unsigned int s_gethostbyname_(const char* hostname,
+                                     int/*bool*/ not_ip,
+                                     ESwitch     log)
 {
     char buf[MAXHOSTNAMELEN + 1];
     unsigned int host;
@@ -1065,20 +1067,23 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
                 *p = '\0';
         }}
 #endif /*NCBI_OS_DARWIN*/
+        not_ip = 1/*true*/;
         hostname = buf;
     }
 
     CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\"", hostname));
 
 #ifdef NCBI_OS_DARWIN
-    if (strspn(hostname, ".0123456789") == strlen(hostname)
-        &&  !SOCK_isip(hostname)) {
-        host = 0;
-        goto out;
+    if (strspn(hostname, ".0123456789") == strlen(hostname))
+        if (!SOCK_isip(hostname)) {
+            host = 0;
+            goto out;
+        } else
+            not_ip = 0/*false*/;
     }
 #endif /*NCBI_OS_DARWIN*/
 
-    if ((host = inet_addr(hostname)) == htonl(INADDR_NONE)) {
+    if (not_ip  ||  (host = inet_addr(hostname)) == htonl(INADDR_NONE)) {
         int error;
 #if defined(HAVE_GETADDRINFO)  &&  !defined(__GLIBC__)
         struct addrinfo hints, *out = 0;
@@ -1181,7 +1186,7 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
  out:
 #endif /*NCBI_OS_DARWIN*/
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
-    if (!SOCK_isipEx(hostname, 1)  ||  !host) {
+    if (!SOCK_isipEx(hostname, 1/*full-quad*/)  ||  !host) {
         char addr[40];
         CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\" @ %s", hostname,
                      SOCK_ntoa(host, addr, sizeof(addr)) == 0
@@ -1201,7 +1206,7 @@ static unsigned int s_getlocalhostaddress(ESwitch reget, ESwitch log)
     /* cached IP address of the local host */
     static unsigned int s_LocalHostAddress = 0;
     if (reget == eOn  ||  (!s_LocalHostAddress  &&  reget != eOff))
-        s_LocalHostAddress = s_gethostbyname_(0, log);
+        s_LocalHostAddress = s_gethostbyname_(0, 0, log);
     if (s_LocalHostAddress)
         return s_LocalHostAddress;
     if (!s_Once  &&  reget != eOff  &&  CORE_Once(&s_Once)) {
@@ -1214,10 +1219,12 @@ static unsigned int s_getlocalhostaddress(ESwitch reget, ESwitch log)
 }
 
 
-static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
+static unsigned int s_gethostbyname(const char* hostname,
+                                    int/*bool*/ not_ip,
+                                    ESwitch     log)
 {
     static void* /*bool*/ s_Once = 0/*false*/;
-    unsigned int retval = s_gethostbyname_(hostname, log);
+    unsigned int retval = s_gethostbyname_(hostname, not_ip, log);
 
     if (!retval) {
         if (s_ErrHook) {
@@ -4103,7 +4110,8 @@ static EIO_Status s_Connect_(SOCK            sock,
         else
             assert(sock->port);
         /* get address of the remote host (assume the same host if NULL) */
-        if (host && !(sock->host = s_gethostbyname(host, (ESwitch)sock->log))){
+        if (host
+            &&  !(sock->host = s_gethostbyname(host, 0, (ESwitch)sock->log))) {
             CORE_LOGF_X(22, eLOG_Error,
                         ("%s[SOCK::Connect] "
                          " Failed SOCK_gethostbyname(\"%.*s\")",
@@ -4124,15 +4132,13 @@ static EIO_Status s_Connect_(SOCK            sock,
 
     /* create the new socket */
     type  = SOCK_STREAM;
-#ifdef NCBI_OS_LINUX
-#  ifdef SOCK_NONBLOCK
+#ifdef SOCK_NONBLOCK
     type |= SOCK_NONBLOCK;
-#  endif /*SOCK_NONBLOCK*/
-#  ifdef SOCK_CLOEXEC
+#endif /*SOCK_NONBLOCK*/
+#ifdef SOCK_CLOEXEC
     if (!sock->crossexec  ||  sock->session)
         type |= SOCK_CLOEXEC;
-#  endif /*SOCK_CLOEXEC*/
-#endif /*NCBI_OS_LINUX*/
+#endif /*SOCK_CLOEXEC*/
     if ((x_sock = socket(addr.sa.sa_family, type, 0)) == SOCK_INVALID) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(23, eLOG_Error,
@@ -4182,7 +4188,7 @@ static EIO_Status s_Connect_(SOCK            sock,
         s_Close_(sock, -2/*silent abort*/);
         return eIO_Unknown;
     }
-#elif !defined(NCBI_OS_LINUX)  ||  !defined(SOCK_NONBLOCK)
+#elif !defined(SOCK_NONBLOCK)
     /* set non-blocking mode */
     if (!s_SetNonblock(x_sock, 1/*true*/)) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
@@ -4222,7 +4228,7 @@ static EIO_Status s_Connect_(SOCK            sock,
 #endif /*SO_OOBINLINE*/
     }
 
-#if !defined(NCBI_OS_LINUX)  ||  !defined(SOCK_CLOEXEC)
+#ifndef SOCK_CLOEXEC
     if ((!sock->crossexec  ||  sock->session)  &&  !s_SetCloexec(x_sock, 1)) {
         const char* strerr;
 #  ifdef NCBI_OS_MSWIN
@@ -4244,7 +4250,7 @@ static EIO_Status s_Connect_(SOCK            sock,
         UTIL_ReleaseBuffer(strerr);
 #  endif /*NCBI_OS_MSWIN*/
     }
-#endif /*!NCBI_OS_LINUX || !SOCK_CLOEXEC*/
+#endif /*!SOCK_CLOEXEC*/
 
     /* establish connection to the peer */
     sock->connected = 0/*false*/;
@@ -4784,15 +4790,13 @@ static EIO_Status s_CreateListening(const char*    path,
 
     /* create new(listening) socket */
     type  = SOCK_STREAM;
-#ifdef NCBI_OS_LINUX
-#  ifdef SOCK_NONBLOCK
+#ifdef SOCK_NONBLOCK
     type |= SOCK_NONBLOCK;
-#  endif /*SOCK_NONBLOCK*/
-#  ifdef SOCK_CLOEXEC
+#endif /*SOCK_NONBLOCK*/
+#ifdef SOCK_CLOEXEC
     if (!(flags & fSOCK_KeepOnExec))
         type |= SOCK_CLOEXEC;
-#  endif /*SOCK_CLOEXEC*/
-#endif /*NCBI_OS_LINUX*/
+#endif /*SOCK_CLOEXEC*/
     if ((x_lsock = socket(addr.sa.sa_family, type, 0)) == SOCK_INVALID){
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         if (!path) {
@@ -4967,7 +4971,7 @@ static EIO_Status s_CreateListening(const char*    path,
         WSACloseEvent(event);
         return eIO_Unknown;
     }
-#elif !defined(NCBI_OS_LINUX)  ||  !defined(SOCK_NONBLOCK)
+#elif !defined(SOCK_NONBLOCK)
     /* set non-blocking mode */
     if (!s_SetNonblock(x_lsock, 1/*true*/)) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
@@ -5031,7 +5035,7 @@ static EIO_Status s_CreateListening(const char*    path,
     (*lsock)->event    = event;
 #endif /*NCBI_OS*/
 
-#if !defined(NCBI_OS_LINUX)  ||  !defined(SOCK_CLOEXEC)
+#ifndef SOCK_CLOEXEC
     if (!(flags & fSOCK_KeepOnExec)  &&  !s_SetCloexec(x_lsock, 1/*true*/)) {
         const char* strerr;
 #  ifdef NCBI_OS_MSWIN
@@ -5058,7 +5062,7 @@ static EIO_Status s_CreateListening(const char*    path,
         UTIL_ReleaseBuffer(strerr);
 #  endif /*NCBI_OS_MSWIN*/
     }
-#endif /*!NCBI_OS_LINUX || !SOCK_CLOEXEC*/
+#endif /*!SOCK_CLOEXEC*/
 
     /* statistics & logging */
     if ((*lsock)->log == eOn  ||  ((*lsock)->log == eDefault && s_Log == eOn)){
@@ -5585,7 +5589,7 @@ static EIO_Status s_SendMsg(SOCK           sock,
     x_port = port ? port : sock->port;
     if (!host  ||  !*host)
         x_host = sock->host;
-    else if (!(x_host = s_gethostbyname(host, (ESwitch) sock->log))) {
+    else if (!(x_host = s_gethostbyname(host, 0, (ESwitch) sock->log))) {
         CORE_LOGF_X(88, eLOG_Error,
                     ("%s[DSOCK::SendMsg] "
                      " Failed SOCK_gethostbyname(\"%.*s\")",
@@ -7290,15 +7294,13 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
         return eIO_NotSupported;
 
     type  = SOCK_DGRAM;
-#ifdef NCBI_OS_LINUX
-#  ifdef SOCK_NONBLOCK
+#ifdef SOCK_NONBLOCK
     type |= SOCK_NONBLOCK;
-#  endif /*SOCK_NONBLOCK*/
-#  ifdef SOCK_CLOEXEC
+#endif /*SOCK_NONBLOCK*/
+#ifdef SOCK_CLOEXEC
     if (!(flags & fSOCK_KeepOnExec))
         type |= SOCK_CLOEXEC;
-#  endif /*SOCK_CLOEXEC*/
-#endif /*NCBI_OS_LINUX*/
+#endif /*SOCK_CLOEXEC*/
     /* create new datagram socket */
     if ((x_sock = socket(AF_INET, type, 0)) == SOCK_INVALID) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
@@ -7337,7 +7339,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
         WSACloseEvent(event);
         return eIO_Unknown;
     }
-#elif !defined(NCBI_OS_LINUX)  ||  !defined(SOCK_NONBLOCK)
+#elif !defined(SOCK_NONBLOCK)
     /* set to non-blocking mode */
     if (!s_SetNonblock(x_sock, 1/*true*/)) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
@@ -7380,7 +7382,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
     BUF_SetChunkSize(&(*sock)->r_buf, SOCK_BUF_CHUNK_SIZE);
     BUF_SetChunkSize(&(*sock)->w_buf, SOCK_BUF_CHUNK_SIZE);
 
-#if !defined(NCBI_OS_LINUX)  ||  !defined(SOCK_CLOEXEC)
+#ifndef SOCK_CLOEXEC
     if (!(*sock)->crossexec  &&  !s_SetCloexec(x_sock, 1/*true*/)) {
         const char* strerr;
         char _id[MAXIDLEN];
@@ -7403,7 +7405,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
         UTIL_ReleaseBuffer(strerr);
 #  endif /*NCBI_OS_MSWIN*/
     }
-#endif /*!NCBI_OS_LINUX || !SOCK_CLOEXEC*/
+#endif /*!SOCK_CLOEXEC*/
 
     /* statistics & logging */
     if ((*sock)->log == eOn  ||  ((*sock)->log == eDefault  &&  s_Log == eOn))
@@ -7518,7 +7520,7 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
 
     if (!hostname  ||  !*hostname)
         host = 0;
-    else if (!(host = s_gethostbyname(hostname, (ESwitch) sock->log))) {
+    else if (!(host = s_gethostbyname(hostname, 0, (ESwitch) sock->log))) {
         CORE_LOGF_X(83, eLOG_Error,
                     ("%s[DSOCK::Connect] "
                      " Failed SOCK_gethostbyname(\"%.*s\")",
@@ -8167,7 +8169,7 @@ extern unsigned int SOCK_gethostbynameEx(const char* hostname, ESwitch log)
     if (s_InitAPI(0) != eIO_Success)
         return 0;
 
-    return s_gethostbyname(hostname, log == eDefault ? s_Log : log);
+    return s_gethostbyname(hostname, 0, log == eDefault ? s_Log : log);
 }
 
 
@@ -8241,7 +8243,7 @@ const char* SOCK_StringToHostPortEx(const char*     str,
     if (s_InitAPI(0) != eIO_Success)
         return 0;
 
-    for (s = str;  *s;  s++) {
+    for (s = str;  *s;  ++s) {
         if (isspace((unsigned char)(*s))  ||  *s == ':')
             break;
     }
@@ -8267,7 +8269,8 @@ const char* SOCK_StringToHostPortEx(const char*     str,
     if (len) {
         memcpy(x_buf, str, len);
         x_buf[len] = '\0';
-        if (!(h = s_gethostbyname(x_buf, s_Log))) {
+        if ((h = inet_addr(x_buf)) == htonl(INADDR_NONE)
+            &&  !(h = s_gethostbyname(x_buf, 1/*not-IP*/, s_Log))) {
             if (!flag)
                 return str;
             h = htonl(INADDR_NONE);
