@@ -62,7 +62,7 @@ extern "C" {
 #endif
 
 
-typedef unsigned int           ticket_t;
+typedef unsigned int  ticket_t;
 
 
 /* This structure is assumed packed */
@@ -77,7 +77,7 @@ typedef struct {
 
 
 /* Maximal accepted request/reply size */
-#define FWD_MAX_RR_SIZE 128
+#define FWD_MAX_RR_SIZE  128
 
 
 /*
