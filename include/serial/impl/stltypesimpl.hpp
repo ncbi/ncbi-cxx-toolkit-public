@@ -94,7 +94,7 @@ public:
     void SetDataId(const CMemberId& id);
 
     virtual bool IsDefault(TConstObjectPtr objectPtr) const override;
-    void SetDefault(TObjectPtr objectPtr) const;
+    virtual void SetDefault(TObjectPtr objectPtr) const override;
 
     // private use
     typedef bool (*TIsDefaultFunction)(TConstObjectPtr objectPtr);
