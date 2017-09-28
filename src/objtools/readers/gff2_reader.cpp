@@ -256,6 +256,20 @@ void
 CGff2Reader::ReadSeqAnnots(
     TAnnots& annots,
     ILineReader& lr,
+    ILineErrorListener* pEC)
+//  ----------------------------------------------------------------------------
+{
+    if (m_iFlags & CGff2Reader::fGenbankMode) {
+        return ReadSeqAnnotsGenbankMode(annots, lr, pEC);
+    }
+    return ReadSeqAnnotsNormalMode(annots, lr, pEC);
+}
+
+//  ---------------------------------------------------------------------------                       
+void
+CGff2Reader::ReadSeqAnnotsNormalMode(
+    TAnnots& annots,
+    ILineReader& lr,
     ILineErrorListener* pEC )
 //  ----------------------------------------------------------------------------
 {
@@ -268,6 +282,16 @@ CGff2Reader::ReadSeqAnnots(
     return;
 }
 
+//  ---------------------------------------------------------------------------                       
+void
+CGff2Reader::ReadSeqAnnotsGenbankMode(
+    TAnnots& annots,
+    ILineReader& lr,
+    ILineErrorListener* pEC )
+//  ----------------------------------------------------------------------------
+{
+    ReadSeqAnnotsNormalMode(annots, lr, pEC);
+}
 
 //  ----------------------------------------------------------------------------                
 CRef< CSeq_entry >

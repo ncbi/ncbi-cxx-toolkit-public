@@ -214,7 +214,18 @@ CGtfReader::~CGtfReader()
 
 //  ---------------------------------------------------------------------------                       
 void
-CGtfReader::ReadSeqAnnots(
+CGtfReader::ReadSeqAnnotsGenbankMode(
+    TAnnots& annots,
+    ILineReader& lr,
+    ILineErrorListener* pEC)
+//  ----------------------------------------------------------------------------
+{
+    return ReadSeqAnnotsNormalMode(annots, lr, pEC);
+}
+
+//  ---------------------------------------------------------------------------                       
+void
+CGtfReader::ReadSeqAnnotsNormalMode(
     TAnnots& annots,
     ILineReader& lr,
     ILineErrorListener* pEC)
@@ -292,18 +303,6 @@ CGtfReader::xNeedsNewSeqAnnot(
     m_CurrentSeqId = seqId;
     m_PendingLine = line;
     return true;
-}
-
-//  --------------------------------------------------------------------------- 
-void
-CGtfReader::ReadSeqAnnots(
-    TAnnots& annots,
-    CNcbiIstream& istr,
-    ILineErrorListener* pMessageListener )
-//  ---------------------------------------------------------------------------
-{
-    CStreamLineReader lr( istr );
-    ReadSeqAnnots( annots, lr, pMessageListener );
 }
 
 //  ----------------------------------------------------------------------------

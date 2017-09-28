@@ -113,6 +113,18 @@ public:
         ILineErrorListener* =0 );
                         
     virtual void
+    ReadSeqAnnotsGenbankMode(
+        TAnnots&,
+        ILineReader&,
+        ILineErrorListener* =0 );
+
+    virtual void
+    ReadSeqAnnotsNormalMode(
+        TAnnots&,
+        ILineReader&,
+        ILineErrorListener* =0 );
+
+    virtual void
     ReadSeqAnnots(
         TAnnotList&,
         ILineReader&,

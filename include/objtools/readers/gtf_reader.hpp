@@ -74,16 +74,16 @@ public:
     virtual ~CGtfReader();
     
     virtual void
-    ReadSeqAnnots(
-        TAnnots&,
-        CNcbiIstream&,
-        ILineErrorListener* =0 );
-                        
-    virtual void
-    ReadSeqAnnots(
+    ReadSeqAnnotsGenbankMode(
         TAnnots&,
         ILineReader&,
-        ILineErrorListener* =0 );
+        ILineErrorListener* =0 ) override;
+
+    virtual void
+    ReadSeqAnnotsNormalMode(
+        TAnnots&,
+        ILineReader&,
+        ILineErrorListener* =0 ) override;
 
 protected:
     virtual CGff2Record* x_CreateRecord() { return new CGtfReadRecord(); };    

@@ -1024,6 +1024,7 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
 CRef<CSeq_entry> CMultiReader::xReadGTF(CNcbiIstream& instream)
 {
     int flags = 0;
+    flags |= CGtfReader::fGenbankMode;
     flags |= CGtfReader::fAllIdsAsLocal;
     flags |= CGtfReader::fGenerateChildXrefs;
 
