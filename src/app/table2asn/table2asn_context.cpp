@@ -325,7 +325,7 @@ CRef<CSerialObject> CTable2AsnContext::CreateSubmitFromTemplate(CRef<CSeq_entry>
     else
     if (m_submit_template.NotEmpty())
     {
-        CRef<CSeq_submit> submit(new CSeq_submit);
+        submit.Reset(new CSeq_submit);
         submit->Assign(*m_submit_template);
 
         submit->SetData().SetEntrys().clear();

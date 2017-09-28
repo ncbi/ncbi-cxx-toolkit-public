@@ -657,9 +657,9 @@ int CTbl2AsnApp::Run(void)
 
     if (args["V"])
     {
-        m_context.m_validate = args["V"].AsString();
+        m_context.m_validate += args["V"].AsString();
         size_t p;
-        if ((p = m_context.m_validate.find("b")) != string::npos)
+        while ((p = m_context.m_validate.find("b")) != string::npos)
         {
             m_context.m_validate.erase(p, 1);
             m_context.m_make_flatfile = true;
