@@ -21322,7 +21322,7 @@ BOOST_AUTO_TEST_CASE(VR_758)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Critical, "ProteinShouldNotHaveGaps", "Protein sequences should not have gaps"));
+    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Error, "ProteinShouldNotHaveGaps", "Protein sequences should not have gaps"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 

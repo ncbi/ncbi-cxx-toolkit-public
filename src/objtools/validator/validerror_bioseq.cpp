@@ -1152,7 +1152,7 @@ void CValidError_bioseq::ValidateInst(
 
     // proteins should not have gaps
     if (seq.IsAa() && x_HasGap(seq)) {
-        PostErr(eDiag_Critical, eErr_SEQ_INST_ProteinShouldNotHaveGaps, "Protein sequences should not have gaps", seq);
+        PostErr(eDiag_Error, eErr_SEQ_INST_ProteinShouldNotHaveGaps, "Protein sequences should not have gaps", seq);
     }
 }
 
