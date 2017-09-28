@@ -189,6 +189,8 @@ public:
     size_t GetTranslTerminalX() const { return m_TranslTerminalX; }
     size_t GetProdTerminalX() const { return m_ProdTerminalX; }
 
+    static vector<CRef<CSeq_loc> > GetNonsenseIntrons(const CSeq_feat& feat, CScope& scope);
+
 private:
 
     size_t m_ProblemFlags;

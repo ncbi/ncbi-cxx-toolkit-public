@@ -21238,3 +21238,48 @@ BOOST_AUTO_TEST_CASE(Test_VR_751)
     BOOST_CHECK_EQUAL(IsLikelyTaxname("Atlantic white-sided dolphin"), false);
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_TripletEncodesStopCodon)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGATAAACAGAGATATAATAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
+    CRef<CSeq_id> id = nuc->SetSeq().SetId().front();
+    // first two "introns" are stop codons, third is not
+    CRef<CSeq_loc> int1(new CSeq_loc(*id, 0, 8));
+    CRef<CSeq_loc> int2(new CSeq_loc(*id, 12, 20));
+    CRef<CSeq_loc> int3(new CSeq_loc(*id, 24, 44));
+    CRef<CSeq_loc> int4(new CSeq_loc(*id, 48, 59));
+    cds->SetLocation().SetMix().Set().push_back(int1);
+    cds->SetLocation().SetMix().Set().push_back(int2);
+    cds->SetLocation().SetMix().Set().push_back(int3);
+    cds->SetLocation().SetMix().Set().push_back(int4);
+
+    STANDARD_SETUP
+
+    vector<CRef<CSeq_loc> > nonsense = CCDSTranslationProblems::GetNonsenseIntrons(*cds, scope);
+    BOOST_CHECK_EQUAL(nonsense.size(), 2);
+    BOOST_CHECK_EQUAL(nonsense.front()->GetInt().GetFrom(), 9);
+    BOOST_CHECK_EQUAL(nonsense.front()->GetInt().GetTo(), 11);
+    BOOST_CHECK_EQUAL(nonsense.back()->GetInt().GetFrom(), 21);
+    BOOST_CHECK_EQUAL(nonsense.back()->GetInt().GetTo(), 23);
+
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Critical, "NonsenseIntron",
+        "Triplet intron encodes stop codon"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Critical, "NonsenseIntron",
+        "Triplet intron encodes stop codon"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "ShortExon", "Internal coding region exon is too short"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "InternalStop", "2 internal stops. Genetic code [0]"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "NoStop", "Missing stop codon"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "TransLen", "Given protein length [8] does not match translation length [17]"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "NotSpliceConsensusDonor", "Splice donor consensus (GT) not found after exon ending at position 9 of lcl|nuc"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "NotSpliceConsensusDonor", "Splice donor consensus (GT) not found after exon ending at position 21 of lcl|nuc"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "NotSpliceConsensusDonor", "Splice donor consensus (GT) not found after exon ending at position 45 of lcl|nuc"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "NotSpliceConsensusAcceptor", "Splice acceptor consensus (AG) not found before exon starting at position 13 of lcl|nuc"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "NotSpliceConsensusAcceptor", "Splice acceptor consensus (AG) not found before exon starting at position 25 of lcl|nuc"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    CLEAR_ERRORS
+}

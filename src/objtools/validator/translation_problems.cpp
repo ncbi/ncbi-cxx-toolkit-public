@@ -405,7 +405,6 @@ size_t CCDSTranslationProblems::x_CountNonsenseIntrons(const CSeq_feat& feat, CS
         if (prev  &&  curr  && IsSameBioseq(curr.GetSeq_id(), prev.GetSeq_id(), scope)) {
             ENa_strand strand = curr.GetStrand();
             bool tmp_nonsense_intron = false;
-            CSeq_loc intron;
             if (strand == eNa_strand_minus) {
                 if (last_start - stop == 4) {
                     if (x_IsThreeBaseNonsense(feat, curr.GetSeq_id(), cdr, stop + 1, last_start - 1, strand, scope)) {
@@ -427,6 +426,62 @@ size_t CCDSTranslationProblems::x_CountNonsenseIntrons(const CSeq_feat& feat, CS
 
     if (count > 0 && sequence::IsPseudo(feat, *scope)) return 0;
     else return count;
+}
+
+
+vector<CRef<CSeq_loc> > CCDSTranslationProblems::GetNonsenseIntrons(const CSeq_feat& feat, CScope& scope)
+{
+    vector<CRef<CSeq_loc> > intron_locs;
+
+    TSeqPos last_start = 0, last_stop = 0, start, stop;
+
+    if (!feat.IsSetData() && !feat.GetData().IsCdregion()) {
+        return intron_locs;
+    }
+    if (feat.IsSetExcept() || feat.IsSetExcept_text()) return intron_locs;
+    const CCdregion& cdr = feat.GetData().GetCdregion();
+    if (cdr.IsSetCode_break()) return intron_locs;
+
+    size_t count = 0;
+    const CSeq_loc& loc = feat.GetLocation();
+
+    CSeq_loc_CI prev;
+    for (CSeq_loc_CI curr(loc); curr; ++curr) {
+        start = curr.GetRange().GetFrom();
+        stop = curr.GetRange().GetTo();
+        if (prev  &&  curr  && IsSameBioseq(curr.GetSeq_id(), prev.GetSeq_id(), &scope)) {
+            ENa_strand strand = curr.GetStrand();
+            bool tmp_nonsense_intron = false;
+            if (strand == eNa_strand_minus) {
+                if (last_start - stop == 4) {
+                    if (x_IsThreeBaseNonsense(feat, curr.GetSeq_id(), cdr, stop + 1, last_start - 1, strand, &scope)) {         
+                        CRef<CSeq_id> id(new CSeq_id());
+                        id->Assign(curr.GetSeq_id());
+                        CRef<CSeq_loc> intron_loc(new CSeq_loc(*id, stop + 1, last_start - 1, strand));
+                        intron_locs.push_back(intron_loc);
+                    }
+                }
+            } else {
+                if (start - last_stop == 4) {
+                    if (x_IsThreeBaseNonsense(feat, curr.GetSeq_id(), cdr, last_stop + 1, start - 1, strand, &scope)) {
+                        CRef<CSeq_id> id(new CSeq_id());
+                        id->Assign(curr.GetSeq_id());
+                        CRef<CSeq_loc> intron_loc(new CSeq_loc(*id, last_stop + 1, start - 1, strand));
+                        intron_locs.push_back(intron_loc);
+                    }
+                }
+            }
+        }
+        last_start = start;
+        last_stop = stop;
+        prev = curr;
+    }
+
+    if (intron_locs.size() > 0 && sequence::IsPseudo(feat, scope)) {
+        intron_locs.clear();
+    }
+    return intron_locs;
+
 }
 
 
