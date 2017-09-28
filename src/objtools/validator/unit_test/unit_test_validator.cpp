@@ -21283,3 +21283,48 @@ BOOST_AUTO_TEST_CASE(Test_TripletEncodesStopCodon)
     CheckErrors(*eval, expected_errors);
     CLEAR_ERRORS
 }
+
+BOOST_AUTO_TEST_CASE(VR_758)
+{
+    // make protein
+    CRef<objects::CBioseq> pseq(new objects::CBioseq());
+    pseq->SetInst().SetMol(objects::CSeq_inst::eMol_aa);
+    pseq->SetInst().SetRepr(objects::CSeq_inst::eRepr_delta);
+    pseq->SetInst().SetExt().SetDelta().AddLiteral("MPRK", objects::CSeq_inst::eMol_aa);
+    CRef<objects::CDelta_seq> gap_seg(new objects::CDelta_seq());
+    gap_seg->SetLiteral().SetSeq_data().SetGap();
+    gap_seg->SetLiteral().SetLength(10);
+    pseq->SetInst().SetExt().SetDelta().Set().push_back(gap_seg);
+    pseq->SetInst().SetExt().SetDelta().AddLiteral("TEIN", objects::CSeq_inst::eMol_aa);
+    pseq->SetInst().SetLength(18);
+
+    CRef<objects::CSeq_id> pid(new objects::CSeq_id());
+    pid->SetLocal().SetStr("prot");
+    pseq->SetId().push_back(pid);
+
+    CRef<objects::CSeqdesc> mpdesc(new objects::CSeqdesc());
+    mpdesc->SetMolinfo().SetBiomol(objects::CMolInfo::eBiomol_peptide);
+    mpdesc->SetMolinfo().SetCompleteness(objects::CMolInfo::eCompleteness_complete);
+    pseq->SetDescr().Set().push_back(mpdesc);
+
+    CRef<objects::CSeq_entry> entry(new objects::CSeq_entry());
+    entry->SetSeq(*pseq);
+
+    AddGoodSource(entry);
+    AddGoodPub(entry);
+
+    CRef<objects::CSeq_feat> feat(new objects::CSeq_feat());
+    feat->SetData().SetProt().SetName().push_back("fake protein name");
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("prot");
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(17);
+    AddFeat(feat, entry);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Critical, "ProteinShouldNotHaveGaps", "Protein sequences should not have gaps"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}

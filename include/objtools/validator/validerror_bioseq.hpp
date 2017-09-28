@@ -331,6 +331,8 @@ private:
     size_t x_CountAdjacentNs(const CSeq_literal& lit);
     void x_CheckGeneralIDs(const CBioseq& seq);
 
+    static bool x_HasGap(const CBioseq& seq);
+
     //internal validators
     CValidError_annot m_AnnotValidator;
     CValidError_descr m_DescrValidator;

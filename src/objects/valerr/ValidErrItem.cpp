@@ -318,7 +318,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_INST_FarLocationExcludesFeatures,
     { "FarLocationExcludesFeatures",
       "Scaffold points to sequence that has features outside the location." } },
-
+    { eErr_SEQ_INST_ProteinShouldNotHaveGaps,
+    { "ProteinShouldNotHaveGaps",
+      "Protein sequences should not have gaps" } },
 
     /* SEQ_DESCR */
 

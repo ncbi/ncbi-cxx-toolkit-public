@@ -1149,6 +1149,11 @@ void CValidError_bioseq::ValidateInst(
 
     // Validate sequence length
     ValidateSeqLen(seq);
+
+    // proteins should not have gaps
+    if (seq.IsAa() && x_HasGap(seq)) {
+        PostErr(eDiag_Critical, eErr_SEQ_INST_ProteinShouldNotHaveGaps, "Protein sequences should not have gaps", seq);
+    }
 }
 
 
@@ -2628,6 +2633,22 @@ static bool s_IsConWithGaps(const CBioseq& seq)
     return false;
 }
 
+
+bool CValidError_bioseq::x_HasGap(const CBioseq& seq)
+{
+    bool has_gap = false;
+    if (seq.GetInst().IsSetExt() && seq.GetInst().GetExt().IsDelta()) {
+        ITERATE(CDelta_ext::Tdata, iter, seq.GetInst().GetExt().GetDelta().Get()) {
+            if ((*iter)->IsLiteral() &&
+                (!(*iter)->GetLiteral().IsSetSeq_data() || (*iter)->GetLiteral().GetSeq_data().IsGap())) {
+                has_gap = true;
+                break;
+            }
+        }
+    }
+    return has_gap;
+}
+
 void CValidError_bioseq::x_ValidateTitle(const CBioseq& seq)
 {
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
@@ -2666,21 +2687,9 @@ void CValidError_bioseq::x_ValidateTitle(const CBioseq& seq)
     }
 
     // warning if title contains complete genome but sequence contains gap features
-    if (NStr::FindNoCase (title, "complete genome") != NPOS) {
-        bool has_gap = false;
-        if ( seq.GetInst().IsSetExt()  &&  seq.GetInst().GetExt().IsDelta() ) {
-            ITERATE(CDelta_ext::Tdata, iter, seq.GetInst().GetExt().GetDelta().Get()) {
-                if ( (*iter)->IsLiteral() && 
-                    (!(*iter)->GetLiteral().IsSetSeq_data() || (*iter)->GetLiteral().GetSeq_data().IsGap())) {
-                    has_gap = true;
-                    break;
-                }
-            }
-        }
-        if (has_gap) {
-            PostErr(eDiag_Warning, eErr_SEQ_INST_CompleteTitleProblem, 
-                    "Title contains 'complete genome' but sequence has gaps", seq);
-        }
+    if (NStr::FindNoCase (title, "complete genome") != NPOS && x_HasGap(seq)) {
+        PostErr(eDiag_Warning, eErr_SEQ_INST_CompleteTitleProblem, 
+                "Title contains 'complete genome' but sequence has gaps", seq);
     }
 
 
@@ -3099,7 +3108,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
         return;
     }
     if (!seq.GetInst().IsSetMol() || seq.GetInst().GetMol() == CSeq_inst::eMol_aa) {
-        // don't check proteins
+        // don't check proteins here
         return;
     }
     CSeq_inst::TRepr repr = seq.GetInst().GetRepr();
