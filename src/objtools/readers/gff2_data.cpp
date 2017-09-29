@@ -639,7 +639,9 @@ bool CGff2Record::UpdateFeature(
     if (subtype == CSeqFeatData::eSubtype_cdregion  &&  recType == "cds") {
         string cdsId;
         GetAttribute("ID", cdsId);
-        pFeature->AddOrReplaceQualifier("ID", cdsId);
+        if (!cdsId.empty()) {
+            pFeature->AddOrReplaceQualifier("ID", cdsId);
+        }
     }
     return true;
 }
