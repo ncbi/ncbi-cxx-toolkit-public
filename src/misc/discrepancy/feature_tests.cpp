@@ -1354,7 +1354,7 @@ DISCREPANCY_CASE(JOINED_FEATURES_NO_EXCEPTION, CSeq_feat_BY_BIOSEQ, eDisc | eSub
                 }
             }
         }
-        m_Objs["[n] coding region[s] with joined location[s] [has] no exception[s]"][bad ? "[n] coding region[s] not over the origin of circular DNA" : "[n] coding region[s] over the origin of circular DNA"].Fatal(bad).Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
+        m_Objs["[n] coding region[s] with joined location[s] [has] no exception[s]"][bad ? "[n] coding region[s] not over the origin of circular DNA" : "[n] coding region[s] over the origin of circular DNA"].Severity(bad ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning).Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
     }
 }
 
@@ -2384,7 +2384,7 @@ DISCREPANCY_CASE(FEATURE_LIST, CSeq_feat, eDisc, "Feature List")
         if (subtype != CSeqFeatData::eSubtype_gap && subtype != CSeqFeatData::eSubtype_prot) {
             string subitem = "[n] " + obj.GetData().GetKey();
             subitem += " feature[s]";
-            m_Objs[kFeatureList][subitem].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+            m_Objs[kFeatureList][subitem].Info().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
         }
     }
 }

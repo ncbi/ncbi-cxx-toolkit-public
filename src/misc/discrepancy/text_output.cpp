@@ -142,13 +142,23 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, size_t inden
             continue;
         }
         Indent(out, indent);
-        out << "<category message=\"" << NStr::XmlEncode((*it)->GetXml()) << "\"";
-        out << " severity=" << ((*it)->IsFatal() ? "\"FATAL\"" : "\"normal\"");
-        if ((*it)->GetCount()) {
-            out << " count=\"" << NStr::Int8ToString((*it)->GetCount()) << "\"";
+        out << "<category message=\"" << NStr::XmlEncode((*it)->GetXml()) << "\"" << " severity=";
+        switch ((*it)->GetSeverity()) {
+            case CReportItem::eSeverity_info:
+                out << "\"INFO\"";
+                break;
+            case CReportItem::eSeverity_warning:
+                out << "\"WARNING\"";
+                break;
+            case CReportItem::eSeverity_error:
+                out << "\"FATAL\"";
+                break;
         }
-        if (!(*it)->GetObj().empty()) {
-            out << " object=\"" << NStr::XmlEncode((*it)->GetObj()) << "\"";
+        if ((*it)->GetCount()) {
+            out << " cardinality=\"" << NStr::Int8ToString((*it)->GetCount()) << "\"";
+        }
+        if (!(*it)->GetUnit().empty()) {
+            out << " unit=\"" << NStr::XmlEncode((*it)->GetUnit()) << "\"";
         }
         if ((*it)->CanAutofix()) {
             out << " autofix=\"true\"";

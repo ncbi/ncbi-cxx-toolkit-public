@@ -145,10 +145,11 @@ void CReportNode::Copy(CRef<CReportNode> other)
     m_Map = other->m_Map;
     m_Objs = other->m_Objs;
     m_Hash = other->m_Hash;
-    m_Fatal = other->m_Fatal;
+    m_Severity = other->m_Severity;
     m_Autofix = other->m_Autofix;
-    m_Fatal = other->m_Fatal;
-    m_Hash = other->m_Hash;
+    m_Ext = other->m_Ext;
+    m_Summ = other->m_Summ;
+    m_NoRec = other->m_NoRec;
 }
 
 
@@ -168,15 +169,19 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
     TReportObjectSet hash = m_Hash;
     TReportItemList subs;
     bool autofix = false;
-    bool fatal = m_Fatal;
-    string type;
+    CReportItem::ESeverity severity = m_Severity;
+    string unit;
     NON_CONST_ITERATE(TNodeMap, it, m_Map) {
         CRef<CReportItem> sub = it->second->Export(test, unique);
-        fatal |= it->second->m_Fatal;
-        fatal |= sub->IsFatal();
+        if (severity < it->second->m_Severity) {
+            severity = it->second->m_Severity;
+        }
+        if (severity < sub->GetSeverity()) {
+            severity = sub->GetSeverity();
+        }
         autofix |= sub->CanAutofix();
-        if (type.empty()) {
-            type = sub->GetObj();
+        if (unit.empty()) {
+            unit = sub->GetUnit();
         }
         subs.push_back(sub);
         if (!m_NoRec) {
@@ -235,18 +240,18 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
     }
     if (n != string::npos) {
         if ((n = str.find("[s]")) != string::npos) {
-            type = str.substr(0, n) + "s";
+            unit = str.substr(0, n);
         }
         else if (!str.find("CDS ")) {
-            type = "CDS";
+            unit = "CDS";
         }
         else if ((n = str.find("s ")) != string::npos) {
-            type = str.substr(0, n) + "s";
+            unit = str.substr(0, n);
         }
     }
-	CRef<CDiscrepancyItem> item(new CDiscrepancyItem(test, m_Name, msg, xml, type, count));
+	CRef<CDiscrepancyItem> item(new CDiscrepancyItem(test, m_Name, msg, xml, unit, count));
     item->m_Autofix = autofix;
-    item->m_Fatal = fatal;
+    item->m_Severity = severity;
     item->m_Ext = m_Ext;
     item->m_Summ = m_Summ;
     item->m_Subs = subs;
@@ -626,8 +631,11 @@ TReportItemList CDiscrepancyGroup::Collect(TDiscrepancyCaseMap& tests, bool all)
             if ((*tt)->CanAutofix()) {
                 di->m_Autofix = true;
             }
-            if ((*tt)->IsFatal()) {
-                di->m_Fatal = true;
+            if ((*tt)->IsInfo()) {
+                di->m_Severity = CDiscrepancyItem::eSeverity_info;
+            }
+            else if ((*tt)->IsFatal()) {
+                di->m_Severity = CDiscrepancyItem::eSeverity_error;
             }
         }
         di->m_Objs = objs;

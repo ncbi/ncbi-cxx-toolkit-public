@@ -516,7 +516,7 @@ DISCREPANCY_SUMMARIZE(FEATURE_COUNT)
     ITERATE (CReportNode::TNodeMap, it, m_Objs[kEmptyCStr].GetMap()) {
         const string& key = it->first;
         string label = key + ": " + NStr::NumericToString(aa[key].GetObjects().size() + na[key].GetObjects().size()) + " present";
-        out[label];
+        out[label].Info();
         if (context.IsGui()) {
             if (na[key].GetObjects().size()) {
                 map<CReportObj*, size_t> obj2num;
@@ -528,7 +528,7 @@ DISCREPANCY_SUMMARIZE(FEATURE_COUNT)
                 }
                 NON_CONST_ITERATE (vector<CRef<CReportObj> >, obj, m_Objs["n"][kEmptyStr].GetObjects()) {
                     string str = "[n] bioseq[s] [has] " + NStr::NumericToString(obj2num[&**obj]) + " " + key + " features";
-                    out[label][str].Add(**obj);
+                    out[label][str].Info().Add(**obj);
                 }
             }
             if (aa[key].GetObjects().size()) {
@@ -541,7 +541,7 @@ DISCREPANCY_SUMMARIZE(FEATURE_COUNT)
                 }
                 NON_CONST_ITERATE (vector<CRef<CReportObj> >, obj, m_Objs["a"][kEmptyStr].GetObjects()) {
                     string str = "[n] bioseq[s] [has] " + NStr::NumericToString(obj2num[&**obj]) + " " + key + " features";
-                    out[label][str].Add(**obj);
+                    out[label][str].Info().Add(**obj);
                 }
             }
         }

@@ -236,7 +236,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
                 string rule_text = leading_space + GetRuleMatch(**rule);
                 CReportNode& node = m_Objs[kSuspectProductNames][rule_num].Summ()[rule_text].Summ();
                 const CSeq_feat* cds = sequence::GetCDSForProduct(*(context.GetCurrentBioseq()), &(context.GetScope()));
-                node.Add(*context.NewDiscObj(cds ? CConstRef<CSeq_feat>(cds) : context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->IsFatal());
+                node.Add(*context.NewDiscObj(cds ? CConstRef<CSeq_feat>(cds) : context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Severity((*rule)->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
             }
         }
     }
@@ -395,7 +395,7 @@ DISCREPANCY_CASE(ORGANELLE_PRODUCTS, CSeqFeatData, eOncaller, "Organelle product
             if (!(*rule)->StringMatchesSuspectProductRule(prot_name)) {
                 continue;
             }
-            m_Objs["[n] suspect product[s] not organelle"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->IsFatal());
+            m_Objs["[n] suspect product[s] not organelle"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Severity((*rule)->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
         }
     }
 }

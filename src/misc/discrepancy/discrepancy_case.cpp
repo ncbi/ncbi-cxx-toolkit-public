@@ -64,7 +64,7 @@ DISCREPANCY_CASE(COUNT_NUCLEOTIDES, CSeq_inst, eOncaller | eSubmitter | eSmart, 
     if (mol != CSeq_inst::eMol_dna && mol != CSeq_inst::eMol_rna && mol != CSeq_inst::eMol_na) {
         return;
     }
-    m_Objs["[n] nucleotide Bioseq[s] [is] present"].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()));
+    m_Objs["[n] nucleotide Bioseq[s] [is] present"].Info().Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()));
 }
 
 
@@ -82,7 +82,7 @@ DISCREPANCY_CASE(COUNT_PROTEINS, CSeq_inst, eDisc, "Count Proteins")
     if (obj.GetMol() != CSeq_inst::eMol_aa) {
         return;
     }
-    m_Objs["[n] protein sequence[s] [is] present"].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()));
+    m_Objs["[n] protein sequence[s] [is] present"].Info().Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()));
 }
 
 

@@ -175,19 +175,20 @@ class CReportNode;
 class CDiscrepancyItem : public CReportItem
 {
 public:
-    CDiscrepancyItem(const string& s) : m_Msg(s), m_Count(0), m_Autofix(false), m_Fatal(false), m_Ext(false), m_Summ(false) {}
-    //CDiscrepancyItem(CDiscrepancyCase& t, const string& m, const string& s) : m_Msg(m), m_Str(s), m_Autofix(false), m_Fatal(false), m_Ext(false), m_Summ(false), m_Test(&t) {}
-    CDiscrepancyItem(CDiscrepancyCase& t, const string& s, const string& m, const string& x, const string& o, size_t n) : m_Str(s), m_Msg(m), m_Xml(x), m_Obj(o), m_Count(n), m_Autofix(false), m_Fatal(false), m_Ext(false), m_Summ(false), m_Test(&t) {}
+    CDiscrepancyItem(const string& s) : m_Msg(s), m_Count(0), m_Autofix(false), m_Severity(eSeverity_warning), m_Ext(false), m_Summ(false) {}
+    CDiscrepancyItem(CDiscrepancyCase& t, const string& s, const string& m, const string& x, const string& o, size_t n) : m_Str(s), m_Msg(m), m_Xml(x), m_Unit(o), m_Count(n), m_Autofix(false), m_Severity(eSeverity_warning), m_Ext(false), m_Summ(false), m_Test(&t) {}
     string GetTitle(void) const { return m_Test ? m_Test->GetName() : kEmptyStr; }
     string GetStr(void) const { return m_Str; }
     string GetMsg(void) const { return m_Msg; }
     string GetXml(void) const { return m_Xml; }
-    string GetObj(void) const { return m_Obj; }
+    string GetUnit(void) const { return m_Unit; }
     size_t GetCount(void) const { return m_Count; }
     TReportObjectList GetDetails(void) const { return m_Objs; }
     TReportItemList GetSubitems(void) const { return m_Subs;}
     bool CanAutofix(void) const { return m_Autofix; }
-    bool IsFatal(void) const { return m_Fatal; }
+    ESeverity GetSeverity() const { return m_Severity; }
+    bool IsFatal(void) const { return m_Severity == eSeverity_error; }
+    bool IsInfo(void) const { return m_Severity == eSeverity_info; }
     bool IsExtended(void) const { return m_Ext; }
     bool IsSummary(void) const { return m_Summ; }
     bool IsReal(void) const { return !m_Test.Empty(); }
@@ -198,10 +199,10 @@ protected:
     string m_Str;
     string m_Msg;
     string m_Xml;
-    string m_Obj;
+    string m_Unit;
     size_t m_Count;
     mutable bool m_Autofix;
-    bool m_Fatal;
+    ESeverity m_Severity;
     bool m_Ext;
     bool m_Summ;
     TReportObjectList m_Objs;
@@ -229,11 +230,13 @@ class CReportNode : public CObject
 public:
     typedef map<string, CRef<CReportNode> > TNodeMap;
 
-    CReportNode(const string& name = kEmptyStr) : m_Name(name), m_Fatal(false), m_Autofix(false), m_Ext(false), m_Summ(false), m_NoRec(false), m_Count(0) {}
+    CReportNode(const string& name = kEmptyStr) : m_Name(name), m_Severity(CReportItem::eSeverity_warning), m_Autofix(false), m_Ext(false), m_Summ(false), m_NoRec(false), m_Count(0) {}
 
     CReportNode& operator[](const string& name);
 
-    CReportNode& Fatal(bool b = true) { m_Fatal = b; return *this; }
+    CReportNode& Severity(CReportItem::ESeverity s) { m_Severity = s; return *this; }
+    CReportNode& Fatal() { m_Severity = CReportItem::eSeverity_error; return *this; }
+    CReportNode& Info() { m_Severity = CReportItem::eSeverity_info; return *this; }
     CReportNode& Ext(bool b = true) { m_Ext = b; return *this; }
     CReportNode& Summ(bool b = true) { m_Summ = b; return *this; }
     CReportNode& NoRec(bool b = true) { m_NoRec = b; return *this; }
@@ -261,7 +264,7 @@ protected:
     TNodeMap m_Map;
     TReportObjectList m_Objs;
     TReportObjectSet m_Hash;
-    bool m_Fatal;
+    CReportItem::ESeverity m_Severity;
     bool m_Autofix;
     bool m_Ext;
     bool m_Summ;

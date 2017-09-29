@@ -71,17 +71,24 @@ typedef string(*TAutofixHook)(void*);
 class NCBI_DISCREPANCY_EXPORT CReportItem : public CObject
 {
 public:
+    enum ESeverity {
+        eSeverity_info    = 0,
+        eSeverity_warning = 1,
+        eSeverity_error   = 2
+    };
     virtual ~CReportItem(void){}
     virtual string GetTitle(void) const = 0;
     virtual string GetStr(void) const = 0;
     virtual string GetMsg(void) const = 0;
     virtual string GetXml(void) const = 0;
-    virtual string GetObj(void) const = 0;
+    virtual string GetUnit(void) const = 0;
     virtual size_t GetCount(void) const = 0;
     virtual TReportObjectList GetDetails(void) const = 0;
     virtual vector<CRef<CReportItem> > GetSubitems(void) const = 0;
     virtual bool CanAutofix(void) const = 0;
+    virtual ESeverity GetSeverity(void) const = 0;
     virtual bool IsFatal(void) const = 0;
+    virtual bool IsInfo(void) const = 0;
     virtual bool IsExtended(void) const = 0;
     virtual bool IsSummary(void) const = 0;
     virtual bool IsReal(void) const = 0;
