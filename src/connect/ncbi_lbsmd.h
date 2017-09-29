@@ -29,8 +29,8 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   Low-level API to resolve NCBI service name to server meta-address
- *   with the use of NCBI Load-Balancing Service Mapper (LBSMD).
+ *   Low-level API to resolve NCBI service name to server meta-address with
+ *   the use of NCBI Load-Balancing Service Mapper (LBSMD).
  *
  */
 
@@ -49,47 +49,47 @@ const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER    iter,
                                     int/*bool*/  no_dispd);
 
 
-/* Get configuration file name. Returned '\0'-terminated string
- * is to be free()'d by a caller when no longer needed.
- * Return NULL if no configuration file name is available.
- * LBSMD_FastHeapAccess() was set to "eOff" and there is a cached copy
- * of LBSM heap kept in-core, it will be released by this call.
+/* Get configuration file name.  Returned '\0'-terminated string is to be
+ * free()'d by the caller when no longer needed.  Return NULL if no
+ * configuration file name is available.
+ * If LBSMD_FastHeapAccess() was set to "eOff" and there is a cached copy of
+ * LBSM heap kept in-core, it will be released by this call.
  */
 NCBI_XCONNECT_EXPORT const char* LBSMD_GetConfig(void);
 
 
-/* Get (perhaps cached) copy of LBSM heap, which is guaranteed to be
- * current for given the time "time".  If "time" passed as 0, the heap
- * (if present as shmem) will be returned regardless of its freshness.
- * Return NULL if the copy operation cannot be performed (due to various
- * reasons, including the original LBSM shmem to be stale).
- * Returned heap (if non-NULL) has a serial number reflecting which
- * shmem segment has been used to get the snapshot.  The serial number
- * is negated for newer heap structure, which has dedicated version
- * entry format.  Older heap structure uses SLBSM_OldEntry instead,
- * and has TTLs for entries instead of expiration times.  The returned
- * copy must be passed to (MT-locked by the caller) HEAP_Destroy() when
- * no longer needed.
- * The copy may be cached in-core, the only way to release it is to
- * call LBSMD_GetConfig() provided that LBSM_FastHeapAccess() has
- * been set to "eOff" (which is the default setting).
+/* Get a (perhaps cached) copy of LBSM heap, which is guaranteed to be current
+ * for the given time "time".  If "time" passed as 0, the heap (if present as
+ * shmem) will be returned regardless of its freshness.  Return NULL if the
+ * copy operation cannot be performed (due to various reasons, including the
+ * original LBSM shmem to be stale).  Returned heap (if non-NULL) has a serial
+ * number reflecting which shmem segment has been used to get the the snapshot,
+ * negated.  The returned copy must be passed to (MT-locked by the caller)
+ * HEAP_Destroy() when no longer needed.  The copy may be cached in-core, the
+ * only way to release it is to call LBSMD_GetConfig() provided that
+ * LBSM_FastHeapAccess() has been set to "eOff" (which is the default setting).
  */
 NCBI_XCONNECT_EXPORT HEAP LBSMD_GetHeapCopy(TNCBI_Time time);
 
 
-/* Get a value of a host parameter from the LBSMD host environment.
- * Return 0 if none found;  return heap-allocated string otherwise
- * (the caller is responsible for calling free() when no longer needing it).
- * Argument "host" can be either an IP address of the host to inquire about,
- * or SERV_LOCALHOST(or 0) to get the information as defined for the current
- * (local) host.
+/* Get the value of a host parameter from the LBSMD host environment.  Return 0
+ * if none found;  return a heap-allocated string otherwise (the caller is
+ * responsible to call free() when no longer needing it).  The "host" argument
+ * can be either an IP address of the host to inquire about, or SERV_LOCALHOST
+ * (or 0) to get the information as defined for the current (local) host.
  */
 NCBI_XCONNECT_EXPORT const char* LBSMD_GetHostParameter(unsigned int addr,
                                                         const char*  name);
 
 
+/* MUST be used in the daemon code.  In client code, takes advantage of an
+ * individual (usually ref-counted) heap copy per iterator -- useful in MT apps
+ * using the service resolution facilities intensively (such as Apache HTTPD).
+ */
 NCBI_XCONNECT_EXPORT ESwitch LBSMD_FastHeapAccess(ESwitch onoff);
 
+
+/* LBSMD-based helper functions for HINFO API <connect/ncbi_host_info.h> */
 
 unsigned int LBSMD_GetLocalHostAddress(const void/*SLBSM_Version*/ *v);
 
