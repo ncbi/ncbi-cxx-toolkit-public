@@ -2013,7 +2013,16 @@ string InterpretSpecificHostResult(const string& host, const CT3Reply& reply, co
             err_str = "Specific host value is misspelled: " + 
                 (NStr::IsBlank(orig_host) ? host : orig_host);
         } else if (reply.GetData().IsSetOrg()) {
-            if ( ! FindMatchInOrgRef (host, reply.GetData().GetOrg()) && ! IsCommonName(reply.GetData())) {
+            if (NStr::StartsWith(reply.GetData().GetOrg().GetTaxname(), host)) {
+                // do nothing, all good
+            } else if (IsCommonName(reply.GetData())) {
+                // not actionable
+            } else if (FindMatchInOrgRef(host, reply.GetData().GetOrg())) {
+                // replace with synonym
+                err_str = "Specific host value is alternate name: " + 
+                    orig_host + " should be " + 
+                    reply.GetData().GetOrg().GetTaxname();
+            } else {
                 err_str = "Specific host value is incorrectly capitalized: " + 
                     (NStr::IsBlank(orig_host) ? host : orig_host);
             }

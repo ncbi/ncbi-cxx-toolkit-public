@@ -20535,6 +20535,20 @@ void TestBulkSpecificHostFixList(const THostStringsVector& test_values)
     }
 }
 
+BOOST_AUTO_TEST_CASE(Test_SQD_4354)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+
+    THostStringsVector test_values;
+    test_values.push_back(pair<string, string>("Zymomonas anaerobia", "Zymomonas mobilis"));
+    TestBulkSpecificHostFixList(test_values);
+
+    test_values.clear();
+    test_values.push_back(pair<string, string>("Zymononas mobilis", "Zymomonas mobilis"));
+    TestBulkSpecificHostFixList(test_values);
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
@@ -20564,6 +20578,9 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
     test_values.push_back(pair<string, string>("Homo sapiens; sex: female", "Homo sapiens; sex: female"));
     TestBulkSpecificHostFixList(test_values);
     test_values.push_back(pair<string, string>("Atlantic white-sided dolphin", "Atlantic white-sided dolphin"));
+    TestBulkSpecificHostFixList(test_values);
+    test_values.push_back(pair<string, string>("Zymomonas anaerobia", "Zymomonas mobilis"));
+    TestBulkSpecificHostFixList(test_values);
 
     vector<CRef<COrg_ref> > to_adjust;
     vector<CRef<COrg_ref> > original;
@@ -20669,9 +20686,9 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
             num_updated_feats++;
         }
     }
-    // only four of the feats will be updated, because their taxnames cannot be
-    // recognized, and only four of the specific hosts are altered.
-    BOOST_CHECK_EQUAL(num_updated_feats, 4);
+    // only five of the feats will be updated, because their taxnames cannot be
+    // recognized, and only five of the specific hosts are altered.
+    BOOST_CHECK_EQUAL(num_updated_feats, 5);
 }
 
 

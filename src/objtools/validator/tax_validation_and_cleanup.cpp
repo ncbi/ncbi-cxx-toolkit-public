@@ -143,6 +143,9 @@ void CSpecificHostRequest::AddReply(const CT3Reply& reply)
         } else if (NStr::StartsWith(m_Error, "Invalid value for specific host") && !IsLikelyTaxname(m_Host)) {
             m_Response = eNormal;
             m_SuggestedFix = m_Host;
+        } else if (NStr::StartsWith(m_Error, "Specific host value is alternate name")) {
+            m_Response = eAlternateName;
+            m_SuggestedFix = reply.GetData().GetOrg().GetTaxname();
         } else {
             m_Response = eUnrecognized;
             if (NStr::IsBlank(m_SuggestedFix) && reply.IsData()) {
@@ -182,6 +185,14 @@ void CSpecificHostRequest::PostErrors(CValidError_imp& imp)
                 imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, m_Error, **it);
             }
             break;        
+        case eAlternateName:
+            for (auto it = m_Descs.begin(); it != m_Descs.end(); it++) {
+                imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, m_Error, *(it->first), it->second);
+            }
+            for (auto it = m_Feats.begin(); it != m_Feats.end(); it++) {
+                imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, m_Error, **it);
+            }
+            break;
     }
 }
 

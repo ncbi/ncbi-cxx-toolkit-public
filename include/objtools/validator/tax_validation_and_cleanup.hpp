@@ -126,7 +126,8 @@ public:
     enum EHostResponseFlags{
         eNormal = 0,
         eAmbiguous,
-        eUnrecognized
+        eUnrecognized,
+        eAlternateName
     };
     typedef int TResponseFlags;
 
