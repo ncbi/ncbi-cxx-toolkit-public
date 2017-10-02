@@ -7227,6 +7227,11 @@ void CValidError_bioseq::x_TranscriptIDsMatch(const string& protein_id, const CS
             }
         }
     }
+    if (m_Imp.IsRefSeq()) {
+        // per VR-760, do not report if RefSeq and no general tag
+        return;
+    }
+    
     // no general tags, try plain match
     if (bsh) {
         ITERATE(CBioseq::TId, id_it, bsh.GetBioseqCore()->GetId()) {

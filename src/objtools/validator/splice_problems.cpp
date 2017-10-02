@@ -146,59 +146,63 @@ void CSpliceProblems::ValidateDonorAcceptorPair
 CSpliceProblems::ESpliceSiteRead
 CSpliceProblems::ReadDonorSpliceSite(ENa_strand strand, TSeqPos stop, const CSeqVector& vec, TSeqPos seq_len, TSpliceSite& site)
 {
-    bool in_gap;
-    bool bad_seq = false;
+    try {
+        bool in_gap;
+        bool bad_seq = false;
 
-    if (strand == eNa_strand_minus) {
-        // check donor and acceptor on minus strand
-        if (stop > 1 && stop <= seq_len) {
-            in_gap = (vec.IsInGap(stop - 2) && vec.IsInGap(stop - 1));
-            if (!in_gap) {
-                bad_seq = (vec[stop - 1] > 250 || vec[stop - 2] > 250);
+        if (strand == eNa_strand_minus) {
+            // check donor and acceptor on minus strand
+            if (stop > 1 && stop <= seq_len) {
+                in_gap = (vec.IsInGap(stop - 2) && vec.IsInGap(stop - 1));
+                if (!in_gap) {
+                    bad_seq = (vec[stop - 1] > 250 || vec[stop - 2] > 250);
+                }
+
+                if (in_gap) {
+                    return eSpliceSiteRead_Gap;
+                } else if (bad_seq) {
+                    return eSpliceSiteRead_BadSeq;
+                }
+
+                // Read splice site seq
+                site[0] = vec[stop - 2];
+                site[1] = vec[stop - 1];
+            } else {
+                return eSpliceSiteRead_OutOfRange;
             }
-
-            if (in_gap) {
-                return eSpliceSiteRead_Gap;
-            } else if (bad_seq) {
-                return eSpliceSiteRead_BadSeq;
-            }
-
-            // Read splice site seq
-            site[0] = vec[stop - 2];
-            site[1] = vec[stop - 1];
-        } else {
-            return eSpliceSiteRead_OutOfRange;
         }
-    }
-    // Read donor splice site from plus strand
-    else {
-        if (stop < seq_len - 2) {
-            in_gap = (vec.IsInGap(stop + 1) && vec.IsInGap(stop + 2));
-            if (!in_gap) {
-                bad_seq = (vec[stop + 1] > 250 || vec[stop + 2] > 250);
+        // Read donor splice site from plus strand
+        else {
+            if (stop < seq_len - 2) {
+                in_gap = (vec.IsInGap(stop + 1) && vec.IsInGap(stop + 2));
+                if (!in_gap) {
+                    bad_seq = (vec[stop + 1] > 250 || vec[stop + 2] > 250);
+                }
+                if (in_gap) {
+                    return eSpliceSiteRead_Gap;
+                } else if (bad_seq) {
+                    return eSpliceSiteRead_BadSeq;
+                }
+                site[0] = vec[stop + 1];
+                site[1] = vec[stop + 2];
+            } else {
+                return eSpliceSiteRead_OutOfRange;
             }
-            if (in_gap) {
-                return eSpliceSiteRead_Gap;
-            } else if (bad_seq) {
-                return eSpliceSiteRead_BadSeq;
-            }
-            site[0] = vec[stop + 1];
-            site[1] = vec[stop + 2];
-        } else {
-            return eSpliceSiteRead_OutOfRange;
         }
-    }
 
-    // Check canonical donor site: "GT"
-    if (!CheckSpliceSite(kSpliceSiteGT, strand, site)) {
-        // Check non-canonical donor site: "GC"
-        if (CheckSpliceSite(kSpliceSiteGC, strand, site)) {
-            return eSpliceSiteRead_Rare;
-        } else {
-            return eSpliceSiteRead_WrongNT;
+        // Check canonical donor site: "GT"
+        if (!CheckSpliceSite(kSpliceSiteGT, strand, site)) {
+            // Check non-canonical donor site: "GC"
+            if (CheckSpliceSite(kSpliceSiteGC, strand, site)) {
+                return eSpliceSiteRead_Rare;
+            } else {
+                return eSpliceSiteRead_WrongNT;
+            }
         }
+        return eSpliceSiteRead_OK;
+    } catch (CException& ex) {
+        return eSpliceSiteRead_BadSeq;
     }
-    return eSpliceSiteRead_OK;
 }
 
 
@@ -220,52 +224,56 @@ CSpliceProblems::ReadAcceptorSpliceSite
  TSeqPos seq_len,
  TSpliceSite& site)
 {
-    bool in_gap;
-    bool bad_seq = false;
+    try {
+        bool in_gap;
+        bool bad_seq = false;
 
-    if (strand == eNa_strand_minus) {
-        // check donor and acceptor on minus strand
-        if (start < seq_len - 2) {
-            in_gap = (vec.IsInGap(start + 1) && vec.IsInGap(start + 2));
-            if (!in_gap) {
-                bad_seq = (vec[start + 1] > 250 || vec[start + 2] > 250);
-            }
+        if (strand == eNa_strand_minus) {
+            // check donor and acceptor on minus strand
+            if (start < seq_len - 2) {
+                in_gap = (vec.IsInGap(start + 1) && vec.IsInGap(start + 2));
+                if (!in_gap) {
+                    bad_seq = (vec[start + 1] > 250 || vec[start + 2] > 250);
+                }
 
-            if (in_gap) {
-                return eSpliceSiteRead_Gap;
-            } else if (bad_seq) {
-                return eSpliceSiteRead_BadSeq;
+                if (in_gap) {
+                    return eSpliceSiteRead_Gap;
+                } else if (bad_seq) {
+                    return eSpliceSiteRead_BadSeq;
+                }
+                site[0] = vec[start + 1];
+                site[1] = vec[start + 2];
+            } else {
+                return eSpliceSiteRead_OutOfRange;
             }
-            site[0] = vec[start + 1];
-            site[1] = vec[start + 2];
-        } else {
-            return eSpliceSiteRead_OutOfRange;
         }
-    }
-    // read acceptor splice site from plus strand
-    else {
-        if (start > 1 && start <= seq_len) {
-            in_gap = (vec.IsInGap(start - 2) && vec.IsInGap(start - 1));
-            if (!in_gap) {
-                bad_seq = (vec[start - 2] > 250 || vec[start - 1] > 250);
-            }
+        // read acceptor splice site from plus strand
+        else {
+            if (start > 1 && start <= seq_len) {
+                in_gap = (vec.IsInGap(start - 2) && vec.IsInGap(start - 1));
+                if (!in_gap) {
+                    bad_seq = (vec[start - 2] > 250 || vec[start - 1] > 250);
+                }
 
-            if (in_gap) {
-                return eSpliceSiteRead_Gap;
-            } else if (bad_seq) {
-                return eSpliceSiteRead_BadSeq;
+                if (in_gap) {
+                    return eSpliceSiteRead_Gap;
+                } else if (bad_seq) {
+                    return eSpliceSiteRead_BadSeq;
+                }
+                site[0] = vec[start - 2];
+                site[1] = vec[start - 1];
+            } else {
+                return eSpliceSiteRead_OutOfRange;
             }
-            site[0] = vec[start - 2];
-            site[1] = vec[start - 1];
-        } else {
-            return eSpliceSiteRead_OutOfRange;
         }
-    }
-    // Check canonical acceptor site: "AG"
-    if (CheckSpliceSite(kSpliceSiteAG, strand, site)) {
-        return eSpliceSiteRead_OK;
-    } else {
-        return eSpliceSiteRead_WrongNT;
+        // Check canonical acceptor site: "AG"
+        if (CheckSpliceSite(kSpliceSiteAG, strand, site)) {
+            return eSpliceSiteRead_OK;
+        } else {
+            return eSpliceSiteRead_WrongNT;
+        }
+    } catch (CException& ex) {
+        return eSpliceSiteRead_BadSeq;
     }
 }
 
