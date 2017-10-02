@@ -53,8 +53,9 @@ public:
     /// The method is called from the Init() method of the
     /// worker node application prior to daemonizing.
     virtual void OnInit(IWorkerNodeInitBaseContext*) {}
-    /// TODO: Make deprecated and final after discovered clients migrated to the new OnInit above
-    virtual void OnInit(CNcbiApplication*) {}
+
+    /// @deprecated, use OnInit(IWorkerNodeInitBaseContext*) instead
+    NCBI_DEPRECATED virtual void OnInit(CNcbiApplication*) final {}
 
     /// Notify that CGridWorkerNode::Run() is about to be executed.
     /// This method can be overridden to implement worker node-
