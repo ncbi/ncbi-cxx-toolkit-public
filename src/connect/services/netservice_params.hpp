@@ -190,6 +190,7 @@ public:
     bool Has(const SRegSynonyms& sections, SRegSynonyms names);
 
     virtual void Add(const IRegistry& registry) = 0;
+    virtual IRegistry& GetIRegistry() = 0;
 
 protected:
     virtual string VGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value) = 0;
@@ -222,6 +223,7 @@ class NCBI_XCONNECT_EXPORT CSynRegistryImpl : public ISynRegistry
 {
 public:
     void Add(const IRegistry& registry) override;
+    IRegistry& GetIRegistry() override;
 
 protected:
     template <typename TType>
@@ -249,6 +251,7 @@ public:
     ~CCachedSynRegistryImpl();
 
     void Add(const IRegistry& registry) override;
+    IRegistry& GetIRegistry() override;
 
 protected:
     template <typename TType>

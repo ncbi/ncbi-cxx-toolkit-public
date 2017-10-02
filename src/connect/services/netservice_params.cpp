@@ -137,6 +137,11 @@ void CSynRegistryImpl::Add(const IRegistry& registry)
     m_Registry.Add(registry, ++m_Priority);
 }
 
+IRegistry& CSynRegistryImpl::GetIRegistry()
+{
+    return m_Registry;
+}
+
 template <typename TType>
 TType CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, TType default_value)
 {
@@ -275,6 +280,11 @@ CCachedSynRegistryImpl::~CCachedSynRegistryImpl()
 void CCachedSynRegistryImpl::Add(const IRegistry& registry)
 {
     m_Registry.Add(registry);
+}
+
+IRegistry& CCachedSynRegistryImpl::GetIRegistry()
+{
+    return m_Registry.GetIRegistry();
 }
 
 template <typename TType>
