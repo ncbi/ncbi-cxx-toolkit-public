@@ -117,8 +117,6 @@ public:
 private:
     void Construct(IWorkerNodeJobFactory* job_factory);
 
-    auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
-
     CGridWorkerNode m_WorkerNode;
 
     CGridWorkerApp(const CGridWorkerApp&);

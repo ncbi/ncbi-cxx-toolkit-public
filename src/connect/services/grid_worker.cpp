@@ -317,6 +317,22 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 //
+class CDefaultWorkerNodeInitContext : public IWorkerNodeInitContext
+{
+public:
+    CDefaultWorkerNodeInitContext(SGridWorkerNodeImpl& worker_node) : m_WorkerNode(worker_node) {}
+
+    const IRegistry&               GetConfig()             const override { return m_WorkerNode.m_App.GetConfig();      }
+    const CArgs&                   GetArgs()               const override { return m_WorkerNode.m_App.GetArgs();        }
+    const CNcbiEnvironment&        GetEnvironment()        const override { return m_WorkerNode.m_App.GetEnvironment(); }
+    IWorkerNodeCleanupEventSource* GetCleanupEventSource() const override { return m_WorkerNode.m_CleanupEventSource;   }
+    CNetScheduleAPI                GetNetScheduleAPI()     const override { return m_WorkerNode.m_NetScheduleAPI;       }
+    CNetCacheAPI                   GetNetCacheAPI()        const override { return m_WorkerNode.m_NetCacheAPI;          }
+
+private:
+    SGridWorkerNodeImpl& m_WorkerNode;
+};
+
 CGridWorkerNode::CGridWorkerNode(CNcbiApplication& app,
         IWorkerNodeJobFactory* job_factory) :
     m_Impl(new SGridWorkerNodeImpl(app, job_factory))
@@ -325,6 +341,7 @@ CGridWorkerNode::CGridWorkerNode(CNcbiApplication& app,
 
 SGridWorkerNodeImpl::SGridWorkerNodeImpl(CNcbiApplication& app,
         IWorkerNodeJobFactory* job_factory) :
+    m_WorkerNodeInitContext(new CDefaultWorkerNodeInitContext(*this)),
     m_JobProcessorFactory(job_factory),
     m_ThreadPool(NULL),
     m_MaxThreads(1),
@@ -365,6 +382,7 @@ void CGridWorkerNode::Init()
     m_Impl->m_NetScheduleAPI = CNetScheduleAPI(reg);
     m_Impl->m_NetCacheAPI = CNetCacheAPI(reg,
             kEmptyStr, m_Impl->m_NetScheduleAPI);
+    m_Impl->m_JobProcessorFactory->Init(*m_Impl->m_WorkerNodeInitContext);
 }
 
 void CGridWorkerNode::Suspend(bool pullback, unsigned timeout)

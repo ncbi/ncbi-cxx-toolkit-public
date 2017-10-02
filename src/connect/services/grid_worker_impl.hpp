@@ -199,6 +199,7 @@ struct SGridWorkerNodeImpl : public CObject
 
     int OfflineRun();
 
+    unique_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
     auto_ptr<IWorkerNodeJobFactory>      m_JobProcessorFactory;
 
     CNetCacheAPI m_NetCacheAPI;

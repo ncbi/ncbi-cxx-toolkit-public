@@ -58,53 +58,6 @@ void g_GridWorker_TermHandler(int /*sig*/)
 
 BEGIN_NCBI_SCOPE
 
-class CDefaultWorkerNodeInitContext : public IWorkerNodeInitContext
-{
-public:
-    CDefaultWorkerNodeInitContext(SGridWorkerNodeImpl& worker_node)
-        : m_WorkerNode(worker_node)
-    {}
-
-    virtual ~CDefaultWorkerNodeInitContext() {}
-
-    virtual const IRegistry&        GetConfig() const
-    { return m_WorkerNode.m_App.GetConfig(); }
-
-    virtual const CArgs&            GetArgs() const
-    { return m_WorkerNode.m_App.GetArgs(); }
-
-    virtual const CNcbiEnvironment& GetEnvironment() const
-    { return m_WorkerNode.m_App.GetEnvironment(); }
-
-    virtual IWorkerNodeCleanupEventSource* GetCleanupEventSource() const;
-
-    virtual CNetScheduleAPI GetNetScheduleAPI() const;
-
-    virtual CNetCacheAPI GetNetCacheAPI() const;
-
-private:
-    SGridWorkerNodeImpl& m_WorkerNode;
-
-    CDefaultWorkerNodeInitContext(const CDefaultWorkerNodeInitContext&);
-    CDefaultWorkerNodeInitContext& operator=(const CDefaultWorkerNodeInitContext&);
-};
-
-IWorkerNodeCleanupEventSource*
-    CDefaultWorkerNodeInitContext::GetCleanupEventSource() const
-{
-    return m_WorkerNode.m_CleanupEventSource;
-}
-
-CNetScheduleAPI CDefaultWorkerNodeInitContext::GetNetScheduleAPI() const
-{
-    return m_WorkerNode.m_NetScheduleAPI;
-}
-
-CNetCacheAPI CDefaultWorkerNodeInitContext::GetNetCacheAPI() const
-{
-    return m_WorkerNode.m_NetCacheAPI;
-}
-
 /////////////////////////////////////////////////////////////////////////////
 //
 
@@ -152,8 +105,6 @@ void CGridWorkerApp::Init(void)
     SetupArgDescriptions(arg_desc.release());
 
     m_WorkerNode.Init();
-    m_WorkerNodeInitContext.reset(new CDefaultWorkerNodeInitContext(m_WorkerNode--));
-    m_WorkerNode->m_JobProcessorFactory->Init(*m_WorkerNodeInitContext);
 }
 
 void CGridWorkerApp::SetupArgDescriptions(CArgDescriptions* arg_desc)
