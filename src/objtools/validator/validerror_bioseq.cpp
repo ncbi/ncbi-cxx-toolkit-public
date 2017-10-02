@@ -5810,7 +5810,7 @@ void CValidError_bioseq::x_ValidateCodingRegionParentPartialness(const CSeq_feat
     if (mrna) {
         TFeatScores contained_mrna;
         GetOverlappingFeatures(gene->GetLocation(), CSeqFeatData::e_Rna,
-            CSeqFeatData::eSubtype_cdregion, eOverlap_Contained, contained_mrna, *m_Scope);
+            CSeqFeatData::eSubtype_mRNA, eOverlap_Contains, contained_mrna, *m_Scope);
         if (contained_mrna.size() == 1) {
             // messy for alternate splicing, so only check if there is only one
             x_ValidateCodingRegionParentPartialness(cds, mrna->GetLocation(), "mRNA");
