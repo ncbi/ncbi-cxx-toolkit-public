@@ -263,12 +263,12 @@ public:
     CRemoteAppListener(const TLauncherPtr& launcher)
         : CRemoteAppBaseListener(launcher) {}
 
-    virtual void OnInit(CNcbiApplication* app);
+    virtual void OnInit(IWorkerNodeInitBaseContext* ctx);
 };
 
-void CRemoteAppListener::OnInit(CNcbiApplication* app)
+void CRemoteAppListener::OnInit(IWorkerNodeInitBaseContext* ctx)
 {
-    if (!app->GetConfig().HasEntry("log", "merge_lines")) {
+    if (!ctx->GetConfig().HasEntry("log", "merge_lines")) {
         SetDiagPostFlag(eDPF_PreMergeLines);
         SetDiagPostFlag(eDPF_MergeLines);
     }
