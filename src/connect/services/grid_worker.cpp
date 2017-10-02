@@ -368,21 +368,25 @@ SGridWorkerNodeImpl::SGridWorkerNodeImpl(CNcbiApplication& app,
                  eJobFactoryIsNotSet, "The JobFactory is not set.");
 }
 
-void CGridWorkerNode::Init()
+void SGridWorkerNodeImpl::Init()
 {
-    m_Impl->m_Listener->OnInit(&m_Impl->m_App);
+    m_Listener->OnInit(&m_App);
 
-    const IRegistry& reg = m_Impl->m_App.GetConfig();
+    const IRegistry& reg = m_App.GetConfig();
 
     if (reg.GetBool("log", "merge_lines", false)) {
         SetDiagPostFlag(eDPF_PreMergeLines);
         SetDiagPostFlag(eDPF_MergeLines);
     }
 
-    m_Impl->m_NetScheduleAPI = CNetScheduleAPI(reg);
-    m_Impl->m_NetCacheAPI = CNetCacheAPI(reg,
-            kEmptyStr, m_Impl->m_NetScheduleAPI);
-    m_Impl->m_JobProcessorFactory->Init(*m_Impl->m_WorkerNodeInitContext);
+    m_NetScheduleAPI = CNetScheduleAPI(reg);
+    m_NetCacheAPI = CNetCacheAPI(reg, kEmptyStr, m_NetScheduleAPI);
+    m_JobProcessorFactory->Init(*m_WorkerNodeInitContext);
+}
+
+void CGridWorkerNode::Init()
+{
+    m_Impl->Init();
 }
 
 void CGridWorkerNode::Suspend(bool pullback, unsigned timeout)

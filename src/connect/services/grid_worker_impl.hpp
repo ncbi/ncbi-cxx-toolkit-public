@@ -162,6 +162,8 @@ struct SGridWorkerNodeImpl : public CObject
     void AddJobWatcher(IWorkerNodeJobWatcher& job_watcher,
                           EOwnership owner = eNoOwnership);
 
+    void Init();
+
     int Run(
 #ifdef NCBI_OS_UNIX
             ESwitch daemonize,
@@ -199,7 +201,10 @@ struct SGridWorkerNodeImpl : public CObject
 
     int OfflineRun();
 
+private:
     unique_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
+
+public:
     auto_ptr<IWorkerNodeJobFactory>      m_JobProcessorFactory;
 
     CNetCacheAPI m_NetCacheAPI;
