@@ -7209,6 +7209,18 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadSpecificHost)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    // should see errors for bad lineages
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_nat_host, "");
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_nat_host, "Lentinula edodes");
+    unit_test_util::SetLineage(entry, "Streptophyta");
+
+    eval = validator.Validate(seh, options);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "BadSpecificHost",
+        "Suspect Host Value - a prokaryote, fungus or virus is suspect as a host for a plant or animal"));
+    CheckErrors(*eval, expected_errors);
+    CLEAR_ERRORS
+
     // others
     TestSpecificHostNoError("Racoon");
     TestSpecificHostNoError("SNAKE");

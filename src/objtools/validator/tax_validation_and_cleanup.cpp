@@ -116,7 +116,11 @@ bool CQualifierRequest::MatchTryValue(const string& val) const
 
 
 CSpecificHostRequest::CSpecificHostRequest(const string& host, const COrg_ref& org) :
-    CQualifierRequest(), m_Host(host), m_Response(eUnrecognized)
+    CQualifierRequest(), 
+    m_Host(host), 
+    m_Response(eUnrecognized), 
+    m_HostLineage(kEmptyStr), 
+    m_OrgLineage(kEmptyStr)
 {
     string host_check = SpecificHostValueToCheck(host);
     if (NStr::IsBlank(host_check)) {
@@ -128,6 +132,9 @@ CSpecificHostRequest::CSpecificHostRequest(const string& host, const COrg_ref& o
         m_ValuesToTry.push_back(host);
     }
     m_SuggestedFix.clear();
+    if (org.IsSetLineage()) {
+        m_OrgLineage = org.GetLineage();
+    }
 }
 
 
@@ -138,6 +145,7 @@ void CSpecificHostRequest::AddReply(const CT3Reply& reply)
         if (NStr::IsBlank(m_Error)) {
             m_Response = eNormal;
             m_SuggestedFix = m_Host;
+            m_HostLineage = reply.GetData().GetOrg().GetLineage();
         } else if (NStr::Find(m_Error, "ambiguous") != NPOS) {
             m_Response = eAmbiguous;
         } else if (NStr::StartsWith(m_Error, "Invalid value for specific host") && !IsLikelyTaxname(m_Host)) {
@@ -146,16 +154,17 @@ void CSpecificHostRequest::AddReply(const CT3Reply& reply)
         } else if (NStr::StartsWith(m_Error, "Specific host value is alternate name")) {
             m_Response = eAlternateName;
             m_SuggestedFix = reply.GetData().GetOrg().GetTaxname();
+            m_HostLineage = reply.GetData().GetOrg().GetLineage();
         } else {
             m_Response = eUnrecognized;
-            if (NStr::IsBlank(m_SuggestedFix) && reply.IsData()) {
-                if (HasMisSpellFlag(reply.GetData()) && reply.GetData().IsSetOrg()) {
+            if (NStr::IsBlank(m_SuggestedFix) && reply.IsData() && reply.GetData().IsSetOrg()) {
+                if (HasMisSpellFlag(reply.GetData())) {
                     m_SuggestedFix = reply.GetData().GetOrg().GetTaxname();
-                } else if (reply.GetData().IsSetOrg()) {
-                    if (!FindMatchInOrgRef(m_Host, reply.GetData().GetOrg())
+                    m_HostLineage = reply.GetData().GetOrg().GetLineage();
+                } else if (!FindMatchInOrgRef(m_Host, reply.GetData().GetOrg())
                         && !IsCommonName(reply.GetData())) {
-                        m_SuggestedFix = reply.GetData().GetOrg().GetTaxname();
-                    }
+                    m_SuggestedFix = reply.GetData().GetOrg().GetTaxname();
+                    m_HostLineage = reply.GetData().GetOrg().GetLineage();
                 }
             }
         }
@@ -193,6 +202,21 @@ void CSpecificHostRequest::PostErrors(CValidError_imp& imp)
                 imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, m_Error, **it);
             }
             break;
+    }
+
+    if (!NStr::IsBlank(m_HostLineage) && !NStr::IsBlank(m_OrgLineage) &&
+        (NStr::Find(m_OrgLineage, "Streptophyta") != NPOS || NStr::Find(m_OrgLineage, "Metazoa") != NPOS) &&
+        (NStr::Find(m_HostLineage, "Fungi") != NPOS || NStr::Find(m_HostLineage, "Bacteria") != NPOS ||
+        NStr::Find(m_HostLineage, "Archaea") != NPOS || NStr::Find(m_HostLineage, "Viruses") != NPOS)) {
+        for (auto it = m_Descs.begin(); it != m_Descs.end(); it++) {
+            imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
+                "Suspect Host Value - a prokaryote, fungus or virus is suspect as a host for a plant or animal",
+                *(it->first), it->second);
+        }
+        for (auto it = m_Feats.begin(); it != m_Feats.end(); it++) {
+            imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
+                "Suspect Host Value - a prokaryote, fungus or virus is suspect as a host for a plant or animal", **it);
+        }
     }
 }
 

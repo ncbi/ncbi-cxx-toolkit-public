@@ -141,6 +141,8 @@ private:
     TResponseFlags m_Response;
     string m_SuggestedFix;
     string m_Error;
+    string m_HostLineage;
+    string m_OrgLineage;
 };
 
 
