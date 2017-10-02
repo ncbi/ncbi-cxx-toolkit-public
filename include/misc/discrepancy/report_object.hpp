@@ -48,12 +48,13 @@ struct CReportObjPtr;
 class NCBI_DISCREPANCY_EXPORT CReportObject : public CReportObj
 {
 public:
-    CReportObject(CConstRef<CBioseq> obj, CScope& scope) : m_Bioseq(obj), m_Scope(scope) {}
-    CReportObject(CConstRef<CSeq_feat> obj, CScope& scope) : m_Seq_feat(obj), m_Scope(scope) {}
-    CReportObject(CConstRef<CSeqdesc> obj, CScope& scope) : m_Seqdesc(obj), m_Scope(scope) {}
-    CReportObject(CConstRef<CSubmit_block> obj, CScope& scope, const string& text) : m_Text(text), m_Submit_block(obj), m_Scope(scope) {}
-    CReportObject(CConstRef<CBioseq_set> obj, CScope& scope) : m_Bioseq_set(obj), m_Scope(scope) {}
+    CReportObject(CConstRef<CBioseq> obj, CScope& scope) : m_Type(eType_sequence), m_Bioseq(obj), m_Scope(scope) {}
+    CReportObject(CConstRef<CSeq_feat> obj, CScope& scope) : m_Type(eType_feature), m_Seq_feat(obj), m_Scope(scope) {}
+    CReportObject(CConstRef<CSeqdesc> obj, CScope& scope) : m_Type(eType_descriptor), m_Seqdesc(obj), m_Scope(scope) {}
+    CReportObject(CConstRef<CSubmit_block> obj, CScope& scope, const string& text) : m_Type(eType_submit_block), m_Text(text), m_Submit_block(obj), m_Scope(scope) {}
+    CReportObject(CConstRef<CBioseq_set> obj, CScope& scope) : m_Type(eType_seq_set), m_Bioseq_set(obj), m_Scope(scope) {}
     CReportObject(const CReportObject& other) :
+        m_Type(other.m_Type),
         m_Text(other.m_Text),
         m_ShortName(other.m_ShortName),
         m_Bioseq(other.m_Bioseq),
@@ -65,8 +66,9 @@ public:
         m_Scope(other.m_Scope) {}
     ~CReportObject() {}
 
-    virtual const string& GetText() const { return m_Text; }
+    const string& GetText() const { return m_Text; }
     const string& GetShort() const { return m_ShortName; }
+    EType GetType(void) const { return m_Type; }
 
     void SetText(CScope& scope, const string& str = kEmptyStr);
     void SetText(const string& str) { m_Text = str; }
@@ -78,7 +80,7 @@ public:
     // if we have read in Seq-entries from multiple files, the 
     // report should include the filename that the object was
     // originally found in
-    string GetFilename() const { return m_Filename; }
+    const string& GetFilename() const { return m_Filename; }
     void SetFilename(const string& filename) { m_Filename = filename; }
 
     // the DropReferences methods save text representations of the objects
@@ -119,6 +121,7 @@ public:
     }
 
 protected:
+    EType                  m_Type;
     string                 m_Text;
     string                 m_ShortName;
     CConstRef<CBioseq>     m_Bioseq;

@@ -173,7 +173,29 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, size_t inden
             TReportObjectList det = (*it)->GetDetails();
             ITERATE(TReportObjectList, obj, det) {
                 Indent(out, indent + XML_INDENT);
-                out << "<object text=\"" << NStr::XmlEncode((*obj)->GetText()) << "\"/>\n";
+                out << "<object type=";
+                switch ((*obj)->GetType()) {
+                    case CReportObj::eType_feature:
+                        out << "\"feature\"";
+                        break;
+                    case CReportObj::eType_descriptor:
+                        out << "\"descriptor\"";
+                        break;
+                    case CReportObj::eType_sequence:
+                        out << "\"sequence\"";
+                        break;
+                    case CReportObj::eType_seq_set:
+                        out << "\"set\"";
+                        break;
+                    case CReportObj::eType_submit_block:
+                        out << "\"submit_block\"";
+                        break;
+                }
+                if (!(*obj)->GetFilename().empty()) {
+                    out << " file=\"" << NStr::XmlEncode((*obj)->GetFilename()) << "\"/>\n";
+                }
+                string text = NStr::Replace((*obj)->GetText(), "\t", "  ");
+                out << " text=\"" << NStr::XmlEncode(text) << "\"/>\n";
             }
         }
         Indent(out, indent);

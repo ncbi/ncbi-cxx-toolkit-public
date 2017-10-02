@@ -41,9 +41,18 @@ BEGIN_SCOPE(NDiscrepancy)
 class NCBI_DISCREPANCY_EXPORT CReportObj : public CObject
 {
 public:
+    enum EType {
+        eType_feature,
+        eType_descriptor,
+        eType_sequence,
+        eType_seq_set,
+        eType_submit_block
+    };
     virtual ~CReportObj(void){}
     virtual const string& GetText(void) const = 0;
     virtual const string& GetShort(void) const = 0;
+    virtual const string& GetFilename(void) const = 0;
+    virtual EType GetType(void) const = 0;
     virtual CConstRef<CSerialObject> GetObject(void) const = 0;
     virtual objects::CScope& GetScope(void) const = 0;
     virtual bool CanAutofix(void) const = 0;
