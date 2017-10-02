@@ -61,20 +61,20 @@ BEGIN_NCBI_SCOPE
 class CDefaultWorkerNodeInitContext : public IWorkerNodeInitContext
 {
 public:
-    CDefaultWorkerNodeInitContext(CNcbiApplication& app)
-        : m_App(app)
+    CDefaultWorkerNodeInitContext(SGridWorkerNodeImpl& worker_node)
+        : m_WorkerNode(worker_node)
     {}
 
     virtual ~CDefaultWorkerNodeInitContext() {}
 
     virtual const IRegistry&        GetConfig() const
-    { return m_App.GetConfig(); }
+    { return m_WorkerNode.m_App.GetConfig(); }
 
     virtual const CArgs&            GetArgs() const
-    { return m_App.GetArgs(); }
+    { return m_WorkerNode.m_App.GetArgs(); }
 
     virtual const CNcbiEnvironment& GetEnvironment() const
-    { return m_App.GetEnvironment(); }
+    { return m_WorkerNode.m_App.GetEnvironment(); }
 
     virtual IWorkerNodeCleanupEventSource* GetCleanupEventSource() const;
 
@@ -83,7 +83,7 @@ public:
     virtual CNetCacheAPI GetNetCacheAPI() const;
 
 private:
-    CNcbiApplication& m_App;
+    SGridWorkerNodeImpl& m_WorkerNode;
 
     CDefaultWorkerNodeInitContext(const CDefaultWorkerNodeInitContext&);
     CDefaultWorkerNodeInitContext& operator=(const CDefaultWorkerNodeInitContext&);
@@ -92,27 +92,17 @@ private:
 IWorkerNodeCleanupEventSource*
     CDefaultWorkerNodeInitContext::GetCleanupEventSource() const
 {
-    const CGridWorkerApp* grid_app =
-        dynamic_cast<const CGridWorkerApp*>(&m_App);
-
-    _ASSERT(grid_app != NULL);
-    return grid_app->GetWorkerNode().GetCleanupEventSource();
+    return m_WorkerNode.m_CleanupEventSource;
 }
 
 CNetScheduleAPI CDefaultWorkerNodeInitContext::GetNetScheduleAPI() const
 {
-    const CGridWorkerApp* grid_app =
-        dynamic_cast<const CGridWorkerApp*>(&m_App);
-
-    return grid_app->GetWorkerNode().GetNetScheduleAPI();
+    return m_WorkerNode.m_NetScheduleAPI;
 }
 
 CNetCacheAPI CDefaultWorkerNodeInitContext::GetNetCacheAPI() const
 {
-    const CGridWorkerApp* grid_app =
-        dynamic_cast<const CGridWorkerApp*>(&m_App);
-
-    return grid_app->GetWorkerNode().GetNetCacheAPI();
+    return m_WorkerNode.m_NetCacheAPI;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -162,7 +152,7 @@ void CGridWorkerApp::Init(void)
     SetupArgDescriptions(arg_desc.release());
 
     m_WorkerNode.Init();
-    m_WorkerNodeInitContext.reset(new CDefaultWorkerNodeInitContext(*this));
+    m_WorkerNodeInitContext.reset(new CDefaultWorkerNodeInitContext(m_WorkerNode--));
     m_WorkerNode->m_JobProcessorFactory->Init(*m_WorkerNodeInitContext);
 }
 
