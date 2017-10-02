@@ -2220,7 +2220,7 @@ void GetCdssForGene(const CSeq_feat& gene_feat, CScope& scope,
         CConstRef<CSeq_feat> feat =
             sequence::GetBestOverlappingFeat(gene_feat.GetLocation(),
                                              CSeqFeatData::eSubtype_cdregion,
-                                             sequence::eOverlap_CheckIntervals,
+                                             sequence::eOverlap_Subset,
                                              scope, opts, plugin );
         if (feat) {
             cds_feats.push_back(feat);
