@@ -162,7 +162,8 @@ void CGridWorkerApp::Init(void)
     SetupArgDescriptions(arg_desc.release());
 
     m_WorkerNode.Init();
-    m_WorkerNode->m_JobProcessorFactory->Init(GetInitContext());
+    m_WorkerNodeInitContext.reset(new CDefaultWorkerNodeInitContext(*this));
+    m_WorkerNode->m_JobProcessorFactory->Init(*m_WorkerNodeInitContext);
 }
 
 void CGridWorkerApp::SetupArgDescriptions(CArgDescriptions* arg_desc)
@@ -193,14 +194,6 @@ void CGridWorkerApp::SetupArgDescriptions(CArgDescriptions* arg_desc)
             CArgDescriptions::eString);
 
     CNcbiApplication::SetupArgDescriptions(arg_desc);
-}
-
-const IWorkerNodeInitContext&  CGridWorkerApp::GetInitContext()
-{
-    if (!m_WorkerNodeInitContext.get())
-        m_WorkerNodeInitContext.reset(
-                       new CDefaultWorkerNodeInitContext(*this));
-    return *m_WorkerNodeInitContext;
 }
 
 int CGridWorkerApp::Run(void)

@@ -114,10 +114,6 @@ public:
 
     CGridWorkerNode GetWorkerNode() const {return m_WorkerNode;}
 
-protected:
-
-    const IWorkerNodeInitContext& GetInitContext();
-
 private:
     void Construct(IWorkerNodeJobFactory* job_factory);
 
