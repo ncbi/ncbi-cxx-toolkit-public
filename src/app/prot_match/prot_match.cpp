@@ -144,7 +144,7 @@ private:
         TEntryFilenameMap&  filename_map) const;
 
     void x_CreateSeqEntryOStreams(const TEntryFilenameMap& filename_map,
-        TEntryOStreamMap& ostream_map) const;
+        TEntryOStreamMap& ostream_map);
 
     void x_WriteToSeqEntryTempFiles(
         const CBioseq_set& nuc_prot_set,
@@ -181,12 +181,6 @@ void CProteinMatchApp::Init(void)
         "Binary_Dir", 
         "Directory containing C++ binaries, if not CWD",
         CArgDescriptions::eString);
-/*
-    arg_desc->AddOptionalKey("outdir",
-        "Output_Dir",
-        "Output directory, if not specified write to CWD",
-        CArgDescriptions::eString);
-*/
     arg_desc->AddFlag("keep-temps", "Retain temporary files");
 
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc,
@@ -205,16 +199,6 @@ int CProteinMatchApp::Run(void)
     const string bin_dir = args["bindir"] ? 
         args["bindir"].AsString() :
         CDir::GetCwd();
-/*
-    string out_dir = CDir::GetCwd();
-    if (args["outdir"]) {
-        CDir outputdir(args["outdir"].AsString());
-        if (!outputdir.Exists()) {
-            outputdir.Create();
-        }
-        out_dir = args["outdir"].AsString();
-    }
-*/
 
 #ifdef NCBI_OS_MSWIN
     CBinRunner assm_assm_blastn(bin_dir, "assm_assm_blastn.exe");
@@ -676,11 +660,12 @@ void CProteinMatchApp::x_GetSeqEntryFileNames(const string& file_stub,
 
 
 void CProteinMatchApp::x_CreateSeqEntryOStreams(const CProteinMatchApp::TEntryFilenameMap& filename_map,
-    CProteinMatchApp::TEntryOStreamMap& ostream_map) const
+    CProteinMatchApp::TEntryOStreamMap& ostream_map) 
 {
     static const bool as_text = false;
     for (const auto& key_val : filename_map) {
         ostream_map[key_val.first].reset(x_InitObjectOStream(key_val.second, as_text));
+        x_LogTempFile(key_val.second);
     }
 }
 
@@ -724,7 +709,6 @@ void CProteinMatchApp::x_WriteToSeqEntryTempFiles(
             "db_nuc_prot_set",
             filename_map,
             ostream_map);
-        x_LogTempFile(filename_map.at("db_nuc_prot_set"));
 
         const CBioseq& db_nuc_seq = db_entry.GetSet().GetNucFromNucProtSet();
         CRef<CSeq_entry> db_nuc_se = Ref(new CSeq_entry());
@@ -733,14 +717,12 @@ void CProteinMatchApp::x_WriteToSeqEntryTempFiles(
             "db_nuc_seq",
             filename_map,
             ostream_map);
-        x_LogTempFile(filename_map.at("db_nuc_seq"));
     } 
     else { // db_entry.IsSeq() == true
         x_WriteEntry(db_entry,
             "db_nuc_seq",
             filename_map,
             ostream_map);
-        x_LogTempFile(filename_map.at("db_nuc_seq"));
     }
 
     CRef<CSeq_entry> nuc_prot_se = Ref(new CSeq_entry());
@@ -749,7 +731,6 @@ void CProteinMatchApp::x_WriteToSeqEntryTempFiles(
         "local_nuc_prot_set",
         filename_map,
         ostream_map);
-    x_LogTempFile(filename_map.at("local_nuc_prot_set"));
 
     // Write update nucleotide sequence
     const CBioseq& nuc_seq = nuc_prot_set.GetNucFromNucProtSet();
@@ -759,7 +740,6 @@ void CProteinMatchApp::x_WriteToSeqEntryTempFiles(
         "local_nuc_seq",
         filename_map,
         ostream_map);
-    x_LogTempFile(filename_map.at("local_nuc_seq"));
 }
 
 
