@@ -321,4 +321,109 @@ template bool   CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegS
 template int    CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
 template double CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
 
+ISynRegistryToIRegistry::ISynRegistryToIRegistry(ISynRegistry& registry) :
+    m_Registry(registry)
+{
+}
+
+bool ISynRegistryToIRegistry::x_Empty(TFlags flags) const
+{
+    return GetIRegistry().Empty(flags);
+}
+
+bool ISynRegistryToIRegistry::x_Modified(TFlags flags) const
+{
+    return GetIRegistry().Modified(flags);
+}
+
+void ISynRegistryToIRegistry::x_SetModifiedFlag(bool modified, TFlags flags)
+{
+    return GetIRegistry().SetModifiedFlag(modified, flags);
+}
+
+const string& ISynRegistryToIRegistry::x_Get(const string&, const string&, TFlags) const
+{
+    // Get* overrides must never call this method
+    _TROUBLE;
+    return kEmptyStr;
+}
+
+bool ISynRegistryToIRegistry::x_HasEntry(const string&, const string&, TFlags) const
+{
+    // Has override must never call this method
+    _TROUBLE;
+    return false;
+}
+
+const string& ISynRegistryToIRegistry::x_GetComment(const string&, const string&, TFlags) const
+{
+    // GetComment override must never call this method
+    _TROUBLE;
+    return kEmptyStr;
+}
+
+void ISynRegistryToIRegistry::x_Enumerate(const string&, list<string>&, TFlags) const
+{
+    // Enumerate* overrides must never call this method
+    _TROUBLE;
+}
+
+void ISynRegistryToIRegistry::x_ChildLockAction(FLockAction action)
+{
+    return (GetIRegistry().*action)();
+}
+
+const string& ISynRegistryToIRegistry::Get(const string& section, const string& name, TFlags flags) const
+{
+    // Cannot return reference to a temporary, so first call for caching and next for returning
+    m_Registry.Get(section, name, kEmptyStr);
+    return GetIRegistry().Get(section, name, flags);
+}
+
+bool ISynRegistryToIRegistry::HasEntry(const string& section, const string& name, TFlags) const
+{
+    return m_Registry.Has(section, name);
+}
+
+string ISynRegistryToIRegistry::GetString(const string& section, const string& name, const string& default_value, TFlags) const
+{
+    return m_Registry.Get(section, name, default_value);
+}
+
+int ISynRegistryToIRegistry::GetInt(const string& section, const string& name, int default_value, TFlags, EErrAction) const
+{
+    return m_Registry.Get(section, name, default_value);
+}
+
+bool ISynRegistryToIRegistry::GetBool(const string& section, const string& name, bool default_value, TFlags, EErrAction) const
+{
+    return m_Registry.Get(section, name, default_value);
+}
+
+double ISynRegistryToIRegistry::GetDouble(const string& section, const string& name, double default_value, TFlags, EErrAction) const
+{
+    return m_Registry.Get(section, name, default_value);
+}
+
+const string& ISynRegistryToIRegistry::GetComment(const string& section, const string& name, TFlags flags) const
+{
+    return GetIRegistry().GetComment(section, name, flags);
+}
+
+void ISynRegistryToIRegistry::EnumerateInSectionComments(const string& section, list<string>* comments, TFlags flags) const
+{
+    return GetIRegistry().EnumerateInSectionComments(section, comments, flags);
+}
+
+void ISynRegistryToIRegistry::EnumerateSections(list<string>* sections, TFlags flags) const
+{
+    return GetIRegistry().EnumerateSections(sections, flags);
+}
+
+void ISynRegistryToIRegistry::EnumerateEntries(const string& section, list<string>* entries, TFlags flags) const
+{
+    return GetIRegistry().EnumerateEntries(section, entries, flags);
+}
+
+
 END_NCBI_SCOPE

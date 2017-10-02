@@ -266,6 +266,37 @@ private:
 
 using CCachedSynRegistry = TSynRegistry<CCachedSynRegistryImpl>;
 
+class ISynRegistryToIRegistry : public IRegistry
+{
+public:
+    ISynRegistryToIRegistry(ISynRegistry& registry);
+
+    const string& Get(const string& section, const string& name, TFlags flags = 0) const final;
+    bool HasEntry(const string& section, const string& name = kEmptyStr, TFlags flags = 0) const final;
+    string GetString(const string& section, const string& name, const string& default_value, TFlags flags = 0) const final;
+    int GetInt(const string& section, const string& name, int default_value, TFlags flags = 0, EErrAction err_action = eThrow) const final;
+    bool GetBool(const string& section, const string& name, bool default_value, TFlags flags = 0, EErrAction err_action = eThrow) const final;
+    double GetDouble(const string& section, const string& name, double default_value, TFlags flags = 0, EErrAction err_action = eThrow) const final;
+    const string& GetComment(const string& section = kEmptyStr, const string& name = kEmptyStr, TFlags flags = 0) const final;
+    void EnumerateInSectionComments(const string& section, list<string>* comments, TFlags flags = fAllLayers) const final;
+    void EnumerateSections(list<string>* sections, TFlags flags = fAllLayers) const final;
+    void EnumerateEntries(const string& section, list<string>* entries, TFlags flags = fAllLayers) const final;
+
+private:
+    bool x_Empty(TFlags flags) const final;
+    bool x_Modified(TFlags flags) const final;
+    void x_SetModifiedFlag(bool modified, TFlags flags) final;
+    const string& x_Get(const string& section, const string& name, TFlags flags) const final;
+    bool x_HasEntry(const string& section, const string& name, TFlags flags) const final;
+    const string& x_GetComment(const string& section, const string& name, TFlags flags) const final;
+    void x_Enumerate(const string& section, list<string>& entries, TFlags flags) const final;
+    void x_ChildLockAction(FLockAction action) final;
+
+    IRegistry& GetIRegistry() const { return m_Registry.GetIRegistry(); }
+
+    ISynRegistry& m_Registry;
+};
+
 extern template NCBI_XCONNECT_EXPORT string CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value);
 extern template NCBI_XCONNECT_EXPORT bool   CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value);
 extern template NCBI_XCONNECT_EXPORT int    CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);

@@ -160,10 +160,12 @@ public:
     ///   The parameter value, or empty string if the parameter is not found.
     /// @sa
     ///   GetString(), GetEncryptedString()
+    virtual
     const string& Get(const string& section,
                       const string& name,
                       TFlags        flags = 0) const;
 
+    virtual
     bool HasEntry(const string& section,
                   const string& name = kEmptyStr,
                   TFlags        flags = 0) const;
@@ -174,6 +176,7 @@ public:
     /// found, then return 'default_value' rather than empty string.
     /// @sa
     ///   Get(), GetEncryptedString()
+    virtual
     string GetString(const string& section,
                      const string& name,
                      const string& default_value,
@@ -209,6 +212,7 @@ public:
     ///   What to do if error encountered in converting parameter value.
     /// @sa
     ///   GetString()
+    virtual
     int GetInt(const string& section,
                const string& name,
                int           default_value,
@@ -222,6 +226,7 @@ public:
     ///   What to do if error encountered in converting parameter value.
     /// @sa
     ///   GetString()
+    virtual
     bool GetBool(const string& section,
                  const string& name,
                  bool          default_value,
@@ -235,6 +240,7 @@ public:
     ///   What to do if error encountered in converting parameter value.
     /// @sa
     ///   GetString()
+    virtual
     double GetDouble(const string& section,
                      const string& name,
                      double        default_value,
@@ -292,6 +298,7 @@ public:
     ///   To control search.
     /// @return
     ///   Comment string. If not found, return an empty string.
+    virtual
     const string& GetComment(const string& section = kEmptyStr,
                              const string& name    = kEmptyStr,
                              TFlags        flags   = 0) const;
@@ -304,6 +311,7 @@ public:
     /// @param flags
     ///   To control layers if search. Allowed values are fTransient, 
     ///   fPersistent, fNotJustCore, fJustCore and their mix using |
+    virtual
     void EnumerateInSectionComments(const string& section,
                                     list<string>* comments,
                                     TFlags        flags = fAllLayers) const;
@@ -315,6 +323,7 @@ public:
     /// erased.
     /// @param flags
     ///   To control search.
+    virtual
     void EnumerateSections(list<string>* sections,
                            TFlags        flags = fAllLayers) const;
 
@@ -326,6 +335,7 @@ public:
     /// @deprecated empty and fSectionlessEntries is not set.
     /// @param flags
     ///   To control search.
+    virtual
     void EnumerateEntries(const string& section,
                           list<string>* entries,
                           TFlags        flags = fAllLayers) const;
