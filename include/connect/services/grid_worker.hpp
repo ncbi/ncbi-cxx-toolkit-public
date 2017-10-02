@@ -110,10 +110,11 @@ public:
 /// The worker node job class can use this class to get
 /// configuration parameters.
 ///
-class NCBI_XCONNECT_EXPORT IWorkerNodeInitContext
+/// @{
+class NCBI_XCONNECT_EXPORT IWorkerNodeInitBaseContext
 {
 public:
-    virtual ~IWorkerNodeInitContext() {}
+    virtual ~IWorkerNodeInitBaseContext() {}
 
     /// Get a config file registry
     ///
@@ -126,7 +127,10 @@ public:
     /// Get environment variables
     ///
     virtual const CNcbiEnvironment& GetEnvironment() const = 0;
-
+};
+class NCBI_XCONNECT_EXPORT IWorkerNodeInitContext : public IWorkerNodeInitBaseContext
+{
+public:
     /// Get interface for registering clean-up event listeners
     ///
     virtual IWorkerNodeCleanupEventSource* GetCleanupEventSource() const = 0;
@@ -139,6 +143,7 @@ public:
     ///
     virtual CNetCacheAPI GetNetCacheAPI() const = 0;
 };
+/// @}
 
 class CWorkerNodeJobContext;
 class CWorkerNodeControlServer;

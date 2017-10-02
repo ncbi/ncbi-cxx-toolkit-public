@@ -371,6 +371,7 @@ SGridWorkerNodeImpl::SGridWorkerNodeImpl(CNcbiApplication& app,
 void SGridWorkerNodeImpl::Init()
 {
     m_Listener->OnInit(&m_App);
+    m_Listener->OnInit(m_WorkerNodeInitContext.get());
 
     const IRegistry& reg = m_App.GetConfig();
 
