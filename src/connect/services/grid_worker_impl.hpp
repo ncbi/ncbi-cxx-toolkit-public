@@ -245,7 +245,6 @@ struct SGridWorkerNodeImpl : public CObject
     CDeadline m_JobPullbackTime;
 
     bool x_AreMastersBusy() const;
-    auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
 
     CRef<CJobCommitterThread> m_JobCommitterThread;
     CRef<CWorkerNodeIdleThread>  m_IdleThread;
