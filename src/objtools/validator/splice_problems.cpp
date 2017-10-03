@@ -201,7 +201,7 @@ CSpliceProblems::ReadDonorSpliceSite(ENa_strand strand, TSeqPos stop, const CSeq
         }
         return eSpliceSiteRead_OK;
     } catch (CException& ex) {
-        return eSpliceSiteRead_BadSeq;
+        return eSpliceSiteRead_OK;
     }
 }
 
