@@ -317,21 +317,38 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 //
-class CDefaultWorkerNodeInitContext : public IWorkerNodeInitContext
+const IRegistry& SGridWorkerNodeImpl::GetConfig() const
 {
-public:
-    CDefaultWorkerNodeInitContext(SGridWorkerNodeImpl& worker_node) : m_WorkerNode(worker_node) {}
+    return m_App.GetConfig();
+}
 
-    const IRegistry&               GetConfig()             const override { return m_WorkerNode.m_App.GetConfig();      }
-    const CArgs&                   GetArgs()               const override { return m_WorkerNode.m_App.GetArgs();        }
-    const CNcbiEnvironment&        GetEnvironment()        const override { return m_WorkerNode.m_App.GetEnvironment(); }
-    IWorkerNodeCleanupEventSource* GetCleanupEventSource() const override { return m_WorkerNode.m_CleanupEventSource;   }
-    CNetScheduleAPI                GetNetScheduleAPI()     const override { return m_WorkerNode.m_NetScheduleAPI;       }
-    CNetCacheAPI                   GetNetCacheAPI()        const override { return m_WorkerNode.m_NetCacheAPI;          }
+const CArgs& SGridWorkerNodeImpl::GetArgs() const
+{
+    return m_App.GetArgs();
+}
 
-private:
-    SGridWorkerNodeImpl& m_WorkerNode;
-};
+const CNcbiEnvironment& SGridWorkerNodeImpl::GetEnvironment() const
+{
+    return m_App.GetEnvironment();
+}
+
+IWorkerNodeCleanupEventSource* SGridWorkerNodeImpl::GetCleanupEventSource() const
+{
+    // It should be safe to do the cast here
+    // as SGridWorkerNodeImpl is only used as const IWorkerNodeInitContext in
+    // its own constructor where 'this' is not const
+    return const_cast<SGridWorkerNodeImpl*>(this)->m_CleanupEventSource;
+}
+
+CNetScheduleAPI SGridWorkerNodeImpl::GetNetScheduleAPI() const
+{
+    return m_NetScheduleAPI;
+}
+
+CNetCacheAPI SGridWorkerNodeImpl::GetNetCacheAPI() const
+{
+    return m_NetCacheAPI;
+}
 
 CGridWorkerNode::CGridWorkerNode(CNcbiApplication& app,
         IWorkerNodeJobFactory* job_factory) :
@@ -341,7 +358,6 @@ CGridWorkerNode::CGridWorkerNode(CNcbiApplication& app,
 
 SGridWorkerNodeImpl::SGridWorkerNodeImpl(CNcbiApplication& app,
         IWorkerNodeJobFactory* job_factory) :
-    m_WorkerNodeInitContext(new CDefaultWorkerNodeInitContext(*this)),
     m_JobProcessorFactory(job_factory),
     m_ThreadPool(NULL),
     m_MaxThreads(1),
@@ -370,7 +386,7 @@ SGridWorkerNodeImpl::SGridWorkerNodeImpl(CNcbiApplication& app,
 
 void SGridWorkerNodeImpl::Init()
 {
-    m_Listener->OnInit(m_WorkerNodeInitContext.get());
+    m_Listener->OnInit(this);
 
     const IRegistry& reg = m_App.GetConfig();
 
@@ -381,7 +397,7 @@ void SGridWorkerNodeImpl::Init()
 
     m_NetScheduleAPI = CNetScheduleAPI(reg);
     m_NetCacheAPI = CNetCacheAPI(reg, kEmptyStr, m_NetScheduleAPI);
-    m_JobProcessorFactory->Init(*m_WorkerNodeInitContext);
+    m_JobProcessorFactory->Init(*this);
 }
 
 void CGridWorkerNode::Init()

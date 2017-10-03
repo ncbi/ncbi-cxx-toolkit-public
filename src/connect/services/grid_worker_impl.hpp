@@ -154,7 +154,7 @@ private:
 };
 
 ///@internal
-struct SGridWorkerNodeImpl : public CObject
+struct SGridWorkerNodeImpl : public CObject, IWorkerNodeInitContext
 {
     SGridWorkerNodeImpl(CNcbiApplication& app,
             IWorkerNodeJobFactory* job_factory);
@@ -201,10 +201,14 @@ struct SGridWorkerNodeImpl : public CObject
 
     int OfflineRun();
 
-private:
-    unique_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
+    // IWorkerNodeInitContext implementation
+    const IRegistry&               GetConfig()             const override;
+    const CArgs&                   GetArgs()               const override;
+    const CNcbiEnvironment&        GetEnvironment()        const override;
+    IWorkerNodeCleanupEventSource* GetCleanupEventSource() const override;
+    CNetScheduleAPI                GetNetScheduleAPI()     const override;
+    CNetCacheAPI                   GetNetCacheAPI()        const override;
 
-public:
     auto_ptr<IWorkerNodeJobFactory>      m_JobProcessorFactory;
 
     CNetCacheAPI m_NetCacheAPI;
