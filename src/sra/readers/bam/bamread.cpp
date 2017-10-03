@@ -51,6 +51,7 @@
 #include <objects/seqset/seqset__.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 #include <util/sequtil/sequtil_manip.hpp>
+#include <numeric>
 
 #ifdef HAVE_NEW_PILEUP_COLLECTOR
 #  include <immintrin.h>
