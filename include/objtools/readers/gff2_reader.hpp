@@ -113,18 +113,6 @@ public:
         ILineErrorListener* =0 );
                         
     virtual void
-    ReadSeqAnnotsGenbankMode(
-        TAnnots&,
-        ILineReader&,
-        ILineErrorListener* =0 );
-
-    virtual void
-    ReadSeqAnnotsNormalMode(
-        TAnnots&,
-        ILineReader&,
-        ILineErrorListener* =0 );
-
-    virtual void
     ReadSeqAnnots(
         TAnnotList&,
         ILineReader&,
@@ -387,9 +375,13 @@ protected:
         CSeq_feat&,
         CSeq_feat&);
 
+    bool xNeedsNewSeqAnnot(
+        const string&);
+
     //  data:
     //
 protected:
+    string m_CurrentSeqId;
     ILineErrorListener* m_pErrors;
     unsigned int mCurrentFeatureCount;
     bool mParsingAlignment;

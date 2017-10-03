@@ -73,23 +73,8 @@ public:
 
     virtual ~CGtfReader();
     
-    virtual void
-    ReadSeqAnnotsGenbankMode(
-        TAnnots&,
-        ILineReader&,
-        ILineErrorListener* =0 ) override;
-
-    virtual void
-    ReadSeqAnnotsNormalMode(
-        TAnnots&,
-        ILineReader&,
-        ILineErrorListener* =0 ) override;
-
 protected:
     virtual CGff2Record* x_CreateRecord() { return new CGtfReadRecord(); };    
-
-    bool xNeedsNewSeqAnnot(
-        const string&);
 
     virtual bool x_UpdateAnnotFeature(
         const CGff2Record&,
@@ -202,7 +187,6 @@ protected:
     bool x_CdsIsPartial(
         const CGff2Record& );
 
-    string m_CurrentSeqId;
     typedef map< string, CRef< CSeq_feat > > TIdToFeature;
     TIdToFeature m_GeneMap;
     TIdToFeature m_CdsMap;

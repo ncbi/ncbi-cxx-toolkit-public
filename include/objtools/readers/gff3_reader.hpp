@@ -93,18 +93,6 @@ public:
 
     bool IsInGenbankMode() const;
 
-    virtual void
-    ReadSeqAnnotsGenbankMode(
-        TAnnots&,
-        ILineReader&,
-        ILineErrorListener* =0 ) override;
-
-    virtual void
-    ReadSeqAnnotsNormalMode(
-        TAnnots&,
-        ILineReader&,
-        ILineErrorListener* =0 ) override;
-
 protected:
     virtual CGff2Record* x_CreateRecord() { return new CGff3ReadRecord(); };    
 

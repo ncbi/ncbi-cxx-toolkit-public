@@ -219,28 +219,6 @@ bool CGff3Reader::IsInGenbankMode() const
     return (m_iFlags & CGff3Reader::fGenbankMode);
 }
 
-//  ---------------------------------------------------------------------------                       
-void
-CGff3Reader::ReadSeqAnnotsGenbankMode(
-    TAnnots& annots,
-    ILineReader& lr,
-    ILineErrorListener* pEC)
-//  ----------------------------------------------------------------------------
-{
-    return ReadSeqAnnotsNormalMode(annots, lr, pEC);
-}
-
-//  ---------------------------------------------------------------------------                       
-void
-CGff3Reader::ReadSeqAnnotsNormalMode(
-    TAnnots& annots,
-    ILineReader& lr,
-    ILineErrorListener* pEC)
-//  ----------------------------------------------------------------------------
-{
-    CGff2Reader::ReadSeqAnnotsNormalMode(annots, lr, pEC);
-}
-
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::x_UpdateFeatureCds(
     const CGff2Record& gff,
@@ -378,6 +356,9 @@ bool CGff3Reader::xUpdateAnnotCds(
         return false;
     }
 
+    if (record.SeqStart() == 133055619) {
+        cerr << "";
+    }
     list<string> parents;
     record.GetAttribute("Parent", parents);
     map<string, string> impliedCdsFeats;

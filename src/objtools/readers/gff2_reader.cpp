@@ -198,12 +198,13 @@ CGff2Reader::ReadSeqAnnot(
                 xParseTrackLine("track", pEC);
                 continue;
             }
-            //if (line == "###") {
-            //    m_PendingLine = "track";
-            //}
             break;
         }
 
+        if (xNeedsNewSeqAnnot(line)) {
+            break;
+        }
+           
         if (xParseBrowserLine(line, pAnnot, pEC)) {
             continue;
         }
@@ -259,38 +260,74 @@ CGff2Reader::ReadSeqAnnots(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    if (m_iFlags & CGff2Reader::fGenbankMode) {
-        return ReadSeqAnnotsGenbankMode(annots, lr, pEC);
-    }
-    return ReadSeqAnnotsNormalMode(annots, lr, pEC);
-}
-
-//  ---------------------------------------------------------------------------                       
-void
-CGff2Reader::ReadSeqAnnotsNormalMode(
-    TAnnots& annots,
-    ILineReader& lr,
-    ILineErrorListener* pEC )
-//  ----------------------------------------------------------------------------
-{
     xProgressInit(lr);
-    CRef<CSeq_annot> pAnnot = ReadSeqAnnot(lr, pEC);
-    while (pAnnot) {
-        annots.push_back(pAnnot);
-        pAnnot = ReadSeqAnnot(lr, pEC);
+    while (!lr.AtEOF()) {
+        CRef<CSeq_annot> pNext = this->ReadSeqAnnot(lr, pEC);
+        if (pNext) {
+            annots.push_back(pNext);
+        }
     }
     return;
-}
 
-//  ---------------------------------------------------------------------------                       
-void
-CGff2Reader::ReadSeqAnnotsGenbankMode(
-    TAnnots& annots,
-    ILineReader& lr,
-    ILineErrorListener* pEC )
-//  ----------------------------------------------------------------------------
-{
-    ReadSeqAnnotsNormalMode(annots, lr, pEC);
+    string line;
+    while (xGetLine(lr, line)) {
+        if (IsCanceled()) {
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Info,
+                0,
+                "Reader stopped by user.",
+                ILineError::eProblem_ProgressInfo));
+            ProcessError(*pErr, pEC);
+            annots.clear();
+            return;
+        }
+        xReportProgress(pEC);
+        if ( xParseStructuredComment(line) ) {
+            continue;
+        }
+
+        try {
+            if (xIsTrackTerminator(line)) {
+                continue;
+            }
+            if (x_ParseBrowserLineGff(line, m_CurrentBrowserInfo)) {
+                continue;
+            }
+            if (xIsTrackLine(line)) {
+                //completely ignore in Genbank mode
+                if (m_iFlags & CGff2Reader::fGenbankMode) {
+                    continue;
+                }
+                if (!annots.empty()) {
+                    xPostProcessAnnot(annots.back(), pEC);
+                }
+                xParseTrackLine(line, pEC);
+                CRef< CSeq_annot > pAnnot( new CSeq_annot );
+                annots.push_back(pAnnot);
+                continue;
+            }
+            if (xNeedsNewSeqAnnot(line)) {
+                if (!annots.empty()) {
+                    xPostProcessAnnot(annots.back(), pEC);
+                }
+                mCurrentFeatureCount = 0;
+                mParsingAlignment = false;
+                CRef< CSeq_annot > pAnnot( new CSeq_annot );
+                annots.push_back(pAnnot);
+                continue;
+            }                
+            if (x_ParseFeatureGff(line, annots, pEC)) {
+                continue;
+            }
+        }
+        catch(CObjReaderLineException& err) {
+            err.SetLineNumber(m_uLineNumber);
+        }
+    }
+    if (!annots.empty()) {
+        xPostProcessAnnot(annots.back(), pEC);
+    }
 }
 
 //  ----------------------------------------------------------------------------                
@@ -362,15 +399,31 @@ void CGff2Reader::xAssignAnnotId(
     }
 
     string annotId(givenId);
-    if (annotId.empty()  &&  pAnnot->GetData().IsFtable()) {
-        const CSeq_annot::TData::TFtable ftable = pAnnot->GetData().GetFtable();
-        if (ftable.empty()) {
-            return;
+    if (annotId.empty()) {
+        if (m_iFlags & CGff2Reader::fGenbankMode) {
+            if (!pAnnot->GetData().IsFtable()) {
+                return;
+            }
+            if (pAnnot->GetData().GetFtable().empty()) {
+                return;
+            }
+            annotId = pAnnot->GetData().GetFtable().front()->GetLocation().GetId()->
+                GetSeqIdString(true);
         }
-        const CSeq_feat& front = *ftable.front();
-        annotId = front.GetLocation().GetId()->GetSeqIdString(true);
+        else {
+            if (annotId.empty()) {
+                if (m_pTrackDefaults) {
+                    annotId = m_pTrackDefaults->Name();
+                }
+            }
+            if (annotId.empty()) {
+                return;
+            }
+        }
     }
-
+    if (annotId.empty()) {
+        return;
+    }    
     CRef< CAnnot_id > pAnnotId(new CAnnot_id);
     pAnnotId->SetLocal().SetStr(annotId);
     pAnnot->SetId().push_back(pAnnotId);   
@@ -2042,6 +2095,28 @@ bool CGff2Reader::xIsIgnoredFeatureId(
     const string& type)
 //  ============================================================================
 {
+    return false;
+}
+
+//  ---------------------------------------------------------------------------
+bool
+CGff2Reader::xNeedsNewSeqAnnot(
+    const string& line)
+//  ---------------------------------------------------------------------------
+{
+    if (m_iFlags & CGff2Reader::fGenbankMode) {
+        vector<string> columns;
+        NStr::Split(line, "\t ", columns, NStr::eMergeDelims);
+        string seqId = columns[0];
+        if (m_CurrentSeqId == seqId) {
+            return false;
+        }
+        m_CurrentSeqId = seqId;
+        m_PendingLine = line;
+        return true;
+    }
+    //in normal mode, segmentation is driven by track line markers rather than 
+    // Seq-ids, and that test has already been done
     return false;
 }
 
