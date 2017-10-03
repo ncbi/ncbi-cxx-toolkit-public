@@ -1460,7 +1460,11 @@ CSemaphore::CSemaphore(unsigned int init_count, unsigned int max_count)
     m_Sem->sem = CreateSemaphore(NULL, init_count, max_count, NULL);
     xncbi_Validate(m_Sem->sem != NULL,
                    "CSemaphore::CSemaphore() - CreateSemaphore() failed");
-
+#ifdef _DEBUG
+    if (m_Sem->sem == NULL) {
+        ERR_POST(Error << "GetLastError returns " << GetLastError());
+    }
+#endif
 #else
     m_Sem->max_count = max_count;
     m_Sem->count     = init_count;
