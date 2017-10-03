@@ -1,7 +1,4 @@
 Seq-annot ::= {
-  id {
-    local str "NC_000001.10"
-  },
   desc {
     user {
       type str "Track Data",
