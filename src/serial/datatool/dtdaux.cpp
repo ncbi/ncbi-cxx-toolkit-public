@@ -319,6 +319,7 @@ DTDElement& DTDElement::operator=(const DTDElement& other)
     m_GlobalGroup = other.m_GlobalGroup;
     m_Comments = other.m_Comments;
     m_AttribComments = other.m_AttribComments;
+    m_Restrictions = other.m_Restrictions;
     return *this;
 }
 

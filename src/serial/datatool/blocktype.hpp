@@ -34,6 +34,7 @@
 */
 
 #include "type.hpp"
+#include "dtdaux.hpp"
 #include <list>
 
 BEGIN_NCBI_SCOPE
@@ -110,6 +111,12 @@ public:
         {
             return m_Comments;
         }
+    void SetRestrictions(const list<CMemberFacet>& c) {
+        m_Restrictions = c;
+    }
+    const list<CMemberFacet>& GetRestrictions(void) const {
+        return m_Restrictions;
+    }
 
 private:
     string m_Name;
@@ -122,6 +129,7 @@ private:
     bool m_Nillable;
     AutoPtr<CDataValue> m_Default;
     CComments m_Comments;
+    list<CMemberFacet> m_Restrictions;
 };
 
 class CDataMemberContainerType : public CDataType {

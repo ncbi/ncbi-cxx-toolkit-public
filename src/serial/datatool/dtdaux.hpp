@@ -41,6 +41,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include "comments.hpp"
+#include <serial/serialdef.hpp>
 #include <list>
 #include <map>
 
@@ -55,6 +56,24 @@ class CDataMember;
 class CEnumDataType;
 class CEnumDataTypeValue;
 
+
+/////////////////////////////////////////////////////////////////////////////
+class CMemberFacet
+{
+public:
+    CMemberFacet(ESerialFacet type, const string& value)
+        : m_Type(type), m_Value(value) {
+    }
+    ESerialFacet GetType(void) const {
+        return m_Type;
+    }
+    const string& GetValue(void) const {
+        return m_Value;
+    }
+private:
+    ESerialFacet m_Type;
+    string m_Value;
+};
 
 /////////////////////////////////////////////////////////////////////////////
 // DTDEntity
@@ -350,6 +369,13 @@ public:
     {
         return m_AttribComments;
     }
+
+    void AddFacet(const CMemberFacet& c) {
+        m_Restrictions.push_back(c);
+    }
+    const list<CMemberFacet>& GetRestrictions(void) const {
+        return m_Restrictions;
+    }
 private:
     int m_SourceLine;
     string m_Name;
@@ -369,6 +395,7 @@ private:
     bool m_GlobalType, m_GlobalGroup;
     CComments m_Comments;
     CComments m_AttribComments;
+    list<CMemberFacet> m_Restrictions;
 };
 
 END_NCBI_SCOPE

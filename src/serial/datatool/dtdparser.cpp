@@ -1332,6 +1332,7 @@ CDataType* DTDParser::TypesBlock(
         if (m_SrcType == eDTD || refNode.IsEmbedded()) {
             member->Comments() = refNode.GetComments();
         }
+        member->SetRestrictions( refNode.GetRestrictions());
         container->AddMember(member);
     }
     if (m_SrcType == eDTD || node.IsEmbedded()) {

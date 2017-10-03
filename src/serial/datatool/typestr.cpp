@@ -251,4 +251,23 @@ string CTypeStrings::GetStorageType(const CNamespace& ns) const
     return GetCType(ns);
 }
 
+const char* CTypeStrings::GetFacetString(ESerialFacet c)
+{
+    switch (c) {
+    case ESerialFacet::eMinLength:        return "ncbi::ESerialFacet::eMinLength";
+    case ESerialFacet::eMaxLength:        return "ncbi::ESerialFacet::eMaxLength";
+    case ESerialFacet::eLength:           return "ncbi::ESerialFacet::eLength";
+    case ESerialFacet::ePattern:          return "ncbi::ESerialFacet::ePattern";
+    case ESerialFacet::eInclusiveMinimum: return "ncbi::ESerialFacet::eInclusiveMinimum";
+    case ESerialFacet::eExclusiveMinimum: return "ncbi::ESerialFacet::eExclusiveMinimum";
+    case ESerialFacet::eInclusiveMaximum: return "ncbi::ESerialFacet::eInclusiveMaximum";
+    case ESerialFacet::eExclusiveMaximum: return "ncbi::ESerialFacet::eExclusiveMaximum";
+    case ESerialFacet::eMultipleOf:       return "ncbi::ESerialFacet::eMultipleOf";
+    case ESerialFacet::eMinItems:         return "ncbi::ESerialFacet::eMinItems";
+    case ESerialFacet::eMaxItems:         return "ncbi::ESerialFacet::eMaxItems";
+    case ESerialFacet::eUniqueItems:      return "ncbi::ESerialFacet::eUniqueItems";
+    default:                              return "";
+    }
+}
+
 END_NCBI_SCOPE

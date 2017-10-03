@@ -279,6 +279,8 @@ bool CDataTool::ProcessModules(void)
                 m_codestyle |= FCodeGenerationStyle(ePreserveNestedElements);
             } else if (NStr::CompareNocase(v,"xmlelem_enums")==0) {
                 m_codestyle |= FCodeGenerationStyle(eXmlElementEnums);
+            } else if (NStr::CompareNocase(v,"no_restrictions")==0) {
+                m_codestyle |= FCodeGenerationStyle(eNoRestrictions);
             } else {
                 ERR_POST_X(1, Warning << "Unknown code generation value: " << v);
             }

@@ -42,6 +42,7 @@ BEGIN_NCBI_SCOPE
 class CClassContext;
 class CNamespace;
 class CDataType;
+enum class ESerialFacet;
 
 class CTypeStrings {
 public:
@@ -144,7 +145,7 @@ public:
     void SetSpecialRef(const string& ref) {
         m_SpecialRef = ref;
     }
-
+    static const char* GetFacetString(ESerialFacet c);
 private:
     string m_ModuleName;
     string m_NamespaceName;

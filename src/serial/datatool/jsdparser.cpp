@@ -130,6 +130,11 @@ void JSDParser::ParseArrayContent(DTDElement& node)
     item.SetEmbedded();
     ParseNode(item);
 	AddElementContent(node,node_id);
+    if (!item.IsNamed()) {
+        for( const CMemberFacet& f : item.GetRestrictions()) {
+            node.AddFacet(f);
+        }
+    }
 }
 
 void JSDParser::ParseNode(DTDElement& node)
@@ -174,12 +179,46 @@ void JSDParser::ParseNode(DTDElement& node)
                 } else if (key == "$ref") {
                     node.SetTypeName(Value());
                     node.SetType(DTDElement::eAlias);
+                } else if (key == "pattern") {
+                    node.AddFacet( CMemberFacet( ESerialFacet::ePattern, Value()));
                 } else {
                     ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
                 }
             } else if (tok == T_NUMBER) {
                 if (key == "minItems") {
                     AdjustMinOccurence(node, NStr::StringToInt(Value()));
+                } else if (key == "maxItems") {
+                    node.AddFacet( CMemberFacet( ESerialFacet::eMaxItems, Value()));
+                } else if (key == "minLength") {
+                    node.AddFacet( CMemberFacet( ESerialFacet::eMinLength, Value()));
+                } else if (key == "maxLength") {
+                    node.AddFacet( CMemberFacet( ESerialFacet::eMaxLength, Value()));
+                } else if (key == "minimum") {
+                    node.AddFacet( CMemberFacet( ESerialFacet::eInclusiveMinimum, Value()));
+                } else if (key == "maximum") {
+                    node.AddFacet( CMemberFacet( ESerialFacet::eInclusiveMaximum, Value()));
+                } else if (key == "multipleOf") {
+                    node.AddFacet( CMemberFacet( ESerialFacet::eMultipleOf, Value()));
+                } else {
+                    ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
+                }
+            } else if (tok == T_DOUBLE) {
+                if (key == "minimum") {
+                    node.AddFacet( CMemberFacet( ESerialFacet::eInclusiveMinimum, Value()));
+                } else if (key == "maximum") {
+                    node.AddFacet( CMemberFacet( ESerialFacet::eInclusiveMaximum, Value()));
+                } else {
+                    ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
+                }
+            } else if (tok == K_TRUE || tok == K_FALSE) {
+                if (key == "exclusiveMinimum") {
+                    node.AddFacet( CMemberFacet( ESerialFacet::eExclusiveMinimum, Value()));
+                } else if (key == "exclusiveMaximum") {
+                    node.AddFacet( CMemberFacet( ESerialFacet::eExclusiveMaximum, Value()));
+                } else if (key == "uniqueItems") {
+                    node.AddFacet( CMemberFacet( ESerialFacet::eUniqueItems, Value()));
+                } else if (key == "additionalProperties") {
+//                    has_additional_prop = tok == K_TRUE;
                 } else {
                     ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
                 }
@@ -221,14 +260,6 @@ void JSDParser::ParseNode(DTDElement& node)
                     ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
                     SkipUnknown(K_END_ARRAY);
                 }
-#if 0
-            } else if (tok == K_TRUE || tok == K_FALSE) {
-                if (key == "additionalProperties") {
-                    has_additional_prop = tok == K_TRUE;
-                } else {
-                    ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
-                }
-#endif
             } else {
                 ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
             }
@@ -257,7 +288,7 @@ void JSDParser::AdjustMinOccurence(DTDElement& node, int occ)
         }
     } else {
         if (occ != 1) {
-            ERR_POST_X(8, Warning << GetLocation() << "Unsupported property minItems= " << occ);
+            node.AddFacet( CMemberFacet( ESerialFacet::eMinItems, Value()));
         }
         if (occNow == DTDElement::eZeroOrOne) {
             occNew = DTDElement::eOne;
@@ -424,11 +455,15 @@ void JSDParser::ParseOneOf(DTDElement& node)
             if (c.GetType() == DTDElement::eAlias) {
                 item_id = c.GetTypeName();
             } else {
-                if (!c.IsNamed()) {
-                    c.SetName(item_id);
-                    c.SetNamed(false);
+                if(!c.IsNamed() && c.GetContent().size() == 1) {
+                    item_id = c.GetContent().front();
+                } else {
+                    if (!c.IsNamed()) {
+                        c.SetName(item_id);
+                        c.SetNamed(false);
+                    }
+                    m_MapElement[item_id] = c;
                 }
-                m_MapElement[item_id] = c;
             }
     	    AddElementContent(node,item_id);
         }

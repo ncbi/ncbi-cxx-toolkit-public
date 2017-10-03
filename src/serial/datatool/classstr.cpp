@@ -1578,6 +1578,53 @@ mem_simple = false;
             if (i->nonEmpty) {
                 methods << "->SetNonEmpty()";
             }
+            if (i->dataType && i->dataType->GetDataMember() && !DataTool().IsSetCodeGenerationStyle(CDataTool::eNoRestrictions)) {
+                const list<CMemberFacet>& con = i->dataType->GetDataMember()->GetRestrictions();
+                if (!con.empty()) {
+                    for (const CMemberFacet& c : con) {
+                        ESerialFacet ct = c.GetType();
+                        if (ct == ESerialFacet::eExclusiveMinimum || ct == ESerialFacet::eExclusiveMaximum) {
+                            continue;
+                        }
+                        if (ct == ESerialFacet::eInclusiveMinimum) {
+                            if (find_if(con.begin(), con.end(), [](const CMemberFacet& i) {
+                                    return (i.GetType() == ESerialFacet::eExclusiveMinimum) &&
+                                            NStr::StringToBool(i.GetValue());
+                                }) != con.end()) {
+                                ct = ESerialFacet::eExclusiveMinimum;
+                            }
+                        }
+                        if (ct == ESerialFacet::eInclusiveMaximum) {
+                            if (find_if(con.begin(), con.end(), [](const CMemberFacet& i) {
+                                    return (i.GetType() == ESerialFacet::eExclusiveMaximum) &&
+                                            NStr::StringToBool(i.GetValue());
+                                }) != con.end()) {
+                                ct = ESerialFacet::eExclusiveMaximum;
+                            }
+                        }
+                        if (ct == ESerialFacet::eInclusiveMinimum || ct == ESerialFacet::eExclusiveMinimum ||
+                            ct == ESerialFacet::eInclusiveMaximum || ct == ESerialFacet::eExclusiveMaximum ||
+                            ct == ESerialFacet::eMultipleOf)
+                        {
+                            const CTemplate1TypeStrings* tt = dynamic_cast<const CTemplate1TypeStrings*>(i->type.get());
+                            if (tt) {
+                                methods << "->RestrictV<" << tt->GetArg1Type()->GetCType(GetNamespace()) << ">(";
+                            } else {
+                                methods << "->RestrictV<decltype(" << i->mName << ")>(";
+                            }
+                        } else {
+                            methods << "->Restrict(";
+                        }
+                        methods << GetFacetString(ct) << ",";
+                        if (ct == ESerialFacet::ePattern) {
+                            methods << "\"" << c.GetValue() << "\"";
+                        } else {
+                            methods << c.GetValue();
+                        }
+                        methods << ")";
+                    }
+                }
+            }
             methods << ";\n";
         }
         if ( isSet ) {
