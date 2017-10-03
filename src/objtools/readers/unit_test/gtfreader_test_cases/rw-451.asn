@@ -1,7 +1,4 @@
 Seq-annot ::= {
-  id {
-    local str "chr1"
-  },
   data ftable {
     {
       id local str "gene_29",
