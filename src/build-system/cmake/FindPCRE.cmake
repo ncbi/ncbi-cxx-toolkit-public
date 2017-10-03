@@ -34,7 +34,7 @@ else(PCRE_INCLUDE_DIR AND PCRE_LIBRARIES)
 	if (WIN32)
 		find_library(PCRE_LIBRARY
 			NAMES
-			pcre
+			libpcre
 			HINTS
 			${PCRE_PKG_LIBRARY_DIRS}
 			PATHS
