@@ -629,7 +629,10 @@ public:
     typedef int      TFlags;
     typedef EDiagSev TSeverity;
 
-    CExceptionArgs_Base(void) : m_ErrCode(0), m_Flags(0), m_Severity(eDiag_Error) {}
+    CExceptionArgs_Base(void) :
+        m_ErrCode(0), m_Flags(0),
+        m_Severity(eDiag_Error), m_Retriable(eRetriable_Unknown)
+    {}
 
     void SetErrCodeVal(TErrCodeVal err_code) { m_ErrCode = err_code; }
     TErrCodeVal GetErrCodeVal(void) const { return m_ErrCode; }
@@ -644,11 +647,15 @@ public:
     const string& GetModule(void) const { return m_Module; }
     bool IsSetModule(void) const { return !m_Module.empty(); }
 
+    void SetRetriable(ERetriable  retriable) { m_Retriable = retriable; }
+    ERetriable GetRetriable(void) const { return m_Retriable; }
+
 private:
     TErrCodeVal m_ErrCode;
     TFlags      m_Flags;
     TSeverity   m_Severity;
     string      m_Module;
+    ERetriable  m_Retriable;
 };
 
 
@@ -1065,6 +1072,24 @@ public:
 
 private:
     string m_Module;
+};
+
+
+/// Retriable manipulator
+
+class Retriable : public CExceptionArgsManip
+{
+public:
+    Retriable(ERetriable  retriable) : m_Retriable(retriable) {}
+    virtual ~Retriable(void) {}
+
+    virtual void operator()(CExceptionArgs_Base& args) const
+    {
+        args.SetRetriable(m_Retriable);
+    }
+
+private:
+    ERetriable  m_Retriable;
 };
 
 

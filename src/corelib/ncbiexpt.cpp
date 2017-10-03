@@ -526,6 +526,7 @@ void CException::x_InitArgs(const CExceptionArgs_Base& args)
     if ( args.IsSetModule() ) {
         m_Module = args.GetModule();
     }
+    m_Retriable = args.GetRetriable();
 }
 
 

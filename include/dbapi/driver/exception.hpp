@@ -693,8 +693,16 @@ typedef CDB_UserHandler_Diag CDB_UserHandler_Default;
 /// Generic macro to throw a database exception, given the exception class,
 /// database error code and message string.
 #define NCBI_DATABASE_THROW( exception_class, message, err_code, severity ) \
-    throw exception_class( DIAG_COMPILE_INFO, \
-        0, (message), severity, err_code )
+    do { \
+        exception_class ex( DIAG_COMPILE_INFO, \
+                            0, (message), severity, err_code ); \
+        if (severity == eDiag_Error || severity == eDiag_Fatal) \
+            ex.SetRetriable(eRetriable_No); \
+        else \
+            ex.SetRetriable(eRetriable_Unknown); \
+        throw ex; \
+    } while(0)
+
 #define NCBI_DATABASE_RETHROW( prev_exception, exception_class, message, \
     err_code, severity ) \
     throw exception_class( DIAG_COMPILE_INFO, \
@@ -703,8 +711,13 @@ typedef CDB_UserHandler_Diag CDB_UserHandler_Default;
 // Driver code typically redefines NCBI_DATABASE_(RE)THROW in terms of these.
 #define NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
                                       dbg_info, conn, params) \
-    throw ex_class(DIAG_COMPILE_INFO, NULL, (message), severity, err_code, \
-                   dbg_info, conn, params)
+    do { \
+        ex_class ex(DIAG_COMPILE_INFO, NULL, (message), severity, err_code, \
+                    dbg_info, conn, params); \
+        ex.SetRetriable(eRetriable_No); \
+        throw ex; \
+    } while (0)
+
 #define NCBI_DATABASE_RETHROW_ANNOTATED(prev_ex, ex_class, message, err_code, \
                                         severity, dbg_info, conn, params) \
     throw ex_class(DIAG_COMPILE_INFO, &(prev_ex), (message), severity, \

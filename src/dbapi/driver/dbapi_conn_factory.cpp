@@ -671,6 +671,7 @@ CDBConnectionFactory::MakeValidConnection(
                                  "Validation failed against "
                                  + params.GetServerName(),
                                  eDiag_Error, 0);
+                ex.SetRetriable(eRetriable_No);
                 // m_Errors.push_back(ex.Clone());
                 ctx.handlers.PostMsg(&ex);
                 return NULL;

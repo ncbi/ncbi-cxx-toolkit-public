@@ -1094,6 +1094,7 @@ CS_RETCODE CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* 
 
             ex.SetSybaseSeverity(msg->severity);
             GetCTLExceptionStorage().Accept(ex);
+            GetCTLExceptionStorage().SetRetriable(eRetriable_No);
             return CS_SUCCEED;
         }
 #endif
@@ -1108,6 +1109,11 @@ CS_RETCODE CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* 
         ex.SetSybaseSeverity(msg->severity);
 
         GetCTLExceptionStorage().Accept(ex);
+        if (msg->severity == CS_SV_INFORM)
+            GetCTLExceptionStorage().SetRetriable(eRetriable_Yes);
+        else
+            // Otherwise the final severity is detected as error or critical
+            GetCTLExceptionStorage().SetRetriable(eRetriable_No);
     } catch (...) {
         return CS_FAIL;
     }
@@ -1117,18 +1123,22 @@ CS_RETCODE CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* 
 
 
 static
-void PassException(CDB_Exception& ex,
-                   const string&  server_name,
-                   const string&  user_name,
-                   CS_INT         severity,
-                   const CDBParams* params
+void PassException(CDB_Exception&   ex,
+                   const string&    server_name,
+                   const string&    user_name,
+                   CS_INT           severity,
+                   const CDBParams* params,
+                   ERetriable       retriable
                    )
 {
     ex.SetServerName(server_name);
     ex.SetUserName(user_name);
     ex.SetSybaseSeverity(severity);
     ex.SetParams(params);
-    GetCTLExceptionStorage().Accept(ex);
+
+    impl::CDBExceptionStorage& ex_storage = GetCTLExceptionStorage();
+    ex_storage.Accept(ex);
+    ex_storage.SetRetriable(retriable);
 }
 
 
@@ -1166,7 +1176,8 @@ HandleConnStatus(CS_CONNECTION* conn,
                     "Got timeout on ct_cancel(CS_CANCEL_ALL)",
                     msg->msgnumber);
 
-                PassException(ex, server_name, user_name, msg->severity, NULL);
+                PassException(ex, server_name, user_name, msg->severity, NULL,
+                              eRetriable_No);
             }
 #endif
             default:
@@ -1284,7 +1295,8 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                 message,
                 msg->msgnumber);
 
-            PassException(ex, server_name, user_name, msg->severity, params);
+            PassException(ex, server_name, user_name, msg->severity, params,
+                          eRetriable_Yes);
             if (ctl_conn != NULL && ctl_conn->IsOpen()) {
 #if NCBI_FTDS_VERSION >= 95
                 if (ctl_conn->GetCancelTimedOut()) {
@@ -1311,7 +1323,8 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                 message,
                 msg->msgnumber);
 
-            PassException(ex, server_name, user_name, msg->severity, params);
+            PassException(ex, server_name, user_name, msg->severity, params,
+                          eRetriable_No);
             return CS_SUCCEED;
         }
 #endif
@@ -1325,7 +1338,8 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                                eDiag_Info,
                                msg->msgnumber);
 
-            PassException(ex, server_name, user_name, msg->severity, params);
+            PassException(ex, server_name, user_name, msg->severity, params,
+                          eRetriable_Yes);
 
             break;
         }
@@ -1336,7 +1350,8 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                 message,
                 msg->msgnumber);
 
-            PassException(ex, server_name, user_name, msg->severity, params);
+            PassException(ex, server_name, user_name, msg->severity, params,
+                          eRetriable_Yes);
 
             return HandleConnStatus(con, msg, server_name, user_name);
 
@@ -1345,13 +1360,17 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
         case CS_SV_CONFIG_FAIL:
         case CS_SV_API_FAIL:
         case CS_SV_INTERNAL_FAIL: {
+            ERetriable  retriable = eRetriable_No;
+            if (msg->severity == CS_SV_INTERNAL_FAIL)
+                retriable = eRetriable_Unknown;
             CDB_ClientEx ex( DIAG_COMPILE_INFO,
                               0,
                               message,
                               eDiag_Error,
                               msg->msgnumber);
 
-            PassException(ex, server_name, user_name, msg->severity, params);
+            PassException(ex, server_name, user_name, msg->severity, params,
+                          retriable);
 
             break;
         }
@@ -1363,7 +1382,8 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                 eDiag_Critical,
                 msg->msgnumber);
 
-            PassException(ex, server_name, user_name, msg->severity, params);
+            PassException(ex, server_name, user_name, msg->severity, params,
+                          eRetriable_No);
 
             break;
         }
@@ -1487,7 +1507,8 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                               0,
                               message);
 
-            PassException(ex, server_name, user_name, msg->severity, params);
+            PassException(ex, server_name, user_name, msg->severity, params,
+                          eRetriable_Yes);
         }
         else if (msg->msgnumber == 1771  ||  msg->msgnumber == 1708) {
             // "Maximum row size exceeds allowable width. It is being rounded down to 32767 bytes."
@@ -1496,6 +1517,18 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
             // "The table has been created but its maximum row size exceeds the maximum number of bytes
             //  per row (8060). INSERT or UPDATE of a row in this table will fail if the resulting row
             //  length exceeds 8060 bytes."
+            // Note: MS SQL server 2014 does not report error code 1771 as
+            //       described in the comment; it reports: "Cannot create
+            //       foreign key '%.*ls' because it references object '%.*ls'
+            //       whose clustered index '%.*ls' is disabled."
+            //       However it was decided to keep the code as it is because:
+            //       - it is not clear what (and if) MSSQL2014 reports anything
+            //         instead
+            //       - we still have Sybase servers which may report it
+            //       - there were no complains that MSSQL2014 behaves
+            //         improperly
+            //       - at this point there is no way to tell what server we are
+            //         talking to
             ERR_POST_X(11, Warning << message);
         }
         else {
@@ -1514,7 +1547,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                               (int) msg->line);
 
                 PassException(ex, server_name, user_name, msg->severity,
-                              params);
+                              params, eRetriable_No);
             }
             else if (msg->sqlstatelen > 1  &&
                      (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
@@ -1527,7 +1560,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                               (int) msg->line);
 
                 PassException(ex, server_name, user_name, msg->severity,
-                              params);
+                              params, eRetriable_No);
             }
             else {
                 CDB_DSEx ex(DIAG_COMPILE_INFO,
@@ -1537,7 +1570,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                             (int) msg->msgnumber);
 
                 PassException(ex, server_name, user_name, msg->severity,
-                              params);
+                              params, eRetriable_No);
             }
         }
     } catch (...) {

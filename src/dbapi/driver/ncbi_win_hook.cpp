@@ -1869,16 +1869,16 @@ namespace NWinHook
             if (!registry.GetBool("NCBI_WIN_HOOK", "ENABLED", true)) {
                 enabled_from_registry = false;
                 NCBI_THROW(CWinHookException,
-                        eDisabled,
-                        "Windows API hooking is disabled from registry.");
+                           eDisabled | Retriable(eRetriable_No),
+                           "Windows API hooking is disabled from registry.");
             }
             else {
                 enabled_from_registry = true;
             }
         } else if (!enabled_from_registry) {
             NCBI_THROW(CWinHookException,
-                    eDisabled,
-                    "Windows API hooking is disabled from registry.");
+                       eDisabled  | Retriable(eRetriable_No),
+                       "Windows API hooking is disabled from registry.");
         }
 
         x_HookSystemFuncs();
@@ -2285,13 +2285,13 @@ namespace NWinHook
                                     ));
             if (!m_ImageDirectoryEntryToData ) {
                 NCBI_THROW(CWinHookException,
-                           eDbghelp,
+                           eDbghelp | Retriable(eRetriable_No),
                            "Dbghelp.dll does not have "
                            "ImageDirectoryEntryToData symbol");
             }
         } else {
             NCBI_THROW(CWinHookException,
-                       eDbghelp,
+                       eDbghelp | Retriable(eRetriable_No),
                        "Dbghelp.dll not found");
         }
     }

@@ -205,7 +205,7 @@ public:
                 m_BlobSize = v.GetInt4();
             } else {
                 NCBI_THROW(CDBAPI_ICacheException,
-                           eCannotReadBLOB,
+                           eCannotReadBLOB | Retriable(eRetriable_No),
                            "BLOB data is NULL for query " + sel_blob_sql);
             }
             if (m_BlobSize) {
@@ -221,8 +221,8 @@ public:
                         m_TmpFile->write(buf, br);
                         if (m_TmpFile->bad()) {
                             NCBI_THROW(CDBAPI_ICacheException,
-                                    eTempFileIOError,
-                                    "Temp file write error");
+                                eTempFileIOError | Retriable(eRetriable_No),
+                                "Temp file write error");
                         }
                         i += br;
                         _ASSERT(br);
@@ -355,8 +355,9 @@ public:
         if (m_Flushed) {
             if (bytes_written)
                 *bytes_written = 0;
-            NCBI_THROW(CDBAPI_ICacheException, eStreamClosed,
-                "Cannot call IWriter::Write after Flush");
+            NCBI_THROW(CDBAPI_ICacheException,
+                       eStreamClosed | Retriable(eRetriable_No),
+                       "Cannot call IWriter::Write after Flush");
         }
 
         size_t new_buf_length = m_BytesInBuffer + count;
@@ -446,8 +447,9 @@ private:
     ERW_Result x_Flush(void)
     {
         if (m_Flushed) {
-            NCBI_THROW(CDBAPI_ICacheException, eStreamClosed,
-                "Cannot call IWriter::Write after Flush");
+            NCBI_THROW(CDBAPI_ICacheException,
+                       eStreamClosed | Retriable(eRetriable_No),
+                       "Cannot call IWriter::Write after Flush");
         }
         if (!m_GoodStateFlag)
             return eRW_Error;
@@ -520,7 +522,8 @@ private:
             } // while
         }
 
-        NCBI_THROW(CDBAPI_ICacheException, eCannotCreateBLOB,
+        NCBI_THROW(CDBAPI_ICacheException,
+                   eCannotCreateBLOB | Retriable(eRetriable_No),
                    "BLOB INSERT failed.  Failed query: " + ins_blob_sql);
         return eRW_Success;
     }
@@ -601,8 +604,9 @@ void CDBAPI_Cache::Open(IConnection* conn,
 
         if (!tmp_dir.Exists()) {
             if (!tmp_dir.Create()) {
-                NCBI_THROW(CDBAPI_ICacheException, eInvalidDirectory,
-                        "Cannot create directory:" + m_TempDir);
+                NCBI_THROW(CDBAPI_ICacheException,
+                           eInvalidDirectory | Retriable(eRetriable_No),
+                           "Cannot create directory:" + m_TempDir);
             }
         }
     }
@@ -621,8 +625,9 @@ void CDBAPI_Cache::Open(const string& driver,
     IDataSource* ds = db_drv_man.CreateDs(driver);
     unique_ptr<IConnection> conn(ds->CreateConnection());  // TODO: Add ownership flag
     if (conn.get() == 0) {
-        NCBI_THROW(CDBAPI_ICacheException, eConnectionError,
-                "Cannot create connection");
+        NCBI_THROW(CDBAPI_ICacheException,
+                   eConnectionError | Retriable(eRetriable_No),
+                   "Cannot create connection");
     }
     conn->Connect(login, password, server, database);
 
@@ -869,9 +874,10 @@ IReader* CDBAPI_Cache::GetReadStream(const string&  /* key */,
                                      int*           /* version */,
                                      ICache::EBlobVersionValidity* /* validity */)
 {
-    NCBI_THROW(CDBAPI_ICacheException, eNotImplemented,
-        "CDBAPI_Cache::GetReadStream(key, subkey, &version, &validity) "
-        "is not implemented");
+    NCBI_THROW(CDBAPI_ICacheException,
+               eNotImplemented | Retriable(eRetriable_No),
+               "CDBAPI_Cache::GetReadStream(key, subkey, &version, &validity) "
+               "is not implemented");
 }
 
 
@@ -879,9 +885,10 @@ void CDBAPI_Cache::SetBlobVersionAsCurrent(const string&  /* key */,
                                          const string&  /* subkey */,
                                          int            /* version */)
 {
-    NCBI_THROW(CDBAPI_ICacheException, eNotImplemented,
-        "CDBAPI_Cache::SetBlobVersionAsCurrent(key, subkey, version) "
-        "is not implemented");
+    NCBI_THROW(CDBAPI_ICacheException,
+               eNotImplemented | Retriable(eRetriable_No),
+               "CDBAPI_Cache::SetBlobVersionAsCurrent(key, subkey, version) "
+               "is not implemented");
 }
 
 

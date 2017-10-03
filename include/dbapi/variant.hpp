@@ -281,7 +281,7 @@ inline I_BlobDescriptor&
 CVariant::GetBlobDescriptor(void) const
 {
     if (m_descr.get() == NULL) {
-        NCBI_THROW(CVariantException, eVariant,
+        NCBI_THROW(CVariantException, eVariant | Retriable(eRetriable_No),
                    "No blob descriptor available.");
     }
     return *m_descr;
@@ -297,7 +297,7 @@ inline
 void CVariant::x_Verify_AssignType(EDB_Type db_type, const char* cxx_type) const
 {
     if (db_type == eDB_UnsupportedType  ||  db_type != GetType()) {
-        NCBI_THROW(CVariantException, eVariant,
+        NCBI_THROW(CVariantException, eVariant  | Retriable(eRetriable_No),
              "Cannot assign type '" + string(cxx_type) + "' to type '"
              + string(CDB_Object::GetTypeName(GetType())) + "'");
     }
@@ -306,7 +306,7 @@ void CVariant::x_Verify_AssignType(EDB_Type db_type, const char* cxx_type) const
 inline
 void CVariant::x_Inapplicable_Method(const char* method) const
 {
-    NCBI_THROW(CVariantException, eVariant,
+    NCBI_THROW(CVariantException, eVariant | Retriable(eRetriable_No),
         "CVariant::" + string(method) + " is not applicable to type '"
         + string(CDB_Object::GetTypeName(GetType())) + "'");
 }

@@ -1127,7 +1127,7 @@ protected:
     {
         return GetConnection().IsDead();
     }
-    
+
     const CDBParams* GetLastParams(void) const 
     {
         return m_Connect ? m_Connect->GetLastParams() : NULL;

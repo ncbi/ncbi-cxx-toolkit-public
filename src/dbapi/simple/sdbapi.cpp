@@ -63,7 +63,7 @@ BEGIN_NCBI_SCOPE
 #define SDBAPI_THROW(code, msg) \
     NCBI_THROW(CSDB_Exception, code, \
                CDB_Exception::SMessageInContext(msg, x_GetContext()))
-    
+
 
 
 const char*
@@ -239,7 +239,7 @@ s_ConvertHints(CBulkInsert::EHints hints)
 static void
 s_ConvertionNotSupported(const char* one_type, EDB_Type other_type)
 {
-    NCBI_THROW(CSDB_Exception, eUnsupported,
+    NCBI_THROW(CSDB_Exception, eUnsupported | Retriable(eRetriable_No),
                "Conversion between " + string(one_type) + " and "
                + CDB_Object::GetTypeName(other_type, false)
                + " is not supported");
@@ -659,7 +659,7 @@ s_ConvertValue(const CVariant& from_var, Int4& to_val)
     if (temp_val < numeric_limits<Int4>::min()
         ||  temp_val > numeric_limits<Int4>::max())
     {
-        NCBI_THROW(CSDB_Exception, eOutOfBounds,
+        NCBI_THROW(CSDB_Exception, eOutOfBounds | Retriable(eRetriable_No),
                    "Value for Int4 is out of bounds: "
                    + NStr::NumericToString(temp_val));
     }
@@ -696,7 +696,7 @@ s_ConvertValue(const CVariant& from_var, short& to_val)
     if (temp_val < numeric_limits<short>::min()
         ||  temp_val > numeric_limits<short>::max())
     {
-        NCBI_THROW(CSDB_Exception, eOutOfBounds,
+        NCBI_THROW(CSDB_Exception, eOutOfBounds | Retriable(eRetriable_No),
                    "Value for short is out of bounds: "
                    + NStr::NumericToString(temp_val));
     }
@@ -733,7 +733,7 @@ s_ConvertValue(const CVariant& from_var, unsigned char& to_val)
     if (temp_val < numeric_limits<unsigned char>::min()
         ||  temp_val > numeric_limits<unsigned char>::max())
     {
-        NCBI_THROW(CSDB_Exception, eOutOfBounds,
+        NCBI_THROW(CSDB_Exception, eOutOfBounds | Retriable(eRetriable_No),
                    "Value for unsigned char is out of bounds: "
                    + NStr::NumericToString(temp_val));
     }
@@ -767,7 +767,7 @@ s_ConvertValue(const CVariant& from_var, bool& to_val)
     }
     if (temp_val != 0  &&  temp_val != 1)
     {
-        NCBI_THROW(CSDB_Exception, eOutOfBounds,
+        NCBI_THROW(CSDB_Exception, eOutOfBounds | Retriable(eRetriable_No),
                    "Value for bool is out of bounds: "
                    + NStr::NumericToString(temp_val));
     }
@@ -929,7 +929,7 @@ string CSDB_Decryptor::x_GetKey(const CTempString& key_id)
     }
 #endif
     if (key.empty()) {
-        NCBI_THROW(CSDB_Exception, eWrongParams,
+        NCBI_THROW(CSDB_Exception, eWrongParams | Retriable(eRetriable_No),
                    "Unknown password decryption key ID " + string(key_id));
     }
     return key;
@@ -969,7 +969,7 @@ CSDB_ConnectionParam::ComposeUrl(TComposeUrlFlags flags) const
              ||  m_Url.GetPath().empty()  ||  m_Url.GetPath() == "/"))
     {
         TComposeUrlFlags fl = (flags & ~fThrowIfIncomplete) | fHidePassword; 
-        NCBI_THROW(CSDB_Exception, eURLFormat,
+        NCBI_THROW(CSDB_Exception, eURLFormat | Retriable(eRetriable_No),
                    "Connection parameters miss at least one essential part"
                    " (host, user, password, or database [as \"path\"]): "
                    + ComposeUrl(fl));
@@ -1076,7 +1076,7 @@ void CSDB_ConnectionParam::x_FillParamMap(void)
     }
 
     if (conf_params.IsPasswordSet()  &&  conf_params.IsPasswordFileSet()) {
-        NCBI_THROW(CSDB_Exception, eWrongParams,
+        NCBI_THROW(CSDB_Exception, eWrongParams | Retriable(eRetriable_No),
                    '[' + m_Url.GetHost() + ".dbservice] password and"
                    " password_file parameters are mutually exclusive.");
     }
@@ -1105,7 +1105,8 @@ string CSDB_ConnectionParam::x_GetPassword() const
         } else {
             CNcbiIfstream in(pwfile.c_str(), IOS_BASE::in | IOS_BASE::binary);
             if ( !in ) {
-                NCBI_THROW(CSDB_Exception, eNotExist, // eWrongParams?
+                NCBI_THROW(CSDB_Exception,
+                           eNotExist | Retriable(eRetriable_No), // eWrongParams?
                            "Unable to open password file " + pwfile + ": " +
                            NCBI_ERRNO_STR_WRAPPER(NCBI_ERRNO_CODE_WRAPPER()));
             }
@@ -1121,7 +1122,8 @@ string CSDB_ConnectionParam::x_GetPassword() const
             password = decryptor->Decrypt(password, key_id);
             ITERATE (string, pit, password) {
                 if ( !isprint((unsigned char)*pit) ) {
-                    NCBI_THROW(CSDB_Exception, eWrongParams,
+                    NCBI_THROW(CSDB_Exception,
+                               eWrongParams | Retriable(eRetriable_No),
                                "Invalid character in supposedly decrypted"
                                " password.");
                 }
@@ -1292,7 +1294,7 @@ string CSDBAPI::GetApplicationName(void)
 void CSDBAPI::UseDriver(EDriver driver)
 {
     if (s_DriverName.get() != NULL) {
-        NCBI_THROW(CSDB_Exception, eInconsistent,
+        NCBI_THROW(CSDB_Exception, eInconsistent | Retriable(eRetriable_No),
                    "CSDBAPI::UseDriver called with SDBAPI already in use.");
     }
     switch (driver) {
@@ -1408,7 +1410,7 @@ CSDBAPI::UpdateMirror(const string& dbservice,
                       string*       error_message /* = NULL */)
 {
     if (dbservice.empty()) {
-        NCBI_THROW(CSDB_Exception, eWrongParams,
+        NCBI_THROW(CSDB_Exception, eWrongParams | Retriable(eRetriable_No),
                    "Mirrored database service name cannot be empty");
     }
 
@@ -1429,7 +1431,7 @@ CSDBAPI::UpdateMirror(const string& dbservice,
         CSDB_ConnectionParam sdb_params(dbservice);
         sdb_params.x_FillLowerParams(&conn_params);
         if (conn_params.GetParam("single_server") != "true") {
-            NCBI_THROW(CSDB_Exception, eInconsistent,
+            NCBI_THROW(CSDB_Exception, eInconsistent | Retriable(eRetriable_No),
                        "UpdateMirror cannot be used when configuration file "
                        "doesn't have exclusive_server=true (for " + dbservice
                        + ')');
@@ -1437,7 +1439,7 @@ CSDBAPI::UpdateMirror(const string& dbservice,
         CDBConnectionFactory* factory
                               = dynamic_cast<CDBConnectionFactory*>(i_factory);
         if (!factory) {
-            NCBI_THROW(CSDB_Exception, eInconsistent,
+            NCBI_THROW(CSDB_Exception, eInconsistent | Retriable(eRetriable_No),
                        "UpdateMirror cannot work with non-standard "
                        "connection factory");
         }
@@ -1590,7 +1592,8 @@ CSDBAPI::UpdateMirror(const string& dbservice,
                 need_reread_servers = true;
 
                 if (++cnt_switches == 10) {
-                    NCBI_THROW(CSDB_Exception, eInconsistent,
+                    NCBI_THROW(CSDB_Exception,
+                               eInconsistent | Retriable(eRetriable_No),
                                "Mirror database switches too frequently or "
                                "it isn't mirrored: " + service_name);
                 }
@@ -1991,7 +1994,7 @@ void CDatabase::x_ConnectAsNeeded(const char* operation)
         _TRACE(operation << ": connecting on demand.");
         Connect();
     } else if ( !IsConnected(eNoCheck) ) {
-        NCBI_THROW(CSDB_Exception, eClosed,
+        NCBI_THROW(CSDB_Exception, eClosed | Retriable(eRetriable_No),
                    string("Cannot call ") + operation
                    + " when not connected.");
     }
@@ -2035,17 +2038,18 @@ void
 CBulkInsertImpl::x_CheckCanWrite(int col)
 {
     if (!m_BI) {
-        SDBAPI_THROW(eClosed, "Cannot write into completed CBulkInsert");
+        SDBAPI_THROW(eClosed | Retriable(eRetriable_No),
+                     "Cannot write into completed CBulkInsert");
     }
     if (!m_DBImpl->IsOpen()) {
         m_BI->Cancel();
         delete m_BI;
         m_BI = NULL;
-        SDBAPI_THROW(eClosed,
+        SDBAPI_THROW(eClosed | Retriable(eRetriable_No),
                      "Cannot write into CBulkInsert when CDatabase was closed");
     }
     if (col != 0  &&  col > int(m_Cols.size())) {
-        SDBAPI_THROW(eInconsistent,
+        SDBAPI_THROW(eInconsistent | Retriable(eRetriable_No),
                      "Too many values were written to CBulkInsert: "
                      + NStr::NumericToString(col) + " > "
                      + NStr::NumericToString(m_Cols.size()));
@@ -2078,11 +2082,11 @@ CBulkInsertImpl::Bind(int col, ESDB_Type type)
 {
     x_CheckCanWrite(0);
     if (m_WriteStarted) {
-        SDBAPI_THROW(eStarted,
+        SDBAPI_THROW(eStarted | Retriable(eRetriable_No),
                      "Cannot bind columns when already started to insert");
     }
     if (col - 1 != int(m_Cols.size())) {
-        SDBAPI_THROW(eNotInOrder,
+        SDBAPI_THROW(eNotInOrder | Retriable(eRetriable_No),
                      "Cannot bind columns in CBulkInsert randomly");
     }
     m_Cols.push_back(CVariant(s_ConvertType(type)));
@@ -2097,7 +2101,7 @@ CBulkInsertImpl::EndRow(void)
 {
     x_CheckCanWrite(0);
     if (m_ColsWritten != int(m_Cols.size())) {
-        SDBAPI_THROW(eInconsistent,
+        SDBAPI_THROW(eInconsistent | Retriable(eRetriable_No),
                      "Not enough values were written to CBulkInsert: "
                      + NStr::NumericToString(m_ColsWritten) + " != "
                      + NStr::NumericToString(m_Cols.size()));
@@ -2418,7 +2422,8 @@ inline
 void CQuery::CRow::x_CheckColumnNumber(unsigned int col) const
 {
     if (col == 0  ||  col > m_Fields.size()) {
-        NCBI_THROW(CSDB_Exception, eNotExist,
+        NCBI_THROW(CSDB_Exception,
+                   eNotExist | Retriable(eRetriable_No),
                    "No such column in the result set: "
                    + NStr::NumericToString(col) + ".  " + x_GetContext());
     }
@@ -2435,7 +2440,8 @@ const CQuery::CField& CQuery::CRow::operator[](CTempString col) const
     SQueryRSMetaData::TColNumsMap::const_iterator it
         = m_MetaData->col_nums.find(col);
     if (it == m_MetaData->col_nums.end()) {
-        NCBI_THROW(CSDB_Exception, eNotExist,
+        NCBI_THROW(CSDB_Exception,
+                   eNotExist | Retriable(eRetriable_No),
                    "No such column in the result set: " + col + ".  "
                    + x_GetContext());
     } else {
@@ -2548,13 +2554,14 @@ void
 CQueryImpl::x_CheckCanWork(bool need_rs /* = false */) const
 {
     if (!m_DBImpl->IsOpen()) {
-        SDBAPI_THROW(eClosed,
+        SDBAPI_THROW(eClosed | Retriable(eRetriable_No),
                      "CQuery is not operational because CDatabase was closed");
     }
     if (need_rs  &&  !m_CurRS
         &&  !const_cast<CQueryImpl*>(this)->HasMoreResultSets())
     {
-        SDBAPI_THROW(eClosed, "CQuery is closed or never executed");
+        SDBAPI_THROW(eClosed | Retriable(eRetriable_No),
+                     "CQuery is closed or never executed");
     }
 }
 
@@ -2643,13 +2650,15 @@ CQueryImpl::GetParameter(CTempString name)
 
     TParamsMap::iterator it = m_Params.find(name);
     if (it == m_Params.end()) {
-        NCBI_THROW(CSDB_Exception, eNotExist,
+        NCBI_THROW(CSDB_Exception,
+                   eNotExist | Retriable(eRetriable_No),
                    "Parameter '" + string(name) + "' doesn't exist.  "
                    + x_GetContext());
     } else if (static_cast<const CParamQFB&>(*it->second.m_Impl->m_Basis)
                .GetParamType() == eSP_InOut
                &&  !IsFinished(CQuery::eAllResultSets) ) {
-        NCBI_THROW(CSDB_Exception, eInconsistent,
+        NCBI_THROW(CSDB_Exception,
+                   eInconsistent | Retriable(eRetriable_No),
                    "CQuery::GetParameter called with some results still"
                    " unread.  " + x_GetContext());
     }
@@ -2756,7 +2765,8 @@ inline void
 CQueryImpl::Execute(const CTimeout& timeout)
 {
     if (m_IsSP  ||  m_Sql.empty()) {
-        SDBAPI_THROW(eInconsistent, "No statement to execute.");
+        SDBAPI_THROW(eInconsistent | Retriable(eRetriable_No),
+                     "No statement to execute.");
     }
 
     x_CheckCanWork();
@@ -2853,7 +2863,7 @@ CQueryImpl::GetRowCount(void) const
 {
     x_CheckCanWork();
     if ( !IsFinished(CQuery::eAllResultSets) ) {
-        NCBI_THROW(CSDB_Exception, eInconsistent,
+        NCBI_THROW(CSDB_Exception, eInconsistent | Retriable(eRetriable_No),
                    "CQuery::GetRowCount called with some results still"
                    " unread.  " + x_GetContext());
     } else {
@@ -2866,7 +2876,7 @@ CQueryImpl::GetStatus(void) const
 {
     x_CheckCanWork();
     if ( !IsFinished(CQuery::eAllResultSets) ) {
-        NCBI_THROW(CSDB_Exception, eInconsistent,
+        NCBI_THROW(CSDB_Exception, eInconsistent | Retriable(eRetriable_No),
                    "CQuery::GetStatus called with some results still"
                    " unread.  " + x_GetContext());
     } else {
@@ -2893,13 +2903,13 @@ void CQueryImpl::x_CheckRowCount(void)
 
     if (n > m_MaxRowCount) {
         m_ReportedWrongRowCount = true;
-        NCBI_THROW(CSDB_Exception, eWrongParams,
+        NCBI_THROW(CSDB_Exception, eWrongParams | Retriable(eRetriable_No),
                    "Too many rows returned (limited to "
                    + NStr::NumericToString(m_MaxRowCount) + ").  "
                    + x_GetContext());
     } else if (m_RSFinished  &&  n < m_MinRowCount) {
         m_ReportedWrongRowCount = true;
-        NCBI_THROW(CSDB_Exception, eWrongParams,
+        NCBI_THROW(CSDB_Exception, eWrongParams | Retriable(eRetriable_No),
                    "Not enough rows returned ("
                    + NStr::NumericToString(m_CurRowNo) + '/'
                    + NStr::NumericToString(m_MinRowCount) + ").  "
@@ -3033,7 +3043,7 @@ CQueryImpl::BeginNewRS(void)
             // OK to have no results whatsoever in SingleSet mode.
             return;
         }
-        NCBI_THROW(CSDB_Exception, eClosed,
+        NCBI_THROW(CSDB_Exception, eClosed | Retriable(eRetriable_No),
                    "All result sets in CQuery were already iterated through.  "
                    + x_GetContext());
     }
@@ -3123,12 +3133,12 @@ inline void
 CQueryImpl::RequireRowCount(unsigned int min_rows, unsigned int max_rows)
 {
     if ( !m_Executed ) {
-        SDBAPI_THROW(eInconsistent,
+        SDBAPI_THROW(eInconsistent | Retriable(eRetriable_No),
                      "RequireRowCount must follow Execute or ExecuteSP,"
                      " which reset any requirements.");
     }
     if (min_rows > max_rows) {
-        SDBAPI_THROW(eWrongParams,
+        SDBAPI_THROW(eWrongParams | Retriable(eRetriable_No),
                      "Inconsistent row-count constraints: "
                      + NStr::NumericToString(min_rows) + " > "
                      + NStr::NumericToString(max_rows));
@@ -3178,7 +3188,7 @@ CQueryImpl::VerifyDone(CQuery::EHowMuch how_much)
     }
 
     if (missed_results) {
-        NCBI_THROW(CSDB_Exception, eInconsistent,
+        NCBI_THROW(CSDB_Exception, eInconsistent | Retriable(eRetriable_No),
                    "Result set had unread rows.  " + x_GetContext());
     }
 }
@@ -3398,7 +3408,8 @@ CQuery::CRowIterator&
 CQuery::CRowIterator::operator++ (void)
 {
     if (m_IsEnd  ||  m_Query->IsFinished()) {
-        SDBAPI_THROW(eInconsistent, "Cannot increase end() iterator");
+        SDBAPI_THROW(eInconsistent | Retriable(eRetriable_No),
+                     "Cannot increase end() iterator");
     }
     m_Query->Next();
     return *this;
@@ -3534,7 +3545,7 @@ CQuery::CField::AsDateTime(void) const
 const vector<unsigned char>&
 CQueryFieldImpl::AsVector(void) const
 {
-    SDBAPI_THROW(eUnsupported,
+    SDBAPI_THROW(eUnsupported | Retriable(eRetriable_No),
                  string("Method is unsupported for this type of data: ")
                  + CDB_Object::GetTypeName(GetValue()->GetType(), false));
 }
@@ -3563,7 +3574,7 @@ CQuery::CField::AsVector(void) const
 CNcbiIstream&
 CQueryFieldImpl::AsIStream(void) const
 {
-    SDBAPI_THROW(eUnsupported,
+    SDBAPI_THROW(eUnsupported | Retriable(eRetriable_No),
                  string("Method is unsupported for this type of data: ")
                  + CDB_Object::GetTypeName(GetValue()->GetType(), false));
 }
@@ -3592,7 +3603,8 @@ CQuery::CField::IsNull(void) const
 
 CNcbiOstream* IQueryFieldBasis::GetOStream(size_t, TBlobOStreamFlags) const
 {
-    SDBAPI_THROW(eUnsupported, "Method requires a live field");
+    SDBAPI_THROW(eUnsupported | Retriable(eRetriable_No),
+                 "Method requires a live field");
 }
 
 CNcbiOstream* CRemoteQFB::GetOStream(size_t blob_size,
@@ -3614,7 +3626,7 @@ CNcbiOstream* CRemoteQFB::GetOStream(size_t blob_size,
 
 CNcbiOstream& CQueryFieldImpl::GetOStream(size_t, TBlobOStreamFlags) const
 {
-    SDBAPI_THROW(eUnsupported,
+    SDBAPI_THROW(eUnsupported | Retriable(eRetriable_No),
                  string("Method is unsupported for this type of data: ")
                  + CDB_Object::GetTypeName(GetValue()->GetType(), false));
 }
@@ -3641,7 +3653,8 @@ CQuery::CField::GetOStream(size_t blob_size, EAllowLog log_it) const
 
 CBlobBookmark IQueryFieldBasis::GetBookmark(void) const
 {
-    SDBAPI_THROW(eUnsupported, "Method requires a live field");
+    SDBAPI_THROW(eUnsupported | Retriable(eRetriable_No),
+                 "Method requires a live field");
 }
 
 CBlobBookmark CRemoteQFB::GetBookmark(void) const
@@ -3655,7 +3668,7 @@ CBlobBookmark CRemoteQFB::GetBookmark(void) const
 
 CBlobBookmark CQueryFieldImpl::GetBookmark(void) const
 {
-    SDBAPI_THROW(eUnsupported,
+    SDBAPI_THROW(eUnsupported | Retriable(eRetriable_No),
                  string("Method is unsupported for this type of data: ")
                  + CDB_Object::GetTypeName(GetValue()->GetType(), false));
 }

@@ -53,8 +53,12 @@ public:
 };
 
 #define NCBI_DBAPI_THROW( message ) \
-    throw CDbapiException( DIAG_COMPILE_INFO, 0, (message) )
-    
+    do { \
+        CDbapiException     ex( DIAG_COMPILE_INFO, 0, (message) ); \
+        ex.SetRetriable(eRetriable_No); \
+        throw ex; \
+    } while (0)
+
 #define CHECK_NCBI_DBAPI( failed, message ) \
     if ( ( failed ) ) { NCBI_DBAPI_THROW( message ); }
 

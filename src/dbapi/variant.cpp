@@ -196,7 +196,9 @@ CVariant::CVariant(EDB_Type type, size_t size)
     case eDB_LongChar:
         if( size == 0 )
         {
-            NCBI_THROW(CVariantException, eVariant, "Illegal argument, the size of LONGCHAR should not be 0");
+            NCBI_THROW(CVariantException,
+                       eVariant | Retriable(eRetriable_No),
+                       "Illegal argument, the size of LONGCHAR should not be 0");
         }
         m_data = new CDB_LongChar(size);
         return;
@@ -206,14 +208,16 @@ CVariant::CVariant(EDB_Type type, size_t size)
     case eDB_Char:
         if( size == 0 )
         {
-            NCBI_THROW(CVariantException, eVariant, "Illegal argument, the size of CHAR should not be 0");
+            NCBI_THROW(CVariantException, eVariant | Retriable(eRetriable_No),
+                       "Illegal argument, the size of CHAR should not be 0");
         }
         m_data = new CDB_Char(size);
         return;
     case eDB_LongBinary:
         if( size == 0 )
         {
-            NCBI_THROW(CVariantException, eVariant, "Illegal argument, the size of LONGBINARY should not be 0");
+            NCBI_THROW(CVariantException, eVariant | Retriable(eRetriable_No),
+                       "Illegal argument, the size of LONGBINARY should not be 0");
         }
         m_data = new CDB_LongBinary(size);
         return;
@@ -223,7 +227,8 @@ CVariant::CVariant(EDB_Type type, size_t size)
     case eDB_Binary:
         if( size == 0 )
         {
-            NCBI_THROW(CVariantException, eVariant, "Illegal argument, the size of BINARY should not be 0");
+            NCBI_THROW(CVariantException, eVariant | Retriable(eRetriable_No),
+                       "Illegal argument, the size of BINARY should not be 0");
         }
         m_data = new CDB_Binary(size);
         return;
@@ -260,7 +265,7 @@ CVariant::CVariant(EDB_Type type, size_t size)
     case eDB_UnsupportedType:
         break;
     }
-    NCBI_THROW(CVariantException, eVariant,
+    NCBI_THROW(CVariantException, eVariant | Retriable(eRetriable_No),
                string("Unsupported type: ")
                + CDB_Object::GetTypeName(type, false));
 }
@@ -325,7 +330,7 @@ CVariant::CVariant(const CTime& v, EDateTimeFormat fmt)
         m_data = new CDB_DateTime(v);
         break;
     default:
-        NCBI_THROW(CVariantException, eVariant,
+        NCBI_THROW(CVariantException, eVariant | Retriable(eRetriable_No),
                    "CVariant::ctor(): unsupported datetime type "
                    + NStr::IntToString(fmt));
     }
@@ -355,7 +360,8 @@ CVariant::~CVariant(void)
 
 CDB_Object* CVariant::GetNonNullData() const {
     if( m_data == 0 )
-        NCBI_THROW(CVariantException, eVariant, "CVariant::GetNonNullData(): null data");
+        NCBI_THROW(CVariantException, eVariant | Retriable(eRetriable_No),
+                   "CVariant::GetNonNullData(): null data");
 
     return m_data;
 }
@@ -847,7 +853,7 @@ bool operator<(const CVariant& v1, const CVariant& v2)
     }
     else {
         if( v1.GetType() != v2.GetType() ) {
-            NCBI_THROW(CVariantException, eVariant,
+            NCBI_THROW(CVariantException, eVariant | Retriable(eRetriable_No),
                        string("Cannot compare different types ")
                        + CDB_Object::GetTypeName(v1.GetType(), false) + " and "
                        + CDB_Object::GetTypeName(v2.GetType(), false));
@@ -882,7 +888,7 @@ bool operator<(const CVariant& v1, const CVariant& v2)
             less = v1.GetCTime() < v2.GetCTime();
             break;
         default:
-            NCBI_THROW(CVariantException, eVariant,
+            NCBI_THROW(CVariantException, eVariant | Retriable(eRetriable_No),
                        string("Type not supported: ")
                        + CDB_Object::GetTypeName(v1.GetType(), false));
         }
@@ -899,7 +905,7 @@ bool operator==(const CVariant& v1, const CVariant& v2)
     }
     else {
         if( v1.GetType() != v2.GetType() ) {
-            NCBI_THROW(CVariantException, eVariant,
+            NCBI_THROW(CVariantException, eVariant | Retriable(eRetriable_No),
                        string("Cannot compare different types ")
                        + CDB_Object::GetTypeName(v1.GetType(), false) + " and "
                        + CDB_Object::GetTypeName(v2.GetType(), false));
@@ -939,7 +945,7 @@ bool operator==(const CVariant& v1, const CVariant& v2)
             less = v1.GetCTime() == v2.GetCTime();
             break;
         default:
-            NCBI_THROW(CVariantException, eVariant,
+            NCBI_THROW(CVariantException, eVariant | Retriable(eRetriable_No),
                        string("Type not supported: ")
                        + CDB_Object::GetTypeName(v1.GetType(), false));
         }

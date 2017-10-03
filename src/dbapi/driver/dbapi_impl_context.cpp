@@ -1114,6 +1114,7 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
             err += "' as user '" + act_params.GetUserName() + "'";
 
             CDB_ClientEx ex(DIAG_COMPILE_INFO, NULL, err, eDiag_Error, 100011);
+            ex.SetRetriable(eRetriable_No);
             CDB_UserHandler::TExceptions* expts = factory->GetExceptions();
             if (expts) {
                 NON_CONST_REVERSE_ITERATE(CDB_UserHandler::TExceptions, it, *expts) {

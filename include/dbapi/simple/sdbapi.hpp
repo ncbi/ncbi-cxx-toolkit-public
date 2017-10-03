@@ -121,6 +121,20 @@ public:
         , m_Context(message.context)
         NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CSDB_Exception, CException);
 
+public:
+    CSDB_Exception(const CDiagCompileInfo& info,
+                   const CException* prev_exception,
+                   const CExceptionArgs<EErrCode>& args,
+                   const CDB_Exception::SMessageInContext& message)
+        : CException(info, prev_exception, message.message,
+                     args.GetSeverity(), 0)
+        , m_Context(message.context)
+    {
+        x_Init(info, message.message, prev_exception, args.GetSeverity());
+        x_InitArgs(args);
+        x_InitErrCode((CException::EErrCode) args.GetErrCode());
+    }
+
 protected:
     CSDB_Exception(const CDiagCompileInfo& info,
                    const CException* prev_exception,
@@ -574,7 +588,7 @@ public:
     void ClearParameter(CTempString name);
     /// Remove all parameters from parameter list.
     void ClearParameters(void);
-     
+
     /// Set current sql statement.
     /// Method does not clear parameter list and doesn't purge result sets
     /// left from previous query execution.
@@ -1228,7 +1242,7 @@ public:
     /// use of SDBAPI; calling it later is an error, and will result
     /// in throwing an exception.
     static void UseDriver(EDriver driver);
-    
+
     /// @sa UpdateMirror
     enum EMirrorStatus {
         eMirror_Steady,      ///< Mirror is working on the same server as before
@@ -1451,7 +1465,7 @@ CSDB_ConnectionParam::Get(EParam param, EWithOverrides with_overrides) const
         bool   found  = false;
         string pwfile = m_Url.GetArgs().GetValue("password_file", &found);
         if (found  &&  !pwfile.empty()  &&  !m_Url.GetPassword().empty()) {
-            NCBI_THROW(CSDB_Exception, eURLFormat,
+            NCBI_THROW(CSDB_Exception, eURLFormat | Retriable(eRetriable_No),
                        "Password and password_file URL parameters"
                        " are mutually exclusive.");
             return kEmptyStr;

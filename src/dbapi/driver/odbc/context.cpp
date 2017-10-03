@@ -226,6 +226,7 @@ void CODBC_Reporter::ReportErrors(void) const
                                     0,
                                     err_msg,
                                     NativeError);
+                    to.SetRetriable(eRetriable_Yes);
 
                     x_PostMsg(to);
                 }
@@ -234,6 +235,7 @@ void CODBC_Reporter::ReportErrors(void) const
                     CDB_DeadlockEx dl(DIAG_COMPILE_INFO,
                                     0,
                                     err_msg);
+                    dl.SetRetriable(eRetriable_Yes);
                     x_PostMsg(dl);
                 }
                 else if (NativeError == 1708  ||  NativeError == 1771) {
@@ -248,6 +250,7 @@ void CODBC_Reporter::ReportErrors(void) const
                                 NativeError,
                                 CODBCString(SqlState).AsLatin1(),
                                 0);
+                    se.SetRetriable(eRetriable_No);
                     x_PostMsg(se);
                 }
                 continue;
@@ -264,6 +267,7 @@ void CODBC_Reporter::ReportErrors(void) const
                                 err_msg,
                                 eDiag_Warning,
                                 777);
+                    dse.SetRetriable(eRetriable_No);
                     x_PostMsg(dse);
                 }
 
@@ -279,6 +283,7 @@ void CODBC_Reporter::ReportErrors(void) const
                                     err_msg,
                                     eDiag_Warning,
                                     420016);
+                    ce.SetRetriable(eRetriable_No);
                     x_PostMsg(ce);
                 }
 

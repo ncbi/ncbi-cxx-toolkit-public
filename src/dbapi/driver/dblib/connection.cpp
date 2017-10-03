@@ -628,6 +628,7 @@ RETCODE CDBL_Connection::CheckDead(RETCODE rc)
                             220000);
 
             GetDBLExceptionStorage().Accept(ex);
+            GetDBLExceptionStorage().SetRetriable(eRetriable_No);
         } else {
             CDB_ClientEx ex(DIAG_COMPILE_INFO,
                             0,
@@ -636,6 +637,7 @@ RETCODE CDBL_Connection::CheckDead(RETCODE rc)
                             220001);
 
             GetDBLExceptionStorage().Accept(ex);
+            GetDBLExceptionStorage().SetRetriable(eRetriable_No);
         }
     }
 
