@@ -1692,32 +1692,40 @@ static struct STimePrinter {
 
 struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
 {
+    static const int kStat_Match = CBamDb::SPileupValues::kStat_Match;
+    static const int kStat_Gap = CBamDb::SPileupValues::kStat_Gap;
+    static const int kNumStat_ACGT = CBamDb::SPileupValues::kNumStat_ACGT;
     static const int kNumStat = CBamDb::SPileupValues::kNumStat;
     typedef CBamDb::SPileupValues::TCount TCount;
     
     CRef<CSeq_id> ref_id;
     CRange<TSeqPos> ref_range;
-    
-    CRef<CSeq_graph> graphs[kNumStat];
-    CByte_graph::TValues* byte_values[kNumStat];
-    CInt_graph::TValues* int_values[kNumStat];
-    TCount max_value[kNumStat];
+
+    struct SGraph {
+        SGraph()
+            : bytes(0),
+              ints(0),
+              max_value(0)
+            {
+            }
+        
+        CRef<CSeq_graph> graph;
+        CByte_graph::TValues* bytes;
+        CInt_graph::TValues* ints;
+        TCount max_value;
+    };
+    SGraph graphs[kNumStat];
     
     SPileupGraphCreator(const CSeq_id_Handle& ref_id,
                         CRange<TSeqPos> ref_range)
         : ref_id(SerialClone(*ref_id.GetSeqId())),
           ref_range(ref_range)
         {
-            for ( int k = 0; k < kNumStat; ++k ) {
-                byte_values[k] = 0;
-                int_values[k] = 0;
-                max_value[k] = 0;
-            }
         }
 
-    void x_CreateGraph(int k)
+    void x_CreateGraph(SGraph& g)
         {
-            _ASSERT(!graphs[k]);
+            _ASSERT(!g.graph);
             CRef<CSeq_graph> graph(new CSeq_graph);
             static const char* const titles[kNumStat] = {
                 "Number of A bases",
@@ -1727,53 +1735,75 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
                 "Number of inserts",
                 "Number of matches"
             };
-            graph->SetTitle(titles[k]);
+            graph->SetTitle(titles[&g-graphs]);
             CSeq_interval& loc = graph->SetLoc().SetInt();
             loc.SetId(*ref_id);
             loc.SetFrom(ref_range.GetFrom());
             loc.SetTo(ref_range.GetTo());
             TSeqPos length = ref_range.GetLength();
             graph->SetNumval(length);
-            graphs[k] = graph;
+            g.graph = graph;
         }
-    void x_FinalizeGraph(int k)
+    void x_FinalizeGraph(SGraph& g)
         {
-            if ( !max_value[k] ) {
-                if ( graphs[k] ) {
-                    _ASSERT(byte_values[k]);
-                    _ASSERT(graphs[k]->GetGraph().IsByte());
-                    CByte_graph& data = graphs[k]->SetGraph().SetByte();
-                    data.SetMin(0);
-                    data.SetMax(0);
-                    data.SetAxis(0);
-                }
+            if ( !g.graph ) {
+                return;
             }
-            else if ( max_value[k] < 256 ) {
-                _ASSERT(byte_values[k]);
-                _ASSERT(graphs[k]->GetGraph().IsByte());
-                _ASSERT(graphs[k]->GetGraph().GetByte().GetValues().size() == ref_range.GetLength());
-                CByte_graph& data = graphs[k]->SetGraph().SetByte();
+            if ( g.max_value < 256 ) {
+                _ASSERT(g.bytes);
+                _ASSERT(g.graph->GetGraph().IsByte());
+                _ASSERT(g.graph->GetGraph().GetByte().GetValues().size() == ref_range.GetLength());
+                CByte_graph& data = g.graph->SetGraph().SetByte();
                 data.SetMin(0);
-                data.SetMax(max_value[k]);
+                data.SetMax(g.max_value);
                 data.SetAxis(0);
             }
             else {
-                _ASSERT(int_values[k]);
-                _ASSERT(graphs[k]->GetGraph().IsInt());
-                _ASSERT(graphs[k]->GetGraph().GetInt().GetValues().size() == ref_range.GetLength());
-                CInt_graph& data = graphs[k]->SetGraph().SetInt();
+                _ASSERT(g.ints);
+                _ASSERT(g.graph->GetGraph().IsInt());
+                _ASSERT(g.graph->GetGraph().GetInt().GetValues().size() == ref_range.GetLength());
+                CInt_graph& data = g.graph->SetGraph().SetInt();
                 data.SetMin(0);
-                data.SetMax(max_value[k]);
+                data.SetMax(g.max_value);
                 data.SetAxis(0);
             }
         }
 
+    void x_AdjustACGT(TSeqPos ref_offset)
+        {
+            if ( GetSkipEmptyPileupGraphsParam() ) {
+                // empty graphs can be skipped -> no adjustment
+                return;
+            }
+            bool have_acgt = false;
+            for ( int k = 0; k < kNumStat_ACGT; ++k ) {
+                if ( graphs[k].graph ) {
+                    have_acgt = true;
+                    break;
+                }
+            }
+            if ( have_acgt ) {
+                for ( int k = 0; k < kNumStat_ACGT; ++k ) {
+                    SGraph& g = graphs[k];
+                    if ( g.graph ) {
+                        // graph already created
+                        continue;
+                    }
+                    x_CreateGraph(g);
+                    g.bytes = &g.graph->SetGraph().SetByte().SetValues();
+                    g.bytes->reserve(ref_offset);
+                    NFast::append_zeros_aligned16(*g.bytes, ref_offset);
+                }
+            }
+        }
     void Finalize()
         {
             if ( !GetSkipEmptyPileupGraphsParam() ) {
                 // make missing empty graphs
+                TSeqPos len = ref_range.GetLength();
                 for ( int k = 0; k < kNumStat; ++k ) {
-                    if ( graphs[k] ) {
+                    SGraph& g = graphs[k];
+                    if ( g.graph ) {
                         // graph already created
                         continue;
                     }
@@ -1781,72 +1811,136 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
                         // do not generate empty 'matches' graph
                         continue;
                     }
-                    x_CreateGraph(k);
-                    byte_values[k] = &graphs[k]->SetGraph().SetByte().SetValues();
-                    TSeqPos zeros = ref_range.GetLength();
-                    byte_values[k]->reserve(zeros);
-                    NFast::append_zeros_aligned16(*byte_values[k], zeros);
+                    x_CreateGraph(g);
+                    g.bytes = &g.graph->SetGraph().SetByte().SetValues();
+                    g.bytes->reserve(len);
+                    NFast::append_zeros(*g.bytes, len);
                 }
             }
             for ( int k = 0; k < kNumStat; ++k ) {
-                x_FinalizeGraph(k);
+                x_FinalizeGraph(graphs[k]);
             }
         }
 
     virtual void AddZerosBy16(TSeqPos len) override
         {
             for ( int k = 0; k < kNumStat; ++k ) {
-                if ( graphs[k] ) {
-                    if ( int_values[k] ) {
-                        NFast::append_zeros_aligned16(*int_values[k], len);
+                SGraph& g = graphs[k];
+                if ( g.graph ) {
+                    if ( g.ints ) {
+                        NFast::append_zeros_aligned16(*g.ints, len);
                     }
                     else {
-                        NFast::append_zeros_aligned16(*byte_values[k], len);
+                        NFast::append_zeros_aligned16(*g.bytes, len);
                     }
                 }
             }
         }
 
-    bool x_UpdateMaxIsInt(int k, TCount max_added, const CBamDb::SPileupValues& values)
+    bool x_UpdateMaxIsInt(SGraph& g, TCount max_added, TSeqPos ref_offset)
         {
-            if ( !graphs[k] ) {
-                _ASSERT(!max_value[k]);
-                max_value[k] = max_added;
-                x_CreateGraph(k);
-                TSeqPos zeros = values.m_RefFrom-ref_range.GetFrom();
+            if ( !g.graph ) {
+                _ASSERT(!g.max_value);
+                g.max_value = max_added;
+                x_CreateGraph(g);
                 if ( max_added >= 256 ) {
-                    int_values[k] = &graphs[k]->SetGraph().SetInt().SetValues();
-                    int_values[k]->reserve(ref_range.GetLength());
-                    NFast::append_zeros_aligned16(*int_values[k], zeros);
+                    g.ints = &g.graph->SetGraph().SetInt().SetValues();
+                    g.ints->reserve(ref_range.GetLength());
+                    NFast::append_zeros_aligned16(*g.ints, ref_offset);
                     return true;
                 }
                 else {
-                    byte_values[k] = &graphs[k]->SetGraph().SetByte().SetValues();
-                    byte_values[k]->reserve(ref_range.GetLength());
-                    NFast::append_zeros_aligned16(*byte_values[k], zeros);
+                    g.bytes = &g.graph->SetGraph().SetByte().SetValues();
+                    g.bytes->reserve(ref_range.GetLength());
+                    NFast::append_zeros_aligned16(*g.bytes, ref_offset);
                     return false;
                 }
             }
             else if ( max_added >= 256 ) {
-                max_value[k] = max(max_value[k], max_added);
-                if ( byte_values[k] ) {
+                g.max_value = max(g.max_value, max_added);
+                if ( g.bytes ) {
                     CRef<CInt_graph> int_graph(new CInt_graph);
-                    int_values[k] = &int_graph->SetValues();
-                    int_values[k]->reserve(ref_range.GetLength());
-                    size_t size = byte_values[k]->size();
-                    NFast::copy_n_bytes_aligned16(byte_values[k]->data(), size,
-                                                  NFast::append_uninitialized(*int_values[k], size));
-                    byte_values[k] = 0;
-                    graphs[k]->SetGraph().SetInt(*int_graph);
+                    g.ints = &int_graph->SetValues();
+                    g.ints->reserve(ref_range.GetLength());
+                    size_t size = g.bytes->size();
+                    NFast::copy_n_bytes_aligned16(g.bytes->data(), size,
+                                                  NFast::append_uninitialized(*g.ints, size));
+                    g.bytes = 0;
+                    g.graph->SetGraph().SetInt(*int_graph);
                 }
                 return true;
             }
-            else if ( int_values[k] ) {
+            else if ( g.ints ) {
                 return true;
             }
             else {
-                max_value[k] = max(max_value[k], max_added);
+                g.max_value = max(g.max_value, max_added);
                 return false;
+            }
+        }
+
+    void x_AddValuesBy16(SGraph& g, TSeqPos len, const TCount* src)
+        {
+            if ( g.bytes ) {
+                NFast::copy_n_aligned16(src, len, NFast::append_uninitialized(*g.bytes, len));
+            }
+            else if ( g.ints ) {
+                NFast::copy_n_aligned16(src, len, NFast::append_uninitialized(*g.ints, len));
+            }
+        }
+    void x_AddValues(SGraph& g, TSeqPos len, const TCount* src)
+        {
+            if ( g.bytes ) {
+                copy_n(src, len, NFast::append_uninitialized(*g.bytes, len));
+            }
+            else if ( g.ints ) {
+                copy_n(src, len, NFast::append_uninitialized(*g.ints, len));
+            }
+        }
+    void x_AddValuesBy16(TSeqPos len, const CBamDb::SPileupValues& values)
+        {
+            x_AddValuesBy16(graphs[kStat_Match], len, values.cc_match.data());
+            x_AddValuesBy16(graphs[kStat_Gap], len, values.get_gap_counts());
+            int dst_byte = 0, dst_int = 0;
+            for ( int k = 0; k < kNumStat_ACGT; ++k ) {
+                SGraph& g = graphs[k];
+                if ( g.bytes ) {
+                    ++dst_byte;
+                }
+                else if ( g.ints ) {
+                    ++dst_int;
+                }
+            }
+            if ( dst_byte == kNumStat_ACGT ) {
+                NFast::copy_4n_split_aligned16(values.get_acgt_counts(), len,
+                                               NFast::append_uninitialized(*graphs[0].bytes, len),
+                                               NFast::append_uninitialized(*graphs[1].bytes, len),
+                                               NFast::append_uninitialized(*graphs[2].bytes, len),
+                                               NFast::append_uninitialized(*graphs[3].bytes, len));
+            }
+            else if ( dst_int == kNumStat_ACGT ) {
+                NFast::copy_4n_split_aligned16(values.cc_acgt[0].cc, len,
+                                               NFast::append_uninitialized(*graphs[0].ints, len),
+                                               NFast::append_uninitialized(*graphs[1].ints, len),
+                                               NFast::append_uninitialized(*graphs[2].ints, len),
+                                               NFast::append_uninitialized(*graphs[3].ints, len));
+            }
+            else {
+                // use split ACGT arrays
+                for ( int k = 0; k < kNumStat_ACGT; ++k ) {
+                    SGraph& g = graphs[k];
+                    x_AddValuesBy16(g, len, values.get_split_acgt_counts(k, len));
+                }
+            }
+        }
+    void x_AddValues(TSeqPos len, const CBamDb::SPileupValues& values)
+        {
+            x_AddValues(graphs[kStat_Match], len, values.cc_match.data());
+            x_AddValues(graphs[kStat_Gap], len, values.cc_gap.data());
+            // use split ACGT into separate arrays
+            for ( int k = 0; k < kNumStat_ACGT; ++k ) {
+                SGraph& g = graphs[k];
+                x_AddValues(g, len, values.get_split_acgt_counts(k, len));
             }
         }
     virtual void AddValuesBy16(TSeqPos len, const CBamDb::SPileupValues& values) override
@@ -1856,19 +1950,16 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
             _ASSERT(values.m_RefFrom+len <= ref_range.GetToOpen());
             _ASSERT((values.m_RefFrom - ref_range.GetFrom())%16 == 0);
             _ASSERT(len%16 == 0);
+            TSeqPos ref_offset = values.m_RefFrom-ref_range.GetFrom();
             for ( int k = 0; k < kNumStat; ++k ) {
-                TCount max_added = values.get_max_count(k, len);
-                if ( max_added != 0 || graphs[k] ) {
-                    if ( x_UpdateMaxIsInt(k, max_added, values) ) {
-                        NFast::copy_n_aligned16(values.cc[k].data(), len,
-                                                NFast::append_uninitialized(*int_values[k], len));
-                    }
-                    else {
-                        NFast::copy_n_aligned16(values.cc[k].data(), len,
-                                                NFast::append_uninitialized(*byte_values[k], len));
-                    }
+                SGraph& g = graphs[k];
+                TCount max_added = values.get_max_count(k);
+                if ( max_added != 0 || g.graph ) {
+                    x_UpdateMaxIsInt(g, max_added, ref_offset);
                 }
             }
+            x_AdjustACGT(ref_offset);
+            x_AddValuesBy16(len, values);
         }
     virtual void AddValuesTail(TSeqPos len, const CBamDb::SPileupValues& values) override
         {
@@ -1877,19 +1968,16 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
             _ASSERT(values.m_RefFrom+len <= ref_range.GetToOpen());
             _ASSERT((values.m_RefFrom - ref_range.GetFrom())%16 == 0);
             _ASSERT(len%16 == 0 || values.m_RefFrom+len == ref_range.GetToOpen());
+            TSeqPos ref_offset = values.m_RefFrom-ref_range.GetFrom();
             for ( int k = 0; k < kNumStat; ++k ) {
-                TCount max_added = values.get_max_count(k, len);
-                if ( max_added != 0 || graphs[k] ) {
-                    if ( x_UpdateMaxIsInt(k, max_added, values) ) {
-                        std::copy_n(values.cc[k].data(), len,
-                                    NFast::append_uninitialized(*int_values[k], len));
-                    }
-                    else {
-                        std::copy_n(values.cc[k].data(), len,
-                                    NFast::append_uninitialized(*byte_values[k], len));
-                    }
+                SGraph& g = graphs[k];
+                TCount max_added = values.get_max_count(k);
+                if ( max_added != 0 || g.graph ) {
+                    x_UpdateMaxIsInt(g, max_added, ref_offset);
                 }
             }
+            x_AdjustACGT(ref_offset);
+            x_AddValues(len, values);
         }
 };
 
@@ -1910,6 +1998,11 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
     CBamDb::SPileupValues ss;
     size_t count = m_File->GetBamDb().CollectPileup(ss, GetRefSeqId(), graph_range, min_quality, &gg);
 
+    if ( GetDebugLevel() >= 3 ) {
+        LOG_POST_X(11, Info<<"CBAMDataLoader: "
+                   "Collected pileup counts "<<GetRefSeqId()<<" @ "<<
+                   chunk.GetRefSeqRange()<<": "<<count<<" in "<<sw.Elapsed());
+    }
     if ( count == 0 ) {
         // zero pileup graphs
         chunk_info.SetLoaded();
@@ -1926,13 +2019,28 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
         desc->SetName(name);
         annot->SetDesc().Set().push_back(desc);
     }
+    size_t total_bytes = 0;
     for ( int k = 0; k < ss.kNumStat; ++k ) {
-        if ( gg.graphs[k] ) {
-            annot->SetData().SetGraph().push_back(gg.graphs[k]);
+        SPileupGraphCreator::SGraph& g = gg.graphs[k];
+        if ( g.graph ) {
+            annot->SetData().SetGraph().push_back(g.graph);
+            if ( g.bytes ) {
+                total_bytes += g.bytes->size()*sizeof(g.bytes->front())+10000;
+            }
+            else {
+                total_bytes += g.ints->size()*sizeof(g.ints->front())+10000;
+            }
         }
     }
     chunk_info.x_LoadAnnot(place, *annot);
+    chunk_info.x_AddUsedMemory(total_bytes);
 
+    if ( GetDebugLevel() >= 3 ) {
+        LOG_POST_X(11, Info<<"CBAMDataLoader: "
+                   "Loaded pileup "<<GetRefSeqId()<<" @ "<<
+                   chunk.GetRefSeqRange()<<": "<<count<<" in "<<sw.Elapsed());
+    }
+    
     chunk_info.SetLoaded();
 }
 

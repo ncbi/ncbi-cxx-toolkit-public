@@ -696,21 +696,119 @@ void CBamDb::SPileupValues::initialize(CRange<TSeqPos> ref_range)
     m_RefToOpen = m_RefFrom = ref_range.GetFrom();
     m_RefStop = ref_range.GetToOpen();
     TSeqPos len = ref_range.GetLength()+32;
-    for ( int i = 0; i < kNumStat; ++i ) {
-        cc[i].clear();
-        cc[i].resize(len);
-    }
-    cc[kStat_Gap][0] = 0;
+    for ( auto& c : max_count ) c = 0;
+    cc_acgt.clear();
+    cc_acgt.resize(len);
+    cc_match.clear();
+    cc_match.resize(len);
+    cc_gap.clear();
+    cc_gap.resize(len);
+    cc_gap[0] = 0;
 }
 
 
 void CBamDb::SPileupValues::decode_gap(TSeqPos len)
 {
+    _ASSERT(len <= (m_RefToOpen-m_RefFrom));
+    _ASSERT(accumulate(&cc_gap[0], &cc_gap[m_RefToOpen-m_RefFrom+1], 0) == 0);
     // restore gap counts from delta encoding
     TCount g = 0;
     for ( TSeqPos i = 0; i <= len; ++i ) {
-        g += cc[kStat_Gap][i];
-        cc[kStat_Gap][i] = g;
+        g += cc_gap[i];
+        cc_gap[i] = g;
+    }
+    _ASSERT(accumulate(&cc_gap[len], &cc_gap[m_RefToOpen-m_RefFrom+1], 0) == 0);
+}
+
+
+static inline
+void add_bases_acgt(CBamDb::SPileupValues::SCountACGT* dst1, unsigned b, __m128i bits, __m128i mask)
+{
+    __m128i add = _mm_and_si128(_mm_srl_epi32(bits, _mm_cvtsi32_si128(b)), mask);
+    __m128i* dst = (__m128i*)dst1;
+    __m128i cnt = _mm_load_si128(dst);
+    cnt = _mm_add_epi32(cnt, add);
+    _mm_store_si128(dst, cnt);
+}
+
+
+void CBamDb::SPileupValues::add_bases_graph_range(TSeqPos pos, TSeqPos end,
+                                                  CTempString read, TSeqPos read_pos)
+{
+    _ASSERT(pos < end);
+    __m128i bits = _mm_set_epi32(0x1000, 0x80, 0x8, 0x2); /* T, G, C, and A bits */
+    __m128i mask = _mm_set1_epi32(1);
+    const char* src = read.data()+read_pos;
+    SPileupValues::SCountACGT* dst = cc_acgt.data()+pos;
+    SPileupValues::SCountACGT* dst_end = cc_acgt.data()+end;
+    TCount* dst_match = cc_match.data()+pos;
+    for ( ; dst < dst_end; ++src, ++dst, ++dst_match ) {
+        unsigned b = Uint1(*src);
+        dst_match[0] += b == '=';
+        add_bases_acgt(dst, b, bits, mask);
+    }
+}
+
+
+static inline unsigned get_raw_base0(unsigned bb)
+{
+    return bb >> 4;
+}
+
+
+static inline unsigned get_raw_base1(unsigned bb)
+{
+    return bb & 0xf;
+}
+
+
+static inline TSeqPos align_to_16_down(TSeqPos size)
+{
+    return size & ~0xf;
+}
+
+
+static inline TSeqPos align_to_16_up(TSeqPos size)
+{
+    return (size + 0xf) & ~0xf;
+}
+
+
+void CBamDb::SPileupValues::add_bases_graph_range_raw(TSeqPos pos, TSeqPos end,
+                                                      CTempString read, TSeqPos read_pos)
+{
+    _ASSERT(pos < end);
+    __m128i bits = _mm_set_epi32(0x100, 0x10, 0x4, 0x2); /* 8th, 4th, 2nd, and 1st bits */
+    __m128i mask = _mm_set1_epi32(1);
+    const char* src = read.data()+read_pos/2;
+    SPileupValues::SCountACGT* dst = cc_acgt.data()+pos;
+    SPileupValues::SCountACGT* dst_end = cc_acgt.data()+end-1;
+    TCount* dst_match = cc_match.data()+pos;
+    if ( read_pos%2 ) {
+        unsigned bb = Uint1(*src);
+        unsigned b = get_raw_base1(bb);
+        dst_match[0] += b == 0;
+        add_bases_acgt(dst, b, bits, mask);
+        
+        ++src;
+        ++dst;
+        ++dst_match;
+    }
+    for ( ; dst < dst_end; ++src, dst += 2, dst_match += 2 ) {
+        unsigned bb = Uint1(*src);
+        unsigned b0 = get_raw_base0(bb);
+        unsigned b1 = get_raw_base1(bb);
+        dst_match[0] += b0 == 0;
+        dst_match[1] += b1 == 0;
+        add_bases_acgt(dst+0, b0, bits, mask);
+        add_bases_acgt(dst+1, b1, bits, mask);
+        
+    }
+    if ( dst <= dst_end ) {
+        unsigned bb = Uint1(*src);
+        unsigned b = get_raw_base0(bb);
+        dst_match[0] += b == 0;
+        add_bases_acgt(dst, b, bits, mask);
     }
 }
 
@@ -727,7 +825,7 @@ void CBamDb::SPileupValues::advance_current_beg(TSeqPos ref_pos, ICollectPileupC
             }
             _ASSERT(m_RefToOpen == m_RefFrom);
             TSeqPos add_zeros = ref_pos-m_RefToOpen;
-            TSeqPos flush_zeros = add_zeros & ~15; // align
+            TSeqPos flush_zeros = align_to_16_down(add_zeros);
             _ASSERT(flush_zeros%16 == 0);
             callback->AddZerosBy16(flush_zeros);
             m_RefToOpen = m_RefFrom += flush_zeros;
@@ -740,25 +838,30 @@ void CBamDb::SPileupValues::advance_current_beg(TSeqPos ref_pos, ICollectPileupC
     }
     TSeqPos flush = ref_pos-m_RefFrom;
     if ( ref_pos != m_RefStop ) {
-        flush &= ~15;
+        flush = align_to_16_down(flush);
     }
     if ( flush ) {
         decode_gap(flush);
         TSeqPos total = m_RefToOpen-m_RefFrom;
         if ( flush >= 16 ) {
             _ASSERT(flush%16 == 0);
-            callback->AddValuesBy16(flush&~15, *this);
+            update_max_counts(flush);
+            callback->AddValuesBy16(flush, *this);
             if ( TSeqPos copy = total-flush ) {
-                TCount gap_save = cc[kStat_Gap][total];
-                for ( int i = 0; i < kNumStat; ++i ) {
-                    NFast::copy_n_aligned16(cc[i].data()+flush, (copy+15)&~15, cc[i].data());
-                }
-                cc[kStat_Gap][flush] = gap_save;
+                TSeqPos copy16 = align_to_16_up(copy);
+                NFast::copy_n_aligned16(cc_acgt[flush].cc, copy16*4, cc_acgt[0].cc);
+                NFast::copy_n_aligned16(cc_match.data()+flush, copy16, cc_match.data());
+                TCount gap_save = cc_gap[total];
+                NFast::copy_n_aligned16(cc_gap.data()+flush, copy16, cc_gap.data());
+                cc_gap[copy] = gap_save;
             }
             m_RefFrom += flush;
+            _ASSERT(accumulate(&cc_gap[0], &cc_gap[m_RefToOpen-m_RefFrom+1], 0) == 0);
         }
         else {
             _ASSERT(ref_pos == m_RefStop);
+            _ASSERT(ref_pos == m_RefToOpen);
+            update_max_counts(flush);
             callback->AddValuesTail(flush, *this);
             m_RefFrom = m_RefStop;
         }
@@ -772,12 +875,13 @@ void CBamDb::SPileupValues::advance_current_end(TSeqPos ref_end)
     _ASSERT(ref_end <= m_RefStop);
     TSeqPos cur_pos = m_RefToOpen-m_RefFrom;
     TSeqPos new_pos = (min(m_RefStop + 15, ref_end + FLUSH_SIZE) - m_RefFrom) & ~15;
-    TCount gap_save = cc[kStat_Gap][cur_pos];
-    for ( int i = 0; i < kNumStat; ++i ) {
-        NFast::fill_n_zeros_aligned16(cc[i].data()+cur_pos, new_pos-cur_pos);
-    }
-    cc[kStat_Gap][cur_pos] = gap_save;
-    cc[kStat_Gap][new_pos] = 0;
+
+    NFast::fill_n_zeros_aligned16(cc_acgt[cur_pos].cc, (new_pos-cur_pos)*4);
+    NFast::fill_n_zeros_aligned16(cc_match.data()+cur_pos, (new_pos-cur_pos));
+    TCount gap_save = cc_gap[cur_pos];
+    NFast::fill_n_zeros_aligned16(cc_gap.data()+cur_pos, (new_pos-cur_pos));
+    cc_gap[cur_pos] = gap_save;
+    cc_gap[new_pos] = 0;
     m_RefToOpen = min(m_RefStop, m_RefFrom + new_pos);
 }
 
@@ -792,16 +896,44 @@ void CBamDb::SPileupValues::finalize(ICollectPileupCallback* callback)
     if ( callback ) {
         if ( TSeqPos flush = m_RefToOpen-m_RefFrom ) {
             _ASSERT(flush < 16);
+            update_max_counts(flush);
             callback->AddValuesTail(flush, *this);
             m_RefFrom += flush;
         }
     }
+    else {
+        update_max_counts(m_RefStop - m_RefFrom);
+    }
 }
 
 
-CBamDb::SPileupValues::TCount CBamDb::SPileupValues::get_max_count(int type, TSeqPos length) const
+void CBamDb::SPileupValues::update_max_counts(TSeqPos length)
 {
-    return NFast::max_element_n_aligned16(cc[type].data(), (length+15)&~15);
+    _ASSERT(m_RefFrom+length <= m_RefToOpen);
+    _ASSERT(length % 16 == 0 || m_RefToOpen == m_RefStop);
+    length = align_to_16_up(length);
+    NFast::max_4elements_n_aligned16(cc_acgt[0].cc, length, max_count);
+    NFast::max_element_n_aligned16(cc_match.data(), length, max_count[kStat_Match]);
+    NFast::max_element_n_aligned16(cc_gap.data(), length, max_count[kStat_Gap]);
+    m_SplitACGTLen = 0;
+}
+
+
+void CBamDb::SPileupValues::make_split_acgt(TSeqPos len)
+{
+    if ( m_SplitACGTLen < len ) {
+        TSeqPos len16 = align_to_16_up(len);
+        for ( int k = 0; k < kNumStat_ACGT; ++k ) {
+            cc_split_acgt[k].clear();
+            cc_split_acgt[k].resize(len16);
+        }
+        NFast::copy_4n_split_aligned16(get_acgt_counts(), len16,
+                                       cc_split_acgt[0].data(),
+                                       cc_split_acgt[1].data(),
+                                       cc_split_acgt[2].data(),
+                                       cc_split_acgt[3].data());
+        m_SplitACGTLen = len;
+    }
 }
 
 
@@ -950,11 +1082,13 @@ size_t CBamDb::CollectPileup(SPileupValues& values,
         //values.update_current_ref_start(graph_range.GetToOpen(), callback);
         if ( callback && graph_range.GetToOpen() != values.m_RefFrom ) {
             TSeqPos flush = graph_range.GetToOpen() - values.m_RefFrom;
-            if ( flush & ~15 ) {
-                values.advance_current_beg(values.m_RefFrom+(flush&~15), callback);
+            TSeqPos flush16 = align_to_16_down(flush);
+            TSeqPos flush_tail = flush - flush16;
+            if ( flush16 ) {
+                values.advance_current_beg(values.m_RefFrom+flush16, callback);
             }
-            if ( flush & 15 ) {
-                values.advance_current_beg(values.m_RefFrom+(flush&15), callback);
+            if ( flush_tail ) {
+                values.advance_current_beg(values.m_RefFrom+flush_tail, callback);
             }
             _ASSERT(values.m_RefFrom == graph_range.GetToOpen());
         }
@@ -2246,18 +2380,12 @@ void fill_n_zeros_aligned16(int* dst, size_t count)
     }
 }
 
-/*
+
 void fill_n_zeros(int* dst, size_t count)
 {
-    __m128i zero = _mm_setzero_si128();
-    for ( auto dst_end = dst+count; dst < dst_end; dst += 16 ) {
-        _mm_store_si128((__m128i*)dst+0, zero);
-        _mm_store_si128((__m128i*)dst+1, zero);
-        _mm_store_si128((__m128i*)dst+2, zero);
-        _mm_store_si128((__m128i*)dst+3, zero);
-    }
+    fill_n(dst, count, 0);
 }
-*/
+
 
 void fill_n_zeros_aligned16(char* dst, size_t count)
 {
@@ -2269,15 +2397,12 @@ void fill_n_zeros_aligned16(char* dst, size_t count)
     }
 }
 
-/*
+
 void fill_n_zeros(char* dst, size_t count)
 {
-    __m128i zero = _mm_setzero_si128();
-    for ( auto dst_end = dst+count; dst < dst_end; dst += 16 ) {
-        _mm_store_si128((__m128i*)dst, zero);
-    }
+    fill_n(dst, count, 0);
 }
-*/
+
 
 void copy_n_bytes_aligned16(const char* src, size_t count, int* dst)
 {
@@ -2348,6 +2473,119 @@ void copy_n_aligned16(const int* src, size_t count, int* dst)
     }
 }
 
+
+void copy_4n_split_aligned16(const int* src, size_t count,
+                             char* dst0, char* dst1, char* dst2, char* dst3)
+{
+    _ASSERT(count%16 == 0);
+    _ASSERT(intptr_t(src)%16 == 0);
+    _ASSERT(intptr_t(dst0)%16 == 0);
+    _ASSERT(intptr_t(dst1)%16 == 0);
+    _ASSERT(intptr_t(dst2)%16 == 0);
+    _ASSERT(intptr_t(dst3)%16 == 0);
+    for ( auto src_end = src+count*4; src < src_end;
+          src += 64, dst0 += 16, dst1 += 16, dst2 += 16, dst3 += 16 ) {
+        __m128i ww0, ww1, ww2, ww3;
+        {
+            __m128i tt0 = _mm_load_si128((const __m128i*)src+0);
+            __m128i tt1 = _mm_load_si128((const __m128i*)src+1);
+            __m128i tt2 = _mm_load_si128((const __m128i*)src+2);
+            __m128i tt3 = _mm_load_si128((const __m128i*)src+3);
+            tt0 = _mm_or_si128(tt0, _mm_slli_si128(tt1, 1));
+            tt2 = _mm_or_si128(tt2, _mm_slli_si128(tt3, 1));
+            ww0 = _mm_or_si128(tt0, _mm_slli_si128(tt2, 2));
+        }
+        {
+            __m128i tt0 = _mm_load_si128((const __m128i*)src+4);
+            __m128i tt1 = _mm_load_si128((const __m128i*)src+5);
+            __m128i tt2 = _mm_load_si128((const __m128i*)src+6);
+            __m128i tt3 = _mm_load_si128((const __m128i*)src+7);
+            tt0 = _mm_or_si128(tt0, _mm_slli_si128(tt1, 1));
+            tt2 = _mm_or_si128(tt2, _mm_slli_si128(tt3, 1));
+            ww1 = _mm_or_si128(tt0, _mm_slli_si128(tt2, 2));
+        }
+        {
+            __m128i tt0 = _mm_load_si128((const __m128i*)src+8);
+            __m128i tt1 = _mm_load_si128((const __m128i*)src+9);
+            __m128i tt2 = _mm_load_si128((const __m128i*)src+10);
+            __m128i tt3 = _mm_load_si128((const __m128i*)src+11);
+            tt0 = _mm_or_si128(tt0, _mm_slli_si128(tt1, 1));
+            tt2 = _mm_or_si128(tt2, _mm_slli_si128(tt3, 1));
+            ww2 = _mm_or_si128(tt0, _mm_slli_si128(tt2, 2));
+        }
+        {
+            __m128i tt0 = _mm_load_si128((const __m128i*)src+12);
+            __m128i tt1 = _mm_load_si128((const __m128i*)src+13);
+            __m128i tt2 = _mm_load_si128((const __m128i*)src+14);
+            __m128i tt3 = _mm_load_si128((const __m128i*)src+15);
+            tt0 = _mm_or_si128(tt0, _mm_slli_si128(tt1, 1));
+            tt2 = _mm_or_si128(tt2, _mm_slli_si128(tt3, 1));
+            ww3 = _mm_or_si128(tt0, _mm_slli_si128(tt2, 2));
+        }
+
+        {
+            // transpose 4x4
+            __m128i tt0 = _mm_unpacklo_epi32(ww0, ww1);
+            __m128i tt1 = _mm_unpacklo_epi32(ww2, ww3);
+            __m128i tt2 = _mm_unpackhi_epi32(ww0, ww1);
+            __m128i tt3 = _mm_unpackhi_epi32(ww2, ww3);
+            
+            ww0 = _mm_unpacklo_epi64(tt0, tt1);
+            ww1 = _mm_unpackhi_epi64(tt0, tt1);
+            ww2 = _mm_unpacklo_epi64(tt2, tt3);
+            ww3 = _mm_unpackhi_epi64(tt2, tt3);
+        }
+        
+        _mm_store_si128((__m128i*)dst0, ww0);
+        _mm_store_si128((__m128i*)dst1, ww1);
+        _mm_store_si128((__m128i*)dst2, ww2);
+        _mm_store_si128((__m128i*)dst3, ww3);
+    }
+    for ( TSeqPos i = 0; i < count; ++i ) {
+        _ASSERT(Uint1(dst0[i-count]) == src[4*(i-count)+0]);
+        _ASSERT(Uint1(dst1[i-count]) == src[4*(i-count)+1]);
+        _ASSERT(Uint1(dst2[i-count]) == src[4*(i-count)+2]);
+        _ASSERT(Uint1(dst3[i-count]) == src[4*(i-count)+3]);
+    }
+}
+    
+
+void copy_4n_split_aligned16(const int* src, size_t count,
+                             int* dst0, int* dst1, int* dst2, int* dst3)
+{
+    _ASSERT(count%16 == 0);
+    _ASSERT(intptr_t(src)%16 == 0);
+    _ASSERT(intptr_t(dst0)%16 == 0);
+    _ASSERT(intptr_t(dst1)%16 == 0);
+    _ASSERT(intptr_t(dst2)%16 == 0);
+    _ASSERT(intptr_t(dst3)%16 == 0);
+    for ( auto src_end = src+count*4; src < src_end;
+          src += 16, dst0 += 4, dst1 += 4, dst2 += 4, dst3 += 4 ) {
+        __m128i ww0 = _mm_load_si128((const __m128i*)src+0);
+        __m128i ww1 = _mm_load_si128((const __m128i*)src+1);
+        __m128i ww2 = _mm_load_si128((const __m128i*)src+2);
+        __m128i ww3 = _mm_load_si128((const __m128i*)src+3);
+
+        {
+            // transpose 4x4
+            __m128i tt0 = _mm_unpacklo_epi32(ww0, ww1);
+            __m128i tt1 = _mm_unpacklo_epi32(ww2, ww3);
+            __m128i tt2 = _mm_unpackhi_epi32(ww0, ww1);
+            __m128i tt3 = _mm_unpackhi_epi32(ww2, ww3);
+            
+            ww0 = _mm_unpacklo_epi64(tt0, tt1);
+            ww1 = _mm_unpackhi_epi64(tt0, tt1);
+            ww2 = _mm_unpacklo_epi64(tt2, tt3);
+            ww3 = _mm_unpackhi_epi64(tt2, tt3);
+        }
+        
+        _mm_store_si128((__m128i*)dst0, ww0);
+        _mm_store_si128((__m128i*)dst1, ww1);
+        _mm_store_si128((__m128i*)dst2, ww2);
+        _mm_store_si128((__m128i*)dst3, ww3);
+    }
+}
+
 /*
 void copy_n(const int* src, size_t count, char* dst)
 {
@@ -2407,6 +2645,46 @@ unsigned max_element_n_aligned16(const unsigned* src, size_t count)
     max4 = _mm_max_epu32(max4, _mm_srli_si128(max4, 8));
     max4 = _mm_max_epu32(max4, _mm_srli_si128(max4, 4));
     return _mm_cvtsi128_si32(max4);
+}
+
+
+void max_element_n_aligned16(const unsigned* src, size_t count, unsigned& dst)
+{
+    _ASSERT(count%16 == 0);
+    _ASSERT(intptr_t(src)%16 == 0);
+    __m128i max4 = _mm_set1_epi32(dst);
+    for ( auto src_end = src+count; src < src_end; src += 16 ) {
+        __m128i ww0 = _mm_load_si128((const __m128i*)src+0);
+        __m128i ww1 = _mm_load_si128((const __m128i*)src+1);
+        __m128i ww2 = _mm_load_si128((const __m128i*)src+2);
+        __m128i ww3 = _mm_load_si128((const __m128i*)src+3);
+        ww0 = _mm_max_epu32(ww0, ww1);
+        ww2 = _mm_max_epu32(ww2, ww3);
+        ww0 = _mm_max_epu32(ww0, ww2);
+        max4 = _mm_max_epu32(max4, ww0);
+    }
+    max4 = _mm_max_epu32(max4, _mm_srli_si128(max4, 8));
+    max4 = _mm_max_epu32(max4, _mm_srli_si128(max4, 4));
+    dst = _mm_cvtsi128_si32(max4);
+}
+
+
+void max_4elements_n_aligned16(const unsigned* src, size_t count, unsigned dst[4])
+{
+    _ASSERT(count%16 == 0);
+    _ASSERT(intptr_t(src)%16 == 0);
+    __m128i max4 = _mm_loadu_si128((__m128i*)dst);
+    for ( auto src_end = src+count*4; src < src_end; src += 16 ) {
+        __m128i ww0 = _mm_load_si128((const __m128i*)src+0);
+        __m128i ww1 = _mm_load_si128((const __m128i*)src+1);
+        __m128i ww2 = _mm_load_si128((const __m128i*)src+2);
+        __m128i ww3 = _mm_load_si128((const __m128i*)src+3);
+        ww0 = _mm_max_epu32(ww0, ww1);
+        ww2 = _mm_max_epu32(ww2, ww3);
+        ww0 = _mm_max_epu32(ww0, ww2);
+        max4 = _mm_max_epu32(max4, ww0);
+    }
+    _mm_storeu_si128((__m128i*)dst, max4);
 }
 
 

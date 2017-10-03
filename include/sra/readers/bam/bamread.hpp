@@ -253,94 +253,71 @@ public:
             kStat_T = 3,
             kStat_Gap = 4,
             kStat_Match = 5,
+            kNumStat_ACGT = 4,
             kNumStat = 6
         };
 
         TSeqPos m_RefFrom; // current values array start on ref sequence
         TSeqPos m_RefToOpen; // current values array end on ref sequence
         TSeqPos m_RefStop; // limit of pileup collection on ref sequence
-        CSimpleBufferT<TCount> cc[kNumStat];
+        TSeqPos m_SplitACGTLen;
+        
+        struct SCountACGT {
+            TCount cc[kNumStat_ACGT];
+        };
+        CSimpleBufferT<SCountACGT> cc_acgt;
+        CSimpleBufferT<TCount> cc_split_acgt[kNumStat_ACGT];
+        CSimpleBufferT<TCount> cc_gap;
+        CSimpleBufferT<TCount> cc_match;
+        TCount max_count[kNumStat];
         
         SPileupValues();
         explicit SPileupValues(CRange<TSeqPos> ref_range);
 
         void initialize(CRange<TSeqPos> ref_range);
         void finalize(ICollectPileupCallback* callback);
-        
+
+        const TCount* get_acgt_counts() const
+            {
+                return cc_acgt.data()->cc;
+            }
+        void make_split_acgt(TSeqPos len);
+        const TCount* get_split_acgt_counts(int k, TSeqPos len) const
+            {
+                if ( m_SplitACGTLen < len ) {
+                    const_cast<SPileupValues*>(this)->make_split_acgt(len);
+                }
+                return cc_split_acgt[k].data();
+            }
+        const TCount* get_match_counts() const
+            {
+                return cc_match.data();
+            }
+        const TCount* get_gap_counts() const
+            {
+                return cc_gap.data();
+            }
+    
         void add_match_graph_pos(TSeqPos pos)
             {
-                cc[kStat_Match][pos] += 1;
+                cc_match[pos] += 1;
             }
         void add_match_graph_range(TSeqPos pos, TSeqPos end)
             {
                 for ( ; pos < end; ++pos ) {
-                    cc[kStat_Match][pos] += 1;
+                    cc_match[pos] += 1;
                 }
             }
         void add_gap_graph_range(TSeqPos pos, TSeqPos end)
             {
                 _ASSERT(pos < end);
-                cc[kStat_Gap][pos] += 1;
-                cc[kStat_Gap][end] -= 1;
-            }
-        void add_base_graph_pos(TSeqPos pos, char b)
-            {
-                switch ( b ) {
-                case 'A': cc[kStat_A][pos] += 1; break;
-                case 'C': cc[kStat_C][pos] += 1; break;
-                case 'G': cc[kStat_G][pos] += 1; break;
-                case 'T': cc[kStat_T][pos] += 1; break;
-                case '=': cc[kStat_Match][pos] += 1; break;
-                    // others including N are unknown mismatch, no pileup information
-                }
-            }
-        void add_base_graph_pos_raw(TSeqPos pos, Uint1 b)
-            {
-                if ( 1 ) {
-                    if ( (b & (b-1)) == 0 ) {
-                        // at most 1 bit set
-                        // others including N (=15) are unknown mismatch, no pileup information
-                        cc[kStat_A][pos] += (b>>0)&1;
-                        cc[kStat_C][pos] += (b>>1)&1;
-                        cc[kStat_G][pos] += (b>>2)&1;
-                        cc[kStat_T][pos] += (b>>3)&1;
-                        cc[kStat_Match][pos] += !b;
-                    }
-                }
-                else {
-                    switch ( b ) {
-                    case 1: /* A */ cc[kStat_A][pos] += 1; break;
-                    case 2: /* C */ cc[kStat_C][pos] += 1; break;
-                    case 4: /* G */ cc[kStat_G][pos] += 1; break;
-                    case 8: /* T */ cc[kStat_T][pos] += 1; break;
-                    case 0: /* = */ cc[kStat_Match][pos] += 1; break;
-                        // others including N (=15) are unknown mismatch, no pileup information
-                    }
-                }
-            }
-        static char get_base(const CTempString& read, TSeqPos pos)
-            {
-                return read[pos];
-            }
-        static Uint1 get_base_raw(const CTempString& read, TSeqPos pos)
-            {
-                Uint1 b2 = read[pos/2];
-                return pos%2? b2&0xf: b2>>4;
+                cc_gap[pos] += 1;
+                cc_gap[end] -= 1;
             }
         void add_bases_graph_range(TSeqPos pos, TSeqPos end,
-                                   const CTempString& read, TSeqPos read_pos)
-            {
-                for ( ; pos < end; ++pos, ++read_pos ) {
-                    add_base_graph_pos(pos, get_base(read, read_pos));
-                }
-            }
+                                   CTempString read, TSeqPos read_pos);
         void add_bases_graph_range_raw(TSeqPos pos, TSeqPos end,
-                                       const CTempString& read, TSeqPos read_pos)
-            {
-                for ( ; pos < end; ++pos, ++read_pos ) {
-                    add_base_graph_pos_raw(pos, get_base_raw(read, read_pos));
-                }
-            }
+                                       CTempString read, TSeqPos read_pos);
 
         static const TSeqPos FLUSH_SIZE = 512;
 
@@ -424,8 +401,13 @@ public:
                                               read, read_pos);
                 }
             }
+
+        void update_max_counts(TSeqPos len);
         
-        TCount get_max_count(int type, TSeqPos length) const;
+        TCount get_max_count(int type) const
+            {
+                return max_count[type];
+            }
     };
 
     size_t CollectPileup(SPileupValues& values,
@@ -907,6 +889,38 @@ inline void copy_n_aligned16(const unsigned* src, size_t count, unsigned* dst)
     copy_n_aligned16(reinterpret_cast<const int*>(src), count, reinterpret_cast<int*>(dst));
 }
 
+// copy count*4 ints splitting them into 4 arrays
+// src, dsts, and count must be aligned by 16
+void NCBI_BAMREAD_EXPORT copy_4n_split_aligned16(const int* src, size_t count,
+                                                 int* dst0, int* dst1, int* dst2, int* dst3);
+
+// convert count*4 ints int chars splitting them into 4 arrays
+// src, dsts, and count must be aligned by 16
+void NCBI_BAMREAD_EXPORT copy_4n_split_aligned16(const int* src, size_t count,
+                                                 char* dst0, char* dst1, char* dst2, char* dst3);
+
+inline void copy_4n_split_aligned16(const unsigned* src, size_t count,
+                                    char* dst0, char* dst1, char* dst2, char* dst3)
+{
+    copy_4n_split_aligned16(reinterpret_cast<const int*>(src), count, dst0, dst1, dst2, dst3);
+}
+
+inline void copy_4n_split_aligned16(const unsigned* src, size_t count,
+                                    int* dst0, int* dst1, int* dst2, int* dst3)
+{
+    copy_4n_split_aligned16(reinterpret_cast<const int*>(src), count, dst0, dst1, dst2, dst3);
+}
+
+inline void copy_4n_split_aligned16(const unsigned* src, size_t count,
+                                    unsigned* dst0, unsigned* dst1, unsigned* dst2, unsigned* dst3)
+{
+    copy_4n_split_aligned16(reinterpret_cast<const int*>(src), count,
+                            reinterpret_cast<int*>(dst0),
+                            reinterpret_cast<int*>(dst1),
+                            reinterpret_cast<int*>(dst2),
+                            reinterpret_cast<int*>(dst3));
+}
+
 // append count unitialized elements to dst vector
 // return pointer to appended elements for proper initialization
 // vector must have enough memory reserved
@@ -976,6 +990,9 @@ inline void append_zeros_aligned16(vector<V, A>& dst, size_t count)
 // return max element from unsigned array
 // src and count must be aligned by 16
 unsigned NCBI_BAMREAD_EXPORT max_element_n_aligned16(const unsigned* src, size_t count);
+
+void NCBI_BAMREAD_EXPORT max_element_n_aligned16(const unsigned* src, size_t count, unsigned& dst);
+void NCBI_BAMREAD_EXPORT max_4elements_n_aligned16(const unsigned* src, size_t count, unsigned dst[4]);
 
 END_NAMESPACE(NFast);
 #endif //HAVE_NEW_PILEUP_COLLECTOR
