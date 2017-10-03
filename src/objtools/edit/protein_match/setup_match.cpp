@@ -284,9 +284,7 @@ bool CMatchSetup::GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
     }
 
     if (ids.empty()) {
-        NCBI_THROW(CProteinMatchException,
-            eBadInput,
-            "CDS locations not specified");
+        return false;
     }
 
 

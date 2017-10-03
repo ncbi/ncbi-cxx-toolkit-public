@@ -451,19 +451,6 @@ void CProteinMatchApp::x_ProcessSeqEntry(CRef<CSeq_entry> nuc_prot_set,
 
     current_nuc_accessions.push_back(db_nuc_acc_string);
 
-/*
-    if (success) {
-        db_nuc_acc_string = nuc_seqid->GetSeqIdString();
-        if (!db_scope.GetBioseqHandle(*nuc_seqid) &&
-            m_pMatchSetup->GetReplacedIdFromHist(
-                nuc_prot_set->GetSet().GetNucFromNucProtSet(),
-                nuc_seqid)) {
-            const string& current_nuc_acc_string = nuc_seqid->GetSeqIdString();
-            new_nuc_accessions[current_nuc_acc_string] = db_nuc_acc_string;
-            db_nuc_acc_string = current_nuc_acc_string;
-        }
-    }
-*/
     if (nuc_seqid.IsNull() || NStr::IsBlank(db_nuc_acc_string)) {
         NCBI_THROW(CProteinMatchException, 
         eInputError,
@@ -572,10 +559,24 @@ void CProteinMatchApp::x_RelabelNucSeq(CRef<CSeq_entry> nuc_prot_set)
 {
     CRef<CSeq_id> local_id;
 
+    // Could optimize this. No need to look for CDS features if the 
+    // nuc-prot set contains only a nucleotide sequence.
     if (!m_pMatchSetup->GetNucSeqIdFromCDSs(*nuc_prot_set, local_id)) {
-        NCBI_THROW(CProteinMatchException, 
-                    eInputError, 
-                    "Could not determine a unique nucleotide id");
+        // There are no CDS features, so just make the nuc-seq id local 
+        const CBioseq& nuc_seq = nuc_prot_set->GetSet().GetNucFromNucProtSet();
+        const CSeq_id* id_ptr = nuc_seq.GetFirstId();
+        if (id_ptr) {
+            if (id_ptr->IsLocal()) {
+                if (nuc_seq.GetId().size() == 1) {
+                    return; // Bioseq already has a single local id => nothing to do here
+                } // else
+                local_id->Assign(*id_ptr);
+            }
+            else {
+                local_id = Ref(new CSeq_id());
+                local_id->SetLocal().SetStr(id_ptr->GetSeqIdString(true)); 
+            } 
+        }
     }
 
     if (!m_pMatchSetup->UpdateNucSeqIds(local_id, nuc_prot_set.GetNCObject())) {
@@ -583,6 +584,7 @@ void CProteinMatchApp::x_RelabelNucSeq(CRef<CSeq_entry> nuc_prot_set)
                     eExecutionError, 
                     "Unable to assign local nucleotide id");
     }
+    return;
 }
 
 
