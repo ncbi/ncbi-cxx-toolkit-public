@@ -848,14 +848,15 @@ void CBamDb::SPileupValues::advance_current_beg(TSeqPos ref_pos, ICollectPileupC
             _ASSERT(flush%16 == 0);
             update_max_counts(flush);
             callback->AddValuesBy16(flush, *this);
-            if ( TSeqPos copy = total-flush ) {
+            TSeqPos copy = total-flush;
+            TCount gap_save = cc_gap[total];
+            if ( copy ) {
                 TSeqPos copy16 = align_to_16_up(copy);
                 NFast::copy_n_aligned16(cc_acgt[flush].cc, copy16*4, cc_acgt[0].cc);
                 NFast::copy_n_aligned16(cc_match.data()+flush, copy16, cc_match.data());
-                TCount gap_save = cc_gap[total];
                 NFast::copy_n_aligned16(cc_gap.data()+flush, copy16, cc_gap.data());
-                cc_gap[copy] = gap_save;
             }
+            cc_gap[copy] = gap_save;
             m_RefFrom += flush;
             _ASSERT(accumulate(&cc_gap[0], &cc_gap[m_RefToOpen-m_RefFrom+1], 0) == 0);
         }
