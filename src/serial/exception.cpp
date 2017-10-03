@@ -261,5 +261,23 @@ const char* CUnassignedMember::GetErrCodeString(void) const
 #endif
 }
 
+const char* CSerialFacetException::GetErrCodeString(void) const
+{
+    switch ( GetErrCode() ) {
+    case eMinLength:        return "eMinLength";
+    case eMaxLength:        return "eMaxLength";
+    case eLength:           return "eLength";
+    case ePattern:          return "ePattern";
+    case eInclusiveMinimum: return "eInclusiveMinimum";
+    case eExclusiveMinimum: return "eExclusiveMinimum";
+    case eInclusiveMaximum: return "eInclusiveMaximum";
+    case eExclusiveMaximum: return "eExclusiveMaximum";
+    case eMultipleOf:       return "eMultipleOf";
+    case eMinItems:         return "eMinItems";
+    case eMaxItems:         return "eMaxItems";
+    case eUniqueItems:      return "eUniqueItems";
+    default:                return CException::GetErrCodeString();
+    }
+};
 
 END_NCBI_SCOPE

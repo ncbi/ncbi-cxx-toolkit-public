@@ -234,6 +234,8 @@ public:
 
     pair<TConstObjectPtr, TTypeInfo> Get(void) const;
 
+    size_t GetElementCount(void) const;
+
 private:
     TTypeInfo m_ElementType;
     TIterator m_Iterator;

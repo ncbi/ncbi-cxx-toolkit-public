@@ -38,33 +38,37 @@ BEGIN_NCBI_SCOPE
 CItemInfo::CItemInfo(const CMemberId& id,
                      TPointerOffsetType offset, TTypeInfo type)
     : m_Id(id), m_Index(kInvalidMember), m_Offset(offset), m_Type(type),
-      m_NonEmpty(false), m_Optional(false)
+      m_NonEmpty(false), m_Optional(false), m_Restrict(nullptr)
+
 {
 }
 
 CItemInfo::CItemInfo(const CMemberId& id,
                      TPointerOffsetType offset, const CTypeRef& type)
     : m_Id(id), m_Index(kInvalidMember), m_Offset(offset), m_Type(type),
-      m_NonEmpty(false), m_Optional(false)
+      m_NonEmpty(false), m_Optional(false), m_Restrict(nullptr)
 {
 }
 
 CItemInfo::CItemInfo(const char* id,
                      TPointerOffsetType offset, TTypeInfo type)
     : m_Id(id), m_Index(kInvalidMember), m_Offset(offset), m_Type(type),
-      m_NonEmpty(false), m_Optional(false)
+      m_NonEmpty(false), m_Optional(false), m_Restrict(nullptr)
 {
 }
 
 CItemInfo::CItemInfo(const char* id,
                      TPointerOffsetType offset, const CTypeRef& type)
     : m_Id(id), m_Index(kInvalidMember), m_Offset(offset), m_Type(type),
-      m_NonEmpty(false), m_Optional(false)
+      m_NonEmpty(false), m_Optional(false), m_Restrict(nullptr)
 {
 }
 
 CItemInfo::~CItemInfo(void)
 {
+    if (m_Restrict) {
+        delete m_Restrict;
+    }
 }
 
 CItemInfo* CItemInfo::SetNonEmpty(void)

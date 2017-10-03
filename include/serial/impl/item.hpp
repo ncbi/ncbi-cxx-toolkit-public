@@ -47,6 +47,7 @@
 BEGIN_NCBI_SCOPE
 
 class CItemsInfo;
+class CSerialFacet;
 
 class NCBI_XSERIAL_EXPORT CItemInfo
 {
@@ -85,6 +86,29 @@ public:
 
     bool Optional(void) const;
 
+    void Validate(TConstObjectPtr classPtr) const;
+
+    CItemInfo* Restrict( ESerialFacet type, const string& pattern);
+    CItemInfo* Restrict( ESerialFacet type, Uint8 value);
+    CItemInfo* RestrictI(ESerialFacet type, Int8 value);
+    CItemInfo* RestrictD(ESerialFacet type, double value);
+
+    template<typename T>
+    CItemInfo* RestrictV(ESerialFacet type, T value) {
+        static_assert(is_integral<T>::value || is_floating_point<T>::value, "Wrong data type");
+        if (std::is_integral<T>::value && std::is_signed<T>::value) {
+            return RestrictI(type, (Int8)value);
+        }
+        else if (std::is_integral<T>::value && std::is_unsigned<T>::value) {
+            return Restrict(type, (Uint8)value);
+        }
+        else if (std::is_floating_point<T>::value) {
+            return RestrictD(type, (double)value);
+        }
+        _ASSERT(0);
+        return nullptr;
+    }
+
 private:
     friend class CItemsInfo;
     virtual void UpdateFunctions(void) = 0;
@@ -101,8 +125,18 @@ private:
     bool m_NonEmpty;
 protected:
     bool m_Optional;
+    const CSerialFacet* m_Restrict;
 };
 
+class CConstObjectInfo;
+class NCBI_XSERIAL_EXPORT CSerialFacet
+{
+public:
+    CSerialFacet(void);
+    virtual ~CSerialFacet(void);
+    void Validate(const CItemInfo* info, TConstObjectPtr object) const;
+    virtual void Validate(const CConstObjectInfo& oi, const string& name) const = 0;
+};
 
 /* @} */
 

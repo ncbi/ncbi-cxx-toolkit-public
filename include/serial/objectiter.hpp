@@ -101,6 +101,11 @@ public:
         return 0;
     }
 
+    size_t GetElementCount(void) const
+    {
+        return m_Iterator.GetElementCount();
+    }
+
 protected:
     bool CheckValid(void) const;
 

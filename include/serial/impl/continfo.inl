@@ -448,6 +448,12 @@ void CConstContainerElementIterator::Next(void)
 }
 
 inline
+size_t CConstContainerElementIterator::GetElementCount(void) const
+{
+    return m_Iterator.GetContainerType()->GetElementCount(m_Iterator.GetContainerPtr());
+}
+
+inline
 pair<TConstObjectPtr, TTypeInfo> CConstContainerElementIterator::Get(void) const
 {
     _ASSERT( Valid() );

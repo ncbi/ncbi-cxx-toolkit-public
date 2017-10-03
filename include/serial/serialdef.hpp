@@ -208,6 +208,23 @@ enum class EDataSpec {
     eJSON
 };
 
+enum class ESerialFacet {
+    eMinLength = 1,
+    eMaxLength,
+    eLength,
+    ePattern,
+
+    eInclusiveMinimum,
+    eExclusiveMinimum,
+    eInclusiveMaximum,
+    eExclusiveMaximum,
+    eMultipleOf,
+
+    eMinItems,
+    eMaxItems,
+    eUniqueItems
+};
+
 /// Type used for indexing class members and choice variants
 typedef size_t TMemberIndex;
 

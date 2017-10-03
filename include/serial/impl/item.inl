@@ -86,5 +86,13 @@ bool CItemInfo::Optional(void) const
     return m_Optional;
 }
 
+inline
+void CItemInfo::Validate(TConstObjectPtr classPtr) const
+{
+    if (m_Restrict) {
+        m_Restrict->Validate(this, GetItemPtr(classPtr));
+    }
+}
+
 
 #endif /* def ITEM__HPP  &&  ndef ITEM__INL */

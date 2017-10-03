@@ -470,6 +470,9 @@ void CVariantInfoFunctions::ReadInlineVariant(CObjectIStream& in,
     choiceType->SetIndex(choicePtr, index, in.GetMemoryPool());
     in.ReadObject(variantInfo->GetItemPtr(choicePtr),
                   variantInfo->GetTypeInfo());
+    if (in.GetVerifyData() == eSerialVerifyData_Yes) {
+        variantInfo->Validate(choicePtr);
+    }
 }
 
 void CVariantInfoFunctions::ReadPointerVariant(CObjectIStream& in,
@@ -568,6 +571,9 @@ void CVariantInfoFunctions::WriteInlineVariant(CObjectOStream& out,
     _ASSERT(variantInfo->IsInline());
     _ASSERT(variantInfo->GetChoiceType()->GetIndex(choicePtr) ==
             variantInfo->GetIndex());
+    if (out.GetVerifyData() == eSerialVerifyData_Yes) {
+        variantInfo->Validate(choicePtr);
+    }
     out.WriteObject(variantInfo->GetItemPtr(choicePtr),
                     variantInfo->GetTypeInfo());
 }

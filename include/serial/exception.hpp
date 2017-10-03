@@ -67,7 +67,7 @@ public:
     NCBI_EXCEPTION_DEFAULT(CSerialException,CException);
 
 public:
-    // Combine steram frames info into single message
+    // Combine stream frames info into single message
     void AddFrameInfo(string frame_info);
     virtual void ReportExtra(ostream& out) const;
 
@@ -139,6 +139,28 @@ public:
 protected:
     CInvalidChoiceSelection(void);
     virtual const CException* x_Clone(void) const;
+};
+
+class NCBI_XSERIAL_EXPORT CSerialFacetException : public CSerialException
+{
+public:
+    /// Error codes
+    enum EErrCode {
+        eMinLength,
+        eMaxLength,
+        eLength,
+        ePattern,
+        eInclusiveMinimum,
+        eExclusiveMinimum,
+        eInclusiveMaximum,
+        eExclusiveMaximum,
+        eMultipleOf,
+        eMinItems,
+        eMaxItems,
+        eUniqueItems
+    };
+    virtual const char* GetErrCodeString(void) const;
+    NCBI_EXCEPTION_DEFAULT(CSerialFacetException,CSerialException);
 };
 
 END_NCBI_SCOPE
