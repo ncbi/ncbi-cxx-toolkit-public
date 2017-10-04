@@ -1457,14 +1457,15 @@ CSemaphore::CSemaphore(unsigned int init_count, unsigned int max_count)
 #  endif  /* NCBI_OS_CYGWIN */
 
 #elif defined(NCBI_WIN32_THREADS)
-    m_Sem->sem = CreateSemaphore(NULL, init_count, max_count, NULL);
-    xncbi_Validate(m_Sem->sem != NULL,
-                   "CSemaphore::CSemaphore() - CreateSemaphore() failed");
+    m_Sem->sem = CreateSemaphore(NULL, init_count, min(max_count,(unsigned int)LONG_MAX), NULL);
 #ifdef _DEBUG
     if (m_Sem->sem == NULL) {
-        ERR_POST(Error << "GetLastError returns " << GetLastError());
+        DWORD dwErr = GetLastError();
+        ERR_POST(Error << "GetLastError returns " << dwErr);
     }
 #endif
+    xncbi_Validate(m_Sem->sem != NULL,
+                   "CSemaphore::CSemaphore() - CreateSemaphore() failed");
 #else
     m_Sem->max_count = max_count;
     m_Sem->count     = init_count;
