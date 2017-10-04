@@ -21357,3 +21357,25 @@ BOOST_AUTO_TEST_CASE(VR_758)
 
     CLEAR_ERRORS
 }
+
+
+void CheckLocalId(const string& id, const string& badchar)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    entry->SetSeq().SetId().front()->SetLocal().SetStr(id);
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|" + id, eDiag_Warning, "BadSeqIdFormat",
+           "Bad character '" + badchar + "' in local ID '" + id + "'"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(VR_V48)
+{
+    CheckLocalId("abc|def", "|");
+    CheckLocalId("abc=def", "=");
+}

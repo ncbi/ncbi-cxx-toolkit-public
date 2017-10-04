@@ -309,28 +309,23 @@ static bool s_IsSkippableDbtag (const CDbtag& dbt)
     }
 }
 
-// FROM VR-748: may contain only the following characters: 
-// letters, digits, hyphens , underscores (_), periods (.), colons (:),
-// asterisks , and number signs(#).
-bool s_IsLegalSeqIdChar(const char ch)
-{
-    if (isalpha(ch) || isdigit(ch)) {
-        return true;
-    } else if (ch == '-' || ch == '_' || ch == '.' || ch == ':' ||
-        ch == '*' || ch == '#' || ch == '/' || ch == '(' || ch == ')') {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
 static char CheckForBadSeqIdChars (const string& id)
 
 {
     FOR_EACH_CHAR_IN_STRING(itr, id) {
         const char& ch = *itr;
-        if (!s_IsLegalSeqIdChar(ch)) return ch;
+        if (ch == '|' || ch == ',') return ch;
+    }
+    return '\0';
+}
+
+// VR-748
+static char CheckForBadLocalIdChars(const string& id)
+{
+    for (size_t i = 0; i < id.length(); i++) {
+        if (!CSeq_id::IsValidLocalID(id.substr(i, 1))) {
+            return id.c_str()[i];
+        }
     }
     return '\0';
 }
@@ -607,10 +602,10 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
             }
             if (id.IsLocal() && id.GetLocal().IsStr()) {
                 const string& acc = id.GetLocal().GetStr();
-                const char badch = CheckForBadSeqIdChars (acc);
+                const char badch = CheckForBadLocalIdChars(acc);
                 if (badch != '\0') {
                     PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat,
-                            "Bad character '" + string(1, badch) + "' in accession '" + acc + "'", ctx);
+                            "Bad character '" + string(1, badch) + "' in local ID '" + acc + "'", ctx);
                 }
             }
             break;
