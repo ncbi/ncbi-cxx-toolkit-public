@@ -737,14 +737,17 @@ void CBamDb::SPileupValues::add_bases_graph_range(TSeqPos pos, TSeqPos end,
                                                   CTempString read, TSeqPos read_pos)
 {
     _ASSERT(pos < end);
-    __m128i bits = _mm_set_epi32(0x1000, 0x80, 0x8, 0x2); /* T, G, C, and A bits */
+    /* bits = Tth, Gth, Cth, and Ath bits */
+    __m128i bits = _mm_set_epi32(1<<('T'&0x1f), 1<<('G'&0x1f), 1<<('C'&0x1f), 1<<('A'&0x1f));
     __m128i mask = _mm_set1_epi32(1);
     const char* src = read.data()+read_pos;
     SPileupValues::SCountACGT* dst = cc_acgt.data()+pos;
     SPileupValues::SCountACGT* dst_end = cc_acgt.data()+end;
     TCount* dst_match = cc_match.data()+pos;
     for ( ; dst < dst_end; ++src, ++dst, ++dst_match ) {
-        unsigned b = Uint1(*src);
+        // use only low 5 bits of base character, it's sufficient to distinguish all letters
+        // and allows to use 32-bit masks
+        unsigned b = *src & 0x1f;
         dst_match[0] += b == '=';
         add_bases_acgt(dst, b, bits, mask);
     }
