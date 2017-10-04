@@ -86,7 +86,7 @@ string CSeq_inst::GetMoleculeClass(CSeq_inst::EMol mol)
 
 #define CONVERT_AA_CODING_TO_STR(encoding) \
     case CSeq_data::e_##encoding: \
-        CSeqConvert::Convert(seq_data.Get##encoding().Get(), CSeqUtil::e_##encoding, 0, length, str, CSeqUtil::e_Iupacaa); \
+        CSeqConvert::Convert(seq_data.Get##encoding().Get(), CSeqUtil::e_##encoding, 0, length, str, CSeqUtil::e_Ncbieaa); \
         break;
 
 
@@ -154,7 +154,11 @@ bool CSeq_inst::ConvertDeltaToRaw()
     }
     SetRepr(objects::CSeq_inst::eRepr_raw);
     if (IsAa()) {
-        SetSeq_data().SetIupacaa() = objects::CIUPACaa(iupacna);
+        if (NStr::Find(iupacna, "*") != NPOS || NStr::Find(iupacna, "-") != NPOS) {
+            SetSeq_data().SetNcbieaa() = objects::CNCBIeaa(iupacna);
+        } else {
+            SetSeq_data().SetIupacaa() = objects::CIUPACaa(iupacna);
+        }
     } else {
         SetSeq_data().SetIupacna() = objects::CIUPACna(iupacna);
     }
