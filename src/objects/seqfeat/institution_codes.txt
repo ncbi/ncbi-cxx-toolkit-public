@@ -1918,6 +1918,7 @@ FIDS	s	Great Lakes Forest Research Laboratory, Forest Insect and Disease Survey
 FIEC	s	Freshwater Institute		
 FIJI	s	University of the South Pacific		
 FIOC	s	Fundacao Instituto Oswaldo Cruz		
+FIOC:ColTryp	c	Fundacao Instituto Oswaldo Cruz, Collection of Trypanosoma from Wild and Domestic Mammals and Vectors
 FIP	s	Florida Institute of Paleontology		
 FIPF	s	Universita di Firenze		
 FIPIA	s	Institut Teknologi Bandung, Jurusan Biologi		

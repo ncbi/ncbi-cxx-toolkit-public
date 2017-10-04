@@ -1951,6 +1951,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "FIEC\ts\tFreshwater Institute\t\t",
 "FIJI\ts\tUniversity of the South Pacific\t\t",
 "FIOC\ts\tFundacao Instituto Oswaldo Cruz\t\t",
+"FIOC:ColTryp\tc\tFundacao Instituto Oswaldo Cruz, Collection of Trypanosoma from Wild and Domestic Mammals and Vectors",
 "FIP\ts\tFlorida Institute of Paleontology\t\t",
 "FIPF\ts\tUniversita di Firenze\t\t",
 "FIPIA\ts\tInstitut Teknologi Bandung, Jurusan Biologi\t\t",
