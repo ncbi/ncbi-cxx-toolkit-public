@@ -1791,7 +1791,7 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
                     }
                     x_CreateGraph(g);
                     g.bytes = &g.graph->SetGraph().SetByte().SetValues();
-                    g.bytes->reserve(ref_offset);
+                    g.bytes->reserve(ref_range.GetLength());
                     NFast::append_zeros_aligned16(*g.bytes, ref_offset);
                 }
             }
