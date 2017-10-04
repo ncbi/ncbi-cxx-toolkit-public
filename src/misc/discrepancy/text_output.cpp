@@ -70,6 +70,9 @@ static void RecursiveText(ostream& out, const TReportItemList& list, bool fatal,
         else {
             TReportObjectList det = (*it)->GetDetails();
             ITERATE (TReportObjectList, obj, det) {
+                if (!(*obj)->GetFilename().empty()) {
+                    out << (*obj)->GetFilename() << ":";
+                }
                 out << (*obj)->GetText() << "\n";
             }
             out << "\n";
@@ -194,8 +197,8 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, size_t inden
                 if (!(*obj)->GetFilename().empty()) {
                     out << " file=\"" << NStr::XmlEncode((*obj)->GetFilename()) << "\"/>\n";
                 }
-                string text = NStr::Replace((*obj)->GetText(), "\t", "  ");
-                out << " text=\"" << NStr::XmlEncode(text) << "\"/>\n";
+                string text = NStr::Replace((*obj)->GetText(), "\t", " ");
+                out << " label=\"" << NStr::XmlEncode(text) << "\"/>\n";
             }
         }
         Indent(out, indent);

@@ -449,10 +449,6 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
                 m_Current_Bioseq->GetLabel(&label, CBioseq::eContent);
                 citsub = "Cit-sub for Set containing " + label;
                 label = "Set containing " + label;
-                if (!m_File.empty()) {
-                    label = m_File + ":" + label;
-                    citsub = m_File + ":" + citsub;
-                }
                 m_Current_Submit_block_StringObj->Value = label;
                 m_Current_Cit_sub_StringObj->Value = citsub;
                 m_Current_Submit_block_StringObj.Reset();

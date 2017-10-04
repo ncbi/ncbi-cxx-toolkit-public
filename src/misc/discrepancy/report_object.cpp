@@ -111,10 +111,6 @@ void CReportObject::SetText(CScope& scope, const string& label)
         CBioseq_set_Handle bssh = scope.GetBioseq_setHandle(*m_Bioseq_set);
         m_Text = GetTextObjectDescription(bssh);
     }
-
-    if (!NStr::IsBlank(m_Filename)) {
-        m_Text = m_Filename + ":" + m_Text;
-    }
 }
 
 
