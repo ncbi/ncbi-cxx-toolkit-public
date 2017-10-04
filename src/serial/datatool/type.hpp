@@ -119,6 +119,23 @@ TOutputIt Dt_transform_if(TInputIt first, TInputIt last, TOutputIt dest,
 	return (dest);
 }
 /////////////////////////////////////////////////////////////////////////////
+class CMemberFacet
+{
+public:
+    CMemberFacet(ESerialFacet type, const string& value)
+        : m_Type(type), m_Value(value) {
+    }
+    ESerialFacet GetType(void) const {
+        return m_Type;
+    }
+    const string& GetValue(void) const {
+        return m_Value;
+    }
+private:
+    ESerialFacet m_Type;
+    string m_Value;
+};
+
 
 struct AnyType {
     union {
@@ -417,6 +434,12 @@ public:
         return !m_EmptyExternalName;
     }
     string GetFullName(void) const;
+    void SetRestrictions(const list<CMemberFacet>& c) {
+        m_Restrictions = c;
+    }
+    const list<CMemberFacet>& GetRestrictions(void) const {
+        return m_Restrictions;
+    }
 
 protected:
     static bool x_IsSavedName(const string& name);
@@ -458,6 +481,7 @@ private:
     bool m_IsNillable;
     EGlobalType m_GlobalType;
     bool m_EmptyExternalName;
+    list<CMemberFacet> m_Restrictions;
 
     CDataType(const CDataType&);
     CDataType& operator=(const CDataType&);

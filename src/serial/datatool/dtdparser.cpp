@@ -1159,7 +1159,9 @@ CDataType* DTDParser::x_Type(
         container->AddMember(member);
         type = container.release();
     }
-
+    if (!fromInside) {
+        type->SetRestrictions(node.GetRestrictions());
+    }
     if (!embtype.empty()) {
         m_ElementEmbTypes.pop_back();
     }
@@ -1332,7 +1334,9 @@ CDataType* DTDParser::TypesBlock(
         if (m_SrcType == eDTD || refNode.IsEmbedded()) {
             member->Comments() = refNode.GetComments();
         }
-        member->SetRestrictions( refNode.GetRestrictions());
+        if (refNode.IsEmbedded()) {
+            member->SetRestrictions( refNode.GetRestrictions());
+        }
         container->AddMember(member);
     }
     if (m_SrcType == eDTD || node.IsEmbedded()) {

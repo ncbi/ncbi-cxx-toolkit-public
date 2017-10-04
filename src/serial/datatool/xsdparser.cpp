@@ -524,7 +524,7 @@ void XSDParser::SkipContent()
     }
 }
 
-DTDElement::EOccurrence XSDParser::ParseMinOccurs( DTDElement::EOccurrence occNow)
+DTDElement::EOccurrence XSDParser::ParseMinOccurs( DTDElement& node, DTDElement::EOccurrence occNow)
 {
     DTDElement::EOccurrence occNew = occNow;
     if (GetAttribute("minOccurs")) {
@@ -536,21 +536,21 @@ DTDElement::EOccurrence XSDParser::ParseMinOccurs( DTDElement::EOccurrence occNo
                 occNew = DTDElement::eZeroOrMore;
             }
         } else if (m > 1) {
-            ERR_POST_X(8, Warning << GetLocation() << "Unsupported element minOccurs= " << m);
+            node.AddFacet( CMemberFacet( ESerialFacet::eMinItems, m_Value));
             occNew = DTDElement::eOneOrMore;
         }
     }
     return occNew;
 }
 
-DTDElement::EOccurrence XSDParser::ParseMaxOccurs( DTDElement::EOccurrence occNow)
+DTDElement::EOccurrence XSDParser::ParseMaxOccurs( DTDElement& node, DTDElement::EOccurrence occNow)
 {
     DTDElement::EOccurrence occNew = occNow;
     if (GetAttribute("maxOccurs")) {
         int m = IsValue("unbounded") ? -1 : NStr::StringToInt(m_Value);
         if (m == -1 || m > 1) {
             if (m > 1) {
-                ERR_POST_X(8, Warning << GetLocation() << "Unsupported element maxOccurs= " << m);
+                node.AddFacet( CMemberFacet( ESerialFacet::eMaxItems, m_Value));
             }
             if (occNow == DTDElement::eOne) {
                 occNew = DTDElement::eOneOrMore;
@@ -624,8 +624,8 @@ string XSDParser::ParseElementContent(DTDElement* owner, int emb)
         m_MapElement[name].SetNillable(IsValue("true"));
     }
     if (owner && !name.empty()) {
-        owner->SetOccurrence(name, ParseMinOccurs( owner->GetOccurrence(name)));
-        owner->SetOccurrence(name, ParseMaxOccurs( owner->GetOccurrence(name)));
+        owner->SetOccurrence(name, ParseMinOccurs( m_MapElement[name], owner->GetOccurrence(name)));
+        owner->SetOccurrence(name, ParseMaxOccurs( m_MapElement[name], owner->GetOccurrence(name)));
     }
     if (tok != K_CLOSING && tok != K_ENDOFTAG) {
         ParseError("endoftag");
@@ -658,8 +658,8 @@ string XSDParser::ParseGroup(DTDElement* owner, int emb)
         DTDElement& node = m_MapElement[name];
         node.SetEmbedded();
         node.SetName(m_Value);
-        node.SetOccurrence( ParseMinOccurs( node.GetOccurrence()));
-        node.SetOccurrence( ParseMaxOccurs( node.GetOccurrence()));
+        node.SetOccurrence( ParseMinOccurs( node, node.GetOccurrence()));
+        node.SetOccurrence( ParseMaxOccurs( node, node.GetOccurrence()));
         node.SetQualified(owner->IsQualified());
         SetCommentsIfEmpty(&(node.Comments()));
 
@@ -733,6 +733,16 @@ bool XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
             break;
         case K_RESTRICTION:
             ParseRestriction(node);
+            break;
+        case K_MINLENGTH:
+        case K_MAXLENGTH:
+        case K_LENGTH:
+        case K_PATTERN:
+        case K_INCMIN:
+        case K_EXCMIN:
+        case K_INCMAX:
+        case K_EXCMAX:
+            ParseFacet(node, tok);
             break;
         case K_ENUMERATION:
             ParseEnumeration(node);
@@ -872,8 +882,8 @@ void XSDParser::ParseContainer(DTDElement& node)
 {
     TToken tok = GetRawAttributeSet();
     m_ExpectLastComment = true;
-    node.SetOccurrence( ParseMinOccurs( node.GetOccurrence()));
-    node.SetOccurrence( ParseMaxOccurs( node.GetOccurrence()));
+    node.SetOccurrence( ParseMinOccurs( node, node.GetOccurrence()));
+    node.SetOccurrence( ParseMaxOccurs( node, node.GetOccurrence()));
     if (tok == K_CLOSING) {
         ParseContent(node);
     }
@@ -958,6 +968,44 @@ void XSDParser::ParseRestriction(DTDElement& node)
     }
     if (tok == K_CLOSING) {
         ParseContent(node,extended);
+    }
+}
+
+void XSDParser::ParseFacet(DTDElement& node, TToken facet)
+{
+    TToken tok = GetRawAttributeSet();
+    if (GetAttribute("value")) {
+        switch (facet) {
+        case K_MINLENGTH:
+            node.AddFacet( CMemberFacet( ESerialFacet::eMinLength, m_Value));
+            break;
+        case K_MAXLENGTH:
+            node.AddFacet( CMemberFacet( ESerialFacet::eMaxLength, m_Value));
+            break;
+        case K_LENGTH:
+            node.AddFacet( CMemberFacet( ESerialFacet::eLength, m_Value));
+            break;
+        case K_PATTERN:
+            node.AddFacet( CMemberFacet( ESerialFacet::ePattern, m_Value));
+            break;
+        case K_INCMIN:
+            node.AddFacet( CMemberFacet( ESerialFacet::eInclusiveMinimum, m_Value));
+            break;
+        case K_EXCMIN:
+            node.AddFacet( CMemberFacet( ESerialFacet::eExclusiveMinimum, m_Value));
+            break;
+        case K_INCMAX:
+            node.AddFacet( CMemberFacet( ESerialFacet::eInclusiveMaximum, m_Value));
+            break;
+        case K_EXCMAX:
+            node.AddFacet( CMemberFacet( ESerialFacet::eExclusiveMaximum, m_Value));
+            break;
+        default:
+            break;
+        }
+    }
+    if (tok == K_CLOSING) {
+        ParseContent(node);
     }
 }
 
@@ -1082,8 +1130,8 @@ void XSDParser::ParseAny(DTDElement& node)
         }
     }
 #endif
-    node.SetOccurrence( ParseMinOccurs( node.GetOccurrence()));
-    node.SetOccurrence( ParseMaxOccurs( node.GetOccurrence()));
+    node.SetOccurrence( ParseMinOccurs( node, node.GetOccurrence()));
+    node.SetOccurrence( ParseMaxOccurs( node, node.GetOccurrence()));
     if (GetAttribute("namespace")) {
         node.SetNamespaceName(m_Value);
     }
@@ -1488,6 +1536,9 @@ void XSDParser::ProcessNamedTypes(void)
                                     node.GetContent().empty() && !node.HasAttributes()) {
 // special case - plain std type
                                     node.SetType(item.GetType());
+                                    for( const CMemberFacet& f : item.GetRestrictions()) {
+                                        node.AddFacet(f);
+                                    }
                                 } else {
                                     item.SetEmbedded(false);
                                     item.SetGlobalType(true);

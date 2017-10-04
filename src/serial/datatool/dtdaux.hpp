@@ -41,7 +41,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include "comments.hpp"
-#include <serial/serialdef.hpp>
+#include "type.hpp"
 #include <list>
 #include <map>
 
@@ -56,24 +56,6 @@ class CDataMember;
 class CEnumDataType;
 class CEnumDataTypeValue;
 
-
-/////////////////////////////////////////////////////////////////////////////
-class CMemberFacet
-{
-public:
-    CMemberFacet(ESerialFacet type, const string& value)
-        : m_Type(type), m_Value(value) {
-    }
-    ESerialFacet GetType(void) const {
-        return m_Type;
-    }
-    const string& GetValue(void) const {
-        return m_Value;
-    }
-private:
-    ESerialFacet m_Type;
-    string m_Value;
-};
 
 /////////////////////////////////////////////////////////////////////////////
 // DTDEntity

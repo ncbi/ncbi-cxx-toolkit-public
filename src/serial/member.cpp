@@ -740,7 +740,7 @@ void CMemberInfoFunctions::ReadWithSetFlagMember(CObjectIStream& in,
         in.ReadObject(memberInfo->GetItemPtr(classPtr),
                       memberInfo->GetTypeInfo());
         if (in.GetVerifyData() == eSerialVerifyData_Yes) {
-            memberInfo->Validate(classPtr);
+            memberInfo->Validate(classPtr, in);
         }
     }
     catch (CSerialException& e) {
@@ -828,7 +828,7 @@ void CMemberInfoFunctions::ReadWithDefaultMemberX(CObjectIStream& in,
             }
         }
         else if (in.GetVerifyData() == eSerialVerifyData_Yes) {
-            memberInfo->Validate(classPtr);
+            memberInfo->Validate(classPtr, in);
         }
         in.UnsetMemberSpecialCase();
     }
@@ -1023,7 +1023,7 @@ void CMemberInfoFunctions::WriteWithDefaultMemberX(
         }
     }
     if (out.GetVerifyData() == eSerialVerifyData_Yes) {
-        memberInfo->Validate(classPtr);
+        memberInfo->Validate(classPtr, out);
     }
 do_write:
     out.WriteClassMember(memberInfo->GetId(), memberType, memberPtr);
@@ -1090,7 +1090,7 @@ void CMemberInfoFunctions::WriteWithSetFlagMember(CObjectOStream& out,
     }
 #endif
     if (out.GetVerifyData() == eSerialVerifyData_Yes) {
-        memberInfo->Validate(classPtr);
+        memberInfo->Validate(classPtr, out);
     }
 do_write:
     out.WriteClassMember(memberInfo->GetId(),

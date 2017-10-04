@@ -259,11 +259,13 @@ TToken XSDLexer::LookupKeyword(void)
         CHECK("choice", K_CHOICE, 6);
         CHECK("schema", K_SCHEMA, 6);
         CHECK("import", K_IMPORT, 6);
+        CHECK("length", K_LENGTH, 6);
         break;
     case 7:
         CHECK("include", K_INCLUDE, 7);
         CHECK("element", K_ELEMENT, 7);
         CHECK("appinfo", K_APPINFO, 7);
+        CHECK("pattern", K_PATTERN, 7);
         break;
     case 8:
         CHECK("sequence", K_SEQUENCE, 8);
@@ -271,6 +273,8 @@ TToken XSDLexer::LookupKeyword(void)
     case 9:
         CHECK("extension", K_EXTENSION, 9);
         CHECK("attribute", K_ATTRIBUTE, 9);
+        CHECK("minLength", K_MINLENGTH, 9);
+        CHECK("maxLength", K_MAXLENGTH, 9);
         break;
     case 10:
         CHECK("simpleType", K_SIMPLETYPE, 10);
@@ -281,6 +285,12 @@ TToken XSDLexer::LookupKeyword(void)
         CHECK("restriction", K_RESTRICTION, 11);
         CHECK("enumeration", K_ENUMERATION, 11);
         break;
+    case 12:
+        CHECK("minInclusive", K_INCMIN, 12);
+        CHECK("minExclusive", K_EXCMIN, 12);
+        CHECK("maxInclusive", K_INCMAX, 12);
+        CHECK("maxExclusive", K_EXCMAX, 12);
+        break;
     case 13:
         CHECK("simpleContent", K_SIMPLECONTENT, 13);
         CHECK("documentation", K_DOCUMENTATION, 13);
@@ -289,7 +299,6 @@ TToken XSDLexer::LookupKeyword(void)
         CHECK("complexContent", K_COMPLEXCONTENT, 14);
         CHECK("attributeGroup", K_ATTRIBUTEGROUP, 14);
         break;
-
     }
     return T_IDENTIFIER;
 }

@@ -34,7 +34,6 @@
 */
 
 #include "type.hpp"
-#include "dtdaux.hpp"
 #include <list>
 
 BEGIN_NCBI_SCOPE

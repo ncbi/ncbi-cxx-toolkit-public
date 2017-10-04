@@ -1606,28 +1606,30 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     methods << ")";
                 }
             }
-            if (i->dataType && i->dataType->GetDataMember() && !DataTool().IsSetCodeGenerationStyle(CDataTool::eNoRestrictions)) {
+            if (!DataTool().IsSetCodeGenerationStyle(CDataTool::eNoRestrictions) && i->dataType && i->dataType->GetDataMember()) {
                 const list<CMemberFacet>& con = i->dataType->GetDataMember()->GetRestrictions();
                 if (!con.empty()) {
                     for (const CMemberFacet& c : con) {
                         ESerialFacet ct = c.GetType();
-                        if (ct == ESerialFacet::eExclusiveMinimum || ct == ESerialFacet::eExclusiveMaximum) {
-                            continue;
-                        }
-                        if (ct == ESerialFacet::eInclusiveMinimum) {
-                            if (find_if(con.begin(), con.end(), [](const CMemberFacet& i) {
-                                    return (i.GetType() == ESerialFacet::eExclusiveMinimum) &&
-                                            NStr::StringToBool(i.GetValue());
-                                }) != con.end()) {
-                                ct = ESerialFacet::eExclusiveMinimum;
+                        if (CDataType::GetSourceDataSpec() == EDataSpec::eJSON) {
+                            if (ct == ESerialFacet::eExclusiveMinimum || ct == ESerialFacet::eExclusiveMaximum) {
+                                continue;
                             }
-                        }
-                        if (ct == ESerialFacet::eInclusiveMaximum) {
-                            if (find_if(con.begin(), con.end(), [](const CMemberFacet& i) {
-                                    return (i.GetType() == ESerialFacet::eExclusiveMaximum) &&
-                                            NStr::StringToBool(i.GetValue());
-                                }) != con.end()) {
-                                ct = ESerialFacet::eExclusiveMaximum;
+                            if (ct == ESerialFacet::eInclusiveMinimum) {
+                                if (find_if(con.begin(), con.end(), [](const CMemberFacet& i) {
+                                        return (i.GetType() == ESerialFacet::eExclusiveMinimum) &&
+                                                NStr::StringToBool(i.GetValue());
+                                    }) != con.end()) {
+                                    ct = ESerialFacet::eExclusiveMinimum;
+                                }
+                            }
+                            if (ct == ESerialFacet::eInclusiveMaximum) {
+                                if (find_if(con.begin(), con.end(), [](const CMemberFacet& i) {
+                                        return (i.GetType() == ESerialFacet::eExclusiveMaximum) &&
+                                                NStr::StringToBool(i.GetValue());
+                                    }) != con.end()) {
+                                    ct = ESerialFacet::eExclusiveMaximum;
+                                }
                             }
                         }
                         if (ct == ESerialFacet::eInclusiveMinimum || ct == ESerialFacet::eExclusiveMinimum ||

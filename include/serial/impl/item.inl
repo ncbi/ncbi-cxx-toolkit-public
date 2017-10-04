@@ -87,10 +87,10 @@ bool CItemInfo::Optional(void) const
 }
 
 inline
-void CItemInfo::Validate(TConstObjectPtr classPtr) const
+void CItemInfo::Validate(TConstObjectPtr classPtr, const CObjectStack& stk) const
 {
     if (m_Restrict) {
-        m_Restrict->Validate(this, GetItemPtr(classPtr));
+        m_Restrict->Validate(GetTypeInfo(), GetItemPtr(classPtr), stk);
     }
 }
 

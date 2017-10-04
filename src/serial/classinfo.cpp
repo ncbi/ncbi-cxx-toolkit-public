@@ -303,8 +303,12 @@ void CClassTypeInfo::ReadImplicitMember(CObjectIStream& in,
     in.ReadNamedType(classType,
                      memberInfo->GetTypeInfo(),
                      memberInfo->GetItemPtr(objectPtr));
-    if (memberInfo->HaveSetFlag() && in.GetSpecialCaseUsed() == CObjectIStream::eReadAsNil) {
-        memberInfo->UpdateSetFlagNo(objectPtr);
+    if (memberInfo->HaveSetFlag()) {
+        if (in.GetSpecialCaseUsed() == CObjectIStream::eReadAsNil) {
+            memberInfo->UpdateSetFlagNo(objectPtr);
+        } else if (in.GetVerifyData() == eSerialVerifyData_Yes) {
+            memberInfo->Validate(objectPtr, in);
+        }
     }
     in.UnsetMemberNillable();
 }
@@ -361,6 +365,9 @@ void CClassTypeInfo::WriteImplicitMember(CObjectOStream& out,
                 return;
             }
         } 
+    }
+    if (memberInfo->HaveSetFlag() && out.GetVerifyData() == eSerialVerifyData_Yes) {
+        memberInfo->Validate(objectPtr, out);
     }
 do_write:
     out.WriteNamedType(classType,

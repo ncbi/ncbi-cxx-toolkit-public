@@ -81,8 +81,8 @@ protected:
 
     void SkipContent();
 
-    DTDElement::EOccurrence ParseMinOccurs( DTDElement::EOccurrence occNow);
-    DTDElement::EOccurrence ParseMaxOccurs( DTDElement::EOccurrence occNow);
+    DTDElement::EOccurrence ParseMinOccurs( DTDElement& node, DTDElement::EOccurrence occNow);
+    DTDElement::EOccurrence ParseMaxOccurs( DTDElement& node, DTDElement::EOccurrence occNow);
 
     string ParseElementContent(DTDElement* owner, int emb);
     string ParseGroup(DTDElement* owner, int emb);
@@ -95,6 +95,7 @@ protected:
     void ParseSimpleContent(DTDElement& node);
     void ParseExtension(DTDElement& node);
     void ParseRestriction(DTDElement& node);
+    void ParseFacet(DTDElement& node, TToken tok);
     void ParseEnumeration(DTDElement& node);
     void ParseAttribute(DTDElement& node);
     void ParseAttributeGroup(DTDElement& node);

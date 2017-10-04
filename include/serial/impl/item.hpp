@@ -36,6 +36,7 @@
 #include <serial/serialutil.hpp>
 #include <serial/impl/typeref.hpp>
 #include <serial/impl/memberid.hpp>
+#include <serial/impl/objstack.hpp>
 
 
 /** @addtogroup FieldsComplex
@@ -86,7 +87,7 @@ public:
 
     bool Optional(void) const;
 
-    void Validate(TConstObjectPtr classPtr) const;
+    void Validate(TConstObjectPtr classPtr, const CObjectStack& stk) const;
 
     CItemInfo* Restrict( ESerialFacet type, const string& pattern);
     CItemInfo* Restrict( ESerialFacet type, Uint8 value);
@@ -134,8 +135,8 @@ class NCBI_XSERIAL_EXPORT CSerialFacet
 public:
     CSerialFacet(void);
     virtual ~CSerialFacet(void);
-    void Validate(const CItemInfo* info, TConstObjectPtr object) const;
-    virtual void Validate(const CConstObjectInfo& oi, const string& name) const = 0;
+    void Validate(TTypeInfo info, TConstObjectPtr object, const CObjectStack& stk) const;
+    virtual void Validate(const CConstObjectInfo& oi, const CObjectStack& stk) const = 0;
 };
 
 /* @} */

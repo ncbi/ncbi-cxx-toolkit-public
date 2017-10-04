@@ -676,8 +676,9 @@ CSerialFacet::CSerialFacet(void) {
 }
 CSerialFacet::~CSerialFacet(void) {
 }
-void CSerialFacet::Validate(const CItemInfo* info, TConstObjectPtr object) const {
-    Validate( CConstObjectInfo(object, info->GetTypeInfo()), info->GetId().GetName());
+
+void CSerialFacet::Validate(TTypeInfo info, TConstObjectPtr object, const CObjectStack& stk) const {
+    Validate( CConstObjectInfo(object, info), stk);
 }
 
 class CSerialFacetImpl : public CSerialFacet
@@ -690,17 +691,20 @@ public:
             delete m_Next;
         }
     }
-    virtual void Validate(const CConstObjectInfo& oi, const string& name) const override {
+    virtual void Validate( const CConstObjectInfo& oi, const CObjectStack& stk) const override {
         if (m_Next) {
-            m_Next->Validate(oi, name);
+            m_Next->Validate(oi, stk);
         }
     }
-    void ValidateContainerElements( const CSerialFacetImpl& facet, const CConstObjectInfo& oi, const string& name) const {
-        size_t ib=0;
+protected:
+    void ValidateContainerElements( const CConstObjectInfo& oi, const CObjectStack& stk) const {
         CConstObjectInfo::CElementIterator b = oi.BeginElements();
-        for ( ; b.Valid(); ++b, ++ib) {
-            facet.Validate(b.GetElement(), name + "[" + NStr::NumericToString(ib) + "]");
+        for ( ; b.Valid(); ++b) {
+            Validate(b.GetElement(), stk);
         }
+    }
+    static string GetLocation(const CObjectStack& stk) {
+        return string("Restriction check failed at ") + stk.GetPosition() + " (" + stk.GetStackTrace() + "): ";
     }
 
 protected:
@@ -714,20 +718,22 @@ class CSerialFacetPattern : public CSerialFacetImpl
 public:
     CSerialFacetPattern(ESerialFacet type, const string& value) : CSerialFacetImpl(type), m_Value(value) {
     }
-    virtual void Validate(const CConstObjectInfo& oi, const string& name) const override {
+    virtual void Validate( const CConstObjectInfo& oi, const CObjectStack& stk) const override {
         if ( oi.GetTypeFamily() == eTypeFamilyPrimitive && oi.GetPrimitiveValueType() == ePrimitiveValueString) {
             string v;
             oi.GetPrimitiveValueString(v);
             if (!regex_match(v, regex(m_Value))) {
-                NCBI_THROW(CSerialFacetException,ePattern,
-                    "Restriction check failed: member \"" + name +
-                    "\" has value \"" + v + "\", which does not match pattern \"" + m_Value + "\"");
+                NCBI_THROW(CSerialFacetException,ePattern, GetLocation(stk) +
+                    "value \"" + v + "\", does not match pattern \"" + m_Value + "\"");
             }
         }
         else if ( oi.GetTypeFamily() == eTypeFamilyContainer) {
-            ValidateContainerElements( CSerialFacetPattern(m_Type, m_Value), oi, name);
+            CSerialFacetPattern(m_Type, m_Value).ValidateContainerElements( oi, stk);
         }
-        CSerialFacetImpl::Validate(oi, name);
+        CSerialFacetImpl::Validate( oi, stk);
+    }
+    void AddPattern(const string& value) {
+        m_Value += "|" + value;
     }
 private:
     string m_Value;
@@ -738,7 +744,7 @@ class CSerialFacetLength : public CSerialFacetImpl
 public:
     CSerialFacetLength(ESerialFacet type, Uint8 value) : CSerialFacetImpl(type), m_Value(value) {
     }
-    virtual void Validate(const CConstObjectInfo& oi, const string& name) const override {
+    virtual void Validate( const CConstObjectInfo& oi, const CObjectStack& stk) const override {
         if (oi.GetTypeFamily() == eTypeFamilyPrimitive) {
             Uint8 v;
             switch (oi.GetPrimitiveValueType()) {
@@ -764,29 +770,26 @@ public:
                 }
                 break;
             default:
-                CSerialFacetImpl::Validate(oi, name);
+                CSerialFacetImpl::Validate(oi, stk);
                 return;
             }
             switch (m_Type) {
             case ESerialFacet::eMinLength:
                 if (v < m_Value) {
-                    NCBI_THROW(CSerialFacetException,eMinLength,
-                        "Restriction check failed: member \"" + name +
-                        "\" has length \"" + NStr::NumericToString(v) + "\", while MinLength is " + NStr::NumericToString(m_Value));
+                    NCBI_THROW(CSerialFacetException,eMinLength, GetLocation(stk) +
+                        "string is too short (" + NStr::NumericToString(v) + "), must have MinLength = " + NStr::NumericToString(m_Value));
                 }
                 break;
             case ESerialFacet::eMaxLength:
                 if (v > m_Value) {
-                    NCBI_THROW(CSerialFacetException,eMaxLength,
-                        "Restriction check failed: member \"" + name +
-                        "\" has length \"" + NStr::NumericToString(v) + "\", while MaxLength is " + NStr::NumericToString(m_Value));
+                    NCBI_THROW(CSerialFacetException,eMaxLength, GetLocation(stk) +
+                        "string is too long (" + NStr::NumericToString(v) + "), must have MaxLength = " + NStr::NumericToString(m_Value));
                 }
                 break;
             case ESerialFacet::eLength:
                 if (v != m_Value) {
-                    NCBI_THROW(CSerialFacetException,eLength,
-                        "Restriction check failed: member \"" + name +
-                        "\" has length \"" + NStr::NumericToString(v) + "\", while Length is " + NStr::NumericToString(m_Value));
+                    NCBI_THROW(CSerialFacetException,eLength, GetLocation(stk) +
+                        "string has invalid length (" + NStr::NumericToString(v) + "), must have Length = " + NStr::NumericToString(m_Value));
                 }
                 break;
             default:
@@ -794,9 +797,9 @@ public:
             }
         }
         else if ( oi.GetTypeFamily() == eTypeFamilyContainer) {
-            ValidateContainerElements( CSerialFacetLength(m_Type, m_Value), oi, name);
+            CSerialFacetLength(m_Type, m_Value).ValidateContainerElements(oi, stk);
         }
-        CSerialFacetImpl::Validate(oi, name);
+        CSerialFacetImpl::Validate(oi, stk);
     }
 private:
     Uint8 m_Value;
@@ -827,19 +830,18 @@ class CSerialFacetMultipleOf : public CSerialFacetImpl
 public:
     CSerialFacetMultipleOf(ESerialFacet type, TValue value) : CSerialFacetImpl(type), m_Value(value) {
     }
-    virtual void Validate(const CConstObjectInfo& oi, const string& name) const override {
+    virtual void Validate(const CConstObjectInfo& oi, const CObjectStack& stk) const override {
         if ( oi.GetTypeFamily() == eTypeFamilyPrimitive && oi.GetPrimitiveValueType() == ePrimitiveValueInteger) {
             TValue v = xxx_Value<TValue>(oi);
             if (v % m_Value != 0) {
-                NCBI_THROW(CSerialFacetException,eMultipleOf,
-                    "Restriction check failed: member \"" + name +
-                    "\" has value \"" + NStr::NumericToString(v) + "\", while it should be MultipleOf " + NStr::NumericToString(m_Value));
+                NCBI_THROW(CSerialFacetException,eMultipleOf, GetLocation(stk) +
+                    "invalid value (" + NStr::NumericToString(v) + "), must be MultipleOf " + NStr::NumericToString(m_Value));
             }
         }
         else if ( oi.GetTypeFamily() == eTypeFamilyContainer) {
-            ValidateContainerElements( CSerialFacetMultipleOf<TValue>(m_Type, m_Value), oi, name);
+            CSerialFacetMultipleOf<TValue>(m_Type, m_Value).ValidateContainerElements(oi, stk);
         }
-        CSerialFacetImpl::Validate(oi, name);
+        CSerialFacetImpl::Validate(oi, stk);
     }
 private:
     TValue m_Value;
@@ -851,37 +853,33 @@ class CSerialFacetValue : public CSerialFacetImpl
 public:
     CSerialFacetValue(ESerialFacet type, TValue value) : CSerialFacetImpl(type), m_Value(value) {
     }
-    virtual void Validate(const CConstObjectInfo& oi, const string& name) const override {
+    virtual void Validate( const CConstObjectInfo& oi, const CObjectStack& stk) const override {
         if ( oi.GetTypeFamily() == eTypeFamilyPrimitive && 
             (oi.GetPrimitiveValueType() == ePrimitiveValueInteger || oi.GetPrimitiveValueType() == ePrimitiveValueReal)) {
             TValue v = xxx_Value<TValue>(oi);
             switch (m_Type) {
             case ESerialFacet::eInclusiveMinimum:
                 if (v < m_Value) {
-                    NCBI_THROW(CSerialFacetException,eInclusiveMinimum,
-                        "Restriction check failed: member \"" + name +
-                        "\" has value \"" + NStr::NumericToString(v) + "\", while eInclusiveMinimum is " + NStr::NumericToString(m_Value));
+                    NCBI_THROW(CSerialFacetException,eInclusiveMinimum, GetLocation(stk) +
+                        "invalid value (" + NStr::NumericToString(v) + "), eInclusiveMinimum = " + NStr::NumericToString(m_Value));
                 }
                 break;
             case ESerialFacet::eExclusiveMinimum:
                 if (v <= m_Value) {
-                    NCBI_THROW(CSerialFacetException,eExclusiveMinimum,
-                        "Restriction check failed: member \"" + name +
-                        "\" has value \"" + NStr::NumericToString(v) + "\", while ExclusiveMinimum is " + NStr::NumericToString(m_Value));
+                    NCBI_THROW(CSerialFacetException,eExclusiveMinimum, GetLocation(stk) +
+                        "invalid value (" + NStr::NumericToString(v) + "), ExclusiveMinimum = " + NStr::NumericToString(m_Value));
                 }
                 break;
             case ESerialFacet::eInclusiveMaximum:
                 if (v > m_Value) {
-                    NCBI_THROW(CSerialFacetException,eInclusiveMaximum,
-                        "Restriction check failed: member \"" + name +
-                        "\" has value \"" + NStr::NumericToString(v) + "\", while eInclusiveMaximum is " + NStr::NumericToString(m_Value));
+                    NCBI_THROW(CSerialFacetException,eInclusiveMaximum, GetLocation(stk) +
+                        "invalid value (" + NStr::NumericToString(v) + "), eInclusiveMaximum = " + NStr::NumericToString(m_Value));
                 }
                 break;
             case ESerialFacet::eExclusiveMaximum:
                 if (v >= m_Value) {
-                    NCBI_THROW(CSerialFacetException,eExclusiveMaximum,
-                        "Restriction check failed: member \"" + name +
-                        "\" has value \"" + NStr::NumericToString(v) + "\", while ExclusiveMaximum is " + NStr::NumericToString(m_Value));
+                    NCBI_THROW(CSerialFacetException,eExclusiveMaximum, GetLocation(stk) +
+                        "invalid value (" + NStr::NumericToString(v) + "), ExclusiveMaximum = " + NStr::NumericToString(m_Value));
                 }
                 break;
             default:
@@ -889,9 +887,9 @@ public:
             }
         }
         else if ( oi.GetTypeFamily() == eTypeFamilyContainer) {
-            ValidateContainerElements( CSerialFacetValue<TValue>(m_Type, m_Value), oi, name);
+            CSerialFacetValue<TValue>(m_Type, m_Value).ValidateContainerElements(oi, stk);
         }
-        CSerialFacetImpl::Validate(oi, name);
+        CSerialFacetImpl::Validate(oi, stk);
     }
 private:
     TValue m_Value;
@@ -902,23 +900,21 @@ class CSerialFacetContainer : public CSerialFacetImpl
 public:
     CSerialFacetContainer(ESerialFacet type, Uint8 value) : CSerialFacetImpl(type), m_Value(value) {
     }
-    virtual void Validate(const CConstObjectInfo& oi, const string& name) const override {
+    virtual void Validate(const CConstObjectInfo& oi, const CObjectStack& stk) const override {
         if ( oi.GetTypeFamily() == eTypeFamilyContainer) {
             CConstObjectInfo::CElementIterator b = oi.BeginElements();
             Uint8 v = b.GetElementCount();
             switch (m_Type) {
             case ESerialFacet::eMinItems:
                 if (v < m_Value) {
-                    NCBI_THROW(CSerialFacetException,eMinItems,
-                        "Restriction check failed: array \"" + name +
-                        "\" is too short: " + NStr::NumericToString(v) + " elements, while MinItems is " + NStr::NumericToString(m_Value));
+                    NCBI_THROW(CSerialFacetException,eMinItems, GetLocation(stk) +
+                        "array is too short (" + NStr::NumericToString(v) + "), must have MinItems = " + NStr::NumericToString(m_Value));
                 }
                 break;
             case ESerialFacet::eMaxItems:
                 if (v > m_Value) {
-                    NCBI_THROW(CSerialFacetException,eMaxItems,
-                        "Restriction check failed: array \"" + name +
-                        "\" is too long: " + NStr::NumericToString(v) + " elements, while MaxItems is " + NStr::NumericToString(m_Value));
+                    NCBI_THROW(CSerialFacetException,eMaxItems, GetLocation(stk) +
+                        "array is too long (" + NStr::NumericToString(v) + "), must have MaxItems = " + NStr::NumericToString(m_Value));
                 }
                 break;
             case ESerialFacet::eUniqueItems:
@@ -928,9 +924,8 @@ public:
                     for ( ; b.Valid(); ++b, ++ib) {
                         for ( e=b, ie=ib+1, ++e; e.Valid(); ++e, ++ie) {
                             if (b.GetElement().GetTypeInfo()->Equals( b.GetElement().GetObjectPtr(), e.GetElement().GetObjectPtr())) {
-                                NCBI_THROW(CSerialFacetException,eUniqueItems,
-                                    "Restriction check failed: array \"" + name +
-                                    "\" contains identical elements: #" + NStr::NumericToString(ib) + " and #" + NStr::NumericToString(ie));
+                                NCBI_THROW(CSerialFacetException,eUniqueItems, GetLocation(stk) +
+                                    "array contains identical elements: #" + NStr::NumericToString(ib) + " and #" + NStr::NumericToString(ie) + ", must have UniqueItems");
                             }
                         }
                     }
@@ -940,7 +935,7 @@ public:
                 break;
             }
         }
-        CSerialFacetImpl::Validate(oi, name);
+        CSerialFacetImpl::Validate(oi, stk);
     }
 private:
     Uint8 m_Value;
@@ -950,6 +945,12 @@ CItemInfo* CItemInfo::Restrict( ESerialFacet type, const string& pattern)
 {
     CSerialFacetImpl* next = nullptr;
     if (type == ESerialFacet::ePattern) {
+        for (next = (CSerialFacetImpl*)m_Restrict; next; next = (CSerialFacetImpl*)next->m_Next) {
+            if (next->m_Type == ESerialFacet::ePattern) {
+                ((CSerialFacetPattern*)next)->AddPattern(pattern);
+                return this;
+            }
+        }
         next = new CSerialFacetPattern(type, pattern);
     }
     if (next) {
