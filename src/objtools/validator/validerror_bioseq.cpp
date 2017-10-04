@@ -237,8 +237,7 @@ void CValidError_bioseq::ValidateBioseq (
             m_FeatValidator.SetScope(*m_Scope);
             m_FeatValidator.SetTSE(m_CurrentHandle.GetTopLevelEntry());
         }
-        
-
+ 
         try {
             CCacheImpl::SFeatKey gene_key(
                 CSeqFeatData::e_Gene, CCacheImpl::kAnyFeatSubtype,
@@ -318,7 +317,7 @@ bool s_IsLegalSeqIdChar(const char ch)
     if (isalpha(ch) || isdigit(ch)) {
         return true;
     } else if (ch == '-' || ch == '_' || ch == '.' || ch == ':' ||
-        ch == '*' || ch == '#' || ch == '/') {
+        ch == '*' || ch == '#' || ch == '/' || ch == '(' || ch == ')') {
         return true;
     } else {
         return false;
@@ -1303,6 +1302,7 @@ void CValidError_bioseq::ValidateBioseqContext(
 
         // Validate descriptors that affect this bioseq
         ValidateSeqDescContext(seq);
+
 
         if (m_dblink_count > 1) {
             PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
@@ -5490,6 +5490,27 @@ bool CValidError_bioseq::x_MatchesOverlappingFeaturePartial (const CMappedFeat& 
         bool look_for_gene = true;
         TSeqPos mrna_start = feat.GetLocation().GetStart(eExtreme_Biological);
         TSeqPos mrna_stop = feat.GetLocation().GetStop(eExtreme_Biological);
+#if 1
+        vector<CMappedFeat> cds_children = m_Imp.GetGeneCache().GetFeatTreeFromCache(m_CurrentHandle)->GetChildren(feat);
+        if (cds_children.size() > 0) {
+            look_for_gene = false;
+            for (auto it = cds_children.begin(); it != cds_children.end(); it++) {
+                if (partial_type == sequence::eSeqlocPartial_Nostart) {
+                    if (it->GetLocation().GetStart(eExtreme_Biological) == mrna_start) {
+                        rval = true;
+                    } else {
+                        rval = false;
+                    }
+                } else if (partial_type == sequence::eSeqlocPartial_Nostop) {
+                    if (it->GetLocation().GetStop(eExtreme_Biological) == mrna_stop) {
+                        rval = true;
+                    } else {
+                        rval = false;
+                    }
+                }
+            }
+        }
+#else
         CRef<CMatchmRNA> match = m_mRNACDSIndex.FindMatchmRNA(feat);
         if (match) {
           if (match->HasCDSMatch()) {
@@ -5499,6 +5520,7 @@ bool CValidError_bioseq::x_MatchesOverlappingFeaturePartial (const CMappedFeat& 
             rval = true;
           }
         }
+#endif
         if (!rval && look_for_gene) {
             CConstRef<CSeq_feat> gene = m_Imp.GetGeneCache().GetGeneFromCache(feat.GetSeq_feat(), *m_Scope);
             if (gene) {
@@ -5822,7 +5844,6 @@ void CValidError_bioseq::x_ValidateCodingRegionParentPartialness(const CSeq_feat
 void CValidError_bioseq::ValidateFeatPartialInContext (
     const CMappedFeat& feat)
 {
-
     ValidateCDSAndProtPartials (feat);
     x_ValidateCodingRegionParentPartialness(*(feat.GetSeq_feat()));
 
@@ -6023,7 +6044,6 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
         }
         errtype <<= 1;
     }
-
 }
 
 
@@ -6077,6 +6097,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
 
         int firstcdsgencode = 0;
         bool mixedcdsgencodes = false;
+
         if (m_AllFeatIt) {
             ITERATE(CCacheImpl::TFeatValue, fi, *m_AllFeatIt) {
                 const CSeq_feat& feat = fi->GetOriginalFeature();
@@ -6197,7 +6218,6 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                                    "Different pseudogene values on mRNA (" + sfp_pseudo + ") and gene (" + gene_pseudo + ")", feat);
                         }
                     }
-
                 } else if (fi->GetFeatSubtype() == CSeqFeatData::eSubtype_rRNA) {
                     if (! feat.IsSetPseudo() || ! feat.GetPseudo()) {
                         const CRNA_ref& rref = feat.GetData().GetRna();
@@ -6246,7 +6266,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                         break;
                     }
                 }
-                
+ 
                 if ( is_mrna ) {              // mRNA
                     switch ( ftype ) {
                     case CSeqFeatData::e_Cdregion:
@@ -6425,6 +6445,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
         if ( !is_aa ) {
             // validate abutting UTRs for nucleotides
             x_ValidateAbuttingUTR(m_CurrentHandle);
+
             // validate coding regions between UTRs
             ValidateCDSUTR(seq);
         }
