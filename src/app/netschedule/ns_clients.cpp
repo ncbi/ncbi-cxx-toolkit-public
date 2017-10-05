@@ -606,7 +606,8 @@ CNSClient::CNSClient(const CNSClientId &  client_id,
     m_ClientDataVersion(0),
     m_WNData(blacklist_timeout),
     m_ReaderData(read_blacklist_timeout),
-    m_LastScope(client_id.GetScope())
+    m_LastScope(client_id.GetScope()),
+    m_ProgName(client_id.GetProgramName())
 {
     if (!client_id.IsComplete())
         NCBI_THROW(CNetScheduleException, eInternalError,
@@ -700,6 +701,7 @@ string CNSClient::Print(const string &               node_name,
                         bool                         verbose) const
 {
     string      buffer;
+    buffer.reserve(4096);
 
     buffer += "OK:CLIENT: '" + node_name + "'\n"
               "OK:  STATUS: " + x_StateAsString() + "\n"
@@ -880,7 +882,9 @@ string CNSClient::Print(const string &               node_name,
         buffer += "OK:  READER AFFINITIES GARBAGE COLLECTED: FALSE\n";
     else
         buffer += "OK:  READER AFFINITIES GARBAGE COLLECTED: TRUE\n";
-    buffer += "OK:  LAST SCOPE: '" + m_LastScope + "'\n";
+    buffer += "OK:  LAST SCOPE: '" + m_LastScope + "'\n"
+              "OK:  PROGRAM NAME: '" +
+              NStr::PrintableString(m_ProgName) + "'\n";
 
     return buffer;
 }

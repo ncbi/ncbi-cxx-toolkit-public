@@ -551,6 +551,7 @@ class CNSClient
         SRemoteNodeData     m_ReaderData;
 
         string              m_LastScope;
+        string              m_ProgName;
 
     private:
         string  x_TypeAsString(void) const;
