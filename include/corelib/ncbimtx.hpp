@@ -1339,9 +1339,9 @@ class NCBI_XNCBI_EXPORT CSemaphore
 public:
     /// Constructor.
     ///
-    /// @param
-    ///   int_count   The initial value of the semaphore.
-    ///   max_count   Maximum value that semaphore value can be incremented to.
+    /// @param int_count   The initial value of the semaphore.
+    /// @param max_count   Maximum value that semaphore value can be incremented to.
+    ///                    NOTE: On Windows max_count can not be greater than LONG_MAX.
     CSemaphore(unsigned int init_count, unsigned int max_count);
 
     /// Destructor.

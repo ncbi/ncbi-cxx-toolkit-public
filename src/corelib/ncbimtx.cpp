@@ -1422,6 +1422,10 @@ struct SSemaphore
 
 CSemaphore::CSemaphore(unsigned int init_count, unsigned int max_count)
 {
+#if defined(NCBI_WIN32_THREADS)
+    // On Windows max_count is LONG and can not exceed LONG_MAX.
+    max_count = min(max_count, (unsigned int)LONG_MAX);
+#endif
     xncbi_Validate(max_count != 0,
                    "CSemaphore::CSemaphore() - max_count passed zero");
     xncbi_Validate(init_count <= max_count,
@@ -1457,7 +1461,7 @@ CSemaphore::CSemaphore(unsigned int init_count, unsigned int max_count)
 #  endif  /* NCBI_OS_CYGWIN */
 
 #elif defined(NCBI_WIN32_THREADS)
-    m_Sem->sem = CreateSemaphore(NULL, init_count, min(max_count,(unsigned int)LONG_MAX), NULL);
+    m_Sem->sem = CreateSemaphore(NULL, init_count, max_count, NULL);
 #ifdef _DEBUG
     if (m_Sem->sem == NULL) {
         DWORD dwErr = GetLastError();
