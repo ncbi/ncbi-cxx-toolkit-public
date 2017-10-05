@@ -92,8 +92,8 @@ static int/*bool*/ s_AddService(const SSERV_Info* info,
 
 static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
 {
+    TSERV_Type types = iter->types & ~(fSERV_Stateless | fSERV_Firewall);
     struct SLOCAL_Data* data = (struct SLOCAL_Data*) iter->data;
-    const TSERV_Type types = iter->types & ~fSERV_Firewall;
     char key[sizeof(REG_CONN_LOCAL_SERVER) + 10];
     int/*bool*/ ok = 0/*failed*/;
     SSERV_Info* info;
@@ -101,7 +101,7 @@ static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
 
     info = 0;
     strcpy(key, REG_CONN_LOCAL_SERVER "_");
-    for (n = 0;  n <= 100;  n++) {
+    for (n = 0;  n <= 100;  ++n) {
         const char* svc;
         char buf[1024];
 
@@ -122,15 +122,17 @@ static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
             unsigned int localhost = SOCK_GetLocalHostAddress(eDefault);
             if (!info->host)
                 info->host = localhost;
-            if ((info->site & fSERV_Private)  &&  info->host != localhost)
+            if (!iter->ok_private  &&  (info->site & fSERV_Private)
+                &&  info->host != localhost) {
                 continue;  /* private server */
+            }
         }
         if (!iter->reverse_dns  &&  info->type != fSERV_Dns) {
             if (types != fSERV_Any  &&  !(types & info->type))
                 continue;  /* type doesn't match */
             if (types == fSERV_Any  &&  info->type == fSERV_Dns)
                 continue;  /* DNS entries have to be req'd explicitly */
-            if (iter->stateless  &&  (info->mode & fSERV_Stateful))
+            if ((iter->types & fSERV_Stateless)&&(info->mode & fSERV_Stateful))
                 continue;  /* skip stateful only servers */
         }
         if (!info->rate)
@@ -236,7 +238,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     i = 0;
     data->i_cand = 0;
     while (i < data->n_cand) {
-        /* NB all servers have been loaded in accordance with iter->external */
+        /* NB all servers have been loaded in accordance with their locality */
         info = (SSERV_Info*) data->cand[i].info;
         if (info->rate > 0.0  ||  iter->ok_down) {
             const char* c = SERV_NameOfInfo(info);

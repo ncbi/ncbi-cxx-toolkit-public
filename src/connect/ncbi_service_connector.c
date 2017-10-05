@@ -97,10 +97,7 @@ extern "C" {
 
 static int/*bool*/ s_OpenDispatcher(SServiceConnector* uuu)
 {
-    TSERV_Type types = uuu->types;
-    if (uuu->net_info->stateless)
-        types |= fSERV_Stateless;
-    if (!(uuu->iter = SERV_Open(uuu->service, types,
+    if (!(uuu->iter = SERV_Open(uuu->service, uuu->types,
                                 SERV_LOCALHOST, uuu->net_info))) {
         CORE_LOGF_X(5, eLOG_Error,
                     ("[%s]  Service not found", uuu->service));
@@ -1020,6 +1017,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
     uuu->warned = 0;
     for (uuu->retry = 0;  uuu->retry < uuu->net_info->max_try;  uuu->retry++) {
         SConnNetInfo* net_info;
+        TSERV_TypeOnly types;
         SSERV_InfoCPtr info;
         int stateless;
         CONNECTOR c;
@@ -1034,11 +1032,12 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
                  ||  strcasecmp(SERV_MapperName(uuu->iter), "local") == 0)) {
             break;
         }
-        if ((uuu->types & ~fSERV_Firewall)
-            &&  info  &&  ((info->type != fSERV_Firewall
-                            &&  !(uuu->types & info->type))  ||
-                           (info->type == fSERV_Firewall
-                            &&  !(uuu->types & info->u.firewall.type)))) {
+        types = uuu->iter->types & ~(fSERV_Firewall | fSERV_Stateless);
+        if (info  &&  types
+            &&  ((info->type != fSERV_Firewall
+                  &&  !(types & info->type))  ||
+                 (info->type == fSERV_Firewall
+                  &&  !(types & info->u.firewall.type)))) {
             const char* type = SERV_TypeStr(info->type == fSERV_Firewall
                                             ? info->u.firewall.type
                                             : info->type);
@@ -1047,7 +1046,15 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
                     *type ? " (0x%hX)" : "0x%hX", (unsigned short) info->type);
             CORE_LOGF_X(10, eLOG_Critical,
                         ("[%s]  Mismatched server type %s%s not within 0x%hX",
-                         uuu->service, type, buf, (unsigned short)uuu->types));
+                         uuu->service, type, buf, types));
+            status = eIO_Unknown;
+            continue;
+        }
+        if (info
+            &&  (uuu->types & fSERV_Stateless)&&(info->mode & fSERV_Stateful)){
+            CORE_LOGF_X(12, eLOG_Critical,
+                        ("[%s]  Stateful server in stateless search",
+                         uuu->service));
             status = eIO_Unknown;
             continue;
         }
@@ -1126,7 +1133,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
             CORE_LOGF_X(6, eLOG_Error,
                         ("[%s]  %s connection failure (%s) usually"
                          " indicates possible firewall configuration"
-                         " problems; please consult <%s>", uuu->service,
+                         " problem(s); please consult <%s>", uuu->service,
                          uuu->net_info->firewall ? "Firewall":"Stateful relay",
                          IO_StatusStr(status), kFWDLink));
         }

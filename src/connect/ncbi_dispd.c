@@ -70,8 +70,9 @@ static const SSERV_VTable s_op = {
 
 
 struct SDISPD_Data {
-    short/*bool*/  eof;  /* no more resolves */
-    short/*bool*/  fail; /* no more connects */
+    int            code;  /* last HTTP code   */
+    short/*bool*/  fail;  /* no more connects */
+    short/*bool*/  eof;   /* no more resolves */
     SConnNetInfo*  net_info;
     SLB_Candidate* cand;
     size_t         n_cand;
@@ -82,32 +83,33 @@ struct SDISPD_Data {
 
 static int/*bool*/ s_AddServerInfo(struct SDISPD_Data* data, SSERV_Info* info)
 {
-    size_t i;
+    size_t n;
     const char* name = SERV_NameOfInfo(info);
     /* First check that the new server info updates an existing one */
-    for (i = 0; i < data->n_cand; i++) {
-        if (strcasecmp(name, SERV_NameOfInfo(data->cand[i].info)) == 0
-            &&  SERV_EqualInfo(info, data->cand[i].info)) {
+    for (n = 0;  n < data->n_cand;  ++n) {
+        if (strcasecmp(name, SERV_NameOfInfo(data->cand[n].info)) == 0
+            &&  SERV_EqualInfo(info, data->cand[n].info)) {
             /* Replace older version */
-            free((void*) data->cand[i].info);
-            data->cand[i].info = info;
-            return 1;
+            free((void*) data->cand[n].info);
+            data->cand[n].info = info;
+            return 1/*success*/;
         }
     }
     /* Next, add new service to the list */
     if (data->n_cand == data->a_cand) {
-        size_t n = data->a_cand + 10;
-        SLB_Candidate* temp = (SLB_Candidate*)
-            (data->cand
-             ? realloc(data->cand, n * sizeof(*temp))
-             : malloc (            n * sizeof(*temp)));
-        if (!temp)
-            return 0;
+        SLB_Candidate* temp;
+        n = data->a_cand + 10;
+        if (!(temp
+              = (SLB_Candidate*)(data->cand
+                                 ? realloc(data->cand, n * sizeof(*temp))
+                                 : malloc (            n * sizeof(*temp))))) {
+            return 0/*failure*/;
+        }
         data->cand = temp;
         data->a_cand = n;
     }
     data->cand[data->n_cand++].info = info;
-    return 1;
+    return 1/*success*/;
 }
 
 
@@ -118,20 +120,22 @@ extern "C" {
 #endif /*__cplusplus*/
 
 static EHTTP_HeaderParse s_ParseHeader(const char* header,
-                                       void*       iter,
+                                       void*       user_data,
                                        int         server_error)
 {
-    struct SDISPD_Data* data = (struct SDISPD_Data*)((SERV_ITER) iter)->data;
-    int code = 0/*success code if any*/;
+    SERV_ITER iter = (SERV_ITER) user_data;
+    struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
     if (server_error) {
         if (server_error == 400 || server_error == 403 || server_error == 404)
             data->fail = 1/*true*/;
-    } else if (sscanf(header, "%*s %d", &code) < 1) {
+        data->code = server_error;
+    } else if (sscanf(header, "%*s %d", &data->code) < 1) {
         data->eof = 1/*true*/;
+        data->code = -1/*failure*/;
         return eHTTP_HeaderError;
     }
-    /* check for empty document */
-    if (!SERV_Update((SERV_ITER) iter, header, server_error)  ||  code == 204)
+    /* a check for empty document */
+    if (!SERV_Update(iter, header, server_error)  ||  data->code == 204)
         data->eof = 1/*true*/;
     return eHTTP_HeaderSuccess;
 }
@@ -163,7 +167,9 @@ static void s_Resolve(SERV_ITER iter)
     char* s;
 
     assert(!(data->eof | data->fail));
-    assert(!!net_info->stateless == !!iter->stateless);
+    assert(!!net_info->firewall  == !!(iter->types & fSERV_Firewall));
+    assert(!!net_info->stateless == !!(iter->types & fSERV_Stateless));
+
     /* Obtain additional header information */
     if ((!(s = SERV_Print(iter, 0, 0))
          ||  ConnNetInfo_OverrideUserHeader(net_info, s))
@@ -183,7 +189,7 @@ static void s_Resolve(SERV_ITER iter)
                                        ? "Client-Mode: STATEFUL_CAPABLE\r\n"
                                        : "Client-Mode: STATELESS_ONLY\r\n")) {
         c = HTTP_CreateConnectorEx(net_info, fHTTP_Flushable, s_ParseHeader,
-                                   iter/*data*/, s_Adjust, 0/*cleanup*/);
+                                   iter/*user_data*/, s_Adjust, 0/*cleanup*/);
     }
     if (s) {
         ConnNetInfo_DeleteUserHeader(net_info, s);
@@ -230,12 +236,12 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text, int code)
                 return 0/*not updated*/;
             name = s;
             while (*name  &&  isspace((unsigned char)(*name)))
-                name++;
+                ++name;
             if (!*name) {
                 free(s);
                 return 0/*not updated*/;
             }
-            for (c = s + (name - s);  *c;  c++) {
+            for (c = s + (name - s);  *c;  ++c) {
                 if (isspace((unsigned char)(*c)))
                     break;
             }
@@ -265,14 +271,14 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text, int code)
         if (data->net_info->debug_printout) {
             text += sizeof(HTTP_DISP_FAILURES) - 1;
             while (*text  &&  isspace((unsigned char)(*text)))
-                text++;
+                ++text;
             CORE_LOGF_X(6, failure ? eLOG_Warning : eLOG_Note,
                         ("[%s]  %s", data->net_info->svc/*not exact*/, text));
         }
 #endif /*_DEBUG && !NDEBUG*/
         if (failure) {
             if (code)
-                data->fail = 1;
+                data->fail = 1/*true*/;
             return 1/*updated*/;
         }
         /* NB: a mere message does not constitute an update */
@@ -290,7 +296,6 @@ static int/*bool*/ s_IsUpdateNeeded(TNCBI_Time now, struct SDISPD_Data *data)
         size_t i = 0;
         while (i < data->n_cand) {
             const SSERV_Info* info = data->cand[i].info;
-
             total += fabs(info->rate);
             if (info->time < now) {
                 if (i < --data->n_cand) {
@@ -300,11 +305,11 @@ static int/*bool*/ s_IsUpdateNeeded(TNCBI_Time now, struct SDISPD_Data *data)
                 free((void*) info);
             } else {
                 status += fabs(info->rate);
-                i++;
+                ++i;
             }
         }
     }
-    return total == 0.0 ? 1 : status/total < DISPD_STALE_RATIO_OK;
+    return total == 0.0 ? 1/*true*/ : status / total < DISPD_STALE_RATIO_OK;
 }
 
 
@@ -359,7 +364,7 @@ static void s_Reset(SERV_ITER iter)
         if (data->cand) {
             size_t i;
             assert(data->a_cand);
-            for (i = 0; i < data->n_cand; i++)
+            for (i = 0;  i < data->n_cand;  ++i)
                 free((void*) data->cand[i].info);
             data->n_cand = 0;
         }
@@ -409,7 +414,7 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 
     data->net_info->scheme = eURL_Https;
     data->net_info->req_method = eReqMethod_Get;
-    if (iter->stateless)
+    if (iter->types & fSERV_Stateless)
         data->net_info->stateless = 1/*true*/;
     if ((iter->types & fSERV_Firewall)  &&  !data->net_info->firewall)
         data->net_info->firewall = eFWMode_Adaptive;

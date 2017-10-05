@@ -236,14 +236,14 @@ static SERV_ITER x_Open(const char*         service,
         iter->ismask        = 1;
     if (types & fSERV_IncludeDown)
         iter->ok_down       = 1;
+    if (types & fSERV_IncludePrivate)
+        iter->ok_private    = 1;
     if (types & fSERV_IncludeReserved)
         iter->ok_reserved   = 1;
     if (types & fSERV_IncludeSuppressed)
         iter->ok_suppressed = 1;
     if (types & fSERV_ReverseDns)
         iter->reverse_dns   = 1;
-    if (types & fSERV_Stateless)
-        iter->stateless     = 1;
     iter->external          = external ? 1 : 0;
     if (arg  &&  *arg) {
         iter->arg           = arg;
@@ -285,7 +285,7 @@ static SERV_ITER x_Open(const char*         service,
         if (net_info->firewall)
             iter->types |= fSERV_Firewall;
         if (net_info->stateless)
-            iter->stateless = 1;
+            iter->types |= fSERV_Stateless;
         if (net_info->lb_disable)
             do_lbsmd = 0/*false*/;
     } else
@@ -764,7 +764,6 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
     static const char kSkipInfo[] = "Skip-Info-%u: ";
     static const char kAffinity[] = "Affinity: ";
     char buffer[128], *str;
-    TBSERV_TypeOnly t;
     size_t buflen, i;
     BUF buf = 0;
 
@@ -777,14 +776,14 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
         return 0;
     }
     if (iter) {
-        assert(iter->op);
+        TSERV_TypeOnly t, types = iter->types & ~fSERV_Stateless;
         if (net_info  &&  !net_info->http_referer  &&  iter->op->mapper)
             s_SetDefaultReferer(net_info, iter);
         /* Accepted server types */
         buflen = sizeof(kAcceptedServerTypes) - 1;
         memcpy(buffer, kAcceptedServerTypes, buflen);
         for (t = 1;  t;  t <<= 1) {
-            if (iter->types & t) {
+            if (types & t) {
                 const char* name = SERV_TypeStr((ESERV_Type) t);
                 size_t namelen = strlen(name);
                 if (!namelen  ||  buflen + 1 + namelen + 2 >= sizeof(buffer))
@@ -792,7 +791,7 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
                 buffer[buflen++] = ' ';
                 memcpy(buffer + buflen, name, namelen);
                 buflen += namelen;
-            } else if (iter->types < t)
+            } else if (types < t)
                 break;
         }
         if (buffer[buflen - 1] != ':') {
@@ -810,7 +809,7 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
                 return 0;
             }
         }
-        if (iter->types & fSERV_Firewall) {
+        if (types & fSERV_Firewall) {
             /* Firewall */
             EFWMode mode
                 = net_info ? (EFWMode) net_info->firewall : eFWMode_Legacy;

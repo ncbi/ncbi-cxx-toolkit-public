@@ -393,9 +393,8 @@ static EEndpointStatus s_EndpointFromNamerd(SEndpoint* end, SERV_ITER iter)
         retval = eEndStat_Error;
         goto out;
     }
-    nd_iter->name       = strdup(iter->name);
-    nd_iter->types      = fSERV_Http;
-    nd_iter->stateless  = 1;
+    nd_iter->name  = strdup(iter->name);
+    nd_iter->types = fSERV_Http;
 
     /* Connect directly to namerd. */
     nd_net_info = ConnNetInfo_Create(iter->name);
@@ -591,7 +590,6 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
 {
     struct SLINKERD_Data*   data;
 
-
     /* Sanity checks */
     {{
         assert(iter);
@@ -604,14 +602,12 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
 
         /* Check that service name is provided - otherwise there is nothing to
          * search for. */
-        if ( ! iter->name) {
+        if (!iter->name  ||  !*iter->name) {
             CORE_LOG_X(eLSub_BadData, eLOG_Error,
-                "\"iter->name\" is NULL, not able to continue "
+                "Service name is NULL or empty: not able to continue "
                 "SERV_LINKERD_Open");
             return NULL;
         }
-        assert(iter->name);
-        assert(*iter->name);
 
         /* Prohibit catalog-prefixed services (e.g. "/lbsm/<svc>") */
         if (iter->name[0] == '/') {
@@ -691,12 +687,7 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
     strcpy(dni->path, endpoint.path);
     strcpy(dni->args, endpoint.args);
 
-    if (iter->stateless)
-        dni->stateless = 1;
-    if ((iter->types & fSERV_Firewall)  &&  ! dni->firewall)
-        dni->firewall = eFWMode_Adaptive;
 
-    assert( !! dni->stateless ==  !! iter->stateless);
     assert(dni->scheme == eURL_Http  ||  dni->scheme == eURL_Https);
 
     if ( ! s_Resolve(iter)) {

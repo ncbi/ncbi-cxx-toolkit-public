@@ -1240,7 +1240,6 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
 
     TIN("s_Resolve()");
     assert( ! (data->eof | data->fail));
-    assert( !! net_info->stateless ==  !! iter->stateless);
 
     /* Handle DTAB, if present. */
     s_ProcessDtab(net_info);
@@ -1506,19 +1505,18 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
         strcat(data->net_info->args, iter->name);
     }
 
-    if (iter->stateless)
+    if (iter->types & fSERV_Stateless)
         data->net_info->stateless = 1/*true*/;
-    if ((iter->types & fSERV_Firewall)  &&   ! data->net_info->firewall)
+    if ((iter->types & fSERV_Firewall)  &&  !data->net_info->firewall)
         data->net_info->firewall = eFWMode_Adaptive;
 
     iter->op = &s_op; /*SERV_Update() [from HTTP callback] expects*/
     s_Resolve(iter);
     iter->op = NULL;
 
-    if ( ! data->n_cand  &&  (data->fail  ||
-                             ! (data->net_info->stateless  &&
-                              data->net_info->firewall)))
-    {
+    if (!data->n_cand  &&  (data->fail
+                            ||  !(data->net_info->stateless  &&
+                                  data->net_info->firewall))) {
         s_Close(iter);
         TOUT("SERV_NAMERD_Open() -- fail");
         return NULL;
