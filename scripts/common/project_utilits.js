@@ -9,10 +9,12 @@ var g_open_solution = true;
 
 var g_def_branch = "toolkit/trunk/internal/c++";
 var g_branch     = "toolkit/trunk/internal/c++";
+//var g_def_branch = "toolkit/trunk/c++";
+//var g_branch     = "toolkit/trunk/c++";
 
 // valid:   "120", "120x64", "140", "140x64"
-var g_def_msvcver = "120x64";
-var g_msvcver     = "120x64";
+var g_def_msvcver = "140x64";
+var g_msvcver     = "140x64";
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Utility functions :
