@@ -885,8 +885,7 @@ CNetServer::SExecResult SNetServiceImpl::FindServerAndExec(const string& cmd,
     switch (m_ServiceType) {
     default: // CNetService::eServiceNotDefined
         NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
-                m_APIName << ": command '" << cmd <<
-                        "' requires a server but none specified");
+                m_APIName << ": service name is not set");
 
     case CNetService::eLoadBalancedService:
         {
