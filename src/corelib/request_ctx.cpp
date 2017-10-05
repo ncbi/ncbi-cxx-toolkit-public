@@ -826,4 +826,54 @@ const char* CRequestContextException::GetErrCodeString(void) const
 }
 
 
+CRequestContextGuard::CRequestContextGuard(CRequestContext* context, TFlags flags)
+    : m_Flags(flags)
+{
+    CDiagContext& ctx = GetDiagContext();
+    if ( context ) {
+        m_SavedContext.Reset(&ctx.GetRequestContext());
+        m_RequestContext.Reset(context);
+        ctx.SetRequestContext(context);
+    }
+    else {
+        m_RequestContext.Reset(&ctx.GetRequestContext());
+    }
+
+    if (m_Flags & fPrintRequestStart) {
+        // This also updates app state to RB/R
+        ctx.PrintRequestStart();
+    }
+}
+
+
+CRequestContextGuard::~CRequestContextGuard(void)
+{
+    // If released, do not perform any actions.
+    if ( !m_RequestContext ) return;
+
+    if ( uncaught_exception() ) {
+        SetStatus(m_ErrorStatus);
+    }
+    else if ( !m_RequestContext->IsSetRequestStatus() ) {
+        m_RequestContext->SetRequestStatus(CRequestStatus::e200_Ok);
+    }
+
+    CDiagContext& ctx = GetDiagContext();
+    // This also updates app state to RE/P
+    ctx.PrintRequestStop();
+
+    if ( m_SavedContext ) {
+        ctx.SetRequestContext(m_SavedContext.GetNonNullPointer());
+    }
+}
+
+
+void CRequestContextGuard::SetDefaultErrorStatus(int status)
+{
+    // If the guard has been released throw null pointer exception.
+    m_RequestContext.GetNonNullPointer();
+    m_ErrorStatus = status;
+}
+
+
 END_NCBI_SCOPE

@@ -479,6 +479,52 @@ private:
 };
 
 
+/// Take guard of the current CRequestContext, handle app-state, start/stop
+/// logging and request status in the dtor.
+class NCBI_XNCBI_EXPORT CRequestContextGuard
+{
+public:
+    enum FFlags {
+        fPrintRequestStart = 1 << 0 ///< Print request-start automatically in the
+                                    ///< constructor. By default request-start is
+                                    ///< not printed to allow the caller log request
+                                    ///< arguments.
+    };
+    typedef int TFlags;
+
+    /// Initialize guard.
+    /// @param context
+    ///  Request context to be used. If null, re-use current context.
+    /// @param flags
+    ///  Optional flags, @sa FFlags.
+    CRequestContextGuard(CRequestContext* context, TFlags flags = 0);
+
+    /// Destroy guard. If released do nothing. On exception set error status.
+    /// Print request-stop. Restore previous context.
+    ~CRequestContextGuard(void);
+
+    /// Set request context status.
+    void SetStatus(int status) { m_RequestContext->SetRequestStatus(status); }
+
+    /// Set default error status, which will be used if an uncaught exception
+    /// is detected.
+    void SetDefaultErrorStatus(int status);
+
+    /// Get the guarded request context.
+    CRequestContext& GetRequestContext() const { return *m_RequestContext; }
+
+    /// Release the guarded context, do not perform any automatic actions
+    /// (logging, setting status, restoring context).
+    void Release(void) { m_RequestContext.Reset(); }
+
+private:
+    TFlags                        m_Flags = 0;
+    int                           m_ErrorStatus = 500;
+    CRef<CRequestContext>         m_SavedContext;
+    mutable CRef<CRequestContext> m_RequestContext;
+};
+
+
 class NCBI_XNCBI_EXPORT CRequestContextException :
     EXCEPTION_VIRTUAL_BASE public CException
 {
