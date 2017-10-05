@@ -316,7 +316,7 @@ void RetrieveLargeChromosomeWithTimeOut(bool is_remote)
 {
     const string kAccession("NC_000001");
 
-    const string db("nucl_dbs");
+    const string db("refseq_genomic");
     const bool is_protein = false;
     const bool use_fixed_slice_size = false;
     CAutoRegistrar reg(db, is_protein, use_fixed_slice_size, is_remote);
