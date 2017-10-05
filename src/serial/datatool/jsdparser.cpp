@@ -143,6 +143,9 @@ void JSDParser::ParseNode(DTDElement& node)
     TToken tok;
     bool is_object = false;
     bool has_additional_prop = false;//true;
+    string min_value, max_value;
+    bool excl_min = false, excl_max = false;
+
     node.SetSourceLine( Lexer().CurrentLine());
     for (tok = GetNextToken(); tok != K_END_OBJECT; tok = GetNextToken()) {
         if (tok == K_KEY) {
@@ -194,9 +197,15 @@ void JSDParser::ParseNode(DTDElement& node)
                 } else if (key == "maxLength") {
                     node.AddFacet( CMemberFacet( ESerialFacet::eMaxLength, Value()));
                 } else if (key == "minimum") {
-                    node.AddFacet( CMemberFacet( ESerialFacet::eInclusiveMinimum, Value()));
+                    min_value = Value();
                 } else if (key == "maximum") {
-                    node.AddFacet( CMemberFacet( ESerialFacet::eInclusiveMaximum, Value()));
+                    max_value = Value();
+                } else if (key == "exclusiveMinimum") {
+                    min_value = Value();
+                    excl_max = true;
+                } else if (key == "exclusiveMaximum") {
+                    max_value = Value();
+                    excl_max = true;
                 } else if (key == "multipleOf") {
                     node.AddFacet( CMemberFacet( ESerialFacet::eMultipleOf, Value()));
                 } else {
@@ -207,14 +216,20 @@ void JSDParser::ParseNode(DTDElement& node)
                     node.AddFacet( CMemberFacet( ESerialFacet::eInclusiveMinimum, Value()));
                 } else if (key == "maximum") {
                     node.AddFacet( CMemberFacet( ESerialFacet::eInclusiveMaximum, Value()));
+                } else if (key == "exclusiveMinimum") {
+                    min_value = Value();
+                    excl_max = true;
+                } else if (key == "exclusiveMaximum") {
+                    max_value = Value();
+                    excl_max = true;
                 } else {
                     ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
                 }
             } else if (tok == K_TRUE || tok == K_FALSE) {
                 if (key == "exclusiveMinimum") {
-                    node.AddFacet( CMemberFacet( ESerialFacet::eExclusiveMinimum, Value()));
+                    excl_min = true;
                 } else if (key == "exclusiveMaximum") {
-                    node.AddFacet( CMemberFacet( ESerialFacet::eExclusiveMaximum, Value()));
+                    excl_max = true;
                 } else if (key == "uniqueItems") {
                     node.AddFacet( CMemberFacet( ESerialFacet::eUniqueItems, Value()));
                 } else if (key == "additionalProperties") {
@@ -264,6 +279,12 @@ void JSDParser::ParseNode(DTDElement& node)
                 ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
             }
         }
+    }
+    if (!min_value.empty()) {
+        node.AddFacet( CMemberFacet( excl_min ?  ESerialFacet::eExclusiveMinimum : ESerialFacet::eInclusiveMinimum, min_value));
+    }
+    if (!max_value.empty()) {
+        node.AddFacet( CMemberFacet( excl_max ?  ESerialFacet::eExclusiveMaximum : ESerialFacet::eInclusiveMaximum, max_value));
     }
     if (is_object && has_additional_prop) {
         string item_id = NStr::Join(m_URI,"/") + "*";

@@ -224,7 +224,7 @@ void CDataTypeModule::PrintJSONSchema(CNcbiOstream& out) const
 {
     out << "{";
     int indent = 1;
-    PrintASNNewLine(out, indent) << "\"$schema\": \"http://json-schema.org/draft-04/schema#\",";
+    PrintASNNewLine(out, indent) << "\"$schema\": \"http://json-schema.org/draft-07/schema#\",";
     list<string> req;
     bool first = true;
     ITERATE ( TDefinitions, i, m_Definitions ) {

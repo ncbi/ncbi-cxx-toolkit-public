@@ -60,6 +60,7 @@ void CStaticDataType::PrintASN(CNcbiOstream& out, int /*indent*/) const
 void CStaticDataType::PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool) const
 {
     string asnk(GetASNKeyword());
+    const CDataMember* mem = GetDataMember();
     string type("string");
     if (asnk == "NULL") {
         type = "null";
@@ -75,10 +76,53 @@ void CStaticDataType::PrintJSONSchema(CNcbiOstream& out, int indent, list<string
         out << "\"oneOf\": [{";
     }
     out << "\"type\": \"" << type << "\"";
+    if (mem) {
+        const list<CMemberFacet>& con = mem->GetRestrictions();
+        for (const CMemberFacet& f : con) {
+            string fname;
+            switch (f.GetType()) {
+            case ESerialFacet::eMinLength:
+                out << ",";  PrintASNNewLine(out, indent) << "\"minLength\": " << f.GetValue();
+                break;
+            case ESerialFacet::eMaxLength:
+                out << ",";  PrintASNNewLine(out, indent) << "\"maxLength\": " << f.GetValue();
+                break;
+            case ESerialFacet::eExclusiveMinimum:
+                out << ",";  PrintASNNewLine(out, indent) << "\"exclusiveMinimum\": " << f.GetValue();
+                break;
+            case ESerialFacet::eInclusiveMinimum:
+                out << ",";  PrintASNNewLine(out, indent) << "\"minimum\": " << f.GetValue();
+                break;
+            case ESerialFacet::eExclusiveMaximum:
+                out << ",";  PrintASNNewLine(out, indent) << "\"exclusiveMaximum\": " << f.GetValue();
+                break;
+            case ESerialFacet::eInclusiveMaximum:
+                out << ",";  PrintASNNewLine(out, indent) << "\"maximum\": " << f.GetValue();
+                break;
+            case ESerialFacet::eMultipleOf:
+                out << ",";  PrintASNNewLine(out, indent) << "\"multipleOf\": " << f.GetValue();
+                break;
+            case ESerialFacet::ePattern:
+//                out << ",";  PrintASNNewLine(out, indent) << "\"pattern\": \"" << f.GetValue() << "\"";
+                break;
+            default: break;
+            }
+        }
+        if (find_if(con.begin(), con.end(), [](const CMemberFacet& f) { return f.GetType() == ESerialFacet::ePattern;}) != con.end()) {
+            out << ",";  PrintASNNewLine(out, indent) << "\"pattern\": \"";
+            Dt_transform_if(con.begin(), con.end(), Dt_ostream_iterator<string>(out, "|"),
+                [](const CMemberFacet& f) {
+                    return f.GetType() == ESerialFacet::ePattern;
+                },
+                [](const CMemberFacet& f) {
+                    return f.GetValue();
+                });
+            out << "\"";
+        }
+    }
     if (IsNillable()) {
         out << "}, {\"type\": \"null\"}]";
     }
-    const CDataMember* mem = GetDataMember();
     if (mem) {
         if (mem->GetDefault()) {
             out << ", \"default\": \"" << mem->GetDefault()->GetXmlString() << "\"";
@@ -104,6 +148,7 @@ void CStaticDataType::PrintXMLSchema(CNcbiOstream& out,
     const CDataMember* mem = GetDataMember();
     bool optional = mem ? mem->Optional() : false;
     bool isGlobalType = GetGlobalType() == CDataType::eType;
+    bool hasFacets = mem ? !mem->GetRestrictions().empty() : !GetRestrictions().empty();
 
     if (isGlobalType) {
         xsdk = "complexType";
@@ -126,7 +171,7 @@ void CStaticDataType::PrintXMLSchema(CNcbiOstream& out,
     }
     PrintASNNewLine(out, indent) << "<xs:" << xsdk << " name=\"" << tag << "\"";
     string type = GetSchemaTypeString();
-    if (!isGlobalType && !type.empty()) {
+    if (!isGlobalType && !type.empty() && !hasFacets) {
         out << " type=\"" << type << "\"";
     }
     if (!use.empty()) {
@@ -165,6 +210,34 @@ void CStaticDataType::PrintXMLSchema(CNcbiOstream& out,
         PrintASNNewLine(out, ++indent) << "<xs:simpleContent>";
         PrintASNNewLine(out, ++indent) << "<xs:extension base=\"" << type << "\"/>";
         PrintASNNewLine(out, --indent) << "</xs:simpleContent>";
+        PrintASNNewLine(out, --indent) << "</xs:" << xsdk << ">";
+        return;
+    }
+    if (hasFacets && !type.empty()) {
+        out << ">";
+        PrintASNNewLine(out, ++indent) << "<xs:simpleType>";
+        PrintASNNewLine(out, ++indent) << "<xs:restriction base=\"" << type << "\">";
+        ++indent;
+        const list<CMemberFacet>& con = mem ? mem->GetRestrictions() : GetRestrictions();
+        for (const CMemberFacet& f : con) {
+            string fname;
+            switch (f.GetType()) {
+            case ESerialFacet::eMinLength:         fname = "minLength";    break;
+            case ESerialFacet::eMaxLength:         fname = "maxLength";    break;
+            case ESerialFacet::eLength:            fname = "length";       break;
+            case ESerialFacet::ePattern:           fname = "pattern";      break;
+            case ESerialFacet::eInclusiveMinimum:  fname = "minInclusive"; break;
+            case ESerialFacet::eExclusiveMinimum:  fname = "minExclusive"; break;
+            case ESerialFacet::eInclusiveMaximum:  fname = "maxInclusive"; break;
+            case ESerialFacet::eExclusiveMaximum:  fname = "maxExclusive"; break;
+            default: break;
+            }
+            if (!fname.empty()) {
+                PrintASNNewLine(out, indent) << "<xs:" << fname << " value=\"" << f.GetValue() << "\"/>";
+            }
+        }
+        PrintASNNewLine(out, --indent) << "</xs:restriction>";
+        PrintASNNewLine(out, --indent) << "</xs:simpleType>";
         PrintASNNewLine(out, --indent) << "</xs:" << xsdk << ">";
         return;
     }

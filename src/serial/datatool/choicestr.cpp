@@ -1611,27 +1611,6 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 if (!con.empty()) {
                     for (const CMemberFacet& c : con) {
                         ESerialFacet ct = c.GetType();
-                        if (CDataType::GetSourceDataSpec() == EDataSpec::eJSON) {
-                            if (ct == ESerialFacet::eExclusiveMinimum || ct == ESerialFacet::eExclusiveMaximum) {
-                                continue;
-                            }
-                            if (ct == ESerialFacet::eInclusiveMinimum) {
-                                if (find_if(con.begin(), con.end(), [](const CMemberFacet& i) {
-                                        return (i.GetType() == ESerialFacet::eExclusiveMinimum) &&
-                                                NStr::StringToBool(i.GetValue());
-                                    }) != con.end()) {
-                                    ct = ESerialFacet::eExclusiveMinimum;
-                                }
-                            }
-                            if (ct == ESerialFacet::eInclusiveMaximum) {
-                                if (find_if(con.begin(), con.end(), [](const CMemberFacet& i) {
-                                        return (i.GetType() == ESerialFacet::eExclusiveMaximum) &&
-                                                NStr::StringToBool(i.GetValue());
-                                    }) != con.end()) {
-                                    ct = ESerialFacet::eExclusiveMaximum;
-                                }
-                            }
-                        }
                         if (ct == ESerialFacet::eInclusiveMinimum || ct == ESerialFacet::eExclusiveMinimum ||
                             ct == ESerialFacet::eInclusiveMaximum || ct == ESerialFacet::eExclusiveMaximum ||
                             ct == ESerialFacet::eMultipleOf)
