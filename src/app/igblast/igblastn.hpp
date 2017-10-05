@@ -181,7 +181,7 @@ public:
     // END:   FORMATTER THREAD DECLARATION ========================
     
     /** @inheritDoc */
-    CIgBlastnApp() : m_new_batch_done(0, UINT_MAX) 
+    CIgBlastnApp() : m_new_batch_done(0, UINT_MAX>>1) 
     {
         CRef<CVersion> version(new CVersion());
         version->SetVersionInfo(new CIgBlastVersion());
