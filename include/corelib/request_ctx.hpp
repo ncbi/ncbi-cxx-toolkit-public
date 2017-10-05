@@ -481,7 +481,7 @@ private:
 
 /// Take guard of the current CRequestContext, handle app-state, start/stop
 /// logging and request status in the dtor.
-class NCBI_XNCBI_EXPORT CRequestContextGuard
+class NCBI_XNCBI_EXPORT CRequestContextGuard_Base
 {
 public:
     enum FFlags {
@@ -497,11 +497,11 @@ public:
     ///  Request context to be used. If null, re-use current context.
     /// @param flags
     ///  Optional flags, @sa FFlags.
-    CRequestContextGuard(CRequestContext* context, TFlags flags = 0);
+    CRequestContextGuard_Base(CRequestContext* context, TFlags flags = 0);
 
     /// Destroy guard. If released do nothing. On exception set error status.
     /// Print request-stop. Restore previous context.
-    ~CRequestContextGuard(void);
+    ~CRequestContextGuard_Base(void);
 
     /// Set request context status.
     void SetStatus(int status) { m_RequestContext->SetRequestStatus(status); }

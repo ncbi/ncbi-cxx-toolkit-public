@@ -826,7 +826,7 @@ const char* CRequestContextException::GetErrCodeString(void) const
 }
 
 
-CRequestContextGuard::CRequestContextGuard(CRequestContext* context, TFlags flags)
+CRequestContextGuard_Base::CRequestContextGuard_Base(CRequestContext* context, TFlags flags)
     : m_Flags(flags)
 {
     CDiagContext& ctx = GetDiagContext();
@@ -846,7 +846,7 @@ CRequestContextGuard::CRequestContextGuard(CRequestContext* context, TFlags flag
 }
 
 
-CRequestContextGuard::~CRequestContextGuard(void)
+CRequestContextGuard_Base::~CRequestContextGuard_Base(void)
 {
     // If released, do not perform any actions.
     if ( !m_RequestContext ) return;
@@ -868,7 +868,7 @@ CRequestContextGuard::~CRequestContextGuard(void)
 }
 
 
-void CRequestContextGuard::SetDefaultErrorStatus(int status)
+void CRequestContextGuard_Base::SetDefaultErrorStatus(int status)
 {
     // If the guard has been released throw null pointer exception.
     m_RequestContext.GetNonNullPointer();
