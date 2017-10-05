@@ -246,7 +246,7 @@ void RetrievePartsOfLargeChromosome(bool is_remote)
     const TSeqRange kRange(15100, 15500); 
     CRef<CSeq_loc> sl(new CSeq_loc(*id, kRange.GetFrom(), kRange.GetTo()));
 
-    const string db("nucl_dbs");
+    const string db("refseq_genomic");
     const bool is_protein = false;
     const bool use_fixed_slice_size = true;
     CAutoRegistrar reg(db, is_protein, use_fixed_slice_size, is_remote);
