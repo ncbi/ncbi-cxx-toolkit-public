@@ -29,10 +29,6 @@ Seq-annot ::= {
           tag str "HGNC:11024"
         },
         {
-          db "HPRD",
-          tag id 10479
-        },
-        {
           db "MIM",
           tag id 608094
         }
@@ -7109,6 +7105,12 @@ Seq-annot ::= {
           accession "NT_011512",
           version 11
         }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 406947
+        }
       }
     },
     {
@@ -7144,30 +7146,6 @@ Seq-annot ::= {
         type ncRNA,
         ext gen {
           class "miRNA",
-          product "hsa-miR-155-5p"
-        }
-      },
-      location int {
-        from 12608165,
-        to 12608187,
-        strand plus,
-        id other {
-          accession "NT_011512",
-          version 11
-        }
-      },
-      dbxref {
-        {
-          db "miRBase",
-          tag str "MIMAT0000646"
-        }
-      }
-    },
-    {
-      data rna {
-        type ncRNA,
-        ext gen {
-          class "miRNA",
           product "hsa-miR-155-3p"
         }
       },
@@ -7185,30 +7163,6 @@ Seq-annot ::= {
           db "GeneID",
           tag id 406947
         },
-        {
-          db "miRBase",
-          tag str "MIMAT0004658"
-        }
-      }
-    },
-    {
-      data rna {
-        type ncRNA,
-        ext gen {
-          class "miRNA",
-          product "hsa-miR-155-3p"
-        }
-      },
-      location int {
-        from 12608204,
-        to 12608225,
-        strand plus,
-        id other {
-          accession "NT_011512",
-          version 11
-        }
-      },
-      dbxref {
         {
           db "miRBase",
           tag str "MIMAT0004658"
@@ -9684,10 +9638,6 @@ Seq-annot ::= {
           tag str "HGNC:99"
         },
         {
-          db "HPRD",
-          tag str "03471"
-        },
-        {
           db "MIM",
           tag id 601784
         }
@@ -10471,7 +10421,7 @@ Seq-annot ::= {
         {
           data prot {
             name {
-              "phage portal protein"
+              "DUF1073 domain-containing protein"
             }
           }
         }
