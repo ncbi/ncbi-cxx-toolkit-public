@@ -2821,6 +2821,9 @@ BOOST_AUTO_TEST_CASE(FetchGiFromAccessionInput)
     ITERATE(TVecOpts, config, opts) {
         CAutoNcbiConfigFile acf(config->first);
         blast::SDataLoaderConfig dlconfig(false);
+        if(config->second == "BLASTDB") {
+            dlconfig.m_BlastDbName = "refseq_genomic";
+        }
         dlconfig.OptimizeForWholeLargeSequenceRetrieval();
         blast::CBlastInputSourceConfig input_config(dlconfig);
         // this needs to be omitted for this test to work
