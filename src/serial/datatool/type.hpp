@@ -109,7 +109,7 @@ struct _Is_checked_helper<Dt_ostream_iterator<TValue, TElem, TTraits> >
 
 template<typename TInputIt, typename TOutputIt, class TFnIf, class TFnTr>
 TOutputIt Dt_transform_if(TInputIt first, TInputIt last, TOutputIt dest,
-                            TFnIf& funcIf, TFnTr& funcTransform)
+                          const TFnIf& funcIf, const TFnTr& funcTransform)
 {
 	for (; first != last; ++first, (void)++dest) {
         if (funcIf(*first)) {
