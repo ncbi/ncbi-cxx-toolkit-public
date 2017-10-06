@@ -107,6 +107,7 @@ void CUniSequenceDataType::PrintJSONSchema(CNcbiOstream& out, int indent, list<s
     const CDataMember* mem = GetDataMember();
     if (mem) {
         const list<CMemberFacet>& con = mem->GetRestrictions();
+        string pattern;
         for (const CMemberFacet& f : con) {
             string fname;
             switch (f.GetType()) {
@@ -132,21 +133,16 @@ void CUniSequenceDataType::PrintJSONSchema(CNcbiOstream& out, int indent, list<s
                 out << ",";  PrintASNNewLine(out, indent) << "\"multipleOf\": " << f.GetValue();
                 break;
             case ESerialFacet::ePattern:
-//                out << ",";  PrintASNNewLine(out, indent) << "\"pattern\": \"" << f.GetValue() << "\"";
+                if (!pattern.empty()) {
+                    pattern.append("|");
+                }
+                pattern.append(f.GetValue());
                 break;
             default: break;
             }
         }
-        if (find_if(con.begin(), con.end(), [](const CMemberFacet& f) { return f.GetType() == ESerialFacet::ePattern;}) != con.end()) {
-            out << ",";  PrintASNNewLine(out, indent) << "\"pattern\": \"";
-            Dt_transform_if(con.begin(), con.end(), Dt_ostream_iterator<string>(out, "|"),
-                [](const CMemberFacet& f) {
-                    return f.GetType() == ESerialFacet::ePattern;
-                },
-                [](const CMemberFacet& f) {
-                    return f.GetValue();
-                });
-            out << "\"";
+        if (!pattern.empty()) {
+            out << ",";  PrintASNNewLine(out, indent) << "\"pattern\": \"" << pattern << "\"";
         }
     }
     PrintASNNewLine(out, --indent) << "}";
