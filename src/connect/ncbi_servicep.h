@@ -53,11 +53,11 @@
 
 /* SERV_IfSuppressed() can be applied to any of the SERV_Is*() macros below */
 #define SERV_IfSuppressed(i)  (  (i)->time == NCBI_TIME_INFINITE   ||  \
-                               (!(i)->time  &&      (i)->rate < 0.0))
-#define SERV_IsActive(i)      (  (i)->time  &&      (i)->rate > 0.0)
-#define SERV_IsStandby(i)     (  (i)->time  &&      (i)->rate < 0.0)
-#define SERV_IsReserved(i)    ( !(i)->time  &&      (i)->rate)
-#define SERV_IsDown(i)        (                    !(i)->rate)
+                               (!(i)->time  &&  (i)->rate < 0.0))
+#define SERV_IsActive(i)      (  (i)->time  &&  (i)->rate > 0.0)
+#define SERV_IsStandby(i)     (  (i)->time  &&  (i)->rate < 0.0)
+#define SERV_IsReserved(i)    ( !(i)->time  &&  (i)->rate)
+#define SERV_IsDown(i)        (                !(i)->rate)
 
 /* Thus, SERV_IsUp() can be defined as follows */
 #define SERV_IsUp(i)          (SERV_IsActive(i)  &&  !SERV_IfSuppressed(i))

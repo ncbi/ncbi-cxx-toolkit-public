@@ -1017,7 +1017,6 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
     uuu->warned = 0;
     for (uuu->retry = 0;  uuu->retry < uuu->net_info->max_try;  uuu->retry++) {
         SConnNetInfo* net_info;
-        TSERV_TypeOnly types;
         SSERV_InfoCPtr info;
         int stateless;
         CONNECTOR c;
@@ -1031,32 +1030,6 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
             &&  (!uuu->net_info->firewall
                  ||  strcasecmp(SERV_MapperName(uuu->iter), "local") == 0)) {
             break;
-        }
-        types = uuu->iter->types & ~(fSERV_Firewall | fSERV_Stateless);
-        if (info  &&  types
-            &&  ((info->type != fSERV_Firewall
-                  &&  !(types & info->type))  ||
-                 (info->type == fSERV_Firewall
-                  &&  !(types & info->u.firewall.type)))) {
-            const char* type = SERV_TypeStr(info->type == fSERV_Firewall
-                                            ? info->u.firewall.type
-                                            : info->type);
-            char buf[40];
-            sprintf(buf,
-                    *type ? " (0x%hX)" : "0x%hX", (unsigned short) info->type);
-            CORE_LOGF_X(10, eLOG_Critical,
-                        ("[%s]  Mismatched server type %s%s not within 0x%hX",
-                         uuu->service, type, buf, types));
-            status = eIO_Unknown;
-            continue;
-        }
-        if (info
-            &&  (uuu->types & fSERV_Stateless)&&(info->mode & fSERV_Stateful)){
-            CORE_LOGF_X(12, eLOG_Critical,
-                        ("[%s]  Stateful server in stateless search",
-                         uuu->service));
-            status = eIO_Unknown;
-            continue;
         }
         if (uuu->type) {
             free((void*) uuu->type);
@@ -1142,7 +1115,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
     }
     if (status != eIO_Success  &&  !uuu->warned
         &&  uuu->retry > 1  &&  uuu->retry >= uuu->net_info->max_try) {
-        CORE_LOGF_X(11, eLOG_Error,
+        CORE_LOGF_X(10, eLOG_Error,
                     ("[%s]  Too many failed attempts (%hu), giving up",
                      uuu->service, uuu->retry));
     }
