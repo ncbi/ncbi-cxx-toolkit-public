@@ -836,6 +836,9 @@ CCSRADataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
             }
         }
     }
+    else if ( GetReadsFileInfo(idh).first ) {
+        ret.sequence_found = true;
+    }
     return ret;
 }
 
@@ -853,6 +856,9 @@ CCSRADataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
                 break;
             }
         }
+    }
+    else if ( GetReadsFileInfo(idh).first ) {
+        ret.sequence_found = true;
     }
     return ret;
 }

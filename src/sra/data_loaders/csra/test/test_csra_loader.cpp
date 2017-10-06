@@ -51,6 +51,9 @@
 #include <common/test_data_path.h>
 #include <common/test_assert.h>  /* This header must go last */
 
+#include <objmgr/impl/scope_info.hpp>
+#include <objmgr/impl/data_source.hpp>
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -732,6 +735,100 @@ BOOST_AUTO_TEST_CASE(FetchSeq5)
             }
         }
     }
+    
+    scope.RemoveDataLoader(loader_name); // no use-lock as there is no main sequence
+    om->RevokeDataLoader(loader_name);
+}
+
+BOOST_AUTO_TEST_CASE(FetchSeq5u)
+{
+    CRef<CObjectManager> om = sx_GetOM();
+
+    CCSRADataLoader::SLoaderParams params;
+    string csra_name, id;
+    TSeqPos from, to, align_count;
+
+#if 1
+    {
+        csra_name = "SRR389414";
+        params.m_DirPath = csra_name;
+        id = "NC_000023.10";
+        from = 1000000;
+        to = 2000000;
+        align_count = 3016; // 3005 if mapq>=1
+    }
+    string loader_name =
+        CCSRADataLoader::RegisterInObjectManager(*om, params,
+                                                 CObjectManager::eDefault)
+        .GetLoader()->GetName();
+#else
+    {
+        csra_name = "SRR389414";
+        id = "NC_000023.10";
+        from = 1000000;
+        to = 2000000;
+        align_count = 3016; // 3005 if mapq>=1
+    }
+    string loader_name =
+        CCSRADataLoader::RegisterInObjectManager(*om, csra_name,
+                                                 CObjectManager::eDefault)
+        .GetLoader()->GetName();
+#endif
+    sx_ReportCSraLoaderName(loader_name);
+    CGBDataLoader::RegisterInObjectManager(*om);
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    string annot_name = csra_name; //CDirEntry(csra_name).GetBase();
+    string pileup_name = annot_name+PILEUP_NAME_SUFFIX;
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    loc->SetInt().SetId(*seqid);
+    loc->SetInt().SetFrom(from);
+    loc->SetInt().SetTo(to);
+    sx_CheckNames(scope, *loc, annot_name);
+    SAnnotSelector sel(CSeq_annot::C_Data::e_Align);
+    sel.ExcludeNamedAnnots(pileup_name);
+
+    if ( 1 ) {
+        CGraph_CI git(scope, *loc, sel);
+        BOOST_CHECK_EQUAL(git.GetSize(), 1u);
+    }
+
+    if ( 1 ) {
+        CAlign_CI it(scope, *loc, sel);
+        if ( it ) {
+            cout << "Align count: "<<it.GetSize()<<endl;
+            if ( it.GetAnnot().IsNamed() ) {
+                cout << "Annot name: " << it.GetAnnot().GetName()<<endl;
+            }
+        }
+        BOOST_CHECK_EQUAL(align_count, it.GetSize());
+
+        for ( ; it; ++it ) {
+            const CSeq_align& align = *it;
+            ITERATE(CDense_seg::TIds, j, align.GetSegs().GetDenseg().GetIds()) {
+                sx_CheckSeq(scope, idh, **j);
+            }
+        }
+    }
+
+    if ( 1 ) {
+        sel.ResetAnnotsNames();
+        sel.AddNamedAnnots(pileup_name);
+        CGraph_CI git(scope, *loc, sel);
+        BOOST_CHECK(git.GetSize() % 6 == 0);
+        if ( 0 ) {
+            for ( ; git; ++git ) {
+                NcbiCout << MSerial_AsnText << git->GetOriginalGraph();
+            }
+        }
+    }
+
+    scope.RemoveDataLoader(loader_name, scope.eRemoveIfLocked); // there is a use-lock from main sequence
+    om->RevokeDataLoader(loader_name); // but it shouldn't prevend revoking data loader
 }
 
 BOOST_AUTO_TEST_CASE(FetchSeq6)
