@@ -21,7 +21,9 @@ if [ -z "$CONN_HTTP11" -a "`expr $$ '%' 2`" = "1" ]; then
   export CONN_HTTP11
 fi
 
-if [ "`echo $FEATURES | grep -vic '[-]GNUTLS'`" = "1" ]; then
+ssl="`expr '(' $$ / 100 ')' '%' 2`"
+
+if [ "$ssl" = "1" ]; then
   # for netstat
   PATH=${PATH}:/sbin:/usr/sbin
   : ${CONN_USESSL:=1}
@@ -32,6 +34,10 @@ if [ "`echo $FEATURES | grep -vic '[-]GNUTLS'`" = "1" ]; then
   else
     url='https://www.ncbi.nlm.nih.gov/Service/index.html'
   fi
+elif [ -n "$CONN_HTTP_USER_HEADER" ]; then
+  : ${CONN_USESSL:=1}
+  export CONN_USESSL
+  url='http://www.ncbi.nlm.nih.gov/Service/index.html'
 else
   url='http://intranet.ncbi.nlm.nih.gov/Service/index.html'
 fi
