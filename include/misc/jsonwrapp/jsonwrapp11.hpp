@@ -157,6 +157,14 @@ public:
     CJson_ConstNode  GetNode(const TKeyType& value) const;
 
     /// Convert the contents of the node into string
+    /// 
+    /// @note  Method returns JSON text representation of the node.
+    ///        When the node is a string, this differs from the node value,
+    ///        because JSON representation of a string includes quotation marks.
+    ///        To get string value of such node, use GetValue().GetString().
+    ///        For example:
+    ///            node.ToString()             will return  "value"
+    ///            node.GetValue().GetString() will return   value
     std::string ToString(TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
                          unsigned int indent_char_count = 4) const;
 
