@@ -197,6 +197,30 @@ const CAuth_list& CPub::GetAuthors (void) const
   }
 }
 
+CAuth_list& CPub::SetAuthors (void)
+{
+  switch (Which()) {
+    case CPub::e_Gen :
+        return (SetGen().SetAuthors());
+    case CPub::e_Sub :
+        return (SetSub().SetAuthors());
+    case CPub::e_Article :
+        return (SetArticle().SetAuthors());
+    case CPub::e_Book :
+        return (SetBook().SetAuthors());
+    case CPub::e_Proc :
+        return (SetProc().SetBook().SetAuthors());
+    case CPub::e_Patent :
+        return (SetPatent().SetAuthors());
+    case CPub::e_Man :
+        return (SetMan().SetCit().SetAuthors());
+    default :
+        NCBI_THROW(CSerialException, eNotImplemented,
+                   "CPub::SetAuthors: unsupported entry type "
+                   + SelectionName(Which()));
+  }
+}
+
 void CPub::GetTitles(
     TOneTitleRefVec & out_title,
     size_t iMaxToGet ) const

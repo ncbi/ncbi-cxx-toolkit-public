@@ -654,7 +654,7 @@ DISCREPANCY_SUMMARIZE(SUBMITBLOCK_CONFLICT)
 DISCREPANCY_CASE(CONSORTIUM, CPerson_id, eOncaller, "Submitter blocks and publications have consortiums")
 {
     if (obj.IsConsortium()) {
-        m_Objs["[n] publication[s]/submitter block[s] [has] consortium"].Add(*context.NewFeatOrDescOrCitSubObj());
+        m_Objs["[n] publication[s]/submitter block[s] [has] consortium"].Add(*context.NewFeatOrDescOrCitSubObj(eNoRef, true));
     }
 }
 
@@ -662,6 +662,58 @@ DISCREPANCY_CASE(CONSORTIUM, CPerson_id, eOncaller, "Submitter blocks and public
 DISCREPANCY_SUMMARIZE(CONSORTIUM)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+static int RemoveConsortium(CAuth_list& authors)
+{
+    int n = 0;
+    CAuth_list::C_Names::TStd& names = authors.SetNames().SetStd();
+    CAuth_list::C_Names::TStd::iterator it = names.begin();
+    while (it != names.end()) {
+        if ((*it)->CanGetName() && (*it)->GetName().IsConsortium()) {
+            names.erase(it++);
+            n++;
+        }
+        else {
+            ++it;
+        }
+    }
+    return n;
+}
+
+
+DISCREPANCY_AUTOFIX(CONSORTIUM)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        if ((*it)->CanAutofix()) {
+            const CSerialObject* obj = dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer();
+            const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(obj);
+            CSeqdesc* desc = const_cast<CSeqdesc*>(dynamic_cast<const CSeqdesc*>(obj));
+            CSubmit_block* subb = const_cast<CSubmit_block*>(dynamic_cast<const CSubmit_block*>(obj));
+            if (feat) {
+cout << "CONSORTIUM AUTOFIX: on seq_feat is not implemented\n";
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            }
+            if (desc && desc->IsPub() && desc->GetPub().CanGetPub() && desc->GetPub().GetPub().CanGet()) {
+                CPub_equiv::Tdata& data = desc->SetPub().SetPub().Set();
+                NON_CONST_ITERATE (CPub_equiv::Tdata, it, data) {
+                    if ((*it)->IsSetAuthors()) {
+                        n += RemoveConsortium((*it)->SetAuthors());
+                    }
+                }
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            }
+            if (subb && subb->CanGetCit() && subb->GetCit().CanGetAuthors() && subb->GetCit().GetAuthors().CanGetNames()) {
+                n += RemoveConsortium(subb->SetCit().SetAuthors());
+                // we don't autofix in the cit_sub->contact
+                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+            }
+        }
+    }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("CONSORTIUM: [n] Consortium[s] [is] removed", n) : 0);
 }
 
 

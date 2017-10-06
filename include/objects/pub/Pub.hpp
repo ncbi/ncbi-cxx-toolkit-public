@@ -84,6 +84,7 @@ public:
     // convenience functions to get author list from underlying pub
     bool IsSetAuthors(void) const;
     const CAuth_list& GetAuthors(void) const;
+    CAuth_list& SetAuthors(void);
 
     typedef CConstRef<CTitle::C_E> TOneTitleRef;
     typedef vector<TOneTitleRef> TOneTitleRefVec;
