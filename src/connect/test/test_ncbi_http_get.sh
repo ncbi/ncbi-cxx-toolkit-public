@@ -23,20 +23,20 @@ fi
 
 ssl="`expr '(' $$ / 100 ')' '%' 2`"
 
+# for netstat
+PATH=${PATH}:/sbin:/usr/sbin
+
 if [ "$ssl" = "1" ]; then
-  # for netstat
-  PATH=${PATH}:/sbin:/usr/sbin
   : ${CONN_USESSL:=1}
   : ${CONN_TLS_LOGLEVEL:=2}
   export PATH CONN_USESSL CONN_TLS_LOGLEVEL
-  if [ -z "$proxy" -a "`netstat -a -n | grep -w 5556 | grep -c ':5556'`" != "0" ]; then
+  if [ -z "$proxy" -a "`netstat -a -n | grep -c ':\<5556\>'`" != "0" ]; then
     url='https://localhost:5556'
   else
     url='https://www.ncbi.nlm.nih.gov/Service/index.html'
   fi
-elif [ -n "$CONN_HTTP_USER_HEADER" ]; then
-  : ${CONN_USESSL:=1}
-  export CONN_USESSL
+elif [ -n "$CONN_HTTP_USER_HEADER" -o "`netstat -a -n | grep -c ':\<5556\>'`" != "0" ]; then
+  : ${CONN_USESSL:=1};  export CONN_USESSL
   url='http://www.ncbi.nlm.nih.gov/Service/index.html'
 else
   url='http://intranet.ncbi.nlm.nih.gov/Service/index.html'
