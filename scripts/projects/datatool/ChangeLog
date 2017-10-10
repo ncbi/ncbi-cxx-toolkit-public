@@ -156,4 +156,12 @@ July 21, 2016
 Version 2.16.0, CXX-8385
 Added option to distinguish BigInt and Int8 in ASN binary serialization.
 
+October 10, 2017
+version 2.17.0, CXX-9646
+Added generation of C++ code for global types and reusing it when defining elements of such types.
+Added generation of C++ code from JSON schema.
+Added generation of JSON schema from other specifications.
+Added support of data value restrictions.
+Added class member bitset to reference members not using their names.
+
 
