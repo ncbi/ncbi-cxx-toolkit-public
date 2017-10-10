@@ -40,6 +40,7 @@
 #include <corelib/ncbi_config.hpp>
 
 #include <memory>
+#include <unordered_map>
 
 // The number of connection attemps
 #define CONNECTION_MAX_RETRIES 4
@@ -266,6 +267,29 @@ private:
 
 using CCachedSynRegistry = TSynRegistry<CCachedSynRegistryImpl>;
 
+class NCBI_XCONNECT_EXPORT CIncludeSynRegistryImpl : public ISynRegistry
+{
+public:
+    CIncludeSynRegistryImpl(ISynRegistry& registry);
+
+    void Add(const IRegistry& registry) override;
+    IRegistry& GetIRegistry() override;
+
+protected:
+    template <typename TType>
+    TType TGet(const SRegSynonyms& sections, SRegSynonyms names, TType default_value);
+
+    bool HasImpl(const string& section, const string& name) final;
+
+private:
+    SRegSynonyms GetSections(const SRegSynonyms& sections);
+
+    ISynRegistry& m_Registry;
+    unordered_map<string, vector<string>> m_Includes;
+};
+
+using CIncludeSynRegistry = TSynRegistry<CIncludeSynRegistryImpl>;
+
 class ISynRegistryToIRegistry : public IRegistry
 {
 public:
@@ -306,6 +330,11 @@ extern template NCBI_XCONNECT_EXPORT string CCachedSynRegistryImpl::TGet(const S
 extern template NCBI_XCONNECT_EXPORT bool   CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value);
 extern template NCBI_XCONNECT_EXPORT int    CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
 extern template NCBI_XCONNECT_EXPORT double CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
+
+extern template NCBI_XCONNECT_EXPORT string CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value);
+extern template NCBI_XCONNECT_EXPORT bool   CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value);
+extern template NCBI_XCONNECT_EXPORT int    CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
+extern template NCBI_XCONNECT_EXPORT double CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
 
 template <typename TImpl>
 string TSynRegistry<TImpl>::VGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value)
