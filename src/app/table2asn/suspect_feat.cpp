@@ -76,8 +76,9 @@ bool CFixSuspectProductName::FixSuspectProductName(string& name)
         return false;
     }
 
+    CMatchString match(name);
     for (const auto& rule : m_rules->Get()) {
-        if (rule->ApplyToString(name)) {
+        if (rule->ApplyToString(name, match)) {
             return true;
         }
     }

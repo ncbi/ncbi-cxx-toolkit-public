@@ -104,31 +104,29 @@ bool SkipWeasel(string& str)
 }
 
 
-bool CSimple_replace::ApplyToString(string& val, CRef<CString_constraint> find) const
+bool CSimple_replace::ApplyToString(string& result, const CMatchString& str,  CRef<CString_constraint> find) const
 {
     bool use_putative = false;
     if (IsSetWeasel_to_putative() && GetWeasel_to_putative()) {
-        if (SkipWeasel(val)) {
-            use_putative = true;
-        }
+        use_putative = str.HasWeasel();
     }
 
     bool rval = false;
     if (!find) {
-        val = GetReplace();
+        result = GetReplace();
         rval = true;
     } else if (IsSetWhole_string() && GetWhole_string()) {
-        if (find->Match(val)) {
-            val = GetReplace();
+        if (find->Match(str)) {
+            result = GetReplace();
             rval = true;
         }
     } else {
-       string replace = IsSetReplace() ? GetReplace() : kEmptyStr;
-       rval = find->ReplaceStringConstraintPortionInString(val, replace);
+       const string& replace = IsSetReplace() ? GetReplace() : kEmptyStr;
+       rval = find->ReplaceStringConstraintPortionInString(result, str, replace);
     }
 
     if (use_putative) {
-        val = "putative " + val;
+        result = "putative " + str;
         rval = true;
     }
     return rval;

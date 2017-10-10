@@ -93,7 +93,7 @@ public:
             m_uppercase = m_original;
             NStr::ToUpper(m_uppercase);
         }
-        return m_lowercase;
+        return m_uppercase;
     }
     operator const string&() const
     {
@@ -145,8 +145,8 @@ class CString_constraint : public CString_constraint_Base
 {
     typedef CString_constraint_Base Tparent;
 public:
-    CString_constraint() {}
-    ~CString_constraint() {}
+    CString_constraint();
+    virtual ~CString_constraint();
 
     // get all string type data from object
     template <class T>
@@ -159,14 +159,14 @@ public:
        }
     }
 
-    bool Match(const string& str) const;
+    bool Match(const CMatchString& str) const;
     bool Empty() const;
-    bool ReplaceStringConstraintPortionInString(string& val, const string& replace) const;
+    bool ReplaceStringConstraintPortionInString(string& result, const CMatchString& str, const string& replace) const;
 
 private:
     // Prohibit copy constructor and assignment operator
-    CString_constraint(const CString_constraint& value);
-    CString_constraint& operator=(const CString_constraint& value);
+    CString_constraint(const CString_constraint& value) = delete;
+    CString_constraint& operator=(const CString_constraint& value) = delete;
 
     bool x_DoesSingleStringMatchConstraint (const string& str) const;
     bool x_IsWeasel(const CTempString& str) const;

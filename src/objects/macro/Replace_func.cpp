@@ -102,15 +102,15 @@ bool s_ReplaceNocase(string& val, const string& find, const string& repl)
 }
 
 
-bool CReplace_func::ApplyToString(string& val, CRef<CString_constraint> find) const
+bool CReplace_func::ApplyToString(string& result, const CMatchString& str, CRef<CString_constraint> find) const
 {
     bool rval = false;
     if (IsSimple_replace()) {
-        rval = GetSimple_replace().ApplyToString(val, find);
+        rval = GetSimple_replace().ApplyToString(result, str, find);
     } else if (IsHaem_replace()) {
         string repl = GetHaem_replace();
-        rval = s_WholeWordReplaceNocase(val, repl, "heme");
-        rval |= s_ReplaceNocase(val, repl, "hem");
+        rval = s_WholeWordReplaceNocase(result, repl, "heme");
+        rval |= s_ReplaceNocase(result, repl, "hem");
     } 
     return rval;
 }

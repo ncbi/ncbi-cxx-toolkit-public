@@ -44,6 +44,7 @@
 #include <objects/macro/Suspect_rule_.hpp>
 #include <objects/macro/Replace_rule.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/macro/String_constraint.hpp>
 
 // generated classes
 
@@ -71,8 +72,9 @@ public:
     ~CSuspect_rule() {}
  
     // C's MatchesSuspectProductRule()
-    bool StringMatchesSuspectProductRule (const string& str) const;
+    bool StringMatchesSuspectProductRule(const CMatchString& str) const;
 
+    bool ApplyToString(string& result, const CMatchString& str) const;
     bool ApplyToString(string& val) const;
 
     string GetRuleTypeName(void) const;

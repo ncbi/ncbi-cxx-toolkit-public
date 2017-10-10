@@ -688,7 +688,7 @@ static bool DoesSingleStringMatchConstraint(const string& str, const CString_con
 }
 
 
-bool CSuspect_rule::StringMatchesSuspectProductRule(const string& str) const
+bool CSuspect_rule::StringMatchesSuspectProductRule(const CMatchString& str) const
 {
     // CSearch_func: only about string
     const CSearch_func& func = GetFind();
@@ -724,7 +724,13 @@ bool CSuspect_rule::StringMatchesSuspectProductRule(const string& str) const
 
 bool CSuspect_rule::ApplyToString(string& val) const
 {
-    if (!IsSetReplace() || !StringMatchesSuspectProductRule(val)) {
+    return ApplyToString(val, CMatchString(val));
+}
+
+bool CSuspect_rule::ApplyToString(string& result, const CMatchString& str) const
+
+{
+    if (!IsSetReplace() || !StringMatchesSuspectProductRule(str)) {
         return false;
     }
 
@@ -733,7 +739,7 @@ bool CSuspect_rule::ApplyToString(string& val) const
         constraint.Reset(new CString_constraint());
         constraint->Assign(GetFind().GetString_constraint());
     }
-    return GetReplace().ApplyToString(val, constraint);
+    return GetReplace().ApplyToString(result, str, constraint);
 }
 
 

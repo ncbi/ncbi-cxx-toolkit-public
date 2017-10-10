@@ -49,6 +49,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CMatchString;
 /////////////////////////////////////////////////////////////////////////////
 class CReplace_func : public CReplace_func_Base
 {
@@ -59,7 +60,7 @@ public:
     // destructor
     ~CReplace_func(void);
 
-    bool ApplyToString(string& val, CRef<CString_constraint> find) const;
+    bool ApplyToString(string& result, const CMatchString& str, CRef<CString_constraint> find) const;
 
 private:
     // Prohibit copy constructor and assignment operator

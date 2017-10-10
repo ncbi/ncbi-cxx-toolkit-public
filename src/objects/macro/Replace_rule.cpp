@@ -52,12 +52,12 @@ CReplace_rule::~CReplace_rule(void)
 }
 
 
-bool CReplace_rule::ApplyToString(string& val, CRef<CString_constraint> find) const
+bool CReplace_rule::ApplyToString(string& result, const CMatchString& str, CRef<CString_constraint> find) const
 {
     if (!IsSetReplace_func()) {
         return false;
     }
-    return GetReplace_func().ApplyToString(val, find);
+    return GetReplace_func().ApplyToString(result, str, find);
 }
 
 

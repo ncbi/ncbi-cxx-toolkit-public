@@ -62,7 +62,7 @@ public:
     ~CSearch_func() {}
 
     bool Empty() const;
-    bool Match(const string& str) const;
+    bool Match(const CMatchString& str) const;
 
 private:
     // Prohibit copy constructor and assignment operator

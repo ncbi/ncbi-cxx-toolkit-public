@@ -61,7 +61,7 @@ public:
     // destructor
     ~CSimple_replace(void);
 
-    bool ApplyToString(string& val, CRef<CString_constraint> find) const;
+    bool ApplyToString(string& result, const CMatchString& str, CRef<CString_constraint> find) const;
 
 private:
     // Prohibit copy constructor and assignment operator

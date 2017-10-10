@@ -441,9 +441,11 @@ bool CSearch_func :: x_ProductContainsTerm(const string& str, const string& patt
   else return false;
 }
 
-bool CSearch_func :: Match(const string& str) const
+bool CSearch_func::Match(const CMatchString& str) const
 {
-   switch (Which()){
+    const string& orig = str;
+
+    switch (Which()){
      case e_String_constraint:
       {
         const CString_constraint& str_cons = GetString_constraint();
@@ -464,12 +466,10 @@ bool CSearch_func :: Match(const string& str) const
       {
         // IsAllCaps (str);
         string alpha_str("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
-        string up_str = str;
-        if (up_str.find_first_not_of(alpha_str) != string::npos) {
+        if (orig.find_first_not_of(alpha_str) != string::npos) {
            return false;
         }
-        up_str = NStr::ToUpper(up_str);
-        if (up_str == str) {
+        if (orig == str.original().uppercase()) {
            return true;
         }
         else return false;
@@ -477,9 +477,9 @@ bool CSearch_func :: Match(const string& str) const
      case CSearch_func::e_Unbalanced_paren:
         return x_StringContainsUnbalancedParentheses (str);
      case CSearch_func::e_Too_long:
-        if (NStr::FindNoCase (str, "bifunctional") == string::npos
-              && NStr::FindNoCase (str, "multifunctional") == string::npos
-              && str.size() > (unsigned) GetToo_long()) {
+        if (NStr::FindNoCase (orig, "bifunctional") == string::npos
+              && NStr::FindNoCase (orig, "multifunctional") == string::npos
+              && orig.size() > (unsigned) GetToo_long()) {
             return true;
         }
         else return false;

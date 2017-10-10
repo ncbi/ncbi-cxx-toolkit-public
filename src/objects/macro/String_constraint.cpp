@@ -42,6 +42,73 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+namespace
+{
+    static const char digit_str[] = "0123456789";
+    static const char alpha_str[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    static const char* weasels[] = {
+        "candidate",
+        "hypothetical",
+        "novel",
+        "possible",
+        "potential",
+        "predicted",
+        "probable",
+        "putative",
+        "candidate",
+        "uncharacterized",
+        "unique"
+    };
+
+    bool x_IsWeasel(const CTempString& str)
+    {
+        size_t n = ArraySize(weasels);
+        for (size_t i = 0; i < n; i++) {
+            if (str == weasels[i]) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    string x_SkipWeasel(bool& found, const string& str)
+    {
+        if (str.empty()) {
+            return kEmptyStr;
+        }
+
+        list<CTempString> arr;
+        arr = NStr::Split(str, " ", arr, 0);
+
+        found = false;
+        while (!arr.empty() && x_IsWeasel(arr.front())) {
+            arr.erase(arr.begin());
+            found = true;
+        }
+
+        return found ? NStr::Join(arr, " ") : str;
+    };
+
+};
+
+const CAutoLowerCase& CMatchString::noweasel() const
+{
+    if (m_noweasel.original().empty() && !m_original.original().empty())
+    {
+        m_noweasel = x_SkipWeasel(m_has_weasel, m_original.original());
+    }
+    return m_noweasel;
+}
+
+CString_constraint::CString_constraint()
+{
+}
+
+CString_constraint::~CString_constraint()
+{
+}
+
 bool CString_constraint :: Empty() const
 {
    if (GetIs_all_caps() ||
@@ -143,21 +210,6 @@ bool CString_constraint :: x_IsFirstEachCap(const string& str) const
     return rval;
 }
 
-
-static const char* weasels[] = {
-  "candidate",
-  "hypothetical",
-  "novel",
-  "possible",
-  "potential",
-  "predicted",
-  "probable",
-  "putative",
-  "candidate",
-  "uncharacterized",
-  "unique"
-};
-
 bool CString_constraint::x_IsWeasel(const CTempString& str) const
 {
     size_t n = ArraySize(weasels);
@@ -172,7 +224,6 @@ bool CString_constraint::x_IsWeasel(const CTempString& str) const
 
 string CString_constraint::x_SkipWeasel(const string& str) const
 {
-    string ret_str;
     list<CTempString> arr;
     arr = NStr::Split(str, " ", arr, 0);
 
@@ -668,7 +719,7 @@ bool CString_constraint :: x_DoesSingleStringMatchConstraint(const string& str) 
     return rval;
 }
 
-bool CString_constraint :: Match(const string& str) const
+bool CString_constraint::Match(const CMatchString& str) const
 {
     bool rval = x_DoesSingleStringMatchConstraint (str);
     return GetNot_present() ? (!rval) : rval;
@@ -695,37 +746,42 @@ bool CString_constraint::x_ReplaceContains(string& val, const string& replace) c
 }
 
 
-bool CString_constraint::ReplaceStringConstraintPortionInString(string& val, const string& replace) const
+bool CString_constraint::ReplaceStringConstraintPortionInString(string& result, const CMatchString& str, const string& replace) const
 {
     bool rval = false;
     
+    const string& val = str;
+
     if (val.empty()) {
         if (Empty() || (IsSetNot_present() && GetNot_present())) {
-            val = replace;
+            result = replace;
             rval = true;
         }
     } else if (Empty()) {
-        val = replace;
+        result = replace;
         rval = true;
     } else {
         if (IsSetMatch_location()) {
             switch (GetMatch_location()) {
                 case eString_location_inlist:
                 case eString_location_equals:
-                    val = replace;
+                    result = replace;
                     rval = true;
                     break;
                 case eString_location_starts:
                     {{
                        size_t match_len = 0;
                        if (x_AdvancedStringCompare(val, GetMatch_text(), 0, &match_len)) {
-                           val = replace + val.substr(match_len);
+                           result = replace;
+                           CTempString add = CTempString(val).substr(match_len);
+                           result.append(add.data(), match_len);                           
                            rval = true;
                        }
                     }}
                     break;
                 case eString_location_contains:
-                    rval = x_ReplaceContains(val, replace);
+                    result = val;
+                    rval = x_ReplaceContains(result, replace);
                     break;
                 case eString_location_ends:
                     {{
@@ -737,7 +793,7 @@ bool CString_constraint::ReplaceStringConstraintPortionInString(string& val, con
                                                          (offset == 0 ? 0 : val.c_str()[offset - 1]), 
                                                           &match_len)
                                 && offset + match_len == val.length()) {
-                                val = val.substr(0, offset) + replace;
+                                result = val.substr(0, offset) + replace;
                                 rval = true;
                             } else {
                                 offset++;
@@ -747,7 +803,8 @@ bool CString_constraint::ReplaceStringConstraintPortionInString(string& val, con
                     break;
             } 
         } else {
-            rval = x_ReplaceContains(val, replace);                    
+            result = val;
+            rval = x_ReplaceContains(result, replace);                    
         }
     }
     return rval;
