@@ -553,45 +553,45 @@ DISCREPANCY_SUMMARIZE(FEATURE_COUNT)
 
 // EXON_ON_MRNA
 
-const string kExonOnMrna = "[n] mRNA bioseq[s] [has] exon features";
-const string kExons = "exon";
-const string kExonBioseq = "exon bioseq";
-
-void SummarizeExonCount(CReportNode& m_Objs)
-{
-    if (!m_Objs[kExons].GetObjects().empty()) {
-        CRef<CDiscrepancyObject> seq_disc_obj(dynamic_cast<CDiscrepancyObject*>(m_Objs[kExonBioseq].GetObjects().back().GetNCPointer()));
-        m_Objs[kExonOnMrna].Add(*seq_disc_obj, false);
-        m_Objs[kExons].clear();
-        m_Objs[kExonBioseq].clear();
-    }
-}
-
-
 DISCREPANCY_CASE(EXON_ON_MRNA, CSeq_feat_BY_BIOSEQ, eOncaller | eSmart, "mRNA sequences should not have exons")
 {
-    if (m_Count != context.GetCountBioseq()) {
-        m_Count = context.GetCountBioseq();
-        SummarizeExonCount(m_Objs);
-        CRef<CDiscrepancyObject> this_disc_obj(context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary(), eKeepRef));
-        m_Objs[kExonBioseq].Add(*this_disc_obj, false);
+    if (obj.IsSetData() && obj.GetData().GetSubtype() == CSeqFeatData::eSubtype_exon && context.IsCurrentSequenceMrna()) {
+        m_Objs["[n] mRNA bioseq[s] [has] exon features"].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary(), eNoRef, true));
     }
-    if (!context.IsCurrentSequenceMrna() || !obj.IsSetData() || obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_exon) {
-        return;
-    }
-    m_Objs[kExons].Add(*(context.NewDiscObj(CConstRef<CSeq_feat>(&obj))), false);
 }
 
 
 DISCREPANCY_SUMMARIZE(EXON_ON_MRNA)
 {
-    SummarizeExonCount(m_Objs);
-    m_Objs.GetMap().erase(kExons);
-    m_Objs.GetMap().erase(kExonBioseq);
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+DISCREPANCY_AUTOFIX(EXON_ON_MRNA)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
+        if ((*it)->CanAutofix()) {
+            CDiscrepancyObject* disc_obj = dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
+            const CBioseq* bioseq = dynamic_cast<const CBioseq*>(disc_obj->GetObject().GetPointer());
+            CBioseq_Handle bs = scope.GetBioseqHandle(*bioseq);
+            CFeat_CI ci(scope.GetBioseqHandle(*bioseq));
+            while (ci) {
+                bool kill = false;
+                CSeq_feat_EditHandle eh;
+                if (ci->IsSetData() && ci->GetData().GetSubtype() == CSeqFeatData::eSubtype_exon) {
+                    eh = CSeq_feat_EditHandle(scope.GetSeq_featHandle(ci->GetMappedFeature()));
+                }
+                ++ci;
+                if (eh) {
+                    eh.Remove();
+                    n++;
+                }
+            }
+        }
+    }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("EXON_ON_MRNA: [n] exon[s] removed", n) : 0);
 }
 
 

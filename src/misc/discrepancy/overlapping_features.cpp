@@ -432,7 +432,7 @@ DISCREPANCY_CASE(MRNA_OVERLAPPING_PSEUDO_GENE, COverlappingFeatures, eOncaller, 
             const CSeq_loc& loc_j = pseudo[j]->GetLocation();
             sequence::ECompare ovlp = context.Compare(loc_i, loc_j);
             if (ovlp != sequence::eNoOverlap) {
-                m_Objs["[n] Pseudogene[s] [has] overlapping mRNA[s]."].Add(*context.NewDiscObj(mrnas[i]));  // should say "n mRNAs overlapping pseudogenes", but C Toolkit reports this way.
+                m_Objs["[n] Pseudogene[s] [has] overlapping mRNA[s]."].Add(*context.NewDiscObj(mrnas[i], eNoRef, true));  // should say "n mRNAs overlapping pseudogenes", but C Toolkit reports this way.
                 break;
             }
         }
@@ -446,7 +446,24 @@ DISCREPANCY_SUMMARIZE(MRNA_OVERLAPPING_PSEUDO_GENE)
 }
 
 
-// MRNA_OVERLAPPING_PSEUDO_GENE
+DISCREPANCY_AUTOFIX(MRNA_OVERLAPPING_PSEUDO_GENE)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
+        if ((*it)->CanAutofix()) {
+            CDiscrepancyObject* disc_obj = dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
+            const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(disc_obj->GetObject().GetPointer());
+            CSeq_feat_EditHandle eh = CSeq_feat_EditHandle(scope.GetSeq_featHandle(*feat));
+            eh.Remove();
+            n++;
+        }
+    }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("MRNA_OVERLAPPING_PSEUDO_GENE: [n] mRNA[s] removed", n) : 0);
+}
+
+
+// EXON_INTRON_CONFLICT
 
 static bool less(CConstRef<CSeq_feat> A, CConstRef<CSeq_feat> B)
 {
