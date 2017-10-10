@@ -219,6 +219,7 @@ public:
     SRegSynonyms sections;
     SRegSynonyms names;
     SValueHolder value;
+    string included;
     SParamIndices indices;
 
     SRandomParam(SRandomGenerator& generator, vector<string> sv, vector<string> nv) :
@@ -226,6 +227,7 @@ public:
         names_values(move(nv)),
         sections(sections_values.front()),
         names(names_values.front()),
+        included(generator.GetSection()),
         indices(generator.GetRandom())
     {
         Init(generator);
@@ -237,6 +239,7 @@ public:
         sections(sections_values.front()),
         names(names_values.front()),
         value(src.value),
+        included(src.included),
         indices(src.indices)
     {
         Init();
@@ -249,6 +252,8 @@ public:
     void SetValue(TMemoryRegistries& registries) const;
     void CheckValue(ISynRegistry& registry) const;
     void CheckCachedValue(CCachedSynRegistry& registry) const;
+
+    void SetIncluded(TMemoryRegistries& registries) const;
 
 private:
     template <typename TType>
@@ -430,6 +435,28 @@ void SRandomParam::CheckCachedValue(CCachedSynRegistry& registry) const
             default: _TROUBLE;
         }
     }
+}
+
+void SRandomParam::SetIncluded(TMemoryRegistries& registries) const
+{
+    const size_t priority = indices.GetPriority();
+
+    if (!priority) return;
+
+    const auto& section = sections[indices.GetSection(sections.size())];
+    const auto& name = names[indices.GetName(names.size())];
+
+    switch (value.GetIndex()) {
+        case 0:  registries[priority - 1].SetValue(included, name, value.Get<0>()); break;
+        case 1:  registries[priority - 1].SetValue(included, name, value.Get<1>()); break;
+        case 2:  registries[priority - 1].SetValue(included, name, value.Get<2>()); break;
+        case 3:  registries[priority - 1].SetValue(included, name, value.Get<3>()); break;
+        default: _TROUBLE;
+    }
+
+    auto already_included = registries[0].GetValue(section, ".Include", kEmptyStr);
+    if (!already_included.empty()) already_included += ", ";
+    registries[0].SetValue(section, ".Include", already_included + included);
 }
 
 void SRandomParam::Init()
@@ -638,6 +665,26 @@ BOOST_AUTO_TEST_CASE(CachedSynRegistry)
     // Check cached values
     for (auto& param : random_params) {
         param.CheckCachedValue(cached_syn_registry);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(IncludeSynRegistry)
+{
+    TMemoryRegistries registries;
+
+    for (auto& param : random_params) {
+        param.SetIncluded(registries);
+    }
+
+    CSynRegistry syn_registry;
+    CIncludeSynRegistry include_registry(syn_registry);
+
+    for (auto& registry : registries) {
+        include_registry.Add(registry);
+    }
+
+    for (auto param : random_params) {
+        param.CheckValue(include_registry);
     }
 }
 
