@@ -60,7 +60,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode,
                 }
             } else {
                 // If NetCache service is not provided, use server from blob ID
-                CNetCacheKey key(m_Opts.ncid.key);
+                CNetCacheKey key(m_Opts.ncid.key, CCompoundIDPool());
                 m_Opts.nc_service = key.GetHost() + ':' + to_string(key.GetPort());
             }
         }
