@@ -868,6 +868,16 @@ CRequestContextGuard_Base::~CRequestContextGuard_Base(void)
 }
 
 
+void CRequestContextGuard_Base::Release(void)
+{
+    if ( m_SavedContext ) {
+        GetDiagContext().SetRequestContext(m_SavedContext.GetNonNullPointer());
+        m_SavedContext.Reset();
+    }
+    m_RequestContext.Reset();
+}
+
+
 void CRequestContextGuard_Base::SetDefaultErrorStatus(int status)
 {
     // If the guard has been released throw null pointer exception.

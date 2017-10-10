@@ -484,7 +484,7 @@ private:
 class NCBI_XNCBI_EXPORT CRequestContextGuard_Base
 {
 public:
-    enum FFlags {
+    enum EFlags {
         fPrintRequestStart = 1 << 0 ///< Print request-start automatically in the
                                     ///< constructor. By default request-start is
                                     ///< not printed to allow the caller log request
@@ -513,9 +513,9 @@ public:
     /// Get the guarded request context.
     CRequestContext& GetRequestContext() const { return *m_RequestContext; }
 
-    /// Release the guarded context, do not perform any automatic actions
-    /// (logging, setting status, restoring context).
-    void Release(void) { m_RequestContext.Reset(); }
+    /// Release the guarded context, restore the saved context if any, do not
+    /// perform any other actions (logging, setting status).
+    void Release(void);
 
 private:
     TFlags                        m_Flags = 0;
