@@ -120,6 +120,9 @@ public:
     CMatchString(const string& v) : m_original(v), m_has_weasel(false)
     {
     }
+    CMatchString(const char* v) : m_original(v), m_has_weasel(false)
+    {
+    }
     const CAutoLowerCase& original() const
     {
         return m_original;
