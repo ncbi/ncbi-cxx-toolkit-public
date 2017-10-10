@@ -1050,6 +1050,19 @@ void CBioseqIndex::x_InitFeats (void)
 
             if (type == CSeqFeatData::e_Biosrc) {
                 m_HasSourceFeats = true;
+                m_SrcList.push_back(sfx);
+                if (! m_BioSource) {
+                    if (! mf.IsSetData ()) continue;
+                    const CSeqFeatData& sfdata = mf.GetData();
+                    const CBioSource& biosrc = sfdata.GetBiosrc();
+                    m_BioSource.Reset (&biosrc);
+                    if (biosrc.IsSetOrgname()) {
+                        const COrg_ref& org = biosrc.GetOrg();
+                        if (org.CanGetTaxname()) {
+                            m_Taxname = org.GetTaxname();
+                        }
+                    }
+                }
                 continue;
             }
 
@@ -1242,6 +1255,14 @@ CConstRef<CBioSource> CBioseqIndex::GetBioSource (void)
         x_InitDescs();
     }
 
+    if (m_BioSource) {
+      return m_BioSource;
+    }
+
+    if (! m_FeatsInitialized) {
+        x_InitFeats();
+    }
+
     return m_BioSource;
 }
 
@@ -1355,6 +1376,16 @@ const vector<CRef<CFeatureIndex>>& CBioseqIndex::GetFeatureIndices(void)
     return m_SfxList;
 }
 
+const vector<CRef<CFeatureIndex>>& CBioseqIndex::GetSourceFeatIndices(void)
+
+{
+    if (! m_FeatsInitialized) {
+        x_InitFeats();
+    }
+
+    return m_SrcList;
+}
+
 
 // CGapIndex
 
@@ -1428,6 +1459,30 @@ CRef<CFeatureIndex> CFeatureIndex::GetBestGene (void)
         }
     } catch (CException& e) {
         LOG_POST(Error << "Error in CFeatureIndex::GetBestGene: " << e.what());
+    }
+    return CRef<CFeatureIndex> ();
+}
+
+// Find CFeatureIndex object for overlapping source feature using internal CFeatTree
+CRef<CFeatureIndex> CFeatureIndex::GetOverlappingSource (void)
+
+{
+    try {
+        TSeqPos lft = GetStart();
+        TSeqPos rgt = GetEnd();
+        CWeakRef<CBioseqIndex> bsx = GetBioseqIndex();
+        auto bsxl = bsx.Lock();
+        if (bsxl) {
+            for (auto& sfx : bsxl->GetSourceFeatIndices()) {
+            	TSeqPos stt = sfx->GetStart();
+            	TSeqPos stp = sfx->GetEnd();
+            	if (lft >= stt && rgt <= stp) {
+            		  return sfx;
+            	}
+            }
+        }
+    } catch (CException& e) {
+        LOG_POST(Error << "Error in CFeatureIndex::GetOverlappingSource: " << e.what());
     }
     return CRef<CFeatureIndex> ();
 }

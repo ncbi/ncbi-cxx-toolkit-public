@@ -428,6 +428,8 @@ public:
 
     const vector<CRef<CFeatureIndex>>& GetFeatureIndices(void);
 
+    const vector<CRef<CFeatureIndex>>& GetSourceFeatIndices(void);
+
     // Get feature (CDS, mRNA, Prot) with product pointing to this Bioseq (protein, cDNA, peptide)
     CRef<CFeatureIndex> GetFeatureForProduct(void);
 
@@ -483,6 +485,7 @@ private:
     TFeatIndexMap m_FeatIndexMap;
 
     bool m_HasSourceFeats;
+    vector<CRef<CFeatureIndex>> m_SrcList;
 
     CRef<CSeqVector> m_SeqVec;
 
@@ -655,6 +658,9 @@ public:
 
     // Map from feature to CFeatureIndex for best gene using CFeatTree in parent CBioseqIndex
     CRef<CFeatureIndex> GetBestGene (void);
+
+    // Find CFeatureIndex object for overlapping source feature using internal CFeatTree
+    CRef<CFeatureIndex> GetOverlappingSource (void);
 
 private:
     void SetFetchFailure (bool fails);
