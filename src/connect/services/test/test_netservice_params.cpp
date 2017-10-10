@@ -257,30 +257,30 @@ public:
 
 private:
     template <typename TType>
-    void CompareValue(IRegistry& registry, TType value) const
+    void CompareValue(IRegistry& registry, TType expected_value) const
     {
         const auto& section = sections.front();
         const auto& name = names.front();
 
-        BOOST_CHECK(registry.GetValue(section, name, TType{}) == value);
+        BOOST_CHECK(registry.GetValue(section, name, TType{}) == expected_value);
     }
 
     template <typename TType>
-    void CompareValue(ISynRegistry& registry, TType value) const
+    void CompareValue(ISynRegistry& registry, TType expected_value) const
     {
-        BOOST_CHECK(registry.Get(sections, names, TType{}) == value);
+        BOOST_CHECK(registry.Get(sections, names, TType{}) == expected_value);
     }
 
     template <typename TType>
-    void CompareCachedValue(CCachedSynRegistry& registry, SRegSynonyms sub_sections, SRegSynonyms sub_names, TType value) const
+    void CompareCachedValue(CCachedSynRegistry& registry, SRegSynonyms sub_sections, SRegSynonyms sub_names, TType expected_value) const
     {
-        BOOST_CHECK(registry.Get(sub_sections, sub_names, TType{}) == value);
+        BOOST_CHECK(registry.Get(sub_sections, sub_names, TType{}) == expected_value);
     }
 
 
     // Doubles cannot be compared with operator==, so these overloads added
 
-    void CompareValue(IRegistry& registry, double value) const
+    void CompareValue(IRegistry& registry, double expected_value) const
     {
         const auto& section = sections.front();
         const auto& name = names.front();
@@ -288,23 +288,23 @@ private:
         const auto read_value = registry.GetValue(section, name, 0.0);
         const auto epsilon = numeric_limits<double>::epsilon();
 
-        BOOST_CHECK(abs(read_value - value) <= epsilon * (abs(read_value) < abs(value) ? abs(read_value) : abs(value)));
+        BOOST_CHECK(abs(read_value - expected_value) <= epsilon * (abs(read_value) < abs(expected_value) ? abs(read_value) : abs(expected_value)));
     }
 
-    void CompareValue(ISynRegistry& registry, double value) const
+    void CompareValue(ISynRegistry& registry, double expected_value) const
     {
         const auto read_value = registry.Get(sections, names, 0.0);
         const auto epsilon = numeric_limits<double>::epsilon();
 
-        BOOST_CHECK(abs(read_value - value) <= epsilon * (abs(read_value) < abs(value) ? abs(read_value) : abs(value)));
+        BOOST_CHECK(abs(read_value - expected_value) <= epsilon * (abs(read_value) < abs(expected_value) ? abs(read_value) : abs(expected_value)));
     }
 
-    void CompareCachedValue(CCachedSynRegistry& registry, SRegSynonyms sub_sections, SRegSynonyms sub_names, double value) const
+    void CompareCachedValue(CCachedSynRegistry& registry, SRegSynonyms sub_sections, SRegSynonyms sub_names, double expected_value) const
     {
         const auto read_value = registry.Get(sub_sections, sub_names, 0.0);
         const auto epsilon = numeric_limits<double>::epsilon();
 
-        BOOST_CHECK(abs(read_value - value) <= epsilon * (abs(read_value) < abs(value) ? abs(read_value) : abs(value)));
+        BOOST_CHECK(abs(read_value - expected_value) <= epsilon * (abs(read_value) < abs(expected_value) ? abs(read_value) : abs(expected_value)));
     }
 
     void Init();
