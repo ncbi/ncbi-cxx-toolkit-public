@@ -776,17 +776,6 @@ find_external_library(libxlsxwriter
 find_external_library(LIBUNWIND INCLUDES libunwind.h LIBS unwind HINTS "${NCBI_TOOLS_ROOT}/libunwind-1.1")
 set(HAVE_LIBUNWIND ${LIBUNWIND_FOUND})
 
-##############################################################################
-#
-# NCBI-isms
-# FIXME: these should be tested not hard-coded
-if (WIN32)
-    set(NCBI_DATATOOL "//snowman/win-coremake/App/Ncbi/cppcore/datatool/msvc/2.16.0/datatool.exe")
-else()
-    set (NCBI_DATATOOL ${NCBI_TOOLS_ROOT}/bin/datatool)
-endif()
-
-
 #
 # Final tasks
 #
