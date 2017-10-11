@@ -43,6 +43,7 @@
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_memory_connector.h>
+#include <connect/ncbi_server_info.h>
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -937,10 +938,10 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             {
                 rate = x_json_object_dotget_number(address, "meta.rate");
             } else {
-                rate = 0.0;
+                rate = LBSM_DEFAULT_RATE;
             }
             /* verify magnitude */
-            if (rate < 0.0  ||  rate > 10000.0) {
+            if (rate < SERV_MINIMAL_RATE  ||  rate > SERV_MAXIMAL_RATE) {
                 CORE_LOGF_X(eNSub_Json, eLOG_Error,
                     ("Unexpected JSON {\"addrs[i].meta.rate\"} value '%lf'.",
                      rate));
@@ -1400,7 +1401,6 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     s_Init();
 
     assert(iter);
-    assert(net_info);
 
     /* Check that service name is provided - otherwise there is nothing to
      * search for. */
@@ -1438,11 +1438,28 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     }
     iter->data = data;
 
-    if ( ! (data->net_info = ConnNetInfo_Clone(net_info))) {
+    /* Make sure a net_info exists. */
+    SConnNetInfo* new_net_info = NULL;
+    if ( ! net_info) {
+        new_net_info = ConnNetInfo_Create(0);
+        if ( ! new_net_info) {
+            CORE_LOG_X(eNSub_Alloc, eLOG_Critical, "Couldn't create net_info.");
+            s_Close(iter);
+            TOUT("SERV_NAMERD_Open() -- fail");
+            return NULL;
+        }
+        data->net_info = ConnNetInfo_Clone(new_net_info);
+    } else {
+        data->net_info = ConnNetInfo_Clone(net_info);
+    }
+    if ( ! data->net_info) {
         CORE_LOG_X(eNSub_Alloc, eLOG_Critical, "Couldn't clone net_info.");
         s_Close(iter);
         TOUT("SERV_NAMERD_Open() -- fail");
         return NULL;
+    }
+    if (new_net_info) {
+        ConnNetInfo_Destroy(new_net_info);
     }
 
     if ( ! ConnNetInfo_SetupStandardArgs(data->net_info, iter->name)) {

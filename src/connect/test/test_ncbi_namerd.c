@@ -417,8 +417,14 @@ static int run_a_test(size_t test_idx, int live, const char *svc,
 
             char    *info_str;
             info_str = SERV_WriteInfo(info);
-            CORE_LOGF(eLOG_Note, ("    Found server %d:   %s",
-                                  s_n_hits_got, info_str ? info_str : "?"));
+            CORE_LOGF(eLOG_Note, (
+                "    Found server %d: "
+                "(type, host:post, local, private, stateful, extra) = "
+                "(%s, %s:%hu, %s, %s, %s, '%s')",
+                s_n_hits_got,                   s_hits_got[s_n_hits_got].type,
+                s_hits_got[s_n_hits_got].host,  s_hits_got[s_n_hits_got].port,
+                s_hits_got[s_n_hits_got].loc,   s_hits_got[s_n_hits_got].priv,
+                s_hits_got[s_n_hits_got].stfl,  s_hits_got[s_n_hits_got].xtra));
             if (info_str)
                 free(info_str);
         }
@@ -774,7 +780,9 @@ static int run_tests(int live, const char *test_nums)
             s_hits_exp[it2].match = 0;
 
             CORE_LOGF(eLOG_Note, (
-                "        Expected server %d:   %s %s:%hu L=%s P=%s S=%s %s",
+                "        Expected server %d: "
+                "(type, host:post, local, private, stateful, extra) = "
+                "(%s, %s:%hu, %s, %s, %s, '%s')",
                 it2,                    s_hits_exp[it2].type,
                 s_hits_exp[it2].host,   s_hits_exp[it2].port,
                 s_hits_exp[it2].loc,    s_hits_exp[it2].priv,
