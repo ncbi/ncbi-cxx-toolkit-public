@@ -1008,31 +1008,6 @@ bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat, CScope *sc
 }
 
 
-bool CValidError_feat::SuppressCheck(const string& except_text)
-{
-    static string exceptions[] = {
-        "ribosomal slippage",
-        "artificial frameshift",
-        "nonconsensus splice site"
-    };
-
-    for ( size_t i = 0; i < sizeof(exceptions) / sizeof(string); ++i ) {
-    if ( NStr::FindNoCase(except_text, exceptions[i] ) != string::npos )
-         return true;
-    }
-    return false;
-}
-
-
-
-
-
-unsigned char CValidError_feat::Residue(unsigned char res)
-{
-    return res == 255 ? '?' : res;
-}
-
-
 string CValidError_feat::MapToNTCoords
 (const CSeq_feat& feat,
  const CSeq_loc& product,
@@ -6689,12 +6664,12 @@ bool CValidError_feat::x_FindProteinGeneXrefByKey(CBioseq_Handle bsh, const stri
                 const CSeq_loc& loc = cds->GetLocation();
                 const CSeq_id* id = loc.GetId();
                 if (id != NULL) {
-                    CBioseq_Handle nbsh = m_Scope->GetBioseqHandle(*id);
+                    CBioseq_Handle nbsh = bsh.GetScope().GetBioseqHandle(*id);
                     if (nbsh) {
 #if 1
                         CRef<CGene_ref> g(new CGene_ref());
                         g->SetLocus_tag(key);
-                        found = FindGeneToMatchGeneXref(*g, nbsh.GetSeq_entry_Handle());
+                        found = x_FindGeneToMatchGeneXref(*g, nbsh.GetSeq_entry_Handle());
 #else
                         CCacheImpl::SFeatStrKey label_key(CCacheImpl::eFeatKeyStr_Label, nbsh, key);
                         const CCacheImpl::TFeatValue & feats = GetCache().GetFeatStrKeyToFeats(label_key, m_TSE);
@@ -6711,7 +6686,7 @@ bool CValidError_feat::x_FindProteinGeneXrefByKey(CBioseq_Handle bsh, const stri
 }
 
 
-bool CValidError_feat::FindGeneToMatchGeneXref(const CGene_ref& xref, CSeq_entry_Handle seh)
+bool CValidError_feat::x_FindGeneToMatchGeneXref(const CGene_ref& xref, CSeq_entry_Handle seh)
 {
     CSeq_feat_Handle feat = CGeneFinder::ResolveGeneXref(&xref, seh);
     if (feat) {
@@ -6912,13 +6887,13 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
             // find gene on bioseq to match genexref
             if (gene_xref->IsSetLocus_tag() &&
                 !NStr::IsBlank(gene_xref->GetLocus_tag()) &&
-                !FindGeneToMatchGeneXref(*gene_xref, bsh.GetSeq_entry_Handle()) &&
+                !x_FindGeneToMatchGeneXref(*gene_xref, bsh.GetSeq_entry_Handle()) &&
                 !x_FindProteinGeneXrefByKey(bsh, gene_xref->GetLocus_tag())) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutGene,
                     "Feature has gene locus_tag cross-reference but no equivalent gene feature exists", feat);
             } else if (gene_xref->IsSetLocus() &&
                 !NStr::IsBlank(gene_xref->GetLocus()) &&
-                !FindGeneToMatchGeneXref(*gene_xref, bsh.GetSeq_entry_Handle()) &&
+                !x_FindGeneToMatchGeneXref(*gene_xref, bsh.GetSeq_entry_Handle()) &&
                 !x_FindProteinGeneXrefByKey(bsh, gene_xref->GetLocus())) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutGene,
                     "Feature has gene locus cross-reference but no equivalent gene feature exists", feat);
@@ -7103,7 +7078,7 @@ void CValidError_feat::ValidateFeatBioSource
 }
 
 
-size_t CValidError_feat::x_FindStartOfGap (CBioseq_Handle bsh, int pos)
+size_t CValidError_feat::x_FindStartOfGap (CBioseq_Handle bsh, int pos, CScope* scope)
 {
     if (!bsh || !bsh.IsNa() || !bsh.IsSetInst_Repr() 
         || bsh.GetInst_Repr() != CSeq_inst::eRepr_delta
@@ -7118,7 +7093,7 @@ size_t CValidError_feat::x_FindStartOfGap (CBioseq_Handle bsh, int pos)
         if ((*it)->IsLiteral()) {
             len = (*it)->GetLiteral().GetLength();
         } else if ((*it)->IsLoc()) {
-            len = sequence::GetLength((*it)->GetLoc(), m_Scope);
+            len = sequence::GetLength((*it)->GetLoc(), scope);
         }
         if ((unsigned int) pos >= offset && (unsigned int) pos < offset + len) {
             return offset;
@@ -7440,7 +7415,7 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                         if (num_real > 0) {
                             size_t gap_start = x_FindStartOfGap(bsh, 
                                         first_in_gap ? loc.GetStart(eExtreme_Biological) 
-                                                     : loc.GetStop(eExtreme_Biological));
+                                                     : loc.GetStop(eExtreme_Biological), m_Scope);
 
                             PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureBeginsOrEndsInGap, 
                                     "Feature begins or ends in gap starting at " + NStr::NumericToString(gap_start + 1), feat);

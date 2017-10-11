@@ -158,15 +158,14 @@ private:
     CBioseq_Handle x_GetCachedBsh(const CSeq_loc& loc);
 
     void x_ValidateSeqFeatLoc(const CSeq_feat& feat);
-    void x_CheckLocForGaps(const CSeq_loc& loc);
-    size_t x_FindStartOfGap (CBioseq_Handle bsh, int pos);
+    static size_t x_FindStartOfGap (CBioseq_Handle bsh, int pos, CScope* scope);
     void ValidateSeqFeatData(const CSeqFeatData& data, const CSeq_feat& feat);
     void ValidateSeqFeatProduct(const CSeq_loc& prod, const CSeq_feat& feat);
     void ValidateGene(const CGene_ref& gene, const CSeq_feat& feat);
     void ValidateGeneXRef(const CSeq_feat& feat);
     void ValidateGeneFeaturePair(const CSeq_feat& feat, const CSeq_feat& gene);
-    bool x_FindProteinGeneXrefByKey(CBioseq_Handle bsh, const string& key);
-    bool FindGeneToMatchGeneXref(const CGene_ref& xref, CSeq_entry_Handle seh);
+    static bool x_FindProteinGeneXrefByKey(CBioseq_Handle bsh, const string& key);
+    static bool x_FindGeneToMatchGeneXref(const CGene_ref& xref, CSeq_entry_Handle seh);
     void ValidateOperon(const CSeq_feat& feat);
     void ValidateGeneCdsPair(const CSeq_feat& gene);
 
@@ -236,7 +235,6 @@ private:
     void ValidatePeptideOnCodonBoundry(const CSeq_feat& feat, 
         const string& key);
 
-    bool SplicingNotExpected(const CSeq_feat& feat);
     void ValidateFeatPartialness(const CSeq_feat& feat);
     void ValidateExcept(const CSeq_feat& feat);
     void ValidateExceptText(const string& text, const CSeq_feat& feat);
@@ -260,11 +258,9 @@ private:
 
     void x_ValidateGbQual(const CGb_qual& qual, const CSeq_feat& feat);
 
-    bool IsPlastid(int genome);
+    static bool IsPlastid(int genome);
     bool IsOverlappingGenePseudo(const CSeq_feat& feat, CScope* scope);
-    unsigned char Residue(unsigned char res);
 
-    bool SuppressCheck(const string& except_text);
     string MapToNTCoords(const CSeq_feat& feat, const CSeq_loc& product,
         TSeqPos pos);
 
