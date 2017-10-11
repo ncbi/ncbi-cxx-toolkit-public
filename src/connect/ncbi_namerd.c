@@ -907,6 +907,14 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                 stateful = "";
             }
 
+            /* Make sure the JSON is stateless for a stateless SERV_ITER. */
+            if ((iter->types & fSERV_Stateless)  &&  stateful[0] != '\0') {
+                CORE_TRACEF((
+                    "Ignoring stateful endpoint %s:%d in stateless search.",
+                    host, port));
+                continue;
+            }
+
             /* SSERV_Info.site <=== addrs[i].meta.mode */
             local = "NO";
             priv = "";
@@ -1314,13 +1322,19 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 
     if (data->n_cand < 1  &&  data->done) {
         data->done = 0;
-        TOUT("s_GetNextInfo() -- no cand");
+        TOUT("s_GetNextInfo() -- end of candidates");
         return NULL;
     }
 
     if (s_IsUpdateNeeded(iter->time, data)) {
-        if ( ! (data->eof | data->fail))
+        if ( ! (data->eof | data->fail)) {
             s_Resolve(iter);
+            if (data->n_cand < 1) {
+                data->done = 1;
+                TOUT("s_GetNextInfo() -- resolved no candidates");
+                return NULL;
+            }
+        }
     }
 
     /* No need to load-balance - that's already been done by the namerd service.
