@@ -693,6 +693,11 @@ function GetSvnRepositoryRoot()
     return "https://svn.ncbi.nlm.nih.gov/repos/";
 }
 
+function GetSvnRepositoryToolkitRoot()
+{
+    return GetSvnRepositoryRoot() + "toolkit";
+}
+
 function GetRepositoryRoot()
 {
     return GetSvnRepositoryRoot() + GetBranch();
@@ -726,6 +731,44 @@ function SearchRepository(oShell, abs_path, rel_path)
         while( repo.length == 0 ) {
             while (repo.length == 0 && !externals.StdOut.AtEndOfStream) {
                 line = externals.StdOut.ReadLine();
+                var line_parts = line.split(/\s/);
+                var line_parts_size = line_parts.length;
+                if (line_parts_size > 1) {
+                    var test = "";
+                    var j;
+                    for (j=i; j<rel_path_size; ++j) {
+                        test += rel_path_array[j];
+                        if (line_parts[line_parts_size - 1] == test) {
+                            repo = "";
+                            var p;
+                            for (p = 0; p < line_parts_size - 1; ++p) {
+                                var t = line_parts[p];
+                                if (t.charAt(0) == '^') {
+                                    t = t.replace(/\^/, GetSvnRepositoryToolkitRoot());
+                                }
+                                if (t.indexOf("http") == 0) {
+                                    var curdir = oFso.GetAbsolutePathName("") + "\\";
+                                    t = oFso.GetAbsolutePathName(t);
+                                    t = t.substr(curdir.length);
+                                    t = ForwardSlashes(t);
+                                    if (t.indexOf("http:/") == 0) {
+                                        t = "http://" + t.substr(6);
+                                    }
+                                    else if (t.indexOf("https:/") == 0) {
+                                        t = "https://" + t.substr(7);
+                                    }
+                                    for (j=j+1; j<rel_path_size; ++j) {
+                                        t += "/" + rel_path_array[j];
+                                    }
+                                }
+                                repo += " " + t;
+                            }
+                            break;
+                        }
+                        test += "/";
+                    }
+                }
+/*
                 var test = "";
                 var j;
                 for (j=i; j<rel_path_size; ++j) {
@@ -739,6 +782,7 @@ function SearchRepository(oShell, abs_path, rel_path)
                     }
                     test += "/";
                 }
+*/
             }
             if (repo.length != 0) {
                 while (!externals.StdOut.AtEndOfStream) {
