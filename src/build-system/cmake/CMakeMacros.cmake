@@ -94,11 +94,12 @@ endmacro(add_subdirectory_optional)
 
 #
 # FIXME: these should be tested not hard-coded
-## if (WIN32)
-##     set(NCBI_DATATOOL "//snowman/win-coremake/App/Ncbi/cppcore/datatool/msvc/2.16.0/datatool.exe")
-## else()
-##     set (NCBI_DATATOOL ${NCBI_TOOLS_ROOT}/bin/datatool)
-## endif()
+if (WIN32)
+    set(NCBI_DATATOOL "//snowman/win-coremake/App/Ncbi/cppcore/datatool/msvc/2.16.0/datatool.exe")
+else()
+    #set (NCBI_DATATOOL $<TARGET_FILE:datatool-app>)
+    set (NCBI_DATATOOL "/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool/Linux64/2.16.0/datatool")
+endif()
 
 
 
@@ -254,19 +255,19 @@ macro( RunDatatool MODULE MODULE_SEARCH )
     if (WIN32)
         add_custom_command(
             OUTPUT ${generated}
-            COMMAND $<TARGET_FILE:datatool-app> -oR "${top_src_dir}" -opm "${MODULE_SEARCH}" -m "${MODULE_PATH}" -M "${MODULE_IMPORT}" -oA -oc "${MODULE}" -or "${MODULE_PATH_RELATIVE}" -odi -od "${SOURCE_PATH}/${MODULE}.def" -ocvs     -pch "ncbi_pch.hpp" -fd ${MODULE}.dump VERBATIM
+            COMMAND ${NCBI_DATATOOL} -oR "${top_src_dir}" -opm "${MODULE_SEARCH}" -m "${MODULE_PATH}" -M "${MODULE_IMPORT}" -oA -oc "${MODULE}" -or "${MODULE_PATH_RELATIVE}" -odi -od "${SOURCE_PATH}/${MODULE}.def" -ocvs     -pch "ncbi_pch.hpp" -fd ${MODULE}.dump VERBATIM
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
             COMMENT "Generating module: ${MODULE}"
-            DEPENDS $<TARGET_FILE:datatool-app> ${MODULE_PATH}
+            DEPENDS ${NCBI_DATATOOL} ${MODULE_PATH}
             VERBATIM
         )
     else()
         add_custom_command(
             OUTPUT ${generated}
-            COMMAND $<TARGET_FILE:datatool-app> -oR \"${top_src_dir}\" -opm \"${MODULE_SEARCH}\" -m \"${MODULE_PATH}\" -M \""${MODULE_IMPORT}"\" -oA -oc \"${MODULE}\" -or \"${MODULE_PATH_RELATIVE}\" -odi -od \"${SOURCE_PATH}/${MODULE}.def\" -ocvs -pch \"ncbi_pch.hpp\" -fd ${MODULE}.dump
+            COMMAND ${NCBI_DATATOOL} -oR \"${top_src_dir}\" -opm \"${MODULE_SEARCH}\" -m \"${MODULE_PATH}\" -M \""${MODULE_IMPORT}"\" -oA -oc \"${MODULE}\" -or \"${MODULE_PATH_RELATIVE}\" -odi -od \"${SOURCE_PATH}/${MODULE}.def\" -ocvs -pch \"ncbi_pch.hpp\" -fd ${MODULE}.dump
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
             COMMENT "Generating module: ${MODULE}"
-            DEPENDS $<TARGET_FILE:datatool-app> ${MODULE_PATH}
+            DEPENDS ${NCBI_DATATOOL} ${MODULE_PATH}
         )
     endif()
 
