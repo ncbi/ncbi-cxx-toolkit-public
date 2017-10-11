@@ -194,11 +194,11 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, size_t inden
                         out << "\"submit_block\"";
                         break;
                 }
-                if (!(*obj)->GetLocation().empty()) {
-                    out << " location=\"" << NStr::XmlEncode((*obj)->GetLocation()) << "\"/>\n";
-                }
                 if (!(*obj)->GetFilename().empty()) {
-                    out << " file=\"" << NStr::XmlEncode((*obj)->GetFilename()) << "\"/>\n";
+                    out << " file=\"" << NStr::XmlEncode((*obj)->GetFilename()) << "\"";
+                }
+                if (!(*obj)->GetLocation().empty()) {
+                    out << " location=\"" << NStr::XmlEncode((*obj)->GetLocation()) << "\"";
                 }
                 string text = NStr::Replace((*obj)->GetText(), "\t", " ");
                 out << " label=\"" << NStr::XmlEncode(text) << "\"/>\n";
