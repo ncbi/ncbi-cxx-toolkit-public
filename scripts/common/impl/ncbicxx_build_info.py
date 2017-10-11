@@ -51,17 +51,8 @@ class Collector(object):
                 self.info['app_version'] = subprocess.check_output(cmd)
             except subprocess.CalledProcessError:
                 pass
-        # contact -- tentative, needs clarification
-        if 'LOGNAME' in os.environ:
-            self.info['contact'] = os.environ['LOGNAME']
-        elif 'USER' in os.environ:
-            self.info['contact'] = os.environ['USER']
-        else:
-            uid = os.getuid()
-            try:
-                self.info['contact'] = pwd.getpwuid(uid)[0]
-            except:
-                self.info['contact'] = str(uid)
+        if 'contact' in wanted or '*' in wanted:
+            self.info['contact'] = self.get_contact(mf)
         self.info['start_time'] = start_time
         self.info['end_time']   = end_time
         self.info['duration']   = (end_time - start_time).total_seconds()
@@ -318,3 +309,31 @@ class Collector(object):
             else:
                 info['vcs_branch'] = match_info.group(1)
         return info
+
+    def get_contact(self, mf):
+        next_dir = os.getcwd()
+        while mf is not None:
+            if 'WATCHERS' in mf:
+                return expand_makefile_vars('$(WATCHERS)', mf)
+            elif next_dir is None:
+                break
+            mfname = os.path.join(next_dir, 'Makefile')
+            if os.path.exists(mfname):
+                mf = parse_makefile(mfname)
+            else:
+                break
+            if next_dir == '/':
+                next_dir = None
+            else:
+                next_dir = os.path.dirname(next_dir)
+
+        if 'LOGNAME' in os.environ:
+            return os.environ['LOGNAME']
+        elif 'USER' in os.environ:
+            return os.environ['USER']
+        else:
+            uid = os.getuid()
+            try:
+                return pwd.getpwuid(uid)[0]
+            except:
+                return str(uid)
