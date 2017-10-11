@@ -34,13 +34,13 @@
  *
  */
 
-#include <connect/ncbi_server_info.h>
-#include <connect/ncbi_service.h>
+#include <string>
+#include <vector>
 
 #include <corelib/ncbistl.hpp>
 
-#include <string>
-#include <vector>
+#include <connect/ncbi_server_info.h>
+#include <connect/ncbi_service.h>
 
 
 /** @addtogroup UtilityFunc
@@ -66,17 +66,23 @@ typedef unsigned int   TSERV_Mapper;    ///< Bitwise OR of ESERV_Mapper
 
 /// Attributes of a given service.
 ///
-class CSERV_Info {
+class NCBI_XCONNECT_EXPORT CSERV_Info {
 public:
     CSERV_Info(const string& host, unsigned int port, double rate, ESERV_Type type) :
-        host(host), port(port), rate(rate), type(type)
+        m_Host(host), m_Port(port), m_Rate(rate), m_Type(type)
     {
     }
 
-    string          host;
-    unsigned int    port;
-    double          rate;
-    ESERV_Type      type;
+    string          GetHost(void) const { return m_Host; }
+    unsigned int    GetPort(void) const { return m_Port; }
+    double          GetRate(void) const { return m_Rate; }
+    ESERV_Type      GetType(void) const { return m_Type; }
+
+private:
+    string          m_Host;
+    unsigned int    m_Port;
+    double          m_Rate;
+    ESERV_Type      m_Type;
 };
 
 
@@ -90,6 +96,7 @@ public:
 ///  Which mapper(s) to use
 /// @return
 ///  List of servers (ordered according to their rates)
+extern NCBI_XCONNECT_EXPORT
 vector<CSERV_Info> SERV_GetServers(const string& service,
                                    TSERV_Type    types    = fSERV_Http,
                                    TSERV_Mapper  mappers  = fSERV_Namerd);

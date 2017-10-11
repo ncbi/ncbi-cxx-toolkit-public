@@ -33,23 +33,24 @@
 #include <ncbi_pch.hpp>
 #include <algorithm>
 
-#include <connect/ncbi_socket.h>
+#include <connect/ncbi_service_cxx.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <corelib/ncbidiag.hpp>
 
-#include <connect/ncbi_service_cxx.hpp>
+#include <connect/ncbi_socket.h>
 
 
 BEGIN_NCBI_SCOPE
 
 
-bool x_OrderHostsByRateDesc(const CSERV_Info& lhs, const CSERV_Info& rhs)
+static bool x_OrderHostsByRateDesc(const CSERV_Info& lhs, const CSERV_Info& rhs)
 {
-    return lhs.rate >= rhs.rate;
+    return lhs.GetRate() >= rhs.GetRate();
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // SERV_GetServers implementation
+extern
 vector<CSERV_Info> SERV_GetServers(const string& service,
                                    TSERV_Type    types,
                                    TSERV_Mapper  mappers)
