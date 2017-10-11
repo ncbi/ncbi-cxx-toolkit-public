@@ -464,8 +464,6 @@ bool CSearch_func::Match(const CMatchString& str) const
         return x_IsPrefixPlusNumbers (str, GetPrefix_and_numbers());
      case CSearch_func::e_All_caps:
       {
-        // IsAllCaps (str);
-        string alpha_str("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
         if (orig.find_first_not_of(alpha_str) != string::npos) {
            return false;
         }
