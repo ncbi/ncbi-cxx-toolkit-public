@@ -162,34 +162,34 @@ BOOST_AUTO_TEST_CASE(Test_SimpleConstraints)
 
 
 
-    string before;
+    string in, out;
     s.Reset();
     s.SetMatch_text("cat");
     s.SetMatch_location(eString_location_contains);
 
-    before = "cat";
-    BOOST_CHECK_EQUAL(s.ReplaceStringConstraintPortionInString(before, "dog"), true);
-    BOOST_CHECK_EQUAL(before, "dog");
+    in = "cat";
+    BOOST_CHECK(s.ReplaceStringConstraintPortionInString(out, in, "dog"));
+    BOOST_CHECK_EQUAL(out, "dog");
 
-    before = "catalog";
-    BOOST_CHECK_EQUAL(s.ReplaceStringConstraintPortionInString(before, "dog"), true);
-    BOOST_CHECK_EQUAL(before, "dogalog");
+    in = "catalog";
+    BOOST_CHECK(s.ReplaceStringConstraintPortionInString(out, in, "dog"));
+    BOOST_CHECK_EQUAL(out, "dogalog");
 
-    before = "the catalog";
-    BOOST_CHECK_EQUAL(s.ReplaceStringConstraintPortionInString(before, "dog"), true);
-    BOOST_CHECK_EQUAL(before, "the dogalog");
+    in = "the catalog";
+    BOOST_CHECK(s.ReplaceStringConstraintPortionInString(out, in, "dog"));
+    BOOST_CHECK_EQUAL(out, "the dogalog");
 
-    before = "ducat";
-    BOOST_CHECK_EQUAL(s.ReplaceStringConstraintPortionInString(before, "dog"), true);
-    BOOST_CHECK_EQUAL(before, "dudog");
+    in = "ducat";
+    BOOST_CHECK(s.ReplaceStringConstraintPortionInString(out, in, "dog"));
+    BOOST_CHECK_EQUAL(out, "dudog");
 
-    before = "dog, cat, cow";
-    BOOST_CHECK_EQUAL(s.ReplaceStringConstraintPortionInString(before, "dog"), true);
-    BOOST_CHECK_EQUAL(before, "dog, dog, cow");
+    in = "dog, cat, cow";
+    BOOST_CHECK(s.ReplaceStringConstraintPortionInString(out, in, "dog"));
+    BOOST_CHECK_EQUAL(out, "dog, dog, cow");
 
-    before = "feline";
-    BOOST_CHECK_EQUAL(s.ReplaceStringConstraintPortionInString(before, "dog"), false);
-    BOOST_CHECK_EQUAL(before, "feline");
+    in = "feline";
+    BOOST_CHECK(!s.ReplaceStringConstraintPortionInString(out, in, "dog"));
+    BOOST_CHECK_EQUAL(out, "feline");
 
 }
 
