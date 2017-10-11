@@ -609,12 +609,12 @@ BOOST_AUTO_TEST_CASE(Test_SimpleReplace)
     string test = "abc";
 
     CRef<CString_constraint> constraint(NULL);
-    BOOST_CHECK_EQUAL(repl->ApplyToString(test, constraint), true);
+    BOOST_CHECK(repl->ApplyToString(test, test, constraint));
     BOOST_CHECK_EQUAL(test, "foo");
 
     test = "candidate abc";
     repl->SetWeasel_to_putative(true);
-    BOOST_CHECK_EQUAL(repl->ApplyToString(test, constraint), true);
+    BOOST_CHECK(repl->ApplyToString(test, test, constraint));
     BOOST_CHECK_EQUAL(test, "putative foo");
 }
 
@@ -627,22 +627,22 @@ BOOST_AUTO_TEST_CASE(Test_ReplaceFunc)
     string test = "haemagglutination domain protein";
 
     CRef<CString_constraint> constraint(NULL);
-    BOOST_CHECK_EQUAL(repl->ApplyToString(test, constraint), true);
+    BOOST_CHECK(repl->ApplyToString(test, test, constraint));
     BOOST_CHECK_EQUAL(test, "hemagglutination domain protein");
 
     test = "land of the free, haem of the brave";
-    BOOST_CHECK_EQUAL(repl->ApplyToString(test, constraint), true);
+    BOOST_CHECK(repl->ApplyToString(test, test, constraint));
     BOOST_CHECK_EQUAL(test, "land of the free, heme of the brave");
 
     repl->SetSimple_replace().SetReplace("foo");
     test = "abc";
 
-    BOOST_CHECK_EQUAL(repl->ApplyToString(test, constraint), true);
+    BOOST_CHECK(repl->ApplyToString(test, test, constraint));
     BOOST_CHECK_EQUAL(test, "foo");
 
     test = "candidate abc";
     repl->SetSimple_replace().SetWeasel_to_putative(true);
-    BOOST_CHECK_EQUAL(repl->ApplyToString(test, constraint), true);
+    BOOST_CHECK(repl->ApplyToString(test, test, constraint));
     BOOST_CHECK_EQUAL(test, "putative foo");
 
 }
