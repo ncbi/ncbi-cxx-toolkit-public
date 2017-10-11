@@ -30,7 +30,7 @@ ABO	s	Aboyne Castle
 ABRC	b	Arabidopsis Biological Resource Center		
 ABRIICC	c	ABRIICC Agricultural Biotechnology Research Institute of Iran Culture collection		
 ABRN	s	Centre for Ecology and Hydrology		
-ABS<UK>	sc	Aberystwyth University, Institute of Biological. Environmental and Rural Sciences		
+ABS<UK>	sc	Aberystwyth University, Institute of Biological, Environmental and Rural Sciences		
 ABS<USA>	s	Archbold Biological Station		
 ABSH	s	Southern Illinois Universitiy, Department of Plant Biology		
 ABSL	s	University of Minnesota, American Bryological and Lichenological Society		
@@ -4128,7 +4128,7 @@ MNFD	s	Museum fuer Naturkunde
 MNG	s	Sammlung Eisfeld des Museums der Natur Gotha		
 MNGA	s	Muzeul National de Istorie Natural "Grigore Antipa"		
 MNGC	s	Museo Nacional de Historia Natural, Guatemala City		
-MNH	s	Musei Nacionalis Hungarici		
+MNH	s	Museo de Ciencias Naturales de Tenerife		
 MNHCI	s	Museu de Historia Natural Capao da Imbuia		
 MNHM<DEU>	s	Naturhistorisches Museum Mainz/Landessammlung fuer Naturkunde Rheinland-Pfalz		
 MNHM<USA-CO>	s	John May Museum of Natural History		
