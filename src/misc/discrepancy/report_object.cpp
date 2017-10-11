@@ -67,7 +67,7 @@ USING_SCOPE(objects);
 
 string CReportObj::GetTextObjectDescription(const CSeq_feat& sf, CScope& scope)
 {
-    return CReportObject::GetTextObjectDescription(sf, scope);
+    return CReportObject::GetTextObjectDescription(sf, scope).first;
 }
 
 
@@ -99,7 +99,9 @@ void CReportObject::SetText(CScope& scope, const string& label)
         GetBestId(*m_Bioseq)->GetLabel(&m_ShortName, CSeq_id::eContent);
     }
     else if (m_Seq_feat) {
-        m_Text = GetTextObjectDescription(*m_Seq_feat, scope);
+        pair<string, string> p = GetTextObjectDescription(*m_Seq_feat, scope);
+        m_Text = p.first;
+        m_Location = p.second;
     }
     else if (m_Seqdesc) {
         m_Text = GetTextObjectDescription(*m_Seqdesc);
@@ -383,15 +385,14 @@ void CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& 
     else GetSeqFeatLabel(seq_feat, context);
 }
 
-string CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope)
+pair<string, string> CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope)
 {
     string location;
     string label;
     string context;
     string locus_tag;
     GetTextObjectDescription(seq_feat, scope, label, context, location, locus_tag);
-
-    string rval = label + "\t" + context + "\t" + location + "\t" + locus_tag;
+    pair<string, string> rval(label + "\t" + context + "\t" + location + "\t" + locus_tag, location);
     return rval;
 }
 

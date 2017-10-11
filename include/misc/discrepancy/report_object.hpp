@@ -56,6 +56,7 @@ public:
     CReportObject(const CReportObject& other) :
         m_Type(other.m_Type),
         m_Text(other.m_Text),
+        m_Location(other.m_Location),
         m_ShortName(other.m_ShortName),
         m_Bioseq(other.m_Bioseq),
         m_Seq_feat(other.m_Seq_feat),
@@ -67,11 +68,13 @@ public:
     ~CReportObject() {}
 
     const string& GetText() const { return m_Text; }
+    const string& GetLocation() const { return m_Location; }
     const string& GetShort() const { return m_ShortName; }
     EType GetType(void) const { return m_Type; }
 
     void SetText(CScope& scope, const string& str = kEmptyStr);
     void SetText(const string& str) { m_Text = str; }
+    void SetLocation(const string& str) { m_Location = str; }
     void SetShort(const string& str) { m_ShortName = str; }
 
     CConstRef<CBioseq> GetBioseq() const { return m_Bioseq; }
@@ -91,7 +94,7 @@ public:
     void DropReference();
     void DropReference(CScope& scope);
 
-    static string GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope);
+    static pair<string, string> GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope);
     static string GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, const string& product);  
     static string GetTextObjectDescription(const CSeqdesc& sd);
     static string GetTextObjectDescription(const CBioseq& bs, CScope& scope);
@@ -123,6 +126,7 @@ public:
 protected:
     EType                  m_Type;
     string                 m_Text;
+    string                 m_Location;
     string                 m_ShortName;
     CConstRef<CBioseq>     m_Bioseq;
     CConstRef<CSeq_feat>   m_Seq_feat;
