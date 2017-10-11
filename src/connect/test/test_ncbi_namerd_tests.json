@@ -268,7 +268,7 @@
             "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"10.50.10.94\",\"port\":29641,\"meta\":{\"mock\":\"true\"}}],\"meta\":{\"authority\":\"demo-project-ami-68.service.aws-dev.consul.ncbi.nlm.nih.gov\"}}"
         },
         {
-            "alias":            "FWD - mode \"H\"",
+            "alias":            "FWD - mode \"L\"",
             "env_unset":        ["CONN_DTAB"],
             "service":          "FWD",
             "expect_hits":      [
@@ -277,7 +277,7 @@
                     "host": "130.14.18.113",
                     "port": 5867,
                     "loc":  "yes",
-                    "priv": "yes",
+                    "priv": "no",
                     "stfl": "yes"
                 },
                 {
@@ -285,7 +285,7 @@
                     "host": "130.14.19.201",
                     "port": 5870,
                     "loc":  "yes",
-                    "priv": "yes",
+                    "priv": "no",
                     "stfl": "yes"
                 },
                 {
@@ -293,7 +293,7 @@
                     "host": "130.14.22.49",
                     "port": 5861,
                     "loc":  "yes",
-                    "priv": "yes",
+                    "priv": "no",
                     "stfl": "yes"
                 },
                 {
@@ -301,11 +301,11 @@
                     "host": "130.14.22.119",
                     "port": 5868,
                     "loc":  "yes",
-                    "priv": "yes",
+                    "priv": "no",
                     "stfl": "yes"
                 }
             ],
-            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.18.113\",\"port\":5867,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:25_\",\"stateful\":true,\"mode\":\"H\"}},{\"ip\":\"130.14.19.201\",\"port\":5870,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:25_\",\"stateful\":true,\"mode\":\"H\"}},{\"ip\":\"130.14.22.49\",\"port\":5861,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:26_\",\"stateful\":true,\"mode\":\"H\"}},{\"ip\":\"130.14.22.119\",\"port\":5868,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:27_\",\"stateful\":true,\"mode\":\"H\"}}],\"meta\":{}}"
+            "mock_body":        "{\"type\":\"bound\",\"addrs\":[{\"ip\":\"130.14.18.113\",\"port\":5867,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:25_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.19.201\",\"port\":5870,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:25_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.22.49\",\"port\":5861,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:26_\",\"stateful\":true,\"mode\":\"L\"}},{\"ip\":\"130.14.22.119\",\"port\":5868,\"meta\":{\"mock\":\"true\",\"rate\":1000.0,\"standing\":\"Static\",\"serviceType\":\"STANDALONE\",\"expires\":\"__________+00:00:27_\",\"stateful\":true,\"mode\":\"L\"}}],\"meta\":{}}"
         },
         {
             "alias":            "service type HTTP - e.g. Accn2Gi - with SERV_ITER repopulation and reset",
