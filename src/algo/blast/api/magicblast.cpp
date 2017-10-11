@@ -202,6 +202,7 @@ void CMagicBlast::x_Validate(void)
 // contains base mismatch infotmation
 static void s_ComputeBtopAndIdentity(const HSPChain* chain,
                                      string& btop,
+                                     string& md_tag,
                                      double& perc_id)
 {
     _ASSERT(chain);
@@ -210,6 +211,7 @@ static void s_ComputeBtopAndIdentity(const HSPChain* chain,
     
     int num_identical = 0;
     int len = 0;
+    int md_matches = 0;
     HSPContainer* h = chain->hsps;
     BlastHSP* prev = NULL;
     for (; h; prev = h->hsp, h = h->next) {
@@ -257,6 +259,27 @@ static void s_ComputeBtopAndIdentity(const HSPChain* chain,
             buff[1] = BLASTNA_TO_IUPACNA[(int)hsp_edits->edits[i].subject_base];
             buff[2] = 0;
             btop += (string)buff;
+
+            // assemble SAM MD tag
+            if (buff[1] != '-') {
+                if (i > 0 && hsp_edits->edits[i - 1].query_base == kGap &&
+                    buff[0] == '-' && num_matches == 0) {
+
+                    md_tag += (string)(&buff[1]);
+                }
+                else {
+                    md_tag += NStr::IntToString(num_matches + md_matches);
+                    if (buff[0] == '-') {
+                        md_tag += "^";
+                    }
+                    md_tag += (string)(&buff[1]);
+                    md_matches = 0;
+                }
+            }
+            else {
+                md_matches += num_matches;
+            }
+
             len++;
             if (hsp_edits->edits[i].query_base != kGap) {
                 query_pos++;
@@ -266,7 +289,18 @@ static void s_ComputeBtopAndIdentity(const HSPChain* chain,
         num_identical += num_matches;
         if (num_matches > 0) {
             btop += NStr::IntToString(num_matches);
+
+            if (hsp_edits->num_edits > 0) {
+                md_tag += NStr::IntToString(num_matches + md_matches);
+                md_matches = 0;
+            }
+            else {
+                md_matches += num_matches;
+            }
         }
+    }
+    if (md_matches > 0) {
+        md_tag += NStr::IntToString(md_matches);
     }
     len += num_identical;
 
@@ -315,9 +349,11 @@ static CRef<CSeq_align> s_CreateSeqAlign(const HSPChain* chain,
 
     // for tabular
     string btop;
+    string md_tag;
     double perc_id;
-    s_ComputeBtopAndIdentity(chain, btop, perc_id);
+    s_ComputeBtopAndIdentity(chain, btop, md_tag, perc_id);
     user_object->AddField("btop", btop);
+    user_object->AddField("md_tag", md_tag);
     align->SetNamedScore(CSeq_align::eScore_PercentIdentity_Gapped,
                          perc_id);
 

@@ -850,6 +850,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
     string sep = "\t";
 
     string btop_string;
+    string md_tag;
     int query_len = 0;
     int num_hits = 0;
     int context = -1;
@@ -902,6 +903,11 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
                      (*it)->GetData().IsInt()) {
 
                 context = (*it)->GetInt();
+            }
+            else if ((*it)->GetLabel().GetStr() == "md_tag" &&
+                     (*it)->GetData().IsStr()) {
+
+                md_tag = (*it)->GetString();
             }
         }
             
@@ -1251,6 +1257,10 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
         }
 
         ostr << sep << "XS:A:" << ori;
+    }
+
+    if (!md_tag.empty()) {
+        ostr << sep << "MD:Z:" << md_tag;
     }
 
     return ostr;
