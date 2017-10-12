@@ -138,6 +138,8 @@ static void Indent(ostream& out, size_t indent)
 }
 
 
+static string SevLevel[] = {"INFO", "WARNING", "FATAL"};
+
 static void RecursiveXML(ostream& out, const TReportItemList& list, size_t indent, bool ext)
 {
     ITERATE(TReportItemList, it, list) {
@@ -145,18 +147,7 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, size_t inden
             continue;
         }
         Indent(out, indent);
-        out << "<category message=\"" << NStr::XmlEncode((*it)->GetXml()) << "\"" << " severity=";
-        switch ((*it)->GetSeverity()) {
-            case CReportItem::eSeverity_info:
-                out << "\"INFO\"";
-                break;
-            case CReportItem::eSeverity_warning:
-                out << "\"WARNING\"";
-                break;
-            case CReportItem::eSeverity_error:
-                out << "\"FATAL\"";
-                break;
-        }
+        out << "<category message=\"" << NStr::XmlEncode((*it)->GetXml()) << "\"" << " severity=\"" << SevLevel[(*it)->GetSeverity()] << "\"";
         if ((*it)->GetCount()) {
             out << " cardinality=\"" << NStr::Int8ToString((*it)->GetCount()) << "\"";
         }
@@ -221,8 +212,15 @@ void CDiscrepancyContext::OutputXML(ostream& out, bool ext)
         if (rep.empty()) {
             continue;
         }
+        CReportItem::ESeverity sev = CReportItem::eSeverity_info;
+        ITERATE(TReportItemList, it, rep) {
+            CReportItem::ESeverity s = (*it)->GetSeverity();
+            if (s > sev) {
+                sev = s;
+            }
+        }
         Indent(out, XML_INDENT);
-        out << "<test name=\"" << NStr::XmlEncode(tst->first) << "\">\n";
+        out << "<test name=\"" << NStr::XmlEncode(tst->first) << "\" severity=\"" << SevLevel[sev] << "\">\n";
         RecursiveXML(out, rep, XML_INDENT * 2, ext);
         Indent(out, XML_INDENT);
         out << "</test>\n";
