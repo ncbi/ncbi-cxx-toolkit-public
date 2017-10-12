@@ -181,11 +181,11 @@ BOOST_AUTO_TEST_CASE(LocalFetchBatchData)
 BOOST_AUTO_TEST_CASE(LocalFetchNucleotideBioseqNotFixedSize)
 {
      CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-     string dbname("nucl_dbs");
+     string dbname("refseq_genomic");
      string loader_name = 
        CBlastDbDataLoader::RegisterInObjectManager(*objmgr, dbname, CBlastDbDataLoader::eNucleotide, false,
            CObjectManager::eNonDefault, CObjectManager::kPriority_NotSet).GetLoader()->GetName();
-     BOOST_REQUIRE_EQUAL("BLASTDB_nucl_dbsNucleotide", loader_name);
+     BOOST_REQUIRE_EQUAL("BLASTDB_refseq_genomicNucleotide", loader_name);
      CScope scope(*objmgr);
 
      scope.AddDataLoader(loader_name);

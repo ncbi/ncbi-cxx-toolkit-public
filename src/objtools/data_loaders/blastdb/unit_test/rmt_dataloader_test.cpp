@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(RemoteFetchNucleotideBioseq)
 
 static void RemoteFetchLongNucleotideBioseq(bool fixed_slice_size)
 {          
-    const string db("nucl_dbs");
+    const string db("refseq_genomic");
     const bool is_protein(false);
     const bool is_remote(true);
     CAutoRegistrar::RemoveAllDataLoaders();
@@ -179,7 +179,7 @@ static void RemoteFetchLongNucleotideBioseq(bool fixed_slice_size)
     CObjectManager::TRegisteredNames loader_names;
     objmgr->GetRegisteredNames(loader_names);
     BOOST_REQUIRE_EQUAL(1, loader_names.size());
-    BOOST_REQUIRE_EQUAL("REMOTE_BLASTDB_nucl_dbsNucleotide",
+    BOOST_REQUIRE_EQUAL("REMOTE_BLASTDB_refseq_genomicNucleotide",
                         loader_names.front());
 
     {{ // limit the lifespan of the CScope object
