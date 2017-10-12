@@ -100,6 +100,16 @@ void CFastaOstreamEx::WriteFeature(const CSeq_feat& feat,
     }
 
     const bool IsCdregion = feat.GetData().IsCdregion();
+    if (IsCdregion) { // check that the cdregion is translatable (RW-490)
+        int frame_offset = 0;
+        if (feat.GetData().GetCdregion().IsSetFrame()) {
+            frame_offset = feat.GetData().GetCdregion().GetFrame()-1;
+        }
+        if (((GetLength(feat.GetLocation(), &scope) - frame_offset) < 3)) {
+            return;
+        }
+    }
+
 
     if (!xWriteFeatureTitle(feat, scope, translate_cds)) {
         return; // Title not written
