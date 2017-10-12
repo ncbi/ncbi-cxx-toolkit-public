@@ -133,6 +133,9 @@ enum ENAMERD_Subcodes {
 #define REG_NAMERD_DTAB_KEY         "DTAB"
 #define REG_NAMERD_DTAB_DEF         ""
 
+/* Default rate increase 20% if svc runs locally */
+#define NAMERD_LOCAL_BONUS          1.2
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -1311,6 +1314,13 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text, int code)
 }
 
 
+static SLB_Candidate* s_GetCandidate(void* user_data, size_t n)
+{
+    struct SNAMERD_Data* data = (struct SNAMERD_Data*) user_data;
+    return n < data->n_cand ? &data->cand[n] : 0;
+}
+
+
 static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 {
     struct SNAMERD_Data* data = (struct SNAMERD_Data*) iter->data;
@@ -1337,10 +1347,8 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
         }
     }
 
-    /* No need to load-balance - that's already been done by the namerd service.
-     * Just take the first one.
-     */
-    n = 0;
+    /* Pick a randomized candidate. */
+    n = LB_Select(iter, data, s_GetCandidate, NAMERD_LOCAL_BONUS);
     info       = (SSERV_Info*) data->cand[n].info;
     info->rate =               data->cand[n].status;
 
