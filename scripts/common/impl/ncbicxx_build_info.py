@@ -327,13 +327,14 @@ class Collector(object):
             else:
                 next_dir = os.path.dirname(next_dir)
 
-        if 'LOGNAME' in os.environ:
-            return os.environ['LOGNAME']
-        elif 'USER' in os.environ:
-            return os.environ['USER']
-        else:
-            uid = os.getuid()
-            try:
-                return pwd.getpwuid(uid)[0]
-            except:
-                return str(uid)
+        return ''
+        # if 'LOGNAME' in os.environ:
+        #     return os.environ['LOGNAME']
+        # elif 'USER' in os.environ:
+        #     return os.environ['USER']
+        # else:
+        #     uid = os.getuid()
+        #     try:
+        #         return pwd.getpwuid(uid)[0]
+        #     except:
+        #         return str(uid)
