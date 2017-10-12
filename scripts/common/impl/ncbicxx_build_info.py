@@ -261,20 +261,38 @@ class Collector(object):
         info = { 'vcs_type': 'git' }
         git = os.environ.get('TEAMCITY_GIT_PATH', 'git')
         try:
-            cmd = [git, '-C', srcdir, 'remote', 'get-url', 'origin'] 
+            cmd = [git, 'remote', 'get-url', 'origin'] 
             url = subprocess.check_output(cmd, stderr = subprocess.DEVNULL,
-                                          universal_newlines = True)
+                                          universal_newlines = True,
+                                          cwd = srcdir)
             url = url.rstrip('\n')
             if len(rest) > 0:
                 url = url + '#' + os.path.join(*rest)
             info['vcs_path'] = url
         except subprocess.CalledProcessError:
-            info['vcs_path'] = 'file://' + os.path.join(srcdir, *rest)
+            try:
+                cmd = [git, 'remote', 'show', 'origin'] 
+                with subprocess.Popen(cmd, stdout = subprocess.PIPE,
+                                      stderr = subprocess.DEVNULL,
+                                      universal_newlines = True,
+                                      cwd = srcdir) as remote:
+                    for l in remote.stdout:
+                        (k, v) = l.strip().split(': ', 1)
+                        if k == 'Fetch URL':
+                            url = v
+                            if len(rest) > 0:
+                                url = url + '#' + os.path.join(*rest)
+                            info['vcs_path'] = url
+                            break
+            except subprocess.CalledProcessError:
+                pass
+            if 'vcs_path' not in info:
+                info['vcs_path'] = 'file://' + os.path.join(srcdir, *rest)
         try:
-            cmd = [git, '-C', srcdir, 'rev-parse', '--symbolic-full-name',
-                   'HEAD']
+            cmd = [git, 'rev-parse', '--symbolic-full-name', 'HEAD']
             rev = subprocess.check_output(cmd, stderr = subprocess.DEVNULL,
-                                          universal_newlines = True)
+                                          universal_newlines = True,
+                                          cwd = srcdir)
             rev = rev.rstrip('\n')
             info['vcs_branch'] = re.sub(r'^refs/(?:heads|tags)/', '', rev)
         except subprocess.CalledProcessError:
