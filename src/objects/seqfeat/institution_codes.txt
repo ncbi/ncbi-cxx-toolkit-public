@@ -7198,7 +7198,7 @@ VYM	s	Muzeum Vyakovska
 W	s	Naturhistorisches Museum Wien, Department of Botany		
 WA	s	Herbarium, Faculty of Biology, University of Warsaw		
 WAB	s	Wabash College, Biological Sciences Department		
-WABG	h	University of Warsaw Botanic Garden		
+WABG	s	University of Warsaw Botanic Garden		
 WAC	c	Department of Agriculture Western Australia Plant Pathogen Collection		
 WACA<USA-AZ>	s	Walnut Canyon National Monument		
 WACA<USA-OR>	s	Work Amber Collection		
@@ -7436,6 +7436,7 @@ YCH	s	Yavapai College, Biology Department
 YCM	s	Yokosuka City Museum		
 YCP	s	Yunnan Laboratory for Conservation of Rare, Endangered & Endemic Forest Plants, State Forestry Administration		
 YDC	s	Yunnan Institute for Drug Control		
+Yeast Collection of Department of Microbiology, Stellenbosch University	c	Yeast Collection of Department of Microbiology, Stellenbosch University		
 YELLO	s	Yellowstone National Park		
 YEO	s	Yeovil Museum		
 YF	s	Yanbei Forestry Institute		
