@@ -38,69 +38,15 @@
 #include <corelib/ncbi_autoinit.hpp>
 
 #include <objmgr/scope.hpp>
-#include <objmgr/feat_ci.hpp>  // for CMappedFeat
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/SeqFeatData.hpp>
-
-//#include <objtools/validator/validator.hpp>
-//#include <objtools/validator/utilities.hpp>
-//#include <objtools/validator/feature_match.hpp>
-//#include <objtools/validator/gene_cache.hpp>
-//#include <objtools/validator/validerror_base.hpp>
-
-#include <objmgr/util/feature.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CSeq_entry;
-class CCit_sub;
-class CCit_art;
-class CCit_gen;
 class CSeq_feat;
-class CBioseq;
-class CSeqdesc;
-class CSeq_annot;
-class CTrna_ext;
-class CProt_ref;
-class CSeq_loc;
-class CFeat_CI;
-class CPub_set;
-class CAuth_list;
-class CTitle;
-class CMolInfo;
-class CUser_object;
-class CSeqdesc_CI;
-class CSeq_graph;
-class CMappedGraph;
-class CDense_diag;
-class CDense_seg;
-class CSeq_align_set;
-class CPubdesc;
-class CBioSource;
-class COrg_ref;
-class CByte_graph;
-class CDelta_seq;
-class CGene_ref;
-class CCdregion;
-class CRNA_ref;
-class CImp_feat;
-class CSeq_literal;
 class CBioseq_Handle;
-class CSeq_feat_Handle;
-class CCountries;
-class CInferencePrefixList;
-class CComment_set;
-class CTaxon3_reply;
-class ITaxon3;
-class CT3Error;
 
 BEGIN_SCOPE(validator)
-
-class CValidError_imp;
-class CTaxValidationAndCleanup;
-class CGeneCache;
-class CValidError_base;
 
 typedef Char(&TSpliceSite)[2];
 

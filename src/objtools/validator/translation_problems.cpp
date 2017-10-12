@@ -34,66 +34,15 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
 #include <objtools/validator/translation_problems.hpp>
-//#include <objtools/validator/validatorp.hpp>
-//#include <objtools/validator/validerror_feat.hpp>
 #include <objtools/validator/utilities.hpp>
-//#include <objtools/format/items/gene_finder.hpp>
 
-#include <serial/serialbase.hpp>
-
-#include <objmgr/bioseq_handle.hpp>
-#include <objmgr/seq_entry_handle.hpp>
-#include <objmgr/feat_ci.hpp>
-#include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
-#include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
-#include <objmgr/util/feature.hpp>
-
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
-#include <objects/seqfeat/Genetic_code_table.hpp>
-#include <objects/seqfeat/Imp_feat.hpp>
-#include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/Prot_ref.hpp>
-#include <objects/seqfeat/RNA_ref.hpp>
-#include <objects/seqfeat/SubSource.hpp>
-#include <objects/seqfeat/Trna_ext.hpp>
-
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seqloc/Seq_point.hpp>
-#include <objects/seqloc/Textseq_id.hpp>
-
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-
-#include <objects/seq/MolInfo.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seq/seqport_util.hpp>
-
-#include <objects/seq/seq_id_mapper.hpp>
-
-#include <objects/pub/Pub.hpp>
-#include <objects/pub/Pub_set.hpp>
-
-#include <objects/general/Dbtag.hpp>
-
-#include <objects/misc/sequence_macros.hpp>
-
-#include <objtools/edit/cds_fix.hpp>
-
-#include <util/static_set.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
-#include <util/sgml_entity.hpp>
-
-#include <algorithm>
-#include <string>
-
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -148,9 +97,11 @@ CScope* scope)
     }
 
     // do not validate for pseudo gene
-    FOR_EACH_GBQUAL_ON_FEATURE(it, feat) {
-        if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), "pseudo")) {
-            return;
+    if (feat.IsSetQual()) {
+        for (auto it = feat.GetQual().begin(); it != feat.GetQual().end(); it++) {
+             if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), "pseudo")) {
+                return;
+            }
         }
     }
 
@@ -185,9 +136,11 @@ CScope* scope)
     m_ProblemFlags |= x_CheckCDSFrame(feat, scope);
 
     // check for unparsed transl_except
-    FOR_EACH_GBQUAL_ON_FEATURE(it, feat) {
-        if ((*it)->IsSetQual() && NStr::Equal((*it)->GetQual(), "transl_except")) {
-            m_UnparsedTranslExcept = true;
+    if (feat.IsSetQual()) {
+        for (auto it = feat.GetQual().begin(); it != feat.GetQual().end(); it++) {
+            if ((*it)->IsSetQual() && NStr::Equal((*it)->GetQual(), "transl_except")) {
+                m_UnparsedTranslExcept = true;
+            }
         }
     }
 
@@ -618,7 +571,7 @@ size_t CCDSTranslationProblems::x_CountTerminalXs(const string& transl_prot, boo
 size_t CCDSTranslationProblems::x_CountTerminalXs(const CSeqVector& prot_vec)
 {
     size_t prod_terminal_x = 0;
-    size_t prod_len = prot_vec.size() - 1;
+    TSeqPos prod_len = prot_vec.size() - 1;
     while (prod_len > 0 && prot_vec[prod_len] == 'X') {
         prod_terminal_x++;
         prod_len--;
@@ -676,9 +629,11 @@ static bool x_LeuCUGstart
     if ( ! feat.IsSetExcept_text()) return false;
     const string& except_text = feat.GetExcept_text();
     if (NStr::FindNoCase(except_text, "translation initiation by tRNA-Leu at CUG codon") == NPOS) return false;
-    FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
-        const CGb_qual& qual = **it;
-        if ( qual.IsSetQual() && NStr::Compare(qual.GetQual(), "experiment") == 0) return true;
+    if (feat.IsSetQual()) {
+        for (auto it = feat.GetQual().begin(); it != feat.GetQual().end(); it++) {
+            const CGb_qual& qual = **it;
+            if (qual.IsSetQual() && NStr::Compare(qual.GetQual(), "experiment") == 0) return true;
+        }
     }
     return false;
 }
@@ -690,7 +645,7 @@ CCDSTranslationProblems::x_GetTranslExceptProblems
 {
     TTranslExceptProblems problems;
 
-    if (!feat.IsSetData() || !feat.GetData().IsCdregion()) {
+    if (!feat.IsSetData() || !feat.GetData().IsCdregion() || !feat.GetData().GetCdregion().IsSetCode_break()) {
         return problems;
     }
 
@@ -715,7 +670,7 @@ CCDSTranslationProblems::x_GetTranslExceptProblems
 
     const CSeq_loc& loc = feat.GetLocation();
 
-    FOR_EACH_CODEBREAK_ON_CDREGION(cbr, cdregion) {
+    for (auto cbr = cdregion.GetCode_break().begin(); cbr != cdregion.GetCode_break().end(); cbr++) {
         if (!(*cbr)->IsSetLoc()) {
             continue;
         }
@@ -726,7 +681,7 @@ CCDSTranslationProblems::x_GetTranslExceptProblems
             continue;
         }
 
-        size_t codon_length = GetLength((*cbr)->GetLoc(), scope);
+        TSeqPos codon_length = GetLength((*cbr)->GetLoc(), scope);
         TSeqPos from = LocationOffset(loc, (*cbr)->GetLoc(),
             eOffset_FromStart, scope);
 
@@ -776,12 +731,12 @@ CCDSTranslationProblems::x_GetTranslExceptProblems
             switch ((*cbr)->GetAa().Which()) {
             case CCode_break::C_Aa::e_Ncbi8aa:
                 str = (*cbr)->GetAa().GetNcbi8aa();
-                CSeqConvert::Convert(str, CSeqUtil::e_Ncbi8aa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
+                CSeqConvert::Convert(str, CSeqUtil::e_Ncbi8aa, (TSeqPos)0, (TSeqPos)(str.size()), seqData, CSeqUtil::e_Ncbieaa);
                 ex = seqData[0];
                 break;
             case CCode_break::C_Aa::e_Ncbistdaa:
                 str = (*cbr)->GetAa().GetNcbi8aa();
-                CSeqConvert::Convert(str, CSeqUtil::e_Ncbistdaa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
+                CSeqConvert::Convert(str, CSeqUtil::e_Ncbistdaa, (TSeqPos)0, (TSeqPos)(str.size()), seqData, CSeqUtil::e_Ncbieaa);
                 ex = seqData[0];
                 break;
             case CCode_break::C_Aa::e_Ncbieaa:
@@ -974,11 +929,13 @@ CScope* scope)
         size_t last_pos = 0;
 
         CSeq_loc::TRange range = CSeq_loc::TRange::GetEmpty();
-        FOR_EACH_CODEBREAK_ON_CDREGION(cbr, cdregion) {
-            SRelLoc rl(loc, (*cbr)->GetLoc(), scope);
-            ITERATE(SRelLoc::TRanges, rit, rl.m_Ranges) {
-                if ((*rit)->GetTo() > last_pos) {
-                    last_pos = (*rit)->GetTo();
+        if (cdregion.IsSetCode_break()) {
+            for (auto cbr = cdregion.GetCode_break().begin(); cbr != cdregion.GetCode_break().end(); cbr++) {
+                SRelLoc rl(loc, (*cbr)->GetLoc(), scope);
+                ITERATE(SRelLoc::TRanges, rit, rl.m_Ranges) {
+                    if ((*rit)->GetTo() > last_pos) {
+                        last_pos = (*rit)->GetTo();
+                    }
                 }
             }
         }
@@ -1103,8 +1060,8 @@ size_t GetMRNATranslationProblems
                 CBioseq_Handle::eCoding_Iupac);
             CSeqVector rna_vec(rna, CBioseq_Handle::eCoding_Iupac);
 
-            size_t nuc_len = nuc_vec.size();
-            size_t rna_len = rna_vec.size();
+            TSeqPos nuc_len = nuc_vec.size();
+            TSeqPos rna_len = rna_vec.size();
 
             if (nuc_len != rna_len) {
                 has_errors = true;
