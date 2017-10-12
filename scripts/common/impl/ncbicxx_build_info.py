@@ -259,8 +259,9 @@ class Collector(object):
 
     def get_git_info(self, srcdir, rest):
         info = { 'vcs_type': 'git' }
+        git = os.environ.get('TEAMCITY_GIT_PATH', 'git')
         try:
-            cmd = ['git', '-C', srcdir, 'remote', 'get-url', 'origin'] 
+            cmd = [git, '-C', srcdir, 'remote', 'get-url', 'origin'] 
             url = subprocess.check_output(cmd, stderr = subprocess.DEVNULL,
                                           universal_newlines = True)
             url = url.rstrip('\n')
@@ -270,7 +271,7 @@ class Collector(object):
         except subprocess.CalledProcessError:
             info['vcs_path'] = 'file://' + os.path.join(srcdir, *rest)
         try:
-            cmd = ['git', '-C', srcdir, 'rev-parse', '--symbolic-full-name',
+            cmd = [git, '-C', srcdir, 'rev-parse', '--symbolic-full-name',
                    'HEAD']
             rev = subprocess.check_output(cmd, stderr = subprocess.DEVNULL,
                                           universal_newlines = True)
