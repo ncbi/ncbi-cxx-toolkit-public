@@ -1251,7 +1251,7 @@ CBioseq_Handle BioseqHandleFromLocation (CScope* m_Scope, const CSeq_loc& loc)
 }
 
 
-bool s_PosIsNNotGap(CSeqVector& vec, int pos)
+bool s_PosIsNNotGap(const CSeqVector& vec, int pos)
 {
     if (pos >= vec.size()) {
         return false;
@@ -1265,14 +1265,24 @@ bool s_PosIsNNotGap(CSeqVector& vec, int pos)
 }
 
 
-void CheckBioseqEndsForNAndGap 
-(CBioseq_Handle bsh,
- EBioseqEndIsType& begin_n,
- EBioseqEndIsType& begin_gap,
- EBioseqEndIsType& end_n,
- EBioseqEndIsType& end_gap,
- bool& begin_ambig,
- bool& end_ambig)
+bool ShouldCheckForNsAndGap(CBioseq_Handle bsh)
+{
+    if (!bsh || bsh.GetInst_Length() < 10 || (bsh.IsSetInst_Topology() && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular)) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+void CheckBioseqEndsForNAndGap
+(const CSeqVector& vec,
+EBioseqEndIsType& begin_n,
+EBioseqEndIsType& begin_gap,
+EBioseqEndIsType& end_n,
+EBioseqEndIsType& end_gap,
+bool& begin_ambig,
+bool& end_ambig)
 {
     begin_n = eBioseqEndIsType_None;
     begin_gap = eBioseqEndIsType_None;
@@ -1281,14 +1291,14 @@ void CheckBioseqEndsForNAndGap
     begin_ambig = false;
     end_ambig = false;
 
+    if (vec.size() < 10) {
+        return;
+    }
+
     try {
-        if (!bsh || bsh.GetInst_Length() < 10 || (bsh.IsSetInst_Topology() && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular)) {
-            return;
-        }
 
         // check for gap at begining of sequence
-        CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-        if (vec.IsInGap(0) /* || vec.IsInGap(1) */ ) {
+        if (vec.IsInGap(0) /* || vec.IsInGap(1) */) {
             begin_gap = eBioseqEndIsType_All;
             for (int i = 0; i < 10; i++) {
                 if (!vec.IsInGap(i)) {
@@ -1299,7 +1309,7 @@ void CheckBioseqEndsForNAndGap
         }
 
         // check for gap at end of sequence
-        if ( /* vec.IsInGap (vec.size() - 2) || */ vec.IsInGap (vec.size() - 1)) {
+        if ( /* vec.IsInGap (vec.size() - 2) || */ vec.IsInGap(vec.size() - 1)) {
             end_gap = eBioseqEndIsType_All;
             for (int i = vec.size() - 11; i < vec.size(); i++) {
                 if (!vec.IsInGap(i)) {
@@ -1309,9 +1319,9 @@ void CheckBioseqEndsForNAndGap
             }
         }
 
-        if (bsh.IsNa()) {
+        if (vec.IsNucleotide()) {
             // check for N bases at beginning of sequence
-            if (s_PosIsNNotGap(vec, 0) /* || s_PosIsNNotGap(vec, 1) */ ) {
+            if (s_PosIsNNotGap(vec, 0) /* || s_PosIsNNotGap(vec, 1) */) {
                 begin_n = eBioseqEndIsType_All;
                 for (int i = 0; i < 10; i++) {
                     if (!s_PosIsNNotGap(vec, i)) {
@@ -1347,7 +1357,7 @@ void CheckBioseqEndsForNAndGap
                     } else if (num_ns >= 15) {
                         begin_ambig = true;
                         break;
-                    }                    
+                    }
                 }
             }
             num_ns = 0;
@@ -1364,6 +1374,35 @@ void CheckBioseqEndsForNAndGap
                 }
             }
         }
+    } catch (exception&) {
+        // if there are exceptions, cannot perform this calculation
+    }
+}
+
+
+void CheckBioseqEndsForNAndGap 
+(CBioseq_Handle bsh,
+ EBioseqEndIsType& begin_n,
+ EBioseqEndIsType& begin_gap,
+ EBioseqEndIsType& end_n,
+ EBioseqEndIsType& end_gap,
+ bool& begin_ambig,
+ bool& end_ambig)
+{
+    begin_n = eBioseqEndIsType_None;
+    begin_gap = eBioseqEndIsType_None;
+    end_n = eBioseqEndIsType_None;
+    end_gap = eBioseqEndIsType_None;
+    begin_ambig = false;
+    end_ambig = false;
+    if (!ShouldCheckForNsAndGap(bsh)) {
+        return;
+    }
+
+    try {
+        // check for gap at begining of sequence
+        CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+        CheckBioseqEndsForNAndGap(vec, begin_n, begin_gap, end_n, end_gap, begin_ambig, end_ambig);
     } catch ( exception& ) {
         // if there are exceptions, cannot perform this calculation
     }
@@ -2829,7 +2868,6 @@ bool ConsistentWithT(Char ch)
 bool DoesCodingRegionHaveUnnecessaryException(const CSeq_feat& feat, CBioseq_Handle loc_handle, CScope& scope)
 {
     CCDSTranslationProblems problems;
-    bool is_far = false;
     CBioseq_Handle prot_handle;
     if (feat.IsSetProduct()) {
         prot_handle = scope.GetBioseqHandle(feat.GetProduct());

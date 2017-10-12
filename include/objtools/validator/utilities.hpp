@@ -162,6 +162,18 @@ void NCBI_VALIDATOR_EXPORT CheckBioseqEndsForNAndGap
  bool &begin_ambig,
  bool &end_ambig);
 
+bool ShouldCheckForNsAndGap(CBioseq_Handle bsh);
+
+void CheckBioseqEndsForNAndGap
+(const CSeqVector& vec,
+EBioseqEndIsType& begin_n,
+EBioseqEndIsType& begin_gap,
+EBioseqEndIsType& end_n,
+EBioseqEndIsType& end_gap,
+bool& begin_ambig,
+bool& end_ambig);
+
+
 
 /// Indicates whether feature is a dicistronic gene 
 /// @param f Seq-feat-Handle [in]

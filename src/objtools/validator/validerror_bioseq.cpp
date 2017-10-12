@@ -2985,12 +2985,11 @@ bool CValidError_bioseq::GetTSANStretchErrors(const CBioseq& seq)
 
 
 // check to see if sequence is all Ns
-bool CValidError_bioseq::IsAllNs(CBioseq_Handle bsh)
+bool CValidError_bioseq::IsAllNs(const CSeqVector& vec)
 {
     bool rval = true;
     bool at_least_one = false;
     try {
-        CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
         for (CSeqVector_CI sv_iter(vec); (sv_iter) && rval; ++sv_iter) {
             if (*sv_iter != 'N') {
                 rval = false;
@@ -3120,8 +3119,9 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
     }    
 
     try { 
+        CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
-        if (IsAllNs(bsh)) {
+        if (IsAllNs(vec)) {
             PostErr(eDiag_Critical, eErr_SEQ_INST_AllNs, "Sequence is all Ns", seq);
             return;
         }
@@ -3137,8 +3137,8 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
         EBioseqEndIsType end_n = eBioseqEndIsType_None;
         EBioseqEndIsType end_gap = eBioseqEndIsType_None;
         bool begin_ambig = false, end_ambig = false;
-        if (x_IsDeltaLitOnly(seq.GetInst())) {
-            CheckBioseqEndsForNAndGap(bsh, begin_n, begin_gap, end_n, end_gap, begin_ambig, end_ambig);
+        if (ShouldCheckForNsAndGap(bsh) && x_IsDeltaLitOnly(seq.GetInst())) {
+            CheckBioseqEndsForNAndGap(vec, begin_n, begin_gap, end_n, end_gap, begin_ambig, end_ambig);
         }
 
         bool is_circular = false;

@@ -153,7 +153,7 @@ public:
     bool GetTSAConflictingBiomolTechErrors(const CBioseq& seq);
 
     static bool IsSelfReferential(const CBioseq& seq);
-    static bool IsAllNs(CBioseq_Handle bsh);
+    static bool IsAllNs(const CSeqVector& vec);
     static int PctNs(CBioseq_Handle bsh);
 
     static bool IsMaster(const CBioseq& seq);
