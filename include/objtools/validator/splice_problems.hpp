@@ -38,16 +38,8 @@
 #include <corelib/ncbi_autoinit.hpp>
 
 #include <objmgr/scope.hpp>
-#include <objmgr/feat_ci.hpp>  // for CMappedFeat
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
-
-//#include <objtools/validator/validator.hpp>
-//#include <objtools/validator/utilities.hpp>
-//#include <objtools/validator/feature_match.hpp>
-//#include <objtools/validator/gene_cache.hpp>
-//#include <objtools/validator/validerror_base.hpp>
-//#include <objtools/validator/translation_problems.hpp>
 
 #include <objmgr/util/feature.hpp>
 

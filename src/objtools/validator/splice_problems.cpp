@@ -33,66 +33,13 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
-//#include <objtools/validator/validatorp.hpp>
-//#include <objtools/validator/validerror_feat.hpp>
 #include <objtools/validator/utilities.hpp>
-//#include <objtools/format/items/gene_finder.hpp>
 #include <objtools/validator/splice_problems.hpp>
-
-#include <serial/serialbase.hpp>
-
 #include <objmgr/bioseq_handle.hpp>
-#include <objmgr/seq_entry_handle.hpp>
-#include <objmgr/feat_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
-#include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
-#include <objmgr/util/feature.hpp>
-
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/BioSource.hpp>
-#include <objects/seqfeat/Cdregion.hpp>
-#include <objects/seqfeat/Code_break.hpp>
-#include <objects/seqfeat/Gb_qual.hpp>
-#include <objects/seqfeat/Genetic_code.hpp>
-#include <objects/seqfeat/Genetic_code_table.hpp>
-#include <objects/seqfeat/Imp_feat.hpp>
-#include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/Prot_ref.hpp>
-#include <objects/seqfeat/RNA_ref.hpp>
-#include <objects/seqfeat/SubSource.hpp>
-#include <objects/seqfeat/Trna_ext.hpp>
-
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seqloc/Seq_point.hpp>
-#include <objects/seqloc/Textseq_id.hpp>
-
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-
-#include <objects/seq/MolInfo.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seq/seqport_util.hpp>
-
-#include <objects/seq/seq_id_mapper.hpp>
-
-#include <objects/pub/Pub.hpp>
-#include <objects/pub/Pub_set.hpp>
-
-#include <objects/general/Dbtag.hpp>
-
-#include <objects/misc/sequence_macros.hpp>
-
-#include <objtools/edit/cds_fix.hpp>
-
-#include <util/static_set.hpp>
-#include <util/sequtil/sequtil_convert.hpp>
-#include <util/sgml_entity.hpp>
-
-#include <algorithm>
-#include <string>
+#include <objects/seqfeat/OrgName.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -593,7 +540,7 @@ void CSpliceProblems::ValidateSpliceMrna(const CSeq_feat& feat, const CBioseq_Ha
                     ValidateDonorAcceptorPair(strand,
                         stop, vec_head, bsh_head.GetInst_Length(),
                         start, vec_tail, bsh_tail.GetInst_Length());
-                } catch (CSeqVectorException& e) {
+                } catch (CSeqVectorException& ) {
                 }
             }
         }
@@ -637,6 +584,11 @@ void CSpliceProblems::ValidateSpliceCdregion(const CSeq_feat& feat, const CBiose
             try {
                 CSeqVector vec = bsh_head.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
                 if (part.IsPartialStart(eExtreme_Biological)) {
+                    if (strand == eNa_strand_minus) {
+                        start = range.GetTo();
+                    } else {
+                        start = range.GetFrom();
+                    }
                     ESpliceSiteRead good_acceptor = ReadAcceptorSpliceSite(strand, start, vec, bsh_head.GetInst_Length());
                     m_AcceptorProblems.push_back(TSpliceProblem(good_acceptor, start));
                 }
