@@ -253,6 +253,18 @@ CDBServiceMapperCoR::GetServersList(const string& service, list<string>* serv_li
     }
 }
 
+void
+CDBServiceMapperCoR::GetServerOptions(const string& service, TOptions* options)
+{
+    CFastMutexGuard mg(m_Mtx);
+
+    TDelegates::reverse_iterator dg_it = m_Delegates.rbegin();
+    TDelegates::reverse_iterator dg_end = m_Delegates.rend();
+    for (; options->empty() && dg_it != dg_end; ++dg_it) {
+        (*dg_it)->GetServerOptions(service, options);
+    }
+}
+
 
 bool
 CDBServiceMapperCoR::RecordServer(I_ConnectionExtra& extra) const

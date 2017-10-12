@@ -115,6 +115,44 @@ private:
 };
 typedef CRef<CDBServer> TSvrRef;
 
+/// CDBServerOption -- CDBServer extended with additional information
+/// that helps maintain a balanced pool of connections.  Rankings are
+/// relative; what matters there is the ratios between rankings
+/// obtained together.  Some rankings may be zero as long as the total
+/// isn't.
+class CDBServerOption : public CDBServer
+{
+public:
+    enum EState {
+        fState_Penalized = 1 << 0, ///< Penalized by the load balancer
+        fState_Excluded  = 1 << 1, ///< Excluded by DBAPI
+        fState_Normal    = 0       ///< Fully available
+    };
+    DECLARE_SAFE_FLAGS_TYPE(EState, TState);
+    
+    CDBServerOption(const string& name,
+                    Uint4         host,
+                    Uint2         port,
+                    double        ranking,
+                    TState        state = fState_Normal,
+                    unsigned int  expire_time = 0)
+        : CDBServer(name, host, port, expire_time),
+          m_Ranking(ranking), m_State(state)
+        { }
+
+    double GetRanking (void) const { return m_Ranking;                  }
+    TState GetState   (void) const { return m_State;                    }
+    bool   IsPenalized(void) const { return m_State & fState_Penalized; }
+    bool   IsExcluded (void) const { return m_State & fState_Excluded;  }
+    bool   IsNormal   (void) const { return m_State == fState_Normal;   }
+
+private:
+    double m_Ranking;
+    TState m_State;
+};
+
+DECLARE_SAFE_FLAGS(CDBServerOption::EState);
+
 ///////////////////////////////////////////////////////////////////////////////
 /// IDBServiceMapper
 ///
@@ -123,6 +161,7 @@ class IDBServiceMapper : public CObject
 {
 public:
     typedef IDBServiceMapper* (*TFactory)(const IRegistry* registry);
+    typedef list<CRef<CDBServerOption> > TOptions;
 
     struct SDereferenceLess
     {
@@ -157,6 +196,11 @@ public:
         serv_list->clear();
     }
 
+    /// Get an annotated list of all servers for the given service.
+    /// The default implementation just pads out the results of
+    /// calling GetServersList, which predates this method and as such
+    /// is likelier to be defined by derived classes.
+    virtual void GetServerOptions(const string& service, TOptions* options);
 
     /// Set up mapping preferences for a service
     /// preference - value between 0 and 100
@@ -200,6 +244,17 @@ inline
 string IDBServiceMapper::GetName(void) const
 {
     return CDBServiceMapperTraits<IDBServiceMapper>::GetName();
+}
+
+inline
+void IDBServiceMapper::GetServerOptions(const string& name, TOptions* options)
+{
+    list<string> servers;
+    GetServersList(name, &servers);
+    options->clear();
+    for (const string& it : servers) {
+        options->emplace_back(new CDBServerOption(it, 0, 0, 1.0));
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

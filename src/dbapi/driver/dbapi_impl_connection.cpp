@@ -416,13 +416,22 @@ string CConnection::GetDriverName(void) const
 
 void CConnection::x_RecordServer(const CDBServer& server)
 {
+    CMutexGuard mg(eEmptyGuard);
     string new_name = ServerName().substr(0, ServerName().find(':'))
         + '@' + server.GetName();
     _TRACE("Updating server metadata from " << ServerName() << '@'
            << ConvertN2A(m_Host) << ':' << m_Port << " to " << new_name);
+    
+    if (m_Reusable) {
+        mg.Guard(m_DriverContext->m_PoolMutex);
+        m_DriverContext->x_AdjustCounts(this, -1);
+    }
     m_ExceptionContext->server_name = new_name;
     m_Host = server.GetHost();
     m_Port = server.GetPort();
+    if (m_Reusable) {
+        m_DriverContext->x_AdjustCounts(this, 1);
+    }
 }
 
 } // namespace impl

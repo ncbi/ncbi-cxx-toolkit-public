@@ -100,6 +100,9 @@ protected:
                      const CRef<IDBServiceMapper>& mapper);
 
     public:
+        typedef IDBServiceMapper::TOptions TServerOptions;
+        TServerOptions& GetServerOptions(const string& service_name,
+                                         bool force_refresh = false);
         //
         TSvrRef GetDispatchedServer(const string& service_name);
         void SetDispatchedServer(const string&  service_name,
@@ -135,12 +138,14 @@ protected:
 
     private:
         // Data types
+        typedef map<string, TServerOptions> TServerOptionsMap;
         typedef map<string, TSvrRef>      TDispatchedSet;
         typedef map<string, string>       TExclusionSummaryMap;
         typedef map<string, unsigned int> TServer2NumMap;
 
         const CDBConnectionFactory* m_Parent;
         CRef<IDBServiceMapper>      m_DBServiceMapper;
+        TServerOptionsMap           m_ServerOptionsMap;
         TDispatchedSet              m_DispatchedSet;
         TExclusionSummaryMap        m_ExclusionSummaryMap;
         TServer2NumMap              m_DispatchNumMap;
@@ -174,7 +179,8 @@ private:
                                        const CDBConnParams& params);
 
     CDB_Connection* MakeValidConnection(SOpeningContext& ctx,
-                                        const CDBConnParams& params);
+                                        const CDBConnParams& params,
+                                        CDB_Connection* candidate = NULL);
 
     virtual CDB_UserHandler::TExceptions* GetExceptions(void);
 

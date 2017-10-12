@@ -255,6 +255,29 @@ private:
 NCBI_DBAPIDRIVER_EXPORT
 string ConvertN2A(Uint4 host);
 
+typedef Uint8 TEndpointKey;
+
+inline
+TEndpointKey MakeEndpointKey(Uint4 host, Uint2 port)
+{
+    return (static_cast<TEndpointKey>(host) << 16) | port;
+}
+
+inline
+Uint4 GetHost(TEndpointKey key)
+{
+    _ASSERT(key >> 48 == 0);
+    return static_cast<Uint4>(key >> 16);
+}
+
+inline
+Uint2 GetPort(TEndpointKey key)
+{
+    return key & 0xFFFF;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 // CUtf8::GetValidBytesCount tolerates mid-sequence truncation.
 NCBI_DBAPIDRIVER_EXPORT
 SIZE_TYPE GetValidUTF8Len(const CTempString& ts);

@@ -142,6 +142,7 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
 class NCBI_DBAPIDRIVER_EXPORT CDriverContext : public I_DriverContext
 {
     friend class impl::CConnection;
+    friend class CDBPoolBalancer;
 
 protected:
     CDriverContext(void);
@@ -237,6 +238,18 @@ public:
     void CloseOldIdleConns (unsigned int max_closings,
                             const string& pool_name = kEmptyStr);
 
+    typedef map<string, unsigned int> TCounts;    // by server name
+    typedef map<string, TCounts>      TCountsMap; // by pool or service name
+
+    void GetCountsForPool(const string& pool_name, TCounts* counts) const
+    {
+        x_GetCounts(m_CountsByPool, pool_name, counts);
+    }
+    void GetCountsForService(const string& service, TCounts* counts) const
+    {
+        x_GetCounts(m_CountsByService, service, counts);
+    }
+    
 protected:
     typedef list<CConnection*> TConnPool;
 
@@ -246,7 +259,8 @@ protected:
     }
 
     // To allow children of CDriverContext to create CDB_Connection
-    CDB_Connection* MakeCDBConnection(CConnection* connection);
+    CDB_Connection* MakeCDBConnection(CConnection* connection,
+                                      int delta /* = 1 */);
     CDB_Connection* MakePooledConnection(const CDBConnParams& params);
     virtual CConnection* MakeIConnection(const CDBConnParams& params) = 0;
     void DestroyConnImpl(CConnection* impl);
@@ -274,7 +288,7 @@ protected:
 
 private:
     mutable CMutex  m_DefaultCtxMtx;
-    mutable CMutex  m_PoolMutex; //< for m_PoolSem* and m_(Not)InUse
+    mutable CMutex  m_PoolMutex; //< for m_PoolSem*, m_(Not)InUse, & m_Counts*
     CSemaphore      m_PoolSem;
     string          m_PoolSemSubject;
     CConnection*    m_PoolSemConn;
@@ -291,6 +305,9 @@ private:
     /// Used connections
     TConnPool       m_InUse;
 
+    TCountsMap      m_CountsByPool;
+    TCountsMap      m_CountsByService;
+
     /// Stack of `per-context' err.message handlers
     CDBHandlerStack m_CntxHandlers;
     /// Stacks of `per-connection' err.message handlers
@@ -305,6 +322,10 @@ private:
     /// Return unused connection "conn" to the driver context for future
     /// reuse (if "conn_reusable" is TRUE) or utilization
     void x_Recycle(CConnection* conn, bool conn_reusable);
+
+    void x_AdjustCounts(const CConnection* conn, int delta);
+    void x_GetCounts(const TCountsMap& main_map, const string& name,
+                     TCounts* counts) const;
 };
 
 

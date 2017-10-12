@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author:  Sergey Sikorskiy
+* Authors:  Sergey Sikorskiy, Aaron Ucko
 *
 */
 
@@ -37,6 +37,7 @@
 #include <dbapi/driver/impl/dbapi_impl_context.hpp>
 #include <dbapi/driver/public.hpp>
 #include <dbapi/error_codes.hpp>
+#include "dbapi_pool_balancer.hpp"
 #include <corelib/ncbiapp.hpp>
 #include <corelib/request_ctx.hpp>
 
@@ -356,15 +357,27 @@ CDBConnectionFactory::MakeDBConnection(
     } else {
         // Server name is already dispatched ...
         string single_server(params.GetParam("single_server"));
+        string is_pooled(params.GetParam("is_pooled"));
 
         // We probably need to re-dispatch it ...
-        if (single_server != "true"  &&  GetMaxNumOfDispatches() &&
-            rt_data.GetNumOfDispatches(params.GetServerName()) >= GetMaxNumOfDispatches()) {
+        if (single_server != "true"
+            &&  ((GetMaxNumOfDispatches()
+                  &&  (rt_data.GetNumOfDispatches(params.GetServerName())
+                       >= GetMaxNumOfDispatches()))
+                 || (dsp_srv->GetExpireTime() != 0
+                     &&  (CurrentTime(CTime::eUTC).GetTimeT()
+                          > dsp_srv->GetExpireTime())))) {
             // We definitely need to re-dispatch it ...
 
             // Clean previous info ...
             rt_data.CleanExcluded(params.GetServerName());
             rt_data.SetDispatchedServer(params.GetServerName(), TSvrRef());
+            if (is_pooled == "true") {
+                rt_data.GetServerOptions(params.GetServerName()).clear();
+            }
+            t_con.reset(DispatchServerName(opening_ctx, params));
+        } else if (single_server != "true"  &&  is_pooled == "true") {
+            // Don't fully redispatch, but keep the pool balanced
             t_con.reset(DispatchServerName(opening_ctx, params));
         } else {
             // We do not need to re-dispatch it ...
@@ -452,6 +465,15 @@ CDBConnectionFactory::DispatchServerName(
     unsigned int alternatives = GetMaxNumOfServerAlternatives();
     list<TSvrRef> tried_servers;
     bool full_retry_made = false;
+    CRef<CDBPoolBalancer> balancer;
+
+    if ( !do_not_dispatch  &&  params.GetParam("is_pooled") == "true"
+        &&  !service_name.empty()  ) {
+        balancer.Reset(new CDBPoolBalancer
+                       (service_name, params.GetParam("pool_name"),
+                        ctx.driver_ctx,
+                        rt_data.GetServerOptions(service_name)));
+    }
     for ( ; !t_con && alternatives > 0; --alternatives ) {
         TSvrRef dsp_srv;
 
@@ -464,9 +486,22 @@ CDBConnectionFactory::DispatchServerName(
         // This is possible when somebody uses a named connection pool.
         // In this case we even won't try to map it.
         else if (!service_name.empty()) {
-            dsp_srv = rt_data.GetDBServiceMapper().GetServer(service_name);
+            if (balancer.NotEmpty()) {
+                dsp_srv = balancer->GetServer(&t_con, params);
+            }
+            if (dsp_srv.Empty()) {
+                dsp_srv = rt_data.GetDispatchedServer(service_name);
+            }
+            if (dsp_srv.Empty()) {
+                dsp_srv = rt_data.GetDBServiceMapper().GetServer(service_name);
+            }
 
-            if (dsp_srv.Empty()  &&  tried_servers.empty()) {
+            if (tried_servers.empty()
+                &&  (dsp_srv.Empty()
+                     ||  (dsp_srv->GetName() == service_name
+                          &&  dsp_srv->GetHost() == 0
+                          &&  dsp_srv->GetPort() == 0
+                          &&  !rt_data.GetExcluded(service_name).empty() ))) {
                 _TRACE("List of servers for service " << service_name
                        << " is exhausted. Giving excluded a try.");
                 rt_data.CleanExcluded(service_name);
@@ -496,6 +531,13 @@ CDBConnectionFactory::DispatchServerName(
                     rt_data.CleanExcluded(service_name);
                     ITERATE(list<TSvrRef>, it, tried_servers) {
                         rt_data.Exclude(service_name, *it);
+                    }
+                    if (balancer.NotEmpty()) {
+                        balancer.Reset
+                            (new CDBPoolBalancer
+                             (service_name, params.GetParam("pool_name"),
+                              ctx.driver_ctx,
+                              rt_data.GetServerOptions(service_name, true)));
                     }
                     full_retry_made = true;
                     continue;
@@ -536,7 +578,7 @@ CDBConnectionFactory::DispatchServerName(
         ctx.conn_status = IConnValidator::eInvalidConn;
 
         // We don't check value of conn_status inside of a loop below by design.
-        for (; !t_con && attepmpts > 0; --attepmpts) {
+        for (; attepmpts > 0; --attepmpts) {
             try {
                 CDB_DBLB_Delegate cur_params(
                         cur_srv_name,
@@ -546,7 +588,11 @@ CDBConnectionFactory::DispatchServerName(
                 cur_params.SetOpeningMsgHandlers() = ctx.handlers;
                 t_con = MakeValidConnection(ctx,
                                             // curr_conn_attr,
-                                            cur_params);
+                                            cur_params,
+                                            t_con);
+                if (t_con != NULL) {
+                    break;
+                }
             } catch (CDB_Exception& ex) {
                 // m_Errors.push_back(ex.Clone());
                 ctx.handlers.PostMsg(&ex);
@@ -601,7 +647,8 @@ CDBConnectionFactory::DispatchServerName(
 CDB_Connection*
 CDBConnectionFactory::MakeValidConnection(
     SOpeningContext& ctx,
-    const CDBConnParams& params)
+    const CDBConnParams& params,
+    CDB_Connection* candidate)
 {
     _TRACE("Trying to connect to server '" << params.GetServerName()
            << "', host " << impl::ConvertN2A(params.GetHost())
@@ -615,7 +662,11 @@ CDBConnectionFactory::MakeValidConnection(
 
     unique_ptr<CDB_Connection> conn;
     try {
-        conn.reset(CtxMakeConnection(ctx.driver_ctx, params));
+        if (candidate == NULL) {
+            conn.reset(CtxMakeConnection(ctx.driver_ctx, params));
+        } else {
+            conn.reset(candidate);
+        }
     } catch (...) {
         CRef<IConnValidator> validator = params.GetConnValidator();
         CRuntimeData&        rt_data   = GetRuntimeData(validator);
@@ -899,6 +950,21 @@ CDBConnectionFactory::CRuntimeData::CRuntimeData(
 m_Parent(&parent),
 m_DBServiceMapper(mapper)
 {
+}
+
+IDBServiceMapper::TOptions&
+CDBConnectionFactory::CRuntimeData::GetServerOptions(const string& svc_name,
+                                                     bool force_refresh)
+{
+    auto& options = m_ServerOptionsMap[svc_name];
+    if (force_refresh  ||  options.empty()) {
+        m_DBServiceMapper->GetServerOptions(svc_name, &options);
+        // OK to leave empty if nothing turns up; service mappers can and
+        // do take responsibility for temporarily remembering negative
+        // results if checking from scratch is slow, and higher-level logic
+        // on this end falls back on GetServer as needed.
+    }
+    return options;
 }
 
 TSvrRef

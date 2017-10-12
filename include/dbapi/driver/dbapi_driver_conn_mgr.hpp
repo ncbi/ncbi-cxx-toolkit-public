@@ -52,6 +52,7 @@ namespace impl
 
 class IRegistry;
 template <typename T> class CSafeStatic_Allocator;
+class CDBPoolBalancer;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -115,6 +116,7 @@ protected:
 private:
     // Friends
     friend class impl::CDriverContext;
+    friend class CDBPoolBalancer;
 };
 
 

@@ -301,11 +301,48 @@ void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
         }
 #endif
     } else {
+        x_AdjustCounts(conn, -1);
         delete conn;
     }
 
     CloseOldIdleConns(1);
 }
+
+
+void CDriverContext::x_AdjustCounts(const CConnection* conn, int delta)
+{
+    if (delta != 0  &&  conn->IsReusable()) {
+        CMutexGuard mg(m_PoolMutex);
+        string server_name = conn->GetServerName();
+        if (conn->Host() != 0  &&  server_name.find('@') == NPOS) {
+            server_name += '@' + ConvertN2A(conn->Host());
+            if (conn->Port() != 0) {
+                server_name += ':' + NStr::NumericToString(conn->Port());
+            }
+        }
+        _DEBUG_ARG(unsigned int pool_count =)
+        m_CountsByPool[conn->PoolName()][server_name] += delta;
+        _DEBUG_ARG(unsigned int service_count =)
+        m_CountsByService[conn->GetRequestedServer()][server_name] += delta;
+        _TRACE(server_name << " count += " << delta << " for pool "
+               << conn->PoolName() << " (" << pool_count << ") and service "
+               << conn->GetRequestedServer() << " (" << service_count << ')');
+    }
+}
+
+
+void CDriverContext::x_GetCounts(const TCountsMap& main_map,
+                                 const string& name, TCounts* counts) const
+{
+    CMutexGuard mg(m_PoolMutex);
+    auto it = main_map.find(name);
+    if (it == main_map.end()) {
+        counts->clear();
+    } else {
+        *counts = it->second;
+    }
+}
+
 
 void CDriverContext::CloseUnusedConnections(const string&   srv_name,
                                             const string&   pool_name,
@@ -326,6 +363,7 @@ void CDriverContext::CloseUnusedConnections(const string&   srv_name,
 
         it = m_NotInUse.erase(it);
         --it;
+        x_AdjustCounts(con, -1);
         delete con;
         if (--max_closings == 0) {
             break;
@@ -381,11 +419,13 @@ unsigned int CDriverContext::NofConnections(const string& srv_name,
     return NofConnections(svr_ref, pool_name);
 }
 
-CDB_Connection* CDriverContext::MakeCDBConnection(CConnection* connection)
+CDB_Connection* CDriverContext::MakeCDBConnection(CConnection* connection,
+                                                  int delta)
 {
     connection->m_CleanupTime.Clear();
     CMutexGuard mg(m_PoolMutex);
     m_InUse.push_back(connection);
+    x_AdjustCounts(connection, delta);
 
     return new CDB_Connection(connection);
 }
@@ -424,7 +464,7 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                     // pool contains connections with appropriate server names only.
                     if (pool_name == t_con->PoolName()) {
                         it = m_NotInUse.erase(it);
-                        CDB_Connection* dbcon = MakeCDBConnection(t_con);
+                        CDB_Connection* dbcon = MakeCDBConnection(t_con, 0);
                         if (dbcon->Refresh()) {
                             /* Future development ...
                             if (!params.GetDatabaseName().empty()) {
@@ -437,6 +477,7 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                             return dbcon;
                         }
                         else {
+                            x_AdjustCounts(t_con, -1);
                             t_con->m_Reusable = false;
                             delete dbcon;
                         }
@@ -456,7 +497,7 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                     if (server_name == t_con->ServerName()
                         ||  server_name == t_con->GetRequestedServer()) {
                         it = m_NotInUse.erase(it);
-                        CDB_Connection* dbcon = MakeCDBConnection(t_con);
+                        CDB_Connection* dbcon = MakeCDBConnection(t_con, 0);
                         if (dbcon->Refresh()) {
                             /* Future development ...
                             if (!params.GetDatabaseName().empty()) {
@@ -469,6 +510,7 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                             return dbcon;
                         }
                         else {
+                            x_AdjustCounts(t_con, -1);
                             t_con->m_Reusable = false;
                             delete dbcon;
                         }
@@ -511,7 +553,7 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                             }
                         }
                         if (t_con != NULL) {
-                            return MakeCDBConnection(t_con);
+                            return MakeCDBConnection(t_con, 0);
                         }
                     } else
 #endif
@@ -554,7 +596,7 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
 
     CConnection* t_con = MakeIConnection(params);
 
-    return MakeCDBConnection(t_con);
+    return MakeCDBConnection(t_con, 1);
 }
 
 void
@@ -563,6 +605,7 @@ CDriverContext::CloseAllConn(void)
     CMutexGuard mg(m_PoolMutex);
     // close all connections first
     ITERATE(TConnPool, it, m_NotInUse) {
+        x_AdjustCounts(*it, -1);
         delete *it;
     }
     m_NotInUse.clear();
@@ -578,11 +621,13 @@ CDriverContext::DeleteAllConn(void)
     CMutexGuard mg(m_PoolMutex);
     // close all connections first
     ITERATE(TConnPool, it, m_NotInUse) {
+        x_AdjustCounts(*it, -1);
         delete *it;
     }
     m_NotInUse.clear();
 
     ITERATE(TConnPool, it, m_InUse) {
+        x_AdjustCounts(*it, -1);
         delete *it;
     }
     m_InUse.clear();
@@ -1153,6 +1198,7 @@ void CDriverContext::CloseConnsForPool(const string& pool_name)
         CConnection* t_con(*it);
         if (t_con->IsReusable()  &&  pool_name == t_con->PoolName()) {
             m_NotInUse.erase(it);
+            x_AdjustCounts(t_con, -1);
             delete t_con;
         }
     }
@@ -1180,6 +1226,7 @@ void CDriverContext::CloseOldIdleConns(unsigned int max_closings,
         }
         unsigned int n = NofConnections(TSvrRef(), pool_name_2);
         if (n > (*it)->m_PoolMinSize) {
+            x_AdjustCounts(*it, -1);
             delete *it;
             m_NotInUse.erase(it);
             if (--max_closings == 0) {

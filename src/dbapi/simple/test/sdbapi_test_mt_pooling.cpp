@@ -48,14 +48,14 @@ private:
 
 bool CSDBAPITestMTPoolingApp::Thread_Run(int idx) {
     int n = GetArgs()["queries-per-thread"].AsInteger();
+    const string& query_string = GetArgs()["query"].AsString();
     for (unsigned i = 0;  i < n;  ++i) {
         CDatabase db(m_Params);
         db.Connect();
-        CQuery query = db.NewQuery("SELECT 1");
+        CQuery query = db.NewQuery(query_string);
         query.Execute();
-        ITERATE(CQuery, it, query) {
-            ERR_POST(Note << idx << ' ' << i << ' ' << it[1].AsInt4());
-        }
+        query.PurgeResults();
+        ERR_POST(Note << idx << '\t' << i);
     }
     return true;
 }
@@ -87,6 +87,8 @@ bool CSDBAPITestMTPoolingApp::TestApp_Args(CArgDescriptions& argdesc)
     argdesc.AddDefaultKey("password", "password", "Password",
                            CArgDescriptions::eString, "allowed",
                            CArgDescriptions::fConfidential);
+    argdesc.AddDefaultKey("query", "query", "Query string",
+                          CArgDescriptions::eString, "SELECT 1");
 
     return true;
 }
