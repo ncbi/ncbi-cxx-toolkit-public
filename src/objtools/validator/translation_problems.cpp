@@ -181,9 +181,6 @@ CScope* scope)
 
     m_HasException = !report_errors;
 
-    const CCdregion& cdregion = feat.GetData().GetCdregion();
-    const CSeq_loc& location = feat.GetLocation();
-
     // check frame
     m_ProblemFlags |= x_CheckCDSFrame(feat, scope);
 
@@ -404,7 +401,6 @@ size_t CCDSTranslationProblems::x_CountNonsenseIntrons(const CSeq_feat& feat, CS
         stop = curr.GetRange().GetTo();
         if (prev  &&  curr  && IsSameBioseq(curr.GetSeq_id(), prev.GetSeq_id(), scope)) {
             ENa_strand strand = curr.GetStrand();
-            bool tmp_nonsense_intron = false;
             if (strand == eNa_strand_minus) {
                 if (last_start - stop == 4) {
                     if (x_IsThreeBaseNonsense(feat, curr.GetSeq_id(), cdr, stop + 1, last_start - 1, strand, scope)) {
@@ -442,7 +438,6 @@ vector<CRef<CSeq_loc> > CCDSTranslationProblems::GetNonsenseIntrons(const CSeq_f
     const CCdregion& cdr = feat.GetData().GetCdregion();
     if (cdr.IsSetCode_break()) return intron_locs;
 
-    size_t count = 0;
     const CSeq_loc& loc = feat.GetLocation();
 
     CSeq_loc_CI prev;
@@ -451,7 +446,6 @@ vector<CRef<CSeq_loc> > CCDSTranslationProblems::GetNonsenseIntrons(const CSeq_f
         stop = curr.GetRange().GetTo();
         if (prev  &&  curr  && IsSameBioseq(curr.GetSeq_id(), prev.GetSeq_id(), &scope)) {
             ENa_strand strand = curr.GetStrand();
-            bool tmp_nonsense_intron = false;
             if (strand == eNa_strand_minus) {
                 if (last_start - stop == 4) {
                     if (x_IsThreeBaseNonsense(feat, curr.GetSeq_id(), cdr, stop + 1, last_start - 1, strand, &scope)) {         
@@ -701,7 +695,6 @@ CCDSTranslationProblems::x_GetTranslExceptProblems
     }
 
     TSeqPos len = GetLength(feat.GetLocation(), scope);
-    bool has_errors = false;
     bool alt_start = false;
 
     // need to translate a version of the coding region without the code breaks,

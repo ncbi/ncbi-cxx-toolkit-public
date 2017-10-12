@@ -200,7 +200,7 @@ CSpliceProblems::ReadDonorSpliceSite(ENa_strand strand, TSeqPos stop, const CSeq
             }
         }
         return eSpliceSiteRead_OK;
-    } catch (CException& ex) {
+    } catch (CException&) {
         return eSpliceSiteRead_OK;
     }
 }
@@ -272,7 +272,7 @@ CSpliceProblems::ReadAcceptorSpliceSite
         } else {
             return eSpliceSiteRead_WrongNT;
         }
-    } catch (CException& ex) {
+    } catch (CException&) {
         return eSpliceSiteRead_BadSeq;
     }
 }
@@ -521,8 +521,6 @@ void CSpliceProblems::ValidateSpliceMrna(const CSeq_feat& feat, const CBioseq_Ha
 {
     const CSeq_loc& loc = feat.GetLocation();
 
-    bool rare_consensus_not_expected = RareConsensusNotExpected (bsh);
-
     bool ignore_mrna_partial5 = false;
     bool ignore_mrna_partial3 = false;
 
@@ -564,14 +562,6 @@ void CSpliceProblems::ValidateSpliceMrna(const CSeq_feat& feat, const CBioseq_Ha
                 start = range.GetFrom();
             }
             if (part.IsPartialStart(eExtreme_Biological) && !ignore_mrna_partial5) {
-                bool is_sequence_end = false;
-                if (part.IsSetStrand() && part.GetStrand() == eNa_strand_minus) {
-                    if (part.GetStart(eExtreme_Biological) == bsh_head.GetInst_Length() - 1) {
-                        is_sequence_end = true;
-                    }
-                } else if (part.GetStart(eExtreme_Biological) == 0) {
-                    is_sequence_end = true;
-                }
                 ESpliceSiteRead good_acceptor = ReadAcceptorSpliceSite(strand, start, vec, bsh_head.GetInst_Length());
                 m_AcceptorProblems.push_back(TSpliceProblem(good_acceptor, start));
             }
@@ -646,23 +636,11 @@ void CSpliceProblems::ValidateSpliceCdregion(const CSeq_feat& feat, const CBiose
         if (bsh_head) {
             try {
                 CSeqVector vec = bsh_head.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-                bool is_sequence_end = false;
-                if (strand == eNa_strand_minus) {
-                    start = range.GetTo();
-                    if (start == bsh_head.GetInst_Length() - 1) {
-                        is_sequence_end = true;
-                    }
-                } else {
-                    start = range.GetFrom();
-                    if (start == 0) {
-                        is_sequence_end = true;
-                    }
-                }
                 if (part.IsPartialStart(eExtreme_Biological)) {
                     ESpliceSiteRead good_acceptor = ReadAcceptorSpliceSite(strand, start, vec, bsh_head.GetInst_Length());
                     m_AcceptorProblems.push_back(TSpliceProblem(good_acceptor, start));
                 }
-            } catch (CSeqVectorException& e) {
+            } catch (CSeqVectorException&) {
             }
         }
 
@@ -693,7 +671,7 @@ void CSpliceProblems::ValidateSpliceCdregion(const CSeq_feat& feat, const CBiose
                     ValidateDonorAcceptorPair(strand,
                                                stop, vec_head, bsh_head.GetInst_Length(), 
                                                start, vec_tail, bsh_tail.GetInst_Length());
-                } catch (CSeqVectorException& e) {
+                } catch (CSeqVectorException&) {
                 }
             }
         }
@@ -717,7 +695,7 @@ void CSpliceProblems::ValidateSpliceCdregion(const CSeq_feat& feat, const CBiose
                     ESpliceSiteRead good_donor = ReadDonorSpliceSite(strand, stop, vec, bsh_head.GetInst_Length());
                     m_DonorProblems.push_back(TSpliceProblem(good_donor, stop));
                 }
-            } catch (CSeqVectorException& e) {
+            } catch (CSeqVectorException&) {
             }
         }
     }
