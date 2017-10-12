@@ -699,9 +699,9 @@ cout << "CONSORTIUM AUTOFIX: on seq_feat is not implemented\n";
             }
             if (desc && desc->IsPub() && desc->GetPub().CanGetPub() && desc->GetPub().GetPub().CanGet()) {
                 CPub_equiv::Tdata& data = desc->SetPub().SetPub().Set();
-                NON_CONST_ITERATE (CPub_equiv::Tdata, it, data) {
-                    if ((*it)->IsSetAuthors()) {
-                        n += RemoveConsortium((*it)->SetAuthors());
+                NON_CONST_ITERATE (CPub_equiv::Tdata, pub, data) {
+                    if ((*pub)->IsSetAuthors()) {
+                        n += RemoveConsortium((*pub)->SetAuthors());
                     }
                 }
                 dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();

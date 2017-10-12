@@ -578,7 +578,6 @@ DISCREPANCY_AUTOFIX(EXON_ON_MRNA)
             CBioseq_Handle bs = scope.GetBioseqHandle(*bioseq);
             CFeat_CI ci(scope.GetBioseqHandle(*bioseq));
             while (ci) {
-                bool kill = false;
                 CSeq_feat_EditHandle eh;
                 if (ci->IsSetData() && ci->GetData().GetSubtype() == CSeqFeatData::eSubtype_exon) {
                     eh = CSeq_feat_EditHandle(scope.GetSeq_featHandle(ci->GetMappedFeature()));
