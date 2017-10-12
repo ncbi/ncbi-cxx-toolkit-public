@@ -535,7 +535,10 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
         while (*str  &&  isspace((unsigned char)(*str)))
             ++str;
     }
-    if (!*str  &&  (!vhost  ||  secu  ||  (info->type & fSERV_Http))) {
+
+    if (!*str  &&  (!vh  ||  secu  ||  (info->type & fSERV_Http))) {
+        if (!vh  &&  !(secu  ||  (info->type & fSERV_Http)))
+            vhost = 0;
         if (vhost) {
             if (len > 255)
                 len = 255;
