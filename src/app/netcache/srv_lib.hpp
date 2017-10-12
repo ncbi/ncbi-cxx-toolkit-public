@@ -276,6 +276,14 @@ public:
     static CRequestContext& GetRequestContext(void) {
         return *(CRequestContext*)nullptr;
     }
+#if NCBI_DEVELOPMENT_VER > 20171005
+    void SetRequestContext(CRequestContext* ctx) {
+    }
+    void PrintRequestStart(void) {
+    }
+    void PrintRequestStop(void) {
+    }
+#endif
 
 public:
     enum EDefaultHitIDFlags {

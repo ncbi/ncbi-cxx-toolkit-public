@@ -135,6 +135,11 @@ public:
     const CSrvDiagMsg& operator<< (Uint4 num) const;
     const CSrvDiagMsg& operator<< (Int8 num) const;
     const CSrvDiagMsg& operator<< (Uint8 num) const;
+#ifdef NCBI_OS_MSWIN
+    const CSrvDiagMsg& operator<< (DWORD num) const {
+        return operator<< ((Uint8)num);
+    }
+#endif
     const CSrvDiagMsg& operator<< (double num) const;
     const CSrvDiagMsg& operator<< (const void* ptr) const;
     const CSrvDiagMsg& operator<< (const exception& ex) const;
