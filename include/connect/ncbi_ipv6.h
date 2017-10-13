@@ -117,7 +117,7 @@ const char*  NcbiStringToIPv4(unsigned int* addr,
  */
 extern NCBI_XCONNECT_EXPORT
 const char*  NcbiStringToIPv6(TNCBI_IPv6Addr* addr,
-                             const char* str, size_t len);
+                              const char* str, size_t len);
 
 
 /** Convert into an IPv6 address, the first "len" (or "strlen(str)" if "len" is
@@ -196,13 +196,28 @@ const char*  NcbiAddrToDNS(char* buf, size_t bufsize,
                            const TNCBI_IPv6Addr* addr);
 
 
-/** Return non-zero if "addr" belongs to the network specified as CIDR
- *  "base/bits"; return zero otherwise.
+/** Return non-zero(true) if "addr" belongs to the network specified as CIDR
+ *  "base/bits"; return zero(false) otherwise.
+ * @note "base" is not checked to contain all zero bits beyond "bits" (as it
+ *  should), but if it does not then the return value will always be false.
+ * @sa
+ *  NcbiIPv6Subnet
  */
 extern NCBI_XCONNECT_EXPORT
 int/*bool*/  NcbiIsInIPv6Network(const TNCBI_IPv6Addr* base,
                                  unsigned int          bits,
                                  const TNCBI_IPv6Addr* addr);
+
+
+/** Retain first "bits" in a given "addr", resetting all remaining bits to 0.
+ *  Return non-zero(true) if the resultant "addr" is non-empty; return
+ *  zero(false) otherwise.
+ * @sa
+ *  NcbiIsEmptyIPv6, NcbiIsInIPv6Network
+ */
+extern NCBI_XCONNECT_EXPORT
+int/*bool*/  NcbiIPv6Subnet(TNCBI_IPv6Addr* addr,
+                            unsigned int    bits);
 
 
 #ifdef __cplusplus

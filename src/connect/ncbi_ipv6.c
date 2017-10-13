@@ -75,15 +75,16 @@ static int/*bool*/ x_NcbiIsIPv4(const TNCBI_IPv6Addr* addr, int/*bool*/ mapped)
 
 extern int/*bool*/ NcbiIsEmptyIPv6(const TNCBI_IPv6Addr* addr)
 {
-    return !memcchr(addr->octet, '\0', sizeof(addr->octet))
-        ||  (x_NcbiIsIPv4(addr, 1/*mapped*/)  &&  !NcbiIPv6ToIPv4(addr, 0))
+    return !addr
+        ||  !memcchr(addr->octet, '\0', sizeof(addr->octet))
+        ||  (x_NcbiIsIPv4(addr, 1/*mapped*/)  &&  !NcbiIPv6ToIPv4(addr, 96))
         ? 1/*true*/ : 0/*false*/;
 }
 
 
 extern int/*bool*/ NcbiIsIPv4(const TNCBI_IPv6Addr* addr)
 {
-    return x_NcbiIsIPv4(addr, 1/*mapped*/);
+    return addr  &&  x_NcbiIsIPv4(addr, 1/*mapped*/) ? 1/*true*/ : 0/*false*/;
 }
 
 
@@ -91,6 +92,8 @@ extern unsigned int NcbiIPv6ToIPv4(const TNCBI_IPv6Addr* addr, size_t pfxlen)
 {
     unsigned int ipv4;
     static const size_t size = sizeof(ipv4);
+    if (!addr)
+        return 0;
     if (pfxlen == 0) {
         if (!x_NcbiIsIPv4(addr, 1/*mapped*/))
             return 0;
@@ -130,6 +133,8 @@ extern int/*bool*/ NcbiIPv4ToIPv6(TNCBI_IPv6Addr* addr,
                                   unsigned int ipv4, size_t pfxlen)
 {
     static const size_t size = sizeof(ipv4);
+    if (!addr)
+        return 0/*failure*/;
     if (pfxlen == 0) {
         /* creates IPv6 mapped */
         memset(addr, 0, sizeof(*addr));
@@ -469,6 +474,8 @@ extern char* NcbiIPv6ToString(char* buf, size_t bufsize,
     if (!buf  ||  !bufsize)
         return 0;
     *buf = '\0';
+    if (!addr)
+        return 0;
 
     return x_IPv6ToString(buf, bufsize, addr);
 }
@@ -480,6 +487,8 @@ extern char* NcbiAddrToString(char* buf, size_t bufsize,
     if (!buf  ||  !bufsize)
         return 0;
     *buf = '\0';
+    if (!addr)
+        return 0;
 
     if (x_NcbiIsIPv4(addr, -1/*mapped only*/)) {
         unsigned int ipv4 = NcbiIPv6ToIPv4(addr, 0);
@@ -500,6 +509,8 @@ extern const char* NcbiAddrToDNS(char* buf, size_t bufsize,
     if (!buf  ||  !bufsize)
         return 0;
     *buf = '\0';
+    if (!addr)
+        return 0;
 
     len = 0;
     src = addr->octet + sizeof(addr->octet) - 1;
@@ -665,11 +676,14 @@ extern const char* NcbiStringToAddr(TNCBI_IPv6Addr* addr,
 }
 
 
-int/*bool*/ NcbiIsInIPv6Network(const TNCBI_IPv6Addr* base,
-                                unsigned int          bits,
-                                const TNCBI_IPv6Addr* addr)
+extern int/*bool*/ NcbiIsInIPv6Network(const TNCBI_IPv6Addr* base,
+                                       unsigned int          bits,
+                                       const TNCBI_IPv6Addr* addr)
 {
     size_t n;
+
+    if (!base  ||  !addr)
+        return 0/*false*/;
 
     if (bits > (sizeof(base->octet) << 3))
         return 0/*false*/;
@@ -690,4 +704,30 @@ int/*bool*/ NcbiIsInIPv6Network(const TNCBI_IPv6Addr* base,
     }
 
     return 1/*true*/;
+}
+
+
+extern int/*bool*/ NcbiIPv6Subnet(TNCBI_IPv6Addr* addr, unsigned int bits)
+{
+    int/*bool*/ zero = 1/*true*/;
+
+    if (addr) {
+        size_t n;
+        for (n = 0;  n < sizeof(addr->octet);  ++n) {
+            if (!bits)
+                addr->octet[n] = 0;
+            else if (8 > bits) {
+                unsigned char mask = ~0 << (8 - bits);
+                if (addr->octet[n] &= mask)
+                    zero = 0/*false*/;
+                bits  = 0;
+            } else {
+                bits -= 8;
+                if (addr->octet[n])
+                    zero = 0/*false*/;
+            }
+        }
+    }
+
+    return !zero;
 }
