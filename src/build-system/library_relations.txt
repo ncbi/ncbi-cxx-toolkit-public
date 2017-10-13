@@ -946,7 +946,6 @@ refseq_aln_source needs ncbi_xdbapi_ftds
 refseq_aln_source needs xalgoalignsplign
 refseq_ctl needs bacterial_pipeline_proc
 refseq_ctl needs bag_access
-refseq_ctl needs gpinit_access
 refseq_ctl needs idload_utils
 refseq_ctl needs validation_results
 reftrack_access needs xncbi
