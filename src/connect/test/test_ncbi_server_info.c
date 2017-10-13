@@ -40,8 +40,8 @@
 
 int main(int argc, char* argv[])
 {
-    const char*    server = argv[1];
-    SSERV_Info*    info;
+    const char* server = argv[1];
+    SSERV_Info* info;
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
