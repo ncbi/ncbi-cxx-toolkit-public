@@ -486,6 +486,10 @@ protected:
     vector<CConstRef<CSeq_feat> > m_FeatMisc;
     map<const CSerialObject*, string> m_TextMap;
     map<const CSerialObject*, string> m_TextMapShort;
+    map<const CSerialObject*, string> m_FeatureTypeMap;
+    map<const CSerialObject*, string> m_ProductMap;
+    map<const CSerialObject*, string> m_LocationMap;
+    map<const CSerialObject*, string> m_LocusTagMap;
     map<const CSeq_feat*, bool> m_IsPseudoMap;
     map<const CSeq_feat*, const CSeq_feat*> m_GeneForFeatureMap;
     map<const CSeq_feat*, string> m_ProdForFeatureMap;

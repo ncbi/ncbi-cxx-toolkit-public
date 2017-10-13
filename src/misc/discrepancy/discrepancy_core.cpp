@@ -424,6 +424,10 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
 
     m_TextMap.clear();
     m_TextMapShort.clear();
+    m_FeatureTypeMap.clear();
+    m_ProductMap.clear();
+    m_LocationMap.clear();
+    m_LocusTagMap.clear();
     m_IsPseudoMap.clear();
     m_GeneForFeatureMap.clear();
     m_ProdForFeatureMap.clear();

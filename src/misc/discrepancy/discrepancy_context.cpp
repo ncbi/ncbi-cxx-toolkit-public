@@ -950,9 +950,17 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::NewDiscObj(CConstRef<CSeq_feat> ob
     if (m_TextMap.find(ser) == m_TextMap.end()) {
         D->SetText(*m_Scope);
         m_TextMap[ser] = D->GetText();
+        m_FeatureTypeMap[ser] = D->GetFeatureType();
+        m_ProductMap[ser] = D->GetProductName();
+        m_LocationMap[ser] = D->GetLocation();
+        m_LocusTagMap[ser] = D->GetLocusTag();
     }
     else {
         D->SetText(m_TextMap[ser]);
+        D->SetFeatureType(m_FeatureTypeMap[ser]);
+        D->SetProductName(m_ProductMap[ser]);
+        D->SetLocation(m_LocationMap[ser]);
+        D->SetLocusTag(m_LocusTagMap[ser]);
     }
     if (!keep) {
         D->DropReference();

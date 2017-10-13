@@ -56,7 +56,10 @@ public:
     CReportObject(const CReportObject& other) :
         m_Type(other.m_Type),
         m_Text(other.m_Text),
+        m_FeatureType(other.m_FeatureType),
+        m_Product(other.m_Product),
         m_Location(other.m_Location),
+        m_LocusTag(other.m_LocusTag),
         m_ShortName(other.m_ShortName),
         m_Bioseq(other.m_Bioseq),
         m_Seq_feat(other.m_Seq_feat),
@@ -68,13 +71,19 @@ public:
     ~CReportObject() {}
 
     const string& GetText() const { return m_Text; }
+    const string& GetFeatureType() const { return m_FeatureType; }
+    const string& GetProductName() const { return m_Product; }
     const string& GetLocation() const { return m_Location; }
+    const string& GetLocusTag() const { return m_LocusTag; }
     const string& GetShort() const { return m_ShortName; }
     EType GetType(void) const { return m_Type; }
 
     void SetText(CScope& scope, const string& str = kEmptyStr);
     void SetText(const string& str) { m_Text = str; }
+    void SetFeatureType(const string& str) { m_FeatureType = str; }
+    void SetProductName(const string& str) { m_Product = str; }
     void SetLocation(const string& str) { m_Location = str; }
+    void SetLocusTag(const string& str) { m_LocusTag = str; }
     void SetShort(const string& str) { m_ShortName = str; }
 
     CConstRef<CBioseq> GetBioseq() const { return m_Bioseq; }
@@ -94,13 +103,13 @@ public:
     void DropReference();
     void DropReference(CScope& scope);
 
-    static pair<string, string> GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope);
+    static string GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope);
     static string GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, const string& product);  
     static string GetTextObjectDescription(const CSeqdesc& sd);
     static string GetTextObjectDescription(const CBioseq& bs, CScope& scope);
     static string GetTextObjectDescription(CBioseq_set_Handle bssh);
-    static void GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &context, string &location, string &locus_tag);
-    static void GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &location, string &locus_tag);
+    static void GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &type, string &context, string &location, string &locus_tag);
+    static void GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &type, string &location, string &locus_tag);
 
     CScope& GetScope(void) const { return m_Scope; }
     CConstRef<CSerialObject> GetObject(void) const
@@ -126,7 +135,10 @@ public:
 protected:
     EType                  m_Type;
     string                 m_Text;
+    string                 m_FeatureType;
+    string                 m_Product;
     string                 m_Location;
+    string                 m_LocusTag;
     string                 m_ShortName;
     CConstRef<CBioseq>     m_Bioseq;
     CConstRef<CSeq_feat>   m_Seq_feat;

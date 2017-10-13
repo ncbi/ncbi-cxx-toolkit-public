@@ -50,7 +50,10 @@ public:
     };
     virtual ~CReportObj(void){}
     virtual const string& GetText(void) const = 0;
+    virtual const string& GetFeatureType() const = 0;
+    virtual const string& GetProductName() const = 0;
     virtual const string& GetLocation(void) const = 0;
+    virtual const string& GetLocusTag() const = 0;
     virtual const string& GetShort(void) const = 0;
     virtual const string& GetFilename(void) const = 0;
     virtual EType GetType(void) const = 0;

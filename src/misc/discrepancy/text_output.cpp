@@ -188,8 +188,17 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, size_t inden
                 if (!(*obj)->GetFilename().empty()) {
                     out << " file=\"" << NStr::XmlEncode((*obj)->GetFilename()) << "\"";
                 }
+                if (!(*obj)->GetFeatureType().empty()) {
+                    out << " feature_type=\"" << NStr::XmlEncode((*obj)->GetFeatureType()) << "\"";
+                }
+                if (!(*obj)->GetProductName().empty()) {
+                    out << " product=\"" << NStr::XmlEncode((*obj)->GetProductName()) << "\"";
+                }
                 if (!(*obj)->GetLocation().empty()) {
                     out << " location=\"" << NStr::XmlEncode((*obj)->GetLocation()) << "\"";
+                }
+                if (!(*obj)->GetLocusTag().empty()) {
+                    out << " locus_tag=\"" << NStr::XmlEncode((*obj)->GetLocusTag()) << "\"";
                 }
                 string text = NStr::Replace((*obj)->GetText(), "\t", " ");
                 out << " label=\"" << NStr::XmlEncode(text) << "\"/>\n";
