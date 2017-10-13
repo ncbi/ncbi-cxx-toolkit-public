@@ -9410,12 +9410,11 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include <immintrin.h>
+#include <smmintrin.h>
 int
 main ()
 {
-long long v __attribute__((vector_size(16)));
-               __builtin_ia32_pcmpgtq(v, v);
+__m128i v;  _mm_cmpgt_epi64(v, v);
   ;
   return 0;
 }
@@ -9499,12 +9498,11 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include <immintrin.h>
+#include <smmintrin.h>
 int
 main ()
 {
-long long v __attribute__((vector_size(16)));
-               __builtin_ia32_pcmpgtq(v, v);
+__m128i v;  _mm_cmpgt_epi64(v, v);
   ;
   return 0;
 }
