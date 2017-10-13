@@ -127,6 +127,21 @@
 #  define NCBI_WARN_UNUSED_RESULT
 #endif
 
+#if defined(__SSE_4_2__)  ||  defined(__AVX__)
+#  define NCBI_SSE 42
+#elif defined(__SSE_4_1__)
+#  define NCBI_SSE 41
+#elif defined(__SSSE3__)
+#  define NCBI_SSE 40
+#elif defined(__SSE3__)
+#  define NCBI_SSE 30
+#elif defined(__SSE2__)  ||  defined(_M_AMD64)  ||  defined(_M_X64) \
+    ||  (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
+#  define NCBI_SSE 20
+#elif defined(__SSE__)  ||  (defined(_M_IX86_FP) && _M_IX86_FP >= 1)
+#  define NCBI_SSE 10
+#endif
+
 #ifdef __cplusplus
 #  if __cplusplus >= 201103L  ||  defined(__GXX_EXPERIMENTAL_CXX0X__) \
       ||  defined(__GXX_EXPERIMENTAL_CPP0X__)  \
