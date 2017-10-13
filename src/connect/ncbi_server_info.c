@@ -274,11 +274,12 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                     return 0;
                 ipv6  = 1;
                 vhost = 0;
-            } else if (ipv6  &&  !memchr(str + 1, ']', len - 1)) {
+            } else if (*str == '[') {
+                /* not a valid host name */
                 return 0;
             } else {
-                vhost = ipv6  ||  !(attr->type & SERV_VHOSTABLE) ? 0 : str;
-                ipv6  = 0;
+                assert(!ipv6);
+                vhost = attr->type & SERV_VHOSTABLE ? str : 0;
             }
             if (str == end)
                 port = 0/*NB: ipv6 only*/;
