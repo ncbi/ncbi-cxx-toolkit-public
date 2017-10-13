@@ -174,7 +174,8 @@ extern char* SERV_WriteInfo(const SSERV_Info* info)
         s += attr->len;
         *s++ = ' ';
         if (info->host == SOCK_HostToNetLong(-1L)) {
-            int/*bool*/ ipv6 = !NcbiIsIPv4(&info->addr);
+            int/*bool*/ ipv6 = !NcbiIsIPv4(&info->addr)
+                ||  NcbiIPv6ToIPv4(&info->addr, 0) == SOCK_HostToNetLong(-1L);
             if (ipv6)
                 *s++ = '[';
             s = NcbiAddrToString(s, reserve, &info->addr);
@@ -273,16 +274,20 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                     return 0;
                 ipv6  = 1;
                 vhost = 0;
+            } else if (ipv6  &&  !memchr(str + 1, ']', len - 1)) {
+                return 0;
             } else {
-                vhost = attr->type & SERV_VHOSTABLE ? str : 0;
+                vhost = ipv6  ||  !(attr->type & SERV_VHOSTABLE) ? 0 : str;
                 ipv6  = 0;
             }
             if (str == end)
-                port = 0;
+                port = 0/*NB: ipv6 only*/;
             else if (!(str = SOCK_StringToHostPortEx(str, &host, &port, lazy)))
                 return 0;
             else if (str != end)
                 return 0;
+            else if (host == SOCK_HostToNetLong(-1L))
+                vhost = 0;
             if (!ipv6)
                 NcbiIPv4ToIPv6(&addr, host, 0);
             else if (NcbiIsIPv4(&addr))

@@ -31,7 +31,7 @@
  */
 
 #include "../ncbi_priv.h"
-#include <connect/ncbi_server_info.h>
+#include "../ncbi_server_infop.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -50,13 +50,18 @@ int main(int argc, char* argv[])
     if (!server)
         CORE_LOG(eLOG_Fatal, "Server info required");
 
-    if (!(info = SERV_ReadInfo(server)))
+    if (!(info = SERV_ReadInfoEx(server, 0, 1/*lazy*/)))
         CORE_LOGF(eLOG_Fatal, ("Cannot parse: %s", server));
 
     if (!(server = SERV_WriteInfo(info)))
         CORE_LOGF(eLOG_Fatal, ("Cannot dump: %s", argv[1]));
 
     CORE_LOGF(eLOG_Note, ("'%s' = '%s'", argv[1], server));
+    free(info);
+
+    if (!(info = SERV_ReadInfo(server)))
+        CORE_LOG(eLOG_Fatal, "Cannot re-parse");
+
     free((void*) server);
     free(info);
 
