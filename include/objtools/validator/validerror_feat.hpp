@@ -160,7 +160,7 @@ private:
     void x_ValidateSeqFeatLoc(const CSeq_feat& feat);
     static size_t x_FindStartOfGap (CBioseq_Handle bsh, int pos, CScope* scope);
     void ValidateSeqFeatData(const CSeqFeatData& data, const CSeq_feat& feat);
-    void ValidateSeqFeatProduct(const CSeq_loc& prod, const CSeq_feat& feat);
+    void ValidateSeqFeatProduct(const CSeq_loc& prod, const CSeq_feat& feat, CBioseq_Handle prot);
     void ValidateGene(const CGene_ref& gene, const CSeq_feat& feat);
     void ValidateGeneXRef(const CSeq_feat& feat);
     void ValidateGeneFeaturePair(const CSeq_feat& feat, const CSeq_feat& gene);

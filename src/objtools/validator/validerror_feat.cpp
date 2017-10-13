@@ -247,11 +247,11 @@ void CValidError_feat::x_ValidateSeqFeatExceptXref(const CSeq_feat& feat)
                 "Location", feat);
 
             if (feat.CanGetProduct()) {
-                ValidateSeqFeatProduct(feat.GetProduct(), feat);
                 CBioseq_Handle p_bsh = x_GetCachedBsh(feat.GetProduct());
                 if (p_bsh == bsh) {
                     PostErr(eDiag_Error, eErr_SEQ_FEAT_SelfReferentialProduct, "Self-referential feature product", feat);
                 }
+                ValidateSeqFeatProduct(feat.GetProduct(), feat, p_bsh);
             }
         }
         x_ValidateSeqFeatLoc(feat);
@@ -681,7 +681,7 @@ void CValidError_feat::ValidateSeqFeatData
 
 
 void CValidError_feat::ValidateSeqFeatProduct
-(const CSeq_loc& prod, const CSeq_feat& feat)
+(const CSeq_loc& prod, const CSeq_feat& feat, CBioseq_Handle prot)
 {
     const CSeq_id& sid = GetId(prod, m_Scope);
 
@@ -713,11 +713,10 @@ void CValidError_feat::ValidateSeqFeatProduct
         break;
     }
     
-    CBioseq_Handle bsh = x_GetCachedBsh(feat.GetProduct());
-    if (bsh) {
-        m_Imp.ValidateSeqLoc(feat.GetProduct(), bsh, true, "Product", feat);
+    if (prot) {
+        m_Imp.ValidateSeqLoc(feat.GetProduct(), prot, true, "Product", feat);
 
-        FOR_EACH_SEQID_ON_BIOSEQ (id, *(bsh.GetCompleteBioseq())) {
+        FOR_EACH_SEQID_ON_BIOSEQ(id, *(prot.GetCompleteBioseq())) {
             switch ( (*id)->Which() ) {
             case CSeq_id::e_Genbank:
             case CSeq_id::e_Embl:
