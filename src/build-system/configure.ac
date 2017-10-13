@@ -1897,9 +1897,8 @@ if test "${with_sse42-$with_optimization}" = yes; then
        CC="$CC -msse4.2"
        AC_LINK_IFELSE(
           [AC_LANG_PROGRAM(
-              [#include <immintrin.h>],
-              [long long v __attribute__((vector_size(16)));
-               __builtin_ia32_pcmpgtq(v, v);])],
+              [#include <smmintrin.h>],
+              [__m128i v;  _mm_cmpgt_epi64(v, v);])],
           [ncbi_cv_prog_c_sse42=yes],
           [ncbi_cv_prog_c_sse42=no])])
    if test $ncbi_cv_prog_c_sse42 = yes; then
@@ -1920,9 +1919,8 @@ if test "${with_sse42-$with_optimization}" = yes; then
        CXX="$CXX -msse4.2"
        AC_LINK_IFELSE(
           [AC_LANG_PROGRAM(
-              [#include <immintrin.h>],
-              [long long v __attribute__((vector_size(16)));
-               __builtin_ia32_pcmpgtq(v, v);])],
+              [#include <smmintrin.h>],
+              [__m128i v;  _mm_cmpgt_epi64(v, v);])],
           [ncbi_cv_prog_cxx_sse42=yes],
           [ncbi_cv_prog_cxx_sse42=no])])
    if test $ncbi_cv_prog_cxx_sse42 = yes; then
