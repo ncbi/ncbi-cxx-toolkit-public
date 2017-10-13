@@ -41,7 +41,6 @@
 #include <objtools/validator/validerror_descr.hpp>
 #include <objtools/validator/validerror_annot.hpp>
 #include <objtools/validator/validerror_bioseq.hpp>
-#include <objtools/validator/validatorp.hpp>
 #include <objtools/validator/utilities.hpp>
 
 #include <serial/enumvalues.hpp>

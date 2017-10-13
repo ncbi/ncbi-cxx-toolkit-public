@@ -35,7 +35,7 @@
 #define VALIDATOR___VALIDERROR_BASE__HPP
 
 #include <corelib/ncbistd.hpp>
-
+#include <objtools/validator/cache_impl.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

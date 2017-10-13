@@ -44,7 +44,6 @@
 
 #include <objtools/validator/validator.hpp>
 #include <objtools/validator/validatorp.hpp>
-#include <objtools/validator/utilities.hpp>
 #include <objtools/validator/validerror_imp.hpp>
 #include <objtools/validator/validerror_base.hpp>
 

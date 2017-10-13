@@ -38,34 +38,12 @@
 #include <objtools/validator/validerror_bioseq.hpp>
 #include <objtools/validator/validerror_bioseqset.hpp>
 #include <objtools/validator/validerror_base.hpp>
-#include <objtools/validator/utilities.hpp>
-
 #include <objmgr/util/sequence.hpp>
-
-#include <serial/enumvalues.hpp>
-#include <serial/iterator.hpp>
-
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
-
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seq/MolInfo.hpp>
-
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/BioSource.hpp>
-#include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/RNA_ref.hpp>
-
 #include <objects/misc/sequence_macros.hpp>
-
-#include <objmgr/bioseq_ci.hpp>
-#include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seqdesc_ci.hpp>
-#include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
-#include <objmgr/seq_entry_ci.hpp>
-
-#include <objtools/cleanup/cleanup.hpp>
 
 
 BEGIN_NCBI_SCOPE

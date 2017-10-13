@@ -54,8 +54,10 @@
 #include <objects/taxon3/taxon3.hpp>
 #include <objects/taxon3/Taxon3_reply.hpp>
 
-#include <objtools/validator/validatorp.hpp>
+#include <objtools/validator/validator.hpp>
+#include <objtools/validator/validerror_imp.hpp>
 #include <objtools/validator/tax_validation_and_cleanup.hpp>
+#include <objtools/validator/utilities.hpp>
 
 #define NCBI_USE_ERRCODE_X   Objtools_Validator
 

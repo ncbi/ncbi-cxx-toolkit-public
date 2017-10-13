@@ -38,39 +38,12 @@
 #include <corelib/ncbiexec.hpp>
 #include <objtools/validator/validator_barcode.hpp>
 #include <objtools/validator/utilities.hpp>
-
-#include <serial/iterator.hpp>
-#include <serial/enumvalues.hpp>
-
-#include <objects/seqset/Bioseq_set.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-
-#include <objects/seq/Bioseq.hpp>
-
-
-#include <objmgr/bioseq_ci.hpp>
-#include <objmgr/seqdesc_ci.hpp>
-#include <objmgr/seq_annot_ci.hpp>
-#include <objmgr/util/sequence.hpp>
-
+#include <objtools/validator/validatorp.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/general/Dbtag.hpp>
 #include <objmgr/feat_ci.hpp>
-#include <objmgr/seq_vector.hpp>
-#include <objmgr/scope.hpp>
-
-#include <objects/misc/sequence_macros.hpp>
-
-
-#include <objtools/error_codes.hpp>
-#include <objtools/edit/seq_entry_edit.hpp>
-#include <util/sgml_entity.hpp>
-#include <util/line_reader.hpp>
-#include <util/util_misc.hpp>
-#include <util/static_set.hpp>
-
-#include <algorithm>
-
-
-#include <serial/iterator.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/util/sequence.hpp>
 
 
 BEGIN_NCBI_SCOPE

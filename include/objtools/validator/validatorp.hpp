@@ -38,101 +38,14 @@
 #include <corelib/ncbi_autoinit.hpp>
 
 #include <objmgr/scope.hpp>
-#include <objmgr/feat_ci.hpp>  // for CMappedFeat
-#include <objmgr/util/seq_loc_util.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-#include <objects/seq/GIBB_mol.hpp>
-#include <util/strsearch.hpp>
-#include <objects/misc/sequence_macros.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/SeqFeatData.hpp>
-#include <objects/seqalign/Seq_align.hpp>
-#include <objects/seqalign/Std_seg.hpp>
-#include <objects/seqalign/Packed_seg.hpp>
-#include <objects/valid/Comment_set.hpp>
-#include <objects/valid/Comment_rule.hpp>
-#include <objects/taxon3/taxon3.hpp>
-
 #include <objtools/validator/validator.hpp>
-#include <objtools/validator/tax_validation_and_cleanup.hpp>
-#include <objtools/validator/utilities.hpp>
-#include <objtools/validator/feature_match.hpp>
-#include <objtools/validator/gene_cache.hpp>
 #include <objtools/validator/validerror_imp.hpp>
-#include <objtools/validator/validerror_base.hpp>
-#include <objtools/validator/validerror_feat.hpp>
-
-#include <objtools/alnmgr/sparse_aln.hpp>
-
-#include <objmgr/util/create_defline.hpp>
-
-#include <objmgr/util/feature.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CSeq_entry;
-class CCit_sub;
-class CCit_art;
-class CCit_gen;
-class CSeq_feat;
-class CBioseq;
-class CSeqdesc;
-class CSeq_annot;
-class CTrna_ext;
-class CProt_ref;
-class CSeq_loc;
-class CFeat_CI;
-class CPub_set;
-class CAuth_list;
-class CTitle;
-class CMolInfo;
-class CUser_object;
-class CSeqdesc_CI;
-class CSeq_graph;
-class CMappedGraph;
-class CDense_diag;
-class CDense_seg;
-class CSeq_align_set;
-class CPubdesc;
-class CBioSource;
-class COrg_ref;
-class CByte_graph;
-class CDelta_seq;
-class CGene_ref;
-class CCdregion;
-class CRNA_ref;
-class CImp_feat;
-class CSeq_literal;
-class CBioseq_Handle;
-class CSeq_feat_Handle;
-class CCountries;
-class CInferencePrefixList;
-class CComment_set;
-class CTaxon3_reply;
-class ITaxon3;
-class CT3Error;
 
 BEGIN_SCOPE(validator)
-
-class CTaxValidationAndCleanup;
-class CGeneCache;
-class CValidError_base;
-class CValidError_bioseq;
-
-// =============================================================================
-//                            Caching classes
-// =============================================================================
-
-// for convenience
-typedef CValidator::CCache CCache;
-
-
-// =============================================================================
-//                         Specific validation classes
-// =============================================================================
-
-
 
 
 // ===========================  for handling PCR primer subtypes on BioSource ==

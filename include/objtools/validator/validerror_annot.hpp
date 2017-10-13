@@ -38,20 +38,6 @@
 #include <corelib/ncbi_autoinit.hpp>
 
 #include <objmgr/scope.hpp>
-#include <objmgr/feat_ci.hpp>  // for CMappedFeat
-#include <objmgr/util/seq_loc_util.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-#include <objects/seq/GIBB_mol.hpp>
-#include <util/strsearch.hpp>
-#include <objects/misc/sequence_macros.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/SeqFeatData.hpp>
-#include <objects/seqalign/Seq_align.hpp>
-#include <objects/seqalign/Std_seg.hpp>
-#include <objects/seqalign/Packed_seg.hpp>
-#include <objects/valid/Comment_set.hpp>
-#include <objects/valid/Comment_rule.hpp>
-#include <objects/taxon3/taxon3.hpp>
 
 #include <objtools/validator/validator.hpp>
 #include <objtools/validator/validerror_imp.hpp>

@@ -109,6 +109,7 @@
 #include <objtools/validator/validatorp.hpp>
 #include <objtools/validator/utilities.hpp>
 #include <objtools/validator/validerror_format.hpp>
+#include <objtools/validator/translation_problems.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <common/ncbi_export.h>

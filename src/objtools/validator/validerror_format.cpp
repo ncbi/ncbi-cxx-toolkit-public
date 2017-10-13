@@ -33,13 +33,21 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/serialbase.hpp>
 #include <objects/submit/Seq_submit.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/pub/Pub_equiv.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Pubdesc.hpp>
 #include <objects/seq/Seqdesc.hpp>
+#include <objects/seqfeat/Feat_id.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/OrgName.hpp>
 #include <objects/general/User_object.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/validator/validerror_format.hpp>
-#include <objtools/validator/validatorp.hpp>
+//#include <objtools/validator/validatorp.hpp>
+#include <objtools/validator/utilities.hpp>
 #include <util/static_map.hpp>
 
 

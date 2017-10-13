@@ -38,15 +38,9 @@
 #include <corelib/ncbi_autoinit.hpp>
 
 #include <objmgr/scope.hpp>
-#include <objects/seqalign/Seq_align.hpp>
-#include <objects/seqalign/Std_seg.hpp>
-#include <objects/seqalign/Packed_seg.hpp>
-
 #include <objtools/validator/validator.hpp>
-#include <objtools/validator/utilities.hpp>
 #include <objtools/validator/validerror_imp.hpp>
 #include <objtools/validator/validerror_base.hpp>
-#include <objtools/validator/validerror_graph.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
