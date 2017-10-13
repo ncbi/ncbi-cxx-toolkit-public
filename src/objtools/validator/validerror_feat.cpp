@@ -7242,32 +7242,8 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                 "Bond location should only be on bond features", feat);
     }
 
-    // check for location on multiple near non-part bioseqs
-    //CSeq_entry_Handle tse = m_Scope->GetSeq_entryHandle(m_Imp.GetTSE());
-    CSeq_entry_Handle tse = m_Imp.GetTSEH();
-    const CSeq_loc& loc = feat.GetLocation();
-    if (!IsOneBioseq(loc, m_Scope)) {
-        CBioseq_Handle bsh;
-        for (CSeq_loc_CI it(loc) ;it; ++it) {
-            CBioseq_Handle seq = m_Scope->GetBioseqHandleFromTSE(it.GetSeq_id(), tse);
-            if (seq  &&
-                (!seq.GetExactComplexityLevel(CBioseq_set::eClass_parts)) &&
-                (!seq.GetExactComplexityLevel(CBioseq_set::eClass_small_genome_set))) {
-                if (bsh  &&  seq != bsh) {
-//Not reported in C Toolkit
-#if 0
-                    PostErr(eDiag_Error, eErr_SEQ_FEAT_MultipleBioseqs,
-                        "Feature location refers to multiple near bioseqs.", feat);
-#endif
-                } else {
-                    bsh = seq;
-                }
-            }
-        }
-    } 
-
     // feature location should not be whole
-    if (loc.IsWhole ()) {
+    if (feat.GetLocation().IsWhole ()) {
         string prefix = "Feature";
         if (feat.IsSetData()) {
             if (feat.GetData().IsCdregion()) {
@@ -7280,11 +7256,11 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
     }
 
     if (m_Scope) {
-        CBioseq_Handle bsh = x_GetCachedBsh(loc);
+        CBioseq_Handle bsh = x_GetCachedBsh(feat.GetLocation());
         if (bsh) {
             // look for mismatch in capitalization for IDs
             CNcbiOstrstream os;
-            const CSeq_id *id = loc.GetId();
+            const CSeq_id *id = feat.GetLocation().GetId();
             if (id) {
                 id->WriteAsFasta(os);
                 string loc_id = CNcbiOstrstreamToString(os);
@@ -7303,7 +7279,7 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                 }
             }
             // look for protein features on the minus strand
-            if (bsh.IsAa() && loc.IsSetStrand() && loc.GetStrand() == eNa_strand_minus) {
+            if (bsh.IsAa() && feat.GetLocation().IsSetStrand() && feat.GetLocation().GetStrand() == eNa_strand_minus) {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_MinusStrandProtein, 
                          "Feature on protein indicates negative strand",
                          feat);
@@ -7325,7 +7301,7 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                     bool startsOrEndsInGap = false;
                     bool first = true;
 
-                    for ( CSeq_loc_CI loc_it(loc); loc_it; ++loc_it ) {        
+                    for ( CSeq_loc_CI loc_it(feat.GetLocation()); loc_it; ++loc_it ) {        
                         CSeqVector vec = GetSequenceFromLoc(*(loc_it.GetRangeAsSeq_loc()), *m_Scope);
                         if (!vec.empty()) {
                             CBioseq_Handle ph = x_GetCachedBsh(loc_it.GetEmbeddingSeq_loc());
@@ -7400,8 +7376,8 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
 
                     if (num_real == 0 && num_n == 0
                         && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature) {
-                        TSeqPos start = loc.GetStart(eExtreme_Positional);
-                        TSeqPos stop = loc.GetStop(eExtreme_Positional);
+                        TSeqPos start = feat.GetLocation().GetStart(eExtreme_Positional);
+                        TSeqPos stop = feat.GetLocation().GetStop(eExtreme_Positional);
                         if ((start == 0 || CSeqMap_CI(bsh, SSeqMapSelector(), start - 1).GetType() != CSeqMap::eSeqGap ) 
                             && (stop == bsh.GetBioseqLength() - 1 || CSeqMap_CI(bsh, SSeqMapSelector(), stop + 1).GetType() != CSeqMap::eSeqGap )) {
                             misc_feature_matches_gap = true;
@@ -7414,8 +7390,8 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                     } else if (first_in_gap || last_in_gap) {
                         if (num_real > 0) {
                             size_t gap_start = x_FindStartOfGap(bsh, 
-                                        first_in_gap ? loc.GetStart(eExtreme_Biological) 
-                                                     : loc.GetStop(eExtreme_Biological), m_Scope);
+                                first_in_gap ? feat.GetLocation().GetStart(eExtreme_Biological)
+                                : feat.GetLocation().GetStop(eExtreme_Biological), m_Scope);
 
                             PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureBeginsOrEndsInGap, 
                                     "Feature begins or ends in gap starting at " + NStr::NumericToString(gap_start + 1), feat);
@@ -7457,7 +7433,7 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                             int num_n = 0;
                             int real_bases = 0;
 
-                            for ( CSeq_loc_CI loc_it(loc); loc_it; ++loc_it ) {        
+                            for (CSeq_loc_CI loc_it(feat.GetLocation()); loc_it; ++loc_it) {
                                 CSeqVector vec = GetSequenceFromLoc (loc_it.GetEmbeddingSeq_loc(), *m_Scope);
                                 if ( !vec.empty() ) {
                                     CBioseq_Handle ph = x_GetCachedBsh(loc_it.GetEmbeddingSeq_loc());
@@ -7502,7 +7478,7 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
     // for coding regions, internal exons should not be 15 or less bp long
     if (feat.IsSetData() && feat.GetData().IsCdregion()) {
         int num_short_exons = 0;
-        CSeq_loc_CI it(loc);
+        CSeq_loc_CI it(feat.GetLocation());
         if (it) {
             // note - do not want to warn for first or last exon
             ++it;
