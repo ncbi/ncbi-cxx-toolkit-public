@@ -3460,7 +3460,10 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
                       
             string url_holder = CAlignFormatUtil::GetURLFromRegistry("LOCAL_ID");
         
-            string user_url = (seqUrlInfo->addCssInfo) ? m_Reg->Get("LOCAL_ID","TOOL_URL_ALIGN") : m_Reg->Get("LOCAL_ID","TOOL_URL");
+            string user_url;
+            if (m_Reg) {
+                user_url = (seqUrlInfo->addCssInfo) ? m_Reg->Get("LOCAL_ID","TOOL_URL_ALIGN") : m_Reg->Get("LOCAL_ID","TOOL_URL");
+            }
             string id_string;
             wid->GetLabel(&id_string, CSeq_id::eContent);
             url_link = CAlignFormatUtil::MapTemplate(user_url,"seq_id", NStr::URLEncode(id_string));  
