@@ -79,6 +79,7 @@ SSERV_Info* SERV_CreateDnsInfoEx
  );
 
 
+NCBI_XCONNECT_EXPORT
 SSERV_Info* SERV_ReadInfoEx
 (const char*       info_str,
  const char*       name,
