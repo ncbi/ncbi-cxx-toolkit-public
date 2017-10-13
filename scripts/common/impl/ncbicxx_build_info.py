@@ -346,7 +346,7 @@ class Collector(object):
             else:
                 next_dir = os.path.dirname(next_dir)
 
-        return ''
+        return '-'
         # if 'LOGNAME' in os.environ:
         #     return os.environ['LOGNAME']
         # elif 'USER' in os.environ:
