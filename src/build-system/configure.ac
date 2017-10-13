@@ -128,6 +128,8 @@ AC_ARG_WITH(symbols,
    [ --with-symbols          retain debugging symbols in non-debug mode])
 AC_ARG_WITH(optimization,
    [ --without-optimization  turn off optimization flags in non-debug mode])
+AC_ARG_WITH(sse42,
+   [ --without-sse42         don't enable SSE 4.2 when optimizing])
 AC_ARG_WITH(profiling,
    [ --with-profiling        build profiled versions of libs and apps])
 AC_ARG_WITH(code-coverage,
@@ -730,6 +732,7 @@ if test "$with_bin_release" = "yes" ; then
    : ${with_ncbi_crypt=no}
    : ${with_connext=no}
    : ${with_pcre=no} # Too much variation across distributions.
+   : ${with_sse42=no}
    AC_DEFINE(NCBI_BIN_RELEASE, 1,
              [Define to 1 when building binaries for public release.])
 fi
@@ -1886,8 +1889,50 @@ AC_CACHE_CHECK([how to enable C '11 or at least '99 features in $CC],
           test "x$ncbi_cv_prog_c_99" = "xno"  ||  break
        done
        CC=$orig_CC])
+
+if test "${with_sse42-$with_optimization}" = yes; then
+   AC_CACHE_CHECK([whether $CC supports -msse4.2],
+      ncbi_cv_prog_c_sse42,
+      [orig_CC=$CC
+       CC="$CC -msse4.2"
+       AC_LINK_IFELSE(
+          [AC_LANG_PROGRAM(
+              [#include <immintrin.h>],
+              [long long v __attribute__((vector_size(16)));
+               __builtin_ia32_pcmpgtq(v, v);])],
+          [ncbi_cv_prog_c_sse42=yes],
+          [ncbi_cv_prog_c_sse42=no])])
+   if test $ncbi_cv_prog_c_sse42 = yes; then
+      orig_CC=$CC
+   elif test "$with_sse42" = yes; then
+      AC_MSG_ERROR([SSE 4.2 support explicitly requested but unavailable.])
+   else
+      CC=$orig_CC
+   fi
+fi
 AC_LANG_POP(C)
 test "$ncbi_cv_prog_c_99" = no  ||  CC="$CC $ncbi_cv_prog_c_99"
+
+if test "${with_sse42-$with_optimization}" = yes; then
+   AC_CACHE_CHECK([whether $CXX supports -msse4.2],
+      ncbi_cv_prog_cxx_sse42,
+      [orig_CXX=$CXX
+       CXX="$CXX -msse4.2"
+       AC_LINK_IFELSE(
+          [AC_LANG_PROGRAM(
+              [#include <immintrin.h>],
+              [long long v __attribute__((vector_size(16)));
+               __builtin_ia32_pcmpgtq(v, v);])],
+          [ncbi_cv_prog_cxx_sse42=yes],
+          [ncbi_cv_prog_cxx_sse42=no])])
+   if test $ncbi_cv_prog_cxx_sse42 = yes; then
+      orig_CXX=$CXX
+   elif test "$with_sse42" = yes; then
+      AC_MSG_ERROR([SSE 4.2 support explicitly requested but unavailable.])
+   else
+      CXX=$orig_CXX
+   fi
+fi
 
 case "$host_os:$compiler" in
  solaris*:GCC )

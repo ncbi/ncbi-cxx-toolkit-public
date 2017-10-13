@@ -1863,6 +1863,7 @@ Optional Packages:
  --with-max-debug        enable extra runtime checks (esp. of STL usage)
  --with-symbols          retain debugging symbols in non-debug mode
  --without-optimization  turn off optimization flags in non-debug mode
+ --without-sse42         don't enable SSE 4.2 when optimizing
  --with-profiling        build profiled versions of libs and apps
  --with-code-coverage    track which code blocks have been exercised
  --with-tcheck(=DIR)     build for Intel Thread Checker (in DIR)
@@ -3059,6 +3060,12 @@ fi
 # Check whether --with-optimization was given.
 if test "${with_optimization+set}" = set; then
   withval=$with_optimization;
+fi
+
+
+# Check whether --with-sse42 was given.
+if test "${with_sse42+set}" = set; then
+  withval=$with_sse42;
 fi
 
 
@@ -4464,6 +4471,7 @@ if test "$with_bin_release" = "yes" ; then
    : ${with_ncbi_crypt=no}
    : ${with_connext=no}
    : ${with_pcre=no} # Too much variation across distributions.
+   : ${with_sse42=no}
 
 cat >>confdefs.h <<\_ACEOF
 #define NCBI_BIN_RELEASE 1
@@ -9387,6 +9395,88 @@ rm -f core conftest.err conftest.$ac_objext \
 fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_prog_c_99" >&5
 echo "${ECHO_T}$ncbi_cv_prog_c_99" >&6; }
+
+if test "${with_sse42-$with_optimization}" = yes; then
+   { echo "$as_me:$LINENO: checking whether $CC supports -msse4.2" >&5
+echo $ECHO_N "checking whether $CC supports -msse4.2... $ECHO_C" >&6; }
+if test "${ncbi_cv_prog_c_sse42+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  orig_CC=$CC
+       CC="$CC -msse4.2"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <immintrin.h>
+int
+main ()
+{
+long long v __attribute__((vector_size(16)));
+               __builtin_ia32_pcmpgtq(v, v);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_prog_c_sse42=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_prog_c_sse42=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_prog_c_sse42" >&5
+echo "${ECHO_T}$ncbi_cv_prog_c_sse42" >&6; }
+   if test $ncbi_cv_prog_c_sse42 = yes; then
+      orig_CC=$CC
+   elif test "$with_sse42" = yes; then
+      { { echo "$as_me:$LINENO: error: SSE 4.2 support explicitly requested but unavailable." >&5
+echo "$as_me: error: SSE 4.2 support explicitly requested but unavailable." >&2;}
+   { (exit 1); exit 1; }; }
+   else
+      CC=$orig_CC
+   fi
+fi
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -9394,6 +9484,88 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 test "$ncbi_cv_prog_c_99" = no  ||  CC="$CC $ncbi_cv_prog_c_99"
+
+if test "${with_sse42-$with_optimization}" = yes; then
+   { echo "$as_me:$LINENO: checking whether $CXX supports -msse4.2" >&5
+echo $ECHO_N "checking whether $CXX supports -msse4.2... $ECHO_C" >&6; }
+if test "${ncbi_cv_prog_cxx_sse42+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  orig_CXX=$CXX
+       CXX="$CXX -msse4.2"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <immintrin.h>
+int
+main ()
+{
+long long v __attribute__((vector_size(16)));
+               __builtin_ia32_pcmpgtq(v, v);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_prog_cxx_sse42=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_prog_cxx_sse42=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_prog_cxx_sse42" >&5
+echo "${ECHO_T}$ncbi_cv_prog_cxx_sse42" >&6; }
+   if test $ncbi_cv_prog_cxx_sse42 = yes; then
+      orig_CXX=$CXX
+   elif test "$with_sse42" = yes; then
+      { { echo "$as_me:$LINENO: error: SSE 4.2 support explicitly requested but unavailable." >&5
+echo "$as_me: error: SSE 4.2 support explicitly requested but unavailable." >&2;}
+   { (exit 1); exit 1; }; }
+   else
+      CXX=$orig_CXX
+   fi
+fi
 
 case "$host_os:$compiler" in
  solaris*:GCC )
