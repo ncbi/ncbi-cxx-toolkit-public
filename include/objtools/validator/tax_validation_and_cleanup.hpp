@@ -164,6 +164,7 @@ private:
     string m_Taxname;
     bool m_IsInvalid;
     static bool x_IsUnwanted(const string& str);
+    static bool x_IgnoreStrain(const string& str);
 };
 
 

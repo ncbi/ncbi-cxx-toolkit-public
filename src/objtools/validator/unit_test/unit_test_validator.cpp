@@ -20857,6 +20857,12 @@ BOOST_AUTO_TEST_CASE(Test_BulkStrainIncremental)
     TestOneStrain("Acetobacter sp.", "DsW_063", "Bacteria", false);
 }
 
+
+BOOST_AUTO_TEST_CASE(VR_762)
+{
+    TestOneStrain("Cystobasidium minutum", "P22", "xyz", false);
+}
+
 BOOST_AUTO_TEST_CASE(TEST_VR_477)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
@@ -21380,3 +21386,4 @@ BOOST_AUTO_TEST_CASE(VR_V48)
     CheckLocalId("abc|def", "|");
     CheckLocalId("abc=def", "=");
 }
+

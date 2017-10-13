@@ -229,6 +229,29 @@ const string& CSpecificHostRequest::SuggestFix() const
 }
 
 
+bool CStrainRequest::x_IgnoreStrain(const string& str)
+{
+    // per VR-762, ignore strain if combination of letters and numbers
+    bool has_number = false;
+    bool has_letter = false;
+    for (size_t i = 0; i < str.length(); i++) {
+        char ch = str.c_str()[i];
+        if (isdigit(ch)) {
+            has_number = true;
+        } else if (isalpha(ch)) {
+            has_letter = true;
+        } else {
+            return false;
+        }
+    }
+    if (!has_number || !has_letter) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
 CStrainRequest::CStrainRequest(const string& strain, const COrg_ref& org) : CQualifierRequest(), m_Strain(strain)
 { 
     if (org.IsSetTaxname()) {
@@ -237,7 +260,7 @@ CStrainRequest::CStrainRequest(const string& strain, const COrg_ref& org) : CQua
         m_Taxname.clear();
     }
 
-    if (NStr::IsBlank(strain)) {
+    if (NStr::IsBlank(strain) || x_IgnoreStrain(strain)) {
         m_IsInvalid = true;
         return;
     }
