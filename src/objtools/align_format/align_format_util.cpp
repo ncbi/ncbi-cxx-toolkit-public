@@ -87,7 +87,7 @@ CRef<CScope> kScope;
 const char k_PSymbol[ePMatrixSize+1] =
 "ARNDCQEGHILKMFPSTWYVBZX";
 
-CNcbiRegistry *CAlignFormatUtil::m_Reg = NULL;
+unique_ptr<CNcbiRegistry> CAlignFormatUtil::m_Reg;
 string CAlignFormatUtil::m_Protocol = "";
 bool  CAlignFormatUtil::m_geturl_debug_flag = false;
 auto_ptr<CGeneInfoFileReader> CAlignFormatUtil::m_GeneInfoReader;
@@ -3083,7 +3083,7 @@ void CAlignFormatUtil::InitConfig()
         }    
         if(cfgExists) {
             CNcbiIfstream l_ConfigFile(l_cfg_file_name.c_str() );
-            m_Reg = new CNcbiRegistry(l_ConfigFile);
+            m_Reg.reset(new CNcbiRegistry(l_ConfigFile));
             if( l_dbg ) fprintf(stderr,"REGISTRY: %s\n",l_cfg_file_name.c_str());        
         }
     }
@@ -3186,12 +3186,6 @@ string  CAlignFormatUtil::GetURLDefault( const string url_name, int index) {
   string error_msg = "CAlignFormatUtil::GetURLDefault:no_defualt_for"+url_name;
   if( index != -1 ) error_msg += "_index_"+ NStr::IntToString( index ); 
   return error_msg;
-}
-//
-// Release memory allocated for the NCBIRegistry object
-//
-void CAlignFormatUtil::ReleaseURLRegistry(void){
-    if( m_Reg) { delete m_Reg; m_Reg = NULL;}
 }
 
 void

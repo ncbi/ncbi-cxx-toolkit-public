@@ -1277,10 +1277,6 @@ public:
     ///@return: URL format string defined in blastfmtutil.hpp 
     static string GetURLDefault( const string url_name, int index = -1);
 
-    ///release memory allocated for the registry object by GetURLFromRegistry
-    ///
-    static void ReleaseURLRegistry(void);
-
     ///Replace template tags by real data
     ///@param inpString: string containing template data
     ///@param tmplParamName:string with template tag name
@@ -1484,7 +1480,7 @@ public:
     static string  GetGeneInfo(TGi giForGeneLookup);
     
 
-    static CNcbiRegistry *m_Reg;
+    static unique_ptr<CNcbiRegistry> m_Reg;
     static string m_Protocol;
     static bool   m_geturl_debug_flag;
     static auto_ptr<CGeneInfoFileReader> m_GeneInfoReader;
