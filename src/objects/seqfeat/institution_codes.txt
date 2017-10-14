@@ -5499,6 +5499,7 @@ RENO	s	University of Nevada, Environmental and Resource Sciences Department
 RENZ	s	Universitaet Basel, The Swiss Orchid Foundation		
 REP	s	Desert Experiment Station of the W.I.R.		
 RESC	s	Shasta College		
+RET	s	Herbarium Amanitarum Rooseveltensis		
 REU	s	Universite de la Reunion		
 RFA	s	Universidade Federal do Rio de Janeiro, Departamento de Botanica		
 RFE	s	Radcliffe Literary and Scientific Society Museum		

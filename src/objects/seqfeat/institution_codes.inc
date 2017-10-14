@@ -5532,6 +5532,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "RENZ\ts\tUniversitaet Basel, The Swiss Orchid Foundation\t\t",
 "REP\ts\tDesert Experiment Station of the W.I.R.\t\t",
 "RESC\ts\tShasta College\t\t",
+"RET\ts\tHerbarium Amanitarum Rooseveltensis\t\t",
 "REU\ts\tUniversite de la Reunion\t\t",
 "RFA\ts\tUniversidade Federal do Rio de Janeiro, Departamento de Botanica\t\t",
 "RFE\ts\tRadcliffe Literary and Scientific Society Museum\t\t",
