@@ -30728,7 +30728,7 @@ if test "x$with_gnutls" != xno; then
          static_libs=$static_libs$sep$x
          sep=' '
       done
-      GNUTLS_LIBS=$static_libs
+      GNUTLS_LIBS="$static_libs $ICONV_LIBS"
    fi
 fi
 
