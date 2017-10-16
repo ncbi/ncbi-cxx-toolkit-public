@@ -179,6 +179,12 @@ public:
     void erase(iterator it);
     void erase(const key_type& v);
 
+    template <typename OtherIterator>
+    void insert(OtherIterator it_begin, OtherIterator it_end)
+    {
+        m_Data.insert(it_begin, it_end);
+    }
+
     /// @}
 
     ///

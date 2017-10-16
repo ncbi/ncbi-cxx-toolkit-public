@@ -908,12 +908,17 @@ template <class Key, class Score>
 inline
 void CScoreVector<Key, Score>::Add(Key idx, Score weight)
 {
+    iterator iter = m_Data.emplace(typename TVector::value_type(idx, 0)).first;
+    iter->second += weight;
+
+    /**
     iterator iter = m_Data.find(idx);
     if (iter == m_Data.end()) {
         m_Data[idx] = weight;
     } else {
         iter->second += weight;
     }
+    **/
 }
 
 
