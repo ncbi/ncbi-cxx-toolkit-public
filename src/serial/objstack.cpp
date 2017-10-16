@@ -414,7 +414,9 @@ string CObjectStackFrame::GetFrameName(void) const
         info = "[]";
         break;
     case eFrameNamed:
-        info = GetTypeInfo()->GetName();
+        if (!GetNotag()) {
+            info = GetTypeInfo()->GetName();
+        }
         break;
     default:
         {
