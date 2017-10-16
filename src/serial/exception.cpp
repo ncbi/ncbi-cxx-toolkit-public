@@ -46,6 +46,9 @@ void CSerialException::x_Assign(const CException& src)
 
 void CSerialException::AddFrameInfo(string frame_info)
 {
+    if (!frame_info.empty() && !m_FrameStack.empty()) {
+        m_FrameStack.insert(0,1,'.');
+    }
     m_FrameStack = frame_info + m_FrameStack;
 }
 

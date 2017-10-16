@@ -395,7 +395,7 @@ string CObjectStackFrame::GetFrameName(void) const
         {
             if ( m_MemberId ) {
                 const CMemberId& id = *m_MemberId;
-                info = '.';
+//                info = '.';
                 if ( !id.GetName().empty() ) {
                     info += id.GetName();
                 }
