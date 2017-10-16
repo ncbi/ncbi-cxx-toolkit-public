@@ -380,6 +380,41 @@ void CFeatTableEdit::GenerateProteinAndTranscriptIds()
     }
 }
 
+//  ----------------------------------------------------------------------------
+void CFeatTableEdit::InstantiateProducts()
+//  ----------------------------------------------------------------------------
+{
+    SAnnotSelector sel1;
+    sel1.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+    sel1.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+    for (CFeat_CI it(mHandle, sel1); it; ++it) {
+        CMappedFeat mf = *it;
+        if (mf.IsSetProduct()) {
+            continue;
+        }
+        switch(mf.GetFeatSubtype()) {
+        default:
+            break;
+        case CSeqFeatData::eSubtype_mRNA: {
+                auto tid = mf.GetNamedQual("transcript_id");
+                if (!tid.empty()) {
+                    xFeatureSetProduct(mf, tid);
+                    xFeatureRemoveQualifier(mf, "transcript_id");
+                }
+                break;
+            }
+        case CSeqFeatData::eSubtype_cdregion: {
+                auto pid = mf.GetNamedQual("protein_id");
+                if (!pid.empty()) {
+                    xFeatureSetProduct(mf, pid);
+                    xFeatureRemoveQualifier(mf, "protein_id");
+                }
+                break;
+            }
+        }
+    }
+}
+
 //  ---------------------------------------------------------------------------
 void CFeatTableEdit::xGenerateMissingGeneForChoice(
     CSeqFeatData::E_Choice choice)
@@ -979,6 +1014,24 @@ void CFeatTableEdit::xFeatureSetQualifier(
     pQual->SetQual(qualKey);
     pQual->SetVal(qualVal);
     pEditedFeat->SetQual().push_back(pQual);
+    CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(origFeat));
+    feh.Replace(*pEditedFeat);
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatTableEdit::xFeatureSetProduct(
+    CMappedFeat mf,
+    const string& proteinIdStr)
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_id> pProteinId( 
+        new CSeq_id(proteinIdStr, 
+            CSeq_id::fParse_ValidLocal|CSeq_id::fParse_PartialOK));
+
+    const CSeq_feat& origFeat = mf.GetOriginalFeature();
+    CRef<CSeq_feat> pEditedFeat(new CSeq_feat);
+    pEditedFeat->Assign(origFeat);
+    pEditedFeat->SetProduct().SetWhole(*pProteinId);
     CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(origFeat));
     feh.Replace(*pEditedFeat);
 }

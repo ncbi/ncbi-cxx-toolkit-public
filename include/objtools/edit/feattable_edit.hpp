@@ -66,6 +66,7 @@ public:
     void InferPartials();
     void EliminateBadQualifiers();
     void GenerateProteinAndTranscriptIds();
+    void InstantiateProducts();
     void GenerateLocusIds();
     void SubmitFixProducts();
     void GenerateMissingMrnaForCds();
@@ -129,7 +130,9 @@ protected:
         CMappedFeat);
     void xFeatureAddTranscriptIdDefault(
         CMappedFeat);
-
+    void xFeatureSetProduct(
+        CMappedFeat,
+        const string&);
     std::string xGenerateTranscriptOrProteinId(
         CMappedFeat,
         const std::string&);
