@@ -4,7 +4,7 @@ APP = sdbapi_unit_test
 SRC = sdbapi_unit_test sdbapi_unit_test_object sdbapi_unit_test_bcp \
       sdbapi_unit_test_proc sdbapi_unit_test_stmt \
       sdbapi_unit_test_connection sdbapi_unit_test_common \
-      sdbapi_unit_test_lob
+      sdbapi_unit_test_lob sdbapi_unit_test_xact_abort
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 

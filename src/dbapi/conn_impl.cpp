@@ -51,6 +51,11 @@
 
 BEGIN_NCBI_SCOPE
 
+NCBI_PARAM_DECL(bool, dbapi, set_xact_abort);
+typedef NCBI_PARAM_TYPE(dbapi, set_xact_abort) TDbapi_SetXactAbort;
+NCBI_PARAM_DEF_EX(bool, dbapi, set_xact_abort, true, eParam_NoThread, NULL);
+
+
 // Implementation
 CConnection::CConnection(CDataSource* ds, EOwnership ownership)
     : m_ds(ds), m_connection(0), m_connCounter(1), m_connUsed(false),
@@ -131,6 +136,7 @@ void CConnection::Connect(const CDBConnParams& params)
     m_connection = m_ds->GetDriverContext()->MakeConnection(params);
     // Explicitly set member value ...
     m_database = m_connection? m_connection->DatabaseName(): string();
+    x_SendXactAbort();
 }
 
 
@@ -266,6 +272,7 @@ IConnection* CConnection::CloneConnection(EOwnership ownership)
     conn->AddListener(m_ds);
     m_ds->AddListener(conn);
 
+    conn->x_SendXactAbort();
     return conn;
 }
 
@@ -565,4 +572,44 @@ void CConnection::DeleteConn(CConnection* conn)
     return;
 }
 */
+
+void CConnection::x_SendXactAbort(void)
+{
+    static TDbapi_SetXactAbort  sx_set_xact_abort;
+
+    if (sx_set_xact_abort.Get()) {
+        // Note: SET XACT_ABORT ON is supported by MS SQL and is not supported
+        // by Sybase. So we first check the server brand.
+        bool    is_ms_sql = false;
+
+        unique_ptr<CDB_LangCmd> cmd(m_connection->LangCmd("SELECT @@version"));
+        cmd->Send();
+
+        while (cmd->HasMoreResults()) {
+            unique_ptr<CDB_Result>  result(cmd->Result());
+            if (!result.get())
+                continue;
+
+            while (result->Fetch()) {
+                CDB_VarChar             value;
+                result->GetItem(&value);
+                if (NStr::Find(value.AsString(),
+                               "Microsoft", NStr::eNocase) != NPOS)
+                    is_ms_sql = true;
+            }
+        }
+
+        if (is_ms_sql) {
+            unique_ptr<CDB_LangCmd> xact_cmd(
+                m_connection->LangCmd("SET XACT_ABORT ON"));
+            xact_cmd->Send();
+
+            // Dump results triggers calling the Check() method a few levels
+            // below which properly checks if there were problems during the
+            // command execution. If so then an exception is thrown.
+            xact_cmd->DumpResults();
+        }
+    }
+}
+
 END_NCBI_SCOPE

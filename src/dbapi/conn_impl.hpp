@@ -154,6 +154,8 @@ private:
 
     EOwnership m_ownership;
 
+private:
+    void x_SendXactAbort(void);
 };
 
 //====================================================================
