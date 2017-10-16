@@ -1787,8 +1787,7 @@ bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
                 return classType->GetItems().FindDeep(tagName) != kInvalidMember ||
                     HasAnyContent(classType) != kInvalidMember;
             }
-            TTypeInfo nextType = classType ? (TTypeInfo)classType : (TTypeInfo)aliasType;
-            return tagName == nextType->GetName();
+            return (classType && tagName == classType->GetName()) || (aliasType && tagName == aliasType->GetName());
         }
     }
     return true;
