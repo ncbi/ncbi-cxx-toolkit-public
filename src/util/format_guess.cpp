@@ -2690,8 +2690,10 @@ bool CFormatGuess::IsLineGlimmer3(
 bool CFormatGuess::IsLineGtf(
     const string& line )
 {
+    const string delim = (line.find("\t") == NPOS) ? " " : "\t";
+
     vector<string> tokens;
-    if ( NStr::Split(line, " \t", tokens, NStr::fSplit_Tokenize).size() < 8 ) {
+    if ( NStr::Split(line, delim, tokens, NStr::fSplit_Tokenize).size() < 8 ) {
         return false;
     }
     if ( ! s_IsTokenPosInt( tokens[3] ) ) {
@@ -2797,8 +2799,10 @@ bool CFormatGuess::IsLineGvf(
 bool CFormatGuess::IsLineGff3(
     const string& line )
 {
+    const string delim = (line.find("\t") == NPOS) ? " " : "\t";
+
     vector<string> tokens;
-    if ( NStr::Split(line, " \t", tokens, NStr::fSplit_Tokenize).size() < 8 ) {
+    if ( NStr::Split(line, delim, tokens, NStr::fSplit_Tokenize).size() < 8 ) {
         return false;
     }
     if ( ! s_IsTokenPosInt( tokens[3] ) ) {
