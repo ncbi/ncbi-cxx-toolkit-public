@@ -2275,10 +2275,9 @@ static list<string> s_GetLinkoutUrl(int linkout,
     }    
     if(linkout & eGenomeDataViewer){
         url_link = CAlignFormatUtil::GetURLFromRegistry("GENOME_DATA_VIEWER");                        
-        lnk_displ = textLink ? "Genome Data Viewer" : kGenomeDataViewerImg;            
-        
-        lnkTitleInfo = "genomic data information";                
-        url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,firstAcc,lnk_displ,lnkTitleInfo);
+        lnk_displ = textLink ? "Genome Data Viewer" : kGenomeDataViewerImg;                            
+        lnkTitleInfo = "title=\"View BLAST hits for <@label@> within a genomic context in NCBI's Genome Data Viewer (GDV)- genome browser for RefSeq annotated assemblies. See other genomic features annotated at the same location as hits and browse to other regions.\"";
+        url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,firstAcc,lnk_displ,"",lnkTitleInfo);
                 
         url_link = CAlignFormatUtil::MapTemplate(url_link,"queryID",linkoutInfo.queryID);
 
