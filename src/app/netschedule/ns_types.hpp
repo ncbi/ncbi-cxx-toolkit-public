@@ -36,9 +36,9 @@
 
 #include <string>
 
-#include <util/bitset/bmalgo.h>
 #include <util/bitset/ncbi_bitset.hpp>
 #include <util/bitset/ncbi_bitset_alloc.hpp>
+#include <util/bitset/bmalgo.h>
 
 #include <connect/services/netschedule_api.hpp>
 
