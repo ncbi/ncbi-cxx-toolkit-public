@@ -170,11 +170,11 @@ static const char kReprMicrobialGenomesImg[] = "<img border=0 height=16 width=16
 static const string kReprMicrobialGenomesDispl =  "<div><@lnk@>-<span class=\"rlLink\">Genomic Sequence</span></div>";
 
 // .ncbirc alias: GENOME_DATA_VIEWER /genome/gdv/browser/?context=blast&id=NC_000019.10&alignid=<@label@>&rid=N9WGPH30015
-static const char kGenomeDataViewerUrl[] = "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/genome/gdv/browser/?context=blast&id=<@label@>&alignid=<@queryID@>&from=<@from@>&to=<@to@>&rid=<@rid@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
+static const char kGenomeDataViewerUrl[] = "<span id=\"adNew\">New</span><a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/genome/gdv/browser/?context=blast&id=<@label@>&alignid=<@queryID@>&from=<@from@>&to=<@to@>&rid=<@rid@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
 static const char kGenomeDataViewerImg[] = "<img border=0 height=16 width=16 src=\"images/V.gif\" alt=\"View genome data for <@label@>\">";
 //For text link <@lnk@> is substituted by formatted url
-static const string kGenomeDataViewerDispl =  "<div><@lnk@>-<span class=\"rlLink\">Genomic Data viewer</span></div>";
+static const string kGenomeDataViewerDispl =  "<div><@lnk@>-<span class=\"rlLink\">aligned genomic context</span></div>";
 
 static const char kIdenticalProteinsUrl[] = "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/ipg/<@label@>\" title=\"View proteins identical to <@label@>\" <@lnkTarget@>><@lnk_displ@></a>";
 static const string kIdenticalProteinsDispl =  "<div><@lnk@>-<span class=\"rlLink\">Identical proteins to <@label@></span></div>";
