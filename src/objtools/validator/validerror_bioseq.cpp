@@ -5943,37 +5943,17 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                     x_PartialAdjacentToIntron(feat.GetLocation())) {
                     // suppress
                 } else if ( x_IsPartialAtSpliceSiteOrGap(feat.GetLocation(), errtype, bad_seq, is_gap) ) {
-                    if (!is_gap) {
-                        if (feat.GetData().IsCdregion() && IsOrganelle(m_Scope->GetBioseqHandle(feat.GetLocation()))) {
+                    if (!is_gap && (!feat.IsSetPseudo() || !feat.GetPseudo()) && feat.GetData().IsCdregion()) {
+                        if (m_CurrentHandle && IsMrna(m_CurrentHandle)) {
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
+                                "PartialLocation: " + parterrs[j] +
+                                " (but is at consensus splice site, but is on an mRNA that is already spliced)",
+                                *(feat.GetSeq_feat()));
+                        } else if (IsOrganelle(m_CurrentHandle)) {
                             PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
                                     "PartialLocation: " + parterrs[j] + " (organelle does not use standard splice site convention)",
                                     *(feat.GetSeq_feat()));
-                        } else if (!feat.GetData().IsCdregion() || x_SplicingNotExpected (feat)) {
-                            if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
-                                // ignore in genomic gpipe sequence
-                            } else if (feat.IsSetPseudo() && feat.GetPseudo()) {
-                                // ignore pseudo feature
-                            } else {
-                                PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
-                                    "PartialLocation: " + parterrs[j] + 
-                                    " (but is at consensus splice site)", *(feat.GetSeq_feat()));
-                            }
-                        } else if (feat.GetData().IsCdregion()) {
-                            if (m_CurrentHandle) {
-                                CSeqdesc_CI diter (m_CurrentHandle, CSeqdesc::e_Molinfo);
-                                if (diter && diter->GetMolinfo().IsSetBiomol()
-                                    && diter->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA) {
-                                    if (feat.IsSetPseudo() && feat.GetPseudo()) {
-                                        // ignore pseudo feature
-                                    } else {
-                                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
-                                            "PartialLocation: " + parterrs[j] +
-                                            " (but is at consensus splice site, but is on an mRNA that is already spliced)",
-                                            *(feat.GetSeq_feat()));
-                                    }
-                                }
-                            }
-                        }
+                        } 
                     }
                 } else if ( bad_seq) {
                     PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,

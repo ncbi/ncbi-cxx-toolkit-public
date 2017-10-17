@@ -11180,8 +11180,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     misc_feat->SetPartial(true);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Info, "PartialProblem",
-        "PartialLocation: Stop does not include first/last residue of sequence (but is at consensus splice site)"));
+    // no longer show error, per VR-763
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -11191,12 +11190,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     misc_feat->SetLocation().SetPartialStart(true, eExtreme_Biological);
     misc_feat->SetLocation().SetPartialStop(false, eExtreme_Biological);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetErrMsg("PartialLocation: Start does not include first/last residue of sequence (but is at consensus splice site)");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-    for ( CValidError_CI vit(*eval); vit; ++vit) {
-        BOOST_CHECK_EQUAL(vit->GetSeqOffset(), 46);
-    }
 
     scope.RemoveTopLevelSeqEntry(seh);
     // take misc_feat away
@@ -11222,7 +11217,6 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     prot_feat->SetPartial(true);
     unit_test_util::SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_right);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetErrMsg("PartialLocation: Stop does not include first/last residue of sequence (but is at consensus splice site)");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -11230,8 +11224,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     unit_test_util::SetDiv (entry, "PRI");
     entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
     unit_test_util::SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_mRNA);
-    expected_errors[0]->SetErrMsg("PartialLocation: Stop does not include first/last residue of sequence (but is at consensus splice site, but is on an mRNA that is already spliced)");
-    expected_errors[0]->SetSeverity(eDiag_Warning);
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
+        "PartialLocation: Stop does not include first/last residue of sequence (but is at consensus splice site, but is on an mRNA that is already spliced)"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
