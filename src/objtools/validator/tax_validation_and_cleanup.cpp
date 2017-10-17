@@ -260,11 +260,10 @@ CStrainRequest::CStrainRequest(const string& strain, const COrg_ref& org) : CQua
         m_Taxname.clear();
     }
 
+    m_IsInvalid = false;
     if (NStr::IsBlank(strain) || x_IgnoreStrain(strain)) {
-        m_IsInvalid = true;
         return;
     }
-    m_IsInvalid = false;
 
     m_ValuesToTry.push_back(strain);
     size_t pos = 0;
