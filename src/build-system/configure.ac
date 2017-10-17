@@ -8791,7 +8791,7 @@ $build_flat
 ******* CONFIGURATION SUCCESSFUL *******
 EOCONF
 ], [
-PATH='/bin:/usr/bin:\$PATH'
+PATH="$HOME/bin:/bin:/usr/bin:\$PATH"
 status_dir='$status_dir'
 builddir='$builddir'
 build_root='$build_root'
