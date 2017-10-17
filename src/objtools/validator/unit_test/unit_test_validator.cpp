@@ -11601,6 +11601,31 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_MixedStrand)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> gene = AddMiscFeature(entry);
+    CRef<CSeq_loc> gene_loc = unit_test_util::MakeMixLoc(entry->SetSeq().SetId().front());
+    gene_loc->SetMix().Set().front()->SetInt().SetFrom(0);
+    gene_loc->SetMix().Set().front()->SetInt().SetTo(0);
+    gene_loc->SetMix().Set().front()->SetInt().SetStrand(eNa_strand_minus);
+    gene_loc->SetMix().Set().back()->SetInt().SetFrom(9);
+    gene_loc->SetMix().Set().back()->SetInt().SetTo(10);
+    gene->SetLocation().Assign(*gene_loc);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "MixedStrand",
+        "Location: Mixed strands in SeqLoc [(lcl|good:c1-1, 10-11)]"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // warning if gene is pseudo
+    scope.RemoveTopLevelSeqEntry(seh);
+    gene->SetPseudo(true);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    CLEAR_ERRORS
 }
 
 

@@ -2211,7 +2211,11 @@ void CValidError_imp::ValidateSeqLoc
                     prefix + ": Mixed strands in SeqLoc ["
                     + loc_lbl + "] in small genome set - set trans-splicing exception if appropriate", obj);
             } else {
-                PostErr(IsGeneious() ? eDiag_Warning : eDiag_Error, eErr_SEQ_FEAT_MixedStrand,
+                EDiagSev sev = eDiag_Error;
+                if (IsGeneious() || (sfp && sequence::IsPseudo(*sfp, *m_Scope))) {
+                    sev = eDiag_Warning;
+                }
+                PostErr(sev, eErr_SEQ_FEAT_MixedStrand,
                     prefix + ": Mixed strands in SeqLoc ["
                     + loc_lbl + "]", obj);
             }
