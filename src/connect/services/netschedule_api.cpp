@@ -69,13 +69,6 @@ void ThrowIllegalChar(const string& name, const string& value, char c)
 
 using namespace grid::netschedule;
 
-void g_AppendClientIPSessionIDHitID(string& cmd, bool use_next_sub_hit_id)
-{
-    CRequestContext& req = CDiagContext::GetRequestContext();
-    g_AppendClientIPAndSessionID(cmd, req);
-    g_AppendHitID(cmd, req, use_next_sub_hit_id);
-}
-
 SNetScheduleNotificationThread::SNetScheduleNotificationThread(
         SNetScheduleAPIImpl* ns_api) :
     m_API(ns_api),

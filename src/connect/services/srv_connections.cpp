@@ -772,7 +772,9 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
 
 CNetServerInfo CNetServer::GetServerInfo()
 {
-    string response(ExecWithRetry("VERSION", false).response);
+    string cmd("VERSION");
+    g_AppendClientIPSessionIDHitID(cmd);
+    auto response = ExecWithRetry(cmd, false).response;
 
     // Keep these two lines separate to let the Exec method
     // above succeed before constructing the object below.

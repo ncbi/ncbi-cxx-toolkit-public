@@ -174,6 +174,10 @@ extern NCBI_XCONNECT_EXPORT
 CNetService g_DiscoverService(const string& service_name,
         const string& client_name);
 
+/// @internal
+extern NCBI_XCONNECT_EXPORT
+void g_AppendClientIPSessionIDHitID(string& cmd, bool = false);
+
 END_NCBI_SCOPE
 
 #endif  /* CONNECT_SERVICES___NETSERVICE_API__HPP */

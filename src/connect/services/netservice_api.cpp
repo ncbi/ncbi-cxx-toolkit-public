@@ -1487,4 +1487,11 @@ CNetService g_DiscoverService(const string& service_name,
     return service;
 }
 
+void g_AppendClientIPSessionIDHitID(string& cmd, bool use_next_sub_hit_id)
+{
+    CRequestContext& req = CDiagContext::GetRequestContext();
+    g_AppendClientIPAndSessionID(cmd, req);
+    g_AppendHitID(cmd, req, use_next_sub_hit_id);
+}
+
 END_NCBI_SCOPE
