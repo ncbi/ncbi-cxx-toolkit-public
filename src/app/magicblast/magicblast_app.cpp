@@ -949,10 +949,10 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
             // only concordantly aligned pairs have this bit set
             // FIXME: it is assumed that subject is always in plus strand
             // (BLAST way)
-            if ((align.GetSeqStart(1) < mate->GetSeqStart(1) &&
+            if ((align.GetSeqStart(1) <= mate->GetSeqStart(1) &&
                  align.GetSeqStrand(0) == eNa_strand_plus &&
                  mate->GetSeqStrand(0) == eNa_strand_minus) ||
-                (mate->GetSeqStart(1) < align.GetSeqStart(1) &&
+                (mate->GetSeqStart(1) <= align.GetSeqStart(1) &&
                  mate->GetSeqStrand(0) == eNa_strand_plus &&
                  align.GetSeqStrand(0) == eNa_strand_minus)) {
 
