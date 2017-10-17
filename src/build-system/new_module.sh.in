@@ -64,6 +64,7 @@ getvar () {
 }
 
 # detect command arguments
+suffixes='asn dtd xsd wsdl'
 case "$1" in
     --dtd)
         ext="dtd"
@@ -80,6 +81,14 @@ case "$1" in
         EXT="WSDL"
         shift
 	;;
+    --protobuf | --proto)
+        ext="proto"
+        EXT="PROTO"
+        suffixes="$ext"
+        makemodule=$build_root/build/Makefile.protobuf
+        PREBUILT_DATATOOL_EXE=/no/need/for/datatool
+        shift
+        ;;
     *)
         ext="asn"
         EXT="ASN"
@@ -134,7 +143,7 @@ need_main=false
 for i in $imports; do
     found=no
     for d in "$p" "$top_srcdir"; do
-        for x in asn xsd dtd wsdl; do
+        for x in $suffixes; do
             if test -f "$d/src/$i.$x"; then
                 impdeps="${impdeps}${space}${d}/src/$i.$x"
                 impfiles="${impfiles}${space}$i.$x"
