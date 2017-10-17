@@ -38,6 +38,7 @@
 #include "wn_automation.hpp"
 #include "nst_automation.hpp"
 
+#include <corelib/request_ctx.hpp>
 #include <connect/ncbi_pipe.hpp>
 #include <connect/services/grid_app_version_info.hpp>
 
@@ -449,6 +450,11 @@ TCommands CAutomationProc::Commands()
             }},
         { "echo", ExecEcho, "any" },
         { "version", ExecVersion },
+        { "set_context", ExecSetContext, {
+                { "phid", CJsonNode::eString, },
+                { "sid", "", },
+                { "client_ip", "", },
+            }},
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         { "allow_xsite_connections", ExecAllowXSite },
 #endif
@@ -501,6 +507,20 @@ void CAutomationProc::ExecEcho(const TArguments& args, SInputOutput& io, void*)
 {
     auto& reply = io.reply;
     for (auto& arg: args) reply.Append(arg.Value());
+}
+
+void CAutomationProc::ExecSetContext(const TArguments& args, SInputOutput&, void*)
+{
+    _ASSERT(args.size() == 3);
+
+    const auto phid      = args["phid"].AsString();
+    const auto sid       = args["sid"].AsString();
+    const auto client_ip = args["client_ip"].AsString();
+
+    auto& ctx = GetDiagContext().GetRequestContext();
+    if (!phid.empty())      ctx.SetHitID(phid);
+    if (!sid.empty())       ctx.SetSessionID(sid);
+    if (!client_ip.empty()) ctx.SetClientIP(client_ip);
 }
 
 void CAutomationProc::ExecAllowXSite(const TArguments&, SInputOutput&, void*)
