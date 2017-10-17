@@ -39,6 +39,7 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/general/User_object.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

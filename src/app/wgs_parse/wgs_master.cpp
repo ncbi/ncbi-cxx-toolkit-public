@@ -36,7 +36,6 @@
 #include <functional>
 
 #include <objects/submit/Seq_submit.hpp>
-#include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/submit/Submit_block.hpp>
 #include <objects/submit/Contact_info.hpp>
@@ -624,7 +623,6 @@ static void CreateCitSub(CBioseq& bioseq, CCit_sub& cit_sub)
     CPubdesc& pubdescr = descr->SetPub();
     pubdescr.SetPub().Set().push_back(pub);
 
-    descr->SetPub().Assign(pubdescr);
     bioseq.SetDescr().Set().push_back(descr);
 
     if (cit_sub.IsSetImp()) {
