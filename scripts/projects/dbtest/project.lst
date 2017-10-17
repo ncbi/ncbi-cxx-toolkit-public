@@ -15,6 +15,7 @@ serial/datatool$
 cgi$
 cgi/impl$
 connect$
+connect/mbedtls
 connect/ext$
 connect/services$
 connect/services/impl$
