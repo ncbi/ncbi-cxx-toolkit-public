@@ -829,7 +829,7 @@ public:
         return eRR_Continue_Data;
     }
 
-    ERR_TranslationResult Translate(TFieldNo          field_no,
+    ERR_TranslationResult Translate(TFieldNo          /* field_no */,
                                     const CTempString raw_value,
                                     string&           translated_value)
     { if (raw_value == "null")

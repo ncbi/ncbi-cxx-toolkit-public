@@ -74,7 +74,7 @@ public:
     /// Set the validation mode
     /// @param validation_mode
     ///  validation mode
-    void SetValidationMode(ERR_ValidationMode validation_mode)
+    void SetValidationMode(ERR_ValidationMode /* validation_mode */)
     {}
 
     /// Called by CRowReader<>::Validate() for each line
@@ -83,8 +83,8 @@ public:
     /// @return
     ///  Instructions of what to do next e.g. interrupt validation or continue.
     ///  See ERR_Action in row_reader.inl
-    ERR_Action Validate(CTempString raw_line,
-                        ERR_FieldValidationMode field_validation_mode)
+    ERR_Action Validate(CTempString /* raw_line */,
+                        ERR_FieldValidationMode /* field_validation_mode */)
     { return eRR_Skip; }
 
     /// Called before any other processing of the next read line
@@ -96,7 +96,7 @@ public:
     /// @example
     ///  return NStr::IsBlank(raw_line) || NStr::StartsWith(raw_line, "#")
     ///         ? eRR_Skip : eRR_Continue_Data;
-    ERR_Action OnNextLine(CTempString raw_line)
+    ERR_Action OnNextLine(CTempString /* raw_line */)
     { return eRR_Continue_Data; }
 
     /// Tokenize the raw line and put the tokens into the tokens vector
@@ -124,9 +124,9 @@ public:
     ///  The translated value. Used only if "eRR_Translated" is returned.
     /// @return
     ///  Translation action taken
-    ERR_TranslationResult Translate(TFieldNo          field_no,
-                                    const CTempString raw_value,
-                                    string&           translated_value)
+    ERR_TranslationResult Translate(TFieldNo          /* field_no */,
+                                    const CTempString /* raw_value */,
+                                    string&           /* translated_value */)
     { return eRR_UseOriginal; }
 
 

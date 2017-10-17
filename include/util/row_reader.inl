@@ -533,12 +533,14 @@ template <typename TTraits>
 class CRR_MetaInfo : public CObject
 {
 public:
-    CRR_MetaInfo()
+    CRR_MetaInfo() :
+        CObject()
     {
         m_FieldsInfo.reserve(64);
     }
 
-    CRR_MetaInfo(const CRR_MetaInfo& other)
+    CRR_MetaInfo(const CRR_MetaInfo& other) :
+        CObject()
     {
         Clear(true);    // true -> clears both user and traits provided info
         m_FieldNamesIndex = other.m_FieldNamesIndex;

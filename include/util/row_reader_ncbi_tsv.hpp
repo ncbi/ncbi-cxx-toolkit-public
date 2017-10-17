@@ -161,7 +161,7 @@ public:
         return eRR_EventAction_Default;
     }
 
-    ERR_TranslationResult Translate(TFieldNo          field_no,
+    ERR_TranslationResult Translate(TFieldNo          /* field_no */,
                                     const CTempString raw_value,
                                     string&           translated_value)
     {

@@ -118,7 +118,7 @@ public:
         return lines_read;
     }
 
-    ERR_Action OnNextLine(CTempString raw_line)
+    ERR_Action OnNextLine(CTempString /* raw_line */)
     {
         return eRR_Continue_Data;
     }
@@ -186,7 +186,7 @@ public:
         return eRR_Skip;
     }
 
-    ERR_TranslationResult Translate(TFieldNo          field_no,
+    ERR_TranslationResult Translate(TFieldNo          /* field_no */,
                                     const CTempString raw_value,
                                     string&           translated_value)
     {
