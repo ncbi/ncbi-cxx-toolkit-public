@@ -32,6 +32,8 @@
 
 
 #include <ncbi_pch.hpp>
+#include <common/ncbi_source_ver.h>
+#include <common/ncbi_package_ver.h>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbi_process.hpp>
 #include <corelib/ncbifile.hpp>
@@ -1967,7 +1969,7 @@ void CDiagContext::PrintStart(const string& message)
     x_PrintMessage(SDiagMessage::eEvent_Start, message);
     // Print extra message. If ncbi_role and/or ncbi_location are set,
     // they will be logged by this extra. Otherwise nothing will be printed.
-    Extra().PrintNcbiRoleAndLocation().Flush();
+    Extra().PrintNcbiRoleAndLocation().PrintNcbiAppInfoOnStart().PrintNcbiAppInfoOnRequest().Flush();
 
     static const char* kCloudIdFile = "/etc/ncbi/cloudid";
     CFile cloudid(kCloudIdFile);
@@ -2089,6 +2091,61 @@ CDiagContext_Extra& CDiagContext_Extra::PrintNcbiRoleAndLocation(void)
     return *this;
 }
 
+CDiagContext_Extra& CDiagContext_Extra::PrintNcbiAppInfoOnStart(void)
+{
+    Print("ncbi_app_username", GetProcessUserName());
+    CNcbiApplication* ins = CNcbiApplication::Instance();
+    if (ins) {
+        Print("ncbi_app_path", ins->GetProgramExecutablePath());
+        const CVersion& ver = ins->GetFullVersion();
+        if (!ver.GetBuildInfo().date.empty()) {
+            Print("ncbi_app_build_date", ver.GetBuildInfo().date);
+        }
+#if NCBI_PACKAGE
+        Print("ncbi_app_package_name", ver.GetPackageName());
+        string pkv = NStr::NumericToString(ver.GetPackageVersion().GetMajor())
+            + "." +  NStr::NumericToString(ver.GetPackageVersion().GetMinor())
+            + "." +  NStr::NumericToString(ver.GetPackageVersion().GetPatchLevel());
+        Print("ncbi_app_package_version", pkv);
+        Print("ncbi_app_package_date", SBuildInfo().date);
+#endif
+    }
+#if defined(NCBI_TEAMCITY_PROJECT_NAME)
+    Print("ncbi_app_tc_project", NCBI_TEAMCITY_PROJECT_NAME);
+#endif
+#if defined(NCBI_TEAMCITY_BUILDCONF_NAME)
+    Print("ncbi_app_tc_conf", NCBI_TEAMCITY_BUILDCONF_NAME);
+#endif
+#if defined(NCBI_TEAMCITY_BUILD_NUMBER)
+    Print("ncbi_app_tc_build", NStr::NumericToString<Uint8>(NCBI_TEAMCITY_BUILD_NUMBER));
+#endif
+
+    return *this;
+}
+
+CDiagContext_Extra& CDiagContext_Extra::PrintNcbiAppInfoOnRequest(void)
+{
+    CNcbiApplication* ins = CNcbiApplication::Instance();
+    if (ins) {
+        string ver = NStr::NumericToString(ins->GetVersion().GetMajor())
+            + "." +  NStr::NumericToString(ins->GetVersion().GetMinor())
+            + "." +  NStr::NumericToString(ins->GetVersion().GetPatchLevel());
+        Print("ncbi_app_version", ver);
+    }
+#if defined(NCBI_PRODUCTION_VER)
+    Print("ncbi_app_prod_version", NStr::NumericToString<Uint8>(NCBI_PRODUCTION_VER));
+#elif defined(NCBI_DEVELOPMENT_VER)
+    Print("ncbi_app_dev_version", NStr::NumericToString<Uint8>(NCBI_DEVELOPMENT_VER));
+#endif
+#if defined(NCBI_SC_VERSION)
+    Print("ncbi_app_sc_version", NStr::NumericToString<Uint8>(NCBI_SC_VERSION));
+#endif
+#if defined(NCBI_SUBVERSION_REVISION)
+    Print("ncbi_app_vcs_revision", NStr::NumericToString<Uint8>(NCBI_SUBVERSION_REVISION));
+#endif
+    return *this;
+}
+
 
 void CDiagContext_Extra::Flush(void)
 {
@@ -2098,7 +2155,7 @@ void CDiagContext_Extra::Flush(void)
 
     // Add ncbi-role and ncbi-location just before setting m_Flushed flag.
     if (m_EventType == SDiagMessage::eEvent_RequestStart) {
-        PrintNcbiRoleAndLocation();
+        PrintNcbiRoleAndLocation().PrintNcbiAppInfoOnRequest();
     }
     // Prevent double-flush
     m_Flushed = true;

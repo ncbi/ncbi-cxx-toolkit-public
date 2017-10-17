@@ -1947,6 +1947,8 @@ private:
 
     // If available, add ncbi_role/ncbi_location to the arguments.
     CDiagContext_Extra& PrintNcbiRoleAndLocation(void);
+    CDiagContext_Extra& PrintNcbiAppInfoOnStart(void);
+    CDiagContext_Extra& PrintNcbiAppInfoOnRequest(void);
 
     friend class CDiagContext;
     friend NCBI_XNCBI_EXPORT
