@@ -528,7 +528,6 @@ string SNetScheduleAPIImpl::MakeAuthString()
     // like the "queue not found" error.
     if (m_Mode & fNonWnCompatible) {
         auth += "\r\nVERSION";
-        g_AppendClientIPSessionIDHitID(auth);
     }
 
     return auth;
