@@ -991,47 +991,137 @@ void CBioseqIndex::x_InitGaps (void)
     }
 }
 
-// Descriptor collection (delayed until needed)
-void CBioseqIndex::x_InitDescs (void)
+static const char* x_OrganelleName (
+    TBIOSOURCE_GENOME genome,
+    bool has_plasmid,
+    bool virus_or_phage,
+    bool wgs_suffix
+)
 
 {
-    try {
-        if (m_DescsInitialized) {
-           return;
+    const char* result = kEmptyCStr;
+
+    switch (genome) {
+        case NCBI_GENOME(chloroplast):
+            result = "chloroplast";
+            break;
+        case NCBI_GENOME(chromoplast):
+            result = "chromoplast";
+            break;
+        case NCBI_GENOME(kinetoplast):
+            result = "kinetoplast";
+            break;
+        case NCBI_GENOME(mitochondrion):
+        {
+            if (has_plasmid || wgs_suffix) {
+                result = "mitochondrial";
+            } else {
+                result = "mitochondrion";
+            }
+            break;
+        }
+        case NCBI_GENOME(plastid):
+            result = "plastid";
+            break;
+        case NCBI_GENOME(macronuclear):
+        {
+            result = "macronuclear";
+            break;
+        }
+        case NCBI_GENOME(extrachrom):
+        {
+            if (! wgs_suffix) {
+                result = "extrachromosomal";
+            }
+            break;
+        }
+        case NCBI_GENOME(plasmid):
+        {
+            if (! wgs_suffix) {
+                result = "plasmid";
+            }
+            break;
+        }
+        // transposon and insertion-seq are obsolete
+        case NCBI_GENOME(cyanelle):
+            result = "cyanelle";
+            break;
+        case NCBI_GENOME(proviral):
+        {
+            if (! virus_or_phage) {
+                if (has_plasmid || wgs_suffix) {
+                    result = "proviral";
+                } else {
+                    result = "provirus";
+                }
+            }
+            break;
+        }
+        case NCBI_GENOME(virion):
+        {
+            if (! virus_or_phage) {
+                result = "virus";
+            }
+            break;
+        }
+        case NCBI_GENOME(nucleomorph):
+        {
+            if (! wgs_suffix) {
+                result = "nucleomorph";
+            }
+           break;
+        }
+        case NCBI_GENOME(apicoplast):
+            result = "apicoplast";
+            break;
+        case NCBI_GENOME(leucoplast):
+            result = "leucoplast";
+            break;
+        case NCBI_GENOME(proplastid):
+            result = "proplastid";
+            break;
+        case NCBI_GENOME(endogenous_virus):
+            result = "endogenous virus";
+            break;
+        case NCBI_GENOME(hydrogenosome):
+            result = "hydrogenosome";
+            break;
+        case NCBI_GENOME(chromosome):
+            result = "chromosome";
+            break;
+        case NCBI_GENOME(chromatophore):
+            result = "chromatophore";
+            break;
+    }
+
+    return result;
+}
+
+void CBioseqIndex::x_InitSource (void)
+
+{
+    if (m_BioSource.NotEmpty()) {
+        // get organism name
+        if (m_BioSource->IsSetTaxname()) {
+            m_Taxname = m_BioSource->GetTaxname();
+        }
+        if (m_BioSource->IsSetGenome()) {
+            m_Genome = m_BioSource->GetGenome();
+            m_IsPlasmid = (m_Genome == NCBI_GENOME(plasmid));
+            m_IsChromosome = (m_Genome == NCBI_GENOME(chromosome));
         }
 
-        m_DescsInitialized = true;
+        if (m_IsWP) {
+            int num_super_kingdom = 0;
+            bool super_kingdoms_different = false;
 
-        const list <string> *keywords = NULL;
-
-        int num_super_kingdom = 0;
-        bool super_kingdoms_different = false;
-
-        // explore descriptors, pass original target BioseqHandle if using Bioseq sublocation
-        for (CSeqdesc_CI desc_it(m_OrigBsh); desc_it; ++desc_it) {
-            const CSeqdesc& sd = *desc_it;
-            CRef<CDescriptorIndex> sdx(new CDescriptorIndex(sd, *this));
-            m_SdxList.push_back(sdx);
-
-            switch (sd.Which()) {
-                case CSeqdesc::e_Source:
-                {
-                    if (! m_BioSource) {
-                        const CBioSource& biosrc = sd.GetSource();
-                        m_BioSource.Reset (&biosrc);
-                        if (! biosrc.IsSetOrg()) break;
-                        const COrg_ref& org = biosrc.GetOrg();
-                        if (org.CanGetTaxname()) {
-                            m_Taxname = org.GetTaxname();
-                        }
-                        if (m_IsWP) {
-                            if (! biosrc.IsSetOrgname()) break;
-                            const COrgName& onp = biosrc.GetOrgname();
-                            if (! onp.IsSetName()) break;
-                            const COrgName::TName& nam = onp.GetName();
-                            if (! nam.IsPartial()) break;
-                            const CPartialOrgName& pon = nam.GetPartial();
-                            if (! pon.IsSet()) break;
+            if (m_BioSource->IsSetOrgname()) {
+                const COrgName& onp = m_BioSource->GetOrgname();
+                if (onp.IsSetName()) {
+                    const COrgName::TName& nam = onp.GetName();
+                    if (nam.IsPartial()) {
+                        const CPartialOrgName& pon = nam.GetPartial();
+                        if (pon.IsSet()) {
                             const CPartialOrgName::Tdata& tx = pon.Get();
                             ITERATE (CPartialOrgName::Tdata, itr, tx) {
                                 const CTaxElement& te = **itr;
@@ -1054,6 +1144,157 @@ void CBioseqIndex::x_InitDescs (void)
                                 }
                             }
                         }
+                    }
+                }
+            }
+        }
+
+        // process SubSource
+        FOR_EACH_SUBSOURCE_ON_BIOSOURCE (sbs_itr, *m_BioSource) {
+            const CSubSource& sbs = **sbs_itr;
+            if (! sbs.IsSetName()) continue;
+            const string& str = sbs.GetName();
+            SWITCH_ON_SUBSOURCE_CHOICE (sbs) {
+                case NCBI_SUBSOURCE(chromosome):
+                    m_Chromosome = str;
+                    break;
+                case NCBI_SUBSOURCE(clone):
+                    m_Clone = str;
+                    m_has_clone = true;
+                    break;
+                case NCBI_SUBSOURCE(map):
+                    m_Map = str;
+                    break;
+                case NCBI_SUBSOURCE(plasmid_name):
+                    m_Plasmid = str;
+                    break;
+                case NCBI_SUBSOURCE(segment):
+                    m_Segment = str;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (m_BioSource->IsSetOrgname()) {
+            const COrgName& onp = m_BioSource->GetOrgname();
+            if (onp.IsSetName()) {
+                const COrgName::TName& nam = onp.GetName();
+                if (nam.IsBinomial()) {
+                    const CBinomialOrgName& bon = nam.GetBinomial();
+                    if (bon.IsSetGenus()) {
+                        m_Genus = bon.GetGenus();
+                    }
+                    if (bon.IsSetSpecies()) {
+                        m_Species = bon.GetSpecies();
+                    }
+                } else if (nam.IsPartial()) {
+                    const CPartialOrgName& pon = nam.GetPartial();
+                    if (pon.IsSet()) {
+                        const CPartialOrgName::Tdata& tx = pon.Get();
+                        ITERATE (CPartialOrgName::Tdata, itr, tx) {
+                            const CTaxElement& te = **itr;
+                            if (te.IsSetFixed_level()) {
+                                int fl = te.GetFixed_level();
+                                if (fl > 0) {
+                                    m_Multispecies = true;
+                                } else if (te.IsSetLevel()) {
+                                    const string& lvl = te.GetLevel();
+                                    if (! NStr::EqualNocase (lvl, "species")) {
+                                        m_Multispecies = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // process OrgMod
+        FOR_EACH_ORGMOD_ON_BIOSOURCE (omd_itr, *m_BioSource) {
+            const COrgMod& omd = **omd_itr;
+            if (! omd.IsSetSubname()) continue;
+            const string& str = omd.GetSubname();
+            SWITCH_ON_ORGMOD_CHOICE (omd) {
+                case NCBI_ORGMOD(strain):
+                    if (m_Strain.empty()) {
+                        m_Strain = str;
+                    }
+                    break;
+                case NCBI_ORGMOD(cultivar):
+                    if (m_Cultivar.empty()) {
+                        m_Cultivar = str;
+                    }
+                    break;
+                case NCBI_ORGMOD(isolate):
+                    if (m_Isolate.empty()) {
+                        m_Isolate = str;
+                    }
+                    break;
+                case NCBI_ORGMOD(breed):
+                    if (m_Breed.empty()) {
+                        m_Breed = str;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    bool virus_or_phage = false;
+    bool has_plasmid = false;
+    bool wgs_suffix = false;
+
+    if (NStr::FindNoCase(m_Taxname, "virus") != NPOS  ||
+        NStr::FindNoCase(m_Taxname, "phage") != NPOS) {
+        virus_or_phage = true;
+    }
+
+    if (! m_Plasmid.empty()) {
+        has_plasmid = true;
+        /*
+        if (NStr::FindNoCase(m_Plasmid, "plasmid") == NPOS  &&
+            NStr::FindNoCase(m_Plasmid, "element") == NPOS) {
+            pls_pfx = " plasmid ";
+        }
+        */
+    }
+
+    if (m_IsWGS) {
+        wgs_suffix = true;
+    }
+
+    m_Organelle = x_OrganelleName (m_Genome, has_plasmid, virus_or_phage, wgs_suffix);
+}
+
+// Descriptor collection (delayed until needed)
+void CBioseqIndex::x_InitDescs (void)
+
+{
+    try {
+        if (m_DescsInitialized) {
+           return;
+        }
+
+        m_DescsInitialized = true;
+
+        const list <string> *keywords = NULL;
+
+        // explore descriptors, pass original target BioseqHandle if using Bioseq sublocation
+        for (CSeqdesc_CI desc_it(m_OrigBsh); desc_it; ++desc_it) {
+            const CSeqdesc& sd = *desc_it;
+            CRef<CDescriptorIndex> sdx(new CDescriptorIndex(sd, *this));
+            m_SdxList.push_back(sdx);
+
+            switch (sd.Which()) {
+                case CSeqdesc::e_Source:
+                {
+                    if (! m_BioSource) {
+                        const CBioSource& biosrc = sd.GetSource();
+                        m_BioSource.Reset (&biosrc);
+                        x_InitSource();
                     }
                     break;
                 }
@@ -1373,12 +1614,7 @@ void CBioseqIndex::x_InitFeats (void)
                     const CSeqFeatData& sfdata = mf.GetData();
                     const CBioSource& biosrc = sfdata.GetBiosrc();
                     m_BioSource.Reset (&biosrc);
-                    if (biosrc.IsSetOrgname()) {
-                        const COrg_ref& org = biosrc.GetOrg();
-                        if (org.CanGetTaxname()) {
-                            m_Taxname = org.GetTaxname();
-                        }
-                    }
+                    x_InitSource();
                 }
                 continue;
             }

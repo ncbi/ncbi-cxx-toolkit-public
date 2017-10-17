@@ -531,6 +531,9 @@ private:
     // Common feature collection, delayed until actually needed
     void x_InitFeats (void);
 
+    // Set BioSource flags
+    void x_InitSource (void);
+
 private:
     CBioseq_Handle m_Bsh;
     const CBioseq& m_Bsp;
