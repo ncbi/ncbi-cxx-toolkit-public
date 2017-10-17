@@ -262,6 +262,12 @@ void CValidError_feat::x_ValidateSeqFeatExceptXref(const CSeq_feat& feat)
 
         ValidateSeqFeatData(feat.GetData(), feat);
 
+#if 1
+        CSingleFeatValidator* fval = FeatValidatorFactory(feat, *m_Scope, m_Imp);
+        if (fval) {
+            fval->Validate();
+        }
+#else
         ValidateBothStrands(feat);
 
         if (feat.CanGetDbxref()) {
@@ -292,6 +298,7 @@ void CValidError_feat::x_ValidateSeqFeatExceptXref(const CSeq_feat& feat)
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue,
                 "Inference or experiment qualifier missing but obsolete experimental evidence qualifier set", feat);
         }
+#endif
     } catch (const exception& e) {
         PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
             string("Exception while validating feature. EXCEPTION: ") +
@@ -313,7 +320,7 @@ void CValidError_feat::ValidateSeqFeat(
 void CValidError_feat::ValidateSeqFeatWithParent(const CSeq_feat& feat, const CTSE_Handle& tse)
 {
     x_ValidateSeqFeatExceptXref(feat);
-//    ValidateSeqFeatXref(feat, tse);
+    ValidateSeqFeatXref(feat, tse);
 
 }
 
@@ -7518,6 +7525,492 @@ void CValidError_feat::ValidateCharactersInField (string value, string field_nam
                 field_name + " ends with hyphen", feat);
     }
 }
+
+
+CSingleFeatValidator::CSingleFeatValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) 
+    : m_Feat(feat), m_Scope(scope), m_Imp(imp)
+{
+
+}
+
+
+void CSingleFeatValidator::Validate()
+{
+
+    x_ValidateBothStrands();
+
+    if (m_Feat.CanGetDbxref()) {
+        m_Imp.ValidateDbxref(m_Feat.GetDbxref(), m_Feat);
+        x_ValidateGeneId();
+    }
+
+    x_ValidateFeatComment();
+    x_ValidateFeatCit();
+    if (m_Feat.IsSetQual()) {
+        for (auto it = m_Feat.GetQual().begin(); it != m_Feat.GetQual().end(); it++) {
+            x_ValidateGbQual(**it);
+        }
+    }
+    x_ValidateExtUserObject();
+
+    if (m_Feat.IsSetExp_ev() && m_Feat.GetExp_ev() > 0 &&
+        !x_HasNamedQual("inference") &&
+        !x_HasNamedQual("experiment") &&
+        !m_Imp.DoesAnyFeatLocHaveGI()) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue,
+            "Inference or experiment qualifier missing but obsolete experimental evidence qualifier set");
+    }
+
+}
+
+void CSingleFeatValidator::PostErr(EDiagSev sv, EErrType et, const string& msg)
+{
+    m_Imp.PostErr(sv, et, msg, m_Feat);
+}
+
+
+void CSingleFeatValidator::x_ValidateBothStrands()
+{
+    if (!m_Feat.IsSetLocation() || CSeqFeatData::AllowStrandBoth(m_Feat.GetData().GetSubtype())) {
+        return;
+    }
+    bool both, both_rev;
+    x_LocHasStrandBoth(m_Feat.GetLocation(), both, both_rev);
+    if (both || both_rev) {
+        string suffix = "";
+        if (both && both_rev) {
+            suffix = "(forward and reverse)";
+        } else if (both) {
+            suffix = "(forward)";
+        } else if (both_rev) {
+            suffix = "(reverse)";
+        }
+
+        string label = CSeqFeatData::SubtypeValueToName(m_Feat.GetData().GetSubtype());
+
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_BothStrands,
+            label + " may not be on both " + suffix + " strands");
+    }
+}
+
+
+void CSingleFeatValidator::x_LocHasStrandBoth(const CSeq_loc& loc, bool& both, bool& both_rev)
+{
+    both = false;
+    both_rev = false;
+    for (CSeq_loc_CI it(loc); it; ++it) {
+        if (it.IsSetStrand()) {
+            ENa_strand s = it.GetStrand();
+            if (s == eNa_strand_both && !both) {
+                both = true;
+            } else if (s == eNa_strand_both_rev && !both_rev) {
+                both_rev = true;
+            }
+        }
+        if (both && both_rev) {
+            break;
+        }
+    }
+}
+
+
+void CSingleFeatValidator::x_ValidateGeneId()
+{
+    if (!m_Feat.IsSetDbxref()) {
+        return;
+    }
+
+    CRef<feature::CFeatTree> feat_tree(NULL);
+    CMappedFeat mf = m_Scope.GetSeq_featHandle(m_Feat);
+    ITERATE(CSeq_feat::TDbxref, it, m_Feat.GetDbxref()) {
+        if ((*it)->IsSetDb() && NStr::EqualNocase((*it)->GetDb(), "GeneID") &&
+            (*it)->IsSetTag()) {
+            if (!feat_tree) {
+                feat_tree = m_Imp.GetGeneCache().GetFeatTreeFromCache(m_Feat, m_Scope);
+            }
+            if (feat_tree) {
+                CMappedFeat parent = feat_tree->GetParent(mf);
+                while (parent) {
+                    if (!HasGeneIdXref(parent, (*it)->GetTag())) {
+                        PostErr(eDiag_Error, eErr_SEQ_FEAT_GeneIdMismatch,
+                            "GeneID mismatch");
+                    }
+                    parent = feat_tree->GetParent(parent);
+                }
+            }
+        }
+    }
+}
+
+
+void CSingleFeatValidator::x_ValidateFeatCit()
+{
+    if (!m_Feat.IsSetCit()) {
+        return;
+    }
+
+    if (m_Feat.GetCit().IsPub()) {
+        ITERATE(CPub_set::TPub, pi, m_Feat.GetCit().GetPub()) {
+            if ((*pi)->IsEquiv()) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryCitPubEquiv,
+                    "Citation on feature has unexpected internal Pub-equiv");
+                return;
+            }
+        }
+    }
+}
+
+
+void CSingleFeatValidator::x_ValidateGbQual(const CGb_qual& qual)
+{
+    if (!qual.IsSetQual()) {
+        return;
+    }
+    /* first check for anything other than replace */
+    if (!qual.IsSetVal() || NStr::IsBlank(qual.GetVal())) {
+        if (NStr::EqualNocase(qual.GetQual(), "replace")) {
+            /* ok for replace */
+        } else {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                "Qualifier other than replace has just quotation marks");
+            if (NStr::EqualNocase(qual.GetQual(), "EC_number")) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, "EC number should not be empty");
+            }
+        }
+        if (NStr::EqualNocase(qual.GetQual(), "inference")) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue, 
+                "Inference qualifier problem - empty inference string ()");
+        } else if (NStr::EqualNocase(qual.GetQual(), "pseudogene")) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue, "/pseudogene value should be not empty");
+        }
+    } else if (NStr::EqualNocase(qual.GetQual(), "EC_number")) {
+        if (!s_IsValidECNumberFormat(qual.GetVal())) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberFormat,
+                qual.GetVal() + " is not in proper EC_number format");
+        } else {
+            string ec_number = qual.GetVal();
+            CProt_ref::EECNumberStatus status = CProt_ref::GetECNumberStatus(ec_number);
+            x_ReportECNumFileStatus();
+            switch (status) {
+            case CProt_ref::eEC_deleted:
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_DeletedEcNumber,
+                    "EC_number " + ec_number + " was deleted");
+                break;
+            case CProt_ref::eEC_replaced:
+                PostErr(eDiag_Warning,
+                    CProt_ref::IsECNumberSplit(ec_number) ? eErr_SEQ_FEAT_SplitEcNumber : eErr_SEQ_FEAT_ReplacedEcNumber,
+                    "EC_number " + ec_number + " was replaced");
+                break;
+            case CProt_ref::eEC_unknown:
+            {
+                size_t pos = NStr::Find(ec_number, "n");
+                if (pos == string::npos || !isdigit(ec_number.c_str()[pos + 1])) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue,
+                        ec_number + " is not a legal value for qualifier EC_number");
+                } else {
+                    PostErr(eDiag_Info, eErr_SEQ_FEAT_BadEcNumberValue,
+                        ec_number + " is not a legal preliminary value for qualifier EC_number");
+                }
+            }
+            break;
+            default:
+                break;
+            }
+        }
+    } else if (NStr::EqualNocase(qual.GetQual(), "inference")) {
+        /* TODO: Validate inference */
+        string val = "";
+        if (qual.IsSetVal()) {
+            val = qual.GetVal();
+        }
+        CValidError_feat::EInferenceValidCode rsult = CValidError_feat::ValidateInference(val, m_Imp.ValidateInferenceAccessions());
+        if (rsult > CValidError_feat::eInferenceValidCode_valid) {
+            if (NStr::IsBlank(val)) {
+                val = "?";
+            }
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue,
+                "Inference qualifier problem - " + kInferenceMessage[(int)rsult] + " ("
+                + val + ")");
+        }
+    } else if (NStr::EqualNocase(qual.GetQual(), "pseudogene")) {
+        m_Imp.IncrementPseudogeneCount();
+        if (!CGb_qual::IsValidPseudogeneValue(qual.GetVal())) {
+            m_Imp.PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                "/pseudogene value should be not '" + qual.GetVal() + "'", m_Feat);
+        }
+    } else if (NStr::EqualNocase(qual.GetQual(), "number")) {
+        bool has_space = false;
+        bool has_char_after_space = false;
+        ITERATE(string, it, qual.GetVal()) {
+            if (isspace((unsigned char)(*it))) {
+                has_space = true;
+            } else if (has_space) {
+                // non-space after space
+                has_char_after_space = true;
+                break;
+            }
+        }
+        if (has_char_after_space) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                "Number qualifiers should not contain spaces");
+        }
+    }
+    if (qual.IsSetVal() && ContainsSgml(qual.GetVal())) {
+        PostErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
+            "feature qualifier " + qual.GetVal() + " has SGML");
+    }
+
+}
+
+
+void CSingleFeatValidator::x_ReportECNumFileStatus()
+{
+    static bool file_status_reported = false;
+
+    if (!file_status_reported) {
+        if (CProt_ref::GetECNumAmbiguousStatus() == CProt_ref::eECFile_not_found) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberDataMissing,
+                "Unable to find EC number file 'ecnum_ambiguous.txt' in data directory");
+        }
+        if (CProt_ref::GetECNumDeletedStatus() == CProt_ref::eECFile_not_found) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberDataMissing,
+                "Unable to find EC number file 'ecnum_deleted.txt' in data directory");
+        }
+        if (CProt_ref::GetECNumReplacedStatus() == CProt_ref::eECFile_not_found) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberDataMissing,
+                "Unable to find EC number file 'ecnum_replaced.txt' in data directory");
+        }
+        if (CProt_ref::GetECNumSpecificStatus() == CProt_ref::eECFile_not_found) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberDataMissing,
+                "Unable to find EC number file 'ecnum_specific.txt' in data directory");
+        }
+        file_status_reported = true;
+    }
+}
+
+
+void CSingleFeatValidator::x_ValidateGoTerms(CUser_object::TData field_list, vector<pair<string, string> >& id_terms)
+{
+    vector < CGoTermSortStruct > sorted_list;
+
+    ITERATE(CUser_object::TData, it, field_list) {
+        if (!(*it)->IsSetData() || !(*it)->GetData().IsFields()) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadGeneOntologyFormat,
+                "Bad GO term format");
+            continue;
+        }
+        CUser_object::TData sublist = (*it)->GetData().GetFields();
+        string textstr = "";
+        string evidence = "";
+        string goid = "";
+        int pmid = 0;
+        ITERATE(CUser_object::TData, sub_it, sublist) {
+            string label = kEmptyStr;
+            if ((*sub_it)->IsSetLabel() && (*sub_it)->GetLabel().IsStr()) {
+                label = (*sub_it)->GetLabel().GetStr();
+            }
+            if (NStr::IsBlank(label)) {
+                label = "[blank]";
+            }
+            if (NStr::Equal(label, kGoTermText)) {
+                if ((*sub_it)->GetData().IsStr()) {
+                    textstr = (*sub_it)->GetData().GetStr();
+                } else {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadGeneOntologyFormat,
+                        "Bad data format for GO term qualifier term");
+                }
+            } else if (NStr::Equal(label, kGoTermID)) {
+                if ((*sub_it)->GetData().IsInt()) {
+                    goid = NStr::IntToString((*sub_it)->GetData().GetInt());
+                } else if ((*sub_it)->GetData().IsStr()) {
+                    goid = (*sub_it)->GetData().GetStr();
+                } else {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadGeneOntologyFormat,
+                        "Bad data format for GO term qualifier GO ID");
+                }
+            } else if (NStr::Equal(label, kGoTermPubMedID)) {
+                if ((*sub_it)->GetData().IsInt()) {
+                    pmid = (*sub_it)->GetData().GetInt();
+                } else {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadGeneOntologyFormat,
+                        "Bad data format for GO term qualifier PMID");
+                }
+            } else if (NStr::Equal(label, kGoTermEvidence)) {
+                if ((*sub_it)->GetData().IsStr()) {
+                    evidence = (*sub_it)->GetData().GetStr();
+                } else {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadGeneOntologyFormat,
+                        "Bad data format for GO term qualifier evidence");
+                }
+            } else if (NStr::Equal(label, kGoTermRef)) {
+                // recognized term
+
+            } else {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadGeneOntologyFormat,
+                    "Unrecognized label on GO term qualifier field " + label);
+            }
+        }
+        // create sort structure and add to list
+        sorted_list.push_back(CGoTermSortStruct(textstr, goid, pmid, evidence));
+        // add id/term pair
+        pair<string, string> p(goid, textstr);
+        id_terms.push_back(p);
+    }
+    stable_sort(sorted_list.begin(), sorted_list.end(), s_GoTermSortStructCompare);
+
+    vector < CGoTermSortStruct >::iterator it1 = sorted_list.begin();
+    if (it1 != sorted_list.end()) {
+        if (NStr::IsBlank((*it1).m_Goid)) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneOntologyTermMissingGOID,
+                "GO term does not have GO identifier");
+        }
+        vector < CGoTermSortStruct >::iterator it2 = it1;
+        ++it2;
+        while (it2 != sorted_list.end()) {
+            if (NStr::IsBlank((*it2).m_Goid)) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneOntologyTermMissingGOID,
+                    "GO term does not have GO identifier");
+            }
+            if ((*it2).Duplicates(*it1)) {
+                PostErr(eDiag_Info, eErr_SEQ_FEAT_DuplicateGeneOntologyTerm,
+                    "Duplicate GO term on feature");
+            }
+            it1 = it2;
+            ++it2;
+        }
+    }
+}
+
+
+void CSingleFeatValidator::x_ValidateExtUserObject()
+{
+    if (!m_Feat.IsSetExt()) {
+        return;
+    }
+    const CUser_object& user_object = m_Feat.GetExt();
+    if (user_object.IsSetType() && user_object.GetType().IsStr()
+        && NStr::EqualCase(user_object.GetType().GetStr(), "GeneOntology")
+        && user_object.IsSetData()) {
+        vector<pair<string, string> > id_terms;
+        // iterate through fields
+        ITERATE(CUser_object::TData, it, user_object.GetData()) {
+            // validate terms if match accepted type
+            if (!(*it)->GetData().IsFields()) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadGeneOntologyFormat, "Bad data format for GO term");
+            } else if (!(*it)->IsSetLabel() || !(*it)->GetLabel().IsStr() || !(*it)->IsSetData()) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadGeneOntologyFormat, "Unrecognized GO term label [blank]");
+            } else {
+                string qualtype = (*it)->GetLabel().GetStr();
+                if (NStr::EqualNocase(qualtype, "Process")
+                    || NStr::EqualNocase(qualtype, "Component")
+                    || NStr::EqualNocase(qualtype, "Function")
+                    || NStr::IsBlank(qualtype)) {
+                    if ((*it)->IsSetData()
+                        && (*it)->GetData().IsFields()) {
+                        x_ValidateGoTerms((*it)->GetData().GetFields(), id_terms);
+                    }
+                } else {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadGeneOntologyFormat, "Unrecognized GO term label " + qualtype);
+                }
+            }
+        }
+        if (id_terms.size() > 1) {
+            stable_sort(id_terms.begin(), id_terms.end(), s_GoTermPairCompare);
+            vector<pair <string, string> >::iterator id_it1 = id_terms.begin();
+            vector<pair <string, string> >::iterator id_it2 = id_it1;
+            ++id_it2;
+            while (id_it2 != id_terms.end()) {
+                if (NStr::Equal((*id_it1).first, (*id_it2).first) && !NStr::Equal((*id_it1).second, (*id_it2).second)) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_InconsistentGeneOntologyTermAndId, 
+                        "Inconsistent GO terms for GO ID " + (*id_it1).first);
+                }
+                id_it1 = id_it2;
+                id_it2++;
+            }
+        }
+    }
+}
+
+
+bool CSingleFeatValidator::x_HasNamedQual(const string& qual_name)
+{
+    if (!m_Feat.IsSetQual()) {
+        return false;
+    }
+    ITERATE(CSeq_feat::TQual, it, m_Feat.GetQual()) {
+        if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), qual_name)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void CSingleFeatValidator::x_ValidateFeatComment()
+{
+    if (!m_Feat.IsSetComment()) {
+        return;
+    }
+    const string& comment = m_Feat.GetComment();
+    if (m_Imp.IsSerialNumberInComment(comment)) {
+        m_Imp.PostErr(eDiag_Info, eErr_SEQ_FEAT_SerialInComment,
+            "Feature comment may refer to reference by serial number - "
+            "attach reference specific comments to the reference "
+            "REMARK instead.", m_Feat);
+    }
+    if (ContainsSgml(comment)) {
+        m_Imp.PostErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
+            "feature comment " + comment + " has SGML",
+            m_Feat);
+    }
+}
+
+
+void CCdregionValidator::x_ValidateFeatComment()
+{
+    if (!m_Feat.IsSetComment()) {
+        return;
+    }
+    CSingleFeatValidator::x_ValidateFeatComment();
+    const string& comment = m_Feat.GetComment();
+    if (NStr::Find(comment, "ambiguity in stop codon") != NPOS
+        && !edit::DoesCodingRegionHaveTerminalCodeBreak(m_Feat.GetData().GetCdregion())) {
+        CRef<CSeq_loc> stop_codon_loc = edit::GetLastCodonLoc(m_Feat, m_Scope);
+        if (stop_codon_loc) {
+            TSeqPos len = sequence::GetLength(*stop_codon_loc, &m_Scope);
+            CSeqVector vec(*stop_codon_loc, m_Scope, CBioseq_Handle::eCoding_Iupac);
+            string seq_string;
+            vec.GetSeqData(0, len - 1, seq_string);
+            bool found_ambig = false;
+            string::iterator it = seq_string.begin();
+            while (it != seq_string.end() && !found_ambig) {
+                if (*it != 'A' && *it != 'T' && *it != 'C' && *it != 'G' && *it != 'U') {
+                    found_ambig = true;
+                }
+                ++it;
+            }
+            if (!found_ambig) {
+                m_Imp.PostErr(eDiag_Error, eErr_SEQ_FEAT_BadComment,
+                    "Feature comment indicates ambiguity in stop codon "
+                    "but no ambiguities are present in stop codon.", m_Feat);
+            }
+        }
+    }
+}
+
+
+CSingleFeatValidator* FeatValidatorFactory(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp)
+{
+    if (!feat.IsSetData()) {
+        return new CSingleFeatValidator(feat, scope, imp);
+    } else if (feat.GetData().IsCdregion()) {
+        return new CCdregionValidator(feat, scope, imp);
+    } else {
+        return new CSingleFeatValidator(feat, scope, imp);
+    }
+}
+
+
 
 
 END_SCOPE(validator)

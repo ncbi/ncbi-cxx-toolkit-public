@@ -281,6 +281,48 @@ private:
 };
 
 
+class CSingleFeatValidator
+{
+public:
+    CSingleFeatValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp);
+    virtual ~CSingleFeatValidator() {};
+
+    virtual void Validate();
+
+protected:
+    const CSeq_feat& m_Feat;
+    CScope& m_Scope;
+    CValidError_imp& m_Imp;
+
+    void PostErr(EDiagSev sv, EErrType et, const string& msg);
+
+    void x_ValidateBothStrands();
+    static void x_LocHasStrandBoth(const CSeq_loc& feat, bool& both, bool& both_rev);
+    void x_ValidateGeneId();
+    void x_ValidateFeatCit();
+    virtual void x_ValidateFeatComment();
+    void x_ValidateGbQual(const CGb_qual& qual);
+    void x_ReportECNumFileStatus();
+
+    void x_ValidateExtUserObject();
+    void x_ValidateGoTerms(CUser_object::TData field_list, vector<pair<string, string> >& id_terms);
+
+    bool x_HasNamedQual(const string& qual_name);
+
+};
+
+class CCdregionValidator : public CSingleFeatValidator
+{
+public:
+    CCdregionValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
+        CSingleFeatValidator(feat, scope, imp) {};
+
+protected:
+    virtual void x_ValidateFeatComment();
+};
+
+
+CSingleFeatValidator* FeatValidatorFactory(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp);
 
 
 END_SCOPE(validator)
