@@ -142,8 +142,8 @@ public:
 
     double GetRanking (void) const { return m_Ranking;                  }
     TState GetState   (void) const { return m_State;                    }
-    bool   IsPenalized(void) const { return m_State & fState_Penalized != 0; }
-    bool   IsExcluded (void) const { return m_State & fState_Excluded  != 0; }
+    bool   IsPenalized(void) const { return (m_State & fState_Penalized) != 0; }
+    bool   IsExcluded (void) const { return (m_State & fState_Excluded) != 0; }
     bool   IsNormal   (void) const { return m_State == fState_Normal;   }
 
 private:
