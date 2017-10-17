@@ -211,18 +211,22 @@ class Collector(object):
             pass
         return props
                                 
-    def get_vcs_info(self, srcdir, rest = ()):
+    def get_vcs_info(self, srcdir, rest = (), fallback = None):
         if os.path.isdir(os.path.join(srcdir, '.svn')):
             return self.get_svn_info(srcdir, rest)
         elif os.path.isdir(os.path.join(srcdir, '.git')):
             return self.get_git_info(srcdir, rest)
         elif len(rest) == 0 and os.path.isdir(os.path.join(srcdir, 'CVS')):
             return self.get_cvs_info(srcdir)
-        elif srcdir != '/':
+        elif os.path.isfile(os.path.join(srcdir,
+                                         'include/common/ncbi_package_ver.h')):
+            fallback = self.get_package_info(srcdir, rest)
+
+        if srcdir != '/':
             (d, b) = os.path.split(srcdir)
-            return self.get_vcs_info(d, (b,) + rest)
+            return self.get_vcs_info(d, (b,) + rest, fallback)
         else:
-            return None
+            return fallback
 
     def get_svn_info(self, srcdir, rest):
         info = { 'vcs_type': 'svn' }
@@ -329,6 +333,32 @@ class Collector(object):
                 info['vcs_branch'] = match_info.group(1)
         return info
 
+    def get_package_info(self, srcdir, rest):
+        filename = os.path.join(srcdir, 'include/common/ncbi_package_ver.h')
+        package_name = None
+        version      = [None, None, None]
+        with open(filename) as f:
+            for l in f:
+                if l.startswith('#define NCBI_PACKAGE_'):
+                    words = l.split()
+                    if words[1] == 'NCBI_PACKAGE_NAME':
+                        package_name = words[2].strip('"')
+                    elif words[1] == 'NCBI_PACKAGE_VERSION_MAJOR':
+                        version[0] = words[2]
+                    elif words[1] == 'NCBI_PACKAGE_VERSION_MINOR':
+                        version[1] = words[2]
+                    elif words[1] == 'NCBI_PACKAGE_VERSION_PATCH':
+                        version[2] = words[2]
+            if package_name is not None and version[0] is not None \
+               and version[1] is not None and version[2] is not None:
+                base    = 'https://svn.ncbi.nlm.nih.gov/repos/toolkit/release'
+                version = '.'.join(version)
+                url     = '/'.join([base, package_name, version, 'c++'] + rest)
+                return { 'vcs_type':   'svn',
+                         'vcs_path':   url,
+                         'vcs_branch': package_name + '-' + version }
+        return None
+    
     def get_contact(self, mf):
         next_dir = os.getcwd()
         while mf is not None:
