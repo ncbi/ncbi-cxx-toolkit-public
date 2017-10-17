@@ -7400,6 +7400,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "WTS\ts\tWest Texas A&M University, Department of Life, Earth and Environmental Sciences\t\t",
 "WTSU\ts\tWest Texas A&M University, Natural History Collection\t\t",
 "WTU\ts\tUniversity of Washington\t\t",
+"WTU:Fungal Collection\ts\tUniversity of Washington, F",
 "WTUH\ts\tUniversity of Washington Botanic Gardens, College of Forest Resources\t\t",
 "WU\ts\tUniversitaet Wien\t\t",
 "WU<USA-TX>\ts\tWayland University\t\t",

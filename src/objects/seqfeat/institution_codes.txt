@@ -7367,6 +7367,7 @@ WTR	s	Winchester College, Biology Department
 WTS	s	West Texas A&M University, Department of Life, Earth and Environmental Sciences		
 WTSU	s	West Texas A&M University, Natural History Collection		
 WTU	s	University of Washington		
+WTU:Fungal Collection	s	University of Washington, F
 WTUH	s	University of Washington Botanic Gardens, College of Forest Resources		
 WU	s	Universitaet Wien		
 WU<USA-TX>	s	Wayland University		
