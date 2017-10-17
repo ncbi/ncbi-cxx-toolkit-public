@@ -388,30 +388,6 @@ public:
     // Get master index
     CWeakRef<CSeqMasterIndex> GetSeqMasterIndex (void) const { return m_Idx; }
 
-    const string& GetAccession (void) const { return m_Accession; }
-
-    // Seq-inst fields
-    bool IsNA (void) const {  return m_IsNA; }
-    bool IsAA (void) const { return m_IsAA; }
-    CSeq_inst::TTopology GetTopology (void) const { return m_Topology; }
-    CSeq_inst::TLength GetLength (void) const { return m_Length; }
-
-    bool IsDelta (void) const { return m_IsDelta; }
-    bool IsVirtual (void) const { return m_IsVirtual; }
-    bool IsMap (void) const { return m_IsMap; }
-
-    // Most important descriptor fields
-
-    const string& GetTitle (void);
-
-    CConstRef<CMolInfo> GetMolInfo (void);
-    CMolInfo::TBiomol GetBiomol (void);
-    CMolInfo::TTech GetTech (void);
-    CMolInfo::TCompleteness GetCompleteness (void);
-
-    CConstRef<CBioSource> GetBioSource (void);
-    const string& GetTaxname (void);
-
     // Get sequence letters from Bioseq
     string GetSequence (void);
     void GetSequence (string& buffer);
@@ -446,6 +422,104 @@ public:
     bool IsFetchFailure (void) const { return m_FetchFailure; }
 
     void SetFetchFailure (bool fails) { m_FetchFailure = fails; }
+
+public:
+    // Seq-inst fields
+    bool IsNA (void) const {  return m_IsNA; }
+    bool IsAA (void) const { return m_IsAA; }
+    CSeq_inst::TTopology GetTopology (void) const { return m_Topology; }
+    CSeq_inst::TLength GetLength (void) const { return m_Length; }
+
+    bool IsDelta (void) const { return m_IsDelta; }
+    bool IsVirtual (void) const { return m_IsVirtual; }
+    bool IsMap (void) const { return m_IsMap; }
+
+    // Seq-id fields
+    const string& GetAccession (void) const { return m_Accession; }
+
+    bool IsNC (void) const { return m_IsNC; }
+    bool IsNM (void) const { return m_IsNM; }
+    bool IsNR (void) const { return m_IsNR; }
+    bool IsPatent (void) const { return m_IsPatent; }
+    bool IsPDB (void) const { return m_IsPDB; }
+    bool IsWP (void) const { return m_IsWP; }
+    bool IsThirdParty (void) const { return m_ThirdParty; }
+    bool IsWGSMaster (void) const { return m_WGSMaster; }
+    bool IsTSAMaster (void) const { return m_TSAMaster; }
+    bool IsTLSMaster (void) const { return m_TLSMaster; }
+
+    string GetGeneralStr (void) const { return m_GeneralStr; }
+    int GetGeneralId (void) const { return m_GeneralId; }
+
+    string GetPatentCountry (void) const { return m_PatentCountry; }
+    string GetPatentNumber (void) const { return m_PatentNumber; }
+    int GetPatentSequence (void) const { return m_PatentSequence; }
+
+    int GetPDBChain (void) const { return m_PDBChain; }
+
+    // Most important descriptor fields
+
+    const string& GetTitle (void);
+
+    CConstRef<CMolInfo> GetMolInfo (void);
+    CMolInfo::TBiomol GetBiomol (void);
+    CMolInfo::TTech GetTech (void);
+    CMolInfo::TCompleteness GetCompleteness (void);
+
+    CConstRef<CBioSource> GetBioSource (void);
+    const string& GetTaxname (void);
+
+    bool IsHTGTech (void);
+    bool IsHTGSUnfinished (void);
+    bool IsTLS (void);
+    bool IsTSA (void);
+    bool IsWGS (void);
+    bool IsEST_STS_GSS (void);
+
+    bool IsUseBiosrc (void);
+
+    CTempString GetGenus (void);
+    CTempString GetSpecies (void);
+    bool IsMultispecies (void);
+    CBioSource::TGenome GetGenome (void);
+    bool IsPlasmid (void);
+    bool IsChromosome (void);
+
+    CTempString GetOrganelle (void);
+
+    string GetFirstSuperKingdom (void);
+    string GetSecondSuperKingdom (void);
+    bool IsCrossKingdom (void);
+
+    CTempString GetChromosome (void);
+    CTempString GetClone (void);
+    bool IsHasClone (void);
+    CTempString GetMap (void);
+    CTempString GetPlasmid (void);
+    CTempString GetSegment (void);
+
+    CTempString GetBreed (void);
+    CTempString GetCultivar (void);
+    CTempString GetIsolate (void);
+    CTempString GetStrain (void);
+
+    bool IsHTGSCancelled (void);
+    bool IsHTGSDraft (void);
+    bool IsHTGSPooled (void);
+    bool IsTPAExp (void);
+    bool IsTPAInf (void);
+    bool IsTPAReasm (void);
+    bool IsUnordered (void);
+
+    CTempString GetPDBCompound (void);
+
+    bool IsForceOnlyNearFeats (void);
+    bool IsUnverified (void);
+    CTempString GetTargetedLocus (void);
+
+    bool IsPseudogene (void);
+
+    string GetrEnzyme (void);
 
 private:
     // Common gap collection, delayed until actually needed
@@ -496,9 +570,6 @@ private:
     bool m_FetchFailure;
 
 private:
-    // Seq-id field
-    string m_Accession;
-
     // Seq-inst fields
     bool m_IsNA;
     bool m_IsAA;
@@ -509,6 +580,29 @@ private:
     bool m_IsVirtual;
     bool m_IsMap;
 
+    // Seq-id fields
+    string m_Accession;
+
+    bool m_IsNC;
+    bool m_IsNM;
+    bool m_IsNR;
+    bool m_IsPatent;
+    bool m_IsPDB;
+    bool m_IsWP;
+    bool m_ThirdParty;
+    bool m_WGSMaster;
+    bool m_TSAMaster;
+    bool m_TLSMaster;
+
+    string m_GeneralStr;
+    int m_GeneralId;
+
+    string m_PatentCountry;
+    string m_PatentNumber;
+    int m_PatentSequence;
+
+    int m_PDBChain;
+
     // Instantiated title
     string m_Title;
 
@@ -518,12 +612,68 @@ private:
     CMolInfo::TTech m_Tech;
     CMolInfo::TCompleteness m_Completeness;
 
+    bool m_HTGTech;
+    bool m_HTGSUnfinished;
+    bool m_IsTLS;
+    bool m_IsTSA;
+    bool m_IsWGS;
+    bool m_IsEST_STS_GSS;
+
+    bool m_UseBiosrc;
+
     // BioSource fields
     CConstRef<CBioSource> m_BioSource;
     string m_Taxname;
 
+    CTempString m_Genus;
+    CTempString m_Species;
+    bool m_Multispecies;
+    CBioSource::TGenome m_Genome;
+    bool m_IsPlasmid;
+    bool m_IsChromosome;
+
+    CTempString m_Organelle;
+
+    string m_FirstSuperKingdom;
+    string m_SecondSuperKingdom;
+    bool m_IsCrossKingdom;
+
+    // Subsource fields
+    CTempString m_Chromosome;
+    CTempString m_Clone;
+    bool m_has_clone;
+    CTempString m_Map;
+    CTempString m_Plasmid;
+    CTempString m_Segment;
+
+    // Orgmod fields
+    CTempString m_Breed;
+    CTempString m_Cultivar;
+    CTempString m_Isolate;
+    CTempString m_Strain;
+
+    // Keyword fields (genbank or embl blocks)
+    bool m_HTGSCancelled;
+    bool m_HTGSDraft;
+    bool m_HTGSPooled;
+    bool m_TPAExp;
+    bool m_TPAInf;
+    bool m_TPAReasm;
+    bool m_Unordered;
+
+    // PDB block fields
+    CTempString m_PDBCompound;
+
     // User object fields
     bool m_ForceOnlyNearFeats;
+    bool m_IsUnverified;
+    CTempString m_TargetedLocus;
+
+    // Comment fields
+    bool m_IsPseudogene;
+
+    // Map fields
+    string m_rEnzyme;
 
     // true if this index is for a temporary subrange delta Bioseq
     bool m_Surrogate;

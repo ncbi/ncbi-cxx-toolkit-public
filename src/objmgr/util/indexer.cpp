@@ -685,40 +685,106 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_DescsInitialized = false;
     m_FeatsInitialized = false;
 
-    m_HasSourceFeats = false;
+    m_ForceOnlyNearFeats = false;
 
-    m_Accession.clear();
-
-    for (CSeq_id_Handle sid : obsh.GetId()) {
-        switch (sid.Which()) {
-            case CSeq_id::e_Other:
-            case CSeq_id::e_Genbank:
-            case CSeq_id::e_Embl:
-            case CSeq_id::e_Ddbj:
-            case CSeq_id::e_Tpg:
-            case CSeq_id::e_Tpe:
-            case CSeq_id::e_Tpd:
-                {
-                    CConstRef<CSeq_id> id = sid.GetSeqId();
-                    const CTextseq_id& tsid = *id->GetTextseq_Id ();
-                    if (tsid.IsSetAccession()) {
-                        m_Accession = tsid.GetAccession ();
-                    }
-                }
-                break;
-            default:
-                break;
-        }
-    }
-
-    m_IsNA = m_Bsh.IsNa();
-    m_IsAA = m_Bsh.IsAa();
-    m_Topology = CSeq_inst::eTopology_not_set;
-    m_Length = 0;
+    // reset member variables to cleared state
+    m_IsNA = false;
+    m_IsAA = false;
+    m_Topology = NCBI_SEQTOPOLOGY(not_set);
 
     m_IsDelta = false;
     m_IsVirtual = false;
     m_IsMap = false;
+
+    m_Title.clear();
+
+    m_MolInfo.Reset();
+    m_Biomol = CMolInfo::eBiomol_unknown;
+    m_Tech = CMolInfo::eTech_unknown;
+    m_Completeness = CMolInfo::eCompleteness_unknown;
+
+    m_HasSourceFeats = false;
+
+    m_Accession.clear();
+
+    m_IsNC = false;
+    m_IsNM = false;
+    m_IsNR = false;
+    m_IsPatent = false;
+    m_IsPDB = false;
+    m_IsWP = false;
+    m_ThirdParty = false;
+    m_WGSMaster = false;
+    m_TSAMaster = false;
+    m_TLSMaster = false;
+
+    m_Title.clear();
+    m_GeneralStr.clear();
+    m_GeneralId = 0;
+    m_PatentCountry.clear();
+    m_PatentNumber.clear();
+
+    m_PatentSequence = 0;
+
+    m_PDBChain = 0;
+
+    m_HTGTech = false;
+    m_HTGSUnfinished = false;
+    m_IsTLS = false;
+    m_IsTSA = false;
+    m_IsWGS = false;
+    m_IsEST_STS_GSS = false;
+
+    m_UseBiosrc = false;
+
+    m_HTGSCancelled = false;
+    m_HTGSDraft = false;
+    m_HTGSPooled = false;
+    m_TPAExp = false;
+    m_TPAInf = false;
+    m_TPAReasm = false;
+    m_Unordered = false;
+
+    m_PDBCompound.clear();
+
+    m_BioSource.Reset();
+    m_Taxname.clear();
+    m_Genus.clear();
+    m_Species.clear();
+    m_Multispecies = false;
+    m_Genome = NCBI_GENOME(unknown);
+    m_IsPlasmid = false;
+    m_IsChromosome = false;
+
+    m_Organelle.clear();
+
+    m_FirstSuperKingdom.clear();
+    m_SecondSuperKingdom.clear();
+    m_IsCrossKingdom = false;
+
+    m_Chromosome.clear();
+    m_Clone.clear();
+    m_has_clone = false;
+    m_Map.clear();
+    m_Plasmid.clear();
+    m_Segment.clear();
+
+    m_Breed.clear();
+    m_Cultivar.clear();
+    m_Isolate.clear();
+    m_Strain.clear();
+
+    m_IsUnverified = false;
+    m_IsPseudogene = false;
+    m_TargetedLocus.clear();
+
+    m_rEnzyme.clear();
+
+    // now start setting member variables from Bioseq
+    m_IsNA = m_Bsh.IsNa();
+    m_IsAA = m_Bsh.IsAa();
+    m_Topology = CSeq_inst::eTopology_not_set;
+    m_Length = 0;
 
     if (m_Bsh.IsSetInst()) {
         if (m_Bsh.IsSetInst_Topology()) {
@@ -739,16 +805,115 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
         }
     }
 
-    m_Title.clear();
-    m_MolInfo.Reset();
-    m_BioSource.Reset();
-    m_Taxname.clear();
+    // process Seq-ids
+    for (CSeq_id_Handle sid : obsh.GetId()) {
+        switch (sid.Which()) {
+            case NCBI_SEQID(Tpg):
+            case NCBI_SEQID(Tpe):
+            case NCBI_SEQID(Tpd):
+                m_ThirdParty = true;
+                // fall through
+            case NCBI_SEQID(Other):
+            case NCBI_SEQID(Genbank):
+            case NCBI_SEQID(Embl):
+            case NCBI_SEQID(Ddbj):
+            {
+                CConstRef<CSeq_id> id = sid.GetSeqId();
+                const CTextseq_id& tsid = *id->GetTextseq_Id ();
+                if (tsid.IsSetAccession()) {
+                    m_Accession = tsid.GetAccession ();
+                    TACCN_CHOICE type = CSeq_id::IdentifyAccession (m_Accession);
+                    TACCN_CHOICE div = (TACCN_CHOICE) (type & NCBI_ACCN(division_mask));
+                    if ( div == NCBI_ACCN(wgs) )
+                    {
+                        if( (type & CSeq_id::fAcc_master) != 0 ) {
+                            m_WGSMaster = true;
+                        }
+                    } else if ( div == NCBI_ACCN(tsa) )
+                    {
+                        if( (type & CSeq_id::fAcc_master) != 0 && m_IsVirtual ) {
+                            m_TSAMaster = true;
+                        }
+                    } else if (type == NCBI_ACCN(refseq_chromosome)) {
+                        m_IsNC = true;
+                    } else if (type == NCBI_ACCN(refseq_mrna)) {
+                        m_IsNM = true;
+                    } else if (type == NCBI_ACCN(refseq_mrna_predicted)) {
+                        m_IsNM = true;
+                    } else if (type == NCBI_ACCN(refseq_ncrna)) {
+                        m_IsNR = true;
+                    } else if (type == NCBI_ACCN(refseq_unique_prot)) {
+                        m_IsWP = true;
+                    }
+                }
+                break;
+            }
+            case NCBI_SEQID(General):
+            {
+                CConstRef<CSeq_id> id = sid.GetSeqId();
+                const CDbtag& gen_id = id->GetGeneral ();
+                if (! gen_id.IsSkippable ()) {
+                    if (gen_id.IsSetTag ()) {
+                        const CObject_id& oid = gen_id.GetTag();
+                        if (oid.IsStr()) {
+                            m_GeneralStr = oid.GetStr();
+                        } else if (oid.IsId()) {
+                            m_GeneralId = oid.GetId();
+                        }
+                    }
+                }
+                break;
+            }
+            case NCBI_SEQID(Pdb):
+            {
+                m_IsPDB = true;
+                CConstRef<CSeq_id> id = sid.GetSeqId();
+                const CPDB_seq_id& pdb_id = id->GetPdb ();
+                if (pdb_id.IsSetChain()) {
+                    m_PDBChain = pdb_id.GetChain();
+                }
+                break;
+            }
+            case NCBI_SEQID(Patent):
+            {
+                m_IsPatent = true;
+                CConstRef<CSeq_id> id = sid.GetSeqId();
+                const CPatent_seq_id& pat_id = id->GetPatent();
+                if (pat_id.IsSetSeqid()) {
+                    m_PatentSequence = pat_id.GetSeqid();
+                }
+                if (pat_id.IsSetCit()) {
+                    const CId_pat& cit = pat_id.GetCit();
+                    m_PatentCountry = cit.GetCountry();
+                    m_PatentNumber = cit.GetSomeNumber();
+                }
+                break;
+            }
+            case NCBI_SEQID(Gpipe):
+                break;
+            default:
+                break;
+        }
+    }
 
-    m_Biomol = CMolInfo::eBiomol_unknown;
-    m_Tech = CMolInfo::eTech_unknown;
-    m_Completeness = CMolInfo::eCompleteness_unknown;
-
-    m_ForceOnlyNearFeats = false;
+    // process restriction map
+    if (m_IsMap) {
+        if (bsh.IsSetInst_Ext() && bsh.GetInst_Ext().IsMap()) {
+            const CMap_ext& mp = bsh.GetInst_Ext().GetMap();
+            if (mp.IsSet()) {
+                const CMap_ext::Tdata& ft = mp.Get();
+                ITERATE (CMap_ext::Tdata, itr, ft) {
+                    const CSeq_feat& feat = **itr;
+                    const CSeqFeatData& data = feat.GetData();
+                    if (! data.IsRsite()) continue;
+                    const CRsite_ref& rsite = data.GetRsite();
+                    if (rsite.IsStr()) {
+                        m_rEnzyme = rsite.GetStr();
+                    }
+                }
+            }
+        }
+    }
 }
 
 // Destructor
@@ -837,6 +1002,11 @@ void CBioseqIndex::x_InitDescs (void)
 
         m_DescsInitialized = true;
 
+        const list <string> *keywords = NULL;
+
+        int num_super_kingdom = 0;
+        bool super_kingdoms_different = false;
+
         // explore descriptors, pass original target BioseqHandle if using Bioseq sublocation
         for (CSeqdesc_CI desc_it(m_OrigBsh); desc_it; ++desc_it) {
             const CSeqdesc& sd = *desc_it;
@@ -849,10 +1019,39 @@ void CBioseqIndex::x_InitDescs (void)
                     if (! m_BioSource) {
                         const CBioSource& biosrc = sd.GetSource();
                         m_BioSource.Reset (&biosrc);
-                        if (biosrc.IsSetOrgname()) {
-                            const COrg_ref& org = biosrc.GetOrg();
-                            if (org.CanGetTaxname()) {
-                                m_Taxname = org.GetTaxname();
+                        if (! biosrc.IsSetOrg()) break;
+                        const COrg_ref& org = biosrc.GetOrg();
+                        if (org.CanGetTaxname()) {
+                            m_Taxname = org.GetTaxname();
+                        }
+                        if (m_IsWP) {
+                            if (! biosrc.IsSetOrgname()) break;
+                            const COrgName& onp = biosrc.GetOrgname();
+                            if (! onp.IsSetName()) break;
+                            const COrgName::TName& nam = onp.GetName();
+                            if (! nam.IsPartial()) break;
+                            const CPartialOrgName& pon = nam.GetPartial();
+                            if (! pon.IsSet()) break;
+                            const CPartialOrgName::Tdata& tx = pon.Get();
+                            ITERATE (CPartialOrgName::Tdata, itr, tx) {
+                                const CTaxElement& te = **itr;
+                                if (! te.IsSetFixed_level()) continue;
+                                if (te.GetFixed_level() != 0) continue;
+                                if (! te.IsSetLevel()) continue;
+                                const string& lvl = te.GetLevel();
+                                if (! NStr::EqualNocase (lvl, "superkingdom")) continue;
+                                num_super_kingdom++;
+                                if (m_FirstSuperKingdom.empty() && te.IsSetName()) {
+                                    m_FirstSuperKingdom = te.GetName();
+                                } else if (te.IsSetName() && ! NStr::EqualNocase (m_FirstSuperKingdom, te.GetName())) {
+                                    if (m_SecondSuperKingdom.empty()) {
+                                        super_kingdoms_different = true;
+                                        m_SecondSuperKingdom = te.GetName();
+                                    }
+                                }
+                                if (num_super_kingdom > 1 && super_kingdoms_different) {
+                                    m_IsCrossKingdom = true;
+                                }
                             }
                         }
                     }
@@ -866,6 +1065,44 @@ void CBioseqIndex::x_InitDescs (void)
                         m_Biomol = molinf.GetBiomol();
                         m_Tech = molinf.GetTech();
                         m_Completeness = molinf.GetCompleteness();
+
+                        switch (m_Tech) {
+                            case NCBI_TECH(htgs_0):
+                            case NCBI_TECH(htgs_1):
+                            case NCBI_TECH(htgs_2):
+                                m_HTGSUnfinished = true;
+                                // manufacture all titles for unfinished HTG sequences
+                                // m_Reconstruct = true;
+                                m_Title.clear();
+                                // fall through
+                            case NCBI_TECH(htgs_3):
+                                m_HTGTech = true;
+                                m_UseBiosrc = true;
+                                break;
+                            case NCBI_TECH(est):
+                            case NCBI_TECH(sts):
+                            case NCBI_TECH(survey):
+                                m_IsEST_STS_GSS = true;
+                                m_UseBiosrc = true;
+                                break;
+                            case NCBI_TECH(wgs):
+                                m_IsWGS = true;
+                                m_UseBiosrc = true;
+                                break;
+                            case NCBI_TECH(tsa):
+                                m_IsTSA = true;
+                                m_UseBiosrc = true;
+                                break;
+                            case NCBI_TECH(targeted):
+                                m_IsTLS = true;
+                                m_UseBiosrc = true;
+                                if (m_IsVirtual) {
+                                    m_TLSMaster = true;
+                                }
+                                break;
+                            default:
+                                break;
+                        }
                     }
                     break;
                 }
@@ -897,6 +1134,56 @@ void CBioseqIndex::x_InitDescs (void)
                                         }
                                     }
                                 }
+                            } else if (NStr::EqualNocase(type, "Unverified")) {
+                                m_IsUnverified = true;
+                            } else if (NStr::EqualNocase(type, "AutodefOptions")) {
+                                FOR_EACH_USERFIELD_ON_USEROBJECT (uitr, usr) {
+                                    const CUser_field& fld = **uitr;
+                                    if (! FIELD_IS_SET_AND_IS(fld, Label, Str)) continue;
+                                    const string &label_str = GET_FIELD(fld.GetLabel(), Str);
+                                    if (! NStr::EqualNocase(label_str, "Targeted Locus Name")) continue;
+                                    if (fld.IsSetData() && fld.GetData().IsStr()) {
+                                        m_TargetedLocus = fld.GetData().GetStr();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    break;
+                }
+                case CSeqdesc::e_Comment:
+                {
+                    const string& comment = sd.GetComment();
+                    if (NStr::Find (comment, "[CAUTION] Could be the product of a pseudogene") != string::npos) {
+                        m_IsPseudogene = true;
+                    }
+                    break;
+                }
+                case CSeqdesc::e_Genbank:
+                {
+                    const CGB_block& gbk = desc_it->GetGenbank();
+                    if (gbk.IsSetKeywords()) {
+                        keywords = &gbk.GetKeywords();
+                    }
+                    break;
+                }
+                case CSeqdesc::e_Embl:
+                {
+                    const CEMBL_block& ebk = desc_it->GetEmbl();
+                    if (ebk.IsSetKeywords()) {
+                        keywords = &ebk.GetKeywords();
+                    }
+                    break;
+                }
+                case CSeqdesc::e_Pdb:
+                {
+                    if (m_PDBCompound.empty()) {
+                        _ASSERT(m_IsPDB);
+                        const CPDB_block& pbk = desc_it->GetPdb();
+                        FOR_EACH_COMPOUND_ON_PDBBLOCK (cp_itr, pbk) {
+                            if (m_PDBCompound.empty()) {
+                                m_PDBCompound = *cp_itr;
+                                break;
                             }
                         }
                     }
@@ -904,6 +1191,36 @@ void CBioseqIndex::x_InitDescs (void)
                 }
                 default:
                     break;
+            }
+        }
+
+        if (keywords != NULL) {
+            FOR_EACH_STRING_IN_LIST (kw_itr, *keywords) {
+                const string& clause = *kw_itr;
+                list<string> kywds;
+                NStr::Split( clause, ";", kywds, NStr::fSplit_Tokenize );
+                FOR_EACH_STRING_IN_LIST ( k_itr, kywds ) {
+                    const string& str = *k_itr;
+                    if (NStr::EqualNocase (str, "UNORDERED")) {
+                        m_Unordered = true;
+                    }
+                    if ((! m_HTGTech) && (! m_ThirdParty)) continue;
+                    if (NStr::EqualNocase (str, "HTGS_DRAFT")) {
+                        m_HTGSDraft = true;
+                    } else if (NStr::EqualNocase (str, "HTGS_CANCELLED")) {
+                        m_HTGSCancelled = true;
+                    } else if (NStr::EqualNocase (str, "HTGS_POOLED_MULTICLONE")) {
+                        m_HTGSPooled = true;
+                    } else if (NStr::EqualNocase (str, "TPA:experimental")) {
+                        m_TPAExp = true;
+                    } else if (NStr::EqualNocase (str, "TPA:inferential")) {
+                        m_TPAInf = true;
+                    } else if (NStr::EqualNocase (str, "TPA:reassembly")) {
+                        m_TPAReasm = true;
+                    } else if (NStr::EqualNocase (str, "TPA:assembly")) {
+                        m_TPAReasm = true;
+                    }
+                }
             }
         }
     }
@@ -1248,6 +1565,76 @@ CMolInfo::TCompleteness CBioseqIndex::GetCompleteness (void)
     return m_Completeness;
 }
 
+bool CBioseqIndex::IsHTGTech (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_HTGTech;
+}
+
+bool CBioseqIndex::IsHTGSUnfinished (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_HTGSUnfinished;
+}
+
+bool CBioseqIndex::IsTLS (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_IsTLS;
+}
+
+bool CBioseqIndex::IsTSA (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_IsTSA;
+}
+
+bool CBioseqIndex::IsWGS (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_IsWGS;
+}
+
+bool CBioseqIndex::IsEST_STS_GSS (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_IsEST_STS_GSS;
+}
+
+bool CBioseqIndex::IsUseBiosrc (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_UseBiosrc;
+}
+
 CConstRef<CBioSource> CBioseqIndex::GetBioSource (void)
 
 {
@@ -1274,6 +1661,336 @@ const string& CBioseqIndex::GetTaxname (void)
     }
 
     return m_Taxname;
+}
+
+CTempString CBioseqIndex::GetGenus (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_Genus;
+}
+
+CTempString CBioseqIndex::GetSpecies (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_Species;
+}
+
+bool CBioseqIndex::IsMultispecies (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_Multispecies;
+}
+
+CBioSource::TGenome CBioseqIndex::GetGenome (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_Genome;
+}
+
+bool CBioseqIndex::IsPlasmid (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_IsPlasmid;
+}
+
+bool CBioseqIndex::IsChromosome (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_IsChromosome;
+}
+
+CTempString CBioseqIndex::GetOrganelle (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_Organelle;
+}
+
+string CBioseqIndex::GetFirstSuperKingdom (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_FirstSuperKingdom;
+}
+
+string CBioseqIndex::GetSecondSuperKingdom (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_SecondSuperKingdom;
+}
+
+bool CBioseqIndex::IsCrossKingdom (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_IsCrossKingdom;
+}
+
+CTempString CBioseqIndex::GetChromosome (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_Chromosome;
+}
+
+CTempString CBioseqIndex::GetClone (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_Clone;
+}
+
+bool CBioseqIndex::IsHasClone (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_has_clone;
+}
+
+CTempString CBioseqIndex::GetMap (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_Map;
+}
+
+CTempString CBioseqIndex::GetPlasmid (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_Plasmid;
+}
+
+CTempString CBioseqIndex::GetSegment (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_Segment;
+}
+
+CTempString CBioseqIndex::GetBreed (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_Breed;
+}
+
+CTempString CBioseqIndex::GetCultivar (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_Cultivar;
+}
+
+CTempString CBioseqIndex::GetIsolate (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_Isolate;
+}
+
+CTempString CBioseqIndex::GetStrain (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_Strain;
+}
+
+bool CBioseqIndex::IsHTGSCancelled (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_HTGSCancelled;
+}
+
+bool CBioseqIndex::IsHTGSDraft (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_HTGSDraft;
+}
+
+bool CBioseqIndex::IsHTGSPooled (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_HTGSPooled;
+}
+
+bool CBioseqIndex::IsTPAExp (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_TPAExp;
+}
+
+bool CBioseqIndex::IsTPAInf (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_TPAInf;
+}
+
+bool CBioseqIndex::IsTPAReasm (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_TPAReasm;
+}
+
+bool CBioseqIndex::IsUnordered (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_Unordered;
+}
+
+CTempString CBioseqIndex::GetPDBCompound (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_PDBCompound;
+}
+
+bool CBioseqIndex::IsForceOnlyNearFeats (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_ForceOnlyNearFeats;
+}
+
+bool CBioseqIndex::IsUnverified (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_IsUnverified;
+}
+
+CTempString CBioseqIndex::GetTargetedLocus (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_TargetedLocus;
+}
+
+bool CBioseqIndex::IsPseudogene (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_IsPseudogene;
+}
+
+string CBioseqIndex::GetrEnzyme (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_rEnzyme;
 }
 
 CRef<CFeatureIndex> CBioseqIndex::GetFeatIndex (const CMappedFeat& mf)
@@ -1474,11 +2191,11 @@ CRef<CFeatureIndex> CFeatureIndex::GetOverlappingSource (void)
         auto bsxl = bsx.Lock();
         if (bsxl) {
             for (auto& sfx : bsxl->GetSourceFeatIndices()) {
-            	TSeqPos stt = sfx->GetStart();
-            	TSeqPos stp = sfx->GetEnd();
-            	if (lft >= stt && rgt <= stp) {
-            		  return sfx;
-            	}
+                TSeqPos stt = sfx->GetStart();
+                TSeqPos stp = sfx->GetEnd();
+                if (lft >= stt && rgt <= stp) {
+                      return sfx;
+                }
             }
         }
     } catch (CException& e) {
