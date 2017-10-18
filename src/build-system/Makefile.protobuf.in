@@ -54,11 +54,11 @@ $(MODULE).grpc.pb.cc $(MODULE).grpc.pb.h: $(DEPS) $(GRPC_CPP_PLUGIN)
 	    --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN) $(SPEC)
 
 %.pb.cpp: %.pb.cc
-	sed -e $(SED_SCRIPT) $< > $@
+	$(SED) -e $(SED_SCRIPT) $< > $@
 
 $(INCLUDEDIR)/%.pb.hpp: %.pb.h
 	$(MKDIR) -p $(INCLUDEDIR)
-	sed -e $(SED_SCRIPT) $< > $@
+	$(SED) -e $(SED_SCRIPT) $< > $@
 
 $(MODULE).module:
 	@$(TOUCH) $@
