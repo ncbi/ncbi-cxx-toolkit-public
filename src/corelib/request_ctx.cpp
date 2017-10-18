@@ -697,7 +697,7 @@ void CRequestContext::x_UpdateStdContextProp(CTempString name) const
 
 
 NCBI_PARAM_DECL(string, Context, Fields);
-NCBI_PARAM_DEF_EX(string, Context, Fields, kEmptyStr,
+NCBI_PARAM_DEF_EX(string, Context, Fields, "",
                   eParam_NoThread,
                   NCBI_CONTEXT_FIELDS);
 typedef NCBI_PARAM_TYPE(Context, Fields) TNcbiContextFields;

@@ -568,7 +568,7 @@ typedef NCBI_PARAM_TYPE(CGI, CORS_Enable) TCORS_Enable;
 
 // Access-Control-Allow-Headers
 NCBI_PARAM_DECL(string, CGI, CORS_Allow_Headers);
-NCBI_PARAM_DEF_EX(string, CGI, CORS_Allow_Headers, kEmptyStr,
+NCBI_PARAM_DEF_EX(string, CGI, CORS_Allow_Headers, "",
                   eParam_NoThread, CGI_CORS_ALLOW_HEADERS);
 typedef NCBI_PARAM_TYPE(CGI, CORS_Allow_Headers) TCORS_AllowHeaders;
 
@@ -597,13 +597,13 @@ typedef NCBI_PARAM_TYPE(CGI, CORS_Allow_Credentials) TCORS_AllowCredentials;
 
 // Access-Control-Expose-Headers
 NCBI_PARAM_DECL(string, CGI, CORS_Expose_Headers);
-NCBI_PARAM_DEF_EX(string, CGI, CORS_Expose_Headers, kEmptyStr,
+NCBI_PARAM_DEF_EX(string, CGI, CORS_Expose_Headers, "",
                   eParam_NoThread, CGI_CORS_EXPOSE_HEADERS);
 typedef NCBI_PARAM_TYPE(CGI, CORS_Expose_Headers) TCORS_ExposeHeaders;
 
 // Access-Control-Max-Age
 NCBI_PARAM_DECL(string, CGI, CORS_Max_Age);
-NCBI_PARAM_DEF_EX(string, CGI, CORS_Max_Age, kEmptyStr,
+NCBI_PARAM_DEF_EX(string, CGI, CORS_Max_Age, "",
                   eParam_NoThread, CGI_CORS_MAX_AGE);
 typedef NCBI_PARAM_TYPE(CGI, CORS_Max_Age) TCORS_MaxAge;
 

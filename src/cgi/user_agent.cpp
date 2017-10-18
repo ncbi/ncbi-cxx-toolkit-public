@@ -160,24 +160,24 @@ bool CCgiUserAgent::IsBrowser(void) const
 // or names that should be excluded from the check.
 
 NCBI_PARAM_DECL(string, CGI, Bots); 
-NCBI_PARAM_DEF (string, CGI, Bots, kEmptyStr);
+NCBI_PARAM_DEF (string, CGI, Bots, "");
 NCBI_PARAM_DECL(string, CGI, NotBots); 
-NCBI_PARAM_DEF (string, CGI, NotBots, kEmptyStr);
+NCBI_PARAM_DEF (string, CGI, NotBots, "");
 
 NCBI_PARAM_DECL(string, CGI, PhoneDevices); 
-NCBI_PARAM_DEF (string, CGI, PhoneDevices, kEmptyStr);
+NCBI_PARAM_DEF (string, CGI, PhoneDevices, "");
 NCBI_PARAM_DECL(string, CGI, NotPhoneDevices); 
-NCBI_PARAM_DEF (string, CGI, NotPhoneDevices, kEmptyStr);
+NCBI_PARAM_DEF (string, CGI, NotPhoneDevices, "");
 
 NCBI_PARAM_DECL(string, CGI, TabletDevices); 
-NCBI_PARAM_DEF (string, CGI, TabletDevices, kEmptyStr);
+NCBI_PARAM_DEF (string, CGI, TabletDevices, "");
 NCBI_PARAM_DECL(string, CGI, NotTabletDevices); 
-NCBI_PARAM_DEF (string, CGI, NotTabletDevices, kEmptyStr);
+NCBI_PARAM_DEF (string, CGI, NotTabletDevices, "");
 
 NCBI_PARAM_DECL(string, CGI, MobileDevices); 
-NCBI_PARAM_DEF (string, CGI, MobileDevices, kEmptyStr);
+NCBI_PARAM_DEF (string, CGI, MobileDevices, "");
 NCBI_PARAM_DECL(string, CGI, NotMobileDevices); 
-NCBI_PARAM_DEF (string, CGI, NotMobileDevices, kEmptyStr);
+NCBI_PARAM_DEF (string, CGI, NotMobileDevices, "");
 
 
 // Helper method to check devices/bots against external patterns.

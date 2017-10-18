@@ -398,7 +398,7 @@ typedef NCBI_PARAM_TYPE(Log, NoCreate) TLogNoCreate;
 // Logging of environment variables: space separated list of names which
 // should be logged after each request start.
 NCBI_PARAM_DECL(string, Log, LogEnvironment);
-NCBI_PARAM_DEF_EX(string, Log, LogEnvironment, kEmptyStr,
+NCBI_PARAM_DEF_EX(string, Log, LogEnvironment, "",
                   eParam_NoThread,
                   DIAG_LOG_ENVIRONMENT);
 typedef NCBI_PARAM_TYPE(Log, LogEnvironment) TLogEnvironment;
@@ -406,7 +406,7 @@ typedef NCBI_PARAM_TYPE(Log, LogEnvironment) TLogEnvironment;
 
 // Logging of registry values: space separated list of 'section:name' strings.
 NCBI_PARAM_DECL(string, Log, LogRegistry);
-NCBI_PARAM_DEF_EX(string, Log, LogRegistry, kEmptyStr,
+NCBI_PARAM_DEF_EX(string, Log, LogRegistry, "",
                   eParam_NoThread,
                   DIAG_LOG_REGISTRY);
 typedef NCBI_PARAM_TYPE(Log, LogRegistry) TLogRegistry;
@@ -2497,13 +2497,13 @@ void CDiagContext::SetAppState(EDiagAppState state, EPropertyMode mode)
 
 // Session id passed through HTTP
 NCBI_PARAM_DECL(string, Log, Http_Session_Id);
-NCBI_PARAM_DEF_EX(string, Log, Http_Session_Id, kEmptyStr, eParam_NoThread,
+NCBI_PARAM_DEF_EX(string, Log, Http_Session_Id, "", eParam_NoThread,
                   HTTP_NCBI_SID);
 typedef NCBI_PARAM_TYPE(Log, Http_Session_Id) TParamHttpSessionId;
 
 // Session id set in the environment
 NCBI_PARAM_DECL(string, Log, Session_Id);
-NCBI_PARAM_DEF_EX(string, Log, Session_Id, kEmptyStr, eParam_NoThread,
+NCBI_PARAM_DEF_EX(string, Log, Session_Id, "", eParam_NoThread,
                   NCBI_LOG_SESSION_ID);
 typedef NCBI_PARAM_TYPE(Log, Session_Id) TParamDefaultSessionId;
 
@@ -2568,7 +2568,7 @@ string CDiagContext::GetEncodedSessionID(void) const
 
 
 NCBI_PARAM_DECL(string, Log, Client_Ip);
-NCBI_PARAM_DEF_EX(string, Log, Client_Ip, kEmptyStr, eParam_NoThread,
+NCBI_PARAM_DEF_EX(string, Log, Client_Ip, "", eParam_NoThread,
                   NCBI_LOG_CLIENT_IP);
 typedef NCBI_PARAM_TYPE(Log, Client_Ip) TParamDefaultClientIp;
 
@@ -2587,13 +2587,13 @@ void CDiagContext::SetDefaultClientIP(const string& client_ip)
 
 // Hit id passed through HTTP
 NCBI_PARAM_DECL(string, Log, Http_Hit_Id);
-NCBI_PARAM_DEF_EX(string, Log, Http_Hit_Id, kEmptyStr, eParam_NoThread,
+NCBI_PARAM_DEF_EX(string, Log, Http_Hit_Id, "", eParam_NoThread,
                   HTTP_NCBI_PHID);
 typedef NCBI_PARAM_TYPE(Log, Http_Hit_Id) TParamHttpHitId;
 
 // Hit id set in the environment or registry
 NCBI_PARAM_DECL(string, Log, Hit_Id);
-NCBI_PARAM_DEF_EX(string, Log, Hit_Id, kEmptyStr, eParam_NoThread,
+NCBI_PARAM_DEF_EX(string, Log, Hit_Id, "", eParam_NoThread,
                   NCBI_LOG_HIT_ID);
 typedef NCBI_PARAM_TYPE(Log, Hit_Id) TParamHitId;
 

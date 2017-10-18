@@ -1593,7 +1593,7 @@ CCgiSession& CCgiRequest::GetSession(ESessionCreateMode mode) const
 // Arguments listed here as 'arg1&arg2...' are completely removed from
 // log message. If '*' is listed, all arguments are excluded.
 NCBI_PARAM_DECL(string, CGI, LOG_EXCLUDE_ARGS);
-NCBI_PARAM_DEF_EX(string, CGI, LOG_EXCLUDE_ARGS, kEmptyStr, eParam_NoThread,
+NCBI_PARAM_DEF_EX(string, CGI, LOG_EXCLUDE_ARGS, "", eParam_NoThread,
                   CGI_LOG_EXCLUDE_ARGS);
 typedef NCBI_PARAM_TYPE(CGI, LOG_EXCLUDE_ARGS) TCGI_LogExcludeArgs;
 

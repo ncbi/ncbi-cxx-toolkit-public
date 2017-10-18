@@ -45,6 +45,8 @@ template<class TValue>
 class CSafeStatic_Proxy
 {
 public:
+    typedef TValue TStaticInit;
+
     CSafeStatic_Proxy(void)
     {}
 
@@ -73,6 +75,8 @@ template<>
 class CSafeStatic_Proxy<string>
 {
 public:
+    typedef const char* TStaticInit;
+
     CSafeStatic_Proxy(void)
         : m_Value(CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Longest, 1))
     {}
@@ -129,6 +133,7 @@ struct SParamDescription
 {
     typedef TValue TValueType;
     typedef CSafeStatic_Proxy<TValue> TStaticValue;
+    typedef typename CSafeStatic_Proxy<TValue>::TStaticInit TStaticInit;
     // Initialization function. The string returned is converted to
     // the TValue type the same way as when loading from other sources.
     typedef string (*FInitFunc)(void);
@@ -136,7 +141,7 @@ struct SParamDescription
     const char*           section;
     const char*           name;
     const char*           env_var_name;
-    TStaticValue          default_value;
+    TStaticInit           default_value;
     FInitFunc             init_func;
     TNcbiParamFlags       flags;
 };
@@ -157,12 +162,13 @@ struct SParamEnumDescription
 {
     typedef TValue TValueType;
     typedef CSafeStatic_Proxy<TValue> TStaticValue;
+    typedef typename CSafeStatic_Proxy<TValue>::TStaticInit TStaticInit;
     typedef string (*FInitFunc)(void);
 
     const char*           section;
     const char*           name;
     const char*           env_var_name;
-    TStaticValue          default_value;
+    TStaticInit           default_value;
     FInitFunc             init_func;
     TNcbiParamFlags       flags;
 
@@ -382,19 +388,15 @@ template<class TDescription>
 typename CParam<TDescription>::TValueType&
 CParam<TDescription>::sx_GetDefault(bool force_reset)
 {
-    TValueType& def = TDescription::sm_Default;
     bool& def_init = TDescription::sm_DefaultInitialized;
-    if ( !TDescription::sm_ParamDescription.section ) {
-        // Static data not initialized yet, nothing to do.
-        return def;
-    }
+    _ASSERT(TDescription::sm_ParamDescription.section);
     if ( !def_init ) {
-        def = TDescription::sm_ParamDescription.default_value;
+        TDescription::sm_Default = TDescription::sm_ParamDescription.default_value;
         def_init = true;
     }
 
     if ( force_reset ) {
-        def = TDescription::sm_ParamDescription.default_value;
+        TDescription::sm_Default = TDescription::sm_ParamDescription.default_value;
         sx_GetState() = eState_NotSet;
     }
 
@@ -408,7 +410,7 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
         if ( TDescription::sm_ParamDescription.init_func ) {
             // Run the initialization function
             sx_GetState() = eState_InFunc;
-            def = TParamParser::StringToValue(
+            TDescription::sm_Default = TParamParser::StringToValue(
                 TDescription::sm_ParamDescription.init_func(),
                 TDescription::sm_ParamDescription);
         }
@@ -427,7 +429,7 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
                                     TDescription::sm_ParamDescription.env_var_name,
                                     "");
             if ( !config_value.empty() ) {
-                def = TParamParser::StringToValue(config_value,
+                TDescription::sm_Default = TParamParser::StringToValue(config_value,
                     TDescription::sm_ParamDescription);
             }
             CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
@@ -437,7 +439,7 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
         }
     }
 
-    return def;
+    return TDescription::sm_Default;
 }
 
 

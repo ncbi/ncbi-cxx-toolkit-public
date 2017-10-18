@@ -70,7 +70,7 @@ static string s_GroupsCount(void)
     return NStr::UIntToString( (unsigned int)sqrt((double)s_NumThreads));
 }
 NCBI_PARAM_DECL(string, TEST_MT, GroupsCount);
-NCBI_PARAM_DEF_WITH_INIT(string, TEST_MT, GroupsCount, kEmptyStr, s_GroupsCount);
+NCBI_PARAM_DEF_WITH_INIT(string, TEST_MT, GroupsCount, "", s_GroupsCount);
 
 // group.has_sync_point = (rand() % 100) < threshold;
 NCBI_PARAM_DECL(unsigned int, TEST_MT, IntragroupSyncPoint);

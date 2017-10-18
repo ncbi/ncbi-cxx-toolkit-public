@@ -81,9 +81,9 @@ private:
 };
 
 
-NCBI_PARAM_DEF_EX(string, output, size_distr, kEmptyStr,
+NCBI_PARAM_DEF_EX(string, output, size_distr, "",
     eParam_NoThread, NS_OUTPUT_SIZE_DISTR);
-NCBI_PARAM_DEF_EX(string, output, time_distr, kEmptyStr,
+NCBI_PARAM_DEF_EX(string, output, time_distr, "",
     eParam_NoThread, NS_OUTPUT_TIME_DISTR);
 NCBI_PARAM_DEF_EX(double, output, failure_rate, 0.0,
     eParam_NoThread, NS_OUTPUT_FAILURE_RATE);

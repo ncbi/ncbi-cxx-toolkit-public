@@ -435,7 +435,7 @@ const char* kNcbiEncryptVersion = "2";
 
 // Key files to cache in memory.
 NCBI_PARAM_DECL(string, NCBI_KEY, FILES);
-NCBI_PARAM_DEF_EX(string, NCBI_KEY, FILES, kEmptyStr, eParam_NoThread,
+NCBI_PARAM_DEF_EX(string, NCBI_KEY, FILES, "", eParam_NoThread,
     NCBI_KEY_FILES);
 typedef NCBI_PARAM_TYPE(NCBI_KEY, FILES) TKeyFiles;
 

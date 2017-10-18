@@ -134,7 +134,7 @@ static CSafeStatic< CFileDeleteList > s_DeleteAtExitFileList;
 //     NCBI_CONFIG__NCBI__TmpDir
 //
 NCBI_PARAM_DECL(string, NCBI, TmpDir); 
-NCBI_PARAM_DEF (string, NCBI, TmpDir, kEmptyStr);
+NCBI_PARAM_DEF (string, NCBI, TmpDir, "");
 
 
 // Define how read-only files are treated on Windows.

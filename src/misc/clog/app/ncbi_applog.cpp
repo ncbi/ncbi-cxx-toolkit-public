@@ -153,7 +153,7 @@ NCBI_PARAM_DEF_EX(string, NCBI, NcbiApplogCGI, kDefaultCGI, eParam_NoThread, NCB
 
 /// Declare the parameter for logging output destination
 NCBI_PARAM_DECL(string,   NCBI, NcbiApplogDestination); 
-NCBI_PARAM_DEF_EX(string, NCBI, NcbiApplogDestination, kEmptyStr, eParam_NoThread, NCBI_CONFIG__NCBIAPPLOG_DESTINATION);
+NCBI_PARAM_DEF_EX(string, NCBI, NcbiApplogDestination, "", eParam_NoThread, NCBI_CONFIG__NCBIAPPLOG_DESTINATION);
 
 
 /// Structure to store logging information
