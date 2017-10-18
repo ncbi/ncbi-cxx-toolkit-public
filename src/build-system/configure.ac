@@ -1904,6 +1904,7 @@ if test "${with_sse42-$with_optimization}" = yes; then
           [ncbi_cv_prog_c_sse42=yes],
           [ncbi_cv_prog_c_sse42=no])])
    if test $ncbi_cv_prog_c_sse42 = yes; then
+      CC="$orig_CC -msse4.2"
       orig_CC=$CC
    elif test "$with_sse42" = yes; then
       AC_MSG_ERROR([SSE 4.2 support explicitly requested but unavailable.])
@@ -1926,6 +1927,7 @@ if test "${with_sse42-$with_optimization}" = yes; then
           [ncbi_cv_prog_cxx_sse42=yes],
           [ncbi_cv_prog_cxx_sse42=no])])
    if test $ncbi_cv_prog_cxx_sse42 = yes; then
+      CXX="$orig_CXX -msse4.2"
       orig_CXX=$CXX
    elif test "$with_sse42" = yes; then
       AC_MSG_ERROR([SSE 4.2 support explicitly requested but unavailable.])
