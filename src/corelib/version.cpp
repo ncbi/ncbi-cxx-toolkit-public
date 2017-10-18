@@ -123,7 +123,7 @@ void CVersionInfo::FromStr(const string& version)
     s_ConvertVersionInfo(this, version.c_str());
 /*
     vector<string> lst;
-    NStr::Tokenize(version, ".", lst, NStr::eNoMergeDelims);
+    NStr::Split(version, ".", lst);
 
     if (lst.size() == 0) {
         NCBI_THROW2(CStringException, eFormat,

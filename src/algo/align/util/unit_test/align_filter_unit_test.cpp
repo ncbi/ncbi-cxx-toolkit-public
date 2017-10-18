@@ -121,8 +121,7 @@ BOOST_AUTO_TEST_CASE(Test_Align_Filter)
         string results_string;
         NcbiGetlineEOL(filters, results_string);
         vector<string> tokens;
-        NStr::Split(NStr::TruncateSpaces(results_string), " \t", tokens,
-                       NStr::eNoMergeDelims);
+        NStr::Split(NStr::TruncateSpaces(results_string), " \t", tokens);
         set<unsigned int> expected_results;
         ITERATE (vector<string>, it, tokens) {
             expected_results.insert(NStr::StringToUInt(*it));

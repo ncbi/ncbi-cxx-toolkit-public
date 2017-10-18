@@ -844,12 +844,12 @@ CVcfReader::xParseData(
 
         data.m_strChrom = columns[0];
         data.m_iPos = NStr::StringToInt( columns[1] );
-        NStr::Split( columns[2], ";", data.m_Ids, NStr::eNoMergeDelims );
+        NStr::Split( columns[2], ";", data.m_Ids );
         if ( (data.m_Ids.size() == 1)  &&  (data.m_Ids[0] == ".") ) {
             data.m_Ids.clear();
         }
         data.m_strRef = columns[3];
-        NStr::Split( columns[4], ",", data.m_Alt, NStr::eNoMergeDelims );
+        NStr::Split( columns[4], ",", data.m_Alt );
         if ( columns[5] != "." ) {
             data.m_pdQual = new double( NStr::StringToDouble( columns[5] ) );
         }

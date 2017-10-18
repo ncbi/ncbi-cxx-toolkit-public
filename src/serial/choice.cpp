@@ -522,7 +522,7 @@ void CChoiceTypeInfo::SetGlobalHook(const CTempString& variants,
     }
     else {
         vector<CTempString> tokens;
-        NStr::Split(variants, ",", tokens, NStr::fSplit_NoMergeDelims);
+        NStr::Split(variants, ",", tokens);
         ITERATE ( vector<CTempString>, it, tokens ) {
             const_cast<CVariantInfo*>(GetVariantInfo(*it))->
                 SetGlobalReadHook(hook);

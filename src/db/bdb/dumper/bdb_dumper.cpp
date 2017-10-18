@@ -449,7 +449,7 @@ void CBDB_FileDumperApp::Dump(const CArgs&                args,
 
         if (field_count > 1) {
             list<string> keys;
-            NStr::Split(key_str, string("|"), keys, NStr::fSplit_NoMergeDelims);
+            NStr::Split(key_str, string("|"), keys);
 
             unsigned cnt = 0;
             ITERATE(list<string>, it, keys) {

@@ -178,7 +178,7 @@ void CGridCommandLineInterfaceApp::SOptions::SNCID::Parse(
     if (parts == 1) {
         vector<string> key_parts;
 
-        NStr::Split(key, ",", key_parts, NStr::fSplit_NoMergeDelims);
+        NStr::Split(key, ",", key_parts);
         if (key_parts.size() != 3) {
             NCBI_THROW_FMT(CArgException, eInvalidArg,
                 "Invalid ICache key specification \"" << key << "\" ("

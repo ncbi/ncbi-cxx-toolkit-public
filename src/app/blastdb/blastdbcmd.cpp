@@ -159,7 +159,7 @@ CBlastDBCmdApp::x_ProcessEntry(CBlastDB_Formatter & fmt)
 
     	vector<string> queries;
        	if (entry.find(kDelim[0]) != string::npos) {
-           	NStr::Split(entry, kDelim, queries, NStr::fSplit_NoMergeDelims);
+           	NStr::Split(entry, kDelim, queries);
        	} else {
        		queries.resize(1);
        		queries[0]  = entry;

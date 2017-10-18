@@ -811,16 +811,14 @@ void CMakeBlastDBApp::x_ProcessMaskData()
     vector<string> gi_mask_names;
 
     if (! files.HasValue()) return;
-    NStr::Split(NStr::TruncateSpaces(files.AsString()), ",", file_list,
-                   NStr::eNoMergeDelims);
+    NStr::Split(NStr::TruncateSpaces(files.AsString()), ",", file_list);
     if (! file_list.size()) {
         NCBI_THROW(CInvalidDataException, eInvalidInput,
                 "mask_data option found, but no files were specified.");
     }
 
     if (ids.HasValue()) {
-        NStr::Split(NStr::TruncateSpaces(ids.AsString()), ",", id_list,
-                   NStr::eNoMergeDelims);
+        NStr::Split(NStr::TruncateSpaces(ids.AsString()), ",", id_list);
         if (file_list.size() != id_list.size()) {
             NCBI_THROW(CInvalidDataException, eInvalidInput,
                 "the size of mask_id does not match that of mask_data.");
@@ -836,8 +834,7 @@ void CMakeBlastDBApp::x_ProcessMaskData()
     }
 
     if (descs.HasValue()) {
-        NStr::Split(NStr::TruncateSpaces(descs.AsString()), ",", desc_list,
-                   NStr::eNoMergeDelims);
+        NStr::Split(NStr::TruncateSpaces(descs.AsString()), ",", desc_list);
         if (file_list.size() != desc_list.size()) {
             NCBI_THROW(CInvalidDataException, eInvalidInput,
                 "the size of mask_desc does not match that of mask_data.");
@@ -849,8 +846,7 @@ void CMakeBlastDBApp::x_ProcessMaskData()
     }
 
     if (gi_names.HasValue()) {
-        NStr::Split(NStr::TruncateSpaces(gi_names.AsString()), ",", gi_mask_names,
-                   NStr::eNoMergeDelims);
+        NStr::Split(NStr::TruncateSpaces(gi_names.AsString()), ",", gi_mask_names);
         if (file_list.size() != gi_mask_names.size()) {
             NCBI_THROW(CInvalidDataException, eInvalidInput,
                 "the size of gi_mask_name does not match that of mask_data.");
@@ -1035,7 +1031,7 @@ void CMakeBlastDBApp::x_BuildDatabase()
     }
 
     vector<string> input_files;
-    NStr::Split(dbname, kInputSeparators, input_files, NStr::fSplit_NoMergeDelims);
+    NStr::Split(dbname, kInputSeparators, input_files);
     if (dbname == "-" || input_files.size() > 1) {
         NCBI_THROW(CInvalidDataException, eInvalidInput,
             "Please provide a database name using -" + kOutput);

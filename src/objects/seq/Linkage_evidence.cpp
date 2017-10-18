@@ -61,7 +61,7 @@ bool CLinkage_evidence::GetLinkageEvidence (
     // basically just a wrapper for the other function which does
     // the convenience of splitting the string
     vector<string> linkage_evidence_vec;
-    NStr::Split(linkage_evidence, ";", linkage_evidence_vec, NStr::fSplit_NoMergeDelims);
+    NStr::Split(linkage_evidence, ";", linkage_evidence_vec);
     return GetLinkageEvidence( output_result, linkage_evidence_vec );
 }
 

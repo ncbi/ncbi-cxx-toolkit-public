@@ -151,7 +151,7 @@ InitializeQueryDataLoaderConfiguration(bool query_is_protein,
         (query_is_protein == db_adapter->IsProtein())) { /* the same database type is used for both queries and subjects */
         // Make sure we don't add the same database more than once
         vector<string> default_dbs;
-        NStr::Split(retval.m_BlastDbName, " ", default_dbs, NStr::fSplit_NoMergeDelims);
+        NStr::Split(retval.m_BlastDbName, " ", default_dbs);
         if (default_dbs.size() &&
             (find(default_dbs.begin(), default_dbs.end(),
                  db_adapter->GetDatabaseName()) == default_dbs.end())) {
@@ -791,7 +791,7 @@ CheckForFreqRatioFile(const string& rps_dbname, CRef<CBlastOptionsHandle>  & opt
     bool use_cbs = (opt_handle->GetOptions().GetCompositionBasedStats() == eNoCompositionBasedStats) ? false : true;
     if(use_cbs) {
         vector<string> db;
-        NStr::Split(rps_dbname, " ", db, NStr::fSplit_NoMergeDelims);
+        NStr::Split(rps_dbname, " ", db);
         list<string> failed_db;
         for (unsigned int i=0; i < db.size(); i++) {
     	    string path;

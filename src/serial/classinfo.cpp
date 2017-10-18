@@ -555,7 +555,7 @@ void CClassTypeInfo::SetGlobalHook(const CTempString& members,
     }
     else {
         vector<CTempString> tokens;
-        NStr::Split(members, ",", tokens, NStr::fSplit_NoMergeDelims);
+        NStr::Split(members, ",", tokens);
         ITERATE ( vector<CTempString>, it, tokens ) {
             const_cast<CMemberInfo*>(GetMemberInfo(*it))->
                 SetGlobalReadHook(hook);

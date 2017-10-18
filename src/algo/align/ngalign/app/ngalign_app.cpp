@@ -276,7 +276,7 @@ int CNgAlignApp::Run()
 	if(args["blastdb"].HasValue()) {
 		string Orig = args["blastdb"].AsString();
         vector<string> DBs;
-        NStr::Split(Orig, ",", DBs, NStr::fSplit_NoMergeDelims);
+        NStr::Split(Orig, ",", DBs);
         ITERATE(vector<string>, DBIter, DBs) {
             cerr << *DBIter << endl;
             CBlastDbDataLoader::RegisterInObjectManager
@@ -289,7 +289,7 @@ int CNgAlignApp::Run()
      
     if(args["asn_cache"].HasValue()) {
 	    vector<string> Tokens;
-        NStr::Split(args["asn_cache"].AsString(), ",", Tokens, NStr::fSplit_NoMergeDelims);
+        NStr::Split(args["asn_cache"].AsString(), ",", Tokens);
         int Priority = 1;
         ITERATE(vector<string>, CacheIter, Tokens) {
             CFile CacheFile( *CacheIter + "/asn_cache.idx"  );
@@ -621,7 +621,7 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
 	else if(Type == "blastdb") {
 		string Orig = Args["blastdb"].AsString();
         vector<string> DBs;
-        NStr::Split(Orig, ",", DBs, NStr::fSplit_NoMergeDelims);
+        NStr::Split(Orig, ",", DBs);
         ITERATE(vector<string>, DBIter, DBs) {
             CRef<CBlastDbSet> BlastDb(new CBlastDbSet(*DBIter));
 		    if(Args["softfilter"].HasValue()) {
@@ -887,7 +887,7 @@ void CNgAlignApp::x_AddScorers(CNgAligner& NgAligner, IRegistry* RunRegistry)
         ScorerNames = RunRegistry->Get("scorers", "names");
 	
     vector<string> Names;
-	NStr::Split(ScorerNames, " \t;", Names, NStr::fSplit_NoMergeDelims);
+	NStr::Split(ScorerNames, " \t;", Names);
 	
 	ITERATE(vector<string>, NameIter, Names) {
 
@@ -930,7 +930,7 @@ void CNgAlignApp::x_AddFilters(CNgAligner& NgAligner, IRegistry* RunRegistry)
     if(args["filters"].HasValue()) {        
         string OrigFilters = args["filters"].AsString();
         vector<string> SplitFilters;
-        NStr::Split(OrigFilters, ";", SplitFilters, NStr::fSplit_NoMergeDelims);
+        NStr::Split(OrigFilters, ";", SplitFilters);
         ITERATE(vector<string>, FilterIter, SplitFilters) {
             const string FilterStr = *FilterIter;
             try {
@@ -945,7 +945,7 @@ void CNgAlignApp::x_AddFilters(CNgAligner& NgAligner, IRegistry* RunRegistry)
     } else {    
         string FilterNames = RunRegistry->Get("filters", "names");
         vector<string> Names;
-        NStr::Split(FilterNames, " \t", Names, NStr::fSplit_NoMergeDelims);
+        NStr::Split(FilterNames, " \t", Names);
         ITERATE(vector<string>, NameIter, Names) {
             string FilterStr = RunRegistry->Get("filters", *NameIter);
             try {
@@ -965,7 +965,7 @@ void CNgAlignApp::x_AddAligners(CNgAligner& NgAligner, IRegistry* RunRegistry)
 {
 	string FilterNames = RunRegistry->Get("aligners", "names");
 	vector<string> Names;
-	NStr::Split(FilterNames, " \t", Names, NStr::fSplit_NoMergeDelims);
+	NStr::Split(FilterNames, " \t", Names);
 
 	ITERATE(vector<string>, NameIter, Names) {
 		

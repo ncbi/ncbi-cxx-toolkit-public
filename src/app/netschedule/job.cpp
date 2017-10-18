@@ -287,7 +287,7 @@ CJob::CompareAuthToken(const string &  auth_token) const
 {
     vector<string>      parts;
 
-    NStr::Split(auth_token, "_", parts, NStr::fSplit_NoMergeDelims);
+    NStr::Split(auth_token, "_", parts);
     if (parts.size() < 2)
         return eInvalidTokenFormat;
 

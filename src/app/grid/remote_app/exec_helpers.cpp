@@ -617,7 +617,7 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
     const string args = reg.GetString(sec_name, "version_args", "-version");
     vector<string> v;
     m_Version.reset(new CRemoteAppVersion(cmd,
-                NStr::Split(args, " ", v, NStr::fSplit_NoMergeDelims)));
+                NStr::Split(args, " ", v)));
 
     const string mode = reg.GetString(sec_name, "progress_message_on_timeout",
             "smart");

@@ -229,7 +229,7 @@ bool CGb_qual::FixRptTypeValue(string& val)
 
     // look for list of values
     vector<string> rpt_types;
-    NStr::Split(val, ",", rpt_types, NStr::fSplit_NoMergeDelims);
+    NStr::Split(val, ",", rpt_types);
 
     NON_CONST_ITERATE(vector<string>, it, rpt_types) {
         bool open_bracket = false,
@@ -263,7 +263,7 @@ bool CGb_qual::IsValidRptTypeValue(const string& val)
 
     // look for list of values
     vector<string> rpt_types;
-    NStr::Split(val, ",", rpt_types, NStr::fSplit_NoMergeDelims);
+    NStr::Split(val, ",", rpt_types);
     ITERATE(vector<string>, it, rpt_types) {
 
         bool open_bracket = false,

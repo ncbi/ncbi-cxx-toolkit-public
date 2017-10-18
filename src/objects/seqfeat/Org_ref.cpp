@@ -351,7 +351,7 @@ DEFINE_STATIC_FAST_MUTEX(s_OrgRefMapMutex);
 static void s_ProcessOrgRefMapLine(const CTempString& line)
 {
     vector<string> tokens;
-    NStr::Split(line, "\t", tokens, NStr::fSplit_NoMergeDelims);
+    NStr::Split(line, "\t", tokens);
     if (tokens.size() != 8) {
         //        ERR_POST_X(1, Warning << "Bad format in common_tax.txt entry " << line
         //                   << "; disregarding");

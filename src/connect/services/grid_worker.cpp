@@ -585,7 +585,7 @@ int SGridWorkerNodeImpl::Run(
     vector<string> vhosts;
 
     NStr::Split(reg.GetString(kServerSec,
-        "master_nodes", kEmptyStr), " ;,", vhosts, NStr::fSplit_NoMergeDelims);
+        "master_nodes", kEmptyStr), " ;,", vhosts);
 
     ITERATE(vector<string>, it, vhosts) {
         string host, port;
@@ -598,7 +598,7 @@ int SGridWorkerNodeImpl::Run(
     vhosts.clear();
 
     NStr::Split(reg.GetString(kServerSec,
-        "admin_hosts", kEmptyStr), " ;,", vhosts, NStr::fSplit_NoMergeDelims);
+        "admin_hosts", kEmptyStr), " ;,", vhosts);
 
     ITERATE(vector<string>, it, vhosts) {
         unsigned int ha = CSocketAPI::gethostbyname(*it);

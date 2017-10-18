@@ -200,7 +200,7 @@ DEFINE_STATIC_FAST_MUTEX(s_InstitutionCollectionCodeMutex);
 static void s_ProcessInstitutionCollectionCodeLine(const CTempString& line)
 {
     vector<string> tokens;
-    NStr::Split(line, "\t", tokens, NStr::fSplit_NoMergeDelims);
+    NStr::Split(line, "\t", tokens);
     if (tokens.size() < 2) {
 //        ERR_POST_X(1, Warning << "Bad format in institution_codes.txt entry " << line
 //                   << "; disregarding");
@@ -232,7 +232,7 @@ static void s_ProcessInstitutionCollectionCodeLine(const CTempString& line)
         if (tokens.size() > 3 && !NStr::IsBlank(tokens[3])) {
             NStr::TruncateSpacesInPlace(tokens[3]);
             vector<string> synonyms;
-            NStr::Split(tokens[3], ",", synonyms, NStr::fSplit_NoMergeDelims);
+            NStr::Split(tokens[3], ",", synonyms);
             NON_CONST_ITERATE(vector<string>, s, synonyms) {
                 NStr::TruncateSpacesInPlace(*s);
                 s_InstitutionCodeSynonymsMap[*s] = tokens[0];
@@ -742,7 +742,7 @@ string COrgMod::FixStrain( const string& strain)
     string new_val = strain;
     vector<string> words;
     vector<string> results;
-    NStr::Split(strain, ";", words, NStr::fSplit_NoMergeDelims);
+    NStr::Split(strain, ";", words);
     FOR_EACH_STRING_IN_VECTOR(itr, words) {
         string str = *itr;
         NStr::TruncateSpacesInPlace(str);

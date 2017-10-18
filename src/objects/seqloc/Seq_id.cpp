@@ -1863,7 +1863,7 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
         }
     } else {
         list<CTempString> fasta_pieces;
-        NStr::Split(the_id, "|", fasta_pieces, NStr::fSplit_NoMergeDelims);
+        NStr::Split(the_id, "|", fasta_pieces);
         x_Init(fasta_pieces, type);
         if ( !fasta_pieces.empty() ) {
             // tolerate trailing parts if they're all empty.
@@ -1919,7 +1919,7 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
 
     SIZE_TYPE count = 0;
     list<CTempString> fasta_pieces;
-    NStr::Split(ss, "|", fasta_pieces, NStr::eNoMergeDelims);
+    NStr::Split(ss, "|", fasta_pieces);
     _ASSERT(fasta_pieces.size() > 0);
     if (fasta_pieces.size() == 1)
     {

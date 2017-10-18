@@ -120,7 +120,7 @@ void AgpRead(CNcbiIstream& is,
 
         // split into fields, as delimited by tabs
         fields.clear();
-        NStr::Split(line, "\t", fields, NStr::fSplit_NoMergeDelims);
+        NStr::Split(line, "\t", fields);
 
         // eliminate any empty fields at the end of the line
         int index;

@@ -287,8 +287,7 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
 
                 if (!job_statuses_string.empty()) {
                     list<string>    statuses;
-                    NStr::Split(job_statuses_string, ",", statuses,
-                                NStr::fSplit_NoMergeDelims);
+                    NStr::Split(job_statuses_string, ",", statuses);
 
                     for (list<string>::const_iterator k = statuses.begin();
                          k != statuses.end(); ++k )
@@ -362,7 +361,7 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
 void SNSCommandArguments::x_CheckAffinityList(const string &  val)
 {
     list<string>    affs;
-    NStr::Split(val, "\t,", affs, NStr::fSplit_NoMergeDelims);
+    NStr::Split(val, "\t,", affs);
     for (list<string>::const_iterator
             k = affs.begin(); k != affs.end(); ++k)
         if (k->size() > kNetScheduleMaxDBDataSize - 1)
@@ -383,7 +382,7 @@ void SNSCommandArguments::x_CheckAffinityList(const string &  val)
 void SNSCommandArguments::x_CheckGroupList(const string &  val)
 {
     list<string>    groups;
-    NStr::Split(val, "\t,", groups, NStr::fSplit_NoMergeDelims);
+    NStr::Split(val, "\t,", groups);
     for (list<string>::const_iterator
             k = groups.begin(); k != groups.end(); ++k)
         if (k->size() > kNetScheduleMaxDBDataSize - 1)

@@ -1532,7 +1532,7 @@ CNcbiIstream& operator>>(CNcbiIstream& is, SGFFrec& res)
     }
 
     vector<string> v;
-    NStr::Split(line, "\t", v, NStr::eNoMergeDelims);
+    NStr::Split(line, "\t", v);
     if (v.size()!=9)
         return InputError(is);
     SGFFrec rec;

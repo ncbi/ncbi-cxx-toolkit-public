@@ -435,20 +435,20 @@ CRowInfo_SP_SQL_Server::~CRowInfo_SP_SQL_Server(void)
 void 
 CRowInfo_SP_SQL_Server::Initialize(void) const
 {
-	impl::CConnection& conn = GetCConnection();
-	unsigned int step = 0;
+    impl::CConnection& conn = GetCConnection();
+    unsigned int step = 0;
     CDBConnParams::EServerType server_type = conn.GetServerType();
 
-	if (server_type == CDBConnParams::eUnknown) {
-		server_type = conn.CalculateServerType(server_type);
-		++step;
-	}
+    if (server_type == CDBConnParams::eUnknown) {
+        server_type = conn.CalculateServerType(server_type);
+        ++step;
+    }
 
 	while (step++ < 3) {
 		if (server_type == CDBConnParams::eSybaseSQLServer
             || server_type == CDBConnParams::eMSSqlServer) 
 		{
-			string sql; 
+             string sql; 
 			string db_name;
 			string db_owner;
 			string sp_name;
@@ -457,8 +457,7 @@ CRowInfo_SP_SQL_Server::Initialize(void) const
 			{
 				vector<string> arr_param;
 
-                NStr::Split(GetSPName(), ".", arr_param,
-                            NStr::fSplit_NoMergeDelims);
+                NStr::Split(GetSPName(), ".", arr_param);
 				size_t pos = 0;
 
 				switch (arr_param.size()) {

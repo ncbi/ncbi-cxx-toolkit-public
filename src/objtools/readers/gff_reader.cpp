@@ -476,7 +476,7 @@ CGFFReader::x_ParseFeatureInterval(const TStr& line)
     TStrVec v;
     bool    misdelimited = false;
 
-    NStr::Split(line, "\t", v, NStr::fSplit_NoMergeDelims);
+    NStr::Split(line, "\t", v);
     if (v.size() < 8) {
         v.clear();
         NStr::Split(line, " \t", v, NStr::fSplit_Tokenize);
@@ -935,7 +935,7 @@ void CGFFReader::x_ParseV3Attributes(SRecord& record, const TStrVec& v,
             vector<string> vals;
             attr.resize(2);
             s_URLDecode(key, attr[0]);
-            NStr::Split(values, ",", vals, NStr::fSplit_NoMergeDelims);
+            NStr::Split(values, ",", vals);
             ITERATE (vector<string>, it2, vals) {
                 string value( *it2 );
                 if ( NStr::MatchesMask(value, "\"*\"") ) {
