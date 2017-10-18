@@ -120,7 +120,7 @@ def run_rpm(blast_version):
     dest = os.path.join(RPMBUILD_HOME, "SPECS", rpm_spec)
     shutil.copyfile(src, dest)
     update_blast_version(dest, blast_version)
-    cmd = "/usr/bin/rpmbuild -ba " + dest
+    cmd = "/usr/bin/rpmbuild -vba " + dest
     safe_exec(cmd)
 
 def move_rpms_to_installdir(installdir):
