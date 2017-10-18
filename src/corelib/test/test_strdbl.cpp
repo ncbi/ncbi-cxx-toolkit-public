@@ -859,7 +859,7 @@ void CTestApp::RunSpeedBenchmark(void)
             ",1.234567890123456789e200,-1.234567890123456789e-200";
     }
     vector<string> ss;
-    NStr::Split(test_strings, ",", ss, NStr::fSplit_NoMergeDelims);
+    NStr::Split(test_strings, ",", ss);
     const size_t TESTS = ss.size();
     vector<double> ssr(TESTS), ssr_min(TESTS), ssr_max(TESTS);
     static const int kConvertError = -555;

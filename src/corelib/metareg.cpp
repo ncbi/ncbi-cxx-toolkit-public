@@ -331,8 +331,7 @@ void CMetaRegistry::GetDefaultSearchPath(CMetaRegistry::TSearchPath& path)
     const TXChar* cfg_path = NcbiSys_getenv(_TX("NCBI_CONFIG_PATH"));
     TSearchPath   path_tail;
     if (cfg_path) {
-        NStr::Split(_T_STDSTRING(cfg_path), kConfigPathDelim, path,
-                    NStr::fSplit_NoMergeDelims);
+        NStr::Split(_T_STDSTRING(cfg_path), kConfigPathDelim, path);
         TSearchPath::iterator it = find(path.begin(), path.end(), kEmptyStr);
         if (it == path.end()) {
             return;

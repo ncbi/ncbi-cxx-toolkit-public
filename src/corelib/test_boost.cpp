@@ -1456,7 +1456,7 @@ CNcbiTestApplication::x_ReadConfiguration(void)
         but::test_unit* tu = GetTestUnit(test_name);
         if (tu) {
             list<CTempString> koef_lst;
-            NStr::Split(reg_value, ";", koef_lst, NStr::fSplit_NoMergeDelims);
+            NStr::Split(reg_value, ";", koef_lst);
             ITERATE(list<CTempString>, it_koef, koef_lst) {
                 CTempString koef_str, koef_cond;
                 if (NStr::SplitInTwo(*it_koef, ":", koef_str, koef_cond)) {
