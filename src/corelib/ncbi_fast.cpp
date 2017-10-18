@@ -23,9 +23,10 @@
  *
  * ===========================================================================
  *
- * Authors:  Michael Kholodov
+ * Authors:  Eugene Vasilchenko, Andrei Gourianov
  *
- * File Description:   Java toolkit specifics.
+ * File Description:
+ *   SSE utility functions
  *
  */
 
