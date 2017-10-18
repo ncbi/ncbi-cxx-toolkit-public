@@ -92,13 +92,28 @@ endmacro(add_subdirectory_optional)
 ## datatool-derived code
 ##
 
-#
-# FIXME: these should be tested not hard-coded
+
 if (WIN32)
-    set(NCBI_DATATOOL "//snowman/win-coremake/App/Ncbi/cppcore/datatool/msvc/2.16.0/datatool.exe")
+    set(NCBI_DATATOOL_BASE "//snowman/win-coremake/App/Ncbi/cppcore/datatool/msvc")
 else()
-    #set (NCBI_DATATOOL $<TARGET_FILE:datatool-app>)
-    set (NCBI_DATATOOL "/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool/Linux64/2.16.0/datatool")
+    #FIXME: Not just Linux!
+    # However, we only use CMake on Linux for now, so ok to hard code
+    set(NCBI_DATATOOL_BASE "/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool/Linux64")
+endif()
+
+if (EXISTS "${top_src_dir}/src/build-system/datatool_version.txt")
+    FILE(READ "${top_src_dir}/src/build-system/datatool_version.txt" _datatool_version)
+else()
+    set(_datatool_version "2.17.0")
+endif()
+
+message(STATUS "Datatool version required by software: ${_datatool_version}")
+if (EXISTS "${NCBI_DATATOOL_BASE}/${_datatool_version}/datatool")
+    set (NCBI_DATATOOL "${NCBI_DATATOOL_BASE}/${_datatool_version}/datatool")
+    message(STATUS "Datatool location: ${NCBI_DATATOOL}")
+else()
+    set (NCBI_DATATOOL $<TARGET_FILE:datatool-app>)
+    message(STATUS "Datatool location: <locally compiled>")
 endif()
 
 
