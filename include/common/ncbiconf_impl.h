@@ -127,9 +127,9 @@
 #  define NCBI_WARN_UNUSED_RESULT
 #endif
 
-#if defined(__SSE_4_2__)  ||  defined(__AVX__)
+#if defined(__SSE4_2__)  ||  defined(__AVX__)
 #  define NCBI_SSE 42
-#elif defined(__SSE_4_1__)
+#elif defined(__SSE4_1__)
 #  define NCBI_SSE 41
 #elif defined(__SSSE3__)
 #  define NCBI_SSE 40
