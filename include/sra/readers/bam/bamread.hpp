@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbi_fast.hpp>
 
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqset/Seq_entry.hpp>
@@ -208,21 +209,11 @@ public:
 
     string GetHeaderText(void) const;
 
+#ifdef NCBI_SSE
 #define HAVE_NEW_PILEUP_COLLECTOR
-
-#if defined HAVE_NEW_PILEUP_COLLECTOR
-// check availability of SSE intrinsics
-# if defined NCBI_COMPILER_GCC || defined NCBI_COMPILER_ICC
-// check availability of SSE 4
-#  ifndef __SSE4_1__
-#   undef HAVE_NEW_PILEUP_COLLECTOR
-#  endif
-# elif defined NCBI_COMPILER_MSVC
-// MSVC has intrinsics
-# else
-// no intrinsics by default
-#  undef HAVE_NEW_PILEUP_COLLECTOR
-# endif // compilers
+#if (defined NCBI_COMPILER_GCC || defined NCBI_COMPILER_ICC) && NCBI_SSE < 41
+#undef HAVE_NEW_PILEUP_COLLECTOR
+#endif
 #endif
 
 #ifdef HAVE_NEW_PILEUP_COLLECTOR
@@ -841,162 +832,6 @@ Uint4 CBamAlignIterator::GetRawCIGAROp(Uint2 index) const
 
 
 END_NAMESPACE(objects);
-
-#ifdef HAVE_NEW_PILEUP_COLLECTOR
-BEGIN_NAMESPACE(NFast);
-
-// fastest fill of count ints at dst with zeroes
-// dst and count must be aligned by 16
-void NCBI_BAMREAD_EXPORT fill_n_zeros_aligned16(int* dst, size_t count);
-// fastest fill of count chars at dst with zeroes
-// dst and count must be aligned by 16
-void NCBI_BAMREAD_EXPORT fill_n_zeros_aligned16(char* dst, size_t count);
-
-inline void fill_n_zeros_aligned16(unsigned* dst, size_t count)
-{
-    fill_n_zeros_aligned16(reinterpret_cast<int*>(dst), count);
-}
-
-// fastest fill of count ints at dst with zeroes
-void NCBI_BAMREAD_EXPORT fill_n_zeros(int* dst, size_t count);
-// fastest fill of count chars at dst with zeroes
-void NCBI_BAMREAD_EXPORT fill_n_zeros(char* dst, size_t count);
-
-// convert count unsigned chars to ints
-// src, dst, and count must be aligned by 16
-void NCBI_BAMREAD_EXPORT copy_n_bytes_aligned16(const char* src, size_t count, int* dst);
-
-// convert count ints to chars
-// src, dst, and count must be aligned by 16
-void NCBI_BAMREAD_EXPORT copy_n_aligned16(const int* src, size_t count, char* dst);
-
-// copy count ints
-// src, dst, and count must be aligned by 16
-void NCBI_BAMREAD_EXPORT copy_n_aligned16(const int* src, size_t count, int* dst);
-
-inline void copy_n_aligned16(const unsigned* src, size_t count, char* dst)
-{
-    copy_n_aligned16(reinterpret_cast<const int*>(src), count, dst);
-}
-
-inline void copy_n_aligned16(const unsigned* src, size_t count, int* dst)
-{
-    copy_n_aligned16(reinterpret_cast<const int*>(src), count, dst);
-}
-
-inline void copy_n_aligned16(const unsigned* src, size_t count, unsigned* dst)
-{
-    copy_n_aligned16(reinterpret_cast<const int*>(src), count, reinterpret_cast<int*>(dst));
-}
-
-// copy count*4 ints splitting them into 4 arrays
-// src, dsts, and count must be aligned by 16
-void NCBI_BAMREAD_EXPORT copy_4n_split_aligned16(const int* src, size_t count,
-                                                 int* dst0, int* dst1, int* dst2, int* dst3);
-
-// convert count*4 ints int chars splitting them into 4 arrays
-// src, dsts, and count must be aligned by 16
-void NCBI_BAMREAD_EXPORT copy_4n_split_aligned16(const int* src, size_t count,
-                                                 char* dst0, char* dst1, char* dst2, char* dst3);
-
-inline void copy_4n_split_aligned16(const unsigned* src, size_t count,
-                                    char* dst0, char* dst1, char* dst2, char* dst3)
-{
-    copy_4n_split_aligned16(reinterpret_cast<const int*>(src), count, dst0, dst1, dst2, dst3);
-}
-
-inline void copy_4n_split_aligned16(const unsigned* src, size_t count,
-                                    int* dst0, int* dst1, int* dst2, int* dst3)
-{
-    copy_4n_split_aligned16(reinterpret_cast<const int*>(src), count, dst0, dst1, dst2, dst3);
-}
-
-inline void copy_4n_split_aligned16(const unsigned* src, size_t count,
-                                    unsigned* dst0, unsigned* dst1, unsigned* dst2, unsigned* dst3)
-{
-    copy_4n_split_aligned16(reinterpret_cast<const int*>(src), count,
-                            reinterpret_cast<int*>(dst0),
-                            reinterpret_cast<int*>(dst1),
-                            reinterpret_cast<int*>(dst2),
-                            reinterpret_cast<int*>(dst3));
-}
-
-// append count unitialized elements to dst vector
-// return pointer to appended elements for proper initialization
-// vector must have enough memory reserved
-template<class V, class A>
-V* append_uninitialized(vector<V, A>& dst, size_t count);
-
-// append count zeros to dst vector
-// vector must have enough memory reserved
-template<class V, class A>
-inline void append_zeros(vector<V, A>& dst, size_t count);
-
-// append count zeros to dst vector
-// vector must have enough memory reserved
-// dst.end() pointer and count must be aligned by 16
-template<class V, class A>
-inline void append_zeros_aligned16(vector<V, A>& dst, size_t count);
-
-#ifdef NCBI_COMPILER_GCC
-// fast implementation using internal layout of vector
-template<class V, class A>
-inline V* append_uninitialized(vector<V, A>& dst, size_t count)
-{
-    if ( sizeof(dst) == 3*sizeof(V*) ) {
-        V*& end_ptr = ((V**)&dst)[1];
-        V* ret = end_ptr;
-        end_ptr = ret + count;
-        return ret;
-    }
-    else {
-        // wrong vector size and probably layout
-        size_t size = dst.size();
-        dst.resize(size+count);
-        return dst.data()+size;
-    }
-}
-template<class V, class A>
-inline void append_zeros(vector<V, A>& dst, size_t count)
-{
-    fill_n_zeros(append_uninitialized(dst, count), count);
-}
-template<class V, class A>
-inline void append_zeros_aligned16(vector<V, A>& dst, size_t count)
-{
-    fill_n_zeros_aligned16(append_uninitialized(dst, count), count);
-}
-#else
-// default implementation
-template<class V, class A>
-inline V* append_uninitialized(vector<V, A>& dst, size_t count)
-{
-    size_t size = dst.size();
-    dst.resize(size+count);
-    return dst.data()+size;
-}
-template<class V, class A>
-inline void append_zeros(vector<V, A>& dst, size_t count)
-{
-    dst.resize(dst.size()+count);
-}
-template<class V, class A>
-inline void append_zeros_aligned16(vector<V, A>& dst, size_t count)
-{
-    dst.resize(dst.size()+count);
-}
-#endif
-
-// return max element from unsigned array
-// src and count must be aligned by 16
-unsigned NCBI_BAMREAD_EXPORT max_element_n_aligned16(const unsigned* src, size_t count);
-
-void NCBI_BAMREAD_EXPORT max_element_n_aligned16(const unsigned* src, size_t count, unsigned& dst);
-void NCBI_BAMREAD_EXPORT max_4elements_n_aligned16(const unsigned* src, size_t count, unsigned dst[4]);
-
-END_NAMESPACE(NFast);
-#endif //HAVE_NEW_PILEUP_COLLECTOR
-
 END_NCBI_NAMESPACE;
 
 #endif // SRA__READER__BAM__BAMREAD__HPP
