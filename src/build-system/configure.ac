@@ -1893,6 +1893,7 @@ AC_CACHE_CHECK([how to enable C '11 or at least '99 features in $CC],
        CC=$orig_CC])
 
 if test "${with_sse42-$with_optimization}" = yes; then
+   orig_CC=$CC
    AC_CACHE_CHECK([whether $CC supports -msse4.2],
       ncbi_cv_prog_c_sse42,
       [orig_CC=$CC
@@ -1916,10 +1917,10 @@ AC_LANG_POP(C)
 test "$ncbi_cv_prog_c_99" = no  ||  CC="$CC $ncbi_cv_prog_c_99"
 
 if test "${with_sse42-$with_optimization}" = yes; then
+   orig_CXX=$CXX
    AC_CACHE_CHECK([whether $CXX supports -msse4.2],
       ncbi_cv_prog_cxx_sse42,
-      [orig_CXX=$CXX
-       CXX="$CXX -msse4.2"
+      [CXX="$CXX -msse4.2"
        AC_LINK_IFELSE(
           [AC_LANG_PROGRAM(
               [#include <smmintrin.h>],

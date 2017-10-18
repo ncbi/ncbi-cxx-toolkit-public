@@ -9401,6 +9401,7 @@ fi
 echo "${ECHO_T}$ncbi_cv_prog_c_99" >&6; }
 
 if test "${with_sse42-$with_optimization}" = yes; then
+   orig_CC=$CC
    { echo "$as_me:$LINENO: checking whether $CC supports -msse4.2" >&5
 echo $ECHO_N "checking whether $CC supports -msse4.2... $ECHO_C" >&6; }
 if test "${ncbi_cv_prog_c_sse42+set}" = set; then
@@ -9471,6 +9472,7 @@ fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_prog_c_sse42" >&5
 echo "${ECHO_T}$ncbi_cv_prog_c_sse42" >&6; }
    if test $ncbi_cv_prog_c_sse42 = yes; then
+      CC="$orig_CC -msse4.2"
       orig_CC=$CC
    elif test "$with_sse42" = yes; then
       { { echo "$as_me:$LINENO: error: SSE 4.2 support explicitly requested but unavailable." >&5
@@ -9489,13 +9491,13 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 test "$ncbi_cv_prog_c_99" = no  ||  CC="$CC $ncbi_cv_prog_c_99"
 
 if test "${with_sse42-$with_optimization}" = yes; then
+   orig_CXX=$CXX
    { echo "$as_me:$LINENO: checking whether $CXX supports -msse4.2" >&5
 echo $ECHO_N "checking whether $CXX supports -msse4.2... $ECHO_C" >&6; }
 if test "${ncbi_cv_prog_cxx_sse42+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  orig_CXX=$CXX
-       CXX="$CXX -msse4.2"
+  CXX="$CXX -msse4.2"
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -9559,6 +9561,7 @@ fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_prog_cxx_sse42" >&5
 echo "${ECHO_T}$ncbi_cv_prog_cxx_sse42" >&6; }
    if test $ncbi_cv_prog_cxx_sse42 = yes; then
+      CXX="$orig_CXX -msse4.2"
       orig_CXX=$CXX
    elif test "$with_sse42" = yes; then
       { { echo "$as_me:$LINENO: error: SSE 4.2 support explicitly requested but unavailable." >&5
