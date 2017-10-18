@@ -289,17 +289,17 @@ void g_DoPerfLogging(const CQueue &  queue,
     if (counters.size() != statuses.size())
         return;     // inconsistent
 
-    // It was decided for the time being that the jobs counter is sitting in
-    // the seconds portion of the time field. It was also decided to produce
-    // a separate record for each job state.
     for (size_t k = 0; k < statuses.size(); ++k) {
         CPerfLogger         perf_logger(CPerfLogger::eSuspend);
 
-        perf_logger.Adjust(CTimeSpan(counters[k], 0));
+        // There is no time for this record, that's rather periodic printouts.
+        // So it was decided to set it explicitly to 0.0
+        perf_logger.Adjust(CTimeSpan(0, 0));
         CDiagContext_Extra  extra = perf_logger.Post(
                 CRequestStatus::e200_Ok,
                 CNetScheduleAPI::StatusToString(statuses[k]));
-        extra.Print("_queue", queue.GetQueueName());
+        extra.Print("_queue", queue.GetQueueName())
+             .Print("count", counters[k]);
     }
 }
 
