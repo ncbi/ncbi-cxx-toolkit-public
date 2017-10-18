@@ -574,7 +574,7 @@ dnl to which AC_MSG_ERROR normally copies its output, to be available.
 m4_rename([AS_MESSAGE_LOG_FD], [NCBI_ORIG_ASMLFD])
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug max-debug symbols optimization profiling code-coverage \
+debug max-debug symbols optimization sse42 profiling code-coverage \
 tcheck dll static static-exe \
 plugin-auto-load bundles bin-release mt 64 exe runpath hard-runpath \
 lfs limited-linker openmp \
