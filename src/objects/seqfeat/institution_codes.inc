@@ -5846,7 +5846,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SEL\ts\tMarie Selby Botanical Gardens\t\t",
 "SELU\ts\tSoutheastern Louisiana University, Biological Sciences Department\t\t",
 "SEMC\ts\tSnow Entomological Museum\tKU:SEMC",
-"SEMIA\tc\tColecao de Culturas de Rhizobium da Fepagro\t\t",
+"SEMIA\tc\tRhizobium Culture Collection\t\t",
 "SEMK\ts\tSnow Entomological Museum\t\t",
 "SEMM\ts\tStation Experimental de la Maboke\t\t",
 "SEMO\ts\tSoutheast Missouri State University, Department of Biology\t\t",
