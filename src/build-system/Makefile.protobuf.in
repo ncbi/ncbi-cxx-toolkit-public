@@ -56,9 +56,9 @@ $(MODULE).grpc.pb.cc $(MODULE).grpc.pb.h: $(DEPS) $(GRPC_CPP_PLUGIN)
 %.pb.cpp: %.pb.cc
 	$(SED) -e $(SED_SCRIPT) $< > $@
 
-$(INCLUDEDIR)/%.pb.hpp: %.pb.h
+$(INCLUDEDIR)/%.pb.hpp: %.pb.cc # not .h, to avoid duplicate protoc runs
 	$(MKDIR) -p $(INCLUDEDIR)
-	$(SED) -e $(SED_SCRIPT) $< > $@
+	$(SED) -e $(SED_SCRIPT) $*.pb.h > $@
 
 $(MODULE).module:
 	@$(TOUCH) $@
