@@ -21,6 +21,9 @@ GRPC_BIN = @GRPC_BIN@
 PROTOC = $(GRPC_BIN)/protoc
 GRPC_CPP_PLUGIN = $(GRPC_BIN)/grpc_cpp_plugin
 
+SED_SCRIPT = '/^\#include ".*pb.h"/ { s|"|<'$(MODULE_PATH)'/|; s/"/pp>/ }'
+DEPS = $(SPEC) $(PROTOC) $(MODULE).module $(IMPDEPS)
+
 all: sources
 
 all_files: sources
@@ -28,28 +31,34 @@ all_files: sources
 sources: $(FILES)
 
 clean_sources:
-	-$(RM) $(FILES)
+	-$(RM) $(FILES) *.pb.cc *.pb.h
 
 purge_sources:
-	-$(RM) $(FILES) *.pb.cpp $(INCLUDEDIR)/*.pb.h
+	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.hpp
 
 purge_all_sources:
-	-$(RM) $(FILES) *.pb.cpp $(INCLUDEDIR)/*.pb.h
+	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.hpp
 
 purge_all_files:
-	-$(RM) $(FILES) *.pb.cpp $(INCLUDEDIR)/*.pb.h
+	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.hpp
 
-$(FILES): $(SPEC) $(PROTOC) $(GRPC_CPP_PLUGIN) $(MODULE).module $(IMPDEPS)
+$(FILES): $(MODULE).pb.cpp      $(INCLUDEDIR)/$(MODULE).pb.hpp      \
+          $(MODULE).grpc.pb.cpp $(INCLUDEDIR)/$(MODULE).grpc.pb.hpp
+	@$(TOUCH) $@
+
+$(MODULE).pb.cc $(MODULE).pb.h: $(DEPS)
 	$(PROTOC) $(PROTOC_FLAGS) --cpp_out=. $(SPEC)
+
+$(MODULE).grpc.pb.cc $(MODULE).grpc.pb.h: $(DEPS) $(GRPC_CPP_PLUGIN)
 	$(PROTOC) $(PROTOC_FLAGS) --grpc_out=. \
 	    --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN) $(SPEC)
-	-$(RM) $(MODULE).pb.cpp $(MODULE).grpc.pb.cpp \
-	    $(INCLUDEDIR)/$(MODULE).pb.h $(INCLUDEDIR)/$(MODULE).grpc.pb.h
+
+%.pb.cpp: %.pb.cc
+	sed -e $(SED_SCRIPT) $< > $@
+
+$(INCLUDEDIR)/%.pb.hpp: %.pb.h
 	$(MKDIR) -p $(INCLUDEDIR)
-	mv $(MODULE).pb.cc      $(MODULE).pb.cpp
-	mv $(MODULE).grpc.pb.cc $(MODULE).grpc.pb.cpp
-	mv $(MODULE).pb.h $(MODULE).grpc.pb.h $(INCLUDEDIR)/
-	@$(TOUCH) $@
+	sed -e $(SED_SCRIPT) $< > $@
 
 $(MODULE).module:
 	@$(TOUCH) $@
