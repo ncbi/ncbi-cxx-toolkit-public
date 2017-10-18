@@ -57,7 +57,7 @@ static void s_SerializeJob(string& cmd, const CNetScheduleNewJob& job,
     cmd.append(NStr::PrintableString(job.input));
     cmd.push_back('"');
 
-    if (udp_port != 0) {
+    if (udp_port && wait_time) {
         cmd.append(" port=");
         cmd.append(NStr::UIntToString(udp_port));
         cmd.append(" timeout=");
@@ -432,7 +432,8 @@ SNetScheduleSubmitterImpl::SubmitJobAndWait(CNetScheduleJob& job, unsigned wait_
 
     CNetScheduleNotificationHandler submit_job_handler;
 
-    submit_job_handler.SubmitJob(this, job, wait_time);
+    SubmitJobImpl(job, submit_job_handler.GetPort(), wait_time);
+    if (!wait_time) return CNetScheduleAPI::ePending;
 
     return submit_job_handler.WaitForJobCompletion(job, deadline, m_API, job_exptime);
 }
