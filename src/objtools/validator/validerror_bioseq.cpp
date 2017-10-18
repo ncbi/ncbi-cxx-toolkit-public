@@ -5848,20 +5848,18 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
         "Improper use of partial (greater than or less than)"
     };
 
-    unsigned int  partial_prod = eSeqlocPartial_Complete, 
-                  partial_loc  = eSeqlocPartial_Complete;
+    unsigned int partial_loc  = eSeqlocPartial_Complete;
 
     bool is_partial = feat.IsSetPartial()  &&  feat.GetPartial();
     // NOTE - have to use original seqfeat in order for this to work correctly 
     // for features on segmented sequences 
     partial_loc  = SeqLocPartialCheck(feat.GetOriginalSeq_feat()->GetLocation(), m_Scope );
-    if (feat.IsSetProduct ()) {
-        partial_prod = SeqLocPartialCheck(feat.GetProduct (), m_Scope );
+    if (feat.IsSetProduct () && !feat.GetProduct().IsWhole()) {
+        PostErr(eDiag_Info, eErr_SEQ_FEAT_ProductShouldBeWhole, 
+            "Feature products should be entire sequences.", *(feat.GetSeq_feat()));
     }
 
-    if ( (partial_loc  == eSeqlocPartial_Complete)  &&
-         (partial_prod == eSeqlocPartial_Complete)  &&   
-         !is_partial ) {
+    if (partial_loc  == eSeqlocPartial_Complete && !is_partial ) {
         return;
     }
 
@@ -5884,45 +5882,9 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
         comment_text = feat.GetComment();
     }
 
-    // partial product
-    unsigned int errtype = eSeqlocPartial_Nostart;
-    for ( int j = 0; j < 4; ++j ) {
-        if (partial_prod & errtype) {
-            if (feat.GetData().Which() == CSeqFeatData::e_Cdregion
-                       && feat.IsSetExcept()
-                       && NStr::Find(except_text, "rearrangement required for product") != string::npos) {
-                // suppress
-            } else if (feat.GetData().Which() == CSeqFeatData::e_Cdregion && j == 0) {
-                if (no_nonconsensus_except) {
-                    if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
-                        // suppress
-                    } else {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
-                            "PartialProduct: 5' partial is not at start AND is not at consensus splice site",
-                            *(feat.GetSeq_feat())); 
-                    }
-                }
-            } else if (feat.GetData().Which() == CSeqFeatData::e_Cdregion && j == 1) {
-                if (no_nonconsensus_except) {
-                    if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
-                        // suppress
-                    } else {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
-                            "PartialProduct: 3' partial is not at stop AND is not at consensus splice site",
-                            *(feat.GetSeq_feat()));
-                    }
-                }
-            } else {
-                PostErr (j == 2 ? eDiag_Error : eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
-                    "PartialProduct: " + parterrs[j], *(feat.GetSeq_feat()));
-            }
-        }
-        errtype <<= 1;
-    }
-
     // partial location
-    errtype = eSeqlocPartial_Nostart;
-    for ( int j = 0; j < 4; ++j ) {
+    unsigned int errtype = eSeqlocPartial_Nostart;
+    for (int j = 0; j < 4; ++j) {
         if (partial_loc & errtype) {
             bool bad_seq = false;
             bool is_gap = false;

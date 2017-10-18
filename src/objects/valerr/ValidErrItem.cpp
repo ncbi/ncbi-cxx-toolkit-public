@@ -1696,6 +1696,9 @@ same id type" } },
    { eErr_SEQ_FEAT_GeneIdMismatch,
    { "GeneIdMismatch",
 "GeneID for parent and child features should match." } },
+   { eErr_SEQ_FEAT_ProductShouldBeWhole,
+   { "ProductShouldBeWhole",
+     "Feature products should be entire sequences." } },
 
 /* SEQ_ALIGN */
 

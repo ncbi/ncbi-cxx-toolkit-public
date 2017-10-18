@@ -14764,6 +14764,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_NestedSeqLocMix)
                                "Product: SeqLoc [[lcl|good:1-11, [21-31, 41-51]]] has nested SEQLOC_MIX elements"));
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Error, "SelfReferentialProduct",
                                "Self-referential feature product"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "ProductShouldBeWhole",
+                               "Feature products should be entire sequences."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     CLEAR_ERRORS
