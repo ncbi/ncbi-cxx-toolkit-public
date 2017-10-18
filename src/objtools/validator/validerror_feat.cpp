@@ -6046,8 +6046,12 @@ void CValidError_feat::x_ReportCDSTranslationProblems(const CSeq_feat& feat, con
         if (unclassified_except && m_Imp.IsGpipe()) {
             // suppress if gpipe genomic
         } else {
-            PostErr(unclassified_except ? eDiag_Warning : eDiag_Error,
-                eErr_SEQ_FEAT_InternalStop,
+            EDiagSev stop_sev = unclassified_except ? eDiag_Warning : eDiag_Error;
+            if (!m_Imp.IsRefSeq() && m_Imp.IsGI() && m_Imp.IsGED()) {
+                stop_sev = eDiag_Critical;
+            }
+
+            PostErr(stop_sev, eErr_SEQ_FEAT_InternalStop,
                 GetInternalStopErrorMessage(feat, problems.GetInternalStopCodons(),
                                             problem_flags & CCDSTranslationProblems::eCDSTranslationProblem_BadStart,
                                             problems.GetTranslStartCharacter()),
