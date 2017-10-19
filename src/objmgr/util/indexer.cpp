@@ -2249,7 +2249,11 @@ void CBioseqIndex::GetSequence (int from, int to, string& buffer)
         if (! m_SeqVec) {
             m_SeqVec = new CSeqVector(m_Bsh);
             if (m_SeqVec) {
-                m_SeqVec->SetCoding(CBioseq_Handle::eCoding_Iupac);
+                if (IsAA()) {
+                    m_SeqVec->SetCoding(CSeq_data::e_Ncbieaa);
+                } else {
+                    m_SeqVec->SetCoding(CBioseq_Handle::eCoding_Iupac);
+                }
             }
         }
 
@@ -2462,7 +2466,11 @@ void CFeatureIndex::GetSequence (int from, int to, string& buffer)
                 if (lc) {
                     m_SeqVec = new CSeqVector(*lc, *bsxl->GetScope());
                     if (m_SeqVec) {
-                        m_SeqVec->SetCoding(CBioseq_Handle::eCoding_Iupac);
+                        if (bsxl->IsAA()) {
+                            m_SeqVec->SetCoding(CSeq_data::e_Ncbieaa);
+                        } else {
+                            m_SeqVec->SetCoding(CBioseq_Handle::eCoding_Iupac);
+                        }
                     }
                 }
             }
