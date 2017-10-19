@@ -353,7 +353,7 @@ class Collector(object):
                and version[1] is not None and version[2] is not None:
                 base    = 'https://svn.ncbi.nlm.nih.gov/repos/toolkit/release'
                 version = '.'.join(version)
-                url     = '/'.join([base, package_name, version, 'c++'] + rest)
+                url     = '/'.join((base, package_name, version, 'c++') + rest)
                 return { 'vcs_type':   'svn',
                          'vcs_path':   url,
                          'vcs_branch': package_name + '-' + version }
