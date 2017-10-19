@@ -649,6 +649,23 @@ public:
 };
 
 
+class NCBI_XCGI_EXPORT CExtraEntryCollector : public CEntryCollector_Base {
+public:
+    CExtraEntryCollector(void) {}
+    ~CExtraEntryCollector(void) override {}
+    
+    void AddEntry(const string& name,
+                  const string& value,
+                  const string& filename,
+                  bool          is_index) override;
+
+    CDiagContext_Extra::TExtraArgs& GetArgs(void) { return m_Args; }
+
+private:
+    CDiagContext_Extra::TExtraArgs m_Args;
+};
+
+
 ///////////////////////////////////////////////////////
 ///
 ///  CCgiRequest::

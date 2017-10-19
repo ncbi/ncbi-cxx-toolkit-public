@@ -1912,4 +1912,15 @@ CStringUTF8 CCgiEntry::GetValueAsUTF8(EOnCharsetError on_error) const
 }
 
 
+void CExtraEntryCollector::AddEntry(const string& name,
+                                    const string& value,
+                                    const string& filename,
+                                    bool          is_index)
+{
+    _ASSERT(!is_index  ||  value.empty());
+    m_Args.push_back(CDiagContext_Extra::TExtraArg(name,
+        filename.empty() ? value : filename + "/" + value));
+}
+
+
 END_NCBI_SCOPE

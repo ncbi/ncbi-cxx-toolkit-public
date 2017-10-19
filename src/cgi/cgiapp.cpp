@@ -1061,28 +1061,6 @@ const CArgs& CCgiApplication::GetArgs(void) const
 }
 
 
-class CExtraEntryCollector : public CEntryCollector_Base {
-public:
-    CExtraEntryCollector(void) {}
-    virtual ~CExtraEntryCollector(void) {}
-    
-    virtual void AddEntry(const string& name,
-                          const string& value,
-                          const string& filename,
-                          bool          is_index)
-    {
-        _ASSERT(!is_index  ||  value.empty());
-        m_Args.push_back(CDiagContext_Extra::TExtraArg(name,
-            filename.empty() ? value : filename + "/" + value));
-    }
-
-    CDiagContext_Extra::TExtraArgs& GetArgs(void) { return m_Args; }
-
-private:
-    CDiagContext_Extra::TExtraArgs m_Args;
-};
-
-
 void CCgiApplication::x_OnEvent(EEvent event, int status)
 {
     switch ( event ) {
