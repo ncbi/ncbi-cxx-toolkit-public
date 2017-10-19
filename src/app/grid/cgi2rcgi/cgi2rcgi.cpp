@@ -55,6 +55,7 @@
 #include <vector>
 #include <map>
 #include <sstream>
+#include <unordered_map>
 
 #define GRID_APP_NAME "cgi2rcgi"
 
@@ -296,6 +297,7 @@ private:
     void DefineRefreshTags(CGridCgiContext& grid_ctx, const string& url, int delay);
 
 private:
+    void ListenJobs(CCgiContext& ctx, const string& job_ids_value, const string& timeout_value);
     void CheckJob(CGridCgiContext& grid_ctx);
     void SubmitJob(CCgiRequest& request, CGridCgiContext& grid_ctx);
     void PopulatePage(CGridCgiContext& grid_ctx);
@@ -638,6 +640,11 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
     m_CustomHTTPHeader->SetTemplateString("<@CUSTOM_HTTP_HEADER@>");
     CGridCgiContext grid_ctx(*m_Page, *m_CustomHTTPHeader, ctx);
 
+    string listen_jobs;
+    string timeout;
+    grid_ctx.PullUpPersistentEntry("listen_jobs", listen_jobs);
+    grid_ctx.PullUpPersistentEntry("timeout", timeout);
+
     grid_ctx.PullUpPersistentEntry("job_key", grid_ctx.GetJobKey());
     grid_ctx.PullUpPersistentEntry("Cancel");
 
@@ -665,6 +672,10 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
         grid_ctx.PullUpPersistentEntry(kSinceTime);
 
         try {
+            if (!listen_jobs.empty()) {
+                grid_ctx.NeedRenderPage(false);
+                ListenJobs(ctx, listen_jobs, timeout);
+            } else
             if (!grid_ctx.GetJobKey().empty()) {
                 CheckJob(grid_ctx);
             } else {
@@ -685,6 +696,96 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
     }
 
     return grid_ctx.NeedRenderPage() ? RenderPage() : 0;
+}
+
+inline bool s_IsPendingOrRunning(CNetScheduleAPI::EJobStatus job_status)
+{
+    switch (job_status) {
+    case CNetScheduleAPI::ePending:
+    case CNetScheduleAPI::eRunning:
+        return true;
+
+    default:
+        return false;
+    }
+}
+
+void CCgi2RCgiApp::ListenJobs(CCgiContext& ctx, const string& job_ids_value, const string& timeout_value)
+{
+    CDeadline deadline(CTimeout(NStr::StringToDouble(timeout_value)));
+
+    vector<string> job_ids;
+    NStr::Split(job_ids_value, ",", job_ids);
+
+    if (job_ids.empty()) return;
+
+
+    // Consider all jobs to be pending initially
+
+    unordered_map<string, CNetScheduleAPI::EJobStatus> jobs;
+
+    for (auto job_id : job_ids) {
+        jobs.emplace(job_id, CNetScheduleAPI::ePending);
+    }
+
+
+    // Request notifications unless there is a job that is already not pending/running
+
+    CNetScheduleSubmitter submitter = m_GridClient->GetNetScheduleSubmitter();
+    CNetScheduleNotificationHandler handler;
+
+    bool wait_notifications = true;
+
+    for (auto& job : jobs) {
+        if (wait_notifications) {
+            int not_used;
+            handler.RequestJobWatching(m_NetScheduleAPI, job.first, deadline, &job.second, &not_used);
+        } else {
+            job.second = submitter.GetJobStatus(job.first);
+        }
+
+        if (!s_IsPendingOrRunning(job.second)) wait_notifications = false;
+    }
+
+
+    // If all jobs are still pending/running, wait for a notification
+
+    if (wait_notifications) {
+        while (handler.WaitForNotification(deadline)) {
+            const char* const attr_names[] = { "job_key", "job_status" };
+            array<string, 2> attr_values;
+            const auto& received_job_id = attr_values[0];
+            const auto& received_job_status = attr_values[1];
+
+            g_ParseNSOutput(handler.GetMessage(), attr_names, attr_values.data(), attr_values.size());
+            auto job = jobs.find(received_job_id);
+
+            // If it's one of requested jobs
+            if (job != jobs.end()) {
+                job->second = CNetScheduleAPI::StringToStatus(received_job_status);
+
+                if (!s_IsPendingOrRunning(job->second)) break;
+            }
+        }
+
+        // Recheck still pending/running jobs, just in case
+        for (auto& job : jobs) {
+            if (s_IsPendingOrRunning(job.second)) job.second = submitter.GetJobStatus(job.first);
+        }
+    }
+
+
+    // Output jobs and their current states
+
+    CNcbiOstream& out = ctx.GetResponse().out();
+    char delimiter = '{';
+
+    for (auto& job : jobs) {
+        out << delimiter << "\n " << job.first << ": " << CNetScheduleAPI::StatusToString(job.second);
+        delimiter = ',';
+    }
+
+    out << "\n}" << endl;
 }
 
 void CCgi2RCgiApp::CheckJob(CGridCgiContext& grid_ctx)
@@ -774,15 +875,7 @@ void CCgi2RCgiApp::SubmitJob(CCgiRequest& request,
         grid_ctx.DefinePersistentEntry("job_key", grid_ctx.GetJobKey());
         GetDiagContext().Extra().Print("job_key", grid_ctx.GetJobKey());
 
-        switch (status) {
-        case CNetScheduleAPI::ePending:
-        case CNetScheduleAPI::eRunning:
-            done = false;
-            break;
-
-        default:
-            done = CheckIfJobDone(grid_ctx, status);
-        }
+        done = !s_IsPendingOrRunning(status) && CheckIfJobDone(grid_ctx, status);
 
         if (!done) {
             // The job has just been submitted.
