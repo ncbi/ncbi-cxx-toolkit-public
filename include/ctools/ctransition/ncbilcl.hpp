@@ -34,6 +34,10 @@
  */
 
 
+/// Define ctransition namespace, and defang ncbi_skew_guard.h.
+
+#define CTRANSITION_NS ctransition
+
 #include <corelib/ncbistl.hpp>
 
 /** @addtogroup CToolsBridge
@@ -41,10 +45,6 @@
  * @{
  */
 
-
-/// Define ctransition namespace.
-
-#define CTRANSITION_NS ctransition
 
 #define BEGIN_CTRANSITION_SCOPE  BEGIN_SCOPE(CTRANSITION_NS)
 #define END_CTRANSITION_SCOPE    END_SCOPE(CTRANSITION_NS)
