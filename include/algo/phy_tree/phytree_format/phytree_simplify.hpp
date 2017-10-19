@@ -147,6 +147,81 @@ protected:
 };
 
 
+
+class CPhyTreeNodeAnalyzer
+{
+public:
+    CPhyTreeNodeAnalyzer(const string& feature_name,
+                        const string& feature_acc,
+                        CBioTreeDynamic& tree,
+                        CNcbiOfstream* ostr = NULL);
+
+    struct SLeafNodeInfo{
+       int nodeID;
+       string accession;
+    };
+
+    typedef struct SLeafNodeInfo TLeafNodeInfo;
+    typedef map <string, vector <TLeafNodeInfo> > TLeafNodeInfoMap; // string blastName; vector of info
+
+    class CLabeledNode
+    {
+    public:
+        CLabeledNode(CBioTreeDynamic::CBioNode* node,
+                     map <string, vector <TLeafNodeInfo> > &leafNodesInfoMap)
+            : m_Node(node), m_LeafNodesInfoMap(leafNodesInfoMap) {}
+
+        CBioTreeDynamic::CBioNode* GetNode(void) const {return m_Node;}
+        TLeafNodeInfoMap& GetLeafInfoMap(void) const {return m_LeafNodesInfoMap;}
+        
+    private:
+        CBioTreeDynamic::CBioNode* m_Node;        
+        TLeafNodeInfoMap& m_LeafNodesInfoMap;
+    };
+
+public:
+    typedef vector<CLabeledNode> CLabeledNodes;
+    typedef CLabeledNodes::iterator CLabeledNodes_I;
+
+public:
+
+    virtual ~CPhyTreeNodeAnalyzer() {}
+    void Init(const string& feature_name, const string& feature_acc,
+              CBioTreeDynamic& tree);
+    const string& GetError(void) const {return m_Error;}
+    virtual CLabeledNodes& GetLabeledNodes(void) {return m_LabeledNodes;}
+    const string& GetFeatureName(void) const {return m_LabelFeatureName;}
+    bool IsEmpty(void) const {return m_LabeledNodes.empty();}
+    CLabeledNodes_I Begin(void) {return m_LabeledNodes.begin();}
+    CLabeledNodes_I End() {return m_LabeledNodes.end();}
+    int GetLabeledNodesNum(void) {return m_LabeledNodes.size();}
+    ETreeTraverseCode operator()(CBioTreeDynamic::CBioNode& node, int delta);
+
+protected:
+    ETreeTraverseCode x_OnStepDown(CBioTreeDynamic::CBioNode& x_node);
+    ETreeTraverseCode x_OnStepLeft(CBioTreeDynamic::CBioNode& x_node);
+    ETreeTraverseCode x_OnStepRight(CBioTreeDynamic::CBioNode& x_node);
+    /*
+    bool x_IsRoot(CBioTreeDynamic::CBioNode* node) const
+    {return node == m_Root;}
+    */
+    void x_InitLeafNodeStack(CBioTreeDynamic::CBioNode& x_node);
+    TLeafNodeInfoMap x_CombineNodeMaps(TLeafNodeInfoMap nodeMap1, TLeafNodeInfoMap nodeMap2);
+    void x_PrintNodeMap(TLeafNodeInfoMap nodeMap);
+        
+protected:
+    //CBioTreeDynamic::CBioNode* m_Root;
+    string m_LabelFeatureName;
+    string m_AccFeatureName;
+    string m_Error;
+    CLabeledNodes m_LabeledNodes;    
+    stack<TLeafNodeInfoMap> m_InfoStack;
+    CNcbiOfstream* m_Ostr;  //diagnostics
+};
+
+
+
+
 END_NCBI_SCOPE
 
 #endif // PHYTREE_SIMPLIFY__HPP
