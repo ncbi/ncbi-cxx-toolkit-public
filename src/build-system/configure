@@ -1940,7 +1940,6 @@ Optional Packages:
  --with-nettle=DIR       use Nettle installation in DIR
  --without-nettle        do not use Nettle
  --with-gnutls=DIR       use GNUTLS installation in DIR
- --without-gnutls        do not use GNUTLS
  --with-static-gnutls    link GNUTLS statically if possible
  --with-openssl=DIR      use OpenSSL installation in DIR
  --without-openssl       do not use OpenSSL
@@ -3520,12 +3519,6 @@ if test "${with_gnutls+set}" = set; then
 fi
 
 
-# Check whether --with-gnutls was given.
-if test "${with_gnutls+set}" = set; then
-  withval=$with_gnutls;
-fi
-
-
 # Check whether --with-static-gnutls was given.
 if test "${with_static_gnutls+set}" = set; then
   withval=$with_static_gnutls;
@@ -4437,13 +4430,6 @@ echo "$as_me: error: incompatible options: --without-xslt but --with-gbench" >&2
       else
          : ${with_xslt:=yes}
       fi
-     if test "$with_gnutls" = "no"; then
-         { { echo "$as_me:$LINENO: error: incompatible options: --without-gnutls but --with-gbench" >&5
-echo "$as_me: error: incompatible options: --without-gnutls but --with-gbench" >&2;}
-   { (exit 1); exit 1; }; }
-      else
-         : ${with_gnutls:=yes}
-      fi
 
    : ${with_projects=scripts/projects/ncbi_gbench.lst}
 elif test "$with_jni" = "yes" ; then
@@ -4539,7 +4525,7 @@ echo "$as_me: error: incompatible options: --without-gnutls but --with-static-gn
    yes: )
       with_gnutls=yes
       ;;
-   :* )
+   :yes )
       with_static_gnutls=$with_bin_release
       ;;
 esac
@@ -30340,10 +30326,10 @@ else
              WithPackages="$WithPackages${WithPackagesSep}NETTLE"; WithPackagesSep=" "
 fi
 
-case "$with_gnutls" in
-   no )       ac_cv_path_LIBGNUTLS_CONFIG=no ;;
-   yes | '' )                                ;;
-   * )        GNUTLS_PATH=$with_gnutls       ;;
+case "${with_gnutls=no}" in
+   no  ) ac_cv_path_LIBGNUTLS_CONFIG=no ;;
+   yes )                                ;;
+   *   ) GNUTLS_PATH=$with_gnutls       ;;
 esac
 if test -d "$GNUTLS_PATH"; then
    ncbi_fix_dir_tmp=`if cd $GNUTLS_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
@@ -48866,10 +48852,6 @@ if test "$with_gbench" != "no"  -a  -d "$real_srcdir/src/app/gbench"; then
    fi
    if test "$with_libxslt" = "no"; then
      reason="$reason${sep}libxslt"
-     sep=", "
-   fi
-   if test "$with_gnutls" = "no"; then
-     reason="$reason${sep}GNUTLS"
      sep=", "
    fi
    if test "$with_mt" = "no"; then

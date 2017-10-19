@@ -284,8 +284,6 @@ AC_ARG_WITH(nettle,
    [ --without-nettle        do not use Nettle])
 AC_ARG_WITH(gnutls,
    [ --with-gnutls=DIR       use GNUTLS installation in DIR])
-AC_ARG_WITH(gnutls,
-   [ --without-gnutls        do not use GNUTLS])
 AC_ARG_WITH(static-gnutls,
    [ --with-static-gnutls    link GNUTLS statically if possible])
 AC_ARG_WITH(openssl,
@@ -705,7 +703,7 @@ AC_DIVERT_POP
 
 
 if test "$with_gbench" = "yes" ; then
-   m4_foreach(OPT, [dll,mt,gui,exe,serial,objects,algo,glew,wxwidgets,ftgl,sqlite3,bdb,boost,xslt,gnutls],
+   m4_foreach(OPT, [dll,mt,gui,exe,serial,objects,algo,glew,wxwidgets,ftgl,sqlite3,bdb,boost,xslt],
      [if test "$[with_]OPT" = "no"; then
          AC_MSG_ERROR([incompatible options: --without-]OPT[ but --with-gbench])
       else
@@ -784,7 +782,7 @@ case "$with_static_gnutls:$with_gnutls" in
    yes: )
       with_gnutls=yes
       ;;
-   :* )
+   :yes )
       with_static_gnutls=$with_bin_release
       ;;
 esac
@@ -4489,10 +4487,10 @@ else
    NCBI_PACKAGE(NETTLE)
 fi
 
-case "$with_gnutls" in
-   no )       ac_cv_path_LIBGNUTLS_CONFIG=no ;;
-   yes | '' )                                ;;
-   * )        GNUTLS_PATH=$with_gnutls       ;;
+case "${with_gnutls=no}" in
+   no  ) ac_cv_path_LIBGNUTLS_CONFIG=no ;;
+   yes )                                ;;
+   *   ) GNUTLS_PATH=$with_gnutls       ;;
 esac
 if test -d "$GNUTLS_PATH"; then
    NCBI_FIX_DIR(GNUTLS_PATH)
@@ -8073,10 +8071,6 @@ if test "$with_gbench" != "no"  -a  -d "$real_srcdir/src/app/gbench"; then
    fi
    if test "$with_libxslt" = "no"; then
      reason="$reason${sep}libxslt"
-     sep=", "
-   fi
-   if test "$with_gnutls" = "no"; then
-     reason="$reason${sep}GNUTLS"
      sep=", "
    fi
    if test "$with_mt" = "no"; then

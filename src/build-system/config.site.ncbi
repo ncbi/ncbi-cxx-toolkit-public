@@ -169,6 +169,7 @@ case "$ncbi_platform" in
     *MAC       ) : ${GMP_PATH=$NCBI/gmp-6.0.0a} ;;
 esac
 
+# NB: now used only when explicitly configured --with-gnutls
 case "$ncbi_platform" in
     Linux64    ) : ${GNUTLS_PATH=$NCBI/gnutls-3.4.0} ;;
     *MAC       ) : ${GNUTLS_PATH=$NCBI/gnutls-3.4.0} ;;
