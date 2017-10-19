@@ -37,6 +37,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbifile.hpp>
+#include <connect/ncbi_core_cxx.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objmgr/scope.hpp>
@@ -194,6 +195,9 @@ void CProteinMatchApp::Init(void)
 
 int CProteinMatchApp::Run(void)
 {
+
+    CONNECT_Init(&GetConfig());
+
     const CArgs& args = GetArgs();
 
     const string bin_dir = args["bindir"] ? 
@@ -209,10 +213,16 @@ int CProteinMatchApp::Run(void)
 #endif
 
     CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
-    CDataLoadersUtil::SetupObjectManager(args, *obj_mgr);
+  //  CDataLoadersUtil::SetupObjectManager(args, *obj_mgr);
+
+    cout << "About to register GenBank loader" << endl;
+    CGBDataLoader::RegisterInObjectManager(*obj_mgr);
+    return 0;
+
     CRef<CScope> db_scope = Ref(new CScope(*obj_mgr));
     db_scope->AddDefaults();
     m_pMatchSetup.reset(new CMatchSetup(db_scope));
+
 
     bool keep_temps = args["keep-temps"];
     
@@ -947,6 +957,6 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[]) 
 {
-    return CProteinMatchApp().AppMain(argc, argv, 0, eDS_ToStderr, 0);
+    return CProteinMatchApp().AppMain(argc, argv);
 }
 
