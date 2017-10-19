@@ -1,5 +1,6 @@
 corelib$
 connect$
+connect/mbedtls
 ./include/util/bitset$
 util$
 util/regexp$
