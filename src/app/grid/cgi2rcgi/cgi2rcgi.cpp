@@ -52,6 +52,7 @@
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbi_system.hpp>
 
+#include <array>
 #include <vector>
 #include <map>
 #include <sstream>
