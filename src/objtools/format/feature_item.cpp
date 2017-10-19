@@ -2075,8 +2075,11 @@ void CFeatureItem::x_AddQualTranslation(
     }
     else if ( bsh ) {
         CSeqVector seqv = bsh.GetSeqVector();
+        /*
         CSeq_data::E_Choice coding = cfg.IupacaaOnly() ?
             CSeq_data::e_Iupacaa : CSeq_data::e_Ncbieaa;
+        */
+        CSeq_data::E_Choice coding = CSeq_data::e_Ncbieaa;
         seqv.SetCoding( coding );
 
         try {
