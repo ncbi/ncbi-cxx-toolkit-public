@@ -348,5 +348,208 @@ bool CPhyTreeLabelTracker::x_IsSeqKmerBlast(
 }
 
 
+CPhyTreeNodeAnalyzer::CPhyTreeNodeAnalyzer(const string& feature_name,
+                                           const string& feature_acc,
+                                           CBioTreeDynamic& tree,
+                                           CNcbiOfstream* ostr)
+    : m_Ostr(ostr)
+{
+    Init(feature_name, feature_acc, tree);
+}
+
+void CPhyTreeNodeAnalyzer::Init(const string& feature_name,
+                                const string& feature_acc,
+                                CBioTreeDynamic& tree)
+{
+    m_LabelFeatureName = feature_name;
+    m_AccFeatureName = feature_acc;
+
+    const CBioTreeFeatureDictionary& fdict = tree.GetFeatureDict();
+    if (!fdict.HasFeature(m_LabelFeatureName)
+        || !fdict.HasFeature(m_AccFeatureName)) {
+
+        m_Error = "Feature " + m_LabelFeatureName + " or " + m_AccFeatureName + " not in feature dictionary";
+    }
+    m_LabeledNodes.clear();
+    while (!m_InfoStack.empty()) {
+        m_InfoStack.pop();
+    }    
+}
+
+ETreeTraverseCode CPhyTreeNodeAnalyzer::operator()(
+                                            CBioTreeDynamic::CBioNode& x_node,
+                                            int delta)
+{
+  if (!m_Error.empty()) {
+        return eTreeTraverseStop;
+    }
+    
+    switch (delta) {
+    case 0:  return x_OnStepDown(x_node);
+    case 1:  return x_OnStepRight(x_node);
+    case -1: return x_OnStepLeft(x_node);
+    }
+
+    return eTreeTraverse;
+}
+
+void CPhyTreeNodeAnalyzer::x_PrintNodeMap(CPhyTreeNodeAnalyzer::TLeafNodeInfoMap nodeMap)
+{
+    *m_Ostr << "Number of blast names =" << nodeMap.size() << endl;
+    for (auto it = nodeMap.begin(); it != nodeMap.end(); ++it) {       
+       vector <CPhyTreeNodeAnalyzer::TLeafNodeInfo> vecInf = it->second;
+       string printStr = (vecInf.size() > 1) ? " nodeIDs: " : " nodeID: ";
+       *m_Ostr << "Blast name: " << it->first << printStr;       
+       for(size_t i = 0;i < vecInf.size(); i++){
+           *m_Ostr << vecInf[i].nodeID << ",";
+       }       
+
+       printStr = (vecInf.size() > 1) ? " Accessions: " : " Accession: ";
+       *m_Ostr << printStr;       
+       for(size_t i = 0;i < vecInf.size(); i++){
+           *m_Ostr << vecInf[i].accession << ",";
+       }              
+       *m_Ostr << endl;
+   }    
+}
+
+void CPhyTreeNodeAnalyzer::x_InitLeafNodeStack(CBioTreeDynamic::CBioNode& x_node)
+{
+    TLeafNodeInfoMap infoStackMap;        
+    vector <TLeafNodeInfo> vecLeafInfoNode;
+
+    TLeafNodeInfo leafInfoNode;
+    leafInfoNode.nodeID = x_node.GetValue().GetId();
+    leafInfoNode.accession = x_node.GetFeature(m_AccFeatureName);
+
+    vecLeafInfoNode.push_back(leafInfoNode);        
+    infoStackMap.insert(TLeafNodeInfoMap::value_type(x_node.GetFeature(m_LabelFeatureName),vecLeafInfoNode));
+
+    m_InfoStack.push(infoStackMap);
+    if (m_Ostr) {
+        x_PrintNodeMap(infoStackMap);
+    }
+}
+
+
+ETreeTraverseCode CPhyTreeNodeAnalyzer::x_OnStepRight(
+                                           CBioTreeDynamic::CBioNode& x_node)
+{
+    //If leaf, then record blast name and acc number is put on stack
+    if (m_Ostr != NULL)
+        *m_Ostr << "x_OnStepRight, nodeID: " + NStr::IntToString(x_node.GetValue().GetId()) << NcbiEndl;
+        
+    // other nodes
+    if (x_node.IsLeaf()) {
+        if (x_node.GetFeature(m_LabelFeatureName).empty() || x_node.GetFeature(m_AccFeatureName).empty()) {
+            m_Error = "Leaf node has unset feature, Id: " 
+               + NStr::IntToString(x_node.GetValue().GetId());
+            return eTreeTraverseStop;
+        }
+        x_InitLeafNodeStack(x_node);
+    }    
+
+    return eTreeTraverse;
+}
+
+ETreeTraverseCode CPhyTreeNodeAnalyzer::x_OnStepDown(
+                                           CBioTreeDynamic::CBioNode& x_node)
+{
+    if (m_Ostr != NULL)
+        *m_Ostr << "x_OnStepDown, nodeID: " + NStr::IntToString(x_node.GetValue().GetId()) << NcbiEndl;
+    
+    if (x_node.IsLeaf()) {
+        
+        if (x_node.GetFeature(m_LabelFeatureName).empty() || x_node.GetFeature(m_AccFeatureName).empty()) {
+            m_Error = "Leaf node has unset feature, Id: " 
+               + NStr::IntToString(x_node.GetValue().GetId());
+            return eTreeTraverseStop;
+        }
+        
+        x_InitLeafNodeStack(x_node);
+    }
+
+    return eTreeTraverse;
+}
+
+static void s_CreateTitle(CPhyTreeNodeAnalyzer::TLeafNodeInfoMap nodeMap, string &title, int &leafCount)
+{
+    
+    leafCount = 0;
+    
+    if(nodeMap.size() <= 2) {
+        CPhyTreeNodeAnalyzer::TLeafNodeInfoMap::iterator it = nodeMap.begin();
+        title  = it->first;
+        leafCount = it->second.size();       
+        if(nodeMap.size() == 2) {
+            it++;
+            if(leafCount > it->second.size()) {//if first leafcont > than second
+                title += " and " + it->first;
+            }
+            else {
+
+                title = it->first + " and " + title;
+            }
+            leafCount += it->second.size();       
+        }
+    }
+    else {
+        title = "Multiple organisms";
+        for (auto it = nodeMap.begin(); it != nodeMap.end(); ++it) {
+            vector <CPhyTreeNodeAnalyzer::TLeafNodeInfo> vecInf = it->second;
+            leafCount += vecInf.size();       
+        }      
+    }
+}
+
+
+CPhyTreeNodeAnalyzer::TLeafNodeInfoMap CPhyTreeNodeAnalyzer::x_CombineNodeMaps(TLeafNodeInfoMap nodeMap1, TLeafNodeInfoMap nodeMap2)
+{
+   TLeafNodeInfoMap mapResult(nodeMap1);    
+   for (auto it = nodeMap2.begin(); it != nodeMap2.end(); ++it) {
+       if (mapResult.count(it->first) > 0 ) { //blastname exists in the second map
+           vector <TLeafNodeInfo> vecInf2 = it->second;
+           vector <TLeafNodeInfo> vecInf1 = mapResult[it->first];           
+           vecInf1.insert(vecInf1.end(), vecInf2.begin(), vecInf2.end());           
+           mapResult[it->first].insert(mapResult[it->first].end(), vecInf2.begin(), vecInf2.end());
+       }
+       else {           
+           mapResult.insert(TLeafNodeInfoMap::value_type(it->first,it->second));                      
+       }
+   }
+   return mapResult;
+}
+
+ETreeTraverseCode CPhyTreeNodeAnalyzer::x_OnStepLeft(
+                                            CBioTreeDynamic::CBioNode& x_node)
+{
+    if (m_Ostr != NULL)
+       *m_Ostr << "x_OnStepLeft, nodeID: " + NStr::IntToString(x_node.GetValue().GetId()) << NcbiEndl;
+
+    TLeafNodeInfoMap infoStackMap1, infoStackMap2, infoStackMapCombined;
+    if(!m_InfoStack.empty()) {        
+        infoStackMap1 = m_InfoStack.top();        
+        m_InfoStack.pop();
+    }    
+    //new map = combine maps    
+    if(!m_InfoStack.empty()) {
+        infoStackMap2 = m_InfoStack.top();        
+        m_InfoStack.pop();
+    }
+    infoStackMapCombined  = x_CombineNodeMaps(infoStackMap1, infoStackMap2);
+    m_InfoStack.push(infoStackMapCombined);
+    if (m_Ostr) {
+        x_PrintNodeMap(infoStackMapCombined);
+    }
+
+    string title;
+    int leafCount;
+    s_CreateTitle(infoStackMapCombined,title,leafCount);
+    x_node.SetFeature(CPhyTreeFormatter::GetFeatureTag(CPhyTreeFormatter::eLeafCountId), NStr::IntToString(leafCount));
+    x_node.SetFeature(CPhyTreeFormatter::GetFeatureTag(CPhyTreeFormatter::eTitleId), title);    
+    m_LabeledNodes.push_back(CLabeledNode(&x_node, infoStackMapCombined));
+    return eTreeTraverse;
+}
+
 
 END_NCBI_SCOPE
