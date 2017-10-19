@@ -42,6 +42,7 @@
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
 #include <objects/general/User_object.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/util/sequence.hpp>
