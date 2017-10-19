@@ -1389,6 +1389,7 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
             }
         }
     }
+    m_Seq2Chunk.clear();
 }
 
 
