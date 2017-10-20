@@ -4877,28 +4877,20 @@ void CValidError_feat::ValidateFarProducts(const CSeq_feat& feat)
         return;
     }
     mrna_prod = m_Scope->GetBioseqHandle(*mrna_sid);
-    cds_prod = m_Scope->GetBioseqHandle(*cds_sid);
-    if (!mrna_prod && !cds_prod) {
-        return;
-    }
     if (!mrna_prod) {
-        // mRNA product can't be fetched
-        PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSmRNAmismatch, "Far mRNA product cannot be fetched", *(mrna.GetSeq_feat()));
+        // can't be fetched, will be reported elsewhere
         return;
     }
-    if (!cds_prod) {
-        // CDS product can't be fetched
-        PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSmRNAmismatch, "Far CDS product cannot be fetched", feat);
-        return;
-    }
-    CSeq_entry_Handle far_cds_nps =
-        cds_prod.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
     CSeq_entry_Handle far_mrna_nps =
         mrna_prod.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
-
-    if (!far_cds_nps || !far_mrna_nps || far_cds_nps != far_mrna_nps) {
-        PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSmRNAmismatch, "Far CDS product and far mRNA product are not packaged together", feat);
-        PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSmRNAmismatch, "Far CDS product and far mRNA product are not packaged together", *(mrna.GetSeq_feat()));
+    if (!far_mrna_nps) {
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSmRNAmismatch, "no Far mRNA nuc-prot-set", feat);
+    } else {
+        CBioseq_Handle cds_prod = m_Scope->GetBioseqHandleFromTSE(*cds_sid, far_mrna_nps);
+        if (!cds_prod) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSmRNAmismatch, "Far CDS product and far mRNA product are not packaged together", feat);
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSmRNAmismatch, "Far CDS product and far mRNA product are not packaged together", *(mrna.GetSeq_feat()));
+        }
     }
 }
 
