@@ -95,8 +95,15 @@
 
 #if BOOST_VERSION >= 106000
 #  define attr_value utils::attr_value
-#  define RTCFG(type, new_name, old_name) \
-    but::runtime_config::get<type >(but::runtime_config::new_name)
+#  if BOOST_VERSION >= 106400
+     // Everything old is new again, apparently...
+#    define RTCFG(type, new_name, old_name) \
+      but::runtime_config::get<type >(but::runtime_config::btrt_##old_name)
+#    define CONFIGURED_FILTERS RTCFG(std::vector<std::string>, _, run_filters)
+#  else
+#    define RTCFG(type, new_name, old_name) \
+      but::runtime_config::get<type >(but::runtime_config::new_name)
+#  endif
 #else
 #  define RTCFG(type, new_name, old_name) but::runtime_config::old_name()
 #  if BOOST_VERSION >= 105900
@@ -112,8 +119,10 @@
 #  endif
 #endif
 
-#define CONFIGURED_FILTERS \
+#ifndef CONFIGURED_FILTERS
+  #define CONFIGURED_FILTERS \
     RTCFG(std::vector<std::string>, RUN_FILTERS, test_to_run)
+#endif
 
 #ifdef NCBI_COMPILER_MSVC
 #  pragma warning(pop)
@@ -2316,7 +2325,7 @@ main(int argc, char* argv[])
 
         if (
 #if BOOST_VERSION >= 106000
-            runtime_config::get<bool>( runtime_config::RESULT_CODE )
+            RTCFG(bool, RESULT_CODE, result_code)
 #else
             !runtime_config::no_result_code()
 #endif
