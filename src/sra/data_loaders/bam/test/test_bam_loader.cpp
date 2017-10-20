@@ -787,11 +787,28 @@ BOOST_AUTO_TEST_CASE(MemoryTest)
         if ( ait ) {
             cout << "Loaded "<<ait.GetSize()<<" alignments"<<endl;
             tseh = ait.GetAnnot().GetTSE_Handle();
+            for ( int i = 0; ait && i < 2; ++i, ++ait ) {
+                auto& id = ait->GetSeq_id(1);
+                LOG_POST("Short read: " << id.AsFastaString());
+                auto bsh = scope.GetBioseqHandle(id);
+                BOOST_CHECK(bsh);
+            }
         }
         
         if ( tseh ) {
-            cout << "BAM TSE memory: "<<tseh.GetUsedMemory()<<endl;
+            cout << "BAM TSE memory: " << tseh.GetUsedMemory() << endl;
             scope.RemoveFromHistory(tseh);
+            BOOST_CHECK(tseh);
+            if (i % 2) {
+                git = CGraph_CI();
+                ait = CAlign_CI();
+                scope.RemoveFromHistory(tseh);
+                BOOST_CHECK(!tseh);
+            }
+            else {
+                scope.RemoveFromHistory(tseh, CScope::eRemoveIfLocked);
+                BOOST_CHECK(!tseh);
+            }
         }
     }
 }
