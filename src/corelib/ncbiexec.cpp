@@ -343,11 +343,9 @@ void s_Create_Args_L(
 {
     // Count arguments to allocate memory
     va_list v_args = begin;
-    size_t xcnt = 1;
-    if (argv) {
-        while ( va_arg(v_args, const char*) ) {
-            xcnt++;
-        }
+    size_t xcnt = 2;
+    while ( va_arg(v_args, const char*) ) {
+        xcnt++;
     }
     const TXChar **args = new const TXChar*[xcnt+1];
     if ( !args ) {
@@ -357,9 +355,7 @@ void s_Create_Args_L(
 
     // Use temporary vector to store quoted/unicoded strings.
     xargs.push_back( _T_XSTRING(CExec::QuoteArg(cmdname)) );
-    if (argv) {
-        xargs.push_back( _T_XSTRING(s_QuoteSpawnArg(argv)) );
-    }
+    xargs.push_back( _T_XSTRING(s_QuoteSpawnArg(argv)) );
     // Repeat for each argument in the variable list
     v_args = begin;
     for (size_t i=2; i < xcnt; ++i) {
@@ -599,17 +595,6 @@ CExec::CResult
 CExec::SpawnLPE(EMode mode, const char *cmdname, const char *argv, ...)
 {
     intptr_t status;
-/*
-    const TXChar* const *a_args;
-    vector<TXString> x_args;
-    TXArgsOrEnv t_args;
-    va_list vargs;
-    va_start(vargs, argv);
-    s_Create_Args_L(x_args, t_args, vargs, cmdname, argv);
-    a_args = t_args.get();
-    */
-
-
     XGET_EXEC_ARGS(args, argv);
     XGET_EXEC_ENVP(envs);
 
