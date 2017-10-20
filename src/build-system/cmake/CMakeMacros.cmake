@@ -115,7 +115,7 @@ if (WIN32)
 else()
     set(NCBI_DATATOOL_BIN "datatool")
 endif()
-message(WARNING "${NCBI_DATATOOL_BASE}/${_datatool_version}/${NCBI_DATATOOL_BIN}")
+
 if (EXISTS "${NCBI_DATATOOL_BASE}/${_datatool_version}/${NCBI_DATATOOL_BIN}")
     set (NCBI_DATATOOL "${NCBI_DATATOOL_BASE}/${_datatool_version}/${NCBI_DATATOOL_BIN}")
     message(STATUS "Datatool location: ${NCBI_DATATOOL}")
