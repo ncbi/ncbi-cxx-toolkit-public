@@ -739,8 +739,13 @@ void CCgi2RCgiApp::ListenJobs(CCgiContext& ctx, const string& job_ids_value, con
 
     for (auto& job : jobs) {
         if (wait_notifications) {
-            int not_used;
-            handler.RequestJobWatching(m_NetScheduleAPI, job.first, deadline, &job.second, &not_used);
+            try {
+                int not_used;
+                handler.RequestJobWatching(m_NetScheduleAPI, job.first, deadline, &job.second, &not_used);
+            } catch (CNetScheduleException& ex) {
+                if (ex.GetErrCode() != CNetScheduleException::eJobNotFound) throw;
+                job.second = CNetScheduleAPI::eJobNotFound;
+            }
         } else {
             job.second = submitter.GetJobStatus(job.first);
         }
@@ -780,9 +785,10 @@ void CCgi2RCgiApp::ListenJobs(CCgiContext& ctx, const string& job_ids_value, con
 
     CNcbiOstream& out = ctx.GetResponse().out();
     char delimiter = '{';
+    out << "Content-type: application/json\nStatus: 200 OK\n\n";
 
     for (auto& job : jobs) {
-        out << delimiter << "\n " << job.first << ": " << CNetScheduleAPI::StatusToString(job.second);
+        out << delimiter << "\n\"" << job.first << "\": \"" << CNetScheduleAPI::StatusToString(job.second) << '"';
         delimiter = ',';
     }
 
