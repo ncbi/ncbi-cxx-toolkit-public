@@ -389,7 +389,9 @@ typename CParam<TDescription>::TValueType&
 CParam<TDescription>::sx_GetDefault(bool force_reset)
 {
     bool& def_init = TDescription::sm_DefaultInitialized;
+#if !defined(NCBI_OS_DARWIN)
     _ASSERT(TDescription::sm_ParamDescription.section);
+#endif
     if ( !def_init ) {
         TDescription::sm_Default = TDescription::sm_ParamDescription.default_value;
         def_init = true;
