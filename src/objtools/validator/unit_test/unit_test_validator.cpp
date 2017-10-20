@@ -20823,6 +20823,10 @@ void TestOneStrain(const string& taxname, const string& strain, const string& li
     if (NStr::Equal(taxname, "Bacillus sp.") || NStr::Equal(taxname, "Acetobacter sp.")) {
         expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "OrganismIsUndefinedSpecies",
             "Organism '" + taxname + "' is undefined species and does not have a specific identifier."));
+        if (NStr::Equal(taxname, "Bacillus sp.")) {
+            expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TaxonomyLookupProblem",
+                "Taxonomy lookup failed with message 'Ambiguous name. Matching taxids:1409,2046141'"));
+        }
     }
 
     eval = validator.Validate(seh, options);
