@@ -231,8 +231,8 @@ public:
     typedef CMutex TTSE_LockSetMutex;
     const TTSE_LockSet& GetTSE_LockSet(void) const;
     TTSE_LockSetMutex& GetTSE_LockSetMutex(void) const;
-    void UpdateTSELock(CTSE_ScopeInfo& tse, CTSE_Lock lock);
-    void ReleaseTSELock(CTSE_ScopeInfo& tse); // into queue
+    void ReleaseTSEUserLock(CTSE_ScopeInfo& tse); // into queue
+    void AcquireTSEUserLock(CTSE_ScopeInfo& tse); // from queue
     void ForgetTSELock(CTSE_ScopeInfo& tse); // completely
     void RemoveFromHistory(CTSE_ScopeInfo& tse, bool drop_from_ds = false);
     bool TSEIsInQueue(const CTSE_ScopeInfo& tse) const;
@@ -371,9 +371,9 @@ public:
     bool CanBeEdited(void) const;
 
     // True if the TSE is referenced
-    bool IsLocked(void) const;
+    bool IsUserLocked(void) const;
     // True if the TSE is referenced by more than one handle
-    bool LockedMoreThanOnce(void) const;
+    bool IsUserLockedMoreThanOnce(void) const;
 
     bool ContainsBioseq(const CSeq_id_Handle& id) const;
     // returns matching Seq-id handle

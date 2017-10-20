@@ -209,6 +209,10 @@ CUnlockedTSEsGuard::~CUnlockedTSEsGuard(void)
             TUnlockedTSEsInternal locks;
             swap(m_UnlockedTSEsInternal, locks);
         }
+        while ( !m_UnlockedTSEsLock.empty() ) {
+            TUnlockedTSEsLock locks;
+            swap(m_UnlockedTSEsLock, locks);
+        }
         st_Guard = 0;
     }
 }
@@ -292,6 +296,7 @@ CDataSource_ScopeInfo::GetTSE_Lock(const CTSE_Lock& lock)
         }
         _ASSERT(info->IsAttached() && &info->GetDSInfo() == this);
         info->m_TSE_LockCounter.Add(1);
+        info->m_UserLockCounter.Add(1);
         {{
             // first remove the TSE from unlock queue
             TTSE_LockSetMutex::TWriteLockGuard guard2(m_TSE_UnlockQueueMutex);
@@ -304,6 +309,7 @@ CDataSource_ScopeInfo::GetTSE_Lock(const CTSE_Lock& lock)
         }}
         info->SetTSE_Lock(lock);
         ret.Reset(info);
+        _VERIFY(info->m_UserLockCounter.Add(-1) > 0);
         _VERIFY(info->m_TSE_LockCounter.Add(-1) > 0);
         _ASSERT(info->GetTSE_Lock() == lock);
     }}
@@ -370,40 +376,14 @@ CDataSource_ScopeInfo::x_FindBestTSEInIndex(const CSeq_id_Handle& idh) const
 }
 
 
-void CDataSource_ScopeInfo::UpdateTSELock(CTSE_ScopeInfo& tse, CTSE_Lock lock)
-{
-    {{
-        // first remove the TSE from unlock queue
-        TTSE_LockSetMutex::TWriteLockGuard guard(m_TSE_UnlockQueueMutex);
-        // TSE must be locked already by caller
-        _ASSERT(tse.m_TSE_LockCounter.Get() > 0);
-        m_TSE_UnlockQueue.Erase(&tse);
-        // TSE must be still locked by caller even after removing it
-        // from unlock queue
-        _ASSERT(tse.m_TSE_LockCounter.Get() > 0);
-    }}
-    if ( !tse.GetTSE_Lock() ) {
-        // OK, we need to update the lock
-        if ( !lock ) { // obtain lock from CDataSource
-            lock = tse.m_UnloadedInfo->LockTSE();
-            _ASSERT(lock);
-        }
-        tse.SetTSE_Lock(lock);
-        _ASSERT(tse.GetTSE_Lock() == lock);
-    }
-    _ASSERT(tse.m_TSE_LockCounter.Get() > 0);
-    _ASSERT(tse.GetTSE_Lock());
-}
-
-
 // Called by destructor of CTSE_ScopeUserLock when lock counter goes to 0
-void CDataSource_ScopeInfo::ReleaseTSELock(CTSE_ScopeInfo& tse)
+void CDataSource_ScopeInfo::ReleaseTSEUserLock(CTSE_ScopeInfo& tse)
 {
     CUnlockedTSEsGuard guard;
     {{
         CTSE_ScopeInternalLock unlocked;
         TTSE_LockSetMutex::TWriteLockGuard tse_guard(m_TSE_UnlockQueueMutex);
-        if ( tse.m_TSE_LockCounter.Get() > 0 ) {
+        if ( tse.m_UserLockCounter.Get() > 0 ) {
             // relocked already
             return;
         }
@@ -416,6 +396,29 @@ void CDataSource_ScopeInfo::ReleaseTSELock(CTSE_ScopeInfo& tse)
             CUnlockedTSEsGuard::SaveInternal(unlocked);
         }
     }}
+}
+
+
+// Called when lock counter becomes non-zero
+void CDataSource_ScopeInfo::AcquireTSEUserLock(CTSE_ScopeInfo& tse)
+{
+    TTSE_LockSetMutex::TWriteLockGuard tse_guard(m_TSE_UnlockQueueMutex);
+    m_TSE_UnlockQueue.Erase(&tse);
+    if ( !tse.m_TSE_Lock ) {
+        CDataSource_ScopeInfo* ds = tse.m_DS_Info;
+        if ( !ds ) {
+            tse.m_UserLockCounter.Add(-1);
+            NCBI_THROW(CCoreException, eNullPtr,
+                       "CTSE_ScopeInfo is not attached to CScope");
+        }
+        // obtain lock from CDataSource
+        CTSE_Lock lock = tse.m_UnloadedInfo->LockTSE();
+        _ASSERT(lock);
+        tse.SetTSE_Lock(lock);
+        _ASSERT(tse.GetTSE_Lock() == lock);
+        _ASSERT(tse.m_UserLockCounter.Get() > 0);
+    }
+    _ASSERT(tse.m_TSE_Lock);
 }
 
 
@@ -497,7 +500,8 @@ void CDataSource_ScopeInfo::RemoveFromHistory(CTSE_ScopeInfo& tse,
     }
     tse.RestoreReplacedTSE();
     _VERIFY(m_TSE_InfoMap.erase(tse.GetBlobId()));
-    tse.m_TSE_LockCounter.Add(1); // to prevent storing into m_TSE_UnlockQueue
+    // prevent storing into m_TSE_UnlockQueue
+    _VERIFY(tse.m_UserLockCounter.Add(1) > 0);
     // remove TSE lock completely
     {{
         TTSE_LockSetMutex::TWriteLockGuard guard2(m_TSE_UnlockQueueMutex);
@@ -514,7 +518,7 @@ void CDataSource_ScopeInfo::RemoveFromHistory(CTSE_ScopeInfo& tse,
         tse.ResetTSE_Lock();
     }
     tse.x_DetachDS();
-    tse.m_TSE_LockCounter.Add(-1); // restore lock counter
+    _VERIFY(tse.m_UserLockCounter.Add(-1) >= 0); // restore lock counter
     _ASSERT(!tse.GetTSE_Lock());
     _ASSERT(!tse.m_DS_Info);
 }
@@ -916,40 +920,90 @@ const CTSE_ScopeInfo::TSeqIds& CTSE_ScopeInfo::GetBioseqsIds(void) const
 }
 
 
-void CTSE_ScopeInfo_Base::x_LockTSE(void)
-{
-    CTSE_ScopeInfo* tse = static_cast<CTSE_ScopeInfo*>(this);
-    if ( !tse->m_TSE_Lock ) {
-        CDataSource_ScopeInfo* ds = tse->m_DS_Info;
-        if ( !ds ) {
-            tse->m_TSE_LockCounter.Add(-1);
-            NCBI_THROW(CCoreException, eNullPtr,
-                       "CTSE_ScopeInfo is not attached to CScope");
-        }
-        ds->UpdateTSELock(*tse, CTSE_Lock());
-    }
-    _ASSERT(tse->m_TSE_Lock);
-}
+/////////////////////////////////////////////////////////////////////////////
+// TSE locking support classes
 
-
-void CTSE_ScopeInfo_Base::x_UserUnlockTSE(void)
+void CTSE_ScopeInfo_Base::x_InternalLockTSE(void)
 {
-    CTSE_ScopeInfo* tse = static_cast<CTSE_ScopeInfo*>(this);
-    _ASSERT(tse->CanBeUnloaded());
-    if ( tse->IsAttached() ) {
-        tse->GetDSInfo().ReleaseTSELock(*tse);
-    }
+    _VERIFY(m_TSE_LockCounter.Add(1) > 0);
 }
 
 
 void CTSE_ScopeInfo_Base::x_InternalUnlockTSE(void)
 {
-    CTSE_ScopeInfo* tse = static_cast<CTSE_ScopeInfo*>(this);
-    _ASSERT(tse->CanBeUnloaded());
-    if ( tse->IsAttached() ) {
-        tse->GetDSInfo().ForgetTSELock(*tse);
+    if ( m_TSE_LockCounter.Add(-1) == 0 ) {
+        CTSE_ScopeInfo* tse = static_cast<CTSE_ScopeInfo*>(this);
+        _ASSERT(tse->CanBeUnloaded());
+        if ( tse->IsAttached() ) {
+            tse->GetDSInfo().ForgetTSELock(*tse);
+        }
     }
 }
+
+
+void CTSE_ScopeInfo_Base::x_UserLockTSE(void)
+{
+    if ( m_UserLockCounter.Add(1) == 1 ) {
+        CTSE_ScopeInfo* tse = static_cast<CTSE_ScopeInfo*>(this);
+        //_ASSERT(tse->CanBeUnloaded());
+        if ( tse->IsAttached() ) {
+            tse->GetDSInfo().AcquireTSEUserLock(*tse);
+        }
+    }
+}
+
+
+void CTSE_ScopeInfo_Base::x_UserUnlockTSE(void)
+{
+    if ( m_UserLockCounter.Add(-1) == 0 ) {
+        CTSE_ScopeInfo* tse = static_cast<CTSE_ScopeInfo*>(this);
+        //_ASSERT(tse->CanBeUnloaded());
+        if ( tse->IsAttached() ) {
+            tse->GetDSInfo().ReleaseTSEUserLock(*tse);
+        }
+    }
+}
+
+
+void CTSE_ScopeInternalLocker::Lock(CTSE_ScopeInfo* tse) const
+{
+    CTSE_ScopeInfo_Base* base =
+        reinterpret_cast<CTSE_ScopeInfo_Base*>(tse);
+    CObjectCounterLocker::Lock(base);
+    base->x_InternalLockTSE();
+}
+
+
+void CTSE_ScopeInternalLocker::Unlock(CTSE_ScopeInfo* tse) const
+{
+    CTSE_ScopeInfo_Base* base =
+        reinterpret_cast<CTSE_ScopeInfo_Base*>(tse);
+    base->x_InternalUnlockTSE();
+    CObjectCounterLocker::Unlock(base);
+}
+
+
+void CTSE_ScopeUserLocker::Lock(CTSE_ScopeInfo* tse) const
+{
+    CTSE_ScopeInfo_Base* base =
+        reinterpret_cast<CTSE_ScopeInfo_Base*>(tse);
+    CObjectCounterLocker::Lock(base);
+    base->x_InternalLockTSE();
+    base->x_UserLockTSE();
+}
+
+
+void CTSE_ScopeUserLocker::Unlock(CTSE_ScopeInfo* tse) const
+{
+    CTSE_ScopeInfo_Base* base =
+        reinterpret_cast<CTSE_ScopeInfo_Base*>(tse);
+    base->x_UserUnlockTSE();
+    base->x_InternalUnlockTSE();
+    CObjectCounterLocker::Unlock(base);
+}
+
+// end of TSE locking support classes
+/////////////////////////////////////////////////////////////////////////////
 
 
 bool CTSE_ScopeInfo::x_SameTSE(const CTSE_Info& tse) const
@@ -1202,21 +1256,21 @@ int CTSE_ScopeInfo::x_GetDSLocksCount(void) const
 }
 
 
-bool CTSE_ScopeInfo::IsLocked(void) const
+bool CTSE_ScopeInfo::IsUserLocked(void) const
 {
-    return int(m_TSE_LockCounter.Get()) > x_GetDSLocksCount();
+    return int(m_TSE_LockCounter.Get()) > 0;
 }
 
 
-bool CTSE_ScopeInfo::LockedMoreThanOnce(void) const
+bool CTSE_ScopeInfo::IsUserLockedMoreThanOnce(void) const
 {
-    return int(m_TSE_LockCounter.Get()) > x_GetDSLocksCount() + 1;
+    return int(m_UserLockCounter.Get()) > 1;
 }
 
 
 void CTSE_ScopeInfo::RemoveFromHistory(int action_if_locked, bool drop_from_ds)
 {
-    if ( IsLocked() ) {
+    if ( IsUserLockedMoreThanOnce() ) {
         switch ( action_if_locked ) {
         case CScope::eKeepIfLocked:
             return;

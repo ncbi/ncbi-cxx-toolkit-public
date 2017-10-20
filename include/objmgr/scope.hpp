@@ -351,12 +351,14 @@ public:
     /// live handles referencing the TSE, nothing is removed.
     /// @param tse
     ///  TSE to be removed from the cache.
-    void RemoveFromHistory(const CTSE_Handle& tse);
+    void RemoveFromHistory(const CTSE_Handle& tse,
+                           EActionIfLocked action = eKeepIfLocked);
     /// Remove the bioseq's TSE from the scope's history. If there are other
     /// live handles referencing the TSE, nothing is removed.
     /// @param bioseq
     ///  Bioseq, which TSE is to be removed from the cache.
-    void RemoveFromHistory(const CBioseq_Handle& bioseq);
+    void RemoveFromHistory(const CBioseq_Handle& bioseq,
+                           EActionIfLocked action = eKeepIfLocked);
 
     /// Revoke data loader from the scope. Throw exception if the
     /// operation fails (e.g. data source is in use or not found).

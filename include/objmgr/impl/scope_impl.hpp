@@ -295,7 +295,7 @@ public:
     void ResetScope(void); // reset scope in initial state (no data)
     void ResetHistory(int action); // CScope::EActionIfLocked
     void ResetDataAndHistory(void);
-    void RemoveFromHistory(CTSE_Handle tse);
+    void RemoveFromHistory(const CTSE_Handle& tse, int action);
 
     // Revoke data sources from the scope. Throw exception if the
     // operation fails (e.g. data source is in use or not found).
@@ -303,7 +303,7 @@ public:
                           int action); // CScope::EActionIfLocked
     // Remove TSE previously added using AddTopLevelSeqEntry() or
     // AddBioseq().
-    void RemoveTopLevelSeqEntry(CTSE_Handle entry);
+    void RemoveTopLevelSeqEntry(const CTSE_Handle& entry);
 
     CSeq_entry_Handle GetSeq_entryHandle(CDataLoader* loader,
                                          const CBlobIdKey& blob_id,

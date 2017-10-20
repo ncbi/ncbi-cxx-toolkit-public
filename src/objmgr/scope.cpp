@@ -328,15 +328,17 @@ void CScope::ResetDataAndHistory(ERemoveDataLoaders)
 }
 
 
-void CScope::RemoveFromHistory(const CBioseq_Handle& bioseq)
+void CScope::RemoveFromHistory(const CBioseq_Handle& bioseq,
+                               EActionIfLocked action)
 {
-    m_Impl->RemoveFromHistory(bioseq.GetTSE_Handle());
+    m_Impl->RemoveFromHistory(bioseq.GetTSE_Handle(), action);
 }
 
 
-void CScope::RemoveFromHistory(const CTSE_Handle& tse)
+void CScope::RemoveFromHistory(const CTSE_Handle& tse,
+                               EActionIfLocked action)
 {
-    m_Impl->RemoveFromHistory(tse);
+    m_Impl->RemoveFromHistory(tse, action);
 }
 
 

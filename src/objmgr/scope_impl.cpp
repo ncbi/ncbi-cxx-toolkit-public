@@ -459,7 +459,7 @@ void CScope_Impl::RemoveDataLoader(const string& name,
 }
 
 
-void CScope_Impl::RemoveTopLevelSeqEntry(CTSE_Handle tse)
+void CScope_Impl::RemoveTopLevelSeqEntry(const CTSE_Handle& tse)
 {
     TConfWriteLockGuard guard(m_ConfLock);
     if ( !tse ) {
@@ -2475,11 +2475,16 @@ void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
 }
 
 
-void CScope_Impl::RemoveFromHistory(CTSE_Handle tse)
+void CScope_Impl::RemoveFromHistory(const CTSE_Handle& tse, int action)
 {
     TConfWriteLockGuard guard(m_ConfLock);
-    x_RemoveFromHistory(Ref(&tse.x_GetScopeInfo()), CScope::eRemoveIfLocked);
-    _ASSERT(!tse);
+    x_RemoveFromHistory(Ref(&tse.x_GetScopeInfo()), action);
+    if ( !tse ) {
+        const_cast<CTSE_Handle&>(tse).Reset();
+    }
+    else {
+        _ASSERT(action == CScope::eKeepIfLocked);
+    }
 }
 
 

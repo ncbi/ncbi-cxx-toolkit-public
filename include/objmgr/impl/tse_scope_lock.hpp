@@ -40,7 +40,6 @@ BEGIN_SCOPE(objects)
 
 class CTSE_Lock;
 class CTSE_ScopeInfo;
-class CTSE_ScopeLocker;
 class CTSE_ScopeInternalLocker;
 class CTSE_ScopeUserLocker;
 
@@ -48,57 +47,26 @@ class CTSE_ScopeInfo_Base : public CObject
 {
 protected:
     mutable CAtomicCounter_WithAutoInit m_TSE_LockCounter;
+    mutable CAtomicCounter_WithAutoInit m_UserLockCounter;
 
-    void x_LockTSE(void);
+    void x_InternalLockTSE(void);
     void x_InternalUnlockTSE(void);
+    void x_UserLockTSE(void);
     void x_UserUnlockTSE(void);
 
-    friend class CTSE_ScopeLocker;
+    friend class CTSE_ScopeInternalLocker;
+    friend class CTSE_ScopeUserLocker;
 };
 
 
-class CTSE_ScopeLocker : protected CObjectCounterLocker
+class NCBI_XOBJMGR_EXPORT CTSE_ScopeInternalLocker : public CObjectCounterLocker
 {
 public:
-    void Lock(CTSE_ScopeInfo* tse) const
-        {
-            CTSE_ScopeInfo_Base* base =
-                reinterpret_cast<CTSE_ScopeInfo_Base*>(tse);
-            CObjectCounterLocker::Lock(base);
-            base->m_TSE_LockCounter.Add(1);
-            base->x_LockTSE();
-        }
-    void InternalUnlock(CTSE_ScopeInfo* tse) const
-        {
-            CTSE_ScopeInfo_Base* base =
-                reinterpret_cast<CTSE_ScopeInfo_Base*>(tse);
-            if ( base->m_TSE_LockCounter.Add(-1) == 0 ) {
-                base->x_InternalUnlockTSE();
-            }
-            CObjectCounterLocker::Unlock(base);
-        }
-    void UserUnlock(CTSE_ScopeInfo* tse) const
-        {
-            CTSE_ScopeInfo_Base* base =
-                reinterpret_cast<CTSE_ScopeInfo_Base*>(tse);
-            if ( base->m_TSE_LockCounter.Add(-1) == 0 ) {
-                base->x_UserUnlockTSE();
-            }
-            CObjectCounterLocker::Unlock(base);
-        }
+    void Lock(CTSE_ScopeInfo* tse) const;
+    void Unlock(CTSE_ScopeInfo* tse) const;
     void Relock(CTSE_ScopeInfo* tse) const
         {
             Lock(tse);
-        }
-};
-
-
-class CTSE_ScopeInternalLocker : public CTSE_ScopeLocker
-{
-public:
-    void Unlock(CTSE_ScopeInfo* tse) const
-        {
-            InternalUnlock(tse);
         }
     void TransferLock(const CTSE_ScopeInfo* /*tse*/,
                       const CTSE_ScopeInternalLocker& /*old_locker*/) const
@@ -107,12 +75,14 @@ public:
 };
 
 
-class CTSE_ScopeUserLocker : public CTSE_ScopeLocker
+class NCBI_XOBJMGR_EXPORT CTSE_ScopeUserLocker : public CObjectCounterLocker
 {
 public:
-    void Unlock(CTSE_ScopeInfo* tse) const
+    void Lock(CTSE_ScopeInfo* tse) const;
+    void Unlock(CTSE_ScopeInfo* tse) const;
+    void Relock(CTSE_ScopeInfo* tse) const
         {
-            UserUnlock(tse);
+            Lock(tse);
         }
     void TransferLock(const CTSE_ScopeInfo* /*tse*/,
                       const CTSE_ScopeUserLocker& /*old_locker*/) const
