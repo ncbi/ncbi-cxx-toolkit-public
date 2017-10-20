@@ -126,7 +126,7 @@ bool CSimple_replace::ApplyToString(string& result, const CMatchString& str,  CR
     }
 
     if (use_putative) {
-        result = "putative " + str;
+        result = "putative " + result;
         rval = true;
     }
     return rval;

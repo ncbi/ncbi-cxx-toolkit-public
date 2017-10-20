@@ -772,9 +772,7 @@ bool CString_constraint::ReplaceStringConstraintPortionInString(string& result, 
                     {{
                        size_t match_len = 0;
                        if (x_AdvancedStringCompare(val, GetMatch_text(), 0, &match_len)) {
-                           result = replace;
-                           CTempString add = CTempString(val).substr(match_len);
-                           result.append(add.data(), match_len);                           
+                           result = replace + val.substr(match_len); // dont optimize before you profile!
                            rval = true;
                        }
                     }}
