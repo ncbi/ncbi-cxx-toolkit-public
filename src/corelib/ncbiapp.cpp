@@ -856,7 +856,7 @@ int CNcbiApplication::AppMain
     }
 
     if (!diag_context.IsSetExitCode()) {
-        diag_context.SetExitCode(got_exception ? 500 : exit_code);
+        diag_context.SetExitCode(exit_code);
     }
 
     if (m_ExitCodeCond == eAllExits
