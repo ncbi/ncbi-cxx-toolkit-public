@@ -199,7 +199,6 @@ config_access needs gpipe_common
 connect needs3party $(NETWORK_LIBS)
 connect needs3party $(ORIG_LIBS)
 connext needs connect
-connssl needs3party $(NETWORK_LIBS)
 connssl needs3party $(ORIG_LIBS)
 creaders needs3party $(ORIG_LIBS)
 crypto needs $(Z_LIB)
@@ -934,11 +933,9 @@ pstub needs3party $(ORIG_LIBS)
 pub needs medline
 pubmed needs medline
 python2.7 needs3party $(ORIG_LIBS)
-python_ncbi_dbapi needs $(Z_LIB)
 python_ncbi_dbapi needs connect
 python_ncbi_dbapi needs dbapi
 python_ncbi_dbapi needs3party $(PYTHON_LIBS)
-python_ncbi_dbapi needs3party $(Z_LIBS)
 rcobaltasn_g needs xser
 refseq_aln_source needs $(COMPRESS_LIBS)
 refseq_aln_source needs dbapi
