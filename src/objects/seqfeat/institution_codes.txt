@@ -730,6 +730,7 @@ BZM	s	Museum fur Naturkunde, Berlin
 BZT	s	Biological Institute Titograd		
 C	s	Botanical Museum, Natural History Museum of Denmark		
 CA	s	Chicago Academy of Sciences		
+CAB	c	Yeast Collection of Department of Microbiology, Stellenbosch University		
 CABI	c	CABI Genetic Resource Collection		
 CACA	s	Carlsbad Caverns National Park		
 CACC<CHN>	c	China Antibiotic Culture Collection Center		
@@ -7438,7 +7439,6 @@ YCH	s	Yavapai College, Biology Department
 YCM	s	Yokosuka City Museum		
 YCP	s	Yunnan Laboratory for Conservation of Rare, Endangered & Endemic Forest Plants, State Forestry Administration		
 YDC	s	Yunnan Institute for Drug Control		
-Yeast Collection of Department of Microbiology, Stellenbosch University	c	Yeast Collection of Department of Microbiology, Stellenbosch University		
 YELLO	s	Yellowstone National Park		
 YEO	s	Yeovil Museum		
 YF	s	Yanbei Forestry Institute		
