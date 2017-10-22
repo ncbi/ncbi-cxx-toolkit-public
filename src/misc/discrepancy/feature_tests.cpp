@@ -2384,7 +2384,7 @@ DISCREPANCY_CASE(FEATURE_LIST, CSeq_feat, eDisc, "Feature List")
         if (subtype != CSeqFeatData::eSubtype_gap && subtype != CSeqFeatData::eSubtype_prot) {
             string subitem = "[n] " + obj.GetData().GetKey();
             subitem += " feature[s]";
-            m_Objs[kFeatureList][subitem].Info().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+            m_Objs[kFeatureList].Info()[subitem].Info().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
         }
     }
 }

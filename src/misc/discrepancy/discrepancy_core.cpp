@@ -260,6 +260,21 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
 }
 
 
+TReportObjectList CDiscrepancyCore::GetObjects(void) const
+{
+    TReportObjectList ret;
+    TReportObjectSet hash;
+    TReportItemList items = GetReport();
+    ITERATE (TReportItemList, rep, items) {
+        TReportObjectList objs = (*rep)->GetDetails();
+        NON_CONST_ITERATE (TReportObjectList, obj, objs) {
+            CReportNode::Add(ret, hash, **obj);
+        }
+    }
+    return ret;
+}
+
+
 CRef<CReportItem> CReportItem::CreateReportItem(const string& test, const string& msg, bool autofix)
 {
     CRef<CDiscrepancyCase> t = CDiscrepancyConstructor::GetDiscrepancyConstructor(test)->Create();

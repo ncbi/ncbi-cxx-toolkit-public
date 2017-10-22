@@ -119,6 +119,7 @@ public:
     virtual string GetName(void) const = 0;
     virtual string GetType(void) const = 0;
     virtual TReportItemList GetReport(void) const = 0;
+    virtual TReportObjectList GetObjects(void) const = 0;
 };
 typedef map<string, CRef<CDiscrepancyCase> > TDiscrepancyCaseMap;
 

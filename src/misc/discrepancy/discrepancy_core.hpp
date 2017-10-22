@@ -279,6 +279,7 @@ public:
     CDiscrepancyCore() : m_Count(0) {}
     virtual void Summarize(CDiscrepancyContext& context){}
     virtual TReportItemList GetReport(void) const { return m_ReportItems;}
+    virtual TReportObjectList GetObjects(void) const;
     virtual CRef<CAutofixReport> Autofix(const CDiscrepancyItem* item, CScope& scope) const { return CRef<CAutofixReport>(0); }
     virtual bool SetHook(TAutofixHook func) { return false;}
 protected:
