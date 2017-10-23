@@ -347,26 +347,29 @@ bool CPhyTreeLabelTracker::x_IsSeqKmerBlast(
         == CPhyTreeFormatter::kNodeInfoSeqKmerBlast;
 }
 
-
 CPhyTreeNodeAnalyzer::CPhyTreeNodeAnalyzer(const string& feature_name,
+                                           const string& feature_color,
                                            const string& feature_acc,
                                            CBioTreeDynamic& tree,
                                            CNcbiOfstream* ostr)
     : m_Ostr(ostr)
 {
-    Init(feature_name, feature_acc, tree);
+    Init(feature_name, feature_color, feature_acc, tree);
 }
 
 void CPhyTreeNodeAnalyzer::Init(const string& feature_name,
+                                const string& feature_color,
                                 const string& feature_acc,
                                 CBioTreeDynamic& tree)
 {
     m_LabelFeatureName = feature_name;
     m_AccFeatureName = feature_acc;
+    m_ColorFeatureName = feature_color;
 
     const CBioTreeFeatureDictionary& fdict = tree.GetFeatureDict();
-    if (!fdict.HasFeature(m_LabelFeatureName)
-        || !fdict.HasFeature(m_AccFeatureName)) {
+    if (!fdict.HasFeature(m_LabelFeatureName) || 
+        !fdict.HasFeature(m_ColorFeatureName) ||
+        !fdict.HasFeature(m_AccFeatureName)) {
 
         m_Error = "Feature " + m_LabelFeatureName + " or " + m_AccFeatureName + " not in feature dictionary";
     }
@@ -420,6 +423,8 @@ void CPhyTreeNodeAnalyzer::x_InitLeafNodeStack(CBioTreeDynamic::CBioNode& x_node
 
     TLeafNodeInfo leafInfoNode;
     leafInfoNode.nodeID = x_node.GetValue().GetId();
+    
+    leafInfoNode.nodeColor = x_node.GetFeature(m_ColorFeatureName);
     leafInfoNode.accession = x_node.GetFeature(m_AccFeatureName);
 
     vecLeafInfoNode.push_back(leafInfoNode);        
@@ -472,36 +477,6 @@ ETreeTraverseCode CPhyTreeNodeAnalyzer::x_OnStepDown(
     return eTreeTraverse;
 }
 
-static void s_CreateTitle(CPhyTreeNodeAnalyzer::TLeafNodeInfoMap nodeMap, string &title, int &leafCount)
-{
-    
-    leafCount = 0;
-    
-    if(nodeMap.size() <= 2) {
-        CPhyTreeNodeAnalyzer::TLeafNodeInfoMap::iterator it = nodeMap.begin();
-        title  = it->first;
-        leafCount = it->second.size();       
-        if(nodeMap.size() == 2) {
-            it++;
-            if(leafCount > it->second.size()) {//if first leafcont > than second
-                title += " and " + it->first;
-            }
-            else {
-
-                title = it->first + " and " + title;
-            }
-            leafCount += it->second.size();       
-        }
-    }
-    else {
-        title = "Multiple organisms";
-        for (auto it = nodeMap.begin(); it != nodeMap.end(); ++it) {
-            vector <CPhyTreeNodeAnalyzer::TLeafNodeInfo> vecInf = it->second;
-            leafCount += vecInf.size();       
-        }      
-    }
-}
-
 
 CPhyTreeNodeAnalyzer::TLeafNodeInfoMap CPhyTreeNodeAnalyzer::x_CombineNodeMaps(TLeafNodeInfoMap nodeMap1, TLeafNodeInfoMap nodeMap2)
 {
@@ -540,16 +515,9 @@ ETreeTraverseCode CPhyTreeNodeAnalyzer::x_OnStepLeft(
     m_InfoStack.push(infoStackMapCombined);
     if (m_Ostr) {
         x_PrintNodeMap(infoStackMapCombined);
-    }
-
-    string title;
-    int leafCount;
-    s_CreateTitle(infoStackMapCombined,title,leafCount);
-    x_node.SetFeature(CPhyTreeFormatter::GetFeatureTag(CPhyTreeFormatter::eLeafCountId), NStr::IntToString(leafCount));
-    x_node.SetFeature(CPhyTreeFormatter::GetFeatureTag(CPhyTreeFormatter::eTitleId), title);    
-    m_LabeledNodes.push_back(CLabeledNode(&x_node, infoStackMapCombined));
+    }        
+    m_LabeledNodes.push_back(CLabeledNode(&x_node, new TLeafNodeInfoMap(infoStackMapCombined)));
     return eTreeTraverse;
 }
-
 
 END_NCBI_SCOPE
