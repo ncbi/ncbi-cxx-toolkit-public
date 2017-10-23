@@ -39,6 +39,8 @@
 #include <random>
 #include <array>
 
+#include <common/test_assert.h>  /* This header must go last */
+
 USING_NCBI_SCOPE;
 
 // Priorities: not set, bottom, middle, top
