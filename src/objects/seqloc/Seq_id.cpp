@@ -872,7 +872,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                 if (old == hints.prev_type) {
                     old_name = hints.prev_type_name;
                 } else {
-                    old_name = "0x" + NStr::UIntToString(old, 16);
+                    old_name = "0x" + NStr::UIntToString(old, 0, 16);
                 }
                 if ( !key_used.empty() ) {
                     key_used = " (per " + key_used + ')';
@@ -918,7 +918,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                 if (old == hints.prev_type) {
                     old_name = hints.prev_type_name;
                 } else {
-                    old_name = "0x" + NStr::UIntToString(old, 16);
+                    old_name = "0x" + NStr::UIntToString(old, 0, 16);
                 }
                 if ( !key_used.empty() ) {
                     key_used = " (per " + key_used + ')';
@@ -971,7 +971,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                 if (it2->second == hints.prev_type) {
                     old_name = hints.prev_type_name;
                 } else {
-                    old_name = "0x" + NStr::UIntToString(it2->second, 16);
+                    old_name = "0x" + NStr::UIntToString(it2->second, 0, 16);
                 }
                 ERR_POST_X(8, Warning << "SAccGuide::AddRule: " << count
                            << ": ignoring refinement of " << key << " from "
