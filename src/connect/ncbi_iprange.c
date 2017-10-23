@@ -60,7 +60,7 @@ extern int/*bool*/ NcbiIsInIPRange(const SIPRange*       range,
             a  = SOCK_NetToHostLong(NcbiIPv6ToIPv4(&range->a, 0));
             b  = SOCK_NetToHostLong(                range->b    );
             ip = SOCK_NetToHostLong(NcbiIPv6ToIPv4( addr,     0));
-            assert(a <= b  &&  ip);
+            assert(ip  &&  a < b);
             return a <= ip  &&  ip <= b;
         case eIPRange_Network:
             a = NcbiIsIPv4(&range->a);
@@ -90,6 +90,7 @@ extern int/*bool*/ NcbiIsInIPRange(const SIPRange*       range,
 
 extern SIPRange NcbiTrueIPRange(const SIPRange* range)
 {
+    unsigned int a;
     SIPRange retval;
     if (range) {
         switch (range->type) {
@@ -107,22 +108,26 @@ extern SIPRange NcbiTrueIPRange(const SIPRange* range)
                 retval = *range;
                 return retval;
             }
-            retval.a =                  range->a;
-            retval.b =  NcbiIPv6ToIPv4(&range->a, 0);
+            retval.a =                 range->a;
+            retval.b = NcbiIPv6ToIPv4(&range->a, 0);
             break;
         case eIPRange_Range:
             assert(NcbiIsIPv4(&range->a)  &&  range->b);
-            retval.a =  range->a;
-            retval.b =  range->b;
+            assert(SOCK_NetToHostLong(NcbiIPv6ToIPv4(&range->a, 0)) <
+                   SOCK_NetToHostLong(range->b));
+            retval.a = range->a;
+            retval.b = range->b;
             break;
         case eIPRange_Network:
-            assert(range->b);
+            assert(!NcbiIsEmptyIPv6(&range->a)  &&  range->b);
             if (!NcbiIsIPv4(&range->a)) {
                 retval = *range;
                 return retval;
             }
-            retval.a =                  range->a;
-            retval.b = (NcbiIPv6ToIPv4(&range->a, 0) & range->b) | ~range->b;
+            a = NcbiIPv6ToIPv4(&range->a, 0);
+            assert(a  &&  !(a & ~range->b));
+            retval.a = a;
+            retval.b = a | ~range->b;
             break;
         }
         retval.type = eIPRange_Range;
