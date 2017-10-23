@@ -287,11 +287,19 @@ public:
     virtual
     void entry_context_start(ostream& ostr, but::log_level l);
 
+#  if BOOST_VERSION >= 106500
+    virtual
+    void log_entry_context(ostream& os, but::log_level l, but::const_string v);
+
+    virtual
+    void entry_context_finish(ostream& os, but::log_level l);
+#  else
     virtual
     void log_entry_context(ostream& ostr, but::const_string value);
 
     virtual
     void entry_context_finish (ostream& ostr);
+#  endif
 #endif
 
 private:
@@ -2133,6 +2141,19 @@ void CNcbiBoostLogger::entry_context_start(ostream& ostr, but::log_level l)
     m_Upper->entry_context_start(ostr, l);
 }
 
+#  if BOOST_VERSION >= 106500
+void CNcbiBoostLogger::log_entry_context(ostream& ostr,
+                                         but::log_level l,
+                                         but::const_string value)
+{
+    m_Upper->log_entry_context(ostr, l, value);
+}
+
+void CNcbiBoostLogger::entry_context_finish(ostream& ostr, but::log_level l)
+{
+    m_Upper->entry_context_finish(ostr, l);
+}
+#  else
 void CNcbiBoostLogger::log_entry_context(ostream& ostr,
                                          but::const_string value)
 {
@@ -2143,6 +2164,7 @@ void CNcbiBoostLogger::entry_context_finish (ostream& ostr)
 {
     m_Upper->entry_context_finish(ostr);
 }
+#  endif
 #endif
 
 void
