@@ -40,6 +40,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(align_format);
 // forward declaration
 class CPhyTreeNodeGroupper;
+class CPhyTreeNodeAnalyzer;
 
 
 /// Class for adding tree features, maniplating and printing tree in standard
@@ -56,8 +57,9 @@ public:
     enum ETreeSimplifyMode {
         eNone,             ///< No simplification mode
         eFullyExpanded,    ///< Tree fully expanded
-        eByBlastName       ///< Subtrees that contain sequences with the
+        eByBlastName,      ///< Subtrees that contain sequences with the
                            ///< the same Blast Name are collapsed
+        eCollapseToViewPort ///< collapse to viewport
     };
 
     /// Output formats
@@ -331,6 +333,9 @@ public:
     bool ShowSubtree(int root_id);
 
 
+    void CollapseToViewPort(void);
+
+
 protected:    
     
     /// Forbiding copy constructor
@@ -402,6 +407,8 @@ protected:
     /// nodes provided by the input paramater. Used by x_SimplifyTree.
     ///
     void x_CollapseSubtrees(CPhyTreeNodeGroupper& groupper);
+
+    void x_AddFeaturesForInnerNodes(CPhyTreeNodeAnalyzer& groupper);
 
 
     /// Init tree leaf labels with selected labels type
