@@ -86,8 +86,7 @@ std::string TeamcityMessages::escape(std::string s) {
 }
 
 void TeamcityMessages::openMsg(const std::string &name) {
-    // endl for http://jetbrains.net/tracker/issue/TW-4412
-    *m_out << std::endl << "##teamcity[" << name;
+    *m_out << "##teamcity[" << name;
 }
 
 void TeamcityMessages::closeMsg() {
