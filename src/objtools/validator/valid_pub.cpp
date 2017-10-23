@@ -1210,15 +1210,12 @@ void CValidError_imp::ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs
         if (b_it) {
             CConstRef<CBioseq> bioseq = b_it->GetCompleteBioseq();
             if (CValidError_bioseq::IsWGSMaster(*bioseq, *m_Scope) || 
-                (!s_IsNoncuratedRefSeq(*bioseq) &&
+                (!IsRefSeq() &&
                  !CValidError_bioseq::IsWGSAccession(*bioseq) &&
                  !CValidError_bioseq::IsTSAAccession(*bioseq))) {
                   EDiagSev sev = eDiag_Info;
                   if (m_genomeSubmission) {
                       sev = eDiag_Error;
-                  }
-                  if (s_CuratedRefSeqLowerToWarning(*bioseq)) {
-                      sev = eDiag_Warning;
                   }
                   PostErr(sev, eErr_GENERIC_MissingPubInfo,
                        "No submission citation anywhere on this entire record.", se);
