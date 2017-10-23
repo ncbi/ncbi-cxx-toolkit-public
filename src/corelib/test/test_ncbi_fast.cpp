@@ -47,8 +47,8 @@ USING_NCBI_SCOPE;
 #define SSETEST_BUFSIZE 128
 #define SSETEST_COUNT   100
 #elif 1
-#define SSETEST_BUFSIZE 512000
-#define SSETEST_COUNT   50000
+#define SSETEST_BUFSIZE 51200
+#define SSETEST_COUNT   500000
 #elif 0
 #define SSETEST_BUFSIZE 102400
 #define SSETEST_COUNT   100000
@@ -104,6 +104,9 @@ BOOST_AUTO_TEST_CASE(TestFillZerosChar)
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         NFast::fill_n_zeros_aligned16(buf,buf_size);
+        for (size_t j = 0; j < buf_size; j += 64) {
+            buf[j] += 1;
+        }
     } 
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::fill_n_zeros_aligned16(char)" << endl;
@@ -111,7 +114,10 @@ BOOST_AUTO_TEST_CASE(TestFillZerosChar)
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         NFast::fill_n_zeros(buf,buf_size);
-    } 
+        for (size_t j = 0; j < buf_size; j += 64) {
+            buf[j] += 1;
+        }
+    }
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::fill_n_zeros(char)" << endl;
 #endif
@@ -119,14 +125,20 @@ BOOST_AUTO_TEST_CASE(TestFillZerosChar)
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         NFast::x_no_ncbi_sse_fill_n_zeros(buf, buf_size);
-    } 
+        for (size_t j = 0; j < buf_size; j += 64) {
+            buf[j] += 1;
+        }
+    }
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::x_no_ncbi_sse_fill_n_zeros(char)" << endl;
 
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         NFast::Zero_memory(buf,buf_size);
-    } 
+        for (size_t j = 0; j < buf_size; j += 64) {
+            buf[j] += 1;
+        }
+    }
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::Zero_memory(char)"
          << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0) ? "ok" : "wrong")
@@ -149,14 +161,20 @@ BOOST_AUTO_TEST_CASE(TestFillZerosInt)
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         NFast::fill_n_zeros_aligned16(buf,buf_size);
-    } 
+        for (size_t j = 0; j < buf_size; j += 16) {
+            buf[j] += 1;
+        }
+    }
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::fill_n_zeros_aligned16(int)" << endl;
 
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         NFast::fill_n_zeros(buf,buf_size);
-    } 
+        for (size_t j = 0; j < buf_size; j += 16) {
+            buf[j] += 1;
+        }
+    }
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::fill_n_zeros(int) " << endl;
 #endif
@@ -164,14 +182,20 @@ BOOST_AUTO_TEST_CASE(TestFillZerosInt)
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         NFast::x_no_ncbi_sse_fill_n_zeros(buf, buf_size);
-    } 
+        for (size_t j = 0; j < buf_size; j += 16) {
+            buf[j] += 1;
+        }
+    }
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::x_no_ncbi_sse_fill_n_zeros(int)" << endl;
 
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         NFast::Zero_memory(buf,buf_size);
-    } 
+        for (size_t j = 0; j < buf_size; j += 16) {
+            buf[j] += 1;
+        }
+    }
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::Zero_memory(int)"
          << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0) ? "ok" : "wrong")
