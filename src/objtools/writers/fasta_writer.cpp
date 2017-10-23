@@ -100,26 +100,17 @@ void CFastaOstreamEx::WriteFeature(const CSeq_feat& feat,
     }
 
     const bool IsCdregion = feat.GetData().IsCdregion();
-    if (IsCdregion) { // check that the cdregion is translatable (RW-490)
-        int frame_offset = 0;
-        if (feat.GetData().GetCdregion().IsSetFrame()) {
-            frame_offset = feat.GetData().GetCdregion().GetFrame()-1;
-        }
-        if (((GetLength(feat.GetLocation(), &scope) - frame_offset) < 3)) {
-            return;
-        }
+    if (translate_cds &&
+        IsCdregion) {
+        x_WriteTranslatedCds(feat, scope);
+        return;
     }
 
 
     if (!xWriteFeatureTitle(feat, scope, translate_cds)) {
         return; // Title not written
     }
-
-    if (translate_cds &&
-        IsCdregion) {
-        x_WriteTranslatedCds(feat, scope);
-        return;
-    }
+   
 
     CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetLocation());
     if (!bsh) {
@@ -225,7 +216,17 @@ void CFastaOstreamEx::x_WriteTranslatedCds(const CSeq_feat& cds, CScope& scope)
 {
     CBioseq_Handle bsh;
     try {
-        auto bioseq = CSeqTranslator::TranslateToProtein(cds, scope); // Need to set seq-id on this.
+        CRef<CBioseq> bioseq = CSeqTranslator::TranslateToProtein(cds, scope); // Need to set seq-id on this.
+        if (bioseq.Empty()) { // RW-490
+            int frame_offset = 0;
+            if (cds.GetData().GetCdregion().IsSetFrame()) {
+                frame_offset = cds.GetData().GetCdregion().GetFrame()-1;
+            }
+            int cds_length = (GetLength(cds.GetLocation(), &scope) - frame_offset);
+            if (cds_length < 10) {
+                return;
+            }
+        }
         bsh = m_InternalScope->AddBioseq(bioseq.GetObject());
     } catch(CException& e) {
         string err_msg = "CDS translation error: ";
@@ -237,6 +238,10 @@ void CFastaOstreamEx::x_WriteTranslatedCds(const CSeq_feat& cds, CScope& scope)
         NCBI_THROW(CObjWriterException, eInternal, "Empty bioseq handle");
     }
 
+    const bool translate_cds = true;
+    if (!xWriteFeatureTitle(cds, scope, translate_cds)) {
+        return; // Title not written
+    }
     WriteSequence(bsh, nullptr, CSeq_loc::fMerge_AbuttingOnly);
 }
 
