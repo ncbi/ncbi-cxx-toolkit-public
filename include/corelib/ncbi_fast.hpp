@@ -336,7 +336,7 @@ inline
 void x_no_ncbi_sse_split_into4(const int* src, size_t count, int*  dest0, int*  dest1, int*  dest2, int*  dest3) {
     size_t d=0;
     int* dest[] = {dest0, dest1, dest2, dest3};
-    for (size_t e = 0; e < count; ++e, d%=4) {
+    for (size_t e = 0; e < 4*count; ++e, d%=4) {
         *(dest[d++]++) = *(src + e);
     }
 }
@@ -344,7 +344,7 @@ inline
 void x_no_ncbi_sse_split_into4(const int* src, size_t count, char* dest0, char* dest1, char* dest2, char* dest3) {
     size_t d=0;
     char* dest[] = {dest0, dest1, dest2, dest3};
-    for (size_t e = 0; e < count; ++e, d%=4) {
+    for (size_t e = 0; e < 4*count; ++e, d%=4) {
         *(dest[d++]++) = *(src + e);
     }
 }
@@ -362,7 +362,7 @@ inline
 void x_no_ncbi_sse_max_4element(const unsigned int* src, size_t count, unsigned int dest[4]) {
     unsigned int result[4];
     memcpy(result, dest, sizeof(unsigned int) * 4);
-    for (size_t e = 0; e < count; e += 4) {
+    for (size_t e = 0; e < 4*count; e += 4) {
         if (result[0] < *(src + e)) {
             result[0] = *(src + e);
         }
@@ -462,8 +462,7 @@ void Convert_memory(const unsigned int* src, size_t count, char* dest) {
 
 inline
 void Split_into4(const int* src, size_t count, int*  dest0, int*  dest1, int*  dest2, int*  dest3) {
-#if 0
-//#if !defined(NCBI_COMPILER_MSVC) && defined(NCBI_HAVE_FAST_OPS)
+#if !defined(NCBI_COMPILER_MSVC) && defined(NCBI_HAVE_FAST_OPS)
     if (count%16 == 0 && intptr_t(src)%16 == 0 &&
         intptr_t(dest0)%16 == 0 && intptr_t(dest1)%16 == 0 && intptr_t(dest2)%16 == 0 && intptr_t(dest3)%16 == 0) {
         copy_4n_split_aligned16(src, count, dest0, dest1, dest2, dest3);
@@ -531,8 +530,7 @@ void Max_element(const unsigned int* src, size_t count, unsigned int& dest) {
 }
 inline
 void Max_4element(const unsigned int* src, size_t count, unsigned int dest[4]) {
-#if 0
-//#if !defined(NCBI_COMPILER_MSVC) && defined(NCBI_HAVE_FAST_OPS)
+#if !defined(NCBI_COMPILER_MSVC) && defined(NCBI_HAVE_FAST_OPS)
     if (count%16 == 0 && intptr_t(src)%16 == 0) {
         max_4elements_n_aligned16(src, count, dest);
     } else {
