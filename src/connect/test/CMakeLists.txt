@@ -48,4 +48,4 @@ include(CMakeLists.test_ncbi_linkerd_mt.app.txt)
 include(CMakeLists.test_ncbi_namerd.app.txt)
 include(CMakeLists.test_ncbi_namerd_mt.app.txt)
 include(CMakeLists.test_ncbi_http_upload.app.txt)
-
+include(CMakeLists.test_ncbi_service_cxx_mt.app.txt)

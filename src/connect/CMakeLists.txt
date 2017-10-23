@@ -77,6 +77,7 @@ set(SRC_CXX
     ncbi_misc ncbi_namedpipe ncbi_namedpipe_connector
     ncbi_pipe ncbi_pipe_connector ncbi_conn_reader_writer
     ncbi_userhost ncbi_http_session ncbi_lbos_cxx ncbi_monkey
+    ncbi_service_cxx
     ${SRC_TLS}
     )
 
