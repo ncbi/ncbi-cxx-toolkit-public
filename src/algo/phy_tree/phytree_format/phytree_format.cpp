@@ -292,6 +292,24 @@ void CPhyTreeFormatter::FullyExpand(void)
     TreeDepthFirstTraverse(*m_Dyntree.GetTreeNodeNonConst(), CExpander());
 }
 
+void CPhyTreeFormatter::CollapseToViewPort(void)
+{
+    string outFileName = "tmp/treeTraverse.txt";        
+    CNcbiOfstream ostr(outFileName.c_str());        
+    
+    CPhyTreeNodeAnalyzer groupper 
+            = TreeDepthFirstTraverse(*m_Dyntree.GetTreeNodeNonConst(), 
+                           CPhyTreeNodeAnalyzer(GetFeatureTag(eBlastNameId),
+                                                GetFeatureTag(eNodeColorId),
+                                                GetFeatureTag(eAccessionNbrId),
+                                                m_Dyntree,&ostr));
+
+    if (!groupper.GetError().empty()) {
+            NCBI_THROW(CPhyTreeFormatterException, eTraverseProblem,
+                       groupper.GetError());
+    }
+    x_AddFeaturesForInnerNodes(groupper);
+}
 
 void CPhyTreeFormatter::SimplifyTree(ETreeSimplifyMode method)
 {
@@ -306,17 +324,17 @@ void CPhyTreeFormatter::SimplifyTree(ETreeSimplifyMode method)
     case eByBlastName :
     {
         FullyExpand();
+        
         CPhyTreeNodeGroupper groupper 
             = TreeDepthFirstTraverse(*m_Dyntree.GetTreeNodeNonConst(), 
                            CPhyTreeNodeGroupper(GetFeatureTag(eBlastNameId),
                                                   GetFeatureTag(eNodeColorId),
                                                   m_Dyntree));
-
+        
         if (!groupper.GetError().empty()) {
             NCBI_THROW(CPhyTreeFormatterException, eTraverseProblem,
                        groupper.GetError());
-        }
-
+        }        
         x_CollapseSubtrees(groupper);
         break;
     }
@@ -324,6 +342,10 @@ void CPhyTreeFormatter::SimplifyTree(ETreeSimplifyMode method)
     //Fully expand the tree        
     case eFullyExpanded :
         FullyExpand();
+        break;
+
+    case eCollapseToViewPort:
+        CollapseToViewPort();
         break;
 
     default:
@@ -593,6 +615,80 @@ void CPhyTreeFormatter::x_CollapseSubtrees(CPhyTreeNodeGroupper& groupper)
         if(leafCount != 0) {            
             it->GetNode()->SetFeature(GetFeatureTag(eLeafCountId), NStr::IntToString(leafCount));
         }
+    }
+}
+
+static void s_InitFeatures(CPhyTreeNodeAnalyzer::TLeafNodeInfoMap nodeMap, string &title, int &leafCount, string &nodeColor)
+{
+    
+    leafCount = 0;
+    
+    if(nodeMap.size() <= 2) {
+        CPhyTreeNodeAnalyzer::TLeafNodeInfoMap::iterator it = nodeMap.begin();
+        title  = it->first;
+        leafCount = it->second.size();       
+        if(nodeMap.size() == 1) { // one blast name
+            nodeColor = it->second[0].nodeColor;
+        }
+        else if(nodeMap.size() == 2) {
+            it++;
+            if(leafCount > it->second.size()) {//if first leafcont > than second
+                title += " and " + it->first;
+            }
+            else {
+
+                title = it->first + " and " + title;
+            }
+            leafCount += it->second.size();       
+        }
+    }
+    else {
+        title = "Multiple organisms";
+        for (auto it = nodeMap.begin(); it != nodeMap.end(); ++it) {
+            vector <CPhyTreeNodeAnalyzer::TLeafNodeInfo> vecInf = it->second;
+            leafCount += vecInf.size();       
+        }      
+    }
+}
+
+
+void CPhyTreeFormatter::x_AddFeaturesForInnerNodes(CPhyTreeNodeAnalyzer& groupper)
+{
+    for (CPhyTreeNodeAnalyzer::CLabeledNodes_I it=groupper.Begin();
+         it != groupper.End(); ++it) {
+
+        CPhyTreeNodeAnalyzer::TLeafNodeInfoMap *leafInfoMap = it->GetLeafInfoMap();                
+        if(leafInfoMap && !(*leafInfoMap).empty()) {
+            string label,nodeColor;
+            int leafCount;
+            s_InitFeatures(*leafInfoMap,label,leafCount,nodeColor);                       
+            it->GetNode()->SetFeature(GetFeatureTag(eLabelId), label);            
+            it->GetNode()->SetFeature(GetFeatureTag(eLeafCountId), NStr::IntToString(leafCount));            
+            if(!nodeColor.empty()) {
+                it->GetNode()->SetFeature(GetFeatureTag(eNodeColorId), nodeColor);            
+            }
+        }
+
+        CQueryNodeChecker query_checker
+            = TreeDepthFirstTraverse(*it->GetNode(),
+                                     CQueryNodeChecker(m_Dyntree));
+        
+        if (query_checker.HasQueryNode()) {
+            x_MarkNode(it->GetNode(), s_kQueryNodeBgColor);
+        }
+        else if (query_checker.HasSeqFromType()) {
+            x_MarkNode(it->GetNode(), s_kSeqOfTypeNodeBgColor);
+        }
+        else if (query_checker.HasSeqFromVerifiedMat()) {
+            x_MarkNode(it->GetNode(), s_kSeqFromVerifiedMatNodeBgColor);
+        }        
+        else if (query_checker.HasSeqReferenceDB()) {
+            x_MarkNode(it->GetNode(), s_kSeqReferenceDBNodeBgColor);
+        }        
+        else if (query_checker.HasSeqKmerBlast()) {
+            x_MarkNode(it->GetNode(), s_kSeqKmerBlastNodeBgColor);
+        }  
+        delete leafInfoMap;
     }
 }
 
