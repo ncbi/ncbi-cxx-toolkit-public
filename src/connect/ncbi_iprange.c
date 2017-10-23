@@ -126,8 +126,8 @@ extern SIPRange NcbiTrueIPRange(const SIPRange* range)
             }
             a = NcbiIPv6ToIPv4(&range->a, 0);
             assert(a  &&  !(a & ~range->b));
-            retval.a = a;
-            retval.b = a | ~range->b;
+            retval.a = range->a;
+            retval.b =        a | ~range->b;
             break;
         }
         retval.type = eIPRange_Range;
