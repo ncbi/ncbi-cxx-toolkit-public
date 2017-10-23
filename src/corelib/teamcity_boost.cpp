@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id$
+ * $Revision$
 */
 
 #include <sstream>
@@ -83,6 +83,17 @@ public:
     virtual void entry_context_start(std::ostream&, boost::unit_test::log_level);
     virtual void log_entry_context(std::ostream&, boost::unit_test::const_string);
     virtual void entry_context_finish(std::ostream&);
+
+#if BOOST_VERSION >= 106500
+     // Since v1.65.0 the log level is passed to the formatters for the contexts
+     // See boostorg/test.git:fcb302b66ea09c25f0682588d22fbfdf59eac0f7
+     void log_entry_context(std::ostream& os, boost::unit_test::log_level, boost::unit_test::const_string ctx) override {
+         log_entry_context(os, ctx);
+     }
+     void entry_context_finish(std::ostream& os, boost::unit_test::log_level) override {
+         entry_context_finish(os);
+     }
+#endif
 };
 
 // Fake fixture to register formatter
@@ -90,13 +101,16 @@ struct TeamcityFormatterRegistrar {
     TeamcityFormatterRegistrar() {
         if (underTeamcity()) {
             boost::unit_test::unit_test_log.set_formatter(new TeamcityBoostLogFormatter());
-            boost::unit_test::unit_test_log.set_threshold_level
-                (RTCFG(but::log_level, LOG_LEVEL, log_level));
+            boost::unit_test::unit_test_log.set_threshold_level(boost::unit_test::log_test_units);
         }
     }
 };
 
 BOOST_GLOBAL_FIXTURE(TeamcityFormatterRegistrar);
+
+// Dummy method used to keep object file in case of static library linking
+// See README.md and https://github.com/JetBrains/teamcity-cpp/pull/19
+void TeamcityGlobalFixture() {}
 
 // Formatter implementation
 static std::string toString(boost::unit_test::const_string bstr) {

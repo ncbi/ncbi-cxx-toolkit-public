@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * $Id$
+ * $Revision$
 */
 
 #ifndef H_TEAMCITY_MESSAGES
@@ -33,9 +33,9 @@ protected:
     std::ostream *m_out;
 
 public:
-    std::string escape(std::string s);
+    std::string escape(const std::string &s);
     void openMsg(const std::string &name);
-    void writeProperty(std::string name, std::string value);
+    void writeProperty(const std::string &name, const std::string &value);
     void closeMsg();
 
 public:
@@ -46,14 +46,14 @@ public:
 
     void setOutput(std::ostream &);
 
-    void suiteStarted(std::string name, std::string flowid =  std::string());
-    void suiteFinished(std::string name, std::string flowid =  std::string());
+    void suiteStarted(const std::string &name, const std::string &flowid =  std::string());
+    void suiteFinished(const std::string &name, const std::string &flowid =  std::string());
 
-    void testStarted(std::string name, std::string flowid =  std::string(), bool captureStandardOutput = false);
-    void testFailed(std::string name, std::string message, std::string details, std::string flowid =  std::string());
-    void testIgnored(std::string name, std::string message, std::string flowid =  std::string());
-    void testOutput(std::string name, std::string output, std::string flowid, bool isStdErr = StdOut);
-    void testFinished(std::string name, int durationMs = -1, std::string flowid = std::string());
+    void testStarted(const std::string &name, const std::string &flowid =  std::string(), bool captureStandardOutput = false);
+    void testFailed(const std::string &name, const std::string &message, const std::string &details, const std::string &flowid =  std::string());
+    void testIgnored(const std::string &name, const std::string &message, const std::string &flowid =  std::string());
+    void testOutput(const std::string &name, const std::string &output, const std::string &flowid, bool isStdErr = StdOut);
+    void testFinished(const std::string &name, int durationMs = -1, const std::string &flowid = std::string());
 };
 
 }

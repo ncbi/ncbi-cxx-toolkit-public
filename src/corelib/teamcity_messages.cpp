@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * $Id$
+ * $Revision$
 */
 
 #include <ncbi_pch.hpp>
@@ -26,7 +26,7 @@ namespace jetbrains {
 namespace teamcity {
 
 std::string getFlowIdFromEnvironment() {
-#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)) && 0
+#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32)) && !defined(__CYGWIN__) && !defined(__MINGW32__) && 0
     char *flowId = NULL;
     size_t sz = 0;
     std::string result;
@@ -43,7 +43,7 @@ std::string getFlowIdFromEnvironment() {
 }
 
 bool underTeamcity() {
-#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)) && 0
+#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32)) && !defined(__CYGWIN__) && !defined(__MINGW32__) && 0
     char *teamCityProjectName = 0;
     size_t sz = 0;
     bool result = false;
@@ -66,8 +66,9 @@ void TeamcityMessages::setOutput(std::ostream &out) {
     m_out = &out;
 }
 
-std::string TeamcityMessages::escape(std::string s) {
+std::string TeamcityMessages::escape(const std::string &s) {
     std::string result;
+    result.reserve(s.length());
 
     for (size_t i = 0; i < s.length(); i++) {
         char c = s[i];
@@ -95,11 +96,11 @@ void TeamcityMessages::closeMsg() {
     *m_out << std::endl;
 }
 
-void TeamcityMessages::writeProperty(std::string name, std::string value) {
+void TeamcityMessages::writeProperty(const std::string &name, const std::string &value) {
     *m_out << " " << name << "='" << escape(value) << "'";
 }
 
-void TeamcityMessages::suiteStarted(std::string name, std::string flowid) {
+void TeamcityMessages::suiteStarted(const std::string &name, const std::string &flowid) {
     openMsg("testSuiteStarted");
     writeProperty("name", name);
     if(flowid.length() > 0) {
@@ -109,7 +110,7 @@ void TeamcityMessages::suiteStarted(std::string name, std::string flowid) {
     closeMsg();
 }
 
-void TeamcityMessages::suiteFinished(std::string name, std::string flowid) {
+void TeamcityMessages::suiteFinished(const std::string &name, const std::string &flowid) {
     openMsg("testSuiteFinished");
     writeProperty("name", name);
     if(flowid.length() > 0) {
@@ -119,7 +120,7 @@ void TeamcityMessages::suiteFinished(std::string name, std::string flowid) {
     closeMsg();
 }
 
-void TeamcityMessages::testStarted(std::string name, std::string flowid, bool captureStandardOutput) {
+void TeamcityMessages::testStarted(const std::string &name, const std::string &flowid, bool captureStandardOutput) {
     openMsg("testStarted");
     writeProperty("name", name);
     if(flowid.length() > 0) {
@@ -133,7 +134,7 @@ void TeamcityMessages::testStarted(std::string name, std::string flowid, bool ca
     closeMsg();
 }
 
-void TeamcityMessages::testFinished(std::string name, int durationMs, std::string flowid) {
+void TeamcityMessages::testFinished(const std::string &name, int durationMs, const std::string &flowid) {
     openMsg("testFinished");
 
     writeProperty("name", name);
@@ -151,7 +152,7 @@ void TeamcityMessages::testFinished(std::string name, int durationMs, std::strin
     closeMsg();
 }
 
-void TeamcityMessages::testFailed(std::string name, std::string message, std::string details, std::string flowid) {
+void TeamcityMessages::testFailed(const std::string &name, const std::string &message, const std::string &details, const std::string &flowid) {
     openMsg("testFailed");
     writeProperty("name", name);
     writeProperty("message", message);
@@ -163,7 +164,7 @@ void TeamcityMessages::testFailed(std::string name, std::string message, std::st
     closeMsg();
 }
 
-void TeamcityMessages::testIgnored(std::string name, std::string message, std::string flowid) {
+void TeamcityMessages::testIgnored(const std::string &name, const std::string &message, const std::string &flowid) {
     openMsg("testIgnored");
     writeProperty("name", name);
     writeProperty("message", message);
@@ -174,7 +175,7 @@ void TeamcityMessages::testIgnored(std::string name, std::string message, std::s
     closeMsg();
 }
 
-void TeamcityMessages::testOutput(std::string name, std::string output, std::string flowid, bool isStdError) {
+void TeamcityMessages::testOutput(const std::string &name, const std::string &output, const std::string &flowid, bool isStdError) {
     openMsg(isStdError ? "testStdErr" : "testStdOut");
     writeProperty("name", name);
     writeProperty("out", output);
