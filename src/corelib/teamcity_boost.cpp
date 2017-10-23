@@ -87,10 +87,10 @@ public:
 #if BOOST_VERSION >= 106500
      // Since v1.65.0 the log level is passed to the formatters for the contexts
      // See boostorg/test.git:fcb302b66ea09c25f0682588d22fbfdf59eac0f7
-     void log_entry_context(std::ostream& os, boost::unit_test::log_level, boost::unit_test::const_string ctx) override {
+     void log_entry_context(std::ostream& os, boost::unit_test::log_level, boost::unit_test::const_string ctx) {
          log_entry_context(os, ctx);
      }
-     void entry_context_finish(std::ostream& os, boost::unit_test::log_level) override {
+     void entry_context_finish(std::ostream& os, boost::unit_test::log_level) {
          entry_context_finish(os);
      }
 #endif
