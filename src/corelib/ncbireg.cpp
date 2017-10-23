@@ -1825,7 +1825,7 @@ bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags,
 
     list<string> names;
     {{
-        string s = m_MainRegistry->Get("NCBI", ".Inherits");
+        string s = m_AllRegistries->Get("NCBI", ".Inherits");
         if (s.empty()) {
             if (dynamic_cast<CNcbiRegistry*>(this) != NULL) {
                 _TRACE("LoadBaseRegistries(" << this
