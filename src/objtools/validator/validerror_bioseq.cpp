@@ -5950,7 +5950,7 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                             // suppress
                         } else {
                             PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
-                                "PartialLocation: 3' partial is not at stop AND is not at consensus splice site",
+                                "PartialLocation: 3' partial is not at end of sequence, gap, or consensus splice site",
                                 *(feat.GetSeq_feat()));
                         }
                     }

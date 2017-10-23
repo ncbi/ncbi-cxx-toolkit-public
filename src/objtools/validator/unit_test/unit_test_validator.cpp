@@ -11035,7 +11035,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
                                                  "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
-                                                 "PartialLocation: 3' partial is not at stop AND is not at consensus splice site"));
+                                                 "PartialLocation: 3' partial is not at end of sequence, gap, or consensus splice site"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
                                                  "Got stop codon, but 3'end is labeled partial"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
@@ -11067,7 +11067,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
                                                  "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
-                                                 "PartialLocation: 3' partial is not at stop AND is not at consensus splice site"));
+                                                 "PartialLocation: 3' partial is not at end of sequence, gap, or consensus splice site"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
                                                  "Got stop codon, but 3'end is labeled partial"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
@@ -11308,7 +11308,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
                                                  "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
-        "PartialLocation: 3' partial is not at stop AND is not at consensus splice site"));
+        "PartialLocation: 3' partial is not at end of sequence, gap, or consensus splice site"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -11391,7 +11391,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
                                                  "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
-                                                 "PartialLocation: 3' partial is not at stop AND is not at consensus splice site"));
+                                                 "PartialLocation: 3' partial is not at end of sequence, gap, or consensus splice site"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
         "Inconsistent: Product= complete, Location= partial, Feature.partial= TRUE"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
@@ -20287,7 +20287,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_78)
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
         "Coding region should not be 3' partial if mRNA is 3' complete"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
-        "PartialLocation: 3' partial is not at stop AND is not at consensus splice site"));
+        "PartialLocation: 3' partial is not at end of sequence, gap, or consensus splice site"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
         "Got stop codon, but 3'end is labeled partial"));
     eval = validator.Validate(seh, options);
@@ -20308,7 +20308,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_78)
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
         "Coding region should not be 3' partial if mRNA is 3' complete"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
-        "PartialLocation: 3' partial is not at stop AND is not at consensus splice site"));
+        "PartialLocation: 3' partial is not at end of sequence, gap, or consensus splice site"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
         "Got stop codon, but 3'end is labeled partial"));
     eval = validator.Validate(seh, options);
