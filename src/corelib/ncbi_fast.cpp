@@ -34,29 +34,10 @@
 #include <corelib/ncbidbg.hpp>
 #include <corelib/ncbi_fast.hpp>
 
-#if defined(NCBI_COMPILER_MSVC) || NCBI_SSE > 40
+#if defined(NCBI_HAVE_FAST_OPS)
 BEGIN_NCBI_SCOPE
 BEGIN_NAMESPACE(NFast);
-USING_NCBI_SCOPE;
-
-void fill_n_zeros_aligned16(int* dst, size_t count)
-{
-    _ASSERT(count%16 == 0);
-    _ASSERT(intptr_t(dst)%16 == 0);
-    __m128i zero = _mm_setzero_si128();
-    for ( auto dst_end = dst+count; dst < dst_end; dst += 16 ) {
-        _mm_store_si128((__m128i*)dst+0, zero);
-        _mm_store_si128((__m128i*)dst+1, zero);
-        _mm_store_si128((__m128i*)dst+2, zero);
-        _mm_store_si128((__m128i*)dst+3, zero);
-    }
-}
-
-
-void fill_n_zeros(int* dst, size_t count)
-{
-    fill_n(dst, count, 0);
-}
+//USING_NCBI_SCOPE;
 
 
 void fill_n_zeros_aligned16(char* dst, size_t count)
@@ -69,14 +50,94 @@ void fill_n_zeros_aligned16(char* dst, size_t count)
     }
 }
 
+void fill_n_zeros_aligned16(int* dst, size_t count)
+{
+#if 1
+    _ASSERT(count%16 == 0);
+    _ASSERT(intptr_t(dst)%16 == 0);
+    __m128i zero = _mm_setzero_si128();
+    for ( auto dst_end = dst+count; dst < dst_end; dst += 16 ) {
+        _mm_store_si128((__m128i*)dst+0, zero);
+        _mm_store_si128((__m128i*)dst+1, zero);
+        _mm_store_si128((__m128i*)dst+2, zero);
+        _mm_store_si128((__m128i*)dst+3, zero);
+    }
+#else
+    _ASSERT(count%4 == 0);
+    _ASSERT(intptr_t(dst)%16 == 0);
+    __m128i zero = _mm_setzero_si128();
+    for ( auto dst_end = dst+count; dst < dst_end; dst += 4 ) {
+        _mm_store_si128((__m128i*)dst, zero);
+    }
+#endif
+}
 
 void fill_n_zeros(char* dst, size_t count)
 {
     fill_n(dst, count, 0);
 }
 
+void fill_n_zeros(int* dst, size_t count)
+{
+    fill_n(dst, count, 0);
+}
+
+
+
+
+#if 0
+void copy_n_aligned16(const char* src, size_t count, char* dst)
+{
+    _ASSERT(count%16 == 0);
+    _ASSERT(intptr_t(src)%16 == 0);
+    _ASSERT(intptr_t(dst)%16 == 0);
+    for ( auto src_end = src+count; src < src_end; dst += 16, src += 16 ) {
+        _mm_store_si128((__m128i*)dst, *(__m128i*)src);
+    }
+}
+#endif
+
+void copy_n_aligned16(const int* src, size_t count, int* dst)
+{
+#if 1
+    _ASSERT(count%16 == 0);
+    _ASSERT(intptr_t(src)%16 == 0);
+    _ASSERT(intptr_t(dst)%16 == 0);
+    for ( auto src_end = src+count; src < src_end; dst += 16, src += 16 ) {
+        __m128i ww0 = _mm_load_si128((const __m128i*)src+0);
+        __m128i ww1 = _mm_load_si128((const __m128i*)src+1);
+        __m128i ww2 = _mm_load_si128((const __m128i*)src+2);
+        __m128i ww3 = _mm_load_si128((const __m128i*)src+3);
+        _mm_store_si128((__m128i*)dst+0, ww0);
+        _mm_store_si128((__m128i*)dst+1, ww1);
+        _mm_store_si128((__m128i*)dst+2, ww2);
+        _mm_store_si128((__m128i*)dst+3, ww3);
+    }
+#elif 0
+    _ASSERT(count%4 == 0);
+    _ASSERT(intptr_t(src)%16 == 0);
+    _ASSERT(intptr_t(dst)%16 == 0);
+    for ( auto src_end = src+count; src < src_end; dst += 4, src += 4 ) {
+        _mm_store_si128((__m128i*)dst, *(__m128i*)src);
+    }
+#else
+    _ASSERT(count%4 == 0);
+    _ASSERT(intptr_t(src)%16 == 0);
+    _ASSERT(intptr_t(dst)%16 == 0);
+    for ( auto src_end = src+count; src < src_end; dst += 4, src += 4 ) {
+        __m128i ww0 = _mm_load_si128((const __m128i*)src);
+        _mm_store_si128((__m128i*)dst, ww0);
+    }
+#endif
+}
+
+
+
+
+
 void copy_n_bytes_aligned16(const char* src, size_t count, int* dst)
 {
+#if 1
     _ASSERT(count%16 == 0);
     _ASSERT(intptr_t(src)%16 == 0);
     _ASSERT(intptr_t(dst)%16 == 0);
@@ -98,6 +159,20 @@ void copy_n_bytes_aligned16(const char* src, size_t count, int* dst)
         _mm_store_si128((__m128i*)dst+2, ww2);
         _mm_store_si128((__m128i*)dst+3, ww3);
     }
+#else
+    _ASSERT(count%4 == 0);
+    _ASSERT(intptr_t(src)%16 == 0);
+    _ASSERT(intptr_t(dst)%16 == 0);
+    __m128i mask = _mm_set_epi8(-128, -128, -128, 3,
+                                -128, -128, -128, 2,
+                                -128, -128, -128, 1,
+                                -128, -128, -128, 0);
+    for ( auto src_end = src+count; src < src_end; dst += 4, src += 4 ) {
+        uint32_t bb0 = ((const uint32_t*)src)[0];
+        __m128i ww0 = _mm_shuffle_epi8(_mm_cvtsi32_si128(bb0), mask);
+        _mm_store_si128((__m128i*)dst+0, ww0);
+    }
+#endif
 }
 
 
@@ -126,23 +201,6 @@ void copy_n_aligned16(const int* src, size_t count, char* dst)
     }
 }
     
-
-void copy_n_aligned16(const int* src, size_t count, int* dst)
-{
-    _ASSERT(count%16 == 0);
-    _ASSERT(intptr_t(src)%16 == 0);
-    _ASSERT(intptr_t(dst)%16 == 0);
-    for ( auto src_end = src+count; src < src_end; dst += 16, src += 16 ) {
-        __m128i ww0 = _mm_load_si128((const __m128i*)src+0);
-        __m128i ww1 = _mm_load_si128((const __m128i*)src+1);
-        __m128i ww2 = _mm_load_si128((const __m128i*)src+2);
-        __m128i ww3 = _mm_load_si128((const __m128i*)src+3);
-        _mm_store_si128((__m128i*)dst+0, ww0);
-        _mm_store_si128((__m128i*)dst+1, ww1);
-        _mm_store_si128((__m128i*)dst+2, ww2);
-        _mm_store_si128((__m128i*)dst+3, ww3);
-    }
-}
 
 
 void copy_4n_split_aligned16(const int* src, size_t count,
@@ -362,4 +420,5 @@ void max_4elements_n_aligned16(const unsigned* src, size_t count, unsigned dst[4
 END_NAMESPACE(NFast);
 
 END_NCBI_SCOPE
-#endif // NCBI_SSE
+#endif // NCBI_HAVE_FAST_OPS
+
