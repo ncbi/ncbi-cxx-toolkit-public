@@ -624,7 +624,18 @@ find_package(LEVELDB
              /usr
              NO_DEFAULT_PATH
 )
+############################################################################
+##
+## wgMLST
 
+if (NOT WIN32)
+    find_package(SKESA)
+endif()
+if (WGMLST_FOUND)
+    set(WGMLST_INCLUDE ${WGMLST_INCLUDE_DIRS})
+    set(WGMLST_LIB ${WGMLST_LIBPATH} ${WGMLST_LIBRARIES})
+endif()
+message(STATUS "wgMLST Includes: ${WGMLST_INCLUDE}")
 
 # libmagic (file-format identification)
 find_library(MAGIC_LIBS magic)
