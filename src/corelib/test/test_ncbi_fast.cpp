@@ -311,6 +311,24 @@ BOOST_AUTO_TEST_CASE(TestConvertIntChar)
 #endif
 
 #if 1
+void s_clear_split_dst(size_t buf_size, int* dst0, int* dst1, int* dst2, int* dst3)
+{
+    fill_n(dst0, buf_size/4, 0);
+    fill_n(dst1, buf_size/4, 0);
+    fill_n(dst2, buf_size/4, 0);
+    fill_n(dst3, buf_size/4, 0);
+}
+
+void s_check_split_dst(size_t buf_size, const int* dst0, const int* dst1, const int* dst2, const int* dst3)
+{
+    for ( size_t i = 0; i < buf_size/4; ++i ) {
+        _ASSERT(dst0[i] == int((i*4+0) & 0xff));
+        _ASSERT(dst1[i] == int((i*4+1) & 0xff));
+        _ASSERT(dst2[i] == int((i*4+2) & 0xff));
+        _ASSERT(dst3[i] == int((i*4+3) & 0xff));
+    }
+}
+
 BOOST_AUTO_TEST_CASE(TestSplitIntInt)
 {
     cout << endl << "TestSplitIntInt" << endl;
@@ -327,21 +345,26 @@ BOOST_AUTO_TEST_CASE(TestSplitIntInt)
     }
 
 #ifdef NCBI_HAVE_FAST_OPS
+    s_clear_split_dst(buf_size, dst0, dst1, dst2, dst3);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         NFast::copy_4n_split_aligned16(buf, buf_size/4, dst0, dst1, dst2, dst3);
     } 
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::copy_4n_split_aligned16(int -> int)"  << endl;
+    s_check_split_dst(buf_size, dst0, dst1, dst2, dst3);
 #endif
 
+    s_clear_split_dst(buf_size, dst0, dst1, dst2, dst3);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         NFast::x_no_ncbi_sse_split_into4(buf, buf_size/4, dst0, dst1, dst2, dst3);
     } 
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::x_no_ncbi_sse_split_into4(int -> int)" << endl;
+    s_check_split_dst(buf_size, dst0, dst1, dst2, dst3);
 
+    s_clear_split_dst(buf_size, dst0, dst1, dst2, dst3);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         NFast::Split_into4(buf, buf_size/4, dst0, dst1, dst2, dst3);
@@ -351,7 +374,7 @@ BOOST_AUTO_TEST_CASE(TestSplitIntInt)
          << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0 &&
             intptr_t(dst0)%16 == 0 && intptr_t(dst1)%16 == 0 && intptr_t(dst2)%16 == 0 && intptr_t(dst3)%16 == 0) ? "ok" : "wrong")
          << endl;
-
+    s_check_split_dst(buf_size, dst0, dst1, dst2, dst3);
 
     free(buf);
     free(dst0);
@@ -362,6 +385,24 @@ BOOST_AUTO_TEST_CASE(TestSplitIntInt)
 #endif
 
 #if 1
+void s_clear_split_dst(size_t buf_size, char* dst0, char* dst1, char* dst2, char* dst3)
+{
+    fill_n(dst0, buf_size/4, 0);
+    fill_n(dst1, buf_size/4, 0);
+    fill_n(dst2, buf_size/4, 0);
+    fill_n(dst3, buf_size/4, 0);
+}
+
+void s_check_split_dst(size_t buf_size, const char* dst0, const char* dst1, const char* dst2, const char* dst3)
+{
+    for ( size_t i = 0; i < buf_size/4; ++i ) {
+        _ASSERT(dst0[i] == char((i*4+0) & 0xff));
+        _ASSERT(dst1[i] == char((i*4+1) & 0xff));
+        _ASSERT(dst2[i] == char((i*4+2) & 0xff));
+        _ASSERT(dst3[i] == char((i*4+3) & 0xff));
+    }
+}
+
 BOOST_AUTO_TEST_CASE(TestSplitIntChar)
 {
     cout << endl << "TestSplitIntChar" << endl;
@@ -378,20 +419,24 @@ BOOST_AUTO_TEST_CASE(TestSplitIntChar)
     }
 
 #ifdef NCBI_HAVE_FAST_OPS
+    s_clear_split_dst(buf_size, dst0, dst1, dst2, dst3);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         NFast::copy_4n_split_aligned16(buf, buf_size/4, dst0, dst1, dst2, dst3);
     } 
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - copy_4n_split_aligned16(int -> char)"  << endl;
+    s_check_split_dst(buf_size, dst0, dst1, dst2, dst3);
 #endif
 
+    s_clear_split_dst(buf_size, dst0, dst1, dst2, dst3);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         NFast::x_no_ncbi_sse_split_into4(buf, buf_size/4, dst0, dst1, dst2, dst3);
     } 
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::x_no_ncbi_sse_split_into4(int -> char)" << endl;
+    s_check_split_dst(buf_size, dst0, dst1, dst2, dst3);
 
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
@@ -402,6 +447,7 @@ BOOST_AUTO_TEST_CASE(TestSplitIntChar)
          << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0 &&
             intptr_t(dst0)%16 == 0 && intptr_t(dst1)%16 == 0 && intptr_t(dst2)%16 == 0 && intptr_t(dst3)%16 == 0) ? "ok" : "wrong")
          << endl;
+    s_check_split_dst(buf_size, dst0, dst1, dst2, dst3);
 
     free(buf);
     free(dst0);
@@ -421,7 +467,7 @@ BOOST_AUTO_TEST_CASE(TestMaxElement1)
     unsigned int result = 0;
     Uint8 start, finish;
     for (size_t i = 0; i < buf_size; ++i) {
-        buf[i] = i & 0xFF;
+        buf[i] = (i*256/SSETEST_BUFSIZE) & 0xFF;
     }
 
 #ifdef NCBI_HAVE_FAST_OPS
@@ -463,7 +509,7 @@ BOOST_AUTO_TEST_CASE(TestMaxElement2)
     unsigned int result = 0;
     Uint8 start, finish;
     for (size_t i = 0; i < buf_size; ++i) {
-        buf[i] = i & 0xFF;
+        buf[i] = (i*256/SSETEST_BUFSIZE) & 0xFF;
     }
 
 #ifdef NCBI_HAVE_FAST_OPS
@@ -474,6 +520,7 @@ BOOST_AUTO_TEST_CASE(TestMaxElement2)
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::max_element_n_aligned16 " << result  << endl;
 #endif
+    _ASSERT(result == 0xff);
 
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
@@ -481,6 +528,7 @@ BOOST_AUTO_TEST_CASE(TestMaxElement2)
     } 
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::x_no_ncbi_sse_max_element " << result << endl;
+    _ASSERT(result == 0xff);
 
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
@@ -490,6 +538,7 @@ BOOST_AUTO_TEST_CASE(TestMaxElement2)
     cout << (finish - start) << " - NFast::Max_element2 " << result
          << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0) ? "ok" : "wrong")
          << endl;
+    _ASSERT(result == 0xff);
 
     free(buf);
 }
@@ -504,7 +553,7 @@ BOOST_AUTO_TEST_CASE(TestMaxElement3)
     unsigned int*  buf  = (unsigned int*)malloc(buf_size * sizeof(unsigned int));
     Uint8 start, finish;
     for (size_t i = 0; i < buf_size; ++i) {
-        buf[i] = (i/4) & 0xFF;
+        buf[i] = (i*64/SSETEST_BUFSIZE*4+i%4) & 0xFF;
     }
 
 #ifdef NCBI_HAVE_FAST_OPS
@@ -515,7 +564,11 @@ BOOST_AUTO_TEST_CASE(TestMaxElement3)
         NFast::max_4elements_n_aligned16(buf, buf_size/4, result);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::max_element_n_aligned16 " << result[0] << result[1] << result[2] << result[3]  << endl;
+    cout << (finish - start) << " - NFast::max_element_n_aligned16 " << result[0] <<' '<< result[1] <<' '<< result[2] <<' '<< result[3]  << endl;
+    _ASSERT(result[0] == 0xfc);
+    _ASSERT(result[1] == 0xfd);
+    _ASSERT(result[2] == 0xfe);
+    _ASSERT(result[3] == 0xff);
     }
 #endif
 
@@ -526,7 +579,11 @@ BOOST_AUTO_TEST_CASE(TestMaxElement3)
         NFast::x_no_ncbi_sse_max_4element(buf, buf_size/4, result);
     }
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::x_no_ncbi_sse_max_4element " << result[0] << result[1] << result[2] << result[3] << endl;
+    cout << (finish - start) << " - NFast::x_no_ncbi_sse_max_4element " << result[0] <<' '<< result[1] <<' '<< result[2] <<' '<< result[3] << endl;
+    _ASSERT(result[0] == 0xfc);
+    _ASSERT(result[1] == 0xfd);
+    _ASSERT(result[2] == 0xfe);
+    _ASSERT(result[3] == 0xff);
     }
 
     {
@@ -536,9 +593,13 @@ BOOST_AUTO_TEST_CASE(TestMaxElement3)
         NFast::Max_4element(buf, buf_size/4, result);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Max_4element " << result[0] << result[1] << result[2] << result[3]
+    cout << (finish - start) << " - NFast::Max_4element " << result[0] <<' '<< result[1] <<' '<< result[2] <<' '<< result[3]
          << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0) ? "ok" : "wrong")
          << endl;
+    _ASSERT(result[0] == 0xfc);
+    _ASSERT(result[1] == 0xfd);
+    _ASSERT(result[2] == 0xfe);
+    _ASSERT(result[3] == 0xff);
     }
 
     free(buf);
