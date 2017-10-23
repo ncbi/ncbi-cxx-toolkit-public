@@ -578,46 +578,25 @@ void CTable2AsnContext::RenameProteinIdsQuals(CSeq_feat& feature)
     string mask_transcript = "gnl|*|mrna." + m_locus_tag_prefix + "*";
     string mask_protein    = "gnl|*|" + m_locus_tag_prefix + "*";
     CSeq_feat::TQual& quals = feature.SetQual();
-    for (CSeq_feat::TQual::iterator it = quals.begin(); it != quals.end();) // no ++ iterator
+    for (CSeq_feat::TQual::iterator it = quals.begin(); it != quals.end(); it++)
     {
         auto& qual = (**it);
         if (qual.CanGetVal())
         {
             const auto& qual_name = qual.GetQual();
             const auto& qual_value = qual.GetVal();
-            if (qual_name == "transcript_id")
-            {
-                if (NStr::MatchesMask(qual_value, mask_transcript))
-                {
-                    it = quals.erase(it);
-                }
-                else {
-                    qual.SetQual("orig_transcript_id");
-                    it++;
-                }
+            //discussion of rw-451: always rename, never delete, regardless of 
+            // whether in original data or not
+            //
+            if (qual_name == "transcript_id") {
+                qual.SetQual("orig_transcript_id");
+                continue;
             }
-            else
-                if (qual_name == "protein_id")
-                {
-                    if ((feature.IsSetData() && feature.GetData().IsCdregion()) ||
-                        NStr::MatchesMask(qual_value, mask_protein))
-                        it = quals.erase(it);
-                    else
-                    {
-                        qual.SetQual("orig_protein_id");
-                        it++;
-                    }
-                }
-                else
-                {
-                    it++;
-                }
+            if (qual_name == "protein_id") {
+                qual.SetQual("orig_protein_id");
+                continue;
+            }
         }
-        else
-        {
-            it++;
-        }
-
     }
     if (quals.empty())
         feature.ResetQual();

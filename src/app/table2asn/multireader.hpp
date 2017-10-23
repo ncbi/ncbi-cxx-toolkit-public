@@ -40,7 +40,7 @@ public:
    void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeqdesc & source);
    void ApplyDescriptors(objects::CSeq_entry & obj, const objects::CSeq_descr & source);
    bool LoadAnnot(objects::CSeq_entry& obj, const string& filename);
-
+   bool CdsMergingNeeded() const { return m_CdsMergingNeeded; }; 
 
 protected:
 private:
@@ -60,7 +60,7 @@ private:
     int  m_iFlags;
     string m_AnnotName;
     string m_AnnotTitle;
-
+    bool m_CdsMergingNeeded;
     CTable2AsnContext& m_context;
 };
 

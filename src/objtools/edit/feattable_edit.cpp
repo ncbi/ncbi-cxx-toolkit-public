@@ -327,6 +327,9 @@ void CFeatTableEdit::EliminateBadQualifiers()
                 if (qualKey == "protein_id"  ||  qualKey == "transcript_id") {
                     continue;
                 }
+                if (qualKey == "orig_protein_id"  ||  qualKey == "orig_transcript_id") {
+                    continue;
+                }
             }
             CSeqFeatData::EQualifier qualType = CSeqFeatData::GetQualifierType(qualKey);
             if (CSeqFeatData::IsLegalQualifier(subtype, qualType)) {
@@ -389,27 +392,20 @@ void CFeatTableEdit::InstantiateProducts()
     sel1.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
     for (CFeat_CI it(mHandle, sel1); it; ++it) {
         CMappedFeat mf = *it;
-        if (mf.IsSetProduct()) {
-            continue;
+
+        auto tid = mf.GetNamedQual("transcript_id");
+        if (!tid.empty()) {
+            xFeatureRemoveQualifier(mf, "transcript_id");
+            xFeatureAddQualifier(mf, "orig_transcript_id", tid);
         }
-        switch(mf.GetFeatSubtype()) {
-        default:
-            break;
-        case CSeqFeatData::eSubtype_mRNA: {
-                auto tid = mf.GetNamedQual("transcript_id");
-                if (!tid.empty()) {
-                    xFeatureSetProduct(mf, tid);
-                    xFeatureRemoveQualifier(mf, "transcript_id");
-                }
-                break;
-            }
-        case CSeqFeatData::eSubtype_cdregion: {
-                auto pid = mf.GetNamedQual("protein_id");
-                if (!pid.empty()) {
+
+        if (mf.GetFeatSubtype() == CSeqFeatData::eSubtype_cdregion) {
+            auto pid = mf.GetNamedQual("protein_id");
+            if (!pid.empty()) {
+                if (!mf.IsSetProduct()) {
                     xFeatureSetProduct(mf, pid);
-                    xFeatureRemoveQualifier(mf, "protein_id");
                 }
-                break;
+                xFeatureRemoveQualifier(mf, "protein_id");
             }
         }
     }
@@ -971,14 +967,8 @@ void CFeatTableEdit::xFeatureAddQualifier(
 //  ----------------------------------------------------------------------------
 {
     const CSeq_feat& origFeat = mf.GetOriginalFeature();
-    CRef<CSeq_feat> pEditedFeat(new CSeq_feat);
-    pEditedFeat->Assign(origFeat);
-    CRef<CGb_qual> pQual(new CGb_qual);
-    pQual->SetQual(qualKey);
-    pQual->SetVal(qualVal);
-    pEditedFeat->SetQual().push_back(pQual);
     CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(origFeat));
-    feh.Replace(*pEditedFeat);
+    feh.AddQualifier(qualKey, qualVal);
 }
 
 
@@ -989,11 +979,8 @@ void CFeatTableEdit::xFeatureRemoveQualifier(
 //  ----------------------------------------------------------------------------
 {
     const CSeq_feat& origFeat = mf.GetOriginalFeature();
-    CRef<CSeq_feat> pEditedFeat(new CSeq_feat);
-    pEditedFeat->Assign(origFeat);
-    pEditedFeat->RemoveQualifier(qualKey);
     CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(origFeat));
-    feh.Replace(*pEditedFeat);
+    feh.RemoveQualifier(qualKey);
 }
 
 //  ----------------------------------------------------------------------------
@@ -1003,19 +990,11 @@ void CFeatTableEdit::xFeatureSetQualifier(
     const string& qualVal)
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& origFeat = mf.GetOriginalFeature();
-    CRef<CSeq_feat> pEditedFeat(new CSeq_feat);
-    pEditedFeat->Assign(origFeat);
-    auto existing = pEditedFeat->GetNamedQual(qualKey);
+    auto existing = mf.GetNamedQual(qualKey);
     if (!existing.empty()) {
-        pEditedFeat->RemoveQualifier(qualKey);
+        xFeatureRemoveQualifier(mf, qualKey);
     }
-    CRef<CGb_qual> pQual(new CGb_qual);
-    pQual->SetQual(qualKey);
-    pQual->SetVal(qualVal);
-    pEditedFeat->SetQual().push_back(pQual);
-    CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(origFeat));
-    feh.Replace(*pEditedFeat);
+    xFeatureAddQualifier(mf, qualKey, qualVal);
 }
 
 //  ----------------------------------------------------------------------------

@@ -328,7 +328,7 @@ void CMultiReader::WriteObject(
 }
 
 CMultiReader::CMultiReader(CTable2AsnContext& context)
-    :m_context(context)
+    :m_context(context), m_CdsMergingNeeded(false)
 {
 }
 
@@ -728,6 +728,7 @@ void CMultiReader::x_PostProcessAnnot(objects::CSeq_entry& entry)
         fte.GenerateMissingParentFeatures(m_context.m_eukariote);
         fte.GenerateLocusTags();
         fte.GenerateProteinAndTranscriptIds();
+        fte.InstantiateProducts();
         fte.EliminateBadQualifiers();
         fte.SubmitFixProducts();
 
@@ -872,6 +873,7 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in, 
     {
     case CFormatGuess::eFiveColFeatureTable:
     {
+        m_CdsMergingNeeded = true;
         string seqid_prefix;
         if (!m_context.m_genome_center_id.empty())
             seqid_prefix = "gnl|" + m_context.m_genome_center_id + "|";
