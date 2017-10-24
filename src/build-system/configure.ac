@@ -5083,6 +5083,9 @@ if test "$with_bdb" != "no" ; then
    fi
    if test -f "${BERKELEYDB_LIBPATH}/libdb-static.a"; then
       BERKELEYDB_STATIC_LIBS="-L${BERKELEYDB_LIBPATH} -ldb-static"
+      if test "x$with_bin_release" = "xyes"; then
+         BERKELEYDB_LIBS=$BERKELEYDB_STATIC_LIBS
+      fi
    else
       BERKELEYDB_STATIC_LIBS=${BERKELEYDB_LIBS}
    fi
@@ -6692,6 +6695,9 @@ AC_SUBST(LIBXML_LIBS)
 
 if test -f "${LIBXML_LIBPATH_}/libxml2-static.a"; then
    LIBXML_STATIC_LIBS="-L${LIBXML_LIBPATH_} -lxml2-static"
+   if test "x$with_bin_release" = "xyes"; then
+      LIBXML_LIBS=$LIBXML_STATIC_LIBS
+   fi
 else
    LIBXML_STATIC_LIBS=${LIBXML_LIBS}
 fi
@@ -6704,6 +6710,9 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(libxslt, LIBXSLT, xslt,
 # XXX - they might be in different directories in some setups
 if test -f "${LIBXML_LIBPATH_}/libxslt-static.a"; then
    LIBXSLT_STATIC_LIBS="-L${LIBXML_LIBPATH_} -lxslt-static"
+   if test "x$with_bin_release" = "xyes"; then
+      LIBXSLT_LIBS=$LIBXSLT_STATIC_LIBS
+   fi
 else
    LIBXSLT_STATIC_LIBS=${LIBXSLT_LIBS}
 fi
@@ -6725,6 +6734,9 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(libexslt, LIBEXSLT, exslt,
 # XXX - they might be in different directories in some setups
 if test -f "${LIBXML_LIBPATH_}/libexslt-static.a"; then
    LIBEXSLT_STATIC_LIBS="-L${LIBXML_LIBPATH_} -lexslt-static $GCRYPT_LIBS"
+   if test "x$with_bin_release" = "xyes"; then
+      LIBEXSLT_LIBS=$LIBEXSLT_STATIC_LIBS
+   fi
 else
    LIBEXSLT_STATIC_LIBS=${LIBEXSLT_LIBS}
 fi
@@ -6956,6 +6968,9 @@ else
 fi
 if test -n "$SQLITE3_LIBS" -a -f "$SQLITE3_LIBDIR/libsqlite3-static.a"; then
    SQLITE3_STATIC_LIBS="-L$SQLITE3_LIBDIR -lsqlite3-static"
+   if test "x$with_bin_release" = "xyes"; then
+      SQLITE3_LIBS=$SQLITE3_STATIC_LIBS
+   fi
 else
    SQLITE3_STATIC_LIBS=$SQLITE3_LIBS
 fi
