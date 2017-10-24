@@ -36,7 +36,7 @@
 #include <vector>
 #include <memory.h>
 
-#if (defined(NCBI_COMPILER_MSVC) || NCBI_SSE > 40) && !defined(NCBI_COMPILER_ICC)
+#if (defined(NCBI_COMPILER_MSVC) || NCBI_SSE > 40)
 #   include <immintrin.h>
 #   define NCBI_HAVE_FAST_OPS
 #endif //NCBI_SSE
@@ -148,6 +148,23 @@ void Max_element(const unsigned int* src, size_t count, unsigned int& dest);
 void Max_4element(const unsigned int* src, size_t count, unsigned int dest[4]);
 
 
+/// Append count unitialized elements to dest vector
+/// return pointer to appended elements for proper initialization
+/// vector must have enough memory reserved
+template<class V, class A>
+V* append_uninitialized(vector<V, A>& dest, size_t count);
+
+/// Append count zeros to dest vector
+/// vector must have enough memory reserved
+template<class V, class A>
+void append_zeros(vector<V, A>& dest, size_t count);
+
+/// Append count zeros to dest vector
+/// vector must have enough memory reserved
+/// dst.end() pointer and count must be aligned by 16
+template<class V, class A>
+void append_zeros_aligned16(vector<V, A>& dest, size_t count);
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -238,23 +255,7 @@ unsigned int NCBI_XNCBI_EXPORT max_element_n_aligned16(const unsigned int* src, 
 void NCBI_XNCBI_EXPORT max_element_n_aligned16(const unsigned int* src, size_t count, unsigned int& dst);
 void NCBI_XNCBI_EXPORT max_4elements_n_aligned16(const unsigned int* src, size_t count, unsigned int dst[4]);
 
-/// Append count unitialized elements to dest vector
-/// return pointer to appended elements for proper initialization
-/// vector must have enough memory reserved
-template<class V, class A>
-V* append_uninitialized(vector<V, A>& dest, size_t count);
-
-/// Append count zeros to dest vector
-/// vector must have enough memory reserved
-template<class V, class A>
-void append_zeros(vector<V, A>& dest, size_t count);
-
-/// Append count zeros to dest vector
-/// vector must have enough memory reserved
-/// dst.end() pointer and count must be aligned by 16
-template<class V, class A>
-void append_zeros_aligned16(vector<V, A>& dest, size_t count);
-
+#endif //NCBI_HAVE_FAST_OPS
 
 #if defined(NCBI_COMPILER_GCC) && defined(NCBI_HAVE_FAST_OPS)
 // fast implementation using internal layout of vector
@@ -306,7 +307,6 @@ void append_zeros_aligned16(vector<V, A>& dst, size_t count) {
     dst.resize(dst.size()+count);
 }
 #endif
-#endif //NCBI_HAVE_FAST_OPS
 
 //---------------------------------------------------------------------------
 inline
