@@ -851,9 +851,9 @@ void CBamDb::SPileupValues::advance_current_beg(TSeqPos ref_pos, ICollectPileupC
             TCount gap_save = cc_gap[total];
             if ( copy ) {
                 TSeqPos copy16 = align_to_16_up(copy);
-                NFast::copy_n_aligned16(cc_acgt[flush].cc, copy16*4, cc_acgt[0].cc);
-                NFast::copy_n_aligned16(cc_match.data()+flush, copy16, cc_match.data());
-                NFast::copy_n_aligned16(cc_gap.data()+flush, copy16, cc_gap.data());
+                NFast::Copy_memory(cc_acgt[flush].cc, copy16*4, cc_acgt[0].cc);
+                NFast::Copy_memory(cc_match.data()+flush, copy16, cc_match.data());
+                NFast::Copy_memory(cc_gap.data()+flush, copy16, cc_gap.data());
             }
             cc_gap[copy] = gap_save;
             m_RefFrom += flush;
@@ -877,10 +877,10 @@ void CBamDb::SPileupValues::advance_current_end(TSeqPos ref_end)
     TSeqPos cur_pos = m_RefToOpen-m_RefFrom;
     TSeqPos new_pos = (min(m_RefStop + 15, ref_end + FLUSH_SIZE) - m_RefFrom) & ~15;
 
-    NFast::fill_n_zeros_aligned16(cc_acgt[cur_pos].cc, (new_pos-cur_pos)*4);
-    NFast::fill_n_zeros_aligned16(cc_match.data()+cur_pos, (new_pos-cur_pos));
+    NFast::Zero_memory(cc_acgt[cur_pos].cc, (new_pos-cur_pos)*4);
+    NFast::Zero_memory(cc_match.data()+cur_pos, (new_pos-cur_pos));
     TCount gap_save = cc_gap[cur_pos];
-    NFast::fill_n_zeros_aligned16(cc_gap.data()+cur_pos, (new_pos-cur_pos));
+    NFast::Zero_memory(cc_gap.data()+cur_pos, (new_pos-cur_pos));
     cc_gap[cur_pos] = gap_save;
     cc_gap[new_pos] = 0;
     m_RefToOpen = min(m_RefStop, m_RefFrom + new_pos);
@@ -913,9 +913,9 @@ void CBamDb::SPileupValues::update_max_counts(TSeqPos length)
     _ASSERT(m_RefFrom+length <= m_RefToOpen);
     _ASSERT(length % 16 == 0 || m_RefToOpen == m_RefStop);
     length = align_to_16_up(length);
-    NFast::max_4elements_n_aligned16(cc_acgt[0].cc, length, max_count);
-    NFast::max_element_n_aligned16(cc_match.data(), length, max_count[kStat_Match]);
-    NFast::max_element_n_aligned16(cc_gap.data(), length, max_count[kStat_Gap]);
+    NFast::Max_4element(cc_acgt[0].cc, length, max_count);
+    NFast::Max_element(cc_match.data(), length, max_count[kStat_Match]);
+    NFast::Max_element(cc_gap.data(), length, max_count[kStat_Gap]);
     m_SplitACGTLen = 0;
 }
 
@@ -928,11 +928,11 @@ void CBamDb::SPileupValues::make_split_acgt(TSeqPos len)
             cc_split_acgt[k].clear();
             cc_split_acgt[k].resize(len16);
         }
-        NFast::copy_4n_split_aligned16(get_acgt_counts(), len16,
-                                       cc_split_acgt[0].data(),
-                                       cc_split_acgt[1].data(),
-                                       cc_split_acgt[2].data(),
-                                       cc_split_acgt[3].data());
+        NFast::Split_into4(get_acgt_counts(), len16,
+                           cc_split_acgt[0].data(),
+                           cc_split_acgt[1].data(),
+                           cc_split_acgt[2].data(),
+                           cc_split_acgt[3].data());
         m_SplitACGTLen = len;
     }
 }
