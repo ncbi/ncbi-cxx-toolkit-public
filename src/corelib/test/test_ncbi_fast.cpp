@@ -70,6 +70,11 @@ inline Uint8 QUERY_PERF_COUNTER(void) {
     LARGE_INTEGER p;
     return QueryPerformanceCounter(&p) ? p.QuadPart : 0;
 }
+#elif defined(NCBI_XCODE_BUILD)
+#include <mach/mach_time.h>
+inline Uint8 QUERY_PERF_COUNTER(void) {
+    return mach_absolute_time();
+}
 #else
 inline Uint8 QUERY_PERF_COUNTER(void) {
     timespec p;
@@ -602,8 +607,8 @@ BOOST_AUTO_TEST_CASE(TestMaxElement2)
     } 
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::max_element_n_aligned16 " << result  << endl;
-#endif
     _ASSERT(result == 0xff);
+#endif
 
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
