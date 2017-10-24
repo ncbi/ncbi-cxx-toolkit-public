@@ -89,6 +89,11 @@ public:
         /// as they don't resemble FASTA-style IDs (or ID sets).
         fParse_AnyLocal   = 0x18,
         fParse_NoFASTA    = 0x20, ///< Don't bother checking for a tag
+        /// For IdentifyAccession, don't warn about falling back to a
+        /// different specific type because broad identification is
+        /// sufficient.  (Automatically on when calling IdentifyAccession
+        /// internally.)
+        fParse_FallbackOK = 0x40,
 
         /// By default in ParseIDs and IsValid, allow raw parsable
         /// non-numeric accessions and plausible local accessions.
@@ -191,7 +196,8 @@ public:
         fAcc_specials  = 0x10000000, // has special cases; only used internally
         fAcc_master    = 0x08000000,
         fAcc_ncbo      = 0x04000000, // for refseq pathogen detection pipeline
-        eAcc_flag_mask = 0xfc000000,
+        fAcc_fallback  = 0x02000000, // is a fallback; only used internally
+        eAcc_flag_mask = 0xfe000000,
 
         // Divisions and categories (multiples of 1 << 8; always
         // globally unique nowadays, no matter how specialized)

@@ -745,9 +745,11 @@ struct SAccGuide : public CObject
     typedef CSeq_id::EAccessionInfo TAccInfo;
     typedef map<string, TAccInfo>   TPrefixes;
     typedef pair<string, TAccInfo>  TPair;
-    typedef vector<TPair>           TPairs;
+    typedef list<TPair>             TPairs; // not vector -- need stable ptrs
     typedef map<string, TPair>      TSpecialMap; // last -> first -> value
     typedef unsigned int            TFormatCode;
+    typedef pair<string, string>    TFallback; // fallback, refinement
+    typedef map<const TAccInfo*, TFallback> TFallbackMap;
 
     struct SSubMap {
         TPrefixes    prefixes;
@@ -758,16 +760,24 @@ struct SAccGuide : public CObject
 
     struct SHints {
         SHints()
-            : prev_type(CSeq_id::eAcc_unknown), prev_submap(NULL)
+            : prev_type(CSeq_id::eAcc_unknown), prev_submap(NULL),
+              prev_special_format(0),
+              prev_special_base_type(CSeq_id::eAcc_unknown)
             {}
 
         TAccInfo FindAccInfo(CTempString name);
+        TAccInfo FindSpecial(const SAccGuide& guide, TFormatCode fmt,
+                             CTempString acc_or_range);
         SSubMap& FindSubMap(TMainMap& rules, TFormatCode fmt);
         
         TAccInfo              prev_type;
         CTempString           prev_type_name;
         TMainMap::value_type* prev_submap;
         TSpecialMap::iterator prev_special;
+        TFormatCode           prev_special_format;
+        string                prev_special_key;
+        string                prev_special_base_key;
+        TAccInfo              prev_special_base_type;
     };
     
     SAccGuide(void);
@@ -779,14 +789,15 @@ struct SAccGuide : public CObject
         { x_Load(lr); }
 
     void AddRule(const CTempString& rule, SHints& hints);
-    TAccInfo Find(TFormatCode fmt, const CTempString& acc_or_pfx,
-                  string* key_used = NULL);
+    const TAccInfo& Find(TFormatCode fmt, const CTempString& acc_or_pfx,
+                         string* key_used = NULL) const;
     static TFormatCode s_Key(unsigned short letters, unsigned short digits)
         { return TFormatCode(letters) << 16 | digits; }
 
     unsigned int count;
     TMainMap     rules;
     TPrefixes    general;
+    TFallbackMap fallbacks;
 
 private:
     void x_Load(const string& filename);
@@ -811,6 +822,25 @@ SAccGuide::TAccInfo SAccGuide::SHints::FindAccInfo(CTempString name)
             return prev_type = it->second;
         }
     }
+}
+
+inline
+SAccGuide::TAccInfo SAccGuide::SHints::FindSpecial(const SAccGuide& guide,
+                                                   TFormatCode fmt,
+                                                   CTempString acc_or_range)
+{
+    CTempString pfx(acc_or_range, 0, fmt >> 16);
+    if (fmt == prev_special_format) {
+        if (acc_or_range == prev_special_key) {
+            return prev_type;
+        } else if (pfx == prev_special_base_key) {
+            return prev_special_base_type;
+        }
+    }
+    prev_special_format    = fmt;
+    prev_special_base_key  = pfx;
+    prev_special_base_type = guide.Find(fmt, pfx);
+    return prev_special_base_type;
 }
 
 inline
@@ -864,44 +894,60 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
             = s_Key(NStr::StringToUInt(tmp1, NStr::fConvErr_NoThrow),
                     NStr::StringToUInt(tmp2, NStr::fConvErr_NoThrow));
         TAccInfo value = hints.FindAccInfo(tokens[2]);
+        unique_ptr<string> old_name;
         if (value == kUnrecognized) {
             string   key_used;
             TAccInfo old = Find(fmt, tokens[1], &key_used);
+            old_name.reset(new string);
             if (old != CSeq_id::eAcc_unknown) {
-                string old_name;
+                value = TAccInfo(old | CSeq_id::fAcc_fallback);
                 if (old == hints.prev_type) {
-                    old_name = hints.prev_type_name;
+                    *old_name = hints.prev_type_name;
                 } else {
-                    old_name = "0x" + NStr::UIntToString(old, 0, 16);
+                    *old_name = "0x" + NStr::UIntToString(old, 0, 16);
                 }
                 if ( !key_used.empty() ) {
                     key_used = " (per " + key_used + ')';
                 }
-                ERR_POST_X(8, Warning << "SAccGuide::AddRule: " << count
+                ERR_POST_X(8, Info << "SAccGuide::AddRule: " << count
                            << ": ignoring refinement of " << tokens[1]
-                           << " from " << old_name << key_used
+                           << " from " << *old_name << key_used
                            << " to unrecognized accession type " << tokens[2]);
             } else {
+                *old_name = "unknown";
                 ERR_POST_X(3, "SAccGuide::AddRule: " << count
                            << ": unrecognized accession type " << tokens[2]
                            << " for " << tokens[1]);
             }
-        } else {
+        }
+        if (value != kUnrecognized) {
             SSubMap& submap = hints.FindSubMap(rules, fmt);
             if (tokens.size() == 4) {
                 value = TAccInfo(value | CSeq_id::fAcc_specials);
             }
+            const TAccInfo* value_ptr = NULL;
             if (tokens[1].find_first_of("?*") == NPOS) {
-                submap.prefixes[tokens[1]] = value;
+                value_ptr = &(submap.prefixes[tokens[1]] = value);
             } else {
                 // Account for possible refinements of fallback definitions
                 NON_CONST_ITERATE (TPairs, wit, submap.wildcards) {
                     if (wit->first == tokens[1]) {
                         wit->second = value;
-                        return;
+                        value_ptr   = &wit->second;
+                        break;
                     }
                 }
-                submap.wildcards.push_back(TPair(tokens[1], value));
+                if (value_ptr == NULL) {
+                    submap.wildcards.push_back(TPair(tokens[1], value));
+                    value_ptr = &submap.wildcards.back().second;
+                }
+            }
+            _ASSERT(*value_ptr == value);
+            if ((value & CSeq_id::fAcc_fallback) != 0) {
+                _ASSERT(old_name.get() != NULL  &&  !old_name->empty());
+                fallbacks[value_ptr] = make_pair(*old_name, tokens[2]);
+            } else {
+                _ASSERT(old_name.get() == NULL);
             }
         }
     } else if (tokens.size() == 3 && NStr::EqualNocase(tokens[0], "special")) {
@@ -910,29 +956,46 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         TFormatCode fmt
             = s_Key(pos, ((pos2 == NPOS) ? tokens[1].size() : pos2) - pos);
         TAccInfo value = hints.FindAccInfo(tokens[2]);
+        TAccInfo old   = hints.FindSpecial(*this, fmt, tokens[1]);
+        if ((old & CSeq_id::fAcc_specials) != 0) {
+            old = TAccInfo(old & ~CSeq_id::fAcc_specials);
+        } else {
+            string key_used;
+            Find(fmt, tokens[1], &key_used);
+            if ( !key_used.empty() ) {
+                ERR_POST_X(13, Warning
+                           << "SAccGuide::AddRule: Main listing for special "
+                           << tokens[1]
+                           << " doesn't indicate that specials are present.");
+            }
+        }
+        unique_ptr<string> old_name;
         if (value == kUnrecognized) {
             string   key_used;
-            TAccInfo old = Find(fmt, tokens[1], &key_used);
+            Find(fmt, tokens[1], &key_used);
+            old_name.reset(new string);
             if (old) {
-                string old_name;
+                value = TAccInfo(old | CSeq_id::fAcc_fallback);
                 if (old == hints.prev_type) {
-                    old_name = hints.prev_type_name;
+                    *old_name = hints.prev_type_name;
                 } else {
-                    old_name = "0x" + NStr::UIntToString(old, 0, 16);
+                    *old_name = "0x" + NStr::UIntToString(old, 0, 16);
                 }
                 if ( !key_used.empty() ) {
                     key_used = " (per " + key_used + ')';
                 }
-                ERR_POST_X(4, Warning << "SAccGuide::AddRule: " << count
+                ERR_POST_X(4, Info << "SAccGuide::AddRule: " << count
                            << ": unrecognized accession type " << tokens[2]
                            << " for special case " << tokens[1]
-                           << "; falling back to " << old_name << key_used);
+                           << "; falling back to " << *old_name << key_used);
             } else {
+                *old_name = "unknown";
                 ERR_POST_X(9, Warning << "SAccGuide::AddRule: " << count
                            << ": unrecognized accession type " << tokens[2]
                            << " for stray(!) special case " << tokens[1]);
             }
-        } else {
+        }
+        if (value != kUnrecognized) {
             SSubMap& submap = hints.FindSubMap(rules, fmt);
             if (pos2 == NPOS) {
                 tmp1 = tmp2 = tokens[1];
@@ -955,13 +1018,20 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                 submap.specials[tmp2] = TPair(tmp1, value);
             }
             */
+            if ((value & CSeq_id::fAcc_fallback) != 0) {
+                const TAccInfo* value_ptr = &hints.prev_special->second.second;
+                _ASSERT(old_name.get() != NULL  &&  !old_name->empty());
+                fallbacks[value_ptr] = make_pair(*old_name, tokens[2]);
+            } else {
+                _ASSERT(old_name.get() == NULL);
+            }
         }
     } else if (tokens.size() == 3 && NStr::EqualNocase(tokens[0], "gnl")) {
         string key(tokens[1]);
         NStr::ToUpper(key);
         TAccInfo value = hints.FindAccInfo(tokens[2]);
         if (value == kUnrecognized) {
-            TPrefixes::const_iterator it2 = general.find(key);
+            TPrefixes::iterator it2 = general.find(key);
             if (it2 == general.end()) {
                 ERR_POST_X(3, "SAccGuide::AddRule: " << count
                            << ": unrecognized accession type " << tokens[2]
@@ -973,7 +1043,9 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                 } else {
                     old_name = "0x" + NStr::UIntToString(it2->second, 0, 16);
                 }
-                ERR_POST_X(8, Warning << "SAccGuide::AddRule: " << count
+                it2->second = TAccInfo(it2->second | CSeq_id::fAcc_fallback);
+                fallbacks[&it2->second] = make_pair(old_name, tokens[2]);
+                ERR_POST_X(8, Info << "SAccGuide::AddRule: " << count
                            << ": ignoring refinement of " << key << " from "
                            << old_name << " to unrecognized accession type "
                            << tokens[2]);
@@ -987,33 +1059,34 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
     }
 }
 
-SAccGuide::TAccInfo SAccGuide::Find(TFormatCode fmt,
-                                    const CTempString& acc_or_pfx,
-                                    string* key_used)
+const SAccGuide::TAccInfo& SAccGuide::Find(TFormatCode fmt,
+                                           const CTempString& acc_or_pfx,
+                                           string* key_used) const
 {
+    static const TAccInfo kUnknown = CSeq_id::eAcc_unknown;
     TMainMap::const_iterator it = rules.find(fmt);
     if (it == rules.end()) {
-        return CSeq_id::eAcc_unknown;
+        return kUnknown;
     }
 
     const SSubMap&            submap = it->second;
-    TAccInfo                  result = CSeq_id::eAcc_unknown;
+    const TAccInfo*           result = &kUnknown;
     CTempString               pfx     (acc_or_pfx, 0, fmt >> 16);
     TPrefixes::const_iterator pit    = submap.prefixes.find(pfx);
     if (pit != submap.prefixes.end()) {
-        result = pit->second;
+        result = &pit->second;
     } else {
         ITERATE (TPairs, wit, submap.wildcards) {
             if (NStr::MatchesMask(pfx, wit->first)) {
                 if (key_used  &&  acc_or_pfx != wit->first) {
                     *key_used = wit->first;
                 }
-                result = wit->second;
+                result = &wit->second;
                 break;
             }
         }
     }
-    if (acc_or_pfx != pfx  &&  result & CSeq_id::fAcc_specials) {
+    if (acc_or_pfx != pfx  &&  (*result & CSeq_id::fAcc_specials) != 0) {
         TSpecialMap::const_iterator sit
             = submap.specials.lower_bound(acc_or_pfx);
         if (sit != submap.specials.end()
@@ -1026,10 +1099,10 @@ SAccGuide::TAccInfo SAccGuide::Find(TFormatCode fmt,
             if (key_used  &&  key_used->empty()) {
                 *key_used = pfx;
             }
-            return TAccInfo(result & ~CSeq_id::fAcc_specials);
+            return *result;
         }
-    } else /* if (result != CSeq_id::eAcc_unknown) */ {
-        return result;
+    } else /* if (*result != CSeq_id::eAcc_unknown) */ {
+        return *result;
     }
 }
 
@@ -1227,8 +1300,35 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
 
     SIZE_TYPE flag_len = (flag_char == '\0') ? 0 : 1;
     SIZE_TYPE digit_count = main_size - digit_pos - flag_len;
-    EAccessionInfo ai
+    const EAccessionInfo& found_ai
         = (*s_Guide)->Find(SAccGuide::s_Key(digit_pos, digit_count), main_acc);
+    EAccessionInfo ai = found_ai;
+    if ((ai & fAcc_specials) != 0) {
+        ai = EAccessionInfo(ai & ~fAcc_specials);
+    }
+    if ((ai & fAcc_fallback) != 0) {
+        ai = EAccessionInfo(ai & ~fAcc_fallback);
+        static bool s_ReportedFallback;
+        if ((flags & fParse_FallbackOK) == 0  &&  !s_ReportedFallback ) {
+            // TODO - arrange to skip when only interested in the overall type
+            s_ReportedFallback = true;
+            auto it = (*s_Guide)->fallbacks.find(&found_ai);
+            if (it != (*s_Guide)->fallbacks.end()) {
+                ERR_POST_X(14, Warning << "CSeq_id::IdentifyAccession:"
+                           " Returning fallback type "
+                           << it->second.first << " for accession "
+                           << main_acc << ".  (Preferred type "
+                           << it->second.second << " unrecognized.)");
+            } else {
+                ERR_POST_X(15, Warning << "CSeq_id::IdentifyAccession:"
+                           " Returning fallback type 0x"
+                           << NStr::UIntToString(ai, 0, 16)
+                           << " for accession " << main_acc
+                           << ".  (Internal error looking up names of"
+                           " fallback and preferred types.)");
+            }
+        }
+    }
     if (flag_char == 'P') {
         switch (ai & eAcc_division_mask) {
         case eAcc_targeted:
@@ -1819,7 +1919,8 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
         // If no (attempt at a) valid tag, tries to interpret the string
         // as a pure accession.
         if ((flags & fParse_AnyRaw) != 0) {
-            type = GetAccType(IdentifyAccession(the_id, flags));
+            type = GetAccType(IdentifyAccession(the_id,
+                                                flags | fParse_FallbackOK));
         }
         switch (type) {
         case e_Gi:
@@ -2644,9 +2745,11 @@ SSeqIdRange::SSeqIdRange(const CTempString& s, TFlags flags)
 CRef<CSeq_id> SSeqIdRange::const_iterator::GetID(void) const
 {
     CRef<CSeq_id> ret;
+    static const CSeq_id::TParseFlags flags
+        = CSeq_id::fParse_AnyRaw | CSeq_id::fParse_FallbackOK;
 
     if (m_Range->acc_info == CSeq_id::eAcc_unknown) {
-        m_Range->acc_info = CSeq_id::IdentifyAccession(**this);
+        m_Range->acc_info = CSeq_id::IdentifyAccession(**this, flags);
         if (m_Range->size() > 1  &&  m_Range->digits == 5) {
             // account for possible non-uniformity
             switch (m_Range->prefix[0]) {
