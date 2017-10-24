@@ -1,7 +1,7 @@
 # $Id$
 
-# Adjust ICC flags to avoid problematic references to
-# __intel_sse2_str* functions (as of ICC [20]13)
+# Adjust ICC flags to avoid problematic references to __intel_sse*
+# functions (as of ICC [20]17)
 
 ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
   ncbi_ansi_ext.o:       CFLAGS += -fno-builtin-strncat
@@ -15,7 +15,7 @@ ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
   ncbi_lbos.o:           CFLAGS += -fno-builtin-strcat
   ncbi_lbsm.o:           CFLAGS += -fno-builtin-strcpy
   ncbi_lbsmd.o:          CFLAGS += -fno-builtin-strcspn -fno-builtin-strspn
-  ncbi_linkerd.o:        CFLAGS += -fno-builtin-strcat
+  ncbi_linkerd.o:        CFLAGS += -fno-builtin-strcat -fno-builtin-strcpy
   ncbi_local.o:          CFLAGS += -fno-builtin-strcspn -fno-builtin-strspn
   ncbi_localip.o:        CFLAGS += -fno-builtin-strcspn -fno-builtin-strspn
   ncbi_namerd.o:         CFLAGS += -fno-builtin-strcat

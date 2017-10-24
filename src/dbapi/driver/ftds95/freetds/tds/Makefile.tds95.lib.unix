@@ -1,7 +1,7 @@
 # $Id$
 
-# Adjust ICC flags to avoid problematic references to
-# __intel_sse2_str* functions (as of ICC [20]13).
+# Adjust ICC flags to avoid problematic references to __intel_sse*
+# functions (as of ICC [20]17).
 
 ifeq "$(COMPILER)" "icc"
   bulk.o:       CFLAGS += -fno-builtin-strcat -fno-builtin-strchr \
@@ -9,6 +9,7 @@ ifeq "$(COMPILER)" "icc"
   config.o:     CFLAGS += -fno-builtin-strcat -fno-builtin-strcpy
   convert.o:    CFLAGS += -fno-builtin-strcpy
   getmac.o:     CFLAGS += -fno-builtin-strcpy
+  iconv.o:      CFLAGS += -fno-builtin-strncmp
   login.o:      CFLAGS += -fno-builtin-strcat -fno-builtin-strchr
   query.o:      CFLAGS += -fno-builtin-strcat
   threadsafe.o: CFLAGS += -fno-builtin-strcat
