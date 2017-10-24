@@ -333,52 +333,12 @@ void x_no_ncbi_sse_convert_memory(char* dest, const int*  src, size_t count) {
         *(dest + e) = *(src + e);
     } 
 }
-inline
-void x_no_ncbi_sse_split_into4(const int* src, size_t count, int*  dest0, int*  dest1, int*  dest2, int*  dest3) {
-    size_t d=0;
-    int* dest[] = {dest0, dest1, dest2, dest3};
-    for (size_t e = 0; e < 4*count; ++e, d%=4) {
-        *(dest[d++]++) = *(src + e);
-    }
-}
-inline
-void x_no_ncbi_sse_split_into4(const int* src, size_t count, char* dest0, char* dest1, char* dest2, char* dest3) {
-    size_t d=0;
-    char* dest[] = {dest0, dest1, dest2, dest3};
-    for (size_t e = 0; e < 4*count; ++e, d%=4) {
-        *(dest[d++]++) = *(src + e);
-    }
-}
-inline
-unsigned int x_no_ncbi_sse_max_element(const unsigned int* src, size_t count, unsigned int v) {
-    unsigned int result = v;
-    for (size_t e = 0; e < count; ++e) {
-        if (result < *(src + e)) {
-            result = *(src + e);
-        }
-    } 
-    return result;
-}
-inline
-void x_no_ncbi_sse_max_4element(const unsigned int* src, size_t count, unsigned int dest[4]) {
-    unsigned int result[4];
-    memcpy(result, dest, sizeof(unsigned int) * 4);
-    for (size_t e = 0; e < 4*count; e += 4) {
-        if (result[0] < *(src + e)) {
-            result[0] = *(src + e);
-        }
-        if (result[1] < *(src + e + 1)) {
-            result[1] = *(src + e + 1);
-        }
-        if (result[2] < *(src + e + 2)) {
-            result[2] = *(src + e + 2);
-        }
-        if (result[3] < *(src + e + 3)) {
-            result[3] = *(src + e + 3);
-        }
-    } 
-    memcpy(dest, result, sizeof(unsigned int) * 4);
-}
+
+void x_no_ncbi_sse_split_into4(const int* src, size_t count, int*  dest0, int*  dest1, int*  dest2, int*  dest3);
+void x_no_ncbi_sse_split_into4(const int* src, size_t count, char* dest0, char* dest1, char* dest2, char* dest3);
+
+unsigned int x_no_ncbi_sse_max_element(const unsigned int* src, size_t count, unsigned int v);
+void x_no_ncbi_sse_max_4element(const unsigned int* src, size_t count, unsigned int dest[4]);
 
 //---------------------------------------------------------------------------
 inline

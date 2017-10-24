@@ -268,12 +268,6 @@ void copy_4n_split_aligned16(const int* src, size_t count,
         _mm_store_si128((__m128i*)dst2, ww2);
         _mm_store_si128((__m128i*)dst3, ww3);
     }
-    for ( size_t i = 0; i < count; ++i ) {
-        _ASSERT(Uint1(dst0[i-count]) == src[4*(i-count)+0]);
-        _ASSERT(Uint1(dst1[i-count]) == src[4*(i-count)+1]);
-        _ASSERT(Uint1(dst2[i-count]) == src[4*(i-count)+2]);
-        _ASSERT(Uint1(dst3[i-count]) == src[4*(i-count)+3]);
-    }
 }
     
 
@@ -310,6 +304,36 @@ void copy_4n_split_aligned16(const int* src, size_t count,
         _mm_store_si128((__m128i*)dst1, ww1);
         _mm_store_si128((__m128i*)dst2, ww2);
         _mm_store_si128((__m128i*)dst3, ww3);
+    }
+}
+
+
+void x_no_ncbi_sse_split_into4(const int* src, size_t count, int*  dest0, int*  dest1, int*  dest2, int*  dest3)
+{
+    for (size_t e = 0; e < count; ++e) {
+        int v0 = src[e*4+0];
+        int v1 = src[e*4+1];
+        int v2 = src[e*4+2];
+        int v3 = src[e*4+3];
+        dest0[e] = v0;
+        dest1[e] = v1;
+        dest2[e] = v2;
+        dest3[e] = v3;
+    }
+}
+
+
+void x_no_ncbi_sse_split_into4(const int* src, size_t count, char* dest0, char* dest1, char* dest2, char* dest3)
+{
+    for (size_t e = 0; e < count; ++e) {
+        char v0 = char(src[e*4+0]);
+        char v1 = char(src[e*4+1]);
+        char v2 = char(src[e*4+2]);
+        char v3 = char(src[e*4+3]);
+        dest0[e] = v0;
+        dest1[e] = v1;
+        dest2[e] = v2;
+        dest3[e] = v3;
     }
 }
 
@@ -412,6 +436,40 @@ void max_4elements_n_aligned16(const unsigned* src, size_t count, unsigned dst[4
         max4 = _mm_max_epu32(max4, ww0);
     }
     _mm_storeu_si128((__m128i*)dst, max4);
+}
+
+
+unsigned int x_no_ncbi_sse_max_element(const unsigned int* src, size_t count, unsigned int v)
+{
+    unsigned int result = v;
+    for (size_t e = 0; e < count; ++e) {
+        if (result < *(src + e)) {
+            result = *(src + e);
+        }
+    } 
+    return result;
+}
+
+
+void x_no_ncbi_sse_max_4element(const unsigned int* src, size_t count, unsigned int dest[4])
+{
+    unsigned int result[4];
+    memcpy(result, dest, sizeof(unsigned int) * 4);
+    for (size_t e = 0; e < 4*count; e += 4) {
+        if (result[0] < *(src + e)) {
+            result[0] = *(src + e);
+        }
+        if (result[1] < *(src + e + 1)) {
+            result[1] = *(src + e + 1);
+        }
+        if (result[2] < *(src + e + 2)) {
+            result[2] = *(src + e + 2);
+        }
+        if (result[3] < *(src + e + 3)) {
+            result[3] = *(src + e + 3);
+        }
+    } 
+    memcpy(dest, result, sizeof(unsigned int) * 4);
 }
 
 
