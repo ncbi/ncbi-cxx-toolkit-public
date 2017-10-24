@@ -145,11 +145,7 @@ void CMatchTabulate::x_ProcessProteins(
         }
 
         string nuc_acc = x_GetSubjectNucleotideAccession(comparison);
-/*       
-        if (new_nuc_accessions.find(nuc_acc) != new_nuc_accessions.end()) {
-            nuc_acc = new_nuc_accessions.at(nuc_acc);    
-        }
-*/
+
         // Match by similarity
         if (x_IsGoodGloballyReciprocalBest(comparison)) { 
             const CSeq_feat& subject = x_GetSubject(comparison);
@@ -206,11 +202,12 @@ void CMatchTabulate::x_ProcessProteins(
                 nuc_accession :
                 new_nuc_accessions.at(nuc_accession);
 
+
             const string& status = match_it->second ? "Same" : "Changed";
             x_AppendNucleotide(displayed_nuc_accession, status); 
             if (match_map.find(nuc_accession) != match_map.end()) { 
                 for (const SProtMatchInfo& match : match_map.at(nuc_accession)) {
-                    x_AppendMatchedProtein(match);
+                    x_AppendMatchedProtein(displayed_nuc_accession, match);
                 }
             }
 
@@ -218,7 +215,7 @@ void CMatchTabulate::x_ProcessProteins(
                 for (const string local_id : local_prot_ids.at(nuc_accession)) {
                     if (new_protein_skip[nuc_accession].find(local_id) == new_protein_skip[nuc_accession].end()) {
                         new_protein_skip[nuc_accession].insert(local_id);
-                        x_AppendNewProtein(nuc_accession, local_id);
+                        x_AppendNewProtein(displayed_nuc_accession, local_id);
                     }
                 }
             }
@@ -229,7 +226,7 @@ void CMatchTabulate::x_ProcessProteins(
                         dead_protein_skip[nuc_accession].insert(prot_accver);
                         vector<string> accver_vec;
                         NStr::Split(prot_accver, ".", accver_vec);
-                        x_AppendDeadProtein(nuc_accession, accver_vec[0]);
+                        x_AppendDeadProtein(displayed_nuc_accession, accver_vec[0]);
                     }
                 }
             }
@@ -245,21 +242,6 @@ void CMatchTabulate::x_ProcessProteins(
             }
         }
     }
-
-/*
-    for (const string& nuc_accession : current_nuc_accessions) {
-        if (nuc_match.find(nuc_accession) == nuc_match.end()) {
-            x_AppendNucleotide(nuc_accession, "Dead");
-            if (prot_accessions.find(nuc_accession) != prot_accessions.end()) {
-                for (const string prot_accver : prot_accessions.at(nuc_accession)) {
-                    vector<string> accver_vec;
-                    NStr::Split(prot_accver, ".", accver_vec);
-                    x_AppendDeadProtein(nuc_accession, accver_vec[0]);
-                }
-            }
-        }
-    }
-*/
     return;
 }
 
@@ -572,19 +554,6 @@ void CMatchTabulate::x_InitMatchTable()
     mMatchTable->SetNum_rows(0);
 }
 
-/*
-void CMatchTabulate::x_AppendNucleotide(
-    const SNucMatchInfo& nuc_match_info)
-{
-    x_AppendColumnValue("NA_Accession", nuc_match_info.accession);
-    x_AppendColumnValue("PROT_Accession", "---");
-    x_AppendColumnValue("PROT_LocalID", "---");
-    x_AppendColumnValue("Mol_type", "NUC");
-    x_AppendColumnValue("Status", nuc_match_info.status);
-
-    mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
-}
-*/
 
 void CMatchTabulate::x_AppendNucleotide(
     const string& accession, const string& status)
@@ -623,37 +592,9 @@ void CMatchTabulate::x_AppendDeadProtein(
     mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
 }
 
-/*
+
 void CMatchTabulate::x_AppendMatchedProtein(
     const string& nuc_accession,
-    const string& prot_accession,
-    const string& local_id,
-    const string& comp_class)
-{
-    // No protein in database - skip
-    if (NStr::IsBlank(nuc_accession) ||
-        NStr::IsBlank(prot_accession)) {
-        return;
-    }
-
-    const string status = (comp_class == "perfect") ? "Same" : "Changed";
-
-    string local_id_string = local_id;
-    if (NStr::IsBlank(local_id)){ 
-        local_id_string = "---";
-    }
-
-    x_AppendColumnValue("NA_Accession", nuc_accession);
-    x_AppendColumnValue("PROT_Accession", prot_accession);
-    x_AppendColumnValue("PROT_LocalID", local_id_string);
-    x_AppendColumnValue("Mol_type", "PROT");
-    x_AppendColumnValue("Status", status);
-
-    mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
-}
-*/
-
-void CMatchTabulate::x_AppendMatchedProtein(
     const SProtMatchInfo& match_info)
 {
     // No protein in database - skip
@@ -669,7 +610,12 @@ void CMatchTabulate::x_AppendMatchedProtein(
         local_id = "---";
     }
 
-    x_AppendColumnValue("NA_Accession", match_info.nuc_accession);
+    if (NStr::IsBlank(nuc_accession)) {
+        x_AppendColumnValue("NA_Accession", match_info.nuc_accession);
+    }
+    else {
+        x_AppendColumnValue("NA_Accession", nuc_accession);
+    }
     x_AppendColumnValue("PROT_Accession", match_info.prot_accession);
     x_AppendColumnValue("PROT_LocalID", local_id);
     x_AppendColumnValue("Mol_type", "PROT");
@@ -747,8 +693,6 @@ TSeqPos CMatchTabulate::GetNum_rows(void) const
 
 void g_ReadSeqTable(CNcbiIstream& in, CSeq_table& table) 
 {
-
-    //CRef<CSeq_table> table = Ref(new CSeq_table());
     table.Reset();
     CRef<ILineReader> pLineReader = ILineReader::New(in);
 

@@ -82,6 +82,7 @@ private:
         const string& status);
 
     void x_AppendMatchedProtein(
+        const string& nuc_accession,
         const SProtMatchInfo& prot_match_info);
 
     void x_AppendNewProtein(
