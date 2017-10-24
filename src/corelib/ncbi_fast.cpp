@@ -74,15 +74,13 @@ void fill_n_zeros_aligned16(int* dst, size_t count)
 
 void fill_n_zeros(char* dst, size_t count)
 {
-    fill_n(dst, count, 0);
+    memset(dst, 0, count*sizeof(*dst));
 }
 
 void fill_n_zeros(int* dst, size_t count)
 {
-    fill_n(dst, count, 0);
+    memset(dst, 0, count*sizeof(*dst));
 }
-
-
 
 
 #if 0
