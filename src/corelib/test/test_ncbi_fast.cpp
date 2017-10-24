@@ -508,7 +508,7 @@ BOOST_AUTO_TEST_CASE(TestSplitIntChar)
         NFast::copy_4n_split_aligned16(buf, buf_size/4, dst0, dst1, dst2, dst3);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - copy_4n_split_aligned16(int -> char)"  << endl;
+    cout << (finish - start) << " - NFast::copy_4n_split_aligned16(int -> char)"  << endl;
     s_check_split_dst(buf_size, dst0, dst1, dst2, dst3);
 #endif
 
