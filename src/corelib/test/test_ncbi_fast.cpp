@@ -80,6 +80,50 @@ inline Uint8 QUERY_PERF_COUNTER(void) {
 
 /////////////////////////////////////////////////////////////////////////////
 
+template<class V>
+void s_set_zero(V* buf, size_t buf_size)
+{
+    memset(buf, 0, buf_size*sizeof(*buf));
+}
+template<class V>
+void s_set_non_zero(V* buf, size_t buf_size)
+{
+    memset(buf, 0xaa, buf_size*sizeof(*buf));
+}
+template<class V>
+void s_check_zero(const V* buf, size_t buf_size)
+{
+    for ( size_t i = 0; i < buf_size; ++i ) {
+        _ASSERT(buf[i] == V(0));
+    }
+}
+template<class V>
+void s_check_non_zero(const V* buf, size_t buf_size)
+{
+    for ( size_t i = 0; i < buf_size; ++i ) {
+        _ASSERT(buf[i] == V(0xaaaaaaaa));
+    }
+}
+template<class V1, class V2>
+void s_check_equal(const V1* buf, size_t buf_size, const V2* dst)
+{
+    for ( size_t i = 0; i < buf_size; ++i ) {
+        V2 v = V2(buf[i]);
+        if ( sizeof(V1) == 1 && sizeof(V2) == 4 ) {
+            // unsigned char to int
+            v &= 0xff;
+        }
+        _ASSERT(dst[i] == v);
+    }
+}
+template<class V>
+inline void s_payload(V* buf, size_t buf_size)
+{
+    for (size_t j = 0; j < buf_size; j += 64/sizeof(V)) {
+        buf[j] += 1;
+    }
+}
+
 #if 1
 BOOST_AUTO_TEST_CASE(TestFillZerosChar)
 {
@@ -101,48 +145,48 @@ BOOST_AUTO_TEST_CASE(TestFillZerosChar)
     Uint8 start, finish;
 
 #ifdef NCBI_HAVE_FAST_OPS
+    s_set_non_zero(buf, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
+        s_payload(buf, buf_size);
         NFast::fill_n_zeros_aligned16(buf,buf_size);
-        for (size_t j = 0; j < buf_size; j += 64) {
-            buf[j] += 1;
-        }
     } 
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::fill_n_zeros_aligned16(char)" << endl;
+    s_check_zero(buf, buf_size);
 
+    s_set_non_zero(buf, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
+        s_payload(buf, buf_size);
         NFast::fill_n_zeros(buf,buf_size);
-        for (size_t j = 0; j < buf_size; j += 64) {
-            buf[j] += 1;
-        }
     }
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::fill_n_zeros(char)" << endl;
+    s_check_zero(buf, buf_size);
 #endif
 
+    s_set_non_zero(buf, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
+        s_payload(buf, buf_size);
         NFast::x_no_ncbi_sse_fill_n_zeros(buf, buf_size);
-        for (size_t j = 0; j < buf_size; j += 64) {
-            buf[j] += 1;
-        }
     }
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::x_no_ncbi_sse_fill_n_zeros(char)" << endl;
+    s_check_zero(buf, buf_size);
 
+    s_set_non_zero(buf, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
+        s_payload(buf, buf_size);
         NFast::Zero_memory(buf,buf_size);
-        for (size_t j = 0; j < buf_size; j += 64) {
-            buf[j] += 1;
-        }
     }
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::Zero_memory(char)"
          << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0) ? "ok" : "wrong")
          << endl;
+    s_check_zero(buf, buf_size);
 
     free(buf);
 }
@@ -158,48 +202,48 @@ BOOST_AUTO_TEST_CASE(TestFillZerosInt)
     Uint8 start, finish;
 
 #ifdef NCBI_HAVE_FAST_OPS
+    s_set_non_zero(buf, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
+        s_payload(buf, buf_size);
         NFast::fill_n_zeros_aligned16(buf,buf_size);
-        for (size_t j = 0; j < buf_size; j += 16) {
-            buf[j] += 1;
-        }
     }
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::fill_n_zeros_aligned16(int)" << endl;
+    s_check_zero(buf, buf_size);
 
+    s_set_non_zero(buf, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
+        s_payload(buf, buf_size);
         NFast::fill_n_zeros(buf,buf_size);
-        for (size_t j = 0; j < buf_size; j += 16) {
-            buf[j] += 1;
-        }
     }
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::fill_n_zeros(int) " << endl;
+    s_check_zero(buf, buf_size);
 #endif
 
+    s_set_non_zero(buf, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
+        s_payload(buf, buf_size);
         NFast::x_no_ncbi_sse_fill_n_zeros(buf, buf_size);
-        for (size_t j = 0; j < buf_size; j += 16) {
-            buf[j] += 1;
-        }
     }
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::x_no_ncbi_sse_fill_n_zeros(int)" << endl;
+    s_check_zero(buf, buf_size);
 
+    s_set_non_zero(buf, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
+        s_payload(buf, buf_size);
         NFast::Zero_memory(buf,buf_size);
-        for (size_t j = 0; j < buf_size; j += 16) {
-            buf[j] += 1;
-        }
     }
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::Zero_memory(int)"
          << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0) ? "ok" : "wrong")
          << endl;
+    s_check_zero(buf, buf_size);
 
     free(buf);
 }
@@ -219,29 +263,38 @@ BOOST_AUTO_TEST_CASE(TestCopyInt)
     }
 
 #ifdef NCBI_HAVE_FAST_OPS
+    s_set_non_zero(dst, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
+        s_payload(dst, buf_size);
         NFast::copy_n_aligned16(buf, buf_size, dst);
     } 
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::copy_n_aligned16(int) "  << endl;
+    s_check_equal(buf, buf_size, dst);
 #endif
 
+    s_set_non_zero(dst, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
+        s_payload(dst, buf_size);
         NFast::x_no_ncbi_sse_copy_mem(dst,buf,buf_size);
     } 
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::x_no_ncbi_sse_copy_mem(int)" << endl;
+    s_check_equal(buf, buf_size, dst);
 
+    s_set_non_zero(dst, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
+        s_payload(dst, buf_size);
         NFast::Copy_memory(buf, buf_size, dst);
     } 
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::Copy_memory(int)"
          << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0 && intptr_t(dst)%16 == 0) ? "ok" : "wrong")
          << endl;
+    s_check_equal(buf, buf_size, dst);
 
     free(buf);
     free(dst);
@@ -262,29 +315,38 @@ BOOST_AUTO_TEST_CASE(TestConvertCharInt)
     }
 
 #ifdef NCBI_HAVE_FAST_OPS
+    s_set_non_zero(dst, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
+        s_payload(dst, buf_size);
         NFast::copy_n_bytes_aligned16(buf, buf_size, dst);
     } 
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::copy_n_bytes_aligned16(char -> int) "  << endl;
+    s_check_equal(buf, buf_size, dst);
 #endif
 
+    s_set_non_zero(dst, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
+        s_payload(dst, buf_size);
         NFast::x_no_ncbi_sse_convert_memory(dst, buf, buf_size);
     } 
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::x_no_ncbi_sse_convert_memory(char -> int)" << endl;
+    s_check_equal(buf, buf_size, dst);
 
+    s_set_non_zero(dst, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
+        s_payload(dst, buf_size);
         NFast::Convert_memory(buf, buf_size, dst);
     } 
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::Convert_memory(char -> int)"
          << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0 && intptr_t(dst)%16 == 0) ? "ok" : "wrong")
          << endl;
+    s_check_equal(buf, buf_size, dst);
 
     free(buf);
     free(dst);
@@ -305,54 +367,71 @@ BOOST_AUTO_TEST_CASE(TestConvertIntChar)
     }
 
 #ifdef NCBI_HAVE_FAST_OPS
+    s_set_non_zero(dst, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
+        s_payload(dst, buf_size);
         NFast::copy_n_aligned16(buf, buf_size, dst);
     } 
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::copy_n_aligned16(int -> char) "  << endl;
+    s_check_equal(buf, buf_size, dst);
 #endif
 
+    s_set_non_zero(dst, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
+        s_payload(dst, buf_size);
         NFast::x_no_ncbi_sse_convert_memory(dst, buf, buf_size);
     } 
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::x_no_ncbi_sse_convert_memory(int -> char)" << endl;
+    s_check_equal(buf, buf_size, dst);
 
+    s_set_non_zero(dst, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
+        s_payload(dst, buf_size);
         NFast::Convert_memory(buf, buf_size, dst);
     } 
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::Convert_memory(int -> char)"
          << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0 && intptr_t(dst)%16 == 0) ? "ok" : "wrong")
          << endl;
+    s_check_equal(buf, buf_size, dst);
 
     free(buf);
     free(dst);
 }
 #endif
 
-#if 1
-void s_clear_split_dst(size_t buf_size, int* dst0, int* dst1, int* dst2, int* dst3)
+template<class V>
+void s_clear_split_dst(size_t buf_size, V* dst0, V* dst1, V* dst2, V* dst3)
 {
-    fill_n(dst0, buf_size/4, 0);
-    fill_n(dst1, buf_size/4, 0);
-    fill_n(dst2, buf_size/4, 0);
-    fill_n(dst3, buf_size/4, 0);
+    s_set_zero(dst0, buf_size/4);
+    s_set_zero(dst1, buf_size/4);
+    s_set_zero(dst2, buf_size/4);
+    s_set_zero(dst3, buf_size/4);
 }
-
-void s_check_split_dst(size_t buf_size, const int* dst0, const int* dst1, const int* dst2, const int* dst3)
+template<class V>
+void s_set_split_buf(V* buf, size_t buf_size)
+{
+    for (size_t i = 0; i < buf_size; ++i) {
+        buf[i] = V(i & 0xFF);
+    }
+}
+template<class V>
+void s_check_split_dst(size_t buf_size, const V* dst0, const V* dst1, const V* dst2, const V* dst3)
 {
     for ( size_t i = 0; i < buf_size/4; ++i ) {
-        _ASSERT(dst0[i] == int((i*4+0) & 0xff));
-        _ASSERT(dst1[i] == int((i*4+1) & 0xff));
-        _ASSERT(dst2[i] == int((i*4+2) & 0xff));
-        _ASSERT(dst3[i] == int((i*4+3) & 0xff));
+        _ASSERT(dst0[i] == V((i*4+0) & 0xff));
+        _ASSERT(dst1[i] == V((i*4+1) & 0xff));
+        _ASSERT(dst2[i] == V((i*4+2) & 0xff));
+        _ASSERT(dst3[i] == V((i*4+3) & 0xff));
     }
 }
 
+#if 1
 BOOST_AUTO_TEST_CASE(TestSplitIntInt)
 {
     cout << endl << "TestSplitIntInt" << endl;
@@ -364,9 +443,8 @@ BOOST_AUTO_TEST_CASE(TestSplitIntInt)
     int*  dst2 = (int*)malloc((buf_size/4) * sizeof(int));
     int*  dst3 = (int*)malloc((buf_size/4) * sizeof(int));
     Uint8 start, finish;
-    for (size_t i = 0; i < buf_size; ++i) {
-        buf[i] = i & 0xFF;
-    }
+
+    s_set_split_buf(buf, buf_size);
 
 #ifdef NCBI_HAVE_FAST_OPS
     s_clear_split_dst(buf_size, dst0, dst1, dst2, dst3);
@@ -409,24 +487,6 @@ BOOST_AUTO_TEST_CASE(TestSplitIntInt)
 #endif
 
 #if 1
-void s_clear_split_dst(size_t buf_size, char* dst0, char* dst1, char* dst2, char* dst3)
-{
-    fill_n(dst0, buf_size/4, 0);
-    fill_n(dst1, buf_size/4, 0);
-    fill_n(dst2, buf_size/4, 0);
-    fill_n(dst3, buf_size/4, 0);
-}
-
-void s_check_split_dst(size_t buf_size, const char* dst0, const char* dst1, const char* dst2, const char* dst3)
-{
-    for ( size_t i = 0; i < buf_size/4; ++i ) {
-        _ASSERT(dst0[i] == char((i*4+0) & 0xff));
-        _ASSERT(dst1[i] == char((i*4+1) & 0xff));
-        _ASSERT(dst2[i] == char((i*4+2) & 0xff));
-        _ASSERT(dst3[i] == char((i*4+3) & 0xff));
-    }
-}
-
 BOOST_AUTO_TEST_CASE(TestSplitIntChar)
 {
     cout << endl << "TestSplitIntChar" << endl;
@@ -438,9 +498,8 @@ BOOST_AUTO_TEST_CASE(TestSplitIntChar)
     char* dst2 = (char*)malloc((buf_size/4) * sizeof(char));
     char* dst3 = (char*)malloc((buf_size/4) * sizeof(char));
     Uint8 start, finish;
-    for (size_t i = 0; i < buf_size; ++i) {
-        buf[i] = i & 0xFF;
-    }
+
+    s_set_split_buf(buf, buf_size);
 
 #ifdef NCBI_HAVE_FAST_OPS
     s_clear_split_dst(buf_size, dst0, dst1, dst2, dst3);
