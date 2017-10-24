@@ -33,10 +33,11 @@
  */
 #include <ncbiconf.h>
 #include <corelib/ncbistl.hpp>
+#include <vector>
 #include <memory.h>
-#include <immintrin.h>
 
 #if (defined(NCBI_COMPILER_MSVC) || NCBI_SSE > 40) && !defined(NCBI_COMPILER_ICC)
+#   include <immintrin.h>
 #   define NCBI_HAVE_FAST_OPS
 #endif //NCBI_SSE
 
