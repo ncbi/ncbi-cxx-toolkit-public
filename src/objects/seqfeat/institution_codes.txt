@@ -728,7 +728,7 @@ BZCM	h	Bozhou Vocational and Technical College
 BZF	s	Forest Research and Development Center and Nature Conservation		
 BZM	s	Museum fur Naturkunde, Berlin		
 BZT	s	Biological Institute Titograd		
-C	s	Botanical Museum, Natural History Museum of Denmark		
+C	s	Natural History Museum of Denmark		
 CA	s	Chicago Academy of Sciences		
 CAB	c	Yeast Collection of Department of Microbiology, Stellenbosch University		
 CABI	c	CABI Genetic Resource Collection		
@@ -1223,7 +1223,7 @@ COCAZ	h	Coconino National Forest Herbarium
 COCH	s	Universidad Mayor de San Simon, Departamento de Botanica		
 COCO	s	Colorado College, Biology Department		
 CODAGEM	s	Universidad Autonoma del Estado de Mexico		
-CODIMAR	c	Centro de Investigaciones Biologicas del Noroeste		
+CODIMAR	c	Centro de Investigaciones Biologicas del Noroeste (CIBNOR), Marine Dinoflagellate Collection		
 COFC	s	Universidad de Cordoba, Departamento de Biologia Vegetal		
 COI	s	University of Coimbra		
 COL	s	Universidad Nacional de Colombia		
@@ -1304,7 +1304,7 @@ CRK	s	University College, Plant Science Department
 CRL	c	Centro de Referencia Para Lactobacilos		
 CRLA	s	Crater Lake National Park, Museum and Archives Collections		
 CRMC	s	College of the Redwoods, Mendocino Coast Campus, Biological Sciences Department		
-CRMM	s	Centre de Recherche sur les Mammiferes Marins		
+CRMM	s	Observatoire PELAGIS -UMS 3462- University of la Rochelle-CNRS		
 CRO	s	Wellington College		
 CRP	s	I.N.T.A., E.E.A. Bariloche		
 CRRHA	s	Centre Regional de Recherches en Hydrobiologie Appliquee		
@@ -5179,7 +5179,7 @@ PEY	s	Peking University, Biology Department
 PFC	s	Pfeiffer University, Biology Department		
 PFCA	s	Pacific Forestry Centre Arthropod Reference Collection		
 PFES	s	Petawawa National Forestry Institute, Canadian Forest Service		
-PFI	s	Percy FitzPatrick Institute of African Ornithology		
+PFI	s	Percy FitzPatrick Institute of African Ornithology	PFI
 PFRA	s	Tree Nursery		
 PFRS	s	Pacific Southwest Forest and Range Experiment Station		
 PFSS	s	Petrified Forest National Park		
@@ -5464,8 +5464,9 @@ RAS	s	Union of Burma Applied Research Institute, Pharmaceutical Department
 RAU	s	Laboratoire de Biologie Vegetale		
 RAW	s	Pakistan Agricultural Research Council		
 RB	s	Jardim Botanico do Rio de Janeiro		
-RBCM	s	Royal British Columbia Museum		
+RBCM	s	Royal British Columbia Museum	V
 RBCM:Mamm	s	Royal British Columbia Museum, Mammal Collection
+RBCM:Ornith	s	Royal British Columbia Museum, Ornithology Collection
 RBE	s	Universidade Federal Rural do Rio de Janeiro		
 RBF	c	Raiffeisen Bioforschung		
 RBINS	s	Royal Belgian Institute of Natural Sciences		
@@ -5553,7 +5554,7 @@ RMCA	s	Royal Museum for Central Africa
 RMDRC	s	Rocky Mountain Dinosaur Resource Center		
 RMF	c	Rocky Mountain Herbarium, Fungi		
 RMFM	s	Richmond Marine Fossils Museum		
-RMNH	s	Naturalis Biodiversity Center		
+RMNH	s	Naturalis Biodiversity Center	RMNHD
 RMNH:ACA	s	Naturalis Biodiversity Center, Acari collection
 RMNH:AVES	s	Naturalis Biodiversity Center, bird collection
 RMNH:BRA	s	Naturalis Biodiversity Center, brachiopod collection
@@ -5566,7 +5567,7 @@ RMNH:MAM	s	Naturalis Biodiversity Center, Mammal collection
 RMNH:MOL	s	Naturalis Biodiversity Center, mollusc collection
 RMNH:PISC	s	Naturalis Biodiversity Center, fish collection
 RMNH:POR	s	Naturalis Biodiversity Center, poriferan collection
-RMNHD	s	Naturalis Biodiversity Center		
+RMNHD	s	Naturalis Biodiversity Center	RMNH
 RMNP	s	Riding Mountain National Park		
 RMRC	b	Regional Medical Research Centre		
 RMS	s	University of Wyoming Herbarium		
@@ -7102,7 +7103,7 @@ UZL	s	University of Zambia, Biological Sciences Department
 UZMC	s	Universidad del Zulia		
 UZMH	s	University Museum (Zoology)		
 UZMO	s	Zoologisk Museum		
-V	s	Royal British Columbia Museum - Herbarium		
+V	s	Royal British Columbia Museum - Herbarium	RBCM
 VA	s	University of Virginia		
 VAB	s	Universitat de Valencia, Departamento de Biologia Vegetal		
 VAIC	s	Victorian Agricultural Insect Collection		
@@ -7581,11 +7582,11 @@ ZMU	s	Zhejiang Medical University, Pharmacy Department
 ZMUA<CHN>	s	Zooligal Museum, University of Amoy		
 ZMUA<GRC>	s	Zoological Museum, University of Athens		
 ZMUAS	s	Zoological Museum Ukrainian Academy of Sciences		
-ZMUB	s	Museum of Zoology at the University of Bergen, Vertebrate collections		
-ZMUB:BIRD	s	Museum of Zoology at the University of Bergen, Vertebrate collections, Bird collection
-ZMUB:HERP	s	Museum of Zoology at the University of Bergen, Vertebrate collections, Herptile collection
-ZMUB:ICHT	s	Museum of Zoology at the University of Bergen, Vertebrate collections, Fish Collections
-ZMUB:MAMM	s	Museum of Zoology at the University of Bergen, Vertebrate collections, Mammal collection
+ZMUB	s	Museum of Zoology at the University of Bergen		
+ZMUB:BIRD	s	Museum of Zoology at the University of Bergen, Bird collection
+ZMUB:HERP	s	Museum of Zoology at the University of Bergen, Herptile collection
+ZMUB:ICHT	s	Museum of Zoology at the University of Bergen, Fish Collections
+ZMUB:MAMM	s	Museum of Zoology at the University of Bergen, Mammal collection
 ZMUC	sb	Zoological Museum, University of Copenhagen		
 ZMUD	s	University of Dhaka, Zoology Museum		
 ZMUH<DEU>	s	Zoologisches Institut und Zoologisches Museum, Universitat Hamburg		
