@@ -348,14 +348,25 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
                 bio_set->Assign(obj);
                 seq_entry->SetSet(*bio_set);
 
+                list<string> set_current_nuc_accessions;
+                map<string, string> set_new_nuc_accessions;
+                map<string, list<string>> set_prot_accessions;
+                map<string, list<string>> set_local_prot_ids;
+
                 x_ProcessNucProtSet(seq_entry,
                     filename_map,
                     ostream_map,
-                    current_nuc_accessions,
-                    new_nuc_accessions,
-                    local_prot_ids,
-                    prot_accessions,
+                    set_current_nuc_accessions,
+                    set_new_nuc_accessions,
+                    set_local_prot_ids,
+                    set_prot_accessions,
                     db_scope); 
+                
+                // Clean this up by gathering accessions into struct
+                current_nuc_accessions.merge(set_current_nuc_accessions);
+                new_nuc_accessions.insert(set_new_nuc_accessions.begin(), set_new_nuc_accessions.end());
+                prot_accessions.insert(set_prot_accessions.begin(), set_prot_accessions.end());
+                local_prot_ids.insert(set_local_prot_ids.begin(), set_local_prot_ids.end());
             }
             istr.Close();
 
@@ -570,9 +581,11 @@ void CProteinMatchApp::x_ProcessNucProtSet(CRef<CSeq_entry> nuc_prot_set,
     CScope& db_scope) 
 {
 
+    const CBioseq& nuc_seq = nuc_prot_set->GetSet().GetNucFromNucProtSet();
+
     CRef<CSeq_id> nuc_seqid;
     const bool success = m_pMatchSetup->GetNucSeqId(
-        nuc_prot_set->GetSet().GetNucFromNucProtSet(),
+        nuc_seq,
         nuc_seqid);
 
     string db_nuc_acc_string = "";
@@ -580,7 +593,7 @@ void CProteinMatchApp::x_ProcessNucProtSet(CRef<CSeq_entry> nuc_prot_set,
         string local_nuc_acc_string = nuc_seqid->GetSeqIdString();
         if (!db_scope.GetBioseqHandle(*nuc_seqid) &&
              m_pMatchSetup->GetReplacedIdFromHist(
-                    nuc_prot_set->GetSet().GetNucFromNucProtSet(),
+                    nuc_seq,
                     nuc_seqid)) {
             db_nuc_acc_string = nuc_seqid->GetSeqIdString();
             new_nuc_accessions[db_nuc_acc_string] = local_nuc_acc_string;
