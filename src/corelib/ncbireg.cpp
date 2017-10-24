@@ -1825,23 +1825,28 @@ bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags,
 
     list<string> names;
     {{
-        string s = m_AllRegistries->Get("NCBI", ".Inherits");
-        if (s.empty()) {
+        string s = m_MainRegistry->Get("NCBI", ".Inherits");
+
+        REVERSE_ITERATE(CCompoundRegistry::TPriorityMap, it, m_AllRegistries->m_PriorityMap) {
+            s += ',';
+            s += it->second->Get("NCBI", ".Inherits");
+        }
+
+        {
             if (dynamic_cast<CNcbiRegistry*>(this) != NULL) {
                 _TRACE("LoadBaseRegistries(" << this
                        << "): trying file registry");
-                s = FindByName(CNcbiRegistry::sm_FileRegName)
+                s += ',';
+                s += FindByName(CNcbiRegistry::sm_FileRegName)
                     ->Get("NCBI", ".Inherits");
             }
-            if (s.empty()) {
-                return false;
-            }
         }
-        _TRACE("LoadBaseRegistries(" << this << "): using " << s);
         NStr::Split(s, ", ", names,
                     NStr::fSplit_CanSingleQuote | 
                     NStr::fSplit_MergeDelimiters | 
                     NStr::fSplit_Truncate);
+        if (names.empty()) return false;
+        _TRACE("LoadBaseRegistries(" << this << "): using " << s);
     }}
 
     typedef pair<string, CRef<IRWRegistry> > TNewBase;
