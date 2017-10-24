@@ -488,9 +488,19 @@ RunTest() {
 
 
            # Run check
+           
            rm -f check_exec.pid > /dev/null 2>&1
            start_time="\`date +'$x_date_format'\`"
            check_exec="\$root_dir/scripts/common/check/check_exec.sh"
+           
+           # Generate PHID and SID for a new test
+           logfile=\$NCBI_CONFIG__LOG__FILE
+           NCBI_CONFIG__LOG__FILE=
+           export NCBI_CONFIG__LOG__FILE
+           eval "\`ncbi_applog generate -phid -sid -format=shell-export\`"
+           NCBI_CONFIG__LOG__FILE=\$logfile
+           export NCBI_CONFIG__LOG__FILE
+           
            \$check_exec $x_time \`eval echo \$xx_run\` > \$x_test_out.\$\$ 2>&1
            result=\$?
            stop_time="\`date +'$x_date_format'\`"
@@ -501,7 +511,7 @@ RunTest() {
                s/ ["][$][@]["].*$//
             }' \$x_test_out.\$\$ >> \$x_test_out
 
-           # RunID
+           # Compute RunID
            runpid='?'
            test -f check_exec.pid  &&  runpid="\`cat check_exec.pid\`"
            runid="\`date -u +%y%m%d%H%M%S\`-\$runpid-\`uname -n\`"
