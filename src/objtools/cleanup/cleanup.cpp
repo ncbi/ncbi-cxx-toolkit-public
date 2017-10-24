@@ -2478,7 +2478,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
             change_this_cds |= SetCDSPartialsByFrameAndTranslation(*new_cds, entry.GetScope());
 
             // retranslate
-            if (new_cds->IsSetProduct() && entry.GetScope().GetBioseqHandle(new_cds->GetProduct())) {
+            if (new_cds->IsSetProduct() && entry.GetScope().GetBioseqHandleFromTSE(*(new_cds->GetProduct().GetId()), entry)) {
                 any_changes |= feature::RetranslateCDS(*new_cds, entry.GetScope());
             } else {
                 // need to set product if not set
