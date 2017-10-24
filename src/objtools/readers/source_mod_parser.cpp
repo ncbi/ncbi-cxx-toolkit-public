@@ -275,7 +275,62 @@ namespace
                                                  
     CSafeStatic<TSModSubSrcSubtype> kSModSubSrcSubtypeMap(
         s_InitSModSubSrcSubtypeMap, nullptr);
+
+    bool x_FindBrackets(const CTempString& str, size_t& start, size_t& stop, size_t& eq_pos)
+    {
+        size_t i = start;
+        bool found = false;
+
+        eq_pos = CTempString::npos;
+
+        const char* s = str.data() + start;
+
+        size_t nested_brackets = CTempString::npos;;
+        while (i < str.size())
+        {
+            switch (*s)
+            {
+            case '[':
+                nested_brackets++;
+                if (nested_brackets == 0)
+                {
+                    start = i;
+                }
+                break;
+            case '=':
+                if (eq_pos == CTempString::npos)
+                    eq_pos = i;
+                break;
+            case ']':
+                if (nested_brackets == 0)
+                {
+                    stop = i;
+                    if (eq_pos == CTempString::npos)
+                        eq_pos = i;
+                    return true;
+                }
+                else
+                {
+                    nested_brackets--;
+                }
+            }
+            i++; s++;
+        }
+        return false;
+    };
+
+    void x_AppendIfNonEmpty(string& s, const CTempString& o)
+    {
+        if (!o.empty())
+        {
+            if (!s.empty())
+                s.push_back(' ');
+            s.append(o.data(), o.length());
+        }
+    }
+
 };
+
 
 CSafeStatic<CSourceModParser::SMod> CSourceModParser::kEmptyMod;
 
@@ -399,6 +454,7 @@ void CAutoInitDesc<CGB_block>::_getfromdesc()
     m_ptr = &Set().SetGenbank();
 }
 
+
 string CSourceModParser::ParseTitle(const CTempString& title, 
     CConstRef<CSeq_id> seqid,
     size_t iMaxModsToParse )
@@ -411,43 +467,33 @@ string CSourceModParser::ParseTitle(const CTempString& title,
 
     mod.seqid = seqid;
 
-    size_t iModsFoundSoFar = 0;
-    for( ; (pos < title.size()) && (iModsFoundSoFar < iMaxModsToParse); 
+    size_t iModsFoundSoFar = 0;    
+    for (; (pos < title.size()) && (iModsFoundSoFar < iMaxModsToParse);
         ++iModsFoundSoFar )
     {
-        size_t lb_pos = title.find('[', pos), eq_pos = title.find('=', lb_pos),
-               end_pos = CTempString::npos;
-        if (eq_pos != CTempString::npos) {
-            mod.key = NStr::TruncateSpaces_Unsafe
-                (title.substr(lb_pos + 1, eq_pos - lb_pos - 1));
-            if (eq_pos + 3 < title.size()  &&  title[eq_pos + 1] == '"') {
-                end_pos = title.find('"', ++eq_pos + 1);
-            } else {
-                end_pos = title.find(']', eq_pos + 1);
-            }
-        }
-        if (end_pos == CTempString::npos) {
-            stripped_title += title.substr(pos);
-            break;
-        } else {
-            mod.value = NStr::TruncateSpaces_Unsafe
-                (title.substr(eq_pos + 1, end_pos - eq_pos - 1));
-            if (title[end_pos] == '"') {
-                end_pos = title.find(']', end_pos + 1);
-                if (end_pos == CTempString::npos) {
-                    break;
-                }
-            }
+        size_t lb_pos, end_pos, eq_pos;
+        lb_pos = pos;
+        if (x_FindBrackets(title, lb_pos, end_pos, eq_pos))
+        {            
+            CTempString key = NStr::TruncateSpaces_Unsafe(title.substr(lb_pos+1, eq_pos - lb_pos - 1));
+            CTempString value = NStr::TruncateSpaces_Unsafe(title.substr(eq_pos + 1, end_pos - eq_pos - 1));
+            CTempString skipped = NStr::TruncateSpaces_Unsafe(title.substr(pos, lb_pos - pos));
+
+            mod.key = key;
+            mod.value = value;
             mod.pos = lb_pos;
             mod.used = false;
             m_Mods.emplace(mod);
-            CTempString text = NStr::TruncateSpaces_Unsafe
-                (title.substr(pos, lb_pos - pos));
-            if ( !stripped_title.empty()  &&  !text.empty() ) {
-                stripped_title += ' ';
-            }
-            stripped_title += text;
+
+            x_AppendIfNonEmpty(stripped_title, skipped);
+
             pos = end_pos + 1;
+        }
+        else
+        { // rest of the title is unparsed
+            CTempString rest = NStr::TruncateSpaces_Unsafe(title.substr(pos));
+            x_AppendIfNonEmpty(stripped_title, rest);
+            break;
         }
     }
 
