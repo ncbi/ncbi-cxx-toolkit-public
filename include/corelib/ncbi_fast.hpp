@@ -311,20 +311,20 @@ void append_zeros_aligned16(vector<V, A>& dst, size_t count) {
 //---------------------------------------------------------------------------
 inline
 void x_no_ncbi_sse_fill_n_zeros(char* dst, size_t count) {
-    memset(dst, 0, count * sizeof(char));
+    memset(dst, 0, count * sizeof(*dst));
 }
 inline
 void x_no_ncbi_sse_fill_n_zeros(int* dst, size_t count) {
-    memset(dst, 0, count * sizeof(int));
+    memset(dst, 0, count * sizeof(*dst));
 }
 inline
 void x_no_ncbi_sse_copy_mem(int* dest, const int* src, size_t count) {
-    memcpy(dest, src, count * sizeof(int));
+    memcpy(dest, src, count * sizeof(*dest));
 }
 inline 
 void x_no_ncbi_sse_convert_memory( int* dest, const char* src, size_t count) {
     for (size_t e = 0; e < count; ++e) {
-        *(dest + e) = *(src + e);
+        *(dest + e) = (unsigned char)*(src + e);
     } 
 }
 inline
