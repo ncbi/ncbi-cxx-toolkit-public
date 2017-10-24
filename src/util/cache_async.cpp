@@ -139,7 +139,7 @@ CThreadPool* s_CreateThreadPool()
 #ifdef NCBI_THREADS
     if (TCacheWriteAsync::GetDefault()) {
         // XXX: Thread pool can only use single thread, as writer would be shared between threads otherwise.
-        return new CThreadPool(numeric_limits<unsigned>::max(), 1, 1, CThread::fRunCloneRequestContext);
+        return new CThreadPool(numeric_limits<unsigned>::max(), 1, 1);
     }
 #endif
 
