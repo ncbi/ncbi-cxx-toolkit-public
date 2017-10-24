@@ -30,6 +30,7 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbistre.hpp>
+#include <corelib/request_ctx.hpp>
 #include <corelib/rwstream.hpp>
 #include <corelib/stream_utils.hpp>
 
@@ -55,6 +56,7 @@ struct SMeta
     string subkey;
     unsigned time_to_live;
     string owner;
+    CRef<CRequestContext> ctx;
 };
 
 
@@ -102,6 +104,7 @@ SAsyncWriteTask::EStatus SAsyncWriteTask::Execute(void)
     if (!cache) return eCanceled;
 
     auto& m = m_Meta; // Shortcut
+    GetDiagContext().SetRequestContext(m.ctx);
     auto writer = cache->GetWriteStream(m.key, m.version, m.subkey, m.time_to_live, m.owner);
 
     CWStream os(writer, 0, 0, CRWStreambuf::fOwnWriter);
@@ -275,7 +278,8 @@ void CAsyncWriteCache::GetBlobAccess(const string& key, TBlobVersion version, co
 IWriter* CAsyncWriteCache::GetWriteStream(const string& key, TBlobVersion version, const string& subkey, unsigned int time_to_live, const string& owner)
 {
     if (m_ThreadPool) {
-        SMeta meta{key, version, subkey, time_to_live, owner};
+        auto ctx = GetDiagContext().GetRequestContext().Clone();
+        SMeta meta{key, version, subkey, time_to_live, owner, ctx};
         return new SDeferredWriter(m_ThreadPool, m_Writer, move(meta));
     }
 
