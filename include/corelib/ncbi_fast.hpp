@@ -334,11 +334,11 @@ void x_no_ncbi_sse_convert_memory(char* dest, const int*  src, size_t count) {
     } 
 }
 
-void x_no_ncbi_sse_split_into4(const int* src, size_t count, int*  dest0, int*  dest1, int*  dest2, int*  dest3);
-void x_no_ncbi_sse_split_into4(const int* src, size_t count, char* dest0, char* dest1, char* dest2, char* dest3);
+void NCBI_XNCBI_EXPORT x_no_ncbi_sse_split_into4(const int* src, size_t count, int*  dest0, int*  dest1, int*  dest2, int*  dest3);
+void NCBI_XNCBI_EXPORT x_no_ncbi_sse_split_into4(const int* src, size_t count, char* dest0, char* dest1, char* dest2, char* dest3);
 
-unsigned int x_no_ncbi_sse_max_element(const unsigned int* src, size_t count, unsigned int v);
-void x_no_ncbi_sse_max_4element(const unsigned int* src, size_t count, unsigned int dest[4]);
+unsigned int NCBI_XNCBI_EXPORT x_no_ncbi_sse_max_element(const unsigned int* src, size_t count, unsigned int v);
+void NCBI_XNCBI_EXPORT x_no_ncbi_sse_max_4element(const unsigned int* src, size_t count, unsigned int dest[4]);
 
 //---------------------------------------------------------------------------
 inline
