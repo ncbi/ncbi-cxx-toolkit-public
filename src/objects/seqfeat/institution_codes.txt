@@ -1867,7 +1867,7 @@ FCAB	s	Pontificia Universidade Catolica do Rio de Janeiro, Nucleo Interdisciplin
 FCAP	s	Universidade Federal do Para		
 FCBP	c	First Fungal Culture Bank of Pakistan		
 FCDA	s	Fresno County Department of Agriculture		
-FCL<POL>	c	Fungal Culture Collection of Lublin		
+FCL<POL>	c	Fungal Culture Collection of Lublin (at Biochemistry Dept., UMCS)		
 FCLR	s	Fundacion Cientifica Los Roques		
 FCM	s	Facultad de Ciencias Marinas		
 FCME	s	Universidad Nacional Autonoma de Mexico, Ciudad Universitaria, Departamento de Biologia		
@@ -7446,7 +7446,7 @@ YF	s	Yanbei Forestry Institute
 YFS	s	Yunnan Forestry School		
 YFTC	s	Yale Fish Tissue Collection		
 YH	s	Lutheran College		
-YHB<CAN>	s	Yukon Heritage Board , Paleontology Collections		
+YHB<CAN>	s	Yukon Heritage Resources Unit, Paleontology Program	YHB
 YIM	c	Yunnan Institute of Microbiology		
 YIM<herbarium>	s	Yunnan Institute of Pharmacology		
 YIO	s	Yamashina Institute for Ornithology		
