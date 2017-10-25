@@ -2547,16 +2547,16 @@ DISCREPANCY_SUMMARIZE(CDS_HAS_NO_ADJACENT_TRNA)
 }
 
 
-// INVERTEBRATE_MITO_RRNA
+// MITO_RRNA
 
-DISCREPANCY_CASE(INVERTEBRATE_MITO_RRNA, COverlappingFeatures, eOncaller, "Non-mitochondrial rRNAs with 12S/16S")
+DISCREPANCY_CASE(MITO_RRNA, COverlappingFeatures, eOncaller, "Non-mitochondrial rRNAs with 12S/16S")
 {
     if (context.IsEukaryotic()) {
         const vector<CConstRef<CSeq_feat> >& rnas = context.Feat_RNAs();
         for (size_t i = 0; i < rnas.size(); i++) {
             if (rnas[i]->GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA) {
                 const string& name = rnas[i]->GetData().GetRna().GetExt().GetName();
-                if (name.find("16S") || name.find("12S")) {
+                if (name.find("16S") != string::npos || name.find("12S") != string::npos) {
                     m_Objs["[n] non mitochondrial rRNA name[s] contain[S] 12S/16S"].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(rnas[i])));
                 }
             }
@@ -2565,7 +2565,7 @@ DISCREPANCY_CASE(INVERTEBRATE_MITO_RRNA, COverlappingFeatures, eOncaller, "Non-m
 }
 
 
-DISCREPANCY_SUMMARIZE(INVERTEBRATE_MITO_RRNA)
+DISCREPANCY_SUMMARIZE(MITO_RRNA)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
