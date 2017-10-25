@@ -55,7 +55,7 @@
  *   SSERV_Info::u's string parameters are stored contiguously following the
  *                 "fixed" area (SSERV_Ops::SizeOf() returns the size of the
  *                 type-dependent "u" plus all the string parameters);
- *   SSERV_Info::vhost (if non-zero) is stored past the parameters;
+ *   SSERV_Info::vhost (if non-zero) is stored past the parameters (+'\0');
  *   SSERV_Info::extra defines the size of "extra" opaque bytes (which may be
  *                 used to keep private information) that follow vhost (or the
  *                 SSERV_Info::u's block if vhost is empty), zero means none;
@@ -616,7 +616,7 @@ extern size_t SERV_SizeOfInfo(const SSERV_Info *info)
     return attr
         ? (sizeof(*info) - sizeof(info->u)
            + attr->ops.SizeOf(&info->u)
-           + info->vhost
+           + (info->vhost ? (size_t) info->vhost + 1 : 0)
            + info->extra)
         : 0;
 }
