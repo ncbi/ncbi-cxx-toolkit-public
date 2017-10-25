@@ -1436,17 +1436,25 @@ void Test_WGSCleanup(const string& cds_product, const string& mrna_product)
 
     CBioseq_CI pseq(seh, CSeq_inst::eMol_aa);
     if (!pseq) {
-        BOOST_CHECK_EQUAL("ERROR", "Protein sequence missing");
+        BOOST_ERROR("Protein sequence missing");
     } else {
         CFeat_CI prot(*pseq, CSeqFeatData::e_Prot);
         if (!prot) {
-            BOOST_CHECK_EQUAL("ERROR", "Protein feature missing");
+            BOOST_ERROR("Protein feature missing");
         } else {
             if (NStr::IsBlank(cds_product)) {
                 BOOST_CHECK_EQUAL(prot->GetData().GetProt().GetName().front(), "hypothetical protein");
             } else {
                 BOOST_CHECK_EQUAL(prot->GetData().GetProt().GetName().front(), cds_product);
             }
+        }
+        CSeqdesc_CI molinfo(*pseq, CSeqdesc::e_Molinfo);
+        if (!molinfo) {
+            BOOST_ERROR("MolInfo descriptor missing");
+        } else if (!molinfo->GetMolinfo().IsSetTech()) {
+            BOOST_ERROR("Protein Molinfo tech not set");
+        } else {
+            BOOST_CHECK_EQUAL(molinfo->GetMolinfo().GetTech(), CMolInfo::eTech_concept_trans);
         }
     }
 
