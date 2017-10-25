@@ -572,22 +572,52 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
     }
 
     string base_name;
-    const string* protein_ids = &cd_feature.GetNamedQual("protein_id");
-
-    if (protein_ids == 0 || protein_ids->empty())
-    {
-        protein_ids = &cd_feature.GetNamedQual("orig_protein_id");
-    }
-
-    if (!protein_ids->empty())
-    {
-        CBioseq::TId new_ids;
-        CSeq_id::ParseIDs(new_ids, *protein_ids, CSeq_id::fParse_ValidLocal | CSeq_id::fParse_PartialOK);
-        MergeSeqIds(*protein, new_ids);
-        cd_feature.RemoveQualifier("protein_id");
-    }
-
     CRef<CSeq_id> newid;
+    CTempString qual_to_remove;
+#if 0
+    if (protein->GetId().empty())
+    {
+        if (cd_feature.IsSetProduct() && cd_feature.GetProduct().IsWhole())
+        {
+            newid.Reset(&cd_feature.SetProduct().SetWhole());
+            protein->SetId().push_back(newid);
+        }
+    }
+#endif
+
+    if (protein->GetId().empty())
+    {
+        const string* protein_ids = 0;
+
+        qual_to_remove = "protein_id";
+        protein_ids = &cd_feature.GetNamedQual(qual_to_remove);
+
+        if (protein_ids->empty())
+        {
+            qual_to_remove = "orig_protein_id";
+            protein_ids = &cd_feature.GetNamedQual(qual_to_remove);
+        }
+
+        if (protein_ids->empty())
+        {
+            if (mrna.NotEmpty())
+                protein_ids = &mrna->GetNamedQual("protein_id");
+        }
+
+        if (protein_ids->empty())
+        {
+            protein_ids = &cd_feature.GetNamedQual("product_id");
+        }
+
+        if (!protein_ids->empty())
+        {
+            CBioseq::TId new_ids;
+            CSeq_id::ParseIDs(new_ids, *protein_ids, CSeq_id::fParse_ValidLocal | CSeq_id::fParse_PartialOK);
+            MergeSeqIds(*protein, new_ids);
+            cd_feature.RemoveQualifier(qual_to_remove);
+        }
+    }
+
     if (protein->GetId().empty())
     {
         if (base_name.empty() && !bioseq.GetId().empty())

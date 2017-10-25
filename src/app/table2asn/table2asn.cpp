@@ -899,8 +899,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     }
 
     fr.m_replacement_protein = m_replacement_proteins;
-    if (m_reader->CdsMergingNeeded()) 
-       fr.MergeCDSFeatures(*entry);
+    fr.MergeCDSFeatures(*entry);
 
     entry->Parentize();
 

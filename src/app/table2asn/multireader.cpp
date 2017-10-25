@@ -328,7 +328,7 @@ void CMultiReader::WriteObject(
 }
 
 CMultiReader::CMultiReader(CTable2AsnContext& context)
-    :m_context(context), m_CdsMergingNeeded(false)
+    :m_context(context)
 {
 }
 
@@ -728,7 +728,7 @@ void CMultiReader::x_PostProcessAnnot(objects::CSeq_entry& entry)
         fte.GenerateMissingParentFeatures(m_context.m_eukariote);
         fte.GenerateLocusTags();
         fte.GenerateProteinAndTranscriptIds();
-        fte.InstantiateProducts();
+        //fte.InstantiateProducts();
         fte.EliminateBadQualifiers();
         fte.SubmitFixProducts();
 
@@ -873,7 +873,6 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in, 
     {
     case CFormatGuess::eFiveColFeatureTable:
     {
-        m_CdsMergingNeeded = true;
         string seqid_prefix;
         if (!m_context.m_genome_center_id.empty())
             seqid_prefix = "gnl|" + m_context.m_genome_center_id + "|";
@@ -1001,7 +1000,21 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
                 CConstRef<CSeq_id> matching_id = GetIdByKind(*annot_id, bioseq.GetId());
                 if (matching_id)
                     annot_id->Assign(*matching_id);
-                bioseq.SetAnnot().push_back(annot_it);
+
+                CRef<CSeq_annot> existing;
+                for (auto feat_it : bioseq.SetAnnot())
+                {
+                    if (feat_it->IsFtable())
+                    {
+                        existing = feat_it;
+                        break;
+                    }
+                }
+                if (existing.Empty())
+                    bioseq.SetAnnot().push_back(annot_it);
+                else
+                    existing->SetData().SetFtable().insert(existing->SetData().SetFtable().end(),
+                       annot_it->SetData().SetFtable().begin(), annot_it->SetData().SetFtable().end());
             }
 #ifdef _DEBUG
             else

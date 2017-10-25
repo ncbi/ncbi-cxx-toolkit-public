@@ -575,8 +575,6 @@ void CTable2AsnContext::RenameProteinIdsQuals(CSeq_feat& feature)
     if (!feature.IsSetQual())
         return;
 
-    string mask_transcript = "gnl|*|mrna." + m_locus_tag_prefix + "*";
-    string mask_protein    = "gnl|*|" + m_locus_tag_prefix + "*";
     CSeq_feat::TQual& quals = feature.SetQual();
     for (CSeq_feat::TQual::iterator it = quals.begin(); it != quals.end(); it++)
     {
