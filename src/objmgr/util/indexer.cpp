@@ -718,7 +718,6 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_TSAMaster = false;
     m_TLSMaster = false;
 
-    m_Title.clear();
     m_GeneralStr.clear();
     m_GeneralId = 0;
     m_PatentCountry.clear();
