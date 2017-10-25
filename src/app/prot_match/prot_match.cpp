@@ -39,6 +39,9 @@
 #include <corelib/ncbifile.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Seq_hist.hpp>
+#include <objects/seq/Seq_hist_rec.hpp>
+
 #include <objmgr/scope.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -163,6 +166,8 @@ private:
     void x_GatherLocalProteinIds(const CBioseq_set& nuc_prot_set, list<string>& id_list) const;
 
     void x_GatherProteinAccessions(const CBioseq_set& nuc_prot_set, list<string>& id_list) const;
+
+    void x_GatherReplacedProteinAccessions(const CBioseq_set& nuc_prot_set, set<string>& prot_ids) const;
 
     void x_RelabelNucSeq(CRef<CSeq_entry> nuc_prot_set);
 
@@ -633,6 +638,10 @@ void CProteinMatchApp::x_ProcessNucProtSet(CRef<CSeq_entry> nuc_prot_set,
     }
 
     if (overwrite_history) {
+        set<string> replaced_prot_accessions;
+        x_GatherReplacedProteinAccessions(nuc_prot_set->GetSet(), replaced_prot_accessions);
+        prot_accessions[db_nuc_acc_string].remove_if([&replaced_prot_accessions](const string& prot_accession){ return (replaced_prot_accessions.find(prot_accession) != replaced_prot_accessions.end()); });
+
         x_GatherProteinAccessions(nuc_prot_set->GetSet(), local_prot_ids[db_nuc_acc_string]);
         return;
     }
@@ -789,7 +798,7 @@ void CProteinMatchApp::x_GatherProteinAccessions(const CBioseq_set& nuc_prot_set
     id_list.clear();
     if (!nuc_prot_set.IsSetClass() ||
         nuc_prot_set.GetClass() != CBioseq_set::eClass_nuc_prot) {
-        return; // Throw an exception here
+        return; 
     }
 
     const bool with_version = false;
@@ -801,6 +810,34 @@ void CProteinMatchApp::x_GatherProteinAccessions(const CBioseq_set& nuc_prot_set
                 if (id->IsGenbank() || id->IsOther()) {
                     id_list.push_back(id->GetSeqIdString(with_version));
                     break;
+                }
+            }
+        }
+    }
+}
+
+
+void CProteinMatchApp::x_GatherReplacedProteinAccessions(const CBioseq_set& nuc_prot_set,
+        set<string>& id_set) const 
+{
+    id_set.clear();
+    if (!nuc_prot_set.IsSetClass() ||
+        nuc_prot_set.GetClass() != CBioseq_set::eClass_nuc_prot) {
+        return; 
+    }
+    const bool with_version = false;
+
+    for (CRef<CSeq_entry> seq_entry : nuc_prot_set.GetSeq_set()) {
+        const auto& bioseq = seq_entry->GetSeq();
+        if (bioseq.IsAa() &&
+            bioseq.IsSetInst() &&
+            bioseq.GetInst().IsSetHist() &&
+            bioseq.GetInst().GetHist().IsSetReplaces()) {
+
+            const CSeq_hist_rec& replaces = bioseq.GetInst().GetHist().GetReplaces();
+            if (replaces.IsSetIds()) {
+                for (CRef<CSeq_id> id : replaces.GetIds()) {
+                    id_set.insert(id->GetSeqIdString(with_version));
                 }
             }
         }
