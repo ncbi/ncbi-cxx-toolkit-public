@@ -117,7 +117,23 @@ public:
         eSeverityMedium = 21,
 
         /// Rs is clinical but neither high nor medium
-        eSeverityOther = 22
+        eSeverityOther = 22,
+
+        /// Set if both a RefSNP has any frequency data from any study
+        /// and there is a rare allele in any of such studies
+        eRare = 23,
+
+        /// Whether a RefSNP is considered common as determined by the
+        /// frequency of its MAF for the "global" population.
+        eCommon = 24,
+
+        /// Flags for specific studies
+        eALSPAC = 25,
+        eExAC = 26,
+        eGNOMAD = 27,
+        eGO_ESP = 28,
+        eTOPMED = 29,
+        eTWINSUK = 30
     };
 
     /// Initialize the bitset with a 64-bit integer.
