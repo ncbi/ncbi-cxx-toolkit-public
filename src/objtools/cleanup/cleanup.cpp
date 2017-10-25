@@ -1311,8 +1311,73 @@ void CCleanup::SetProteinName(CProt_ref& prot_ref, const string& protein_name, b
 }
 
 
+void CCleanup::SetMrnaName(CSeq_feat& mrna, const string& protein_name)
+{
+    bool used_qual = false;
+    if (mrna.IsSetQual()) {
+        for (auto it = mrna.SetQual().begin(); it != mrna.SetQual().end(); it++) {
+            if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), "product")) {
+                (*it)->SetVal(protein_name);
+                used_qual = true;
+                break;
+            }
+        }
+    }
+    if (!used_qual || mrna.IsSetData() && mrna.GetData().IsRna() && mrna.GetData().GetRna().IsSetExt()) {
+        string remainder;
+        mrna.SetData().SetRna().SetRnaProductName(protein_name, remainder);
+    }
+}
+
+
+bool CCleanup::s_IsProductOnFeat(const CSeq_feat& cds)
+{
+    if (cds.IsSetXref()) {
+        for (auto it = cds.GetXref().begin(); it != cds.GetXref().end(); it++) {
+            if ((*it)->IsSetData() && (*it)->GetData().IsProt()) {
+                return true;
+            }
+        }
+    }
+    if (cds.IsSetQual()) {
+        for (auto it = cds.GetQual().begin(); it != cds.GetQual().end(); it++) {
+            if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), "product")) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+void CCleanup::s_SetProductOnFeat(CSeq_feat& feat, const string& protein_name, bool append)
+{
+    if (feat.IsSetXref()) {
+        // see if this seq-feat already has a prot xref
+        for (auto it = feat.SetXref().begin(); it != feat.SetXref().end(); it++) {
+            if ((*it)->IsSetData() && (*it)->GetData().IsProt()) {
+                SetProteinName((*it)->SetData().SetProt(), protein_name, append);
+                break;
+            }
+        }
+    }
+    if (feat.IsSetQual()) {
+        for (auto it = feat.SetQual().begin(); it != feat.SetQual().end(); it++) {
+            if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), "product")) {
+                if ((*it)->IsSetVal() && !NStr::IsBlank((*it)->GetVal()) && append) {
+                    (*it)->SetVal((*it)->GetVal() + "; " + protein_name);
+                } else {
+                    (*it)->SetVal(protein_name);
+                }
+            }
+        }
+    }
+}
+
+
 void CCleanup::SetProteinName(CSeq_feat& cds, const string& protein_name, bool append, CScope& scope)
 {
+    s_SetProductOnFeat(cds, protein_name, append);
     bool added = false;
     if (cds.IsSetProduct()) {
         CBioseq_Handle prot = scope.GetBioseqHandle(cds.GetProduct());
@@ -1370,13 +1435,20 @@ const string& CCleanup::GetProteinName(const CSeq_feat& cds, CScope& scope)
             CFeat_CI f(prot, CSeqFeatData::eSubtype_prot);
             if (f) {
                 return GetProteinName(f->GetData().GetProt());
-            }
+            } 
         }
     }
     if (cds.IsSetXref()) {
         ITERATE(CSeq_feat::TXref, it, cds.GetXref()) {
             if ((*it)->IsSetData() && (*it)->GetData().IsProt()) {
                 return GetProteinName((*it)->GetData().GetProt());
+            }
+        }
+    }
+    if (cds.IsSetQual()) {
+        for (auto it = cds.GetQual().begin(); it != cds.GetQual().end(); it++) {
+            if ((*it)->IsSetQual() && (*it)->IsSetVal() && NStr::EqualNocase((*it)->GetQual(), "product")) {
+                return (*it)->GetVal();
             }
         }
     }
@@ -2516,6 +2588,15 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
                 SetProteinName(*new_cds, "hypothetical protein", false, entry.GetScope());
                 current_name = "hypothetical protein";
                 change_this_cds = true;
+            } else if (new_cds->IsSetProduct()) {
+                CBioseq_Handle p = entry.GetScope().GetBioseqHandle(new_cds->GetProduct());
+                if (p) {
+                    CFeat_CI feat_ci(p, CSeqFeatData::eSubtype_prot);
+                    if (!feat_ci) {
+                        // make new protein feature
+                        feature::AddProteinFeature(*(p.GetCompleteBioseq()), current_name, *new_cds, entry.GetScope());
+                    }
+                }
             }
 
             CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(*(cds_it->GetSeq_feat()), entry.GetScope());
@@ -2525,11 +2606,18 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
                 new_mrna->Assign(*mrna);
                 // Make mRNA name match coding region protein
                 string mrna_name = new_mrna->GetData().GetRna().GetRnaProductName();
+                if (NStr::IsBlank(mrna_name) && new_mrna->IsSetQual()) {
+                    for (auto it = new_mrna->GetQual().begin(); it != new_mrna->GetQual().end(); it++) {
+                        if ((*it)->IsSetQual() && (*it)->IsSetVal() && NStr::EqualNocase((*it)->GetQual(), "product")) {
+                            mrna_name = (*it)->GetVal();
+                            break;
+                        }
+                    }
+                }
                 if (NStr::IsBlank(mrna_name)
                     || (!NStr::Equal(current_name, "hypothetical protein") &&
                     !NStr::Equal(current_name, mrna_name))) {
-                    string remainder;
-                    new_mrna->SetData().SetRna().SetRnaProductName(current_name, remainder);
+                    SetMrnaName(*new_mrna, current_name);
                     change_mrna = true;
                 }
                 // Adjust mRNA partials to match coding region

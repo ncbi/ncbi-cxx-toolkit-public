@@ -1399,3 +1399,71 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4303)
 
 }
 
+
+void Test_WGSCleanup(const string& cds_product, const string& mrna_product)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> cds = AddMiscFeature(entry);
+    cds->SetData().SetCdregion();
+    if (!NStr::IsBlank(cds_product)) {
+        CRef<CGb_qual> cp(new CGb_qual("product", cds_product));
+        cds->SetQual().push_back(cp);
+    }
+    CRef<CSeq_feat> mrna = AddMiscFeature(entry);
+    mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    if (!NStr::IsBlank(mrna_product)) {
+        CRef<CGb_qual> mp(new CGb_qual("product", mrna_product));
+        mrna->SetQual().push_back(mp);
+    }
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    BOOST_CHECK_EQUAL(CCleanup::WGSCleanup(seh), true);
+
+    CConstRef<CSeq_entry> new_entry = seh.GetCompleteSeq_entry();
+    scope->RemoveTopLevelSeqEntry(seh);
+    seh = scope->AddTopLevelSeqEntry(*new_entry);
+
+    BOOST_CHECK_EQUAL(seh.IsSet(), true);
+    BOOST_CHECK_EQUAL(seh.GetSet().GetClass(), CBioseq_set::eClass_nuc_prot);
+    BOOST_CHECK_EQUAL(seh.GetSet().GetCompleteBioseq_set()->GetSeq_set().size(), 2);
+
+    CBioseq_CI nuc(seh, CSeq_inst::eMol_na);
+
+    CFeat_CI cdsf(*nuc, CSeqFeatData::e_Cdregion);
+    BOOST_CHECK_EQUAL(cdsf->IsSetQual(), false);
+
+    CBioseq_CI pseq(seh, CSeq_inst::eMol_aa);
+    if (!pseq) {
+        BOOST_CHECK_EQUAL("ERROR", "Protein sequence missing");
+    } else {
+        CFeat_CI prot(*pseq, CSeqFeatData::e_Prot);
+        if (!prot) {
+            BOOST_CHECK_EQUAL("ERROR", "Protein feature missing");
+        } else {
+            if (NStr::IsBlank(cds_product)) {
+                BOOST_CHECK_EQUAL(prot->GetData().GetProt().GetName().front(), "hypothetical protein");
+            } else {
+                BOOST_CHECK_EQUAL(prot->GetData().GetProt().GetName().front(), cds_product);
+            }
+        }
+    }
+
+    CFeat_CI mrnaf(*nuc, CSeqFeatData::eSubtype_mRNA);
+    BOOST_CHECK_EQUAL(mrnaf->IsSetQual(), false);
+    if (NStr::IsBlank(cds_product)) {
+        BOOST_CHECK_EQUAL(mrnaf->GetData().GetRna().GetExt().GetName(), "hypothetical protein");
+    } else {
+        BOOST_CHECK_EQUAL(mrnaf->GetData().GetRna().GetExt().GetName(), cds_product);
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_RW_492)
+{
+    Test_WGSCleanup("X", "X");
+    Test_WGSCleanup("", "");
+    Test_WGSCleanup("X", "");
+    Test_WGSCleanup("X", "Y");
+}

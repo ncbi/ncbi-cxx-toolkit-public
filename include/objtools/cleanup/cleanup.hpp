@@ -300,6 +300,7 @@ public:
 
     static void SetProteinName(CProt_ref& prot, const string& protein_name, bool append);
     static void SetProteinName(CSeq_feat& cds, const string& protein_name, bool append, CScope& scope);
+    static void SetMrnaName(CSeq_feat& mrna, const string& protein_name);
     static const string& GetProteinName(const CProt_ref& prot);
     static const string& GetProteinName(const CSeq_feat& cds, CScope& scope);
 
@@ -525,6 +526,9 @@ private:
     static bool x_HasShortIntron(const CSeq_loc& loc, size_t min_len = 11);
     static bool x_AddLowQualityException(CSeq_feat& feat);
     static bool x_AddLowQualityException(CSeq_entry_Handle entry, CSeqFeatData::ESubtype subtype);
+
+    static bool s_IsProductOnFeat(const CSeq_feat& cds);
+    static void s_SetProductOnFeat(CSeq_feat& feat, const string& protein_name, bool append);
 };
 
 
