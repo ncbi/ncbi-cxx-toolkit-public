@@ -70,7 +70,7 @@ inline Uint8 QUERY_PERF_COUNTER(void) {
     LARGE_INTEGER p;
     return QueryPerformanceCounter(&p) ? p.QuadPart : 0;
 }
-#elif defined(NCBI_XCODE_BUILD)
+#elif defined(NCBI_OS_DARWIN)
 #include <mach/mach_time.h>
 inline Uint8 QUERY_PERF_COUNTER(void) {
     return mach_absolute_time();
