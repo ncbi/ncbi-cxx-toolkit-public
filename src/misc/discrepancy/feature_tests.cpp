@@ -902,7 +902,7 @@ DISCREPANCY_CASE(GENE_PARTIAL_CONFLICT, COverlappingFeatures, eOncaller | eSubmi
                 middle_label = kGenePartialConflictCodingRegion;
                 conflict_start = IsPartialStartConflict(**feat, *gene, is_mrna);
                 conflict_stop = IsPartialStopConflict(**feat, *gene, is_mrna);
-                if (is_mrna && (!conflict_start || !conflict_stop)) {                
+                if (is_mrna || (!conflict_start && !conflict_stop)) {                
                     if (!conflict_start || is_mrna) {
                         //look for 5' UTR
                         TSeqPos gene_start = gene->GetLocation().GetStart(eExtreme_Biological);
@@ -910,7 +910,7 @@ DISCREPANCY_CASE(GENE_PARTIAL_CONFLICT, COverlappingFeatures, eOncaller | eSubmi
                         bool found_start = false;
                         bool found_utr5 = false;
                         ITERATE (vector<CConstRef<CSeq_feat>>, fi, all) {
-                            if ((*fi)->IsSetData() && (*feat)->GetData().GetSubtype() == CSeqFeatData::eSubtype_5UTR) {
+                            if ((*fi)->IsSetData() && (*fi)->GetData().GetSubtype() == CSeqFeatData::eSubtype_5UTR) {
                                 found_utr5 = true;
                                 if ((*fi)->GetLocation().GetStart(eExtreme_Biological) == gene_start && (*fi)->GetLocation().IsPartialStart(eExtreme_Biological) == gene_start_partial) {
                                     found_start = true;
@@ -930,7 +930,7 @@ DISCREPANCY_CASE(GENE_PARTIAL_CONFLICT, COverlappingFeatures, eOncaller | eSubmi
                         bool found_stop = false;
                         bool found_utr3 = false;
                         ITERATE (vector<CConstRef<CSeq_feat>>, fi, all) {
-                            if ((*fi)->IsSetData() && (*feat)->GetData().GetSubtype() == CSeqFeatData::eSubtype_3UTR) {
+                            if ((*fi)->IsSetData() && (*fi)->GetData().GetSubtype() == CSeqFeatData::eSubtype_3UTR) {
                                 found_utr3 = true;
                                 if ((*fi)->GetLocation().GetStop(eExtreme_Biological) == gene_stop && (*fi)->GetLocation().IsPartialStop(eExtreme_Biological) == gene_stop_partial) {
                                     found_stop = true;
