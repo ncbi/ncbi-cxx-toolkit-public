@@ -51,6 +51,13 @@ public:
     CMatchTabulate(CRef<CScope> db_scope);
     virtual ~CMatchTabulate(void);
 
+    void OverwriteEntry(
+        const map<string, list<string>>& local_prot_ids,
+        const map<string, list<string>>& prot_accessions,
+        const list<string>& prev_nuc_accessions,
+        const map<string, string>& new_nuc_accessions);
+
+
     void GenerateMatchTable(
         const map<string, list<string>>& local_prot_ids,
         const map<string, list<string>>& prot_accessions,
@@ -84,6 +91,10 @@ private:
     void x_AppendMatchedProtein(
         const string& nuc_accession,
         const SProtMatchInfo& prot_match_info);
+
+    void x_AppendUnchangedProtein(
+        const string& nuc_accession,
+        const string& prot_accession);
 
     void x_AppendNewProtein(
         const string& nuc_accession,

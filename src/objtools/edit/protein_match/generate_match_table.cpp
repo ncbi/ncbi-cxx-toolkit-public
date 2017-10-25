@@ -68,6 +68,37 @@ bool CMatchTabulate::x_IsPerfectAlignment(const CSeq_align& align) const
 }
 
 
+void CMatchTabulate::OverwriteEntry(
+    const map<string, list<string>>& local_prot_ids,
+    const map<string, list<string>>& prot_accessions,
+    const list<string>& prev_nuc_accessions,
+    const map<string, string>& new_nuc_accessions)
+{
+    if (!mMatchTableInitialized) {
+        x_InitMatchTable();
+        mMatchTableInitialized = true;
+    }
+
+
+    for (const auto& key_val: new_nuc_accessions) {
+        const string& displayed_nuc_accession = key_val.second;
+        const string& prev_nuc_accession = key_val.first;
+
+        x_AppendNucleotide(displayed_nuc_accession, "Same");
+
+        if (local_prot_ids.find(prev_nuc_accession) != local_prot_ids.end()) {
+            for (const string& prot_accession : local_prot_ids.at(prev_nuc_accession)) {
+                x_AppendUnchangedProtein(displayed_nuc_accession, prot_accession);
+            }
+        }
+
+        if (prot_accessions.find(prev_nuc_accession) != prot_accessions.end()) {
+            for (const string& dead_protein_accession : prot_accessions.at(prev_nuc_accession)) {
+                x_AppendDeadProtein(displayed_nuc_accession, dead_protein_accession);
+            }
+        }
+    }
+}
 
 void CMatchTabulate::GenerateMatchTable(
     const map<string, list<string>>& local_prot_ids,
@@ -106,11 +137,6 @@ void CMatchTabulate::x_ProcessAlignments(
         string accession;
         if (x_FetchAccession(align, accession)) {
             if (!NStr::IsBlank(accession)) {
-            /*
-                if (new_nuc_accessions.find(accession) != new_nuc_accessions.end()) {
-                    accession = new_nuc_accessions.at(accession); 
-                }
-            */
                 if ((accession == prev_accession) ||
                     !x_IsPerfectAlignment(align)) {
                     nuc_match[accession] = false;
@@ -566,6 +592,17 @@ void CMatchTabulate::x_AppendNucleotide(
     mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
 }
 
+void CMatchTabulate::x_AppendUnchangedProtein(
+    const string& nuc_accession,
+    const string& prot_accession)
+{
+    x_AppendColumnValue("NA_Accession", nuc_accession);
+    x_AppendColumnValue("PROT_Accession", prot_accession);
+    x_AppendColumnValue("PROT_LocalID", "---");
+    x_AppendColumnValue("Mol_type", "PROT");
+    x_AppendColumnValue("Status", "Same");
+    mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
+}
 
 void CMatchTabulate::x_AppendNewProtein(
     const string& nuc_accession,
