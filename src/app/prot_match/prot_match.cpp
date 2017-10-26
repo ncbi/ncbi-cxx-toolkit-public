@@ -324,7 +324,6 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
         map<string, list<string>> local_prot_ids;
         map<string, list<string>> prot_accessions;
    
-        CNcbiStreampos start_pos = istr.GetStreamPos();
         { 
             TEntryOStreamMap ostream_map; // must go out of scope before we attempt to remove temporary files - MSS-670
             CObjectIStreamIterator<TRoot, CBioseq_set> bioseqset_it(istr, eNoOwnership,
