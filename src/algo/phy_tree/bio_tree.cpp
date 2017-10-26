@@ -245,20 +245,18 @@ void PrintNode(CNcbiOstream& os, const CBioTreeDynamic& tree, const CBioTreeDyna
         os << ')';
     }
 
-    if (node.IsLeaf()) {
-        string label;
-        if (label_fmt) {
-            label = label_fmt->GetLabelForNode(node);
+    string label;
+    if (label_fmt) {
+        label = label_fmt->GetLabelForNode(node);
+    }
+    else {
+        if (tree.GetFeatureDict().HasFeature("label")) {
+            label = node.GetValue().features
+                .GetFeatureValue(tree.GetFeatureDict().GetId("label"));
         }
-        else {
-            if (tree.GetFeatureDict().HasFeature("label")) {
-                label = node.GetValue().features
-                    .GetFeatureValue(tree.GetFeatureDict().GetId("label"));
-            }
-        }
-        if (!label.empty()) {
-            os << s_EncodeLabel(label);
-        }
+    }
+    if (!label.empty()) {
+        os << s_EncodeLabel(label);
     }
 
     string dist_string;
