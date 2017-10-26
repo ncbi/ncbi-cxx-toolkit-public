@@ -590,6 +590,7 @@ void s_FindSequences(const CBioseq_set& set, list<string>& nuc_ids, map<string, 
         (set.GetClass() == CBioseq_set::eClass_nuc_prot)) {
         list<string> prot_accessions;
         string nuc_id;
+        const bool with_version = false;
         for (CRef<CSeq_entry> seq_seqentry : set.GetSeq_set()) {
             const CBioseq& bioseq = seq_seqentry->GetSeq();
             if (bioseq.IsNa()) {
