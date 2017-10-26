@@ -81,7 +81,7 @@ public:
         const string& defaultMethod) { m_sDefaultMethod = defaultMethod; };
     void SetBioseqHandle(CBioseq_Handle bsh);
 
-    virtual bool WriteHeader();
+    virtual bool WriteHeader() override;
     virtual bool WriteHeader(
         const CSeq_annot& annot) override { return CGff2Writer::WriteHeader(annot); };
     bool WriteAlign(

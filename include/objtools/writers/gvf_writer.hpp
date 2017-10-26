@@ -60,7 +60,7 @@ public:
         unsigned int = fNormal );
     virtual ~CGvfWriter();
 
-    virtual bool WriteHeader();
+    virtual bool WriteHeader() override;
     virtual bool WriteHeader(
         const CSeq_annot& ) override;
 

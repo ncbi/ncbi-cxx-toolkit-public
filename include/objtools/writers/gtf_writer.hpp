@@ -68,7 +68,7 @@ public:
         unsigned int = 0 );
     ~CGtfWriter();
 
-    bool WriteHeader();
+    bool WriteHeader() override;
     virtual bool WriteHeader(
         const CSeq_annot& annot) override { return CGff2Writer::WriteHeader(annot); };
 
