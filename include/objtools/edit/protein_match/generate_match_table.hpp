@@ -127,6 +127,7 @@ private:
 
     bool x_FetchAccession(const CSeq_align& align, string& accession);
 
+    bool x_FetchLocalId(const CSeq_align& align, string& local_id);
 
     void x_AddColumn(const string& colName);
     void x_AppendColumnValue(const string& colName,

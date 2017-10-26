@@ -135,17 +135,32 @@ void CMatchTabulate::x_ProcessAlignments(
             CObjectIStreamIterator<CSeq_align>(istr)) 
     {
         string accession;
-        if (x_FetchAccession(align, accession)) {
-            if (!NStr::IsBlank(accession)) {
-                if ((accession == prev_accession) ||
-                    !x_IsPerfectAlignment(align)) {
-                    nuc_match[accession] = false;
-                    continue;
-                }
-                nuc_match[accession] = true;
-            }
-            prev_accession = accession;
+        string local_id;
+    
+        if (!x_FetchAccession(align, accession) ||
+            !x_FetchLocalId(align, local_id)) {
+            continue;
         }
+
+        cout << accession << "  " << local_id << endl;
+
+        if (new_nuc_accessions.find(accession) != new_nuc_accessions.end()) {
+            accession = new_nuc_accessions.at(accession);
+        }
+
+        if (NStr::IsBlank(accession) ||
+            accession != local_id) {
+            continue;
+        }
+
+
+        if ((accession == prev_accession) ||
+            !x_IsPerfectAlignment(align)) {
+            nuc_match[accession] = false;
+        } else {
+            nuc_match[accession] = true;
+        }
+        prev_accession = accession;
     }
 }
 
@@ -391,12 +406,28 @@ string CMatchTabulate::x_GetSubjectNucleotideAccession(const CSeq_annot& compare
 }
 
 
+bool CMatchTabulate::x_FetchLocalId(const CSeq_align& align,
+    string& local_id) 
+{
+    const bool withVersion = false;
+    if (align.IsSetSegs() &&
+        align.GetSegs().IsDenseg() &&
+        align.GetSegs().GetDenseg().IsSetIds()) {
+        for (CRef<CSeq_id> id : align.GetSegs().GetDenseg().GetIds()) {
+            if (id->IsLocal()) {
+                local_id = id->GetSeqIdString(withVersion);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
 bool CMatchTabulate::x_FetchAccession(const CSeq_align& align,
     string& accession) 
 {
     const bool withVersion = false;
-    map<string, string> id_map;
-
     if (align.IsSetSegs() &&
         align.GetSegs().IsDenseg() &&
         align.GetSegs().GetDenseg().IsSetIds()) {

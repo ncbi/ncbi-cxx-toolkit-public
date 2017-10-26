@@ -81,8 +81,10 @@ CBioseq& CMatchSetup::x_FetchNucSeqRef(CSeq_entry& nuc_prot_set) const
 }
 
 
-bool CMatchSetup::GetReplacedIdFromHist(const CBioseq& nuc_seq, CRef<CSeq_id>& id) const
+bool CMatchSetup::GetReplacedIdsFromHist(const CBioseq& nuc_seq, list<CRef<CSeq_id>>& ids) const
 {
+    ids.clear();
+
     if (!nuc_seq.IsSetInst()) {
         return false;
     }
@@ -96,12 +98,11 @@ bool CMatchSetup::GetReplacedIdFromHist(const CBioseq& nuc_seq, CRef<CSeq_id>& i
 
     for (auto pReplacesId : seq_inst.GetHist().GetReplaces().GetIds()) {
         if (pReplacesId->IsGenbank() || pReplacesId->IsOther()) {
-            id = pReplacesId;
-            return true;
+            ids.push_back(pReplacesId);
         }
     }
 
-    return false;
+    return !ids.empty();
 }
 
 
@@ -138,11 +139,11 @@ CConstRef<CBioseq_set> CMatchSetup::GetDBNucProtSet(const CBioseq& nuc_seq)
         }
     }
 
-    CRef<CSeq_id> pReplacedId;
-    const bool use_replaced_id = GetReplacedIdFromHist(nuc_seq, pReplacedId);
+    list<CRef<CSeq_id>> pReplacedIds;
+    const bool use_replaced_id = GetReplacedIdsFromHist(nuc_seq, pReplacedIds);
 
     if (use_replaced_id) {
-        db_bsh = m_DBScope->GetBioseqHandle(*pReplacedId);
+        db_bsh = m_DBScope->GetBioseqHandle(*(pReplacedIds.front()));
         if (db_bsh && 
             db_bsh.GetParentBioseq_set()) {
             return db_bsh.GetParentBioseq_set().GetCompleteBioseq_set();
@@ -154,6 +155,16 @@ CConstRef<CBioseq_set> CMatchSetup::GetDBNucProtSet(const CBioseq& nuc_seq)
                "Failed to find a valid database id");
 
     return CConstRef<CBioseq_set>();
+}
+
+
+CSeq_entry_Handle CMatchSetup::GetTopLevelEntry(const CSeq_id& nuc_id)
+{
+    CBioseq_Handle db_bsh = m_DBScope->GetBioseqHandle(nuc_id);
+    if (db_bsh) {
+        return db_bsh.GetTopLevelEntry();
+    }
+    return CSeq_entry_Handle();
 }
 
 
@@ -210,11 +221,11 @@ CConstRef<CSeq_entry> CMatchSetup::GetDBEntry(const CBioseq& nuc_seq)
         }
     }
 
-    CRef<CSeq_id> pReplacedId;
-    const bool use_replaced_id = GetReplacedIdFromHist(nuc_seq, pReplacedId);
+    list<CRef<CSeq_id>> replacedIds;
+    const bool use_replaced_id = GetReplacedIdsFromHist(nuc_seq, replacedIds);
 
     if (use_replaced_id) {
-        db_bsh = m_DBScope->GetBioseqHandle(*pReplacedId);
+        db_bsh = m_DBScope->GetBioseqHandle(*(replacedIds.front()));
         if (db_bsh) {
             CBioseq_set_Handle bss_handle =  db_bsh.GetParentBioseq_set();
             if (bss_handle &&

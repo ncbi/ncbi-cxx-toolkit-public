@@ -55,6 +55,8 @@ public:
 
     CConstRef<CSeq_entry> GetDBEntry(const CBioseq& nuc_seq);
 
+    CSeq_entry_Handle GetTopLevelEntry(const CSeq_id& seq_id);
+
     bool UpdateNucSeqIds(CRef<CSeq_id> new_id,
         CSeq_entry& nuc_prot_set) const;
 
@@ -65,7 +67,7 @@ public:
 
     bool GetNucSeqId(const CBioseq_set& nuc_prot_set, CRef<CSeq_id>& id) const;
 
-    bool GetReplacedIdFromHist(const CBioseq& nuc_seq, CRef<CSeq_id>& id) const;
+    bool GetReplacedIdsFromHist(const CBioseq& nuc_seq, list<CRef<CSeq_id>>& ids) const;
 private:
     CBioseq& x_FetchNucSeqRef(CSeq_entry& nuc_prot_set) const;
     CBioseq& x_FetchNucSeqRef(CBioseq_set& nuc_prot_set) const;
