@@ -49,23 +49,23 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 class CAutoLowerCase
 {
 public:
+    CAutoLowerCase() {};
+
     CAutoLowerCase(const string& v) :
         m_original(v)
     {
     }
     CAutoLowerCase(CAutoLowerCase&& v): 
         m_original(move(v.m_original)),
-        m_lowercase(move(v.m_lowercase))
-    {
-    }
-    CAutoLowerCase(string&& v):
-        m_original(move(v))
+        m_lowercase(move(v.m_lowercase)),
+        m_uppercase(move(v.m_uppercase))
     {
     }
     CAutoLowerCase& operator=(CAutoLowerCase&& v)
     {
         m_original = move(v.m_original);
         m_lowercase = move(v.m_lowercase);
+        m_uppercase = move(v.m_uppercase);
         return *this;
     }
     CAutoLowerCase& operator=(string&& v)
@@ -75,7 +75,13 @@ public:
         m_uppercase.clear();
         return *this;
     }
-    CAutoLowerCase& operator=(const CTempString&);
+    CAutoLowerCase& operator=(const string& v)
+    {
+        m_original = v;
+        m_lowercase.clear();
+        m_uppercase.clear();
+        return *this;
+    }
 
     const string& lowercase() const
     {
@@ -104,7 +110,6 @@ public:
         return m_original;
     }
 
-    CAutoLowerCase() {};
 private:
     CAutoLowerCase(const CAutoLowerCase&); 
     CAutoLowerCase& operator=(const CAutoLowerCase&);
@@ -117,30 +122,55 @@ private:
 class CMatchString
 {
 public:
-    CMatchString(const string& v) : m_original(v), m_has_weasel(false)
+    CMatchString() {};
+
+    CMatchString(const string& v) : m_original(v), m_noweasel_start(CTempString::npos)
     {
     }
-    CMatchString(const char* v) : m_original(v), m_has_weasel(false)
+    CMatchString(const char* v) : m_original(v), m_noweasel_start(CTempString::npos)
     {
     }
     const CAutoLowerCase& original() const
     {
         return m_original;
     }
-    const CAutoLowerCase& noweasel() const;
+    CMatchString& operator=(const string&s)
+    {
+        m_original = s; 
+        m_noweasel_start = CTempString::npos;
+        return *this;
+    };
+
     operator const string&() const
     {
         return m_original;
     }
+
     bool HasWeasel() const
     {
-        noweasel();
-        return m_has_weasel;
+        x_GetNoweasel();
+        return m_noweasel_start != 0;
+    }
+
+    CTempString GetNoweasel() const
+    {
+        x_GetNoweasel();
+        return CTempString(m_original.original(), m_noweasel_start, m_original.original().length() - m_noweasel_start);
+    }
+    CTempString GetNoweaselLC() const
+    {
+        x_GetNoweasel();
+        return CTempString(m_original.lowercase(), m_noweasel_start, m_original.lowercase().length() - m_noweasel_start);
+    }
+    CTempString GetNoweaselUC() const
+    {
+        x_GetNoweasel();
+        return CTempString(m_original.uppercase(), m_noweasel_start, m_original.uppercase().length() - m_noweasel_start);
     }
 private:
+    void x_GetNoweasel() const;
     CAutoLowerCase m_original;
-    mutable CAutoLowerCase m_noweasel;
-    mutable bool m_has_weasel;
+    mutable CTempString::size_type m_noweasel_start;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -165,24 +195,49 @@ public:
     bool Match(const CMatchString& str) const;
     bool Empty() const;
     bool ReplaceStringConstraintPortionInString(string& result, const CMatchString& str, const string& replace) const;
+    void SetMatch_text(const TMatch_text& value)
+    {
+        m_match = kEmptyStr;
+        CString_constraint_Base::SetMatch_text(value);
+    }
+    TMatch_text& SetMatch_text(void)
+    {
+        m_match = kEmptyStr;
+        return CString_constraint_Base::SetMatch_text();
+    }
 
 private:
     // Prohibit copy constructor and assignment operator
     CString_constraint(const CString_constraint& value) = delete;
     CString_constraint& operator=(const CString_constraint& value) = delete;
 
-    bool x_DoesSingleStringMatchConstraint (const string& str) const;
-    bool x_IsWeasel(const CTempString& str) const;
-    string x_SkipWeasel(const string& str) const;
-    bool x_IsAllCaps(const string& str) const;
-    bool x_IsAllLowerCase(const string& str) const;
-    bool x_IsAllPunctuation(const string& str) const;
+    typedef enum 
+    {
+        e_original,
+        e_lowercase,
+        e_uppercase,
+        e_automatic
+    } ECase;
+
+    CTempString x_GetCompareString(ECase e_case = e_automatic) const
+    {
+        if (CanGetMatch_text() && m_match.original().original().empty())
+            m_match = GetMatch_text();
+        return x_GetCompareString(m_match, e_case);
+    }
+
+    CTempString x_GetCompareString(const CMatchString& s, ECase e_case = e_automatic) const;
+
+    bool x_DoesSingleStringMatchConstraint(const CMatchString& str) const;
+    bool x_IsAllCaps(const CMatchString& str) const;
+    bool x_IsAllLowerCase(const CMatchString& str) const;
+    bool x_IsAllPunctuation(const CMatchString& str) const;
     bool x_IsSkippable(const char ch) const;
-    bool x_IsAllSkippable(const string& str) const;
+    bool x_IsAllSkippable(const CTempString& str) const;
     // Checks whether the first letter of the first word is capitalized
-    bool x_IsFirstCap(const string& str) const;
+    bool x_IsFirstCap(const CMatchString& str) const;
     // Checks whether the first letter of each word is capitalized
-    bool x_IsFirstEachCap(const string& str) const;
+    bool x_IsFirstEachCap(const CMatchString& str) const;
         
     bool x_PartialCompare(const string& str, const string& pattern, char prev_char, size_t & match_len) const;
     bool x_AdvancedStringCompare(const string& str, 
@@ -190,16 +245,10 @@ private:
                                 const char prev_char, 
                                 size_t * ini_target_match_len = 0) const;
     bool x_AdvancedStringMatch(const string& str,const string& tmp_match) const;
-    bool x_CaseNCompareEqual(string str1,
-                               string str2,
-                               size_t len1, bool case_sensitive) const;
-    string x_StripUnimportantCharacters(const string& str,
-                                     bool strip_space, bool strip_punct) const;
-    bool x_IsWholeWordMatch(const string& start,
+    bool x_IsWholeWordMatch(const CTempString& start,
                               size_t found,
                               size_t match_len,
                               bool disallow_slash = false) const;
-    bool x_DisallowCharacter(const char ch, bool disallow_slash) const;
 
     bool x_GetSpanFromHyphenInString(const string& str, 
                                      size_t hyphen, 
@@ -212,6 +261,8 @@ private:
                           const string& second) const;
 
     bool x_ReplaceContains(string& val, const string& replace) const;
+
+    mutable CMatchString m_match;
 };
 
 

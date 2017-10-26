@@ -39,6 +39,7 @@
 
 // generated includes
 #include <objects/macro/Simple_replace.hpp>
+#include <objects/macro/String_constraint.hpp>
 
 // generated classes
 
@@ -104,7 +105,7 @@ bool SkipWeasel(string& str)
 }
 
 
-bool CSimple_replace::ApplyToString(string& result, const CMatchString& str,  CRef<CString_constraint> find) const
+bool CSimple_replace::ApplyToString(string& result, const CMatchString& str, CConstRef<CString_constraint> find) const
 {
     bool use_putative = false;
     if (IsSetWeasel_to_putative() && GetWeasel_to_putative()) {

@@ -38,8 +38,11 @@
 #include <objects/macro/Search_func.hpp>
 
 ///// This file is included in macro__.cpp (sic!), so these statics are visible elsewhere
-static const char* digit_str = "0123456789";
-static const char* alpha_str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+namespace
+{
+    static const char* digit_str = "0123456789";
+    static const char* alpha_str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+};
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::

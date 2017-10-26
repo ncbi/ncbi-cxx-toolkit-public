@@ -52,7 +52,7 @@ CReplace_rule::~CReplace_rule(void)
 }
 
 
-bool CReplace_rule::ApplyToString(string& result, const CMatchString& str, CRef<CString_constraint> find) const
+bool CReplace_rule::ApplyToString(string& result, const CMatchString& str, CConstRef<CString_constraint> find) const
 {
     if (!IsSetReplace_func()) {
         return false;

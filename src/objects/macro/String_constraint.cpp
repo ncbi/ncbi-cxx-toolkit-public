@@ -47,7 +47,7 @@ namespace
     static const char digit_str[] = "0123456789";
     static const char alpha_str[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-    static const char* weasels[] = {
+    static const CTempString s_weasels[] = {
         "candidate",
         "hypothetical",
         "novel",
@@ -61,44 +61,113 @@ namespace
         "unique"
     };
 
-    bool x_IsWeasel(const CTempString& str)
+    CTempString::size_type x_SkipWeasel(const string& str)
     {
-        size_t n = ArraySize(weasels);
-        for (size_t i = 0; i < n; i++) {
-            if (str == weasels[i]) {
-                return true;
-            }
+        if (str.empty()) {
+            return 0;
         }
-        return false;
+
+        bool found = false;
+
+        string::size_type start;
+        string::size_type word_end = 0;
+        bool word_found;
+        do
+        {
+            if ((start = str.find_first_not_of(' ', word_end)) == string::npos)
+            {
+                start = str.length();
+                break;
+            }
+
+            if ((word_end = str.find(' ', start)) == string::npos)
+                word_end = str.size();
+
+            CTempString word(str, start, word_end - start);
+
+            word_found = find(std::begin(s_weasels), std::end(s_weasels), word) != std::end(s_weasels);
+
+            if (word_found)
+                found = true;
+
+        } while (word_found);
+
+        if (found)
+        {
+            return start;
+        }
+        else
+            return 0;
+    }
+
+    class T
+    {
+    public:
+        T()
+        {
+            string r;
+            r = x_SkipWeasel("check the word");
+            r = x_SkipWeasel(" novel check the word");
+            r = x_SkipWeasel("novel check the word");
+            r = x_SkipWeasel("novel novel");
+            r = x_SkipWeasel("novel novel ");
+        };
     };
 
-    string x_SkipWeasel(bool& found, const string& str)
+    T test;
+
+    CTempString x_StripUnimportantCharacters(string& storage, const CTempString& str, bool strip_space, bool strip_punct)
     {
         if (str.empty()) {
             return kEmptyStr;
         }
+        if (!strip_space && !strip_punct)
+            return str;
 
-        list<CTempString> arr;
-        arr = NStr::Split(str, " ", arr, 0);
-
-        found = false;
-        while (!arr.empty() && x_IsWeasel(arr.front())) {
-            arr.erase(arr.begin());
-            found = true;
+        bool has_stripped = false;
+        CTempString::size_type i = 0;
+        const char* s = str.data();
+        for (; i < str.size(); i++, s++)
+        {
+            if ((strip_space && isspace(*s)) || (strip_punct && ispunct(*s)))
+            {
+                if (!has_stripped) // first occurence
+                {
+                    storage.reserve(str.size()-1); // at least one symbol will be removed
+                    storage.clear();
+                    storage.append(str.data(), i);
+                    has_stripped = true;
+                }
+            }
+            else
+            {
+                if (has_stripped)
+                   storage.push_back(*s);
+            }
         }
 
-        return found ? NStr::Join(arr, " ") : str;
+        if (has_stripped)
+            return storage;
+        else
+            return str;
+    };
+
+    inline
+    bool x_DisallowCharacter(const char ch, bool disallow_slash)
+    {
+        if (isalpha(Uint1(ch)) || isdigit(Uint1(ch)) || ch == '_' || ch == '-') return true;
+        else if (disallow_slash && ch == '/') return true;
+        else return false;
     };
 
 };
 
-const CAutoLowerCase& CMatchString::noweasel() const
+void CMatchString::x_GetNoweasel() const
 {
-    if (m_noweasel.original().empty() && !m_original.original().empty())
-    {
-        m_noweasel = x_SkipWeasel(m_has_weasel, m_original.original());
+    if (m_noweasel_start == CTempString::npos)
+    {        
+        m_noweasel_start = x_SkipWeasel(m_original.lowercase());
     }
-    return m_noweasel;
 }
 
 CString_constraint::CString_constraint()
@@ -124,24 +193,21 @@ bool CString_constraint :: Empty() const
    return false;
 }
 
-bool CString_constraint :: x_IsAllCaps(const string& str) const
+bool CString_constraint::x_IsAllCaps(const CMatchString& str) const
 {
-  string up_str(str);
-  NStr::ToUpper(up_str);
-  return NStr::EqualCase(up_str, str);
+    return x_GetCompareString(e_original) == x_GetCompareString(str, e_uppercase);
 }
 
-bool CString_constraint :: x_IsAllLowerCase(const string& str) const
+bool CString_constraint::x_IsAllLowerCase(const CMatchString& str) const
 {
-  string low_str(str);
-  NStr::ToLower(low_str);
-  return NStr::EqualCase(low_str, str);
+    return x_GetCompareString(e_original) == x_GetCompareString(str, e_lowercase);
 }
 
-bool CString_constraint :: x_IsAllPunctuation(const string& str) const
+bool CString_constraint::x_IsAllPunctuation(const CMatchString& str) const
 {
-   for (unsigned i=0; i< str.size(); i++) {
-     if (!ispunct(Uint1(str[i]))) return false;
+   CTempString match = x_GetCompareString(str, e_original);
+   for (unsigned i=0; i< match.size(); i++) {
+     if (!ispunct(match[i])) return false;
    }
    return true;
 }
@@ -157,20 +223,21 @@ bool CString_constraint::x_IsSkippable(const char ch) const
     }
 }
 
-bool CString_constraint::x_IsAllSkippable(const string& str) const
+bool CString_constraint::x_IsAllSkippable(const CTempString& match) const
 {
-    for (unsigned i = 0; i < str.size(); i++) {
-        if (!x_IsSkippable(Uint1(str[i]))) {
+    for (CTempString::size_type i = 0; i < match.size(); i++) {
+        if (!x_IsSkippable(match[i])) {
             return false;
         }
     }
     return true;
 }
 
-bool CString_constraint :: x_IsFirstCap(const string& str) const
+bool CString_constraint::x_IsFirstCap(const CMatchString& s) const
 {
+    CTempString str = x_GetCompareString(s, e_original);
     // ignore punctuation and spaces at the beginning of the phrase
-    string::const_iterator it = str.begin();
+    CTempString::const_iterator it = str.begin();
     while (it != str.end() && !isalpha((unsigned char) (*it))) {
     if (isdigit( (unsigned char) (*it))) {
         return false;
@@ -184,8 +251,9 @@ bool CString_constraint :: x_IsFirstCap(const string& str) const
     return false;
 }
 
-bool CString_constraint :: x_IsFirstEachCap(const string& str) const
+bool CString_constraint::x_IsFirstEachCap(const CMatchString& s) const
 {
+    CTempString str = x_GetCompareString(s, e_original);
     bool first(true);
     bool rval(true);
     for (size_t i = 0; i < str.size() && rval; ++i) {
@@ -210,70 +278,7 @@ bool CString_constraint :: x_IsFirstEachCap(const string& str) const
     return rval;
 }
 
-bool CString_constraint::x_IsWeasel(const CTempString& str) const
-{
-    size_t n = ArraySize(weasels);
-    for (size_t i = 0; i < n; i++) {
-        if (str == weasels[i]) {
-            return true;
-        }
-    }
-    return false;
-};
-
-
-string CString_constraint::x_SkipWeasel(const string& str) const
-{
-    list<CTempString> arr;
-    arr = NStr::Split(str, " ", arr, 0);
-
-    bool found = false;
-    while (!arr.empty() && x_IsWeasel(arr.front())) {
-        arr.erase(arr.begin());
-        found = true;
-    }
-  
-    return found ? NStr::Join(arr, " ") : str;
-};
-
-bool CString_constraint :: x_CaseNCompareEqual(string str1, string str2, size_t len1, bool case_sensitive) const
-{
-   if (!len1) return false;
-   string comp_str1, comp_str2;
-   comp_str1 = CTempString(str1).substr(0, len1);
-   comp_str2 = CTempString(str2).substr(0, len1);
-   if (case_sensitive) {
-       return (comp_str1 == comp_str2);
-   }
-   else {
-     return (NStr::EqualNocase(comp_str1, 0, len1, comp_str2));
-   }
-};
-
-string CString_constraint :: x_StripUnimportantCharacters(const string& str, bool strip_space, bool strip_punct) const
-{
-   if (str.empty()) {
-      return kEmptyStr;
-   }
-   string result;
-   result.reserve(str.size());
-   string::const_iterator it = str.begin();
-   do {
-      if ((strip_space && isspace(Uint1(*it))) || (strip_punct && ispunct(Uint1(*it))));
-      else result += *it;
-   } while (++it != str.end());
-
-   return result;
-};
-
-bool CString_constraint :: x_DisallowCharacter(const char ch, bool disallow_slash) const
-{
-  if (isalpha (Uint1(ch)) || isdigit (Uint1(ch)) || ch == '_' || ch == '-') return true;
-  else if (disallow_slash && ch == '/') return true;
-  else return false;
-};
-
-bool CString_constraint :: x_IsWholeWordMatch(const string& start, size_t found, size_t match_len, bool disallow_slash) const
+bool CString_constraint :: x_IsWholeWordMatch(const CTempString& start, size_t found, size_t match_len, bool disallow_slash) const
 {
   size_t after_idx;
 
@@ -613,9 +618,51 @@ bool CString_constraint :: x_IsStringInSpanInList (const string& str, const stri
   return rval;
 };
 
-bool CString_constraint :: x_DoesSingleStringMatchConstraint(const string& str) const
+CTempString CString_constraint::x_GetCompareString(const CMatchString& s, ECase e_case) const
 {
-    if (str.empty()) {
+    if (e_case == e_automatic && GetCase_sensitive())
+    {
+        if (GetIgnore_weasel())
+            return s.GetNoweaselLC();
+        else
+            return s.original().lowercase();
+    }
+    else
+    {
+        if (GetIgnore_weasel())
+        {
+            switch (e_case)
+            {
+            case e_automatic:
+            case e_original:
+                return s.GetNoweasel();
+            case e_lowercase:
+                return s.GetNoweaselLC();
+            case e_uppercase:
+                return s.GetNoweaselUC();
+            }
+        }
+        else
+        {
+            switch (e_case)
+            {
+            case e_automatic:
+            case e_original:
+                return s.original().original();
+            case e_lowercase:
+                return s.original().lowercase();
+            case e_uppercase:
+                return s.original().uppercase();
+            }
+        }
+        return s.original().original();
+    }
+
+}
+
+bool CString_constraint::x_DoesSingleStringMatchConstraint(const CMatchString& str) const
+{
+    if (str.original().original().empty()) {
         return false;
     }
 
@@ -624,41 +671,42 @@ bool CString_constraint :: x_DoesSingleStringMatchConstraint(const string& str) 
         rval = true;
     }
     
-    string this_str(str);
-    if (GetIgnore_weasel()) {
-        this_str = x_SkipWeasel(str);
+    //const CAutoLowerCase& this_str = GetIgnore_weasel() ? str.noweasel() : str.original();
+    //const CAutoLowerCase& this_str = str.original();
+
+    if (GetIs_all_caps() && !x_IsAllCaps(str)) {
+        rval = false;
     }
-    if (GetIs_all_caps() && !x_IsAllCaps(this_str)) {
+    else if (GetIs_all_lower() && !x_IsAllLowerCase(str)) {
         rval = false;
-    } else if (GetIs_all_lower() && !x_IsAllLowerCase(this_str)) {
+    }
+    else if (GetIs_all_punct() && !x_IsAllPunctuation(str)) {
         rval = false;
-    } else if (GetIs_all_punct() && !x_IsAllPunctuation(this_str)) {
+    }
+    else if (GetIs_first_cap() && !x_IsFirstCap(str)) {
         rval = false;
-    } else if (GetIs_first_cap() && !x_IsFirstCap(this_str)) {
+    }
+    else if (GetIs_first_each_cap() && !x_IsFirstEachCap(str)) {
         rval = false;
-    } else if (GetIs_first_each_cap() && !x_IsFirstEachCap(this_str)) {
-        rval = false;
-    } else {
-      
-        string tmp_match = CanGetMatch_text() ? GetMatch_text() : kEmptyStr;
-        //if (GetIgnore_weasel()) {
-        //    tmp_match = x_SkipWeasel(tmp_match);
-        //}
+    } else 
+    {
+        CTempString pattern = x_GetCompareString();
+        CTempString search = x_GetCompareString(str);
+
         if (GetMatch_location() != eString_location_inlist && CanGetIgnore_words()){
-            rval = x_AdvancedStringMatch(str, tmp_match);
+            rval = x_AdvancedStringMatch(search, pattern);
         } else {
-            string search(this_str), pattern(tmp_match);
+            string s_search, s_pattern;
             if ( GetMatch_location() != eString_location_inlist && (GetIgnore_space() || GetIgnore_punct())) {
-              search = x_StripUnimportantCharacters(search, GetIgnore_space(), GetIgnore_punct());
-              pattern = x_StripUnimportantCharacters(pattern, GetIgnore_space(), GetIgnore_punct());
+              search = x_StripUnimportantCharacters(s_search, search, GetIgnore_space(), GetIgnore_punct());
+              pattern = x_StripUnimportantCharacters(s_pattern, pattern, GetIgnore_space(), GetIgnore_punct());
             } 
             
-            NStr::ECase case_sens = GetCase_sensitive() ? NStr::eCase : NStr::eNocase;
             SIZE_TYPE pFound;
             if (pattern.empty()) {
                 pFound = 0;
             } else {
-                pFound = NStr::Find(search, pattern, 0, NPOS, NStr::eFirst, case_sens);
+                pFound = search.find(pattern); // NStr::Find(search, pattern, 0, NPOS, NStr::eFirst);
             }
 
             switch (GetMatch_location()) {
@@ -668,7 +716,7 @@ bool CString_constraint :: x_DoesSingleStringMatchConstraint(const string& str) 
                 } else if (GetWhole_word()) {
                     rval = x_IsWholeWordMatch (search, pFound, pattern.size());
                     while (!rval && pFound != NPOS) {
-                        pFound = NStr::Find(search, pattern, pFound + 1, NPOS, NStr::eFirst, case_sens);
+                        pFound = search.find(pattern, pFound+1); // NStr::Find(search, pattern, pFound + 1, NPOS, NStr::eFirst);
                         rval = (pFound != NPOS) ? x_IsWholeWordMatch(search, pFound, pattern.size()) : false;
                     }
                 } else {
@@ -676,7 +724,7 @@ bool CString_constraint :: x_DoesSingleStringMatchConstraint(const string& str) 
                 }
                 break;
             case eString_location_starts:
-                if (!pFound) {
+                if (pFound == 0) {
                     rval = GetWhole_word() ? x_IsWholeWordMatch (search, pFound, pattern.size()) : true;
                 }
                 break;
@@ -687,23 +735,23 @@ bool CString_constraint :: x_DoesSingleStringMatchConstraint(const string& str) 
                         /* stop the search, we're at the end of the string */
                         pFound = NPOS;
                     } else {
-                        pFound = NStr::Find(search, pattern, pFound + 1, NPOS, NStr::eFirst, case_sens);
+                        pFound = search.find(pattern, pFound + 1); // NStr::Find(search, pattern, pFound + 1, NPOS, NStr::eFirst);
                     }
                 }
                 break;
             case eString_location_equals:
-                rval = NStr::Equal(search, pattern, case_sens);
+                rval = (search == pattern);
                 break;
             case eString_location_inlist:
-                pFound = NStr::Find(pattern, search, 0, NPOS, NStr::eFirst, case_sens);
+                pFound = NStr::Find(pattern, search, 0, NPOS, NStr::eFirst);
                 if (pFound == NPOS) {
                     rval = false;
                 } else {
                     rval = x_IsWholeWordMatch(pattern, pFound, search.size(), true);
                     while (!rval && pFound != NPOS) {
-                        pFound = NStr::Find(pattern.substr(pFound + 1), search, 0, NPOS, NStr::eFirst, case_sens);
+                        pFound = NStr::Find(pattern.substr(pFound + 1), search, 0, NPOS, NStr::eFirst);
                         if (pFound != NPOS) {
-                            rval = x_IsWholeWordMatch(pattern, pFound, str.size(), true);
+                            rval = x_IsWholeWordMatch(pattern, pFound, str.original().original().size(), true);
                         }
                     }
                 }
@@ -772,7 +820,8 @@ bool CString_constraint::ReplaceStringConstraintPortionInString(string& result, 
                     {{
                        size_t match_len = 0;
                        if (x_AdvancedStringCompare(val, GetMatch_text(), 0, &match_len)) {
-                           result = replace + val.substr(match_len); // dont optimize before you profile!
+                           result = replace;
+                           result.append(val.data()+match_len, val.length()-match_len);                           
                            rval = true;
                        }
                     }}

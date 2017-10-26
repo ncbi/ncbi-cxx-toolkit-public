@@ -734,10 +734,9 @@ bool CSuspect_rule::ApplyToString(string& result, const CMatchString& str) const
         return false;
     }
 
-    CRef<CString_constraint> constraint(NULL);
+    CConstRef<CString_constraint> constraint(NULL);
     if (IsSetFind() && GetFind().IsString_constraint()) {
-        constraint.Reset(new CString_constraint());
-        constraint->Assign(GetFind().GetString_constraint());
+        constraint.Reset(&GetFind().GetString_constraint());
     }
     return GetReplace().ApplyToString(result, str, constraint);
 }

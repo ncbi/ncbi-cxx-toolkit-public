@@ -102,7 +102,7 @@ bool s_ReplaceNocase(string& val, const string& find, const string& repl)
 }
 
 
-bool CReplace_func::ApplyToString(string& result, const CMatchString& str, CRef<CString_constraint> find) const
+bool CReplace_func::ApplyToString(string& result, const CMatchString& str, CConstRef<CString_constraint> find) const
 {
     bool rval = false;
     if (IsSimple_replace()) {
