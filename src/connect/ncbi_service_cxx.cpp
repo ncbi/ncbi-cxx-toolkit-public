@@ -33,11 +33,11 @@
 #include <ncbi_pch.hpp>
 #include <algorithm>
 
+#include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_service_cxx.hpp>
+#include <connect/ncbi_socket.h>
 #include <connect/ncbi_socket.hpp>
 #include <corelib/ncbidiag.hpp>
-
-#include <connect/ncbi_socket.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -55,6 +55,13 @@ vector<CSERV_Info> SERV_GetServers(const string& service,
                                    TSERV_Type    types,
                                    TSERV_Mapper  mappers)
 {
+    // Share core functionality with C-language CONNECT library.
+    {
+        class CInPlaceConnIniter : protected CConnIniter
+        {
+        } conn_initer;  /*NCBI_FAKE_WARNING*/
+    }
+
     vector<CSERV_Info>  servers;
 
     SERV_ITER iter = SERV_Open(service.c_str(), types, SERV_ANYHOST, 0);

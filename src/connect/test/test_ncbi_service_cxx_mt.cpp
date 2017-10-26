@@ -35,7 +35,6 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/test_mt.hpp>
 
-#include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_service_cxx.hpp>
 
 #include "test_assert.h"  // This header must go last
@@ -87,10 +86,6 @@ bool CTestApp::TestApp_Init(void)
         ERR_POST(Critical << "Missing service.");
         return false;
     }
-
-    // Share registry with C-language CONNECT lib.
-    CNcbiRegistry& config = GetConfig();
-    CONNECT_Init(dynamic_cast<ncbi::IRWRegistry*>(&config));
 
     ERR_POST(Info << "Service:  '" << sm_Service << "'");
 
