@@ -171,7 +171,6 @@ boost_unit_test_framework-gcc48-mt-d-64 needs3party $(ORIG_LIBS)
 build_config needs $(GPIPE_GENCOLL_LIBS)
 build_config needs bacterial_pipeline_proc
 build_config needs build_config_base
-build_config needs gpxlib
 build_config needs reftrack_access
 build_config_base needs gencoll_client
 build_config_base needs gpinit_bag_util
@@ -508,7 +507,7 @@ gpipe_xml needs gpipe_dateutil
 gpipe_xmlutil needs xmlwrapp
 gpxapi needs general
 gpxapi needs xconnect
-gpxlib needs gpipe_common
+gpxlib needs gpipe_objutil
 gpxlib needs gpxapi
 gpxlib needs xgp_manifest
 grid_wrapper needs gpipe_common
@@ -892,7 +891,6 @@ pathogen_ctl needs $(GPIPE_COMMON_LIBS)
 pathogen_ctl needs bag_access
 pathogen_ctl needs gpinit_access
 pathogen_ctl needs gpipe_kmer
-pathogen_ctl needs gpxlib
 pathogen_ctl needs pathogen_connection
 pathogen_ctl needs xvalidate
 pathogen_fill_taxa needs gpipe_common
@@ -909,7 +907,6 @@ pmcidconv_client needs xmlwrapp
 pn_ctl needs bacterial_pipeline_proc
 pn_ctl needs gpipe_clean_prot_names
 pn_ctl needs gpipe_jira
-pn_ctl needs gpxlib
 pn_ctl needs idload_utils
 png needs $(Z_LIB)
 png needs3party $(ORIG_LIBS)
@@ -939,7 +936,6 @@ refseq_aln_source needs ncbi_xdbapi_ftds
 refseq_aln_source needs xalgoalignsplign
 refseq_ctl needs bacterial_pipeline_proc
 refseq_ctl needs bag_access
-refseq_ctl needs gpxlib
 refseq_ctl needs idload_utils
 refseq_ctl needs validation_results
 reftrack_access needs xncbi
