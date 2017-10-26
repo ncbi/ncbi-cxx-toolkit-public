@@ -35,6 +35,7 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/test_mt.hpp>
 
+#include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_service_cxx.hpp>
 
 #include "test_assert.h"  // This header must go last
@@ -80,12 +81,16 @@ bool CTestApp::TestApp_Args(CArgDescriptions& args)
 
 bool CTestApp::TestApp_Init(void)
 {
-    /* Get args as passed in. */
+    // Get args as passed in.
     sm_Service = GetArgs()["service"].AsString();
     if (sm_Service.empty()) {
         ERR_POST(Critical << "Missing service.");
         return false;
     }
+
+    // Share registry with C-language CONNECT lib.
+    CNcbiRegistry& config = GetConfig();
+    CONNECT_Init(dynamic_cast<ncbi::IRWRegistry*>(&config));
 
     ERR_POST(Info << "Service:  '" << sm_Service << "'");
 
