@@ -193,11 +193,9 @@ class CBamFileInfo : public CObject
 {
 public:
     CBamFileInfo(const CBAMDataLoader_Impl& impl,
-                 const CBAMDataLoader::SBamFileName& bam);
-    CBamFileInfo(const CBAMDataLoader_Impl& impl,
                  const CBAMDataLoader::SBamFileName& bam,
-                 const string& refseq_label,
-                 const CSeq_id_Handle& seq_id);
+                 const string& refseq_label = kEmptyStr,
+                 const CSeq_id_Handle& seq_id = CSeq_id_Handle());
     
     const string& GetBamName(void) const
         {
@@ -259,6 +257,7 @@ public:
 
     void AddSrzDef(void);
     void AddBamFile(const CBAMDataLoader::SBamFileName& bam);
+    void OpenBAMFiles();
 
     CRef<CBAMBlobId> GetShortSeqBlobId(const CSeq_id_Handle& idh);
     CRef<CBAMBlobId> GetRefSeqBlobId(const CSeq_id_Handle& idh);
@@ -287,7 +286,7 @@ protected:
     friend class CBamFileInfo;
     struct SDirSeqInfo {
         CSeq_id_Handle m_SeqId;
-        string m_BamFileName;
+        CBAMDataLoader::SBamFileName m_BamFileName;
         string m_BamSeqLabel;
         string m_Label;
         string m_CovFileName;

@@ -267,6 +267,7 @@ CBAMDataLoader_Impl::CBAMDataLoader_Impl(
             AddBamFile(*it);
         }
     }
+    OpenBAMFiles();
 }
 
 
@@ -318,14 +319,17 @@ void CBAMDataLoader_Impl::AddSrzDef(void)
         mapper->AddMapping(CSeq_id_Handle::GetHandle(*src_id), info.m_SeqId);
     }
     m_IdMapper.reset(mapper.release());
+}
 
+
+void CBAMDataLoader_Impl::OpenBAMFiles()
+{
     ITERATE ( TSeqInfos, it, m_SeqInfos ) {
         const SDirSeqInfo& info = *it;
         
-        CBAMDataLoader::SBamFileName bam(info.m_BamFileName);
-        CRef<CBamFileInfo>& bam_info = m_BamFiles[info.m_BamFileName];
+        CRef<CBamFileInfo>& bam_info = m_BamFiles[info.m_BamFileName.m_BamName];
         if ( !bam_info ) {
-            bam_info = new CBamFileInfo(*this, bam,
+            bam_info = new CBamFileInfo(*this, info.m_BamFileName,
                                         info.m_BamSeqLabel, info.m_SeqId);
         }
         else {
@@ -348,7 +352,9 @@ void CBAMDataLoader_Impl::AddSrzDef(void)
 
 void CBAMDataLoader_Impl::AddBamFile(const CBAMDataLoader::SBamFileName& bam)
 {
-    m_BamFiles[bam.m_BamName] = new CBamFileInfo(*this, bam);
+    SDirSeqInfo info;
+    info.m_BamFileName = bam;
+    m_SeqInfos.push_back(info);
 }
 
 
@@ -487,31 +493,28 @@ bool CBAMDataLoader_Impl::IsShortSeq(const CSeq_id_Handle& idh)
 
 
 CBamFileInfo::CBamFileInfo(const CBAMDataLoader_Impl& impl,
-                           const CBAMDataLoader::SBamFileName& bam)
+                           const CBAMDataLoader::SBamFileName& bam,
+                           const string& refseq_label,
+                           const CSeq_id_Handle& seq_id)
 {
     CStopWatch sw;
     if ( GetDebugLevel() >= 1 ) {
         sw.Start();
     }
     x_Initialize(impl, bam);
-    for ( CBamRefSeqIterator rit(m_BamDb); rit; ++rit ) {
-        string refseq_label = rit.GetRefSeqId();
-        CSeq_id_Handle seq_id = CSeq_id_Handle::GetHandle(*rit.GetRefSeq_id());
+    if ( seq_id ) {
         AddRefSeq(refseq_label, seq_id);
+    }
+    else {
+        for ( CBamRefSeqIterator rit(m_BamDb); rit; ++rit ) {
+            string refseq_label = rit.GetRefSeqId();
+            CSeq_id_Handle seq_id = CSeq_id_Handle::GetHandle(*rit.GetRefSeq_id());
+            AddRefSeq(refseq_label, seq_id);
+        }
     }
     if ( GetDebugLevel() >= 1 ) {
         LOG_POST_X(16, "Opened BAM file "<<bam.m_BamName<<" in "<<sw.Elapsed());
     }
-}
-
-
-CBamFileInfo::CBamFileInfo(const CBAMDataLoader_Impl& impl,
-                           const CBAMDataLoader::SBamFileName& bam,
-                           const string& refseq_label,
-                           const CSeq_id_Handle& seq_id)
-{
-    x_Initialize(impl, bam);
-    AddRefSeq(refseq_label, seq_id);
 }
 
 
