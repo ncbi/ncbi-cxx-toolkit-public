@@ -137,6 +137,9 @@ public:
     static bool GetEstimatedCoverageGraphParamDefault(void);
     static void SetEstimatedCoverageGraphParamDefault(bool param);
 
+    static bool GetPreOpenParam(void);
+    static void SetPreOpenParam(bool param);
+
     virtual double EstimateLoadSeconds(const CTSE_Chunk_Info& chunk, Uint4 bytes) const;
     
     virtual unsigned GetDefaultBlobCacheSizeLimit() const;

@@ -258,6 +258,7 @@ public:
     void AddSrzDef(void);
     void AddBamFile(const CBAMDataLoader::SBamFileName& bam);
     void OpenBAMFiles();
+    bool BAMFilesOpened() const;
 
     CRef<CBAMBlobId> GetShortSeqBlobId(const CSeq_id_Handle& idh);
     CRef<CBAMBlobId> GetRefSeqBlobId(const CSeq_id_Handle& idh);
@@ -290,6 +291,7 @@ protected:
         string m_BamSeqLabel;
         string m_Label;
         string m_CovFileName;
+        string m_AnnotName;
     };
 
 private:
@@ -297,7 +299,7 @@ private:
     typedef vector<SDirSeqInfo> TSeqInfos;
 
     // mutex guarding input into the map
-    CMutex  m_Mutex;
+    mutable CMutex m_Mutex;
     CBamMgr m_Mgr;
     string  m_DirPath;
     TSeqInfos m_SeqInfos;

@@ -187,6 +187,21 @@ static inline bool GetEstimatedCoverageGraphParam(void)
 }
 
 
+NCBI_PARAM_DECL(bool, BAM_LOADER, PREOPEN);
+NCBI_PARAM_DEF(bool, BAM_LOADER, PREOPEN, false);
+
+bool CBAMDataLoader::GetPreOpenParam(void)
+{
+    return NCBI_PARAM_TYPE(BAM_LOADER, PREOPEN)::GetDefault();
+}
+
+
+void CBAMDataLoader::SetPreOpenParam(bool param)
+{
+    NCBI_PARAM_TYPE(BAM_LOADER, PREOPEN)::SetDefault(param);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CBAMBlobId
 /////////////////////////////////////////////////////////////////////////////
@@ -267,7 +282,9 @@ CBAMDataLoader_Impl::CBAMDataLoader_Impl(
             AddBamFile(*it);
         }
     }
-    OpenBAMFiles();
+    if ( CBAMDataLoader::GetPreOpenParam() ) {
+        OpenBAMFiles();
+    }
 }
 
 
@@ -308,6 +325,7 @@ void CBAMDataLoader_Impl::AddSrzDef(void)
         if ( tokens.size() >= 4 ) {
             info.m_CovFileName = tokens[4];
         }
+        info.m_AnnotName = CDirEntry(info.m_BamFileName.m_BamName).GetBase();
         m_SeqInfos.push_back(info);
         CRef<CSeq_id> src_id;
         try {
@@ -322,8 +340,19 @@ void CBAMDataLoader_Impl::AddSrzDef(void)
 }
 
 
+bool CBAMDataLoader_Impl::BAMFilesOpened() const
+{
+    CMutexGuard guard(m_Mutex);
+    return !m_BamFiles.empty();
+}
+
+
 void CBAMDataLoader_Impl::OpenBAMFiles()
 {
+    CMutexGuard guard(m_Mutex);
+    if ( !m_BamFiles.empty() ) {
+        return;
+    }
     ITERATE ( TSeqInfos, it, m_SeqInfos ) {
         const SDirSeqInfo& info = *it;
         
@@ -354,12 +383,14 @@ void CBAMDataLoader_Impl::AddBamFile(const CBAMDataLoader::SBamFileName& bam)
 {
     SDirSeqInfo info;
     info.m_BamFileName = bam;
+    info.m_AnnotName = CDirEntry(info.m_BamFileName.m_BamName).GetBase();
     m_SeqInfos.push_back(info);
 }
 
 
 CBamRefSeqInfo* CBAMDataLoader_Impl::GetRefSeqInfo(const CBAMBlobId& blob_id)
 {
+    OpenBAMFiles();
     TBamFiles::iterator bit = m_BamFiles.find(blob_id.m_BamName);
     if ( bit == m_BamFiles.end() ) {
         return 0;
@@ -395,8 +426,10 @@ CRef<CBAMBlobId>
 CBAMDataLoader_Impl::GetShortSeqBlobId(const CSeq_id_Handle& idh)
 {
     CRef<CBAMBlobId> ret;
-    ITERATE ( TBamFiles, it, m_BamFiles ) {
-        it->second->GetShortSeqBlobId(ret, idh);
+    if ( BAMFilesOpened() ) {
+        ITERATE ( TBamFiles, it, m_BamFiles ) {
+            it->second->GetShortSeqBlobId(ret, idh);
+        }
     }
     return ret;
 }
@@ -406,6 +439,7 @@ CRef<CBAMBlobId>
 CBAMDataLoader_Impl::GetRefSeqBlobId(const CSeq_id_Handle& idh)
 {
     CRef<CBAMBlobId> ret;
+    OpenBAMFiles();
     ITERATE ( TBamFiles, it, m_BamFiles ) {
         it->second->GetRefSeqBlobId(ret, idh);
     }
@@ -416,8 +450,8 @@ CBAMDataLoader_Impl::GetRefSeqBlobId(const CSeq_id_Handle& idh)
 CBAMDataLoader::TAnnotNames CBAMDataLoader_Impl::GetPossibleAnnotNames(void) const
 {
     CBAMDataLoader::TAnnotNames names;
-    ITERATE ( TBamFiles, it, m_BamFiles ) {
-        const string& name = it->second->GetAnnotName();
+    ITERATE ( TSeqInfos, it, m_SeqInfos ) {
+        const string& name = it->m_AnnotName;
         if ( name.empty() ) {
             names.push_back(CAnnotName());
         }
