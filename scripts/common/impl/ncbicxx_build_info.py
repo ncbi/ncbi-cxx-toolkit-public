@@ -291,7 +291,8 @@ class Collector(object):
             except subprocess.CalledProcessError:
                 pass
             if 'vcs_path' not in info:
-                info['vcs_path'] = 'file://' + os.path.join(srcdir, *rest)
+                info['vcs_path'] = ('file://' + srcdir + '#'
+                                    + os.path.join(*rest))
         try:
             cmd = [git, 'rev-parse', '--symbolic-full-name', 'HEAD']
             rev = subprocess.check_output(cmd, stderr = subprocess.DEVNULL,
