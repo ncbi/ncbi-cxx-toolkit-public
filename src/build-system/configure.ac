@@ -6694,7 +6694,7 @@ AC_SUBST(LIBXML_INCLUDE)
 AC_SUBST(LIBXML_LIBS)
 
 if test -f "${LIBXML_LIBPATH_}/libxml2-static.a"; then
-   LIBXML_STATIC_LIBS="-L${LIBXML_LIBPATH_} -lxml2-static"
+   LIBXML_STATIC_LIBS="-L${LIBXML_LIBPATH_} -lxml2-static $ICONV_LIBS"
    if test "x$with_bin_release" = "xyes"; then
       LIBXML_LIBS=$LIBXML_STATIC_LIBS
    fi
