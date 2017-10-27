@@ -59,9 +59,6 @@ BEGIN_NCBI_SCOPE
 class NCBI_XNCBI_EXPORT CVersionInfo
 {
 public:
-    /// Default constructor
-    CVersionInfo(void) ;
-
     /// Constructor
     CVersionInfo(int  ver_major,
                  int  ver_minor,
@@ -78,11 +75,13 @@ public:
         kAny = 0,
         kLatest
     };
-    CVersionInfo(EVersionFlags flags);
+    CVersionInfo(EVersionFlags flags = kLatest);
 
-    /// Constructor.
-    CVersionInfo(const CVersionInfo& version);
-    CVersionInfo& operator=(const CVersionInfo& version);
+    CVersionInfo(const CVersionInfo&) = default;
+    CVersionInfo(CVersionInfo&&) = default;
+
+    CVersionInfo& operator=(const CVersionInfo&) = default;
+    CVersionInfo& operator=(CVersionInfo&&) = default;
 
     /// Destructor.
     virtual ~CVersionInfo() {}
@@ -191,15 +190,6 @@ public:
                            const string& version,
                            const string& ver_name = kEmptyStr);
 
-    /// Copy constructor.
-    CComponentVersionInfo(const CComponentVersionInfo& version);
-
-    /// Assignment.
-    CComponentVersionInfo& operator=(const CComponentVersionInfo& version);
-
-    /// Destructor.
-    virtual ~CComponentVersionInfo() {}
-
     /// Get component name
     const string& GetComponentName(void) const
     {
@@ -216,8 +206,6 @@ public:
     virtual string PrintJson(void) const;
 
 private:
-    // default ctor
-    CComponentVersionInfo(void);
     string m_ComponentName;
 };
 
@@ -253,13 +241,12 @@ public:
     CVersion(const CVersionInfo& version,
             const SBuildInfo& build_info = SBuildInfo());
 
-    /// Copy constructor.
     CVersion(const CVersion& version);
-    /// Destructor.
-    virtual ~CVersion(void)
-    {
-    }
-    
+    CVersion(CVersion&& version) = default;
+
+    CVersion& operator=(const CVersion& version);
+    CVersion& operator=(CVersion&& version) = default;
+
     /// Set version information
     void SetVersionInfo( int  ver_major,
                          int  ver_minor,
@@ -314,9 +301,8 @@ public:
     string PrintJson(const string& appname, TPrintFlags flags = fPrintAll) const;
 
 private:
-
-    AutoPtr< CVersionInfo > m_VersionInfo;
-    vector< AutoPtr< CComponentVersionInfo> > m_Components;
+    unique_ptr<CVersionInfo> m_VersionInfo;
+    vector<unique_ptr<CComponentVersionInfo>> m_Components;
     SBuildInfo m_BuildInfo;
 };
 

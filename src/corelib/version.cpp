@@ -39,15 +39,6 @@
 BEGIN_NCBI_SCOPE
 
 
-CVersionInfo::CVersionInfo(void) 
-    : m_Major(-1),
-      m_Minor(-1),
-      m_PatchLevel(-1),
-      m_Name(kEmptyStr)
-
-{
-}
-
 CVersionInfo::CVersionInfo(int ver_major,
                            int  ver_minor,
                            int  patch_level, 
@@ -121,55 +112,6 @@ void s_ConvertVersionInfo(CVersionInfo* vi, const char* str)
 void CVersionInfo::FromStr(const string& version)
 {
     s_ConvertVersionInfo(this, version.c_str());
-/*
-    vector<string> lst;
-    NStr::Split(version, ".", lst);
-
-    if (lst.size() == 0) {
-        NCBI_THROW2(CStringException, eFormat,
-                            "Invalid version format", 0);
-    }
-
-    for (unsigned i = 0; i < 3; ++i) {
-        string tmp;
-        if (i < lst.size()) {
-            tmp = lst[i];
-        }
-        int value = tmp.empty() ? 0 : NStr::StringToInt(tmp);
-        switch (i) {
-        case 0: 
-            if (value == 0) {
-                NCBI_THROW2(CStringException, eFormat,
-                            "Invalid version format (major is 0)", 0);
-            }
-            m_Major = value;
-            break;
-        case 1:
-            m_Minor = value;
-            break;
-        case 2:
-            m_PatchLevel = value;
-            break;
-        } 
-    } // for
-*/
-}
-
-
-CVersionInfo::CVersionInfo(const CVersionInfo& version)
-    : m_Major(version.m_Major),
-      m_Minor(version.m_Minor),
-      m_PatchLevel(version.m_PatchLevel),
-      m_Name(version.m_Name)
-{
-}
-
-CVersionInfo& CVersionInfo::operator=(const CVersionInfo& version)
-{
-    m_Major = version.m_Major;
-    m_Minor = version.m_Minor;
-    m_PatchLevel = version.m_PatchLevel;
-    return *this;
 }
 
 
@@ -468,22 +410,6 @@ CComponentVersionInfo::CComponentVersionInfo( const string& component_name,
 {
 }
 
-CComponentVersionInfo::CComponentVersionInfo(
-    const CComponentVersionInfo& version)
-    : CVersionInfo( version),
-      m_ComponentName( version.m_ComponentName )
-      
-{
-}
-
-CComponentVersionInfo& CComponentVersionInfo::operator=(
-    const CComponentVersionInfo& version)
-{
-    m_ComponentName = version.m_ComponentName;
-    CVersionInfo::operator=( version );
-    return *this;
-}
-
 string CComponentVersionInfo::Print(void) const
 {
     CNcbiOstrstream os;
@@ -571,10 +497,18 @@ CVersion::CVersion(const CVersionInfo& version, const SBuildInfo& build_info)
 }
 
 CVersion::CVersion(const CVersion& version)
-    : m_VersionInfo( version.m_VersionInfo), 
-      m_Components(version.m_Components),
+    : m_VersionInfo(new CVersionInfo(*version.m_VersionInfo)), 
       m_BuildInfo(version.m_BuildInfo)
 {
+    for (const auto& c : version.m_Components) {
+        m_Components.emplace_back(new CComponentVersionInfo(*c));
+    }
+}
+
+CVersion& CVersion::operator=(const CVersion& version)
+{
+    CVersion tmp(version);
+    return *this = std::move(tmp);
 }
 
 void CVersion::SetVersionInfo( int  ver_major, int  ver_minor,
@@ -614,14 +548,14 @@ void CVersion::AddComponentVersion(
     const string& component_name, int  ver_major, int  ver_minor,
     int  patch_level, const string& ver_name)
 {
-    m_Components.push_back( AutoPtr<CComponentVersionInfo>(
+    m_Components.emplace_back(
         new CComponentVersionInfo(component_name, ver_major, ver_minor,
-                                  patch_level, ver_name) ));
+                                  patch_level, ver_name));
 }
 
 void CVersion::AddComponentVersion( CComponentVersionInfo* component)
 {
-    m_Components.push_back( AutoPtr<CComponentVersionInfo>( component ));
+    m_Components.emplace_back(component);
 }
 
 const SBuildInfo& CVersion::GetBuildInfo() const
@@ -656,8 +590,8 @@ string CVersion::Print(const string& appname, TPrintFlags flags) const
     }
 
     if (flags & fComponents) {
-        ITERATE(vector< AutoPtr< CComponentVersionInfo> >, c, m_Components) {
-            os << ' ' <<  (*c)->Print() << endl;
+        for (const auto& c : m_Components) {
+            os << ' ' <<  c->Print() << endl;
         }
     }
 
@@ -717,8 +651,8 @@ string CVersion::PrintXml(const string& appname, TPrintFlags flags) const
     }
 
     if (flags & fComponents) {
-        ITERATE(vector< AutoPtr< CComponentVersionInfo> >, c, m_Components) {
-            os << (*c)->PrintXml();
+        for (const auto& c : m_Components) {
+            os << c->PrintXml();
         }
     }
 
@@ -776,9 +710,9 @@ string CVersion::PrintJson(const string& appname, TPrintFlags flags) const
         if ( need_separator ) os << ",\n";
         os << "    \"components\": [";
         need_separator = false;
-        ITERATE(vector< AutoPtr< CComponentVersionInfo> >, c, m_Components) {
+        for (const auto& c : m_Components) {
             if ( need_separator ) os << ",";
-            os << "\n      " << (*c)->PrintJson();
+            os << "\n      " << c->PrintJson();
             need_separator = true;
         }
         os << "]";
