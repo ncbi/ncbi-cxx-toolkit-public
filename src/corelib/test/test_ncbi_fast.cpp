@@ -48,7 +48,7 @@ USING_NCBI_SCOPE;
 #define SSETEST_COUNT   100
 #elif 1
 #define SSETEST_BUFSIZE 51200
-#define SSETEST_COUNT   500000
+#define SSETEST_COUNT   100000
 #elif 0
 #define SSETEST_BUFSIZE 102400
 #define SSETEST_COUNT   100000
@@ -124,6 +124,7 @@ void s_check_equal(const V1* buf, size_t buf_size, const V2* dst)
 template<class V>
 inline void s_payload(V* buf, size_t buf_size)
 {
+    return;
     for (size_t j = 0; j < buf_size; j += 64/sizeof(V)) {
         buf[j] += 1;
     }
@@ -594,7 +595,7 @@ BOOST_AUTO_TEST_CASE(TestMaxElement2)
     const size_t buf_size = SSETEST_BUFSIZE;
     const size_t test_count = SSETEST_COUNT;
     unsigned int*  buf  = (unsigned int*)malloc(buf_size * sizeof(unsigned int));
-    unsigned int result = 0;
+    unsigned int result;
     Uint8 start, finish;
     for (size_t i = 0; i < buf_size; ++i) {
         buf[i] = (i*256/SSETEST_BUFSIZE) & 0xFF;
@@ -602,6 +603,7 @@ BOOST_AUTO_TEST_CASE(TestMaxElement2)
 
 #ifdef NCBI_HAVE_FAST_OPS
     start = QUERY_PERF_COUNTER();
+    result = 0;
     for (size_t i = 0; i < test_count; ++i) {
         NFast::max_element_n_aligned16(buf, buf_size, result);
     } 
@@ -611,6 +613,7 @@ BOOST_AUTO_TEST_CASE(TestMaxElement2)
 #endif
 
     start = QUERY_PERF_COUNTER();
+    result = 0;
     for (size_t i = 0; i < test_count; ++i) {
         result = NFast::x_no_ncbi_sse_max_element(buf, buf_size, result);
     } 
@@ -619,6 +622,7 @@ BOOST_AUTO_TEST_CASE(TestMaxElement2)
     _ASSERT(result == 0xff);
 
     start = QUERY_PERF_COUNTER();
+    result = 0;
     for (size_t i = 0; i < test_count; ++i) {
         NFast::Max_element(buf, buf_size, result);
     } 
