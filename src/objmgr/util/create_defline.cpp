@@ -1595,10 +1595,19 @@ CConstRef<CGene_ref> CDeflineGenerator::x_GetGeneRefViaCDS (
             m_Feat_Tree->AddGenesForCds (mapped_cds);
         }
 
-        CMappedFeat mapped_gene = GetBestGeneForCds (mapped_cds, m_Feat_Tree);
-        if (mapped_gene) {
-            const CSeq_feat& gene_feat = mapped_gene.GetOriginalFeature();
-            gene_ref = &gene_feat.GetData().GetGene();
+        try {
+            CMappedFeat mapped_gene = GetBestGeneForCds (mapped_cds, m_Feat_Tree);
+            if (mapped_gene) {
+                const CSeq_feat& gene_feat = mapped_gene.GetOriginalFeature();
+                gene_ref = &gene_feat.GetData().GetGene();
+            }
+        } catch ( const exception&  ) {
+            // ERR_POST(Error << "x_GetGeneRefViaCDS GetBestGeneForCds failure");
+        }
+
+        // clearing m_InitializedFeatTree may remove artifact after first protein is indexed and second protein is requested
+        if (m_ConstructedFeatTree) {
+            m_InitializedFeatTree = false;
         }
     }
 
