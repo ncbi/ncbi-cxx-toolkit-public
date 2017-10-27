@@ -35,6 +35,8 @@
 #include <common/ncbi_package_ver.h>
 #include <common/ncbi_source_ver.h>
 
+#include <utility>
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
@@ -505,10 +507,10 @@ CVersion::CVersion(const CVersion& version)
     }
 }
 
-CVersion& CVersion::operator=(const CVersion& version)
+CVersion& CVersion::operator=(CVersion version)
 {
-    CVersion tmp(version);
-    return *this = std::move(tmp);
+    swap(version, *this);
+    return *this;
 }
 
 void CVersion::SetVersionInfo( int  ver_major, int  ver_minor,

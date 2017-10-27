@@ -77,12 +77,6 @@ public:
     };
     CVersionInfo(EVersionFlags flags = kLatest);
 
-    CVersionInfo(const CVersionInfo&) = default;
-    CVersionInfo(CVersionInfo&&) = default;
-
-    CVersionInfo& operator=(const CVersionInfo&) = default;
-    CVersionInfo& operator=(CVersionInfo&&) = default;
-
     /// Destructor.
     virtual ~CVersionInfo() {}
 
@@ -242,10 +236,8 @@ public:
             const SBuildInfo& build_info = SBuildInfo());
 
     CVersion(const CVersion& version);
-    CVersion(CVersion&& version) = default;
 
-    CVersion& operator=(const CVersion& version);
-    CVersion& operator=(CVersion&& version) = default;
+    CVersion& operator=(CVersion version);
 
     /// Set version information
     void SetVersionInfo( int  ver_major,
