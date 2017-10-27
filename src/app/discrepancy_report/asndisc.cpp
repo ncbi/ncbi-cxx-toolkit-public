@@ -151,7 +151,8 @@ void CDiscRepApp::Init(void)
     arg_desc->AddFlag("XML", "Generate XML output");
     arg_desc->AddFlag("STDOUT", "Copy the output to STDOUT");
 
-    arg_desc->AddOptionalKey("P", "ReportType", "Report type: g - Genome, b - Big Sequence, m - MegaReport, t - Include FATAL Tag, s - FATAL Tag for Superuser", CArgDescriptions::eString);
+    //arg_desc->AddOptionalKey("P", "ReportType", "Report type: g - Genome, b - Big Sequence, m - MegaReport, t - Include FATAL Tag, s - FATAL Tag for Superuser", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("P", "ReportType", "Report type: q - SMART, b - Big Sequence, t - Include FATAL Tag, s - FATAL Tag for Superuser", CArgDescriptions::eString);
 
 /*
     arg_desc->AddOptionalKey("M", "MessageLevel", 
@@ -332,11 +333,13 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
         LOG_POST((string)"Processing file " + NStr::IntToString(count) + " of " + NStr::IntToString((int)m_Files.size()));
         CRef<CSerialObject> obj = x_ReadFile(*fname);
         Tests->SetFile(*fname);
+        Tests->Parse(*obj);
         if (m_AutoFix) {
             objects[*fname] = obj;
         }
-        //m_Scope.RemoveTopLevelSeqEntry(*obj);
-        Tests->Parse(*obj);
+        else {
+            m_Scope.ResetDataAndHistory();
+        }
     }
     Tests->Summarize();
     if (m_Macro) {
@@ -419,6 +422,33 @@ int CDiscRepApp::Run(void)
 {
     const CArgs& args = GetArgs();
 
+    //EGroup group = eNone;
+    char group = 0;
+
+    if (args["P"]) {
+        const string& s = args["P"].AsString();
+        for (size_t i = 0; i < s.length(); i++) {
+            if (s[i] == 't') {
+                m_Fat = true;
+            }
+            else if (s[i] == 's') {
+                m_Ext = true;
+                m_Fat = true;
+            }
+            else if (s[i] == 'q' || s[i] == 'b' ) {
+                if (group && group != s[i]) {
+                    ERR_POST(string("-P options are not compatible: ") + group + " and " + s[i]);
+                    return 1;
+                }
+                group = s[i];
+            }
+            else {
+                ERR_POST(string("Unrecognized character in -P argument: ") + s[i]);
+                return 1;
+            }
+        }
+    }
+
     // constructing the test list
     set<string> Tests;
     if (args["e"]) {
@@ -433,8 +463,16 @@ int CDiscRepApp::Run(void)
                 Tests.insert(name);
             }
         }
+        LOG_POST(string("Option ignored: -P ") + group);
     } else {
-        vector<string> AllTests = GetDiscrepancyNames();
+        vector<string> AllTests;
+        switch (group) {
+            case 'q':
+                AllTests = GetDiscrepancyNames(eSmart);
+                break;
+            default:
+                AllTests = GetDiscrepancyNames();
+        }
         copy(AllTests.begin(), AllTests.end(), inserter(Tests, Tests.begin()));
     }
     if (args["d"]) {
@@ -486,22 +524,6 @@ int CDiscRepApp::Run(void)
     if (args["XML"]) m_Xml = args["XML"].AsBoolean();
     if (args["STDOUT"]) m_Print = args["STDOUT"].AsBoolean();
 
-    if (args["P"]) {
-        const string& s = args["P"].AsString();
-        for (size_t i = 0; i < s.length(); i++) {
-            if (s[i] == 't') {
-                m_Fat = true;
-            }
-            else if (s[i] == 's') {
-                m_Ext = true;
-                m_Fat = true;
-            }
-            else {
-                ERR_POST(string("Unrecognized character in -P argument: ") + s[i]);
-                return 1;
-            }
-        }
-    }
 
 
     // run tests
