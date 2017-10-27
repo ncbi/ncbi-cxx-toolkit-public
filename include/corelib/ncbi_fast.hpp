@@ -344,7 +344,7 @@ void NCBI_XNCBI_EXPORT x_no_ncbi_sse_max_4element(const unsigned int* src, size_
 inline
 void Zero_memory(char* dest, size_t count) {
 #if !defined(NCBI_COMPILER_MSVC) && defined(NCBI_HAVE_FAST_OPS)
-    if (count%16 == 0 && intptr_t(dest)%16 == 0) {
+    if (count%16 == 0 && uintptr_t(dest)%16 == 0) {
         fill_n_zeros_aligned16(dest,count);
     } else {
         x_no_ncbi_sse_fill_n_zeros(dest, count);
@@ -356,7 +356,7 @@ void Zero_memory(char* dest, size_t count) {
 inline
 void Zero_memory(int* dest, size_t count) {
 #if !defined(NCBI_COMPILER_MSVC) && defined(NCBI_HAVE_FAST_OPS)
-    if (count%16 == 0 && intptr_t(dest)%16 == 0) {
+    if (count%16 == 0 && uintptr_t(dest)%16 == 0) {
         fill_n_zeros_aligned16(dest,count);
     } else {
         x_no_ncbi_sse_fill_n_zeros(dest, count);
@@ -374,7 +374,7 @@ void Zero_memory(unsigned int* dest, size_t count) {
 inline
 void Copy_memory(const int* src, size_t count, int* dest) {
 #if !defined(NCBI_COMPILER_MSVC) && defined(NCBI_HAVE_FAST_OPS)
-    if (count%16 == 0 && intptr_t(dest)%16 == 0 && intptr_t(src)%16 == 0) {
+    if (count%16 == 0 && uintptr_t(dest)%16 == 0 && uintptr_t(src)%16 == 0) {
         copy_n_aligned16(src, count, dest);
     } else {
         x_no_ncbi_sse_copy_mem(dest, src, count);
@@ -395,7 +395,7 @@ void Copy_memory(const unsigned int* src, size_t count, unsigned int* dest) {
 inline
 void Convert_memory(const char* src, size_t count, int* dest) {
 #if defined(NCBI_HAVE_FAST_OPS)
-    if (count%16 == 0 && intptr_t(dest)%16 == 0 && intptr_t(src)%16 == 0) {
+    if (count%16 == 0 && uintptr_t(dest)%16 == 0 && uintptr_t(src)%16 == 0) {
         copy_n_bytes_aligned16(src, count, dest);
     } else {
         x_no_ncbi_sse_convert_memory(dest, src, count);
@@ -407,7 +407,7 @@ void Convert_memory(const char* src, size_t count, int* dest) {
 inline
 void Convert_memory(const int* src, size_t count, char* dest) {
 #if defined(NCBI_HAVE_FAST_OPS)
-    if (count%16 == 0 && intptr_t(dest)%16 == 0 && intptr_t(src)%16 == 0) {
+    if (count%16 == 0 && uintptr_t(dest)%16 == 0 && uintptr_t(src)%16 == 0) {
         copy_n_aligned16(src, count, dest);
     } else {
         x_no_ncbi_sse_convert_memory(dest, src, count);
@@ -424,8 +424,8 @@ void Convert_memory(const unsigned int* src, size_t count, char* dest) {
 inline
 void Split_into4(const int* src, size_t count, int*  dest0, int*  dest1, int*  dest2, int*  dest3) {
 #if defined(NCBI_HAVE_FAST_OPS)
-    if (count%16 == 0 && intptr_t(src)%16 == 0 &&
-        intptr_t(dest0)%16 == 0 && intptr_t(dest1)%16 == 0 && intptr_t(dest2)%16 == 0 && intptr_t(dest3)%16 == 0) {
+    if (count%16 == 0 && uintptr_t(src)%16 == 0 &&
+        uintptr_t(dest0)%16 == 0 && uintptr_t(dest1)%16 == 0 && uintptr_t(dest2)%16 == 0 && uintptr_t(dest3)%16 == 0) {
         copy_4n_split_aligned16(src, count, dest0, dest1, dest2, dest3);
     } else {
         x_no_ncbi_sse_split_into4(src, count, dest0, dest1, dest2, dest3);
@@ -437,8 +437,8 @@ void Split_into4(const int* src, size_t count, int*  dest0, int*  dest1, int*  d
 inline
 void Split_into4(const int* src, size_t count, char* dest0, char* dest1, char* dest2, char* dest3) {
 #if defined(NCBI_HAVE_FAST_OPS)
-    if (count%16 == 0 && intptr_t(src)%16 == 0 &&
-        intptr_t(dest0)%16 == 0 && intptr_t(dest1)%16 == 0 && intptr_t(dest2)%16 == 0 && intptr_t(dest3)%16 == 0) {
+    if (count%16 == 0 && uintptr_t(src)%16 == 0 &&
+        uintptr_t(dest0)%16 == 0 && uintptr_t(dest1)%16 == 0 && uintptr_t(dest2)%16 == 0 && uintptr_t(dest3)%16 == 0) {
         copy_4n_split_aligned16(src, count, dest0, dest1, dest2, dest3);
     } else {
         x_no_ncbi_sse_split_into4(src, count, dest0, dest1, dest2, dest3);
@@ -468,7 +468,7 @@ void Split_into4(const unsigned int* src, size_t count,
 inline
 unsigned int Max_element(const unsigned int* src, size_t count) {
 #if defined(NCBI_HAVE_FAST_OPS)
-    if (count%16 == 0 && intptr_t(src)%16 == 0) {
+    if (count%16 == 0 && uintptr_t(src)%16 == 0) {
         return max_element_n_aligned16(src,count);
     } else {
         return x_no_ncbi_sse_max_element(src, count, 0);
@@ -480,7 +480,7 @@ unsigned int Max_element(const unsigned int* src, size_t count) {
 inline
 void Max_element(const unsigned int* src, size_t count, unsigned int& dest) {
 #if defined(NCBI_HAVE_FAST_OPS)
-    if (count%16 == 0 && intptr_t(src)%16 == 0) {
+    if (count%16 == 0 && uintptr_t(src)%16 == 0) {
         max_element_n_aligned16(src, count, dest);
     } else {
         dest = x_no_ncbi_sse_max_element(src, count, dest);
@@ -492,7 +492,7 @@ void Max_element(const unsigned int* src, size_t count, unsigned int& dest) {
 inline
 void Max_4element(const unsigned int* src, size_t count, unsigned int dest[4]) {
 #if defined(NCBI_HAVE_FAST_OPS)
-    if (count%16 == 0 && intptr_t(src)%16 == 0) {
+    if (count%16 == 0 && uintptr_t(src)%16 == 0) {
         max_4elements_n_aligned16(src, count, dest);
     } else {
         x_no_ncbi_sse_max_4element(src, count, dest);

@@ -43,7 +43,7 @@ BEGIN_NAMESPACE(NFast);
 void fill_n_zeros_aligned16(char* dst, size_t count)
 {
     _ASSERT(count%16 == 0);
-    _ASSERT(intptr_t(dst)%16 == 0);
+    _ASSERT(uintptr_t(dst)%16 == 0);
     __m128i zero = _mm_setzero_si128();
     for ( auto dst_end = dst+count; dst < dst_end; dst += 16 ) {
         _mm_store_si128((__m128i*)dst, zero);
@@ -54,7 +54,7 @@ void fill_n_zeros_aligned16(int* dst, size_t count)
 {
 #if 1
     _ASSERT(count%16 == 0);
-    _ASSERT(intptr_t(dst)%16 == 0);
+    _ASSERT(uintptr_t(dst)%16 == 0);
     __m128i zero = _mm_setzero_si128();
     for ( auto dst_end = dst+count; dst < dst_end; dst += 16 ) {
         _mm_store_si128((__m128i*)dst+0, zero);
@@ -64,7 +64,7 @@ void fill_n_zeros_aligned16(int* dst, size_t count)
     }
 #else
     _ASSERT(count%4 == 0);
-    _ASSERT(intptr_t(dst)%16 == 0);
+    _ASSERT(uintptr_t(dst)%16 == 0);
     __m128i zero = _mm_setzero_si128();
     for ( auto dst_end = dst+count; dst < dst_end; dst += 4 ) {
         _mm_store_si128((__m128i*)dst, zero);
@@ -87,8 +87,8 @@ void fill_n_zeros(int* dst, size_t count)
 void copy_n_aligned16(const char* src, size_t count, char* dst)
 {
     _ASSERT(count%16 == 0);
-    _ASSERT(intptr_t(src)%16 == 0);
-    _ASSERT(intptr_t(dst)%16 == 0);
+    _ASSERT(uintptr_t(src)%16 == 0);
+    _ASSERT(uintptr_t(dst)%16 == 0);
     for ( auto src_end = src+count; src < src_end; dst += 16, src += 16 ) {
         _mm_store_si128((__m128i*)dst, *(__m128i*)src);
     }
@@ -99,8 +99,8 @@ void copy_n_aligned16(const int* src, size_t count, int* dst)
 {
 #if 1
     _ASSERT(count%16 == 0);
-    _ASSERT(intptr_t(src)%16 == 0);
-    _ASSERT(intptr_t(dst)%16 == 0);
+    _ASSERT(uintptr_t(src)%16 == 0);
+    _ASSERT(uintptr_t(dst)%16 == 0);
     for ( auto src_end = src+count; src < src_end; dst += 16, src += 16 ) {
         __m128i ww0 = _mm_load_si128((const __m128i*)src+0);
         __m128i ww1 = _mm_load_si128((const __m128i*)src+1);
@@ -113,15 +113,15 @@ void copy_n_aligned16(const int* src, size_t count, int* dst)
     }
 #elif 0
     _ASSERT(count%4 == 0);
-    _ASSERT(intptr_t(src)%16 == 0);
-    _ASSERT(intptr_t(dst)%16 == 0);
+    _ASSERT(uintptr_t(src)%16 == 0);
+    _ASSERT(uintptr_t(dst)%16 == 0);
     for ( auto src_end = src+count; src < src_end; dst += 4, src += 4 ) {
         _mm_store_si128((__m128i*)dst, *(__m128i*)src);
     }
 #else
     _ASSERT(count%4 == 0);
-    _ASSERT(intptr_t(src)%16 == 0);
-    _ASSERT(intptr_t(dst)%16 == 0);
+    _ASSERT(uintptr_t(src)%16 == 0);
+    _ASSERT(uintptr_t(dst)%16 == 0);
     for ( auto src_end = src+count; src < src_end; dst += 4, src += 4 ) {
         __m128i ww0 = _mm_load_si128((const __m128i*)src);
         _mm_store_si128((__m128i*)dst, ww0);
@@ -137,8 +137,8 @@ void copy_n_bytes_aligned16(const char* src, size_t count, int* dst)
 {
 #if 1
     _ASSERT(count%16 == 0);
-    _ASSERT(intptr_t(src)%16 == 0);
-    _ASSERT(intptr_t(dst)%16 == 0);
+    _ASSERT(uintptr_t(src)%16 == 0);
+    _ASSERT(uintptr_t(dst)%16 == 0);
     __m128i mask = _mm_set_epi8(-128, -128, -128, 3,
                                 -128, -128, -128, 2,
                                 -128, -128, -128, 1,
@@ -159,8 +159,8 @@ void copy_n_bytes_aligned16(const char* src, size_t count, int* dst)
     }
 #else
     _ASSERT(count%4 == 0);
-    _ASSERT(intptr_t(src)%16 == 0);
-    _ASSERT(intptr_t(dst)%16 == 0);
+    _ASSERT(uintptr_t(src)%16 == 0);
+    _ASSERT(uintptr_t(dst)%16 == 0);
     __m128i mask = _mm_set_epi8(-128, -128, -128, 3,
                                 -128, -128, -128, 2,
                                 -128, -128, -128, 1,
@@ -177,8 +177,8 @@ void copy_n_bytes_aligned16(const char* src, size_t count, int* dst)
 void copy_n_aligned16(const int* src, size_t count, char* dst)
 {
     _ASSERT(count%16 == 0);
-    _ASSERT(intptr_t(src)%16 == 0);
-    _ASSERT(intptr_t(dst)%16 == 0);
+    _ASSERT(uintptr_t(src)%16 == 0);
+    _ASSERT(uintptr_t(dst)%16 == 0);
     __m128i mask = _mm_set_epi8(-128, -128, -128, -128,
                                 -128, -128, -128, -128,
                                 -128, -128, -128, -128,
@@ -205,11 +205,11 @@ void copy_4n_split_aligned16(const int* src, size_t count,
                              char* dst0, char* dst1, char* dst2, char* dst3)
 {
     _ASSERT(count%16 == 0);
-    _ASSERT(intptr_t(src)%16 == 0);
-    _ASSERT(intptr_t(dst0)%16 == 0);
-    _ASSERT(intptr_t(dst1)%16 == 0);
-    _ASSERT(intptr_t(dst2)%16 == 0);
-    _ASSERT(intptr_t(dst3)%16 == 0);
+    _ASSERT(uintptr_t(src)%16 == 0);
+    _ASSERT(uintptr_t(dst0)%16 == 0);
+    _ASSERT(uintptr_t(dst1)%16 == 0);
+    _ASSERT(uintptr_t(dst2)%16 == 0);
+    _ASSERT(uintptr_t(dst3)%16 == 0);
     for ( auto src_end = src+count*4; src < src_end;
           src += 64, dst0 += 16, dst1 += 16, dst2 += 16, dst3 += 16 ) {
         __m128i ww0, ww1, ww2, ww3;
@@ -275,11 +275,11 @@ void copy_4n_split_aligned16(const int* src, size_t count,
                              int* dst0, int* dst1, int* dst2, int* dst3)
 {
     _ASSERT(count%16 == 0);
-    _ASSERT(intptr_t(src)%16 == 0);
-    _ASSERT(intptr_t(dst0)%16 == 0);
-    _ASSERT(intptr_t(dst1)%16 == 0);
-    _ASSERT(intptr_t(dst2)%16 == 0);
-    _ASSERT(intptr_t(dst3)%16 == 0);
+    _ASSERT(uintptr_t(src)%16 == 0);
+    _ASSERT(uintptr_t(dst0)%16 == 0);
+    _ASSERT(uintptr_t(dst1)%16 == 0);
+    _ASSERT(uintptr_t(dst2)%16 == 0);
+    _ASSERT(uintptr_t(dst3)%16 == 0);
     for ( auto src_end = src+count*4; src < src_end;
           src += 16, dst0 += 4, dst1 += 4, dst2 += 4, dst3 += 4 ) {
         __m128i ww0 = _mm_load_si128((const __m128i*)src+0);
@@ -310,7 +310,7 @@ void copy_4n_split_aligned16(const int* src, size_t count,
 /*
 void copy_n(const int* src, size_t count, char* dst)
 {
-    for ( ; count && (intptr_t(dst)%4); ++dst, --count, ++src ) {
+    for ( ; count && (uintptr_t(dst)%4); ++dst, --count, ++src ) {
         *dst = *src;
     }
     __m128i mask = _mm_set_epi8(128, 128, 128, 128,
@@ -330,7 +330,7 @@ void copy_n(const int* src, size_t count, char* dst)
 
 void copy_n(const int* src, size_t count, int* dst)
 {
-    for ( ; count && (intptr_t(dst)%16); ++dst, --count, ++src ) {
+    for ( ; count && (uintptr_t(dst)%16); ++dst, --count, ++src ) {
         *dst = *src;
     }
     __m128i mask = _mm_set_epi8(128, 128, 128, 128,
@@ -351,7 +351,7 @@ void copy_n(const int* src, size_t count, int* dst)
 unsigned max_element_n_aligned16(const unsigned* src, size_t count)
 {
     _ASSERT(count%16 == 0);
-    _ASSERT(intptr_t(src)%16 == 0);
+    _ASSERT(uintptr_t(src)%16 == 0);
     __m128i max4 = _mm_setzero_si128();
     for ( auto src_end = src+count; src < src_end; src += 16 ) {
         __m128i ww0 = _mm_load_si128((const __m128i*)src+0);
@@ -372,7 +372,7 @@ unsigned max_element_n_aligned16(const unsigned* src, size_t count)
 void max_element_n_aligned16(const unsigned* src, size_t count, unsigned& dst)
 {
     _ASSERT(count%16 == 0);
-    _ASSERT(intptr_t(src)%16 == 0);
+    _ASSERT(uintptr_t(src)%16 == 0);
     __m128i max4 = _mm_set1_epi32(dst);
     for ( auto src_end = src+count; src < src_end; src += 16 ) {
         __m128i ww0 = _mm_load_si128((const __m128i*)src+0);
@@ -393,7 +393,7 @@ void max_element_n_aligned16(const unsigned* src, size_t count, unsigned& dst)
 void max_4elements_n_aligned16(const unsigned* src, size_t count, unsigned dst[4])
 {
     _ASSERT(count%16 == 0);
-    _ASSERT(intptr_t(src)%16 == 0);
+    _ASSERT(uintptr_t(src)%16 == 0);
     __m128i max4 = _mm_loadu_si128((__m128i*)dst);
     for ( auto src_end = src+count*4; src < src_end; src += 16 ) {
         __m128i ww0 = _mm_load_si128((const __m128i*)src+0);
