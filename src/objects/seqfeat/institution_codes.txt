@@ -1212,6 +1212,7 @@ CNU<CHN>	s	Capital Normal University, College of Life Sciences
 CNU<KOR-TJ>	s	Chungnam National University		
 CNU<KOR>	s	Chonbuk National University		
 CNUK	h	Chungnam National University		
+CNUMH	s	Chungnam National University, Mycological Herbarium		
 CNWGRGL	b	Chinese National Waterfowl Germplasm Resources Gene Library		
 CO	s	Museum National d'Histoire Naturelle, Department of Marine Biology		
 COA	s	Herbario, Universidad de Cordoba - Jardin Botanico de Cordoba		
@@ -6932,7 +6933,7 @@ UQTR	s	Universite du Quebec a Trois-Rivieres, Departement de chimie-biologie
 URB	s	Ryukyu University Department of Zoology		
 URIC	s	University of Rhode Island		
 URIMC	s	University of Rhode Island, Mammal Collection		
-URM<BRA>	c	Universidade Federal de Pernambuco		
+URM<BRA>	sc	Universidade Federal de Pernambuco		
 URM<JPN>	s	University of the Ryukyus		
 URMU	s	Museo Nacional de Historia Natural, Montevideo		
 URO	s	University of the Ryukyus		
