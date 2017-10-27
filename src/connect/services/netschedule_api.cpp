@@ -459,6 +459,32 @@ string SNetScheduleAPIImpl::MakeAuthString()
 {
     string auth(m_Service->MakeAuthString());
 
+    const CVersion* version = nullptr;
+    string name;
+
+    {{
+        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+
+        if (CNcbiApplication* app = CNcbiApplication::Instance()) {
+            version = &app->GetFullVersion();
+            name = app->GetProgramDisplayName();
+        }
+    }}
+
+    if (version && m_ProgramVersion.empty()) {
+        m_ProgramVersion += name;
+        auto package_name = version->GetPackageName();
+
+        if (!package_name.empty()) {
+            m_ProgramVersion += ": ";
+            m_ProgramVersion += package_name;
+            m_ProgramVersion += ' ';
+            m_ProgramVersion += version->GetPackageVersion().Print();
+            m_ProgramVersion += " built on ";
+            m_ProgramVersion += version->GetBuildInfo().date;
+        }
+    }
+
     if (!m_ProgramVersion.empty()) {
         auth += " prog=\"";
         auth += m_ProgramVersion;
@@ -497,15 +523,11 @@ string SNetScheduleAPIImpl::MakeAuthString()
         auth += '\"';
     }
 
-    {{
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* app = CNcbiApplication::Instance();
-        if (app != NULL) {
-            auth += " client_version=\"";
-            auth += app->GetFullVersion().GetVersionInfo().Print();
-            auth += '\"';
-        }
-    }}
+    if (version) {
+        auth += " client_version=\"";
+        auth += version->GetVersionInfo().Print();
+        auth += '\"';
+    }
 
     ITERATE(SNetScheduleAPIImpl::TAuthParams, it, m_AuthParams) {
         auth += it->second;

@@ -330,7 +330,7 @@ public:
 
     virtual string GetJobVersion() const
     {
-        return GRID_APP_VERSION_INFO;
+        return m_WorkerNodeInitContext->GetNetScheduleAPI().GetProgramVersion();
     }
     virtual string GetAppName() const
     {

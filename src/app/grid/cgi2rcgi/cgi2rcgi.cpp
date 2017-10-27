@@ -384,10 +384,6 @@ void CCgi2RCgiApp::Init()
         m_FirstDelay = 0;
 
     m_NetScheduleAPI = CNetScheduleAPI(config);
-    // Program version is passed to NetSchedule so that it
-    // does not allow obsolete clients to submit or execute jobs.
-    m_NetScheduleAPI.SetProgramVersion(GRID_APP_VERSION_INFO);
-
     m_NetCacheAPI = CNetCacheAPI(config, kEmptyStr, m_NetScheduleAPI);
 
     m_GridClient.reset(new CGridClient(
