@@ -71,15 +71,19 @@ template <class TBase>
 class CVersionReporting : public TBase
 {
 public:
-    CVersionReporting()
+    template<typename... Args>
+    CVersionReporting(Args&&... args) : TBase(std::forward<Args>(args)...)
     {
         auto& version = this->GetFullVersion();
         auto package_version =  version.GetPackageVersion();
         this->SetVersion(package_version);
     }
 };
-
 }
+
+template <class TBase>
+using CVersionReporting = cgi::CVersionReporting<TBase>;
+
 }
 }
 

@@ -137,7 +137,7 @@ int Main(int argc, const char* argv[])
     auto_ptr<TFactory> factory(new TFactory);
     auto_ptr<TListener> listener(factory->CreateListener());
     const string app_name(factory->GetAppName());
-    CGridWorkerApp app(factory.release());
+    grid::CVersionReporting<CGridWorkerApp> app(factory.release());
     app.SetListener(listener.release());
     return app.AppMain(argc, argv, NULL, eDS_ToStdlog, NcbiEmptyCStr, app_name);
 }
