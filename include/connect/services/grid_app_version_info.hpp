@@ -65,7 +65,6 @@
 
 namespace ncbi {
 namespace grid {
-namespace cgi {
 
 template <class TBase>
 class CVersionReporting : public TBase
@@ -79,10 +78,6 @@ public:
         this->SetVersion(package_version);
     }
 };
-}
-
-template <class TBase>
-using CVersionReporting = cgi::CVersionReporting<TBase>;
 
 }
 }
