@@ -709,16 +709,11 @@ CRef<CSeq_graph> CCSraRefSeqIterator::GetCoverageGraph(void) const
     CByte_graph::TValues& values = b_graph.SetValues();
     values.resize(size);
     CRef<CCSraDb_Impl::SRefTableCursor> ref(GetDb().Ref());
-    typedef CByte_graph::TValues::value_type TValue;
-    TValue min_q = numeric_limits<TValue>::max();
-    TValue max_q = 0;
+    Uint1 max_q = 0;
     for ( size_t i = 0; i < size; ++i ) {
         TVDBRowId row = info.m_RowFirst+i;
-        TValue q = *ref->CGRAPH_HIGH(row);
+        Uint1 q = *ref->CGRAPH_HIGH(row);
         values[i] = q;
-        if ( q < min_q ) {
-            min_q = q;
-        }
         if ( q > max_q ) {
             max_q = q;
         }
@@ -727,7 +722,7 @@ CRef<CSeq_graph> CCSraRefSeqIterator::GetCoverageGraph(void) const
             loc_int.SetTo((size-1)*row_size+len);
         }
     }
-    b_graph.SetMin(min_q);
+    b_graph.SetMin(0);
     b_graph.SetMax(max_q);
     GetDb().Put(ref);
     return graph;
