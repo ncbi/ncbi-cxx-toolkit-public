@@ -586,7 +586,21 @@ void CConnection::x_SendXactAbort(void)
         cmd->Send();
 
         while (cmd->HasMoreResults()) {
-            unique_ptr<CDB_Result>  result(cmd->Result());
+            unique_ptr<CDB_Result>  result;
+            try {
+                // Note: in case of connecting to PSOS cmd->HasFailed() returns
+                // false however cmd->Result() generates an exception. The way
+                // to identify an error in the command execution without an
+                // exception was NOT found so here are try-catch blocks.
+                // The error code was picked as the one used in PSOS scenario
+                // at lang_cmd.cpp:698 (DATABASE_DRIVER_WARNING macro).
+                result.reset(cmd->Result());
+            } catch (const CDB_ClientEx &  ex) {
+                if (ex.GetDBErrCode() == 120016)
+                    return;
+                throw;
+            }
+
             if (!result.get())
                 continue;
 
