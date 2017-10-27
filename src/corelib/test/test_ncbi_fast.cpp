@@ -142,15 +142,19 @@ BOOST_AUTO_TEST_CASE(TestFillZerosChar)
     cout << "SSETEST_COUNT = " << SSETEST_COUNT << endl;
     cout << "sizeof(char) = " << sizeof(char) << endl;
     cout << "sizeof(int) = "  << sizeof(int) << endl;
+    cout << "sizeof(void*) = "  << sizeof(void*) << endl;
 
 
-    cout << endl << "TestFillZerosChar" << endl;
     const size_t buf_size = 4 * SSETEST_BUFSIZE;
     const size_t test_count = SSETEST_COUNT;
     char* buf = (char*)malloc(buf_size * sizeof(char));
     Uint8 start, finish;
 
+    bool aligned = buf_size%16 == 0 && uintptr_t(buf)%16 == 0;
+    cout << endl << "TestFillZerosChar  aligned " << (aligned ? "ok" : "wrong")
+         << endl;
 #ifdef NCBI_HAVE_FAST_OPS
+    if ( aligned ) {
     s_set_non_zero(buf, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
@@ -160,6 +164,7 @@ BOOST_AUTO_TEST_CASE(TestFillZerosChar)
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::fill_n_zeros_aligned16(char)" << endl;
     s_check_zero(buf, buf_size);
+    }
 
     s_set_non_zero(buf, buf_size);
     start = QUERY_PERF_COUNTER();
@@ -189,9 +194,7 @@ BOOST_AUTO_TEST_CASE(TestFillZerosChar)
         NFast::Zero_memory(buf,buf_size);
     }
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Zero_memory(char)"
-         << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0) ? "ok" : "wrong")
-         << endl;
+    cout << (finish - start) << " - NFast::Zero_memory(char)" << endl;
     s_check_zero(buf, buf_size);
 
     free(buf);
@@ -201,13 +204,16 @@ BOOST_AUTO_TEST_CASE(TestFillZerosChar)
 #if 1
 BOOST_AUTO_TEST_CASE(TestFillZerosInt)
 {
-    cout << endl << "TestFillZerosInt" << endl;
     const size_t buf_size = SSETEST_BUFSIZE;
     const size_t test_count = SSETEST_COUNT;
     int* buf = (int*)malloc(buf_size * sizeof(int));
     Uint8 start, finish;
 
+    bool aligned = buf_size%16 == 0 && uintptr_t(buf)%16 == 0;
+    cout << endl << "TestFillZerosInt  aligned " << (aligned ? "ok" : "wrong")
+         << endl;
 #ifdef NCBI_HAVE_FAST_OPS
+    if ( aligned ) {
     s_set_non_zero(buf, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
@@ -217,6 +223,7 @@ BOOST_AUTO_TEST_CASE(TestFillZerosInt)
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::fill_n_zeros_aligned16(int)" << endl;
     s_check_zero(buf, buf_size);
+    }
 
     s_set_non_zero(buf, buf_size);
     start = QUERY_PERF_COUNTER();
@@ -246,9 +253,7 @@ BOOST_AUTO_TEST_CASE(TestFillZerosInt)
         NFast::Zero_memory(buf,buf_size);
     }
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Zero_memory(int)"
-         << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0) ? "ok" : "wrong")
-         << endl;
+    cout << (finish - start) << " - NFast::Zero_memory(int)" << endl;
     s_check_zero(buf, buf_size);
 
     free(buf);
@@ -258,7 +263,6 @@ BOOST_AUTO_TEST_CASE(TestFillZerosInt)
 #if 1
 BOOST_AUTO_TEST_CASE(TestCopyInt)
 {
-    cout << endl << "TestCopyInt" << endl;
     const size_t buf_size = SSETEST_BUFSIZE;
     const size_t test_count = SSETEST_COUNT;
     int* buf = (int*)malloc(buf_size * sizeof(int));
@@ -268,7 +272,11 @@ BOOST_AUTO_TEST_CASE(TestCopyInt)
         buf[i] = i & 0xFF;
     }
 
+    bool aligned = buf_size%16 == 0 && uintptr_t(buf)%16 == 0 && uintptr_t(dst)%16 == 0;
+    cout << endl << "TestCopyInt  aligned " << (aligned ? "ok" : "wrong")
+         << endl;
 #ifdef NCBI_HAVE_FAST_OPS
+    if ( aligned ) {
     s_set_non_zero(dst, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
@@ -278,6 +286,7 @@ BOOST_AUTO_TEST_CASE(TestCopyInt)
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::copy_n_aligned16(int) "  << endl;
     s_check_equal(buf, buf_size, dst);
+    }
 #endif
 
     s_set_non_zero(dst, buf_size);
@@ -297,9 +306,7 @@ BOOST_AUTO_TEST_CASE(TestCopyInt)
         NFast::Copy_memory(buf, buf_size, dst);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Copy_memory(int)"
-         << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0 && intptr_t(dst)%16 == 0) ? "ok" : "wrong")
-         << endl;
+    cout << (finish - start) << " - NFast::Copy_memory(int)" << endl;
     s_check_equal(buf, buf_size, dst);
 
     free(buf);
@@ -310,7 +317,6 @@ BOOST_AUTO_TEST_CASE(TestCopyInt)
 #if 1
 BOOST_AUTO_TEST_CASE(TestConvertCharInt)
 {
-    cout << endl << "TestConvertCharInt" << endl;
     const size_t buf_size = SSETEST_BUFSIZE;
     const size_t test_count = SSETEST_COUNT;
     char* buf = (char*)malloc(buf_size * sizeof(char));
@@ -320,7 +326,11 @@ BOOST_AUTO_TEST_CASE(TestConvertCharInt)
         buf[i] = i & 0xFF;
     }
 
+    bool aligned = buf_size%16 == 0 && uintptr_t(buf)%16 == 0 && uintptr_t(dst)%16 == 0;
+    cout << endl << "TestConvertCharInt  aligned " << (aligned ? "ok" : "wrong")
+         << endl;
 #ifdef NCBI_HAVE_FAST_OPS
+    if ( aligned ) {
     s_set_non_zero(dst, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
@@ -330,6 +340,7 @@ BOOST_AUTO_TEST_CASE(TestConvertCharInt)
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::copy_n_bytes_aligned16(char -> int) "  << endl;
     s_check_equal(buf, buf_size, dst);
+    }
 #endif
 
     s_set_non_zero(dst, buf_size);
@@ -349,9 +360,7 @@ BOOST_AUTO_TEST_CASE(TestConvertCharInt)
         NFast::Convert_memory(buf, buf_size, dst);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Convert_memory(char -> int)"
-         << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0 && intptr_t(dst)%16 == 0) ? "ok" : "wrong")
-         << endl;
+    cout << (finish - start) << " - NFast::Convert_memory(char -> int)" << endl;
     s_check_equal(buf, buf_size, dst);
 
     free(buf);
@@ -362,7 +371,6 @@ BOOST_AUTO_TEST_CASE(TestConvertCharInt)
 #if 1
 BOOST_AUTO_TEST_CASE(TestConvertIntChar)
 {
-    cout << endl << "TestConvertIntChar" << endl;
     const size_t buf_size = SSETEST_BUFSIZE;
     const size_t test_count = SSETEST_COUNT;
     int*  buf = (int* )malloc(buf_size * sizeof(int));
@@ -372,7 +380,11 @@ BOOST_AUTO_TEST_CASE(TestConvertIntChar)
         buf[i] = i & 0xFF;
     }
 
+    bool aligned = buf_size%16 == 0 && uintptr_t(buf)%16 == 0 && uintptr_t(dst)%16 == 0;
+    cout << endl << "TestConvertIntChar  aligned " << (aligned ? "ok" : "wrong")
+         << endl;
 #ifdef NCBI_HAVE_FAST_OPS
+    if ( aligned ) {
     s_set_non_zero(dst, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
@@ -382,6 +394,7 @@ BOOST_AUTO_TEST_CASE(TestConvertIntChar)
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::copy_n_aligned16(int -> char) "  << endl;
     s_check_equal(buf, buf_size, dst);
+    }
 #endif
 
     s_set_non_zero(dst, buf_size);
@@ -401,9 +414,7 @@ BOOST_AUTO_TEST_CASE(TestConvertIntChar)
         NFast::Convert_memory(buf, buf_size, dst);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Convert_memory(int -> char)"
-         << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0 && intptr_t(dst)%16 == 0) ? "ok" : "wrong")
-         << endl;
+    cout << (finish - start) << " - NFast::Convert_memory(int -> char)" << endl;
     s_check_equal(buf, buf_size, dst);
 
     free(buf);
@@ -440,7 +451,6 @@ void s_check_split_dst(size_t buf_size, const V* dst0, const V* dst1, const V* d
 #if 1
 BOOST_AUTO_TEST_CASE(TestSplitIntInt)
 {
-    cout << endl << "TestSplitIntInt" << endl;
     const size_t buf_size = SSETEST_BUFSIZE;
     const size_t test_count = SSETEST_COUNT;
     int*  buf = (int* )malloc(buf_size * sizeof(int));
@@ -452,7 +462,13 @@ BOOST_AUTO_TEST_CASE(TestSplitIntInt)
 
     s_set_split_buf(buf, buf_size);
 
+    bool aligned = buf_size%16 == 0 && uintptr_t(buf)%16 == 0 &&
+        uintptr_t(dst0)%16 == 0 && uintptr_t(dst1)%16 == 0 &&
+        uintptr_t(dst2)%16 == 0 && uintptr_t(dst3)%16 == 0;
+    cout << endl << "TestSplitIntInt  aligned " << (aligned ? "ok" : "wrong")
+         << endl;
 #ifdef NCBI_HAVE_FAST_OPS
+    if ( aligned ) {
     s_clear_split_dst(buf_size, dst0, dst1, dst2, dst3);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
@@ -461,6 +477,7 @@ BOOST_AUTO_TEST_CASE(TestSplitIntInt)
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::copy_4n_split_aligned16(int -> int)"  << endl;
     s_check_split_dst(buf_size, dst0, dst1, dst2, dst3);
+    }
 #endif
 
     s_clear_split_dst(buf_size, dst0, dst1, dst2, dst3);
@@ -478,10 +495,7 @@ BOOST_AUTO_TEST_CASE(TestSplitIntInt)
         NFast::Split_into4(buf, buf_size/4, dst0, dst1, dst2, dst3);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Split_into4(int -> int)"
-         << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0 &&
-            intptr_t(dst0)%16 == 0 && intptr_t(dst1)%16 == 0 && intptr_t(dst2)%16 == 0 && intptr_t(dst3)%16 == 0) ? "ok" : "wrong")
-         << endl;
+    cout << (finish - start) << " - NFast::Split_into4(int -> int)" << endl;
     s_check_split_dst(buf_size, dst0, dst1, dst2, dst3);
 
     free(buf);
@@ -495,7 +509,6 @@ BOOST_AUTO_TEST_CASE(TestSplitIntInt)
 #if 1
 BOOST_AUTO_TEST_CASE(TestSplitIntChar)
 {
-    cout << endl << "TestSplitIntChar" << endl;
     const size_t buf_size = SSETEST_BUFSIZE;
     const size_t test_count = SSETEST_COUNT;
     int*  buf  = (int* )malloc(buf_size * sizeof(int));
@@ -507,7 +520,14 @@ BOOST_AUTO_TEST_CASE(TestSplitIntChar)
 
     s_set_split_buf(buf, buf_size);
 
+    bool aligned = buf_size%16 == 0 && uintptr_t(buf)%16 == 0 &&
+        uintptr_t(dst0)%16 == 0 && uintptr_t(dst1)%16 == 0 &&
+        uintptr_t(dst2)%16 == 0 && uintptr_t(dst3)%16 == 0;
+    cout << endl << "TestSplitIntChar  aligned " << (aligned ? "ok" : "wrong")
+         << endl;
+    
 #ifdef NCBI_HAVE_FAST_OPS
+    if ( aligned ) {
     s_clear_split_dst(buf_size, dst0, dst1, dst2, dst3);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
@@ -516,6 +536,7 @@ BOOST_AUTO_TEST_CASE(TestSplitIntChar)
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::copy_4n_split_aligned16(int -> char)"  << endl;
     s_check_split_dst(buf_size, dst0, dst1, dst2, dst3);
+    }
 #endif
 
     s_clear_split_dst(buf_size, dst0, dst1, dst2, dst3);
@@ -532,10 +553,7 @@ BOOST_AUTO_TEST_CASE(TestSplitIntChar)
         NFast::Split_into4(buf, buf_size/4, dst0, dst1, dst2, dst3);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Split_into4(int -> char)"
-         << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0 &&
-            intptr_t(dst0)%16 == 0 && intptr_t(dst1)%16 == 0 && intptr_t(dst2)%16 == 0 && intptr_t(dst3)%16 == 0) ? "ok" : "wrong")
-         << endl;
+    cout << (finish - start) << " - NFast::Split_into4(int -> char)" << endl;
     s_check_split_dst(buf_size, dst0, dst1, dst2, dst3);
 
     free(buf);
@@ -549,7 +567,6 @@ BOOST_AUTO_TEST_CASE(TestSplitIntChar)
 #if 1
 BOOST_AUTO_TEST_CASE(TestMaxElement1)
 {
-    cout << endl << "TestMaxElement1" << endl;
     const size_t buf_size = SSETEST_BUFSIZE;
     const size_t test_count = SSETEST_COUNT;
     unsigned int*  buf  = (unsigned int*)malloc(buf_size * sizeof(unsigned int));
@@ -559,13 +576,19 @@ BOOST_AUTO_TEST_CASE(TestMaxElement1)
         buf[i] = (i*256/SSETEST_BUFSIZE) & 0xFF;
     }
 
+    bool aligned = buf_size%16 == 0 && uintptr_t(buf)%16 == 0;
+    cout << endl << "TestMaxElement1  aligned " << (aligned ? "ok" : "wrong")
+         << endl;
+    
 #ifdef NCBI_HAVE_FAST_OPS
+    if ( aligned ) {
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         result = NFast::max_element_n_aligned16(buf, buf_size);
     } 
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::max_element_n_aligned16 " << result  << endl;
+    }
 #endif
 
     start = QUERY_PERF_COUNTER();
@@ -580,9 +603,7 @@ BOOST_AUTO_TEST_CASE(TestMaxElement1)
         result = NFast::Max_element(buf, buf_size);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Max_element1 " << result
-         << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0) ? "ok" : "wrong")
-         << endl;
+    cout << (finish - start) << " - NFast::Max_element1 " << result << endl;
 
     free(buf);
 }
@@ -591,7 +612,6 @@ BOOST_AUTO_TEST_CASE(TestMaxElement1)
 #if 1
 BOOST_AUTO_TEST_CASE(TestMaxElement2)
 {
-    cout << endl << "TestMaxElement2" << endl;
     const size_t buf_size = SSETEST_BUFSIZE;
     const size_t test_count = SSETEST_COUNT;
     unsigned int*  buf  = (unsigned int*)malloc(buf_size * sizeof(unsigned int));
@@ -601,7 +621,12 @@ BOOST_AUTO_TEST_CASE(TestMaxElement2)
         buf[i] = (i*256/SSETEST_BUFSIZE) & 0xFF;
     }
 
+    bool aligned = buf_size%16 == 0 && uintptr_t(buf)%16 == 0;
+    cout << endl << "TestMaxElement2  aligned " << (aligned ? "ok" : "wrong")
+         << endl;
+    
 #ifdef NCBI_HAVE_FAST_OPS
+    if ( aligned ) {
     start = QUERY_PERF_COUNTER();
     result = 0;
     for (size_t i = 0; i < test_count; ++i) {
@@ -610,6 +635,7 @@ BOOST_AUTO_TEST_CASE(TestMaxElement2)
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::max_element_n_aligned16 " << result  << endl;
     _ASSERT(result == 0xff);
+    }
 #endif
 
     start = QUERY_PERF_COUNTER();
@@ -627,9 +653,7 @@ BOOST_AUTO_TEST_CASE(TestMaxElement2)
         NFast::Max_element(buf, buf_size, result);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Max_element2 " << result
-         << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0) ? "ok" : "wrong")
-         << endl;
+    cout << (finish - start) << " - NFast::Max_element2 " << result << endl;
     _ASSERT(result == 0xff);
 
     free(buf);
@@ -639,7 +663,6 @@ BOOST_AUTO_TEST_CASE(TestMaxElement2)
 #if 1
 BOOST_AUTO_TEST_CASE(TestMaxElement3)
 {
-    cout << endl << "TestMaxElement3" << endl;
     const size_t buf_size = SSETEST_BUFSIZE;
     const size_t test_count = SSETEST_COUNT;
     unsigned int*  buf  = (unsigned int*)malloc(buf_size * sizeof(unsigned int));
@@ -648,9 +671,14 @@ BOOST_AUTO_TEST_CASE(TestMaxElement3)
         buf[i] = (i*64/SSETEST_BUFSIZE*4+i%4) & 0xFF;
     }
 
+    unsigned int result[4];
+    bool aligned = buf_size%16 == 0 && uintptr_t(buf)%16 == 0;
+    cout << endl << "TestMaxElement3  aligned " << (aligned ? "ok" : "wrong")
+         << endl;
+    
 #ifdef NCBI_HAVE_FAST_OPS
-    {
-    unsigned int result[4]= {0};
+    if ( aligned ) {
+    memset(result, 0, sizeof(result));
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         NFast::max_4elements_n_aligned16(buf, buf_size/4, result);
@@ -664,8 +692,7 @@ BOOST_AUTO_TEST_CASE(TestMaxElement3)
     }
 #endif
 
-    {
-    unsigned int result[4]= {0};
+    memset(result, 0, sizeof(result));
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         NFast::x_no_ncbi_sse_max_4element(buf, buf_size/4, result);
@@ -676,23 +703,18 @@ BOOST_AUTO_TEST_CASE(TestMaxElement3)
     _ASSERT(result[1] == 0xfd);
     _ASSERT(result[2] == 0xfe);
     _ASSERT(result[3] == 0xff);
-    }
 
-    {
-    unsigned int result[4]= {0};
+    memset(result, 0, sizeof(result));
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         NFast::Max_4element(buf, buf_size/4, result);
-    } 
+    }
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Max_4element " << result[0] <<' '<< result[1] <<' '<< result[2] <<' '<< result[3]
-         << "  aligned " << ((buf_size%16 == 0 && intptr_t(buf)%16 == 0) ? "ok" : "wrong")
-         << endl;
+    cout << (finish - start) << " - NFast::Max_4element " << result[0] <<' '<< result[1] <<' '<< result[2] <<' '<< result[3] << endl;
     _ASSERT(result[0] == 0xfc);
     _ASSERT(result[1] == 0xfd);
     _ASSERT(result[2] == 0xfe);
     _ASSERT(result[3] == 0xff);
-    }
 
     free(buf);
 }
