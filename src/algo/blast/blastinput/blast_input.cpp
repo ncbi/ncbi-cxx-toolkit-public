@@ -197,8 +197,14 @@ CBlastInput::GetAllSeqs(CScope& scope)
     while (!End()) {
         try { retval->AddQuery(m_Source->GetNextSequence(scope)); }
         catch (const CObjReaderParseException& e) {
-            if (e.GetErrCode() == CObjReaderParseException::eEOF) {
+            auto err = e.GetErrCode();
+            if (err == CObjReaderParseException::eEOF) {
                 break;
+            } else if (err == CObjReaderParseException::eNoDefline) {
+                CNcbiStrstream ss;
+                ss << "Query input doesn't start with "
+                    "a defline or comment, line " << e.GetPos() << ends;
+                NCBI_THROW(CInputException, eInvalidInput, ss.str());
             }
             throw;
         }
