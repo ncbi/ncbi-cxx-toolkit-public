@@ -147,6 +147,9 @@ protected:
         if (gene.IsSetLocus()) {
             *m_out << "Gene locus " << gene.GetLocus() << endl;
         }
+        if (gene.IsSetLocus_tag()) {
+            *m_out << "Gene locus_tag " << gene.GetLocus_tag() << endl;
+        }
         /*
         *m_out << SeqLocString( locbase ) << " -> " 
                << SeqLocString( ol->GetLocation() ) << endl;
@@ -266,6 +269,9 @@ protected:
             const CGene_ref& gene = best.GetData().GetGene();
             if (gene.IsSetLocus()) {
                 *m_out << "Gene locus " << gene.GetLocus() << endl;
+            }
+            if (gene.IsSetLocus_tag()) {
+                *m_out << "Gene locus_tag " << gene.GetLocus_tag() << endl;
             }
         }
     }
