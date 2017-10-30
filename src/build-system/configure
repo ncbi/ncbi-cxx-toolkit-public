@@ -9386,6 +9386,10 @@ fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_prog_c_99" >&5
 echo "${ECHO_T}$ncbi_cv_prog_c_99" >&6; }
 
+if test "$host_cpu" != x86_64; then
+   : ${with_sse42=no}
+fi
+
 if test "${with_sse42-$with_optimization}" = yes; then
    orig_CC=$CC
    { echo "$as_me:$LINENO: checking whether $CC supports -msse4.2" >&5

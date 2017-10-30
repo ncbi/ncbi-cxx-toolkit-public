@@ -1890,6 +1890,10 @@ AC_CACHE_CHECK([how to enable C '11 or at least '99 features in $CC],
        done
        CC=$orig_CC])
 
+if test "$host_cpu" != x86_64; then
+   : ${with_sse42=no}
+fi
+
 if test "${with_sse42-$with_optimization}" = yes; then
    orig_CC=$CC
    AC_CACHE_CHECK([whether $CC supports -msse4.2],
