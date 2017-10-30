@@ -13,6 +13,7 @@
 #include <objects/seqtable/Seq_table.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/edit/protein_match/prot_match_utils.hpp>
 #include <objtools/edit/protein_match/prot_match_exception.hpp>
 #include <objtools/edit/protein_match/generate_match_table.hpp>
 #include <util/line_reader.hpp>
@@ -100,6 +101,52 @@ void CMatchTabulate::OverwriteEntry(
     }
 }
 
+
+void CMatchTabulate::OverwriteEntry(
+    const SMatchIdInfo& match_info) 
+{
+    if (!mMatchTableInitialized) {
+        x_InitMatchTable();
+        mMatchTableInitialized = true;
+    }
+
+    const string& update_nuc_id = match_info.update_nuc_id;
+
+    x_AppendNucleotide(update_nuc_id, "Same");
+    for (const string& update_prot_id : match_info.update_prot_ids) {
+        x_AppendUnchangedProtein(update_nuc_id, update_prot_id);
+    }
+
+    // Look at database proteins for the replaced nucleotide sequences
+    const list<string>& replaced_prot_ids = match_info.replaced_prot_ids;
+
+    for (const string& replaced_nuc_id : match_info.replaced_nuc_ids) {
+        if (match_info.DBEntryHasProteins(replaced_nuc_id)) {
+            for (const string& db_prot_id : match_info.db_prot_ids.at(replaced_nuc_id)) {
+                if (find(replaced_prot_ids.begin(), replaced_prot_ids.end(), db_prot_id) == 
+                    replaced_prot_ids.end()) {
+                    x_AppendDeadProtein(update_nuc_id, db_prot_id);
+                } 
+            }
+        }
+    }
+
+    // Look at other database ids
+    for (const string& db_nuc_id : match_info.db_nuc_ids) {
+        if (!match_info.IsReplacedNucId(db_nuc_id)) {
+            x_AppendNucleotide(db_nuc_id , "Dead");
+            
+            if (match_info.DBEntryHasProteins(db_nuc_id)) {
+                for (const string& db_prot_id : match_info.db_prot_ids.at(db_nuc_id)) {
+                    x_AppendDeadProtein(update_nuc_id, db_prot_id);
+                }
+            }
+        } 
+    }
+}
+
+
+
 void CMatchTabulate::GenerateMatchTable(
     const map<string, list<string>>& local_prot_ids,
     const map<string, list<string>>& prot_accessions,
@@ -134,25 +181,37 @@ void CMatchTabulate::x_ProcessAlignments(
     for (const CSeq_align& align :
             CObjectIStreamIterator<CSeq_align>(istr)) 
     {
+
+        string accession;
+        if (x_FetchAccession(align, accession)) {
+            if (!NStr::IsBlank(accession)) {
+
+                if ((accession == prev_accession) ||
+                    !x_IsPerfectAlignment(align)) {
+                    nuc_match[accession] = false;
+                    continue;
+                }
+                nuc_match[accession] = true;
+            }
+            prev_accession = accession;
+        }
+
+
+    /*
         string accession;
         string local_id;
-    
         if (!x_FetchAccession(align, accession) ||
             !x_FetchLocalId(align, local_id)) {
             continue;
         }
 
-        cout << accession << "  " << local_id << endl;
+        cout << "Have accession" << accession <<  endl;
 
         if (new_nuc_accessions.find(accession) != new_nuc_accessions.end()) {
             accession = new_nuc_accessions.at(accession);
         }
 
-        if (NStr::IsBlank(accession) ||
-            accession != local_id) {
-            continue;
-        }
-
+        cout << "New accession : " << accession << endl;
 
         if ((accession == prev_accession) ||
             !x_IsPerfectAlignment(align)) {
@@ -161,6 +220,7 @@ void CMatchTabulate::x_ProcessAlignments(
             nuc_match[accession] = true;
         }
         prev_accession = accession;
+        */
     }
 }
 

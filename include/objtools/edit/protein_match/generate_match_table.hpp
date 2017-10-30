@@ -44,6 +44,7 @@ class CSeq_align;
 class CUser_object;
 class CSeq_table;
 class CScope;
+struct SMatchIdInfo;
 
 class CMatchTabulate {
 
@@ -57,6 +58,7 @@ public:
         const list<string>& prev_nuc_accessions,
         const map<string, string>& new_nuc_accessions);
 
+    void OverwriteEntry(const SMatchIdInfo& match_info);
 
     void GenerateMatchTable(
         const map<string, list<string>>& local_prot_ids,
