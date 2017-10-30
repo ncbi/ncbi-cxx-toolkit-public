@@ -43,6 +43,11 @@ const bool     kBoolParam_Default   = false;
 const unsigned kUIntParam_Default   = 123;
 const char*    kStaticStr_Default   = "StaticStringParam";
 const double   kDoubleParam_Default = 123.456;
+const int      kInitFuncParam_Default = 123;
+const char*    kInitFuncParam_SetStr  = "456";
+const int      kInitFuncParam_SetInt  = 456;
+// Structure literals can not be passed to NCBI_PARAM_DEF* macros directly.
+const int kTestStruct_Default = 123456; // {123, 456}
 
 NCBI_PARAM_DECL(int, ParamTest, ThreadIdx);
 NCBI_PARAM_DECL(string, ParamTest, StrParam);
@@ -62,19 +67,32 @@ NCBI_PARAM_DEF_EX(int, ParamTest, NoThreadParam, 0, eParam_NoThread, 0);
 NCBI_PARAM_DEF_EX(int, ParamTest, NoLoadParam, 0, eParam_NoLoad, 0);
 NCBI_PARAM_DEF(double, ParamTest, DoubleParam, kDoubleParam_Default);
 
+string InitIntParam(void);
+NCBI_PARAM_DECL(int, ParamTest, InitFuncParam);
+NCBI_PARAM_DEF_WITH_INIT(int, ParamTest, InitFuncParam, kInitFuncParam_Default, InitIntParam);
+string InitIntParam(void)
+{
+    return kInitFuncParam_SetStr;
+}
 
-// User-defined type
+// User-defined types
 
+// Classes/structures require CSafeStatic_Proxy wrappers to be initialized statically.
+// It's impossible to pass a non-scalar literal to nested macros, so the class/structure
+// should have a constructor with a single scalar argument.
+// CSafeStatic_Proxy also requires the wrapped type to have a default constructor.
 struct STestStruct
 {
     STestStruct(void) : first(0), second(0) {}
-    STestStruct(int f, int s) : first(f), second(s) {}
+    STestStruct(int init) : first(init % 1000), second(init / 1000) {}
     bool operator==(const STestStruct& val)
     { return first == val.first  &&  second == val.second; }
-    int first, second;
+
+    int first;
+    int second;
 };
 
-CNcbiIstream& operator>>(CNcbiIstream& in, STestStruct val)
+CNcbiIstream& operator>>(CNcbiIstream& in, STestStruct& val)
 {
     in >> val.first >> val.second;
     return in;
@@ -86,10 +104,65 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const STestStruct val)
     return out;
 }
 
-const STestStruct kDefaultPair(123, 456);
 
+namespace ncbi {
+NCBI_PARAM_STATIC_PROXY(STestStruct, int);
+};
 NCBI_PARAM_DECL(STestStruct, ParamTest, Struct);
-NCBI_PARAM_DEF(STestStruct, ParamTest, Struct, kDefaultPair);
+
+
+typedef NCBI_PARAM_TYPE(ParamTest, ThreadIdx) TParam_ThreadIdx;
+typedef NCBI_PARAM_TYPE(ParamTest, StrParam) TParam_StrParam;
+typedef NCBI_PARAM_TYPE(ParamTest, BoolParam) TParam_BoolParam;
+typedef NCBI_PARAM_TYPE(ParamTest, UIntParam) TParam_UIntParam;
+typedef NCBI_PARAM_TYPE(ParamTest, NoThreadParam) TParam_NoThread;
+typedef NCBI_PARAM_TYPE(ParamTest, NoLoadParam) TParam_NoLoad;
+typedef NCBI_PARAM_TYPE(ParamTest, DoubleParam) TParam_DoubleParam;
+typedef NCBI_PARAM_TYPE(ParamTest, Struct) TParam_Struct;
+typedef NCBI_PARAM_TYPE(ParamTest, InitFuncParam) TParam_InitFunc;
+typedef NCBI_PARAM_TYPE(ParamTest, StaticStr) TParam_StaticStr;
+
+// Static instance of string param. Must be initialized before CStaticParamTester
+// instance below.
+TParam_StaticStr s_StaticStrParam;
+
+// Access parameters before they have been fully initialized.
+// The scalar default values passed to NCBI_PARAM_DEF* should be returned.
+class CStaticParamTester
+{
+public:
+    CStaticParamTester(void)
+    {
+        _ASSERT(TParam_InitFunc::GetDefault() == kInitFuncParam_SetInt);
+        _ASSERT(TParam_StrParam::GetDefault() == kStrParam_Default);
+        _ASSERT(TParam_BoolParam::GetDefault() == kBoolParam_Default);
+        _ASSERT(TParam_UIntParam::GetDefault() == kUIntParam_Default);
+        _ASSERT(TParam_DoubleParam::GetDefault() == kDoubleParam_Default);
+        _ASSERT(TParam_Struct::GetDefault() == kTestStruct_Default);
+        _ASSERT(s_StaticStrParam.Get() == kStaticStr_Default);
+    }
+
+    ~CStaticParamTester(void)
+    {
+        _ASSERT(TParam_InitFunc::GetDefault() == kInitFuncParam_SetInt);
+        _ASSERT(TParam_StrParam::GetDefault() == kStrParam_Default);
+        // Skip bool param - it may have any value after being toggled by each thread.
+        // _ASSERT(TParam_BoolParam::GetDefault());
+        _ASSERT(TParam_UIntParam::GetDefault() == kUIntParam_Default);
+        _ASSERT(TParam_DoubleParam::GetDefault() == kDoubleParam_Default);
+        _ASSERT(TParam_Struct::GetDefault() == kTestStruct_Default);
+        // Static param instance have been destroyed by now, but should not fail
+        // when trying to get its value (the value itself may be empty).
+        s_StaticStrParam.Get();
+        _ASSERT(TParam_StaticStr::GetDefault() == kStaticStr_Default);
+    }
+};
+
+// The tester should be initialized before static params below.
+static const CStaticParamTester s_StaticParamTester;
+
+NCBI_PARAM_DEF(STestStruct, ParamTest, Struct, kTestStruct_Default);
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  Test application
@@ -101,31 +174,7 @@ public:
 protected:
     virtual bool TestApp_Init(void);
     virtual bool TestApp_Exit(void);
-private:
-    typedef NCBI_PARAM_TYPE(ParamTest, ThreadIdx) TParam_ThreadIdx;
-    typedef NCBI_PARAM_TYPE(ParamTest, StrParam) TParam_StrParam;
-    typedef NCBI_PARAM_TYPE(ParamTest, BoolParam) TParam_BoolParam;
-    typedef NCBI_PARAM_TYPE(ParamTest, UIntParam) TParam_UIntParam;
-    typedef NCBI_PARAM_TYPE(ParamTest, Struct) TParam_Struct;
-    typedef NCBI_PARAM_TYPE(ParamTest, NoThreadParam) TParam_NoThread;
-    typedef NCBI_PARAM_TYPE(ParamTest, NoLoadParam) TParam_NoLoad;
-    typedef NCBI_PARAM_TYPE(ParamTest, DoubleParam) TParam_DoubleParam;
 };
-
-
-typedef NCBI_PARAM_TYPE(ParamTest, StaticStr) TParam_StaticStr;
-static TParam_StaticStr s_StrParam;
-
-string InitIntParam(void);
-
-NCBI_PARAM_DECL(int, ParamTest, InitFuncParam);
-NCBI_PARAM_DEF_WITH_INIT(int, ParamTest, InitFuncParam, 123, InitIntParam);
-typedef NCBI_PARAM_TYPE(ParamTest, InitFuncParam) TParam_InitFunc;
-
-string InitIntParam(void)
-{
-    return "456";
-}
 
 
 bool CTestParamApp::Thread_Run(int idx)
@@ -138,7 +187,7 @@ bool CTestParamApp::Thread_Run(int idx)
     string str_idx = NStr::IntToString(idx);
 
     _ASSERT(TParam_StrParam::GetDefault() == kStrParam_Default);
-    _ASSERT(s_StrParam.Get() == kStaticStr_Default);
+    _ASSERT(s_StaticStrParam.Get() == kStaticStr_Default);
 
     // Non-initializable param must always have the same value
     _ASSERT(TParam_NoLoad::GetDefault() == 0);
@@ -187,8 +236,9 @@ bool CTestParamApp::Thread_Run(int idx)
     TParam_BoolParam bool_param2;
     _ASSERT(bool_param2.Get() == odd);
 
+    _ASSERT(TParam_Struct::GetDefault() == kTestStruct_Default);
     TParam_Struct struct_param;
-    _ASSERT(struct_param.Get() == kDefaultPair);
+    _ASSERT(struct_param.Get() == kTestStruct_Default);
 
     // Thread default value should not change
     _ASSERT(TParam_ThreadIdx::GetThreadDefault() == idx);
@@ -229,7 +279,6 @@ bool CTestParamApp::TestApp_Exit(void)
              << NcbiEndl << NcbiEndl;
     return true;
 }
-
 
 
 ///////////////////////////////////

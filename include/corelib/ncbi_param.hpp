@@ -298,8 +298,9 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
         X_NCBI_PARAM_DECLNAME(section, name))
 
 
-/// Parameter definition. "value" is used to set the initial parameter
-/// value, which may be overriden by registry or environment.
+/// Parameter definition. "default_value" is used to set the initial parameter
+/// value, which may be overriden by registry or environment. The default value
+/// must be a scalar literal for the default value to be initialized statically.
 /// @sa NCBI_PARAM_DECL
 #define NCBI_PARAM_DEF(type, section, name, default_value)                  \
     SParamDescription< type >                                               \
@@ -386,6 +387,31 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
         default_value)
 
 
+/// Define CSafeStatic_Proxy for a non-POD type using the provided POD type
+/// to store the default value.
+/// NOTE: The proxy specialization must be defined in 'ncbi' namespace.
+#define NCBI_PARAM_STATIC_PROXY(user_type, pod_type)                    \
+    template<> class CSafeStatic_Proxy<user_type> {                     \
+    public:                                                             \
+        typedef user_type TValue;                                       \
+        typedef pod_type TStaticInit;                                   \
+        CSafeStatic_Proxy(void) {}                                      \
+        CSafeStatic_Proxy(TStaticInit init) : m_Value(init) {}          \
+        CSafeStatic_Proxy(TValue value) : m_Value(value) {}             \
+        CSafeStatic_Proxy& operator=(TStaticInit init) {                \
+            m_Value = init;                                             \
+            return *this;                                               \
+        }                                                               \
+        CSafeStatic_Proxy& operator=(TValue value) {                    \
+            m_Value = value;                                            \
+            return *this;                                               \
+        }                                                               \
+        operator TValue& (void) { return m_Value; }                     \
+    private:                                                            \
+        mutable TValue m_Value;                                         \
+    }
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CParamException
@@ -458,7 +484,8 @@ public:
         eState_Func   = 2, ///< Initialized using FParamInit function
         eState_User   = 3, ///< Value has been set by user
         eState_EnvVar = 4, ///< The environment variable has been checked
-        eState_Config = 5  ///< The app. config file has been checked
+        eState_Config = 5, ///< The app. config file has been checked
+        eState_Error = 99  ///< Error reading param value, do not try to re-read
     };
 };
 
@@ -569,7 +596,7 @@ private:
     static bool sx_IsSetFlag(ENcbiParamFlags flag);
     static bool sx_CanGetDefault(void);
 
-    mutable bool       m_ValueSet;
+    mutable bool       m_ValueSet = false;
     mutable TValueType m_Value;
 };
 

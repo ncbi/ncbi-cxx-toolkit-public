@@ -42,6 +42,7 @@
 #include <corelib/request_ctx.hpp>
 #include <corelib/request_control.hpp>
 #include <corelib/ncbi_strings.h>
+#include <corelib/impl/ncbi_param_impl.hpp>
 #include "ncbidiag_p.hpp"
 #include "ncbisys.hpp"
 #include <fcntl.h>
@@ -312,9 +313,14 @@ CNcbiIstream& operator>>(CNcbiIstream& in, CLogRateLimit& lim)
 }
 
 
+// Need CSafeStatic_Proxy<> instance for CLogRateLimit to allow static
+// initialization of default values with unsigned int.
+NCBI_PARAM_STATIC_PROXY(CLogRateLimit, CLogRateLimit::TValue);
+
+
 // AppLog limit per period
 NCBI_PARAM_DECL(CLogRateLimit, Diag, AppLog_Rate_Limit);
-NCBI_PARAM_DEF_EX(CLogRateLimit, Diag, AppLog_Rate_Limit, CLogRateLimit(50000),
+NCBI_PARAM_DEF_EX(CLogRateLimit, Diag, AppLog_Rate_Limit, 50000,
                   eParam_NoThread, DIAG_APPLOG_RATE_LIMIT);
 typedef NCBI_PARAM_TYPE(Diag, AppLog_Rate_Limit) TAppLogRateLimitParam;
 
@@ -326,7 +332,7 @@ typedef NCBI_PARAM_TYPE(Diag, AppLog_Rate_Period) TAppLogRatePeriodParam;
 
 // ErrLog limit per period
 NCBI_PARAM_DECL(CLogRateLimit, Diag, ErrLog_Rate_Limit);
-NCBI_PARAM_DEF_EX(CLogRateLimit, Diag, ErrLog_Rate_Limit, CLogRateLimit(5000),
+NCBI_PARAM_DEF_EX(CLogRateLimit, Diag, ErrLog_Rate_Limit, 5000,
                   eParam_NoThread, DIAG_ERRLOG_RATE_LIMIT);
 typedef NCBI_PARAM_TYPE(Diag, ErrLog_Rate_Limit) TErrLogRateLimitParam;
 
@@ -338,7 +344,7 @@ typedef NCBI_PARAM_TYPE(Diag, ErrLog_Rate_Period) TErrLogRatePeriodParam;
 
 // TraceLog limit per period
 NCBI_PARAM_DECL(CLogRateLimit, Diag, TraceLog_Rate_Limit);
-NCBI_PARAM_DEF_EX(CLogRateLimit, Diag, TraceLog_Rate_Limit, CLogRateLimit(5000),
+NCBI_PARAM_DEF_EX(CLogRateLimit, Diag, TraceLog_Rate_Limit, 5000,
                   eParam_NoThread, DIAG_TRACELOG_RATE_LIMIT);
 typedef NCBI_PARAM_TYPE(Diag, TraceLog_Rate_Limit) TTraceLogRateLimitParam;
 

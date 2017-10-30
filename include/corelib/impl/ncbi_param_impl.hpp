@@ -41,11 +41,20 @@
 BEGIN_NCBI_SCOPE
 
 
+// When creating a CParam<> for a non-POD type, the default param value must be
+// stored in a POD static variable. The proxy allows to use TStaticInit (POD type
+// used for initialization) different from the actual parameter type (TValue).
+// The default implementation assumes TValue is already a POD type.
+// In most cases NCBI_PARAM_STATIC_PROXY macro can be used to create CSafeStatic_Proxy
+// specialization.
 template<class TValue>
 class CSafeStatic_Proxy
 {
 public:
-    typedef TValue TStaticInit;
+    // Disable default CSafeStatic_Proxy implementation for non-POD types.
+    // Users need to implement type-specific proxy with TStaticInit defined
+    // as a POD type and constructors/assignments accepting POD values.
+    typedef typename enable_if<std::is_scalar<TValue>::value, TValue>::type TStaticInit;
 
     CSafeStatic_Proxy(void)
     {}
@@ -71,6 +80,8 @@ private:
 };
 
 
+// Special case of CSafeStatic_Proxy for std::string - extends life span of
+// string parameters using CSafeStatic<string>.
 template<>
 class CSafeStatic_Proxy<string>
 {
@@ -364,7 +375,6 @@ CEnumParser<TEnum, TParam>::EnumToString(const TEnumType& val,
 template<class TDescription>
 inline
 CParam<TDescription>::CParam(EParamCacheFlag cache_flag)
-    : m_ValueSet(false)
 {
     if (cache_flag == eParamCache_Defer) {
         return;
@@ -389,8 +399,8 @@ typename CParam<TDescription>::TValueType&
 CParam<TDescription>::sx_GetDefault(bool force_reset)
 {
     bool& def_init = TDescription::sm_DefaultInitialized;
-    // _ASSERT(TDescription::sm_ParamDescription.section);
-    if (!def_init  &&  TDescription::sm_ParamDescription.section) {
+    _ASSERT(TDescription::sm_ParamDescription.section);
+    if ( !def_init ) {
         TDescription::sm_Default = TDescription::sm_ParamDescription.default_value;
         def_init = true;
     }
@@ -410,9 +420,15 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
         if ( TDescription::sm_ParamDescription.init_func ) {
             // Run the initialization function
             sx_GetState() = eState_InFunc;
-            TDescription::sm_Default = TParamParser::StringToValue(
-                TDescription::sm_ParamDescription.init_func(),
-                TDescription::sm_ParamDescription);
+            try {
+                TDescription::sm_Default = TParamParser::StringToValue(
+                    TDescription::sm_ParamDescription.init_func(),
+                    TDescription::sm_ParamDescription);
+            }
+            catch (...) {
+                sx_GetState() = eState_Error;
+                throw;
+            }
         }
         sx_GetState() = eState_Func;
     }
@@ -429,8 +445,16 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
                                     TDescription::sm_ParamDescription.env_var_name,
                                     "");
             if ( !config_value.empty() ) {
-                TDescription::sm_Default = TParamParser::StringToValue(config_value,
-                    TDescription::sm_ParamDescription);
+                try {
+                    TDescription::sm_Default = TParamParser::StringToValue(config_value,
+                        TDescription::sm_ParamDescription);
+                }
+                catch (...) {
+                    sx_GetState() = eState_Error;
+                    ERR_POST("Error reading CParam value " <<
+                        TDescription::sm_ParamDescription.section << "/" << TDescription::sm_ParamDescription.name);
+                    throw;
+                }
             }
             CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
             CNcbiApplication* app = CNcbiApplication::Instance();
