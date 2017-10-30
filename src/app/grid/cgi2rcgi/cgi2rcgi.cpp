@@ -670,8 +670,8 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
 
         try {
             if (!listen_jobs.empty()) {
-                grid_ctx.NeedRenderPage(false);
                 ListenJobs(ctx, listen_jobs, timeout);
+                grid_ctx.NeedRenderPage(false);
             } else
             if (!grid_ctx.GetJobKey().empty()) {
                 CheckJob(grid_ctx);
@@ -1183,7 +1183,6 @@ void CCgi2RCgiApp::OnJobDone(CGridCgiContext& ctx)
     CNcbiIstream& is = m_GridClient->GetIStream();
 
     if (m_GridClient->GetBlobSize() > 0) {
-        ctx.NeedRenderPage(false);
         CNcbiOstream& out = ctx.GetCGIContext().GetResponse().out();
         bool no_jquery = ctx.GetJqueryCallback().empty();
 
@@ -1221,6 +1220,7 @@ void CCgi2RCgiApp::OnJobDone(CGridCgiContext& ctx)
             NcbiStreamCopy(out, is);
             out << ')';
         }
+        ctx.NeedRenderPage(false);
     } else {
         const char* str_page;
 
