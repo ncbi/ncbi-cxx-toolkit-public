@@ -274,6 +274,9 @@ public:
                         if (gene.IsSetLocus()) {
                             locus = gene.GetLocus();
                             *m_out << "Best gene: " << locus << '\n';
+                        } else if (gene.IsSetLocus_tag()) {
+                            locus = gene.GetLocus_tag();
+                            *m_out << "Best gene: " << locus << '\n';
                         }
                     }
 
