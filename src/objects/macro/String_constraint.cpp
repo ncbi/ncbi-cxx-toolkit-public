@@ -195,12 +195,12 @@ bool CString_constraint :: Empty() const
 
 bool CString_constraint::x_IsAllCaps(const CMatchString& str) const
 {
-    return x_GetCompareString(e_original) == x_GetCompareString(str, e_uppercase);
+    return x_GetCompareString(str, e_original) == x_GetCompareString(str, e_uppercase);
 }
 
 bool CString_constraint::x_IsAllLowerCase(const CMatchString& str) const
 {
-    return x_GetCompareString(e_original) == x_GetCompareString(str, e_lowercase);
+    return x_GetCompareString(str, e_original) == x_GetCompareString(str, e_lowercase);
 }
 
 bool CString_constraint::x_IsAllPunctuation(const CMatchString& str) const
@@ -620,44 +620,39 @@ bool CString_constraint :: x_IsStringInSpanInList (const string& str, const stri
 
 CTempString CString_constraint::x_GetCompareString(const CMatchString& s, ECase e_case) const
 {
-    if (e_case == e_automatic && GetCase_sensitive())
+    if (e_case == e_automatic)
     {
-        if (GetIgnore_weasel())
-            return s.GetNoweaselLC();
+        if (GetCase_sensitive())
+          e_case = e_original;
         else
-            return s.original().lowercase();
+          e_case = e_lowercase;
+    }
+    if (GetIgnore_weasel())
+    {
+        switch (e_case)
+        {
+        case e_automatic:
+        case e_original:
+            return s.GetNoweasel();
+        case e_lowercase:
+            return s.GetNoweaselLC();
+        case e_uppercase:
+            return s.GetNoweaselUC();
+        }
     }
     else
     {
-        if (GetIgnore_weasel())
+        switch (e_case)
         {
-            switch (e_case)
-            {
-            case e_automatic:
-            case e_original:
-                return s.GetNoweasel();
-            case e_lowercase:
-                return s.GetNoweaselLC();
-            case e_uppercase:
-                return s.GetNoweaselUC();
-            }
+        case e_automatic:
+        case e_original:
+            return s.original().original();
+        case e_lowercase:
+            return s.original().lowercase();
+        case e_uppercase:
+            return s.original().uppercase();
         }
-        else
-        {
-            switch (e_case)
-            {
-            case e_automatic:
-            case e_original:
-                return s.original().original();
-            case e_lowercase:
-                return s.original().lowercase();
-            case e_uppercase:
-                return s.original().uppercase();
-            }
-        }
-        return s.original().original();
     }
-
 }
 
 bool CString_constraint::x_DoesSingleStringMatchConstraint(const CMatchString& str) const
