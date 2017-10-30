@@ -709,7 +709,15 @@ inline bool s_IsPendingOrRunning(CNetScheduleAPI::EJobStatus job_status)
 
 void CCgi2RCgiApp::ListenJobs(CCgiContext& ctx, const string& job_ids_value, const string& timeout_value)
 {
-    CDeadline deadline(CTimeout(NStr::StringToDouble(timeout_value)));
+    CTimeout timeout;
+
+    try {
+        timeout.Set(NStr::StringToDouble(timeout_value));
+    }
+    catch (...) {
+    }
+
+    CDeadline deadline(timeout);
 
     vector<string> job_ids;
     NStr::Split(job_ids_value, ",", job_ids);
@@ -734,6 +742,8 @@ void CCgi2RCgiApp::ListenJobs(CCgiContext& ctx, const string& job_ids_value, con
     bool wait_notifications = true;
 
     for (auto& job : jobs) {
+        wait_notifications = wait_notifications && !deadline.IsExpired();
+
         if (wait_notifications) {
             try {
                 int not_used;
@@ -746,7 +756,7 @@ void CCgi2RCgiApp::ListenJobs(CCgiContext& ctx, const string& job_ids_value, con
             job.second = submitter.GetJobStatus(job.first);
         }
 
-        if (!s_IsPendingOrRunning(job.second)) wait_notifications = false;
+        wait_notifications = wait_notifications && s_IsPendingOrRunning(job.second);
     }
 
 
