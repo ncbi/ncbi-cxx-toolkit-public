@@ -216,8 +216,8 @@ void CFastaOstreamEx::x_WriteTranslatedCds(const CSeq_feat& cds, CScope& scope)
 {
     CBioseq_Handle bsh;
     try {
-        CRef<CBioseq> bioseq = CSeqTranslator::TranslateToProtein(cds, scope); // Need to set seq-id on this.
-        if (bioseq.Empty()) { // RW-490
+        CRef<CBioseq> protein = CSeqTranslator::TranslateToProtein(cds, scope);
+        if (protein.Empty()) { // RW-490
             int frame_offset = 0;
             if (cds.GetData().GetCdregion().IsSetFrame()) {
                 frame_offset = cds.GetData().GetCdregion().GetFrame()-1;
@@ -227,15 +227,17 @@ void CFastaOstreamEx::x_WriteTranslatedCds(const CSeq_feat& cds, CScope& scope)
                 return;
             }
         }
-        bsh = m_InternalScope->AddBioseq(bioseq.GetObject());
-    } catch(CException& e) {
+        else {
+            bsh = m_InternalScope->AddBioseq(protein.GetObject());
+            if (!bsh) {
+                NCBI_THROW(CObjWriterException, eInternal, "Empty bioseq handle");
+            }
+        }
+    }
+    catch (CException& e) {
         string err_msg = "CDS translation error: ";
         err_msg += e.GetMsg();
         NCBI_THROW(CObjWriterException, eInternal, err_msg);
-    }
-
-    if (!bsh) {
-        NCBI_THROW(CObjWriterException, eInternal, "Empty bioseq handle");
     }
 
     const bool translate_cds = true;
