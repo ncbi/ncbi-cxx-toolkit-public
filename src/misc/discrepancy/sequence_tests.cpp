@@ -67,7 +67,7 @@ DISCREPANCY_MODULE(sequence_tests);
 
 const string kMissingGenomeAssemblyComments = "[n] bioseq[s] [is] missing GenomeAssembly structured comments";
 
-DISCREPANCY_CASE(MISSING_GENOMEASSEMBLY_COMMENTS, CSeq_inst, eDisc | eSmart, "Bioseqs should have GenomeAssembly structured comments")
+DISCREPANCY_CASE(MISSING_GENOMEASSEMBLY_COMMENTS, CSeq_inst, eDisc | eSmart | eBig, "Bioseqs should have GenomeAssembly structured comments")
 {
     if (obj.IsAa()) {
         return;
@@ -288,7 +288,7 @@ DISCREPANCY_SUMMARIZE(MRNA_ON_WRONG_SEQUENCE_TYPE)
 
 const string kSequencesWithGaps = "[n] sequence[s] contain[S] gaps";
 
-DISCREPANCY_CASE(GAPS, CSeq_inst, eDisc | eSubmitter | eSmart, "Sequences with gaps")
+DISCREPANCY_CASE(GAPS, CSeq_inst, eDisc | eSubmitter | eSmart | eBig, "Sequences with gaps")
 {
     if (obj.IsSetRepr() && obj.GetRepr() == CSeq_inst::eRepr_delta) {
 
@@ -1941,7 +1941,7 @@ static bool IsmRNASequenceInGenProdSet(CDiscrepancyContext& context, const CBios
 }
 
 
-DISCREPANCY_CASE(SHORT_CONTIG, CSeq_inst, eDisc | eSubmitter | eSmart, "Short Contig")
+DISCREPANCY_CASE(SHORT_CONTIG, CSeq_inst, eDisc | eSubmitter | eSmart | eBig, "Short Contig")
 {
     static TSeqPos MIN_CONTIG_LEN = 200;
 

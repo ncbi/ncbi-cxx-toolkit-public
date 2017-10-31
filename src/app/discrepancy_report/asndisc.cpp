@@ -470,6 +470,9 @@ int CDiscRepApp::Run(void)
             case 'q':
                 AllTests = GetDiscrepancyNames(eSmart);
                 break;
+            case 'b':
+                AllTests = GetDiscrepancyNames(eBig);
+                break;
             default:
                 AllTests = GetDiscrepancyNames();
         }

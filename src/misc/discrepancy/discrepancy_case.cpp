@@ -58,7 +58,7 @@ DISCREPANCY_MODULE(discrepancy_case);
 
 // COUNT_NUCLEOTIDES
 
-DISCREPANCY_CASE(COUNT_NUCLEOTIDES, CSeq_inst, eOncaller | eSubmitter | eSmart, "Count nucleotide sequences")
+DISCREPANCY_CASE(COUNT_NUCLEOTIDES, CSeq_inst, eOncaller | eSubmitter | eSmart | eBig, "Count nucleotide sequences")
 {
     CSeq_inst::TMol mol = obj.GetMol();
     if (mol != CSeq_inst::eMol_dna && mol != CSeq_inst::eMol_rna && mol != CSeq_inst::eMol_na) {
@@ -170,7 +170,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_PROTEIN_ID)
 
 
 // SHORT_SEQUENCES
-DISCREPANCY_CASE(SHORT_SEQUENCES, CSeq_inst, eDisc | eSubmitter | eSmart, "Find Short Sequences")
+DISCREPANCY_CASE(SHORT_SEQUENCES, CSeq_inst, eDisc | eSubmitter | eSmart | eBig, "Find Short Sequences")
 {
     if (obj.IsAa()) {
         return;
@@ -229,7 +229,7 @@ void FindNRuns(vector<CRange<TSeqPos> >& runs, const CSeq_data& seq_data, const 
 }
 
 
-DISCREPANCY_CASE(N_RUNS, CSeq_inst, eDisc | eSubmitter | eSmart, "More than 10 Ns in a row")
+DISCREPANCY_CASE(N_RUNS, CSeq_inst, eDisc | eSubmitter | eSmart | eBig, "More than 10 Ns in a row")
 {
     if (obj.IsAa() || context.SequenceHasFarPointers()) {
         return;
@@ -275,7 +275,7 @@ DISCREPANCY_SUMMARIZE(N_RUNS)
 
 // PERCENT_N
 
-DISCREPANCY_CASE(PERCENT_N, CSeq_inst, eDisc | eSubmitter | eSmart, "More than 5 percent Ns")
+DISCREPANCY_CASE(PERCENT_N, CSeq_inst, eDisc | eSubmitter | eSmart | eBig, "More than 5 percent Ns")
 {
     if (obj.IsAa() || context.SequenceHasFarPointers()) {
         return;
@@ -696,7 +696,7 @@ DISCREPANCY_AUTOFIX(CONTAINED_CDS)
 }
 
 
-DISCREPANCY_CASE(ZERO_BASECOUNT, CSeq_inst, eDisc | eOncaller | eSubmitter | eSmart, "Zero Base Counts")
+DISCREPANCY_CASE(ZERO_BASECOUNT, CSeq_inst, eDisc | eOncaller | eSubmitter | eSmart | eBig, "Zero Base Counts")
 {
     static const char* kMsg = "[n] sequence[s] [has] a zero basecount for a nucleotide";
     if (obj.IsAa() || context.SequenceHasFarPointers()) {
@@ -776,7 +776,7 @@ DISCREPANCY_AUTOFIX(NONWGS_SETS_PRESENT)
 
 
 //NO_ANNOTATION
-DISCREPANCY_CASE(NO_ANNOTATION, CSeq_inst, eDisc | eOncaller | eSubmitter | eSmart, "No annotation")
+DISCREPANCY_CASE(NO_ANNOTATION, CSeq_inst, eDisc | eOncaller | eSubmitter | eSmart | eBig, "No annotation")
 {
     if (context.HasFeatures()) {
         return;
@@ -791,7 +791,7 @@ DISCREPANCY_SUMMARIZE(NO_ANNOTATION)
 }
 
 
-DISCREPANCY_CASE(LONG_NO_ANNOTATION, CSeq_inst, eDisc | eOncaller | eSubmitter | eSmart, "No annotation for LONG sequence")
+DISCREPANCY_CASE(LONG_NO_ANNOTATION, CSeq_inst, eDisc | eOncaller | eSubmitter | eSmart | eBig, "No annotation for LONG sequence")
 {
     const int kSeqLength = 5000;
     if (obj.IsAa() || context.HasFeatures() || !(obj.CanGetLength() && obj.GetLength() > kSeqLength)) {
