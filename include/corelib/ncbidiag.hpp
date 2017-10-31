@@ -1869,6 +1869,8 @@ private:
 };
 
 
+class CStrictId64;
+
 /// Temporary object for holding extra message arguments. Prints all
 /// of the arguments on destruction.
 class NCBI_XNCBI_EXPORT CDiagContext_Extra
@@ -1900,6 +1902,7 @@ public:
     CDiagContext_Extra& Print(const string& name, unsigned char value);
     CDiagContext_Extra& Print(const string& name, double value);
     CDiagContext_Extra& Print(const string& name, bool value);
+    CDiagContext_Extra& Print(const string& name, const CStrictId64& value);
 
     typedef SDiagMessage::TExtraArg  TExtraArg;
     typedef SDiagMessage::TExtraArgs TExtraArgs;
