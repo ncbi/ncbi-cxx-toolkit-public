@@ -291,6 +291,7 @@ private:
     mutable CMutex  m_PoolMutex; //< for m_PoolSem*, m_(Not)InUse, & m_Counts*
     CSemaphore      m_PoolSem;
     string          m_PoolSemSubject;
+    bool            m_PoolSemSubjectHasPoolName;
     CConnection*    m_PoolSemConn;
 
     unsigned int    m_LoginTimeout; //< Login timeout.

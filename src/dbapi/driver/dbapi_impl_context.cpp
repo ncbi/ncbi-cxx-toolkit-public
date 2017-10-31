@@ -58,6 +58,20 @@ NCBI_PARAM_DEF_EX(bool, dbapi, conn_use_encrypt_data, false, eParam_NoThread, NU
 namespace impl
 {
 
+inline
+static bool s_Matches(CConnection* conn, const string& pool_name,
+                      const string& server_name)
+{
+    if (pool_name.empty()) {
+        // There is no server name check here.  We assume that a connection
+        // pool contains connections with appropriate server names only.
+        return conn->ServerName() == server_name
+            ||  conn->GetRequestedServer() == server_name;
+    } else {
+        return conn->PoolName() == pool_name;
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////////
 //  CDriverContext::
 //
@@ -280,7 +294,10 @@ void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
 
 #ifdef NCBI_THREADS
     bool for_sem = false;
-    if ( !m_PoolSemSubject.empty()  &&  conn->PoolName() == m_PoolSemSubject) {
+    if ( !m_PoolSemSubject.empty()
+         &&  (m_PoolSemSubjectHasPoolName
+              ? conn->PoolName() == m_PoolSemSubject
+              : s_Matches(conn, kEmptyStr, m_PoolSemSubject))) {
         for_sem = true;
         m_PoolSemSubject.erase();
         m_PoolSemConn = NULL;
@@ -453,68 +470,29 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
     if (params.GetParam("is_pooled") == "true") {
         CMutexGuard mg(m_PoolMutex);
 
-        string pool_name(params.GetParam("pool_name"));
-        if (!m_NotInUse.empty()) {
-            if (!pool_name.empty()) {
-                // use a pool name
-                ERASE_ITERATE(TConnPool, it, m_NotInUse) {
-                    CConnection* t_con(*it);
+        string pool_name  (params.GetParam("pool_name")),
+               server_name(params.GetServerName());
 
-                    // There is no pool name check here. We assume that a connection
-                    // pool contains connections with appropriate server names only.
-                    if (pool_name == t_con->PoolName()) {
-                        it = m_NotInUse.erase(it);
-                        CDB_Connection* dbcon = MakeCDBConnection(t_con, 0);
-                        if (dbcon->Refresh()) {
-                            /* Future development ...
-                            if (!params.GetDatabaseName().empty()) {
-                                return SetDatabase(dbcon, params);
-                            } else {
-                                return dbcon;
-                            }
-                            */
-
-                            return dbcon;
-                        }
-                        else {
-                            x_AdjustCounts(t_con, -1);
-                            t_con->m_Reusable = false;
-                            delete dbcon;
-                        }
-                    }
+        ERASE_ITERATE(TConnPool, it, m_NotInUse) {
+            CConnection* t_con(*it);
+            if (s_Matches(t_con, pool_name, server_name)) {
+                it = m_NotInUse.erase(it);
+                CDB_Connection* dbcon = MakeCDBConnection(t_con, 0);
+                if (dbcon->Refresh()) {
+                    /* Future development ...
+                       if (!params.GetDatabaseName().empty()) {
+                           return SetDatabase(dbcon, params);
+                       } else {
+                           return dbcon;
+                       }
+                    */
+ 
+                    return dbcon;
                 }
-            }
-            else {
-                string server_name = params.GetServerName();
-                if ( server_name.empty() ) {
-                    return NULL;
-                }
-
-                // try to use a server name
-                ERASE_ITERATE(TConnPool, it, m_NotInUse) {
-                    CConnection* t_con(*it);
-
-                    if (server_name == t_con->ServerName()
-                        ||  server_name == t_con->GetRequestedServer()) {
-                        it = m_NotInUse.erase(it);
-                        CDB_Connection* dbcon = MakeCDBConnection(t_con, 0);
-                        if (dbcon->Refresh()) {
-                            /* Future development ...
-                            if (!params.GetDatabaseName().empty()) {
-                                return SetDatabase(dbcon, params);
-                            } else {
-                                return dbcon;
-                            }
-                            */
-
-                            return dbcon;
-                        }
-                        else {
-                            x_AdjustCounts(t_con, -1);
-                            t_con->m_Reusable = false;
-                            delete dbcon;
-                        }
-                    }
+                else {
+                    x_AdjustCounts(t_con, -1);
+                    t_con->m_Reusable = false;
+                    delete dbcon;
                 }
             }
         }
@@ -528,8 +506,9 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                 int total_cnt = 0;
                 ITERATE(TConnPool, it, m_InUse) {
                     CConnection* t_con(*it);
-                    if (pool_name == t_con->PoolName())
+                    if (s_Matches(t_con, pool_name, server_name)) {
                         ++total_cnt;
+                    }
                 }
                 if (total_cnt >= pool_max) {
 #ifdef NCBI_THREADS
@@ -539,7 +518,13 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                         timeout_val = NStr::StringToDouble(timeout_str);
                     }
                     CTimeout timeout(timeout_val);
-                    m_PoolSemSubject = pool_name;
+                    if (pool_name.empty()) {
+                        m_PoolSemSubject = server_name;
+                        m_PoolSemSubjectHasPoolName = false;
+                    } else {
+                        m_PoolSemSubject = pool_name;
+                        m_PoolSemSubjectHasPoolName = true;
+                    }
                     mg.Release();
                     if (m_PoolSem.TryWait(timeout)) {
                         mg.Guard(m_PoolMutex);
@@ -956,11 +941,12 @@ CDriverContext::SatisfyPoolMinimum(const CDBConnParams& params)
     if (pool_min <= 0)
         return true;
 
-    string pool_name = params.GetParam("pool_name");
+    string pool_name   = params.GetParam("pool_name"),
+           server_name = params.GetServerName();
     int total_cnt = 0;
     ITERATE(TConnPool, it, m_InUse) {
         CConnection* t_con(*it);
-        if (t_con->IsReusable()  &&  pool_name == t_con->PoolName()
+        if (t_con->IsReusable()  &&  s_Matches(t_con, pool_name, server_name)
             &&  t_con->IsValid()  &&  t_con->IsAlive())
         {
             ++total_cnt;
@@ -968,7 +954,7 @@ CDriverContext::SatisfyPoolMinimum(const CDBConnParams& params)
     }
     ITERATE(TConnPool, it, m_NotInUse) {
         CConnection* t_con(*it);
-        if (t_con->IsReusable()  &&  pool_name == t_con->PoolName()
+        if (t_con->IsReusable()  &&  s_Matches(t_con, pool_name, server_name)
             &&  t_con->IsAlive())
         {
             ++total_cnt;
@@ -1213,18 +1199,30 @@ void CDriverContext::CloseOldIdleConns(unsigned int max_closings,
         return;
     }
 
-    set<string> at_min;
+    set<string> at_min_by_pool, at_min_by_server;
     CTime now(CTime::eCurrent);
     ERASE_ITERATE (TConnPool, it, m_NotInUse) {
         const string& pool_name_2 = (*it)->PoolName();
-        if (pool_name_2.empty()
-            ||  ( !pool_name.empty()  &&  pool_name != pool_name_2)
-            ||  at_min.find(pool_name_2) != at_min.end()
-            ||  (*it)->m_CleanupTime.IsEmpty()
-            ||  (*it)->m_CleanupTime > now) {
+        set<string>& at_min
+            = pool_name_2.empty() ? at_min_by_server : at_min_by_pool;
+        if (pool_name_2.empty()) {
+            if ( !pool_name.empty()
+                ||  at_min.find((*it)->GetRequestedServer()) != at_min.end()) {
+                continue;
+            }
+        } else if (( !pool_name.empty()  &&  pool_name != pool_name_2)
+                   ||  at_min.find(pool_name_2) != at_min.end()) {
             continue;
         }
-        unsigned int n = NofConnections(TSvrRef(), pool_name_2);
+        if ((*it)->m_CleanupTime.IsEmpty()  ||  (*it)->m_CleanupTime > now) {
+            continue;
+        }
+        unsigned int n;
+        if (pool_name_2.empty()) {
+            n = NofConnections((*it)->GetRequestedServer());
+        } else {
+            n = NofConnections(TSvrRef(), pool_name_2);
+        }
         if (n > (*it)->m_PoolMinSize) {
             x_AdjustCounts(*it, -1);
             delete *it;
