@@ -1489,13 +1489,14 @@ void CDiagContext::x_CreateUID(void) const
     }
     h &= 0xFFFF;
     // The low 4 bits are reserved as GUID generator version number.
-    // As of August 2017 the following versions are used:
+    // As of October 2017 the following versions are used:
     //   0 - very old C++ Toolkit
     //   1 - contemporary C++ Toolkit
     //   2 - ?
     //   3 - "C" client (CLOG API); "Python" module 'python-applog'
     //   4 - ?
-    //   5 - Java 
+    //   5 - Java
+    //   6 - Scala
     //  13 - Perl (NcbiApplog.pm)
     m_UID = (TUID(h) << 48) |
         ((TUID(pid) & 0xFFFF) << 32) |
