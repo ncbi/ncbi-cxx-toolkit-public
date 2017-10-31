@@ -36,7 +36,7 @@
 #include <vector>
 #include <memory.h>
 
-#if (defined(NCBI_COMPILER_MSVC) || NCBI_SSE > 40)
+#if NCBI_SSE > 40
 #   include <immintrin.h>
 #   define NCBI_HAVE_FAST_OPS
 #endif //NCBI_SSE
