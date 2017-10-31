@@ -306,7 +306,26 @@ void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
     }
 #endif
 
+    bool keep = false;
     if (conn_reusable  &&  conn->IsOpeningFinished()  &&  conn->IsValid()) {
+        keep = true;
+        // Tentatively; account for temporary overflow below, bearing
+        // in mind that that conn is already gone from m_InUse and not
+        // yet in m_NotInUse, and as such uncounted.
+        if (conn->m_PoolMaxSize <= m_InUse.size() + m_NotInUse.size()) {
+            unsigned int n;
+            if (conn->m_Pool.empty()) {
+                n = NofConnections(conn->m_RequestedServer);
+            } else {
+                n = NofConnections(kEmptyStr, conn->m_Pool);
+            }
+            if (n >= conn->m_PoolMaxSize) {
+                keep = false;
+            }
+        }
+    }
+
+    if (keep) {
         if (conn->m_PoolIdleTimeParam.GetSign() != eNegative) {
             CTime now(CTime::eCurrent);
             conn->m_CleanupTime = now + conn->m_PoolIdleTimeParam;
@@ -447,23 +466,6 @@ CDB_Connection* CDriverContext::MakeCDBConnection(CConnection* connection,
     return new CDB_Connection(connection);
 }
 
-class CDBConnParams_Unpooled : public CDBConnParamsDelegate
-{
-public:
-    CDBConnParams_Unpooled(const CDBConnParams& other)
-        : CDBConnParamsDelegate(other)
-        { }
-
-    string GetParam(const string& key) const
-        {
-            if (key == "is_pooled") {
-                return "false";
-            } else {
-                return CDBConnParamsDelegate::GetParam(key);
-            }
-        }
-};
-    
 CDB_Connection*
 CDriverContext::MakePooledConnection(const CDBConnParams& params)
 {
@@ -543,10 +545,7 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                     } else
 #endif
                     if (params.GetParam("pool_allow_temp_overflow")
-                        == "true") {
-                        return MakePooledConnection
-                            (CDBConnParams_Unpooled(params));
-                    } else {
+                        != "true") {
                         return NULL;
                     }
                 }

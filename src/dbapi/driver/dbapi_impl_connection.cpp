@@ -104,6 +104,7 @@ CConnection::CConnection(CDriverContext& dc,
 , m_Passwd(params.GetPassword())
 , m_Pool(params.GetParam("pool_name"))
 , m_PoolMinSize(0)
+, m_PoolMaxSize(kMax_UInt)
 , m_PoolIdleTimeParam(-1, 0)
 , m_CleanupTime(CTime::eEmpty)
 , m_ReuseCount(0)
@@ -119,10 +120,14 @@ CConnection::CConnection(CDriverContext& dc,
     m_OpeningMsgHandlers = params.GetOpeningMsgHandlers();
 
     string pool_min_str  = params.GetParam("pool_minsize"),
+           pool_max_str  = params.GetParam("pool_maxsize"),
            pool_idle_str = params.GetParam("pool_idle_time");
 
     if ( !pool_min_str.empty()  &&  pool_min_str != "default") {
         m_PoolMinSize = NStr::StringToUInt(pool_min_str);
+    }
+    if ( !pool_max_str.empty()  &&  pool_max_str != "default") {
+        m_PoolMaxSize = NStr::StringToUInt(pool_max_str);
     }
     if ( !pool_idle_str.empty()  &&  pool_idle_str != "default") {
         m_PoolIdleTimeParam = CTimeSpan(NStr::StringToDouble(pool_idle_str));

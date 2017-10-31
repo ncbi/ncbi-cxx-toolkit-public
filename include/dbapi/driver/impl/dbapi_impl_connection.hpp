@@ -341,6 +341,7 @@ private:
     const string   m_Passwd;
     const string   m_Pool;
     unsigned int   m_PoolMinSize;
+    unsigned int   m_PoolMaxSize;
     CTimeSpan      m_PoolIdleTimeParam;
     CTime          m_CleanupTime;
     CRef<CObject>  m_UserData;
