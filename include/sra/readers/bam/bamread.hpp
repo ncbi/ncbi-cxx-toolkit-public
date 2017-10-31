@@ -209,12 +209,7 @@ public:
 
     string GetHeaderText(void) const;
 
-#ifdef NCBI_SSE
 #define HAVE_NEW_PILEUP_COLLECTOR
-#if (defined NCBI_COMPILER_GCC || defined NCBI_COMPILER_ICC) && NCBI_SSE < 41
-#undef HAVE_NEW_PILEUP_COLLECTOR
-#endif
-#endif
 
 #ifdef HAVE_NEW_PILEUP_COLLECTOR
 

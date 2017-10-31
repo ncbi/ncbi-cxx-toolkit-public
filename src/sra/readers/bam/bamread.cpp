@@ -718,6 +718,8 @@ void CBamDb::SPileupValues::decode_gap(TSeqPos len)
 }
 
 
+// all SSE instructions used here are from SSE 2 which is always available
+
 static inline
 void add_bases_acgt(CBamDb::SPileupValues::SCountACGT* dst1, unsigned b, __m128i bits, __m128i mask)
 {
