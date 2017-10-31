@@ -1901,8 +1901,8 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
                     g.ints = &int_graph->SetValues();
                     g.ints->reserve(ref_range.GetLength());
                     size_t size = g.bytes->size();
-                    NFast::copy_n_bytes_aligned16(g.bytes->data(), size,
-                                                  NFast::append_uninitialized(*g.ints, size));
+                    NFast::Convert_memory(g.bytes->data(), size,
+                                          NFast::append_uninitialized(*g.ints, size));
                     g.bytes = 0;
                     g.graph->SetGraph().SetInt(*int_graph);
                 }
@@ -1920,10 +1920,10 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
     void x_AddValuesBy16(SGraph& g, TSeqPos len, const TCount* src)
         {
             if ( g.bytes ) {
-                NFast::copy_n_aligned16(src, len, NFast::append_uninitialized(*g.bytes, len));
+                NFast::Convert_memory(src, len, NFast::append_uninitialized(*g.bytes, len));
             }
             else if ( g.ints ) {
-                NFast::copy_n_aligned16(src, len, NFast::append_uninitialized(*g.ints, len));
+                NFast::Copy_memory(src, len, NFast::append_uninitialized(*g.ints, len));
             }
         }
     void x_AddValues(SGraph& g, TSeqPos len, const TCount* src)
@@ -1950,18 +1950,18 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
                 }
             }
             if ( dst_byte == kNumStat_ACGT ) {
-                NFast::copy_4n_split_aligned16(values.get_acgt_counts(), len,
-                                               NFast::append_uninitialized(*graphs[0].bytes, len),
-                                               NFast::append_uninitialized(*graphs[1].bytes, len),
-                                               NFast::append_uninitialized(*graphs[2].bytes, len),
-                                               NFast::append_uninitialized(*graphs[3].bytes, len));
+                NFast::Split_into4(values.get_acgt_counts(), len,
+                                   NFast::append_uninitialized(*graphs[0].bytes, len),
+                                   NFast::append_uninitialized(*graphs[1].bytes, len),
+                                   NFast::append_uninitialized(*graphs[2].bytes, len),
+                                   NFast::append_uninitialized(*graphs[3].bytes, len));
             }
             else if ( dst_int == kNumStat_ACGT ) {
-                NFast::copy_4n_split_aligned16(values.cc_acgt[0].cc, len,
-                                               NFast::append_uninitialized(*graphs[0].ints, len),
-                                               NFast::append_uninitialized(*graphs[1].ints, len),
-                                               NFast::append_uninitialized(*graphs[2].ints, len),
-                                               NFast::append_uninitialized(*graphs[3].ints, len));
+                NFast::Split_into4(values.cc_acgt[0].cc, len,
+                                   NFast::append_uninitialized(*graphs[0].ints, len),
+                                   NFast::append_uninitialized(*graphs[1].ints, len),
+                                   NFast::append_uninitialized(*graphs[2].ints, len),
+                                   NFast::append_uninitialized(*graphs[3].ints, len));
             }
             else {
                 // use split ACGT arrays
