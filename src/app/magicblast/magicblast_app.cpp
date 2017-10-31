@@ -1529,6 +1529,8 @@ s_CreateInputSource(CRef<CMapperQueryOptionsArgs> query_opts,
                 NCBI_THROW(CInputException, eEmptyUserInput, ss.str());
             }
             throw;
+        } catch (...) {
+            throw;
         }
         break;
         
