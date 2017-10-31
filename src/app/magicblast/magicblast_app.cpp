@@ -1516,9 +1516,20 @@ s_CreateInputSource(CRef<CMapperQueryOptionsArgs> query_opts,
         break;
 
     case CMapperQueryOptionsArgs::eSra:
-        retval = new CSraInputSource(query_opts->GetSraAccessions(),
+        try {
+            retval = new CSraInputSource(query_opts->GetSraAccessions(),
                                          query_opts->IsPaired(),
                                          query_opts->IsSraCacheEnabled());
+        } catch (CSraException& e) {
+            const string& str = query_opts->GetSraAccessions().front();
+            if (e.GetErrCode() == CSraException::eNotFoundDb) {
+                CNcbiStrstream ss;
+                ss << "The provided SRA accession '" << str
+                     << "' does not exist" << ends;
+                NCBI_THROW(CInputException, eEmptyUserInput, ss.str());
+            }
+            throw;
+        }
         break;
         
 
