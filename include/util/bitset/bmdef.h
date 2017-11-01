@@ -41,7 +41,7 @@
 // macro to define/undefine unaligned memory access (x86, PowerPC)
 //
 #if defined(__i386) || defined(__x86_64) || defined(__ppc__) || \
-	defined(__ppc64__) || defined(_M_IX86) || defined(_M_AMD64) || \
+    defined(__ppc64__) || defined(_M_IX86) || defined(_M_AMD64) || \
     defined(_M_IX86) || defined(_M_AMD64) || defined(_M_X64) || \
     (defined(_M_MPPC) && !defined(BM_FORBID_UNALIGNED_ACCESS))
 #define BM_UNALIGNED_ACCESS_OK 1
@@ -51,6 +51,23 @@
     defined(__i386) || defined(__x86_64) || defined(_M_AMD64) || \
     defined(BMSSE2OPT) || defined(BMSSE42OPT)
 #define BM_x86
+#endif
+
+// cxx11 features
+//
+#ifdef BM_NO_CXX11
+# define BMNOEXEPT
+#else
+# ifndef BMNOEXEPT
+#  define BMNOEXEPT noexcept
+# endif
+#endif
+
+
+// disable 'register' keyword, which is obsolete in C++11
+//
+#ifndef BMREGISTER
+# define BMREGISTER
 #endif
 
 
@@ -101,9 +118,7 @@
 #define FULL_BLOCK_REAL_ADDR bm::all_set<true>::_block._p
 #define FULL_BLOCK_FAKE_ADDR bm::all_set<true>::_block._p_fullp
 #define BLOCK_ADDR_SAN(addr) (addr == FULL_BLOCK_FAKE_ADDR) ? FULL_BLOCK_REAL_ADDR : addr
-//#define IS_VALID_ADDR(addr) bool(addr && (addr != FULL_BLOCK_ADDR)
 #define IS_VALID_ADDR(addr) bm::all_set<true>::is_valid_block_addr(addr)
-//#define IS_FULL_BLOCK(addr) bool(addr == FULL_BLOCK_ADDR)
 #define IS_FULL_BLOCK(addr) bm::all_set<true>::is_full_block(addr)
 #define IS_EMPTY_BLOCK(addr) bool(addr == 0)
 
@@ -204,7 +219,7 @@
 #endif
 
 /*! 
-	Define calculates number of 1 bits in 32-bit word.
+    Define calculates number of 1 bits in 32-bit word.
     @ingroup bitfunc 
 */
 #ifndef BM_INCWORD_BITCOUNT

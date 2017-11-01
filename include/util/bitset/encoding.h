@@ -1,30 +1,32 @@
 #ifndef BMENCODING_H__INCLUDED__
 #define BMENCODING_H__INCLUDED__
 /*
-Copyright(c) 2002-2009 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
+Copyright(c) 2002-2017 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
-
-Permission is hereby granted, free of charge, to any person 
-obtaining a copy of this software and associated documentation 
-files (the "Software"), to deal in the Software without restriction, 
-including without limitation the rights to use, copy, modify, merge, 
-publish, distribute, sublicense, and/or sell copies of the Software, 
-and to permit persons to whom the Software is furnished to do so, 
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included 
+The above copyright notice and this permission notice shall be included
 in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
+You have to explicitly mention BitMagic project in any derivative product,
+its WEB Site, published materials, articles or any other work derived from this
+project or based on our code or know-how.
 
-For more information please visit:   http://bmagic.sourceforge.net
+For more information please visit:  http://bitmagic.io
 
 */
 
@@ -49,7 +51,7 @@ class encoder
 public:
     typedef unsigned char* position_type;
 public:
-    encoder(unsigned char* buf, unsigned size);
+    encoder(unsigned char* buf, size_t size);
     void put_8(unsigned char c);
     void put_16(bm::short_t  s);
     void put_16(const bm::short_t* s, unsigned count);
@@ -67,7 +69,7 @@ public:
 private:
     unsigned char*  buf_;
     unsigned char*  start_;
-    unsigned int    size_;
+    size_t          size_;
 };
 
 // ----------------------------------------------------------------
@@ -207,9 +209,9 @@ public:
             flush_accum();        
     }
 
-    void put_zero_bits(register unsigned count)
+    void put_zero_bits(unsigned count)
     {
-        register unsigned used = used_bits_;
+        unsigned used = used_bits_;
         unsigned free_bits = (sizeof(accum_) * 8) - used;
         if (count >= free_bits)
         {
@@ -518,7 +520,7 @@ private:
     \param buf - memory buffer pointer.
     \param size - size of the buffer
 */
-inline encoder::encoder(unsigned char* buf, unsigned a_size)
+inline encoder::encoder(unsigned char* buf, size_t a_size)
 : buf_(buf), start_(buf)
 {
     size_ = a_size;

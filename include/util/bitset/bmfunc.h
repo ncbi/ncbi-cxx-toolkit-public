@@ -1,28 +1,32 @@
 #ifndef BMFUNC__H__INCLUDED__
 #define BMFUNC__H__INCLUDED__
 /*
-Copyright(c) 2002-2010 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
+Copyright(c) 2002-2017 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
-Permission is hereby granted, free of charge, to any person 
-obtaining a copy of this software and associated documentation 
-files (the "Software"), to deal in the Software without restriction, 
-including without limitation the rights to use, copy, modify, merge, 
-publish, distribute, sublicense, and/or sell copies of the Software, 
-and to permit persons to whom the Software is furnished to do so, 
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included 
+The above copyright notice and this permission notice shall be included
 in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
-For more information please visit:  http://bmagic.sourceforge.net
+You have to explicitly mention BitMagic project in any derivative product,
+its WEB Site, published materials, articles or any other work derived from this
+project or based on our code or know-how.
+
+For more information please visit:  http://bitmagic.io
 
 */
 
@@ -91,6 +95,18 @@ struct bv_statistics
     }
 };
 
+/**
+	\brief ad-hoc conditional expressions 
+	\internal
+*/
+template <bool b> struct conditional
+{
+	static bool test() { return true; }
+};
+template <> struct conditional<false>
+{
+	static bool test() { return false; }
+};
 
 /*! 
     @defgroup gapfunc GAP functions
@@ -107,64 +123,7 @@ struct bv_statistics
  */
 
 
-/*! @brief Default GAP lengths table.
-    @ingroup gapfunc
-*/
-template<bool T> struct gap_len_table
-{
-    static const gap_word_t _len[bm::gap_levels];
-};
 
-template<bool T>
-const gap_word_t gap_len_table<T>::_len[bm::gap_levels] = 
-                { 128, 256, 512, bm::gap_max_buff_len }; 
-
-
-/*! @brief Alternative GAP lengths table. 
-    Good for for memory saver mode and very sparse bitsets.
-
-    @ingroup gapfunc
-*/
-template<bool T> struct gap_len_table_min
-{
-    static const gap_word_t _len[bm::gap_levels];
-};
-
-template<bool T>
-const gap_word_t gap_len_table_min<T>::_len[bm::gap_levels] = 
-                                { 32, 96, 128, 512 }; 
-
-
-
-//---------------------------------------------------------------------
-
-/** Structure keeps all-left/right ON bits masks. 
-    @ingroup bitfunc 
-*/
-template<bool T> struct block_set_table
-{
-    static const unsigned _left[32];
-    static const unsigned _right[32];
-};
-
-template<bool T>
-const unsigned block_set_table<T>::_left[32] = {
-    0x1, 0x3, 0x7, 0xf, 0x1f, 0x3f, 0x7f, 0xff, 0x1ff, 0x3ff, 0x7ff,
-    0xfff, 0x1fff, 0x3fff, 0x7fff, 0xffff, 0x1ffff, 0x3ffff, 0x7ffff,
-    0xfffff, 0x1fffff, 0x3fffff, 0x7fffff, 0xffffff, 0x1ffffff, 0x3ffffff,
-    0x7ffffff, 0xfffffff, 0x1fffffff, 0x3fffffff, 0x7fffffff, 0xffffffff
-};
-
-template<bool T>
-const unsigned block_set_table<T>::_right[32] = {
-    0xffffffff, 0xfffffffe, 0xfffffffc, 0xfffffff8, 0xfffffff0,
-    0xffffffe0, 0xffffffc0, 0xffffff80, 0xffffff00, 0xfffffe00,
-    0xfffffc00, 0xfffff800, 0xfffff000, 0xffffe000, 0xffffc000,
-    0xffff8000, 0xffff0000, 0xfffe0000, 0xfffc0000, 0xfff80000,
-    0xfff00000, 0xffe00000, 0xffc00000, 0xff800000, 0xff000000,
-    0xfe000000, 0xfc000000, 0xf8000000, 0xf0000000, 0xe0000000,
-    0xc0000000, 0x80000000
-};
 
 
 
@@ -175,7 +134,7 @@ const unsigned block_set_table<T>::_right[32] = {
 BMFORCEINLINE
 bm::id_t word_bitcount(bm::id_t w)
 {
-#ifdef BMSSE4OPT
+#ifdef BMSSE42OPT
     return _mm_popcnt_u32(w);
 #else
     return
@@ -242,9 +201,32 @@ unsigned bitcount64_4way(bm::id64_t x, bm::id64_t y,
     x = x + (x >> 32);
     return x & 0x000001FF;
 }
-
-
 #endif
+
+
+/*!
+    Returns number of trailing zeros
+    @ingroup bitfunc 
+*/
+BMFORCEINLINE
+bm::id_t word_trailing_zeros(bm::id_t w)
+{
+	// TODO: find a better variant for MSVC 
+#if defined(BMSSE42OPT) && defined(__GNUC__)
+        return __builtin_ctzl(w);
+#else
+    // implementation from
+    // https://gist.github.com/andrewrk/1883543
+    static const int mod37_pos[] =
+    {
+        -1, 0, 1, 26, 2, 23, 27, 0, 3, 16, 24, 30, 28, 11, 0, 13, 4,
+        7, 17, 0, 25, 22, 31, 15, 29, 10, 12, 6, 0, 21, 14, 9, 5,
+        20, 8, 19, 18
+    };
+    return mod37_pos[(-w & w) % 37];
+#endif
+}
+
 
 
 
@@ -319,7 +301,7 @@ template<bool T> struct all_set
         all_set_block()
         {
             ::memset(_p, 0xFF, sizeof(_p));
-			if (sizeof(void*) == 8)
+			if (bm::conditional<sizeof(void*) == 8>::test())
 			{
 				const unsigned long long magic_mask = 0xFFFFfffeFFFFfffe;
 				::memcpy(&_p_fullp, &magic_mask, sizeof(magic_mask));
@@ -407,17 +389,6 @@ template<typename T> int wordcmp(T a, T b)
 // x & (x ^ (x-1))
 
 
-/**
-    Internal structure. Copyright information.
-*/
-template<bool T> struct _copyright
-{
-    static const char _p[];
-};
-
-template<bool T> const char _copyright<T>::_p[] = 
-    "BitMagic C++ Library. v.3.8.0 (c) 2002-2017 Anatoliy Kuznetsov.";
-
 
 /*! 
    \brief Byte orders recognized by the library.
@@ -491,8 +462,8 @@ unsigned gap_bfind(const T* buf, unsigned pos, unsigned* is_set)
     BM_ASSERT(pos < bm::gap_max_bits);
 	*is_set = (*buf) & 1;
 
-	register unsigned start = 1;
-	register unsigned end = 1 + ((*buf) >> 3);
+	BMREGISTER unsigned start = 1;
+	BMREGISTER unsigned end = 1 + ((*buf) >> 3);
 
 	while ( start != end )
 	{
@@ -707,13 +678,13 @@ template<class T> T sum_arr(T* first, T* last)
 */
 template<typename T> unsigned gap_bit_count(const T* buf, unsigned dsize=0) 
 {
-    register const T* pcurr = buf;
+    BMREGISTER const T* pcurr = buf;
     if (dsize == 0)
         dsize = (*pcurr >> 3);
 
-    register const T* pend = pcurr + dsize;
+    BMREGISTER const T* pend = pcurr + dsize;
 
-    register unsigned bits_counter = 0;
+    BMREGISTER unsigned bits_counter = 0;
     ++pcurr;
 
     if (*buf & 1)
@@ -857,7 +828,7 @@ T* gap_2_dgap(const T* gap_buf, T* dgap_buf, bool copy_head=true)
 template<typename T>
 void dgap_2_gap(const T* dgap_buf, T* gap_buf, T gap_header=0)
 {
-    register const T* pcurr = dgap_buf;
+    BMREGISTER const T* pcurr = dgap_buf;
     unsigned len;    
     if (!gap_header) // GAP header is already part of the stream
     {
@@ -870,7 +841,7 @@ void dgap_2_gap(const T* dgap_buf, T* gap_buf, T gap_header=0)
         *gap_buf++ = gap_header; // assign GAP header
     }    
     --len; // last element is actually not encoded
-    register const T* pend = pcurr + len;
+    BMREGISTER const T* pend = pcurr + len;
 
     *gap_buf = *pcurr++; // copy first element
     if (*gap_buf == 0) 
@@ -970,8 +941,8 @@ void gap_buff_op(T*         BMRESTRICT dest,
                  F&         f,
                  unsigned&  dlen)
 {
-    register const T*  cur1 = vect1;
-    register const T*  cur2 = vect2;
+    BMREGISTER const T*  cur1 = vect1;
+    BMREGISTER const T*  cur2 = vect2;
 
     T bitval1 = (T)((*cur1++ & 1) ^ vect1_mask);
     T bitval2 = (T)((*cur2++ & 1) ^ vect2_mask);
@@ -979,7 +950,7 @@ void gap_buff_op(T*         BMRESTRICT dest,
     T bitval = (T) f(bitval1, bitval2);
     T bitval_prev = bitval;
 
-    register T* res = dest; 
+    BMREGISTER T* res = dest; 
     *res = bitval;
     ++res;
 
@@ -1050,8 +1021,8 @@ unsigned gap_buff_any_op(const T*   BMRESTRICT vect1,
                          unsigned              vect2_mask, 
                          F                     f)
 {
-    register const T*  cur1 = vect1;
-    register const T*  cur2 = vect2;
+    BMREGISTER const T*  cur1 = vect1;
+    BMREGISTER const T*  cur2 = vect2;
 
     unsigned bitval1 = (*cur1++ & 1) ^ vect1_mask;
     unsigned bitval2 = (*cur2++ & 1) ^ vect2_mask;
@@ -1205,7 +1176,7 @@ template<typename T> unsigned gap_set_value(unsigned val,
     BM_ASSERT(pos < bm::gap_max_bits);
     unsigned curr = gap_bfind(buf, pos, is_set);
 
-    register T end = (T)(*buf >> 3);
+    BMREGISTER T end = (T)(*buf >> 3);
 	if (*is_set == val)
 	{
 		*is_set = 0;
@@ -1213,9 +1184,9 @@ template<typename T> unsigned gap_set_value(unsigned val,
 	}
     *is_set = 1;
 
-    register T* pcurr = buf + curr;
-    register T* pprev = pcurr - 1;
-    register T* pend = buf + end;
+    BMREGISTER T* pcurr = buf + curr;
+    BMREGISTER T* pprev = pcurr - 1;
+    BMREGISTER T* pend = buf + end;
 
     // Special case, first bit GAP operation. There is no platform beside it.
     // initial flag must be inverted.
@@ -1294,11 +1265,11 @@ unsigned gap_add_value(T* buf, unsigned pos)
 {
     BM_ASSERT(pos < bm::gap_max_bits);
 
-    register T end = (T)(*buf >> 3);
+    BMREGISTER T end = (T)(*buf >> 3);
 	T curr = end;
-    register T* pcurr = buf + end;
-    register T* pend  = pcurr;
-    register T* pprev = pcurr - 1;
+    BMREGISTER T* pcurr = buf + end;
+    BMREGISTER T* pend  = pcurr;
+    BMREGISTER T* pprev = pcurr - 1;
 
     // Special case, first bit GAP operation. There is no platform beside it.
     // initial flag must be inverted.
@@ -1479,7 +1450,7 @@ template<typename T> int gap_find_in_block(const T* buf,
        return 1;
     }
 
-    register unsigned val = buf[gap_idx] + 1;
+    BMREGISTER unsigned val = buf[gap_idx] + 1;
     *prev += val - nbit;
  
     return (val != bm::gap_max_bits);  // no bug here.
@@ -1708,8 +1679,8 @@ inline void xor_bit_block(unsigned* dest,
 template<typename T> 
 void gap_sub_to_bitset(unsigned* dest, const T*  buf)
 {
-    register const T* pcurr = buf;    
-    register const T* pend = pcurr + (*pcurr >> 3);
+    BMREGISTER const T* pcurr = buf;    
+    BMREGISTER const T* pend = pcurr + (*pcurr >> 3);
     ++pcurr;
 
     if (*buf & 1)  // Starts with 1
@@ -1740,8 +1711,8 @@ void gap_sub_to_bitset(unsigned* dest, const T*  buf)
 template<typename T> 
 void gap_xor_to_bitset(unsigned* dest, const T*  buf)
 {
-    register const T* pcurr = buf;    
-    register const T* pend = pcurr + (*pcurr >> 3);
+    BMREGISTER const T* pcurr = buf;    
+    BMREGISTER const T* pend = pcurr + (*pcurr >> 3);
     ++pcurr;
 
     if (*buf & 1)  // Starts with 1
@@ -1772,8 +1743,8 @@ void gap_xor_to_bitset(unsigned* dest, const T*  buf)
 template<typename T> 
 void gap_add_to_bitset(unsigned* dest, const T*  buf)
 {
-    register const T* pcurr = buf;    
-    register const T* pend = pcurr + (*pcurr >> 3);
+    BMREGISTER const T* pcurr = buf;    
+    BMREGISTER const T* pend = pcurr + (*pcurr >> 3);
     ++pcurr;
 
     if (*buf & 1)  // Starts with 1
@@ -1804,8 +1775,8 @@ void gap_add_to_bitset(unsigned* dest, const T*  buf)
 template<typename T> 
 void gap_and_to_bitset(unsigned* dest, const T*  buf)
 {
-    register const T* pcurr = buf;    
-    register const T* pend = pcurr + (*pcurr >> 3);
+    BMREGISTER const T* pcurr = buf;    
+    BMREGISTER const T* pend = pcurr + (*pcurr >> 3);
     ++pcurr;
 
     if (! (*buf & 1) )  // Starts with 0 
@@ -1872,8 +1843,8 @@ bm::id_t gap_bitset_and_any(const unsigned* block, const T*  buf)
 {
     BM_ASSERT(block);
 
-    register const T* pcurr = buf;    
-    register const T* pend = pcurr + (*pcurr >> 3);
+    BMREGISTER const T* pcurr = buf;    
+    BMREGISTER const T* pend = pcurr + (*pcurr >> 3);
     ++pcurr;
 
     bm::id_t count = 0;
@@ -1912,8 +1883,8 @@ bm::id_t gap_bitset_sub_count(const unsigned* block, const T*  buf)
 {
     BM_ASSERT(block);
 
-    register const T* pcurr = buf;    
-    register const T* pend = pcurr + (*pcurr >> 3);
+    BMREGISTER const T* pcurr = buf;    
+    BMREGISTER const T* pend = pcurr + (*pcurr >> 3);
     ++pcurr;
 
     bm::id_t count = 0;
@@ -1946,8 +1917,8 @@ bm::id_t gap_bitset_sub_any(const unsigned* block, const T*  buf)
 {
     BM_ASSERT(block);
 
-    register const T* pcurr = buf;    
-    register const T* pend = pcurr + (*pcurr >> 3);
+    BMREGISTER const T* pcurr = buf;    
+    BMREGISTER const T* pend = pcurr + (*pcurr >> 3);
     ++pcurr;
 
     bm::id_t count = 0;
@@ -1985,13 +1956,13 @@ bm::id_t gap_bitset_xor_count(const unsigned* block, const T*  buf)
 {
     BM_ASSERT(block);
 
-    register const T* pcurr = buf;    
-    register const T* pend = pcurr + (*pcurr >> 3);
+    BMREGISTER const T* pcurr = buf;    
+    BMREGISTER const T* pend = pcurr + (*pcurr >> 3);
     ++pcurr;
 
     unsigned bitval = *buf & 1;
     
-    register bm::id_t count = bit_block_calc_count_range(block, 0, *pcurr);
+    BMREGISTER bm::id_t count = bit_block_calc_count_range(block, 0, *pcurr);
     if (bitval)
     {
         count = *pcurr + 1 - count;
@@ -2024,13 +1995,13 @@ bm::id_t gap_bitset_xor_any(const unsigned* block, const T*  buf)
 {
     BM_ASSERT(block);
 
-    register const T* pcurr = buf;    
-    register const T* pend = pcurr + (*pcurr >> 3);
+    BMREGISTER const T* pcurr = buf;    
+    BMREGISTER const T* pend = pcurr + (*pcurr >> 3);
     ++pcurr;
 
     unsigned bitval = *buf & 1;
     
-    register bm::id_t count = bit_block_any_range(block, 0, *pcurr);
+    BMREGISTER bm::id_t count = bit_block_any_range(block, 0, *pcurr);
     if (bitval)
     {
         count = *pcurr + 1 - count;
@@ -2068,13 +2039,13 @@ bm::id_t gap_bitset_or_count(const unsigned* block, const T*  buf)
 {
     BM_ASSERT(block);
 
-    register const T* pcurr = buf;    
-    register const T* pend = pcurr + (*pcurr >> 3);
+    BMREGISTER const T* pcurr = buf;    
+    BMREGISTER const T* pend = pcurr + (*pcurr >> 3);
     ++pcurr;
 
     unsigned bitval = *buf & 1;
     
-    register bm::id_t count;
+    BMREGISTER bm::id_t count;
     if (bitval)
     {
         count = *pcurr + 1;
@@ -2116,13 +2087,13 @@ bm::id_t gap_bitset_or_any(const unsigned* block, const T*  buf)
 {
     BM_ASSERT(block);
 
-    register const T* pcurr = buf;    
-    register const T* pend = pcurr + (*pcurr >> 3);
+    BMREGISTER const T* pcurr = buf;    
+    BMREGISTER const T* pend = pcurr + (*pcurr >> 3);
     ++pcurr;
 
     unsigned bitval = *buf & 1;
     
-    register bm::id_t count;
+    BMREGISTER bm::id_t count;
     if (bitval)
     {
         count = *pcurr + 1;
@@ -2244,8 +2215,8 @@ template<typename T> unsigned gap_control_sum(const T* buf)
 {
     unsigned end = *buf >> 3;
 
-    register const T* pcurr = buf;    
-    register const T* pend = pcurr + (*pcurr >> 3);
+    BMREGISTER const T* pcurr = buf;    
+    BMREGISTER const T* pend = pcurr + (*pcurr >> 3);
     ++pcurr;
 
     if (*buf & 1)  // Starts with 1
@@ -2551,16 +2522,16 @@ template<typename T>
                                 bm::id_t bits, 
                                 unsigned dest_len)
 {
-    register T* BMRESTRICT pcurr = dest;
+    BMREGISTER T* BMRESTRICT pcurr = dest;
     T* BMRESTRICT end = dest + dest_len; 
-    register int bitval = (*src) & 1;
+    BMREGISTER int bitval = (*src) & 1;
 //    *pcurr |= bitval;
     *pcurr = (T)bitval;
 
     ++pcurr;
     *pcurr = 0;
-    register unsigned bit_idx = 0;
-    register int bitval_next;
+    BMREGISTER unsigned bit_idx = 0;
+    BMREGISTER int bitval_next;
 
     unsigned val = *src;
 
@@ -2591,7 +2562,7 @@ template<typename T>
         }
 
 
-        register unsigned mask = 1;
+        BMREGISTER unsigned mask = 1;
         while (mask)
         {
             // Now plain bitshifting. TODO: Optimization wanted.
@@ -2696,8 +2667,8 @@ D gap_convert_to_arr(D* BMRESTRICT       dest,
                      unsigned            dest_len,
                      bool                invert = false)
 {
-    register const T* BMRESTRICT pcurr = buf;
-    register const T* pend = pcurr + (*pcurr >> 3);
+    BMREGISTER const T* BMRESTRICT pcurr = buf;
+    BMREGISTER const T* pend = pcurr + (*pcurr >> 3);
 
     D* BMRESTRICT dest_curr = dest;
     ++pcurr;
@@ -4477,7 +4448,7 @@ int bit_find_in_block(const bm::word_t* data,
                       unsigned          nbit, 
                       bm::id_t*         prev)
 {
-    register bm::id_t p = *prev;
+    BMREGISTER bm::id_t p = *prev;
     int found = 0;
 
     for(;;)
@@ -4485,21 +4456,17 @@ int bit_find_in_block(const bm::word_t* data,
         unsigned nword  = nbit >> bm::set_word_shift;
         if (nword >= bm::set_block_size) break;
 
-        register bm::word_t val = data[nword] >> (p & bm::set_word_mask);
-
-        // TODO: consider BSF and de bruijn sequences here:
-        // http://www.0xe3.com/text/ntz/ComputingTrailingZerosHOWTO.html#debruijn
-
+        BMREGISTER bm::word_t val = data[nword] >> (p & bm::set_word_mask);
         if (val)
         {
-            while((val & 1) == 0)
+            unsigned trail_z = bm::word_trailing_zeros(val);
+            if (trail_z)
             {
-                val >>= 1;
-                ++nbit;
-                ++p;
+                val >>= trail_z;
+                p += trail_z;
+                BM_ASSERT(val & 1);
             }
             ++found;
-
             break;
         }
         else
@@ -4721,6 +4688,28 @@ template<typename T,typename B> unsigned bit_list_4(T w, B* bits)
 }
 
 /*!
+\brief Unpacks word into list of ON bit indexes using popcnt method
+\param w - value
+\param bits - pointer on the result array
+\return number of bits in the list
+
+@ingroup bitfunc
+*/
+
+template<typename T, typename B>
+unsigned bitscan_popcnt(T w, B* bits)
+{
+	unsigned pos = 0;
+	while (w)
+	{
+		T t = w & -w;
+		bits[pos++] = bm::word_bitcount(t - 1);
+		w &= w - 1;
+	}
+	return pos;
+}
+
+/*!
    \brief Unpacks word into list of ON bit indexes
    \param w - value
    \param bits - pointer on the result array 
@@ -4819,13 +4808,13 @@ template<typename T> T bit_convert_to_arr2(T* BMRESTRICT dest,
                                           bm::id_t bits, 
                                           unsigned dest_len)
 {
-    register T* BMRESTRICT pcurr = dest;
+    BMREGISTER T* BMRESTRICT pcurr = dest;
     T* BMRESTRICT end = dest + dest_len; 
     unsigned  bit_idx = 0;
 
     do
     {
-        register unsigned val = *src;
+        BMREGISTER unsigned val = *src;
         // We can skip if *src == 0 
 
         while (val == 0)

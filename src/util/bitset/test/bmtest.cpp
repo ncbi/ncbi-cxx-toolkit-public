@@ -1,24 +1,31 @@
 /*
-Copyright (c) 2002-2017 Anatoliy Kuznetsov.
+Copyright(c) 2002-2017 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
-Permission is hereby granted, free of charge, to any person 
-obtaining a copy of this software and associated documentation 
-files (the "Software"), to deal in the Software without restriction, 
-including without limitation the rights to use, copy, modify, merge, 
-publish, distribute, sublicense, and/or sell copies of the Software, 
-and to permit persons to whom the Software is furnished to do so, 
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included 
+The above copyright notice and this permission notice shall be included
 in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
+
+You have to explicitly mention BitMagic project in any derivative product,
+its WEB Site, published materials, articles or any other work derived from this
+project or based on our code or know-how.
+
+For more information please visit:  http://bitmagic.io
+
 */
 
 #include <ncbi_pch.hpp>
@@ -27,6 +34,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <iostream>
 #include <time.h>
 #include <stdio.h>
+#include <sstream>
 
 //#define BMSSE2OPT
 //#define BMSSE42OPT
@@ -247,7 +255,7 @@ void BitCountTest()
     }
 
     volatile unsigned* p = &value;
-    unsigned c1 = *p;
+    unsigned c1;
     c1 = value = 0;
 
     if (!platform_test)
@@ -261,6 +269,8 @@ void BitCountTest()
 
     c1 = *p;
     c1 = value = 0;
+    stringstream s;
+    s << value << c1; // to fool the optimization
 
     delete bset;
     delete bv;
@@ -274,40 +284,53 @@ void BitForEachTest()
     // setup the test data
     //
     unsigned* test_arr = new unsigned[65536];
-	for (unsigned j = 0; j < 65536; ++j)
-	{
+    for (unsigned j = 0; j < 65536; ++j)
+    {
         test_arr[j] = j;		
-	}
+    }
 
     if (!platform_test)
     {
-	unsigned bit_list[32];
+    unsigned bit_list[32];
     TimeTaker tt("BitList algorithm. Conventional (AND based check)", REPEATS*10);
     
 
-	for (unsigned i = 0; i < REPEATS*10; ++i)
+    for (unsigned i = 0; i < REPEATS*10; ++i)
     {    
-		for (unsigned j = 0; j < 65536; ++j)
-		{
-			bm::bit_list(i*test_arr[j], bit_list);
-		}
-	}
-	}
-	
+        for (unsigned j = 0; j < 65536; ++j)
+        {
+            bm::bit_list(i*test_arr[j], bit_list);
+        }
+    }
+    }
+    
     {
-	unsigned bit_list[32];
-    TimeTaker tt("BitList4 algorithm(sub-octet+switch)", REPEATS*10);
+    unsigned bit_list[32];
+    TimeTaker tt("BitList4 algorithm(sub-octet+switch)", REPEATS*20);
 
-	for (unsigned i = 0; i < REPEATS*10; ++i)
+    for (unsigned i = 0; i < REPEATS*100; ++i)
     {    
-		for (unsigned j = 0; j < 65536; ++j)
-		{
-			bm::bit_list_4(i*test_arr[j], bit_list);
-		}
-	}
-	}
-	
-	delete [] test_arr;
+        for (unsigned j = 0; j < 65536; ++j)
+        {
+            bm::bit_list_4(i*test_arr[j], bit_list);
+        }
+    }
+    }
+
+    {
+        unsigned bit_list[32];
+        TimeTaker tt("BitScan on bitcount algorithm", REPEATS * 20);
+
+        for (unsigned i = 0; i < REPEATS * 100; ++i)
+        {
+            for (unsigned j = 0; j < 65536; ++j)
+            {
+                bm::bitscan_popcnt(i*test_arr[j], bit_list);
+            }
+        }
+    }
+
+    delete [] test_arr;
 }
 
 
@@ -316,8 +339,8 @@ void BitCountSparseTest()
     {
     bvect*  bv = new bvect();
     test_bitset*  bset = new test_bitset();
-    unsigned value = 0, c1;
-    volatile unsigned* p = &value;
+    size_t value = 0, c1;
+    volatile size_t* p = &value;
 
     SimpleFillSets(*bset, *bv, 0, BSIZE, 2500);
 
@@ -469,8 +492,8 @@ void EnumeratorTest()
     unsigned i;
 
     {
-    TimeTaker tt("bvector<>::enumerator", REPEATS/10);
-    for (i = 0; i < REPEATS/10; ++i)
+    TimeTaker tt("bvector<>::enumerator", REPEATS);
+    for (i = 0; i < REPEATS; ++i)
     {    
         bvect::enumerator en = bv.first();
 
@@ -486,8 +509,8 @@ void EnumeratorTest()
 
     unsigned cnt = 0;
     {
-        TimeTaker tt("bvector<>::get_next()", REPEATS/10);
-        for (i = 0; i < REPEATS/10; ++i)
+        TimeTaker tt("bvector<>::get_next()", REPEATS);
+        for (i = 0; i < REPEATS; ++i)
         {
             if (bv.any())
             {
@@ -531,10 +554,13 @@ void EnumeratorTestGAP()
 
         while (en < bend)
         {
-            v = *en;
+            v += *en;
             ++en;
         }
     }
+
+    stringstream s;
+    s << v << endl; // attempt to fool optimization
 
     }
 
@@ -580,24 +606,24 @@ void EnumeratorTestGAP()
 
 void SerializationTest()
 {
-	bvect bv_sparse;
+    bvect bv_sparse;
     // stack declaration of temp block instead of re-allocation makes things faster
     BM_DECLARE_TEMP_BLOCK(tb)
 
 
-	// prepare a test bitset with a small number of bits set somewhere
-	// far from the beginning
-	for (unsigned i = 0; i < 5; ++i)
-	{
-		bv_sparse[BSIZE/2 + i * 3] = true;		
-	}
-	bv_sparse[100] = true;
-	bv_sparse[70000] = true;
-	bv_sparse[200000] = true;
+    // prepare a test bitset with a small number of bits set somewhere
+    // far from the beginning
+    for (unsigned i = 0; i < 5; ++i)
+    {
+        bv_sparse[BSIZE/2 + i * 3] = true;		
+    }
+    bv_sparse[100] = true;
+    bv_sparse[70000] = true;
+    bv_sparse[200000] = true;
 
-	bv_sparse.optimize(tb);
+    bv_sparse.optimize(tb);
 
-	unsigned cnt = bv_sparse.count();
+    unsigned cnt = bv_sparse.count();
     bvect::statistics st;
     bv_sparse.calc_stat(&st);
     unsigned char*  buf = new unsigned char[st.max_serialize_mem];
@@ -605,37 +631,37 @@ void SerializationTest()
     unsigned len, id_size;
     len = id_size = 0;
     {
-	TimeTaker tt("Small bvector serialization", REPEATS*70000);
-	for (unsigned i = 0; i < REPEATS*70000; ++i)
-	{
-		len += bm::serialize(bv_sparse, buf, tb, bm::BM_NO_BYTE_ORDER|bm::BM_NO_GAP_LENGTH);
-		id_size += cnt * (unsigned)sizeof(unsigned);
-	}
-	}
-	
-	delete [] buf; buf = 0;
-		
+    TimeTaker tt("Small bvector serialization", REPEATS*70000);
+    for (unsigned i = 0; i < REPEATS*70000; ++i)
+    {
+        len += bm::serialize(bv_sparse, buf, tb, bm::BM_NO_BYTE_ORDER|bm::BM_NO_GAP_LENGTH);
+        id_size += cnt * (unsigned)sizeof(unsigned);
+    }
+    }
+    
+    delete [] buf; buf = 0;
+        
     bvect*  bv = new bvect();
     test_bitset*  bset = new test_bitset();
     unsigned value = 0;
 
     SimpleFillSets(*bset, *bv, 0, BSIZE, 4);
     
-	cnt = bv->count();
+    cnt = bv->count();
     bv->calc_stat(&st);
     buf = new unsigned char[st.max_serialize_mem];
     
     {
-	TimeTaker tt("Large bvector serialization", REPEATS*4);
-	for (unsigned i = 0; i < REPEATS*4; ++i)
-	{
-		len += bm::serialize(*bv, buf, tb, bm::BM_NO_BYTE_ORDER|bm::BM_NO_GAP_LENGTH);
-		id_size += cnt * (unsigned)sizeof(unsigned);
-	}
-	}
+    TimeTaker tt("Large bvector serialization", REPEATS*4);
+    for (unsigned i = 0; i < REPEATS*4; ++i)
+    {
+        len += bm::serialize(*bv, buf, tb, bm::BM_NO_BYTE_ORDER|bm::BM_NO_GAP_LENGTH);
+        id_size += cnt * (unsigned)sizeof(unsigned);
+    }
+    }
     
-	char cbuf[256];
-	sprintf(cbuf, "%i %i %i", id_size, len, value);
+    char cbuf[256];
+    sprintf(cbuf, "%i %i %i", id_size, len, value);
     
     
     delete bv;
@@ -1060,7 +1086,7 @@ void TI_MetricTest()
 
 void BitBlockTransposeTest()
 {
-    bm::word_t BM_ALIGN16 block1[bm::set_block_size] BM_ALIGN16ATTR = {0,};
+    bm::word_t BM_ALIGN16 block1[bm::set_block_size] BM_ALIGN16ATTR = { 0, };
     //bm::word_t BM_ALIGN16 block2[bm::set_block_size] = {0xFF,};
     unsigned   BM_ALIGN16 tmatrix1[32][bm::set_block_plain_size] BM_ALIGN16ATTR;
 

@@ -1,38 +1,43 @@
 #ifndef BMSPARSEVEC_H__INCLUDED__
 #define BMSPARSEVEC_H__INCLUDED__
 /*
-Copyright(c) 2017 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
+Copyright(c) 2002-2017 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
-
-Permission is hereby granted, free of charge, to any person 
-obtaining a copy of this software and associated documentation 
-files (the "Software"), to deal in the Software without restriction, 
-including without limitation the rights to use, copy, modify, merge, 
-publish, distribute, sublicense, and/or sell copies of the Software, 
-and to permit persons to whom the Software is furnished to do so, 
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included 
+The above copyright notice and this permission notice shall be included
 in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
+You have to explicitly mention BitMagic project in any derivative product,
+its WEB Site, published materials, articles or any other work derived from this
+project or based on our code or know-how.
 
-For more information please visit:   http://bmagic.sourceforge.net
+For more information please visit:  http://bitmagic.io
 
 */
 
 #include <memory.h>
 #include <stdexcept>
 
-#include "bm.h"
 #include "bmdef.h"
+
+#include "bm.h"
+#include "bmtrans.h"
+#include "bmalgo_impl.h"
 
 
 namespace bm
@@ -64,6 +69,44 @@ public:
     struct statistics : public bv_statistics
     {};
 
+    /**
+         Reference class to access elements via common [] operator
+    */
+    class reference
+    {
+    public:
+        reference(sparse_vector<Val, BV>& sv, size_type idx) BMNOEXEPT
+        : sv_(sv), idx_(idx)
+        {}
+        
+        operator value_type() const
+        {
+            return sv_.get(idx_);
+        }
+        
+        reference& operator=(const reference& ref)
+        {
+            sv_.set(idx_, (value_type)ref);
+            return *this;
+        }
+        
+        reference& operator=(value_type val)
+        {
+            sv_.set(idx_, val);
+            return *this;
+        }
+        
+        bool operator==(const reference& ref) const
+        {
+            return bool(*this) == bool(ref);
+        }
+        
+    private:
+        sparse_vector<Val, BV>& sv_;
+        size_type               idx_;
+    };
+    
+
 public:
     /*!
         \brief Sparse vector constructor
@@ -84,26 +127,58 @@ public:
     
     /*! copy-ctor */
     sparse_vector(const sparse_vector<Val, BV>& sv);
-    
-    /*! Assignmment operator */
-    sparse_vector& operator = (const sparse_vector<Val, BV>& sv)
+
+
+#ifndef BM_NO_CXX11
+    /*! move-ctor */
+    sparse_vector(sparse_vector<Val, BV>&& sv) BMNOEXEPT;
+
+
+    /*! move assignmment operator */
+    sparse_vector<Val,BV>& operator = (sparse_vector<Val, BV>&& sv) BMNOEXEPT
     {
-        clear();
-        resize(sv.size());
-        bv_size_ = sv.bv_size_;
-        alloc_ = sv.alloc_;
-    
-        for (size_type i = 0; i < sizeof(Val)*8; ++i)
+        if (this != &sv)
         {
-            const bvector_type* bv = sv.plains_[i];
-            if (bv)
-                plains_[i] = new bvector_type(*bv);
-        } // for i
+            clear();
+            swap(sv);
+        }
+        return *this;
+    }
+#endif
+
+    /*! copy assignmment operator */
+    sparse_vector<Val,BV>& operator = (const sparse_vector<Val, BV>& sv)
+    {
+        if (this != &sv)
+        {
+            clear();
+            resize(sv.size());
+            bv_size_ = sv.bv_size_;
+            alloc_ = sv.alloc_;
+        
+            for (size_type i = 0; i < sizeof(Val)*8; ++i)
+            {
+                const bvector_type* bv = sv.plains_[i];
+                if (bv)
+                    plains_[i] = new bvector_type(*bv);
+            } // for i
+        }
         return *this;
     }
     
     
-    ~sparse_vector();
+    ~sparse_vector() BMNOEXEPT;
+    
+    reference operator[](size_type idx)
+    {
+        BM_ASSERT(idx < size_);
+        return reference(*this, idx);
+    }
+
+    
+    /*! \brief content exchange
+    */
+    void swap(sparse_vector<Val, BV>& sv) BMNOEXEPT;
     
     /*!
         \brief get specified element without bounds checking
@@ -133,10 +208,15 @@ public:
         \param arr  - dest array
         \param size - dest size
         \param offset - target index in the sparse vector to export from
+        \param zero_mem - set to false if target array is pre-initialized 
+                          with 0s to avoid performance penalty
      
         \return number of exported elements
     */
-    size_type extract(value_type* arr, size_type size, size_type offset = 0);
+    size_type extract(value_type* arr,
+                      size_type size,
+                      size_type offset = 0,
+                      bool      zero_mem = true);
 
     
     
@@ -146,6 +226,12 @@ public:
     size_type size() const;
     
     
+    /*! \brief return true if vector is empty
+        \return true if empty
+    */
+    bool empty() const;
+    
+    
     /*! \brief resize vector
         \param sz - new size
     */
@@ -153,7 +239,7 @@ public:
     
     /*! \brief resize to zero, free memory
     */
-    void clear();
+    void clear() BMNOEXEPT;
     
     /*!
         \brief access specified element with bounds checking
@@ -252,7 +338,7 @@ private:
 
     /*! \brief free all internal vectors
     */
-    void free_vectors();
+    void free_vectors() BMNOEXEPT;
 
     /*! \brief set value without checking boundaries
     */
@@ -293,25 +379,78 @@ sparse_vector<Val, BV>::sparse_vector(const sparse_vector<Val, BV>& sv)
   ap_(sv.ap_),
   size_(sv.size_)
 {
+    if (this != &sv)
+    {
+        for (size_type i = 0; i < sizeof(Val)*8; ++i)
+        {
+            const bvector_type* bv = sv.plains_[i];
+            if (bv)
+                plains_[i] = new bvector_type(*bv);
+            else
+                plains_[i] = 0;
+        } // for i
+    }
+}
+
+//---------------------------------------------------------------------
+#ifndef BM_NO_CXX11
+
+template<class Val, class BV>
+sparse_vector<Val, BV>::sparse_vector(sparse_vector<Val, BV>&& sv) BMNOEXEPT
+{
+    bv_size_ = 0;
+    alloc_ = sv.alloc_;
+    ap_ = sv.ap_;
+    size_ = sv.size_;
+        
     for (size_type i = 0; i < sizeof(Val)*8; ++i)
     {
-        const bvector_type* bv = sv.plains_[i];
-        if (bv)
-            plains_[i] = new bvector_type(*bv);
-        else
-            plains_[i] = 0;
-    } // for i
-    
+        plains_[i] = sv.plains_[i];
+        sv.plains_[i] = 0;
+    }
+    sv.size_ = 0;
+}
+
+#endif
+
+
+
+//---------------------------------------------------------------------
+
+template<class Val, class BV>
+sparse_vector<Val, BV>::~sparse_vector() BMNOEXEPT
+{
+    free_vectors();
 }
 
 //---------------------------------------------------------------------
 
-
 template<class Val, class BV>
-sparse_vector<Val, BV>::~sparse_vector()
+void sparse_vector<Val, BV>::swap(sparse_vector<Val, BV>& sv) BMNOEXEPT
 {
-    free_vectors();
+    if (this != &sv)
+    {
+        bm::xor_swap(bv_size_, sv.bv_size_);
+        
+        allocator_type alloc_tmp = alloc_;
+        alloc_ = sv.alloc_;
+        sv.alloc_ = alloc_tmp;
+        
+        allocation_policy_type ap_tmp = ap_;
+        ap_ = sv.ap_;
+        sv.ap_ = ap_tmp;
+        
+        for (size_type i = 0; i < sizeof(Val)*8; ++i)
+        {
+            bvector_type* bv_tmp = plains_[i];
+            plains_[i] = sv.plains_[i];
+            sv.plains_[i] = bv_tmp;
+        } // for i
+        
+        bm::xor_swap(size_, sv.size_);        
+    }
 }
+
 
 //---------------------------------------------------------------------
 
@@ -320,32 +459,66 @@ void sparse_vector<Val, BV>::import(const value_type* arr,
                                     size_type         size,
                                     size_type         offset)
 {
+    unsigned b_list[sizeof(Val)*8];
+    unsigned row_len[sizeof(Val)*8] = {0, };
+    
+    const unsigned transpose_window = 256;
+    bm::tmatrix<bm::id_t, sizeof(Val)*8, transpose_window> tm; // matrix accumulator
+    
     if (size == 0)
         throw std::range_error("sparse vector range error");
     
-    // cleap all plains in the range to provide corrrect import of 0 values
+    // clear all plains in the range to provide corrrect import of 0 values
     this->clear_range(offset, offset + size - 1);
+    
+    // transposition algorithm uses bitscen to find index bits and store it
+    // in temporary matrix (list for each bit plain), matrix here works
+    // when array gets to big - the list gets loaded into bit-vector using
+    // bulk load algorithm, which is faster than single bit access
+    //
     
     size_type i;
     for (i = 0; i < size; ++i)
     {
-        value_type v = arr[i];
-        if (!v)
-            continue;
+        unsigned bcnt = bm::bitscan_popcnt(arr[i], b_list);
+        const unsigned bit_idx = i + offset;
         
-        unsigned b_list[sizeof(Val)*8];
-        unsigned bcnt = bm::bit_list_4(v, b_list);
-
         for (unsigned j = 0; j < bcnt; ++j)
         {
             unsigned p = b_list[j];
-            bvector_type* bv = get_plain(p);
-            bv->set_bit(i + offset);
+            unsigned rl = row_len[p];
+            tm.row(p)[rl] = bit_idx;
+            row_len[p] = ++rl;
+            
+            if (rl == transpose_window)
+            {
+                bvector_type* bv = get_plain(p);
+                const bm::id_t* r = tm.row(p);
+                bm::combine_or(*bv, r, r + rl);
+                row_len[p] = 0;
+                tm.row(p)[0] = 0;
+            }
         } // for j
     } // for i
+    
+    // process incomplete transposition lines
+    //
+    for (unsigned k = 0; k < tm.rows(); ++k)
+    {
+        unsigned rl = row_len[k];
+        if (rl)
+        {
+            bvector_type* bv = get_plain(k);
+            const bm::id_t* r = tm.row(k);
+            bm::combine_or(*bv, r, r + rl);
+        }
+    } // for k
+    
+    
     if (i > size_)
         size_ = i;
 }
+
 
 //---------------------------------------------------------------------
 
@@ -353,38 +526,60 @@ template<class Val, class BV>
 typename sparse_vector<Val, BV>::size_type
 sparse_vector<Val, BV>::extract(value_type* arr,
                                 size_type   size,
-                                size_type   offset)
+                                size_type   offset,
+                                bool        zero_mem)
 {
     if (size == 0)
         return 0;
-    ::memset(arr, 0, sizeof(value_type)*size);
+    if (zero_mem)
+        ::memset(arr, 0, sizeof(value_type)*size);
     
     size_type start = offset;
     size_type end = start + size;
     if (end > size_)
         end = size_;
     
-    for (size_type i = 0; i < sizeof(Val)*8; ++i)
+	bool masked_scan = !(offset == 0 && size == this->size());
+
+    if (masked_scan)
     {
-        const bvector_type* bv = plains_[i];
-        if (bv)
+        bvector_type bv_mask;
+        for (size_type i = 0; i < sizeof(Val)*8; ++i)
         {
-            value_type mask = (1 << i);
-            bvector_type bv_mask;
-            
-            bv_mask.set_range(offset, end - 1);
-            bv_mask.bit_and(*bv);
-            
-            typename BV::enumerator en = bv_mask.first();
-            for (;en.valid();++en)
+            const bvector_type* bv = plains_[i];
+            if (bv)
             {
-                size_type idx = *en - offset;
-                if (idx >=  size)
-                    break;
-                arr[idx] |= mask;
+                value_type mask = (1 << i);            
+                bv_mask.set_range(offset, end - 1);
+                bv_mask.bit_and(*bv);
+                for (typename BV::enumerator en(&bv_mask, 0); en.valid(); ++en)
+                {
+                    size_type idx = *en - offset;
+                    BM_ASSERT(idx < size);
+                    arr[idx] |= mask;
+                } // for
+                bv_mask.clear();
             }
-        }
-    } // for i
+        } // for i
+    }
+    else
+    {
+        for (size_type i = 0; i < sizeof(Val)*8; ++i)
+        {
+            const bvector_type* bv = plains_[i];
+            if (bv)
+            {
+                value_type mask = (1 << i);            
+                for (typename BV::enumerator en(bv, 0); en.valid(); ++en)
+                {
+                    size_type idx = *en;
+                    BM_ASSERT(idx < size);
+                    arr[idx] |= mask;
+                } // for
+            }
+        } // for i
+    }
+
     return 0;
 }
 
@@ -396,6 +591,15 @@ sparse_vector<Val, BV>::size() const
 {
     return size_;
 }
+
+//---------------------------------------------------------------------
+
+template<class Val, class BV>
+bool sparse_vector<Val, BV>::empty() const
+{
+    return (size_ == 0);
+}
+
 
 //---------------------------------------------------------------------
 
@@ -464,10 +668,10 @@ sparse_vector<Val, BV>::get(bm::id_t i) const
     const bvector_type* bv;
     for (unsigned j = 0; j < sizeof(Val)*8; ++j)
     {
-        if ((bv = this->plains_[j]))   v |= ((bv->test(i))<<j);
-        if ((bv = this->plains_[++j])) v |= ((bv->test(i))<<j);
-        if ((bv = this->plains_[++j])) v |= ((bv->test(i))<<j);
-        if ((bv = this->plains_[++j])) v |= ((bv->test(i))<<j);
+        if ((bv = this->plains_[j])!=0)   v |= ((bv->test(i))<<j);
+        if ((bv = this->plains_[++j])!=0) v |= ((bv->test(i))<<j);
+        if ((bv = this->plains_[++j])!=0) v |= ((bv->test(i))<<j);
+        if ((bv = this->plains_[++j])!=0) v |= ((bv->test(i))<<j);
     }
     return v;
 }
@@ -526,7 +730,7 @@ void sparse_vector<Val, BV>::set_value(size_type idx, value_type v)
 //---------------------------------------------------------------------
 
 template<class Val, class BV>
-void sparse_vector<Val, BV>::clear()
+void sparse_vector<Val, BV>::clear() BMNOEXEPT
 {
     free_vectors();
     size_ = 0;
@@ -537,7 +741,7 @@ void sparse_vector<Val, BV>::clear()
 
 
 template<class Val, class BV>
-void sparse_vector<Val, BV>::free_vectors()
+void sparse_vector<Val, BV>::free_vectors() BMNOEXEPT
 {
     for (size_type i = 0; i < sizeof(Val)*8; ++i)
         delete plains_[i];

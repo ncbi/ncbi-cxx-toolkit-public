@@ -1,28 +1,32 @@
 #ifndef BMVMIN__H__INCLUDED__
 #define BMVMIN__H__INCLUDED__
 /*
-Copyright(c) 2002-2005 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
+Copyright(c) 2002-2017 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
-Permission is hereby granted, free of charge, to any person 
-obtaining a copy of this software and associated documentation 
-files (the "Software"), to deal in the Software without restriction, 
-including without limitation the rights to use, copy, modify, merge, 
-publish, distribute, sublicense, and/or sell copies of the Software, 
-and to permit persons to whom the Software is furnished to do so, 
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included 
+The above copyright notice and this permission notice shall be included
 in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
-For more information please visit:  http://bmagic.sourceforge.net
+You have to explicitly mention BitMagic project in any derivative product,
+its WEB Site, published materials, articles or any other work derived from this
+project or based on our code or know-how.
+
+For more information please visit:  http://bitmagic.io
 
 */
 
@@ -50,9 +54,6 @@ namespace bm
 /*!
     @brief Template class implements memory saving set functionality
     
-    Template can be used as template parameter for bvector if we 
-    want to tune bvector for minimal memory consumption.
-
     @sa bvmini
 */
 template <class A, size_t N> class miniset
@@ -212,10 +213,7 @@ private:
 
 /*!
     @brief Mini bitvector used in bvector template to keep block type flags
-    
-    Template is used as a default template parameter MS for bvector  
-    Offers maximum performance comparing to miniset.
-
+ 
     @sa miniset
 */
 template<size_t N> class bvmini
@@ -329,12 +327,12 @@ public:
     /// Counts number of bits ON 
     unsigned bit_count() const
     {
-        register unsigned count = 0;
+        unsigned count = 0;
         const unsigned* end = m_buf + (m_size / 32)+1;    
 
         for (unsigned* start = m_buf; start < end; ++start)
         {
-            register unsigned value = *start;
+            unsigned value = *start;
             for (count += (value!=0); value &= value - 1; ++count);
         }
         return count;
@@ -386,7 +384,7 @@ public:
 
         for (unsigned i = 0; i < (m_size/8)+1; ++i)
         {
-            register unsigned char w = ptr[i];
+            unsigned char w = ptr[i];
 
 
             if (w != 0)
@@ -407,7 +405,7 @@ public:
     /// Returns index of next bit, which is ON
     unsigned get_next(unsigned idx) const
     {
-        register unsigned i;
+        unsigned i;
 
         for (i = idx+1; i < m_size; ++i)
         {
