@@ -957,7 +957,8 @@ protected:
     SAlnDispParams *x_FillAlnDispParams(const CRef< objects::CBlast_def_line > &iter,
                                         const objects::CBioseq_Handle& bsp_handle,								       
                                         list<string> &use_this_seqid,
-								        TGi firstGi);
+								        TGi firstGi,
+                                        int numLinkoutReads);
 								   
     
 	SAlnDispParams *x_FillAlnDispParams(const objects::CBioseq_Handle& bsp_handle);	
