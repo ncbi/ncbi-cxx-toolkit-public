@@ -1616,6 +1616,9 @@ s_NaHashLookupCountWordsInSubject_16_1(const BLAST_SequenceBlk* sequence,
     }
 
     ASSERT(lookup->lut_word_length == 16);
+    if (sequence->length < lookup->lut_word_length) {
+      return -1;
+    }
 
     /* scan the words in the sequence */
     shift = 8;
