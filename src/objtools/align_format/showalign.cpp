@@ -2102,7 +2102,7 @@ int CDisplaySeqalign::x_GetLinkout(TGi gi)
         try {
             linkout = m_LinkoutDB 
                     ? m_LinkoutDB->GetLinkout(gi,m_MapViewerBuildName)
-                    : 0;
+                    : 0;            
         }
         catch (const CException & e) {        
             ERR_POST("Problem with linkoutdb: " + e.GetMsg());                
@@ -2122,7 +2122,7 @@ int CDisplaySeqalign::x_GetLinkout(const objects::CSeq_id &  id)
         try {
             linkout = m_LinkoutDB 
                     ? m_LinkoutDB->GetLinkout(id,m_MapViewerBuildName)
-                    : 0;
+                    : 0;            
         }
         catch (const CException & e) {        
             ERR_POST("Problem with linkoutdb: " + e.GetMsg());                
@@ -2138,10 +2138,11 @@ int CDisplaySeqalign::x_GetLinkout(const objects::CSeq_id &  id)
 CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CRef< CBlast_def_line > &bdl,
                                                                         const CBioseq_Handle& bsp_handle,								                                        
                                                                         list<string> &use_this_seqid,
-								                                        TGi firstGi)							   
+								                                        TGi firstGi,
+                                                                        int deflineNum)							   
 {
     SAlnDispParams *alnDispParams = NULL;
-    
+    const int kMaxDeflineNum = 10;
 
     bool isNa = bsp_handle.GetBioseqCore()->IsNa();
     int seqLength = (int)bsp_handle.GetBioseqLength();    
@@ -2162,6 +2163,10 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
 		alnDispParams->seqID = FindBestChoice(ids, CSeq_id::WorstRank);		
         alnDispParams->ids = bsp_handle.GetBioseqCore()->GetId();
 		alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID);//Just accession without db part like ref| or pdbd|
+        int linkout = 0;
+        if(m_AlignOption&eHtml || (m_AlignOption&eLinkout && m_AlignTemplates == NULL)) {
+            linkout = (deflineNum < kMaxDeflineNum) ? x_GetLinkout(gi) : 0;
+        }
 		if(m_AlignOption&eHtml){
 			int taxid = 0;
 			string type_temp = m_BlastType;
@@ -2169,13 +2174,13 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
 			if(bdl->IsSetTaxid() &&  bdl->CanGetTaxid()){
 				taxid = bdl->GetTaxid();
 			}
-            int linkout = x_GetLinkout(gi);                        
+                       
             alnDispParams->seqUrlInfo = x_InitSeqUrl(gi_in_use_this_gi,alnDispParams->label,linkout,taxid,ids);    
             alnDispParams->id_url = CAlignFormatUtil::GetIDUrl(alnDispParams->seqUrlInfo,&ids);
 		}
 		
 		if(m_AlignOption&eLinkout && m_AlignTemplates == NULL){                    			
-            int linkout = x_GetLinkout(gi);                
+            //linkout = x_GetLinkout(gi);                
 			string user_url = m_Reg->Get(m_BlastType,"TOOL_URL");
             if(linkout != 0) {
 			    list<string> linkout_url =  CAlignFormatUtil::
@@ -2316,11 +2321,13 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
             int numBdl = 0;
             int maxNumBdl = (aln_vec_info->use_this_seqid.empty()) ? bdl.size() : aln_vec_info->use_this_seqid.size();
             for(list< CRef< CBlast_def_line > >::const_iterator 
-                    iter = bdl.begin(); iter != bdl.end(); iter++){                
+                    iter = bdl.begin(); iter != bdl.end(); iter++){
+                        
 				SAlnDispParams *alnDispParams = x_FillAlnDispParams(*iter,
                                                                     bsp_handle,
 																	aln_vec_info->use_this_seqid,
-																	firstGi);
+																	firstGi,
+                                                                    numBdl);
 																
 																	
 
@@ -3742,7 +3749,7 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
             int numBdl = 0;            
             for(list< CRef< CBlast_def_line > >::const_iterator 
                     iter = bdl.begin(); iter != bdl.end(); iter++){                
-				alnDispParams = x_FillAlnDispParams(*iter,bsp_handle,use_this_seqid,firstGi);                
+				alnDispParams = x_FillAlnDispParams(*iter,bsp_handle,use_this_seqid,firstGi,numBdl);                
 				if(alnDispParams) {
                     numBdl++;                
                     bool hideDefline = (numBdl > 1)? true : false;                    
