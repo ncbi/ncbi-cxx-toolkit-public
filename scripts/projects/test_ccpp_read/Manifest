@@ -22,11 +22,11 @@ APP: test_ccpp_read
 
 #Linux32-Centos  : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile
 
-#Linux64-Centos-SSE    : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile --with-sse
-#Linux64-Centos-NOSSE  : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile --without-sse
+#Linux64-Centos-SSE    : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile --with-sse --without-downloaded-vdb
+#Linux64-Centos-NOSSE  : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile --without-sse --without-downloaded-vdb
 
-Linux64-Centos        : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile
-IntelMAC              : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile
+Linux64-Centos        : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile --without-downloaded-vdb
+IntelMAC              : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile --without-downloaded-vdb
 
 #Win32_13    : plain : static  32  ReleaseDLL
 Win64_15    : plain : static  64  ReleaseDLL
