@@ -35,24 +35,75 @@
 
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbithr.hpp>
+#include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbistr.hpp>
 
 #include <assert.h>
 
 BEGIN_NCBI_SCOPE
 
 
-#if defined(_DEBUG)
-
-// 'simple' verify
-#  define xncbi_Verify(expression) assert(expression)
-
-// Abort execution (by default), or throw exception (if explicitly specified
-// by calling xncbi_SetValidateAction(eValidate_Throw)) if
-// "expression" evaluates to FALSE.
+// If "expression" evaluates to FALSE then the behavior depends on whether
+// _DEBUG is defined (implemented in the DiagValidate(...)):
+// - _DEBUG is defined:
+//   Abort execution (by default), or throw exception (if explicitly specified
+//   by calling xncbi_SetValidateAction(eValidate_Throw))
+// - _DEBUG is not defined:
+//   throw an exception
 #  define xncbi_Validate(expression, message) \
     do { \
         if ( !(expression) ) \
             NCBI_NS_NCBI::CNcbiDiag::DiagValidate(DIAG_COMPILE_INFO, #expression, message); \
+    } while ( 0 )
+
+
+#  define xncbi_ValidateAndErrnoReport(expression, message) \
+    do { \
+        if ( !(expression) ) { \
+            string  ext_message(message); \
+            ext_message += " (errno=" + NStr::NumericToString(NCBI_ERRNO_CODE_WRAPPER()) + \
+                           ": " + \
+                           string(NCBI_ERRNO_STR_WRAPPER(NCBI_ERRNO_CODE_WRAPPER())) + ")"; \
+            NCBI_NS_NCBI::CNcbiDiag::DiagValidate(DIAG_COMPILE_INFO, #expression, ext_message.c_str()); \
+        } \
+    } while ( 0 )
+
+
+// The pthread functions (at least on most platforms) do not set the errno
+// variable. They return an errno value instead.
+// In some cases (IBM ?) the errno is set and the return value is -1 in case of
+// errors.
+#if defined(NCBI_POSIX_THREADS)
+    # define xncbi_ValidatePthread(expression, expected_value, message) \
+        do { \
+            auto    retval = expression; \
+            if (retval != expected_value) { \
+                string  msg(message); \
+                msg += "(pthread error=" + NStr::NumericToString(retval) + \
+                       ": " + \
+                       string(NCBI_ERRNO_STR_WRAPPER(retval)); \
+                if ( retval == -1 ) { \
+                    msg += " errno=" + NStr::NumericToString(errno); \
+                } \
+                msg += ")"; \
+                NCBI_NS_NCBI::CNcbiDiag::DiagValidate(DIAG_COMPILE_INFO, \
+                                                      #expression, \
+                                                      msg.c_str()); \
+            } \
+        } while ( 0 )
+#endif
+
+
+bool xncbi_VerifyReport(const char *  expr);
+
+#if defined(_DEBUG)
+
+// 'simple' verify
+#  define xncbi_Verify(expression) assert(expression)
+#  define xncbi_VerifyAndErrorReport(expression) \
+    do { \
+        if ( !(expression) ) \
+            assert(xncbi_VerifyReport(#expression)); \
     } while ( 0 )
 
 #else // _DEBUG
@@ -60,11 +111,10 @@ BEGIN_NCBI_SCOPE
 // 'simple' verify - just evaluate the expression
 #  define xncbi_Verify(expression) while ( expression ) break
 
-// Throw exception if "expression" evaluates to FALSE.
-#  define xncbi_Validate(expression, message) \
+#  define xncbi_VerifyAndErrorReport(expression) \
     do { \
         if ( !(expression) ) \
-            NCBI_NS_NCBI::CNcbiDiag::DiagValidate(DIAG_COMPILE_INFO, #expression, message); \
+            xncbi_VerifyReport(#expression); \
     } while ( 0 )
 
 #endif // _DEBUG

@@ -122,7 +122,7 @@ void CUsedTlsBases::Register(CTlsBase* tls)
 void CUsedTlsBases::Deregister(CTlsBase* tls)
 {
     CMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
-    xncbi_Verify(m_UsedTls.erase(tls));
+    xncbi_VerifyAndErrorReport(m_UsedTls.erase(tls));
     if (tls->m_AutoDestroy) {
         tls->RemoveReference();
     }
@@ -201,12 +201,12 @@ void CTlsBase::x_Init(void)
 {
     // Create platform-dependent TLS key (index)
 #if defined(NCBI_WIN32_THREADS)
-    xncbi_Verify((m_Key = TlsAlloc()) != DWORD(-1));
+    xncbi_VerifyAndErrorReport((m_Key = TlsAlloc()) != DWORD(-1));
 #elif defined(NCBI_POSIX_THREADS)
-    xncbi_Verify(pthread_key_create(&m_Key, s_PosixTlsCleanup) == 0);
+    xncbi_VerifyAndErrorReport(pthread_key_create(&m_Key, s_PosixTlsCleanup) == 0);
     // pthread_key_create does not reset the value to 0 if the key has been
     // used and deleted.
-    xncbi_Verify(pthread_setspecific(m_Key, 0) == 0);
+    xncbi_VerifyAndErrorReport(pthread_setspecific(m_Key, 0) == 0);
 #else
     m_Key = 0;
 #endif
@@ -247,7 +247,7 @@ void s_TlsSetValue(TTlsKey& key, void* data, const char* err_message)
 #if defined(NCBI_WIN32_THREADS)
     xncbi_Validate(TlsSetValue(key, data), err_message);
 #elif defined(NCBI_POSIX_THREADS)
-    xncbi_Validate(pthread_setspecific(key, data) == 0, err_message);
+    xncbi_ValidatePthread(pthread_setspecific(key, data), 0, err_message);
 #else
     key = data;
     assert(err_message);  // to get rid of the "unused variable" warning

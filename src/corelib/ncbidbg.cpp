@@ -88,4 +88,11 @@ void xncbi_CCheckMe_ReportError(ECheckMeError _DEBUG_ARG(error))
 }
 
 
+bool xncbi_VerifyReport(const char *  expr)
+{
+    ERR_POST("Expression failed: " << expr);
+    return false;
+}
+
+
 END_NCBI_SCOPE

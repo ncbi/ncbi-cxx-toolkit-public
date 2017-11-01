@@ -141,8 +141,9 @@ void SSystemFastMutex::InitializeHandle(void)
 #  if defined(NCBI_USE_CRITICAL_SECTION)
     InitializeCriticalSection(&m_Handle);
 #  else
-    xncbi_Validate((m_Handle = CreateMutex(NULL, FALSE, NULL)) != NULL,
-                   "Mutex creation failed");
+    xncbi_ValidateAndErrnoReport(
+        (m_Handle = CreateMutex(NULL, FALSE, NULL)) != NULL,
+        "Mutex creation failed");
 #  endif
 #elif defined(NCBI_POSIX_THREADS)
 #  if defined(NCBI_OS_CYGWIN)
@@ -153,8 +154,8 @@ void SSystemFastMutex::InitializeHandle(void)
         // (just looked at the source code; never tested) in the early 2006.
         memset(&m_Handle, 0, sizeof(m_Handle));
 #  endif  /* NCBI_OS_CYGWIN */
-        xncbi_Validate(pthread_mutex_init(&m_Handle, 0) == 0,
-                       "Mutex creation failed");
+        xncbi_ValidatePthread(pthread_mutex_init(&m_Handle, 0), 0,
+                              "Mutex creation failed");
 #  if defined(NCBI_OS_CYGWIN)
     }
 #  endif  /* NCBI_OS_CYGWIN */
@@ -170,10 +171,10 @@ void SSystemFastMutex::DestroyHandle(void)
 #  if defined(NCBI_USE_CRITICAL_SECTION)
     DeleteCriticalSection(&m_Handle);
 #  else
-    xncbi_Verify(CloseHandle(m_Handle) != 0);
+    xncbi_VerifyAndErrorReport(CloseHandle(m_Handle) != 0);
 #  endif
 #elif defined(NCBI_POSIX_THREADS)
-    xncbi_Verify(pthread_mutex_destroy(&m_Handle) == 0);
+    xncbi_VerifyAndErrorReport(pthread_mutex_destroy(&m_Handle) == 0);
 #endif
 }
 
@@ -420,7 +421,7 @@ static TSystemMutex s_GetInitMutexHandle(void)
     TSystemMutex init_mutex = s_InitMutexHandle;
     if ( !init_mutex ) {
         init_mutex = CreateMutex(NULL, FALSE, kInitMutexName);
-        xncbi_Verify(init_mutex);
+        xncbi_VerifyAndErrorReport(init_mutex);
         assert(!s_InitMutexHandle || s_InitMutexHandle == init_mutex);
         s_InitMutexHandle = init_mutex;
     }
@@ -437,7 +438,7 @@ static inline void s_ReleaseInitMutexHandle(TSystemMutex _DEBUG_ARG(mutex))
 static inline HANDLE s_GetInitMutexHandle(void)
 {
     HANDLE init_mutex = CreateMutexA(NULL, FALSE, kInitMutexName);
-    xncbi_Verify(init_mutex);
+    xncbi_VerifyAndErrorReport(init_mutex);
     return init_mutex;
 }
 
@@ -454,11 +455,12 @@ void CAutoInitializeStaticFastMutex::Initialize(void)
         return;
     }
     HANDLE init_mutex = s_GetInitMutexHandle();
-    xncbi_Verify(WaitForSingleObject(init_mutex, INFINITE) == WAIT_OBJECT_0);
+    xncbi_VerifyAndErrorReport(
+        WaitForSingleObject(init_mutex, INFINITE) == WAIT_OBJECT_0);
     if ( !m_Mutex.IsInitialized() ) {
         m_Mutex.InitializeStatic();
     }
-    xncbi_Verify(ReleaseMutex(init_mutex));
+    xncbi_VerifyAndErrorReport(ReleaseMutex(init_mutex));
     assert(m_Mutex.IsInitialized());
     s_ReleaseInitMutexHandle(init_mutex);
 }
@@ -469,11 +471,12 @@ void CAutoInitializeStaticMutex::Initialize(void)
         return;
     }
     HANDLE init_mutex = s_GetInitMutexHandle();
-    xncbi_Verify(WaitForSingleObject(init_mutex, INFINITE) == WAIT_OBJECT_0);
+    xncbi_VerifyAndErrorReport(
+        WaitForSingleObject(init_mutex, INFINITE) == WAIT_OBJECT_0);
     if ( !m_Mutex.IsInitialized() ) {
         m_Mutex.InitializeStatic();
     }
-    xncbi_Verify(ReleaseMutex(init_mutex));
+    xncbi_VerifyAndErrorReport(ReleaseMutex(init_mutex));
     assert(m_Mutex.IsInitialized());
     s_ReleaseInitMutexHandle(init_mutex);
 }
@@ -552,8 +555,8 @@ public:
     LONG Release(LONG add = 1)
     {
         LONG prev_sema;
-        xncbi_Validate(ReleaseSemaphore(*this, add, &prev_sema),
-                       "CWindowsSemaphore::Release() failed");
+        xncbi_ValidateAndErrnoReport(ReleaseSemaphore(*this, add, &prev_sema),
+                                     "CWindowsSemaphore::Release() failed");
         return prev_sema;
     }
 };
@@ -818,8 +821,9 @@ void CRWLock::ReadLock(void)
             obj[0] = m_RW->m_Mutex.GetHandle();
             obj[1] = m_RW->m_Rsema;
             obj[2] = m_RW->m_Rsema2;
-            xncbi_Validate(ReleaseMutex(m_RW->m_Mutex.GetHandle()),
-                           "CRWLock::ReadLock() - release mutex error");
+            xncbi_ValidateAndErrnoReport(
+                ReleaseMutex(m_RW->m_Mutex.GetHandle()),
+                "CRWLock::ReadLock() - release mutex error");
             DWORD wait_res =
                 WaitForMultipleObjects(3, obj, TRUE, INFINITE)-WAIT_OBJECT_0;
             xncbi_Validate(wait_res < 3,
@@ -836,10 +840,10 @@ void CRWLock::ReadLock(void)
             }
 #elif defined(NCBI_POSIX_THREADS)
             while ( !x_MayAcquireForReading(self_id) ) {
-                xncbi_Validate(pthread_cond_wait(m_RW->m_Rcond,
-                                                 m_RW->m_Mutex.GetHandle())
-                               == 0,
-                               "CRWLock::ReadLock() - R-lock waiting error");
+                xncbi_ValidatePthread(
+                    pthread_cond_wait(m_RW->m_Rcond,
+                                      m_RW->m_Mutex.GetHandle()), 0,
+                    "CRWLock::ReadLock() - R-lock waiting error");
             }
 #else
             // Can not be already W-locked by another thread without MT
@@ -966,8 +970,9 @@ bool CRWLock::TryReadLock(const CTimeout& timeout)
             obj[0] = m_RW->m_Mutex.GetHandle();
             obj[1] = m_RW->m_Rsema;
             obj[2] = m_RW->m_Rsema2;
-            xncbi_Validate(ReleaseMutex(m_RW->m_Mutex.GetHandle()),
-                           "CRWLock::TryReadLock() - release mutex error");
+            xncbi_ValidateAndErrnoReport(
+                ReleaseMutex(m_RW->m_Mutex.GetHandle()),
+                "CRWLock::TryReadLock() - release mutex error");
             DWORD timeout_msec = timeout.GetAsMilliSeconds();
             DWORD wait_res =
                 WaitForMultipleObjects(3, obj, TRUE, timeout_msec);
@@ -1089,8 +1094,9 @@ void CRWLock::WriteLock(void)
                                    "error locking R-semaphore 2");
                 }
             }
-            xncbi_Validate(ReleaseMutex(m_RW->m_Mutex.GetHandle()),
-                           "CRWLock::WriteLock() - release mutex error");
+            xncbi_ValidateAndErrnoReport(
+                ReleaseMutex(m_RW->m_Mutex.GetHandle()),
+                "CRWLock::WriteLock() - release mutex error");
             DWORD wait_res =
                 WaitForMultipleObjects(3, obj, TRUE, INFINITE)-WAIT_OBJECT_0;
             xncbi_Validate(wait_res < 3,
@@ -1111,10 +1117,10 @@ void CRWLock::WriteLock(void)
             ++m_WaitingWriters;
         }
         while (m_Count != 0) {
-            xncbi_Validate(pthread_cond_wait(m_RW->m_Wcond,
-                                             m_RW->m_Mutex.GetHandle()) == 0,
-                           "CRWLock::WriteLock() - "
-                           "error locking R&W-conditionals");
+            xncbi_ValidatePthread(
+                pthread_cond_wait(m_RW->m_Wcond,
+                                  m_RW->m_Mutex.GetHandle()), 0,
+                "CRWLock::WriteLock() - error locking R&W-conditionals");
         }
         if (m_Flags & fFavorWriters) {
             --m_WaitingWriters;
@@ -1242,8 +1248,9 @@ bool CRWLock::TryWriteLock(const CTimeout& timeout)
                                    "error locking R-semaphore 2");
                 }
             }
-            xncbi_Validate(ReleaseMutex(m_RW->m_Mutex.GetHandle()),
-                           "CRWLock::TryWriteLock() - release mutex error");
+            xncbi_ValidateAndErrnoReport(
+                ReleaseMutex(m_RW->m_Mutex.GetHandle()),
+                "CRWLock::TryWriteLock() - release mutex error");
             DWORD timeout_msec = timeout.GetAsMilliSeconds();
             DWORD wait_res =
                 WaitForMultipleObjects(3, obj, TRUE, timeout_msec);
@@ -1352,11 +1359,13 @@ void CRWLock::Unlock(void)
                            "CRWLock::Unlock() - invalid R-semaphore state");
 #elif defined(NCBI_POSIX_THREADS)
             if ( !m_WaitingWriters ) {
-                xncbi_Validate(pthread_cond_broadcast(m_RW->m_Rcond) == 0,
-                               "CRWLock::Unlock() - error signalling unlock");
+                xncbi_ValidatePthread(
+                    pthread_cond_broadcast(m_RW->m_Rcond), 0,
+                    "CRWLock::Unlock() - error signalling unlock");
             }
-            xncbi_Validate(pthread_cond_signal(m_RW->m_Wcond) == 0,
-                           "CRWLock::Unlock() - error signalling unlock");
+            xncbi_ValidatePthread(
+                pthread_cond_signal(m_RW->m_Wcond), 0,
+                "CRWLock::Unlock() - error signalling unlock");
 #endif
         }
         if (m_Flags & fTrackReaders) {
@@ -1375,8 +1384,9 @@ void CRWLock::Unlock(void)
             xncbi_Validate(m_RW->m_Wsema.Release() == 0,
                            "CRWLock::Unlock() - invalid W-semaphore state");
 #elif defined(NCBI_POSIX_THREADS)
-            xncbi_Validate(pthread_cond_signal(m_RW->m_Wcond) == 0,
-                           "CRWLock::Unlock() - error signaling unlock");
+            xncbi_ValidatePthread(
+                pthread_cond_signal(m_RW->m_Wcond), 0,
+                "CRWLock::Unlock() - error signaling unlock");
 #endif
         }
         if (m_Flags & fTrackReaders) {
@@ -1444,8 +1454,9 @@ CSemaphore::CSemaphore(unsigned int init_count, unsigned int max_count)
     if (pthread_mutex_init(&m_Sem->mutex, 0) != 0) {
         memset(&m_Sem->mutex, 0, sizeof(m_Sem->mutex));
 #  endif  /* NCBI_OS_CYGWIN */
-        xncbi_Validate(pthread_mutex_init(&m_Sem->mutex, 0) == 0,
-                       "CSemaphore::CSemaphore() - pthread_mutex_init() failed");
+        xncbi_ValidatePthread(
+            pthread_mutex_init(&m_Sem->mutex, 0), 0,
+            "CSemaphore::CSemaphore() - pthread_mutex_init() failed");
 #  if defined(NCBI_OS_CYGWIN)
     }
 #  endif  /* NCBI_OS_CYGWIN */
@@ -1454,8 +1465,9 @@ CSemaphore::CSemaphore(unsigned int init_count, unsigned int max_count)
     if (pthread_cond_init(&m_Sem->cond, 0) != 0) {
         memset(&m_Sem->cond, 0, sizeof(m_Sem->cond));
 #  endif  /* NCBI_OS_CYGWIN */
-        xncbi_Validate(pthread_cond_init(&m_Sem->cond, 0) == 0,
-                       "CSemaphore::CSemaphore() - pthread_cond_init() failed");
+        xncbi_ValidatePthread(
+            pthread_cond_init(&m_Sem->cond, 0), 0,
+            "CSemaphore::CSemaphore() - pthread_cond_init() failed");
 #  if defined(NCBI_OS_CYGWIN)
     }
 #  endif  /* NCBI_OS_CYGWIN */
@@ -1483,11 +1495,11 @@ CSemaphore::~CSemaphore(void)
 {
 #if defined(NCBI_POSIX_THREADS)
     _ASSERT(m_Sem->wait_count == 0);
-    xncbi_Verify(pthread_mutex_destroy(&m_Sem->mutex) == 0);
-    xncbi_Verify(pthread_cond_destroy(&m_Sem->cond)  == 0);
+    xncbi_VerifyAndErrorReport(pthread_mutex_destroy(&m_Sem->mutex) == 0);
+    xncbi_VerifyAndErrorReport(pthread_cond_destroy(&m_Sem->cond)  == 0);
 
 #elif defined(NCBI_WIN32_THREADS)
-    xncbi_Verify( CloseHandle(m_Sem->sem) );
+    xncbi_VerifyAndErrorReport( CloseHandle(m_Sem->sem) );
 #endif
 
     delete m_Sem;
@@ -1497,8 +1509,9 @@ CSemaphore::~CSemaphore(void)
 void CSemaphore::Wait(void)
 {
 #if defined(NCBI_POSIX_THREADS)
-    xncbi_Validate(pthread_mutex_lock(&m_Sem->mutex) == 0,
-                   "CSemaphore::Wait() - pthread_mutex_lock() failed");
+    xncbi_ValidatePthread(
+        pthread_mutex_lock(&m_Sem->mutex), 0,
+        "CSemaphore::Wait() - pthread_mutex_lock() failed");
 
     if (m_Sem->count != 0) {
         m_Sem->count--;
@@ -1508,10 +1521,10 @@ void CSemaphore::Wait(void)
         do {
             int status = pthread_cond_wait(&m_Sem->cond, &m_Sem->mutex);
             if (status != 0  &&  status != EINTR) {
-                xncbi_Validate(pthread_mutex_unlock(&m_Sem->mutex) == 0,
-                               "CSemaphore::Wait() - "
-                               "pthread_cond_wait() and "
-                               "pthread_mutex_unlock() failed");
+                xncbi_ValidatePthread(
+                    pthread_mutex_unlock(&m_Sem->mutex), 0,
+                    "CSemaphore::Wait() - pthread_cond_wait() and "
+                    "pthread_mutex_unlock() failed");
                 xncbi_Validate(0,
                                "CSemaphore::Wait() - "
                                "pthread_cond_wait() failed");
@@ -1521,8 +1534,9 @@ void CSemaphore::Wait(void)
         m_Sem->count--;
     }
 
-    xncbi_Validate(pthread_mutex_unlock(&m_Sem->mutex) == 0,
-                   "CSemaphore::Wait() - pthread_mutex_unlock() failed");
+    xncbi_ValidatePthread(
+        pthread_mutex_unlock(&m_Sem->mutex), 0,
+        "CSemaphore::Wait() - pthread_mutex_unlock() failed");
 
 #elif defined(NCBI_WIN32_THREADS)
     xncbi_Validate(WaitForSingleObject(m_Sem->sem, INFINITE) == WAIT_OBJECT_0,
@@ -1546,8 +1560,9 @@ bool CSemaphore::TryWait(unsigned int NCBI_THREADS_ARG(timeout_sec),
                          unsigned int NCBI_THREADS_ARG(timeout_nsec))
 {
 #if defined(NCBI_POSIX_THREADS)
-    xncbi_Validate(pthread_mutex_lock(&m_Sem->mutex) == 0,
-                   "CSemaphore::TryWait() - pthread_mutex_lock() failed");
+    xncbi_ValidatePthread(
+        pthread_mutex_lock(&m_Sem->mutex), 0,
+        "CSemaphore::TryWait() - pthread_mutex_lock() failed");
 
     bool retval = false;
     if (m_Sem->count != 0) {
@@ -1590,10 +1605,10 @@ bool CSemaphore::TryWait(unsigned int NCBI_THREADS_ARG(timeout_sec),
                 break;
             } else if (status != 0  &&  status != EINTR) {
                 // EINVAL, presumably?
-                xncbi_Validate(pthread_mutex_unlock(&m_Sem->mutex) == 0,
-                               "CSemaphore::TryWait() - "
-                               "pthread_cond_timedwait() and "
-                               "pthread_mutex_unlock() failed");
+                xncbi_ValidatePthread(
+                    pthread_mutex_unlock(&m_Sem->mutex), 0,
+                    "CSemaphore::TryWait() - pthread_cond_timedwait() and "
+                    "pthread_mutex_unlock() failed");
                 xncbi_Validate(0, "CSemaphore::TryWait() - "
                                "pthread_cond_timedwait() failed");
             }
@@ -1605,8 +1620,9 @@ bool CSemaphore::TryWait(unsigned int NCBI_THREADS_ARG(timeout_sec),
         }
     }
 
-    xncbi_Validate(pthread_mutex_unlock(&m_Sem->mutex) == 0,
-                   "CSemaphore::TryWait() - pthread_mutex_unlock() failed");
+    xncbi_ValidatePthread(
+        pthread_mutex_unlock(&m_Sem->mutex), 0,
+        "CSemaphore::TryWait() - pthread_mutex_unlock() failed");
 
     return retval;
 
@@ -1650,15 +1666,16 @@ void CSemaphore::Post(unsigned int count)
         return;
 
 #if defined (NCBI_POSIX_THREADS)
-    xncbi_Validate(pthread_mutex_lock(&m_Sem->mutex) == 0,
-                   "CSemaphore::Post() - pthread_mutex_lock() failed");
+    xncbi_ValidatePthread(
+        pthread_mutex_lock(&m_Sem->mutex), 0,
+        "CSemaphore::Post() - pthread_mutex_lock() failed");
 
     if (m_Sem->count > kMax_UInt - count  ||
         m_Sem->count + count > m_Sem->max_count) {
-        xncbi_Validate(pthread_mutex_unlock(&m_Sem->mutex) == 0,
-                       "CSemaphore::Post() - "
-                       "attempt to exceed max_count and "
-                       "pthread_mutex_unlock() failed");
+        xncbi_ValidatePthread(
+            pthread_mutex_unlock(&m_Sem->mutex), 0,
+            "CSemaphore::Post() - attempt to exceed max_count and "
+            "pthread_mutex_unlock() failed");
         xncbi_Validate(false,
                        "CSemaphore::Post() - attempt to exceed max_count");
     }
@@ -1682,23 +1699,25 @@ void CSemaphore::Post(unsigned int count)
     // Success
     if (err_code == 0) {
         m_Sem->count += count;
-        xncbi_Validate(pthread_mutex_unlock(&m_Sem->mutex) == 0,
-                       "CSemaphore::Post() - pthread_mutex_unlock() failed");
+        xncbi_ValidatePthread(
+            pthread_mutex_unlock(&m_Sem->mutex), 0,
+            "CSemaphore::Post() - pthread_mutex_unlock() failed");
         return;
     }
 
     // Error
-    xncbi_Validate(pthread_mutex_unlock(&m_Sem->mutex) == 0,
-                   "CSemaphore::Post() - "
-                   "pthread_cond_signal/broadcast() and "
-                   "pthread_mutex_unlock() failed");
+    xncbi_ValidatePthread(
+        pthread_mutex_unlock(&m_Sem->mutex), 0,
+        "CSemaphore::Post() - pthread_cond_signal/broadcast() and "
+        "pthread_mutex_unlock() failed");
     xncbi_Validate(0,
                    "CSemaphore::Post() - "
                    "pthread_cond_signal/broadcast() failed");
 
 #elif defined(NCBI_WIN32_THREADS)
-    xncbi_Validate(ReleaseSemaphore(m_Sem->sem, count, NULL),
-                   "CSemaphore::Post() - ReleaseSemaphore() failed");
+    xncbi_ValidateAndErrnoReport(
+        ReleaseSemaphore(m_Sem->sem, count, NULL),
+        "CSemaphore::Post() - ReleaseSemaphore() failed");
 
 #else
     xncbi_Validate(m_Sem->count + count <= m_Sem->max_count,
