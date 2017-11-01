@@ -1191,6 +1191,8 @@ AutoPtr<CDataValue> DTDParser::x_Value(const DTDElement& node)
     switch (node.GetType()) {
     default:
         break;;
+    case DTDElement::eEnum:
+        return AutoPtr<CDataValue>(new CIdDataValue(node.GetDefault()));
     case DTDElement::eString:
         return AutoPtr<CDataValue>(new CStringDataValue(node.GetDefault()));
     case DTDElement::eOctetString:
@@ -1209,6 +1211,7 @@ AutoPtr<CDataValue> DTDParser::x_Value(const DTDElement& node)
             }
             return AutoPtr<CDataValue>(new CBoolDataValue(b));
         }
+    case DTDElement::eIntEnum:
     case DTDElement::eInteger:
     case DTDElement::eBigInt:
         return AutoPtr<CDataValue>(new CIntDataValue(
