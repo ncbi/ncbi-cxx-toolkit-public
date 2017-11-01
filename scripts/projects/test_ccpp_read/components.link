@@ -1,5 +1,3 @@
 [components]
-#core            9.0 -r351635
-#objects         9.0 -r351635
-core            10.0
-objects         10.0
+core            20.0
+objects         20.0
