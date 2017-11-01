@@ -1,6 +1,7 @@
 #define TAGS [perf]
 corelib$
 connect$
+connect/mbedtls
 serial$
 serial/datatool$
 util$
