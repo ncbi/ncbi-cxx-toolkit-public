@@ -2432,11 +2432,11 @@ CAlignFormatUtil::GetBdlLinkoutInfo(CBioseq::TId& cur_id,
         if(linkout & eReprMicrobialGenomes){        
             s_AddLinkoutInfo(linkout_map,eReprMicrobialGenomes,cur_id);            
         }
-	/*            
+        	            
         if(linkout & eGenomeDataViewer){        
             s_AddLinkoutInfo(linkout_map,eGenomeDataViewer,cur_id);            
         } 
-	*/                   
+	                   
 }
 
 void 
@@ -2445,8 +2445,8 @@ CAlignFormatUtil::GetBdlLinkoutInfo(const list< CRef< CBlast_def_line > > &bdl,
                                     ILinkoutDB* linkoutdb, 
                                     const string& mv_build_name)
 {
-    
-    
+    const int kMaxDeflineNum = 10;
+    int num = 0;
     for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
             iter != bdl.end(); iter++){    
         CBioseq::TId& cur_id = (CBioseq::TId &)(*iter)->GetSeqid();        
@@ -2455,6 +2455,8 @@ CAlignFormatUtil::GetBdlLinkoutInfo(const list< CRef< CBlast_def_line > > &bdl,
                           linkout_map,
                           linkoutdb, 
                           mv_build_name);        
+        num++;
+        if(num > kMaxDeflineNum) break;
     }       
 }
 
