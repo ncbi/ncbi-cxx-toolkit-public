@@ -423,8 +423,10 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
 //     so marked
 //
 CRef<CDense_seg>
-CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
-                         const CSeq_id& consensus_id) const
+CAlnVec::CreateConsensus(int& consensus_row,
+                         CBioseq& consensus_seq,
+                         const CSeq_id& consensus_id,
+                         vector<string>* consens) const
 {
     consensus_seq.Reset();
     if ( !m_DS || m_NumRows < 1) {
@@ -436,10 +438,13 @@ CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
     size_t i;
     size_t j;
 
-    // temporary storage for our consensus
-    vector<string> consens(m_NumSegs);
-
-    CreateConsensus(consens);
+    // If the caller did not pass in consensus values, compute them now
+    vector<string> c;
+    if (consens == NULL) {              
+        c.resize(m_NumSegs);
+        CreateConsensus(c);
+        consens = &c;
+    }
 
     //
     // now, create a new CDense_seg
@@ -459,7 +464,7 @@ CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
                                      m_NumSegs);
     }
 
-    for (i = 0;  i < consens.size();  ++i) {
+    for (i = 0;  i < consens->size();  ++i) {
         // copy the old entries
         for (j = 0;  j < (size_t)m_NumRows;  ++j) {
             int idx = i * m_NumRows + j;
@@ -474,7 +479,7 @@ CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
         // it should preferably be the first, but this would mean adjusting
         // the bioseq handle and seqvector caches, and all row numbers would
         // shift
-        if (consens[i].length() != 0) {
+        if ((*consens)[i].length() != 0) {
             new_ds->SetStarts().push_back(total_bases);
         } else {
             new_ds->SetStarts().push_back(-1);
@@ -484,8 +489,8 @@ CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
             new_ds->SetStrands().push_back(eNa_strand_unknown);
         }
 
-        total_bases += consens[i].length();
-        data += consens[i];
+        total_bases += (*consens)[i].length();
+        data += (*consens)[i];
     }
 
     // copy our IDs
@@ -529,7 +534,7 @@ CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
     return new_ds;
 }
 
-void TransposeSequences(vector<string>& segs)
+void CAlnVec::TransposeSequences(vector<string>& segs)
 {
     char* buf = NULL;
     size_t cols = 0;
@@ -560,7 +565,7 @@ void TransposeSequences(vector<string>& segs)
     delete[] buf;
 }
 
-void CollectNucleotideFrequences(const string& col, int base_count[], int numBases)
+void CAlnVec::CollectNucleotideFrequences(const string& col, int base_count[], int numBases)
 {
     // first, we record which bases occur and how often
     // this is computed in NCBI4na notation
@@ -638,7 +643,7 @@ void CollectNucleotideFrequences(const string& col, int base_count[], int numBas
     }
 }
 
-void CollectProteinFrequences(const string& col, int base_count[], int numBases)
+void CAlnVec::CollectProteinFrequences(const string& col, int base_count[], int numBases)
 {
     // first, we record which bases occur and how often
     // this is computed in NCBI4na notation

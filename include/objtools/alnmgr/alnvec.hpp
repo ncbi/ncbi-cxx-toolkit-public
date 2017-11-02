@@ -144,7 +144,8 @@ public:
     // without adding it to the scope.
     CRef<CDense_seg> CreateConsensus(int& consensus_row,
                                      CBioseq& consensus_seq,
-     	                             const CSeq_id& consensus_id) const;
+     	                             const CSeq_id& consensus_id,
+                                     vector<string>* consens = NULL) const;
 
     // utilities
     int CalculateScore          (TNumrow row1, TNumrow row2) const;
@@ -165,13 +166,18 @@ public:
     static unsigned char FromIupac(unsigned char c);
     static unsigned char ToIupac  (unsigned char c);
 
+    static void TransposeSequences(vector<string>& segs);
+    static void CollectNucleotideFrequences(const string& col, int base_count[], int numBases);
+    static void CollectProteinFrequences(const string& col, int base_count[], int numBases);
+
+    void RetrieveSegmentSequences(size_t segment, vector<string>& segs) const;
+
 protected:
 
     CSeqVector& x_GetSeqVector         (TNumrow row)       const;
     CSeqVector& x_GetConsensusSeqVector(void)              const;
 
     void CreateConsensus(vector<string>& consens) const;
-    void RetrieveSegmentSequences(size_t segment, vector<string>& segs) const;
 
     mutable CRef<CScope>            m_Scope;
     mutable TBioseqHandleCache      m_BioseqHandlesCache;
