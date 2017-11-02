@@ -33,6 +33,7 @@
 
 #include "grid_worker_impl.hpp"
 #include "grid_control_thread.hpp"
+#include "netcache_api_impl.hpp"
 
 #include <connect/services/grid_globals.hpp>
 
@@ -319,7 +320,9 @@ private:
 //
 const IRegistry& SGridWorkerNodeImpl::GetConfig() const
 {
-    return m_App.GetConfig();
+    _ASSERT(m_Registry);
+
+    return *m_Registry;
 }
 
 const CArgs& SGridWorkerNodeImpl::GetArgs() const
@@ -386,17 +389,19 @@ SGridWorkerNodeImpl::SGridWorkerNodeImpl(CNcbiApplication& app,
 
 void SGridWorkerNodeImpl::Init()
 {
+    SISynRegistryBuilder registry_builder(m_App);
+    m_SynRegistry = registry_builder.Get();
+    m_Registry.Reset(new ISynRegistryToIRegistry(m_SynRegistry));
+
     m_Listener->OnInit(this);
 
-    const IRegistry& reg = m_App.GetConfig();
-
-    if (reg.GetBool("log", "merge_lines", false)) {
+    if (m_SynRegistry->Get("log", "merge_lines", false)) {
         SetDiagPostFlag(eDPF_PreMergeLines);
         SetDiagPostFlag(eDPF_MergeLines);
     }
 
-    m_NetScheduleAPI = CNetScheduleAPI(reg);
-    m_NetCacheAPI = CNetCacheAPI(reg, kEmptyStr, m_NetScheduleAPI);
+    m_NetScheduleAPI = new SNetScheduleAPIImpl(registry_builder, kEmptyStr);
+    m_NetCacheAPI = new SNetCacheAPIImpl(registry_builder, kEmptyStr, kEmptyStr, kEmptyStr, m_NetScheduleAPI);
     m_JobProcessorFactory->Init(*this);
 }
 
@@ -435,12 +440,10 @@ bool SGridWorkerNodeImpl::CheckForPullback(unsigned job_generation)
 
 void SGridWorkerNodeImpl::x_WNCoreInit()
 {
-    const string kServerSec("server");
-
-    const IRegistry& reg = m_App.GetConfig();
+    _ASSERT(m_SynRegistry);
 
     if (!m_SingleThreadForced) {
-        string max_threads = reg.GetString(kServerSec, "max_threads", "8");
+        string max_threads = m_SynRegistry->Get("server", "max_threads", "8");
         if (NStr::CompareNocase(max_threads, "auto") == 0)
             m_MaxThreads = GetCpuCount();
         else {
@@ -449,38 +452,31 @@ void SGridWorkerNodeImpl::x_WNCoreInit()
             }
             catch (exception&) {
                 m_MaxThreads = GetCpuCount();
-                ERR_POST_X(51, "Could not convert [" << kServerSec <<
+                ERR_POST_X(51, "Could not convert [server"
                     "] max_threads parameter to number.\n"
                     "Using \'auto\' option (" << m_MaxThreads << ").");
             }
         }
     }
-    m_NSTimeout = reg.GetInt(kServerSec,
-            "job_wait_timeout", DEFAULT_NS_TIMEOUT, 0, IRegistry::eErrPost);
+    m_NSTimeout = m_SynRegistry->Get("server", "job_wait_timeout", DEFAULT_NS_TIMEOUT);
 
     {{
-        string memlimitstr(reg.GetString(kServerSec,
-                "total_memory_limit", kEmptyStr));
+        string memlimitstr = m_SynRegistry->Get("server", "total_memory_limit", kEmptyStr);
 
         if (!memlimitstr.empty())
             m_TotalMemoryLimit = NStr::StringToUInt8_DataSize(memlimitstr);
     }}
 
-    m_TotalTimeLimit = reg.GetInt(kServerSec,
-            "total_time_limit", 0, 0, IRegistry::eErrPost);
+    m_TotalTimeLimit = m_SynRegistry->Get("server", "total_time_limit", 0);
 
     m_StartupTime = time(0);
 
-    CGridGlobals::GetInstance().SetReuseJobObject(reg.GetBool(kServerSec,
-        "reuse_job_object", false, 0, CNcbiRegistry::eErrPost));
+    CGridGlobals::GetInstance().SetReuseJobObject(m_SynRegistry->Get("server", "reuse_job_object", false));
     CGridGlobals::GetInstance().SetWorker(this);
 
-    m_LogRequested = reg.GetBool(kServerSec,
-        "log", false, 0, IRegistry::eErrPost);
-    m_ProgressLogRequested = reg.GetBool(kServerSec,
-        "log_progress", false, 0, IRegistry::eErrPost);
-    m_ThreadPoolTimeout = reg.GetInt(kServerSec,
-        "thread_pool_timeout", 30, 0, IRegistry::eErrPost);
+    m_LogRequested =         m_SynRegistry->Get("server", "log", false);
+    m_ProgressLogRequested = m_SynRegistry->Get("server", "log_progress", false);
+    m_ThreadPoolTimeout =    m_SynRegistry->Get("server", "thread_pool_timeout", 30);
 }
 
 void SGridWorkerNodeImpl::x_StartWorkerThreads()
@@ -547,16 +543,14 @@ int SGridWorkerNodeImpl::Run(
 #endif
     string procinfo_file_name)
 {
-    x_WNCoreInit();
+    _ASSERT(m_SynRegistry);
 
-    const string kServerSec("server");
+    x_WNCoreInit();
 
     const SBuildInfo& build_info(m_App.GetFullVersion().GetBuildInfo());
 
     LOG_POST_X(50, Info << m_JobProcessorFactory->GetJobVersion() <<
             " build " << build_info.date << " tag " << build_info.tag);
-
-    const IRegistry& reg = m_App.GetConfig();
 
     const CArgs& args = m_App.GetArgs();
 
@@ -565,7 +559,7 @@ int SGridWorkerNodeImpl::Run(
     {{
         string control_port_arg(args["control_port"] ?
                 args["control_port"].AsString() :
-                reg.GetString(kServerSec, "control_port", "9300"));
+                m_SynRegistry->Get("server", "control_port", "9300"));
 
         CTempString from_port, to_port;
 
@@ -579,13 +573,12 @@ int SGridWorkerNodeImpl::Run(
 
 #ifdef NCBI_OS_UNIX
     bool is_daemon = daemonize != eDefault ? daemonize == eOn :
-            reg.GetBool(kServerSec, "daemon", false, 0, CNcbiRegistry::eErrPost);
+            m_SynRegistry->Get("server", "daemon", false);
 #endif
 
     vector<string> vhosts;
 
-    NStr::Split(reg.GetString(kServerSec,
-        "master_nodes", kEmptyStr), " ;,", vhosts);
+    NStr::Split(m_SynRegistry->Get("server", "master_nodes", kEmptyStr), " ;,", vhosts);
 
     ITERATE(vector<string>, it, vhosts) {
         string host, port;
@@ -597,8 +590,7 @@ int SGridWorkerNodeImpl::Run(
 
     vhosts.clear();
 
-    NStr::Split(reg.GetString(kServerSec,
-        "admin_hosts", kEmptyStr), " ;,", vhosts);
+    NStr::Split(m_SynRegistry->Get("server", "admin_hosts", kEmptyStr), " ;,", vhosts);
 
     ITERATE(vector<string>, it, vhosts) {
         unsigned int ha = CSocketAPI::gethostbyname(*it);
@@ -606,21 +598,18 @@ int SGridWorkerNodeImpl::Run(
             m_AdminHosts.insert(ha);
     }
 
-    m_CommitJobInterval = reg.GetInt(kServerSec, "commit_job_interval",
-            COMMIT_JOB_INTERVAL_DEFAULT, 0, IRegistry::eErrPost);
+    m_CommitJobInterval = m_SynRegistry->Get("server", "commit_job_interval", COMMIT_JOB_INTERVAL_DEFAULT);
     if (m_CommitJobInterval == 0)
         m_CommitJobInterval = 1;
 
-    m_CheckStatusPeriod = reg.GetInt(kServerSec,
-            "check_status_period", 2, 0, IRegistry::eErrPost);
+    m_CheckStatusPeriod = m_SynRegistry->Get("server", "check_status_period", 2);
     if (m_CheckStatusPeriod == 0)
         m_CheckStatusPeriod = 1;
 
-    m_DefaultPullbackTimeout = reg.GetInt(kServerSec,
-            "default_pullback_timeout", 0, 0, IRegistry::eErrPost);
+    m_DefaultPullbackTimeout = m_SynRegistry->Get("server", "default_pullback_timeout", 0);
 
-    if (reg.HasEntry(kServerSec, "wait_server_timeout")) {
-        ERR_POST_X(52, "[" << kServerSec <<
+    if (m_SynRegistry->Has("server", "wait_server_timeout")) {
+        ERR_POST_X(52, "[server"
             "] \"wait_server_timeout\" is not used anymore.\n"
             "Use [" << kNetScheduleAPIDriverName <<
             "] \"communication_timeout\" parameter instead.");
@@ -706,8 +695,7 @@ int SGridWorkerNodeImpl::Run(
     request_context.SetSessionID(m_NetScheduleAPI->m_ClientSession);
 
 #ifdef NCBI_OS_UNIX
-    bool reliable_cleanup = reg.GetBool(kServerSec,
-            "reliable_cleanup", false, 0, CNcbiRegistry::eErrPost);
+    bool reliable_cleanup = m_SynRegistry->Get("server", "reliable_cleanup", false);
 
     if (reliable_cleanup) {
         TPid child_pid = CProcess::Fork();
@@ -789,28 +777,20 @@ int SGridWorkerNodeImpl::Run(
         }
     }
 
-    m_JobsPerClientIP.ResetJobCounter((unsigned) reg.GetInt(kServerSec,
-            "max_jobs_per_client_ip", 0, 0, IRegistry::eErrPost));
-    m_JobsPerSessionID.ResetJobCounter((unsigned) reg.GetInt(kServerSec,
-            "max_jobs_per_session_id", 0, 0, IRegistry::eErrPost));
+    m_JobsPerClientIP.ResetJobCounter( (unsigned) m_SynRegistry->Get("server", "max_jobs_per_client_ip", 0));
+    m_JobsPerSessionID.ResetJobCounter((unsigned) m_SynRegistry->Get("server", "max_jobs_per_session_id", 0));
 
     CWNJobWatcher& watcher(CGridGlobals::GetInstance().GetJobWatcher());
-    watcher.SetMaxJobsAllowed(reg.GetInt(kServerSec,
-            "max_total_jobs", 0, 0, IRegistry::eErrPost));
-    watcher.SetMaxFailuresAllowed(reg.GetInt(kServerSec,
-            "max_failed_jobs", 0, 0, IRegistry::eErrPost));
-    watcher.SetInfiniteLoopTime(reg.GetInt(kServerSec,
-            "infinite_loop_time", 0, 0, IRegistry::eErrPost));
+    watcher.SetMaxJobsAllowed(    m_SynRegistry->Get("server", "max_total_jobs", 0));
+    watcher.SetMaxFailuresAllowed(m_SynRegistry->Get("server", "max_failed_jobs", 0));
+    watcher.SetInfiniteLoopTime(  m_SynRegistry->Get("server", "infinite_loop_time", 0));
     CGridGlobals::GetInstance().SetUDPPort(
             m_NSExecutor->m_NotificationHandler.GetPort());
 
     IWorkerNodeIdleTask* task = NULL;
 
-    unsigned idle_run_delay = reg.GetInt(kServerSec,
-        "idle_run_delay", 30, 0, IRegistry::eErrPost);
-
-    unsigned auto_shutdown = reg.GetInt(kServerSec,
-        "auto_shutdown_if_idle", 0, 0, IRegistry::eErrPost);
+    unsigned idle_run_delay = m_SynRegistry->Get("server", "idle_run_delay", 30);
+    unsigned auto_shutdown  = m_SynRegistry->Get("server", "auto_shutdown_if_idle", 0);
 
     if (idle_run_delay > 0)
         task = m_JobProcessorFactory->GetIdleTask();
@@ -848,8 +828,7 @@ int SGridWorkerNodeImpl::Run(
 
     LOG_POST_X(31, Info << "Shutting down...");
 
-    bool force_exit = reg.GetBool(kServerSec,
-            "force_exit", false, 0, CNcbiRegistry::eErrPost);
+    bool force_exit = m_SynRegistry->Get("server", "force_exit", false);
     if (force_exit) {
         ERR_POST_X(45, "Force exit (worker threads will not be waited for)");
     } else
