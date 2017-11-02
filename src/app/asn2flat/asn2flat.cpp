@@ -690,6 +690,12 @@ void CAsn2FlatApp::HandleSeqId(
                 );
         }
         seh = bsh.GetParentEntry();
+        /*
+        CConstRef<CSeq_entry> ser = seh.GetTopLevelEntry().GetCompleteSeq_entry();
+        if (ser) {
+            cout << MSerial_AsnText << *ser << endl;
+        }
+        */
     }
 
     //
