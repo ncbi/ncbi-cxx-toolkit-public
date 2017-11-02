@@ -653,7 +653,7 @@ BOOST_AUTO_TEST_CASE(CachedSynRegistry)
         syn_registry.Add(registry);
     }
 
-    CCachedSynRegistry cached_syn_registry(syn_registry);
+    CCachedSynRegistry cached_syn_registry(syn_registry.MakeRef());
 
     // Check (and cache) values
     for (auto& param : random_params) {
@@ -679,7 +679,7 @@ BOOST_AUTO_TEST_CASE(IncludeSynRegistry)
     }
 
     CSynRegistry syn_registry;
-    CIncludeSynRegistry include_registry(syn_registry);
+    CIncludeSynRegistry include_registry(syn_registry.MakeRef());
 
     for (auto& registry : registries) {
         include_registry.Add(registry);

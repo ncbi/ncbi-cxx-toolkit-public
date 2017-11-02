@@ -175,6 +175,8 @@ class NCBI_XCONNECT_EXPORT ISynRegistry
     template <typename TType> struct TR;
 
 public:
+    using TPtr = shared_ptr<ISynRegistry>;
+
     virtual ~ISynRegistry() {}
 
     // XXX:
@@ -192,6 +194,9 @@ public:
 
     virtual void Add(const IRegistry& registry) = 0;
     virtual IRegistry& GetIRegistry() = 0;
+
+    TPtr MakeRef() { return TPtr(TPtr(), this); }
+    TPtr MakePtr() { return TPtr(this); }
 
 protected:
     virtual string VGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value) = 0;
@@ -248,7 +253,7 @@ class NCBI_XCONNECT_EXPORT CCachedSynRegistryImpl : public ISynRegistry
     class CCache;
 
 public:
-    CCachedSynRegistryImpl(ISynRegistry& registry);
+    CCachedSynRegistryImpl(ISynRegistry::TPtr registry);
     ~CCachedSynRegistryImpl();
 
     void Add(const IRegistry& registry) override;
@@ -261,7 +266,7 @@ protected:
     bool HasImpl(const string& section, const string& name) final;
 
 private:
-    ISynRegistry& m_Registry;
+    ISynRegistry::TPtr m_Registry;
     unique_ptr<CCache> m_Cache;
 };
 
@@ -270,7 +275,7 @@ using CCachedSynRegistry = TSynRegistry<CCachedSynRegistryImpl>;
 class NCBI_XCONNECT_EXPORT CIncludeSynRegistryImpl : public ISynRegistry
 {
 public:
-    CIncludeSynRegistryImpl(ISynRegistry& registry);
+    CIncludeSynRegistryImpl(ISynRegistry::TPtr registry);
 
     void Add(const IRegistry& registry) override;
     IRegistry& GetIRegistry() override;
@@ -284,7 +289,7 @@ protected:
 private:
     SRegSynonyms GetSections(const SRegSynonyms& sections);
 
-    ISynRegistry& m_Registry;
+    ISynRegistry::TPtr m_Registry;
     unordered_map<string, vector<string>> m_Includes;
 };
 
@@ -293,7 +298,7 @@ using CIncludeSynRegistry = TSynRegistry<CIncludeSynRegistryImpl>;
 class ISynRegistryToIRegistry : public IRegistry
 {
 public:
-    ISynRegistryToIRegistry(ISynRegistry& registry);
+    ISynRegistryToIRegistry(ISynRegistry::TPtr registry);
 
     const string& Get(const string& section, const string& name, TFlags flags = 0) const final;
     bool HasEntry(const string& section, const string& name = kEmptyStr, TFlags flags = 0) const final;
@@ -316,9 +321,9 @@ private:
     void x_Enumerate(const string& section, list<string>& entries, TFlags flags) const final;
     void x_ChildLockAction(FLockAction action) final;
 
-    IRegistry& GetIRegistry() const { return m_Registry.GetIRegistry(); }
+    IRegistry& GetIRegistry() const { _ASSERT(m_Registry); return m_Registry->GetIRegistry(); }
 
-    ISynRegistry& m_Registry;
+    ISynRegistry::TPtr m_Registry;
 };
 
 extern template NCBI_XCONNECT_EXPORT string CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value);

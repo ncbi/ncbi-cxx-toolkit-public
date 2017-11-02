@@ -515,8 +515,8 @@ void SNetServiceImpl::Init(CObject* api_impl, const IRegistry* top_registry, SRe
     }
 
     CSynRegistry syn_registry;
-    CCachedSynRegistry cached_registry(syn_registry);
-    CIncludeSynRegistry registry(cached_registry);
+    CCachedSynRegistry cached_registry(syn_registry.MakeRef());
+    CIncludeSynRegistry registry(cached_registry.MakeRef());
 
     {
         CMutexGuard guard(CNcbiApplication::GetInstanceMutex());

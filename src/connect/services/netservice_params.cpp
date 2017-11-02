@@ -265,7 +265,7 @@ CCachedSynRegistryImpl::CCache::TValuePtr CCachedSynRegistryImpl::CCache::Get(co
     return value;
 }
 
-CCachedSynRegistryImpl::CCachedSynRegistryImpl(ISynRegistry& registry) :
+CCachedSynRegistryImpl::CCachedSynRegistryImpl(ISynRegistry::TPtr registry) :
     m_Registry(registry),
     m_Cache(new CCache)
 {
@@ -277,17 +277,23 @@ CCachedSynRegistryImpl::~CCachedSynRegistryImpl()
 
 void CCachedSynRegistryImpl::Add(const IRegistry& registry)
 {
-    m_Registry.Add(registry);
+    _ASSERT(m_Registry);
+
+    m_Registry->Add(registry);
 }
 
 IRegistry& CCachedSynRegistryImpl::GetIRegistry()
 {
-    return m_Registry.GetIRegistry();
+    _ASSERT(m_Registry);
+
+    return m_Registry->GetIRegistry();
 }
 
 template <typename TType>
 TType CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, TType default_value)
 {
+    _ASSERT(m_Registry);
+
     auto cached = m_Cache->Get(sections, names);
     auto& cached_type = cached->type;
     auto& cached_value = cached->value;
@@ -296,9 +302,9 @@ TType CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms na
     if (cached_type == CCache::SValue::Read) return cached_value;
 
     // Has a non-default value
-    if (m_Registry.Has(sections, names)) {
+    if (m_Registry->Has(sections, names)) {
         cached_type = CCache::SValue::Read;
-        cached_value = m_Registry.Get(sections, names, default_value);
+        cached_value = m_Registry->Get(sections, names, default_value);
 
     // Has no (default) value cached
     } else if (cached_type == CCache::SValue::New) {
@@ -311,7 +317,9 @@ TType CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms na
 
 bool CCachedSynRegistryImpl::HasImpl(const string& section, const string& name)
 {
-    return (m_Cache->Has(section, name)) || m_Registry.Has(section, name);
+    _ASSERT(m_Registry);
+
+    return (m_Cache->Has(section, name)) || m_Registry->Has(section, name);
 }
 
 template string CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value);
@@ -319,34 +327,44 @@ template bool   CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegS
 template int    CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
 template double CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
 
-CIncludeSynRegistryImpl::CIncludeSynRegistryImpl(ISynRegistry& registry) :
+CIncludeSynRegistryImpl::CIncludeSynRegistryImpl(ISynRegistry::TPtr registry) :
     m_Registry(registry)
 {
 }
 
 void CIncludeSynRegistryImpl::Add(const IRegistry& registry)
 {
-    m_Registry.Add(registry);
+    _ASSERT(m_Registry);
+
+    m_Registry->Add(registry);
 }
 
 IRegistry& CIncludeSynRegistryImpl::GetIRegistry()
 {
-    return m_Registry.GetIRegistry();
+    _ASSERT(m_Registry);
+
+    return m_Registry->GetIRegistry();
 }
 
 template <typename TType>
 TType CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, TType default_value)
 {
-    return m_Registry.Get(GetSections(sections), names, default_value);
+    _ASSERT(m_Registry);
+
+    return m_Registry->Get(GetSections(sections), names, default_value);
 }
 
 bool CIncludeSynRegistryImpl::HasImpl(const string& section, const string& name)
 {
-    return m_Registry.Has(GetSections(section), name);
+    _ASSERT(m_Registry);
+
+    return m_Registry->Has(GetSections(section), name);
 }
 
 SRegSynonyms CIncludeSynRegistryImpl::GetSections(const SRegSynonyms& sections)
 {
+    _ASSERT(m_Registry);
+
     SRegSynonyms rv{};
 
     for (const auto& section : sections) {
@@ -355,7 +373,7 @@ SRegSynonyms CIncludeSynRegistryImpl::GetSections(const SRegSynonyms& sections)
 
         // Have not checked for '.include' yet
         if (result.second) {
-            auto included_value = m_Registry.Get(string(section), ".include", kEmptyStr);
+            auto included_value = m_Registry->Get(string(section), ".include", kEmptyStr);
             auto flags = NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate;
             NStr::Split(included_value, ",; \t\n\r", included, flags);
         }
@@ -372,7 +390,7 @@ template bool   CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SReg
 template int    CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
 template double CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
 
-ISynRegistryToIRegistry::ISynRegistryToIRegistry(ISynRegistry& registry) :
+ISynRegistryToIRegistry::ISynRegistryToIRegistry(ISynRegistry::TPtr registry) :
     m_Registry(registry)
 {
 }
@@ -426,34 +444,46 @@ void ISynRegistryToIRegistry::x_ChildLockAction(FLockAction action)
 
 const string& ISynRegistryToIRegistry::Get(const string& section, const string& name, TFlags flags) const
 {
+    _ASSERT(m_Registry);
+
     // Cannot return reference to a temporary, so first call for caching and next for returning
-    m_Registry.Get(section, name, kEmptyStr);
+    m_Registry->Get(section, name, kEmptyStr);
     return GetIRegistry().Get(section, name, flags);
 }
 
 bool ISynRegistryToIRegistry::HasEntry(const string& section, const string& name, TFlags) const
 {
-    return m_Registry.Has(section, name);
+    _ASSERT(m_Registry);
+
+    return m_Registry->Has(section, name);
 }
 
 string ISynRegistryToIRegistry::GetString(const string& section, const string& name, const string& default_value, TFlags) const
 {
-    return m_Registry.Get(section, name, default_value);
+    _ASSERT(m_Registry);
+
+    return m_Registry->Get(section, name, default_value);
 }
 
 int ISynRegistryToIRegistry::GetInt(const string& section, const string& name, int default_value, TFlags, EErrAction) const
 {
-    return m_Registry.Get(section, name, default_value);
+    _ASSERT(m_Registry);
+
+    return m_Registry->Get(section, name, default_value);
 }
 
 bool ISynRegistryToIRegistry::GetBool(const string& section, const string& name, bool default_value, TFlags, EErrAction) const
 {
-    return m_Registry.Get(section, name, default_value);
+    _ASSERT(m_Registry);
+
+    return m_Registry->Get(section, name, default_value);
 }
 
 double ISynRegistryToIRegistry::GetDouble(const string& section, const string& name, double default_value, TFlags, EErrAction) const
 {
-    return m_Registry.Get(section, name, default_value);
+    _ASSERT(m_Registry);
+
+    return m_Registry->Get(section, name, default_value);
 }
 
 const string& ISynRegistryToIRegistry::GetComment(const string& section, const string& name, TFlags flags) const
