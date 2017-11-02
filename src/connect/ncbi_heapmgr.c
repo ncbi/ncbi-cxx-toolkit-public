@@ -770,6 +770,7 @@ static void s_HEAP_Free(HEAP             heap,
      * "flag" must keep its HEAP_LAST bit so that it can be verified. */
     unsigned int last = HEAP_ISLAST(b) ? HEAP_LAST : 0;
 
+    assert(HEAP_ISUSED(b));
     assert(p < b  &&  b < n);
     assert((!p  ||  HEAP_NEXT(p) == b)  &&  b  &&  HEAP_NEXT(b) == n);
     assert((!p  ||  heap->base <= p)  &&  n <= heap->base + heap->size);
@@ -878,7 +879,7 @@ extern void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
 /*FIXME: to remove*/
 extern void HEAP_FreeFast(HEAP heap, SHEAP_Block* ptr, const SHEAP_Block* prev)
 {
-    SHEAP_HeapBlock *b, *p, *n;
+    SHEAP_HeapBlock *b, *p, *n, *t;
     char _id[32];
 
     if (unlikely(!heap)) {
@@ -898,6 +899,11 @@ extern void HEAP_FreeFast(HEAP heap, SHEAP_Block* ptr, const SHEAP_Block* prev)
     p = (SHEAP_HeapBlock*) prev;
     b = (SHEAP_HeapBlock*) ptr;
     n = HEAP_NEXT(b);
+
+    if (likely(p  &&  HEAP_ISUSED(p))  &&  unlikely((t = HEAP_NEXT(p)) != b)
+        &&  likely(!HEAP_ISUSED(t)  &&  HEAP_NEXT(t) == b)) {
+        p = t;
+    }
 
     if (unlikely(!s_HEAP_fast)) {
         const SHEAP_HeapBlock* e = heap->base + heap->size;

@@ -137,9 +137,12 @@ extern NCBI_XCONNECT_EXPORT void HEAP_Free
 /* Deallocate a block pointed to by "ptr" and having "prev" as its predecessor
  * (NULL if "ptr" is the first on the heap) -- a faster variant of HEAP_Free().
  * NOTE:  Since the block pointed to by "ptr" may cause free blocks to
- * coalesce, to use this call again while walking the following rule must
- * be utilized:  If "prev" was free, "prev" must not get advanced;
+ * coalesce, to use this call again while walking the heap, the following rule
+ * must be utilized:  If "prev" was free, "prev" must not get advanced;
  * otherwise, "prev" must be updated with "ptr"'s value.
+ * As an exception, if "prev" points to a used block and "prev"'s next block is
+ * not "ptr", but a free block, whose next is "ptr", then "prev" gets bumped up
+ * internally to that free block's pointer value.
  * NOTE:  This call will be removed.
  */
 extern NCBI_XCONNECT_EXPORT void HEAP_FreeFast
