@@ -335,6 +335,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
     void Construct();
 
     void Init(CObject* api_impl, const IRegistry* top_registry, SRegSynonyms sections);
+    void Init(CObject* api_impl, ISynRegistry& registry, SRegSynonyms sections);
 
     string MakeAuthString();
 
@@ -374,6 +375,8 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
     shared_ptr<CTry> GetTryGuard();
 
     virtual ~SNetServiceImpl();
+
+    static ISynRegistry* CreateISynRegistry();
 
     // Connection event listening. This listener implements
     // the authentication part of both NS and NC protocols.

@@ -501,6 +501,30 @@ void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
 
 void SNetServiceImpl::Init(CObject* api_impl, const IRegistry* top_registry, SRegSynonyms sections)
 {
+    ISynRegistry::TPtr registry(CreateISynRegistry());
+    if (top_registry) registry->Add(*top_registry);
+    Init(api_impl, *registry, sections);
+}
+
+ISynRegistry* SNetServiceImpl::CreateISynRegistry()
+{
+    auto syn_registry = new CSynRegistry;
+    auto cached_registry = new CCachedSynRegistry(syn_registry->MakePtr());
+    unique_ptr<ISynRegistry> registry(new CIncludeSynRegistry(cached_registry->MakePtr()));
+
+    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+
+    if (CNcbiApplication* app = CNcbiApplication::Instance()) {
+        registry->Add(app->GetConfig());
+    } else {
+        registry->Add(*new CEnvironmentRegistry);
+    }
+
+    return registry.release();
+}
+
+void SNetServiceImpl::Init(CObject* api_impl, ISynRegistry& registry, SRegSynonyms sections)
+{
     _ASSERT(m_Listener);
 
     // Initialize the connect library and LBSM structures
@@ -513,22 +537,6 @@ void SNetServiceImpl::Init(CObject* api_impl, const IRegistry* top_registry, SRe
         } conn_initer;
         conn_initer.NoOp();
     }
-
-    CSynRegistry syn_registry;
-    CCachedSynRegistry cached_registry(syn_registry.MakeRef());
-    CIncludeSynRegistry registry(cached_registry.MakeRef());
-
-    {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-
-        if (CNcbiApplication* app = CNcbiApplication::Instance()) {
-            syn_registry.Add(app->GetConfig());
-        } else {
-            syn_registry.Add(*new CEnvironmentRegistry);
-        }
-    }
-
-    if (top_registry) syn_registry.Add(*top_registry);
 
     // Remove empty sections
     for (auto it = sections.begin(); it != sections.end(); ) {
