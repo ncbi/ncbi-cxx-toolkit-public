@@ -334,7 +334,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
     void Construct(SNetServerInPool* server);
     void Construct();
 
-    void Init(CObject* api_impl, SConfigOrRegistry conf_or_reg, SRegSynonyms sections);
+    void Init(CObject* api_impl, SISynRegistryBuilder registry_builder, SRegSynonyms sections);
 
     string MakeAuthString();
 

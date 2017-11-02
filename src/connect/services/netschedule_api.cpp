@@ -712,13 +712,13 @@ void CNetScheduleServerListener::OnWarning(const string& warn_msg,
 
 const char* const kNetScheduleAPIDriverName = "netschedule_api";
 
-SNetScheduleAPIImpl::SNetScheduleAPIImpl(SConfigOrRegistry conf_or_reg, const string& section) :
+SNetScheduleAPIImpl::SNetScheduleAPIImpl(SISynRegistryBuilder registry_builder, const string& section) :
     m_Mode(GetMode(false, true)),
     m_SharedData(new SNetScheduleSharedData),
     m_Service(new SNetServiceImpl("NetScheduleAPI", kEmptyStr, kEmptyStr,
                 new CNetScheduleServerListener(m_Mode & fNonWnCompatible, m_SharedData)))
 {
-    m_Service->Init(this, conf_or_reg, { section, kNetScheduleAPIDriverName });
+    m_Service->Init(this, registry_builder, { section, kNetScheduleAPIDriverName });
 }
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(const string& service_name, const string& client_name,

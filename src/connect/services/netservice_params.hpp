@@ -274,11 +274,11 @@ private:
 using CIncludeSynRegistry = TSynRegistry<CIncludeSynRegistryImpl>;
 
 // Class to create ISynRegistry from CConfig, IRegistry or CNcbiApplication automatically
-struct SConfigOrRegistry
+struct SISynRegistryBuilder
 {
-    SConfigOrRegistry(const IRegistry& registry);
-    SConfigOrRegistry(CConfig* config);
-    SConfigOrRegistry(const CNcbiApplication& app);
+    SISynRegistryBuilder(const IRegistry& registry);
+    SISynRegistryBuilder(CConfig* config);
+    SISynRegistryBuilder(const CNcbiApplication& app);
 
     ISynRegistry::TPtr Get() { return m_Registry; }
 

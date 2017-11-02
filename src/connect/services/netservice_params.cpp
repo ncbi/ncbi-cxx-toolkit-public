@@ -414,7 +414,7 @@ ISynRegistry::TPtr s_CreateISynRegistry()
     return s_CreateISynRegistry(CNcbiApplication::Instance());
 }
 
-SConfigOrRegistry::SConfigOrRegistry(const IRegistry& registry) :
+SISynRegistryBuilder::SISynRegistryBuilder(const IRegistry& registry) :
     m_Registry(s_CreateISynRegistry())
 {
     _ASSERT(m_Registry);
@@ -422,7 +422,7 @@ SConfigOrRegistry::SConfigOrRegistry(const IRegistry& registry) :
     m_Registry->Add(registry);
 }
 
-SConfigOrRegistry::SConfigOrRegistry(CConfig* config) :
+SISynRegistryBuilder::SISynRegistryBuilder(CConfig* config) :
     m_Registry(s_CreateISynRegistry())
 {
     _ASSERT(m_Registry);
@@ -434,7 +434,7 @@ SConfigOrRegistry::SConfigOrRegistry(CConfig* config) :
     }
 }
 
-SConfigOrRegistry::SConfigOrRegistry(const CNcbiApplication& app) :
+SISynRegistryBuilder::SISynRegistryBuilder(const CNcbiApplication& app) :
     m_Registry(s_CreateISynRegistry(&app))
 {
     _ASSERT(m_Registry);

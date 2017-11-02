@@ -498,11 +498,11 @@ void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
 
 #endif
 
-void SNetServiceImpl::Init(CObject* api_impl, SConfigOrRegistry conf_or_reg, SRegSynonyms sections)
+void SNetServiceImpl::Init(CObject* api_impl, SISynRegistryBuilder registry_builder, SRegSynonyms sections)
 {
     _ASSERT(m_Listener);
 
-    ISynRegistry& registry = *conf_or_reg.Get();
+    ISynRegistry& registry = *registry_builder.Get();
 
     // Initialize the connect library and LBSM structures
     // used in DiscoverServersIfNeeded().

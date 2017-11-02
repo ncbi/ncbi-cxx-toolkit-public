@@ -227,7 +227,7 @@ void CNetCacheServerListener::OnWarning(const string& warn_msg,
 
 const char* const kNetCacheAPIDriverName = "netcache_api";
 
-SNetCacheAPIImpl::SNetCacheAPIImpl(SConfigOrRegistry conf_or_reg, const string& section,
+SNetCacheAPIImpl::SNetCacheAPIImpl(SISynRegistryBuilder registry_builder, const string& section,
         const string& service, const string& client_name,
         CNetScheduleAPI::TInstance ns_api) :
     m_Service(new SNetServiceImpl("NetCacheAPI", service, client_name,
@@ -235,7 +235,7 @@ SNetCacheAPIImpl::SNetCacheAPIImpl(SConfigOrRegistry conf_or_reg, const string& 
     m_NetScheduleAPI(ns_api),
     m_DefaultParameters(eVoid)
 {
-    m_Service->Init(this, conf_or_reg, { section, kNetCacheAPIDriverName, "netcache_client", "netcache" });
+    m_Service->Init(this, registry_builder, { section, kNetCacheAPIDriverName, "netcache_client", "netcache" });
 }
 
 SNetCacheAPIImpl::SNetCacheAPIImpl(const string& api_name, const string& service,
