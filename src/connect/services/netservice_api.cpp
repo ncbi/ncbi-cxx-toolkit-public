@@ -49,7 +49,6 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_config.hpp>
 #include <corelib/ncbi_message.hpp>
-#include <corelib/env_reg.hpp>
 
 #include <util/random_gen.hpp>
 #include <util/checksum.hpp>
@@ -499,33 +498,11 @@ void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
 
 #endif
 
-void SNetServiceImpl::Init(CObject* api_impl, const IRegistry* top_registry, SRegSynonyms sections)
-{
-    ISynRegistry::TPtr registry(CreateISynRegistry());
-    if (top_registry) registry->Add(*top_registry);
-    Init(api_impl, *registry, sections);
-}
-
-ISynRegistry* SNetServiceImpl::CreateISynRegistry()
-{
-    auto syn_registry = new CSynRegistry;
-    auto cached_registry = new CCachedSynRegistry(syn_registry->MakePtr());
-    unique_ptr<ISynRegistry> registry(new CIncludeSynRegistry(cached_registry->MakePtr()));
-
-    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-
-    if (CNcbiApplication* app = CNcbiApplication::Instance()) {
-        registry->Add(app->GetConfig());
-    } else {
-        registry->Add(*new CEnvironmentRegistry);
-    }
-
-    return registry.release();
-}
-
-void SNetServiceImpl::Init(CObject* api_impl, ISynRegistry& registry, SRegSynonyms sections)
+void SNetServiceImpl::Init(CObject* api_impl, SConfigOrRegistry conf_or_reg, SRegSynonyms sections)
 {
     _ASSERT(m_Listener);
+
+    ISynRegistry& registry = *conf_or_reg.Get();
 
     // Initialize the connect library and LBSM structures
     // used in DiscoverServersIfNeeded().

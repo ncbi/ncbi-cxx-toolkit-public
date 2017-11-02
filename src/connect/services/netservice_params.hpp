@@ -273,17 +273,17 @@ private:
 
 using CIncludeSynRegistry = TSynRegistry<CIncludeSynRegistryImpl>;
 
-// Convenience wrapper to support for both CConfig and IRegistry automatically
+// Class to create ISynRegistry from CConfig, IRegistry or CNcbiApplication automatically
 struct SConfigOrRegistry
 {
-    SConfigOrRegistry();
     SConfigOrRegistry(const IRegistry& registry);
     SConfigOrRegistry(CConfig* config);
+    SConfigOrRegistry(const CNcbiApplication& app);
 
-    operator const IRegistry*() const { return m_Registry.GetPointer(); }
+    ISynRegistry::TPtr Get() { return m_Registry; }
 
 private:
-    CRef<const IRegistry> m_Registry;
+    ISynRegistry::TPtr m_Registry;
 };
 
 class ISynRegistryToIRegistry : public IRegistry

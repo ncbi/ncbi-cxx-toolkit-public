@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbireg.hpp>
+#include <corelib/env_reg.hpp>
 
 #include "netservice_params.hpp"
 
@@ -390,19 +391,53 @@ template bool   CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SReg
 template int    CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
 template double CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
 
-SConfigOrRegistry::SConfigOrRegistry() :
-    m_Registry(nullptr)
+ISynRegistry::TPtr s_CreateISynRegistry(const CNcbiApplication* app)
 {
+    auto syn_registry = new CSynRegistry;
+    auto cached_registry = new CCachedSynRegistry(syn_registry->MakePtr());
+    ISynRegistry::TPtr registry(new CIncludeSynRegistry(cached_registry->MakePtr()));
+
+    if (app) {
+        registry->Add(app->GetConfig());
+    } else {
+        // This code is safe, as the sub-registry ends up in CCompoundRegistry which uses CRef, too
+        CRef<IRegistry> env_registry(new CEnvironmentRegistry);
+        registry->Add(*env_registry);
+    }
+
+    return registry;
+}
+
+ISynRegistry::TPtr s_CreateISynRegistry()
+{
+    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+    return s_CreateISynRegistry(CNcbiApplication::Instance());
 }
 
 SConfigOrRegistry::SConfigOrRegistry(const IRegistry& registry) :
-    m_Registry(&registry)
+    m_Registry(s_CreateISynRegistry())
 {
+    _ASSERT(m_Registry);
+
+    m_Registry->Add(registry);
 }
 
 SConfigOrRegistry::SConfigOrRegistry(CConfig* config) :
-    m_Registry(config ? new CConfigRegistry(config) : nullptr)
+    m_Registry(s_CreateISynRegistry())
 {
+    _ASSERT(m_Registry);
+
+    if (config) {
+        // This code is safe, as the sub-registry ends up in CCompoundRegistry which uses CRef, too
+        CRef<IRegistry> config_registry(new CConfigRegistry(config));
+        m_Registry->Add(*config_registry);
+    }
+}
+
+SConfigOrRegistry::SConfigOrRegistry(const CNcbiApplication& app) :
+    m_Registry(s_CreateISynRegistry(&app))
+{
+    _ASSERT(m_Registry);
 }
 
 ISynRegistryToIRegistry::ISynRegistryToIRegistry(ISynRegistry::TPtr registry) :
