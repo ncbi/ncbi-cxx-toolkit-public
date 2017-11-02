@@ -258,7 +258,6 @@ ARRI	s	Ayurveda Regional Research Institute
 ARSEF	c	ARS Collection of Entomopathogenic Fungi		
 ARTH	s	Artvin Coruh University		
 ARUN	s	Botanical Survey of India, Arunachal Pradesh Regional Centre		
-AS	c	China General Microbiological Culture Collection Center		
 AS<DEU>	s	Paleontological Collection		
 AS<PRY>	s	Jardin Botanico		
 ASAY	s	Academy of Science of Armenia		
@@ -982,7 +981,7 @@ CGE	s	University of Cambridge, Department of Plant Sciences
 CGEC	s	China Entomological Research Institute		
 CGG	s	Cambridge University Botanic Garden		
 CGH	s	National Museum of Prague		
-CGMCC	c	China General Microbiological Culture Collection Center, Chinese Academy of Sciences		
+CGMCC	c	China General Microbiological Culture Collection Center, Chinese Academy of Sciences	AS
 CGMS	s	Universidade Federal de Mato Grosso do Sul, Departamento de Biologia		
 CGN	s	Centre for Genetic Resources, The Netherlands		
 CGRIS	b	Chinese Crop Germplasm Resources Information Network		
