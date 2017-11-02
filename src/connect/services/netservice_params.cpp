@@ -390,6 +390,21 @@ template bool   CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SReg
 template int    CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
 template double CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
 
+SConfigOrRegistry::SConfigOrRegistry() :
+    m_Registry(nullptr)
+{
+}
+
+SConfigOrRegistry::SConfigOrRegistry(const IRegistry& registry) :
+    m_Registry(&registry)
+{
+}
+
+SConfigOrRegistry::SConfigOrRegistry(CConfig* config) :
+    m_Registry(config ? new CConfigRegistry(config) : nullptr)
+{
+}
+
 ISynRegistryToIRegistry::ISynRegistryToIRegistry(ISynRegistry::TPtr registry) :
     m_Registry(registry)
 {

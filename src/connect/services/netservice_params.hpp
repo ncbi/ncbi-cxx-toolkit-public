@@ -123,24 +123,6 @@ private:
     mutable map<string, unique_ptr<CConfig>> m_SubConfigs;
 };
 
-// Convenience wrapper to support for both CConfig and IRegistry automatically
-struct SConfigOrRegistry
-{
-    SConfigOrRegistry() : m_Registry(nullptr) {}
-
-    SConfigOrRegistry(const IRegistry& registry) : m_Registry(&registry) {}
-
-    SConfigOrRegistry(CConfig* config) :
-        m_Registry(config ? new CConfigRegistry(config) : nullptr)
-    {
-    }
-
-    operator const IRegistry*() const { return m_Registry.GetPointer(); }
-
-private:
-    CRef<const IRegistry> m_Registry;
-};
-
 struct SRegSynonyms : vector<CTempString>
 {
     using TBase = vector<CTempString>;
@@ -206,10 +188,6 @@ protected:
 
     virtual bool   HasImpl(const string& section, const string& name) = 0;
 };
-
-template <typename TType> struct ISynRegistry::TR              { using T = TType;  };
-template <>               struct ISynRegistry::TR<const char*> { using T = string; };
-template <>               struct ISynRegistry::TR<unsigned>    { using T = int;    };
 
 template <class TImpl>
 class TSynRegistry : public TImpl
@@ -295,6 +273,19 @@ private:
 
 using CIncludeSynRegistry = TSynRegistry<CIncludeSynRegistryImpl>;
 
+// Convenience wrapper to support for both CConfig and IRegistry automatically
+struct SConfigOrRegistry
+{
+    SConfigOrRegistry();
+    SConfigOrRegistry(const IRegistry& registry);
+    SConfigOrRegistry(CConfig* config);
+
+    operator const IRegistry*() const { return m_Registry.GetPointer(); }
+
+private:
+    CRef<const IRegistry> m_Registry;
+};
+
 class ISynRegistryToIRegistry : public IRegistry
 {
 public:
@@ -325,6 +316,10 @@ private:
 
     ISynRegistry::TPtr m_Registry;
 };
+
+template <typename TType> struct ISynRegistry::TR              { using T = TType;  };
+template <>               struct ISynRegistry::TR<const char*> { using T = string; };
+template <>               struct ISynRegistry::TR<unsigned>    { using T = int;    };
 
 extern template NCBI_XCONNECT_EXPORT string CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value);
 extern template NCBI_XCONNECT_EXPORT bool   CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value);
