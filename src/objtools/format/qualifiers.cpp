@@ -1708,7 +1708,9 @@ void CFlatAnticodonQVal::Format
         return;
     }
 
-    string locationString = CFlatSeqLoc(*m_Anticodon, ctx).GetString();
+    CSeq_loc_Mapper mapper(ctx.GetHandle(), CSeq_loc_Mapper::eSeqMap_Up);
+    CSeq_loc& slp = *mapper.Map(*m_Anticodon);
+    string locationString = CFlatSeqLoc(slp, ctx).GetString();
 
     string text;
     text = "(pos:";
