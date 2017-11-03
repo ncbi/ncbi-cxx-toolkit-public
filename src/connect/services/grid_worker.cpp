@@ -482,13 +482,13 @@ void SGridWorkerNodeImpl::x_WNCoreInit()
 void SGridWorkerNodeImpl::x_StartWorkerThreads()
 {
     _ASSERT(m_MaxThreads > 0);
+    _ASSERT(m_SynRegistry);
 
     m_ThreadPool = new CStdPoolOfThreads(m_MaxThreads, 0, 1, kMax_UInt,
             GetAppName() + "_wr");
 
     try {
-        unsigned init_threads = m_App.GetConfig().GetInt("server",
-                "init_threads", 1, 0, IRegistry::eErrPost);
+        unsigned init_threads = m_SynRegistry->Get("server", "init_threads", 1);
 
         m_ThreadPool->Spawn(init_threads <= m_MaxThreads ?
                 init_threads : m_MaxThreads);
