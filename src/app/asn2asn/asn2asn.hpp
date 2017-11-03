@@ -37,6 +37,8 @@ class CAsn2AsnThread;
 
 class CAsn2Asn : public CNcbiApplication
 {
+public:
+    CAsn2Asn();
 protected:
     void Init(void);
     int Run(void);

@@ -347,6 +347,11 @@ private:
 };
 
 
+CAsn2Asn::CAsn2Asn()
+{
+    SetVersionByBuild(1);
+}
+
 /*****************************************************************************
 *
 *   Main program loop to read, process, write SeqEntrys
