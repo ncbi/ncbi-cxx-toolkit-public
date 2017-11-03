@@ -7163,6 +7163,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "VETMED\ts\tUniversity of Veterinary Medicine\t\t",
 "VF\ts\tUniversidad de Valencia, Departamento de Biologia Vegetal, Botanica\t\t",
 "VFM\th\tForest Inventory and Planning Institute\t\t",
+"VFU\ts\tVietnam Forestry University\t\t",
 "VFWD\ts\tVermont Fish and Wildlife Department\t\t",
 "VFWO\th\tU.S. Fish and Wildlife Service, Ventura Fish and Wildlife Office\t\t",
 "VGZ\ts\tVoronezh State Biosphere Reserve, Research Department\t\t",

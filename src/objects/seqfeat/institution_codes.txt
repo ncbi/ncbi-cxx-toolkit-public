@@ -7130,6 +7130,7 @@ VER	s	Herbario, Museo Civico di Storia Naturale, Verona
 VETMED	s	University of Veterinary Medicine		
 VF	s	Universidad de Valencia, Departamento de Biologia Vegetal, Botanica		
 VFM	h	Forest Inventory and Planning Institute		
+VFU	s	Vietnam Forestry University		
 VFWD	s	Vermont Fish and Wildlife Department		
 VFWO	h	U.S. Fish and Wildlife Service, Ventura Fish and Wildlife Office		
 VGZ	s	Voronezh State Biosphere Reserve, Research Department		
