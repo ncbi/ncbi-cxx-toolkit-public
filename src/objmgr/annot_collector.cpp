@@ -2797,7 +2797,7 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
             CSeq_annot_SNP_Info::const_iterator snp_it =
                 snp_annot.FirstIn(range);
             if ( snp_it != snp_annot.end() ) {
-                //x_AddTSE(tseh);
+                x_AddTSE(tseh);
                 const CSeq_annot_Info& annot_info =
                     snp_annot.GetParentSeq_annot_Info();
                 if ( !sah || &sah.x_GetInfo() != &annot_info ) {
@@ -2851,7 +2851,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
 
     // CHandleRange::TRange range = hr.GetOverlappingRange();
 
-    //x_AddTSE(tseh);
+    x_AddTSE(tseh);
     CSeq_annot_Handle sah;
 
     size_t from_idx = 0;
@@ -2876,12 +2876,13 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
 
             // Release lock for tse update:
             guard.Release();
-            ITERATE(TStubMap, it, stubmap) {
+            for ( auto& it : stubmap) {
                 if ( m_Selector->GetMaxSize() < numeric_limits<TMaxSize>::max() ) {
-                    it->first->LoadChunk(*it->second.begin());
+                    it.first->LoadChunk(it.second.front());
                     break;
                 }
-                it->first->LoadChunks(it->second);
+                gfx::timsort(it.second.begin(), it.second.end());
+                it.first->LoadChunks(it.second);
             }
             tse.UpdateAnnotIndex(id);
 
