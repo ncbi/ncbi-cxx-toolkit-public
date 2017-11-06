@@ -1132,7 +1132,7 @@ void CFlatGatherer::x_RefSeqComments(CBioseqContext& ctx,
             if ( !did_tpa ) {
                 string str = CCommentItem::GetStringForTPA(uo, ctx);
                 if ( !str.empty() ) {
-                    x_AddComment(new CCommentItem(str, ctx, &uo));
+                    x_AddComment(new CCommentItem(str, ctx, /* &uo */ &(*it)));
                     did_tpa = true;
                 }
             }
@@ -1144,7 +1144,7 @@ void CFlatGatherer::x_RefSeqComments(CBioseqContext& ctx,
                 const CFlatFileConfig& cfg = ctx.Config();
                 string str = CCommentItem::GetStringForBankIt(uo, cfg.IsModeDump());
                 if ( !str.empty() ) {
-                    x_AddComment(new CCommentItem(str, ctx, &uo));
+                    x_AddComment(new CCommentItem(str, ctx, /* &uo */ &(*it)));
                 }
             }
         }}
@@ -1157,7 +1157,7 @@ void CFlatGatherer::x_RefSeqComments(CBioseqContext& ctx,
                       CCommentItem::eGenomeBuildComment_Yes : */
                       CCommentItem::eGenomeBuildComment_No ) );
                 if ( !str.empty() ) {
-                    x_AddComment(new CCommentItem(str, ctx, &uo));
+                    x_AddComment(new CCommentItem(str, ctx, /* &uo */ &(*it)));
                     did_ref_track = true;
                 }
             }
@@ -1220,7 +1220,7 @@ void CFlatGatherer::x_RefSeqGenomeComments(CBioseqContext& ctx) const
 
         string str = CCommentItem::GetStringForRefSeqGenome(uo);
         if ( !str.empty() ) {
-            x_AddComment(new CCommentItem(str, ctx, &uo));
+            x_AddComment(new CCommentItem(str, ctx, /* &uo */ &(*it)));
             break;
         }
     }
