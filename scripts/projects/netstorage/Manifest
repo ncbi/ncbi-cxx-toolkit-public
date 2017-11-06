@@ -35,3 +35,6 @@ Linux64-Centos : O2g     : GCC.sh 4.8.1 --without-debug --with-mt --with-flat-ma
 
 #USE_COMPONENTS
 
+TEST: test_netstorage_release.py --verbose -s ${packagedir} -a  ${packagedir}.tar,gz -u netstorage_ddl -p 'netstorage_Az@!812' -t notused prepare
+TEST: test_netstorage_release.py --verbose -s ${packagedir} -a  ${packagedir}.tar,gz -u netstorage_ddl -p 'netstorage_Az@!812' -t notused run
+

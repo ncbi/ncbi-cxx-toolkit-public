@@ -37,7 +37,6 @@ Linux64-Centos   : icc : ICC.sh            --with-bin-release --with-strip --wit
 
 DEFAULT_CONFIGURATIONS: Linux64-Centos:icc
 
-#Win32    : plain : static  32  ReleaseMT
 #Win64    : plain : static  64  ReleaseMT
 Win64    : plain : static  64  ReleaseDLL <ENV>NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI-INT8-GI=1</ENV>
 
