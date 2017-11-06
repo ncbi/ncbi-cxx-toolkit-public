@@ -14,9 +14,6 @@ add_library(xformat
     gap_item genome_project_item sam_formatter cigar_formatter
     gather_iter html_anchor_item inst_info_map gene_finder flat_qual_slots
 )
-add_dependencies(xformat
-    submit gbseq 
-)
 
 target_link_libraries(xformat
     gbseq mlacli xalnmgr

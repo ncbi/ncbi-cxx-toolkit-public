@@ -8,6 +8,6 @@ add_executable(test_ncbi_linkerd-app
 set_target_properties(test_ncbi_linkerd-app PROPERTIES OUTPUT_NAME test_ncbi_linkerd)
 
 target_link_libraries(test_ncbi_linkerd-app
-    xconnect
+    xxconnect
 )
 

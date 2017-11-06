@@ -8,6 +8,6 @@ add_executable(test_ic_client-app
 set_target_properties(test_ic_client-app PROPERTIES OUTPUT_NAME test_ic_client)
 
 target_link_libraries(test_ic_client-app
-    ncbi_xcache_netcache test_boost xutil
+    ncbi_xcache_netcache test_boost
 )
 
