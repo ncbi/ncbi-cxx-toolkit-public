@@ -121,7 +121,7 @@ x_script_name=`echo "$x_out" | sed -e 's%^.*/%%'`
 
 # Determine signature of the build (only for automatic builds)
 signature=""
-if test -n "$NCBI_AUTOMATED_BUILD"; then
+if \$is_automated; then
    if test $x_compiler = "XCODE"; then
       ncbiconf="$x_build_dir/$x_libdll/inc/$x_cfg/common/config/ncbiconf_xcode_site.h"
       signature=`grep "\"XCODE.*\"" $ncbiconf | sed 's/.*\"\(XCODE.*\)\".*/\1/'`
@@ -188,7 +188,9 @@ res_list="\$res_script.list"
 res_concat="\$res_script.out"
 res_concat_err="\$res_script.out_err"
 
-is_db_load=false
+# Define both senses to accommodate shells lacking !
+is_run=false
+no_run=true
 
 
 ##  Printout USAGE info and exit
@@ -207,8 +209,6 @@ USAGE:  $x_script_name {run | concat | concat_err}
 
 ERROR:  \$1
 EOF_usage
-# Undocumented command:
-#     load_to_db  Load data about test to database keeping all statistics.
 
     exit 1
 }
@@ -228,6 +228,8 @@ method="\$1"
 case "\$method" in
 #----------------------------------------------------------
    run )
+      is_run=true
+      no_run=false
       # See RunTest() below
       ;;
 #----------------------------------------------------------
@@ -268,18 +270,25 @@ case "\$method" in
       exit 0
       ;;
 #----------------------------------------------------------
-   load_to_db )
-      is_db_load=true
-      # See RunTest() below
-      ;;
-#----------------------------------------------------------
    * )
       Usage "Invalid method name."
       ;;
 esac
 
 
-## Run
+# Check for automated build
+is_automated=false
+is_db_load=false
+if test -n "\$NCBI_AUTOMATED_BUILD"; then
+   is_automated=true
+   if test -n "\$NCBI_CHECK_DB_LOAD"; then
+      is_db_load=true
+   fi
+fi
+
+
+#//////////////////////////////////////////////////////////////////////////
+
 
 trap "touch \$check_dir/check.failed; exit 1"  1 2 15
 rm \$check_dir/check.failed \$check_dir/check.success > /dev/null 2>&1 
@@ -331,19 +340,22 @@ if test -z "\$NCBI_TEST_DATA_PATH"; then
 fi
 
 
+## Run
+
 count_ok=0
 count_err=0
 count_timeout=0
 count_absent=0
 configurations="$x_confs"
 
+if \$is_run; then
+    rm -f "\$res_journal"
+    rm -f "\$res_log"
+fi
 if \$is_db_load; then
     echo "--------------------------------------------------" >> "\$build_dir/test_stat_load.log" 2>&1
     echo "Loading tests from: \$check_dir"                    >> "\$build_dir/test_stat_load.log" 2>&1
     echo "--------------------------------------------------" >> "\$build_dir/test_stat_load.log" 2>&1
-else
-    rm -f "\$res_journal"
-    rm -f "\$res_log"
 fi
 
 
@@ -390,36 +402,14 @@ RunTest() {
            x_test_out="\$x_work_dir/\$x_app.test_out\$x_ext"
            x_test_rep="\$x_work_dir/\$x_app.test_rep\$x_ext"
            x_boost_rep="\$x_work_dir/\$x_app.boost_rep\$x_ext"
-           x_applog_sh="\$x_work_dir/\$x_app.applog\$x_ext.sh"
         else
            x_cmd="[\$build_tree/\$build_cfg/\$x_wdir] \$tool_up \$x_name"
            x_test_out="\$x_work_dir/\$x_app.test_out\$x_ext.\$tool_lo"
            x_test_rep="\$x_work_dir/\$x_app.test_rep\$x_ext.\$tool_lo"
            x_boost_rep="\$x_work_dir/\$x_app.boost_rep\$x_ext.\$tool_lo"
-           x_applog_sh="\$x_work_dir/\$x_app.applog\$x_ext.\$tool_lo.sh"
         fi
 
-        if \$is_db_load; then
-           echo "\$x_path_app:" >> "\$build_dir/test_stat_load.log" 2>&1
-           case "$x_compiler" in
-             MSVC )
-                test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" "\$(cygpath -w "\$x_applog_sh")" >> "\$build_dir/test_stat_load.log" 2>&1
-                ;;        
-             XCODE ) 
-                $NCBI/bin/_production/CPPCORE/test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "\$build_dir/test_stat_load.log" 2>&1
-                ;;
-           esac
-           if test -f \$x_applog_sh; then
-              chmod a+x \$x_applog_sh 2>&1
-              echo "\$x_path_app:" >> "\$build_dir/test_stat_load_applog.log" 2>&1
-              \$x_applog_sh        >> "\$build_dir/test_stat_load_applog.log" 2>&1
-           else
-              echo "Error generating \$x_applog_sh "
-           fi
-           continue
-        fi
-   
-        if test -n "\$NCBI_AUTOMATED_BUILD"; then
+        if \$is_run && \$is_automated; then
            echo "\$signature"   >> "\$x_test_rep"
            echo "\$x_wdir"      >> "\$x_test_rep"
            echo "\$x_run"       >> "\$x_test_rep"
@@ -543,40 +533,40 @@ RunTest() {
               echo "DIS --  \$x_cmd"
               echo "DIS --  \$x_cmd" >> \$res_log
               count_absent=\`expr \$count_absent + 1\`
-              test -n "\$NCBI_AUTOMATED_BUILD" && echo "DIS" >> "\$x_test_rep"
+              \$is_automated && echo "DIS" >> "\$x_test_rep"
       
            elif grep NCBI_UNITTEST_SKIPPED \$x_test_out >/dev/null; then
               echo "SKP --  \$x_cmd"
               echo "SKP --  \$x_cmd" >> \$res_log
               count_absent=\`expr \$count_absent + 1\`
-              test -n "\$NCBI_AUTOMATED_BUILD" && echo "SKP" >> "\$x_test_rep"
+              \$is_automated && echo "SKP" >> "\$x_test_rep"
       
            elif grep NCBI_UNITTEST_TIMEOUTS_BUT_NO_ERRORS \$x_test_out >/dev/null; then
               echo "TO  --  \$x_cmd"
               echo "TO  --  \$x_cmd" >> \$res_log
               count_timeout=\`expr \$count_timeout + 1\`
-              test -n "\$NCBI_AUTOMATED_BUILD" && echo "TO" >> "\$x_test_rep"
+              \$is_automated && echo "TO" >> "\$x_test_rep"
 
            elif egrep "Maximum execution .* is exceeded" \$x_test_out >/dev/null; then
               echo "TO  --  \$x_cmd     (\$exec_time)"
               echo "TO  --  \$x_cmd     (\$exec_time)" >> \$res_log
               count_timeout=\`expr \$count_timeout + 1\`
-              test -n "\$NCBI_AUTOMATED_BUILD" && echo "TO" >> "\$x_test_rep"
+              \$is_automated && echo "TO" >> "\$x_test_rep"
 
            elif test \$result -eq 0; then
               echo "OK  --  \$x_cmd     (\$exec_time)"
               echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
               count_ok=\`expr \$count_ok + 1\`
-              test -n "\$NCBI_AUTOMATED_BUILD" && echo "OK" >> "\$x_test_rep"
+              \$is_automated && echo "OK" >> "\$x_test_rep"
 
            else
-               echo "ERR [\$result] --  \$x_cmd     (\$exec_time)"
-               echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
-               count_err=\`expr \$count_err + 1\`
-               test -n "\$NCBI_AUTOMATED_BUILD" && echo "ERR" >> "\$x_test_rep"
+              echo "ERR [\$result] --  \$x_cmd     (\$exec_time)"
+              echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
+              count_err=\`expr \$count_err + 1\`
+              \$is_automated && echo "ERR" >> "\$x_test_rep"
            fi
    
-           if test -n "\$NCBI_AUTOMATED_BUILD"; then
+           if \$is_automated; then
               echo "\$start_time" >> "\$x_test_rep"
               echo "\$result"     >> "\$x_test_rep"
               echo "\$exec_time"  >> "\$x_test_rep"
@@ -585,17 +575,34 @@ RunTest() {
               echo "\$runid"      >> "\$x_test_rep"
            fi
 
-        else  # Check existence of the test's application directory
-           # Test application is absent
-           echo "ABS --  \$x_cmd - \$x_test"
-           echo "ABS --  \$x_cmd - \$x_test" >> \$res_log
-           count_absent=\`expr \$count_absent + 1\`
-           if test -n "\$NCBI_AUTOMATED_BUILD"; then
-              echo "ABS" >> "\$x_test_rep"
-              echo "\`date +'$x_date_format'\`" >> "\$x_test_rep"
+        else  # Run test if it exist
+           if \$is_run; then
+              # Test application is absent
+              echo "ABS --  \$x_cmd - \$x_test"
+              echo "ABS --  \$x_cmd - \$x_test" >> \$res_log
+              count_absent=\`expr \$count_absent + 1\`
+              if \$is_automated; then
+                 echo "ABS" >> "\$x_test_rep"
+                 echo "\`date +'$x_date_format'\`" >> "\$x_test_rep"
+              fi
            fi
         fi
         
+        # Load test results to Database and Applog immediately after a test.
+        # Always load test results for automated builds on a 'run' command.
+        
+        if \$is_run && \$is_db_load; then
+           echo "\$x_path_app:" >> "\$build_dir/test_stat_load.log" 2>&1
+           case "$x_compiler" in
+             MSVC )
+                test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" >> "\$build_dir/test_stat_load.log" 2>&1
+                ;;        
+             XCODE ) 
+                $NCBI/bin/_production/CPPCORE/test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "\$build_dir/test_stat_load.log" 2>&1
+                ;;
+           esac
+        fi
+
     done  # Run test under all specified check tools   
 }
 
@@ -721,7 +728,7 @@ cat >> $x_out <<EOF
 PATH="\$saved_path"
 
 # Write result of the tests execution
-if ! \$is_db_load; then
+if \$is_run; then
    echo
    echo "Succeeded : \$count_ok"
    echo "Timeout   : \$count_timeout"
