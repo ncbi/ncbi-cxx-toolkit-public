@@ -947,7 +947,7 @@ struct SCommandDefinition {
         "line option.",
         {eID, eAuthToken, eNetSchedule, eQueue, eNetCache,
             eReturnCode, eJobOutput, eJobOutputBlob, eInputFile,
-            eFailJob, eAffinity, eOutputFile, eLoginToken, eAuth,
+            eFailJob, eAffinity, eLoginToken, eAuth,
             eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
