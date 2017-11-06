@@ -158,6 +158,9 @@ compile_dir="$x_compile_dir"
 bin_dir="$x_bin_dir"
 script="$x_out"
 cygwin=$cygwin
+signature="$x_signature"
+sendmail=''
+domain='@ncbi.nlm.nih.gov'
 
 res_journal="\$script.journal"
 res_log="\$script.log"
@@ -166,13 +169,11 @@ res_concat="\$script.out"
 res_concat_err="\$script.out_err"
 
 # Define both senses to accommodate shells lacking !
+is_run=false
+no_run=true
 is_report_err=false
 no_report_err=true
-is_db_load=false
-no_db_load=true
-signature="$x_signature"
-sendmail=''
-domain='@ncbi.nlm.nih.gov'
+
 
 # Include COMMON.SH
 . \${root_dir}/scripts/common/common.sh
@@ -198,7 +199,6 @@ ERROR:  \$1
 EOF_usage
 # Undocumented commands:
 #     report_err  Report failed tests directly to developers.
-#     load_to_db  Load data about test to database keeping all statistics.
 
     exit 1
 }
@@ -218,6 +218,8 @@ method="\$1"
 case "\$method" in
 #----------------------------------------------------------
    run )
+      is_run=true
+      no_run=false
       # See RunTest() below
       ;;
 #----------------------------------------------------------
@@ -283,17 +285,24 @@ case "\$method" in
       # See RunTest() below
       ;;
 #----------------------------------------------------------
-   load_to_db )
-      is_db_load=true
-      no_db_load=false
-      rm -f "$x_build_dir/test_stat_load.log"
-      # See RunTest() below
-      ;;
-#----------------------------------------------------------
    * )
       Usage "Invalid method name."
       ;;
 esac
+
+
+# Check for automated build
+is_automated=false
+is_db_load=false
+if test -n "\$NCBI_AUTOMATED_BUILD"; then
+   is_automated=true
+   if test -n "\$NCBI_CHECK_DB_LOAD"; then
+      is_db_load=true
+   fi
+fi
+
+
+#//////////////////////////////////////////////////////////////////////////
 
 
 trap "touch $x_target_dir/check.failed; exit 1"  1 2 15
@@ -349,8 +358,8 @@ if test -z "\$NCBI_EXPORT_PROJECT"; then
     export NCBI_CONFIG__LOG__FILE
 fi
 
-# Add additional necessaary directories to PATH: current, build, scripts, utility.
-PATH=".:\${build_dir}:\${root_dir}/scripts/common/impl:\$NCBI/bin/_production/CPPCORE:\${PATH}"
+# Add additional necessary directories to PATH: current, build, scripts, utility and $HOME/bin (for Ubuntu).
+PATH=".:\${build_dir}:\${root_dir}/scripts/common/impl:\$NCBI/bin/_production/CPPCORE:\$HOME/bin:\${PATH}"
 export PATH
 
 # Export bin and lib pathes
@@ -433,9 +442,10 @@ count_timeout=0
 count_absent=0
 count_total=0
 
-if \$no_report_err && \$no_db_load; then
+if \$is_run; then
    rm -f "\$res_journal"
    rm -f "\$res_log"
+   rm -f "$x_build_dir/test_stat_load.log"
 fi
 
 if test "\$NCBI_CHECK_SETLIMITS" != "0"; then
@@ -494,42 +504,21 @@ RunTest()
            x_test_out="\$x_work_dir/\$x_test.test_out\$x_ext"
            x_test_rep="\$x_work_dir/\$x_test.test_rep\$x_ext"
            x_boost_rep="\$x_work_dir/\$x_test.boost_rep\$x_ext"
-           x_applog_sh="\$x_work_dir/\$x_test.applog\$x_ext.sh"
         else
            #x_cmd="[\$x_work_dir_tail] \$tool_up \$x_name"
            x_test_out="\$x_work_dir/\$x_test.test_out\$x_ext.\$tool_lo"
            x_test_rep="\$x_work_dir/\$x_test.test_rep\$x_ext.\$tool_lo"
            x_boost_rep="\$x_work_dir/\$x_test.boost_rep\$x_ext.\$tool_lo"
-           x_applog_sh="\$x_work_dir/\$x_test.applog\$x_ext.\$tool_lo.sh"
         fi
 
-        if \$is_db_load; then
-            case \`uname -s\` in
-              CYGWIN* )
-                test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" "\$(cygpath -w "\$x_applog_sh")" >> "$x_build_dir/test_stat_load.log" 2>&1 ;;
-              IRIX* )
-                test_stat_load.sh "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" "\$x_applog_sh" >> "$x_build_dir/test_stat_load.log" 2>&1 ;;
-              * )
-                test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" "\$x_applog_sh" >> "$x_build_dir/test_stat_load.log" 2>&1 ;;
-            esac
-            if test -f \$x_applog_sh; then
-               chmod a+x \$x_applog_sh 2>&1
-               \$x_applog_sh >> "$x_build_dir/test_stat_load_applog.log" 2>&1
-            else
-               echo "Error generating \$x_applog_sh "
-            fi
-            continue
-        fi
-        
-        if \$no_report_err; then
-           if test -n "\$NCBI_AUTOMATED_BUILD"; then
-               echo "\$signature \$NCBI_CHECK_OS_NAME" > "\$x_test_rep"
-               echo "\$x_work_dir_tail" >> "\$x_test_rep"
-               echo "\$x_run" >> "\$x_test_rep"
-               echo "\$x_real_name" >> "\$x_test_rep"
-               NCBI_BOOST_REPORT_FILE="\$x_boost_rep"
-               export NCBI_BOOST_REPORT_FILE
-           fi
+   
+        if \$is_run && \$is_automated; then
+           echo "\$signature \$NCBI_CHECK_OS_NAME" > "\$x_test_rep"
+           echo "\$x_work_dir_tail" >> "\$x_test_rep"
+           echo "\$x_run" >> "\$x_test_rep"
+           echo "\$x_real_name" >> "\$x_test_rep"
+           NCBI_BOOST_REPORT_FILE="\$x_boost_rep"
+           export NCBI_BOOST_REPORT_FILE
         fi
 
         # Check existence of the test's application directory
@@ -546,7 +535,6 @@ RunTest()
 
                 # Fix empty parameters (replace "" to \"\", '' to \'\')
                 x_run_fix=\`echo "\$x_run" | sed -e 's/""/\\\\\\\\\\"\\\\\\\\\\"/g' -e "s/''/\\\\\\\\\\'\\\\\\\\\\'/g"\`
-
 
                 # Define check tool variables
                 NCBI_CHECK_TOOL=\`eval echo "\$"NCBI_CHECK_\${tool_up}""\`
@@ -607,7 +595,7 @@ RunTest()
                     fi
                 ) > \$x_test_out 2>&1
 
-                # Remove old core file if it exist (for clarity of the test)
+                # Remove old core file if any
                 corefile="\$x_work_dir/core"
                 rm -f "\$corefile" > /dev/null 2>&1
                 rm -f check_exec.pid > /dev/null 2>&1
@@ -621,6 +609,14 @@ RunTest()
                 launch_sh="/var/tmp/launch.\$\$.sh"
 cat > \$launch_sh <<EOF_launch
 #! /bin/sh
+
+logfile=\\\$NCBI_CONFIG__LOG__FILE
+NCBI_CONFIG__LOG__FILE=
+export NCBI_CONFIG__LOG__FILE
+eval "\\\`ncbi_applog generate -phid -sid -format=shell-export\\\`"
+NCBI_CONFIG__LOG__FILE=\\\$logfile
+export NCBI_CONFIG__LOG__FILE
+
 exec time -p \$check_exec \`eval echo \$xx_run\`
 EOF_launch
                 chmod a+x \$launch_sh
@@ -694,40 +690,40 @@ EOF_launch
                     echo "DIS --  \$x_cmd"
                     echo "DIS --  \$x_cmd" >> \$res_log
                     count_absent=\`expr \$count_absent + 1\`
-                    test -n "\$NCBI_AUTOMATED_BUILD" && echo "DIS" >> "\$x_test_rep"
+                    \$is_automated && echo "DIS" >> "\$x_test_rep"
 
                 elif grep NCBI_UNITTEST_SKIPPED \$x_test_out >/dev/null; then
                     echo "SKP --  \$x_cmd"
                     echo "SKP --  \$x_cmd" >> \$res_log
                     count_absent=\`expr \$count_absent + 1\`
-                    test -n "\$NCBI_AUTOMATED_BUILD" && echo "SKP" >> "\$x_test_rep"
+                    \$is_automated && echo "SKP" >> "\$x_test_rep"
 
                 elif grep NCBI_UNITTEST_TIMEOUTS_BUT_NO_ERRORS \$x_test_out >/dev/null; then
                     echo "TO  --  \$x_cmd"
                     echo "TO  --  \$x_cmd" >> \$res_log
                     count_timeout=\`expr \$count_timeout + 1\`
-                    test -n "\$NCBI_AUTOMATED_BUILD" && echo "TO" >> "\$x_test_rep"
+                    \$is_automated && echo "TO" >> "\$x_test_rep"
 
                 elif echo "\$exec_time" | egrep 'Maximum execution .* is exceeded' >/dev/null || egrep "Maximum execution .* is exceeded" \$x_test_out >/dev/null; then
                     echo "TO  --  \$x_cmd     (\$exec_time)"
                     echo "TO  --  \$x_cmd     (\$exec_time)" >> \$res_log
                     count_timeout=\`expr \$count_timeout + 1\`
-                    test -n "\$NCBI_AUTOMATED_BUILD" && echo "TO" >> "\$x_test_rep"
+                    \$is_automated && echo "TO" >> "\$x_test_rep"
 
                 elif test \$result -eq 0; then
                     echo "OK  --  \$x_cmd     (\$exec_time)"
                     echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
                     count_ok=\`expr \$count_ok + 1\`
-                    test -n "\$NCBI_AUTOMATED_BUILD" && echo "OK" >> "\$x_test_rep"
+                    \$is_automated && echo "OK" >> "\$x_test_rep"
 
                 else
                     echo "ERR [\$result] --  \$x_cmd     (\$exec_time)"
                     echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
                     count_err=\`expr \$count_err + 1\`
-                    test -n "\$NCBI_AUTOMATED_BUILD" && echo "ERR" >> "\$x_test_rep"
+                    \$is_automated && echo "ERR" >> "\$x_test_rep"
                 fi
 
-                if test -n "\$NCBI_AUTOMATED_BUILD"; then
+                if \$is_automated; then
                     echo "\$start_time" >> "\$x_test_rep"
                     echo "\$result"     >> "\$x_test_rep"
                     echo "\$exec_time"  >> "\$x_test_rep"
@@ -737,12 +733,12 @@ EOF_launch
                 fi
 
             else  # Run test if it exist
-                if \$no_report_err; then
+                if \$is_run; then
                     echo "ABS --  \$x_cmd"
                     echo "ABS --  \$x_cmd" >> \$res_log
                     count_absent=\`expr \$count_absent + 1\`
 
-                    if test -n "\$NCBI_AUTOMATED_BUILD"; then
+                    if \$is_automated; then
                         echo "ABS"         >> "\$x_test_rep"
                         echo "\`date +'$x_date_format'\`" >> "\$x_test_rep"
                         echo "\$x_authors" >> "\$x_test_rep"
@@ -751,18 +747,32 @@ EOF_launch
             fi
 
         else  # Check existence of the test's application directory
-            if \$no_report_err; then
+            if \$is_run; then
                 # Test application is absent
                 echo "ABS -- \$x_work_dir - \$x_test"
                 echo "ABS -- \$x_work_dir - \$x_test" >> \$res_log
                 count_absent=\`expr \$count_absent + 1\`
 
-                if test -n "\$NCBI_AUTOMATED_BUILD"; then
+                if \$is_automated; then
                     echo "ABS"         >> "\$x_test_rep"
                     echo "\`date +'$x_date_format'\`" >> "\$x_test_rep"
                     echo "\$x_authors" >> "\$x_test_rep"
                 fi
             fi
+        fi
+
+        # Load test results to Database and Applog immediately after a test.
+        # Always load test results for automated builds on a 'run' command.
+        
+        if \$is_run && \$is_db_load; then
+            case \`uname -s\` in
+              CYGWIN* )
+                test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" >> "$x_build_dir/test_stat_load.log" 2>&1 ;;
+              IRIX* )
+                test_stat_load.sh "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "$x_build_dir/test_stat_load.log" 2>&1 ;;
+              * )
+                test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "$x_build_dir/test_stat_load.log" 2>&1 ;;
+            esac
         fi
         
     done  # Run test under all specified check tools   
@@ -898,7 +908,7 @@ done # for x_row in x_tests
 # Write ending code into the script 
 cat >> $x_out <<EOF
 
-if \$no_report_err  &&  \$no_db_load; then
+if \$is_run; then
    # Write result of the tests execution
    echo
    echo "Succeeded : \$count_ok"
