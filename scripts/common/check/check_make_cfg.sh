@@ -121,7 +121,7 @@ x_script_name=`echo "$x_out" | sed -e 's%^.*/%%'`
 
 # Determine signature of the build (only for automatic builds)
 signature=""
-if \$is_automated; then
+if test -n "$NCBI_AUTOMATED_BUILD"; then
    if test $x_compiler = "XCODE"; then
       ncbiconf="$x_build_dir/$x_libdll/inc/$x_cfg/common/config/ncbiconf_xcode_site.h"
       signature=`grep "\"XCODE.*\"" $ncbiconf | sed 's/.*\"\(XCODE.*\)\".*/\1/'`
