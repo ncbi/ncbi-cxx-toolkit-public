@@ -7394,6 +7394,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_ReplacedCountryCode)
     old_countries.push_back("USSR");
     old_countries.push_back("Yugoslavia");
     old_countries.push_back("Zaire");
+    old_countries.push_back("Macedonia");
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "ReplacedCountryCode",
                               ""));
