@@ -8479,6 +8479,11 @@ bool s_IsMasterAccession(const CSeq_id& id)
                 rval = s_IsGenbankMasterAccession(id.GetEmbl().GetAccession());
             }
             break;
+        case CSeq_id::e_Tpg:
+            if (id.GetTpg().IsSetAccession()) {
+                rval = s_IsGenbankMasterAccession(id.GetTpg().GetAccession());
+            }
+            break;
         default:
             break;
     }
