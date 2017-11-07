@@ -261,7 +261,11 @@ void SNetCacheAPIImpl::AppendClientIPSessionID(string* cmd, CRequestContext& req
 {
     _ASSERT(cmd);
 
-    g_AppendClientIPAndSessionID(*cmd, req, true);
+    // XXX: A workaround for IP always required
+    // TODO: Remove after all NetCache servers upgraded to include CXX-9580 and CXX-9720
+    if (!req.IsSetClientIP()) *cmd += " ip=\"\"";
+
+    g_AppendClientIPAndSessionID(*cmd, req);
 }
 
 void SNetCacheAPIImpl::AppendClientIPSessionIDPasswordAgeHitID(string* cmd,
@@ -767,10 +771,6 @@ void CNetCacheAPI::ProlongBlobLifetime(const string& blob_key, unsigned ttl,
     CNetCacheAPIParameters parameters(&m_Impl->m_DefaultParameters);
 
     parameters.LoadNamedParameters(optional);
-
-    // XXX: A workaround for IP always required for PROLONG
-    // TODO: Remove after all NetCache servers upgraded to 6.14.4 (CXX-9580)
-    if (!CDiagContext::GetRequestContext().IsSetClientIP()) cmd += " ip=\"\"";
 
     m_Impl->AppendClientIPSessionIDPasswordAgeHitID(&cmd, &parameters);
 

@@ -457,11 +457,10 @@ void g_AppendHitID(string& cmd, CRequestContext& req, bool use_next_sub_hit_id)
     cmd += '"';
 }
 
-// TODO: Remove cxx_9720_workaround after all NetCache servers are updated to include CXX-9720
 inline
-void g_AppendClientIPAndSessionID(string& cmd, const CRequestContext& req, bool cxx_9720_workaround = false)
+void g_AppendClientIPAndSessionID(string& cmd, const CRequestContext& req)
 {
-    if (req.IsSetClientIP() || cxx_9720_workaround) {
+    if (req.IsSetClientIP()) {
         cmd += " ip=\"";
         cmd += req.GetClientIP();
         cmd += '"';
