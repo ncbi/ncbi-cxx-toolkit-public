@@ -261,7 +261,7 @@ void SNetCacheAPIImpl::AppendClientIPSessionID(string* cmd, CRequestContext& req
 {
     _ASSERT(cmd);
 
-    g_AppendClientIPAndSessionID(*cmd, req);
+    g_AppendClientIPAndSessionID(*cmd, req, true);
 }
 
 void SNetCacheAPIImpl::AppendClientIPSessionIDPasswordAgeHitID(string* cmd,
