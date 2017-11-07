@@ -7295,6 +7295,7 @@ BOOST_AUTO_TEST_CASE(Test_Validity_SpecificHost)
     host = "Homo sapiens; sex: female";
 	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
 	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
+
 }
 
 
@@ -11338,6 +11339,16 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     expected_errors[0]->SetSeverity(eDiag_Error);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    // suppress for RefSeq
+    CLEAR_ERRORS
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_id> refseq_id(new CSeq_id());
+    refseq_id->SetOther().SetAccession("NC_123456");
+    entry->SetSeq().SetId().push_back(refseq_id);
+    seh = scope.AddTopLevelSeqEntry(*entry); 
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
 

@@ -5682,6 +5682,8 @@ void CValidError_bioseq::x_ReportInternalPartial(const CSeq_feat& feat)
 {
     if (m_Imp.x_IsFarFetchFailure(feat.GetLocation())) {
         m_Imp.SetFarFetchFailure();
+    } else if (m_Imp.IsRefSeq()) {
+        // suppress
     } else if (feat.GetData().Which() == CSeqFeatData::e_Cdregion
         && feat.IsSetExcept()
         && NStr::Find(feat.GetExcept_text(), "rearrangement required for product") != string::npos) {
