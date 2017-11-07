@@ -394,8 +394,11 @@ template double CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SReg
 ISynRegistry::TPtr s_CreateISynRegistry(const CNcbiApplication* app)
 {
     auto syn_registry = new CSynRegistry;
-    auto cached_registry = new CCachedSynRegistry(syn_registry->MakePtr());
-    ISynRegistry::TPtr registry(new CIncludeSynRegistry(cached_registry->MakePtr()));
+
+    // TODO: Fix caching and enable
+    // auto cached_registry = new CCachedSynRegistry(syn_registry->MakePtr());
+
+    ISynRegistry::TPtr registry(new CIncludeSynRegistry(syn_registry->MakePtr()));
 
     if (app) {
         registry->Add(app->GetConfig());
