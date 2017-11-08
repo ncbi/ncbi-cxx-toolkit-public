@@ -1340,14 +1340,14 @@ int CNcbiApplogApp::Cmd_Generate()
         }
         if ( env ) {
             if (newline) {
-                cout << endl;
+                cout << '\n';
             }
             if (fmt == "shell" || fmt == "shell-export") {
                 cout << env << "=";
             }
             cout << buf;
             if (fmt == "shell-export") {
-                cout << "\nexport " << env << endl;
+                cout << "\nexport " << env << '\n';
             }
             else {
                 newline = true;
