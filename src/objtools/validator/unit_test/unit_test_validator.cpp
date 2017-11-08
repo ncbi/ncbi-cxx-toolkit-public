@@ -9881,8 +9881,8 @@ BOOST_AUTO_TEST_CASE(Test_Generic_SgmlPresentInText)
     foo = sgml_tags[tag_num] + "foo";
     feat->SetData().SetRna().SetExt().SetName(foo);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAmismatch",
-                              "No match for 1 mRNA"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAMismatchLocation",
+                              "No CDS location match for 1 mRNA"));
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "SgmlPresentInText",
                               "mRNA name " + foo + " has SGML"));
@@ -10309,8 +10309,8 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
     mrna->SetProduct().SetWhole().SetLocal().SetStr("nuc2");
     unit_test_util::AddFeat(mrna, contig);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAmismatch",
-                                                 "No match for 1 mRNA"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAMismatchLocation",
+                                                 "No CDS location match for 1 mRNA"));
     expected_errors.push_back(new CExpectedError("lcl|prot2", eDiag_Warning, "GenomicProductPackagingProblem",
                                                  "Protein bioseq should be product of CDS feature on contig, but is not"));
     eval = validator.Validate(seh, options);
@@ -10807,9 +10807,9 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_InvalidForType)
     cds->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetAccession("lcl|good");
-    expected_errors[0]->SetErrCode("CDSmRNAmismatch");
+    expected_errors[0]->SetErrCode("CDSmRNAMismatchLocation");
     expected_errors[0]->SetSeverity(eDiag_Warning);
-    expected_errors[0]->SetErrMsg("No match for 1 mRNA");
+    expected_errors[0]->SetErrMsg("No CDS location match for 1 mRNA");
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidForType",
                                                  "mRNA feature is invalid on an mRNA (cDNA) Bioseq."));
@@ -12969,8 +12969,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BothStrands)
     feat->SetExcept_text("trans-splicing");
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAmismatch",
-                              "No match for 1 mRNA"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAMismatchLocation",
+                              "No CDS location match for 1 mRNA"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BothStrands", 
                       "mRNA may not be on both (forward and reverse) strands"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "mRNAgeneRange",
@@ -13018,8 +13018,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSmRNArange)
 
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSwithNoMRNA",
                               "Unmatched CDS"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSmRNAmismatch",
-                              "No match for 1 mRNA"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSmRNAMismatchLocation",
+                              "No CDS location match for 1 mRNA"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSmRNArange", 
                       "mRNA contains CDS but internal intron-exon boundaries do not match"));
     eval = validator.Validate(seh, options);
@@ -13041,8 +13041,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSmRNArange)
     eval = validator.Validate(seh, options);
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSwithNoMRNA",
                               "Unmatched CDS"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSmRNAmismatch",
-                              "No match for 1 mRNA"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSmRNAMismatchLocation",
+                              "No CDS location match for 1 mRNA"));
     CheckErrors(*eval, expected_errors);
 
     // overlap problem rather than internal boundary problem
@@ -13250,8 +13250,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultipleMRNAproducts)
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "FeatureProductInconsistency",
                       "mRNA products are not unique"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAmismatch",
-                       "No match for 1 mRNA"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAMismatchLocation",
+                       "No CDS location match for 1 mRNA"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "TranscriptLen", 
                       "Transcript length [11] less than product length [27], and tail < 95% polyA"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "MultipleMRNAproducts", 
@@ -13277,8 +13277,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_mRNAgeneRange)
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "mRNAgeneRange",
                       "gene [locus:lcl|good:6-11] overlaps mRNA but does not completely contain it"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAmismatch",
-                       "No match for 1 mRNA"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAMismatchLocation",
+                       "No CDS location match for 1 mRNA"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -13291,8 +13291,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_mRNAgeneRange)
     overlap->SetLocation().SetInt().SetTo(10);    
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAmismatch",
-                       "No match for 1 mRNA"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAMismatchLocation",
+                       "No CDS location match for 1 mRNA"));
     CheckErrors (*eval, expected_errors);
 
     scope.RemoveTopLevelSeqEntry(seh);
@@ -13315,8 +13315,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranscriptLen)
     STANDARD_SETUP
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSwithNoMRNA",
                               "Unmatched CDS"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAmismatch",
-                      "No match for 1 mRNA"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAMismatchLocation",
+                      "No CDS location match for 1 mRNA"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNArange",
                       "mRNA overlaps or contains CDS but does not completely contain intervals"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "TranscriptLen", 
@@ -13565,8 +13565,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MissingMRNAproduct)
 
     STANDARD_SETUP_WITH_DATABASE
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAmismatch",
-                      "No match for 1 mRNA"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAMismatchLocation",
+                      "No CDS location match for 1 mRNA"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "ProductFetchFailure", 
                       "Unable to fetch mRNA transcript 'lcl|not_present_ever'"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "MissingMRNAproduct", 
@@ -13856,8 +13856,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_RnaProductMismatch)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAmismatch",
-                      "No match for 1 mRNA"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAMismatchLocation",
+                      "No CDS location match for 1 mRNA"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "RnaProductMismatch",
               "Type of RNA does not match MolInfo of product Bioseq"));
     eval = validator.Validate(seh, options);
@@ -13870,8 +13870,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_RnaProductMismatch)
     unit_test_util::SetBiomol (rna_seq, CMolInfo::eBiomol_mRNA);
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAmismatch",
-                      "No match for 1 mRNA"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAMismatchLocation",
+                      "No CDS location match for 1 mRNA"));
     CheckErrors (*eval, expected_errors);
     
    
@@ -14572,12 +14572,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSmRNAmismatch)
     unit_test_util::AddFeat (mrna2, nseq);
     
     STANDARD_SETUP
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSmRNAmismatch",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSmRNAmismatchCount",
                                "mRNA count (2) does not match CDS (1) count for gene"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSwithMultipleMRNAs",
                               "CDS matches 2 mRNAs"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSmRNAmismatch",
-                              "No match for 1 mRNA"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSmRNAMismatchLocation",
+                              "No CDS location match for 1 mRNA"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -14833,8 +14833,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PolyATail)
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSwithNoMRNA",
                       "Unmatched CDS"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAmismatch",
-                      "No match for 1 mRNA"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAMismatchLocation",
+                      "No CDS location match for 1 mRNA"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNArange",
                       "mRNA overlaps or contains CDS but does not completely contain intervals"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "PolyATail", 
@@ -14868,8 +14868,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSwithMultipleMRNAs)
                               "mRNA products are not unique"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSwithMultipleMRNAs",
                               "CDS matches 2 mRNAs"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAmismatch",
-                              "No match for 1 mRNA"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAMismatchLocation",
+                              "No CDS location match for 1 mRNA"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "FeatContentDup",
                               "Duplicate feature"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "MultipleMRNAproducts",
@@ -14892,8 +14892,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSwithMultipleMRNAs)
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "CDSwithMultipleMRNAs",
                               "CDS matches 2 mRNAs, but product locations are unique"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAmismatch",
-                              "No match for 1 mRNA"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAMismatchLocation",
+                              "No CDS location match for 1 mRNA"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "FeatContentDup", "Duplicate feature"));
     expected_errors.push_back(new CExpectedError("lcl|prot2", eDiag_Warning, "GenomicProductPackagingProblem",
                               "Protein bioseq should be product of CDS feature on contig, but is not"));
@@ -16597,8 +16597,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureCrossesGap)
     misc->SetLocation().SetInt().SetTo(30);
 
     STANDARD_SETUP
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAmismatch",
-                              "No match for 1 mRNA"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAMismatchLocation",
+                              "No CDS location match for 1 mRNA"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "FeatureCrossesGap",
                               "Feature crosses gap of unknown length"));
 
@@ -16619,8 +16619,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureCrossesGap)
     misc->SetLocation().SetMix().Set().push_back(int1);
     misc->SetLocation().SetMix().Set().push_back(int2);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAmismatch",
-        "No match for 1 mRNA"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAMismatchLocation",
+        "No CDS location match for 1 mRNA"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "IntervalBeginsOrEndsInGap",
         "Internal interval begins or ends in gap"));
 
@@ -17287,8 +17287,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PseudoCDSmRNArange)
     mrna->SetPseudo(true);
 
     STANDARD_SETUP
-    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAmismatch",
-                               "No match for 1 mRNA"));
+    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAMismatchLocation",
+                               "No CDS location match for 1 mRNA"));
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Info, "PseudoCDSmRNArange", 
                               "mRNA contains CDS but internal intron-exon boundaries do not match"));
     eval = validator.Validate(seh, options);

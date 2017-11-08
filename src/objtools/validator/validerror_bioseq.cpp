@@ -7160,14 +7160,14 @@ bool s_GeneralTagsMatch(const string& protein_id, const CDbtag& dbtag)
 void CValidError_bioseq::x_TranscriptIDsMatch(const string& protein_id, const CSeq_feat& cds)
 {
     if (!cds.IsSetProduct() || !cds.GetProduct().GetId()) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
-            "CDS-mRNA pair has mismatching protein_ids (" + protein_id + ")", cds);
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAMissingProteinIDs,
+            "CDS-mRNA pair has one missing protein_id (" + protein_id + ")", cds);
         return;
     }
     const CSeq_id& product_id = *(cds.GetProduct().GetId());
     if (product_id.IsGeneral()) {
         if (!s_GeneralTagsMatch(protein_id, product_id.GetGeneral())) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAMismatchProteinIDs,
                 "CDS-mRNA pair has mismatching protein_ids (" +
                 product_id.AsFastaString() + ", " + protein_id + ")", cds);
         }
@@ -7178,7 +7178,7 @@ void CValidError_bioseq::x_TranscriptIDsMatch(const string& protein_id, const CS
         ITERATE(CBioseq::TId, id_it, bsh.GetBioseqCore()->GetId()) {
             if ((*id_it)->IsGeneral()) {
                 if (!s_GeneralTagsMatch(protein_id, (*id_it)->GetGeneral())) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAMismatchProteinIDs,
                         "CDS-mRNA pair has mismatching protein_ids (" +
                         (*id_it)->AsFastaString() + ", " + protein_id + ")", cds);                   
                 }
@@ -7202,8 +7202,8 @@ void CValidError_bioseq::x_TranscriptIDsMatch(const string& protein_id, const CS
         return;
     }
 
-    PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
-        "CDS-mRNA pair has mismatching protein_ids (" + protein_id + ")", cds);
+    PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAMissingProteinIDs,
+        "CDS-mRNA pair has one missing protein_id (" + protein_id + ")", cds);
 }
 
 
@@ -7244,7 +7244,7 @@ void CValidError_bioseq::x_CheckOrigProteinAndTranscriptIds(const CCdsMatchInfo&
 
     if (must_reconcile) {
         if (!NStr::Equal(mrna_transcript_id, cds_transcript_id)) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAMismatchTranscriptIDs,
                 "CDS-mRNA pair has mismatching transcript_ids ("
                 + cds_transcript_id + "," + mrna_transcript_id + ")", 
                 cds_feat);
@@ -7415,14 +7415,14 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
 #endif
     if (num_unmatched_mrna > 10) {
         string msg = "No matches for " + NStr::NumericToString(num_unmatched_mrna) + " mRNAs";
-        PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNANotMatched,
                  msg, *(seq.GetCompleteBioseq()));
     } else {
 #ifdef USE_MRNA_MAP
         ITERATE(TmRNAList, it, mrna_map) {
             if (!it->second->OkWithoutCds()) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
-                    "No match for 1 mRNA", it->second->GetSeqfeat());
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAMismatchLocation,
+                    "No CDS location match for 1 mRNA", it->second->GetSeqfeat());
             }
         }
 #else
@@ -7480,7 +7480,7 @@ void CValidError_bioseq::x_ValidateGeneCDSmRNACounts (const CBioseq_Handle& seq)
                 SIZE_TYPE cds_num = it->second,
                           mrna_num = mrna_count[it->first];
                 if (cds_num > 0 && mrna_num > 1 && cds_num != mrna_num) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatchCount,
                         "mRNA count (" + NStr::SizetToString(mrna_num) + 
                         ") does not match CDS (" + NStr::SizetToString(cds_num) +
                         ") count for gene", *it->first);
