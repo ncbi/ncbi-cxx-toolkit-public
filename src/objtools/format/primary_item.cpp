@@ -153,6 +153,7 @@ void CPrimaryItem::x_GatherInfo(CBioseqContext& ctx)
              else if (o.GetType().GetStr() == "TSA") {
                  has_tsa = true;
              }
+             x_SetObject(*desc);
         }
     }
 

@@ -40,6 +40,7 @@
 #include <objtools/format/items/defline_item.hpp>
 #include <objtools/format/context.hpp>
 #include <objmgr/util/objutil.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -84,6 +85,10 @@ void CDeflineItem::x_GatherInfo(CBioseqContext& ctx)
     CleanAndCompress (m_Defline, m_Defline.c_str());
     ConvertQuotes(m_Defline);
     AddPeriod(m_Defline);
+    CSeqdesc_CI di(ctx.GetHandle(), CSeqdesc::e_Title);
+    if (di) {
+        x_SetObject(*di);
+    }
 }
 
 
