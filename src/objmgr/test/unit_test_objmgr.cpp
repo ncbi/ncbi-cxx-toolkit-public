@@ -370,8 +370,8 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT3)
 
 BOOST_AUTO_TEST_CASE(TestReResolveMT4)
 {
-    const size_t COUNT = 1000;
-    const size_t THREADS = 10;
+    const size_t COUNT = 10000;
+    const size_t THREADS = 40;
     
     // check re-resolve after adding
     CScope scope(*CObjectManager::GetInstance());

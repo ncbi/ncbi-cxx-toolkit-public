@@ -269,8 +269,83 @@ void CDataSource_ScopeInfo::AddTSE_Lock(const CTSE_Lock& lock)
     _VERIFY(m_TSE_LockSet.AddLock(lock));
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// CScope TSE locking scheme.
 
-CDataSource_ScopeInfo::TTSE_Lock
+// CTSE_ScopeUserLock is a link from user handles, it's also an internal lock.
+//
+// User lock maintains m_UserLockCounter, and when the last handle is deleted
+// the TSE is put into m_TSE_UnlockQueue.
+// The entries pushed out of m_TSE_UnlockQueue lose their internal lock.
+//
+// The TSE with user locks can be forcily released by explicit request:
+// RemoveFromHistory(), RemoveDataLoader(), ResetHistory() etc.
+// In this case all handles become invalidated - disconnected from scope.
+// When a TSE is being forcily released the CTSE_ScopeInfo will remain
+// as it may be referenced from other user-level handles, but the content
+// of CTSE_ScopeInfo is cleared - info->IsAttached() == false.
+
+// CTSE_ScopeInternalLock lock holds CTSE_Lock m_TSE_lock (in CDataSource).
+//
+// Internal locks are either links from user handles,
+// links from another TSE (master to segments, sequence to external annots),
+// or entries in m_TSE_UnlockQueue.
+// When the last internal lock is deleted the m_TSE_lock can be released if
+// the TSE can be reloaded later.
+// When an internal lock is obtained it will be assigned with proper CTSE_Lock
+// if necessary, which could involve reloading of entry from CDataLoader.
+
+// So, possible states of CTSE_ScopeInfo are:
+//   0. detached:
+//     m_DS_Info == null
+//     m_TSE_LockCounter >= 0
+//     m_UserLockCounter >= 0
+//     m_TSE_Lock == null
+//     m_UnloadedInfo == null
+//     m_UsedByTSE, m_UsedTSE_Set: empty
+//     m_ReplacedTSE == null
+//     m_BioseqById, m_ScopeInfoMap: empty
+//     not in m_TSE_UnlockQueue
+//   1. attached, unlocked
+//     m_DS_Info != null
+//     m_TSE_LockCounter == 0
+//     m_UserLockCounter == 0
+//     m_TSE_Lock, m_UnloadedInfo: exactly one of them is null
+//     m_UsedByTSE, m_UsedTSE_Set: empty
+//     m_ReplacedTSE
+//     m_BioseqById, m_ScopeInfoMap
+//     not in m_TSE_UnlockQueue
+//   2. attached, locked, no user handle locks
+//     m_DS_Info != null
+//     m_TSE_LockCounter > 0
+//     m_UserLockCounter == 0
+//     m_TSE_Lock != null
+//     m_UnloadedInfo: any
+//     m_UsedByTSE, m_UsedTSE_Set: any
+//     m_ReplacedTSE: any
+//     m_BioseqById: any
+//     m_ScopeInfoMap: any
+//     may be m_TSE_UnlockQueue
+//   3. attached, locked, with user handle locks
+//     m_DS_Info != null
+//     m_TSE_LockCounter > 0
+//     m_UserLockCounter > 0
+//     m_TSE_Lock != null
+//     m_UnloadedInfo: any
+//     m_UsedByTSE, m_UsedTSE_Set: any
+//     m_ReplacedTSE: any
+//     m_BioseqById: any
+//     m_ScopeInfoMap: any
+//     not in m_TSE_UnlockQueue
+
+// get user lock for a CTSE_Lock (in CDataSource)
+// create CTSE_ScopeInfo if necessary
+// preconditions:
+//   lock != null
+//   m_UserLockCounter >= 0 (any)
+
+
+CTSE_ScopeUserLock
 CDataSource_ScopeInfo::GetTSE_Lock(const CTSE_Lock& lock)
 {
     CTSE_ScopeUserLock ret;
@@ -391,6 +466,7 @@ void CDataSource_ScopeInfo::ReleaseTSEUserLock(CTSE_ScopeInfo& tse)
             // already unlocked
             return;
         }
+        m_TSE_UnlockQueue.Erase(&tse);
         m_TSE_UnlockQueue.Put(&tse, CTSE_ScopeInternalLock(&tse), &unlocked);
         if ( unlocked ) {
             CUnlockedTSEsGuard::SaveInternal(unlocked);
