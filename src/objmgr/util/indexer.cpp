@@ -684,6 +684,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_GapsInitialized = false;
     m_DescsInitialized = false;
     m_FeatsInitialized = false;
+    m_SourcesInitialized = false;
 
     m_ForceOnlyNearFeats = false;
 
@@ -745,6 +746,8 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_Unordered = false;
 
     m_PDBCompound.clear();
+
+    m_DescBioSource.Reset();
 
     m_BioSource.Reset();
     m_Taxname.clear();
@@ -1096,111 +1099,164 @@ static const char* x_OrganelleName (
     return result;
 }
 
+static bool s_BlankOrNotSpecialTaxname (string taxname)
+
+{
+    if (taxname.empty()) {
+        return true;
+    }
+
+    if (NStr::EqualNocase (taxname, "synthetic construct")) {
+        return false;
+    }
+    if (NStr::EqualNocase (taxname, "artificial sequence")) {
+        return false;
+    }
+    if (NStr::EqualNocase (taxname, "vector")) {
+        return false;
+    }
+    if (NStr::EqualNocase (taxname, "Vector")) {
+        return false;
+    }
+
+    return true;
+}
+
 void CBioseqIndex::x_InitSource (void)
 
 {
-    if (m_BioSource.NotEmpty()) {
-        // get organism name
-        if (m_BioSource->IsSetTaxname()) {
-            m_Taxname = m_BioSource->GetTaxname();
-        }
-        if (m_BioSource->IsSetGenome()) {
-            m_Genome = m_BioSource->GetGenome();
-            m_IsPlasmid = (m_Genome == NCBI_GENOME(plasmid));
-            m_IsChromosome = (m_Genome == NCBI_GENOME(chromosome));
+    try {
+        if (m_SourcesInitialized) {
+           return;
         }
 
-        if (m_IsWP) {
-            int num_super_kingdom = 0;
-            bool super_kingdoms_different = false;
+        m_SourcesInitialized = true;
+
+        if (! m_DescsInitialized) {
+            x_InitDescs();
+        }
+
+        if (m_IsAA && m_DescBioSource.NotEmpty() && m_DescBioSource->IsSetTaxname()) {
+            string taxname = m_DescBioSource->GetTaxname();
+            if (taxname.empty() || s_BlankOrNotSpecialTaxname(taxname)) {
+                CRef<CFeatureIndex> sfxp = GetFeatureForProduct();
+                if (sfxp) {
+                    CRef<CFeatureIndex> bscx = sfxp->GetOverlappingSource();
+                    if (bscx) {
+                        const CBioSource& bsrc = bscx->GetMappedFeat().GetData().GetBiosrc();
+                        m_BioSource.Reset (&bsrc);
+                    }
+                }
+            }
+        }
+
+        if (m_DescBioSource && ! m_BioSource) {
+            m_BioSource = m_DescBioSource;
+        }
+
+        if (m_BioSource.NotEmpty()) {
+            // get organism name
+            if (m_BioSource->IsSetTaxname()) {
+                m_Taxname = m_BioSource->GetTaxname();
+            }
+            if (m_BioSource->IsSetGenome()) {
+                m_Genome = m_BioSource->GetGenome();
+                m_IsPlasmid = (m_Genome == NCBI_GENOME(plasmid));
+                m_IsChromosome = (m_Genome == NCBI_GENOME(chromosome));
+            }
+
+            if (m_IsWP) {
+                int num_super_kingdom = 0;
+                bool super_kingdoms_different = false;
+
+                if (m_BioSource->IsSetOrgname()) {
+                    const COrgName& onp = m_BioSource->GetOrgname();
+                    if (onp.IsSetName()) {
+                        const COrgName::TName& nam = onp.GetName();
+                        if (nam.IsPartial()) {
+                            const CPartialOrgName& pon = nam.GetPartial();
+                            if (pon.IsSet()) {
+                                const CPartialOrgName::Tdata& tx = pon.Get();
+                                ITERATE (CPartialOrgName::Tdata, itr, tx) {
+                                    const CTaxElement& te = **itr;
+                                    if (! te.IsSetFixed_level()) continue;
+                                    if (te.GetFixed_level() != 0) continue;
+                                    if (! te.IsSetLevel()) continue;
+                                    const string& lvl = te.GetLevel();
+                                    if (! NStr::EqualNocase (lvl, "superkingdom")) continue;
+                                    num_super_kingdom++;
+                                    if (m_FirstSuperKingdom.empty() && te.IsSetName()) {
+                                        m_FirstSuperKingdom = te.GetName();
+                                    } else if (te.IsSetName() && ! NStr::EqualNocase (m_FirstSuperKingdom, te.GetName())) {
+                                        if (m_SecondSuperKingdom.empty()) {
+                                            super_kingdoms_different = true;
+                                            m_SecondSuperKingdom = te.GetName();
+                                        }
+                                    }
+                                    if (num_super_kingdom > 1 && super_kingdoms_different) {
+                                        m_IsCrossKingdom = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // process SubSource
+            FOR_EACH_SUBSOURCE_ON_BIOSOURCE (sbs_itr, *m_BioSource) {
+                const CSubSource& sbs = **sbs_itr;
+                if (! sbs.IsSetName()) continue;
+                const string& str = sbs.GetName();
+                SWITCH_ON_SUBSOURCE_CHOICE (sbs) {
+                    case NCBI_SUBSOURCE(chromosome):
+                        m_Chromosome = str;
+                        break;
+                    case NCBI_SUBSOURCE(clone):
+                        m_Clone = str;
+                        m_has_clone = true;
+                        break;
+                    case NCBI_SUBSOURCE(map):
+                        m_Map = str;
+                        break;
+                    case NCBI_SUBSOURCE(plasmid_name):
+                        m_Plasmid = str;
+                        break;
+                    case NCBI_SUBSOURCE(segment):
+                        m_Segment = str;
+                        break;
+                    default:
+                        break;
+                }
+            }
 
             if (m_BioSource->IsSetOrgname()) {
                 const COrgName& onp = m_BioSource->GetOrgname();
                 if (onp.IsSetName()) {
                     const COrgName::TName& nam = onp.GetName();
-                    if (nam.IsPartial()) {
+                    if (nam.IsBinomial()) {
+                        const CBinomialOrgName& bon = nam.GetBinomial();
+                        if (bon.IsSetGenus()) {
+                            m_Genus = bon.GetGenus();
+                        }
+                        if (bon.IsSetSpecies()) {
+                            m_Species = bon.GetSpecies();
+                        }
+                    } else if (nam.IsPartial()) {
                         const CPartialOrgName& pon = nam.GetPartial();
                         if (pon.IsSet()) {
                             const CPartialOrgName::Tdata& tx = pon.Get();
                             ITERATE (CPartialOrgName::Tdata, itr, tx) {
                                 const CTaxElement& te = **itr;
-                                if (! te.IsSetFixed_level()) continue;
-                                if (te.GetFixed_level() != 0) continue;
-                                if (! te.IsSetLevel()) continue;
-                                const string& lvl = te.GetLevel();
-                                if (! NStr::EqualNocase (lvl, "superkingdom")) continue;
-                                num_super_kingdom++;
-                                if (m_FirstSuperKingdom.empty() && te.IsSetName()) {
-                                    m_FirstSuperKingdom = te.GetName();
-                                } else if (te.IsSetName() && ! NStr::EqualNocase (m_FirstSuperKingdom, te.GetName())) {
-                                    if (m_SecondSuperKingdom.empty()) {
-                                        super_kingdoms_different = true;
-                                        m_SecondSuperKingdom = te.GetName();
-                                    }
-                                }
-                                if (num_super_kingdom > 1 && super_kingdoms_different) {
-                                    m_IsCrossKingdom = true;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // process SubSource
-        FOR_EACH_SUBSOURCE_ON_BIOSOURCE (sbs_itr, *m_BioSource) {
-            const CSubSource& sbs = **sbs_itr;
-            if (! sbs.IsSetName()) continue;
-            const string& str = sbs.GetName();
-            SWITCH_ON_SUBSOURCE_CHOICE (sbs) {
-                case NCBI_SUBSOURCE(chromosome):
-                    m_Chromosome = str;
-                    break;
-                case NCBI_SUBSOURCE(clone):
-                    m_Clone = str;
-                    m_has_clone = true;
-                    break;
-                case NCBI_SUBSOURCE(map):
-                    m_Map = str;
-                    break;
-                case NCBI_SUBSOURCE(plasmid_name):
-                    m_Plasmid = str;
-                    break;
-                case NCBI_SUBSOURCE(segment):
-                    m_Segment = str;
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        if (m_BioSource->IsSetOrgname()) {
-            const COrgName& onp = m_BioSource->GetOrgname();
-            if (onp.IsSetName()) {
-                const COrgName::TName& nam = onp.GetName();
-                if (nam.IsBinomial()) {
-                    const CBinomialOrgName& bon = nam.GetBinomial();
-                    if (bon.IsSetGenus()) {
-                        m_Genus = bon.GetGenus();
-                    }
-                    if (bon.IsSetSpecies()) {
-                        m_Species = bon.GetSpecies();
-                    }
-                } else if (nam.IsPartial()) {
-                    const CPartialOrgName& pon = nam.GetPartial();
-                    if (pon.IsSet()) {
-                        const CPartialOrgName::Tdata& tx = pon.Get();
-                        ITERATE (CPartialOrgName::Tdata, itr, tx) {
-                            const CTaxElement& te = **itr;
-                            if (te.IsSetFixed_level()) {
-                                int fl = te.GetFixed_level();
-                                if (fl > 0) {
-                                    m_Multispecies = true;
-                                } else if (te.IsSetLevel()) {
-                                    const string& lvl = te.GetLevel();
-                                    if (! NStr::EqualNocase (lvl, "species")) {
+                                if (te.IsSetFixed_level()) {
+                                    int fl = te.GetFixed_level();
+                                    if (fl > 0) {
                                         m_Multispecies = true;
+                                    } else if (te.IsSetLevel()) {
+                                        const string& lvl = te.GetLevel();
+                                        if (! NStr::EqualNocase (lvl, "species")) {
+                                            m_Multispecies = true;
+                                        }
                                     }
                                 }
                             }
@@ -1208,64 +1264,67 @@ void CBioseqIndex::x_InitSource (void)
                     }
                 }
             }
-        }
 
-        // process OrgMod
-        FOR_EACH_ORGMOD_ON_BIOSOURCE (omd_itr, *m_BioSource) {
-            const COrgMod& omd = **omd_itr;
-            if (! omd.IsSetSubname()) continue;
-            const string& str = omd.GetSubname();
-            SWITCH_ON_ORGMOD_CHOICE (omd) {
-                case NCBI_ORGMOD(strain):
-                    if (m_Strain.empty()) {
-                        m_Strain = str;
-                    }
-                    break;
-                case NCBI_ORGMOD(cultivar):
-                    if (m_Cultivar.empty()) {
-                        m_Cultivar = str;
-                    }
-                    break;
-                case NCBI_ORGMOD(isolate):
-                    if (m_Isolate.empty()) {
-                        m_Isolate = str;
-                    }
-                    break;
-                case NCBI_ORGMOD(breed):
-                    if (m_Breed.empty()) {
-                        m_Breed = str;
-                    }
-                    break;
-                default:
-                    break;
+            // process OrgMod
+            FOR_EACH_ORGMOD_ON_BIOSOURCE (omd_itr, *m_BioSource) {
+                const COrgMod& omd = **omd_itr;
+                if (! omd.IsSetSubname()) continue;
+                const string& str = omd.GetSubname();
+                SWITCH_ON_ORGMOD_CHOICE (omd) {
+                    case NCBI_ORGMOD(strain):
+                        if (m_Strain.empty()) {
+                            m_Strain = str;
+                        }
+                        break;
+                    case NCBI_ORGMOD(cultivar):
+                        if (m_Cultivar.empty()) {
+                            m_Cultivar = str;
+                        }
+                        break;
+                    case NCBI_ORGMOD(isolate):
+                        if (m_Isolate.empty()) {
+                            m_Isolate = str;
+                        }
+                        break;
+                    case NCBI_ORGMOD(breed):
+                        if (m_Breed.empty()) {
+                            m_Breed = str;
+                        }
+                        break;
+                    default:
+                        break;
+                }
             }
         }
-    }
 
-    bool virus_or_phage = false;
-    bool has_plasmid = false;
-    bool wgs_suffix = false;
+        bool virus_or_phage = false;
+        bool has_plasmid = false;
+        bool wgs_suffix = false;
 
-    if (NStr::FindNoCase(m_Taxname, "virus") != NPOS  ||
-        NStr::FindNoCase(m_Taxname, "phage") != NPOS) {
-        virus_or_phage = true;
-    }
-
-    if (! m_Plasmid.empty()) {
-        has_plasmid = true;
-        /*
-        if (NStr::FindNoCase(m_Plasmid, "plasmid") == NPOS  &&
-            NStr::FindNoCase(m_Plasmid, "element") == NPOS) {
-            pls_pfx = " plasmid ";
+        if (NStr::FindNoCase(m_Taxname, "virus") != NPOS  ||
+            NStr::FindNoCase(m_Taxname, "phage") != NPOS) {
+            virus_or_phage = true;
         }
-        */
-    }
 
-    if (m_IsWGS) {
-        wgs_suffix = true;
-    }
+        if (! m_Plasmid.empty()) {
+            has_plasmid = true;
+            /*
+            if (NStr::FindNoCase(m_Plasmid, "plasmid") == NPOS  &&
+                NStr::FindNoCase(m_Plasmid, "element") == NPOS) {
+                pls_pfx = " plasmid ";
+            }
+            */
+        }
 
-    m_Organelle = x_OrganelleName (m_Genome, has_plasmid, virus_or_phage, wgs_suffix);
+        if (m_IsWGS) {
+            wgs_suffix = true;
+        }
+
+        m_Organelle = x_OrganelleName (m_Genome, has_plasmid, virus_or_phage, wgs_suffix);
+    }
+    catch (CException& e) {
+        LOG_POST(Error << "Error in CBioseqIndex::x_InitSource: " << e.what());
+    }
 }
 
 // Descriptor collection (delayed until needed)
@@ -1290,10 +1349,12 @@ void CBioseqIndex::x_InitDescs (void)
             switch (sd.Which()) {
                 case CSeqdesc::e_Source:
                 {
-                    if (! m_BioSource) {
+                    if (! m_DescBioSource) {
                         const CBioSource& biosrc = sd.GetSource();
-                        m_BioSource.Reset (&biosrc);
-                        x_InitSource();
+                        m_DescBioSource.Reset (&biosrc);
+                        if (m_IsNA && ! m_BioSource) {
+                            m_BioSource = m_DescBioSource;
+                        }
                     }
                     break;
                 }
@@ -1613,7 +1674,6 @@ void CBioseqIndex::x_InitFeats (void)
                     const CSeqFeatData& sfdata = mf.GetData();
                     const CBioSource& biosrc = sfdata.GetBiosrc();
                     m_BioSource.Reset (&biosrc);
-                    x_InitSource();
                 }
                 continue;
             }
@@ -1873,16 +1933,8 @@ bool CBioseqIndex::IsUseBiosrc (void)
 CConstRef<CBioSource> CBioseqIndex::GetBioSource (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
-    }
-
-    if (m_BioSource) {
-      return m_BioSource;
-    }
-
-    if (! m_FeatsInitialized) {
-        x_InitFeats();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_BioSource;
@@ -1891,8 +1943,8 @@ CConstRef<CBioSource> CBioseqIndex::GetBioSource (void)
 const string& CBioseqIndex::GetTaxname (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_Taxname;
@@ -1901,8 +1953,8 @@ const string& CBioseqIndex::GetTaxname (void)
 CTempString CBioseqIndex::GetGenus (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_Genus;
@@ -1911,8 +1963,8 @@ CTempString CBioseqIndex::GetGenus (void)
 CTempString CBioseqIndex::GetSpecies (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_Species;
@@ -1921,8 +1973,8 @@ CTempString CBioseqIndex::GetSpecies (void)
 bool CBioseqIndex::IsMultispecies (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_Multispecies;
@@ -1931,8 +1983,8 @@ bool CBioseqIndex::IsMultispecies (void)
 CBioSource::TGenome CBioseqIndex::GetGenome (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_Genome;
@@ -1941,8 +1993,8 @@ CBioSource::TGenome CBioseqIndex::GetGenome (void)
 bool CBioseqIndex::IsPlasmid (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_IsPlasmid;
@@ -1951,8 +2003,8 @@ bool CBioseqIndex::IsPlasmid (void)
 bool CBioseqIndex::IsChromosome (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_IsChromosome;
@@ -1961,8 +2013,8 @@ bool CBioseqIndex::IsChromosome (void)
 CTempString CBioseqIndex::GetOrganelle (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_Organelle;
@@ -1971,8 +2023,8 @@ CTempString CBioseqIndex::GetOrganelle (void)
 string CBioseqIndex::GetFirstSuperKingdom (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_FirstSuperKingdom;
@@ -1981,8 +2033,8 @@ string CBioseqIndex::GetFirstSuperKingdom (void)
 string CBioseqIndex::GetSecondSuperKingdom (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_SecondSuperKingdom;
@@ -1991,8 +2043,8 @@ string CBioseqIndex::GetSecondSuperKingdom (void)
 bool CBioseqIndex::IsCrossKingdom (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_IsCrossKingdom;
@@ -2001,8 +2053,8 @@ bool CBioseqIndex::IsCrossKingdom (void)
 CTempString CBioseqIndex::GetChromosome (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_Chromosome;
@@ -2011,8 +2063,8 @@ CTempString CBioseqIndex::GetChromosome (void)
 CTempString CBioseqIndex::GetClone (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_Clone;
@@ -2021,8 +2073,8 @@ CTempString CBioseqIndex::GetClone (void)
 bool CBioseqIndex::IsHasClone (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_has_clone;
@@ -2031,8 +2083,8 @@ bool CBioseqIndex::IsHasClone (void)
 CTempString CBioseqIndex::GetMap (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_Map;
@@ -2041,8 +2093,8 @@ CTempString CBioseqIndex::GetMap (void)
 CTempString CBioseqIndex::GetPlasmid (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_Plasmid;
@@ -2051,8 +2103,8 @@ CTempString CBioseqIndex::GetPlasmid (void)
 CTempString CBioseqIndex::GetSegment (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_Segment;
@@ -2061,8 +2113,8 @@ CTempString CBioseqIndex::GetSegment (void)
 CTempString CBioseqIndex::GetBreed (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_Breed;
@@ -2071,8 +2123,8 @@ CTempString CBioseqIndex::GetBreed (void)
 CTempString CBioseqIndex::GetCultivar (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_Cultivar;
@@ -2081,8 +2133,8 @@ CTempString CBioseqIndex::GetCultivar (void)
 CTempString CBioseqIndex::GetIsolate (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_Isolate;
@@ -2091,8 +2143,8 @@ CTempString CBioseqIndex::GetIsolate (void)
 CTempString CBioseqIndex::GetStrain (void)
 
 {
-    if (! m_DescsInitialized) {
-        x_InitDescs();
+    if (! m_SourcesInitialized) {
+        x_InitSource();
     }
 
     return m_Strain;
@@ -2408,7 +2460,8 @@ CRef<CFeatureIndex> CFeatureIndex::GetBestGene (void)
         auto bsxl = bsx.Lock();
         if (bsxl) {
             best = feature::GetBestGeneForFeat(m_Mf, &bsxl->GetFeatTree(), 0,
-                                               feature::CFeatTree::eBestGene_AllowOverlapped);
+                                               /* feature::CFeatTree::eBestGene_AllowOverlapped */
+                                               feature::CFeatTree::eBestGene_TreeOnly);
             if (best) {
                 return bsxl->GetFeatIndex(best);
             }

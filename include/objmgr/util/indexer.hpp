@@ -554,6 +554,8 @@ private:
     vector<CRef<CFeatureIndex>> m_SfxList;
     feature::CFeatTree m_FeatTree;
 
+    bool m_SourcesInitialized;
+
     CRef<CFeatureIndex> m_FeatureForProduct;
     CRef<CFeatureIndex> m_BestProteinFeature;
 
@@ -625,6 +627,8 @@ private:
     bool m_UseBiosrc;
 
     // BioSource fields
+    CConstRef<CBioSource> m_DescBioSource;
+
     CConstRef<CBioSource> m_BioSource;
     string m_Taxname;
 
