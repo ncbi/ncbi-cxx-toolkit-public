@@ -56,7 +56,7 @@ namespace NCBI_NS_FTDS_CTLIB
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//  CTL_Cmd::
+//  CTL_CmdBase::
 //
 
 CTL_CmdBase::CTL_CmdBase(CTL_Connection& conn, const string& query)
@@ -64,6 +64,8 @@ CTL_CmdBase::CTL_CmdBase(CTL_Connection& conn, const string& query)
 , m_RowCount(-1)
 , m_DbgInfo(new TDbgInfo(conn.GetDbgInfo()))
 , m_IsActive(true)
+, m_TimedOut(false)
+, m_Retriable(eRetriable_Unknown)
 {
     if (conn.m_ActiveCmd) {
         conn.m_ActiveCmd->m_IsActive = false;
@@ -78,6 +80,8 @@ CTL_CmdBase::CTL_CmdBase(CTL_Connection& conn, const string& cursor_name,
 , m_RowCount(-1)
 , m_DbgInfo(new TDbgInfo(conn.GetDbgInfo()))
 , m_IsActive(true)
+, m_TimedOut(false)
+, m_Retriable(eRetriable_Unknown)
 {
     if (conn.m_ActiveCmd) {
         conn.m_ActiveCmd->m_IsActive = false;
@@ -91,6 +95,19 @@ CTL_CmdBase::~CTL_CmdBase(void)
     if (m_IsActive) {
         GetConnection().m_ActiveCmd = NULL;
     }
+}
+
+
+CS_RETCODE
+CTL_CmdBase::Check(CS_RETCODE rc)
+{
+    // The connection::Check() may or may not throw an exception.
+    // If it did not then an exception may be thrown later (e.g. in case of
+    // a timeout). Two attributes: retriability and the fact that it was a
+    // timeout needs to be memorized in the command.
+    SetTimedOut(GetCTLExceptionStorage().GetHasTimeout());
+    SetRetriable(GetCTLExceptionStorage().GetRetriable());
+    return GetConnection().Check(rc, GetDbgInfo());
 }
 
 
@@ -676,7 +693,23 @@ CTL_LRCmd::MakeResultInternal(void)
             }
 #endif
             SetWasSent(false);
-            DATABASE_DRIVER_ERROR( "Your command has been canceled." + GetDbgInfo(), 120011 );
+            if (GetTimedOut()) {
+                // This branch is for a very specific scenario:
+                // - the user sets up a message handler which does not throw
+                //   any exceptions
+                // - a command execution has timed out
+                // - a command is used to retrieve data
+                // In this case there is no usual timeout exception due to a
+                // message handler. However the fact of the timeout is
+                // memorized for the command and it is checked here.
+                CDB_ClientEx ex(DIAG_COMPILE_INFO, 0,
+                                "Your command has been canceled due to timeout",
+                                eDiag_Error, 20003);
+                ex.SetRetriable(GetRetriable());
+                throw ex;
+            } else {
+                DATABASE_DRIVER_ERROR( "Your command has been canceled." + GetDbgInfo(), 120011 );
+            }
 #ifdef CS_BUSY
         case CS_BUSY:
             DATABASE_DRIVER_ERROR( "Connection has another request pending." + GetDbgInfo(), 120014 );

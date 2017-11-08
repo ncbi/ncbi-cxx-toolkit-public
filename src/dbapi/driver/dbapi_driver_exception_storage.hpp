@@ -58,13 +58,15 @@ public:
     void SetClosingConnect(bool value);
     bool IsClosingConnect(void) const;
     void SetRetriable(ERetriable retriable);
-    ERetriable GetRetriable(void)  const;
+    ERetriable GetRetriable(void) const;
+    bool GetHasTimeout(void) const;
 
 private:
     CFastMutex                      m_Mutex;
     CDB_UserHandler::TExceptions    m_Exceptions;
     bool                            m_ClosingConnect;
     ERetriable                      m_Retriable;
+    bool                            m_HasTimeout;
 };
 
 
@@ -85,6 +87,12 @@ inline ERetriable
 CDBExceptionStorage::GetRetriable(void)  const
 {
     return m_Retriable;
+}
+
+inline bool
+CDBExceptionStorage::GetHasTimeout(void) const
+{
+    return m_HasTimeout;
 }
 
 }

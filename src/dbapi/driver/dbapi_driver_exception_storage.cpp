@@ -59,7 +59,8 @@ struct SUnLock
 /////////////////////////////////////////////////////////////////////////////
 CDBExceptionStorage::CDBExceptionStorage(void)
     : m_ClosingConnect(false),
-      m_Retriable(eRetriable_Unknown)
+      m_Retriable(eRetriable_Unknown),
+      m_HasTimeout(false)
 {
 }
 
@@ -90,6 +91,10 @@ void CDBExceptionStorage::Accept(CDB_Exception const& e)
 
     CDB_Exception* ex = e.Clone(); // for debugging ...
     m_Exceptions.push_back(ex);
+
+    const CDB_TimeoutEx *  timeout_exc = dynamic_cast<const CDB_TimeoutEx *>(&e);
+    if (timeout_exc)
+        m_HasTimeout = true;
 }
 
 
@@ -106,6 +111,8 @@ void CDBExceptionStorage::Handle(const CDBHandlerStack& handler,
 
         ERetriable retriable = m_Retriable;
         m_Retriable = eRetriable_Unknown;
+
+        m_HasTimeout = false;
 
         try {
             handler.HandleExceptions(m_Exceptions, dbg_info, conn, par);

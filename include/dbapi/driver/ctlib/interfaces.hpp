@@ -596,7 +596,7 @@ protected:
 #endif
     };
 
-    inline CS_RETCODE Check(CS_RETCODE rc);
+    CS_RETCODE Check(CS_RETCODE rc);
 
 protected:
     inline CTL_Connection& GetConnection(void);
@@ -625,7 +625,7 @@ protected:
     {
         return Cancel();
     }
-    
+
 
 protected:
     // Result-related ...
@@ -671,11 +671,37 @@ protected:
     }
 
 protected:
+    bool GetTimedOut(void) const
+    {
+        return m_TimedOut;
+    }
+
+    void SetTimedOut(bool  val)
+    {
+        m_TimedOut = val;
+    }
+
+    ERetriable GetRetriable(void) const
+    {
+        return m_Retriable;
+    }
+
+    void SetRetriable(ERetriable val)
+    {
+        m_Retriable = val;
+    }
+
+protected:
     int             m_RowCount;
     CRef<TDbgInfo>  m_DbgInfo;
 
 private:
     bool            m_IsActive;
+
+    // Support for a better exception in case of a suppressed timeout
+    // exception.
+    bool            m_TimedOut;
+    ERetriable      m_Retriable;
 };
 
 
@@ -1403,13 +1429,6 @@ const CTL_Connection&
 CTL_CmdBase::GetConnection(void) const
 {
     return static_cast<CTL_Connection&>(GetConnImpl());
-}
-
-inline
-CS_RETCODE
-CTL_CmdBase::Check(CS_RETCODE rc)
-{
-    return GetConnection().Check(rc, GetDbgInfo());
 }
 
 inline
