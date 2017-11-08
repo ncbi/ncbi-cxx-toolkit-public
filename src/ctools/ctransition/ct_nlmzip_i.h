@@ -197,7 +197,7 @@ ulg           Nlmzip_updcrc            _((unsigned char*, Uint4));
 void          Nlmzip_clear_bufs        _((void));
 void          Nlmzip_flush_window      _((void));
 int           Nlmzip_inflate           _((void));
-void          Nlmzip_Err               _((char*,int,char*));
+void          Nlmzip_Err               _((const char*,int,const char*));
 unsigned char Nlmzip_ReadByte          _((void));
 int           Nlmzip_ReadData          _((unsigned char*,int));
 void          Nlmzip_ReadUndo          _((void));

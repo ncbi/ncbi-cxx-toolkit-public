@@ -39,6 +39,7 @@
 #include <ctools/ctransition/ncbistr.hpp>
 #include <ctools/ctransition/ncbimem.hpp>
 #include <ctools/ctransition/ncbierr.hpp>
+#include <ctools/ctransition/nlmzip.hpp>
 
 #include <common/test_assert.h>
 
@@ -61,7 +62,7 @@ void CTest::Init()
     
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "Test for 'ctransition' library");
+                              "Simple test for 'ctransition' library");
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -75,14 +76,14 @@ int CTest::Run()
         Int8 n1 = StringToInt8(str.c_str(), &p);
         Int8 n2 = Nlm_StringToInt8(str.c_str(), &p);
         Int8 n3 = NStr::StringToInt8(str); // C++ version
-        _ASSERT((n1 == n2) && (n2 == n3));
+        assert((n1 == n2) && (n2 == n3));
     }}
 
     // ncbimem.hpp
     {{
         Nlm_VoidPtr p;
         p = Nlm_MemNew(256);
-        _ASSERT(p);
+        assert(p);
         string s = "some text";
 		Nlm_MemCopy(p, s.c_str(), s.length());
         Nlm_MemFree(p);
@@ -101,6 +102,35 @@ int CTest::Run()
         Nlm_Message(MSG_OK, "Message 1: %ld", 1);
         Nlm_Message(MSG_OK, "Message 2: %ld, %ld", 1, 2);
         Nlm_Message(MSG_OK, "Message 3: %ld, %ld, %ld", 1, 2, 3);
+    }}
+
+    // nlmzip.hpp
+    {{
+        const size_t kDataLen =  8000;
+        const size_t kBufLen  = 10000;
+
+        char src[kBufLen];
+        char dst[kBufLen];
+        char cmp[kBufLen];
+
+        // Set a random starting point
+        unsigned int seed = (unsigned int)time(0);
+        srand(seed);
+        for (size_t i = 0; i < kDataLen; i++) {
+            // Use a set of 25 chars [A-Z]
+            src[i] = (char)(65 + (double)rand() / RAND_MAX*(90 - 65));
+        }
+
+        Nlmzip_rc_t res;
+        Int4 dst_len, cmp_len;
+
+        res = Nlmzip_Compress(src, kDataLen, dst, kBufLen, &dst_len);
+        assert(res == NLMZIP_OKAY);
+        assert(dst_len > 0);
+
+        res = Nlmzip_Uncompress(dst, dst_len, cmp, kBufLen, &cmp_len);
+        assert(res == NLMZIP_OKAY);
+        assert(cmp_len == kDataLen);
     }}
 
     cout << "Test succeeded." << endl;

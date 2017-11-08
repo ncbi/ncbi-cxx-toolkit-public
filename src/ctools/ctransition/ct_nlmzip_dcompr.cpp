@@ -102,6 +102,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <setjmp.h>
 #include "ct_nlmzip_i.h"
 
 BEGIN_CTRANSITION_SCOPE
@@ -174,9 +175,9 @@ static const char* theComprErr[] = {
 /****************************************************************************/
 void
 Nlmzip_Err ( /*FCN*/
-  char* lpFileName,                 /* Pointer to source file name (I) */
+  const char* lpFileName,           /* Pointer to source file name (I) */
   int   iLine,                      /* Line number (I) */
-  char* lpMessage                   /* Error message (I) */
+  const char* lpMessage             /* Error message (I) */
 ) {
 #if 0
     printf("Error: %s(%d) - %s\n",lpFileName,iLine,lpMessage);

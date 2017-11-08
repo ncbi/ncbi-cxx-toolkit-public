@@ -129,7 +129,7 @@ cacher_read(Pointer ptr, CharPtr buf, Int4 count)
       if ( db->len == db->start ) /* if cache is empty */
         {
           Int4 len = 0;
-          int direct_read = 0;
+//          int direct_read = 0;
           if (db->eos)  
             break;      /* end of stream EXIT */
           if ( count-bytes > db->cache_size / 2)
@@ -198,7 +198,7 @@ cacher_write(Pointer ptr, CharPtr buf, Int4 count)
 {
   cacher_t *db = (cacher_t*)ptr;
   Int4      bytes = 0;
-  int       flush_it = 0;
+//  int       flush_it = 0;
 
   if(count<=0)
     return 0;
@@ -474,7 +474,7 @@ compressor_write(Pointer ptr, CharPtr buf, Int4 count)
   switch (db->mode)
     {
     case 0  :
-      bytes = db->src->proc_buf(db->src->data, "ZIP",4);
+      bytes = db->src->proc_buf(db->src->data,(char*)"ZIP",4);
       if (bytes!=4)
         return -1;
       db->mode=1; /* compresseed mode */

@@ -2,7 +2,14 @@
 
 SRC = ct_ncbierr \
       ct_ncbimem \
-      ct_ncbistr
+      ct_ncbistr \
+      ct_nlmzip_bits \
+      ct_nlmzip_dcompr \
+      ct_nlmzip_deflate \
+      ct_nlmzip_inflate \
+      ct_nlmzip_streamprocs \
+      ct_nlmzip_trees \
+      ct_nlmzip_util
     
 LIB = ctransition
 
