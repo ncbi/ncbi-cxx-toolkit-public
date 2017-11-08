@@ -303,6 +303,6 @@ typedef double		Nlm_FloatHi, PNTR Nlm_FloatHiPtr;
 #endif
 
 
-#endif
-
 /* @} */
+
+#endif  /* _NCBISTD_ */

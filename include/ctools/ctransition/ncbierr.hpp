@@ -27,13 +27,14 @@
  * ===========================================================================
  *
  * Author:  Vladimir Ivanov
- *
+ * Wrapper for the C Toolkit ErrPostEx() macro.
  *
  */
 
-/// @file ncbierr.hpp
-///
-///   Wrapper for the C Toolkit ErrPostEx() macro.
+/** @addtogroup CToolsBridge
+ *
+ * @{
+ */
 
 
 #include <corelib/ncbidiag.hpp>
@@ -88,5 +89,6 @@ extern std::string  ctransition_ErrMessage(const char* format, ...);
 
 END_CTRANSITION_SCOPE
 
+/* @} */
 
 #endif  /* CTRANSITION___NCBIERR__HPP */

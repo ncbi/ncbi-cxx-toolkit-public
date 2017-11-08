@@ -248,7 +248,6 @@
 
 
 
-#endif  /* _NCBILCL_ */
-
-
 /* @} */
+
+#endif  /* _NCBILCL_ */

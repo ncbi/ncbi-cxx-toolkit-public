@@ -242,10 +242,8 @@ Nlm_Boolean Nlm_MemMapAdvise(void* addr, size_t len, EMemMapAdvise advise);
 Nlm_Boolean Nlm_MemMapAdvisePtr(Nlm_MemMapPtr ptr, EMemMapAdvise advise);
 
 
-#endif /* _NCBIMEM_ */
-
-
 END_CTRANSITION_SCOPE
 
-
 /* @} */
+
+#endif /* _NCBIMEM_ */

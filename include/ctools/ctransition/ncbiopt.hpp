@@ -250,7 +250,6 @@ by including it first.
 #endif /* ndef Int8, ndef Uint8, ndef Int8Ptr, ndef Uint8Ptr */
 
 
+ /* @} */
+
 #endif  /* _NCBIOPT_ */
-
-
-/* @} */

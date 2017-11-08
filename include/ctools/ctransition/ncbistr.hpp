@@ -429,8 +429,9 @@ char* LIBCALL Uint8ToString(Nlm_Uint8 value, char* str, size_t str_size)
 }
 
 
-#endif
 
 END_CTRANSITION_SCOPE
 
 /* @} */
+
+#endif /* _NCBISTR_ */
