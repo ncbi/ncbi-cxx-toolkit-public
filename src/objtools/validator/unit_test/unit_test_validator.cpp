@@ -20490,11 +20490,12 @@ BOOST_AUTO_TEST_CASE(Test_VR_660)
     CheckErrors(*eval, expected_errors);
 
     // info because not other and not valid
-    qual->SetVal("not a valid recombination class");
-    expected_errors[0]->SetErrMsg("'not a valid recombination class' is not a legal value for recombination_class");
-    expected_errors[0]->SetSeverity(eDiag_Info);
-    eval = validator.Validate(seh, options);
-    CheckErrors(*eval, expected_errors);
+    // removed per VR-770
+    // qual->SetVal("not a valid recombination class");
+    // expected_errors[0]->SetErrMsg("'not a valid recombination class' is not a legal value for recombination_class");
+    // expected_errors[0]->SetSeverity(eDiag_Info);
+    // eval = validator.Validate(seh, options);
+    // CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
 

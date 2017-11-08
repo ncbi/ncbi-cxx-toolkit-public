@@ -3456,8 +3456,11 @@ void CValidError_feat::ValidateImp(
                                 "The recombination_class 'other' is missing the required /note", feat);
                         }
                     } else {
-                        PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidQualifierValue,
-                            "'" + val + "' is not a legal value for recombination_class", feat);
+                        // Removed per VR-770. FlatFile will automatically
+                        // display the unrecognized recombination_class value
+                        // in the note and list the recombination_class as other
+//                        PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidQualifierValue,
+//                            "'" + val + "' is not a legal value for recombination_class", feat);
                     }
                 }
             }
