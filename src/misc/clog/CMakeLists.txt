@@ -17,9 +17,13 @@ PROJECT(ncbi_applog VERSION 1.2.4)
 INSTALL(PROGRAMS app/ncbi_applog DESTINATION bin)
 INSTALL(PROGRAMS app/ncbi_applog.cgi DESTINATION bin)
 
-INSTALL(TARGETS libclog.a libclog.so
-    LIBRARY DESTINATION lib
+INSTALL(TARGETS libclog.a
     ARCHIVE DESTINATION lib
+    OPTIONAL
+)
+
+INSTALL(TARGETS libclog.so
+    LIBRARY DESTINATION lib
     OPTIONAL
 )
 
