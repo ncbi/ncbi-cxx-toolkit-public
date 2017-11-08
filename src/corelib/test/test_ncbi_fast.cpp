@@ -29,7 +29,6 @@
  *   Test SSE utility functions
  *
  */
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_fast.hpp>
 
@@ -82,6 +81,94 @@ inline Uint8 QUERY_PERF_COUNTER(void) {
     return p.tv_sec * 1000 * 1000 + p.tv_nsec / 1000;
 }
 #endif
+
+/////////////////////////////////////////////////////////////////////////////
+class NFastTest : public NFast
+{
+public:
+//---------------------------------------------------------------------------
+#ifdef NCBI_HAVE_FAST_OPS
+    static void x_sse_ClearBuffer(char* dst, size_t count) {
+        NFast::x_sse_ClearBuffer(dst, count);
+    }
+    static void x_sse_ClearBuffer(int* dst, size_t count) {
+        NFast::x_sse_ClearBuffer(dst, count);
+    }
+    static void x_ClearBuffer(char* dst, size_t count) {
+        NFast::x_ClearBuffer(dst, count);
+    }
+    static void x_ClearBuffer(int* dst, size_t count) {
+        NFast::x_ClearBuffer(dst, count);
+    }
+#endif
+    static void x_no_sse_ClearBuffer(char* dst, size_t count) {
+        NFast::x_no_sse_ClearBuffer(dst, count);
+    }
+    static void x_no_sse_ClearBuffer(int* dst, size_t count) {
+        NFast::x_no_sse_ClearBuffer(dst, count);
+    }
+//---------------------------------------------------------------------------
+#ifdef NCBI_HAVE_FAST_OPS
+    static void x_sse_CopyBuffer(const int* src, size_t count, int* dst) {
+        NFast::x_sse_CopyBuffer(src, count, dst);
+    }
+#endif
+    static void x_no_sse_CopyBuffer(int* dst, const int* src, size_t count) {
+        NFast::x_no_sse_CopyBuffer(dst, src, count);
+    }
+//---------------------------------------------------------------------------
+#ifdef NCBI_HAVE_FAST_OPS
+    static void x_sse_ConvertBuffer(const char* src, size_t count, int* dst) {
+        NFast::x_sse_ConvertBuffer(src, count, dst);
+    }
+    static void x_sse_ConvertBuffer(const int* src, size_t count, char* dst) {
+        NFast::x_sse_ConvertBuffer(src, count, dst);
+    }
+#endif
+    static void x_no_sse_ConvertBuffer( int* dest, const char* src, size_t count) {
+        NFast::x_no_sse_ConvertBuffer( dest, src, count);
+    }
+    static void x_no_sse_ConvertBuffer(char* dest, const int*  src, size_t count) {
+        NFast::x_no_sse_ConvertBuffer(dest, src, count);
+    }
+//---------------------------------------------------------------------------
+#ifdef NCBI_HAVE_FAST_OPS
+    static void x_sse_SplitBufferInto4(const int* src, size_t count,
+                                       int* dst0, int* dst1, int* dst2, int* dst3) {
+        NFast::x_sse_SplitBufferInto4(src, count, dst0, dst1, dst2, dst3);
+    }
+    static void x_sse_SplitBufferInto4(const int* src, size_t count,
+                                       char* dst0, char* dst1, char* dst2, char* dst3) {
+        NFast::x_sse_SplitBufferInto4(src, count, dst0, dst1, dst2, dst3);
+    }
+#endif
+    static void x_no_sse_SplitBufferInto4(const int* src, size_t count,
+                                          int*  dest0, int*  dest1, int*  dest2, int*  dest3) {
+        NFast::x_no_sse_SplitBufferInto4(src, count, dest0, dest1, dest2, dest3);
+    }
+    static void x_no_sse_SplitBufferInto4(const int* src, size_t count,
+                                          char* dest0, char* dest1, char* dest2, char* dest3) {
+        NFast::x_no_sse_SplitBufferInto4(src, count, dest0, dest1, dest2, dest3);
+    }
+//---------------------------------------------------------------------------
+#ifdef NCBI_HAVE_FAST_OPS
+    static unsigned int x_sse_FindMaxElement(const unsigned int* src, size_t count) {
+        return NFast::x_sse_FindMaxElement(src, count);
+    }
+    static void x_sse_FindMaxElement(const unsigned int* src, size_t count, unsigned int& dst) {
+        NFast::x_sse_FindMaxElement(src, count, dst);
+    }
+    static void x_sse_Find4MaxElements(const unsigned int* src, size_t count, unsigned int dst[4]) {
+        NFast::x_sse_Find4MaxElements(src, count, dst);
+    }
+#endif
+    static unsigned int x_no_sse_FindMaxElement(const unsigned int* src, size_t count, unsigned int v) {
+        return NFast::x_no_sse_FindMaxElement(src, count, v);
+    }
+    static void x_no_sse_Find4MaxElements(const unsigned int* src, size_t count, unsigned int dest[4]) {
+        NFast::x_no_sse_Find4MaxElements(src, count, dest);
+    }
+};
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -159,10 +246,10 @@ BOOST_AUTO_TEST_CASE(TestFillZerosChar)
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         s_payload(buf, buf_size);
-        NFast::fill_n_zeros_aligned16(buf,buf_size);
+        NFastTest::x_sse_ClearBuffer(buf,buf_size);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::fill_n_zeros_aligned16(char)" << endl;
+    cout << (finish - start) << " - NFast::x_sse_ClearBuffer(char)" << endl;
     s_check_zero(buf, buf_size);
     }
 
@@ -170,10 +257,10 @@ BOOST_AUTO_TEST_CASE(TestFillZerosChar)
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         s_payload(buf, buf_size);
-        NFast::fill_n_zeros(buf,buf_size);
+        NFastTest::x_ClearBuffer(buf,buf_size);
     }
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::fill_n_zeros(char)" << endl;
+    cout << (finish - start) << " - NFast::x_ClearBuffer(char)" << endl;
     s_check_zero(buf, buf_size);
 #endif
 
@@ -181,20 +268,20 @@ BOOST_AUTO_TEST_CASE(TestFillZerosChar)
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         s_payload(buf, buf_size);
-        NFast::x_no_ncbi_sse_fill_n_zeros(buf, buf_size);
+        NFastTest::x_no_sse_ClearBuffer(buf, buf_size);
     }
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::x_no_ncbi_sse_fill_n_zeros(char)" << endl;
+    cout << (finish - start) << " - NFast::x_no_sse_ClearBuffer(char)" << endl;
     s_check_zero(buf, buf_size);
 
     s_set_non_zero(buf, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         s_payload(buf, buf_size);
-        NFast::Zero_memory(buf,buf_size);
+        NFast::ClearBuffer(buf,buf_size);
     }
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Zero_memory(char)" << endl;
+    cout << (finish - start) << " - NFast::ClearBuffer(char)" << endl;
     s_check_zero(buf, buf_size);
 
     free(buf);
@@ -218,10 +305,10 @@ BOOST_AUTO_TEST_CASE(TestFillZerosInt)
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         s_payload(buf, buf_size);
-        NFast::fill_n_zeros_aligned16(buf,buf_size);
+        NFastTest::x_sse_ClearBuffer(buf,buf_size);
     }
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::fill_n_zeros_aligned16(int)" << endl;
+    cout << (finish - start) << " - NFast::x_sse_ClearBuffer(int)" << endl;
     s_check_zero(buf, buf_size);
     }
 
@@ -229,10 +316,10 @@ BOOST_AUTO_TEST_CASE(TestFillZerosInt)
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         s_payload(buf, buf_size);
-        NFast::fill_n_zeros(buf,buf_size);
+        NFastTest::x_ClearBuffer(buf,buf_size);
     }
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::fill_n_zeros(int) " << endl;
+    cout << (finish - start) << " - NFast::x_ClearBuffer(int) " << endl;
     s_check_zero(buf, buf_size);
 #endif
 
@@ -240,20 +327,20 @@ BOOST_AUTO_TEST_CASE(TestFillZerosInt)
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         s_payload(buf, buf_size);
-        NFast::x_no_ncbi_sse_fill_n_zeros(buf, buf_size);
+        NFastTest::x_no_sse_ClearBuffer(buf, buf_size);
     }
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::x_no_ncbi_sse_fill_n_zeros(int)" << endl;
+    cout << (finish - start) << " - NFast::x_no_sse_ClearBuffer(int)" << endl;
     s_check_zero(buf, buf_size);
 
     s_set_non_zero(buf, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         s_payload(buf, buf_size);
-        NFast::Zero_memory(buf,buf_size);
+        NFast::ClearBuffer(buf,buf_size);
     }
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Zero_memory(int)" << endl;
+    cout << (finish - start) << " - NFast::ClearBuffer(int)" << endl;
     s_check_zero(buf, buf_size);
 
     free(buf);
@@ -281,10 +368,10 @@ BOOST_AUTO_TEST_CASE(TestCopyInt)
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         s_payload(dst, buf_size);
-        NFast::copy_n_aligned16(buf, buf_size, dst);
+        NFastTest::x_sse_CopyBuffer(buf, buf_size, dst);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::copy_n_aligned16(int) "  << endl;
+    cout << (finish - start) << " - NFast::x_sse_CopyBuffer(int) "  << endl;
     s_check_equal(buf, buf_size, dst);
     }
 #endif
@@ -293,20 +380,20 @@ BOOST_AUTO_TEST_CASE(TestCopyInt)
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         s_payload(dst, buf_size);
-        NFast::x_no_ncbi_sse_copy_mem(dst,buf,buf_size);
+        NFastTest::x_no_sse_CopyBuffer(dst,buf,buf_size);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::x_no_ncbi_sse_copy_mem(int)" << endl;
+    cout << (finish - start) << " - NFast::x_no_sse_CopyBuffer(int)" << endl;
     s_check_equal(buf, buf_size, dst);
 
     s_set_non_zero(dst, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         s_payload(dst, buf_size);
-        NFast::Copy_memory(buf, buf_size, dst);
+        NFast::CopyBuffer(buf, buf_size, dst);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Copy_memory(int)" << endl;
+    cout << (finish - start) << " - NFast::CopyBuffer(int)" << endl;
     s_check_equal(buf, buf_size, dst);
 
     free(buf);
@@ -335,10 +422,10 @@ BOOST_AUTO_TEST_CASE(TestConvertCharInt)
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         s_payload(dst, buf_size);
-        NFast::copy_n_bytes_aligned16(buf, buf_size, dst);
+        NFastTest::x_sse_ConvertBuffer(buf, buf_size, dst);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::copy_n_bytes_aligned16(char -> int) "  << endl;
+    cout << (finish - start) << " - NFast::x_sse_ConvertBuffer(char -> int) "  << endl;
     s_check_equal(buf, buf_size, dst);
     }
 #endif
@@ -347,20 +434,20 @@ BOOST_AUTO_TEST_CASE(TestConvertCharInt)
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         s_payload(dst, buf_size);
-        NFast::x_no_ncbi_sse_convert_memory(dst, buf, buf_size);
+        NFastTest::x_no_sse_ConvertBuffer(dst, buf, buf_size);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::x_no_ncbi_sse_convert_memory(char -> int)" << endl;
+    cout << (finish - start) << " - NFast::x_no_sse_ConvertBuffer(char -> int)" << endl;
     s_check_equal(buf, buf_size, dst);
 
     s_set_non_zero(dst, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         s_payload(dst, buf_size);
-        NFast::Convert_memory(buf, buf_size, dst);
+        NFast::ConvertBuffer(buf, buf_size, dst);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Convert_memory(char -> int)" << endl;
+    cout << (finish - start) << " - NFast::ConvertBuffer(char -> int)" << endl;
     s_check_equal(buf, buf_size, dst);
 
     free(buf);
@@ -389,10 +476,10 @@ BOOST_AUTO_TEST_CASE(TestConvertIntChar)
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         s_payload(dst, buf_size);
-        NFast::copy_n_aligned16(buf, buf_size, dst);
+        NFastTest::x_sse_ConvertBuffer(buf, buf_size, dst);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::copy_n_aligned16(int -> char) "  << endl;
+    cout << (finish - start) << " - NFast::x_sse_ConvertBuffer(int -> char) "  << endl;
     s_check_equal(buf, buf_size, dst);
     }
 #endif
@@ -401,20 +488,20 @@ BOOST_AUTO_TEST_CASE(TestConvertIntChar)
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         s_payload(dst, buf_size);
-        NFast::x_no_ncbi_sse_convert_memory(dst, buf, buf_size);
+        NFastTest::x_no_sse_ConvertBuffer(dst, buf, buf_size);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::x_no_ncbi_sse_convert_memory(int -> char)" << endl;
+    cout << (finish - start) << " - NFast::x_no_sse_ConvertBuffer(int -> char)" << endl;
     s_check_equal(buf, buf_size, dst);
 
     s_set_non_zero(dst, buf_size);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
         s_payload(dst, buf_size);
-        NFast::Convert_memory(buf, buf_size, dst);
+        NFast::ConvertBuffer(buf, buf_size, dst);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Convert_memory(int -> char)" << endl;
+    cout << (finish - start) << " - NFast::ConvertBuffer(int -> char)" << endl;
     s_check_equal(buf, buf_size, dst);
 
     free(buf);
@@ -472,10 +559,10 @@ BOOST_AUTO_TEST_CASE(TestSplitIntInt)
     s_clear_split_dst(buf_size, dst0, dst1, dst2, dst3);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
-        NFast::copy_4n_split_aligned16(buf, buf_size/4, dst0, dst1, dst2, dst3);
+        NFastTest::x_sse_SplitBufferInto4(buf, buf_size/4, dst0, dst1, dst2, dst3);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::copy_4n_split_aligned16(int -> int)"  << endl;
+    cout << (finish - start) << " - NFast::x_sse_SplitBufferInto4(int -> int)"  << endl;
     s_check_split_dst(buf_size, dst0, dst1, dst2, dst3);
     }
 #endif
@@ -483,19 +570,19 @@ BOOST_AUTO_TEST_CASE(TestSplitIntInt)
     s_clear_split_dst(buf_size, dst0, dst1, dst2, dst3);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
-        NFast::x_no_ncbi_sse_split_into4(buf, buf_size/4, dst0, dst1, dst2, dst3);
+        NFastTest::x_no_sse_SplitBufferInto4(buf, buf_size/4, dst0, dst1, dst2, dst3);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::x_no_ncbi_sse_split_into4(int -> int)" << endl;
+    cout << (finish - start) << " - NFast::x_no_sse_SplitBufferInto4(int -> int)" << endl;
     s_check_split_dst(buf_size, dst0, dst1, dst2, dst3);
 
     s_clear_split_dst(buf_size, dst0, dst1, dst2, dst3);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
-        NFast::Split_into4(buf, buf_size/4, dst0, dst1, dst2, dst3);
+        NFast::SplitBufferInto4(buf, buf_size/4, dst0, dst1, dst2, dst3);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Split_into4(int -> int)" << endl;
+    cout << (finish - start) << " - NFast::SplitBufferInto4(int -> int)" << endl;
     s_check_split_dst(buf_size, dst0, dst1, dst2, dst3);
 
     free(buf);
@@ -531,10 +618,10 @@ BOOST_AUTO_TEST_CASE(TestSplitIntChar)
     s_clear_split_dst(buf_size, dst0, dst1, dst2, dst3);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
-        NFast::copy_4n_split_aligned16(buf, buf_size/4, dst0, dst1, dst2, dst3);
+        NFastTest::x_sse_SplitBufferInto4(buf, buf_size/4, dst0, dst1, dst2, dst3);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::copy_4n_split_aligned16(int -> char)"  << endl;
+    cout << (finish - start) << " - NFast::x_sse_SplitBufferInto4(int -> char)"  << endl;
     s_check_split_dst(buf_size, dst0, dst1, dst2, dst3);
     }
 #endif
@@ -542,18 +629,18 @@ BOOST_AUTO_TEST_CASE(TestSplitIntChar)
     s_clear_split_dst(buf_size, dst0, dst1, dst2, dst3);
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
-        NFast::x_no_ncbi_sse_split_into4(buf, buf_size/4, dst0, dst1, dst2, dst3);
+        NFastTest::x_no_sse_SplitBufferInto4(buf, buf_size/4, dst0, dst1, dst2, dst3);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::x_no_ncbi_sse_split_into4(int -> char)" << endl;
+    cout << (finish - start) << " - NFast::x_no_sse_SplitBufferInto4(int -> char)" << endl;
     s_check_split_dst(buf_size, dst0, dst1, dst2, dst3);
 
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
-        NFast::Split_into4(buf, buf_size/4, dst0, dst1, dst2, dst3);
+        NFast::SplitBufferInto4(buf, buf_size/4, dst0, dst1, dst2, dst3);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Split_into4(int -> char)" << endl;
+    cout << (finish - start) << " - NFast::SplitBufferInto4(int -> char)" << endl;
     s_check_split_dst(buf_size, dst0, dst1, dst2, dst3);
 
     free(buf);
@@ -584,26 +671,26 @@ BOOST_AUTO_TEST_CASE(TestMaxElement1)
     if ( aligned ) {
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
-        result = NFast::max_element_n_aligned16(buf, buf_size);
+        result = NFastTest::x_sse_FindMaxElement(buf, buf_size);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::max_element_n_aligned16 " << result  << endl;
+    cout << (finish - start) << " - NFast::x_sse_FindMaxElement " << result  << endl;
     }
 #endif
 
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
-        result = NFast::x_no_ncbi_sse_max_element(buf, buf_size, 0);
+        result = NFastTest::x_no_sse_FindMaxElement(buf, buf_size, 0);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::x_no_ncbi_sse_max_element " << result << endl;
+    cout << (finish - start) << " - NFast::x_no_sse_FindMaxElement " << result << endl;
 
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
-        result = NFast::Max_element(buf, buf_size);
+        result = NFast::FindMaxElement(buf, buf_size);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Max_element1 " << result << endl;
+    cout << (finish - start) << " - NFast::FindMaxElement1 " << result << endl;
 
     free(buf);
 }
@@ -630,10 +717,10 @@ BOOST_AUTO_TEST_CASE(TestMaxElement2)
     start = QUERY_PERF_COUNTER();
     result = 0;
     for (size_t i = 0; i < test_count; ++i) {
-        NFast::max_element_n_aligned16(buf, buf_size, result);
+        NFastTest::x_sse_FindMaxElement(buf, buf_size, result);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::max_element_n_aligned16 " << result  << endl;
+    cout << (finish - start) << " - NFast::x_sse_FindMaxElement " << result  << endl;
     _ASSERT(result == 0xff);
     }
 #endif
@@ -641,19 +728,19 @@ BOOST_AUTO_TEST_CASE(TestMaxElement2)
     start = QUERY_PERF_COUNTER();
     result = 0;
     for (size_t i = 0; i < test_count; ++i) {
-        result = NFast::x_no_ncbi_sse_max_element(buf, buf_size, result);
+        result = NFastTest::x_no_sse_FindMaxElement(buf, buf_size, result);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::x_no_ncbi_sse_max_element " << result << endl;
+    cout << (finish - start) << " - NFast::x_no_sse_FindMaxElement " << result << endl;
     _ASSERT(result == 0xff);
 
     start = QUERY_PERF_COUNTER();
     result = 0;
     for (size_t i = 0; i < test_count; ++i) {
-        NFast::Max_element(buf, buf_size, result);
+        NFast::FindMaxElement(buf, buf_size, result);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Max_element2 " << result << endl;
+    cout << (finish - start) << " - NFast::FindMaxElement2 " << result << endl;
     _ASSERT(result == 0xff);
 
     free(buf);
@@ -681,10 +768,10 @@ BOOST_AUTO_TEST_CASE(TestMaxElement3)
     memset(result, 0, sizeof(result));
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
-        NFast::max_4elements_n_aligned16(buf, buf_size/4, result);
+        NFastTest::x_sse_Find4MaxElements(buf, buf_size/4, result);
     } 
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::max_element_n_aligned16 " << result[0] <<' '<< result[1] <<' '<< result[2] <<' '<< result[3]  << endl;
+    cout << (finish - start) << " - NFast::x_sse_Find4MaxElements " << result[0] <<' '<< result[1] <<' '<< result[2] <<' '<< result[3]  << endl;
     _ASSERT(result[0] == 0xfc);
     _ASSERT(result[1] == 0xfd);
     _ASSERT(result[2] == 0xfe);
@@ -695,10 +782,10 @@ BOOST_AUTO_TEST_CASE(TestMaxElement3)
     memset(result, 0, sizeof(result));
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
-        NFast::x_no_ncbi_sse_max_4element(buf, buf_size/4, result);
+        NFastTest::x_no_sse_Find4MaxElements(buf, buf_size/4, result);
     }
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::x_no_ncbi_sse_max_4element " << result[0] <<' '<< result[1] <<' '<< result[2] <<' '<< result[3] << endl;
+    cout << (finish - start) << " - NFast::x_no_sse_Find4MaxElements " << result[0] <<' '<< result[1] <<' '<< result[2] <<' '<< result[3] << endl;
     _ASSERT(result[0] == 0xfc);
     _ASSERT(result[1] == 0xfd);
     _ASSERT(result[2] == 0xfe);
@@ -707,10 +794,10 @@ BOOST_AUTO_TEST_CASE(TestMaxElement3)
     memset(result, 0, sizeof(result));
     start = QUERY_PERF_COUNTER();
     for (size_t i = 0; i < test_count; ++i) {
-        NFast::Max_4element(buf, buf_size/4, result);
+        NFast::Find4MaxElements(buf, buf_size/4, result);
     }
     finish = QUERY_PERF_COUNTER();
-    cout << (finish - start) << " - NFast::Max_4element " << result[0] <<' '<< result[1] <<' '<< result[2] <<' '<< result[3] << endl;
+    cout << (finish - start) << " - NFast::Find4MaxElements " << result[0] <<' '<< result[1] <<' '<< result[2] <<' '<< result[3] << endl;
     _ASSERT(result[0] == 0xfc);
     _ASSERT(result[1] == 0xfd);
     _ASSERT(result[2] == 0xfe);

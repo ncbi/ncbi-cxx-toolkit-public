@@ -1830,7 +1830,7 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
                     x_CreateGraph(g);
                     g.bytes = &g.graph->SetGraph().SetByte().SetValues();
                     g.bytes->reserve(ref_range.GetLength());
-                    NFast::append_zeros_aligned16(*g.bytes, ref_offset);
+                    NFast::AppendZerosAligned16(*g.bytes, ref_offset);
                 }
             }
         }
@@ -1852,7 +1852,7 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
                     x_CreateGraph(g);
                     g.bytes = &g.graph->SetGraph().SetByte().SetValues();
                     g.bytes->reserve(len);
-                    NFast::append_zeros(*g.bytes, len);
+                    NFast::AppendZeros(*g.bytes, len);
                 }
             }
             for ( int k = 0; k < kNumStat; ++k ) {
@@ -1866,10 +1866,10 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
                 SGraph& g = graphs[k];
                 if ( g.graph ) {
                     if ( g.ints ) {
-                        NFast::append_zeros_aligned16(*g.ints, len);
+                        NFast::AppendZerosAligned16(*g.ints, len);
                     }
                     else {
-                        NFast::append_zeros_aligned16(*g.bytes, len);
+                        NFast::AppendZerosAligned16(*g.bytes, len);
                     }
                 }
             }
@@ -1884,13 +1884,13 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
                 if ( max_added >= 256 ) {
                     g.ints = &g.graph->SetGraph().SetInt().SetValues();
                     g.ints->reserve(ref_range.GetLength());
-                    NFast::append_zeros_aligned16(*g.ints, ref_offset);
+                    NFast::AppendZerosAligned16(*g.ints, ref_offset);
                     return true;
                 }
                 else {
                     g.bytes = &g.graph->SetGraph().SetByte().SetValues();
                     g.bytes->reserve(ref_range.GetLength());
-                    NFast::append_zeros_aligned16(*g.bytes, ref_offset);
+                    NFast::AppendZerosAligned16(*g.bytes, ref_offset);
                     return false;
                 }
             }
@@ -1901,8 +1901,8 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
                     g.ints = &int_graph->SetValues();
                     g.ints->reserve(ref_range.GetLength());
                     size_t size = g.bytes->size();
-                    NFast::Convert_memory(g.bytes->data(), size,
-                                          NFast::append_uninitialized(*g.ints, size));
+                    NFast::ConvertBuffer(g.bytes->data(), size,
+                                          NFast::AppendUninitialized(*g.ints, size));
                     g.bytes = 0;
                     g.graph->SetGraph().SetInt(*int_graph);
                 }
@@ -1920,19 +1920,19 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
     void x_AddValuesBy16(SGraph& g, TSeqPos len, const TCount* src)
         {
             if ( g.bytes ) {
-                NFast::Convert_memory(src, len, NFast::append_uninitialized(*g.bytes, len));
+                NFast::ConvertBuffer(src, len, NFast::AppendUninitialized(*g.bytes, len));
             }
             else if ( g.ints ) {
-                NFast::Copy_memory(src, len, NFast::append_uninitialized(*g.ints, len));
+                NFast::CopyBuffer(src, len, NFast::AppendUninitialized(*g.ints, len));
             }
         }
     void x_AddValues(SGraph& g, TSeqPos len, const TCount* src)
         {
             if ( g.bytes ) {
-                copy_n(src, len, NFast::append_uninitialized(*g.bytes, len));
+                copy_n(src, len, NFast::AppendUninitialized(*g.bytes, len));
             }
             else if ( g.ints ) {
-                copy_n(src, len, NFast::append_uninitialized(*g.ints, len));
+                copy_n(src, len, NFast::AppendUninitialized(*g.ints, len));
             }
         }
     void x_AddValuesBy16(TSeqPos len, const CBamDb::SPileupValues& values)
@@ -1950,18 +1950,18 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
                 }
             }
             if ( dst_byte == kNumStat_ACGT ) {
-                NFast::Split_into4(values.get_acgt_counts(), len,
-                                   NFast::append_uninitialized(*graphs[0].bytes, len),
-                                   NFast::append_uninitialized(*graphs[1].bytes, len),
-                                   NFast::append_uninitialized(*graphs[2].bytes, len),
-                                   NFast::append_uninitialized(*graphs[3].bytes, len));
+                NFast::SplitBufferInto4(values.get_acgt_counts(), len,
+                                   NFast::AppendUninitialized(*graphs[0].bytes, len),
+                                   NFast::AppendUninitialized(*graphs[1].bytes, len),
+                                   NFast::AppendUninitialized(*graphs[2].bytes, len),
+                                   NFast::AppendUninitialized(*graphs[3].bytes, len));
             }
             else if ( dst_int == kNumStat_ACGT ) {
-                NFast::Split_into4(values.cc_acgt[0].cc, len,
-                                   NFast::append_uninitialized(*graphs[0].ints, len),
-                                   NFast::append_uninitialized(*graphs[1].ints, len),
-                                   NFast::append_uninitialized(*graphs[2].ints, len),
-                                   NFast::append_uninitialized(*graphs[3].ints, len));
+                NFast::SplitBufferInto4(values.cc_acgt[0].cc, len,
+                                   NFast::AppendUninitialized(*graphs[0].ints, len),
+                                   NFast::AppendUninitialized(*graphs[1].ints, len),
+                                   NFast::AppendUninitialized(*graphs[2].ints, len),
+                                   NFast::AppendUninitialized(*graphs[3].ints, len));
             }
             else {
                 // use split ACGT arrays

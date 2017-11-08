@@ -35,12 +35,12 @@
 #include <corelib/ncbi_fast.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_NAMESPACE(NFast);
+
 //USING_NCBI_SCOPE;
 
 #if defined(NCBI_HAVE_FAST_OPS)
 
-void fill_n_zeros_aligned16(char* dst, size_t count)
+void NFast::x_sse_ClearBuffer(char* dst, size_t count)
 {
     _ASSERT(count%16 == 0);
     _ASSERT(uintptr_t(dst)%16 == 0);
@@ -50,7 +50,7 @@ void fill_n_zeros_aligned16(char* dst, size_t count)
     }
 }
 
-void fill_n_zeros_aligned16(int* dst, size_t count)
+void NFast::x_sse_ClearBuffer(int* dst, size_t count)
 {
 #if 1
     _ASSERT(count%16 == 0);
@@ -72,19 +72,19 @@ void fill_n_zeros_aligned16(int* dst, size_t count)
 #endif
 }
 
-void fill_n_zeros(char* dst, size_t count)
+void NFast::x_ClearBuffer(char* dst, size_t count)
 {
     memset(dst, 0, count*sizeof(*dst));
 }
 
-void fill_n_zeros(int* dst, size_t count)
+void NFast::x_ClearBuffer(int* dst, size_t count)
 {
     memset(dst, 0, count*sizeof(*dst));
 }
 
 
 #if 0
-void copy_n_aligned16(const char* src, size_t count, char* dst)
+void NFast::x_sse_CopyBuffer(const char* src, size_t count, char* dst)
 {
     _ASSERT(count%16 == 0);
     _ASSERT(uintptr_t(src)%16 == 0);
@@ -95,7 +95,7 @@ void copy_n_aligned16(const char* src, size_t count, char* dst)
 }
 #endif
 
-void copy_n_aligned16(const int* src, size_t count, int* dst)
+void NFast::x_sse_CopyBuffer(const int* src, size_t count, int* dst)
 {
 #if 1
     _ASSERT(count%16 == 0);
@@ -130,10 +130,7 @@ void copy_n_aligned16(const int* src, size_t count, int* dst)
 }
 
 
-
-
-
-void copy_n_bytes_aligned16(const char* src, size_t count, int* dst)
+void NFast::x_sse_ConvertBuffer(const char* src, size_t count, int* dst)
 {
 #if 1
     _ASSERT(count%16 == 0);
@@ -174,7 +171,7 @@ void copy_n_bytes_aligned16(const char* src, size_t count, int* dst)
 }
 
 
-void copy_n_aligned16(const int* src, size_t count, char* dst)
+void NFast::x_sse_ConvertBuffer(const int* src, size_t count, char* dst)
 {
     _ASSERT(count%16 == 0);
     _ASSERT(uintptr_t(src)%16 == 0);
@@ -201,7 +198,7 @@ void copy_n_aligned16(const int* src, size_t count, char* dst)
     
 
 
-void copy_4n_split_aligned16(const int* src, size_t count,
+void NFast::x_sse_SplitBufferInto4(const int* src, size_t count,
                              char* dst0, char* dst1, char* dst2, char* dst3)
 {
     _ASSERT(count%16 == 0);
@@ -271,7 +268,7 @@ void copy_4n_split_aligned16(const int* src, size_t count,
 }
     
 
-void copy_4n_split_aligned16(const int* src, size_t count,
+void NFast::x_sse_SplitBufferInto4(const int* src, size_t count,
                              int* dst0, int* dst1, int* dst2, int* dst3)
 {
     _ASSERT(count%16 == 0);
@@ -348,7 +345,7 @@ void copy_n(const int* src, size_t count, int* dst)
 }
 */
 
-unsigned max_element_n_aligned16(const unsigned* src, size_t count)
+unsigned int NFast::x_sse_FindMaxElement(const unsigned int* src, size_t count)
 {
     _ASSERT(count%16 == 0);
     _ASSERT(uintptr_t(src)%16 == 0);
@@ -369,7 +366,7 @@ unsigned max_element_n_aligned16(const unsigned* src, size_t count)
 }
 
 
-void max_element_n_aligned16(const unsigned* src, size_t count, unsigned& dst)
+void NFast::x_sse_FindMaxElement(const unsigned int* src, size_t count, unsigned int& dst)
 {
     _ASSERT(count%16 == 0);
     _ASSERT(uintptr_t(src)%16 == 0);
@@ -390,7 +387,7 @@ void max_element_n_aligned16(const unsigned* src, size_t count, unsigned& dst)
 }
 
 
-void max_4elements_n_aligned16(const unsigned* src, size_t count, unsigned dst[4])
+void NFast::x_sse_Find4MaxElements(const unsigned int* src, size_t count, unsigned int dst[4])
 {
     _ASSERT(count%16 == 0);
     _ASSERT(uintptr_t(src)%16 == 0);
@@ -410,7 +407,7 @@ void max_4elements_n_aligned16(const unsigned* src, size_t count, unsigned dst[4
 
 #endif // NCBI_HAVE_FAST_OPS
 
-void x_no_ncbi_sse_split_into4(const int* src, size_t count, int*  dest0, int*  dest1, int*  dest2, int*  dest3)
+void NFast::x_no_sse_SplitBufferInto4(const int* src, size_t count, int*  dest0, int*  dest1, int*  dest2, int*  dest3)
 {
     for (size_t e = 0; e < count; ++e) {
         int v0 = src[e*4+0];
@@ -424,7 +421,7 @@ void x_no_ncbi_sse_split_into4(const int* src, size_t count, int*  dest0, int*  
     }
 }
 
-void x_no_ncbi_sse_split_into4(const int* src, size_t count, char* dest0, char* dest1, char* dest2, char* dest3)
+void NFast::x_no_sse_SplitBufferInto4(const int* src, size_t count, char* dest0, char* dest1, char* dest2, char* dest3)
 {
     for (size_t e = 0; e < count; ++e) {
         char v0 = char(src[e*4+0]);
@@ -438,7 +435,7 @@ void x_no_ncbi_sse_split_into4(const int* src, size_t count, char* dest0, char* 
     }
 }
 
-unsigned int x_no_ncbi_sse_max_element(const unsigned int* src, size_t count, unsigned int v)
+unsigned int NFast::x_no_sse_FindMaxElement(const unsigned int* src, size_t count, unsigned int v)
 {
     unsigned int result = v;
     for (size_t e = 0; e < count; ++e) {
@@ -449,7 +446,7 @@ unsigned int x_no_ncbi_sse_max_element(const unsigned int* src, size_t count, un
     return result;
 }
 
-void x_no_ncbi_sse_max_4element(const unsigned int* src, size_t count, unsigned int dest[4])
+void NFast::x_no_sse_Find4MaxElements(const unsigned int* src, size_t count, unsigned int dest[4])
 {
     unsigned int result[4];
     memcpy(result, dest, sizeof(unsigned int) * 4);
@@ -470,7 +467,7 @@ void x_no_ncbi_sse_max_4element(const unsigned int* src, size_t count, unsigned 
     memcpy(dest, result, sizeof(unsigned int) * 4);
 }
 
-END_NAMESPACE(NFast);
+
 
 END_NCBI_SCOPE
 
