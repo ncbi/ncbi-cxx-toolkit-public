@@ -805,6 +805,31 @@ int CheckDate (const CDate& date, bool require_full_date)
 }
 
 
+bool IsDateInPast(const CDate& date)
+{
+    time_t t;
+    time(&t);
+    struct tm *tm;
+    tm = localtime(&t);
+
+    bool in_past = false;
+    if (date.GetStd().GetYear() < tm->tm_year + 1900) {
+        in_past = true;
+    } else if (date.GetStd().GetYear() == tm->tm_year + 1900
+        && date.GetStd().IsSetMonth()) {
+        if (date.GetStd().GetMonth() < tm->tm_mon + 1) {
+            in_past = true;
+        } else if (date.GetStd().GetMonth() == tm->tm_mon + 1
+            && date.GetStd().IsSetDay()) {
+            if (date.GetStd().GetDay() < tm->tm_mday) {
+                in_past = true;
+            }
+        }
+    }
+    return in_past;
+}
+
+
 string GetDateErrorDescription (int flags)
 {
     string reasons = "";

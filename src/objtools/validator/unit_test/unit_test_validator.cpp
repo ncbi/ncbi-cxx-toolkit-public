@@ -21421,3 +21421,30 @@ BOOST_AUTO_TEST_CASE(VR_V48)
     CheckLocalId("abc=def", "=");
 }
 
+BOOST_AUTO_TEST_CASE(VR_778)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+
+    // find sub pub and other pub
+    CRef<CPub> subpub(NULL);
+    CRef<CPub> otherpub(NULL);
+    NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        if ((*it)->IsPub()) {
+            if ((*it)->GetPub().GetPub().Get().front()->IsSub()) {
+                subpub = (*it)->SetPub().SetPub().Set().front();
+            } else {
+                otherpub = (*it)->SetPub().SetPub().Set().front();
+            }
+        }
+    }
+
+    STANDARD_SETUP
+
+    subpub->SetSub().SetDate().SetStd().SetYear(2030);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BadDate",
+                              "Submission citation date is in the future"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+}
+
