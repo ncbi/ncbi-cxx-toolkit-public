@@ -548,6 +548,12 @@ enum EErrType {
     eErr_SEQ_FEAT_TranslExceptIsPartial,
     eErr_SEQ_FEAT_GeneIdMismatch,
     eErr_SEQ_FEAT_ProductShouldBeWhole,
+    eErr_SEQ_FEAT_CDSmRNAMismatchProteinIDs,
+    eErr_SEQ_FEAT_CDSmRNAMissingProteinIDs,
+    eErr_SEQ_FEAT_CDSmRNAMismatchTranscriptIDs,
+    eErr_SEQ_FEAT_CDSmRNAmismatchCount,
+    eErr_SEQ_FEAT_CDSmRNAMismatchLocation,
+    eErr_SEQ_FEAT_CDSmRNANotMatched,
     ERR_CODE_END(SEQ_FEAT),
 
     ERR_CODE_BEGIN(SEQ_ALIGN) = 5000,
