@@ -600,6 +600,16 @@ RunTest()
                 rm -f "\$corefile" > /dev/null 2>&1
                 rm -f check_exec.pid > /dev/null 2>&1
 
+                # Generate PHID and SID, to use it by any application in the current test,
+                # and for loading test statistics later (test_stat_load -> ncbi_applog),
+                # to have same values in Applog.
+                logfile=\$NCBI_CONFIG__LOG__FILE
+                NCBI_CONFIG__LOG__FILE=
+                export NCBI_CONFIG__LOG__FILE
+                eval "\`ncbi_applog generate -phid -sid -format=shell-export\`"
+                NCBI_CONFIG__LOG__FILE=\$logfile
+                export NCBI_CONFIG__LOG__FILE
+
                 # Run check
                 start_time="\`date +'$x_date_format'\`"
                         
@@ -609,14 +619,6 @@ RunTest()
                 launch_sh="/var/tmp/launch.\$\$.sh"
 cat > \$launch_sh <<EOF_launch
 #! /bin/sh
-
-logfile=\\\$NCBI_CONFIG__LOG__FILE
-NCBI_CONFIG__LOG__FILE=
-export NCBI_CONFIG__LOG__FILE
-eval "\\\`ncbi_applog generate -phid -sid -format=shell-export\\\`"
-NCBI_CONFIG__LOG__FILE=\\\$logfile
-export NCBI_CONFIG__LOG__FILE
-
 exec time -p \$check_exec \`eval echo \$xx_run\`
 EOF_launch
                 chmod a+x \$launch_sh
