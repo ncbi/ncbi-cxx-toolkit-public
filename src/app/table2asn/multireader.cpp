@@ -120,6 +120,21 @@ namespace
         return CRef<CSeq_id>();
     }
 
+	void x_ModifySeqIds(CSerialObject& obj, CConstRef<CSeq_id> match, const CSeq_id& new_id)
+	{
+		CTypeIterator<CSeq_id> visitor(obj);
+
+		while (visitor)
+		{
+			CSeq_id& id = *visitor;
+			if (match.Empty() || id.Compare(*match) == CSeq_id::e_YES)
+			{
+				id.Assign(new_id);
+			}
+			++visitor;
+		}
+	}
+
 }
 
 CFormatGuess::EFormat CMultiReader::xReadFile(CNcbiIstream& istr, CRef<CSeq_entry>& entry, CRef<CSeq_submit>& submit)
@@ -938,18 +953,18 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
                     }
             }
             else
-            if (!annot_it->GetData().GetFtable().empty())
-            {
-                // get a reference to CSeq_id instance, we'd need to update it recently
-                // 5 column feature reader has a single shared instance for all features 
-                // update one at once would change all the features
-                annot_id.Reset((CSeq_id*)annot_it->GetData().GetFtable().front()->GetLocation().GetId());
-            }
+                if (!annot_it->GetData().GetFtable().empty())
+                {
+                    // get a reference to CSeq_id instance, we'd need to update it recently
+                    // 5 column feature reader has a single shared instance for all features 
+                    // update one at once would change all the features
+                    annot_id.Reset((CSeq_id*)annot_it->GetData().GetFtable().front()->GetLocation().GetId());
+                }
 
+            CBioseq::TId ids;
             CBioseq_Handle bioseq_h = scope.GetBioseqHandle(*annot_id);
             if (!bioseq_h && annot_id->IsLocal() && annot_id->GetLocal().IsStr())
             {
-                CBioseq::TId ids;
                 CSeq_id::ParseIDs(ids, annot_id->GetLocal().GetStr());
                 if (ids.size() == 1)
                 {
@@ -963,24 +978,6 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
                     if (ids.size() == 1)
                     {
                         bioseq_h = scope.GetBioseqHandle(*ids.front());
-                    }
-                }
-                if (bioseq_h)
-                {
-                    if (annot_id->Compare(*ids.front()) != CSeq_id::e_YES)
-                    {
-                        CSeq_annot::C_Data::TFtable& ftable = annot_it->SetData().SetFtable();
-                        NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, feat_it, ftable)
-                        {
-                            if ((**feat_it).IsSetLocation())
-                            {
-                                if ((**feat_it).GetLocation().GetId()->Compare(*annot_id) == CSeq_id::e_YES)
-                                {
-                                    (**feat_it).SetLocation().SetId(*annot_id);
-                                }
-                            }
-                        }
-                        annot_id->Assign(*ids.front());
                     }
                 }
             }
@@ -998,8 +995,14 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
                 CBioseq_EditHandle edit_handle = bioseq_h.GetEditHandle();
                 CBioseq& bioseq = (CBioseq&)*edit_handle.GetBioseqCore();
                 CConstRef<CSeq_id> matching_id = GetIdByKind(*annot_id, bioseq.GetId());
+
+                if (matching_id.Empty())
+                    matching_id = ids.front();
+
                 if (matching_id)
-                    annot_id->Assign(*matching_id);
+                {
+                    x_ModifySeqIds(*annot_it, annot_id, *matching_id);
+                }
 
                 CRef<CSeq_annot> existing;
                 for (auto feat_it : bioseq.SetAnnot())
@@ -1014,7 +1017,7 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
                     bioseq.SetAnnot().push_back(annot_it);
                 else
                     existing->SetData().SetFtable().insert(existing->SetData().SetFtable().end(),
-                       annot_it->SetData().SetFtable().begin(), annot_it->SetData().SetFtable().end());
+                        annot_it->SetData().SetFtable().begin(), annot_it->SetData().SetFtable().end());
             }
 #ifdef _DEBUG
             else
