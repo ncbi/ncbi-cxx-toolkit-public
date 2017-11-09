@@ -1083,6 +1083,9 @@ STypeLink::STypeLink(CSeqFeatData::ESubtype subtype,
     case CSeqFeatData::eSubtype_sig_peptide:
         m_ParentType = CSeqFeatData::eSubtype_prot;
         break;
+    case CSeqFeatData::eSubtype_mRNA:
+        m_ParentType = CSeqFeatData::eSubtype_biosrc;
+        break;
     case CSeqFeatData::eSubtype_cdregion:
         m_ParentType = CSeqFeatData::eSubtype_mRNA;
         break;
