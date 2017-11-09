@@ -196,9 +196,9 @@ ANC	s	Universita di Ancona, Dipartimento di Biotecnologie Agrarie ed Ambientali
 ANCB	s	Museo Nacional de Historia Natural, La Paz		
 AND	s	Slezske zemske muzeum Opava, Arboretum Nopvy Dvur, Dendrology Department		
 ANDA	s	Andalas University		
-ANDES	s	La Universidad de Los Andes		
-ANDES:A	s	La Universidad de Los Andes, Amphibian Collection
-ANDES:O	s	La Universidad de Los Andes, Ornithology Collection
+ANDES	s	Universidad de Los Andes		
+ANDES:A	s	Universidad de Los Andes, Amphibian Collection
+ANDES:O	s	Universidad de Los Andes, Ornithology Collection
 ANES	s	Anadolu University, Biology Department		
 ANFC	s	Australian National Fish Collection		
 ANFM	s	Associazione Naturalisti Forlivesi Pro Museo		
@@ -730,7 +730,7 @@ BZT	s	Biological Institute Titograd
 C	s	Natural History Museum of Denmark		
 CA	s	Chicago Academy of Sciences		
 CAB	c	Yeast Collection of Department of Microbiology, Stellenbosch University		
-CABI	c	CABI Genetic Resource Collection		
+CABI	c	CABI Genetic Resource Collection	IMI
 CACA	s	Carlsbad Caverns National Park		
 CACC<CHN>	c	China Antibiotic Culture Collection Center		
 CACS	s	Chicago Academy of Sciences, Department of Biology		
@@ -963,7 +963,7 @@ CETESB	c	Setor de Pesquisa Tecnologica de Sistemas de Tratamento de Efluentes Do
 CEU	s	Collage of Eastern Utah		
 CFB	s	Northern Forestry Centre, Canadian Forest Service		
 CFBH	s	Celio F.B. Haddad Herpetological Collection, Departamento de  Zoologia, Universidade Estadual Paulista		
-CFBP	c	Collection Francaise des Bacteries Phytopathogenes		
+CFBP	c	French Collection for Plant-associated Bacteria	CFBP
 CFCC	cb	China Forestry Culture Collection Center		
 CFI	s	Genetic Resources and Biotechnology (CENARGEN), EMBRAPA		
 CFIA	h	Canadian Food Inspection Agency		
@@ -1277,7 +1277,6 @@ CPZ	c	Centro Panamericano de Zoonosis
 CQBG	s	Chongqing Botanical Garden		
 CQNM	s	Chongqing Natural History Museum		
 CR	s	Museo Nacional de Costa Rica		
-CRA-CIN	c	Consiglio per la Ricerca e sperimentazione in Agricoltura - Centro ricerche per  le Colture Industriali ( Research Centre for Industrial Crops)		
 CRA-COLMIA<ITA>	c	Collezione Nazionale di Microrganismi di interesse Agrario ed Industriale ed Ambientale - COL.MIA		
 CRA-OLI	b	Centro di Ricerca per l'Olivicoltura e l'Industria Olearia		
 CRA-PAV<ITA>	c	Centro di Ricerca per la Patologia Vegetale	ISPaVe
@@ -1295,6 +1294,7 @@ CRCM:Mammal	s	Washington State University, Charles R. Conner Museum, Mammal Coll
 CRD	s	Instituto Politecnico Nacional, Coleccion Cientifica de Fauna Silvestre (Mexico)		
 CRE<CRI>	s	Costa Rica Expeditions		
 CRE<USA-CA>	s	University of Southern California		
+CREA-AA	c	 Consiglio per la ricerca in agricoltura e lanalisi delleconomia agraria - Centro di Ricerca Agricoltura e Ambiente	CRA-CIN
 CREG	s	Instituto Tecnologico Agropecuario de Jalisco		
 CRGF	c	Collection de Recursos Geneticos Fungicos, Instituto de Ecologia y Systematica		
 CRH	s	Centre de Recherche en Hydrobiologie		
@@ -2240,7 +2240,7 @@ GUCM	h	Guangzhou University of Chinese Medicine
 GUH	s	HNB Garhwal University, Botany Department		
 GUL	h	Suleyman Demirel University		
 GUM	s	Glasgow University Museum (Hunter Museum)		
-GUM<IRN>	s	Mycological herbarium of University of Guilan		
+GUM<IRN>	s	Guilan University Mycological Herbarium		
 GUMACC	c	Gotheburg University Marine Algal Culture Collection		
 GUYN	s	Fundacion Jardin Botanico del Orinoco		
 GVF	s	George Vanderbilt Foundation		
@@ -2840,7 +2840,7 @@ IMDC	s	Inner Mongolia Institute for Drug Control
 IMDY	s	Chinese Academy of Medical Sciences, Yunnan Branch		
 IMET	c	National Kurturensammlung fuer Mikroorganismen		
 IMFA	s	Inner Mongolia Academy of Forestry		
-IMI	sc	CABI Bioscience Genetic Resource Collection		
+IMI	sc	CABI Genetic Resource Collection	CABI
 IML	s	Instituto Miguel Lillo		
 IMLA	s	Fundacion e Instituto Miguel Lillo		
 IMM<CHN-Bejing>	s	Chinese Academy of Medical Science		
@@ -3281,7 +3281,7 @@ KMG	s	McGregor Museum
 KMK<MOL>	s	Kraevedscheskii Musei Kishineva - Museum of Regional Study		
 KMK<ZAF>	s	Kaffarian Museum		
 KMKV	s	Karlovarske muzeum		
-KMM	c	Collection of Marine Microorganisms		
+KMM	c	G.B. Elyakov Pacific Institute of Bioorganic Chemistry of the Far Eastern Branch of the Russian Academy of Sciences (PIBOC FEB RAS) Collection of Marine Microorganisms		
 KMMA	s	Royal Museum for Central Africa	RMCA
 KMMCC	c	Korea Marine Microalgae Culture Center		
 KMN	s	Adger Museum of Natural History and Botanical Garden, Botany Department		
@@ -3764,7 +3764,7 @@ MAINE	s	University of Maine, Department of Biological Sciences
 MAIS	s	Institut d'Elevage et de Medecine Veterinaire des Pays Tropicaux, Departement de Botanique		
 MAK	s	Tokyo Metropolitan University		
 MAKAR	s	Institut Planina i More		
-MAKFUNGI	s	Fungi Macedonici		
+MAKFUNGI	s	Macedonian Collection of Fungi,Institute of Biology	Fungi Macedonici
 MAL	s	Botanic Gardens of Malawi		
 MALA	s	Malaspina University, Biology Department		
 MALC	s	Museu Municipal de la Vila d'Alcover		
@@ -4339,7 +4339,7 @@ MTQA	s	Museum of Tropical Queensland	MTQ
 MTSN	s	Trento Museum of Natural Sciences		
 MTSU	s	Middle Tennessee State University, Biology Department		
 MTUF	s	University Museum, Tokyo University of Fisheries		
-MU<TUR>	c	Mugla University Collection of Microorganisms		
+MU<TUR>	c	Mugla Sitki Kocman University		
 MU<USA-OH>	s	Miami University, Botany Department, Willard Sherman Turrell Herbarium		
 MU<USA-TX>	s	Midwestern University		
 MUACC	c	Murdoch University Algal Culture Collection		
@@ -5152,7 +5152,7 @@ PCU<THA>	c	Department of Microbiology, Faculty of Pharmaceutical Sciences
 PD	c	Dutch Plant Protection Service, Culture Collection of Plant Pathogenic Bacteria		
 PDA	s	Royal Botanic Gardens, Department of Agriculture		
 PDBK<KOR>	b	Plant DNA Bank in Korea		
-PDD	s	New Zealand Fungal and Plant Disease Herbarium	LCR:PDD
+PDD	s	New Zealand Fungarium	LCR:PDD
 PDTFAU	s	Paleoantropoloji Dil ve Tarih Cografya Facueltesi		
 PE	s	Institute of Botany, Chinese Academy of Sciences		
 PECA	s	Pratt Education Center and Aquarium		
@@ -6556,7 +6556,7 @@ UAM<ESP>	c	Universidad Autonoma De Madrid culture collection of cyanobacteria
 UAM<USA-AL>	s	University of Alabama, Malacology Collection		
 UAM<USA-AR>	s	University of Arkansas at Monticello		
 UAM<VEN>	s	Universidad de los Andes, Facultad de Ciencias		
-UAMH	scb	University of Alberta Microfungus Collection and Herbarium		
+UAMH	scb	Centre for Global Microfungal Biodiversity		
 UAMI	s	Universidad Autonoma Metropolitana, Unidad Iztapalapa (Mexico)		
 UAMIZ	s	Universidad Autonoma Metropolitana, Iztapalapa, Departamento de Biologia		
 UAMM	s	Universidad de los Andes		
@@ -6572,7 +6572,7 @@ UASC	s	Museo de Historia Natural "Noel Kempff Mercado"
 UASK	s	Ukrainian Academy of Science		
 UASM	s	University of Alberta, E.H. Strickland Entomological Museum		
 UAT	s	Universidad Autonoma de Tamaulipas		
-UAVP	s	University of Alberta, Laboratory for Vertebrate Paleontology		
+UAVP	s	University of Alberta, Laboratory for Vertebrate Paleontology	UAVP
 UAWC<WBK>	b	Union of Agricultural Work Committees		
 UAY	s	Universidad Autonoma de Yucatan, Facultad de Medicina Veterinaria y Zootecnia		
 UAZ	s	University of Arizona		
