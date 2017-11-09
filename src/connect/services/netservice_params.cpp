@@ -186,147 +186,116 @@ template bool   CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonym
 template int    CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
 template double CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
 
-class CCachedSynRegistryImpl::CCache
+class CReportSynRegistryImpl::CReport
 {
 public:
-    struct SValue
-    {
-        struct SValueHolder
-        {
-            template <typename TType>
-            operator TType() const
-            {
-                _ASSERT(typeid(TType).hash_code() == m_TypeHash);
-                return *static_cast<TType*>(m_Value.get());
-            }
+    template <typename TType>
+    void Add(const SRegSynonyms& sections, SRegSynonyms names, TType value);
 
-            template <typename TType>
-            SValueHolder& operator=(TType value)
-            {
-                _ASSERT(m_TypeHash = typeid(TType).hash_code());
-                m_Value = make_shared<TType>(value);
-                return *this;
-            }
-
-        private:
-            size_t m_TypeHash = 0;
-            shared_ptr<void> m_Value;
-        };
-
-        enum { New, Default, Read } type = New;
-        SValueHolder value;
-    };
-
-    using TValuePtr = shared_ptr<SValue>;
-    using TValues = unordered_map<string, unordered_map<string, TValuePtr>>;
-
-    bool Has(const SRegSynonyms& sections, SRegSynonyms names);
-    TValuePtr Get(const SRegSynonyms& sections, SRegSynonyms names);
+    void Report(ostream& os);
 
 private:
-    TValuePtr Find(const SRegSynonyms& sections, SRegSynonyms names);
+    template <typename TType>
+    static string ToString(TType value) { return to_string(value); }
+
+    using TSections = deque<string>;
+    using TNames = deque<string>;
+    using TValues = deque<tuple<TSections, TNames, string>>;
 
     TValues m_Values;
 };
 
-CCachedSynRegistryImpl::CCache::TValuePtr CCachedSynRegistryImpl::CCache::Find(const SRegSynonyms& sections, SRegSynonyms names)
+void CReportSynRegistryImpl::CReport::Report(ostream& os)
+{
+    for (auto& v : m_Values) {
+        char separator = '[';
+
+        for (auto& s : get<0>(v)) {
+            os << separator << s;
+            separator = '/';
+        }
+
+        separator = ']';
+
+        for (auto& s : get<1>(v)) {
+            os << separator << s;
+            separator = '/';
+        }
+
+        os << '=' << get<2>(v) << endl;
+    }
+}
+
+template <>
+string CReportSynRegistryImpl::CReport::ToString<string>(string value)
+{
+    return '"' + value + '"';
+}
+
+template <typename TType>
+void CReportSynRegistryImpl::CReport::Add(const SRegSynonyms& sections, SRegSynonyms names, TType value)
 {
     _ASSERT(sections.size());
     _ASSERT(names.size());
 
-    auto section = sections.front();
-    auto name = names.front();
-    auto& section_values = m_Values[section];
-    auto found = section_values.find(name);
+    TSections s(sections.begin(), sections.end());
+    TNames n(names.begin(), names.end());
+    string v(ToString(value));
 
-    return found != section_values.end() ? found->second : nullptr;
+    m_Values.emplace_back(move(s), move(n), move(v));
 }
 
-bool CCachedSynRegistryImpl::CCache::Has(const SRegSynonyms& sections, SRegSynonyms names)
-{
-    auto found = Find(sections, names);
-    return found && found->type == SValue::Read;
-}
-
-CCachedSynRegistryImpl::CCache::TValuePtr CCachedSynRegistryImpl::CCache::Get(const SRegSynonyms& sections, SRegSynonyms names)
-{
-    if (auto found = Find(sections, names)) return found;
-
-    TValuePtr value(new SValue);
-
-    for (auto& s : sections) {
-        for (auto& n : names) {
-            auto& sv = m_Values[s];
-
-            // If failed, corresponding parameter has already been read with a different set of synonyms
-            _VERIFY(sv.insert(make_pair(n, value)).second);
-        }
-    }
-
-    return value;
-}
-
-CCachedSynRegistryImpl::CCachedSynRegistryImpl(ISynRegistry::TPtr registry) :
+CReportSynRegistryImpl::CReportSynRegistryImpl(ISynRegistry::TPtr registry) :
     m_Registry(registry),
-    m_Cache(new CCache)
+    m_Report(new CReport)
 {
 }
 
-CCachedSynRegistryImpl::~CCachedSynRegistryImpl()
+CReportSynRegistryImpl::~CReportSynRegistryImpl()
 {
 }
 
-void CCachedSynRegistryImpl::Add(const IRegistry& registry)
+void CReportSynRegistryImpl::Add(const IRegistry& registry)
 {
     _ASSERT(m_Registry);
 
     m_Registry->Add(registry);
 }
 
-IRegistry& CCachedSynRegistryImpl::GetIRegistry()
+IRegistry& CReportSynRegistryImpl::GetIRegistry()
 {
     _ASSERT(m_Registry);
 
     return m_Registry->GetIRegistry();
 }
 
+void CReportSynRegistryImpl::Report(ostream& os)
+{
+    m_Report->Report(os);
+}
+
 template <typename TType>
-TType CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, TType default_value)
+TType CReportSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, TType default_value)
 {
     _ASSERT(m_Registry);
 
-    auto cached = m_Cache->Get(sections, names);
-    auto& cached_type = cached->type;
-    auto& cached_value = cached->value;
+    auto rv = m_Registry->Get(sections, names, default_value);
 
-    // Has a non-default cached value
-    if (cached_type == CCache::SValue::Read) return cached_value;
-
-    // Has a non-default value
-    if (m_Registry->Has(sections, names)) {
-        cached_type = CCache::SValue::Read;
-        cached_value = m_Registry->Get(sections, names, default_value);
-
-    // Has no (default) value cached
-    } else if (cached_type == CCache::SValue::New) {
-        cached_type = CCache::SValue::Default;
-        cached_value = default_value;
-    }
-
-    return cached_value;
+    m_Report->Add(sections, names, rv);
+    return rv;
 }
 
-bool CCachedSynRegistryImpl::HasImpl(const string& section, const string& name)
+bool CReportSynRegistryImpl::HasImpl(const string& section, const string& name)
 {
     _ASSERT(m_Registry);
 
-    return (m_Cache->Has(section, name)) || m_Registry->Has(section, name);
+    return m_Registry->Has(section, name);
 }
 
-template string CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value);
-template bool   CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value);
-template int    CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
-template double CCachedSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
+template string CReportSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value);
+template bool   CReportSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value);
+template int    CReportSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
+template double CReportSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
 
 CIncludeSynRegistryImpl::CIncludeSynRegistryImpl(ISynRegistry::TPtr registry) :
     m_Registry(registry)
@@ -394,11 +363,9 @@ template double CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SReg
 ISynRegistry::TPtr s_CreateISynRegistry(const CNcbiApplication* app)
 {
     auto syn_registry = new CSynRegistry;
+    auto include_registry = new CIncludeSynRegistry(syn_registry->MakePtr());
+    ISynRegistry::TPtr registry(new CReportSynRegistry(include_registry->MakePtr()));
 
-    // TODO: Fix caching and enable
-    // auto cached_registry = new CCachedSynRegistry(syn_registry->MakePtr());
-
-    ISynRegistry::TPtr registry(new CIncludeSynRegistry(syn_registry->MakePtr()));
 
     if (app) {
         registry->Add(app->GetConfig());
