@@ -2282,6 +2282,8 @@ void CDeflineGenerator::x_SetTitleFromWGS (void)
             joiner.Add("plasmid", m_Plasmid);
         }
     }
+    // string tmp needs to be in scope for final joiner.Join statement
+    string tmp;
     if (m_Genome == NCBI_GENOME(plasmid) && m_Topology == NCBI_SEQTOPOLOGY(circular)) {
     } else if (m_Genome == NCBI_GENOME(chromosome)) {
     } else if (! m_GeneralStr.empty()) {
@@ -2289,7 +2291,7 @@ void CDeflineGenerator::x_SetTitleFromWGS (void)
             joiner.Add("", m_GeneralStr, eHideType);
         }
     } else if (m_GeneralId > 0) {
-        string tmp = NStr::NumericToString (m_GeneralId);
+        tmp = NStr::NumericToString (m_GeneralId);
         if (! tmp.empty()) {
             if (tmp != m_Chromosome  &&  (! m_IsWGS  ||  tmp != m_Plasmid)) {
                 joiner.Add("", tmp, eHideType);
