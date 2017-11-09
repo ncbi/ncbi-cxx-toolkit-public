@@ -267,12 +267,12 @@ CNetServProtoParserBase::ParseArguments(CTempString             args,
             if (!(arg_descr->flags & fNSPA_Optional)) {
                 break;
             }
+            bool is_chain = (arg_descr->flags & fNSPA_Chain) != 0;
             do {
                 s_SetDefaultValue(params, arg_descr);
                 ++arg_descr;
             }
-            while (arg_descr->flags != eNSPA_None
-                   &&  arg_descr[-1].flags & fNSPA_Chain);
+            while (arg_descr->flags != eNSPA_None &&  is_chain);
         }
 
         if (arg_descr->flags & fNSPA_Obsolete) {
