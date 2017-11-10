@@ -502,7 +502,7 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
                                  CArgDescriptions::eString, "genbank");
          arg_desc->SetConstraint("format",
                                  &(*new CArgAllow_Strings,
-                                   "genbank", "embl", "ddbj", "gbseq", "ftable", "gff", "gff3", "lite"));
+                                   "genbank", "embl", "ddbj", "gbseq", "insdseq", "ftable", "gff", "gff3", "lite"));
 
          // mode (default: dump)
          arg_desc->AddDefaultKey("mode", "Mode",
@@ -653,6 +653,8 @@ CFlatFileConfig::EFormat x_GetFormat(const CArgs& args)
         return CFlatFileConfig::eFormat_DDBJ;
     } else if ( format == "gbseq" ) {
         return CFlatFileConfig::eFormat_GBSeq;
+    } else if ( format == "insdseq" ) {
+        return CFlatFileConfig::eFormat_INSDSeq;
     } else if ( format == "ftable" ) {
         return CFlatFileConfig::eFormat_FTable;
     } else if ( format == "lite" ) {

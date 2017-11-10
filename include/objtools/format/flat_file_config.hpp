@@ -119,6 +119,7 @@ public:
         eFormat_EMBL,
         eFormat_DDBJ,
         eFormat_GBSeq,
+        eFormat_INSDSeq,
         eFormat_FTable,
         eFormat_FeaturesOnly,
         eFormat_SAM,
@@ -381,9 +382,10 @@ public:
     bool IsFormatEMBL   (void) const { return m_Format == eFormat_EMBL;    }
     bool IsFormatDDBJ   (void) const { return m_Format == eFormat_DDBJ;    }
     bool IsFormatGBSeq  (void) const { return m_Format == eFormat_GBSeq;   }
+    bool IsFormatINSDSeq(void) const { return m_Format == eFormat_INSDSeq; }
     bool IsFormatFTable (void) const { return m_Format == eFormat_FTable;  }
-	bool IsFormatAGP    (void) const { return m_Format == eFormat_AGP;     }
-	bool IsFormatLite   (void) const { return m_Format == eFormat_Lite;    }
+    bool IsFormatAGP    (void) const { return m_Format == eFormat_AGP;     }
+    bool IsFormatLite   (void) const { return m_Format == eFormat_Lite;    }
 
     // setters
     void SetFormat(const TFormat& format) { m_Format = format; }
@@ -391,6 +393,7 @@ public:
     void SetFormatEMBL   (void) { m_Format = eFormat_EMBL;     }
     void SetFormatDDBJ   (void) { m_Format = eFormat_DDBJ;     }
     void SetFormatGBSeq  (void) { m_Format = eFormat_GBSeq;    }
+    void SetFormatINSDSeq(void) { m_Format = eFormat_INSDSeq;  }
     void SetFormatFTable (void) { m_Format = eFormat_FTable;   }
     void SetFormatAGP    (void) { m_Format = eFormat_AGP;      }
     void SetFormatLite   (void) { m_Format = eFormat_Lite;     }

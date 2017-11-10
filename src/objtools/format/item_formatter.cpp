@@ -95,6 +95,9 @@ CFlatItemFormatter* CFlatItemFormatter::New(CFlatFileConfig::TFormat format)
     case CFlatFileConfig::eFormat_GBSeq:
         return new CGBSeqFormatter;
 
+    case CFlatFileConfig::eFormat_INSDSeq:
+        return new CGBSeqFormatter(true);
+
     case CFlatFileConfig::eFormat_DDBJ:
     default:
         NCBI_THROW(CFlatException, eNotSupported, 

@@ -61,6 +61,7 @@ class NCBI_FORMAT_EXPORT CGBSeqFormatter : public CFlatItemFormatter
 {
 public:
     CGBSeqFormatter(void);
+    CGBSeqFormatter(bool isInsd);
     ~CGBSeqFormatter(void);
 
     virtual void Start       (IFlatTextOStream&);
@@ -105,6 +106,7 @@ private:
     auto_ptr<CObjectOStream> m_Out;
     CNcbiOstrstream m_StrStream;
     auto_ptr<SOStreamContainer>  m_Cont;
+    bool m_IsInsd;
 };
 
 
