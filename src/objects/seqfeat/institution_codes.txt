@@ -1946,6 +1946,7 @@ FMM	s	Muzeum Beskyd
 FMNH	s	Field Museum of Natural History	CMNH<USA-IL>
 FMNH:ARTH	s	Field Museum of Natural History, Arthropod Collection
 FMNH:AVES	s	Field Museum of Natural History, Ornithology Collection
+FMNH:F	s	Field Museum of Natural History, Botany Department
 FMNH:HERP	s	Field Museum of Natural History, Herpetology Collection
 FMNH:ICHTHY	s	Field Museum of Natural History, Ichthyology Collection
 FMNH:INVRT	s	Field Museum of Natural History, Invertebrate Collection

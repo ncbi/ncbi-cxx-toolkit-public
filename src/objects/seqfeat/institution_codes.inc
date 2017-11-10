@@ -1979,6 +1979,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "FMNH\ts\tField Museum of Natural History\tCMNH<USA-IL>",
 "FMNH:ARTH\ts\tField Museum of Natural History, Arthropod Collection",
 "FMNH:AVES\ts\tField Museum of Natural History, Ornithology Collection",
+"FMNH:F\ts\tField Museum of Natural History, Botany Department",
 "FMNH:HERP\ts\tField Museum of Natural History, Herpetology Collection",
 "FMNH:ICHTHY\ts\tField Museum of Natural History, Ichthyology Collection",
 "FMNH:INVRT\ts\tField Museum of Natural History, Invertebrate Collection",
