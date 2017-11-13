@@ -487,7 +487,7 @@ RunTest() {
            logfile=\$NCBI_CONFIG__LOG__FILE
            NCBI_CONFIG__LOG__FILE=
            export NCBI_CONFIG__LOG__FILE
-           eval "\`ncbi_applog generate -phid -sid -format=shell-export | tr -d '\r'`\`"
+           eval "\`ncbi_applog generate -phid -sid -format=shell-export | tr -d '\r'\`"
            NCBI_CONFIG__LOG__FILE=\$logfile
            export NCBI_CONFIG__LOG__FILE
            
