@@ -37,7 +37,19 @@ endif()
 # Basic Setup
 #
 
+# This sets a version to be used throughout our config process
+# NOTE: Adjust as needed
+#
+set(NCBI_CPP_TOOLKIT_VERSION_MAJOR 21)
+set(NCBI_CPP_TOOLKIT_VERSION_MINOR 0)
+set(NCBI_CPP_TOOLKIT_VERSION_PATCH 0)
+set(NCBI_CPP_TOOLKIT_VERSION_EXTRA "")
+set(NCBI_CPP_TOOLKIT_VERSION
+    ${NCBI_CPP_TOOLKIT_VERSION_MAJOR}.${NCBI_CPP_TOOLKIT_VERSION_MINOR}.${NCBI_CPP_TOOLKIT_VERSION_PATCH}${NCBI_CPP_TOOLKIT_VERSION_EXTRA})
 
+
+# Basic variables
+#
 set(top_src_dir     ${CMAKE_CURRENT_SOURCE_DIR}/..)
 set(abs_top_src_dir ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
@@ -799,6 +811,7 @@ configure_file(${includedir}/common/ncbi_build_ver.h.in ${includedir}/common/ncb
 if (UNIX)
     message(STATUS "Generating ${build_root}/inc/ncbiconf_unix.h...")
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/config.cmake.h.in ${build_root}/inc/ncbiconf_unix.h)
+    set(_os_specific_config ${build_root}/inc/ncbiconf_unix.h)
 endif(UNIX)
 
 if (WIN32)
@@ -806,11 +819,13 @@ if (WIN32)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/config.cmake.h.in ${build_root}/inc/ncbiconf_msvc.h)
     message(STATUS "Generating ${includedir}/common/config/ncbiconf_msvc_site.h...")
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/ncbiconf_msvc_site.h.in ${includedir}/common/config/ncbiconf_msvc_site.h)
+    set(_os_specific_config ${build_root}/inc/ncbiconf_msvc.h ${includedir}/common/config/ncbiconf_msvc_site.h)
 endif (WIN32)
 
 if (APPLE AND NOT UNIX) #XXX 
     message(STATUS "Generating ${build_root}/inc/ncbiconf_xcode.h...")
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/config.cmake.h.in ${build_root}/inc/ncbiconf_xcode.h)
+    set(_os_specific_config ${build_root}/inc/ncbiconf_xcode.h)
 endif (APPLE AND NOT UNIX)
 
 #
