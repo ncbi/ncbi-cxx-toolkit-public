@@ -518,8 +518,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "no_retries",        eNSPT_Int, eNSPA_Optional, "0" } } },
     { "JXCG",          { &CNetScheduleHandler::x_ProcessJobExchange,
                          eNS_Queue | eNS_Worker | eNS_Program },
-        { { "job_key",           eNSPT_Id,  eNSPA_Optchain      },
-          { "job_return_code",   eNSPT_Int, eNSPA_Optchain      },
+        { { "job_key",           eNSPT_Id,  eNSPA_Optional      },
+          { "job_return_code",   eNSPT_Int, eNSPA_Optional      },
           { "output",            eNSPT_Str, eNSPA_Optional      },
           { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
@@ -2818,6 +2818,7 @@ void CNetScheduleHandler::x_ProcessListenJob(CQueue* q)
                        CNetScheduleAPI::StatusToString(status) +
                        "&last_event_index=" +
                        NStr::NumericToString(last_event_index) +
+                       "&msg=" + NStr::URLEncode(job.GetProgressMsg()) +
                        kEndOfResponse);
         x_LogCommandWithJob(job);
     }

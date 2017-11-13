@@ -416,8 +416,7 @@ public:
     bool Flush(CQueue* queue);
 
     bool ShouldNotifySubmitter(const CNSPreciseTime & current_time) const;
-    bool ShouldNotifyListener(const CNSPreciseTime &  current_time,
-                              TNSBitVector &          jobs_to_notify) const;
+    bool ShouldNotifyListener(const CNSPreciseTime &  current_time) const;
 
     string Print(const CQueue &               queue,
                  const CNSAffinityRegistry &  aff_registry,

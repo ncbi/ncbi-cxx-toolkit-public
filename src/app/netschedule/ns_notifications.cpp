@@ -184,13 +184,9 @@ string  SNSNotificationAttributes::Print(
 CNSNotificationList::CNSNotificationList(CQueueDataBase &  qdb,
                                          const string &    ns_node,
                                          const string &    qname) :
-    m_QueueDB(qdb)
+    m_QueueDB(qdb),
+    m_JobChangeNotifConstPart("ns_node=" + ns_node + "&job_key=")
 {
-    m_JobStateConstPartLength = snprintf(m_JobStateConstPart,
-                                         k_MessageBufferSize,
-                                         "ns_node=%s&job_key=",
-                                         ns_node.c_str());
-
     m_GetMsgLength = snprintf(m_GetMsgBuffer, k_MessageBufferSize,
                               "reason=get&ns_node=%s&queue=%s",
                               ns_node.c_str(), qname.c_str()) + 1;
@@ -309,31 +305,58 @@ void CNSNotificationList::UnregisterListener(unsigned int         address,
 
 
 void
-CNSNotificationList::NotifyJobStatus(
-                            unsigned int    address,
-                            unsigned short  port,
-                            const string &  job_key,
-                            TJobStatus      job_status,
-                            size_t          last_event_index  // zero based
-                                    )
+CNSNotificationList::NotifyJobChanges(unsigned int      address,
+                                      unsigned short    port,
+                                      const string &    notification)
 {
-    char    buffer[k_MessageBufferSize];
-
-    memcpy(buffer, m_JobStateConstPart, m_JobStateConstPartLength);
-    strncpy(buffer + m_JobStateConstPartLength,
-            job_key.c_str(), k_MessageBufferSize - m_JobStateConstPartLength);
-    snprintf(buffer + m_JobStateConstPartLength + job_key.size(),
-             k_MessageBufferSize - m_JobStateConstPartLength - job_key.size(),
-             "&job_status=%s&last_event_index=%ld",
-             CNetScheduleAPI::StatusToString(job_status).c_str(),
-             (long int)last_event_index);
-
-
     CFastMutexGuard     guard(m_StatusNotificationSocketLock);
-    m_StatusNotificationSocket.Send(
-                                buffer,
-                                strlen(buffer) + 1,
-                                CSocketAPI::ntoa(address), port);
+    m_StatusNotificationSocket.Send(notification.c_str(),
+                                    notification.size() + 1,
+                                    CSocketAPI::ntoa(address), port);
+}
+
+
+string
+CNSNotificationList::BuildJobChangedNotification(
+        const CJob &         job,
+        const string &       job_key,
+        TJobStatus           job_status,
+        ENotificationReason  reason)
+{
+    string      notification;
+    notification.reserve(2048);
+
+    // "ns_node=<node>&job_key="
+    notification +=
+        m_JobChangeNotifConstPart + job_key +
+        "&job_status=" + CNetScheduleAPI::StatusToString(job_status) +
+        "&last_event_index=" + NStr::NumericToString(job.GetLastEventIndex()) +
+        "reason=";
+
+    switch (reason) {
+        case eStatusChanged:
+            notification += "status";
+            break;
+        case eNotificationStolen:
+            notification += "stolen";
+            break;
+        case eProgressMessageChanged:
+            notification += "progress";
+            break;
+        default:
+            notification += "unknown";
+    };
+
+    const string &      progress_msg = job.GetProgressMsg();
+    size_t              msg_size = progress_msg.size();
+    if (msg_size > 1000) {
+        notification +=
+            "&msg=" + NStr::URLEncode(progress_msg.substr(0, 1000)) +
+            "&msg_truncated=" + NStr::NumericToString(msg_size - 1000);
+    } else {
+        notification += "&msg=" + NStr::URLEncode(progress_msg);
+    }
+    return notification;
 }
 
 

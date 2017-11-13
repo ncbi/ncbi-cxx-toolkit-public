@@ -638,6 +638,10 @@ private:
 
     string x_GetJobsDumpFileName(const string &  dump_dname) const;
     void x_ClearQueue(void);
+    void x_NotifyJobChanges(const CJob &            job,
+                            const string &          job_key,
+                            ENotificationReason     reason,
+                            const CNSPreciseTime &  current_time);
 
 private:
     friend class CJob;
@@ -689,9 +693,6 @@ private:
     // read.
     TNSBitVector                m_ReadJobs;
     unsigned int                m_ReadJobsOps;
-
-    // Vector of jobs which have been set for notifications
-    TNSBitVector                m_JobsToNotify;
 
     // Configurable queue parameters
     mutable CFastMutex          m_ParamLock;

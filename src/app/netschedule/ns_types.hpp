@@ -58,6 +58,15 @@ enum ECommandGroup {
 };
 
 
+// Submitter/listener notification reasons
+enum ENotificationReason {
+    eStatusChanged,             // Job status has been changed
+    eNotificationStolen,        // Listener notification has been stolen
+    eProgressMessageChanged,    // The progress message has been changed
+    eJobDeleted                 // The job has been deleted from the DB
+};
+
+
 typedef bm::bvector<>                           TNSBitVector;
 typedef CNetScheduleAPI::EJobStatus             TJobStatus;
 

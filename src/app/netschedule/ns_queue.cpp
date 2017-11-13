@@ -797,18 +797,7 @@ TJobStatus  CQueue::PutResult(const CNSClientId &     client,
 
     TimeLineRemove(job_id);
 
-    if (job.ShouldNotifySubmitter(curr))
-        m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
-                                            job.GetSubmNotifPort(),
-                                            job_key,
-                                            job.GetStatus(),
-                                            job.GetLastEventIndex());
-    if (job.ShouldNotifyListener(curr, m_JobsToNotify))
-        m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),
-                                            job.GetListenerNotifPort(),
-                                            job_key,
-                                            job.GetStatus(),
-                                            job.GetLastEventIndex());
+    x_NotifyJobChanges(job, job_key, eStatusChanged, curr);
 
     // Notify the readers if the job has not been given for reading yet
     if (!m_ReadJobs.get_bit(job_id)) {
@@ -994,13 +983,8 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
             TimeLineAdd(job_pick.job_id, curr + m_RunTimeout);
             m_ClientsRegistry.RegisterJob(client, job_pick.job_id, eGet);
 
-            if (new_job->ShouldNotifyListener(curr, m_JobsToNotify))
-                m_NotificationsList.NotifyJobStatus(
-                                new_job->GetListenerNotifAddr(),
-                                new_job->GetListenerNotifPort(),
-                                MakeJobKey(job_pick.job_id),
-                                new_job->GetStatus(),
-                                new_job->GetLastEventIndex());
+            x_NotifyJobChanges(*new_job, MakeJobKey(job_pick.job_id),
+                               eStatusChanged, curr);
 
             // If there are no more pending jobs, let's clear the
             // list of delayed exact notifications.
@@ -1432,7 +1416,6 @@ TJobStatus  CQueue::SetJobListener(unsigned int            job_id,
     CNSPreciseTime      curr = CNSPreciseTime::Current();
     TJobStatus          status = CNetScheduleAPI::eJobNotFound;
     CFastMutexGuard     guard(m_OperationLock);
-    bool                switched_on = true;
 
     {{
         CNSTransaction      transaction(this);
@@ -1442,10 +1425,11 @@ TJobStatus  CQueue::SetJobListener(unsigned int            job_id,
 
         *last_event_index = job.GetLastEventIndex();
         status = job.GetStatus();
-        if (status == CNetScheduleAPI::eCanceled)
-            return status;  // Listener notifications are valid for all states
-                            // except of Cancel - there are no transitions from
-                            // Cancel.
+
+        if (job.GetListenerNotifAddr() != 0 &&
+            job.GetListenerNotifPort() != 0)
+            x_NotifyJobChanges(job, MakeJobKey(job_id), eNotificationStolen,
+                               curr);
 
         if (address == 0 || port == 0 || timeout == kTimeZero) {
             // If at least one of the values is 0 => no notifications
@@ -1453,7 +1437,6 @@ TJobStatus  CQueue::SetJobListener(unsigned int            job_id,
             job.SetListenerNotifAddr(0);
             job.SetListenerNotifPort(0);
             job.SetListenerNotifAbsTime(kTimeZero);
-            switched_on = false;
         } else {
             job.SetListenerNotifAddr(address);
             job.SetListenerNotifPort(port);
@@ -1464,8 +1447,6 @@ TJobStatus  CQueue::SetJobListener(unsigned int            job_id,
         job.Flush(this);
         transaction.Commit();
     }}
-
-    m_JobsToNotify.set_bit(job_id, switched_on);
 
     return status;
 }
@@ -1498,6 +1479,8 @@ bool CQueue::PutProgressMessage(unsigned int    job_id,
                                                           m_ReadTimeout,
                                                           m_PendingTimeout,
                                                           curr));
+        x_NotifyJobChanges(job, MakeJobKey(job_id), eProgressMessageChanged,
+                           curr);
     }}
 
     return true;
@@ -1608,12 +1591,7 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
                                                       m_PendingTimeout,
                                                       current_time));
 
-    if (job.ShouldNotifyListener(current_time, m_JobsToNotify))
-        m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),
-                                            job.GetListenerNotifPort(),
-                                            job_key,
-                                            job.GetStatus(),
-                                            job.GetLastEventIndex());
+    x_NotifyJobChanges(job, job_key, eStatusChanged, current_time);
 
     if (m_PauseStatus == eNoPause)
         m_NotificationsList.Notify(job_id,
@@ -1740,12 +1718,7 @@ TJobStatus  CQueue::RescheduleJob(const CNSClientId &     client,
                                                       m_PendingTimeout,
                                                       current_time));
 
-    if (job.ShouldNotifyListener(current_time, m_JobsToNotify))
-        m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),
-                                            job.GetListenerNotifPort(),
-                                            job_key,
-                                            job.GetStatus(),
-                                            job.GetLastEventIndex());
+    x_NotifyJobChanges(job, job_key, eStatusChanged, current_time);
 
     if (m_PauseStatus == eNoPause)
         m_NotificationsList.Notify(job_id,
@@ -1809,12 +1782,7 @@ TJobStatus  CQueue::RedoJob(const CNSClientId &     client,
                                                       m_PendingTimeout,
                                                       current_time));
 
-    if (job.ShouldNotifyListener(current_time, m_JobsToNotify))
-        m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),
-                                            job.GetListenerNotifPort(),
-                                            job_key,
-                                            job.GetStatus(),
-                                            job.GetLastEventIndex());
+    x_NotifyJobChanges(job, job_key, eStatusChanged, current_time);
 
     if (m_PauseStatus == eNoPause)
         m_NotificationsList.Notify(job_id,
@@ -1948,12 +1916,7 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
                                                           m_PendingTimeout,
                                                           current_time));
 
-        if (job.ShouldNotifyListener(current_time, m_JobsToNotify))
-            m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),
-                                                job.GetListenerNotifPort(),
-                                                job_key,
-                                                job.GetStatus(),
-                                                job.GetLastEventIndex());
+        x_NotifyJobChanges(job, job_key, eStatusChanged, current_time);
 
         // Notify the readers if the job has not been given for reading yet
         // and it was not a rollback due to a socket write error
@@ -1969,15 +1932,6 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
                                        eRead);
         }
     }}
-
-    if ((old_status == CNetScheduleAPI::eRunning ||
-         old_status == CNetScheduleAPI::ePending) &&
-         job.ShouldNotifySubmitter(current_time))
-        m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
-                                            job.GetSubmNotifPort(),
-                                            job_key,
-                                            job.GetStatus(),
-                                            job.GetLastEventIndex());
 
     return old_status;
 }
@@ -2070,20 +2024,8 @@ unsigned int CQueue::x_CancelJobs(const CNSClientId &   client,
                                                           m_PendingTimeout,
                                                           current_time));
 
-        if ((old_status == CNetScheduleAPI::eRunning ||
-             old_status == CNetScheduleAPI::ePending) &&
-             job.ShouldNotifySubmitter(current_time))
-            m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
-                                                job.GetSubmNotifPort(),
-                                                MakeJobKey(job_id),
-                                                job.GetStatus(),
-                                                job.GetLastEventIndex());
-        if (job.ShouldNotifyListener(current_time, m_JobsToNotify))
-            m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),
-                                                job.GetListenerNotifPort(),
-                                                MakeJobKey(job_id),
-                                                job.GetStatus(),
-                                                job.GetLastEventIndex());
+        x_NotifyJobChanges(job, MakeJobKey(job_id),
+                           eStatusChanged, current_time);
 
         // Notify the readers if the job has not been given for reading yet
         if (!m_ReadJobs.get_bit(job_id)) {
@@ -2426,13 +2368,8 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
             TimeLineAdd(job_pick.job_id, curr + m_ReadTimeout);
             m_ClientsRegistry.RegisterJob(client, job_pick.job_id, eRead);
 
-
-            if (job->ShouldNotifyListener(curr, m_JobsToNotify))
-                m_NotificationsList.NotifyJobStatus(job->GetListenerNotifAddr(),
-                                                    job->GetListenerNotifPort(),
-                                                    MakeJobKey(job_pick.job_id),
-                                                    job->GetStatus(),
-                                                    job->GetLastEventIndex());
+            x_NotifyJobChanges(*job, MakeJobKey(job_pick.job_id),
+                               eStatusChanged, curr);
 
             rollback_action = new CNSReadJobRollback(client, job_pick.job_id,
                                                      old_status);
@@ -2570,12 +2507,7 @@ TJobStatus  CQueue::RereadJob(const CNSClientId &     client,
                                                               m_PendingTimeout,
                                                               current_time));
 
-    if (job.ShouldNotifyListener(current_time, m_JobsToNotify))
-        m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),
-                                            job.GetListenerNotifPort(),
-                                            job_key,
-                                            job.GetStatus(),
-                                            job.GetLastEventIndex());
+    x_NotifyJobChanges(job, job_key, eStatusChanged, current_time);
 
     // Notify the readers
     m_NotificationsList.Notify(job_id, job.GetAffinityId(),
@@ -2727,12 +2659,7 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
                                              target_status,
                                              path_option);
     g_DoPerfLogging(*this, job, 200);
-    if (job.ShouldNotifyListener(current_time, m_JobsToNotify))
-        m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),
-                                            job.GetListenerNotifPort(),
-                                            job_key,
-                                            job.GetStatus(),
-                                            job.GetLastEventIndex());
+    x_NotifyJobChanges(job, job_key, eStatusChanged, current_time);
     return CNetScheduleAPI::eReading;
 }
 
@@ -3300,14 +3227,6 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
                                                           m_PendingTimeout,
                                                           curr));
 
-        if (!rescheduled  &&  job.ShouldNotifySubmitter(curr)) {
-            m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
-                                                job.GetSubmNotifPort(),
-                                                job_key,
-                                                job.GetStatus(),
-                                                job.GetLastEventIndex());
-        }
-
         if (rescheduled && m_PauseStatus == eNoPause)
             m_NotificationsList.Notify(job_id,
                                        job.GetAffinityId(), m_ClientsRegistry,
@@ -3328,12 +3247,7 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
                                            eRead);
             }
 
-        if (job.ShouldNotifyListener(curr, m_JobsToNotify))
-            m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),
-                                                job.GetListenerNotifPort(),
-                                                job_key,
-                                                job.GetStatus(),
-                                                job.GetLastEventIndex());
+        x_NotifyJobChanges(job, job_key, eStatusChanged, curr);
     }}
 
     return old_status;
@@ -3682,23 +3596,9 @@ void CQueue::x_CheckExecutionTimeout(const CNSPreciseTime &  queue_run_timeout,
                                            m_HandicapTimeout,
                                            eRead);
             }
-
-        if (job.ShouldNotifyListener(curr_time, m_JobsToNotify))
-            m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),
-                                                job.GetListenerNotifPort(),
-                                                MakeJobKey(job_id),
-                                                job.GetStatus(),
-                                                job.GetLastEventIndex());
     }}
 
-    if (status == CNetScheduleAPI::eRunning &&
-        new_status == CNetScheduleAPI::eFailed &&
-        job.ShouldNotifySubmitter(curr_time))
-        m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
-                                            job.GetSubmNotifPort(),
-                                            MakeJobKey(job_id),
-                                            job.GetStatus(),
-                                            job.GetLastEventIndex());
+    x_NotifyJobChanges(job, MakeJobKey(job_id), eStatusChanged, curr_time);
 
     if (logging)
     {
@@ -3788,27 +3688,15 @@ CQueue::CheckJobsExpiry(const CNSPreciseTime &  current_time,
         for (; en.valid(); ++en) {
             unsigned int    id = *en;
             CJob            job;
-            bool            need_to_notify = m_JobsToNotify[id];
-
 
             // if the job is deleted from the pending state then a performance
             // record should be produced. A job full information is also
-            // required if the submitter expects job notifications.
-            if (need_to_notify || status == CNetScheduleAPI::ePending) {
-                if (job.Fetch(this, id) == CJob::eJF_Ok) {
-                    if (need_to_notify &&
-                        job.ShouldNotifyListener(current_time, m_JobsToNotify)) {
-                        m_NotificationsList.NotifyJobStatus(
-                                            job.GetListenerNotifAddr(),
-                                            job.GetListenerNotifPort(),
-                                            MakeJobKey(id),
-                                            CNetScheduleAPI::eDeleted,
-                                            job.GetLastEventIndex());
-                        m_JobsToNotify.set_bit(id, false);
-                    }
-                    if (status == CNetScheduleAPI::ePending) {
-                        g_DoErasePerfLogging(*this, job);
-                    }
+            // required if the listener expects job notifications.
+            if (job.Fetch(this, id) == CJob::eJF_Ok) {
+                x_NotifyJobChanges(job, MakeJobKey(id), eJobDeleted,
+                                   current_time);
+                if (status == CNetScheduleAPI::ePending) {
+                    g_DoErasePerfLogging(*this, job);
                 }
             }
         }
@@ -4481,13 +4369,7 @@ TJobStatus  CQueue::x_ResetDueTo(const CNSClientId &     client,
                                        eRead);
         }
 
-    if (job.ShouldNotifyListener(current_time, m_JobsToNotify))
-        m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),
-                                            job.GetListenerNotifPort(),
-                                            MakeJobKey(job_id),
-                                            job.GetStatus(),
-                                            job.GetLastEventIndex());
-
+    x_NotifyJobChanges(job, MakeJobKey(job_id), eStatusChanged, current_time);
     return new_status;
 }
 
@@ -5117,7 +4999,6 @@ void CQueue::x_ClearQueue(void)
     m_RunTimeLine->ReInit();
     m_JobsToDelete.clear(true);
     m_ReadJobs.clear(true);
-    m_JobsToNotify.clear(true);
 
     m_AffinityRegistry.Clear();
     m_GroupRegistry.Clear();
@@ -5154,5 +5035,36 @@ void CQueue::x_ClearQueue(void)
 }
 
 
-END_NCBI_SCOPE
+void CQueue::x_NotifyJobChanges(const CJob &            job,
+                                const string &          job_key,
+                                ENotificationReason     reason,
+                                const CNSPreciseTime &  current_time)
+{
+    string      notification;
+    TJobStatus  job_status = job.GetStatus();
 
+    if (reason == eJobDeleted)
+        job_status = CNetScheduleAPI::eDeleted;
+
+    if (job.ShouldNotifyListener(current_time)) {
+        notification = m_NotificationsList.BuildJobChangedNotification(
+                job, job_key, job_status, reason);
+        m_NotificationsList.NotifyJobChanges(job.GetListenerNotifAddr(),
+                                             job.GetListenerNotifPort(),
+                                             notification);
+    }
+
+    if (reason != eNotificationStolen) {
+        if (job.ShouldNotifySubmitter(current_time)) {
+            if (notification.empty())
+                notification = m_NotificationsList.BuildJobChangedNotification(
+                        job, job_key, job_status, reason);
+            m_NotificationsList.NotifyJobChanges(job.GetSubmAddr(),
+                                                 job.GetSubmNotifPort(),
+                                                 notification);
+        }
+    }
+}
+
+
+END_NCBI_SCOPE

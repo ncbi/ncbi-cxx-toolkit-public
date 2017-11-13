@@ -52,6 +52,7 @@ class CNSAffinityRegistry;
 class CNSGroupsRegistry;
 class CQueueDataBase;
 class CNSScopeRegistry;
+class CJob;
 
 
 
@@ -140,12 +141,14 @@ class CNSNotificationList
         void UnregisterListener(unsigned int         address,
                                 unsigned short       port,
                                 ECommandGroup        cmd_group);
+        void NotifyJobChanges(unsigned int      address,
+                              unsigned short    port,
+                              const string &    notification);
 
-        void NotifyJobStatus(unsigned int    address,
-                             unsigned short  port,
-                             const string &  job_key,
-                             TJobStatus      job_status,
-                             size_t          last_event_index);
+        string BuildJobChangedNotification(const CJob &         job,
+                                           const string &       job_key,
+                                           TJobStatus           job_status,
+                                           ENotificationReason  reason);
         void CheckTimeout(const CNSPreciseTime & current_time,
                           CNSClientsRegistry &   clients_registry,
                           ECommandGroup          cmd_group);
@@ -242,8 +245,7 @@ class CNSNotificationList
 
         CDatagramSocket     m_StatusNotificationSocket;
         CFastMutex          m_StatusNotificationSocketLock;
-        char                m_JobStateConstPart[k_MessageBufferSize];
-        size_t              m_JobStateConstPartLength;
+        string              m_JobChangeNotifConstPart;
 
         CQueueDataBase &    m_QueueDB;
 
