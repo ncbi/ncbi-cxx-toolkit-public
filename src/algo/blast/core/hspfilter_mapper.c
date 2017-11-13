@@ -294,11 +294,11 @@ typedef struct BlastHSPMapperData {
 /*************************************************************/
 /** The following are implementations for BlastHSPWriter ADT */
 
-/** Perform pre-run stage-specific initialization 
+/** Perform pre-run stage-specific initialization
  * @param data The internal data structure [in][out]
  * @param results The HSP results to operate on  [in]
- */ 
-static int 
+ */
+static int
 s_BlastHSPMapperPairedInit(void* data, void* results)
 {
    BlastHSPMapperData * spl_data = data;
@@ -735,7 +735,7 @@ static Int4 s_TrimHSP(BlastHSP* hsp, Int4 num, Boolean is_query,
         hsp->query.end -= delta_query;
         hsp->subject.end -= delta_subject;
     }
-    
+
     /* update HSP score */
     hsp->score = s_ComputeAlignmentScore(hsp, mismatch_score, gap_open_score,
                                          gap_extend_score);
@@ -776,7 +776,7 @@ static Int4 s_FindAdapterInSequence(Int4 hsp_from, Int4 hsp_to, Uint1* query,
     const Int4 kMaxErrors = 1; /* max number of mismaches allowed for matching
                                   the adapter sequence + 1*/
 
-    
+
     if (!query) {
         return -1;
     }
@@ -991,13 +991,13 @@ static Int2 s_SetAdapter(HSPChain** chains_ptr, Int4 adapter_pos,
             hsp = chain->hsps->hsp;
             hsp->map_info->left_edge |= MAPPER_ADAPTER;
             hsp->map_info->left_edge |= MAPPER_EXON;
- 
+
             /* trim HSP if necessary */
             if (pos_minus >= hsp->query.offset) {
                 Int4 old_score = hsp->score;
                 ASSERT(pos_minus - hsp->query.offset + 1 > 0);
                 s_TrimHSP(hsp, pos_minus - hsp->query.offset + 1,
-                          TRUE, TRUE, scores->penalty, scores->gap_open, 
+                          TRUE, TRUE, scores->penalty, scores->gap_open,
                           scores->gap_extend);
                 chain->score += hsp->score - old_score;
             }
@@ -1033,7 +1033,7 @@ static Int4 s_FindAdapters(HSPChain** saved,
         if (!saved[query_idx]) {
             continue;
         }
-        
+
         /* we search for adapters and  only in the plus strand of the query */
         query = query_blk->sequence +
             query_info->contexts[query_idx * NUM_STRANDS].query_offset;
@@ -1241,7 +1241,7 @@ static Int4 s_FindPolyATails(HSPChain** saved,
         if (!saved[query_idx] || saved[query_idx]->adapter >= 0) {
             continue;
         }
-        
+
         query_len = query_info->contexts[query_idx * NUM_STRANDS].query_length;
 
         /* find the best scoring chain */
@@ -1278,7 +1278,7 @@ static Int4 s_FindPolyATails(HSPChain** saved,
         if (from < 4 && to > query_len - 3) {
             continue;
         }
-        
+
         /* search for polyA tail on the positive strand */
         query = query_blk->sequence +
             query_info->contexts[query_idx * NUM_STRANDS].query_offset;
@@ -1364,7 +1364,7 @@ static BlastHSP* s_MergeHSPs(const BlastHSP* first, const BlastHSP* second,
     if (query_gap == subject_gap) {
         mismatches = query_gap;
     }
-    
+
     /* add mismatches to gap_info */
     if (mismatches > 0) {
         if (merged_hsp->gap_info->op_type[merged_hsp->gap_info->size - 1]
@@ -1601,7 +1601,7 @@ static int s_PruneChains(HSPChain** saved, Int4 num_queries, Int4 pair_bonus)
                 chain = chain->next;
             }
         }
-        
+
     }
 
     /* second pass: for each query remove chains scoring poorer than the best
@@ -1636,7 +1636,7 @@ static int s_PruneChains(HSPChain** saved, Int4 num_queries, Int4 pair_bonus)
 
                 best_pair_score = chain->score + chain->pair->score;
             }
-            
+
             /* collect chains in the array */
             if (num_chains >= array_size) {
                 array_size *= 2;
@@ -1827,7 +1827,7 @@ static int s_RemoveOverlaps(HSPChain* chain, const ScoringOptions* score_opts,
     prev = chain->hsps;
 
     for (; h; h = h->next) {
-        
+
         /* if HSPs overlap on the query */
         if (prev->hsp->query.end > h->hsp->query.offset) {
             /* do a flat copy of the chain */
@@ -1867,7 +1867,7 @@ static int s_RemoveOverlaps(HSPChain* chain, const ScoringOptions* score_opts,
 
 
 /* Removes chains with scores below the cutoff */
-static int s_FilterChains(HSPChain** chains_ptr, Int4 cutoff_score, 
+static int s_FilterChains(HSPChain** chains_ptr, Int4 cutoff_score,
                           Int4 cutoff_edit_distance)
 {
     HSPChain* chain = *chains_ptr;
@@ -1994,15 +1994,17 @@ static int s_Finalize(HSPChain** saved, BlastMappingResults* results,
 /** Perform post-run clean-ups
  * @param data The buffered data structure [in]
  * @param results The HSP results to propagate [in][out]
- */ 
-static int 
+ */
+static int
 s_BlastHSPMapperFinal(void* data, void* mapping_results)
 {
     BlastHSPMapperData* spl_data = data;
     BlastHSPMapperParams* params = spl_data->params;
     BlastMappingResults* results = (BlastMappingResults*)mapping_results;
 
-    if (spl_data->saved_chains) {
+    ASSERT(spl_data->saved_chains);
+
+    if (spl_data->saved_chains != NULL) {
         s_Finalize(spl_data->saved_chains, results, spl_data->query_info,
                    spl_data->query, &params->scoring_options, params->paired,
                    params->cutoff_score, params->cutoff_edit_dist);
@@ -2037,7 +2039,7 @@ static int s_HSPNodeArrayCopy(HSPNode* dest, HSPNode* source, Int4 num)
             dest[i].path_next = dest + (source[i].path_next - source);
         }
     }
-   
+
     return 0;
 }
 
@@ -2178,7 +2180,7 @@ s_FindSpliceJunctionsForOverlaps(BlastHSP* first, BlastHSP* second,
                 Uint1 edge = first->map_info->right_edge;
                 Int4 num_edits = first->map_info->edits->num_edits;
                 Int4 trim_by;
-                
+
                 if (edits[num_edits - 1].query_pos >= first->query.end - 1) {
                     if (edits[num_edits - 1].subject_base != kGap) {
                         edge >>= 2;
@@ -2416,7 +2418,7 @@ static Int4 s_ExtendAlignment(BlastHSP* hsp, const Uint1* query,
     JUMP jumper_deletion[] = {{1, 1, 2, 0},
                               {0, 1, 1, 0},
                               {1, 1, 0, 0}};
-                            
+
     if (!hsp || !query || !hsp->map_info ||
         !hsp->map_info->subject_overhangs) {
         return -1;
@@ -2468,7 +2470,7 @@ static Int4 s_ExtendAlignment(BlastHSP* hsp, const Uint1* query,
 
     case -1: jumper_table = jumper_deletion;
         break;
-    
+
     case 1: jumper_table = jumper_insertion;
         break;
 
@@ -2496,7 +2498,7 @@ static Int4 s_ExtendAlignment(BlastHSP* hsp, const Uint1* query,
 
     ASSERT(query_ext_len <= query_gap);
     ASSERT(subject_ext_len <= subject_gap);
-    
+
     /* Because this is a global alignment a gap may exist after the last query
        or subject base which causes jumper extension to stop prematurely. If
        this is the case, add the missing indel */
@@ -2549,7 +2551,7 @@ static Int4 s_ExtendAlignment(BlastHSP* hsp, const Uint1* query,
         s_ExtendAlignmentCleanup(subject, gap_align, NULL, edits);
         return -1;
     }
- 
+
     if (is_left) {
         hsp->map_info->edits = JumperEditsBlockCombine(&edits,
                                                    &hsp->map_info->edits);
@@ -2674,7 +2676,7 @@ s_FindSpliceJunctionsForGap(BlastHSP* first, BlastHSP* second,
             else {
                 return -1;
             }
-        
+
             if (seq != (signals[k] & 0xf0)) {
                 continue;
             }
@@ -2830,7 +2832,7 @@ s_FindSpliceJunctionsForGap(BlastHSP* first, BlastHSP* second,
     }
     else {
         first->map_info->right_edge &= ~MAPPER_SPLICE_SIGNAL;
-        second->map_info->left_edge &= ~MAPPER_SPLICE_SIGNAL;        
+        second->map_info->left_edge &= ~MAPPER_SPLICE_SIGNAL;
     }
 
     return 0;
@@ -2880,7 +2882,7 @@ static Int4 s_FindSpliceSignals(BlastHSP* hsp, Uint1* query, Int4 query_len)
         if (overhangs->left_len >= 2) {
             Uint1 signal = (overhangs->left[overhangs->left_len - 2] << 2) |
                 overhangs->left[overhangs->left_len - 1];
-            
+
             for (k = 0;k < NUM_SINGLE_SIGNALS;k++) {
                 if (signal == signals[k]) {
                     hsp->map_info->left_edge = signal;
@@ -2948,7 +2950,7 @@ static Int4 s_FindSpliceSignals(BlastHSP* hsp, Uint1* query, Int4 query_len)
                     break;
                 }
             }
-            
+
         }
 
         if (!found && overhangs->right_len >= 1) {
@@ -3073,7 +3075,7 @@ s_FindSpliceJunctions(HSPChain* chains,
                 else {
                     /* something went wrong with merging, use the initial
                        HSPs */
-                    h->next->next = following; 
+                    h->next->next = following;
                     h = h->next;
                 }
             }
@@ -3137,7 +3139,7 @@ s_FindSpliceJunctions(HSPChain* chains,
     }
 
     s_TestChains(chains);
-    
+
     return 0;
 }
 
@@ -3353,7 +3355,7 @@ static HSPChain* s_FindBestPath(HSPNode* nodes, Int4 num, HSPPath* path,
     }
 
     ASSERT(path->num_paths == 0 || s_TestChains(retval));
-    
+
     return retval;
 }
 
@@ -3371,12 +3373,12 @@ s_CompareHSPsByContextScore(const void* v1, const void* v2)
 
    if (!h1 && !h2)
       return 0;
-   else if (!h1) 
+   else if (!h1)
       return -1;
    else if (!h2)
       return 1;
 
-   if (h1->context < h2->context) 
+   if (h1->context < h2->context)
       return -1;
    if (h1->context > h2->context)
       return 1;
@@ -3402,13 +3404,13 @@ s_CompareHSPsByContextSubjectOffset(const void* v1, const void* v2)
 
    if (!h1 && !h2)
       return 0;
-   else if (!h1) 
+   else if (!h1)
       return 1;
    else if (!h2)
       return -1;
 
    /* If these are from different contexts, don't compare offsets */
-   if (h1->context < h2->context) 
+   if (h1->context < h2->context)
       return -1;
    if (h1->context > h2->context)
       return 1;
@@ -3423,7 +3425,7 @@ s_CompareHSPsByContextSubjectOffset(const void* v1, const void* v2)
    if (h1->query.offset > h2->query.offset)
       return 1;
 
-   /* tie breakers: sort by decreasing score, then 
+   /* tie breakers: sort by decreasing score, then
       by increasing size of query range, then by
       increasing subject range. */
 
@@ -3722,7 +3724,7 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
                     minus = second;
                 }
                 ASSERT(plus && minus);
-                
+
                 /* find start positions on the subject, for the minus strand we
                    are interested subject start position on the minus strand,
                    but the HSP has subject on plus and query on the minus
@@ -3833,7 +3835,7 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
 
         /* sort pair information by score, configuration distance */
         qsort(pair_info, num_pairs, sizeof(Pairinfo), s_ComparePairs);
-    
+
         /* iterate over pair information and collect pairs */
         for (i=0;i < num_pairs;i++) {
             HSPChain* f = pair_info[i].first;
@@ -3843,7 +3845,7 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
             if (pair_info[i].first->pair || pair_info[i].second->pair) {
                 continue;
             }
-            
+
             /* skip pairs with scores significantly smaller than the best one
                found */
             if (best_score - pair_info[i].score > margin) {
@@ -4042,7 +4044,7 @@ HSPChain* FindPartialyCoveredQueries(void* data, Int4 oid, Int4 word_size)
  * @param data To store results to [in][out]
  * @param hsp_list Pointer to the HSP list to save in the collector. [in]
  */
-static int 
+static int
 s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
 {
     BlastHSPMapperData* spl_data = data;
@@ -4116,7 +4118,7 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
         /* iterate over contexts that belong to a read pair */
         while (i < hsp_list->hspcnt &&
                hsp_array[i]->context < context_next_fragment) {
-       
+
             memset(nodes, 0, num_hsps * sizeof(HSPNode));
             num_hsps = 0;
             context = hsp_array[i]->context;
@@ -4223,7 +4225,7 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
                             cutoff_score_fun[1] * query_len) / 100;
         }
 
-        /* save all chains and remove ones with scores lower than 
+        /* save all chains and remove ones with scores lower than
            best score - kPairBonus */
         if (first) {
             HSPChainListInsert(&saved_chains[query_idx], &first, cutoff_score,
@@ -4251,26 +4253,26 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
         /* make temporary lists empty */
         chain_array[0] = chain_array[1] = NULL;
     }
-   
+
     /* delete HSPs that were not saved in results */
     hsp_list = Blast_HSPListFree(hsp_list);
 
     s_BlastHSPMapperSplicedRunCleanUp(path, nodes, pair_workspace);
 
-    return 0; 
+    return 0;
 }
 
 
-/** Free the writer 
+/** Free the writer
  * @param writer The writer to free [in]
  * @return NULL.
  */
 static
 BlastHSPWriter*
-s_BlastHSPMapperFree(BlastHSPWriter* writer) 
+s_BlastHSPMapperFree(BlastHSPWriter* writer)
 {
    BlastHSPMapperData *data = writer->data;
-   sfree(data->params); 
+   sfree(data->params);
    sfree(writer->data);
    sfree(writer);
    return NULL;
@@ -4282,7 +4284,7 @@ s_BlastHSPMapperFree(BlastHSPWriter* writer)
  * @return writer
  */
 static
-BlastHSPWriter* 
+BlastHSPWriter*
 s_BlastHSPMapperPairedNew(void* params, BlastQueryInfo* query_info,
                           BLAST_SequenceBlk* query)
 {
@@ -4305,7 +4307,7 @@ s_BlastHSPMapperPairedNew(void* params, BlastQueryInfo* query_info,
    data->params = params;
    data->query_info = query_info;
    data->query = query;
-    
+
    return writer;
 }
 
@@ -4352,7 +4354,7 @@ BlastHSPMapperParamsFree(BlastHSPMapperParams* opts)
 BlastHSPWriterInfo*
 BlastHSPMapperInfoNew(BlastHSPMapperParams* params) {
    BlastHSPWriterInfo * writer_info =
-                        malloc(sizeof(BlastHSPWriterInfo)); 
+                        malloc(sizeof(BlastHSPWriterInfo));
 
    writer_info->NewFnPtr = &s_BlastHSPMapperPairedNew;
 

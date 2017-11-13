@@ -111,6 +111,24 @@ struct SMatch
 };
 
 
+BOOST_AUTO_TEST_CASE(MappingNonMatch)
+{
+    ifstream istr("data/magicblast_nonmatch.asn");
+    BOOST_REQUIRE(istr);
+    istr >> MSerial_AsnText >> *m_Queries;
+
+    CRef<IQueryFactory> query_factory(new CObjMgrFree_QueryFactory(m_Queries));
+    CRef<CLocalDbAdapter> db_adapter(new CLocalDbAdapter(*m_Db));
+    m_OptHandle->SetMismatchPenalty(-8);
+    m_OptHandle->SetGapExtensionCost(8);
+    CMagicBlast magicblast(query_factory, db_adapter, m_OptHandle);
+    CRef<CMagicBlastResultSet> results = magicblast.RunEx();
+
+    const size_t kExpectedNumResults = 1;
+    BOOST_REQUIRE_EQUAL(results->size(), kExpectedNumResults);
+}
+
+
 BOOST_AUTO_TEST_CASE(MappingNoPairs)
 {
     ifstream istr("data/magicblast_queries.asn");

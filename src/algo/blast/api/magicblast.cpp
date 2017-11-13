@@ -457,7 +457,7 @@ CRef<CMagicBlastResultSet> CMagicBlast::x_BuildResultSet(
     _ASSERT(seqinfo_src);
 
     BlastQueryInfo* query_info = m_InternalData->m_QueryInfo;
-    _ASSERT(results->num_queries == (int)query_data->GetNumQueries());
+    //    _ASSERT(results->num_queries == (int)query_data->GetNumQueries());
 
     const TSeqLocInfoVector& query_masks = m_PrelimSearch->GetQueryMasks();
 
