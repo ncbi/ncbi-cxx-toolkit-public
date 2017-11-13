@@ -3,7 +3,7 @@
 
 /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    NOTE: NLMZIP is not MT-safe !!! 
+    NOTE: NLMZIP is have very bad MT-safety !!! 
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 */
@@ -102,7 +102,7 @@
 
 #include <corelib/ncbistd.hpp> 
 #include <ctools/ctransition/ncbistd.hpp>
-
+#include <util/compress/stream_util.hpp>
 
 /** @addtogroup CToolsBridge
 *
@@ -110,6 +110,7 @@
 */
 
 BEGIN_CTRANSITION_SCOPE
+USING_NCBI_SCOPE;
 
   
 /***********************************************************************/
@@ -143,18 +144,18 @@ typedef struct { /* stream processor descriptor */
 /***********************************************************************/
 Nlmzip_rc_t
 Nlmzip_Compress (   /* Compress input buffer and write to output */
-          VoidPtr,  /* pointer to source buffer (I) */
+          const void*,  /* pointer to source buffer (I) */
           Int4,     /* size of data in source buffer (I) */
-          VoidPtr,  /* destination buffer (O) */
+          void*,    /* destination buffer (O) */
           Int4,     /* maximum size of destination buffer (I) */
           Int4Ptr   /* size of data that was written to destination (O) */
      );             /* Return 0, if no error found */
 
 Nlmzip_rc_t
 Nlmzip_Uncompress ( /* Uncompress input buffer and write to output */
-          VoidPtr,  /* pointer to source buffer (I) */
+          const void*,  /* pointer to source buffer (I) */
           Int4,     /* size of data in source buffer (I) */
-          VoidPtr,  /* destination buffer (O) */
+          void*,    /* destination buffer (O) */
           Int4,     /* maximum size of destination buffer (I) */
           Int4Ptr   /* size of data that was written to destination (O) */
      );             /* Return 0, if no error found */
@@ -165,7 +166,7 @@ Nlmzip_UncompressedSize ( /* Return uncompressed block size */
           Int4            /* Input data size (I) */
      );
 
-CharPtr
+const char*
 Nlmzip_ErrMsg ( /* Get error message for error code */
           Int4          /* Error code */
         );
@@ -192,11 +193,93 @@ fci_t LIBCALL cacher_open(fci_t stream, int max_cache_size,int read);
 fci_t LIBCALL compressor_open(fci_t stream, int max_buffer_size, int read);
 
 
-#if 0
-/* merger for fci_t to AsnIO interface */
-AsnIoPtr LIBCALL asnio2fci_open(int read, fci_t stream);
-Int4     LIBCALL asnio2fci_close(AsnIoPtr aip,Int4 commit);
-#endif
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Wrapper functions that works with old Nlmzip and new methods from 
+// C++ Compression API
+//
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// We use our own format to store compressed data:
+//
+//     -----------------------------------------------------------
+//     | magic (2) | method (1) | reserved (1) | compressed data |
+//     -----------------------------------------------------------
+//
+//     magic    - magic signature ('2f,9a'), different from zlib`s '1f,8b';
+//     method   - used compression method;
+//     reserved - some bytes, just in case for possible future changes;
+//
+//
+//////////////////////////////////////////////////////////////////////////////
+
+
+/// Compress data in the buffer.
+///
+/// Use specified method to.compress data.
+///
+/// @param src_buf
+///   Source buffer.
+/// @param src_len
+///   Size of data in source  buffer.
+/// @param dst_buf
+///   Destination buffer.
+/// @param dst_size
+///   Size of destination buffer.
+///   In some cases, small source data or bad compressed data for example,
+///   it should be a little more then size of the source buffer.
+/// @param dst_len
+///   Size of compressed data in destination buffer.
+/// @param method
+///   Compression method, zip/deflate by default.
+/// @sa
+///   CT_DecompressBuffer, CCompression
+/// @return
+///   Return TRUE if operation was successfully or FALSE otherwise.
+///   On success, 'dst_buf' contains compressed data of 'dst_len' size.
+
+bool CT_CompressBuffer(
+    const void* src_buf, size_t  src_len,
+    void*       dst_buf, size_t  dst_size,
+    /* out */            size_t* dst_len,
+    CCompressStream::EMethod method = CCompressStream::eZip,
+    CCompression::ELevel level = CCompression::eLevel_Default
+);
+
+
+/// Decompress data in the buffer.
+///
+/// Automatically detects format of data, written by CT_CompressBuffer.
+/// If it cannot recognize format, assumes that this is an NlMZIP.
+///
+/// @note
+///   The decompressor stops and returns TRUE, if it find logical
+///   end in the compressed data, even not all compressed data was processed.
+/// @param src_buf
+///   Source buffer.
+/// @param src_len
+///   Size of data in source  buffer.
+/// @param dst_buf
+///   Destination buffer.
+///   It must be large enough to hold all of the uncompressed data for the operation to complete.
+/// @param dst_size
+///   Size of destination buffer.
+/// @param dst_len
+///   Size of decompressed data in destination buffer.
+/// @sa
+///   CT_CompressBuffer, CCompression
+/// @return
+///   Return TRUE if operation was successfully or FALSE otherwise.
+///   On success, 'dst_buf' contains decompressed data of dst_len size.
+
+bool CT_DecompressBuffer(
+    const void* src_buf, size_t  src_len,
+    void*       dst_buf, size_t  dst_size,
+    /* out */            size_t* dst_len
+);
+
 
 
 END_CTRANSITION_SCOPE
