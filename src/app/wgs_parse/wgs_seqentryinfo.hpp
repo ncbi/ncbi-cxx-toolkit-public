@@ -94,6 +94,8 @@ struct CSeqEntryInfo
     bool m_bad_mol;
     bool m_secondary_accessions;
     bool m_hist_secondary_differs;
+    bool m_update_date_present;
+    bool m_creation_date_present;
 
     size_t m_num_of_prot_seq;
     size_t m_num_of_nuc_seq;
@@ -125,6 +127,8 @@ struct CSeqEntryInfo
         m_bad_mol(false),
         m_secondary_accessions(false),
         m_hist_secondary_differs(false),
+        m_update_date_present(false),
+        m_creation_date_present(false),
         m_num_of_prot_seq(0),
         m_num_of_nuc_seq(0),
         m_chromosome_subtype_status(eChromosomeSubtypeValid),
@@ -178,6 +182,13 @@ struct COrgRefInfo
         m_org_ref_after_lookup;
 };
 
+enum EDateIssues
+{
+    eDateNoIssues,
+    eDateDiff,
+    eDateMissing
+};
+
 struct CMasterInfo
 {
     size_t m_num_of_pubs;
@@ -202,9 +213,17 @@ struct CMasterInfo
     CRef<CUser_object> m_dblink;
     int m_dblink_state;
 
+    CDate m_update_date;
+    CDate m_creation_date;
+    bool m_update_date_present;
+    EDateIssues m_update_date_issues;
+    bool m_creation_date_present;
+    EDateIssues m_creation_date_issues;
+
     CRef<CSeq_entry> m_master_bioseq;
 
     int m_num_of_entries;
+    int m_accession_ver;
 
     CMasterInfo() :
         m_num_of_pubs(0),
@@ -216,7 +235,12 @@ struct CMasterInfo
         m_same_org(false),
         m_reject(false),
         m_dblink_state(eDblinkNoProblem),
-        m_num_of_entries(0)
+        m_update_date_present(false),
+        m_update_date_issues(eDateNoIssues),
+        m_creation_date_present(false),
+        m_creation_date_issues(eDateNoIssues),
+        m_num_of_entries(0),
+        m_accession_ver(-1)
     {}
 
     void SetDblinkEmpty(const string& file, const string& id)

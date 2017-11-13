@@ -169,4 +169,94 @@ bool HasLineage(const string& lineage_str, const string& lineage)
     return NStr::FindCase(lineage_str, lineage) != NPOS;
 }
 
+
+static CRef<CSeq_submit> GetSeqSubmitFromSeqSubmit(CNcbiIfstream& in)
+{
+    CRef<CSeq_submit> ret(new CSeq_submit);
+    in >> MSerial_AsnText >> *ret;
+
+    return ret;
+}
+
+static CRef<CSeq_submit> GetSeqSubmitFromSeqEntry(CNcbiIfstream& in)
+{
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    in >> MSerial_AsnText >> *entry;
+
+    if (entry->IsSet() && !entry->GetSet().IsSetClass()) {
+        entry->SetSet().SetClass(CBioseq_set::eClass_genbank);
+    }
+
+    CRef<CSeq_submit> ret(new CSeq_submit);
+    ret->SetData().SetEntrys().push_back(entry);
+
+    return ret;
+}
+
+static CRef<CSeq_submit> GetSeqSubmitFromBioseqSet(CNcbiIfstream& in)
+{
+    CRef<CBioseq_set> bioseq_set(new CBioseq_set);
+    in >> MSerial_AsnText >> *bioseq_set;
+
+    CRef<CSeq_submit> ret(new CSeq_submit);
+    if (!bioseq_set->IsSetAnnot() && !bioseq_set->IsSetDescr()) {
+
+        CSeq_submit::C_Data::TEntrys& entries = ret->SetData().SetEntrys();
+        entries.splice(entries.end(), bioseq_set->SetSeq_set());
+    }
+    else {
+
+        CRef<CSeq_entry> entry(new CSeq_entry);
+        entry->SetSet(*bioseq_set);
+        ret->SetData().SetEntrys().push_back(entry);
+    }
+
+    return ret;
+}
+
+CRef<CSeq_submit> GetSeqSubmit(CNcbiIfstream& in, EInputType type)
+{
+    static const map<EInputType, CRef<CSeq_submit>(*)(CNcbiIfstream&)> SEQSUBMIT_LOADERS = {
+        { eSeqSubmit, GetSeqSubmitFromSeqSubmit },
+        { eSeqEntry, GetSeqSubmitFromSeqEntry },
+        { eBioseqSet, GetSeqSubmitFromBioseqSet }
+    };
+
+    CRef<CSeq_submit> ret;
+
+    try {
+        ret = SEQSUBMIT_LOADERS.at(type)(in);
+    }
+    catch (CException&) {
+        ret.Reset();
+    }
+
+    return ret;
+}
+
+string GetSeqSubmitTypeName(EInputType type)
+{
+    static const map<EInputType, string> SEQSUBMIT_TYPE_STR = {
+        { eSeqSubmit, "Seq-submit" },
+        { eSeqEntry, "Seq-entry" },
+        { eBioseqSet, "Bioseq-set" }
+    };
+
+    return SEQSUBMIT_TYPE_STR.at(type);
+}
+
+string GetIdStr(const CObject_id& obj_id)
+{
+    string ret;
+    if (obj_id.IsStr()) {
+        ret = obj_id.GetStr();
+    }
+    else if (obj_id.IsId()) {
+        Int8 id = obj_id.GetId8();
+        ret = NStr::Int8ToString(id);
+    }
+
+    return ret;
+}
+
 }

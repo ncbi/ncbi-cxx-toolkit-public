@@ -37,6 +37,8 @@
 
 #include <corelib/ncbistre.hpp>
 #include <objmgr/object_manager.hpp>
+#include <objects/submit/Seq_submit.hpp>
+#include <objects/general/Object_id.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -67,6 +69,9 @@ bool GetAnnot(const CSeq_entry& entry, const CBioseq::TAnnot* &annot);
 
 bool HasLineage(const string& lineage_str, const string& lineage);
 
+CRef<CSeq_submit> GetSeqSubmit(CNcbiIfstream& in, EInputType type);
+string GetSeqSubmitTypeName(EInputType type);
+string GetIdStr(const CObject_id& obj_id);
 
 CScope& GetScope();
 

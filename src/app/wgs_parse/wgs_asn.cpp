@@ -36,21 +36,20 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
-#include <objmgr/bioseq_ci.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/general/User_object.hpp>
-#include <objects/general/Object_id.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqblock/EMBL_block.hpp>
 #include <objects/seq/Seq_hist.hpp>
 #include <objects/seq/Seq_hist_rec.hpp>
+#include <objects/seq/Seq_inst.hpp>
+
 
 #include "wgs_asn.hpp"
 #include "wgs_utils.hpp"
 #include "wgs_params.hpp"
-#include "wgs_seqentryinfo.hpp"
 
 
 namespace wgsparse
@@ -99,20 +98,6 @@ static void RemoveSomeIds(CBioseq::TId& ids)
             ++id;
         }
     }
-}
-
-static string GetIdStr(const CObject_id& obj_id)
-{
-    string ret;
-    if (obj_id.IsStr()) {
-        ret = obj_id.GetStr();
-    }
-    else if (obj_id.IsId()) {
-        Int8 id = obj_id.GetId8();
-        ret = NStr::Int8ToString(id);
-    }
-
-    return ret;
 }
 
 static void CheckGeneralLocalIds(CBioseq::TId& ids)
@@ -1114,6 +1099,66 @@ bool CheckSeqEntry(const CSeq_entry& entry, const string& file, CSeqEntryInfo& i
                       filename);
             ret = FALSE;
         }*/
+    }
+
+    return ret;
+}
+
+static bool GetDate(const CSeq_descr::Tdata& descrs, CSeqdesc::E_Choice choice, CDate& date)
+{
+    auto descr_date = find_if(descrs.begin(), descrs.end(), [choice](const CRef<CSeqdesc>& desc){ return desc->Which() == choice; });
+    if (descr_date != descrs.end()) {
+        const CDate& date_found = choice == CSeqdesc::e_Create_date ? (*descr_date)->GetCreate_date() : (*descr_date)->GetUpdate_date();
+        date.Assign(date_found);
+    }
+    return descr_date != descrs.end();
+}
+
+static bool LookForDate(const CSeq_entry& entry, CSeqdesc::E_Choice choice, CDate& date)
+{
+    if (entry.IsSeq()) {
+
+        if (entry.GetSeq().IsSetDescr() && entry.GetSeq().GetDescr().IsSet()) {
+            if (GetDate(entry.GetSeq().GetDescr().Get(), choice, date)) {
+                return true;
+            }
+        }
+    }
+    else if (entry.IsSet()) {
+
+        if (entry.GetSet().IsSetDescr() && entry.GetSet().GetDescr().IsSet()) {
+            if (GetDate(entry.GetSet().GetDescr().Get(), choice, date)) {
+                return true;
+            }
+        }
+
+        if (entry.GetSet().IsSetSeq_set()) {
+            for (auto& cur_entry : entry.GetSet().GetSeq_set()) {
+                if (LookForDate(*cur_entry, choice, date)) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+EDateIssues CheckDates(const CSeq_entry& entry, CSeqdesc::E_Choice choice, CDate& date)
+{
+    EDateIssues ret = eDateMissing;
+
+    CDate cur_date;
+    if (LookForDate(entry, choice, cur_date)) {
+        ret = eDateNoIssues;
+
+        if (date.Which() == CDate::e_not_set) {
+            date.Assign(cur_date);
+        }
+        else if (date.Compare(cur_date) != CDate::eCompare_same) {
+            date.Reset();
+            ret = eDateDiff;
+        }
     }
 
     return ret;

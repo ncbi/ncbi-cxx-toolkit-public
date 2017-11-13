@@ -35,17 +35,17 @@
 
 #include <objects/submit/Seq_submit.hpp>
 
+#include "wgs_seqentryinfo.hpp"
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 namespace wgsparse
 {
 
-struct CSeqEntryInfo;
-struct CSeqEntryCommonInfo;
-
 bool FixSeqSubmit(CRef<CSeq_submit>& seq_submit, int& accession_ver, bool first);
 bool CheckSeqEntry(const CSeq_entry& entry, const string& file, CSeqEntryInfo& info, CSeqEntryCommonInfo& common_info);
+EDateIssues CheckDates(const CSeq_entry& entry, CSeqdesc::E_Choice choice, CDate& date);
 
 }
 

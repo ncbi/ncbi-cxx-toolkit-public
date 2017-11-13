@@ -83,7 +83,8 @@ enum ESortOrder
     eUnsorted,
     eSeqLenDesc,
     eSeqLenAsc,
-    eById
+    eById,
+    eByAccession
 };
 
 

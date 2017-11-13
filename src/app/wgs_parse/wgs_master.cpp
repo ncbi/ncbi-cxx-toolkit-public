@@ -35,7 +35,6 @@
 #include <map>
 #include <functional>
 
-#include <objects/submit/Seq_submit.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/submit/Submit_block.hpp>
 #include <objects/submit/Contact_info.hpp>
@@ -64,70 +63,6 @@
 
 namespace wgsparse
 {
-
-static CRef<CSeq_submit> GetSeqSubmitFromSeqSubmit(CNcbiIfstream& in)
-{
-    CRef<CSeq_submit> ret(new CSeq_submit);
-    in >> MSerial_AsnText >> *ret;
-
-    return ret;
-}
-
-static CRef<CSeq_submit> GetSeqSubmitFromSeqEntry(CNcbiIfstream& in)
-{
-    CRef<CSeq_entry> entry(new CSeq_entry);
-    in >> MSerial_AsnText >> *entry;
-
-    if (entry->IsSet() && !entry->GetSet().IsSetClass()) {
-        entry->SetSet().SetClass(CBioseq_set::eClass_genbank);
-    }
-
-    CRef<CSeq_submit> ret(new CSeq_submit);
-    ret->SetData().SetEntrys().push_back(entry);
-
-    return ret;
-}
-
-static CRef<CSeq_submit> GetSeqSubmitFromBioseqSet(CNcbiIfstream& in)
-{
-    CRef<CBioseq_set> bioseq_set(new CBioseq_set);
-    in >> MSerial_AsnText >> *bioseq_set;
-
-    CRef<CSeq_submit> ret(new CSeq_submit);
-    if (!bioseq_set->IsSetAnnot() && !bioseq_set->IsSetDescr()) {
-
-        CSeq_submit::C_Data::TEntrys& entries = ret->SetData().SetEntrys();
-        entries.splice(entries.end(), bioseq_set->SetSeq_set());
-    }
-    else {
-
-        CRef<CSeq_entry> entry(new CSeq_entry);
-        entry->SetSet(*bioseq_set);
-        ret->SetData().SetEntrys().push_back(entry);
-    }
-
-    return ret;
-}
-
-static CRef<CSeq_submit> GetSeqSubmit(CNcbiIfstream& in, EInputType type)
-{
-    static const map<EInputType, CRef<CSeq_submit>(*)(CNcbiIfstream&)> SEQSUBMIT_LOADERS = {
-        { eSeqSubmit, GetSeqSubmitFromSeqSubmit },
-        { eSeqEntry, GetSeqSubmitFromSeqEntry },
-        { eBioseqSet, GetSeqSubmitFromBioseqSet }
-    };
-
-    CRef<CSeq_submit> ret;
-
-    try {
-        ret = SEQSUBMIT_LOADERS.at(type)(in);
-    }
-    catch (CException&) {
-        ret.Reset();
-    }
-
-    return ret;
-}
 
 static size_t CheckPubs(const CSeq_entry& entry, const string& file, list<CPubDescriptionInfo>& common_pubs)
 {
@@ -739,6 +674,25 @@ static void CreateUserObject(const CMasterInfo& info, CBioseq& bioseq)
     bioseq.SetDescr().Set().push_back(descr);
 }
 
+static bool CreateDateDescr(CBioseq& bioseq, const CDate& date, EDateIssues issue, bool is_update_date)
+{
+    if (date.Which() == CDate::e_not_set || issue != eDateNoIssues)
+        return false;
+
+    CRef<CSeqdesc> descr(new CSeqdesc);
+
+    if (is_update_date) {
+        descr->SetUpdate_date().Assign(date);
+    }
+    else {
+        descr->SetCreate_date().Assign(date);
+    }
+
+    bioseq.SetDescr().Set().push_back(descr);
+
+    return true;
+}
+
 static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& cit_sub, CRef<CContact_info>& contact_info)
 {
     CRef<CBioseq> bioseq(new CBioseq);
@@ -780,7 +734,10 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
         }
     }
 
-    // TODO dates
+    if (GetParams().GetSource() != eNCBI) {
+        info.m_update_date_present = CreateDateDescr(*bioseq, info.m_update_date, info.m_update_date_issues, true);
+        info.m_creation_date_present = CreateDateDescr(*bioseq, info.m_creation_date, info.m_creation_date_issues, false);
+    }
 
     if (info.m_num_of_entries) {
         CreateUserObject(info, *bioseq);
@@ -810,6 +767,54 @@ static bool IsDupIds(const list<string>& ids)
 static bool NeedToGetAccessionPrefix() {
 
     return GetParams().IsUpdateScaffoldsMode() && GetParams().IsAccessionAssigned() && GetParams().GetScaffoldPrefix().empty();
+}
+
+static void ReportDateProblem(EDateIssues issue, string date_type, bool is_error)
+{
+    if (issue == eDateMissing) {
+        ERR_POST_EX(0, 0, (is_error ? Error : Info) <<
+                    date_type << " date is missing from one or more input submissions.Will not propagate " <<
+                    date_type << " date to the master record.");
+    }
+    else if (issue == eDateDiff) {
+        ERR_POST_EX(0, 0, (is_error ? Error : Info) <<
+                    "Different " << date_type << " dates encountered amongst input submissions.Will not propagate " <<
+                    date_type << " date to the master record.");
+    }
+}
+
+static bool IsDateFound(const CSeq_descr::Tdata& descrs, CSeqdesc::E_Choice choice)
+{
+    auto date = find_if(descrs.begin(), descrs.end(), [choice](const CRef<CSeqdesc>& desc){ return desc->Which() == choice; });
+    return date != descrs.end();
+}
+
+static bool IsDatePresent(const CSeq_entry& entry, CSeqdesc::E_Choice choice)
+{
+    if (entry.IsSeq()) {
+
+        if (entry.GetSeq().IsSetDescr() && entry.GetSeq().GetDescr().IsSet()) {
+            return IsDateFound(entry.GetSeq().GetDescr().Get(), choice);
+        }
+    }
+    else if (entry.IsSet()) {
+
+        if (entry.GetSet().IsSetDescr() && entry.GetSet().GetDescr().IsSet()) {
+            if (IsDateFound(entry.GetSet().GetDescr().Get(), choice)) {
+                return true;
+            }
+        }
+
+        if (entry.GetSet().IsSetSeq_set()) {
+            for (auto& cur_entry : entry.GetSet().GetSeq_set()) {
+                if (IsDatePresent(*cur_entry, choice)) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
 }
 
 bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
@@ -842,13 +847,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
             if (seq_submit.Empty()) {
 
                 if (first) {
-                    static const map<EInputType, string> SEQSUBMIT_TYPE_STR = {
-                        { eSeqSubmit, "Seq-submit" },
-                        { eSeqEntry, "Seq-entry" },
-                        { eBioseqSet, "Bioseq-set" }
-                    };
-
-                    ERR_POST_EX(0, 0, "Failed to read " << SEQSUBMIT_TYPE_STR.at(input_type) << " from file \"" << file << "\". Cannot proceed.");
+                    ERR_POST_EX(0, 0, "Failed to read " << GetSeqSubmitTypeName(input_type) << " from file \"" << file << "\". Cannot proceed.");
                     ret = false;
                 }
                 break;
@@ -856,14 +855,13 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 
             first = false;
 
-            int accession_ver = -1;
-            if (!FixSeqSubmit(seq_submit, accession_ver, true)) {
+            if (!FixSeqSubmit(seq_submit, master_info.m_accession_ver, true)) {
                 ERR_POST_EX(0, 0, "Wrapper GenBank set has non-empty annotation (Seq-annot), which is not allowed. Cannot process this submission \"" << file << "\".");
                 ret = false;
                 break;
             }
 
-            if (GetParams().GetUpdateMode() == eUpdateAssembly && accession_ver > 0 && GetParams().IsAccessionAssigned()) {
+            if (GetParams().GetUpdateMode() == eUpdateAssembly && master_info.m_accession_ver > 0 && GetParams().IsAccessionAssigned()) {
                 // TODO
             }
 
@@ -926,6 +924,15 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                         // TODO: should eventually call SetScaffoldPrefix
                     }
 
+                    if (GetParams().GetSource() == eNCBI) {
+                        if (!master_info.m_update_date_present) {
+                            master_info.m_update_date_present = IsDatePresent(*entry, CSeqdesc::e_Update_date);
+                        }
+                        if (!master_info.m_creation_date_present) {
+                            master_info.m_creation_date_present = IsDatePresent(*entry, CSeqdesc::e_Create_date);
+                        }
+                    }
+
                     CSeqEntryInfo info;
                     if (!CheckSeqEntry(*entry, file, info, common_info)) {
                         master_info.m_reject = true;
@@ -976,42 +983,17 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 
                     CollectOrgRefs(*entry, master_info.m_org_refs);
 
-                    /*if (widp->source != FROM_NCBI) {
-                        SeqEntryExplore(sep, widp->dates, WGSCollectCommonDates);
-                        if (widp->dates->choice != 100) {
-                            if (widp->dates->choice == 0) {
-                                ErrPostEx(SEV_ERROR, ERR_SUBMISSION_UpdateDateMissing,
-                                          "Update date is missing from one or more input submissions. Will not propagate update date to the master record.");
-                                widp->dates->choice = 100;
-                            }
-                            else if (widp->dates->data.ptrvalue == NULL) {
-                                ErrPostEx(SEV_ERROR, ERR_SUBMISSION_UpdateDatesDiffer,
-                                          "Different update dates encountered amongst input submissions. Will not propagate update date to the master record.");
-                                widp->dates->choice = 100;
-                            }
-                            else
-                                widp->dates->choice = 0;
+                    if (GetParams().GetSource() != eNCBI) {
+                        if (master_info.m_update_date_issues == eDateNoIssues) {
+                            master_info.m_update_date_issues = CheckDates(*entry, CSeqdesc::e_Update_date, master_info.m_update_date);
+                            ReportDateProblem(master_info.m_update_date_issues, "Update", true);
                         }
 
-                        if (widp->dates->next->choice != 100) {
-                            if (widp->dates->next->choice == 0) {
-                                if (widp->source == FROM_DDBJ)
-                                    sev = SEV_INFO;
-                                else
-                                    sev = SEV_ERROR;
-                                ErrPostEx(sev, ERR_SUBMISSION_CreateDateMissing,
-                                          "Create date is missing from one or more input submissions. Will not propagate create date to the master record.");
-                                widp->dates->next->choice = 100;
-                            }
-                            else if (widp->dates->next->data.ptrvalue == NULL) {
-                                ErrPostEx(SEV_ERROR, ERR_SUBMISSION_CreateDatesDiffer,
-                                          "Different create dates encountered amongst input submissions. Will not propagate create date to the master record.");
-                                widp->dates->next->choice = 100;
-                            }
-                            else
-                                widp->dates->next->choice = 0;
+                        if (master_info.m_creation_date_issues == eDateNoIssues) {
+                            master_info.m_creation_date_issues = CheckDates(*entry, CSeqdesc::e_Create_date, master_info.m_creation_date);
+                            ReportDateProblem(master_info.m_creation_date_issues, "Create", GetParams().GetSource() != eEMBL);
                         }
-                    }*/
+                    }
 
                     ++master_info.m_num_of_entries;
 
