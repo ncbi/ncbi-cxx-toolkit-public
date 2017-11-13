@@ -285,7 +285,7 @@ namespace
 
         const char* s = str.data() + start;
 
-        size_t nested_brackets = CTempString::npos;;
+        int nested_brackets = -1;
         while (i < str.size())
         {
             switch (*s)
@@ -298,6 +298,8 @@ namespace
                 }
                 break;
             case '=':
+                if (nested_brackets < 0)
+                    return false;
                 if (eq_pos == CTempString::npos)
                     eq_pos = i;
                 break;
@@ -309,6 +311,9 @@ namespace
                         eq_pos = i;
                     return true;
                 }
+                else
+                if (nested_brackets < 0)
+                    return false;
                 else
                 {
                     nested_brackets--;
