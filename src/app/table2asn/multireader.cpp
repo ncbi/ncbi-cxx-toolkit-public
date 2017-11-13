@@ -120,8 +120,9 @@ namespace
         return CRef<CSeq_id>();
     }
 
-	void x_ModifySeqIds(CSerialObject& obj, CConstRef<CSeq_id> match, const CSeq_id& new_id)
+	void x_ModifySeqIds(CSerialObject& obj, CConstRef<CSeq_id> match, CRef<CSeq_id> new_id)
 	{
+#if 0
 		CTypeIterator<CSeq_id> visitor(obj);
 
 		while (visitor)
@@ -129,10 +130,25 @@ namespace
 			CSeq_id& id = *visitor;
 			if (match.Empty() || id.Compare(*match) == CSeq_id::e_YES)
 			{
-				id.Assign(new_id);
+				id.Assign(*new_id);
 			}
 			++visitor;
 		}
+#else
+        CTypeIterator<CSeq_loc> visitor(obj);
+
+        CSeq_id& id = *new_id;
+        while (visitor)
+        {
+            CSeq_loc& loc = *visitor;
+            
+            if (match.Empty() || loc.GetId()->Compare(*match) == CSeq_id::e_YES)
+            {
+                loc.SetId(id);
+            }
+            ++visitor;
+        }
+#endif
 	}
 
 }
@@ -994,14 +1010,14 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
                 // update ids
                 CBioseq_EditHandle edit_handle = bioseq_h.GetEditHandle();
                 CBioseq& bioseq = (CBioseq&)*edit_handle.GetBioseqCore();
-                CConstRef<CSeq_id> matching_id = GetIdByKind(*annot_id, bioseq.GetId());
+                CRef<CSeq_id> matching_id = GetIdByKind(*annot_id, bioseq.GetId());
 
                 if (matching_id.Empty())
                     matching_id = ids.front();
 
                 if (matching_id)
                 {
-                    x_ModifySeqIds(*annot_it, annot_id, *matching_id);
+                    x_ModifySeqIds(*annot_it, annot_id, matching_id);                    
                 }
 
                 CRef<CSeq_annot> existing;
