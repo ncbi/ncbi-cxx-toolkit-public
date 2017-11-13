@@ -133,7 +133,17 @@ public:
         eGNOMAD = 27,
         eGO_ESP = 28,
         eTOPMED = 29,
-        eTWINSUK = 30
+        eTWINSUK = 30,
+
+        /// Stop bits
+        eHasStopLossAllele = 31,
+        eHasStopLossOrGainAllele = 32,
+
+        /// In-frame bits
+        eInframeDeletion = 33,
+        eInframeInsertion = 34,
+        eInframeIndel = 35,
+        eInframeAny = 36
     };
 
     /// Initialize the bitset with a 64-bit integer.
