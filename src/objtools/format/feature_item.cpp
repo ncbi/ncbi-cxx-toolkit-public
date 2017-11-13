@@ -1893,7 +1893,7 @@ void CFeatureItem::x_AddQualsRna(
     switch ( rna_type ) {
     case CRNA_ref::eType_tRNA:
     {
-        if ( !pseudo  &&  ( cfg.ShowTranscript() || cfg.IsFormatGBSeq() ) ) {
+        if ( !pseudo  &&  ( cfg.ShowTranscript() || cfg.IsFormatGBSeq() || cfg.IsFormatINSDSeq() ) ) {
             CSeqVector vec(feat.GetLocation(), scope);
             vec.SetCoding(CBioseq_Handle::eCoding_Iupac);
             string transcription;
@@ -1966,7 +1966,7 @@ void CFeatureItem::x_AddQualsRna(
     }
     case CRNA_ref::eType_mRNA:
     {
-        if ( !pseudo  &&  ( cfg.ShowTranscript() || cfg.IsFormatGBSeq() ) ) {
+        if ( !pseudo  &&  ( cfg.ShowTranscript() || cfg.IsFormatGBSeq() || cfg.IsFormatINSDSeq() ) ) {
             CSeqVector vec(feat.GetLocation(), scope);
             vec.SetCoding(CBioseq_Handle::eCoding_Iupac);
             string transcription;
@@ -2111,7 +2111,7 @@ void CFeatureItem::x_AddQualTranslationTable(
     if ( gcode == 1 || gcode == 255 ) {
         return;
     }
-    if ( ctx.Config().IsFormatGBSeq() || gcode > 1 ) {
+    if ( ctx.Config().IsFormatGBSeq() || ctx.Config().IsFormatINSDSeq() || gcode > 1 ) {
         x_AddQual(eFQ_transl_table, new CFlatIntQVal(gcode));
     }
 }
@@ -3232,7 +3232,7 @@ void CFeatureItem::x_AddQualsProt(
     } else { // protein feature on subpeptide bioseq
         x_AddQual(eFQ_derived_from, new CFlatSeqLocQVal(m_Feat.GetLocation()));
     }
-    if ( !pseudo  &&  ( ctx.Config().ShowPeptides() || ctx.Config().IsFormatGBSeq() ) ) {
+    if ( !pseudo  &&  ( ctx.Config().ShowPeptides() || ctx.Config().IsFormatGBSeq() || ctx.Config().IsFormatINSDSeq() ) ) {
         if ( processed == CProt_ref::eProcessed_mature          ||
              processed == CProt_ref::eProcessed_signal_peptide  ||
              processed == CProt_ref::eProcessed_transit_peptide  ||
@@ -3250,7 +3250,7 @@ void CFeatureItem::x_AddQualsProt(
     ///
     /// report molecular weights
     ///
-    if (ctx.IsProt() && ( ctx.IsRefSeq() || ctx.Config().IsFormatGBSeq() ) && ! IsMappedFromProt() && 
+    if (ctx.IsProt() && ( ctx.IsRefSeq() || ctx.Config().IsFormatGBSeq() || ctx.Config().IsFormatINSDSeq() ) && ! IsMappedFromProt() && 
         ! ( m_Feat.IsSetPartial() && m_Feat.GetPartial() ) && 
         ! ( m_Feat.GetLocation().IsPartialStart(eExtreme_Biological) || 
             m_Feat.GetLocation().IsPartialStop(eExtreme_Biological)) && 

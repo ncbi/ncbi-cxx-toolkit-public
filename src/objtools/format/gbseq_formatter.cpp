@@ -100,12 +100,7 @@ static void s_GBSeqQualCleanup(string& val)
 // Public
 
 
-// constructors
-CGBSeqFormatter::CGBSeqFormatter(void)
-    : m_IsInsd(false)
-{
-}
-
+// constructor
 CGBSeqFormatter::CGBSeqFormatter(bool isInsd)
     : m_IsInsd(isInsd)
 {
@@ -691,11 +686,10 @@ void CGBSeqFormatter::x_StrOStreamToTextOStream(IFlatTextOStream& text_os)
     NStr::Split((string)CNcbiOstrstreamToString(m_StrStream), "\n", l, NStr::fSplit_Tokenize);
     // convert GBseq to INSDSeq
     if ( m_IsInsd ) {
-        EDIT_EACH_STRING_IN_LIST(itr, l) {
-            string& str = *itr;
+        for (string& str : l) {
             string one = NStr::Replace(str, "<GB", "<INSD");
             string two = NStr::Replace(one, "</GB", "</INSD");
-            *itr = two;
+            str = two;
         }
     }
     // add text to TextOStream

@@ -60,8 +60,7 @@ class CGenomeProjectItem;
 class NCBI_FORMAT_EXPORT CGBSeqFormatter : public CFlatItemFormatter
 {
 public:
-    CGBSeqFormatter(void);
-    CGBSeqFormatter(bool isInsd);
+    CGBSeqFormatter(bool isInsd=false);
     ~CGBSeqFormatter(void);
 
     virtual void Start       (IFlatTextOStream&);

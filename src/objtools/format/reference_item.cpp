@@ -1512,7 +1512,7 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
     }
 
     // for GBSeq format collect remarks only from comments.
-    if ( ctx.Config().IsFormatGBSeq() ) {
+    if ( ctx.Config().IsFormatGBSeq() || ctx.Config().IsFormatINSDSeq() ) {
         if ( !l.empty() ) {
             m_Remark = l.front();
         }

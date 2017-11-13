@@ -1396,7 +1396,7 @@ static void s_FormatJournal
     jour << title;
 
     string issue, part_sup, part_supi;
-    if (cfg.IsFormatGenbank() || cfg.IsFormatGBSeq() ) {
+    if (cfg.IsFormatGenbank() || cfg.IsFormatGBSeq() || cfg.IsFormatINSDSeq() ) {
         issue = imp.IsSetIssue() ? imp.GetIssue(): kEmptyStr;
         part_sup = imp.IsSetPart_sup() ? imp.GetPart_sup() : kEmptyStr;
         part_supi = imp.IsSetPart_supi() ? imp.GetPart_supi() : kEmptyStr;
@@ -1423,7 +1423,7 @@ static void s_FormatJournal
         jour << s_DoSup(issue, part_sup, part_supi);
     }
 
-    if (cfg.IsFormatGenbank() || cfg.IsFormatGBSeq()) {
+    if (cfg.IsFormatGenbank() || cfg.IsFormatGBSeq() || cfg.IsFormatINSDSeq()) {
         if (!NStr::IsBlank(pages)) {
             jour << ", " << pages;
         }
@@ -1440,7 +1440,7 @@ static void s_FormatJournal
         jour << ' ' << year;
     }
     
-    if (cfg.IsFormatGenbank() || cfg.IsFormatGBSeq()) {
+    if (cfg.IsFormatGenbank() || cfg.IsFormatGBSeq() || cfg.IsFormatINSDSeq()) {
         if (prepub == CImprint::ePrepub_in_press) {
             jour << " In press";
         } else if (imp.IsSetPubstatus()  &&  imp.GetPubstatus() == 10  &&  NStr::IsBlank(pages)) {

@@ -355,7 +355,7 @@ void CLocusItem::x_SetStrand(CBioseqContext& ctx)
     }
 
     // cleanup for formats other than GBSeq
-    if ( !ctx.Config().IsFormatGBSeq() ) {
+    if ( !ctx.Config().IsFormatGBSeq() && !ctx.Config().IsFormatINSDSeq() ) {
         // if ds-DNA don't show ds
         if ( bmol == CSeq_inst::eMol_dna  &&  m_Strand == CSeq_inst::eStrand_ds ) {
             m_Strand = CSeq_inst::eStrand_not_set;
