@@ -717,6 +717,12 @@ private:
     TValue m_Value;
 };
 
+template <class TValue, class TNullToValue = SThrowOnNull<TValue> >
+bool operator==(const CNullable<TValue, TNullToValue>& l, const CNullable<TValue, TNullToValue>& r)
+{
+    return (l.IsNull() && r.IsNull()) ||
+           (!l.IsNull() && !r.IsNull() && l.GetValue() == r.GetValue());
+}
 
 // "min" and "max" templates
 //
