@@ -26,6 +26,7 @@ network_timeout=360
 admin_client_name=netschedule_admin
 
 node_id=dev_4_10_0
+reserve_dump_space=1K
 
 
 [log]
