@@ -1,0 +1,8 @@
+add_executable(test_ctransition_nlmzip test_ctransition_nlmzip)
+
+include_directories(SYSTEM ${CMPRS_INCLUDE})
+
+target_link_libraries(test_ctransition
+    ctransition
+)
+

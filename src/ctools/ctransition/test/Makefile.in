@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = test_ctransition
+APP_PROJ = test_ctransition test_ctransition_nlmzip
 
 PROJ_TAG = test
 

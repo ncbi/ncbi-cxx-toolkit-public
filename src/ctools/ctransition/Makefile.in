@@ -1,6 +1,6 @@
 # $Id$
 
-LIB_PROJ = ctransition
+LIB_PROJ = ctransition ctransition_nlmzip
 SUB_PROJ = test
 
 srcdir = @srcdir@

@@ -188,7 +188,7 @@ Nlmzip_Err ( /*FCN*/
 #endif
     longjmp (theErrJumper, 1);      /* report error and abort */
     return;
-}                                   /* Nlmzip_Err() */
+}
 
 /****************************************************************************/
 /*.doc Nlmzip_CompressInit (external) */
@@ -346,9 +346,9 @@ Nlmzip_WriteData ( /*FCN*/
 /****************************************************************************/
 Nlmzip_rc_t
 Nlmzip_Compress ( /*FCN*/
-  VoidPtr pInputData,                  /* Input data (I) */
+  const void* pInputData,                  /* Input data (I) */
   Int4    iInputSize,                  /* Input data size (I) */
-  VoidPtr pOutputBuff,                 /* Output buffer (O) */
+  void*   pOutputBuff,                 /* Output buffer (O) */
   Int4    iOutputSize,                 /* Output buffer size (I) */
   Int4Ptr ipCompressedSize             /* Size of data in output (O) */
 ){
@@ -424,9 +424,9 @@ Nlmzip_Compress ( /*FCN*/
 /****************************************************************************/
 Nlmzip_rc_t
 Nlmzip_Uncompress ( /*FCN*/
-  VoidPtr pInputData,                  /* Input data (I) */
+  const void* pInputData,                  /* Input data (I) */
   Int4    iInputSize,                  /* Input data size (I) */
-  VoidPtr pOutputBuff,                 /* Output buffer (O) */
+  void*   pOutputBuff,                 /* Output buffer (O) */
   Int4    iOutputSize,                 /* Output buffer size (I) */
   Int4Ptr ipUncompressedSize           /* Size of data in output (O) */
 ){
@@ -502,7 +502,7 @@ Nlmzip_Uncompress ( /*FCN*/
              && ulOrigCrc != ulCurCrc ) {
             URCOMPRERR("Invalid compressed data(CRC error)");
 	}
-        if ( ulOrigLen != iOutCurPos ) {
+        if ( ulOrigLen != (ulg)iOutCurPos ) {
             URCOMPRERR("Invalid compressed data(length error)");
         }
 
@@ -521,11 +521,10 @@ Nlmzip_Uncompress ( /*FCN*/
    This function return error message for error
 -*/
 /****************************************************************************/
-CharPtr
-Nlmzip_ErrMsg ( /*FCN*/
+const char* Nlmzip_ErrMsg ( /*FCN*/
   Int4 iCode                            /* Error code (I) */
 ) {
-    if ( iCode >= 0 && iCode < (sizeof(theComprErr)/sizeof(theComprErr[0])) ) {
+    if ( iCode >= 0 && iCode < (Int4)(sizeof(theComprErr)/sizeof(theComprErr[0])) ) {
         return (CharPtr)theComprErr[(int)iCode];
     }
     return "Invalid error code";
@@ -550,6 +549,196 @@ Nlmzip_UncompressedSize ( /*FCN*/
 
     return (int)lSize;
 }
+
+
+
+/****************************************************************************/
+
+// Wrapper format header size
+const int kHeaderSize = 4;
+// Wrapper format magic signature
+const unsigned char kMagic[2] = {0x2f, 0x9a};
+
+
+
+bool CT_CompressBuffer(
+    const void* src_buf, size_t  src_len,
+    void*       dst_buf, size_t  dst_size,
+    /* out */            size_t* dst_len,
+    CCompressStream::EMethod method,
+    CCompression::ELevel level)
+{
+    *dst_len = 0;
+
+    // Check parameters
+    if (!src_len || !src_buf || !dst_buf || dst_size <= kHeaderSize) {
+        return false;
+    }
+    // Pointer to the current positions in the destination buffer
+    unsigned char* dst = (unsigned char*)dst_buf;   
+
+    // Set header
+    dst[0] = kMagic[0];
+    dst[1] = kMagic[1];
+    dst[2] = (unsigned char)method;
+    dst[3] = 0; // reserved
+  
+    *dst_len =  kHeaderSize;
+    dst      += kHeaderSize;
+    dst_size =- kHeaderSize;
+
+    size_t n = 0;
+    bool res = false;
+
+    switch(method) {
+    case CCompressStream::eNone:
+        if (src_len > dst_size) {
+            return false;
+        }
+        memcpy(dst, src_buf, src_len);
+        res = true;
+        n = src_len;
+        break;
+
+    case CCompressStream::eBZip2:
+        {
+            CBZip2Compression c(level);
+            res = c.CompressBuffer(src_buf, src_len, dst, dst_size, &n);
+        }
+        break;
+
+    case CCompressStream::eLZO:
+#if defined(HAVE_LIBLZO)
+        {
+            CLZOCompression c(level);
+            res = c.CompressBuffer(src_buf, src_len, dst, dst_size, &n);
+        }
+#endif 
+        break;
+
+    case CCompressStream::eZip:
+        {
+            CZipCompression c(level);
+            res = c.CompressBuffer(src_buf, src_len, dst, dst_size, &n);
+        }
+        break;
+
+    case CCompressStream::eGZipFile:
+    case CCompressStream::eConcatenatedGZipFile:
+        {
+            CZipCompression c(level);
+            c.SetFlags(c.GetFlags() | CZipCompression::fGZip);
+            res = c.CompressBuffer(src_buf, src_len, dst, dst_size, &n);
+        }
+        break;
+
+    default:
+        NCBI_THROW(CCompressionException, eCompression, "Unknown compression method");
+    }
+    
+    if (!res) {
+        return false;
+    }
+    *dst_len += n;
+    
+    return true;
+}
+
+
+bool CT_DecompressBuffer(
+    const void* src_buf, size_t  src_len,
+    void*       dst_buf, size_t  dst_size,
+    /* out */            size_t* dst_len)
+{
+    *dst_len = 0;
+
+    // Check parameters
+    if (!src_len || !src_buf || !dst_buf) {
+        return false;
+    }
+  
+    // Pointer to the current positions in the source buffer
+    unsigned char* src = (unsigned char*)src_buf;
+
+    bool old_format = true;
+    CCompressStream::EMethod method;
+
+    // Check on old format
+    if (dst_size > kHeaderSize) {
+        if (src[0] == kMagic[0]  &&  src[1] == kMagic[1]) {
+            method = (CCompressStream::EMethod)src[2];
+            old_format = false;
+        }
+    }
+    if (old_format) {
+        if (src_len > kMax_I4) {
+            return false;
+        }
+        Int4 n = 0;
+        Nlmzip_rc_t res = Nlmzip_Uncompress(src_buf, src_len, dst_buf, dst_size, &n);
+        *dst_len = (size_t)n;
+        return (res == NLMZIP_OKAY);
+    }
+
+    src     += kHeaderSize;
+    src_len -= kHeaderSize;
+    size_t n = 0;
+    bool res = false;
+
+    switch(method) {
+    case CCompressStream::eNone:
+        if (src_len > dst_size) {
+            return false;
+        }
+        memcpy(dst_buf, src, src_len);
+        res = true;
+        n = src_len;
+        break;
+
+    case CCompressStream::eBZip2:
+        {
+            CBZip2Compression c;
+            res = c.DecompressBuffer(src, src_len, dst_buf, dst_size, &n);
+        }
+        break;
+
+    case CCompressStream::eLZO:
+#if defined(HAVE_LIBLZO)
+        {
+            CLZOCompression c;
+            res = c.DecompressBuffer(src, src_len, dst_buf, dst_size, &n);
+        }
+#endif 
+        break;
+
+    case CCompressStream::eZip:
+        {
+            CZipCompression c;
+            res = c.DecompressBuffer(src, src_len, dst_buf, dst_size, &n);
+        }
+        break;
+
+    case CCompressStream::eGZipFile:
+    case CCompressStream::eConcatenatedGZipFile:
+        {
+            CZipCompression c;
+            c.SetFlags(c.GetFlags() | CZipCompression::fGZip);
+            res = c.DecompressBuffer(src, src_len, dst_buf, dst_size, &n);
+        }
+        break;
+
+    default:
+        NCBI_THROW(CCompressionException, eCompression, "Unknown compression method");
+    }
+    
+    if (!res) {
+        return false;
+    }
+    *dst_len = n;
+    
+    return true;
+}
+
 
 
 END_CTRANSITION_SCOPE
