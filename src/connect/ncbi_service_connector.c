@@ -265,7 +265,7 @@ static int/*bool*/ s_IsContentTypeDefined(const char*         service,
                 const char* c;
                 size_t len;
                 char* t;
-                for (s += 15;  *s;  s++) {
+                for (s += 14;  *s;  s++) {
                     if (!isspace((unsigned char)(*s)))
                         break;
                 }
