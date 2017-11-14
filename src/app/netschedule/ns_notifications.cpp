@@ -331,7 +331,7 @@ CNSNotificationList::BuildJobChangedNotification(
         m_JobChangeNotifConstPart + job_key +
         "&job_status=" + CNetScheduleAPI::StatusToString(job_status) +
         "&last_event_index=" + NStr::NumericToString(job.GetLastEventIndex()) +
-        "reason=";
+        "&reason=";
 
     switch (reason) {
         case eStatusChanged:
