@@ -6,18 +6,19 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-struct SMatchIdInfo {
+// Should have CSOverwriteIdInfo
+struct SOverwriteIdInfo {
 
     string update_nuc_id;
     list<string> update_prot_ids;
 
     list<string> replaced_nuc_ids;
     list<string> replaced_prot_ids;
-   // map<string, list<string>> replaced_prot_ids;
+
+    map<string, list<string>> replaced_prot_id_map;
 
     list<string> db_nuc_ids;
     map<string, list<string>> db_prot_ids;
-
 
     bool IsReplacedNucId(const string& id) const {
         return (find(replaced_nuc_ids.begin(), replaced_nuc_ids.end(), id) != replaced_nuc_ids.end());
@@ -32,6 +33,94 @@ struct SMatchIdInfo {
     }
 };
 
+
+class CNucProtInfo {
+private:
+    string m_NucId;
+    list<string> m_ProtIds;
+
+public:
+    string& SetNucId(void) { return m_NucId; }
+    const string& GetNucId(void) { return m_NucId; }
+    bool IsSetNucId(void) const { return !m_NucId.empty(); }
+
+    list<string>& SetProtIds(void) { return m_ProtIds; }
+    const list<string>& GetProtIds(void) { return m_ProtIds; }
+    bool IsSetProtIds(void) const { return !m_ProtIds.empty(); }
+};
+
+
+class CMatchIdInfo {
+ private:
+     string m_UpdateNucId;
+     list<string> m_UpdateLocalProtIds;
+     string m_DBNucId;
+     list<string> m_DBProtIds;
+
+public:
+
+     string& SetUpdateNucId(void) { return m_UpdateNucId; }
+     const string& GetUpdateNucId(void) { return m_UpdateNucId; }
+
+     list<string>& SetUpdateLocalProtIds(void) { return m_UpdateLocalProtIds; }
+     const list<string>& GetUpdateLocalProtIds(void) { return m_UpdateLocalProtIds; }
+
+     string& SetDBNucId(void) { return m_DBNucId; }
+     const string& GetDBNucId(void) { return m_DBNucId; }
+
+     list<string>& SetDBProtIds(void) { return m_DBProtIds; }
+     const list<string>& GetDBProtIds(void) { return m_DBProtIds; }
+
+
+     bool NucIdChanges(void) const { return m_UpdateNucId != m_DBNucId; }
+     bool DBEntryHasProts(void) const { return !m_DBProtIds.empty(); }
+
+     bool IsDBProtId(const string& prot_id) const { 
+        return (find(m_DBProtIds.begin(), m_DBProtIds.end(), prot_id) != m_DBProtIds.end());
+     }
+
+     bool HasLocalProtIds(void) const {
+        return !m_UpdateLocalProtIds.empty();
+     }
+
+     bool IsLocalProtId(const string& prot_id) const { 
+        return (find(m_UpdateLocalProtIds.begin(), m_UpdateLocalProtIds.end(), prot_id) != m_UpdateLocalProtIds.end());
+     }
+};
+
+/*
+
+class CProtMatchInfo {
+private:
+    CNucProtInfo m_UpdateEntry;
+
+    list<string> m_ReplacedNucIds;
+    list<string> m_ReplacedProtIds;
+
+
+public:
+
+    CNucProtInfo& SetUpdate(void) { return m_UpdateEntry; }
+    const CNucProtInfo& GetUpdate(void) { return m_UpdateEntry; }
+
+    list<string>& SetReplacedNucIds(void) { return m_ReplacedNucIds; }
+    list<string>& SetReplacedProtIds(void) { return m_ReplacedProtIds; }
+    const list<string>& GetReplacedNucIds(void) { return m_ReplacedNucIds; }
+    const list<string>& GetReplacedProtIds(void) { return m_ReplacedProtIds; }
+
+
+    bool IsReplacedNucId(const string& id) const {
+        return (find(m_ReplacedNucIds.begin(), m_ReplacedNucIds.end(), id) != m_ReplacedNucIds.end());
+    }
+
+    bool IsReplacedProtId(const string& id) const {
+        return (find(m_ReplacedProtIds.begin(), m_ReplacedProtIds.end(), id) != m_ReplacedProtIds.end());
+    }
+
+    list<CNucProtInfo>& SetDBEntry(void) { return m_DBEntry; }
+    const list<CNucProtInfo>& GetDBEntry(void) { return m_DBEntry; }
+};
+*/
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -49,7 +49,7 @@ public:
         CSeq_entry& input_entry,
         list<CRef<CSeq_entry>>& nuc_prot_sets);
 
-    CConstRef<CBioseq_set> GetDBNucProtSet(const CBioseq& nuc_seq);
+//    CConstRef<CBioseq_set> GetDBNucProtSet(const CBioseq& nuc_seq);
 
     CConstRef<CSeq_entry> GetDBEntry(const CSeq_id& nuc_id);
 
@@ -63,12 +63,25 @@ public:
     bool GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
         CRef<CSeq_id>& id) const;
 
-    bool GetNucSeqId(const CBioseq& nuc_seq, CRef<CSeq_id>& id) const;
+    bool GetAccession(const CBioseq& bioseq, CRef<CSeq_id>& id) const;
 
     bool GetNucSeqId(const CBioseq_set& nuc_prot_set, CRef<CSeq_id>& id) const;
 
     bool GetReplacedIdsFromHist(const CBioseq& nuc_seq, list<CRef<CSeq_id>>& ids) const;
 private:
+
+    struct SIdCompare
+    {
+        bool operator()(const CRef<CSeq_id>& id1,
+            const CRef<CSeq_id>& id2) const 
+        {
+            return id1->CompareOrdered(*id2) < 0;
+        }
+    };
+
+    bool x_GetNucSeqIdsFromCDSs(const CSeq_annot& annot,
+        set<CRef<CSeq_id>, SIdCompare>& ids) const;
+
     CBioseq& x_FetchNucSeqRef(CSeq_entry& nuc_prot_set) const;
     CBioseq& x_FetchNucSeqRef(CBioseq_set& nuc_prot_set) const;
     const CBioseq& x_FetchNucSeqRef(const CBioseq_set& nuc_prot_set) const;

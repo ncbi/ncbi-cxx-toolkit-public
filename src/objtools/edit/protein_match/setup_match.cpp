@@ -106,12 +106,12 @@ bool CMatchSetup::GetReplacedIdsFromHist(const CBioseq& nuc_seq, list<CRef<CSeq_
 }
 
 
-bool CMatchSetup::GetNucSeqId(const CBioseq& nuc_seq, CRef<CSeq_id>& id) const
+bool CMatchSetup::GetAccession(const CBioseq& bioseq, CRef<CSeq_id>& id) const
 {
     CRef<CSeq_id> other_id;
-    for (auto pNucId : nuc_seq.GetId()) {
-        if (pNucId->IsGenbank() || pNucId->IsOther()) {
-            id = pNucId;
+    for (auto pSeqId : bioseq.GetId()) {
+        if (pSeqId->IsGenbank() || pSeqId->IsOther()) {
+            id = pSeqId;
             return true;
         }
     }
@@ -122,39 +122,7 @@ bool CMatchSetup::GetNucSeqId(const CBioseq& nuc_seq, CRef<CSeq_id>& id) const
 bool CMatchSetup::GetNucSeqId(const CBioseq_set& nuc_prot_set, CRef<CSeq_id>& id) const
 {
     const CBioseq& nuc_seq = x_FetchNucSeqRef(nuc_prot_set);
-    return GetNucSeqId(nuc_seq, id);
-}
-
-
-CConstRef<CBioseq_set> CMatchSetup::GetDBNucProtSet(const CBioseq& nuc_seq) 
-{
-    CBioseq_Handle db_bsh;
-    for (auto pNucId : nuc_seq.GetId()) {
-        if (pNucId->IsGenbank() || pNucId->IsOther()) {  // Look at GetBioseqHandle
-            db_bsh = m_DBScope->GetBioseqHandle(*pNucId);
-            if (db_bsh && 
-                db_bsh.GetParentBioseq_set()) {
-                return db_bsh.GetParentBioseq_set().GetCompleteBioseq_set();
-            }
-        }
-    }
-
-    list<CRef<CSeq_id>> pReplacedIds;
-    const bool use_replaced_id = GetReplacedIdsFromHist(nuc_seq, pReplacedIds);
-
-    if (use_replaced_id) {
-        db_bsh = m_DBScope->GetBioseqHandle(*(pReplacedIds.front()));
-        if (db_bsh && 
-            db_bsh.GetParentBioseq_set()) {
-            return db_bsh.GetParentBioseq_set().GetCompleteBioseq_set();
-        }
-    }
-
-    NCBI_THROW(CProteinMatchException,
-               eInputError,
-               "Failed to find a valid database id");
-
-    return CConstRef<CBioseq_set>();
+    return GetAccession(nuc_seq, id);
 }
 
 
@@ -250,7 +218,7 @@ CConstRef<CSeq_entry> CMatchSetup::GetDBEntry(const CBioseq& nuc_seq)
     return CConstRef<CSeq_entry>();
 }
 
-
+/*
 struct SIdCompare
 {
     bool operator()(const CRef<CSeq_id>& id1,
@@ -259,7 +227,7 @@ struct SIdCompare
         return id1->CompareOrdered(*id2) < 0;
     }
 };
-
+*/
 
 static bool s_InList(const CSeq_id& id, const CBioseq::TId& id_list)
 {
@@ -271,29 +239,108 @@ static bool s_InList(const CSeq_id& id, const CBioseq::TId& id_list)
     return false;
 }
 
+bool CMatchSetup::x_GetNucSeqIdsFromCDSs(const CSeq_annot& annot,
+    set<CRef<CSeq_id>, SIdCompare>& ids) const
+{
+    if (!annot.IsFtable()) {
+        return false;
+    }
+
+    bool found_id = false;
+
+    for (CRef<CSeq_feat> feat : annot.GetData().GetFtable()) {
+        if (feat->GetData().IsCdregion()) {
+
+            const CSeq_id* id_ptr = feat->GetLocation().GetId();
+            if (!id_ptr) {
+                NCBI_THROW(CProteinMatchException,
+                    eBadInput,
+                    "Invalid CDS location");
+            }
+            CRef<CSeq_id> nucseq_id = Ref(new CSeq_id());
+            nucseq_id->Assign(*id_ptr);
+            ids.insert(nucseq_id);
+            found_id = true;
+        }
+    }
+    return found_id;
+}
+
+/*
+void CMatchSetup::GatherCdregionFeatures(const CSeq_entry& nuc_prot_set,
+    list<CRef<CSeq_feat>>& cds_feats) const 
+{
+    cds_feats.clear();
+
+    const CBioseq_set& bioseq_set = nuc_prot_set.GetSet();
+    if (bioseq_set.IsSetAnnot()) { 
+        for (CRef<CSeq_annot> pAnnot : bioseq_set.GetAnnot()) {
+            if (pAnnot->IsFtable()) {
+                // Do stuff here
+            }
+        }
+    }
+
+    for (CRef<CSeq_entry> pSubentry : bioseq_set.GetSeq_set()) {
+        if (pSubentry->IsSeq() && pSubentry->GetSeq().IsNa()) {
+            const CBioseq& nucseq = pSubentry->GetSeq();
+            if (nucseq.IsSetAnnot()) {
+                for (CRef<CSeq_annot> pAnnot : bioseq_set.GetAnnot()) {
+                    if (pAnnot->IsFtable()) {
+
+                        // Do stuff here
+                    }
+                }
+            }
+        }
+    }
+}
+*/
+
+
+
 bool CMatchSetup::GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
     CRef<CSeq_id>& id) const
 {
     // Set containing distinct ids
     set<CRef<CSeq_id>, SIdCompare> ids;
+    
+    const CBioseq_set& bioseq_set = nuc_prot_set.GetSet();
+    if (bioseq_set.IsSetAnnot()) { 
+        for (CRef<CSeq_annot> pAnnot : bioseq_set.GetAnnot()) {
+            x_GetNucSeqIdsFromCDSs(*pAnnot, ids);
+        }
+    }
 
+    for (CRef<CSeq_entry> pSubentry : bioseq_set.GetSeq_set()) {
+        if (pSubentry->IsSeq() && pSubentry->GetSeq().IsNa()) {
+            const CBioseq& nucseq = pSubentry->GetSeq();
+            if (nucseq.IsSetAnnot()) {
+                for (CRef<CSeq_annot> pAnnot : bioseq_set.GetAnnot()) {
+                    x_GetNucSeqIdsFromCDSs(*pAnnot, ids);
+                }
+            }
+        }
+    }
+
+/*
     for (CTypeConstIterator<CSeq_feat> feat(nuc_prot_set); feat; ++feat) 
     {
         if (!feat->GetData().IsCdregion()) {
             continue;
         }
 
-        CRef<CSeq_id> nucseq_id = Ref(new CSeq_id());
         const CSeq_id* id_ptr = feat->GetLocation().GetId();
         if (!id_ptr) {
             NCBI_THROW(CProteinMatchException,
                 eBadInput,
                 "Invalid CDS location");
         }
+        CRef<CSeq_id> nucseq_id = Ref(new CSeq_id());
         nucseq_id->Assign(*id_ptr);
         ids.insert(nucseq_id);
     }
-
+*/
     if (ids.empty()) {
         return false;
     }
