@@ -1294,7 +1294,11 @@ void CProteinMatchApp::x_WriteToSeqEntryTempFiles(
 
     CRef<CSeq_entry> nuc_prot_se = Ref(new CSeq_entry());
     nuc_prot_se->SetSet().Assign(nuc_prot_set);
-    x_WriteEntry(*nuc_prot_se, 
+
+    CRef<CSeq_entry> core_se = m_pMatchSetup->GetCoreNucProtSet(*nuc_prot_se);
+
+    //x_WriteEntry(*nuc_prot_se, 
+    x_WriteEntry(*core_se,
         "local_nuc_prot_set",
         filename_map,
         ostream_map);

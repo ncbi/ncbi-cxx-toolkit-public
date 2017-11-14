@@ -49,7 +49,6 @@ public:
         CSeq_entry& input_entry,
         list<CRef<CSeq_entry>>& nuc_prot_sets);
 
-//    CConstRef<CBioseq_set> GetDBNucProtSet(const CBioseq& nuc_seq);
 
     CConstRef<CSeq_entry> GetDBEntry(const CSeq_id& nuc_id);
 
@@ -68,6 +67,11 @@ public:
     bool GetNucSeqId(const CBioseq_set& nuc_prot_set, CRef<CSeq_id>& id) const;
 
     bool GetReplacedIdsFromHist(const CBioseq& nuc_seq, list<CRef<CSeq_id>>& ids) const;
+
+    void GatherCdregionFeatures(const CSeq_entry& nuc_prot_set,
+            list<CRef<CSeq_feat>>& cds_feats) const;
+
+    CRef<CSeq_entry> GetCoreNucProtSet(const CSeq_entry& nuc_prot_set) const;
 private:
 
     struct SIdCompare

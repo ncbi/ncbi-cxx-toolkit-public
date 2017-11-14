@@ -218,16 +218,6 @@ CConstRef<CSeq_entry> CMatchSetup::GetDBEntry(const CBioseq& nuc_seq)
     return CConstRef<CSeq_entry>();
 }
 
-/*
-struct SIdCompare
-{
-    bool operator()(const CRef<CSeq_id>& id1,
-        const CRef<CSeq_id>& id2) const 
-    {
-        return id1->CompareOrdered(*id2) < 0;
-    }
-};
-*/
 
 static bool s_InList(const CSeq_id& id, const CBioseq::TId& id_list)
 {
@@ -266,7 +256,7 @@ bool CMatchSetup::x_GetNucSeqIdsFromCDSs(const CSeq_annot& annot,
     return found_id;
 }
 
-/*
+
 void CMatchSetup::GatherCdregionFeatures(const CSeq_entry& nuc_prot_set,
     list<CRef<CSeq_feat>>& cds_feats) const 
 {
@@ -276,7 +266,11 @@ void CMatchSetup::GatherCdregionFeatures(const CSeq_entry& nuc_prot_set,
     if (bioseq_set.IsSetAnnot()) { 
         for (CRef<CSeq_annot> pAnnot : bioseq_set.GetAnnot()) {
             if (pAnnot->IsFtable()) {
-                // Do stuff here
+                for (CRef<CSeq_feat> feat : pAnnot->GetData().GetFtable()) {
+                    if (feat->GetData().IsCdregion()) {
+                        cds_feats.push_back(feat);
+                    }
+                } 
             }
         }
     }
@@ -285,17 +279,46 @@ void CMatchSetup::GatherCdregionFeatures(const CSeq_entry& nuc_prot_set,
         if (pSubentry->IsSeq() && pSubentry->GetSeq().IsNa()) {
             const CBioseq& nucseq = pSubentry->GetSeq();
             if (nucseq.IsSetAnnot()) {
-                for (CRef<CSeq_annot> pAnnot : bioseq_set.GetAnnot()) {
+                for (CRef<CSeq_annot> pAnnot : nucseq.GetAnnot()) {
                     if (pAnnot->IsFtable()) {
-
-                        // Do stuff here
+                        for (CRef<CSeq_feat> feat : pAnnot->GetData().GetFtable()) {
+                            if (feat->GetData().IsCdregion()) {
+                            cds_feats.push_back(feat);
+                            }
+                        } 
                     }
                 }
             }
         }
     }
 }
-*/
+
+
+CRef<CSeq_entry> CMatchSetup::GetCoreNucProtSet(const CSeq_entry& nuc_prot_set) const 
+{
+    CRef<CSeq_entry> pCoreSet = Ref(new CSeq_entry());
+    pCoreSet->SetSet().SetClass(CBioseq_set::eClass_nuc_prot);
+
+    list<CRef<CSeq_feat>> cds_feats;
+    GatherCdregionFeatures(nuc_prot_set, cds_feats);
+
+    for (CRef<CSeq_entry> pSubEntry : nuc_prot_set.GetSet().GetSeq_set()) {
+        const CBioseq& old_seq = pSubEntry->GetSeq();
+        CRef<CSeq_entry> pCoreSubEntry(new CSeq_entry());
+        CBioseq& core_seq = pCoreSubEntry->SetSeq();
+        core_seq.SetId() = old_seq.GetId();
+        core_seq.SetInst().Assign(old_seq.GetInst()); // May be no need to copy here
+       
+        if (old_seq.IsNa()) {
+            CRef<CSeq_annot> pCoreAnnot(new CSeq_annot());
+            pCoreAnnot->SetData().SetFtable() = cds_feats;
+            core_seq.SetAnnot().push_back(pCoreAnnot);
+        }
+        pCoreSet->SetSet().SetSeq_set().push_back(pCoreSubEntry);
+    }
+
+    return pCoreSet;
+}
 
 
 
@@ -323,24 +346,6 @@ bool CMatchSetup::GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
         }
     }
 
-/*
-    for (CTypeConstIterator<CSeq_feat> feat(nuc_prot_set); feat; ++feat) 
-    {
-        if (!feat->GetData().IsCdregion()) {
-            continue;
-        }
-
-        const CSeq_id* id_ptr = feat->GetLocation().GetId();
-        if (!id_ptr) {
-            NCBI_THROW(CProteinMatchException,
-                eBadInput,
-                "Invalid CDS location");
-        }
-        CRef<CSeq_id> nucseq_id = Ref(new CSeq_id());
-        nucseq_id->Assign(*id_ptr);
-        ids.insert(nucseq_id);
-    }
-*/
     if (ids.empty()) {
         return false;
     }
