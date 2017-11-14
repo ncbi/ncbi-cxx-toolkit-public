@@ -794,7 +794,8 @@ void CCgi2RCgiApp::ListenJobs(CCgiContext& ctx, const string& job_ids_value, con
     out << "Content-type: application/json\nStatus: 200 OK\n\n";
 
     for (auto& job : jobs) {
-        out << delimiter << "\n\"" << job.first << "\": \"" << CNetScheduleAPI::StatusToString(job.second) << '"';
+        const auto status = CNetScheduleAPI::StatusToString(job.second);
+        out << delimiter << "\n\"" << job.first << "\": { \"Status\": \"" << status << "\" }";
         delimiter = ',';
     }
 
