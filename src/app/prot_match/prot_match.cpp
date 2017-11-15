@@ -225,6 +225,10 @@ void CProteinMatchApp::Init(void)
         "Binary_Dir", 
         "Directory containing C++ binaries, if not CWD",
         CArgDescriptions::eString);
+
+    arg_desc->AddFlag("no-local-match", "Do not attempt to match proteins that only have local IDs");
+
+
     arg_desc->AddFlag("keep-temps", "Retain temporary files");
 
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc,
@@ -912,9 +916,10 @@ void CProteinMatchApp::x_InitNucProtSetMatch(CRef<CSeq_entry> nuc_prot_set,
         x_GatherProteinAccessions(db_entry->GetSet(), match_info.SetDBProtIds());
     }
 
-    CRef<CSeq_entry> core_nuc_prot_set = m_pMatchSetup->GetCoreNucProtSet(*nuc_prot_set);
+    const bool exclude_local_prot_ids = GetArgs()["no-local-match"];
 
-   // CRef<CSeq_entry> core_nuc_prot_set = nuc_prot_set;
+
+    CRef<CSeq_entry> core_nuc_prot_set = m_pMatchSetup->GetCoreNucProtSet(*nuc_prot_set, exclude_local_prot_ids);
 
     x_RelabelNucSeq(core_nuc_prot_set); // Temporary - need to fix this
 
