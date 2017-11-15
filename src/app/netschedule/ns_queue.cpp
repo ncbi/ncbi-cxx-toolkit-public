@@ -1426,10 +1426,16 @@ TJobStatus  CQueue::SetJobListener(unsigned int            job_id,
         *last_event_index = job.GetLastEventIndex();
         status = job.GetStatus();
 
-        if (job.GetListenerNotifAddr() != 0 &&
-            job.GetListenerNotifPort() != 0)
-            x_NotifyJobChanges(job, MakeJobKey(job_id), eNotificationStolen,
-                               curr);
+        unsigned int    old_listener_addr = job.GetListenerNotifAddr();
+        unsigned short  old_listener_port = job.GetListenerNotifPort();
+
+        if (old_listener_addr != 0 && old_listener_port != 0) {
+            if (old_listener_addr != address || old_listener_port != port) {
+                // Send the stolen notification only if it is a new listener
+                x_NotifyJobChanges(job, MakeJobKey(job_id),
+                                   eNotificationStolen, curr);
+            }
+        }
 
         if (address == 0 || port == 0 || timeout == kTimeZero) {
             // If at least one of the values is 0 => no notifications
