@@ -84,27 +84,12 @@ public:
 
 private:
     void x_WriteFileHeader(IFlatTextOStream& text_os);
-    void x_StartWriteGBSet(IFlatTextOStream& text_os);
     void x_WriteGBSeq(IFlatTextOStream& text_os);
-    void x_EndWriteGBSet(IFlatTextOStream& text_os);
     void x_StrOStreamToTextOStream(IFlatTextOStream& text_os);
 
-    struct SOStreamContainer
-    {
-        SOStreamContainer(CObjectOStream& out, 
-            const CObjectTypeInfo& containerType) :
-            m_Cont(out, containerType)
-        {}
-        void WriteElement(const CConstObjectInfo& element) {
-            m_Cont.WriteElement(element);
-        }
-    private:
-        COStreamContainer  m_Cont;
-    };
     CRef<CGBSeq> m_GBSeq;
     auto_ptr<CObjectOStream> m_Out;
     CNcbiOstrstream m_StrStream;
-    auto_ptr<SOStreamContainer>  m_Cont;
     bool m_IsInsd;
 };
 

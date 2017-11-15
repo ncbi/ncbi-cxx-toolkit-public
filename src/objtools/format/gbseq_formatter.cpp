@@ -116,7 +116,7 @@ void CGBSeqFormatter::Start(IFlatTextOStream& text_os)
 {
     x_WriteFileHeader(text_os);
         
-    x_StartWriteGBSet(text_os);
+    // x_StartWriteGBSet(text_os);
 }
 
 
@@ -138,7 +138,7 @@ void CGBSeqFormatter::EndSection(const CEndSectionItem&, IFlatTextOStream& text_
 
 void CGBSeqFormatter::End(IFlatTextOStream& text_os)
 {
-    x_EndWriteGBSet(text_os);
+    // x_EndWriteGBSet(text_os);
 }
 
 
@@ -646,32 +646,11 @@ void CGBSeqFormatter::FormatContig
 void CGBSeqFormatter::x_WriteFileHeader(IFlatTextOStream& text_os)
 {
     m_Out.reset(CObjectOStream::Open(eSerial_Xml, m_StrStream));
-    CObjectOStreamXml & out_strm = dynamic_cast<CObjectOStreamXml&>(*m_Out);
-    const CClassTypeInfo* gbset_info
-        = dynamic_cast<const CClassTypeInfo*>(CGBSet::GetTypeInfo());
-    out_strm.SetEncoding(eEncoding_UTF8);
-    out_strm.WriteFileHeader(gbset_info);
-    x_StrOStreamToTextOStream(text_os);
 }
-
-
-void CGBSeqFormatter::x_StartWriteGBSet(IFlatTextOStream& text_os)
-{
-    m_Cont.reset(new SOStreamContainer(*m_Out, CGBSet::GetTypeInfo()));
-    x_StrOStreamToTextOStream(text_os);
-}
-
 
 void CGBSeqFormatter::x_WriteGBSeq(IFlatTextOStream& text_os)
 {
-    m_Cont->WriteElement(ConstObjectInfo(*m_GBSeq));
-    x_StrOStreamToTextOStream(text_os);
-}
-
-
-void CGBSeqFormatter::x_EndWriteGBSet(IFlatTextOStream& text_os)
-{
-    m_Cont.reset();
+    m_Out->WriteObject(ConstObjectInfo(*m_GBSeq));
     x_StrOStreamToTextOStream(text_os);
 }
 
