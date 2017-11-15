@@ -1879,3 +1879,124 @@ BOOST_AUTO_TEST_CASE(Test_VR_730)
 
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("2012-10-26T11:13:00"), "2012-10-26");
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_RefGeneTracking)
+{
+    CRef<CUser_object> user(new CUser_object());
+    user->SetObjectType(CUser_object::eObjectType_RefGeneTracking);
+    BOOST_CHECK_EQUAL(user->GetType().GetStr(), "RefGeneTracking");
+    BOOST_CHECK_EQUAL(user->GetObjectType(), CUser_object::eObjectType_RefGeneTracking);
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingStatus(), CUser_object::eRefGeneTrackingStatus_NotSet);
+
+    user->SetRefGeneTrackingStatus(CUser_object::eRefGeneTrackingStatus_PIPELINE);
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingStatus(), CUser_object::eRefGeneTrackingStatus_PIPELINE);
+    BOOST_CHECK_EQUAL(user->GetData().back()->GetLabel().GetStr(), "Status");
+    BOOST_CHECK_EQUAL(user->GetData().back()->GetData().GetStr(), "PIPELINE");
+    user->SetRefGeneTrackingStatus(CUser_object::eRefGeneTrackingStatus_INFERRED);
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingStatus(), CUser_object::eRefGeneTrackingStatus_INFERRED);
+    BOOST_CHECK_EQUAL(user->GetData().back()->GetLabel().GetStr(), "Status");
+    BOOST_CHECK_EQUAL(user->GetData().back()->GetData().GetStr(), "INFERRED");
+    BOOST_CHECK_EQUAL(user->GetData().size(), 1);
+
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingGenomicSource(), kEmptyStr);
+    user->SetRefGeneTrackingGenomicSource("XXX");
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingGenomicSource(), "XXX");
+    BOOST_CHECK_EQUAL(user->GetData().back()->GetLabel().GetStr(), "GenomicSource");
+    BOOST_CHECK_EQUAL(user->GetData().back()->GetData().GetStr(), "XXX");
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingStatus(), CUser_object::eRefGeneTrackingStatus_INFERRED);
+    user->SetRefGeneTrackingGenomicSource("XXX2");
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingGenomicSource(), "XXX2");
+    BOOST_CHECK_EQUAL(user->GetData().back()->GetLabel().GetStr(), "GenomicSource");
+    BOOST_CHECK_EQUAL(user->GetData().back()->GetData().GetStr(), "XXX2");
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingStatus(), CUser_object::eRefGeneTrackingStatus_INFERRED);
+    BOOST_CHECK_EQUAL(user->GetData().size(), 2);
+
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingCollaborator(), kEmptyStr);
+    user->SetRefGeneTrackingCollaborator("YYY");
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingCollaborator(), "YYY");
+    BOOST_CHECK_EQUAL(user->GetData().back()->GetLabel().GetStr(), "Collaborator");
+    BOOST_CHECK_EQUAL(user->GetData().back()->GetData().GetStr(), "YYY");
+    user->SetRefGeneTrackingCollaborator("YYY2");
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingCollaborator(), "YYY2");
+    BOOST_CHECK_EQUAL(user->GetData().back()->GetLabel().GetStr(), "Collaborator");
+    BOOST_CHECK_EQUAL(user->GetData().back()->GetData().GetStr(), "YYY2");
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingStatus(), CUser_object::eRefGeneTrackingStatus_INFERRED);
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingGenomicSource(), "XXX2");
+    BOOST_CHECK_EQUAL(user->GetData().size(), 3);
+
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingCollaboratorURL(), kEmptyStr);
+    user->SetRefGeneTrackingCollaboratorURL("ZZZ");
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingCollaboratorURL(), "ZZZ");
+    BOOST_CHECK_EQUAL(user->GetData().back()->GetLabel().GetStr(), "CollaboratorURL");
+    BOOST_CHECK_EQUAL(user->GetData().back()->GetData().GetStr(), "ZZZ");
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingStatus(), CUser_object::eRefGeneTrackingStatus_INFERRED);
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingGenomicSource(), "XXX2");
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingCollaborator(), "YYY2");
+    BOOST_CHECK_EQUAL(user->GetData().size(), 4);
+
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingGenerated(), false);
+    user->SetRefGeneTrackingGenerated(true);
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingGenerated(), true);
+    BOOST_CHECK_EQUAL(user->GetData().back()->GetLabel().GetStr(), "Generated");
+    BOOST_CHECK_EQUAL(user->GetData().back()->GetData().GetBool(), true);
+
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingStatus(), CUser_object::eRefGeneTrackingStatus_INFERRED);
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingGenomicSource(), "XXX2");
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingCollaborator(), "YYY2");
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingCollaboratorURL(), "ZZZ");
+    BOOST_CHECK_EQUAL(user->GetData().size(), 5);
+
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingIdenticalTo(), CConstRef<CUser_object::CRefGeneTrackingAccession>(NULL));
+    CRef<CUser_object::CRefGeneTrackingAccession> ident(new CUser_object::CRefGeneTrackingAccession("AY12345"));
+    user->SetRefGeneTrackingIdenticalTo(*ident);
+    CConstRef<CUser_object::CRefGeneTrackingAccession> r_ident = user->GetRefGeneTrackingIdenticalTo();
+    BOOST_CHECK_EQUAL(r_ident->GetAccession(), "AY12345");
+    BOOST_CHECK_EQUAL(user->GetData().size(), 6);
+
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingAssembly().size(), 0);
+    vector<CConstRef<CUser_object::CRefGeneTrackingAccession> > assembly;
+    assembly.push_back(CConstRef<CUser_object::CRefGeneTrackingAccession>(new CUser_object::CRefGeneTrackingAccession("XXX", 123, 0, 100, "comment1", "name1")));
+    assembly.push_back(CConstRef<CUser_object::CRefGeneTrackingAccession>(new CUser_object::CRefGeneTrackingAccession("YYY", 124, 10, 1100, "comment2", "name2")));
+    user->SetRefGeneTrackingAssembly(assembly);
+    BOOST_CHECK_EQUAL(user->GetData().size(), 7);
+
+    CUser_object::TRefGeneTrackingAccessions r_assembly = user->GetRefGeneTrackingAssembly();
+    BOOST_CHECK_EQUAL(r_assembly.size(), 2);
+    BOOST_CHECK_EQUAL(r_assembly.front()->GetAccession(), "XXX");
+    BOOST_CHECK_EQUAL(r_assembly.front()->GetGI(), 123);
+    BOOST_CHECK_EQUAL(r_assembly.front()->GetFrom(), 0);
+    BOOST_CHECK_EQUAL(r_assembly.front()->GetTo(), 100);
+    BOOST_CHECK_EQUAL(r_assembly.front()->GetName(), "name1");
+    BOOST_CHECK_EQUAL(r_assembly.front()->GetComment(), "comment1");
+    BOOST_CHECK_EQUAL(r_assembly.back()->GetAccession(), "YYY");
+    BOOST_CHECK_EQUAL(r_assembly.back()->GetGI(), 124);
+    BOOST_CHECK_EQUAL(r_assembly.back()->GetFrom(), 10);
+    BOOST_CHECK_EQUAL(r_assembly.back()->GetTo(), 1100);
+    BOOST_CHECK_EQUAL(r_assembly.back()->GetName(), "name2");
+    BOOST_CHECK_EQUAL(r_assembly.back()->GetComment(), "comment2");
+
+    user->ResetRefGeneTrackingAssembly();
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingAssembly().size(), 0);
+    BOOST_CHECK_EQUAL(user->GetData().size(), 6);
+    user->ResetRefGeneTrackingIdenticalTo();
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingIdenticalTo(), CConstRef<CUser_object::CRefGeneTrackingAccession>(NULL));
+    BOOST_CHECK_EQUAL(user->GetData().size(), 5);
+    user->ResetRefGeneTrackingCollaboratorURL();
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingCollaboratorURL(), kEmptyStr);
+    BOOST_CHECK_EQUAL(user->GetData().size(), 4);
+    user->ResetRefGeneTrackingCollaborator();
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingCollaborator(), kEmptyStr);
+    BOOST_CHECK_EQUAL(user->GetData().size(), 3);
+    user->ResetRefGeneTrackingGenerated();
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingGenerated(), false);
+    BOOST_CHECK_EQUAL(user->GetData().size(), 2);
+    user->ResetRefGeneTrackingGenomicSource();
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingGenomicSource(), kEmptyStr);
+    BOOST_CHECK_EQUAL(user->GetData().size(), 1);
+    user->ResetRefGeneTrackingStatus();
+    BOOST_CHECK_EQUAL(user->GetRefGeneTrackingStatus(), CUser_object::eRefGeneTrackingStatus_NotSet);
+    BOOST_CHECK_EQUAL(user->GetData().size(), 0);
+
+    BOOST_CHECK_EQUAL(user->GetObjectType(), CUser_object::eObjectType_RefGeneTracking);
+}

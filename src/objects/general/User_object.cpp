@@ -598,6 +598,23 @@ static const char* kValidationSuppression = "ValidationSuppression";
 static const char* kNcbiCleanup           = "NcbiCleanup";
 static const char* kAutoDefOptions        = "AutodefOptions";
 static const char* kFileTrack             = "FileTrack";
+static const char* kRefGeneTracking       = "RefGeneTracking";
+
+typedef SStaticPair<const char*, CUser_object::EObjectType>  TObjectTypePair;
+static const TObjectTypePair k_object_type_map[] = {
+    { kAutoDefOptions, CUser_object::eObjectType_AutodefOptions },
+    { kDBLink, CUser_object::eObjectType_DBLink },
+    { kFileTrack, CUser_object::eObjectType_FileTrack },
+    { kNcbiCleanup, CUser_object::eObjectType_Cleanup },
+    { kOriginalId, CUser_object::eObjectType_OriginalId },
+    { kRefGeneTracking, CUser_object::eObjectType_RefGeneTracking },
+    { kStructuredComment, CUser_object::eObjectType_StructuredComment },
+    { kUnverified, CUser_object::eObjectType_Unverified },
+    { kValidationSuppression, CUser_object::eObjectType_ValidationSuppression }
+};
+typedef CStaticArrayMap<const char*, CUser_object::EObjectType, PNocase_CStr> TObjectTypeMap;
+DEFINE_STATIC_ARRAY_MAP(TObjectTypeMap, sc_ObjectTypeMap, k_object_type_map);
+
 
 CUser_object::EObjectType CUser_object::GetObjectType() const
 {
@@ -606,61 +623,30 @@ CUser_object::EObjectType CUser_object::GetObjectType() const
     }
     EObjectType rval = eObjectType_Unknown;
 
-    string label = GetType().GetStr();
-    if (NStr::Equal(label, kDBLink)) {
-        rval = eObjectType_DBLink;
-    } else if (NStr::Equal(label, kStructuredComment)) {
-        rval = eObjectType_StructuredComment;
-    } else if (NStr::Equal(label, kOriginalId)) {
-        rval = eObjectType_OriginalId;
-    } else if (NStr::Equal(label, kOrigIdAltSpell)) {
-        rval = eObjectType_OriginalId;
-    } else if (NStr::Equal(label, kUnverified)) {
-        rval = eObjectType_Unverified;
-    } else if (NStr::Equal(label, kValidationSuppression)) {
-        rval = eObjectType_ValidationSuppression;
-    } else if (NStr::Equal(label, kNcbiCleanup)) {
-        rval = eObjectType_Cleanup;
-    } else if (NStr::Equal(label, kAutoDefOptions)) {
-        rval = eObjectType_AutodefOptions;
-    } else if (NStr::Equal(label, kFileTrack)) {
-        rval = eObjectType_FileTrack;
+    const string& label = GetType().GetStr();
+    
+    auto it = sc_ObjectTypeMap.find(label.c_str());
+    if (it == sc_ObjectTypeMap.end()) {
+        if (NStr::EqualNocase(label, kOrigIdAltSpell)) {
+            rval = eObjectType_OriginalId;
+        }
+    } else {
+        rval = it->second;
     }
+
     return rval;
 }
 
 
 void CUser_object::SetObjectType(EObjectType obj_type)
 {
-    switch (obj_type) {
-        case eObjectType_DBLink:
-            SetType().SetStr(kDBLink);
-            break;
-        case eObjectType_StructuredComment:
-            SetType().SetStr(kStructuredComment);
-            break;
-        case eObjectType_OriginalId:
-            SetType().SetStr(kOriginalId);
-            break;
-        case eObjectType_Unverified:
-            SetType().SetStr(kUnverified);
-            break;
-        case eObjectType_ValidationSuppression:
-            SetType().SetStr(kValidationSuppression);
-            break;
-        case eObjectType_Cleanup:
-            SetType().SetStr(kNcbiCleanup);
-            break;
-        case eObjectType_AutodefOptions:
-            SetType().SetStr(kAutoDefOptions);
-            break;
-        case eObjectType_FileTrack:
-            SetType().SetStr(kFileTrack);
-            break;
-        case eObjectType_Unknown:
-            ResetType();
-            break;
+    for (auto it = sc_ObjectTypeMap.begin(); it != sc_ObjectTypeMap.end(); it++) {
+        if (it->second == obj_type) {
+            SetType().SetStr(it->first);
+            return;
+        }
     }
+    ResetType();
 }
 
 
@@ -717,16 +703,16 @@ void CUser_object::x_RemoveUnverifiedType(const string& val)
         return;
     }
     CUser_object::TData::iterator it = SetData().begin();
-    while (it != SetData().end()) {
-        if (x_IsUnverifiedType(val, **it)) {
-            it = SetData().erase(it);
-        } else {
-            it++;
-        }
+while (it != SetData().end()) {
+    if (x_IsUnverifiedType(val, **it)) {
+        it = SetData().erase(it);
+    } else {
+        it++;
     }
-    if (GetData().empty()) {
-        ResetData();
-    }
+}
+if (GetData().empty()) {
+    ResetData();
+}
 }
 
 
@@ -803,6 +789,38 @@ void CUser_object::UpdateNcbiCleanup(int version)
 }
 
 
+bool CUser_object::RemoveNamedField(const string& field_name, NStr::ECase ecase)
+{
+    if (!IsSetData()) {
+        return false;
+    }
+    bool rval = false;
+    auto it = SetData().begin();
+    while (it != SetData().end()) {
+        bool do_remove = false;
+        if ((*it)->IsSetLabel()) {
+            if ((*it)->GetLabel().IsStr()) {
+                if (NStr::Equal((*it)->GetLabel().GetStr(), field_name, ecase)) {
+                    do_remove = true;
+                }
+            } else if ((*it)->GetLabel().IsId()) {
+                string label = NStr::NumericToString((*it)->GetLabel().GetId());
+                if (NStr::Equal((*it)->GetLabel().GetStr(), field_name, ecase)) {
+                    do_remove = true;
+                }
+            }
+        }
+        if (do_remove) {
+            it = SetData().erase(it);
+            rval = true;
+        } else {
+            it++;
+        }
+    }
+    return rval;
+}
+
+
 void CUser_object::SetFileTrackURL(const string& url)
 {
     SetObjectType(eObjectType_FileTrack);
@@ -816,6 +834,370 @@ void CUser_object::SetFileTrackUploadId(const string& upload_id)
     string url = "https://submit.ncbi.nlm.nih.gov/ft/byid/" + upload_id;
     SetFileTrackURL(url);
 }
+
+
+// For RefGeneTracking
+
+void CUser_object::x_SetRefGeneTrackingField(const string& field_name, const string& value)
+{
+    SetObjectType(eObjectType_RefGeneTracking);
+    if (value.empty()) {
+        RemoveNamedField(field_name);
+    } else {
+        CUser_field& field = SetField(field_name);
+        field.SetString(value);
+    }
+}
+
+const string& CUser_object::x_GetRefGeneTrackingField(const string& field_name) const
+{
+    if (GetObjectType() != eObjectType_RefGeneTracking) {
+        return kEmptyStr;
+    }
+    CConstRef<CUser_field>  field = GetFieldRef(field_name);
+    if (field && field->IsSetData() && field->GetData().IsStr()) {
+        return field->GetData().GetStr();
+    }
+    return kEmptyStr;
+}
+
+
+typedef SStaticPair<const char*, CUser_object::ERefGeneTrackingStatus>  TRefGeneTrackingStatusPair;
+static const TRefGeneTrackingStatusPair k_refgene_tracking_status_map[] = {
+    { "INFERRED", CUser_object::eRefGeneTrackingStatus_INFERRED },
+    { "PIPELINE", CUser_object::eRefGeneTrackingStatus_PIPELINE },
+    { "PREDICTED", CUser_object::eRefGeneTrackingStatus_PREDICTED },
+    { "PROVISIONAL", CUser_object::eRefGeneTrackingStatus_PROVISIONAL },
+    { "REVIEWED", CUser_object::eRefGeneTrackingStatus_REVIEWED },
+    { "VALIDATED", CUser_object::eRefGeneTrackingStatus_VALIDATED },
+    { "WGS", CUser_object::eRefGeneTrackingStatus_WGS }
+};
+typedef CStaticArrayMap<const char*, CUser_object::ERefGeneTrackingStatus, PNocase_CStr> TRefGeneTrackingStatusMap;
+DEFINE_STATIC_ARRAY_MAP(TRefGeneTrackingStatusMap, sc_RefGeneTrackingStatusMap, k_refgene_tracking_status_map);
+
+const string kRefGeneTrackingStatus = "Status";
+
+void CUser_object::SetRefGeneTrackingStatus(ERefGeneTrackingStatus status)
+{
+    for (auto it = sc_RefGeneTrackingStatusMap.begin(); it != sc_RefGeneTrackingStatusMap.end(); it++) {
+        if (it->second == status) {
+            x_SetRefGeneTrackingField(kRefGeneTrackingStatus, it->first);
+            return;
+        }
+    }
+    NCBI_THROW(CRefGeneTrackingException, eBadStatus, "Unrecognized RefGeneTracking Status");
+}
+
+CUser_object::ERefGeneTrackingStatus CUser_object::GetRefGeneTrackingStatus() const
+{
+    if (GetObjectType() != eObjectType_RefGeneTracking) {
+        return eRefGeneTrackingStatus_Error;
+    }
+    CConstRef<CUser_field>  field = GetFieldRef(kRefGeneTrackingStatus);
+    if (!field || !field->IsSetData()) {
+        return eRefGeneTrackingStatus_NotSet;
+    }
+    if (!field->GetData().IsStr()) {
+        return eRefGeneTrackingStatus_Error;
+    }
+    if (field->GetData().GetStr().empty()) {
+        return eRefGeneTrackingStatus_NotSet;
+    }
+    auto it = sc_RefGeneTrackingStatusMap.find(field->GetData().GetStr().c_str());
+    if (it != sc_RefGeneTrackingStatusMap.end()) {
+        return it->second;
+    }
+    NCBI_THROW(CRefGeneTrackingException, eBadStatus, "Unrecognized RefGeneTracking Status " + field->GetData().GetStr());
+}
+
+
+void CUser_object::ResetRefGeneTrackingStatus()
+{
+    RemoveNamedField(kRefGeneTrackingStatus);
+}
+
+
+const string kRefGeneTrackingGenomicSource = "GenomicSource";
+
+void CUser_object::SetRefGeneTrackingGenomicSource(const string& genomic_source)
+{
+    x_SetRefGeneTrackingField(kRefGeneTrackingGenomicSource, genomic_source);
+}
+
+
+const string& CUser_object::GetRefGeneTrackingGenomicSource() const
+{
+    return x_GetRefGeneTrackingField(kRefGeneTrackingGenomicSource);
+}
+
+
+void CUser_object::ResetRefGeneTrackingGenomicSource()
+{
+    RemoveNamedField(kRefGeneTrackingGenomicSource);
+}
+
+
+const string kRefGeneTrackingCollaborator = "Collaborator";
+void CUser_object::SetRefGeneTrackingCollaborator(const string& val)
+{
+    x_SetRefGeneTrackingField(kRefGeneTrackingCollaborator, val);
+}
+
+
+const string& CUser_object::GetRefGeneTrackingCollaborator() const
+{
+    return x_GetRefGeneTrackingField(kRefGeneTrackingCollaborator);
+}
+
+
+void CUser_object::ResetRefGeneTrackingCollaborator()
+{
+    RemoveNamedField(kRefGeneTrackingCollaborator);
+}
+
+
+const string kRefGeneTrackingCollaboratorURL = "CollaboratorURL";
+void CUser_object::SetRefGeneTrackingCollaboratorURL(const string& val)
+{
+    x_SetRefGeneTrackingField(kRefGeneTrackingCollaboratorURL, val);
+}
+
+
+const string& CUser_object::GetRefGeneTrackingCollaboratorURL() const
+{
+    return x_GetRefGeneTrackingField(kRefGeneTrackingCollaboratorURL);
+}
+
+
+void CUser_object::ResetRefGeneTrackingCollaboratorURL()
+{
+    RemoveNamedField(kRefGeneTrackingCollaboratorURL);
+}
+
+
+const string kRefGeneTrackingGenerated = "Generated";
+
+void CUser_object::SetRefGeneTrackingGenerated(bool val)
+{
+    SetObjectType(eObjectType_RefGeneTracking);
+    CUser_field& field = SetField(kRefGeneTrackingGenerated);
+    field.SetBool(val);
+}
+
+
+bool CUser_object::GetRefGeneTrackingGenerated() const
+{
+    if (GetObjectType() != eObjectType_RefGeneTracking) {
+        return false;
+    }
+    bool rval = false;
+    CConstRef<CUser_field> field = GetFieldRef(kRefGeneTrackingGenerated);
+    if (field && field->IsSetData() && field->GetData().IsBool() &&
+        field->GetData().GetBool()) {
+        rval = true;
+    }
+    return rval;
+}
+
+
+void CUser_object::ResetRefGeneTrackingGenerated()
+{
+    RemoveNamedField(kRefGeneTrackingGenerated);
+}
+
+
+const string kRGTAAccession = "accession";
+const string kRGTAName = "name";
+const string kRGTAGI = "gi";
+const string kRGTAFrom = "from";
+const string kRGTATo = "to";
+const string kRGTAComment = "comment";
+
+CRef<CUser_field> CUser_object::CRefGeneTrackingAccession::MakeAccessionField() const
+{
+    CRef<CUser_field> top(new CUser_field());
+    //use IsSet construction here
+    if (!NStr::IsBlank(m_Accession)) {
+        CRef<CUser_field> uf(new CUser_field());
+        uf->SetLabel().SetStr(kRGTAAccession);
+        uf->SetData().SetStr(m_Accession);
+        top->SetData().SetFields().push_back(uf);
+    }
+    if (!NStr::IsBlank(m_Name)) {
+        CRef<CUser_field> uf(new CUser_field());
+        uf->SetLabel().SetStr(kRGTAName);
+        uf->SetData().SetStr(m_Name);
+        top->SetData().SetFields().push_back(uf);
+    }
+    if (m_GI > 0) {
+        CRef<CUser_field> uf(new CUser_field());
+        uf->SetLabel().SetStr(kRGTAGI);
+        uf->SetData().SetInt(m_GI);
+        top->SetData().SetFields().push_back(uf);
+    }
+    if (m_From != kInvalidSeqPos) {
+        CRef<CUser_field> uf(new CUser_field());
+        uf->SetLabel().SetStr(kRGTAFrom);
+        uf->SetData().SetInt(m_From);
+        top->SetData().SetFields().push_back(uf);
+    }
+    if (m_To != kInvalidSeqPos) {
+        CRef<CUser_field> uf(new CUser_field());
+        uf->SetLabel().SetStr(kRGTATo);
+        uf->SetData().SetInt(m_To);
+        top->SetData().SetFields().push_back(uf);
+    }
+    if (!NStr::IsBlank(m_Comment)) {
+        CRef<CUser_field> uf(new CUser_field());
+        uf->SetLabel().SetStr(kRGTAComment);
+        uf->SetData().SetStr(m_Comment);
+        top->SetData().SetFields().push_back(uf);
+    }
+    if (top->IsSetData()) {
+        top->SetLabel().SetId(0);
+    } else {
+        top.Reset(NULL);
+    }
+    return top;
+}
+
+
+CRef<CUser_object::CRefGeneTrackingAccession> 
+CUser_object::CRefGeneTrackingAccession::MakeAccessionFromUserField(const CUser_field& field)
+{
+    // TODO: Throw exception if no good fields or if any bad fields found
+    if (!field.IsSetData() || !field.GetData().IsFields()) {
+        return CRef<CRefGeneTrackingAccession>(NULL);
+    }
+
+    string accession, acc_name, comment;
+    TSeqPos from = kInvalidSeqPos, to = kInvalidSeqPos;
+    TGi gi = 0;
+    for (auto it : field.GetData().GetFields()) {
+        if (it->IsSetLabel() && it->GetLabel().IsStr() && it->IsSetData()) {
+            // finish taking out dereferences
+            const string& label = it->GetLabel().GetStr();
+            if (NStr::EqualNocase(label, kRGTAAccession)) {
+                if (it->GetData().IsStr()) {
+                    accession = it->GetData().GetStr();
+                } else {
+                    NCBI_THROW(CRefGeneTrackingException, eBadUserFieldData, kEmptyStr);
+                }
+            } else if (NStr::EqualNocase(label, kRGTAName)) {
+                if (it->GetData().IsStr()) {
+                    acc_name = it->GetData().GetStr();
+                } else {
+                    NCBI_THROW(CRefGeneTrackingException, eBadUserFieldData, kEmptyStr);
+                }
+            } else if (NStr::EqualNocase(label, kRGTAComment)) {
+                if (it->GetData().IsStr()) {
+                    comment = it->GetData().GetStr();
+                } else {
+                    NCBI_THROW(CRefGeneTrackingException, eBadUserFieldData, kEmptyStr);
+                }
+            } else if (NStr::EqualNocase(label, kRGTAGI)) {
+                if (it->GetData().IsInt()) {
+                    gi = it->GetData().GetInt();
+                } else {
+                    NCBI_THROW(CRefGeneTrackingException, eBadUserFieldData, kEmptyStr);
+                }
+            } else if (NStr::EqualNocase(label, kRGTAFrom)) {
+                if (it->GetData().IsInt()) {
+                    from = it->GetData().GetInt();
+                } else {
+                    NCBI_THROW(CRefGeneTrackingException, eBadUserFieldData, kEmptyStr);
+                }
+            } else if (NStr::EqualNocase(label, kRGTATo)) {
+                if (it->GetData().IsInt()) {
+                    to = it->GetData().GetInt();
+                } else {
+                    NCBI_THROW(CRefGeneTrackingException, eBadUserFieldData, kEmptyStr);
+                }
+            } else {
+                NCBI_THROW(CRefGeneTrackingException, eBadUserFieldName, "Unrecognized field name " + label);
+            }
+        } else {
+            NCBI_THROW(CRefGeneTrackingException, eUserFieldWithoutLabel, kEmptyStr);
+        }
+    }
+    return CRef<CRefGeneTrackingAccession>(new CRefGeneTrackingAccession(accession, gi, from, to, comment, acc_name));
+}
+
+
+const string kRefGeneTrackingIdenticalTo = "IdenticalTo";
+
+void CUser_object::SetRefGeneTrackingIdenticalTo(const CRefGeneTrackingAccession& accession)
+{
+    CUser_field& field = SetField(kRefGeneTrackingIdenticalTo);
+    field.ResetData();
+    CRef<CUser_field> ident = accession.MakeAccessionField();
+    if (ident) {
+        field.SetData().SetFields().push_back(ident);
+    }
+    SetObjectType(eObjectType_RefGeneTracking);
+}
+
+
+CConstRef<CUser_object::CRefGeneTrackingAccession> CUser_object::GetRefGeneTrackingIdenticalTo() const
+{
+    if (GetObjectType() != eObjectType_RefGeneTracking) {
+        return CConstRef<CUser_object::CRefGeneTrackingAccession>(NULL);
+    }
+    bool rval = false;
+    CConstRef<CUser_field> field = GetFieldRef(kRefGeneTrackingIdenticalTo);
+    if (field && field->IsSetData() && field->GetData().IsFields() && !field->GetData().GetFields().empty()) {
+        return CRefGeneTrackingAccession::MakeAccessionFromUserField(*(field->GetData().GetFields().front()));
+    }
+    return CConstRef<CUser_object::CRefGeneTrackingAccession>(NULL);
+}
+
+
+void CUser_object::ResetRefGeneTrackingIdenticalTo()
+{
+    RemoveNamedField(kRefGeneTrackingIdenticalTo);
+}
+
+const string kRefGeneTrackingAssembly = "Assembly";
+
+void CUser_object::SetRefGeneTrackingAssembly(const TRefGeneTrackingAccessions& acc_list)
+{
+    CUser_field& field = SetField(kRefGeneTrackingAssembly);
+    field.ResetData();
+    // use auto iterator syntax
+    for (auto it : acc_list) {
+        CRef<CUser_field> acc = it->MakeAccessionField();
+        if (acc) {
+            field.SetData().SetFields().push_back(acc);
+        }
+    }
+    SetObjectType(eObjectType_RefGeneTracking);
+}
+
+
+CUser_object::TRefGeneTrackingAccessions CUser_object::GetRefGeneTrackingAssembly() const
+{
+    TRefGeneTrackingAccessions rval;
+
+    if (GetObjectType() != eObjectType_RefGeneTracking) {
+        return rval;
+    }
+    CConstRef<CUser_field> field = GetFieldRef(kRefGeneTrackingAssembly);
+    if (field && field->IsSetData() && field->GetData().IsFields()) {
+        rval.reserve(field->GetData().GetFields().size());
+        for (auto it : field->GetData().GetFields()) {
+            rval.push_back(CRefGeneTrackingAccession::MakeAccessionFromUserField(*it));
+        }
+    }
+    return rval;
+}
+
+
+void CUser_object::ResetRefGeneTrackingAssembly()
+{
+    RemoveNamedField(kRefGeneTrackingAssembly);
+}
+
+
 
 
 END_objects_SCOPE // namespace ncbi::objects::

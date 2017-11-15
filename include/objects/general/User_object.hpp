@@ -167,7 +167,8 @@ public:
         eObjectType_ValidationSuppression,
         eObjectType_Cleanup,
         eObjectType_AutodefOptions,
-        eObjectType_FileTrack
+        eObjectType_FileTrack,
+        eObjectType_RefGeneTracking
     };
 
     EObjectType GetObjectType() const;
@@ -186,9 +187,129 @@ public:
 
     void UpdateNcbiCleanup(int version);
 
+    // returns true if one or more matching fields were removed
+    bool RemoveNamedField(const string& field_name, NStr::ECase ecase = NStr::eCase);
+
     // Set FileTrack URL
     void SetFileTrackURL(const string& url);
     void SetFileTrackUploadId(const string& upload_id);
+
+    // For RefGeneTracking
+    // See https://confluence.ncbi.nlm.nih.gov/display/REF/RefGeneTracking+user+object?focusedCommentId=94310717#comment-94310717 for spec
+    // JIRA:MSS-677
+    enum ERefGeneTrackingStatus {
+        eRefGeneTrackingStatus_Error = -1,
+        eRefGeneTrackingStatus_NotSet,
+        eRefGeneTrackingStatus_PREDICTED,
+        eRefGeneTrackingStatus_PROVISIONAL,
+        eRefGeneTrackingStatus_INFERRED, 
+        eRefGeneTrackingStatus_VALIDATED, 
+        eRefGeneTrackingStatus_REVIEWED, 
+        eRefGeneTrackingStatus_PIPELINE,
+        eRefGeneTrackingStatus_WGS
+    };
+    void SetRefGeneTrackingStatus(ERefGeneTrackingStatus status);
+    ERefGeneTrackingStatus GetRefGeneTrackingStatus() const;
+    void ResetRefGeneTrackingStatus();
+
+    void SetRefGeneTrackingGenomicSource(const string& genomic_source);
+    const string& GetRefGeneTrackingGenomicSource() const;
+    void ResetRefGeneTrackingGenomicSource();
+
+    void SetRefGeneTrackingGenerated(bool val = true);
+    bool GetRefGeneTrackingGenerated() const;
+    void ResetRefGeneTrackingGenerated();
+
+    // Collaborator field in RefGeneTracking User-object
+    void SetRefGeneTrackingCollaborator(const string& collaborator);
+    const string& GetRefGeneTrackingCollaborator() const;
+    void ResetRefGeneTrackingCollaborator();
+
+    // CollaboratorURL field in RefGeneTracking User-object
+    void SetRefGeneTrackingCollaboratorURL(const string& collaborator_url);
+    const string& GetRefGeneTrackingCollaboratorURL() const;
+    void ResetRefGeneTrackingCollaboratorURL();
+
+    class CRefGeneTrackingException : public CException
+    {
+    public:
+        enum EErrCode {            
+            eUserFieldWithoutLabel,
+            eBadUserFieldName,
+            eBadUserFieldData,
+            eBadStatus
+        };
+
+        virtual const char* GetErrCodeString() const
+        {
+            switch (GetErrCode()) {
+            case eUserFieldWithoutLabel: return "User field without label";
+            case eBadUserFieldData: return "Unexpected data type";
+            default:     return CException::GetErrCodeString();
+            }
+        }
+
+        NCBI_EXCEPTION_DEFAULT(CRefGeneTrackingException, CException);
+    };
+
+    class CRefGeneTrackingAccession : public CObject {
+    public:
+        CRefGeneTrackingAccession() {}
+        CRefGeneTrackingAccession(const string& accession,
+                                  TGi gi = 0,
+                                  TSeqPos from = kInvalidSeqPos,
+                                  TSeqPos to = kInvalidSeqPos,
+                                  const string& comment = kEmptyStr,
+                                  const string& acc_name = kEmptyStr) :
+            m_Accession(accession),
+            m_GI(gi),
+            m_From(from),
+            m_To(to),
+            m_Comment(comment),
+            m_Name(acc_name) {}
+
+        ~CRefGeneTrackingAccession() {}
+
+        const string& GetAccession() const { return m_Accession; }
+        bool IsSetAccession() const { return !m_Accession.empty(); }
+        const string& GetComment() const { return m_Comment; }
+        bool IsSetComment() const { return !m_Comment.empty(); }
+        const string& GetName() const { return m_Name; }
+        bool IsSetName() const { return !m_Name.empty(); }
+        TGi GetGI() const { return m_GI; }
+        bool IsSetGI() const { return m_GI > 0; }
+        TSeqPos GetFrom() const { return m_From; }
+        bool IsSetFrom() const { return m_From != kInvalidSeqPos; }
+        TSeqPos GetTo() const { return m_To; }
+        bool IsSetTo() const { return m_To != kInvalidSeqPos; }
+
+        CRef<CUser_field> MakeAccessionField() const;
+        static CRef<CRefGeneTrackingAccession> MakeAccessionFromUserField(const CUser_field& field);
+
+    private:
+        string m_Accession;
+        TGi m_GI;
+        TSeqPos m_From;
+        TSeqPos m_To;
+        string m_Comment;
+        string m_Name;
+
+        /// Prohibit copy constructor and assignment operator
+        CRefGeneTrackingAccession(const CRefGeneTrackingAccession& cpy) = delete;
+        CRefGeneTrackingAccession& operator=(const CRefGeneTrackingAccession& value) = delete;
+    };
+
+    typedef vector<CConstRef<CRefGeneTrackingAccession> > TRefGeneTrackingAccessions;
+
+    // "IdenticalTo" field in RefGeneTracking User-object: can have only one accession
+    void SetRefGeneTrackingIdenticalTo(const CRefGeneTrackingAccession& accession);
+    CConstRef<CRefGeneTrackingAccession> GetRefGeneTrackingIdenticalTo() const;
+    void ResetRefGeneTrackingIdenticalTo();
+
+    // "Assembly" field in RefGeneTracking User-object: can have one or more accessions
+    void SetRefGeneTrackingAssembly(const TRefGeneTrackingAccessions& acc_list);
+    TRefGeneTrackingAccessions GetRefGeneTrackingAssembly() const;
+    void ResetRefGeneTrackingAssembly();
 
 private:
     /// Prohibit copy constructor and assignment operator
@@ -199,6 +320,10 @@ private:
     bool x_IsUnverifiedType(const string& val, const CUser_field& field) const;
     void x_AddUnverifiedType(const string& val);
     void x_RemoveUnverifiedType(const string& val);
+
+    // for RefGeneTracking
+    void x_SetRefGeneTrackingField(const string& field_name, const string& value);
+    const string& x_GetRefGeneTrackingField(const string& field_name) const;
 };
 
 
