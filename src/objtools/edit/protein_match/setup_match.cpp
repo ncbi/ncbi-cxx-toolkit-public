@@ -256,7 +256,7 @@ bool CMatchSetup::x_GetNucSeqIdsFromCDSs(const CSeq_annot& annot,
     return found_id;
 }
 
-
+// Should be replaced with a gather features method with a unary predicate for filtering
 void CMatchSetup::GatherCdregionFeatures(const CSeq_entry& nuc_prot_set,
     list<CRef<CSeq_feat>>& cds_feats) const 
 {
@@ -294,7 +294,7 @@ void CMatchSetup::GatherCdregionFeatures(const CSeq_entry& nuc_prot_set,
 }
 
 
-CRef<CSeq_entry> CMatchSetup::GetCoreNucProtSet(const CSeq_entry& nuc_prot_set) const 
+CRef<CSeq_entry> CMatchSetup::GetCoreNucProtSet(const CSeq_entry& nuc_prot_set, bool exclude_local_ids) const 
 {
     CRef<CSeq_entry> pCoreSet = Ref(new CSeq_entry());
     pCoreSet->SetSet().SetClass(CBioseq_set::eClass_nuc_prot);
@@ -302,14 +302,20 @@ CRef<CSeq_entry> CMatchSetup::GetCoreNucProtSet(const CSeq_entry& nuc_prot_set) 
     list<CRef<CSeq_feat>> cds_feats;
     GatherCdregionFeatures(nuc_prot_set, cds_feats);
 
+    // cds_feats - remove if
+
     for (CRef<CSeq_entry> pSubEntry : nuc_prot_set.GetSet().GetSeq_set()) {
         const CBioseq& old_seq = pSubEntry->GetSeq();
+
+        if (exclude_local_ids && !old_seq.GetNonLocalId()) {
+            continue;
+        }
         CRef<CSeq_entry> pCoreSubEntry(new CSeq_entry());
         CBioseq& core_seq = pCoreSubEntry->SetSeq();
         core_seq.SetId() = old_seq.GetId();
         core_seq.SetInst().Assign(old_seq.GetInst()); // May be no need to copy here
        
-        if (old_seq.IsNa()) {
+        if (old_seq.IsNa() && !cds_feats.empty()) {
             CRef<CSeq_annot> pCoreAnnot(new CSeq_annot());
             pCoreAnnot->SetData().SetFtable() = cds_feats;
             core_seq.SetAnnot().push_back(pCoreAnnot);
@@ -339,7 +345,7 @@ bool CMatchSetup::GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
         if (pSubentry->IsSeq() && pSubentry->GetSeq().IsNa()) {
             const CBioseq& nucseq = pSubentry->GetSeq();
             if (nucseq.IsSetAnnot()) {
-                for (CRef<CSeq_annot> pAnnot : bioseq_set.GetAnnot()) {
+                for (CRef<CSeq_annot> pAnnot : nucseq.GetAnnot()) {
                     x_GetNucSeqIdsFromCDSs(*pAnnot, ids);
                 }
             }

@@ -71,7 +71,7 @@ public:
     void GatherCdregionFeatures(const CSeq_entry& nuc_prot_set,
             list<CRef<CSeq_feat>>& cds_feats) const;
 
-    CRef<CSeq_entry> GetCoreNucProtSet(const CSeq_entry& nuc_prot_set) const;
+    CRef<CSeq_entry> GetCoreNucProtSet(const CSeq_entry& nuc_prot_set, bool exclude_local_ids=false) const;
 private:
 
     struct SIdCompare

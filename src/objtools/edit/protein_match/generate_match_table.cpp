@@ -361,6 +361,8 @@ void CMatchTabulate::x_ProcessProteins(
                 new_protein_skip[nuc_acc].insert(local_id);
             }
 
+            cout << "Match by accession" << endl;
+
             SProtMatchInfo match;
             match.nuc_accession = nuc_acc;
             match.prot_accession = subject_acc;

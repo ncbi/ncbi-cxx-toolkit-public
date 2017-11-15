@@ -912,7 +912,11 @@ void CProteinMatchApp::x_InitNucProtSetMatch(CRef<CSeq_entry> nuc_prot_set,
         x_GatherProteinAccessions(db_entry->GetSet(), match_info.SetDBProtIds());
     }
 
-    x_RelabelNucSeq(nuc_prot_set); // Temporary - need to fix this
+    CRef<CSeq_entry> core_nuc_prot_set = m_pMatchSetup->GetCoreNucProtSet(*nuc_prot_set);
+
+   // CRef<CSeq_entry> core_nuc_prot_set = nuc_prot_set;
+
+    x_RelabelNucSeq(core_nuc_prot_set); // Temporary - need to fix this
 
     if (!m_TempFilesCreated) {
         x_CreateSeqEntryOStreams(filename_map, ostream_map);
@@ -920,7 +924,7 @@ void CProteinMatchApp::x_InitNucProtSetMatch(CRef<CSeq_entry> nuc_prot_set,
     }
 
     x_WriteToSeqEntryTempFiles(
-        nuc_prot_set->GetSet(),
+        core_nuc_prot_set->GetSet(),
         *db_entry,
         filename_map,
         ostream_map);
@@ -1004,10 +1008,12 @@ bool CProteinMatchApp::x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& seq_
 
 void CProteinMatchApp::x_RelabelNucSeq(CRef<CSeq_entry> nuc_prot_set) 
 {
+
     CRef<CSeq_id> local_id;
     // Could optimize this. No need to look for CDS features if the 
     // nuc-prot set contains only a nucleotide sequence.
     if (!m_pMatchSetup->GetNucSeqIdFromCDSs(*nuc_prot_set, local_id)) {
+
         // There are no CDS features, so just make the nuc-seq id local 
         const CBioseq& nuc_seq = nuc_prot_set->GetSet().GetNucFromNucProtSet();
         const CSeq_id* id_ptr = nuc_seq.GetFirstId();
@@ -1016,6 +1022,7 @@ void CProteinMatchApp::x_RelabelNucSeq(CRef<CSeq_entry> nuc_prot_set)
                 if (nuc_seq.GetId().size() == 1) {
                     return; // Bioseq already has a single local id => nothing to do here
                 } // else
+                local_id = Ref(new CSeq_id());
                 local_id->Assign(*id_ptr);
             }
             else {
@@ -1295,10 +1302,8 @@ void CProteinMatchApp::x_WriteToSeqEntryTempFiles(
     CRef<CSeq_entry> nuc_prot_se = Ref(new CSeq_entry());
     nuc_prot_se->SetSet().Assign(nuc_prot_set);
 
-    CRef<CSeq_entry> core_se = m_pMatchSetup->GetCoreNucProtSet(*nuc_prot_se);
 
-    //x_WriteEntry(*nuc_prot_se, 
-    x_WriteEntry(*core_se,
+    x_WriteEntry(*nuc_prot_se, 
         "local_nuc_prot_set",
         filename_map,
         ostream_map);
