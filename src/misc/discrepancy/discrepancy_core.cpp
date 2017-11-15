@@ -372,6 +372,7 @@ bool CDiscrepancyContext::AddTest(const string& name)
     REGISTER_DISCREPANCY_TYPE(CAuth_list)
     REGISTER_DISCREPANCY_TYPE(CPerson_id)
     REGISTER_DISCREPANCY_TYPE(CBioseq_set)
+    REGISTER_DISCREPANCY_TYPE(string)
     return false;
 }
 
@@ -613,6 +614,14 @@ void CDiscrepancyContext::AutofixAll()
         ITERATE (TReportItemList, it, list) {
             (*it)->Autofix(*m_Scope);
         }
+    }
+}
+
+
+void CDiscrepancyContext::TestString(const string& str)
+{
+    NON_CONST_ITERATE (vector<CDiscrepancyVisitor<string>* >, it, m_All_string) {
+        Call(**it, str);
     }
 }
 

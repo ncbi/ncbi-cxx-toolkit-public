@@ -53,6 +53,7 @@ public:
     CReportObject(CConstRef<CSeqdesc> obj, CScope& scope) : m_Type(eType_descriptor), m_Seqdesc(obj), m_Scope(scope) {}
     CReportObject(CConstRef<CSubmit_block> obj, CScope& scope, const string& text) : m_Type(eType_submit_block), m_Text(text), m_Submit_block(obj), m_Scope(scope) {}
     CReportObject(CConstRef<CBioseq_set> obj, CScope& scope) : m_Type(eType_seq_set), m_Bioseq_set(obj), m_Scope(scope) {}
+    CReportObject(const string& str, CScope& scope) : m_Type(eType_string), m_Text(str), m_Scope(scope) {}
     CReportObject(const CReportObject& other) :
         m_Type(other.m_Type),
         m_Text(other.m_Text),

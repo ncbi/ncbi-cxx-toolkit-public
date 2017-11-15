@@ -942,6 +942,14 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::NewSeqdescObj(CConstRef<CSeqdesc> 
 }
 
 
+CRef<CDiscrepancyObject> CDiscrepancyContext::NewStringObj(const string& str, EKeepRef keep_ref, bool autofix, CObject* more)
+{
+    bool keep = keep_ref || m_KeepRef;
+    CRef<CDiscrepancyObject> D(new CDiscrepancyObject(str, *m_Scope, m_File, keep, autofix, more));
+    return D;
+}
+
+
 CRef<CDiscrepancyObject> CDiscrepancyContext::NewDiscObj(CConstRef<CSeq_feat> obj, EKeepRef keep_ref, bool autofix, CObject* more)
 {
     bool keep = keep_ref || m_KeepRef;

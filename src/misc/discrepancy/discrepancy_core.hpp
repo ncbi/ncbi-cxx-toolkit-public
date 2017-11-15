@@ -134,6 +134,10 @@ protected:
     {
         SetFilename(filename);
     }
+    CDiscrepancyObject(const string& str, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(str, scope), m_Autofix(autofix), m_Fixed(false), m_More(more)
+    {
+        SetFilename(filename);
+    }
     CDiscrepancyObject(const CDiscrepancyObject& other) : CReportObject(other), m_Autofix(other.m_Autofix), m_Case(other.m_Case), m_More(other.m_More) {}
 
 public:
@@ -365,11 +369,13 @@ public:
             INIT_DISCREPANCY_TYPE(CPubdesc),
             INIT_DISCREPANCY_TYPE(CAuth_list),
             INIT_DISCREPANCY_TYPE(CPerson_id),
-            INIT_DISCREPANCY_TYPE(CBioseq_set)
+            INIT_DISCREPANCY_TYPE(CBioseq_set),
+            INIT_DISCREPANCY_TYPE(string)
         { InitStatic(); }
     bool AddTest(const string& name);
     bool SetAutofixHook(const string& name, TAutofixHook func);
     void Parse(const CSerialObject& root);
+    void TestString(const string& str);
     void Summarize(void);
     void AutofixAll(void);
     const TDiscrepancyCaseMap& GetTests(void){ return m_Tests; }
@@ -446,6 +452,7 @@ public:
     CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CBioseq_set> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewSubmitBlockObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewCitSubObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
+    CRef<CDiscrepancyObject> NewStringObj(const string& str, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewFeatOrDescObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewFeatOrDescOrSubmitBlockObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewFeatOrDescOrCitSubObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
@@ -516,6 +523,7 @@ protected:
     // features of the set, and never to subvert the visitor pattern
     // by iterating over the contents oneself
     ADD_DISCREPANCY_TYPE(CBioseq_set)
+    ADD_DISCREPANCY_TYPE(string)
 
     // moved static members from the functions
     mutable size_t GetCurrentBioseqLabel_count;

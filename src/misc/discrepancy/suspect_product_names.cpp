@@ -228,13 +228,13 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
                     continue;
                 }
                 size_t rule_type = (*rule)->GetRule_type();
-                string rule_num = "[*";
+                string rule_name = "[*";
                 if (rule_type < 10) {
-                    rule_num += " ";
+                    rule_name += " ";
                 }
-                rule_num += NStr::NumericToString(rule_type) + "*]" + GetRuleText(**rule);
+                rule_name += NStr::NumericToString(rule_type) + "*]" + GetRuleText(**rule);
                 string rule_text = leading_space + GetRuleMatch(**rule);
-                CReportNode& node = m_Objs[kSuspectProductNames][rule_num].Summ()[rule_text].Summ();
+                CReportNode& node = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
                 const CSeq_feat* cds = sequence::GetCDSForProduct(*(context.GetCurrentBioseq()), &(context.GetScope()));
                 node.Add(*context.NewDiscObj(cds ? CConstRef<CSeq_feat>(cds) : context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Severity((*rule)->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
             }
@@ -524,6 +524,7 @@ static void s_SummarizeSuspectRule(
     }
 }
 
+
 DISCREPANCY_CASE(SUSPECT_RRNA_PRODUCTS, CSeq_feat, eDisc | eSubmitter | eSmart, "rRNA product names should not contain 'partial' or 'domain'")
 {
     if( ! obj.IsSetData() ||
@@ -546,17 +547,51 @@ DISCREPANCY_CASE(SUSPECT_RRNA_PRODUCTS, CSeq_feat, eDisc | eSubmitter | eSmart, 
             CNcbiOstrstream detailed_msg;
             detailed_msg << "[n] rRNA product name[s] ";
             s_SummarizeSuspectRule(detailed_msg, suspect_rule);
-
             m_Objs[kMsg][(string)CNcbiOstrstreamToString(detailed_msg)].Ext().Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
         }
     }
 }
+
 
 DISCREPANCY_SUMMARIZE(SUSPECT_RRNA_PRODUCTS)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
+// _SUSPECT_PRODUCT_NAMES - used for asndisc -N option
+
+DISCREPANCY_CASE(_SUSPECT_PRODUCT_NAMES, string, 0, "Suspect Product Names for asndisc -N option")
+{
+    CConstRef<CSuspect_rule_set> rules = context.GetProductRules();
+    if (!ContainsLetters(obj)) {
+        CReportNode& node = m_Objs[kSuspectProductNames]["[*-1*]Product name does not contain letters"].Summ()["[n] feature[s] [does] not contain letters in product name"].Summ().Fatal();
+        node.Add(*context.NewStringObj(obj)).Fatal();
+    }
+    size_t rule_num = 1;
+    ITERATE(list<CRef<CSuspect_rule> >, rule, rules->Get()) {
+        string leading_space = "[*" + NStr::NumericToString(rule_num) + "*]";
+        rule_num++;
+        if (!(*rule)->StringMatchesSuspectProductRule(obj)) {
+            continue;
+        }
+        size_t rule_type = (*rule)->GetRule_type();
+        string rule_name = "[*";
+        if (rule_type < 10) {
+            rule_name += " ";
+        }
+        rule_name += NStr::NumericToString(rule_type) + "*]" + GetRuleText(**rule);
+        string rule_text = leading_space + GetRuleMatch(**rule);
+        CReportNode& node = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
+        node.Add(*context.NewStringObj(obj)).Fatal();
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(_SUSPECT_PRODUCT_NAMES)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

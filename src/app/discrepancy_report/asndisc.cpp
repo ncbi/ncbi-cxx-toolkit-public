@@ -39,6 +39,7 @@
 #include <serial/objostr.hpp>
 #include <util/format_guess.hpp>
 #include <util/compress/stream_util.hpp>
+#include <util/line_reader.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(NDiscrepancy);
@@ -73,6 +74,7 @@ protected:
     string m_Lineage;   // override lineage
     vector<string> m_Files;
     vector<string> m_Tests;
+    bool m_SuspectProductNames;
     bool m_Ext;
     bool m_Fat;
     bool m_AutoFix;
@@ -82,7 +84,7 @@ protected:
 };
 
 
-CDiscRepApp::CDiscRepApp(void) : m_Scope(*CObjectManager::GetInstance()), m_Ext(false), m_Fat(false), m_AutoFix(false), m_Macro(false), m_Xml(false), m_Print(false)
+CDiscRepApp::CDiscRepApp(void) : m_Scope(*CObjectManager::GetInstance()), m_SuspectProductNames(false), m_Ext(false), m_Fat(false), m_AutoFix(false), m_Macro(false), m_Xml(false), m_Print(false)
 {
   SetVersionByBuild(1);
 }
@@ -146,6 +148,7 @@ void CDiscRepApp::Init(void)
     arg_desc->AddOptionalKey("L", "LineageToUse", "Default lineage", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("X", "ExpandCategories", "Expand Report Categories (comma-delimited list of test names or ALL)", CArgDescriptions::eString);
+    arg_desc->AddFlag("N", "Check Product Names");
     arg_desc->AddFlag("F", "Autofix");
     arg_desc->AddFlag("R", "Generate Autofix MACRO file");
     arg_desc->AddFlag("XML", "Generate XML output");
@@ -293,21 +296,33 @@ void CDiscRepApp::x_ParseDirectory(const string& name, bool recursive)
 void CDiscRepApp::x_ProcessFile(const string& fname)
 {
     CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(m_Scope);
-    ITERATE (vector<string>, tname, m_Tests) {
-        Tests->AddTest(*tname);
+    if (m_SuspectProductNames) {
+        Tests->AddTest("_SUSPECT_PRODUCT_NAMES");
+        CNcbiIfstream istr(fname);
+        CStreamLineReader line_reader(istr);
+        do {
+            Tests->TestString(*++line_reader);
+        }
+        while (!line_reader.AtEOF());
+        Tests->Summarize();
     }
-    CRef<CSerialObject> obj = x_ReadFile(fname);
-    Tests->SetKeepRef(m_AutoFix);
-    Tests->SetSuspectRules(m_SuspectRules);
-    Tests->SetLineage(m_Lineage);
-    Tests->Parse(*obj);
-    Tests->Summarize();
-    if (m_Macro) {
-        x_OutputMacro(x_ConstructMacroName(fname), Tests->GetTests());
-    }
-    if (m_AutoFix) {
-        x_Autofix(Tests->GetTests());
-        x_OutputObject(x_ConstructAutofixName(fname), *obj);
+    else {
+        ITERATE (vector<string>, tname, m_Tests) {
+            Tests->AddTest(*tname);
+        }
+        CRef<CSerialObject> obj = x_ReadFile(fname);
+        Tests->SetKeepRef(m_AutoFix);
+        Tests->SetSuspectRules(m_SuspectRules);
+        Tests->SetLineage(m_Lineage);
+        Tests->Parse(*obj);
+        Tests->Summarize();
+        if (m_Macro) {
+            x_OutputMacro(x_ConstructMacroName(fname), Tests->GetTests());
+        }
+        if (m_AutoFix) {
+            x_Autofix(Tests->GetTests());
+            x_OutputObject(x_ConstructAutofixName(fname), *obj);
+        }
     }
     m_Xml ? x_OutputXml(x_ConstructOutputName(fname), *Tests) : x_Output(x_ConstructOutputName(fname), *Tests);
     if (m_Print) {
@@ -318,37 +333,54 @@ void CDiscRepApp::x_ProcessFile(const string& fname)
 
 void CDiscRepApp::x_ProcessAll(const string& outname)
 {
-    CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(m_Scope);
-    ITERATE (vector<string>, tname, m_Tests) {
-        Tests->AddTest(*tname);
-    }
-    Tests->SetKeepRef(m_AutoFix);
-    Tests->SetSuspectRules(m_SuspectRules);
-    Tests->SetLineage(m_Lineage);
-    typedef map<string, CRef<CSerialObject> > TStr2Obj;
-    TStr2Obj objects;
     int count = 0;
-    ITERATE (vector<string>, fname, m_Files) {
-        ++count;
-        LOG_POST((string)"Processing file " + NStr::IntToString(count) + " of " + NStr::IntToString((int)m_Files.size()));
-        CRef<CSerialObject> obj = x_ReadFile(*fname);
-        Tests->SetFile(*fname);
-        Tests->Parse(*obj);
+    CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(m_Scope);
+    if (m_SuspectProductNames) {
+        Tests->AddTest("_SUSPECT_PRODUCT_NAMES");
+        ITERATE (vector<string>, fname, m_Files) {
+            ++count;
+            LOG_POST((string)"Processing file " + NStr::IntToString(count) + " of " + NStr::IntToString((int)m_Files.size()));
+            Tests->SetFile(*fname);
+            CNcbiIfstream istr(*fname);
+            CStreamLineReader line_reader(istr);
+            do {
+                Tests->TestString(*++line_reader);
+            }
+            while (!line_reader.AtEOF());
+        }
+        Tests->Summarize();
+    }
+    else {
+        ITERATE (vector<string>, tname, m_Tests) {
+            Tests->AddTest(*tname);
+        }
+        Tests->SetKeepRef(m_AutoFix);
+        Tests->SetSuspectRules(m_SuspectRules);
+        Tests->SetLineage(m_Lineage);
+        typedef map<string, CRef<CSerialObject> > TStr2Obj;
+        TStr2Obj objects;
+        ITERATE (vector<string>, fname, m_Files) {
+            ++count;
+            LOG_POST((string)"Processing file " + NStr::IntToString(count) + " of " + NStr::IntToString((int)m_Files.size()));
+            CRef<CSerialObject> obj = x_ReadFile(*fname);
+            Tests->SetFile(*fname);
+            Tests->Parse(*obj);
+            if (m_AutoFix) {
+                objects[*fname] = obj;
+            }
+            else {
+                m_Scope.ResetDataAndHistory();
+            }
+        }
+        Tests->Summarize();
+        if (m_Macro) {
+            x_OutputMacro(x_ConstructMacroName(outname), Tests->GetTests());
+        }
         if (m_AutoFix) {
-            objects[*fname] = obj;
-        }
-        else {
-            m_Scope.ResetDataAndHistory();
-        }
-    }
-    Tests->Summarize();
-    if (m_Macro) {
-        x_OutputMacro(x_ConstructMacroName(outname), Tests->GetTests());
-    }
-    if (m_AutoFix) {
-        x_Autofix(Tests->GetTests());
-        ITERATE (TStr2Obj, it, objects) {
-            x_OutputObject(x_ConstructAutofixName(it->first), *it->second);
+            x_Autofix(Tests->GetTests());
+            ITERATE (TStr2Obj, it, objects) {
+                x_OutputObject(x_ConstructAutofixName(it->first), *it->second);
+            }
         }
     }
     m_Xml ? x_OutputXml(outname, *Tests) : x_Output(outname, *Tests);
@@ -452,6 +484,10 @@ int CDiscRepApp::Run(void)
     // constructing the test list
     set<string> Tests;
     if (args["e"]) {
+        if (args["N"]) {
+            ERR_POST("Options -N and -e are mutually exclusive");
+            return 1;
+        }
         list<string> List;
         NStr::Split(args["e"].AsString(), ", ", List, NStr::fSplit_Tokenize);
         ITERATE (list<string>, s, List) {
@@ -464,7 +500,8 @@ int CDiscRepApp::Run(void)
             }
         }
         LOG_POST(string("Option ignored: -P ") + group);
-    } else {
+    }
+    else if (!args["N"]) {
         vector<string> AllTests;
         switch (group) {
             case 'q':
@@ -479,6 +516,10 @@ int CDiscRepApp::Run(void)
         copy(AllTests.begin(), AllTests.end(), inserter(Tests, Tests.begin()));
     }
     if (args["d"]) {
+        if (args["N"]) {
+            ERR_POST("Options -N and -d are mutually exclusive");
+            return 1;
+        }
         list<string> List;
         NStr::Split(args["d"].AsString(), ", ", List, NStr::fSplit_Tokenize);
         ITERATE (list<string>, s, List) {
@@ -491,10 +532,15 @@ int CDiscRepApp::Run(void)
             }
         }
     }
-    copy(Tests.begin(), Tests.end(), back_inserter(m_Tests));
-    if (m_Tests.empty()) {
-        ERR_POST("Empty test list");
-        return 1;
+    if (args["N"]) {
+        m_SuspectProductNames = true;
+    }
+    else {
+        copy(Tests.begin(), Tests.end(), back_inserter(m_Tests));
+        if (m_Tests.empty()) {
+            ERR_POST("Empty test list");
+            return 1;
+        }
     }
 
     if (args["X"]) {
@@ -532,7 +578,8 @@ int CDiscRepApp::Run(void)
     // run tests
     if (args["o"]) {
         x_ProcessAll(args["o"].AsString());
-    } else {
+    }
+    else {
         int count = 0;
         ITERATE (vector<string>, f, m_Files) {
             ++count;
