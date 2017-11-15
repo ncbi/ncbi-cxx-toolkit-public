@@ -62,7 +62,11 @@ static void RecursiveText(ostream& out, const TReportItemList& list, bool fatal,
         if (fatal && ShowFatal(**it)) {
             out << "FATAL: ";
         }
-        out << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";
+        string name = (*it)->GetTitle();
+        if (name[0] == '_') {
+            name = name.substr(1);
+        }
+        out << name << ": " << (*it)->GetMsg() << "\n";
         TReportItemList subs = (*it)->GetSubitems();
         if (!subs.empty() && (ext || !subs[0]->IsExtended() && !subs[0]->IsSummary())) {
             RecursiveText(out, subs, fatal, ext);
@@ -88,7 +92,11 @@ static void RecursiveSummary(ostream& out, const TReportItemList& list, bool fat
             if (fatal && ShowFatal(**it)) {
                 out << "FATAL: ";
             }
-            out << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";
+            string name = (*it)->GetTitle();
+            if (name[0] == '_') {
+                name = name.substr(1);
+            }
+            out << name << ": " << (*it)->GetMsg() << "\n";
         }
         else if ((*it)->IsSummary()) {
             for (size_t i = 0; i < level; i++) {
@@ -230,7 +238,11 @@ void CDiscrepancyContext::OutputXML(ostream& out, bool ext)
         }
         TReportObjectList objs = tst->second->GetObjects();
         Indent(out, XML_INDENT);
-        out << "<test name=\"" << NStr::XmlEncode(tst->first) << "\" description=\"" << NStr::XmlEncode(GetDiscrepancyDescr(tst->first)) << "\" severity=\"" << SevLevel[sev] << "\" cardinality=\"" << objs.size() << "\">\n";
+        string name = tst->first;
+        if (name[0] == '_') {
+            name = name.substr(1);
+        }
+        out << "<test name=\"" << name << "\" description=\"" << NStr::XmlEncode(GetDiscrepancyDescr(tst->first)) << "\" severity=\"" << SevLevel[sev] << "\" cardinality=\"" << objs.size() << "\">\n";
         Indent(out, XML_INDENT * 2);
         out << "<object-collection>\n";
         ITERATE(TReportObjectList, obj, objs) {
@@ -251,6 +263,9 @@ void CDiscrepancyContext::OutputXML(ostream& out, bool ext)
                     break;
                 case CReportObj::eType_submit_block:
                     out << "\"submit_block\"";
+                    break;
+                case CReportObj::eType_string:
+                    out << "\"string\"";
                     break;
             }
             if (!(*obj)->GetFilename().empty()) {
