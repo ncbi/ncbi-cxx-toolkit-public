@@ -583,7 +583,7 @@ DISCREPANCY_CASE(_SUSPECT_PRODUCT_NAMES, string, 0, "Suspect Product Names for a
         rule_name += NStr::NumericToString(rule_type) + "*]" + GetRuleText(**rule);
         string rule_text = leading_space + GetRuleMatch(**rule);
         CReportNode& node = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
-        node.Add(*context.NewStringObj(obj)).Fatal();
+        node.Add(*context.NewStringObj(obj)).Severity((*rule)->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
     }
 }
 
