@@ -713,6 +713,18 @@ string CFeatTableEdit::xGenerateTranscriptOrProteinId(
         return "";
     }
 
+    auto parentGene = feature::GetBestGeneForFeat(mf, &mTree);
+    if (parentGene.GetData().GetGene().IsSetLocus_tag()) {
+        auto xxx_id = string("gnl|") + 
+            parentGene.GetData().GetGene().GetLocus_tag();
+        if (mf.GetFeatSubtype() == CSeqFeatData::eSubtype_cdregion) {
+            xxx_id += ".cds";
+        }
+        return xxx_id;
+    }
+
+    //very last resort.
+    // it would be very unusual (though not impossible) to get here ---
     auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
     if (locusTagPrefix.empty()) {
         xPutError(
