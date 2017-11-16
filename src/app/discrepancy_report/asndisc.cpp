@@ -298,7 +298,7 @@ void CDiscRepApp::x_ProcessFile(const string& fname)
     CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(m_Scope);
     if (m_SuspectProductNames) {
         Tests->AddTest("_SUSPECT_PRODUCT_NAMES");
-        CNcbiIfstream istr(fname);
+        CNcbiIfstream istr(fname.c_str());
         CStreamLineReader line_reader(istr);
         do {
             Tests->TestString(*++line_reader);
@@ -341,7 +341,7 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
             ++count;
             LOG_POST((string)"Processing file " + NStr::IntToString(count) + " of " + NStr::IntToString((int)m_Files.size()));
             Tests->SetFile(*fname);
-            CNcbiIfstream istr(*fname);
+            CNcbiIfstream istr(fname->c_str());
             CStreamLineReader line_reader(istr);
             do {
                 Tests->TestString(*++line_reader);
