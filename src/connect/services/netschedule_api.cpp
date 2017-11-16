@@ -43,6 +43,7 @@
 
 #include <util/ncbi_url.hpp>
 
+#include <array>
 #include <memory>
 #include <stdio.h>
 
