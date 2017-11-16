@@ -404,8 +404,6 @@ public:
 
     const vector<CRef<CFeatureIndex>>& GetFeatureIndices(void);
 
-    const vector<CRef<CFeatureIndex>>& GetSourceFeatIndices(void);
-
     // Get feature (CDS, mRNA, Prot) with product pointing to this Bioseq (protein, cDNA, peptide)
     CRef<CFeatureIndex> GetFeatureForProduct(void);
 
@@ -414,9 +412,6 @@ public:
 
     // Get best (longest) protein feature on this protein Bioseq
     CRef<CFeatureIndex> GetBestProteinFeature(void);
-
-    // Check if Bioseq has BioSource features
-    bool HasSourceFeats (void);
 
     // Flag to indicate failure to fetch remote sequence components or feature annotation
     bool IsFetchFailure (void) const { return m_FetchFailure; }
@@ -562,9 +557,6 @@ private:
     // CFeatureIndex from CMappedFeat for use with GetBestGene
     typedef map<CMappedFeat, CRef<CFeatureIndex> > TFeatIndexMap;
     TFeatIndexMap m_FeatIndexMap;
-
-    bool m_HasSourceFeats;
-    vector<CRef<CFeatureIndex>> m_SrcList;
 
     CRef<CSeqVector> m_SeqVec;
 

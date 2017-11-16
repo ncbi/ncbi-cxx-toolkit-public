@@ -704,8 +704,6 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_Tech = CMolInfo::eTech_unknown;
     m_Completeness = CMolInfo::eCompleteness_unknown;
 
-    m_HasSourceFeats = false;
-
     m_Accession.clear();
 
     m_IsNC = false;
@@ -1141,10 +1139,17 @@ void CBioseqIndex::x_InitSource (void)
             if (taxname.empty() || s_BlankOrNotSpecialTaxname(taxname)) {
                 CRef<CFeatureIndex> sfxp = GetFeatureForProduct();
                 if (sfxp) {
-                    CRef<CFeatureIndex> bscx = sfxp->GetOverlappingSource();
-                    if (bscx) {
-                        const CBioSource& bsrc = bscx->GetMappedFeat().GetData().GetBiosrc();
-                        m_BioSource.Reset (&bsrc);
+                    CMappedFeat cds_feat = sfxp->GetMappedFeat();
+                    if (cds_feat) {
+                        try {
+                            CMappedFeat src_feat = m_FeatTree.GetParent(cds_feat, CSeqFeatData::eSubtype_biosrc);
+                            if (src_feat) {
+                                const CBioSource& bsrc = src_feat.GetData().GetBiosrc();
+                                m_BioSource.Reset (&bsrc);
+                            }
+                        }
+                        catch  (CException& e) {
+                        }
                     }
                 }
             }
@@ -1667,8 +1672,6 @@ void CBioseqIndex::x_InitFeats (void)
             CSeqFeatData::E_Choice type = sfx->GetType();
 
             if (type == CSeqFeatData::e_Biosrc) {
-                m_HasSourceFeats = true;
-                m_SrcList.push_back(sfx);
                 if (! m_BioSource) {
                     if (! mf.IsSetData ()) continue;
                     const CSeqFeatData& sfdata = mf.GetData();
@@ -1796,17 +1799,6 @@ CRef<CFeatureIndex> CBioseqIndex::GetBestProteinFeature (void)
     }
 
     return m_BestProteinFeature;
-}
-
-// HasSourceFeats reports whether Bioseq has BioSource features
-bool CBioseqIndex::HasSourceFeats (void)
-
-{
-    if (! m_FeatsInitialized) {
-        x_InitFeats();
-    }
-
-    return m_HasSourceFeats;
 }
 
 // Common descriptor field getters
@@ -2384,16 +2376,6 @@ const vector<CRef<CFeatureIndex>>& CBioseqIndex::GetFeatureIndices(void)
     return m_SfxList;
 }
 
-const vector<CRef<CFeatureIndex>>& CBioseqIndex::GetSourceFeatIndices(void)
-
-{
-    if (! m_FeatsInitialized) {
-        x_InitFeats();
-    }
-
-    return m_SrcList;
-}
-
 
 // CGapIndex
 
@@ -2468,30 +2450,6 @@ CRef<CFeatureIndex> CFeatureIndex::GetBestGene (void)
         }
     } catch (CException& e) {
         LOG_POST(Error << "Error in CFeatureIndex::GetBestGene: " << e.what());
-    }
-    return CRef<CFeatureIndex> ();
-}
-
-// Find CFeatureIndex object for overlapping source feature using internal CFeatTree
-CRef<CFeatureIndex> CFeatureIndex::GetOverlappingSource (void)
-
-{
-    try {
-        TSeqPos lft = GetStart();
-        TSeqPos rgt = GetEnd();
-        CWeakRef<CBioseqIndex> bsx = GetBioseqIndex();
-        auto bsxl = bsx.Lock();
-        if (bsxl) {
-            for (auto& sfx : bsxl->GetSourceFeatIndices()) {
-                TSeqPos stt = sfx->GetStart();
-                TSeqPos stp = sfx->GetEnd();
-                if (lft >= stt && rgt <= stp) {
-                      return sfx;
-                }
-            }
-        }
-    } catch (CException& e) {
-        LOG_POST(Error << "Error in CFeatureIndex::GetOverlappingSource: " << e.what());
     }
     return CRef<CFeatureIndex> ();
 }
