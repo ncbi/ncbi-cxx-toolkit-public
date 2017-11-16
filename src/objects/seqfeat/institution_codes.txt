@@ -558,7 +558,7 @@ BMRP	s	Burpee Museum Rockford Paleontology
 BMSA	s	National Museum Bloemfontein		
 BMSC	s	Buffalo Museum of Science		
 BMUK	s	Bolton Museum		
-BNA<ESP>	c	National Bank of Algae		
+BNA<ESP>	c	Banco Espanol de Algas (Spanish Bank of Algae)	BNA
 BNA<GBR>	s	British (Empire) Naturalists' Association		
 BNBE	s	YMCA Hostel		
 BNFF	s	Banff Museum		
@@ -4367,6 +4367,7 @@ MULU	s	Museum Ludovicae Ulricae, Zoology Institute of the University of Uppsala
 MUM	c	Micoteca da Universidade do Minho		
 MUMF	s	Department of Life Sciences		
 MUMH<JPN>	s	Mie University Mycological Herbarium		
+MUMNH	s	Mahidol University Museum of Natural History		
 MUMZ	s	University of Missouri, Museum of Zoology		
 MUNC	s	St. John's, Memorial University of Newfoundland		
 MUNZ	s	Massey University		
@@ -5483,6 +5484,7 @@ RCHM	s	Rochdale Museum Service
 RCHP	s	Rochdale Equitable Pioneers' Memorial Museum		
 RCMC	s	Rockford College		
 RCN	s	Richmond Naturalists' Field Club		
+RCPF	sc	Russian Collection of Pathogenetic Fungi		
 RCR	s	Rochester Public Museum		
 RCS	s	Royal College of Surgeon's Museum	RCSM
 RCSL	s	Royal College of Surgeons		
