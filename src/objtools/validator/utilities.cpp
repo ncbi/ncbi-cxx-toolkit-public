@@ -813,6 +813,9 @@ bool IsDateInPast(const CDate& date)
     tm = localtime(&t);
 
     bool in_past = false;
+    if (!date.IsStd()) {
+        return false;
+    }
     if (date.GetStd().GetYear() < tm->tm_year + 1900) {
         in_past = true;
     } else if (date.GetStd().GetYear() == tm->tm_year + 1900

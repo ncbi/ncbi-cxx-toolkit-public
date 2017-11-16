@@ -126,7 +126,7 @@ typedef enum {
   eDateValid_empty_date = 0x40 } EDateValid;
 
 int CheckDate (const CDate& date, bool require_full_date = false);
-bool IsDateInPast(const CDate& date);
+bool NCBI_VALIDATOR_EXPORT IsDateInPast(const CDate& date);
 string GetDateErrorDescription (int flags);
 
 bool IsBioseqTSA (const CBioseq& seq, CScope* scope);

@@ -21421,19 +21421,56 @@ BOOST_AUTO_TEST_CASE(VR_V48)
     CheckLocalId("abc=def", "=");
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_IsDateInPast)
+{
+    CRef<CDate> date(new CDate());
+    BOOST_CHECK_EQUAL(IsDateInPast(*date), false);
+
+    date.Reset(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
+    BOOST_CHECK_EQUAL(IsDateInPast(*date), false);
+    auto curr_day = date->GetStd().GetDay();
+    if (curr_day < 28) {
+        date->SetStd().SetDay(curr_day + 1);
+        BOOST_CHECK_EQUAL(IsDateInPast(*date), false);
+    }
+    if (curr_day > 1) {
+        date->SetStd().SetDay(curr_day - 1);
+        BOOST_CHECK_EQUAL(IsDateInPast(*date), true);
+    }
+    date->SetStd().ResetDay();
+    BOOST_CHECK_EQUAL(IsDateInPast(*date), false);
+
+    auto curr_month = date->GetStd().GetMonth();
+    if (curr_month < 11) {
+        date->SetStd().SetMonth(curr_month + 1);
+        BOOST_CHECK_EQUAL(IsDateInPast(*date), false);
+    }
+    if (curr_month != 0) {
+        date->SetStd().SetMonth(curr_month - 1);
+        BOOST_CHECK_EQUAL(IsDateInPast(*date), true);
+    }
+    date->SetStd().ResetMonth();
+    BOOST_CHECK_EQUAL(IsDateInPast(*date), false);
+
+    auto curr_year = date->GetStd().GetYear();
+    date->SetStd().SetYear(curr_year + 1);
+    BOOST_CHECK_EQUAL(IsDateInPast(*date), false);
+    date->SetStd().SetYear(curr_year - 1);
+    BOOST_CHECK_EQUAL(IsDateInPast(*date), true);
+}
+
+
 BOOST_AUTO_TEST_CASE(VR_778)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
 
     // find sub pub and other pub
     CRef<CPub> subpub(NULL);
-    CRef<CPub> otherpub(NULL);
     NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
         if ((*it)->IsPub()) {
             if ((*it)->GetPub().GetPub().Get().front()->IsSub()) {
                 subpub = (*it)->SetPub().SetPub().Set().front();
-            } else {
-                otherpub = (*it)->SetPub().SetPub().Set().front();
             }
         }
     }
