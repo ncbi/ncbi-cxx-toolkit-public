@@ -1,4 +1,4 @@
-#!/opt/python-2.7/bin/python
+#!/bin/env python2
 import os
 import shutil
 import sys

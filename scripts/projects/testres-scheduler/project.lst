@@ -8,6 +8,7 @@ util/xregexp$
 util/compress
 common
 connect$
+connect/mbedtls
 connect/ext$
 connect/impl$
 connect/services$
