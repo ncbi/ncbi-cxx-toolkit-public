@@ -173,6 +173,15 @@ public:
 
     EObjectType GetObjectType() const;
     void SetObjectType(EObjectType obj_type);
+    bool IsDBLink() const { return GetObjectType() == eObjectType_DBLink; }
+    bool IsStructuredComment() const { return GetObjectType() == eObjectType_StructuredComment; }
+    bool IsOriginalId() const { return GetObjectType() == eObjectType_OriginalId; }
+    bool IsUnverified() const { return GetObjectType() == eObjectType_Unverified; }
+    bool IsValidationSuppression() const { return GetObjectType() == eObjectType_ValidationSuppression; }
+    bool IsCleanup() const { return GetObjectType() == eObjectType_Cleanup; }
+    bool IsAutodefOptions() const { return GetObjectType() == eObjectType_AutodefOptions; }
+    bool IsFileTrack() const { return GetObjectType() == eObjectType_FileTrack; }
+    bool IsRefGeneTracking() const { return GetObjectType() == eObjectType_RefGeneTracking; }
 
     // for Unverified User-objects: Can have Organism and/or Feature and/or Misassembled
     bool IsUnverifiedOrganism() const;
@@ -211,10 +220,16 @@ public:
     void SetRefGeneTrackingStatus(ERefGeneTrackingStatus status);
     ERefGeneTrackingStatus GetRefGeneTrackingStatus() const;
     void ResetRefGeneTrackingStatus();
+    bool IsSetRefGeneTrackingStatus() const 
+    {
+        ERefGeneTrackingStatus val = GetRefGeneTrackingStatus();
+        return (val != eRefGeneTrackingStatus_NotSet && val != eRefGeneTrackingStatus_Error);
+    }
 
     void SetRefGeneTrackingGenomicSource(const string& genomic_source);
     const string& GetRefGeneTrackingGenomicSource() const;
     void ResetRefGeneTrackingGenomicSource();
+    bool IsSetRefGeneTrackingGenomicSource() const { return !GetRefGeneTrackingGenomicSource().empty(); }
 
     void SetRefGeneTrackingGenerated(bool val = true);
     bool GetRefGeneTrackingGenerated() const;
@@ -224,11 +239,14 @@ public:
     void SetRefGeneTrackingCollaborator(const string& collaborator);
     const string& GetRefGeneTrackingCollaborator() const;
     void ResetRefGeneTrackingCollaborator();
+    bool IsSetRefGeneTrackingCollaborator() const { return !GetRefGeneTrackingCollaborator().empty(); }
+
 
     // CollaboratorURL field in RefGeneTracking User-object
     void SetRefGeneTrackingCollaboratorURL(const string& collaborator_url);
     const string& GetRefGeneTrackingCollaboratorURL() const;
     void ResetRefGeneTrackingCollaboratorURL();
+    bool IsSetRefGeneTrackingCollaboratorURL() const { return !GetRefGeneTrackingCollaboratorURL().empty(); }
 
     class CRefGeneTrackingException : public CException
     {
@@ -283,6 +301,10 @@ public:
         TSeqPos GetTo() const { return m_To; }
         bool IsSetTo() const { return m_To != kInvalidSeqPos; }
 
+        bool IsEmpty() const { return !(IsSetAccession() || IsSetComment() ||
+                                       IsSetName() || IsSetGI() ||
+                                       IsSetFrom() || IsSetTo()); }
+
         CRef<CUser_field> MakeAccessionField() const;
         static CRef<CRefGeneTrackingAccession> MakeAccessionFromUserField(const CUser_field& field);
 
@@ -305,11 +327,13 @@ public:
     void SetRefGeneTrackingIdenticalTo(const CRefGeneTrackingAccession& accession);
     CConstRef<CRefGeneTrackingAccession> GetRefGeneTrackingIdenticalTo() const;
     void ResetRefGeneTrackingIdenticalTo();
+    bool IsSetRefGeneTrackingIdenticalTo() const { return GetRefGeneTrackingIdenticalTo() != CConstRef<CRefGeneTrackingAccession>(NULL); }
 
     // "Assembly" field in RefGeneTracking User-object: can have one or more accessions
     void SetRefGeneTrackingAssembly(const TRefGeneTrackingAccessions& acc_list);
     TRefGeneTrackingAccessions GetRefGeneTrackingAssembly() const;
     void ResetRefGeneTrackingAssembly();
+    bool IsSetRefGeneTrackingAssembly() const { return GetRefGeneTrackingAssembly().size() > 0; }
 
 private:
     /// Prohibit copy constructor and assignment operator

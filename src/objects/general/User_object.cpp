@@ -1120,7 +1120,12 @@ CUser_object::CRefGeneTrackingAccession::MakeAccessionFromUserField(const CUser_
             NCBI_THROW(CRefGeneTrackingException, eUserFieldWithoutLabel, kEmptyStr);
         }
     }
-    return CRef<CRefGeneTrackingAccession>(new CRefGeneTrackingAccession(accession, gi, from, to, comment, acc_name));
+    CRef<CRefGeneTrackingAccession> rval(new CRefGeneTrackingAccession(accession, gi, from, to, comment, acc_name));
+    if (rval->IsEmpty()) {
+        return CRef<CRefGeneTrackingAccession>(NULL);
+    } else {
+        return rval;
+    }
 }
 
 
@@ -1185,7 +1190,10 @@ CUser_object::TRefGeneTrackingAccessions CUser_object::GetRefGeneTrackingAssembl
     if (field && field->IsSetData() && field->GetData().IsFields()) {
         rval.reserve(field->GetData().GetFields().size());
         for (auto it : field->GetData().GetFields()) {
-            rval.push_back(CRefGeneTrackingAccession::MakeAccessionFromUserField(*it));
+            CConstRef<CRefGeneTrackingAccession> acc = CRefGeneTrackingAccession::MakeAccessionFromUserField(*it);
+            if (acc) {
+                rval.push_back(acc);
+            }
         }
     }
     return rval;
