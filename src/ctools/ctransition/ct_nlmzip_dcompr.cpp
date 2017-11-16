@@ -181,10 +181,6 @@ Nlmzip_Err ( /*FCN*/
 ) {
 #if 0
     printf("Error: %s(%d) - %s\n",lpFileName,iLine,lpMessage);
-#else
-    lpFileName = lpFileName;
-    iLine = iLine;
-    lpMessage = lpMessage;
 #endif
     longjmp (theErrJumper, 1);      /* report error and abort */
     return;
@@ -585,7 +581,7 @@ bool CT_CompressBuffer(
   
     *dst_len =  kHeaderSize;
     dst      += kHeaderSize;
-    dst_size =- kHeaderSize;
+    dst_size -= kHeaderSize;
 
     size_t n = 0;
     bool res = false;
@@ -671,11 +667,11 @@ bool CT_DecompressBuffer(
         }
     }
     if (old_format) {
-        if (src_len > kMax_I4) {
+        if (src_len > kMax_I4  || dst_size > kMax_I4) {
             return false;
         }
         Int4 n = 0;
-        Nlmzip_rc_t res = Nlmzip_Uncompress(src_buf, src_len, dst_buf, dst_size, &n);
+        Nlmzip_rc_t res = Nlmzip_Uncompress(src_buf, (Int4)src_len, dst_buf, (Int4)dst_size, &n);
         *dst_len = (size_t)n;
         return (res == NLMZIP_OKAY);
     }
