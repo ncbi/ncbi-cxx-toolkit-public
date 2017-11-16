@@ -295,7 +295,7 @@ public:
         const string& GetName() const { return m_Name; }
         bool IsSetName() const { return !m_Name.empty(); }
         TGi GetGI() const { return m_GI; }
-        bool IsSetGI() const { return m_GI > 0; }
+        bool IsSetGI() const { return m_GI > (TGi) 0; }
         TSeqPos GetFrom() const { return m_From; }
         bool IsSetFrom() const { return m_From != kInvalidSeqPos; }
         TSeqPos GetTo() const { return m_To; }
