@@ -462,13 +462,11 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
 
     unsigned wait_sec = FORCED_SST_INTERVAL_SEC;
 
-    bool last_wait = false;
     for (;;) {
         CDeadline timeout(wait_sec, FORCED_SST_INTERVAL_NANOSEC);
 
-        if (!(timeout < deadline)) {
+        if (deadline < timeout) {
             timeout = deadline;
-            last_wait = true;
         }
 
         if (WaitForNotification(timeout)) {
@@ -480,7 +478,7 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
             try {
                 status = ns_api.GetJobDetails(job, job_exptime);
                 if ((status != CNetScheduleAPI::eRunning &&
-                        status != CNetScheduleAPI::ePending) || last_wait)
+                        status != CNetScheduleAPI::ePending) || deadline.IsExpired())
                     return status;
                 // The job is still running - next time, wait one second
                 // longer before querying the server again.
@@ -491,7 +489,7 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
                 continue;
             }
             catch (CNetScheduleException& e) {
-                if (last_wait)
+                if (deadline.IsExpired())
                     throw;
                 switch (e.GetErrCode()) {
                 case CNetScheduleException::eJobNotFound:
@@ -501,7 +499,7 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
                 err_msg = e.GetMsg();
             }
             catch (CException& e) {
-                if (last_wait)
+                if (deadline.IsExpired())
                     throw;
                 err_msg = e.GetMsg();
             }
@@ -565,13 +563,11 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
 
     unsigned wait_sec = FORCED_SST_INTERVAL_SEC;
 
-    bool last_wait = false;
     do {
         CDeadline timeout(wait_sec++, FORCED_SST_INTERVAL_NANOSEC);
 
-        if (!(timeout < deadline)) {
+        if (deadline < timeout) {
             timeout = deadline;
-            last_wait = true;
         }
 
         if (RequestJobWatching(ns_api, job_key, timeout, &job_status, &index) &&
@@ -579,7 +575,7 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
                 index > last_event_index))
             break;
 
-        if (deadline.GetRemainingTime().IsZero())
+        if (deadline.IsExpired())
             break;
 
         if (WaitForNotification(timeout) &&
@@ -587,7 +583,7 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
                 ((status_mask & (1 << job_status)) != 0 ||
                 index > last_event_index))
             break;
-    } while (!last_wait);
+    } while (!deadline.IsExpired());
 
     if (new_event_index) {
         *new_event_index = index;
