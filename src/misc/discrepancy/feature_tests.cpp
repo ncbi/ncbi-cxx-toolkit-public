@@ -695,7 +695,7 @@ static bool ExtendToGapsOrEnds(const CSeq_feat& cds, CScope& scope)
                     CCdregion::EFrame frame = new_feat->GetData().GetCdregion().GetFrame();
                     if (frame != CCdregion::eFrame_not_set) {
                         unsigned fr = (unsigned)frame - 1;
-                        fr = (fr + 3 - (extend_len % 3)) % 3;
+                        fr = (fr + extend_len) % 3;
                         frame = (CCdregion::EFrame)(fr + 1);
                         new_feat->SetData().SetCdregion().SetFrame() = frame;
                     }
