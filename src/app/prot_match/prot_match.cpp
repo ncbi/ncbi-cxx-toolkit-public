@@ -1057,10 +1057,26 @@ void CProteinMatchApp::x_GatherLocalProteinIds(const CBioseq_set& nuc_prot_set,
 
     for (CRef<CSeq_entry> seq_entry : nuc_prot_set.GetSeq_set()) {
         const auto& bioseq = seq_entry->GetSeq();
-        if (bioseq.IsAa()) {
-            const CSeq_id* local_id = bioseq.GetLocalId();
-            if (local_id != nullptr) {
-                id_list.push_back(local_id->GetSeqIdString());
+        if (bioseq.IsAa() && bioseq.IsSetId()) {
+
+            CRef<CSeq_id> best_id;
+            for (CRef<CSeq_id> id : bioseq.GetId()) {
+                if (id.Empty()) {
+                    continue;
+                }
+
+                if (id->IsGeneral()) {
+                    best_id = id;
+                    break;
+                }
+                else 
+                if (id->IsLocal()) {
+                    best_id = id;
+                }
+            }
+
+            if (!best_id.Empty()) {
+                id_list.push_back(best_id->GetSeqIdString());   
             }
         }
     }

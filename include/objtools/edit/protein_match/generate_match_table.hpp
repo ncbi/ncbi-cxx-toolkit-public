@@ -171,8 +171,7 @@ private:
     string x_GetAccession(const CSeq_feat& seq_feat) const;
     string x_GetAccessionVersion(const CSeq_feat& seq_feat) const;
     string x_GetAccessionVersion(const CUser_object& user_obj) const;
-    string x_GetLocalID(const CSeq_feat& seq_feat) const;
-//    string x_GetLocalID(const CUser_object& user_obj) const;
+    string x_GetGeneralOrLocalID(const CSeq_feat& seq_feat) const;
 
     CRef<CSeq_table> mMatchTable;
     map<string, size_t> mColnameToIndex;
