@@ -98,7 +98,7 @@ bool TaxNode::isSeqLeaf(const TaxNode& node)
 
 bool TaxNode::isSubSeqLeaf(const TaxNode& node)
 {
-	return node.cd > 0;
+	return node.cd != NULL;
 }
 
 TaxTreeData :: TaxTreeData(const AlignmentCollection& ac)
