@@ -54,6 +54,16 @@ void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetscheduleapi(
      CPluginManager<SNetScheduleAPIImpl>::TDriverInfoList&   info_list,
      CPluginManager<SNetScheduleAPIImpl>::EEntryPointRequest method);
 
+struct SNetScheduleNotificationReceiver
+{
+    CDatagramSocket socket;
+    unsigned short port;
+    string message;
+
+    SNetScheduleNotificationReceiver();
+    bool operator()(string* server_host);
+};
+
 class NCBI_XCONNECT_EXPORT CNetScheduleNotificationHandler
 {
 public:
@@ -64,9 +74,9 @@ public:
     bool WaitForNotification(const CDeadline& deadline,
                              string*          server_host = NULL);
 
-    unsigned short GetPort() const {return m_UDPPort;}
+    unsigned short GetPort() const { return m_Receiver.port; }
 
-    const string& GetMessage() const {return m_Message;}
+    const string& GetMessage() const { return m_Receiver.message; }
 
     void PrintPortNumber();
 
@@ -128,11 +138,8 @@ public:
 protected:
     bool CheckJobStatusNotification(CNetScheduleAPI ns_api, CNetScheduleJob& job,
             time_t* job_exptime, CNetScheduleAPI::EJobStatus& job_status);
-    CDatagramSocket m_UDPSocket;
-    unsigned short m_UDPPort;
 
-    char m_Buffer[1024];
-    string m_Message;
+    SNetScheduleNotificationReceiver m_Receiver;
 };
 
 struct NCBI_XCONNECT_EXPORT CNetScheduleAPIExt : CNetScheduleAPI

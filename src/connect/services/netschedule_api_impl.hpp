@@ -276,21 +276,15 @@ struct SNetScheduleNotificationThread : public CThread
 
     virtual void* Main();
 
-    unsigned short GetPort() const {return m_UDPPort;}
+    unsigned short GetPort() const { return m_Receiver.port; }
 
-    const string& GetMessage() const {return m_Message;}
-
-    void PrintPortNumber();
+    const string& GetMessage() const { return m_Receiver.message; }
 
     void CmdAppendPortAndTimeout(string* cmd, unsigned remaining_seconds);
 
     SNetScheduleAPIImpl* m_API;
 
-    CDatagramSocket m_UDPSocket;
-    unsigned short m_UDPPort;
-
-    char m_Buffer[1024];
-    string m_Message;
+    SNetScheduleNotificationReceiver m_Receiver;
 
     bool m_StopThread;
 

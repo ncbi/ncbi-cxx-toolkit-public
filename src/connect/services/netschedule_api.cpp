@@ -74,17 +74,21 @@ SNetScheduleNotificationThread::SNetScheduleNotificationThread(
     m_API(ns_api),
     m_StopThread(false)
 {
+}
+
+SNetScheduleNotificationReceiver::SNetScheduleNotificationReceiver()
+{
     STimeout rto;
     rto.sec = rto.usec = 0;
-    m_UDPSocket.SetTimeout(eIO_Read, &rto);
+    socket.SetTimeout(eIO_Read, &rto);
 
-    EIO_Status status = m_UDPSocket.Bind(0);
+    EIO_Status status = socket.Bind(0);
     if (status != eIO_Success) {
         NCBI_THROW_FMT(CException, eUnknown,
             "Could not bind a UDP socket: " << IO_StatusStr(status));
     }
 
-    m_UDPPort = m_UDPSocket.GetLocalPort(eNH_HostByteOrder);
+    port = socket.GetLocalPort(eNH_HostByteOrder);
 }
 
 void SNetScheduleNotificationThread::CmdAppendPortAndTimeout(
@@ -101,17 +105,6 @@ void SNetScheduleNotificationThread::CmdAppendPortAndTimeout(
 
 CNetScheduleNotificationHandler::CNetScheduleNotificationHandler()
 {
-    STimeout rto;
-    rto.sec = rto.usec = 0;
-    m_UDPSocket.SetTimeout(eIO_Read, &rto);
-
-    EIO_Status status = m_UDPSocket.Bind(0);
-    if (status != eIO_Success) {
-        NCBI_THROW_FMT(CException, eUnknown,
-            "Could not bind a UDP socket: " << IO_StatusStr(status));
-    }
-
-    m_UDPPort = m_UDPSocket.GetLocalPort(eNH_HostByteOrder);
 }
 
 int g_ParseNSOutput(const string& attr_string, const char* const* attr_names,
@@ -153,7 +146,7 @@ SNetScheduleNotificationThread::ENotificationType
 
     string attr_values[JOB_NOTIF_ATTR_COUNT];
 
-    int defined_attrs = g_ParseNSOutput(m_Message,
+    int defined_attrs = g_ParseNSOutput(m_Receiver.message,
             attr_names, attr_values, JOB_NOTIF_ATTR_COUNT);
 
     if (defined_attrs == -1 || attr_values[2] != m_API->m_Queue)
@@ -228,20 +221,14 @@ void* SNetScheduleNotificationThread::Main()
 
     static const STimeout two_seconds = {2, 0};
 
-    size_t msg_len;
     string server_host;
 
     while (!m_StopThread)
-        if (m_UDPSocket.Wait(&two_seconds) == eIO_Success) {
+        if (m_Receiver.socket.Wait(&two_seconds) == eIO_Success) {
             if (m_StopThread)
                 break;
 
-            if (m_UDPSocket.Recv(m_Buffer, sizeof(m_Buffer), &msg_len,
-                    &server_host, NULL) == eIO_Success) {
-                while (msg_len > 0 && m_Buffer[msg_len - 1] == '\0')
-                    --msg_len;
-                m_Message.assign(m_Buffer, msg_len);
-
+            if (m_Receiver(&server_host)) {
                 string ns_node;
 
                 ENotificationType notif_type = CheckNotification(&ns_node);
@@ -261,19 +248,24 @@ void* SNetScheduleNotificationThread::Main()
     return NULL;
 }
 
-bool CNetScheduleNotificationHandler::ReceiveNotification(string* server_host)
+bool SNetScheduleNotificationReceiver::operator()(string* server_host)
 {
+    array<char, 64 * 1024> buffer; // Enough to hold any UDP
     size_t msg_len;
 
-    if (m_UDPSocket.Recv(m_Buffer, sizeof(m_Buffer), &msg_len,
+    if (socket.Recv(buffer.data(), buffer.size(), &msg_len,
             server_host, NULL) != eIO_Success)
         return false;
 
-    while (msg_len > 0 && m_Buffer[msg_len - 1] == '\0')
-        --msg_len;
-    m_Message.assign(m_Buffer, msg_len);
+    _ASSERT(buffer.size() > msg_len);
+    message.assign(buffer.data(), msg_len);
 
     return true;
+}
+
+bool CNetScheduleNotificationHandler::ReceiveNotification(string* server_host)
+{
+    return m_Receiver(server_host);
 }
 
 bool CNetScheduleNotificationHandler::WaitForNotification(
@@ -287,7 +279,7 @@ bool CNetScheduleNotificationHandler::WaitForNotification(
         if (timeout.sec == 0 && timeout.usec == 0)
             return false;
 
-        switch (m_UDPSocket.Wait(&timeout)) {
+        switch (m_Receiver.socket.Wait(&timeout)) {
         case eIO_Timeout:
             return false;
 
@@ -331,7 +323,7 @@ SNetScheduleAPIImpl::~SNetScheduleAPIImpl()
         if (m_NotificationThread != NULL) {
             m_NotificationThread->m_StopThread = true;
             CDatagramSocket().Send("INTERRUPT", sizeof("INTERRUPT"),
-                    "127.0.0.1", m_NotificationThread->m_UDPPort);
+                    "127.0.0.1", m_NotificationThread->m_Receiver.port);
             m_NotificationThread->Join();
         }
     }

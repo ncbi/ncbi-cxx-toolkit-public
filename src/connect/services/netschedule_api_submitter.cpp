@@ -381,9 +381,9 @@ bool CNetScheduleNotificationHandler::CheckJobStatusNotification(
     string attr_values[3];
 
     if (last_event_index == NULL)
-        g_ParseNSOutput(m_Message, s_JobStatusAttrNames, attr_values, 2);
+        g_ParseNSOutput(m_Receiver.message, s_JobStatusAttrNames, attr_values, 2);
     else {
-        g_ParseNSOutput(m_Message, s_JobStatusAttrNames, attr_values, 3);
+        g_ParseNSOutput(m_Receiver.message, s_JobStatusAttrNames, attr_values, 3);
 
         if (!attr_values[2].empty())
             *last_event_index = NStr::StringToInt(attr_values[2],
@@ -402,7 +402,7 @@ bool CNetScheduleNotificationHandler::CheckJobStatusNotification(CNetScheduleAPI
     const string& received_job_id = attr_values[0];
     const string& received_job_status = attr_values[1];
 
-    g_ParseNSOutput(m_Message, attr_names, attr_values.data(), attr_values.size());
+    g_ParseNSOutput(m_Receiver.message, attr_names, attr_values.data(), attr_values.size());
 
     if (received_job_id != job.job_id) return false;
 
@@ -536,11 +536,11 @@ bool CNetScheduleNotificationHandler::RequestJobWatching(
 
     g_AppendClientIPSessionIDHitID(cmd);
 
-    m_Message = ns_api->GetServer(job_id).ExecWithRetry(cmd, false).response;
+    m_Receiver.message = ns_api->GetServer(job_id).ExecWithRetry(cmd, false).response;
 
     string attr_values[2];
 
-    g_ParseNSOutput(m_Message, s_JobStatusAttrNames + 1, attr_values, 2);
+    g_ParseNSOutput(m_Receiver.message, s_JobStatusAttrNames + 1, attr_values, 2);
 
     if (!attr_values[1].empty())
         *last_event_index = NStr::StringToInt(attr_values[1],

@@ -440,7 +440,7 @@ bool CNetScheduleNotificationHandler::CheckRequestJobNotification(
 
     string attr_values[GET2_NOTIF_ATTR_COUNT];
 
-    if (g_ParseNSOutput(m_Message,
+    if (g_ParseNSOutput(m_Receiver.message,
             attr_names, attr_values, GET2_NOTIF_ATTR_COUNT) !=
                     GET2_NOTIF_ATTR_COUNT ||
             attr_values[1] != executor->m_API.GetQueueName())
