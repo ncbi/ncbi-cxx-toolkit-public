@@ -564,7 +564,7 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
     unsigned wait_sec = FORCED_SST_INTERVAL_SEC;
 
     do {
-        CDeadline timeout(wait_sec++, FORCED_SST_INTERVAL_NANOSEC);
+        CDeadline timeout(wait_sec, FORCED_SST_INTERVAL_NANOSEC);
 
         if (deadline < timeout) {
             timeout = deadline;
@@ -578,8 +578,9 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
         if (deadline.IsExpired())
             break;
 
-        if (WaitForNotification(timeout) &&
-                CheckJobStatusNotification(job_key, &job_status, &index) &&
+        if (!WaitForNotification(timeout))
+            ++wait_sec;
+        else if (CheckJobStatusNotification(job_key, &job_status, &index) &&
                 ((status_mask & (1 << job_status)) != 0 ||
                 index > last_event_index))
             break;
