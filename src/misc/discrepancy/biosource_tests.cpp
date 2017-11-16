@@ -1228,7 +1228,8 @@ DISCREPANCY_SUMMARIZE(ORGANELLE_ITS)
 }
 
 
-// HAPLOTYPE_MISMATCH
+// HAPLOTYPE_MISMATCH -- removed!
+/*
 
 static const string kTaxnameAndHaplotype = "TaxnameAndHaplotype";
 
@@ -1404,7 +1405,7 @@ DISCREPANCY_SUMMARIZE(HAPLOTYPE_MISMATCH)
 
     m_ReportItems = report.Export(*this)->GetSubitems();
 }
-
+//*/
 
 // INCONSISTENT_BIOSOURCE
 typedef list<string> TInconsistecyDescriptionList;
