@@ -53,6 +53,11 @@ static bool ShowFatal(const CReportItem& item)
 }
 
 
+static inline string deunderscore(const string s)
+{
+    return s[0] == '_' ? s.substr(1) : s;
+}
+
 static void RecursiveText(ostream& out, const TReportItemList& list, bool fatal, bool ext)
 {
     ITERATE (TReportItemList, it, list) {
@@ -62,11 +67,7 @@ static void RecursiveText(ostream& out, const TReportItemList& list, bool fatal,
         if (fatal && ShowFatal(**it)) {
             out << "FATAL: ";
         }
-        string name = (*it)->GetTitle();
-        if (name[0] == '_') {
-            name = name.substr(1);
-        }
-        out << name << ": " << (*it)->GetMsg() << "\n";
+        out << deunderscore((*it)->GetTitle()) << ": " << (*it)->GetMsg() << "\n";
         TReportItemList subs = (*it)->GetSubitems();
         if (!subs.empty() && (ext || !subs[0]->IsExtended() && !subs[0]->IsSummary())) {
             RecursiveText(out, subs, fatal, ext);
@@ -92,11 +93,7 @@ static void RecursiveSummary(ostream& out, const TReportItemList& list, bool fat
             if (fatal && ShowFatal(**it)) {
                 out << "FATAL: ";
             }
-            string name = (*it)->GetTitle();
-            if (name[0] == '_') {
-                name = name.substr(1);
-            }
-            out << name << ": " << (*it)->GetMsg() << "\n";
+            out << deunderscore((*it)->GetTitle()) << ": " << (*it)->GetMsg() << "\n";
         }
         else if ((*it)->IsSummary()) {
             for (size_t i = 0; i < level; i++) {
@@ -238,11 +235,7 @@ void CDiscrepancyContext::OutputXML(ostream& out, bool ext)
         }
         TReportObjectList objs = tst->second->GetObjects();
         Indent(out, XML_INDENT);
-        string name = tst->first;
-        if (name[0] == '_') {
-            name = name.substr(1);
-        }
-        out << "<test name=\"" << name << "\" description=\"" << NStr::XmlEncode(GetDiscrepancyDescr(tst->first)) << "\" severity=\"" << SevLevel[sev] << "\" cardinality=\"" << objs.size() << "\">\n";
+        out << "<test name=\"" << deunderscore(tst->first) << "\" description=\"" << NStr::XmlEncode(GetDiscrepancyDescr(tst->first)) << "\" severity=\"" << SevLevel[sev] << "\" cardinality=\"" << objs.size() << "\">\n";
         Indent(out, XML_INDENT * 2);
         out << "<object-collection>\n";
         ITERATE(TReportObjectList, obj, objs) {
