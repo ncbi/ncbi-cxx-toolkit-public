@@ -10991,7 +10991,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistentCDSProtein",
                                                  "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
                                                  "Inconsistent: Product= complete, Location= partial, Feature.partial= TRUE"));
@@ -11018,9 +11018,9 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
     cds->SetPartial(true);
     unit_test_util::SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_right);
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistentCDSProtein",
                                                  "Coding region and protein feature partials conflict"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblemHasStop",
                                                  "Got stop codon, but 3'end is labeled partial"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
                                                  "CDS is 3' complete but protein is CO2 partial"));
@@ -11034,11 +11034,11 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     cds->SetLocation().SetPartialStart(false, eExtreme_Biological);
     cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
     unit_test_util::SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_left);
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistentCDSProtein",
                                                  "Coding region and protein feature partials conflict"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
-                                                 "PartialLocation: 3' partial is not at end of sequence, gap, or consensus splice site"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemNotConsensus3Prime",
+                                                 "3' partial is not at end of sequence, gap, or consensus splice site"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblemHasStop",
                                                  "Got stop codon, but 3'end is labeled partial"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
                                                  "CDS is 5' complete but protein is NH2 partial"));
@@ -11052,9 +11052,9 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
     cds->SetLocation().SetPartialStop(false, eExtreme_Biological);
     unit_test_util::SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_ends);
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistentCDSProtein",
                                                  "Coding region and protein feature partials conflict"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblemHasStop",
                                                  "Got stop codon, but 3'end is labeled partial"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
                                                  "CDS is 5' partial but protein has neither end"));
@@ -11066,11 +11066,11 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     cds->SetLocation().SetPartialStart(false, eExtreme_Biological);
     cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
     unit_test_util::SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_ends);
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistentCDSProtein",
                                                  "Coding region and protein feature partials conflict"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
-                                                 "PartialLocation: 3' partial is not at end of sequence, gap, or consensus splice site"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemNotConsensus3Prime",
+                                                 "3' partial is not at end of sequence, gap, or consensus splice site"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblemHasStop",
                                                  "Got stop codon, but 3'end is labeled partial"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
                                                  "CDS is 3' partial but protein has neither end"));
@@ -11085,7 +11085,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     unit_test_util::SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_ends);
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
         "Inconsistent: Product= partial, Location= complete, Feature.partial= FALSE"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblemHasStop",
                                                  "Got stop codon, but 3'end is labeled partial"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
                                                  "CDS is complete but protein has neither end"));
@@ -11119,7 +11119,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     misc_feat->SetPartial(true);
     misc_feat->SetProduct().SetWhole().SetLocal().SetStr("prot");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistentCDSProtein",
                                                  "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
         "When SeqFeat.product is a partial Bioseq, SeqFeat.location should also be partial"));
@@ -11151,7 +11151,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
         "Gene feature on non-segmented sequence should not have multiple intervals"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSgeneRange",
         "gene [locus value:[lcl|nuc:1-6, ~, 8-11]] overlaps CDS but does not completely contain it"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistentCDSProtein",
                                                  "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
         "Gene of 'order' with otherwise complete location should have partial flag set"));
@@ -11167,7 +11167,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     unit_test_util::SetCompleteness (prot_seq, CMolInfo::eCompleteness_partial);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistentCDSProtein",
                                                  "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
         "5' or 3' partial location should not have unclassified partial in product molinfo descriptor"));
@@ -11226,8 +11226,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     unit_test_util::SetDiv (entry, "PRI");
     entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
     unit_test_util::SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_mRNA);
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
-        "PartialLocation: Stop does not include first/last residue of sequence (but is at consensus splice site, but is on an mRNA that is already spliced)"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemmRNASequence3Prime",
+        "Stop does not include first/last residue of mRNA sequence"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -11249,7 +11249,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     unit_test_util::SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_left);
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Critical, "InvalidResidue", "Invalid residue '#' at position [3]"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistentCDSProtein",
                                                  "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Info, "PartialProblem",
         "PartialLocation: Start does not include first/last residue of sequence (and is at bad sequence)"));
@@ -11288,10 +11288,10 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     unit_test_util::SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_left);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistentCDSProtein",
                                                  "Coding region and protein feature partials conflict"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
-        "PartialLocation: 5' partial is not at start AND is not at consensus splice site"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemNotConsensus5Prime",
+        "5' partial is not at beginning of sequence, gap, or consensus splice site"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -11307,10 +11307,10 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     unit_test_util::SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_right);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistentCDSProtein",
                                                  "Coding region and protein feature partials conflict"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
-        "PartialLocation: 3' partial is not at end of sequence, gap, or consensus splice site"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemNotConsensus3Prime",
+        "3' partial is not at end of sequence, gap, or consensus splice site"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -11323,21 +11323,23 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     misc_feat->SetLocation().SetPartialStart(true, eExtreme_Biological);
     misc_feat->SetPartial(true);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "PartialProblem",
-        "PartialLocation: Start does not include first/last residue of sequence"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "PartialProblem5Prime",
+        "Start does not include first/last residue of sequence"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     misc_feat->SetLocation().SetPartialStart(false, eExtreme_Biological);
     misc_feat->SetLocation().SetPartialStop(true, eExtreme_Biological);
-    expected_errors[0]->SetErrMsg("PartialLocation: Stop does not include first/last residue of sequence");
+    expected_errors[0]->SetErrCode("PartialProblem3Prime");
+    expected_errors[0]->SetErrMsg("Stop does not include first/last residue of sequence");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
     misc_feat->SetLocation().Assign(*unit_test_util::MakeMixLoc(entry->SetSeq().SetId().front()));
     misc_feat->SetLocation().SetMix().Set().front()->SetPartialStop(true, eExtreme_Biological);
-    expected_errors[0]->SetErrMsg("PartialLocation: Internal partial intervals do not include first/last residue of sequence");
-    expected_errors[0]->SetSeverity(eDiag_Error);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "PartialProblem",
+        "PartialLocation: Internal partial intervals do not include first/last residue of sequence"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -11400,13 +11402,13 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     CLEAR_ERRORS
 
     cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistentCDSProtein",
                                                  "Coding region and protein feature partials conflict"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
-                                                 "PartialLocation: 3' partial is not at end of sequence, gap, or consensus splice site"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemNotConsensus3Prime",
+                                                 "3' partial is not at end of sequence, gap, or consensus splice site"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
         "Inconsistent: Product= complete, Location= partial, Feature.partial= TRUE"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblemHasStop",
                                                  "Got stop codon, but 3'end is labeled partial"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
                                                  "CDS is partial but protein is complete"));
@@ -16128,7 +16130,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SuspiciousFrame)
     seh = scope.AddTopLevelSeqEntry(*entry);
 
     expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Error, "SuspiciousFrame",
-                               "Suspicious CDS location - frame > 1 but not 5' partial"));
+                               "Suspicious CDS location - reading frame > 1 but not 5' partial"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -16149,10 +16151,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SuspiciousFrame)
     seh = scope.AddTopLevelSeqEntry(*entry);
     CLEAR_ERRORS    
 
-    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
-                               "PartialLocation: 5' partial is not at start AND is not at consensus splice site"));
+    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemNotConsensus5Prime",
+                               "5' partial is not at beginning of sequence, gap, or consensus splice site"));
     expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "SuspiciousFrame",
-                               "Suspicious CDS location - frame > 1 and not at consensus splice site"));
+                               "Suspicious CDS location - reading frame > 1 and not at consensus splice site"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -17655,13 +17657,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PartialProblem)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistentCDSProtein",
                                                  "Coding region and protein feature partials conflict"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
-                              "PartialLocation: 5' partial is not at start AND is not at consensus splice site"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemNotConsensus5Prime",
+                              "5' partial is not at beginning of sequence, gap, or consensus splice site"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
                               "Inconsistent: Product= partial, Location= partial, Feature.partial= FALSE"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem", "Got stop codon, but 3'end is labeled partial"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblemHasStop", "Got stop codon, but 3'end is labeled partial"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem", "CDS is 3' complete but protein is CO2 partial"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem", "CDS is 5' partial but protein is CO2 partial"));
     eval = validator.Validate(seh, options);
@@ -20269,9 +20271,9 @@ BOOST_AUTO_TEST_CASE(Test_VR_78)
     unit_test_util::SetNucProtSetPartials(entry, true, false);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemMismatch5Prime",
         "Coding region should not be 5' partial if gene is 5' complete"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemMismatch5Prime",
         "Coding region should not be 5' partial if mRNA is 5' complete"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -20281,13 +20283,13 @@ BOOST_AUTO_TEST_CASE(Test_VR_78)
     unit_test_util::SetNucProtSetPartials(entry, false, true);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemMismatch3Prime",
         "Coding region should not be 3' partial if gene is 3' complete"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemMismatch3Prime",
         "Coding region should not be 3' partial if mRNA is 3' complete"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
-        "PartialLocation: 3' partial is not at end of sequence, gap, or consensus splice site"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemNotConsensus3Prime",
+        "3' partial is not at end of sequence, gap, or consensus splice site"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblemHasStop",
         "Got stop codon, but 3'end is labeled partial"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -20298,17 +20300,17 @@ BOOST_AUTO_TEST_CASE(Test_VR_78)
     unit_test_util::SetNucProtSetPartials(entry, true, true);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemMismatch5Prime",
         "Coding region should not be 5' partial if gene is 5' complete"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemMismatch5Prime",
         "Coding region should not be 5' partial if mRNA is 5' complete"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemMismatch3Prime",
         "Coding region should not be 3' partial if gene is 3' complete"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemMismatch3Prime",
         "Coding region should not be 3' partial if mRNA is 3' complete"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
-        "PartialLocation: 3' partial is not at end of sequence, gap, or consensus splice site"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblem",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemNotConsensus3Prime",
+        "3' partial is not at end of sequence, gap, or consensus splice site"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblemHasStop",
         "Got stop codon, but 3'end is labeled partial"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);

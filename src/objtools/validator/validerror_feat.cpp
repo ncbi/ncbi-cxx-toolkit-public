@@ -6038,7 +6038,7 @@ void CValidError_feat::x_ReportCDSTranslationProblems(const CSeq_feat& feat, con
 
         if (problem_flags & CCDSTranslationProblems::eCDSTranslationProblem_FrameNotPartial) {
             PostErr(eDiag_Error, eErr_SEQ_FEAT_SuspiciousFrame,
-                "Suspicious CDS location - frame > 1 but not 5' partial", feat);
+                "Suspicious CDS location - reading frame > 1 but not 5' partial", feat);
         }
 
         if (problem_flags & CCDSTranslationProblems::eCDSTranslationProblem_FrameNotConsensus) {
@@ -6048,7 +6048,7 @@ void CValidError_feat::x_ReportCDSTranslationProblems(const CSeq_feat& feat, con
                 sev = eDiag_Error;
             }
             PostErr(sev, eErr_SEQ_FEAT_SuspiciousFrame,
-                "Suspicious CDS location - frame > 1 and not at consensus splice site", feat);
+                "Suspicious CDS location - reading frame > 1 and not at consensus splice site", feat);
         }
 
         if (problem_flags & CCDSTranslationProblems::eCDSTranslationProblem_NoStop) {
@@ -6056,7 +6056,7 @@ void CValidError_feat::x_ReportCDSTranslationProblems(const CSeq_feat& feat, con
                 "Missing stop codon", feat);
         }
         if (problem_flags & CCDSTranslationProblems::eCDSTranslationProblem_StopPartial) {
-            PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblemHasStop,
                 "Got stop codon, but 3'end is labeled partial", feat);
         }
         if (problem_flags & CCDSTranslationProblems::eCDSTranslationProblem_ShouldStartPartial) {

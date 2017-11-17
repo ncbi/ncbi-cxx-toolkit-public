@@ -5608,7 +5608,7 @@ void CValidError_bioseq::ValidateCDSAndProtPartials (const CMappedFeat& feat)
                     return;
                 }
                 if (!PartialsSame(feat.GetLocation(), prot->GetLocation())) {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialsInconsistent,
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialsInconsistentCDSProtein,
                         "Coding region and protein feature partials conflict",
                         *(feat.GetSeq_feat()));
                 }  
@@ -5790,7 +5790,7 @@ void CValidError_bioseq::x_ValidateCodingRegionParentPartialness(const CSeq_feat
         }
 
         if (!has_abutting_gap) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem, "Coding region should not be 5' partial if " + parent_name + " is 5' complete", cds);
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemMismatch5Prime, "Coding region should not be 5' partial if " + parent_name + " is 5' complete", cds);
         }
     }
     if (cds.GetLocation().IsPartialStop(eExtreme_Biological) && !parent_loc.IsPartialStop(eExtreme_Biological)) {
@@ -5807,7 +5807,7 @@ void CValidError_bioseq::x_ValidateCodingRegionParentPartialness(const CSeq_feat
         }
 
         if (!has_abutting_gap) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem, "Coding region should not be 3' partial if " + parent_name + " is 3' complete", cds);
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemMismatch3Prime, "Coding region should not be 3' partial if " + parent_name + " is 3' complete", cds);
         }
     }
 }
@@ -5909,14 +5909,25 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                 } else if ( x_IsPartialAtSpliceSiteOrGap(feat.GetLocation(), errtype, bad_seq, is_gap) ) {
                     if (!is_gap && (!feat.IsSetPseudo() || !feat.GetPseudo()) && feat.GetData().IsCdregion()) {
                         if (m_CurrentHandle && IsMrna(m_CurrentHandle)) {
-                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
-                                "PartialLocation: " + parterrs[j] +
-                                " (but is at consensus splice site, but is on an mRNA that is already spliced)",
-                                *(feat.GetSeq_feat()));
-                        } else if (IsOrganelle(m_CurrentHandle)) {
-                            PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
-                                    "PartialLocation: " + parterrs[j] + " (organelle does not use standard splice site convention)",
+                            if (j == 0) {
+                                PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemmRNASequence5Prime,
+                                    "Start does not include first/last residue of mRNA sequence",
                                     *(feat.GetSeq_feat()));
+                            } else if (j == 1) {
+                                PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemmRNASequence3Prime,
+                                    "Stop does not include first/last residue of mRNA sequence",
+                                    *(feat.GetSeq_feat()));
+                            }
+                        } else if (IsOrganelle(m_CurrentHandle)) {
+                            if (j == 0) {
+                                PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblemOrganelle5Prime,
+                                    "Start does not include first/last residue of organelle sequence (organelle does not use standard splice site convention)",
+                                    *(feat.GetSeq_feat()));
+                            } else if (j == 1) {
+                                PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblemOrganelle3Prime,
+                                    "Stop does not include first/last residue of organelle sequence (organelle does not use standard splice site convention)",
+                                    *(feat.GetSeq_feat()));
+                            }
                         } 
                     }
                 } else if ( bad_seq) {
@@ -5937,8 +5948,8 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                                     NStr::Find(comment_text, "coding region disrupted by sequencing gap") != string::npos)) {
                             // suppress
                         } else {
-                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
-                                "PartialLocation: 5' partial is not at start AND is not at consensus splice site",
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemNotConsensus5Prime,
+                                "5' partial is not at beginning of sequence, gap, or consensus splice site",
                                 *(feat.GetSeq_feat())); 
                         }
                     }
@@ -5951,16 +5962,21 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                                     && NStr::Find(comment_text, "coding region disrupted by sequencing gap") != string::npos)) {
                             // suppress
                         } else {
-                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
-                                "PartialLocation: 3' partial is not at end of sequence, gap, or consensus splice site",
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemNotConsensus3Prime,
+                                "3' partial is not at end of sequence, gap, or consensus splice site",
                                 *(feat.GetSeq_feat()));
                         }
                     }
                 } else if ((feat.GetData().Which() == CSeqFeatData::e_Gene ||
                     feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) &&
                     x_IsSameAsCDS(feat)) {
-                    PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
-                        "PartialLocation: " + parterrs[j], *(feat.GetSeq_feat()));
+                    if (j == 0) {
+                        PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem5Prime,
+                            "Start does not include first/last residue of sequence", *(feat.GetSeq_feat()));
+                    } else if (j == 1) {
+                        PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem3Prime,
+                            "Stop does not include first/last residue of sequence", *(feat.GetSeq_feat()));
+                    }
                 } else if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA && 
                     j == 0 && x_PartialAdjacentToIntron(feat.GetLocation())) {
                     // suppress tRNAs adjacent to introns
@@ -5975,8 +5991,13 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                             }
                         }
                     }
-                    PostErr (sev, eErr_SEQ_FEAT_PartialProblem,
-                        "PartialLocation: " + parterrs[j], *(feat.GetSeq_feat()));
+                    if (j == 0) {
+                        PostErr(sev, eErr_SEQ_FEAT_PartialProblem5Prime,
+                            "Start does not include first/last residue of sequence", *(feat.GetSeq_feat()));
+                    } else if (j == 1) {
+                        PostErr(sev, eErr_SEQ_FEAT_PartialProblem3Prime,
+                            "Stop does not include first/last residue of sequence", *(feat.GetSeq_feat()));
+                    }
                 }
             }
         }
