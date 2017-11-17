@@ -1141,14 +1141,20 @@ void CBioseqIndex::x_InitSource (void)
                 if (sfxp) {
                     CMappedFeat cds_feat = sfxp->GetMappedFeat();
                     if (cds_feat) {
-                        try {
-                            CMappedFeat src_feat = m_FeatTree.GetParent(cds_feat, CSeqFeatData::eSubtype_biosrc);
-                            if (src_feat) {
-                                const CBioSource& bsrc = src_feat.GetData().GetBiosrc();
-                                m_BioSource.Reset (&bsrc);
+                        CWeakRef<CBioseqIndex> bsx = GetBioseqForProduct();
+                        auto bsxl = bsx.Lock();
+                        if (bsxl) {
+                            feature::CFeatTree ft = bsxl->GetFeatTree();
+                            try {
+                                CMappedFeat src_feat = ft.GetParent(cds_feat, CSeqFeatData::eSubtype_biosrc);
+                                if (src_feat) {
+                                    const CBioSource& bsrc = src_feat.GetData().GetBiosrc();
+                                    m_BioSource.Reset (&bsrc);
+                                }
                             }
-                        }
-                        catch  (CException& e) {
+                            catch  (CException& e) {
+                                LOG_POST(Error << "Error in ft.GetParent: " << e.what());
+                            }
                         }
                     }
                 }
