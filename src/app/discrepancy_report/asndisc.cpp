@@ -339,7 +339,7 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
         Tests->AddTest("_SUSPECT_PRODUCT_NAMES");
         ITERATE (vector<string>, fname, m_Files) {
             ++count;
-            LOG_POST((string)"Processing file " + to_string(count) + " of " + to_string((int)m_Files.size()));
+            LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
             Tests->SetFile(*fname);
             CNcbiIfstream istr(fname->c_str());
             CStreamLineReader line_reader(istr);
@@ -361,7 +361,7 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
         TStr2Obj objects;
         ITERATE (vector<string>, fname, m_Files) {
             ++count;
-            LOG_POST((string)"Processing file " + to_string(count) + " of " + to_string((int)m_Files.size()));
+            LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
             CRef<CSerialObject> obj = x_ReadFile(*fname);
             Tests->SetFile(*fname);
             Tests->Parse(*obj);
@@ -583,7 +583,7 @@ int CDiscRepApp::Run(void)
         int count = 0;
         ITERATE (vector<string>, f, m_Files) {
             ++count;
-            LOG_POST((string)"Processing file " + to_string(count) + " of " + to_string((int)m_Files.size()));
+            LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
             x_ProcessFile(*f);
         }
     }
