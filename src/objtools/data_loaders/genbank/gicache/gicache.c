@@ -72,6 +72,7 @@ typedef struct {
 } SGiDataIndex;
 
 static SGiDataIndex *gi_cache = NULL;
+static Boolean data_index_notfound = FALSE;
 
 static void (*__LogFunc)(char*) = NULL;
 static void (*__LogFuncEx)(int severity, char* msg) = NULL;
@@ -176,6 +177,7 @@ GiDataIndex_New(const char* prefix, Uint1 readonly, Uint1 enablesync) {
 	MDB_txn *txn = 0;
 	int64_t mapsize;
 
+    data_index_notfound = FALSE;
     data_index = (SGiDataIndex*) malloc(sizeof(SGiDataIndex));
     memset(data_index, 0, sizeof(SGiDataIndex));
     data_index->m_ReadOnlyMode = readonly;
@@ -265,6 +267,7 @@ ERROR:
 	}
 	GiDataIndex_Free(data_index);
 	data_index = NULL;
+    data_index_notfound = TRUE;
 	LOG(SEV_ERROR, logmsg);
 	return NULL;
 }
@@ -549,7 +552,7 @@ static int x_GICacheInit(const char* prefix, Uint1 readonly, Uint1 enablesync) {
         Uint1 cache_found = gi_cache != NULL;
 
         if (!cache_found && !prefix) {
-            snprintf(prefix_str, sizeof(prefix_str), "%s/%s.", DEFAULT_GI_CACHE_PATH, DEFAULT_GI_CACHE_PREFIX);            
+            snprintf(prefix_str, sizeof(prefix_str), "%s/%s", DEFAULT_GI_CACHE_PATH, DEFAULT_GI_CACHE_PREFIX);            
             gi_cache = GiDataIndex_New(prefix_str, readonly, 0);
         }
     }
@@ -570,7 +573,8 @@ int GICache_GetAccessionLen(int64_t gi, char* acc, int buf_len, int64_t* gi_len)
 	if (acc && buf_len > 0)
 		acc[0] = NULLB;
 	if (!gi_cache) {
-		LOG(SEV_ERROR, "GICache_GetAccession: GI Cache is not initialized, call GICache_ReadData() first");
+        if (!data_index_notfound)
+            LOG(SEV_ERROR, "GICache_GetAccession: GI Cache is not initialized, call GICache_ReadData() first");
 		return 0;
 	}
 	rv = x_GetGiData(gi_cache, gi, acc, buf_len, gi_len);
