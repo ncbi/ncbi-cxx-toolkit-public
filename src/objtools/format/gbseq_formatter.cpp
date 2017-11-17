@@ -666,9 +666,8 @@ void CGBSeqFormatter::x_StrOStreamToTextOStream(IFlatTextOStream& text_os)
     // convert GBseq to INSDSeq
     if ( m_IsInsd ) {
         for (string& str : l) {
-            string one = NStr::Replace(str, "<GB", "<INSD");
-            string two = NStr::Replace(one, "</GB", "</INSD");
-            str = two;
+            NStr::ReplaceInPlace(str, "<GB", "<INSD");
+            NStr::ReplaceInPlace(str,"</GB", "</INSD");
         }
     }
     // add text to TextOStream
