@@ -272,7 +272,7 @@ void s_CollectFileInfo(const string& filename, CZipCompression::SFileInfo& info)
 static 
 unsigned long s_UpdateCRC32(unsigned long crc, const void* buf, size_t len)
 {
-#if (ZLIB_VERNUM >= 0x1290)
+#if !defined(NCBI_OS_DARWIN)  &&  (ZLIB_VERNUM >= 0x1290)
     return crc32_z(0L, (unsigned char*)buf, len);
 
 #else
