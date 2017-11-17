@@ -39581,9 +39581,6 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 fi
-# Sigh... without this, the linker pulls in the contents of the cache
-# and then gripes about missing JTC stuff.
-test -d SunWS_cache  &&  rm -r SunWS_cache
 
 
 ## International Components for Unicode (ICU)
@@ -40148,7 +40145,6 @@ _ACEOF
 
 
 
-test -d SunWS_cache  &&  rm -r SunWS_cache
 if test -f "${SABLOT_PATH}/lib${bit64_sfx}/libsablot-static.a"; then
    SABLOT_STATIC_LIBS="-L${SABLOT_PATH}/lib${bit64_sfx} -lsablot-static $EXPAT_STATIC_LIBS"
 else
@@ -41216,8 +41212,6 @@ else
    XALAN_LIBS=
    XALAN_STATIC_LIBS=
 fi
-
-test -d SunWS_cache  &&  rm -r SunWS_cache
 
 if test "$with_zorba" != no; then
    if test "${with_zorba-yes}" != yes; then
@@ -42444,7 +42438,6 @@ _ACEOF
 if test -n "$OECHEM_LIBS"; then
    OECHEM_LIBS=`echo $OECHEM_LIBS | sed -e 's/-loechem \(.*-loechem .*\)/\1/'`
 fi
-test -d SunWS_cache  &&  rm -r SunWS_cache
 
 
 ### Sun/Univa Grid Engine
@@ -48994,21 +48987,6 @@ for x in ChaosMonkey Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray W
       esac
    done
 
-
-### Cleanup
-### ---------------------------------
-
-case "$compiler" in
- WorkShop* )
-   test -d SunWS_cache  &&  rm -r SunWS_cache
-   ;;
- MIPSpro73 )
-   test -d ii_files     &&  rm -r ii_files
-   ;;
- KCC )
-   test -d ti_files     &&  rm -r ti_files
-   ;;
-esac
 
 
 ### Get rid of the KCC "anti-license-warning" filter

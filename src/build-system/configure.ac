@@ -6531,9 +6531,6 @@ else
    AC_DEFINE(HAVE_ORBACUS, 1,
              [Define to 1 if the ORBacus CORBA package is available.])
 fi
-# Sigh... without this, the linker pulls in the contents of the cache
-# and then gripes about missing JTC stuff.
-test -d SunWS_cache  &&  rm -r SunWS_cache
 
 
 ## International Components for Unicode (ICU)
@@ -6619,7 +6616,6 @@ NCBI_CHECK_THIRD_PARTY_LIB(sablot,
  AC_LANG_PROGRAM([#include <sablot.h>],
     [SDOM_Document* D; int x = SablotParse(NULL, "file:/dev/null", D);]),
  $EXPAT_LIBS)
-test -d SunWS_cache  &&  rm -r SunWS_cache
 if test -f "${SABLOT_PATH}/lib${bit64_sfx}/libsablot-static.a"; then
    SABLOT_STATIC_LIBS="-L${SABLOT_PATH}/lib${bit64_sfx} -lsablot-static $EXPAT_STATIC_LIBS"
 else
@@ -6864,8 +6860,6 @@ else
    XALAN_LIBS=
    XALAN_STATIC_LIBS=
 fi
-
-test -d SunWS_cache  &&  rm -r SunWS_cache
 
 if test "$with_zorba" != no; then
    if test "${with_zorba-yes}" != yes; then
@@ -7154,7 +7148,6 @@ NCBI_CHECK_THIRD_PARTY_LIB(oechem,
 if test -n "$OECHEM_LIBS"; then
    OECHEM_LIBS=`echo $OECHEM_LIBS | sed -e 's/-loechem \(.*-loechem .*\)/\1/'`
 fi
-test -d SunWS_cache  &&  rm -r SunWS_cache
 
 
 ### Sun/Univa Grid Engine
@@ -8194,21 +8187,6 @@ m4_foreach(CATEGORY, [Features,Packages,Projects],
       esac
    done
   ])
-
-### Cleanup
-### ---------------------------------
-
-case "$compiler" in
- WorkShop* )
-   test -d SunWS_cache  &&  rm -r SunWS_cache
-   ;;
- MIPSpro73 )
-   test -d ii_files     &&  rm -r ii_files
-   ;;
- KCC )
-   test -d ti_files     &&  rm -r ti_files
-   ;;
-esac
 
 
 ### Get rid of the KCC "anti-license-warning" filter
