@@ -16432,23 +16432,14 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_RareSpliceConsensusDonor)
     unit_test_util::AddFeat(intron, nuc);
 
     STANDARD_SETUP
-
-    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Info, "RareSpliceConsensusDonor",
-                               "Rare splice donor/acceptor consensus (GC-AG) found instead of (GT-AG) after exon ending at position 16 and before exon starting at position 47 of lcl|nuc"));
-
+    // no longer report
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-
-    CValidErrorFormat format(*objmgr);
-    string formatted = format.FormatForSubmitterReport(*(eval->GetErrs()[0]), scope);
-    BOOST_CHECK_EQUAL(formatted, "CDS\tlcl|nuc\t(GC-AG) instead of (GT-AG) at 16, 47");
 
     scope.RemoveTopLevelSeqEntry(seh);
     unit_test_util::RevComp(entry);
     seh = scope.AddTopLevelSeqEntry(*entry);
     CLEAR_ERRORS
-    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Info, "RareSpliceConsensusDonor",
-                               "Rare splice donor/acceptor consensus (GC-AG) found instead of (GT-AG) after exon ending at position 45 and before exon starting at position 14 of lcl|nuc"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -16471,9 +16462,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_RareSpliceConsensusDonor_VR_65)
 
     STANDARD_SETUP
 
-    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Info, "RareSpliceConsensusDonor",
-                               "Rare splice donor/acceptor consensus (AT-AC) found instead of (GT-AG) after exon ending at position 16 and before exon starting at position 47 of lcl|nuc"));
-
+    // no longer report
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -16481,9 +16470,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_RareSpliceConsensusDonor_VR_65)
     unit_test_util::RevComp(entry);
     seh = scope.AddTopLevelSeqEntry(*entry);
     CLEAR_ERRORS
-    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Info, "RareSpliceConsensusDonor",
-                               "Rare splice donor/acceptor consensus (AT-AC) found instead of (GT-AG) after exon ending at position 45 and before exon starting at position 14 of lcl|nuc"));
-
+    // no longer report
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 

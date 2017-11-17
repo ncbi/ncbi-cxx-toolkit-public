@@ -63,26 +63,20 @@ void CSpliceProblems::ValidateDonorAcceptorPair
     
     ESpliceSiteRead good_donor = ReadDonorSpliceSite(strand, stop, vec_donor, seq_len_donor, donor);
     ESpliceSiteRead good_acceptor = ReadAcceptorSpliceSite(strand, start, vec_acceptor, seq_len_acceptor, acceptor);
-    bool donor_ok = (good_donor == eSpliceSiteRead_OK || good_donor == eSpliceSiteRead_Rare || good_donor == eSpliceSiteRead_WrongNT);
+    bool donor_ok = (good_donor == eSpliceSiteRead_OK  || good_donor == eSpliceSiteRead_WrongNT);
     bool acceptor_ok = (good_acceptor == eSpliceSiteRead_OK || good_acceptor == eSpliceSiteRead_WrongNT);
 
     if (donor_ok && acceptor_ok) {
         // Check canonical adjacent splice sites: "GT-AG"
-        if (CheckAdjacentSpliceSites(kSpliceSiteGTAG, strand, donor, acceptor)) {
+        // Check non-canonical adjacent splice sites: "GC-AG"
+        // Check non-canonical adjacent splice sites: "AT-AC"
+        if (CheckAdjacentSpliceSites(kSpliceSiteGTAG, strand, donor, acceptor) ||
+            CheckAdjacentSpliceSites(kSpliceSiteGCAG, strand, donor, acceptor) ||
+            CheckAdjacentSpliceSites(kSpliceSiteATAC, strand, donor, acceptor)) {
             return; // canonical splice site found
         }
-        // Check non-canonical adjacent splice sites: "GC-AG"
-        if (CheckAdjacentSpliceSites(kSpliceSiteGCAG, strand, donor, acceptor)) {
-            m_IntervalProblems.push_back(SSpliceIntervalProblem{ eSplicePairGC_AG, start, stop });
-        }
-        // Check non-canonical adjacent splice sites: "AT-AC"
-        else if (CheckAdjacentSpliceSites(kSpliceSiteATAC, strand, donor, acceptor)) {
-            m_IntervalProblems.push_back(SSpliceIntervalProblem{ eSplicePairAT_AC, start, stop });
-        }
-        else {
-            m_DonorProblems.push_back(TSpliceProblem(good_donor, stop));
-            m_AcceptorProblems.push_back(TSpliceProblem(good_acceptor, start));
-        }
+        m_DonorProblems.push_back(TSpliceProblem(good_donor, stop));
+        m_AcceptorProblems.push_back(TSpliceProblem(good_acceptor, start));
     } else {
         m_DonorProblems.push_back(TSpliceProblem(good_donor, stop));
         m_AcceptorProblems.push_back(TSpliceProblem(good_acceptor, start));
@@ -137,16 +131,12 @@ CSpliceProblems::ReadDonorSpliceSite(ENa_strand strand, TSeqPos stop, const CSeq
             }
         }
 
-        // Check canonical donor site: "GT"
-        if (!CheckSpliceSite(kSpliceSiteGT, strand, site)) {
-            // Check non-canonical donor site: "GC"
-            if (CheckSpliceSite(kSpliceSiteGC, strand, site)) {
-                return eSpliceSiteRead_Rare;
-            } else {
-                return eSpliceSiteRead_WrongNT;
-            }
+        // Check canonical donor site: "GT" and non-canonical donor site: "GC"
+        if (CheckSpliceSite(kSpliceSiteGT, strand, site) || CheckSpliceSite(kSpliceSiteGC, strand, site)) {
+            return eSpliceSiteRead_OK;
+        } else {
+            return eSpliceSiteRead_WrongNT;
         }
-        return eSpliceSiteRead_OK;
     } catch (CException&) {
         return eSpliceSiteRead_OK;
     }
@@ -237,13 +227,13 @@ TSeqPos seq_len)
 }
 
 
-bool CSpliceProblems::SpliceSitesHaveErrors(bool rare_consensus_not_expected)
+bool CSpliceProblems::SpliceSitesHaveErrors()
 {
     bool has_errors = false;
     // donors
     for (auto it = m_DonorProblems.begin(); it != m_DonorProblems.end() && !has_errors; it++) {
         if (it->first == eSpliceSiteRead_BadSeq || it->first == eSpliceSiteRead_Gap ||
-            it->first == eSpliceSiteRead_WrongNT || (it->first == eSpliceSiteRead_Rare && rare_consensus_not_expected)) {
+            it->first == eSpliceSiteRead_WrongNT) {
             has_errors = true;            
         }
     }
@@ -251,14 +241,6 @@ bool CSpliceProblems::SpliceSitesHaveErrors(bool rare_consensus_not_expected)
     for (auto it = m_AcceptorProblems.begin(); it != m_AcceptorProblems.end() && !has_errors; it++) {
         if (it->first == eSpliceSiteRead_BadSeq || it->first == eSpliceSiteRead_Gap ||
             it->first == eSpliceSiteRead_WrongNT) {
-            has_errors = true;
-        }
-    }
-    // intervals
-    for (auto it = m_IntervalProblems.begin(); it != m_IntervalProblems.end() && !has_errors; it++) {
-        if (it->pair_problem == eSplicePairGC_AG && rare_consensus_not_expected) {
-            has_errors = true;
-        } else if (it->pair_problem == eSplicePairGC_AG) {
             has_errors = true;
         }
     }
@@ -271,7 +253,6 @@ void CSpliceProblems::CalculateSpliceProblems(const CSeq_feat& feat, bool check_
 {
     m_DonorProblems.clear();
     m_AcceptorProblems.clear();
-    m_IntervalProblems.clear();
     m_ExceptionUnnecessary = false;
     m_ErrorsNotExpected = true;
 
@@ -349,8 +330,7 @@ void CSpliceProblems::CalculateSpliceProblems(const CSeq_feat& feat, bool check_
             break;
         }
     }
-    bool rare_consensus_not_expected = RareConsensusNotExpected(loc_handle);
-    has_errors = SpliceSitesHaveErrors(rare_consensus_not_expected);
+    has_errors = SpliceSitesHaveErrors();
 
     if (!m_ErrorsNotExpected  &&  !has_errors  &&  !ribo_slip) {
         m_ExceptionUnnecessary = true;
@@ -653,26 +633,6 @@ void CSpliceProblems::ValidateSpliceCdregion(const CSeq_feat& feat, const CBiose
     }
 
 }
-
-
-bool CSpliceProblems::RareConsensusNotExpected(CBioseq_Handle seq)
-
-{
-    bool rval = false;
-    CSeqdesc_CI sd(seq, CSeqdesc::e_Source);
-
-    if (sd && sd->GetSource().IsSetOrgname()) {
-        if (!sd->GetSource().GetOrgname().IsSetDiv()
-            || !NStr::EqualNocase(sd->GetSource().GetOrgname().GetDiv(), "PLN")) {
-            rval = true;
-        } else if (!sd->GetSource().GetOrgname().IsSetLineage()
-            || !NStr::StartsWith(sd->GetSource().GetOrgname().GetLineage(), "Eukaryota; Viridiplantae; ")) {
-            rval = true;
-        }
-    }
-    return rval;
-}
-
 
 
 bool s_EqualsG(Char c)

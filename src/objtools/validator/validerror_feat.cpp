@@ -1402,10 +1402,6 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
                   PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
                            "gene description " + gene.GetDesc() + " has SGML", feat);
             }
-            if (NStr::Find(desc, "..") != string::npos) {
-                  PostErr (eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature, 
-                           "Possible location text (" + desc + ") on gene description", feat);
-            }
       }
       FOR_EACH_SYNONYM_ON_GENEREF (it, gene) {
             if (ContainsSgml(*it)) {
@@ -1950,18 +1946,13 @@ EDiagSev CValidError_feat::x_SeverityForConsensusSplice(void)
 }
 
 
-void CValidError_feat::ReportDonorSpliceSiteReadErrors(const CSpliceProblems::TSpliceProblem& problem, const string& label, const CSeq_feat& feat, bool rare_consensus_not_expected)
+void CValidError_feat::ReportDonorSpliceSiteReadErrors(const CSpliceProblems::TSpliceProblem& problem, const string& label, const CSeq_feat& feat)
 {
     if (problem.first == CSpliceProblems::eSpliceSiteRead_BadSeq) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
             "Bad sequence at splice donor after exon ending at position "
             + NStr::IntToString(problem.second + 1) + " of " + label,
             feat);
-    } else if (problem.first == CSpliceProblems::eSpliceSiteRead_Rare && rare_consensus_not_expected) {
-        PostErr(eDiag_Info, eErr_SEQ_FEAT_RareSpliceConsensusDonor,
-                "Rare splice donor consensus (GC) found instead of (GT) after exon ending at position "
-                + NStr::IntToString(problem.second + 1) + " of " + label,
-                feat);
     } else if (problem.first == CSpliceProblems::eSpliceSiteRead_WrongNT) {
         PostErr(x_SeverityForConsensusSplice(), eErr_SEQ_FEAT_NotSpliceConsensusDonor,
             "Splice donor consensus (GT) not found after exon ending at position "
@@ -1990,31 +1981,15 @@ void CValidError_feat::ReportAcceptorSpliceSiteReadErrors(const CSpliceProblems:
 
 
 void CValidError_feat::ReportSpliceProblems
-(const CSpliceProblems& problems, const string& label, const CSeq_feat& feat, bool rare_consensus_not_expected)
+(const CSpliceProblems& problems, const string& label, const CSeq_feat& feat)
 {
     const CSpliceProblems::TSpliceProblemList& donor_problems = problems.GetDonorProblems();
     for (auto it = donor_problems.begin(); it != donor_problems.end(); it++) {
-        ReportDonorSpliceSiteReadErrors(*it, label, feat, rare_consensus_not_expected);
+        ReportDonorSpliceSiteReadErrors(*it, label, feat);
     }
     const CSpliceProblems::TSpliceProblemList& acceptor_problems = problems.GetAcceptorProblems();    
     for (auto it = acceptor_problems.begin(); it != acceptor_problems.end(); it++) {
         ReportAcceptorSpliceSiteReadErrors(*it, label, feat);
-    }
-    const CSpliceProblems::TSpliceIntervalProblemList& interval_problems = problems.GetIntervalProblems();
-    for (auto it = interval_problems.begin(); it != interval_problems.end(); it++) {
-        if (it->pair_problem == CSpliceProblems::eSplicePairGC_AG && rare_consensus_not_expected) {
-            PostErr(eDiag_Info, eErr_SEQ_FEAT_RareSpliceConsensusDonor,
-                "Rare splice donor/acceptor consensus (GC-AG) found instead of (GT-AG) after exon ending at position "
-                + NStr::IntToString(it->stop + 1) + " and before exon starting at position "
-                + NStr::IntToString(it->start + 1) + " of " + label,
-                feat);
-        } else if (it->pair_problem == CSpliceProblems::eSplicePairAT_AC) {
-            PostErr(eDiag_Info, eErr_SEQ_FEAT_RareSpliceConsensusDonor,
-                "Rare splice donor/acceptor consensus (AT-AC) found instead of (GT-AG) after exon ending at position "
-                + NStr::IntToString(it->stop + 1) + " and before exon starting at position "
-                + NStr::IntToString(it->start + 1) + " of " + label,
-                feat);
-        }
     }
 }
 
@@ -2030,14 +2005,13 @@ void CValidError_feat::ValidateSplice(
         m_Imp.SetFarFetchFailure();
         return;
     }
-    bool rare_consensus_not_expected = CSpliceProblems::RareConsensusNotExpected(bsh);
 
     CSpliceProblems splice_problems;
     splice_problems.CalculateSpliceProblems(feat, check_all, IsOverlappingGenePseudo(feat, m_Scope), bsh);
 
     if (splice_problems.AreErrorsUnexpected()) {
         string label = GetBioseqIdLabel(*(bsh.GetCompleteBioseq()), true);
-        ReportSpliceProblems(splice_problems, label, feat, rare_consensus_not_expected);
+        ReportSpliceProblems(splice_problems, label, feat);
     }
 
     if (splice_problems.IsExceptionUnnecessary()) {

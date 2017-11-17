@@ -267,8 +267,8 @@ private:
     void ValidateCharactersInField (string value, string field_name, const CSeq_feat& feat);
     void x_ReportECNumFileStatus(const CSeq_feat& feat);
 
-    void ReportSpliceProblems(const CSpliceProblems& problems, const string& label, const CSeq_feat& feat, bool rare_consensus_not_expected);
-    void ReportDonorSpliceSiteReadErrors(const CSpliceProblems::TSpliceProblem& problem, const string& label, const CSeq_feat& feat, bool rare_consensus_not_expected);
+    void ReportSpliceProblems(const CSpliceProblems& problems, const string& label, const CSeq_feat& feat);
+    void ReportDonorSpliceSiteReadErrors(const CSpliceProblems::TSpliceProblem& problem, const string& label, const CSeq_feat& feat);
     void ReportAcceptorSpliceSiteReadErrors(const CSpliceProblems::TSpliceProblem& problem, const string& label, const CSeq_feat& feat);
 
     bool x_CDS3primePartialTest(const CSeq_feat& feat);

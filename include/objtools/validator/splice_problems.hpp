@@ -111,40 +111,24 @@ public:
     // first is problem flags, second is position
     typedef pair<size_t, TSeqPos> TSpliceProblem;
     typedef vector<TSpliceProblem> TSpliceProblemList;
-    typedef enum {
-        eSplicePair_OK,
-        eSplicePairGC_AG,
-        eSplicePairAT_AC
-    } ESplicePair;
-    typedef struct {
-        size_t pair_problem;
-        TSeqPos start;
-        TSeqPos stop;
-    } SSpliceIntervalProblem;
-    typedef vector<SSpliceIntervalProblem> TSpliceIntervalProblemList;
 
     typedef enum {
         eSpliceSiteRead_OK = 0,
         eSpliceSiteRead_BadSeq,
         eSpliceSiteRead_Gap,
         eSpliceSiteRead_OutOfRange,
-        eSpliceSiteRead_Rare,
         eSpliceSiteRead_WrongNT
     } ESpliceSiteRead;
 
-    bool SpliceSitesHaveErrors(bool rare_consensus_not_expected);
+    bool SpliceSitesHaveErrors();
     bool IsExceptionUnnecessary() const { return m_ExceptionUnnecessary; }
     bool AreErrorsUnexpected() const { return m_ErrorsNotExpected; }
     const TSpliceProblemList& GetDonorProblems() const { return m_DonorProblems; }
     const TSpliceProblemList& GetAcceptorProblems() const { return m_AcceptorProblems; }
-    const TSpliceIntervalProblemList& GetIntervalProblems() const { return m_IntervalProblems; }
-
-    static bool RareConsensusNotExpected(CBioseq_Handle seq);
 
 private:
     TSpliceProblemList m_DonorProblems;
     TSpliceProblemList m_AcceptorProblems;
-    TSpliceIntervalProblemList m_IntervalProblems;
     bool m_ExceptionUnnecessary;
     bool m_ErrorsNotExpected;
 
