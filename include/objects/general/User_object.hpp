@@ -274,7 +274,7 @@ public:
     public:
         CRefGeneTrackingAccession() {}
         CRefGeneTrackingAccession(const string& accession,
-                                  TGi gi = 0,
+                                  TGi gi = ZERO_GI,
                                   TSeqPos from = kInvalidSeqPos,
                                   TSeqPos to = kInvalidSeqPos,
                                   const string& comment = kEmptyStr,
@@ -295,7 +295,7 @@ public:
         const string& GetName() const { return m_Name; }
         bool IsSetName() const { return !m_Name.empty(); }
         TGi GetGI() const { return m_GI; }
-        bool IsSetGI() const { return m_GI > (TGi) 0; }
+        bool IsSetGI() const { return m_GI > ZERO_GI; }
         TSeqPos GetFrom() const { return m_From; }
         bool IsSetFrom() const { return m_From != kInvalidSeqPos; }
         TSeqPos GetTo() const { return m_To; }

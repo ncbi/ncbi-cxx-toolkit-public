@@ -1029,10 +1029,10 @@ CRef<CUser_field> CUser_object::CRefGeneTrackingAccession::MakeAccessionField() 
         uf->SetData().SetStr(m_Name);
         top->SetData().SetFields().push_back(uf);
     }
-    if (m_GI > 0) {
+    if (m_GI > ZERO_GI) {
         CRef<CUser_field> uf(new CUser_field());
         uf->SetLabel().SetStr(kRGTAGI);
-        uf->SetData().SetInt(m_GI);
+        uf->SetData().SetInt(GI_TO(int, m_GI));
         top->SetData().SetFields().push_back(uf);
     }
     if (m_From != kInvalidSeqPos) {
@@ -1072,7 +1072,7 @@ CUser_object::CRefGeneTrackingAccession::MakeAccessionFromUserField(const CUser_
 
     string accession, acc_name, comment;
     TSeqPos from = kInvalidSeqPos, to = kInvalidSeqPos;
-    TGi gi = 0;
+    TGi gi = ZERO_GI;
     for (auto it : field.GetData().GetFields()) {
         if (it->IsSetLabel() && it->GetLabel().IsStr() && it->IsSetData()) {
             // finish taking out dereferences
@@ -1097,7 +1097,7 @@ CUser_object::CRefGeneTrackingAccession::MakeAccessionFromUserField(const CUser_
                 }
             } else if (NStr::EqualNocase(label, kRGTAGI)) {
                 if (it->GetData().IsInt()) {
-                    gi = it->GetData().GetInt();
+                    gi = GI_FROM(int, it->GetData().GetInt());
                 } else {
                     NCBI_THROW(CRefGeneTrackingException, eBadUserFieldData, kEmptyStr);
                 }
