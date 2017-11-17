@@ -547,7 +547,7 @@ static void TestCgi(const CNcbiArguments& args)
         assert( !X_PUTENV("REQUEST_METHOD=POST") );
         NcbiCout << "Enter the length of CGI posted data now: " << NcbiFlush;
         long l = 0;
-        if (!(NcbiCin >> l)  ||  len < 0) {
+        if (!(NcbiCin >> l)  ||  l < 0) {
             NcbiCin.clear();
             throw runtime_error("Invalid length of CGI posted data");
         }
