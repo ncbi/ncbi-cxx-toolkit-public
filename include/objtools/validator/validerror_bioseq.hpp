@@ -198,6 +198,7 @@ private:
     bool x_SplicingNotExpected(const CMappedFeat& feat);
     bool x_MatchesOverlappingFeaturePartial (const CMappedFeat& feat, unsigned int partial_type);
     bool x_IsSameAsCDS(const CMappedFeat& feat);
+    void x_ReportPseudogeneConflict(CConstRef <CSeq_feat> gene, const CSeq_feat& feat);
     void ValidateSeqFeatContext(const CBioseq& seq);
     EDiagSev x_DupFeatSeverity (const CSeq_feat& curr, const CSeq_feat& prev, bool viral, bool htgs, bool same_annot, bool same_label);
     bool x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle & f1, const CSeq_feat_Handle & f2, bool fruit_fly, bool viral, bool htgs);

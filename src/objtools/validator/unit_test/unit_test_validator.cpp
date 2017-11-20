@@ -21474,3 +21474,78 @@ BOOST_AUTO_TEST_CASE(VR_778)
 
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_InconsistentPseudogeneValue)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+
+    CRef<CSeq_feat> cds = unit_test_util::AddMiscFeature(entry);
+    cds->SetData().SetCdregion();
+    cds->ResetComment();
+    cds->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("pseudogene", "unitary")));
+
+    CRef<CSeq_feat> mrna = unit_test_util::AddMiscFeature(entry);
+    mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    mrna->ResetComment();
+    mrna->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("pseudogene", "unitary")));
+
+    CRef<CSeq_feat> gene = unit_test_util::AddMiscFeature(entry);
+    gene->SetData().SetGene().SetLocus("x");
+    gene->ResetComment();
+    gene->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("pseudogene", "unitary")));
+
+    // no errors, all features have matching pseudogene values
+    STANDARD_SETUP
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // no errors if cds has no pseudogene but mrna and gene do
+    cds->ResetQual();
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // no errors if mrna and cds have no pseudogene but gene does
+    mrna->ResetQual();
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // no errors if mrna has no pseudogene but cds and gene do
+    cds->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("pseudogene", "unitary")));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // error if cds has pseudogene but gene does not
+    gene->ResetQual();
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "InconsistentPseudogeneValue",
+        "CDS has pseudogene qualifier, gene does not"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // also error if mRNA has pseudogene but gene does not
+    mrna->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("pseudogene", "unitary")));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "InconsistentPseudogeneValue",
+        "mRNA has pseudogene qualifier, gene does not"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // different errors when pseudogene values conflict
+    gene->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("pseudogene", "allelic")));
+    mrna->SetQual().front()->SetVal("processed");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "InconsistentPseudogeneValue",
+        "Different pseudogene values on CDS (unitary) and gene (allelic)"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "InconsistentPseudogeneValue",
+        "Different pseudogene values on mRNA (processed) and gene (allelic)"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+}
+

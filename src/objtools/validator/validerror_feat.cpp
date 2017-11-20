@@ -189,19 +189,6 @@ static bool s_IsValidECNumberFormat (const string& str)
     return false;
 }
 
-bool s_HasNamedQual(const CSeq_feat& f, const string& qual_name)
-{
-    if (!f.IsSetQual()) {
-        return false;
-    }
-    ITERATE(CSeq_feat::TQual, it, f.GetQual()) {
-        if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), qual_name)) {
-            return true;
-        }
-    }
-    return false;
-}
-
 
 const string kInferenceMessage[] = {
   "unknown error",
@@ -1428,12 +1415,40 @@ static bool IsGeneticCodeValid(int gcode)
     return ret;
 }
 
+
+bool s_HasNamedQual(const CSeq_feat& feat, const string& qual)
+{
+    bool rval = false;
+    if (feat.IsSetQual()) {
+        for (auto it : feat.GetQual()) {
+            if (it->IsSetQual() && NStr::EqualNocase(it->GetQual(), qual)) {
+                rval = true;
+                break;
+            }
+        }
+    }
+    return rval;
+}
+
+
+static bool s_IsPseudo(const CSeq_feat& feat)
+{
+    if (feat.CanGetPseudo() && feat.GetPseudo()) {
+        return true;
+    } else if (s_HasNamedQual(feat, "pseudogene")) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 void CValidError_feat::ValidateCdregion (
     const CCdregion& cdregion, 
     const CSeq_feat& feat
 ) 
 {
-    bool feat_is_pseudo = feat.CanGetPseudo()  &&  feat.GetPseudo();
+    bool feat_is_pseudo = s_IsPseudo(feat);
     bool gene_is_pseudo = IsOverlappingGenePseudo(feat, m_Scope);
     bool pseudo = feat_is_pseudo  ||  gene_is_pseudo;
     bool nonsense_intron;
@@ -1660,7 +1675,7 @@ void CValidError_feat::ValidateCdsProductId(const CSeq_feat& feat)
         return;
     }
     // bail if pseudo
-    bool pseudo = (feat.CanGetPseudo()  &&  feat.GetPseudo())  ||
+    bool pseudo = s_IsPseudo(feat) ||
         IsOverlappingGenePseudo(feat, m_Scope);
     if ( pseudo ) {
         return;
