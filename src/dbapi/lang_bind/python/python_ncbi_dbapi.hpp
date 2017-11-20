@@ -51,12 +51,12 @@ namespace python
 enum EConnectionMode { eSimpleMode, eStandardMode };
 
 //////////////////////////////////////////////////////////////////////////////
-class CBinary : public pythonpp::CExtObject<CBinary>
+class CBinaryType : public pythonpp::CExtObject<CBinaryType>
 {
 public:
-    CBinary(void);
-    CBinary(const string& value);
-    ~CBinary(void);
+    CBinaryType(void);
+    CBinaryType(const string& value);
+    ~CBinaryType(void);
 
 public:
     string GetValue(void) const

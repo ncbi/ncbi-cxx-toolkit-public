@@ -833,6 +833,127 @@ public:
     }
 };
 
+
+class CBinary : public CObject
+{
+public:
+    CBinary(void)
+#if PY_MAJOR_VERSION >= 3
+        : CObject(PyBytes_FromStringAndSize("", 0), eTakeOwnership)
+#else
+        : CObject(PyString_FromStringAndSize("", 0), eTakeOwnership)
+#endif
+    {
+    }
+    CBinary(PyObject* obj, EOwnership ownership = eAcquireOwnership)
+        : CObject(obj, ownership)
+    {
+        if ( !HasExactSameType(obj) ) {
+            throw CTypeError("Invalid conversion");
+        }
+    }
+    CBinary(const CObject& obj)
+    {
+        if ( !HasExactSameType(obj) ) {
+            throw CTypeError("Invalid conversion");
+        }
+        Set(obj);
+    }
+    CBinary(const CBinary& obj)
+        : CObject(obj)
+    {
+    }
+    CBinary(const string& str)
+    {
+        operator= (str);
+    }
+    CBinary(const char* str, size_t str_size)
+    {
+        operator= (string(str, str_size));
+    }
+
+public:
+    // Assign operators ...
+    CBinary& operator= (const CObject& obj)
+    {
+        if (this != &obj) {
+            if ( !HasExactSameType(obj) ) {
+                throw CTypeError("Invalid conversion");
+            }
+            Set(obj);
+        }
+        return *this;
+    }
+    CBinary& operator= (PyObject* obj)
+    {
+        if (Get() != obj) {
+            if ( !HasExactSameType(obj) ) {
+                throw CTypeError("Invalid conversion");
+            }
+            Set(obj);
+        }
+        return *this;
+    }
+    CBinary& operator= (const string& str)
+    {
+#if PY_MAJOR_VERSION >= 3
+        Set(PyBytes_FromStringAndSize(str.data(), str.size()), eTakeOwnership);
+#else
+        Set(PyString_FromStringAndSize(str.data(), str.size()),
+            eTakeOwnership);
+#endif
+        return *this;
+    }
+    CBinary& operator= (const char* str)
+    {
+        return operator= (string(str));
+    }
+
+public:
+    size_t GetSize (void) const
+    {
+#if PY_MAJOR_VERSION >= 3
+        return static_cast<size_t>(PyBytes_Size(Get()));
+#else
+        return static_cast<size_t>(PyString_Size(Get()));
+#endif
+    }
+    operator string (void) const
+    {
+        return AsStdSring();
+    }
+
+    string AsStdSring(void) const
+    {
+#if PY_MAJOR_VERSION >= 3
+        return string(PyBytes_AsString(Get()),
+                      static_cast<size_t>(PyBytes_Size(Get())));
+#else
+        return string(PyString_AsString(Get()),
+                       static_cast<size_t>(PyString_Size(Get())));
+#endif
+    }
+
+public:
+    static bool HasExactSameType(PyObject* obj)
+    {
+#if PY_MAJOR_VERSION >= 3
+        return PyBytes_CheckExact(obj);
+#else
+        return PyString_CheckExact(obj);
+#endif
+    }
+    static bool HasSameType(PyObject* obj)
+    {
+#if PY_MAJOR_VERSION >= 3
+        return PyBytes_Check(obj);
+#else
+        return PyString_Check(obj);
+#endif        
+    }
+};
+
+
 #if 0
 // PyFile_Type
 class CFile : public CObject

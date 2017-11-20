@@ -471,18 +471,18 @@ void CVariantSetProxy::DumpResult(void)
 
 
 //////////////////////////////////////////////////////////////////////////////
-CBinary::CBinary(void)
+CBinaryType::CBinaryType(void)
 {
     PrepareForPython(this);
 }
 
-CBinary::CBinary(const string& value)
+CBinaryType::CBinaryType(const string& value)
 : m_Value(value)
 {
     PrepareForPython(this);
 }
 
-CBinary::~CBinary(void)
+CBinaryType::~CBinaryType(void)
 {
 }
 
@@ -2092,7 +2092,7 @@ s_FillDescription(pythonpp::CList& descr, const IResultSetMetaData* data)
         case eDB_LongBinary:
         case eDB_Image:
         case eDB_VarBinaryMax:            
-            col_list.Append((PyObject*) &python::CBinary::GetType());
+            col_list.Append((PyObject*) &python::CBinaryType::GetType());
             break;
         case eDB_DateTime:
         case eDB_SmallDateTime:
@@ -2445,6 +2445,7 @@ ConvertCVariant2PCObject(const CVariant& value)
     case eDB_VarChar :
     case eDB_Char :
     case eDB_LongChar :
+    case eDB_Numeric :
         {
         string str = value.GetString();
         return pythonpp::CString( str );
@@ -2452,8 +2453,7 @@ ConvertCVariant2PCObject(const CVariant& value)
     case eDB_LongBinary :
     case eDB_VarBinary :
     case eDB_Binary :
-    case eDB_Numeric :
-        return pythonpp::CString( value.GetString() );
+        return pythonpp::CBinary( value.GetString() );
     case eDB_Text :
     case eDB_Image :
     case eDB_VarCharMax:
@@ -2464,7 +2464,11 @@ ConvertCVariant2PCObject(const CVariant& value)
 
         tmp_str.resize(lob_size);
         value.Read( (void*)tmp_str.data(), lob_size );
-        return pythonpp::CString(tmp_str);
+        if (value.GetType() == eDB_Text || value.GetType() == eDB_VarCharMax) {
+            return pythonpp::CString(tmp_str);
+        } else {
+            return pythonpp::CBinary(tmp_str);
+        }
         }
     case eDB_UnsupportedType :
         break;
@@ -2905,8 +2909,8 @@ CCursor::GetCVariant(const pythonpp::CObject& obj) const
         std_date.SetMicroSecond(python_time.GetMicroSecond());
         return CVariant( std_date, eLong );
 #endif
-    } else if (obj == CBinary::GetType()) {
-        const string value = static_cast<CBinary*>(obj.Get())->GetValue();
+    } else if (obj == CBinaryType::GetType()) {
+        const string value = static_cast<CBinaryType*>(obj.Get())->GetValue();
         return CVariant::VarBinary(value.data(), value.size());
     }
 
@@ -3630,7 +3634,7 @@ CModuleDBAPI::Binary(const pythonpp::CTuple& args)
             throw CProgrammingError("Invalid parameters within 'Binary' function");
         }
 
-        CBinary* obj = new CBinary(
+        CBinaryType* obj = new CBinaryType(
             );
 
         // Feef the object to the Python interpreter ...
@@ -3657,8 +3661,8 @@ PYDBAPI_MODINIT_FUNC(initpython_ncbi_dbapi)
     // Initialize DateTime module ...
     PyDateTime_IMPORT;
 
-    // Declare CBinary
-    python::CBinary::Declare("python_ncbi_dbapi.BINARY");
+    // Declare CBinaryType
+    python::CBinaryType::Declare("python_ncbi_dbapi.BINARY");
 
     // Declare CNumber
     python::CNumber::Declare("python_ncbi_dbapi.NUMBER");
@@ -4056,7 +4060,7 @@ static
 PyObject*
 Binary(PyObject *self, PyObject *args)
 {
-    CBinary* obj = NULL;
+    CBinaryType* obj = NULL;
 
     try {
         string value;
@@ -4069,7 +4073,7 @@ Binary(PyObject *self, PyObject *args)
             throw CProgrammingError("Invalid parameters within 'Binary' function");
         }
 
-        obj = new CBinary(value);
+        obj = new CBinaryType(value);
     }
     catch (const CDB_Exception& e) {
         s_ThrowDatabaseError(e);
@@ -4533,9 +4537,9 @@ PyObject* init_common(const string& module_name)
     PyDateTime_IMPORT;      // NCBI_FAKE_WARNING
 #endif
 
-    // Declare CBinary
-    python::CBinary::Declare(module_name + ".BINARY");
-    python::CBinary::GetType().SetName("BINARY");
+    // Declare CBinaryType
+    python::CBinaryType::Declare(module_name + ".BINARY");
+    python::CBinaryType::GetType().SetName("BINARY");
 
     // Declare CNumber
     python::CNumber::Declare(module_name + ".NUMBER");
@@ -4602,10 +4606,11 @@ PyObject* init_common(const string& module_name)
     // Declare types ...
 
     // Declare BINARY
-    if ( PyType_Ready(&python::CBinary::GetType()) == -1 ) {
+    if ( PyType_Ready(&python::CBinaryType::GetType()) == -1 ) {
         return NULL;
     }
-    if ( PyModule_AddObject(module, const_cast<char*>("BINARY"), (PyObject*)&python::CBinary::GetType() ) == -1 ) {
+    if (PyModule_AddObject(module, const_cast<char*>("BINARY"),
+                           (PyObject*)&python::CBinaryType::GetType()) == -1) {
         return NULL;
     }
 
