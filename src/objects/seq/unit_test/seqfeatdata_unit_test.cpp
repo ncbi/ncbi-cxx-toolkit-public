@@ -172,6 +172,10 @@ BOOST_AUTO_TEST_CASE(Test_CapitalizationFix)
 
 BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
 {
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("+60.500280-145.866244", true), "60.500280 N 145.866244 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("-60.500280+145.866244", true), "60.500280 S 145.866244 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("-60.500280-145.866244", true), "60.500280 S 145.866244 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("+60.500280+145.866244", true), "60.500280 N 145.866244 E");
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("\"36.222459,139.636522\"", true), "36.222459 N 139.636522 E");
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("35 57' 18'' N 79 43' 34\" W", true), "35.9550 N 79.7261 W");
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("35 57' 18'' N 79 43' 34' W", true), "35.9550 N 79.7261 W");

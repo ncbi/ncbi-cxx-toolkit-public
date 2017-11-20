@@ -1770,16 +1770,43 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
                 // do we have just two numbers, separated by either a comma or just a space?
                 s_TrimInternalSpaces(cpy);
                 size_t sep_pos = NStr::Find (cpy, ",");
+                // if +/- are separators, need to keep them as part of the token, otherwise not
+                int sep_len = 1; 
                 if (sep_pos == NPOS) {
                     sep_pos = NStr::Find (cpy, " ");
-                    if (sep_pos == NPOS  ||  NStr::Find (cpy, " ", sep_pos + 1) != NPOS) {
+                    if (sep_pos == NPOS) {
+                        // perhaps we can use +/- as separators                        
+                        size_t start = 0;
+                        if (cpy.c_str()[0] == '+' || cpy.c_str()[0] == '-') {
+                            start = 1;
+                        }
+                        sep_pos = NStr::Find(cpy, "+", start);
+                        if (sep_pos != NPOS) {
+                            if (NStr::Find(cpy, "+", sep_pos + 1) != NPOS || NStr::Find(cpy, "-", sep_pos + 1) != NPOS) {
+                                return kEmptyStr;
+                            } else {
+                                sep_len = 0;
+                            }
+                        } else {
+                            sep_pos = NStr::Find(cpy, "-", start);
+                            if (sep_pos != NPOS) {
+                                if (NStr::Find(cpy, "+", sep_pos + 1) != NPOS || NStr::Find(cpy, "-", sep_pos + 1) != NPOS) {
+                                    return kEmptyStr;
+                                } else {
+                                    sep_len = 0;
+                                }
+                            } else {
+                                return kEmptyStr;
+                            }
+                        }
+                    } else if (NStr::Find(cpy, " ", sep_pos + 1) != NPOS) {
                         return kEmptyStr;
                     }
                 } else if (NStr::Find (cpy, ",", sep_pos + 1) != NPOS) {
                     return kEmptyStr;
                 }
                 la_token = cpy.substr(0, sep_pos);
-                lo_token = cpy.substr(sep_pos + 1);                 
+                lo_token = cpy.substr(sep_pos + sep_len);                 
                 NStr::TruncateSpacesInPlace (la_token);
                 NStr::TruncateSpacesInPlace (lo_token);
                 if (NStr::StartsWith (la_token, "-")) {
@@ -1792,6 +1819,8 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
                 } else {
                   lo_token = "E " + lo_token;
                 }
+                NStr::ReplaceInPlace(la_token, "+", "");
+                NStr::ReplaceInPlace(lo_token, "+", "");
             } else {
                 return kEmptyStr;
             }
