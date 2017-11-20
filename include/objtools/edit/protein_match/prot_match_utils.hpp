@@ -53,23 +53,23 @@ public:
 class CMatchIdInfo {
  private:
      string m_UpdateNucId;
-     list<string> m_UpdateLocalProtIds;
+     list<string> m_UpdateOtherProtIds;
      string m_DBNucId;
      list<string> m_DBProtIds;
 
 public:
 
      string& SetUpdateNucId(void) { return m_UpdateNucId; }
-     const string& GetUpdateNucId(void) { return m_UpdateNucId; }
+     const string& GetUpdateNucId(void) const { return m_UpdateNucId; }
 
-     list<string>& SetUpdateLocalProtIds(void) { return m_UpdateLocalProtIds; }
-     const list<string>& GetUpdateLocalProtIds(void) { return m_UpdateLocalProtIds; }
+     list<string>& SetUpdateOtherProtIds(void) { return m_UpdateOtherProtIds; }
+     const list<string>& GetUpdateOtherProtIds(void) const { return m_UpdateOtherProtIds; }
 
      string& SetDBNucId(void) { return m_DBNucId; }
-     const string& GetDBNucId(void) { return m_DBNucId; }
+     const string& GetDBNucId(void) const { return m_DBNucId; }
 
      list<string>& SetDBProtIds(void) { return m_DBProtIds; }
-     const list<string>& GetDBProtIds(void) { return m_DBProtIds; }
+     const list<string>& GetDBProtIds(void) const { return m_DBProtIds; }
 
 
      bool NucIdChanges(void) const { return m_UpdateNucId != m_DBNucId; }
@@ -80,11 +80,11 @@ public:
      }
 
      bool HasLocalProtIds(void) const {
-        return !m_UpdateLocalProtIds.empty();
+        return !m_UpdateOtherProtIds.empty();
      }
 
-     bool IsLocalProtId(const string& prot_id) const { 
-        return (find(m_UpdateLocalProtIds.begin(), m_UpdateLocalProtIds.end(), prot_id) != m_UpdateLocalProtIds.end());
+     bool IsOtherProtId(const string& prot_id) const { 
+        return (find(m_UpdateOtherProtIds.begin(), m_UpdateOtherProtIds.end(), prot_id) != m_UpdateOtherProtIds.end());
      }
 };
 

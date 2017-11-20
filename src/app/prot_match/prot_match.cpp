@@ -908,7 +908,7 @@ void CProteinMatchApp::x_InitNucProtSetMatch(CRef<CSeq_entry> nuc_prot_set,
 
     x_GatherLocalProteinIds(nuc_prot_set->GetSet(), local_prot_ids[db_nuc_acc_string]);
 
-    x_GatherLocalProteinIds(nuc_prot_set->GetSet(), match_info.SetUpdateLocalProtIds());
+    x_GatherLocalProteinIds(nuc_prot_set->GetSet(), match_info.SetUpdateOtherProtIds());
 
     if (db_entry->IsSet()) {
         x_GatherProteinAccessions(db_entry->GetSet(), prot_accessions[db_nuc_acc_string]);
@@ -917,8 +917,6 @@ void CProteinMatchApp::x_InitNucProtSetMatch(CRef<CSeq_entry> nuc_prot_set,
     }
 
     const bool exclude_local_prot_ids = GetArgs()["no-local-match"];
-
-
     CRef<CSeq_entry> core_nuc_prot_set = m_pMatchSetup->GetCoreNucProtSet(*nuc_prot_set, exclude_local_prot_ids);
 
     x_RelabelNucSeq(core_nuc_prot_set); // Temporary - need to fix this

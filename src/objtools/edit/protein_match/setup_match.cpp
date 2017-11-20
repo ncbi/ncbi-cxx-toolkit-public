@@ -294,6 +294,33 @@ void CMatchSetup::GatherCdregionFeatures(const CSeq_entry& nuc_prot_set,
 }
 
 
+bool s_GetGeneralOrLocalID(const CBioseq& bioseq, CRef<CSeq_id>& id) 
+{
+    if (!bioseq.IsSetId()) {
+        return false;
+    }
+
+
+    CRef<CSeq_id> best_id;
+    for (CRef<CSeq_id> seq_id : bioseq.GetId()) {
+        if (seq_id->IsGeneral()) {
+            id = seq_id;
+            return true;
+        }
+        else 
+        if (seq_id->IsLocal()){
+            best_id = seq_id;
+        }
+    }
+
+    if (!best_id.Empty()) {
+        id = best_id;
+        return true;
+    }
+    return false;
+}
+
+
 CRef<CSeq_entry> CMatchSetup::GetCoreNucProtSet(const CSeq_entry& nuc_prot_set, bool exclude_local_prot_ids) const 
 {
     CRef<CSeq_entry> pCoreSet = Ref(new CSeq_entry());
@@ -307,14 +334,15 @@ CRef<CSeq_entry> CMatchSetup::GetCoreNucProtSet(const CSeq_entry& nuc_prot_set, 
     if (exclude_local_prot_ids) {
         for (CRef<CSeq_entry> pSubEntry : nuc_prot_set.GetSet().GetSeq_set()) {
             const CBioseq& seq = pSubEntry->GetSeq();
-            if (seq.IsAa()) {
-                if (seq.GetNonLocalId() == nullptr) {
-                    CRef<CSeq_id> pLocalId(new CSeq_id());
-                    pLocalId->Assign(*seq.GetLocalId());
-                    excluded_ids.insert(pLocalId);
+            if (seq.IsAa() && seq.IsSetId()) {
+                CRef<CSeq_id> id;
+                if (!GetAccession(seq, id) &&
+                    s_GetGeneralOrLocalID(seq, id)) {
+                    excluded_ids.insert(id);
                 }
             }
         }
+
 
         if (!excluded_ids.empty()) {
             // drop CDS features whose products are excluded protein sequences
@@ -337,9 +365,10 @@ CRef<CSeq_entry> CMatchSetup::GetCoreNucProtSet(const CSeq_entry& nuc_prot_set, 
     for (CRef<CSeq_entry> pSubEntry : nuc_prot_set.GetSet().GetSeq_set()) {
         const CBioseq& old_seq = pSubEntry->GetSeq();
 
+        CRef<CSeq_id> dummy_id;
         if (old_seq.IsAa() &&
             exclude_local_prot_ids 
-            && !old_seq.GetNonLocalId()) {
+            && !GetAccession(old_seq, dummy_id)) {
             continue;
         }
         CRef<CSeq_entry> pCoreSubEntry(new CSeq_entry());

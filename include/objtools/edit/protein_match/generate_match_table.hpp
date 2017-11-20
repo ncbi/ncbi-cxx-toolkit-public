@@ -82,6 +82,60 @@ public:
         bool same;
     };
 
+    class CProtMatchInfo {
+
+    public:
+        CProtMatchInfo() : m_IsSetMatchType(false) {}
+
+        bool IsSetAccession(void) const {
+            return !NStr::IsBlank(m_Accession);
+        }
+
+        void SetAccession(const string& accession) {
+            m_Accession = accession;
+        }
+
+        const string& GetAccession(void) const {
+            return m_Accession;
+        } 
+
+        bool IsSetOtherId(void) const {
+            return !NStr::IsBlank(m_OtherId);
+        }
+
+        void SetOtherId(const string& other_id) {
+            m_OtherId = other_id;
+        }
+
+        const string& GetOtherId(void) const {
+            return m_OtherId;
+        }
+
+        bool IsSetMatchType(void) const {
+            return m_IsSetMatchType;
+        }
+
+        void SetExactMatch(bool exact) {
+            m_IsExactMatch = exact;
+            m_IsSetMatchType = true;
+        }
+
+        bool IsExactMatch(void) const {
+            if (!m_IsSetMatchType) {
+                // throw an exception - the match type is unknown
+            }
+            return m_IsExactMatch;
+        }
+
+    private:
+        string m_Accession;
+        string m_OtherId;
+        bool m_IsExactMatch;
+        bool m_IsSetMatchType;
+    }; // CProtMatchInfo
+
+    using TProtMatchMap = map<string, list<CProtMatchInfo>>;
+
 private:
 
     void x_GenerateMatchTable(
@@ -90,12 +144,12 @@ private:
         CObjectIStream& annot_istr);
 
     bool x_GetMatch(const CSeq_annot& annot,
-        SProtMatchInfo& match_info);
+        string& nuc_accession,
+        CProtMatchInfo& match_info);
 
     void x_ProcessAnnots(
         CObjectIStream& annot_istr,
-        list<SProtMatchInfo>& prot_matches);
-
+        TProtMatchMap& match_map);
 
     void x_InitMatchTable(void);
 
@@ -110,6 +164,10 @@ private:
     void x_AppendMatchedProtein(
         const string& nuc_accession,
         const SProtMatchInfo& prot_match_info);
+
+    void x_AppendMatchedProtein(
+        const string& nuc_accession,
+        const CProtMatchInfo& prot_match_info);
 
     void x_AppendUnchangedProtein(
         const string& nuc_accession,
@@ -134,8 +192,7 @@ private:
         const string& prot_accession);
 
     void x_ProcessAlignments(CObjectIStream& istr,
-        const list<CMatchIdInfo>& match_id_info,
-        map<string, bool>& nuc_match);
+        map<string, bool>& nucseq_changed);
 
     bool x_IsPerfectAlignment(const CSeq_align& align) const;
 
@@ -148,6 +205,8 @@ private:
         const map<string, string>& new_nuc_accessions,
         const list<CMatchIdInfo>& match_id_info
         );
+
+    void x_ReportDeadDBEntry(const CMatchIdInfo& id_info);
 
     bool x_IsCdsComparison(const CSeq_annot& annot) const;
     bool x_IsGoodGloballyReciprocalBest(const CSeq_annot& annot) const;
