@@ -336,19 +336,17 @@ bool CMatchTabulate::x_IsGoodGloballyReciprocalBest(const CUser_object& user_obj
        return false;
    }
 
-   ITERATE(CUser_object::TData, it, user_obj.GetData()) {
+   for (CRef<CUser_field> pUserfield : user_obj.GetData()) {
 
-       const CUser_field& uf = **it;
-
-       if (!uf.IsSetData() ||
-           !uf.IsSetLabel() ||
-           !uf.GetLabel().IsStr() ||
-            uf.GetLabel().GetStr() != "good_globally_reciprocal_best") {
+       if (!pUserfield->IsSetData() ||
+           !pUserfield->IsSetLabel() ||
+           !pUserfield->GetLabel().IsStr() ||
+            pUserfield->GetLabel().GetStr() != "good_globally_reciprocal_best") {
            continue;
        }
 
-       if (uf.GetData().IsBool() &&
-           uf.GetData().GetBool()) {
+       if (pUserfield->GetData().IsBool() &&
+           pUserfield->GetData().GetBool()) {
            return true;
        }
    }

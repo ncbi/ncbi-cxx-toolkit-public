@@ -47,10 +47,9 @@ void CMatchSetup::GatherNucProtSets(
 
 CBioseq& CMatchSetup::x_FetchNucSeqRef(CBioseq_set& nuc_prot_set) const 
 {
-    NON_CONST_ITERATE(CBioseq_set::TSeq_set, seq_it, nuc_prot_set.SetSeq_set()) {
-        CSeq_entry& se = **seq_it;
-        if (se.IsSeq() && se.GetSeq().IsNa()) {
-            return se.SetSeq();
+    for (CRef<CSeq_entry> sub_entry : nuc_prot_set.SetSeq_set()) {
+        if (sub_entry->IsSeq() && sub_entry->GetSeq().IsNa()) {
+            return sub_entry->SetSeq();
         }
     }
 
@@ -62,10 +61,9 @@ CBioseq& CMatchSetup::x_FetchNucSeqRef(CBioseq_set& nuc_prot_set) const
 
 const CBioseq& CMatchSetup::x_FetchNucSeqRef(const CBioseq_set& nuc_prot_set) const 
 {
-    ITERATE(CBioseq_set::TSeq_set, seq_it, nuc_prot_set.GetSeq_set()) {
-        const CSeq_entry& se = **seq_it;
-        if (se.IsSeq() && se.GetSeq().IsNa()) {
-            return se.GetSeq();
+    for (CRef<CSeq_entry> sub_entry : nuc_prot_set.GetSeq_set()) {
+        if (sub_entry->IsSeq() && sub_entry->GetSeq().IsNa()) {
+            return sub_entry->GetSeq();
         }
     }
 

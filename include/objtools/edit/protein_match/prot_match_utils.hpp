@@ -50,10 +50,68 @@ public:
 };
 
 
+
+
+class CUpdateProtIds {
+
+private:
+    string m_Accession;
+    string m_Gi;
+
+    set<CRef<CSeq_id>> m_Others;
+
+public:
+
+    using TOtherIds = set<CRef<CSeq_id>>;
+
+
+    bool IsSetAccession(void) const {
+        return !NStr::IsBlank(m_Accession);
+    }
+
+    bool IsSetGi(void) const {
+        return !NStr::IsBlank(m_Gi); 
+    }
+
+    bool IsSetOther(void) const {
+        return !(m_Others.empty());
+    }
+
+
+    string& SetAccession(void) {
+        return m_Accession;
+    }
+
+    string& SetGi(void) {
+        return m_Gi;
+    }
+
+    TOtherIds& SetOthers(void) {
+        return m_Others;
+    }
+
+    const string& GetAccession(void) const {
+        return m_Accession;
+    }
+
+    const string& GetGi(void) const {
+        return m_Gi;
+    }
+
+    const TOtherIds& GetOthers(void) const {
+        return m_Others;
+    }
+};
+
+
+
 class CMatchIdInfo {
  private:
      string m_UpdateNucId;
      list<string> m_UpdateOtherProtIds;
+
+     CUpdateProtIds m_UpdateProtIds;
+     
      string m_DBNucId;
      list<string> m_DBProtIds;
 
@@ -61,6 +119,10 @@ public:
 
      string& SetUpdateNucId(void) { return m_UpdateNucId; }
      const string& GetUpdateNucId(void) const { return m_UpdateNucId; }
+
+
+     CUpdateProtIds& SetUpdateProtIds(void) { return m_UpdateProtIds; }
+     const CUpdateProtIds& GetUpdateProtIds(void) const { return m_UpdateProtIds; }
 
      list<string>& SetUpdateOtherProtIds(void) { return m_UpdateOtherProtIds; }
      const list<string>& GetUpdateOtherProtIds(void) const { return m_UpdateOtherProtIds; }
@@ -88,39 +150,6 @@ public:
      }
 };
 
-/*
-
-class CProtMatchInfo {
-private:
-    CNucProtInfo m_UpdateEntry;
-
-    list<string> m_ReplacedNucIds;
-    list<string> m_ReplacedProtIds;
-
-
-public:
-
-    CNucProtInfo& SetUpdate(void) { return m_UpdateEntry; }
-    const CNucProtInfo& GetUpdate(void) { return m_UpdateEntry; }
-
-    list<string>& SetReplacedNucIds(void) { return m_ReplacedNucIds; }
-    list<string>& SetReplacedProtIds(void) { return m_ReplacedProtIds; }
-    const list<string>& GetReplacedNucIds(void) { return m_ReplacedNucIds; }
-    const list<string>& GetReplacedProtIds(void) { return m_ReplacedProtIds; }
-
-
-    bool IsReplacedNucId(const string& id) const {
-        return (find(m_ReplacedNucIds.begin(), m_ReplacedNucIds.end(), id) != m_ReplacedNucIds.end());
-    }
-
-    bool IsReplacedProtId(const string& id) const {
-        return (find(m_ReplacedProtIds.begin(), m_ReplacedProtIds.end(), id) != m_ReplacedProtIds.end());
-    }
-
-    list<CNucProtInfo>& SetDBEntry(void) { return m_DBEntry; }
-    const list<CNucProtInfo>& GetDBEntry(void) { return m_DBEntry; }
-};
-*/
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
