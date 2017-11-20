@@ -48,8 +48,7 @@ def main():
              "libhogweed-4-2.dll",
              "libnettle-6-2.dll",
              "libp11-kit-0.dll",
-             "msvcp120.dll",
-             "msvcr120.dll",
+             "msvcp140.dll",
              "ncbi-vdb-md.dll"
             ]
     
