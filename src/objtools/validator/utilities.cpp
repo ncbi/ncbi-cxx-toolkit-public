@@ -893,20 +893,6 @@ bool IsNCBIFILESeqId (const CSeq_id& id)
 }
 
 
-bool IsRefGeneTrackingObject (const CUser_object& user)
-{
-    bool rval = false;
-
-    if (user.IsSetType()) {
-        const CObject_id& oi = user.GetType();
-        if (oi.IsStr() && NStr::EqualNocase(oi.GetStr(), "RefGeneTracking")) {
-            rval = true;
-        }
-    }
-    return rval;
-}
-
-
 bool IsAccession(const CSeq_id& id)
 {
     if (id.GetTextseq_Id() != NULL) {

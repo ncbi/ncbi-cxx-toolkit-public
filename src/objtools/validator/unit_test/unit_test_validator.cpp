@@ -1774,11 +1774,8 @@ static bool IsProteinTech (CMolInfo::TTech tech)
 static void AddRefGeneTrackingUserObject(CRef<CSeq_entry> entry)
 {
     CRef<CSeqdesc> desc(new CSeqdesc());
-    desc->SetUser().SetType().SetStr("RefGeneTracking");
-    CRef<CUser_field> field(new CUser_field());
-    field->SetLabel().SetStr("Status");
-    field->SetData().SetStr("Inferred");
-    desc->SetUser().SetData().push_back(field);
+    desc->SetUser().SetObjectType(CUser_object::eObjectType_RefGeneTracking);
+    desc->SetUser().SetRefGeneTrackingStatus(CUser_object::eRefGeneTrackingStatus_INFERRED);
     if (entry->IsSeq()) {
         entry->SetSeq().SetDescr().Set().push_back(desc);
     } else if (entry->IsSet()) {
@@ -1787,27 +1784,17 @@ static void AddRefGeneTrackingUserObject(CRef<CSeq_entry> entry)
 }
 
 
-static bool IsRefGeneTrackingUserObject (const CUser_object& user)
-{
-    if (user.IsSetType() && user.GetType().IsStr() && NStr::Equal(user.GetType().GetStr(), "RefGeneTracking")) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
 static void SetRefGeneTrackingStatus(CRef<CSeq_entry> entry, string status)
 {
     if (entry->IsSeq()) {
         NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
-            if ((*it)->IsUser() && IsRefGeneTrackingUserObject((*it)->GetUser())) {
+            if ((*it)->IsUser() && (*it)->GetUser().IsRefGeneTracking()) {
                 (*it)->SetUser().SetData().front()->SetData().SetStr(status);
             }
         }
     } else if (entry->IsSet()) {
         NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
-            if ((*it)->IsUser() && IsRefGeneTrackingUserObject((*it)->GetUser())) {
+            if ((*it)->IsUser() && (*it)->GetUser().IsRefGeneTracking()) {
                 (*it)->SetUser().SetData().front()->SetData().SetStr(status);
             }
         }
@@ -5608,7 +5595,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_RefGeneTrackingWithoutStatus)
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
     CRef<CSeqdesc> desc(new CSeqdesc());
-    desc->SetUser().SetType().SetStr("RefGeneTracking");
+    desc->SetUser().SetObjectType(CUser_object::eObjectType_RefGeneTracking);
     entry->SetSeq().SetDescr().Set().push_back(desc);
 
     CRef<CUser_field> field(new CUser_field());

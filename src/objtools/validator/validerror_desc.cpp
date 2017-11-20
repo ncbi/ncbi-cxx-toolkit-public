@@ -718,7 +718,7 @@ void CValidError_desc::ValidateUser
                     "User object with no data", *m_Ctx, desc);
         }
     }
-    if ( oi.IsStr() && NStr::EqualNocase(oi.GetStr(), "RefGeneTracking")) {
+    if ( usr.IsRefGeneTracking()) {
         bool has_ref_track_status = false;
         ITERATE(CUser_object::TData, field, usr.GetData()) {
             if ( (*field)->CanGetLabel() ) {
@@ -728,14 +728,14 @@ void CValidError_desc::ValidateUser
                 }
                 if ( NStr::CompareNocase(obj_id.GetStr(), "Status") == 0 ) {
                     has_ref_track_status = true;
-					          if ((*field)->IsSetData() && (*field)->GetData().IsStr()) {
-						            if (CCommentItem::GetRefTrackStatus(usr) == CCommentItem::eRefTrackStatus_Unknown) {
-							              PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingIllegalStatus, 
-									              "RefGeneTracking object has illegal Status '" 
-									              + (*field)->GetData().GetStr() + "'",
-									              *m_Ctx, desc);
-						            }
-					          }
+					if ((*field)->IsSetData() && (*field)->GetData().IsStr()) {
+						if (CCommentItem::GetRefTrackStatus(usr) == CCommentItem::eRefTrackStatus_Unknown) {
+							    PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingIllegalStatus, 
+									    "RefGeneTracking object has illegal Status '" 
+									    + (*field)->GetData().GetStr() + "'",
+									    *m_Ctx, desc);
+						}
+					}
                 }
             }
         }
@@ -743,9 +743,9 @@ void CValidError_desc::ValidateUser
             PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingWithoutStatus,
                 "RefGeneTracking object needs to have Status set", *m_Ctx, desc);
         }
-    } else if ( oi.IsStr() && NStr::EqualCase(oi.GetStr(), "StructuredComment")) {
+    } else if ( usr.IsStructuredComment()) {
         ValidateStructuredComment(usr, desc);
-    } else if ( oi.IsStr() && NStr::EqualCase(oi.GetStr(), "DBLink")) {
+    } else if ( usr.IsDBLink()) {
         ValidateDblink(usr, desc);
     }
 }

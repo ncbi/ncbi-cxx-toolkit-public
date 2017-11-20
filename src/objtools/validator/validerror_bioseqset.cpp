@@ -400,7 +400,7 @@ void CValidError_bioseqset::ValidateNucProtSet
         } else if ((*it)->IsTitle()) {
             has_title = true;
         } else if ((*it)->IsUser()
-            && IsRefGeneTrackingObject((*it)->GetUser())) {
+            && (*it)->GetUser().IsRefGeneTracking()) {
             has_refgenetracking = true;
         }
         /*

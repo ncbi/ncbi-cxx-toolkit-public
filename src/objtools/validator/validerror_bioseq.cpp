@@ -4273,7 +4273,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
         EDiagSev missing_gaps_sev = eDiag_Error;
         CSeqdesc_CI desc_i(m_Scope->GetBioseqHandle(seq), CSeqdesc::e_User);
         while (desc_i) {
-            if (IsRefGeneTrackingObject (desc_i->GetUser())) {
+            if (desc_i->GetUser().IsRefGeneTracking()) {
                 missing_gaps_sev = eDiag_Info;
                 break;
             }
@@ -8922,13 +8922,13 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                     PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
                         "Non-TPA record " + id_str + " should not have TpaAssembly object", seq);
                 }
-                if (IsRefGeneTrackingObject(desc.GetUser())
+                if (desc.GetUser().IsRefGeneTracking()
                     && !CValidError_imp::IsWGSIntermediate(seq) 
                     && !m_Imp.IsRefSeq()) {
                               PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingOnNonRefSeq, 
                                       "RefGeneTracking object should only be in RefSeq record", 
                                       ctx, desc);
-                } else if (oi.IsStr() && NStr::EqualCase(oi.GetStr(), "StructuredComment")) {
+                } else if (desc.GetUser().IsStructuredComment()) {
                     const CUser_object& obj = desc.GetUser();
                     string keyword = s_GetKeywordForStructuredComment(obj);
                     if (!NStr::IsBlank(keyword)) {

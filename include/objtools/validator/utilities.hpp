@@ -132,7 +132,6 @@ string GetDateErrorDescription (int flags);
 bool IsBioseqTSA (const CBioseq& seq, CScope* scope);
 
 bool IsNCBIFILESeqId (const CSeq_id& id);
-bool IsRefGeneTrackingObject (const CUser_object& user);
 
 string GetValidatorLocationLabel (const CSeq_loc& loc, CScope& scope);
 void AppendBioseqLabel(string& str, const CBioseq& sq, bool supress_context);
