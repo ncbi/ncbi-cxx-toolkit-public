@@ -58,132 +58,134 @@
 
 #include "run_binary.hpp"
 
-BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+    BEGIN_NCBI_SCOPE
+    USING_SCOPE(objects);
 
-class CProteinMatchApp : public CNcbiApplication
-{
-public:
-    void Init(void);
-    int Run(void);
+    class CProteinMatchApp : public CNcbiApplication
+    {
+    public:
+        void Init(void);
+        int Run(void);
 
-private:
-    using TSeqEntryLabel = string;
-    using TEntryFilenameMap = map<TSeqEntryLabel, string>;
-    using TEntryOStreamMap  = map<TSeqEntryLabel, unique_ptr<CObjectOStream>>;
-
-
-    enum ENextAction {
-        eRunMatch,
-        eOverwrite,
-        eSkipAhead,
-        eReportWildDependent
-    };
+    private:
+        using TSeqEntryLabel = string;
+        using TEntryFilenameMap = map<TSeqEntryLabel, string>;
+        using TEntryOStreamMap  = map<TSeqEntryLabel, unique_ptr<CObjectOStream>>;
 
 
-    template<typename TRoot>
-    void x_GenerateMatchTable(CObjectIStream& istr, 
-        const string& out_stub, 
-        bool keep_temps, 
-        CBinRunner& assm_assm_blastn,
-        CBinRunner& compare_annots, 
-        CMatchTabulate& match_tab,
-        CScope& db_scope);
-
-    void x_WriteMatchTable(
-        const string& table_file,
-        const CMatchTabulate& match_tab,
-        bool suppress_exception=false) const;
-
-    void x_InitNucProtSetMatch(CRef<CSeq_entry> nuc_prot_set,
-        const CProteinMatchApp::TEntryFilenameMap& filename_map,
-        CProteinMatchApp::TEntryOStreamMap& ostream_map,
-        list<string>& current_nuc_accessions,
-        CMatchIdInfo& match_info,
-        ENextAction& next_action,
-        CMatchTabulate& match_tab,
-        CScope& db_scope);
-
-    void x_InitNucSeqMatch(CRef<CSeq_entry> nuc_seq,
-        const CProteinMatchApp::TEntryFilenameMap& filename_map,
-        CProteinMatchApp::TEntryOStreamMap& ostream_map,
-        list<string>& current_nuc_accessions,
-        CMatchIdInfo& match_info,
-        ENextAction& next_action,
-        CScope& db_scope);
-
-    template<typename TRoot>
-    bool x_CheckForWildDependents(CObjectIStream& istr,
-        CMatchTabulate& match_tab);
-
-    bool x_ApplyOverwrite(CRef<CSeq_entry> update_entry,
-                        CMatchTabulate& match_tab,
-                        set<string>& processed_nuc_accessions);
+        enum ENextAction {
+            eRunMatch,
+            eOverwrite,
+            eSkipAhead,
+            eReportWildDependent
+        };
 
 
+        template<typename TRoot>
+        void x_GenerateMatchTable(CObjectIStream& istr, 
+            const string& out_stub, 
+            bool keep_temps, 
+            CBinRunner& assm_assm_blastn,
+            CBinRunner& compare_annots, 
+            CMatchTabulate& match_tab,
+            CScope& db_scope);
 
-    CObjectIStream* x_InitObjectIStream(const CArgs& args);
-    CObjectOStream* x_InitObjectOStream(const string& filename, 
-        const bool binary) const;
-    CObjectIStream* x_InitObjectIStream(const string& filename,
-        const bool binary) const;
+        void x_WriteMatchTable(
+            const string& table_file,
+            const CMatchTabulate& match_tab,
+            bool suppress_exception=false) const;
 
-    TTypeInfo x_GetRootTypeInfo(CObjectIStream& istr) const;
-    bool x_TryReadSeqEntry(CObjectIStream& istr, CSeq_entry& seq_entry) const;
-    bool x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& seq_entry) const;
+        void x_InitNucProtSetMatch(CRef<CSeq_entry> nuc_prot_set,
+            const CProteinMatchApp::TEntryFilenameMap& filename_map,
+            CProteinMatchApp::TEntryOStreamMap& ostream_map,
+            list<string>& current_nuc_accessions,
+            CMatchIdInfo& match_info,
+            ENextAction& next_action,
+            CMatchTabulate& match_tab,
+            CScope& db_scope);
 
-    void x_WriteEntry(const CSeq_entry& seq_entry,
-        const string& key,
-        const CProteinMatchApp::TEntryFilenameMap& filename_map,
-        CProteinMatchApp::TEntryOStreamMap& ostream_map) const;
+        void x_InitNucSeqMatch(CRef<CSeq_entry> nuc_seq,
+            const CProteinMatchApp::TEntryFilenameMap& filename_map,
+            CProteinMatchApp::TEntryOStreamMap& ostream_map,
+            list<string>& current_nuc_accessions,
+            CMatchIdInfo& match_info,
+            ENextAction& next_action,
+            CScope& db_scope);
 
-    void x_WriteEntry(const CSeq_entry& seq_entry,
-        const string& filename,
-        CObjectOStream& ostream) const;
+        template<typename TRoot>
+        bool x_CheckForWildDependents(CObjectIStream& istr,
+            CMatchTabulate& match_tab);
 
-    void x_GetBlastArgs(
-        const bool binary_output,
-        const string& update_file, 
-        const string& genbank_file,
-        const string& alignment_file,
-        vector<string>& blast_args) const;
+        bool x_ApplyOverwrite(CRef<CSeq_entry> update_entry,
+                            CMatchTabulate& match_tab,
+                            set<string>& processed_nuc_accessions);
 
-    void x_GetCompareAnnotsArgs(const string& update_file,
-        const string& genbank_file,
-        const string& alignment_manifest_file,
-        const string& annot_file,
-        vector<string>& compare_annots_args) const;
 
-    void x_ReadAnnotFile(const string& filename, list<CRef<CSeq_annot>>& seq_annots) const;
 
-    void x_ReadAlignmentFile(const string& filename, CRef<CSeq_align>& alignment) const;
+        CObjectIStream* x_InitObjectIStream(const CArgs& args);
+        CObjectOStream* x_InitObjectOStream(const string& filename, 
+            const bool binary) const;
+        CObjectIStream* x_InitObjectIStream(const string& filename,
+            const bool binary) const;
 
-    void x_LogTempFile(const string& string);
-    void x_DeleteTempFiles(void);
+        TTypeInfo x_GetRootTypeInfo(CObjectIStream& istr) const;
+        bool x_TryReadSeqEntry(CObjectIStream& istr, CSeq_entry& seq_entry) const;
+        bool x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& seq_entry) const;
 
-    struct SSeqEntryFilenames {
-        string db_nuc_prot_set;
-        string db_nuc_seq;
-        string local_nuc_prot_set;
-        string local_nuc_seq;
-    };
+        void x_WriteEntry(const CSeq_entry& seq_entry,
+            const string& key,
+            const CProteinMatchApp::TEntryFilenameMap& filename_map,
+            CProteinMatchApp::TEntryOStreamMap& ostream_map) const;
 
-    void x_GetSeqEntryFileNames(const string& file_stub, 
-    SSeqEntryFilenames& filenames) const;
+        void x_WriteEntry(const CSeq_entry& seq_entry,
+            const string& filename,
+            CObjectOStream& ostream) const;
 
-    void x_GetSeqEntryFileNames(const string& file_stub,
-        TEntryFilenameMap&  filename_map) const;
+        void x_GetBlastArgs(
+            const bool binary_output,
+            const string& update_file, 
+            const string& genbank_file,
+            const string& alignment_file,
+            vector<string>& blast_args) const;
 
-    void x_CreateSeqEntryOStreams(const TEntryFilenameMap& filename_map,
-        TEntryOStreamMap& ostream_map);
+        void x_GetCompareAnnotsArgs(const string& update_file,
+            const string& genbank_file,
+            const string& alignment_manifest_file,
+            const string& annot_file,
+            vector<string>& compare_annots_args) const;
 
-    void x_WriteToSeqEntryTempFiles(
-        const CBioseq_set& nuc_prot_set,
-        const CSeq_entry& db_entry,
-        const CProteinMatchApp::TEntryFilenameMap& filename_map,
-        CProteinMatchApp::TEntryOStreamMap& ostream_map);
+        void x_ReadAnnotFile(const string& filename, list<CRef<CSeq_annot>>& seq_annots) const;
+
+        void x_ReadAlignmentFile(const string& filename, CRef<CSeq_align>& alignment) const;
+
+        void x_LogTempFile(const string& string);
+        void x_DeleteTempFiles(void);
+
+        struct SSeqEntryFilenames {
+            string db_nuc_prot_set;
+            string db_nuc_seq;
+            string local_nuc_prot_set;
+            string local_nuc_seq;
+        };
+
+        void x_GetSeqEntryFileNames(const string& file_stub, 
+        SSeqEntryFilenames& filenames) const;
+
+        void x_GetSeqEntryFileNames(const string& file_stub,
+            TEntryFilenameMap&  filename_map) const;
+
+        void x_CreateSeqEntryOStreams(const TEntryFilenameMap& filename_map,
+            TEntryOStreamMap& ostream_map);
+
+        void x_WriteToSeqEntryTempFiles(
+            const CBioseq_set& nuc_prot_set,
+            const CSeq_entry& db_entry,
+            const CProteinMatchApp::TEntryFilenameMap& filename_map,
+            CProteinMatchApp::TEntryOStreamMap& ostream_map);
 
     void x_GatherLocalProteinIds(const CBioseq_set& nuc_prot_set, list<string>& id_list) const;
+
+    void x_GatherUpdateProteinIds(const CBioseq_set& nuc_prot_set, list<CUpdateProtIds>& id_list) const;
 
     void x_GatherProteinAccessions(const CBioseq_set& nuc_prot_set, list<string>& id_list) const;
     void x_GatherProteinAccessions(const CBioseq_set& nuc_prot_set, set<string>& id_set) const;
@@ -875,6 +877,7 @@ void CProteinMatchApp::x_InitNucProtSetMatch(CRef<CSeq_entry> nuc_prot_set,
         "Failed to fetch database entry");
     }
 
+
     x_GatherLocalProteinIds(nuc_prot_set->GetSet(), match_info.SetUpdateOtherProtIds());
 
     if (db_entry->IsSet()) {
@@ -1041,6 +1044,54 @@ void CProteinMatchApp::x_GatherLocalProteinIds(const CBioseq_set& nuc_prot_set,
             if (!best_id.Empty()) {
                 id_list.push_back(best_id->GetSeqIdString());   
             }
+        }
+    }
+}
+
+
+void CProteinMatchApp::x_GatherUpdateProteinIds(const CBioseq_set& nuc_prot_set,    
+    list<CUpdateProtIds>& id_list) const 
+{
+    id_list.clear();
+    if (!nuc_prot_set.IsSetClass() ||
+        nuc_prot_set.GetClass() != CBioseq_set::eClass_nuc_prot) {
+        return; // Throw an exception here
+    }
+
+
+    const bool with_version = false;
+    for (CRef<CSeq_entry> sub_entry : nuc_prot_set.GetSeq_set()) {
+        const auto& bioseq = sub_entry->GetSeq();
+        if (bioseq.IsAa() && bioseq.IsSetId()) {
+            bool has_general = false;
+            CRef<CSeq_id> pLocalId;
+            CUpdateProtIds prot_ids;
+            for (CRef<CSeq_id> pSeqId : bioseq.GetId()) {
+                prot_ids.SetAccession().clear();
+                prot_ids.SetOthers().clear();
+
+
+                if (pSeqId.Empty()) {
+                    continue;
+                }
+        
+                if (pSeqId->IsGenbank() || pSeqId->IsOther()) {
+                    prot_ids.SetAccession() = pSeqId->GetSeqIdString(with_version);
+                }
+
+                if (pSeqId->IsGeneral() && !has_general) {
+                    prot_ids.SetOthers().insert(pSeqId);
+                    has_general = true;
+                }
+
+                if (pSeqId->IsLocal()) {
+                    pLocalId = pSeqId;
+                }
+            }
+            if (!has_general && !pLocalId.Empty()) {
+                prot_ids.SetOthers().insert(pLocalId);
+            }
+            id_list.push_back(prot_ids);
         }
     }
 }

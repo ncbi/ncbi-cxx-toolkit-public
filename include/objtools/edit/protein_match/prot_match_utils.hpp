@@ -59,7 +59,6 @@ private:
     string m_Gi;
 
     set<CRef<CSeq_id>> m_Others;
-
 public:
 
     using TOtherIds = set<CRef<CSeq_id>>;
@@ -110,7 +109,7 @@ class CMatchIdInfo {
      string m_UpdateNucId;
      list<string> m_UpdateOtherProtIds;
 
-     CUpdateProtIds m_UpdateProtIds;
+     list<CUpdateProtIds> m_UpdateProtIds;
      
      string m_DBNucId;
      list<string> m_DBProtIds;
@@ -121,8 +120,8 @@ public:
      const string& GetUpdateNucId(void) const { return m_UpdateNucId; }
 
 
-     CUpdateProtIds& SetUpdateProtIds(void) { return m_UpdateProtIds; }
-     const CUpdateProtIds& GetUpdateProtIds(void) const { return m_UpdateProtIds; }
+     list<CUpdateProtIds>& SetUpdateProtIds(void) { return m_UpdateProtIds; }
+     const list<CUpdateProtIds>& GetUpdateProtIds(void) const { return m_UpdateProtIds; }
 
      list<string>& SetUpdateOtherProtIds(void) { return m_UpdateOtherProtIds; }
      const list<string>& GetUpdateOtherProtIds(void) const { return m_UpdateOtherProtIds; }
