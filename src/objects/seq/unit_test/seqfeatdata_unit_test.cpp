@@ -1967,21 +1967,25 @@ BOOST_AUTO_TEST_CASE(Test_RefGeneTracking)
 
     BOOST_CHECK_EQUAL(user->GetRefGeneTrackingAssembly().size(), 0);
     vector<CConstRef<CUser_object::CRefGeneTrackingAccession> > assembly;
-    assembly.push_back(CConstRef<CUser_object::CRefGeneTrackingAccession>(new CUser_object::CRefGeneTrackingAccession("XXX", 123, 0, 100, "comment1", "name1")));
-    assembly.push_back(CConstRef<CUser_object::CRefGeneTrackingAccession>(new CUser_object::CRefGeneTrackingAccession("YYY", 124, 10, 1100, "comment2", "name2")));
+    assembly.push_back(CConstRef<CUser_object::CRefGeneTrackingAccession>
+                       (new CUser_object::CRefGeneTrackingAccession
+                        ("XXX", GI_CONST(123), 0, 100, "comment1", "name1")));
+    assembly.push_back(CConstRef<CUser_object::CRefGeneTrackingAccession>
+                       (new CUser_object::CRefGeneTrackingAccession
+                        ("YYY", GI_CONST(124), 10, 1100, "comment2", "name2")));
     user->SetRefGeneTrackingAssembly(assembly);
     BOOST_CHECK_EQUAL(user->GetData().size(), 7);
 
     CUser_object::TRefGeneTrackingAccessions r_assembly = user->GetRefGeneTrackingAssembly();
     BOOST_CHECK_EQUAL(r_assembly.size(), 2);
     BOOST_CHECK_EQUAL(r_assembly.front()->GetAccession(), "XXX");
-    BOOST_CHECK_EQUAL(r_assembly.front()->GetGI(), 123);
+    BOOST_CHECK_EQUAL(r_assembly.front()->GetGI(), GI_CONST(123));
     BOOST_CHECK_EQUAL(r_assembly.front()->GetFrom(), 0);
     BOOST_CHECK_EQUAL(r_assembly.front()->GetTo(), 100);
     BOOST_CHECK_EQUAL(r_assembly.front()->GetName(), "name1");
     BOOST_CHECK_EQUAL(r_assembly.front()->GetComment(), "comment1");
     BOOST_CHECK_EQUAL(r_assembly.back()->GetAccession(), "YYY");
-    BOOST_CHECK_EQUAL(r_assembly.back()->GetGI(), 124);
+    BOOST_CHECK_EQUAL(r_assembly.back()->GetGI(), GI_CONST(124));
     BOOST_CHECK_EQUAL(r_assembly.back()->GetFrom(), 10);
     BOOST_CHECK_EQUAL(r_assembly.back()->GetTo(), 1100);
     BOOST_CHECK_EQUAL(r_assembly.back()->GetName(), "name2");
