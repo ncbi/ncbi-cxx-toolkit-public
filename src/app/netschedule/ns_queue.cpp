@@ -587,7 +587,8 @@ unsigned int  CQueue::Submit(const CNSClientId &        client,
 
         m_JobInfoCache.SetJobCachedInfo(job_id, job.GetClientIP(),
                                                 job.GetClientSID(),
-                                                job.GetNCBIPHID());
+                                                job.GetNCBIPHID(),
+                                                job.GetProgressMsg());
 
     }}
 
@@ -730,7 +731,8 @@ CQueue::SubmitBatch(const CNSClientId &             client,
             m_JobInfoCache.SetJobCachedInfo(batch[k].first.GetId(),
                                             batch[k].first.GetClientIP(),
                                             batch[k].first.GetClientSID(),
-                                            batch[k].first.GetNCBIPHID());
+                                            batch[k].first.GetNCBIPHID(),
+                                            batch[k].first.GetProgressMsg());
         }
     }}
 
@@ -1328,6 +1330,7 @@ TJobStatus  CQueue::GetStatusAndLifetime(unsigned int      job_id,
                                          string &          client_ip,
                                          string &          client_sid,
                                          string &          client_phid,
+                                         string &          progress_msg,
                                          CNSPreciseTime *  lifetime)
 {
     bool                updated_from_cache = false;
@@ -1343,6 +1346,7 @@ TJobStatus  CQueue::GetStatusAndLifetime(unsigned int      job_id,
             client_ip = job_info.m_ClientIP;
             client_sid = job_info.m_ClientSID;
             client_phid = job_info.m_NCBIPHID;
+            progress_msg = job_info.m_ProgressMsg;
             updated_from_cache = true;
         }
     }
@@ -1358,10 +1362,12 @@ TJobStatus  CQueue::GetStatusAndLifetime(unsigned int      job_id,
         client_ip = job.GetClientIP();
         client_sid = job.GetClientSID();
         client_phid = job.GetNCBIPHID();
+        progress_msg = job.GetProgressMsg();
 
         if (!m_JobInfoCache.IsInCleaning())
             m_JobInfoCache.SetJobCachedInfo(job_id, client_ip,
-                                            client_sid, client_phid);
+                                            client_sid, client_phid,
+                                            progress_msg);
     }
 
     *lifetime = x_GetEstimatedJobLifetime(job_id, status);
@@ -1411,6 +1417,8 @@ TJobStatus  CQueue::SetJobListener(unsigned int            job_id,
                                    unsigned int            address,
                                    unsigned short          port,
                                    const CNSPreciseTime &  timeout,
+                                   bool                    need_stolen,
+                                   bool                    need_progress_msg,
                                    size_t *                last_event_index)
 {
     CNSPreciseTime      curr = CNSPreciseTime::Current();
@@ -1429,9 +1437,11 @@ TJobStatus  CQueue::SetJobListener(unsigned int            job_id,
         unsigned int    old_listener_addr = job.GetListenerNotifAddr();
         unsigned short  old_listener_port = job.GetListenerNotifPort();
 
-        if (old_listener_addr != 0 && old_listener_port != 0) {
+        if (job.GetNeedStolenNotif() &&
+            old_listener_addr != 0 && old_listener_port != 0) {
             if (old_listener_addr != address || old_listener_port != port) {
-                // Send the stolen notification only if it is a new listener
+                // Send the stolen notification only if it is
+                // really a new listener
                 x_NotifyJobChanges(job, MakeJobKey(job_id),
                                    eNotificationStolen, curr);
             }
@@ -1449,6 +1459,8 @@ TJobStatus  CQueue::SetJobListener(unsigned int            job_id,
             job.SetListenerNotifAbsTime(curr + timeout);
         }
 
+        job.SetNeedLsnrProgressMsgNotif(need_progress_msg);
+        job.SetNeedStolenNotif(need_stolen);
         job.SetLastTouch(curr);
         job.Flush(this);
         transaction.Commit();
@@ -5052,22 +5064,26 @@ void CQueue::x_NotifyJobChanges(const CJob &            job,
     if (reason == eJobDeleted)
         job_status = CNetScheduleAPI::eDeleted;
 
-    if (job.ShouldNotifyListener(current_time)) {
-        notification = m_NotificationsList.BuildJobChangedNotification(
-                job, job_key, job_status, reason);
-        m_NotificationsList.NotifyJobChanges(job.GetListenerNotifAddr(),
-                                             job.GetListenerNotifPort(),
-                                             notification);
+    if (reason != eProgressMessageChanged || job.GetLsnrNeedProgressMsgNotif()) {
+        if (job.ShouldNotifyListener(current_time)) {
+            notification = m_NotificationsList.BuildJobChangedNotification(
+                    job, job_key, job_status, reason);
+            m_NotificationsList.NotifyJobChanges(job.GetListenerNotifAddr(),
+                                                 job.GetListenerNotifPort(),
+                                                 notification);
+        }
     }
 
     if (reason != eNotificationStolen) {
-        if (job.ShouldNotifySubmitter(current_time)) {
-            if (notification.empty())
-                notification = m_NotificationsList.BuildJobChangedNotification(
-                        job, job_key, job_status, reason);
-            m_NotificationsList.NotifyJobChanges(job.GetSubmAddr(),
-                                                 job.GetSubmNotifPort(),
-                                                 notification);
+        if (reason != eProgressMessageChanged || job.GetSubmNeedProgressMsgNotif()) {
+            if (job.ShouldNotifySubmitter(current_time)) {
+                if (notification.empty())
+                    notification = m_NotificationsList.BuildJobChangedNotification(
+                            job, job_key, job_status, reason);
+                m_NotificationsList.NotifyJobChanges(job.GetSubmAddr(),
+                                                     job.GetSubmNotifPort(),
+                                                     notification);
+            }
         }
     }
 }

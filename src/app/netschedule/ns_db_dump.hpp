@@ -66,6 +66,9 @@ struct SJobDump
     Uint4               listener_notif_addr;
     Uint4               listener_notif_port;
     double              listener_notif_abstime;
+    bool                need_subm_progress_msg_notif;
+    bool                need_lsnr_progress_msg_notif;
+    bool                need_stolen_notif;
 
     Uint4               run_counter;
     Uint4               read_counter;

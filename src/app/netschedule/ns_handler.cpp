@@ -279,7 +279,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
-          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  },
+          { "need_progress_msg", eNSPT_Str, eNSPA_Optional, "0" } } },
     { "SUBMIT",        { &CNetScheduleHandler::x_ProcessSubmit,
                          eNS_Queue | eNS_Submitter | eNS_Program },
         { { "input",             eNSPT_Str, eNSPA_Required      },
@@ -290,7 +291,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "group",             eNSPT_Str, eNSPA_Optional, ""  },
-          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  },
+          { "need_progress_msg", eNSPT_Str, eNSPA_Optional, "0" } } },
     { "CANCEL",        { &CNetScheduleHandler::x_ProcessCancel,
                          eNS_Queue | eNS_Submitter | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Optional      },
@@ -307,7 +309,9 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "timeout",           eNSPT_Int, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
-          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  },
+          { "need_stolen",       eNSPT_Str, eNSPA_Optional, "0" },
+          { "need_progress_msg", eNSPT_Str, eNSPA_Optional, "0" } } },
     { "BSUB",          { &CNetScheduleHandler::x_ProcessSubmitBatch,
                          eNS_Queue | eNS_Submitter | eNS_Program },
         { { "port",              eNSPT_Int, eNSPA_Optional      },
@@ -385,7 +389,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
-          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  },
+          { "need_progress_msg", eNSPT_Str, eNSPA_Optional, "0" } } },
     { "CHAFF",         { &CNetScheduleHandler::x_ProcessChangeAffinity,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "add",               eNSPT_Str, eNSPA_Optional, ""  },
@@ -1630,11 +1635,18 @@ void CNetScheduleHandler::x_ProcessFastStatusS(CQueue* q)
             else if (pause_status == CQueue::ePauseWithoutPullback)
                 pause_status_msg = "&pause=nopullback";
 
+            string      progress_msg_part;
+            if (m_CommandArguments.need_progress_msg)
+                progress_msg_part = "&msg=" +
+                                    NStr::URLEncode(job.GetProgressMsg());
+
             x_WriteMessage("OK:job_status=" +
                            CNetScheduleAPI::StatusToString(status) +
                            "&job_exptime=" +
                            NStr::NumericToString(lifetime.Sec()) +
-                           pause_status_msg + kEndOfResponse);
+                           pause_status_msg +
+                           progress_msg_part +
+                           kEndOfResponse);
         }
         else
             x_WriteMessage(kOKResponsePrefix +
@@ -1653,9 +1665,11 @@ void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
     string          client_ip;
     string          client_sid;
     string          client_phid;
+    string          progress_msg;
     TJobStatus      status = q->GetStatusAndLifetime(m_CommandArguments.job_id,
                                                      client_ip, client_sid,
-                                                     client_phid, &lifetime);
+                                                     client_phid, progress_msg,
+                                                     &lifetime);
 
 
     if (status == CNetScheduleAPI::eJobNotFound) {
@@ -1680,11 +1694,18 @@ void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
             else if (pause_status == CQueue::ePauseWithoutPullback)
                 pause_status_msg = "&pause=nopullback";
 
+            string      progress_msg_part;
+            if (m_CommandArguments.need_progress_msg)
+                progress_msg_part = "&msg=" +
+                                    NStr::URLEncode(progress_msg);
+
             x_WriteMessage("OK:job_status=" +
                            CNetScheduleAPI::StatusToString(status) +
                            "&job_exptime=" +
                            NStr::NumericToString(lifetime.Sec()) +
-                           pause_status_msg + kEndOfResponse);
+                           pause_status_msg +
+                           progress_msg_part +
+                           kEndOfResponse);
         }
         else
             x_WriteMessage(kOKResponsePrefix +
@@ -2806,6 +2827,8 @@ void CNetScheduleHandler::x_ProcessListenJob(CQueue* q)
                                     m_ClientId.GetAddress(),
                                     m_CommandArguments.port,
                                     timeout,
+                                    m_CommandArguments.need_stolen,
+                                    m_CommandArguments.need_progress_msg,
                                     &last_event_index);
 
     if (status == CNetScheduleAPI::eJobNotFound) {
@@ -2814,11 +2837,16 @@ void CNetScheduleHandler::x_ProcessListenJob(CQueue* q)
         x_SetCmdRequestStatus(eStatus_NotFound);
         x_WriteMessage(kErrNoJobFoundResponse);
     } else {
+        string      progress_msg_part;
+        if (m_CommandArguments.need_progress_msg)
+            progress_msg_part = "&msg=" +
+                                NStr::URLEncode(job.GetProgressMsg());
+
         x_WriteMessage("OK:job_status=" +
                        CNetScheduleAPI::StatusToString(status) +
                        "&last_event_index=" +
                        NStr::NumericToString(last_event_index) +
-                       "&msg=" + NStr::URLEncode(job.GetProgressMsg()) +
+                       progress_msg_part +
                        kEndOfResponse);
         x_LogCommandWithJob(job);
     }

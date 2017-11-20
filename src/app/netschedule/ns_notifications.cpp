@@ -184,8 +184,8 @@ string  SNSNotificationAttributes::Print(
 CNSNotificationList::CNSNotificationList(CQueueDataBase &  qdb,
                                          const string &    ns_node,
                                          const string &    qname) :
-    m_QueueDB(qdb),
-    m_JobChangeNotifConstPart("ns_node=" + ns_node + "&job_key=")
+    m_JobChangeNotifConstPart("ns_node=" + ns_node + "&job_key="),
+    m_QueueDB(qdb)
 {
     m_GetMsgLength = snprintf(m_GetMsgBuffer, k_MessageBufferSize,
                               "reason=get&ns_node=%s&queue=%s",
@@ -348,14 +348,21 @@ CNSNotificationList::BuildJobChangedNotification(
     };
 
     const string &      progress_msg = job.GetProgressMsg();
-    size_t              msg_size = progress_msg.size();
-    if (msg_size > 1000) {
+    string              url_encoded_msg = NStr::URLEncode(progress_msg);
+    size_t              encoded_msg_size = url_encoded_msg.size();
+    const size_t        size_limit = 768;
+
+    if (encoded_msg_size > size_limit) {
+        size_t  msg_size = progress_msg.size();
+        size_t  truncate_count = encoded_msg_size - size_limit;
         notification +=
-            "&msg=" + NStr::URLEncode(progress_msg.substr(0, 1000)) +
-            "&msg_truncated=" + NStr::NumericToString(msg_size - 1000);
+            "&msg=" + NStr::URLEncode(
+                        progress_msg.substr(0, msg_size - truncate_count)) +
+            "&msg_truncated=" + NStr::NumericToString(truncate_count);
     } else {
-        notification += "&msg=" + NStr::URLEncode(progress_msg);
+        notification += "&msg=" + url_encoded_msg;
     }
+
     return notification;
 }
 

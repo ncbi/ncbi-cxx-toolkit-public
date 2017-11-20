@@ -169,7 +169,10 @@ CJob::CJob() :
     m_AffinityId(0),
     m_Mask(0),
     m_GroupId(0),
-    m_LastTouch()
+    m_LastTouch(),
+    m_NeedSubmProgressMsgNotif(false),
+    m_NeedLsnrProgressMsgNotif(false),
+    m_NeedStolenNotif(false)
 {}
 
 
@@ -193,7 +196,10 @@ CJob::CJob(const SNSCommandArguments &  request) :
     m_Mask(request.job_mask),
     m_GroupId(0),
     m_LastTouch(),
-    m_Output("")
+    m_Output(""),
+    m_NeedSubmProgressMsgNotif(request.need_progress_msg),
+    m_NeedLsnrProgressMsgNotif(false),
+    m_NeedStolenNotif(false)
 {
     SetClientIP(request.ip);
     SetClientSID(request.sid);
@@ -343,6 +349,10 @@ CJob::EJobFetchResult CJob::x_Fetch(CQueue* queue)
     m_ClientSID     = job_db.client_sid;
     m_NCBIPHID      = job_db.ncbi_phid;
 
+    m_NeedSubmProgressMsgNotif = job_db.need_subm_progress_notif;
+    m_NeedLsnrProgressMsgNotif = job_db.need_lsnr_progress_notif;
+    m_NeedStolenNotif = job_db.need_stolen_notif;
+
     if (!(char) job_db.input_overflow)
         job_db.input.ToString(m_Input);
     if (!(char) job_db.output_overflow)
@@ -472,6 +482,10 @@ bool CJob::Flush(CQueue* queue)
         job_db.client_ip    = m_ClientIP;
         job_db.client_sid   = m_ClientSID;
         job_db.ncbi_phid    = m_NCBIPHID;
+
+        job_db.need_subm_progress_notif = m_NeedSubmProgressMsgNotif;
+        job_db.need_lsnr_progress_notif = m_NeedLsnrProgressMsgNotif;
+        job_db.need_stolen_notif = m_NeedStolenNotif;
 
         if (!input_overflow) {
             job_db.input_overflow = 0;
@@ -723,8 +737,13 @@ string CJob::Print(const CQueue &               queue,
               "OK:progress_msg: '" + m_ProgressMsg + "'\n"
               "OK:remote_client_sid: " + NStr::PrintableString(m_ClientSID) + "\n"
               "OK:remote_client_ip: " + NStr::PrintableString(m_ClientIP) + "\n"
-              "OK:ncbi_phid: " + NStr::PrintableString(m_NCBIPHID) + "\n";
-
+              "OK:ncbi_phid: " + NStr::PrintableString(m_NCBIPHID) + "\n"
+              "OK:need_subm_progress_msg_notif: " +
+                 NStr::BoolToString(m_NeedSubmProgressMsgNotif) + "\n"
+              "OK:need_lsnr_progress_msg_notif: " +
+                 NStr::BoolToString(m_NeedLsnrProgressMsgNotif) + "\n"
+              "OK:need_stolen_notif: " +
+                 NStr::BoolToString(m_NeedStolenNotif) + "\n";
     return result;
 }
 
@@ -763,6 +782,9 @@ void CJob::Dump(FILE *  jobs_file) const
     job_dump.listener_notif_addr = m_ListenerNotifAddress;
     job_dump.listener_notif_port = m_ListenerNotifPort;
     job_dump.listener_notif_abstime = (double)m_ListenerNotifAbsTime;
+    job_dump.need_subm_progress_msg_notif = m_NeedSubmProgressMsgNotif;
+    job_dump.need_lsnr_progress_msg_notif = m_NeedLsnrProgressMsgNotif;
+    job_dump.need_stolen_notif = m_NeedStolenNotif;
     job_dump.run_counter = m_RunCount;
     job_dump.read_counter = m_ReadCount;
     job_dump.aff_id = m_AffinityId;
@@ -853,6 +875,9 @@ bool CJob::LoadFromDump(FILE *  jobs_file,
     m_ListenerNotifAddress = job_dump.listener_notif_addr;
     m_ListenerNotifPort = job_dump.listener_notif_port;
     m_ListenerNotifAbsTime = CNSPreciseTime(job_dump.listener_notif_abstime);
+    m_NeedSubmProgressMsgNotif = job_dump.need_subm_progress_msg_notif;
+    m_NeedLsnrProgressMsgNotif = job_dump.need_lsnr_progress_msg_notif;
+    m_NeedStolenNotif = job_dump.need_stolen_notif;
     m_RunCount = job_dump.run_counter;
     m_ReadCount = job_dump.read_counter;
     m_ProgressMsg.clear();

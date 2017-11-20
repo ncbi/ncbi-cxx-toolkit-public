@@ -80,6 +80,13 @@ struct SJobDB : public CBDB_File
     CBDB_FieldUint4        listener_notif_port;
     CBDB_FieldDouble       listener_notif_abstime;
 
+    // To send or not a notification when the progress message is changed
+    // to a submitter and a listener respectively
+    CBDB_FieldChar         need_subm_progress_notif;
+    CBDB_FieldChar         need_lsnr_progress_notif;
+
+    CBDB_FieldChar         need_stolen_notif;
+
     // This field shows the number of attempts from submission or last
     // reschedule, so the number of actual attempts in SEventsDB can be more
     // than this number
@@ -118,9 +125,12 @@ struct SJobDB : public CBDB_File
         BindData("subm_notif_port",         &subm_notif_port);
         BindData("subm_notif_timeout",      &subm_notif_timeout);
 
-        BindData("listener_notif_addr",     &listener_notif_addr);
-        BindData("listener_notif_port",     &listener_notif_port);
-        BindData("listener_notif_abstime",  &listener_notif_abstime);
+        BindData("listener_notif_addr",      &listener_notif_addr);
+        BindData("listener_notif_port",      &listener_notif_port);
+        BindData("listener_notif_abstime",   &listener_notif_abstime);
+        BindData("need_subm_progress_notif", &need_subm_progress_notif);
+        BindData("need_lsnr_progress_notif", &need_lsnr_progress_notif);
+        BindData("need_stolen_notif",        &need_stolen_notif);
 
         BindData("run_counter",     &run_counter);
         BindData("read_counter",    &read_counter);

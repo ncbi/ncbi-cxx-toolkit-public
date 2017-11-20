@@ -56,6 +56,7 @@ struct SJobCachedInfo
     string      m_ClientIP;
     string      m_ClientSID;
     string      m_NCBIPHID;
+    string      m_ProgressMsg;
 };
 
 
@@ -77,7 +78,8 @@ class CJobInfoCache
         void SetJobCachedInfo(unsigned int    job_id,
                               const string &  client_ip,
                               const string &  client_sid,
-                              const string &  client_phid);
+                              const string &  client_phid,
+                              const string &  progress_msg);
         void RemoveJobCachedInfo(unsigned int  job_id);
         void RemoveJobCachedInfo(const TNSBitVector &  jobs);
         size_t GetSize(void) const;
@@ -106,5 +108,3 @@ class CJobInfoCache
 END_NCBI_SCOPE
 
 #endif /* NETSCHEDULE_JOB_INFO_CACHE__HPP */
-
-

@@ -116,7 +116,8 @@ void CJobInfoCache::SetJobCachedInfo(unsigned int             job_id,
 void CJobInfoCache::SetJobCachedInfo(unsigned int  job_id,
                                      const string &  client_ip,
                                      const string &  client_sid,
-                                     const string &  client_phid)
+                                     const string &  client_phid,
+                                     const string &  progress_msg)
 {
     CFastMutexGuard     guard(m_Lock);
     pair<TCachedInfo::iterator,
@@ -127,6 +128,7 @@ void CJobInfoCache::SetJobCachedInfo(unsigned int  job_id,
     item.first->second.m_ClientIP = client_ip;
     item.first->second.m_ClientSID = client_sid;
     item.first->second.m_NCBIPHID = client_phid;
+    item.first->second.m_ProgressMsg = progress_msg;
 }
 
 void CJobInfoCache::RemoveJobCachedInfo(unsigned int  job_id)
@@ -231,4 +233,3 @@ CJobInfoCache::x_RemoveJobsInStates(const TNSBitVector &        all_jobs,
 
 
 END_NCBI_SCOPE
-

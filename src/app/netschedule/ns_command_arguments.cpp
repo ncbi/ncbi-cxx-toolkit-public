@@ -95,6 +95,9 @@ void SNSCommandArguments::x_Reset()
     affinity_may_change = false;
     group_may_change = false;
 
+    need_progress_msg = false;
+    need_stolen = false;
+
     job_statuses.clear();
 
     return;
@@ -235,6 +238,10 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
             }
             else if (key == "no_retries")
                 no_retries = x_GetBooleanValue(val, key);
+            else if (key == "need_stolen")
+                need_stolen = x_GetBooleanValue(val, key);
+            else if (key == "need_progress_msg")
+                need_progress_msg = x_GetBooleanValue(val, key);
             break;
         case 'o':
             if (key == "output") {

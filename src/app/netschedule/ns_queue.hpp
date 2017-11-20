@@ -234,6 +234,7 @@ public:
                                      string &          client_ip,
                                      string &          client_sid,
                                      string &          client_phid,
+                                     string &          progress_msg,
                                      CNSPreciseTime *  lifetime);
     TJobStatus  GetStatusAndLifetimeAndTouch(unsigned int      job_id,
                                              CJob &            job,
@@ -244,6 +245,8 @@ public:
                                unsigned int            address,
                                unsigned short          port,
                                const CNSPreciseTime &  timeout,
+                               bool                    need_stolen,
+                               bool                    need_progress_msg,
                                size_t *                last_event_index);
 
     // Worker node-specific methods

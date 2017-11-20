@@ -97,6 +97,9 @@ struct SNSCommandArguments
     bool            affinity_may_change;
     bool            group_may_change;
 
+    bool            need_progress_msg;
+    bool            need_stolen;
+
     vector<TJobStatus>  job_statuses;
 
     void AssignValues(TNSProtoParams &           params,

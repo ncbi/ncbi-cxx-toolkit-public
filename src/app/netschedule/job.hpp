@@ -274,7 +274,12 @@ public:
     { return m_ClientSID; }
     const string&  GetNCBIPHID() const
     { return m_NCBIPHID; }
-
+    bool  GetSubmNeedProgressMsgNotif() const
+    { return m_NeedSubmProgressMsgNotif; }
+    bool  GetLsnrNeedProgressMsgNotif() const
+    { return m_NeedLsnrProgressMsgNotif; }
+    bool  GetNeedStolenNotif() const
+    { return m_NeedStolenNotif; }
     const vector<CJobEvent>& GetEvents() const
     { return m_Events; }
     size_t  GetLastEventIndex(void) const
@@ -366,6 +371,15 @@ public:
         else
             m_NCBIPHID = ncbi_phid.substr(0, kMaxHitIdSize);
       }
+      m_Dirty |= fJobPart; }
+    void  SetNeedSubmProgressMsgNotif(bool  need)
+    { m_NeedSubmProgressMsgNotif = need;
+      m_Dirty |= fJobPart; }
+    void  SetNeedLsnrProgressMsgNotif(bool  need)
+    { m_NeedLsnrProgressMsgNotif = need;
+      m_Dirty |= fJobPart; }
+    void  SetNeedStolenNotif(bool  need)
+    { m_NeedStolenNotif = need;
       m_Dirty |= fJobPart; }
 
     void           SetEvents(const vector<CJobEvent>& events)
@@ -471,6 +485,10 @@ private:
     // Reside in SJobInfoDB table (input and output - if over limit)
     string              m_Input;
     string              m_Output;
+
+    bool                m_NeedSubmProgressMsgNotif;
+    bool                m_NeedLsnrProgressMsgNotif;
+    bool                m_NeedStolenNotif;
 };
 
 
