@@ -99,7 +99,7 @@ private:
         const CProteinMatchApp::TEntryFilenameMap& filename_map,
         CProteinMatchApp::TEntryOStreamMap& ostream_map,
         list<string>& current_nuc_accessions,
-        map<string, string>& new_nuc_accessions,
+//        map<string, string>& new_nuc_accessions,
         map<string, list<string>>& local_prot_ids,
         map<string, list<string>>& prot_accessions,
         CMatchIdInfo& match_info,
@@ -111,8 +111,8 @@ private:
         const CProteinMatchApp::TEntryFilenameMap& filename_map,
         CProteinMatchApp::TEntryOStreamMap& ostream_map,
         list<string>& current_nuc_accessions,
-        map<string, string>& new_nuc_accessions,
-        map<string, list<string>>& prot_accessions,
+ //       map<string, string>& new_nuc_accessions,
+ //       map<string, list<string>>& prot_accessions,
         CMatchIdInfo& match_info,
         ENextAction& next_action,
         CScope& db_scope);
@@ -430,8 +430,8 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
        
         list<string> current_nuc_accessions; 
         map<string, string> new_nuc_accessions; 
-        map<string, list<string>> local_prot_ids;
-        map<string, list<string>> prot_accessions;
+//        map<string, list<string>> local_prot_ids;
+//        map<string, list<string>> prot_accessions;
 
         list<CMatchIdInfo> match_id_info;
    
@@ -463,7 +463,7 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
                 seq_entry->SetSet(*bio_set);
 
                 list<string> set_current_nuc_accessions;
-                map<string, string> set_new_nuc_accessions;
+//                map<string, string> set_new_nuc_accessions;
                 map<string, list<string>> set_prot_accessions;
                 map<string, list<string>> set_local_prot_ids;
 
@@ -473,7 +473,7 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
                     filename_map,
                     ostream_map,
                     set_current_nuc_accessions,
-                    set_new_nuc_accessions,
+//                    set_new_nuc_accessions,
                     set_local_prot_ids,
                     set_prot_accessions,
                     match_info,
@@ -484,9 +484,9 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
                 for (const string& accession : set_current_nuc_accessions) {
                     processed_nuc_accessions.insert(accession);
                 }
-                for (auto key_val : set_new_nuc_accessions) {
-                    processed_nuc_accessions.insert(key_val.second);
-                }
+//                for (auto key_val : set_new_nuc_accessions) {
+//                    processed_nuc_accessions.insert(key_val.second);
+//                }
               
                 if (next_action == eOverwrite) {
                     x_ApplyOverwrite(seq_entry, match_tab, processed_nuc_accessions);
@@ -500,9 +500,9 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
 
                 // Clean this up by gathering accessions into struct
                 current_nuc_accessions.merge(set_current_nuc_accessions);
-                new_nuc_accessions.insert(set_new_nuc_accessions.begin(), set_new_nuc_accessions.end());
-                prot_accessions.insert(set_prot_accessions.begin(), set_prot_accessions.end());
-                local_prot_ids.insert(set_local_prot_ids.begin(), set_local_prot_ids.end());
+//                new_nuc_accessions.insert(set_new_nuc_accessions.begin(), set_new_nuc_accessions.end());
+//                prot_accessions.insert(set_prot_accessions.begin(), set_prot_accessions.end());
+//               local_prot_ids.insert(set_local_prot_ids.begin(), set_local_prot_ids.end());
             }
             istr.Close();
 
@@ -534,8 +534,6 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
                     filename_map,
                     ostream_map,
                     current_nuc_accessions,
-                    new_nuc_accessions,
-                    prot_accessions,
                     match_info,
                     next_action,
                     db_scope);
@@ -595,8 +593,13 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
  
         unique_ptr<CObjectIStream> align_istr_ptr(x_InitObjectIStream(alignment_file, false)); // false => not binary
         unique_ptr<CObjectIStream> annot_istr_ptr(x_InitObjectIStream(annot_file, true));
-    
+   
+
         match_tab.GenerateMatchTable(
+            match_id_info,
+            *align_istr_ptr,
+            *annot_istr_ptr);
+/*
             local_prot_ids, 
             prot_accessions, 
             current_nuc_accessions,
@@ -604,6 +607,7 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
             match_id_info,
             *align_istr_ptr,
             *annot_istr_ptr);
+            */
 
         align_istr_ptr->Close();
         annot_istr_ptr->Close();
@@ -625,8 +629,8 @@ void CProteinMatchApp::x_InitNucSeqMatch(CRef<CSeq_entry> nuc_seq,
     const CProteinMatchApp::TEntryFilenameMap& filename_map,
     CProteinMatchApp::TEntryOStreamMap& ostream_map,
     list<string>& current_nuc_accessions,
-    map<string, string>& new_nuc_accessions,
-    map<string, list<string>>& prot_accessions,
+//    map<string, string>& new_nuc_accessions,
+//    map<string, list<string>>& prot_accessions,
     CMatchIdInfo& match_info,
     ENextAction& next_action,
     CScope& db_scope)
@@ -654,7 +658,7 @@ void CProteinMatchApp::x_InitNucSeqMatch(CRef<CSeq_entry> nuc_seq,
             }
             nuc_seqid = hist_ids.front();
             db_nuc_acc_string = nuc_seqid->GetSeqIdString();
-            new_nuc_accessions[db_nuc_acc_string] = update_nuc_acc_string;
+        //    new_nuc_accessions[db_nuc_acc_string] = update_nuc_acc_string;
         }
         else {
             db_nuc_acc_string = update_nuc_acc_string;
@@ -679,7 +683,7 @@ void CProteinMatchApp::x_InitNucSeqMatch(CRef<CSeq_entry> nuc_seq,
     }
 
     if (db_entry->IsSet()) {
-        x_GatherProteinAccessions(db_entry->GetSet(), prot_accessions[db_nuc_acc_string]);
+ //       x_GatherProteinAccessions(db_entry->GetSet(), prot_accessions[db_nuc_acc_string]);
 
         x_GatherProteinAccessions(db_entry->GetSet(), match_info.SetDBProtIds());
     }
@@ -852,7 +856,7 @@ void CProteinMatchApp::x_InitNucProtSetMatch(CRef<CSeq_entry> nuc_prot_set,
     const CProteinMatchApp::TEntryFilenameMap& filename_map,
     CProteinMatchApp::TEntryOStreamMap& ostream_map,
     list<string>& current_nuc_accessions,
-    map<string, string>& new_nuc_accessions,
+//    map<string, string>& new_nuc_accessions,
     map<string, list<string>>& local_prot_ids,
     map<string, list<string>>& prot_accessions,
     CMatchIdInfo& match_info,
@@ -883,7 +887,7 @@ void CProteinMatchApp::x_InitNucProtSetMatch(CRef<CSeq_entry> nuc_prot_set,
             }
             nuc_seqid = hist_ids.front();
             db_nuc_acc_string = nuc_seqid->GetSeqIdString();
-            new_nuc_accessions[db_nuc_acc_string] = update_nuc_acc_string;
+//            new_nuc_accessions[db_nuc_acc_string] = update_nuc_acc_string;
         }
         else {
             db_nuc_acc_string = update_nuc_acc_string;
@@ -906,12 +910,12 @@ void CProteinMatchApp::x_InitNucProtSetMatch(CRef<CSeq_entry> nuc_prot_set,
         "Failed to fetch database entry");
     }
 
-    x_GatherLocalProteinIds(nuc_prot_set->GetSet(), local_prot_ids[db_nuc_acc_string]);
+//    x_GatherLocalProteinIds(nuc_prot_set->GetSet(), local_prot_ids[db_nuc_acc_string]);
 
     x_GatherLocalProteinIds(nuc_prot_set->GetSet(), match_info.SetUpdateOtherProtIds());
 
     if (db_entry->IsSet()) {
-        x_GatherProteinAccessions(db_entry->GetSet(), prot_accessions[db_nuc_acc_string]);
+   //     x_GatherProteinAccessions(db_entry->GetSet(), prot_accessions[db_nuc_acc_string]);
 
         x_GatherProteinAccessions(db_entry->GetSet(), match_info.SetDBProtIds());
     }

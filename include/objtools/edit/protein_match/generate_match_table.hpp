@@ -56,17 +56,13 @@ public:
 
     void ReportWildDependents(const string& nuc_accession,
            const list<string>& wild_dependents);
+
     void OverwriteEntry(const SOverwriteIdInfo& match_info);
 
     void GenerateMatchTable(
-        const map<string, list<string>>& local_prot_ids,
-        const map<string, list<string>>& prot_accessions,
-        const list<string>& current_nuc_accessions,
-        const map<string, string>& new_nuc_accessions,
         const list<CMatchIdInfo>& match_id_info,
-        CObjectIStream& align_istr, 
+        CObjectIStream& align_istr,
         CObjectIStream& annot_istr);
-
 
     void WriteTable(CNcbiOstream& out) const;;
 
@@ -138,11 +134,6 @@ public:
 
 private:
 
-    void x_GenerateMatchTable(
-        const list<CMatchIdInfo>& match_id_info,
-        CObjectIStream& align_istr,
-        CObjectIStream& annot_istr);
-
     bool x_GetMatch(const CSeq_annot& annot,
         string& nuc_accession,
         CProtMatchInfo& match_info);
@@ -195,16 +186,6 @@ private:
         map<string, bool>& nucseq_changed);
 
     bool x_IsPerfectAlignment(const CSeq_align& align) const;
-
-    void x_ProcessProteins(
-        CObjectIStream& istr,
-        const map<string, bool>& nuc_accessions,
-        const map<string, list<string>>& local_prot_ids,
-        const map<string, list<string>>& prot_accessions,
-        const list<string>& current_nuc_accessions,
-        const map<string, string>& new_nuc_accessions,
-        const list<CMatchIdInfo>& match_id_info
-        );
 
     void x_ReportDeadDBEntry(const CMatchIdInfo& id_info);
 
