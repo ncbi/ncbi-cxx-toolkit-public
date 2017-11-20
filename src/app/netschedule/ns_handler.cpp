@@ -208,7 +208,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
-          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  },
+          { "need_progress_msg", eNSPT_Str, eNSPA_Optional, "0" } } },
     /* The STAT command makes sense with and without a queue */
     { "STAT",          { &CNetScheduleHandler::x_ProcessStatistics,
                          eNS_NoChecks },
@@ -2111,6 +2112,11 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
         else if (pause_status == CQueue::ePauseWithoutPullback)
             pause_status_msg = "&pause=nopullback";
 
+        string      progress_msg_part;
+        if (m_CommandArguments.need_progress_msg)
+            progress_msg_part = "&msg=" +
+                                NStr::URLEncode(job.GetProgressMsg());
+
         x_WriteMessage("OK:"
                        "job_status=" +
                        CNetScheduleAPI::StatusToString(job.GetStatus()) +
@@ -2122,7 +2128,8 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
                        "&output=" + NStr::URLEncode(job.GetOutput()) +
                        "&err_msg=" + NStr::URLEncode(job.GetErrorMsg()) +
                        "&input=" + NStr::URLEncode(job.GetInput()) +
-                       pause_status_msg + kEndOfResponse
+                       pause_status_msg + progress_msg_part +
+                       kEndOfResponse
                       );
     }
     else
