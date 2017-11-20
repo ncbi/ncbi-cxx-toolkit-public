@@ -71,6 +71,7 @@
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_loc_mix.hpp>
+#include <objects/seqloc/Giimport_id.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 
 #include <objects/general/Dbtag.hpp>
@@ -2117,6 +2118,214 @@ static EStrandMatchRule s_GetStrandMatchRule(const STypeLink& link,
 }
 
 
+struct SBestInfoLess
+{
+    bool operator()(const SBestInfo& info1, const SBestInfo& info2) {
+        if (info1.m_Info  &&  info2.m_Info) {
+            if (info1.m_Quality != info2.m_Quality) {
+                return info1.m_Quality > info2.m_Quality;
+            }
+            if (info1.m_Overlap != info2.m_Overlap) {
+                return info1.m_Overlap < info2.m_Overlap;
+            }
+        }
+        return info1.m_Info < info2.m_Info;
+    }
+};
+
+
+class CDisambiguator
+{
+public:
+    CDisambiguator(CFeatTree::TFeatArray& features)
+    {
+        m_IsAmbiguous = false;
+        size_t cnt = features.size();
+        for (size_t i = 0; i < cnt; ++i) {
+            m_Children.emplace(features[i], SCandidates(i));
+        }
+    }
+
+    typedef CFeatTree::CFeatInfo CFeatInfo;
+
+    void Add(CFeatInfo* child, CFeatInfo* parent, Int1 quality, Int8 overlap)
+    {
+        // Store separate SBestInfo for each child/parent candidate.
+        SBestInfo info;
+        info.CheckBest(quality, overlap, parent);
+        TChildren::iterator ci = m_Children.find(child);
+        _ASSERT(ci != m_Children.end());
+        SCandidates& c = m_Children[child];
+        if ( !c.parents.empty() ) {
+            m_IsAmbiguous = true;
+        }
+        c.parents.insert(info);
+        m_Parents[parent].push_back(child);
+    }
+
+    void Disambiguate(TBestArray& bests);
+
+    typedef set<SBestInfo, SBestInfoLess> TBestSet;
+    typedef list<CFeatInfo*> TChildList;
+
+    struct SCandidates
+    {
+        SCandidates(void) : index(0) {}
+        SCandidates(size_t i) : index(i) {}
+        size_t index;
+        TBestSet parents;
+    };
+    typedef map<CFeatInfo*, SCandidates> TChildren;
+    typedef map<CFeatInfo*, TChildList> TParents;
+
+private:
+    bool m_IsAmbiguous;
+    TChildren m_Children;
+    TParents  m_Parents;
+};
+
+
+struct SChildLess
+{
+    typedef CDisambiguator::TChildren::const_iterator TChild;
+
+    bool operator()(const TChild& c1, const TChild& c2) {
+        const TChild::value_type& cr1 = *c1;
+        const TChild::value_type& cr2 = *c2;
+        if (cr1.first == cr2.first) return false;
+        // Children with fewer parents go first.
+        if (cr1.second.parents.size() != cr2.second.parents.size()) {
+            return cr1.second.parents.size() < cr2.second.parents.size();
+        }
+        // Check for better parent quality/overlap.
+        if (!cr1.second.parents.empty()) {
+            const SBestInfo& p1 = *cr1.second.parents.begin();
+            const SBestInfo& p2 = *cr2.second.parents.begin();
+            if (p1.m_Quality != p2.m_Quality) return p1.m_Quality > p2.m_Quality;
+            if (p1.m_Overlap != p2.m_Overlap) return p1.m_Overlap < p2.m_Overlap;
+        }
+        // Sort children by other values.
+        const CMappedFeat& f1 = cr1.first->m_Feat;
+        const CMappedFeat& f2 = cr2.first->m_Feat;
+        // Sort by location/product
+        int cmp = f1.GetLocation().Compare(f2.GetLocation());
+        if (cmp != 0) return cmp < 0;
+        if ( f1.IsSetProduct() ) {
+            // Features with product go first.
+            if ( !f2.IsSetProduct() ) return true;
+            cmp = f1.GetProduct().Compare(f2.GetProduct());
+            if (cmp != 0) return cmp < 0;
+        }
+        else if ( f2.IsSetProduct() ) return false;
+
+        // Sort by feature id, if any
+        if ( f1.IsSetId() ) {
+            if ( !f2.IsSetId() ) return true; // Features with id go first.
+            if (f1.GetId().Which() != f2.GetId().Which()) {
+                return f1.GetId().Which() < f2.GetId().Which();
+            }
+            switch ( f1.GetId().Which() ) {
+            case CFeat_id::e_General:
+                cmp = f1.GetId().GetGeneral().Compare(f2.GetId().GetGeneral());
+                if (cmp != 0) return cmp < 0;
+                break;
+            case CFeat_id::e_Gibb:
+                if (f1.GetId().GetGibb() != f2.GetId().GetGibb()) {
+                    return f1.GetId().GetGibb() < f2.GetId().GetGibb();
+                }
+                break;
+            case CFeat_id::e_Giim:
+            {
+                const CGiimport_id& giim1 = f1.GetId().GetGiim();
+                const CGiimport_id& giim2 = f2.GetId().GetGiim();
+                if (giim1.GetId() != giim2.GetId()) {
+                    return giim1.GetId() < giim2.GetId();
+                }
+                if ( giim1.IsSetDb() ) {
+                    if ( !giim2.IsSetDb() ) return true;
+                    cmp = NStr::Compare(giim1.GetDb(), giim2.GetDb());
+                    if (cmp != 0) return cmp < 0;
+                }
+                else if ( giim2.IsSetDb() ) return false;
+                if ( giim1.IsSetRelease() ) {
+                    if ( !giim2.IsSetRelease() ) return true;
+                    cmp = NStr::Compare(giim1.GetRelease(), giim2.GetRelease());
+                    if (cmp != 0) return cmp < 0;
+                }
+                else if ( giim2.IsSetRelease() ) return false;
+                break;
+            }
+            case CFeat_id::e_Local:
+            {
+                const CObject_id& oid1 = f1.GetId().GetLocal();
+                const CObject_id& oid2 = f2.GetId().GetLocal();
+                if ( oid1.IsId() ) {
+                    if ( !oid2.IsId() ) return true;
+                    if (oid1.GetId() != oid2.GetId()) {
+                        return oid1.GetId() < oid2.GetId();
+                    }
+                }
+                else if ( oid1.IsStr() ) {
+                    if ( !oid2.IsStr() ) return false;
+                    cmp = NStr::Compare(oid1.GetStr(), oid2.GetStr());
+                    if (cmp != 0) return cmp < 0;
+                }
+                break;
+            }
+            default:
+                break;
+            }
+        }
+        else if ( f2.IsSetId() ) return false;
+
+        // Fallback - sort by ASN.1 string representation (can be slow)
+        string asn1, asn2;
+        asn1 << f1.GetMappedFeature();
+        asn2 << f2.GetMappedFeature();
+        return asn1 < asn2;
+    }
+};
+
+
+void CDisambiguator::Disambiguate(TBestArray& bests)
+{
+    if ( !m_IsAmbiguous  ||  m_Parents.empty() ) return; // No ambiguous features.
+
+    // Children must be sorted based on both key and value from TChildren map,
+    // so we need to create a temporary set.
+    typedef set<TChildren::const_iterator, SChildLess> TOrderedChildren;
+    TOrderedChildren ordered_children;
+    ITERATE(TChildren, ci, m_Children) {
+        if (ci->second.parents.empty()) continue;
+        ordered_children.insert(ci);
+    }
+    ITERATE(TOrderedChildren, ci, ordered_children) {
+        const TChildren::value_type& child = **ci;
+        if (child.second.parents.empty()) continue;
+        // Use the first (possibly the unique) parent.
+        bests[(*ci)->second.index] = *child.second.parents.begin();
+        CFeatInfo* parent = child.second.parents.begin()->m_Info;
+        // Remove the parent candidate from all other children.
+        TParents::iterator pi = m_Parents.find(parent);
+        _ASSERT(pi != m_Parents.end());
+        ITERATE(TChildList, pci, pi->second) {
+            SCandidates& ccand = m_Children[*pci];
+            ERASE_ITERATE(TBestSet, bi, ccand.parents) {
+                if (bi->m_Info == parent) {
+                    ccand.parents.erase(bi);
+                    break;
+                }
+            }
+            if (*pci == (*ci)->first) continue;
+            SBestInfo& info = bests[ccand.index];
+            if (info.m_Info == parent) {
+                info.m_Info = nullptr;
+            }
+        }
+    }
+}
+
+
 static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                                   TBestArray& bests,
                                   const STypeLink& link,
@@ -2158,6 +2367,7 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
 
     // assign parents in single scan over both lists
     {{
+        CDisambiguator disambibuator(features);
         TRangeArray::iterator pi = pp.begin();
         TRangeArray::iterator ci = cc.begin();
         for ( ; ci != cc.end(); ) {
@@ -2208,6 +2418,11 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                     sx_GetOverlapType(link, c_loc, circular_length);
                 EStrandMatchRule strand_match_rule =
                     s_GetStrandMatchRule(link, info, tree);
+                // Some CDS:mRNA/VDJ_segment/C_region relationships may be ambiguous. For these types
+                // we need to collect all candidates before selecting the best ones.
+                bool disambiguate =
+                    info.GetSubtype() == CSeqFeatData::eSubtype_cdregion &&
+                    link.m_ParentType == CSeqFeatData::eSubtype_mRNA;
 
                 // skip non-overlapping parents
                 while ( pi != pe &&
@@ -2254,6 +2469,9 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                         overlap = -1;
                     }
                     if ( overlap >= 0 ) {
+                        if (disambiguate) {
+                            disambibuator.Add(ci->m_Info, pc->m_Info, quality, overlap);
+                        }
                         ci->m_Best->CheckBest(quality, overlap, pc->m_Info);
                         continue;
                     }
@@ -2298,6 +2516,9 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                         overlap = -1;
                     }
                     if ( overlap >= 0 ) {
+                        if (disambiguate) {
+                            disambibuator.Add(ci->m_Info, pc->m_Info, quality, overlap);
+                        }
                         ci->m_Best->CheckBest((Int1)(quality-1), overlap, pc->m_Info);
                     }
                 }
@@ -2306,6 +2527,7 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
             for ( ; ci != cc.end() && ci->m_Id == cur_id; ++ci ) {
             }
         }
+        disambibuator.Disambiguate(bests);
     }}
 }
 
@@ -3391,7 +3613,8 @@ ELocationInFrame IsLocationInFrame (const CSeq_feat_Handle& cds, const CSeq_loc&
         return eLocationInFrame_NotIn;
     }
 
-    sequence::ECompare cmp = sequence::Compare(cds.GetLocation(), loc, &(cds.GetScope()));
+    sequence::ECompare cmp = sequence::Compare(cds.GetLocation(), loc, &(cds.GetScope()),
+        sequence::fCompareOverlapping);
     if (cmp != sequence::eContains && cmp != sequence::eSame) {
         return eLocationInFrame_NotIn;
     }
