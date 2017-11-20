@@ -344,6 +344,11 @@ enum EKeepRef {
     eKeepRef = 1
 };
 
+
+// GENE_PRODUCT_CONFLICT
+typedef list<pair<CRef<CDiscrepancyObject>, string>> TGenesList;
+typedef map<string, TGenesList> TGeneLocusMap;
+
 class CDiscrepancyContext : public CDiscrepancySet
 {
 public:
@@ -457,6 +462,9 @@ public:
     CRef<CDiscrepancyObject> NewFeatOrDescOrSubmitBlockObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewFeatOrDescOrCitSubObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
 
+    // GENE_PRODUCT_CONFLICT
+    TGeneLocusMap& GetGeneLocusMap() { return m_GeneLocusMap;}
+
 protected:
     void Update_Bioseq_set_Stack(CTypesConstIterator& it);
     CRef<objects::CScope> m_Scope;
@@ -502,6 +510,9 @@ protected:
     map<const CSeq_feat*, const CSeq_feat*> m_GeneForFeatureMap;
     map<const CSeq_feat*, string> m_ProdForFeatureMap;
     bool x_IsPseudo(const CSeq_feat& feat);
+
+    // GENE_PRODUCT_CONFLICT
+    TGeneLocusMap m_GeneLocusMap;
 
 #define ADD_DISCREPANCY_TYPE(type) bool m_Enable_##type; vector<CDiscrepancyVisitor<type>* > m_All_##type;
     ADD_DISCREPANCY_TYPE(CSeq_inst)

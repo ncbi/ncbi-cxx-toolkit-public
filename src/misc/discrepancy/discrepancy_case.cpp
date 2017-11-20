@@ -1262,35 +1262,17 @@ DISCREPANCY_SUMMARIZE(BAD_BGPIPE_QUALS)
 
 // GENE_PRODUCT_CONFLICT
 
-static const string kGeneProductConflict = "[n] coding region[s] [has] the same gene name as another coding region but a different product";
-
 DISCREPANCY_CASE(GENE_PRODUCT_CONFLICT, CSeq_feat, eDisc | eSubmitter | eSmart, "Gene Product Conflict")
 {
     if (obj.IsSetData() && obj.GetData().IsCdregion()) {
-        CConstRef<CSeq_feat> gene_feat = sequence::GetBestGeneForCds(obj, context.GetScope());
+        CConstRef<CSeq_feat> gene_feat(context.GetGeneForFeature(obj));
         if (gene_feat && gene_feat->IsSetData() && gene_feat->GetData().IsGene()) {
             const CGene_ref& gene = gene_feat->GetData().GetGene();
             if (gene.IsSetLocus()) {
-                m_Objs.Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef), false);
-            }
-        }
-    }
-}
-
-typedef list<pair<CConstRef<CSeq_feat>, string>> TGenesList;
-typedef map<string, TGenesList> TGeneLocusMap;
-
-static void CollectGenesByLocusTag(CDiscrepancyContext& context, TReportObjectList& objs, TGeneLocusMap& genes)
-{
-    NON_CONST_ITERATE (TReportObjectList, obj, objs) {
-        const CSeq_feat* cds = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*obj).GetNCPointer())->GetObject().GetPointer());
-        if (cds) {
-            CScope& scope = context.GetScope();
-            CConstRef<CSeq_feat> gene = sequence::GetBestGeneForCds(*cds, scope);
-            if (gene) {
-                const string& locus = gene->GetData().GetGene().GetLocus();
-                string product = context.GetProdForFeature(*cds);
-                genes[locus].push_back(make_pair(CConstRef<CSeq_feat>(cds), product));
+                TGeneLocusMap& genes = context.GetGeneLocusMap();
+                const string& locus = gene.GetLocus();
+                string product = context.GetProdForFeature(obj);
+                genes[locus].push_back(make_pair(context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), product));
             }
         }
     }
@@ -1299,16 +1281,8 @@ static void CollectGenesByLocusTag(CDiscrepancyContext& context, TReportObjectLi
 
 DISCREPANCY_SUMMARIZE(GENE_PRODUCT_CONFLICT)
 {
-    if (m_Objs.empty()) {
-        return;
-    }
-
-    CReportNode report;
-    TGeneLocusMap genes;
-
-    CollectGenesByLocusTag(context, m_Objs.GetObjects(), genes);
-
-    ITERATE (TGeneLocusMap, gene, genes) {
+    TGeneLocusMap& genes = context.GetGeneLocusMap();
+    NON_CONST_ITERATE (TGeneLocusMap, gene, genes) {
         if (gene->second.size() > 1) {
             TGenesList::const_iterator cur_gene = gene->second.begin();
             const string& product = cur_gene->second;
@@ -1322,13 +1296,13 @@ DISCREPANCY_SUMMARIZE(GENE_PRODUCT_CONFLICT)
             }
             if (diff) {
                 string sub = "[n] coding regions have the same gene name (" + gene->first + ") as another coding region but a different product";
-                ITERATE (TGenesList, cur_gene, gene->second) {
-                    report[kGeneProductConflict][sub].Ext().Add(*context.NewDiscObj(cur_gene->first), false);
+                NON_CONST_ITERATE (TGenesList, cur_gene, gene->second) {
+                    m_Objs["[n] coding region[s] [has] the same gene name as another coding region but a different product"][sub].Ext().Add(*cur_gene->first, false);
                 }
             }
         }
     }
-    m_ReportItems = report.Export(*this)->GetSubitems();
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
