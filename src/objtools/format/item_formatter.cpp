@@ -765,12 +765,13 @@ static void s_FormatCitBookArt(const CReferenceItem& ref, string& journal, bool 
         const CCit_book::TAuthors& auth = book.GetAuthors();
         string authstr;
         CReferenceItem::FormatAuthors(auth, authstr);
-        if (!authstr.empty() && ! NStr::EqualNocase (authstr, "?")) {
+        if (!authstr.empty() /* && ! NStr::EqualNocase (authstr, "?") */ ) {
             jour << authstr;
             size_t num_auth = s_NumAuthors(auth);
             jour << ((num_auth == 1) ? " (Ed.);" : " (Eds.);") << '\n';
         }
     }
+    title = NStr::TruncateSpaces(title);
     jour << NStr::ToUpper(title);
 
     string issue, part_sup, part_supi;
