@@ -1632,17 +1632,16 @@ CRef<CSeq_interval> SplitLocationForGap(CSeq_interval& before,
     // Feature location
     TSeqPos feat_from = before.GetFrom();
     TSeqPos feat_to = before.GetTo();
-
     CRef<CSeq_interval> after(NULL);
     if (feat_to < start) {
         // gap completely after location
         return after;
     }
 
-    if (feat_from > start && !(options & eSplitLocOption_split_in_intron)) {
-        // if gap completely before location, but not splitting in introns,
-        // no change
-        return after;
+    if (feat_from > stop && !(options & eSplitLocOption_split_in_intron)) {
+      // if gap completely before location, but not splitting in introns,
+      // no change
+      return after;
     }
 
     if (feat_from < start && feat_to > stop) {
@@ -1697,8 +1696,6 @@ void SplitLocationForGap(CSeq_loc::TPacked_int& before_intervals,
             }
             if (after) {
                 after_intervals.Set().push_back(after);
-                // from here on, always move intervals to the right to the other loc
-                options |= eSplitLocOption_split_in_intron;
             }
         }
     }
@@ -1794,11 +1791,8 @@ void SplitLocationForGap(CSeq_loc& loc1, CSeq_loc& loc2,
                         }
                         if (after->Which() != CSeq_loc::e_not_set) {
                             after_mix->Set().push_back(after);
-                            // from here on, always move intervals to the right to the other loc
-                            options |= eSplitLocOption_split_in_intron;
                         }
                     }
-
                     // Update the original list
                     if (before_mix.Set().empty()) {
                         loc1.Reset();

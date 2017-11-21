@@ -240,15 +240,17 @@ bool CFeatGapInfo::ShouldRemove() const
 
 void CFeatGapInfo::Trim(CSeq_loc& loc, bool make_partial, CScope& scope)
 {
+  CRef<CSeq_id> seqid(new CSeq_id);
+  seqid->Assign(*loc.GetId());
     for (vector<pair<size_t, size_t> >::reverse_iterator b = m_LeftGaps.rbegin(); b != m_LeftGaps.rend(); ++b)
     {
         size_t start = b->first;
         size_t stop = b->second;
         CRef<CSeq_loc> loc2(new CSeq_loc());
-        int options = edit::eSplitLocOption_split_in_exon;
+        int options = edit::eSplitLocOption_split_in_exon | edit::eSplitLocOption_split_in_intron;
         if (make_partial)
             options |= edit::eSplitLocOption_make_partial;
-        edit::SplitLocationForGap(loc, *loc2, start, stop, loc.GetId(), options);
+        edit::SplitLocationForGap(loc, *loc2, start, stop, seqid.GetPointer(), options);
         if (loc2->Which() != CSeq_loc::e_not_set)
         {
             loc.Assign(*loc2);
@@ -262,7 +264,7 @@ void CFeatGapInfo::Trim(CSeq_loc& loc, bool make_partial, CScope& scope)
         int options = edit::eSplitLocOption_split_in_exon;
         if (make_partial)
             options |= edit::eSplitLocOption_make_partial;
-        edit::SplitLocationForGap(loc, *loc2, start, stop, loc.GetId(), options);
+        edit::SplitLocationForGap(loc, *loc2, start, stop, seqid.GetPointer(), options);
     }
 }
 
@@ -272,6 +274,8 @@ CFeatGapInfo::TLocList CFeatGapInfo::Split(const CSeq_loc& orig, bool in_intron,
     TLocList locs;
     CRef<CSeq_loc> left_loc(new CSeq_loc());
     left_loc->Assign(orig);
+    CRef<CSeq_id> seqid(new CSeq_id);
+    seqid->Assign(*orig.GetId());
     for (vector<pair<size_t, size_t> >::reverse_iterator b = m_InsideGaps.rbegin(); b != m_InsideGaps.rend(); ++b)
     {
         size_t start = b->first;
@@ -280,20 +284,22 @@ CFeatGapInfo::TLocList CFeatGapInfo::Split(const CSeq_loc& orig, bool in_intron,
         int options = edit::eSplitLocOption_make_partial | edit::eSplitLocOption_split_in_exon;
         if (in_intron)
             options |= edit::eSplitLocOption_split_in_intron;
-        edit::SplitLocationForGap(*left_loc, *loc2, start, stop, orig.GetId(), options);
+        edit::SplitLocationForGap(*left_loc, *loc2, start, stop, seqid.GetPointer(), options);
         if (loc2->GetId())
         {
             if (make_partial)
             {
                 loc2->SetPartialStart(true, objects::eExtreme_Positional);
-                left_loc->SetPartialStop(true, objects::eExtreme_Positional);
+		if (left_loc->Which() != CSeq_loc::e_not_set)
+		  left_loc->SetPartialStop(true, objects::eExtreme_Positional);
             }
             locs.push_back(loc2);
         }
     }
     if (locs.size() > 0) {
+      if (left_loc->Which() != CSeq_loc::e_not_set)
         locs.push_back(left_loc);
-        reverse(locs.begin(), locs.end());
+      reverse(locs.begin(), locs.end());
     }
     return locs;
 }
