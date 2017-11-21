@@ -2672,6 +2672,7 @@ IBI	s	Instituto Biologico, Laboratorio de Micologia
 IBIR	s	Institutul Agronomic		
 IBIW	s	I. D. Papanin Institute for Biology of Inland Waters		
 IBK	s	Guangxi Institute of Botany		
+IBK<UKR>	c	Mushroom Culture Collection of the M.G. Kholodny Institute of Botany		
 IBL<ISR>	s	Independent Biological Laboratories		
 IBL<POL>	s	Forest Research Institute, Poland		
 IBL<PRT>	c	Botanical Institute, Lisbon Faculty of Sciences		
