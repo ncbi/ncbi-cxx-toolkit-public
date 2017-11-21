@@ -199,7 +199,7 @@ esac
 
 : ${LIBXLSXWRITER_PATH=$NCBI/libxlsxwriter-0.6.9}
 
-: ${LMDB_PATH=$NCBI/lmdb-0.9.18}
+: ${LMDB_PATH=$NCBI/lmdb-0.9.21}
 
 case "$ncbi_platform" in
     FreeBSD64* ) : ${LZO_PATH=$NCBI/lzo-2.09} ;;
