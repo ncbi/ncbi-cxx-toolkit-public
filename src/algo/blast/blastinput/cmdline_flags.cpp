@@ -199,6 +199,7 @@ const string kArgPercentIdentity("perc_identity");
 const string kArgNoGreedyExtension("no_greedy");
 const string kArgDMBTemplateType("template_type");
 const string kArgDMBTemplateLength("template_length");
+const string kArgNoDiscordant("no_discordant");
 
 const string kArgInputSearchStrategy("import_search_strategy");
 const string kArgOutputSearchStrategy("export_search_strategy");

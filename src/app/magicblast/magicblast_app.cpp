@@ -40,6 +40,7 @@
 #include <algo/blast/blastinput/blast_asn1_input.hpp>
 #include <algo/blast/blast_sra_input/blast_sra_input.hpp>
 #include <algo/blast/blastinput/magicblast_args.hpp>
+#include <algo/blast/blastinput/cmdline_flags.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/format/blast_format.hpp>
 #include "../blast/blast_app_util.hpp"
@@ -97,6 +98,7 @@ public:
         CRef<CVersion> version(new CVersion());
         version->SetVersionInfo(new CMagicBlastVersion());
         SetFullVersion(version);
+        m_NoDiscordant = false;
     }
 private:
     /** @inheritDoc */
@@ -106,6 +108,9 @@ private:
 
     /// This application's command line args
     CRef<CMagicBlastAppArgs> m_CmdLineArgs;
+
+    /// "no_discordant" setting
+    bool m_NoDiscordant;
 };
 
 void CMagicBlastApp::Init()
@@ -133,7 +138,7 @@ static char s_Complement(char c)
     case 'C':
         retval = 'G';
         break;
-        
+
     case 'G':
         retval = 'C';
         break;
@@ -230,7 +235,7 @@ static const CBioseq& s_GetQueryBioseq(const TQueryMap& queries,
         NCBI_THROW(CException, eInvalid, (string)"Query Bioseq not found for "
                    "id: " + s_GetBareId(seqid));
     }
-    
+
     return it->second->GetSeq();
 }
 
@@ -369,7 +374,7 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
     ostr << 0 << sep; // mismatch
     ostr << 0 << sep; // gapopen
 
-    
+
     int query_len = 0;
 
     if (align.GetSegs().IsDenseg()) {
@@ -453,7 +458,7 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
                               btop_string[i] == ')')) {
                 i--;
             }
-                
+
             new_btop += btop_string.substr(i + 1, to - i);
 
             if (i > 0) {
@@ -477,7 +482,7 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
     if (mate) {
         int mate_score = 0;
         mate->GetNamedScore(CSeq_align::eScore_Score, mate_score);
-        fragment_score += mate_score; 
+        fragment_score += mate_score;
     }
 
     // report unaligned part of the query: 3' end and reverese complemented
@@ -502,7 +507,7 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
         left_overhang.clear();
         s_GetQuerySequence(bioseq, r, true, left_overhang);
     }
-        
+
     // 3' end
     if (to < query_len) {
         CRange<TSeqPos> r(to, MIN(to + 30 - 1, query_len - 1));
@@ -535,7 +540,7 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
              align.GetSeqStrand(0) == eNa_strand_minus) ||
             (mate->GetSeqStart(1) < align.GetSeqStart(1) &&
              mate->GetSeqStrand(0) == eNa_strand_minus)) {
-                
+
             pair_start = -pair_start;
         }
         ostr << sep << pair_start;
@@ -583,7 +588,7 @@ CNcbiOstream& PrintTabularUnaligned(CNcbiOstream& ostr,
 
     // subject start and stop
     ostr << 0 << sep << 0 << sep;
-    
+
     ostr << 0 << sep; // e-value
     ostr << 99 << sep;  // bit score
 
@@ -638,8 +643,13 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
                            const CMagicBlastResults& results,
                            const TQueryMap& queries,
                            bool is_paired, int batch_number,
-                           int& compartment, bool print_unaligned)
+                           int& compartment, bool print_unaligned,
+                           bool no_discordant)
 {
+    if (is_paired  &&  no_discordant  &&  !results.IsConcordant()) {
+        return ostr;
+    }
+
     for (auto it: results.GetSeqAlign()->Get()) {
         PrintTabular(ostr, *it, queries, is_paired, batch_number, compartment++);
         ostr << endl;
@@ -669,7 +679,8 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
                            const CMagicBlastResultSet& results,
                            const CBioseq_set& query_batch,
                            bool is_paired, int batch_number,
-                           bool print_unaligned)
+                           bool print_unaligned,
+                           bool no_discordant)
 {
     TQueryMap queries;
     s_CreateQueryMap(query_batch, queries);
@@ -677,7 +688,7 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
     int compartment = 0;
     for (auto it: results) {
         PrintTabular(ostr, *it, queries, is_paired, batch_number,
-                     compartment, print_unaligned);
+                     compartment, print_unaligned, no_discordant);
     }
 
     return ostr;
@@ -693,7 +704,7 @@ CNcbiOstream& PrintSAMHeader(CNcbiOstream& ostr,
     _ASSERT(seq_src && seqinfo_src);
 
     ostr << "@HD\t" << "VN:1.0\t" << "GO:query" << endl;
-    
+
     BlastSeqSrcResetChunkIterator(seq_src);
     BlastSeqSrcIterator* it = BlastSeqSrcIteratorNew();
     CRef<CSeq_id> seqid(new CSeq_id);
@@ -718,7 +729,7 @@ struct hash_seqid
     size_t operator()(const CSeq_id* s) const {
         std::hash<string> h;
         return h(s->AsFastaString());
-    }    
+    }
 };
 
 
@@ -762,10 +773,10 @@ s_GetSpliceSiteOrientation(const CSpliced_seg::TExons::const_iterator& exon,
 
     // orientation is unknown if exons align on different strands or a exon's
     // genomic strand is unknown
-    if ((*exon)->GetGenomic_strand() != 
+    if ((*exon)->GetGenomic_strand() !=
         (*next_exon)->GetGenomic_strand() ||
         (*exon)->GetGenomic_strand() == eNa_strand_unknown) {
-        
+
         return eNa_strand_unknown;
     }
 
@@ -802,7 +813,7 @@ s_GetSpliceSiteOrientation(const CSpliced_seg::TExons::const_iterator& exon,
                                      CSeqUtil::e_Iupacna,
                                      0, acceptor.length(),
                                      rc_acceptor);
-                        
+
         // if reverse complemented signals are recognised then splice
         // orientation is opposite to genomic strand
         if (IsConsensusSplice(rc_acceptor, rc_donor) ||
@@ -823,7 +834,7 @@ s_GetSpliceSiteOrientation(const CSpliced_seg::TExons::const_iterator& exon,
             // unknown
             result = eNa_strand_unknown;
         }
-                            
+
     }
 
     return result;
@@ -843,7 +854,7 @@ s_GetSpliceSiteOrientation(const CSpliced_seg::TExons::const_iterator& exon,
 CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
                        const TQueryMap& queries,
                        const BlastQueryInfo* query_info,
-                       int batch_number, bool& first_secondary, 
+                       int batch_number, bool& first_secondary,
                        bool& last_secondary, bool trim_read_ids,
                        const CSeq_align* mate = NULL)
 {
@@ -855,7 +866,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
     int num_hits = 0;
     int context = -1;
     int sam_flags = 0;
-    
+
     // if paired alignment
     if (align.GetSegs().IsDisc()) {
 
@@ -910,7 +921,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
                 md_tag = (*it)->GetString();
             }
         }
-            
+
     }
 
     vector<ENa_strand> orientation;
@@ -938,7 +949,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
             != 0) {
             sam_flags |= SAM_FLAG_LAST_SEGMENT;
         }
-        
+
         if ((query_info->contexts[context].segment_flags & fPartialFlag) != 0
             || !mate) {
 
@@ -1003,7 +1014,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
     // mapping position
     CRange<TSeqPos> range = align.GetSeqRange(1);
     ostr << range.GetFrom() + 1 << sep;
-    
+
     // mapping quality
     ostr << "255" << sep;
 
@@ -1123,7 +1134,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
             if (num > 0) {
                 cigar += NStr::IntToString(num);
                 cigar += op;
-                
+
             }
 
             CSpliced_seg::TExons::const_iterator next_exon(exon);
@@ -1318,7 +1329,7 @@ CNcbiOstream& PrintSAMUnaligned(CNcbiOstream& ostr,
 
     // mapping position
     ostr << "0" << sep;
-    
+
     // mapping quality
     ostr << "0" << sep;
 
@@ -1362,12 +1373,18 @@ CNcbiOstream& PrintSAMUnaligned(CNcbiOstream& ostr,
 CNcbiOstream& PrintSAM(CNcbiOstream& ostr, CMagicBlastResults& results,
                        const TQueryMap& queries,
                        const BlastQueryInfo* query_info, int batch_number,
-                       bool trim_read_id, bool print_unaligned)
+                       bool trim_read_id, bool print_unaligned,
+                       bool no_discordant)
 {
     bool first_secondary = false;
     bool last_secondary = false;
+    bool not_concordant = !results.IsConcordant();
 
     for (auto it: results.GetSeqAlign()->Get()) {
+        // If paired, skip over non-concordant pairs.
+        if (it->GetSegs().IsDisc()  &&  no_discordant  &&  not_concordant) {
+            continue;
+        }
         PrintSAM(ostr, *it, queries, query_info, batch_number, first_secondary,
                  last_secondary, trim_read_id);
         ostr << endl;
@@ -1397,18 +1414,19 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CMagicBlastResultSet& results,
                        const BlastQueryInfo* query_info,
                        int batch_number,
                        bool trim_read_id,
-                       bool print_unaligned)
+                       bool print_unaligned,
+                       bool no_discordant)
 {
     TQueryMap bioseqs;
     s_CreateQueryMap(query_batch, bioseqs);
 
     for (auto it: results) {
         PrintSAM(ostr, *it, bioseqs, query_info, batch_number, trim_read_id,
-                 print_unaligned);
+                 print_unaligned, no_discordant);
     }
 
     return ostr;
-}                       
+}
 
 
 CNcbiOstream& PrintASN1(CNcbiOstream& ostr, const CBioseq_set& query_batch,
@@ -1478,7 +1496,7 @@ s_CreateInputSource(CRef<CMapperQueryOptionsArgs> query_opts,
     CBlastInputSourceOMF* retval;
 
     CMapperQueryOptionsArgs::EInputFormat infmt = query_opts->GetInputFormat();
-    
+
     switch (infmt) {
     case CMapperQueryOptionsArgs::eFasta:
     case CMapperQueryOptionsArgs::eFastc:
@@ -1533,7 +1551,7 @@ s_CreateInputSource(CRef<CMapperQueryOptionsArgs> query_opts,
             throw;
         }
         break;
-        
+
 
     default:
         NCBI_THROW(CException, eInvalid, "Unrecognized input format");
@@ -1544,7 +1562,7 @@ s_CreateInputSource(CRef<CMapperQueryOptionsArgs> query_opts,
 
 
 static void
-s_InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args, 
+s_InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
                     CRef<blast::CBlastOptionsHandle> opts_hndl,
                     CRef<blast::CLocalDbAdapter>& db_adapter,
                     Uint8& subject_length,
@@ -1556,7 +1574,7 @@ s_InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
     CRef<CSearchDatabase> search_db = db_args->GetSearchDatabase();
     CRef<CScope> scope;
 
-    // Initialize the scope... 
+    // Initialize the scope...
     if (scope.Empty()) {
         scope.Reset(new CScope(*CObjectManager::GetInstance()));
     }
@@ -1633,7 +1651,10 @@ int CMagicBlastApp::Run(void)
         CRef<CBlastOptionsHandle> opts_hndl;
         opts_hndl.Reset(&*m_CmdLineArgs->SetOptions(args));
         const CBlastOptions& opt = opts_hndl->GetOptions();
-        
+
+        // Is "no_discordant" selected?
+        const bool kNoDiscordant = args[kArgNoDiscordant].AsBoolean();
+
         /*** Initialize the database/subject ***/
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
 
@@ -1646,7 +1667,7 @@ int CMagicBlastApp::Run(void)
 
 
         /*** Get the query sequence(s) ***/
-        CRef<CMapperQueryOptionsArgs> query_opts( 
+        CRef<CMapperQueryOptionsArgs> query_opts(
             dynamic_cast<CMapperQueryOptionsArgs*>(
                    m_CmdLineArgs->GetQueryOptionsArgs().GetNonNullPointer()));
 
@@ -1745,7 +1766,7 @@ int CMagicBlastApp::Run(void)
 
                 if (query_batch->IsSetSeq_set() &&
                     !query_batch->GetSeq_set().empty()) {
-                
+
                     CRef<IQueryFactory> queries(
                                   new CObjMgrFree_QueryFactory(query_batch));
 
@@ -1801,7 +1822,8 @@ int CMagicBlastApp::Run(void)
                                      *query_batch,
                                      magic_opts->GetPaired(),
                                      thread_batch_number,
-                                     kPrintUnaligned);
+                                     kPrintUnaligned,
+                                     kNoDiscordant);
                     }
                     else if (fmt_args->GetFormattedOutputChoice() ==
                              CFormattingArgs::eAsnText) {
@@ -1810,7 +1832,7 @@ int CMagicBlastApp::Run(void)
                                   *results->GetFlatResults());
                     }
                     else {
-                
+
 /*
                         if (num_query_threads == 1 &&
                             kNumSubjects >= kSamLargeNumSubjects) {
@@ -1823,14 +1845,15 @@ int CMagicBlastApp::Run(void)
                         CRef<ILocalQueryData> query_data =
                             queries->MakeLocalQueryData(
                                                options.GetNonNullPointer());
-                        
+
                         PrintSAM(os_vector[thread_index],
                                  *results,
                                  *query_batch,
                                  query_data->GetQueryInfo(),
                                  thread_batch_number,
                                  kTrimReadIdForSAM,
-                                 kPrintUnaligned);
+                                 kPrintUnaligned,
+                                 kNoDiscordant);
                     }
 
 

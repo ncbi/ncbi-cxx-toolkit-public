@@ -208,7 +208,7 @@ static void s_ComputeBtopAndIdentity(const HSPChain* chain,
     _ASSERT(chain);
     _ASSERT(chain->hsps->hsp);
     const Uint1 kGap = 15;
-    
+
     int num_identical = 0;
     int len = 0;
     int md_matches = 0;
@@ -240,14 +240,14 @@ static void s_ComputeBtopAndIdentity(const HSPChain* chain,
 
                 len += hsp->query.offset - prev->query.end;
             }
-        }        
+        }
 
         int query_pos = hsp->query.offset;
         int num_matches = 0;
         for (int i=0;i < hsp_edits->num_edits;i++) {
             num_matches = hsp_edits->edits[i].query_pos - query_pos;
             query_pos += num_matches;
-            
+
             _ASSERT(num_matches >= 0);
             num_identical += num_matches;
             if (num_matches > 0) {
@@ -436,7 +436,7 @@ CRef<CSeq_align_set> CMagicBlast::x_BuildSeqAlignSet(
             retval->Set().push_back(it);
         }
     }
-    
+
     return retval;
 }
 
@@ -515,7 +515,7 @@ CRef<CMagicBlastResultSet> CMagicBlast::x_BuildResultSet(
 
         retval->push_back(res);
     }
-    
+
     return retval;
 }
 
@@ -555,12 +555,14 @@ void CMagicBlastResults::x_SetInfo(int first_length,
 {
     m_FirstInfo = 0;
     m_LastInfo = 0;
+    m_Concordant = false;
 
     bool first_aligned = false;
     bool last_aligned = false;
 
     if (!m_Paired) {
         first_aligned = !m_Aligns->Get().empty();
+        m_Concordant = true;
     }
     else {
 
@@ -568,6 +570,31 @@ void CMagicBlastResults::x_SetInfo(int first_length,
             if (it->GetSegs().IsDisc()) {
                 first_aligned = true;
                 last_aligned = true;
+
+                const CSeq_align_set::Tdata& sasd =
+                        it->GetSegs().GetDisc().Get();
+                ASSERT(sasd.size() == 2);
+
+                CRef<CSeq_align>   sa_q = sasd.front();
+                ENa_strand str_q = sa_q->GetSeqStrand(0);
+                TSeqPos sp_q     = sa_q->GetSeqStart(1);
+
+                CRef<CSeq_align>   sa_m = sasd.back();
+                ENa_strand str_m = sa_m->GetSeqStrand(0);
+                TSeqPos sp_m     = sa_m->GetSeqStart(1);
+
+                if (str_q == eNa_strand_plus
+                        &&  str_m == eNa_strand_minus) {
+                    if (sp_q <= sp_m) {
+                        m_Concordant = true;
+                    }
+                } else if (str_q == eNa_strand_minus
+                        &&  str_m == eNa_strand_plus) {
+                    if (sp_q >= sp_m) {
+                        m_Concordant = true;
+                    }
+                }
+
                 break;
             }
             else if (it->GetSeq_id(0).Match(*m_QueryId)) {

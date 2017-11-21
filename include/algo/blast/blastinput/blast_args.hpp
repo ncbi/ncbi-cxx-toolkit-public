@@ -56,7 +56,7 @@ BEGIN_SCOPE(blast)
 
 /**
  * BLAST Command line arguments design
- * The idea is to have several small objects (subclasses of IBlastCmdLineArgs) 
+ * The idea is to have several small objects (subclasses of IBlastCmdLineArgs)
  * which can do two things:
  * 1) On creation, add flags/options/etc to a CArgs object
  * 2) When passed in a CBlastOptions object, call the appropriate methods based
@@ -66,9 +66,9 @@ BEGIN_SCOPE(blast)
  * application via some other interface methods.
  *
  * Each command line application will have its own argument class (e.g.:
- * CPsiBlastAppArgs), which will contain several of the aformentioned small 
- * objects. It will create and hold a reference to a CArgs class as well as 
- * a CBlastOptionsHandle object, which will pass to each of its small objects 
+ * CPsiBlastAppArgs), which will contain several of the aformentioned small
+ * objects. It will create and hold a reference to a CArgs class as well as
+ * a CBlastOptionsHandle object, which will pass to each of its small objects
  * aggregated as data members and then return it to the caller (application)
  *
  * Categories of data to extract from command line options
@@ -99,7 +99,7 @@ public:
      * @param options object to which the appropriate options will be set
      * [in|out]
      */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 };
 
@@ -116,7 +116,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
     /** Get the input stream for a command line application */
     CNcbiIstream& GetInputStream() const;
@@ -132,7 +132,7 @@ public:
      */
     void SetGzipEnabled(bool g) {m_GzipEnabled = g;}
 
-    /** enables sra accession flag 
+    /** enables sra accession flag
      * @param g If true "-sra" will be added (not compatible with "-query")
      */
     void SetSRAaccessionEnabled(bool g) {m_SRAaccessionEnabled = g;}
@@ -160,13 +160,13 @@ private:
 class NCBI_BLASTINPUT_EXPORT CProgramDescriptionArgs : public IBlastCmdLineArgs
 {
 public:
-    /** 
+    /**
      * @brief Constructor
-     * 
+     *
      * @param program_name application's name [in]
      * @param program_description application's description [in]
      */
-    CProgramDescriptionArgs(const string& program_name, 
+    CProgramDescriptionArgs(const string& program_name,
                             const string& program_description);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
@@ -180,7 +180,7 @@ protected:
 class NCBI_BLASTINPUT_EXPORT CTaskCmdLineArgs : public IBlastCmdLineArgs
 {
 public:
-    /** Constructor 
+    /** Constructor
      * @param supported_tasks list of supported tasks [in]
      * @param default_task One of the tasks above, to be displayed as
      * default in the command line arguments (cannot be empty or absent from
@@ -191,7 +191,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 private:
     /// Set of supported tasks by this command line argument
@@ -200,17 +200,17 @@ private:
     string m_DefaultTask;
 };
 
-/** Argument class to retrieve and set the window size BLAST algorithm 
+/** Argument class to retrieve and set the window size BLAST algorithm
  * option */
 class NCBI_BLASTINPUT_EXPORT CWindowSizeArg : public IBlastCmdLineArgs
 {
 public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
-    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions 
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions
      * @note this depends on the matrix already being set...
      */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 };
 
@@ -221,29 +221,29 @@ class NCBI_BLASTINPUT_EXPORT COffDiagonalRangeArg : public IBlastCmdLineArgs
 public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
-    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions 
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions
      * @note this depends on the matrix already being set...
      */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 };
 
-/** Argument class to retrieve and set the word threshold BLAST algorithm 
+/** Argument class to retrieve and set the word threshold BLAST algorithm
  * option */
 class NCBI_BLASTINPUT_EXPORT CWordThresholdArg : public IBlastCmdLineArgs
 {
 public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
-    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions 
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions
      * @note this depends on the matrix already being set...
      */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 };
 
-/** RMH: Argument class to retrieve and set the options specific to 
- *       the RMBlastN algorithm 
+/** RMH: Argument class to retrieve and set the options specific to
+ *       the RMBlastN algorithm
  */
 class NCBI_BLASTINPUT_EXPORT CRMBlastNArg : public IBlastCmdLineArgs
 {
@@ -263,20 +263,20 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 };
 
 /** Argument class for general search BLAST algorithm options: evalue, gap
- * penalties, query filter string, ungapped x-drop, initial and final gapped 
+ * penalties, query filter string, ungapped x-drop, initial and final gapped
  * x-drop, word size, percent identity, and effective search space.
  */
 class NCBI_BLASTINPUT_EXPORT CGenericSearchArgs : public IBlastCmdLineArgs
 {
 public:
-    /** 
+    /**
      * @brief Constructor
-     * 
+     *
      * @param query_is_protein is the query sequence(s) protein? [in]
      * @param is_rpsblast is it RPS-BLAST? [in]
      * @param show_perc_identity should the percent identity be shown?
@@ -289,11 +289,11 @@ public:
         : m_QueryIsProtein(query_is_protein), m_IsRpsBlast(is_rpsblast),
           m_ShowPercentIdentity(show_perc_identity), m_IsTblastx(is_tblastx),
           m_IsIgBlast(is_igblast) {}
-         
+
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 private:
     bool m_QueryIsProtein;  /**< true if the query is protein */
@@ -308,29 +308,29 @@ private:
 class NCBI_BLASTINPUT_EXPORT CFilteringArgs : public IBlastCmdLineArgs
 {
 public:
-    /** 
+    /**
      * @brief Constructor
-     * 
+     *
      * @param query_is_protein is the query sequence(s) protein? [in]
      * @param filter_by_default should filtering be applied by default? [in]
      */
     CFilteringArgs(bool query_is_protein = true,
                    bool filter_by_default = true)
-        : m_QueryIsProtein(query_is_protein), 
+        : m_QueryIsProtein(query_is_protein),
           m_FilterByDefault(filter_by_default) {}
 
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 private:
     bool m_QueryIsProtein;  /**< true if the query is protein */
     bool m_FilterByDefault; /**< Should filtering be applied by default? */
 
-    /** 
+    /**
      * @brief Auxiliary method to tokenize the filtering string.
-     * 
+     *
      * @param filtering_args string to tokenize [in]
      * @param output vector with tokens [in|out]
      */
@@ -346,7 +346,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 };
 
@@ -357,7 +357,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 
     /// Value to specify coding template type
@@ -389,7 +389,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 
 protected:
@@ -408,7 +408,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 };
 
@@ -419,7 +419,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 };
 
@@ -430,7 +430,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 };
 
@@ -445,9 +445,9 @@ public:
     };
 
 
-    /** 
+    /**
      * @brief Constructor
-     * 
+     *
      * @param t genetic code target (query or database)
      */
     CGeneticCodeArgs(ETarget t) : m_Target(t) {};
@@ -455,7 +455,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 
 private:
@@ -466,17 +466,17 @@ private:
 class NCBI_BLASTINPUT_EXPORT CGapTriggerArgs : public IBlastCmdLineArgs
 {
 public:
-    /** 
+    /**
      * @brief Constructor
-     * 
+     *
      * @param query_is_protein is the query sequence(s) protein?
      */
-    CGapTriggerArgs(bool query_is_protein) 
+    CGapTriggerArgs(bool query_is_protein)
         : m_QueryIsProtein(query_is_protein) {}
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 private:
     bool m_QueryIsProtein;  /**< true if the query is protein */
@@ -494,7 +494,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 
 private:
@@ -509,7 +509,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 
     /// Get the input stream for the search strategy
@@ -528,14 +528,14 @@ public:
         eNucleotideDb       ///< PSI-Tblastn, non-iterated
     };
 
-    /** 
+    /**
      * @brief Constructor
-     * 
+     *
      * @param db_target Molecule type of the database
      * @param is_deltablast Are the aruments set up for Delta Blast
      */
     CPsiBlastArgs(ETargetDatabase db_target = eProteinDb,
-                  bool is_deltablast = false) 
+                  bool is_deltablast = false)
         : m_DbTarget(db_target), m_NumIterations(1),
           m_CheckPointOutput(0), m_AsciiMatrixOutput(0),
           m_IsDeltaBlast(is_deltablast),
@@ -548,12 +548,12 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 
     /// Retrieve the number of iterations to perform
-    size_t GetNumberOfIterations() const { 
-        return m_NumIterations; 
+    size_t GetNumberOfIterations() const {
+        return m_NumIterations;
     }
 
     /// Retrieve the number of iterations to perform
@@ -625,7 +625,7 @@ private:
     /// Auxiliary function to create a PSSM from a multiple sequence alignment
     /// file
     CRef<objects::CPssmWithParameters>
-    x_CreatePssmFromMsa(CNcbiIstream& input_stream, CBlastOptions& opt, 
+    x_CreatePssmFromMsa(CNcbiIstream& input_stream, CBlastOptions& opt,
                         bool save_ascii_pssm, unsigned int msa_master_idx,
                         bool ignore_pssm_tmpl_seq);
 };
@@ -637,7 +637,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 };
 
@@ -655,10 +655,10 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 
-    
+
     /// Get the Jaccard distance
     double GetJaccardDistance(void) { return m_JDistance;}
 
@@ -704,7 +704,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 
     /// Get domain database
@@ -738,7 +738,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 
 };
@@ -750,14 +750,14 @@ public:
 class NCBI_BLASTINPUT_EXPORT CQueryOptionsArgs : public IBlastCmdLineArgs
 {
 public:
-    /** 
+    /**
      * @brief Constructor
-     * 
+     *
      * @param query_cannot_be_nucl can the query not be nucleotide?
      */
     CQueryOptionsArgs(bool query_cannot_be_nucl = false)
         : m_Strand(objects::eNa_strand_unknown), m_Range(),
-        m_UseLCaseMask(kDfltArgUseLCaseMasking), 
+        m_UseLCaseMask(kDfltArgUseLCaseMasking),
         m_ParseDeflines(kDfltArgParseDeflines),
         m_QueryCannotBeNucl(query_cannot_be_nucl)
     {};
@@ -765,7 +765,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 
     /// Get query sequence range restriction
@@ -882,7 +882,7 @@ public:
     /// @param is_rpsblast is it RPS-BLAST?
     /// @param is_igblast is it IG-BLAST?
     /// @param is_deltablast is it DELTA-BLAST?
-    CBlastDatabaseArgs(bool request_mol_type = false, 
+    CBlastDatabaseArgs(bool request_mol_type = false,
                        bool is_rpsblast = false,
                        bool is_igblast = false,
                        bool is_mapper = false,
@@ -890,7 +890,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& args,
                                          CBlastOptions& opts);
 
     /// Turns on/off database masking support
@@ -904,8 +904,8 @@ public:
     /// Get the BLAST database name
     /// @return empty string in the case of BLAST2Sequences, otherwise the
     /// BLAST database name
-    string GetDatabaseName() const { 
-        return m_SearchDb.Empty() ? kEmptyStr : m_SearchDb->GetDatabaseName(); 
+    string GetDatabaseName() const {
+        return m_SearchDb.Empty() ? kEmptyStr : m_SearchDb->GetDatabaseName();
     }
 
     /// Retrieve the search database information
@@ -934,11 +934,11 @@ public:
     CRef<IQueryFactory> GetSubjects(objects::CScope* scope = NULL) {
         if (m_Subjects && scope) {
             // m_Scope contains the subject(s) read
-            _ASSERT(m_Scope.NotEmpty()); 
+            _ASSERT(m_Scope.NotEmpty());
             // Add the scope with a lower priority to avoid conflicts
             scope->AddScope(*m_Scope, kSubjectsDataLoaderPriority);
         }
-        return m_Subjects; 
+        return m_Subjects;
     }
 
 protected:
@@ -968,7 +968,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 
     CRef<CIgBlastOptions> GetIgBlastOptions() { return m_IgOptions; }
@@ -977,7 +977,7 @@ public:
 
         if (m_Scope.NotEmpty()) {
             // Add the scope with a lower priority to avoid conflicts
-            scope->AddScope(*m_Scope, 
+            scope->AddScope(*m_Scope,
                   CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
         }
     }
@@ -991,7 +991,7 @@ private:
     CRef<objects::CScope> m_Scope;
 };
 
-/// Argument class to collect formatting options, use this to create a 
+/// Argument class to collect formatting options, use this to create a
 /// CBlastFormat object.
 /// @note This object is also needed to set the maximum number of target
 /// sequences to save (hitlist size)
@@ -1001,7 +1001,7 @@ public:
     /// Defines the output formats supported by our command line formatter
     enum EOutputFormat {
         /// Standard pairwise alignments
-        ePairwise = 0,                  
+        ePairwise = 0,
         ///< Query anchored showing identities
         eQueryAnchoredIdentities,
         ///< Query anchored no identities
@@ -1053,7 +1053,7 @@ public:
     };
     /// Default constructor
     CFormattingArgs(bool isIgblast = false, EFormatFlags flag = eDefaultFlag)
-        : m_OutputFormat(ePairwise), m_ShowGis(false), 
+        : m_OutputFormat(ePairwise), m_ShowGis(false),
         m_NumDescriptions(0), m_NumAlignments(0),
         m_DfltNumDescriptions(0), m_DfltNumAlignments(0),
         m_Html(false),
@@ -1072,7 +1072,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& args,
                                          CBlastOptions& opts);
 
     /// Parses the output format command line option value, returns the
@@ -1097,7 +1097,7 @@ public:
     /// determine whether to print or not that a PSI-BLAST search has
     /// converged - this is not supported in structured formats)
     bool HasStructuredOutputFormat() const {
-        return m_OutputFormat == eXml || 
+        return m_OutputFormat == eXml ||
             m_OutputFormat == eAsnText ||
             m_OutputFormat == eAsnBinary ||
             m_OutputFormat == eXml2 ||
@@ -1127,8 +1127,8 @@ public:
 
     /// Retrieve for string that specifies the custom output format for tabular
     /// and comma-separated value
-    string GetCustomOutputFormatSpec() const { 
-        return m_CustomOutputFormatSpec; 
+    string GetCustomOutputFormatSpec() const {
+        return m_CustomOutputFormatSpec;
     }
 
     virtual bool ArchiveFormatRequested(const CArgs& args) const;
@@ -1158,8 +1158,11 @@ class NCBI_BLASTINPUT_EXPORT CMapperFormattingArgs : public CFormattingArgs
 {
 public:
 
-    CMapperFormattingArgs(void) : CFormattingArgs(), m_TrimReadIds(true),
-                                  m_PrintUnaligned(true) {}
+    CMapperFormattingArgs(void) :
+        CFormattingArgs(),
+        m_TrimReadIds(true),
+        m_PrintUnaligned(true),
+        m_NoDiscordant(false) {}
 
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
 
@@ -1179,6 +1182,7 @@ public:
 private:
     bool m_TrimReadIds;
     bool m_PrintUnaligned;
+    bool m_NoDiscordant;
 };
 
 /// Argument class to collect multi-threaded arguments
@@ -1197,7 +1201,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 
     /// Get the number of threads to spawn
@@ -1215,7 +1219,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 
     /// Return whether the search should be executed remotely or not
@@ -1236,7 +1240,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
 
     /// Return whether debug (verbose) output should be produced on remote
@@ -1261,7 +1265,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& args,
                                          CBlastOptions& opts);
 };
 
@@ -1272,7 +1276,7 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& args, 
+    virtual void ExtractAlgorithmOptions(const CArgs& args,
                                          CBlastOptions& opts);
 
     /// Auxiliary function to determine if the megablast database indexing
@@ -1376,13 +1380,13 @@ public:
 
     /// Return whether debug (verbose) output should be produced on remote
     /// searches (only available when compiled with _DEBUG)
-    bool ProduceDebugRemoteOutput() const { 
+    bool ProduceDebugRemoteOutput() const {
         return m_DebugArgs->ProduceDebugRemoteOutput();
     }
 
     /// Return whether debug (verbose) output should be produced on remote
     /// searches (only available when compiled with _DEBUG)
-    bool ProduceDebugOutput() const { 
+    bool ProduceDebugOutput() const {
         return m_DebugArgs->ProduceDebugOutput();
     }
 
@@ -1435,7 +1439,7 @@ protected:
     x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
                           const CArgs& args) = 0;
 
-    /** Creates the BLAST options handle based on the task argument 
+    /** Creates the BLAST options handle based on the task argument
      * @param locality whether the search will be executed locally or remotely [in]
      * @param task program-specific BLAST named parameter set [in]
      */
@@ -1448,16 +1452,16 @@ protected:
     void x_IssueWarningsForIgnoredOptions(const CArgs& args);
 };
 
-/** 
+/**
  * @brief Create a CArgDescriptions object and invoke SetArgumentDescriptions
  * for each of the TBlastCmdLineArgs in its argument list
- * 
+ *
  * @param args arguments to configure the return value [in]
- * 
+ *
  * @return a CArgDescriptions object with the command line options set
  */
 NCBI_BLASTINPUT_EXPORT
-CArgDescriptions* 
+CArgDescriptions*
 SetUpCommandLineArguments(TBlastCmdLineArgs& args);
 
 END_SCOPE(blast)

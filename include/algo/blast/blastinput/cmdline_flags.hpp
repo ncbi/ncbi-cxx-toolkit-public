@@ -116,7 +116,7 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgEvalue;
 NCBI_BLASTINPUT_EXPORT extern const string kArgMinRawGappedScore;
 
 /// Argument to specify the maximum number of target sequences to keep (a.k.a.:
-/// hitlist size) 
+/// hitlist size)
 /// If not set in the command line, this value is the maximum of the number of
 /// alignments/descriptions to show in the traditional BLAST report
 NCBI_BLASTINPUT_EXPORT extern const string kArgMaxTargetSequences;
@@ -326,6 +326,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgNoGreedyExtension;
 NCBI_BLASTINPUT_EXPORT extern const string kArgDMBTemplateType;
 /// Argument to specify the discontinuous megablast template length
 NCBI_BLASTINPUT_EXPORT extern const string kArgDMBTemplateLength;
+/// Argument to specify if non-concordant pairs should be displayed
+NCBI_BLASTINPUT_EXPORT extern const string kArgNoDiscordant;
 
 /// Argument to specify the maximum number of HPSs to save per subject for each query
 NCBI_BLASTINPUT_EXPORT extern const string kArgMaxHSPsPerSubject;
@@ -337,7 +339,7 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgPercentIdentity;
 /// Argument to specify the search strategy file to read and use for a BLAST
 /// search
 NCBI_BLASTINPUT_EXPORT extern const string kArgInputSearchStrategy;
-/// Argument to specify the file name to save the search strategy used for a 
+/// Argument to specify the file name to save the search strategy used for a
 /// BLAST search
 NCBI_BLASTINPUT_EXPORT extern const string kArgOutputSearchStrategy;
 /// Flag to force using or not using megablast database index.

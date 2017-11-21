@@ -60,7 +60,7 @@ public:
 
 public:
     /// Constructor to map short reads as queries to a genome as BLAST database
-    /// @param query_factory 
+    /// @param query_factory
     ///     Short reads sequence to map [in]
     /// @param blastdb
     ///     Adapter to the BLAST database [in]
@@ -100,7 +100,7 @@ protected:
     CRef<CMagicBlastResultSet> x_BuildResultSet(
                                       const BlastMappingResults* results);
 
-    
+
     /// Create results
     static CRef<CSeq_align_set> x_CreateSeqAlignSet(const HSPChain* results,
                                            CRef<ILocalQueryData> qdata,
@@ -168,6 +168,9 @@ public:
     /// Are alignments computed for paired reads
     bool IsPaired(void) const {return m_Paired;}
 
+    /// Are an aligned pair concordant?
+    bool IsConcordant(void) const {return m_Concordant;}
+
     /// Get alignment flags for the query
     TResultsInfo GetFirstInfo(void) const {return m_FirstInfo;}
 
@@ -195,7 +198,6 @@ private:
                    int last_length = 0,
                    const TMaskedQueryRegions* last_masks = NULL);
 
-
 private:
     /// Query id
     CConstRef<CSeq_id> m_QueryId;
@@ -208,6 +210,9 @@ private:
 
     /// True if results are for paired reads
     bool m_Paired;
+
+    /// True if results are concordant pair
+    bool m_Concordant;
 
     /// Alignment flags for the query
     TResultsInfo m_FirstInfo;
@@ -245,7 +250,7 @@ public:
 
     /// Is the container empty
     bool empty() const {return size() == 0;}
-    
+
     /// Returns const iteartor to the beginning of the container,
     /// provided to facilitate STL-style iteartion
     const_iterator begin() const {return m_Results.begin();}

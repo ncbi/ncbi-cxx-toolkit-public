@@ -121,11 +121,64 @@ BOOST_AUTO_TEST_CASE(MappingNonMatch)
     CRef<CLocalDbAdapter> db_adapter(new CLocalDbAdapter(*m_Db));
     m_OptHandle->SetMismatchPenalty(-8);
     m_OptHandle->SetGapExtensionCost(8);
+    m_OptHandle->SetPaired(true);
     CMagicBlast magicblast(query_factory, db_adapter, m_OptHandle);
     CRef<CMagicBlastResultSet> results = magicblast.RunEx();
 
     const size_t kExpectedNumResults = 1;
     BOOST_REQUIRE_EQUAL(results->size(), kExpectedNumResults);
+}
+
+
+BOOST_AUTO_TEST_CASE(MappingAllConcordant)
+{
+    ifstream istr("data/magicblast_concordant.asn");
+    BOOST_REQUIRE(istr);
+    istr >> MSerial_AsnText >> *m_Queries;
+
+    CRef<IQueryFactory> query_factory(new CObjMgrFree_QueryFactory(m_Queries));
+    CRef<CLocalDbAdapter> db_adapter(new CLocalDbAdapter(*m_Db));
+    m_OptHandle->SetMismatchPenalty(-8);
+    m_OptHandle->SetGapExtensionCost(8);
+    m_OptHandle->SetPaired(true);
+    CMagicBlast magicblast(query_factory, db_adapter, m_OptHandle);
+    CRef<CMagicBlastResultSet> results = magicblast.RunEx();
+    
+    const size_t kExpectedNumResults = 3;
+    const size_t kExpectedConcordant = 3;
+    BOOST_REQUIRE_EQUAL(results->size(), kExpectedNumResults);
+    size_t count = 0;
+    for (auto r = results->begin(); r != results->end(); ++r) {
+        CRef<CMagicBlastResults> re = *r;
+        if (re->IsConcordant()) ++count;
+    }
+    BOOST_REQUIRE_EQUAL(count, kExpectedConcordant);
+}
+
+
+BOOST_AUTO_TEST_CASE(MappingAllDiscordant)
+{
+    ifstream istr("data/magicblast_discordant.asn");
+    BOOST_REQUIRE(istr);
+    istr >> MSerial_AsnText >> *m_Queries;
+
+    CRef<IQueryFactory> query_factory(new CObjMgrFree_QueryFactory(m_Queries));
+    CRef<CLocalDbAdapter> db_adapter(new CLocalDbAdapter(*m_Db));
+    m_OptHandle->SetMismatchPenalty(-8);
+    m_OptHandle->SetGapExtensionCost(8);
+    m_OptHandle->SetPaired(true);
+    CMagicBlast magicblast(query_factory, db_adapter, m_OptHandle);
+    CRef<CMagicBlastResultSet> results = magicblast.RunEx();
+    
+    const size_t kExpectedNumResults = 4;
+    const size_t kExpectedDiscordant = 4;
+    BOOST_REQUIRE_EQUAL(results->size(), kExpectedNumResults);
+    size_t count = 0;
+    for (auto r = results->begin(); r != results->end(); ++r) {
+        CRef<CMagicBlastResults> re = *r;
+        if (!re->IsConcordant()) ++count;
+    }
+    BOOST_REQUIRE_EQUAL(count, kExpectedDiscordant);
 }
 
 

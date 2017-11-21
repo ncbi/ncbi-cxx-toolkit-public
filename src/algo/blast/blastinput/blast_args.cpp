@@ -64,7 +64,7 @@ IBlastCmdLineArgs::ExtractAlgorithmOptions(const CArgs& /* cmd_line_args */,
                                            CBlastOptions& /* options */)
 {}
 
-CProgramDescriptionArgs::CProgramDescriptionArgs(const string& program_name, 
+CProgramDescriptionArgs::CProgramDescriptionArgs(const string& program_name,
                                                  const string& program_desc)
     : m_ProgName(program_name), m_ProgDesc(program_desc)
 {}
@@ -73,7 +73,7 @@ void
 CProgramDescriptionArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     // program description
-    arg_desc.SetUsageContext(m_ProgName, m_ProgDesc + " " + 
+    arg_desc.SetUsageContext(m_ProgName, m_ProgDesc + " " +
                              CBlastVersion().Print());
 }
 
@@ -92,7 +92,7 @@ CTaskCmdLineArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("General search options");
     if ( !m_DefaultTask.empty() ) {
-        arg_desc.AddDefaultKey(kTask, "task_name", "Task to execute", 
+        arg_desc.AddDefaultKey(kTask, "task_name", "Task to execute",
                                CArgDescriptions::eString, m_DefaultTask);
     } else {
         arg_desc.AddKey(kTask, "task_name", "Task to execute",
@@ -100,7 +100,7 @@ CTaskCmdLineArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     }
     arg_desc.SetConstraint(kTask, new CArgAllowStringSet(m_SupportedTasks));
     arg_desc.SetCurrentGroup("");
-   
+
 }
 
 void
@@ -118,18 +118,18 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     // evalue cutoff
     if (!m_IsIgBlast) {
-        arg_desc.AddDefaultKey(kArgEvalue, "evalue", 
+        arg_desc.AddDefaultKey(kArgEvalue, "evalue",
                      "Expectation value (E) threshold for saving hits ",
                      CArgDescriptions::eDouble,
                      NStr::DoubleToString(BLAST_EXPECT_VALUE));
     } else if (m_QueryIsProtein) {
-        arg_desc.AddDefaultKey(kArgEvalue, "evalue", 
+        arg_desc.AddDefaultKey(kArgEvalue, "evalue",
                      "Expectation value (E) threshold for saving hits ",
                      CArgDescriptions::eDouble,
                      NStr::DoubleToString(1.0));
     } else {
         //igblastn
-        arg_desc.AddDefaultKey(kArgEvalue, "evalue", 
+        arg_desc.AddDefaultKey(kArgEvalue, "evalue",
                      "Expectation value (E) threshold for saving hits ",
                      CArgDescriptions::eDouble,
                      NStr::DoubleToString(20.0));
@@ -150,13 +150,13 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     if ( !m_IsRpsBlast && !m_IsTblastx) {
         // gap open penalty
-        arg_desc.AddOptionalKey(kArgGapOpen, "open_penalty", 
-                                "Cost to open a gap", 
+        arg_desc.AddOptionalKey(kArgGapOpen, "open_penalty",
+                                "Cost to open a gap",
                                 CArgDescriptions::eInteger);
 
         // gap extend penalty
         arg_desc.AddOptionalKey(kArgGapExtend, "extend_penalty",
-                               "Cost to extend a gap", 
+                               "Cost to extend a gap",
                                CArgDescriptions::eInteger);
     }
 
@@ -186,7 +186,7 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("Extension options");
     // ungapped X-drop
     // Default values: blastn=20, megablast=10, others=7
-    arg_desc.AddOptionalKey(kArgUngappedXDropoff, "float_value", 
+    arg_desc.AddOptionalKey(kArgUngappedXDropoff, "float_value",
                             "X-dropoff value (in bits) for ungapped extensions",
                             CArgDescriptions::eDouble);
 
@@ -194,13 +194,13 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     if (!m_IsTblastx) {
          // initial gapped X-drop
          // Default values: blastn=30, megablast=20, tblastx=0, others=15
-         arg_desc.AddOptionalKey(kArgGappedXDropoff, "float_value", 
+         arg_desc.AddOptionalKey(kArgGappedXDropoff, "float_value",
                  "X-dropoff value (in bits) for preliminary gapped extensions",
                  CArgDescriptions::eDouble);
 
          // final gapped X-drop
          // Default values: blastn/megablast=50, tblastx=0, others=25
-         arg_desc.AddOptionalKey(kArgFinalGappedXDropoff, "float_value", 
+         arg_desc.AddOptionalKey(kArgFinalGappedXDropoff, "float_value",
                          "X-dropoff value (in bits) for final gapped alignment",
                          CArgDescriptions::eDouble);
     }
@@ -208,10 +208,10 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("Statistical options");
     // effective search space
     // Default value is the real size
-    arg_desc.AddOptionalKey(kArgEffSearchSpace, "int_value", 
+    arg_desc.AddOptionalKey(kArgEffSearchSpace, "int_value",
                             "Effective length of the search space",
                             CArgDescriptions::eInt8);
-    arg_desc.SetConstraint(kArgEffSearchSpace, 
+    arg_desc.SetConstraint(kArgEffSearchSpace,
                            new CArgAllowValuesGreaterThanOrEqual(0));
 
     arg_desc.AddOptionalKey(kArgSumStats, "bool_value",
@@ -222,7 +222,7 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 }
 
 void
-CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args, 
+CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
                                             CBlastOptions& opt)
 {
     if (args.Exist(kArgEvalue) && args[kArgEvalue]) {
@@ -309,7 +309,7 @@ CFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     } else {
         arg_desc.AddDefaultKey(kArgDustFiltering, "DUST_options",
                         "Filter query sequence with DUST "
-                        "(Format: '" + kDfltArgApplyFiltering + "', " + 
+                        "(Format: '" + kDfltArgApplyFiltering + "', " +
                         "'level window linker', or '" + kDfltArgNoFiltering +
                         "' to disable)",
                         CArgDescriptions::eString, m_FilterByDefault
@@ -317,7 +317,7 @@ CFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.AddOptionalKey(kArgFilteringDb, "filtering_database",
                 "BLAST database containing filtering elements (i.e.: repeats)",
                 CArgDescriptions::eString);
-        
+
         arg_desc.AddOptionalKey(kArgWindowMaskerTaxId, "window_masker_taxid",
                 "Enable WindowMasker filtering using a Taxonomic ID",
                 CArgDescriptions::eInteger);
@@ -335,8 +335,8 @@ CFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("");
 }
 
-void 
-CFilteringArgs::x_TokenizeFilteringArgs(const string& filtering_args, 
+void
+CFilteringArgs::x_TokenizeFilteringArgs(const string& filtering_args,
                                         vector<string>& output) const
 {
     output.clear();
@@ -390,23 +390,23 @@ CFilteringArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt)
                        "Invalid input for filtering parameters");
         }
     }
-    
+
     int filter_dbs = 0;
-    
+
     if (args.Exist(kArgFilteringDb) && args[kArgFilteringDb]) {
         opt.SetRepeatFilteringDB(args[kArgFilteringDb].AsString().c_str());
         filter_dbs++;
     }
-    
+
     if (args.Exist(kArgWindowMaskerTaxId) &&
         args[kArgWindowMaskerTaxId]) {
-        
+
         opt.SetWindowMaskerTaxId
             (args[kArgWindowMaskerTaxId].AsInteger());
-        
+
         filter_dbs++;
     }
-    
+
     if (args.Exist(kArgWindowMaskerDatabase) &&
         args[kArgWindowMaskerDatabase]) {
         const string& stat_file = args[kArgWindowMaskerDatabase].AsString();
@@ -417,16 +417,16 @@ CFilteringArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt)
             string msg("Only optimized binary windowmasker stat files are supported");
             NCBI_THROW(CInputException, eInvalidInput, msg);
         }
-        
+
         opt.SetWindowMaskerDatabase(stat_file.c_str());
         filter_dbs++;
     }
-    
+
     if (filter_dbs > 1) {
         string msg =
             string("Please specify at most one of ") + kArgFilteringDb + ", " +
             kArgWindowMaskerTaxId + ", or " + kArgWindowMaskerDatabase + ".";
-        
+
         NCBI_THROW(CInputException, eInvalidInput, msg);
     }
 }
@@ -436,11 +436,11 @@ CWindowSizeArg::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("Extension options");
     // 2-hit wordfinder window size
-    arg_desc.AddOptionalKey(kArgWindowSize, "int_value", 
+    arg_desc.AddOptionalKey(kArgWindowSize, "int_value",
                             "Multiple hits window size, use 0 to specify "
                             "1-hit algorithm",
                             CArgDescriptions::eInteger);
-    arg_desc.SetConstraint(kArgWindowSize, 
+    arg_desc.SetConstraint(kArgWindowSize,
                            new CArgAllowValuesGreaterThanOrEqual(0));
     arg_desc.SetCurrentGroup("");
 }
@@ -452,8 +452,8 @@ CWindowSizeArg::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt)
         opt.SetWindowSize(args[kArgWindowSize].AsInteger());
     } else {
         int window = -1;
-        BLAST_GetSuggestedWindowSize(opt.GetProgramType(), 
-                                     opt.GetMatrixName(), 
+        BLAST_GetSuggestedWindowSize(opt.GetProgramType(),
+                                     opt.GetMatrixName(),
                                      &window);
         if (window != -1) {
             opt.SetWindowSize(window);
@@ -466,12 +466,12 @@ COffDiagonalRangeArg::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("Extension options");
     // 2-hit wordfinder off diagonal range
-    arg_desc.AddDefaultKey(kArgOffDiagonalRange, "int_value", 
+    arg_desc.AddDefaultKey(kArgOffDiagonalRange, "int_value",
                             "Number of off-diagonals to search for the 2nd hit, "
                             "use 0 to turn off",
                             CArgDescriptions::eInteger,
                             NStr::IntToString(kDfltOffDiagonalRange));
-    arg_desc.SetConstraint(kArgOffDiagonalRange, 
+    arg_desc.SetConstraint(kArgOffDiagonalRange,
                            new CArgAllowValuesGreaterThanOrEqual(0));
     arg_desc.SetCurrentGroup("");
 }
@@ -539,11 +539,11 @@ CWordThresholdArg::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("General search options");
     // lookup table word score threshold
-    arg_desc.AddOptionalKey(kArgWordScoreThreshold, "float_value", 
+    arg_desc.AddOptionalKey(kArgWordScoreThreshold, "float_value",
                  "Minimum word score such that the word is added to the "
                  "BLAST lookup table",
                  CArgDescriptions::eDouble);
-    arg_desc.SetConstraint(kArgWordScoreThreshold, 
+    arg_desc.SetConstraint(kArgWordScoreThreshold,
                            new CArgAllowValuesGreaterThanOrEqual(0));
     arg_desc.SetCurrentGroup("");
 }
@@ -567,7 +567,7 @@ s_IsDefaultWordThreshold(EProgram program, double threshold)
 }
 
 void
-CWordThresholdArg::ExtractAlgorithmOptions(const CArgs& args, 
+CWordThresholdArg::ExtractAlgorithmOptions(const CArgs& args,
                                            CBlastOptions& opt)
 {
     if (args[kArgWordScoreThreshold]) {
@@ -590,7 +590,7 @@ CMatrixNameArg::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("General search options");
     arg_desc.AddOptionalKey(kArgMatrixName, "matrix_name",
                            "Scoring matrix name (normally BLOSUM62)",
-                           CArgDescriptions::eString); 
+                           CArgDescriptions::eString);
     arg_desc.SetCurrentGroup("");
 }
 
@@ -609,17 +609,17 @@ CNuclArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     arg_desc.SetCurrentGroup("General search options");
     // blastn mismatch penalty
-    arg_desc.AddOptionalKey(kArgMismatch, "penalty", 
-                           "Penalty for a nucleotide mismatch", 
+    arg_desc.AddOptionalKey(kArgMismatch, "penalty",
+                           "Penalty for a nucleotide mismatch",
                            CArgDescriptions::eInteger);
-    arg_desc.SetConstraint(kArgMismatch, 
+    arg_desc.SetConstraint(kArgMismatch,
                            new CArgAllowValuesLessThanOrEqual(0));
 
     // blastn match reward
-    arg_desc.AddOptionalKey(kArgMatch, "reward", 
-                           "Reward for a nucleotide match", 
-                           CArgDescriptions::eInteger); 
-    arg_desc.SetConstraint(kArgMatch, 
+    arg_desc.AddOptionalKey(kArgMatch, "reward",
+                           "Reward for a nucleotide match",
+                           CArgDescriptions::eInteger);
+    arg_desc.SetConstraint(kArgMatch,
                            new CArgAllowValuesGreaterThanOrEqual(0));
 
 
@@ -651,7 +651,7 @@ CNuclArgs::ExtractAlgorithmOptions(const CArgs& cmd_line_args,
 
 const string CDiscontiguousMegablastArgs::kTemplType_Coding("coding");
 const string CDiscontiguousMegablastArgs::kTemplType_Optimal("optimal");
-const string 
+const string
 CDiscontiguousMegablastArgs::kTemplType_CodingAndOptimal("coding_and_optimal");
 
 void
@@ -659,7 +659,7 @@ CDiscontiguousMegablastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("Extension options");
     // FIXME: this can be applied to any program, but since it was only offered
-    // in megablast, we're putting it here 
+    // in megablast, we're putting it here
     arg_desc.AddOptionalKey(kArgMinRawGappedScore, "int_value",
                             "Minimum raw gapped score to keep an alignment "
                             "in the preliminary gapped and traceback stages",
@@ -667,10 +667,10 @@ CDiscontiguousMegablastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     arg_desc.SetCurrentGroup("Discontiguous MegaBLAST options");
 
-    arg_desc.AddOptionalKey(kArgDMBTemplateType, "type", 
+    arg_desc.AddOptionalKey(kArgDMBTemplateType, "type",
                  "Discontiguous MegaBLAST template type",
                  CArgDescriptions::eString);
-    arg_desc.SetConstraint(kArgDMBTemplateType, &(*new CArgAllow_Strings, 
+    arg_desc.SetConstraint(kArgDMBTemplateType, &(*new CArgAllow_Strings,
                                                   kTemplType_Coding,
                                                   kTemplType_Optimal,
                                                   kTemplType_CodingAndOptimal));
@@ -678,14 +678,14 @@ CDiscontiguousMegablastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            CArgDescriptions::eRequires,
                            kArgDMBTemplateLength);
 
-    arg_desc.AddOptionalKey(kArgDMBTemplateLength, "int_value", 
+    arg_desc.AddOptionalKey(kArgDMBTemplateLength, "int_value",
                  "Discontiguous MegaBLAST template length",
                  CArgDescriptions::eInteger);
     set<int> allowed_values;
     allowed_values.insert(16);
     allowed_values.insert(18);
     allowed_values.insert(21);
-    arg_desc.SetConstraint(kArgDMBTemplateLength, 
+    arg_desc.SetConstraint(kArgDMBTemplateLength,
                            new CArgAllowIntegerSet(allowed_values));
     arg_desc.SetDependency(kArgDMBTemplateLength,
                            CArgDescriptions::eRequires,
@@ -719,7 +719,7 @@ CDiscontiguousMegablastArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
 
     if (args[kArgDMBTemplateLength]) {
-        unsigned char tlen = 
+        unsigned char tlen =
             static_cast<unsigned char>(args[kArgDMBTemplateLength].AsInteger());
         options.SetMBTemplateLength(tlen);
     }
@@ -740,7 +740,7 @@ CCompositionBasedStatsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     string one_opt_insrt = m_Is2and3Supported ? "" : " or T or t";
 
-    string more_opts = m_Is2and3Supported ? 
+    string more_opts = m_Is2and3Supported ?
         "    2 or T or t : Composition-based score adjustment as in "
         "Bioinformatics 21:902-911,\n"
         "    2005, conditioned on sequence properties\n"
@@ -763,16 +763,16 @@ CCompositionBasedStatsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     // Use Smith-Waterman algorithm in traceback stage
     // FIXME: available only for gapped blastp/tblastn, and with
     // composition-based statistics
-    arg_desc.AddFlag(kArgUseSWTraceback, 
+    arg_desc.AddFlag(kArgUseSWTraceback,
                      "Compute locally optimal Smith-Waterman alignments?",
                      true);
     arg_desc.SetCurrentGroup("");
 }
 
-/** 
+/**
  * @brief Auxiliary function to set the composition based statistics and smith
  * waterman options
- * 
+ *
  * @param opt BLAST options object [in|out]
  * @param comp_stat_string command line value for composition based statistics
  * [in]
@@ -790,13 +790,13 @@ s_SetCompositionBasedStats(CBlastOptions& opt,
                            bool* ungapped)
 {
     const EProgram program = opt.GetProgram();
-    if (program == eBlastp || program == eTblastn || 
+    if (program == eBlastp || program == eTblastn ||
         program == ePSIBlast || program == ePSITblastn ||
         program == eRPSBlast || program == eRPSTblastn ||
         program == eBlastx  ||  program == eDeltaBlast) {
 
         ECompoAdjustModes compo_mode = eNoCompositionBasedStats;
-    
+
         switch (comp_stat_string[0]) {
             case '0': case 'F': case 'f':
                 compo_mode = eNoCompositionBasedStats;
@@ -825,14 +825,14 @@ s_SetCompositionBasedStats(CBlastOptions& opt,
                 compo_mode = (program == eRPSBlast || program == eRPSTblastn || program == eDeltaBlast) ?
                     eCompositionBasedStats : eCompositionMatrixAdjust;
                 break;
-        } 
+        }
 
         if(program == ePSITblastn) {
             compo_mode = eNoCompositionBasedStats;
         }
 
         if (ungapped && *ungapped && compo_mode != eNoCompositionBasedStats) {
-            NCBI_THROW(CInputException, eInvalidInput, 
+            NCBI_THROW(CInputException, eInvalidInput,
                        "Composition-adjusted searched are not supported with "
                        "an ungapped search, please add -comp_based_stats F or "
                        "do a gapped search");
@@ -853,9 +853,9 @@ CCompositionBasedStatsArgs::ExtractAlgorithmOptions(const CArgs& args,
                                                     CBlastOptions& opt)
 {
     if (args[kArgCompBasedStats]) {
-        auto_ptr<bool> ungapped(args.Exist(kArgUngapped) 
+        auto_ptr<bool> ungapped(args.Exist(kArgUngapped)
             ? new bool(args[kArgUngapped]) : 0);
-        s_SetCompositionBasedStats(opt, 
+        s_SetCompositionBasedStats(opt,
                                    args[kArgCompBasedStats].AsString(),
                                    args[kArgUseSWTraceback],
                                    ungapped.get());
@@ -868,7 +868,7 @@ CGappedArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     // perform gapped search
 #if 0
-    arg_desc.AddOptionalKey(ARG_GAPPED, "gapped", 
+    arg_desc.AddOptionalKey(ARG_GAPPED, "gapped",
                  "Perform gapped alignment (default T, but "
                  "not available for tblastx)",
                  CArgDescriptions::eBoolean,
@@ -896,7 +896,7 @@ CLargestIntronSizeArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("General search options");
     // largest intron length
-    arg_desc.AddDefaultKey(kArgMaxIntronLength, "length", 
+    arg_desc.AddDefaultKey(kArgMaxIntronLength, "length",
                     "Length of the largest intron allowed in a translated "
                     "nucleotide sequence when linking multiple distinct "
                     "alignments",
@@ -917,7 +917,7 @@ CLargestIntronSizeArgs::ExtractAlgorithmOptions(const CArgs& args,
 
     // sum statistics are defauled to be on unless a cmdline option is set
     opt.SetLongestIntronLength(args[kArgMaxIntronLength].AsInteger());
-   
+
 }
 
 void
@@ -930,7 +930,7 @@ CFrameShiftArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             "gapped alignment in blastx or tblastn, default "
                             "ignored)",
                             CArgDescriptions::eInteger);
-    arg_desc.SetConstraint(kArgFrameShiftPenalty, 
+    arg_desc.SetConstraint(kArgFrameShiftPenalty,
                            new CArgAllowValuesGreaterThanOrEqual(1));
     arg_desc.SetDependency(kArgFrameShiftPenalty, CArgDescriptions::eExcludes,kArgUngapped);
     arg_desc.SetCurrentGroup("");
@@ -980,7 +980,7 @@ CGeneticCodeArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     if (m_Target == eQuery) {
         arg_desc.SetCurrentGroup("Input query options");
         // query genetic code
-        arg_desc.AddDefaultKey(kArgQueryGeneticCode, "int_value", 
+        arg_desc.AddDefaultKey(kArgQueryGeneticCode, "int_value",
                                "Genetic code to use to translate query (see user manual for details)\n",
                                CArgDescriptions::eInteger,
                                NStr::IntToString(BLAST_GENETIC_CODE));
@@ -989,7 +989,7 @@ CGeneticCodeArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     } else {
         arg_desc.SetCurrentGroup("General search options");
         // DB genetic code
-        arg_desc.AddDefaultKey(kArgDbGeneticCode, "int_value", 
+        arg_desc.AddDefaultKey(kArgDbGeneticCode, "int_value",
                                "Genetic code to use to translate "
                                "database/subjects (see user manual for details)\n",
                                CArgDescriptions::eInteger,
@@ -1010,7 +1010,7 @@ CGeneticCodeArgs::ExtractAlgorithmOptions(const CArgs& args,
     if (m_Target == eQuery && args[kArgQueryGeneticCode]) {
         opt.SetQueryGeneticCode(args[kArgQueryGeneticCode].AsInteger());
     }
-  
+
     if (m_Target == eDatabase && args[kArgDbGeneticCode] &&
         (program == eTblastn || program == eTblastx) ) {
         opt.SetDbGeneticCode(args[kArgDbGeneticCode].AsInteger());
@@ -1024,7 +1024,7 @@ CGapTriggerArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     const double default_value = m_QueryIsProtein
         ? BLAST_GAP_TRIGGER_PROT : BLAST_GAP_TRIGGER_NUCL;
-    arg_desc.AddDefaultKey(kArgGapTrigger, "float_value", 
+    arg_desc.AddDefaultKey(kArgGapTrigger, "float_value",
                            "Number of bits to trigger gapping",
                            CArgDescriptions::eDouble,
                            NStr::DoubleToString(default_value));
@@ -1060,8 +1060,8 @@ CPssmEngineArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     }
 
     // Evalue inclusion threshold
-    arg_desc.AddDefaultKey(kArgPSIInclusionEThreshold, "ethresh", 
-                   "E-value inclusion threshold for pairwise alignments", 
+    arg_desc.AddDefaultKey(kArgPSIInclusionEThreshold, "ethresh",
+                   "E-value inclusion threshold for pairwise alignments",
                    CArgDescriptions::eDouble,
                    NStr::DoubleToString(PSI_INCLUSION_ETHRESH));
 
@@ -1096,7 +1096,7 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.SetCurrentGroup("PSI-TBLASTN options");
 
         // PSI-tblastn checkpoint
-        arg_desc.AddOptionalKey(kArgPSIInputChkPntFile, "psi_chkpt_file", 
+        arg_desc.AddOptionalKey(kArgPSIInputChkPntFile, "psi_chkpt_file",
                                 "PSI-TBLASTN checkpoint file",
                                 CArgDescriptions::eInputFile);
         arg_desc.SetDependency(kArgPSIInputChkPntFile,
@@ -1110,7 +1110,7 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                "Number of iterations to perform (0 means run "
                                "until convergence)", CArgDescriptions::eInteger,
                                NStr::IntToString(kDfltArgPSINumIterations));
-        arg_desc.SetConstraint(kArgPSINumIterations, 
+        arg_desc.SetConstraint(kArgPSINumIterations,
                                new CArgAllowValuesGreaterThanOrEqual(0));
         arg_desc.SetDependency(kArgPSINumIterations,
                                CArgDescriptions::eExcludes,
@@ -1137,7 +1137,7 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
             msa_exclusions.push_back(kArgQuery);
             msa_exclusions.push_back(kArgQueryLocation);
             // pattern and MSA is not supported
-            msa_exclusions.push_back(kArgPHIPatternFile);   
+            msa_exclusions.push_back(kArgPHIPatternFile);
             arg_desc.SetCurrentGroup("");
             arg_desc.SetCurrentGroup("");
 
@@ -1159,7 +1159,7 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                     "alignment. If not provided, the first sequence"
                                     " in the multiple sequence alignment will be "
                                     "used", CArgDescriptions::eInteger);
-            arg_desc.SetConstraint(kArgMSAMasterIndex, 
+            arg_desc.SetConstraint(kArgMSAMasterIndex,
                                    new CArgAllowValuesGreaterThanOrEqual(1));
             ITERATE(vector<string>, exclusion, msa_exclusions) {
                 arg_desc.SetDependency(kArgMSAMasterIndex,
@@ -1173,7 +1173,7 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                    CArgDescriptions::eExcludes,
                                    kArgIgnoreMsaMaster);
 
-            arg_desc.AddFlag(kArgIgnoreMsaMaster, 
+            arg_desc.AddFlag(kArgIgnoreMsaMaster,
                              "Ignore the master sequence when creating PSSM", true);
 
             vector<string> ignore_pssm_master_exclusions;
@@ -1191,7 +1191,7 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                    kArgMSAInputFile);
 
             // PSI-BLAST checkpoint
-            arg_desc.AddOptionalKey(kArgPSIInputChkPntFile, "psi_chkpt_file", 
+            arg_desc.AddOptionalKey(kArgPSIInputChkPntFile, "psi_chkpt_file",
                                     "PSI-BLAST checkpoint file",
                                     CArgDescriptions::eInputFile);
         }
@@ -1209,14 +1209,14 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 }
 
 CRef<CPssmWithParameters>
-CPsiBlastArgs::x_CreatePssmFromMsa(CNcbiIstream& input_stream, 
-                                   CBlastOptions& opt, bool save_ascii_pssm, 
+CPsiBlastArgs::x_CreatePssmFromMsa(CNcbiIstream& input_stream,
+                                   CBlastOptions& opt, bool save_ascii_pssm,
                                    unsigned int msa_master_idx,
                                    bool ignore_pssm_tmplt_seq)
 {
     // FIXME get these from CBlastOptions
     CPSIBlastOptions psiblast_opts;
-    PSIBlastOptionsNew(&psiblast_opts); 
+    PSIBlastOptionsNew(&psiblast_opts);
     psiblast_opts->nsg_compatibility_mode = ignore_pssm_tmplt_seq;
 
     CPSIDiagnosticsRequest diags(PSIDiagnosticsRequestNewEx(save_ascii_pssm));
@@ -1267,7 +1267,7 @@ CPsiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
             args[kArgPSIOutputChkPntFile]) {
             m_CheckPointOutput.Reset
                 (new CAutoOutputFileReset
-                 (args[kArgPSIOutputChkPntFile].AsString(), kSaveAllPssms)); 
+                 (args[kArgPSIOutputChkPntFile].AsString(), kSaveAllPssms));
         }
         const bool kSaveAsciiPssm = args[kArgAsciiPssmOutputFile];
         if (kSaveAsciiPssm) {
@@ -1282,7 +1282,7 @@ CPsiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
                 msa_master_idx = args[kArgMSAMasterIndex].AsInteger() - 1;
             }
             m_Pssm = x_CreatePssmFromMsa(in, opt, kSaveAsciiPssm,
-                                         msa_master_idx, 
+                                         msa_master_idx,
                                          args[kArgIgnoreMsaMaster]);
         }
         if (!m_IsDeltaBlast) {
@@ -1310,7 +1310,7 @@ CPsiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
                 in >> MSerial_Xml >> *m_Pssm;
                 break;
             default:
-                NCBI_THROW(CInputException, eInvalidInput, 
+                NCBI_THROW(CInputException, eInvalidInput,
                            "Unsupported format for PSSM");
             }
         } catch (const CSerialException&) {
@@ -1353,38 +1353,38 @@ CPhiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
         while (in.getline(buffer, 4096)) {
            line = buffer;
            string ltype = line.substr(0, 2);
-           if (ltype == "ID") 
+           if (ltype == "ID")
              name = line.substr(4);
            else if (ltype == "PA")
              pattern = line.substr(4);
         }
         if (!pattern.empty())
-            opt.SetPHIPattern(pattern.c_str(), 
+            opt.SetPHIPattern(pattern.c_str(),
                (Blast_QueryIsNucleotide(opt.GetProgramType())
                ? true : false));
         else
-            NCBI_THROW(CInputException, eInvalidInput, 
+            NCBI_THROW(CInputException, eInvalidInput,
                        "PHI pattern not read");
     }
 }
 
-void 
+void
 CKBlastpArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
    arg_desc.SetCurrentGroup("KBLASTP options");
-   arg_desc.AddDefaultKey(kArgJDistance, "threshold", "Jaccard Distance", 
+   arg_desc.AddDefaultKey(kArgJDistance, "threshold", "Jaccard Distance",
 			CArgDescriptions::eDouble, kDfltArgJDistance);
-   arg_desc.AddDefaultKey(kArgMinHits, "minhits", "minimal number of LSH matches", 
+   arg_desc.AddDefaultKey(kArgMinHits, "minhits", "minimal number of LSH matches",
 			CArgDescriptions::eInteger, kDfltArgMinHits);
-   arg_desc.AddDefaultKey(kArgCandidateSeqs, "candidates", "Number of candidate sequences to process with BLAST", 
+   arg_desc.AddDefaultKey(kArgCandidateSeqs, "candidates", "Number of candidate sequences to process with BLAST",
 			CArgDescriptions::eInteger, kDfltArgCandidateSeqs);
 }
 
-void 
+void
 CKBlastpArgs::ExtractAlgorithmOptions(const CArgs& args,
                                          CBlastOptions& opt)
 {
-	if (args.Exist(kArgJDistance)) 
+	if (args.Exist(kArgJDistance))
 		m_JDistance = args[kArgJDistance].AsDouble();
 	if (args.Exist(kArgMinHits))
 		m_MinHits = args[kArgMinHits].AsInteger();
@@ -1573,40 +1573,40 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.AddOptionalKey(kArgGLChainType, "filename",
                             "File containing the coding frame start positions for sequences in germline J database",
                             CArgDescriptions::eString);
-        
+
         arg_desc.AddOptionalKey(kArgMinDMatch, "min_D_match",
                                 "Required minimal number of D gene matches ",
                                 CArgDescriptions::eInteger);
-        arg_desc.SetConstraint(kArgMinDMatch, 
+        arg_desc.SetConstraint(kArgMinDMatch,
                                new CArgAllowValuesGreaterThanOrEqual(5));
-        
+
         arg_desc.AddDefaultKey(kArgDPenalty, "D_penalty",
                                 "Penalty for a nucleotide mismatch in D gene",
                                 CArgDescriptions::eInteger, "-2");
 
-        arg_desc.SetConstraint(kArgDPenalty, 
+        arg_desc.SetConstraint(kArgDPenalty,
                                new CArgAllowValuesBetween(-5, 0));
 
         arg_desc.AddDefaultKey(kArgJPenalty, "J_penalty",
                                 "Penalty for a nucleotide mismatch in J gene",
                                 CArgDescriptions::eInteger, "-2");
 
-        arg_desc.SetConstraint(kArgJPenalty, 
+        arg_desc.SetConstraint(kArgJPenalty,
                                new CArgAllowValuesBetween(-4, 0));
 
         arg_desc.AddDefaultKey(kArgNumClonotype, "num_clonotype",
                                 "Number of top clonotypes to show ",
                                CArgDescriptions::eInteger, "100");
-        arg_desc.SetConstraint(kArgNumClonotype, 
+        arg_desc.SetConstraint(kArgNumClonotype,
                                new CArgAllowValuesGreaterThanOrEqual(0));
-        
-        arg_desc.AddOptionalKey(kArgClonotypeFile, "clonotype_out", 
+
+        arg_desc.AddOptionalKey(kArgClonotypeFile, "clonotype_out",
                                 "Output file name for clonotype info",
                                CArgDescriptions::eOutputFile);
-        
+
         arg_desc.AddFlag(kArgDetectOverlap, "Allow V(D)J genes to overlap.  This option is active only when D_penalty and J_penalty are set to -4 and -3, respectively", true);
 
-       
+
     }
 
     arg_desc.AddDefaultKey(kArgGLOrigin, "germline_origin",
@@ -1633,15 +1633,15 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            "Minimal required V gene length",
                            CArgDescriptions::eInteger, "9");
 
-    arg_desc.SetConstraint(kArgMinVLength, 
+    arg_desc.SetConstraint(kArgMinVLength,
                            new CArgAllowValuesGreaterThanOrEqual(9));
 
     if (! m_IsProtein) {
         arg_desc.AddDefaultKey(kArgMinJLength, "Min_J_Length",
                                "Minimal required J gene length",
                                CArgDescriptions::eInteger, "0");
-        
-        arg_desc.SetConstraint(kArgMinJLength, 
+
+        arg_desc.SetConstraint(kArgMinJLength,
                                new CArgAllowValuesGreaterThanOrEqual(0));
     }
 
@@ -1655,16 +1655,16 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 static string s_RegisterOMDataLoader(CRef<CSeqDB> db_handle)
 {    // the blast formatter requires that the database coexist in
     // the same scope with the query sequences
-    CRef<CObjectManager> om = CObjectManager::GetInstance();                          
-    CBlastDbDataLoader::RegisterInObjectManager(*om, db_handle, true,                 
-                        CObjectManager::eDefault,                                     
-                        CBlastDatabaseArgs::kSubjectsDataLoaderPriority);             
-    CBlastDbDataLoader::SBlastDbParam param(db_handle);                               
-    string retval(CBlastDbDataLoader::GetLoaderNameFromArgs(param));                  
-    _TRACE("Registering " << retval << " at priority " <<                             
-           (int)CBlastDatabaseArgs::kSubjectsDataLoaderPriority);                     
-    return retval;                                                                    
-}               
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CBlastDbDataLoader::RegisterInObjectManager(*om, db_handle, true,
+                        CObjectManager::eDefault,
+                        CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
+    CBlastDbDataLoader::SBlastDbParam param(db_handle);
+    string retval(CBlastDbDataLoader::GetLoaderNameFromArgs(param));
+    _TRACE("Registering " << retval << " at priority " <<
+           (int)CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
+    return retval;
+}
 
 void
 CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
@@ -1681,13 +1681,13 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     } else {
 #if defined(NCBI_OS_DARWIN)
        paths[2] = "/usr/local/ncbi/igblast/data";
-#else        
+#else
        paths[2] = paths[0];
-#endif        
+#endif
     }
 
     m_IgOptions.Reset(new CIgBlastOptions());
-    
+
     CBlastDatabaseArgs::EMoleculeType mol_type = Blast_SubjectIsNucleotide(opts.GetProgramType())
         ? CSearchDatabase::eBlastDbIsNucleotide
         : CSearchDatabase::eBlastDbIsProtein;
@@ -1740,8 +1740,8 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
 
     string df_db_name = CDirEntry::ConcatPath(
-                        CDirEntry::ConcatPath(m_IgOptions->m_IgDataPath, 
-                           m_IgOptions->m_Origin), m_IgOptions->m_Origin + 
+                        CDirEntry::ConcatPath(m_IgOptions->m_IgDataPath,
+                           m_IgOptions->m_Origin), m_IgOptions->m_Origin +
                         ((m_IgOptions->m_SequenceType == "TCR")?"_TR":"") + "_V");
     CRef<CSearchDatabase> db(new CSearchDatabase(df_db_name, mol_type));
     m_IgOptions->m_Db[3].Reset(new CLocalDbAdapter(*db));
@@ -1756,11 +1756,11 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     if (args.Exist(kArgMinDMatch) && args[kArgMinDMatch]) {
         m_IgOptions->m_Min_D_match = args[kArgMinDMatch].AsInteger();
     }
-   
+
     if (args.Exist(kArgDPenalty) && args[kArgDPenalty]) {
         m_IgOptions->m_D_penalty = args[kArgDPenalty].AsInteger();
     }
-    
+
     if (args.Exist(kArgJPenalty) && args[kArgJPenalty]) {
         m_IgOptions->m_J_penalty = args[kArgJPenalty].AsInteger();
     }
@@ -1789,27 +1789,27 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
             CNcbiIstream& subj_input_stream = args[arg_sub].AsInputFile();
             TSeqRange subj_range;
 
-            const bool parse_deflines = args.Exist(kArgParseDeflines) 
+            const bool parse_deflines = args.Exist(kArgParseDeflines)
 	        ? bool(args[kArgParseDeflines])
                 : kDfltArgParseDeflines;
             const bool use_lcase_masks = args.Exist(kArgUseLCaseMasking)
 	        ? bool(args[kArgUseLCaseMasking])
                 : kDfltArgUseLCaseMasking;
             CRef<blast::CBlastQueryVector> subjects;
-            CRef<CScope> scope = ReadSequencesToBlast(subj_input_stream, 
+            CRef<CScope> scope = ReadSequencesToBlast(subj_input_stream,
                                        m_IgOptions->m_IsProtein,
                                        subj_range, parse_deflines,
                                        use_lcase_masks, subjects);
-            m_Scope->AddScope(*scope, 
+            m_Scope->AddScope(*scope,
                         CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
             CRef<IQueryFactory> sub_seqs(
                                 new blast::CObjMgr_QueryFactory(*subjects));
             m_IgOptions->m_Db[gene].Reset(new CLocalDbAdapter(
                                        sub_seqs, opts_hndl));
-        } else { 
+        } else {
             string gl_db_name = m_IgOptions->m_Origin + "_gl_";
             gl_db_name.push_back(suffix[gene]);
-            string db_name = (args.Exist(arg_db) && args[arg_db]) 
+            string db_name = (args.Exist(arg_db) && args[arg_db])
                        ?  args[arg_db].AsString() :  gl_db_name;
             db.Reset(new CSearchDatabase(db_name, mol_type));
 
@@ -1831,22 +1831,22 @@ CQueryOptionsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     arg_desc.SetCurrentGroup("Query filtering options");
     // lowercase masking
-    arg_desc.AddFlag(kArgUseLCaseMasking, 
+    arg_desc.AddFlag(kArgUseLCaseMasking,
          "Use lower case filtering in query and subject sequence(s)?", true);
 
     arg_desc.SetCurrentGroup("Input query options");
     // query location
-    arg_desc.AddOptionalKey(kArgQueryLocation, "range", 
+    arg_desc.AddOptionalKey(kArgQueryLocation, "range",
                             "Location on the query sequence in 1-based offsets "
                             "(Format: start-stop)",
                             CArgDescriptions::eString);
 
     if ( !m_QueryCannotBeNucl) {
         // search strands
-        arg_desc.AddDefaultKey(kArgStrand, "strand", 
+        arg_desc.AddDefaultKey(kArgStrand, "strand",
                      "Query strand(s) to search against database/subject",
                                CArgDescriptions::eString, kDfltArgStrand);
-        arg_desc.SetConstraint(kArgStrand, &(*new CArgAllow_Strings, 
+        arg_desc.SetConstraint(kArgStrand, &(*new CArgAllow_Strings,
                                              kDfltArgStrand, "plus", "minus"));
     }
 
@@ -1858,7 +1858,7 @@ CQueryOptionsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 }
 
 void
-CQueryOptionsArgs::ExtractAlgorithmOptions(const CArgs& args, 
+CQueryOptionsArgs::ExtractAlgorithmOptions(const CArgs& args,
                                            CBlastOptions& opt)
 {
     // Get the strand
@@ -1887,7 +1887,7 @@ CQueryOptionsArgs::ExtractAlgorithmOptions(const CArgs& args,
 
     // set the sequence range
     if (args.Exist(kArgQueryLocation) && args[kArgQueryLocation]) {
-        m_Range = ParseSequenceRange(args[kArgQueryLocation].AsString(), 
+        m_Range = ParseSequenceRange(args[kArgQueryLocation].AsString(),
                                      "Invalid specification of query location");
     }
 
@@ -1903,7 +1903,7 @@ CMapperQueryOptionsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     arg_desc.SetCurrentGroup("Query filtering options");
     // lowercase masking
-    arg_desc.AddFlag(kArgUseLCaseMasking, 
+    arg_desc.AddFlag(kArgUseLCaseMasking,
                      "Use lower case filtering in subject sequence(s)?", true);
     arg_desc.AddDefaultKey(kArgQualityFilter, "TF", "Reject low quality "
                            "sequences ", CArgDescriptions::eBoolean, "true");
@@ -2028,10 +2028,10 @@ CBlastDatabaseArgs::CBlastDatabaseArgs(bool request_mol_type /* = false */,
                                        bool is_igblast  /* = false */,
                                        bool is_mapper   /* = false */,
                                        bool is_kblast   /* = false */)
-    : m_RequestMoleculeType(request_mol_type), 
+    : m_RequestMoleculeType(request_mol_type),
       m_IsRpsBlast(is_rpsblast),
       m_IsIgBlast(is_igblast),
-      m_IsProtein(true), 
+      m_IsProtein(true),
       m_IsMapper(is_mapper),
       m_IsKBlast(is_kblast),
       m_SupportsDatabaseMasking(false)
@@ -2052,15 +2052,15 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("General search options");
     // database filename
-    arg_desc.AddOptionalKey(kArgDb, "database_name", "BLAST database name", 
+    arg_desc.AddOptionalKey(kArgDb, "database_name", "BLAST database name",
                             CArgDescriptions::eString);
     arg_desc.SetCurrentGroup("");
 
     if (m_RequestMoleculeType) {
-        arg_desc.AddKey(kArgDbType, "database_type", 
+        arg_desc.AddKey(kArgDbType, "database_type",
                         "BLAST database molecule type",
                         CArgDescriptions::eString);
-        arg_desc.SetConstraint(kArgDbType, 
+        arg_desc.SetConstraint(kArgDbType,
                                &(*new CArgAllow_Strings, "prot", "nucl"));
     }
 
@@ -2078,7 +2078,7 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     // DB size
     if (!m_IsMapper) {
         arg_desc.SetCurrentGroup("Statistical options");
-        arg_desc.AddOptionalKey(kArgDbSize, "num_letters", 
+        arg_desc.AddOptionalKey(kArgDbSize, "num_letters",
                                 "Effective length of the database ",
                                 CArgDescriptions::eInt8);
     }
@@ -2086,43 +2086,43 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("Restrict search or results");
     // GI list
     if (!m_IsRpsBlast) {
-        arg_desc.AddOptionalKey(kArgGiList, "filename", 
+        arg_desc.AddOptionalKey(kArgGiList, "filename",
                                 "Restrict search of database to list of GI's",
                                 CArgDescriptions::eString);
         // SeqId list
-        arg_desc.AddOptionalKey(kArgSeqIdList, "filename", 
+        arg_desc.AddOptionalKey(kArgSeqIdList, "filename",
                                 "Restrict search of database to list of SeqId's",
                                 CArgDescriptions::eString);
         // Negative GI list
-        arg_desc.AddOptionalKey(kArgNegativeGiList, "filename", 
+        arg_desc.AddOptionalKey(kArgNegativeGiList, "filename",
                                 "Restrict search of database to everything"
                                 " except the listed GIs",
                                 CArgDescriptions::eString);
 
         // Negative SeqId list
-        arg_desc.AddOptionalKey(kArgNegativeSeqidList, "filename", 
+        arg_desc.AddOptionalKey(kArgNegativeSeqidList, "filename",
                                 "Restrict search of database to everything"
                                 " except the listed SeqIDs",
-                                CArgDescriptions::eString);        
+                                CArgDescriptions::eString);
 
-        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
+        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes,
                                kArgNegativeGiList);
-        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
+        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes,
                                kArgSeqIdList);
-        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
+        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes,
                                kArgNegativeSeqidList);
 
-        arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes, 
+        arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes,
                                kArgNegativeGiList);
-        arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes, 
+        arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes,
                                kArgNegativeSeqidList);
 
-        
+
         // For now, disable pairing -remote with either -gilist or
         // -negative_gilist as this is not implemented in the BLAST server
-        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
+        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes,
                                kArgRemote);
-        arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes, 
+        arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes,
                                kArgRemote);
         arg_desc.SetDependency(kArgNegativeGiList, CArgDescriptions::eExcludes,
                                kArgRemote);
@@ -2132,12 +2132,12 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     // Entrez Query
     if (!m_IsMapper) {
-        arg_desc.AddOptionalKey(kArgEntrezQuery, "entrez_query", 
+        arg_desc.AddOptionalKey(kArgEntrezQuery, "entrez_query",
                                 "Restrict search with the given Entrez query",
                                 CArgDescriptions::eString);
 
         // Entrez query currently requires the -remote option
-        arg_desc.SetDependency(kArgEntrezQuery, CArgDescriptions::eRequires, 
+        arg_desc.SetDependency(kArgEntrezQuery, CArgDescriptions::eRequires,
                                kArgRemote);
     }
 
@@ -2146,15 +2146,15 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     // Masking of database
     if (m_SupportsDatabaseMasking) {
-        arg_desc.AddOptionalKey(kArgDbSoftMask, 
+        arg_desc.AddOptionalKey(kArgDbSoftMask,
                 "filtering_algorithm",
                 "Filtering algorithm ID to apply to the BLAST database as soft "
                 "masking",
                 CArgDescriptions::eString);
-        arg_desc.SetDependency(kArgDbSoftMask, CArgDescriptions::eExcludes, 
+        arg_desc.SetDependency(kArgDbSoftMask, CArgDescriptions::eExcludes,
                            kArgDbHardMask);
 
-        arg_desc.AddOptionalKey(kArgDbHardMask, 
+        arg_desc.AddOptionalKey(kArgDbHardMask,
                 "filtering_algorithm",
                 "Filtering algorithm ID to apply to the BLAST database as hard "
                 "masking",
@@ -2170,23 +2170,23 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                 "Subject sequence(s) to search",
                                 CArgDescriptions::eInputFile);
         ITERATE(vector<string>, dbarg, database_args) {
-            arg_desc.SetDependency(kArgSubject, CArgDescriptions::eExcludes, 
+            arg_desc.SetDependency(kArgSubject, CArgDescriptions::eExcludes,
                                    *dbarg);
         }
 
         // subject location
-        arg_desc.AddOptionalKey(kArgSubjectLocation, "range", 
+        arg_desc.AddOptionalKey(kArgSubjectLocation, "range",
                         "Location on the subject sequence in 1-based offsets "
                         "(Format: start-stop)",
                         CArgDescriptions::eString);
         ITERATE(vector<string>, dbarg, database_args) {
-            arg_desc.SetDependency(kArgSubjectLocation, 
-                                   CArgDescriptions::eExcludes, 
+            arg_desc.SetDependency(kArgSubjectLocation,
+                                   CArgDescriptions::eExcludes,
                                    *dbarg);
         }
         // Because Blast4-subject does not support Seq-locs, specifying a
         // subject range does not work for remote searches
-        arg_desc.SetDependency(kArgSubjectLocation, 
+        arg_desc.SetDependency(kArgSubjectLocation,
                                CArgDescriptions::eExcludes, kArgRemote);
     }
 
@@ -2204,7 +2204,7 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
 
     if (args.Exist(kArgDb) && args[kArgDb]) {
 
-        m_SearchDb.Reset(new CSearchDatabase(args[kArgDb].AsString(), 
+        m_SearchDb.Reset(new CSearchDatabase(args[kArgDb].AsString(),
                                              mol_type));
 
         if (args.Exist(kArgGiList) && args[kArgGiList]) {
@@ -2222,8 +2222,8 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
         } else if (args.Exist(kArgNegativeSeqidList) && args[kArgNegativeSeqidList]) {
             string fn(SeqDB_ResolveDbPath(args[kArgNegativeSeqidList].AsString()));
             m_SearchDb->SetNegativeGiList(CRef<CSeqDBGiList> (new CSeqDBFileGiList(fn,CSeqDBFileGiList::eMixList)));
-        } 
-        
+        }
+
 
         if (args.Exist(kArgEntrezQuery) && args[kArgEntrezQuery])
             m_SearchDb->SetEntrezQueryLimitation(args[kArgEntrezQuery].AsString());
@@ -2253,12 +2253,12 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
 
         TSeqRange subj_range;
         if (args.Exist(kArgSubjectLocation) && args[kArgSubjectLocation]) {
-            subj_range = 
-                ParseSequenceRange(args[kArgSubjectLocation].AsString(), 
+            subj_range =
+                ParseSequenceRange(args[kArgSubjectLocation].AsString(),
                             "Invalid specification of subject location");
         }
 
-        const bool parse_deflines = args.Exist(kArgParseDeflines) 
+        const bool parse_deflines = args.Exist(kArgParseDeflines)
             ? args[kArgParseDeflines].AsBoolean()
             : kDfltArgParseDeflines;
         const bool use_lcase_masks = args.Exist(kArgUseLCaseMasking)
@@ -2311,13 +2311,13 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     " 14 = Multiple-file BLAST XML2,\n"
     " 15 = Single-file BLAST JSON,\n"
     " 16 = Single-file BLAST XML2");
-    
+
     if(m_FormatFlags & eIsSAM) {
-    	kOutputFormatDescription += ",\n 17 = Sequence Alignment/Map (SAM)";                
-    }    
+    	kOutputFormatDescription += ",\n 17 = Sequence Alignment/Map (SAM)";
+    }
     kOutputFormatDescription += ",\n 18 = Organism Report\n\n";
     if(m_FormatFlags & eIsSAM) {
-    	kOutputFormatDescription +=    			
+    	kOutputFormatDescription +=
                 "Options 6, 7, 10 and 17 "
     			"can be additionally configured to produce\n"
     		    "a custom format specified by space delimited format specifiers.\n"
@@ -2358,9 +2358,9 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     }
 
     // alignment view
-    arg_desc.AddDefaultKey(kArgOutputFormat, "format", 
+    arg_desc.AddDefaultKey(kArgOutputFormat, "format",
                            kOutputFormatDescription,
-                           CArgDescriptions::eString, 
+                           CArgDescriptions::eString,
                            NStr::IntToString(dft_outfmt));
 
     // show GIs in deflines
@@ -2373,7 +2373,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     		     "Not applicable for outfmt > 4\n"
     			 "Default = `"+ NStr::IntToString(m_DfltNumDescriptions)+ "'",
                  CArgDescriptions::eInteger);
-    arg_desc.SetConstraint(kArgNumDescriptions, 
+    arg_desc.SetConstraint(kArgNumDescriptions,
                            new CArgAllowValuesGreaterThanOrEqual(0));
 
     // number of alignments per DB sequence
@@ -2381,7 +2381,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                  "Number of database sequences to show alignments for\n"
                  "Default = `" + NStr::IntToString(m_DfltNumAlignments) + "'",
                  CArgDescriptions::eInteger );
-    arg_desc.SetConstraint(kArgNumAlignments, 
+    arg_desc.SetConstraint(kArgNumAlignments,
                            new CArgAllowValuesGreaterThanOrEqual(0));
 
     arg_desc.AddOptionalKey(kArgLineLength, "line_length",
@@ -2416,7 +2416,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("");
 }
 
-bool 
+bool
 CFormattingArgs::ArchiveFormatRequested(const CArgs& args) const
 {
     EOutputFormat output_fmt;
@@ -2426,17 +2426,17 @@ CFormattingArgs::ArchiveFormatRequested(const CArgs& args) const
 }
 
 void
-CFormattingArgs::ParseFormattingString(const CArgs& args, 
-                                       EOutputFormat& fmt_type, 
+CFormattingArgs::ParseFormattingString(const CArgs& args,
+                                       EOutputFormat& fmt_type,
                                        string& custom_fmt_spec) const
 {
     custom_fmt_spec.clear();
     if (args[kArgOutputFormat]) {
-        string fmt_choice = 
+        string fmt_choice =
             NStr::TruncateSpaces(args[kArgOutputFormat].AsString());
         string::size_type pos;
         if ( (pos = fmt_choice.find_first_of(' ')) != string::npos) {
-            custom_fmt_spec.assign(fmt_choice, pos+1, 
+            custom_fmt_spec.assign(fmt_choice, pos+1,
                                    fmt_choice.size()-(pos+1));
             fmt_choice.erase(pos);
         }
@@ -2569,9 +2569,9 @@ CMapperFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                              "tabular = Tabular format,\n"
                                              "asn = text ASN.1\n");
 
-    arg_desc.AddDefaultKey(align_format::kArgOutputFormat, "format", 
+    arg_desc.AddDefaultKey(align_format::kArgOutputFormat, "format",
                            kOutputFormatDescription,
-                           CArgDescriptions::eString, 
+                           CArgDescriptions::eString,
                            "sam");
 
     set<string> allowed_formats = {"sam", "tabular", "asn"};
@@ -2583,6 +2583,9 @@ CMapperFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                      "paired runs");
 
     arg_desc.AddFlag(kArgNoUnaligned, "Do report unaligned reads");
+
+    arg_desc.AddFlag(kArgNoDiscordant,
+            "Suppress discordant alignments for paired reads");
 
     arg_desc.SetCurrentGroup("");
 }
@@ -2643,9 +2646,9 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     arg_desc.AddDefaultKey(kArgNumThreads, "int_value",
                            "Number of threads (CPUs) to use in the BLAST search",
-                           CArgDescriptions::eInteger, 
+                           CArgDescriptions::eInteger,
                            NStr::IntToString(kDfltValue));
-    arg_desc.SetConstraint(kArgNumThreads, 
+    arg_desc.SetConstraint(kArgNumThreads,
                            new CArgAllowValuesBetween(kMinValue, kMaxValue, true));
     arg_desc.SetDependency(kArgNumThreads,
                            CArgDescriptions::eExcludes,
@@ -2700,9 +2703,9 @@ CDebugArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("Miscellaneous options");
     arg_desc.AddFlag("verbose", "Produce verbose output (show BLAST options)",
                      true);
-    arg_desc.AddFlag("remote_verbose", 
+    arg_desc.AddFlag("remote_verbose",
                      "Produce verbose output for remote searches", true);
-    arg_desc.AddFlag("use_test_remote_service", 
+    arg_desc.AddFlag("use_test_remote_service",
                      "Send remote requests to test servers", true);
     arg_desc.SetCurrentGroup("");
 #endif /* _BLAST_DEBUG */
@@ -2731,31 +2734,31 @@ CHspFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                      "If the query range of a hit is enveloped by that of at "
                      "least this many higher-scoring hits, delete the hit",
                      CArgDescriptions::eInteger);
-    arg_desc.SetConstraint(kArgCullingLimit, 
+    arg_desc.SetConstraint(kArgCullingLimit,
     // best hit algorithm arguments
                new CArgAllowValuesGreaterThanOrEqual(kDfltArgCullingLimit));
 
-    arg_desc.AddOptionalKey(kArgBestHitOverhang, "float_value", 
+    arg_desc.AddOptionalKey(kArgBestHitOverhang, "float_value",
                             "Best Hit algorithm overhang value "
                             "(recommended value: " +
                             NStr::DoubleToString(kDfltArgBestHitOverhang) +
                             ")",
                             CArgDescriptions::eDouble);
-    arg_desc.SetConstraint(kArgBestHitOverhang, 
-                           new CArgAllowValuesBetween(kBestHit_OverhangMin, 
+    arg_desc.SetConstraint(kArgBestHitOverhang,
+                           new CArgAllowValuesBetween(kBestHit_OverhangMin,
                                                       kBestHit_OverhangMax));
     arg_desc.SetDependency(kArgBestHitOverhang,
                            CArgDescriptions::eExcludes,
                            kArgCullingLimit);
 
-    arg_desc.AddOptionalKey(kArgBestHitScoreEdge, "float_value", 
+    arg_desc.AddOptionalKey(kArgBestHitScoreEdge, "float_value",
                             "Best Hit algorithm score edge value "
                             "(recommended value: " +
                             NStr::DoubleToString(kDfltArgBestHitScoreEdge) +
                             ")",
                             CArgDescriptions::eDouble);
-    arg_desc.SetConstraint(kArgBestHitScoreEdge, 
-                           new CArgAllowValuesBetween(kBestHit_ScoreEdgeMin, 
+    arg_desc.SetConstraint(kArgBestHitScoreEdge,
+                           new CArgAllowValuesBetween(kBestHit_ScoreEdgeMin,
                                                       kBestHit_ScoreEdgeMax));
     arg_desc.SetDependency(kArgBestHitScoreEdge,
                            CArgDescriptions::eExcludes,
@@ -2765,7 +2768,7 @@ CHspFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 }
 
 void
-CHspFilteringArgs::ExtractAlgorithmOptions(const CArgs& args, 
+CHspFilteringArgs::ExtractAlgorithmOptions(const CArgs& args,
                                       CBlastOptions& opts)
 {
     if (args[kArgCullingLimit]) {
@@ -2784,7 +2787,7 @@ void
 CMbIndexArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("General search options");
-    arg_desc.AddDefaultKey( 
+    arg_desc.AddDefaultKey(
             kArgUseIndex, "boolean",
             "Use MegaBLAST database index",
             CArgDescriptions::eBoolean, NStr::BoolToString(kDfltArgUseIndex));
@@ -2822,7 +2825,7 @@ CMbIndexArgs::ExtractAlgorithmOptions(const CArgs& args,
             else use_index = false;
         }
 
-        if( args.Exist( kTask ) && args[kTask] && 
+        if( args.Exist( kTask ) && args[kTask] &&
                 args[kTask].AsString() != "megablast" ) {
             use_index = false;
         }
@@ -2841,7 +2844,7 @@ CMbIndexArgs::ExtractAlgorithmOptions(const CArgs& args,
                 NCBI_THROW(CInputException, eInvalidInput,
                         "Can not deduce database index name" );
             }
-    
+
             opts.SetUseIndex( true, index_name, force_index, old_style_index );
         }
     }
@@ -2853,7 +2856,7 @@ CStdCmdLineArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("Input query options");
 
     // query filename
-    arg_desc.AddDefaultKey(kArgQuery, "input_file", 
+    arg_desc.AddDefaultKey(kArgQuery, "input_file",
                      "Input file name",
                      CArgDescriptions::eInputFile, kDfltArgQuery);
     // for now it's either -query or -sra
@@ -2864,12 +2867,12 @@ CStdCmdLineArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 	arg_desc.SetDependency(kArgSraAccession,
 			CArgDescriptions::eExcludes,
 			kArgQuery);
-    } 
-	
+    }
+
     arg_desc.SetCurrentGroup("General search options");
 
     // report output file
-    arg_desc.AddDefaultKey(kArgOutput, "output_file", 
+    arg_desc.AddDefaultKey(kArgOutput, "output_file",
                    "Output file name",
                    CArgDescriptions::eOutputFile, "-");
 
@@ -2944,11 +2947,11 @@ CSearchStrategyArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     arg_desc.AddOptionalKey(kArgInputSearchStrategy,
                             "filename",
-                            "Search strategy to use", 
+                            "Search strategy to use",
                             CArgDescriptions::eInputFile);
     arg_desc.AddOptionalKey(kArgOutputSearchStrategy,
                             "filename",
-                            "File name to record the search strategy used", 
+                            "File name to record the search strategy used",
                             CArgDescriptions::eOutputFile);
     arg_desc.SetDependency(kArgInputSearchStrategy,
                            CArgDescriptions::eExcludes,
@@ -2963,7 +2966,7 @@ CSearchStrategyArgs::ExtractAlgorithmOptions(const CArgs& /* cmd_line_args */,
 {
 }
 
-CNcbiIstream* 
+CNcbiIstream*
 CSearchStrategyArgs::GetImportStream(const CArgs& args) const
 {
     CNcbiIstream* retval = NULL;
@@ -2974,7 +2977,7 @@ CSearchStrategyArgs::GetImportStream(const CArgs& args) const
     return retval;
 }
 
-CNcbiOstream* 
+CNcbiOstream*
 CSearchStrategyArgs::GetExportStream(const CArgs& args) const
 {
     CNcbiOstream* retval = NULL;
@@ -3031,14 +3034,14 @@ CBlastAppArgs::SetOptions(const CArgs& args)
         return m_OptsHandle;
     }
 
-    CBlastOptions::EAPILocality locality = 
-        (args.Exist(kArgRemote) && args[kArgRemote]) 
-        ? CBlastOptions::eRemote 
+    CBlastOptions::EAPILocality locality =
+        (args.Exist(kArgRemote) && args[kArgRemote])
+        ? CBlastOptions::eRemote
         : CBlastOptions::eLocal;
 
     // This is needed as a CRemoteBlast object and its options are instantiated
     // to create the search strategy
-    if (GetExportSearchStrategyStream(args) || 
+    if (GetExportSearchStrategyStream(args) ||
            m_FormattingArgs->ArchiveFormatRequested(args)) {
         locality = CBlastOptions::eBoth;
     }
@@ -3065,7 +3068,7 @@ void CBlastAppArgs::SetTask(const string& task)
     m_Task.assign(task);
 }
 
-CArgDescriptions* 
+CArgDescriptions*
 SetUpCommandLineArguments(TBlastCmdLineArgs& args)
 {
     auto_ptr<CArgDescriptions> retval(new CArgDescriptions);
@@ -3144,7 +3147,7 @@ CBlastAppArgs::x_IssueWarningsForIgnoredOptions(const CArgs& args)
     has_defaults[kArgOldStyleIndex] = kDfltArgOldStyleIndex;
 
     if (Blast_QueryIsProtein(prog)) {
-        if (NStr::Find(m_Task, "blastp") != NPOS || 
+        if (NStr::Find(m_Task, "blastp") != NPOS ||
             NStr::Find(m_Task, "psiblast") != NPOS) {
             has_defaults[kArgSegFiltering] = kDfltArgNoFiltering;
         } else {
@@ -3173,7 +3176,7 @@ CBlastAppArgs::x_IssueWarningsForIgnoredOptions(const CArgs& args)
         NStr::IntToString(PSI_PSEUDO_COUNT_CONST);
     has_defaults[kArgPSIInclusionEThreshold] =
         NStr::DoubleToString(PSI_INCLUSION_ETHRESH);
-    has_defaults[kArgPSINumIterations] = 
+    has_defaults[kArgPSINumIterations] =
         NStr::IntToString(kDfltArgPSINumIterations);
 
     // get arguments, remove the supported ones and warn about those that
@@ -3186,7 +3189,7 @@ CBlastAppArgs::x_IssueWarningsForIgnoredOptions(const CArgs& args)
         // if it has a default value, ignore it if it's not different from the
         // default, otherwise, issue a warning
         if (has_defaults.find(arg_name) != has_defaults.end()) {
-            if (has_defaults[arg_name] == arg_value) { 
+            if (has_defaults[arg_name] == arg_value) {
                 continue;
             } else {
                 if (arg_name == kTask && arg_value == "megablast") {
@@ -3196,7 +3199,7 @@ CBlastAppArgs::x_IssueWarningsForIgnoredOptions(const CArgs& args)
                 LOG_POST(Warning << arg_name << " cannot be overridden when "
                          "using a search strategy");
             }
-        } 
+        }
         // if the argument cannot be overridden, issue a warning
         if (can_override.find(arg_name) == can_override.end()) {
             LOG_POST(Warning << arg_name << " cannot be overridden when "
