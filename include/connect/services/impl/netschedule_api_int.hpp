@@ -144,7 +144,7 @@ public:
                                      CNetServer* server);
 
 protected:
-    bool CheckJobStatusNotification(CNetScheduleAPI ns_api, CNetScheduleJob& job,
+    bool GetJobDetailsIfCompleted(CNetScheduleAPI ns_api, CNetScheduleJob& job,
             time_t* job_exptime, CNetScheduleAPI::EJobStatus& job_status);
 
     SNetScheduleNotificationReceiver m_Receiver;

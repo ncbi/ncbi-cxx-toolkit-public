@@ -388,23 +388,18 @@ bool CNetScheduleNotificationHandler::CheckJobStatusNotification(
     return *job_status != CNetScheduleAPI::eJobNotFound;
 }
 
-bool CNetScheduleNotificationHandler::CheckJobStatusNotification(CNetScheduleAPI ns_api, CNetScheduleJob& job,
+bool CNetScheduleNotificationHandler::GetJobDetailsIfCompleted(CNetScheduleAPI ns_api, CNetScheduleJob& job,
         time_t* job_exptime, CNetScheduleAPI::EJobStatus& job_status)
 {
     SNetScheduleOutputParser parser(m_Receiver.message);
 
     if (parser("job_key") != job.job_id) return false;
 
-    switch (CNetScheduleAPI::StringToStatus(parser("job_status"))) {
-    case CNetScheduleAPI::eJobNotFound:
-    case CNetScheduleAPI::eRunning:
-    case CNetScheduleAPI::ePending:
-        return false;
+    job_status = CNetScheduleAPI::StringToStatus(parser("job_status"));
+    if (job_status <= CNetScheduleAPI::eRunning) return false;
 
-    default:
-        job_status = ns_api.GetJobDetails(job, job_exptime);
-        return true;
-    }
+    job_status = ns_api.GetJobDetails(job, job_exptime);
+    return job_status > CNetScheduleAPI::eRunning;
 }
 
 CNetScheduleAPI::EJobStatus
@@ -459,7 +454,7 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
         }
 
         if (WaitForNotification(timeout)) {
-            if (CheckJobStatusNotification(ns_api, job, job_exptime, status)) return status;
+            if (GetJobDetailsIfCompleted(ns_api, job, job_exptime, status)) return status;
         } else {
             // The wait has timed out - query the server directly.
 
