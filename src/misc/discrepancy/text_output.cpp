@@ -170,9 +170,6 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, size_t inden
             RecursiveXML(out, subs, indent, ext);
         }
         else {
-            Indent(out, indent);
-            out << "<object-collection>\n";
-            indent += XML_INDENT;
             TReportObjectList det = (*it)->GetDetails();
             ITERATE(TReportObjectList, obj, det) {
                 Indent(out, indent);
@@ -215,8 +212,6 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, size_t inden
                 string text = NStr::Replace((*obj)->GetText(), "\t", " ");
                 out << " label=\"" << NStr::XmlEncode(text) << "\"/>\n";
             }
-            indent -= XML_INDENT;
-            out << "</object-collection>\n";
         }
         indent -= XML_INDENT;
         Indent(out, indent);

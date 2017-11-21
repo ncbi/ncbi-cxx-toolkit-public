@@ -132,7 +132,7 @@ DISCREPANCY_SUMMARIZE(DUP_DEFLINE)
     NON_CONST_ITERATE (CReportNode::TNodeMap, it, m_Objs.GetMap()) {
         TReportObjectList& list = it->second->GetObjects();
         if (list.size() == 1) {
-            tmp[kSomeIdenticalDeflines][kUniqueDeflines].Add(list);
+            tmp[kSomeIdenticalDeflines][kUniqueDeflines].Add(list).Severity(CReportItem::eSeverity_info);
         }
         else if (list.size() > 1) {
             tmp[kSomeIdenticalDeflines][kIdenticalDeflines + "[*" + it->first + "*]"].Add(list);
@@ -141,7 +141,7 @@ DISCREPANCY_SUMMARIZE(DUP_DEFLINE)
     }
     if (all_unique) {
         tmp.clear();
-        tmp[kAllUniqueDeflines];
+        tmp[kAllUniqueDeflines].Severity(CReportItem::eSeverity_info);
     }
     m_ReportItems = tmp.Export(*this)->GetSubitems();
 }
@@ -2364,9 +2364,7 @@ private:
 static void FindSuspectTextInObject(const CSerialObject& obj, list<size_t>& misspells)
 {
     for (CStdTypeConstIterator<string> it(obj); it; ++it) {
-
         for (size_t i = 0; i < sizeof(kSpellFixes) / sizeof(kSpellFixes[0]); ++i) {
-
             size_t pos = kSpellFixes[i].m_whole_word ? NStr::FindWord(*it, kSpellFixes[i].m_misspell) : NStr::Find(*it, kSpellFixes[i].m_misspell);
             if (pos != NPOS) {
                 misspells.push_back(i);
