@@ -182,7 +182,55 @@ BOOST_AUTO_TEST_CASE(Test_StateAbbreviation)
     edit::GetStateAbbreviation(state);
     BOOST_CHECK_EQUAL(state, string("SAXONY"));
 }
-   
+
+BOOST_AUTO_TEST_CASE(Test_USAAndStateAbbreviations1)
+{
+    CAffil affil;
+    CAffil::TStd& std = affil.SetStd();
+    std.SetAffil("DuPont Nutrition & Health");
+    std.SetCity("Madison");
+    std.SetSub("Wisc");
+    std.SetCountry("United States");
+
+    bool modified = edit::FixUSAAbbreviationInAffil(affil);
+    BOOST_CHECK(modified);
+    BOOST_CHECK_EQUAL(affil.GetStd().GetCountry(), "USA");
+
+    modified = false;
+    modified = edit::FixStateAbbreviationsInAffil(affil);
+    BOOST_CHECK(modified);
+    BOOST_CHECK_EQUAL(affil.GetStd().GetSub(), "WI");
+}
+ 
+
+BOOST_AUTO_TEST_CASE(Test_USAAndStateAbbreviations2)
+{
+    CAffil affil;
+    CAffil::TStd& std = affil.SetStd();
+    std.SetAffil("DuPont Nutrition & Health");
+    std.SetCity("Madison");
+    std.SetCountry("United States");
+    CCit_sub sub;
+    sub.SetAuthors().SetAffil(affil);
+
+    bool modified = edit::FixStateAbbreviationsInCitSub(sub);
+    BOOST_CHECK(modified);
+    BOOST_CHECK_EQUAL(affil.GetStd().GetCountry(), "USA");
+
+    std.SetSub("Wisc");
+    modified = false;
+    modified = edit::FixStateAbbreviationsInCitSub(sub);
+    BOOST_CHECK(modified);
+    BOOST_CHECK_EQUAL(affil.GetStd().GetSub(), "WI");
+
+    std.SetSub("Wisc");
+    std.SetCountry("Albania");
+    modified = false;
+    modified = edit::FixStateAbbreviationsInCitSub(sub);
+    BOOST_CHECK(!modified);
+    // it will only change the state if the country is 'USA'
+}
+
 
 BOOST_AUTO_TEST_CASE(Test_FixupMouseStrain)
 {

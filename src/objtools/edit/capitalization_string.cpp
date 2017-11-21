@@ -779,26 +779,31 @@ bool FixStateAbbreviationsInCitSub(CCit_sub& sub)
 {
     bool modified = false;
     if (sub.IsSetAuthors() && sub.GetAuthors().IsSetAffil() && sub.GetAuthors().GetAffil().IsStd()) {
-        CAffil::C_Std& std = sub.SetAuthors().SetAffil().SetStd();
-        if (std.IsSetCountry()) {
-            string country = std.GetCountry();
-            NStr::ReplaceInPlace (country, "  ", " ");
-            NStr::TruncateSpacesInPlace (country);
-
-            if (NStr::CompareNocase(country, "United States of America") == 0 ||
-                NStr::CompareNocase(country, "United States") == 0 ||
-                NStr::CompareNocase(country, "U.S.A.") == 0 ||
-                NStr::CompareNocase(country, "U S A") == 0 ||
-                NStr::CompareNocase(country, "US") == 0) 
-            {
-                std.SetCountry("USA");
-                modified = true;
-            }
-        }
-
+        modified |= FixUSAAbbreviationInAffil(sub.SetAuthors().SetAffil());
         modified |= FixStateAbbreviationsInAffil(sub.SetAuthors().SetAffil());
     }
     return modified;
+}
+
+bool FixUSAAbbreviationInAffil(CAffil& affil)
+{
+    if (affil.IsStd() && affil.GetStd().IsSetCountry()) {
+        CAffil::C_Std& std = affil.SetStd();
+        string country = std.GetCountry();
+        NStr::ReplaceInPlace(country, "  ", " ");
+        NStr::TruncateSpacesInPlace(country);
+
+        if (NStr::CompareNocase(country, "United States of America") == 0 ||
+            NStr::CompareNocase(country, "United States") == 0 ||
+            NStr::CompareNocase(country, "U.S.A.") == 0 ||
+            NStr::CompareNocase(country, "U S A") == 0 ||
+            NStr::CompareNocase(country, "US") == 0)
+        {
+            std.SetCountry("USA");
+            return true;
+        }
+    }
+    return false;
 }
 
 bool FixStateAbbreviationsInAffil(CAffil& affil)
