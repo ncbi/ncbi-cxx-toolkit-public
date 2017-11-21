@@ -2623,6 +2623,10 @@ void CMapperFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
         m_PrintUnaligned = false;
     }
 
+    if (args.Exist(kArgNoDiscordant) && args[kArgNoDiscordant]) {
+        m_NoDiscordant = true;
+    }
+
     // only the fast tabular format is able to show merged HSPs with
     // common query bases
     if (m_OutputFormat != eTabular) {
