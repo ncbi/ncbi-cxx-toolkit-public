@@ -1179,6 +1179,9 @@ public:
     /// Should unaligned reads be reported
     bool PrintUnaligned(void) const {return m_PrintUnaligned;}
 
+    /// Should non-concordant pairs be filtered out of report
+    bool NoDiscordant(void) const {return m_NoDiscordant;}
+
 private:
     bool m_TrimReadIds;
     bool m_PrintUnaligned;

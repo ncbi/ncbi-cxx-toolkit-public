@@ -40,7 +40,6 @@
 #include <algo/blast/blastinput/blast_asn1_input.hpp>
 #include <algo/blast/blast_sra_input/blast_sra_input.hpp>
 #include <algo/blast/blastinput/magicblast_args.hpp>
-#include <algo/blast/blastinput/cmdline_flags.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/format/blast_format.hpp>
 #include "../blast/blast_app_util.hpp"
@@ -98,7 +97,6 @@ public:
         CRef<CVersion> version(new CVersion());
         version->SetVersionInfo(new CMagicBlastVersion());
         SetFullVersion(version);
-        m_NoDiscordant = false;
     }
 private:
     /** @inheritDoc */
@@ -108,9 +106,6 @@ private:
 
     /// This application's command line args
     CRef<CMagicBlastAppArgs> m_CmdLineArgs;
-
-    /// "no_discordant" setting
-    bool m_NoDiscordant;
 };
 
 void CMagicBlastApp::Init()
@@ -1652,9 +1647,6 @@ int CMagicBlastApp::Run(void)
         opts_hndl.Reset(&*m_CmdLineArgs->SetOptions(args));
         const CBlastOptions& opt = opts_hndl->GetOptions();
 
-        // Is "no_discordant" selected?
-        const bool kNoDiscordant = args[kArgNoDiscordant].AsBoolean();
-
         /*** Initialize the database/subject ***/
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
 
@@ -1678,6 +1670,9 @@ int CMagicBlastApp::Run(void)
         CRef<CMapperFormattingArgs> fmt_args(
              dynamic_cast<CMapperFormattingArgs*>(
                    m_CmdLineArgs->GetFormattingArgs().GetNonNullPointer()));
+
+        // Is "no_discordant" selected?
+        const bool kNoDiscordant = fmt_args->NoDiscordant();
 
         if (fmt_args->GetFormattedOutputChoice() == CFormattingArgs::eSAM) {
             if (num_db_sequences < kSamLargeNumSubjects) {
