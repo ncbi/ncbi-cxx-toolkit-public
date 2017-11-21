@@ -58,7 +58,7 @@ DISCREPANCY_CASE(RETROVIRIDAE_DNA, CSeqdesc_BY_BIOSEQ, eOncaller, "Retroviridae 
     const CBioSource& src = obj.GetSource();
     if (src.IsSetLineage() && context.HasLineage(src, src.GetLineage(), "Retroviridae")) {
         if (!src.IsSetGenome() || src.GetGenome() != CBioSource::eGenome_proviral) {
-            m_Objs[kGenomeNotProviral].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel(), eKeepRef));
+            m_Objs[kGenomeNotProviral].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel()));
         }
     }
 }
@@ -97,12 +97,10 @@ DISCREPANCY_CASE(NON_RETROVIRIDAE_PROVIRAL, CSeqdesc_BY_BIOSEQ, eOncaller, "Non-
     if (!obj.IsSource() || !context.IsDNA()) {
         return;
     }
-
     const CBioSource& src = obj.GetSource();
     if (src.IsSetLineage() && !context.HasLineage(src, src.GetLineage(), "Retroviridae")) {
         if (src.IsSetGenome() && src.GetGenome() == CBioSource::eGenome_proviral) {
-
-            m_Objs[kGenomeProviral].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel(), eKeepRef));
+            m_Objs[kGenomeProviral].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel()));
         }
     }
 }
@@ -258,7 +256,7 @@ DISCREPANCY_CASE(SWITCH_STRUCTURED_COMMENT_PREFIX, CSeqdesc, eOncaller, "Suspici
             if (!errors.empty()) {
                 const CComment_rule* new_rule = FindAppropriateRule(*comment_rules, user);
                 if (new_rule) {
-                    m_Objs[kBadStructCommentPrefix].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel(), eKeepRef, true, const_cast<CComment_rule*>(new_rule)));
+                    m_Objs[kBadStructCommentPrefix].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel(), eNoRef, true, const_cast<CComment_rule*>(new_rule)));
                 }
             }
         }
@@ -348,7 +346,7 @@ DISCREPANCY_SUMMARIZE(MISMATCHED_COMMENTS)
         const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*obj).GetNCPointer())->GetObject().GetPointer());
         if (desc) {
             string subitem = "[n] comment[s] contain[S] " + desc->GetComment();
-            m_Objs[kMismatchedComments][subitem].Ext().Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(desc), context.GetCurrentBioseqLabel(), eKeepRef, true));
+            m_Objs[kMismatchedComments][subitem].Ext().Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(desc), context.GetCurrentBioseqLabel(), eNoRef, true));
         }
     }
     m_Objs.GetMap().erase(kComments);

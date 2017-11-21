@@ -2262,10 +2262,6 @@ DISCREPANCY_CASE(PROTEIN_NAMES, CSeq_feat, eDisc | eSubmitter | eSmart, "Frequen
 
         const CProt_ref& prot = obj.GetData().GetProt();
         if (prot.IsSetName() && !prot.GetName().empty()) {
-
-            CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
-
-            // const cast is possible here because bioseq will not be changed
             m_Objs[kProteins].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef), false);
         }
     }

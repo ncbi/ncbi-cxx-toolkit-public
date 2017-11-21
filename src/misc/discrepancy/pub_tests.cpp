@@ -1062,21 +1062,17 @@ DISCREPANCY_CASE(USA_STATE, CPubdesc, eDisc | eOncaller | eSmart, "For country U
     }
 
     if (cit_sub && cit_sub->IsSetAuthors() && cit_sub->GetAuthors().IsSetAffil()) {
-
         const CAffil& affil = cit_sub->GetAuthors().GetAffil();
         if (affil.IsStd() && affil.GetStd().IsSetCountry()) {
-
             const string& country = affil.GetStd().GetCountry();
-
             if (country == "USA") {
                 bool report = !affil.GetStd().IsSetSub();
                 if (!report) {
                     const string& state = affil.GetStd().GetSub();
                     report = !IsValidStateAbbreviation(state);
                 }
-
                 if (report) {
-                    AddParentObject(m_Objs, context, kMissingState, eKeepRef, true, const_cast<CAffil*>(&affil));
+                    AddParentObject(m_Objs, context, kMissingState, eNoRef, true, const_cast<CAffil*>(&affil));
                 }
             }
         }

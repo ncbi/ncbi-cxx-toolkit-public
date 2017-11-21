@@ -721,9 +721,6 @@ DISCREPANCY_CASE(TITLE_ENDS_WITH_SEQUENCE, CSeqdesc, eDisc | eSubmitter | eSmart
 
 DISCREPANCY_SUMMARIZE(TITLE_ENDS_WITH_SEQUENCE)
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -763,7 +760,7 @@ DISCREPANCY_CASE(FEATURE_MOLTYPE_MISMATCH, CSeq_inst, eOncaller, "Sequences with
                 if ((*feat)->IsSetData()) {
                     CSeqFeatData::ESubtype subtype = (*feat)->GetData().GetSubtype();
                     if (subtype == CSeqFeatData::eSubtype_rRNA || subtype == CSeqFeatData::eSubtype_otherRNA) {
-                        m_Objs[kMoltypeMismatch].Add(*context.NewBioseqObj(bioseq, &context.GetSeqSummary(), eKeepRef, true));
+                        m_Objs[kMoltypeMismatch].Add(*context.NewBioseqObj(bioseq, &context.GetSeqSummary(), eNoRef, true));
                         break;
                     }
                 }
@@ -775,9 +772,6 @@ DISCREPANCY_CASE(FEATURE_MOLTYPE_MISMATCH, CSeq_inst, eOncaller, "Sequences with
 
 DISCREPANCY_SUMMARIZE(FEATURE_MOLTYPE_MISMATCH)
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -1944,11 +1938,10 @@ static bool IsmRNASequenceInGenProdSet(CDiscrepancyContext& context, const CBios
 DISCREPANCY_CASE(SHORT_CONTIG, CSeq_inst, eDisc | eSubmitter | eSmart | eBig, "Short Contig")
 {
     static TSeqPos MIN_CONTIG_LEN = 200;
-
     if (obj.IsNa() && obj.IsSetLength() && obj.GetLength() < MIN_CONTIG_LEN) {
         CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
         if (!IsmRNASequenceInGenProdSet(context, *bioseq)) {
-            m_Objs[kShortContig].Add(*context.NewBioseqObj(bioseq, &context.GetSeqSummary(), eKeepRef, true), false);
+            m_Objs[kShortContig].Add(*context.NewBioseqObj(bioseq, &context.GetSeqSummary(), eNoRef, true), false);
         }
     }
 }
@@ -2389,10 +2382,9 @@ void  AddMisspellsToReport(const list<size_t>& misspells, CReportNode& node, con
 {
     ITERATE (list<size_t>, misspell_idx, misspells) {
         string subitem = string("[n] object[s] contain[S] ") + kSpellFixes[*misspell_idx].m_misspell;
-        EKeepRef keep_ref = kSpellFixes[*misspell_idx].m_correct == nullptr ? eNoRef : eKeepRef;
         bool autofix = kSpellFixes[*misspell_idx].m_correct != nullptr;
         const string& fixable = (autofix ? kFixable : kNonFixable);
-        node[fixable][subitem].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), keep_ref, autofix, CRef<CIdxObject>(new CIdxObject(*misspell_idx))));
+        node[fixable][subitem].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eNoRef, autofix, CRef<CIdxObject>(new CIdxObject(*misspell_idx))));
     }
 }
 
@@ -2401,10 +2393,9 @@ void  AddMisspellsToReport(const list<size_t>& misspells, CReportNode& node, con
 {
     ITERATE (list<size_t>, misspell_idx, misspells) {
         string subitem = string("[n] object[s] contain[S] ") + kSpellFixes[*misspell_idx].m_misspell;
-        EKeepRef keep_ref = kSpellFixes[*misspell_idx].m_correct == nullptr ? eNoRef : eKeepRef;
         bool autofix = kSpellFixes[*misspell_idx].m_correct != nullptr;
         const string& fixable = (autofix ? kFixable : kNonFixable);
-        node[fixable][subitem].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel(), keep_ref, autofix, CRef<CIdxObject>(new CIdxObject(*misspell_idx))));
+        node[fixable][subitem].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel(), eNoRef, autofix, CRef<CIdxObject>(new CIdxObject(*misspell_idx))));
     }
 }
 

@@ -1302,6 +1302,7 @@ DISCREPANCY_SUMMARIZE(GENE_PRODUCT_CONFLICT)
             }
         }
     }
+    genes.clear();
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
