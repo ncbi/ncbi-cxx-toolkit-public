@@ -723,6 +723,11 @@ bool operator==(const CNullable<TValue, TNullToValue>& l, const CNullable<TValue
     return (l.IsNull() && r.IsNull()) ||
            (!l.IsNull() && !r.IsNull() && l.GetValue() == r.GetValue());
 }
+template <class TValue, class TNullToValue = SThrowOnNull<TValue> >
+bool operator!=(const CNullable<TValue, TNullToValue>& l, const CNullable<TValue, TNullToValue>& r)
+{
+    return !operator==(l, r);
+}
 
 // "min" and "max" templates
 //
