@@ -382,6 +382,8 @@ public:
     CSourceFeatureItem(const CMappedFeat& feat, CBioseqContext& ctx,
         CRef<feature::CFeatTree> ftree, const CSeq_loc* loc = NULL);
 
+    void SetObject(const CSerialObject& obj) { x_SetObject(obj); }
+
     bool WasDesc(void) const { return m_WasDesc; }
     const CBioSource& GetSource(void) const {
         return m_Feat.GetData().GetBiosrc();

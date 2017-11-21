@@ -1659,6 +1659,7 @@ void CFlatGatherer::x_CollectSourceDescriptors
         const CBioSource& bsrc = dit->GetSource();
         if (bsrc.IsSetOrg()) {
             sf.Reset(new CSourceFeatureItem(bsrc, print_range, ctx, m_Feat_Tree));
+            sf->SetObject(*dit);
             srcs.push_back(sf);
             okay = true;
         }
