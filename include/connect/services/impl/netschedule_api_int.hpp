@@ -33,6 +33,7 @@
  *
  */
 
+#include <util/ncbi_url.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -46,9 +47,16 @@ NCBI_DECLARE_INTERFACE_VERSION(SNetScheduleAPIImpl, "xnetschedule_api", 1,0, 0);
 
 extern NCBI_XCONNECT_EXPORT const char* const kNetScheduleAPIDriverName;
 
-extern NCBI_XCONNECT_EXPORT
+/// @deprecated, use SNetScheduleOutputParser instead
+extern NCBI_DEPRECATED NCBI_XCONNECT_EXPORT
 int g_ParseNSOutput(const string& attr_string, const char* const* attr_names,
         string* attr_values, size_t attr_count);
+
+struct NCBI_XCONNECT_EXPORT SNetScheduleOutputParser : private CUrlArgs
+{
+    SNetScheduleOutputParser(const string& output);
+    const string& operator()(const string& param) const;
+};
 
 void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetscheduleapi(
      CPluginManager<SNetScheduleAPIImpl>::TDriverInfoList&   info_list,

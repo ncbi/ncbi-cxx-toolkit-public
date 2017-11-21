@@ -430,23 +430,14 @@ bool CNetScheduleNotificationHandler::RequestJob(
     return true;
 }
 
-#define GET2_NOTIF_ATTR_COUNT 2
-
 bool CNetScheduleNotificationHandler::CheckRequestJobNotification(
         CNetScheduleExecutor::TInstance executor, CNetServer* server)
 {
-    static const char* const attr_names[GET2_NOTIF_ATTR_COUNT] =
-        {"ns_node", "queue"};
+    SNetScheduleOutputParser parser(m_Receiver.message);
 
-    string attr_values[GET2_NOTIF_ATTR_COUNT];
+    if (parser("queue") != executor->m_API.GetQueueName()) return false;
 
-    if (g_ParseNSOutput(m_Receiver.message,
-            attr_names, attr_values, GET2_NOTIF_ATTR_COUNT) !=
-                    GET2_NOTIF_ATTR_COUNT ||
-            attr_values[1] != executor->m_API.GetQueueName())
-        return false;
-
-    return executor->m_API->GetServerByNode(attr_values[0], server);
+    return executor->m_API->GetServerByNode(parser("ns_node"), server);
 }
 
 inline

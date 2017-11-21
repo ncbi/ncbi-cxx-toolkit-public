@@ -764,17 +764,13 @@ void CCgi2RCgiApp::ListenJobs(CCgiContext& ctx, const string& job_ids_value, con
 
     if (wait_notifications) {
         while (handler.WaitForNotification(deadline)) {
-            const char* const attr_names[] = { "job_key", "job_status" };
-            array<string, 2> attr_values;
-            const auto& received_job_id = attr_values[0];
-            const auto& received_job_status = attr_values[1];
+            SNetScheduleOutputParser parser(handler.GetMessage());
 
-            g_ParseNSOutput(handler.GetMessage(), attr_names, attr_values.data(), attr_values.size());
-            auto job = jobs.find(received_job_id);
+            auto job = jobs.find(parser("job_key"));
 
             // If it's one of requested jobs
             if (job != jobs.end()) {
-                job->second = CNetScheduleAPI::StringToStatus(received_job_status);
+                job->second = CNetScheduleAPI::StringToStatus(parser("job_status"));
 
                 if (!s_IsPendingOrRunning(job->second)) break;
             }

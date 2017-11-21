@@ -41,8 +41,6 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 
-#include <util/ncbi_url.hpp>
-
 #include <array>
 #include <memory>
 #include <stdio.h>
@@ -108,6 +106,25 @@ CNetScheduleNotificationHandler::CNetScheduleNotificationHandler()
 {
 }
 
+CUrlArgs s_CreateCUrlArgs(const string& output)
+try {
+    return CUrlArgs(output);
+}
+catch (CUrlParserException&) {
+    return CUrlArgs();
+}
+
+SNetScheduleOutputParser::SNetScheduleOutputParser(const string& output) :
+        CUrlArgs(s_CreateCUrlArgs(output))
+{
+}
+
+const string& SNetScheduleOutputParser::operator()(const string& param) const
+{
+    auto it = FindFirst(param);
+    return it != GetArgs().end() ? it->value : kEmptyStr;
+}
+
 int g_ParseNSOutput(const string& attr_string, const char* const* attr_names,
         string* attr_values, size_t attr_count)
 {
@@ -137,29 +154,24 @@ int g_ParseNSOutput(const string& attr_string, const char* const* attr_names,
     return -1;
 }
 
-#define JOB_NOTIF_ATTR_COUNT 3
-
 SNetScheduleNotificationThread::ENotificationType
         SNetScheduleNotificationThread::CheckNotification(string* ns_node)
 {
-    static const char* const attr_names[JOB_NOTIF_ATTR_COUNT] =
-        {"reason", "ns_node", "queue"};
+    _ASSERT(ns_node);
 
-    string attr_values[JOB_NOTIF_ATTR_COUNT];
+    SNetScheduleOutputParser parser(m_Receiver.message);
 
-    int defined_attrs = g_ParseNSOutput(m_Receiver.message,
-            attr_names, attr_values, JOB_NOTIF_ATTR_COUNT);
+    if (parser("queue") != m_API->m_Queue) return eNT_Unknown;
 
-    if (defined_attrs == -1 || attr_values[2] != m_API->m_Queue)
-        return eNT_Unknown;
+    *ns_node = parser("ns_node");
 
-    *ns_node = attr_values[1];
+    const auto reason = parser("reason");
 
-    if (defined_attrs != JOB_NOTIF_ATTR_COUNT)
+    if (reason.empty())
         return eNT_GetNotification;
-    else if (NStr::CompareCase(attr_values[0], CTempString("get", 3)) == 0)
+    else if (NStr::CompareCase(reason, CTempString("get", 3)) == 0)
         return eNT_GetNotification;
-    else if (NStr::CompareCase(attr_values[0], CTempString("read", 4)) == 0)
+    else if (NStr::CompareCase(reason, CTempString("read", 4)) == 0)
         return eNT_ReadNotification;
     else
         return eNT_Unknown;
@@ -933,29 +945,12 @@ CNetScheduleAPI::EJobStatus CNetScheduleAPI::GetJobDetails(
         ENetScheduleQueuePauseMode* pause_mode)
 {
     string resp = m_Impl->x_ExecOnce("STATUS2", job);
+    SNetScheduleOutputParser parser(resp);
 
-    static const char* const s_JobStatusAttrNames[] = {
-            "job_status",       // 0
-            "job_exptime",      // 1
-            "input",            // 2
-            "output",           // 3
-            "ret_code",         // 4
-            "err_msg",          // 5
-            "pause",            // 6
-    };
+    const auto status = StringToStatus(parser("job_status"));
 
-#define NUMBER_OF_STATUS_ATTRS (sizeof(s_JobStatusAttrNames) / \
-    sizeof(*s_JobStatusAttrNames))
-
-    string attr_values[NUMBER_OF_STATUS_ATTRS];
-
-    g_ParseNSOutput(resp, s_JobStatusAttrNames,
-            attr_values, NUMBER_OF_STATUS_ATTRS);
-
-    EJobStatus status = StringToStatus(attr_values[0]);
-
-    s_SetJobExpTime(job_exptime, attr_values[1]);
-    s_SetPauseMode(pause_mode, attr_values[6]);
+    s_SetJobExpTime(job_exptime, parser("job_exptime"));
+    s_SetPauseMode(pause_mode, parser("pause"));
 
     switch (status) {
     case ePending:
@@ -966,11 +961,10 @@ CNetScheduleAPI::EJobStatus CNetScheduleAPI::GetJobDetails(
     case eReading:
     case eConfirmed:
     case eReadFailed:
-        job.input = attr_values[2];
-        job.output = attr_values[3];
-        job.ret_code = NStr::StringToInt(attr_values[4],
-                NStr::fConvErr_NoThrow);
-        job.error_msg = attr_values[5];
+        job.input = parser("input");
+        job.output = parser("output");
+        job.ret_code = NStr::StringToInt(parser("ret_code"), NStr::fConvErr_NoThrow);
+        job.error_msg = parser("err_msg");
         break;
 
     default:
@@ -1006,22 +1000,12 @@ CNetScheduleAPI::EJobStatus SNetScheduleAPIImpl::GetJobStatus(const string& cmd,
         return CNetScheduleAPI::eJobNotFound;
     }
 
-    static const char* const s_AttrNames[] = {
-        "job_status",       // 0
-        "job_exptime",      // 1
-        "pause",            // 2
-    };
+    SNetScheduleOutputParser parser(response);
 
-#define NUMBER_OF_ATTRS (sizeof(s_AttrNames) / sizeof(*s_AttrNames))
+    s_SetJobExpTime(job_exptime, parser("job_exptime"));
+    s_SetPauseMode(pause_mode, parser("pause"));
 
-    string attr_values[NUMBER_OF_ATTRS];
-
-    g_ParseNSOutput(response, s_AttrNames, attr_values, NUMBER_OF_ATTRS);
-
-    s_SetJobExpTime(job_exptime, attr_values[1]);
-    s_SetPauseMode(pause_mode, attr_values[2]);
-
-    return CNetScheduleAPI::StringToStatus(attr_values[0]);
+    return CNetScheduleAPI::StringToStatus(parser("job_status"));
 }
 
 bool SNetScheduleAPIImpl::GetServerByNode(const string& ns_node,
