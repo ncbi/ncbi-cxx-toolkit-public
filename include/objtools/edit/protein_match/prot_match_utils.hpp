@@ -51,17 +51,16 @@ public:
 
 
 
-
 class CUpdateProtIds {
 
 private:
     string m_Accession;
     string m_Gi;
 
-    set<CRef<CSeq_id>> m_Others;
+    list<CRef<CSeq_id>> m_Others;
 public:
 
-    using TOtherIds = set<CRef<CSeq_id>>;
+    using TOtherIds = list<CRef<CSeq_id>>;
 
 
     bool IsSetAccession(void) const {
@@ -72,7 +71,7 @@ public:
         return !NStr::IsBlank(m_Gi); 
     }
 
-    bool IsSetOther(void) const {
+    bool IsSetOthers(void) const {
         return !(m_Others.empty());
     }
 

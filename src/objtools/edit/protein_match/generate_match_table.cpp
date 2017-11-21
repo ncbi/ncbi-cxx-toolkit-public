@@ -184,6 +184,8 @@ bool CMatchTabulate::x_GetMatch(const CSeq_annot& annot,
         const string db_prot_acc =  x_GetAccession(subject);
 
         const CSeq_feat& query = x_GetQuery(annot);
+
+
         const string update_prot_id = x_GetGeneralOrLocalID(query);
         match_info.SetAccession(db_prot_acc);
         match_info.SetOtherId(update_prot_id);
@@ -256,18 +258,6 @@ void CMatchTabulate::GenerateMatchTable(
     TProtMatchMap prot_matches;
     x_ProcessAnnots(annot_istr, prot_matches);
 
-    map<string, set<string>> matched_protein_accessions;
-    map<string, set<string>> other_matched_protein_ids;
-
-    for (const auto& key_val : nucseq_same) {
-        const string& nuc_accession = key_val.first;        
-        for (const CProtMatchInfo& prot_match : prot_matches[nuc_accession]) {
-            matched_protein_accessions[nuc_accession].insert(prot_match.GetAccession());
-            if (prot_match.IsSetOtherId()) {
-                other_matched_protein_ids[nuc_accession].insert(prot_match.GetOtherId());
-            }
-        }
-    }
 
     // loop over match id info
     for (const auto& id_info : id_info_list) {
@@ -285,22 +275,48 @@ void CMatchTabulate::GenerateMatchTable(
         const string& nucseq_status = nucseq_same[db_nuc_accession] ? "Same" : "Changed";
         x_AppendNucleotide(update_nuc_accession, nucseq_status);
         if (prot_matches.find(db_nuc_accession) != prot_matches.end()) {
+            set<string> matched_protein_accessions;
+            set<string> other_matched_protein_ids;
             for (const CProtMatchInfo& prot_match : prot_matches[db_nuc_accession]) {
                 x_AppendMatchedProtein(update_nuc_accession, prot_match);
+                    
+                matched_protein_accessions.insert(prot_match.GetAccession());
+                if (prot_match.IsSetOtherId()) {
+                    other_matched_protein_ids.insert(prot_match.GetOtherId());
+                }
             }
-        }
 
-        for (const string& other_prot_id : id_info.GetUpdateOtherProtIds()) {
-            if (other_matched_protein_ids[db_nuc_accession].find(other_prot_id) == 
-                other_matched_protein_ids[db_nuc_accession].end()) {
-                x_AppendNewProtein(update_nuc_accession, other_prot_id);
+/*
+            for (const CUpdateProtIds& update_prot_ids : id_info.GetUpdateProtIds() {
+                if (update_prot_ids.IsSetOthers()) {
+                    bool matched = false;
+                    for (CRef<CSeq_id> other_id : update_prot_ids.GetOthers()) {
+                        string id_string = other_id->GetSeqIdString();
+                        if (other_matched_protein_ids.find(other_prot_id) != 
+                            other_matched_protein_ids.end()) {
+                            matched = true;
+                            break;
+                        }       
+                    }
+                    if (!matched) {
+                    //    x_AppendNewProtein(update_nuc_accession,  // complete this
+                    }
+                }
             }
-        }
+*/
 
-        for (const string& db_prot_accession : id_info.GetDBProtIds()) {
-            if (matched_protein_accessions[db_nuc_accession].find(db_prot_accession) == 
-                matched_protein_accessions[db_nuc_accession].end()) {
-                x_AppendDeadProtein(update_nuc_accession, db_prot_accession);
+            for (const string& other_prot_id : id_info.GetUpdateOtherProtIds()) {
+                if (other_matched_protein_ids.find(other_prot_id) == 
+                    other_matched_protein_ids.end()) {
+                    x_AppendNewProtein(update_nuc_accession, other_prot_id);
+                }
+            }
+
+            for (const string& db_prot_accession : id_info.GetDBProtIds()) {
+                if (matched_protein_accessions.find(db_prot_accession) == 
+                    matched_protein_accessions.end()) {
+                    x_AppendDeadProtein(update_nuc_accession, db_prot_accession);
+                }
             }
         }
     }
@@ -486,6 +502,21 @@ string CMatchTabulate::x_GetGeneralOrLocalID(const CSeq_feat& seq_feat) const
     }
 
     return "";
+}
+
+
+CRef<CSeq_id> CMatchTabulate::x_GetQueryProductId(const CSeq_feat& seq_feat) const 
+{
+    CRef<CSeq_id> pSeqId;
+
+    if (seq_feat.IsSetProduct() &&
+        seq_feat.GetProduct().IsWhole()) {
+        pSeqId = Ref(new CSeq_id());
+   
+        pSeqId->Assign(seq_feat.GetProduct().GetWhole());  
+    }
+
+    return pSeqId;
 }
 
 

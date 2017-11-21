@@ -212,6 +212,7 @@ private:
     string x_GetAccessionVersion(const CSeq_feat& seq_feat) const;
     string x_GetAccessionVersion(const CUser_object& user_obj) const;
     string x_GetGeneralOrLocalID(const CSeq_feat& seq_feat) const;
+    CRef<CSeq_id> x_GetQueryProductId(const CSeq_feat& seq_feat) const;
 
     CRef<CSeq_table> mMatchTable;
     map<string, size_t> mColnameToIndex;

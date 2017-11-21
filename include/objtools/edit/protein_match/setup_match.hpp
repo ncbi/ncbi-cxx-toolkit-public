@@ -52,8 +52,6 @@ public:
 
     CConstRef<CSeq_entry> GetDBEntry(const CSeq_id& nuc_id);
 
-    CConstRef<CSeq_entry> GetDBEntry(const CBioseq& nuc_seq);
-
     CSeq_entry_Handle GetTopLevelEntry(const CSeq_id& seq_id);
 
     bool UpdateNucSeqIds(CRef<CSeq_id> new_id,
