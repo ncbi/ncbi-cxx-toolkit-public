@@ -769,7 +769,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_InvalidQualifierValue)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InvalidQualifierValue", 
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "RepeatSeqDoNotMatch", 
                       "repeat_region /rpt_unit and underlying sequence do not match"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -780,12 +780,11 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_InvalidQualifierValue)
     misc->SetData().SetImp().SetKey("repeat_region");
     misc->AddQualifier("rpt_unit_seq", "ATAGTGATAGTG");
     seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrCode("InvalidRepeatUnitLength");
     expected_errors[0]->SetErrMsg("Length of rpt_unit_seq is greater than feature length");
     expected_errors[0]->SetSeverity(eDiag_Info);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-
-    // TODO: Finish this
 
     CLEAR_ERRORS
 }
@@ -7458,7 +7457,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("PMS");
     ambig.push_back("LE");
     ambig.push_back("GCM");
-    ambig.push_back("BNA");
     ambig.push_back("SU");
     ambig.push_back("TMP");
     ambig.push_back("DMNH");
@@ -7721,7 +7719,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("ITCC");
     ambig.push_back("WB");
     ambig.push_back("LE");
-    ambig.push_back("BNA");
     ambig.push_back("LCC");
     ambig.push_back("LBM");
     ambig.push_back("NI");
@@ -15919,7 +15916,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_EcNumberProblem)
 
     STANDARD_SETUP
 
-    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "InvalidQualifierValue",
+    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "InvalidPunctuation",
                                "Qualifier other than replace has just quotation marks"));
     expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "EcNumberProblem",
                                "EC number should not be empty"));
@@ -15935,7 +15932,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_EcNumberProblem)
     CLEAR_ERRORS    
 
     prot->SetData().SetProt().ResetEc();
-    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "InvalidQualifierValue",
+    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "InvalidPunctuation",
                                "Qualifier other than replace has just quotation marks"));
     expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "EcNumberProblem",
                                "EC number should not be empty"));
@@ -16212,7 +16209,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UnnecessaryTranslExcept)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SuspiciousQualifierValue)
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_InvalidMatchingReplace)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     CRef<CSeq_feat> feat = unit_test_util::AddMiscFeature(entry);
@@ -16221,7 +16218,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SuspiciousQualifierValue)
 
     STANDARD_SETUP
 
-    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Info, "SuspiciousQualifierValue",
+    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Info, "InvalidMatchingReplace",
                                "/replace already matches underlying sequence (aattggccaaa)"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -18813,7 +18810,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ANNOT_AnnotLOCs)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_WrongQualOnFeature)
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_WrongQualOnCDS)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
     CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
@@ -18822,7 +18819,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_WrongQualOnFeature)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "WrongQualOnFeature", 
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "WrongQualOnCDS", 
                               "gene_synonym should not be a gbqual on a CDS feature"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -20461,7 +20458,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_660)
     recomb->ResetComment();
     eval = validator.Validate(seh, options);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
-        "InvalidQualifierValue",
+        "RecombinationClassOtherNeedsNote",
         "The recombination_class 'other' is missing the required /note"));
     CheckErrors(*eval, expected_errors);
 
@@ -20903,7 +20900,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_35)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidQualifierValue",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidNumberQualifier",
         "Number qualifiers should not contain spaces"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -21536,3 +21533,427 @@ BOOST_AUTO_TEST_CASE(Test_InconsistentPseudogeneValue)
 
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_InvalidPseudoQualifier)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+
+    CRef<CSeq_feat> gene = unit_test_util::AddMiscFeature(entry);
+    gene->SetData().SetGene().SetLocus("x");
+    gene->ResetComment();
+    gene->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("pseudogene", "")));
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "InvalidPseudoQualifier",
+        "/pseudogene value should not be empty"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "InvalidPunctuation",
+        "Qualifier other than replace has just quotation marks"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    gene->SetQual().front()->SetVal("abc");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "InvalidPseudoQualifier",
+        "/pseudogene value should not be 'abc'"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_InvalidRptUnitRange)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+
+    CRef<CSeq_feat> rpt = unit_test_util::AddMiscFeature(entry);
+    rpt->SetData().SetImp().SetKey("repeat_region");
+    rpt->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("rpt_unit_range", "x")));
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "InvalidRptUnitRange",
+        "/rpt_unit_range is not a base range"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    rpt->SetQual().front()->SetVal("a..b");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    rpt->SetQual().front()->SetVal("1..5");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_InvalidRptUnitSeqCharacters)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+
+    CRef<CSeq_feat> rpt = unit_test_util::AddMiscFeature(entry);
+    rpt->SetData().SetImp().SetKey("repeat_region");
+    rpt->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("rpt_unit_seq", "x..y")));
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "InvalidRptUnitSeqCharacters",
+        "/rpt_unit_seq has illegal characters"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    rpt->SetQual().front()->SetVal("(atgc)");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_MismatchedAllele)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+
+    CRef<CSeq_feat> rna = unit_test_util::AddMiscFeature(entry);
+    rna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    rna->SetData().SetRna().SetExt().SetName("16S ribosomal RNA");
+    rna->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("allele", "x")));
+    CRef<CSeq_feat> gene1 = unit_test_util::MakeGeneForFeature(rna);
+    unit_test_util::AddFeat(gene1, entry);
+    gene1->SetData().SetGene().SetAllele("y");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "MismatchedAllele",
+        "Mismatched allele qualifier on gene (y) and feature (x)"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_InvalidAlleleDuplicates)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+
+    CRef<CSeq_feat> rna = unit_test_util::AddMiscFeature(entry);
+    rna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    rna->SetData().SetRna().SetExt().SetName("16S ribosomal RNA");
+    rna->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("allele", "x")));
+    CRef<CSeq_feat> gene1 = unit_test_util::MakeGeneForFeature(rna);
+    unit_test_util::AddFeat(gene1, entry);
+    gene1->SetData().SetGene().SetAllele("x");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "InvalidAlleleDuplicates",
+        "Redundant allele qualifier (x) on gene and feature"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_InvalidOperonMatchesGene)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> operon = unit_test_util::AddMiscFeature(entry);
+    operon->SetData().SetImp().SetKey("operon");
+    operon->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("operon", "x")));
+
+    CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature(operon);
+    unit_test_util::AddFeat(gene, entry);
+    gene->SetData().SetGene().SetLocus("x");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "InvalidOperonMatchesGene",
+        "Operon is same as gene - x"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_InvalidCompareRefSeqAccession)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    entry->SetSeq().SetId().push_back(CRef<CSeq_id>(new CSeq_id("AY123456.1")));
+    CRef<CSeq_feat> var = unit_test_util::AddMiscFeature(entry);
+    var->SetData().SetImp().SetKey("variation");
+    var->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("compare", "NC_000001.1")));
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("gb|AY123456.1|", eDiag_Error,
+        "InvalidCompareRefSeqAccession",
+        "RefSeq accession NC_000001.1 cannot be used for qualifier compare"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_InvalidCompareMissingVersion)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    entry->SetSeq().SetId().push_back(CRef<CSeq_id>(new CSeq_id("AY123456.1")));
+    CRef<CSeq_feat> var = unit_test_util::AddMiscFeature(entry);
+    var->SetData().SetImp().SetKey("variation");
+    var->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("compare", "NC_000001")));
+
+    STANDARD_SETUP
+
+        expected_errors.push_back(new CExpectedError("gb|AY123456.1|", eDiag_Error,
+        "InvalidCompareMissingVersion",
+        "NC_000001 accession missing version for qualifier compare"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_InvalidCompareBadAccession)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    entry->SetSeq().SetId().push_back(CRef<CSeq_id>(new CSeq_id("AY123456.1")));
+    CRef<CSeq_feat> var = unit_test_util::AddMiscFeature(entry);
+    var->SetData().SetImp().SetKey("variation");
+    var->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("compare", "x_y")));
+
+    STANDARD_SETUP
+
+        expected_errors.push_back(new CExpectedError("gb|AY123456.1|", eDiag_Error,
+        "InvalidCompareBadAccession",
+        "x_y is not a legal accession for qualifier compare"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_RegulatoryClassOtherNeedsNote)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> reg = unit_test_util::AddMiscFeature(entry);
+    reg->SetData().SetImp().SetKey("regulatory");
+    CRef<CGb_qual> qual(new CGb_qual("regulatory_class", "other"));
+    reg->SetQual().push_back(qual);
+
+    STANDARD_SETUP
+
+    // first check ok because recomb has comment
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // error because 'other' and no comment
+    reg->ResetComment();
+    eval = validator.Validate(seh, options);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "RegulatoryClassOtherNeedsNote",
+        "The regulatory_class 'other' is missing the required /note"));
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_UnparsedtRNAAnticodon)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> trna = unit_test_util::AddMiscFeature(entry);
+    trna->SetData().SetRna().SetType(CRNA_ref::eType_tRNA);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAa().SetNcbieaa('A');
+    trna->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("anticodon", "other")));
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "UnparsedtRNAAnticodon",
+        "Unparsed anticodon qualifier in tRNA"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_UnparsedtRNAProduct)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> trna = unit_test_util::AddMiscFeature(entry);
+    trna->SetData().SetRna().SetType(CRNA_ref::eType_tRNA);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAa().SetNcbieaa('A');
+    trna->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("product", "other")));
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "UnparsedtRNAProduct",
+        "Unparsed product qualifier in tRNA"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_rRNADoesNotHaveProduct)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> rrna = unit_test_util::AddMiscFeature(entry);
+    rrna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "rRNADoesNotHaveProduct",
+        "rRNA has no name"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_MobileElementInvalidQualifier)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> misc = unit_test_util::AddMiscFeature(entry);
+    misc->SetData().SetImp().SetKey("repeat_region");
+    misc->AddQualifier("mobile_element", "foo");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MobileElementInvalidQualifier",
+        "foo is not a legal value for qualifier mobile_element"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    misc->SetQual().front()->SetVal("integron");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_InvalidReplace)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> misc = unit_test_util::AddMiscFeature(entry);
+    misc->SetData().SetImp().SetKey("misc_difference");
+    misc->AddQualifier("replace", "123");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidReplace",
+        "123 is not a legal value for qualifier replace - should only be composed of acgtmrwsykvhdbn nucleotide bases"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    misc->SetQual().front()->SetVal("aaccttgg");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_entry> prot = unit_test_util::GetProteinSequenceFromGoodNucProtSet(entry);
+
+    misc = unit_test_util::AddMiscFeature(prot, prot->GetSeq().GetLength() - 1);
+    misc->SetData().SetImp().SetKey("misc_difference");
+    misc->AddQualifier("replace", "123");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Error, "InvalidReplace",
+        "123 is not a legal value for qualifier replace - should only be composed of acdefghiklmnpqrstuvwy* amino acids"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_InvalidVariationReplace)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> misc = unit_test_util::AddMiscFeature(entry);
+    misc->SetData().SetImp().SetKey("variation");
+    misc->AddQualifier("replace", "123");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidVariationReplace",
+        "123 is not a legal value for qualifier replace - should only be composed of acgt unambiguous nucleotide bases"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    misc->SetQual().front()->SetVal("aaccttgg");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_InvalidProductOnGene)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> gene = unit_test_util::AddMiscFeature(entry);
+    gene->SetData().SetGene().SetLocus("x");
+    gene->AddQualifier("product", "hypothetical protein");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "InvalidProductOnGene",
+        "A product qualifier is not used on a gene feature"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_InvalidCodonStart)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    cds->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("codon_start", "z")));
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "InvalidCodonStart",
+        "codon_start value should be 1, 2, or 3"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}

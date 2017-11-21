@@ -322,7 +322,7 @@ void CValidError_feat::x_ValidateGbQual(const CGb_qual& qual, const CSeq_feat& f
         if (NStr::EqualNocase(qual.GetQual(), "replace")) {
             /* ok for replace */
         } else {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidPunctuation,
                 "Qualifier other than replace has just quotation marks", feat);
             if (NStr::EqualNocase(qual.GetQual(), "EC_number")) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, "EC number should not be empty", feat);
@@ -331,7 +331,7 @@ void CValidError_feat::x_ValidateGbQual(const CGb_qual& qual, const CSeq_feat& f
         if (NStr::EqualNocase(qual.GetQual(), "inference")) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue, "Inference qualifier problem - empty inference string ()", feat);
         } else if (NStr::EqualNocase(qual.GetQual(), "pseudogene")) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue, "/pseudogene value should be not empty", feat);
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidPseudoQualifier, "/pseudogene value should not be empty", feat);
         }
     } else if (NStr::EqualNocase(qual.GetQual(), "EC_number")) {
         if (!s_IsValidECNumberFormat(qual.GetVal())) {
@@ -389,8 +389,8 @@ void CValidError_feat::x_ValidateGbQual(const CGb_qual& qual, const CSeq_feat& f
     } else if (NStr::EqualNocase(qual.GetQual(), "pseudogene")) {
         m_Imp.IncrementPseudogeneCount();
         if (!CGb_qual::IsValidPseudogeneValue(qual.GetVal())) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
-                "/pseudogene value should be not '" + qual.GetVal() + "'", feat);
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidPseudoQualifier,
+                "/pseudogene value should not be '" + qual.GetVal() + "'", feat);
         }
     } else if (NStr::EqualNocase(qual.GetQual(), "number")) {
         bool has_space = false;
@@ -405,7 +405,7 @@ void CValidError_feat::x_ValidateGbQual(const CGb_qual& qual, const CSeq_feat& f
             }
         }
         if (has_char_after_space) {
-            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidNumberQualifier,
                 "Number qualifiers should not contain spaces", feat);
         }
     }
@@ -1472,7 +1472,7 @@ void CValidError_feat::ValidateCdregion (
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
                     "protein_id should not be a gbqual on a CDS feature", feat);
             } else if ( NStr::EqualNocase(key, "gene_synonym") ) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnCDS,
                     "gene_synonym should not be a gbqual on a CDS feature", feat);
             } else if ( NStr::EqualNocase(key, "transcript_id") ) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
@@ -1482,7 +1482,7 @@ void CValidError_feat::ValidateCdregion (
                     PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
                         "conflicting codon_start values", feat);
                 } else {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidCodonStart,
                         "codon_start value should be 1, 2, or 3", feat);
                 }
             }
@@ -2571,12 +2571,12 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
     if ( rna_type == CRNA_ref::eType_tRNA ) {
         FOR_EACH_GBQUAL_ON_FEATURE (gbqual, feat) {
             if ( NStr::CompareNocase((**gbqual).GetQual (), "anticodon") == 0 ) {
-                PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_UnparsedtRNAAnticodon,
                     "Unparsed anticodon qualifier in tRNA", feat);
             } else if (NStr::CompareNocase ((**gbqual).GetQual (), "product") == 0 ) {
                 if (NStr::CompareNocase ((**gbqual).GetVal (), "tRNA-fMet") != 0 &&
                     NStr::CompareNocase ((**gbqual).GetVal (), "tRNA-iMet") != 0) {
-                    PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_UnparsedtRNAProduct,
                         "Unparsed product qualifier in tRNA", feat);
                 } else {
                     mustbemethionine = true;
@@ -2612,7 +2612,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
         /* tRNA with string extension */
         if ( rna.IsSetExt()  &&  
              rna.GetExt().Which () == CRNA_ref::C_Ext::e_Name ) {
-            PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_UnparsedtRNAProduct,
                 "Unparsed product qualifier in tRNA", feat);
         } else if (!rna.IsSetExt() || rna.GetExt().Which() == CRNA_ref::C_Ext::e_not_set ) {
             PostErr (eDiag_Warning, eErr_SEQ_FEAT_MissingTrnaAA,
@@ -2643,7 +2643,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
         if (!rna.IsSetExt() || !rna.GetExt().IsName() || NStr::IsBlank(rna.GetExt().GetName())) {
             if (!pseudo) {
                 string rna_typename = CRNA_ref::GetRnaTypeName(rna_type);
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue, 
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_rRNADoesNotHaveProduct,
                          rna_typename + " has no name", feat);
             }
         }
@@ -3425,7 +3425,7 @@ void CValidError_feat::ValidateImp(
                 }
                 if ( missing ) {
                     if ( NStr::Equal (val, "other") && !feat.IsSetComment() ) {
-                        PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                        PostErr(eDiag_Error, eErr_SEQ_FEAT_RegulatoryClassOtherNeedsNote,
                             "The regulatory_class 'other' is missing the required /note", feat);
                     }
                 }
@@ -3441,7 +3441,7 @@ void CValidError_feat::ValidateImp(
                if ( recomb_values.find(val.c_str()) == recomb_values.end() ) {
                     if ( NStr::Equal (val, "other")) {
                         if (!feat.IsSetComment()) {
-                            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                            PostErr(eDiag_Error, eErr_SEQ_FEAT_RecombinationClassOtherNeedsNote,
                                 "The recombination_class 'other' is missing the required /note", feat);
                         }
                     } else {
@@ -3739,14 +3739,14 @@ void CValidError_feat::ValidateRptUnitVal (const string& val, const string& key,
                     string vec_data;
                     vec.GetSeqData(0, vec.size(), vec_data);
                     if (NStr::FindNoCase (vec_data, val) == string::npos) {
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_RepeatSeqDoNotMatch,
                             "repeat_region /rpt_unit and underlying "
                             "sequence do not match", feat);
                     }
                 }
             }
         } else {
-            PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidQualifierValue,
+            PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidRepeatUnitLength,
                 "Length of rpt_unit_seq is greater than feature length", feat);
         }                            
     }
@@ -3772,7 +3772,7 @@ void CValidError_feat::ValidateRptUnitSeqVal (const string& val, const string& k
         cp++;
     }
     if (badchars) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidRptUnitSeqCharacters,
             "/rpt_unit_seq has illegal characters", feat);
     }
 }
@@ -3782,7 +3782,7 @@ void CValidError_feat::ValidateRptUnitRangeVal (const string& val, const CSeq_fe
 {
     TSeqPos from = kInvalidSeqPos, to = kInvalidSeqPos;
     if (!s_RptUnitIsBaseRange(val, from, to)) {
-        PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidRptUnitRange,
                  "/rpt_unit_range is not a base range", feat);
     } else {
         CSeq_loc::TRange range = feat.GetLocation().GetTotalRange();
@@ -3839,16 +3839,16 @@ void CValidError_feat::ValidateCompareVal (const string& val, const CSeq_feat& f
     if (!NStr::StartsWith (val, "(")) {
         EAccessionFormatError valid_accession = ValidateAccessionString (val, true);  
         if (valid_accession == eAccessionFormat_missing_version) {
-            PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidCompareMissingVersion,
                      val + " accession missing version for qualifier compare", feat);
         } else if (valid_accession == eAccessionFormat_bad_version) {
             PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
                      val + " accession has bad version for qualifier compare", feat);
         } else if (valid_accession != eAccessionFormat_valid) {
-            PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidCompareBadAccession,
                      val + " is not a legal accession for qualifier compare", feat);
         } else if (m_Imp.IsINSDInSep() && NStr::Find (val, "_") != string::npos) {
-            PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidCompareRefSeqAccession,
                      "RefSeq accession " + val + " cannot be used for qualifier compare", feat);
         }
     }
@@ -4281,20 +4281,20 @@ void CValidError_feat::ValidateImpGbquals
                         if (bh.IsNa()) {
                             if (NStr::Equal(key, "variation")) {
                                 if (!s_StringConsistsOf (val, "acgtACGT")) {
-                                    PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                                    PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidVariationReplace,
                                              val + " is not a legal value for qualifier " + qual_str
                                              + " - should only be composed of acgt unambiguous nucleotide bases",
                                              feat);
                                 }
                             } else if (!s_StringConsistsOf (val, "acgtmrwsykvhdbn")) {
-                                  PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                                  PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidReplace,
                                            val + " is not a legal value for qualifier " + qual_str
                                            + " - should only be composed of acgtmrwsykvhdbn nucleotide bases",
                                            feat);
                             }
                         } else if (bh.IsAa()) {
                             if (!s_StringConsistsOf (val, "acdefghiklmnpqrstuvwy*")) {
-                                PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                                PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidReplace,
                                          val + " is not a legal value for qualifier " + qual_str
                                          + " - should only be composed of acdefghiklmnpqrstuvwy* amino acids",
                                          feat);
@@ -4314,7 +4314,7 @@ void CValidError_feat::ValidateImpGbquals
                                 string bases = "";
                                 nuc_vec.GetSeqData(0, nuc_vec.size(), bases);
                                 if (NStr::EqualNocase(val, bases)) {
-                                    PostErr (eDiag_Info, eErr_SEQ_FEAT_SuspiciousQualifierValue,
+                                    PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidMatchingReplace,
                                              "/replace already matches underlying sequence (" + val + ")",
                                              feat);
                                 }
@@ -4326,10 +4326,10 @@ void CValidError_feat::ValidateImpGbquals
                 }}
                 break;
 
-            case CSeqFeatData::eQual_mobile_element_type:
+            case CSeqFeatData::eQual_mobile_element:
                 {{
                     if (!CGb_qual::IsLegalMobileElementValue(val)) {
-                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_MobileElementInvalidQualifier,
                                   val + " is not a legal value for qualifier " + qual_str,
                                   feat);
                     }
@@ -4459,8 +4459,8 @@ void CValidError_feat::ValidateNonImpFeatGbquals (const CSeq_feat& feat)
                     {{
                         CSeqFeatData::E_Choice chs = feat.GetData().Which();
                         if (chs == CSeqFeatData::e_Gene) {
-                            PostErr(eDiag_Info, eErr_SEQ_FEAT_SuspiciousQualifierValue, 
-                                    "A product qualifier is not normally used on a gene feature", feat);
+                            PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidProductOnGene,
+                                    "A product qualifier is not used on a gene feature", feat);
                         }
                     }}
                     break;
@@ -6840,11 +6840,11 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                      NStr::Compare(qual.GetQual(), "allele") == 0 ) {
                     if ( qual.CanGetVal()  &&
                          NStr::CompareNocase(qual.GetVal(), allele) == 0 ) {
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidAlleleDuplicates,
                             "Redundant allele qualifier (" + allele + 
                             ") on gene and feature", feat);
                     } else if (feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_variation) {
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_MismatchedAllele,
                             "Mismatched allele qualifier on gene (" + allele + 
                             ") and feature (" + qual.GetVal() +")", feat);
                     }
@@ -6865,11 +6865,11 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                      NStr::Compare(qual.GetQual(), "allele") == 0 ) {
                     if ( qual.CanGetVal()  &&
                          NStr::CompareNocase(qual.GetVal(), allele) == 0 ) {
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidAlleleDuplicates,
                             "Redundant allele qualifier (" + allele + 
                             ") on gene and feature", feat);
                     } else if (feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_variation) {
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_MismatchedAllele,
                             "Mismatched allele qualifier on gene (" + allele + 
                             ") and feature (" + qual.GetVal() +")", feat);
                     }
@@ -6921,7 +6921,7 @@ void CValidError_feat::ValidateOperon(const CSeq_feat& gene)
         if( qual.CanGetQual()  &&  qual.CanGetVal() ) {
             if ( NStr::Compare(qual.GetQual(), "operon") == 0  &&
                  NStr::CompareNocase(qual.GetVal(), label) == 0) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidOperonMatchesGene,
                     "Operon is same as gene - " + qual.GetVal(), gene);
             }
         }
@@ -7659,7 +7659,7 @@ void CSingleFeatValidator::x_ValidateGbQual(const CGb_qual& qual)
         if (NStr::EqualNocase(qual.GetQual(), "replace")) {
             /* ok for replace */
         } else {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidPunctuation,
                 "Qualifier other than replace has just quotation marks");
             if (NStr::EqualNocase(qual.GetQual(), "EC_number")) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, "EC number should not be empty");
@@ -7669,7 +7669,7 @@ void CSingleFeatValidator::x_ValidateGbQual(const CGb_qual& qual)
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue, 
                 "Inference qualifier problem - empty inference string ()");
         } else if (NStr::EqualNocase(qual.GetQual(), "pseudogene")) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue, "/pseudogene value should be not empty");
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidPseudoQualifier, "/pseudogene value should not be empty");
         }
     } else if (NStr::EqualNocase(qual.GetQual(), "EC_number")) {
         if (!s_IsValidECNumberFormat(qual.GetVal())) {
@@ -7723,8 +7723,8 @@ void CSingleFeatValidator::x_ValidateGbQual(const CGb_qual& qual)
     } else if (NStr::EqualNocase(qual.GetQual(), "pseudogene")) {
         m_Imp.IncrementPseudogeneCount();
         if (!CGb_qual::IsValidPseudogeneValue(qual.GetVal())) {
-            m_Imp.PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
-                "/pseudogene value should be not '" + qual.GetVal() + "'", m_Feat);
+            m_Imp.PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidPseudoQualifier,
+                "/pseudogene value should not be '" + qual.GetVal() + "'", m_Feat);
         }
     } else if (NStr::EqualNocase(qual.GetQual(), "number")) {
         bool has_space = false;
@@ -7739,7 +7739,7 @@ void CSingleFeatValidator::x_ValidateGbQual(const CGb_qual& qual)
             }
         }
         if (has_char_after_space) {
-            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidNumberQualifier,
                 "Number qualifiers should not contain spaces");
         }
     }
