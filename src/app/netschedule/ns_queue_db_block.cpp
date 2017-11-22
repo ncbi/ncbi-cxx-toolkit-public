@@ -65,14 +65,13 @@ void SQueueDbBlock::Open(CBDB_Env& env, const string& path, int pos_,
         // if eventually is disposed of, it does not make sense to save
         // space here
         job_db.RevSplitOff();
-        job_db.Open(job_db_file, "", CBDB_RawFile::eReadWriteCreate);
+        job_db.Open(job_db_file, "", CBDB_RawFile::eCreate);
 
         job_info_db.SetEnv(env);
-        job_info_db.Open(job_info_db_file, "", CBDB_RawFile::eReadWriteCreate);
+        job_info_db.Open(job_info_db_file, "", CBDB_RawFile::eCreate);
 
         events_db.SetEnv(env);
-        events_db.Open(job_events_db_file, "",
-                       CBDB_RawFile::eReadWriteCreate);
+        events_db.Open(job_events_db_file, "", CBDB_RawFile::eCreate);
     } catch (CBDB_ErrnoException&) {
         throw;
     }
