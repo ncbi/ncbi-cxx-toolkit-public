@@ -914,3 +914,140 @@ BOOST_AUTO_TEST_CASE(Test_Anticodon)
     TestAnticodonTrim(15, 32, 18, false);
     TestAnticodonTrim(15, 32, 22, true);
 }
+
+
+edit::TGappedFeatList TryOneCaseMixLoc(TSeqPos start1, TSeqPos stop1, TSeqPos start2, TSeqPos stop2, bool is_minus = false)
+{
+    CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
+    // 12 AAA 10 NNN 12 AAA
+    CRef<CSeq_feat> misc = AddMiscFeature(entry);
+    const CSeq_id &id = misc->GetLocation().GetInt().GetId();
+
+    CRef<CSeq_loc_mix> mix(new CSeq_loc_mix);
+
+    CRef<CSeq_loc> add1(new CSeq_loc());
+    add1->SetInt().SetId().Assign(id);
+    add1->SetInt().SetFrom(start1);
+    add1->SetInt().SetTo(stop1);
+    if (is_minus) 
+        add1->SetStrand(eNa_strand_minus);    
+    mix->Set().push_back(add1);
+
+    CRef<CSeq_loc> add2(new CSeq_loc());
+    add2->SetInt().SetId().Assign(id);
+    add2->SetInt().SetFrom(start2);
+    add2->SetInt().SetTo(stop2);
+    if (is_minus) 
+      add2->SetStrand(eNa_strand_minus);
+    mix->Set().push_back(add2);
+
+    misc->SetLocation().SetMix().Assign(*mix);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    CFeat_CI f(seh);
+
+    edit::TGappedFeatList gapped_list = ListGappedFeatures(f, *scope);
+    return gapped_list;
+}
+
+void TestTrimMiscOnRightMixLoc(TSeqPos start1, TSeqPos stop1, TSeqPos start2, TSeqPos stop2, bool is_minus)
+{
+    edit::TGappedFeatList gapped_list = TryOneCaseMixLoc(start1, stop1, start2, stop2, is_minus);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 1);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
+    gapped_list.front()->CalculateRelevantIntervals(false, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
+    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true);
+    BOOST_CHECK_EQUAL(adjusted_feats.size(), 1);
+    BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().GetStart(eExtreme_Positional), 0);
+    BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().GetStop(eExtreme_Positional), 11);
+    BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().IsPartialStart(eExtreme_Positional), false);
+    BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().IsPartialStop(eExtreme_Positional), true);
+}
+
+void TestTrimMiscOnLeftMixLoc(TSeqPos start1, TSeqPos stop1, TSeqPos start2, TSeqPos stop2, bool is_minus)
+{
+    edit::TGappedFeatList gapped_list = TryOneCaseMixLoc(start1, stop1, start2, stop2, is_minus);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 1);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
+    gapped_list.front()->CalculateRelevantIntervals(false, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
+    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true);
+    BOOST_CHECK_EQUAL(adjusted_feats.size(), 1);
+    BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().GetStart(eExtreme_Positional), 22);
+    BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().GetStop(eExtreme_Positional), 33);
+    BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().IsPartialStart(eExtreme_Positional), true);
+    BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().IsPartialStop(eExtreme_Positional), false);
+}
+
+void TestSplitMiscMixLoc(TSeqPos start1, TSeqPos stop1, TSeqPos start2, TSeqPos stop2, bool is_minus)
+{
+    edit::TGappedFeatList gapped_list = TryOneCaseMixLoc(start1, stop1, start2, stop2, is_minus);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 1);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
+    gapped_list.front()->CalculateRelevantIntervals(false, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), true);
+    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true);
+    BOOST_CHECK_EQUAL(adjusted_feats.size(), 2);
+    BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().GetStart(eExtreme_Positional), 0);
+    BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().GetStop(eExtreme_Positional), 11);
+    BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().IsPartialStart(eExtreme_Positional), false);
+    BOOST_CHECK_EQUAL(adjusted_feats.front()->GetLocation().IsPartialStop(eExtreme_Positional), true);
+    BOOST_CHECK_EQUAL(adjusted_feats.back()->GetLocation().GetStart(eExtreme_Positional), 22);
+    BOOST_CHECK_EQUAL(adjusted_feats.back()->GetLocation().GetStop(eExtreme_Positional), 33);
+    BOOST_CHECK_EQUAL(adjusted_feats.back()->GetLocation().IsPartialStart(eExtreme_Positional), true);
+    BOOST_CHECK_EQUAL(adjusted_feats.back()->GetLocation().IsPartialStop(eExtreme_Positional), false);
+}
+
+void TestRemoveMiscMixLoc(TSeqPos start1, TSeqPos stop1, TSeqPos start2, TSeqPos stop2, bool is_minus)
+{
+    edit::TGappedFeatList gapped_list = TryOneCaseMixLoc(start1, stop1, start2, stop2, is_minus);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 1);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasKnown(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->HasUnknown(), false);
+    gapped_list.front()->CalculateRelevantIntervals(false, true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->ShouldRemove(), true);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Trimmable(), false);
+    BOOST_CHECK_EQUAL(gapped_list.front()->Splittable(), false);
+    vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true);
+    BOOST_CHECK_EQUAL(adjusted_feats.size(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(Test_FeatGapInfoMiscMixLoc)
+{
+    // no gap
+    edit::TGappedFeatList gapped_list = TryOneCaseMixLoc(0, 5, 9, 11);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 0);
+    gapped_list = TryOneCaseMixLoc(9, 11, 0, 5, true);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 0);
+    gapped_list = TryOneCaseMixLoc(25, 28, 30, 34);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 0);
+    gapped_list = TryOneCaseMixLoc(30, 34, 25, 28, true);
+    BOOST_CHECK_EQUAL(gapped_list.size(), 0);
+
+    // trim on right
+    TestTrimMiscOnRightMixLoc(0, 5, 10, 15, false);
+    TestTrimMiscOnRightMixLoc(10, 15, 0, 5, true);
+
+    // trim on left
+    TestTrimMiscOnLeftMixLoc(17, 25, 29, 33, false);
+    TestTrimMiscOnLeftMixLoc(29, 33, 17, 25, true);
+
+    // split
+    TestSplitMiscMixLoc(0, 11, 22, 33, false);
+    TestSplitMiscMixLoc(22, 33, 0, 11, true);
+
+    // remove
+    TestRemoveMiscMixLoc(12, 15, 17, 21, false);
+    TestRemoveMiscMixLoc(17, 21, 12, 15, true);    
+}
