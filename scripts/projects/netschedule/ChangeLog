@@ -1,4 +1,4 @@
-Release 4.31.0 cloned from 4.30.1 (2017-11-13)
+Release 4.31.0 cloned from 4.30.1 (2017-11-22)
 
 Improvements:
     * GRID Dashboard -- all server pages (NC, NS, OSG) to list paths and args
@@ -8,6 +8,9 @@ Improvements:
       "exec_time_msec" anymore? (JIRA: CXX-9648)
     * NetSchedule -- LISTEN to also allow to listen to progress messages,
       stolen LISTENs, etc. (JIRA: CXX-9673)
+    * NetSchedule: BDB warning (JIRA: CXX-9760)
+    * NetSchedule -- provide backward- and forward-compatibility of the job
+      dump (flat files) (JIRA: CXX-9754)
 
 
 Release 4.30.1 cloned from 4.30.0 (2017-08-15)
