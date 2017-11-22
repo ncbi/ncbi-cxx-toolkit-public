@@ -82,7 +82,7 @@ void CFeatGapInfo::CollectGaps(const CSeq_loc& feat_loc, CScope& scope)
     CSeqMap_CI seq_map_ci = seq_map->ResolvedRangeIterator(&scope,
         0,
         m_Stop - m_Start + 1,
-        feat_loc.GetStrand(),
+        eNa_strand_plus, //feat_loc.GetStrand(),
         size_t(-1),
         objects::CSeqMap::fFindGap | objects::CSeqMap::fFindData);
 
