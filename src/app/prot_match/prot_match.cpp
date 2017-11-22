@@ -183,14 +183,12 @@
             const CProteinMatchApp::TEntryFilenameMap& filename_map,
             CProteinMatchApp::TEntryOStreamMap& ostream_map);
 
-    void x_GatherLocalProteinIds(const CBioseq_set& nuc_prot_set, list<string>& id_list) const;
-
-    void x_GatherUpdateProteinIds(const CBioseq_set& nuc_prot_set, list<CUpdateProtIds>& id_list) const;
+    void x_GatherUpdateProteinIds(const CBioseq_set& nuc_prot_set, list<list<CRef<CSeq_id>>>& id_list) const;
 
     void x_GatherProteinAccessions(const CBioseq_set& nuc_prot_set, list<string>& id_list) const;
     void x_GatherProteinAccessions(const CBioseq_set& nuc_prot_set, set<string>& id_set) const;
 
-    void x_GatherReplacedProteinAccessions(const CBioseq_set& nuc_prot_set, set<string>& prot_ids) const;
+ //   void x_GatherReplacedProteinAccessions(const CBioseq_set& nuc_prot_set, set<string>& prot_ids) const;
  
     void x_GatherReplacedProteinAccessions(const CBioseq_set& nuc_prot_set, list<string>& prot_ids) const;
 
@@ -482,12 +480,11 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
                 }
 
                 match_id_info.push_back(match_info);
-
                 // Clean this up by gathering accessions into struct
                 current_nuc_accessions.merge(set_current_nuc_accessions);
             }
             istr.Close();
-/*
+
             // Second pass - to detect unprocessed nucleotide sequences
             unique_ptr<CObjectIStream> pIstr(x_InitObjectIStream(GetArgs()));
             CObjectIStreamIterator<TRoot, CBioseq> bioseq_it(*pIstr, eNoOwnership);
@@ -520,7 +517,6 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
                     next_action,
                     db_scope);
 
-
                 if (next_action == eOverwrite) {
                     x_ApplyOverwrite(seq_entry, match_tab, processed_nuc_accessions);
                 } 
@@ -528,7 +524,6 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
                     match_id_info.push_back(match_info);
                 }
             }
-            */
         }
 
         if (!m_TempFilesCreated) {
@@ -875,8 +870,7 @@ void CProteinMatchApp::x_InitNucProtSetMatch(CRef<CSeq_entry> nuc_prot_set,
         "Failed to fetch database entry");
     }
 
-
-    x_GatherLocalProteinIds(nuc_prot_set->GetSet(), match_info.SetUpdateOtherProtIds());
+    x_GatherUpdateProteinIds(nuc_prot_set->GetSet(), match_info.SetUpdateProtIds());
 
     if (db_entry->IsSet()) {
         x_GatherProteinAccessions(db_entry->GetSet(), match_info.SetDBProtIds());
@@ -1010,82 +1004,27 @@ void CProteinMatchApp::x_RelabelNucSeq(CRef<CSeq_entry> nuc_prot_set)
 }
 
 
-void CProteinMatchApp::x_GatherLocalProteinIds(const CBioseq_set& nuc_prot_set,
-    list<string>& id_list) const 
-{
-    id_list.clear();
-    if (!nuc_prot_set.IsSetClass() ||
-        nuc_prot_set.GetClass() != CBioseq_set::eClass_nuc_prot) {
-        return; // Throw an exception here
-    }
-
-    for (CRef<CSeq_entry> seq_entry : nuc_prot_set.GetSeq_set()) {
-        const auto& bioseq = seq_entry->GetSeq();
-        if (bioseq.IsAa() && bioseq.IsSetId()) {
-
-            CRef<CSeq_id> best_id;
-            for (CRef<CSeq_id> id : bioseq.GetId()) {
-                if (id.Empty()) {
-                    continue;
-                }
-       //         if (id->IsGeneral()) {
-       //             best_id = id;
-       //             break;
-       //         }
-       //         else 
-                if (id->IsLocal()) {
-                    best_id = id;
-                }
-            }
-
-            if (!best_id.Empty()) {
-                id_list.push_back(best_id->GetSeqIdString());   
-            }
-        }
-    }
-}
-
-
 void CProteinMatchApp::x_GatherUpdateProteinIds(const CBioseq_set& nuc_prot_set,    
-    list<CUpdateProtIds>& id_list) const 
+    list<list<CRef<CSeq_id>>>& id_list) const 
 {
     id_list.clear();
     if (!nuc_prot_set.IsSetClass() ||
         nuc_prot_set.GetClass() != CBioseq_set::eClass_nuc_prot) {
-        return; // Throw an exception here
+        return; 
     }
-
 
     const bool with_version = false;
     for (CRef<CSeq_entry> sub_entry : nuc_prot_set.GetSeq_set()) {
         const auto& bioseq = sub_entry->GetSeq();
         if (bioseq.IsAa() && bioseq.IsSetId()) {
-            list<CRef<CSeq_id>> local_ids;
-            CUpdateProtIds prot_ids;
-            for (CRef<CSeq_id> pSeqId : bioseq.GetId()) {
-                prot_ids.SetAccession().clear();
-                prot_ids.SetOthers().clear();
+            list<CRef<CSeq_id>> single_seq_ids;
 
-                if (pSeqId.Empty()) {
-                    continue;
-                }
-        
-                if (pSeqId->IsGenbank() || pSeqId->IsOther()) {
-                    prot_ids.SetAccession() = pSeqId->GetSeqIdString(with_version);
-                }
-                else
-                if (pSeqId->IsGeneral()) {
-                    prot_ids.SetOthers().push_back(pSeqId);
-                }
-                else
-                if (pSeqId->IsLocal()) {
-                    local_ids.push_back(pSeqId);
-                }
+            for (CRef<CSeq_id> pSeqId : bioseq.GetId()) {
+                single_seq_ids.push_back(pSeqId);
             }
-            if (!local_ids.empty()) {
-                prot_ids.SetOthers().splice(prot_ids.SetOthers().end(), local_ids);
+            if (!single_seq_ids.empty()) {
+                id_list.push_back(single_seq_ids);
             }
-            id_list.push_back(prot_ids);
         }
     }
 }
@@ -1139,6 +1078,7 @@ void CProteinMatchApp::x_GatherProteinAccessions(const CBioseq_set& nuc_prot_set
     }
 }
 
+/*
 void CProteinMatchApp::x_GatherReplacedProteinAccessions(const CBioseq_set& nuc_prot_set,
         set<string>& id_set) const 
 {
@@ -1165,6 +1105,7 @@ void CProteinMatchApp::x_GatherReplacedProteinAccessions(const CBioseq_set& nuc_
         }
     }
 }
+*/
 
 void CProteinMatchApp::x_GatherReplacedProteinAccessions(const CBioseq_set& nuc_prot_set,
         list<string>& id_list) const 
@@ -1192,7 +1133,6 @@ void CProteinMatchApp::x_GatherReplacedProteinAccessions(const CBioseq_set& nuc_
         }
     }
 }
-
 
 
 void CProteinMatchApp::x_GatherReplacedProteinAccessions(const CBioseq_set& nuc_prot_set,

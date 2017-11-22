@@ -6,6 +6,14 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+struct SIdCompare
+{
+    bool operator()(const CRef<CSeq_id>& id1,
+        const CRef<CSeq_id>& id2) const 
+    {
+        return id1->CompareOrdered(*id2) < 0;
+    }
+};
 // Should have CSOverwriteIdInfo
 struct SOverwriteIdInfo {
 
@@ -108,7 +116,8 @@ class CMatchIdInfo {
      string m_UpdateNucId;
      list<string> m_UpdateOtherProtIds;
 
-     list<CUpdateProtIds> m_UpdateProtIds;
+
+     list<list<CRef<CSeq_id>>> m_UpdateProtIds;
      
      string m_DBNucId;
      list<string> m_DBProtIds;
@@ -119,8 +128,9 @@ public:
      const string& GetUpdateNucId(void) const { return m_UpdateNucId; }
 
 
-     list<CUpdateProtIds>& SetUpdateProtIds(void) { return m_UpdateProtIds; }
-     const list<CUpdateProtIds>& GetUpdateProtIds(void) const { return m_UpdateProtIds; }
+     list<list<CRef<CSeq_id>>>& SetUpdateProtIds(void) { return m_UpdateProtIds; }
+     const list<list<CRef<CSeq_id>>>& GetUpdateProtIds(void) const { return m_UpdateProtIds; }
+     const bool IsSetUpdateProtIds(void) const { return !m_UpdateProtIds.empty(); }
 
      list<string>& SetUpdateOtherProtIds(void) { return m_UpdateOtherProtIds; }
      const list<string>& GetUpdateOtherProtIds(void) const { return m_UpdateOtherProtIds; }

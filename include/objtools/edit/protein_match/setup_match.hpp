@@ -35,6 +35,7 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objmgr/scope.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objtools/edit/protein_match/prot_match_utils.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -71,7 +72,7 @@ public:
 
     CRef<CSeq_entry> GetCoreNucProtSet(const CSeq_entry& nuc_prot_set, bool exclude_local_ids=false) const;
 private:
-
+/*
     struct SIdCompare
     {
         bool operator()(const CRef<CSeq_id>& id1,
@@ -80,7 +81,7 @@ private:
             return id1->CompareOrdered(*id2) < 0;
         }
     };
-
+*/
     bool x_GetNucSeqIdsFromCDSs(const CSeq_annot& annot,
         set<CRef<CSeq_id>, SIdCompare>& ids) const;
 

@@ -83,6 +83,25 @@ public:
     public:
         CProtMatchInfo() : m_IsSetMatchType(false) {}
 
+
+        bool IsSetUpdateProductId(void) const {
+            return m_UpdateProductId.NotNull();
+        }
+
+        CRef<CSeq_id> GetUpdateProductId(void) const {
+            return m_UpdateProductId;
+        }
+
+        void SetUpdateProductId(CRef<CSeq_id> product_id) {
+            m_UpdateProductId = product_id;
+        }
+
+        void SetUpdateProductId(const CSeq_id& product_id) {
+            if (m_UpdateProductId.Empty());
+            m_UpdateProductId = Ref(new CSeq_id());
+            m_UpdateProductId->Assign(product_id);
+        }
+
         bool IsSetAccession(void) const {
             return !NStr::IsBlank(m_Accession);
         }
@@ -128,6 +147,7 @@ public:
         string m_OtherId;
         bool m_IsExactMatch;
         bool m_IsSetMatchType;
+        CRef<CSeq_id> m_UpdateProductId;
     }; // CProtMatchInfo
 
     using TProtMatchMap = map<string, list<CProtMatchInfo>>;
@@ -212,7 +232,7 @@ private:
     string x_GetAccessionVersion(const CSeq_feat& seq_feat) const;
     string x_GetAccessionVersion(const CUser_object& user_obj) const;
     string x_GetGeneralOrLocalID(const CSeq_feat& seq_feat) const;
-    CRef<CSeq_id> x_GetQueryProductId(const CSeq_feat& seq_feat) const;
+    CRef<CSeq_id> x_GetProductId(const CSeq_feat& seq_feat) const;
 
     CRef<CSeq_table> mMatchTable;
     map<string, size_t> mColnameToIndex;
