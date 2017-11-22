@@ -1,11 +1,12 @@
 #
 #
 #
+add_definitions(-DBOOST_ERROR_CODE_HEADER_ONLY -DBOOST_SYSTEM_NO_DEPRECATED)
+
 add_library(hgvs
     hgvs_parser2 hgvs_writer2 variation_util2 seq_id_resolver objcoords
     sequtils hgvs_reader
 )
-include_directories(SYSTEM ${BOOST_INCLUDE})
 
 add_dependencies(hgvs
     seq variation objcoords
