@@ -92,9 +92,16 @@ CIStreamBuffer::~CIStreamBuffer(void)
 void CIStreamBuffer::Open(CByteSourceReader& reader)
 {
     Close();
-    if ( !m_BufferSize ) {
-        m_BufferSize = KInitialBufferSize;
-        m_CurrentPos = m_DataEndPos = m_Buffer = new char[m_BufferSize];
+    if (reader.IsMultiPart()) {
+        m_BufferSize = reader.GetNextPart(&m_Buffer);
+        m_CurrentPos = m_Buffer;
+        m_DataEndPos = m_Buffer + m_BufferSize;
+        m_BufferSize = 0;
+    } else {
+        if ( !m_BufferSize ) {
+            m_BufferSize = KInitialBufferSize;
+            m_CurrentPos = m_DataEndPos = m_Buffer = new char[m_BufferSize];
+        }
     }
     m_Input = &reader;
     m_Error = 0;
@@ -322,6 +329,26 @@ const char* CIStreamBuffer::FillBuffer(const char* pos, bool noEOF)
     // remove unused portion of buffer at the beginning
     _ASSERT(m_CurrentPos >= m_Buffer);
     if ( m_BufferSize == 0 ) {
+        if (m_Input.NotNull() && m_Input->IsMultiPart()) {
+
+            if ( m_Collector ) {
+                _ASSERT(m_CollectPos);
+                size_t count = m_CurrentPos - m_CollectPos;
+                if ( count > 0 )
+                    m_Collector->AddChunk(m_CollectPos, count);
+            }
+            m_BufferPos += (m_DataEndPos - m_Buffer);
+            m_BufferSize = m_Input->GetNextPart(&m_Buffer);
+            m_CurrentPos = m_Buffer;
+            m_DataEndPos = m_Buffer + m_BufferSize;
+            if ( m_Collector ) {
+                m_CollectPos = m_CurrentPos;
+            }
+            m_BufferSize = 0;
+            if (m_CurrentPos != m_DataEndPos) {
+                return  m_CurrentPos;
+            }
+        }
         // buffer is external -> no more data
         if ( noEOF ) {
             return pos;

@@ -81,6 +81,10 @@
 
 BEGIN_NCBI_SCOPE
 
+NCBI_PARAM_DECL(bool, SERIAL, READ_MMAPBYTESOURCE);
+NCBI_PARAM_DEF_EX(bool, SERIAL, READ_MMAPBYTESOURCE, false,
+                  eParam_NoThread, SERIAL_READ_MMAPBYTESOURCE);
+
 CRef<CByteSource> CObjectIStream::GetSource(ESerialDataFormat format,
                                             const string& fileName,
                                             TSerialOpenFlags openFlags)
@@ -114,8 +118,14 @@ CRef<CByteSource> CObjectIStream::GetSource(ESerialDataFormat format,
             return CRef<CByteSource>(new CFileByteSource(fileName, binary));
         }
         else {
-            // open file as stream
-            return CRef<CByteSource>(new CFStreamByteSource(fileName, binary));
+            static CSafeStatic<NCBI_PARAM_TYPE(SERIAL, READ_MMAPBYTESOURCE)> s_MmapSrc;
+            if (s_MmapSrc->Get()) {
+                // open file as file mapping
+                return CRef<CByteSource>(new CMMapByteSource(fileName));
+            } else {
+                // open file as stream
+                return CRef<CByteSource>(new CFStreamByteSource(fileName, binary));
+            }
         }
     }
 }

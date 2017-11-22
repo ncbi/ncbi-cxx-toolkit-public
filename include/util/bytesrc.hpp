@@ -36,6 +36,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbifile.hpp>
 #include <corelib/reader_writer.hpp>
 
 
@@ -86,6 +87,13 @@ public:
     // Set reader current position, when possible
     // (default implementation throws an exception)
     virtual void Seekg(CNcbiStreampos pos);
+
+    virtual bool IsMultiPart(void) {
+        return false;
+    }
+    virtual size_t GetNextPart(char** buffer) {
+        return 0;
+    }
 
 private:
     CByteSourceReader(const CByteSourceReader&);
@@ -183,6 +191,46 @@ private:
     bool   m_Binary;
 };
 
+
+class NCBI_XUTIL_EXPORT CMMapByteSource : public CByteSource
+{
+public:
+    CMMapByteSource(const string& fileName, size_t num_blocks = 0);
+    CMMapByteSource(const CMMapByteSource& other) = delete;
+    virtual ~CMMapByteSource(void);
+
+    virtual CRef<CByteSourceReader> Open(void);
+
+protected:
+    CMemoryFileMap m_FileMap;
+    size_t m_CBlocks;
+};
+
+
+class NCBI_XUTIL_EXPORT CMMapByteSourceReader : public CByteSourceReader
+{
+public:
+    CMMapByteSourceReader(const CByteSource* source, CMemoryFileMap* fmap, size_t num_blocks = 0);
+    ~CMMapByteSourceReader(void);
+
+    size_t Read(char* buffer, size_t bufferLength);
+    bool EndOfData(void) const;
+    bool Pushback(const char* data, size_t size);
+    virtual void Seekg(CNcbiStreampos pos);
+
+    virtual bool IsMultiPart(void) {
+        return true;
+    }
+    virtual size_t GetNextPart(char** buffer);
+
+protected:
+    void x_GetNextChunk(void);
+    CConstRef<CByteSource> m_Source;
+    CMemoryFileMap*          m_Fmap;
+    char* m_Ptr;
+    Int8 m_ChunkOffset, m_CurOffset;
+    size_t m_DefaultSize, m_ChunkSize, m_ChunkSizeLeft, m_FileSizeLeft;
+};
 
 class NCBI_XUTIL_EXPORT CStreamByteSourceReader : public CByteSourceReader
 {
