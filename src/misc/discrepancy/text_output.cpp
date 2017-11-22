@@ -241,54 +241,7 @@ void CDiscrepancyContext::OutputXML(ostream& out, bool ext)
         TReportObjectList objs = tst->second->GetObjects();
         Indent(out, XML_INDENT);
         out << "<test name=\"" << deunderscore(tst->first) << "\" description=\"" << NStr::XmlEncode(GetDiscrepancyDescr(tst->first)) << "\" severity=\"" << SevLevel[sev] << "\" cardinality=\"" << objs.size() << "\">\n";
-//        Indent(out, XML_INDENT * 2);
-//        out << "<object-collection>\n";
-//        ITERATE(TReportObjectList, obj, objs) {
-//            Indent(out, XML_INDENT * 3);
-//            out << "<object type=";
-//            switch ((*obj)->GetType()) {
-//                case CReportObj::eType_feature:
-//                    out << "\"feature\"";
-//                    break;
-//                case CReportObj::eType_descriptor:
-//                    out << "\"descriptor\"";
-//                    break;
-//                case CReportObj::eType_sequence:
-//                    out << "\"sequence\"";
-//                    break;
-//                case CReportObj::eType_seq_set:
-//                    out << "\"set\"";
-//                    break;
-//                case CReportObj::eType_submit_block:
-//                    out << "\"submit_block\"";
-//                    break;
-//                case CReportObj::eType_string:
-//                    out << "\"string\"";
-//                    break;
-//            }
-//            if (!(*obj)->GetFilename().empty()) {
-//                out << " file=\"" << NStr::XmlEncode((*obj)->GetFilename()) << "\"";
-//            }
-//            if (!(*obj)->GetFeatureType().empty()) {
-//                out << " feature_type=\"" << NStr::XmlEncode((*obj)->GetFeatureType()) << "\"";
-//            }
-//            if (!(*obj)->GetProductName().empty()) {
-//                out << " product=\"" << NStr::XmlEncode((*obj)->GetProductName()) << "\"";
-//            }
-//            if (!(*obj)->GetLocation().empty()) {
-//                out << " location=\"" << NStr::XmlEncode((*obj)->GetLocation()) << "\"";
-//            }
-//            if (!(*obj)->GetLocusTag().empty()) {
-//                out << " locus_tag=\"" << NStr::XmlEncode((*obj)->GetLocusTag()) << "\"";
-//            }
-//            string text = NStr::Replace((*obj)->GetText(), "\t", " ");
-//            out << " label=\"" << NStr::XmlEncode(text) << "\"/>\n";
-//        }
-
         RecursiveXML(out, rep, XML_INDENT * 2, ext);
-
-//        Indent(out, XML_INDENT * 2);
-//        out << "</object-collection>\n";
         Indent(out, XML_INDENT);
         out << "</test>\n";
     }
