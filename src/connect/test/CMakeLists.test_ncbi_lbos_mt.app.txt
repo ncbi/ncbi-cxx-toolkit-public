@@ -1,7 +1,6 @@
 #
 #
 #
-include_directories(SYSTEM ${BOOST_INCLUDE})
 
 add_definitions(-DLBOS_TEST_MT)
 

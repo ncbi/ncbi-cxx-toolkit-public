@@ -2,7 +2,6 @@
 # 
 #
 
-include_directories(SYSTEM ${BOOST_INCLUDE})
 
 # Include projects from this directory
 include(CMakeLists.blast_unit_test_util.lib.txt)

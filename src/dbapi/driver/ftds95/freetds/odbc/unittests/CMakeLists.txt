@@ -2,7 +2,6 @@
 # 
 #
 
-include_directories(SYSTEM ${BOOST_INCLUDE})
 
 
 add_definitions(-DHAVE_CONFIG_H=1 -DNEED_FREETDS_SRCDIR)

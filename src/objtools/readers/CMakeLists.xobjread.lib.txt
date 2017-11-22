@@ -14,7 +14,6 @@ add_library(xobjread
     ucscregion_reader struct_cmt_reader
     message_listener line_error
 )
-include_directories(SYSTEM ${BOOST_INCLUDE})
 
 target_link_libraries(xobjread
     creaders submit

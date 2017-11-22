@@ -21,7 +21,8 @@ if(WIN32)
 #	set(BOOST_ROOT "${WINDOWS_BOOST_DIR}")
 #	set(BOOST_LIBRARYDIR "${BOOST_ROOT}/stage/lib")
 else()
-	set(BOOST_ROOT ${NCBI_TOOLS_ROOT}/boost-1.57.0-ncbi1 )
+    # preferentially set a specific NCBI version of Boost
+	set(BOOST_ROOT ${NCBI_TOOLS_ROOT}/boost-1.62.0-ncbi1 )
 endif()
 
 
@@ -29,10 +30,16 @@ endif()
 #include(FindBoost)
 #set(CMAKE_LIBRARY_PATH ${NCBI_TOOLS_ROOT}/boost-1.41.0/lib)
 find_package(Boost
-             COMPONENTS filesystem regex system unit_test_framework
+             COMPONENTS filesystem regex system
              REQUIRED)
+set(CMAKE_PREFIX_PATH ${_foo_CMAKE_PREFIX_PATH})
 
 set(BOOST_INCLUDE ${Boost_INCLUDE_DIRS})
 set(BOOST_LIBPATH -L${Boost_LIBRARY_DIRS} -Wl,-rpath,${Boost_LIBRARY_DIRS})
 
-set(CMAKE_PREFIX_PATH ${_foo_CMAKE_PREFIX_PATH})
+#
+# As a blanket statement, we now include Boost everywhere
+# This avoids a serious insidious version skew if we have both the
+# system-installed Boost libraries and a custom version of Boost
+include_directories(SYSTEM ${BOOST_INCLUDE})
+

@@ -2,7 +2,6 @@
 #
 #
 
-include_directories(SYSTEM ${BOOST_INCLUDE})
 
 add_executable(test_eutils_client-app
     test_eutils_client

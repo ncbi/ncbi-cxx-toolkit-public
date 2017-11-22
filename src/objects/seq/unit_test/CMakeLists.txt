@@ -2,7 +2,6 @@
 # 
 #
 
-include_directories(SYSTEM ${BOOST_INCLUDE})
 
 # Include projects from this directory
 include(CMakeLists.seq_id_unit_test.app.txt)
