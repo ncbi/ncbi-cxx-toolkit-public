@@ -94,7 +94,7 @@ const size_t    kDumpReservedSpaceFileBuffer = 1024 * 1024;
 // Some swap first two bytes with the last two bytes
 // Some reverse the signature byte by byte. So the magic is selected to be
 // visible the same way everywhere.
-const Int4      kDumpMagic(0xD0D0D0D0);
+const Int4      kDumpMagic(0xE0E0E0E0);
 
 
 // An empty bit vector is returned in quite a few places

@@ -853,12 +853,14 @@ void CJob::Dump(FILE *  jobs_file) const
 // exception => reading problem
 bool CJob::LoadFromDump(FILE *  jobs_file,
                         char *  input_buf,
-                        char *  output_buf)
+                        char *  output_buf,
+                        const SJobDumpHeader &  header)
 {
     SJobDump        job_dump;
     char            progress_msg_buf[kNetScheduleMaxDBDataSize];
 
-    if (job_dump.Read(jobs_file, progress_msg_buf) == 1)
+    if (job_dump.Read(jobs_file, header.job_props_fixed_size,
+                      progress_msg_buf) == 1)
         return false;
 
     // Fill in the job fields
@@ -898,8 +900,10 @@ bool CJob::LoadFromDump(FILE *  jobs_file,
     char            client_session_buf[kMaxWorkerNodeIdSize];
     char            err_msg_buf[kNetScheduleMaxDBErrSize];
     for (size_t  k = 0; k < job_dump.number_of_events; ++k) {
-        if (event_dump.Read(jobs_file, client_node_buf, client_session_buf,
-                                       err_msg_buf) != 0)
+        if (event_dump.Read(jobs_file,
+                            header.job_event_fixed_size,
+                            client_node_buf, client_session_buf,
+                            err_msg_buf) != 0)
             throw runtime_error("Unexpected end of the dump file. "
                                 "Cannot read expected job events." );
 
@@ -931,7 +935,8 @@ bool CJob::LoadFromDump(FILE *  jobs_file,
     // Read the job input/output
     SJobIODump  io_dump;
 
-    if (io_dump.Read(jobs_file, input_buf, output_buf) != 0)
+    if (io_dump.Read(jobs_file, header.job_io_fixed_size,
+                     input_buf, output_buf) != 0)
         throw runtime_error("Unexpected end of the dump file. "
                             "Cannot read expected job input/output." );
 

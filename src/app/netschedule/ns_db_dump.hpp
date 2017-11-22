@@ -39,7 +39,70 @@
 #include "ns_db.hpp"
 
 
+// NB
+// The dump format is extendable and the extensions will work in both
+// directions: forward and backward. The only requirement to keep it working is
+// to extend the structures at the end without touching the existing part.
+// In this case:
+// - if a newer format is provided the older format dump (new NS starts after
+// old NS saved the data) then: the extended fields will have zeroes.
+// - if an older format is provided the newer data (old NS starts after a new
+// NS, e.g. due to a rollback) then: the extended values are stripped.
+
+
+
 BEGIN_NCBI_SCOPE
+
+
+// Common header for the dump files
+#pragma pack(push, 1)
+struct SCommonDumpHeader
+{
+    Int4        magic;
+    Uint4       storage_ver_major;
+    Uint4       storage_ver_minor;
+    Uint4       storage_ver_patch;
+
+    Uint4       server_ver_major;
+    Uint4       server_ver_minor;
+    Uint4       server_ver_patch;
+
+    SCommonDumpHeader();
+};
+#pragma pack(pop)
+
+
+// The header appears ones in the job info file
+#pragma pack(push, 1)
+struct SJobDumpHeader
+{
+    SCommonDumpHeader   common_header;
+    Uint4               job_props_fixed_size;
+    Uint4               job_io_fixed_size;
+    Uint4               job_event_fixed_size;
+
+    SJobDumpHeader();
+
+    void Write(FILE *  f);
+    int Read(FILE *  f);
+};
+#pragma pack(pop)
+
+
+// A few dump files store a sequence of one structure. They will use the header
+// below
+#pragma pack(push, 1)
+struct SOneStructDumpHeader
+{
+    SCommonDumpHeader   common_header;
+    Uint4               fixed_size;
+
+    SOneStructDumpHeader();
+
+    void Write(FILE *  f);
+    int Read(FILE *  f);
+};
+#pragma pack(pop)
 
 
 // The structures mostly match the Berkeley DB tables structure
@@ -51,7 +114,7 @@ BEGIN_NCBI_SCOPE
 #pragma pack(push, 1)
 struct SJobDump
 {
-    Int4                magic;
+    Uint4               total_size;
     Uint4               id;
 
     Uint4               passport;
@@ -92,7 +155,8 @@ struct SJobDump
     SJobDump();
 
     void Write(FILE *  f, const char *  progress_msg);
-    int Read(FILE *  f, char *  progress_msg);
+    int Read(FILE *  f, size_t  fixed_size_from_header,
+             char *  progress_msg);
 };
 #pragma pack(pop)
 
@@ -103,11 +167,15 @@ struct SJobDump
 #pragma pack(push, 1)
 struct SJobIODump
 {
+    Uint4           total_size;
     Uint4           input_size;
     Uint4           output_size;
 
+    SJobIODump();
+
     void Write(FILE *  f, const char *  input, const char *  output);
-    int Read(FILE *  f, char *  input, char *  output);
+    int Read(FILE *  f, size_t  fixed_size_from_header,
+             char *  input, char *  output);
 };
 #pragma pack(pop)
 
@@ -118,6 +186,7 @@ struct SJobIODump
 #pragma pack(push, 1)
 struct SJobEventsDump
 {
+    Uint4               total_size;
     Uint4               event;
     Int4                status;
     double              timestamp;
@@ -132,9 +201,10 @@ struct SJobEventsDump
     void Write(FILE *  f, const char *  client_node,
                           const char *  client_session,
                           const char *  err_msg);
-    int Read(FILE *  f, char *  client_node,
-                        char *  client_session,
-                        char *  err_msg);
+    int Read(FILE *  f, size_t  fixed_size_from_header,
+             char *  client_node,
+             char *  client_session,
+             char *  err_msg);
 };
 #pragma pack(pop)
 
@@ -142,7 +212,7 @@ struct SJobEventsDump
 #pragma pack(push, 1)
 struct SAffinityDictDump
 {
-    Int4                magic;
+    Uint4               total_size;
     Uint4               aff_id;
     Uint4               token_size;
     char                token[kNetScheduleMaxDBDataSize];
@@ -150,7 +220,7 @@ struct SAffinityDictDump
     SAffinityDictDump();
 
     void Write(FILE *  f);
-    int Read(FILE *  f);
+    int Read(FILE *  f, size_t  fixed_size_from_header);
 };
 #pragma pack(pop)
 
@@ -158,7 +228,7 @@ struct SAffinityDictDump
 #pragma pack(push, 1)
 struct SGroupDictDump
 {
-    Int4                magic;
+    Uint4               total_size;
     Uint4               group_id;
     Uint4               token_size;
     char                token[kNetScheduleMaxDBDataSize];
@@ -166,7 +236,7 @@ struct SGroupDictDump
     SGroupDictDump();
 
     void Write(FILE *  f);
-    int Read(FILE *  f);
+    int Read(FILE *  f, size_t  fixed_size_from_header);
 };
 #pragma pack(pop)
 
@@ -174,7 +244,7 @@ struct SGroupDictDump
 #pragma pack(push, 1)
 struct SQueueDescriptionDump
 {
-    Int4                magic;
+    Uint4               total_size;
     bool                is_queue;
     Uint4               qname_size;
     char                qname[kMaxQueueNameSize];
@@ -232,7 +302,7 @@ struct SQueueDescriptionDump
     SQueueDescriptionDump();
 
     void Write(FILE *  f);
-    int Read(FILE *  f);
+    int Read(FILE *  f, size_t  fixed_size_from_header);
 };
 #pragma pack(pop)
 
@@ -240,7 +310,7 @@ struct SQueueDescriptionDump
 #pragma pack(push, 1)
 struct SLinkedSectionDump
 {
-    Int4        magic;
+    Uint4       total_size;
     Uint4       section_size;
     Uint4       value_name_size;
     Uint4       value_size;
@@ -251,7 +321,7 @@ struct SLinkedSectionDump
     SLinkedSectionDump();
 
     void Write(FILE *  f);
-    int Read(FILE *  f);
+    int Read(FILE *  f, size_t  fixed_size_from_header);
 };
 #pragma pack(pop)
 

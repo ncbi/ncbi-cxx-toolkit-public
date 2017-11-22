@@ -44,6 +44,7 @@
 #include "ns_ini_params.hpp"
 #include "ns_perf_logging.hpp"
 #include "ns_restore_state.hpp"
+#include "ns_db_dump.hpp"
 
 #include <corelib/ncbi_system.hpp> // SleepMilliSec
 #include <corelib/request_ctx.hpp>
@@ -4859,6 +4860,10 @@ void CQueue::Dump(const string &  dump_dname)
         // Disable buffering to detect errors right away
         setbuf(jobs_file, NULL);
 
+        // Write a header
+        SJobDumpHeader      header;
+        header.Write(jobs_file);
+
         m_QueueDbBlock->job_db.SetTransaction(NULL);
         m_QueueDbBlock->events_db.SetTransaction(NULL);
         m_QueueDbBlock->job_info_db.SetTransaction(NULL);
@@ -4926,10 +4931,15 @@ unsigned int  CQueue::LoadFromDump(const string &  dump_dname)
             throw runtime_error("Cannot open file " + jobs_file_name +
                                 " to load dumped jobs");
 
+        SJobDumpHeader      header;
+        header.Read(jobs_file);
+
         CJob                job;
         AutoArray<char>     input_buf(new char[kNetScheduleMaxOverflowSize]);
         AutoArray<char>     output_buf(new char[kNetScheduleMaxOverflowSize]);
-        while (job.LoadFromDump(jobs_file, input_buf.get(), output_buf.get())) {
+        while (job.LoadFromDump(jobs_file,
+                                input_buf.get(), output_buf.get(),
+                                header)) {
             unsigned int    job_id = job.GetId();
             unsigned int    group_id = job.GetGroupId();
             unsigned int    aff_id = job.GetAffinityId();

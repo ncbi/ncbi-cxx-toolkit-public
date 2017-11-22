@@ -36,19 +36,103 @@
 #include <string.h>
 #include "ns_db_dump.hpp"
 #include "ns_types.hpp"
+#include "netschedule_version.hpp"
 
 
 BEGIN_NCBI_SCOPE
+
+SCommonDumpHeader::SCommonDumpHeader() :
+    magic(kDumpMagic),
+    storage_ver_major(NETSCHEDULED_STORAGE_VERSION_MAJOR),
+    storage_ver_minor(NETSCHEDULED_STORAGE_VERSION_MINOR),
+    storage_ver_patch(NETSCHEDULED_STORAGE_VERSION_PATCH)
+{
+    CNcbiApplication *  app = CNcbiApplication::Instance();
+    CVersionInfo        ver_info = app->GetVersion();
+
+    server_ver_major = ver_info.GetMajor();
+    server_ver_minor = ver_info.GetMinor();
+    server_ver_patch = ver_info.GetPatchLevel();
+}
+
+
+SJobDumpHeader::SJobDumpHeader() :
+    common_header(),
+    job_props_fixed_size(sizeof(SJobDump)),
+    job_io_fixed_size(sizeof(SJobIODump)),
+    job_event_fixed_size(sizeof(SJobEventsDump))
+{}
+
+
+void SJobDumpHeader::Write(FILE *  f)
+{
+    errno = 0;
+    if (fwrite(this, sizeof(SJobDumpHeader), 1, f) != 1)
+        throw runtime_error(strerror(errno));
+}
+
+
+int SJobDumpHeader::Read(FILE *  f)
+{
+    size_t      bytes = fread(this, 1, sizeof(SJobDumpHeader), f);
+    if (bytes != sizeof(SJobDumpHeader)) {
+        if (bytes > 0)
+            throw runtime_error("Incomplete dump file header");
+        if (feof(f))
+            return 1;
+        if (errno != 0)
+            throw runtime_error(strerror(errno));
+        throw runtime_error("Unknown dump file header reading error");
+    }
+
+    if (common_header.magic != kDumpMagic)
+        throw runtime_error("Dump file header magic does not match");
+    return 0;
+}
+
+
+SOneStructDumpHeader::SOneStructDumpHeader() :
+    common_header(),
+    fixed_size(0)
+{}
+
+
+void SOneStructDumpHeader::Write(FILE *  f)
+{
+    errno = 0;
+    if (fwrite(this, sizeof(SOneStructDumpHeader), 1, f) != 1)
+        throw runtime_error(strerror(errno));
+}
+
+
+int SOneStructDumpHeader::Read(FILE *  f)
+{
+    size_t      bytes = fread(this, 1, sizeof(SOneStructDumpHeader), f);
+    if (bytes != sizeof(SOneStructDumpHeader)) {
+        if (bytes > 0)
+            throw runtime_error("Incomplete dump file header");
+        if (feof(f))
+            return 1;
+        if (errno != 0)
+            throw runtime_error(strerror(errno));
+        throw runtime_error("Unknown dump file header reading error");
+    }
+
+    if (common_header.magic != kDumpMagic)
+        throw runtime_error("Dump file header magic does not match");
+    return 0;
+}
 
 
 SJobDump::SJobDump()
 {
     memset(this, 0, sizeof(SJobDump));
-    magic = kDumpMagic;
 }
 
 void SJobDump::Write(FILE *  f, const char *  progress_msg)
 {
+    total_size = sizeof(SJobDump) + progress_msg_size;
+
     errno = 0;
     if (fwrite(this, sizeof(SJobDump), 1, f) != 1)
         throw runtime_error(strerror(errno));
@@ -60,11 +144,17 @@ void SJobDump::Write(FILE *  f, const char *  progress_msg)
     }
 }
 
-int SJobDump::Read(FILE *  f, char *  progress_msg)
+int SJobDump::Read(FILE *  f,
+                   size_t  fixed_size_from_header,
+                   char *  progress_msg)
 {
+    memset(this, 0, sizeof(SJobDump));
+
+    size_t      size_to_read = min(sizeof(SJobDump), fixed_size_from_header);
+
     errno = 0;
-    size_t      bytes = fread(this, 1, sizeof(SJobDump), f);
-    if (bytes != sizeof(SJobDump)) {
+    size_t      bytes = fread(this, 1, size_to_read, f);
+    if (bytes != size_to_read) {
         if (bytes > 0)
             throw runtime_error("Incomplete job record reading");
         if (feof(f))
@@ -73,9 +163,15 @@ int SJobDump::Read(FILE *  f, char *  progress_msg)
             throw runtime_error(strerror(errno));
         throw runtime_error("Unknown job record reading error");
     }
+    if (fixed_size_from_header > size_to_read) {
+        size_t      bytes_to_skip = fixed_size_from_header - size_to_read;
 
-    if (magic != kDumpMagic)
-        throw runtime_error("Job structure magic does not match.");
+        if (fseek(f, bytes_to_skip, SEEK_CUR) != 0) {
+            if (errno != 0)
+                throw runtime_error(strerror(errno));
+            throw runtime_error("Unknown job record skipping error");
+        }
+    }
 
     if (client_ip_size > kMaxClientIpSize)
         throw runtime_error("Job client ip size is more "
@@ -103,7 +199,24 @@ int SJobDump::Read(FILE *  f, char *  progress_msg)
             throw runtime_error("Unknown job progress message reading error");
         }
     }
+
+    if (total_size > fixed_size_from_header + progress_msg_size) {
+        size_t      bytes_to_skip = total_size -
+                                    fixed_size_from_header - progress_msg_size;
+        if (fseek(f, bytes_to_skip, SEEK_CUR) != 0) {
+            if (errno != 0)
+                throw runtime_error(strerror(errno));
+            throw runtime_error("Unknown job record skipping error");
+        }
+    }
+
     return 0;
+}
+
+
+SJobIODump::SJobIODump()
+{
+    memset(this, 0, sizeof(SJobIODump));
 }
 
 
@@ -113,6 +226,8 @@ int SJobDump::Read(FILE *  f, char *  progress_msg)
 void SJobIODump::Write(FILE *  f, const char *  input,
                                   const char *  output)
 {
+    total_size = sizeof(SJobIODump) + input_size + output_size;
+
     errno = 0;
     if (fwrite(this, sizeof(SJobIODump), 1, f) != 1)
         throw runtime_error(strerror(errno));
@@ -131,12 +246,16 @@ void SJobIODump::Write(FILE *  f, const char *  input,
 }
 
 
-int SJobIODump::Read(FILE *  f, char *  input,
-                                char *  output)
+int SJobIODump::Read(FILE *  f, size_t  fixed_size_from_header,
+                     char *  input, char *  output)
 {
+    memset(this, 0, sizeof(SJobIODump));
+
+    size_t      size_to_read = min(sizeof(SJobIODump), fixed_size_from_header);
+
     errno = 0;
-    size_t  bytes = fread(this, 1, sizeof(SJobIODump), f);
-    if (bytes != sizeof(SJobIODump)) {
+    size_t  bytes = fread(this, 1, size_to_read, f);
+    if (bytes != size_to_read) {
         if (bytes > 0)
             throw runtime_error("Incomplete job i/o record reading");
         if (feof(f))
@@ -145,6 +264,15 @@ int SJobIODump::Read(FILE *  f, char *  input,
         if (errno != 0)
             throw runtime_error(strerror(errno));
         throw runtime_error("Unknown job i/o reading error");
+    }
+    if (fixed_size_from_header > size_to_read) {
+        size_t      bytes_to_skip = fixed_size_from_header - size_to_read;
+
+        if (fseek(f, bytes_to_skip, SEEK_CUR) != 0) {
+            if (errno != 0)
+                throw runtime_error(strerror(errno));
+            throw runtime_error("Unknown job i/o record skipping error");
+        }
     }
 
     if (input_size > kNetScheduleMaxOverflowSize)
@@ -182,6 +310,18 @@ int SJobIODump::Read(FILE *  f, char *  input,
             throw runtime_error("Unknown job output reading error");
         }
     }
+
+    if (total_size > fixed_size_from_header + input_size + output_size) {
+        size_t      bytes_to_skip = total_size -
+                                    fixed_size_from_header -
+                                    input_size - output_size;
+        if (fseek(f, bytes_to_skip, SEEK_CUR) != 0) {
+            if (errno != 0)
+                throw runtime_error(strerror(errno));
+            throw runtime_error("Unknown job i/o record skipping error");
+        }
+    }
+
     return 0;
 }
 
@@ -195,6 +335,9 @@ void SJobEventsDump::Write(FILE *  f, const char *  client_node,
                                       const char *  client_session,
                                       const char *  err_msg)
 {
+    total_size = sizeof(SJobEventsDump) + client_node_size +
+                 client_session_size + err_msg_size;
+
     errno = 0;
     if (fwrite(this, sizeof(SJobEventsDump), 1, f) != 1)
         throw runtime_error(strerror(errno));
@@ -216,13 +359,19 @@ void SJobEventsDump::Write(FILE *  f, const char *  client_node,
     }
 }
 
-int SJobEventsDump::Read(FILE *  f, char *  client_node,
-                                    char *  client_session,
-                                    char *  err_msg)
+int SJobEventsDump::Read(FILE *  f, size_t  fixed_size_from_header,
+                         char *  client_node,
+                         char *  client_session,
+                         char *  err_msg)
 {
+    memset(this, 0, sizeof(SJobEventsDump));
+
+    size_t      size_to_read = min(sizeof(SJobEventsDump),
+                                   fixed_size_from_header);
+
     errno = 0;
-    size_t      bytes = fread(this, 1, sizeof(SJobEventsDump), f);
-    if (bytes != sizeof(SJobEventsDump)) {
+    size_t      bytes = fread(this, 1, size_to_read, f);
+    if (bytes != size_to_read) {
         if (bytes > 0)
             throw runtime_error("Incomplete job event reading");
         if (feof(f))
@@ -231,6 +380,15 @@ int SJobEventsDump::Read(FILE *  f, char *  client_node,
         if (errno != 0)
             throw runtime_error(strerror(errno));
         throw runtime_error("Unknown job event reading error");
+    }
+    if (fixed_size_from_header > size_to_read) {
+        size_t      bytes_to_skip = fixed_size_from_header - size_to_read;
+
+        if (fseek(f, bytes_to_skip, SEEK_CUR) != 0) {
+            if (errno != 0)
+                throw runtime_error(strerror(errno));
+            throw runtime_error("Unknown job event record skipping error");
+        }
     }
 
     if (client_node_size > kMaxWorkerNodeIdSize)
@@ -291,6 +449,19 @@ int SJobEventsDump::Read(FILE *  f, char *  client_node,
         }
     }
 
+    if (total_size > fixed_size_from_header + client_node_size +
+                     client_session_size + err_msg_size) {
+        size_t      bytes_to_skip = total_size -
+                                    fixed_size_from_header  -
+                                    client_node_size - client_session_size -
+                                    err_msg_size;
+        if (fseek(f, bytes_to_skip, SEEK_CUR) != 0) {
+            if (errno != 0)
+                throw runtime_error(strerror(errno));
+            throw runtime_error("Unknown job event record skipping error");
+        }
+    }
+
     return 0;
 }
 
@@ -298,22 +469,28 @@ int SJobEventsDump::Read(FILE *  f, char *  client_node,
 SAffinityDictDump::SAffinityDictDump()
 {
     memset(this, 0, sizeof(SAffinityDictDump));
-    magic = kDumpMagic;
 }
 
 
 void SAffinityDictDump::Write(FILE *  f)
 {
+    total_size = sizeof(SAffinityDictDump);
+
     errno = 0;
     if (fwrite(this, sizeof(SAffinityDictDump), 1, f) != 1)
         throw runtime_error(strerror(errno));
 }
 
-int SAffinityDictDump::Read(FILE *  f)
+int SAffinityDictDump::Read(FILE *  f, size_t  fixed_size_from_header)
 {
+    memset(this, 0, sizeof(SAffinityDictDump));
+
+    size_t      size_to_read = min(sizeof(SAffinityDictDump),
+                                   fixed_size_from_header);
+
     errno = 0;
-    size_t      bytes = fread(this, 1, sizeof(SAffinityDictDump), f);
-    if (bytes != sizeof(SAffinityDictDump)) {
+    size_t      bytes = fread(this, 1, size_to_read, f);
+    if (bytes != size_to_read) {
         if (bytes > 0)
             throw runtime_error("Incomplete affinity reading");
         if (feof(f))
@@ -323,11 +500,19 @@ int SAffinityDictDump::Read(FILE *  f)
         throw runtime_error("Unknown affinity reading error");
     }
 
-    if (magic != kDumpMagic)
-        throw runtime_error("Affinity structure magic does not match.");
     if (token_size > kNetScheduleMaxDBDataSize)
         throw runtime_error("Affinity token size is more "
                             "than max allowed");
+
+    if (fixed_size_from_header > size_to_read) {
+        size_t      bytes_to_skip = fixed_size_from_header - size_to_read;
+
+        if (fseek(f, bytes_to_skip, SEEK_CUR) != 0) {
+            if (errno != 0)
+                throw runtime_error(strerror(errno));
+            throw runtime_error("Unknown affinity skipping error");
+        }
+    }
     return 0;
 }
 
@@ -335,22 +520,28 @@ int SAffinityDictDump::Read(FILE *  f)
 SGroupDictDump::SGroupDictDump()
 {
     memset(this, 0, sizeof(SGroupDictDump));
-    magic = kDumpMagic;
 }
 
 
 void SGroupDictDump::Write(FILE *  f)
 {
+    total_size = sizeof(SGroupDictDump);
+
     errno = 0;
     if (fwrite(this, sizeof(SGroupDictDump), 1, f) != 1)
         throw runtime_error(strerror(errno));
 }
 
-int SGroupDictDump::Read(FILE *  f)
+int SGroupDictDump::Read(FILE *  f, size_t  fixed_size_from_header)
 {
+    memset(this, 0, sizeof(SGroupDictDump));
+
+    size_t      size_to_read = min(sizeof(SGroupDictDump),
+                                   fixed_size_from_header);
+
     errno = 0;
-    size_t      bytes = fread(this, 1, sizeof(SGroupDictDump), f);
-    if (bytes != sizeof(SGroupDictDump)) {
+    size_t      bytes = fread(this, 1, size_to_read, f);
+    if (bytes != size_to_read) {
         if (bytes > 0)
             throw runtime_error("Incomplete job group reading");
         if (feof(f))
@@ -360,11 +551,19 @@ int SGroupDictDump::Read(FILE *  f)
         throw runtime_error("Unknown job group reading error");
     }
 
-    if (magic != kDumpMagic)
-        throw runtime_error("Group structure magic does not match.");
     if (token_size > kNetScheduleMaxDBDataSize)
         throw runtime_error("Group token size is more "
                             "than max allowed");
+
+    if (fixed_size_from_header > size_to_read) {
+        size_t      bytes_to_skip = fixed_size_from_header - size_to_read;
+
+        if (fseek(f, bytes_to_skip, SEEK_CUR) != 0) {
+            if (errno != 0)
+                throw runtime_error(strerror(errno));
+            throw runtime_error("Unknown group skipping error");
+        }
+    }
     return 0;
 }
 
@@ -372,22 +571,28 @@ int SGroupDictDump::Read(FILE *  f)
 SQueueDescriptionDump::SQueueDescriptionDump()
 {
     memset(this, 0, sizeof(SQueueDescriptionDump));
-    magic = kDumpMagic;
 }
 
 
 void SQueueDescriptionDump::Write(FILE *  f)
 {
+    total_size = sizeof(SQueueDescriptionDump);
+
     errno = 0;
     if (fwrite(this, sizeof(SQueueDescriptionDump), 1, f) != 1)
         throw runtime_error(strerror(errno));
 }
 
-int SQueueDescriptionDump::Read(FILE *  f)
+int SQueueDescriptionDump::Read(FILE *  f, size_t  fixed_size_from_header)
 {
+    memset(this, 0, sizeof(SQueueDescriptionDump));
+
+    size_t      size_to_read = min(sizeof(SQueueDescriptionDump),
+                                   fixed_size_from_header);
+
     errno = 0;
-    size_t      bytes = fread(this, 1, sizeof(SQueueDescriptionDump), f);
-    if (bytes != sizeof(SQueueDescriptionDump)) {
+    size_t      bytes = fread(this, 1, size_to_read, f);
+    if (bytes != size_to_read) {
         if (bytes > 0)
             throw runtime_error("Incomplete queue description reading");
         if (feof(f))
@@ -397,9 +602,6 @@ int SQueueDescriptionDump::Read(FILE *  f)
         throw runtime_error("Unknown queue description reading error");
     }
 
-    if (magic != kDumpMagic)
-        throw runtime_error("Queue description structure magic "
-                            "does not match.");
     if (qname_size > kMaxQueueNameSize)
         throw runtime_error("Queue name size is more "
                             "than max allowed");
@@ -427,6 +629,16 @@ int SQueueDescriptionDump::Read(FILE *  f)
     if (linked_section_names_size > kLinkedSectionsList)
         throw runtime_error("Linked section names size is more "
                             "than max allowed");
+
+    if (fixed_size_from_header > size_to_read) {
+        size_t      bytes_to_skip = fixed_size_from_header - size_to_read;
+
+        if (fseek(f, bytes_to_skip, SEEK_CUR) != 0) {
+            if (errno != 0)
+                throw runtime_error(strerror(errno));
+            throw runtime_error("Unknown queue description skipping error");
+        }
+    }
     return 0;
 }
 
@@ -434,21 +646,27 @@ int SQueueDescriptionDump::Read(FILE *  f)
 SLinkedSectionDump::SLinkedSectionDump()
 {
     memset(this, 0, sizeof(SLinkedSectionDump));
-    magic = kDumpMagic;
 }
 
 
 void SLinkedSectionDump::Write(FILE *  f)
 {
+    total_size = sizeof(SLinkedSectionDump);
+
     if (fwrite(this, sizeof(SLinkedSectionDump), 1, f) != 1)
         throw runtime_error(strerror(errno));
 }
 
-int SLinkedSectionDump::Read(FILE *  f)
+int SLinkedSectionDump::Read(FILE *  f, size_t  fixed_size_from_header)
 {
+    memset(this, 0, sizeof(SLinkedSectionDump));
+
+    size_t      size_to_read = min(sizeof(SLinkedSectionDump),
+                                   fixed_size_from_header);
+
     errno = 0;
-    size_t      bytes = fread(this, 1, sizeof(SLinkedSectionDump), f);
-    if (bytes != sizeof(SLinkedSectionDump)) {
+    size_t      bytes = fread(this, 1, size_to_read, f);
+    if (bytes != size_to_read) {
         if (bytes > 0)
             throw runtime_error("Incomplete linked section reading");
         if (feof(f))
@@ -458,8 +676,6 @@ int SLinkedSectionDump::Read(FILE *  f)
         throw runtime_error("Unknown linked section reading error");
     }
 
-    if (magic != kDumpMagic)
-        throw runtime_error("Linked section structure magic does not match");
     if (section_size > kLinkedSectionValueNameSize)
         throw runtime_error("Linked section name size is more "
                             "than max allowed");
@@ -469,9 +685,18 @@ int SLinkedSectionDump::Read(FILE *  f)
     if (value_size > kLinkedSectionValueSize)
         throw runtime_error("Linked section value size is more "
                             "than max allowed");
+
+    if (fixed_size_from_header > size_to_read) {
+        size_t      bytes_to_skip = fixed_size_from_header - size_to_read;
+
+        if (fseek(f, bytes_to_skip, SEEK_CUR) != 0) {
+            if (errno != 0)
+                throw runtime_error(strerror(errno));
+            throw runtime_error("Unknown linked section skipping error");
+        }
+    }
     return 0;
 }
 
 
 END_NCBI_SCOPE
-

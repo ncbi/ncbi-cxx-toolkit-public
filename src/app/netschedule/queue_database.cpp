@@ -30,7 +30,7 @@
  */
 #include <ncbi_pch.hpp>
 
-#include <corelib/ncbi_system.hpp> // SleepMilliSec
+#include <corelib/ncbi_system.hpp>
 #include <corelib/ncbireg.hpp>
 
 #include <connect/services/netschedule_api.hpp>
@@ -2289,6 +2289,13 @@ void CQueueDataBase::x_Dump()
                                     qclasses_dump_file_name);
             setbuf(qclasses_dump_file, NULL);
 
+            if (classes_to_dump.size() > 0 ||
+                dynamic_queues_to_dump.size() > 0) {
+                SOneStructDumpHeader    header;
+                header.fixed_size = sizeof(SQueueDescriptionDump);
+                header.Write(qclasses_dump_file);
+            }
+
             // Dump dynamic queue classes
             for (set<string>::const_iterator  k = classes_to_dump.begin();
                     k != classes_to_dump.end(); ++k) {
@@ -2319,6 +2326,10 @@ void CQueueDataBase::x_Dump()
                     throw runtime_error("Cannot open file " +
                                          linked_sections_dump_file_name);
                 setbuf(linked_sections_dump_file, NULL);
+
+                SOneStructDumpHeader    header;
+                header.fixed_size = sizeof(SLinkedSectionDump);
+                header.Write(linked_sections_dump_file);
 
                 for (set<string>::const_iterator
                         k = linked_sections_to_dump.begin();
@@ -2581,23 +2592,57 @@ bool CQueueDataBase::x_CheckOpenPreconditions(bool  reinit)
 
         if (dump_dir_exists && ver_file_exists) {
             CFileIO     f;
-            char        buf[32];
+            char        buf[1024];
             size_t      read_count = 0;
-            string      storage_ver;
 
+            // Expected 1 or 2 lines.
+            // The first one is a storage version
+            // The second is a server version (used starting from 4.31.0)
             f.Open(m_DataPath + kDBStorageVersionFileName,
                    CFileIO_Base::eOpen, CFileIO_Base::eRead);
-
-            read_count = f.Read(buf, sizeof(buf));
-            storage_ver.append(buf, read_count);
-            NStr::TruncateSpacesInPlace(storage_ver, NStr::eTrunc_End);
+            read_count = f.Read(buf, sizeof(buf) - 1);
             f.Close();
 
-            if (storage_ver != NETSCHEDULED_STORAGE_VERSION)
-                NCBI_THROW(CNetScheduleException, eInternalError,
-                           "Error detected: Storage version mismatch, "
-                           "required: " NETSCHEDULED_STORAGE_VERSION
-                           ", found: " + storage_ver);
+            buf[read_count] = '\0';
+            vector<string>  lines;
+            NStr::Split(buf, "\n", lines);
+
+            if (lines.size() > 2) {
+                ERR_POST(Message << Warning <<
+                         "Unexpected format of the storage version file: more "
+                         "than 2 lines found");
+            } else if (lines.size() == 0) {
+                ERR_POST(Message << Warning <<
+                         "Unexpected format of the storage version file: no "
+                         "lines found");
+            }
+
+            CNcbiApplication *  app = CNcbiApplication::Instance();
+            CVersionInfo        ver_info = app->GetVersion();
+            string              server_version = ver_info.Print();
+
+            if (lines.size() >= 2) {
+                if (server_version != lines[1]) {
+                    ERR_POST(Message << Warning <<
+                             "NetSchedule version has changed. "
+                             "Previous server version: " << lines[1] <<
+                             " Current version: " << server_version);
+                }
+            } else if (lines.size() == 1) {
+                ERR_POST(Message << Warning <<
+                         "NetSchedule version has changed. "
+                         "Previous server version is unknown. "
+                         " Current version: " << server_version);
+            }
+
+            if (lines.size() >= 1) {
+                if (lines[0] != NETSCHEDULED_STORAGE_VERSION) {
+                    ERR_POST(Message << Warning <<
+                             "Storage version mismatch detected. "
+                             "Dumped version: " << lines[0] <<
+                             " Current version: " NETSCHEDULED_STORAGE_VERSION);
+                }
+            }
         }
 
         if (!dump_dir_exists && ver_file_exists) {
@@ -2703,10 +2748,16 @@ CQueueDataBase::x_CreateBDBEnvironment(const SNSDBEnvironmentParams &  params)
 
 void CQueueDataBase::x_CreateStorageVersionFile(void)
 {
+    CNcbiApplication *  app = CNcbiApplication::Instance();
+    CVersionInfo        ver_info = app->GetVersion();
+    string              server_version = ver_info.Print();
+
     CFileIO     f;
     f.Open(m_DataPath + kDBStorageVersionFileName, CFileIO_Base::eCreate,
                                                    CFileIO_Base::eReadWrite);
     f.Write(NETSCHEDULED_STORAGE_VERSION, strlen(NETSCHEDULED_STORAGE_VERSION));
+    f.Write("\n", 1);
+    f.Write(server_version.data(), server_version.size());
     f.Close();
 }
 
@@ -2729,9 +2780,13 @@ CQueueDataBase::x_ReadDumpQueueDesrc(set<string, PNocase> &  dump_static_queues,
         if (f == NULL)
             throw runtime_error("Cannot open the existing dump file "
                                 "for reading: " + queue_desrc_file_name);
+
         SQueueDescriptionDump   dump_struct;
         try {
-            while (dump_struct.Read(f) == 0) {
+            SOneStructDumpHeader    header;
+            header.Read(f);
+
+            while (dump_struct.Read(f, header.fixed_size) == 0) {
                 if (dump_struct.is_queue) {
                     string  qname(dump_struct.qname, dump_struct.qname_size);
                     string  qclass(dump_struct.qclass, dump_struct.qclass_size);
@@ -2913,7 +2968,10 @@ void CQueueDataBase::x_AppendDumpLinkedSections(void)
         SLinkedSectionDump                  dump_struct;
         map<string, map<string, string> >   dump_sections;
         try {
-            while (dump_struct.Read(f) == 0) {
+            SOneStructDumpHeader    header;
+            header.Read(f);
+
+            while (dump_struct.Read(f, header.fixed_size) == 0) {
                 if (m_LinkedSections.find(dump_struct.section) !=
                         m_LinkedSections.end())
                     continue;

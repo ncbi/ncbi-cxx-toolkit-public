@@ -615,6 +615,18 @@ void CNSGroupsRegistry::Dump(const string &  dump_dir_name,
     // Disable buffering to detect errors straight away
     setbuf(grp_dict_file, NULL);
 
+    if (groups_to_dump.any()) {
+        try {
+            SOneStructDumpHeader    header;
+            header.fixed_size = sizeof(SGroupDictDump);
+            header.Write(grp_dict_file);
+        } catch (const exception &  ex) {
+            fclose(grp_dict_file);
+            throw runtime_error("Writing error while dumping groups header: " +
+                                string(ex.what()));
+        }
+    }
+
     TNSBitVector::enumerator    en(groups_to_dump.first());
     for ( ; en.valid(); ++en) {
         TGroupIDToAttrMap::const_iterator  grp_it =
@@ -680,8 +692,11 @@ void  CNSGroupsRegistry::LoadFromDump(const string &  dump_dir_name,
         throw runtime_error("Cannot open file " + grp_dict_file_name +
                             " to load dumped groups");
     try {
+        SOneStructDumpHeader    header;
+        header.Read(grp_dict_file);
+
         SGroupDictDump      grp_dump;
-        while (grp_dump.Read(grp_dict_file) == 0) {
+        while (grp_dump.Read(grp_dict_file, header.fixed_size) == 0) {
             string *            new_token = new string(grp_dump.token,
                                                        grp_dump.token_size);
             SNSGroupJobs *      new_record = new SNSGroupJobs;

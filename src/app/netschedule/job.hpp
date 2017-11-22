@@ -49,6 +49,7 @@ BEGIN_NCBI_SCOPE
 class CQueue;
 class CNSAffinityRegistry;
 class CNSGroupsRegistry;
+struct SJobDumpHeader;
 
 
 // Used to specify what to fetch and what to include into a transaction
@@ -439,7 +440,8 @@ public:
     TJobStatus GetStatusBeforeReading(void) const;
     void Dump(FILE *  jobs_file) const;
     bool LoadFromDump(FILE *  jobs_file,
-                      char *  input_buf, char * output_buf);
+                      char *  input_buf, char * output_buf,
+                      const SJobDumpHeader &  header);
 
 private:
     EJobFetchResult x_Fetch(CQueue* queue);

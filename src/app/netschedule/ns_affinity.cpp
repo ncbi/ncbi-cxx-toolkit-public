@@ -941,6 +941,17 @@ void CNSAffinityRegistry::Dump(const string &  dump_dir_name,
     // Disable buffering to detect errors straight away
     setbuf(aff_dict_file, NULL);
 
+    // Write a header with a magic, versions and fixed size
+    try {
+        SOneStructDumpHeader    header;
+        header.fixed_size = sizeof(SAffinityDictDump);
+        header.Write(aff_dict_file);
+    } catch (const exception &  ex) {
+        fclose(aff_dict_file);
+        throw runtime_error("Writing error while dumping affinities: " +
+                            string(ex.what()));
+    }
+
     TNSBitVector::enumerator    en(affs_to_dump.first());
     for ( ; en.valid(); ++en) {
         map< unsigned int,
@@ -1007,8 +1018,11 @@ void CNSAffinityRegistry::LoadFromDump(const string &  dump_dir_name,
         throw runtime_error("Cannot open file " + aff_dict_file_name +
                             " to load dumped affinities");
     try {
+        SOneStructDumpHeader    header;
+        header.Read(aff_dict_file);
+
         SAffinityDictDump   aff_dump;
-        while (aff_dump.Read(aff_dict_file) == 0) {
+        while (aff_dump.Read(aff_dict_file, header.fixed_size) == 0) {
             string *            new_token = new string(aff_dump.token,
                                                        aff_dump.token_size);
             SNSJobsAffinity     new_record;
