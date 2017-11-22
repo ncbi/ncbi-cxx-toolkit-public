@@ -91,7 +91,7 @@ public:
     virtual bool IsMultiPart(void) {
         return false;
     }
-    virtual size_t GetNextPart(char** buffer) {
+    virtual size_t GetNextPart(char** /*buffer*/) {
         return 0;
     }
 
