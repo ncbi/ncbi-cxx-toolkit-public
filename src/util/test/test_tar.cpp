@@ -125,6 +125,29 @@ protected:
     string x_Pos(const CTarEntryInfo& info);
 
     CTar::TFlags m_Flags;
+
+private:
+    class CTestTar : public CTar
+    {
+    public:
+        CTestTar(const string& fname, size_t bf, bool listonfly)
+            : CTar(fname, bf), m_ListOnFly(listonfly)
+        { }
+        CTestTar(CNcbiIos& stream,    size_t bf, bool listonfly)
+            : CTar(stream, bf), m_ListOnFly(listonfly)
+        { }
+    protected:
+        virtual bool Checkpoint(const CTarEntryInfo& current, bool ifwrite)
+        {
+            if (m_ListOnFly) {
+                _ASSERT(!ifwrite);
+                NcbiCerr << current << NcbiEndl;
+            }
+            return true;
+        }
+    private:
+        bool m_ListOnFly;
+    };
 };
 
 
@@ -405,11 +428,11 @@ int CTarTest::Run(void)
                    "Sorry, -z is not supported with either -r or -u");
     }
 
-    size_t blocking_factor = args["b"].AsInteger();
-    bool   pipethru        = args["S"].HasValue();
-    bool   stream          = args["s"].HasValue();
-    bool   verbose         = args["v"].HasValue();
-    size_t n               = args.GetNExtra();
+    size_t bf       = args["b"].AsInteger();
+    bool   pipethru = args["S"].HasValue();
+    bool   stream   = args["s"].HasValue();
+    bool   verbose  = args["v"].HasValue();
+    size_t n        = args.GetNExtra();
 
     if (verbose) {
         SetDiagPostLevel(eDiag_Info);
@@ -418,7 +441,7 @@ int CTarTest::Run(void)
 #endif /*_DEBUG && !NDEBUG*/
     }
 
-    unique_ptr<CTar>     tar;
+    unique_ptr<CTestTar> tar;
     unique_ptr<CNcbiIos> zs;
     CNcbiIstream* in = 0;
     CNcbiIfstream ifs;
@@ -523,13 +546,14 @@ int CTarTest::Run(void)
         io = 0;
     }
     if (action != eExtract  ||  !stream  ||  n != 1) {
+        bool listonfly = !stream  &&  !verbose  &&  action == eList;
         if (io) {
             if (zip  &&  pipethru) {
                 NCBI_THROW(CArgException, eInvalidArg, "Write-thru zip pipe");
             }
-            tar.reset(new CTar(*io,  blocking_factor));
+            tar.reset(new CTestTar(*io,  bf, listonfly));
         } else {
-            tar.reset(new CTar(file, blocking_factor));
+            tar.reset(new CTestTar(file, bf, listonfly));
         }
         m_Flags = tar->GetFlags();
     } else {
@@ -690,8 +714,10 @@ int CTarTest::Run(void)
                     }
                 } else {
                     unique_ptr<CTar::TEntries> entries = tar->List();
-                    ITERATE(CTar::TEntries, it, *entries.get()) {
-                        NcbiCerr << *it << x_Pos(*it) << NcbiEndl;
+                    if (verbose) {
+                        ITERATE(CTar::TEntries, it, *entries.get()) {
+                            NcbiCerr << *it << x_Pos(*it) << NcbiEndl;
+                        }
                     }
                 }
             } else if (stream) {
