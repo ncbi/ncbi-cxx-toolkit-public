@@ -1107,10 +1107,19 @@ void CValidError_bioseq::ValidateInst(
         ValidateRawConst(seq);
     }
 
+    // per VR-779
+#if 1
+    if (rp == CSeq_inst::eRepr_seg) {
+        PostErr(eDiag_Critical, eErr_SEQ_INST_ReprInvalid, "Segmented set format is not supported", seq);
+    } else if (rp == CSeq_inst::eRepr_ref) {
+        PostErr(eDiag_Critical, eErr_SEQ_INST_ReprInvalid, "Repr_ref format is not supported", seq);
+    }
+#else
     if (rp == CSeq_inst::eRepr_seg  ||  rp == CSeq_inst::eRepr_ref) {
         // Validate segmented and reference sequences
         ValidateSegRef(seq);
     }
+#endif
 
     if (rp == CSeq_inst::eRepr_delta) {
         // Validate delta sequences

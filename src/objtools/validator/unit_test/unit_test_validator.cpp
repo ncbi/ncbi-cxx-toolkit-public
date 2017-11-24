@@ -53,6 +53,9 @@
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 
+// for ignoring external config files
+#include <util/util_misc.hpp>
+
 #include <objects/biblio/Id_pat.hpp>
 #include <objects/biblio/Title.hpp>
 #include <objects/general/Object_id.hpp>
@@ -372,6 +375,11 @@ NCBITEST_AUTO_INIT()
     if (args["debug_mode"]) {
         s_debugMode = true;
     }
+#if 0
+    g_IgnoreDataFile("institution_codes.txt");
+    g_IgnoreDataFile("lat_lon_country.txt");
+    g_IgnoreDataFile("lat_lon_water.txt");
+#endif
 }
 
 
@@ -2264,6 +2272,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_SeqIdNameHasSpace)
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_INST_DuplicateSegmentReferences)
 {
+#if 0
+    // removed per VR-779
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     entry->SetSeq().SetInst().ResetSeq_data();
     entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_seg);
@@ -2312,6 +2322,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_DuplicateSegmentReferences)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+#endif
 }
 
 
@@ -2356,7 +2367,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
     CRef<CSeq_feat> prot_feat = prot_entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
     CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
 
-    STANDARD_SETUP
+    STANDARD_SETUP_WITH_DATABASE
 
     expected_errors.push_back(new CExpectedError("",eDiag_Error, "BadSeqIdFormat", "Bad accession"));
 
@@ -14247,11 +14258,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqDataLenWrong)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-
+    CRef<CSeq_id> id(new CSeq_id("gb|AY123456"));
+#if 0
+    // removed per VR-779
     // now try seg and ref
     entry->SetSeq().SetInst().ResetSeq_data();
     entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_seg);
-    CRef<CSeq_id> id(new CSeq_id("gb|AY123456"));
     CRef<CSeq_loc> loc(new CSeq_loc(*id, 0, 55));
     entry->SetSeq().SetInst().SetExt().SetSeg().Set().push_back(loc);
     expected_errors[0]->SetErrMsg("Bioseq.seq_data too short [56] for given length [60]");
@@ -14275,11 +14287,15 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqDataLenWrong)
     expected_errors[0]->SetErrMsg("Bioseq.seq_data is larger [64] than given length [60]");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-
+#endif
+    
+    CLEAR_ERRORS
+    entry->SetSeq().SetInst().ResetSeq_data();
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "SeqDataLenWrong",
+        "Bioseq.seq_data too short [56] for given length [60]"));
     // delta sequence
     entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_delta);
     entry->SetSeq().SetInst().SetExt().SetDelta().AddSeqRange(*id, 0, 55);
-    expected_errors[0]->SetErrMsg("Bioseq.seq_data too short [56] for given length [60]");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     entry->SetSeq().SetInst().SetExt().Reset();
