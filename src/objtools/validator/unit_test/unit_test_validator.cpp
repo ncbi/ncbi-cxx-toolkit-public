@@ -375,11 +375,7 @@ NCBITEST_AUTO_INIT()
     if (args["debug_mode"]) {
         s_debugMode = true;
     }
-#if 0
     g_IgnoreDataFile("institution_codes.txt");
-    g_IgnoreDataFile("lat_lon_country.txt");
-    g_IgnoreDataFile("lat_lon_water.txt");
-#endif
 }
 
 
