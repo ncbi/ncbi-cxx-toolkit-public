@@ -35,6 +35,8 @@
 
 #include <util/ncbi_url.hpp>
 
+#include <tuple>
+
 BEGIN_NCBI_SCOPE
 
 
@@ -103,6 +105,16 @@ public:
     CNetScheduleAPI::EJobStatus WaitForJobCompletion(CNetScheduleJob& job,
             CDeadline& deadline, CNetScheduleAPI ns_api, time_t* job_exptime = NULL);
 
+    using TLastEventIndex = int;
+    using TProgressMessage = string;
+    using TJobInfo = tuple<CNetScheduleAPI::EJobStatus, TLastEventIndex, TProgressMessage>;
+
+    TJobInfo RequestJobWatching(CNetScheduleAPI::TInstance ns_api,
+            const string& job_id,
+            const CDeadline& deadline);
+
+    /// @deprecated, use tuple returning overload instead
+    NCBI_DEPRECATED
     bool RequestJobWatching(CNetScheduleAPI::TInstance ns_api,
             const string& job_id,
             const CDeadline& deadline,

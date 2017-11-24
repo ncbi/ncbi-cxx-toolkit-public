@@ -677,8 +677,10 @@ int CGridCommandLineInterfaceApp::Cmd_WatchJob()
     CNetScheduleAPI::EJobStatus job_status;
     int last_event_index = -1;
 
-    if (!submit_job_handler.RequestJobWatching(m_NetScheduleAPI, m_Opts.id,
-            deadline, &job_status, &last_event_index)) {
+    tie(job_status, last_event_index, ignore) =
+        submit_job_handler.RequestJobWatching(m_NetScheduleAPI, m_Opts.id, deadline);
+
+    if (job_status == CNetScheduleAPI::eJobNotFound) {
         fprintf(stderr, GRID_APP_NAME ": unexpected error while "
                 "setting up a job event listener.\n");
         return 3;

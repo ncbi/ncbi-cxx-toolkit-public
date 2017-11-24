@@ -746,8 +746,7 @@ void CCgi2RCgiApp::ListenJobs(CCgiContext& ctx, const string& job_ids_value, con
 
         if (wait_notifications) {
             try {
-                int not_used;
-                handler.RequestJobWatching(m_NetScheduleAPI, job.first, deadline, &job.second, &not_used);
+                tie(job.second, ignore, ignore) = handler.RequestJobWatching(m_NetScheduleAPI, job.first, deadline);
             } catch (CNetScheduleException& ex) {
                 if (ex.GetErrCode() != CNetScheduleException::eJobNotFound) throw;
                 job.second = CNetScheduleAPI::eJobNotFound;

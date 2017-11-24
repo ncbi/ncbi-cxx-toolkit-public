@@ -510,6 +510,16 @@ bool CNetScheduleNotificationHandler::RequestJobWatching(
     _ASSERT(job_status);
     _ASSERT(last_event_index);
 
+    tie(*job_status, *last_event_index, ignore) = RequestJobWatching(ns_api, job_id, deadline);
+
+    return *job_status != CNetScheduleAPI::eJobNotFound;
+}
+
+CNetScheduleNotificationHandler::TJobInfo CNetScheduleNotificationHandler::RequestJobWatching(
+        CNetScheduleAPI::TInstance ns_api,
+        const string& job_id,
+        const CDeadline& deadline)
+{
     double remaining_seconds = ceil(deadline.GetRemainingTime().GetAsDouble());
 
     string cmd("LISTEN job_key=" + job_id);
@@ -524,10 +534,11 @@ bool CNetScheduleNotificationHandler::RequestJobWatching(
     m_Receiver.message = ns_api->GetServer(job_id).ExecWithRetry(cmd, false).response;
 
     SNetScheduleOutputParser parser(m_Receiver.message);
-    *job_status = CNetScheduleAPI::StringToStatus(parser("job_status"));
-    *last_event_index = NStr::StringToInt(parser("last_event_index"), NStr::fConvErr_NoThrow);
+    const auto job_status = CNetScheduleAPI::StringToStatus(parser("job_status"));
+    const auto last_event_index = NStr::StringToInt(parser("last_event_index"), NStr::fConvErr_NoThrow);
+    const auto progress_message = parser("msg");
 
-    return *job_status != CNetScheduleAPI::eJobNotFound;
+    return make_tuple(job_status, last_event_index, progress_message);
 }
 
 CNetScheduleAPI::EJobStatus
@@ -552,7 +563,9 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
             timeout = deadline;
         }
 
-        if (RequestJobWatching(ns_api, job_key, timeout, &job_status, &index) &&
+        tie(job_status, index, ignore) = RequestJobWatching(ns_api, job_key, timeout);
+
+        if ((job_status != CNetScheduleAPI::eJobNotFound) &&
                 ((status_mask & (1 << job_status)) != 0 ||
                 index > last_event_index))
             break;
