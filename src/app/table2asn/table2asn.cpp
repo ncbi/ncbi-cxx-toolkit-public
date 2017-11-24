@@ -212,7 +212,7 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddFlag("g", "Genomic Product Set");
     arg_desc->AddFlag("J", "Delayed Genomic Product Set ");                // done
-    arg_desc->AddOptionalKey
+    arg_desc->AddOptionalKey                                               // removed
         ("F", "String", "Feature ID Links\n\
       o By Overlap\n\
       p By Product", CArgDescriptions::eString);
@@ -413,7 +413,6 @@ int CTbl2AsnApp::Run(void)
         m_context.m_delay_genprodset = true;
         m_context.m_GenomicProductSet = false;
         m_context.m_HandleAsSet = true;
-        m_context.m_feature_links = 'p';
         m_context.m_cleanup += "fU";
         m_context.m_validate = "v";       
     }
@@ -509,7 +508,6 @@ int CTbl2AsnApp::Run(void)
             NCBI_THROW(CArgException, eConvert,
                 "Unrecognized feature link type " + args["F"].AsString());
         }
-        m_context.m_feature_links = f_arg;
     }
     if (args["f"])
         m_context.m_single_annot_file = args["f"].AsString();

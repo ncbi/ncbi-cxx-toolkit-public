@@ -713,6 +713,7 @@ string CFeatTableEdit::xGenerateTranscriptOrProteinId(
         return "";
     }
 
+#if 0
     auto parentGene = feature::GetBestGeneForFeat(mf, &mTree);
     if (parentGene.GetData().GetGene().IsSetLocus_tag()) {
         auto xxx_id = string("gnl|") + 
@@ -722,6 +723,7 @@ string CFeatTableEdit::xGenerateTranscriptOrProteinId(
         }
         return xxx_id;
     }
+#endif
 
     //very last resort.
     // it would be very unusual (though not impossible) to get here ---

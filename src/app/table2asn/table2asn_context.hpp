@@ -100,7 +100,6 @@ public:
     bool   m_handle_as_nuc;
     string m_asn1_suffix;
     string m_locus_tag_prefix;
-    char   m_feature_links;
     bool   m_use_hypothetic_protein;
     bool   m_eukariote;
     bool   m_di_fasta;

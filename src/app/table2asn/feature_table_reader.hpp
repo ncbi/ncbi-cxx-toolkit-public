@@ -16,7 +16,13 @@ namespace objects
     class CDelta_seq;
     class CBioseq_Handle;
     class CSeq_feat;
+    class CFeat_id;
+    namespace feature
+    {
+        class CFeatTree;
+    };
 };
+
 class CSerialObject;
 class ILineReader;
 class CTable2AsnContext;
@@ -25,6 +31,7 @@ class CFeatureTableReader
 {
 public:
    CFeatureTableReader(CTable2AsnContext& context);
+   ~CFeatureTableReader();
 
    void ConvertNucSetToSet(CRef<objects::CSeq_entry>& entry) const;
    // MergeCDSFeatures looks for cdregion features in the feature tables
@@ -55,11 +62,29 @@ private:
        const objects::CBioseq& bioseq,
        objects::CSeq_feat& cd_feature);
 
-   int m_local_id_counter;
-   bool _AddProteinToSeqEntry(const objects::CSeq_entry* protein, objects::CSeq_entry_Handle seh);
-   void _MoveCdRegions(objects::CSeq_entry_Handle entry_h, const objects::CBioseq& bioseq, objects::CSeq_annot::TData::TFtable& seq_ftable, objects::CSeq_annot::TData::TFtable& set_ftable);
+    typedef map<string, CRef<objects::CSeq_feat>> TFeatMap;
+    int m_local_id_counter;
+    CRef<objects::feature::CFeatTree> m_Feat_Tree;
+    CRef<objects::CBioseq> m_bioseq;
+    CRef<objects::CScope> m_scope;
 
-   CTable2AsnContext& m_context;
+    TFeatMap m_transcript_to_mrna;
+    TFeatMap m_protein_to_mrna;
+    TFeatMap m_locus_to_gene;
+
+    bool _AddProteinToSeqEntry(const objects::CSeq_entry* protein, objects::CSeq_entry_Handle seh);
+    void _MoveCdRegions(objects::CSeq_entry_Handle entry_h, const objects::CBioseq& bioseq, objects::CSeq_annot::TData::TFtable& seq_ftable, objects::CSeq_annot::TData::TFtable& set_ftable);
+
+    CConstRef<objects::CSeq_feat> _FindFeature(const objects::CSeq_feat& feature, bool gene);
+    CConstRef<objects::CSeq_feat> _FindFeature(const objects::CFeat_id& id);
+    CConstRef<objects::CSeq_feat> _GetLinkedFeature(const objects::CSeq_feat& cd_feature, bool gene);
+    void _AddFeatures();
+    void _ClearTrees();
+    CRef<objects::feature::CFeatTree> _GetFeatTree();
+    
+
+
+    CTable2AsnContext& m_context;
 };
 
 END_NCBI_SCOPE

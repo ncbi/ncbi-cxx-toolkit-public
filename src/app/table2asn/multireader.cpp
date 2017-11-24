@@ -1015,7 +1015,7 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
                 if (matching_id.Empty())
                     matching_id = ids.front();
 
-                if (matching_id)
+                if (matching_id && annot_id->Compare(*matching_id) != CSeq_id::e_YES)
                 {
                     x_ModifySeqIds(*annot_it, annot_id, matching_id);                    
                 }
@@ -1040,7 +1040,7 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
             {
                 cerr << MSerial_AsnText << "Found unmatched annot: " << *annot_id << endl;
             }
-            if (false)
+            if (true)
             {
                 CNcbiOfstream debug_annot("annot.sqn");
                 debug_annot << MSerial_AsnText
