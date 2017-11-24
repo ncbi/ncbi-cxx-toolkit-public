@@ -531,6 +531,7 @@ CNetScheduleNotificationHandler::TJobInfo CNetScheduleNotificationHandler::Reque
 
     g_AppendClientIPSessionIDHitID(cmd);
 
+    cmd += " need_progress_msg=1";
     m_Receiver.message = ns_api->GetServer(job_id).ExecWithRetry(cmd, false).response;
 
     SNetScheduleOutputParser parser(m_Receiver.message);

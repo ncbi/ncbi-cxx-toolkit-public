@@ -271,7 +271,8 @@ bool SNetScheduleNotificationReceiver::operator()(string* server_host)
         return false;
 
     _ASSERT(buffer.size() > msg_len);
-    message.assign(buffer.data(), msg_len);
+    buffer[msg_len] = '\0'; // Make it null-terminated in case it's not
+    message.assign(buffer.data()); // Ignore everything after the first null character
 
     return true;
 }
@@ -944,8 +945,15 @@ CNetScheduleAPI::EJobStatus CNetScheduleAPI::GetJobDetails(
         time_t* job_exptime,
         ENetScheduleQueuePauseMode* pause_mode)
 {
-    string resp = m_Impl->x_ExecOnce("STATUS2", job);
-    SNetScheduleOutputParser parser(resp);
+    string cmd(g_MakeBaseCmd("STATUS2", job.job_id));
+    g_AppendClientIPSessionIDHitID(cmd);
+    cmd += " need_progress_msg=1";
+
+    CNetServer::SExecResult exec_result;
+
+    m_Impl->GetServer(job)->ConnectAndExec(cmd, false, exec_result);
+
+    SNetScheduleOutputParser parser(exec_result.response);
 
     const auto status = StringToStatus(parser("job_status"));
 
@@ -976,7 +984,7 @@ CNetScheduleAPI::EJobStatus CNetScheduleAPI::GetJobDetails(
 
     job.affinity.erase();
     job.mask = CNetScheduleAPI::eEmptyMask;
-    job.progress_msg.erase();
+    job.progress_msg = parser("msg");
 
     return status;
 }
