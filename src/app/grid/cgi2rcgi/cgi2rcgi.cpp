@@ -781,7 +781,7 @@ void CCgi2RCgiApp::ListenJobs(CCgiContext& ctx, const string& job_ids_value, con
                 auto& job = it->second;
                 job.status = CNetScheduleAPI::StringToStatus(parser("job_status"));
                 job.progress_msg = parser("msg");
-                job.progress_msg_truncated = !parser("msg_trucated").empty();
+                job.progress_msg_truncated = !parser("msg_truncated").empty();
 
                 if (!s_IsPendingOrRunning(job.status)) break;
             }
