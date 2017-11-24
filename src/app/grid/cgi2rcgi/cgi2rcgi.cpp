@@ -707,6 +707,14 @@ inline bool s_IsPendingOrRunning(CNetScheduleAPI::EJobStatus job_status)
     }
 }
 
+struct SJob : CNetScheduleJob
+{
+    CNetScheduleAPI::EJobStatus status = CNetScheduleAPI::ePending;
+    bool progress_msg_truncated = false;
+
+    SJob(const string& id) { job_id = id; }
+};
+
 void CCgi2RCgiApp::ListenJobs(CCgiContext& ctx, const string& job_ids_value, const string& timeout_value)
 {
     CTimeout timeout;
@@ -724,13 +732,10 @@ void CCgi2RCgiApp::ListenJobs(CCgiContext& ctx, const string& job_ids_value, con
 
     if (job_ids.empty()) return;
 
+    unordered_map<string, SJob> jobs;
 
-    // Consider all jobs to be pending initially
-
-    unordered_map<string, CNetScheduleAPI::EJobStatus> jobs;
-
-    for (auto job_id : job_ids) {
-        jobs.emplace(job_id, CNetScheduleAPI::ePending);
+    for (const auto& job_id : job_ids) {
+        jobs.emplace(job_id, job_id);
     }
 
 
@@ -741,21 +746,25 @@ void CCgi2RCgiApp::ListenJobs(CCgiContext& ctx, const string& job_ids_value, con
 
     bool wait_notifications = true;
 
-    for (auto& job : jobs) {
+    for (auto&& j : jobs) {
+        const auto& job_id = j.first;
+        auto& job = j.second;
+
         wait_notifications = wait_notifications && !deadline.IsExpired();
 
-        if (wait_notifications) {
-            try {
-                tie(job.second, ignore, ignore) = handler.RequestJobWatching(m_NetScheduleAPI, job.first, deadline);
-            } catch (CNetScheduleException& ex) {
-                if (ex.GetErrCode() != CNetScheduleException::eJobNotFound) throw;
-                job.second = CNetScheduleAPI::eJobNotFound;
+        try {
+            if (wait_notifications) {
+                tie(job.status, ignore, job.progress_msg) =
+                    handler.RequestJobWatching(m_NetScheduleAPI, job_id, deadline);
+            } else {
+                job.status = m_NetScheduleAPI.GetJobDetails(job);
             }
-        } else {
-            job.second = submitter.GetJobStatus(job.first);
+        } catch (CNetScheduleException& ex) {
+            if (ex.GetErrCode() != CNetScheduleException::eJobNotFound) throw;
+            job.status = CNetScheduleAPI::eJobNotFound;
         }
 
-        wait_notifications = wait_notifications && s_IsPendingOrRunning(job.second);
+        wait_notifications = wait_notifications && s_IsPendingOrRunning(job.status);
     }
 
 
@@ -765,19 +774,34 @@ void CCgi2RCgiApp::ListenJobs(CCgiContext& ctx, const string& job_ids_value, con
         while (handler.WaitForNotification(deadline)) {
             SNetScheduleOutputParser parser(handler.GetMessage());
 
-            auto job = jobs.find(parser("job_key"));
+            auto it = jobs.find(parser("job_key"));
 
             // If it's one of requested jobs
-            if (job != jobs.end()) {
-                job->second = CNetScheduleAPI::StringToStatus(parser("job_status"));
+            if (it != jobs.end()) {
+                auto& job = it->second;
+                job.status = CNetScheduleAPI::StringToStatus(parser("job_status"));
+                job.progress_msg = parser("msg");
+                job.progress_msg_truncated = !parser("msg_trucated").empty();
 
-                if (!s_IsPendingOrRunning(job->second)) break;
+                if (!s_IsPendingOrRunning(job.status)) break;
             }
         }
 
         // Recheck still pending/running jobs, just in case
-        for (auto& job : jobs) {
-            if (s_IsPendingOrRunning(job.second)) job.second = submitter.GetJobStatus(job.first);
+        for (auto&& j : jobs) {
+            auto& job = j.second;
+
+            if (s_IsPendingOrRunning(job.status)) {
+                job.progress_msg_truncated = false;
+
+                try {
+                    job.status = m_NetScheduleAPI.GetJobDetails(job);
+                } catch (CNetScheduleException& ex) {
+                    if (ex.GetErrCode() != CNetScheduleException::eJobNotFound) throw;
+                    job.status = CNetScheduleAPI::eJobNotFound;
+                    job.progress_msg.clear();
+                }
+            }
         }
     }
 
@@ -788,9 +812,20 @@ void CCgi2RCgiApp::ListenJobs(CCgiContext& ctx, const string& job_ids_value, con
     char delimiter = '{';
     out << "Content-type: application/json\nStatus: 200 OK\n\n";
 
-    for (auto& job : jobs) {
-        const auto status = CNetScheduleAPI::StatusToString(job.second);
-        out << delimiter << "\n\"" << job.first << "\": { \"Status\": \"" << status << "\" }";
+    for (const auto& j : jobs) {
+        const auto& job_id = j.first;
+        const auto& job = j.second;
+
+        const auto status = CNetScheduleAPI::StatusToString(job.status);
+        const auto message = NStr::JsonEncode(job.progress_msg);
+        out << delimiter << "\n  \"" << job_id << "\":\n  {\n    \"Status\": \"" << status << "\"";
+
+        if (!job.progress_msg.empty()) {
+            out << ",\n    \"Message\": \"" << message << "\"";
+            if (job.progress_msg_truncated) out << ",\n    \"Truncated\": true";
+        }
+
+        out << "\n  }";
         delimiter = ',';
     }
 
