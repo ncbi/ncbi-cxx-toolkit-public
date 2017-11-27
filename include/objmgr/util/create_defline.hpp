@@ -151,7 +151,14 @@ private:
         const CBioseq_Handle& bsh,
         TUserFlags flags
     );
+    void x_SetFlagsIdx (
+        const CBioseq_Handle& bsh,
+        TUserFlags flags
+    );
     void x_SetBioSrc (
+        const CBioseq_Handle& bsh
+    );
+    void x_SetBioSrcIdx (
         const CBioseq_Handle& bsh
     );
 
@@ -203,6 +210,9 @@ private:
     );
 
     void x_AdjustProteinTitleSuffix (
+        const CBioseq_Handle& bsh
+    );
+    void x_AdjustProteinTitleSuffixIdx (
         const CBioseq_Handle& bsh
     );
 

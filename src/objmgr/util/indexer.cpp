@@ -746,6 +746,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_PDBCompound.clear();
 
     m_DescBioSource.Reset();
+    m_DescTaxname.clear();
 
     m_BioSource.Reset();
     m_Taxname.clear();
@@ -1135,8 +1136,8 @@ void CBioseqIndex::x_InitSource (void)
         }
 
         if (m_IsAA && m_DescBioSource.NotEmpty() && m_DescBioSource->IsSetTaxname()) {
-            string taxname = m_DescBioSource->GetTaxname();
-            if (taxname.empty() || s_BlankOrNotSpecialTaxname(taxname)) {
+            m_DescTaxname = m_DescBioSource->GetTaxname();
+            if (m_DescTaxname.empty() || s_BlankOrNotSpecialTaxname(m_DescTaxname)) {
                 CRef<CFeatureIndex> sfxp = GetFeatureForProduct();
                 if (sfxp) {
                     CRef<CFeatureIndex> bsrx = sfxp->GetOverlappingSource();
@@ -1936,6 +1937,16 @@ const string& CBioseqIndex::GetTaxname (void)
     }
 
     return m_Taxname;
+}
+
+const string& CBioseqIndex::GetDescTaxname (void)
+
+{
+    if (! m_SourcesInitialized) {
+        x_InitSource();
+    }
+
+    return m_DescTaxname;
 }
 
 CTempString CBioseqIndex::GetGenus (void)

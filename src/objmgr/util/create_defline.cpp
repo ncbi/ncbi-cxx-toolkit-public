@@ -419,6 +419,118 @@ static const char* x_OrganelleName (
 
 // set instance variables from Seq-inst, Seq-ids, MolInfo, etc., but not
 //  BioSource
+void CDeflineGenerator::x_SetFlagsIdx (
+    const CBioseq_Handle& bsh,
+    TUserFlags flags
+)
+
+{
+    CRef<CBioseqIndex> bsx = m_Idx->GetBioseqIndex (bsh);
+    if (! bsx) {
+        return;
+    }
+
+    // set flags from record components
+    m_Reconstruct = (flags & fIgnoreExisting) != 0;
+    m_AllProtNames = (flags & fAllProteinNames) != 0;
+    m_LocalAnnotsOnly = (flags & fLocalAnnotsOnly) != 0;
+    m_GpipeMode = (flags & fGpipeMode) != 0;
+    m_OmitTaxonomicName = (flags & fOmitTaxonomicName) != 0;
+    m_DevMode = (flags & fDevMode) != 0;
+
+    // reset member variables to cleared state
+    m_IsNA = bsx->IsNA();
+    m_IsAA = bsx->IsAA();
+    m_Topology = bsx->GetTopology();
+
+    m_IsDelta = bsx->IsDelta();
+    m_IsVirtual = bsx->IsVirtual();
+    m_IsMap = bsx->IsMap();
+
+    m_IsNC = bsx->IsNC();
+    m_IsNM = bsx->IsNM();
+    m_IsNR = bsx->IsNR();
+    m_IsPatent = bsx->IsPatent();
+    m_IsPDB = bsx->IsPDB();
+    m_IsWP = bsx->IsWP();
+    m_ThirdParty = bsx->IsThirdParty();
+    m_WGSMaster = bsx->IsWGSMaster();
+    m_TSAMaster = bsx->IsTSAMaster();
+    m_TLSMaster = bsx->IsTLSMaster();
+
+    m_GeneralStr = bsx->GetGeneralStr();
+    m_GeneralId = bsx->GetGeneralId();
+
+    m_PatentCountry= bsx->GetPatentCountry();
+    m_PatentNumber = bsx->GetPatentNumber();
+    m_PatentSequence = bsx->GetPatentSequence();
+
+    m_PDBChain = bsx->GetPDBChain();
+
+    m_MIBiomol = bsx->GetBiomol();
+    m_MITech = bsx->GetTech();
+    m_MICompleteness = bsx->GetCompleteness();
+
+    m_HTGTech = bsx->IsHTGTech();
+    m_HTGSUnfinished = bsx->IsHTGSUnfinished();
+    m_IsTLS = bsx->IsTLS();
+    m_IsTSA = bsx->IsTSA();
+    m_IsWGS = bsx->IsWGS();
+    m_IsEST_STS_GSS = bsx->IsEST_STS_GSS();
+
+    m_MainTitle.clear();
+    if (! m_HTGSUnfinished && ! m_Reconstruct) {
+        m_MainTitle = bsx->GetTitle();
+    }
+
+    m_UseBiosrc = bsx->IsUseBiosrc();
+
+    m_HTGSCancelled = bsx->IsHTGSCancelled();
+    m_HTGSDraft = bsx->IsHTGSDraft();
+    m_HTGSPooled = bsx->IsHTGSPooled();
+    m_TPAExp = bsx->IsTPAExp();
+    m_TPAInf = bsx->IsTPAInf();
+    m_TPAReasm = bsx->IsTPAReasm();
+    m_Unordered = bsx->IsUnordered();
+
+    m_PDBCompound = bsx->GetPDBCompound();
+
+    m_Source = bsx->GetBioSource();
+    m_Taxname = bsx->GetTaxname();
+    m_Genus = bsx->GetGenus();
+    m_Species = bsx->GetSpecies();
+    m_Multispecies = bsx->IsMultispecies();
+    m_Genome = bsx->GetGenome();
+    m_IsPlasmid = bsx->IsPlasmid();
+    m_IsChromosome = bsx->IsChromosome();
+
+    m_Organelle = bsx->GetOrganelle();
+
+    m_FirstSuperKingdom = bsx->GetFirstSuperKingdom();
+    m_SecondSuperKingdom = bsx->GetSecondSuperKingdom();
+    m_IsCrossKingdom = bsx->IsCrossKingdom();
+
+    m_Chromosome = bsx->GetChromosome();
+    m_Clone = bsx->GetClone();
+    m_has_clone = bsx->IsHasClone();
+    m_Map = bsx->GetMap();
+    m_Plasmid = bsx->GetPlasmid();
+    m_Segment = bsx->GetSegment();
+
+    m_Breed = bsx->GetBreed();
+    m_Cultivar = bsx->GetCultivar();
+    m_Isolate = bsx->GetIsolate();
+    m_Strain = bsx->GetStrain();
+
+    m_IsUnverified = bsx->IsUnverified();
+    m_IsPseudogene = bsx->IsPseudogene();
+    m_TargetedLocus = bsx->GetTargetedLocus();
+
+    m_rEnzyme = bsx->GetrEnzyme();
+}
+
+// set instance variables from Seq-inst, Seq-ids, MolInfo, etc., but not
+//  BioSource
 void CDeflineGenerator::x_SetFlags (
     const CBioseq_Handle& bsh,
     TUserFlags flags
@@ -913,6 +1025,42 @@ void CDeflineGenerator::x_SetFlags (
             }
         }
     }
+}
+
+void CDeflineGenerator::x_SetBioSrcIdx (
+    const CBioseq_Handle& bsh
+)
+
+{
+    CRef<CBioseqIndex> bsx = m_Idx->GetBioseqIndex (bsh);
+    if (! bsx) {
+        return;
+    }
+
+    m_Source = bsx->GetBioSource();
+    m_Taxname = bsx->GetTaxname();
+
+    m_Genome = bsx->GetGenome();
+    m_IsPlasmid = bsx->IsPlasmid();
+    m_IsChromosome = bsx->IsChromosome();
+
+    m_Chromosome = bsx->GetChromosome();
+    m_Clone = bsx->GetClone();
+    m_has_clone = bsx->IsHasClone();
+    m_Map = bsx->GetMap();
+    m_Plasmid = bsx->GetPlasmid();
+    m_Segment = bsx->GetSegment();
+
+    m_Genus = bsx->GetGenus();
+    m_Species = bsx->GetSpecies();
+    m_Multispecies = bsx->IsMultispecies();
+
+    m_Strain = bsx->GetStrain();
+    m_Cultivar = bsx->GetCultivar();
+    m_Isolate = bsx->GetIsolate();
+    m_Breed = bsx->GetBreed();
+
+    m_Organelle = bsx->GetOrganelle();
 }
 
 // set instance variables from BioSource
@@ -1914,17 +2062,25 @@ void CDeflineGenerator::x_SetTitleFromProteinIdx (
     }
 
     // check for special taxname, go to overlapping source feature
+    /*
     if ((taxname.empty()  ||
          (!NStr::EqualNocase (taxname, "synthetic construct")  &&
           !NStr::EqualNocase (taxname, "artificial sequence")  &&
           taxname.find ("vector") == NPOS  &&
           taxname.find ("Vector") == NPOS))  &&
         !m_LocalAnnotsOnly) {
-        src = x_GetSourceFeatViaCDS (bsh);
-        if (src.NotEmpty()  &&  src->IsSetTaxname()) {
-            taxname = src->GetTaxname();
+        CWeakRef<CBioseqIndex> bsxp = bsx->GetBioseqForProduct();
+        auto nucx = bsxp.Lock();
+        if (nucx) {
+            if (nucx->HasSourceFeats()) {
+                src = x_GetSourceFeatViaCDS (bsh);
+                if (src.NotEmpty()  &&  src->IsSetTaxname()) {
+                    taxname = src->GetTaxname();
+                }
+            }
         }
     }
+    */
 
     if (m_IsCrossKingdom && ! m_FirstSuperKingdom.empty() && ! m_SecondSuperKingdom.empty()) {
         m_MainTitle += " [" + string(m_FirstSuperKingdom) + "][" + string(m_SecondSuperKingdom) + "]";
@@ -2612,6 +2768,158 @@ static size_t s_TitleEndsInOrganism (
     return NPOS;
 }
 
+void CDeflineGenerator::x_AdjustProteinTitleSuffixIdx (
+    const CBioseq_Handle& bsh
+)
+
+{
+    CBioSource::TGenome   genome;
+    size_t                pos, tpos = NPOS, opos = NPOS;
+    int                   len1, len2;
+    CConstRef<CBioSource> src;
+
+    CRef<CBioseqIndex> bsx = m_Idx->GetBioseqIndex (bsh);
+    if (! bsx) {
+        return;
+    }
+
+    m_Source = bsx->GetBioSource();
+    m_Taxname = bsx->GetTaxname();
+
+    m_Genome = bsx->GetGenome();
+
+    m_Genus = bsx->GetGenus();
+    m_Species = bsx->GetSpecies();
+
+    m_Organelle = bsx->GetOrganelle();
+
+    if (m_Source.Empty()) return;
+
+    s_TrimMainTitle (m_MainTitle);
+
+    len1 = m_MainTitle.length();
+    len2 = m_Taxname.length();
+
+    // find [taxname]
+
+    if (len1 > len2 + 4) {
+        tpos = s_TitleEndsInOrganism(m_MainTitle, m_Taxname);
+        if (tpos == NPOS) {
+            string descTaxname = bsx->GetDescTaxname();
+            tpos = s_TitleEndsInOrganism(m_MainTitle, descTaxname);
+        }
+        if (tpos == NPOS) {
+            string binomial = m_Genus;
+            binomial += " ";
+            binomial += m_Species;
+            tpos = s_TitleEndsInOrganism(m_MainTitle, binomial);
+            if (tpos == NPOS) {
+                if (m_IsCrossKingdom) {
+                    pos = NStr::FindNoCase(m_MainTitle, "][", 0, NPOS, NStr::eLast);
+                    if (pos != NPOS) {
+                        m_MainTitle.erase (pos + 1);
+                        s_TrimMainTitle (m_MainTitle);
+                        tpos = s_TitleEndsInOrganism(m_MainTitle, m_Taxname);
+                    }
+                }
+            }
+        }
+    }
+
+    /* do not change unless [genus species] was at the end */
+    if (tpos == NPOS) return;
+
+    m_MainTitle.erase (tpos);
+    s_TrimMainTitle (m_MainTitle);
+    len1 = m_MainTitle.length();
+
+    // find (organelle)
+
+    if (len1 > 2 && m_MainTitle [len1 - 1] == ')') {
+        pos = m_MainTitle.find_last_of ("(");
+        if (pos != NPOS) {
+            for ( genome = NCBI_GENOME(chloroplast); genome <= NCBI_GENOME(chromatophore); genome++ ) {
+                string str = s_proteinOrganellePrefix [genome];
+                if ( ! str.empty() ) {
+                    string paren = "(" + str + ")";
+                    if (NStr::EndsWith (m_MainTitle, paren )) {
+                        opos = pos;
+                        break;
+                    }
+                }
+            }
+        }
+        s_TrimMainTitle (m_MainTitle);
+        len1 = m_MainTitle.length();
+    }
+
+    if (opos != NPOS) {
+        m_MainTitle.erase (opos);
+        s_TrimMainTitle (m_MainTitle);
+        len1 = m_MainTitle.length();
+    }
+
+    if ( NStr::EndsWith (m_MainTitle, ", partial")) {
+        m_MainTitle.erase(m_MainTitle.length() - 9);
+        s_TrimMainTitle (m_MainTitle);
+    }
+
+    // then reconstruct partial (organelle) [taxname] suffix
+
+    if ( !x_IsComplete()) {
+        m_MainTitle += ", partial";
+    }
+
+    if (m_OmitTaxonomicName) return;
+
+    CTempString taxname = m_Taxname;
+
+    if (m_Genome >= NCBI_GENOME(chloroplast) && m_Genome <= NCBI_GENOME(chromatophore)) {
+        const char * organelle = s_proteinOrganellePrefix [m_Genome];
+        if ( organelle[0] != '\0'  &&  ! taxname.empty()
+            /* &&  NStr::Find (taxname, organelle) == NPOS */) {
+            m_MainTitle += " (";
+            m_MainTitle += organelle;
+            m_MainTitle += ")";
+        }
+    }
+
+    // check for special taxname, go to overlapping source feature
+    /*
+    if ((taxname.empty()  ||
+         (!NStr::EqualNocase (taxname, "synthetic construct")  &&
+          !NStr::EqualNocase (taxname, "artificial sequence")  &&
+          taxname.find ("vector") == NPOS  &&
+          taxname.find ("Vector") == NPOS))  &&
+        !m_LocalAnnotsOnly) {
+        if (m_Idx) {
+            CRef<CBioseqIndex> bsx = m_Idx->GetBioseqIndex (bsh);
+            if (bsx) {
+                CWeakRef<CBioseqIndex> bsxp = bsx->GetBioseqForProduct();
+                auto nucx = bsxp.Lock();
+                if (nucx) {
+                        src = x_GetSourceFeatViaCDS (bsh);
+                        if (src.NotEmpty()  &&  src->IsSetTaxname()) {
+                            taxname = src->GetTaxname();
+                        }
+                }
+            }
+        } else {
+            src = x_GetSourceFeatViaCDS (bsh);
+            if (src.NotEmpty()  &&  src->IsSetTaxname()) {
+                taxname = src->GetTaxname();
+            }
+        }
+    }
+    */
+
+    if (m_IsCrossKingdom && ! m_FirstSuperKingdom.empty() && ! m_SecondSuperKingdom.empty()) {
+        m_MainTitle += " [" + string(m_FirstSuperKingdom) + "][" + string(m_SecondSuperKingdom) + "]";
+    } else if (! taxname.empty() /* && m_MainTitle.find(taxname) == NPOS */) {
+        m_MainTitle += " [" + string(taxname) + "]";
+    }
+}
+
 void CDeflineGenerator::x_AdjustProteinTitleSuffix (
     const CBioseq_Handle& bsh
 )
@@ -2738,9 +3046,23 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
           taxname.find ("vector") == NPOS  &&
           taxname.find ("Vector") == NPOS))  &&
         !m_LocalAnnotsOnly) {
-        src = x_GetSourceFeatViaCDS (bsh);
-        if (src.NotEmpty()  &&  src->IsSetTaxname()) {
-            taxname = src->GetTaxname();
+        if (m_Idx) {
+            CRef<CBioseqIndex> bsx = m_Idx->GetBioseqIndex (bsh);
+            if (bsx) {
+                CWeakRef<CBioseqIndex> bsxp = bsx->GetBioseqForProduct();
+                auto nucx = bsxp.Lock();
+                if (nucx) {
+                        src = x_GetSourceFeatViaCDS (bsh);
+                        if (src.NotEmpty()  &&  src->IsSetTaxname()) {
+                            taxname = src->GetTaxname();
+                        }
+                }
+            }
+        } else {
+            src = x_GetSourceFeatViaCDS (bsh);
+            if (src.NotEmpty()  &&  src->IsSetTaxname()) {
+                taxname = src->GetTaxname();
+            }
         }
     }
 
@@ -2912,7 +3234,11 @@ string CDeflineGenerator::GenerateDefline (
     string final;
 
     // set flags from record components
-    x_SetFlags (bsh, flags);
+    if (m_Idx) {
+        x_SetFlagsIdx (bsh, flags);
+    } else {
+        x_SetFlags (bsh, flags);
+    }
 
     if (flags & fShowModifiers) {
         return x_GetModifiers(bsh);
@@ -2932,7 +3258,11 @@ string CDeflineGenerator::GenerateDefline (
 
     // adjust protein partial/organelle/taxname suffix, if necessary
     if ( m_IsAA && ! m_MainTitle.empty() ) {
-        x_AdjustProteinTitleSuffix (bsh);
+        if (m_Idx) {
+            x_AdjustProteinTitleSuffixIdx (bsh);
+        } else {
+            x_AdjustProteinTitleSuffix (bsh);
+        }
     }
 
     // use appropriate algorithm if title needs to be generated
@@ -2946,7 +3276,11 @@ string CDeflineGenerator::GenerateDefline (
 
         if (m_MainTitle.empty()) {
             // set fields from source information
-            x_SetBioSrc (bsh);
+            if (m_Idx) {
+                x_SetBioSrcIdx (bsh);
+            } else {
+                x_SetBioSrc (bsh);
+            }
 
             // several record types have specific methods
             if (m_IsNC) {

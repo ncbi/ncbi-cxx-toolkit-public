@@ -464,6 +464,8 @@ public:
     CConstRef<CBioSource> GetBioSource (void);
     const string& GetTaxname (void);
 
+    const string& GetDescTaxname (void);
+
     bool IsHTGTech (void);
     bool IsHTGSUnfinished (void);
     bool IsTLS (void);
@@ -620,6 +622,7 @@ private:
 
     // BioSource fields
     CConstRef<CBioSource> m_DescBioSource;
+    string m_DescTaxname;
 
     CConstRef<CBioSource> m_BioSource;
     string m_Taxname;
