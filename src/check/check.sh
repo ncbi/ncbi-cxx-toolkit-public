@@ -159,7 +159,6 @@ if test "$need_check" = "yes" ; then
       "$make" check_r RUN_CHECK=N  ||  Error "MAKE CHECK_R failed"
    fi
    $run_script ./check.sh run
-   $run_script ./check.sh load_to_db
 fi
 
 
