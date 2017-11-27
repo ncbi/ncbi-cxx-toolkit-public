@@ -97,8 +97,9 @@ public:
         }
 
         void SetUpdateProductId(const CSeq_id& product_id) {
-            if (m_UpdateProductId.Empty());
-            m_UpdateProductId = Ref(new CSeq_id());
+            if (m_UpdateProductId.Empty()) {
+                m_UpdateProductId = Ref(new CSeq_id());
+            }
             m_UpdateProductId->Assign(product_id);
         }
 

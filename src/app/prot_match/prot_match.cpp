@@ -196,9 +196,15 @@
 
     void x_RelabelNucSeq(CRef<CSeq_entry> nuc_prot_set);
 
+    unique_ptr<CBinRunner> m_pBlastExec;
+    unique_ptr<CBinRunner> m_pCompareAnnotsExec;
     unique_ptr<CMatchSetup> m_pMatchSetup;
+    unique_ptr<CMatchTabulate> m_pMatchTabulate;
+    CRef<CScope> m_pDBScope;
+    
     set<string> m_TempFiles;
     bool m_TempFilesCreated;
+    bool m_KeepTempFiles;
 };
 
 
@@ -542,6 +548,9 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
             alignment_file,
             blast_args);
 
+
+        string blast_string = NStr::Join(blast_args, " ");
+
         x_LogTempFile(alignment_file);
         assm_assm_blastn.Exec(blast_args);
         // Create alignment manifest tempfile 
@@ -565,6 +574,8 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
             manifest_file, 
             annot_file,
             compare_annots_args);
+
+        string compare_annots_string = NStr::Join(compare_annots_args, " ");
 
         x_LogTempFile(annot_file);
         compare_annots.Exec(compare_annots_args);
@@ -878,6 +889,7 @@ void CProteinMatchApp::x_InitNucProtSetMatch(CRef<CSeq_entry> nuc_prot_set,
 
     const bool exclude_local_prot_ids = GetArgs()["no-local-match"];
     CRef<CSeq_entry> core_nuc_prot_set = m_pMatchSetup->GetCoreNucProtSet(*nuc_prot_set, exclude_local_prot_ids);
+    //CRef<CSeq_entry> core_nuc_prot_set = nuc_prot_set;
 
     x_RelabelNucSeq(core_nuc_prot_set); // Temporary - need to fix this
 

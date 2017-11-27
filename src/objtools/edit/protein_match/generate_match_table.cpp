@@ -280,8 +280,8 @@ void CMatchTabulate::GenerateMatchTable(
         
         const string& nucseq_status = nucseq_same[db_nuc_accession] ? "Same" : "Changed";
         x_AppendNucleotide(update_nuc_accession, nucseq_status);
+        set<string> matched_protein_accessions;
         if (prot_matches.find(db_nuc_accession) != prot_matches.end()) {
-            set<string> matched_protein_accessions;
             for (const CProtMatchInfo& prot_match : prot_matches[db_nuc_accession]) {
                 x_AppendMatchedProtein(update_nuc_accession, prot_match);
                 matched_protein_accessions.insert(prot_match.GetAccession());
@@ -290,29 +290,29 @@ void CMatchTabulate::GenerateMatchTable(
                     matched_update_product_ids.insert(matched_update_product_id);
                 }
             }
+        }
 
         
-            for (const list<CRef<CSeq_id>>& single_seq_ids : id_info.GetUpdateProtIds()) {
-                bool is_matched = false;
-                for (CRef<CSeq_id> update_prot_id :  single_seq_ids) {
-                    auto it = matched_update_product_ids.find(update_prot_id);
-                    if (it != matched_update_product_ids.end()) {
-                        matched_update_product_ids.erase(it);  
-                        is_matched = true;     
-                        break; 
-                    }
-                }
-                if (!is_matched) {
-                    const string& unmatched_prot_id = single_seq_ids.front()->GetSeqIdString();
-                    x_AppendNewProtein(update_nuc_accession, unmatched_prot_id);
+        for (const list<CRef<CSeq_id>>& single_seq_ids : id_info.GetUpdateProtIds()) {
+            bool is_matched = false;
+            for (CRef<CSeq_id> update_prot_id :  single_seq_ids) {
+                auto it = matched_update_product_ids.find(update_prot_id);
+                if (it != matched_update_product_ids.end()) {
+                    matched_update_product_ids.erase(it);  
+                    is_matched = true;     
+                    break; 
                 }
             }
+            if (!is_matched) {
+                const string& unmatched_prot_id = single_seq_ids.front()->GetSeqIdString();
+                x_AppendNewProtein(update_nuc_accession, unmatched_prot_id);
+            }
+        }
 
-            for (const string& db_prot_accession : id_info.GetDBProtIds()) {
-                if (matched_protein_accessions.find(db_prot_accession) == 
-                    matched_protein_accessions.end()) {
-                    x_AppendDeadProtein(update_nuc_accession, db_prot_accession);
-                }
+        for (const string& db_prot_accession : id_info.GetDBProtIds()) {
+            if (matched_protein_accessions.find(db_prot_accession) == 
+                matched_protein_accessions.end()) {
+                x_AppendDeadProtein(update_nuc_accession, db_prot_accession);
             }
         }
     }
