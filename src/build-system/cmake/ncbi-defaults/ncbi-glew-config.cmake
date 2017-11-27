@@ -18,6 +18,8 @@ endif()
 ## Module-specific checks
 ##
 
+set(_GLEW_VERSION "glew-1.5.8")
+
 get_filename_component(GLEW_CMAKE_DIR "$ENV{NCBI}/glew" REALPATH)
 string(REGEX REPLACE ".*-([0-9].*)" "\\1" GLEW_VERSION_STRING "${GLEW_CMAKE_DIR}")
 
@@ -26,9 +28,20 @@ set(GLEW_INCLUDE_DIRS
     ${GLEW_CMAKE_DIR}/include
     )
 
-set(GLEW_LIBRARIES
-    ${GLEW_CMAKE_DIR}/${CMAKE_BUILD_TYPE}/lib/libGLEW${_NCBI_LIBRARY_SUFFIX}
-    )
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+
+    set(GLEW_LIBRARIES
+        ${GLEW_CMAKE_DIR}/${CMAKE_BUILD_TYPE}/lib/libGLEW${_NCBI_LIBRARY_SUFFIX}
+        )
+
+else()
+
+    set(GLEW_LIBRARIES
+        /opt/ncbi/64/${_GLEW_VERSION}/${CMAKE_BUILD_TYPE}/lib/libGLEW${_NCBI_LIBRARY_SUFFIX}
+        )
+
+endif()
 
 
 #############################################################################

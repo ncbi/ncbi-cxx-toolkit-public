@@ -18,7 +18,9 @@ endif()
 ## Module-specific checks
 ##
 
-get_filename_component(FTGL_CMAKE_DIR "$ENV{NCBI}/ftgl-2.1.3-rc5" REALPATH)
+set(_FTGL_VERSION "ftgl-2.1.3-rc5")
+
+get_filename_component(FTGL_CMAKE_DIR "$ENV{NCBI}/${_FTGL_VERSION}" REALPATH)
 string(REGEX REPLACE ".*-([0-9].*)" "\\1" FTGL_VERSION_STRING "${FTGL_CMAKE_DIR}")
 
 set(FTGL_FOUND True)
@@ -26,9 +28,19 @@ set(FTGL_INCLUDE_DIR
     ${FTGL_CMAKE_DIR}/include
     )
 
-set(FTGL_LIBRARIES
-    ${FTGL_CMAKE_DIR}/${CMAKE_BUILD_TYPE}64/lib/libftgl${_NCBI_LIBRARY_SUFFIX}
-    )
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+
+    set(FTGL_LIBRARIES
+        ${FTGL_CMAKE_DIR}/${CMAKE_BUILD_TYPE}64/lib/libftgl${_NCBI_LIBRARY_SUFFIX}
+        )
+else()
+
+    set(FTGL_LIBRARIES
+        /opt/ncbi/64/${_FTGL_VERSION}/${CMAKE_BUILD_TYPE}64/lib/libftgl${_NCBI_LIBRARY_SUFFIX}
+        )
+
+endif()
 
 #############################################################################
 ##

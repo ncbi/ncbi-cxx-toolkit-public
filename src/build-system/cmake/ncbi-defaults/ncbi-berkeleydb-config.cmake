@@ -24,6 +24,7 @@ get_filename_component(BerkeleyDB_CMAKE_DIR "$ENV{NCBI}/${_BDB_VERSION}" REALPAT
 string(REGEX REPLACE ".*-([0-9].*)" "\\1" BerkeleyDB_VERSION_STRING "${BerkeleyDB_CMAKE_DIR}")
 
 set(BerkeleyDB_FOUND True)
+set(BERKELEYDB_FOUND True)
 set(BERKELEYDB_INCLUDE_DIR
     ${BerkeleyDB_CMAKE_DIR}/include
     )
@@ -42,11 +43,12 @@ else()
     # release-mode binaries are in /opt
 
     set(BERKELEYDB_LIBRARY
-        ${BerkeleyDB_CMAKE_DIR}/${CMAKE_BUILD_TYPE}MT64/libdb${_NCBI_LIBRARY_SUFFIX}
+        /opt/ncbi/64/${_BDB_VERSION}/${CMAKE_BUILD_TYPE}MT64/libdb${_NCBI_LIBRARY_SUFFIX}
         )
     set(BERKELEYDB_LIBRARIES
         -Wl,-rpath,/opt/ncbi/64/${_BDB_VERSION}/${CMAKE_BUILD_TYPE}MT64 ${BERKELEYDB_LIBRARY}
         )
+
 endif()
 
 
@@ -55,7 +57,8 @@ endif()
 ## Logging
 ##
 
-set(BerkeleyDB_LIBRARIES ${BERKELEYDB_LIBRARY})
+set(BerkeleyDB_LIBRARY ${BERKELEYDB_LIBRARY})
+set(BerkeleyDB_LIBRARIES ${BERKELEYDB_LIBRARIES})
 
 if (_NCBI_MODULE_DEBUG)
     message(STATUS "BerkeleyDB (NCBI): FOUND = ${BerkeleyDB_FOUND}")

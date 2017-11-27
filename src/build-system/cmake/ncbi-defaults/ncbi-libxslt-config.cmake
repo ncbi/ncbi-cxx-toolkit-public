@@ -18,7 +18,9 @@ endif()
 ## Module-specific checks
 ##
 
-get_filename_component(LibXslt_CMAKE_DIR "$ENV{NCBI}/libxml-2.7.8" REALPATH)
+set(_LIBXSL_VERSION "libxml-2.7.8")
+
+get_filename_component(LibXslt_CMAKE_DIR "$ENV{NCBI}/${_LIBXSL_VERSION}" REALPATH)
 string(REGEX REPLACE ".*-([0-9].*)" "\\1" LibXslt_VERSION_STRING "${LibXslt_CMAKE_DIR}")
 
 set(LIBXSLT_FOUND True)
@@ -26,9 +28,19 @@ set(LIBXSLT_INCLUDE_DIR
     ${LibXslt_CMAKE_DIR}/include/libxslt
     )
 
-set(LIBXSLT_LIBRARIES
-    ${LibXslt_CMAKE_DIR}/${CMAKE_BUILD_TYPE}64MT/lib/libxslt${_NCBI_LIBRARY_SUFFIX}
-    )
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+
+    set(LIBXSLT_LIBRARIES
+        ${LibXslt_CMAKE_DIR}/${CMAKE_BUILD_TYPE}64MT/lib/libxslt${_NCBI_LIBRARY_SUFFIX}
+        )
+else()
+
+    set(LIBXSLT_LIBRARIES
+        /opt/ncbi/64/${_LIBXSL_VERSION}/${CMAKE_BUILD_TYPE}64MT/lib/libxslt${_NCBI_LIBRARY_SUFFIX}
+        )
+
+endif()
+
 set(LIBXSLT_DEFINITIONS
     )
 set(LIBXSLT_XSLTPROC_EXECUTABLE

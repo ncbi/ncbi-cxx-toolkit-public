@@ -18,7 +18,9 @@ endif()
 ## Module-specific checks
 ##
 
-get_filename_component(LibXml2_CMAKE_DIR "$ENV{NCBI}/libxml-2.7.8" REALPATH)
+set(_LIBXML_VERSION "libxml-2.7.8")
+
+get_filename_component(LibXml2_CMAKE_DIR "$ENV{NCBI}/${_LIBXML_VERSION}" REALPATH)
 string(REGEX REPLACE ".*-([0-9].*)" "\\1" LIBXML2_VERSION_STRING "${LibXml2_CMAKE_DIR}")
 
 set(LIBXML2_FOUND True)
@@ -26,9 +28,19 @@ set(LIBXML2_INCLUDE_DIR
     ${LibXml2_CMAKE_DIR}/include/libxml2
     )
 
-set(LIBXML2_LIBRARIES
-    ${LibXml2_CMAKE_DIR}/${CMAKE_BUILD_TYPE}64MT/lib/libxml2${_NCBI_LIBRARY_SUFFIX}
-    )
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+
+    set(LIBXML2_LIBRARIES
+        ${LibXml2_CMAKE_DIR}/${CMAKE_BUILD_TYPE}64MT/lib/libxml2${_NCBI_LIBRARY_SUFFIX}
+        )
+else()
+
+    set(LIBXML2_LIBRARIES
+        /opt/ncbi/64/${_LIBXML_VERSION}/${CMAKE_BUILD_TYPE}64MT/lib/libxml2${_NCBI_LIBRARY_SUFFIX}
+        )
+endif()
+
 set(LIBXML2_DEFINITIONS
     )
 set(LIBXML2_XMLLINT_EXECUTABLE
