@@ -491,6 +491,8 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
             }
             istr.Close();
 
+
+
             // Second pass - to detect unprocessed nucleotide sequences
             unique_ptr<CObjectIStream> pIstr(x_InitObjectIStream(GetArgs()));
             CObjectIStreamIterator<TRoot, CBioseq> bioseq_it(*pIstr, eNoOwnership);
@@ -502,11 +504,27 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
 
                 CRef<CSeq_id> nuc_seqid;
                 const bool success = m_pMatchSetup->GetAccession(bioseq, nuc_seqid);
-                if (!success || 
-                    (processed_nuc_accessions.find(nuc_seqid->GetSeqIdString()) != 
-                     processed_nuc_accessions.end())) {
+
+                if(!success) {
                     continue;
-                } 
+                }
+
+                if (processed_nuc_accessions.find(nuc_seqid->GetSeqIdString()) == 
+                    processed_nuc_accessions.end()) {
+                    list<CRef<CSeq_id>> hist_ids;
+                    if (m_pMatchSetup->GetReplacedIdsFromHist(
+                                    bioseq,
+                                    hist_ids)) {
+                        nuc_seqid = hist_ids.front();
+                        if (processed_nuc_accessions.find(nuc_seqid->GetSeqIdString()) != 
+                            processed_nuc_accessions.end()) {
+                            continue;
+                        }
+                    }
+                }
+                else {
+                    continue;
+                }
 
                 CMatchIdInfo match_info;
 
@@ -1293,6 +1311,7 @@ void CProteinMatchApp::x_WriteToSeqEntryTempFiles(
     const CBioseq& nuc_seq = nuc_prot_set.GetNucFromNucProtSet();
     CRef<CSeq_entry> nuc_se = Ref(new CSeq_entry());
     nuc_se->SetSeq().Assign(nuc_seq);
+
     x_WriteEntry(*nuc_se, 
         "local_nuc_seq",
         filename_map,
