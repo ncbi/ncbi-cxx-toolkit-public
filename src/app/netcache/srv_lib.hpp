@@ -56,6 +56,18 @@ struct SSystemMutex;
         SRV_LOG(Fatal, msg)         \
 /**/
 
+#define xncbi_VerifyAndErrorReport(expr)   \
+    if (!(expr))                           \
+        SRV_LOG(Fatal, #expr)
+
+#define xncbi_ValidateAndErrnoReport(expr, msg)   \
+    if (!(expr))                                  \
+        SRV_LOG(Fatal, msg)
+
+# define xncbi_ValidatePthread(expression, expected_value, message) \
+    if (expression != expected_value)                                  \
+        SRV_LOG(Fatal, message)
+
 #define xncbi_Verify(expression)    assert(expression)
 
 #ifdef _DEBUG
