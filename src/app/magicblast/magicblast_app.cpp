@@ -641,13 +641,27 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
                            int& compartment, bool print_unaligned,
                            bool no_discordant)
 {
-    if (is_paired  &&  no_discordant  &&  !results.IsConcordant()) {
-        return ostr;
-    }
-
     for (auto it: results.GetSeqAlign()->Get()) {
-        PrintTabular(ostr, *it, queries, is_paired, batch_number, compartment++);
-        ostr << endl;
+        if (results.IsConcordant()) {
+            PrintTabular(ostr, *it, queries, is_paired, batch_number,
+                    compartment++);
+            ostr << endl;
+        } else {
+            if (no_discordant) {
+                if (print_unaligned) {
+                    PrintTabularUnaligned(ostr, results, queries, true);
+                    ostr << endl;
+                    if (results.IsPaired()) {
+                        PrintTabularUnaligned(ostr, results, queries, false);
+                        ostr << endl;
+                    }
+                }
+            } else {
+                PrintTabular(ostr, *it, queries, is_paired, batch_number,
+                        compartment++);
+                ostr << endl;
+            }
+        }
     }
 
     if (!print_unaligned) {
@@ -1373,16 +1387,30 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, CMagicBlastResults& results,
 {
     bool first_secondary = false;
     bool last_secondary = false;
-    bool not_concordant = !results.IsConcordant();
 
     for (auto it: results.GetSeqAlign()->Get()) {
-        // If paired, skip over non-concordant pairs.
-        if (it->GetSegs().IsDisc()  &&  no_discordant  &&  not_concordant) {
-            continue;
+        if (results.IsConcordant()) {
+            PrintSAM(ostr, *it, queries, query_info, batch_number,
+                    first_secondary, last_secondary, trim_read_id);
+            ostr << endl;
+        } else {
+            if (no_discordant) {
+                if (print_unaligned) {
+                    PrintSAMUnaligned(ostr, results, queries, true,
+                            trim_read_id);
+                    ostr << endl;
+                    if (results.IsPaired()) {
+                        PrintSAMUnaligned(ostr, results, queries, false,
+                                trim_read_id);
+                        ostr << endl;
+                    }
+                }
+            } else {
+                PrintSAM(ostr, *it, queries, query_info, batch_number,
+                        first_secondary, last_secondary, trim_read_id);
+                ostr << endl;
+            }
         }
-        PrintSAM(ostr, *it, queries, query_info, batch_number, first_secondary,
-                 last_secondary, trim_read_id);
-        ostr << endl;
     }
 
     if (!print_unaligned) {
