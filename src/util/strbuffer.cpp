@@ -93,7 +93,7 @@ void CIStreamBuffer::Open(CByteSourceReader& reader)
 {
     Close();
     if (reader.IsMultiPart()) {
-        m_BufferSize = reader.GetNextPart(&m_Buffer);
+        m_BufferSize = reader.GetNextPart(&m_Buffer, 0);
         m_CurrentPos = m_Buffer;
         m_DataEndPos = m_Buffer + m_BufferSize;
         m_BufferSize = 0;
@@ -338,7 +338,7 @@ const char* CIStreamBuffer::FillBuffer(const char* pos, bool noEOF)
                     m_Collector->AddChunk(m_CollectPos, count);
             }
             m_BufferPos += (m_DataEndPos - m_Buffer);
-            m_BufferSize = m_Input->GetNextPart(&m_Buffer);
+            m_BufferSize = m_Input->GetNextPart(&m_Buffer, m_DataEndPos - m_CurrentPos);
             m_CurrentPos = m_Buffer;
             m_DataEndPos = m_Buffer + m_BufferSize;
             if ( m_Collector ) {

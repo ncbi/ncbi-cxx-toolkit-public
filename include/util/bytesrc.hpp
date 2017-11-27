@@ -91,7 +91,7 @@ public:
     virtual bool IsMultiPart(void) {
         return false;
     }
-    virtual size_t GetNextPart(char** /*buffer*/) {
+    virtual size_t GetNextPart(char** /*buffer*/, size_t /*copy_count*/) {
         return 0;
     }
 
@@ -221,15 +221,15 @@ public:
     virtual bool IsMultiPart(void) {
         return true;
     }
-    virtual size_t GetNextPart(char** buffer);
+    virtual size_t GetNextPart(char** buffer, size_t copy_count);
 
 protected:
-    void x_GetNextChunk(void);
+    void x_GetNextChunkAt(size_t offset);
     CConstRef<CByteSource> m_Source;
     CMemoryFileMap*          m_Fmap;
     char* m_Ptr;
-    Int8 m_ChunkOffset, m_CurOffset;
-    size_t m_DefaultSize, m_ChunkSize, m_ChunkSizeLeft, m_FileSizeLeft;
+    size_t m_UnitSize, m_DefaultSize;
+    size_t m_ChunkOffset, m_CurOffset, m_NextOffset, m_FileSize;
 };
 
 class NCBI_XUTIL_EXPORT CStreamByteSourceReader : public CByteSourceReader

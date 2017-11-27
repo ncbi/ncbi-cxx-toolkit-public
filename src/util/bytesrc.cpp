@@ -284,20 +284,19 @@ CRef<CByteSourceReader> CMMapByteSource::Open(void)
 
 CMMapByteSourceReader::CMMapByteSourceReader(const CByteSource* source, CMemoryFileMap* fmap, size_t num_blocks)
     : m_Source(source), m_Fmap(fmap), m_Ptr(nullptr),
-        m_ChunkOffset(0),  m_CurOffset(0),
-        m_DefaultSize(0), m_ChunkSize(0), m_ChunkSizeLeft(0),
-        m_FileSizeLeft(fmap->GetFileSize())
+        m_UnitSize(GetVirtualMemoryAllocationGranularity()), m_DefaultSize(0), 
+        m_ChunkOffset(0),  m_CurOffset(0), m_NextOffset(0),
+        m_FileSize(fmap->GetFileSize())
 {
     if (num_blocks == 0) {
         num_blocks = 128;
+    } else if (num_blocks == 1) {
+        num_blocks = 2;
     }
-    m_DefaultSize = num_blocks * GetVirtualMemoryAllocationGranularity();
-    if (m_DefaultSize == 0) {
-        m_DefaultSize = 64 * 1024;
+    if (m_UnitSize == 0) {
+        m_UnitSize = 64 * 1024;
     }
-#if 0
-    m_mapper = async(x_MapperFunc, m_Fmap, m_Ptr, m_ChunkOffset, min(m_FileSizeLeft, m_DefaultSize)); 
-#endif
+    m_DefaultSize = num_blocks * m_UnitSize;
 }
 
 CMMapByteSourceReader::~CMMapByteSourceReader(void)
@@ -307,89 +306,58 @@ CMMapByteSourceReader::~CMMapByteSourceReader(void)
     }
 }
 
-#if 0
-    static char* x_MapperFunc(CMemoryFileMap* fmap, char* prev, Int8 offset, Int8 size);
-    future<char*> m_mapper;
-
-char* CMMapByteSourceReader::x_MapperFunc(CMemoryFileMap* fmap, char* prev, Int8 offset, Int8 size)
-{
-    if (prev) {
-        fmap->Unmap(prev);
-    }
-    return size ? (char*)fmap->Map(offset, size) : nullptr;
-}
-
-void CMMapByteSourceReader::x_GetNextChunk(void)
-{
-    char* prev = m_Ptr;
-    m_Ptr = m_mapper.get();
-    if (m_Ptr) {
-        m_ChunkOffset = m_CurOffset = m_Fmap->GetOffset(m_Ptr);
-        m_ChunkSize = m_ChunkSizeLeft = m_Fmap->GetSize(m_Ptr);
-        m_FileSizeLeft -= m_ChunkSize;
-    }
-    m_mapper = async(x_MapperFunc, m_Fmap, prev, m_ChunkOffset+m_ChunkSize, min(m_FileSizeLeft, m_DefSize)); 
-}
-
-#else
-
-void CMMapByteSourceReader::x_GetNextChunk(void)
+void CMMapByteSourceReader::x_GetNextChunkAt(size_t offset)
 {
     if (m_Ptr) {
         m_Fmap->Unmap(m_Ptr);
-        m_ChunkOffset += m_ChunkSize;
-        m_FileSizeLeft -= m_ChunkSize;
         m_Ptr = nullptr;
     }
-    if (m_FileSizeLeft) {
-        m_ChunkSizeLeft = 0;
-        m_Ptr = (char*)m_Fmap->Map(m_ChunkOffset, min(m_FileSizeLeft, m_DefaultSize));
+    if (offset < m_FileSize) {
+        m_CurOffset = offset;
+        m_ChunkOffset = (m_CurOffset / m_UnitSize) * m_UnitSize;
+        m_Ptr = (char*)m_Fmap->Map(m_ChunkOffset, min(m_FileSize - m_ChunkOffset, m_DefaultSize));
         m_Fmap->MemMapAdvise(m_Ptr, CMemoryFileMap::eMMA_Sequential);
-        if (m_Ptr) {
-            m_ChunkOffset = m_CurOffset = m_Fmap->GetOffset(m_Ptr);
-            m_ChunkSize = m_ChunkSizeLeft = m_Fmap->GetSize(m_Ptr);
-        }
+        m_NextOffset = m_ChunkOffset + m_Fmap->GetSize(m_Ptr);
     }
 }
-#endif
 
-size_t CMMapByteSourceReader::GetNextPart(char** buffer)
+size_t CMMapByteSourceReader::GetNextPart(char** buffer, size_t copy_count)
 {
-    if (m_ChunkSizeLeft == 0) {
-        x_GetNextChunk();
-    }
+    x_GetNextChunkAt(m_NextOffset - copy_count);
     if (m_Ptr) {
-        *buffer = m_Ptr;
-        m_ChunkSizeLeft = 0;
-        return m_ChunkSize;
+        *buffer = m_Ptr + (m_CurOffset - m_ChunkOffset);
+        size_t len = m_NextOffset - m_CurOffset;
+        m_CurOffset = m_NextOffset;
+        return len;
     }
     return 0;
 }
 
 size_t CMMapByteSourceReader::Read(char* buffer, size_t bufferLength)
 {
-    if (m_ChunkSizeLeft == 0) {
-        x_GetNextChunk();
+    if (m_CurOffset == m_NextOffset) {
+        x_GetNextChunkAt(m_NextOffset);
     }
-    size_t len = min( m_ChunkSizeLeft, bufferLength);
-    if (len != 0) {
-        memcpy(buffer, m_Ptr + (m_CurOffset - m_ChunkOffset), len);
-        m_CurOffset += len;
-        m_ChunkSizeLeft -= len;
+    size_t len = 0;
+    if (m_Ptr) {
+        len = min( m_NextOffset - m_CurOffset, bufferLength);
+        if (len != 0) {
+            memcpy(buffer, m_Ptr + (m_CurOffset - m_ChunkOffset), len);
+            m_CurOffset += len;
+        }
     }
     return len;
 }
 
 bool CMMapByteSourceReader::EndOfData(void) const
 {
-    return m_Ptr == nullptr;
+    return m_CurOffset >= m_FileSize;
 }
 
 bool CMMapByteSourceReader::Pushback(const char* data, size_t size)
 {
     if (m_Ptr && (m_CurOffset >= m_ChunkOffset + size)) {
         m_CurOffset -= size;
-        m_ChunkSizeLeft += size;
         return true;
     }
     return false;
@@ -397,16 +365,11 @@ bool CMMapByteSourceReader::Pushback(const char* data, size_t size)
 
 void CMMapByteSourceReader::Seekg(CNcbiStreampos pos)
 {
-    Int8 ipos = pos;
-    if (m_Ptr) {
-        if (ipos >= m_ChunkOffset && ipos <= (m_ChunkOffset + m_ChunkSize)) {
-            m_CurOffset = ipos;
-            m_ChunkSizeLeft = m_ChunkOffset + m_ChunkSize - m_CurOffset;
-        }
-        else {
-// not implemented
-            NCBI_THROW(CUtilException,eWrongCommand,"CMMapByteSourceReader::Seekg: unable to seek");
-        }
+    size_t ipos = pos;
+    if (m_Ptr && ipos >= m_ChunkOffset && ipos <= m_NextOffset) {
+        m_CurOffset = ipos;
+    } else {
+        x_GetNextChunkAt(ipos);
     }
 }
 
