@@ -282,20 +282,29 @@ void CSourceQualifiersReader::ProcessSourceQualifiers(CSeq_entry& entry, const s
         if (!m_context->m_source_mods.empty())
            mod.ParseTitle(m_context->m_source_mods, CConstRef<CSeq_id>(dest->GetFirstId()));
 
+        bool handled = false;
+
         if (opt_map_filename.empty())
         {
-            m_quals[0].AddQualifiers(mod, *dest);
-            m_quals[1].AddQualifiers(mod, *dest);
+            handled |= m_quals[0].AddQualifiers(mod, *dest);
+            handled |= m_quals[1].AddQualifiers(mod, *dest);
         }
         else
         {
-            m_quals[0].AddQualifiers(mod, opt_map_filename);
-            m_quals[1].AddQualifiers(mod, opt_map_filename);
+            handled |= m_quals[0].AddQualifiers(mod, opt_map_filename);
+            handled |= m_quals[1].AddQualifiers(mod, opt_map_filename);
         }
 
         if (!x_ApplyAllQualifiers(mod, *dest))
           NCBI_THROW(CArgException, eConstraint,
              "there are found unrecognised source modifiers");
+
+        if (m_context->m_verbose && !handled)
+        {
+            m_context->m_logger->PutError(*auto_ptr<CLineError>(
+                CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
+                    "Source qualifiers file doesn't contain qualifiers for sequence id " + dest->GetId().front()->AsFastaString())));
+        }
     }
     if (m_context->m_verbose)
     {
