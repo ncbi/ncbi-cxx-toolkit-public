@@ -123,7 +123,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
             "VERSION", fNoCmdFlags, eNCNone, eProxyNone},
         {
           // Client IP for application requesting the info.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // request Hit ID
@@ -135,7 +135,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
             "HEALTH", fNoCmdFlags, eNCNone, eProxyNone},
         {
           // Client IP for application requesting the info.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // request Hit ID
@@ -159,7 +159,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           // Client IP for application requesting the info.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
@@ -185,7 +185,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           // Client IP for application requesting the info.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
@@ -219,7 +219,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           // Client IP for application requesting the info.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
@@ -254,7 +254,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           // Client IP for application requesting the info.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
@@ -285,7 +285,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           // Client IP for application requesting the info.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
@@ -314,7 +314,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           // Client IP for application requesting the info.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
@@ -372,7 +372,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Parameter is not empty only if command is issued as part of
           // quorum-related functionality, i.e. before client received
           // confirmation of blob writing.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application that requested writing the blob.
           // Parameter is not empty only if command is issued as part of
           // quorum-related functionality, i.e. before client received
@@ -406,7 +406,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "ver_dead",eNSPT_Int,  eNSPA_Required },
           // Time of creation of initial record in synchronization log about
           // this operation.
-          { "log_time",eNSPT_Int,  eNSPA_Optchain },
+          { "log_time",eNSPT_Int,  fNSPA_Optional },
           // Server that first made the blob's life prolongation.
           { "log_srv", eNSPT_Int,  eNSPA_Optional },
           // Record number of the initial record in synchronization log about
@@ -428,7 +428,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
@@ -453,7 +453,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
@@ -475,7 +475,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
@@ -496,7 +496,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
@@ -516,7 +516,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
@@ -543,7 +543,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
@@ -569,7 +569,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
@@ -593,7 +593,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           // Client IP for application requesting the info.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
@@ -625,7 +625,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           // Client IP for application requesting the info.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
@@ -1095,7 +1095,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "ver_dead",eNSPT_Int,  eNSPA_Required },
           // Time of creation of initial record in synchronization log about
           // this operation.
-          { "log_time",eNSPT_Int,  eNSPA_Optchain },
+          { "log_time",eNSPT_Int,  fNSPA_Optional },
           // Server that first made the blob's life prolongation.
           { "log_srv", eNSPT_Int,  eNSPA_Optional },
           // Record number of the initial record in synchronization log about
@@ -1197,7 +1197,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // request Hit ID
@@ -1224,7 +1224,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // request Hit ID
@@ -1252,7 +1252,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
@@ -1321,7 +1321,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
             "SHUTDOWN",
             fNeedsAdminClient, eNCNone, eProxyNone},
           // Client IP for application sending the command.
-        { { "ip",      eNSPT_Str,  eNSPA_Optchain },
+        { { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // drain: wait until all BLOBs are expired, then shutdown
@@ -1334,12 +1334,12 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
         {&CNCMessageHandler::x_DoCmd_GetStat, "GETSTAT"},
           // Flag showing whether current (value is 0) or previous (value is 1)
           // statistics period should be shown.
-        { { "prev",    eNSPT_Int,  eNSPA_Optchain, "0" },
+        { { "prev",    eNSPT_Int,  fNSPA_Optional, "0" },
           // Type of statistics period to show. See top of nc_stat.cpp for
           // list of all possible period types.
           { "type",    eNSPT_Str,  eNSPA_Optional, "life" },
           // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // request Hit ID
@@ -1357,7 +1357,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // when section name is "netcache", setup for this cache
           { "cache",   eNSPT_Str,  eNSPA_Optional },
           // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // request Hit ID
@@ -1375,7 +1375,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // when section name is "netcache", setup for this cache
           { "cache",   eNSPT_Str,  eNSPA_Optional },
           // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // request Hit ID
@@ -1391,7 +1391,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // User name
           { "user", eNSPT_Str,  fNSPA_Required },
           // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // request Hit ID
@@ -1408,7 +1408,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Netcached.ini section name
           { "section", eNSPT_Str,  eNSPA_Required },
           // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // request Hit ID
@@ -1423,7 +1423,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
             // Cache name.
             { "cache",     eNSPT_Str, eNSPA_Required },
           // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // request Hit ID
@@ -1447,7 +1447,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
           // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // request Hit ID
@@ -1480,7 +1480,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "subkey",  eNSPT_Str,  eNSPA_Optional },
           { "local",   eNSPT_Int,  eNSPA_Optional },
           // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // request Hit ID
@@ -1532,7 +1532,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // blob smaller than this size
           { "fsize_lt",  eNSPT_Int,  eNSPA_Optional },
           // Client IP for application sending the command.
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  fNSPA_Optional },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // request Hit ID
