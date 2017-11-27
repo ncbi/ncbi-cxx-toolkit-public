@@ -365,12 +365,7 @@ bool CMMapByteSourceReader::Pushback(const char* data, size_t size)
 
 void CMMapByteSourceReader::Seekg(CNcbiStreampos pos)
 {
-    size_t ipos = pos;
-    if (m_Ptr && ipos >= m_ChunkOffset && ipos <= m_NextOffset) {
-        m_CurOffset = ipos;
-    } else {
-        x_GetNextChunkAt(ipos);
-    }
+    m_NextOffset = pos;
 }
 
 /////////////////////////////////////////////////////////////////////////////
