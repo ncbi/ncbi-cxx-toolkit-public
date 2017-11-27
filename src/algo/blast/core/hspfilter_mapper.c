@@ -3832,6 +3832,7 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
         Int4 best_score = pair_info[0].score;
         Int4 margin = 5;
         HSPChain* ch = NULL;
+        Boolean convergent_found = FALSE;
 
         /* sort pair information by score, configuration distance */
         qsort(pair_info, num_pairs, sizeof(Pairinfo), s_ComparePairs);
@@ -3841,9 +3842,16 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
             HSPChain* f = pair_info[i].first;
             HSPChain* s = pair_info[i].second;
 
-            /* skip pairs with chains already used in other pairs */
-            if (pair_info[i].first->pair || pair_info[i].second->pair) {
+            /* skip pairs with chains already used in other pairs
+               and other configurations when convergent one was found */
+            if (pair_info[i].first->pair || pair_info[i].second->pair ||
+                (convergent_found && pair_info[i].conf != PAIR_CONVERGENT)) {
+
                 continue;
+            }
+
+            if (pair_info[i].conf == PAIR_CONVERGENT) {
+                convergent_found = TRUE;
             }
 
             /* skip pairs with scores significantly smaller than the best one
