@@ -243,7 +243,8 @@ public:
     CMagicBlastResultSet(void) {}
 
     /// Get all results as a single Seq-align-set object
-    CRef<CSeq_align_set> GetFlatResults(void);
+    /// @param no_discordant Report only paires aligned concordantly [in]
+    CRef<CSeq_align_set> GetFlatResults(bool no_discordant = false);
 
     /// Get number of results, provided to facilitate STL-style iteration
     size_type size() const {return m_Results.size();}

@@ -1852,7 +1852,7 @@ int CMagicBlastApp::Run(void)
                              CFormattingArgs::eAsnText) {
 
                         PrintASN1(os_vector[thread_index], *query_batch,
-                                  *results->GetFlatResults());
+                                  *results->GetFlatResults(kNoDiscordant));
                     }
                     else {
 

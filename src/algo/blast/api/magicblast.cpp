@@ -629,11 +629,16 @@ void CMagicBlastResults::x_SetInfo(int first_length,
     }
 }
 
-CRef<CSeq_align_set> CMagicBlastResultSet::GetFlatResults(void)
+CRef<CSeq_align_set> CMagicBlastResultSet::GetFlatResults(bool no_discordant)
 {
     CRef<CSeq_align_set> retval(new CSeq_align_set);
 
     for (auto result: *this) {
+
+        if (no_discordant && result->IsPaired() && !result->IsConcordant()) {
+            continue;
+        }
+
         for (auto it: result->GetSeqAlign()->Get()) {
             retval->Set().push_back(it);
         }
