@@ -23,7 +23,6 @@ set(_BDB_VERSION "BerkeleyDB-4.6.21.1")
 get_filename_component(BerkeleyDB_CMAKE_DIR "$ENV{NCBI}/${_BDB_VERSION}" REALPATH)
 string(REGEX REPLACE ".*-([0-9].*)" "\\1" BerkeleyDB_VERSION_STRING "${BerkeleyDB_CMAKE_DIR}")
 
-set(BerkeleyDB_FOUND True)
 set(BERKELEYDB_FOUND True)
 set(BERKELEYDB_INCLUDE_DIR
     ${BerkeleyDB_CMAKE_DIR}/include
@@ -51,14 +50,16 @@ else()
 
 endif()
 
+# These are for compatibility
+# Some variants of CMake are case-sensitive when it comes to variables
+set(BerkeleyDB_LIBRARY ${BERKELEYDB_LIBRARY})
+set(BerkeleyDB_LIBRARIES ${BERKELEYDB_LIBRARIES})
+set(BerkeleyDB_FOUND ${BERKELEYDB_FOUND})
 
 #############################################################################
 ##
 ## Logging
 ##
-
-set(BerkeleyDB_LIBRARY ${BERKELEYDB_LIBRARY})
-set(BerkeleyDB_LIBRARIES ${BERKELEYDB_LIBRARIES})
 
 if (_NCBI_MODULE_DEBUG)
     message(STATUS "BerkeleyDB (NCBI): FOUND = ${BerkeleyDB_FOUND}")

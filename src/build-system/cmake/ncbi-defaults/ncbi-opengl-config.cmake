@@ -18,7 +18,9 @@ endif()
 ## Module-specific checks
 ##
 
-get_filename_component(OpenGL_CMAKE_DIR "$ENV{NCBI}/MesaGL" REALPATH)
+set(_MESAGL_VERSION "Mesa-7.0.2-ncbi2")
+
+get_filename_component(OpenGL_CMAKE_DIR "$ENV{NCBI}/${_MESAGL_VERSION}" REALPATH)
 string(REGEX REPLACE ".*-([0-9].*)" "\\1" OpenGL_VERSION_STRING "${OpenGL_CMAKE_DIR}")
 
 set(OPENGL_FOUND True)
@@ -27,12 +29,28 @@ set(OPENGL_INCLUDE_DIR
     ${OpenGL_CMAKE_DIR}/include
     )
 
-set(OPENGL_glu_LIBRARIES
-    ${OpenGL_CMAKE_DIR}/lib/libGLU${_NCBI_LIBRARY_SUFFIX}
-    )
-set(OPENGL_gl_LIBRARIES
-    ${OpenGL_CMAKE_DIR}/lib/libGL${_NCBI_LIBRARY_SUFFIX}
-    )
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+
+    set(OPENGL_glu_LIBRARIES
+        ${OpenGL_CMAKE_DIR}/lib/libGLU${_NCBI_LIBRARY_SUFFIX}
+        )
+    set(OPENGL_gl_LIBRARIES
+        ${OpenGL_CMAKE_DIR}/lib/libGL${_NCBI_LIBRARY_SUFFIX}
+        )
+
+else()
+
+    set(OPENGL_glu_LIBRARIES
+        /opt/ncbi/64/${_MESAGL_VERSION}/lib/libGLU${_NCBI_LIBRARY_SUFFIX}
+        )
+    set(OPENGL_gl_LIBRARIES
+        /opt/ncbi/64/${_MESAGL_VERSION}/lib/libGL${_NCBI_LIBRARY_SUFFIX}
+        )
+
+
+endif()
+
 set(OPENGL_LIBRARIES
     ${OPENGL_glu_LIBRARIES}
     ${OPENGL_gl_LIBRARIES}
