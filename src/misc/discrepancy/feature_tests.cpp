@@ -813,7 +813,6 @@ DISCREPANCY_SUMMARIZE(NON_GENE_LOCUS_TAG)
 
 // FIND_BADLEN_TRNAS
 static const string ktRNATooShort = "[n] tRNA[s] [is] too short";
-static const string ktRNATooLong = "[n] tRNA[s] [is] too long";
 static const string ktRNATooLong150 = "[n] tRNA[s] [is] too long - over 150 nucleotides";
 
 DISCREPANCY_CASE(FIND_BADLEN_TRNAS, CSeq_feat, eDisc | eOncaller | eSubmitter | eSmart, "Find short and long tRNAs")
@@ -827,15 +826,6 @@ DISCREPANCY_CASE(FIND_BADLEN_TRNAS, CSeq_feat, eDisc | eOncaller | eSubmitter | 
     }
     else if (len >= 150) {
         m_Objs[ktRNATooLong150].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
-    }
-    else if (len > 100) {
-        m_Objs[ktRNATooLong].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
-    }
-    else if (len > 90) {
-        const string aa = context.GetAminoacidName(obj);
-        if (aa != "Ser" && aa != "Sec" && aa != "Leu") {
-            m_Objs[ktRNATooLong].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
-        }
     }
 }
 
