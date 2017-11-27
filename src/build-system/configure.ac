@@ -74,7 +74,7 @@ case "$with_3psw" in
                      oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm, magic,
                      curl, gsoap, avro, cereal, sasl2,
                      mongodb, mongodb3, gmock, lapack,
-                     libuv, libssh2, cassandra, libxlsxwriter, grpc],
+                     libuv, libssh2, cassandra, libxlsxwriter, grpc, msgsl],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -526,6 +526,10 @@ AC_ARG_WITH(grpc,
    [ --with-grpc=DIR         use GRPC installation in DIR])
 AC_ARG_WITH(grpc,
    [ --without-grpc          do not use GRPC])
+AC_ARG_WITH(msgsl,
+   [ --with-msgsl=DIR        use Guideline Support Library installation in DIR])
+AC_ARG_WITH(msgsl,
+   [ --without-msgsl         do not use the Guideline Support Library])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
 AC_ARG_WITH(3psw,
@@ -589,7 +593,7 @@ sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 mongodb mongodb3 gmock lapack lmdb \
-libuv libssh2 cassandra libxlsxwriter grpc 3psw \
+libuv libssh2 cassandra libxlsxwriter grpc msgsl 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -662,7 +666,7 @@ for x_arg in "$@" ; do
       | --with-mongodb=* | --with-mongodb3=* \
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
       | --with-libssh2=* | --with-cassandra=* | --with-libxlsxwriter=* \
-      | --with-grpc=* )
+      | --with-grpc=* | --with-msgsl=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
       case "$x_arg" in
@@ -7773,6 +7777,26 @@ if test -n "$GRPC_LIBS"; then
    GRPC_BIN=$GRPC_PATH/bin
 fi
 
+if test -d "$MSGSL_PATH"; then
+   MSGSL_INCLUDE=-I$MSGSL_PATH/include
+   in_path=" in $MSGSL_PATH"
+else
+   in_path=
+fi
+CPPFLAGS="$orig_CPPFLAGS $MSGSL_INCLUDE"
+AC_CACHE_CHECK([for the Guideline Support Library$in_path],
+   ncbi_cv_lib_msgsl,
+   [AC_COMPILE_IFELSE(
+       [AC_LANG_PROGRAM([[#include <gsl/gsl>]],
+           [[int i;  gsl::not_null<int*> p{&i};]])],
+       ncbi_cv_lib_msgsl=yes, ncbi_cv_lib_msgsl=no)])
+if test $ncbi_cv_lib_msgsl = yes; then
+   NCBI_PACKAGE(MSGSL)
+else
+   MSGSL_INCLUDE=
+   NCBI_MISSING_PACKAGE(msgsl)
+fi
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -8507,6 +8531,7 @@ AC_SUBST(LIBXLSXWRITER_STATIC_LIBS)
 AC_SUBST(GRPC_UNSECURE_LIBS)
 AC_SUBST(GRPC_REFLECTION_LIBS)
 AC_SUBST(GRPC_BIN)
+AC_SUBST(MSGSL_INCLUDE)
 AC_SUBST(ncbi_xreader_pubseqos)
 AC_SUBST(ncbi_xreader_pubseqos2)
 AC_SUBST(UNLESS_PUBSEQOS)

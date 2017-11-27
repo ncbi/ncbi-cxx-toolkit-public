@@ -1083,6 +1083,7 @@ LIBXLSXWRITER_STATIC_LIBS
 GRPC_UNSECURE_LIBS
 GRPC_REFLECTION_LIBS
 GRPC_BIN
+MSGSL_INCLUDE
 ncbi_xreader_pubseqos
 ncbi_xreader_pubseqos2
 UNLESS_PUBSEQOS
@@ -1655,7 +1656,7 @@ sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 mongodb mongodb3 gmock lapack lmdb \
-libuv libssh2 cassandra libxlsxwriter grpc 3psw \
+libuv libssh2 cassandra libxlsxwriter grpc msgsl 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -1729,7 +1730,7 @@ for x_arg in "$@" ; do
       | --with-mongodb=* | --with-mongodb3=* \
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
       | --with-libssh2=* | --with-cassandra=* | --with-libxlsxwriter=* \
-      | --with-grpc=* )
+      | --with-grpc=* | --with-msgsl=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[^=]*=//'`
       case "$x_arg" in
@@ -2061,6 +2062,8 @@ Optional Packages:
  --without-libxlsxwriter do not use libxlsxwriter
  --with-grpc=DIR         use GRPC installation in DIR
  --without-grpc          do not use GRPC
+ --with-msgsl=DIR        use Guideline Support Library installation in DIR
+ --without-msgsl         do not use the Guideline Support Library
  --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.
  --without-3psw          do not use any of the above packages
  --without-local-lbsm    turn off support for IPC with locally running LBSMD
@@ -2651,6 +2654,12 @@ case "$with_3psw" in
    { (exit 1); exit 1; }; }
          else
             with_grpc=no
+         fi
+        if test "${with_msgsl-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-msgsl but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_msgsl=no
          fi
 
       $as_unset NCBI || test "${NCBI+set}" != set || { NCBI=; export NCBI; }
@@ -4242,6 +4251,18 @@ fi
 # Check whether --with-grpc was given.
 if test "${with_grpc+set}" = set; then
   withval=$with_grpc;
+fi
+
+
+# Check whether --with-msgsl was given.
+if test "${with_msgsl+set}" = set; then
+  withval=$with_msgsl;
+fi
+
+
+# Check whether --with-msgsl was given.
+if test "${with_msgsl+set}" = set; then
+  withval=$with_msgsl;
 fi
 
 
@@ -9226,7 +9247,7 @@ if test "${ncbi_cv_prog_cxx_11+set}" = set; then
 else
   orig_CXX=$CXX
     ncbi_cv_prog_cxx_11=no
-    for x in -std=gnu++11 -std=gnu++0x ''; do
+    for x in -std=gnu++14 -std=gnu++11 -std=gnu++0x ''; do
        CXX="$orig_CXX $x"
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -48520,6 +48541,90 @@ if test -n "$GRPC_LIBS"; then
    GRPC_BIN=$GRPC_PATH/bin
 fi
 
+if test -d "$MSGSL_PATH"; then
+   MSGSL_INCLUDE=-I$MSGSL_PATH/include
+   in_path=" in $MSGSL_PATH"
+else
+   in_path=
+fi
+CPPFLAGS="$orig_CPPFLAGS $MSGSL_INCLUDE"
+{ echo "$as_me:$LINENO: checking for the Guideline Support Library$in_path" >&5
+echo $ECHO_N "checking for the Guideline Support Library$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_msgsl+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <gsl/gsl>
+int
+main ()
+{
+int i;  gsl::not_null<int*> p{&i};
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_msgsl=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_msgsl=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_msgsl" >&5
+echo "${ECHO_T}$ncbi_cv_lib_msgsl" >&6; }
+if test $ncbi_cv_lib_msgsl = yes; then
+             WithPackages="$WithPackages${WithPackagesSep}MSGSL"; WithPackagesSep=" "
+else
+   MSGSL_INCLUDE=
+   if test "${with_msgsl:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-msgsl explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-msgsl explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+fi
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -48968,7 +49073,7 @@ for x in ChaosMonkey Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray W
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA LIBXLSXWRITER GRPC; do
+  for x in UUID FUSE Iconv LIBUNWIND Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA LIBXLSXWRITER GRPC MSGSL; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -49061,6 +49166,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 
@@ -50676,6 +50782,7 @@ LIBXLSXWRITER_STATIC_LIBS!$LIBXLSXWRITER_STATIC_LIBS$ac_delim
 GRPC_UNSECURE_LIBS!$GRPC_UNSECURE_LIBS$ac_delim
 GRPC_REFLECTION_LIBS!$GRPC_REFLECTION_LIBS$ac_delim
 GRPC_BIN!$GRPC_BIN$ac_delim
+MSGSL_INCLUDE!$MSGSL_INCLUDE$ac_delim
 ncbi_xreader_pubseqos!$ncbi_xreader_pubseqos$ac_delim
 ncbi_xreader_pubseqos2!$ncbi_xreader_pubseqos2$ac_delim
 UNLESS_PUBSEQOS!$UNLESS_PUBSEQOS$ac_delim
@@ -50685,7 +50792,6 @@ JDK_PATH!$JDK_PATH$ac_delim
 JDK_INCLUDE!$JDK_INCLUDE$ac_delim
 ncbi_java!$ncbi_java$ac_delim
 NCBI_C_ncbi!$NCBI_C_ncbi$ac_delim
-BINCOPY!$BINCOPY$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -50727,6 +50833,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+BINCOPY!$BINCOPY$ac_delim
 APP_NOCOPY!$APP_NOCOPY$ac_delim
 APP_OR_NULL!$APP_OR_NULL$ac_delim
 IF_REBUILDING_LIBS!$IF_REBUILDING_LIBS$ac_delim
@@ -50762,7 +50869,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 33; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 34; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
