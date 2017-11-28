@@ -981,7 +981,7 @@ CGE	s	University of Cambridge, Department of Plant Sciences
 CGEC	s	China Entomological Research Institute		
 CGG	s	Cambridge University Botanic Garden		
 CGH	s	National Museum of Prague		
-CGMCC	c	China General Microbiological Culture Collection Center, Chinese Academy of Sciences	AS
+CGMCC	c	China General Microbiological Culture Collection Center	AS
 CGMS	s	Universidade Federal de Mato Grosso do Sul, Departamento de Biologia		
 CGN	s	Centre for Genetic Resources, The Netherlands		
 CGRIS	b	Chinese Crop Germplasm Resources Information Network		
@@ -1139,7 +1139,7 @@ CMMED<USA-HI>	c	Center for Marine Microbial Ecology & Diversity Collection
 CMMEX	s	Universidad Autonoma de Baja California		
 CMMF	h	Jardin botanique de Montreal		
 CMMI	s	Chinese Academy of Traditional Medicine		
-CMML	s	Colorado State University Herbarium		
+CMML	s	Center for Environmental Management of Military Lands (CEMML)		
 CMN	s	Canadian Museum of Nature		
 CMN:Annelid	s	Canadian Museum of Nature, Annelid Collection
 CMN:Bird	s	Canadian Museum of Nature, Bird Collection
@@ -1308,9 +1308,9 @@ CRMM	s	Observatoire PELAGIS -UMS 3462- University of la Rochelle-CNRS
 CRO	s	Wellington College		
 CRP	s	I.N.T.A., E.E.A. Bariloche		
 CRRHA	s	Centre Regional de Recherches en Hydrobiologie Appliquee		
-CS<AUS>	c	CSIRO Collection of Living Micro-algae		
+CS<AUS>	c	Australian National Algae Culture Collection, ANACC		
 CS<FRA>	s	Musee des Dinosaures d'Esperaza (Aude)		
-CS<USA-CO>	s	Colorado State University, Biology Department		
+CS<USA-CO>	s	Colorado State University herbarium		
 CSAT	s	Colegio de Postgraduados, Campus Tabasco		
 CSAU	s	National Agrarian University, Southern Branch "Crimean Agrotechnological University", Department of Botany, Plant Physiology and Genetics		
 CSB	s	St. John's University/College of Saint Benedict, Biology Department		
@@ -1734,7 +1734,7 @@ EHCV	s	Emory and Henry College, Biology Department
 EHH	s	Universite d'Etat d'Haiti		
 EI	s	Universidade Federal Rural do Rio de Janeiro		
 EIF	s	Universidad de Chile, Departamento de Silvicultura		
-EIHU	s	Entomological Institute, Hokkaido University		
+EIHU	s	Entomological Institute, Hokkaido University	SEHU
 EINS	s	Ecuadorian Institute of Natural Sciences		
 EISC	s	Shaanxi Agricultural University, Entomological Institute		
 EIU	s	Eastern Illinois University, Biological Sciences Department		
@@ -3827,7 +3827,7 @@ MC	s	Museo de Cipolleti
 MCA	s	Muhlenberg College, Biology Department		
 MCAS	s	Museo Civico Archeologico e di Scienze Naturali "F. Eusebio"		
 MCBR	s	Museo Civico "Baldassarre Romano"		
-MCC	c	Microbial Culture Collection		
+MCC	c	National Centre for Microbial Resource (Microbial Culture Collection)	MCC
 MCC-UPLB	c	Microbial Culture Collection		
 MCCB	s	Museo Civico "Craveri"		
 MCCC	c	Marine Culture Collection of China		
@@ -5814,7 +5814,7 @@ SECM	s	Science Education Center
 SEFES	s	Southeastern Forest Experiment Station		
 SEFSC	s	Southeast Fisheries Science Center		
 SEFSC:MMMGL	s	Southeast Fisheries Science Center, Marine Mammal Molecular Genetics Laboratory
-SEHU	s	Hokkaido University Insect Collection		
+SEHU	s	Hokkaido University Insect Collection	EIHU
 SEIG	s	Societa Entomologica Italiana		
 SEL	s	Marie Selby Botanical Gardens		
 SELU	s	Southeastern Louisiana University, Biological Sciences Department		
