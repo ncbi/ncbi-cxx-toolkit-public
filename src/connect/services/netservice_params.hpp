@@ -237,7 +237,7 @@ public:
     void Add(const IRegistry& registry) override;
     IRegistry& GetIRegistry() override;
 
-    void Report(ostream& os);
+    void Report(ostream& os) const;
 
 protected:
     template <typename TType>

@@ -37,6 +37,8 @@
 
 #include "netservice_params.hpp"
 
+#include <mutex>
+
 BEGIN_NCBI_SCOPE
 
 
@@ -192,7 +194,7 @@ public:
     template <typename TType>
     void Add(const SRegSynonyms& sections, SRegSynonyms names, TType value);
 
-    void Report(ostream& os);
+    void Report(ostream& os) const;
 
 private:
     template <typename TType>
@@ -203,10 +205,13 @@ private:
     using TValues = deque<tuple<TSections, TNames, string>>;
 
     TValues m_Values;
+    mutable mutex m_Mutex;
 };
 
-void CReportSynRegistryImpl::CReport::Report(ostream& os)
+void CReportSynRegistryImpl::CReport::Report(ostream& os) const
 {
+    lock_guard<mutex> lock(m_Mutex);
+
     for (auto& v : m_Values) {
         char separator = '[';
 
@@ -242,6 +247,7 @@ void CReportSynRegistryImpl::CReport::Add(const SRegSynonyms& sections, SRegSyno
     TNames n(names.begin(), names.end());
     string v(ToString(value));
 
+    lock_guard<mutex> lock(m_Mutex);
     m_Values.emplace_back(move(s), move(n), move(v));
 }
 
@@ -269,7 +275,7 @@ IRegistry& CReportSynRegistryImpl::GetIRegistry()
     return m_Registry->GetIRegistry();
 }
 
-void CReportSynRegistryImpl::Report(ostream& os)
+void CReportSynRegistryImpl::Report(ostream& os) const
 {
     m_Report->Report(os);
 }
