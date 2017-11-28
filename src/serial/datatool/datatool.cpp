@@ -436,6 +436,9 @@ bool CDataTool::ProcessData(void)
     }
     else {
         typeName = in->ReadFileHeader();
+        if (typeName.empty() && CDataType::GetSourceDataSpec() == EDataSpec::eJSON) {
+            typeName = "JsonValue";
+        }
     }
 
     bool type_guessed = false;
