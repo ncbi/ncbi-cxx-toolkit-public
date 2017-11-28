@@ -619,12 +619,6 @@ void CFeatTableEdit::xFeatureAddTranscriptIdMrna(
         return;
     }
 
-    if (tid.empty()) {
-        tid = mf.GetNamedQual("ID"); 
-        if (tid.empty()) {
-            tid = xGetIdStr(mf);
-        }
-    }
     tid = xGenerateTranscriptOrProteinId(mf, tid);
     if (!tid.empty()) {
         xFeatureSetQualifier(mf, "transcript_id", tid);
@@ -705,6 +699,7 @@ string CFeatTableEdit::xGenerateTranscriptOrProteinId(
     const string& rawId)
 //  ----------------------------------------------------------------------------
 {
+    //weed out badly formatted original tags:
      if (string::npos != rawId.find("|")) {
         xPutError(
             ILineError::eProblem_InvalidQualifier,
@@ -713,29 +708,55 @@ string CFeatTableEdit::xGenerateTranscriptOrProteinId(
         return "";
     }
 
-#if 0
-    auto parentGene = feature::GetBestGeneForFeat(mf, &mTree);
-    if (parentGene.GetData().GetGene().IsSetLocus_tag()) {
-        auto xxx_id = string("gnl|") + 
-            parentGene.GetData().GetGene().GetLocus_tag();
-        if (mf.GetFeatSubtype() == CSeqFeatData::eSubtype_cdregion) {
-            xxx_id += ".cds";
-        }
-        return xxx_id;
-    }
-#endif
-
-    //very last resort.
-    // it would be very unusual (though not impossible) to get here ---
+    //make sure we got the locus tag prefix necessary for tag generation:
     auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
     if (locusTagPrefix.empty()) {
         xPutError(
             ILineError::eProblem_InvalidQualifier,
-            "Cannot generate transcript_/protein_id for feature " + xGetIdStr(mf) + 
-                " without a locus tag.");
+            "Cannot generate transcript_/protein_id for feature " + xGetIdStr(mf) +
+            " without a locus tag.");
         return "";
     }
-    return string("gnl|") + locusTagPrefix + "|" + rawId;
+
+    //reformat any tags we already have:
+    if (!rawId.empty()) {
+        return string("gnl|") + locusTagPrefix + "|" + rawId;
+    }
+    
+    //attempt to make transcript_id from protein_id, or protein_id from transcript_id:
+    switch (mf.GetFeatSubtype()) {
+        case CSeqFeatData::eSubtype_mRNA: {
+                auto id = mf.GetNamedQual("protein_id");
+                if (id.empty()) {
+                    id = mf.GetNamedQual("ID");
+                }
+                if (!id.empty()) {
+                    return string("gnl|") + locusTagPrefix + "|mrna." + id;
+                }
+            }
+            break;
+
+        case CSeqFeatData::eSubtype_cdregion: {
+                auto id = mf.GetNamedQual("transcript_id");
+                if (id.empty()) {
+                    id = mf.GetNamedQual("ID");
+                }
+                if (!id.empty()) {
+                    return string("gnl|") + locusTagPrefix + "|cds." + id;
+                }
+            }
+            break;
+
+        default:
+            break;
+    }
+
+
+    xPutError(
+        ILineError::eProblem_InvalidQualifier,
+        "Cannot generate transcript_/protein_id for feature " + xGetIdStr(mf) +
+        " - insufficient context.");
+    return "";
 }
 
 
