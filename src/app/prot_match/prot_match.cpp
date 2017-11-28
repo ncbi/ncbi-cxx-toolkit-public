@@ -1080,7 +1080,6 @@ bool CProteinMatchApp::x_ApplyOverwrite(CRef<CSeq_entry> update_entry, CMatchTab
     }
 
     match_tab.OverwriteEntry(overwrite_info);
-    p diocessed_nuc_accessions.insert(overwrite_info.update_nuc_id);
 
     return true;
 
