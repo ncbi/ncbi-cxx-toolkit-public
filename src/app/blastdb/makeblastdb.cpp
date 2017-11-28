@@ -1118,10 +1118,10 @@ void CMakeBlastDBApp::x_BuildDatabase()
 
     // Max file size
 
-    Uint8 bytes = NStr::StringToUInt8_DataSize(args["max_file_sz"].AsString());
-    if (bytes >= (1L << 31)) {
+    Uint8 bytes = NStr::StringToUInt8_DataSize(args["max_file_sz"].AsString());    
+    if (bytes >= (1L << 32)) {
         NCBI_THROW(CInvalidDataException, eInvalidInput,
-                "max_file_sz must be < 2 GiB");
+                "max_file_sz must be < 4 GiB");
     }
     *m_LogFile << "Maximum file size: "
                << Uint8ToString_DataSize(bytes) << endl;

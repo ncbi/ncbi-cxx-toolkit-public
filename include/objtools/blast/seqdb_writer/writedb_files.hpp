@@ -92,12 +92,12 @@ public:
     /// Write contents of a string to the file.
     /// @param data Data to write.
     /// @return File offset after write.
-    int Write(const CTempString & data);
+    unsigned int Write(const CTempString & data);
 
     /// Write an Int4 (in bigendian order) to the file.
     /// @param data String to write.
     /// @return File offset after write.
-    int WriteInt4(int data)
+    unsigned int WriteInt4(int data)
     {
         s_WriteInt4(m_RealFile, data);
         m_Offset += 4;
@@ -107,7 +107,7 @@ public:
     /// Write an Int8 (in bigendian order) to the file.
     /// @param data String to write.
     /// @return File offset after write.
-    int WriteInt8(Int8 data)
+    unsigned int WriteInt8(Int8 data)
     {
         s_WriteInt8BE(m_RealFile, data);
         m_Offset += 8;
@@ -117,7 +117,7 @@ public:
     /// Write contents of a string to the file, appending a NUL.
     /// @param data String to write.
     /// @return File offset after write.
-    int WriteWithNull(const CTempString & data)
+    unsigned int WriteWithNull(const CTempString & data)
     {
         Write(data);
         return Write(m_Nul);
@@ -189,7 +189,7 @@ protected:
     string m_BaseName;    ///< Database base name for all files.
     string m_Extension;   ///< File extension for this file.
     int    m_Index;       ///< Volume index.
-    int    m_Offset;      ///< Stream position.
+    unsigned int    m_Offset;      ///< Stream position.
     Uint8  m_MaxFileSize; ///< Maximum file size in bytes.
 
     // The file
@@ -237,7 +237,7 @@ public:
     /// @param Sequence length in letters.
     /// @param hdr Length of binary ASN.1 header data.
     /// @param seq Length in bytes of sequence data.
-    void AddSequence(int length, int hdr, int seq)
+    void AddSequence(int length, unsigned int hdr, unsigned int seq)
     {
         if (length > m_MaxLength) {
             m_MaxLength = length;
@@ -260,7 +260,7 @@ public:
     /// @param hdr Length of binary ASN.1 header data.
     /// @param seq Length in bytes of packed sequence data.
     /// @param amb Length in bytes of packed ambiguity data.
-    void AddSequence(int length, int hdr, int seq, int amb)
+    void AddSequence(int length, unsigned int hdr, unsigned int seq, unsigned int amb)
     {
         if (length > m_MaxLength) {
             m_MaxLength = length;
@@ -305,19 +305,19 @@ private:
     ///
     /// The end offset is given by the start offset of the following
     /// OID's headers.
-    vector<int> m_Hdr;
+    vector<unsigned int> m_Hdr;
 
     /// Offset in sequence file of each OID's sequence data.
     ///
     /// The end of the sequence data is given by the start offset of
     /// the ambiguity data for the same OID.
-    vector<int> m_Seq;
+    vector<unsigned int> m_Seq;
 
     /// Offset in sequence file of each OID's ambiguity data.
     ///
     /// The end of the ambiguity data is given by the start offset of
     /// the sequence data for the next OID.
-    vector<int> m_Amb;
+    vector<unsigned int> m_Amb;
 };
 
 /// This class builds the volume header file (phr or nhr).
@@ -354,7 +354,7 @@ public:
     /// Add binary header data to this file.
     /// @param binhdr Binary ASN.1 version of header data. [in]
     /// @param offset Offset of end of header data. [out]
-    void AddSequence(const string & binhdr, int & offset)
+    void AddSequence(const string & binhdr, unsigned int & offset)
     {
         m_DataSize = offset = Write(binhdr);
     }
@@ -419,7 +419,7 @@ public:
     /// @param offset Offset of the end of the sequence data. [out]
     /// @param length Length of the sequence in letters. [in]
     void AddSequence(const string & sequence,
-                     int          & offset,
+                     unsigned int & offset,
                      int            length)
     {
 #ifdef _DEBUG
@@ -440,9 +440,9 @@ public:
     /// @param length Length of the sequence in letters. [in]
     void AddSequence(const string & sequence,
                      const string & ambig,
-                     int          & off_seq,
-                     int          & off_amb,
-                     int            length)
+                     unsigned int & off_seq,
+                     unsigned int & off_amb,
+                     int          length)
     {
 #ifdef _DEBUG
         _ASSERT(! m_Protein);

@@ -236,7 +236,7 @@ bool CWriteDB_Volume::WriteSequence(const string      & seq,
         }
     }
 
-    int off_hdr(0), off_seq(0), off_amb(0);
+    unsigned int off_hdr(0), off_seq(0), off_amb(0);
 
     m_Hdr->AddSequence(binhdr, off_hdr);
 
