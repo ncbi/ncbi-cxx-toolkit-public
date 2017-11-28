@@ -224,17 +224,29 @@ void CTable2AsnContext::AddUserTrack(CSeq_descr& SD, const string& type, const s
     SetUserObject(SD, type).SetData().push_back(uf);
 }
 
+CSeq_descr& CTable2AsnContext::SetBioseqOrParentDescr(CBioseq& bioseq)
+{
+    if (bioseq.GetParentEntry() && bioseq.GetParentEntry()->GetParentEntry())
+    {
+        auto entry = bioseq.GetParentEntry()->GetParentEntry();
+        if (entry->IsSet() && entry->GetSet().IsSetClass() &&
+            entry->GetSet().GetClass() == CBioseq_set::eClass_nuc_prot)
+            return entry->SetSet().SetDescr();
+    }
+
+    return bioseq.SetDescr();
+}
 
 CUser_object& CTable2AsnContext::SetUserObject(CSeq_descr& descr, const string& type)
 {
     CRef<CUser_object> user_obj;
-    NON_CONST_ITERATE(CSeq_descr::Tdata, desc_it, descr.Set())
+    for (auto desc: descr.Set())
     {
-        if ((**desc_it).IsUser() && (**desc_it).GetUser().IsSetType() &&
-            (**desc_it).GetUser().GetType().IsStr() &&
-            (**desc_it).GetUser().GetType().GetStr() == type)
+        if (desc->IsUser() && desc->GetUser().IsSetType() &&
+            desc->GetUser().GetType().IsStr() &&
+            desc->GetUser().GetType().GetStr() == type)
         {
-            return (**desc_it).SetUser();
+            return desc->SetUser();
         }
     }
 

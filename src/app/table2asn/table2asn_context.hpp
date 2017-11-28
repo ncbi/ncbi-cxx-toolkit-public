@@ -126,6 +126,8 @@ public:
 
     static
     objects::CUser_object& SetUserObject(objects::CSeq_descr& descr, const string& type);
+    static
+    objects::CSeq_descr& SetBioseqOrParentDescr(objects::CBioseq& bioseq);
     bool ApplyCreateUpdateDates(objects::CSeq_entry& entry) const;
     bool ApplyCreateDate(objects::CSeq_entry& entry) const;
     void ApplyUpdateDate(objects::CSeq_entry& entry) const;

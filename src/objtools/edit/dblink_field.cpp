@@ -50,17 +50,41 @@ const string kDBLink = "DBLink";
 bool CDBLinkField::SetVal(CObject& object, const string & newValue, EExistingText existing_text)
 {
     bool rval = false;
-    CSeqdesc* seqdesc = dynamic_cast<CSeqdesc*>(&object);
-    CUser_object* user = dynamic_cast<CUser_object*>(&object);
+    CSerialObject* serial = dynamic_cast<CSerialObject*>(&object);
 
-    if (seqdesc && seqdesc->IsUser()) {
-        user = &(seqdesc->SetUser());
+    if (serial)
+    {
+        if (serial->GetThisTypeInfo() == CSeqdesc::GetTypeInfo())
+        {
+            rval = SetVal(static_cast<CSeqdesc&>(*serial), newValue, existing_text);
+        }
+        else
+        if (serial->GetThisTypeInfo() == CUser_object::GetTypeInfo())
+        {
+            rval = SetVal(static_cast<CUser_object&>(*serial), newValue, existing_text);
+        }
     }
-    if (user && IsDBLink(*user)) {
+    return rval;
+}
+
+bool CDBLinkField::SetVal(CSeqdesc& seqdesc, const string & newValue, EExistingText existing_text)
+{
+    bool rval = false;
+    if (seqdesc.IsUser()) {
+        rval = SetVal(seqdesc.SetUser(), newValue, existing_text);
+    }
+
+    return rval;
+}
+
+bool CDBLinkField::SetVal(CUser_object& user, const string & newValue, EExistingText existing_text)
+{
+    bool rval = false;
+    if (IsDBLink(user)) {
         bool found = false;
-        if (user->IsSetData()) {
-            CUser_object::TData::iterator it = user->SetData().begin();
-            while (it != user->SetData().end()) {
+        if (user.IsSetData()) {
+            CUser_object::TData::iterator it = user.SetData().begin();
+            while (it != user.SetData().end()) {
                 if ((*it)->IsSetLabel() && (*it)->GetLabel().IsStr()) {
                     EDBLinkFieldType check = GetTypeForLabel((*it)->GetLabel().GetStr());
                     if (check == m_FieldType) {
@@ -69,7 +93,7 @@ bool CDBLinkField::SetVal(CObject& object, const string & newValue, EExistingTex
                     }
                 }
                 if (!(*it)->IsSetData()) {
-                    it = user->SetData().erase(it);
+                    it = user.SetData().erase(it);
                 } else {
                     it++;
                 }
@@ -79,14 +103,14 @@ bool CDBLinkField::SetVal(CObject& object, const string & newValue, EExistingTex
             CRef<CUser_field> new_field(new CUser_field());
             new_field->SetLabel().SetStr(GetLabelForType(m_FieldType));
             if (SetVal(*new_field, newValue, eExistingText_replace_old)) {
-                user->SetData().push_back(new_field);
+                user.SetData().push_back(new_field);
                 rval = true;
             }
         }
         
         // if User object now has no fields, reset so it will be detected as empty
-        if (user->GetData().empty()) {
-            user->ResetData();
+        if (user.GetData().empty()) {
+            user.ResetData();
         }
     }
     return rval;
