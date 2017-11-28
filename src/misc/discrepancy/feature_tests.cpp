@@ -836,6 +836,30 @@ DISCREPANCY_SUMMARIZE(FIND_BADLEN_TRNAS)
 }
 
 
+// ORG_TRNAS
+static const string ktRNATooLong = "[n] tRNA[s] [is] too long";
+
+DISCREPANCY_CASE(ORG_TRNAS, CSeq_feat, eDisc | eOncaller, "Find long tRNAs > 90nt except Ser/Leu/Sec")
+{
+    if (!obj.IsSetData() || obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_tRNA) {
+        return;
+    }
+    TSeqPos len = sequence::GetLength(obj.GetLocation(), &(context.GetScope()));
+    if (len > 90) {
+        const string aa = context.GetAminoacidName(obj);
+        if (aa != "Ser" && aa != "Sec" && aa != "Leu") {
+            m_Objs[ktRNATooLong].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(ORG_TRNAS)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 // GENE_PARTIAL_CONFLICT
 bool IsPartialStartConflict(const CSeq_feat& feat, const CSeq_feat& gene, bool is_mrna = false)
 {

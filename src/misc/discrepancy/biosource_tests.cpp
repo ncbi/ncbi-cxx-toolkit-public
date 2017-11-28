@@ -1233,7 +1233,7 @@ DISCREPANCY_SUMMARIZE(ORGANELLE_ITS)
 
 static const string kTaxnameAndHaplotype = "TaxnameAndHaplotype";
 
-DISCREPANCY_CASE(HAPLOTYPE_MISMATCH, CBioSource, eOncaller, "Sequences with the same haplotype should match")
+DISCREPANCY_CASE(HAPLOTYPE_MISMATCH, CBioSource, 0, "Sequences with the same haplotype should match")
 {
     if (!obj.IsSetTaxname() || !obj.IsSetSubtype()) {
         return;
