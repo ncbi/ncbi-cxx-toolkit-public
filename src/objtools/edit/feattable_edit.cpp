@@ -518,23 +518,21 @@ void CFeatTableEdit::xFeatureAddProteinIdMrna(
         // already what we want
         return;
     }
-    if (pid.empty()) {
-    // we need to upinherit the protein_id from the CDS:
-        CMappedFeat child = feature::GetBestCdsForMrna(mf, &mTree);
-        if (!child) {
-            // only permitted case of an mRNA without a protein_id
-            return;
-        }
-        auto pid = child.GetNamedQual("protein_id");
-        xFeatureAddQualifier(mf, "protein_id", pid);
+    //reformat any tags we already have:
+    if (!pid.empty()) {
+        pid = string("gnl|") + xGetCurrentLocusTagPrefix(mf) + "|" + pid;
+        xFeatureSetQualifier(mf, "protein_id", pid);
         return;
     }
 
-    // otherwise, we need to police the existing transcript_id:
-    pid = xGenerateTranscriptOrProteinId(mf, pid);
-    if (!pid.empty()) {
-        xFeatureSetQualifier(mf, "protein_id", pid);
+    CMappedFeat child = feature::GetBestCdsForMrna(mf, &mTree);
+    if (!child) {
+        // only permitted case of an mRNA without a protein_id
+        return;
     }
+    pid = child.GetNamedQual("protein_id");
+    xFeatureAddQualifier(mf, "protein_id", pid);
+    return;
 }
 
 //  ----------------------------------------------------------------------------
@@ -558,14 +556,15 @@ void CFeatTableEdit::xFeatureAddProteinIdCds(
         // already what we want
         return;
     }
-
-    if (pid.empty()) {
-        pid = mf.GetNamedQual("ID"); 
-        if (pid.empty()) {
-            pid = xGetIdStr(mf);
-        }
+    //reformat any tags we already have:
+    if (!pid.empty()) {
+        pid = string("gnl|") + xGetCurrentLocusTagPrefix(mf) + "|" + pid;
+        xFeatureSetQualifier(mf, "protein_id", pid);
+        return;
     }
-    pid = xGenerateTranscriptOrProteinId(mf, pid);
+
+    //pid = xGenerateTranscriptOrProteinId(mf, pid);
+    pid = xNextProteinId(mf);
     if (!pid.empty()) {
         xFeatureSetQualifier(mf, "protein_id", pid);
     }
@@ -590,7 +589,15 @@ void CFeatTableEdit::xFeatureAddProteinIdDefault(
         // already what we want
         return;
     }
-    pid = xGenerateTranscriptOrProteinId(mf, pid);
+    //reformat any tags we already have:
+    if (!pid.empty()) {
+        pid = string("gnl|") + xGetCurrentLocusTagPrefix(mf) + "|" + pid;
+        xFeatureSetQualifier(mf, "protein_id", pid);
+        return;
+    }
+
+    //pid = xGenerateTranscriptOrProteinId(mf, pid);
+    pid = xNextProteinId(mf);
     if (!pid.empty()) {
         xFeatureSetQualifier(mf, "protein_id", pid);
     }
@@ -618,8 +625,16 @@ void CFeatTableEdit::xFeatureAddTranscriptIdMrna(
         // already what we want
         return;
     }
+    //reformat any tags we already have:
+    if (!tid.empty()) {
+        tid = string("gnl|") + xGetCurrentLocusTagPrefix(mf) + "|" + tid;
+        xFeatureSetQualifier(mf, "transcript_id", tid);
+        return;
+    }
 
-    tid = xGenerateTranscriptOrProteinId(mf, tid);
+
+    //tid = xGenerateTranscriptOrProteinId(mf, tid);
+    tid = xNextTranscriptId(mf);
     if (!tid.empty()) {
         xFeatureSetQualifier(mf, "transcript_id", tid);
     }
@@ -643,27 +658,25 @@ void CFeatTableEdit::xFeatureAddTranscriptIdCds(
     }
 
     auto tid = mf.GetNamedQual("transcript_id");
-    if (tid.empty()) {
-    // we need to down inherit the transcript_id from the mRNA:
-        CMappedFeat parent = feature::GetBestMrnaForCds(mf, &mTree);
-        if (!parent) {
-            // only permitted case of a CDS without a transcript_id
-            return;
-        }
-        auto tid = parent.GetNamedQual("transcript_id");
-        xFeatureAddQualifier(mf, "transcript_id", tid);
-        return;
-    }
-
     // otherwise, we need to police the existing transcript_id:
     if (NStr::StartsWith(tid, "gb|")  ||  NStr::StartsWith(tid, "gnl|")) {
         // already what we want
         return;
     }
-    tid = xGenerateTranscriptOrProteinId(mf, tid);
+    //reformat any tags we already have:
     if (!tid.empty()) {
+        tid = string("gnl|") + xGetCurrentLocusTagPrefix(mf) + "|" + tid;
         xFeatureSetQualifier(mf, "transcript_id", tid);
+        return;
     }
+
+    CMappedFeat parent = feature::GetBestMrnaForCds(mf, &mTree);
+    if (!parent) {
+        // only permitted case of a CDS without a transcript_id
+        return;
+    }
+    tid = parent.GetNamedQual("transcript_id");
+    xFeatureAddQualifier(mf, "transcript_id", tid);
 }
 
 
@@ -686,7 +699,13 @@ void CFeatTableEdit::xFeatureAddTranscriptIdDefault(
         // already what we want
         return;
     }
-    tid = xGenerateTranscriptOrProteinId(mf, tid);
+    if (!tid.empty()) {
+        tid = string("gnl|") + xGetCurrentLocusTagPrefix(mf) + "|" + tid;
+        xFeatureSetQualifier(mf, "transcript_id", tid);
+        return;
+    }
+
+    tid = this->xNextTranscriptId(mf);
     if (!tid.empty()) {
         xFeatureSetQualifier(mf, "transcript_id", tid);
     }
@@ -729,6 +748,11 @@ string CFeatTableEdit::xGenerateTranscriptOrProteinId(
                 auto id = mf.GetNamedQual("protein_id");
                 if (id.empty()) {
                     id = mf.GetNamedQual("ID");
+                }
+                if (id.empty()) {
+                    if (mf.GetId().IsLocal()) {
+                        id = mf.GetId().GetLocal().GetStr();
+                    }
                 }
                 if (!id.empty()) {
                     return string("gnl|") + locusTagPrefix + "|mrna." + id;
