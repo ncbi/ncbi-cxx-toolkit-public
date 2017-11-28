@@ -109,11 +109,13 @@ CWriteDB_File::CWriteDB_File(const string & basename,
       m_MaxFileSize(max_file_size)
 {
     // Define number of usable bits in m_Offset,
-    // deducting one for the sign bit.
-    static const int MAX_OFFSET_BITS = (sizeof m_Offset * 8) - 1;
+    // deducting one for the sign bit.    
+    static const int MAX_OFFSET_BITS = (sizeof m_Offset * 8);
+    
+    
     // Define maximum allowed max_file_size.
-#ifdef _DEBUG
-    static const Uint8 MAX_FILE_SIZE = (1L << MAX_OFFSET_BITS) - 1L;
+#ifdef _DEBUG    
+    static const Uint8 MAX_FILE_SIZE = (1L << MAX_OFFSET_BITS) - 1L;    
 #endif
 
     if (m_MaxFileSize == 0) {
@@ -142,14 +144,14 @@ void CWriteDB_File::Create()
     m_RealFile.open(m_Fname.c_str(), ios::out | ios::binary);
 }
 
-int CWriteDB_File::Write(const CTempString & data)
+unsigned int CWriteDB_File::Write(const CTempString & data)
 {
     // Define number of usable bits in m_Offset,
-    // deducting one for the sign bit.
-    static const int MAX_OFFSET_BITS = (sizeof m_Offset * 8) - 1;
+    // deducting one for the sign bit.    
+    static const int MAX_OFFSET_BITS = (sizeof m_Offset * 8);    
     // Define maximum allowed max_file_size.
-#ifdef _DEBUG
-    static const Uint8 MAX_OFFSET = (1L << MAX_OFFSET_BITS) - 1L;
+#ifdef _DEBUG    
+    static const Uint8 MAX_OFFSET = (1L << MAX_OFFSET_BITS) - 1L;    
 #endif
 
     _ASSERT(m_Created);
@@ -183,7 +185,7 @@ void CWriteDB_File::x_MakeFileName()
     }
 
     m_Fname += ".";
-    m_Fname += m_Extension;
+    m_Fname += m_Extension;    
 }
 
 void CWriteDB_File::Close()
@@ -277,7 +279,7 @@ void CWriteDB_IndexFile::x_Flush()
     s_WriteInt8LE(F, m_Letters);
     s_WriteInt4  (F, m_MaxLength);
 
-    for(unsigned i = 0; i < m_Hdr.size(); i++) {
+    for(unsigned i = 0; i < m_Hdr.size(); i++) {        
         s_WriteInt4(F, m_Hdr[i]);
     }
 
@@ -302,7 +304,7 @@ void CWriteDB_IndexFile::x_Flush()
         s_WriteInt4(F, m_Seq.back());
     }
 
-    vector<int> tmp1, tmp2, tmp3;
+    vector<unsigned int> tmp1, tmp2, tmp3;
     m_Hdr.swap(tmp1);
     m_Seq.swap(tmp2);
     m_Amb.swap(tmp3);
@@ -317,7 +319,7 @@ CWriteDB_HeaderFile::CWriteDB_HeaderFile(const string & dbname,
                     index,
                     max_file_size,
                     true),
-      m_DataSize  (0)
+      m_DataSize(0)
 {
 }
 
