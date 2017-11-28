@@ -152,6 +152,7 @@ private:
     CCgiRequest* GetSavedRequest(const string& rid);
     bool x_ProcessHelpRequest(void);
     bool x_ProcessVersionRequest(void);
+    bool x_ProcessAdminRequest(void);
 
 protected:
     /// Check the command line arguments before parsing them.
@@ -313,6 +314,19 @@ protected:
     /// The default implementation prints GetVersion/GetFullVersion as plain text
     /// (default), XML or JSON depending on the 'Accept:' HTTP header, if any.
     virtual void ProcessVersionRequest(EVersionType ver_type);
+
+    /// Admin commands passed through ncbi_admin_cmd argument.
+    enum EAdminCommand {
+        eAdmin_Health,       ///< Report health for this CGI only
+        eAdmin_HealthDeep,   ///< Report health for this CGI and any services used by it.
+        eAdmin_Unknown       ///< Unrecognized command. Overriden ProcessAdminRequest()
+                             ///< can use GetEntry() to fetch command name if necessary.
+    };
+
+    /// Process admin command passed through ncbi_admin_cmd argument.
+    /// Return true on success, false if the command was not processed
+    /// (in this case the default processing will be used).
+    virtual bool ProcessAdminRequest(EAdminCommand cmd);
 
     /// "Accept:" header entry.
     struct SAcceptEntry {

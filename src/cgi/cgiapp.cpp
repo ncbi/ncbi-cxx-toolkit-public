@@ -554,7 +554,8 @@ int CCgiApplication::Run(void)
                 GetDiagContext().SetAppState(eDiagAppState_Request);
                 if (x_ProcessHelpRequest() ||
                     x_ProcessVersionRequest() ||
-                    CCgiContext::ProcessCORSRequest(m_Context->GetRequest(), m_Context->GetResponse())) {
+                    CCgiContext::ProcessCORSRequest(m_Context->GetRequest(), m_Context->GetResponse()) ||
+                    x_ProcessAdminRequest()) {
                     result = 0;
                 }
                 else {
@@ -1711,7 +1712,7 @@ NCBI_PARAM_DEF_EX(bool, CGI, EnableHelpRequest, true,
 typedef NCBI_PARAM_TYPE(CGI, EnableHelpRequest) TEnableHelpRequest;
 
 
-bool CCgiApplication::x_ProcessHelpRequest()
+bool CCgiApplication::x_ProcessHelpRequest(void)
 {
     if (!TEnableHelpRequest::GetDefault()) return false;
     CCgiRequest& request = m_Context->GetRequest();
@@ -1851,7 +1852,7 @@ NCBI_PARAM_DEF_EX(string, CGI, EnableVersionRequest, "t",
 typedef NCBI_PARAM_TYPE(CGI, EnableVersionRequest) TEnableVersionRequest;
 
 
-bool CCgiApplication::x_ProcessVersionRequest()
+bool CCgiApplication::x_ProcessVersionRequest(void)
 {
     CCgiRequest& request = m_Context->GetRequest();
     if (request.GetRequestMethod() != CCgiRequest::eMethod_GET) return false;
@@ -1949,6 +1950,49 @@ void CCgiApplication::ProcessVersionRequest(EVersionType ver_type)
         NCBI_THROW(CCgiRequestException, eData,
             "Unsupported version format");
     }
+}
+
+
+bool CCgiApplication::x_ProcessAdminRequest(void)
+{
+    CCgiRequest& request = m_Context->GetRequest();
+    if (request.GetRequestMethod() != CCgiRequest::eMethod_GET) return false;
+
+    bool found = false;
+    string cmd_name = request.GetEntry("ncbi_admin_cmd", &found);
+    if ( !found ) {
+        // Check if PATH_INFO contains a command.
+        string path_info = request.GetProperty(eCgi_PathInfo);
+        NStr::TrimSuffixInPlace(path_info, "/");
+        NStr::TrimPrefixInPlace(path_info, "/");
+        if ( path_info.empty() ) return false;
+        cmd_name = path_info;
+    }
+    EAdminCommand cmd = eAdmin_Unknown;
+    if ( NStr::EqualNocase(cmd_name, "health") ) {
+        cmd = eAdmin_Health;
+    }
+    else if ( NStr::EqualNocase(cmd_name, "deep-health") ) {
+        cmd = eAdmin_HealthDeep;
+    }
+
+    // If the overriden method failed or refused to process a command,
+    // fallback to the default processing which returns true for all known commands.
+    return ProcessAdminRequest(cmd) || CCgiApplication::ProcessAdminRequest(cmd);
+}
+
+
+bool CCgiApplication::ProcessAdminRequest(EAdminCommand cmd)
+{
+    if (cmd == eAdmin_Unknown) return false;
+
+    // By default report status 200 and write headers for any command.
+    CCgiResponse& response = m_Context->GetResponse();
+    response.SetContentType("text/plain");
+    SetHTTPStatus(CCgiException::e200_Ok,
+        CCgiException::GetStdStatusMessage(CCgiException::e200_Ok));
+    response.WriteHeader();
+    return true;
 }
 
 
