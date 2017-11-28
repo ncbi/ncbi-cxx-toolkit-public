@@ -641,26 +641,13 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
                            int& compartment, bool print_unaligned,
                            bool no_discordant)
 {
-    for (auto it: results.GetSeqAlign()->Get()) {
-        if (results.IsConcordant()) {
+    bool is_concordant = results.IsConcordant();
+
+    if (!no_discordant || (no_discordant && is_concordant)) {
+        for (auto it: results.GetSeqAlign()->Get()) {
             PrintTabular(ostr, *it, queries, is_paired, batch_number,
-                    compartment++);
+                         compartment++);
             ostr << endl;
-        } else {
-            if (no_discordant) {
-                if (print_unaligned) {
-                    PrintTabularUnaligned(ostr, results, queries, true);
-                    ostr << endl;
-                    if (results.IsPaired()) {
-                        PrintTabularUnaligned(ostr, results, queries, false);
-                        ostr << endl;
-                    }
-                }
-            } else {
-                PrintTabular(ostr, *it, queries, is_paired, batch_number,
-                        compartment++);
-                ostr << endl;
-            }
         }
     }
 
@@ -668,13 +655,16 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
         return ostr;
     }
 
-    if ((results.GetFirstInfo() & CMagicBlastResults::fUnaligned) != 0) {
+    if ((results.GetFirstInfo() & CMagicBlastResults::fUnaligned) != 0 ||
+        (no_discordant && !is_concordant)) {
+
         PrintTabularUnaligned(ostr, results, queries, true);
         ostr << endl;
     }
 
     if (results.IsPaired() &&
-        (results.GetLastInfo() & CMagicBlastResults::fUnaligned) != 0) {
+        ((results.GetLastInfo() & CMagicBlastResults::fUnaligned) != 0 ||
+         (no_discordant && !is_concordant))) {
 
         PrintTabularUnaligned(ostr, results, queries, false);
         ostr << endl;
@@ -1388,28 +1378,14 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, CMagicBlastResults& results,
     bool first_secondary = false;
     bool last_secondary = false;
 
-    for (auto it: results.GetSeqAlign()->Get()) {
-        if (results.IsConcordant()) {
+    // is the pair aligned concordantly
+    bool is_concordant = results.IsConcordant();
+
+    if (!no_discordant || (no_discordant && is_concordant)) {
+        for (auto it: results.GetSeqAlign()->Get()) {
             PrintSAM(ostr, *it, queries, query_info, batch_number,
-                    first_secondary, last_secondary, trim_read_id);
+                     first_secondary, last_secondary, trim_read_id);
             ostr << endl;
-        } else {
-            if (no_discordant) {
-                if (print_unaligned) {
-                    PrintSAMUnaligned(ostr, results, queries, true,
-                            trim_read_id);
-                    ostr << endl;
-                    if (results.IsPaired()) {
-                        PrintSAMUnaligned(ostr, results, queries, false,
-                                trim_read_id);
-                        ostr << endl;
-                    }
-                }
-            } else {
-                PrintSAM(ostr, *it, queries, query_info, batch_number,
-                        first_secondary, last_secondary, trim_read_id);
-                ostr << endl;
-            }
         }
     }
 
@@ -1417,13 +1393,16 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, CMagicBlastResults& results,
         return ostr;
     }
 
-    if ((results.GetFirstInfo() & CMagicBlastResults::fUnaligned) != 0) {
+    if ((results.GetFirstInfo() & CMagicBlastResults::fUnaligned) != 0 ||
+        (no_discordant && !is_concordant)) {
+
         PrintSAMUnaligned(ostr, results, queries, true, trim_read_id);
         ostr << endl;
     }
 
     if (results.IsPaired() &&
-        (results.GetLastInfo() & CMagicBlastResults::fUnaligned) != 0) {
+        ((results.GetLastInfo() & CMagicBlastResults::fUnaligned) != 0 ||
+         (no_discordant && !is_concordant))) {
         PrintSAMUnaligned(ostr, results, queries, false, trim_read_id);
         ostr << endl;
     }
