@@ -233,6 +233,42 @@ void CMatchSetup::GatherCdregionFeatures(const CSeq_entry& nuc_prot_set,
 }
 
 
+void CMatchSetup::GatherCdregionFeatures(const CBioseq_set& nuc_prot_set,
+    list<CRef<CSeq_feat>>& cds_feats) const 
+{
+    cds_feats.clear();
+
+    
+    if (nuc_prot_set.IsSetAnnot()) { 
+        for (CRef<CSeq_annot> pAnnot : nuc_prot_set.GetAnnot()) {
+            if (pAnnot->IsFtable()) {
+                for (CRef<CSeq_feat> feat : pAnnot->GetData().GetFtable()) {
+                    if (feat->GetData().IsCdregion()) {
+                        cds_feats.push_back(feat);
+                    }
+                } 
+            }
+        }
+    }
+
+    for (CRef<CSeq_entry> pSubentry : nuc_prot_set.GetSeq_set()) {
+        if (pSubentry->IsSeq() && pSubentry->GetSeq().IsNa()) {
+            const CBioseq& nucseq = pSubentry->GetSeq();
+            if (nucseq.IsSetAnnot()) {
+                for (CRef<CSeq_annot> pAnnot : nucseq.GetAnnot()) {
+                    if (pAnnot->IsFtable()) {
+                        for (CRef<CSeq_feat> feat : pAnnot->GetData().GetFtable()) {
+                            if (feat->GetData().IsCdregion()) {
+                            cds_feats.push_back(feat);
+                            }
+                        } 
+                    }
+                }
+            }
+        }
+    }
+}
+
 bool s_GetGeneralOrLocalID(const CBioseq& bioseq, CRef<CSeq_id>& id) 
 {
     if (!bioseq.IsSetId()) {
@@ -259,6 +295,71 @@ bool s_GetGeneralOrLocalID(const CBioseq& bioseq, CRef<CSeq_id>& id)
     return false;
 }
 
+CRef<CBioseq_set> CMatchSetup::GetCoreNucProtSet(const CBioseq_set& nuc_prot_set, bool exclude_local_prot_ids) const 
+{
+    CRef<CBioseq_set> pCoreSet = Ref(new CBioseq_set());
+    pCoreSet->SetClass(CBioseq_set::eClass_nuc_prot);
+
+    list<CRef<CSeq_feat>> cds_feats;
+    GatherCdregionFeatures(nuc_prot_set, cds_feats);
+
+    // cds_feats - remove if
+    set<CRef<CSeq_id>, SIdCompare> excluded_ids;
+    if (exclude_local_prot_ids) {
+        for (CRef<CSeq_entry> pSubEntry : nuc_prot_set.GetSeq_set()) {
+            const CBioseq& seq = pSubEntry->GetSeq();
+            if (seq.IsAa() && seq.IsSetId()) {
+                CRef<CSeq_id> id;
+                if (!GetAccession(seq, id) &&
+                    s_GetGeneralOrLocalID(seq, id)) {
+                    excluded_ids.insert(id);
+                }
+            }
+        }
+
+
+        if (!excluded_ids.empty()) {
+            // drop CDS features whose products are excluded protein sequences
+            cds_feats.remove_if([&excluded_ids](CRef<CSeq_feat> cds_feat)->bool {
+                        if (cds_feat->IsSetProduct() &&
+                            cds_feat->GetProduct().GetId()) {
+                            CRef<CSeq_id> pProductId(new CSeq_id()); 
+                            pProductId->Assign(*cds_feat->GetProduct().GetId());
+                            if (excluded_ids.find(pProductId) != excluded_ids.end()) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+            );
+        }
+    }
+
+
+    for (CRef<CSeq_entry> pSubEntry : nuc_prot_set.GetSeq_set()) {
+        const CBioseq& old_seq = pSubEntry->GetSeq();
+
+        CRef<CSeq_id> dummy_id;
+        if (old_seq.IsAa() &&
+            exclude_local_prot_ids 
+            && !GetAccession(old_seq, dummy_id)) {
+            continue;
+        }
+        CRef<CSeq_entry> pCoreSubEntry(new CSeq_entry());
+        CBioseq& core_seq = pCoreSubEntry->SetSeq();
+        core_seq.SetId() = old_seq.GetId();
+        core_seq.SetInst().Assign(old_seq.GetInst()); // May be no need to copy here
+       
+        if (old_seq.IsNa() && !cds_feats.empty()) {
+            CRef<CSeq_annot> pCoreAnnot(new CSeq_annot());
+            pCoreAnnot->SetData().SetFtable() = cds_feats;
+            core_seq.SetAnnot().push_back(pCoreAnnot);
+        }
+        pCoreSet->SetSeq_set().push_back(pCoreSubEntry);
+    }
+
+    return pCoreSet;
+}
 
 CRef<CSeq_entry> CMatchSetup::GetCoreNucProtSet(const CSeq_entry& nuc_prot_set, bool exclude_local_prot_ids) const 
 {
@@ -326,6 +427,56 @@ CRef<CSeq_entry> CMatchSetup::GetCoreNucProtSet(const CSeq_entry& nuc_prot_set, 
     return pCoreSet;
 }
 
+
+bool CMatchSetup::GetNucSeqIdFromCDSs(const CBioseq_set& nuc_prot_set,
+    CRef<CSeq_id>& id) const
+{
+    // Set containing distinct ids
+    set<CRef<CSeq_id>, SIdCompare> ids;
+    
+    if (nuc_prot_set.IsSetAnnot()) { 
+        for (CRef<CSeq_annot> pAnnot : nuc_prot_set.GetAnnot()) {
+            x_GetNucSeqIdsFromCDSs(*pAnnot, ids);
+        }
+    }
+
+    for (CRef<CSeq_entry> pSubentry : nuc_prot_set.GetSeq_set()) {
+        if (pSubentry->IsSeq() && pSubentry->GetSeq().IsNa()) {
+            const CBioseq& nucseq = pSubentry->GetSeq();
+            if (nucseq.IsSetAnnot()) {
+                for (CRef<CSeq_annot> pAnnot : nucseq.GetAnnot()) {
+                    x_GetNucSeqIdsFromCDSs(*pAnnot, ids);
+                }
+            }
+        }
+    }
+
+    if (ids.empty()) {
+        return false;
+    }
+
+
+    // Check that the ids point to the nucleotide sequence
+    const CBioseq& nuc_seq = nuc_prot_set.GetNucFromNucProtSet();
+
+    for ( auto pId : ids) {
+        if (!s_InList(*pId, nuc_seq.GetId())) {
+            NCBI_THROW(CProteinMatchException,
+                eBadInput,
+                "Unrecognized CDS location id");
+        }
+    }
+
+    const bool with_version = true;
+    const string local_id_string = nuc_seq.GetFirstId()->GetSeqIdString(with_version);
+
+    if (id.IsNull()) {
+        id = Ref(new CSeq_id());
+    }
+    id->SetLocal().SetStr(local_id_string);
+
+    return true;
+}
 
 
 bool CMatchSetup::GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
@@ -400,6 +551,21 @@ bool CMatchSetup::UpdateNucSeqIds(CRef<CSeq_id> new_id,
     return true;   
 }
 
+bool CMatchSetup::UpdateNucSeqIds(CRef<CSeq_id> new_id,
+    CBioseq_set& nuc_prot_set) const
+{
+    CBioseq& nuc_seq = x_FetchNucSeqRef(nuc_prot_set);
+    nuc_seq.ResetId();
+    nuc_seq.SetId().push_back(new_id);
+
+    for (CTypeIterator<CSeq_feat> feat(nuc_prot_set); feat; ++feat) {
+        if (feat->GetData().IsCdregion()) {
+            feat->SetLocation().SetId(*new_id);
+        }
+    }
+
+    return true;   
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

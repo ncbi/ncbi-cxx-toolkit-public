@@ -58,7 +58,13 @@ public:
     bool UpdateNucSeqIds(CRef<CSeq_id> new_id,
         CSeq_entry& nuc_prot_set) const;
 
+    bool UpdateNucSeqIds(CRef<CSeq_id> new_id,
+        CBioseq_set& nuc_prot_set) const;
+
     bool GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
+        CRef<CSeq_id>& id) const;
+
+    bool GetNucSeqIdFromCDSs(const CBioseq_set& nuc_prot_set,
         CRef<CSeq_id>& id) const;
 
     bool GetAccession(const CBioseq& bioseq, CRef<CSeq_id>& id) const;
@@ -70,6 +76,11 @@ public:
     void GatherCdregionFeatures(const CSeq_entry& nuc_prot_set,
             list<CRef<CSeq_feat>>& cds_feats) const;
 
+    void GatherCdregionFeatures(const CBioseq_set& nuc_prot_set,
+            list<CRef<CSeq_feat>>& cds_feats) const;
+
+    CRef<CBioseq_set> GetCoreNucProtSet(const CBioseq_set& nuc_prot_set, bool exclude_local_ids=false) const;
+    
     CRef<CSeq_entry> GetCoreNucProtSet(const CSeq_entry& nuc_prot_set, bool exclude_local_ids=false) const;
 private:
 /*
