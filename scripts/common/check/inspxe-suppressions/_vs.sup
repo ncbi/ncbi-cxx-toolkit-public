@@ -17,6 +17,15 @@ suppression = {
 	}
 }
 suppression = {
+	name = "Suppress all mismatched deallocation - VS2015 problem"
+	type = {mismatched_deallocation}
+	stacks = {
+		{
+			...;
+		}
+	}
+}
+suppression = {
 	name = "Unhandled exception - VS2010"
 	type = {prob_app_exception}
 	stacks = {
