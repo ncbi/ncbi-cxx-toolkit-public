@@ -40,7 +40,6 @@
 #include <corelib/ncbi_config.hpp>
 
 #include <memory>
-#include <unordered_map>
 
 // The number of connection attemps
 #define CONNECTION_MAX_RETRIES 4
@@ -254,8 +253,11 @@ using CReportSynRegistry = TSynRegistry<CReportSynRegistryImpl>;
 
 class NCBI_XCONNECT_EXPORT CIncludeSynRegistryImpl : public ISynRegistry
 {
+    class CInclude;
+
 public:
     CIncludeSynRegistryImpl(ISynRegistry::TPtr registry);
+    ~CIncludeSynRegistryImpl();
 
     void Add(const IRegistry& registry) override;
     IRegistry& GetIRegistry() override;
@@ -267,10 +269,8 @@ protected:
     bool HasImpl(const string& section, const string& name) final;
 
 private:
-    SRegSynonyms GetSections(const SRegSynonyms& sections);
-
     ISynRegistry::TPtr m_Registry;
-    unordered_map<string, vector<string>> m_Includes;
+    unique_ptr<CInclude> m_Include;
 };
 
 using CIncludeSynRegistry = TSynRegistry<CIncludeSynRegistryImpl>;

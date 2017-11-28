@@ -38,6 +38,7 @@
 #include "netservice_params.hpp"
 
 #include <mutex>
+#include <unordered_map>
 
 BEGIN_NCBI_SCOPE
 
@@ -303,8 +304,23 @@ template bool   CReportSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegS
 template int    CReportSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
 template double CReportSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
 
+class CIncludeSynRegistryImpl::CInclude
+{
+public:
+    SRegSynonyms Get(const SRegSynonyms& sections, ISynRegistry& registry);
+
+private:
+    unordered_map<string, vector<string>> m_Includes;
+    mutex m_Mutex;
+};
+
 CIncludeSynRegistryImpl::CIncludeSynRegistryImpl(ISynRegistry::TPtr registry) :
-    m_Registry(registry)
+    m_Registry(registry),
+    m_Include(new CInclude)
+{
+}
+
+CIncludeSynRegistryImpl::~CIncludeSynRegistryImpl()
 {
 }
 
@@ -327,21 +343,22 @@ TType CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms n
 {
     _ASSERT(m_Registry);
 
-    return m_Registry->Get(GetSections(sections), names, default_value);
+    const auto sections_plus_included = m_Include->Get(sections, *m_Registry);
+    return m_Registry->Get(sections_plus_included, names, default_value);
 }
 
 bool CIncludeSynRegistryImpl::HasImpl(const string& section, const string& name)
 {
     _ASSERT(m_Registry);
 
-    return m_Registry->Has(GetSections(section), name);
+    const auto sections_plus_included = m_Include->Get(section, *m_Registry);
+    return m_Registry->Has(sections_plus_included, name);
 }
 
-SRegSynonyms CIncludeSynRegistryImpl::GetSections(const SRegSynonyms& sections)
+SRegSynonyms CIncludeSynRegistryImpl::CInclude::Get(const SRegSynonyms& sections, ISynRegistry& registry)
 {
-    _ASSERT(m_Registry);
-
     SRegSynonyms rv{};
+    lock_guard<mutex> lock(m_Mutex);
 
     for (const auto& section : sections) {
         auto result = m_Includes.insert({section, {}});
@@ -349,7 +366,7 @@ SRegSynonyms CIncludeSynRegistryImpl::GetSections(const SRegSynonyms& sections)
 
         // Have not checked for '.include' yet
         if (result.second) {
-            auto included_value = m_Registry->Get(string(section), ".include", kEmptyStr);
+            auto included_value = registry.Get(string(section), ".include", kEmptyStr);
             auto flags = NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate;
             NStr::Split(included_value, ",; \t\n\r", included, flags);
         }
