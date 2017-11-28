@@ -219,7 +219,6 @@
                             CMatchTabulate& match_tab,
                             set<string>& processed_nuc_accessions);
 
-
         CObjectIStream* x_InitObjectIStream(const CArgs& args);
         CObjectOStream* x_InitObjectOStream(const string& filename, 
             const bool binary) const;
@@ -329,8 +328,6 @@ void CProteinMatchApp::Init(void)
 
     return;
 }
-
-
 
 
 int CProteinMatchApp::Run(void)
@@ -500,6 +497,7 @@ bool CProteinMatchApp::x_CheckForWildDependents(CObjectIStream& istr)
     return has_wild_dependent;
 }
 
+
 template<typename TRoot>
 void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr, 
         const string& out_stub,
@@ -510,7 +508,15 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
 {
     try {
         x_GetSeqEntryFileNames(out_stub, m_TempFilenames);
-       
+
+        CObjectTypeInfo(CType<CBioseq>()).SetLocalSkipHook(istr, new CSkipBioseqHook(this));
+
+        CObjectTypeInfo(CType<CBioseq_set>()).SetLocalSkipHook(istr, new CSkipBioseqSetHook(this));
+
+        istr.Skip(CType<TRoot>());
+
+
+    /*   
         map<string, string> new_nuc_accessions; 
         { 
             TEntryOStreamMap ostream_map; // must go out of scope before we attempt to remove temporary files - MSS-670
@@ -601,6 +607,7 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
                 }
             }
         }
+    */
 
         // Need to close temp file ostreams before we call the gpipe utilities
         if (m_TempFilesCreated) {
@@ -1073,7 +1080,7 @@ bool CProteinMatchApp::x_ApplyOverwrite(CRef<CSeq_entry> update_entry, CMatchTab
     }
 
     match_tab.OverwriteEntry(overwrite_info);
-    processed_nuc_accessions.insert(overwrite_info.update_nuc_id);
+    p diocessed_nuc_accessions.insert(overwrite_info.update_nuc_id);
 
     return true;
 
