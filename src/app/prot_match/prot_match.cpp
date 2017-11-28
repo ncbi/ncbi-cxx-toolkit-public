@@ -71,24 +71,46 @@
 
     private:
 
-        class SSkipBioseqHook : public CSkipObjectHook
+        class CSkipBioseqHook : public CSkipObjectHook
         {
-        public:    
+        public:  
+            CSkipBioseqHook(CProteinMatchApp* match_app) : m_pMatchApp(match_app) {} // Need to check that match_app is not NULL
+
             void SkipObject(CObjectIStream& in, const CObjectTypeInfo& type_info) 
             {
-                CRef<CBioseq> bioseq(new CBioseq());
-                type_info.GetTypeInfo()->DefaultReadData(in, bioseq);
-                cout << MSerial_AsnText << *bioseq << endl;
+                CRef<CBioseq> pBioseq(new CBioseq());
+                type_info.GetTypeInfo()->DefaultReadData(in, pBioseq);
+
+                if (pBioseq->IsNa()) {
+                    CMatchIdInfo match_id_info;
+                    const bool perform_match = m_pMatchApp->x_InitNucSeqMatch(*pBioseq, match_id_info);
+
+                    if (perform_match) {
+                        m_pMatchApp->m_MatchIdInfo.push_back(match_id_info);
+                    }
+                    else {
+                        set<string> dummy_set;
+                        CRef<CSeq_entry> pSeqEntry(new CSeq_entry());
+                        pSeqEntry->SetSeq().Assign(*pBioseq);
+                        m_pMatchApp->x_ApplyOverwrite(pSeqEntry, *(m_pMatchApp->m_pMatchTabulate), dummy_set); 
+                    }
+                }
             }
+
+        private:
+            CProteinMatchApp* m_pMatchApp;
         };
+
 
         class CSkipBioseqSetHook : public CSkipObjectHook 
         {
         public:
+            CSkipBioseqSetHook(CProteinMatchApp* match_app) : m_pMatchApp(match_app) {} // Need to check that match_app is not NULL
+
             void SkipObject(CObjectIStream& in, const CObjectTypeInfo& type_info)
             {
                 CObjectInfo obj_info(type_info.GetTypeInfo());
-                bool is_npset = true;
+                bool is_npset = true; // Assume nuc-prot set until we have proof otherwise
                 for (CIStreamClassMemberIterator it(in, type_info); it; ++it) {
                     if (is_npset) {
                         it.ReadClassMember(obj_info);
@@ -109,10 +131,26 @@
                 }
 
                 if (is_npset) {
-                    CBioseq_set& bioseq_set = *CTypeConverter<CBioseq_set>::SafeCast(obj_info.GetObjectPtr());
-                    cout << MSerial_AsnText << bioseq_set << endl;
+                    const CBioseq_set& nuc_prot_set = *CTypeConverter<CBioseq_set>::SafeCast(obj_info.GetObjectPtr());
+                    CMatchIdInfo match_id_info;
+
+                    list<string> dummy_list;
+                    const bool perform_match = m_pMatchApp->x_InitNucProtSetMatch(nuc_prot_set, dummy_list, match_id_info);
+
+                    if (perform_match) {
+                        m_pMatchApp->m_MatchIdInfo.push_back(match_id_info);
+                    }
+                    else {
+                        set<string> dummy_set;
+                        CRef<CSeq_entry> pSeqEntry(new CSeq_entry());
+                        pSeqEntry->SetSet().Assign(nuc_prot_set);
+                        m_pMatchApp->x_ApplyOverwrite(pSeqEntry, *(m_pMatchApp->m_pMatchTabulate), dummy_set); 
+                    }
                 }
             }
+
+        private:
+            CProteinMatchApp* m_pMatchApp;
         };
 
 
