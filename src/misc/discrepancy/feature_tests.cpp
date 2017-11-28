@@ -892,46 +892,42 @@ DISCREPANCY_CASE(GENE_PARTIAL_CONFLICT, COverlappingFeatures, eOncaller | eSubmi
                 middle_label = kGenePartialConflictCodingRegion;
                 conflict_start = IsPartialStartConflict(**feat, *gene, is_mrna);
                 conflict_stop = IsPartialStopConflict(**feat, *gene, is_mrna);
-                if (is_mrna || (!conflict_start && !conflict_stop)) {                
-                    if (!conflict_start || is_mrna) {
-                        //look for 5' UTR
-                        TSeqPos gene_start = gene->GetLocation().GetStart(eExtreme_Biological);
-                        bool gene_start_partial = gene->GetLocation().IsPartialStart(eExtreme_Biological);
-                        bool found_start = false;
-                        bool found_utr5 = false;
-                        ITERATE (vector<CConstRef<CSeq_feat>>, fi, all) {
-                            if ((*fi)->IsSetData() && (*fi)->GetData().GetSubtype() == CSeqFeatData::eSubtype_5UTR) {
-                                found_utr5 = true;
-                                if ((*fi)->GetLocation().GetStart(eExtreme_Biological) == gene_start && (*fi)->GetLocation().IsPartialStart(eExtreme_Biological) == gene_start_partial) {
-                                    found_start = true;
-                                    conflict_start = false;
-                                    break;
-                                }
+                if (is_mrna) {
+                    //look for 5' UTR
+                    TSeqPos gene_start = gene->GetLocation().GetStart(eExtreme_Biological);
+                    bool gene_start_partial = gene->GetLocation().IsPartialStart(eExtreme_Biological);
+                    bool found_start = false;
+                    bool found_utr5 = false;
+                    ITERATE (vector<CConstRef<CSeq_feat>>, fi, all) {
+                        if ((*fi)->IsSetData() && (*fi)->GetData().GetSubtype() == CSeqFeatData::eSubtype_5UTR) {
+                            found_utr5 = true;
+                            if ((*fi)->GetLocation().GetStart(eExtreme_Biological) == gene_start && (*fi)->GetLocation().IsPartialStart(eExtreme_Biological) == gene_start_partial) {
+                                found_start = true;
+                                conflict_start = false;
+                                break;
                             }
-                        }
-                        if (found_utr5 && !found_start) {
-                            conflict_start = true;
                         }
                     }
-                    if (!conflict_stop || is_mrna) {
-                        //look for 3' UTR
-                        TSeqPos gene_stop = gene->GetLocation().GetStop(eExtreme_Biological);
-                        bool gene_stop_partial = gene->GetLocation().IsPartialStop(eExtreme_Biological);
-                        bool found_stop = false;
-                        bool found_utr3 = false;
-                        ITERATE (vector<CConstRef<CSeq_feat>>, fi, all) {
-                            if ((*fi)->IsSetData() && (*fi)->GetData().GetSubtype() == CSeqFeatData::eSubtype_3UTR) {
-                                found_utr3 = true;
-                                if ((*fi)->GetLocation().GetStop(eExtreme_Biological) == gene_stop && (*fi)->GetLocation().IsPartialStop(eExtreme_Biological) == gene_stop_partial) {
-                                    found_stop = true;
-                                    conflict_stop = false;
-                                    break;
-                                }
+                    if (found_utr5 && !found_start) {
+                        conflict_start = true;
+                    }
+                    //look for 3' UTR
+                    TSeqPos gene_stop = gene->GetLocation().GetStop(eExtreme_Biological);
+                    bool gene_stop_partial = gene->GetLocation().IsPartialStop(eExtreme_Biological);
+                    bool found_stop = false;
+                    bool found_utr3 = false;
+                    ITERATE (vector<CConstRef<CSeq_feat>>, fi, all) {
+                        if ((*fi)->IsSetData() && (*fi)->GetData().GetSubtype() == CSeqFeatData::eSubtype_3UTR) {
+                            found_utr3 = true;
+                            if ((*fi)->GetLocation().GetStop(eExtreme_Biological) == gene_stop && (*fi)->GetLocation().IsPartialStop(eExtreme_Biological) == gene_stop_partial) {
+                                found_stop = true;
+                                conflict_stop = false;
+                                break;
                             }
                         }
-                        if (found_utr3 && !found_stop) {
-                            conflict_stop = true;
-                        }
+                    }
+                    if (found_utr3 && !found_stop) {
+                        conflict_stop = true;
                     }
                 }
             }
