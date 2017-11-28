@@ -65,6 +65,13 @@ public:
     ///   when the reader is deleted
     CObjectIStreamJson(CNcbiIstream& in, EOwnership deleteIn);
 
+    /// Check if there is still some meaningful data that can be read;
+    /// this function will skip white spaces and comments
+    ///
+    /// @return
+    ///   TRUE if there is no more data
+    virtual bool EndOfData(void) override;
+
     /// Get current stream position as string.
     /// Useful for diagnostic and information messages.
     ///

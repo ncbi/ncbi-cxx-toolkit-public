@@ -89,6 +89,19 @@ void CObjectIStreamJson::ResetState(void)
     m_Utf8Pos = m_Utf8Buf.begin();
 }
 
+bool CObjectIStreamJson::EndOfData(void)
+{
+    if (CObjectIStream::EndOfData()) {
+        return true;
+    }
+    try {
+        SkipWhiteSpace();
+    } catch (...) {
+        return true;
+    }
+    return false;
+}
+
 string CObjectIStreamJson::GetPosition(void) const
 {
     return "line "+NStr::SizetToString(m_Input.GetLine());
