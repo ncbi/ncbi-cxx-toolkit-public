@@ -126,8 +126,7 @@
             const string& out_stub, 
             bool keep_temps, 
             CBinRunner& assm_assm_blastn,
-            CBinRunner& compare_annots, 
-            CMatchTabulate& match_tab);
+            CBinRunner& compare_annots);
 
         void x_WriteMatchTable(
             const string& table_file,
@@ -146,13 +145,11 @@
             CMatchIdInfo& match_info);
 
         template<typename TRoot>
-        bool x_CheckForWildDependents(CObjectIStream& istr,
-            CMatchTabulate& match_tab);
+        bool x_CheckForWildDependents(CObjectIStream& istr);
 
         bool x_ApplyOverwrite(CRef<CSeq_entry> update_entry,
                             CMatchTabulate& match_tab,
                             set<string>& processed_nuc_accessions);
-
 
 
         CObjectIStream* x_InitObjectIStream(const CArgs& args);
@@ -231,6 +228,7 @@
 
     CRef<CScope> m_pDBScope;
     unique_ptr<CMatchSetup> m_pMatchSetup;
+    unique_ptr<CMatchTabulate> m_pMatchTabulate;
     list<CMatchIdInfo> m_MatchIdInfo;    
 
     set<string> m_TempFiles;
@@ -296,6 +294,7 @@ int CProteinMatchApp::Run(void)
     m_pDBScope = Ref(new CScope(*obj_mgr));
     m_pDBScope->AddDefaults();
     m_pMatchSetup.reset(new CMatchSetup(m_pDBScope));
+    m_pMatchTabulate.reset(new CMatchTabulate(m_pDBScope));
 
     bool keep_temps = args["keep-temps"];
     
@@ -309,6 +308,7 @@ int CProteinMatchApp::Run(void)
             "Table filename not specified");
     }
 
+
     CMatchTabulate match_tab(m_pDBScope);
 
     const TTypeInfo root_info =  x_GetRootTypeInfo(*pInStream);
@@ -316,14 +316,14 @@ int CProteinMatchApp::Run(void)
     // Check for wild dependent errors
     bool has_wild_dependent = false;
     if (root_info == CSeq_entry::GetTypeInfo()) {
-        has_wild_dependent = x_CheckForWildDependents<CSeq_entry>(*pInStream, match_tab);
+        has_wild_dependent = x_CheckForWildDependents<CSeq_entry>(*pInStream);
     }
     else {
-        has_wild_dependent = x_CheckForWildDependents<CBioseq_set>(*pInStream, match_tab);
+        has_wild_dependent = x_CheckForWildDependents<CBioseq_set>(*pInStream);
     }
     pInStream->Close();
     if (has_wild_dependent) {
-        x_WriteMatchTable(table_file, match_tab);
+        x_WriteMatchTable(table_file, *m_pMatchTabulate);
         return 0; // What should I return here?
     }
     pInStream.reset(x_InitObjectIStream(args));
@@ -335,26 +335,24 @@ int CProteinMatchApp::Run(void)
                 table_file,
                 keep_temps,
                 assm_assm_blastn,
-                compare_annots,
-                match_tab);
+                compare_annots);
 
         } else { // Must be CBioseq_set
             x_GenerateMatchTable<CBioseq_set>(*pInStream,
                 table_file,
                 keep_temps,
                 assm_assm_blastn,
-                compare_annots,
-                match_tab);
+                compare_annots);
         }
     } 
     catch (...) 
     {
         const bool suppress_write_exceptions = true;
-        x_WriteMatchTable(table_file, match_tab, suppress_write_exceptions);
+        x_WriteMatchTable(table_file, *m_pMatchTabulate, suppress_write_exceptions);
         throw;
     }
 
-    x_WriteMatchTable(table_file, match_tab);
+    x_WriteMatchTable(table_file, *m_pMatchTabulate);
 
     return 0;
 }
@@ -385,8 +383,7 @@ void CProteinMatchApp::x_WriteMatchTable(
 }
 
 template<typename TRoot>
-bool CProteinMatchApp::x_CheckForWildDependents(CObjectIStream& istr,
-    CMatchTabulate& match_tab)
+bool CProteinMatchApp::x_CheckForWildDependents(CObjectIStream& istr)
 {
     CObjectIStreamIterator<TRoot, CBioseq_set> bioseqset_it(istr, eNoOwnership,
         CObjectIStreamIterator<CBioseq_set>::CParams().FilterByMember("class",
@@ -433,7 +430,7 @@ bool CProteinMatchApp::x_CheckForWildDependents(CObjectIStream& istr,
                 }
 
                 if (!wild_dependents.empty()) {
-                    match_tab.ReportWildDependents(update_nuc_acc_string, wild_dependents);
+                    m_pMatchTabulate->ReportWildDependents(update_nuc_acc_string, wild_dependents);
                     has_wild_dependent = true;
                 }
             }
@@ -448,8 +445,7 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
         const string& out_stub,
         bool keep_temps, 
         CBinRunner& assm_assm_blastn,
-        CBinRunner& compare_annots, 
-        CMatchTabulate& match_tab)
+        CBinRunner& compare_annots)
 
 {
     try {
@@ -457,8 +453,6 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
         x_GetSeqEntryFileNames(out_stub, filename_map);
        
         map<string, string> new_nuc_accessions; 
-        //list<CMatchIdInfo> match_id_info;
-   
         { 
             TEntryOStreamMap ostream_map; // must go out of scope before we attempt to remove temporary files - MSS-670
             CObjectIStreamIterator<TRoot, CBioseq_set> bioseqset_it(istr, eNoOwnership,
@@ -498,7 +492,7 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
                 } else {
                     CRef<CSeq_entry> seq_entry(new CSeq_entry());
                     seq_entry->SetSet().Assign(nuc_prot_set);
-                    x_ApplyOverwrite(seq_entry, match_tab, processed_nuc_accessions);
+                    x_ApplyOverwrite(seq_entry, *m_pMatchTabulate, processed_nuc_accessions);
                 }
             }
             istr.Close();
@@ -549,7 +543,7 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
                 else {
                     CRef<CSeq_entry> seq_entry(new CSeq_entry());
                     seq_entry->SetSeq().Assign(bioseq);
-                    x_ApplyOverwrite(seq_entry, match_tab, processed_nuc_accessions);
+                    x_ApplyOverwrite(seq_entry, *m_pMatchTabulate, processed_nuc_accessions);
                 }
             }
         }
@@ -559,7 +553,6 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
         }
 
         const string alignment_file = out_stub + ".merged.asn";
-        //const bool binary_output = true;
         const bool binary_output = false;
 
         vector<string> blast_args;
@@ -605,7 +598,7 @@ void CProteinMatchApp::x_GenerateMatchTable(CObjectIStream& istr,
         unique_ptr<CObjectIStream> align_istr_ptr(x_InitObjectIStream(alignment_file, false)); // false => not binary
         unique_ptr<CObjectIStream> annot_istr_ptr(x_InitObjectIStream(annot_file, true));
    
-        match_tab.GenerateMatchTable(
+        m_pMatchTabulate->GenerateMatchTable(
             m_MatchIdInfo,
             *align_istr_ptr,
             *annot_istr_ptr);
