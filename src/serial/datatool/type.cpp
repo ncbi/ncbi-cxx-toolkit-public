@@ -753,6 +753,7 @@ TTypeInfo CDataType::GetAnyTypeInfo(void)
                 typeInfo = alias;
             }
             m_AnyTypeInfo.reset(new CAutoPointerTypeInfo(typeInfo));
+            m_AnyTypeInfo->DataSpec(CDataType::GetSourceDataSpec());
             typeInfo = m_AnyTypeInfo.get();
         }
     }
