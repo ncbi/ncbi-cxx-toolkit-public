@@ -27,7 +27,7 @@ SRC = id_mapper_app
 #PRE_LIBS = $(NCBI_C_LIBPATH) ......
 
 CPPFLAGS =  $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
-LIB  = generic_db_core dbassist dbloadb tea_crypt asnmuxdblb mux generic_db_utils \
+LIB  = gencoll_client generic_db_core dbassist dbloadb tea_crypt asnmuxdblb mux generic_db_utils \
        dbloadb_asn generic_db_asn asngendefs aligndb_reader hgvs xid_mapper xalgoseq \
 	   xobjwrite variation_utils xobjsimple ncbi_xloader_blastdb xobjreadex objcoords \
 	   entrez2cli entrez2 $(SDBAPI_LIB) xmlwrapp $(XFORMAT_LIBS) $(BLAST_LIBS) \

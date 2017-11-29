@@ -144,7 +144,7 @@ void CIdMapperTestApp::Init()
     
     arg_desc->AddKey("out", "outfile", "mapped file", CArgDescriptions::eOutputFile);
 
-    arg_desc->AddOptionalKey("informat", "string", "accepted input formats", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("informat", "string", "accepted input formats. Temporarily doesnt work, asn text only.", CArgDescriptions::eString);
     
     SetupArgDescriptions(arg_desc.release());
 }
@@ -228,16 +228,16 @@ int CIdMapperTestApp::Run()
         string GCAsm = args["gc"].AsString();
         CGenomicCollectionsService GcService;
         CRef<CGC_Assembly> Asm;
-        Asm = GcService.GetAssembly(GCAsm, CGCClient_GetAssemblyRequest::eLevel_component);
-        {{
-            CNcbiOfstream Out("debug_gc.asnt");
-            Out << MSerial_AsnText << *Asm;
-            Out.close();
-        }}
+        Asm = GcService.GetAssembly(GCAsm, "SequenceNames");//CGCClient_GetAssemblyRequest::eLevel_component);
+        //{{
+        //    CNcbiOfstream Out("debug_gc.asnt");
+        //    Out << MSerial_AsnText << *Asm;
+        //    Out.close();
+        //}}
         Mapper.Reset(new CGencollIdMapper(Asm));
     } else if(args["gcf"].HasValue()) {
         CRef<CGC_Assembly> Asm(new CGC_Assembly);
-       args["gcf"].AsInputFile() >> MSerial_AsnText >> *Asm;
+        args["gcf"].AsInputFile() >> MSerial_AsnText >> *Asm;
         Mapper.Reset(new CGencollIdMapper(Asm));
 	} else {
         cerr << "Rquires either a -gc or a -gcf" << endl;
@@ -312,7 +312,7 @@ int CIdMapperTestApp::Run()
         DestSpec.Primary = true;
 
 
-	cerr << DestSpec.ToString() << endl;
+	ERR_POST(Warning << "Output ID Spec: " << DestSpec.ToString());
 
     CNcbiOstream& Out = args["out"].AsOutputFile();
 
@@ -348,7 +348,7 @@ int CIdMapperTestApp::x_HandleFeatures(CGencollIdMapper& Mapper,
                 CRef<CSeq_annot> Annot(new CSeq_annot);
                 AnnotIn >> MSerial_AsnText >> *Annot;
                 Annots.push_back(Annot);
-            } catch(...) { ; }
+            } catch(...) { break; }
         }
     }}
 
@@ -399,7 +399,7 @@ int CIdMapperTestApp::x_HandleFeatures(CGencollIdMapper& Mapper,
     //FeatLoader.WriteAnnots(Out, Annots, Mapper.GetInternalGencoll());
     
     ITERATE(list<CRef<CSeq_annot> >, AnnotIter, Annots) {
-        cout << MSerial_AsnText << **AnnotIter;
+        Out << MSerial_AsnText << **AnnotIter;
     }
 	
     return 0;

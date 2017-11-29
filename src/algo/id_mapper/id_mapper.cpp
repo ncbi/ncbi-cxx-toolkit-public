@@ -1210,16 +1210,18 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
             const CGC_TypedSeqId::E_Choice syn_type = (*it)->Which();
             CConstRef<CGC_SeqIdAlias> seq_id_alias = s_GetSeqIdAlias_GenBankRefSeq(*it);
             if (seq_id_alias.NotNull()) {
-                Spec.TypedChoice = syn_type;
                 if (seq_id_alias->IsSetPublic() && seq_id_alias->GetPublic().Equals(Id)) {
+                    Spec.TypedChoice = syn_type;
                     Spec.Alias = CGC_SeqIdAlias::e_Public;
                     return true;
                 }
                 if (seq_id_alias->IsSetGpipe() && seq_id_alias->GetGpipe().Equals(Id)) {
+                    Spec.TypedChoice = syn_type;
                     Spec.Alias = CGC_SeqIdAlias::e_Gpipe;
                     return true;
                 }
                 if (seq_id_alias->IsSetGi() && seq_id_alias->GetGi().Equals(Id)) {
+                    Spec.TypedChoice = syn_type;
                     Spec.Alias = CGC_SeqIdAlias::e_Gi;
                     return true;
                 }
@@ -1236,10 +1238,18 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
                      (*it)->GetPrivate().Equals(Id)
                     ) {
                 Spec.TypedChoice = CGC_TypedSeqId::e_Private;
-                return true;
+                //return true;
+                //Externals are better then Private. 
+                //But private is in the list first. 
+                //So continue the list for Privates and let External overwrite it, if it matches
             }
         }
     }
+    if(Spec.TypedChoice != CGC_TypedSeqId::e_not_set) {
+        // was found as a skipped-over Private
+        return true;
+    }
+
     // If we didn't find it normally, try again, looking for Pattern matches
     if (Seq.CanGetSeq_id_synonyms()) {
         ITERATE (CGC_Sequence::TSeq_id_synonyms, it, Seq.GetSeq_id_synonyms()) {
