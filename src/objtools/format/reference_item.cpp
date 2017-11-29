@@ -923,8 +923,8 @@ static bool PiiOk(const string& str)
 
     char ch = str[i];
 
-    if (ch != 'e' && ch != 'E') return false;
-    if (ch == 'e' || ch == 'E') {
+    if (! isupper(ch) && ! islower(ch)) return false;
+    if (isupper(ch) || islower(ch)) {
         i++;
         ch = str[i];
     }
@@ -935,12 +935,12 @@ static bool PiiOk(const string& str)
     }
     if (i >= max) return true;
 
-    if (ch == 'e' || ch == 'E') return false;
+    if (isupper(ch) || islower(ch)) return false;
     if (ch == '-') {
         i++;
         ch = str[i];
     }
-    if (ch == 'e' || ch == 'E') {
+    if (isupper(ch) || islower(ch)) {
         i++;
         ch = str[i];
     }
