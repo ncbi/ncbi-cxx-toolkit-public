@@ -1117,7 +1117,7 @@ struct SCommandDefinition {
         "getconf", "Dump actual configuration of a server.",
         "Print the effective configuration parameters of a "
         "running NetCache, NetSchedule, or NetStorage server.",
-        {eNetCache, eNetSchedule, eNetStorage, eLoginToken, eAuth,
+        {eNetCache, eNetSchedule, eWorkerNode, eNetStorage, eLoginToken, eAuth,
             eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 

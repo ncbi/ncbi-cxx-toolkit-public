@@ -404,6 +404,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetConf()
         return 0;
 
     case eNetScheduleAdmin:
+    case eWorkerNodeAdmin:
         m_NetScheduleAdmin.PrintConf(NcbiCout);
         return 0;
 
