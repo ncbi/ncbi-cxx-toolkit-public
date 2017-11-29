@@ -2688,6 +2688,28 @@ extern char* NcbiLog_AppGetSession(void)
 }
 
 
+extern char* NcbiLog_GetSession(void)
+{
+    TNcbiLog_Context ctx = NULL;
+    char* sid = NULL;
+
+    MT_LOCK_API;
+    ctx = s_GetContext();
+
+    if ( s_IsInsideRequest(ctx) ) {
+        if (ctx->session[0]) {
+            sid = s_StrDup(ctx->session);
+        } else {
+            if (sx_Info->session[0]) {
+                sid = s_StrDup((char*)sx_Info->session);
+            }
+        }
+    }
+    MT_UNLOCK;
+    return sid;
+}
+
+
 extern void NcbiLog_SetSession(const char* session)
 {
     TNcbiLog_Context ctx = NULL;

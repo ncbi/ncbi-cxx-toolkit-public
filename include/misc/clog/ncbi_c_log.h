@@ -645,7 +645,7 @@ extern void NcbiLog_AppSetSession(const char* session);
  *  @attention
  *    This function should be called after NcbiLog_AppRun().
  *  @attention
- *    The caller is responsible for freeing the returned SID string!
+ *    The caller is responsible for freeing the returned string!
  *    Use free() or NcbiLog_FreeMemory().
  *  @sa
  *    NcbiLog_AppSetSession, NcbiLog_AppStart, NcbiLog_FreeMemory
@@ -658,6 +658,23 @@ extern char* NcbiLog_AppGetSession(void);
  *  @sa NcbiLog_AppSetSession
  */
 extern void NcbiLog_AppNewSession(void);
+
+
+/** Get sessio ID (SID) for the request.
+ *
+ *  @return
+ *    - copy of the current request SID (URL-encoded);
+ *    - if not set, copy of the application-wide SID;
+ *    - NULL, if called outside request, or on error.
+ *  @attention
+ *    This function should be called inside request, after NcbiLog_ReqRun().
+ *  @attention
+ *    The caller is responsible for freeing the returned string!
+ *    Use free() or NcbiLog_FreeMemory().
+ *  @sa
+ *    NcbiLog_AppGetSession, NcbiLog_ReqRun, NcbiLog_FreeMemory
+ */
+extern char* NcbiLog_GetSession(void);
 
 
 /** Set session ID (SID) for the request.
@@ -752,7 +769,7 @@ extern void NcbiLog_SetHitID(const char* hit_id);
  *  @attention
  *    This function should be called after NcbiLog_AppRun().
  *  @attention
- *    The caller is responsible for freeing the returned SID string!
+ *    The caller is responsible for freeing the returned string!
  *    Use free() or NcbiLog_FreeMemory().
  *  @sa
  *    NcbiLog_AppSetHitID, NcbiLog_AppRun
@@ -769,7 +786,7 @@ extern char* NcbiLog_AppGetHitID(void);
  *  @attention
  *    This function should be called inside request, after NcbiLog_ReqRun().
  *  @attention
- *    The caller is responsible for freeing the returned SID string!
+ *    The caller is responsible for freeing the returned string!
  *    Use free() or NcbiLog_FreeMemory().
  *  @sa
  *    NcbiLog_AppSetHitID, NcbiLog_SetHitID, NcbiLog_ReqRun
