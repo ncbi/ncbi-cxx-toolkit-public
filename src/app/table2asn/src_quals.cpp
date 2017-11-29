@@ -308,7 +308,7 @@ void CSourceQualifiersReader::ProcessSourceQualifiers(CSeq_entry& entry, const s
         if (m_context->m_verbose && !handled)
         {
             m_context->m_logger->PutError(*auto_ptr<CLineError>(
-                CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
+                CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
                     "Source qualifiers file doesn't contain qualifiers for sequence id " + dest->GetId().front()->AsFastaString())));
         }
     }
@@ -318,7 +318,7 @@ void CSourceQualifiersReader::ProcessSourceQualifiers(CSeq_entry& entry, const s
             for (auto line : m.m_lines_map)
             {
                 m_context->m_logger->PutError(*auto_ptr<CLineError>(
-                    CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
+                    CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
                     "File " + m_context->m_current_file + " doesn't contain sequence with id " + line.first)));
             }
     }
