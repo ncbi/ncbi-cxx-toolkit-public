@@ -125,7 +125,7 @@ static string s_KeyVersionSubkeyToBlobID(
 
 static const char s_NetICacheAPIName[] = "NetICacheClient";
 
-struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
+struct SNetICacheClientImpl : public SNetCacheAPIImpl
 {
     SNetICacheClientImpl(SISynRegistryBuilder registry_builder,
             const string& section,
