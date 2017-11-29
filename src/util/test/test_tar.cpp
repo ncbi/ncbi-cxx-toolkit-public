@@ -130,14 +130,15 @@ private:
     class CTestTar : public CTar
     {
     public:
-        CTestTar(const string& fname, size_t bf, bool listonfly)
-            : CTar(fname, bf), m_ListOnFly(listonfly)
+        CTestTar(const string& fname, size_t bfactor, bool listonfly)
+            : CTar(fname, bfactor), m_ListOnFly(listonfly)
         { }
-        CTestTar(CNcbiIos& stream,    size_t bf, bool listonfly)
-            : CTar(stream, bf), m_ListOnFly(listonfly)
+        CTestTar(CNcbiIos& stream,    size_t bfactor, bool listonfly)
+            : CTar(stream, bfactor), m_ListOnFly(listonfly)
         { }
     protected:
-        virtual bool Checkpoint(const CTarEntryInfo& current, bool ifwrite)
+        virtual bool Checkpoint(const CTarEntryInfo& current,
+                                bool _DEBUG_ARG(ifwrite))
         {
             if (m_ListOnFly) {
                 _ASSERT(!ifwrite);
@@ -428,7 +429,7 @@ int CTarTest::Run(void)
                    "Sorry, -z is not supported with either -r or -u");
     }
 
-    size_t bf       = args["b"].AsInteger();
+    size_t bfactor  = args["b"].AsInteger();
     bool   pipethru = args["S"].HasValue();
     bool   stream   = args["s"].HasValue();
     bool   verbose  = args["v"].HasValue();
@@ -551,9 +552,9 @@ int CTarTest::Run(void)
             if (zip  &&  pipethru) {
                 NCBI_THROW(CArgException, eInvalidArg, "Write-thru zip pipe");
             }
-            tar.reset(new CTestTar(*io,  bf, listonfly));
+            tar.reset(new CTestTar(*io, bfactor, listonfly));
         } else {
-            tar.reset(new CTestTar(file, bf, listonfly));
+            tar.reset(new CTestTar(file, bfactor, listonfly));
         }
         m_Flags = tar->GetFlags();
     } else {
@@ -684,7 +685,7 @@ int CTarTest::Run(void)
             if (m_Flags & fVerbose) {
                 CTar::TEntries::const_iterator pr = entries.end();
                 ITERATE(CTar::TEntries, it, entries) {
-                    NcbiCerr << pfx << it->GetName() + x_Pos(*it) << NcbiEndl;
+                    NcbiCerr << pfx + it->GetName() + x_Pos(*it) << NcbiEndl;
                     _ASSERT(it->GetPosition(CTarEntryInfo::ePos_Header) <=
                             it->GetPosition(CTarEntryInfo::ePos_Data));
                     _ASSERT(it->GetPosition(CTarEntryInfo::ePos_Header) <
@@ -714,7 +715,7 @@ int CTarTest::Run(void)
                     }
                 } else {
                     unique_ptr<CTar::TEntries> entries = tar->List();
-                    if (verbose) {
+                    if (m_Flags & fVerbose) {
                         ITERATE(CTar::TEntries, it, *entries.get()) {
                             NcbiCerr << *it << x_Pos(*it) << NcbiEndl;
                         }
@@ -727,7 +728,7 @@ int CTarTest::Run(void)
                         continue;
                     }
                     if (m_Flags & fVerbose) {
-                        NcbiCerr << "X " << info->GetName() + x_Pos(*info)
+                        NcbiCerr << "X " + info->GetName() + x_Pos(*info)
                                  << NcbiEndl;
                     }
                     IReader* ir = tar->GetNextEntryData();
@@ -781,6 +782,7 @@ int CTarTest::Run(void)
     Uint8 pos = tar.get() ? tar->GetCurrentPosition() : 0;
 
     zs.reset(0);       // make sure zip stream gets finalized...
+    stdio.flush();
     if (ofs.is_open()) {
         ofs.close();   // ...before the output file gets closed
     }
@@ -791,7 +793,7 @@ int CTarTest::Run(void)
         NcbiCerr << NStr::UInt8ToString(pos, NStr::fWithCommas)
                  << " archive byte" << &"s"[pos == 1] << " processed in "
                  << CTimeSpan(elapsed + 0.5).AsString("h:m:s")
-                 << (rate ? " " + x_DataSize(rate, false) + "/s" : kEmptyStr)
+                 << (rate ? " @ " + x_DataSize(rate, false) + "/s" : kEmptyStr)
                  << NcbiEndl;
     }
     return 0;
