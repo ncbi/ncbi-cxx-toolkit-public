@@ -269,6 +269,26 @@ public:
     }
 };
 
+class CGetConfProcessor : public CWorkerNodeControlServer::IRequestProcessor
+{
+public:
+    void Process(const string& request, CNcbiOstream& reply, CWorkerNodeControlServer* control_server) override;
+};
+
+void CGetConfProcessor::Process(const string&, CNcbiOstream& reply, CWorkerNodeControlServer* control_server)
+{
+    _ASSERT(control_server);
+
+    auto node = static_cast<SGridWorkerNodeImpl*>(control_server->GetWorkerNode());
+    _ASSERT(node);
+
+    auto registry = node->m_SynRegistry;
+    _ASSERT(registry);
+
+    registry->Report(reply);
+    reply << "OK:END\n";
+}
+
 class CUnknownProcessor : public CWorkerNodeControlServer::IRequestProcessor
 {
 public:
@@ -305,6 +325,9 @@ CWorkerNodeControlServer::IRequestProcessor*
 
     if (NStr::StartsWith(cmd, TEMP_STRING_CTOR("GETLOAD")))
         return new CGetLoadProcessor;
+
+    if (NStr::StartsWith(cmd, TEMP_STRING_CTOR("GETCONF")))
+        return new CGetConfProcessor;
 
     return new CUnknownProcessor;
 }

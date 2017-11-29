@@ -175,6 +175,7 @@ public:
 
     virtual void Add(const IRegistry& registry) = 0;
     virtual IRegistry& GetIRegistry() = 0;
+    virtual void Report(ostream& os) const = 0;
 
     TPtr MakeRef() { return TPtr(TPtr(), this); }
     TPtr MakePtr() { return TPtr(this); }
@@ -207,6 +208,7 @@ class NCBI_XCONNECT_EXPORT CSynRegistryImpl : public ISynRegistry
 public:
     void Add(const IRegistry& registry) override;
     IRegistry& GetIRegistry() override;
+    void Report(ostream& os) const override;
 
 protected:
     template <typename TType>
@@ -235,8 +237,7 @@ public:
 
     void Add(const IRegistry& registry) override;
     IRegistry& GetIRegistry() override;
-
-    void Report(ostream& os) const;
+    void Report(ostream& os) const override;
 
 protected:
     template <typename TType>
@@ -261,6 +262,7 @@ public:
 
     void Add(const IRegistry& registry) override;
     IRegistry& GetIRegistry() override;
+    void Report(ostream& os) const override;
 
 protected:
     template <typename TType>

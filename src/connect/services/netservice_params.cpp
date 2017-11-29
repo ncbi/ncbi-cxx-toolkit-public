@@ -144,6 +144,11 @@ IRegistry& CSynRegistryImpl::GetIRegistry()
     return m_Registry;
 }
 
+void CSynRegistryImpl::Report(ostream&) const
+{
+    NCBI_ALWAYS_TROUBLE("Not implemented");
+}
+
 template <typename TType>
 TType CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, TType default_value)
 {
@@ -336,6 +341,11 @@ IRegistry& CIncludeSynRegistryImpl::GetIRegistry()
     _ASSERT(m_Registry);
 
     return m_Registry->GetIRegistry();
+}
+
+void CIncludeSynRegistryImpl::Report(ostream& os) const
+{
+    m_Registry->Report(os);
 }
 
 template <typename TType>
