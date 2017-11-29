@@ -18,9 +18,9 @@ endif()
 ## Module-specific checks
 ##
 
-set(_LIBXSL_VERSION "libxml-2.7.8")
+set(_LIBXSLT_VERSION "libxml-2.7.8")
 
-get_filename_component(LibXslt_CMAKE_DIR "$ENV{NCBI}/${_LIBXSL_VERSION}" REALPATH)
+get_filename_component(LibXslt_CMAKE_DIR "$ENV{NCBI}/${_LIBXSLT_VERSION}" REALPATH)
 string(REGEX REPLACE ".*-([0-9].*)" "\\1" LibXslt_VERSION_STRING "${LibXslt_CMAKE_DIR}")
 
 set(LIBXSLT_FOUND True)
@@ -37,7 +37,7 @@ set(LIBXSLT_XSLTPROC_EXECUTABLE
 # Choose the proper library path
 # For some libraries, we look in /opt/ncbi/64
 set(_libpath ${LibXslt_CMAKE_DIR}/${CMAKE_BUILD_TYPE}MT64/lib)
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
+if (CMAKE_BUILD_TYPE STREQUAL "Release" AND BUILD_SHARED_LIBS)
     if (EXISTS /opt/ncbi/64/${_LIBXSLT_VERSION}/${CMAKE_BUILD_TYPE}MT64/lib)
         set(_libpath /opt/ncbi/64/${_LIBXSLT_VERSION}/${CMAKE_BUILD_TYPE}MT64/lib)
     endif()

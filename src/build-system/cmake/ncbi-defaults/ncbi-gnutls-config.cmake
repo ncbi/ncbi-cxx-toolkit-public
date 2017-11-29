@@ -18,7 +18,9 @@ endif()
 ## Module-specific checks
 ##
 
-get_filename_component(GnuTLS_CMAKE_DIR "$ENV{NCBI}/gnutls-3.4.0" REALPATH)
+set(_GNUTLS_VERSION "gnutls-3.4.0")
+
+get_filename_component(GnuTLS_CMAKE_DIR "$ENV{NCBI}/${_GNUTLS_VERSION}" REALPATH)
 string(REGEX REPLACE ".*-([0-9].*)" "\\1" GnuTLS_VERSION_STRING "${GnuTLS_CMAKE_DIR}")
 
 set(GNUTLS_FOUND True)
@@ -26,9 +28,16 @@ set(GNUTLS_INCLUDE_DIR
     ${GnuTLS_CMAKE_DIR}/include
     )
 
-set(GNUTLS_LIBRARIES
-    ${GnuTLS_CMAKE_DIR}/${CMAKE_BUILD_TYPE}64MT/lib/libgnutls${_NCBI_LIBRARY_SUFFIX}
-    )
+# Choose the proper library path
+# For some libraries, we look in /opt/ncbi/64
+set(_libpath ${GnuTLS_CMAKE_DIR}/${CMAKE_BUILD_TYPE}MT64/lib)
+if (CMAKE_BUILD_TYPE STREQUAL "Release" AND BUILD_SHARED_LIBS)
+    if (EXISTS /opt/ncbi/64/${_GNUTLS_VERSION}/${CMAKE_BUILD_TYPE}MT64/lib)
+        set(_libpath /opt/ncbi/64/${_GNUTLS_VERSION}/${CMAKE_BUILD_TYPE}MT64/lib)
+    endif()
+endif()
+
+set(GNUTLS_LIBRARIES ${_libpath}/libgnutls${_NCBI_LIBRARY_SUFFIX})
 
 
 #############################################################################

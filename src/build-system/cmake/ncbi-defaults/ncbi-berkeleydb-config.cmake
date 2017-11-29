@@ -31,7 +31,7 @@ set(BERKELEYDB_INCLUDE_DIR
 # Choose the proper library path
 # For some libraries, we look in /opt/ncbi/64
 set(_libpath ${BerkeleyDB_CMAKE_DIR}/${CMAKE_BUILD_TYPE}MT64)
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
+if (CMAKE_BUILD_TYPE STREQUAL "Release" AND BUILD_SHARED_LIBS)
     if (EXISTS /opt/ncbi/64/${_BDB_VERSION}/${CMAKE_BUILD_TYPE}MT64)
         set(_libpath /opt/ncbi/64/${_BDB_VERSION}/${CMAKE_BUILD_TYPE}MT64)
     endif()

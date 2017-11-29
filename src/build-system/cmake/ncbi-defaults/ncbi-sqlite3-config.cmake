@@ -35,7 +35,7 @@ set(SQLITE3_INCLUDE_DIR
 # Choose the proper library path
 # For some libraries, we look in /opt/ncbi/64
 set(_libpath ${SQLITE3_CMAKE_DIR}/${CMAKE_BUILD_TYPE}MT64/lib)
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
+if (CMAKE_BUILD_TYPE STREQUAL "Release" AND BUILD_SHARED_LIBS)
     if (EXISTS /opt/ncbi/64/${_SQLITE3_VERSION}/${CMAKE_BUILD_TYPE}MT64/lib)
         set(_libpath /opt/ncbi/64/${_SQLITE3_VERSION}/${CMAKE_BUILD_TYPE}MT64/lib)
     endif()
