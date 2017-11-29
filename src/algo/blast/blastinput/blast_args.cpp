@@ -2582,7 +2582,7 @@ CMapperFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                      "or '/2' at the end of read ids for SAM format and" \
                      "paired runs");
 
-    arg_desc.AddFlag(kArgNoUnaligned, "Do report unaligned reads");
+    arg_desc.AddFlag(kArgNoUnaligned, "Do not report unaligned reads");
 
     arg_desc.AddFlag(kArgNoDiscordant,
             "Suppress discordant alignments for paired reads");
