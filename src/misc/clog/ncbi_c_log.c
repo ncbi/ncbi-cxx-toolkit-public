@@ -3677,6 +3677,8 @@ extern void NcbiLog_UpdateOnFork(TNcbiLog_OnForkFlags flags)
         s_GetTime((STime*)&sx_Info->app_start_time);
     }
     if (flags & fNcbiLog_OnFork_PrintStart) {
+        /* Forcedly reset state to allow starting sequince */
+        sx_Info->state = eNcbiLog_NotSet;
         s_AppStart(ctx, NULL);
         s_SetState(ctx, eNcbiLog_AppRun);
     }
