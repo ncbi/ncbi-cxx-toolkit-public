@@ -4086,7 +4086,7 @@ MM<FRA>	s	University of Montpellier
 MMB	s	Moravske Muzeum		
 MMBC	s	Moravske Muzeum [Moravian Museum]		
 MMBS	s	Mukaishima Marine Biological Station		
-MMCC	c	MARDI Microbial Culture Collection		
+MMCC	c	Malaysian Agricultural Research and Development, MARDI Microbial Culture Collection		
 MMChPV	s	Museo Municipal El Chocon		
 MMCM	s	Museum of Malawi		
 MMF	s	Museu Municipal do Funchal		
@@ -6479,7 +6479,7 @@ TTRS	s	Tall Timbers Research Station, Fire Ecology Laboratory
 TTU	s	Texas Tech University, Museum		
 TTY	s	Westonbirt School		
 TU<DEU>	s	Institut fur Geologie und Palaontologie, Technische Universitat Braunschweig		
-TU<EST>	s	University of Tartu, Botanical and Mycological Museum		
+TU<EST>	s	University of Tartu, Natural History Museum, Botanical and Mycological Collections		
 TU<USA-LA>	s	Tulane University, Museum of Natural History		
 TU<USA-LA>:Birds	s	Tulane University, Museum of Natural History, Ornithological Collection
 TU<USA-LA>:Fish	s	Tulane University, Museum of Natural History, Fish Collection
@@ -7582,7 +7582,7 @@ ZMS	s	Zentralmuseum Senckenberg (SENCKENBERG world of biodiversity)
 ZMSZ	s	Zemaljski Mujski		
 ZMT<CZE>	s	Zapadomoravske muzeum v Trebici		
 ZMT<GEO>	s	Georgian State Museum, Zoological Section		
-ZMTAU	s	Zoological Museum Tel Aviv University		
+ZMTAU	s	The Steinhardt Museum of Natural History		
 ZMU	s	Zhejiang Medical University, Pharmacy Department		
 ZMUA<CHN>	s	Zooligal Museum, University of Amoy		
 ZMUA<GRC>	s	Zoological Museum, University of Athens		
