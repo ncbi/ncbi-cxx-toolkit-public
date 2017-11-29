@@ -30,10 +30,10 @@ set(OSMesa_INCLUDE_DIR
 
 # Choose the proper library path
 # For some libraries, we look in /opt/ncbi/64
-set(_libpath ${OSMesa_CMAKE_DIR}/${CMAKE_BUILD_TYPE}MT64/lib)
+set(_libpath ${OSMesa_CMAKE_DIR}/lib)
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
-    if (EXISTS /opt/ncbi/64/${_MESAGL_VERSION}/${CMAKE_BUILD_TYPE}MT64/lib)
-        set(_libpath /opt/ncbi/64/${_MESAGL_VERSION}/${CMAKE_BUILD_TYPE}MT64/lib)
+    if (EXISTS /opt/ncbi/64/${_MESAGL_VERSION}/lib)
+        set(_libpath /opt/ncbi/64/${_MESAGL_VERSION}/lib)
     endif()
 endif()
 
