@@ -308,6 +308,18 @@ TMgr-RemoveUserTrackRequest ::= SEQUENCE {
     dtrack-ids SET OF TMgr-DTrackId
 }
 
+TMgr-CreateRemoteTrackRequest ::= SEQUENCE {
+    identity TMgr-Identity,
+    track-name VisibleString,
+    assembly-acc VisibleString,
+    url VisibleString
+}
+
+TMgr-CreateRemoteTrackReply ::= SEQUENCE {
+    messages SEQUENCE OF TMgr-Message OPTIONAL,
+    display-tracks SET OF TMgr-DisplayTrack OPTIONAL
+}
+
 TMgr-Status ::= INTEGER {
     success (0),
     failure (1)
