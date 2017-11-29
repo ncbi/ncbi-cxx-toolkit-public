@@ -205,6 +205,38 @@ string s_ToString(string value)
     return '"' + value + '"';
 }
 
+template <class TParam>
+struct SParamReporter
+{
+};
+
+template <class TDescription>
+ostream& operator<<(ostream& os, SParamReporter<CParam<TDescription>>)
+{
+    return os <<
+        '[' << TDescription::sm_ParamDescription.section << ']' <<
+        TDescription::sm_ParamDescription.name << '=' <<
+        s_ToString(CParam<TDescription>::GetDefault()) << endl;
+}
+
+template <class... TParams>
+struct SListReporter
+{
+};
+
+// Clang needs TSecond (sees ambiguity between these two below otherwise)
+template <class TFirst, class TSecond, class... TOther>
+ostream& operator<<(ostream& os, SListReporter<TFirst, TSecond, TOther...>)
+{
+    return os << SParamReporter<TFirst>() << SListReporter<TSecond, TOther...>();
+}
+
+template <class TParam>
+ostream& operator<<(ostream& os, SListReporter<TParam>)
+{
+    return os << SParamReporter<TParam>();
+}
+
 class CReportSynRegistryImpl::CReport
 {
 public:
@@ -243,6 +275,18 @@ void CReportSynRegistryImpl::CReport::Report(ostream& os) const
 
         os << '=' << get<2>(v) << endl;
     }
+
+    os << SListReporter<
+        TServConn_ConnMaxRetries,
+        TServConn_RetryDelay,
+        TServConn_UserLinger2,
+        TServConn_MaxFineLBNameRetries,
+        TCGI_NetCacheFallbackServer,
+        TServConn_MaxConnPoolSize,
+        TServConn_ConnDataLogging,
+        TWorkerNode_MaxWaitForServers,
+        TWorkerNode_StopOnJobErrors,
+        TWorkerNode_AllowImplicitJobReturn>();
 }
 
 template <typename TType>
