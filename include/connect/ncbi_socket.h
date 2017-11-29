@@ -148,7 +148,8 @@
  *
  * Secure Socket Layer:
  *
- *  SOCK_SetupSSL
+ *  SOCK_SetupSSL[Ex]
+ *  SOCK_SSLName
  *
  */
 
@@ -300,7 +301,7 @@ extern NCBI_XCONNECT_EXPORT const STimeout*SOCK_SetSelectInternalRestartTimeout
  *  SOCK_SetIOWaitSysAPI
  */
 typedef enum {
-    eSOCK_IOWaitSysAPIAuto,   /**< default; use some euristics to choose API */
+    eSOCK_IOWaitSysAPIAuto,   /**< default; use some heuristics to choose API*/
     eSOCK_IOWaitSysAPIPoll,   /**< always use poll()                         */
     eSOCK_IOWaitSysAPISelect  /**< always use select()                       */
 } ESOCK_IOWaitSysAPI;
@@ -308,9 +309,9 @@ typedef enum {
 /** This is a helper call that can improve I/O behavior (ignored for Windows).
  * @param api
  *  [in]  Default behavior is to wait on I/O such a way that accomodates the
- *  requested sockets accordingly.  There is a known limitation of select()
+ *  requested sockets accordingly.  There is a known limitation of the select()
  *  API that requires all sockets to have low-level IO descriptors less than
- *  1024, but works faster than poll() API that does not have limits on the
+ *  1024, but works faster than the poll() API that does not have limits on the
  *  numeric values of the descriptors.  Either API can be enforced here.
  * @return
  *  Previous value of the API selector
@@ -1505,6 +1506,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_WaitMsg
  *  [in]  additional data to send
  * @param datalen
  *  [in]  size of additional data (bytes)
+ * @sa
+ *  SOCK_Write
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SendMsg
 (SOCK           sock,
@@ -1530,6 +1533,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SendMsg
  *  [out] net byte order, may be NULL
  * @param sender_port
  *  [out] host byte order, may be NULL
+ * @sa
+ *  SOCK_Read
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_RecvMsg
 (SOCK            sock,
@@ -2148,6 +2153,11 @@ typedef SOCKSSL (*FSSLSetup)(void);
 /** Store SSL setup callback until actual initialization.
  * @param setup
  *  non-NULL SSL setup routine
+ * @warning
+ *  Do not use this function unless you know what you're doing.
+ *  Use other means of initialization such as CONNECT_Init() or CConnIniter.
+ * @sa
+ *  CONNECT_Init, CConnIniter
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_SetupSSL(FSSLSetup setup);
 
@@ -2157,6 +2167,11 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetupSSL(FSSLSetup setup);
  *  non-NULL SSL setup routine
  * @return
  *  eIO_Success if successful, other code on error.
+ * @warning
+ *  Do not use this function unless you know what you're doing.
+ *  Use other means of initialization such as CONNECT_Init() or CConnIniter.
+ * @sa
+ *  CONNECT_Init, CConnIniter
  */ 
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_SetupSSLEx(FSSLSetup setup);
 
