@@ -148,6 +148,16 @@ typedef NCBI_PARAM_TYPE(EXCEPTION, Abort_If_Critical) TAbortIfCritical;
 static CSafeStatic<TAbortIfCritical> s_AbortIfCritical;
 
 
+class CRequestContextRef
+{
+public:
+    CRequestContextRef(CRequestContext& ctx) : m_Context(&ctx) {}
+    CRequestContext& GetRequestContext(void) { return *m_Context; }
+private:
+    CRef<CRequestContext> m_Context;
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CException implementation
 
@@ -237,7 +247,8 @@ CException::CException(void)
   m_InReporter(false),
   m_MainText(true),
   m_Flags(0),
-  m_Retriable(eRetriable_Unknown)
+  m_Retriable(eRetriable_Unknown),
+  m_RequestContext(new CRequestContextRef(GetDiagContext().GetRequestContext()))
 {
 // this only is called in case of multiple inheritance
 }
@@ -456,16 +467,6 @@ const string& CException::GetMsg(void) const
 }
 
 
-class CRequestContextRef
-{
-public:
-    CRequestContextRef(CRequestContext& ctx) : m_Context(&ctx) {}
-    CRequestContext& GetRequestContext(void) { return *m_Context; }
-private:
-    CRef<CRequestContext> m_Context;
-};
-
-
 CRequestContext& CException::GetRequestContext(void) const
 {
     return m_RequestContext->GetRequestContext();
@@ -550,6 +551,7 @@ void CException::x_Assign(const CException& src)
     }
     m_Flags = src.m_Flags;
     m_Retriable = src.m_Retriable;
+    m_RequestContext.reset(new CRequestContextRef(src.m_RequestContext->GetRequestContext()));
 }
 
 
