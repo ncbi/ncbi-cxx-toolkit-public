@@ -28,30 +28,21 @@ set(BERKELEYDB_INCLUDE_DIR
     ${BerkeleyDB_CMAKE_DIR}/include
     )
 
-
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-
-    set(BERKELEYDB_LIBRARY
-        ${BerkeleyDB_CMAKE_DIR}/${CMAKE_BUILD_TYPE}MT64/libdb${_NCBI_LIBRARY_SUFFIX}
-        )
-    set(BERKELEYDB_LIBRARIES
-        -Wl,-rpath,${BerkeleyDB_CMAKE_DIR}/${CMAKE_BUILD_TYPE}MT64 ${BERKELEYDB_LIBRARY}
-        )
-
-else()
-    # release-mode binaries are in /opt
-
-    set(BERKELEYDB_LIBRARY
-        /opt/ncbi/64/${_BDB_VERSION}/${CMAKE_BUILD_TYPE}MT64/libdb${_NCBI_LIBRARY_SUFFIX}
-        )
-    set(BERKELEYDB_LIBRARIES
-        -Wl,-rpath,/opt/ncbi/64/${_BDB_VERSION}/${CMAKE_BUILD_TYPE}MT64 ${BERKELEYDB_LIBRARY}
-        )
-
+# Choose the proper library path
+# For some libraries, we look in /opt/ncbi/64
+set(_libpath ${BerkeleyDB_CMAKE_DIR}/${CMAKE_BUILD_TYPE}MT64)
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    if (EXISTS /opt/ncbi/64/${_BDB_VERSION}/${CMAKE_BUILD_TYPE}MT64)
+        set(_libpath /opt/ncbi/64/${_BDB_VERSION}/${CMAKE_BUILD_TYPE}MT64)
+    endif()
 endif()
+
+set(BERKELEYDB_LIBRARY ${_libpath}/libdb${_NCBI_LIBRARY_SUFFIX})
+set(BERKELEYDB_LIBRARIES ${BERKELEYDB_LIBRARY})
 
 # These are for compatibility
 # Some variants of CMake are case-sensitive when it comes to variables
+set(BerkeleyDB_INCLUDE_DIR ${BERKELEYDB_INCLUDE_DIR})
 set(BerkeleyDB_LIBRARY ${BERKELEYDB_LIBRARY})
 set(BerkeleyDB_LIBRARIES ${BERKELEYDB_LIBRARIES})
 set(BerkeleyDB_FOUND ${BERKELEYDB_FOUND})
@@ -64,6 +55,7 @@ set(BerkeleyDB_FOUND ${BERKELEYDB_FOUND})
 if (_NCBI_MODULE_DEBUG)
     message(STATUS "BerkeleyDB (NCBI): FOUND = ${BerkeleyDB_FOUND}")
     message(STATUS "BerkeleyDB (NCBI): VERSION = ${BerkeleyDB_VERSION_STRING}")
+    message(STATUS "BerkeleyDB (NCBI): INCLUDE = ${BERKELEYDB_INCLUDE_DIR}")
     message(STATUS "BerkeleyDB (NCBI): INCLUDE = ${BERKELEYDB_INCLUDE_DIR}")
     message(STATUS "BerkeleyDB (NCBI): LIBRARIES = ${BERKELEYDB_LIBRARY}")
 endif()

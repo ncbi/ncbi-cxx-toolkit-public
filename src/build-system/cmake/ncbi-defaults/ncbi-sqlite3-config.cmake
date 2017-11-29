@@ -32,23 +32,18 @@ set(SQLITE3_INCLUDE_DIR
     ${SQLITE3_CMAKE_DIR}/include
     )
 
-
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-
-    set(SQLITE3_LIBRARY
-        ${SQLITE3_CMAKE_DIR}/${CMAKE_BUILD_TYPE}MT64/lib/libsqlite3${_NCBI_LIBRARY_SUFFIX}
-        )
-
-else()
-    # release-mode binaries are in /opt
-
-    set(SQLITE3_LIBRARY
-        /opt/ncbi/64/${_SQLITE3_VERSION}/${CMAKE_BUILD_TYPE}MT64/lib/libsqlite3${_NCBI_LIBRARY_SUFFIX}
-        )
-
+# Choose the proper library path
+# For some libraries, we look in /opt/ncbi/64
+set(_libpath ${SQLITE3_CMAKE_DIR}/${CMAKE_BUILD_TYPE}MT64/lib)
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    if (EXISTS /opt/ncbi/64/${_SQLITE3_VERSION}/${CMAKE_BUILD_TYPE}MT64/lib)
+        set(_libpath /opt/ncbi/64/${_SQLITE3_VERSION}/${CMAKE_BUILD_TYPE}MT64/lib)
+    endif()
 endif()
 
+set(SQLITE3_LIBRARY ${_libpath}/libsqlite3${_NCBI_LIBRARY_SUFFIX})
 set(SQLITE3_LIBRARIES ${SQLITE3_LIBRARY})
+
 
 # These are for compatibility with case-sensitive versions
 set(Sqlite3_FOUND ${SQLITE3_FOUND})

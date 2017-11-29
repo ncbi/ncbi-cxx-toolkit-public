@@ -29,28 +29,18 @@ set(OPENGL_INCLUDE_DIR
     ${OpenGL_CMAKE_DIR}/include
     )
 
-
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-
-    set(OPENGL_glu_LIBRARIES
-        ${OpenGL_CMAKE_DIR}/lib/libGLU${_NCBI_LIBRARY_SUFFIX}
-        )
-    set(OPENGL_gl_LIBRARIES
-        ${OpenGL_CMAKE_DIR}/lib/libGL${_NCBI_LIBRARY_SUFFIX}
-        )
-
-else()
-
-    set(OPENGL_glu_LIBRARIES
-        /opt/ncbi/64/${_MESAGL_VERSION}/lib/libGLU${_NCBI_LIBRARY_SUFFIX}
-        )
-    set(OPENGL_gl_LIBRARIES
-        /opt/ncbi/64/${_MESAGL_VERSION}/lib/libGL${_NCBI_LIBRARY_SUFFIX}
-        )
-
-
+# Choose the proper library path
+# For some libraries, we look in /opt/ncbi/64
+set(_libpath ${OpenGL_CMAKE_DIR}/${CMAKE_BUILD_TYPE}MT64/lib)
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    if (EXISTS /opt/ncbi/64/${_MESAGL_VERSION}/${CMAKE_BUILD_TYPE}MT64/lib)
+        set(_libpath /opt/ncbi/64/${_MESAGL_VERSION}/${CMAKE_BUILD_TYPE}MT64/lib)
+    endif()
 endif()
 
+
+set(OPENGL_glu_LIBRARIES ${_libpath}/libGLU${_NCBI_LIBRARY_SUFFIX})
+set(OPENGL_gl_LIBRARIES ${_libpath}/libGL${_NCBI_LIBRARY_SUFFIX})
 set(OPENGL_LIBRARIES
     ${OPENGL_glu_LIBRARIES}
     ${OPENGL_gl_LIBRARIES}

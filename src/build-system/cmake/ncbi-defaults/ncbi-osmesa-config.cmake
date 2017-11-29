@@ -18,7 +18,9 @@ endif()
 ## Module-specific checks
 ##
 
-get_filename_component(OSMesa_CMAKE_DIR "$ENV{NCBI}/MesaGL" REALPATH)
+set(_MESAGL_VERSION "Mesa-7.0.2-ncbi2")
+
+get_filename_component(OSMesa_CMAKE_DIR "$ENV{NCBI}/${_MESAGL_VERSION}" REALPATH)
 string(REGEX REPLACE ".*-([0-9].*)" "\\1" OSMesa_VERSION_STRING "${OSMesa_CMAKE_DIR}")
 
 set(OSMesa_FOUND True)
@@ -26,9 +28,16 @@ set(OSMesa_INCLUDE_DIR
     ${OSMesa_CMAKE_DIR}/include
     )
 
-set(OSMesa_LIBRARIES
-    ${OSMesa_CMAKE_DIR}/lib/libOSMesa${_NCBI_LIBRARY_SUFFIX}
-    )
+# Choose the proper library path
+# For some libraries, we look in /opt/ncbi/64
+set(_libpath ${OSMesa_CMAKE_DIR}/${CMAKE_BUILD_TYPE}MT64/lib)
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    if (EXISTS /opt/ncbi/64/${_MESAGL_VERSION}/${CMAKE_BUILD_TYPE}MT64/lib)
+        set(_libpath /opt/ncbi/64/${_MESAGL_VERSION}/${CMAKE_BUILD_TYPE}MT64/lib)
+    endif()
+endif()
+
+set(OSMesa_LIBRARIES ${_libpath}/libOSMesa${_NCBI_LIBRARY_SUFFIX})
 
 
 #############################################################################

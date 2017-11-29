@@ -33,26 +33,19 @@ set(LIBXSLT_DEFINITIONS
 set(LIBXSLT_XSLTPROC_EXECUTABLE
     ${LibXslt_CMAKE_DIR}/${CMAKE_BUILD_TYPE}64MT/bin/xsltproc
     )
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 
-    set(LIBXSLT_LIBRARIES
-        ${LibXslt_CMAKE_DIR}/${CMAKE_BUILD_TYPE}64MT/lib/libxslt${_NCBI_LIBRARY_SUFFIX}
-        )
-    set(LIBXSLT_EXSLT_LIBRARIES
-        ${LibXslt_CMAKE_DIR}/${CMAKE_BUILD_TYPE}64MT/lib/libexslt${_NCBI_LIBRARY_SUFFIX}
-        )
-
-else()
-
-    set(LIBXSLT_LIBRARIES
-        /opt/ncbi/64/${_LIBXSL_VERSION}/${CMAKE_BUILD_TYPE}64MT/lib/libxslt${_NCBI_LIBRARY_SUFFIX}
-        )
-    set(LIBXSLT_EXSLT_LIBRARIES
-        /opt/ncbi/64/${_LIBXSL_VERSION}/${CMAKE_BUILD_TYPE}64MT/lib/libexslt${_NCBI_LIBRARY_SUFFIX}
-        )
-
-
+# Choose the proper library path
+# For some libraries, we look in /opt/ncbi/64
+set(_libpath ${LibXslt_CMAKE_DIR}/${CMAKE_BUILD_TYPE}MT64/lib)
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    if (EXISTS /opt/ncbi/64/${_LIBXSLT_VERSION}/${CMAKE_BUILD_TYPE}MT64/lib)
+        set(_libpath /opt/ncbi/64/${_LIBXSLT_VERSION}/${CMAKE_BUILD_TYPE}MT64/lib)
+    endif()
 endif()
+
+set(LIBXSLT_LIBRARIES ${_libpath}/libxslt${_NCBI_LIBRARY_SUFFIX})
+set(LIBXSLT_EXSLT_LIBRARIES ${_libpath}/libexslt${_NCBI_LIBRARY_SUFFIX})
+
 
 #############################################################################
 ##

@@ -28,19 +28,17 @@ set(FTGL_INCLUDE_DIR
     ${FTGL_CMAKE_DIR}/include
     )
 
-
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-
-    set(FTGL_LIBRARIES
-        ${FTGL_CMAKE_DIR}/${CMAKE_BUILD_TYPE}64/lib/libftgl${_NCBI_LIBRARY_SUFFIX}
-        )
-else()
-
-    set(FTGL_LIBRARIES
-        /opt/ncbi/64/${_FTGL_VERSION}/${CMAKE_BUILD_TYPE}64/lib/libftgl${_NCBI_LIBRARY_SUFFIX}
-        )
-
+# Choose the proper library path
+# For some libraries, we look in /opt/ncbi/64
+set(_libpath ${FTGL_CMAKE_DIR}/${CMAKE_BUILD_TYPE}MT64/lib)
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    if (EXISTS /opt/ncbi/64/${_FTGL_VERSION}/${CMAKE_BUILD_TYPE}MT64/lib)
+        set(_libpath /opt/ncbi/64/${_FTGL_VERSION}/${CMAKE_BUILD_TYPE}MT64/lib)
+    endif()
 endif()
+
+set(FTGL_LIBRARIES ${_libpath}/libftgl${_NCBI_LIBRARY_SUFFIX})
+
 
 #############################################################################
 ##
