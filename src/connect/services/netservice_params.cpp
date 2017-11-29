@@ -194,6 +194,17 @@ template bool   CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonym
 template int    CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
 template double CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
 
+template <typename TType>
+static string s_ToString(TType value)
+{
+    return to_string(value);
+}
+
+string s_ToString(string value)
+{
+    return '"' + value + '"';
+}
+
 class CReportSynRegistryImpl::CReport
 {
 public:
@@ -203,9 +214,6 @@ public:
     void Report(ostream& os) const;
 
 private:
-    template <typename TType>
-    static string ToString(TType value) { return to_string(value); }
-
     using TSections = deque<string>;
     using TNames = deque<string>;
     using TValues = deque<tuple<TSections, TNames, string>>;
@@ -237,12 +245,6 @@ void CReportSynRegistryImpl::CReport::Report(ostream& os) const
     }
 }
 
-template <>
-string CReportSynRegistryImpl::CReport::ToString<string>(string value)
-{
-    return '"' + value + '"';
-}
-
 template <typename TType>
 void CReportSynRegistryImpl::CReport::Add(const SRegSynonyms& sections, SRegSynonyms names, TType value)
 {
@@ -251,7 +253,7 @@ void CReportSynRegistryImpl::CReport::Add(const SRegSynonyms& sections, SRegSyno
 
     TSections s(sections.begin(), sections.end());
     TNames n(names.begin(), names.end());
-    string v(ToString(value));
+    string v(s_ToString(value));
 
     lock_guard<mutex> lock(m_Mutex);
     m_Values.emplace_back(move(s), move(n), move(v));
