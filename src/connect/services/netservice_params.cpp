@@ -386,7 +386,7 @@ ISynRegistry::TPtr s_CreateISynRegistry()
     return s_CreateISynRegistry(CNcbiApplication::Instance());
 }
 
-SISynRegistryBuilder::SISynRegistryBuilder(const IRegistry& registry) :
+CSynRegistryBuilder::CSynRegistryBuilder(const IRegistry& registry) :
     m_Registry(s_CreateISynRegistry())
 {
     _ASSERT(m_Registry);
@@ -394,7 +394,7 @@ SISynRegistryBuilder::SISynRegistryBuilder(const IRegistry& registry) :
     m_Registry->Add(registry);
 }
 
-SISynRegistryBuilder::SISynRegistryBuilder(CConfig* config) :
+CSynRegistryBuilder::CSynRegistryBuilder(CConfig* config) :
     m_Registry(s_CreateISynRegistry())
 {
     _ASSERT(m_Registry);
@@ -406,65 +406,65 @@ SISynRegistryBuilder::SISynRegistryBuilder(CConfig* config) :
     }
 }
 
-SISynRegistryBuilder::SISynRegistryBuilder(const CNcbiApplication& app) :
+CSynRegistryBuilder::CSynRegistryBuilder(const CNcbiApplication& app) :
     m_Registry(s_CreateISynRegistry(&app))
 {
     _ASSERT(m_Registry);
 }
 
-ISynRegistryToIRegistry::ISynRegistryToIRegistry(ISynRegistry::TPtr registry) :
+CSynRegistryToIRegistry::CSynRegistryToIRegistry(ISynRegistry::TPtr registry) :
     m_Registry(registry)
 {
 }
 
-bool ISynRegistryToIRegistry::x_Empty(TFlags flags) const
+bool CSynRegistryToIRegistry::x_Empty(TFlags flags) const
 {
     return GetIRegistry().Empty(flags);
 }
 
-bool ISynRegistryToIRegistry::x_Modified(TFlags flags) const
+bool CSynRegistryToIRegistry::x_Modified(TFlags flags) const
 {
     return GetIRegistry().Modified(flags);
 }
 
-void ISynRegistryToIRegistry::x_SetModifiedFlag(bool modified, TFlags flags)
+void CSynRegistryToIRegistry::x_SetModifiedFlag(bool modified, TFlags flags)
 {
     return GetIRegistry().SetModifiedFlag(modified, flags);
 }
 
-const string& ISynRegistryToIRegistry::x_Get(const string&, const string&, TFlags) const
+const string& CSynRegistryToIRegistry::x_Get(const string&, const string&, TFlags) const
 {
     // Get* overrides must never call this method
     _TROUBLE;
     return kEmptyStr;
 }
 
-bool ISynRegistryToIRegistry::x_HasEntry(const string&, const string&, TFlags) const
+bool CSynRegistryToIRegistry::x_HasEntry(const string&, const string&, TFlags) const
 {
     // Has override must never call this method
     _TROUBLE;
     return false;
 }
 
-const string& ISynRegistryToIRegistry::x_GetComment(const string&, const string&, TFlags) const
+const string& CSynRegistryToIRegistry::x_GetComment(const string&, const string&, TFlags) const
 {
     // GetComment override must never call this method
     _TROUBLE;
     return kEmptyStr;
 }
 
-void ISynRegistryToIRegistry::x_Enumerate(const string&, list<string>&, TFlags) const
+void CSynRegistryToIRegistry::x_Enumerate(const string&, list<string>&, TFlags) const
 {
     // Enumerate* overrides must never call this method
     _TROUBLE;
 }
 
-void ISynRegistryToIRegistry::x_ChildLockAction(FLockAction action)
+void CSynRegistryToIRegistry::x_ChildLockAction(FLockAction action)
 {
     return (GetIRegistry().*action)();
 }
 
-const string& ISynRegistryToIRegistry::Get(const string& section, const string& name, TFlags flags) const
+const string& CSynRegistryToIRegistry::Get(const string& section, const string& name, TFlags flags) const
 {
     _ASSERT(m_Registry);
 
@@ -473,57 +473,57 @@ const string& ISynRegistryToIRegistry::Get(const string& section, const string& 
     return GetIRegistry().Get(section, name, flags);
 }
 
-bool ISynRegistryToIRegistry::HasEntry(const string& section, const string& name, TFlags) const
+bool CSynRegistryToIRegistry::HasEntry(const string& section, const string& name, TFlags) const
 {
     _ASSERT(m_Registry);
 
     return m_Registry->Has(section, name);
 }
 
-string ISynRegistryToIRegistry::GetString(const string& section, const string& name, const string& default_value, TFlags) const
+string CSynRegistryToIRegistry::GetString(const string& section, const string& name, const string& default_value, TFlags) const
 {
     _ASSERT(m_Registry);
 
     return m_Registry->Get(section, name, default_value);
 }
 
-int ISynRegistryToIRegistry::GetInt(const string& section, const string& name, int default_value, TFlags, EErrAction) const
+int CSynRegistryToIRegistry::GetInt(const string& section, const string& name, int default_value, TFlags, EErrAction) const
 {
     _ASSERT(m_Registry);
 
     return m_Registry->Get(section, name, default_value);
 }
 
-bool ISynRegistryToIRegistry::GetBool(const string& section, const string& name, bool default_value, TFlags, EErrAction) const
+bool CSynRegistryToIRegistry::GetBool(const string& section, const string& name, bool default_value, TFlags, EErrAction) const
 {
     _ASSERT(m_Registry);
 
     return m_Registry->Get(section, name, default_value);
 }
 
-double ISynRegistryToIRegistry::GetDouble(const string& section, const string& name, double default_value, TFlags, EErrAction) const
+double CSynRegistryToIRegistry::GetDouble(const string& section, const string& name, double default_value, TFlags, EErrAction) const
 {
     _ASSERT(m_Registry);
 
     return m_Registry->Get(section, name, default_value);
 }
 
-const string& ISynRegistryToIRegistry::GetComment(const string& section, const string& name, TFlags flags) const
+const string& CSynRegistryToIRegistry::GetComment(const string& section, const string& name, TFlags flags) const
 {
     return GetIRegistry().GetComment(section, name, flags);
 }
 
-void ISynRegistryToIRegistry::EnumerateInSectionComments(const string& section, list<string>* comments, TFlags flags) const
+void CSynRegistryToIRegistry::EnumerateInSectionComments(const string& section, list<string>* comments, TFlags flags) const
 {
     return GetIRegistry().EnumerateInSectionComments(section, comments, flags);
 }
 
-void ISynRegistryToIRegistry::EnumerateSections(list<string>* sections, TFlags flags) const
+void CSynRegistryToIRegistry::EnumerateSections(list<string>* sections, TFlags flags) const
 {
     return GetIRegistry().EnumerateSections(sections, flags);
 }
 
-void ISynRegistryToIRegistry::EnumerateEntries(const string& section, list<string>* entries, TFlags flags) const
+void CSynRegistryToIRegistry::EnumerateEntries(const string& section, list<string>* entries, TFlags flags) const
 {
     return GetIRegistry().EnumerateEntries(section, entries, flags);
 }

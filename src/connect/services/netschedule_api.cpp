@@ -718,7 +718,7 @@ void CNetScheduleServerListener::OnWarning(const string& warn_msg,
 
 const char* const kNetScheduleAPIDriverName = "netschedule_api";
 
-SNetScheduleAPIImpl::SNetScheduleAPIImpl(SISynRegistryBuilder registry_builder, const string& section) :
+SNetScheduleAPIImpl::SNetScheduleAPIImpl(CSynRegistryBuilder registry_builder, const string& section) :
     m_Mode(GetMode(false, true)),
     m_SharedData(new SNetScheduleSharedData),
     m_Service(new SNetServiceImpl("NetScheduleAPI", kEmptyStr, kEmptyStr,

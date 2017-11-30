@@ -498,7 +498,7 @@ void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
 
 #endif
 
-void SNetServiceImpl::Init(CObject* api_impl, SISynRegistryBuilder registry_builder, SRegSynonyms sections)
+void SNetServiceImpl::Init(CObject* api_impl, CSynRegistryBuilder registry_builder, SRegSynonyms sections)
 {
     _ASSERT(m_Listener);
 

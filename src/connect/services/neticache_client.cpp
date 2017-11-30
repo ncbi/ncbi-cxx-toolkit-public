@@ -127,7 +127,7 @@ static const char s_NetICacheAPIName[] = "NetICacheClient";
 
 struct SNetICacheClientImpl : public SNetCacheAPIImpl
 {
-    SNetICacheClientImpl(SISynRegistryBuilder registry_builder,
+    SNetICacheClientImpl(CSynRegistryBuilder registry_builder,
             const string& section,
             const string& service_name,
             const string& client_name,

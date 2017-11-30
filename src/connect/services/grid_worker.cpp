@@ -389,9 +389,9 @@ SGridWorkerNodeImpl::SGridWorkerNodeImpl(CNcbiApplication& app,
 
 void SGridWorkerNodeImpl::Init()
 {
-    SISynRegistryBuilder registry_builder(m_App);
+    CSynRegistryBuilder registry_builder(m_App);
     m_SynRegistry = registry_builder.Get();
-    m_Registry.Reset(new ISynRegistryToIRegistry(m_SynRegistry));
+    m_Registry.Reset(new CSynRegistryToIRegistry(m_SynRegistry));
 
     m_Listener->OnInit(this);
 

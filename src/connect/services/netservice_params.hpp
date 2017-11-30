@@ -232,11 +232,11 @@ private:
 using CSynRegistry = TSynRegistry<CSynRegistryImpl>;
 
 // Class to create ISynRegistry from CConfig, IRegistry or CNcbiApplication automatically
-struct NCBI_XCONNECT_EXPORT SISynRegistryBuilder
+struct NCBI_XCONNECT_EXPORT CSynRegistryBuilder
 {
-    SISynRegistryBuilder(const IRegistry& registry);
-    SISynRegistryBuilder(CConfig* config);
-    SISynRegistryBuilder(const CNcbiApplication& app);
+    CSynRegistryBuilder(const IRegistry& registry);
+    CSynRegistryBuilder(CConfig* config);
+    CSynRegistryBuilder(const CNcbiApplication& app);
 
     ISynRegistry::TPtr Get() { return m_Registry; }
 
@@ -244,10 +244,10 @@ private:
     ISynRegistry::TPtr m_Registry;
 };
 
-class NCBI_XCONNECT_EXPORT ISynRegistryToIRegistry : public IRegistry
+class NCBI_XCONNECT_EXPORT CSynRegistryToIRegistry : public IRegistry
 {
 public:
-    ISynRegistryToIRegistry(ISynRegistry::TPtr registry);
+    CSynRegistryToIRegistry(ISynRegistry::TPtr registry);
 
     const string& Get(const string& section, const string& name, TFlags flags = 0) const final;
     bool HasEntry(const string& section, const string& name = kEmptyStr, TFlags flags = 0) const final;

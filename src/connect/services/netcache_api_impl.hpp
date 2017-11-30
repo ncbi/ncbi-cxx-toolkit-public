@@ -69,7 +69,7 @@ private:
 
 struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
 {
-    SNetCacheAPIImpl(SISynRegistryBuilder registry_builder, const string& section,
+    SNetCacheAPIImpl(CSynRegistryBuilder registry_builder, const string& section,
             const string& service, const string& client_name,
             CNetScheduleAPI::TInstance ns_api);
 
