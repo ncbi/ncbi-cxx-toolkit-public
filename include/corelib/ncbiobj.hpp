@@ -662,6 +662,13 @@ public:
             }
         }
 
+    template< class CDerived,
+              class = typename enable_if<is_convertible<CDerived*, TObjectType*>::value, void>::type>
+    CRef(const CRef<CDerived, Locker>& ref)
+        : CRef( (TObjectType*)ref.GetNCPointerOrNull())
+        {
+        }
+
     /// Copy constructor from an existing CRef object, 
     CRef(TThisType&& ref)
         : m_Data(ref.m_Data)
@@ -886,6 +893,13 @@ public:
     TThisType& operator=(const TThisType& ref)
         {
             Reset(ref.m_Data.second());
+            return *this;
+        }
+
+    template<class CDerived>
+    TThisType& operator=(const CRef<CDerived, Locker>& ref)
+        {
+            CRef(ref).Swap(*this);
             return *this;
         }
 
@@ -1238,6 +1252,13 @@ public:
             }
         }
 
+    template< class CDerived,
+              class = typename enable_if<is_convertible<CDerived*, TObjectType*>::value, void>::type>
+    CConstRef(const CConstRef<CDerived, Locker>& ref)
+        : CConstRef( (TObjectType*)ref.GetPointerOrNull())
+        {
+        }
+
     /// Constructor from an existing CConstRef object, 
     CConstRef(TThisType&& ref)
         : m_Data(ref.m_Data)
@@ -1257,6 +1278,13 @@ public:
                 m_Data.first().Relock(newPtr);
                 m_Data.second() = newPtr;
             }
+        }
+
+    template< class CDerived,
+              class = typename enable_if<is_convertible<CDerived*, TObjectType*>::value, void>::type>
+    CConstRef(const CRef<CDerived, Locker>& ref)
+        : CConstRef( (TObjectType*)ref.GetPointerOrNull())
+        {
         }
 
     /// Destructor.
@@ -1476,6 +1504,13 @@ public:
             return *this;
         }
 
+    template<class CDerived>
+    TThisType& operator=(const CConstRef<CDerived, Locker>& ref)
+        {
+            CConstRef(ref).Swap(*this);
+            return *this;
+        }
+
     /// Assignment operator for const references.
     TThisType& operator=(TThisType&& ref)
         {
@@ -1503,6 +1538,13 @@ public:
     TThisType& operator=(const CRef<C, Locker>& ref)
         {
             Reset(ref.GetPointerOrNull());
+            return *this;
+        }
+
+    template<class CDerived>
+    TThisType& operator=(const CRef<CDerived, Locker>& ref)
+        {
+            CConstRef(ref).Swap(*this);
             return *this;
         }
 
