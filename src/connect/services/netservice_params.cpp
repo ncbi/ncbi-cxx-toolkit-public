@@ -144,18 +144,22 @@ string s_ToString(string value)
     return '"' + value + '"';
 }
 
+using TValues = map<string, map<string, string>>;
+
 template <class TParam>
 struct SParamReporter
 {
 };
 
 template <class TDescription>
-ostream& operator<<(ostream& os, SParamReporter<CParam<TDescription>>)
+TValues& operator<<(TValues& vs, SParamReporter<CParam<TDescription>>)
 {
-    return os <<
-        '[' << TDescription::sm_ParamDescription.section << ']' <<
-        TDescription::sm_ParamDescription.name << '=' <<
-        s_ToString(CParam<TDescription>::GetDefault()) << endl;
+    const auto& section = TDescription::sm_ParamDescription.section;
+    const auto& name = TDescription::sm_ParamDescription.name;
+    const auto value = CParam<TDescription>::GetDefault();
+
+    vs[section].emplace(name, s_ToString(value));
+    return vs;
 }
 
 template <class... TParams>
@@ -165,57 +169,35 @@ struct SListReporter
 
 // Clang needs TSecond (sees ambiguity between these two below otherwise)
 template <class TFirst, class TSecond, class... TOther>
-ostream& operator<<(ostream& os, SListReporter<TFirst, TSecond, TOther...>)
+TValues& operator<<(TValues& vs, SListReporter<TFirst, TSecond, TOther...>)
 {
-    return os << SParamReporter<TFirst>() << SListReporter<TSecond, TOther...>();
+    return vs << SParamReporter<TFirst>() << SListReporter<TSecond, TOther...>();
 }
 
 template <class TParam>
-ostream& operator<<(ostream& os, SListReporter<TParam>)
+TValues& operator<<(TValues& vs, SListReporter<TParam>)
 {
-    return os << SParamReporter<TParam>();
+    return vs << SParamReporter<TParam>();
 }
 
 class CSynRegistry::CReport
 {
 public:
+    CReport();
+
     template <typename TType>
-    void Add(const SRegSynonyms& sections, SRegSynonyms names, TType value);
+    void Add(const string& section, const string& name, TType value);
 
     void Report(ostream& os) const;
 
 private:
-    using TSections = deque<string>;
-    using TNames = deque<string>;
-    using TValues = deque<tuple<TSections, TNames, string>>;
-
     TValues m_Values;
     mutable mutex m_Mutex;
 };
 
-void CSynRegistry::CReport::Report(ostream& os) const
+CSynRegistry::CReport::CReport()
 {
-    lock_guard<mutex> lock(m_Mutex);
-
-    for (auto& v : m_Values) {
-        char separator = '[';
-
-        for (auto& s : get<0>(v)) {
-            os << separator << s;
-            separator = '/';
-        }
-
-        separator = ']';
-
-        for (auto& s : get<1>(v)) {
-            os << separator << s;
-            separator = '/';
-        }
-
-        os << '=' << get<2>(v) << endl;
-    }
-
-    os << SListReporter<
+    m_Values << SListReporter<
         TServConn_ConnMaxRetries,
         TServConn_RetryDelay,
         TServConn_UserLinger2,
@@ -228,18 +210,26 @@ void CSynRegistry::CReport::Report(ostream& os) const
         TWorkerNode_AllowImplicitJobReturn>();
 }
 
-template <typename TType>
-void CSynRegistry::CReport::Add(const SRegSynonyms& sections, SRegSynonyms names, TType value)
+void CSynRegistry::CReport::Report(ostream& os) const
 {
-    _ASSERT(sections.size());
-    _ASSERT(names.size());
-
-    TSections s(sections.begin(), sections.end());
-    TNames n(names.begin(), names.end());
-    string v(s_ToString(value));
-
     lock_guard<mutex> lock(m_Mutex);
-    m_Values.emplace_back(move(s), move(n), move(v));
+
+    for (const auto& section : m_Values) {
+        os << '[' << section.first << ']' << endl;;
+
+        for (const auto& param : section.second) {
+            os << param.first << '=' << param.second << endl;
+        }
+
+        os << endl;
+    }
+}
+
+template <typename TType>
+void CSynRegistry::CReport::Add(const string& section, const string& name, TType value)
+{
+    lock_guard<mutex> lock(m_Mutex);
+    m_Values[section].emplace(name, s_ToString(value));
 }
 
 class CSynRegistry::CInclude
@@ -316,7 +306,7 @@ TType CSynRegistry::TGet(const SRegSynonyms& sections, SRegSynonyms names, TType
 
             try {
                 auto rv = m_Registry.GetValue(section, name, default_value, IRegistry::eThrow);
-                m_Report->Add(sections, names, rv);
+                m_Report->Add(section, name, rv);
                 return rv;
             }
             catch (CStringException& ex) {
@@ -328,7 +318,10 @@ TType CSynRegistry::TGet(const SRegSynonyms& sections, SRegSynonyms names, TType
         }
     }
 
-    m_Report->Add(sections, names, default_value);
+    // Cannot use sections.front() here.
+    // Otherwise, some default values would be reported twice (with different sections)
+    // due to configuration loading from NetSchedule which adds a special section in front.
+    m_Report->Add(sections.back(), names.front(), default_value);
     return default_value;
 }
 
