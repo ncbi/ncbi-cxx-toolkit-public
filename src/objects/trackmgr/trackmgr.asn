@@ -310,7 +310,7 @@ TMgr-RemoveUserTrackRequest ::= SEQUENCE {
 
 TMgr-CreateRemoteTrackRequest ::= SEQUENCE {
     identity TMgr-Identity,
-    track-name VisibleString,
+    track-name VisibleString OPTIONAL,
     assembly-acc VisibleString,
     url VisibleString
 }
