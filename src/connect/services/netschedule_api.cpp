@@ -376,7 +376,7 @@ CTempString s_GetSection(bool ns_conf)
     return ns_conf ? "netschedule_conf_from_netschedule" : "netcache_conf_from_netschedule";
 }
 
-CNetScheduleConfigLoader::CNetScheduleConfigLoader(ISynRegistry& registry, SRegSynonyms& sections, bool ns_conf) :
+CNetScheduleConfigLoader::CNetScheduleConfigLoader(CSynRegistry& registry, SRegSynonyms& sections, bool ns_conf) :
     m_Registry(registry), m_Sections(sections), m_NsConf(ns_conf), m_Mode(eImplicit)
 {
     sections.insert(sections.begin(), s_GetSection(m_NsConf));
@@ -564,7 +564,7 @@ INetServerConnectionListener* CNetScheduleServerListener::Clone()
     return new CNetScheduleServerListener(*this);
 }
 
-void CNetScheduleServerListener::OnInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections)
+void CNetScheduleServerListener::OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections)
 {
     SNetScheduleAPIImpl* ns_impl = static_cast<SNetScheduleAPIImpl*>(api_impl);
     _ASSERT(ns_impl);
@@ -573,7 +573,7 @@ void CNetScheduleServerListener::OnInit(CObject* api_impl, ISynRegistry& registr
     ns_impl->Init(registry, sections);
 }
 
-void SNetScheduleAPIImpl::Init(ISynRegistry& registry, SRegSynonyms& sections)
+void SNetScheduleAPIImpl::Init(CSynRegistry& registry, SRegSynonyms& sections)
 {
     if (!m_Queue.empty()) limits::Check<limits::SQueueName>(m_Queue);
 
@@ -1209,7 +1209,7 @@ void SNetScheduleAPIImpl::SetAuthParam(const string& param_name,
     UpdateAuthString();
 }
 
-void SNetScheduleAPIImpl::InitAffinities(ISynRegistry& registry, const SRegSynonyms& sections)
+void SNetScheduleAPIImpl::InitAffinities(CSynRegistry& registry, const SRegSynonyms& sections)
 {
     const bool claim_new_affinities = registry.Get(sections, "claim_new_affinities", false);
     const bool process_any_job =      registry.Get(sections, "process_any_job", false);

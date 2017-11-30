@@ -156,8 +156,6 @@ class NCBI_XCONNECT_EXPORT ISynRegistry
     template <typename TType> struct TR;
 
 public:
-    using TPtr = shared_ptr<ISynRegistry>;
-
     virtual ~ISynRegistry() {}
 
     // XXX:
@@ -177,9 +175,6 @@ public:
     virtual IRegistry& GetIRegistry() = 0;
     virtual void Report(ostream& os) const = 0;
 
-    TPtr MakeRef() { return TPtr(TPtr(), this); }
-    TPtr MakePtr() { return TPtr(this); }
-
 protected:
     virtual string VGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value) = 0;
     virtual bool   VGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value) = 0;
@@ -193,6 +188,8 @@ template <class TImpl>
 class TSynRegistry : public TImpl
 {
 public:
+    using TPtr = shared_ptr<TSynRegistry<TImpl>>;
+
     template <class... TArgs>
     TSynRegistry(TArgs&&... args) : TImpl(std::forward<TArgs>(args)...) {}
 
@@ -231,23 +228,23 @@ private:
 
 using CSynRegistry = TSynRegistry<CSynRegistryImpl>;
 
-// Class to create ISynRegistry from CConfig, IRegistry or CNcbiApplication automatically
+// Class to create CSynRegistry from CConfig, IRegistry or CNcbiApplication automatically
 struct NCBI_XCONNECT_EXPORT CSynRegistryBuilder
 {
     CSynRegistryBuilder(const IRegistry& registry);
     CSynRegistryBuilder(CConfig* config);
     CSynRegistryBuilder(const CNcbiApplication& app);
 
-    ISynRegistry::TPtr Get() { return m_Registry; }
+    CSynRegistry::TPtr Get() { return m_Registry; }
 
 private:
-    ISynRegistry::TPtr m_Registry;
+    CSynRegistry::TPtr m_Registry;
 };
 
 class NCBI_XCONNECT_EXPORT CSynRegistryToIRegistry : public IRegistry
 {
 public:
-    CSynRegistryToIRegistry(ISynRegistry::TPtr registry);
+    CSynRegistryToIRegistry(CSynRegistry::TPtr registry);
 
     const string& Get(const string& section, const string& name, TFlags flags = 0) const final;
     bool HasEntry(const string& section, const string& name = kEmptyStr, TFlags flags = 0) const final;
@@ -272,7 +269,7 @@ private:
 
     IRegistry& GetIRegistry() const { _ASSERT(m_Registry); return m_Registry->GetIRegistry(); }
 
-    ISynRegistry::TPtr m_Registry;
+    CSynRegistry::TPtr m_Registry;
 };
 
 template <typename TType> struct ISynRegistry::TR              { using T = TType;  };

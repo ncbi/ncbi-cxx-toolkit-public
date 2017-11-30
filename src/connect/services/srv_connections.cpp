@@ -93,7 +93,7 @@ bool CNetServerMultilineCmdOutput::ReadLine(string& output)
     }
 }
 
-void INetServerConnectionListener::OnPreInit(CObject*, ISynRegistry&, SRegSynonyms&, string&)
+void INetServerConnectionListener::OnPreInit(CObject*, CSynRegistry&, SRegSynonyms&, string&)
 {
 }
 

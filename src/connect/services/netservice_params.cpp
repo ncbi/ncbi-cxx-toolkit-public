@@ -364,9 +364,9 @@ template bool   CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonym
 template int    CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
 template double CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
 
-ISynRegistry::TPtr s_CreateISynRegistry(const CNcbiApplication* app)
+CSynRegistry::TPtr s_CreateISynRegistry(const CNcbiApplication* app)
 {
-    ISynRegistry::TPtr registry(new CSynRegistry);
+    CSynRegistry::TPtr registry(new CSynRegistry);
 
 
     if (app) {
@@ -380,7 +380,7 @@ ISynRegistry::TPtr s_CreateISynRegistry(const CNcbiApplication* app)
     return registry;
 }
 
-ISynRegistry::TPtr s_CreateISynRegistry()
+CSynRegistry::TPtr s_CreateISynRegistry()
 {
     CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
     return s_CreateISynRegistry(CNcbiApplication::Instance());
@@ -412,7 +412,7 @@ CSynRegistryBuilder::CSynRegistryBuilder(const CNcbiApplication& app) :
     _ASSERT(m_Registry);
 }
 
-CSynRegistryToIRegistry::CSynRegistryToIRegistry(ISynRegistry::TPtr registry) :
+CSynRegistryToIRegistry::CSynRegistryToIRegistry(CSynRegistry::TPtr registry) :
     m_Registry(registry)
 {
 }

@@ -167,14 +167,14 @@ struct SNetScheduleServerProperties : public INetServerProperties
 class CNetScheduleConfigLoader
 {
 public:
-    CNetScheduleConfigLoader(ISynRegistry& registry, SRegSynonyms& sections, bool ns_conf = true);
+    CNetScheduleConfigLoader(CSynRegistry& registry, SRegSynonyms& sections, bool ns_conf = true);
 
     bool operator()(SNetScheduleAPIImpl* impl);
 
 private:
     bool Transform(const string& prefix, string& name) const;
 
-    ISynRegistry& m_Registry;
+    CSynRegistry& m_Registry;
     const SRegSynonyms& m_Sections;
     const bool m_NsConf;
     enum { eOff, eImplicit, eExplicit } m_Mode;
@@ -198,7 +198,7 @@ public:
     CRef<INetServerProperties> AllocServerProperties() override;
     INetServerConnectionListener* Clone() override;
 
-    void OnInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections) override;
+    void OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections) override;
     void OnConnected(CNetServerConnection& connection) override;
     void OnError(const string& err_msg, CNetServer& server) override;
     void OnWarning(const string& warn_msg, CNetServer& server) override;
@@ -375,8 +375,8 @@ public:
     void UseOldStyleAuth();
     void SetAuthParam(const string& param_name, const string& param_value);
     CCompoundIDPool GetCompoundIDPool() { return m_CompoundIDPool; }
-    void Init(ISynRegistry& registry, SRegSynonyms& sections);
-    void InitAffinities(ISynRegistry& registry, const SRegSynonyms& sections);
+    void Init(CSynRegistry& registry, SRegSynonyms& sections);
+    void InitAffinities(CSynRegistry& registry, const SRegSynonyms& sections);
     string MakeAuthString();
 
 private:

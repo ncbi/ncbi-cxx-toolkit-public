@@ -262,7 +262,7 @@ struct SGridWorkerNodeImpl : public CObject, IWorkerNodeInitContext
     auto_ptr<IGridWorkerNodeApp_Listener> m_Listener;
 
     CNcbiApplication& m_App;
-    ISynRegistry::TPtr m_SynRegistry;
+    CSynRegistry::TPtr m_SynRegistry;
     CRef<IRegistry> m_Registry;
     bool m_SingleThreadForced;
     bool m_LogRequested;

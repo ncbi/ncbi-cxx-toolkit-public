@@ -93,7 +93,7 @@ INetServerConnectionListener* CNetCacheServerListener::Clone()
     return new CNetCacheServerListener(*this);
 }
 
-void CNetCacheServerListener::OnPreInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections, string& client_name)
+void CNetCacheServerListener::OnPreInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections, string& client_name)
 {
     SNetCacheAPIImpl* nc_impl = static_cast<SNetCacheAPIImpl*>(api_impl);
 
@@ -111,7 +111,7 @@ void CNetCacheServerListener::OnPreInit(CObject* api_impl, ISynRegistry& registr
     }
 }
 
-void CNetCacheServerListener::OnInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections)
+void CNetCacheServerListener::OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections)
 {
     SNetCacheAPIImpl* nc_impl = static_cast<SNetCacheAPIImpl*>(api_impl);
 
@@ -120,7 +120,7 @@ void CNetCacheServerListener::OnInit(CObject* api_impl, ISynRegistry& registry, 
     nc_impl->Init(registry, sections);
 }
 
-void SNetCacheAPIImpl::Init(ISynRegistry& registry, const SRegSynonyms& sections)
+void SNetCacheAPIImpl::Init(CSynRegistry& registry, const SRegSynonyms& sections)
 {
     if (m_Service->GetClientName().length() < 3) {
         NCBI_THROW(CNetCacheException,

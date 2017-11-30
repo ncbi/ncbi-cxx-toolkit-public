@@ -252,7 +252,7 @@ public:
     void CheckValue(IRegistry& registry) const;
 
     void SetValue(TMemoryRegistries& registries) const;
-    void CheckValue(ISynRegistry& registry) const;
+    void CheckValue(CSynRegistry& registry) const;
 
     void SetIncluded(TMemoryRegistries& registries) const;
 
@@ -267,7 +267,7 @@ private:
     }
 
     template <typename TType>
-    void CompareValue(ISynRegistry& registry, TType expected_value) const
+    void CompareValue(CSynRegistry& registry, TType expected_value) const
     {
         BOOST_CHECK(registry.Get(sections, names, TType{}) == expected_value);
     }
@@ -286,7 +286,7 @@ private:
         BOOST_CHECK(abs(read_value - expected_value) <= epsilon * (abs(read_value) < abs(expected_value) ? abs(read_value) : abs(expected_value)));
     }
 
-    void CompareValue(ISynRegistry& registry, double expected_value) const
+    void CompareValue(CSynRegistry& registry, double expected_value) const
     {
         const auto read_value = registry.Get(sections, names, 0.0);
         const auto epsilon = numeric_limits<double>::epsilon();
@@ -368,7 +368,7 @@ void SRandomParam::SetValue(TMemoryRegistries& registries) const
     }
 }
 
-void SRandomParam::CheckValue(ISynRegistry& registry) const
+void SRandomParam::CheckValue(CSynRegistry& registry) const
 {
     const size_t priority = indices.GetPriority();
 

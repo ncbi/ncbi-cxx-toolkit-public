@@ -436,7 +436,7 @@ public:
     CRef<INetServerProperties> AllocServerProperties() override;
     INetServerConnectionListener* Clone() override;
 
-    void OnInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections) override;
+    void OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections) override;
     void OnConnected(CNetServerConnection& connection) override;
     void OnError(const string& err_msg, CNetServer& server) override;
     void OnWarning(const string& warn_msg, CNetServer& server) override;
@@ -456,7 +456,7 @@ INetServerConnectionListener* CNetStorageServerListener::Clone()
     return new CNetStorageServerListener(*this);
 }
 
-void CNetStorageServerListener::OnInit(CObject*, ISynRegistry&, SRegSynonyms&)
+void CNetStorageServerListener::OnInit(CObject*, CSynRegistry&, SRegSynonyms&)
 {
 }
 

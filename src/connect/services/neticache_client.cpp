@@ -65,7 +65,7 @@ BEGIN_NCBI_SCOPE
 class CNetICacheServerListener : public CNetCacheServerListener
 {
 protected:
-    void OnInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections) override;
+    void OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections) override;
 };
 
 const char* const kNetICacheDriverName = "netcache";
@@ -177,12 +177,12 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl
         size_t* blob_size_ptr,
         const CNamedParameterList* optional);
 
-    void Init(ISynRegistry& registry, const SRegSynonyms& sections);
+    void Init(CSynRegistry& registry, const SRegSynonyms& sections);
 
     ICache::TFlags m_CacheFlags;
 };
 
-void CNetICacheServerListener::OnInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections)
+void CNetICacheServerListener::OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections)
 {
     CNetCacheServerListener::OnInit(api_impl, registry, sections);
 
@@ -192,7 +192,7 @@ void CNetICacheServerListener::OnInit(CObject* api_impl, ISynRegistry& registry,
     icache_impl->Init(registry, sections);
 }
 
-void SNetICacheClientImpl::Init(ISynRegistry& registry, const SRegSynonyms& sections)
+void SNetICacheClientImpl::Init(CSynRegistry& registry, const SRegSynonyms& sections)
 {
     auto cache_name = m_DefaultParameters.GetCacheName();
 
@@ -835,8 +835,8 @@ public:
     }
 
     CRef<INetServerProperties> AllocServerProperties() override;
-    void OnPreInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections, string& client_name) override;
-    void OnInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections) override;
+    void OnPreInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections, string& client_name) override;
+    void OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections) override;
     void OnConnected(CNetServerConnection& connection) override;
     void OnError(const string& err_msg, CNetServer& server) override;
     void OnWarning(const string& warn_msg, CNetServer& server) override;
@@ -852,12 +852,12 @@ CRef<INetServerProperties> CSetValidWarningSuppressor::AllocServerProperties()
     return m_DelegateListener->AllocServerProperties();
 }
 
-void CSetValidWarningSuppressor::OnPreInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections, string& client_name)
+void CSetValidWarningSuppressor::OnPreInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections, string& client_name)
 {
     m_DelegateListener->OnPreInit(api_impl, registry, sections, client_name);
 }
 
-void CSetValidWarningSuppressor::OnInit(CObject* api_impl, ISynRegistry& registry, SRegSynonyms& sections)
+void CSetValidWarningSuppressor::OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections)
 {
     m_DelegateListener->OnInit(api_impl, registry, sections);
 }

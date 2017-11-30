@@ -107,14 +107,14 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
         // Whether to check with LBSMD before re-enabling the server.
         bool m_ThrottleUntilDiscoverable;
 
-        void Init(ISynRegistry& registry, const SRegSynonyms& sections);
+        void Init(CSynRegistry& registry, const SRegSynonyms& sections);
     };
 
     // Construct a new object.
     SNetServerPoolImpl(INetServerConnectionListener* listener,
             bool old_style_auth);
 
-    void Init(ISynRegistry& registry, const SRegSynonyms& sections, INetServerConnectionListener* listener);
+    void Init(CSynRegistry& registry, const SRegSynonyms& sections, INetServerConnectionListener* listener);
 
     SNetServerInPool* FindOrCreateServerImpl(const SServerAddress& server_address);
     CRef<SNetServerInPool> ReturnServer(SNetServerInPool* server_impl);
@@ -271,7 +271,7 @@ public:
 
 struct SNetServiceXSiteAPI : public CObject
 {
-    static void InitXSite(ISynRegistry& registry, const SRegSynonyms& sections);
+    static void InitXSite(CSynRegistry& registry, const SRegSynonyms& sections);
     static void ConnectXSite(CSocket&, SNetServerImpl::SConnectDeadline&,
             const SServerAddress&);
 

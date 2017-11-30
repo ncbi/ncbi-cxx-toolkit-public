@@ -370,7 +370,7 @@ bool SNetServiceXSiteAPI::IsUsingXSiteProxy()
     return m_AllowXSiteConnections.load();
 }
 
-void SNetServiceXSiteAPI::InitXSite(ISynRegistry& registry, const SRegSynonyms& sections)
+void SNetServiceXSiteAPI::InitXSite(CSynRegistry& registry, const SRegSynonyms& sections)
 {
     if (registry.Get({ "netservice_api", sections }, "allow_xsite_conn", false)) {
         AllowXSiteConnections();
@@ -485,7 +485,7 @@ atomic<bool> SNetServiceXSiteAPI::m_AllowXSiteConnections{false};
 
 #else
 
-void SNetServiceXSiteAPI::InitXSite(ISynRegistry&, const SRegSynonyms&)
+void SNetServiceXSiteAPI::InitXSite(CSynRegistry&, const SRegSynonyms&)
 {
 }
 
@@ -502,7 +502,7 @@ void SNetServiceImpl::Init(CObject* api_impl, CSynRegistryBuilder registry_build
 {
     _ASSERT(m_Listener);
 
-    ISynRegistry& registry = *registry_builder.Get();
+    CSynRegistry& registry = *registry_builder.Get();
 
     // Initialize the connect library and LBSM structures
     // used in DiscoverServersIfNeeded().
@@ -579,7 +579,7 @@ void SNetServiceImpl::Init(CObject* api_impl, CSynRegistryBuilder registry_build
     m_Listener->OnInit(api_impl, registry, sections);
 }
 
-void SNetServerPoolImpl::Init(ISynRegistry& registry, const SRegSynonyms& sections, INetServerConnectionListener* listener)
+void SNetServerPoolImpl::Init(CSynRegistry& registry, const SRegSynonyms& sections, INetServerConnectionListener* listener)
 {
     int max_requests = CSimpleRebalanceStrategy::DefaultMaxRequests();
     double max_seconds = CSimpleRebalanceStrategy::DefaultMaxSeconds();
@@ -626,7 +626,7 @@ void SNetServerPoolImpl::Init(ISynRegistry& registry, const SRegSynonyms& sectio
     m_Listener = listener;
 }
 
-void SNetServerPoolImpl::SThrottleParams::Init(ISynRegistry& registry, const SRegSynonyms& sections)
+void SNetServerPoolImpl::SThrottleParams::Init(CSynRegistry& registry, const SRegSynonyms& sections)
 {
     m_ServerThrottlePeriod = registry.Get(sections, "throttle_relaxation_period", 0);
 
@@ -1459,7 +1459,7 @@ CNetService g_DiscoverService(const string& service_name,
         }
 
         INetServerConnectionListener* Clone() override { return new SNoOpConnectionListener(*this); }
-        void OnInit(CObject*, ISynRegistry&, SRegSynonyms&) override {}
+        void OnInit(CObject*, CSynRegistry&, SRegSynonyms&) override {}
         void OnConnected(CNetServerConnection&) override {}
         void OnError(const string&, CNetServer&) override {}
         void OnWarning(const string&, CNetServer&) override {}
