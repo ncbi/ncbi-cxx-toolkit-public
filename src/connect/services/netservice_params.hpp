@@ -151,73 +151,32 @@ private:
     bool NotFound(CTempString s) const { return find(begin(), end(), s) == end(); }
 };
 
-class NCBI_XCONNECT_EXPORT ISynRegistry
+class NCBI_XCONNECT_EXPORT CSynRegistry
 {
     template <typename TType> struct TR;
-
-public:
-    virtual ~ISynRegistry() {}
-
-    // XXX:
-    // Since there is no such thing as a virtual template method, a workaround is used:
-    // Template methods (ISynRegistry::Get) call virtual methods (ISynRegistry::VGet).
-    // Their overrides (TSynRegistry<TImpl>::VGet) call actual implementations (TImpl::TGet).
-
-    template <typename TType>
-    typename TR<TType>::T Get(const SRegSynonyms& sections, SRegSynonyms names, TType default_value)
-    {
-        return VGet(sections, names, static_cast<typename TR<TType>::T>(default_value));
-    }
-
-    bool Has(const SRegSynonyms& sections, SRegSynonyms names);
-
-    virtual void Add(const IRegistry& registry) = 0;
-    virtual IRegistry& GetIRegistry() = 0;
-    virtual void Report(ostream& os) const = 0;
-
-protected:
-    virtual string VGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value) = 0;
-    virtual bool   VGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value) = 0;
-    virtual int    VGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value) = 0;
-    virtual double VGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value) = 0;
-
-    virtual bool   HasImpl(const string& section, const string& name) = 0;
-};
-
-template <class TImpl>
-class TSynRegistry : public TImpl
-{
-public:
-    using TPtr = shared_ptr<TSynRegistry<TImpl>>;
-
-    template <class... TArgs>
-    TSynRegistry(TArgs&&... args) : TImpl(std::forward<TArgs>(args)...) {}
-
-protected:
-    string VGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value) final;
-    bool   VGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value) final;
-    int    VGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value) final;
-    double VGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value) final;
-};
-
-class NCBI_XCONNECT_EXPORT CSynRegistryImpl : public ISynRegistry
-{
     class CReport;
     class CInclude;
 
 public:
-    CSynRegistryImpl();
-    ~CSynRegistryImpl();
+    using TPtr = shared_ptr<CSynRegistry>;
 
-    void Add(const IRegistry& registry) override;
-    IRegistry& GetIRegistry() override;
-    void Report(ostream& os) const override;
+    CSynRegistry();
+    ~CSynRegistry();
 
-protected:
+    template <typename TType>
+    typename TR<TType>::T Get(const SRegSynonyms& sections, SRegSynonyms names, TType default_value)
+    {
+        return TGet(sections, names, static_cast<typename TR<TType>::T>(default_value));
+    }
+
     template <typename TType>
     TType TGet(const SRegSynonyms& sections, SRegSynonyms names, TType default_value);
 
-    bool HasImpl(const string& section, const string& name) final;
+    bool Has(const SRegSynonyms& sections, SRegSynonyms names);
+
+    void Add(const IRegistry& registry);
+    IRegistry& GetIRegistry();
+    void Report(ostream& os) const;
 
 private:
     CCompoundRegistry m_Registry;
@@ -225,8 +184,6 @@ private:
     unique_ptr<CReport> m_Report;
     unique_ptr<CInclude> m_Include;
 };
-
-using CSynRegistry = TSynRegistry<CSynRegistryImpl>;
 
 // Class to create CSynRegistry from CConfig, IRegistry or CNcbiApplication automatically
 struct NCBI_XCONNECT_EXPORT CSynRegistryBuilder
@@ -272,38 +229,14 @@ private:
     CSynRegistry::TPtr m_Registry;
 };
 
-template <typename TType> struct ISynRegistry::TR              { using T = TType;  };
-template <>               struct ISynRegistry::TR<const char*> { using T = string; };
-template <>               struct ISynRegistry::TR<unsigned>    { using T = int;    };
+template <typename TType> struct CSynRegistry::TR              { using T = TType;  };
+template <>               struct CSynRegistry::TR<const char*> { using T = string; };
+template <>               struct CSynRegistry::TR<unsigned>    { using T = int;    };
 
-extern template NCBI_XCONNECT_EXPORT string CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value);
-extern template NCBI_XCONNECT_EXPORT bool   CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value);
-extern template NCBI_XCONNECT_EXPORT int    CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
-extern template NCBI_XCONNECT_EXPORT double CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
-
-template <typename TImpl>
-string TSynRegistry<TImpl>::VGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value)
-{
-    return TImpl::TGet(sections, names, default_value);
-}
-
-template <typename TImpl>
-bool TSynRegistry<TImpl>::VGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value)
-{
-    return TImpl::TGet(sections, names, default_value);
-}
-
-template <typename TImpl>
-int TSynRegistry<TImpl>::VGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value)
-{
-    return TImpl::TGet(sections, names, default_value);
-}
-
-template <typename TImpl>
-double TSynRegistry<TImpl>::VGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value)
-{
-    return TImpl::TGet(sections, names, default_value);
-}
+extern template NCBI_XCONNECT_EXPORT string CSynRegistry::TGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value);
+extern template NCBI_XCONNECT_EXPORT bool   CSynRegistry::TGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value);
+extern template NCBI_XCONNECT_EXPORT int    CSynRegistry::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
+extern template NCBI_XCONNECT_EXPORT double CSynRegistry::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
 
 END_NCBI_SCOPE
 
