@@ -821,6 +821,8 @@ protected:
 
 private:
     bool x_AssignParams(void);
+
+    string m_DynamicID;
 };
 
 

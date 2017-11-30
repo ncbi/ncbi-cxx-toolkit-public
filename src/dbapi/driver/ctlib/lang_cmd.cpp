@@ -901,10 +901,35 @@ bool CTL_LangCmd::Send()
 
     SetHasFailed(false);
 
-    CheckSFB(ct_command(x_GetSybaseCmd(), CS_LANG_CMD,
-                        const_cast<char*>(GetQuery().data()),
-                        GetQuery().size(), CS_END),
-             "ct_command failed", 120001);
+    if (m_DynamicID.empty()  &&  GetBindParamsImpl().NofParams() > 0
+        &&  GetQuery().find('?') != NPOS) {
+        m_DynamicID = NStr::NumericToString(reinterpret_cast<uintptr_t>(this),
+                                            0, 16);
+        CheckSFB(ct_dynamic(x_GetSybaseCmd(), CS_PREPARE,
+                            const_cast<char*>(m_DynamicID.data()),
+                            m_DynamicID.size(),
+                            const_cast<char*>(GetQuery().data()),
+                            GetQuery().size()),
+                 "ct_dynamic(CS_PREPARE) failed", 120002);
+        if ( !SendInternal() ) {
+            return false;
+        }
+        while (HasMoreResults()) {
+            unique_ptr<CDB_Result> r(Result());
+        }
+    }
+
+    if (m_DynamicID.empty()) {
+        CheckSFB(ct_command(x_GetSybaseCmd(), CS_LANG_CMD,
+                            const_cast<char*>(GetQuery().data()),
+                            GetQuery().size(), CS_END),
+                 "ct_command failed", 120001);
+    } else {
+        CheckSFB(ct_dynamic(x_GetSybaseCmd(), CS_EXECUTE,
+                            const_cast<char*>(m_DynamicID.data()),
+                            m_DynamicID.size(), NULL, 0),
+                 "ct_dynamic(CS_EXECUTE) failed", 120004);
+    }
 
 
     SetHasFailed(!x_AssignParams());
@@ -933,6 +958,20 @@ int CTL_LangCmd::RowCount() const
 
 CTL_LangCmd::~CTL_LangCmd()
 {
+    if ( !m_DynamicID.empty() ) {
+        try {
+            CheckSFB(ct_dynamic(x_GetSybaseCmd(), CS_DEALLOC,
+                                const_cast<char*>(m_DynamicID.data()),
+                                m_DynamicID.size(), NULL, 0),
+                     "ct_dynamic(CS_DEALLOC) failed", 120005);
+            if (SendInternal()) {
+                while (HasMoreResults()) {
+                    unique_ptr<CDB_Result> r(Result());
+                }
+            }
+        }
+        NCBI_CATCH_ALL_X( 6, NCBI_CURRENT_FUNCTION )
+    }
     try {
         DropCmd(*this);
 
