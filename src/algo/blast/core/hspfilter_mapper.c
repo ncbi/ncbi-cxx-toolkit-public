@@ -3039,8 +3039,12 @@ s_FindSpliceJunctions(HSPChain* chains,
             }
             /* if not a spliced alignment */
             else if (next->hsp->query.offset - h->hsp->query.end < 10 &&
-                     next->hsp->query.offset - h->hsp->query.end ==
-                     next->hsp->subject.offset - h->hsp->subject.end) {
+                     /* This condition is needed only because
+                        s_ExtendAlignment funcition is constranined to allow
+                        up to one gap. It can be lifted once the function is
+                        updated */
+                     abs((next->hsp->query.offset - h->hsp->query.end) -
+                         (next->hsp->subject.offset - h->hsp->subject.end)) < 2) {
 
                 /* save pointer to hsps after next */
                 HSPContainer* following = h->next->next;
@@ -3071,6 +3075,7 @@ s_FindSpliceJunctions(HSPChain* chains,
                     HSPContainerFree(h->next);
                     h->hsp = new_hsp;
                     h->next = following;
+                    searched = TRUE;
                 }
                 else {
                     /* something went wrong with merging, use the initial
@@ -3217,8 +3222,9 @@ static HSPChain* s_FindBestPath(HSPNode* nodes, Int4 num, HSPPath* path,
                     s_FindSpliceJunctions(chain, query_blk, query_info,
                                           scoring_opts);
 
-                    if ((chain->hsps->hsp->map_info->right_edge &
-                         MAPPER_SPLICE_SIGNAL) == 0) {
+                    if (chain->hsps->next &&
+                        ((chain->hsps->hsp->map_info->right_edge &
+                          MAPPER_SPLICE_SIGNAL) == 0)) {
 
 /*                        new_score += scoring_opts->no_splice_signal; */
                         /* FIXME: temporarely, do not create chains if splice
