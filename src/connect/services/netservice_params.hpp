@@ -205,7 +205,12 @@ protected:
 
 class NCBI_XCONNECT_EXPORT CSynRegistryImpl : public ISynRegistry
 {
+    class CReport;
+
 public:
+    CSynRegistryImpl();
+    ~CSynRegistryImpl();
+
     void Add(const IRegistry& registry) override;
     IRegistry& GetIRegistry() override;
     void Report(ostream& os) const override;
@@ -219,34 +224,10 @@ protected:
 private:
     CCompoundRegistry m_Registry;
     int m_Priority = 0;
-};
-
-using CSynRegistry = TSynRegistry<CSynRegistryImpl>;
-
-class NCBI_XCONNECT_EXPORT CReportSynRegistryImpl : public ISynRegistry
-{
-    class CReport;
-
-public:
-    CReportSynRegistryImpl(ISynRegistry::TPtr registry);
-    ~CReportSynRegistryImpl();
-
-    void Add(const IRegistry& registry) override;
-    IRegistry& GetIRegistry() override;
-    void Report(ostream& os) const override;
-
-protected:
-    template <typename TType>
-    TType TGet(const SRegSynonyms& sections, SRegSynonyms names, TType default_value);
-
-    bool HasImpl(const string& section, const string& name) final;
-
-private:
-    ISynRegistry::TPtr m_Registry;
     unique_ptr<CReport> m_Report;
 };
 
-using CReportSynRegistry = TSynRegistry<CReportSynRegistryImpl>;
+using CSynRegistry = TSynRegistry<CSynRegistryImpl>;
 
 class NCBI_XCONNECT_EXPORT CIncludeSynRegistryImpl : public ISynRegistry
 {
@@ -325,11 +306,6 @@ extern template NCBI_XCONNECT_EXPORT string CSynRegistryImpl::TGet(const SRegSyn
 extern template NCBI_XCONNECT_EXPORT bool   CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value);
 extern template NCBI_XCONNECT_EXPORT int    CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
 extern template NCBI_XCONNECT_EXPORT double CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
-
-extern template NCBI_XCONNECT_EXPORT string CReportSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value);
-extern template NCBI_XCONNECT_EXPORT bool   CReportSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value);
-extern template NCBI_XCONNECT_EXPORT int    CReportSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
-extern template NCBI_XCONNECT_EXPORT double CReportSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
 
 extern template NCBI_XCONNECT_EXPORT string CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value);
 extern template NCBI_XCONNECT_EXPORT bool   CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value);

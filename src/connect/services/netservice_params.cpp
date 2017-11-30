@@ -176,7 +176,7 @@ ostream& operator<<(ostream& os, SListReporter<TParam>)
     return os << SParamReporter<TParam>();
 }
 
-class CReportSynRegistryImpl::CReport
+class CSynRegistryImpl::CReport
 {
 public:
     template <typename TType>
@@ -193,7 +193,7 @@ private:
     mutable mutex m_Mutex;
 };
 
-void CReportSynRegistryImpl::CReport::Report(ostream& os) const
+void CSynRegistryImpl::CReport::Report(ostream& os) const
 {
     lock_guard<mutex> lock(m_Mutex);
 
@@ -229,7 +229,7 @@ void CReportSynRegistryImpl::CReport::Report(ostream& os) const
 }
 
 template <typename TType>
-void CReportSynRegistryImpl::CReport::Add(const SRegSynonyms& sections, SRegSynonyms names, TType value)
+void CSynRegistryImpl::CReport::Add(const SRegSynonyms& sections, SRegSynonyms names, TType value)
 {
     _ASSERT(sections.size());
     _ASSERT(names.size());
@@ -275,6 +275,15 @@ SRegSynonyms CIncludeSynRegistryImpl::CInclude::Get(const SRegSynonyms& sections
     return rv;
 }
 
+CSynRegistryImpl::CSynRegistryImpl() :
+    m_Report(new CReport)
+{
+}
+
+CSynRegistryImpl::~CSynRegistryImpl()
+{
+}
+
 void CSynRegistryImpl::Add(const IRegistry& registry)
 {
     // Always add a registry as new top priority
@@ -286,9 +295,9 @@ IRegistry& CSynRegistryImpl::GetIRegistry()
     return m_Registry;
 }
 
-void CSynRegistryImpl::Report(ostream&) const
+void CSynRegistryImpl::Report(ostream& os) const
 {
-    NCBI_ALWAYS_TROUBLE("Not implemented");
+    m_Report->Report(os);
 }
 
 template <typename TType>
@@ -303,7 +312,9 @@ TType CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, T
             if (!HasImpl(section, name)) continue;
 
             try {
-                return m_Registry.GetValue(section, name, default_value, IRegistry::eThrow);
+                auto rv = m_Registry.GetValue(section, name, default_value, IRegistry::eThrow);
+                m_Report->Add(sections, names, rv);
+                return rv;
             }
             catch (CStringException& ex) {
                 LOG_POST(Warning << ex.what());
@@ -314,6 +325,7 @@ TType CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, T
         }
     }
 
+    m_Report->Add(sections, names, default_value);
     return default_value;
 }
 
@@ -341,58 +353,6 @@ template string CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonym
 template bool   CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value);
 template int    CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
 template double CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
-
-CReportSynRegistryImpl::CReportSynRegistryImpl(ISynRegistry::TPtr registry) :
-    m_Registry(registry),
-    m_Report(new CReport)
-{
-}
-
-CReportSynRegistryImpl::~CReportSynRegistryImpl()
-{
-}
-
-void CReportSynRegistryImpl::Add(const IRegistry& registry)
-{
-    _ASSERT(m_Registry);
-
-    m_Registry->Add(registry);
-}
-
-IRegistry& CReportSynRegistryImpl::GetIRegistry()
-{
-    _ASSERT(m_Registry);
-
-    return m_Registry->GetIRegistry();
-}
-
-void CReportSynRegistryImpl::Report(ostream& os) const
-{
-    m_Report->Report(os);
-}
-
-template <typename TType>
-TType CReportSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, TType default_value)
-{
-    _ASSERT(m_Registry);
-
-    auto rv = m_Registry->Get(sections, names, default_value);
-
-    m_Report->Add(sections, names, rv);
-    return rv;
-}
-
-bool CReportSynRegistryImpl::HasImpl(const string& section, const string& name)
-{
-    _ASSERT(m_Registry);
-
-    return m_Registry->Has(section, name);
-}
-
-template string CReportSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value);
-template bool   CReportSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value);
-template int    CReportSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
-template double CReportSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
 
 CIncludeSynRegistryImpl::CIncludeSynRegistryImpl(ISynRegistry::TPtr registry) :
     m_Registry(registry),
@@ -448,8 +408,7 @@ template double CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SReg
 ISynRegistry::TPtr s_CreateISynRegistry(const CNcbiApplication* app)
 {
     auto syn_registry = new CSynRegistry;
-    auto include_registry = new CIncludeSynRegistry(syn_registry->MakePtr());
-    ISynRegistry::TPtr registry(new CReportSynRegistry(include_registry->MakePtr()));
+    ISynRegistry::TPtr registry(new CIncludeSynRegistry(syn_registry->MakePtr()));
 
 
     if (app) {
