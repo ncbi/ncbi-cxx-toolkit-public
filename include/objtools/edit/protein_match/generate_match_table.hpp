@@ -47,6 +47,7 @@ class CSeq_table;
 class CScope;
 struct SOverwriteIdInfo;
 class CMatchIdInfo;
+class CUpdateProtIdSelect_Base;
 
 class CMatchTabulate {
 
@@ -181,6 +182,10 @@ private:
         const string& nuc_accession,
         const CProtMatchInfo& prot_match_info);
 
+    void x_AppendMatchedProtein(
+        const CMatchIdInfo& id_info,
+        const CProtMatchInfo& prot_match_info);
+
     void x_AppendUnchangedProtein(
         const string& nuc_accession,
         const string& prot_accession);
@@ -240,6 +245,21 @@ private:
     bool mMatchTableInitialized;
 
     CRef<CScope> m_DBScope;
+    unique_ptr<CUpdateProtIdSelect_Base> m_pUpdateProtIdSelect;
+};
+
+
+
+class CUpdateProtIdSelect_Base {
+public:
+    virtual ~CUpdateProtIdSelect_Base(void) = default;
+    virtual CRef<CSeq_id> GetBestId(const list<CRef<CSeq_id>>& prot_id) = 0;
+};
+
+
+class CUpdateProtIdSelect : public CUpdateProtIdSelect_Base  {
+public:
+    CRef<CSeq_id> GetBestId(const list<CRef<CSeq_id>>& prot_id) override;
 };
 
 

@@ -864,6 +864,8 @@ bool CProteinMatchApp::x_InitNucProtSetMatch(const CBioseq_set& nuc_prot_set,
 
     const bool exclude_local_prot_ids = GetArgs()["no-local-match"];
     CRef<CBioseq_set> core_nuc_prot_set = m_pMatchSetup->GetCoreNucProtSet(nuc_prot_set, exclude_local_prot_ids);
+    //CRef<CBioseq_set> core_nuc_prot_set(new CBioseq_set());
+    //core_nuc_prot_set->Assign(nuc_prot_set);
 
     x_RelabelNucSeq(*core_nuc_prot_set); 
 
