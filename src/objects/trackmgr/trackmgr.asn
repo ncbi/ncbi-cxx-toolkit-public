@@ -312,7 +312,7 @@ TMgr-CreateRemoteTrackRequest ::= SEQUENCE {
     identity TMgr-Identity,
     track-name VisibleString OPTIONAL,
     assembly-acc VisibleString,
-	file_type VisibleString,
+    file-type VisibleString,
     url VisibleString
 }
 
