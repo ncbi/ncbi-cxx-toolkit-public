@@ -2153,8 +2153,7 @@ public:
         // Store separate SBestInfo for each child/parent candidate.
         SBestInfo info;
         info.CheckBest(quality, overlap, parent);
-        TChildren::iterator ci = m_Children.find(child);
-        _ASSERT(ci != m_Children.end());
+        _ASSERT(m_Children.find(child) != m_Children.end());
         SCandidates& c = m_Children[child];
         if ( !c.parents.empty() ) {
             m_IsAmbiguous = true;
