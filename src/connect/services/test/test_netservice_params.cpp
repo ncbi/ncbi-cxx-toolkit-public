@@ -595,8 +595,7 @@ BOOST_AUTO_TEST_CASE(IncludeSynRegistry)
         param.SetIncluded(registries);
     }
 
-    CSynRegistry syn_registry;
-    CIncludeSynRegistry include_registry(syn_registry.MakeRef());
+    CSynRegistry include_registry;
 
     for (auto& registry : registries) {
         include_registry.Add(registry);

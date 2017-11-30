@@ -242,17 +242,17 @@ void CSynRegistryImpl::CReport::Add(const SRegSynonyms& sections, SRegSynonyms n
     m_Values.emplace_back(move(s), move(n), move(v));
 }
 
-class CIncludeSynRegistryImpl::CInclude
+class CSynRegistryImpl::CInclude
 {
 public:
-    SRegSynonyms Get(const SRegSynonyms& sections, ISynRegistry& registry);
+    SRegSynonyms Get(const SRegSynonyms& sections, IRegistry& registry);
 
 private:
     unordered_map<string, vector<string>> m_Includes;
     mutex m_Mutex;
 };
 
-SRegSynonyms CIncludeSynRegistryImpl::CInclude::Get(const SRegSynonyms& sections, ISynRegistry& registry)
+SRegSynonyms CSynRegistryImpl::CInclude::Get(const SRegSynonyms& sections, IRegistry& registry)
 {
     SRegSynonyms rv{};
     lock_guard<mutex> lock(m_Mutex);
@@ -263,7 +263,7 @@ SRegSynonyms CIncludeSynRegistryImpl::CInclude::Get(const SRegSynonyms& sections
 
         // Have not checked for '.include' yet
         if (result.second) {
-            auto included_value = registry.Get(string(section), ".include", kEmptyStr);
+            auto included_value = registry.Get(string(section), ".include");
             auto flags = NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate;
             NStr::Split(included_value, ",; \t\n\r", included, flags);
         }
@@ -276,7 +276,8 @@ SRegSynonyms CIncludeSynRegistryImpl::CInclude::Get(const SRegSynonyms& sections
 }
 
 CSynRegistryImpl::CSynRegistryImpl() :
-    m_Report(new CReport)
+    m_Report(new CReport),
+    m_Include(new CInclude)
 {
 }
 
@@ -307,9 +308,11 @@ TType CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, T
     _ASSERT(sections.size());
     _ASSERT(names.size());
 
-    for (const auto& section : sections) {
+    const auto sections_plus_included = m_Include->Get(sections, m_Registry);
+
+    for (const auto& section : sections_plus_included) {
         for (const auto& name : names) {
-            if (!HasImpl(section, name)) continue;
+            if (!m_Registry.HasEntry(section, name)) continue;
 
             try {
                 auto rv = m_Registry.GetValue(section, name, default_value, IRegistry::eThrow);
@@ -346,7 +349,14 @@ bool ISynRegistry::Has(const SRegSynonyms& sections, SRegSynonyms names)
 bool CSynRegistryImpl::HasImpl(const string& section, const string& name)
 {
     _ASSERT(m_Priority);
-    return m_Registry.HasEntry(section, name);
+
+    const auto sections_plus_included = m_Include->Get(section, m_Registry);
+
+    for (const auto& s : sections_plus_included) {
+        if (m_Registry.HasEntry(s, name)) return true;
+    }
+
+    return false;
 }
 
 template string CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value);
@@ -354,61 +364,9 @@ template bool   CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonym
 template int    CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
 template double CSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
 
-CIncludeSynRegistryImpl::CIncludeSynRegistryImpl(ISynRegistry::TPtr registry) :
-    m_Registry(registry),
-    m_Include(new CInclude)
-{
-}
-
-CIncludeSynRegistryImpl::~CIncludeSynRegistryImpl()
-{
-}
-
-void CIncludeSynRegistryImpl::Add(const IRegistry& registry)
-{
-    _ASSERT(m_Registry);
-
-    m_Registry->Add(registry);
-}
-
-IRegistry& CIncludeSynRegistryImpl::GetIRegistry()
-{
-    _ASSERT(m_Registry);
-
-    return m_Registry->GetIRegistry();
-}
-
-void CIncludeSynRegistryImpl::Report(ostream& os) const
-{
-    m_Registry->Report(os);
-}
-
-template <typename TType>
-TType CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, TType default_value)
-{
-    _ASSERT(m_Registry);
-
-    const auto sections_plus_included = m_Include->Get(sections, *m_Registry);
-    return m_Registry->Get(sections_plus_included, names, default_value);
-}
-
-bool CIncludeSynRegistryImpl::HasImpl(const string& section, const string& name)
-{
-    _ASSERT(m_Registry);
-
-    const auto sections_plus_included = m_Include->Get(section, *m_Registry);
-    return m_Registry->Has(sections_plus_included, name);
-}
-
-template string CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, string default_value);
-template bool   CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, bool default_value);
-template int    CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, int default_value);
-template double CIncludeSynRegistryImpl::TGet(const SRegSynonyms& sections, SRegSynonyms names, double default_value);
-
 ISynRegistry::TPtr s_CreateISynRegistry(const CNcbiApplication* app)
 {
-    auto syn_registry = new CSynRegistry;
-    ISynRegistry::TPtr registry(new CIncludeSynRegistry(syn_registry->MakePtr()));
+    ISynRegistry::TPtr registry(new CSynRegistry);
 
 
     if (app) {
