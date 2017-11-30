@@ -123,6 +123,26 @@ bool GetDescr(const CSeq_entry& entry, const CSeq_descr* &descrs)
     return ret;
 }
 
+bool GetNonConstDescr(CSeq_entry& entry, CSeq_descr* &descrs)
+{
+    bool ret = true;
+    if (entry.IsSeq()) {
+        if (entry.GetSeq().IsSetDescr()) {
+            descrs = &entry.SetSeq().SetDescr();
+        }
+    }
+    else if (entry.IsSet()) {
+        if (entry.GetSet().IsSetDescr()) {
+            descrs = &entry.SetSet().SetDescr();
+        }
+    }
+    else {
+        ret = false;
+    }
+
+    return ret;
+}
+
 bool GetAnnot(const CSeq_entry& entry, const CBioseq::TAnnot* &annot)
 {
     bool ret = true;
@@ -134,6 +154,26 @@ bool GetAnnot(const CSeq_entry& entry, const CBioseq::TAnnot* &annot)
     else if (entry.IsSet()) {
         if (entry.GetSet().IsSetDescr()) {
             annot = &entry.GetSet().GetAnnot();
+        }
+    }
+    else {
+        ret = false;
+    }
+
+    return ret;
+}
+
+bool GetNonConstAnnot(CSeq_entry& entry, CBioseq::TAnnot* &annot)
+{
+    bool ret = true;
+    if (entry.IsSeq()) {
+        if (entry.GetSeq().IsSetDescr()) {
+            annot = &entry.SetSeq().SetAnnot();
+        }
+    }
+    else if (entry.IsSet()) {
+        if (entry.GetSet().IsSetDescr()) {
+            annot = &entry.SetSet().SetAnnot();
         }
     }
     else {
@@ -252,8 +292,7 @@ string GetIdStr(const CObject_id& obj_id)
         ret = obj_id.GetStr();
     }
     else if (obj_id.IsId()) {
-        Int8 id = obj_id.GetId8();
-        ret = NStr::Int8ToString(id);
+        ret = to_string(obj_id.GetId8());
     }
 
     return ret;

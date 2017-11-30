@@ -548,7 +548,7 @@ static void SetMolInfo(CBioseq& bioseq)
     bioseq.SetDescr().Set().push_back(descr);
 }
 
-static void CreateCitSub(CBioseq& bioseq, CCit_sub& cit_sub)
+static CRef<CSeqdesc> CreateCitSub(CCit_sub& cit_sub)
 {
     CRef<CPub> pub(new CPub);
     pub->SetSub().Assign(cit_sub);
@@ -558,14 +558,14 @@ static void CreateCitSub(CBioseq& bioseq, CCit_sub& cit_sub)
     CPubdesc& pubdescr = descr->SetPub();
     pubdescr.SetPub().Set().push_back(pub);
 
-    bioseq.SetDescr().Set().push_back(descr);
-
     if (cit_sub.IsSetImp()) {
         if (!cit_sub.IsSetDate() && cit_sub.GetImp().IsSetDate()) {
             cit_sub.SetDate().Assign(cit_sub.GetImp().GetDate());
         }
         cit_sub.ResetImp();
     }
+
+    return descr;
 }
 
 static void AddContactInfo(CCit_sub& cit_sub, const CContact_info& contact_info)
@@ -715,7 +715,7 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
     // TODO
 
     if (cit_sub.NotEmpty()) {
-        CreateCitSub(*bioseq, *cit_sub);
+        bioseq->SetDescr().Set().push_back(CreateCitSub(*cit_sub));
         if (contact_info.NotEmpty()) {
             AddContactInfo(*cit_sub, *contact_info);
         }
@@ -791,25 +791,18 @@ static bool IsDateFound(const CSeq_descr::Tdata& descrs, CSeqdesc::E_Choice choi
 
 static bool IsDatePresent(const CSeq_entry& entry, CSeqdesc::E_Choice choice)
 {
-    if (entry.IsSeq()) {
-
-        if (entry.GetSeq().IsSetDescr() && entry.GetSeq().GetDescr().IsSet()) {
-            return IsDateFound(entry.GetSeq().GetDescr().Get(), choice);
+    const CSeq_descr* descrs = nullptr;
+    if (GetDescr(entry, descrs) && descrs->IsSet()) {
+        if (IsDateFound(descrs->Get(), choice)) {
+            return true;
         }
     }
-    else if (entry.IsSet()) {
 
-        if (entry.GetSet().IsSetDescr() && entry.GetSet().GetDescr().IsSet()) {
-            if (IsDateFound(entry.GetSet().GetDescr().Get(), choice)) {
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.GetSet().GetSeq_set()) {
+            if (IsDatePresent(*cur_entry, choice)) {
                 return true;
-            }
-        }
-
-        if (entry.GetSet().IsSetSeq_set()) {
-            for (auto& cur_entry : entry.GetSet().GetSeq_set()) {
-                if (IsDatePresent(*cur_entry, choice)) {
-                    return true;
-                }
             }
         }
     }

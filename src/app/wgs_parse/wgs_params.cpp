@@ -338,7 +338,6 @@ const CDate_std& CParams::GetSubmissionDate() const
     return m_imp->m_submission_date;
 }
 
-
 const string& CParams::GetScaffoldPrefix() const
 {
     static const map<EScaffoldType, string> SCAFFOLD_PREFIX = {
@@ -379,19 +378,22 @@ const list<string>& CParams::GetInputFiles() const
     return m_imp->m_file_list;
 }
 
+const string& CParams::GetProjPrefix() const
+{
+    if (IsTls()) {
+        return "TLS:";
+    }
+    else if (IsTsa()) {
+        "TSA:";
+    }
+    return "WGS:";
+}
+
 const string& CParams::GetProjAccStr() const
 {
     if (m_imp->m_proj_acc.empty()) {
 
-        if (IsTls()) {
-            m_imp->m_proj_acc = "TLS:";
-        }
-        else if (IsTsa()) {
-            m_imp->m_proj_acc = "TSA:";
-        }
-        else {
-            m_imp->m_proj_acc = "WGS:";
-        }
+        m_imp->m_proj_acc = GetProjPrefix();
         m_imp->m_proj_acc += m_imp->m_accession.substr(0, MAJOR_VERSION_POS);
     }
 

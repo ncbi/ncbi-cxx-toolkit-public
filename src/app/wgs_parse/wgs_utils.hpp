@@ -65,7 +65,9 @@ bool IsPubdescContainsSub(const CPubdesc& pub);
 string GetSeqIdStr(const CBioseq& bioseq);
 
 bool GetDescr(const CSeq_entry& entry, const CSeq_descr* &descrs);
+bool GetNonConstDescr(CSeq_entry& entry, CSeq_descr* &descrs);
 bool GetAnnot(const CSeq_entry& entry, const CBioseq::TAnnot* &annot);
+bool GetNonConstAnnot(CSeq_entry& entry, CBioseq::TAnnot* &annot);
 
 bool HasLineage(const string& lineage_str, const string& lineage);
 

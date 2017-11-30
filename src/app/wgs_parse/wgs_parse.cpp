@@ -43,6 +43,7 @@
 #include "wgs_params.hpp"
 #include "wgs_id1.hpp"
 #include "wgs_master.hpp"
+#include "wgs_sub.hpp"
 #include "wgs_seqentryinfo.hpp"
 
 USING_NCBI_SCOPE;
@@ -297,6 +298,10 @@ int CWGSParseApp::Run(void)
 
         if (!master_info.m_master_bioseq->GetSeq().IsNa()) {
             RemoveDupPubs(master_info.m_master_bioseq->SetDescr());
+        }
+
+        if (!ParseSubmissions(master_info)) {
+            // TODO
         }
     }
 

@@ -805,7 +805,7 @@ static void CheckSecondaries(const CBioseq& bioseq, CSeqEntryInfo& info)
                                 size_t end = NStr::StringToSizet(CTempString(accession, digits - accession.begin(), accession.size()));
 
                                 for (size_t cur_num = start; cur_num <= end; ++cur_num) {
-                                    extra_accessions.insert(prefix + NStr::SizetToString(cur_num));
+                                    extra_accessions.insert(prefix + to_string(cur_num));
                                 }
                             }
                         }
@@ -1116,27 +1116,18 @@ static bool GetDate(const CSeq_descr::Tdata& descrs, CSeqdesc::E_Choice choice, 
 
 static bool LookForDate(const CSeq_entry& entry, CSeqdesc::E_Choice choice, CDate& date)
 {
-    if (entry.IsSeq()) {
-
-        if (entry.GetSeq().IsSetDescr() && entry.GetSeq().GetDescr().IsSet()) {
-            if (GetDate(entry.GetSeq().GetDescr().Get(), choice, date)) {
-                return true;
-            }
+    const CSeq_descr* descrs = nullptr;
+    if (GetDescr(entry, descrs) && descrs->IsSet()) {
+        if (GetDate(descrs->Get(), choice, date)) {
+            return true;
         }
     }
-    else if (entry.IsSet()) {
 
-        if (entry.GetSet().IsSetDescr() && entry.GetSet().GetDescr().IsSet()) {
-            if (GetDate(entry.GetSet().GetDescr().Get(), choice, date)) {
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.GetSet().GetSeq_set()) {
+            if (LookForDate(*cur_entry, choice, date)) {
                 return true;
-            }
-        }
-
-        if (entry.GetSet().IsSetSeq_set()) {
-            for (auto& cur_entry : entry.GetSet().GetSeq_set()) {
-                if (LookForDate(*cur_entry, choice, date)) {
-                    return true;
-                }
             }
         }
     }

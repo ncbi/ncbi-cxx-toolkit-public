@@ -146,6 +146,7 @@ public:
 
     const list<string>& GetInputFiles() const;
 
+    const string& GetProjPrefix() const;
     const string& GetProjAccStr() const;
     const string& GetProjAccVerStr() const;
 
