@@ -1046,7 +1046,8 @@ void CValidError_imp::ValidateCitSub
     if (cs.IsSetDate()) {
         int rval = CheckDate (cs.GetDate());
         if (rval == eDateValid_valid) {
-            if (!IsDateInPast(cs.GetDate())) {
+            time_t time_now = time(NULL);
+            if (CSubSource::IsCollectionDateAfterTime(cs.GetDate(), time_now)) {
                 PostObjErr(eDiag_Error, eErr_GENERIC_BadDate, "Submission citation date is in the future", obj, ctx);
             }
         } else {
