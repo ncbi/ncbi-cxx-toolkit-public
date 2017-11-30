@@ -137,6 +137,7 @@ public:
     int               GetPMID      (void) const { return m_PMID;               }
     int               GetMUID      (void) const { return m_MUID;               }
     const string&     GetPII       (void) const { return m_ELocationPII;       }
+    const string&     GetOldPII    (void) const { return m_OldPII;             }
 
     const string&     GetTitle     (void) const { return m_Title;              }
     
@@ -214,6 +215,7 @@ private:
     int                   m_PMID;
     int                   m_MUID;
     string                m_ELocationPII;
+    string                m_OldPII;
     int                   m_Serial;
     mutable string        m_UniqueStr;
     bool                  m_JustUids;

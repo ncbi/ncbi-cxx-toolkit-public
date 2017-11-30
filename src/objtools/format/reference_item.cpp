@@ -1020,6 +1020,14 @@ void CReferenceItem::x_Init(const CCit_art& art, CBioseqContext& ctx)
                     m_MUID = (*it)->GetMedline();
                 }
                 break;
+            case CArticleId::e_Pii:
+                {
+                    const string& pii = (*it)->GetPii();
+                    if (PiiOk (pii)) {
+                        m_OldPII = pii;
+                    }
+                }
+                break;
             case CArticleId_Base::e_Other:
                 {
                     const CDbtag& dbt = (*it)->GetOther();
