@@ -472,7 +472,7 @@ RunTest()
     x_test="\$2"
     x_app="\$3"
     x_run="\${4:-\$x_app}"
-    x_real_name="\$5"
+    x_alias="\$5"
     x_name="\${5:-\$x_run}"
     x_ext="\$6"
     x_timeout="\$7"
@@ -489,6 +489,8 @@ RunTest()
 
     # Run test under all specified check tools   
     for tool in \$NCBI_CHECK_TOOLS; do
+
+        saved_phid=''
 
         tool_lo=\`echo \$tool | tr '[A-Z]' '[a-z]'\`
         tool_up=\`echo \$tool | tr '[a-z]' '[A-Z]'\`
@@ -516,7 +518,7 @@ RunTest()
            echo "\$signature \$NCBI_CHECK_OS_NAME" > "\$x_test_rep"
            echo "\$x_work_dir_tail" >> "\$x_test_rep"
            echo "\$x_run" >> "\$x_test_rep"
-           echo "\$x_real_name" >> "\$x_test_rep"
+           echo "\$x_alias" >> "\$x_test_rep"
            NCBI_BOOST_REPORT_FILE="\$x_boost_rep"
            export NCBI_BOOST_REPORT_FILE
         fi
@@ -607,6 +609,12 @@ RunTest()
                 NCBI_CONFIG__LOG__FILE=
                 export NCBI_CONFIG__LOG__FILE
                 eval "\`ncbi_applog generate -phid -sid -format=shell-export\`"
+                if \$is_run && \$is_db_load; then
+                   # Use generated PHID for test statistics, and sub-PHID.1 for test itself
+                   saved_phid=\$NCBI_LOG_HIT_ID
+                   NCBI_LOG_HIT_ID=\$NCBI_LOG_HIT_ID.1
+                   export NCBI_LOG_HIT_ID
+                fi
                 NCBI_CONFIG__LOG__FILE=\$logfile
                 export NCBI_CONFIG__LOG__FILE
 
@@ -767,7 +775,9 @@ EOF_launch
         # Always load test results for automated builds on a 'run' command.
         
         if \$is_run && \$is_db_load; then
-            case \`uname -s\` in
+           NCBI_LOG_HIT_ID=\$saved_phid
+           export NCBI_LOG_HIT_ID
+           case \`uname -s\` in
               CYGWIN* )
                 test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" >> "$x_build_dir/test_stat_load.log" 2>&1 ;;
               IRIX* )
