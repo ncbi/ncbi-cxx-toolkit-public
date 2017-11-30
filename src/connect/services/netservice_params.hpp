@@ -214,11 +214,7 @@ protected:
     template <typename TType>
     TType TGet(const SRegSynonyms& sections, SRegSynonyms names, TType default_value);
 
-    bool HasImpl(const string& section, const string& name) final
-    {
-        _ASSERT(m_Priority);
-        return m_Registry.HasEntry(section, name);
-    }
+    bool HasImpl(const string& section, const string& name) final;
 
 private:
     CCompoundRegistry m_Registry;
