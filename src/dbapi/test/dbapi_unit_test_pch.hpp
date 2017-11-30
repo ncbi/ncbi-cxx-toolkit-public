@@ -45,11 +45,28 @@
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
 
 
+// Note: there are a few important details in case of a CDB_TimeoutEx for the
+// DBAPI_BOOST_FAIL() macro below.
+// - It is not thread safe because the error message is saved in a static
+//   buffer. This is however a rare case.
+// - The static buffer is required to avoid illegal reading detected by
+//   valgrind in case if BOOST_TIMEOUT(string(ex.what())); is used.
+//   The BOOST_TIMEOUT macro is eventually expanded as
+//   throw boost::execution_exception(...); and this particular boost exception
+//   works well only with constants or a some kind of persistent memory.
+//   See here:
+//   http://www.boost.org/doc/libs/1_61_0/libs/test/doc/html/boost/execution_exception.html
+//   So a static buffer looks good enough to avoid unnecessary valgrind
+//   complains.
 #define DBAPI_BOOST_FAIL(ex)                                                \
     do {                                                                    \
         const CDB_TimeoutEx* to = dynamic_cast<const CDB_TimeoutEx*>(&ex);  \
-        if (to)                                                             \
-            BOOST_TIMEOUT(string(ex.what()));                               \
+        if (to) {                                                           \
+            const size_t    buf_size = 8192;                                \
+            static char     buf[buf_size];                                  \
+            strncpy(buf, ex.what(), buf_size - 1);                          \
+            BOOST_TIMEOUT(buf);                                             \
+        }                                                                   \
         else                                                                \
             BOOST_FAIL(string(ex.what()));                                  \
     } while (0)                                                             \
