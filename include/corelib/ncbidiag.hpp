@@ -1197,6 +1197,9 @@ public:
     /// Reset IsConsole flag.
     void ResetIsConsoleFlag(void) const { m_PostFlags &= ~eDPF_IsConsole; }
 
+    bool GetOmitStackTrace(void) const { return m_OmitStackTrace; }
+    void SetOmitStackTrace(bool value) { m_OmitStackTrace = value; }
+
     /// Set important flags to their globally set values
     /// @sa EDiagPostFlags
     static TDiagPostFlags ForceImportantFlags(TDiagPostFlags flags);
@@ -1207,6 +1210,7 @@ private:
     mutable int            m_ErrSubCode;   ///< Error subcode
     CDiagBuffer&           m_Buffer;       ///< This thread's error msg. buffer
     mutable TDiagPostFlags m_PostFlags;    ///< Bitwise OR of "EDiagPostFlag"
+    mutable bool           m_OmitStackTrace;
 
     mutable CDiagCompileInfo m_CompileInfo;
 
@@ -1652,6 +1656,8 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     /// Special flag indicating that the message should not be printed by
     /// Tee-handler.
     bool             m_NoTee;
+
+    bool m_PrintStackTrace; // Print stack trace after the message
 
     /// Convert extra arguments to string
     string FormatExtraMessage(void) const;

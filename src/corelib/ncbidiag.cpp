@@ -3954,6 +3954,25 @@ void CDiagBuffer::Flush(void)
 }
 
 
+NCBI_PARAM_ENUM_DECL(EDiagSev, DEBUG, Stack_Trace_Level);
+NCBI_PARAM_ENUM_ARRAY(EDiagSev, DEBUG, Stack_Trace_Level)
+{
+    {"Trace",    eDiag_Trace},
+    {"Info",     eDiag_Info},
+    {"Warning",  eDiag_Warning},
+    {"Error",    eDiag_Error},
+    {"Critical", eDiag_Critical},
+    {"Fatal",    eDiag_Fatal}
+};
+NCBI_PARAM_ENUM_DEF_EX(EDiagSev,
+                       DEBUG,
+                       Stack_Trace_Level,
+                       eDiag_Fatal,
+                       eParam_NoThread, // No per-thread values
+                       DEBUG_STACK_TRACE_LEVEL);
+typedef NCBI_PARAM_TYPE(DEBUG, Stack_Trace_Level) TStackTraceLevelParam;
+
+
 void CDiagBuffer::PrintMessage(SDiagMessage& mess, const CNcbiDiag& diag)
 {
     EDiagSev sev = diag.GetSeverity();
@@ -3970,6 +3989,10 @@ void CDiagBuffer::PrintMessage(SDiagMessage& mess, const CNcbiDiag& diag)
             // the console now.
             return;
         }
+    }
+    if ( !diag.GetOmitStackTrace() ) {
+        EDiagSev stack_sev = TStackTraceLevelParam::GetDefault();
+        mess.m_PrintStackTrace = (sev == stack_sev) || (sev > stack_sev && sev != eDiag_Trace);
     }
     DiagHandler(mess);
 }
@@ -4033,6 +4056,7 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
     : m_Event(eEvent_Start),
       m_TypedExtra(false),
       m_NoTee(false),
+      m_PrintStackTrace(false),
       m_Data(0),
       m_Format(eFormat_Auto),
       m_AllowBadExtraNames(false)
@@ -4096,6 +4120,7 @@ SDiagMessage::SDiagMessage(const string& message, bool* result)
       m_Event(eEvent_Start),
       m_TypedExtra(false),
       m_NoTee(false),
+      m_PrintStackTrace(false),
       m_Data(0),
       m_Format(eFormat_Auto),
       m_AllowBadExtraNames(false)
@@ -4137,6 +4162,7 @@ SDiagMessage::SDiagMessage(const SDiagMessage& message)
       m_Event(eEvent_Start),
       m_TypedExtra(false),
       m_NoTee(false),
+      m_PrintStackTrace(false),
       m_Data(0),
       m_Format(eFormat_Auto),
       m_AllowBadExtraNames(false)
@@ -5051,6 +5077,16 @@ NCBI_PARAM_ENUM_DEF_EX(EDiagMergeLines, Diag, Merge_Lines,
 typedef NCBI_PARAM_TYPE(Diag, Merge_Lines) TDiagMergeLines;
 
 
+// Formatted output of stack trace
+void s_FormatStackTrace(CNcbiOstream& os, const CStackTrace& trace)
+{
+    string old_prefix = trace.GetPrefix();
+    trace.SetPrefix("      ");
+    os << "\n     Stack trace:\n" << trace;
+    trace.SetPrefix(old_prefix);
+}
+
+
 CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& out_str,
                                        TDiagWriteFlags flags) const
 {
@@ -5206,6 +5242,10 @@ CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& out_str,
         if (IsSetDiagPostFlag(eDPF_ErrCodeExplanation, m_Flags) &&
             !description.m_Explanation.empty())
             os << NcbiEndl << description.m_Explanation;
+    }
+
+    if ( m_PrintStackTrace ) {
+        s_FormatStackTrace(os, CStackTrace());
     }
 
     string buf = CNcbiOstrstreamToString(os);
@@ -5367,6 +5407,10 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& out_str,
         if (IsSetDiagPostFlag(eDPF_ErrCodeExplanation, m_Flags) &&
             !description.m_Explanation.empty())
             os << '\n' << description.m_Explanation;
+    }
+
+    if ( m_PrintStackTrace ) {
+        s_FormatStackTrace(os, CStackTrace());
     }
 
     string buf = CNcbiOstrstreamToString(os);
@@ -7139,7 +7183,8 @@ CNcbiDiag::CNcbiDiag(EDiagSev sev, TDiagPostFlags post_flags)
       m_ErrCode(0), 
       m_ErrSubCode(0),
       m_Buffer(GetDiagBuffer()), 
-      m_PostFlags(ForceImportantFlags(post_flags))
+      m_PostFlags(ForceImportantFlags(post_flags)),
+      m_OmitStackTrace(false)
 {
 }
 
@@ -7151,6 +7196,7 @@ CNcbiDiag::CNcbiDiag(const CDiagCompileInfo &info,
       m_ErrSubCode(0),
       m_Buffer(GetDiagBuffer()),
       m_PostFlags(ForceImportantFlags(post_flags)),
+      m_OmitStackTrace(false),
       m_CompileInfo(info)
 {
     SetFile(   info.GetFile()   );
@@ -7212,16 +7258,6 @@ bool CNcbiDiag::CheckFilters(const CException* ex) const
     }
     // check for post filter
     return  s_PostFilter->Check(*this, ex) != eDiagFilter_Reject;
-}
-
-
-// Formatted output of stack trace
-void s_FormatStackTrace(CNcbiOstream& os, const CStackTrace& trace)
-{
-    string old_prefix = trace.GetPrefix();
-    trace.SetPrefix("      ");
-    os << "\n     Stack trace:\n" << trace;
-    trace.SetPrefix(old_prefix);
 }
 
 
@@ -7288,6 +7324,7 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
         if ( stacktrace ) {
             CNcbiOstrstream os;
             s_FormatStackTrace(os, *stacktrace);
+            m_OmitStackTrace = true;
             text += (string) CNcbiOstrstreamToString(os);
         }
         string err_type(pex->GetType());

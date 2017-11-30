@@ -692,6 +692,7 @@ void CExceptionReporter::ReportDefaultEx(int err_code, int err_subcode,
                               flags);
     } else {
         CNcbiDiag d(info, cex->GetSeverity(), flags);
+        d.SetOmitStackTrace(true);
         d << ErrCode(err_code, err_subcode) << title << " " <<  *cex;
     }
 }
