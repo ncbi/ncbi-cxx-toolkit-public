@@ -288,7 +288,7 @@ string CRemoteAppVersion::Get(const string& v) const
         WaitOneSecond() : deadline(1) {}
         EAction Watch(TProcessHandle)
         {
-            return deadline.IsExpired() ? eStop : eContinue;
+            return deadline.IsExpired() ? eExit : eContinue;
         }
     } wait_one_second;
 
