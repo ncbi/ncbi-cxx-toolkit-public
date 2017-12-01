@@ -16,7 +16,8 @@ EXPORTS TMgr-Request, TMgr-Reply, TMgr-GenomeContext, TMgr-Status,
         TMgr-RetrieveTracksetRequest, TMgr-RetrieveTracksetReply,
         TMgr-CreateTracksetRequest, TMgr-CreateTracksetReply,
         TMgr-AttrRequest, TMgr-AttrReply, TMgr-ValueRequest, TMgr-AttrValueReply,
-        TMgr-TrackAttributes, TMgr-MessageLevel, TMgr-Message, TMgr-DatasetItemSeq;
+        TMgr-TrackAttributes, TMgr-MessageLevel, TMgr-Message, TMgr-DatasetItemSeq,
+        TMgr-CreateRemoteTrackReply, TMgr-CreateRemoteTrackRequest;
 
 IMPORTS Seq-id FROM NCBI-Seqloc
         Dbtag FROM NCBI-General;
