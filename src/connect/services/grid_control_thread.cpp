@@ -227,6 +227,11 @@ public:
         }
         os << "\n";
 
+        auto registry = node->m_SynRegistry;
+        _ASSERT(registry);
+
+        registry->Alerts(os);
+
         os << "OK:END\n";
     }
 };

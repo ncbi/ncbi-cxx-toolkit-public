@@ -265,9 +265,43 @@ SRegSynonyms CSynRegistry::CInclude::Get(const SRegSynonyms& sections, IRegistry
     return rv;
 }
 
+class CSynRegistry::CAlert
+{
+public:
+    void Set(string message);
+    void Report(ostream& os) const;
+    void Ack(size_t id);
+
+private:
+    map<size_t, string> m_Alerts;
+    size_t m_CurrentID = 0;
+    mutable mutex m_Mutex;
+};
+
+void CSynRegistry::CAlert::Set(string message)
+{
+    lock_guard<mutex> lock(m_Mutex);
+    m_Alerts.emplace(++m_CurrentID, message);
+}
+
+void CSynRegistry::CAlert::Report(ostream& os) const
+{
+    lock_guard<mutex> lock(m_Mutex);
+    for (const auto& alert : m_Alerts) {
+        os << "Alert_" << alert.first << ": \"" << alert.second << '"' << endl;
+    }
+}
+
+void CSynRegistry::CAlert::Ack(size_t id)
+{
+    lock_guard<mutex> lock(m_Mutex);
+    m_Alerts.erase(id);
+}
+
 CSynRegistry::CSynRegistry() :
     m_Report(new CReport),
-    m_Include(new CInclude)
+    m_Include(new CInclude),
+    m_Alert(new CAlert)
 {
 }
 
@@ -291,6 +325,16 @@ void CSynRegistry::Report(ostream& os) const
     m_Report->Report(os);
 }
 
+void CSynRegistry::Alerts(ostream& os) const
+{
+    m_Alert->Report(os);
+}
+
+void CSynRegistry::AckAlert(size_t id)
+{
+    m_Alert->Ack(id);
+}
+
 template <typename TType>
 TType CSynRegistry::TGet(const SRegSynonyms& sections, SRegSynonyms names, TType default_value)
 {
@@ -309,11 +353,18 @@ TType CSynRegistry::TGet(const SRegSynonyms& sections, SRegSynonyms names, TType
                 m_Report->Add(section, name, rv);
                 return rv;
             }
-            catch (CStringException& ex) {
-                LOG_POST(Warning << ex.what());
-            }
-            catch (CRegistryException& ex) {
-                LOG_POST(Warning << ex.what());
+            catch (CException& ex) {
+                string msg;
+                string separator;
+
+                for (const auto* p = &ex; p; p = p->GetPredecessor()) {
+                    msg += separator;
+                    msg += p->GetMsg();
+                    separator = ". ";
+                }
+
+                LOG_POST(Warning << msg);
+                m_Alert->Set(NStr::JsonEncode(msg));
             }
         }
     }

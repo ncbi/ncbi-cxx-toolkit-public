@@ -156,6 +156,7 @@ class NCBI_XCONNECT_EXPORT CSynRegistry
     template <typename TType> struct TR;
     class CReport;
     class CInclude;
+    class CAlert;
 
 public:
     using TPtr = shared_ptr<CSynRegistry>;
@@ -177,12 +178,15 @@ public:
     void Add(const IRegistry& registry);
     IRegistry& GetIRegistry();
     void Report(ostream& os) const;
+    void Alerts(ostream& os) const;
+    void AckAlert(size_t id);
 
 private:
     CCompoundRegistry m_Registry;
     int m_Priority = 0;
     unique_ptr<CReport> m_Report;
     unique_ptr<CInclude> m_Include;
+    unique_ptr<CAlert> m_Alert;
 };
 
 // Class to create CSynRegistry from CConfig, IRegistry or CNcbiApplication automatically
