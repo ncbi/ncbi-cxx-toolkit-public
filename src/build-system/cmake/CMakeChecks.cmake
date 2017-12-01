@@ -799,6 +799,18 @@ find_external_library(libxlsxwriter
 find_external_library(LIBUNWIND INCLUDES libunwind.h LIBS unwind HINTS "${NCBI_TOOLS_ROOT}/libunwind-1.1")
 set(HAVE_LIBUNWIND ${LIBUNWIND_FOUND})
 
+if (EXISTS "${NCBI_TOOLS_ROOT}/msgsl-0.0.20171114-1c95f94/include/gsl/gsl")
+    set(MSGSL_INCLUDE "${NCBI_TOOLS_ROOT}/msgsl-0.0.20171114-1c95f94/include/")
+else()
+    find_path(MSGSL_INCLUDE NAMES gsl/gsl)
+endif()
+
+if (NOT "${MSGSL_INCLUDE}" STREQUAL "")
+    set(HAVE_MSGSL true)
+    message(STATUS "Found MSGSL: ${MSGSL_INCLUDE}")
+else()
+    message(STATUS "Could NOT find MSGSL")
+endif()
 #
 # Final tasks
 #
