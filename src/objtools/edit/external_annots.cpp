@@ -105,10 +105,8 @@ CRef<CSeq_annot> CAnnotGetter::x_GetCompleteSeqAnnot(const CSeq_annot_Handle& an
 
     CRef<CSeq_annot> new_annot = Ref(new CSeq_annot());
     if (annot->IsSetId()) {
-        for (const auto& id : annot->GetId()) {
-            CRef<CAnnot_id> new_id = Ref(new CAnnot_id());
-            new_id->Assign(*id);
-            new_annot->SetId().push_back(new_id);
+        for (CRef<CAnnot_id> id : annot->GetId()) {
+            new_annot->SetId().push_back(id);
         }
     }
 
