@@ -84,11 +84,13 @@ public:
         arg_desc.AddFlag(kArgFwdRev,
                          "Strand specific reads forward/reverse"
 //                               ", requires -only_strand_specific for non-SAM "
-//                               "output format");
+//                               "output format"
+                         );
         arg_desc.AddFlag(kArgRevFwd,
                                "Strand specific reads reverse/forward"
 //                               ", requires -only_strand_specific for non-SAM "
-//                               "output format");
+//                               "output format"
+                         );
         // FIXME: save for later feature enhancement
 //        arg_desc.AddFlag(kArgFwdOnly,
 //                "Strand specific reads forward only", true);
