@@ -92,18 +92,15 @@ bool CFastaOstreamEx::xWriteFeature(CFeat_CI feat_it)
 
 static bool s_LocationSpansMultipleSeqs(const CSeq_loc& loc)
 {
-    CRef<CSeq_id> first_id;
-    bool found_id = false;
+    const CSeq_id* pFirstId = nullptr;
     for (CSeq_loc_CI loc_it(loc); loc_it; ++loc_it) {
         try { // In case GetSeq_id throws
             const CSeq_id& current_id = loc_it.GetSeq_id();
-            if (!found_id) {
-                first_id = Ref(new CSeq_id());
-                first_id->Assign(current_id);
-                found_id = true;
+            if (!pFirstId) {
+                pFirstId = &current_id;
             }
             else {
-                if (!first_id->Match(current_id)) {
+                if (!pFirstId->Match(current_id)) {
                     return true;
                 }
             }
