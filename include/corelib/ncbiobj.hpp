@@ -1930,6 +1930,13 @@ public:
         {
         }
 
+    template< class TDerived,
+              class = typename enable_if<is_convertible<TDerived*, TObjectType*>::value, void>::type>
+    CIRef(const CIRef<TDerived>& ref)
+        : CIRef(ref.GetNCPointerOrNull())
+        {
+        }
+
     /// Constructor for explicit type conversion from pointer to object.
     CIRef(TObjectType* ptr, const locker_type& locker_value)
         : TParent(ptr, locker_value)
@@ -1940,6 +1947,13 @@ public:
     TThisType& operator=(const TThisType& ref)
         {
             TParent::operator=(ref);
+            return *this;
+        }
+
+    template<class TDerived>
+    TThisType& operator=(const CIRef<TDerived>& ref)
+        {
+            CIRef(ref).Swap(*this);
             return *this;
         }
 
@@ -2007,6 +2021,20 @@ public:
         {
         }
 
+    template< class TDerived,
+              class = typename enable_if<is_convertible<TDerived*, TObjectType*>::value, void>::type>
+    CConstIRef(const CConstIRef<TDerived>& ref)
+        : CConstIRef(ref.GetPointerOrNull())
+        {
+        }
+
+    template< class TDerived,
+              class = typename enable_if<is_convertible<TDerived*, TObjectType*>::value, void>::type>
+    CConstIRef(const CIRef<TDerived>& ref)
+        : CConstIRef(ref.GetPointerOrNull())
+        {
+        }
+
     /// Assignment operator for references.
     TThisType& operator=(const TThisType& ref)
         {
@@ -2014,10 +2042,24 @@ public:
             return *this;
         }
 
+    template<class TDerived>
+    TThisType& operator=(const CConstIRef<TDerived>& ref)
+        {
+            CConstIRef(ref).Swap(*this);
+            return *this;
+        }
+
     /// Assignment operator for assigning a reference to a const reference.
     TThisType& operator=(const CIRef<Interface, Locker>& ref)
         {
             TParent::operator=(ref);
+            return *this;
+        }
+
+    template<class TDerived>
+    TThisType& operator=(const CIRef<TDerived>& ref)
+        {
+            CConstIRef(ref).Swap(*this);
             return *this;
         }
 
