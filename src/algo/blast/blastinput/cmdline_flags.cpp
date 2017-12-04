@@ -200,6 +200,11 @@ const string kArgNoGreedyExtension("no_greedy");
 const string kArgDMBTemplateType("template_type");
 const string kArgDMBTemplateLength("template_length");
 const string kArgNoDiscordant("no_discordant");
+const string kArgFwdRev("fr");
+const string kArgRevFwd("rf");
+const string kArgFwdOnly("f");
+const string kArgRevOnly("r");
+const string kArgOnlyStrandSpecific("only_strand_specific");
 
 const string kArgInputSearchStrategy("import_search_strategy");
 const string kArgOutputSearchStrategy("export_search_strategy");

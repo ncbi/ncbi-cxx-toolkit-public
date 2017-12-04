@@ -144,6 +144,13 @@ public:
 
     typedef int TResultsInfo;
 
+    /// Ordering of alignments
+    typedef enum {
+        eFwRevFirst = 0,
+        eRevFwFirst
+    } EOrdering;
+
+
     /// Constructor for a pair
     CMagicBlastResults(CConstRef<CSeq_id> query_id, CConstRef<CSeq_id> mate_id,
                        CRef<CSeq_align_set> aligns,
@@ -191,6 +198,9 @@ public:
 
     /// Is the mate aligned
     bool LastAligned(void) const {return (m_LastInfo & fUnaligned) != 0;}
+
+    /// Sort alignments by selected criteria (pair configuration)
+    void SortAlignments(EOrdering order);
 
 private:
     void x_SetInfo(int first_length,

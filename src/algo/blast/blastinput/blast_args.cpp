@@ -2627,7 +2627,27 @@ void CMapperFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
         m_NoDiscordant = true;
     }
 
-    // only the fast tabular format is able to show merged HSPs with
+    if (args.Exist(kArgFwdRev) && args[kArgFwdRev]) {
+        m_FwdRev = true;
+    }
+
+    if (args.Exist(kArgRevFwd) && args[kArgRevFwd]) {
+        m_RevFwd = true;
+    }
+
+    if (args.Exist(kArgFwdOnly) && args[kArgFwdOnly]) {
+        m_FwdOnly = true;
+    }
+
+    if (args.Exist(kArgRevOnly) && args[kArgRevOnly]) {
+        m_RevOnly = true;
+    }
+
+    if (args.Exist(kArgOnlyStrandSpecific) && args[kArgOnlyStrandSpecific]) {
+        m_OnlyStrandSpecific = true;
+    }
+
+   // only the fast tabular format is able to show merged HSPs with
     // common query bases
     if (m_OutputFormat != eTabular) {
         // FIXME: This is a hack. Merging should be done by the formatter,

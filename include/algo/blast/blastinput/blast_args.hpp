@@ -1162,7 +1162,12 @@ public:
         CFormattingArgs(),
         m_TrimReadIds(true),
         m_PrintUnaligned(true),
-        m_NoDiscordant(false) {}
+        m_NoDiscordant(false),
+        m_FwdRev(false),
+        m_RevFwd(false),
+        m_FwdOnly(false),
+        m_RevOnly(false),
+        m_OnlyStrandSpecific(false) {}
 
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
 
@@ -1182,10 +1187,31 @@ public:
     /// Should non-concordant pairs be filtered out of report
     bool NoDiscordant(void) const {return m_NoDiscordant;}
 
+    /// Specify fwd/ref strands
+    bool SelectFwdRev(void) const {return m_FwdRev;}
+
+    /// Specify rev/fwd strands
+    bool SelectRevFwd(void) const {return m_RevFwd;}
+
+    /// Specify fwd-only strands
+    bool SelectFwdOnly(void) const {return m_FwdOnly;}
+
+    /// Specify rev-only strands
+    bool SelectRevOnly(void) const {return m_RevOnly;}
+
+    /// Specify only-strand-specific
+    bool SelectOnlyStrandSpecific(void) const {return m_OnlyStrandSpecific;}
+
 private:
     bool m_TrimReadIds;
     bool m_PrintUnaligned;
     bool m_NoDiscordant;
+    bool m_FwdRev;
+    bool m_RevFwd;
+    bool m_FwdOnly;
+    bool m_RevOnly;
+    bool m_OnlyStrandSpecific;
+
 };
 
 /// Argument class to collect multi-threaded arguments

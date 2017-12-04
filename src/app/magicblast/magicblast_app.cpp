@@ -840,6 +840,10 @@ s_GetSpliceSiteOrientation(const CSpliced_seg::TExons::const_iterator& exon,
 }
 
 
+enum E_StrandSpecificity {
+    eNonSpecific, eFwdRev, eRevFwd
+};
+
 #define SAM_FLAG_MULTI_SEGMENTS  0x1
 #define SAM_FLAG_SEGS_ALIGNED    0x2
 #define SAM_FLAG_SEG_UNMAPPED    0x4
@@ -855,6 +859,9 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
                        const BlastQueryInfo* query_info,
                        int batch_number, bool& first_secondary,
                        bool& last_secondary, bool trim_read_ids,
+                       E_StrandSpecificity strand_specific,
+                       bool only_specific,
+                       bool other = false,
                        const CSeq_align* mate = NULL)
 {
     string sep = "\t";
@@ -880,12 +887,16 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
 
         PrintSAM(ostr, **first, queries, query_info, batch_number,
                  first_secondary, last_secondary,
-                 trim_read_ids, second->GetNonNullPointer());
+                 trim_read_ids, strand_specific, only_specific,
+                 false,
+                 second->GetNonNullPointer());
         ostr << endl;
 
         PrintSAM(ostr, **second, queries, query_info, batch_number,
                  first_secondary, last_secondary,
-                 trim_read_ids, first->GetNonNullPointer());
+                 trim_read_ids, strand_specific, only_specific,
+                 true,
+                 first->GetNonNullPointer());
 
         return ostr;
     }
@@ -956,17 +967,37 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
         }
 
         if (mate) {
-            // only concordantly aligned pairs have this bit set
             // FIXME: it is assumed that subject is always in plus strand
             // (BLAST way)
-            if ((align.GetSeqStart(1) <= mate->GetSeqStart(1) &&
-                 align.GetSeqStrand(0) == eNa_strand_plus &&
-                 mate->GetSeqStrand(0) == eNa_strand_minus) ||
-                (mate->GetSeqStart(1) <= align.GetSeqStart(1) &&
-                 mate->GetSeqStrand(0) == eNa_strand_plus &&
-                 align.GetSeqStrand(0) == eNa_strand_minus)) {
+            ENa_strand a_strand = align.GetSeqStrand(0);
+            ENa_strand m_strand = mate->GetSeqStrand(0);
+            bool plus_minus =
+                    a_strand == eNa_strand_plus && m_strand == eNa_strand_minus;
+            bool minus_plus =
+                    a_strand == eNa_strand_minus && m_strand == eNa_strand_plus;
+            TSeqPos a_start = align.GetSeqStart(1);
+            TSeqPos m_start = mate->GetSeqStart(1);
 
-                sam_flags |= SAM_FLAG_SEGS_ALIGNED;
+            // For strand specific output we reset SAM_FLAG_SEGS_ALIGNED
+            // for paired alignments with the wrong configuration
+            if (strand_specific != eNonSpecific) {
+                // In this statement <bool1> != <bool2> is equivalent to
+                // EXCLUSIVE-OR.
+                // If <bool2> is false, conditional returns <bool1>.
+                // If <bool2> is true, conditional returns <bool1> inverted.
+                // So if "other" is true, actions based on "plus_minus"
+                // and "minus_plus" are reversed.
+                if ((strand_specific == eFwdRev  &&  plus_minus != other)
+                    ||  (strand_specific == eRevFwd  &&  minus_plus != other)) {
+
+                    sam_flags |= SAM_FLAG_SEGS_ALIGNED;
+
+                }
+            } else {
+                if (((a_start <= m_start && plus_minus)
+                    || (m_start <= a_start && minus_plus))) {
+                    sam_flags |= SAM_FLAG_SEGS_ALIGNED;
+                }
             }
 
             if (mate->GetSeqStrand(0) == eNa_strand_minus) {
@@ -1373,18 +1404,27 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, CMagicBlastResults& results,
                        const TQueryMap& queries,
                        const BlastQueryInfo* query_info, int batch_number,
                        bool trim_read_id, bool print_unaligned,
-                       bool no_discordant)
+                       bool no_discordant, E_StrandSpecificity strand_specific,
+                       bool only_specific)
 {
     bool first_secondary = false;
     bool last_secondary = false;
 
-    // is the pair aligned concordantly
+    if (strand_specific == eFwdRev) {
+        results.SortAlignments(CMagicBlastResults::eFwRevFirst);
+    }
+    else if (strand_specific == eRevFwd) {
+        results.SortAlignments(CMagicBlastResults::eRevFwFirst);
+    }
+
+     // Is the pair aligned concordantly? (Unpaired are treated as concordant.)
     bool is_concordant = results.IsConcordant();
 
     if (!no_discordant || (no_discordant && is_concordant)) {
         for (auto it: results.GetSeqAlign()->Get()) {
             PrintSAM(ostr, *it, queries, query_info, batch_number,
-                     first_secondary, last_secondary, trim_read_id);
+                     first_secondary, last_secondary, trim_read_id,
+                     strand_specific, only_specific);
             ostr << endl;
         }
     }
@@ -1417,14 +1457,17 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CMagicBlastResultSet& results,
                        int batch_number,
                        bool trim_read_id,
                        bool print_unaligned,
-                       bool no_discordant)
+                       bool no_discordant,
+                       E_StrandSpecificity strand_specific,
+                       bool only_specific)
 {
     TQueryMap bioseqs;
     s_CreateQueryMap(query_batch, bioseqs);
 
     for (auto it: results) {
         PrintSAM(ostr, *it, bioseqs, query_info, batch_number, trim_read_id,
-                 print_unaligned, no_discordant);
+                 print_unaligned, no_discordant, strand_specific,
+                 only_specific);
     }
 
     return ostr;
@@ -1678,6 +1721,41 @@ int CMagicBlastApp::Run(void)
              dynamic_cast<CMapperFormattingArgs*>(
                    m_CmdLineArgs->GetFormattingArgs().GetNonNullPointer()));
 
+        // Is either strand-specificity flag set? (mutually exclusive)
+        const bool only_specific = fmt_args->SelectOnlyStrandSpecific();
+        const bool fr = fmt_args->SelectFwdRev();
+        const bool rf = fmt_args->SelectRevFwd();
+        // One or both MUST be false. (enforced by command-line processing)
+        _ASSERT(fr == false  ||  rf == false);
+        // "-fr" and "-rf" flags can only be used without
+        // "-only_strand_specific" for SAM output.  Return an error if this
+        // condition is not met.
+        {
+            if (fmt_args->GetFormattedOutputChoice() != CFormattingArgs::eSAM) {
+                if (!only_specific  &&  (fr || rf)) {
+                    NCBI_THROW(CArgException, eNoValue,
+                               "-fr or -rf can only be used with SAM format."
+                               " Use -oufmt sam option.");
+                }
+            }
+        }
+        // "-only_strand_specific" without "-fr" or "-rf" (or in the future,
+        // "-f" or "-r") is not meaningful.
+        // FIXME: should this be a warning?
+        {
+            if (only_specific  &&  !(fr || rf)) {
+                NCBI_THROW(CArgException, eNoValue,
+                        "-only_strand_specific without either -fr or -rf "
+                        "is not valid.");
+            }
+        }
+        E_StrandSpecificity kStrandSpecific = eNonSpecific;
+        if (fr) {
+            kStrandSpecific = eFwdRev;
+        } else if (rf) {
+            kStrandSpecific = eRevFwd;
+        }
+
         // Is "no_discordant" selected?
         const bool kNoDiscordant = fmt_args->NoDiscordant();
 
@@ -1750,7 +1828,8 @@ int CMagicBlastApp::Run(void)
             #pragma omp parallel for if (num_query_threads > 1) \
               num_threads(num_query_threads) default(none) shared(opt, input, \
               fmt_args, os_vector, batch_number, print_warning, \
-              db_adapter, num_query_threads, num_db_threads, db_args) \
+              db_adapter, num_query_threads, num_db_threads, db_args, \
+              kStrandSpecific) \
               private(index) schedule(dynamic, 1)
             for (index = 0;index < num_query_threads;index++) {
 
@@ -1855,7 +1934,9 @@ int CMagicBlastApp::Run(void)
                                  thread_batch_number,
                                  kTrimReadIdForSAM,
                                  kPrintUnaligned,
-                                 kNoDiscordant);
+                                 kNoDiscordant,
+                                 kStrandSpecific,
+                                 only_specific);
                     }
 
 

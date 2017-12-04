@@ -54,7 +54,7 @@ public:
         arg_desc.SetCurrentGroup("General search options");
 
         arg_desc.AddDefaultKey(kArgWordSize, "int_value", "Minimum number of "
-                               "consecutive bass matching exactly",
+                               "consecutive bases matching exactly",
                                CArgDescriptions::eInteger,
                                NStr::IntToString(BLAST_WORDSIZE_MAPPER));
 
@@ -69,7 +69,7 @@ public:
 
         // gap extend penalty
         arg_desc.AddDefaultKey(kArgGapExtend, "extend_penalty",
-                               "Cost to extend a gap", 
+                               "Cost to extend a gap",
                                CArgDescriptions::eInteger, "4");
 
         // FIXME: not sure if this one is needed
@@ -79,6 +79,36 @@ public:
                                CArgDescriptions::eDouble, "0.0");
         arg_desc.SetConstraint(kArgPercentIdentity,
                                new CArgAllow_Doubles(0.0, 100.0));
+
+        // strand-specific flags (mutually exclusive)
+        arg_desc.AddFlag(kArgFwdRev,
+                         "Strand specific reads forward/reverse"
+//                               ", requires -only_strand_specific for non-SAM "
+//                               "output format");
+        arg_desc.AddFlag(kArgRevFwd,
+                               "Strand specific reads reverse/forward"
+//                               ", requires -only_strand_specific for non-SAM "
+//                               "output format");
+        // FIXME: save for later feature enhancement
+//        arg_desc.AddFlag(kArgFwdOnly,
+//                "Strand specific reads forward only", true);
+//        arg_desc.AddFlag(kArgRevOnly,
+//                "Strand specific reads reverse only", true);
+//        arg_desc.AddFlag(kArgOnlyStrandSpecific,
+//                               "Only show strand specific reads, "
+//                               "requires either -fr or -rf",
+//                               true);
+
+        arg_desc.SetDependency(kArgFwdRev,
+                               CArgDescriptions::eExcludes,
+                               kArgRevFwd);
+        // FIXME: save for later feature enhancement
+//        arg_desc.SetDependency(kArgFwdOnly,
+//                               CArgDescriptions::eRequires,
+//                               kArgOnlyStrandSpecific);
+//        arg_desc.SetDependency(kArgRevOnly,
+//                               CArgDescriptions::eRequires,
+//                               kArgOnlyStrandSpecific);
     }
 };
 
@@ -91,10 +121,10 @@ public:
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc) {
         arg_desc.SetCurrentGroup("General search options");
         // blastn mismatch penalty
-        arg_desc.AddDefaultKey(kArgMismatch, "penalty", 
-                               "Penalty for a nucleotide mismatch", 
+        arg_desc.AddDefaultKey(kArgMismatch, "penalty",
+                               "Penalty for a nucleotide mismatch",
                                CArgDescriptions::eInteger, "-4");
-        arg_desc.SetConstraint(kArgMismatch, 
+        arg_desc.SetConstraint(kArgMismatch,
                                new CArgAllowValuesLessThanOrEqual(0));
         arg_desc.SetCurrentGroup("");
     }
@@ -107,7 +137,7 @@ public:
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc) {
         arg_desc.SetCurrentGroup("General search options");
         // largest intron length
-        arg_desc.AddDefaultKey(kArgMaxIntronLength, "length", 
+        arg_desc.AddDefaultKey(kArgMaxIntronLength, "length",
                     "Length of the largest intron allowed in a translated "
                     "nucleotide sequence when linking multiple distinct "
                     "alignments",
@@ -123,7 +153,7 @@ public:
 class CMapperRemoteArgs : public CRemoteArgs
 {
 public:
-    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc) {}    
+    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc) {}
 };
 
 
@@ -171,8 +201,9 @@ CMagicBlastAppArgs::CMagicBlastAppArgs()
     m_Args.push_back(arg);
 
     arg.Reset(new CMapperFormattingArgs);
-    m_FormattingArgs.Reset(dynamic_cast<CFormattingArgs*>(
-                                           arg.GetNonNullPointer()));
+    m_FormattingArgs.Reset(
+            dynamic_cast<CFormattingArgs*>(arg.GetNonNullPointer())
+    );
     m_Args.push_back(arg);
 
     m_MTArgs.Reset(new CMTArgs);
@@ -194,7 +225,7 @@ CMagicBlastAppArgs::CMagicBlastAppArgs()
     m_Args.push_back(arg);
 }
 
-CRef<CBlastOptionsHandle> 
+CRef<CBlastOptionsHandle>
 CMagicBlastAppArgs::x_CreateOptionsHandle(
                                          CBlastOptions::EAPILocality locality,
                                          const CArgs& args)

@@ -548,6 +548,74 @@ CMagicBlastResults::CMagicBlastResults(CConstRef<CSeq_id> query_id,
 }
 
 
+// Sort alignments so that paired, forward-reversed alignments are first
+struct compare_alignments_fwrev_first
+{
+    bool operator()(const CRef<CSeq_align>& a, const CRef<CSeq_align>& b)
+    {
+        if (a->GetSegs().IsDisc() && b->GetSegs().IsDisc()) {
+            const CSeq_align& a_first = *a->GetSegs().GetDisc().Get().front();
+            const CSeq_align& a_second = *a->GetSegs().GetDisc().Get().back();
+            const CSeq_align& b_first = *b->GetSegs().GetDisc().Get().front();
+            const CSeq_align& b_second = *b->GetSegs().GetDisc().Get().back();
+
+            if (a_first.GetSeqStrand(0) == eNa_strand_plus &&
+                a_second.GetSeqStrand(0) == eNa_strand_minus &&
+                a_first.GetSeqStart(1) <= a_second.GetSeqStart(1) &&
+                (b_first.GetSeqStrand(0) != eNa_strand_plus ||
+                 b_second.GetSeqStrand(0) != eNa_strand_minus ||
+                 b_first.GetSeqStart(1) > b_second.GetSeqStart(1))) {
+
+                return true;
+            }
+
+            return false;
+        }
+        
+        return (a->GetSegs().IsDisc() && !b->GetSegs().IsDisc());
+    }
+};
+
+
+// Sort alignments so that paired, reversed-forward alignments are first
+struct compare_alignments_revfw_first
+{
+    bool operator()(const CRef<CSeq_align>& a, const CRef<CSeq_align>& b)
+    {
+        if (a->GetSegs().IsDisc() && b->GetSegs().IsDisc()) {
+            const CSeq_align& a_first = *a->GetSegs().GetDisc().Get().front();
+            const CSeq_align& a_second = *a->GetSegs().GetDisc().Get().back();
+            const CSeq_align& b_first = *b->GetSegs().GetDisc().Get().front();
+            const CSeq_align& b_second = *b->GetSegs().GetDisc().Get().back();
+
+            if (a_first.GetSeqStrand(0) == eNa_strand_minus &&
+                a_second.GetSeqStrand(0) == eNa_strand_plus &&
+                a_second.GetSeqStart(1) <= a_first.GetSeqStart(1) &&
+                (b_first.GetSeqStrand(0) != eNa_strand_minus ||
+                 b_second.GetSeqStrand(0) != eNa_strand_plus ||
+                 b_second.GetSeqStart(1) > b_first.GetSeqStart(1))) {
+
+                return true;
+            }
+
+            return false;
+        }
+        
+        return (a->GetSegs().IsDisc() && !b->GetSegs().IsDisc());
+    }
+};
+
+void CMagicBlastResults::SortAlignments(CMagicBlastResults::EOrdering order)
+{
+    if (order == eFwRevFirst) {
+        m_Aligns->Set().sort(compare_alignments_fwrev_first());
+    }
+    else {
+        m_Aligns->Set().sort(compare_alignments_revfw_first());
+    }
+}
+
+
 void CMagicBlastResults::x_SetInfo(int first_length,
                              const TMaskedQueryRegions* first_mask,
                              int last_length /* = 0 */,

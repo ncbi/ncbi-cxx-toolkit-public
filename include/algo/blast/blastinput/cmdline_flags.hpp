@@ -328,6 +328,16 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgDMBTemplateType;
 NCBI_BLASTINPUT_EXPORT extern const string kArgDMBTemplateLength;
 /// Argument to specify if non-concordant pairs should be displayed
 NCBI_BLASTINPUT_EXPORT extern const string kArgNoDiscordant;
+/// Argument to specify forward/reverse strand specificity
+NCBI_BLASTINPUT_EXPORT extern const string kArgFwdRev;
+/// Argument to specify reverse/forward strand specificity
+NCBI_BLASTINPUT_EXPORT extern const string kArgRevFwd;
+/// Argument to specify forward-only strand specificity
+NCBI_BLASTINPUT_EXPORT extern const string kArgFwdOnly;
+/// Argument to specify reverse-only strand specificity
+NCBI_BLASTINPUT_EXPORT extern const string kArgRevOnly;
+/// Argument to specify only strand specific results
+NCBI_BLASTINPUT_EXPORT extern const string kArgOnlyStrandSpecific;
 
 /// Argument to specify the maximum number of HPSs to save per subject for each query
 NCBI_BLASTINPUT_EXPORT extern const string kArgMaxHSPsPerSubject;
