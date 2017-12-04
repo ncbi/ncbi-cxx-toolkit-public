@@ -853,9 +853,9 @@ void CBamDb::SPileupValues::advance_current_beg(TSeqPos ref_pos, ICollectPileupC
             TCount gap_save = cc_gap[total];
             if ( copy ) {
                 TSeqPos copy16 = align_to_16_up(copy);
-                NFast::CopyBuffer(cc_acgt[flush].cc, copy16*4, cc_acgt[0].cc);
-                NFast::CopyBuffer(cc_match.data()+flush, copy16, cc_match.data());
-                NFast::CopyBuffer(cc_gap.data()+flush, copy16, cc_gap.data());
+                NFast::MoveBuffer(cc_acgt[flush].cc, copy16*4, cc_acgt[0].cc);
+                NFast::MoveBuffer(cc_match.data()+flush, copy16, cc_match.data());
+                NFast::MoveBuffer(cc_gap.data()+flush, copy16, cc_gap.data());
             }
             cc_gap[copy] = gap_save;
             m_RefFrom += flush;
