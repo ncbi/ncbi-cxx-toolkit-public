@@ -64,7 +64,9 @@ public:
     static void ClearBuffer(unsigned int* dest, size_t count);
 
 
-    /// Copy memory buffer when source and destination do not overlap
+    /// Copy memory buffer (only when source and destination do not overlap!).
+    /// Use MoveBuffer() for overlapping buffers.
+    /// @attention  If src and dest buffers overlap - undefined behavior
     ///
     /// @param src
     ///   Source memory buffer
@@ -406,6 +408,7 @@ void NFast::ClearBuffer(unsigned int* dest, size_t count) {
 
 inline
 void NFast::CopyBuffer(const int* src, size_t count, int* dest) {
+    _ASSERT((src+count < dest) || (dest+count < src));
 #if 0 // because memmove is faster
 #if defined(NCBI_HAVE_FAST_OPS) && !defined(NCBI_COMPILER_GCC) && !defined(NCBI_COMPILER_ICC)
     if (count%16 == 0 && uintptr_t(dest)%16 == 0 && uintptr_t(src)%16 == 0) {
