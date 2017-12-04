@@ -64,7 +64,7 @@ public:
     static void ClearBuffer(unsigned int* dest, size_t count);
 
 
-    /// Copy memory buffer
+    /// Copy memory buffer when source and destination do not overlap
     ///
     /// @param src
     ///   Source memory buffer
