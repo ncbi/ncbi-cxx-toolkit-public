@@ -332,11 +332,20 @@ public:
         bool IsSetParent(void) const {
             return m_IsSetParent;
         }
+        bool IsSetGene(void) const {
+            return m_IsSetGene;
+        }
         CSeqFeatData::ESubtype GetSubtype(void) const {
             return m_Feat.GetFeatSubtype();
         }
         bool IsGene(void) const {
             return GetSubtype() == CSeqFeatData::eSubtype_gene;
+        }
+        bool GivesGeneToChildren(void) const {
+            return IsGene() || IsSetGene();
+        }
+        CFeatInfo* GetChildrenGene(void) {
+            return IsGene()? this: m_Gene;
         }
 
         typedef vector<CFeatInfo*> TChildren;
@@ -345,7 +354,7 @@ public:
         CMappedFeat m_Feat;
         CRange<TSeqPos> m_MasterRange;
         bool m_CanMatchByQual;
-        bool m_IsSetParent, m_IsSetChildren, m_MultiId;
+        bool m_IsSetParent, m_IsSetGene, m_IsSetChildren, m_MultiId;
         enum EIsLinkedToRoot NCBI_PACKED_ENUM_TYPE(Int1) {
             eIsLinkedToRoot_unknown,
             eIsLinkedToRoot_linked,
@@ -384,7 +393,8 @@ protected:
     void x_SetNoParent(CFeatInfo& info);
     CFeatInfo* x_GetParent(CFeatInfo& info);
     const TChildren& x_GetChildren(CFeatInfo& info);
-    void x_SetGeneRecursive(CFeatInfo& info, CFeatInfo& gene);
+    void x_SetGeneRecursive(CFeatInfo& info, CFeatInfo* gene);
+    void x_SetGene(CFeatInfo& info, CFeatInfo* gene);
 
     typedef map<CSeq_feat_Handle, CFeatInfo> TInfoMap;
     typedef vector<CFeatInfo*> TInfoArray;

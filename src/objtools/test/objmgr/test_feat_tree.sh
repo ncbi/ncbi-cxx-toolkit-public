@@ -11,14 +11,14 @@ if test -d "$1"; then
     shift
 fi
 
-d="$base/data"
-r="$base/res"
 t="."
 
 tool="test_feat_tree $@"
 
 ret=0
 do_test() {
+    d="$2"
+    r="$3"
     src="$d/$1"
     ref="$r/$1"
     dst="$t/$1.res"
@@ -41,8 +41,16 @@ do_test() {
     rm "$dst"
 }
 
+d="$base/data"
+r="$base/res"
 for f in `cd "$d"; ls`; do
-    do_test "$f"
+    do_test "$f" "$d" "$r"
+done
+
+d="$base/data2"
+r="$base/res2"
+for f in `cd "$d"; ls`; do
+    do_test "$f" "$d" "$r"
 done
 
 echo "Done."

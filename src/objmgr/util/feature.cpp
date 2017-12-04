@@ -1384,6 +1384,29 @@ namespace {
 
 
     static inline
+    bool sx_GeneSuppressed(const CMappedFeat& feat)
+    {
+        if ( feat.IsSetXref() ) {
+            const CSeq_feat::TXref& xrefs = feat.GetXref();
+            if ( xrefs.size() == 1 ) {
+                const CSeqFeatXref& xref = *xrefs[0];
+                if ( xref.IsSetData() ) {
+                    const CSeqFeatData& data = xref.GetData();
+                    if ( data.IsGene() ) {
+                        const CGene_ref& gene = data.GetGene();
+                        if ( !gene.IsSetLocus() && !gene.IsSetLocus_tag() ) {
+                            // feature has single empty gene xref
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+
+    static inline
     Uint1 sx_GetQualMatch(const CMappedFeat& feat1,
                           const CMappedFeat& feat2)
     {
@@ -1934,6 +1957,7 @@ void CFeatTree::AddFeature(const CMappedFeat& feat)
         info.m_AddIndex = index;
         info.m_Feat = feat;
         info.m_CanMatchByQual = sx_CanMatchByQual(feat);
+        info.m_IsSetGene = sx_GeneSuppressed(feat);
     }
     else {
         _ASSERT(m_InfoMap.size() == m_InfoArray.size());
@@ -2085,7 +2109,9 @@ bool CFeatTree::x_AssignParentByRef(CFeatInfo& info)
         // if intermediate parents are possible
         if ( STypeLink(info.GetSubtype()).m_ParentType!=CSeqFeatData::eSubtype_gene ) {
             // then assign gene only
-            info.m_Gene = parent.second;
+            if ( !info.IsSetGene() ) {
+                x_SetGene(info, parent.second);
+            }
             return false;
         }
     }
@@ -2340,6 +2366,7 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
          link.m_ParentType != CSeqFeatData::eSubtype_gene &&
          link.CanHaveCommonGene() ) {
         // tree uses common gene information
+        // the following public method effectively assigns genes by overlap
         tree->GetBestGene(features[0]->m_Feat, tree->eBestGene_OverlappedOnly);
         check_genes = true;
     }
@@ -2436,11 +2463,9 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                     if ( !pc->m_Range.IntersectingWith(ci->m_Range) ) {
                         continue;
                     }
-                    if ( check_genes ) {
-                        const CFeatTree::CFeatInfo* p_gene =
-                            link.m_ParentType == CSeqFeatData::eSubtype_gene?
-                            pc->m_Info: pc->m_Info->m_Gene;
-                        if ( info.m_Gene != p_gene ) {
+                    if ( check_genes && info.IsSetGene() && pc->m_Info->GivesGeneToChildren() ) {
+                        // check gene mismatch
+                        if ( info.m_Gene != pc->m_Info->GetChildrenGene() ) {
                             continue;
                         }
                     }
@@ -2540,12 +2565,17 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
     if ( GetGeneCheckMode() == eGeneCheck_match &&
          link.m_ParentType == CSeqFeatData::eSubtype_gene ) {
         bool unassigned = false;
-        // assign gene as parent
+        // assign already known genes as parents
         ITERATE ( TFeatArray, it, features ) {
             CFeatInfo& info = **it;
             if ( !info.IsSetParent() ) {
-                if ( info.m_Gene ) {
-                    x_SetParent(info, *info.m_Gene);
+                if ( info.IsSetGene() ) {
+                    if ( info.m_Gene ) {
+                        x_SetParent(info, *info.m_Gene);
+                    }
+                    else {
+                        x_SetNoParent(info);
+                    }
                 }
                 else {
                     unassigned = true;
@@ -2634,23 +2664,23 @@ void CFeatTree::x_AssignGenesByOverlap(TFeatArray& features)
     // assign found genes
     for ( size_t i = 0; i < cnt; ++i ) {
         CFeatInfo& info = *features[i];
-        if ( !info.m_Gene ) {
+        if ( !info.IsSetGene() ) {
             CFeatInfo* best = bests[i].m_Info;
             if ( best ) {
                 // assign best gene
-                info.m_Gene = best;
+                x_SetGene(info, best);
             }
         }
     }
 }
 
 
-void CFeatTree::x_SetGeneRecursive(CFeatInfo& info, CFeatInfo& gene)
+void CFeatTree::x_SetGeneRecursive(CFeatInfo& info, CFeatInfo* gene)
 {
-    info.m_Gene = &gene;
+    x_SetGene(info, gene);
     ITERATE ( CFeatInfo::TChildren, it, info.m_Children ) {
         CFeatInfo& child = **it;
-        if ( child.m_Gene != &gene ) {
+        if ( !child.IsSetGene() ) {
             x_SetGeneRecursive(child, gene);
         }
     }
@@ -2665,16 +2695,14 @@ void CFeatTree::x_AssignGenes(void)
 
     for ( size_t ind = m_AssignedGenes; ind < m_InfoArray.size(); ++ind ) {
         CFeatInfo& info = *m_InfoArray[ind];
-        if ( info.m_Gene ) {
+        if ( info.IsSetGene() ) {
             continue;
         }
         if ( CFeatInfo* parent = info.m_Parent ) {
-            CFeatInfo* gene = parent->m_Gene;
-            if ( !gene && parent->IsGene() ) {
-                gene = parent;
-            }
-            if ( gene ) {
-                x_SetGeneRecursive(info, *gene);
+            if ( parent->GivesGeneToChildren() ) {
+                if ( CFeatInfo* gene = parent->GetChildrenGene() ) {
+                    x_SetGeneRecursive(info, gene);
+                }
             }
         }
     }
@@ -2690,13 +2718,13 @@ void CFeatTree::x_AssignGenes(void)
             has_genes = true;
             continue;
         }
-        else if ( !info.m_Gene && STypeLink(feat_type).CanHaveGeneParent() ) {
+        else if ( !info.IsSetGene() && STypeLink(feat_type).CanHaveGeneParent() ) {
             if ( m_BestGeneFeatIdMode == eBestGeneFeatId_always ) {
                 CFeatInfo* gene =
                     x_LookupParentByRef(info,
                                         CSeqFeatData::eSubtype_gene).second;
                 if ( gene ) {
-                    info.m_Gene = gene;
+                    x_SetGene(info, gene);
                     continue;
                 }
             }
@@ -2829,6 +2857,15 @@ void CFeatTree::x_SetNoParent(CFeatInfo& info)
 }
 
 
+void CFeatTree::x_SetGene(CFeatInfo& info, CFeatInfo* gene)
+{
+    _ASSERT(!info.IsSetGene());
+    _ASSERT(!info.m_Gene);
+    info.m_Gene = gene;
+    info.m_IsSetGene = true;
+}
+
+
 CFeatTree::CFeatInfo* CFeatTree::x_GetParent(CFeatInfo& info)
 {
     if ( !info.IsSetParent() ) {
@@ -2928,6 +2965,7 @@ CFeatTree::CFeatInfo::CFeatInfo(void)
     : m_AddIndex(0),
       m_CanMatchByQual(false),
       m_IsSetParent(false),
+      m_IsSetGene(false),
       m_IsSetChildren(false),
       m_MultiId(false),
       m_IsLinkedToRoot(eIsLinkedToRoot_unknown),

@@ -92,6 +92,7 @@ void CTestApp::Init(void)
                              "file with CFeatTree results",
                              CArgDescriptions::eOutputFile);
 
+    arg_desc->AddFlag("no-xref", "Do not use xref for feature linking");
     arg_desc->AddFlag("timing", "Print time spent");
     arg_desc->AddFlag("verbose", "Print detailed feature info");
 
@@ -349,6 +350,9 @@ int CTestApp::Run(void)
     s_StopTiming(sw, timing, "Loaded data");
 
     CFeatTree ft;
+    if ( args["no-xref"] ) {
+        ft.SetFeatIdMode(ft.eFeatId_ignore);
+    }
     //ft.SetFeatIdMode(feat_id_mode);
     //ft.SetSNPStrandMode(snp_strand_mode);
 
