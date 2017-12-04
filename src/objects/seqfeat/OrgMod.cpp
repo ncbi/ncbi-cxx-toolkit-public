@@ -1110,18 +1110,22 @@ static const string sValidTypeMaterialPrefixes[] = {
 static const int sNumValidTypeMaterialPrefixes = sizeof(sValidTypeMaterialPrefixes) / sizeof(string);
 
 static const string sValidCultureTypeMaterialPrefixes[] = {
-    "paratype",
-    "neotype",
-    "lectotype",
+    "epitype",
+    "hapantotype",
+    "holotype",
+    "isoepitype",
+    "isoepitype",
+    "isolectotype",
+    "isoneotype",
+    "isoparatype",
     "isosyntype",
     "isotype",
-    "isoparatype",
-    "isoneotype",
-    "isolectotype",
-    "holotype",
-    "epitype",
+    "lectotype",
+    "neotype",
+    "paratype",
+    "reference",
     "syntype",
-    "isoepitype"
+    "type material"
 };
 
 static const int sNumValidCultureTypeMaterialPrefixes = sizeof(sValidCultureTypeMaterialPrefixes) / sizeof(string);
@@ -1147,78 +1151,14 @@ bool COrgMod::IsValidTypeMaterial(const string& type_material)
 }
 
 
-static const string sINSDCTypeMaterialPrefixes[] = {
-    "allotype",
-    "culture from epitype",
-    "culture from hapantotype",
-    "culture from holotype",
-    "culture from isoepitype",
-    "culture from isolectotype",
-    "culture from isoneotype",
-    "culture from isoparatype",
-    "culture from isosyntype",
-    "culture from isotype",
-    "culture from lectotype",
-    "culture from neotype",
-    "culture from paratype",
-    "culture from reference",
-    "culture from syntype",
-    "culture from type material",
-    "epitype",
-    "ex-epitype",
-    "ex-hapantotype",
-    "ex-holotype",
-    "ex-isoepitype",
-    "ex-isolectotype",
-    "ex-isoneotype",
-    "ex-isoparatype",
-    "ex-isosyntype",
-    "ex-isotype",
-    "ex-lectotype",
-    "ex-neotype",
-    "ex-paratype",
-    "ex-reference",
-    "ex-syntype",
-    "ex-type",
-    "hapantotype",
-    "holotype",
-    "isoepitype",
-    "isolectotype",
-    "isoneotype",
-    "isoparatype",
-    "isosyntype",
-    "isotype",
-    "lectotype",
-    "neotype strain",
-    "neotype",
-    "paralectotype",
-    "paratype",
-    "pathotype strain",
-    "reference material",
-    "reference strain",
-    "syntype",
-    "type material",
-    "type strain"
-};
-
-static const int sNumINSDCTypeMaterialPrefixes = sizeof(sINSDCTypeMaterialPrefixes) / sizeof(string);
-
-// note that the INSDC definition is currently lagging behind what is considered
-// valid for taxonomy
+// note that the INSDC method now calls IsValidTypeMaterial
 bool COrgMod::IsINSDCValidTypeMaterial(const string& type_material)
 {
     if (NStr::IsBlank(type_material)) {
         return false;
     }
 
-    for (int i = 0; i<sNumINSDCTypeMaterialPrefixes; ++i) {
-        string prefix = sINSDCTypeMaterialPrefixes[i];
-        if (NStr::StartsWith(type_material, prefix)) {
-            return true;
-        }
-    }
-
-    return false;
+    return IsValidTypeMaterial(type_material);
 }
 
 
