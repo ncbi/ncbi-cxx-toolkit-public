@@ -574,7 +574,7 @@ static TNCBI_Time s_ParseExpires(time_t tt_now, const char* expires)
     if (sscanf(expires, "%d-%d-%dT%d:%d:%d%c", &tm_year, &tm_mon, &tm_mday,
             &tm_hour, &tm_min, &tm_sec, &tm_zulu) != 7  ||
         tm_year < 2017  ||
-        (tm_mon < 0  || tm_mon > 11)  ||
+        (tm_mon < 1  || tm_mon > 12)  ||
         (tm_mday < 1  || tm_mday > 31)  ||
         (tm_hour < 0  || tm_hour > 23)  ||
         (tm_min < 0  || tm_min > 59)  ||
