@@ -179,7 +179,7 @@ public:
     IRegistry& GetIRegistry();
     void Report(ostream& os) const;
     void Alerts(ostream& os) const;
-    void AckAlert(size_t id);
+    bool AckAlert(size_t id);
 
 private:
     CCompoundRegistry m_Registry;

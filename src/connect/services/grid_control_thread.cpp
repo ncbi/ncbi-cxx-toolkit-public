@@ -294,6 +294,40 @@ void CGetConfProcessor::Process(const string&, CNcbiOstream& reply, CWorkerNodeC
     reply << "OK:END\n";
 }
 
+class CAckAlertProcessor : public CWorkerNodeControlServer::IRequestProcessor
+{
+public:
+    void Process(const string& request, CNcbiOstream& reply, CWorkerNodeControlServer* control_server) override;
+};
+
+void CAckAlertProcessor::Process(const string& request, CNcbiOstream& reply, CWorkerNodeControlServer* control_server)
+{
+    _ASSERT(control_server);
+
+    auto node = static_cast<SGridWorkerNodeImpl*>(control_server->GetWorkerNode());
+    _ASSERT(node);
+
+    auto registry = node->m_SynRegistry;
+    _ASSERT(registry);
+
+    const string kAlertIDPrefix = " alert_";
+    auto pos = NStr::Find(request, kAlertIDPrefix, NStr::eNocase);
+
+    if (pos == NPOS) {
+        reply << "ERR:Alert ID is required\n";
+        return;
+    }
+
+    const auto kFlags = NStr::fConvErr_NoThrow | NStr::fAllowTrailingSymbols;
+    auto id = NStr::StringToUInt(request.c_str() + pos + kAlertIDPrefix.size(), kFlags);
+
+    if (!registry->AckAlert(id)) {
+        reply << "ERR:Failed to find an alert with such ID (" << id << ")\n";
+    } else {
+        reply << "OK:\n";
+    }
+}
+
 class CUnknownProcessor : public CWorkerNodeControlServer::IRequestProcessor
 {
 public:
@@ -333,6 +367,9 @@ CWorkerNodeControlServer::IRequestProcessor*
 
     if (NStr::StartsWith(cmd, TEMP_STRING_CTOR("GETCONF")))
         return new CGetConfProcessor;
+
+    if (NStr::StartsWith(cmd, TEMP_STRING_CTOR("ACKALERT")))
+        return new CAckAlertProcessor;
 
     return new CUnknownProcessor;
 }

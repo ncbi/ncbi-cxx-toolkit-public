@@ -270,7 +270,7 @@ class CSynRegistry::CAlert
 public:
     void Set(string message);
     void Report(ostream& os) const;
-    void Ack(size_t id);
+    bool Ack(size_t id);
 
 private:
     map<size_t, string> m_Alerts;
@@ -292,10 +292,10 @@ void CSynRegistry::CAlert::Report(ostream& os) const
     }
 }
 
-void CSynRegistry::CAlert::Ack(size_t id)
+bool CSynRegistry::CAlert::Ack(size_t id)
 {
     lock_guard<mutex> lock(m_Mutex);
-    m_Alerts.erase(id);
+    return m_Alerts.erase(id) == 1;
 }
 
 CSynRegistry::CSynRegistry() :
@@ -330,9 +330,9 @@ void CSynRegistry::Alerts(ostream& os) const
     m_Alert->Report(os);
 }
 
-void CSynRegistry::AckAlert(size_t id)
+bool CSynRegistry::AckAlert(size_t id)
 {
-    m_Alert->Ack(id);
+    return m_Alert->Ack(id);
 }
 
 template <typename TType>
