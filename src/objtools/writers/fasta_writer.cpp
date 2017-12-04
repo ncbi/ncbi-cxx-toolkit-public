@@ -90,6 +90,31 @@ bool CFastaOstreamEx::xWriteFeature(CFeat_CI feat_it)
 }
 
 
+static bool s_LocationSpansMultipleSeqs(const CSeq_loc& loc)
+{
+    CRef<CSeq_id> first_id;
+    bool found_id = false;
+    for (CSeq_loc_CI loc_it(loc); loc_it; ++loc_it) {
+        try { // In case GetSeq_id throws
+            const CSeq_id& current_id = loc_it.GetSeq_id();
+            if (!found_id) {
+                first_id = Ref(new CSeq_id());
+                first_id->Assign(current_id);
+                found_id = true;
+            }
+            else {
+                if (!first_id->Match(current_id)) {
+                    return true;
+                }
+            }
+        }
+        catch(...){}
+    }
+
+    return false;
+}
+
+
 void CFastaOstreamEx::WriteFeature(const CSeq_feat& feat, 
                                    CScope& scope,
                                    const bool translate_cds)
@@ -97,6 +122,17 @@ void CFastaOstreamEx::WriteFeature(const CSeq_feat& feat,
     // Could change this to return false if data not set
     if (!feat.IsSetData()) { 
         return; 
+    }
+
+    if (!feat.GetLocation().GetId()) {
+        if (s_LocationSpansMultipleSeqs(feat.GetLocation())) {
+            ERR_POST(Warning <<  "Cannot process feature that spans multiple sequences - skipping");
+        }
+        else {
+            const string err_msg = "Invalid feature location - sequence not specified";
+            NCBI_THROW(CObjWriterException, eBadInput, err_msg);
+        }
+        return;
     }
 
     const bool IsCdregion = feat.GetData().IsCdregion();
@@ -470,6 +506,7 @@ string CFastaOstreamEx::x_GetGeneIdString(const CSeq_feat& gene,
     return id_string;
 }
 
+
 CConstRef<CSeq_feat> s_GetBestGeneForFeat(const CSeq_feat& feat,
                                            CScope& scope)
 {
@@ -477,7 +514,6 @@ CConstRef<CSeq_feat> s_GetBestGeneForFeat(const CSeq_feat& feat,
     if (!feat.IsSetData()) {
         return no_gene;
     }
-
 
     if (feat.GetData().IsCdregion()) {
         return sequence::GetBestGeneForCds(feat, scope);
