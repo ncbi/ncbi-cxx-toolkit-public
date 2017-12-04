@@ -112,9 +112,17 @@ public:
     static void x_sse_CopyBuffer(const int* src, size_t count, int* dst) {
         NFast::x_sse_CopyBuffer(src, count, dst);
     }
+#if 0
+    static void x_sse_MoveBuffer(const int* src, size_t count, int* dst) {
+        NFast::x_sse_MoveBuffer(src, count, dst);
+    }
+#endif
 #endif
     static void x_no_sse_CopyBuffer(int* dst, const int* src, size_t count) {
         NFast::x_no_sse_CopyBuffer(dst, src, count);
+    }
+    static void x_no_sse_MoveBuffer(int* dst, const int* src, size_t count) {
+        NFast::x_no_sse_MoveBuffer(dst, src, count);
     }
 //---------------------------------------------------------------------------
 #ifdef NCBI_HAVE_FAST_OPS
@@ -394,6 +402,60 @@ BOOST_AUTO_TEST_CASE(TestCopyInt)
     } 
     finish = QUERY_PERF_COUNTER();
     cout << (finish - start) << " - NFast::CopyBuffer(int)" << endl;
+    s_check_equal(buf, buf_size, dst);
+
+    free(buf);
+    free(dst);
+}
+#endif
+
+#if 1
+BOOST_AUTO_TEST_CASE(TestMoveInt)
+{
+    const size_t buf_size = SSETEST_BUFSIZE;
+    const size_t test_count = SSETEST_COUNT;
+    int* buf = (int*)malloc(buf_size * sizeof(int));
+    int* dst = (int*)malloc(buf_size * sizeof(int));
+    Uint8 start, finish;
+    for (size_t i = 0; i < buf_size; ++i) {
+        buf[i] = i & 0xFF;
+    }
+
+    bool aligned = buf_size%16 == 0 && uintptr_t(buf)%16 == 0 && uintptr_t(dst)%16 == 0;
+    cout << endl << "TestMoveInt  aligned " << (aligned ? "ok" : "wrong")
+         << endl;
+#ifdef NCBI_HAVE_FAST_OPS
+    if ( aligned ) {
+    s_set_non_zero(dst, buf_size);
+    start = QUERY_PERF_COUNTER();
+    for (size_t i = 0; i < test_count; ++i) {
+        s_payload(dst, buf_size);
+        NFastTest::x_sse_CopyBuffer(buf, buf_size, dst);
+    } 
+    finish = QUERY_PERF_COUNTER();
+    cout << (finish - start) << " - NFast::x_sse_CopyBuffer(int) "  << endl;
+    s_check_equal(buf, buf_size, dst);
+    }
+#endif
+
+    s_set_non_zero(dst, buf_size);
+    start = QUERY_PERF_COUNTER();
+    for (size_t i = 0; i < test_count; ++i) {
+        s_payload(dst, buf_size);
+        NFastTest::x_no_sse_MoveBuffer(dst,buf,buf_size);
+    } 
+    finish = QUERY_PERF_COUNTER();
+    cout << (finish - start) << " - NFast::x_no_sse_MoveBuffer(int)" << endl;
+    s_check_equal(buf, buf_size, dst);
+
+    s_set_non_zero(dst, buf_size);
+    start = QUERY_PERF_COUNTER();
+    for (size_t i = 0; i < test_count; ++i) {
+        s_payload(dst, buf_size);
+        NFast::MoveBuffer(buf, buf_size, dst);
+    } 
+    finish = QUERY_PERF_COUNTER();
+    cout << (finish - start) << " - NFast::MoveBuffer(int)" << endl;
     s_check_equal(buf, buf_size, dst);
 
     free(buf);

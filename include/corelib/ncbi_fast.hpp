@@ -78,6 +78,20 @@ public:
     static void CopyBuffer(const unsigned int* src, size_t count, unsigned int* dest);
 
 
+    /// Copy memory buffer when source and destination overlap
+    ///
+    /// @param src
+    ///   Source memory buffer
+    /// @param count
+    ///   Number of elements to copy
+    /// @param dest
+    ///   Destination memory buffer
+
+    static void MoveBuffer(         const int* src, size_t count,          int* dest);
+    static void MoveBuffer(const unsigned int* src, size_t count,          int* dest);
+    static void MoveBuffer(const unsigned int* src, size_t count, unsigned int* dest);
+
+
     /// Convert memory buffer elements from one type to another
     ///
     /// @param src
@@ -203,6 +217,19 @@ protected:
         x_sse_CopyBuffer(reinterpret_cast<const int*>(src), count, reinterpret_cast<int*>(dst));
     }
 
+#if 0
+    static void x_sse_MoveBuffer(const int* src, size_t count, int* dst);
+
+    inline
+    static void x_sse_MoveBuffer(const unsigned int* src, size_t count, int* dst) {
+        x_sse_MoveBuffer(reinterpret_cast<const int*>(src), count, dst);
+    }
+    inline
+    static void x_sse_MoveBuffer(const unsigned int* src, size_t count, unsigned int* dst) {
+        x_sse_MoveBuffer(reinterpret_cast<const int*>(src), count, reinterpret_cast<int*>(dst));
+    }
+#endif
+
 //---------------------------------------------------------------------------
     // convert count unsigned chars to ints
     // src, dst, and count must be aligned by 16
@@ -267,6 +294,10 @@ protected:
     inline
     static void x_no_sse_CopyBuffer(int* dest, const int* src, size_t count) {
         memcpy(dest, src, count * sizeof(*dest));
+    }
+    inline
+    static void x_no_sse_MoveBuffer(int* dest, const int* src, size_t count) {
+        memmove(dest, src, count * sizeof(*dest));
     }
     inline 
     static void x_no_sse_ConvertBuffer( int* dest, const char* src, size_t count) {
@@ -375,6 +406,7 @@ void NFast::ClearBuffer(unsigned int* dest, size_t count) {
 
 inline
 void NFast::CopyBuffer(const int* src, size_t count, int* dest) {
+#if 0 // because memmove is faster
 #if defined(NCBI_HAVE_FAST_OPS) && !defined(NCBI_COMPILER_GCC) && !defined(NCBI_COMPILER_ICC)
     if (count%16 == 0 && uintptr_t(dest)%16 == 0 && uintptr_t(src)%16 == 0) {
         x_sse_CopyBuffer(src, count, dest);
@@ -384,6 +416,9 @@ void NFast::CopyBuffer(const int* src, size_t count, int* dest) {
 #else
     x_no_sse_CopyBuffer(dest, src, count);
 #endif
+#else
+    x_no_sse_MoveBuffer(dest, src, count);
+#endif
 }
 inline
 void NFast::CopyBuffer(const unsigned int* src, size_t count, int* dest) {
@@ -392,6 +427,19 @@ void NFast::CopyBuffer(const unsigned int* src, size_t count, int* dest) {
 inline
 void NFast::CopyBuffer(const unsigned int* src, size_t count, unsigned int* dest) {
     CopyBuffer(reinterpret_cast<const int*>(src), count, reinterpret_cast<int*>(dest));
+}
+
+inline
+void NFast::MoveBuffer(const int* src, size_t count, int* dest) {
+    x_no_sse_MoveBuffer(dest, src, count);
+}
+inline
+void NFast::MoveBuffer(const unsigned int* src, size_t count, int* dest) {
+    MoveBuffer(reinterpret_cast<const int*>(src), count, dest);
+}
+inline
+void NFast::MoveBuffer(const unsigned int* src, size_t count, unsigned int* dest) {
+    MoveBuffer(reinterpret_cast<const int*>(src), count, reinterpret_cast<int*>(dest));
 }
 
 inline
