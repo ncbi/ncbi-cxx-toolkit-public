@@ -33,6 +33,7 @@
  */
 #include <ncbiconf.h>
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbidbg.hpp>
 #include <vector>
 #include <memory.h>
 
