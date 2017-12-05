@@ -1092,6 +1092,7 @@ void CTSE_ScopeInfo::ReleaseUsedTSEs(void)
 {
     // release all used TSEs
     TUsedTSE_LockSet used;
+    CTSE_ScopeInternalLock self_lock;
     CFastMutexGuard guard(sx_UsedTSEMutex);
     NON_CONST_ITERATE ( TUsedTSE_LockSet, it, m_UsedTSE_Set ) {
         _ASSERT(it->second->m_UsedByTSE == this);
@@ -1099,6 +1100,7 @@ void CTSE_ScopeInfo::ReleaseUsedTSEs(void)
     }
     m_UsedTSE_Set.swap(used);
     if ( m_UsedByTSE ) {
+        self_lock.Reset(this); // prevent recursive deletion
         m_UsedByTSE->m_UsedTSE_Set.erase(ConstRef(this));
         m_UsedByTSE = 0;
     }
