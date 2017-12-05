@@ -33,6 +33,8 @@
 
 #include <connect/services/netschedule_api.hpp>
 
+#include <locale>
+
 // XXX: Workaround for VAR-1651
 // TODO: Merge this code with code of grid_cli (see also r485314).
 
@@ -170,6 +172,7 @@ string s_UnquoteIfQuoted(const CTempString& str)
 
 static void NormalizeStatKeyName(CTempString& key)
 {
+    locale loc;
     char* begin = const_cast<char*>(key.data());
     char* end = begin + key.length();
 
@@ -187,7 +190,7 @@ static void NormalizeStatKeyName(CTempString& key)
     key.assign(begin, end - begin);
 
     for (; begin < end; ++begin)
-        *begin = isalnum(*begin) ? (char)tolower(*begin) : '_';
+        *begin = isalnum(*begin, loc) ? tolower(*begin, loc) : '_';
 }
 
 bool s_FixMisplacedPID(CJsonNode& stat_info, CTempString& executable_path,
@@ -301,6 +304,7 @@ CJsonNode s_ServerInfoToJson(CNetServerInfo server_info,
 static bool s_ExtractKey(const CTempString& line,
         string& key, CTempString& value)
 {
+    locale loc;
     key.erase(0, key.length());
     SIZE_TYPE line_len = line.length();
     key.reserve(line_len);
@@ -308,8 +312,8 @@ static bool s_ExtractKey(const CTempString& line,
     for (SIZE_TYPE i = 0; i < line_len; ++i)
     {
         char c = line[i];
-        if (isalnum(c))
-            key += (char)tolower(c);
+        if (isalnum(c, loc))
+            key += tolower(c, loc);
         else if (c == ' ' || c == '_' || c == '-')
             key += '_';
         else if (c != ':' || key.empty())
