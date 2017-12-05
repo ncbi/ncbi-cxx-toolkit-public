@@ -329,7 +329,7 @@ AZAN	s	Akademia Nauk Azerbaijana-Bulgarian Academy of Science of Azerbaijan
 AZB	s	Herbario Ruy Telles Palhinha - Universidade Dos Acores		
 AZU	s	Universidade dos Acores, Departamento de Ciencias Agrarias		
 AZUS	s	Citrus College, Biological Sciences Department		
-B	s	Berlin Botanic Garden and Botanical Museum	BGBM
+B	s	Berlin Botanic Garden and Botanical Museum (Herbarium Berolinense)	BGBM
 BA	s	Museo Argentino de Ciencias Naturales Bernardino Rivadavia		
 BAA	s	Universidad de Buenos Aires, Facultad de Agronomia		
 BAAC	s	Musee de Beni Abbes		
@@ -500,7 +500,7 @@ BIGU	s	Universidad de San Carlos de Guatemala, Departamento de Botanica
 BIL	s	Forest Research Institute, Natural Forest Department		
 BILAS	s	Institute of Botany		
 BIM	s	Birmingham Natural History and Microscopical Society		
-BIM<BLR>	c	Belarus National Academy of Sciences		
+BIM<BLR>	c	Belarus National Academy of Sciences, Institute of microbiology		
 BING	s	State University of New York, Biological Sciences Department		
 BIO	s	Universidad del Pais Vasco/EHU, Departamento de Biologia Vegetal y Ecologia (Botanica)		
 BioCC	c	BioCC BioCen Culture Collection		
@@ -1108,7 +1108,7 @@ CLR	s	All Saint's Church, Colchester Borough Council
 CLU	s	Universita della Calabria		
 CM	s	Carnegie Museum of Natural History	CMNH<USA-PA>
 CM-IEA	s	Universidad Autonoma de Tamaulipas (Mexico)		
-CM-MBM-UAC	s	Coleccion Mastozoologica de la Museo de Biodiversidad Maya, Universidad  Autonoma de Campeche	CM-MBM-UAC
+CM-MBM-UAC	s	Coleccion Mastozoologica Universidad  Autonoma de Campeche	CM-MBM-UAC,CMMBMUAC
 CM-UMSNH	s	Universidad de Michoacan (Mexico)		
 CM:M	s	Carnegie Museum of Natural History, Section of Mammals
 CM:O	s	Carnegie Museum of Natural History, Section of Birds
@@ -2638,7 +2638,7 @@ IAC	s	Instituto Agronomico de Campinas
 IACC	s	Instituto Agronomico de Campinas		
 IACM	s	Instituto Agronomico		
 IADIZA-CM	s	Instituto Argentino de Investigaciones de las Zonas Aridas		
-IAFB	c	Collection of Industrial Microorganisms		
+IAFB	c	Culture Collection of Industrial Microorganisms, Prof. Wac&#322;aw D&#261;browski Institute of Agricultural and Food Biotechnology		
 IAGB	s	Universitatea Al. I. Cuza Iasi		
 IAL<BRA-Bahia>	s	Herbario, Centro Nacional de Pesquisa de Mandioca e Fruticultura, EMBRAPA		
 IAL<BRA-SaoPaulo>	c	Secao de Colecao de Culturas		
@@ -4546,7 +4546,7 @@ NCH	s	Norwich Botanical Society
 NCHU	s	National Chung Hsing University		
 NCHU:ZOOL	s	National Chung Hsing University, Department of Life Science
 NCIM	c	National Collection of Industrial Microorganisms		
-NCIMB	c	National Collections of Industrial Food and Marine Bacteria (incorporating the NCFB)	NCIB,NCMB
+NCIMB	c	National Collection of Industrial, Food and Marine Bacteria (incorporating the NCFB)	NCIB,NCMB
 NCIP	s	Pusat Penelitian dan Pengembangan Oseanologi		
 NCKU	s	National Cheng-Kung University, Biology Department		
 NCLN	s	New College		
@@ -4684,7 +4684,7 @@ NIOCC	c	National Institute of Oceanography Culture Collection
 NIPH	c	National Institute of Public Health, Collection A. Nemec		
 NIPR	s	National Institute of Polar Research, Biological Data Department		
 NIT	s	Jardim Botanico de Niteroi		
-NIVA	c	Culture Collection of Algae (NIVA)		
+NIVA	c	Norwegian Culture Collection of Algae	NIVA
 NIWA	s	National Institute of Water and Atmospheric Research		
 NJ	s	Njala University College		
 NJM<CZE>	s	Okresni vlastivedne muzeum		
@@ -6834,6 +6834,7 @@ UNAM:CNPE	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Peces
 UNAM:CNPGG	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional del Phylum Porifera Gerardo Green
 UNAN	s	Universidad Nacional Autonoma de Nicaragua		
 UNB	s	Connell Memorial Herbarium		
+UNB<BRA>	s	Universidade de Brasilia, Departamento de Zoologia,		
 UNC-B	s	University of Northern Colorado		
 UNCA	h	University of North Carolina at Asheville		
 UNCB	s	Universidad Nacional de Colombia, Insituto de Ciencias Naturales de la Universidad Nacional		
@@ -7521,10 +7522,10 @@ ZIK	s	Ukrainian Academy of Sciences, Zoological Institute
 ZIKU	s	Zoological Institute, Kochi University		
 ZIL	s	Academy of Sciences, Zoological Institute		
 ZIM	c	ZIM Culture Collection of Industrial Microorganisms		
-ZIN	s	Zoological Institute of the Russian Academy of Sciences	ZIAS
+ZIN	s	Zoological Institute of the Russian Academy of Sciences	ZISP
 ZIS	s	Universitaet Saarbruecken		
 ZISB	s	Institute of Zoology		
-ZISP	s	Zoological Institute, Russian Academy of Sciences	IN
+ZISP	s	Zoological Institute, Russian Academy of Sciences	IN,ZIN
 ZIT	s	Grusinian Academy of Sciences		
 ZITIU	s	Zoological Institute, Tokyo Imperial University		
 ZIUG	s	Zoologisches Institut		
