@@ -325,6 +325,17 @@ RESOLVER_LIBS = @RESOLVER_LIBS@
 LIBUNWIND_INCLUDE = @LIBUNWIND_INCLUDE@
 LIBUNWIND_LIBS    = @LIBUNWIND_LIBS@
 
+# Library for examining DWARF debugging info; normally added to
+# baseline LIBS if present for the sake of corelib, but potentially
+# still useful with C_LIBS.
+LIBDW_INCLUDE = @LIBDW_INCLUDE@
+LIBDW_LIBS    = @LIBDW_LIBS@
+
+# Library for producing prettier stack traces; LIBS here just arranges
+# for automatic stack traces on most fatal errors.
+BACKWARD_CPP_INCLUDE = @BACKWARD_CPP_INCLUDE@
+BACKWARD_CPP_LIBS    = @BACKWARD_CPP_LIBS@
+
 #################################
 # Optional variables that may be needed to build some projects
 # (see in "configure.ac" for the pre-set defaults)

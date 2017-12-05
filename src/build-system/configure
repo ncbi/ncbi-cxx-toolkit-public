@@ -715,6 +715,10 @@ TCHECK_CL
 AMQ
 LIBUNWIND_INCLUDE
 LIBUNWIND_LIBS
+LIBDW_INCLUDE
+LIBDW_LIBS
+BACKWARD_CPP_INCLUDE
+BACKWARD_CPP_LIBS
 Z_INCLUDE
 Z_LIBS
 BZ2_INCLUDE
@@ -1647,7 +1651,7 @@ autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
-geo included-geo vdb downloaded-vdb static-vdb libunwind \
+geo included-geo vdb downloaded-vdb static-vdb libunwind libdw backward-cpp \
 z bz2 lzo pcre mbedtls gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
 sybase sybase-local sybase-new ftds mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx \
@@ -1711,6 +1715,7 @@ for x_arg in "$@" ; do
 
       --srcdir=* | --x-includes=* | --x-libraries=* | --with-tcheck=* \
       | --with-ncbi-c=* | --with-sss=* | --with-vdb=* | --with-libunwind=* \
+      | --with-libdw=* | --with-backward-cpp=* \
       | --with-z=* | --with-bz2=* | --with-lzo=* \
       | --with-pcre=* | --with-mbedtls=* \
       | --with-gmp=* | --with-gcrypt=* | --with-nettle=* \
@@ -1925,6 +1930,9 @@ Optional Packages:
  --with-downloaded-vdb   download and build SRA/VDB from GitHub
  --with-static-vdb       always link statically against SRA/VDB
  --with-libunwind(=DIR)  use libunwind (in DIR)
+ --with-libdw(=DIR)      use libdw (in DIR)
+ --with-backward-cpp=DIR use backward-cpp installation in DIR
+ --without-backward-cpp  do not use backward-cpp
  --with-z=DIR            use zlib installation in DIR
  --without-z             use internal copy of zlib
  --with-bz2=DIR          use bzlib installation in DIR
@@ -3429,6 +3437,24 @@ fi
 # Check whether --with-libunwind was given.
 if test "${with_libunwind+set}" = set; then
   withval=$with_libunwind;
+fi
+
+
+# Check whether --with-libdw was given.
+if test "${with_libdw+set}" = set; then
+  withval=$with_libdw;
+fi
+
+
+# Check whether --with-backward-cpp was given.
+if test "${with_backward_cpp+set}" = set; then
+  withval=$with_backward_cpp;
+fi
+
+
+# Check whether --with-backward-cpp was given.
+if test "${with_backward_cpp+set}" = set; then
+  withval=$with_backward_cpp;
 fi
 
 
@@ -9247,7 +9273,7 @@ if test "${ncbi_cv_prog_cxx_11+set}" = set; then
 else
   orig_CXX=$CXX
     ncbi_cv_prog_cxx_11=no
-    for x in -std=gnu++14 -std=gnu++11 -std=gnu++0x ''; do
+    for x in -std=gnu++11 -std=gnu++0x ''; do
        CXX="$orig_CXX $x"
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -28583,6 +28609,367 @@ _ACEOF
 
 LIBS="$LIBUNWIND_LIBS $LIBS"
 orig_LIBS="$LIBUNWIND_LIBS $orig_LIBS"
+
+: ${with_libdw:=no}
+if test "$with_libdw" != "no"; then
+    case "$with_libdw" in
+       yes | "" ) ;;
+       *        ) LIBDW_PATH=$with_libdw ;;
+    esac
+    if test "$LIBDW_PATH" != /usr -a -d "$LIBDW_PATH"; then
+       in_path=" in $LIBDW_PATH"
+       if test -z "$LIBDW_INCLUDE" -a -d "$LIBDW_PATH/include"; then
+          LIBDW_INCLUDE="-I$LIBDW_PATH/include"
+       fi
+       if test -n "$LIBDW_LIBPATH"; then
+          :
+       elif test -d "$LIBDW_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LIBDW_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LIBDW_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LIBDW_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LIBDW_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$LIBDW_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LIBDW_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LIBDW_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LIBDW_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LIBDW_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       LIBDW_LIBS="$LIBDW_LIBPATH -ldw "
+    else
+       LIBDW_INCLUDE=""
+       LIBDW_LIBS="-ldw "
+       in_path=
+    fi
+    { echo "$as_me:$LINENO: checking for libdw$in_path" >&5
+echo $ECHO_N "checking for libdw$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_libdw+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS=" $LIBDW_INCLUDE $orig_CPPFLAGS"
+       LIBS="$LIBDW_LIBS  $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <elfutils/libdw.h>
+int
+main ()
+{
+Dwarf* d = dwarf_begin(17, DWARF_C_READ);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_libdw=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_libdw=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_libdw" >&5
+echo "${ECHO_T}$ncbi_cv_lib_libdw" >&6; }
+    if test "$ncbi_cv_lib_libdw" = "no"; then
+       if test "${with_libdw:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-libdw explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-libdw explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    fi
+ fi
+ if test "$with_libdw" = "no"; then
+    LIBDW_PATH="No_LIBDW"
+    LIBDW_INCLUDE=
+    LIBDW_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}LIBDW"; WithPackagesSep=" "
+    LIBDW_INCLUDE=" $LIBDW_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBDW 1
+_ACEOF
+
+ fi
+
+
+
+LIBS="$LIBDW_LIBS $LIBS"
+orig_LIBS="$LIBDW_LIBS $orig_LIBS"
+
+if test "$with_backward_cpp" != "no"; then
+    case "$with_backward_cpp" in
+       yes | "" ) ;;
+       *        ) BACKWARD_CPP_PATH=$with_backward_cpp ;;
+    esac
+    if test "$BACKWARD_CPP_PATH" != /usr -a -d "$BACKWARD_CPP_PATH"; then
+       in_path=" in $BACKWARD_CPP_PATH"
+       if test -z "$BACKWARD_CPP_INCLUDE" -a -d "$BACKWARD_CPP_PATH/include"; then
+          BACKWARD_CPP_INCLUDE="-I$BACKWARD_CPP_PATH/include"
+       fi
+       if test -n "$BACKWARD_CPP_LIBPATH"; then
+          :
+       elif test -d "$BACKWARD_CPP_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $BACKWARD_CPP_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    BACKWARD_CPP_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $BACKWARD_CPP_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    BACKWARD_CPP_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$BACKWARD_CPP_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $BACKWARD_CPP_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    BACKWARD_CPP_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $BACKWARD_CPP_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    BACKWARD_CPP_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       BACKWARD_CPP_LIBS="$BACKWARD_CPP_LIBPATH -lbackward "
+    else
+       BACKWARD_CPP_INCLUDE=""
+       BACKWARD_CPP_LIBS="-lbackward "
+       in_path=
+    fi
+    { echo "$as_me:$LINENO: checking for libbackward$in_path" >&5
+echo $ECHO_N "checking for libbackward$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_backward_cpp+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$LIBUNWIND_INCLUDE $LIBDW_INCLUDE $BACKWARD_CPP_INCLUDE $orig_CPPFLAGS"
+       LIBS="$BACKWARD_CPP_LIBS  $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#ifdef HAVE_LIBUNWIND
+                    #  define BACKWARD_HAS_UNWIND 1
+                    #else
+                    #  define BACKWARD_HAS_BACKTRACE 1
+                    #endif
+                    #ifdef HAVE_LIBDW
+                    #  define BACKWARD_HAS_DW 1
+                    #endif
+                    #include <backward.hpp>
+int
+main ()
+{
+backward::StackTrace st; st.load_here(32);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_backward_cpp=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_backward_cpp=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_backward_cpp" >&5
+echo "${ECHO_T}$ncbi_cv_lib_backward_cpp" >&6; }
+    if test "$ncbi_cv_lib_backward_cpp" = "no"; then
+       if test "${with_backward_cpp:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-backward_cpp explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-backward_cpp explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    fi
+ fi
+ if test "$with_backward_cpp" = "no"; then
+    BACKWARD_CPP_PATH="No_BACKWARD_CPP"
+    BACKWARD_CPP_INCLUDE=
+    BACKWARD_CPP_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}BACKWARD_CPP"; WithPackagesSep=" "
+    BACKWARD_CPP_INCLUDE="$LIBUNWIND_INCLUDE $LIBDW_INCLUDE $BACKWARD_CPP_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBBACKWARD_CPP 1
+_ACEOF
+
+ fi
+
+
+
 
 if test "$with_z" != "no"; then
     case "$with_z" in
@@ -49073,7 +49460,7 @@ for x in ChaosMonkey Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray W
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA LIBXLSXWRITER GRPC MSGSL; do
+  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA LIBXLSXWRITER GRPC MSGSL; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -50291,6 +50678,10 @@ TCHECK_CL!$TCHECK_CL$ac_delim
 AMQ!$AMQ$ac_delim
 LIBUNWIND_INCLUDE!$LIBUNWIND_INCLUDE$ac_delim
 LIBUNWIND_LIBS!$LIBUNWIND_LIBS$ac_delim
+LIBDW_INCLUDE!$LIBDW_INCLUDE$ac_delim
+LIBDW_LIBS!$LIBDW_LIBS$ac_delim
+BACKWARD_CPP_INCLUDE!$BACKWARD_CPP_INCLUDE$ac_delim
+BACKWARD_CPP_LIBS!$BACKWARD_CPP_LIBS$ac_delim
 Z_INCLUDE!$Z_INCLUDE$ac_delim
 Z_LIBS!$Z_LIBS$ac_delim
 BZ2_INCLUDE!$BZ2_INCLUDE$ac_delim
@@ -50374,10 +50765,6 @@ SQLITE3_LIBS!$SQLITE3_LIBS$ac_delim
 OECHEM_INCLUDE!$OECHEM_INCLUDE$ac_delim
 OECHEM_LIBS!$OECHEM_LIBS$ac_delim
 SGE_INCLUDE!$SGE_INCLUDE$ac_delim
-SGE_LIBS!$SGE_LIBS$ac_delim
-MUPARSER_INCLUDE!$MUPARSER_INCLUDE$ac_delim
-MUPARSER_LIBS!$MUPARSER_LIBS$ac_delim
-HDF5_INCLUDE!$HDF5_INCLUDE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -50419,6 +50806,10 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+SGE_LIBS!$SGE_LIBS$ac_delim
+MUPARSER_INCLUDE!$MUPARSER_INCLUDE$ac_delim
+MUPARSER_LIBS!$MUPARSER_LIBS$ac_delim
+HDF5_INCLUDE!$HDF5_INCLUDE$ac_delim
 HDF5_LIBS!$HDF5_LIBS$ac_delim
 JPEG_INCLUDE!$JPEG_INCLUDE$ac_delim
 JPEG_LIBS!$JPEG_LIBS$ac_delim
@@ -50512,10 +50903,6 @@ AS_NEEDED!$AS_NEEDED$ac_delim
 NO_AS_NEEDED!$NO_AS_NEEDED$ac_delim
 WHOLE_ARCHIVE!$WHOLE_ARCHIVE$ac_delim
 NO_WHOLE_ARCHIVE!$NO_WHOLE_ARCHIVE$ac_delim
-OPT_GROUPS!$OPT_GROUPS$ac_delim
-local_lbsm!$local_lbsm$ac_delim
-ncbi_crypt!$ncbi_crypt$ac_delim
-CONNEXT!$CONNEXT$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -50557,6 +50944,10 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+OPT_GROUPS!$OPT_GROUPS$ac_delim
+local_lbsm!$local_lbsm$ac_delim
+ncbi_crypt!$ncbi_crypt$ac_delim
+CONNEXT!$CONNEXT$ac_delim
 XCONNEXT!$XCONNEXT$ac_delim
 serial!$serial$ac_delim
 bdb!$bdb$ac_delim
@@ -50650,10 +51041,6 @@ BOOST_PROGRAM_OPTIONS_STATIC_LIBS!$BOOST_PROGRAM_OPTIONS_STATIC_LIBS$ac_delim
 BOOST_REGEX_LIBS!$BOOST_REGEX_LIBS$ac_delim
 BOOST_REGEX_STATIC_LIBS!$BOOST_REGEX_STATIC_LIBS$ac_delim
 BOOST_SYSTEM_LIBS!$BOOST_SYSTEM_LIBS$ac_delim
-BOOST_SYSTEM_STATIC_LIBS!$BOOST_SYSTEM_STATIC_LIBS$ac_delim
-BOOST_TEST_PEM_LIBS!$BOOST_TEST_PEM_LIBS$ac_delim
-BOOST_TEST_PEM_STATIC_LIBS!$BOOST_TEST_PEM_STATIC_LIBS$ac_delim
-BOOST_TEST_TEM_LIBS!$BOOST_TEST_TEM_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -50695,6 +51082,10 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+BOOST_SYSTEM_STATIC_LIBS!$BOOST_SYSTEM_STATIC_LIBS$ac_delim
+BOOST_TEST_PEM_LIBS!$BOOST_TEST_PEM_LIBS$ac_delim
+BOOST_TEST_PEM_STATIC_LIBS!$BOOST_TEST_PEM_STATIC_LIBS$ac_delim
+BOOST_TEST_TEM_LIBS!$BOOST_TEST_TEM_LIBS$ac_delim
 BOOST_TEST_TEM_STATIC_LIBS!$BOOST_TEST_TEM_STATIC_LIBS$ac_delim
 BOOST_TEST_UTF_LIBS!$BOOST_TEST_UTF_LIBS$ac_delim
 BOOST_TEST_UTF_STATIC_LIBS!$BOOST_TEST_UTF_STATIC_LIBS$ac_delim
@@ -50788,10 +51179,6 @@ ncbi_xreader_pubseqos2!$ncbi_xreader_pubseqos2$ac_delim
 UNLESS_PUBSEQOS!$UNLESS_PUBSEQOS$ac_delim
 PERL_INCLUDE!$PERL_INCLUDE$ac_delim
 PERL_LIBS!$PERL_LIBS$ac_delim
-JDK_PATH!$JDK_PATH$ac_delim
-JDK_INCLUDE!$JDK_INCLUDE$ac_delim
-ncbi_java!$ncbi_java$ac_delim
-NCBI_C_ncbi!$NCBI_C_ncbi$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -50833,6 +51220,10 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+JDK_PATH!$JDK_PATH$ac_delim
+JDK_INCLUDE!$JDK_INCLUDE$ac_delim
+ncbi_java!$ncbi_java$ac_delim
+NCBI_C_ncbi!$NCBI_C_ncbi$ac_delim
 BINCOPY!$BINCOPY$ac_delim
 APP_NOCOPY!$APP_NOCOPY$ac_delim
 APP_OR_NULL!$APP_OR_NULL$ac_delim
@@ -50869,7 +51260,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 34; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 38; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

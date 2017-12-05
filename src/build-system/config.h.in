@@ -230,6 +230,9 @@
 /* Define to 1 if libavrocpp is available. */
 #undef HAVE_LIBAVRO
 
+/* Define to 1 if libbackward is available. */
+#undef HAVE_LIBBACKWARD_CPP
+
 /* Define to 1 if libbz2 is available. */
 #undef HAVE_LIBBZ2
 
@@ -253,6 +256,9 @@
 /* Define to 1 if DL is available, either in its own library or as part of the
    standard libraries. */
 #undef HAVE_LIBDL
+
+/* Define to 1 if libdw is available. */
+#undef HAVE_LIBDW
 
 /* Define to 1 if libexpat is available. */
 #undef HAVE_LIBEXPAT
