@@ -608,7 +608,7 @@ RunTest()
                 logfile=\$NCBI_CONFIG__LOG__FILE
                 NCBI_CONFIG__LOG__FILE=
                 export NCBI_CONFIG__LOG__FILE
-                eval "\`ncbi_applog generate -phid -sid -format=shell-export\`"
+                eval "\`ncbi_applog generate -phid -sid -format=shell-export | tr -d '\r'\`"
                 if \$is_run && \$is_db_load; then
                    # Use generated PHID for test statistics, and sub-PHID.1 for test itself
                    saved_phid=\$NCBI_LOG_HIT_ID
