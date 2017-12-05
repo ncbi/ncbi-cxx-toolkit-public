@@ -963,24 +963,24 @@ int CNcbiApplogApp::Redirect()
 int CNcbiApplogApp::ReadCgiResponse(CConn_HttpStream& cgi)
 {
     if (!cgi.good()) {
-        throw "Failed to redirect request to CGI";
+        throw std::runtime_error("Failed to redirect request to CGI");
     }
     // Read response from CGI (until EOF)
     string output;
     getline(cgi, output, '\0');
     if (!cgi.eof()) {
-        throw "Failed to read CGI output";
+        throw std::runtime_error("Failed to read CGI output");
     }
     int res = cgi.GetStatusCode();
     if (res != 0   &&  res != 200) {
-        throw "Failed to call CGI, HTTP status code " + NStr::IntToString(res);
+        throw std::runtime_error("Failed to call CGI, HTTP status code " + NStr::IntToString(res));
     }
     if (output.empty()) {
         return 0;
     }
     // Check output on errors. CGI prints all errors to stderr.
     if (output.find("error:") != NPOS) {
-        throw "Failed to call CGI: " + output;
+        throw std::runtime_error("Failed to call CGI: " + output);
     }
     // Printout CGI's output
     cout << output;
@@ -993,7 +993,7 @@ void CNcbiApplogApp::GetRawAppName(CRegexp& re, string* appname, size_t* from, s
 {
     const int* apos = re.GetResults(1);
     if (!apos || !apos[0] || !apos[1] || (apos[0] >= apos[1])) {
-        throw "Error processing input raw log, line has wrong format";
+        throw std::runtime_error("Error processing input raw log, line has wrong format");
     }
     if (from) {
         *from = (size_t)apos[0];
@@ -1129,11 +1129,11 @@ ETokenType CNcbiApplogApp::ParseToken()
         }
     }
     if (!(have_name  &&  have_pid  &&  have_guid  &&  have_atime)) {
-        throw "Token string has wrong format"; 
+        throw std::runtime_error("Token string has wrong format");
     }
     if (type == eToken_Request) {
         if (!(have_rid  &&  have_rtime)) {
-            throw "Token string has wrong format (request token type expected)"; 
+            throw std::runtime_error("Token string has wrong format (request token type expected)");
         }
     }
     return type;
@@ -1247,7 +1247,7 @@ void CNcbiApplogApp::SetInfo()
     // Set it if it should be inherited only.
     if (!m_Info.phid_app.empty()) {
         if (m_Info.phid_app.length() > 3 * NCBILOG_HITID_MAX) {
-            throw "PHID is too long '" + m_Info.phid_app + "'";
+            throw std::runtime_error("PHID is too long '" + m_Info.phid_app + "'");
         }
         strcpy(g_info->phid, m_Info.phid_app.c_str());
         g_info->phid_inherit = 1;
@@ -1502,7 +1502,7 @@ int CNcbiApplogApp::Run()
         } else {
             m_Raw_ifs.open(filename.c_str(), IOS_BASE::in);
             if (!m_Raw_ifs.good()) {
-                throw "Failed to open file '" + filename + "'";
+                throw std::runtime_error("Failed to open file '" + filename + "'");
             }
             m_Raw_is = &m_Raw_ifs;
         }
@@ -1522,7 +1522,7 @@ int CNcbiApplogApp::Run()
                 }
             }
             if (!found || (m_Raw_line.length() < NCBILOG_ENTRY_MIN)) {
-                throw "Error processing input raw log, cannot find any line in applog format";
+                throw std::runtime_error("Error processing input raw log, cannot find any line in applog format");
             }
             // Get application name
             GetRawAppName(re, &m_Info.appname);
@@ -1543,7 +1543,7 @@ int CNcbiApplogApp::Run()
             // Try to get token from env.variable
             m_Token = GetEnvironment().Get("NCBI_APPLOG_TOKEN");
             if (m_Token.empty())
-                throw "Syntax error: Please specify token argument in the command line or via $NCBI_APPLOG_TOKEN";
+                throw std::runtime_error("Syntax error: Please specify token argument in the command line or via $NCBI_APPLOG_TOKEN");
         }
         token_par_type = ParseToken();
         if (cmd == "parse_token") {
@@ -1674,7 +1674,7 @@ int CNcbiApplogApp::Run()
         ENcbiLog_Destination cur_dst = 
             NcbiLogP_SetDestination(eNcbiLog_Default, m_Info.server_port, m_Info.logsite.c_str());
         if (cur_dst != eNcbiLog_Default  &&  cur_dst != eNcbiLog_Stderr) {
-            throw "Failed to set output destination from $NCBI_CONFIG__LOG__FILE";
+            throw std::runtime_error("Failed to set output destination from $NCBI_CONFIG__LOG__FILE");
         }
     } else {
         // Get an output destination (from registry file, env.variable or default value)
@@ -1689,7 +1689,7 @@ int CNcbiApplogApp::Run()
                 NcbiLog_Destroy();
                 // Recursive redirection is not allowed
                 if (m_IsRemoteLogging) {
-                    throw "/log is not writable for CGI logger";
+                    throw std::runtime_error("/log is not writable for CGI logger");
                 }
                 return Redirect();
             }
@@ -1708,13 +1708,13 @@ int CNcbiApplogApp::Run()
             if (dst_str == "stderr") {
                 dst = eNcbiLog_Stderr;
             } else {
-                throw "Syntax error: NcbiApplogDestination parameter have incorrect value " + dst_str;
+                throw std::runtime_error("Syntax error: NcbiApplogDestination parameter have incorrect value " + dst_str);
             }
             // Try to set output destination
             ENcbiLog_Destination cur_dst = 
                 NcbiLogP_SetDestination(dst, m_Info.server_port, m_Info.logsite.c_str());
             if (cur_dst != dst) {
-                throw "Failed to set output destination to " + dst_str;
+                throw std::runtime_error("Failed to set output destination to " + dst_str);
             }
         }
     }
@@ -1811,7 +1811,7 @@ int CNcbiApplogApp::Run()
     if (cmd == "stop_request") {
         if (token_par_type != eToken_Request) {
             // All other commands don't need this check, it can work with any token type
-            throw "Token string has wrong format (request token type expected)"; 
+            throw std::runtime_error("Token string has wrong format (request token type expected)");
         }
         int status  = args["status"].AsInteger();
         int n_read  = args["input" ].AsInteger();
@@ -1932,7 +1932,7 @@ int CNcbiApplogApp::Run()
                                 }
                             }
                             if ( !param_ofs ) {
-                                throw "Error processing input raw log, perf line has wrong format";
+                                throw std::runtime_error("Error processing input raw log, perf line has wrong format");
                             }
                         }
                         // fall through
@@ -1993,16 +1993,7 @@ int CNcbiApplogApp::Run()
 
     // Cleanup (on error)
     }
-    catch (char* e) {
-        Error(e);
-    }
-    catch (const char* e) {
-        Error(e);
-    }
-    catch (string e) {
-        Error(e);
-    }
-    catch (exception& e) {
+    catch (std::exception const& e) {
         Error(e.what());
     }
     if (is_api_init) {
