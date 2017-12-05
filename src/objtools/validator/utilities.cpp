@@ -648,7 +648,7 @@ EAccessionFormatError ValidateAccessionString (string accession, bool require_ve
 
     if (require_version) {
         if (*cp != '.') {
-            rval = eAccessionFormat_missing_version;
+            return eAccessionFormat_missing_version;
         }
         cp++;
         int numVersion = 0;
@@ -657,9 +657,9 @@ EAccessionFormatError ValidateAccessionString (string accession, bool require_ve
             cp++;
         }
         if (numVersion < 1) {
-            rval = eAccessionFormat_missing_version;
+            return eAccessionFormat_missing_version;
         } else if (*cp != '\0' && *cp != ' ') {
-            rval = eAccessionFormat_bad_version;
+            return eAccessionFormat_bad_version;
         }
     }
 
