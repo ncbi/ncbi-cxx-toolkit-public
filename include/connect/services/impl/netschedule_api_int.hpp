@@ -328,8 +328,27 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
 // Return a JSON object where each key is a worker node
 // session and the value is a JSON object containing
 // status information reported by the worker node itself.
+enum ENetScheduleStatTopic {
+    eNetScheduleStatJobGroups,
+    eNetScheduleStatClients,
+    eNetScheduleStatNotifications,
+    eNetScheduleStatAffinities,
+    eNumberOfNetStheduleStatTopics
+};
 NCBI_XCONNECT_EXPORT
 CJsonNode g_GetWorkerNodeInfo(CNetScheduleAPI api);
+NCBI_XCONNECT_EXPORT
+string g_UnquoteIfQuoted(const CTempString& str);
+NCBI_XCONNECT_EXPORT
+string g_GetNetScheduleStatCommand(ENetScheduleStatTopic topic);
+NCBI_XCONNECT_EXPORT
+CJsonNode g_GenericStatToJson(CNetServer server, ENetScheduleStatTopic topic, bool verbose);
+NCBI_XCONNECT_EXPORT
+bool g_FixMisplacedPID(CJsonNode& stat_info, CTempString& executable_path, const char* pid_key);
+NCBI_XCONNECT_EXPORT
+CJsonNode g_ServerInfoToJson(CNetServerInfo server_info, bool server_version_key);
+NCBI_XCONNECT_EXPORT
+CJsonNode g_WorkerNodeInfoToJson(CNetServer worker_node);
 
 END_NCBI_SCOPE
 
