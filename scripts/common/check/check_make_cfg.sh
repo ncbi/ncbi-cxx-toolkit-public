@@ -495,6 +495,9 @@ RunTest() {
               saved_phid=\$NCBI_LOG_HIT_ID
               NCBI_LOG_HIT_ID=\$NCBI_LOG_HIT_ID.1
               export NCBI_LOG_HIT_ID
+              # Create a file in the cirrent directory with initial sub-PHID
+              # (will be incremented by $CHECK_EXEC, if any)
+              echo "0" > \$NCBI_LOG_HIT_ID
            fi
            NCBI_CONFIG__LOG__FILE=\$logfile
            export NCBI_CONFIG__LOG__FILE
@@ -611,6 +614,9 @@ RunTest() {
                 $NCBI/bin/_production/CPPCORE/test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "\$build_dir/test_stat_load.log" 2>&1
                 ;;
            esac
+        fi
+        if \$is_run; then
+            rm -f \$saved_phid > /dev/null 2>&1
         fi
 
     done  # Run test under all specified check tools   
