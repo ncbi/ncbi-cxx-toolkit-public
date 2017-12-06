@@ -252,73 +252,12 @@ void CNetScheduleAdmin::PrintQueueInfo(const string& queue_name,
     }
 }
 
+void g_GetWorkerNodes(CNetScheduleAPI api, list<CNetScheduleAdmin::SWorkerNodeInfo>& worker_nodes);
+
 void CNetScheduleAdmin::GetWorkerNodes(
     list<SWorkerNodeInfo>& worker_nodes)
 {
-    worker_nodes.clear();
-
-    set<pair<string, unsigned short> > m_Unique;
-
-    string cmd("STAT");
-    g_AppendClientIPSessionIDHitID(cmd);
-
-    for (CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate(
-            CNetService::eIncludePenalized); it; ++it) {
-        CNetServer::SExecResult exec_result((*it).ExecWithRetry(cmd, true));
-        CNetServerMultilineCmdOutput output(exec_result);
-
-        bool nodes_info = false;
-        string response;
-
-        while (output.ReadLine(response)) {
-            if (NStr::StartsWith(response, "[Configured"))
-                break;
-            if (!nodes_info) {
-                if (NStr::Compare(response, "[Worker node statistics]:") == 0)
-                    nodes_info = true;
-                else
-                    continue;
-            } else {
-                if (response.empty())
-                    continue;
-
-                string name;
-                NStr::SplitInTwo(response, " ", name, response);
-                NStr::TruncateSpacesInPlace(response);
-                string prog;
-                NStr::SplitInTwo(response, "@", prog, response);
-                NStr::TruncateSpacesInPlace(response);
-                prog = prog.substr(6,prog.size()-8);
-                string host;
-                NStr::SplitInTwo(response, " ", host, response);
-
-                if (NStr::Compare(host, "localhost") == 0)
-                    host = g_NetService_gethostnamebyaddr((*it).GetHost());
-
-                NStr::TruncateSpacesInPlace(response);
-
-                string sport, stime;
-
-                NStr::SplitInTwo(response, " ", sport, stime);
-                NStr::SplitInTwo(sport, ":", response, sport);
-
-                unsigned short port = (unsigned short) NStr::StringToInt(sport);
-
-                if (m_Unique.insert(make_pair(host,port)).second) {
-                    worker_nodes.push_back(SWorkerNodeInfo());
-
-                    SWorkerNodeInfo& wn_info = worker_nodes.back();
-                    wn_info.name = name;
-                    wn_info.prog = prog;
-                    wn_info.host = host;
-                    wn_info.port = port;
-
-                    NStr::TruncateSpacesInPlace(stime);
-                    wn_info.last_access = CTime(stime, "M/D/Y h:m:s");
-                }
-            }
-        }
-    }
+    g_GetWorkerNodes(m_Impl->m_API, worker_nodes);
 }
 
 void CNetScheduleAdmin::PrintConf(CNcbiOstream& output_stream)

@@ -46,7 +46,7 @@ typedef CNetScheduleAdmin::SWorkerNodeInfo SWorkerNodeInfo;
 ///
 enum ENetScheduleStatTopic;
 
-void s_GetWorkerNodes(CNetScheduleAPI api, list<SWorkerNodeInfo>& worker_nodes)
+void g_GetWorkerNodes(CNetScheduleAPI api, list<SWorkerNodeInfo>& worker_nodes)
 {
     worker_nodes.clear();
 
@@ -72,7 +72,9 @@ void s_GetWorkerNodes(CNetScheduleAPI api, list<SWorkerNodeInfo>& worker_nodes)
 
                 SWorkerNodeInfo& wn_info = worker_nodes.back();
                 wn_info.name = client_info.GetString("client_node");
-                wn_info.prog = session;
+                string not_used;
+                NStr::SplitInTwo(wn_info.name, "::", wn_info.prog, not_used);
+                wn_info.session = session;
                 wn_info.host = client_info.GetString("client_host");
                 wn_info.port = (unsigned short)
                         client_info.GetInteger("worker_node_control_port");
@@ -88,7 +90,7 @@ CJsonNode g_GetWorkerNodeInfo(CNetScheduleAPI api)
     CJsonNode result(CJsonNode::NewObjectNode());
 
     list<SWorkerNodeInfo> worker_nodes;
-    s_GetWorkerNodes(api, worker_nodes);
+    g_GetWorkerNodes(api, worker_nodes);
 
     ITERATE(list<CNetScheduleAdmin::SWorkerNodeInfo>, wn_info, worker_nodes) {
         string wn_address = wn_info->host + ':' +
@@ -98,7 +100,7 @@ CJsonNode g_GetWorkerNodeInfo(CNetScheduleAPI api)
                     api->m_Service->GetClientName(),
                     kEmptyStr);
 
-            result.SetByKey(wn_info->prog, g_WorkerNodeInfoToJson(
+            result.SetByKey(wn_info->session, g_WorkerNodeInfoToJson(
                     wn_api.GetService().Iterate().GetServer()));
         }
         catch (CException& e) {

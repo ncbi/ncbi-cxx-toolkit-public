@@ -267,6 +267,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     struct SWorkerNodeInfo {
         string name;
         string prog;
+        string session;
         string host;
         unsigned short port;
         CTime last_access;
