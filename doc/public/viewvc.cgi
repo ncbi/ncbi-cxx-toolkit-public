@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import cgi
 import os
+import re
 import subprocess
 import sys
 import urllib
@@ -46,22 +47,60 @@ def resolve_via_map(base, path):
             return repos + x[1] + path[len(x[0]):]
     return base + '/' + path
 
+url_splitter       = re.compile(r'(((https://)[^/]+/)repos/[^/]+)/(.+)')
+traditional_syntax = re.compile(r'^(\S+)(?:\s+-r\d+)?\s+(\S+://\S+)')
+new_syntax         = re.compile(r'^(?:-r\d+\s+)?(\S+?)(?:\@\d+)?\s+(\S+)')
+
+def parse_externals(url):
+    (root, server, scheme, rest) = url_splitter.match(url).groups()
+    svn = subprocess.Popen(['svn', 'pg', 'svn:externals', url],
+                           stdout = subprocess.PIPE)
+    for line in svn.communicate()[0].split('\n'):
+        if len(line) == 0:
+            continue
+        mo = traditional_syntax.match(line)
+        if mo is not None:
+            # Traditional format, always absolute
+            yield mo.groups()
+        mo = new_syntax.match(line)
+        if mo is None:
+            # Ignore as unsupported.  (XXX - warn?)
+            yield ('', url)
+        # New format (as of 1.5), possibly relative
+        # XXX - support path quoting, introduced in 1.6?
+        (dest, src) = mo.groups()
+        if dest.find('://') < 0:
+            # Relative in some fashion
+            if dest.startswith('//'):
+                dest = scheme + dest[2:]
+            elif dest.startswith('/'):
+                dest = server + dest[1:]
+            else:
+                # Relative to repository root or current stem
+                d = dest
+                if d.startswith('^/'):
+                    d    = d[2:]
+                    dest = root
+                else:
+                    dest = url
+                while d.startswith('../'):
+                    d    = d[3:]
+                    dest = dest[:dest.rfind('/')]
+                dest = dest + '/' + d
+        yield (src, dest)    
+
 def resolve_via_svn(stem, rest):
     while True:
         # print >>sys.stderr, stem + ' / ' + rest
-        svn = subprocess.Popen(['svn', 'pg', 'svn:externals', stem],
-                               stdout = subprocess.PIPE)
         matched = False
-        for line in svn.communicate()[0].split('\n'):
-            if len(line):
-                (src, dest) = line.split() # ignore revision specifications
-                if rest == src:
-                    return dest
-                elif rest.startswith(src + '/'):
-                    matched = True
-                    stem = dest
-                    rest = rest[len(src)+1:]
-                    break
+        for (src, dest) in parse_externals(stem):
+            if rest == src:
+                return dest
+            elif rest.startswith(src + '/'):
+                matched = True
+                stem = dest
+                rest = rest[len(src)+1:]
+                break
         if not matched:
             try:
                 next_slash = rest.index('/')
