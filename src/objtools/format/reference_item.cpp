@@ -923,7 +923,7 @@ static bool PiiOk(const string& str)
 
     char ch = str[i];
 
-    if (! isupper(ch) && ! islower(ch)) return false;
+    // if (! isupper(ch) && ! islower(ch)) return false;
     if (isupper(ch) || islower(ch)) {
         i++;
         ch = str[i];
