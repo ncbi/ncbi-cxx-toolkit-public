@@ -115,7 +115,7 @@ private:
     string                    m_Password;
     string                    m_DbapiDriver;
 
-    I_DriverContext*          m_Context;
+    unique_ptr<I_DriverContext>   m_Context;
 
     typedef map< TConn, AutoPtr<CDB_Connection> > TConnections;
     TConnections              m_Connections;

@@ -161,8 +161,8 @@ int main(int argc, char* argv[])
         map<string, string> packet;
         packet.insert (map<string, string>::value_type (string("packet"),
                                                         string("2048")));
-        I_DriverContext* my_context= drv_mgr.GetDriverContext(driver_name,
-                                                              &err_msg, &packet);
+        unique_ptr<I_DriverContext> my_context(drv_mgr.GetDriverContext(driver_name,
+                                                              &err_msg, &packet));
         if(!my_context)
         {
             cerr << "Cannot load a driver " << driver_name << " ["

@@ -144,8 +144,8 @@ int main(int argc, char* argv[])
         map<string, string> packet;
         packet.insert (map<string, string>::value_type (string("packet"),
                                                         string("2048")));
-        I_DriverContext* my_context= drv_mgr.GetDriverContext(driver_name,
-                                                              &err_msg, &packet);
+        unique_ptr<I_DriverContext> my_context(drv_mgr.GetDriverContext(driver_name,
+                                                              &err_msg, &packet));
         if(!my_context) {
             cerr << "Cannot load a driver " << driver_name << " ["
                  << err_msg << "] " << endl;
@@ -214,7 +214,7 @@ int main(int argc, char* argv[])
 
         CSimpleBlobStore sbs(table_name, key_col_name, num_col_name, blob_column, is_text);
 
-        CBlobLoader bload(my_context, server_name, user_name, passwd, &sbs);
+        CBlobLoader bload(my_context.get(), server_name, user_name, passwd, &sbs);
 
         sbs.SetKey(blob_key);
         bload.Load(cin, cm, imagesize);

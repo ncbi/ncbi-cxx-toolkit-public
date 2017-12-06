@@ -768,7 +768,7 @@ void MergeExternal(CObjectIStream& in, CObjectOStream& out, TGi gi,
     args["packet"]="3584"; // 7*512
     args["version"]="125"; // for correct connection to OpenServer
     string err;
-    I_DriverContext* context = drvMgr.GetDriverContext("ftds", &err, &args);
+    unique_ptr<I_DriverContext> context(drvMgr.GetDriverContext("ftds", &err, &args));
 
     AutoPtr<CDB_Connection> conn
         (context->Connect("PUBSEQ_OS_PUBLIC_GI64", "anyone", "allowed", 0));

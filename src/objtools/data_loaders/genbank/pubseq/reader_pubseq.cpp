@@ -152,7 +152,7 @@ CPubseqReader::CPubseqReader(int max_connections,
                              const string& dbapi_driver)
     : m_Server(server) , m_User(user), m_Password(pswd),
       m_DbapiDriver(dbapi_driver),
-      m_Context(0),
+      m_Context(nullptr),
       m_AllowGzip(DEFAULT_ALLOW_GZIP),
       m_ExclWGSMaster(DEFAULT_EXCL_WGS_MASTER),
       m_SetCubbyUser(false)
@@ -184,7 +184,7 @@ CPubseqReader::CPubseqReader(int max_connections,
 
 CPubseqReader::CPubseqReader(const TPluginManagerParamTree* params,
                              const string& driver_name)
-    : m_Context(0),
+    : m_Context(nullptr),
       m_AllowGzip(DEFAULT_ALLOW_GZIP),
       m_ExclWGSMaster(DEFAULT_EXCL_WGS_MASTER),
       m_SetCubbyUser(false)
@@ -413,8 +413,8 @@ void CPubseqReader::x_ConnectAtSlot(TConn conn_)
         vector<string> errmsg(driver_count);
         for ( size_t i = 0; i < driver_count; ++i ) {
             try {
-                m_Context = drvMgr.GetDriverContext(driver_list[i],
-                                                    &errmsg[i], &args);
+                m_Context.reset( drvMgr.GetDriverContext(driver_list[i],
+                                                    &errmsg[i], &args));
                 if ( m_Context )
                     break;
             }

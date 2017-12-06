@@ -58,8 +58,8 @@ int main(int argc, char* argv[])
     try {
         C_DriverMgr drv_mgr;
         string err_msg;
-        I_DriverContext* my_context = drv_mgr.GetDriverContext(driver_name,
-                                                               &err_msg);
+        unique_ptr<I_DriverContext> my_context( drv_mgr.GetDriverContext(driver_name,
+                                                               &err_msg));
         if (!my_context) {
             return 1;
         }

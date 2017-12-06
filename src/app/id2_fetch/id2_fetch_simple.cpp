@@ -99,6 +99,7 @@ private:
     void x_ProcessData(const CID2_Reply_Data& data);
     void x_SaveDataObject(const CObjectInfo& object, CNcbiOstream& out);
 
+    unique_ptr<I_DriverContext>   m_Context;
     AutoPtr<CConn_ServiceStream>  m_ID2Conn;
     AutoPtr<CDB_Connection>       m_PubSeqOS;
     AutoPtr<CNcbiIstream>         m_PubSeqOSReply;
@@ -246,12 +247,12 @@ void CId2FetchApp::x_InitPubSeqConnection(const string& server_name,
     args["packet"]="3584"; // 7*512
     args["version"]="125"; // for correct connection to OpenServer
     string errmsg;
-    I_DriverContext* context = drvMgr.GetDriverContext("ftds", &errmsg, &args);
-    if ( !context ) {
+    m_Context.reset(drvMgr.GetDriverContext("ftds", &errmsg, &args));
+    if ( !m_Context ) {
         ERR_FATAL("Failed to create ftds context: "<<errmsg);
     }
 
-    m_PubSeqOS.reset(context->Connect(server_name, "anyone", "allowed", 0));
+    m_PubSeqOS.reset(m_Context->Connect(server_name, "anyone", "allowed", 0));
     if ( !m_PubSeqOS.get() ) {
         ERR_FATAL("Failed to open PubSeqOS connection: "<<server_name);
     }
