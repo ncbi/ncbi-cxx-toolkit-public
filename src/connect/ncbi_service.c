@@ -236,6 +236,8 @@ static SERV_ITER x_Open(const char*         service,
         iter->ismask        = 1;
     if (types & fSERV_IncludeDown)
         iter->ok_down       = 1;
+    if (types & fSERV_IncludeStandby)
+        iter->ok_standby    = 1;
     if (types & fSERV_IncludePrivate)
         iter->ok_private    = 1;
     if (types & fSERV_IncludeReserved)
@@ -257,7 +259,7 @@ static SERV_ITER x_Open(const char*         service,
 
     if (n_skip) {
         size_t i;
-        for (i = 0;  i < n_skip;  i++) {
+        for (i = 0;  i < n_skip;  ++i) {
             const char* name = (iter->ismask  ||  skip[i]->type == fSERV_Dns
                                 ? SERV_NameOfInfo(skip[i]) : "");
             SSERV_Info* temp = SERV_CopyInfoEx(skip[i],

@@ -220,7 +220,7 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
         return 0;
 
     if (service) {
-        if (!*service)
+        if (!*service  ||  strpbrk(service, "*?"))
             service = 0;
         else if (!(service = SERV_ServiceName(service)))
             return 0;
@@ -339,7 +339,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     double dbl;
     char*  e;
 
-    if (service  &&  *service) {
+    if (service  &&  *service  &&  !strpbrk(service, "?*")) {
         if (!(service = SERV_ServiceName(service)))
             return 0;
         assert(*service);
