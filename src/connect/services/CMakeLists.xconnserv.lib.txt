@@ -18,7 +18,7 @@ add_library(xconnserv
     json_over_uttp netstorage netstorage_rpc
     netstorageobjectloc netstorageobjectinfo netstorage_direct_nc
     ns_output_parser
-    ns_job_serializer compound_id compound_id_v0 tmp_wn_info
+    ns_job_serializer compound_id compound_id_v0 netschedule_api_wn_info
 )
 target_link_libraries(xconnserv
     xthrserv

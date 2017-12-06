@@ -325,10 +325,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     void GetQueueList(TQueueList& result);
 };
 
-// XXX: Workaround for VAR-1651
-// Return a JSON object where each key is a worker node
-// session and the value is a JSON object containing
-// status information reported by the worker node itself.
 enum ENetScheduleStatTopic {
     eNetScheduleStatJobGroups,
     eNetScheduleStatClients,
@@ -336,6 +332,9 @@ enum ENetScheduleStatTopic {
     eNetScheduleStatAffinities,
     eNumberOfNetStheduleStatTopics
 };
+// Return a JSON object where each key is a worker node
+// session and the value is a JSON object containing
+// status information reported by the worker node itself.
 NCBI_XCONNECT_EXPORT
 CJsonNode g_GetWorkerNodeInfo(CNetScheduleAPI api);
 NCBI_XCONNECT_EXPORT

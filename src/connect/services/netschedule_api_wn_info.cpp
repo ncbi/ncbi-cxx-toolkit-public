@@ -35,9 +35,6 @@
 
 #include <locale>
 
-// XXX: Workaround for VAR-1651
-// TODO: Merge this code with code of grid_cli (see also r485314).
-
 BEGIN_NCBI_SCOPE
 
 typedef CNetScheduleAdmin::SWorkerNodeInfo SWorkerNodeInfo;
