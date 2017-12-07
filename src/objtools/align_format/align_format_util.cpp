@@ -3332,6 +3332,7 @@ static string s_MapCommonUrlParams(string urlTemplate, CAlignFormatUtil::SSeqURL
     url_link = CAlignFormatUtil::MapTemplate(url_link,"log",logstr_moltype + logstr_location);
     url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rank",seqUrlInfo->blast_rank);
     url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",seqUrlInfo->rid);     
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"acc",seqUrlInfo->accession); 
     url_link = CAlignFormatUtil::MapProtocol(url_link);
     return url_link;
 }
@@ -3413,6 +3414,7 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
     string url_link = NcbiEmptyString;
     CConstRef<CSeq_id> wid = FindBestChoice(*ids, CSeq_id::WorstRank);
     
+    bool hasTextSeqID = GetTextSeqID(*ids);
     string title = "title=\"Show report for " + seqUrlInfo->accession + "\" ";
 
     string temp_class_info = kClassInfo; temp_class_info += " ";
@@ -3428,7 +3430,8 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
 		url_link = CAlignFormatUtil::MapTemplate(url_link,"wgsproj",wgsProj);        
 		url_link = CAlignFormatUtil::MapTemplate(url_link,"wgsacc", wgsAccession);        
 	}
-    else if (seqUrlInfo->gi > ZERO_GI) {        
+    //else if (seqUrlInfo->gi > ZERO_GI) {        
+    else if (hasTextSeqID) {              
         string entrezTag = (seqUrlInfo->useTemplates) ? "ENTREZ_TM" : "ENTREZ";
         string l_EntrezUrl = CAlignFormatUtil::GetURLFromRegistry(entrezTag);
         url_link = s_MapCommonUrlParams(l_EntrezUrl, seqUrlInfo);
@@ -4511,6 +4514,44 @@ string CAlignFormatUtil::GetBareId(const CSeq_id& id)
     }
 
     return retval;
+}
+
+
+bool CAlignFormatUtil::GetTextSeqID(CConstRef<CSeq_id> seqID, string *textSeqID)
+{
+    bool hasTextSeqID = true;
+        
+    const CTextseq_id* text_id = seqID->GetTextseq_Id();
+    if(!text_id) {
+        if(!(seqID->Which() == CSeq_id::e_Pdb) &&  !(seqID->Which() == CSeq_id::e_Patent)) {
+            hasTextSeqID = false;
+        }
+    }
+
+    if(hasTextSeqID && textSeqID) {
+        seqID->GetLabel(textSeqID, CSeq_id::eContent);
+    }
+    return hasTextSeqID;
+}
+
+
+
+bool CAlignFormatUtil::GetTextSeqID(const list<CRef<CSeq_id> > & ids, string *textSeqID)
+{
+    bool hasTextSeqID = false;
+
+    CConstRef<CSeq_id> seqID = FindTextseq_id(ids);
+    if(seqID.Empty()) {
+        seqID = GetSeq_idByType(ids, CSeq_id::e_Pdb);
+    }
+    if(seqID.Empty()) {
+        seqID = GetSeq_idByType(ids, CSeq_id::e_Patent);
+    }
+    if(!seqID.Empty()) {
+        hasTextSeqID = true;
+        if(textSeqID) seqID->GetLabel(textSeqID, CSeq_id::eContent);
+    }
+    return hasTextSeqID;
 }
 
 

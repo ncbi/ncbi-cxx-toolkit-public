@@ -287,8 +287,9 @@ void CShowBlastDefline::x_InitLinkOutInfo(SDeflineInfo* sdl,
 {
     string linkout_list;
     TGi cur_gi =  FindGi(cur_id);
+    CRef<CSeq_id> wid = FindBestChoice(cur_id, CSeq_id::WorstRank);
     try {
-        sdl->linkout = m_LinkoutDB ? m_LinkoutDB->GetLinkout(cur_gi,m_MapViewerBuildName) : 0;    
+        sdl->linkout = m_LinkoutDB ? m_LinkoutDB->GetLinkout(*wid,m_MapViewerBuildName) : 0;    
     }
     catch (const CException & e) {                
         ERR_POST("Problem with linkoutdb: " + e.GetMsg());                
@@ -359,8 +360,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
     sdl->linkout = 0;
     sdl->is_new = false;
     sdl->was_checked = false;
-    sdl->taxid = 0;
-
+    sdl->taxid = 0;    
     //get psiblast stuff
     
     if(m_SeqStatus){
@@ -383,7 +383,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             }   
         }
     }        
-    //get id (sdl->id, sdl-gi)    
+    //get id (sdl->id, sdl-gi)        
     sdl->id = CAlignFormatUtil::GetDisplayIds(handle,aln_id,use_this_seqid,&sdl->gi,&sdl->taxid,&sdl->textSeqID);
     sdl->alnIDFasta = aln_id.AsFastaString();
 
@@ -400,19 +400,16 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                     x_InitLinkOutInfo(sdl,cur_id,blast_rank,getIdentProteins);                    
                     break;
                 }
-            } else if (CAlignFormatUtil::IsGiList(use_this_seqid)) {
-                list<TGi> use_this_gi = CAlignFormatUtil::StringGiToNumGiList(use_this_seqid);
-                ITERATE(list<TGi>, iter_gi, use_this_gi){
-                    if(cur_gi == *iter_gi){                                             
-                        x_InitLinkOutInfo(sdl,cur_id,blast_rank,getIdentProteins);                            
-                        linkout_not_found = false;
-                        break;
-                    }
-                }
-                if(!linkout_not_found){
+            }             
+            else { //seqid list or giList               
+                wid = FindBestChoice(cur_id, CSeq_id::WorstRank);
+                bool match = CAlignFormatUtil::MatchSeqInSeqList(cur_gi, wid, use_this_seqid);
+                if(match) {
+                    x_InitLinkOutInfo(sdl,cur_id,blast_rank,getIdentProteins);
                     break;
-                } 
+                }                                
             }            
+
         }
     }
     
@@ -1431,6 +1428,7 @@ CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<string> &use_thi
     sdl = new SDeflineInfo;
     sdl->id = id;
     sdl->defline = "Unknown";
+    
     try{
         const CBioseq_Handle& handle = m_ScopeRef->GetBioseqHandle(*id);
         x_FillDeflineAndId(handle, *id, use_this_seqid, sdl, blast_rank);
@@ -1442,7 +1440,7 @@ CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<string> &use_thi
         
         if((*id).Which() == CSeq_id::e_Gi){
             sdl->gi = (*id).GetGi();
-        } else {                        
+        } else {                                
             sdl->gi = ZERO_GI;
         }
         sdl->id = id;
@@ -1525,7 +1523,7 @@ string CShowBlastDefline::x_FormatSeqSetHeaders(int isGenomicSeq, bool formatHea
 
 string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo* iter,bool &first_new)
 {
-    string defLine = ((sdl->gi > ZERO_GI) && ((m_Option & eCheckboxChecked) || (m_Option & eCheckbox))) ? x_FormatPsi(sdl, first_new) : m_DeflineTemplates->defLineTmpl;   
+    string defLine = ((sdl->gi > ZERO_GI) && ((m_Option & eCheckboxChecked) || (m_Option & eCheckbox))) ? x_FormatPsi(sdl, first_new) : m_DeflineTemplates->defLineTmpl;
     string dflGi = (m_Option & eShowGi) && (sdl->gi > ZERO_GI) ? "gi|" + NStr::NumericToString(sdl->gi) + "|" : "";
     string seqid;
     if(!sdl->id.Empty()){
@@ -1568,15 +1566,15 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     if(sdl->gi == ZERO_GI) {
         string accession;
         sdl->id->GetLabel(& deflId, CSeq_id::eContent);
-        deflFrmID =  CAlignFormatUtil::GetLabel(sdl->id);//Just accession without db part like GNOMON: or ti:
-        //deflFastaSeq = sdl->id->AsFastaString();
+        deflFrmID =  CAlignFormatUtil::GetLabel(sdl->id);//Just accession without db part like GNOMON: or ti:        
         deflFastaSeq = NStr::TruncateSpaces(sdl->alnIDFasta);
+        deflAccs = sdl->id->AsFastaString();
     }
     else {        
         deflFrmID = deflId = NStr::NumericToString(sdl->gi);        
         deflFastaSeq = "gi|" + NStr::NumericToString(sdl->gi);
-        deflFastaSeq = NStr::TruncateSpaces(sdl->alnIDFasta);        
-        deflAccs = sdl->id->AsFastaString();
+        deflFastaSeq = NStr::TruncateSpaces(sdl->alnIDFasta);         
+        sdl->id->GetLabel(&deflAccs, CSeq_id::eContent);
     }
     //Setup applog info structure
     if(m_AppLogInfo && (m_AppLogInfo->currInd < m_AppLogInfo->topMatchesNum)) {
