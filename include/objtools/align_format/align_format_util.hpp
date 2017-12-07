@@ -67,10 +67,10 @@ static const char kClassInfo[] = "class=\"info\"";
 static const char kDefaultProtocol[] = "https:";
 ///entrez
 // .ncbirc alias: ENTREZ
-static const char kEntrezUrl[] = "<a title=\"Show report for <@acc@>\" <@cssInf@>href=\"<@protocol@>//www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=genbank&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>\" <@target@>>";
+static const char kEntrezUrl[] = "<a title=\"Show report for <@acc@>\" <@cssInf@>href=\"<@protocol@>//www.ncbi.nlm.nih.gov/<@db@>/<@acc@>?report=genbank&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>\" <@target@>>";
 
 //.ncbirc alias: ENTREZ_TM
-static const char kEntrezTMUrl[] = "<@protocol@>//www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=genbank&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>";
+static const char kEntrezTMUrl[] = "<@protocol@>//www.ncbi.nlm.nih.gov/<@db@>/<@acc@>?report=genbank&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>";
 
 //.ncbirc alias: WGS
 static const char kWGSUrl[] = "<@protocol@>//www.ncbi.nlm.nih.gov/nuccore/<@wgsacc@>";
@@ -186,7 +186,7 @@ static const char kDownloadLink[] = "<a href=\"<@download_url@>&segs=<@segs@>\">
 //substitues <@lnk_displ@>
 static const char kDownloadImg[] = "<img border=0 height=16 width=16 src=\"images/D.gif\" alt=\"Download subject sequence <@label@> spanning the HSP\">";
 
-static const char kSeqViewerUrl[] = "<@protocol@>//www.ncbi.nlm.nih.gov/<@dbtype@>/<@gi@>?report=graph&rid=<@rid@>[<@gi@>]&<@seqViewerParams@>&v=<@from@>:<@to@>&appname=ncbiblast&link_loc=<@link_loc@>";
+static const char kSeqViewerUrl[] = "<@protocol@>//www.ncbi.nlm.nih.gov/<@dbtype@>/<@seqid@>?report=graph&rid=<@rid@>[<@seqid@>]&<@seqViewerParams@>&v=<@from@>:<@to@>&appname=ncbiblast&link_loc=<@link_loc@>";
 static const string kSeqViewerParams = "tracks=[key:sequence_track,name:Sequence,display_name:Sequence,id:STD1,category:Sequence,annots:Sequence,ShowLabel:true][key:gene_model_track,CDSProductFeats:false][key:alignment_track,name:other alignments,annots:NG Alignments|Refseq Alignments|Gnomon Alignments|Unnamed,shown:false]";
 
 static const char kSeqViewerUrlNonGi[] = "<@protocol@>//www.ncbi.nlm.nih.gov/projects/sviewer/?RID=<@rid@>&id=<@firstSeqID@>&<@seqViewerParams@>&v=<@from@>:<@to@>&appname=ncbiblast&link_loc=<@link_loc@>";
@@ -1443,7 +1443,10 @@ public:
     static TGi GetDisplayIds(const list< CRef< objects::CBlast_def_line > > &bdl,
                                               const objects::CSeq_id& aln_id,
                                               list<TGi>& use_this_gi);
+    static bool GetTextSeqID(const list<CRef<objects::CSeq_id> > & ids,string *textSeqID = NULL);
+    static bool GetTextSeqID(CConstRef<objects::CSeq_id> seqID,string *textSeqID = NULL);
     
+
     ///Scan the the list of blast deflines and find seqID to be use in display    
     ///@param handle: CBioseq_Handle [in]
     ///@param aln_id: CSeq_id object for alignment seq [in]
