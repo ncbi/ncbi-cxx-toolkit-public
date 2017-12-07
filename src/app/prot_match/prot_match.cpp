@@ -1035,7 +1035,6 @@ void CProteinMatchApp::x_GatherUpdateProteinIds(const CBioseq_set& nuc_prot_set,
         return; 
     }
 
-    const bool with_version = false;
     for (CRef<CSeq_entry> sub_entry : nuc_prot_set.GetSeq_set()) {
         const auto& bioseq = sub_entry->GetSeq();
         if (bioseq.IsAa() && bioseq.IsSetId()) {
