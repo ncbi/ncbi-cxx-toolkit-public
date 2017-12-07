@@ -329,28 +329,4 @@ string CAsyncWriteCache::GetCacheName(void) const
 }
 
 
-void ICache::Purge(time_t access_timeout)
-{
-    Purge(access_timeout, eDropAll); // NCBI_FAKE_WARNING
-}
-
-
-void ICache::Purge(const string& key, const string& subkey, time_t access_timeout)
-{
-    Purge(key, subkey, access_timeout, eDropAll); // NCBI_FAKE_WARNING
-}
-
-
-void ICache::Purge(time_t access_timeout, EKeepVersions)
-{
-    Purge(access_timeout);
-}
-
-
-void ICache::Purge(const string& key, const string& subkey, time_t access_timeout, EKeepVersions)
-{
-    Purge(key, subkey, access_timeout);
-}
-
-
 END_NCBI_SCOPE
