@@ -201,6 +201,8 @@ public:
                                  int            version,
                                  const string&  subkey);
 
+    using ICache::Purge;
+
     virtual void Purge(time_t           access_timeout) override;
 
     virtual void Purge(const string&    key,

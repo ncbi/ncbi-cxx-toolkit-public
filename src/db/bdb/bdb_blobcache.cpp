@@ -2021,7 +2021,7 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
 
     if (m_VersionFlag == eDropAll || m_VersionFlag == eDropOlder) {
         //_TRACE("CBDB_Cache::x_Store point 2");
-        Purge(key, subkey, 0, m_VersionFlag);
+        Purge(key, subkey, 0);
     }
 
     TBlobLock blob_lock(m_LockVector, m_LockTimeout);
@@ -3213,7 +3213,7 @@ IWriter* CBDB_Cache::GetWriteStream(unsigned         blob_id_ext,
     //_TRACE("CBDB_Cache::GetWriteStream point 1");
     if (m_VersionFlag == eDropAll || m_VersionFlag == eDropOlder) {
         //_TRACE("CBDB_Cache::GetWriteStream point 2");
-        Purge(key, subkey, 0, m_VersionFlag);
+        Purge(key, subkey, 0);
     }
 
     //_TRACE("CBDB_Cache::GetWriteStream point 3");

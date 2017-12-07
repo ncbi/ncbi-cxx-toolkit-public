@@ -310,6 +310,8 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
     bool HasBlob(const string& key, const string& subkey,
             const CNamedParameterList* optional = NULL);
 
+    using ICache::Purge;
+
     virtual void Purge(time_t           access_timeout) override;
 
     virtual void Purge(const string&    key,

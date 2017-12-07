@@ -691,7 +691,7 @@ void CDBAPI_Cache::Store(const string&  key,
                          const string&  /*owner = kEmptyStr*/)
 {
     if (m_VersionFlag == eDropAll || m_VersionFlag == eDropOlder) {
-        Purge(key, subkey, 0, m_VersionFlag);
+        Purge(key, subkey, 0);
     }
 
     CFastMutexGuard guard(x_DBAPI_BLOB_CacheMutex);
@@ -910,7 +910,7 @@ IWriter* CDBAPI_Cache::GetWriteStream(const string&    key,
                                       const string&   /*owner*/)
 {
     if (m_VersionFlag == eDropAll || m_VersionFlag == eDropOlder) {
-        Purge(key, subkey, 0, m_VersionFlag);
+        Purge(key, subkey, 0);
     }
 
     unique_ptr<CDBAPI_CacheIWriter> wrt(
