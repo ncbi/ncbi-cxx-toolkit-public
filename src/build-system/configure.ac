@@ -253,7 +253,9 @@ AC_ARG_WITH(static-vdb,
 AC_ARG_WITH(libunwind,
    [ --with-libunwind(=DIR)  use libunwind (in DIR)])
 AC_ARG_WITH(libdw,
-   [ --with-libdw(=DIR)      use libdw (in DIR)])
+   [ --with-libdw=DIR        use elfutils libdw installation in DIR])
+AC_ARG_WITH(libdw,
+   [ --without-libdw         do not use elfutils libdw])
 AC_ARG_WITH(backward-cpp,
    [ --with-backward-cpp=DIR use backward-cpp installation in DIR])
 AC_ARG_WITH(backward-cpp,
@@ -740,6 +742,7 @@ if test "$with_bin_release" = "yes" ; then
    : ${with_local_lbsm=no}
    : ${with_ncbi_crypt=no}
    : ${with_connext=no}
+   : ${with_libdw=no}
    : ${with_pcre=no} # Too much variation across distributions.
    : ${with_sse42=no}
    AC_DEFINE(NCBI_BIN_RELEASE, 1,
@@ -4314,7 +4317,6 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(libunwind, LIBUNWIND, unwind,
 LIBS="$LIBUNWIND_LIBS $LIBS"
 orig_LIBS="$LIBUNWIND_LIBS $orig_LIBS"
 
-: ${with_libdw:=no}
 NCBI_CHECK_THIRD_PARTY_LIB_EX(libdw, LIBDW, dw,
  [[AC_LANG_PROGRAM([#include <elfutils/libdw.h>],
       [[Dwarf* d = dwarf_begin(17, DWARF_C_READ);]])]])

@@ -1930,7 +1930,8 @@ Optional Packages:
  --with-downloaded-vdb   download and build SRA/VDB from GitHub
  --with-static-vdb       always link statically against SRA/VDB
  --with-libunwind(=DIR)  use libunwind (in DIR)
- --with-libdw(=DIR)      use libdw (in DIR)
+ --with-libdw=DIR        use elfutils libdw installation in DIR
+ --without-libdw         do not use elfutils libdw
  --with-backward-cpp=DIR use backward-cpp installation in DIR
  --without-backward-cpp  do not use backward-cpp
  --with-z=DIR            use zlib installation in DIR
@@ -3446,6 +3447,12 @@ if test "${with_libdw+set}" = set; then
 fi
 
 
+# Check whether --with-libdw was given.
+if test "${with_libdw+set}" = set; then
+  withval=$with_libdw;
+fi
+
+
 # Check whether --with-backward-cpp was given.
 if test "${with_backward_cpp+set}" = set; then
   withval=$with_backward_cpp;
@@ -4505,6 +4512,7 @@ if test "$with_bin_release" = "yes" ; then
    : ${with_local_lbsm=no}
    : ${with_ncbi_crypt=no}
    : ${with_connext=no}
+   : ${with_libdw=no}
    : ${with_pcre=no} # Too much variation across distributions.
    : ${with_sse42=no}
 
@@ -28610,7 +28618,6 @@ _ACEOF
 LIBS="$LIBUNWIND_LIBS $LIBS"
 orig_LIBS="$LIBUNWIND_LIBS $orig_LIBS"
 
-: ${with_libdw:=no}
 if test "$with_libdw" != "no"; then
     case "$with_libdw" in
        yes | "" ) ;;
