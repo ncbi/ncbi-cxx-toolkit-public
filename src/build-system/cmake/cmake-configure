@@ -134,6 +134,7 @@ GPipe Predefined Settings:
 
 Options:
    --with-debug            build debug versions of libs and apps
+   --with-symbols          build with full debug info even in release
    --with-max-debug        enable extra runtime checks (esp. of STL usage)
    --without-debug         build non-debug versions of libs and apps
    --with-dll              build all libraries as DLLs
