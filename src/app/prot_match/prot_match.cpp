@@ -274,7 +274,6 @@
 
     void x_GatherReplacedProteinAccessions(const CBioseq_set& nuc_prot_set, map<string, list<string>>& replaced_prots) const;
 
-    void x_RelabelNucSeq(CRef<CSeq_entry> nuc_prot_set);
 
     void x_RelabelNucSeq(CBioseq_set& nuc_prot_set);
 
@@ -863,9 +862,9 @@ bool CProteinMatchApp::x_InitNucProtSetMatch(const CBioseq_set& nuc_prot_set,
     }
 
     const bool exclude_local_prot_ids = GetArgs()["no-local-match"];
-    CRef<CBioseq_set> core_nuc_prot_set = m_pMatchSetup->GetCoreNucProtSet(nuc_prot_set, exclude_local_prot_ids);
-    //CRef<CBioseq_set> core_nuc_prot_set(new CBioseq_set());
-    //core_nuc_prot_set->Assign(nuc_prot_set);
+    //CRef<CBioseq_set> core_nuc_prot_set = m_pMatchSetup->GetCoreNucProtSet(nuc_prot_set, exclude_local_prot_ids);
+    CRef<CBioseq_set> core_nuc_prot_set(new CBioseq_set());
+    core_nuc_prot_set->Assign(nuc_prot_set);
 
     x_RelabelNucSeq(*core_nuc_prot_set); 
 
@@ -957,32 +956,10 @@ bool CProteinMatchApp::x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& seq_
 }
 
 
+
 void CProteinMatchApp::x_RelabelNucSeq(CBioseq_set& nuc_prot_set) 
 {
-
-    CRef<CSeq_id> local_id;
-    // Could optimize this. No need to look for CDS features if the 
-    // nuc-prot set contains only a nucleotide sequence.
-    if (!m_pMatchSetup->GetNucSeqIdFromCDSs(nuc_prot_set, local_id)) {
-
-        // There are no CDS features, so just make the nuc-seq id local 
-        const CBioseq& nuc_seq = nuc_prot_set.GetNucFromNucProtSet();
-        const CSeq_id* id_ptr = nuc_seq.GetFirstId();
-        if (id_ptr) {
-            if (id_ptr->IsLocal()) {
-                if (nuc_seq.GetId().size() == 1) {
-                    return; // Bioseq already has a single local id => nothing to do here
-                } // else
-                local_id = Ref(new CSeq_id());
-                local_id->Assign(*id_ptr);
-            }
-            else {
-                local_id = Ref(new CSeq_id());
-                local_id->SetLocal().SetStr(id_ptr->GetSeqIdString(true)); 
-            } 
-        }
-    }
-
+    CRef<CSeq_id> local_id = m_pMatchSetup->GetLocalSeqId(nuc_prot_set.GetNucFromNucProtSet());
     if (!m_pMatchSetup->UpdateNucSeqIds(local_id, nuc_prot_set)) {
         NCBI_THROW(CProteinMatchException, 
                     eExecutionError, 
@@ -991,39 +968,6 @@ void CProteinMatchApp::x_RelabelNucSeq(CBioseq_set& nuc_prot_set)
     return;
 }
 
-void CProteinMatchApp::x_RelabelNucSeq(CRef<CSeq_entry> nuc_prot_set) 
-{
-
-    CRef<CSeq_id> local_id;
-    // Could optimize this. No need to look for CDS features if the 
-    // nuc-prot set contains only a nucleotide sequence.
-    if (!m_pMatchSetup->GetNucSeqIdFromCDSs(*nuc_prot_set, local_id)) {
-
-        // There are no CDS features, so just make the nuc-seq id local 
-        const CBioseq& nuc_seq = nuc_prot_set->GetSet().GetNucFromNucProtSet();
-        const CSeq_id* id_ptr = nuc_seq.GetFirstId();
-        if (id_ptr) {
-            if (id_ptr->IsLocal()) {
-                if (nuc_seq.GetId().size() == 1) {
-                    return; // Bioseq already has a single local id => nothing to do here
-                } // else
-                local_id = Ref(new CSeq_id());
-                local_id->Assign(*id_ptr);
-            }
-            else {
-                local_id = Ref(new CSeq_id());
-                local_id->SetLocal().SetStr(id_ptr->GetSeqIdString(true)); 
-            } 
-        }
-    }
-
-    if (!m_pMatchSetup->UpdateNucSeqIds(local_id, nuc_prot_set.GetNCObject())) {
-        NCBI_THROW(CProteinMatchException, 
-                    eExecutionError, 
-                    "Unable to assign local nucleotide id");
-    }
-    return;
-}
 
 
 void CProteinMatchApp::x_GatherUpdateProteinIds(const CBioseq_set& nuc_prot_set,    

@@ -61,11 +61,7 @@ public:
     bool UpdateNucSeqIds(CRef<CSeq_id> new_id,
         CBioseq_set& nuc_prot_set) const;
 
-    bool GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
-        CRef<CSeq_id>& id) const;
-
-    bool GetNucSeqIdFromCDSs(const CBioseq_set& nuc_prot_set,
-        CRef<CSeq_id>& id) const;
+    CRef<CSeq_id> GetLocalSeqId(const CBioseq& seq) const;
 
     bool GetAccession(const CBioseq& bioseq, CRef<CSeq_id>& id) const;
 
@@ -83,16 +79,6 @@ public:
     
     CRef<CSeq_entry> GetCoreNucProtSet(const CSeq_entry& nuc_prot_set, bool exclude_local_ids=false) const;
 private:
-/*
-    struct SIdCompare
-    {
-        bool operator()(const CRef<CSeq_id>& id1,
-            const CRef<CSeq_id>& id2) const 
-        {
-            return id1->CompareOrdered(*id2) < 0;
-        }
-    };
-*/
     bool x_GetNucSeqIdsFromCDSs(const CSeq_annot& annot,
         set<CRef<CSeq_id>, SIdCompare>& ids) const;
 

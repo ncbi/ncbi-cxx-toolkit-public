@@ -11,6 +11,8 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/Seq_hist.hpp>
 #include <objects/seq/Seq_hist_rec.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
 
 #include <objtools/edit/protein_match/prot_match_exception.hpp>
 #include <objtools/edit/protein_match/setup_match.hpp>
@@ -269,12 +271,12 @@ void CMatchSetup::GatherCdregionFeatures(const CBioseq_set& nuc_prot_set,
     }
 }
 
+
 bool s_GetGeneralOrLocalID(const CBioseq& bioseq, CRef<CSeq_id>& id) 
 {
     if (!bioseq.IsSetId()) {
         return false;
     }
-
 
     CRef<CSeq_id> best_id;
     for (CRef<CSeq_id> seq_id : bioseq.GetId()) {
@@ -294,6 +296,7 @@ bool s_GetGeneralOrLocalID(const CBioseq& bioseq, CRef<CSeq_id>& id)
     }
     return false;
 }
+
 
 CRef<CBioseq_set> CMatchSetup::GetCoreNucProtSet(const CBioseq_set& nuc_prot_set, bool exclude_local_prot_ids) const 
 {
@@ -401,7 +404,6 @@ CRef<CSeq_entry> CMatchSetup::GetCoreNucProtSet(const CSeq_entry& nuc_prot_set, 
         }
     }
 
-
     for (CRef<CSeq_entry> pSubEntry : nuc_prot_set.GetSet().GetSeq_set()) {
         const CBioseq& old_seq = pSubEntry->GetSeq();
 
@@ -428,128 +430,30 @@ CRef<CSeq_entry> CMatchSetup::GetCoreNucProtSet(const CSeq_entry& nuc_prot_set, 
 }
 
 
-bool CMatchSetup::GetNucSeqIdFromCDSs(const CBioseq_set& nuc_prot_set,
-    CRef<CSeq_id>& id) const
-{
-    // Set containing distinct ids
-    set<CRef<CSeq_id>, SIdCompare> ids;
-    
-    if (nuc_prot_set.IsSetAnnot()) { 
-        for (CRef<CSeq_annot> pAnnot : nuc_prot_set.GetAnnot()) {
-            x_GetNucSeqIdsFromCDSs(*pAnnot, ids);
-        }
+CRef<CSeq_id> CMatchSetup::GetLocalSeqId(const CBioseq& seq) const
+{   
+    CRef<CSeq_id> pLocalId(new CSeq_id());
+
+    const CSeq_id* local_id = seq.GetLocalId();
+    if (local_id) {
+        pLocalId->Assign(*local_id);
+        return pLocalId;
     }
 
-    for (CRef<CSeq_entry> pSubentry : nuc_prot_set.GetSeq_set()) {
-        if (pSubentry->IsSeq() && pSubentry->GetSeq().IsNa()) {
-            const CBioseq& nucseq = pSubentry->GetSeq();
-            if (nucseq.IsSetAnnot()) {
-                for (CRef<CSeq_annot> pAnnot : nucseq.GetAnnot()) {
-                    x_GetNucSeqIdsFromCDSs(*pAnnot, ids);
-                }
-            }
-        }
-    }
-
-    if (ids.empty()) {
-        return false;
-    }
-
-
-    // Check that the ids point to the nucleotide sequence
-    const CBioseq& nuc_seq = nuc_prot_set.GetNucFromNucProtSet();
-
-    for ( auto pId : ids) {
-        if (!s_InList(*pId, nuc_seq.GetId())) {
-            NCBI_THROW(CProteinMatchException,
-                eBadInput,
-                "Unrecognized CDS location id");
-        }
+    const CSeq_id* first_id = seq.GetFirstId();
+    if (!first_id) {
+        NCBI_THROW(CProteinMatchException, 
+                   eBadInput, 
+                   "Unable to find sequence id");
     }
 
     const bool with_version = true;
-    const string local_id_string = nuc_seq.GetFirstId()->GetSeqIdString(with_version);
+    const string local_id_string = first_id->GetSeqIdString(with_version);
+    pLocalId->SetLocal().SetStr(local_id_string);
 
-    if (id.IsNull()) {
-        id = Ref(new CSeq_id());
-    }
-    id->SetLocal().SetStr(local_id_string);
-
-    return true;
+    return pLocalId;
 }
 
-
-bool CMatchSetup::GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
-    CRef<CSeq_id>& id) const
-{
-    // Set containing distinct ids
-    set<CRef<CSeq_id>, SIdCompare> ids;
-    
-    const CBioseq_set& bioseq_set = nuc_prot_set.GetSet();
-    if (bioseq_set.IsSetAnnot()) { 
-        for (CRef<CSeq_annot> pAnnot : bioseq_set.GetAnnot()) {
-            x_GetNucSeqIdsFromCDSs(*pAnnot, ids);
-        }
-    }
-
-    for (CRef<CSeq_entry> pSubentry : bioseq_set.GetSeq_set()) {
-        if (pSubentry->IsSeq() && pSubentry->GetSeq().IsNa()) {
-            const CBioseq& nucseq = pSubentry->GetSeq();
-            if (nucseq.IsSetAnnot()) {
-                for (CRef<CSeq_annot> pAnnot : nucseq.GetAnnot()) {
-                    x_GetNucSeqIdsFromCDSs(*pAnnot, ids);
-                }
-            }
-        }
-    }
-
-    if (ids.empty()) {
-        return false;
-    }
-
-
-    // Check that the ids point to the nucleotide sequence
-    const CBioseq& nuc_seq = nuc_prot_set.GetSet().GetNucFromNucProtSet();
-
-    for ( auto pId : ids) {
-        if (!s_InList(*pId, nuc_seq.GetId())) {
-            NCBI_THROW(CProteinMatchException,
-                eBadInput,
-                "Unrecognized CDS location id");
-        }
-    }
-
-    const bool with_version = true;
-    const string local_id_string = nuc_seq.GetFirstId()->GetSeqIdString(with_version);
-
-    if (id.IsNull()) {
-        id = Ref(new CSeq_id());
-    }
-    id->SetLocal().SetStr(local_id_string);
-
-    return true;
-}
-
-
-bool CMatchSetup::UpdateNucSeqIds(CRef<CSeq_id> new_id,
-    CSeq_entry& nuc_prot_set) const
-{
-    if (!nuc_prot_set.IsSet()) {
-        return false;
-    }
-
-    CBioseq& nuc_seq = x_FetchNucSeqRef(nuc_prot_set);
-    nuc_seq.ResetId();
-    nuc_seq.SetId().push_back(new_id);
-
-    for (CTypeIterator<CSeq_feat> feat(nuc_prot_set); feat; ++feat) {
-        if (feat->GetData().IsCdregion()) {
-            feat->SetLocation().SetId(*new_id);
-        }
-    }
-
-    return true;   
-}
 
 bool CMatchSetup::UpdateNucSeqIds(CRef<CSeq_id> new_id,
     CBioseq_set& nuc_prot_set) const
@@ -559,11 +463,14 @@ bool CMatchSetup::UpdateNucSeqIds(CRef<CSeq_id> new_id,
     nuc_seq.SetId().push_back(new_id);
 
     for (CTypeIterator<CSeq_feat> feat(nuc_prot_set); feat; ++feat) {
-        if (feat->GetData().IsCdregion()) {
+        if (feat->GetData().IsCdregion() ||
+            feat->GetData().IsGene() ||
+            (feat->GetData().IsRna() && (feat->GetData().GetRna().GetType() == CRNA_ref::eType_mRNA)) ||
+            (feat->GetData().IsImp() && feat->GetData().GetImp().GetKey()=="exon") ) {
             feat->SetLocation().SetId(*new_id);
         }
     }
-
+    
     return true;   
 }
 
