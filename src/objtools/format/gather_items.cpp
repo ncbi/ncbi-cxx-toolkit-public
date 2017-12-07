@@ -2690,6 +2690,17 @@ static CMappedFeat s_GetTrimmedMappedFeat(const CSeq_feat& feat,
 }
 
 
+static bool s_IsCDD(const CSeq_feat_Handle& feat)
+{
+    ITERATE(CSeq_feat::TDbxref, it, feat.GetDbxref()) {
+        if ( (*it)->GetType() == CDbtag::eDbtagType_CDD ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void CFlatGatherer::x_GatherFeaturesOnWholeLocation
 (const CSeq_loc& loc,
  SAnnotSelector& sel,
@@ -2725,6 +2736,14 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocation
             ///
 
             s_CleanCDDFeature(original_feat);
+
+            const CFlatFileConfig& cfg = ctx.Config();
+            CSeqFeatData::ESubtype subtype = feat.GetFeatSubtype();
+            if (cfg.HideCDDFeatures()  &&
+                (subtype == CSeqFeatData::eSubtype_region || subtype == CSeqFeatData::eSubtype_site)  &&
+                s_IsCDD(feat)) {
+            	continue;
+            }
 
             ///
             /// HACK HACK HACK
@@ -2991,6 +3010,14 @@ void CFlatGatherer::x_GatherFeaturesOnRange
             /// we need to cleanse CDD features
 
             s_CleanCDDFeature(original_feat);
+
+            const CFlatFileConfig& cfg = ctx.Config();
+            CSeqFeatData::ESubtype subtype = feat.GetFeatSubtype();
+            if (cfg.HideCDDFeatures()  &&
+                (subtype == CSeqFeatData::eSubtype_region || subtype == CSeqFeatData::eSubtype_site)  &&
+                s_IsCDD(feat)) {
+            	continue;
+            }
 
             ///
             /// HACK HACK HACK
@@ -3328,17 +3355,6 @@ void CFlatGatherer::x_GatherFeatures(void) const
             }
         }
     }
-}
-
-
-static bool s_IsCDD(const CSeq_feat_Handle& feat)
-{
-    ITERATE(CSeq_feat::TDbxref, it, feat.GetDbxref()) {
-        if ( (*it)->GetType() == CDbtag::eDbtagType_CDD ) {
-            return true;
-        }
-    }
-    return false;
 }
 
 
