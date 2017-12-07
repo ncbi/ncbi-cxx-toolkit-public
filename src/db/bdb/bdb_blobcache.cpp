@@ -3856,8 +3856,7 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
 */
 }
 
-void CBDB_Cache::Purge(time_t           access_timeout,
-                       EKeepVersions    keep_last_version)
+void CBDB_Cache::Purge(time_t           access_timeout)
 {
     // Protect Purge form double (run from different threads)
     CPurgeFlagGuard pf_guard;
@@ -3873,7 +3872,7 @@ void CBDB_Cache::Purge(time_t           access_timeout,
         return;
     }
 
-    if (keep_last_version == eDropAll && access_timeout == 0) {
+    if (access_timeout == 0) {
         CFastMutexGuard guard(m_DB_Lock);
         // TODO: SetTransaction here ??? Which one, zero?
         x_TruncateDB();
@@ -4233,14 +4232,13 @@ purge_start:
 
 void CBDB_Cache::Purge(const string&    key,
                        const string&    subkey,
-                       time_t           access_timeout,
-                       EKeepVersions    keep_last_version)
+                       time_t           access_timeout)
 {
     if (IsReadOnly()) {
         return;
     }
 
-    if (key.empty() && keep_last_version == eDropAll && access_timeout == 0) {
+    if (key.empty() && access_timeout == 0) {
         CFastMutexGuard guard(m_DB_Lock);
         // TODO: SetTransaction ??? see TODO above
         x_TruncateDB();

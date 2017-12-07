@@ -201,13 +201,11 @@ public:
                                  int            version,
                                  const string&  subkey);
 
-    virtual void Purge(time_t           access_timeout,
-                       EKeepVersions    keep_last_version = eDropAll);
+    virtual void Purge(time_t           access_timeout) override;
 
     virtual void Purge(const string&    key,
                        const string&    subkey,
-                       time_t           access_timeout,
-                       EKeepVersions    keep_last_version = eDropAll);
+                       time_t           access_timeout) override;
 
     virtual bool SameCacheParams(const TCacheParams* params) const;
     virtual string GetCacheName(void) const

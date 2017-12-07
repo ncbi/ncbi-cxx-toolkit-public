@@ -85,8 +85,8 @@ public:
     void Remove(const string& key, TBlobVersion version, const string& subkey) override;
     time_t GetAccessTime(const string& key, TBlobVersion version, const string& subkey) override;
     bool HasBlobs(const string& key, const string& subkey) override;
-    void Purge(time_t access_timeout, EKeepVersions keep_last_version = eDropAll) override;
-    void Purge(const string& key, const string& subkey, time_t access_timeout, EKeepVersions keep_last_version = eDropAll) override;
+    void Purge(time_t access_timeout) override;
+    void Purge(const string& key, const string& subkey, time_t access_timeout) override;
     ~CAsyncWriteCache() override;
     bool SameCacheParams(const TCacheParams* params) const override;
     string GetCacheName(void) const override;

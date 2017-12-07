@@ -305,15 +305,15 @@ bool CAsyncWriteCache::HasBlobs(const string& key, const string& subkey)
 }
 
 
-void CAsyncWriteCache::Purge(time_t access_timeout, EKeepVersions keep_last_version)
+void CAsyncWriteCache::Purge(time_t access_timeout)
 {
-    return m_Main->Purge(access_timeout, keep_last_version);
+    return m_Main->Purge(access_timeout);
 }
 
 
-void CAsyncWriteCache::Purge(const string& key, const string& subkey, time_t access_timeout, EKeepVersions keep_last_version)
+void CAsyncWriteCache::Purge(const string& key, const string& subkey, time_t access_timeout)
 {
-    return m_Main->Purge(key, subkey, access_timeout, keep_last_version);
+    return m_Main->Purge(key, subkey, access_timeout);
 }
 
 
@@ -326,6 +326,30 @@ bool CAsyncWriteCache::SameCacheParams(const TCacheParams* params) const
 string CAsyncWriteCache::GetCacheName(void) const
 {
     return m_Main->GetCacheName();
+}
+
+
+void ICache::Purge(time_t access_timeout)
+{
+    Purge(access_timeout, eDropAll); // NCBI_FAKE_WARNING
+}
+
+
+void ICache::Purge(const string& key, const string& subkey, time_t access_timeout)
+{
+    Purge(key, subkey, access_timeout, eDropAll); // NCBI_FAKE_WARNING
+}
+
+
+void ICache::Purge(time_t access_timeout, EKeepVersions)
+{
+    Purge(access_timeout);
+}
+
+
+void ICache::Purge(const string& key, const string& subkey, time_t access_timeout, EKeepVersions)
+{
+    Purge(key, subkey, access_timeout);
 }
 
 

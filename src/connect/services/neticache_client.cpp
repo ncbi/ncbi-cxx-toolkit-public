@@ -678,16 +678,15 @@ bool CNetICacheClient::HasBlob(const string& key, const string& subkey,
     return (response[0] == '1'|| NStr::StartsWith(response, "0, VER="));
 }
 
-void CNetICacheClient::Purge(time_t access_timeout, EKeepVersions keep_last_version)
+void CNetICacheClient::Purge(time_t access_timeout)
 {
-    Purge(kEmptyStr, kEmptyStr, access_timeout, keep_last_version);
+    Purge(kEmptyStr, kEmptyStr, access_timeout);
 }
 
 
 void CNetICacheClient::Purge(const string&    key,
                              const string&    subkey,
-                             time_t           access_timeout,
-                             EKeepVersions)
+                             time_t           access_timeout)
 {
     if (access_timeout) {
         NCBI_THROW(CNetCacheException, eNotImplemented, "Not implemented");

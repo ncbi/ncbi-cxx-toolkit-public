@@ -448,8 +448,7 @@ public:
     ///    Time in seconds. All objects older than this are deleted.
     /// @param keep_last_version
     ///    type of cleaning action
-    virtual void Purge(time_t         access_timeout,
-                       EKeepVersions  keep_last_version = eDropAll) = 0;
+    virtual void Purge(time_t         access_timeout);
 
     /// Delete BLOBs with access time older than specified
     ///
@@ -465,9 +464,16 @@ public:
     ///    type of cleaning action
     virtual void Purge(const string&  key,
                        const string&  subkey,
-                       time_t         access_timeout,
-                       EKeepVersions  keep_last_version = eDropAll) = 0;
+                       time_t         access_timeout);
 
+    /// @deprecated EKeepVersions arguments have been no-op in Purge() for long time and are now deprecated.
+    /// If you are using one of these methods, switch to use one the overloads above instead.
+    /// If you have implemented these, remove EKeepVersions (making them overrides for the overloads above).
+    /// The deprecated will be eventually purged (after all implementations have switched to the overloads above).
+    NCBI_DEPRECATED
+    virtual void Purge(time_t access_timeout, EKeepVersions);
+    NCBI_DEPRECATED
+    virtual void Purge(const string& key, const string& subkey, time_t access_timeout, EKeepVersions);
 
     virtual ~ICache() {}
 

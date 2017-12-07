@@ -984,12 +984,11 @@ time_t CDBAPI_Cache::GetAccessTime(const string&  key,
     return 0;
 }
 
-void CDBAPI_Cache::Purge(time_t           access_timeout,
-                         EKeepVersions    keep_last_version)
+void CDBAPI_Cache::Purge(time_t           access_timeout)
 {
     CFastMutexGuard guard(x_DBAPI_BLOB_CacheMutex);
 
-    if (keep_last_version == eDropAll && access_timeout == 0) {
+    if (access_timeout == 0) {
         x_TruncateDB();
         return;
     }
@@ -1024,18 +1023,17 @@ void CDBAPI_Cache::Purge(time_t           access_timeout,
 
 void CDBAPI_Cache::Purge(const string&    key,
                          const string&    subkey,
-                         time_t           access_timeout,
-                         EKeepVersions    keep_last_version)
+                         time_t           access_timeout)
 {
     if (key.empty() && subkey.empty()) {
-        Purge(access_timeout, keep_last_version);
+        Purge(access_timeout);
         return;
     }
 
     CFastMutexGuard guard(x_DBAPI_BLOB_CacheMutex);
 
     if (key.empty() ||
-        (keep_last_version == eDropAll && access_timeout == 0)) {
+        (access_timeout == 0)) {
         x_TruncateDB();
         return;
     }
