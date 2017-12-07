@@ -282,6 +282,21 @@ bool CParams::IsTaxonomyLookup() const
     return m_imp->m_taxonomy_lookup;
 }
 
+bool CParams::IsScaffoldTestMode() const
+{
+    return m_imp->m_scfld_test_mode;
+}
+
+bool CParams::IsForcedGencode() const
+{
+    return m_imp->m_force_gcode;
+}
+
+bool CParams::IsMedlineLookup() const
+{
+    return m_imp->m_medline_lookup;
+}
+
 int CParams::GetFixTech() const
 {
     return m_imp->m_fix_tech;
@@ -380,13 +395,17 @@ const list<string>& CParams::GetInputFiles() const
 
 const string& CParams::GetProjPrefix() const
 {
+    static const string TLS("TLS:");
+    static const string TSA("TSA:");
+    static const string WGS("WGS:");
+
     if (IsTls()) {
-        return "TLS:";
+        return TLS;
     }
     else if (IsTsa()) {
-        "TSA:";
+        TSA;
     }
-    return "WGS:";
+    return WGS;
 }
 
 const string& CParams::GetProjAccStr() const
@@ -419,6 +438,16 @@ const string& CParams::GetAccession() const
 ESortOrder CParams::GetSortOrder() const
 {
     return m_imp->m_sort_order;
+}
+
+const string& CParams::GetLoadOrderFile() const
+{
+    return m_imp->m_load_order_file;
+}
+
+const string& CParams::GetAccFile() const
+{
+    return m_imp->m_acc_file;
 }
 
 static std::unique_ptr<CParams> params;

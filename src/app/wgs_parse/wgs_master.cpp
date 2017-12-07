@@ -457,29 +457,14 @@ static void CheckMasterDblink(const CMasterInfo& info)
     // TODO
 }
 
-static const size_t LENGTH_NOT_SET = -1;
-static const size_t MAX_SEVEN_DIGITS_NUM = 9999999;
-static const size_t MAX_SIX_DIGITS_NUM = 999999;
-
-static size_t GetMaxAccessionLen(int accession_num)
-{
-    size_t max_accession_len = 6;
-    if (accession_num > MAX_SEVEN_DIGITS_NUM) {
-        max_accession_len = 8;
-    }
-    else if (accession_num > MAX_SIX_DIGITS_NUM) {
-        max_accession_len = 7;
-    }
-
-    return max_accession_len;
-}
-
 static string GetAccessionValue(size_t val_len, int val)
 {
     CNcbiOstrstream sstream;
     sstream << setfill('0') << setw(2) << GetParams().GetAssemblyVersion() << setw(val_len) << val << '\0';
     return sstream.str();
 }
+
+static const size_t LENGTH_NOT_SET = -1;
 
 static CRef<CSeq_id> CreateAccession(int last_accession_num, size_t accession_len)
 {

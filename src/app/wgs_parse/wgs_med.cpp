@@ -32,11 +32,23 @@
 
 #include <ncbi_pch.hpp>
 
+#include <objects/biblio/Imprint.hpp>
+#include <objects/biblio/Cit_art.hpp>
+#include <objects/biblio/Cit_jour.hpp>
+
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/mla/mla_client.hpp>
 
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+
 #include "wgs_med.hpp"
+#include "wgs_utils.hpp"
 
 namespace wgsparse
 {
@@ -57,6 +69,85 @@ int GetPMID(const CPub& pub)
 {
     int pmid = GetMLA().AskCitmatchpmid(pub);
     return pmid;
+}
+
+static void StripPubComment(string& comment)
+{
+    static const string PUB_STATUS[] = {
+        "Publication Status: Available-Online prior to print",
+        "Publication Status : Available-Online prior to print",
+        "Publication_Status: Available-Online prior to print",
+        "Publication_Status : Available-Online prior to print",
+        "Publication-Status: Available-Online prior to print",
+        "Publication-Status : Available-Online prior to print",
+        "Publication Status: Online-Only",
+        "Publication Status : Online-Only",
+        "Publication_Status: Online-Only",
+        "Publication_Status : Online-Only",
+        "Publication-Status: Online-Only",
+        "Publication-Status : Online-Only",
+        "Publication Status: Available-Online",
+        "Publication Status : Available-Online",
+        "Publication_Status: Available-Online",
+        "Publication_Status : Available-Online",
+        "Publication-Status: Available-Online",
+        "Publication-Status : Available-Online"
+    };
+
+    for (auto& cur_status : PUB_STATUS) {
+
+        SIZE_TYPE pos = NStr::FindNoCase(comment, cur_status, 0);
+
+        while (pos != NPOS) {
+
+            size_t len = comment.size(),
+                   offset = pos + cur_status.size();
+            while (offset < len && (comment[offset] == ';' || comment[offset] == ' ')) {
+                ++offset;
+            }
+            comment = comment.substr(0, pos) + comment.substr(offset);
+            pos = NStr::FindNoCase(comment, cur_status, pos);
+        }
+    }
+
+    if (NStr::StartsWith(comment, "Publication Status", NStr::eNocase) ||
+        NStr::StartsWith(comment, "Publication-Status", NStr::eNocase) ||
+        NStr::StartsWith(comment, "Publication_Status", NStr::eNocase)) {
+
+        ERR_POST_EX(0, 0, Info << "An unusual Publication Status comment exists for this record: \"" << comment <<
+                    "\". If it is a new variant of the special comments used to indicate ahead-of-print or online-only articles, then the comment must be added to the appropriate table of the parser.");
+    }
+}
+
+static bool NeedToStripComment(const CCit_jour& journal)
+{
+    return journal.IsSetImp() && journal.GetImp().IsSetPubstatus() &&
+        (journal.GetImp().GetPubstatus() == ePubStatus_epublish ||
+        journal.GetImp().GetPubstatus() == ePubStatus_ppublish ||
+        journal.GetImp().GetPubstatus() == ePubStatus_aheadofprint);
+}
+
+static void StripErRemarks(CPubdesc& pubdescr)
+{
+    if (pubdescr.IsSetPub() && pubdescr.GetPub().IsSet() && pubdescr.IsSetComment()) {
+
+        auto& pubs = pubdescr.SetPub().Set();
+        for (auto& pub : pubs) {
+
+            if (pub->IsArticle() && pub->GetArticle().IsSetFrom() && pub->GetArticle().GetFrom().IsJournal()) {
+
+                CCit_jour& journal = pub->SetArticle().SetFrom().SetJournal();
+                if (NeedToStripComment(journal)) {
+                    string& comment = pubdescr.SetComment();
+                    StripPubComment(comment);
+                    if (comment.empty()) {
+                        pubdescr.ResetComment();
+                    }
+                    break;
+                }
+            }
+        }
+    }
 }
 
 int SinglePubLookup(CRef<CPubdesc>& pubdescr)
@@ -87,9 +178,53 @@ int SinglePubLookup(CRef<CPubdesc>& pubdescr)
                 }
             }
         }
+
+        StripErRemarks(*pubdescr);
     }
 
     return pmid;
+}
+
+bool PerformMedlineLookup(CSeq_entry& entry)
+{
+    CSeq_descr* descrs = nullptr;
+    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
+
+        for (auto& pub : descrs->Set()) {
+            if (pub->IsPub()) {
+                // TODO porocess pub
+            }
+        }
+    }
+
+    CBioseq::TAnnot* annots = nullptr;
+    if (GetNonConstAnnot(entry, annots) && annots) {
+
+        auto feat_table_it = find_if(annots->begin(), annots->end(), [](CRef<CSeq_annot>& annot) { return annot->IsFtable(); });
+
+        if (feat_table_it != annots->end()) {
+
+            auto feat_table = (*feat_table_it)->SetData().SetFtable();
+
+            for (auto& feat : feat_table) {
+                if (feat->IsSetData() && feat->GetData().IsPub()) {
+                    // TODO porocess pub
+                }
+            }
+        }
+    }
+
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
+
+            if (!PerformMedlineLookup(*cur_entry)) {
+                return false;
+            }
+        }
+    }
+
+    return true;
 }
 
 }

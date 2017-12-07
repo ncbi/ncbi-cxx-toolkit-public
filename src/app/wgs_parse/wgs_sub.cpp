@@ -53,6 +53,8 @@
 #include "wgs_params.hpp"
 #include "wgs_utils.hpp"
 #include "wgs_asn.hpp"
+#include "wgs_tax.hpp"
+#include "wgs_med.hpp"
 
 namespace wgsparse
 {
@@ -252,7 +254,7 @@ static void RemoveDatesFromDescrs(CSeq_descr::Tdata& descrs, bool remove_creatio
 static void RemoveDates(CSeq_entry& entry, bool remove_creation, bool remove_update)
 {
     CSeq_descr* descrs = nullptr;
-    if (GetNonConstDescr(entry, descrs) && descrs->IsSet()) {
+    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
         RemoveDatesFromDescrs(descrs->Set(), remove_creation, remove_update);
     }
 
@@ -304,7 +306,7 @@ static void RemovePubs(CSeq_entry& entry, const list<CPubDescriptionInfo>& commo
     }
 
     CSeq_descr* descrs = nullptr;
-    if (GetNonConstDescr(entry, descrs) && descrs->IsSet()) {
+    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
 
         for (auto& cur_descr = descrs->Set().begin(); cur_descr != descrs->Set().end();) {
 
@@ -444,20 +446,15 @@ static void FixDbName(CSeq_entry& entry)
     CollectObjectIds(entry, ids);
 
     CSeq_descr* descrs = nullptr;
-    if (GetNonConstDescr(entry, descrs)) {
-
-        if (descrs) {
-            FixDbNameInObject(*descrs, ids);
-        }
+    if (GetNonConstDescr(entry, descrs) && descrs) {
+        FixDbNameInObject(*descrs, ids);
     }
 
     CBioseq::TAnnot* annots = nullptr;
-    if (GetNonConstAnnot(entry, annots)) {
+    if (GetNonConstAnnot(entry, annots) && annots) {
 
-        if (annots) {
-            for (auto& annot : *annots) {
-                FixDbNameInObject(*annot, ids);
-            }
+        for (auto& annot : *annots) {
+            FixDbNameInObject(*annot, ids);
         }
     }
 
@@ -509,8 +506,206 @@ static void FixOrigProtTransIds(CSeq_entry& entry)
     }
 }
 
-static void AssignNucAccession(CSeq_entry& entry)
+static void CollectAccGenid()
 {
+}
+
+static CRef<CSeq_id> CreateNewAccession(int num)
+{
+    CRef<CSeq_id> ret;
+
+    CRef<CTextseq_id> text_id(new CTextseq_id);
+    int ver = GetParams().GetAssemblyVersion();
+    text_id->SetAccession(GetParams().GetIdPrefix() + ToStringLeadZeroes(ver, 2) + ToStringLeadZeroes(num, GetMaxAccessionLen(num)));
+
+    auto set_fun = FindSetTextSeqIdFunc(GetParams().GetIdChoice());
+    _ASSERT(set_fun != nullptr && "There should be a valid SetTextId function. Validate the ID choice.");
+
+    if (set_fun == nullptr) {
+        return ret;
+    }
+
+    ret.Reset(new CSeq_id);
+    (ret->*set_fun)(*text_id);
+
+    return ret;
+}
+
+static void RemovePreviousAccession(const string& new_acc, CBioseq::TId& ids)
+{
+    for (auto id = ids.begin(); id != ids.end(); ++id) {
+        if (HasTextAccession(**id)) {
+
+            const CTextseq_id* text_id = (*id)->GetTextseq_Id();
+            _ASSERT(text_id != nullptr);
+
+            if (text_id->GetAccession() != new_acc) {
+                ERR_POST_EX(0, 0, Info << "Input Seq-entry already has accession \"" << text_id->GetAccession() << "\". Replaced with \"" << new_acc << "\".");
+            }
+
+            ids.erase(id);
+            break;
+        }
+    }
+}
+
+static void AssignNucAccession(CSeq_entry& entry, int& next_id)
+{
+    if (entry.IsSeq() && entry.GetSeq().IsNa()) {
+
+        if (GetParams().IsAccessionAssigned()) {
+
+            if (!GetParams().IsTest()) {
+                // TODO
+                CollectAccGenid();
+            }
+            return;
+        }
+
+        // TODO all processing linked with sort parameters
+
+        CRef<CSeq_id> new_id = CreateNewAccession(next_id);
+
+        if (new_id.NotEmpty()) {
+
+            const string& new_acc = new_id->GetTextseq_Id()->GetAccession();
+            ERR_POST_EX(0, 0, Info << "Assigned nucleotide accession \"" << new_acc << "\".");
+
+            RemovePreviousAccession(new_acc, entry.SetSeq().SetId());
+            entry.SetSeq().SetId().push_front(new_id);
+        }
+
+        if (!GetParams().IsTest()) {
+            // TODO
+            CollectAccGenid();
+        }
+
+        if (GetParams().GetUpdateMode() != eUpdateScaffoldsNew || GetParams().IsScaffoldTestMode()) {
+            return;
+        }
+
+        // TODO
+    }
+    
+    if (entry.IsSet()) {
+        if (entry.GetSet().IsSetSeq_set()) {
+            for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
+                AssignNucAccession(*cur_entry, next_id);
+            }
+        }
+    }
+}
+
+static void FixTechMolInfo(CMolInfo& mol_info, CSeq_inst::EMol& mol)
+{
+    if (GetParams().IsTsa()) {
+        if (GetParams().GetFixTech() & eFixMolBiomol) {
+
+            mol_info.SetTech(CMolInfo::eTech_tsa);
+            mol_info.SetBiomol(CMolInfo::eBiomol_transcribed_RNA);
+
+            mol = CSeq_inst::eMol_rna;
+        }
+
+        if (GetParams().GetFixTech() & eFixBiomolMRNA) {
+            mol_info.SetBiomol(CMolInfo::eBiomol_mRNA);
+        }
+        else if (GetParams().GetFixTech() & eFixBiomolRRNA) {
+            mol_info.SetBiomol(CMolInfo::eBiomol_rRNA);
+        }
+        else if (GetParams().GetFixTech() & eFixBiomolNCRNA) {
+            mol_info.SetBiomol(CMolInfo::eBiomol_ncRNA);
+        }
+    }
+    else {
+        if (GetParams().GetFixTech() & eFixMolBiomol) {
+
+            mol_info.SetTech(GetParams().IsTls() ? CMolInfo::eTech_targeted : CMolInfo::eTech_wgs);
+            mol_info.SetBiomol(CMolInfo::eBiomol_genomic);
+
+            mol = CSeq_inst::eMol_dna;
+        }
+
+        if (GetParams().IsWgs()) {
+
+            if (GetParams().GetFixTech() & eFixBiomolCRNA) {
+                mol_info.SetBiomol(CMolInfo::eBiomol_cRNA);
+            }
+
+            if (GetParams().GetFixTech() & eFixInstMolRNA) {
+                mol = CSeq_inst::eMol_rna;
+            }
+        }
+    }
+}
+
+static void FixTech(CSeq_entry& entry)
+{
+    if (entry.IsSeq() && entry.GetSeq().IsNa()) {
+        
+        CRef<CSeqdesc> mol_info_descr;
+        CSeq_descr& descrs = entry.SetSeq().SetDescr();
+        
+        auto mol_info_it = find_if(descrs.Set().begin(), descrs.Set().end(), [](CRef<CSeqdesc>& descr) { return descr->IsMolinfo(); });
+        if (mol_info_it != descrs.Get().end()) {
+            mol_info_descr = *mol_info_it;
+        }
+        else {
+            mol_info_descr.Reset(new CSeqdesc);
+            descrs.Set().push_back(mol_info_descr);
+        }
+
+        FixTechMolInfo(mol_info_descr->SetMolinfo(), entry.SetSeq().SetInst().SetMol());
+    }
+    
+    if (entry.IsSet()) {
+        if (entry.GetSet().IsSetSeq_set()) {
+            for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
+                FixTech(*cur_entry);
+            }
+        }
+    }
+}
+
+static bool FixBioSources(CSeq_entry& entry, const CMasterInfo& master_info)
+{
+    CSeq_descr* descrs = nullptr;
+    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
+
+        auto source_it = find_if(descrs->Set().begin(), descrs->Set().end(), [](CRef<CSeqdesc>& descr) { return descr->IsSource(); });
+
+        if (source_it != descrs->Set().end() && !PerformTaxLookup((*source_it)->SetSource(), master_info.m_org_refs, GetParams().IsTaxonomyLookup())) {
+            return false;
+        }
+    }
+
+    CBioseq::TAnnot* annots = nullptr;
+    if (GetNonConstAnnot(entry, annots) && annots) {
+
+        auto feat_table_it = find_if(annots->begin(), annots->end(), [](CRef<CSeq_annot>& annot) { return annot->IsFtable(); });
+
+        if (feat_table_it != annots->end()) {
+
+            auto feat_table = (*feat_table_it)->SetData().SetFtable();
+            auto feat_source_it = find_if(feat_table.begin(), feat_table.end(), [](CRef<CSeq_feat>& feat) { return feat->IsSetData() && feat->GetData().IsBiosrc(); });
+
+            if (feat_source_it != feat_table.end() && PerformTaxLookup((*feat_source_it)->SetData().SetBiosrc(), master_info.m_org_refs, GetParams().IsTaxonomyLookup())) {
+                return false;
+            }
+        }
+    }
+
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
+
+            if (!FixBioSources(*cur_entry, master_info)) {
+                return false;
+            }
+        }
+    }
+
+    return true;
 }
 
 bool ParseSubmissions(CMasterInfo& master_info)
@@ -518,6 +713,7 @@ bool ParseSubmissions(CMasterInfo& master_info)
     const list<string>& files = GetParams().GetInputFiles();
 
     bool ret = true;
+    int next_id = 0;
 
     for (auto& file : files) {
         CNcbiIfstream in(file);
@@ -543,6 +739,7 @@ bool ParseSubmissions(CMasterInfo& master_info)
                 break;
             }
 
+            first = false;
             FixSeqSubmit(seq_submit, master_info.m_accession_ver, false);
 
             ESortOrder sort_order = GetParams().GetSortOrder();
@@ -592,8 +789,57 @@ bool ParseSubmissions(CMasterInfo& master_info)
                     }
 
                     if (!GetParams().IsVDBMode()) {
-                        AssignNucAccession(*entry);
+                        AssignNucAccession(*entry, next_id);
                     }
+
+                    if (GetParams().IsUpdateScaffoldsMode()) {
+                        // TODO
+                    }
+
+                    if (GetParams().IsForcedGencode()) {
+                        // TODO
+                    }
+
+                    if (GetParams().GetFixTech() && (GetParams().IsTsa() || (GetParams().GetFixTech() | eFixMolBiomol))) {
+                        FixTech(*entry);
+                    }
+
+                    // TODO gaps
+
+                    if (master_info.m_reject) {
+                        break;
+                    }
+
+                    bool lookup_succeed = FixBioSources(*entry, master_info);
+
+                    // TODO dblink etc
+
+                    if (!lookup_succeed) {
+                        ERR_POST_EX(0, 0, Fatal << "Taxonomy lookup failed on submission \"" << file << "\". Cannot proceed.");
+                        break;
+                    }
+
+                    if (GetParams().IsMedlineLookup() && !PerformMedlineLookup(*entry)) {
+                        break;
+                    }
+
+                    /*
+                    if(widp->strip_authors != FALSE)
+                    SeqEntryExplore(sep, NULL, WGSStripAuthors);
+                    if(widp->new_titles != NULL)
+                    {
+                    wtp.title = widp->new_titles;
+                    if(wtp.organism != NULL)
+                    MemFree(wtp.organism);
+                    wtp.organism = NULL;
+                    if(wtp.chro != NULL)
+                    MemFree(wtp.chro);
+                    wtp.chro = NULL;
+                    SeqEntryExplore(sep, &wtp, WGSRepTitles);
+                    }
+                    */
+
+
                 }
             }
         }

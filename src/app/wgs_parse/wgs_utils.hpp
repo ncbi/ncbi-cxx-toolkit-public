@@ -39,6 +39,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -56,6 +57,16 @@ enum EInputType
     eSeqEntry
 };
 
+
+template <typename T> string ToStringLeadZeroes(T num, size_t width)
+{
+    string str_num = to_string(num);
+    size_t zeroes = width > str_num.size() ? width - str_num.size() : 0;
+
+    return string(zeroes, '0') + str_num;
+}
+
+size_t GetMaxAccessionLen(int accession_num);
 
 bool GetInputType(const std::string& str, EInputType& type);
 bool GetInputTypeFromFile(CNcbiIfstream& stream, EInputType& type);

@@ -52,6 +52,22 @@ CScope& GetScope()
     return scope;
 }
 
+static const size_t MAX_SEVEN_DIGITS_NUM = 9999999;
+static const size_t MAX_SIX_DIGITS_NUM = 999999;
+
+size_t GetMaxAccessionLen(int accession_num)
+{
+    size_t max_accession_len = 6;
+    if (accession_num > MAX_SEVEN_DIGITS_NUM) {
+        max_accession_len = 8;
+    }
+    else if (accession_num > MAX_SIX_DIGITS_NUM) {
+        max_accession_len = 7;
+    }
+
+    return max_accession_len;
+}
+
 bool GetInputType(const std::string& str, EInputType& type)
 {
     if (NStr::EqualNocase(str, "Seq-submit")) {

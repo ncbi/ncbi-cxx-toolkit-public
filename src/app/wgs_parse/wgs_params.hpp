@@ -94,7 +94,9 @@ enum EFixTech
     eFixMolBiomol = 1 << 0,
     eFixBiomolMRNA = 1 << 1,
     eFixBiomolRRNA = 1 << 2,
-    eFixBiomolNCRNA = 1 << 3
+    eFixBiomolNCRNA = 1 << 3,
+    eFixBiomolCRNA = 1 << 4,
+    eFixInstMolRNA = 1 << 5
 };
 
 struct CParams_imp;
@@ -125,6 +127,9 @@ public:
     bool IsAccessionsSortedInFile() const;
     bool IsUpdateScaffoldsMode() const;
     bool IsTaxonomyLookup() const;
+    bool IsScaffoldTestMode() const;
+    bool IsForcedGencode() const;
+    bool IsMedlineLookup() const;
 
     int GetFixTech() const;
 
@@ -153,6 +158,9 @@ public:
     const string& GetAccession() const;
 
     ESortOrder GetSortOrder() const;
+
+    const string& GetLoadOrderFile() const;
+    const string& GetAccFile() const;
 
 private:
     std::unique_ptr<CParams_imp> m_imp;
