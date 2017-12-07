@@ -665,8 +665,13 @@ public:
     template< class TDerived,
               class = typename enable_if<is_convertible<TDerived*, TObjectType*>::value, void>::type>
     CRef(const CRef<TDerived, Locker>& ref)
-        : CRef(ref.GetNCPointerOrNull())
+        : m_Data(ref.GetLocker(), 0)
         {
+            TObjectType* newPtr = ref.GetNCPointerOrNull();
+            if ( newPtr ) {
+                m_Data.first().Relock(newPtr);
+                m_Data.second() = newPtr;
+            }
         }
 
     /// Copy constructor from an existing CRef object, 
@@ -1255,8 +1260,13 @@ public:
     template< class TDerived,
               class = typename enable_if<is_convertible<TDerived*, TObjectType*>::value, void>::type>
     CConstRef(const CConstRef<TDerived, Locker>& ref)
-        : CConstRef(ref.GetPointerOrNull())
+        : m_Data(ref.GetLocker(), 0)
         {
+            TObjectType* newPtr = ref.GetPointerOrNull();
+            if ( newPtr ) {
+                m_Data.first().Relock(newPtr);
+                m_Data.second() = newPtr;
+            }
         }
 
     /// Constructor from an existing CConstRef object, 
@@ -1283,8 +1293,13 @@ public:
     template< class TDerived,
               class = typename enable_if<is_convertible<TDerived*, TObjectType*>::value, void>::type>
     CConstRef(const CRef<TDerived, Locker>& ref)
-        : CConstRef(ref.GetPointerOrNull())
+        : m_Data(ref.GetLocker(), 0)
         {
+            TObjectType* newPtr = ref.GetPointerOrNull();
+            if ( newPtr ) {
+                m_Data.first().Relock(newPtr);
+                m_Data.second() = newPtr;
+            }
         }
 
     /// Destructor.
