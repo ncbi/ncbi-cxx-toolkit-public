@@ -1169,22 +1169,27 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
     return t_con.release();
 }
 
-void CDriverContext::CloseConnsForPool(const string& pool_name)
+void CDriverContext::CloseConnsForPool(const string& pool_name,
+                                       Uint4 keep_host_ip, Uint2 keep_port)
 {
     CMutexGuard mg(m_PoolMutex);
 
     ITERATE(TConnPool, it, m_InUse) {
         CConnection* t_con(*it);
         if (t_con->IsReusable()  &&  pool_name == t_con->PoolName()) {
-            t_con->Invalidate();
+            if (t_con->Host() != keep_host_ip || t_con->Port() != keep_port) {
+                t_con->Invalidate();
+            }
         }
     }
     ERASE_ITERATE(TConnPool, it, m_NotInUse) {
         CConnection* t_con(*it);
         if (t_con->IsReusable()  &&  pool_name == t_con->PoolName()) {
-            m_NotInUse.erase(it);
-            x_AdjustCounts(t_con, -1);
-            delete t_con;
+            if (t_con->Host() != keep_host_ip || t_con->Port() != keep_port) {
+                m_NotInUse.erase(it);
+                x_AdjustCounts(t_con, -1);
+                delete t_con;
+            }
         }
     }
 }

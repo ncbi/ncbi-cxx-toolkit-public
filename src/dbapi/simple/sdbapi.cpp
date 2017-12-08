@@ -1581,7 +1581,9 @@ CSDBAPI::UpdateMirror(const string& dbservice,
                               << "' for service '" << service_name
                               << "' became accessible. Switching the master.");
                 factory->WorkWithSingleServer("", service_name, server_name);
-                s_GetDBContext()->CloseConnsForPool(conn_params.GetParam("pool_name"));
+                s_GetDBContext()->CloseConnsForPool(conn_params.GetParam("pool_name"),
+                                                    conn->GetCDB_Connection()->Host(),
+                                                    conn->GetCDB_Connection()->Port());
                 s_GetDBContext()->SatisfyPoolMinimum(conn_params);
 
                 has_master = true;
