@@ -581,7 +581,7 @@ int CIgBlastnApp::Run(void)
 	    string delim = ", ";
 	    NStr::Split( sra_run_accessions, delim, run_arr );
 
-	    for( int ndx=0; ndx<run_arr.size(); ndx ++){
+	    for( int ndx=0; ndx < (int)run_arr.size(); ndx ++){
 		string one_run = NStr::TruncateSpaces( run_arr[ndx]);
 		all_sra_runs.push_back( one_run );
 	    }
