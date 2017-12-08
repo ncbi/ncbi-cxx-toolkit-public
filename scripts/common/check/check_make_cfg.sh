@@ -615,8 +615,8 @@ RunTest() {
                 ;;
            esac
         fi
-        if \$is_run; then
-            rm -f \$saved_phid > /dev/null 2>&1
+        if \$is_run  -a  test -n "\$saved_phid"; then
+            rm -f \$saved_phid* > /dev/null 2>&1
         fi
 
     done  # Run test under all specified check tools   
