@@ -312,11 +312,11 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
 
     using ICache::Purge;
 
-    virtual void Purge(time_t           access_timeout) override;
+    virtual void Purge(time_t           access_timeout);
 
     virtual void Purge(const string&    key,
                        const string&    subkey,
-                       time_t           access_timeout) override;
+                       time_t           access_timeout);
 
     virtual bool SameCacheParams(const TCacheParams* params) const;
     virtual string GetCacheName(void) const;
