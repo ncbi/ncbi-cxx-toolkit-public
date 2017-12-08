@@ -845,6 +845,15 @@ void CBioseqContext::x_SetId(void)
 
         // GBB source
         m_ShowGBBSource = m_ShowGBBSource  ||  (acc_info == CSeq_id::eAcc_gsdb_dirsub);
+
+        if (m_IsGenbank || m_IsEMBL || m_IsDDBJ) {
+            if (acc.length() == 6) {
+                char ch = acc[0];
+                if (ch == 'J' || ch == 'K' || ch == 'L' || ch == 'M') {
+                    m_ShowGBBSource = true;
+                }
+            }
+        }
     }
 
     // Genbank/Embl/Ddbj (GED)
