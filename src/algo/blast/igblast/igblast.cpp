@@ -603,6 +603,30 @@ static string s_RemoveLocalPrefix(const string & sid)
     return sid;
 }
 
+static string s_MakeTopHitsId(const CSeq_align_set::Tdata& align_list, int num_align) {
+    string ids = NcbiEmptyString;
+    CRef<CSeq_align> align = align_list.front();
+    int count = 0;
+    ITERATE(CSeq_align_set::Tdata, it, align_list) {
+        
+        if (count < num_align && s_IsSeqAlignAsGood(align, (*it))) {
+            string this_id = s_RemoveLocalPrefix((*it)->GetSeq_id(1).AsFastaString());
+            if (ids.find(this_id) == string::npos) {
+                
+                //no redundant id
+                if (ids != NcbiEmptyString) {
+                    ids += ",";
+                }
+                ids += this_id;
+                count ++;
+            }
+        } else {
+            break;
+        }
+    }
+    return ids;
+}
+
 void CIgBlast::x_AnnotateV(CRef<CSearchResultSet>        &results, 
                            vector<CRef <CIgAnnotation> > &annots)
 {
@@ -616,15 +640,7 @@ void CIgBlast::x_AnnotateV(CRef<CSearchResultSet>        &results,
             CRef<CSeq_align> align = align_list.front();
             annot->m_GeneInfo[0] = align->GetSeqStart(0);
             annot->m_GeneInfo[1] = align->GetSeqStop(0)+1;
-            annot->m_TopGeneIds[0] = "";
-
-            int ii=0;
-            ITERATE(CSeq_align_set::Tdata, it, align_list) {
-                if (ii++ < m_IgOptions->m_NumAlign[0] && s_IsSeqAlignAsGood(align, (*it))) {
-                    if (annot->m_TopGeneIds[0] != "") annot->m_TopGeneIds[0] += ",";
-                    annot->m_TopGeneIds[0] += s_RemoveLocalPrefix((*it)->GetSeq_id(1).AsFastaString());
-                } else break;
-            }
+            annot->m_TopGeneIds[0] = s_MakeTopHitsId(align_list, m_IgOptions->m_NumAlign[0]);
         } 
     }
 };
@@ -1175,15 +1191,7 @@ void CIgBlast::x_AnnotateD(CRef<CSearchResultSet>        &results_D,
             CRef<CSeq_align> align = align_list.front();
             (*annot)->m_GeneInfo[2] = align->GetSeqStart(0);
             (*annot)->m_GeneInfo[3] = align->GetSeqStop(0)+1;
-            (*annot)->m_TopGeneIds[1] = "";
-
-            int ii=0;
-            ITERATE(CSeq_align_set::Tdata, it, align_list) {
-                if (ii++ < m_IgOptions->m_NumAlign[1] && s_IsSeqAlignAsGood(align, (*it))) {
-                    if ((*annot)->m_TopGeneIds[1] != "") (*annot)->m_TopGeneIds[1] += ",";
-                    (*annot)->m_TopGeneIds[1] += s_RemoveLocalPrefix((*it)->GetSeq_id(1).AsFastaString());
-                } else break;
-            }
+            (*annot)->m_TopGeneIds[1] = s_MakeTopHitsId(align_list, m_IgOptions->m_NumAlign[1]);
         }
 
      
@@ -1219,15 +1227,7 @@ void CIgBlast::x_AnnotateJ(CRef<CSearchResultSet>        &results_J,
                                            align->GetSeqStop(0)  + frame_adj 
                                          : align->GetSeqStart(0) - frame_adj;
             } 
-            (*annot)->m_TopGeneIds[2] = "";
-
-            int ii=0;
-            ITERATE(CSeq_align_set::Tdata, it, align_list) {
-                if (ii++ < m_IgOptions->m_NumAlign[2] && s_IsSeqAlignAsGood(align, (*it))) {
-                    if ((*annot)->m_TopGeneIds[2] != "") (*annot)->m_TopGeneIds[2] += ",";
-                    (*annot)->m_TopGeneIds[2] += s_RemoveLocalPrefix((*it)->GetSeq_id(1).AsFastaString());
-                } else break;
-            }
+            (*annot)->m_TopGeneIds[2] = s_MakeTopHitsId(align_list, m_IgOptions->m_NumAlign[2]);
         }
      
         /* next set of results */
@@ -1256,15 +1256,8 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
             CRef<CSeq_align> align = align_list.front();
             (*annot)->m_GeneInfo[2] = align->GetSeqStart(0);
             (*annot)->m_GeneInfo[3] = align->GetSeqStop(0)+1;
-            (*annot)->m_TopGeneIds[1] = "";
+            (*annot)->m_TopGeneIds[1] = s_MakeTopHitsId(align_list, m_IgOptions->m_NumAlign[1]);
 
-            int ii=0;
-            ITERATE(CSeq_align_set::Tdata, it, align_list) {
-                if (ii++ < m_IgOptions->m_NumAlign[1] && s_IsSeqAlignAsGood(align, (*it))) {
-                    if ((*annot)->m_TopGeneIds[1] != "") (*annot)->m_TopGeneIds[1] += ",";
-                    (*annot)->m_TopGeneIds[1] += s_RemoveLocalPrefix((*it)->GetSeq_id(1).AsFastaString());
-                } else break;
-            }
         }
             
         /* annotate J */    
@@ -1282,15 +1275,7 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
                                            align->GetSeqStop(0)  + frame_adj 
                                          : align->GetSeqStart(0) - frame_adj;
             } 
-            (*annot)->m_TopGeneIds[2] = "";
-
-            int ii=0;
-            ITERATE(CSeq_align_set::Tdata, it, align_list) {
-                if (ii++ < m_IgOptions->m_NumAlign[2] && s_IsSeqAlignAsGood(align, (*it))) {
-                    if ((*annot)->m_TopGeneIds[2] != "") (*annot)->m_TopGeneIds[2] += ",";
-                    (*annot)->m_TopGeneIds[2] += s_RemoveLocalPrefix((*it)->GetSeq_id(1).AsFastaString());
-                } else break;
-            }
+            (*annot)->m_TopGeneIds[2] = s_MakeTopHitsId(align_list, m_IgOptions->m_NumAlign[2]);
         }
      
         /* next set of results */
