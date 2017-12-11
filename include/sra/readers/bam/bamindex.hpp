@@ -73,6 +73,12 @@ public:
             return m_Text;
         }
 
+    typedef map<string, string> TSBamTags;
+    typedef pair<string, TSBamTags> TSBamRecord;
+    typedef list<TSBamRecord> TSBamRecords;
+    // parse m_Text (SAM header), return number of records 
+    size_t GetSBamRecords(TSBamRecords& records) const;
+
     typedef vector<SBamHeaderRefInfo> TRefs;
     const TRefs& GetRefs() const
         {

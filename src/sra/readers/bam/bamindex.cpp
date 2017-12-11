@@ -1281,6 +1281,51 @@ size_t CBamHeader::GetRefIndex(const string& name) const
     return iter->second;
 }
 
+size_t CBamHeader::GetSBamRecords(TSBamRecords& records) const
+{
+    CTempString record;
+    enum { eNone, eTag, eRecord, eValue} state = eNone;
+    bool state_changed = true;
+    const char *p, *p0, *pend;
+
+    for (p = m_Text.data(), pend = p + m_Text.size(); p < pend; ++p) {
+        if (state_changed) {
+            state_changed = false;
+            for (; p < pend && iswspace(*p); ++p)
+                ;
+            p0 = p;
+        }
+        if (*p == '@') {
+            state = eTag;
+            p0 = p;
+        }
+        else if (*p == ':') {
+            if (state == eRecord) {
+                record.assign(p0, p-p0);
+                state = eValue;
+                state_changed = true;
+                p0 = p;
+            }
+        }
+        else if ( iswspace(*p) ) {
+            if (state == eTag) {
+                records.push_back( TSBamRecord(CTempString(p0, p-p0), TSBamTags()));
+                state = eRecord;
+                state_changed = true;
+            }
+            else if (state == eValue) {
+                records.back().second[record] = CTempString(p0, p-p0);
+                state = eRecord;
+                state_changed = true;
+            }
+        }
+    }
+    if (state == eValue) {
+        records.back().second[record] = CTempString(p0, p-p0);
+    }
+    return records.size();
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CBamFileRangeSet
