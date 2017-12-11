@@ -79,6 +79,7 @@ SNetScheduleNotificationReceiver::SNetScheduleNotificationReceiver()
 {
     STimeout rto;
     rto.sec = rto.usec = 0;
+    socket.SetDataLogging(TServConn_ConnDataLogging::GetDefault() ? eOn : eOff);
     socket.SetTimeout(eIO_Read, &rto);
 
     EIO_Status status = socket.Bind(0);
