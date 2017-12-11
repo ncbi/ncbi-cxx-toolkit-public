@@ -615,7 +615,7 @@ RunTest() {
                 ;;
            esac
         fi
-        if \$is_run  -a  test -n "\$saved_phid"; then
+        if test \$is_run  -a  -n "\$saved_phid"; then
             rm -f \$saved_phid* > /dev/null 2>&1
         fi
 
