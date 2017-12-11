@@ -2852,8 +2852,8 @@ static EIO_Status s_Recv(SOCK    sock,
             break/*unknown*/;
         }
 
-        if (sock->i_on_sig == eOn  ||
-            (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
+        if (sock->i_on_sig == eOn
+            ||  (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
             sock->r_status = eIO_Interrupt;
             break/*interrupt*/;
         }
@@ -3384,8 +3384,8 @@ static EIO_Status s_Send(SOCK        sock,
             break/*unknown*/;
         }
 
-        if (sock->i_on_sig == eOn  ||
-            (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
+        if (sock->i_on_sig == eOn
+            ||  (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
             sock->w_status = eIO_Interrupt;
             break/*interrupt*/;
         }
@@ -4259,14 +4259,14 @@ static EIO_Status s_Connect_(SOCK            sock,
     sock->writable  = 0/*false*/;
     sock->closing   = 0/*false*/;
 #endif /*NCBI_OS_MSWIN*/
-    for (n = 0; ; n = 1) { /* optionally auto-resume if interrupted */
+    for (n = 0;  ; n = 1) { /* optionally auto-resume if interrupted */
         if (connect(x_sock, &addr.sa, addrlen) == 0) {
             error = 0;
             break;
         }
         error = SOCK_ERRNO;
         if (error != SOCK_EINTR  ||  sock->i_on_sig == eOn
-            ||  (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal)) {
+            ||  (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
             break;
         }
     }
@@ -5531,10 +5531,10 @@ static EIO_Status s_RecvMsg(SOCK            sock,
                 continue/*read again*/;
             }
         } else if (error == SOCK_EINTR) {
-            if (sock->i_on_sig == eOn  ||
-                (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
+            if (sock->i_on_sig == eOn
+                || (sock->i_on_sig == eDefault && s_InterruptOnSignal == eOn)){
                 sock->r_status = status = eIO_Interrupt;
-                break;
+                break/*interrupt*/;
             }
             continue;
         } else {
@@ -5683,10 +5683,10 @@ static EIO_Status s_SendMsg(SOCK           sock,
                 continue;
             }
         } else if (error == SOCK_EINTR) {
-            if (sock->i_on_sig == eOn  ||
-                (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
+            if (sock->i_on_sig == eOn
+                || (sock->i_on_sig == eDefault && s_InterruptOnSignal == eOn)){
                 sock->w_status = status = eIO_Interrupt;
-                break;
+                break/*interrupt*/;
             }
             continue;
         } else {
@@ -6429,7 +6429,7 @@ extern EIO_Status SOCK_CloseOSHandle(const void* handle, size_t handle_size)
             break;
         }
         /* Maybe in an Ex version of this call someday...
-        if (s_InterruptOnSignal) {
+        if (s_InterruptOnSignal == eOn) {
             status = eIO_Interrupt;
             break;
         }
