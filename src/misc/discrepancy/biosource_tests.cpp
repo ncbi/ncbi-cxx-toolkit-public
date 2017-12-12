@@ -1165,30 +1165,24 @@ DISCREPANCY_CASE(ORGANELLE_ITS, CBioSource, eOncaller, "Test Bioseqs for suspect
         )) {
         return;
     }
-
     CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
     if (!bioseq || !bioseq->IsSetAnnot()) {
         return;
     }
 
     const CSeq_annot* annot = nullptr;
-    ITERATE (CBioseq::TAnnot, annot_it, bioseq->GetAnnot()) {
-        if ((*annot_it)->IsFtable()) {
-            annot = *annot_it;
+    for (auto& annot_it: bioseq->GetAnnot()) {
+        if (annot_it->IsFtable()) {
+            annot = annot_it;
             break;
         }
     }
 
-    bool has_suspect = false;
-
     if (annot) {
-        ITERATE (CSeq_annot::TData::TFtable, feat, annot->GetData().GetFtable()) {
-            if ((*feat)->IsSetData() && (*feat)->GetData().IsRna()) {
-
-                const CRNA_ref& rna = (*feat)->GetData().GetRna();
-
+        for (auto& feat: annot->GetData().GetFtable()) {
+            if (feat->IsSetData() && feat->GetData().IsRna()) {
+                const CRNA_ref& rna = feat->GetData().GetRna();
                 if (rna.IsSetType() && (rna.GetType() == CRNA_ref::eType_rRNA || rna.GetType() == CRNA_ref::eType_miscRNA)) {
-
                     static vector<string> suspectable_products = {
                         "18S ribosomal RNA",
                         "5.8S ribosomal RNA",
@@ -1197,27 +1191,33 @@ DISCREPANCY_CASE(ORGANELLE_ITS, CBioSource, eOncaller, "Test Bioseqs for suspect
                         "internal transcribed spacer 1",
                         "internal transcribed spacer 2"
                     };
-
-                    string product = rna.GetRnaProductName();
-                    if (NStr::FindNoCase(suspectable_products, product) != nullptr) {
-                        has_suspect = true;
-                        break;
+                    const string& product = rna.GetRnaProductName();
+                    // The Owls Are Not What They Seem!
+                    // if (NStr::FindNoCase(suspectable_products, product) != nullptr) {
+                    if (!product.empty()) {
+                        for (auto& pattern: suspectable_products) {
+                            if (NStr::FindNoCase(product, pattern) != NPOS) {
+                                m_Objs[kSuspectITS].Add(*context.NewBioseqObj(bioseq, &context.GetSeqSummary()));
+                                return;
+                            }
+                        }
                     }
-
-                    if ((*feat)->IsSetComment()) {
-                        string comment = (*feat)->GetComment();
-                        if (!comment.empty() && NStr::FindNoCase(suspectable_products, comment) != nullptr) {
-                            has_suspect = true;
-                            break;
+                    if (feat->IsSetComment()) {
+                        const string& comment = feat->GetComment();
+                        // The Owls Are Not What They Seem!
+                        // if (!comment.empty() && NStr::FindNoCase(suspectable_products, comment) != nullptr) {
+                        if (!comment.empty()) {
+                            for (auto& pattern: suspectable_products) {
+                                if (NStr::FindNoCase(comment, pattern) != NPOS) {
+                                    m_Objs[kSuspectITS].Add(*context.NewBioseqObj(bioseq, &context.GetSeqSummary()));
+                                    return;
+                                }
+                            }
                         }
                     }
                 }
             }
         }
-    }
-
-    if (has_suspect) {
-        m_Objs[kSuspectITS].Add(*context.NewBioseqObj(bioseq, &context.GetSeqSummary()), false);
     }
 }
 
