@@ -434,6 +434,26 @@ tds_connect(TDSSOCKET * tds, TDSLOGIN * login, int *p_oserr)
 	erc = TDSEINTF;
 	orig_port = login->port;
 	for (addrs = login->ip_addrs; addrs != NULL; addrs = addrs->ai_next) {
+
+        /*
+         * By some reasons ftds forms 3 linked tds_addrinfo (addrs variable here)
+         * for one server address. The structures differs in their ai_socktype
+         * and ai_protocol field values. Typically the combinations are:
+         * ai_socktype     | ai_protocol
+         * -----------------------------
+         * 1 (SOCK_STREAM) | 6  (tcp)
+         * 2 (SOCK_DGRAM)  | 17 (udp)
+         * 3 (SOCK_RAW)    | 0  (ip)
+         *
+         * Later on these fields are not used and dtds always creates a tcp
+         * socket. In case if there is a connection problem this behavior leads
+         * to 3 tries with the provided timeout which basically multiplies the
+         * spent time without any good result. So it was decided to skip the
+         * non tcp addresses.
+         */
+        if (addrs->ai_socktype != SOCK_STREAM)
+            continue;
+
 		login->port = orig_port;
 
 		if (!IS_TDS50(tds->conn) && !tds_dstr_isempty(&login->instance_name) && !login->port)
