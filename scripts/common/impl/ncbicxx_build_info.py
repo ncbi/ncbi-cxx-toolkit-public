@@ -2,6 +2,8 @@
 import ast
 from datetime import date, datetime, timedelta, timezone
 from distutils.sysconfig import parse_makefile, expand_makefile_vars
+import hashlib
+import mmap
 import os
 import pwd
 import re
@@ -78,6 +80,10 @@ class Collector(object):
             self.info['artifact_version'] = 'SC-%d' % sc_version
         else:
             self.info['artifact_version'] = 'trunk'
+        if status == 0 and ('artifact_hash' in wanted or '*' in wanted):
+              h = self.get_artifact_hash(target_name, target_type)
+              if h is not None:
+                  self.info['artifact_hash'] = h
         self.info['command_line'] = ' '.join(command)
         # deployment-regions -- needs clarification
         # devops_step_name -- ???
@@ -388,3 +394,19 @@ class Collector(object):
         #         return pwd.getpwuid(uid)[0]
         #     except:
         #         return str(uid)
+
+    def get_artifact_hash(self, target_name, target_type):
+        if target_type == 'app':
+            filename = target_name
+        else:
+            filename = 'lib' + target_name
+            for x in ('.dylib', '-dll.dylib', '.so', '-dll.so', '.a'):
+                if os.path.exists(filename + x):
+                    filename = filename + x
+                    break
+        if not os.path.exists(filename):
+            warn('Unable to find ' + filename + ' to hash')
+            return None
+        with open(filename, 'rb') as f:
+            with mmap.mmap(f.fileno(), 0, access = mmap.ACCESS_READ) as mm:
+                return hashlib.md5(mm).hexdigest()

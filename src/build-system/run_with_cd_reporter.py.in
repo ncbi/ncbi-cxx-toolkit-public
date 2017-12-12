@@ -13,7 +13,8 @@ status_dir  = '@status_dir@'
 wanted      = frozenset(('name', 'type', 'contact', 'start_time', 'end_time',
                          'succeeded', 'build_type', 'source_directory',
                          'vcs_type', 'vcs_path', 'vcs_branch',
-                         'artifact_name', 'artifact_version', 'command_line'))
+                         'artifact_name', 'artifact_version', 'artifact_hash',
+                         'command_line'))
 
 ## XXX - favor the real PyYAML installation accompanying cd_reporter?
 sys.path.append(scriptdir + '/common/impl')
