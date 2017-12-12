@@ -2484,9 +2484,11 @@ DISCREPANCY_CASE(DUP_SRC_QUAL, CBioSource, eDisc | eOncaller | eSmart, "Each qua
         }
     }
     if (obj.CanGetPcr_primers()) {
-        ITERATE (list<CRef<CPCRReaction> >, it, obj.GetPcr_primers().Get()) {
+        const auto reaction = obj.GetPcr_primers().Get();
+        for (auto it = reaction.begin(); it != reaction.end(); ++it) {
             if ((*it)->CanGetForward()) {
-                ITERATE (list<CRef<CPCRPrimer> >, pr, (*it)->GetForward().Get()) {
+                const auto primers = (*it)->GetForward().Get();
+                for (auto pr = primers.begin(); pr != primers.end(); ++pr) {
                     if ((*pr)->CanGetName()) {
                         Map[(*pr)->GetName()].push_back("fwd-primer-name");
                     }
@@ -2496,7 +2498,8 @@ DISCREPANCY_CASE(DUP_SRC_QUAL, CBioSource, eDisc | eOncaller | eSmart, "Each qua
                 }
             }
             if ((*it)->CanGetReverse()) {
-                ITERATE (list<CRef<CPCRPrimer> >, pr, (*it)->GetReverse().Get()) {
+                const auto primers = (*it)->GetReverse().Get();
+                for (auto pr = primers.begin(); pr != primers.end(); ++pr) {
                     if ((*pr)->CanGetName()) {
                         Map[(*pr)->GetName()].push_back("rev-primer-name");
                     }

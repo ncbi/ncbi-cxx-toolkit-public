@@ -644,8 +644,6 @@ EAccessionFormatError ValidateAccessionString (string accession, bool require_ve
         return eAccessionFormat_wrong_number_of_digits;
     }
 
-    EAccessionFormatError rval = eAccessionFormat_valid;
-
     if (require_version) {
         if (*cp != '.') {
             return eAccessionFormat_missing_version;
@@ -670,7 +668,7 @@ EAccessionFormatError ValidateAccessionString (string accession, bool require_ve
             || (numAlpha == 3 && numDigits == 5)
             || (numAlpha == 4 && numDigits == 8)
             || (numAlpha == 5 && numDigits == 7)) {
-            return rval;
+            return eAccessionFormat_valid;
         } 
     } else if (numUndersc == 1) {
         if (numAlpha != 2 || (numDigits != 6 && numDigits != 8 && numDigits != 9)) {
@@ -684,12 +682,12 @@ EAccessionFormatError ValidateAccessionString (string accession, bool require_ve
                 || second_letter == 'G' || second_letter == 'R'
                 || second_letter == 'S' || second_letter == 'W'
                 || second_letter == 'Z') {
-                return rval;
+                return eAccessionFormat_valid;
             }
         }
         if ((first_letter == 'A' || first_letter == 'Y')
             && second_letter == 'P') {
-            return rval;
+            return eAccessionFormat_valid;
         }
     }
 
