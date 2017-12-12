@@ -2265,7 +2265,6 @@ static SpellFixData kSpellFixes[] = {
     { "Insitiute", "institute", false },
     { "Instutite", "institute", false },
     { "Instutute", "Institute", false },
-    { "Instutute", "Institute", false },
     { "P.R.Chian", "P.R. China", false },
     { "PRChian", "PR China", false },
     { "Scieces", "Sciences", false },

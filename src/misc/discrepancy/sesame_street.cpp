@@ -159,7 +159,6 @@ DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eDisc | eOncaller | eSubmitter | eSma
                     if ((*pr)->CanGetName()) {
                         AddObjToQualMap("fwd-primer-name", (*pr)->GetName(), *disc_obj, m_Objs);
                     }
-
                     if ((*pr)->CanGetSeq()) {
                         AddObjToQualMap("fwd-primer-seq", (*pr)->GetSeq(), *disc_obj, m_Objs);
                     }

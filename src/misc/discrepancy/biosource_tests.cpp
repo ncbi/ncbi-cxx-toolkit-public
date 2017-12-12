@@ -2483,6 +2483,30 @@ DISCREPANCY_CASE(DUP_SRC_QUAL, CBioSource, eDisc | eOncaller | eSmart, "Each qua
             Map[s].push_back("organism");
         }
     }
+    if (obj.CanGetPcr_primers()) {
+        ITERATE (list<CRef<CPCRReaction> >, it, obj.GetPcr_primers().Get()) {
+            if ((*it)->CanGetForward()) {
+                ITERATE (list<CRef<CPCRPrimer> >, pr, (*it)->GetForward().Get()) {
+                    if ((*pr)->CanGetName()) {
+                        Map[(*pr)->GetName()].push_back("fwd-primer-name");
+                    }
+                    if ((*pr)->CanGetSeq()) {
+                        Map[(*pr)->GetSeq()].push_back("fwd-primer-seq");
+                    }
+                }
+            }
+            if ((*it)->CanGetReverse()) {
+                ITERATE (list<CRef<CPCRPrimer> >, pr, (*it)->GetReverse().Get()) {
+                    if ((*pr)->CanGetName()) {
+                        Map[(*pr)->GetName()].push_back("rev-primer-name");
+                    }
+                    if ((*pr)->CanGetSeq()) {
+                        Map[(*pr)->GetSeq()].push_back("rev-primer-seq");
+                    }
+                }
+            }
+        }
+    }
     bool bad = false;
     for (map<string, vector<string> >::const_iterator it = Map.begin(); it != Map.end(); it++) {
         if (it->second.size() > 1) {
