@@ -92,7 +92,8 @@ using the Entrez Genomes MapViewer</td></tr></table><p>";
 
 ///unigene
 // .ncbirc alias: UNIGEN
-static const char kUnigeneUrl[] = "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=<@db@>&cmd=Display&dopt=<@dopt@>_unigene&from_uid=<@gi@>&RID=<@rid@>&log$=unigene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
+static const char kUnigeneUrl[] = "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/unigene/?term=<@label@>[<@uid@>]&RID=<@rid@>&log$=unigene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
+
 
 //substitues <@lnk_displ@>
 static const char kUnigeneImg[] = "<img border=0 height=16 width=16 src=\"images/U.gif\" alt=\"UniGene info linked to <@label@>\">";
@@ -116,7 +117,7 @@ gov/Structure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&%s\
 
 ///Geo
 // .ncbirc alias: GEO
-static const char kGeoUrl[] =  "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/geoprofiles/?LinkName=nucleotide_geoprofiles&from_uid=<@gi@>&RID=<@rid@>&log$=geo<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
+static const char kGeoUrl[] =  "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/geoprofiles/?term=genbank[Platform+Reporter+Type]+AND+<@label@>[Reporter+Identifier]&RID=<@rid@>&log$=geo<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
 
 
 //substitues <@lnk_displ@>
@@ -126,7 +127,7 @@ static const string kGeoDispl =  "<div><@lnk@>-<span class=\"rlLink\">microarray
 
 ///Gene
 // .ncbirc alias: GENE
-static const char kGeneUrl[] = "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/gene?term=<@gi@>[<@uid@>]&RID=<@rid@>&log$=gene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
+static const char kGeneUrl[] = "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/gene?term=<@label@>[<@uid@>]&RID=<@rid@>&log$=gene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
 
 //substitues <@lnk_displ@>
 static const char kGeneImg[] = "<img border=0 height=16 width=16 src=\"images/G.gif\" alt=\"Gene info linked to <@label@>\">";
@@ -163,7 +164,7 @@ static const string kMapviewBlastHitParams = "<a href=\"<@user_url@>&db=<@db@>&n
 
 ///Repr microbial Genome linkout
 // .ncbirc alias: REPR_MICROBIAL_GENOMES
-static const char kReprMicrobialGenomesUrl[] = "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/genome?term=<@gi@>[gi]&RID=<@rid@>&log$=map<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
+static const char kReprMicrobialGenomesUrl[] = "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/genome?term=<@label@>[<@uid@>]&RID=<@rid@>&log$=map<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
 static const char kReprMicrobialGenomesImg[] = "<img border=0 height=16 width=16 src=\"images/L.gif\" alt=\"View genome information for <@label@>\">";
 //For text link <@lnk@> is substituted by formatted url
@@ -396,7 +397,7 @@ public:
         bool advancedView;      ///< bool indicating that advanced view design option should be used when contsructing links
         string seqUrl;          ///< sequence URL created
         string defline;         ///< sequence defline
-        
+        bool   hasTextSeqID;
         
         /// Constructor        
         SSeqURLInfo(string usurl,string bt, bool isnuc,string db, string rid_in,int qn, 

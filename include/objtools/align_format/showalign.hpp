@@ -543,6 +543,7 @@ protected:
         string linkoutStr;              ///< string containing all linkout urls
         string dumpGnlUrl;              ///< download sequnce url
         string title;                   ///< sequnce title
+        bool hasTextSeqID;
     };
 
     ///Info used to contstruct seq url obtained from processing the whole seq align
