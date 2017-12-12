@@ -2442,37 +2442,37 @@ DISCREPANCY_CASE(DUP_SRC_QUAL, CBioSource, eDisc | eOncaller | eSmart, "Each qua
     string collected_by;
     string identified_by;
     if (obj.CanGetSubtype()) {
-        ITERATE (CBioSource::TSubtype, it, obj.GetSubtype()) {
-            if ((*it)->CanGetName()) {
-                const string& s = (*it)->GetName();
-                if ((*it)->CanGetSubtype()) {
-                    if ((*it)->GetSubtype() == CSubSource::eSubtype_collected_by) {
+        for (auto& it: obj.GetSubtype()) {
+            if (it->CanGetName()) {
+                const string& s = it->GetName();
+                if (it->CanGetSubtype()) {
+                    if (it->GetSubtype() == CSubSource::eSubtype_collected_by) {
                         collected_by = s;
                     }
-                    else if ((*it)->GetSubtype() == CSubSource::eSubtype_identified_by) {
+                    else if (it->GetSubtype() == CSubSource::eSubtype_identified_by) {
                         identified_by = s;
                     }
                 }
                 if (!s.empty()) {
-                    Map[s].push_back(GetSubtypeName(**it));
+                    Map[s].push_back(GetSubtypeName(*it));
                 }
             }
         }
     }
     if (obj.IsSetOrg() && obj.GetOrg().CanGetOrgname() && obj.GetOrg().GetOrgname().CanGetMod()) {
-        ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
-            if ((*it)->IsSetSubname()) {
-                const string& s = (*it)->GetSubname();
-                if ((*it)->CanGetSubtype()) {
-                    if ((*it)->GetSubtype() == COrgMod::eSubtype_anamorph || (*it)->GetSubtype() == COrgMod::eSubtype_common ||
-                        (*it)->GetSubtype() == COrgMod::eSubtype_old_name || (*it)->GetSubtype() == COrgMod::eSubtype_old_lineage ||
-                        (*it)->GetSubtype() == COrgMod::eSubtype_gb_acronym || (*it)->GetSubtype() == COrgMod::eSubtype_gb_anamorph ||
-                        (*it)->GetSubtype() == COrgMod::eSubtype_gb_synonym) {
+        for (auto& it: obj.GetOrg().GetOrgname().GetMod()) {
+            if (it->IsSetSubname()) {
+                const string& s = it->GetSubname();
+                if (it->CanGetSubtype()) {
+                    if (it->GetSubtype() == COrgMod::eSubtype_anamorph || it->GetSubtype() == COrgMod::eSubtype_common ||
+                        it->GetSubtype() == COrgMod::eSubtype_old_name || it->GetSubtype() == COrgMod::eSubtype_old_lineage ||
+                        it->GetSubtype() == COrgMod::eSubtype_gb_acronym || it->GetSubtype() == COrgMod::eSubtype_gb_anamorph ||
+                        it->GetSubtype() == COrgMod::eSubtype_gb_synonym) {
                         continue;
                     }
                 }
                 if (!s.empty()) {
-                    Map[s].push_back(GetOrgModName(**it));
+                    Map[s].push_back(GetOrgModName(*it));
                 }
             }
         }
@@ -2484,46 +2484,43 @@ DISCREPANCY_CASE(DUP_SRC_QUAL, CBioSource, eDisc | eOncaller | eSmart, "Each qua
         }
     }
     if (obj.CanGetPcr_primers()) {
-        const auto reaction = obj.GetPcr_primers().Get();
-        for (auto it = reaction.begin(); it != reaction.end(); ++it) {
-            if ((*it)->CanGetForward()) {
-                const auto primers = (*it)->GetForward().Get();
-                for (auto pr = primers.begin(); pr != primers.end(); ++pr) {
-                    if ((*pr)->CanGetName()) {
-                        Map[(*pr)->GetName()].push_back("fwd-primer-name");
+        for (auto& it: obj.GetPcr_primers().Get()) {
+            if (it->CanGetForward()) {
+                for (auto& pr: it->GetForward().Get()) {
+                    if (pr->CanGetName()) {
+                        Map[pr->GetName()].push_back("fwd-primer-name");
                     }
-                    if ((*pr)->CanGetSeq()) {
-                        Map[(*pr)->GetSeq()].push_back("fwd-primer-seq");
+                    if (pr->CanGetSeq()) {
+                        Map[pr->GetSeq()].push_back("fwd-primer-seq");
                     }
                 }
             }
-            if ((*it)->CanGetReverse()) {
-                const auto primers = (*it)->GetReverse().Get();
-                for (auto pr = primers.begin(); pr != primers.end(); ++pr) {
-                    if ((*pr)->CanGetName()) {
-                        Map[(*pr)->GetName()].push_back("rev-primer-name");
+            if (it->CanGetReverse()) {
+                for (auto& pr: it->GetReverse().Get()) {
+                    if (pr->CanGetName()) {
+                        Map[pr->GetName()].push_back("rev-primer-name");
                     }
-                    if ((*pr)->CanGetSeq()) {
-                        Map[(*pr)->GetSeq()].push_back("rev-primer-seq");
+                    if (pr->CanGetSeq()) {
+                        Map[pr->GetSeq()].push_back("rev-primer-seq");
                     }
                 }
             }
         }
     }
     bool bad = false;
-    for (map<string, vector<string> >::const_iterator it = Map.begin(); it != Map.end(); it++) {
-        if (it->second.size() > 1) {
-            if (it->second.size() == 2 && it->first == collected_by && collected_by == identified_by) {
+    for (auto& it: Map) {
+        if (it.second.size() > 1) {
+            if (it.second.size() == 2 && it.first == collected_by && collected_by == identified_by) {
                 continue; // there is no error if collected_by equals to identified_by
             }
             string s = "[n] biosource[s] [has] value\'";
-            s += it->first;
+            s += it.first;
             s += "\' for these qualifiers: ";
-            for (size_t i = 0; i < it->second.size(); i++) {
+            for (size_t i = 0; i < it.second.size(); i++) {
                 if (i) {
                     s += ", ";
                 }
-                s += it->second[i];
+                s += it.second[i];
             }
             m_Objs[kDupSrc][s].Add(*context.NewFeatOrDescObj());
         }
