@@ -4218,7 +4218,7 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out,SAlnInfo* aln_ve
             out << "   ";
             if(m_AlignOption&eHtml && aln_vec_info->subject_gi > ZERO_GI){
                 string featStr = s_MapFeatureURL(l_EntrezSubseqUrl, 
-                                              NStr::IntToString(aln_vec_info->subject_gi),                                              
+                                              NStr::NumericToString(aln_vec_info->subject_gi),                                              
                                               m_IsDbNa ? "nucleotide" : "protein",  
                                               (*iter)->range.GetFrom() +1 , 
                                               (*iter)->range.GetTo() + 1,
@@ -4239,7 +4239,7 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out,SAlnInfo* aln_ve
             out << "   ";
             if(m_AlignOption&eHtml && aln_vec_info->subject_gi > ZERO_GI){
                 string featStr = s_MapFeatureURL(l_EntrezSubseqUrl, 
-                                              NStr::IntToString(aln_vec_info->subject_gi),                                              
+                                              NStr::NumericToString(aln_vec_info->subject_gi),                                              
                                               m_IsDbNa ? "nucleotide" : "protein",  
                                               aln_vec_info->feat5->range.GetFrom() + 1 , 
                                               aln_vec_info->feat5->range.GetTo() + 1,
@@ -4258,7 +4258,7 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out,SAlnInfo* aln_ve
             out << "   ";
             if(m_AlignOption&eHtml && aln_vec_info->subject_gi > ZERO_GI){
                 string featStr = s_MapFeatureURL(l_EntrezSubseqUrl, 
-                                              NStr::IntToString(aln_vec_info->subject_gi),                                              
+                                              NStr::NumericToString(aln_vec_info->subject_gi),                                              
                                               m_IsDbNa ? "nucleotide" : "protein",  
                                               aln_vec_info->feat3->range.GetFrom() + 1 , 
                                               aln_vec_info->feat3->range.GetTo() + 1,
