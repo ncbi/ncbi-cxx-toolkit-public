@@ -5,7 +5,7 @@ LIB_PROJ = dbapi
 
 REQUIRES = dbapi
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
