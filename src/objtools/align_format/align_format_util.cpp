@@ -2106,8 +2106,8 @@ static list<string> s_GetLinkoutUrl(int linkout,
         lnk_displ = textLink ? "UniGene" : kUnigeneImg;
         
             lnkTitleInfo = "UniGene cluster"; 
-            url_link = CAlignFormatUtil::MapTemplate(url_link,"db",linkoutInfo.is_na ? "nucleotide" : "protein");
-            url_link = CAlignFormatUtil::MapTemplate(url_link,"dopt",linkoutInfo.is_na ? "nucleotide" : "protein");                                            
+            string uid = !linkoutInfo.is_na ? "Protein Accession" : "Nucleotide Accession";
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"uid",uid);
             url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,labelList,lnk_displ,lnkTitleInfo);
         
         if(textLink) {
@@ -2116,7 +2116,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
         url_link = CAlignFormatUtil::MapProtocol(url_link);
         linkout_list.push_back(url_link);
     }
-    if ((linkout & eStructure) && linkoutInfo.cdd_rid != "" && linkoutInfo.cdd_rid != "0"){
+    if ((linkout & eStructure) && linkoutInfo.cdd_rid != "" && linkoutInfo.cdd_rid != "0" && first_gi != ZERO_GI){
         string struct_link = CAlignFormatUtil::GetURLFromRegistry(
                                                              "STRUCTURE_URL");
 
@@ -2172,7 +2172,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
         lnk_displ = kGeneImg;
       }
       
-      string uid = !linkoutInfo.is_na ? "PUID" : "NUID";
+      string uid = !linkoutInfo.is_na ? "Protein Accession" : "Nucleotide Accession";
       url_link = CAlignFormatUtil::MapTemplate(url_link,"uid",uid);
       //gilist contains comma separated gis, change it to the following
       giList = NStr::Replace(giList,",","[" + uid + "] OR ");
@@ -2185,7 +2185,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
       linkout_list.push_back(url_link);        
     }
 
-    if((linkout & eGenomicSeq)){  //only for advanced view -> textlink = true
+    if((linkout & eGenomicSeq)  && first_gi != ZERO_GI){  //only for advanced view -> textlink = true
         if(textLink) {
             url_link = kMapviewBlastHitParams;        
             lnk_displ = "Map Viewer";
@@ -2214,7 +2214,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
             linkout_list.push_back(url_link);
         }
     }
-    else if((linkout & eMapviewer)){  
+    else if((linkout & eMapviewer) && first_gi != ZERO_GI){  
         url_link = kMapviwerUrl;
         lnk_displ = textLink ? "Map Viewer" : kMapviwerImg;        
         
@@ -2228,7 +2228,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
         linkout_list.push_back(url_link);        
     }
     //View Bioassays involving <accession
-    if(linkout & eBioAssay && linkoutInfo.is_na){
+    if(linkout & eBioAssay && linkoutInfo.is_na && first_gi != ZERO_GI){
         url_link = CAlignFormatUtil::GetURLFromRegistry("BIOASSAY_NUC");                        
         lnk_displ = textLink ? "PubChem BioAssay" : kBioAssayNucImg;            
         
@@ -2243,7 +2243,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
         url_link = CAlignFormatUtil::MapProtocol(url_link);
         linkout_list.push_back(url_link);        
     }
-    else if (linkout & eBioAssay && !linkoutInfo.is_na) {
+    else if (linkout & eBioAssay && !linkoutInfo.is_na && first_gi != ZERO_GI) {
         url_link = CAlignFormatUtil::GetURLFromRegistry("BIOASSAY_PROT");                        
         lnk_displ = textLink ? "PubChem BioAssay" : kBioAssayProtImg;
         
@@ -2265,6 +2265,8 @@ static list<string> s_GetLinkoutUrl(int linkout,
         
         lnkTitleInfo = "genomic information";
         //gilist contains comma separated gis            
+        string uid = !linkoutInfo.is_na ? "Protein Accession" : "Nucleotide Accession";
+        url_link = CAlignFormatUtil::MapTemplate(url_link,"uid",uid);
         url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,labelList,lnk_displ,lnkTitleInfo);
                 
         if(textLink) {
@@ -2401,10 +2403,18 @@ CAlignFormatUtil::GetBdlLinkoutInfo(CBioseq::TId& cur_id,
                                     ILinkoutDB* linkoutdb, 
                                     const string& mv_build_name)
 {
+        if(!linkoutdb) return;
+
         TGi gi = FindGi(cur_id);        
-        CRef<CSeq_id> seqID = FindBestChoice(cur_id, CSeq_id::WorstRank);
+        int linkout;
         
-	    int linkout = linkoutdb ? linkoutdb->GetLinkout(gi, mv_build_name) : 0;
+        if(gi > ZERO_GI) {
+            linkout = linkoutdb->GetLinkout(gi, mv_build_name);
+        }
+        else {
+            CRef<CSeq_id> seqID = FindBestChoice(cur_id, CSeq_id::WorstRank);        	    
+            linkout = linkoutdb->GetLinkout(*seqID, mv_build_name);
+        }
         
 
         if(linkout & eGene){
@@ -2485,14 +2495,14 @@ void s_AddOtherRelatedInfoLinks(CBioseq::TId& cur_id,
                                 
 {   
     //Identical Proteins
-     TGi gi = FindGi(cur_id);
-     if (gi > ZERO_GI) { 
-        CRef<CSeq_id> wid = FindBestChoice(cur_id, CSeq_id::WorstRank);
+          
+     CRef<CSeq_id> wid = FindBestChoice(cur_id, CSeq_id::WorstRank);     
+     if (CAlignFormatUtil::GetTextSeqID(wid)) {         
         string label;
         wid->GetLabel(&label, CSeq_id::eContent);                
         string url_link = kIdenticalProteinsUrl;
         string lnk_displ = "Identical Proteins";
-        url_link = s_MapLinkoutGenParam(url_link,rid,NStr::NumericToString(gi),for_alignment, cur_align,label,lnk_displ);        
+        url_link = s_MapLinkoutGenParam(url_link,rid,NStr::NumericToString(ZERO_GI),for_alignment, cur_align,label,lnk_displ);        
         url_link = CAlignFormatUtil::MapTemplate(kIdenticalProteinsDispl,"lnk",url_link);
         url_link = CAlignFormatUtil::MapTemplate(url_link,"label",label);
         linkout_list.push_back(url_link);
@@ -2533,9 +2543,8 @@ static list<string> s_GetFullLinkoutUrl(CBioseq::TId& cur_id,
             if (first_gi == ZERO_GI) first_gi = gi;
 
 
-            CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
-            string label;
-            wid->GetLabel(&label, CSeq_id::eContent);        
+            CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);            
+            string label = CAlignFormatUtil::GetLabel(wid);            
             if(!labelList.empty()) labelList += ",";
             labelList += label;
 
@@ -3429,8 +3438,7 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
 		url_link = s_MapCommonUrlParams(wgsUrl, seqUrlInfo);
 		url_link = CAlignFormatUtil::MapTemplate(url_link,"wgsproj",wgsProj);        
 		url_link = CAlignFormatUtil::MapTemplate(url_link,"wgsacc", wgsAccession);        
-	}
-    //else if (seqUrlInfo->gi > ZERO_GI) {        
+	}    
     else if (hasTextSeqID) {              
         string entrezTag = (seqUrlInfo->useTemplates) ? "ENTREZ_TM" : "ENTREZ";
         string l_EntrezUrl = CAlignFormatUtil::GetURLFromRegistry(entrezTag);
@@ -3604,8 +3612,8 @@ static string s_MapCustomLink(string linkUrl,string reportType,string accession,
 list<string>  CAlignFormatUtil::GetGiLinksList(SSeqURLInfo *seqUrlInfo,
                                                bool hspRange)
 {
-    list<string> customLinksList;
-    if ( seqUrlInfo->gi > ZERO_GI) {         
+    list<string> customLinksList;    
+    if (seqUrlInfo->hasTextSeqID) {                 
         //First show links to GenBank and FASTA
         string linkUrl,link,linkTiltle = kCustomLinkTitle;
         
@@ -3854,6 +3862,7 @@ string  CAlignFormatUtil::GetGeneInfo(TGi giForGeneLookup)
     }
     return geneSym;
 }
+ 
 
 CAlignFormatUtil::DbType CAlignFormatUtil::GetDbType(const CSeq_align_set& actual_aln_list, CScope & scope) 
 {
@@ -3862,11 +3871,12 @@ CAlignFormatUtil::DbType CAlignFormatUtil::GetDbType(const CSeq_align_set& actua
     DbType type = eDbTypeNotSet;
     CRef<CSeq_align> first_aln = actual_aln_list.Get().front();
     const CSeq_id& subject_id = first_aln->GetSeq_id(1);
+    
     if (subject_id.Which() != CSeq_id::e_Local){
         const CBioseq_Handle& handleTemp  = scope.GetBioseqHandle(subject_id);
         if(handleTemp){
             TGi giTemp = FindGi(handleTemp.GetBioseqCore()->GetId());
-            if (giTemp > ZERO_GI) { 
+            if (giTemp > ZERO_GI || GetTextSeqID((CConstRef<CSeq_id>)&subject_id)) { 
                 type = eDbGi;
             } else if (subject_id.Which() == CSeq_id::e_General){
                 const CDbtag& dtg = subject_id.GetGeneral();
@@ -3874,7 +3884,7 @@ CAlignFormatUtil::DbType CAlignFormatUtil::GetDbType(const CSeq_align_set& actua
                 if(NStr::CompareNocase(dbName, "TI") == 0){
                     type = eDbGeneral;
                 }
-            }   
+            }
         }
     }
     return type;
@@ -4522,7 +4532,8 @@ bool CAlignFormatUtil::GetTextSeqID(CConstRef<CSeq_id> seqID, string *textSeqID)
     bool hasTextSeqID = true;
         
     const CTextseq_id* text_id = seqID->GetTextseq_Id();
-    if(!text_id) {
+    //returns non zero if e_Genbank,e_Embl,e_Ddbj,e_Pir,e_Swissprot,case e_Other,e_Prf,case e_Tpg,e_Tpe,case e_Tpd,case e_Gpipe, e_Named_annot_track
+    if(!text_id) { //check for pdb and pat
         if(!(seqID->Which() == CSeq_id::e_Pdb) &&  !(seqID->Which() == CSeq_id::e_Patent)) {
             hasTextSeqID = false;
         }
@@ -4541,6 +4552,7 @@ bool CAlignFormatUtil::GetTextSeqID(const list<CRef<CSeq_id> > & ids, string *te
     bool hasTextSeqID = false;
 
     CConstRef<CSeq_id> seqID = FindTextseq_id(ids);
+    //returns non zero if e_Genbank,e_Embl,e_Ddbj,e_Pir,e_Swissprot,case e_Other,e_Prf,case e_Tpg,e_Tpe,case e_Tpd,case e_Gpipe, e_Named_annot_track
     if(seqID.Empty()) {
         seqID = GetSeq_idByType(ids, CSeq_id::e_Pdb);
     }

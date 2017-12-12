@@ -286,10 +286,14 @@ void CShowBlastDefline::x_InitLinkOutInfo(SDeflineInfo* sdl,
                                             bool getIdentProteins)
 {
     string linkout_list;
-    TGi cur_gi =  FindGi(cur_id);
     CRef<CSeq_id> wid = FindBestChoice(cur_id, CSeq_id::WorstRank);
     try {
-        sdl->linkout = m_LinkoutDB ? m_LinkoutDB->GetLinkout(*wid,m_MapViewerBuildName) : 0;    
+        if(sdl->gi != ZERO_GI) {
+            sdl->linkout = m_LinkoutDB ? m_LinkoutDB->GetLinkout(sdl->gi,m_MapViewerBuildName) : 0;    
+        }
+        else {
+            sdl->linkout = m_LinkoutDB ? m_LinkoutDB->GetLinkout(*wid,m_MapViewerBuildName) : 0;    
+        }
     }
     catch (const CException & e) {                
         ERR_POST("Problem with linkoutdb: " + e.GetMsg());                
@@ -388,8 +392,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
     sdl->alnIDFasta = aln_id.AsFastaString();
 
     //get linkout****
-    if((m_Option & eLinkout)){
-        bool linkout_not_found = true;
+    if((m_Option & eLinkout)){        
         bool getIdentProteins = !m_IsDbNa && bdl.size() > 1;
         for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
             iter != bdl.end(); iter++){

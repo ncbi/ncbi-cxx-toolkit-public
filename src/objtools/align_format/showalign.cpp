@@ -1012,6 +1012,7 @@ void CDisplaySeqalign::x_InitAlignLinks(SAlnDispParams *alnDispParams,
                                         int lnkDispParams)
 {
     CAlignFormatUtil::SSeqURLInfo *seqUrlInfo = alnDispParams->seqUrlInfo;
+    seqUrlInfo->hasTextSeqID = alnDispParams->hasTextSeqID;
     CRef<CSeq_id>  seqID = alnDispParams->seqID;
     if(lnkDispParams & eDisplayResourcesLinks) {
         seqUrlInfo->segs = (lnkDispParams & eDisplayDownloadLink) ?  x_GetSegs(1) : "";
@@ -1030,7 +1031,7 @@ void CDisplaySeqalign::x_InitAlignLinks(SAlnDispParams *alnDispParams,
         m_AlignedRegionsUrl =  CAlignFormatUtil::GetAlignedRegionsURL(seqUrlInfo,*seqID, m_Scope);
                                           
 
-        if(m_AlignOption&eLinkout && (seqUrlInfo->gi > ZERO_GI)){     	
+        if(m_AlignOption&eLinkout && (seqUrlInfo->hasTextSeqID)){     	
             m_LinkoutInfo.cur_align = m_cur_align;
             m_LinkoutInfo.taxid = seqUrlInfo->taxid;
             m_LinkoutInfo.subjRange = seqUrlInfo->seqRange;            
@@ -2160,12 +2161,18 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
         firstGi = (firstGi == ZERO_GI) ? gi_in_use_this_gi : firstGi;
 		alnDispParams = new SAlnDispParams();
 		alnDispParams->gi =  gi;
-		alnDispParams->seqID = FindBestChoice(ids, CSeq_id::WorstRank);		
+		alnDispParams->seqID = FindBestChoice(ids, CSeq_id::WorstRank); //change to use use_this_seq		
+        alnDispParams->hasTextSeqID = CAlignFormatUtil::GetTextSeqID(alnDispParams->seqID);
         alnDispParams->ids = bsp_handle.GetBioseqCore()->GetId();
 		alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID);//Just accession without db part like ref| or pdbd|
         int linkout = 0;
         if(m_AlignOption&eHtml || (m_AlignOption&eLinkout && m_AlignTemplates == NULL)) {
-            linkout = (deflineNum < kMaxDeflineNum) ? x_GetLinkout(gi) : 0;
+            if(alnDispParams->gi != ZERO_GI) {
+                linkout = (deflineNum < kMaxDeflineNum) ? x_GetLinkout(gi) : 0;
+            }
+            else if (alnDispParams->hasTextSeqID) {
+                linkout = (deflineNum < kMaxDeflineNum) ? x_GetLinkout(*alnDispParams->seqID) : 0;            
+            }
         }
 		if(m_AlignOption&eHtml){
 			int taxid = 0;
@@ -2177,8 +2184,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
                        
             alnDispParams->seqUrlInfo = x_InitSeqUrl(gi_in_use_this_gi,alnDispParams->label,linkout,taxid,ids);    
             alnDispParams->id_url = CAlignFormatUtil::GetIDUrl(alnDispParams->seqUrlInfo,&ids);
-		}
-		
+		}		
 		if(m_AlignOption&eLinkout && m_AlignTemplates == NULL){                    			
             //linkout = x_GetLinkout(gi);                
 			string user_url = m_Reg->Get(m_BlastType,"TOOL_URL");
@@ -2223,6 +2229,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CB
         alnDispParams->id_url = CAlignFormatUtil::GetIDUrl(alnDispParams->seqUrlInfo,&alnDispParams->ids);        
 	}			
 	alnDispParams->title = CDeflineGenerator().GenerateDefline(bsp_handle);			
+    alnDispParams->hasTextSeqID = CAlignFormatUtil::GetTextSeqID(alnDispParams->seqID);
 	return alnDispParams;
 }
 
@@ -3779,7 +3786,7 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
                                                       *alnDispParams->seqID);
                         }
                         if(m_CurrAlnAccession.find("gnl|BL_ORD_ID") != string::npos ||
-				m_CurrAlnAccession.find("lcl|Subject_") != string::npos){ 
+				                    m_CurrAlnAccession.find("lcl|Subject_") != string::npos){ 
 							///Get first token of the title
                             vector <string> parts;
                             NStr::Split(alnDispParams->title," ",parts);
@@ -3788,7 +3795,9 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
                             }
                         }						
                     }                    
-                    if( (isFirst && firstGi == ZERO_GI) || (alnDispParams->gi == firstGi) ) {                    
+                    //1. isFirst && firstGi == ZERO_GI - covers resource links for non-gis databases
+                    //2. alnDispParams->gi == firstGi - covers resource links for gi databases/                    
+                    if( (isFirst && firstGi == ZERO_GI) || (alnDispParams->gi == firstGi && firstGi != ZERO_GI) ) {
                         //Get custom links only for the first gi                        
                          int linksDisplayOption = eDisplayResourcesLinks;
                          if(seqLength > k_GetSubseqThreshhold) {
@@ -4099,15 +4108,15 @@ void CDisplaySeqalign::x_PrepareDynamicFeatureInfo(SAlnInfo* aln_vec_info)
     }
 }
 
-static string s_MapFeatureURL(string viewerURL,                           
-                              TGi subject_gi,  
+static string s_MapFeatureURL(string viewerURL,                                                         
+                              string textSeqID,
                               string db,                              
                               int fromRange, 
                               int toRange,
                               string rid)
 {    
-    string url_link = CAlignFormatUtil::MapTemplate(viewerURL,"db",db);
-    url_link = CAlignFormatUtil::MapTemplate(url_link,"gi",subject_gi);    
+    string url_link = CAlignFormatUtil::MapTemplate(viewerURL,"db",db);    
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"gi",textSeqID);    
     url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",rid); 
     url_link = CAlignFormatUtil::MapTemplate(url_link,"from",fromRange); 
     url_link = CAlignFormatUtil::MapTemplate(url_link,"to",toRange); 
@@ -4121,11 +4130,13 @@ string CDisplaySeqalign::x_FormatOneDynamicFeature(string viewerURL,
                                                    string featText)
 {
     string alignFeature = m_AlignTemplates->alignFeatureTmpl;
-    if(subject_gi > ZERO_GI){                   
-        alignFeature = CAlignFormatUtil::MapTemplate(alignFeature,"aln_feat_info",m_AlignTemplates->alignFeatureLinkTmpl);
-        
-        string url = s_MapFeatureURL(viewerURL,
-                                     subject_gi,
+    string textSeqID;
+    
+    if(subject_gi > ZERO_GI) {
+    //if(CAlignFormatUtil::GetTextSeqID((CConstRef<CSeq_id>)&m_AV->GetSeqId(1))) { 
+        alignFeature = CAlignFormatUtil::MapTemplate(alignFeature,"aln_feat_info",m_AlignTemplates->alignFeatureLinkTmpl);        
+        string url = s_MapFeatureURL(viewerURL,                                     
+                                     m_CurrAlnAccession,
                                      string(m_IsDbNa ? "nucleotide" : "protein"),
                                      fromRange + 1,
                                      toRange + 1,
@@ -4207,7 +4218,7 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out,SAlnInfo* aln_ve
             out << "   ";
             if(m_AlignOption&eHtml && aln_vec_info->subject_gi > ZERO_GI){
                 string featStr = s_MapFeatureURL(l_EntrezSubseqUrl, 
-                                              aln_vec_info->subject_gi,
+                                              NStr::IntToString(aln_vec_info->subject_gi),                                              
                                               m_IsDbNa ? "nucleotide" : "protein",  
                                               (*iter)->range.GetFrom() +1 , 
                                               (*iter)->range.GetTo() + 1,
@@ -4228,7 +4239,7 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out,SAlnInfo* aln_ve
             out << "   ";
             if(m_AlignOption&eHtml && aln_vec_info->subject_gi > ZERO_GI){
                 string featStr = s_MapFeatureURL(l_EntrezSubseqUrl, 
-                                              aln_vec_info->subject_gi,
+                                              NStr::IntToString(aln_vec_info->subject_gi),                                              
                                               m_IsDbNa ? "nucleotide" : "protein",  
                                               aln_vec_info->feat5->range.GetFrom() + 1 , 
                                               aln_vec_info->feat5->range.GetTo() + 1,
@@ -4247,7 +4258,7 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out,SAlnInfo* aln_ve
             out << "   ";
             if(m_AlignOption&eHtml && aln_vec_info->subject_gi > ZERO_GI){
                 string featStr = s_MapFeatureURL(l_EntrezSubseqUrl, 
-                                              aln_vec_info->subject_gi,
+                                              NStr::IntToString(aln_vec_info->subject_gi),                                              
                                               m_IsDbNa ? "nucleotide" : "protein",  
                                               aln_vec_info->feat3->range.GetFrom() + 1 , 
                                               aln_vec_info->feat3->range.GetTo() + 1,
