@@ -454,9 +454,15 @@ tds_connect(TDSSOCKET * tds, TDSLOGIN * login, int *p_oserr)
          * to 3 tries with the provided timeout which basically multiplies the
          * spent time without any good result. So it was decided to skip the
          * non tcp addresses.
+         *
+         * NOTE: on Windows exactly one tds_addrinfo structure is formed and
+         *       it has 0 in both ai_socktype and ai_protocol fields. So
+         *       skipping is conditional for non-Windows platforms
          */
+        #ifndef _WIN32
         if (addrs->ai_socktype != SOCK_STREAM)
             continue;
+        #endif
 
 		login->port = orig_port;
 
