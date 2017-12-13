@@ -2238,5 +2238,27 @@ BOOST_AUTO_TEST_CASE(Test_GB_7071)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GB_7479)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+
+    CRef<CSeq_feat> cds = unit_test_util::AddMiscFeature(entry);
+    cds->SetData().SetCdregion();
+    cds->ResetComment();
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+
+    CRef<CSeq_feat> gene = unit_test_util::AddMiscFeature(entry);
+    gene->SetData().SetGene().SetDesc("cullin 1");
+    gene->ResetComment();
+    gene->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    gene->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("pseudogene", "allelic")));
+
+    string defline = "Sebaea microphylla cullin 1 pseudogene, partial sequence.";
+    AddTitle(entry, defline);
+
+    CheckDeflineMatches(entry);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

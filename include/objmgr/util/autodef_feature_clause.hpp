@@ -94,6 +94,8 @@ public:
     
     virtual bool IsBioseqPrecursorRNA();
 
+    static bool IsPseudo(const CSeq_feat& f);
+
 protected:
     CAutoDefFeatureClause();
 

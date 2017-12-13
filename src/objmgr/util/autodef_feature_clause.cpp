@@ -229,13 +229,25 @@ void CAutoDefFeatureClause::x_SetBiomol()
 }
 
 
+bool CAutoDefFeatureClause::IsPseudo(const CSeq_feat& f)
+{
+    bool is_pseudo = false;
+    if (f.CanGetPseudo() && f.IsSetPseudo()) {
+        is_pseudo = true;
+    } else if (f.IsSetQual()) {
+        for (auto& it : f.GetQual()) {
+            if (it->IsSetQual() && NStr::EqualNocase(it->GetQual(), "pseudogene")) {
+                is_pseudo = true;
+            }
+        }
+    }
+    return is_pseudo;
+}
+
+
 bool CAutoDefFeatureClause::x_IsPseudo()
 {
-    if (m_MainFeat.CanGetPseudo() && m_MainFeat.IsSetPseudo()) {
-        return true;
-    } else {
-        return false;
-    }
+    return (m_GeneIsPseudo || IsPseudo(m_MainFeat));
 }
 
 
@@ -482,9 +494,7 @@ CAutoDefGeneClause::CAutoDefGeneClause(CBioseq_Handle bh, const CSeq_feat &main_
             m_AlleleName = m_GeneName + m_AlleleName;
         }
     }
-    if (m_MainFeat.CanGetPseudo() && m_MainFeat.GetPseudo()) {
-        m_GeneIsPseudo = true;
-    }
+    m_GeneIsPseudo = IsPseudo(m_MainFeat);
     m_HasGene = true;
 }
 
@@ -600,6 +610,8 @@ string CAutoDefFeatureClause::x_GetGeneName(const CGene_ref& gref, bool suppress
         return gref.GetLocus();
     } else if (!suppress_locus_tag && gref.IsSetLocus_tag() && !NStr::IsBlank(gref.GetLocus_tag())) {
         return gref.GetLocus_tag();
+    } else if (gref.IsSetDesc() && !NStr::IsBlank(gref.GetDesc())) {
+        return gref.GetDesc();
     } else {
         return "";
     }
@@ -996,7 +1008,7 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval, bool suppres
     }
     
     if (subtype == CSeqFeatData::eSubtype_cdregion
-        && (!m_MainFeat.CanGetPseudo() || !m_MainFeat.GetPseudo())) {
+        && (!x_IsPseudo())) {
         interval += "cds";
         if (m_IsAltSpliced) {
             interval += ", alternatively spliced";
@@ -1202,6 +1214,7 @@ bool CAutoDefFeatureClause::AddGene (CAutoDefFeatureClause_Base *gene_clause, bo
             m_GeneName = gene_clause->GetGeneName();
             m_AlleleName = gene_clause->GetAlleleName();
             m_GeneIsPseudo = gene_clause->GetGeneIsPseudo();
+            m_TypewordChosen = x_GetFeatureTypeWord(m_Typeword);
         }
     }
     
