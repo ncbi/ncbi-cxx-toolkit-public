@@ -1022,9 +1022,11 @@ void CReferenceItem::x_Init(const CCit_art& art, CBioseqContext& ctx)
                 break;
             case CArticleId::e_Pii:
                 {
-                    const string& pii = (*it)->GetPii();
-                    if (PiiOk (pii)) {
-                        m_OldPII = pii;
+                    if (not_in_press && is_epublish) {
+                        const string& pii = (*it)->GetPii();
+                        if (PiiOk (pii)) {
+                            m_OldPII = pii;
+                        }
                     }
                 }
                 break;
