@@ -1595,6 +1595,10 @@ void CTSE_ScopeInfo::RemoveLastInfoLock(CScopeInfo_Base& info)
     CUnlockedTSEsGuard guard;
     {{
         CMutexGuard guard_mtx(m_TSE_LockMutex);
+        if (!info.m_TSE_Handle.m_TSE) {
+            // already unlocked
+            return;
+        }
         if ( info.m_LockCounter.Get() > 0 ) {
             // already locked again
             return;
