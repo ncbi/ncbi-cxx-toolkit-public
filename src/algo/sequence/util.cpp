@@ -140,7 +140,7 @@ SeqLocToBioseq(const objects::CSeq_loc& loc, objects::CScope& scope)
                 CRef<CSeq_loc> sl =
                     handle.GetRangeSeq_loc(prev.GetFrom(), prev.GetTo(), strand);
 
-                CSeqVector vec(*sl, scope, CBioseq_Handle::eCoding_Iupac);
+                CSeqVector vec(*sl, scope, CBioseq_Handle::eCoding_Iupac, strand);
                 string seq_string;
                 vec.GetSeqData(0, vec.size(), seq_string);
 
