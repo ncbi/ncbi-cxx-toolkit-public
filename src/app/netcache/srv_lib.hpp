@@ -502,6 +502,7 @@ public:
 
     bool CheckFilters(void)
     { return true; }
+    void SetOmitStackTrace(bool) {}
 };
 
 inline void Reset(const CNcbiDiag&)
