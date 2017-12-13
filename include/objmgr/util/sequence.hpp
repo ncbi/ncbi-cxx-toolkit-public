@@ -944,9 +944,10 @@ public:
     /// @sa TTranslationFlags
     enum ETranslationFlags {
         fDefault = 0,
-        fNoStop = (1<<0), ///< = 0x1 Do not include stop in translation
+        fNoStop = (1<<0),          ///< = 0x1 Do not include stop in translation
         fRemoveTrailingX = (1<<1), ///< = 0x2 Remove trailing Xs from protein
-        fIs5PrimePartial = (1<<2) ///< = 0x4 Translate first codon even if not start codon (because sequence is 5' partial)
+        fIs5PrimePartial = (1<<2), ///< = 0x4 Translate first codon even if not start codon (because sequence is 5' partial)
+        fIs3PrimePartial = (1<<3)  ///< = 0x8 May not end in stop codon (because sequence is 3' partial)
     };
 
     typedef int TTranslationFlags;
@@ -977,7 +978,8 @@ public:
                           bool include_stop = true,
                           bool remove_trailing_X = false,
                           bool* alt_start = NULL,
-                          bool is_5prime_complete = true);
+                          bool is_5prime_complete = true,
+                          bool is_3prime_complete = true);
 
     /// Translate a string using a specified genetic code
     /// @param seq
@@ -1019,7 +1021,8 @@ public:
                           bool include_stop = true,
                           bool remove_trailing_X = false,
                           bool* alt_start = NULL,
-                          bool is_5prime_complete = true);
+                          bool is_5prime_complete = true,
+                          bool is_3prime_complete = true);
 
     /// Translate a seq-vector using a specified genetic code
     /// if the code is NULL, then the default genetic code is used

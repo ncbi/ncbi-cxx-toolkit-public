@@ -3461,6 +3461,7 @@ void x_Translate(const Container& seq,
                  int frame,
                  const CGenetic_code* code,
                  bool is_5prime_complete,
+                 bool is_3prime_complete,
                  bool include_stop,
                  bool remove_trailing_X,
                  bool* alt_start)
@@ -3545,7 +3546,7 @@ void x_Translate(const Container& seq,
         // ran out of sequence
     }
 
-    if ( aa != '*' && include_stop && (! mod) && prot.size() > 0 ) {
+    if ( aa != '*' && include_stop && (! mod) && prot.size() > 0 && is_3prime_complete ) {
         // check for stop codon that normally encodes an amino acid
         aa = tbl.GetStopResidue(state);
         if (aa == '*') {
@@ -3919,10 +3920,11 @@ void CSeqTranslator::Translate(const string& seq, string& prot,
                                bool include_stop,
                                bool remove_trailing_X,
                                bool* alt_start,
-                               bool is_5prime_complete)
+                               bool is_5prime_complete,
+                               bool is_3prime_complete)
 {
     x_Translate(seq, prot, 0, code,
-                is_5prime_complete, include_stop, remove_trailing_X, alt_start);
+                is_5prime_complete, is_3prime_complete, include_stop, remove_trailing_X, alt_start);
 }
 
 
@@ -3934,7 +3936,8 @@ void CSeqTranslator::Translate(const string& seq,
 {
     x_Translate(seq, prot, 0, code,
                 !(flags & fIs5PrimePartial), 
-                !(flags & fNoStop), 
+                !(flags & fIs3PrimePartial),
+                !(flags & fNoStop),
                 flags & fRemoveTrailingX,
                 alt_start);
 }
@@ -3945,10 +3948,11 @@ void CSeqTranslator::Translate(const CSeqVector& seq, string& prot,
                                bool include_stop,
                                bool remove_trailing_X,
                                bool* alt_start,
-                               bool is_5prime_complete)
+                               bool is_5prime_complete,
+                               bool is_3prime_complete)
 {
     x_Translate(seq, prot, 0, code,
-                is_5prime_complete, include_stop, remove_trailing_X, alt_start);
+                is_5prime_complete, is_3prime_complete, include_stop, remove_trailing_X, alt_start);
 }
 
 
@@ -3959,7 +3963,8 @@ void CSeqTranslator::Translate(const CSeqVector& seq, string& prot,
 {
     x_Translate(seq, prot, 0, code,
                 !(flags & fIs5PrimePartial), 
-                !(flags & fNoStop), 
+                !(flags & fIs3PrimePartial),
+                !(flags & fNoStop),
                 flags & fRemoveTrailingX,
                 alt_start);
 }
@@ -3976,6 +3981,7 @@ void CSeqTranslator::Translate(const CSeq_loc& loc,
     CSeqVector seq(loc, handle.GetScope(), CBioseq_Handle::eCoding_Iupac);
     x_Translate(seq, prot, 0, code,
                 !loc.IsPartialStart(eExtreme_Biological),
+                !loc.IsPartialStop(eExtreme_Biological),
                 include_stop, remove_trailing_X, alt_start);
 }
 
@@ -3992,6 +3998,7 @@ void CSeqTranslator::Translate(const CSeq_loc& loc,
     CSeqVector seq(loc, scope, CBioseq_Handle::eCoding_Iupac);
     x_Translate(seq, prot, 0, code,
                 !loc.IsPartialStart(eExtreme_Biological),
+                !loc.IsPartialStop(eExtreme_Biological),
                 include_stop, remove_trailing_X, alt_start);
 }
 
@@ -4033,6 +4040,7 @@ void CSeqTranslator::Translate(const CSeq_feat& feat,
     CSeqVector seq(feat.GetLocation(), scope, CBioseq_Handle::eCoding_Iupac);
     x_Translate(seq, prot, frame, code,
                 !feat.GetLocation().IsPartialStart(eExtreme_Biological),
+                !feat.GetLocation().IsPartialStop(eExtreme_Biological),
                 code_break_include_stop, remove_trailing_X, alt_start);
 
 
