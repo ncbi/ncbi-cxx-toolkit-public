@@ -2193,7 +2193,7 @@ static bool IsProductMatch(const string& rna_product, const string& cds_product)
 
 DISCREPANCY_CASE(CDS_WITHOUT_MRNA, COverlappingFeatures, eDisc | eOncaller | eSmart, "Coding regions on eukaryotic genomic DNA should have mRNAs with matching products")
 {
-    if (!context.IsEukaryotic() || !context.IsDNA()) {
+    if (!context.IsEukaryotic() || !context.IsDNA() || context.IsOrganelle()) {
         return;
     }
     const vector<CConstRef<CSeq_feat> >& cds = context.FeatCDS();
