@@ -13,7 +13,7 @@ DLL_LIB = dbapi_driver$(DLL)
 DLL_DLIB = $(DLL_LIB) xncbi
 LIBS = $(MYSQL_LIBS) $(Z_LIBS) $(ORIG_LIBS)
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse
 
 
 USES_LIBRARIES =  \

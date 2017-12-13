@@ -12,4 +12,4 @@ CHECK_CMD  = test-tds95 tds95_dataread
 
 CHECK_REQUIRES = in-house-resources
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

@@ -13,4 +13,4 @@ CHECK_CMD  = test-db95 --no-auto db95_thread
 
 CHECK_REQUIRES = in-house-resources
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

@@ -14,4 +14,4 @@ CHECK_COPY = text_buffer.sql
 
 CHECK_REQUIRES = in-house-resources
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

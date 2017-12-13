@@ -12,4 +12,4 @@ CHECK_CMD  = test-ct95 ct95_cancel
 
 CHECK_REQUIRES = in-house-resources
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

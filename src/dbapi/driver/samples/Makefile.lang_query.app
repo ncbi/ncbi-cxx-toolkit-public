@@ -16,4 +16,4 @@ CHECK_CMD  = test_lang_query.sh
 CHECK_COPY = test_lang_query.sh
 CHECK_TIMEOUT = 400
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

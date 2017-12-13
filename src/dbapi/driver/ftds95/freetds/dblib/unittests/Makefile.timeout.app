@@ -14,4 +14,4 @@ CHECK_COPY = timeout.sql
 
 CHECK_REQUIRES = in-house-resources
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

@@ -12,4 +12,4 @@ LINK     = $(C_LINK)
 CHECK_CMD  =
 CHECK_COPY = readconf.in
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

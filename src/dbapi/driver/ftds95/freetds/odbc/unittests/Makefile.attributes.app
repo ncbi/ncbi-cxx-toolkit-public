@@ -14,4 +14,4 @@ CHECK_COPY = odbc.ini attributes.in
 
 CHECK_REQUIRES = in-house-resources
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

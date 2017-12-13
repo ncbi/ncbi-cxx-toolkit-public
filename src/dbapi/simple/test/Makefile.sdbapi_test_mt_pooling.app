@@ -9,4 +9,4 @@ LIBS = $(SDBAPI_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 CHECK_CMD =
 CHECK_REQUIRES = MT in-house-resources
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

@@ -11,4 +11,4 @@ LINK     = $(C_LINK)
 # Attempts to log in as sa with invalid credentials; disabled per DBA request.
 # CHECK_CMD  = test-ct95 ct95_connect_fail
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

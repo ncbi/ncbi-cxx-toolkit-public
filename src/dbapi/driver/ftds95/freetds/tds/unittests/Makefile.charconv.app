@@ -10,4 +10,4 @@ LINK     = $(C_LINK)
 
 CHECK_CMD  =
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

@@ -13,4 +13,4 @@ CHECK_CMD  = test-ct95 --ms-ver 7.1 ct95_get_send_data
 
 CHECK_REQUIRES = in-house-resources
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

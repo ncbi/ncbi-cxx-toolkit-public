@@ -14,4 +14,4 @@ CHECK_COPY = t0016.sql t0016.in t0016_1.sql t0016_1.in t0016_2.sql t0016_2.in t0
 
 CHECK_REQUIRES = in-house-resources
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

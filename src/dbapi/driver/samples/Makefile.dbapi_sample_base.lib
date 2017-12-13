@@ -5,7 +5,7 @@ LIB = dbapi_sample_base
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SYBASE_INCLUDE)
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse
 
 
 USES_LIBRARIES =  \

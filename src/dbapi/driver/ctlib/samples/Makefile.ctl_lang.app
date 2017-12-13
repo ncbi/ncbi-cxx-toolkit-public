@@ -16,4 +16,4 @@ CHECK_COPY = ctl_lang.ini
 CHECK_CMD = run_sybase_app.sh ctl_lang -S DBAPI_SYB155_TEST /CHECK_NAME=ctl_lang-SYB155
 CHECK_CMD = run_sybase_app.sh ctl_lang -S DBAPI_SYB160_TEST /CHECK_NAME=ctl_lang-SYB160
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

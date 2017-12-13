@@ -32,4 +32,4 @@ CHECK_CMD = python_ncbi_dbapi_test -dr odbc  -S MsSql
 # CHECK_CMD = python_ncbi_dbapi_test -dr odbc  -S DBAPI_MS2008_TEST
 
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

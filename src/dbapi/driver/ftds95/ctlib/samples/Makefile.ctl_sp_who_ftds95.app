@@ -15,4 +15,4 @@ CHECK_REQUIRES = in-house-resources
 CHECK_CMD = run_sybase_app.sh ctl_sp_who_ftds95 -S MSDEV1 /CHECK_NAME=ctl_sp_who_ftds95-MS
 # CHECK_CMD = run_sybase_app.sh ctl_sp_who_ftds95 -S MS2008DEV1 /CHECK_NAME=ctl_sp_who_ftds95-MS2008
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

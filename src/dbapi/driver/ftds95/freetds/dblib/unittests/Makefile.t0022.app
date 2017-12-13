@@ -16,4 +16,4 @@ CHECK_COPY = t0022.sql
 
 CHECK_REQUIRES = in-house-resources
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

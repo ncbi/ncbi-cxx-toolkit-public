@@ -13,4 +13,4 @@ LINK     = $(C_LINK)
 
 # CHECK_REQUIRES = in-house-resources
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

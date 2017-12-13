@@ -10,4 +10,4 @@ DLL_LIB  = tds_ftds95
 LIBS     = $(FTDS95_LIBS) $(NETWORK_LIBS) $(RT_LIBS) $(C_LIBS)
 LINK     = $(C_LINK)
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

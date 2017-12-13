@@ -18,4 +18,4 @@ CHECK_COPY = odbc.ini
 # Windows is a fiction to help ensure Xcode builds pick libiconv up.
 CHECK_REQUIRES = in-house-resources Iconv -Solaris -MSWin
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

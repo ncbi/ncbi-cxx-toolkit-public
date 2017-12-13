@@ -12,4 +12,4 @@ CHECK_CMD  = test-ct95 ct95_array_bind
 
 CHECK_REQUIRES = in-house-resources
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

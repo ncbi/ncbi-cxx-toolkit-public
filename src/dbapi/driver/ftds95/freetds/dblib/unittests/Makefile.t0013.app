@@ -15,4 +15,4 @@ CHECK_COPY = t0013.sql data.bin
 
 CHECK_REQUIRES = in-house-resources
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

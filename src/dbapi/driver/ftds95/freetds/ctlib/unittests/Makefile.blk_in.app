@@ -12,4 +12,4 @@ CHECK_CMD  = test-ct95 --no-auto ct95_blk_in
 
 CHECK_REQUIRES = in-house-resources
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

@@ -13,4 +13,4 @@ LIBS = $(SYBASE_LIBS) $(SYBASE_DLLS) $(ODBC_LIBS) $(FTDS64_LIBS) \
 
 CHECK_COPY = dbapi_cursor.ini
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

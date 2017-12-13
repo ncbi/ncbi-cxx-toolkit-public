@@ -14,4 +14,4 @@ CHECK_COPY = numeric.sql numeric_2.sql
 
 CHECK_REQUIRES = in-house-resources
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse

@@ -15,7 +15,7 @@ DLL_LIB = dbapi dbapi_driver$(DLL) $(XCONNEXT) xconnect xutil xncbi
 LIBS    = $(NETWORK_LIBS) $(ORIG_LIBS)
 KEEP_CORELIB = yes
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse
 
 
 USES_LIBRARIES =  \

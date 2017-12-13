@@ -3,7 +3,7 @@
 SRC = sdbapi
 LIB = sdbapi
 
-WATCHERS = ucko
+WATCHERS = ucko satskyse
 
 
 
