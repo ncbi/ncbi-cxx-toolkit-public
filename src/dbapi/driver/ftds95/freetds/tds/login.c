@@ -37,9 +37,9 @@
 #include <unistd.h>
 #endif /* HAVE_UNISTD_H */
 
-#if HAVE_SELECT_H
-#include <sys/select.h>
-#endif /* HAVE_SELECT_H */
+#if HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif /* HAVE_SYS_SOCKET_H */
 
 #ifdef _WIN32
 #include <process.h>
