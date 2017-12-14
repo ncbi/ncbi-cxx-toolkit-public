@@ -1259,6 +1259,10 @@ public:
                                                  bool getIdentProteins);
     static list<string> GetFullLinkoutUrl(const list< CRef< objects::CBlast_def_line > > &bdl, SLinkoutInfo &linkoutInfo);
     static list<string> GetFullLinkoutUrl(objects::CBioseq::TId& cur_id,SLinkoutInfo &linkoutInfo,bool getIdentProteins);
+    static int GetSeqLinkoutInfo(objects::CBioseq::TId& cur_id,                                    
+                                    ILinkoutDB** linkoutdb, 
+                                    const string& mv_build_name,                                    
+                                    TGi gi = INVALID_GI);
     static int GetMasterCoverage(const objects::CSeq_align_set& alnset);
 	static CRange<TSeqPos> GetSeqAlignCoverageParams(const objects::CSeq_align_set& alnset,int *masterCoverage,bool *flip);
 												
