@@ -1169,9 +1169,10 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
     return t_con.release();
 }
 
-void CDriverContext::CloseConnsForPool(const string& pool_name,
-                                       Uint4 keep_host_ip, Uint2 keep_port)
+size_t CDriverContext::CloseConnsForPool(const string& pool_name,
+                                         Uint4 keep_host_ip, Uint2 keep_port)
 {
+    size_t      invalidated_count = 0;
     CMutexGuard mg(m_PoolMutex);
 
     ITERATE(TConnPool, it, m_InUse) {
@@ -1179,6 +1180,7 @@ void CDriverContext::CloseConnsForPool(const string& pool_name,
         if (t_con->IsReusable()  &&  pool_name == t_con->PoolName()) {
             if (t_con->Host() != keep_host_ip || t_con->Port() != keep_port) {
                 t_con->Invalidate();
+                ++invalidated_count;
             }
         }
     }
@@ -1192,6 +1194,7 @@ void CDriverContext::CloseConnsForPool(const string& pool_name,
             }
         }
     }
+    return invalidated_count;
 }
 
 

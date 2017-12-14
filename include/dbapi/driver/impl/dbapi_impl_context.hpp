@@ -234,8 +234,10 @@ public:
 
     void ReadDBConfParams  (const string& service_name, SDBConfParams* params);
     bool SatisfyPoolMinimum(const CDBConnParams& params);
-    void CloseConnsForPool (const string& pool_name, Uint4 keep_host_ip=0,
-                            Uint2 keep_port=0);
+
+    // Provides the number of the invalidated connections
+    size_t CloseConnsForPool (const string& pool_name, Uint4 keep_host_ip=0,
+                              Uint2 keep_port=0);
     void CloseOldIdleConns (unsigned int max_closings,
                             const string& pool_name = kEmptyStr);
 
