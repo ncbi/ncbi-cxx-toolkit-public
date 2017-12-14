@@ -286,20 +286,17 @@ void CShowBlastDefline::x_InitLinkOutInfo(SDeflineInfo* sdl,
                                             bool getIdentProteins)
 {
     string linkout_list;
-    CRef<CSeq_id> wid = FindBestChoice(cur_id, CSeq_id::WorstRank);
-    try {
-        if(sdl->gi != ZERO_GI) {
-            sdl->linkout = m_LinkoutDB ? m_LinkoutDB->GetLinkout(sdl->gi,m_MapViewerBuildName) : 0;    
-        }
-        else {
-            sdl->linkout = m_LinkoutDB ? m_LinkoutDB->GetLinkout(*wid,m_MapViewerBuildName) : 0;    
-        }
-    }
-    catch (const CException & e) {                
-        ERR_POST("Problem with linkoutdb: " + e.GetMsg());                
-        m_Option &= ~eLinkout; //Remove linkout bit for the rest of sequences
+    
+    sdl->linkout = CAlignFormatUtil::GetSeqLinkoutInfo(cur_id,                                    
+                                    &m_LinkoutDB, 
+                                    m_MapViewerBuildName,                                    
+                                    sdl->gi);
+    if(!m_LinkoutDB) {
+        m_Option &= ~eLinkout;
         return;
     }
+
+
     if(m_LinkoutOrder.empty()) {
         m_ConfigFile.reset(new CNcbiIfstream(".ncbirc"));
         m_Reg.reset(new CNcbiRegistry(*m_ConfigFile));        
@@ -398,21 +395,15 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             iter != bdl.end(); iter++){
             CBioseq::TId& cur_id = (CBioseq::TId &)(*iter)->GetSeqid();
             TGi cur_gi =  FindGi(cur_id);            
-            if(use_this_seqid.empty()){
-                if(sdl->gi == cur_gi){                                     
-                    x_InitLinkOutInfo(sdl,cur_id,blast_rank,getIdentProteins);                    
-                    break;
-                }
-            }             
-            else { //seqid list or giList               
+            bool match = false;
+            if(!use_this_seqid.empty()){
                 wid = FindBestChoice(cur_id, CSeq_id::WorstRank);
-                bool match = CAlignFormatUtil::MatchSeqInSeqList(cur_gi, wid, use_this_seqid);
-                if(match) {
-                    x_InitLinkOutInfo(sdl,cur_id,blast_rank,getIdentProteins);
-                    break;
-                }                                
+                match = CAlignFormatUtil::MatchSeqInSeqList(cur_gi, wid, use_this_seqid);
+            }
+            if((use_this_seqid.empty() && sdl->gi == cur_gi) || match) {
+                x_InitLinkOutInfo(sdl,cur_id,blast_rank,getIdentProteins);
+                break;
             }            
-
         }
     }
     

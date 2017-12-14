@@ -2396,6 +2396,33 @@ static void s_AddLinkoutInfo(map<int, vector < CBioseq::TId > > &linkout_map,int
     }
 }
 
+int CAlignFormatUtil::GetSeqLinkoutInfo(CBioseq::TId& cur_id,                                    
+                                    ILinkoutDB **linkoutdb, 
+                                    const string& mv_build_name,                                    
+                                    TGi gi)
+{
+    int linkout = 0;
+
+    if(*linkoutdb) {
+        if(gi == INVALID_GI) {
+            gi = FindGi(cur_id);        
+        }    
+        try {            
+            if(gi > ZERO_GI) {
+                linkout = (*linkoutdb)->GetLinkout(gi, mv_build_name);
+            }
+            else if(GetTextSeqID(cur_id)){
+                CRef<CSeq_id> seqID = FindBestChoice(cur_id, CSeq_id::WorstRank);        	    
+                linkout = (*linkoutdb)->GetLinkout(*seqID, mv_build_name);                
+            }                         
+        }
+        catch (const CException & e) {        
+            ERR_POST("Problem with linkoutdb: " + e.GetMsg());                                        
+            *linkoutdb = NULL;
+        }    
+    }
+    return linkout;
+}
 
 void 
 CAlignFormatUtil::GetBdlLinkoutInfo(CBioseq::TId& cur_id,
@@ -2404,19 +2431,11 @@ CAlignFormatUtil::GetBdlLinkoutInfo(CBioseq::TId& cur_id,
                                     const string& mv_build_name)
 {
         if(!linkoutdb) return;
-
-        TGi gi = FindGi(cur_id);        
-        int linkout;
         
-        if(gi > ZERO_GI) {
-            linkout = linkoutdb->GetLinkout(gi, mv_build_name);
-        }
-        else {
-            CRef<CSeq_id> seqID = FindBestChoice(cur_id, CSeq_id::WorstRank);        	    
-            linkout = linkoutdb->GetLinkout(*seqID, mv_build_name);
-        }
+        int linkout = GetSeqLinkoutInfo(cur_id,                                    
+                                    &linkoutdb, 
+                                    mv_build_name);                                    
         
-
         if(linkout & eGene){
             s_AddLinkoutInfo(linkout_map,eGene,cur_id);            
         }
@@ -2537,6 +2556,7 @@ static list<string> s_GetFullLinkoutUrl(CBioseq::TId& cur_id,
         bool disableLink = (linkout == 0 || idList.size() == 0 || ( (linkout & eStructure) && (linkoutInfo.cdd_rid == "" || linkoutInfo.cdd_rid == "0")));
 
         string giList,labelList;        
+        int seqVersion = (linkout & eGenomeDataViewer) ? true : false; 
         for (size_t i = 0; i < idList.size(); i++) {
             const CBioseq::TId& ids = idList[i];
             TGi gi = FindGi(ids);
@@ -2544,7 +2564,7 @@ static list<string> s_GetFullLinkoutUrl(CBioseq::TId& cur_id,
 
 
             CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);            
-            string label = CAlignFormatUtil::GetLabel(wid);            
+            string label = CAlignFormatUtil::GetLabel(wid,seqVersion);            
             if(!labelList.empty()) labelList += ",";
             labelList += label;
 
@@ -4534,7 +4554,7 @@ bool CAlignFormatUtil::GetTextSeqID(CConstRef<CSeq_id> seqID, string *textSeqID)
     const CTextseq_id* text_id = seqID->GetTextseq_Id();
     //returns non zero if e_Genbank,e_Embl,e_Ddbj,e_Pir,e_Swissprot,case e_Other,e_Prf,case e_Tpg,e_Tpe,case e_Tpd,case e_Gpipe, e_Named_annot_track
     if(!text_id) { //check for pdb and pat
-        if(!(seqID->Which() == CSeq_id::e_Pdb) &&  !(seqID->Which() == CSeq_id::e_Patent)) {
+        if(!(seqID->Which() == CSeq_id::e_Pdb) &&  !(seqID->Which() == CSeq_id::e_Patent) && !(seqID->Which() == CSeq_id::e_Gi)) {
             hasTextSeqID = false;
         }
     }

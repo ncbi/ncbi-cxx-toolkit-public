@@ -2115,7 +2115,6 @@ int CDisplaySeqalign::x_GetLinkout(TGi gi)
 }
 
 
-
 int CDisplaySeqalign::x_GetLinkout(const objects::CSeq_id &  id)
 {
     int linkout = 0;
@@ -2167,12 +2166,13 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
 		alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID);//Just accession without db part like ref| or pdbd|
         int linkout = 0;
         if(m_AlignOption&eHtml || (m_AlignOption&eLinkout && m_AlignTemplates == NULL)) {
-            if(alnDispParams->gi != ZERO_GI) {
-                linkout = (deflineNum < kMaxDeflineNum) ? x_GetLinkout(gi) : 0;
-            }
-            else if (alnDispParams->hasTextSeqID) {
-                linkout = (deflineNum < kMaxDeflineNum) ? x_GetLinkout(*alnDispParams->seqID) : 0;            
-            }
+            if (alnDispParams->hasTextSeqID) {                
+                linkout = (deflineNum < kMaxDeflineNum) ? CAlignFormatUtil::GetSeqLinkoutInfo((CBioseq::TId &)ids,                                    
+                                                                            &m_LinkoutDB,
+                                                                            m_MapViewerBuildName,
+                                                                            alnDispParams->gi) : 0;
+                if(!m_LinkoutDB) m_AlignOption &= ~eLinkout;
+            }            
         }
 		if(m_AlignOption&eHtml){
 			int taxid = 0;
