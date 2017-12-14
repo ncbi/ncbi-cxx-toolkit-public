@@ -211,6 +211,67 @@ CConstRef<CSeq_feat> CGeneCache::GetGeneFromCache(const CSeq_feat* feat, CScope&
 }
 
 
+bool CGeneCache::x_HasNamedQual(const CSeq_feat& feat, const string& qual)
+{
+    bool rval = false;
+    if (feat.IsSetQual()) {
+        for (auto it : feat.GetQual()) {
+            if (it->IsSetQual() && NStr::EqualNocase(it->GetQual(), qual)) {
+                rval = true;
+                break;
+            }
+        }
+    }
+    return rval;
+}
+
+
+bool CGeneCache::x_IsPseudo(const CGene_ref& gref)
+{
+    if (gref.IsSetPseudo() && gref.GetPseudo()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool CGeneCache::x_IsFeatPseudo(const CSeq_feat& feat)
+{
+    if (feat.IsSetPseudo() && feat.GetPseudo()) {
+        return true;
+    } else if (x_HasNamedQual(feat, "pseudogene")) {
+        return true;
+    } else if (feat.GetData().IsGene() && x_IsPseudo(feat.GetData().GetGene())) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool CGeneCache::IsPseudo(const CSeq_feat& feat, CScope& scope)
+{
+    if (x_IsFeatPseudo(feat)) {
+        return true;
+    } else if (!feat.IsSetData() || !feat.GetData().IsGene()) {
+        const CGene_ref* grp = feat.GetGeneXref();
+        if (grp) {
+            return x_IsPseudo(*grp);
+        } else {
+            CConstRef<CSeq_feat> overlap = GetGeneFromCache(&feat, scope);
+            if (overlap) {
+                return x_IsFeatPseudo(*overlap);
+            } else {
+                return false;
+            }
+        }
+    } else {
+        return false;
+    }
+}
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE

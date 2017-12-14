@@ -123,6 +123,7 @@ public:
     CRef<feature::CFeatTree> GetFeatTreeFromCache(const CSeq_feat& feat, CScope& scope);
     CRef<feature::CFeatTree> GetFeatTreeFromCache(CBioseq_Handle bh);
     void Clear() { m_FeatGeneMap.clear(); m_SeqTreeMap.clear(); }
+    bool IsPseudo(const CSeq_feat& feat, CScope& scope);
 
 private:
 
@@ -132,6 +133,9 @@ private:
     typedef map<CBioseq_Handle, CRef<feature::CFeatTree> > TSeqTreeMap;
     TSeqTreeMap m_SeqTreeMap;
 
+    static bool x_IsPseudo(const CGene_ref& gref);
+    static bool x_IsFeatPseudo(const CSeq_feat& feat);
+    static bool x_HasNamedQual(const CSeq_feat& feat, const string& qual);
 };
 
 

@@ -5846,6 +5846,23 @@ void CValidError_bioseq::x_ValidateCodingRegionParentPartialness(const CSeq_feat
 }
 
 
+void CValidError_bioseq::x_ReportStartStopPartialProblem(int partial_type, const CSeq_feat& feat)
+{
+    EDiagSev sev = eDiag_Warning;
+    if (m_Imp.IsGenomeSubmission() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA) {
+        sev = eDiag_Error;
+    }
+
+    if (partial_type == 0) {
+        PostErr(sev, eErr_SEQ_FEAT_PartialProblem5Prime,
+            "Start does not include first/last residue of sequence", feat);
+    } else if (partial_type == 1) {
+        PostErr(sev, eErr_SEQ_FEAT_PartialProblem3Prime,
+            "Stop does not include first/last residue of sequence", feat);
+    }
+}
+
+
 void CValidError_bioseq::ValidateFeatPartialInContext (
     const CMappedFeat& feat)
 {
@@ -5916,7 +5933,9 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                     x_PartialAdjacentToIntron(feat.GetLocation())) {
                     // suppress
                 } else if ( x_IsPartialAtSpliceSiteOrGap(feat.GetLocation(), errtype, bad_seq, is_gap) ) {
-                    if (!is_gap && (!feat.IsSetPseudo() || !feat.GetPseudo()) && feat.GetData().IsCdregion()) {
+                    if (is_gap || m_Imp.GetGeneCache().IsPseudo(*(feat.GetOriginalSeq_feat()), *m_Scope)) {
+                        // suppress for everything
+                    } else if (feat.GetData().IsCdregion() || feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
                         if (m_CurrentHandle && IsMrna(m_CurrentHandle)) {
                             if (j == 0) {
                                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemmRNASequence5Prime,
@@ -5938,6 +5957,8 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                                     *(feat.GetSeq_feat()));
                             }
                         } 
+                    } else {
+                        x_ReportStartStopPartialProblem(j, *(feat.GetSeq_feat()));
                     }
                 } else if ( bad_seq) {
                     PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
@@ -5986,27 +6007,15 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                         PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem3Prime,
                             "Stop does not include first/last residue of sequence", *(feat.GetSeq_feat()));
                     }
+                } else if (m_Imp.GetGeneCache().IsPseudo(*(feat.GetSeq_feat()), *m_Scope)) {
+                    // suppress
                 } else if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA && 
                     j == 0 && x_PartialAdjacentToIntron(feat.GetLocation())) {
                     // suppress tRNAs adjacent to introns
                 } else if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
                     // ignore start/stop not at end in genomic gpipe sequence
                 } else {
-                    EDiagSev sev = eDiag_Warning;
-                    if (m_Imp.IsGenomeSubmission()) {
-                        if (j == 0 || j == 1) {
-                            if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA) {
-                                sev = eDiag_Error;
-                            }
-                        }
-                    }
-                    if (j == 0) {
-                        PostErr(sev, eErr_SEQ_FEAT_PartialProblem5Prime,
-                            "Start does not include first/last residue of sequence", *(feat.GetSeq_feat()));
-                    } else if (j == 1) {
-                        PostErr(sev, eErr_SEQ_FEAT_PartialProblem3Prime,
-                            "Stop does not include first/last residue of sequence", *(feat.GetSeq_feat()));
-                    }
+                    x_ReportStartStopPartialProblem(j, *(feat.GetSeq_feat()));
                 }
             }
         }

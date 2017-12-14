@@ -11173,9 +11173,12 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     misc_feat->SetPartial(true);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    // no longer show error, per VR-763
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, 
+                              "PartialProblem3Prime", 
+                              "Stop does not include first/last residue of sequence"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
     misc_feat->SetLocation().SetInt().SetFrom(46);
@@ -11183,13 +11186,18 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     misc_feat->SetLocation().SetPartialStart(true, eExtreme_Biological);
     misc_feat->SetLocation().SetPartialStop(false, eExtreme_Biological);
     seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, 
+                              "PartialProblem5Prime", 
+                              "Start does not include first/last residue of sequence"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
     // take misc_feat away
     entry->SetSet().SetSeq_set().front()->SetSeq().ResetAnnot();
     // cds, but splicing not expected
+    // do not report, per V-763
     unit_test_util::SetDiv (entry, "BCT");
     entry->SetSet().ResetAnnot();
     cds.Reset(new CSeq_feat());
@@ -11407,6 +11415,117 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+}
+
+
+void SetUpMiscForPartialTest(CSeq_feat& feat, TSeqPos start, TSeqPos stop, bool pseudo)
+{
+    feat.SetLocation().SetInt().SetFrom(start);
+    feat.SetLocation().SetInt().SetTo(stop);
+    if (pseudo) {
+        feat.SetPseudo(true);
+    } else {
+        feat.ResetPseudo();
+    }
+}
+
+
+void CheckMiscPartialErrors(CRef<CSeq_entry> entry, bool expect_bad_5, bool expect_bad_3)
+{
+    STANDARD_SETUP
+
+        eval = validator.Validate(seh, options);
+    if (expect_bad_5) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+            "PartialProblem5Prime",
+            "Start does not include first/last residue of sequence"));
+    }
+    if (expect_bad_3) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+            "PartialProblem3Prime",
+            "Stop does not include first/last residue of sequence"));
+    }
+    if (entry->GetSeq().GetAnnot().front()->GetData().GetFtable().front()->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+            "CDSmRNAMismatchLocation", "No CDS location match for 1 mRNA"));
+    }
+    CheckErrors(*eval, expected_errors);
+    CLEAR_ERRORS
+}
+
+
+void TestOneMiscPartial(CRef<CSeq_entry> entry, TSeqPos good_start, TSeqPos bad_start, TSeqPos good_stop, TSeqPos bad_stop, bool is_mrna)
+{
+    entry->SetSeq().ResetAnnot();
+    CRef<CSeq_feat> misc = AddMiscFeature(entry);
+    if (is_mrna) {
+        misc->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+        misc->SetData().SetRna().SetExt().SetName("fake mRNA name");
+    }
+    misc->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    misc->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    misc->SetPartial();
+
+    SetUpMiscForPartialTest(*misc, good_start, good_stop, false);
+    CheckMiscPartialErrors(entry, false, false);
+
+    SetUpMiscForPartialTest(*misc, good_start, good_stop, true);
+    CheckMiscPartialErrors(entry, false, false);
+
+    SetUpMiscForPartialTest(*misc, bad_start, good_stop, false);
+    CheckMiscPartialErrors(entry, true, false);
+
+    SetUpMiscForPartialTest(*misc, bad_start, good_stop, true);
+    CheckMiscPartialErrors(entry, false, false);
+
+    SetUpMiscForPartialTest(*misc, good_start, bad_stop, false);
+    CheckMiscPartialErrors(entry, false, true);
+
+    SetUpMiscForPartialTest(*misc, good_start, bad_stop, true);
+    CheckMiscPartialErrors(entry, false, false);
+
+    SetUpMiscForPartialTest(*misc, bad_start, bad_stop, false);
+    CheckMiscPartialErrors(entry, true, true);
+
+    SetUpMiscForPartialTest(*misc, bad_start, bad_stop, true);
+    CheckMiscPartialErrors(entry, false, false);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_763)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    // ends
+    TestOneMiscPartial(entry, 0, 1, entry->GetSeq().GetLength() - 1, entry->GetSeq().GetLength() - 2, false);
+    TestOneMiscPartial(entry, 0, 1, entry->GetSeq().GetLength() - 1, entry->GetSeq().GetLength() - 2, true);
+
+    // gap
+    entry->SetSeq().SetInst().ResetSeq_data();
+    entry->SetSeq().SetInst().SetRepr(objects::CSeq_inst::eRepr_delta);
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("ATGATGATGCCCAAATTTGGGAAAA", objects::CSeq_inst::eMol_dna);
+    CRef<objects::CDelta_seq> gap1(new objects::CDelta_seq());
+    gap1->SetLiteral().SetSeq_data().SetGap();
+    gap1->SetLiteral().SetLength(10);
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(gap1);
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("CCCATGATGATGAAATTTGGGCCCC", objects::CSeq_inst::eMol_dna);
+    CRef<objects::CDelta_seq> gap2(new objects::CDelta_seq());
+    gap2->SetLiteral().SetSeq_data().SetGap();
+    gap2->SetLiteral().SetLength(10);
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(gap2);
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("AAACCCATGATGATGCCAATTCCCG", objects::CSeq_inst::eMol_dna);
+    entry->SetSeq().SetInst().SetLength(95);
+    TestOneMiscPartial(entry, 36, 37, 58, 57, false);
+    TestOneMiscPartial(entry, 36, 37, 58, 57, true);
+
+    // splice
+    entry = BuildGoodSeq();
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AGTTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCGT");
+    TestOneMiscPartial(entry, 0, 2, 59, 57, false);
+    TestOneMiscPartial(entry, 2, 3, 57, 56, true);
+
+
 }
 
 
@@ -21467,6 +21586,15 @@ BOOST_AUTO_TEST_CASE(VR_778)
                               "Submission citation date is in the future"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // today is ok
+    time_t time_now = time(NULL);
+    CDate today(time_now);
+    subpub->SetSub().SetDate().Assign(today);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
 
 }
 
