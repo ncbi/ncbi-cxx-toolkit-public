@@ -447,18 +447,14 @@ void CValidError_bioseqset::CheckForInconsistentBiomols (const CBioseq_set& seqs
         if (mol_info == 0) {
             mol_info = &(*miit);
         } else if (mol_info->GetBiomol() != miit->GetBiomol() ) {
-            if (seqset.GetClass() == CBioseq_set::eClass_segset) {
-                PostErr(eDiag_Error, eErr_SEQ_PKG_InconsistentMolInfoBiomols,
-                    "Segmented set contains inconsistent MolInfo biomols",
-                    seqset);
-            } else if (seqset.GetClass() == CBioseq_set::eClass_pop_set
+            if (seqset.GetClass() == CBioseq_set::eClass_pop_set
                        || seqset.GetClass() == CBioseq_set::eClass_eco_set
                        || seqset.GetClass() == CBioseq_set::eClass_mut_set
                        || seqset.GetClass() == CBioseq_set::eClass_phy_set
                        || seqset.GetClass() == CBioseq_set::eClass_wgs_set
                        || seqset.GetClass() == CBioseq_set::eClass_small_genome_set) {
-                PostErr(eDiag_Warning, eErr_SEQ_PKG_InconsistentMolInfoBiomols,
-                    "Pop/phy/mut/eco set contains inconsistent MolInfo biomols",
+                PostErr(eDiag_Warning, eErr_SEQ_PKG_InconsistentMoltypeSet,
+                    "Pop/phy/mut/eco set contains inconsistent moltype",
                     seqset);
             }
             break;
@@ -737,8 +733,8 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
             sev = eDiag_Warning;
         }
 
-        PostErr(sev, eErr_SEQ_DESCR_InconsistentBioSources,
-            "Population set contains inconsistent organisms.",
+        PostErr(sev, eErr_SEQ_DESCR_InconsistentTaxNameSet,
+            "Population set contains inconsistent organism names.",
             seqset);
         break;
     }

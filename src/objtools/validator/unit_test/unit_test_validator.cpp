@@ -2197,7 +2197,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingBiomolTech)
         entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
         SetTech (entry, i);
         unit_test_util::SetBiomol (entry, CMolInfo::eBiomol_cRNA);
-        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InconsistentMolTypeBiomol", "Molecule type (DNA) does not match biomol (RNA)"));
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InconsistentMolType", "Molecule type (DNA) does not match biomol (RNA)"));
         if (i == CMolInfo::eTech_est) {
             expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "ConflictingBiomolTech", "EST sequence should be mRNA"));
         }
@@ -2233,7 +2233,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingBiomolTech)
 
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
     SetTech (entry, CMolInfo::eTech_tsa);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InconsistentMolTypeBiomol", "Molecule type (DNA) does not match biomol (RNA)"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InconsistentMolType", "Molecule type (DNA) does not match biomol (RNA)"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "ConflictingBiomolTech", "TSA sequence should not be DNA"));            
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "WrongBiomolForTechnique", "Biomol \"cRNA\" is not appropriate for sequences that use the TSA technique."));
     eval = validator.Validate(seh, options);
@@ -2415,7 +2415,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
         expected_errors[0]->SetErrMsg("Bad accession " + id_str);
 
         if (id_str.length() == 12 || id_str.length() == 13 || id_str.length() == 14 || id_str.length() == 15) {
-            expected_errors.push_back(new CExpectedError("gb|" + id_str + "|", eDiag_Error, "Inconsistent", "WGS accession should have Mol-info.tech of wgs"));
+            expected_errors.push_back(new CExpectedError("gb|" + id_str + "|", eDiag_Error, "InconsistentMolInfoTechnique", "WGS accession should have Mol-info.tech of wgs"));
         }
 
         //GenBank
@@ -2451,7 +2451,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
         expected_errors[0]->SetErrMsg("Bad accession " + id_str);
 
         if (id_str.length() == 12 || id_str.length() == 13 || id_str.length() == 14 || id_str.length() == 15) {
-            expected_errors.push_back(new CExpectedError("embl|" + id_str + "|", eDiag_Error, "Inconsistent", "WGS accession should have Mol-info.tech of wgs"));
+            expected_errors.push_back(new CExpectedError("embl|" + id_str + "|", eDiag_Error, "InconsistentMolInfoTechnique", "WGS accession should have Mol-info.tech of wgs"));
         }
 
         // EMBL
@@ -2491,7 +2491,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
         expected_errors[0]->SetErrMsg("Bad accession " + id_str);
 
         if (id_str.length() == 12 || id_str.length() == 13 || id_str.length() == 14 || id_str.length() == 15) {
-            expected_errors.push_back(new CExpectedError("dbj|" + id_str + "|", eDiag_Error, "Inconsistent", "WGS accession should have Mol-info.tech of wgs"));
+            expected_errors.push_back(new CExpectedError("dbj|" + id_str + "|", eDiag_Error, "InconsistentMolInfoTechnique", "WGS accession should have Mol-info.tech of wgs"));
         }
 
         // DDBJ
@@ -4745,8 +4745,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InconsistentBiosources)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InconsistentBioSources",
-                              "Population set contains inconsistent organisms."));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InconsistentTaxNameSet",
+                              "Population set contains inconsistent organism names."));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -5186,9 +5186,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
     m_desc->SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_no_right);
     entry->SetSeq().SetDescr().Set().push_back(m_desc);
 
-    STANDARD_SETUP
+    STANDARD_SETUP_WITH_DATABASE
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "Inconsistent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InconsistentTPA",
                               "TPA:experimental and TPA:inferential should not both be in the same set of keywords"));
     /*
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentDates",
@@ -5196,15 +5196,15 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentDates",
                               "Inconsistent create_date [Apr 2009] and update_date [Feb 2009]"));
     */
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "Inconsistent",
-                              "Inconsistent taxnames [Trichechus manatus] and [Sebaea microphylla]"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "Inconsistent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InconsistentTaxName",
+                              "Inconsistent organism names [Trichechus manatus] and [Sebaea microphylla]"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InconsistentMolInfo",
                               "Inconsistent Molinfo-biomol [1] and [11]"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "Inconsistent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InconsistentMolInfoTechnique",
                               "Inconsistent Molinfo-tech [5] and [17]"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "Inconsistent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InconsistentMolInfo",
                               "Inconsistent Molinfo-completeness [3] and [4]"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "Inconsistent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InconsistentGenBankblocks",
                               "Multiple GenBank blocks"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "Inconsistent",
                               "Multiple EMBL blocks"));
@@ -5256,7 +5256,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
     entry->SetSeq().SetId().front()->SetGenbank().SetAccession("ABCD12345678");
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back(new CExpectedError("gb|ABCD12345678|", eDiag_Error, "Inconsistent",
+    expected_errors.push_back(new CExpectedError("gb|ABCD12345678|", eDiag_Error, "InconsistentMolInfoTechnique",
                               "WGS accession should have Mol-info.tech of wgs"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -5380,8 +5380,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
     CheckErrors (*eval, expected_errors);
     // expect errors
     unit_test_util::SetBiomol(entry, CMolInfo::eBiomol_genomic_mRNA);
-    expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Error, "Inconsistent",
-                              "genomic RefSeq accession should use genomic or cRNA biomol type"));
+    expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Error, "InconsistentRefSeqMoltype",
+                              "genomic RefSeq accession should use genomic or cRNA moltype"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     unit_test_util::SetBiomol(entry, CMolInfo::eBiomol_mRNA);
@@ -10412,10 +10412,10 @@ BOOST_AUTO_TEST_CASE(Test_PKG_InconsistentMolInfoBiomols)
     STANDARD_SETUP
 
     unit_test_util::SetBiomol(entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_cRNA);
-    expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Error, "InconsistentMolTypeBiomol",
+    expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Error, "InconsistentMolType",
                                                  "Molecule type (DNA) does not match biomol (RNA)"));
-    expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Warning, "InconsistentMolInfoBiomols",
-                                                 "Pop/phy/mut/eco set contains inconsistent MolInfo biomols"));
+    expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Warning, "InconsistentMoltypeSet",
+                                                 "Pop/phy/mut/eco set contains inconsistent moltype"));
 
     TESTPOPPHYMUTECO (seh, entry)
 
@@ -10553,8 +10553,8 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GPSnonGPSPackaging)
 
     expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Error, "GPSnonGPSPackaging",
                                                  "Genomic product set and mut/pop/phy/eco set records should not be present in the same set"));
-    expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Warning, "InconsistentMolInfoBiomols",
-                                                 "Pop/phy/mut/eco set contains inconsistent MolInfo biomols"));
+    expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Warning, "InconsistentMoltypeSet",
+                                                 "Pop/phy/mut/eco set contains inconsistent moltype"));
     expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Warning, "ImproperlyNestedSets",
                                                  "Nested sets within Pop/Phy/Mut/Eco/Wgs set"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "ImproperlyNestedSets",
@@ -10566,8 +10566,8 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GPSnonGPSPackaging)
     CLEAR_ERRORS
     expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Error, "GPSnonGPSPackaging",
                                                  "Genomic product set and mut/pop/phy/eco set records should not be present in the same set"));
-    expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Warning, "InconsistentMolInfoBiomols",
-                                                 "Pop/phy/mut/eco set contains inconsistent MolInfo biomols"));
+    expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Warning, "InconsistentMoltypeSet",
+                                                 "Pop/phy/mut/eco set contains inconsistent moltype"));
     expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Warning, "ImproperlyNestedSets",
                                                  "Nested sets within Pop/Phy/Mut/Eco/Wgs set"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "ImproperlyNestedSets",
@@ -20255,7 +20255,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_601)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("gb|"+id_str+"|", eDiag_Error, "Inconsistent", "WGS accession should have Mol-info.tech of wgs"));
+    expected_errors.push_back(new CExpectedError("gb|"+id_str+"|", eDiag_Error, "InconsistentMolInfoTechnique", "WGS accession should have Mol-info.tech of wgs"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
@@ -22092,6 +22092,32 @@ BOOST_AUTO_TEST_CASE(Test_InvalidCodonStart)
 
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "InvalidCodonStart",
         "codon_start value should be 1, 2, or 3"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_InconsistentBioSources_ConLocation)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodDeltaSeq();
+    unit_test_util::SetGenome(entry, CBioSource::eGenome_apicoplast);
+    CSeq_loc& l1 = entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc();
+    l1.SetInt().SetId().SetGenbank().SetAccession("AY123456");
+    l1.SetInt().SetFrom(0);
+    l1.SetInt().SetTo(99);
+    CSeq_loc& l2 = entry->SetSeq().SetInst().SetExt().SetDelta().Set().back()->SetLoc();
+    l2.SetInt().SetId().SetGenbank().SetAccession("AY123457");
+    l2.SetInt().SetFrom(0);
+    l2.SetInt().SetTo(99);
+
+    entry->SetSeq().SetInst().SetLength(210);
+
+    STANDARD_SETUP_WITH_DATABASE
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentBioSources_ConLocation",
+        "Genome difference between parent and component"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 

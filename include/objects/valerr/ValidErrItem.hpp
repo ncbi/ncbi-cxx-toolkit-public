@@ -255,6 +255,15 @@ enum EErrType {
     eErr_SEQ_DESCR_InconsistentWGSFlags,
     eErr_SEQ_DESCR_TitleNotAppropriateForSet,
     eErr_SEQ_DESCR_StrainContainsTaxInfo,
+    eErr_SEQ_DESCR_InconsistentBioSources_ConLocation,
+    eErr_SEQ_DESCR_InconsistentRefSeqMoltype,
+    eErr_SEQ_DESCR_InconsistentMolInfo,
+    eErr_SEQ_DESCR_InconsistentMolInfoTechnique,
+    eErr_SEQ_DESCR_InconsistentTaxName,
+    eErr_SEQ_DESCR_InconsistentMolType,
+    eErr_SEQ_DESCR_InconsistentGenBankblocks,
+    eErr_SEQ_DESCR_InconsistentTaxNameSet,
+    eErr_SEQ_DESCR_InconsistentTPA,
     ERR_CODE_END(SEQ_DESCR),
 
 
@@ -318,7 +327,7 @@ enum EErrType {
     eErr_SEQ_PKG_INSDRefSeqPackaging,
     eErr_SEQ_PKG_GPSnonGPSPackaging,
     eErr_SEQ_PKG_RefSeqPopSet,
-      eErr_SEQ_PKG_BioseqSetClassNotSet,
+    eErr_SEQ_PKG_BioseqSetClassNotSet,
     eErr_SEQ_PKG_OrphanedProtein,
     eErr_SEQ_PKG_MissingSetTitle,
     eErr_SEQ_PKG_NucProtSetHasTitle,
@@ -327,6 +336,7 @@ enum EErrType {
     eErr_SEQ_PKG_MisplacedMolInfo,
     eErr_SEQ_PKG_ImproperlyNestedSets,
     eErr_SEQ_PKG_SeqSubmitWithWgsSet,
+    eErr_SEQ_PKG_InconsistentMoltypeSet,
     ERR_CODE_END(SEQ_PKG),
 
     ERR_CODE_BEGIN(SEQ_FEAT) = 4000,

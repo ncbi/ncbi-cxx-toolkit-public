@@ -848,7 +848,7 @@ void CValidError_bioseq::ValidateSeqIds
                 ( mi->GetTech() != CMolInfo::eTech_wgs  &&
                   mi->GetTech() != CMolInfo::eTech_tsa &&
                   mi->GetTech() != CMolInfo::eTech_targeted) ) {
-                PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent, 
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_InconsistentMolInfoTechnique,
                     "WGS accession should have Mol-info.tech of wgs", seq);
             }
         } else if ( mi  &&  mi->IsSetTech()  &&  
@@ -871,8 +871,8 @@ void CValidError_bioseq::ValidateSeqIds
                 && (!mi->IsSetBiomol() 
                 || (mi->GetBiomol() != CMolInfo::eBiomol_genomic 
                     && mi->GetBiomol() != CMolInfo::eBiomol_cRNA))) {
-            PostErr (eDiag_Error, eErr_SEQ_DESCR_Inconsistent, 
-                     "genomic RefSeq accession should use genomic or cRNA biomol type",
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_InconsistentRefSeqMoltype,
+                     "genomic RefSeq accession should use genomic or cRNA moltype",
                      seq);
         }
     }
@@ -890,7 +890,7 @@ void CValidError_bioseq::ValidateSeqIds
                 case CMolInfo::eBiomol_transcribed_RNA:
                 case CMolInfo::eBiomol_ncRNA:
                 case CMolInfo::eBiomol_tmRNA:
-                    PostErr(eDiag_Error, eErr_SEQ_DESCR_InconsistentMolTypeBiomol,
+                    PostErr(eDiag_Error, eErr_SEQ_DESCR_InconsistentMolType,
                             "Molecule type (DNA) does not match biomol (RNA)", seq);
                     break;
                 default:
@@ -4635,7 +4635,7 @@ void CValidError_bioseq::CheckSoureDescriptor(
         if (genome == cgenome) break;
         if (genome == CBioSource::eGenome_unknown || genome == CBioSource::eGenome_genomic) break;
         if (cgenome == CBioSource::eGenome_unknown || cgenome == CBioSource::eGenome_genomic) break;
-        PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentBioSources,
+        PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentBioSources_ConLocation,
                 "Genome difference between parent and component",
                 *(bsh.GetBioseqCore()));
         break;
@@ -9131,7 +9131,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
     }
 
     if ( num_gb > 1 ) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_InconsistentGenBankblocks,
             "Multiple GenBank blocks", ctx, *last_gb);
     }
 
@@ -9217,7 +9217,7 @@ void CValidError_bioseq::ValidateGBBlock
         }
     }
     if (has_tpa_inf && has_tpa_exp) {
-        PostErr (eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_InconsistentTPA,
                  "TPA:experimental and TPA:inferential should not both be in the same set of keywords",
                  ctx, desc);
     }
@@ -9295,7 +9295,7 @@ void CValidError_bioseq::ValidateMolInfoContext
                     "] used on protein", ctx, desc);
             } else {
                 if ( biomol != seq_biomol ) {
-                    PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
+                    PostErr(eDiag_Error, eErr_SEQ_DESCR_InconsistentMolInfo,
                         "Inconsistent Molinfo-biomol [" + 
                         NStr::IntToString(seq_biomol) + "] and [" +
                         NStr::IntToString(biomol) + "]", ctx, desc);
@@ -9443,7 +9443,7 @@ void CValidError_bioseq::ValidateMolInfoContext
 
         if (last_tech > 0) {
             if (last_tech != tech) {
-                PostErr (eDiag_Error, eErr_SEQ_DESCR_Inconsistent, 
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_InconsistentMolInfoTechnique,
                     "Inconsistent Molinfo-tech [" + NStr::IntToString (last_tech)
                     + "] and [" + NStr::IntToString(tech) + "]", ctx, desc);
             }
@@ -9453,7 +9453,7 @@ void CValidError_bioseq::ValidateMolInfoContext
     } else {
         if (last_tech > -1) {
             if (last_tech != 0) {
-                PostErr (eDiag_Error, eErr_SEQ_DESCR_Inconsistent, 
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_InconsistentMolInfoTechnique,
                     "Inconsistent Molinfo-tech [" + NStr::IntToString (last_tech)
                     + "] and [0]", ctx, desc);
             }
@@ -9465,7 +9465,7 @@ void CValidError_bioseq::ValidateMolInfoContext
       if (minfo.IsSetCompleteness()) {
             if (last_completeness > 0) {
                   if (last_completeness != minfo.GetCompleteness()) {
-                PostErr (eDiag_Error, eErr_SEQ_DESCR_Inconsistent, 
+                      PostErr(eDiag_Error, eErr_SEQ_DESCR_InconsistentMolInfo,
                               "Inconsistent Molinfo-completeness [" + NStr::IntToString (last_completeness)
                               + "] and [" + NStr::IntToString(minfo.GetCompleteness()) + "]", ctx, desc);
                   }
@@ -9475,7 +9475,7 @@ void CValidError_bioseq::ValidateMolInfoContext
     } else {
         if (last_completeness > -1) {
             if (last_completeness != 0) {
-                  PostErr (eDiag_Error, eErr_SEQ_DESCR_Inconsistent, 
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_InconsistentMolInfo,
                           "Inconsistent Molinfo-completeness [" + NStr::IntToString (last_completeness)
                           + "] and [0]", ctx, desc);
                   }
@@ -9710,8 +9710,8 @@ void CValidError_bioseq::ValidateOrgContext
                 }
             }
             if (! is_wp) {
-                PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
-                    "Inconsistent taxnames [" + this_org.GetTaxname() + 
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_InconsistentTaxName,
+                    "Inconsistent organism names [" + this_org.GetTaxname() + 
                     "] and [" + org.GetTaxname() + "]",
                     *seq.GetParentEntry(), desc);
             }
