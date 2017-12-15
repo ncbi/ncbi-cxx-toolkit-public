@@ -651,7 +651,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                     GetDiagContext().SetAppState(eDiagAppState_Request);
                     if (x_ProcessHelpRequest() ||
                         x_ProcessVersionRequest() ||
-                        CCgiContext::ProcessCORSRequest(m_Context->GetRequest(), m_Context->GetResponse())) {
+                        CCgiContext::ProcessCORSRequest(m_Context->GetRequest(), m_Context->GetResponse()) ||
+                        x_ProcessAdminRequest()) {
                         x_result = 0;
                     }
                     else {
