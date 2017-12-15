@@ -135,7 +135,7 @@ struct CParams_imp
 };
 
 CParams::CParams() :
-    m_imp(new CParams_imp)
+m_imp(new CParams_imp)
 {
 }
 
@@ -297,6 +297,21 @@ bool CParams::IsMedlineLookup() const
     return m_imp->m_medline_lookup;
 }
 
+bool CParams::IsPreserveInputPath() const
+{
+    return m_imp->m_preserve_input_path;
+}
+
+bool CParams::IsOverrideExisting() const
+{
+    return m_imp->m_override_existing;
+}
+
+bool CParams::IsBinaryOutput() const
+{
+    return m_imp->m_binary_out;
+}
+
 int CParams::GetFixTech() const
 {
     return m_imp->m_fix_tech;
@@ -351,6 +366,11 @@ CSeq_id::E_Choice CParams::GetIdChoice() const
 const CDate_std& CParams::GetSubmissionDate() const
 {
     return m_imp->m_submission_date;
+}
+
+const string& CParams::GetOutputDir() const
+{
+    return m_imp->m_outdir;
 }
 
 const string& CParams::GetScaffoldPrefix() const
@@ -701,6 +721,9 @@ bool SetParams(const CArgs& args)
         
         if (args["d"].HasValue()) {
             params_imp.m_outdir = args["d"].AsString();
+            if (params_imp.m_outdir.back() == '/' || params_imp.m_outdir.back() == '\\') {
+                params_imp.m_outdir.pop_back();
+            }
         }
 
         if (params_imp.m_outdir.empty())

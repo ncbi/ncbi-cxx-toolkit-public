@@ -130,6 +130,9 @@ public:
     bool IsScaffoldTestMode() const;
     bool IsForcedGencode() const;
     bool IsMedlineLookup() const;
+    bool IsPreserveInputPath() const;
+    bool IsOverrideExisting() const;
+    bool IsBinaryOutput() const;
 
     int GetFixTech() const;
 
@@ -142,6 +145,8 @@ public:
     CSeq_id::E_Choice GetIdChoice() const;
 
     const string& GetScaffoldPrefix() const;
+
+    const string& GetOutputDir() const;
 
     char GetMajorAssemblyVersion() const;
     char GetMinorAssemblyVersion() const;

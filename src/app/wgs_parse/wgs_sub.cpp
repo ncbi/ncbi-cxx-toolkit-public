@@ -40,13 +40,25 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/seqport_util.hpp>
+#include <objects/seq/Seq_data.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Seq_literal.hpp>
+
+#include <util/sequtil/sequtil.hpp>
+#include <util/sequtil/sequtil_convert.hpp>
 
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/OrgName.hpp>
 
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/biblio/Cit_sub.hpp>
+
+#include <objtools/cleanup/cleanup.hpp>
 
 #include "wgs_sub.hpp"
 #include "wgs_seqentryinfo.hpp"
@@ -458,8 +470,23 @@ static void FixDbName(CSeq_entry& entry)
         }
     }
 
-    if (entry.IsSeq() && entry.GetSeq().IsSetInst()) {
-        FixDbNameInObject(entry.SetSeq().SetInst(), ids);
+    if (entry.IsSeq()) {
+
+        if (entry.GetSeq().IsSetInst()) {
+            FixDbNameInObject(entry.SetSeq().SetInst(), ids);
+        }
+
+        if (entry.GetSeq().IsSetId()) {
+            for (auto& id : entry.SetSeq().SetId()) {
+                FixDbNameInObject(*id, ids);
+            }
+        }
+    }
+    
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+        for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
+            FixDbName(*cur_entry);
+        }
     }
 }
 
@@ -708,6 +735,272 @@ static bool FixBioSources(CSeq_entry& entry, const CMasterInfo& master_info)
     return true;
 }
 
+struct TTaxNameInfo
+{
+    const string* m_taxname;
+    const string* m_old_taxname;
+
+    list<string> m_others;
+
+    TTaxNameInfo() : m_taxname(nullptr), m_old_taxname(nullptr) {}
+};
+
+static void GetTaxNameInfoFromSource(const CBioSource& bio_src, TTaxNameInfo& info)
+{
+    const COrg_ref& org = bio_src.GetOrg();
+    info.m_taxname = &org.GetTaxname();
+
+    if (org.IsSetCommon()) {
+        info.m_others.push_back(org.GetCommon());
+    }
+
+    if (org.IsSetOrgname() && org.GetOrgname().IsSetMod()) {
+        for (auto& mod : org.GetOrgname().GetMod()) {
+            if (mod->IsSetSubname() && mod->IsSetSubtype()) {
+
+                switch (mod->GetSubtype()) {
+                    case COrgMod::eSubtype_old_name:
+                        info.m_old_taxname = &mod->GetSubname();
+                        break;
+                    case COrgMod::eSubtype_acronym:
+                    case COrgMod::eSubtype_synonym:
+                    case COrgMod::eSubtype_anamorph:
+                    case COrgMod::eSubtype_teleomorph:
+                    case COrgMod::eSubtype_gb_acronym:
+                    case COrgMod::eSubtype_gb_anamorph:
+                    case COrgMod::eSubtype_gb_synonym:
+                        info.m_others.push_back(mod->GetSubname());
+                        break;
+                }
+            }
+        }
+    }
+
+    if (bio_src.IsSetSubtype()) {
+        for (auto& subtype : bio_src.GetSubtype()) {
+            if (subtype->IsSetSubtype() && subtype->GetSubtype() == CSubSource::eSubtype_other && subtype->IsSetName()) {
+
+                static const char COMMON_PREFIX[] = "common:";
+                const string name = subtype->GetName();
+                if (NStr::StartsWith(name, COMMON_PREFIX, NStr::eNocase)) {
+
+                    size_t pos = sizeof(COMMON_PREFIX) - 1,
+                           len = name.size();
+                    while (pos < len && name[pos] == ' ') {
+                        ++pos;
+                    }
+                    if (pos < len) {
+                        info.m_others.push_back(name.substr(pos));
+                    }
+                }
+            }
+        }
+    }
+}
+
+static void GetTaxNameInfo(const CSeq_entry& entry, TTaxNameInfo& info)
+{
+    const CSeq_descr* descrs = nullptr;
+    if (GetDescr(entry, descrs) && descrs && descrs->IsSet()) {
+
+        auto source_it = find_if(descrs->Get().begin(), descrs->Get().end(),
+                                 [](const CRef<CSeqdesc>& descr) { return descr->IsSource() && descr->GetSource().IsSetOrg() && descr->GetSource().GetOrg().IsSetTaxname(); });
+
+        if (source_it != descrs->Get().end()) {
+            GetTaxNameInfoFromSource((*source_it)->GetSource(), info);
+        }
+    }
+
+    if (info.m_taxname == nullptr) {
+        if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+            for (auto& cur_entry : entry.GetSet().GetSeq_set()) {
+                GetTaxNameInfo(*cur_entry, info);
+                if (info.m_taxname) {
+                    break;
+                }
+            }
+        }
+    }
+}
+
+static void RemoveGbblockSource(CSeq_entry& entry, const TTaxNameInfo& info)
+{
+    if (entry.IsSeq()) {
+        // TODO
+    }
+    else if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
+            RemoveGbblockSource(*cur_entry, info);
+        }
+    }
+}
+
+static void FixGbblockSource(CSeq_entry& entry)
+{
+    TTaxNameInfo info;
+    GetTaxNameInfo(entry, info);
+
+    RemoveGbblockSource(entry, info);
+}
+
+static void PackSeqData(CSeq_data::E_Choice code, CSeq_data& seq_data)
+{
+    const string* seq_str = nullptr;
+    const vector<char>* seq_vec = nullptr;
+
+    CSeqUtil::ECoding old_coding = CSeqUtil::e_not_set;
+    size_t old_size = 0;
+
+    static const map<CSeq_data::E_Choice, CSeqUtil::ECoding> CHOICE_TO_ENCODING =
+    {
+        { CSeq_data::e_Iupacaa, CSeqUtil::e_Iupacaa },
+        { CSeq_data::e_Ncbi8aa, CSeqUtil::e_Ncbi8aa },
+        { CSeq_data::e_Ncbistdaa, CSeqUtil::e_Ncbistdaa }
+    };
+
+    switch (code) {
+        case CSeq_data::e_Iupacaa:
+        case CSeq_data::e_Ncbi8aa:
+        case CSeq_data::e_Ncbistdaa:
+            seq_str = &seq_data.GetIupacaa().Get();
+            old_coding = CHOICE_TO_ENCODING.at(code);
+            old_size = seq_str->size();
+            break;
+
+        default:; // do nothing
+    }
+
+    vector<char> new_seq(old_size);
+    size_t new_size = 0;
+    if (seq_str != nullptr)
+        new_size = CSeqConvert::Convert(seq_str->c_str(), old_coding, 0, static_cast<TSeqPos>(old_size), &new_seq[0], CSeqUtil::e_Ncbieaa);
+    else if (seq_vec != nullptr)
+        new_size = CSeqConvert::Convert(&(*seq_vec)[0], old_coding, 0, static_cast<TSeqPos>(old_size), &new_seq[0], CSeqUtil::e_Ncbieaa);
+
+    if (!new_seq.empty()) {
+        seq_data.SetNcbieaa().Set().assign(new_seq.begin(), new_seq.begin() + new_size);
+    }
+}
+
+static void RawBioseqPack(CBioseq& bioseq)
+{
+    if (bioseq.GetInst().IsSetSeq_data()) {
+        if (!bioseq.GetInst().IsSetMol() || !bioseq.GetInst().IsNa()) {
+            CSeq_data::E_Choice code = bioseq.GetInst().GetSeq_data().Which();
+            PackSeqData(code, bioseq.SetInst().SetSeq_data());
+        }
+        else if (!bioseq.GetInst().GetSeq_data().IsGap()) {
+            CSeqportUtil::Pack(&bioseq.SetInst().SetSeq_data());
+        }
+    }
+}
+
+static void DeltaBioseqPack(CBioseq& bioseq)
+{
+    if (bioseq.GetInst().IsSetExt() && bioseq.GetInst().GetExt().IsDelta()) {
+        for (auto& delta: bioseq.SetInst().SetExt().SetDelta().Set())
+        {
+            if (delta->IsLiteral() && delta->GetLiteral().IsSetSeq_data() && !delta->GetLiteral().GetSeq_data().IsGap()) {
+                CSeqportUtil::Pack(&delta->SetLiteral().SetSeq_data());
+            }
+        }
+    }
+}
+
+static void PackEntry(CSeq_entry& entry)
+{
+    for (CTypeIterator<CBioseq> bioseq(Begin(entry)); bioseq; ++bioseq) {
+        if (bioseq->IsSetInst() && bioseq->GetInst().IsSetRepr()) {
+            CSeq_inst::ERepr repr = bioseq->GetInst().GetRepr();
+            if (repr == CSeq_inst::eRepr_raw || repr == CSeq_inst::eRepr_const)
+                RawBioseqPack(*bioseq);
+            else if (repr == CSeq_inst::eRepr_delta)
+                DeltaBioseqPack(*bioseq);
+        }
+    }
+}
+
+static void PerformCleanup(CSeq_submit::C_Data::TEntrys& entries)
+{
+    CCleanup cleanup;
+    for (auto& entry : entries) {
+        cleanup.ExtendedCleanup(*entry);
+
+        // TODO removeBioSources
+    }
+}
+
+static string MakeOutputFileName(const string& in_file)
+{
+    string ret = GetParams().GetOutputDir();
+
+    size_t start = string::npos;
+    if (!GetParams().IsPreserveInputPath()) {
+        start = in_file.rfind('/');
+        if (start == string::npos) {
+            start = in_file.rfind('\\');
+        }
+
+        if (start != string::npos) {
+            ++start;
+        }
+    }
+
+    if (start == string::npos) {
+        start = 0;
+        if (in_file.front() == '/' || in_file.front() == '\\') {
+            start = 1;
+        }
+    }
+
+    ret += '/' + in_file.substr(start);
+    return ret;
+}
+
+static bool OutputSubmission(const CBioseq_set& bioseq_set, const string& in_file)
+{
+    const string& fname = MakeOutputFileName(in_file) + ".bss";
+
+    size_t delimiter = fname.rfind('/');
+    if (delimiter == string::npos) {
+        delimiter = fname.rfind('\\');
+    }
+
+    string dir_name;
+    
+    if (delimiter != string::npos) {
+        dir_name = fname.substr(0, delimiter);
+    }
+
+    if (!dir_name.empty()) {
+        CDir dir(CDir::CreateAbsolutePath(dir_name));
+        dir.CreatePath();
+    }
+
+    if (!GetParams().IsOverrideExisting() && CFile(fname).Exists()) {
+        ERR_POST_EX(0, 0, Error << "File to print out processed submission already exists: \"" << fname << "\". Override is not allowed.");
+        return false;
+    }
+
+    try {
+        CNcbiOfstream out(fname);
+
+        if (GetParams().IsBinaryOutput())
+            out << MSerial_AsnBinary << bioseq_set;
+        else
+            out << MSerial_AsnText << bioseq_set;
+    }
+    catch (CException& e) {
+        ERR_POST_EX(0, 0, Fatal << "Failed to save processed submission to file: \"" << fname << "\" [" << e.GetMsg() << "]. Cannot proceed.");
+        return false;
+    }
+
+    ERR_POST_EX(0, 0, Info << "Processed submission saved in file \"" << fname << "\".");
+    return true;
+}
+
 bool ParseSubmissions(CMasterInfo& master_info)
 {
     const list<string>& files = GetParams().GetInputFiles();
@@ -726,6 +1019,8 @@ bool ParseSubmissions(CMasterInfo& master_info)
 
         EInputType input_type = eSeqSubmit;
         GetInputTypeFromFile(in, input_type);
+
+        CRef<CBioseq_set> bioseq_set;
 
         bool first = true;
         while (in && !in.eof()) {
@@ -757,7 +1052,8 @@ bool ParseSubmissions(CMasterInfo& master_info)
             if (seq_submit->IsSetData() && seq_submit->GetData().IsEntrys()) {
 
                 for (auto& entry : seq_submit->SetData().SetEntrys()) {
-                    
+
+                    ++next_id; // TODO check correctness
                     if (master_info.m_creation_date_present || master_info.m_update_date_present) {
                         RemoveDates(*entry, master_info.m_creation_date_present, master_info.m_update_date_present);
                     }
@@ -839,9 +1135,50 @@ bool ParseSubmissions(CMasterInfo& master_info)
                     }
                     */
 
+                    FixGbblockSource(*entry);
+                    PackEntry(*entry);
 
+                } // for each entry
+
+                // TODO
+                
+                PerformCleanup(seq_submit->SetData().SetEntrys());
+
+                if (bioseq_set.Empty()) {
+                    bioseq_set.Reset(new CBioseq_set);
+                    bioseq_set->SetClass(CBioseq_set::eClass_genbank);
                 }
+
+                bioseq_set->SetSeq_set().splice(bioseq_set->SetSeq_set().end(), seq_submit->SetData().SetEntrys());
             }
+        }
+
+        if (GetParams().GetUpdateMode() == eUpdatePartial) {
+            // TODO
+        }
+
+        if (GetParams().GetSortOrder() == eUnsorted && !GetParams().IsVDBMode()) {
+            reverse(bioseq_set->SetSeq_set().begin(), bioseq_set->SetSeq_set().end());
+        }
+
+        if (GetParams().IsTest()) {
+            ret = true;
+        }
+        else {
+            //+++++
+            // DEBUG pseudo cleanup step
+            for (CTypeIterator<CUser_object> x(*bioseq_set); x; ++x) {
+                x->SetField("method").SetString("SeriousSeqEntryCleanup");
+                x->SetField("version").SetInt(8);
+            }
+            //+++++
+
+            ret = OutputSubmission(*bioseq_set, file);
+        }
+
+        if (!ret) {
+            ERR_POST_EX(0, 0, Error << "Failed to save processed submission \"" << file << "\" to file.");
+            break;
         }
     }
 
