@@ -451,6 +451,7 @@ CDBConnectionFactory::DispatchServerName(
     SOpeningContext& ctx,
     const CDBConnParams& params)
 {
+    CStopWatchScope timing(ctx.dispatch_server_name_sw);
     CDB_Connection* t_con = NULL;
     // I_DriverContext::SConnAttr curr_conn_attr(conn_attr);
     const string service_name(params.GetServerName());
@@ -650,6 +651,7 @@ CDBConnectionFactory::MakeValidConnection(
     const CDBConnParams& params,
     CDB_Connection* candidate)
 {
+    CStopWatchScope timing(ctx.make_valid_connection_sw);
     _TRACE("Trying to connect to server '" << params.GetServerName()
            << "', host " << impl::ConvertN2A(params.GetHost())
            << ", port " << params.GetPort());
@@ -938,6 +940,18 @@ void CDBConnectionFactory::x_LogConnection(const SOpeningContext& ctx,
     }
     if (connection != NULL) {
         extra.Print(prefix + "conn_reuse_count", connection->GetReuseCount());
+    }
+
+    double make_valid_connection_elapsed = ctx.make_valid_connection_sw.Elapsed();
+    if (make_valid_connection_elapsed != 0.0) {
+        extra.Print(prefix + "make_valid_connection_time",
+                    make_valid_connection_elapsed);
+    }
+
+    double dispatch_server_name_elapsed = ctx.dispatch_server_name_sw.Elapsed();
+    if (dispatch_server_name_elapsed != 0.0) {
+        extra.Print(prefix + "dispatch_server_name_time",
+                    dispatch_server_name_elapsed);
     }
 }
 

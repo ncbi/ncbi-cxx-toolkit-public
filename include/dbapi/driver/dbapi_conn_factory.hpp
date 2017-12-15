@@ -171,7 +171,18 @@ private:
         impl::CDBHandlerStack       handlers;
         list<string>                tried;
         TSvrRef                     last_tried;
+        CStopWatch                  make_valid_connection_sw;
+        CStopWatch                  dispatch_server_name_sw;
         // params deliberately left out (potentially call-specific)
+    };
+
+    struct CStopWatchScope {
+        CStopWatchScope(CStopWatch&  sw_) : sw(sw_)
+        { sw.Restart(); }
+        ~CStopWatchScope()
+        { sw.Stop(); }
+
+        CStopWatch& sw;
     };
 
     // Methods
