@@ -20387,9 +20387,9 @@ BOOST_AUTO_TEST_CASE(Test_VR_78)
     seh = scope.AddTopLevelSeqEntry(*entry);
 
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemMismatch5Prime",
-        "Coding region should not be 5' partial if gene is 5' complete"));
+        "gene should not be 5' complete if coding region is 5' partial"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemMismatch5Prime",
-        "Coding region should not be 5' partial if mRNA is 5' complete"));
+        "mRNA should not be 5' complete if coding region is 5' partial"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
     CLEAR_ERRORS
@@ -20399,9 +20399,9 @@ BOOST_AUTO_TEST_CASE(Test_VR_78)
     seh = scope.AddTopLevelSeqEntry(*entry);
 
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemMismatch3Prime",
-        "Coding region should not be 3' partial if gene is 3' complete"));
+        "gene should not be 3' complete if coding region is 3' partial"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemMismatch3Prime",
-        "Coding region should not be 3' partial if mRNA is 3' complete"));
+        "mRNA should not be 3' complete if coding region is 3' partial"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemNotConsensus3Prime",
         "3' partial is not at end of sequence, gap, or consensus splice site"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblemHasStop",
@@ -20416,13 +20416,13 @@ BOOST_AUTO_TEST_CASE(Test_VR_78)
     seh = scope.AddTopLevelSeqEntry(*entry);
 
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemMismatch5Prime",
-        "Coding region should not be 5' partial if gene is 5' complete"));
+        "gene should not be 5' complete if coding region is 5' partial"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemMismatch5Prime",
-        "Coding region should not be 5' partial if mRNA is 5' complete"));
+        "mRNA should not be 5' complete if coding region is 5' partial"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemMismatch3Prime",
-        "Coding region should not be 3' partial if gene is 3' complete"));
+        "gene should not be 3' complete if coding region is 3' partial"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemMismatch3Prime",
-        "Coding region should not be 3' partial if mRNA is 3' complete"));
+        "mRNA should not be 3' complete if coding region is 3' partial"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblemNotConsensus3Prime",
         "3' partial is not at end of sequence, gap, or consensus splice site"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "PartialProblemHasStop",

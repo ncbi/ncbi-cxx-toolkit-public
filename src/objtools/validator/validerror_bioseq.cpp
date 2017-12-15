@@ -5799,7 +5799,7 @@ void CValidError_bioseq::x_ValidateCodingRegionParentPartialness(const CSeq_feat
         }
 
         if (!has_abutting_gap) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemMismatch5Prime, "Coding region should not be 5' partial if " + parent_name + " is 5' complete", cds);
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemMismatch5Prime, parent_name + " should not be 5' complete if coding region is 5' partial", cds);
         }
     }
     if (cds.GetLocation().IsPartialStop(eExtreme_Biological) && !parent_loc.IsPartialStop(eExtreme_Biological)) {
@@ -5816,7 +5816,7 @@ void CValidError_bioseq::x_ValidateCodingRegionParentPartialness(const CSeq_feat
         }
 
         if (!has_abutting_gap) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemMismatch3Prime, "Coding region should not be 3' partial if " + parent_name + " is 3' complete", cds);
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemMismatch3Prime, parent_name + " should not be 3' complete if coding region is 3' partial", cds);
         }
     }
 }
