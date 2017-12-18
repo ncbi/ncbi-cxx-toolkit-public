@@ -13,6 +13,8 @@ SRC = format_flags align_format_util showdefline showalign tabular vectorscreen 
 
 CPPFLAGS = -DNCBI_MODULE=BLASTFORMAT $(ORIG_CPPFLAGS)
 
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+
 ###  EXAMPLES OF OTHER SETTINGS THAT MIGHT BE OF INTEREST
 # CFLAGS   = $(FAST_CFLAGS)
 # CXXFLAGS = $(FAST_CXXFLAGS)
