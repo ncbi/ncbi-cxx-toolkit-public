@@ -238,6 +238,7 @@ bool CAutoDefFeatureClause::IsPseudo(const CSeq_feat& f)
         for (auto& it : f.GetQual()) {
             if (it->IsSetQual() && NStr::EqualNocase(it->GetQual(), "pseudogene")) {
                 is_pseudo = true;
+                break;
             }
         }
     }
