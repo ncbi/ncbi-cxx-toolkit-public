@@ -2019,3 +2019,18 @@ BOOST_AUTO_TEST_CASE(Test_RefGeneTracking)
 
     BOOST_CHECK_EQUAL(user->GetObjectType(), CUser_object::eObjectType_RefGeneTracking);
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_IsValidEcNumberFormat)
+{
+    BOOST_CHECK_EQUAL(CProt_ref::IsValidECNumberFormat("1.1.2.4"), true);
+    BOOST_CHECK_EQUAL(CProt_ref::IsValidECNumberFormat("1.1.2.-"), true);
+    BOOST_CHECK_EQUAL(CProt_ref::IsValidECNumberFormat("1.1.2.n"), true);
+    BOOST_CHECK_EQUAL(CProt_ref::IsValidECNumberFormat("11.22.33.44"), true);
+    BOOST_CHECK_EQUAL(CProt_ref::IsValidECNumberFormat("11.22.n33.44"), false);
+    BOOST_CHECK_EQUAL(CProt_ref::IsValidECNumberFormat("1.2.3.10"), true);
+    BOOST_CHECK_EQUAL(CProt_ref::IsValidECNumberFormat("1"), false);
+    BOOST_CHECK_EQUAL(CProt_ref::IsValidECNumberFormat("1.2"), false);
+    BOOST_CHECK_EQUAL(CProt_ref::IsValidECNumberFormat("1.2.3"), false);
+
+}

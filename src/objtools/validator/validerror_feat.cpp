@@ -126,70 +126,6 @@ void CValidError_feat::SetTSE(CSeq_entry_Handle seh)
 }
 
 
-static bool s_IsValidECNumberFormat (const string& str)
-{
-    char     ch;
-    bool     is_ambig;
-    int      numdashes;
-    int      numdigits;
-    int      numperiods;
-    const char *ptr;
-
-    if (NStr::IsBlank (str)) {
-        return false;
-    }
-
-    is_ambig = false;
-    numperiods = 0;
-    numdigits = 0;
-    numdashes = 0;
-
-    ptr = str.c_str();
-    ch = *ptr;
-    while (ch != '\0') {
-        if (isdigit (ch)) {
-            numdigits++;
-            if (is_ambig) return false;
-            ptr++;
-            ch = *ptr;
-        } else if (ch == '-') {
-            numdashes++;
-            is_ambig = true;
-            ptr++;
-            ch = *ptr;
-        } else if (ch == 'n') {
-            if (numperiods == 3 && numdigits == 0 && isdigit(*(ptr + 1))) {
-              // allow/ignore n in first position of fourth number to not mean ambiguous, if followed by digit */
-            } else {
-              numdashes++;
-              is_ambig = true;
-            }
-            ptr++;
-            ch = *ptr;
-        } else if (ch == '.') {
-            numperiods++;
-            if (numdigits > 0 && numdashes > 0) return false;
-            if (numdigits == 0 && numdashes == 0) return false;
-            if (numdashes > 1) return false;
-            numdigits = 0;
-            numdashes = 0;
-            ptr++;
-            ch = *ptr;
-        } else {
-            ptr++;
-            ch = *ptr;
-        }
-    }
-
-    if (numperiods == 3) {
-        if (numdigits > 0 && numdashes > 0) return false;
-        if (numdigits > 0 || numdashes == 1) return true;
-    }
-
-    return false;
-}
-
-
 const string kInferenceMessage[] = {
   "unknown error",
   "empty inference string",
@@ -334,7 +270,7 @@ void CValidError_feat::x_ValidateGbQual(const CGb_qual& qual, const CSeq_feat& f
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidPseudoQualifier, "/pseudogene value should not be empty", feat);
         }
     } else if (NStr::EqualNocase(qual.GetQual(), "EC_number")) {
-        if (!s_IsValidECNumberFormat(qual.GetVal())) {
+        if (!CProt_ref::IsValidECNumberFormat(qual.GetVal())) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberFormat,
                 qual.GetVal() + " is not in proper EC_number format", feat);
         } else {
@@ -2442,7 +2378,7 @@ void CValidError_feat::x_ValidateProtECNumbers(const CProt_ref& prot, const CSeq
     FOR_EACH_ECNUMBER_ON_PROTREF (it, prot) {
         if (NStr::IsBlank (*it)) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberEmpty, "EC number should not be empty", feat);
-        } else if (!s_IsValidECNumberFormat(*it)) {
+        } else if (!CProt_ref::IsValidECNumberFormat(*it)) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberFormat,
                     (*it) + " is not in proper EC_number format", feat);
         } else {
@@ -7672,7 +7608,7 @@ void CSingleFeatValidator::x_ValidateGbQual(const CGb_qual& qual)
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidPseudoQualifier, "/pseudogene value should not be empty");
         }
     } else if (NStr::EqualNocase(qual.GetQual(), "EC_number")) {
-        if (!s_IsValidECNumberFormat(qual.GetVal())) {
+        if (!CProt_ref::IsValidECNumberFormat(qual.GetVal())) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberFormat,
                 qual.GetVal() + " is not in proper EC_number format");
         } else {

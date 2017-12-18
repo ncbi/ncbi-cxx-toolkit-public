@@ -229,6 +229,22 @@ bool CProt_ref::IsECNumberSplit(const string& old_ecno)
 }
 
 
+// From the INSDC Feature Table Documentation:
+// Valid values for EC numbers are defined in the list prepared by the
+// Nomenclature Committee of the International Union of Biochemistry and
+// Molecular Biology(NC - IUBMB) (published in Enzyme Nomenclature 1992,
+// Academic Press, San Diego, or a more recent revision thereof).
+// The format represents a string of four numbers separated by full
+// stops; up to three numbers starting from the end of the string can
+// be replaced by dash "." to indicate uncertain assignment.
+// Symbol "n" can be used in the last position instead of a number
+// where the EC number is awaiting assignment.Please note that such
+// incomplete EC numbers are not approved by NC - IUBMB.
+// 
+// Examples:
+//     1.1.2.4
+//     1.1.2.-
+//     1.1.2.n
 bool CProt_ref::IsValidECNumberFormat (const string&  ecno)
 {
     char     ch;
@@ -236,8 +252,9 @@ bool CProt_ref::IsValidECNumberFormat (const string&  ecno)
     int      numdashes;
     int      numdigits;
     int      numperiods;
+    const char *ptr;
 
-    if (NStr::IsBlank (ecno)) {
+    if (NStr::IsBlank(ecno)) {
         return false;
     }
 
@@ -246,29 +263,28 @@ bool CProt_ref::IsValidECNumberFormat (const string&  ecno)
     numdigits = 0;
     numdashes = 0;
 
-    string::const_iterator sit = ecno.begin();
-    while (sit != ecno.end()) {
-        ch = *sit;
-        if (isdigit (ch)) {
+    ptr = ecno.c_str();
+    ch = *ptr;
+    while (ch != '\0') {
+        if (isdigit(ch)) {
             numdigits++;
             if (is_ambig) return false;
+            ptr++;
+            ch = *ptr;
         } else if (ch == '-') {
             numdashes++;
             is_ambig = true;
+            ptr++;
+            ch = *ptr;
         } else if (ch == 'n') {
-            if (numperiods == 3 && numdigits == 0) {
-                string::const_iterator sit2 = sit;
-                sit2++;
-                if (isdigit (*sit2)) {
-                    // allow/ignore n in first position of fourth number to not mean ambiguous, if followed by digit
-                } else {
-                    numdashes++;
-                    is_ambig = true;
-                }
+            if (numperiods == 3 && numdigits == 0 && isdigit(*(ptr + 1))) {
+                // allow/ignore n in first position of fourth number to not mean ambiguous, if followed by digit */
             } else {
                 numdashes++;
                 is_ambig = true;
             }
+            ptr++;
+            ch = *ptr;
         } else if (ch == '.') {
             numperiods++;
             if (numdigits > 0 && numdashes > 0) return false;
@@ -276,8 +292,12 @@ bool CProt_ref::IsValidECNumberFormat (const string&  ecno)
             if (numdashes > 1) return false;
             numdigits = 0;
             numdashes = 0;
+            ptr++;
+            ch = *ptr;
+        } else {
+            ptr++;
+            ch = *ptr;
         }
-        ++sit;
     }
 
     if (numperiods == 3) {
