@@ -325,7 +325,7 @@ void CValidError_feat::x_ValidateGbQual(const CGb_qual& qual, const CSeq_feat& f
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidPunctuation,
                 "Qualifier other than replace has just quotation marks", feat);
             if (NStr::EqualNocase(qual.GetQual(), "EC_number")) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, "EC number should not be empty", feat);
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberEmpty, "EC number should not be empty", feat);
             }
         }
         if (NStr::EqualNocase(qual.GetQual(), "inference")) {
@@ -661,7 +661,7 @@ void CValidError_feat::ValidateSeqFeatData
             }
             if (grp == 0 || ! grp->IsSetLocus_tag() || NStr::IsBlank (grp->GetLocus_tag())) {
                 if (! pseudo) {
-                    PostErr(eDiag_Error, eErr_SEQ_FEAT_LocusTagProblem,
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_OldLocusTagWithoutLocusTag,
                            "old_locus_tag without inherited locus_tag", feat);
                 }
             }
@@ -1302,7 +1302,7 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
 
         ITERATE (string, it, locus_tag ) {
             if ( isspace((unsigned char)(*it)) != 0 ) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_LocusTagProblem,
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_LocusTagHasSpace,
                     "Gene locus_tag '" + gene.GetLocus_tag() + 
                     "' should be a single word without any spaces", feat);
                 break;
@@ -1311,7 +1311,7 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
 
             if (gene.IsSetLocus() && !NStr::IsBlank(gene.GetLocus())
                   && NStr::EqualNocase(locus_tag, gene.GetLocus())) {
-                  PostErr (eDiag_Error, eErr_SEQ_FEAT_LocusTagProblem, 
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_LocusTagGeneLocusMatch,
                              "Gene locus and locus_tag '" + gene.GetLocus() + "' match",
                                feat);
             }
@@ -1328,8 +1328,8 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
                             "Gene locus_tag and old_locus_tag '" + locus_tag + "' match", feat);
                 }
                 if (NStr::Find ((*it)->GetVal(), ",") != string::npos) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_LocusTagProblem,
-                            "old_locus_tag has comma, may contain multiple values", feat);
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_OldLocusTagBadFormat,
+                            "old_locus_tag has comma, multiple old_locus_tags should be split into separate qualifiers", feat);
                 }
             }
         }                        
@@ -1603,7 +1603,7 @@ void CValidError_feat::ValidateCdregion (
             }
         }
         if (!suppress) {
-            PostErr (eDiag_Info, eErr_SEQ_FEAT_EcNumberProblem,
+            PostErr(eDiag_Info, eErr_SEQ_FEAT_EcNumberInCDSComment,
                      "Apparent EC number in CDS comment", feat);
         }
     }
@@ -1903,7 +1903,7 @@ void CValidError_feat::ValidateIntron (
                 if ((strand == eNa_strand_minus && end5 == seq_len - 1) ||
                     (strand == eNa_strand_plus && end5 == 0)) {
 
-                    PostErr (eDiag_Info, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
+                    PostErr(eDiag_Info, eErr_SEQ_FEAT_NotSpliceConsensusDonorTerminalIntron,
                             "Splice donor consensus (GT) not found at start of terminal intron, position "
                             + NStr::IntToString (end5 + 1) + " of " + label,
                             feat);
@@ -1932,7 +1932,7 @@ void CValidError_feat::ValidateIntron (
             if (not_found) {
                 if ((strand == eNa_strand_minus && end3 == 0) ||
                     (strand == eNa_strand_plus && end3 == seq_len - 1)) {
-                    PostErr (eDiag_Info, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
+                    PostErr(eDiag_Info, eErr_SEQ_FEAT_NotSpliceConsensusAcceptorTerminalIntron,
                               "Splice acceptor consensus (AG) not found at end of terminal intron, position "
                               + NStr::IntToString (end3 + 1) + " of " + label + ", but at end of sequence",
                               feat);
@@ -2253,7 +2253,7 @@ void CValidError_feat::ValidateProt(
     // only look for brackets and hypothetical protein XP_ in first protein name
     if (prot.IsSetName() && prot.GetName().size() > 0) {
         if (HasECnumberPattern(prot.GetName().front())) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem,
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberInProteinName,
                 "Apparent EC number in protein title", feat);
         }
         x_ValidateProteinName(prot.GetName().front(), feat);
@@ -2286,7 +2286,7 @@ void CValidError_feat::ValidateProt(
     }
 
     if (feat.IsSetComment() && HasECnumberPattern(feat.GetComment())) {
-        PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, 
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberInProteinComment,
                  "Apparent EC number in protein comment", feat);
     }
 
@@ -2441,7 +2441,7 @@ void CValidError_feat::x_ValidateProtECNumbers(const CProt_ref& prot, const CSeq
 {
     FOR_EACH_ECNUMBER_ON_PROTREF (it, prot) {
         if (NStr::IsBlank (*it)) {
-            PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, "EC number should not be empty", feat);
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberEmpty, "EC number should not be empty", feat);
         } else if (!s_IsValidECNumberFormat(*it)) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberFormat,
                     (*it) + " is not in proper EC_number format", feat);
@@ -2672,7 +2672,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
                                eOverlap_Interval,
                                scores, *m_Scope);
         if (scores.size() > 0) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOverlap,
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOverlapTRNA,
                      "tRNA-rRNA overlap", feat);
         }
     }
@@ -7662,7 +7662,7 @@ void CSingleFeatValidator::x_ValidateGbQual(const CGb_qual& qual)
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidPunctuation,
                 "Qualifier other than replace has just quotation marks");
             if (NStr::EqualNocase(qual.GetQual(), "EC_number")) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, "EC number should not be empty");
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberEmpty, "EC number should not be empty");
             }
         }
         if (NStr::EqualNocase(qual.GetQual(), "inference")) {

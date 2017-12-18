@@ -567,7 +567,7 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
         seen.push_back(vit->GetErrCode());
     }
     expected.push_back("NotSpliceConsensusDonor");
-    expected.push_back("NotSpliceConsensusDonor");
+    expected.push_back("NotSpliceConsensusDonorTerminalIntron");
     expected.push_back("NotSpliceConsensusAcceptor");
     expected.push_back("DeletedEcNumber");
     expected.push_back("ReplacedEcNumber");
@@ -596,6 +596,7 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     expected.push_back("NotSpliceConsensusAcceptor");
     expected.push_back("DeletedEcNumber");
     expected.push_back("ReplacedEcNumber");
+    expected.push_back("NotSpliceConsensusDonorTerminalIntron");
     CheckStrings(seen, expected);
 
     string rval = format.FormatForSubmitterReport(*eval, scope, eErr_SEQ_FEAT_NotSpliceConsensusDonor);
@@ -604,7 +605,6 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     NStr::Split(rval, "\n", seen, 0);
     expected.push_back("Not Splice Consensus");
     expected.push_back("intron\tlcl|nuc\tGT at 17");
-    expected.push_back("intron\tlcl|nuc\tGT at 1");
     expected.push_back("CDS\tlcl|nuc\tGT at 16");
     expected.push_back("");
     CheckStrings(seen, expected);
@@ -979,14 +979,14 @@ BOOST_AUTO_TEST_CASE(Test_CollidingLocusTags)
     // list of expected errors
     vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("lcl|LocusCollidesWithLocusTag", eDiag_Warning, "TerminalNs", "N at end of sequence"));
-    expected_errors.push_back(new CExpectedError("lcl|LocusCollidesWithLocusTag", eDiag_Warning, "LocusCollidesWithLocusTag", "locus collides with locus_tag in another gene"));
+    expected_errors.push_back(new CExpectedError("lcl|LocusCollidesWithLocusTag", eDiag_Warning, "GeneLocusCollidesWithLocusTag", "locus collides with locus_tag in another gene"));
     expected_errors.push_back(new CExpectedError("lcl|LocusCollidesWithLocusTag", eDiag_Warning, "CollidingGeneNames", "Colliding names in gene features"));
     expected_errors.push_back(new CExpectedError("lcl|LocusCollidesWithLocusTag", eDiag_Error, "CollidingLocusTags", "Colliding locus_tags in gene features"));
     expected_errors.push_back(new CExpectedError("lcl|LocusCollidesWithLocusTag", eDiag_Error, "CollidingLocusTags", "Colliding locus_tags in gene features"));
     expected_errors.push_back(new CExpectedError("lcl|LocusCollidesWithLocusTag", eDiag_Error, "NoMolInfoFound", "No Mol-info applies to this Bioseq"));
-    expected_errors.push_back(new CExpectedError("lcl|LocusCollidesWithLocusTag", eDiag_Error, "LocusTagProblem", "Gene locus and locus_tag 'foo' match"));
+    expected_errors.push_back(new CExpectedError("lcl|LocusCollidesWithLocusTag", eDiag_Error, "LocusTagGeneLocusMatch", "Gene locus and locus_tag 'foo' match"));
     expected_errors.push_back(new CExpectedError("lcl|LocusCollidesWithLocusTag", eDiag_Error, "NoPubFound", "No publications anywhere on this entire record."));
-    expected_errors.push_back(new CExpectedError("lcl|LocusCollidesWithLocusTag", eDiag_Info, "MissingPubInfo", "No submission citation anywhere on this entire record."));
+    expected_errors.push_back(new CExpectedError("lcl|LocusCollidesWithLocusTag", eDiag_Info, "MissingPubRequirement", "No submission citation anywhere on this entire record."));
     expected_errors.push_back(new CExpectedError("lcl|LocusCollidesWithLocusTag", eDiag_Error, "NoOrgFound", "No organism name anywhere on this entire record."));
 
     CConstRef<CValidError> eval = validator.Validate(seh, options);
@@ -4531,7 +4531,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoPubFound)
 
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "NoPubFound",
                               "No publications anywhere on this entire record."));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Info, "MissingPubInfo",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Info, "MissingPubRequirement",
                               "No submission citation anywhere on this entire record."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -4544,7 +4544,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoPubFound)
     id_suppress->SetGpipe().SetAccession("AY123456");
     entry->SetSet().SetSeq_set().front()->SetSeq().SetId().push_back(id_suppress);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("gpp|AY123456|", eDiag_Info, "MissingPubInfo",
+    expected_errors.push_back(new CExpectedError("gpp|AY123456|", eDiag_Info, "MissingPubRequirement",
                               "No submission citation anywhere on this entire record."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -4562,7 +4562,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoPubFound)
     expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Warning, 
                               "GenomicProductPackagingProblem", 
                               "Protein bioseq should be product of CDS feature on contig, but is not"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Info, "MissingPubInfo",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Info, "MissingPubRequirement",
                               "No submission citation anywhere on this entire record."));
 
     eval = validator.Validate(seh, options);
@@ -4578,7 +4578,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoPubFound)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Error, "NoPubFound",
                               "No publications refer to this Bioseq."));
-    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Info, "MissingPubInfo",
+    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Info, "MissingPubRequirement",
                               "Expected submission citation is missing for this Bioseq"));
 
     eval = validator.Validate(seh, options);
@@ -4593,7 +4593,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoPubFound)
     SetTech (entry->SetSet().SetSeq_set().front(), CMolInfo::eTech_wgs);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Info, "MissingPubInfo",
+    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Info, "MissingPubRequirement",
         "Expected submission citation is missing for this Bioseq"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -9076,7 +9076,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_AuthorListHasEtAl)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
+BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubRequirement)
 {
     // validate cit-sub
     CRef<CSeq_submit> submit(new CSeq_submit());
@@ -9113,7 +9113,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
         submit->SetSub().ResetContact();
         string msg_acc = NStr::StartsWith(*id_it, "NC") ? "ref|" + *id_it + "|" : "lcl|" + *id_it;
         expected_errors.push_back(new CExpectedError(msg_acc,
-                                  sev, "MissingPubInfo",
+                                  sev, "MissingPubRequirement",
                                   "Submission citation affiliation has no country"));
         eval = validator.Validate(*submit, &scope, options);
         CheckErrors (*eval, expected_errors);
@@ -9127,7 +9127,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
 
         submit->SetSub().SetCit().SetAuthors().SetAffil().SetStd().SetSub("VA");
         submit->SetSub().SetContact().SetContact().SetAffil().SetStd().SetAffil("some affiliation");
-        expected_errors.push_back(new CExpectedError(msg_acc, sev, "MissingPubInfo",
+        expected_errors.push_back(new CExpectedError(msg_acc, sev, "MissingPubRequirement",
                                   "Submission citation affiliation has no country"));
         expected_errors[0]->SetAccession("");
         expected_errors[0]->SetSeverity(eDiag_Warning);
@@ -9155,7 +9155,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
 
         seh = scope.AddTopLevelSeqEntry(*entry);
 
-        expected_errors.push_back(new CExpectedError(msg_acc, sev, "MissingPubInfo",
+        expected_errors.push_back(new CExpectedError(msg_acc, sev, "MissingPubRequirement",
                                   "Submission citation affiliation has no country"));
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
@@ -9181,7 +9181,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
         pub->SetSub().SetAuthors().SetAffil().SetStd().ResetAffil();
         expected_errors.push_back(new CExpectedError(msg_acc,
                 NStr::StartsWith(*id_it, "NC_") ? eDiag_Warning : eDiag_Critical,
-                                  "MissingPubInfo",
+                                  "MissingPubRequirement",
                                   "Submission citation has no affiliation"));
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
@@ -9207,9 +9207,9 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
         pub->SetGen().SetAuthors().SetNames().SetStd().push_back(author);
         pub->SetGen().SetCit("Does not start with expected text");
 
-        expected_errors.push_back(new CExpectedError(msg_acc, eDiag_Error, "MissingPubInfo",
+        expected_errors.push_back(new CExpectedError(msg_acc, eDiag_Error, "MissingPubRequirement",
             "Unpublished citation text invalid"));
-        expected_errors.push_back(new CExpectedError(msg_acc, eDiag_Warning, "MissingPubInfo",
+        expected_errors.push_back(new CExpectedError(msg_acc, eDiag_Warning, "MissingPubRequirement",
             "Publication date missing"));
 
         eval = validator.Validate(seh, options);
@@ -9301,7 +9301,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
         CLEAR_ERRORS
-        expected_errors.push_back(new CExpectedError(msg_acc, eDiag_Warning, "MissingPubInfo", 
+        expected_errors.push_back(new CExpectedError(msg_acc, eDiag_Warning, "MissingPubRequirement", 
                                   "Publication date missing"));
         pub->SetArticle().SetFrom().SetJournal().SetImp().SetVolume("vol 1");
         pub->SetArticle().SetFrom().SetJournal().SetImp().ResetDate();
@@ -11846,7 +11846,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
     seh = scope.AddTopLevelSeqEntry(*nuc);
     eval = validator.Validate(seh, options);
     CExpectedError* no_pub = new CExpectedError("lcl|nuc", eDiag_Error, "NoPubFound", "No publications anywhere on this entire record.");
-    CExpectedError* no_sub = new CExpectedError("lcl|nuc", eDiag_Info, "MissingPubInfo", "No submission citation anywhere on this entire record.");
+    CExpectedError* no_sub = new CExpectedError("lcl|nuc", eDiag_Info, "MissingPubRequirement", "No submission citation anywhere on this entire record.");
     CExpectedError* no_org = new CExpectedError("lcl|nuc", eDiag_Error, "NoOrgFound", "No organism name anywhere on this entire record.");
     expected_errors.pop_back();
     expected_errors.push_back(no_pub);
@@ -14492,7 +14492,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_LocusTagProblem)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "LocusTagProblem",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "LocusTagHasSpace",
                               "Gene locus_tag 'a b c' should be a single word without any spaces"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -14509,7 +14509,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_LocusTagProblem)
     gene->ResetQual();
     gene->SetData().SetGene().SetLocus_tag("abc");
     gene->SetData().SetGene().SetLocus("abc");
-    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Error, "LocusTagProblem",
+    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Error, "LocusTagGeneLocusMatch",
                        "Gene locus and locus_tag 'abc' match"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -14517,8 +14517,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_LocusTagProblem)
     CLEAR_ERRORS
     gene->SetData().SetGene().ResetLocus();
     gene->AddQualifier ("old_locus_tag", "a, b, c");
-    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "LocusTagProblem",
-                       "old_locus_tag has comma, may contain multiple values"));
+    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "OldLocusTagBadFormat",
+                       "old_locus_tag has comma, multiple old_locus_tags should be split into separate qualifiers"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -15639,7 +15639,7 @@ BOOST_AUTO_TEST_CASE (Test_SEQ_FEAT_OldLocusTagMismtach)
 
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "OldLocusTagMismtach",
                                 "Old locus tag on feature (one value) does not match that on gene (another value)"));
-    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Error, "LocusTagProblem",
+    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Error, "OldLocusTagWithoutLocusTag",
                                 "old_locus_tag without inherited locus_tag"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -16049,13 +16049,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_EcNumberProblem)
 
     expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "InvalidPunctuation",
                                "Qualifier other than replace has just quotation marks"));
-    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "EcNumberProblem",
+    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "EcNumberEmpty",
                                "EC number should not be empty"));
-    expected_errors.push_back (new CExpectedError("lcl|prot", eDiag_Warning, "EcNumberProblem",
+    expected_errors.push_back (new CExpectedError("lcl|prot", eDiag_Warning, "EcNumberInProteinName",
                                "Apparent EC number in protein title"));
-    expected_errors.push_back (new CExpectedError("lcl|prot", eDiag_Warning, "EcNumberProblem",
+    expected_errors.push_back (new CExpectedError("lcl|prot", eDiag_Warning, "EcNumberInProteinComment",
                                "Apparent EC number in protein comment"));
-    expected_errors.push_back (new CExpectedError("lcl|prot", eDiag_Warning, "EcNumberProblem",
+    expected_errors.push_back (new CExpectedError("lcl|prot", eDiag_Warning, "EcNumberEmpty",
                                "EC number should not be empty"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -16065,13 +16065,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_EcNumberProblem)
     prot->SetData().SetProt().ResetEc();
     expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "InvalidPunctuation",
                                "Qualifier other than replace has just quotation marks"));
-    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "EcNumberProblem",
+    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "EcNumberEmpty",
                                "EC number should not be empty"));
-    expected_errors.push_back (new CExpectedError("lcl|prot", eDiag_Warning, "EcNumberProblem",
+    expected_errors.push_back (new CExpectedError("lcl|prot", eDiag_Warning, "EcNumberInProteinName",
                                "Apparent EC number in protein title"));
-    expected_errors.push_back (new CExpectedError("lcl|prot", eDiag_Warning, "EcNumberProblem",
+    expected_errors.push_back (new CExpectedError("lcl|prot", eDiag_Warning, "EcNumberInProteinComment",
                                "Apparent EC number in protein comment"));
-    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Info, "EcNumberProblem",
+    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Info, "EcNumberInCDSComment",
                                "Apparent EC number in CDS comment"));
 
     eval = validator.Validate(seh, options);
@@ -16419,7 +16419,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_NotSpliceConsensusDonor)
     intron = unit_test_util::AddMiscFeature(entry);
     intron->SetData().SetImp().SetKey("intron");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Info, "NotSpliceConsensusDonor",
+    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Info, "NotSpliceConsensusDonorTerminalIntron",
                                "Splice donor consensus (GT) not found at start of terminal intron, position 1 of lcl|good"));
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "NotSpliceConsensusAcceptor", 
                                "Splice acceptor consensus (AG) not found at end of intron, position 11 of lcl|good"));
@@ -16430,7 +16430,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_NotSpliceConsensusDonor)
     unit_test_util::RevComp(entry);
     seh = scope.AddTopLevelSeqEntry(*entry);
     CLEAR_ERRORS
-    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Info, "NotSpliceConsensusDonor",
+    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Info, "NotSpliceConsensusDonorTerminalIntron",
                                "Splice donor consensus (GT) not found at start of terminal intron, position 60 of lcl|good"));
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "NotSpliceConsensusAcceptor", 
                                "Splice acceptor consensus (AG) not found at end of intron, position 50 of lcl|good"));
@@ -16513,7 +16513,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_NotSpliceConsensusAcceptor)
     intron = unit_test_util::AddMiscFeature(entry);
     intron->SetData().SetImp().SetKey("intron");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Info, "NotSpliceConsensusDonor",
+    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Info, "NotSpliceConsensusDonorTerminalIntron",
                                "Splice donor consensus (GT) not found at start of terminal intron, position 1 of lcl|good"));
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "NotSpliceConsensusAcceptor", 
                                "Splice acceptor consensus (AG) not found at end of intron, position 11 of lcl|good"));
@@ -16524,7 +16524,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_NotSpliceConsensusAcceptor)
     unit_test_util::RevComp(entry);
     seh = scope.AddTopLevelSeqEntry(*entry);
     CLEAR_ERRORS
-    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Info, "NotSpliceConsensusDonor",
+    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Info, "NotSpliceConsensusDonorTerminalIntron",
                                "Splice donor consensus (GT) not found at start of terminal intron, position 60 of lcl|good"));
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "NotSpliceConsensusAcceptor", 
                                "Splice acceptor consensus (AG) not found at end of intron, position 50 of lcl|good"));
@@ -20095,7 +20095,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_146)
                                                  "No publications anywhere on this entire record."));
     expected_errors.push_back(new CExpectedError("lcl|good", 
                                                  eDiag_Info, 
-                                                 "MissingPubInfo",
+                                                 "MissingPubRequirement",
                                                  "No submission citation anywhere on this entire record."));
 
     eval = validator.Validate(seh, options);

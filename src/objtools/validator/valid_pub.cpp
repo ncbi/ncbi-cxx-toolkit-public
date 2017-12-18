@@ -238,7 +238,7 @@ void CValidError_imp::ValidatePubGen
             || NStr::StartsWith (cit, "(er) ", NStr::eNocase)) {
             is_unpub = true;
         } else {            
-            PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+            PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubRequirement,
                 "Unpublished citation text invalid", obj, ctx);
         }
 
@@ -261,14 +261,14 @@ void CValidError_imp::ValidatePubGen
     }
     if (!gen.IsSetDate()) {
         if (!is_unpub) {
-            PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo, "Publication date missing", obj, ctx);
+            PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubRequirement, "Publication date missing", obj, ctx);
         }
     } else if (gen.GetDate().IsStr()) {
         if (NStr::Equal(gen.GetDate().GetStr(), "?")) {
-            PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo, "Publication date marked as '?'", obj, ctx);
+            PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubRequirement, "Publication date marked as '?'", obj, ctx);
         }
     } else if (gen.GetDate().IsStd() && (!gen.GetDate().GetStd().IsSetYear() || gen.GetDate().GetStd().GetYear() == 0)) {
-            PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo, "Publication date not set", obj, ctx);
+        PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubRequirement, "Publication date not set", obj, ctx);
     } else {
         int rval = CheckDate (gen.GetDate());
         if (rval != eDateValid_valid) {
@@ -307,7 +307,7 @@ void CValidError_imp::ValidatePubArticle
  const CSeq_entry *ctx)
 {
     if ( !art.IsSetTitle()  ||  !HasTitle(art.GetTitle()) ) { 
-        PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+        PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubRequirement,
             "Publication has no title", obj, ctx);
     }
         
@@ -318,7 +318,7 @@ void CValidError_imp::ValidatePubArticle
         bool is_electronic_journal = IsElectronicJournal(art.GetFrom().GetJournal());
 
         if (!HasTitle(jour.GetTitle())) {
-            PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+            PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubRequirement,
                 "Journal title missing", obj, ctx);
         }
 
@@ -362,7 +362,7 @@ const CSeq_entry *ctx)
                 }
             }
             if ((!imp.IsSetDate()) || (imp.GetDate().IsStr() && NStr::Equal(imp.GetDate().GetStr(), "?"))) {
-                PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
+                PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubRequirement,
                     "In-press is missing the date", obj, ctx);
             }
         }
@@ -399,14 +399,14 @@ const CSeq_entry *ctx)
         }
         if (imp.IsSetDate() && imp.GetDate().Which() != CDate::e_not_set) {
             if (imp.GetDate().IsStr() && NStr::Equal(imp.GetDate().GetStr(), "?")) {
-                PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
+                PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubRequirement,
                     "Publication date marked as '?'", obj, ctx);
             } else if (imp.GetDate().IsStd()) {
                 if (!imp.GetDate().GetStd().IsSetYear()) {
-                    PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
+                    PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubRequirement,
                         "Publication date missing", obj, ctx);
                 } else if (imp.GetDate().GetStd().GetYear() == 0) {
-                    PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
+                    PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubRequirement,
                         "Publication date not set", obj, ctx);
                 } else {
                     int rval = CheckDate(imp.GetDate());
@@ -416,7 +416,7 @@ const CSeq_entry *ctx)
                 }
             }
         } else {
-            PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
+            PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubRequirement,
                 "Publication date missing", obj, ctx);
         }
     }
@@ -685,7 +685,7 @@ void CValidError_imp::ValidatePubHasAuthor
                     }
                     if (!has_name) {
                         PostObjErr(IsRefSeq() ? eDiag_Warning : eDiag_Error,
-                                   eErr_GENERIC_MissingPubInfo,
+                                   eErr_GENERIC_MissingPubRequirement,
                                    "Publication has no author names", obj, ctx);
                     }
                 }
@@ -698,7 +698,7 @@ void CValidError_imp::ValidatePubHasAuthor
                 }
                 if (!has_name) {
                     PostObjErr(IsRefSeq() ? eDiag_Warning : eDiag_Error,
-                               eErr_GENERIC_MissingPubInfo,
+                               eErr_GENERIC_MissingPubRequirement,
                                "Publication has no author names", obj, ctx);
                 }
                 break;
@@ -941,12 +941,12 @@ void CValidError_imp::ValidateAffil(const CAffil::TStd& std, const CSerialObject
         // do nothing, completely blank
     } else {
         if (!std.IsSetCountry() || NStr::IsBlank(std.GetCountry())) {
-            PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
+            PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubRequirement,
                 "Submission citation affiliation has no country",
                 obj, ctx);
         } else if (NStr::Equal(std.GetCountry(), "USA")) {
             if (!std.IsSetSub() || NStr::IsBlank(std.GetSub())) {
-                PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
+                PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubRequirement,
                     "Submission citation affiliation has no state",
                     obj, ctx);
             }
@@ -966,18 +966,18 @@ void CValidError_imp::ValidateSubAffil
         sev = eDiag_Warning;
     }
     if (!std.IsSetCountry() || NStr::IsBlank(std.GetCountry())) {
-        PostObjErr(sev, eErr_GENERIC_MissingPubInfo,
+        PostObjErr(sev, eErr_GENERIC_MissingPubRequirement,
                     "Submission citation affiliation has no country",
                     obj, ctx);
     } else if (NStr::EqualCase (std.GetCountry(), "USA")) {
         if (!std.IsSetSub() || NStr::IsBlank (std.GetSub())) {
-            PostObjErr (eDiag_Warning, eErr_GENERIC_MissingPubInfo, 
+            PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubRequirement,
                         "Submission citation affiliation has no state",
                         obj, ctx);
         }
     }
     if ((!std.IsSetDiv() || NStr::IsBlank(std.GetDiv())) && (!std.IsSetAffil() || NStr::IsBlank(std.GetAffil()))) {
-        PostObjErr (sev, eErr_GENERIC_MissingPubInfo, 
+        PostObjErr(sev, eErr_GENERIC_MissingPubRequirement,
                     "Submission citation affiliation has no institution",
                     obj, ctx);
     }
@@ -1032,14 +1032,14 @@ void CValidError_imp::ValidateCitSub
     }
 
     if ( !has_name ) {
-        PostObjErr(eDiag_Critical, eErr_GENERIC_MissingPubInfo,
+        PostObjErr(eDiag_Critical, eErr_GENERIC_MissingPubRequirement,
             "Submission citation has no author names", obj, ctx);
     }
     if ( !has_affil ) {
         EDiagSev sev = 
             IsRefSeq() || s_IsRefSeqInSep(GetTSE(), *m_Scope)  ||  s_IsHtgInSep(GetTSE())  || s_IsPDBInSep(GetTSE(), *m_Scope) ?
             eDiag_Warning : eDiag_Critical;
-        PostObjErr(sev, eErr_GENERIC_MissingPubInfo,
+        PostObjErr(sev, eErr_GENERIC_MissingPubRequirement,
             "Submission citation has no affiliation", obj, ctx);
     }
 
@@ -1054,7 +1054,7 @@ void CValidError_imp::ValidateCitSub
             PostBadDateError (eDiag_Error, "Submission citation date has error", rval, obj, ctx);
         }
     } else {
-        PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+        PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubRequirement,
             "Submission citation has no date", obj, ctx);
     }
 }
@@ -1222,7 +1222,7 @@ void CValidError_imp::ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs
                   if (m_genomeSubmission) {
                       sev = eDiag_Error;
                   }
-                  PostErr(sev, eErr_GENERIC_MissingPubInfo,
+                  PostErr(sev, eErr_GENERIC_MissingPubRequirement,
                        "No submission citation anywhere on this entire record.", se);
             }
         }

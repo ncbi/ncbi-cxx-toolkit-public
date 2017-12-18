@@ -85,7 +85,7 @@ static void s_TestOneWrongQual(const string qual, const string val, const string
                                   "/rpt_unit_range is not within sequence length"));
     }
     if (NStr::Equal(qual, "old_locus_tag")) {
-        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "LocusTagProblem", 
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "OldLocusTagWithoutLocusTag", 
                                   "old_locus_tag without inherited locus_tag"));
     }
     CConstRef<CValidError> eval = validator.Validate(*misc_feat, scope, options);

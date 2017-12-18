@@ -82,6 +82,8 @@ ESubmitterFormatErrorGroup CValidErrorFormat::GetSubmitterFormatErrorGroup(CVali
         case eErr_SEQ_FEAT_NotSpliceConsensusDonor:
         case eErr_SEQ_FEAT_NotSpliceConsensusAcceptor:
         case eErr_SEQ_FEAT_RareSpliceConsensusDonor:
+        case eErr_SEQ_FEAT_NotSpliceConsensusAcceptorTerminalIntron:
+        case eErr_SEQ_FEAT_NotSpliceConsensusDonorTerminalIntron:
             rval = eSubmitterFormatErrorGroup_ConsensusSplice;
             break;
         case eErr_SEQ_FEAT_BadEcNumberFormat:
@@ -163,6 +165,8 @@ string CValidErrorFormat::FormatForSubmitterReport(const CValidErrItem& error, C
         case eErr_SEQ_FEAT_NotSpliceConsensusDonor:
         case eErr_SEQ_FEAT_NotSpliceConsensusAcceptor:
         case eErr_SEQ_FEAT_RareSpliceConsensusDonor:
+        case eErr_SEQ_FEAT_NotSpliceConsensusAcceptorTerminalIntron:
+        case eErr_SEQ_FEAT_NotSpliceConsensusDonorTerminalIntron:
             rval = x_FormatConsensusSpliceForSubmitterReport(error);
             break;
         case eErr_SEQ_FEAT_BadEcNumberFormat:

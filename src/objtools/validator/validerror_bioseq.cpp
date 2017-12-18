@@ -1408,7 +1408,7 @@ void CValidError_bioseq::ValidateBioseqContext(
     }
 
     if (!m_Imp.IsNoCitSubPubs() && !x_HasCitSub(bsh)) {
-        PostErr(m_Imp.IsGenomeSubmission() ? eDiag_Error : eDiag_Info, eErr_GENERIC_MissingPubInfo,
+        PostErr(m_Imp.IsGenomeSubmission() ? eDiag_Error : eDiag_Info, eErr_GENERIC_MissingPubRequirement,
                 "Expected submission citation is missing for this Bioseq", seq);
     }
 
@@ -6145,7 +6145,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                                     && NStr::EqualCase (other_gene_ref.GetLocus_tag(), locus)
                                     && (!other_gene_ref.IsSetLocus() 
                                     || !NStr::EqualCase(other_gene_ref.GetLocus(), locus))) {
-                                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_LocusCollidesWithLocusTag,
+                                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneLocusCollidesWithLocusTag,
                                         "locus collides with locus_tag in another gene", feat);
                                 }
                             }
@@ -7910,22 +7910,22 @@ void CValidError_bioseq::x_ValidateAbuttingRNA(const CBioseq_Handle& seq)
                     if (strand1 == eNa_strand_minus) {
                         // on minus strand
                         if (s_AreAdjacent(pos2, pos1)) {
-                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOverlap, 
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOverlapRRNA,
                                      "ITS overlaps adjacent rRNA component",
                                      it2->GetOriginalFeature());
                         } else {
-                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOverlap,
-                                "rRNA components overlap out of order", it2->GetOriginalFeature());
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOverlapAndOrder,
+                                "rRNA components overlap and out of order", it2->GetOriginalFeature());
                         }
                     } else {
                         // on plus strand
                         if (s_AreAdjacent(pos1, pos2)) {
-                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOverlap,
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOverlapRRNA,
                                 "ITS overlaps adjacent rRNA component",
                                 it2->GetOriginalFeature());
                         } else {
-                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOverlap,
-                                "rRNA components overlap out of order", it2->GetOriginalFeature());
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOverlapAndOrder,
+                                "rRNA components overlap and out of order", it2->GetOriginalFeature());
                         }
                     }
     
