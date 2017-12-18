@@ -17,7 +17,7 @@ LIB  = xdiscrepancy xalgophytree fastme prosplign xalgoalignutil xalgoseq xmlwra
 
 LIBS = $(LIBXSLT_STATIC_LIBS) $(LIBXML_STATIC_LIBS) $(BERKELEYDB_STATIC_LIBS) \
        $(SQLITE3_STATIC_LIBS) $(VDB_STATIC_LIBS) $(FTDS_LIBS) \
-       $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+       $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
 
 POST_LINK = $(VDB_POST_LINK)
 

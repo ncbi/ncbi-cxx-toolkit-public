@@ -21,6 +21,7 @@ LIBS = $(SQLITE3_LIBS) \
        $(CMPRS_LIBS) \
        $(NETWORK_LIBS) \
        $(DL_LIBS) \
+       $(BLAST_THIRD_PARTY_LIBS) \
        $(ORIG_LIBS)
 
 

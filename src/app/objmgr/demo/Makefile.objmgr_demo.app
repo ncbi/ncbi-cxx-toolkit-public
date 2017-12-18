@@ -16,7 +16,7 @@ LIB = ncbi_xloader_blastdb seqdb blastdb \
       $(OBJREAD_LIBS) xobjutil $(OBJMGR_LIBS)
 
 LIBS = $(SQLITE3_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) \
-       $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+       $(NETWORK_LIBS) $(DL_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
 
 
 CHECK_COPY = all_readers.sh
