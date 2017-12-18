@@ -45,6 +45,9 @@
 /* Define to 1 if Berkeley DB libraries are available. */
 #cmakedefine HAVE_BERKELEY_DB 1
 
+/* Define to 1 if LMDB libraries are available. */
+#cmakedefine HAVE_LIBLMDB 1
+
 /* Define to 1 if the Berkeley `db_cxx' library is available. */
 #cmakedefine HAVE_BERKELEY_DB_CXX 1
 

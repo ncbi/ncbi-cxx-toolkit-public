@@ -789,6 +789,9 @@ endif ()
 
 #LMBD
 find_external_library(LMDB INCLUDES lmdb.h LIBS lmdb HINTS "${NCBI_TOOLS_ROOT}/lmdb-0.9.18" EXTRALIBS pthread)
+if (LMDB_INCLUDE)
+    set(HAVE_LIBLMDB 1)
+endif()
 
 find_external_library(libxlsxwriter
     INCLUDES xlsxwriter.h
