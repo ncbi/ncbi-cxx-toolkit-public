@@ -38,8 +38,6 @@
 
 BEGIN_NCBI_SCOPE
 
-#ifdef HAVE_LIBLMDB
-
 #define SEQDB_LMDB_TIMING
 #ifdef SEQDB_LMDB_TIMING
 template<class T>
@@ -631,7 +629,6 @@ void DeleteLMDBFiles(bool db_is_protein, const string & filename)
 	}
 }
 
-#endif /* HAVE_LIBLMDB */
 
 END_NCBI_SCOPE
 
