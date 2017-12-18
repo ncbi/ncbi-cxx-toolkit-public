@@ -537,6 +537,86 @@ void CAutoDefModifierCombo::x_AddHIVModifiers(TExtraOrgMods& extra_orgmods, TExt
 }
 
 
+CAutoDefModifierCombo::EInfluenzaType CAutoDefModifierCombo::GetInfluenzaType(const string& taxname)
+{
+    if (NStr::StartsWith(taxname, "Influenza A virus", NStr::eNocase)) {
+        return eInfluenzaA;
+    } else if (NStr::StartsWith(taxname, "Influenza B virus", NStr::eNocase)) {
+        return eInfluenzaB;
+    } else if (NStr::StartsWith(taxname, "Influenza C virus", NStr::eNocase)) {
+        return eInfluenzaC;
+    } else if (NStr::StartsWith(taxname, "Influenza D virus", NStr::eNocase)) {
+        return eInfluenzaD;
+    } else {
+        return eNotInfluenza;
+    }
+}
+
+
+bool CAutoDefModifierCombo::x_SpecialHandlingForInfluenza(EInfluenzaType influenza_type, CSubSource::ESubtype subtype)
+{
+    if (influenza_type == eNotInfluenza) {
+        return false;
+    } else if (subtype == CSubSource::eSubtype_clone || subtype == CSubSource::eSubtype_segment) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool CAutoDefModifierCombo::x_SpecialHandlingForInfluenza(EInfluenzaType influenza_type, COrgMod::ESubtype subtype)
+{
+    if (influenza_type == eNotInfluenza) {
+        return false;
+    } else if (subtype == COrgMod::eSubtype_strain) {
+        return true;
+    } else if (subtype == COrgMod::eSubtype_serotype && influenza_type == eInfluenzaA) {
+        return true;
+    } else {
+        return false;
+    }
+
+}
+
+
+void CAutoDefModifierCombo::x_AddInfluenzaModifiers(TExtraOrgMods& extra_orgmods, TExtraSubSrcs& extra_subsrcs, EInfluenzaType influenza_type)
+{
+    switch (influenza_type) {
+        case eInfluenzaA:
+            if (extra_orgmods.find(COrgMod::eSubtype_strain) == extra_orgmods.end()) {
+                extra_orgmods.insert(TExtraOrgMod(COrgMod::eSubtype_strain, true));
+            }
+            if (extra_orgmods.find(COrgMod::eSubtype_serotype) == extra_orgmods.end()) {
+                extra_orgmods.insert(TExtraOrgMod(COrgMod::eSubtype_serotype, true));
+            }
+            if (extra_subsrcs.find(CSubSource::eSubtype_clone) == extra_subsrcs.end()) {
+                extra_subsrcs.insert(TExtraSubSrc(CSubSource::eSubtype_clone, true));
+            }
+            if (extra_subsrcs.find(CSubSource::eSubtype_segment) == extra_subsrcs.end()) {
+                extra_subsrcs.insert(TExtraSubSrc(CSubSource::eSubtype_segment, true));
+            }
+            break;
+        case eInfluenzaB:
+        case eInfluenzaC:
+        case eInfluenzaD:
+            if (extra_orgmods.find(COrgMod::eSubtype_strain) == extra_orgmods.end()) {
+                extra_orgmods.insert(TExtraOrgMod(COrgMod::eSubtype_strain, true));
+            }
+            if (extra_subsrcs.find(CSubSource::eSubtype_clone) == extra_subsrcs.end()) {
+                extra_subsrcs.insert(TExtraSubSrc(CSubSource::eSubtype_clone, true));
+            }
+            if (extra_subsrcs.find(CSubSource::eSubtype_segment) == extra_subsrcs.end()) {
+                extra_subsrcs.insert(TExtraSubSrc(CSubSource::eSubtype_segment, true));
+            }
+            break;
+        case eNotInfluenza:
+            break;
+    }
+}
+
+
+
 bool CAutoDefModifierCombo::GetDefaultExcludeSp ()
 {
     bool default_exclude = true;
@@ -718,10 +798,13 @@ string CAutoDefModifierCombo::GetSourceDescriptionString(const CBioSource& bsrc)
     /* start with tax name */
     source_description += bsrc.GetOrg().GetTaxname();
     x_CleanUpTaxName(source_description);
+    
+    EInfluenzaType influenza_type = GetInfluenzaType(source_description);
 
     x_AddRequiredSubSourceModifiers(orgmods, subsrcs, bsrc);
 
     x_AddHIVModifiers(orgmods, subsrcs, bsrc);
+    x_AddInfluenzaModifiers(orgmods, subsrcs, influenza_type);
     x_AddTypeStrainModifiers(orgmods, subsrcs, bsrc);
 
     /* should this organism be excluded? */
@@ -775,15 +858,50 @@ string CAutoDefModifierCombo::GetSourceDescriptionString(const CBioSource& bsrc)
         }
     }
 
+    // special handling for influenza
+    if (influenza_type != eNotInfluenza) {
+        if ((x_BioSourceHasOrgMod(bsrc, COrgMod::eSubtype_strain) ||
+            (influenza_type == eInfluenzaA && x_BioSourceHasOrgMod(bsrc, COrgMod::eSubtype_serotype)))) {
+            source_description += " (";
+            for (auto& it : bsrc.GetOrg().GetOrgname().GetMod()) {
+                if (it->IsSetSubtype() && it->GetSubtype() == COrgMod::eSubtype_strain &&
+                    it->IsSetSubname() && !NStr::IsBlank(it->GetSubname())) {
+                    source_description += it->GetSubname();
+                    break;
+                }
+            }
+            if (influenza_type == eInfluenzaA) {
+                source_description += "(";
+                for (auto& it : bsrc.GetOrg().GetOrgname().GetMod()) {
+                    if (it->IsSetSubtype() && it->GetSubtype() == COrgMod::eSubtype_serotype &&
+                        it->IsSetSubname() && !NStr::IsBlank(it->GetSubname())) {
+                        source_description += it->GetSubname();
+                        break;
+                    }
+                }
+                source_description += ")";
+            }
+            source_description += ")";
+        }
+        if (x_BioSourceHasSubSrc(bsrc, CSubSource::eSubtype_clone) && !m_UseModifierLabels) {
+            source_description += " clone";
+        }
+        x_AddSubsourceString(source_description, bsrc, CSubSource::eSubtype_clone);
+        x_AddSubsourceString(source_description, bsrc, CSubSource::eSubtype_segment);
+    }
 
     for (k = 0; k < kNumPreferred; k++) {
         if (s_PreferredList[k].is_orgmod) {
-            if (orgmods.find((COrgMod::ESubtype)s_PreferredList[k].subtype) != orgmods.end()) {
-                x_AddOrgModString(source_description, bsrc, (COrgMod::ESubtype)s_PreferredList[k].subtype);
+            COrgMod::ESubtype st = (COrgMod::ESubtype)s_PreferredList[k].subtype;
+            if (orgmods.find(st) != orgmods.end() &&
+                !x_SpecialHandlingForInfluenza(influenza_type, st)) {
+                x_AddOrgModString(source_description, bsrc, st);
             }
         } else {
-            if (subsrcs.find((CSubSource::ESubtype)s_PreferredList[k].subtype) != subsrcs.end()) {
-                x_AddSubsourceString(source_description, bsrc, (CSubSource::ESubtype)s_PreferredList[k].subtype);
+            CSubSource::ESubtype st = (CSubSource::ESubtype)s_PreferredList[k].subtype;
+            if (subsrcs.find(st) != subsrcs.end() &&
+                !x_SpecialHandlingForInfluenza(influenza_type, st)) {
+                x_AddSubsourceString(source_description, bsrc, st);
             }
         }
     }

@@ -2260,5 +2260,48 @@ BOOST_AUTO_TEST_CASE(Test_GB_7479)
 }
 
 
+void CheckInfluenzaDefline(const string& taxname, const string& strain, const string& serotype, const string& clone, const string& segment, const string& defline)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetTaxname(entry, taxname);
+    if (!NStr::IsBlank(strain)) {
+        unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, strain);
+    }
+    if (!NStr::IsBlank(serotype)) {
+        unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_serotype, serotype);
+    }
+    if (!NStr::IsBlank(clone)) {
+        unit_test_util::SetSubSource(entry, CSubSource::eSubtype_clone, clone);
+    }
+    if (!NStr::IsBlank(segment)) {
+        unit_test_util::SetSubSource(entry, CSubSource::eSubtype_segment, segment);
+    }
+
+    AddTitle(entry, defline);
+
+    CheckDeflineMatches(entry);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_GB_7485)
+{
+    CheckInfluenzaDefline("Influenza A virus", "", "", "", "", "Influenza A virus.");
+    CheckInfluenzaDefline("Influenza B virus", "", "", "", "", "Influenza B virus.");
+    CheckInfluenzaDefline("Influenza A virus", "x", "", "", "", "Influenza A virus (x()).");
+    CheckInfluenzaDefline("Influenza B virus", "x", "", "", "", "Influenza B virus (x).");
+    CheckInfluenzaDefline("Influenza A virus", "x", "y", "", "", "Influenza A virus (x(y)).");
+    CheckInfluenzaDefline("Influenza B virus", "x", "y", "", "", "Influenza B virus (x).");
+    CheckInfluenzaDefline("Influenza A virus", "", "y", "", "", "Influenza A virus ((y)).");
+    CheckInfluenzaDefline("Influenza B virus", "", "y", "", "", "Influenza B virus.");
+    CheckInfluenzaDefline("Influenza A virus", "x", "y", "c", "", "Influenza A virus (x(y)) clone c.");
+    CheckInfluenzaDefline("Influenza B virus", "x", "y", "c", "", "Influenza B virus (x) clone c.");
+    CheckInfluenzaDefline("Influenza A virus", "x", "y", "", "1", "Influenza A virus (x(y)) segment 1.");
+    CheckInfluenzaDefline("Influenza B virus", "x", "y", "", "1", "Influenza B virus (x) segment 1.");
+    CheckInfluenzaDefline("Influenza A virus", "x", "y", "c", "1", "Influenza A virus (x(y)) clone c segment 1.");
+    CheckInfluenzaDefline("Influenza B virus", "x", "y", "c", "1", "Influenza B virus (x) clone c segment 1.");
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

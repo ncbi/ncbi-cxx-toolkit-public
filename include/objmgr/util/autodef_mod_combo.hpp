@@ -142,6 +142,16 @@ public:
     static bool IsModifierRequiredByDefault(bool is_orgmod, int subtype);
     static bool IsModifierInString(const string& find_this, const string& find_in, bool ignore_at_end);
 
+    typedef enum {
+        eNotInfluenza = 0,
+        eInfluenzaA,
+        eInfluenzaB,
+        eInfluenzaC,
+        eInfluenzaD
+    } EInfluenzaType;
+
+    static EInfluenzaType GetInfluenzaType(const string& taxname);
+
 private:
     TSubSourceTypeVector m_SubSources;
     TOrgModTypeVector    m_OrgMods;
@@ -180,6 +190,9 @@ private:
     static bool x_BioSourceHasOrgMod(const CBioSource& src, COrgMod::ESubtype subtype);
 
     void x_AddHIVModifiers(TExtraOrgMods& extra_orgmods, TExtraSubSrcs& extra_subsrcs, const CBioSource& bsrc);
+    void x_AddInfluenzaModifiers(TExtraOrgMods& extra_orgmods, TExtraSubSrcs& extra_subsrcs, EInfluenzaType influenza_type);
+    static bool x_SpecialHandlingForInfluenza(EInfluenzaType influenza_type, CSubSource::ESubtype subtype);
+    static bool x_SpecialHandlingForInfluenza(EInfluenzaType influenza_type, COrgMod::ESubtype subtype);
     void x_AddRequiredSubSourceModifiers(TExtraOrgMods& extra_orgmods, TExtraSubSrcs& extra_subsrcs, const CBioSource& bsrc);
     void x_AddTypeStrainModifiers(TExtraOrgMods& extra_orgmods, TExtraSubSrcs& extra_subsrcs, const CBioSource& bsrc);
     static bool x_HasTypeStrainComment(const CBioSource& bsrc);
