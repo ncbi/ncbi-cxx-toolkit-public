@@ -13,6 +13,7 @@ LIB = xalgocontig_assembly
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
 
 USES_LIBRARIES =  \
     $(BLAST_LIBS) xalgoalignnw

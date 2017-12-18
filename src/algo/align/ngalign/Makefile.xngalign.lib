@@ -17,6 +17,7 @@ LIB = xngalign
 CXXFLAGS = $(FAST_CXXFLAGS) -I./. 
 LDFLAGS  = $(FAST_LDFLAGS)
 
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
 
 USES_LIBRARIES =  \
     $(BLAST_INPUT_LIBS) xalgoalignnw xalgoalignutil xmergetree
