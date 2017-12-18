@@ -9,6 +9,8 @@ CPPFLAGS = -DNCBI_MODULE=BLASTFORMAT $(ORIG_CPPFLAGS)
 
 DLL_LIB = $(BLAST_LIBS) align_format blastxml blastxml2 xhtml xcgi 
 
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+
 WATCHERS = jianye zaretska madden camacho fongah2
 
 

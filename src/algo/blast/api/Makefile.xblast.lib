@@ -90,6 +90,8 @@ CPPFLAGS = -DNCBI_MODULE=BLAST $(ORIG_CPPFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS) 
 LDFLAGS  = $(FAST_LDFLAGS) 
 
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+
 .core_%.c: # $(srcdir)/../core/%.c
 	echo '#include "$(srcdir)/../core/$*.c"' > $@
 
