@@ -228,11 +228,7 @@ bool CGeneCache::x_HasNamedQual(const CSeq_feat& feat, const string& qual)
 
 bool CGeneCache::x_IsPseudo(const CGene_ref& gref)
 {
-    if (gref.IsSetPseudo() && gref.GetPseudo()) {
-        return true;
-    } else {
-        return false;
-    }
+    return (gref.IsSetPseudo() && gref.GetPseudo());
 }
 
 
@@ -252,23 +248,9 @@ bool CGeneCache::x_IsFeatPseudo(const CSeq_feat& feat)
 
 bool CGeneCache::IsPseudo(const CSeq_feat& feat, CScope& scope)
 {
-    if (x_IsFeatPseudo(feat)) {
-        return true;
-    } else if (!feat.IsSetData() || !feat.GetData().IsGene()) {
-        const CGene_ref* grp = feat.GetGeneXref();
-        if (grp) {
-            return x_IsPseudo(*grp);
-        } else {
-            CConstRef<CSeq_feat> overlap = GetGeneFromCache(&feat, scope);
-            if (overlap) {
-                return x_IsFeatPseudo(*overlap);
-            } else {
-                return false;
-            }
-        }
-    } else {
-        return false;
-    }
+    return (feat.IsSetPseudo() && feat.GetPseudo()) ||
+        (x_HasNamedQual(feat, "pseudogene")) ||
+        (feat.GetData().IsGene() && x_IsPseudo(feat.GetData().GetGene()));
 }
 
 
