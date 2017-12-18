@@ -20,5 +20,7 @@ SRC = aaa_dummy_pch \
 
 DLL_LIB = $(BLAST_LIBS) xstruct_dp
 
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+
 USES_LIBRARIES =  \
     $(BLAST_LIBS) xstruct_dp
