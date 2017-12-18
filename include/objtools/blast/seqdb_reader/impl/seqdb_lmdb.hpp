@@ -39,7 +39,6 @@
 
 BEGIN_NCBI_SCOPE
 
-#ifdef HAVE_LIBLMDB
 
 class NCBI_XOBJREAD_EXPORT CSeqDBLMDB : public CObject
 {
@@ -172,7 +171,6 @@ const string acc2oid_str = "acc2oid";
 const string taxid2offset_str = "taxid2offset";
 END_SCOPE(blastdb)
 
-#endif /* HAVE_LIBLMDB */
 
 END_NCBI_SCOPE
 
