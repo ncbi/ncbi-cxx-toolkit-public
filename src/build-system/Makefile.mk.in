@@ -808,4 +808,4 @@ DATA_LOADERS_UTIL_LIB = data_loaders_util \
                         $(SRAREAD_LIBS)
 
 DATA_LOADERS_UTIL_LIBS = $(BERKELEYDB_LIBS) $(SQLITE3_LIBS) $(FTDS_LIBS) \
-                         $(VDB_LIBS)
+                         $(VDB_LIBS) $(BLAST_THIRD_PARTY_LIBS)
