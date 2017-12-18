@@ -12,7 +12,7 @@ LDFLAGS  = $(FAST_LDFLAGS)
 LIB = test_boost cobalt xalgoalignnw xalgophytree biotree ncbi_xloader_blastdb \
       $(BLAST_LIBS) $(OBJMGR_LIBS) fastme
 
-LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included
 

@@ -17,5 +17,7 @@ LDFLAGS = $(FAST_LDFLAGS)
 
 DLL_LIB = $(BLAST_LIBS) xalgoalignnw xalgophytree fastme
 
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+
 USES_LIBRARIES =  \
     $(BLAST_LIBS) xalgoalignnw xalgophytree
