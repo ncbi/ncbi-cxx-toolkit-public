@@ -13,5 +13,7 @@ WATCHERS = boratyng
 
 DLL_LIB = taxon1 align_format
 
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+
 USES_LIBRARIES =  \
     taxon1 xalgophytree
