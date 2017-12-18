@@ -141,12 +141,32 @@ private:
     CSeqDBMemReg m_VectorMemory;
 };
 
+void s_VerifySeqidlist(const SBlastSeqIdListInfo & list_info, const CSeqDBVolSet & volset, const CSeqDBLMDBSet & lmdb_set)
+{
+	if(list_info.is_v4 && lmdb_set.IsBlastDBVersion5()) {
+		NCBI_THROW(CSeqDBException, eArgErr, "Seqidlist is not in BLAST db v5 format");
+	}
+
+	if((!list_info.is_v4) && (!lmdb_set.IsBlastDBVersion5())) {
+		NCBI_THROW(CSeqDBException, eArgErr,
+		           "Seqidlist is not in BLAST db v4 format");
+	}
+
+	if((list_info.db_vol_length > 0) &&
+	   (list_info.db_vol_length != volset.GetVolumeSetLength())) {
+		ERR_POST(Warning << "Seqidlist file db info does not match input db");
+	}
+
+	 return;
+}
+
 
 CSeqDBGiListSet::CSeqDBGiListSet(CSeqDBAtlas            & atlas,
                                  const CSeqDBVolSet     & volset,
                                  CRef<CSeqDBGiList>       user_list,
                                  CRef<CSeqDBNegativeList> neg_list,
-                                 CSeqDBLockHold         & locked)
+                                 CSeqDBLockHold         & locked,
+                                 const CSeqDBLMDBSet & lmdb_set)
     : m_Atlas        (atlas),
       m_UserList     (user_list),
       m_NegativeList (neg_list)
@@ -154,6 +174,37 @@ CSeqDBGiListSet::CSeqDBGiListSet(CSeqDBAtlas            & atlas,
     _ASSERT(user_list.Empty() || neg_list.Empty());
 
     if (m_UserList.NotEmpty() && m_UserList->NotEmpty()) {
+    	if(user_list->GetNumSis() > 0) {
+    		s_VerifySeqidlist(user_list->GetListInfo(), volset, lmdb_set);
+    	}
+
+    	if((user_list->GetNumTaxIds() > 0) && !(lmdb_set.IsBlastDBVersion5())) {
+    		NCBI_THROW(CSeqDBException, eArgErr, "Taxonomy filtering is not supported in v4 BLAST dbs");
+    	}
+    	if (lmdb_set.IsBlastDBVersion5()) {
+    		if(user_list->GetNumSis() > 0) {
+    			vector<string> accs;
+    			vector<blastdb::TOid> oids;
+    			user_list->GetSiList(accs);
+    			lmdb_set.AccessionsToOids(accs, oids);
+    			for(unsigned int i=0; i < accs.size(); i++) {
+    				user_list->SetSiTranslation(i, oids[i]);
+    			}
+    		}
+    		if(user_list->GetNumTaxIds() > 0) {
+    			vector<blastdb::TOid> & oids = user_list->SetOidsForTaxIdsList();
+    			set<Int4> &  tax_ids = user_list->GetTaxIdsList();
+    			lmdb_set.TaxIdsToOids(tax_ids, oids);
+    		}
+    		if((user_list->GetNumGis() == 0) && (user_list->GetNumTis() == 0)) {
+    			return;
+    		}
+    	}
+    	if((user_list->GetNumSis() > 0) && !(lmdb_set.IsBlastDBVersion5())) {
+
+    		user_list->PreprocessIdsForISAMSiLookup();
+    	}
+
         typedef SSeqDB_IndexCountPair TIndexCount;
         vector<TIndexCount> OidsPerVolume;
 
@@ -189,7 +240,35 @@ CSeqDBGiListSet::CSeqDBGiListSet(CSeqDBAtlas            & atlas,
     } else if (m_NegativeList.NotEmpty() && m_NegativeList->NotEmpty()) {
         // We don't bother to sort these since every ISAM mapping must
         // be examined for the negative ID list case.
+    	if(m_NegativeList->GetNumSis() > 0) {
+    		s_VerifySeqidlist(m_NegativeList->GetListInfo(), volset, lmdb_set);
+    	}
 
+    	if((m_NegativeList->GetNumTaxIds() > 0) && !(lmdb_set.IsBlastDBVersion5())) {
+    		NCBI_THROW(CSeqDBException, eArgErr, "Taxonomy filtering is not supported in v4 BLAST dbs");
+    	}
+
+    	if(lmdb_set.IsBlastDBVersion5()) {
+
+    		if(m_NegativeList->GetNumSis() > 0) {
+    			vector<blastdb::TOid> & oids = m_NegativeList->SetExcludedOids();
+    			lmdb_set.NegativeSeqIdsToOids(m_NegativeList->GetSiList(), oids);
+
+    		}
+    		if(m_NegativeList->GetNumTaxIds() > 0) {
+    			vector<blastdb::TOid> & oids = m_NegativeList->SetExcludedOids();
+    			set<Int4> &  tax_ids = m_NegativeList->GetTaxIdsList();
+    			lmdb_set.NegativeTaxIdsToOids(tax_ids, oids);
+    		}
+
+    		if((m_NegativeList->GetNumGis() == 0) && (m_NegativeList->GetNumTis() == 0)) {
+    			return;
+    		}
+    	}
+
+    	if((m_NegativeList->GetNumSis() > 0) && !(lmdb_set.IsBlastDBVersion5())) {
+    		m_NegativeList->PreprocessIdsForISAMSiLookup();
+    	}
         for(int i = 0; i < volset.GetNumVols(); i++) {
             const CSeqDBVolEntry * vol = volset.GetVolEntry(i);
 
@@ -265,6 +344,9 @@ CSeqDBGiListSet::GetNodeIdList(const CSeqDB_Path & filename,
     }
 
     if (m_UserList.Empty() || mixed_ids) {
+    	if(gilist->GetNumSis() > 0 ) {
+    		gilist->PreprocessIdsForISAMSiLookup();
+    	}
         volp->IdsToOids(*gilist, locked);
     }
 

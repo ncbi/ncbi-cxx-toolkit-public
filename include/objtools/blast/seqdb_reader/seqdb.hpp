@@ -564,6 +564,16 @@ public:
                    vector<int> & taxids,
                    bool          persist = false) const;
 
+    /// Get all tax ids for an oid
+    ///
+    /// This includes leaf and non-leaf tax ids associated with the oid
+    /// @param oid
+    ///   The ordinal id of the sequence.
+    /// @param taxids
+    ///   A returned a set of taxids.
+    void GetAllTaxIDs(int           oid,
+                      set<int> & taxids) const;
+
     /// Get a CBioseq for a sequence.
     ///
     /// This builds and returns the header and sequence data
@@ -999,6 +1009,8 @@ public:
     /// Translate an Accession to a list of OIDs.
     void AccessionToOids(const string & acc, vector<int> & oids) const;
 
+    void AccessionsToOids(const vector<string>& accs, vector<blastdb::TOid>& oids) const;
+
     /// Translate a Seq-id to a list of OIDs.
     void SeqidToOids(const CSeq_id & seqid, vector<int> & oids) const;
 
@@ -1428,6 +1440,18 @@ public:
     /// Dump debug information for this object
     /// @sa CDebugDumpable
     void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
+
+    /// Return blast db version
+    EBlastDbVersion GetBlastDbVersion() const;
+
+    /// Get Oid list for input tax ids
+    /// @param tax_ids	taxonomy ids, return only tax ids found in db
+    // @param rv		oids corrpond to tax ids
+    void TaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv) const;
+
+    /// Get all unique tax ids from db
+    /// @param tax_ids	return taxonomy ids in db
+    void GetDBTaxIds(set<Int4> & tax_ids) const;
 
 protected:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).

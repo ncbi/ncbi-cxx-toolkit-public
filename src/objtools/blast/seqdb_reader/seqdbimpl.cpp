@@ -57,6 +57,7 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
                          prot_nucl,
                          gi_list,
                          neg_list),
+      m_LMDBSet         (m_VolSet),
       m_RestrictBegin   (oid_begin),
       m_RestrictEnd     (oid_end),
       m_NextChunkOID    (0),
@@ -107,6 +108,7 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
     try {
         if (gi_list || neg_list || m_Aliases.NeedTotalsScan(m_VolSet)) {
             m_NeedTotalsScan = true;
+            x_InitIdSet();
         }
 
         if ((! m_OidListSetup) && (oid_begin || oid_end)) {
@@ -225,7 +227,8 @@ void CSeqDBImpl::x_GetOidList(CSeqDBLockHold & locked)
                                                *ft,
                                                m_UserGiList,
                                                m_NegativeList,
-                                               locked) );
+                                               locked,
+                                               m_LMDBSet) );
         }
 
         m_OidListSetup = true;
@@ -492,6 +495,22 @@ void CSeqDBImpl::GetTaxIDs(int           oid,
             }
 //            CBlast_def_line::TTaxIds taxid_set = (*defline)->GetTaxIds();
 //            taxids.insert(taxids.end(), taxid_set.begin(), taxid_set.end());
+        }
+    }
+}
+
+void CSeqDBImpl::GetAllTaxIDs(int           oid,
+                              set<int> & taxids)
+{
+    CSeqDBLockHold locked(m_Atlas);
+
+    CRef<CBlast_def_line_set> defline_set =
+        x_GetHdr(oid, locked);
+
+    if ((! defline_set.Empty()) && defline_set->CanGet()) {
+        ITERATE(list< CRef<CBlast_def_line> >, defline, defline_set->Get()) {
+       		CBlast_def_line::TTaxIds taxid_set = (*defline)->GetTaxIds();
+        	taxids.insert(taxid_set.begin(), taxid_set.end());
         }
     }
 }
@@ -1221,41 +1240,123 @@ void CSeqDBImpl::AccessionToOids(const string & acc,
     }
 
     oids.clear();
-
-    vector<int> vol_oids;
-
-    for(int vol_idx = 0; vol_idx < m_VolSet.GetNumVols(); vol_idx++) {
-        // Append any additional OIDs from this volume's indices.
-        m_VolSet.GetVol(vol_idx)->AccessionToOids(acc,
-                                                  vol_oids,
-                                                  locked);
-
-        if (vol_oids.empty()) {
-            continue;
+    if (m_LMDBSet.IsBlastDBVersion5()) {
+    	vector<int>  tmp;
+    	m_LMDBSet.AccessionToOids(acc, tmp);
+   	    for(unsigned int i=0; i < tmp.size(); i++) {
+   	    	int oid2 = tmp[i];
+            if (x_CheckOrFindOID(oid2, locked) && (tmp[i] == oid2)) {
+            	oids.push_back(tmp[i]);
+            }
         }
+    }
+    else {
+        vector<int> vol_oids;
 
-        int vol_start = m_VolSet.GetVolOIDStart(vol_idx);
+        for(int vol_idx = 0; vol_idx < m_VolSet.GetNumVols(); vol_idx++) {
+            // Append any additional OIDs from this volume's indices.
+            m_VolSet.GetVol(vol_idx)->AccessionToOids(acc,
+                                                      vol_oids,
+                                                      locked);
 
-        ITERATE(vector<int>, iter, vol_oids) {
-            int oid1 = ((*iter) + vol_start);
-            int oid2 = oid1;
-
-            // Remove OIDs already found in OIDs.
-
-            if (find(oids.begin(), oids.end(), oid1) != oids.end()) {
+            if (vol_oids.empty()) {
                 continue;
             }
 
-            // Filter out any oids not in the virtual oid bitmaps.
+            int vol_start = m_VolSet.GetVolOIDStart(vol_idx);
 
-            if (x_CheckOrFindOID(oid2, locked) && (oid1 == oid2)) {
-                oids.push_back(oid1);
+            ITERATE(vector<int>, iter, vol_oids) {
+                int oid1 = ((*iter) + vol_start);
+                int oid2 = oid1;
+
+                // Remove OIDs already found in OIDs.
+
+                if (find(oids.begin(), oids.end(), oid1) != oids.end()) {
+                    continue;
+                }
+
+                // Filter out any oids not in the virtual oid bitmaps.
+
+                if (x_CheckOrFindOID(oid2, locked) && (oid1 == oid2)) {
+                    oids.push_back(oid1);
+                }
             }
-        }
 
-        vol_oids.clear();
+            vol_oids.clear();
+        }
     }
 }
+
+
+void CSeqDBImpl::TaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv)
+{
+    CHECK_MARKER();
+    rv.clear();
+    vector<blastdb::TOid> oids;
+    if (m_LMDBSet.IsBlastDBVersion5()) {
+    	m_LMDBSet.TaxIdsToOids(tax_ids,oids);
+    	CSeqDBLockHold locked(m_Atlas);
+    	for(unsigned int i=0; i < oids.size(); i++) {
+    		blastdb::TOid oid2 = oids[i];
+    		if (x_CheckOrFindOID(oid2, locked) && (oids[i] == oid2)) {
+    			rv.push_back(oids[i]);
+    		}
+    	}
+    }
+    else {
+    	NCBI_THROW(CSeqDBException, eArgErr,
+    			           "Taxonomy list is not supported in v4 BLAST db");
+    }
+    return;
+}
+
+void CSeqDBImpl::GetDBTaxIds(set<Int4> & tax_ids) const
+{
+    CHECK_MARKER();
+    tax_ids.clear();
+    if (m_LMDBSet.IsBlastDBVersion5()) {
+    	m_LMDBSet.GetDBTaxIds(tax_ids);
+    }
+    else {
+    	NCBI_THROW(CSeqDBException, eArgErr,
+    			           "Taxonomy list is not supported in v4 BLAST db");
+    }
+    return;
+}
+
+void CSeqDBImpl::AccessionsToOids(const vector<string>& accs, vector<blastdb::TOid>& oids)
+{
+    CHECK_MARKER();
+    oids.clear();
+    oids.resize(accs.size());
+    if (m_LMDBSet.IsBlastDBVersion5()) {
+    	m_LMDBSet.AccessionsToOids(accs,oids);
+    	CSeqDBLockHold locked(m_Atlas);
+    	for(unsigned int i=0; i < oids.size(); i++) {
+    		if(oids[i] == kSeqDBEntryNotFound) {
+    			continue;
+    		}
+    		blastdb::TOid oid2 = oids[i];
+    		if (!(x_CheckOrFindOID(oid2, locked) && (oids[i] == oid2))) {
+    			oids[i] = kSeqDBEntryNotFound;
+    		}
+    	}
+    }
+    else {
+    	for(unsigned int i=0; i < accs.size(); i++) {
+    		vector<blastdb::TOid> tmp;
+    		AccessionToOids(accs[i], tmp);
+    		if(tmp.empty()) {
+    			oids[i] = kSeqDBEntryNotFound;
+    		}
+    		else {
+    			oids[i] = tmp[0];
+    		}
+    	}
+    }
+    return;
+}
+
 
 void CSeqDBImpl::SeqidToOids(const CSeq_id & seqid_in,
                              vector<int>   & oids,
@@ -1268,45 +1369,62 @@ void CSeqDBImpl::SeqidToOids(const CSeq_id & seqid_in,
         x_GetOidList(locked);
     }
 
+    oids.clear();
+    if (m_LMDBSet.IsBlastDBVersion5()) {
+    	if(IsStringId(seqid_in)) {
+    		vector<int>  tmp;
+    		if(seqid_in.IsPir() || seqid_in.IsPrf()) {
+    			m_LMDBSet.AccessionToOids(seqid_in.AsFastaString(), tmp);
+    		}
+    		else {
+    			m_LMDBSet.AccessionToOids(seqid_in.GetSeqIdString(), tmp);
+    		}
+    		for(unsigned int i=0; i < tmp.size(); i++) {
+    			int oid2 = tmp[i];
+    			if (x_CheckOrFindOID(oid2, locked) && (tmp[i] == oid2)) {
+    				oids.push_back(tmp[i]);
+    			}
+    		}
+    		return;
+    	}
+    }
+
+    vector<int> vol_oids;
+
     // The lower level functions modify the seqid - namely, changing
     // or clearing certain fields before printing it to a string.
     // Further analysis of data and exception flow might reveal that
     // the Seq_id will always be returned to the original state by
     // this operation... At the moment, safest route is to clone it.
-
     CSeq_id seqid;
     seqid.Assign(seqid_in);
 
-    oids.clear();
-
-    vector<int> vol_oids;
-
     for(int vol_idx = 0; vol_idx < m_VolSet.GetNumVols(); vol_idx++) {
-        // Append any additional OIDs from this volume's indices.
-        m_VolSet.GetVol(vol_idx)->SeqidToOids(seqid, vol_oids, locked);
+       	// Append any additional OIDs from this volume's indices.
+       	m_VolSet.GetVol(vol_idx)->SeqidToOids(seqid, vol_oids, locked);
 
-        if (vol_oids.empty()) {
-            continue;
-        }
+       	if (vol_oids.empty()) {
+           	continue;
+       	}
 
-        int vol_start = m_VolSet.GetVolOIDStart(vol_idx);
+       	int vol_start = m_VolSet.GetVolOIDStart(vol_idx);
 
-        ITERATE(vector<int>, iter, vol_oids) {
-            int oid1 = ((*iter) + vol_start);
-            int oid2 = oid1;
+       	ITERATE(vector<int>, iter, vol_oids) {
+           	int oid1 = ((*iter) + vol_start);
+           	int oid2 = oid1;
 
-            // Filter out any oids not in the virtual oid bitmaps.
+           	// Filter out any oids not in the virtual oid bitmaps.
 
-            if (x_CheckOrFindOID(oid2, locked) && (oid1 == oid2)) {
-                oids.push_back(oid1);
+           	if (x_CheckOrFindOID(oid2, locked) && (oid1 == oid2)) {
+               	oids.push_back(oid1);
 
-                if (! multi) {
-                    return;
-                }
-            }
-        }
+               	if (! multi) {
+                   	return;
+               	}
+           	}
+       	}
 
-        vol_oids.clear();
+       	vol_oids.clear();
     }
 }
 
@@ -1763,7 +1881,7 @@ void CSeqDBImpl::HashToOids(unsigned hash, vector<int> & oids)
     }
 }
 
-CSeqDBIdSet CSeqDBImpl::GetIdSet()
+void CSeqDBImpl::x_InitIdSet()
 {
     if (m_IdSet.Blank()) {
         if (! m_UserGiList.Empty()) {
@@ -1800,8 +1918,11 @@ CSeqDBIdSet CSeqDBImpl::GetIdSet()
             }
         }
     }
+}
 
-    return m_IdSet;
+CSeqDBIdSet CSeqDBImpl::GetIdSet()
+{
+	return m_IdSet;
 }
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
@@ -2501,6 +2622,12 @@ void CSeqDBImpl::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     ddc.Log("m_GiMask", m_GiMask);
     ddc.Log("m_NumThreads", m_NumThreads);
     ddc.Log("m_NextCacheID", m_NextCacheID);
+}
+
+EBlastDbVersion CSeqDBImpl::GetBlastDbVersion() const
+{
+	return (m_LMDBSet.IsBlastDBVersion5() ? eBDB_Version5 : eBDB_Version4);
+
 }
 
 END_NCBI_SCOPE

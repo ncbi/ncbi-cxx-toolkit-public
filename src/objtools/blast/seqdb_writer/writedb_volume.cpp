@@ -47,13 +47,15 @@ CWriteDB_Volume::CWriteDB_Volume(const string & dbname,
                                  int            index,
                                  Uint8          max_file_size,
                                  Uint8          max_letters,
-                                 EIndexType     indices)
+                                 EIndexType     indices,
+                                 EBlastDbVersion dbver)                                 
     : m_DbName      (dbname),
       m_Protein     (protein),
       m_Title       (title),
       m_Date        (date),
       m_Index       (index),
       m_Indices     (indices),
+      m_DbVersion   (dbver),
       m_OID         (0),
       m_Open        (true)
 {
@@ -64,7 +66,8 @@ CWriteDB_Volume::CWriteDB_Volume(const string & dbname,
                                        title,
                                        date,
                                        index,
-                                       max_file_size));
+                                       max_file_size,
+                                       dbver));
 
     m_Hdr.Reset(new CWriteDB_HeaderFile(dbname,
                                         protein,
@@ -96,14 +99,14 @@ CWriteDB_Volume::CWriteDB_Volume(const string & dbname,
                                          index,
                                          max_file_size,
                                          false));
-
-        m_AccIsam.Reset(new CWriteDB_Isam(eAcc,
+        if(m_DbVersion != eBDB_Version5) {
+            m_AccIsam.Reset(new CWriteDB_Isam(eAcc,
                                           dbname,
                                           protein,
                                           index,
                                           max_file_size,
-                                          sparse));
-
+                                          sparse));                                          
+        }
         if (m_Indices & CWriteDB::eAddTrace) {
             m_TraceIsam.Reset(new CWriteDB_Isam(eTrace,
                                                 dbname,
@@ -175,7 +178,8 @@ bool CWriteDB_Volume::WriteSequence(const string      & seq,
 
         int num = (int)idlist.size();
 
-        if (! (m_AccIsam->CanFit(num) &&
+
+        if (! ( (m_AccIsam.Empty() || m_AccIsam->CanFit(num)) &&
                m_GiIsam->CanFit(num) &&
                (m_TraceIsam.Empty() || m_TraceIsam->CanFit(num)))) {
             overfull = true;
@@ -249,7 +253,7 @@ bool CWriteDB_Volume::WriteSequence(const string      & seq,
     }
 
     if (m_Indices != CWriteDB::eNoIndex) {
-        m_AccIsam->AddIds(m_OID, idlist);
+        if(m_AccIsam.NotEmpty()) m_AccIsam->AddIds(m_OID, idlist);
         m_GiIsam->AddIds(m_OID, idlist);
 
         TGi gi = INVALID_GI;
@@ -315,7 +319,7 @@ void CWriteDB_Volume::Close()
                 m_PigIsam->Close();
             }
             m_GiIsam->Close();
-            m_AccIsam->Close();
+            if(m_AccIsam.NotEmpty()) m_AccIsam->Close();
             m_GiIndex->Close();
 
             if (m_TraceIsam.NotEmpty()) {
@@ -352,7 +356,7 @@ void CWriteDB_Volume::RenameSingle()
             m_PigIsam->RenameSingle();
         }
         m_GiIsam->RenameSingle();
-        m_AccIsam->RenameSingle();
+        if(m_AccIsam.NotEmpty()) m_AccIsam->RenameSingle();
         m_GiIndex->RenameSingle();
 
         if (m_TraceIsam.NotEmpty()) {

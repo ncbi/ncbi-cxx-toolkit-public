@@ -46,6 +46,7 @@ Author: Jason Papadopoulos
 #include <algo/blast/core/hspfilter_besthit.h>
 #include <objects/scoremat/PssmWithParameters.hpp>
 #include <util/format_guess.hpp>
+#include <util/line_reader.hpp>
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>    // for CInputException
 #include <algo/winmask/seq_masker_istat_factory.hpp>    // for CSeqMaskerIstatFactory::DiscoverStatType
@@ -2070,6 +2071,10 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     database_args.push_back(kArgSeqIdList);
     database_args.push_back(kArgNegativeGiList);
     database_args.push_back(kArgNegativeSeqidList);
+    database_args.push_back(kArgTaxIdList);
+    database_args.push_back(kArgTaxIdListFile);
+    database_args.push_back(kArgNegativeTaxIdList);
+    database_args.push_back(kArgNegativeTaxIdListFile);
     if (m_SupportsDatabaseMasking) {
         database_args.push_back(kArgDbSoftMask);
         database_args.push_back(kArgDbHardMask);
@@ -2105,7 +2110,27 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                 " except the listed SeqIDs",
                                 CArgDescriptions::eString);
 
-        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes,
+        // Tax ID list
+        arg_desc.AddOptionalKey(kArgTaxIdList, "string",
+                                "Restrict search of database to list of taxonomy ids"
+        		                "(delimited by ','",
+                                CArgDescriptions::eString);
+	    // Tax ID list file
+        arg_desc.AddOptionalKey(kArgTaxIdListFile, "filename",
+                                "Restrict search of database to list of taxonomy ids in the file"
+        		                "(delimited by eol",
+                                CArgDescriptions::eString);
+        arg_desc.AddOptionalKey(kArgNegativeTaxIdList, "string",
+                                "Restrict search of database to exclude list of taxonomy ids"
+        		                "(delimited by ','",
+                                CArgDescriptions::eString);
+        arg_desc.AddOptionalKey(kArgNegativeTaxIdListFile, "filename",
+                                "Restrict search of database to exclude list of taxonomy ids in the file"
+        		                "(delimited by eol",
+                                CArgDescriptions::eString);
+
+
+        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
                                kArgNegativeGiList);
         arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes,
                                kArgSeqIdList);
@@ -2116,6 +2141,50 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                kArgNegativeGiList);
         arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes,
                                kArgNegativeSeqidList);
+        
+        arg_desc.SetDependency(kArgTaxIdList, CArgDescriptions::eExcludes,
+                               kArgNegativeGiList);
+        arg_desc.SetDependency(kArgTaxIdList, CArgDescriptions::eExcludes,
+                               kArgNegativeSeqidList);
+        arg_desc.SetDependency(kArgTaxIdList, CArgDescriptions::eExcludes,
+        		               kArgSeqIdList);
+        arg_desc.SetDependency(kArgTaxIdList, CArgDescriptions::eExcludes,
+        		               kArgGiList);
+
+	    arg_desc.SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes,
+                               kArgNegativeGiList);
+        arg_desc.SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes,
+                               kArgNegativeSeqidList);
+        arg_desc.SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes,
+        		               kArgSeqIdList);
+        arg_desc.SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes,
+        		               kArgGiList);
+        arg_desc.SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes,
+        		               kArgTaxIdList);
+
+        arg_desc.SetDependency(kArgNegativeTaxIdListFile, CArgDescriptions::eExcludes,
+                               kArgNegativeGiList);
+        arg_desc.SetDependency(kArgNegativeTaxIdListFile, CArgDescriptions::eExcludes,
+                               kArgNegativeSeqidList);
+        arg_desc.SetDependency(kArgNegativeTaxIdListFile, CArgDescriptions::eExcludes,
+           		               kArgSeqIdList);
+        arg_desc.SetDependency(kArgNegativeTaxIdListFile, CArgDescriptions::eExcludes,
+           		               kArgGiList);
+        arg_desc.SetDependency(kArgNegativeTaxIdListFile, CArgDescriptions::eExcludes,
+        		               kArgTaxIdListFile);
+
+        arg_desc.SetDependency(kArgNegativeTaxIdList, CArgDescriptions::eExcludes,
+                               kArgNegativeGiList);
+        arg_desc.SetDependency(kArgNegativeTaxIdList, CArgDescriptions::eExcludes,
+                               kArgNegativeSeqidList);
+        arg_desc.SetDependency(kArgNegativeTaxIdList, CArgDescriptions::eExcludes,
+           		               kArgSeqIdList);
+        arg_desc.SetDependency(kArgNegativeTaxIdList, CArgDescriptions::eExcludes,
+           		               kArgGiList);
+        arg_desc.SetDependency(kArgNegativeTaxIdList, CArgDescriptions::eExcludes,
+           		               kArgTaxIdList);
+        arg_desc.SetDependency(kArgNegativeTaxIdList, CArgDescriptions::eExcludes,
+           		               kArgTaxIdListFile);
 
 
         // For now, disable pairing -remote with either -gilist or
@@ -2127,6 +2196,14 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.SetDependency(kArgNegativeGiList, CArgDescriptions::eExcludes,
                                kArgRemote);
         arg_desc.SetDependency(kArgNegativeSeqidList, CArgDescriptions::eExcludes,
+                               kArgRemote);
+        arg_desc.SetDependency(kArgTaxIdList, CArgDescriptions::eExcludes,
+                               kArgRemote);
+    	arg_desc.SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes,
+                               kArgRemote);
+    	arg_desc.SetDependency(kArgNegativeTaxIdList, CArgDescriptions::eExcludes,
+                               kArgRemote);
+    	arg_desc.SetDependency(kArgNegativeTaxIdListFile, CArgDescriptions::eExcludes,
                                kArgRemote);
     }
 
@@ -2193,6 +2270,42 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("");
 }
 
+
+
+
+static void s_GetTaxIDList(const string & in, bool isFile, bool isNegativeList, CRef<CSearchDatabase> & sdb)
+{
+	vector<string> ids;
+	if (isFile) {
+        string filename(SeqDB_ResolveDbPath(in));
+        CNcbiIfstream instream(filename);
+        CStreamLineReader reader(instream);        
+        while (!reader.AtEOF()) {
+            reader.ReadLine();
+            ids.push_back(reader.GetCurrentLine());
+        }
+    }
+	else {
+        NStr::Split(in, ",", ids, NStr::fSplit_Tokenize);
+    }
+
+	set<int> tax_ids;
+    for(unsigned int i=0; i < ids.size(); i++) {
+    	tax_ids.insert(NStr::StringToInt(ids[i], NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces));
+    }
+
+   	CRef<CSeqDBGiList> taxid_list(new CSeqDBGiList());
+    taxid_list->AddTaxIds(tax_ids);
+    if(isNegativeList) {
+        sdb->SetNegativeGiList(taxid_list.GetPointer());
+    }
+    else {
+        sdb->SetGiList(taxid_list.GetPointer());
+    }
+
+}
+
+
 void
 CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
                                             CBlastOptions& opts)
@@ -2206,7 +2319,7 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
 
         m_SearchDb.Reset(new CSearchDatabase(args[kArgDb].AsString(),
                                              mol_type));
-
+        
         if (args.Exist(kArgGiList) && args[kArgGiList]) {
             string fn(SeqDB_ResolveDbPath(args[kArgGiList].AsString()));
             m_SearchDb->SetGiList(CRef<CSeqDBGiList> (new CSeqDBFileGiList(fn)));
@@ -2218,12 +2331,23 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
         } else if (args.Exist(kArgSeqIdList) && args[kArgSeqIdList]) {
             string fn(SeqDB_ResolveDbPath(args[kArgSeqIdList].AsString()));
             m_SearchDb->SetGiList(CRef<CSeqDBGiList> (new CSeqDBFileGiList(fn,
-                             CSeqDBFileGiList::eMixList)));
+                             CSeqDBFileGiList::eSiList)));
         } else if (args.Exist(kArgNegativeSeqidList) && args[kArgNegativeSeqidList]) {
             string fn(SeqDB_ResolveDbPath(args[kArgNegativeSeqidList].AsString()));
-            m_SearchDb->SetNegativeGiList(CRef<CSeqDBGiList> (new CSeqDBFileGiList(fn,CSeqDBFileGiList::eMixList)));
-        }
+            m_SearchDb->SetNegativeGiList(CRef<CSeqDBGiList> (new CSeqDBFileGiList(fn,CSeqDBFileGiList::eSiList)));
+        } else if (args.Exist(kArgTaxIdList) && args[kArgTaxIdList]) {
+        	s_GetTaxIDList(args[kArgTaxIdList].AsString(), false, false, m_SearchDb);
 
+        } else if (args.Exist(kArgTaxIdListFile) && args[kArgTaxIdListFile]) {
+        	s_GetTaxIDList(args[kArgTaxIdListFile].AsString(), true, false, m_SearchDb);
+
+        } else if (args.Exist(kArgNegativeTaxIdList) && args[kArgNegativeTaxIdList]) {
+        	s_GetTaxIDList(args[kArgNegativeTaxIdList].AsString(), false, true, m_SearchDb);
+
+        } else if (args.Exist(kArgNegativeTaxIdListFile) && args[kArgNegativeTaxIdListFile]) {
+        	s_GetTaxIDList(args[kArgNegativeTaxIdListFile].AsString(), true, true, m_SearchDb);
+
+        }
 
         if (args.Exist(kArgEntrezQuery) && args[kArgEntrezQuery])
             m_SearchDb->SetEntrezQueryLimitation(args[kArgEntrezQuery].AsString());

@@ -40,6 +40,7 @@
 
 #include <objtools/blast/seqdb_writer/writedb_general.hpp>
 #include <objtools/blast/seqdb_writer/writedb_convert.hpp>
+#include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
 #include <objects/seq/seq__.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbifile.hpp>
@@ -216,7 +217,8 @@ public:
                        const string & title,
                        const string & date,
                        int            index,
-                       Uint8          max_file_size);
+                       Uint8          max_file_size,
+                       EBlastDbVersion    dbver = eBDB_Version4);
 
     /// Returns true if another sequence can fit into the file.
     bool CanFit()
@@ -278,6 +280,17 @@ public:
 private:
     /// Compute index file overhead.  This is the overhead used by all
     /// fields of the index file, and does account for padding.
+    /// (version 5)
+    ///
+    /// @param T Title string.
+    /// @param LMDB file name string.
+    /// @param D Create time string.
+    /// @return Combined size of all meta-data fields in nin/pin file.
+    int x_Overhead(const string & T, const string & lmdbName, const string & D);
+
+    /// Compute index file overhead.  This is the overhead used by all
+    /// fields of the index file, and does account for padding.
+    /// (version 4)
     ///
     /// @param T Title string.
     /// @param D Create time string.
@@ -286,6 +299,9 @@ private:
 
     /// Flush index data to disk.
     virtual void x_Flush();
+
+    /// Form name of LMDB database file.
+    const string x_MakeLmdbName();
 
     bool   m_Protein;   ///< True if this is a protein database.
     string m_Title;     ///< Title string for all database volumes.
@@ -318,6 +334,8 @@ private:
     /// The end of the ambiguity data is given by the start offset of
     /// the sequence data for the next OID.
     vector<unsigned int> m_Amb;
+
+    EBlastDbVersion    m_Version;     ///< BLASTDB version (4 or 5).
 };
 
 /// This class builds the volume header file (phr or nhr).

@@ -13,7 +13,8 @@ LIB = xalgowinmask xalgodustmask blast composition_adjustment \
         seqmasks_io seqdb blastdb tables $(OBJREAD_LIBS) xobjutil \
 	$(OBJMGR_LIBS:%=%$(STATIC))
 
-LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BLAST_THIRD_PARTY_INCLUDE)
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)

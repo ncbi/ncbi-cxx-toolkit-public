@@ -5,7 +5,7 @@
 
 REQUIRES = objects algo
 
-APP_PROJ = blastdbcmd makeblastdb blastdb_aliastool blastdbcheck convert2blastmask blastdbcp makeprofiledb 
+APP_PROJ = blastdbcmd makeblastdb blastdb_aliastool blastdbcheck convert2blastmask blastdbcp makeprofiledb blastdb_convert
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
@@ -32,4 +32,8 @@ convert2blastmask:
 
 makeprofiledb:
 	${MAKE} ${MFLAGS} -f Makefile.makeprofiledb_app
+
+blastdb_convert:
+	${MAKE} ${MFLAGS} -f Makefile.blastdb_convert_app
+
 

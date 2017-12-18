@@ -276,6 +276,12 @@ void CMakeBlastDBApp::Init()
                              "Required if multiple file(s)/database(s) are "
                              "provided as input",
                              CArgDescriptions::eString);
+    arg_desc->AddDefaultKey("blastdb_version", "version",
+                             "Version of BLAST database to be created",
+                             CArgDescriptions::eInteger, 
+                             NStr::NumericToString(static_cast<int>(eBDB_Version4)));
+    arg_desc->SetConstraint("blastdb_version",
+                            new CArgAllow_Integers(eBDB_Version4, eBDB_Version5));
     arg_desc->AddDefaultKey("max_file_sz", "number_of_bytes",
                             "Maximum file size for BLAST database files",
                             CArgDescriptions::eString, "1GB");
@@ -1087,13 +1093,17 @@ void CMakeBlastDBApp::x_BuildDatabase()
         long_seqids = (registry.Get("BLAST", "LONG_SEQID") == "1");
     }
 
+    const EBlastDbVersion dbver = 
+        static_cast<EBlastDbVersion>(args["blastdb_version"].AsInteger());
+
     m_DB.Reset(new CBuildDatabase(dbname,
                                   title,
                                   is_protein,
                                   indexing,
                                   use_gi_mask,
                                   m_LogFile,
-                                  long_seqids));
+                                  long_seqids,
+                                  dbver));
 
 #if _BLAST_DEBUG
     if (args["verbose"]) {

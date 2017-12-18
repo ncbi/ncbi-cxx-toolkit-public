@@ -5,14 +5,14 @@ APP = proteinkmer_unit_test
 SRC = proteinkmer_unit_test
 # OBJ =
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) $(BLAST_THIRD_PARTY_INCLUDE)
 
 LIB_ = test_boost proteinkmer $(BLAST_DB_DATA_LOADER_LIBS) \
        $(BLAST_LIBS) xobjsimple $(OBJMGR_LIBS)
 
 LIB = $(LIB_:%=%$(STATIC))
 
-LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included
 

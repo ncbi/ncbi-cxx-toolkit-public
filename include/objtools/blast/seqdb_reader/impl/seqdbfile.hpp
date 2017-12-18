@@ -574,6 +574,8 @@ public:
         x_ClrAmb();
     }
     
+    string GetLMDBFileName()const {return m_LMDBFile;}
+
     /// Verify the integrity of this object and subobjects.
     /*
     void Verify()
@@ -681,6 +683,11 @@ private:
     
     /// Offset of the end of the ambiguity section.
     TIndx m_EndAmb;
+
+    /// Name of matching SQLite file (empty if version 4 DB)
+    string m_LMDBFile;
+    /// Volume number (only set in version 5 DBs)
+    Uint4 m_Volume;
 };
 
 bool

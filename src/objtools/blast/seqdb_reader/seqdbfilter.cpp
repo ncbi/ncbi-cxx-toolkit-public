@@ -81,7 +81,7 @@ CRef<CSeqDB_FilterTree> CSeqDB_FilterTree::Specialize(string volname) const
 bool CSeqDB_FilterTree::HasFilter() const
 {
     if (! m_Filters.empty()) {
-        return false;
+        return true;
     }
     
     ITERATE(vector< CRef<CSeqDB_FilterTree> >, iter, m_SubNodes) {
@@ -89,7 +89,7 @@ bool CSeqDB_FilterTree::HasFilter() const
             return true;
     }
     
-    return true;
+    return false;
 }
 
 END_NCBI_SCOPE

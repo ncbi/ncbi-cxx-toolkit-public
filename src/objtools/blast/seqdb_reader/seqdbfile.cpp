@@ -148,7 +148,9 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
       m_OffSeq        (0),
       m_EndSeq        (0),
       m_OffAmb        (0),
-      m_EndAmb        (0)
+      m_EndAmb        (0),
+      m_LMDBFile	  (kEmptyStr) ,
+      m_Volume        (0)
 {
     //Verify();
     
@@ -178,17 +180,22 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
     TIndx off1(0), off2(0), off3(0), offend(0);
     
     try {
-        if (f_format_version != 4) {
+    	 bool dbv5 = ( 5 == f_format_version );
+        if (!dbv5 && (f_format_version != 4)) {
             NCBI_THROW(CSeqDBException,
                        eFileErr,
-                       "Error: Not a valid version 4 database.");
+                       "Error: Not a valid version 4 or 5 database.");
         }
 
         offset = x_ReadSwapped(m_Lease, offset, & f_db_seqtype);
-
+        if (dbv5) {
+        	offset = x_ReadSwapped(m_Lease, offset, & m_Volume);
+        }
         
         offset = x_ReadSwapped(m_Lease, offset, & m_Title);
-
+        if (dbv5) {
+            offset = x_ReadSwapped(m_Lease, offset, & m_LMDBFile);
+       }
         
         offset = x_ReadSwapped(m_Lease, offset, & m_Date);
 

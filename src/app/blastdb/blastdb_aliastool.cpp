@@ -36,8 +36,11 @@
 #include <corelib/ncbistre.hpp>
 #include <algo/blast/api/version.hpp>
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
+#include <objtools/blast/seqdb_reader/impl/seqdbgeneral.hpp>
 #include <objtools/blast/seqdb_writer/writedb.hpp>
 #include <objtools/blast/seqdb_writer/writedb_error.hpp>
+#include <objtools/blast/seqdb_writer/seqidlist_writer.hpp>
+#include <objtools/blast/seqdb_reader/seqidlist_reader.hpp>
 
 #include <algo/blast/blastinput/blast_input.hpp>
 #include "../blast/blast_app_util.hpp"
@@ -75,13 +78,18 @@ private:
     /// the command line
     void CreateAliasFile() const;
 
+    int x_ConvertSeqIDFile() const;
+    void x_SeqIDFileInfo() const;
+
     /// Documentation for this program
     static const char * const DOCUMENTATION;
 
     /// Describes the modes of operation of this application
     enum EOperationMode {
         eCreateAlias,       ///< Create alias files
-        eConvertGiFile      ///< Convert gi files from text to binary format
+        eConvertGiFile,     ///< Convert gi files from text to binary format
+        eConvertSeqIDFile,  ///< Convert text seqidlist files from proprietory binary format
+        eSeqIDFileInfo      ///< Display info about seqidlist file
     };
 
     /// Determine what mode of operation is being used
@@ -89,6 +97,12 @@ private:
         EOperationMode retval = eCreateAlias;
         if (GetArgs()["gi_file_in"].HasValue()) {
             retval = eConvertGiFile;
+        }
+        if (GetArgs()["seqid_file_in"].HasValue()) {
+            retval = eConvertSeqIDFile;
+        }
+        if (GetArgs()["seqid_file_info"].HasValue()) {
+            retval = eSeqIDFileInfo;
         }
         return retval;
     }
@@ -131,7 +145,8 @@ void CBlastDBAliasApp::Init()
 
     const char* exclusions[]  = { kArgDb.c_str(), kArgDbType.c_str(), kArgDbTitle.c_str(), 
               kArgGiList.c_str(), kArgSeqIdList.c_str(), kArgOutput.c_str(),
-              "dblist", "num_volumes", "vdblist" };
+              "dblist", "num_volumes", "vdblist", "seqid_file_in", "seqid_file_out",
+              "seqid_file_in", "seqid_file_out", "seqid_db", "seqid_dbtype", "seqid_file_info"};
     arg_desc->SetCurrentGroup("GI file conversion options");
     arg_desc->AddOptionalKey("gi_file_in", "input_file",
                      "Text file to convert, should contain one GI per line",
@@ -236,6 +251,46 @@ void CBlastDBAliasApp::Init()
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eRequires, kArgDbType);
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eRequires, kArgDbTitle);
     arg_desc->SetConstraint("num_volumes", new CArgAllowValuesGreaterThanOrEqual(1));
+
+    string dflt_seqid("Default = input file name provided to -seqid_file_in argument");
+    const char* seqid_exclusions[]  = { kArgDb.c_str(), kArgDbType.c_str(), kArgDbTitle.c_str(),
+                  kArgGiList.c_str(), kArgSeqIdList.c_str(), kArgOutput.c_str(),
+                  "dblist", "num_volumes", "vdblist", "gi_file_out", "gi_file_out"};
+        arg_desc->SetCurrentGroup("Seqd ID file conversion options");
+        arg_desc->AddOptionalKey("seqid_file_in", "input_file",
+                         "Text file to convert, should contain one seq id per line",
+                         CArgDescriptions::eInputFile);
+        for (size_t i = 0; i < sizeof(seqid_exclusions)/sizeof(*seqid_exclusions); i++) {
+            arg_desc->SetDependency("seqid_file_in", CArgDescriptions::eExcludes,
+                                    string(seqid_exclusions[i]));
+        }
+        arg_desc->AddOptionalKey("seqid_title", "seqid_title", "Title for seqid list.\n " +
+                         	 	 dflt_seqid, CArgDescriptions::eString);
+        arg_desc->SetDependency("seqid_title", CArgDescriptions::eRequires, "seqid_file_in");
+        arg_desc->AddOptionalKey("seqid_file_out", "output_file",
+                         	     "File name of converted seq id file\n" + dflt_seqid + " with the .bsl extension",
+                                 CArgDescriptions::eString);
+        arg_desc->AddOptionalKey("seqid_db", "dbname", "BLAST database for seqidlist",
+                                 CArgDescriptions::eString);
+        arg_desc->SetDependency("seqid_db", CArgDescriptions::eRequires, "seqid_file_in");
+
+        arg_desc->AddOptionalKey("seqid_dbtype", "molecule_type", "Molecule type BLAST database",
+                                 CArgDescriptions::eString);
+        arg_desc->SetDependency("seqid_dbtype", CArgDescriptions::eRequires, "seqid_file_in");
+        arg_desc->SetDependency("seqid_dbtype", CArgDescriptions::eRequires, "seqid_db");
+        arg_desc->SetConstraint("seqid_dbtype", &(*new CArgAllow_Strings, "nucl", "prot"));
+        for (size_t i = 0; i < sizeof(seqid_exclusions)/sizeof(*seqid_exclusions); i++) {
+            arg_desc->SetDependency("seqid_file_out", CArgDescriptions::eExcludes, string(seqid_exclusions[i]));
+        }
+
+        const char* seqid_info_exclusions[]  = { kArgDb.c_str(), kArgDbType.c_str(), kArgDbTitle.c_str(),
+                  kArgGiList.c_str(), kArgSeqIdList.c_str(), kArgOutput.c_str(),
+                  "dblist", "num_volumes", "vdblist", "gi_file_out", "gi_file_out", "seqid_file_in", "seqid_file_out"};
+        arg_desc->AddOptionalKey("seqid_file_info", "seqid_file_info", "Display seqidlist file info", CArgDescriptions::eString);
+        for (size_t i = 0; i < sizeof(seqid_info_exclusions)/sizeof(*seqid_info_exclusions); i++) {
+            arg_desc->SetDependency("seqid_info", CArgDescriptions::eExcludes, string(seqid_info_exclusions[i]));
+        }
+
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -434,6 +489,63 @@ vector<string> CBlastDBAliasApp::x_GetDbsToAggregate(const string dbs, const str
     return retval;
 }
 
+
+int
+CBlastDBAliasApp::x_ConvertSeqIDFile() const
+{
+	const CArgs& args = GetArgs();
+	CNcbiIstream& input = args["seqid_file_in"].AsInputFile();
+	string out_filename = kEmptyStr;
+	string title = kEmptyStr;
+   	if(args["seqid_file_out"].HasValue()) {
+   		out_filename = args["seqid_file_out"].AsString();
+   	}
+   	else {
+		out_filename = args["seqid_file_in"].AsString() + ".bsl";
+   	}
+
+   	if(args["seqid_title"].HasValue()) {
+   		title = args["seqid_title"].AsString();
+   	}
+   	else {
+   		CSeqDB_Path(args["seqid_file_in"].AsString()).FindFileName().GetString(title);
+   	}
+
+	CNcbiOfstream output(out_filename, IOS_BASE::binary | IOS_BASE::out);
+    unsigned int line_ctr = 0;
+    vector<string> seqid_list;
+    while (input) {
+        string line;
+        NcbiGetlineEOL(input, line);
+        line_ctr++;
+        if ( !line.empty() ) {
+            if (NStr::StartsWith(line, "#")) continue;
+            seqid_list.push_back(line);
+        }
+    }
+
+    if (args["seqid_db"].HasValue()) {
+    	CSeqDB::ESeqType type = CSeqDB::eUnknown;
+    	if (args["seqid_dbtype"].HasValue()) {
+    		type = (args["seqid_dbtype"].AsString()[0] == 'p') ? CSeqDB::eProtein : CSeqDB::eNucleotide;
+    	}
+    	CSeqDB seqdb(args["seqid_db"].AsString(), type);
+    	return WriteBlastSeqidlistFile(seqid_list, output, title, &seqdb);
+    }
+    else {
+    	return WriteBlastSeqidlistFile(seqid_list, output, title);
+    }
+
+}
+
+void
+CBlastDBAliasApp::x_SeqIDFileInfo() const
+{
+	const CArgs& args = GetArgs();
+	CBlastSeqidlistFile::PrintSeqidlistInfo(args["seqid_file_info"].AsString(), std::cout);
+}
+
+
 int CBlastDBAliasApp::Run(void)
 {
     const CArgs& args = GetArgs();
@@ -445,7 +557,12 @@ int CBlastDBAliasApp::Run(void)
             CNcbiIstream& input = args["gi_file_in"].AsInputFile();
             CNcbiOstream& output = args["gi_file_out"].AsOutputFile();
             status = ConvertGiFile(input, output);
-        } else {
+        } else if(x_GetOperationMode() == eConvertSeqIDFile) {
+        	status = x_ConvertSeqIDFile();
+        } else if(x_GetOperationMode() == eSeqIDFileInfo) {
+        	x_SeqIDFileInfo();
+        }
+        else {
             CreateAliasFile();
         }
 

@@ -43,6 +43,7 @@
 #include <objects/blastdb/defline_extra.hpp>
 #include <objtools/blast/seqdb_writer/writedb.hpp>
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
+#include <objtools/blast/seqdb_writer/writedb_lmdb.hpp>
 #include "writedb_volume.hpp"
 #include "writedb_gimask.hpp"
 #include "mask_info_registry.hpp"
@@ -81,7 +82,8 @@ public:
                   EIndexType         indices,
                   bool               parse_ids,
                   bool               long_ids,
-                  bool               use_gi_mask);
+                  bool               use_gi_mask,
+                  EBlastDbVersion dbver = eBDB_Version4);
 
     /// Destructor.
     ~CWriteDB_Impl();
@@ -377,6 +379,7 @@ private:
     map<int, int> m_MaskAlgoMap;      ///< Mapping from algo_id to gi-mask id
     bool          m_ParseIDs;         ///< Generate ISAM files
     bool          m_UseGiMask;        ///< Generate GI-based mask files
+    EBlastDbVersion m_DbVersion;      ///< BLASTDB version
 
     /// Column titles.
     vector<string> m_ColumnTitles;
@@ -621,9 +624,15 @@ private:
     /// Registry for masking algorithms in this database.
     CMaskInfoRegistry m_MaskAlgoRegistry;
 
+    ///Write lmdb handle
+    CRef <CWriteDB_LMDB>    m_Lmdbdb;
+
     /// If true, use long sequence id format (database|accession) for all
     /// acessions
     bool m_LongSeqId;
+    
+    ///Current oid to use for lmdb
+    int m_LmdbOid;
 };
 
 END_NCBI_SCOPE

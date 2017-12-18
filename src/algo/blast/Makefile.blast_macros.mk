@@ -22,4 +22,6 @@ BLAST_LDEP = xalgoblastdbindex composition_adjustment \
  		xalgodustmask xalgowinmask seqmasks_io seqdb blast_services xalnmgr \
  		xobjutil $(OBJREAD_LIBS) xnetblastcli xnetblast blastdb scoremat tables
 BLAST_LIBS = proteinkmer xblast $(BLAST_LDEP)
+BLAST_THIRD_PARTY_INCLUDE = ${LMDB_INCLUDE}
+BLAST_THIRD_PARTY_LIBS =  ${LMDB_LIBS}
 # BLAST additionally needs xconnect $(SOBJMGR_LIBS) or $(OBJMGR_LIBS)

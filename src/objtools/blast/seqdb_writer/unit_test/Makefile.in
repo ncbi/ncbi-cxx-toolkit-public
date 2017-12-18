@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = writedb_unit_test
+APP_PROJ = writedb_unit_test writedb_lmdb_unit_test
 PROJ_TAG = test
 
 REQUIRES = Boost.Test.Included

@@ -45,6 +45,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(std);
 
 // Blast Database Format Notes (version 4).
+// (See below for version 5.)
 //
 // Integers are 4 bytes stored in big endian format, except for the
 // volume length.  The volume length is 8 bytes, but is stored in a
@@ -89,10 +90,67 @@ USING_SCOPE(std);
 //  without adding a special case.
 //
 // As shown, the total size of index header =
-//   6*4 bytes          // 6 int fields
+//   4*4 bytes          // 4 int fields (4 bytes each)
 //   + 8 bytes          // 8 byte field
-//   + 2*8 + strings    // 4 bytes length for each plus string data.
-//   = (48 + strings), rounded up to nearest multiple of 8
+//   + 2*4 + strings    // 4 bytes length for each plus string data.
+//   = (32 + strings), rounded up to nearest multiple of 8
+//
+// "strings" here refers to the unterminated length of both strings.
+
+// Blast Database Format Notes (version 5).
+// (See above for version 4.)
+//
+// Integers are 4 bytes stored in big endian format, except for the
+// volume length.  The volume length is 8 bytes, but is stored in a
+// little endian byte order (reason unknown).
+
+// The 'standard' packing for strings in Blast DBs is as follows:
+//   0..4: length
+//   4..4+length: string data
+//
+// The title string and LMDB string follow this rule, but the create
+// date has an additional detail; if it does not end on an offset that
+// is a multiple of 8 bytes, extra 'NUL' characters are added to bring
+// it to a multiple of 8 bytes.  The NUL characters are added after the
+// string bytes, and the stored length of the string is increased to
+// include them.  After extracting the string, 0-7 NUL bytes will need
+// to be stripped from the end of the string (if any are found).
+//
+// (If this were not done, the offsets in the file would be unaligned;
+// on some architectures this could cause a performance penalty or
+// other problems.  On little endian architectures such as Intel, this
+// penalty is always paid.)
+
+// --------------------------------------------
+
+// INDEX FILE FORMAT, for "Blast DB Version 5"
+//
+// 0..4:         format version  (Blast DB version, current is "5").
+// 4..8:         seqtype (1 for protein or 0 for nucleotide).
+// 8..12:        this volume number (0 and up).
+// 12..N1:       title (string).
+// N1..N2:       name of LMDB database file (string)
+// N2..N3:       create date (string).
+// N3..N3+4:     number of OIDs (#OIDS).
+// N3+4..N3+12:  number of letters in volume. (note: 8 bytes)
+// N3+12..N3+16: maxlength (size of longest sequence in DB)
+//
+// N3+16..(end): Array data
+//
+//  Array data is 2 or 3 arrays of (#OIDS + 1) four byte integers.
+//  For protein, 2 arrays are used; for nucleotide, 3 are used.
+//
+//  The first array is header offsets, the second array is sequence
+//  offsets, and the third (optional) array is offsets of ambiguity
+//  data.  Each array has a final element which is the length of the
+//  file; this makes it possible to compute the last sequence's length
+//  without adding a special case.
+//
+// As shown, the total size of index header =
+//   5*4 bytes          // 5 int fields (4 bytes each)
+//   + 8 bytes          // 8 byte field
+//   + 3*4 + strings    // 4 bytes length for each plus string data.
+//   = (40 + strings), rounded up to nearest multiple of 8
 //
 // "strings" here refers to the unterminated length of both strings.
 
@@ -211,7 +269,8 @@ CWriteDB_IndexFile::CWriteDB_IndexFile(const string & dbname,
                                        const string & title,
                                        const string & date,
                                        int            index,
-                                       Uint8          max_file_size)
+                                       Uint8          max_file_size,
+                                       EBlastDbVersion    dbver)
     : CWriteDB_File(dbname,
                     protein ? "pin" : "nin",
                     index,
@@ -223,11 +282,17 @@ CWriteDB_IndexFile::CWriteDB_IndexFile(const string & dbname,
       m_OIDs      (0),
       m_DataSize  (0),
       m_Letters   (0),
-      m_MaxLength (0)
+      m_MaxLength (0),
+      m_Version   (dbver)
 {
     // Compute index overhead, rounding up.
 
     m_Overhead = x_Overhead(title, date);
+    if (dbver == eBDB_Version5) {
+        m_Overhead = x_Overhead(title, x_MakeLmdbName(), date);
+    } else {
+        m_Overhead = x_Overhead(title, date);
+    }
     m_Overhead = s_RoundUp(m_Overhead, 8);
     m_DataSize = m_Overhead;
 
@@ -241,28 +306,45 @@ CWriteDB_IndexFile::CWriteDB_IndexFile(const string & dbname,
 }
 
 int CWriteDB_IndexFile::x_Overhead(const string & T,
+                                   const string & lmdbName,
                                    const string & D)
 {
-    return 6*4 + 8 + 2*8 + T.size() + D.size();
+    return 5 * sizeof(int) + sizeof(long)
+            + 3 * sizeof(int) + T.size() + lmdbName.size() + D.size();
+}
+
+int CWriteDB_IndexFile::x_Overhead(const string & T,
+                                   const string & D)
+{
+    return 4 * sizeof(int) + sizeof(long)
+            + 2 * sizeof(int) + T.size() + D.size();
 }
 
 void CWriteDB_IndexFile::x_Flush()
 {
     _ASSERT(m_Created);
 
-    int format_version = 4;
+    bool use_lmdb = (m_Version == eBDB_Version5);
+
+    int format_version = (int) m_Version;
     int seq_type = (m_Protein ? 1 : 0);
 
     // Pad the date string (see comments at top.)
 
     string pad_date = m_Date;
     int count = 0;
-
-    while(x_Overhead(m_Title, pad_date) & 0x7) {
+    const string lmdb_name = use_lmdb ? x_MakeLmdbName() : "";
+    int overhead = use_lmdb
+            ? x_Overhead(m_Title, lmdb_name, pad_date)
+            : x_Overhead(m_Title, pad_date);
+    while (overhead & 0x7) {
         pad_date.append(m_Nul);
         if (count != -1) {
             _ASSERT(count++ < 8);
         }
+        overhead = use_lmdb
+                ? x_Overhead(m_Title, lmdb_name, pad_date)
+                : x_Overhead(m_Title, pad_date);
     }
 
     // Write header
@@ -271,8 +353,14 @@ void CWriteDB_IndexFile::x_Flush()
 
     s_WriteInt4  (F, format_version);
     s_WriteInt4  (F, seq_type);
-    s_WriteString(F, m_Title);
-    s_WriteString(F, pad_date);
+    if (!lmdb_name.empty()) {
+        s_WriteInt4  (F, m_Index);
+        s_WriteString(F, m_Title);
+        s_WriteString(F, lmdb_name);
+    } else {
+        s_WriteString(F, m_Title);
+    }
+    s_WriteString(F, pad_date);    
     s_WriteInt4  (F, m_OIDs);
     s_WriteInt8LE(F, m_Letters);
     s_WriteInt4  (F, m_MaxLength);
@@ -306,6 +394,18 @@ void CWriteDB_IndexFile::x_Flush()
     m_Hdr.swap(tmp1);
     m_Seq.swap(tmp2);
     m_Amb.swap(tmp3);
+}
+
+/// Form name of lmdb database file.
+const string CWriteDB_IndexFile::x_MakeLmdbName()
+{
+    string suffix = (m_Protein ? ".pdb" : ".ndb");
+    size_t last_slash = m_BaseName.find_last_of('/');
+    if (last_slash == m_BaseName.npos) {
+        return m_BaseName + suffix;
+    } else {
+        return m_BaseName.substr(last_slash + 1) + suffix;
+    }
 }
 
 CWriteDB_HeaderFile::CWriteDB_HeaderFile(const string & dbname,

@@ -40,6 +40,7 @@
 
 #include <objtools/blast/seqdb_writer/writedb_error.hpp>
 #include <objtools/blast/seqdb_reader/seqdbblob.hpp>
+#include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
 #include <objects/blastdb/Blast_def_line.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
 #include <objects/blastdb/defline_extra.hpp>
@@ -155,7 +156,8 @@ public:
              int            itype = eDefault,
              bool           parse_ids = true,
              bool           long_ids = false,
-             bool           use_gi_mask = false);
+             bool           use_gi_mask = false,
+             EBlastDbVersion    dbver = eBDB_Version4);
 
     /// Destructor.
     ///

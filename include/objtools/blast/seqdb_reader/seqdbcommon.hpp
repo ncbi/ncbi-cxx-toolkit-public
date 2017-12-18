@@ -47,6 +47,16 @@ BEGIN_NCBI_SCOPE
 /// Include definitions from the objects namespace.
 USING_SCOPE(objects);
 
+/// BLAST database version
+enum EBlastDbVersion {
+    eBDB_Version4 = 4,
+    eBDB_Version5 = 5
+};
+
+BEGIN_SCOPE(blastdb)
+/// Ordinal ID in BLAST databases
+typedef Int4 TOid;
+END_SCOPE(blastdb)
 
 /// CSeqDBException
 ///
@@ -71,7 +81,11 @@ public:
         eFileErr,
 
         /// Memory allocation failed.
-        eMemErr
+        eMemErr,
+
+        /// DB version error
+        eVersionErr
+
     };
 
     /// Get a message describing the situation leading to the throw.
@@ -80,6 +94,7 @@ public:
         switch ( GetErrCode() ) {
         case eArgErr:  return "eArgErr";
         case eFileErr: return "eFileErr";
+        case eVersionErr: return "eVersionErr";
         default:       return CException::GetErrCodeString();
         }
     }
@@ -99,6 +114,8 @@ const int kSeqDBNuclNcbiNA8  = 0;
 /// Used to request ambiguities in BLAST/NA8 format.
 const int kSeqDBNuclBlastNA8 = 1;
 
+const blastdb::TOid kSeqDBEntryNotFound = -1;
+const blastdb::TOid kSeqDBEntryDuplicate = -2;
 
 /// Certain methods have an "Alloc" version.  When these methods are
 /// used, the following constants can be specified to indicate which
@@ -114,6 +131,20 @@ enum ESeqDBAllocType {
 
 typedef Uint8 TTi;
 
+
+/// Blast DB v5 seqid list info
+struct NCBI_XOBJREAD_EXPORT SBlastSeqIdListInfo {
+		SBlastSeqIdListInfo() : is_v4(true), file_size(0), num_ids(0), create_date(kEmptyStr),
+				      db_vol_length(0), db_create_date(kEmptyStr), db_vol_names(kEmptyStr) {}
+		bool is_v4;
+		Uint8 file_size;
+		Uint8 num_ids;
+		string title;
+		string create_date;
+		Uint8 db_vol_length;
+		string db_create_date;
+		string db_vol_names;
+};
 
 /// CSeqDBGiList
 ///
@@ -169,8 +200,6 @@ public:
         SSiOid(const string &si_in = "", int oid_in = -1)
             : si(si_in), oid(oid_in)
         {
-            // make sure to lower case as this is what's indexed in ISAM
-            NStr::ToLower(si);
         }
 
         /// The String-id or "" if unknown.
@@ -178,6 +207,11 @@ public:
 
         /// The OID or -1 if unknown.
         int oid;
+    };
+
+    struct STaxIdsOids {
+    	set<int> tax_ids;
+    	vector<blastdb::TOid> oids;
     };
 
     /// Possible sorting states
@@ -293,10 +327,20 @@ public:
         return (int) m_SisOids.size();
     }
 
+    int GetNumTaxIds() const
+    {
+    	return (int) m_TaxIdsOids.tax_ids.size();
+    }
+
+    int GetNumOidsForTaxIdList() const
+    {
+    	return (int) m_TaxIdsOids.oids.size();
+    }
+
     /// Return false if there are elements present.
     bool Empty() const
     {
-        return ! (GetNumGis() || GetNumSis() || GetNumTis());
+        return ! (GetNumGis() || GetNumSis() || GetNumTis() || GetNumTaxIds());
     }
 
     /// Return true if there are elements present.
@@ -385,6 +429,23 @@ public:
     /// TODO Get the seqid list?
     void GetSiList(vector<string>& sis) const;
 
+
+    set<Int4> & GetTaxIdsList()
+	{
+    	return m_TaxIdsOids.tax_ids;
+	}
+
+    const vector<blastdb::TOid> & GetOidsForTaxIdsList()
+    {
+       	return m_TaxIdsOids.oids;
+    }
+
+    vector<blastdb::TOid> & SetOidsForTaxIdsList()
+	{
+    	m_TaxIdsOids.oids.clear();
+    	return m_TaxIdsOids.oids;
+	}
+
     /// Add a new GI to the list.
     void AddGi(TGi gi)
     {
@@ -401,6 +462,12 @@ public:
     void AddSi(const string &si)
     {
         m_SisOids.push_back(si);
+    }
+
+    void AddTaxIds(const set<int> & tax_ids)
+    {
+    	set<int> & tids = m_TaxIdsOids.tax_ids;
+    	tids.insert(tax_ids.begin(), tax_ids.end());
     }
 
     /// Reserve space for GIs.
@@ -420,7 +487,17 @@ public:
         m_SisOids.reserve(n);
     }
 
+    /// Preprocess ids for ISAM string id lookup
+    void PreprocessIdsForISAMSiLookup();
+
     /// TODO Reserve space for seqids?
+
+
+    const SBlastSeqIdListInfo & GetListInfo()
+    {
+    	return m_ListInfo;
+    }
+
 protected:
     /// Indicates the current sort order, if any, of this container.
     ESortOrder m_CurrentOrder;
@@ -433,6 +510,10 @@ protected:
 
     /// Pairs of Seq-ids and OIDs.
     vector<SSiOid> m_SisOids;
+
+    STaxIdsOids m_TaxIdsOids;
+
+    SBlastSeqIdListInfo m_ListInfo;
 
 private:
     // The following disabled methods are reasonable things to do in
@@ -448,6 +529,7 @@ private:
     /// Prevent assignment.
     CSeqDBGiList & operator=(const CSeqDBGiList & other);
 };
+
 
 template < >
 inline int CSeqDBGiList::GetSize<TTi>() const
@@ -765,7 +847,7 @@ public:
     /// Return false if there are elements present.
     bool Empty() const
     {
-        return ! (GetNumGis() || GetNumTis() || GetNumSis());
+        return ! (GetNumGis() || GetNumTis() || GetNumSis()|| GetNumTaxIds());
     }
 
     /// Return true if there are elements present.
@@ -860,6 +942,39 @@ public:
     {
 	return (int)m_Gis.size();
     }
+
+    const SBlastSeqIdListInfo & GetListInfo()
+    {
+       	return m_ListInfo;
+    }
+
+    void PreprocessIdsForISAMSiLookup();
+
+    const vector<blastdb::TOid> & GetExcludedOids() { return m_ExcludedOids; }
+    vector<blastdb::TOid> & SetExcludedOids() { return m_ExcludedOids; }
+
+    void SetListInfo(const SBlastSeqIdListInfo & list_info) {
+       	m_ListInfo = list_info;
+    }
+    const SBlastSeqIdListInfo & GetListInfo() const{
+       	return m_ListInfo;
+    }
+
+    void AddTaxIds(const set<int> & tax_ids)
+    {
+       	m_TaxIds.insert(tax_ids.begin(), tax_ids.end());
+    }
+
+    set<Int4> & GetTaxIdsList()
+    {
+       	return m_TaxIds;
+    }
+
+    int GetNumTaxIds() const
+    {
+       	return (int) m_TaxIds.size();
+    }
+
 protected:
     /// GIs to exclude from the SeqDB instance.
     vector<TGi> m_Gis;
@@ -869,6 +984,7 @@ protected:
 
     /// SeqIds to exclude from the SeqDB instance.
     vector<string> m_Sis;
+    set<Int4> m_TaxIds;
 
 private:
     /// Prevent copy constructor.
@@ -885,6 +1001,10 @@ private:
 
     /// Zero if unsorted, or the size it had after the last sort.
     size_t m_LastSortSize;
+
+    SBlastSeqIdListInfo m_ListInfo;
+
+    vector<blastdb::TOid> m_ExcludedOids;
 };
 
 
@@ -1068,7 +1188,8 @@ void SeqDB_ReadTiList(const string                 & fname,
 NCBI_XOBJREAD_EXPORT
 void SeqDB_ReadSiList(const string                 & fname,
                       vector<CSeqDBGiList::SSiOid> & sis,
-                      bool                         * in_order = 0);
+                      bool                         * in_order,
+                      SBlastSeqIdListInfo & db_info);
 
 /// Read a text SeqId list from a file.
 ///
@@ -1155,7 +1276,7 @@ public:
     CSeqDBFileGiList(const string & fname, EIdType idtype=eGiList);
 
     /// Build a GI list from multiple files.  (only support eSiList)
-    CSeqDBFileGiList(vector<string> fnames, EIdType idtype=eGiList);
+    //CSeqDBFileGiList(vector<string> fnames, EIdType idtype=eGiList);
 };
 
 
@@ -1752,9 +1873,29 @@ SeqDB_SimplifyAccession(const string &acc);
 /// Retrieves a list of all supported file extensions for BLAST databases
 /// @param db_is_protein set to true if the database is protein else false [in]
 /// @param extensions where the return value will be stored [in|out]
+/// @param dbver BLASTDB version to use [in]
 NCBI_XOBJREAD_EXPORT
 void SeqDB_GetFileExtensions(bool db_is_protein,
-                             vector<string>& extensions);
+                             vector<string>& extensions,
+                             EBlastDbVersion dbver = eBDB_Version4);
+
+/// Retrieves file extensions for BLAST LMDB files
+/// @param db_is_protein set to true if the database is protein else false [in]
+/// @param extensions where the return value will be stored [in|out]
+NCBI_XOBJREAD_EXPORT
+void SeqDB_GetLMDBFileExtensions(bool db_is_protein,
+		                         vector<string>& extn);
+
+/// Determine if id is srting id
+/// @param id input id for check
+/// @return
+///   Return true if id is not of type gi, ti or pig
+NCBI_XOBJREAD_EXPORT
+bool IsStringId(const CSeq_id & id);
+
+/// Return ID string as stored in lmdb
+NCBI_XOBJREAD_EXPORT
+string GetBlastSeqIdString(const CSeq_id & seqid, bool version);
 
 END_NCBI_SCOPE
 

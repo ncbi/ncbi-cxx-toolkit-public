@@ -44,6 +44,7 @@
 #include "seqdboidlist.hpp"
 #include <objtools/blast/seqdb_reader/impl/seqdbcol.hpp>
 #include "seqdbgimask.hpp"
+#include "seqdblmdbset.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -287,6 +288,10 @@ public:
             map<TGi, set<int> >& gi_to_taxid_set,
             bool                 persist
     );
+
+    /// Get all tax ids (leaf and non-leaf for an oid
+    void GetAllTaxIDs(int           oid,
+                      set<int> & taxids);
 
     /// Get gi to taxid map for an OID.
     ///
@@ -616,6 +621,8 @@ public:
     /// Find OIDs matching the specified string.
     void AccessionToOids(const string & acc,
                          vector<int>  & oids);
+
+    void AccessionsToOids(const vector<string>& accs, vector<blastdb::TOid>& oids);
 
     /// Translate a CSeq-id to a list of OIDs.
     void SeqidToOids(const CSeq_id & seqid, vector<int> & oids, bool multi);
@@ -1047,6 +1054,18 @@ public:
     /// @sa CDebugDumpable
     void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
+    /// Return blast db version
+    EBlastDbVersion GetBlastDbVersion() const;
+
+    /// Get Oid list for input tax ids
+    /// @param tax_ids	taxonomy ids
+    /// @param rv		oids corrpond to tax ids
+    void TaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv);
+
+    /// Get all unique tax ids from db
+    /// @param tax_ids	return taxonomy ids in db
+    void GetDBTaxIds(set<Int4> & tax_ids) const;
+
 private:
     CLASS_MARKER_FIELD("IMPL")
 
@@ -1250,6 +1269,8 @@ private:
     /// Set of volumes used by this database instance.
     CSeqDBVolSet m_VolSet;
 
+    CSeqDBLMDBSet m_LMDBSet;
+
     /// The list of included OIDs (construction is deferred).
     mutable CRef<CSeqDBOIDList> m_OIDList;
 
@@ -1377,6 +1398,9 @@ private:
 
     /// Return sequence to buffer
     void x_RetSeqBuffer(SSeqResBuffer * buffer, CSeqDBLockHold & locked) const;
+
+    /// Initialize Id Set
+    void x_InitIdSet();
 };
 
 END_NCBI_SCOPE

@@ -9,9 +9,11 @@ NP_909018.1 DDQ13492.1  # multiple string in one line
 DDG22538.  EAI92731.x EAI68439_1  # wrong formats
 lcl|EAF49211.1  # this does not count
 gb|EAF49211.1  # this does count
+EAF49211.1  # this does count
 gb|NP_891258.1 NP_891258.1 # these are the same and should be count once
 EAD68078  # without version
 eAb16775.1  # smaller case should also work
+EAB16775.1  # smaller case should also work
 EAE31203.1
 CAE61105.1
 ZP_00157575.1
@@ -20,6 +22,7 @@ ZP_00016144.1
 EAG09604.* DDD23347.1 EAK18306 EAG61924 EAE27101
 ZP_00205068
 T48635
+pir||T48635
 DDM45611 P80487 CDD34100 NP_959387 EAJ95137 ZP_00197753 XP_357594 _BDD92411 EAI08555 EAH65677 CAD70761 *NP_817911 EAD44110 ECA32017
 NP_735707.1
 EDD95848.1

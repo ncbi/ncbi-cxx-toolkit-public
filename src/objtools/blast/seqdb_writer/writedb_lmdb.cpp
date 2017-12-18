@@ -1,0 +1,471 @@
+/*  $Id:
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author: Amelia Fong
+ *
+ */
+
+/// @file writedb_lmdb.cpp
+/// Implementation for the CWriteDB_LMDB and related classes.
+
+#include <ncbi_pch.hpp>
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbifile.hpp>
+#include <objtools/blast/seqdb_reader/impl/seqdb_lmdb.hpp>
+#include <objtools/blast/seqdb_writer/writedb_lmdb.hpp>
+#include <objects/seqloc/PDB_seq_id.hpp>
+
+BEGIN_NCBI_SCOPE
+
+#define DEFAULT_MAX_ENTRY_PER_TXN 40000
+
+
+CWriteDB_LMDB::CWriteDB_LMDB(const string& dbname,  Uint8 map_size, Uint8 capacity): m_Db(dbname),
+                             m_Env(CBlastLMDBManager::GetInstance().GetWriteEnv(dbname, map_size)),
+                             m_ListCapacity(capacity),
+                             m_MaxEntryPerTxn(DEFAULT_MAX_ENTRY_PER_TXN)
+{
+	m_list.reserve(m_ListCapacity);
+	char* max_entry_str = getenv("MAX_LMDB_TXN_ENTRY");
+	if (max_entry_str) {
+		m_MaxEntryPerTxn = NStr::StringToInt(max_entry_str);
+	    _TRACE("DEBUG: LMDB TXN Max Entry " << m_MaxEntryPerTxn);
+    }
+}
+
+CWriteDB_LMDB::~CWriteDB_LMDB()
+{
+	x_CreateOidToSeqidsLookupFile();
+	x_CommitTransaction();
+    CBlastLMDBManager::GetInstance().CloseEnv(m_Db);
+}
+
+void CWriteDB_LMDB::InsertVolumesInfo(const vector<string> & vol_names, const vector<blastdb::TOid> & vol_num_oids)
+{
+    lmdb::txn txn = lmdb::txn::begin(m_Env);
+    lmdb::dbi volinfo = lmdb::dbi::open(txn, blastdb::volinfo_str.c_str(), MDB_CREATE | MDB_INTEGERKEY);
+    lmdb::dbi volname = lmdb::dbi::open(txn, blastdb::volname_str.c_str(), MDB_CREATE | MDB_INTEGERKEY);
+	for (unsigned int i =0; i < vol_names.size(); i++) {
+		const lmdb::val key{&i, sizeof(i)};
+		lmdb::val value{vol_names[i].c_str(), strlen(vol_names[i].c_str())};
+		bool rc =lmdb::dbi_put(txn, volname.handle(), key, value);
+		if (!rc) {
+			NCBI_THROW( CSeqDBException, eArgErr, "VolNames error ");
+		}
+		rc = volinfo.put(txn, i, vol_num_oids[i]);
+		if (!rc) {
+			NCBI_THROW( CSeqDBException, eArgErr, "VolInfo error ");
+		}
+	}
+	txn.commit();
+}
+
+
+int CWriteDB_LMDB::InsertEntries(const list<CRef<CSeq_id>> & seqids, const blastdb::TOid oid)
+{
+    int count = 0;
+    ITERATE(list<CRef<CSeq_id>>, itr, seqids) {
+    	x_InsertEntry((*itr), oid);
+    	count++;
+    }
+
+    return count;
+}
+
+
+int CWriteDB_LMDB::InsertEntries(const vector<CRef<CSeq_id>> & seqids, const blastdb::TOid oid)
+{
+    int count = 0;
+    ITERATE(vector<CRef<CSeq_id>>, itr, seqids) {
+       x_InsertEntry((*itr), oid);
+    	count++;
+    }
+    return count;
+}
+
+
+void CWriteDB_LMDB::x_InsertEntry(const CRef<CSeq_id> &seqid, const blastdb::TOid oid)
+{
+    
+    if(seqid->IsGi()) {
+    	return;
+    }
+
+    x_Resize();
+
+    if(seqid->IsPir() || seqid->IsPrf()) {
+    	SKeyValuePair kv_pir;
+    	kv_pir.id = seqid->AsFastaString();
+    	kv_pir.oid = oid;
+    	kv_pir.saveToOidList = true;
+    	m_list.push_back(kv_pir);
+    	return;
+    }
+
+    if(seqid->IsPdb()) {
+    	SKeyValuePair kv_pdb_mol;
+    	kv_pdb_mol.id = seqid->GetPdb().GetMol().Get();
+    	kv_pdb_mol.oid = oid;
+    	m_list.push_back(kv_pdb_mol);
+    	string id_upper = kv_pdb_mol.id;
+    	NStr::ToUpper(id_upper);
+    	if(kv_pdb_mol.id != id_upper) {
+    		SKeyValuePair kv_u;
+       		kv_u.id = id_upper;
+       		kv_u.oid = oid;
+       		m_list.push_back(kv_u);
+       	}
+    }
+
+    if(seqid->GetTextseq_Id() != NULL) {
+    	SKeyValuePair kv;
+    	kv.id = seqid->GetSeqIdString(false);
+    	kv.oid = oid;
+    	string id_v = seqid->GetSeqIdString(true);
+    	if( kv.id != id_v) {
+    		m_list.push_back(kv);
+    		SKeyValuePair kv_v;
+    		kv_v.id = id_v;
+    		kv_v.oid = oid;
+    		kv_v.saveToOidList = true;
+    		m_list.push_back(kv_v);
+    	}
+    	else {
+    		kv.saveToOidList = true;
+    		m_list.push_back(kv);
+    	}
+   	}
+    else {
+    	SKeyValuePair kv;
+    	kv.id = seqid->GetSeqIdString(true);
+    	kv.oid = oid;
+    	kv.saveToOidList = true;
+    	m_list.push_back(kv);
+    	string id_upper = kv.id;
+    	NStr::ToUpper(id_upper);
+    	if(kv.id != id_upper) {
+    		SKeyValuePair kv_u;
+    		kv_u.id = id_upper;
+    		kv_u.oid = oid;
+    		m_list.push_back(kv_u);
+
+    	}
+
+    }
+    return;
+}
+
+void CWriteDB_LMDB::x_CommitTransaction()
+{
+	if(m_list.size() == 0) {
+		return;
+	}
+	//CStopWatch sw(CStopWatch::eStart);
+    sort (m_list.begin(), m_list.end(), SKeyValuePair::cmp_key);
+    //cerr << sw.Elapsed() <<endl;
+
+    unsigned int j=0;
+    while (j < m_list.size()){
+    	lmdb::txn txn = lmdb::txn::begin(m_Env);
+    	lmdb::dbi dbi = lmdb::dbi::open(txn, blastdb::acc2oid_str.c_str(),
+    			                        MDB_CREATE | MDB_DUPSORT | MDB_DUPFIXED);
+    	unsigned int i = j;
+    	j= i+m_MaxEntryPerTxn;
+    	if(j > m_list.size()) {
+    		j = m_list.size();
+    	}
+    	for(; i < j; i++){
+    		if( i > 0) {
+    			if ((m_list[i-1].id == m_list[i].id) &&
+    				(m_list[i-1].oid == m_list[i].oid)){
+    				continue;
+    			}
+    		}
+    		blastdb::TOid & oid = m_list[i].oid;
+    		string & id = m_list[i].id;
+    		//cerr << m_list[i].id << endl;
+			lmdb::val value{&oid, sizeof(oid)};
+			lmdb::val key{id.c_str(), strlen(id.c_str())};
+			bool rc = lmdb::dbi_put(txn, dbi.handle(), key, value, MDB_APPENDDUP);
+			if (!rc) {
+		 		NCBI_THROW( CSeqDBException, eArgErr, "acc2oid error for id " + id);
+			}
+		}
+    	txn.commit();
+    }
+    return;
+}
+
+Uint4 s_WirteIds(CNcbiOfstream & os, vector<string> & ids)
+{
+	const unsigned char byte_max = 0xFF;
+	Uint4 diff =0;
+	sort(ids.begin(), ids.end());
+	for(unsigned int j =0; j < ids.size(); j++) {
+		Uint4 id_len = ids[j].size();
+		if(id_len >= byte_max) {
+			os.write((char *)&byte_max, 1);
+			os.write((char *)&id_len, 4);
+			diff += 5;
+		}
+		else {
+			char l = byte_max & id_len;
+			os.write(&l,1);
+			diff += 1;
+		}
+		os.write(ids[j].c_str(), id_len);
+		diff += id_len;
+	}
+	return diff;
+}
+
+void CWriteDB_LMDB::x_CreateOidToSeqidsLookupFile()
+{
+	if(m_list.size() == 0) {
+		return;
+	}
+	Uint8 total_num_oids = m_list.back().oid + 1;
+	string filename = GetFileNameFromExistingLMDBFile(m_Db, ELMDBFileType::eOid2SeqIds);
+	Uint8 offset = 0;
+	CNcbiOfstream os(filename);
+	vector<Uint4> offsets(total_num_oids, 0);
+
+	os.write((char *)&total_num_oids, 8);
+
+	for(unsigned int i=0; i < total_num_oids; i++) {
+		os.write((char *) &offset, 8);
+	}
+	os.flush();
+
+	blastdb::TOid count = 0;
+	vector<string> tmp_ids;
+	for(unsigned int i = 0; i < m_list.size(); i++) {
+		if(i > 0 && m_list[i].oid != m_list[i-1].oid ) {
+			if((m_list[i].oid - m_list[i-1].oid) != 1) {
+		 		NCBI_THROW( CSeqDBException, eArgErr, "Input id list not in ascending oid order");
+			}
+			offsets[count] = s_WirteIds(os, tmp_ids);
+			count++;
+			tmp_ids.clear();
+		}
+		if(!m_list[i].saveToOidList) {
+			continue;
+		}
+		tmp_ids.push_back(m_list[i].id);
+
+	}
+	offsets[count] = s_WirteIds(os, tmp_ids);
+	_ASSERT(count == m_list.back().oid);
+
+	os.flush();
+	os.seekp(8);
+	for(unsigned int i = 0; i < total_num_oids; i++) {
+		offset += offsets[i];
+		os.write((char *) &offset, 8);
+	}
+
+	os.flush();
+}
+
+void CWriteDB_LMDB::x_Resize()
+{
+	if (m_list.size() + 1 > m_ListCapacity) {
+    	 m_ListCapacity = m_ListCapacity * 2;
+         m_list.reserve(m_ListCapacity);
+     }
+}
+
+CWriteDB_TaxID::CWriteDB_TaxID(const string& dbname,  Uint8 map_size, Uint8 capacity): m_Db(dbname),
+                               m_Env(CBlastLMDBManager::GetInstance().GetWriteEnv(dbname, map_size)),
+                               m_ListCapacity(capacity), m_MaxEntryPerTxn(DEFAULT_MAX_ENTRY_PER_TXN)
+{
+	m_TaxId2OidList.reserve(m_ListCapacity);
+	char* max_entry_str = getenv("MAX_LMDB_TXN_ENTRY");
+	if (max_entry_str) {
+		m_MaxEntryPerTxn = NStr::StringToInt(max_entry_str);
+	    _TRACE("DEBUG: LMDB TXN Max Entry " << m_MaxEntryPerTxn);
+    }
+}
+
+CWriteDB_TaxID::~CWriteDB_TaxID()
+{
+	x_CreateOidToTaxIdsLookupFile();
+	x_CreateTaxIdToOidsLookupFile();
+	x_CommitTransaction();
+    CBlastLMDBManager::GetInstance().CloseEnv(m_Db);
+}
+
+int CWriteDB_TaxID::InsertEntries(const set<Int4> & tax_ids, const blastdb::TOid oid)
+{
+    int count = 0;
+    if(tax_ids.size() == 0) {
+    	x_Resize();
+    	SKeyValuePair<blastdb::TOid>  kv(0, oid);
+    	m_TaxId2OidList.push_back(kv);
+    	return 1;
+    }
+
+    ITERATE(set<Int4>, itr, tax_ids) {
+    	x_Resize();
+    	SKeyValuePair<blastdb::TOid> kv(*itr, oid);
+    	m_TaxId2OidList.push_back(kv);
+    	count++;
+    }
+
+    return count;
+}
+
+void CWriteDB_TaxID::x_CommitTransaction()
+{
+	_ASSERT(m_TaxId2OffsetsList.size());
+    sort (m_TaxId2OffsetsList.begin(), m_TaxId2OffsetsList.end(), SKeyValuePair<Uint8>::cmp_key);
+
+    unsigned int j=0;
+    while (j < m_TaxId2OffsetsList.size()){
+    	lmdb::txn txn = lmdb::txn::begin(m_Env);
+    	lmdb::dbi dbi = lmdb::dbi::open(txn, blastdb::taxid2offset_str.c_str(),
+    			                        MDB_CREATE | MDB_DUPSORT | MDB_DUPFIXED);
+    	unsigned int i = j;
+    	j= i+m_MaxEntryPerTxn;
+    	if(j > m_TaxId2OffsetsList.size()) {
+    		j = m_TaxId2OffsetsList.size();
+    	}
+    	for(; i < j; i++){
+    		Uint8 & offset = m_TaxId2OffsetsList[i].value;
+    		Int4 & tax_id = m_TaxId2OffsetsList[i].tax_id;
+    		//cerr << m_list[i].id << endl;
+			lmdb::val value{&offset, sizeof(offset)};
+			lmdb::val key{&tax_id, sizeof(tax_id)};
+			bool rc = lmdb::dbi_put(txn, dbi.handle(), key, value, MDB_APPENDDUP);
+			if (!rc) {
+		 		NCBI_THROW( CSeqDBException, eArgErr, "taxid2offset error for tax id " + tax_id);
+			}
+		}
+    	txn.commit();
+    }
+    return;
+
+}
+
+Uint4 s_WirteTaxIds(CNcbiOfstream & os, vector<Int4> & tax_ids)
+{
+	for(unsigned int j =0; j < tax_ids.size(); j++) {
+		os.write((char *)&tax_ids[j], 4);
+	}
+	return tax_ids.size();
+}
+
+void CWriteDB_TaxID::x_CreateOidToTaxIdsLookupFile()
+{
+	if(m_TaxId2OidList.size() == 0) {
+ 		NCBI_THROW( CSeqDBException, eArgErr, "No tax info for any oid");
+	}
+	Uint8 total_num_oids = m_TaxId2OidList.back().value + 1;
+	string filename = GetFileNameFromExistingLMDBFile(m_Db, ELMDBFileType::eOid2TaxIds);
+	Uint8 offset = 0;
+	CNcbiOfstream os(filename);
+	vector<Uint4> offsets(total_num_oids, 0);
+
+	os.write((char *)&total_num_oids, 8);
+
+	for(unsigned int i=0; i < total_num_oids; i++) {
+		os.write((char *) &offset, 8);
+	}
+	os.flush();
+
+	blastdb::TOid count = 0;
+	vector<Int4> tmp_tax_ids;
+	for(unsigned int i = 0; i < m_TaxId2OidList.size(); i++) {
+		if(i > 0 && m_TaxId2OidList[i].value != m_TaxId2OidList[i-1].value ) {
+			if((m_TaxId2OidList[i].value - m_TaxId2OidList[i-1].value) != 1) {
+		 		NCBI_THROW( CSeqDBException, eArgErr, "Input id list not in ascending oid order");
+			}
+			offsets[count] = s_WirteTaxIds(os, tmp_tax_ids);
+			count++;
+			tmp_tax_ids.clear();
+		}
+		tmp_tax_ids.push_back(m_TaxId2OidList[i].tax_id);
+
+	}
+	offsets[count] = s_WirteTaxIds(os, tmp_tax_ids);
+	_ASSERT(count == m_TaxId2OidList.back().value);
+
+	os.flush();
+	os.seekp(8);
+	for(unsigned int i = 0; i < total_num_oids; i++) {
+		offset += offsets[i];
+		os.write((char *) &offset, 8);
+	}
+
+	os.flush();
+}
+
+Uint4 s_WirteOids(CNcbiOfstream & os, vector<blastdb::TOid> & oids)
+{
+	blastdb::SortAndUnique <blastdb::TOid> (oids);
+	Uint4 num_oids = oids.size();
+	os.write((char *)&num_oids, 4);
+	for(unsigned int j =0; j < num_oids; j++) {
+		os.write((char *)&oids[j], 4);
+	}
+	return ((num_oids +1) * 4);
+}
+
+void CWriteDB_TaxID::x_CreateTaxIdToOidsLookupFile()
+{
+    sort (m_TaxId2OidList.begin(), m_TaxId2OidList.end(), SKeyValuePair<blastdb::TOid>::cmp_key);
+	string filename = GetFileNameFromExistingLMDBFile(m_Db, ELMDBFileType::eTaxId2Oids);
+	CNcbiOfstream os(filename);
+	Uint8 offset =0;
+
+	vector<blastdb::TOid> tmp_oids;
+	for(unsigned int i = 0; i < m_TaxId2OidList.size(); i++) {
+		if(i > 0 && m_TaxId2OidList[i].tax_id != m_TaxId2OidList[i-1].tax_id ) {
+			SKeyValuePair<Uint8> p(m_TaxId2OidList[i-1].tax_id, offset);
+			offset += s_WirteOids(os, tmp_oids);
+			m_TaxId2OffsetsList.push_back(p);
+			tmp_oids.clear();
+		}
+		tmp_oids.push_back(m_TaxId2OidList[i].value);
+
+	}
+   	SKeyValuePair<Uint8> kv(m_TaxId2OidList.back().tax_id, offset);
+   	s_WirteOids(os, tmp_oids);
+	m_TaxId2OffsetsList.push_back(kv);
+
+	os.flush();
+}
+
+
+void CWriteDB_TaxID::x_Resize()
+{
+	if (m_TaxId2OidList.size() + 1 > m_ListCapacity) {
+    	 m_ListCapacity = m_ListCapacity * 2;
+         m_TaxId2OidList.reserve(m_ListCapacity);
+     }
+}
+
+
+END_NCBI_SCOPE

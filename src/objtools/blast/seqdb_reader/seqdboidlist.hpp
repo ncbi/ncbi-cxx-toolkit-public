@@ -95,7 +95,8 @@ public:
                   CSeqDB_FilterTree        & filters,
                   CRef<CSeqDBGiList>       & gi_list,
                   CRef<CSeqDBNegativeList> & neg_list,
-                  CSeqDBLockHold           & locked);
+                  CSeqDBLockHold           & locked,
+                  const CSeqDBLMDBSet	   & lmdb_set);
     
     /// Destructor.
     /// 
@@ -189,7 +190,8 @@ private:
                  CSeqDB_FilterTree        & filters,
                  CRef<CSeqDBGiList>       & gi_list,
                  CRef<CSeqDBNegativeList> & neg_list,
-                 CSeqDBLockHold           & locked);
+                 CSeqDBLockHold           & locked,
+                 const CSeqDBLMDBSet	   & lmdb_set);
 
     /// Clear all bits in a range.
     /// 
@@ -217,7 +219,8 @@ private:
     x_ComputeFilters(const CSeqDB_FilterTree & ft,
                      const CSeqDBVolEntry    & vol,
                      CSeqDBGiListSet         & gis,
-                     CSeqDBLockHold          & locked);
+                     CSeqDBLockHold          & locked,
+                     bool					 isBlastDBv5);
     
     /// Load the named OID mask file into a bitset object.
     ///
@@ -267,10 +270,14 @@ private:
     ///
     /// @param neg
     ///   The negative user gi list to apply to the volumes.
-    /// @param locked
-    ///   The lock holder object for this thread.
-    void x_ApplyNegativeList(CSeqDBNegativeList & neg);
+    /// @param is_v5
+    ///   True if db is v5
+    void x_ApplyNegativeList(CSeqDBNegativeList & neg, bool is_v5);
                              
+    void x_ComputeFilters(const CSeqDBVolSet       & volset,
+    					  const CSeqDB_FilterTree  & filters,
+               		      const CSeqDBLMDBSet      & lmdb_set,
+               		      CSeqDB_BitSet 		   & si_bit);
     
     /// The memory management layer object.
     CSeqDBAtlas & m_Atlas;

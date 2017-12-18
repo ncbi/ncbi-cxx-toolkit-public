@@ -236,6 +236,11 @@ char CSeqDBVol::x_GetSeqType() const
     return m_Idx->GetSeqType();
 }
 
+string CSeqDBVol::GetLMDBFileName() const
+{
+	return m_Idx->GetLMDBFileName();
+}
+
 int CSeqDBVol::GetSeqLengthProt(int oid, CSeqDBLockHold & locked) const
 {
     TIndx start_offset = 0;
@@ -1769,6 +1774,49 @@ CSeqDBVol::GetFilteredHeader(int                    oid,
     return x_GetFilteredHeader(oid, NULL);
 }
 
+bool s_IncludeDefline_Taxid(const CBlast_def_line & def, const set<int> & user_tax_ids)
+{
+	CBlast_def_line::TTaxIds tax_ids;
+	if (def.IsSetTaxid()) {
+	    tax_ids.insert(def.GetTaxid());
+	}
+	if(def.IsSetLinks()) {
+		CBlast_def_line::TLinks leaf_ids = def.GetLinks();
+		tax_ids.insert(leaf_ids.begin(), leaf_ids.end());
+	}
+
+	if(user_tax_ids.size() > tax_ids.size()) {
+		ITERATE(CBlast_def_line::TTaxIds, itr, tax_ids) {
+			if(user_tax_ids.find(*itr) != user_tax_ids.end()) {
+				return true;
+			}
+		}
+
+	}
+	else {
+		ITERATE(set<int>, itr, user_tax_ids) {
+			if(tax_ids.find(*itr) != tax_ids.end()) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+bool s_IncludeDefline_NegativeTaxid(const CBlast_def_line & def, const set<int> & user_tax_ids)
+{
+	CBlast_def_line::TTaxIds taxid_set = def.GetTaxIds();
+	if(taxid_set.size() > user_tax_ids.size()) {
+		return true;
+	}
+	ITERATE(CBlast_def_line::TTaxIds, itr, taxid_set) {
+		if(user_tax_ids.find(*itr) == user_tax_ids.end()) {
+			return true;
+		}
+	}
+	return false;
+}
+
 CRef<CBlast_def_line_set>
 CSeqDBVol::x_GetFilteredHeader(int                    oid,
                                bool                 * changed) const
@@ -1838,6 +1886,13 @@ CSeqDBVol::x_GetFilteredHeader(int                    oid,
                 }
 
                 have_memb = have_user && have_volume;
+            }
+
+            if(have_memb && (!m_UserGiList.Empty()) && (m_UserGiList->GetNumTaxIds() > 0)) {
+               	have_memb = s_IncludeDefline_Taxid(defline, m_UserGiList->GetTaxIdsList());
+            }
+            if(have_memb && (!m_NegativeList.Empty()) && (m_NegativeList->GetNumTaxIds() > 0)) {
+               	have_memb = s_IncludeDefline_NegativeTaxid(defline, m_NegativeList->GetTaxIdsList());
             }
 
             if (! have_memb) {
@@ -2127,7 +2182,7 @@ void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
         }
     }
 
-    if (ids.GetNumSis()) {
+    if (ids.GetNumSis() && (GetLMDBFileName() == kEmptyStr)) {
         if (!m_StrFileOpened) x_OpenStrFile();
         if (m_IsamStr.NotEmpty()) {
             m_IsamStr->IdsToOids(m_VolStart, m_VolEnd, ids);

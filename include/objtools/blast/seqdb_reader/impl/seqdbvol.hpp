@@ -417,6 +417,10 @@ public:
     /// @return The volume's title.
     string GetTitle() const;
 
+    /// Get sqlite file name associated with this volume
+    /// Empty string if version 4
+    string GetLMDBFileName() const;
+
     /// Get the formatting date of the volume.
     /// @return The create-date of the volume.
     string GetDate() const;
@@ -930,9 +934,9 @@ private:
                        bool          & have_vol) const
     {
         if (! have_user) {
-            if (m_UserGiList.NotEmpty()) {
+            if (m_UserGiList.NotEmpty() && m_UserGiList->GetNumTaxIds() == 0) {
                 have_user |= x_ListIncludesId(*m_UserGiList, id);
-            } else if (m_NegativeList.NotEmpty()) {
+            } else if (m_NegativeList.NotEmpty() && m_NegativeList->GetNumTaxIds() == 0) {
                 have_user |= x_ListIncludesId(*m_NegativeList, id);
             } else {
                 have_user = true;

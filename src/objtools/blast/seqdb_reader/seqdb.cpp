@@ -195,6 +195,21 @@ CSeqDB::CSeqDB(const string       & dbname,
     ////m_Impl->Verify();
 }
 
+void CSeqDB::AccessionsToOids(const vector<string>& accs, vector<blastdb::TOid>& oids) const
+{
+     m_Impl->AccessionsToOids(accs, oids);
+}
+
+void CSeqDB::TaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv) const
+{
+     m_Impl->TaxIdsToOids(tax_ids, rv);
+}
+
+void CSeqDB::GetDBTaxIds(set<Int4> & tax_ids) const
+{
+     m_Impl->GetDBTaxIds(tax_ids);
+}
+
 // This could become the primary constructor for SeqDB, and those
 // taking positive and negative lists could be deprecated.  This
 // implies refactoring of code using SeqDB, addition of the third
@@ -384,6 +399,12 @@ void CSeqDB::GetTaxIDs(int           oid,
     ////m_Impl->Verify();
     m_Impl->GetTaxIDs(oid, taxids, persist);
     ////m_Impl->Verify();
+}
+
+void CSeqDB::GetAllTaxIDs(int           oid,
+                          set<int> & taxids) const
+{
+    m_Impl->GetAllTaxIDs(oid, taxids);
 }
 
 void CSeqDB::GetLeafTaxIDs(
@@ -1372,7 +1393,7 @@ Int8 CSeqDB::GetDiskUsage() const
 
     vector<string> extn;
     const bool is_protein(GetSequenceType() == CSeqDB::eProtein);
-    SeqDB_GetFileExtensions(is_protein, extn);
+    SeqDB_GetFileExtensions(is_protein, extn, GetBlastDbVersion());
 
     ITERATE(vector<string>, path, paths) {
         ITERATE(vector<string>, ext, extn) {
@@ -1411,9 +1432,21 @@ bool DeleteBlastDb(const string& dbpath, CSeqDB::ESeqType seq_type)
 {
     int num_files_removed = 0;
     vector<string> db_files, alias_files;
+    bool is_protein = (seq_type == CSeqDB::eProtein);
 
     vector<string> extn;
-    SeqDB_GetFileExtensions((seq_type == CSeqDB::eProtein), extn);
+    SeqDB_GetFileExtensions( is_protein, extn, eBDB_Version4);
+    vector<string> lmdb_extn;
+    SeqDB_GetLMDBFileExtensions(is_protein, lmdb_extn);
+    ITERATE(vector<string>, lmdb, lmdb_extn) {
+    	CNcbiOstrstream oss;
+    	oss << dbpath << "." << *lmdb;
+        const string fname = CNcbiOstrstreamToString(oss);
+        if (CFile(fname).Remove()) {
+        	LOG_POST(Info << "Deleted " << fname);
+            num_files_removed++;
+        }
+    }
 
     try { CSeqDB::FindVolumePaths(dbpath, seq_type, db_files, &alias_files); }
     catch (...) {}    // ignore any errors from the invocation above
@@ -1444,6 +1477,11 @@ void CSeqDB::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     ddc.SetFrame("CSeqDB");
     CObject::DebugDump(ddc, depth);
     ddc.Log("m_Impl", m_Impl, depth);
+}
+
+EBlastDbVersion CSeqDB::GetBlastDbVersion() const
+{
+	 return m_Impl->GetBlastDbVersion();
 }
 
 END_NCBI_SCOPE

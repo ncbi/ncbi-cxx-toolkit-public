@@ -158,7 +158,8 @@ public:
                    CWriteDB::TIndexType   indexing,
                    bool                   use_gi_mask,
                    ostream              * logfile,
-                   bool                   long_seqids = false);
+                   bool                   long_seqids = false,
+                   EBlastDbVersion        dbver = eBDB_Version4);
 
     // Note -- should deprecate (or just remove) the following one:
     // - sparse does nothing
@@ -188,7 +189,8 @@ public:
                    bool                   parse_seqids,
                    bool                   use_gi_mask,
                    ostream              * logfil,
-                   bool                   long_seqids = false);
+                   bool                   long_seqids = false,
+                   EBlastDbVersion dbver = eBDB_Version4);
 
     ~CBuildDatabase();
 
@@ -438,6 +440,10 @@ public:
     /// @param ranges An object mapping Seq-ids to their masking data.
     void SetMaskDataSource(IMaskDataSource & ranges);
 
+    /// Create Directory for blast db
+    ///
+    /// @param dbname output blast db name (with path)
+    static void CreateDirectories(const string& dbname);
 private:
     /// Get a scope for remote loading of objects.
     objects::CScope & x_GetScope();

@@ -4370,6 +4370,77 @@ BOOST_AUTO_TEST_CASE(CSeqDBIsam_32bit_GI)
     }
 }
 
+BOOST_AUTO_TEST_CASE(Test_SeqIdList_AliasFile)
+{
+    CSeqDB db("data/prot_alias", CSeqDB::eProtein, 0, 0, true);
+
+    int found = 0;
+    for(blastdb::TOid oid = 0; db.CheckOrFindOID(oid); oid++) {
+        found++;
+    }
+    BOOST_REQUIRE_EQUAL(55, found);
+}
+
+BOOST_AUTO_TEST_CASE(Test_SeqIdList_FilteredID)
+{
+    CSeqDB db("data/test_seqidlist_v4", CSeqDB::eProtein, 0, 0, true);
+
+    /// Oid 1 has 11 ids but only one in seqid list should be in the id list
+    list< CRef<CSeq_id> > ids = db.GetSeqIDs(1);
+    string fasta_id = kEmptyStr;
+    int num_acc =0;
+    ITERATE(list< CRef<CSeq_id> >, itr, ids) {
+    	 if((*itr)->IsGi()) {
+    		 continue;
+    	 }
+    	 else {
+    		 // special  prf id
+    		 fasta_id = (*itr)->AsFastaString();
+    		 num_acc ++;
+    	 }
+    }
+    BOOST_REQUIRE_EQUAL(1 , num_acc);
+    BOOST_REQUIRE_EQUAL(fasta_id , "prf||2209341B");
+}
+
+BOOST_AUTO_TEST_CASE(Test_Multi_SeqIdList_AliasFile)
+{
+    CSeqDB db("data/alias_2_v4", CSeqDB::eProtein, 0, 0, true);
+
+    int found = 0;
+    for(blastdb::TOid oid = 0; db.CheckOrFindOID(oid); oid++) {
+        found++;
+    }
+    BOOST_REQUIRE_EQUAL(63, found);
+}
+
+BOOST_AUTO_TEST_CASE(Test_Mix_GI_SeqId_List_AliasFile)
+{
+    CSeqDB db("data/multi_list_alias_v4", CSeqDB::eProtein, 0, 0, true);
+
+    int found = 0;
+    blastdb::TOid oid = 0;
+    for(blastdb::TOid i=0; db.CheckOrFindOID(i); i++) {
+    	oid = i;
+        found++;
+    }
+    BOOST_REQUIRE_EQUAL(1, found);
+    BOOST_REQUIRE_EQUAL(3, oid);
+}
+
+BOOST_AUTO_TEST_CASE(Test_Mix_User_SeqIdList_AliasFile)
+{
+	CRef<CSeqDBGiList> gi_list( new CSeqDBFileGiList( "data/test.seqidlist", CSeqDBFileGiList::eSiList));
+    CSeqDB db("data/test_seqidlist_v4", CSeqDB::eProtein, 0, 0, true, gi_list);
+
+    int found = 0;
+    for(blastdb::TOid i=0; db.CheckOrFindOID(i); i++) {
+        found++;
+    }
+    BOOST_REQUIRE_EQUAL(2, found);
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */
 

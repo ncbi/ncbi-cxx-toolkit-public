@@ -40,6 +40,7 @@
 
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
 #include "seqdbvolset.hpp"
+#include "seqdblmdbset.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -90,7 +91,8 @@ public:
                     const CSeqDBVolSet & vol_set,
                     TListRef             user_list,
                     TNegativeRef         neg_list,
-                    CSeqDBLockHold     & locked);
+                    CSeqDBLockHold     & locked,
+                    const CSeqDBLMDBSet & lmdb_set);
     
     /// Get a reference to a named GI list.
     ///

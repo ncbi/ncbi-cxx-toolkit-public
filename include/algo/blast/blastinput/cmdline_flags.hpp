@@ -402,6 +402,16 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgQueryCovHspPerc;
 /// Argument to specify line length for displaying alignments
 NCBI_BLASTINPUT_EXPORT extern const string kArgLineLength;
 
+/// Argument to specify taxonomy ids for filtering
+NCBI_BLASTINPUT_EXPORT extern const string kArgTaxIdList;
+/// Argument to specify negative taxonomy ids filtering
+NCBI_BLASTINPUT_EXPORT extern const string kArgNegativeTaxIdList;
+
+/// Argument to specify file with taxonomy ids for filtering
+NCBI_BLASTINPUT_EXPORT extern const string kArgTaxIdListFile;
+/// Argument to specify file with taxonomy ids for Negative filtering
+NCBI_BLASTINPUT_EXPORT extern const string kArgNegativeTaxIdListFile;
+
 
 // Mapper arguments
 /// Argument to specify whether mapped reads are paired

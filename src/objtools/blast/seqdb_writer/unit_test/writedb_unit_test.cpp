@@ -47,7 +47,9 @@
 #include <boost/current_function.hpp>
 #include <objtools/blast/seqdb_writer/build_db.hpp>
 #include <objtools/blast/seqdb_writer/writedb_isam.hpp>
+#include <objtools/blast/seqdb_writer/seqidlist_writer.hpp>
 #include <objtools/blast/seqdb_reader/impl/seqdbisam.hpp>
+#include <objtools/blast/seqdb_reader/seqidlist_reader.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
 #include <unordered_map>
@@ -3270,6 +3272,81 @@ BOOST_AUTO_TEST_CASE(ReadLongIDNucleotide)
     BOOST_REQUIRE_EQUAL(index, (int)fasta_ids.size());
 }
 
+BOOST_AUTO_TEST_CASE(CreateV5Seqidlist)
+{
+	CNcbiIfstream seqidFile("data/seqidlist.nucl");
+	vector<string> idlist;
+	while (seqidFile) {
+		string line;
+	    NcbiGetlineEOL(seqidFile, line);
+	    if ( !line.empty() ) {
+	    	idlist.push_back(line);
+	    }
+	}
+	// Test create seqidlsit from text file
+	{
+		const string kTitle("Unit Test Seqidlist");
+		const size_t num_of_ids = 12;
+	    CTmpFile tmpfile;
+	    CNcbiOstream & os = tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset);
+	    SBlastSeqIdListInfo list_info;
+	    vector<CSeqDBGiList::SSiOid> read_idlist;
+		WriteBlastSeqidlistFile(idlist, os, kTitle);
+	    CMemoryFile mf(tmpfile.GetFileName());
+		CBlastSeqidlistFile::GetSeqidlist(mf,read_idlist, list_info);
+		BOOST_REQUIRE_EQUAL(num_of_ids, list_info.num_ids);
+		BOOST_REQUIRE_EQUAL(num_of_ids, read_idlist.size());
+		BOOST_REQUIRE_EQUAL(list_info.title, kTitle);
+		BOOST_REQUIRE_EQUAL(list_info.file_size, (Uint8) mf.GetFileSize());
+		BOOST_REQUIRE_EQUAL(read_idlist[2].si, "D88758.1");
+		BOOST_REQUIRE_EQUAL(read_idlist[7].si, "SRA:SRR066117.18823.2");
+		BOOST_REQUIRE_EQUAL(read_idlist[11].si, "u00001.1");
+	}
+	// Test create seqidlsit with db lookup
+	{
+		const string kTitle("Unit Test Seqidlist w DB");
+		const size_t num_of_ids = 9;
+	    CTmpFile tmpfile;
+	    CNcbiOstream & os = tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset);
+	    SBlastSeqIdListInfo list_info;
+	    vector<CSeqDBGiList::SSiOid> read_idlist;
+		CSeqDB db("data/writedb_nucl_v5", CSeqDB::eNucleotide);
+		WriteBlastSeqidlistFile(idlist, os, kTitle, &db);
+	    CMemoryFile mf(tmpfile.GetFileName());
+		CBlastSeqidlistFile::GetSeqidlist(mf,read_idlist, list_info);
+		BOOST_REQUIRE_EQUAL(num_of_ids, list_info.num_ids);
+		BOOST_REQUIRE_EQUAL(num_of_ids, read_idlist.size());
+		BOOST_REQUIRE_EQUAL(list_info.title, kTitle);
+		BOOST_REQUIRE_EQUAL(list_info.file_size, (Uint8) mf.GetFileSize());
+		BOOST_REQUIRE_EQUAL(list_info.db_vol_length, db.GetVolumeLength());
+		BOOST_REQUIRE_EQUAL(read_idlist[2].si, "D88758.1");
+		BOOST_REQUIRE_EQUAL(read_idlist[6].si, "U00001.1");
+
+	}
+
+	// Test create seqidlsit, remove duplicate ids
+	{
+		const string kTitle("Unit Test Seqidlist Duplicate");
+		const size_t num_of_ids = 12;
+	    CTmpFile tmpfile;
+	    CNcbiOstream & os = tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset);
+	    SBlastSeqIdListInfo list_info;
+	    vector<string> dup_list;
+	    dup_list.insert(dup_list.begin(), idlist.begin(), idlist.end());
+	    dup_list.insert(dup_list.end(), idlist.begin(), idlist.end());
+	    vector<CSeqDBGiList::SSiOid> read_idlist;
+		WriteBlastSeqidlistFile(dup_list, os, kTitle);
+	    CMemoryFile mf(tmpfile.GetFileName());
+		CBlastSeqidlistFile::GetSeqidlist(mf,read_idlist, list_info);
+		BOOST_REQUIRE_EQUAL(num_of_ids, list_info.num_ids);
+		BOOST_REQUIRE_EQUAL(num_of_ids, read_idlist.size());
+		BOOST_REQUIRE_EQUAL(list_info.title, kTitle);
+		BOOST_REQUIRE_EQUAL(list_info.file_size, (Uint8) mf.GetFileSize());
+		BOOST_REQUIRE_EQUAL(read_idlist[2].si, "D88758.1");
+		BOOST_REQUIRE_EQUAL(read_idlist[7].si, "SRA:SRR066117.18823.2");
+		BOOST_REQUIRE_EQUAL(read_idlist[11].si, "u00001.1");
+	}
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 

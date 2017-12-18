@@ -321,10 +321,12 @@ void CSeqDB_BitSet::x_Normalize(size_t start, size_t end)
         
         switch(m_Special) {
         case eAllClear:
+            m_Special = eNone;
             break;
             
         case eAllSet:
             AssignBitRange(m_Start, m_End, true);
+            m_Special = eNone;
             break;
             
         case eNone:

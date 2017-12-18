@@ -36,13 +36,14 @@
 #include <corelib/ncbiapp.hpp>
 #include <algo/blast/api/version.hpp>
 #include <objtools/blast/seqdb_reader/seqdbexpert.hpp>
+#include <objtools/blast/seqdb_reader/impl/seqdbtax.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <objtools/blast/blastdb_format/seq_formatter.hpp>
 #include <objtools/blast/blastdb_format/blastdb_formatter.hpp>
 #include <objtools/blast/blastdb_format/blastdb_seqid.hpp>
-
 #include <algo/blast/blastinput/blast_input.hpp>
+#include <objects/seqloc/PDB_seq_id.hpp>
 #include "../blast/blast_app_util.hpp"
 #include <iomanip>
 
@@ -83,8 +84,11 @@ private:
 
     CBlastDB_FormatterConfig m_Config;
 
-    /// Initializes the application's data members
-    void x_InitApplicationData();
+    set<Int4> m_TaxIdList;
+
+    /// Initializes Blast DB
+    void x_InitBlastDB();
+    void x_InitBlastDB_TaxIdList();
 
     string x_InitSearchRequest();
 
@@ -102,24 +106,59 @@ private:
     /// @return 0 on sucess; 1 if some queries were not processed
     int x_ProcessBatchEntry(CBlastDB_Formatter & seq_fmt);
 
+    int x_ProcessBatchEntry_NoDup(CBlastDB_Formatter & fmt);
+
     /// Process entry with range, strand and filter id
     /// @param args program input args
     /// @param seq_fmt sequence formatter object
     /// @return 0 on sucess; 1 if some queries were not processed
     int x_ProcessEntry(CBlastDB_Formatter & fmt);
 
+    int x_ProcessTaxIdList(CBlastDB_Formatter & fmt);
+
     int x_ProcessSearchType(CBlastDB_Formatter & fmt);
 
     bool x_GetOids(const string & acc, vector<int> & oids);
 
-    int x_ModifyConfigForBatchEntry(const vector<string> & tmp);
+    int x_ModifyConfigForBatchEntry(const string & config);
 
     bool x_UseLongSeqIds();
+
+    void x_PrintBlastDatabaseTaxInformation();
+
 };
 
-bool
-CBlastDBCmdApp::x_GetOids(const string & acc, vector<int> & oids)
+string s_PreProcessAccessionsForDBv5(const string & id)
 {
+	string rv = id;
+	if (id.find('|') != NPOS) {
+
+		CRef<CSeq_id> seqid;
+		try {
+			seqid = new CSeq_id(id, CSeq_id::fParse_RawText | CSeq_id::fParse_AnyLocal | CSeq_id::fParse_PartialOK);
+		}
+		catch(...) {
+		}
+
+		if(seqid.NotEmpty()) {
+			if(seqid->IsPir() || seqid->IsPrf()) {
+				return seqid->AsFastaString();
+			}
+			rv = seqid->GetSeqIdString(true);
+		}
+	}
+
+	return NStr::ToUpper(rv);
+
+}
+
+bool
+CBlastDBCmdApp::x_GetOids(const string & id, vector<int> & oids)
+{
+	string acc = id;
+	if(m_BlastDb->GetBlastDbVersion() == EBlastDbVersion::eBDB_Version5) {
+		acc = s_PreProcessAccessionsForDBv5(id);
+	}
 	Int8 num_id = NStr::StringToNumeric<Int8>(acc, NStr::fConvErr_NoThrow);
 	if(!errno) {
 		int gi_oid = -1;
@@ -130,7 +169,7 @@ CBlastDBCmdApp::x_GetOids(const string & acc, vector<int> & oids)
 		else {
 			oids.push_back(gi_oid);
 		}
-			
+
 	}
 	else {
 		m_BlastDb->AccessionToOids(acc, oids);
@@ -167,18 +206,13 @@ CBlastDBCmdApp::x_ProcessEntry(CBlastDB_Formatter & fmt)
    		for(unsigned int i=0; i < queries.size(); i++) {
      		vector<CSeqDB::TOID> oids;
      		if(x_GetOids(queries[i], oids)) {
-     			if (m_GetDuplicates) {
-     				for(unsigned int j=0; j < oids.size(); j++) {
-     					fmt.Write(oids[j], m_Config);
-     				}
-     			}
-     			else {
-     				if(m_TargetOnly) {
-     					fmt.Write(oids[0], m_Config, queries[i]);
-     				}
-     				else {
-     					fmt.Write(oids[0], m_Config);
-     				}
+   				for(unsigned int j=0; j < oids.size(); j++) {
+   					if(m_TargetOnly) {
+   						fmt.Write(oids[j], m_Config, queries[i]);
+   					}
+   					else {
+   						fmt.Write(oids[j], m_Config);
+   					}
      			}
      		}
      		else {
@@ -206,7 +240,7 @@ bool s_IsMaskAlgoIdValid(CSeqDB & blastdb, int id)
 	return true;
 }
 
-int CBlastDBCmdApp::x_ModifyConfigForBatchEntry(const vector<string> & tmp)
+int CBlastDBCmdApp::x_ModifyConfigForBatchEntry(const string & format)
 {
 	int status = 0;
 	if (!m_DbIsProtein) {
@@ -214,25 +248,140 @@ int CBlastDBCmdApp::x_ModifyConfigForBatchEntry(const vector<string> & tmp)
 	}
    	m_Config.m_SeqRange = TSeqRange::GetEmpty();
    	m_Config.m_FiltAlgoId = -1;
-   	for(unsigned int i=1; i < tmp.size(); i++) {
-   		if(tmp[i].find('-')!= string::npos)
-    	{
-    		try {
-    			m_Config.m_SeqRange = ParseSequenceRangeOpenEnd(tmp[i]);
-    		} catch (...) {
-    		}
-    	}
-    	else if (!m_DbIsProtein && NStr::EqualNocase(tmp[i].c_str(), "minus")) {
-    		m_Config.m_Strand = eNa_strand_minus;
-    	}
-    	else {
-    		m_Config.m_FiltAlgoId = NStr::StringToNonNegativeInt(tmp[i]);
-    		if(!s_IsMaskAlgoIdValid(*m_BlastDb, m_Config.m_FiltAlgoId)){
-    			status = 1;
-    		}
+   	if(!format.empty()) {
+   		vector<string> tmp;
+   		NStr::Split(format, " \t", tmp, NStr::fSplit_MergeDelims);
+   		for(unsigned int i=0; i < tmp.size(); i++) {
+   			if(tmp[i].find('-')!= string::npos) {
+   				try {
+   					m_Config.m_SeqRange = ParseSequenceRangeOpenEnd(tmp[i]);
+   				} catch (...) {
+   				}
+   			}
+   			else if (!m_DbIsProtein && NStr::EqualNocase(tmp[i].c_str(), "minus")) {
+   				m_Config.m_Strand = eNa_strand_minus;
+   			}
+   			else {
+   				m_Config.m_FiltAlgoId = NStr::StringToNonNegativeInt(tmp[i]);
+   				if(!s_IsMaskAlgoIdValid(*m_BlastDb, m_Config.m_FiltAlgoId)){
+   					status = 1;
+   				}
+   			}
+   		}
+   	}
+   	return status;
+}
+
+int
+CBlastDBCmdApp::x_ProcessTaxIdList(CBlastDB_Formatter & fmt)
+{
+    vector<blastdb::TOid> oids;
+    m_BlastDb->TaxIdsToOids(m_TaxIdList, oids);
+    if(oids.size() == 0) {
+		ERR_POST (Error << "No seq found in db for taxonomy list");
+		return 1;
+    }
+    for(unsigned i=0; i < oids.size(); i++) {
+    	fmt.Write(oids[i], m_Config);
+    }
+    return  0;
+}
+
+
+void
+CBlastDBCmdApp::x_InitBlastDB_TaxIdList()
+{
+   	const CArgs& args = GetArgs();
+    vector<string> ids;
+    if(args[kArgTaxIdList].HasValue()) {
+    	string input = args[kArgTaxIdList].AsString();
+    	NStr::Split(input, ",", ids);
+    }
+    else {
+    	CNcbiIstream& input = args[kArgTaxIdListFile].AsInputFile();
+    	while (input) {
+    		string line;
+    	    NcbiGetlineEOL(input, line);
+    	    if ( !line.empty() ) {
+    	       	ids.push_back(line);
+    	    }
     	}
     }
-   	return status;
+    for(unsigned int i=0; i < ids.size(); i++) {
+    	m_TaxIdList.insert(NStr::StringToInt(ids[i], NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces));
+    }
+
+    CSeqDB::ESeqType seqtype = ParseMoleculeTypeString(args[kArgDbType].AsString());
+    m_DbIsProtein = static_cast<bool>(seqtype == CSeqDB::eProtein);
+    m_TargetOnly = args["target_only"];
+   	if(m_TargetOnly) {
+    	CRef<CSeqDBGiList> taxid_list(new CSeqDBGiList());
+    	taxid_list->AddTaxIds(m_TaxIdList);
+   		m_BlastDb.Reset(new CSeqDBExpert(args[kArgDb].AsString(), seqtype, taxid_list.GetPointer()));
+    }
+   	else {
+   		m_BlastDb.Reset(new CSeqDBExpert(args[kArgDb].AsString(), seqtype));
+   	}
+}
+
+
+int
+CBlastDBCmdApp::x_ProcessBatchEntry_NoDup(CBlastDB_Formatter & fmt)
+{
+	int err_found = 0;
+   	const CArgs& args = GetArgs();
+    CNcbiIstream& input = args["entry_batch"].AsInputFile();
+    vector<string> ids, formats;
+    vector<CSeqDB::TOID> oids;
+    while (input) {
+        string line;
+        NcbiGetlineEOL(input, line);
+        if ( !line.empty() ) {
+        	string id, format;
+        	NStr::SplitInTwo(line, " \t", id, format, NStr::fSplit_MergeDelims);
+        	if(id.empty()) {
+        		continue;
+        	}
+        	ids.push_back(id);
+        	formats.push_back(format);
+        }
+    }
+
+    if(m_BlastDb->GetBlastDbVersion() == EBlastDbVersion::eBDB_Version5) {
+    	for(unsigned int i=0; i < ids.size(); i++) {
+    		ids[i] = s_PreProcessAccessionsForDBv5(ids[i]);
+    	}
+    }
+    m_BlastDb->AccessionsToOids(ids, oids);
+    for(unsigned i=0; i < ids.size(); i++) {
+    	if(oids[i] == kSeqDBEntryNotFound) {
+    		Int8 num_id = NStr::StringToNumeric<Int8>(ids[i], NStr::fConvErr_NoThrow);
+    		if(!errno) {
+    			int gi_oid = -1;
+    			m_BlastDb->GiToOidwFilterCheck(num_id, gi_oid);
+    			if(gi_oid > 0) {
+    				oids[i] = gi_oid;
+    			}
+    		}
+    		if(oids[i] == kSeqDBEntryNotFound) {
+    			err_found ++;
+    			ERR_POST (Error << "Skipped " << ids[i]);
+    			continue;
+    		}
+    	}
+    	if(x_ModifyConfigForBatchEntry(formats[i]))  {
+    		err_found ++;
+    		ERR_POST (Error << "Skipped " << ids[i]);
+    		continue;
+    	}
+    	if(m_TargetOnly) {
+    		fmt.Write(oids[i], m_Config, ids[i]);
+    	}
+    	else {
+    	   	fmt.Write(oids[i], m_Config);
+    	}
+    }
+    return (err_found) ? 1 : 0;
 }
 
 int
@@ -246,20 +395,20 @@ CBlastDBCmdApp::x_ProcessBatchEntry(CBlastDB_Formatter & fmt)
         string line;
         NcbiGetlineEOL(input, line);
         if ( !line.empty() ) {
-        	vector<string> tmp;
-        	NStr::Split(line, " \t", tmp, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-        	if(tmp.empty()) {
+        	string id, format;
+        	NStr::SplitInTwo(line, " \t", id, format, NStr::fSplit_MergeDelims);
+        	if(id.empty()) {
         		continue;
         	}
-        	if(x_ModifyConfigForBatchEntry(tmp))  {
+        	if(x_ModifyConfigForBatchEntry(format))  {
         		err_found ++;
-        		ERR_POST (Error << "Skipped " << tmp[0]);
+        		ERR_POST (Error << "Skipped " << id);
         		continue;
         	}
    			vector<int> oids;
-         	if(!x_GetOids(tmp[0], oids)) {
+         	if(!x_GetOids(id, oids)) {
          		err_found ++;
-        		ERR_POST (Error << "Skipped " << tmp[0]);
+        		ERR_POST (Error << "Skipped " << id);
         		continue;
          	}
 
@@ -270,7 +419,7 @@ CBlastDBCmdApp::x_ProcessBatchEntry(CBlastDB_Formatter & fmt)
            	}
          	else {
          		if(m_TargetOnly) {
-         			fmt.Write(oids[0], m_Config, tmp[0]);
+         			fmt.Write(oids[0], m_Config, id);
          		}
          		else {
          			fmt.Write(oids[0], m_Config);
@@ -283,7 +432,7 @@ CBlastDBCmdApp::x_ProcessBatchEntry(CBlastDB_Formatter & fmt)
 
 
 void
-CBlastDBCmdApp::x_InitApplicationData()
+CBlastDBCmdApp::x_InitBlastDB()
 {
     const CArgs& args = GetArgs();
 
@@ -330,6 +479,27 @@ CBlastDBCmdApp::x_PrintBlastDatabaseInformation()
         out << "\t" << *file_name << endl;
     }
 }
+
+void
+CBlastDBCmdApp::x_PrintBlastDatabaseTaxInformation()
+{
+    _ASSERT(m_BlastDb.NotEmpty());
+    const CArgs& args = GetArgs();
+
+    CNcbiOstream& out = args[kArgOutput].AsOutputFile();
+
+    set<Int4> tax_ids;
+    m_BlastDb->GetDBTaxIds(tax_ids);
+    // Print basic database information
+    out << "# of Tax IDs in Database: " << tax_ids.size() << endl;
+	SSeqDBTaxInfo info;
+    ITERATE(set<Int4>, itr, tax_ids) {
+    	SSeqDBTaxInfo info;
+   		CSeqDBTaxInfo::GetTaxNames(*itr, info);
+   		out << info << endl;
+    }
+}
+
 
 string
 CBlastDBCmdApp::x_InitSearchRequest()
@@ -423,10 +593,19 @@ CBlastDBCmdApp::x_ProcessSearchType(CBlastDB_Formatter & fmt)
 		fmt.DumpAll(m_Config);
 	}
 	else if (args["entry_batch"].HasValue()) {
-		return x_ProcessBatchEntry(fmt);
+		if(m_GetDuplicates) {
+			return x_ProcessBatchEntry(fmt);
+		}
+		else {
+			return x_ProcessBatchEntry_NoDup(fmt);
+		}
 	}
 	else if (args["entry"].HasValue() || args["pig"].HasValue()) {
 		return x_ProcessEntry(fmt);
+	}
+	else if(args[kArgTaxIdList].HasValue()||
+			args[kArgTaxIdListFile].HasValue()) {
+		 return x_ProcessTaxIdList(fmt);
 	}
 	else {
 		NCBI_THROW(CInputException, eInvalidInput,
@@ -527,15 +706,39 @@ void CBlastDBCmdApp::Init()
     arg_desc->SetDependency("pig", CArgDescriptions::eExcludes, "entry_batch");
     arg_desc->SetDependency("pig", CArgDescriptions::eExcludes, "target_only");
 
+    arg_desc->AddOptionalKey(kArgTaxIdList, "taxonomy_ids",
+    						"Comma-delimited taxonomy identifiers", CArgDescriptions::eString);
+    arg_desc->SetDependency(kArgTaxIdList, CArgDescriptions::eExcludes, "entry");
+    arg_desc->SetDependency(kArgTaxIdList, CArgDescriptions::eExcludes, "entry_batch");
+    arg_desc->SetDependency(kArgTaxIdList, CArgDescriptions::eExcludes, "pig");
+
+    arg_desc->AddOptionalKey(kArgTaxIdListFile, "input_file",
+    						"Input file for taxonomy identifiers", CArgDescriptions::eInputFile);
+    arg_desc->SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes, "entry");
+    arg_desc->SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes, "entry_batch");
+    arg_desc->SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes, "pig");
+    arg_desc->SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes, kArgTaxIdList);
+
     arg_desc->AddFlag("info", "Print BLAST database information", true);
     // All other options to this program should be here
     const char* exclusions[]  = { "entry", "entry_batch", "outfmt", "strand",
         "target_only", "ctrl_a", "get_dups", "pig", "range",
         "mask_sequence", "list", "remove_redundant_dbs", "recursive",
-        "list_outfmt" };
+        "list_outfmt", kArgTaxIdListFile.c_str(), kArgTaxIdList.c_str()};
     for (size_t i = 0; i < sizeof(exclusions)/sizeof(*exclusions); i++) {
         arg_desc->SetDependency("info", CArgDescriptions::eExcludes,
                                 string(exclusions[i]));
+    }
+
+    arg_desc->AddFlag("tax_info", "BLAST database taxonomy list", true);
+    // All other options to this program should be here
+    const char* tax_info_exclusions[]  = { "info", "entry", "entry_batch", "strand",
+        "target_only", "ctrl_a", "get_dups", "pig", "range",
+        "mask_sequence", "list", "remove_redundant_dbs", "recursive",
+        "list_outfmt", kArgTaxIdListFile.c_str(), kArgTaxIdList.c_str() };
+    for (size_t i = 0; i < sizeof(tax_info_exclusions)/sizeof(*tax_info_exclusions); i++) {
+        arg_desc->SetDependency("tax_info", CArgDescriptions::eExcludes,
+                                string(tax_info_exclusions[i]));
     }
 
     arg_desc->SetCurrentGroup("Sequence retrieval configuration options");
@@ -715,15 +918,26 @@ int CBlastDBCmdApp::Run(void)
             return status;
         }
 
-        x_InitApplicationData();
         if (args["info"]) {
+        	x_InitBlastDB();
             x_PrintBlastDatabaseInformation();
-        } else {
-        	x_InitSearchRequest();
+        }
+        else if (args["tax_info"]) {
+        	x_InitBlastDB();
+            x_PrintBlastDatabaseTaxInformation();
+        }
+        else if(args[kArgTaxIdList].HasValue() ||
+                args[kArgTaxIdListFile].HasValue()) {
+    		x_InitBlastDB_TaxIdList();
+       		status = x_ProcessSearchRequest();
+    	}
+        else {
+        	x_InitBlastDB();
        		status = x_ProcessSearchRequest();
         }
 
     } CATCH_ALL(status)
+
     return status;
 }
 

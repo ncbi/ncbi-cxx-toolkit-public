@@ -132,7 +132,9 @@ public:
                     int                index,
                     Uint8              max_file_size,
                     Uint8              max_letters,
-                    EIndexType         indices);
+                    EIndexType         indices,
+                    EBlastDbVersion dbver = eBDB_Version4);
+                    
 
     /// Destructor.
     ///
@@ -247,6 +249,7 @@ private:
     string           m_Date;        ///< Construct time (same for all volumes).
     int              m_Index;       ///< Index of this volume (1 based).
     EIndexType       m_Indices;     ///< Indices are sparse, full, or disabled.
+    EBlastDbVersion  m_DbVersion;   ///< Blast DB version
 
     // Status.
 

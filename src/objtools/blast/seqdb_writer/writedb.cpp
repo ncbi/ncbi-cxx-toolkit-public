@@ -51,7 +51,8 @@ CWriteDB::CWriteDB(const string       & dbname,
                    int                  indices,
                    bool                 parse_ids,
                    bool                 long_ids,
-                   bool                 use_gi_mask)
+                   bool                 use_gi_mask,
+                   EBlastDbVersion      dbver)
     : m_Impl(0)
 {
     m_Impl = new CWriteDB_Impl(dbname,
@@ -60,7 +61,8 @@ CWriteDB::CWriteDB(const string       & dbname,
                                (EIndexType)indices,
                                parse_ids,
                                long_ids,
-                               use_gi_mask);
+                               use_gi_mask,
+                               dbver);
 }
 
 CWriteDB::~CWriteDB()

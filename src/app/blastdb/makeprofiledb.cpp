@@ -56,6 +56,7 @@
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/ncbi_math.h>
 #include <objtools/blast/seqdb_writer/writedb.hpp>
+#include <objtools/blast/seqdb_writer/build_db.hpp>
 #include <objtools/blast/seqdb_writer/taxid_set.hpp>
 #include "../blast/blast_app_util.hpp"
 
@@ -634,34 +635,6 @@ void CMakeProfileDBApp::x_InitOutputDb(void)
 	m_OutputDb.Reset(new CWriteDB(m_OutDbName, CWriteDB::eProtein, m_Title, index_type, m_CreateIndexFile));
 	m_OutputDb->SetMaxFileSize(m_MaxFileSize);
 	return;
-}
-
-
-static void s_CreateDirectories(const string& dbname)
-{
-    CDirEntry dir_entry(dbname);
-
-
-    string dir_name = dir_entry.GetDir(CDirEntry::eIfEmptyPath_Current);
-    CDir tmp(dir_name);
-    if (!tmp.CheckAccess(CDirEntry::fWrite)) {
-        string msg("You do not have write permissions in the destination directory");
-        NCBI_THROW(CSeqDBException, eFileErr, msg);
-    }
-
-    dir_name = dir_entry.GetDir(CDirEntry::eIfEmptyPath_Empty);
-    if(dir_name.empty()) {
-    	return;
-    }
-
-    CDir d(dir_name);
-    if ( !d.Exists() ) {
-        if ( !d.CreatePath() ) {
-            string msg("Failed to create directory '" + d.GetName() + "'");
-            NCBI_THROW(CSeqDBException, eFileErr, msg);
-        }
-    }
-
 }
 
 static bool s_DeleteMakeprofileDb(const string & name )
@@ -1286,7 +1259,7 @@ static CRef<CBlast_def_line_set> s_GenerateBlastDefline(const CBioseq & bio)
 
 int CMakeProfileDBApp::x_Run(void)
 {
-	 s_CreateDirectories(m_OutDbName);
+	 CBuildDatabase::CreateDirectories(m_OutDbName);
 	 if ( s_DeleteMakeprofileDb(m_OutDbName)) {
 		 *m_LogFile << "Deleted existing BLAST database with identical name." << endl;
 	 }

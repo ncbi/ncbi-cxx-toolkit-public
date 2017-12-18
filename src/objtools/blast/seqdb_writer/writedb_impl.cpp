@@ -58,7 +58,8 @@ CWriteDB_Impl::CWriteDB_Impl(const string & dbname,
                              EIndexType     indices,
                              bool           parse_ids,
                              bool           long_ids,
-                             bool           use_gi_mask)
+                             bool           use_gi_mask,
+                             EBlastDbVersion    dbver)
     : m_Dbname           (dbname),
       m_Protein          (protein),
       m_Title            (title),
@@ -69,11 +70,13 @@ CWriteDB_Impl::CWriteDB_Impl(const string & dbname,
       m_MaskDataColumn   (-1),
       m_ParseIDs         (parse_ids),
       m_UseGiMask        (use_gi_mask),
+      m_DbVersion        (dbver),
       m_Pig              (0),
       m_Hash             (0),
       m_SeqLength        (0),
       m_HaveSequence     (false),
-      m_LongSeqId        (long_ids)
+      m_LongSeqId        (long_ids),      
+      m_LmdbOid          (0)
 {
     CTime now(CTime::eCurrent);
 
@@ -320,7 +323,7 @@ void CWriteDB_Impl::Close()
     m_Sequence.erase();
     m_Ambig.erase();
 
-    if (! m_Volume.Empty()) {
+    if (! m_Volume.Empty()) {        
         m_Volume->Close();
 
         if (m_UseGiMask) {
@@ -358,9 +361,19 @@ void CWriteDB_Impl::Close()
         if (m_VolumeList.size() > 1 || m_UseGiMask) {
             x_MakeAlias();
         }
+        if ((m_DbVersion == eBDB_Version5)  &&  m_Lmdbdb) {
+        	vector<string> vol_names(m_VolumeList.size());
+        	vector<blastdb::TOid> vol_num_oids(m_VolumeList.size());
+        	for(unsigned i=0; i < m_VolumeList.size(); i++) {
+        		CRef<CWriteDB_Volume> & v = m_VolumeList[i];
+        		vol_names[i] = CDirEntry(v->GetVolumeName()).GetName();
+        		vol_num_oids[i] = v->GetOID();
+        	}
+            m_Lmdbdb->InsertVolumesInfo(vol_names, vol_num_oids);
+        }
 
         m_Volume.Reset();
-    }
+    }    
 }
 
 string CWriteDB_Impl::x_MakeAliasName()
@@ -1017,6 +1030,12 @@ void CWriteDB_Impl::x_Publish()
         return;
     }
 
+    
+    if(m_DbVersion == eBDB_Version5 && m_Lmdbdb.Empty()) {
+        const string lmdb_fname_w_path = BuildLMDBFileName(m_Dbname, m_Protein);
+        m_Lmdbdb.Reset(new CWriteDB_LMDB(lmdb_fname_w_path));
+    }
+    
     x_CookData();
 
     bool done = false;
@@ -1030,16 +1049,20 @@ void CWriteDB_Impl::x_Publish()
                                        m_Hash,
                                        m_Blobs,
                                        m_MaskDataColumn);
+        if (done  &&  (m_DbVersion == eBDB_Version5)  &&  m_Lmdbdb) {            
+            m_Lmdbdb->InsertEntries(m_Ids,m_LmdbOid++);
+        }
     }
-
+    
     if (! done) {
         int index = (int) m_VolumeList.size();
 
-        if (m_Volume.NotEmpty()) {
+        if (m_Volume.NotEmpty()) {                        
             m_Volume->Close();
         }
 
         {
+            
             m_Volume.Reset(new CWriteDB_Volume(m_Dbname,
                                                m_Protein,
                                                m_Title,
@@ -1047,8 +1070,9 @@ void CWriteDB_Impl::x_Publish()
                                                index,
                                                m_MaxFileSize,
                                                m_MaxVolumeLetters,
-                                               m_Indices));
-
+                                               m_Indices,
+                                               m_DbVersion));
+                                          
             m_VolumeList.push_back(m_Volume);
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
@@ -1077,6 +1101,10 @@ void CWriteDB_Impl::x_Publish()
                                        m_Hash,
                                        m_Blobs,
                                        m_MaskDataColumn);
+
+        if (done  &&  (m_DbVersion == eBDB_Version5)  &&  m_Lmdbdb) {
+            m_Lmdbdb->InsertEntries(m_Ids,m_LmdbOid++);
+        }
 
         if (! done) {
             NCBI_THROW(CWriteDBException,
@@ -1509,6 +1537,9 @@ void CWriteDB_Impl::ListFiles(vector<string> & files)
 
     if (m_VolumeList.size() > 1) {
         files.push_back(x_MakeAliasName());
+    }
+    if (m_DbVersion == eBDB_Version5) {
+        files.push_back(BuildLMDBFileName(m_Dbname, m_Protein));
     }
 }
 

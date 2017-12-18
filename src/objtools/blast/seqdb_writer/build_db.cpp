@@ -998,7 +998,7 @@ bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
     return rv;
 }
 
-static void s_CreateDirectories(const string& dbname)
+void CBuildDatabase::CreateDirectories(const string& dbname)
 {
     CDirEntry dir_entry(dbname);
     string dir_name = dir_entry.GetDir(CDirEntry::eIfEmptyPath_Empty);
@@ -1026,7 +1026,8 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
                                CWriteDB::TIndexType   indexing,
                                bool                   use_gi_mask,
                                ostream              * logfile,
-                               bool                   long_seqids)
+                               bool                   long_seqids,
+                               EBlastDbVersion        dbver)
     : m_IsProtein    (is_protein),
       m_KeepLinks    (false),
       m_KeepMbits    (false),
@@ -1041,7 +1042,7 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
       m_LongIDs      (long_seqids),
       m_FoundMatchingMasks(false)
 {
-    s_CreateDirectories(dbname);
+    CreateDirectories(dbname);
     const string output_dbname = CDirEntry::CreateAbsolutePath(dbname);
     m_LogFile << "\n\nBuilding a new DB, current time: "
               << CTime(CTime::eCurrent).AsString() << endl;
@@ -1064,7 +1065,8 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
                                   indexing,
                                   m_ParseIDs,
                                   m_LongIDs,
-                                  use_gi_mask));
+                                  use_gi_mask,
+                                  dbver));
 
     // Standard 1 GB limit
 
@@ -1078,7 +1080,8 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
                                bool           parse_seqids,
                                bool           use_gi_mask,
                                ostream      * logfile,
-                               bool           long_seqids)
+                               bool           long_seqids,
+                               EBlastDbVersion        dbver)
     : m_IsProtein    (is_protein),
       m_KeepLinks    (false),
       m_KeepMbits    (false),
@@ -1093,7 +1096,7 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
       m_LongIDs      (long_seqids),
       m_FoundMatchingMasks(false)
 {
-    s_CreateDirectories(dbname);
+    CreateDirectories(dbname);
     const string output_dbname = CDirEntry::CreateAbsolutePath(dbname);
     m_LogFile << "\n\nBuilding a new DB, current time: "
               << CTime(CTime::eCurrent).AsString() << endl;
@@ -1120,7 +1123,8 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
                                   ix,
                                   m_ParseIDs,
                                   long_seqids,
-                                  use_gi_mask));
+                                  use_gi_mask,
+                                  dbver));
 
     // Standard 1 GB limit
 

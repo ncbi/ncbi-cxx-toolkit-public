@@ -40,6 +40,7 @@
 #include <objects/general/general__.hpp>
 #include <objtools/blast/seqdb_reader/impl/seqdbgeneral.hpp>
 #include <objtools/blast/seqdb_reader/impl/seqdbatlas.hpp>
+#include <objtools/blast/seqdb_reader/seqidlist_reader.hpp>
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
@@ -609,6 +610,13 @@ void s_InsureOrder(TVector & v)
     }
 }
 
+void CSeqDBGiList::PreprocessIdsForISAMSiLookup()
+{
+	NON_CONST_ITERATE(vector<CSeqDBGiList::SSiOid>, itr, m_SisOids) {
+		string str_id = SeqDB_SimplifyAccession(itr->si);
+		itr->si = NStr::ToLower(str_id);
+	}
+}
 
 void CSeqDBGiList::InsureOrder(ESortOrder order)
 {
@@ -1249,9 +1257,9 @@ void SeqDB_ReadMemorySiList(const char * fbeginp,
         while (p< fendp && *p!=' ' && *p!='\t' && *p!='\n' && *p!='\r') ++p;
         if (p > head) {
             string acc(head, p);
-            string str_id = SeqDB_SimplifyAccession(acc);
+            string str_id = NStr::TruncateSpaces(acc, NStr::eTrunc_Both);
             if (str_id != "") {
-                sis.push_back(NStr::ToLower(str_id));
+                sis.push_back(str_id);
             } else {
                 cerr << "WARNING:  " << acc
                      << " is not a valid seqid string." << endl;
@@ -1348,7 +1356,7 @@ void SeqDB_ReadGiList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis, 
 
     Int8 file_size = mfile.GetSize();
     const char * fbeginp = (char*) mfile.GetPtr();
-    const char * fendp   = fbeginp + (int)file_size;
+    const char * fendp   = fbeginp + file_size;
 
     SeqDB_ReadMemoryGiList(fbeginp, fendp, gis, in_order);
 }
@@ -1360,7 +1368,7 @@ void SeqDB_ReadTiList(const string & fname, vector<CSeqDBGiList::STiOid> & tis, 
 
     Int8 file_size = mfile.GetSize();
     const char * fbeginp = (char*) mfile.GetPtr();
-    const char * fendp   = fbeginp + (int)file_size;
+    const char * fendp   = fbeginp + file_size;
 
     SeqDB_ReadMemoryTiList(fbeginp, fendp, tis, in_order);
 }
@@ -1372,7 +1380,7 @@ void SeqDB_ReadMixList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis,
 
     Int8 file_size = mfile.GetSize();
     const char *fbeginp = (char*) mfile.GetPtr();
-    const char *fendp   = fbeginp + (int) file_size;
+    const char *fendp   = fbeginp + file_size;
 
     SeqDB_ReadMemoryMixList(fbeginp, fendp, gis, tis, sis, in_order);
 }
@@ -1391,15 +1399,19 @@ void SeqDB_ReadGiList(const string & fname, vector<TGi> & gis, bool * in_order)
     }
 }
 
-void SeqDB_ReadSiList(const string & fname, vector<CSeqDBGiList::SSiOid> & sis, bool * in_order)
+void SeqDB_ReadSiList(const string & fname, vector<CSeqDBGiList::SSiOid> & sis, bool * in_order, SBlastSeqIdListInfo & db_info)
 {
-    CMemoryFile mfile(SeqDB_MakeOSPath(fname));
-
-    Int8 file_size = mfile.GetSize();
-    const char *fbeginp = (char*) mfile.GetPtr();
-    const char *fendp   = fbeginp + (int) file_size;
-
-    SeqDB_ReadMemorySiList(fbeginp, fendp, sis, in_order);
+	CMemoryFile mfile(SeqDB_MakeOSPath(fname));
+    if (CBlastSeqidlistFile::GetSeqidlist(mfile, sis, db_info)) {
+    	*in_order = true;
+    	return;
+    }
+    else {
+    	Int8 file_size = mfile.GetSize();
+    	const char *fbeginp = (char*) mfile.GetPtr();
+    	const char *fendp   = fbeginp + file_size;
+    	SeqDB_ReadMemorySiList(fbeginp, fendp, sis, in_order);
+    }
 }
 
 bool CSeqDBNegativeList::FindGi(TGi gi)
@@ -1519,6 +1531,15 @@ bool CSeqDBNegativeList::FindId(const CSeq_id & id, bool & match_type)
     return false;
 }
 
+void CSeqDBNegativeList::PreprocessIdsForISAMSiLookup()
+{
+	NON_CONST_ITERATE(vector<string>, itr, m_Sis) {
+		string str_id = SeqDB_SimplifyAccession(*itr);
+		*itr = NStr::ToLower(str_id);
+	}
+}
+
+
 bool CSeqDBGiList::FindId(const CSeq_id & id)
 {
     if (id.IsGi()) {
@@ -1532,6 +1553,10 @@ bool CSeqDBGiList::FindId(const CSeq_id & id)
 
         return FindTi(ti);
     } else {
+    	if(FindSi(GetBlastSeqIdString(id, true))) return true;
+    	if(FindSi(GetBlastSeqIdString(id, false))) return true;
+
+    	/// For isam lookup
         Int8 num_id;
         string str_id;
         bool simpler;
@@ -1560,7 +1585,7 @@ CSeqDBFileGiList::CSeqDBFileGiList(const string & fname, EIdType idtype)
             SeqDB_ReadTiList(fname, m_TisOids, & in_order);
             break;
         case eSiList:
-            SeqDB_ReadSiList(fname, m_SisOids, & in_order);
+            SeqDB_ReadSiList(fname, m_SisOids, & in_order, m_ListInfo);
             break;
         case eMixList:
         	SeqDB_ReadMixList(fname, m_GisOids, m_TisOids, m_SisOids, & in_order);
@@ -1568,7 +1593,7 @@ CSeqDBFileGiList::CSeqDBFileGiList(const string & fname, EIdType idtype)
     }
     m_CurrentOrder = in_order ? eGi : eNone;
 }
-
+/*
 CSeqDBFileGiList::CSeqDBFileGiList(vector<string> fnames, EIdType idtype)
 {
     bool in_order = false;
@@ -1591,7 +1616,7 @@ CSeqDBFileGiList::CSeqDBFileGiList(vector<string> fnames, EIdType idtype)
     }
     m_CurrentOrder = in_order ? eGi : eNone;
 }
-
+*/
 void SeqDB_CombineAndQuote(const vector<string> & dbs,
                            string               & dbname)
 {
@@ -2408,6 +2433,8 @@ s_SeqDB_ParseSeqIDs(const string              & line,
     return ! seqids.empty();
 }
 
+
+
 ESeqDBIdType SeqDB_SimplifyAccession(const string & acc,
                                      Int8         & num_id,
                                      string       & str_id,
@@ -2443,6 +2470,36 @@ ESeqDBIdType SeqDB_SimplifyAccession(const string & acc,
             str_id = seqids.front()->AsFastaString();
             str_id = NStr::ToLower(str_id);
         }
+        else if (!seqids.empty() && seqids.front()->IsLocal()) {
+        	// Chec for gnl dbs
+        	if( acc.find(":") != string::npos) {
+        		static const char* GNL_DBs[] = {"CDD", "SRA", "TSA", "GNOMON", NULL};
+        		string db_tag, gnl_id;
+        		NStr::SplitInTwo(acc, ":", db_tag, gnl_id);
+        		const char** p = GNL_DBs;
+        		for (;  p  &&  *p;  ++p) {
+        			if(NStr::EqualNocase(*p, db_tag.c_str())) {
+        				str_id  = "gnl|" + db_tag + "|"  + gnl_id;
+        				seqids.front().Reset();
+        				CRef<CSeq_id> new_id(new CSeq_id(str_id));
+        				seqids.front() = new_id;
+        				break;
+        			}
+        		}
+        		if(*p == NULL) {
+        			str_id =  acc;
+        		}
+        	}
+        	else {
+        		Int8 n_id = 0;
+        		if (NStr::StringToNumeric<Int8>(acc,&n_id, NStr::fConvErr_NoThrow)) {
+        			str_id = "lcl|" + acc;
+        		}
+        		else {
+        			str_id = acc;
+        		}
+        	}
+        }
         else {
             str_id = acc;
         }
@@ -2463,7 +2520,7 @@ const string SeqDB_SimplifyAccession(const string &acc)
     else return "";
 }
 
-void SeqDB_GetFileExtensions(bool db_is_protein, vector<string>& extn)
+void SeqDB_GetFileExtensions(bool db_is_protein, vector<string>& extn, EBlastDbVersion dbver)
 {
     // NOTE: If more extensions are added, please keep in sync with
     // updatedb.pl's DistributeBlastDbsToBackends
@@ -2478,11 +2535,17 @@ void SeqDB_GetFileExtensions(bool db_is_protein, vector<string>& extn)
     extn.push_back(kExtnMol + "sq");   // sequence file
     extn.push_back(kExtnMol + "ni");   // ISAM numeric index file
     extn.push_back(kExtnMol + "nd");   // ISAM numeric data file
-    extn.push_back(kExtnMol + "si");   // ISAM string index file
-    extn.push_back(kExtnMol + "sd");   // ISAM string data file
+    if (dbver == eBDB_Version4) {
+    	extn.push_back(kExtnMol + "si");   // ISAM string index file
+    	extn.push_back(kExtnMol + "sd");   // ISAM string data file
+    }
     extn.push_back(kExtnMol + "pi");   // ISAM PIG index file
     extn.push_back(kExtnMol + "pd");   // ISAM PIG data file
-
+    if (dbver == eBDB_Version5) {
+    	vector<string> lmdbs;
+    	SeqDB_GetLMDBFileExtensions(db_is_protein, lmdbs);
+    	extn.insert(extn.end(), lmdbs.begin(), lmdbs.end());
+    }
     // Contain masking information
     extn.push_back(kExtnMol + "aa");   // ISAM mask index file
     extn.push_back(kExtnMol + "ab");   // ISAM mask data file (big-endian)
@@ -2492,6 +2555,46 @@ void SeqDB_GetFileExtensions(bool db_is_protein, vector<string>& extn)
     extn.push_back(kExtnMol + "hd");   // ISAM sequence hash data file
     extn.push_back(kExtnMol + "ti");   // ISAM trace id index file
     extn.push_back(kExtnMol + "td");   // ISAM trace id data file
+}
+
+
+void SeqDB_GetLMDBFileExtensions(bool db_is_protein, vector<string>& extn)
+{
+
+	static const char * ext[]={"db", "os", "ot", "tf", "to", "db-lock", "tf-lock", NULL};
+	extn.clear();
+	const string kExtnMol(1, db_is_protein ? 'p' : 'n');
+	for(const char ** p=ext; *p != NULL; p++) {
+		extn.push_back(kExtnMol + (*p));
+	}
+}
+
+bool IsStringId(const CSeq_id & id)
+{
+	 switch(id.Which()) {
+	    case CSeq_id::e_Gi:
+	    	return false;
+	    break;
+	    case CSeq_id::e_General:
+	    {
+	    	const CDbtag & dbt = id.GetGeneral();
+            if (dbt.CanGetDb() && ((dbt.GetDb() == "PIG") || (dbt.GetDb() == "ti"))) {
+            	return false;
+            }
+	    }
+	    default:
+	    	return true;
+	    break;
+	 };
+}
+
+string GetBlastSeqIdString(const CSeq_id & seqid, bool version)
+{
+	if(seqid.IsPir() || seqid.IsPrf()) {
+		return seqid.AsFastaString();
+	}
+
+	return seqid.GetSeqIdString(version);
 }
 
 END_NCBI_SCOPE
