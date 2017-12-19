@@ -79,7 +79,9 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
                 printf("\nTo retrieve blob attributes from the server, use\n"
                         GRID_APP_NAME " blobinfo %s\n", m_Opts.id.c_str());
             return 0;
-        } else if (ns_key.ParseJobKey(m_Opts.id, m_CompoundIDPool)) {
+
+        // Ignoring version 0 as it means any string with a leading digit
+        } else if (ns_key.ParseJobKey(m_Opts.id, m_CompoundIDPool) && ns_key.version) {
             printf("type: " TOKEN_TYPE__NETSCHEDULE_JOB_KEY "\n"
                     "key_version: %u\n",
                     ns_key.version);

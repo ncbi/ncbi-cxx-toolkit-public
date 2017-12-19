@@ -906,12 +906,16 @@ CJsonNode g_WhatIs(const string& id, CCompoundIDPool id_pool)
 
     if (ns_key.ParseJobKey(id, id_pool)) {
         CJobInfoToJSON job_info_to_json;
-        CJsonNode result(job_info_to_json.GetRootNode());
 
-        result.SetString("type", TOKEN_TYPE__NETSCHEDULE_JOB_KEY);
-        result.SetInteger("key_version", ns_key.version);
-        job_info_to_json.ProcessJobMeta(ns_key);
-        return result;
+        // Ignoring version 0 as it means any string with a leading digit
+        if (ns_key.version) {
+            CJsonNode result(job_info_to_json.GetRootNode());
+
+            result.SetString("type", TOKEN_TYPE__NETSCHEDULE_JOB_KEY);
+            result.SetInteger("key_version", ns_key.version);
+            job_info_to_json.ProcessJobMeta(ns_key);
+            return result;
+        }
     }
 
     return CJsonNode();

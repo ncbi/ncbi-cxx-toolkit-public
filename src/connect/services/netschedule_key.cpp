@@ -158,6 +158,7 @@ bool CNetScheduleKey::ParseJobKey(const string& key_str,
 
     if (isdigit(*ch)) {
         version = 0;
+        port = 0;
         id = (unsigned) atoi(ch);
         return true;
     }
