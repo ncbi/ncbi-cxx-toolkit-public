@@ -2463,7 +2463,7 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                     if ( !pc->m_Range.IntersectingWith(ci->m_Range) ) {
                         continue;
                     }
-                    if ( check_genes && info.IsSetGene() && pc->m_Info->GivesGeneToChildren() ) {
+                    if ( check_genes && info.IsSetGene() ) {
                         // check gene mismatch
                         if ( info.m_Gene != pc->m_Info->GetChildrenGene() ) {
                             continue;

@@ -30,7 +30,7 @@
 *
 * ===========================================================================
 */
-
+#define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbi_system.hpp>
@@ -81,26 +81,26 @@ CScope& GetScope()
 }
 
 
-CRef<CSeq_loc> MakeBond(TIntId giA, TSeqPos posA, int giB = 0, TSeqPos posB = 0)
+CRef<CSeq_loc> MakeBond(TGi giA, TSeqPos posA, TGi giB = ZERO_GI, TSeqPos posB = 0)
 {
     CRef<CSeq_loc> ret(new CSeq_loc);
-    ret->SetBond().SetA().SetId().SetGi(GI_FROM(TIntId, giA));
+    ret->SetBond().SetA().SetId().SetGi(giA);
     ret->SetBond().SetA().SetPoint(posA);
-    if (giB > 0) {
-        ret->SetBond().SetB().SetId().SetGi(GI_FROM(TIntId, giB));
+    if (giB) {
+        ret->SetBond().SetB().SetId().SetGi(giB);
         ret->SetBond().SetB().SetPoint(posB);
     }
     return ret;
 }
 
 
-CRef<CSeq_loc> MakeInterval(TIntId        gi,
+CRef<CSeq_loc> MakeInterval(TGi        gi,
                             TSeqPos    from,
                             TSeqPos    to,
                             ENa_strand strand = eNa_strand_unknown)
 {
     CRef<CSeq_loc> ret(new CSeq_loc);
-    ret->SetInt().SetId().SetGi(GI_FROM(TIntId, gi));
+    ret->SetInt().SetId().SetGi(gi);
     ret->SetInt().SetFrom(from);
     ret->SetInt().SetTo(to);
     if (strand != eNa_strand_unknown) {
@@ -126,1685 +126,16 @@ CRef<CSeq_loc> MakeInterval(CRef<CSeq_id> id,
 }
 
 
-CRef<CSeq_loc> MakePoint(TIntId gi, TSeqPos pos)
+CRef<CSeq_loc> MakePoint(TGi gi, TSeqPos pos)
 {
     CRef<CSeq_loc> ret(new CSeq_loc);
-    ret->SetPnt().SetId().SetGi(GI_FROM(TIntId, gi));
+    ret->SetPnt().SetId().SetGi(gi);
     ret->SetPnt().SetPoint(pos);
     return ret;
 }
 
 
-template<class C>
-CRef<C> s_Parse(const char* asn)
-{
-    CRef<C> obj(new C());
-    CNcbiIstrstream istr(asn);
-    istr >> MSerial_AsnText >> *obj;
-    return obj;
-}
-
-template<class C>
-bool s_Equals(const C& obj1, const C& obj2)
-{
-    if ( obj1.Equals(obj2) ) {
-        return true;
-    }
-    NcbiCout << "Objects differ:\n";
-    NcbiCout << "obj1: " << MSerial_AsnText << obj1;
-    NcbiCout << "obj2: " << MSerial_AsnText << obj2;
-    return false;
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_whole)
-{
-    CScope* scope = &GetScope();
-
-    CSeq_loc wg2, wg3, wl2, wl3;
-    wg2.SetWhole().SetGi(GI_CONST(2));
-    wg3.SetWhole().SetGi(GI_CONST(3));
-    wl2.SetWhole().SetLocal().SetStr("local2");
-    wl3.SetWhole().SetLocal().SetStr("local3");
-
-    BOOST_CHECK_EQUAL(Compare(wg2, wg2, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(wg2, wl2, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(wg2, wg3, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(wg2, wl3, scope, fCompareOverlapping), eNoOverlap);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_interval)
-{
-    CScope* scope = &GetScope();
-
-    CSeq_loc wg2, wg3;
-    wg2.SetWhole().SetGi(GI_CONST(2));
-    wg3.SetWhole().SetGi(GI_CONST(3));
-
-    // Partial overlap
-    CRef<CSeq_loc> i = MakeInterval(2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(wg2, *i, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i, wg2, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(wg3, *i, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i, wg3, scope, fCompareOverlapping), eNoOverlap);
-
-    // Full bioseq
-    i = MakeInterval(2, 0, 1441);
-    BOOST_CHECK_EQUAL(Compare(wg2, *i, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(*i, wg2, scope, fCompareOverlapping), eSame);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_packed_interval)
-{
-    CScope* scope = &GetScope();
-
-    CSeq_loc wg2, wg3;
-    wg2.SetWhole().SetGi(GI_CONST(2));
-    wg3.SetWhole().SetGi(GI_CONST(3));
-
-    CSeq_id gi2("gi|2");
-    CSeq_id gi3("gi|3");
-
-    CSeq_loc pki;
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(wg2, pki, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pki, wg2, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(wg3, pki, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(pki, wg3, scope, fCompareOverlapping), eNoOverlap);
-
-    pki.SetPacked_int().AddInterval(gi3, 30, 40);
-    BOOST_CHECK_EQUAL(Compare(wg2, pki, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pki, wg2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(wg3, pki, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pki, wg3, scope, fCompareOverlapping), eOverlap);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 0, 1441);
-    pki.SetPacked_int().AddInterval(gi3, 0, 374);
-    BOOST_CHECK_EQUAL(Compare(wg2, pki, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(pki, wg2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(wg3, pki, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(pki, wg3, scope, fCompareOverlapping), eContains);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_point)
-{
-    CScope* scope = &GetScope();
-
-    CSeq_loc wg2, wg3;
-    wg2.SetWhole().SetGi(GI_CONST(2));
-    wg3.SetWhole().SetGi(GI_CONST(3));
-
-    CRef<CSeq_loc> pt = MakePoint(2, 10);
-    BOOST_CHECK_EQUAL(Compare(wg2, *pt, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*pt, wg2, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(wg3, *pt, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*pt, wg3, scope, fCompareOverlapping), eNoOverlap);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_packed_point)
-{
-    CScope* scope = &GetScope();
-
-    CSeq_loc wg2, wg3, wl2, wl3;
-    wg2.SetWhole().SetGi(GI_CONST(2));
-    wg3.SetWhole().SetGi(GI_CONST(3));
-    wl2.SetWhole().SetLocal().SetStr("local2");
-    wl3.SetWhole().SetLocal().SetStr("local3");
-
-    CSeq_loc pp;
-    pp.SetPacked_pnt().SetId().SetGi(GI_CONST(2));
-    pp.SetPacked_pnt().AddPoint(10);
-    pp.SetPacked_pnt().AddPoint(20);
-    pp.SetPacked_pnt().AddPoint(30);
-    BOOST_CHECK_EQUAL(Compare(wg2, pp, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pp, wg2, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(wl3, pp, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(pp, wl3, scope, fCompareOverlapping), eNoOverlap);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_mix)
-{
-    CScope* scope = &GetScope();
-
-    CSeq_loc w;
-    w.SetWhole().SetGi(GI_CONST(2));
-
-    // Check some basic cases
-    CSeq_loc mix;
-    mix.SetMix().Set().push_back(MakeInterval(3, 10, 20));
-    BOOST_CHECK_EQUAL(Compare(w, mix, scope, fCompareOverlapping), eNoOverlap);
-
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 10, 20));
-    BOOST_CHECK_EQUAL(Compare(w, mix, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, w, scope, fCompareOverlapping), eContained);
-
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 10, 20));
-    mix.SetMix().Set().push_back(MakeInterval(2, 30, 40));
-    BOOST_CHECK_EQUAL(Compare(w, mix, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, w, scope, fCompareOverlapping), eContained);
-
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 10, 20));
-    mix.SetMix().Set().push_back(MakeInterval(3, 30, 40));
-    BOOST_CHECK_EQUAL(Compare(w, mix, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, w, scope, fCompareOverlapping), eOverlap);
-
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 0, 1441));
-    mix.SetMix().Set().push_back(MakeInterval(3, 30, 40));
-    BOOST_CHECK_EQUAL(Compare(w, mix, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, w, scope, fCompareOverlapping), eContains);
-
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 0, 1441));
-    CRef<CSeq_loc> sub(new CSeq_loc);
-    sub->SetWhole().SetGi(GI_CONST(2));
-    mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(w, mix, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, w, scope, fCompareOverlapping), eContains);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_bond)
-{
-    CScope* scope = &GetScope();
-
-    CSeq_loc wg2, wg3;
-    wg2.SetWhole().SetGi(GI_CONST(2));
-    wg3.SetWhole().SetGi(GI_CONST(3));
-
-    // B not set
-    CRef<CSeq_loc> bond = MakeBond(2, 10);
-    BOOST_CHECK_EQUAL(Compare(wg2, *bond, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*bond, wg2, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(wg3, *bond, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*bond, wg3, scope, fCompareOverlapping), eNoOverlap);
-
-    // A and B on different bioseqs
-    bond = MakeBond(2, 10, 3, 20);
-    BOOST_CHECK_EQUAL(Compare(wg2, *bond, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*bond, wg2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(wg3, *bond, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*bond, wg3, scope, fCompareOverlapping), eOverlap);
-
-    // A and B on the same bioseq
-    bond = MakeBond(2, 10, 2, 20);
-    BOOST_CHECK_EQUAL(Compare(wg2, *bond, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*bond, wg2, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(wg3, *bond, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*bond, wg3, scope, fCompareOverlapping), eNoOverlap);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_interval)
-{
-    CScope* scope = &GetScope();
-
-    CRef<CSeq_loc> i2 = MakeInterval(2, 10, 20);
-    CRef<CSeq_loc> i3 = MakeInterval(3, 10, 20);
-
-    CRef<CSeq_loc> i = MakeInterval(2, 25, 35);
-    // No overlap
-    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope, fCompareOverlapping), eNoOverlap);
-
-    // Abutting but not overlapping
-    i = MakeInterval(2, 0, 22);
-    i2 = MakeInterval(2, 23, 40);
-    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i, *i2, scope, fCompareOverlapping), eNoOverlap);
-
-    i2 = MakeInterval(2, 10, 20);
-    i = MakeInterval(2, 5, 15);
-    // Partial overlap
-    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i, *i2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i3, *i, scope, fCompareOverlapping), eNoOverlap);
-
-    i = MakeInterval(2, 5, 25);
-    // Contained/contains
-    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(*i, *i2, scope, fCompareOverlapping), eContains);
-    i = MakeInterval(2, 10, 25); // same on the right
-    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(*i, *i2, scope, fCompareOverlapping), eContains);
-    i = MakeInterval(2, 5, 20); // same on the left
-    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(*i, *i2, scope, fCompareOverlapping), eContains);
-
-    i = MakeInterval(2, 10, 20);
-    // Same
-    BOOST_CHECK_EQUAL(Compare(*i2, *i, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(*i, *i2, scope, fCompareOverlapping), eSame);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_packed_interval)
-{
-    CScope* scope = &GetScope();
-
-    CRef<CSeq_loc> i2 = MakeInterval(2, 10, 20);
-    CRef<CSeq_loc> i3 = MakeInterval(3, 30, 40);
-
-    CSeq_id gi2("gi|2");
-    CSeq_id gi3("gi|3");
-
-    CSeq_loc pki;
-    // Check different combinations of overlaps. Make sure the order
-    // of ranges does not affect the result.
-
-    // eNoOverlap + eNoOverlap = eNoOverlap
-    pki.SetPacked_int().AddInterval(gi2, 25, 35);
-    pki.SetPacked_int().AddInterval(gi2, 35, 45);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eNoOverlap);
-
-    // eNoOverlap + eContained = eOverlap
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 1, 5);
-    pki.SetPacked_int().AddInterval(gi2, 11, 19);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eOverlap);
-    pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eOverlap);
-
-    // eNoOverlap + eContains = eContains
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 1, 5);
-    pki.SetPacked_int().AddInterval(gi2, 9, 21);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
-    pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
-
-    // eNoOverlap + eSame = eContains
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 1, 5);
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
-    pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
-
-    // eNoOverlap + eOverlap = eOverlap
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 1, 5);
-    pki.SetPacked_int().AddInterval(gi2, 15, 22);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eOverlap);
-    pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eOverlap);
-
-    // eContained + eContained = eContained
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 11, 13);
-    pki.SetPacked_int().AddInterval(gi2, 15, 18);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContains);
-    pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContains);
-
-    // eContained + eContains = eContains
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 11, 13);
-    pki.SetPacked_int().AddInterval(gi2, 9, 21);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
-    pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
-
-    // eContained + eSame = eContains
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 11, 13);
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContains);
-    pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContains);
-
-    // eContained + eOverlap = eOverlap
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 11, 13);
-    pki.SetPacked_int().AddInterval(gi2, 15, 22);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eOverlap);
-    pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eOverlap);
-
-    // eContains + eContains = eContains
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 9, 21);
-    pki.SetPacked_int().AddInterval(gi2, 5, 25);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
-    pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
-
-    // eContains + eSame = eContains
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 9, 21);
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
-    pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
-
-    // eContains + eOverlap = eContains
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 9, 21);
-    pki.SetPacked_int().AddInterval(gi2, 15, 22);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
-    pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
-
-    // eSame + eSame = eContains
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContains);
-
-    // eSame + eOverlap = eContains
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    pki.SetPacked_int().AddInterval(gi2, 15, 22);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
-    pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
-
-    // eOverlap + eOverlap = eOverlap
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 8, 13);
-    pki.SetPacked_int().AddInterval(gi2, 16, 22);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eOverlap);
-    pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eOverlap);
-
-    // eNoOverlap + eContains = eContains
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    pki.SetPacked_int().AddInterval(gi2, 11, 19);
-    pki.SetPacked_int().AddInterval(gi2, 25, 35);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
-    pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
-
-    // eContained + eContains = eContains
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    pki.SetPacked_int().AddInterval(gi2, 11, 19);
-    pki.SetPacked_int().AddInterval(gi2, 12, 18);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContains);
-    pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContains);
-
-    // eContains + eContains = eContains
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    pki.SetPacked_int().AddInterval(gi2, 11, 19);
-    pki.SetPacked_int().AddInterval(gi2, 9, 21);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
-    pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
-
-    // eSame + eContains = eContains
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    pki.SetPacked_int().AddInterval(gi2, 11, 19);
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContains);
-
-    // eOverlap + eContains = eContains
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    pki.SetPacked_int().AddInterval(gi2, 11, 19);
-    pki.SetPacked_int().AddInterval(gi2, 15, 25);
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
-    pki.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pki, *i2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*i2, pki, scope, fCompareOverlapping), eContained);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_point)
-{
-    CScope* scope = &GetScope();
-
-    CRef<CSeq_loc> i2 = MakeInterval(2, 10, 20);
-    CRef<CSeq_loc> i3 = MakeInterval(3, 10, 20);
-
-    CRef<CSeq_loc> pt = MakePoint(2, 5);
-    // No overlap
-    BOOST_CHECK_EQUAL(Compare(*i2, *pt, scope, fCompareOverlapping), eNoOverlap);
-    pt = MakePoint(2, 15);
-    BOOST_CHECK_EQUAL(Compare(*i3, *pt, scope, fCompareOverlapping), eNoOverlap);
-
-    // Overlap
-    BOOST_CHECK_EQUAL(Compare(*i2, *pt, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*pt, *i2, scope, fCompareOverlapping), eContained);
-
-    // Same - interval of length 1
-    CRef<CSeq_loc> i1 = MakeInterval(2, 15, 15);
-    BOOST_CHECK_EQUAL(Compare(*pt, *i1, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(*i1, *pt, scope, fCompareOverlapping), eSame);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_packed_point)
-{
-    CScope* scope = &GetScope();
-
-    CRef<CSeq_loc> i2 = MakeInterval(2, 10, 20);
-    CRef<CSeq_loc> i3 = MakeInterval(3, 10, 20);
-
-    CSeq_loc pp;
-    pp.SetPacked_pnt().SetId().SetGi(GI_CONST(2));
-    pp.SetPacked_pnt().AddPoint(5);
-
-    // No overlap
-    BOOST_CHECK_EQUAL(Compare(*i2, pp, scope, fCompareOverlapping), eNoOverlap);
-    pp.SetPacked_pnt().SetPoints().front() = 15;
-    BOOST_CHECK_EQUAL(Compare(*i3, pp, scope, fCompareOverlapping), eNoOverlap);
-
-    // Contained in the interval
-    BOOST_CHECK_EQUAL(Compare(*i2, pp, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pp, *i2, scope, fCompareOverlapping), eContained);
-    
-    // Overlap
-    pp.SetPacked_pnt().AddPoint(5);
-    pp.SetPacked_pnt().AddPoint(25);
-    BOOST_CHECK_EQUAL(Compare(*i2, pp, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pp, *i2, scope, fCompareOverlapping), eOverlap);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_mix)
-{
-    CScope* scope = &GetScope();
-
-    CRef<CSeq_loc> i = MakeInterval(2, 20, 80);
-
-    CSeq_loc mix;
-    CRef<CSeq_loc> sub, sub2;
-
-    mix.SetMix().Set().push_back(MakeInterval(3, 10, 90));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eNoOverlap);
-
-    // Whole
-    mix.SetMix().Set().clear();
-    sub.Reset(new CSeq_loc);
-    sub->SetWhole().SetGi(GI_CONST(2));
-    mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eContains);
-
-    // Points
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakePoint(2, 50));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eContained);
-    mix.SetMix().Set().push_back(MakePoint(2, 60));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eContained);
-    mix.SetMix().Set().push_back(MakePoint(2, 150));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eOverlap);
-
-    // Packed points - some more complicated cases
-    mix.SetMix().Set().clear();
-    sub.Reset(new CSeq_loc);
-    sub->SetPacked_pnt().SetId().SetGi(GI_CONST(2));
-    sub->SetPacked_pnt().AddPoint(30);
-    sub->SetPacked_pnt().AddPoint(60);
-    mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eContained);
-    sub2.Reset(new CSeq_loc);
-    sub2->SetPacked_pnt().SetId().SetGi(GI_CONST(2));
-    sub2->SetPacked_pnt().AddPoint(10);
-    sub2->SetPacked_pnt().AddPoint(50);
-    mix.SetMix().Set().push_back(sub2);
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eOverlap);
-
-    // Intervals
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 10, 15));
-    mix.SetMix().Set().push_back(MakeInterval(2, 85, 90));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eNoOverlap);
-
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 20, 25));
-    mix.SetMix().Set().push_back(MakeInterval(2, 55, 70));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eContained);
-
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 10, 35));
-    mix.SetMix().Set().push_back(MakeInterval(2, 70, 90));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eOverlap);
-
-    // This results in eOverlap although the mix covers the whole interval.
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 10, 55));
-    mix.SetMix().Set().push_back(MakeInterval(2, 50, 90));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eOverlap);
-
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 10, 30));
-    mix.SetMix().Set().push_back(MakeInterval(2, 10, 90));
-    mix.SetMix().Set().push_back(MakeInterval(2, 70, 90));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eContains);
-
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 20, 30));
-    mix.SetMix().Set().push_back(MakeInterval(2, 20, 80));
-    mix.SetMix().Set().push_back(MakeInterval(2, 70, 80));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eContains);
-
-    // Packed intervals
-    mix.SetMix().Set().clear();
-    sub.Reset(new CSeq_loc);
-    sub->SetPacked_int().Set().push_back(
-        Ref(&MakeInterval(2, 10, 30)->SetInt()));
-    sub->SetPacked_int().Set().push_back(
-        Ref(&MakeInterval(2, 40, 60)->SetInt()));
-    sub->SetPacked_int().Set().push_back(
-        Ref(&MakeInterval(2, 70, 90)->SetInt()));
-    mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eOverlap);
-
-    mix.SetMix().Set().clear();
-    sub.Reset(new CSeq_loc);
-    sub->SetPacked_int().Set().push_back(
-        Ref(&MakeInterval(3, 10, 30)->SetInt()));
-    sub->SetPacked_int().Set().push_back(
-        Ref(&MakeInterval(2, 10, 90)->SetInt()));
-    sub->SetPacked_int().Set().push_back(
-        Ref(&MakeInterval(2, 70, 90)->SetInt()));
-    mix.SetMix().Set().push_back(sub);
-    try {
-        Compare(*i, mix, scope, fCompareOverlapping);
-    }
-    catch (...) {
-    }
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eContains);
-
-    // Mixed sub-location types
-    mix.SetMix().Set().clear();
-    sub.Reset(new CSeq_loc);
-    sub->SetPnt().SetId().SetGi(GI_CONST(2));
-    sub->SetPnt().SetPoint(30);
-    mix.SetMix().Set().push_back(MakePoint(2, 30));
-    mix.SetMix().Set().push_back(MakeInterval(2, 35, 40));
-    sub.Reset(new CSeq_loc);
-    sub->SetPacked_int().Set().push_back(
-        Ref(&MakeInterval(2, 45, 50)->SetInt()));
-    sub->SetPacked_int().Set().push_back(
-        Ref(&MakeInterval(2, 50, 55)->SetInt()));
-    mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eContained);
-
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 10, 90));
-    sub.Reset(new CSeq_loc);
-    sub->SetPacked_int().Set().push_back(
-        Ref(&MakeInterval(2, 40, 50)->SetInt()));
-    sub->SetPacked_int().Set().push_back(
-        Ref(&MakeInterval(2, 50, 85)->SetInt()));
-    mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eContains);
-
-    mix.SetMix().Set().clear();
-    sub.Reset(new CSeq_loc);
-    mix.SetMix().Set().push_back(MakeInterval(2, 40, 50));
-    mix.SetMix().Set().push_back(MakeInterval(2, 60, 70));
-    mix.SetMix().Set().push_back(sub);
-    mix.SetMix().Set().push_back(MakeBond(2, 50, 3, 40));
-    BOOST_CHECK_EQUAL(Compare(*i, mix, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, *i, scope, fCompareOverlapping), eOverlap);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_bond)
-{
-    CScope* scope = &GetScope();
-
-    CRef<CSeq_loc> bA2 = MakeBond(2, 10);
-    CRef<CSeq_loc> bA3 = MakeBond(3, 10);
-    CRef<CSeq_loc> bA2B3 = MakeBond(2, 10, 3, 20);
-    CRef<CSeq_loc> bA3B2 = MakeBond(3, 20, 2, 10);
-    CRef<CSeq_loc> bA2B2 = MakeBond(2, 10, 2, 20);
-
-    CRef<CSeq_loc> i = MakeInterval(2, 15, 25);
-    // No overlap
-    BOOST_CHECK_EQUAL(Compare(*bA2, *i, scope, fCompareOverlapping), eNoOverlap);
-
-    i = MakeInterval(2, 5, 15);
-    // Overlap with one point (no B)
-    BOOST_CHECK_EQUAL(Compare(*bA2, *i, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(*i, *bA2, scope, fCompareOverlapping), eContains);
-    // Overlap with only one of A or B
-    BOOST_CHECK_EQUAL(Compare(*bA2B3, *i, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i, *bA2B3, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*bA3B2, *i, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i, *bA3B2, scope, fCompareOverlapping), eOverlap);
-    // B is on the same bioseq but out of range
-    BOOST_CHECK_EQUAL(Compare(*bA2B2, *i, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*i, *bA2B2, scope, fCompareOverlapping), eOverlap);
-
-    i = MakeInterval(2, 5, 25);
-    // Overlap with both A and B
-    BOOST_CHECK_EQUAL(Compare(*bA2B2, *i, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(*i, *bA2B2, scope, fCompareOverlapping), eContains);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_packed_interval)
-{
-    CScope* scope = &GetScope();
-
-    CSeq_id gi2("gi|2");
-    CSeq_id gi3("gi|3");
-    CSeq_id lcl2;
-    lcl2.SetLocal().SetStr("local2");
-
-    CSeq_loc pk1, pk2;
-
-    // Complicated case: although different seq-ids are used in both
-    // locations and the order is wrong, eSame should be returned.
-    pk1.SetPacked_int().AddInterval(gi2, 10, 20);
-    pk1.SetPacked_int().AddInterval(lcl2, 30, 40);
-    pk2.SetPacked_int().AddInterval(gi2, 30, 40);
-    pk2.SetPacked_int().AddInterval(lcl2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eSame);
-
-    pk1.SetPacked_int().Set().clear();
-    pk1.SetPacked_int().AddInterval(gi2, 10, 20);
-    pk1.SetPacked_int().AddInterval(gi2, 30, 40);
-    pk2.SetPacked_int().Set().clear();
-    pk2.SetPacked_int().AddInterval(gi3, 10, 20);
-    pk2.SetPacked_int().AddInterval(gi2, 50, 60);
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eNoOverlap);
-
-    pk1.SetPacked_int().Set().clear();
-    pk1.SetPacked_int().AddInterval(gi2, 15, 20);
-    pk1.SetPacked_int().AddInterval(gi2, 60, 70);
-    pk2.SetPacked_int().Set().clear();
-    pk2.SetPacked_int().AddInterval(gi2, 5, 10);
-    pk2.SetPacked_int().AddInterval(gi2, 50, 55);
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eNoOverlap);
-
-    pk1.SetPacked_int().Set().clear();
-    pk1.SetPacked_int().AddInterval(gi2, 10, 40);
-    pk1.SetPacked_int().AddInterval(gi2, 60, 90);
-    pk2.SetPacked_int().Set().clear();
-    pk2.SetPacked_int().AddInterval(gi2, 20, 30);
-    pk2.SetPacked_int().AddInterval(gi2, 70, 80);
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eContained);
-    pk2.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eContained);
-
-    pk1.SetPacked_int().Set().clear();
-    pk1.SetPacked_int().AddInterval(gi2, 10, 40);
-    pk1.SetPacked_int().AddInterval(gi3, 60, 90);
-    pk2.SetPacked_int().Set().clear();
-    pk2.SetPacked_int().AddInterval(gi2, 20, 30);
-    pk2.SetPacked_int().AddInterval(gi3, 70, 80);
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eContained);
-    pk2.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eContained);
-
-    pk1.SetPacked_int().Set().clear();
-    pk1.SetPacked_int().AddInterval(gi2, 10, 40);
-    pk1.SetPacked_int().AddInterval(gi2, 50, 70);
-    pk2.SetPacked_int().Set().clear();
-    pk2.SetPacked_int().AddInterval(gi2, 20, 30);
-    pk2.SetPacked_int().AddInterval(gi2, 60, 80);
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eOverlap);
-    pk2.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eOverlap);
-
-    pk1.SetPacked_int().Set().clear();
-    pk1.SetPacked_int().AddInterval(gi2, 10, 20);
-    pk1.SetPacked_int().AddInterval(gi2, 50, 70);
-    pk2.SetPacked_int().Set().clear();
-    pk2.SetPacked_int().AddInterval(gi2, 10, 20);
-    pk2.SetPacked_int().AddInterval(gi2, 60, 80);
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eOverlap);
-    pk2.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eOverlap);
-
-    pk1.SetPacked_int().Set().clear();
-    pk1.SetPacked_int().AddInterval(gi2, 10, 20);
-    pk1.SetPacked_int().AddInterval(gi2, 30, 40);
-    pk2.SetPacked_int().Set().clear();
-    pk2.SetPacked_int().AddInterval(gi2, 10, 20);
-    pk2.SetPacked_int().AddInterval(gi2, 30, 40);
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eSame);
-    // The order does not matter.
-    pk2.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eSame);
-
-    pk1.SetPacked_int().Set().clear();
-    pk1.SetPacked_int().AddInterval(gi2, 10, 20);
-    pk1.SetPacked_int().AddInterval(gi2, 10, 90);
-    pk1.SetPacked_int().AddInterval(gi2, 80, 90);
-    pk2.SetPacked_int().Set().clear();
-    pk2.SetPacked_int().AddInterval(gi2, 10, 90);
-    pk2.SetPacked_int().AddInterval(gi2, 50, 60);
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eContains);
-    pk2.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eContains);
-
-    pk1.SetPacked_int().Set().clear();
-    pk1.SetPacked_int().AddInterval(gi2, 10, 19);
-    pk1.SetPacked_int().AddInterval(gi3, 20, 29);
-    pk2.SetPacked_int().Set().clear();
-    pk2.SetPacked_int().AddInterval(gi2, 20, 29);
-    pk2.SetPacked_int().AddInterval(gi3, 10, 19);
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eNoOverlap);
-    pk2.SetPacked_int().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(pk1, pk2, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(pk2, pk1, scope, fCompareOverlapping), eNoOverlap);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_point)
-{
-    CScope* scope = &GetScope();
-
-    CRef<CSeq_loc> pt = MakePoint(2, 15);
-
-    CSeq_id gi2("gi|2");
-    CSeq_loc pki;
-
-    pki.SetPacked_int().AddInterval(gi2, 1, 5);
-    BOOST_CHECK_EQUAL(Compare(pki, *pt, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*pt, pki, scope, fCompareOverlapping), eNoOverlap);
-    pki.SetPacked_int().AddInterval(gi2, 20, 25);
-    BOOST_CHECK_EQUAL(Compare(pki, *pt, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*pt, pki, scope, fCompareOverlapping), eNoOverlap);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(pki, *pt, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*pt, pki, scope, fCompareOverlapping), eContained);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 15, 15);
-    BOOST_CHECK_EQUAL(Compare(pki, *pt, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(*pt, pki, scope, fCompareOverlapping), eSame);
-
-    pki.SetPacked_int().AddInterval(gi2, 15, 15);
-    BOOST_CHECK_EQUAL(Compare(pki, *pt, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*pt, pki, scope, fCompareOverlapping), eContains);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_packed_point)
-{
-    CScope* scope = &GetScope();
-
-    CSeq_loc pkp;
-    pkp.SetPacked_pnt().SetId().SetGi(GI_CONST(2));
-    pkp.SetPacked_pnt().AddPoint(15);
-
-    CSeq_id gi2("gi|2");
-    CSeq_id gi3("gi|3");
-
-    CSeq_loc pki;
-
-    pki.SetPacked_int().AddInterval(gi2, 1, 5);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eNoOverlap);
-    pki.SetPacked_int().AddInterval(gi2, 20, 25);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eNoOverlap);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eContained);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 15, 15);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eSame);
-
-    pki.SetPacked_int().AddInterval(gi2, 15, 15);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eContains);
-
-    pki.SetPacked_int().AddInterval(gi2, 25, 25);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eContained);
-
-    pkp.SetPacked_pnt().AddPoint(25);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 17, 23);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eNoOverlap);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eContained);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    pki.SetPacked_int().AddInterval(gi2, 30, 40);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eOverlap);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 5, 10);
-    pki.SetPacked_int().AddInterval(gi2, 20, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eOverlap);
-
-    // Complicated case: each interval contains just one of the
-    // points.
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    pki.SetPacked_int().AddInterval(gi2, 21, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eContained);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    pki.SetPacked_int().AddInterval(gi2, 20, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eContained);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    pki.SetPacked_int().AddInterval(gi3, 20, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, pkp, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pkp, pki, scope, fCompareOverlapping), eOverlap);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_mix)
-{
-    CScope* scope = &GetScope();
-
-    CSeq_id gi2("gi|2");
-    CSeq_id gi3("gi|3");
-
-    CSeq_loc pki;
-    pki.SetPacked_int().AddInterval(gi2, 20, 80);
-
-    CSeq_loc mix;
-    CRef<CSeq_loc> sub, sub2;
-
-    mix.SetMix().Set().push_back(MakeInterval(3, 10, 90));
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eNoOverlap);
-
-    // Whole
-    mix.SetMix().Set().clear();
-    sub.Reset(new CSeq_loc);
-    sub->SetWhole().SetGi(GI_CONST(2));
-    mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eContains);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 0, 1441);
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eSame);
-
-    // Points
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    pki.SetPacked_int().AddInterval(gi2, 30, 40);
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakePoint(2, 15));
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eContained);
-    mix.SetMix().Set().push_back(MakePoint(2, 35));
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eContained);
-    mix.SetMix().Set().push_back(MakePoint(2, 150));
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eOverlap);
-
-    // Packed points - some more complicated cases
-    mix.SetMix().Set().clear();
-    sub.Reset(new CSeq_loc);
-    sub->SetPacked_pnt().SetId().SetGi(GI_CONST(2));
-    sub->SetPacked_pnt().AddPoint(15);
-    sub->SetPacked_pnt().AddPoint(33);
-    mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eContained);
-    sub2.Reset(new CSeq_loc);
-    sub2->SetPacked_pnt().SetId().SetGi(GI_CONST(2));
-    sub2->SetPacked_pnt().AddPoint(5);
-    sub2->SetPacked_pnt().AddPoint(37);
-    mix.SetMix().Set().push_back(sub2);
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eOverlap);
-
-    // Intervals
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 20, 80);
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 10, 15));
-    mix.SetMix().Set().push_back(MakeInterval(2, 85, 90));
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eNoOverlap);
-
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 20, 25));
-    mix.SetMix().Set().push_back(MakeInterval(2, 55, 70));
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eContained);
-
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 10, 35));
-    mix.SetMix().Set().push_back(MakeInterval(2, 70, 90));
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eOverlap);
-
-    // This results in eOverlap although the mix covers the whole interval.
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 10, 55));
-    mix.SetMix().Set().push_back(MakeInterval(2, 50, 90));
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eOverlap);
-
-    // The same problem here.
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 60);
-    pki.SetPacked_int().AddInterval(gi2, 56, 90);
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eOverlap);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 20, 80);
-    pki.SetPacked_int().AddInterval(gi2, 30, 70);
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 10, 30));
-    mix.SetMix().Set().push_back(MakeInterval(2, 10, 90));
-    mix.SetMix().Set().push_back(MakeInterval(2, 70, 90));
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eContains);
-
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 20, 30));
-    mix.SetMix().Set().push_back(MakeInterval(2, 20, 80));
-    mix.SetMix().Set().push_back(MakeInterval(2, 70, 80));
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eContains);
-
-    // Packed intervals
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 20, 40);
-    pki.SetPacked_int().AddInterval(gi2, 50, 70);
-    mix.SetMix().Set().clear();
-    sub.Reset(new CSeq_loc);
-    sub->SetPacked_int().Set().push_back(
-        Ref(&MakeInterval(2, 10, 30)->SetInt()));
-    sub->SetPacked_int().Set().push_back(
-        Ref(&MakeInterval(2, 50, 60)->SetInt()));
-    sub->SetPacked_int().Set().push_back(
-        Ref(&MakeInterval(2, 70, 90)->SetInt()));
-    mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eOverlap);
-
-    mix.SetMix().Set().clear();
-    sub.Reset(new CSeq_loc);
-    sub->SetPacked_int().Set().push_back(
-        Ref(&MakeInterval(3, 10, 30)->SetInt()));
-    sub->SetPacked_int().Set().push_back(
-        Ref(&MakeInterval(2, 10, 90)->SetInt()));
-    sub->SetPacked_int().Set().push_back(
-        Ref(&MakeInterval(2, 70, 90)->SetInt()));
-    mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eContains);
-
-    // Mixed sub-location types
-    mix.SetMix().Set().clear();
-    sub.Reset(new CSeq_loc);
-    sub->SetPnt().SetId().SetGi(GI_CONST(2));
-    sub->SetPnt().SetPoint(30);
-    mix.SetMix().Set().push_back(MakePoint(2, 30));
-    mix.SetMix().Set().push_back(MakeInterval(2, 35, 40));
-    sub.Reset(new CSeq_loc);
-    sub->SetPacked_int().Set().push_back(
-        Ref(&MakeInterval(2, 55, 60)->SetInt()));
-    sub->SetPacked_int().Set().push_back(
-        Ref(&MakeInterval(2, 60, 65)->SetInt()));
-    mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eContained);
-
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 10, 40));
-    sub.Reset(new CSeq_loc);
-    sub->SetPacked_int().Set().push_back(
-        Ref(&MakeInterval(2, 40, 50)->SetInt()));
-    sub->SetPacked_int().Set().push_back(
-        Ref(&MakeInterval(2, 50, 85)->SetInt()));
-    mix.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(pki, mix, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, pki, scope, fCompareOverlapping), eContains);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_bond)
-{
-    CScope* scope = &GetScope();
-
-    CRef<CSeq_loc> b = MakeBond(2, 15);
-
-    CSeq_id gi2("gi|2");
-    CSeq_id gi3("gi|3");
-
-    CSeq_loc pki;
-
-    pki.SetPacked_int().AddInterval(gi2, 1, 5);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eNoOverlap);
-    pki.SetPacked_int().AddInterval(gi2, 20, 25);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eNoOverlap);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eContained);
-
-    // For bonds we only detect no-overlap/overlap/contained, not same.
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 15, 15);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eSame);
-
-    pki.SetPacked_int().AddInterval(gi2, 15, 15);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eContains);
-
-    b->SetBond().SetB().SetId().SetGi(GI_CONST(2));
-    b->SetBond().SetB().SetPoint(25);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 17, 23);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eNoOverlap);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eContained);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    pki.SetPacked_int().AddInterval(gi2, 30, 40);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eOverlap);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 5, 10);
-    pki.SetPacked_int().AddInterval(gi2, 20, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eOverlap);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    pki.SetPacked_int().AddInterval(gi2, 20, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eContained);
-
-    b->SetBond().SetB().SetId().SetGi(GI_CONST(3));
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 20, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eNoOverlap);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eOverlap);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    pki.SetPacked_int().AddInterval(gi2, 20, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eOverlap);
-
-    pki.SetPacked_int().Set().clear();
-    pki.SetPacked_int().AddInterval(gi2, 10, 20);
-    pki.SetPacked_int().AddInterval(gi3, 20, 30);
-    BOOST_CHECK_EQUAL(Compare(pki, *b, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pki, scope, fCompareOverlapping), eContained);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_point_vs_point)
-{
-    CScope* scope = &GetScope();
-
-    CRef<CSeq_loc> p2a = MakePoint(2, 10);
-    CRef<CSeq_loc> p2b = MakePoint(2, 15);
-    CRef<CSeq_loc> p3 = MakePoint(3, 20);
-
-    BOOST_CHECK_EQUAL(Compare(*p2a, *p2a, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(*p2a, *p2b, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(*p2a, *p3, scope, fCompareOverlapping), eNoOverlap);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_point_vs_packed_point)
-{
-    CScope* scope = &GetScope();
-
-    CRef<CSeq_loc> p = MakePoint(2, 5);
-
-    CSeq_loc pp;
-    pp.SetPacked_pnt().SetId().SetGi(GI_CONST(2));
-    pp.SetPacked_pnt().AddPoint(10);
-
-    // No overlap
-    BOOST_CHECK_EQUAL(Compare(*p, pp, scope, fCompareOverlapping), eNoOverlap);
-    BOOST_CHECK_EQUAL(Compare(pp, *p, scope, fCompareOverlapping), eNoOverlap);
-
-    p = MakePoint(2, 10);
-    // Single entry in packed points
-    BOOST_CHECK_EQUAL(Compare(*p, pp, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(pp, *p, scope, fCompareOverlapping), eSame);
-
-    pp.SetPacked_pnt().AddPoint(20);
-    pp.SetPacked_pnt().AddPoint(30);
-    // Multiple points
-    BOOST_CHECK_EQUAL(Compare(*p, pp, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(pp, *p, scope, fCompareOverlapping), eContains);
-
-    // Special case: all packed points are the same.
-    // The first seq-loc contains the second one in any direction.
-    pp.Reset();
-    pp.SetPacked_pnt().SetId().SetGi(GI_CONST(2));
-    pp.SetPacked_pnt().AddPoint(10);
-    pp.SetPacked_pnt().AddPoint(10);
-    BOOST_CHECK_EQUAL(Compare(*p, pp, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pp, *p, scope, fCompareOverlapping), eContains);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_point_vs_mix)
-{
-    CScope* scope = &GetScope();
-
-    CRef<CSeq_loc> p = MakePoint(2, 50);
-
-    CSeq_loc mix;
-
-    mix.SetMix().Set().push_back(MakeInterval(3, 10, 90));
-    BOOST_CHECK_EQUAL(Compare(*p, mix, scope, fCompareOverlapping), eNoOverlap);
-
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 10, 40));
-    mix.SetMix().Set().push_back(MakeInterval(2, 60, 90));
-    BOOST_CHECK_EQUAL(Compare(*p, mix, scope, fCompareOverlapping), eNoOverlap);
-    mix.SetMix().Set().push_back(MakeInterval(2, 40, 60));
-    BOOST_CHECK_EQUAL(Compare(*p, mix, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, *p, scope, fCompareOverlapping), eContains);
-
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakePoint(2, 50));
-    BOOST_CHECK_EQUAL(Compare(*p, mix, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(mix, *p, scope, fCompareOverlapping), eSame);
-    mix.SetMix().Set().push_back(MakePoint(2, 50));
-    BOOST_CHECK_EQUAL(Compare(*p, mix, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, *p, scope, fCompareOverlapping), eContains);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_point_vs_bond)
-{
-    CScope* scope = &GetScope();
-
-    CRef<CSeq_loc> bA2 = MakeBond(2, 10);
-    CRef<CSeq_loc> bA2B3 = MakeBond(2, 10, 3, 20);
-    CRef<CSeq_loc> bA2B2 = MakeBond(2, 10, 2, 20);
-    CRef<CSeq_loc> bA2B2eq = MakeBond(2, 10, 2, 10);
-
-    CRef<CSeq_loc> p = MakePoint(2, 5);
-    // No overlap
-    BOOST_CHECK_EQUAL(Compare(*bA2, *p, scope, fCompareOverlapping), eNoOverlap);
-
-    p = MakePoint(2, 10);
-    // Overlap with A
-    BOOST_CHECK_EQUAL(Compare(*bA2, *p, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(*bA2B3, *p, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*p, *bA2B3, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(*bA2B2, *p, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*p, *bA2B2, scope, fCompareOverlapping), eContained);
-
-    // Special case - A==B, contains in both directions.
-    BOOST_CHECK_EQUAL(Compare(*bA2B2eq, *p, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*p, *bA2B2eq, scope, fCompareOverlapping), eContains);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_packed_point_vs_packed_point)
-{
-    CScope* scope = &GetScope();
-
-    CSeq_loc pp1;
-    pp1.SetPacked_pnt().SetId().SetGi(GI_CONST(2));
-    pp1.SetPacked_pnt().AddPoint(10);
-
-    CSeq_loc pp2;
-    pp2.SetPacked_pnt().SetId().SetGi(GI_CONST(3));
-    pp2.SetPacked_pnt().AddPoint(10);
-
-    // No overlap for different bioseqs
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eNoOverlap);
-    pp1.SetPacked_pnt().AddPoint(20);
-    pp2.SetPacked_pnt().SetId().SetGi(GI_CONST(2));
-    pp2.SetPacked_pnt().SetPoints().front() = 5;
-    pp2.SetPacked_pnt().AddPoint(15);
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eNoOverlap);
-    pp1.SetPacked_pnt().AddPoint(30);
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eNoOverlap);
-
-    // Same
-    pp2.Assign(pp1);
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eSame);
-
-    // Overlap
-    pp2.SetPacked_pnt().SetPoints().clear();
-    pp2.SetPacked_pnt().AddPoint(5);
-    pp2.SetPacked_pnt().AddPoint(10);
-    pp2.SetPacked_pnt().AddPoint(15);
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope, fCompareOverlapping), eOverlap);
-
-    // Contained/contains
-    pp1.SetPacked_pnt().AddPoint(40); // 10, 20, 30, 40
-    pp2.SetPacked_pnt().SetPoints().clear();
-    pp2.SetPacked_pnt().AddPoint(20); // 20
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope, fCompareOverlapping), eContained);
-    pp2.SetPacked_pnt().AddPoint(30); // 20, 30
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope, fCompareOverlapping), eContained);
-    // Wrong order of points should still work
-    pp2.SetPacked_pnt().AddPoint(10); // 20, 30, 10
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope, fCompareOverlapping), eContained);
-    // Duplicate points - same result
-    pp2.SetPacked_pnt().AddPoint(20); // 20, 30, 10, 20
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope, fCompareOverlapping), eContained);
-
-    // Special case - due to duplicate points both sets contain each other
-    // but are not equal
-    pp2.SetPacked_pnt().AddPoint(40); // 20, 30, 10, 20, 40
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope, fCompareOverlapping), eContains);
-
-    // Now they just overlap
-    pp1.SetPacked_pnt().AddPoint(45);
-    pp2.SetPacked_pnt().AddPoint(5);
-    BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pp2, pp1, scope, fCompareOverlapping), eOverlap);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_packed_point_vs_mix)
-{
-    CScope* scope = &GetScope();
-
-    CSeq_loc pp;
-    pp.SetPacked_pnt().SetId().SetGi(GI_CONST(2));
-    pp.SetPacked_pnt().AddPoint(25);
-    pp.SetPacked_pnt().AddPoint(85);
-
-    CSeq_loc mix;
-
-    // Each point is contained in a separate sub-location.
-    mix.SetMix().Set().push_back(MakeInterval(2, 30, 70));
-    BOOST_CHECK_EQUAL(Compare(pp, mix, scope, fCompareOverlapping), eNoOverlap);
-    pp.SetPacked_pnt().AddPoint(50);
-    BOOST_CHECK_EQUAL(Compare(pp, mix, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(pp, mix, scope, fCompareOverlapping), eOverlap);
-    mix.SetMix().Set().push_back(MakeInterval(2, 20, 30));
-    mix.SetMix().Set().push_back(MakeInterval(2, 70, 90));
-    BOOST_CHECK_EQUAL(Compare(pp, mix, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, pp, scope, fCompareOverlapping), eContains);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_packed_point_vs_bond)
-{
-    CScope* scope = &GetScope();
-
-    CSeq_loc pp;
-    pp.SetPacked_pnt().SetId().SetGi(GI_CONST(2));
-    pp.SetPacked_pnt().AddPoint(10);
-
-    CRef<CSeq_loc> b = MakeBond(3, 10);
-    // No overlap
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eNoOverlap);
-    b = MakeBond(2, 20);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eNoOverlap);
-
-    b = MakeBond(2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eSame);
-    b = MakeBond(2, 10, 3, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContains);
-    b = MakeBond(2, 10, 2, 20);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContains);
-    b = MakeBond(3, 10, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContains);
-    b = MakeBond(2, 10, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContains);
-
-    pp.SetPacked_pnt().AddPoint(20);
-    b = MakeBond(2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContained);
-    b = MakeBond(2, 10, 2, 20);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eSame);
-    // The order of points does not matter.
-    b = MakeBond(2, 20, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eSame);
-    b = MakeBond(2, 10, 3, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eOverlap);
-    b = MakeBond(3, 10, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eOverlap);
-    b = MakeBond(2, 10, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContained);
-    b = MakeBond(2, 20, 2, 20);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContained);
-    b = MakeBond(2, 10, 2, 40);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eOverlap);
-
-    pp.SetPacked_pnt().AddPoint(30);
-    b = MakeBond(2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContained);
-    b = MakeBond(2, 10, 2, 30);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContained);
-    b = MakeBond(2, 30, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContained);
-    b = MakeBond(2, 10, 3, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eOverlap);
-    b = MakeBond(3, 10, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eOverlap);
-    b = MakeBond(2, 10, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContained);
-    b = MakeBond(2, 10, 2, 40);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eOverlap);
-
-    pp.SetPacked_pnt().SetPoints().clear();
-    pp.SetPacked_pnt().AddPoint(10);
-    pp.SetPacked_pnt().AddPoint(20);
-    pp.SetPacked_pnt().AddPoint(20);
-    b = MakeBond(2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContained);
-    b = MakeBond(2, 10, 2, 20);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContains);
-    b = MakeBond(2, 10, 2, 30);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eOverlap);
-    b = MakeBond(2, 30, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eOverlap);
-    b = MakeBond(2, 10, 2, 20);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContains);
-    b = MakeBond(2, 20, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(pp, *b, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b, pp, scope, fCompareOverlapping), eContains);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_mix_vs_mix)
-{
-    CScope* scope = &GetScope();
-
-    CSeq_loc mix1, mix2;
-
-    mix1.SetMix().Set().push_back(MakeInterval(2, 10, 20));
-    mix1.SetMix().Set().push_back(MakeInterval(2, 50, 60));
-    mix2.SetMix().Set().push_back(MakeInterval(2, 30, 40));
-    mix2.SetMix().Set().push_back(MakeInterval(2, 70, 80));
-    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope, fCompareOverlapping), eNoOverlap);
-    mix1.SetMix().Set().push_back(MakeInterval(3, 30, 40));
-    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope, fCompareOverlapping), eNoOverlap);
-    mix2.SetMix().Set().push_front(MakeInterval(3, 20, 35));
-    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope, fCompareOverlapping), eOverlap);
-
-    mix1.SetMix().Set().clear();
-    mix1.SetMix().Set().push_back(MakeInterval(2, 10, 30));
-    mix1.SetMix().Set().push_back(MakeInterval(2, 50, 70));
-    mix2.SetMix().Set().clear();
-    mix2.SetMix().Set().push_back(MakeInterval(2, 60, 65));
-    mix2.SetMix().Set().push_back(MakeInterval(2, 20, 25));
-    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix2, mix1, scope, fCompareOverlapping), eContained);
-
-    mix2.SetMix().Set().push_back(MakeInterval(2, 50, 70));
-    mix2.SetMix().Set().push_back(MakeInterval(2, 10, 30));
-    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix2, mix1, scope, fCompareOverlapping), eContains);
-
-    // Empty should not change anything (?)
-    CRef<CSeq_loc> sub(new CSeq_loc);
-    sub->SetEmpty().SetGi(GI_CONST(2));
-    mix2.SetMix().Set().push_back(sub);
-    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix2, mix1, scope, fCompareOverlapping), eContains);
-
-    mix2.SetMix().Set().push_back(MakePoint(3, 100));
-    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix2, mix1, scope, fCompareOverlapping), eContains);
-
-    mix1.SetMix().Set().push_back(MakePoint(2, 110));
-    BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix2, mix1, scope, fCompareOverlapping), eOverlap);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_mix_vs_bond)
-{
-    CScope* scope = &GetScope();
-
-    CRef<CSeq_loc> b = MakeBond(2, 50);
-
-    CSeq_loc mix;
-
-    // Each point is contained in a separate sub-location.
-    mix.SetMix().Set().push_back(MakeInterval(2, 10, 30));
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eNoOverlap);
-    mix.SetMix().Set().push_back(MakeInterval(2, 70, 90));
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eNoOverlap);
-    mix.SetMix().Set().push_back(MakeInterval(2, 40, 60));
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, *b, scope, fCompareOverlapping), eContains);
-
-    b = MakeBond(2, 20, 3, 40);
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(mix, *b, scope, fCompareOverlapping), eOverlap);
-
-    mix.SetMix().Set().push_back(MakeInterval(3, 30, 50));
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(mix, *b, scope, fCompareOverlapping), eContains);
-
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakePoint(2, 20));
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, *b, scope, fCompareOverlapping), eContained);
-
-    mix.SetMix().Set().push_back(MakePoint(3, 40));
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(mix, *b, scope, fCompareOverlapping), eSame);
-    mix.SetMix().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(mix, *b, scope, fCompareOverlapping), eSame);
-
-    mix.SetMix().Set().clear();
-    mix.SetMix().Set().push_back(MakeInterval(2, 20, 20));
-    mix.SetMix().Set().push_back(MakeInterval(3, 40, 40));
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(mix, *b, scope, fCompareOverlapping), eSame);
-    mix.SetMix().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(mix, *b, scope, fCompareOverlapping), eSame);
-    mix.SetMix().Set().push_back(MakeInterval(3, 40, 40));
-    mix.SetMix().Set().reverse();
-    BOOST_CHECK_EQUAL(Compare(*b, mix, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(mix, *b, scope, fCompareOverlapping), eContains);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Compare_bond_vs_bond)
-{
-    CScope* scope = &GetScope();
-
-    CRef<CSeq_loc> b1 = MakeBond(2, 10);
-    CRef<CSeq_loc> b2 = MakeBond(3, 10);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eNoOverlap);
-
-    b2 = MakeBond(2, 20);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eNoOverlap);
-
-    b2 = MakeBond(2, 10);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eSame);
-
-    b2 = MakeBond(2, 10, 3, 20);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eContains);
-    b1 = MakeBond(2, 10, 3, 25);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eOverlap);
-    b1 = MakeBond(2, 10, 3, 20);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eSame);
-
-    b2 = MakeBond(2, 15, 3, 20);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eOverlap);
-    b2 = MakeBond(2, 10, 3, 20);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eSame);
-    // The order or ranges is not important
-    b2 = MakeBond(3, 20, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eSame);
-
-    b1 = MakeBond(2, 10, 2, 10);
-    b2 = MakeBond(2, 10, 2, 10);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eSame);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eSame);
-
-    b1 = MakeBond(2, 10, 3, 20);
-    b2 = MakeBond(3, 20);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eContained);
-    b2 = MakeBond(3, 20, 2, 15);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eOverlap);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eOverlap);
-
-    b1 = MakeBond(2, 10, 2, 10);
-    b2 = MakeBond(2, 10);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eContains);
-    b2 = MakeBond(2, 10, 3, 15);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eContained);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eContains);
-
-    b1 = MakeBond(2, 15, 3, 20);
-    b2 = MakeBond(3, 20, 3, 20);
-    BOOST_CHECK_EQUAL(Compare(*b1, *b2, scope, fCompareOverlapping), eContains);
-    BOOST_CHECK_EQUAL(Compare(*b2, *b1, scope, fCompareOverlapping), eContained);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_TestForOverlap)
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap1)
 {
     CScope* scope = &GetScope();
     CRef<CSeq_id> id2(new CSeq_id);
@@ -1830,6 +161,15 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), -1);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap2)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> id2(new CSeq_id);
+    CRef<CSeq_loc> loc1, loc2;
+    id2->SetLocal().SetStr("local2");
 
     // Same
     loc1 = MakeInterval(2, 10, 20);
@@ -1851,6 +191,15 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), 0);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), 0);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 0);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap3)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> id2(new CSeq_id);
+    CRef<CSeq_loc> loc1, loc2;
+    id2->SetLocal().SetStr("local2");
 
     // Overlap
     loc1 = MakeInterval(2, 10, 30);
@@ -1872,6 +221,15 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 20);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap4)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> id2(new CSeq_id);
+    CRef<CSeq_loc> loc1, loc2;
+    id2->SetLocal().SetStr("local2");
 
     // Contained
     loc1 = MakeInterval(2, 10, 40);
@@ -1893,12 +251,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), 20);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 20);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap5)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> id2(new CSeq_id);
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
+    id2->SetLocal().SetStr("local2");
 
     // Multirange, same
-    loc1.Reset(new CSeq_loc);
     loc1->SetMix().Set().push_back(MakeInterval(2, 10, 20));
     loc1->SetMix().Set().push_back(MakeInterval(2, 30, 40));
-    loc2.Reset(new CSeq_loc);
     loc2->SetMix().Set().push_back(MakeInterval(id2, 10, 20));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 30, 40));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 0);
@@ -1918,12 +283,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), 0);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), 0);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 0);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap6)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> id2(new CSeq_id);
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
+    id2->SetLocal().SetStr("local2");
 
     // Multirange, simple (by total range only)
-    loc1->SetMix().Set().clear();
     loc1->SetMix().Set().push_back(MakeInterval(2, 10, 20));
     loc1->SetMix().Set().push_back(MakeInterval(2, 50, 60));
-    loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(id2, 30, 40));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 40);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Contained, scope), 40);
@@ -1942,12 +314,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), -1);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap7)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> id2(new CSeq_id);
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
+    id2->SetLocal().SetStr("local2");
 
     // Multirange, overlap
-    loc1->SetMix().Set().clear();
     loc1->SetMix().Set().push_back(MakeInterval(2, 10, 30));
     loc1->SetMix().Set().push_back(MakeInterval(2, 50, 70));
-    loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(id2, 20, 40));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 60, 80));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 20);
@@ -1967,13 +346,20 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 20);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap8)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> id2(new CSeq_id);
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
+    id2->SetLocal().SetStr("local2");
 
     // Multirange, contained. Contained/contains only check the
     // extremes, not each range.
-    loc1->SetMix().Set().clear();
     loc1->SetMix().Set().push_back(MakeInterval(2, 10, 30));
     loc1->SetMix().Set().push_back(MakeInterval(2, 60, 80));
-    loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(id2, 20, 40));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 50, 70));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 20);
@@ -1993,12 +379,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 20);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap9)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> id2(new CSeq_id);
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
+    id2->SetLocal().SetStr("local2");
 
     // Multirange, subset
-    loc1->SetMix().Set().clear();
     loc1->SetMix().Set().push_back(MakeInterval(2, 10, 40));
     loc1->SetMix().Set().push_back(MakeInterval(2, 50, 80));
-    loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(id2, 20, 30));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 60, 70));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 20);
@@ -2018,13 +411,20 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 20);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap10)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> id2(new CSeq_id);
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
+    id2->SetLocal().SetStr("local2");
 
     // CheckIntervals - extra intervals before/after
-    loc1->SetMix().Set().clear();
     loc1->SetMix().Set().push_back(MakeInterval(2, 10, 30));
     loc1->SetMix().Set().push_back(MakeInterval(2, 40, 50));
     loc1->SetMix().Set().push_back(MakeInterval(2, 60, 80));
-    loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(id2, 40, 50));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 60);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Contained, scope), 60);
@@ -2043,9 +443,20 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), 42);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 60);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap11)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> id2(new CSeq_id);
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
+    id2->SetLocal().SetStr("local2");
 
     // Check intervals fails - the first interval boundaries do not match
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(2, 10, 30));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 40, 50));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 60, 80));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 20, 25));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 40, 50));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 60, 70));
@@ -2066,9 +477,20 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 20);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap12)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> id2(new CSeq_id);
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
+    id2->SetLocal().SetStr("local2");
 
     // Check intervals fails - the second interval boundaries do not match
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(2, 10, 30));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 40, 50));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 60, 80));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 20, 30));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 40, 45));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 60, 70));
@@ -2089,9 +511,20 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 20);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap13)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> id2(new CSeq_id);
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
+    id2->SetLocal().SetStr("local2");
 
     // Check intervals fails - the second interval boundaries do not match
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(2, 10, 30));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 40, 50));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 60, 80));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 20, 30));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 45, 50));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 60, 70));
@@ -2112,9 +545,20 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 20);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap14)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> id2(new CSeq_id);
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
+    id2->SetLocal().SetStr("local2");
 
     // Check intervals fails - the last interval boundaries do not match
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(2, 10, 30));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 40, 50));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 60, 80));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 20, 30));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 40, 50));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 65, 70));
@@ -2135,9 +579,20 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 20);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap15)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> id2(new CSeq_id);
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
+    id2->SetLocal().SetStr("local2");
 
     // Check intervals, extra-ranges in the first/last intervals
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(2, 10, 30));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 40, 50));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 60, 80));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 20, 30));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 40, 50));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 60, 70));
@@ -2158,8 +613,23 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), 20);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 20);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap16)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> id2(new CSeq_id);
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
+    id2->SetLocal().SetStr("local2");
 
     // Subset - two intervals whithin a single interval
+    loc1->SetMix().Set().push_back(MakeInterval(2, 10, 30));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 40, 50));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 60, 80));
+    loc2->SetMix().Set().push_back(MakeInterval(id2, 20, 30));
+    loc2->SetMix().Set().push_back(MakeInterval(id2, 40, 50));
+    loc2->SetMix().Set().push_back(MakeInterval(id2, 60, 70));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 73, 78));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 12);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Contained, scope), 12);
@@ -2178,9 +648,20 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 12);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap17)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> id2(new CSeq_id);
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
+    id2->SetLocal().SetStr("local2");
 
     // Subset - overlapping ranges whithin the same location (loc2)
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(2, 10, 30));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 40, 50));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 60, 80));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 20, 25));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 20, 30));
     loc2->SetMix().Set().push_back(MakeInterval(id2, 40, 50));
@@ -2206,7 +687,7 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multiseq)
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multiseq1)
 {
     CScope* scope = &GetScope();
     CRef<CSeq_id> gi2(new CSeq_id("gi|2"));
@@ -2248,6 +729,21 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multiseq)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 40);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multiseq2)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> gi2(new CSeq_id("gi|2"));
+    CRef<CSeq_id> gi3(new CSeq_id("gi|3"));
+    CRef<CSeq_id> lcl2(new CSeq_id);
+    lcl2->SetLocal().SetStr("local2");
+    CRef<CSeq_id> lcl3(new CSeq_id);
+    lcl3->SetLocal().SetStr("local3");
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Overlap on some seqs
     loc1->SetMix().Set().clear();
@@ -2280,6 +776,21 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multiseq)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 150);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multiseq3)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> gi2(new CSeq_id("gi|2"));
+    CRef<CSeq_id> gi3(new CSeq_id("gi|3"));
+    CRef<CSeq_id> lcl2(new CSeq_id);
+    lcl2->SetLocal().SetStr("local2");
+    CRef<CSeq_id> lcl3(new CSeq_id);
+    lcl3->SetLocal().SetStr("local3");
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Overlap, multistrand
     loc1->SetMix().Set().clear();
@@ -2306,6 +817,21 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multiseq)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 40);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multiseq4)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> gi2(new CSeq_id("gi|2"));
+    CRef<CSeq_id> gi3(new CSeq_id("gi|3"));
+    CRef<CSeq_id> lcl2(new CSeq_id);
+    lcl2->SetLocal().SetStr("local2");
+    CRef<CSeq_id> lcl3(new CSeq_id);
+    lcl3->SetLocal().SetStr("local3");
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Contained (on each sequence)
     loc1->SetMix().Set().clear();
@@ -2334,6 +860,21 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multiseq)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 20);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multiseq5)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> gi2(new CSeq_id("gi|2"));
+    CRef<CSeq_id> gi3(new CSeq_id("gi|3"));
+    CRef<CSeq_id> lcl2(new CSeq_id);
+    lcl2->SetLocal().SetStr("local2");
+    CRef<CSeq_id> lcl3(new CSeq_id);
+    lcl3->SetLocal().SetStr("local3");
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Contained, multistrand
     loc1->SetMix().Set().clear();
@@ -2362,6 +903,21 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multiseq)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 20);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multiseq6)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> gi2(new CSeq_id("gi|2"));
+    CRef<CSeq_id> gi3(new CSeq_id("gi|3"));
+    CRef<CSeq_id> lcl2(new CSeq_id);
+    lcl2->SetLocal().SetStr("local2");
+    CRef<CSeq_id> lcl3(new CSeq_id);
+    lcl3->SetLocal().SetStr("local3");
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Subset
     loc1->SetMix().Set().clear();
@@ -2388,6 +944,21 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multiseq)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 40);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multiseq7)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> gi2(new CSeq_id("gi|2"));
+    CRef<CSeq_id> gi3(new CSeq_id("gi|3"));
+    CRef<CSeq_id> lcl2(new CSeq_id);
+    lcl2->SetLocal().SetStr("local2");
+    CRef<CSeq_id> lcl3(new CSeq_id);
+    lcl3->SetLocal().SetStr("local3");
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Subset, multistrand
     loc1->SetMix().Set().clear();
@@ -2414,6 +985,21 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multiseq)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 40);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multiseq8)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> gi2(new CSeq_id("gi|2"));
+    CRef<CSeq_id> gi3(new CSeq_id("gi|3"));
+    CRef<CSeq_id> lcl2(new CSeq_id);
+    lcl2->SetLocal().SetStr("local2");
+    CRef<CSeq_id> lcl3(new CSeq_id);
+    lcl3->SetLocal().SetStr("local3");
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Check-intervals
     loc1->SetMix().Set().clear();
@@ -2444,6 +1030,21 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multiseq)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), 10);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 10);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multiseq9)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_id> gi2(new CSeq_id("gi|2"));
+    CRef<CSeq_id> gi3(new CSeq_id("gi|3"));
+    CRef<CSeq_id> lcl2(new CSeq_id);
+    lcl2->SetLocal().SetStr("local2");
+    CRef<CSeq_id> lcl3(new CSeq_id);
+    lcl3->SetLocal().SetStr("local3");
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Check-intervals, minus strand
     loc1->SetMix().Set().clear();
@@ -2477,16 +1078,14 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multiseq)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand)
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand1)
 {
     CScope* scope = &GetScope();
-    CRef<CSeq_loc> loc1, loc2;
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
 
     // Different strands
-    loc1.Reset(new CSeq_loc);
     loc1->SetMix().Set().push_back(MakeInterval(2, 10, 20, eNa_strand_plus));
     loc1->SetMix().Set().push_back(MakeInterval(2, 30, 40, eNa_strand_plus));
-    loc2.Reset(new CSeq_loc);
     loc2->SetMix().Set().push_back(MakeInterval(2, 30, 40, eNa_strand_minus));
     loc2->SetMix().Set().push_back(MakeInterval(2, 10, 20, eNa_strand_minus));
 
@@ -2498,6 +1097,13 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Interval, scope), -1);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand2)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
 
     // Mixed strand in the same location
     loc1->SetMix().Set().clear();
@@ -2523,6 +1129,13 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 31);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand3)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
 
     // Mixed strand in the first location, minus in the second one.
     loc1->SetMix().Set().clear();
@@ -2548,6 +1161,13 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 31);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand4)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
 
     // Multistrand, overlap
     loc1->SetMix().Set().clear();
@@ -2577,6 +1197,13 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 40);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand5)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
 
     // Multistrand, overlap
     loc1->SetMix().Set().clear();
@@ -2611,6 +1238,13 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 40);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand6)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
 
     // Multistrand, overlap 2
     loc1->SetMix().Set().clear();
@@ -2640,6 +1274,13 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 161);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand7)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
 
     // Multistrand, overlap 3
     loc1->SetMix().Set().clear();
@@ -2669,6 +1310,13 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 161);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand8)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
 
     // Multistrand, contained
     loc1->SetMix().Set().clear();
@@ -2698,6 +1346,13 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 40);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand9)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
 
     // Multistrand, subset
     loc1->SetMix().Set().clear();
@@ -2727,6 +1382,13 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 40);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand10)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
 
     // CheckIntervals - extra intervals before/after.
     // Note, that ranges on minus strand have wrong order, so the
@@ -2756,9 +1418,21 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), 42);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 51);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand11)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
 
     // Check intervals, extra-ranges in the first/last intervals
     // NOTE: Only the first interval's strand is used to detect the direction.
+    loc1->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(2, 10, 30));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 40, 50));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 140, 150, eNa_strand_minus));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 160, 180, eNa_strand_minus));
     loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(2, 20, 30));
     loc2->SetMix().Set().push_back(MakeInterval(2, 40, 50));
@@ -2781,6 +1455,13 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), 20);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 20);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand12)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
 
     // Subset - several intervals whithin a single interval
     loc1->SetMix().Set().clear();
@@ -2808,6 +1489,13 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 49);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand13)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
 
     // Subset - several intervals whithin a single interval. Same as
     // above, but minus strand ranges are ordered correctly.
@@ -2836,6 +1524,13 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 40);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand14)
+{
+    CScope* scope = &GetScope();
+    CRef<CSeq_loc> loc1(new CSeq_loc), loc2(new CSeq_loc);
 
     // Not a subset - strands do not match
     loc1->SetMix().Set().clear();
@@ -2866,7 +1561,7 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap_Multistrand)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular)
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular1)
 {
     CScope* scope = &GetScope();
 
@@ -2910,8 +1605,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular)
         1442, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc2, *loc1, eOverlap_Interval,
         1442, scope), -1);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular2)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Overlap on the left end, second is not circular
+    loc1->SetMix().Set().push_back(MakeInterval(2, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 100, 200));
     loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(2, 190, 220));
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc1, *loc2, eOverlap_Simple,
@@ -2947,8 +1653,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular)
         1442, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc2, *loc1, eOverlap_Interval,
         1442, scope), 552);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular3)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Overlap on the right end, second is not circular
+    loc1->SetMix().Set().push_back(MakeInterval(2, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 100, 200));
     loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(2, 1080, 1110));
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc1, *loc2, eOverlap_Simple,
@@ -2984,8 +1701,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular)
         1442, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc2, *loc1, eOverlap_Interval,
         1442, scope), 552);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular4)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Overlap on both ends, second is not circular
+    loc1->SetMix().Set().push_back(MakeInterval(2, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 100, 200));
     loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(2, 190, 1110));
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc1, *loc2, eOverlap_Simple,
@@ -3021,8 +1749,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular)
         1442, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc2, *loc1, eOverlap_Interval,
         1442, scope), 1420);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular5)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // The second contained in the first
+    loc1->SetMix().Set().push_back(MakeInterval(2, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 100, 200));
     loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(2, 110, 190));
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc1, *loc2, eOverlap_Simple,
@@ -3058,8 +1797,20 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular)
         1442, scope), 121);
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc2, *loc1, eOverlap_Interval,
         1442, scope), 462);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular6)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // The second's ranges (but not extremes) are contained in the first
+    loc1->SetMix().Set().push_back(MakeInterval(2, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 100, 200));
+    loc2->SetMix().Set().push_back(MakeInterval(2, 110, 190));
     loc2->SetMix().Set().push_back(MakeInterval(2, 1110, 1190));
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc1, *loc2, eOverlap_Simple,
         1442, scope), 1260);
@@ -3094,8 +1845,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular)
         1442, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc2, *loc1, eOverlap_Interval,
         1442, scope), 1260);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular7)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Matching intervals, but loc2 is not circular
+    loc1->SetMix().Set().push_back(MakeInterval(2, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 100, 200));
     loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(2, 100, 190));
     loc2->SetMix().Set().push_back(MakeInterval(2, 1110, 1200));
@@ -3132,8 +1894,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular)
         1442, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc2, *loc1, eOverlap_Interval,
         1442, scope), 1240);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular8)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Two circular locations - overlap
+    loc1->SetMix().Set().push_back(MakeInterval(2, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 100, 200));
     loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(2, 1020, 1120));
     loc2->SetMix().Set().push_back(MakeInterval(2, 20, 120));
@@ -3170,8 +1943,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular)
         1442, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc2, *loc1, eOverlap_Interval,
         1442, scope), 160);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular9)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Two circular locations - contained
+    loc1->SetMix().Set().push_back(MakeInterval(2, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 100, 200));
     loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(2, 1020, 1120));
     loc2->SetMix().Set().push_back(MakeInterval(2, 120, 220));
@@ -3208,8 +1992,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular)
         1442, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc2, *loc1, eOverlap_Interval,
         1442, scope), 100);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular10)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Two circular locations - subset
+    loc1->SetMix().Set().push_back(MakeInterval(2, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 100, 200));
     loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(2, 1120, 1180));
     loc2->SetMix().Set().push_back(MakeInterval(2, 120, 180));
@@ -3246,8 +2041,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular)
         1442, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc2, *loc1, eOverlap_Interval,
         1442, scope), 40);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular11)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Two circular locations - not a subset anymore
+    loc1->SetMix().Set().push_back(MakeInterval(2, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 100, 200));
     loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(2, 1120, 1180));
     loc2->SetMix().Set().push_back(MakeInterval(2, 1320, 1380));
@@ -3285,8 +2091,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular)
         1442, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc2, *loc1, eOverlap_Interval,
         1442, scope), 40);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular12)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Two circular locations - matching intervals
+    loc1->SetMix().Set().push_back(MakeInterval(2, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 100, 200));
     loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(2, 1120, 1200));
     loc2->SetMix().Set().push_back(MakeInterval(2, 100, 180));
@@ -3323,6 +2140,15 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular)
         1442, scope), 40);
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc2, *loc1, eOverlap_Interval,
         1442, scope), 40);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular13)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Two circular locations - more matching intervals
     loc1->SetMix().Set().clear();
@@ -3366,6 +2192,15 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular)
         1442, scope), 40);
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc2, *loc1, eOverlap_Interval,
         1442, scope), 40);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular14)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Two circular locations, minus strand - overlap
     loc1->SetMix().Set().clear();
@@ -3407,8 +2242,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular)
         1442, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc2, *loc1, eOverlap_Interval,
         1442, scope), 160);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular15)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Circular location vs interval, minus strand - contained
+    loc1->SetMix().Set().push_back(MakeInterval(2, 100, 200, eNa_strand_minus));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 1100, 1200, eNa_strand_minus));
     loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(2, 20, 120, eNa_strand_minus));
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc1, *loc2, eOverlap_Simple,
@@ -3444,8 +2290,20 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular)
         1442, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc2, *loc1, eOverlap_Interval,
         1442, scope), 442);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular16)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Two circular locations, minus strand - contained
+    loc1->SetMix().Set().push_back(MakeInterval(2, 100, 200, eNa_strand_minus));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 1100, 1200, eNa_strand_minus));
+    loc2->SetMix().Set().push_back(MakeInterval(2, 20, 120, eNa_strand_minus));
     loc2->SetMix().Set().push_back(MakeInterval(2, 1120, 1220, eNa_strand_minus));
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc1, *loc2, eOverlap_Simple,
         1442, scope), 100);
@@ -3480,8 +2338,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular)
         1442, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc2, *loc1, eOverlap_Interval,
         1442, scope), 100);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular17)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Two circular locations, minus strand - subset
+    loc1->SetMix().Set().push_back(MakeInterval(2, 100, 200, eNa_strand_minus));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 1100, 1200, eNa_strand_minus));
     loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(2, 120, 180, eNa_strand_minus));
     loc2->SetMix().Set().push_back(MakeInterval(2, 1120, 1180, eNa_strand_minus));
@@ -3518,8 +2387,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular)
         1442, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlap64(*loc2, *loc1, eOverlap_Interval,
         1442, scope), 40);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular18)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Two circular locations, minus strand - matching intervals
+    loc1->SetMix().Set().push_back(MakeInterval(2, 100, 200, eNa_strand_minus));
+    loc1->SetMix().Set().push_back(MakeInterval(2, 1100, 1200, eNa_strand_minus));
     loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(2, 100, 180, eNa_strand_minus));
     loc2->SetMix().Set().push_back(MakeInterval(2, 1120, 1200, eNa_strand_minus));
@@ -3559,7 +2439,7 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlap64_Circular)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular1)
 {
     CScope* scope = &GetScope();
 
@@ -3587,9 +2467,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), -1);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular2)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Overlap on the left end, second is not circular
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200));
     loc2->SetMix().Set().push_back(MakeInterval(102, 190, 220));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 552);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Contained, scope), -1);
@@ -3608,9 +2498,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 552);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular3)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Overlap on the right end, second is not circular
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200));
     loc2->SetMix().Set().push_back(MakeInterval(102, 1080, 1110));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 552);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Contained, scope), -1);
@@ -3629,9 +2529,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 552);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular4)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Overlap on both ends, second is not circular
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200));
     loc2->SetMix().Set().push_back(MakeInterval(102, 190, 1110));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 1420);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Contained, scope), -1);
@@ -3650,9 +2560,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 1420);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular5)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // The second contained in the first
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200));
     loc2->SetMix().Set().push_back(MakeInterval(102, 110, 190));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 462);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Contained, scope), 462);
@@ -3671,8 +2591,20 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), 121);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 462);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular6)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // The second's ranges (but not extremes) are contained in the first
+    loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200));
+    loc2->SetMix().Set().push_back(MakeInterval(102, 110, 190));
     loc2->SetMix().Set().push_back(MakeInterval(102, 1110, 1190));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 1260);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Contained, scope), -1);
@@ -3691,9 +2623,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 1260);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular7)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Matching intervals, but loc2 is not circular
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200));
     loc2->SetMix().Set().push_back(MakeInterval(102, 100, 190));
     loc2->SetMix().Set().push_back(MakeInterval(102, 1110, 1200));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 1240);
@@ -3713,9 +2655,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 1240);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular8)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Two circular locations - overlap
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200));
     loc2->SetMix().Set().push_back(MakeInterval(102, 1020, 1120));
     loc2->SetMix().Set().push_back(MakeInterval(102, 20, 120));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 160);
@@ -3741,9 +2693,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
         scope, fOverlap_IgnoreTopology), 320);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Interval,
         scope, fOverlap_IgnoreTopology), 320);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular9)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Two circular locations - contained
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200));
     loc2->SetMix().Set().push_back(MakeInterval(102, 1020, 1120));
     loc2->SetMix().Set().push_back(MakeInterval(102, 120, 220));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 100);
@@ -3763,9 +2725,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 100);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular10)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Two circular locations - subset
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200));
     loc2->SetMix().Set().push_back(MakeInterval(102, 1120, 1180));
     loc2->SetMix().Set().push_back(MakeInterval(102, 120, 180));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 40);
@@ -3785,9 +2757,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 40);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular11)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Two circular locations - not a subset anymore
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200));
     loc2->SetMix().Set().push_back(MakeInterval(102, 1120, 1180));
     loc2->SetMix().Set().push_back(MakeInterval(102, 1320, 1380));
     loc2->SetMix().Set().push_back(MakeInterval(102, 120, 180));
@@ -3808,9 +2790,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 40);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular12)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Two circular locations - matching intervals
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200));
     loc2->SetMix().Set().push_back(MakeInterval(102, 1120, 1200));
     loc2->SetMix().Set().push_back(MakeInterval(102, 100, 180));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 40);
@@ -3830,13 +2822,20 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), 40);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 40);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular13)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Two circular locations - more matching intervals
-    loc1->SetMix().Set().clear();
     loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200));
     loc1->SetMix().Set().push_back(MakeInterval(102, 1300, 1400));
     loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200));
-    loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(102, 1120, 1200));
     loc2->SetMix().Set().push_back(MakeInterval(102, 1300, 1400));
     loc2->SetMix().Set().push_back(MakeInterval(102, 100, 180));
@@ -3857,12 +2856,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), 40);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 40);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular14)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Two circular locations, minus strand - overlap
-    loc1->SetMix().Set().clear();
     loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200, eNa_strand_minus));
     loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200, eNa_strand_minus));
-    loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(102, 20, 120, eNa_strand_minus));
     loc2->SetMix().Set().push_back(MakeInterval(102, 1020, 1120, eNa_strand_minus));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 160);
@@ -3882,9 +2888,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 160);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular15)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Circular location vs interval, minus strand - contained
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200, eNa_strand_minus));
+    loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200, eNa_strand_minus));
     loc2->SetMix().Set().push_back(MakeInterval(102, 20, 120, eNa_strand_minus));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 442);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Contained, scope), 442);
@@ -3903,8 +2919,20 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 442);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular16)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Two circular locations, minus strand - contained
+    loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200, eNa_strand_minus));
+    loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200, eNa_strand_minus));
+    loc2->SetMix().Set().push_back(MakeInterval(102, 20, 120, eNa_strand_minus));
     loc2->SetMix().Set().push_back(MakeInterval(102, 1120, 1220, eNa_strand_minus));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 100);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Contained, scope), 100);
@@ -3923,9 +2951,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 100);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular17)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Two circular locations, minus strand - subset
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200, eNa_strand_minus));
+    loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200, eNa_strand_minus));
     loc2->SetMix().Set().push_back(MakeInterval(102, 120, 180, eNa_strand_minus));
     loc2->SetMix().Set().push_back(MakeInterval(102, 1120, 1180, eNa_strand_minus));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 40);
@@ -3945,9 +2983,19 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 40);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular18)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Two circular locations, minus strand - matching intervals
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200, eNa_strand_minus));
+    loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200, eNa_strand_minus));
     loc2->SetMix().Set().push_back(MakeInterval(102, 100, 180, eNa_strand_minus));
     loc2->SetMix().Set().push_back(MakeInterval(102, 1120, 1200, eNa_strand_minus));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 40);
@@ -3967,15 +3015,22 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), 40);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 40);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular19)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Test with multiple circular bioseqs.
     // No overlap
-    loc1->SetMix().Set().clear();
     loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200));
     loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200));
     loc1->SetMix().Set().push_back(MakeInterval(202, 400, 450));
     loc1->SetMix().Set().push_back(MakeInterval(202, 100, 150));
-    loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(102, 400, 500));
     loc2->SetMix().Set().push_back(MakeInterval(202, 200, 300));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), -1);
@@ -3995,9 +3050,21 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), -1);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular20)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Overlap
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200));
+    loc1->SetMix().Set().push_back(MakeInterval(202, 400, 450));
+    loc1->SetMix().Set().push_back(MakeInterval(202, 100, 150));
     loc2->SetMix().Set().push_back(MakeInterval(102, 180, 280));
     loc2->SetMix().Set().push_back(MakeInterval(202, 420, 520));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 894);
@@ -4017,9 +3084,21 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 894);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular21)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Contained
-    loc2->SetMix().Set().clear();
+    loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200));
+    loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200));
+    loc1->SetMix().Set().push_back(MakeInterval(202, 400, 450));
+    loc1->SetMix().Set().push_back(MakeInterval(202, 100, 150));
     loc2->SetMix().Set().push_back(MakeInterval(102, 80, 120));
     loc2->SetMix().Set().push_back(MakeInterval(202, 520, 580));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 834);
@@ -4039,14 +3118,21 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntervals, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_CheckIntRev, scope), -1);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc2, *loc1, eOverlap_Interval, scope), 834);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular22)
+{
+    CScope* scope = &GetScope();
+
+    CRef<CSeq_loc> loc1(new CSeq_loc);
+    CRef<CSeq_loc> loc2(new CSeq_loc);
 
     // Overlap, mixed strands
-    loc1->SetMix().Set().clear();
     loc1->SetMix().Set().push_back(MakeInterval(102, 1100, 1200));
     loc1->SetMix().Set().push_back(MakeInterval(102, 100, 200));
     loc1->SetMix().Set().push_back(MakeInterval(202, 100, 150, eNa_strand_minus));
     loc1->SetMix().Set().push_back(MakeInterval(202, 400, 450, eNa_strand_minus));
-    loc2->SetMix().Set().clear();
     loc2->SetMix().Set().push_back(MakeInterval(102, 1300, 1400));
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Simple, scope), 835);
     BOOST_CHECK_EQUAL(TestForOverlapEx(*loc1, *loc2, eOverlap_Contained, scope), 835);
@@ -4193,730 +3279,3 @@ GTCAAACCTGCAAATTCAGTAGTAACAGAGTTCTTTTATAACTTTTAAACAAAGCTTTAGAGCA\"\
     }\
   }\
 }";
-
-
-static const char * sc_TestFramePlus = "\
-Seq-entry ::= set {\
-  class nuc-prot ,\
-  descr {\
-    source {\
-      genome genomic ,\
-      org {\
-        taxname \"Homo sapiens\" ,\
-        common \"human\" ,\
-        db {\
-          {\
-            db \"taxon\" ,\
-            tag\
-              id 9606 } } ,\
-        syn {\
-          \"woman\" ,\
-          \"man\" } ,\
-        orgname {\
-          name\
-            binomial {\
-              genus \"Homo\" ,\
-              species \"sapiens\" } ,\
-          lineage \"Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;\
- Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;\
- Catarrhini; Hominidae; Homo\" ,\
-          gcode 1 ,\
-          mgcode 2 ,\
-          div \"PRI\" } } ,\
-      subtype {\
-        {\
-          subtype chromosome ,\
-          name \"22\" } ,\
-        {\
-          subtype map ,\
-          name \"22q13.31-q13.33\" } } } } ,\
-  seq-set {\
-    seq {\
-      id {\
-        other {\
-          accession \"NG_032160\" } } ,\
-      descr {\
-        title \"Homo sapiens tubulin, gamma complex associated protein 6\
- (TUBGCP6), RefSeqGene on chromosome 22\" ,\
-        molinfo {\
-          biomol genomic } ,\
-        create-date\
-          std {\
-            year 2012 ,\
-            month 3 ,\
-            day 15 ,\
-            hour 15 ,\
-            minute 39 ,\
-            second 2 } } ,\
-      inst {\
-        repr raw ,\
-        mol dna ,\
-        length 1683 ,\
-        seq-data\
-          ncbi2na '527578925EEF52B961F44045F71F9E275F54BA2722D94A5E9A0F5E94A78\
-E892EE5D5E8A278A7A5F5A5523A355AEAC74BD71F7FA3FBF5200A0930D201229EAA209C88489E9\
-EA952BA79D6754A848F4B4A9F4A937798E7AA5AFAD122C88BA629E112BBAA9212EB779EEAEA7D2\
-2025DEAFDCA883A9D522B427F544537D40A82A795EDE08B56546E4A3886E8033EF9FC1F0004214\
-BAAFA7A8916949295E78930155D47A20A6E9579517A15F7A038A82E70492E54D51093C076A2BA2\
-1DD492027A9248BAD7957695102A5FA5893A9397AEEE547AAD4D5E52EABD4A85DAA16A79FA95FA\
-1DCAE25B889A9EA929A249E5E4A92A11AD2A9C5D52115E9775129273538E78E7A64B405649EF66\
-7CEA456A4A4D94A89E89BBA2492DDA7A249E2E692279224A052A51EA787A7129B12B895E6D4EB4\
-5AA869AB66E7A002D495A7B87522568ED3D4895A7A10A17A0A67AA19E597A4A7891B99B8E46504\
-1582C6E78A07136648394D8A796266A87DD229091197B57BAD5EA2AAB6954855DD15D78D752B9A\
-6AE78071E8855F14798A6AA59448658A51A0961AA6869292675C492C255677A92481EE6E138DF6\
-C18'H } ,\
-      annot {\
-        {\
-          data\
-            ftable {\
-              {\
-                data\
-                  cdregion {\
-                    frame three ,\
-                    code {\
-                      id 1 } ,\
-                    code-break {\
-                      {\
-                        loc\
-                          int {\
-                            from 30 ,\
-                            to 32 ,\
-                            strand plus ,\
-                            id\
-                              other {\
-                                accession \"NG_032160\" } } ,\
-                        aa\
-                          ncbieaa 85 } } } ,\
-                partial TRUE ,\
-                product\
-                  whole\
-                    local\
-                      id 32880229 ,\
-                location\
-                  int {\
-                    from 28 ,\
-                    to 178 ,\
-                    strand plus ,\
-                    id\
-                      other {\
-                        accession \"NG_032160\" } ,\
-                    fuzz-from\
-                      lim lt } ,\
-                dbxref {\
-                  {\
-                    db \"CCDS\" ,\
-                    tag\
-                      str \"CCDS43034.1\" } ,\
-                  {\
-                    db \"GeneID\" ,\
-                    tag\
-                      id 83642 } } } ,\
-              {\
-                data\
-                  gene {\
-                    locus \"SELO\" } ,\
-                partial TRUE ,\
-                location\
-                  int {\
-                    from 28 ,\
-                    to 1680 ,\
-                    strand plus ,\
-                    id\
-                      other {\
-                        accession \"NG_032160\" } ,\
-                    fuzz-from\
-                      lim lt } } } } } } ,\
-    seq {\
-      id {\
-        local\
-          id 32880229 } ,\
-      descr {\
-        molinfo {\
-          biomol peptide ,\
-          tech concept-trans ,\
-          completeness no-left } } ,\
-      inst {\
-        repr raw ,\
-        mol aa ,\
-        length 218 ,\
-        seq-data\
-          ncbieaa \"ADFTNTFYLLSSFPVELESPGLAEFLARLMEQCASLEELRLAFRPQMDPRQLSMMLMLA\
-QSNPQLFALMGTRAGIARELERVEQQSRLEQLSAAELQSRNQGHWADWLQAYRARLDKDLEGAGDAAAWQAEHVRVMH\
-ANNPKYVLRNYIAQNAIEAAERGDFSEVRRVLKLLETPYHCEAGAATDAEATEADGADGRQRSYSSKPPLWAAELCVT\
-USS\" } ,\
-      annot {\
-        {\
-          data\
-            ftable {\
-              {\
-                data\
-                  prot {\
-                    name {\
-                      \"selenoprotein O\" } } ,\
-                partial TRUE ,\
-                location\
-                  int {\
-                    from 0 ,\
-                    to 217 ,\
-                    id\
-                      local\
-                        id 32880229 ,\
-                    fuzz-from\
-                      lim lt } } } } } } } }\
-";
-
-
-static void TestOneCDS (CRef<CSeq_feat> feat, CScope * scope, int expected_frame)
-{
-    CCdregion& cds = feat->SetData().SetCdregion();
-    CRef<CCode_break> cbr = cds.GetCode_break().front();
-    CSeq_loc& cbr_loc = cbr->SetLoc();
-    int frame = 0;
-    if (cbr_loc.GetStrand() == eNa_strand_minus) {
-      cbr_loc.SetInt().SetTo(feat->GetLocation().GetStart(eExtreme_Biological) - 3);
-      cbr_loc.SetInt().SetFrom(cbr_loc.SetInt().SetTo() - 2);
-    } else {
-      cbr_loc.SetInt().SetFrom(feat->GetLocation().GetStart(eExtreme_Biological) + 3);
-      cbr_loc.SetInt().SetTo(cbr_loc.SetInt().SetFrom() + 2);
-    }
-
-    CRef<CSeq_loc> p_loc = SourceToProduct(*feat, cbr_loc, fS2P_AllowTer, scope, &frame);
-    BOOST_CHECK_EQUAL(expected_frame, frame);
-    if (cbr_loc.GetStrand() == eNa_strand_minus) {
-      cbr_loc.SetInt().SetTo(cbr_loc.GetInt().GetTo() - 1);
-      cbr_loc.SetInt().SetFrom(cbr_loc.SetInt().SetTo() - 2);
-    } else {
-      cbr_loc.SetInt().SetFrom(cbr_loc.GetInt().GetFrom() + 1);
-      cbr_loc.SetInt().SetTo(cbr_loc.SetInt().SetFrom() + 2);
-    }
-    p_loc = SourceToProduct(*feat, cbr_loc, fS2P_AllowTer, scope, &frame);
-    expected_frame ++;
-    if (expected_frame > 3) {
-      expected_frame = 1;
-    }
-    BOOST_CHECK_EQUAL(expected_frame, frame);
-    if (cbr_loc.GetStrand() == eNa_strand_minus) {
-      cbr_loc.SetInt().SetTo(cbr_loc.GetInt().GetTo() - 1);
-      cbr_loc.SetInt().SetFrom(cbr_loc.SetInt().SetTo() - 2);
-    } else {
-      cbr_loc.SetInt().SetFrom(cbr_loc.GetInt().GetFrom() + 1);
-      cbr_loc.SetInt().SetTo(cbr_loc.SetInt().SetFrom() + 2);
-    }
-    p_loc = SourceToProduct(*feat, cbr_loc, fS2P_AllowTer, scope, &frame);
-    expected_frame ++;
-    if (expected_frame > 3) {
-      expected_frame = 1;
-    }
-    BOOST_CHECK_EQUAL(expected_frame, frame);
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_SourceToProductFrame)
-{
-    CScope scope(*CObjectManager::GetInstance());
-    CRef<CSeq_entry> s_Entry = s_Parse<CSeq_entry>(sc_TestFramePlus);
-    scope.AddTopLevelSeqEntry(*s_Entry);
-
-    CRef<CSeq_annot> annot = s_Entry->SetSet().SetSeq_set().front()->SetSeq().SetAnnot().front();
-    CRef<CSeq_feat> feat = annot->SetData().SetFtable().front();
-    CCdregion& cds = feat->SetData().SetCdregion();
-    cds.SetFrame (CCdregion::eFrame_one);
-    TestOneCDS (feat, &scope, 1); 
-    cds.SetFrame (CCdregion::eFrame_two);
-    TestOneCDS (feat, &scope, 3); 
-    cds.SetFrame (CCdregion::eFrame_three);
-    TestOneCDS (feat, &scope, 2); 
-
-    feat->SetLocation().SetStrand(eNa_strand_minus);
-    cds.SetCode_break().front()->SetLoc().SetStrand(eNa_strand_minus);
-    cds.SetFrame (CCdregion::eFrame_one);
-    TestOneCDS (feat, &scope, 1); 
-    cds.SetFrame (CCdregion::eFrame_two);
-    TestOneCDS (feat, &scope, 3); 
-    cds.SetFrame (CCdregion::eFrame_three);
-    TestOneCDS (feat, &scope, 2); 
-
-    
-}
-
-
-const char* sc_TestRevCmpEntryRaw = "\
-Seq-entry ::= seq {\
-  id {\
-    local str \"seq_1\" } , \
-  inst {\
-    repr raw,\
-    mol dna,\
-    length 20,\
-    seq-data iupacna \"ATGCATGCAAATTTGGGCCC\"\
-  }\
-}\
-";
-
-
-const char* sc_TestRevCmpEntryDelta = "\
-Seq-entry ::= seq { \
-  id {\
-    local str \"seq_2\" } , \
-  inst { \
-    repr delta,\
-    mol dna,\
-    length 40,\
-    ext delta {\
-      literal {\
-        length 8,\
-        seq-data iupacna \"ATGCATGC\"},\
-      literal {\
-        length 5},\
-      literal {\
-        length 12,\
-        seq-data iupacna \"AAATTTGGGCCC\"},\
-      literal {\
-        length 7,\
-        seq-data gap { type unknown } },\
-      literal {\
-        length 8,\
-        seq-data iupacna \"AATTGGCC\"}\
-    }\
-  }\
-}\
-";
-
-
-const char* sc_TestRevCmpEntryDeltaFar = "\
-Seq-entry ::= seq { \
-  id {\
-    local str \"seq_3\" } , \
-  inst { \
-    repr delta,\
-    mol dna,\
-    length 16,\
-    ext delta {\
-      loc int {\
-        from 0,\
-        to 3,\
-        id local str \"seq_1\" },\
-      literal {\
-        length 5},\
-      loc int {\
-        from 13,\
-        to 19,\
-        id local str \"seq_1\" }\
-    }\
-  }\
-}\
-";
-
-
-const char* sc_TestRevCmpError = "\
-Seq-entry ::= seq { \
-    id { \
-        local str \"Euplotes\", \
-        general { \
-            db \"NCBIFILE\", \
-            tag str \"Euplotes vannus GPx mRNA sequence-2013-05-16.sqn/Euplotes\" \
-        }, \
-        general { \
-            db \"TMSMART\", \
-            tag id 37854013 \
-        }, \
-        genbank { \
-            accession \"KF049698\" \
-        } \
-    }, \
-    inst { \
-        repr raw, \
-        mol rna, \
-        length 549, \
-        strand ss, \
-        seq-data ncbi2na '3AA0FF0FDF0E8F4D775209D503777F89CDE40E33E3A41DD2\
-DDF9E37E70A1C4090D78FB81BE7DC0EEA74702947389078788D4E30BD2E102BFD037F9FD5F9052\
-F6B9D0894A8706288D227FE44A3031A2603D4BEFE300C86D0EA8631D3DADFC4F7909B0F5D5D4E3\
-D741221C7A21354E81FE50BDF8D04982882DBE2CFF854880496820ECF5003E08177E8C80'H \
-    }, \
-    annot { \
-    { \
-        data ftable { \
-        { \
-            data rna { \
-            type mRNA \
-            }, \
-            location int { \
-            from 0, \
-            to 548, \
-            strand plus, \
-            id local str \"Euplotes\" \
-            } \
-        } \
-        } \
-    } \
-    } \
-} \
-";
-
-BOOST_AUTO_TEST_CASE(Test_RevCompBioseq)
-{
-    CScope scope(*CObjectManager::GetInstance());
-    {{
-        CRef<CSeq_entry> s_Entry = s_Parse<CSeq_entry>(sc_TestRevCmpEntryRaw);
-        ReverseComplement(s_Entry->SetSeq().SetInst(), &scope);
-        scope.AddTopLevelSeqEntry(*s_Entry);
-        CBioseq_Handle bsh = scope.GetBioseqHandle(s_Entry->GetSeq());
-        CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
-        string rev = "";
-        vec.GetSeqData(0, bsh.GetInst_Length(), rev);
-        BOOST_CHECK_EQUAL(rev, "GGGCCCAAATTTGCATGCAT");
-    }}
-    {{
-        CRef<CSeq_entry> s_Entry = s_Parse<CSeq_entry>(sc_TestRevCmpEntryDelta);
-        ReverseComplement(s_Entry->SetSeq().SetInst(), &scope);
-        scope.AddTopLevelSeqEntry(*s_Entry);
-        CBioseq_Handle bsh = scope.GetBioseqHandle(s_Entry->GetSeq());
-        CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
-        string rev = "";
-        vec.GetSeqData(0, bsh.GetInst_Length(), rev);
-        BOOST_CHECK_EQUAL(rev, "GGCCAATTNNNNNNNGGGCCCAAATTTNNNNNGCATGCAT");
-    }}
-    {{
-        CRef<CSeq_entry> s_Entry = s_Parse<CSeq_entry>(sc_TestRevCmpEntryDeltaFar);
-        ReverseComplement(s_Entry->SetSeq().SetInst(), &scope);
-        scope.AddTopLevelSeqEntry(*s_Entry);
-
-        CBioseq_Handle bsh = scope.GetBioseqHandle(s_Entry->GetSeq());
-        CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
-        
-        string rev = "";
-        vec.GetSeqData(0, bsh.GetInst_Length(), rev);
-        BOOST_CHECK_EQUAL(rev, "ATGCATGNNNNNGCCC");
-    }}
-
-    {{
-        CRef<CSeq_entry> s_Entry = s_Parse<CSeq_entry>(sc_TestRevCmpError);
-        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*s_Entry);
-        CSeqVector orig_vec(scope.GetBioseqHandle(s_Entry->GetSeq()), CBioseq_Handle::eCoding_Iupac);
-        string orig = "";
-        orig_vec.GetSeqData(0, s_Entry->GetSeq().GetLength(), orig);
-        scope.RemoveTopLevelSeqEntry(seh);
-
-        ReverseComplement(s_Entry->SetSeq().SetInst(), &scope);
-        scope.AddTopLevelSeqEntry(*s_Entry);
-
-        CBioseq_Handle bsh = scope.GetBioseqHandle(s_Entry->GetSeq());
-        CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);        
-        
-        string rev = "";
-        vec.GetSeqData(0, bsh.GetInst_Length(), rev);
-        string expected = "CTATCCAAGAGGTTCTTCAATTTTTGGAATACATTCTTCCGGCTGTTTCTCTGGGTCAAAATACTCAACG\
-ACTTCTCCTTCGCTGTTGATCAAGAACTTGGCAAAGTTCCATGGGATGTCTCCAGTAGTCTCTGTTGAGG\
-AATCATGGAGGGAGGAATTACGCTTGCAGAATGTAAAGACCGAATGAGTATCGTCCCCATTGACGTCTAT\
-TTTATCAAACAACTGGAATTTCGCTCCGTATTTATCCTGTGCAAAAGCTCTGATCTCCTCGTTAGTCCCT\
-GGCTCTTGAGCACCGAACTGGTTGCAAGGGAAAGCAAAGATTTGAAAACCTTTGTCACTGAACTTATCAT\
-GGATCTCAGTCAGTTGCTCATAGTGGCCTTTAGTGAGCCCACATTTAGAAGCAACGTTCACAATCAGGAT\
-TGCTTTGTAGTCCTTAGCAAGATCAGCAAGAGACTGAGAGTTGCCATCAATATCATTTGCAGATAGCTCA\
-AAGAGAGATTTGGGAGCTTCTGGAGAGGATGAATCCATTAAGAAATTAAAATTCCCCAT";
-        BOOST_CHECK_EQUAL(rev, expected);
-    }}
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Add1)
-{
-    CRef<CSeq_loc> loc1 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 1,to 10,id gi 2}");
-    CRef<CSeq_loc> loc2 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 1,to 10,strand minus,id gi 2}");
-    CRef<CSeq_loc> loc3 = s_Parse<CSeq_loc>
-        ("Seq-loc::=mix{"
-         "  int {from 1,to 10,id gi 2},"
-         "  int {from 1,to 10,strand minus,id gi 2}"
-         "}");
-    CRef<CSeq_loc> loc = Seq_loc_Add(*loc1, *loc2, 0, 0);
-    BOOST_CHECK(s_Equals(*loc, *loc3));
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Add2)
-{
-    CRef<CSeq_loc> loc1 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 1,to 10,id gi 2}");
-    CRef<CSeq_loc> loc2 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 100,to 110,strand minus,id gi 2}");
-    CRef<CSeq_loc> loc3 = s_Parse<CSeq_loc>
-        ("Seq-loc::=mix{"
-         "  int {from 1,to 10,id gi 2},"
-         "  int {from 100,to 110,strand minus,id gi 2}"
-         "}");
-    CRef<CSeq_loc> loc = Seq_loc_Add(*loc1, *loc2, 0, 0);
-    BOOST_CHECK(s_Equals(*loc, *loc3));
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Subtract1)
-{
-    CRef<CSeq_loc> loc1 = s_Parse<CSeq_loc>
-        ("Seq-loc::=mix{"
-         "  int {from 1,to 10,id gi 2},"
-         "  int {from 1,to 10,strand minus,id gi 2}"
-         "}");
-    CRef<CSeq_loc> loc2 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 1,to 10,strand minus,id gi 2}");
-    CRef<CSeq_loc> loc3 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 1,to 10,id gi 2}");
-    CRef<CSeq_loc> loc = Seq_loc_Subtract(*loc1, *loc2, 0, 0);
-    BOOST_CHECK(s_Equals(*loc, *loc3));
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Subtract2)
-{
-    CRef<CSeq_loc> loc1 = s_Parse<CSeq_loc>
-        ("Seq-loc::=mix{"
-         "  int {from 1,to 10,id gi 2},"
-         "  int {from 101,to 110,strand minus,id gi 2}"
-         "}");
-    CRef<CSeq_loc> loc2 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 101,to 110,strand minus,id gi 2}");
-    CRef<CSeq_loc> loc3 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 1,to 10,id gi 2}");
-    CRef<CSeq_loc> loc = Seq_loc_Subtract(*loc1, *loc2, 0, 0);
-    BOOST_CHECK(s_Equals(*loc, *loc3));
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Subtract3)
-{
-    CRef<CSeq_loc> loc1 = s_Parse<CSeq_loc>
-        ("Seq-loc::=mix{"
-         "  int {from 1,to 10,id gi 2},"
-         "  int {from 1,to 10,strand minus,id gi 2}"
-         "}");
-    CRef<CSeq_loc> loc2 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 1,to 10,strand minus,id gi 2}");
-    CRef<CSeq_loc> loc3 = s_Parse<CSeq_loc>
-        ("Seq-loc::=null NULL");
-    CRef<CSeq_loc> loc = Seq_loc_Subtract(*loc1, *loc2, CSeq_loc::fStrand_Ignore, 0);
-    BOOST_CHECK(s_Equals(*loc, *loc3));
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Subtract4)
-{
-    CRef<CSeq_loc> loc1 = s_Parse<CSeq_loc>
-        ("Seq-loc::=mix{"
-         "  int {from 1,to 10,id gi 2},"
-         "  int {from 101,to 110,strand minus,id gi 2}"
-         "}");
-    CRef<CSeq_loc> loc2 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 101,to 110,strand minus,id gi 2}");
-    CRef<CSeq_loc> loc3 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 1,to 10,id gi 2}");
-    CRef<CSeq_loc> loc = Seq_loc_Subtract(*loc1, *loc2, CSeq_loc::fStrand_Ignore, 0);
-    BOOST_CHECK(s_Equals(*loc, *loc3));
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Subtract5)
-{
-    CRef<CSeq_loc> loc1 = s_Parse<CSeq_loc>
-        ("Seq-loc::=mix{"
-         "  int {from 1,to 10,id gi 2},"
-         "  int {from 1,to 10,id gi 2}"
-         "}");
-    CRef<CSeq_loc> loc2 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 1,to 10,id gi 2}");
-    CRef<CSeq_loc> loc3 = s_Parse<CSeq_loc>
-        ("Seq-loc::=null NULL");
-    CRef<CSeq_loc> loc = Seq_loc_Subtract(*loc1, *loc2, 0, 0);
-    BOOST_CHECK(s_Equals(*loc, *loc3));
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Subtract6)
-{
-    CRef<CSeq_loc> loc1 = s_Parse<CSeq_loc>
-        ("Seq-loc::=mix{"
-         "  int {from 1,to 10,id gi 2},"
-         "  int {from 100,to 110,id gi 2}"
-         "}");
-    CRef<CSeq_loc> loc2 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 101,to 110,id gi 2}");
-    CRef<CSeq_loc> loc3 = s_Parse<CSeq_loc>
-        ("Seq-loc::=mix{"
-         "  int {from 1,to 10,id gi 2},"
-         "  pnt {point 100,id gi 2}"
-         "}");
-    CRef<CSeq_loc> loc = Seq_loc_Subtract(*loc1, *loc2, 0, 0);
-    BOOST_CHECK(s_Equals(*loc, *loc3));
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Subtract7)
-{
-    CRef<CSeq_loc> loc1 = s_Parse<CSeq_loc>
-        ("Seq-loc::=mix{"
-         "  int {from 1,to 10,id gi 2},"
-         "  int {from 1,to 10,id gi 2}"
-         "}");
-    CRef<CSeq_loc> loc2 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 1,to 10,id gi 2}");
-    CRef<CSeq_loc> loc3 = s_Parse<CSeq_loc>
-        ("Seq-loc::=null NULL");
-    CRef<CSeq_loc> loc = Seq_loc_Subtract(*loc1, *loc2, CSeq_loc::fStrand_Ignore, 0);
-    BOOST_CHECK(s_Equals(*loc, *loc3));
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Subtract8)
-{
-    CRef<CSeq_loc> loc1 = s_Parse<CSeq_loc>
-        ("Seq-loc::=mix{"
-         "  int {from 1,to 10,id gi 2},"
-         "  int {from 100,to 110,id gi 2}"
-         "}");
-    CRef<CSeq_loc> loc2 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 101,to 110,id gi 2}");
-    CRef<CSeq_loc> loc3 = s_Parse<CSeq_loc>
-        ("Seq-loc::=mix{"
-         "  int {from 1,to 10,id gi 2},"
-         "  pnt {point 100,id gi 2}"
-         "}");
-    CRef<CSeq_loc> loc = Seq_loc_Subtract(*loc1, *loc2, CSeq_loc::fStrand_Ignore, 0);
-    BOOST_CHECK(s_Equals(*loc, *loc3));
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Subtract9)
-{
-    CRef<CSeq_loc> loc1 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 100,to 110,id gi 2}");
-    CRef<CSeq_loc> loc2 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 101,to 105,id gi 2}");
-    CRef<CSeq_loc> loc3 = s_Parse<CSeq_loc>
-        ("Seq-loc::=mix{"
-         "  pnt {point 100,id gi 2},"
-         "  int {from 106,to 110,id gi 2}"
-         "}");
-    CRef<CSeq_loc> loc = Seq_loc_Subtract(*loc1, *loc2, 0, 0);
-    BOOST_CHECK(s_Equals(*loc, *loc3));
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Subtract10)
-{
-    return;
-    CRef<CSeq_loc> loc1 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 100,to 110,id gi 2}");
-    CRef<CSeq_loc> loc2 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 101,to 105,id gi 2}");
-    CRef<CSeq_loc> loc3 = s_Parse<CSeq_loc>
-        ("Seq-loc::=mix{"
-         "  pnt {point 100,id gi 2},"
-         "  int {from 106,to 110,id gi 2}"
-         "}");
-    CRef<CSeq_loc> loc = Seq_loc_Subtract(*loc1, *loc2, CSeq_loc::fSort, 0);
-    BOOST_CHECK(s_Equals(*loc, *loc3));
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Subtract11)
-{
-    return;
-    CRef<CSeq_loc> loc1 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 100,to 110,id gi 2}");
-    CRef<CSeq_loc> loc2 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 102,to 105,id gi 2}");
-    CRef<CSeq_loc> loc3 = s_Parse<CSeq_loc>
-        ("Seq-loc::=mix{"
-         "  int {from 100,to 101,id gi 2},"
-         "  int {from 106,to 110,id gi 2}"
-         "}");
-    CRef<CSeq_loc> loc = Seq_loc_Subtract(*loc1, *loc2, CSeq_loc::fSort, 0);
-    BOOST_CHECK(s_Equals(*loc, *loc3));
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Subtract12)
-{
-    return;
-    CRef<CSeq_loc> loc1 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 100,to 110,id gi 2}");
-    CRef<CSeq_loc> loc2 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 102,to 105,id gi 2}");
-    CRef<CSeq_loc> loc3 = s_Parse<CSeq_loc>
-        ("Seq-loc::=mix{"
-         "  int {from 100,to 101,id gi 2},"
-         "  int {from 106,to 110,id gi 2}"
-         "}");
-    CRef<CSeq_loc> loc = loc1->Subtract(*loc2, CSeq_loc::fSort, 0, 0);
-    BOOST_CHECK(s_Equals(*loc, *loc3));
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Merge1)
-{
-    return;
-    CRef<CSeq_loc> loc1 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 1,to 10,id gi 2}");
-    CRef<CSeq_loc> loc2 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 1,to 10,strand minus,id gi 2}");
-    CRef<CSeq_loc> loc3 = s_Parse<CSeq_loc>
-        ("Seq-loc::=mix{"
-         "  int {from 1,to 10,id gi 2},"
-         "  int {from 1,to 10,strand minus,id gi 2}"
-         "}");
-    CRef<CSeq_loc> loc = Seq_loc_Add(*loc1, *loc2, 0, 0);
-    BOOST_CHECK(s_Equals(*loc, *loc3));
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Merge2)
-{
-    return;
-    CRef<CSeq_loc> loc1 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 1,to 10,id gi 2}");
-    CRef<CSeq_loc> loc2 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 100,to 110,strand minus,id gi 2}");
-    CRef<CSeq_loc> loc3 = s_Parse<CSeq_loc>
-        ("Seq-loc::=mix{"
-         "  int {from 1,to 10,id gi 2},"
-         "  int {from 100,to 110,strand minus,id gi 2}"
-         "}");
-    CRef<CSeq_loc> loc = Seq_loc_Add(*loc1, *loc2, 0, 0);
-    BOOST_CHECK(s_Equals(*loc, *loc3));
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Merge3)
-{
-    return;
-    CRef<CSeq_loc> loc1 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 1,to 10,id gi 2}");
-    CRef<CSeq_loc> loc2 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 1,to 10,strand minus,id gi 2}");
-    CRef<CSeq_loc> loc3 = s_Parse<CSeq_loc>
-        ("Seq-loc::=mix{"
-         "  int {from 1,to 10,id gi 2},"
-         "  int {from 1,to 10,strand minus,id gi 2}"
-         "}");
-    CRef<CSeq_loc> loc = Seq_loc_Add(*loc1, *loc2, CSeq_loc::fSort, 0);
-    BOOST_CHECK(s_Equals(*loc, *loc3));
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Merge4)
-{
-    return;
-    CRef<CSeq_loc> loc1 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 1,to 10,id gi 2}");
-    CRef<CSeq_loc> loc2 = s_Parse<CSeq_loc>
-        ("Seq-loc::=int {from 100,to 110,strand minus,id gi 2}");
-    CRef<CSeq_loc> loc3 = s_Parse<CSeq_loc>
-        ("Seq-loc::=mix{"
-         "  int {from 1,to 10,id gi 2},"
-         "  int {from 100,to 110,strand minus,id gi 2}"
-         "}");
-    CRef<CSeq_loc> loc = Seq_loc_Add(*loc1, *loc2, CSeq_loc::fSort, 0);
-    BOOST_CHECK(s_Equals(*loc, *loc3));
-}
-
-
