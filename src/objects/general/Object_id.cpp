@@ -60,6 +60,7 @@ CObject_id::~CObject_id(void)
 // match for identity
 bool CObject_id::Match(const CObject_id& oid2) const
 {
+#if 0
     E_Choice type = Which();
 
     if ( type != oid2.Which() )
@@ -73,6 +74,9 @@ bool CObject_id::Match(const CObject_id& oid2) const
     default:
         return this == &oid2;
     }
+#else
+    return Compare(oid2) == 0;
+#endif
 }
 
 
