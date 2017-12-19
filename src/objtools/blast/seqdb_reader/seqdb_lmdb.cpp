@@ -58,6 +58,9 @@ CBlastLMDBManager::CBlastEnv::CBlastEnv(const string & fname, bool read_only, Ui
 	const MDB_dbi num_db(3);
 	m_Env.set_max_dbs(num_db);
 	if(m_ReadOnly) {
+		CFile tf(fname);
+		m_MapSize = (tf.GetLength()/10000 + 1) *10000;
+		m_Env.set_mapsize(m_MapSize);
 		m_Env.open(m_Filename.c_str(), MDB_NOSUBDIR|MDB_NOLOCK|MDB_RDONLY, 0664);
 	}
 	else {
