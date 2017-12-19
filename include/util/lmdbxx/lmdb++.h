@@ -105,7 +105,10 @@ public:
    */
   virtual const char* what() const noexcept {
     static thread_local char buffer[1024];
-    std::snprintf(buffer, sizeof(buffer),
+#ifndef _MSC_VER
+    std::
+#endif
+    snprintf(buffer, sizeof(buffer),
       "%s: %s", origin(), ::mdb_strerror(code()));
     return buffer;
   }
