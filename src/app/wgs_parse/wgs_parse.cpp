@@ -44,6 +44,7 @@
 #include "wgs_id1.hpp"
 #include "wgs_master.hpp"
 #include "wgs_sub.hpp"
+#include "wgs_utils.hpp"
 #include "wgs_seqentryinfo.hpp"
 
 USING_NCBI_SCOPE;
@@ -250,11 +251,61 @@ static void RemoveDupPubs(CSeq_descr& descrs)
     }
 }
 
+static void RemoveBioSourseDesc(CSeq_descr& descrs)
+{
+    if (descrs.IsSet()) {
+
+        auto& descrs_list = descrs.Set();
+
+        auto bio_src_it = find_if(descrs_list.begin(), descrs_list.end(), [](CRef<CSeqdesc>& descr) { return descr->IsSource(); });
+        if (bio_src_it != descrs_list.end()) {
+            descrs_list.erase(bio_src_it);
+        }
+    }
+}
+
+static bool OutputMaster(const CMasterInfo& info)
+{
+    // TODO FixMasterDates
+
+    string fname = GetParams().GetOutputDir() + '/';
+    if (info.m_master_file_name.empty()) {
+        fname += GetParams().GetIdPrefix() + ToStringLeadZeroes(GetParams().GetAssemblyVersion(), 2) + ToStringLeadZeroes(0, GetMaxAccessionLen(info.m_num_of_entries));
+    }
+    else {
+        fname += info.m_master_file_name;
+    }
+
+    if (!GetParams().IsOverrideExisting() && CFile(fname).Exists()) {
+        ERR_POST_EX(0, 0, Error << "File to print out processed submission already exists: \"" << fname << "\". Override is not allowed.");
+        return false;
+    }
+
+    try {
+        CNcbiOfstream out(fname);
+
+        if (GetParams().IsBinaryOutput())
+            out << MSerial_AsnBinary << info.m_master_bioseq;
+        else
+            out << MSerial_AsnText << info.m_master_bioseq;
+    }
+    catch (CException& e) {
+        ERR_POST_EX(0, 0, Error << "Failed to save processed submission to file: \"" << fname << "\" [" << e.GetMsg() << "]. Cannot proceed.");
+        return false;
+    }
+
+    ERR_POST_EX(0, 0, Info << "Master Bioseq saved in file \"" << fname << "\".");
+
+    return true;
+}
+
 static const int ERROR_RET = 1;
 
 // CR Use ZZZZ prefix to mock completely new submission
 int CWGSParseApp::Run(void)
 {
+    int ret = 0;
+
     if (SetParams(GetArgs())) {
 
         CRef<CSeq_entry> master_entry = GetMasterEntry();
@@ -280,10 +331,10 @@ int CWGSParseApp::Run(void)
                 case eUpdateScaffoldsNew:
                 case eUpdateScaffoldsUpd:
                 case eUpdateExtraContigs:
-                    ERR_POST_EX(0, 0, "Failed to create temporary master Bioseq.");
+                    ERR_POST_EX(0, 0, Error << "Failed to create temporary master Bioseq.");
                     break;
                 default:
-                    ERR_POST_EX(0, 0, "Failed to create master Bioseq.");
+                    ERR_POST_EX(0, 0, Error << "Failed to create master Bioseq.");
             }
 
             return ERROR_RET;
@@ -301,11 +352,34 @@ int CWGSParseApp::Run(void)
         }
 
         if (!ParseSubmissions(master_info)) {
+            return ERROR_RET;
+        }
+
+        if (!master_info.m_same_org) {
+            ERR_POST_EX(0, 0, Error << "Different OrgRefs found in data. Will not populate BioSource descriptor in master record.");
+            RemoveBioSourseDesc(master_info.m_master_bioseq->SetDescr());
+        }
+
+        if (GetParams().IsTest() || GetParams().GetUpdateMode() == eUpdatePartial)
+            ; // do nothing
+        else if (GetParams().GetUpdateMode() == eUpdateFull || GetParams().GetUpdateMode() == eUpdateExtraContigs ||
+                 GetParams().GetUpdateMode() == eUpdateScaffoldsUpd) {
+
+            // TODO
+        }
+        else {
+            FixGbblockSource(*master_info.m_master_bioseq);
+            if (!OutputMaster(master_info)) {
+                ret = ERROR_RET;
+            }
+        }
+
+        if (!GetParams().IsTest()) {
             // TODO
         }
     }
 
-    return 0;
+    return ret;
 }
 
 } // namespace wgsparse

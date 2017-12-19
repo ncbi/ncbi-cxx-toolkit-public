@@ -691,6 +691,9 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
         return ret;
     }
 
+    _ASSERT(id->GetTextseq_Id() != nullptr && id->GetTextseq_Id()->IsSetName() && "CreateAccession(...) should create 'TextId' with 'Name' attribute");
+    info.m_master_file_name = id->GetTextseq_Id()->GetName();
+
     bioseq->SetId().push_back(id);
     bioseq->SetInst().SetRepr(CSeq_inst::eRepr_virtual);
     bioseq->SetInst().SetLength(info.m_num_of_entries);

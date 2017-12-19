@@ -837,7 +837,7 @@ static void RemoveGbblockSource(CSeq_entry& entry, const TTaxNameInfo& info)
     }
 }
 
-static void FixGbblockSource(CSeq_entry& entry)
+void FixGbblockSource(CSeq_entry& entry)
 {
     TTaxNameInfo info;
     GetTaxNameInfo(entry, info);

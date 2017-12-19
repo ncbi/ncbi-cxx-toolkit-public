@@ -33,17 +33,17 @@
 #ifndef WGS_SUB_H
 #define WGS_SUB_H
 
-//#include <objects/seqset/Seq_entry.hpp>
-//#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
-//USING_NCBI_SCOPE;
-//USING_SCOPE(objects);
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
 namespace wgsparse
 {
 
 struct CMasterInfo;
 bool ParseSubmissions(CMasterInfo& master_info);
+void FixGbblockSource(CSeq_entry& entry);
 
 }
 

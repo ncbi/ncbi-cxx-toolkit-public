@@ -225,6 +225,8 @@ struct CMasterInfo
     int m_num_of_entries;
     int m_accession_ver;
 
+    string m_master_file_name;
+
     CMasterInfo() :
         m_num_of_pubs(0),
         m_common_comments_not_set(true),
