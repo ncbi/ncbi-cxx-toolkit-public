@@ -2963,7 +2963,7 @@ CRef<CSeq_loc_Mapper> s_MakeSliceMapper(const CSeq_loc& loc, CBioseqContext& ctx
     old_loc.SetInt().SetFrom( 0 );
     old_loc.SetInt().SetTo( new_len - 1 );
 
-    CRef<CSeq_loc_Mapper> slice_mapper( new CSeq_loc_Mapper( loc, old_loc ) );
+    CRef<CSeq_loc_Mapper> slice_mapper( new CSeq_loc_Mapper( loc, old_loc, &(ctx.GetScope()) ) );
     slice_mapper->SetFuzzOption( CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr );
     slice_mapper->TruncateNonmappingRanges();
     return slice_mapper;
