@@ -488,36 +488,37 @@ static const TChoiceMapEntry sc_ChoiceArray[] = {
     { "bbm",          CSeq_id::e_Gibbmt },
     { "bbs",          CSeq_id::e_Gibbsq },
     { "dbj",          CSeq_id::e_Ddbj },
-    { "ddbj",         CSeq_id::e_Ddbj },
+// removed aliases, see s_HasFastaTag and x_Init
+//    { "ddbj",         CSeq_id::e_Ddbj },
     { "emb",          CSeq_id::e_Embl },
-    { "embl",         CSeq_id::e_Embl },
+//    { "embl",         CSeq_id::e_Embl },
     { "gb",           CSeq_id::e_Genbank },
-    { "genbank",      CSeq_id::e_Genbank },
-    { "general",      CSeq_id::e_General },
+//    { "genbank",      CSeq_id::e_Genbank },
+//    { "general",      CSeq_id::e_General },
     { "gi",           CSeq_id::e_Gi },
-    { "gibbmt",       CSeq_id::e_Gibbmt },
+//    { "gibbmt",       CSeq_id::e_Gibbmt },
     { "gibbsq",       CSeq_id::e_Gibbsq },
-    { "giim",         CSeq_id::e_Giim },
+//    { "giim",         CSeq_id::e_Giim },
     { "gim",          CSeq_id::e_Giim },
     { "gnl",          CSeq_id::e_General },
-    { "gpipe",        CSeq_id::e_Gpipe },
+//    { "gpipe",        CSeq_id::e_Gpipe },
     { "gpp",          CSeq_id::e_Gpipe },
     { "lcl",          CSeq_id::e_Local },
-    { "local",        CSeq_id::e_Local },
-    { "named_annot_track", CSeq_id::e_Named_annot_track },
+//    { "local",        CSeq_id::e_Local },
+//    { "named_annot_track", CSeq_id::e_Named_annot_track },
     { "nat",          CSeq_id::e_Named_annot_track },
     { "not_set",      CSeq_id::e_not_set },
-    { "oth",          CSeq_id::e_Other }, // deprecated vs. ref
-    { "other",        CSeq_id::e_Other },
+//    { "oth",          CSeq_id::e_Other }, // deprecated vs. ref
+//    { "other",        CSeq_id::e_Other },
     { "pat",          CSeq_id::e_Patent },
-    { "patent",       CSeq_id::e_Patent },
+//    { "patent",       CSeq_id::e_Patent },
     { "pdb",          CSeq_id::e_Pdb },
     { "pgp",          CSeq_id::e_Patent },
     { "pir",          CSeq_id::e_Pir },
     { "prf",          CSeq_id::e_Prf },
     { "ref",          CSeq_id::e_Other },
     { "sp",           CSeq_id::e_Swissprot },
-    { "swissprot",    CSeq_id::e_Swissprot },
+//    { "swissprot",    CSeq_id::e_Swissprot },
     { "tpd",          CSeq_id::e_Tpd },
     { "tpe",          CSeq_id::e_Tpe },
     { "tpg",          CSeq_id::e_Tpg },
@@ -1929,6 +1930,7 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
             if ((flags & fParse_ValidLocal) != 0
                 &&  ((flags & fParse_AnyLocal) == fParse_AnyLocal
                      ||  IsValidLocalID(the_id))) {
+#if 0
                 // Reject internal vertical bars when otherwise permissive?
                 if (type == e_Gi  ||  (flags & fParse_AnyRaw) == 0) {
                     return Set(e_Local, the_id);
@@ -1936,6 +1938,9 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
                     SetLocal().SetStr(the_id);
                     return *this;
                 }
+#else
+                return Set(e_Local, the_id);
+#endif
             } else {
                 NCBI_THROW(CSeqIdException, eFormat,
                            "Malformatted ID " + string(the_id));
