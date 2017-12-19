@@ -2275,9 +2275,10 @@ static list<string> s_GetLinkoutUrl(int linkout,
         url_link = CAlignFormatUtil::MapProtocol(url_link);
         linkout_list.push_back(url_link);        
     }    
-    if(linkout & eGenomeDataViewer){
-        url_link = CAlignFormatUtil::GetURLFromRegistry("GENOME_DATA_VIEWER");                        
-        lnk_displ = textLink ? "Genome Data Viewer" : kGenomeDataViewerImg;                            
+    if((linkout & eGenomeDataViewer) && linkoutInfo.is_na){
+        string urlTag = linkoutInfo.is_na ? "GENOME_DATA_VIEWER_NUC" : "GENOME_DATA_VIEWER_PROT";
+        url_link = CAlignFormatUtil::GetURLFromRegistry(urlTag);
+        lnk_displ = textLink ? "Genome Data Viewer" : kGenomeDataViewerImg;
         lnkTitleInfo = "title=\"View BLAST hits for <@label@> within a genomic context in NCBI's Genome Data Viewer (GDV)- genome browser for RefSeq annotated assemblies. See other genomic features annotated at the same location as hits and browse to other regions.\"";
         url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,firstAcc,lnk_displ,"",lnkTitleInfo);
                 
@@ -2565,6 +2566,7 @@ static list<string> s_GetFullLinkoutUrl(CBioseq::TId& cur_id,
 
             CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);            
             string label = CAlignFormatUtil::GetLabel(wid,seqVersion);            
+            if(!labelList.empty() && (linkout & eGene)) break;
             if(!labelList.empty()) labelList += ",";
             labelList += label;
 
