@@ -12,6 +12,6 @@ add_executable(netstoraged-app
 set_target_properties(netstoraged-app PROPERTIES OUTPUT_NAME netstoraged)
 
 target_link_libraries(netstoraged-app
-    ${RT_LIBS} netstorage sdbapi
+    netstorage sdbapi
 )
 

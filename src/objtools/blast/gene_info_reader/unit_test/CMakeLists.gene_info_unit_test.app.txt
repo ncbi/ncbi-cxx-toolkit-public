@@ -12,5 +12,5 @@ set_target_properties(gene_info_unit_test-app PROPERTIES OUTPUT_NAME gene_info_u
 
 target_link_libraries(gene_info_unit_test-app
     gene_info test_boost
-    )
+)
 

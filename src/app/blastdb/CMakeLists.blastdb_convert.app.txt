@@ -11,6 +11,6 @@ include_directories(SYSTEM ${LMDB_INCLUDE})
 add_definitions(-DNCBI_MODULE=BLASTDB)
 
 target_link_libraries(blastdb_convert-app
-    writedb blastdb_format blastinput
+    blastinput writedb
 )
 
