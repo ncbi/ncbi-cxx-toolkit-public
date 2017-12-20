@@ -5793,7 +5793,7 @@ SDN	s	Borough of Thamesdown Museum and Art Gallery
 SDNCU	cb	The Specimen Depository of the Graduate School of Natural Sciences, Nagoya City University		
 SDNH<SWZ>	s	Malkerns Agricultural Research Station		
 SDNHM	s	San Diego Natural History Museum	SDMC,SDNH,SDSNH
-SDNU	s	Shandong Normal University, Biology Department		
+SDNU	s	Shandong Normal  University, College of Life Sciences		
 SDSM	s	South Dakota School of Mines and Technology		
 SDSU<USA-CA>	s	San Diego State University		
 SDSU<USA-CA>:Arthropods	s	San Diego State University, Museum of Biodiversity Terrestrial Arthropod Collection

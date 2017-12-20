@@ -5826,7 +5826,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SDNCU\tcb\tThe Specimen Depository of the Graduate School of Natural Sciences, Nagoya City University\t\t",
 "SDNH<SWZ>\ts\tMalkerns Agricultural Research Station\t\t",
 "SDNHM\ts\tSan Diego Natural History Museum\tSDMC,SDNH,SDSNH",
-"SDNU\ts\tShandong Normal University, Biology Department\t\t",
+"SDNU\ts\tShandong Normal  University, College of Life Sciences\t\t",
 "SDSM\ts\tSouth Dakota School of Mines and Technology\t\t",
 "SDSU<USA-CA>\ts\tSan Diego State University\t\t",
 "SDSU<USA-CA>:Arthropods\ts\tSan Diego State University, Museum of Biodiversity Terrestrial Arthropod Collection",
