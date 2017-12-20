@@ -1878,9 +1878,10 @@ static string s_RemoveBracketedOrgFromEnd (string str, string taxname)
     if (NStr::StartsWith(suffix, taxname)) {
         str.erase (cp);
         x_CleanAndCompress(final, str, true);
+        return final;
 
     }
-    return final;
+    return str;
 }
 
 void CDeflineGenerator::x_SetTitleFromProteinIdx (
