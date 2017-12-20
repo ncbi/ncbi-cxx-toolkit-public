@@ -40,7 +40,7 @@ set use_gui=no
 set maybe_gui=yes
 set use_debug=yes
 set use_dll=no
-set use_64=no
+set use_64=yes
 set use_staticstd=no
 set use_arch=Win32
 set use_flags=
@@ -215,6 +215,7 @@ if "%1"=="--without-debug"              (set use_debug=no&       goto CONTINUEPA
 if "%1"=="--with-debug"                 (set use_debug=yes&      goto CONTINUEPARSEARGS)
 if "%1"=="--without-dll"                (set use_dll=no&         goto CONTINUEPARSEARGS)
 if "%1"=="--with-dll"                   (set use_dll=yes&        goto CONTINUEPARSEARGS)
+if "%1"=="--without-64"                 (set use_64=no&          goto CONTINUEPARSEARGS)
 if "%1"=="--with-64"                    (set use_64=yes&         goto CONTINUEPARSEARGS)
 if "%1"=="--with-static-exe"            (set use_staticstd=yes&  goto CONTINUEPARSEARGS)
 if "%1"=="--with-projects"              (set dest=lst&           goto CONTINUEPARSEARGS)
@@ -275,6 +276,7 @@ if "%help_req%"=="yes" (
   echo    --without-dll               -- build all toolkit libraries as static ones
   echo    --with-dll                  -- assemble toolkit libraries into DLLs
   echo                                     where requested
+  echo    --without-64                -- compile to 32-bit code
   echo    --with-64                   -- compile to 64-bit code
   echo    --with-static-exe           -- use static C++ standard libraries
   echo    --with-projects=FILE        -- build projects listed in "%srcroot%\FILE"
