@@ -2278,7 +2278,7 @@ static void s_GetTaxIDList(const string & in, bool isFile, bool isNegativeList, 
 	vector<string> ids;
 	if (isFile) {
         string filename(SeqDB_ResolveDbPath(in));
-        CNcbiIfstream instream(filename);
+        CNcbiIfstream instream(filename.c_str());
         CStreamLineReader reader(instream);        
         while (!reader.AtEOF()) {
             reader.ReadLine();
