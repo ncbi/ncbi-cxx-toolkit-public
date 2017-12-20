@@ -44,6 +44,7 @@
 #include <stdarg.h>
 #include <time.h>
 #include <set>
+#include <functional>
 
 
 BEGIN_NCBI_NAMESPACE;
@@ -2626,12 +2627,63 @@ public:
     ///   The strings in "arr" are joined into a single string, separated
     ///   with "delim".
     /// @sa Split
-    static string Join(const list<string>& arr,        const CTempString delim);
-    static string Join(const list<CTempString>& arr,   const CTempString delim);
-    static string Join(const vector<string>& arr,      const CTempString delim);
-    static string Join(const vector<CTempString>& arr, const CTempString delim);
-    static string Join(const set<string>& arr,         const CTempString delim);
-    static string Join(const set<CTempString>& arr,    const CTempString delim);
+    template<typename TContainer>
+    static string
+    Join(const TContainer& arr, const CTempString& delim)
+    {
+        return Join(begin(arr), end(arr), delim);
+    }
+
+    template<typename TValue>
+    static string
+    Join(const initializer_list<TValue>& arr, const CTempString& delim)
+    {
+        return Join(begin(arr), end(arr), delim);
+    }
+
+    template<typename TValue, size_t sz>
+    static string
+    Join(const TValue (&arr)[sz], const CTempString& delim)
+    {
+        return Join(begin(arr), end(arr), delim);
+    }
+
+    template<typename TIterator>
+    static typename enable_if<is_same<typename TIterator::iterator_category, input_iterator_tag>::value, string>::type
+    Join( TIterator from, TIterator to, const CTempString& delim)
+    {
+        return TransformJoin(from, to, delim, [](const auto& i){ return i;});
+    }
+
+    template<typename TIterator>
+    static typename enable_if<is_convertible<typename TIterator::iterator_category, forward_iterator_tag>::value, string>::type
+    Join( TIterator from, TIterator to, const CTempString& delim)
+    {
+        return x_Join(from, to, delim);
+    }
+
+    template<typename TValue>
+    static typename enable_if<is_convertible<TValue, string>::value, string>::type
+    Join( TValue* from, TValue* to, const CTempString& delim)
+    {
+        return x_Join(from, to, delim);
+    }
+
+    template<typename TIterator>
+    static string
+    JoinNumeric( TIterator from, TIterator to, const CTempString& delim)
+    {
+        return TransformJoin( from, to, delim, [](const auto& i){ return NumericToString(i);});
+    }
+
+    template<typename TIterator, typename FTransform>
+    static string
+    TransformJoin( TIterator from, TIterator to, const CTempString& delim, FTransform fnTransform);
+
+private:
+    template<typename TIterator>
+    static string x_Join( TIterator from, TIterator to, const CTempString& delim);
+public:
 
 
     /// How to display printable strings.
@@ -5550,6 +5602,39 @@ inline
 const string* NStr::FindNoCase(const vector <string>& vec, const CTempString val)
 {
     return Find(vec, val, eNocase);
+}
+
+template<typename TIterator, typename FTransform>
+string
+NStr::TransformJoin( TIterator from, TIterator to, const CTempString& delim, FTransform fnTransform)
+{
+    if (from == to) {
+        return kEmptyStr;
+    }
+    string result(fnTransform(*from++));
+    for ( ; from != to; ++from) {
+        result.append(delim).append(fnTransform(*from));
+    }
+    return result;    
+}
+
+template<typename TIterator>
+string
+NStr::x_Join( TIterator from, TIterator to, const CTempString& delim)
+{
+    if (from == to) {
+        return kEmptyStr;
+    }
+    string result(*from++);
+    size_t sz_all = 0, sz_delim = delim.size();
+    for ( TIterator f = from; f != to; ++f) {
+        sz_all += string(*f).size() + sz_delim;
+    }
+    result.reserve(result.size() + sz_all);
+    for ( ; from != to; ++from) {
+        result.append(delim).append(string(*from));
+    }
+    return result;    
 }
 
 inline

@@ -3503,65 +3503,6 @@ bool NStr::SplitInTwo(const CTempString str, const CTempString delim,
 }
 
 
-template <typename T>
-string s_NStr_Join(const T& arr, const CTempString delim)
-{
-    if (arr.empty()) {
-        return kEmptyStr;
-    }
-    typename T::const_iterator it = arr.begin();
-    string result = *it;
-    SIZE_TYPE needed = result.size();
-
-    while (++it != arr.end()) {
-        needed += delim.size() + it->size();
-    }
-    result.reserve(needed);
-    it = arr.begin();
-    while (++it != arr.end()) {
-        result += delim;
-        result += *it;
-    }
-    return result;
-}
-
-
-string NStr::Join(const list<string>& arr, const CTempString delim)
-{
-    return s_NStr_Join(arr, delim);
-}
-
-
-string NStr::Join(const list<CTempString>& arr, const CTempString delim)
-{
-    return s_NStr_Join(arr, delim);
-}
-
-
-string NStr::Join(const vector<string>& arr, const CTempString delim)
-{
-    return s_NStr_Join(arr, delim);
-}
-
-
-string NStr::Join(const vector<CTempString>& arr, const CTempString delim)
-{
-    return s_NStr_Join(arr, delim);
-}
-
-
-string NStr::Join(const set<string>& arr, const CTempString delim)
-{
-    return s_NStr_Join(arr, delim);
-}
-
-
-string NStr::Join(const set<CTempString>& arr, const CTempString delim)
-{
-    return s_NStr_Join(arr, delim);
-}
-
-
 // Auxiliary macros for NStr::Sanitize()
 
 #define SS_WRITE_SUBSTR \

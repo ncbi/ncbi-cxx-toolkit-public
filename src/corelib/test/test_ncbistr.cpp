@@ -4452,6 +4452,73 @@ BOOST_AUTO_TEST_CASE(s_ShellEncode)
 }
 #endif
 
+BOOST_AUTO_TEST_CASE(s_StringJoin)
+{
+    string result("one,two,three"), resultN("1,2,3");
+    stringstream iss("one two three");
+    istream_iterator<string> i(iss);
+    BOOST_CHECK_EQUAL(result, NStr::Join(i, istream_iterator<string>(), ","));
+
+    list<string> x = {"one", "two", "three"};
+    BOOST_CHECK_EQUAL(result, NStr::Join(x, ","));
+    BOOST_CHECK_EQUAL(result, NStr::Join(x.begin(), x.end(), ","));
+
+    initializer_list<string> y = {"one", "two", "three"};
+    BOOST_CHECK_EQUAL(result, NStr::Join(begin(y), end(y), ","));
+    BOOST_CHECK_EQUAL(result, NStr::Join(y, ","));
+    BOOST_CHECK_EQUAL(result, NStr::Join(initializer_list<string>({"one", "two", "three"}), ","));
+    BOOST_CHECK_EQUAL(result, NStr::Join({"one", "two", "three"}, ","));
+
+    initializer_list<const char*> y2 = {"one", "two", "three"};
+    BOOST_CHECK_EQUAL(result, NStr::Join(begin(y2), end(y2), ","));
+    BOOST_CHECK_EQUAL(result, NStr::Join(y2, ","));
+
+    string z[3] = {"one", "two", "three"};
+    BOOST_CHECK_EQUAL(result, NStr::Join(begin(z), end(z), ","));
+    BOOST_CHECK_EQUAL(result, NStr::Join(z, ","));
+
+    const char* z2[3] = {"one", "two", "three"};
+    BOOST_CHECK_EQUAL(result, NStr::Join(begin(z2), end(z2), ","));
+    BOOST_CHECK_EQUAL(result, NStr::Join(z2, ","));
+
+    int z3[3] = {1,2,3};
+#if 0
+    j = NStr::Join(begin(z3), end(z3), ",");
+    j = NStr::Join(z3, ",");
+#endif
+    BOOST_CHECK_EQUAL(resultN, NStr::TransformJoin( begin(z3), end(z3), ",", [](const int& i){ return NStr::NumericToString(i);}));
+    BOOST_CHECK_EQUAL(resultN, NStr::JoinNumeric( begin(z3), end(z3), ","));
+
+    map<string, string> m;
+    m["one"] = "uno";
+    m["two"] = "dos";
+    BOOST_CHECK_EQUAL("one:uno",NStr::Join({m.begin()->first, m.begin()->second}, ":"));
+
+    BOOST_CHECK_EQUAL( "one:uno,two:dos", NStr::TransformJoin( m.begin(), m.end(), ",", [](const map<string, string>::value_type& i){ return NStr::Join( {i.first, i.second}, ":");}));
+    BOOST_CHECK_EQUAL( "one:uno,two:dos", NStr::TransformJoin( m.begin(), m.end(), ",", [](const auto& i){ return NStr::Join( {i.first, i.second}, ":");}));
+
+    list<int> mi = {1,2,3};
+    BOOST_CHECK_EQUAL(resultN, NStr::TransformJoin( mi.begin(), mi.end(), ",", [](const auto& i){ return NStr::NumericToString(i);}));
+    BOOST_CHECK_EQUAL(resultN, NStr::JoinNumeric( mi.begin(), mi.end(), ","));
+
+    initializer_list<int> mi2 = {1,2,3};
+    BOOST_CHECK_EQUAL(resultN, NStr::TransformJoin( mi2.begin(), mi2.end(), ",", [](const auto& i){ return NStr::NumericToString(i);}));
+    BOOST_CHECK_EQUAL(resultN, NStr::JoinNumeric( mi2.begin(), mi2.end(), ","));
+
+    list<CTime> t1;
+    t1.push_back( CTime(CTime::eCurrent, CTime::eLocal));
+    t1.push_back( CTime(CTime::eCurrent, CTime::eUTC));
+    t1.push_back( CTime(CTime::eCurrent, CTime::eGmt));
+    string j = NStr::Join(t1, ",");
+    j = NStr::TransformJoin( t1.begin(), t1.end(), ",", [](const auto& i){ return i.AsString();});
+    j = NStr::Join({CTime(CTime::eCurrent, CTime::eLocal), CTime(CTime::eCurrent, CTime::eUTC)}, ",");
+
+    CTime arr[2];
+    arr[0].SetCurrent();
+    arr[1].SetCurrent();
+    j = NStr::Join(arr, ",");
+    j = NStr::Join(begin(arr), end(arr), ",");
+}
 
 NCBITEST_INIT_TREE()
 {
