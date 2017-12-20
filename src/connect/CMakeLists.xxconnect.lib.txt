@@ -5,31 +5,6 @@ add_library(xxconnect
     ${SRC_CXX}
 )
 
-if (BUILD_SHARED_LIBS)
-
-target_link_libraries(xxconnect
-    connect xncbi
-)
-
-else()
-
-if (HAVE_NCBI_C)
-
-target_link_libraries(xxconnect
-    connect xncbi
-)
-
-else()
-
-target_link_libraries(xxconnect
-    connect xncbi
-)
-
-endif()
-
-endif()
-
-
 target_link_libraries(xxconnect
     connect xncbi ${GNUTLS_LIBS} ${NETWORK_LIBS}
 )
