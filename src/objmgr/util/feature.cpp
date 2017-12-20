@@ -1082,6 +1082,7 @@ STypeLink::STypeLink(CSeqFeatData::ESubtype subtype,
         break;
     case CSeqFeatData::eSubtype_mat_peptide:
     case CSeqFeatData::eSubtype_sig_peptide:
+    case CSeqFeatData::eSubtype_transit_peptide:
         m_ParentType = CSeqFeatData::eSubtype_prot;
         break;
     case CSeqFeatData::eSubtype_mRNA:
@@ -1147,10 +1148,21 @@ inline bool STypeLink::OverlapByIntervals() const
 
 void STypeLink::Next(void)
 {
-    if ( m_CurrentType == CSeqFeatData::eSubtype_prot ) {
-        // no way to link proteins without cdregion
-        m_ParentType = CSeqFeatData::eSubtype_bad;
-        return;
+    if (m_CurrentType == CSeqFeatData::eSubtype_prot) {
+        if (m_StartType == CSeqFeatData::eSubtype_sig_peptide  ||
+            m_StartType == CSeqFeatData::eSubtype_mat_peptide  ||
+            m_StartType == CSeqFeatData::eSubtype_transit_peptide) {
+            // Special case: for peptides allow linking to cdregion by product or location.
+            if (m_ParentType == CSeqFeatData::eSubtype_cdregion  &&  m_ByProduct) {
+                m_ByProduct = false;
+                return;
+            }
+        }
+        else {
+            // no way to link proteins without cdregion except for *_peptide features.
+            m_ParentType = CSeqFeatData::eSubtype_bad;
+            return;
+        }
     }
     switch ( m_ParentType ) {
     case CSeqFeatData::eSubtype_gene:
