@@ -369,24 +369,12 @@ bool CSubSource::IsCollectionDateAfterTime(const string& collection_date, time_t
 
 bool CSubSource::IsCollectionDateAfterTime(const CDate& collection_date, time_t t)
 {
-    struct tm *tm;
-    tm = localtime(&t);
-
-    bool in_future = false;
-    if (collection_date.GetStd().GetYear() > tm->tm_year + 1900) {
-        in_future = true;
-    } else if (collection_date.GetStd().GetYear() == tm->tm_year + 1900
-                && collection_date.GetStd().IsSetMonth()) {
-        if (collection_date.GetStd().GetMonth() > tm->tm_mon + 1) {
-            in_future = true;
-        } else if (collection_date.GetStd().GetMonth() == tm->tm_mon + 1
-                    && collection_date.GetStd().IsSetDay()) {
-            if (collection_date.GetStd().GetDay() > tm->tm_mday) {
-                in_future = true;
-            }
-        }
+    CDate now(t);
+    if (collection_date.Compare(now) == CDate::eCompare_after) {
+        return true;
+    } else {
+        return false;
     }
-    return in_future;
 }
 
 

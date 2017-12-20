@@ -21565,6 +21565,33 @@ BOOST_AUTO_TEST_CASE(Test_IsDateInPast)
 }
 
 
+void AddYear(CDate& add_date)
+{
+    CTime t(add_date.GetStd().GetYear(), add_date.GetStd().GetMonth(), add_date.GetStd().GetDay());
+    t.AddYear();
+    CDate new_date(t);
+    add_date.Assign(new_date);
+}
+
+
+void AddMonth(CDate& add_date)
+{
+    CTime t(add_date.GetStd().GetYear(), add_date.GetStd().GetMonth(), add_date.GetStd().GetDay());
+    t.AddMonth();
+    CDate new_date(t);
+    add_date.Assign(new_date);
+}
+
+
+void AddDay(CDate& add_date)
+{
+    CTime t(add_date.GetStd().GetYear(), add_date.GetStd().GetMonth(), add_date.GetStd().GetDay());
+    t.AddDay();
+    CDate new_date(t);
+    add_date.Assign(new_date);
+}
+
+
 BOOST_AUTO_TEST_CASE(VR_778)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
@@ -21581,17 +21608,31 @@ BOOST_AUTO_TEST_CASE(VR_778)
 
     STANDARD_SETUP
 
-    subpub->SetSub().SetDate().SetStd().SetYear(2030);
+    time_t time_now = time(NULL);
+    CDate today(time_now);
+    CDate future(time_now);
+    
+    AddYear(future);
+    subpub->SetSub().SetDate().Assign(future);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BadDate",
                               "Submission citation date is in the future"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    future.Assign(today);
+    AddMonth(future);
+    subpub->SetSub().SetDate().Assign(future); 
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    future.Assign(today);
+    AddDay(future);
+    subpub->SetSub().SetDate().Assign(future);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
     CLEAR_ERRORS
 
-    // today is ok
-    time_t time_now = time(NULL);
-    CDate today(time_now);
     subpub->SetSub().SetDate().Assign(today);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
