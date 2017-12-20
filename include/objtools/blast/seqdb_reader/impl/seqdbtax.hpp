@@ -53,7 +53,7 @@ USING_SCOPE(objects);
 /// 
 /// This manages access to the taxonomy database.
 
-class CSeqDBTaxInfo  {
+class NCBI_XOBJREAD_EXPORT CSeqDBTaxInfo  {
 public:
     
     /// Get the taxonomy names for a given tax id
