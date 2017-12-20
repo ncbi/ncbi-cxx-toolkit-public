@@ -4452,6 +4452,7 @@ BOOST_AUTO_TEST_CASE(s_ShellEncode)
 }
 #endif
 
+#if 0
 BOOST_AUTO_TEST_CASE(s_StringJoin)
 {
     string result("one,two,three"), resultN("1,2,3");
@@ -4519,6 +4520,7 @@ BOOST_AUTO_TEST_CASE(s_StringJoin)
     j = NStr::Join(arr, ",");
     j = NStr::Join(begin(arr), end(arr), ",");
 }
+#endif
 
 NCBITEST_INIT_TREE()
 {
