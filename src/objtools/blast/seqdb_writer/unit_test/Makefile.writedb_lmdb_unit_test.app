@@ -8,7 +8,7 @@ CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS = $(FAST_LDFLAGS)
 
 LIB_ = test_boost writedb seqdb $(OBJREAD_LIBS) xobjutil blastdb \
-       $(SOBJMGR_LIBS)$(LMDB_LIB)
+       $(SOBJMGR_LIBS) $(LMDB_LIB)
 LIB = $(LIB_:%=%$(STATIC))
 LIBS = $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
