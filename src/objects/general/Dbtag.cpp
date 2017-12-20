@@ -593,7 +593,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_COG, "http://www.ncbi.nlm.nih.gov/COG/new/release/cow.cgi?cog=" }, // url not found tested 7/13/2016
     { CDbtag::eDbtagType_CollecTF, "https://collectf.umbc.edu/" },
     { CDbtag::eDbtagType_ECOCYC, "http://biocyc.org/ECOLI/new-image?type=GENE&object=" }, // https does not result in security cert warning, but “page can’t be displayed”, tested 7/13/2016  
-    { CDbtag::eDbtagType_ENSEMBL, "http://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  “Error 404 Page not found” tested 7/13/2016  
+    { CDbtag::eDbtagType_ENSEMBL, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  “Error 404 Page not found” tested 7/13/2016  
     { CDbtag::eDbtagType_EcoGene, "https://www.ecogene.org/gene/" },
     { CDbtag::eDbtagType_FANTOM_DB, "https://fantom.gsc.riken.jp/db/annotate/main.cgi?masterid=" },
     { CDbtag::eDbtagType_FBOL, "http://www.fungalbarcoding.org/BioloMICS.aspx?Table=Fungal%20barcodes&Fields=All&Rec=" }, // https not available tested 7/13/2016                               
@@ -710,7 +710,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_RNAcentral, "http://rnacentral.org/rna/" },
     { CDbtag::eDbtagType_PeptideAtlas, "https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/Search?action=GO&search_key=" },
     { CDbtag::eDbtagType_EPDnew, "http://epd.vital-it.ch/cgi-bin/get_doc?format=genome&entry=" },
-    { CDbtag::eDbtagType_Ensembl, "http://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  “Error 404 Page not found” tested 7/13/2016  
+    { CDbtag::eDbtagType_Ensembl, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  “Error 404 Page not found” tested 7/13/2016  
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;
