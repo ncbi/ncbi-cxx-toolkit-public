@@ -420,7 +420,6 @@ protected:
     Uint8 ParseSearchResults(const string& xml_file,
                              vector<TGi>& uids);
 
-private:
     CRef<CMessageHandler> m_MessageHandler;
     string m_HostName;
     string m_UrlTag;
