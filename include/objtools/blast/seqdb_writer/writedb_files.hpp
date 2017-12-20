@@ -54,7 +54,7 @@ USING_SCOPE(objects);
 ///
 /// This manufactures blast database index files from input data.
 
-class CWriteDB_File : public CObject {
+class NCBI_XOBJWRITE_EXPORT CWriteDB_File : public CObject {
 public:
     // Setup and control
 
