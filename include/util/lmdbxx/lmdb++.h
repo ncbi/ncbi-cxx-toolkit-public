@@ -4,6 +4,8 @@
        https://github.com/bendiken/lmdbxx
    Adoptation for NCBI (Dmitrienko, Dmitry):
        https://bitbucket.ncbi.nlm.nih.gov/projects/ID/repos/lmdbxx/browse
+   Adaptation for NCBI/VS2013 (Denis Vakatov):
+       here
    Original version is available here:
        src/util/lmdbxx/lmdb++.h.orig 
 */
@@ -23,7 +25,7 @@
 #endif
 
 #if __cplusplus < 201103L
-#if !defined(_MSC_VER) || _MSC_VER < 1900
+#if !defined(_MSC_VER) || _MSC_VER < 1800
 #error "<lmdb++.h> requires a C++11 compiler (CXXFLAGS='-std=c++11')"
 #endif // _MSC_VER check
 #endif
@@ -41,6 +43,20 @@
 #include <stdexcept>   /* for std::runtime_error */
 #include <string>      /* for std::string */
 #include <type_traits> /* for std::is_pod<> */
+
+#if defined(_MSC_VER)  &&  _MSC_VER < 1900
+#  define NCBI_VS2013
+#endif
+
+#ifdef NCBI_VS2013
+#  define LMDB_NOEXCEPT
+#  define LMDB_CONSTEXPR const
+#  define LMDB_SNPRINTF  _snprintf
+#else
+#  define LMDB_NOEXCEPT  noexcept
+#  define LMDB_CONSTEXPR constexpr
+#  define LMDB_SNPRINTF  snprintf
+#endif
 
 namespace lmdb {
   using mode = mdb_mode_t;
@@ -72,47 +88,58 @@ class lmdb::error : public std::runtime_error {
 protected:
   const int _code;
 
+#ifdef NCBI_VS2013
+private:
+	mutable char buffer[1024];
+#endif
+
 public:
   /**
    * Throws an error based on the given LMDB return code.
    */
-  [[noreturn]] static inline void raise(const char* origin, int rc);
+#ifndef NCBI_VS2013
+  [[noreturn]]
+#endif
+  static inline void raise(const char* origin, int rc);
 
   /**
    * Constructor.
    */
   error(const char* const origin,
-        const int rc) noexcept
+        const int rc) LMDB_NOEXCEPT
     : runtime_error{origin},
       _code{rc} {}
 
   /**
    * Returns the underlying LMDB error code.
    */
-  int code() const noexcept {
+  int code() const LMDB_NOEXCEPT {
     return _code;
   }
 
   /**
    * Returns the origin of the LMDB error.
    */
-  const char* origin() const noexcept {
+  const char* origin() const LMDB_NOEXCEPT {
     return runtime_error::what();
   }
 
   /**
    * Returns the underlying LMDB error code.
    */
-  virtual const char* what() const noexcept {
-    static thread_local char buffer[1024];
-#ifndef _MSC_VER
-    std::
+  virtual const char* what() const LMDB_NOEXCEPT {
+#ifndef NCBI_VS2013
+	 static thread_local char buffer[1024];
 #endif
-    snprintf(buffer, sizeof(buffer),
-      "%s: %s", origin(), ::mdb_strerror(code()));
-    return buffer;
+#ifndef _MSC_VER
+	 std::
+#endif
+	 LMDB_SNPRINTF(buffer, sizeof(buffer),
+		"%s: %s", origin(), ::mdb_strerror(code()));
+	 return buffer;
   }
 };
+
 
 /**
  * Base class for logic error conditions.
@@ -120,6 +147,10 @@ public:
 class lmdb::logic_error : public lmdb::error {
 public:
   using error::error;
+#ifdef NCBI_VS2013
+  logic_error(const char* const origin,
+	  const int rc) : lmdb::error(origin, rc) {}
+#endif
 };
 
 /**
@@ -128,6 +159,10 @@ public:
 class lmdb::fatal_error : public lmdb::error {
 public:
   using error::error;
+#ifdef NCBI_VS2013
+  fatal_error(const char* const origin,
+	  const int rc) : lmdb::error(origin, rc) {}
+#endif
 };
 
 /**
@@ -136,6 +171,10 @@ public:
 class lmdb::runtime_error : public lmdb::error {
 public:
   using error::error;
+#ifdef NCBI_VS2013
+  runtime_error(const char* const origin,
+		const int rc) : lmdb::error(origin, rc) {}
+#endif
 };
 
 /**
@@ -146,6 +185,10 @@ public:
 class lmdb::key_exist_error final : public lmdb::runtime_error {
 public:
   using runtime_error::runtime_error;
+#ifdef NCBI_VS2013
+  key_exist_error(const char* const origin,
+	  const int rc) : lmdb::runtime_error(origin, rc) {}
+#endif
 };
 
 /**
@@ -156,6 +199,10 @@ public:
 class lmdb::not_found_error final : public lmdb::runtime_error {
 public:
   using runtime_error::runtime_error;
+#ifdef NCBI_VS2013
+  not_found_error(const char* const origin,
+	  const int rc) : lmdb::runtime_error(origin, rc) {}
+#endif
 };
 
 /**
@@ -166,6 +213,10 @@ public:
 class lmdb::corrupted_error final : public lmdb::fatal_error {
 public:
   using fatal_error::fatal_error;
+#ifdef NCBI_VS2013
+  corrupted_error(const char* const origin,
+	  const int rc) : lmdb::fatal_error(origin, rc) {}
+#endif
 };
 
 /**
@@ -176,6 +227,10 @@ public:
 class lmdb::panic_error final : public lmdb::fatal_error {
 public:
   using fatal_error::fatal_error;
+#ifdef NCBI_VS2013
+  panic_error(const char* const origin,
+	  const int rc) : lmdb::fatal_error(origin, rc) {}
+#endif
 };
 
 /**
@@ -186,6 +241,10 @@ public:
 class lmdb::version_mismatch_error final : public lmdb::fatal_error {
 public:
   using fatal_error::fatal_error;
+#ifdef NCBI_VS2013
+  version_mismatch_error(const char* const origin,
+	  const int rc) : lmdb::fatal_error(origin, rc) {}
+#endif
 };
 
 /**
@@ -196,6 +255,10 @@ public:
 class lmdb::map_full_error final : public lmdb::runtime_error {
 public:
   using runtime_error::runtime_error;
+#ifdef NCBI_VS2013
+  map_full_error(const char* const origin,
+	  const int rc) : lmdb::runtime_error(origin, rc) {}
+#endif
 };
 
 /**
@@ -207,6 +270,10 @@ public:
 class lmdb::bad_dbi_error final : public lmdb::runtime_error {
 public:
   using runtime_error::runtime_error;
+#ifdef NCBI_VS2013
+  bad_dbi_error(const char* const origin,
+	  const int rc) : lmdb::runtime_error(origin, rc) {}
+#endif
 };
 
 inline void
@@ -251,7 +318,7 @@ namespace lmdb {
   static inline void env_stat(MDB_env* env, MDB_stat* stat);
   static inline void env_info(MDB_env* env, MDB_envinfo* stat);
   static inline void env_sync(MDB_env* env, bool force);
-  static inline void env_close(MDB_env* env) noexcept;
+  static inline void env_close(MDB_env* env) LMDB_NOEXCEPT;
   static inline void env_set_flags(MDB_env* env, unsigned int flags, bool onoff);
   static inline void env_get_flags(MDB_env* env, unsigned int* flags);
   static inline void env_get_path(MDB_env* env, const char** path);
@@ -380,7 +447,7 @@ lmdb::env_sync(MDB_env* const env,
  * @see http://symas.com/mdb/doc/group__mdb.html#ga4366c43ada8874588b6a62fbda2d1e95
  */
 static inline void
-lmdb::env_close(MDB_env* const env) noexcept {
+lmdb::env_close(MDB_env* const env) LMDB_NOEXCEPT {
   ::mdb_env_close(env);
 }
 
@@ -534,13 +601,13 @@ lmdb::env_get_userctx(MDB_env* const env) {
 namespace lmdb {
   static inline void txn_begin(
     MDB_env* env, MDB_txn* parent, unsigned int flags, MDB_txn** txn);
-  static inline MDB_env* txn_env(MDB_txn* txn) noexcept;
+  static inline MDB_env* txn_env(MDB_txn* txn) LMDB_NOEXCEPT;
 #ifdef LMDBXX_TXN_ID
-  static inline std::size_t txn_id(MDB_txn* txn) noexcept;
+  static inline std::size_t txn_id(MDB_txn* txn) LMDB_NOEXCEPT;
 #endif
   static inline void txn_commit(MDB_txn* txn);
-  static inline void txn_abort(MDB_txn* txn) noexcept;
-  static inline void txn_reset(MDB_txn* txn) noexcept;
+  static inline void txn_abort(MDB_txn* txn) LMDB_NOEXCEPT;
+  static inline void txn_reset(MDB_txn* txn) LMDB_NOEXCEPT;
   static inline void txn_renew(MDB_txn* txn);
 }
 
@@ -563,7 +630,7 @@ lmdb::txn_begin(MDB_env* const env,
  * @see http://symas.com/mdb/doc/group__mdb.html#gaeb17735b8aaa2938a78a45cab85c06a0
  */
 static inline MDB_env*
-lmdb::txn_env(MDB_txn* const txn) noexcept {
+lmdb::txn_env(MDB_txn* const txn) LMDB_NOEXCEPT {
   return ::mdb_txn_env(txn);
 }
 
@@ -572,7 +639,7 @@ lmdb::txn_env(MDB_txn* const txn) noexcept {
  * @note Only available in HEAD, not yet in any 0.9.x release (as of 0.9.16).
  */
 static inline std::size_t
-lmdb::txn_id(MDB_txn* const txn) noexcept {
+lmdb::txn_id(MDB_txn* const txn) LMDB_NOEXCEPT {
   return ::mdb_txn_id(txn);
 }
 #endif
@@ -593,7 +660,7 @@ lmdb::txn_commit(MDB_txn* const txn) {
  * @see http://symas.com/mdb/doc/group__mdb.html#ga73a5938ae4c3239ee11efa07eb22b882
  */
 static inline void
-lmdb::txn_abort(MDB_txn* const txn) noexcept {
+lmdb::txn_abort(MDB_txn* const txn) LMDB_NOEXCEPT {
   ::mdb_txn_abort(txn);
 }
 
@@ -601,7 +668,7 @@ lmdb::txn_abort(MDB_txn* const txn) noexcept {
  * @see http://symas.com/mdb/doc/group__mdb.html#ga02b06706f8a66249769503c4e88c56cd
  */
 static inline void
-lmdb::txn_reset(MDB_txn* const txn) noexcept {
+lmdb::txn_reset(MDB_txn* const txn) LMDB_NOEXCEPT {
   ::mdb_txn_reset(txn);
 }
 
@@ -625,7 +692,7 @@ namespace lmdb {
     MDB_txn* txn, const char* name, unsigned int flags, MDB_dbi* dbi);
   static inline void dbi_stat(MDB_txn* txn, MDB_dbi dbi, MDB_stat* stat);
   static inline void dbi_flags(MDB_txn* txn, MDB_dbi dbi, unsigned int* flags);
-  static inline void dbi_close(MDB_env* env, MDB_dbi dbi) noexcept;
+  static inline void dbi_close(MDB_env* env, MDB_dbi dbi) LMDB_NOEXCEPT;
   static inline void dbi_drop(MDB_txn* txn, MDB_dbi dbi, bool del);
   static inline void dbi_set_compare(MDB_txn* txn, MDB_dbi dbi, MDB_cmp_func* cmp);
   static inline void dbi_set_dupsort(MDB_txn* txn, MDB_dbi dbi, MDB_cmp_func* cmp);
@@ -686,7 +753,7 @@ lmdb::dbi_flags(MDB_txn* const txn,
  */
 static inline void
 lmdb::dbi_close(MDB_env* const env,
-                const MDB_dbi dbi) noexcept {
+                const MDB_dbi dbi) LMDB_NOEXCEPT {
   ::mdb_dbi_close(env, dbi);
 }
 
@@ -816,10 +883,10 @@ lmdb::dbi_del(MDB_txn* const txn,
 
 namespace lmdb {
   static inline void cursor_open(MDB_txn* txn, MDB_dbi dbi, MDB_cursor** cursor);
-  static inline void cursor_close(MDB_cursor* cursor) noexcept;
+  static inline void cursor_close(MDB_cursor* cursor) LMDB_NOEXCEPT;
   static inline void cursor_renew(MDB_txn* txn, MDB_cursor* cursor);
-  static inline MDB_txn* cursor_txn(MDB_cursor* cursor) noexcept;
-  static inline MDB_dbi cursor_dbi(MDB_cursor* cursor) noexcept;
+  static inline MDB_txn* cursor_txn(MDB_cursor* cursor) LMDB_NOEXCEPT;
+  static inline MDB_dbi cursor_dbi(MDB_cursor* cursor) LMDB_NOEXCEPT;
   static inline bool cursor_get(MDB_cursor* cursor, MDB_val* key, MDB_val* data, MDB_cursor_op op);
   static inline void cursor_put(MDB_cursor* cursor, MDB_val* key, MDB_val* data, unsigned int flags);
   static inline void cursor_del(MDB_cursor* cursor, unsigned int flags);
@@ -844,7 +911,7 @@ lmdb::cursor_open(MDB_txn* const txn,
  * @see http://symas.com/mdb/doc/group__mdb.html#gad685f5d73c052715c7bd859cc4c05188
  */
 static inline void
-lmdb::cursor_close(MDB_cursor* const cursor) noexcept {
+lmdb::cursor_close(MDB_cursor* const cursor) LMDB_NOEXCEPT {
   ::mdb_cursor_close(cursor);
 }
 
@@ -865,7 +932,7 @@ lmdb::cursor_renew(MDB_txn* const txn,
  * @see http://symas.com/mdb/doc/group__mdb.html#ga7bf0d458f7f36b5232fcb368ebda79e0
  */
 static inline MDB_txn*
-lmdb::cursor_txn(MDB_cursor* const cursor) noexcept {
+lmdb::cursor_txn(MDB_cursor* const cursor) LMDB_NOEXCEPT {
   return ::mdb_cursor_txn(cursor);
 }
 
@@ -873,7 +940,7 @@ lmdb::cursor_txn(MDB_cursor* const cursor) noexcept {
  * @see http://symas.com/mdb/doc/group__mdb.html#ga2f7092cf70ee816fb3d2c3267a732372
  */
 static inline MDB_dbi
-lmdb::cursor_dbi(MDB_cursor* const cursor) noexcept {
+lmdb::cursor_dbi(MDB_cursor* const cursor) LMDB_NOEXCEPT {
   return ::mdb_cursor_dbi(cursor);
 }
 
@@ -955,85 +1022,93 @@ public:
   /**
    * Default constructor.
    */
-  val() noexcept = default;
+  val() LMDB_NOEXCEPT = default;
 
   /**
    * Constructor.
    */
-  val(const std::string& data) noexcept
+  val(const std::string& data) LMDB_NOEXCEPT
     : val{data.data(), data.size()} {}
 
   /**
    * Constructor.
    */
-  val(const std::string::const_iterator& data, std::size_t len) noexcept
+  val(const std::string::const_iterator& data, std::size_t len) LMDB_NOEXCEPT
     : val{&*data, len} {}
 
   /**
    * Template Constructor.
    */
   template<typename T>
-  val(const T& t) noexcept
+  val(const T& t) LMDB_NOEXCEPT
     : val{&t, sizeof(T)} {}
 
   /**
    * Constructor.
    */
-  val(const char* const data) noexcept
+  val(const char* const data) LMDB_NOEXCEPT
     : val{data, std::strlen(data)} {}
 
   /**
    * Constructor.
    */
   val(const void* const data,
-      const std::size_t size) noexcept
+      const std::size_t size) LMDB_NOEXCEPT
+#ifndef NCBI_VS2013
     : _val{size, const_cast<void*>(data)} {}
+#else
+      { _val.mv_size = size;  _val.mv_data = const_cast<void*>(data); }
+#endif
 
+#ifndef NCBI_VS2013
   /**
    * Move constructor.
    */
-  val(val&& other) noexcept = default;
+  val(val&& other) LMDB_NOEXCEPT = default;
+#endif
 
   /**
    * Copy constructor.
    */
-  val(const val& other) noexcept = default;
+  val(const val& other) LMDB_NOEXCEPT = default;
 
+#ifndef NCBI_VS2013
   /**
    * Move assignment operator.
    */
-  val& operator=(val&& other) noexcept = default;
+  val& operator=(val&& other) LMDB_NOEXCEPT = default;
+#endif
 
   /**
    * Destructor.
    */
-  ~val() noexcept = default;
+  ~val() LMDB_NOEXCEPT = default;
 
   /**
    * Returns an `MDB_val*` pointer.
    */
-  operator MDB_val*() noexcept {
+  operator MDB_val*() LMDB_NOEXCEPT {
     return &_val;
   }
 
   /**
    * Returns an `MDB_val*` pointer.
    */
-  operator const MDB_val*() const noexcept {
+  operator const MDB_val*() const LMDB_NOEXCEPT {
     return &_val;
   }
 
   /**
    * Determines whether this value is empty.
    */
-  bool empty() const noexcept {
+  bool empty() const LMDB_NOEXCEPT {
     return size() == 0;
   }
 
   /**
    * Returns the size of the data.
    */
-  std::size_t size() const noexcept {
+  std::size_t size() const LMDB_NOEXCEPT {
     return _val.mv_size;
   }
 
@@ -1041,7 +1116,7 @@ public:
    * Returns a pointer to the data.
    */
   template<typename T>
-  T* data() noexcept {
+  T* data() LMDB_NOEXCEPT {
     return reinterpret_cast<T*>(_val.mv_data);
   }
 
@@ -1049,21 +1124,21 @@ public:
    * Returns a pointer to the data.
    */
   template<typename T>
-  const T* data() const noexcept {
+  const T* data() const LMDB_NOEXCEPT {
     return reinterpret_cast<T*>(_val.mv_data);
   }
 
   /**
    * Returns a pointer to the data.
    */
-  char* data() noexcept {
+  char* data() LMDB_NOEXCEPT {
     return reinterpret_cast<char*>(_val.mv_data);
   }
 
   /**
    * Returns a pointer to the data.
    */
-  const char* data() const noexcept {
+  const char* data() const LMDB_NOEXCEPT {
     return reinterpret_cast<char*>(_val.mv_data);
   }
 
@@ -1072,7 +1147,7 @@ public:
    */
   template<typename T>
   val& assign(const T* const data,
-              const std::size_t size) noexcept {
+              const std::size_t size) LMDB_NOEXCEPT {
     _val.mv_size = size;
     _val.mv_data = const_cast<void*>(reinterpret_cast<const void*>(data));
     return *this;
@@ -1082,7 +1157,7 @@ public:
    * Assigns the value.
    */
   template<typename T>
-  val& assign(const T& data) noexcept {
+  val& assign(const T& data) LMDB_NOEXCEPT {
     _val.mv_size = sizeof(T);
     _val.mv_data = const_cast<void*>(reinterpret_cast<const void*>(&data));
     return *this;
@@ -1091,14 +1166,14 @@ public:
   /**
    * Assigns the value.
    */
-  val& assign(const char* const data) noexcept {
+  val& assign(const char* const data) LMDB_NOEXCEPT {
     return assign(data, std::strlen(data));
   }
 
   /**
    * Assigns the value.
    */
-  val& assign(const std::string& data) noexcept {
+  val& assign(const std::string& data) LMDB_NOEXCEPT {
     return assign(data.data(), data.size());
   }
 
@@ -1106,7 +1181,7 @@ public:
    * Assigns the value.
    */
   val& assign(const std::string::const_iterator& data, 
-              const std::size_t len) noexcept {
+              const std::size_t len) LMDB_NOEXCEPT {
     return assign(&*data, len);
   }
   
@@ -1150,8 +1225,8 @@ protected:
   MDB_env* _handle{nullptr};
 
 public:
-  static constexpr unsigned int default_flags = 0;
-  static constexpr mode default_mode = 0644; /* -rw-r--r-- */
+  static LMDB_CONSTEXPR unsigned int default_flags = 0;
+  static LMDB_CONSTEXPR mode default_mode = 0644; /* -rw-r--r-- */
 
   /**
    * Creates a new LMDB environment.
@@ -1182,20 +1257,20 @@ public:
    *
    * @param handle a valid `MDB_env*` handle
    */
-  env(MDB_env* const handle) noexcept
+  env(MDB_env* const handle) LMDB_NOEXCEPT
     : _handle{handle} {}
 
   /**
    * Move constructor.
    */
-  env(env&& other) noexcept {
+  env(env&& other) LMDB_NOEXCEPT {
     std::swap(_handle, other._handle);
   }
 
   /**
    * Move assignment operator.
    */
-  env& operator=(env&& other) noexcept {
+  env& operator=(env&& other) LMDB_NOEXCEPT {
     if (this != &other) {
       std::swap(_handle, other._handle);
     }
@@ -1205,21 +1280,21 @@ public:
   /**
    * Destructor.
    */
-  ~env() noexcept {
+  ~env() LMDB_NOEXCEPT {
     try { close(); } catch (...) {}
   }
 
   /**
    * Returns the underlying `MDB_env*` handle.
    */
-  operator MDB_env*() const noexcept {
+  operator MDB_env*() const LMDB_NOEXCEPT {
     return _handle;
   }
 
   /**
    * Returns the underlying `MDB_env*` handle.
    */
-  MDB_env* handle() const noexcept {
+  MDB_env* handle() const LMDB_NOEXCEPT {
     return _handle;
   }
 
@@ -1239,7 +1314,7 @@ public:
    * @note this method is idempotent
    * @post `handle() == nullptr`
    */
-  void close() noexcept {
+  void close() LMDB_NOEXCEPT {
     if (handle()) {
       lmdb::env_close(handle());
       _handle = nullptr;
@@ -1318,7 +1393,7 @@ protected:
   MDB_txn* _handle{nullptr};
 
 public:
-  static constexpr unsigned int default_flags = 0;
+  static LMDB_CONSTEXPR unsigned int default_flags = 0;
 
   /**
    * Creates a new LMDB transaction.
@@ -1344,20 +1419,20 @@ public:
    *
    * @param handle a valid `MDB_txn*` handle
    */
-  txn(MDB_txn* const handle) noexcept
+  txn(MDB_txn* const handle) LMDB_NOEXCEPT
     : _handle{handle} {}
 
   /**
    * Move constructor.
    */
-  txn(txn&& other) noexcept {
+  txn(txn&& other) LMDB_NOEXCEPT {
     std::swap(_handle, other._handle);
   }
 
   /**
    * Move assignment operator.
    */
-  txn& operator=(txn&& other) noexcept {
+  txn& operator=(txn&& other) LMDB_NOEXCEPT {
     if (this != &other) {
       std::swap(_handle, other._handle);
     }
@@ -1367,7 +1442,7 @@ public:
   /**
    * Destructor.
    */
-  ~txn() noexcept {
+  ~txn() LMDB_NOEXCEPT {
     if (_handle) {
       try { abort(); } catch (...) {}
       _handle = nullptr;
@@ -1377,21 +1452,21 @@ public:
   /**
    * Returns the underlying `MDB_txn*` handle.
    */
-  operator MDB_txn*() const noexcept {
+  operator MDB_txn*() const LMDB_NOEXCEPT {
     return _handle;
   }
 
   /**
    * Returns the underlying `MDB_txn*` handle.
    */
-  MDB_txn* handle() const noexcept {
+  MDB_txn* handle() const LMDB_NOEXCEPT {
     return _handle;
   }
 
   /**
    * Returns the transaction's `MDB_env*` handle.
    */
-  MDB_env* env() const noexcept {
+  MDB_env* env() const LMDB_NOEXCEPT {
     return lmdb::txn_env(handle());
   }
 
@@ -1411,7 +1486,7 @@ public:
    *
    * @post `handle() == nullptr`
    */
-  void abort() noexcept {
+  void abort() LMDB_NOEXCEPT {
     lmdb::txn_abort(_handle);
     _handle = nullptr;
   }
@@ -1419,7 +1494,7 @@ public:
   /**
    * Resets this read-only transaction.
    */
-  void reset() noexcept {
+  void reset() LMDB_NOEXCEPT {
     lmdb::txn_reset(_handle);
   }
 
@@ -1451,8 +1526,8 @@ protected:
   MDB_dbi _handle{0};
 
 public:
-  static constexpr unsigned int default_flags     = 0;
-  static constexpr unsigned int default_put_flags = 0;
+  static LMDB_CONSTEXPR unsigned int default_flags     = 0;
+  static LMDB_CONSTEXPR unsigned int default_put_flags = 0;
 
   /**
    * Opens a database handle.
@@ -1476,20 +1551,20 @@ public:
    *
    * @param handle a valid `MDB_dbi` handle
    */
-  dbi(const MDB_dbi handle) noexcept
+  dbi(const MDB_dbi handle) LMDB_NOEXCEPT
     : _handle{handle} {}
 
   /**
    * Move constructor.
    */
-  dbi(dbi&& other) noexcept {
+  dbi(dbi&& other) LMDB_NOEXCEPT {
     std::swap(_handle, other._handle);
   }
 
   /**
    * Move assignment operator.
    */
-  dbi& operator=(dbi&& other) noexcept {
+  dbi& operator=(dbi&& other) LMDB_NOEXCEPT {
     if (this != &other) {
       std::swap(_handle, other._handle);
     }
@@ -1499,7 +1574,7 @@ public:
   /**
    * Destructor.
    */
-  ~dbi() noexcept {
+  ~dbi() LMDB_NOEXCEPT {
     if (_handle) {
       /* No need to call close() here. */
     }
@@ -1518,14 +1593,14 @@ public:
   /**
    * Returns the underlying `MDB_dbi` handle.
    */
-  operator MDB_dbi() const noexcept {
+  operator MDB_dbi() const LMDB_NOEXCEPT {
     return _handle;
   }
 
   /**
    * Returns the underlying `MDB_dbi` handle.
    */
-  MDB_dbi handle() const noexcept {
+  MDB_dbi handle() const LMDB_NOEXCEPT {
     return _handle;
   }
 
@@ -1789,7 +1864,7 @@ protected:
   MDB_cursor* _handle{nullptr};
 
 public:
-  static constexpr unsigned int default_flags = 0;
+  static LMDB_CONSTEXPR unsigned int default_flags = 0;
 
   /**
    * Creates an LMDB cursor.
@@ -1814,20 +1889,20 @@ public:
    *
    * @param handle a valid `MDB_cursor*` handle
    */
-  cursor(MDB_cursor* const handle) noexcept
+  cursor(MDB_cursor* const handle) LMDB_NOEXCEPT
     : _handle{handle} {}
 
   /**
    * Move constructor.
    */
-  cursor(cursor&& other) noexcept {
+  cursor(cursor&& other) LMDB_NOEXCEPT {
     std::swap(_handle, other._handle);
   }
 
   /**
    * Move assignment operator.
    */
-  cursor& operator=(cursor&& other) noexcept {
+  cursor& operator=(cursor&& other) LMDB_NOEXCEPT {
     if (this != &other) {
       std::swap(_handle, other._handle);
     }
@@ -1837,21 +1912,21 @@ public:
   /**
    * Destructor.
    */
-  ~cursor() noexcept {
+  ~cursor() LMDB_NOEXCEPT {
     try { close(); } catch (...) {}
   }
 
   /**
    * Returns the underlying `MDB_cursor*` handle.
    */
-  operator MDB_cursor*() const noexcept {
+  operator MDB_cursor*() const LMDB_NOEXCEPT {
     return _handle;
   }
 
   /**
    * Returns the underlying `MDB_cursor*` handle.
    */
-  MDB_cursor* handle() const noexcept {
+  MDB_cursor* handle() const LMDB_NOEXCEPT {
     return _handle;
   }
 
@@ -1861,7 +1936,7 @@ public:
    * @note this method is idempotent
    * @post `handle() == nullptr`
    */
-  void close() noexcept {
+  void close() LMDB_NOEXCEPT {
     if (_handle) {
       lmdb::cursor_close(_handle);
       _handle = nullptr;
@@ -1881,14 +1956,14 @@ public:
   /**
    * Returns the cursor's transaction handle.
    */
-  MDB_txn* txn() const noexcept {
+  MDB_txn* txn() const LMDB_NOEXCEPT {
     return lmdb::cursor_txn(handle());
   }
 
   /**
    * Returns the cursor's database handle.
    */
-  MDB_dbi dbi() const noexcept {
+  MDB_dbi dbi() const LMDB_NOEXCEPT {
     return lmdb::cursor_dbi(handle());
   }
 
@@ -1981,5 +2056,10 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+
+#undef LMDB_NOEXCEPT
+#undef LMDB_CONSTEXPR
+#undef LMDB_SNPRINTF
+
 
 #endif /* LMDBXX_H */
