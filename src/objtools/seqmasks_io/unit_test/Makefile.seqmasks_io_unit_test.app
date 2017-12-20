@@ -12,7 +12,7 @@ SRC = seqmasks_out_unit_test
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB = test_boost seqmasks_io $(OBJREAD_LIBS) xobjutil \
-	seqdb blastdb $(OBJMGR_LIBS:%=%$(STATIC))
+	seqdb blastdb $(OBJMGR_LIBS:%=%$(STATIC)) $(LMDB_LIB)
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included

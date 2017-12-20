@@ -12,7 +12,7 @@ LIB_ = test_boost $(BLAST_DB_DATA_LOADER_LIBS) align_format taxon1 blastdb_forma
         gene_info xalnmgr xcgi xhtml seqmasks_io seqdb blast_services xobjutil \
 	$(OBJREAD_LIBS) xnetblastcli xnetblast blastdb scoremat tables $(OBJMGR_LIBS)
 
-LIB = $(LIB_:%=%$(STATIC))
+LIB = $(LIB_:%=%$(STATIC)) $(LMDB_LIB)
 LIBS = $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = align_format_unit_test

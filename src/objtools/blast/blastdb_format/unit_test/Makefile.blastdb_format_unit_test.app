@@ -9,7 +9,7 @@ LDFLAGS = $(FAST_LDFLAGS)
 
 LIB_ = test_boost blastdb_format xobjutil seqdb blastdb $(SOBJMGR_LIBS)
 
-LIB = $(LIB_:%=%$(STATIC))
+LIB = $(LIB_:%=%$(STATIC)) $(LMDB_LIB)
 LIBS = $(BLAST_THIRD_PARTY_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_REQUIRES = in-house-resources

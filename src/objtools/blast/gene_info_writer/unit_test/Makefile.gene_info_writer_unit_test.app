@@ -8,7 +8,7 @@ CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS = $(LOCAL_LDFLAGS) $(FAST_LDFLAGS)
 
 LIB_ = test_boost gene_info_writer gene_info xobjutil seqdb blastdb $(SOBJMGR_LIBS)
-LIB = $(LIB_:%=%$(STATIC))
+LIB = $(LIB_:%=%$(STATIC)) $(LMDB_LIB)
 
 LIBS = $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
