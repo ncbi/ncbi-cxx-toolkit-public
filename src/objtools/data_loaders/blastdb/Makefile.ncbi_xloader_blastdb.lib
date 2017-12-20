@@ -11,7 +11,7 @@ LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
 
 ASN_DEP = blastdb seqset
 
-WATCHERS = camacho
+WATCHERS = camacho fongah2
 
 
 USES_LIBRARIES =  \

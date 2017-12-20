@@ -1,6 +1,6 @@
 # $Id$
 
-WATCHERS = camacho 
+WATCHERS = camacho fongah2
 
 APP = blastdbcheck
 SRC = blastdbcheck

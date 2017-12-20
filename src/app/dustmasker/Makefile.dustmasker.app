@@ -17,4 +17,4 @@ CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
 
-WATCHERS = camacho
+WATCHERS = camacho fongah2

@@ -14,4 +14,4 @@ LIBS = $(BLAST_THIRD_PARTY_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG
 CHECK_REQUIRES = in-house-resources
 CHECK_CMD = blast_dataloader_unit_test
 
-WATCHERS = madden camacho
+WATCHERS = madden camacho fongah2

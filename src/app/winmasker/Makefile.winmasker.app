@@ -1,6 +1,6 @@
 # $Id$
 
-WATCHERS = morgulis camacho mozese2
+WATCHERS = morgulis camacho mozese2 fongah2
 
 REQUIRES = objects algo
 
