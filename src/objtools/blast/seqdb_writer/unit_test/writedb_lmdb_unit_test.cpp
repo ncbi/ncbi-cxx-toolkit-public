@@ -64,14 +64,14 @@ BOOST_AUTO_TEST_CASE(CreateLMDBFile)
 	}
 
 	{
-		CWriteDB_LMDB test_db(lmdb_name);
+		CWriteDB_LMDB test_db(lmdb_name, 100000);
 		for (int i=0; i < source_db.GetNumOIDs(); i++) {
 			list< CRef<CSeq_id> >  ids = source_db.GetSeqIDs(i);
 			test_db.InsertEntries(ids, i);
 		}
 		test_db.InsertVolumesInfo(vol_names, vol_num_oids);
 
-		CWriteDB_TaxID taxdb(tax_lmdb);
+		CWriteDB_TaxID taxdb(tax_lmdb,100000);
 	    const int taxids[5] = { 9606, 562, 0, 2, 10239 };
 		for (int i=0; i < source_db.GetNumOIDs(); i++) {
 			set<int> t;
