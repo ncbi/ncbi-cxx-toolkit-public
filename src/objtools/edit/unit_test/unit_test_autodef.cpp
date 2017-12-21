@@ -2300,6 +2300,10 @@ BOOST_AUTO_TEST_CASE(Test_GB_7485)
     CheckInfluenzaDefline("Influenza B virus", "x", "y", "", "1", "Influenza B virus (x) segment 1.");
     CheckInfluenzaDefline("Influenza A virus", "x", "y", "c", "1", "Influenza A virus (x(y)) clone c segment 1.");
     CheckInfluenzaDefline("Influenza B virus", "x", "y", "c", "1", "Influenza B virus (x) clone c segment 1.");
+
+    CheckInfluenzaDefline("Influenza A virus (x(y))", "x", "y", "c", "1", "Influenza A virus (x(y)) clone c segment 1.");
+    CheckInfluenzaDefline("Influenza C virus (x)", "x", "y", "c", "1", "Influenza C virus (x) clone c segment 1.");
+
 }
 
 

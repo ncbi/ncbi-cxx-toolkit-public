@@ -862,26 +862,29 @@ string CAutoDefModifierCombo::GetSourceDescriptionString(const CBioSource& bsrc)
     if (influenza_type != eNotInfluenza) {
         if ((x_BioSourceHasOrgMod(bsrc, COrgMod::eSubtype_strain) ||
             (influenza_type == eInfluenzaA && x_BioSourceHasOrgMod(bsrc, COrgMod::eSubtype_serotype)))) {
-            source_description += " (";
+            string paren = " (";
             for (auto& it : bsrc.GetOrg().GetOrgname().GetMod()) {
                 if (it->IsSetSubtype() && it->GetSubtype() == COrgMod::eSubtype_strain &&
                     it->IsSetSubname() && !NStr::IsBlank(it->GetSubname())) {
-                    source_description += it->GetSubname();
+                    paren += it->GetSubname();
                     break;
                 }
             }
             if (influenza_type == eInfluenzaA) {
-                source_description += "(";
+                paren += "(";
                 for (auto& it : bsrc.GetOrg().GetOrgname().GetMod()) {
                     if (it->IsSetSubtype() && it->GetSubtype() == COrgMod::eSubtype_serotype &&
                         it->IsSetSubname() && !NStr::IsBlank(it->GetSubname())) {
-                        source_description += it->GetSubname();
+                        paren += it->GetSubname();
                         break;
                     }
                 }
-                source_description += ")";
+                paren += ")";
             }
-            source_description += ")";
+            paren += ")";
+            if (!NStr::EndsWith(source_description, paren)) {
+                source_description += paren;
+            }
         }
         if (x_BioSourceHasSubSrc(bsrc, CSubSource::eSubtype_clone) && !m_UseModifierLabels) {
             source_description += " clone";
