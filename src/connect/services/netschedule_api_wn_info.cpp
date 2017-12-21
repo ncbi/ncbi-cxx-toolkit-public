@@ -337,6 +337,7 @@ CJsonNode g_WorkerNodeInfoToJson(CNetServer worker_node)
     CTempString value;
     CJsonNode job_counters(CJsonNode::NewObjectNode());
     CJsonNode running_jobs(CJsonNode::NewArrayNode());
+    CJsonNode alerts(CJsonNode::NewObjectNode());
     SIZE_TYPE pos;
     int running_job_count = 0;
     int free_worker_threads = 1;
@@ -383,6 +384,8 @@ CJsonNode g_WorkerNodeInfoToJson(CNetServer worker_node)
                     free_worker_threads -= running_job_count;
                 }
             }
+        } else if (NStr::StartsWith(line, TEMP_STRING_CTOR("Alert_")) && s_ExtractKey(line, key, value)) {
+            alerts.SetString(key, value);
         } else if (s_ExtractKey(line, key, value)) {
             if (key == "host_name")
                 key = "hostname";
@@ -435,6 +438,7 @@ CJsonNode g_WorkerNodeInfoToJson(CNetServer worker_node)
 
     wn_info.SetByKey("job_counters", job_counters);
     wn_info.SetByKey("running_jobs", running_jobs);
+    if (alerts.GetSize()) wn_info.SetByKey("alerts", alerts);
 
     return wn_info;
 }
