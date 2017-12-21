@@ -73,7 +73,7 @@ SRC =	aaa_dummy_pch \
 LIB =   xbma_refiner_gui wx_tools xbma_refiner xcd_utils xstruct_util xstruct_dp xstruct_thread \
         xblast xalgowinmask xalgodustmask xalgoblastdbindex composition_adjustment seqmasks_io seqdb $(OBJREAD_LIBS) \
 	xalnmgr tables xobjutil id1cli id1 ncbimime cdd cn3d mmdb blast_services xnetblastcli xnetblast scoremat \
-	taxon1 blastdb xregexp entrez2cli xconnect entrez2 $(SOBJMGR_LIBS) $(Z_LIB) $(PCRE_LIB)
+	taxon1 blastdb xregexp entrez2cli xconnect entrez2 $(SOBJMGR_LIBS) $(Z_LIB) $(PCRE_LIB) $(LMDB_LIB)
 
 CPPFLAGS = \
 	$(ORIG_CPPFLAGS) \
@@ -87,7 +87,7 @@ LDFLAGS = $(FAST_LDFLAGS)
 LIBS = \
 	$(WXWIDGETS_GL_LIBS) $(WXWIDGETS_LIBS) \
 	$(Z_LIBS) $(PNG_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) \
-	$(ORIG_LIBS)
+	$(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
 
 
 # for distribution on linux/gcc, do:

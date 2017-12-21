@@ -13,7 +13,7 @@ SRC = objmgr_demo
 LIB = ncbi_xloader_blastdb seqdb blastdb \
       ncbi_xloader_lds2 lds2 sqlitewrapp \
       ncbi_xdbapi_ftds $(FTDS_LIB) \
-      $(OBJREAD_LIBS) xobjutil $(OBJMGR_LIBS)
+      $(OBJREAD_LIBS) xobjutil $(OBJMGR_LIBS) $(LMDB_LIB)
 
 LIBS = $(SQLITE3_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) \
        $(NETWORK_LIBS) $(DL_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
