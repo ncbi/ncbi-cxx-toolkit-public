@@ -511,7 +511,7 @@ CBlastDBAliasApp::x_ConvertSeqIDFile() const
    		CSeqDB_Path(args["seqid_file_in"].AsString()).FindFileName().GetString(title);
    	}
 
-	CNcbiOfstream output(out_filename, IOS_BASE::binary | IOS_BASE::out);
+	CNcbiOfstream output(out_filename.c_str(), IOS_BASE::binary | IOS_BASE::out);
     unsigned int line_ctr = 0;
     vector<string> seqid_list;
     while (input) {
