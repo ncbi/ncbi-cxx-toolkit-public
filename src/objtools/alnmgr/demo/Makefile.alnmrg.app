@@ -5,7 +5,7 @@ APP = alnmrg
 SRC = alnmrg
 
 LIB = xalnmgr $(OBJREAD_LIBS) ncbi_xloader_blastdb seqdb xobjutil blastdb \
-      tables $(OBJMGR_LIBS)
+      tables $(OBJMGR_LIBS) $(LMDB_LIB)
 
 LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
 
