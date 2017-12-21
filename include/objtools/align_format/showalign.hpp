@@ -719,7 +719,7 @@ protected:
     ///    
 
 
-    CAlignFormatUtil::SSeqURLInfo *x_InitSeqUrl(TGi giToUse,string accession,int linkout,
+    CAlignFormatUtil::SSeqURLInfo *x_InitSeqUrl(TGi giToUse,string accession,
         int taxid,const list<CRef<objects::CSeq_id> >& ids);
 
     string x_HTMLSeqIDLink(SAlnRowInfo *alnRoInfo, int row,TGi giToUse);
@@ -863,7 +863,7 @@ protected:
     ///
     void x_FillSeqid(string& id, int row) const;
 
-    int x_GetLinkout(TGi gi);
+    
     int x_GetLinkout(const objects::CSeq_id &  id);
 
     ///print out features and fill master_feat_str if applicable

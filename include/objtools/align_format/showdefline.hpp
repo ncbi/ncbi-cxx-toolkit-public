@@ -112,7 +112,7 @@ public:
         bool was_checked;              //was this sequence checked before?
 	    string fullDefline;            //defline, containing all seq defines (PIG for example)
         int    taxid;
-        string  textSeqID;
+        string  textSeqID;      
     };
 
     //Data representing templates for defline display 
@@ -132,6 +132,7 @@ public:
         int     topMatchesNum;
         int     currInd;
         vector <string> deflIdVec;
+        vector <string> accVec;
         vector <string> taxidVec;
         vector <string> queryCoverageVec;
         vector <string> percentIdentityVec;
