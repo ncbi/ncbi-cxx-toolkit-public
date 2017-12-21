@@ -802,7 +802,7 @@ OBJEDIT_LIBS = xobjedit $(OBJREAD_LIBS) taxon3
 DATA_LOADERS_UTIL_LIB = data_loaders_util \
                         ncbi_xloader_asn_cache asn_cache bdb \
                         ncbi_xloader_lds2 lds2 $(OBJREAD_LIBS) sqlitewrapp \
-                        ncbi_xloader_blastdb seqdb blastdb \
+                        ncbi_xloader_blastdb seqdb blastdb $(LMDB_LIB) \
                         $(ncbi_xreader_pubseqos2) ncbi_xdbapi_ftds $(FTDS_LIB) \
                         $(ncbi_xloader_wgs) $(ncbi_xloader_csra) \
                         $(SRAREAD_LIBS)
