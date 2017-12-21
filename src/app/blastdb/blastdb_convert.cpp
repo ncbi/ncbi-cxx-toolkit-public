@@ -66,8 +66,6 @@ static const string kMapSize("map_size");
 static const char* kDbList = "DBLIST";
 /// Alias file keyword for oidlist
 static const char* kOidList = "OIDLIST";
-/// Separator for volume number
-static const char kDot('.');
 /// Used to copy index files
 static const SIZE_TYPE kBufSize(4096);
 

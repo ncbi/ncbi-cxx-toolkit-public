@@ -91,7 +91,7 @@ int CSeqidlistRead::GetIds(vector<CSeqDBGiList::SSiOid>  & idlist)
 	idlist.clear();
 	idlist.resize(m_info.num_ids);
 	for(; (m_Ptr < m_EndPtr) && (i < m_info.num_ids); i++) {
-		char id_len = x_GetChar();
+		unsigned char id_len = (unsigned char) x_GetChar();
 		if(id_len == byte_max) {
 			Uint4 long_id_len = x_GetUint4();
 			x_GetString(idlist[i].si, long_id_len);

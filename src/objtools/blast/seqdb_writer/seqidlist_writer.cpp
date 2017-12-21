@@ -117,6 +117,7 @@ int WriteBlastSeqidlistFile(const vector<string> & idlist, CNcbiOstream & os, co
 		}
 		tmplist.push_back(seqid.GetSeqIdString(true));
 		} catch (CException & e) {
+			LOG_POST(e.GetMsg());
 			NCBI_THROW(CSeqDBException, eArgErr, "Invalid seq id: " + idlist[i]);
 
 		}
