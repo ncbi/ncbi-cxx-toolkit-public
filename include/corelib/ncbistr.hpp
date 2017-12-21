@@ -2627,15 +2627,6 @@ public:
     ///   The strings in "arr" are joined into a single string, separated
     ///   with "delim".
     /// @sa Split
-#if 1
-    static string Join(const list<string>& arr,        const CTempString delim);
-    static string Join(const list<CTempString>& arr,   const CTempString delim);
-    static string Join(const vector<string>& arr,      const CTempString delim);
-    static string Join(const vector<CTempString>& arr, const CTempString delim);
-    static string Join(const set<string>& arr,         const CTempString delim);
-    static string Join(const set<CTempString>& arr,    const CTempString delim);
-#else
-// fails to compile on some platforms, disabled for now
     template<typename TContainer>
     static string
     Join(const TContainer& arr, const CTempString& delim)
@@ -2661,7 +2652,7 @@ public:
     static typename enable_if<is_same<typename TIterator::iterator_category, input_iterator_tag>::value, string>::type
     Join( TIterator from, TIterator to, const CTempString& delim)
     {
-        return TransformJoin(from, to, delim, [](const auto& i){ return i;});
+        return TransformJoin(from, to, delim, [](const typename TIterator::value_type& i){ return i;});
     }
 
     template<typename TIterator>
@@ -2679,10 +2670,18 @@ public:
     }
 
     template<typename TIterator>
-    static string
+    static typename enable_if<is_convertible<typename TIterator::iterator_category, input_iterator_tag>::value &&
+                              is_arithmetic< typename TIterator::value_type>::value, string>::type
     JoinNumeric( TIterator from, TIterator to, const CTempString& delim)
     {
-        return TransformJoin( from, to, delim, [](const auto& i){ return NumericToString(i);});
+        return TransformJoin( from, to, delim, [](const typename TIterator::value_type& i){ return NumericToString(i);});
+    }
+
+    template<typename TValue>
+    static typename enable_if<is_arithmetic<TValue>::value, string>::type
+    JoinNumeric( TValue* from, TValue* to, const CTempString& delim)
+    {
+        return TransformJoin( from, to, delim, [](const TValue& i){ return NumericToString(i);});
     }
 
     template<typename TIterator, typename FTransform>
@@ -2693,7 +2692,6 @@ private:
     template<typename TIterator>
     static string x_Join( TIterator from, TIterator to, const CTempString& delim);
 public:
-#endif
 
     /// How to display printable strings.
     ///
@@ -5613,7 +5611,6 @@ const string* NStr::FindNoCase(const vector <string>& vec, const CTempString val
     return Find(vec, val, eNocase);
 }
 
-#if 0
 template<typename TIterator, typename FTransform>
 string
 NStr::TransformJoin( TIterator from, TIterator to, const CTempString& delim, FTransform fnTransform)
@@ -5646,7 +5643,6 @@ NStr::x_Join( TIterator from, TIterator to, const CTempString& delim)
     }
     return result;    
 }
-#endif
 
 inline
 list<string>& NStr::Wrap(const string& str, SIZE_TYPE width, list<string>& arr,

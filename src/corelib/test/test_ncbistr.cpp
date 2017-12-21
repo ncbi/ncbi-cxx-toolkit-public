@@ -4452,13 +4452,15 @@ BOOST_AUTO_TEST_CASE(s_ShellEncode)
 }
 #endif
 
-#if 0
 BOOST_AUTO_TEST_CASE(s_StringJoin)
 {
     string result("one,two,three"), resultN("1,2,3");
     stringstream iss("one two three");
     istream_iterator<string> i(iss);
     BOOST_CHECK_EQUAL(result, NStr::Join(i, istream_iterator<string>(), ","));
+
+    stringstream iss1("1 2 3");
+    BOOST_CHECK_EQUAL(resultN, NStr::JoinNumeric(istream_iterator<int>(iss1), istream_iterator<int>(), ","));
 
     list<string> x = {"one", "two", "three"};
     BOOST_CHECK_EQUAL(result, NStr::Join(x, ","));
@@ -4482,36 +4484,44 @@ BOOST_AUTO_TEST_CASE(s_StringJoin)
     BOOST_CHECK_EQUAL(result, NStr::Join(begin(z2), end(z2), ","));
     BOOST_CHECK_EQUAL(result, NStr::Join(z2, ","));
 
-    int z3[3] = {1,2,3};
-#if 0
-    j = NStr::Join(begin(z3), end(z3), ",");
-    j = NStr::Join(z3, ",");
-#endif
-    BOOST_CHECK_EQUAL(resultN, NStr::TransformJoin( begin(z3), end(z3), ",", [](const int& i){ return NStr::NumericToString(i);}));
-    BOOST_CHECK_EQUAL(resultN, NStr::JoinNumeric( begin(z3), end(z3), ","));
-
     map<string, string> m;
     m["one"] = "uno";
     m["two"] = "dos";
     BOOST_CHECK_EQUAL("one:uno",NStr::Join({m.begin()->first, m.begin()->second}, ":"));
+#if 0
+    string jjj = NStr::JoinNumeric( begin(m), end(m), ",");
+#endif
 
     BOOST_CHECK_EQUAL( "one:uno,two:dos", NStr::TransformJoin( m.begin(), m.end(), ",", [](const map<string, string>::value_type& i){ return NStr::Join( {i.first, i.second}, ":");}));
-    BOOST_CHECK_EQUAL( "one:uno,two:dos", NStr::TransformJoin( m.begin(), m.end(), ",", [](const auto& i){ return NStr::Join( {i.first, i.second}, ":");}));
+// using auto in lambdas, requires C++14?
+// that is, this might fail to compile, otherwise, it is correct
+//    BOOST_CHECK_EQUAL( "one:uno,two:dos", NStr::TransformJoin( m.begin(), m.end(), ",", [](const auto& i){ return NStr::Join( {i.first, i.second}, ":");}));
 
     list<int> mi = {1,2,3};
-    BOOST_CHECK_EQUAL(resultN, NStr::TransformJoin( mi.begin(), mi.end(), ",", [](const auto& i){ return NStr::NumericToString(i);}));
+//    BOOST_CHECK_EQUAL(resultN, NStr::TransformJoin( mi.begin(), mi.end(), ",", [](const auto& i){ return NStr::NumericToString(i);}));
+    BOOST_CHECK_EQUAL(resultN, NStr::TransformJoin( mi.begin(), mi.end(), ",", [](const int& i){ return NStr::NumericToString(i);}));
     BOOST_CHECK_EQUAL(resultN, NStr::JoinNumeric( mi.begin(), mi.end(), ","));
 
     initializer_list<int> mi2 = {1,2,3};
-    BOOST_CHECK_EQUAL(resultN, NStr::TransformJoin( mi2.begin(), mi2.end(), ",", [](const auto& i){ return NStr::NumericToString(i);}));
+//    BOOST_CHECK_EQUAL(resultN, NStr::TransformJoin( mi2.begin(), mi2.end(), ",", [](const auto& i){ return NStr::NumericToString(i);}));
+    BOOST_CHECK_EQUAL(resultN, NStr::TransformJoin( mi2.begin(), mi2.end(), ",", [](const int i){ return NStr::NumericToString(i);}));
     BOOST_CHECK_EQUAL(resultN, NStr::JoinNumeric( mi2.begin(), mi2.end(), ","));
+
+    int z3[3] = {1,2,3};
+#if 0
+    string jjj = NStr::Join(begin(z3), end(z3), ",");
+    jjj = NStr::Join(z3, ",");
+#endif
+    BOOST_CHECK_EQUAL(resultN, NStr::TransformJoin( begin(z3), end(z3), ",", [](const int& i){ return NStr::NumericToString(i);}));
+    BOOST_CHECK_EQUAL(resultN, NStr::JoinNumeric( begin(z3), end(z3), ","));
 
     list<CTime> t1;
     t1.push_back( CTime(CTime::eCurrent, CTime::eLocal));
     t1.push_back( CTime(CTime::eCurrent, CTime::eUTC));
     t1.push_back( CTime(CTime::eCurrent, CTime::eGmt));
     string j = NStr::Join(t1, ",");
-    j = NStr::TransformJoin( t1.begin(), t1.end(), ",", [](const auto& i){ return i.AsString();});
+//    j = NStr::TransformJoin( t1.begin(), t1.end(), ",", [](const auto& i){ return i.AsString();});
+    j = NStr::TransformJoin( t1.begin(), t1.end(), ",", [](const CTime& i){ return i.AsString();});
     j = NStr::Join({CTime(CTime::eCurrent, CTime::eLocal), CTime(CTime::eCurrent, CTime::eUTC)}, ",");
 
     CTime arr[2];
@@ -4520,7 +4530,6 @@ BOOST_AUTO_TEST_CASE(s_StringJoin)
     j = NStr::Join(arr, ",");
     j = NStr::Join(begin(arr), end(arr), ",");
 }
-#endif
 
 NCBITEST_INIT_TREE()
 {
