@@ -7020,6 +7020,27 @@ void CNewCleanup_imp::x_CleanStructuredComment( CUser_object &user_object )
     }
 }
 
+
+bool CNewCleanup_imp::x_CleanDBLink(CUser_object& user_object)
+{
+    bool changed = false;
+    if (user_object.GetObjectType() != CUser_object::eObjectType_DBLink) {
+        return changed;
+    }
+    if (!user_object.IsSetData()) {
+        return changed;
+    }
+    for (auto& it : user_object.SetData()) {
+        if (it->IsSetData() && it->GetData().IsStr()) {
+            string val = it->GetData().GetStr();
+            it->SetData().SetStrs().push_back(val);
+            changed = true;
+        }
+    }
+    return changed;
+}
+
+
 void CNewCleanup_imp::x_MendSatelliteQualifier( string &val )
 {
     if ( val.empty() ){
@@ -9624,6 +9645,9 @@ void CNewCleanup_imp::UserObjectBC( CUser_object &user_object )
     }
 
     x_CleanStructuredComment( user_object );
+    if (x_CleanDBLink(user_object)) {
+        ChangeMade(CCleanupChange::eCleanUserObjectOrField);
+    }
 }
 
 static int s_PcrPrimerCompare( 

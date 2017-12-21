@@ -1400,3 +1400,36 @@ BOOST_AUTO_TEST_CASE(Test_VR_746)
 
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_CleanDBLink)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    CRef<CUser_object> user(new CUser_object());
+    user->SetObjectType(CUser_object::eObjectType_DBLink);
+    CRef<CUser_field> field1(new CUser_field());
+    field1->SetLabel().SetStr("BioProject");
+    field1->SetData().SetStr("A value");
+    user->SetData().push_back(field1);
+
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetUser().Assign(*user);
+    entry->SetSeq().SetDescr().Set().push_back(desc);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*entry);
+
+    BOOST_CHECK_EQUAL(desc->GetUser().GetData().size(), 1);
+    BOOST_CHECK_EQUAL(desc->GetUser().GetData().front()->GetData().IsStrs(), true);
+    BOOST_CHECK_EQUAL(desc->GetUser().GetData().front()->GetData().GetStrs().size(), 1);
+    BOOST_CHECK_EQUAL(desc->GetUser().GetData().front()->GetData().GetStrs().front(), "A value");
+}
+

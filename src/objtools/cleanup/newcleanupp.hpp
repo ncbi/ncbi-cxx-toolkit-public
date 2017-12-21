@@ -461,6 +461,8 @@ private:
     void x_CleanupAndRepairInference( string &inference );
 
     void x_CleanStructuredComment( CUser_object &user_object );
+    static bool x_CleanDBLink(CUser_object& user_object);
+
     void x_RemoveEmptyFields(CUser_object& user_object);
 
     void x_MendSatelliteQualifier( string &val );
