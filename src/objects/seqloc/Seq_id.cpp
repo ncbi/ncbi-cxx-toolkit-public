@@ -1991,9 +1991,13 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
     }
 }
 
+
 bool CSeq_id::IsValidLocalID(const CTempString& s)
 {
-    static const char* kIllegal = " |=\"";
+    if (s.length() > 50) {
+        return false;
+    }
+    static const char* kIllegal = " >[]|\"";
     CSeq_id_find_pred pred; pred.kSymbols = kIllegal;
     return (!s.empty() && find_if(s.begin(), s.end(), pred) == s.end());
 }

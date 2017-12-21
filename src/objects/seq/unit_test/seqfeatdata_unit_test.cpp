@@ -49,6 +49,7 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Prot_ref.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/biblio/Cit_art.hpp>
@@ -2033,4 +2034,23 @@ BOOST_AUTO_TEST_CASE(Test_IsValidEcNumberFormat)
     BOOST_CHECK_EQUAL(CProt_ref::IsValidECNumberFormat("1.2"), false);
     BOOST_CHECK_EQUAL(CProt_ref::IsValidECNumberFormat("1.2.3"), false);
 
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_IsValidLocalID)
+{
+    BOOST_CHECK_EQUAL(CSeq_id::IsValidLocalID(""), false);
+    BOOST_CHECK_EQUAL(CSeq_id::IsValidLocalID("ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXY"), false);
+    BOOST_CHECK_EQUAL(CSeq_id::IsValidLocalID("ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWX"), true);
+    BOOST_CHECK_EQUAL(CSeq_id::IsValidLocalID("nuc1"), true);
+    BOOST_CHECK_EQUAL(CSeq_id::IsValidLocalID("nuc 1"), false);
+    BOOST_CHECK_EQUAL(CSeq_id::IsValidLocalID("nuc>1"), false);
+    BOOST_CHECK_EQUAL(CSeq_id::IsValidLocalID("nuc[1"), false);
+    BOOST_CHECK_EQUAL(CSeq_id::IsValidLocalID("nuc]1"), false);
+    BOOST_CHECK_EQUAL(CSeq_id::IsValidLocalID("nuc|1"), false);
+    BOOST_CHECK_EQUAL(CSeq_id::IsValidLocalID("nuc=1"), true);
+    BOOST_CHECK_EQUAL(CSeq_id::IsValidLocalID("nuc\"1"), false);
+    BOOST_CHECK_EQUAL(CSeq_id::IsValidLocalID("nuc$1"), true);
+    BOOST_CHECK_EQUAL(CSeq_id::IsValidLocalID("nuc@1"), true);
+    BOOST_CHECK_EQUAL(CSeq_id::IsValidLocalID("nuc{1"), true);
 }
