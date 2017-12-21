@@ -682,6 +682,7 @@ void CMessageDumperSender::DumpInputMessage(const CJsonNode& message)
     fprintf(m_ProtocolDumpFile, m_DumpInputHeaderFormat.c_str(),
             GetFastLocalTime().AsString(m_ProtocolDumpTimeFormat).c_str());
     g_PrintJSON(m_ProtocolDumpFile, message);
+    fflush(m_ProtocolDumpFile);
 }
 
 void CMessageDumperSender::SendMessage(const CJsonNode& message)
@@ -692,6 +693,8 @@ void CMessageDumperSender::SendMessage(const CJsonNode& message)
 
     if (m_ActualSender != NULL)
         m_ActualSender->SendMessage(message);
+
+    fflush(m_ProtocolDumpFile);
 }
 
 int CGridCommandLineInterfaceApp::Automation_PipeServer()
