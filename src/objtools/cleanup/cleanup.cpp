@@ -2532,7 +2532,7 @@ bool CCleanup::ExpandGeneToIncludeChildren(CSeq_feat& gene, CTSE_Handle& tse)
 }
 
 
-bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
+bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_proteins)
 {
     bool any_changes = false;
 
@@ -2561,7 +2561,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
                         change_this_cds = true;
                     }
                 }
-                if (new_cds->IsSetProduct()) {
+                if (new_cds->IsSetProduct() && instantiate_missing_proteins) {
                     CRef<CSeq_entry> prot = AddProtein(*new_cds, entry.GetScope());
                     if (prot) {
                         any_changes = true;
