@@ -2275,11 +2275,14 @@ static list<string> s_GetLinkoutUrl(int linkout,
         url_link = CAlignFormatUtil::MapProtocol(url_link);
         linkout_list.push_back(url_link);        
     }    
-    if((linkout & eGenomeDataViewer) && linkoutInfo.is_na){
+    if(linkout & eGenomeDataViewer){
         string urlTag = linkoutInfo.is_na ? "GENOME_DATA_VIEWER_NUC" : "GENOME_DATA_VIEWER_PROT";
         url_link = CAlignFormatUtil::GetURLFromRegistry(urlTag);
         lnk_displ = textLink ? "Genome Data Viewer" : kGenomeDataViewerImg;
-        lnkTitleInfo = "title=\"View BLAST hits for <@label@> within a genomic context in NCBI's Genome Data Viewer (GDV)- genome browser for RefSeq annotated assemblies. See other genomic features annotated at the same location as hits and browse to other regions.\"";
+        lnkTitleInfo = linkoutInfo.is_na ? 
+                         "title=\"View BLAST hits for <@label@> within a genomic context in NCBI's Genome Data Viewer (GDV)- genome browser for RefSeq annotated assemblies. See other genomic features annotated at the same location as hits and browse to other regions.\""
+                         :
+                         "title=\"View the annotation of the protein <@label@> within a genomic context in NCBI's Genome Data Viewer (GDV)- genome browser for RefSeq annotated assemblies. See other genomic features annotated at the same location as the protein annotation and browse to other regions.\"";
         url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,firstAcc,lnk_displ,"",lnkTitleInfo);
                 
         url_link = CAlignFormatUtil::MapTemplate(url_link,"queryID",linkoutInfo.queryID);
@@ -2556,7 +2559,7 @@ static list<string> s_GetFullLinkoutUrl(CBioseq::TId& cur_id,
         }        
         bool disableLink = (linkout == 0 || idList.size() == 0 || ( (linkout & eStructure) && (linkoutInfo.cdd_rid == "" || linkoutInfo.cdd_rid == "0")));
 
-        string giList,labelList;        
+        string giList,labelList;                
         int seqVersion = (linkout & eGenomeDataViewer) ? true : false; 
         for (size_t i = 0; i < idList.size(); i++) {
             const CBioseq::TId& ids = idList[i];
@@ -3523,19 +3526,16 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CSeq_id& id,o
     return url_link;
 }
 
-
 string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* ids)
 {
     string url_link = NcbiEmptyString;
     CConstRef<CSeq_id> wid = FindBestChoice(*ids, CSeq_id::WorstRank);
-    //hit_not_in_mapviewer = true if DbisNa && not (genomic+mapviwer sequence)    
-    bool hit_not_in_mapviewer = (seqUrlInfo->advancedView) ? true :
-                                        (!seqUrlInfo->isDbNa || (seqUrlInfo->linkout != 0 && !( (seqUrlInfo->linkout & eGenomicSeq) && (seqUrlInfo->linkout & eMapviewer) )));    
+                                         
     string title = "title=\"Show report for " + seqUrlInfo->accession + "\" ";
 
     if (seqUrlInfo->user_url != NcbiEmptyString && 
         !((seqUrlInfo->user_url.find("dumpgnl.cgi") != string::npos && seqUrlInfo->gi > ZERO_GI) || 
-          (seqUrlInfo->user_url.find("maps.cgi") != string::npos && hit_not_in_mapviewer))) {
+          (seqUrlInfo->user_url.find("maps.cgi") != string::npos))) {
         
         string url_with_parameters,toolURLParams;
         if(m_Reg && !seqUrlInfo->blastType.empty() && seqUrlInfo->blastType != "newblast") {

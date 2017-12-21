@@ -966,11 +966,10 @@ void CDisplaySeqalign::x_PrintFeatures(SAlnRowInfo *alnRoInfo,
     
 string CDisplaySeqalign::x_HTMLSeqIDLink(SAlnRowInfo *alnRoInfo, int row,TGi giToUse)
 {
-    const CBioseq_Handle& bsp_handle = m_AV->GetBioseqHandle(row);    
-    int linkout = x_GetLinkout(m_AV->GetSeqId(row));                            
+    const CBioseq_Handle& bsp_handle = m_AV->GetBioseqHandle(row);        
     string urlLink = NcbiEmptyString;
     const list<CRef<CSeq_id> >& ids = bsp_handle.GetBioseqCore()->GetId();    
-    CAlignFormatUtil::SSeqURLInfo *seqUrlInfo = x_InitSeqUrl(giToUse,alnRoInfo->seqidArray[row],linkout,alnRoInfo->taxid[row],ids);     
+    CAlignFormatUtil::SSeqURLInfo *seqUrlInfo = x_InitSeqUrl(giToUse,alnRoInfo->seqidArray[row],alnRoInfo->taxid[row],ids);
     if(m_AlignOption & eShowInfoOnMouseOverSeqid) {
         seqUrlInfo->defline = sequence::CDeflineGenerator().GenerateDefline(bsp_handle);
     }
@@ -980,7 +979,7 @@ string CDisplaySeqalign::x_HTMLSeqIDLink(SAlnRowInfo *alnRoInfo, int row,TGi giT
     return urlLink;
 }
 
-CAlignFormatUtil::SSeqURLInfo *CDisplaySeqalign::x_InitSeqUrl(TGi giToUse,string accession,int linkout,
+CAlignFormatUtil::SSeqURLInfo *CDisplaySeqalign::x_InitSeqUrl(TGi giToUse,string accession,
                                   int taxid,const list<CRef<CSeq_id> >& ids)
 {
     string idString = m_AV->GetSeqId(1).GetSeqIdString();	            
@@ -994,7 +993,7 @@ CAlignFormatUtil::SSeqURLInfo *CDisplaySeqalign::x_InitSeqUrl(TGi giToUse,string
                                              m_QueryNumber,
                                              giToUse,
 	    			                         accession, 
-                                             linkout,
+                                             0,// linkout not used any more in seqUrl
                                              m_cur_align,
                                              true,
                                              (m_AlignOption & eNewTargetWindow) ? true : false,
@@ -2096,24 +2095,6 @@ void CDisplaySeqalign::x_FillIdentityInfo(const string& sequence_standard,
     }  
 }
 
-int CDisplaySeqalign::x_GetLinkout(TGi gi)
-{
-    int linkout = 0;
-    if(m_AlignOption & eLinkout) {    
-        try {
-            linkout = m_LinkoutDB 
-                    ? m_LinkoutDB->GetLinkout(gi,m_MapViewerBuildName)
-                    : 0;            
-        }
-        catch (const CException & e) {        
-            ERR_POST("Problem with linkoutdb: " + e.GetMsg());                
-            m_AlignOption &= ~eLinkout; //Remove linkout bit for the rest of sequences
-            linkout = 0;        
-        }    
-    }
-    return linkout;
-}
-
 
 int CDisplaySeqalign::x_GetLinkout(const objects::CSeq_id &  id)
 {
@@ -2164,16 +2145,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
         alnDispParams->hasTextSeqID = CAlignFormatUtil::GetTextSeqID(alnDispParams->seqID);
         alnDispParams->ids = bsp_handle.GetBioseqCore()->GetId();
 		alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID);//Just accession without db part like ref| or pdbd|
-        int linkout = 0;
-        if(m_AlignOption&eHtml || (m_AlignOption&eLinkout && m_AlignTemplates == NULL)) {
-            if (alnDispParams->hasTextSeqID) {                
-                linkout = (deflineNum < kMaxDeflineNum) ? CAlignFormatUtil::GetSeqLinkoutInfo((CBioseq::TId &)ids,                                    
-                                                                            &m_LinkoutDB,
-                                                                            m_MapViewerBuildName,
-                                                                            alnDispParams->gi) : 0;
-                if(!m_LinkoutDB) m_AlignOption &= ~eLinkout;
-            }            
-        }
+        
 		if(m_AlignOption&eHtml){
 			int taxid = 0;
 			string type_temp = m_BlastType;
@@ -2182,12 +2154,19 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
 				taxid = bdl->GetTaxid();
 			}
                        
-            alnDispParams->seqUrlInfo = x_InitSeqUrl(gi_in_use_this_gi,alnDispParams->label,linkout,taxid,ids);    
+            alnDispParams->seqUrlInfo = x_InitSeqUrl(gi_in_use_this_gi,alnDispParams->label,taxid,ids);    
             alnDispParams->id_url = CAlignFormatUtil::GetIDUrl(alnDispParams->seqUrlInfo,&ids);
 		}		
-		if(m_AlignOption&eLinkout && m_AlignTemplates == NULL){                    			
-            //linkout = x_GetLinkout(gi);                
-			string user_url = m_Reg->Get(m_BlastType,"TOOL_URL");
+		if(m_AlignOption&eLinkout && m_AlignTemplates == NULL){                    			            
+            int linkout = 0;
+            if (alnDispParams->hasTextSeqID) {                
+                linkout = (deflineNum < kMaxDeflineNum) ? CAlignFormatUtil::GetSeqLinkoutInfo((CBioseq::TId &)ids,                                    
+                                                                            &m_LinkoutDB,
+                                                                            m_MapViewerBuildName,
+                                                                            alnDispParams->gi) : 0;
+                if(!m_LinkoutDB) m_AlignOption &= ~eLinkout;
+            }             
+		
             if(linkout != 0) {
 			    list<string> linkout_url =  CAlignFormatUtil::
                                 GetLinkoutUrl(linkout, ids,
@@ -2225,7 +2204,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CB
 	alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID);
 	if(m_AlignOption&eHtml){           	            
         alnDispParams->ids = bsp_handle.GetBioseqCore()->GetId();
-        alnDispParams->seqUrlInfo = x_InitSeqUrl(alnDispParams->gi,alnDispParams->label,0,0,alnDispParams->ids);    
+        alnDispParams->seqUrlInfo = x_InitSeqUrl(alnDispParams->gi,alnDispParams->label,0,alnDispParams->ids);    
         alnDispParams->id_url = CAlignFormatUtil::GetIDUrl(alnDispParams->seqUrlInfo,&alnDispParams->ids);        
 	}			
 	alnDispParams->title = CDeflineGenerator().GenerateDefline(bsp_handle);			

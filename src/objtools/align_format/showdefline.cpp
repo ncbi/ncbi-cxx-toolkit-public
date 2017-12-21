@@ -285,6 +285,11 @@ void CShowBlastDefline::x_InitLinkOutInfo(SDeflineInfo* sdl,
                                             int blast_rank,
                                             bool getIdentProteins)
 {
+
+    bool is_mixed_database = (m_IsDbNa == true && m_Ctx)? CAlignFormatUtil::IsMixedDatabase(*m_Ctx): false;
+    if (m_DeflineTemplates && m_DeflineTemplates->advancedView && !is_mixed_database)  return;
+
+
     string linkout_list;
     
     sdl->linkout = CAlignFormatUtil::GetSeqLinkoutInfo(cur_id,                                    
@@ -400,8 +405,8 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                 wid = FindBestChoice(cur_id, CSeq_id::WorstRank);
                 match = CAlignFormatUtil::MatchSeqInSeqList(cur_gi, wid, use_this_seqid);
             }
-            if((use_this_seqid.empty() && sdl->gi == cur_gi) || match) {
-                x_InitLinkOutInfo(sdl,cur_id,blast_rank,getIdentProteins);
+            if((use_this_seqid.empty() && sdl->gi == cur_gi) || match) {                    
+                x_InitLinkOutInfo(sdl,cur_id,blast_rank,getIdentProteins); //only initialized if !(m_DeflineTemplates->advancedView && !is_mixed_database)
                 break;
             }            
         }
@@ -426,7 +431,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
 		CRange<TSeqPos> seqRange = ((int)m_ScoreList.size() >= blast_rank)? m_ScoreList[blast_rank - 1]->subjRange : CRange<TSeqPos>(0,0);
         bool flip = ((int)m_ScoreList.size() >= blast_rank) ? m_ScoreList[blast_rank - 1]->flip : false;        
         CAlignFormatUtil::SSeqURLInfo seqUrlInfo(user_url,m_BlastType,m_IsDbNa,m_Database,m_Rid,
-                                                 m_QueryNumber,sdl->gi, accession, sdl->linkout,
+                                                 m_QueryNumber,sdl->gi, accession, 0, //linkout = 0, not used any more
                                                  blast_rank,false,(m_Option & eNewTargetWindow) ? true : false,seqRange,flip); 
         seqUrlInfo.resourcesUrl = m_Reg.get() ? m_Reg->Get(m_BlastType, "RESOURCE_URL") : kEmptyStr;
         seqUrlInfo.useTemplates = useTemplates;        
@@ -1557,8 +1562,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     }
     /*****************This block of code is for future use with AJAX begin***************************/ 
     string deflId,deflFrmID,deflFastaSeq,deflAccs; 
-    if(sdl->gi == ZERO_GI) {
-        string accession;
+    if(sdl->gi == ZERO_GI) {        
         sdl->id->GetLabel(& deflId, CSeq_id::eContent);
         deflFrmID =  CAlignFormatUtil::GetLabel(sdl->id);//Just accession without db part like GNOMON: or ti:        
         deflFastaSeq = NStr::TruncateSpaces(sdl->alnIDFasta);
@@ -1573,6 +1577,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     //Setup applog info structure
     if(m_AppLogInfo && (m_AppLogInfo->currInd < m_AppLogInfo->topMatchesNum)) {
         m_AppLogInfo->deflIdVec.push_back(deflId);
+        m_AppLogInfo->accVec.push_back(deflAccs);        
         m_AppLogInfo->taxidVec.push_back(NStr::IntToString(sdl->taxid));
         m_AppLogInfo->queryCoverageVec.push_back(NStr::IntToString(iter->percent_coverage));
         m_AppLogInfo->percentIdentityVec.push_back(NStr::IntToString(iter->percent_identity));
