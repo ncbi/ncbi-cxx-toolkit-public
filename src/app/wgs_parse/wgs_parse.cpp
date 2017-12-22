@@ -347,7 +347,7 @@ int CWGSParseApp::Run(void)
 
         // TODO ...
 
-        if (!master_info.m_master_bioseq->GetSeq().IsNa()) {
+        if (master_info.m_master_bioseq->GetSeq().IsNa()) {
             RemoveDupPubs(master_info.m_master_bioseq->SetDescr());
         }
 

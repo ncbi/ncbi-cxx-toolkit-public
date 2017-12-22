@@ -85,7 +85,6 @@ enum EBiomolStatus
 struct CSeqEntryInfo
 {
     bool m_seqset;
-    bool m_keywords_set;
     bool m_has_tpa_keyword;
     bool m_has_targeted_keyword;
     bool m_has_gmi_keyword;
@@ -96,6 +95,11 @@ struct CSeqEntryInfo
     bool m_hist_secondary_differs;
     bool m_update_date_present;
     bool m_creation_date_present;
+    bool m_has_gb_block;
+
+    // keywords data got from CMasterInfo
+    bool& m_keywords_set;
+    set<string>& m_keywords;
 
     size_t m_num_of_prot_seq;
     size_t m_num_of_nuc_seq;
@@ -109,16 +113,14 @@ struct CSeqEntryInfo
     CSeq_id::E_Choice m_seqid_type;
     CMolInfo::TBiomol m_biomol;
 
-    set<string> m_keywords;
     list<string> m_object_ids;
 
     string m_dbname;
     string m_diff_dbname;
     string m_cur_seqid;
 
-    CSeqEntryInfo() :
+    CSeqEntryInfo(bool& keywords_set, set<string>& keywords) :
         m_seqset(false),
-        m_keywords_set(false),
         m_has_tpa_keyword(false),
         m_has_targeted_keyword(false),
         m_has_gmi_keyword(false),
@@ -129,6 +131,9 @@ struct CSeqEntryInfo
         m_hist_secondary_differs(false),
         m_update_date_present(false),
         m_creation_date_present(false),
+        m_has_gb_block(false),
+        m_keywords_set(keywords_set),
+        m_keywords(keywords),
         m_num_of_prot_seq(0),
         m_num_of_nuc_seq(0),
         m_chromosome_subtype_status(eChromosomeSubtypeValid),
@@ -200,6 +205,8 @@ struct CMasterInfo
     bool m_has_genome_project_id;
     bool m_same_org;
     bool m_reject;
+    bool m_has_gb_block;
+    bool m_gpid;
 
     list<CPubDescriptionInfo> m_common_pubs;
     set<string> m_common_comments;
@@ -227,6 +234,10 @@ struct CMasterInfo
 
     string m_master_file_name;
 
+    bool m_keywords_set;
+    set<string> m_keywords;
+
+
     CMasterInfo() :
         m_num_of_pubs(0),
         m_common_comments_not_set(true),
@@ -236,13 +247,16 @@ struct CMasterInfo
         m_has_genome_project_id(false),
         m_same_org(false),
         m_reject(false),
+        m_has_gb_block(false),
+        m_gpid(false),
         m_dblink_state(eDblinkNoProblem),
         m_update_date_present(false),
         m_update_date_issues(eDateNoIssues),
         m_creation_date_present(false),
         m_creation_date_issues(eDateNoIssues),
         m_num_of_entries(0),
-        m_accession_ver(-1)
+        m_accession_ver(-1),
+        m_keywords_set(false)
     {}
 
     void SetDblinkEmpty(const string& file, const string& id)

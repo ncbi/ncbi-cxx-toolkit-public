@@ -47,11 +47,14 @@ static void GetFiles(const string& top_dir, const string& cur_dir, const string&
 {
     string full_dir = top_dir + cur_dir;
     CDir dir(full_dir);
-    CDir::TEntries entries = dir.GetEntries(mask, CDir::fIgnoreRecursive | CDir::fIgnorePath);
+    CDir::TEntries entries = dir.GetEntries(mask, CDir::fIgnoreRecursive);
 
     for (auto entry : entries) {
-        string fname = full_dir + PATH_SEPARATOR + entry->GetName();
-        files.push_back(fname);
+
+        if (!entry->IsDir()) {
+            string fname = full_dir + PATH_SEPARATOR + entry->GetName();
+            files.push_back(fname);
+        }
     }
 
     if (recursive) {

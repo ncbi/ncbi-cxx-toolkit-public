@@ -62,17 +62,12 @@ static bool IsSpecialId(const CSeq_id& id)
 
 static void MoveSpecialIdToTop(CBioseq::TId& ids)
 {
-    CRef<CSeq_id> first_id;
     for (auto id = ids.begin(); id != ids.end(); ++id) {
         if (IsSpecialId(**id)) {
-            first_id = *id;
+            ids.push_front(*id);
             ids.erase(id);
             break;
         }
-    }
-
-    if (first_id.NotEmpty()) {
-        ids.push_front(first_id);
     }
 }
 
@@ -100,23 +95,44 @@ static void RemoveSomeIds(CBioseq::TId& ids)
     }
 }
 
+static bool ContainsLocalsAndGenerals(const CBioseq::TId& ids)
+{
+    bool locals = false,
+         generals = false;
+
+    for (auto id : ids) {
+        if (id->IsLocal()) {
+            locals = true;
+        }
+        if (id->IsGeneral()) {
+            generals = true;
+        }
+    }
+
+    return locals & generals;
+}
+
 static void CheckGeneralLocalIds(CBioseq::TId& ids)
 {
     string general_id,
            local_id;
 
     for (auto id = ids.begin(); id != ids.end(); ) {
-        if (general_id.empty() && (*id)->IsGeneral() && (*id)->GetGeneral().IsSetTag()) {
-
-            general_id = GetIdStr((*id)->GetGeneral().GetTag());
-        }
 
         bool removed = false;
-        if (local_id.empty() && (*id)->IsLocal()) {
+        if ((*id)->IsGeneral()) {
+            if (general_id.empty() && (*id)->GetGeneral().IsSetTag()) {
 
-            local_id = GetIdStr((*id)->GetLocal());
-            id = ids.erase(id);
-            removed = true;
+                general_id = GetIdStr((*id)->GetGeneral().GetTag());
+            }
+        }
+        else {
+            if (local_id.empty() && (*id)->IsLocal()) {
+
+                local_id = GetIdStr((*id)->GetLocal());
+                id = ids.erase(id);
+                removed = true;
+            }
         }
 
         if (!general_id.empty() && !local_id.empty()) {
@@ -128,11 +144,9 @@ static void CheckGeneralLocalIds(CBioseq::TId& ids)
         }
     }
 
-    if (!general_id.empty() && !local_id.empty()) {
-        if (general_id != local_id) {
-            ERR_POST_EX(0, 0, "General and local ids within the same Bioseq are not identical: \"" << general_id << "\" vs \"" << local_id << "\".");
-            // TODO -> reject (see wgsasn.c, line 2188)
-        }
+    if (general_id != local_id) {
+        ERR_POST_EX(0, 0, Fatal << "General and local ids within the same Bioseq are not identical: \"" << general_id << "\" vs \"" << local_id << "\".");
+        // TODO -> reject (see wgsasn.c, line 2188)
     }
 }
 
@@ -145,7 +159,10 @@ static void FixIds(CRef<CSeq_entry>& entry)
             CBioseq::TId& ids = entry->SetSeq().SetId();
             MoveSpecialIdToTop(ids);
             RemoveSomeIds(ids);
-            CheckGeneralLocalIds(ids);
+
+            if (ContainsLocalsAndGenerals(ids)) {
+                CheckGeneralLocalIds(ids);
+            }
         }
     }
     else if (entry->IsSet()) {
@@ -564,6 +581,17 @@ static void CheckKeywords(const CSeq_descr& descrs, CSeqEntryInfo& info)
     }
 }
 
+static bool HasGbBlock(const CSeq_descr& descrs)
+{
+    bool ret = false;
+    if (descrs.IsSet()) {
+
+        auto genbank_it = find_if(descrs.Get().begin(), descrs.Get().end(), [](const CRef<CSeqdesc>& descr) { return descr->IsGenbank(); });
+        ret = genbank_it != descrs.Get().end();
+    }
+    return ret;
+}
+
 static EIdProblem LookThroughObjectIds(const CBioseq::TId& ids, string& obj_id_str, string& db_name_str)
 {
     for (auto id : ids) {
@@ -874,6 +902,9 @@ static void CheckNucBioseqs(const CSeq_entry& entry, CSeqEntryInfo& info, CSeqEn
             if (bioseq.IsNa()) {
                 CheckKeywords(bioseq.GetDescr(), info);
             }
+            else if (!info.m_has_gb_block) {
+                info.m_has_gb_block = HasGbBlock(bioseq.GetDescr());
+            }
         }
 
         if (bioseq.IsSetInst() && bioseq.GetInst().IsSetRepr() && bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_seg) {
@@ -929,12 +960,12 @@ bool CheckSeqEntry(const CSeq_entry& entry, const string& file, CSeqEntryInfo& i
         ret = false;
     }
 
-    if (!GetParams().IsTsa() && info.m_has_tpa_keyword) {
-        ERR_POST_EX(0, 0, Fatal << "One or more non-TRA WGS record from \"" << file << "\" has a special TPA keyword present, which is prohibited. Cannot proceed.");
+    if (!GetParams().IsTpa() && info.m_has_tpa_keyword) {
+        ERR_POST_EX(0, 0, Error << "One or more non-TRA WGS record from \"" << file << "\" has a special TPA keyword present, which is prohibited. Cannot proceed.");
         ret = false;
     }
-    else if (GetParams().IsTsa() && !info.m_has_tpa_keyword && GetParams().GetTpaKeyword().empty()) {
-        ERR_POST_EX(0, 0, Fatal << "One or more TRA WGS reassembly record from \"" << file << "\" is missing required TPA keyword. Cannot proceed.");
+    else if (GetParams().IsTpa() && !info.m_has_tpa_keyword && GetParams().GetTpaKeyword().empty()) {
+        ERR_POST_EX(0, 0, Error << "One or more TRA WGS reassembly record from \"" << file << "\" is missing required TPA keyword. Cannot proceed.");
         ret = false;
     }
 

@@ -40,6 +40,8 @@
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seq/Seq_descr.hpp>
+
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -85,6 +87,9 @@ bool HasLineage(const string& lineage_str, const string& lineage);
 CRef<CSeq_submit> GetSeqSubmit(CNcbiIfstream& in, EInputType type);
 string GetSeqSubmitTypeName(EInputType type);
 string GetIdStr(const CObject_id& obj_id);
+
+bool IsUserObjectOfType(const CSeqdesc& descr, const string& type);
+string ToString(const CSerialObject& obj);
 
 CScope& GetScope();
 

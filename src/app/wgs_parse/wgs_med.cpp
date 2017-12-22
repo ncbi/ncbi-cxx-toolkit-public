@@ -67,7 +67,15 @@ CMLAClient& GetMLA()
 
 int GetPMID(const CPub& pub)
 {
-    int pmid = GetMLA().AskCitmatchpmid(pub);
+    int pmid = 0;
+    
+    try {
+        pmid = GetMLA().AskCitmatchpmid(pub);
+    }
+    catch (const CException& e) {
+        // Failed lookup is not an error
+    }
+
     return pmid;
 }
 

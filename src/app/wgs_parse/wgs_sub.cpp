@@ -39,13 +39,15 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Seq_inst.hpp>
-#include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
+
+#include <objects/seqblock/GB_block.hpp>
+
 
 #include <util/sequtil/sequtil.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
@@ -492,10 +494,10 @@ static void FixDbName(CSeq_entry& entry)
 
 static void FixOrigProtTransValue(string& val)
 {
-    size_t pos = val.find('|');
+    size_t pos = val.rfind('|');
     string no_prefix_val = pos == string::npos ? val : val.substr(pos + 1);
 
-    val = "gnl|" + GetParams().GetProjPrefix() + '|' + GetParams().GetIdPrefix() + '|' + no_prefix_val;
+    val = "gnl|" + GetParams().GetProjPrefix() + GetParams().GetIdPrefix() + '|' + no_prefix_val;
 }
 
 static void FixOrigProtTransQuals(CSeq_annot::C_Data::TFtable& ftable)
@@ -1001,6 +1003,214 @@ static bool OutputSubmission(const CBioseq_set& bioseq_set, const string& in_fil
     return true;
 }
 
+static void RemoveKeywords(CSeq_entry& entry, const set<string>& keywords)
+{
+    CSeq_descr* descrs = nullptr;
+    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
+
+        for (auto& descr = descrs->Set().begin(); descr != descrs->Set().end();) {
+
+            bool removed = false;
+            if ((*descr)->IsGenbank() && (*descr)->GetGenbank().IsSetKeywords()) {
+
+                CGB_block& gb_block = (*descr)->SetGenbank();
+                for (auto& keyword = gb_block.SetKeywords().begin(); keyword != gb_block.SetKeywords().end();) {
+                    if (keywords.find(*keyword) != keywords.end()) {
+                        keyword = gb_block.SetKeywords().erase(keyword);
+                    }
+                    else {
+                        ++keyword;
+                    }
+                }
+
+                if (gb_block.IsEmpty()) {
+                    removed = true;
+                    descr = descrs->Set().erase(descr);
+                }
+            }
+
+            if (!removed) {
+                ++descr;
+            }
+        }
+    }
+
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
+            RemoveKeywords(*cur_entry, keywords);
+        }
+    }
+}
+
+static void RemoveComments(CSeq_entry& entry, const set<string>& comments)
+{
+    if (comments.empty()) {
+        return;
+    }
+
+    CSeq_descr* descrs = nullptr;
+    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
+
+        for (auto& descr = descrs->Set().begin(); descr != descrs->Set().end();) {
+
+            bool removed = false;
+            if ((*descr)->IsComment()) {
+
+                if (comments.find((*descr)->GetComment()) != comments.end()) {
+                    descr = descrs->Set().erase(descr);
+                    removed = true;
+                }
+            }
+
+            if (!removed) {
+                ++descr;
+            }
+        }
+    }
+
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
+            RemoveComments(*cur_entry, comments);
+        }
+    }
+}
+
+static void RemoveStructuredComments(CSeq_entry& entry, const set<string>& comments)
+{
+    if (comments.empty()) {
+        return;
+    }
+
+    CSeq_descr* descrs = nullptr;
+    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
+
+        for (auto& descr = descrs->Set().begin(); descr != descrs->Set().end();) {
+
+            bool removed = false;
+            if (IsUserObjectOfType(**descr, "StructuredComment")) {
+
+                const CUser_object& user_obj = (*descr)->GetUser();
+                if (comments.find(ToString(user_obj)) != comments.end()) {
+                    descr = descrs->Set().erase(descr);
+                    removed = true;
+                }
+            }
+
+            if (!removed) {
+                ++descr;
+            }
+        }
+    }
+
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
+            RemoveStructuredComments(*cur_entry, comments);
+        }
+    }
+}
+
+static void PropagateTPAKeyword(CSeq_entry& entry)
+{
+    if (entry.IsSeq() && entry.GetSeq().IsNa()) {
+
+        CSeq_descr& descrs = entry.SetSeq().SetDescr();
+        auto gb_block_descr = find_if(descrs.Set().begin(), descrs.Set().end(), [](CRef<CSeqdesc>& descr) { return descr->IsGenbank(); });
+
+        if (gb_block_descr == descrs.Set().end()) {
+            CRef<CSeqdesc> descr(new CSeqdesc);
+            descr->SetGenbank();
+            descrs.Set().push_back(descr);
+            --gb_block_descr;
+        }
+
+        CGB_block& gb_block = (*gb_block_descr)->SetGenbank();
+        for (auto& keyword = gb_block.SetKeywords().begin(); keyword != gb_block.SetKeywords().end();) {
+            if (*keyword == "TPA" || NStr::StartsWith(*keyword, "TPA:")) {
+                keyword = gb_block.SetKeywords().erase(keyword);
+            }
+            else {
+                ++keyword;
+            }
+        }
+
+        gb_block.SetKeywords().push_back(GetParams().GetTpaKeyword());
+    }
+
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
+            PropagateTPAKeyword(*cur_entry);
+        }
+    }
+}
+
+static void CleanupProtGbblock(CSeq_entry& entry)
+{
+    if (entry.IsSeq() && entry.GetSeq().IsAa() && entry.GetSeq().IsSetDescr()) {
+
+        CSeq_descr& descrs = entry.SetSeq().SetDescr();
+
+        for (auto& descr = descrs.Set().begin(); descr != descrs.Set().end();) {
+
+            bool removed = false;
+            if ((*descr)->IsGenbank()) {
+
+                CGB_block& gb_block = (*descr)->SetGenbank();
+                if (gb_block.IsSetExtra_accessions()) {
+
+                    // remove everything but extra accessions
+                    list<string> extra_accs;
+                    extra_accs.swap(gb_block.SetExtra_accessions());
+                    gb_block.Reset();
+                    gb_block.SetExtra_accessions().swap(extra_accs);
+                }
+                else {
+                    removed = true;
+                    descr = descrs.Set().erase(descr);
+                }
+            }
+
+            if (!removed) {
+                ++descr;
+            }
+        }
+    }
+
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
+            CleanupProtGbblock(*cur_entry);
+        }
+    }
+}
+
+static void RemoveDblinkGPID(CSeq_entry& entry)
+{
+    CSeq_descr* descrs = nullptr;
+    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
+
+        for (auto& descr = descrs->Set().begin(); descr != descrs->Set().end();) {
+
+            if (IsUserObjectOfType(**descr, "GenomeProjectsDB") || IsUserObjectOfType(**descr, "DBLink")) {
+                descr = descrs->Set().erase(descr);
+            }
+            else {
+                ++descr;
+            }
+        }
+    }
+
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
+            RemoveDblinkGPID(*cur_entry);
+        }
+    }
+}
+
 bool ParseSubmissions(CMasterInfo& master_info)
 {
     const list<string>& files = GetParams().GetInputFiles();
@@ -1058,20 +1268,21 @@ bool ParseSubmissions(CMasterInfo& master_info)
                         RemoveDates(*entry, master_info.m_creation_date_present, master_info.m_update_date_present);
                     }
 
-                    /* TODO if (kwds != FALSE)
-                        SeqEntryExplore(sep, widp->keywords, WGSRemoveKeywords);
-                    if (widp->tpa_keyword != NULL)
-                        SeqEntryExplore(sep, widp->tpa_keyword,
-                        WGSPropagateTPAKeyword);
-                    if (widp->prot_gbblock != FALSE)
-                        SeqEntryExplore(sep, NULL, WGSCleanupProtGbblock); */
+                    if (GetParams().IsVDBMode() && !master_info.m_keywords.empty()) {
+                        RemoveKeywords(*entry, master_info.m_keywords);
+                    }
+
+                    if (!GetParams().GetTpaKeyword().empty()) {
+                        PropagateTPAKeyword(*entry);
+                    }
+
+                    if (master_info.m_has_gb_block) {
+                        CleanupProtGbblock(*entry);
+                    }
 
                     if (GetParams().GetUpdateMode() != eUpdatePartial) {
-                        /* TODO if (widp->comcoms != NULL)
-                            SeqEntryExplore(sep, widp->comcoms, WGSRemoveComments);
-                        if (widp->wsccp != NULL && widp->wsccp->com != NULL)
-                            SeqEntryExplore(sep, widp->wsccp,
-                            WGSRemoveStrComments);*/
+                        RemoveComments(*entry, master_info.m_common_comments);
+                        RemoveStructuredComments(*entry, master_info.m_common_structured_comments);
 
                         if (!master_info.m_common_pubs.empty()) {
                             
@@ -1108,7 +1319,11 @@ bool ParseSubmissions(CMasterInfo& master_info)
 
                     bool lookup_succeed = FixBioSources(*entry, master_info);
 
-                    // TODO dblink etc
+                    if (master_info.m_gpid || master_info.m_dblink_state == eDblinkNoProblem) {
+                        RemoveDblinkGPID(*entry);
+                    }
+
+                    // TODO adddblink ...
 
                     if (!lookup_succeed) {
                         ERR_POST_EX(0, 0, Fatal << "Taxonomy lookup failed on submission \"" << file << "\". Cannot proceed.");
@@ -1154,7 +1369,15 @@ bool ParseSubmissions(CMasterInfo& master_info)
         }
 
         if (GetParams().GetUpdateMode() == eUpdatePartial) {
-            // TODO
+            for (auto& cur_entry : bioseq_set->SetSeq_set()) {
+                RemoveComments(*cur_entry, master_info.m_common_comments);
+                RemoveStructuredComments(*cur_entry, master_info.m_common_structured_comments);
+
+                if (!master_info.m_common_pubs.empty()) {
+
+                    // TODO RemovePubs(*cur_entry, master_info.m_common_pubs, nullptr); should be CDate instead of nullptr
+                }
+            }
         }
 
         if (GetParams().GetSortOrder() == eUnsorted && !GetParams().IsVDBMode()) {

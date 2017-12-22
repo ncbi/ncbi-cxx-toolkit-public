@@ -51,6 +51,7 @@
 #include <objects/pub/Pub.hpp>
 #include <objects/biblio/Imprint.hpp>
 #include <objects/biblio/Auth_list.hpp>
+#include <objects/seqblock/GB_block.hpp>
 
 #include "wgs_params.hpp"
 #include "wgs_master.hpp"
@@ -178,22 +179,12 @@ static void CheckComments(const CSeq_entry& entry, CMasterInfo& info)
     }
 }
 
-static bool IsUserObjectOfType(const CSeqdesc& descr, const string& type)
-{
-    return descr.IsUser() && descr.GetUser().IsSetType() && descr.GetUser().GetType().IsStr() &&
-        descr.GetUser().GetType().GetStr() == type;
-}
-
 static void ProcessStructuredComment(const CSeqdesc& descr, set<string>& comments)
 {
     if (IsUserObjectOfType(descr, "StructuredComment")) {
 
         const CUser_object& user_obj = descr.GetUser();
-        string label;
-        user_obj.GetLabel(&label);
-
-        // TODO
-        comments.insert(label);
+        comments.insert(ToString(user_obj));
     }
 }
 
@@ -214,7 +205,6 @@ static void CheckStructuredComments(const CSeq_entry& entry, CMasterInfo& info)
             set<string> common_comments;
             set_intersection(info.m_common_structured_comments.begin(), info.m_common_structured_comments.end(), cur_comments.begin(), cur_comments.end(), inserter(common_comments, common_comments.begin()));
 
-            // TODO
             info.m_common_structured_comments.swap(common_comments);
         }
     }
@@ -678,6 +668,106 @@ static bool CreateDateDescr(CBioseq& bioseq, const CDate& date, EDateIssues issu
     return true;
 }
 
+static void AddComment(CBioseq& bioseq, const string& comment)
+{
+    CRef<CSeqdesc> descr(new CSeqdesc);
+    descr->SetComment(comment);
+
+    bioseq.SetDescr().Set().push_back(descr);
+}
+
+static void AddStructuredComment(CBioseq& bioseq, const string& comment)
+{
+    CRef<CSeqdesc> descr(new CSeqdesc);
+
+    CNcbiIstrstream stream(comment.c_str());
+    CRef<CUser_object> user_obj(new CUser_object);
+    stream >> MSerial_AsnText >> *user_obj;
+    descr->SetUser(*user_obj);
+
+    bioseq.SetDescr().Set().push_back(descr);
+}
+
+static void CreateDbLink(CBioseq& bioseq, CUser_object& user_obj)
+{
+    CRef<CSeqdesc> descr(new CSeqdesc);
+    descr->SetUser(user_obj);
+
+    bioseq.SetDescr().Set().push_back(descr);
+}
+
+static const string TPA_KEYWORD("TPA:assembly");
+
+static bool FixTpaKeyword(set<string>& keywords)
+{
+    static const string TPA_KEYWORD_OLD("TPA:reassembly");
+
+    bool ret = false;
+    if (GetParams().IsVDBMode()) {
+
+        auto tpa_keyword_it = keywords.find(TPA_KEYWORD);
+        if (tpa_keyword_it != keywords.end()) {
+            ret = true;
+            keywords.erase(tpa_keyword_it);
+        }
+
+        tpa_keyword_it = keywords.find(TPA_KEYWORD_OLD);
+        if (tpa_keyword_it != keywords.end()) {
+            ret = true;
+            keywords.erase(tpa_keyword_it);
+        }
+
+        if (ret) {
+            keywords.insert(GetParams().GetTpaKeyword());
+        }
+    }
+
+    return ret;
+}
+
+static CGB_block* ProcessKeywords(CBioseq& bioseq, const CMasterInfo& info)
+{
+    CRef<CSeqdesc> descr;
+    if (GetParams().IsVDBMode()) {
+
+        descr.Reset(new CSeqdesc);
+        for (auto& keyword : info.m_keywords) {
+            if (!keyword.empty()) {
+                descr->SetGenbank().SetKeywords().push_back(keyword);
+            }
+        }
+    }
+    else {
+
+        if (GetParams().IsTsa() && info.m_has_targeted_keyword) {
+            descr.Reset(new CSeqdesc);
+            descr->SetGenbank().SetKeywords().push_back("Targeted");
+        }
+        else if (GetParams().IsWgs() && info.m_has_gmi_keyword) {
+            descr.Reset(new CSeqdesc);
+            descr->SetGenbank().SetKeywords().push_back("GMI");
+        }
+    }
+
+    if (descr.NotEmpty()) {
+        bioseq.SetDescr().Set().push_back(descr);
+    }
+
+    return descr.NotEmpty() ? &descr->SetGenbank() : nullptr;
+}
+
+static void AddTpaKeyword(CBioseq& bioseq, CGB_block* gb_block)
+{
+    CRef<CSeqdesc> descr;
+    if (gb_block == nullptr) {
+        descr.Reset(new CSeqdesc);
+        gb_block = &descr->SetGenbank();
+        bioseq.SetDescr().Set().push_back(descr);
+    }
+
+    gb_block->SetKeywords().push_back(GetParams().GetTpaKeyword().empty() ? TPA_KEYWORD : GetParams().GetTpaKeyword());
+}
+
 static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& cit_sub, CRef<CContact_info>& contact_info)
 {
     CRef<CBioseq> bioseq(new CBioseq);
@@ -700,8 +790,33 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
 
     SetMolInfo(*bioseq);
 
-    // TODO
+    // Keywords
+    bool is_tpa_keyword_present = false;
+    CGB_block* gb_block = nullptr;
 
+    if (info.m_keywords_set) {
+        is_tpa_keyword_present = FixTpaKeyword(info.m_keywords);
+        gb_block = ProcessKeywords(*bioseq, info);
+    }
+
+    if (GetParams().IsTpa() && !is_tpa_keyword_present) {
+        AddTpaKeyword(*bioseq, gb_block);
+    }
+
+    // Comments
+    if (info.m_common_comments.empty() && info.m_common_structured_comments.empty() && GetParams().GetSource() != eNCBI) {
+        ERR_POST_EX(0, 0, Info << "All contigs are missing both text and structured comments.");
+    }
+
+    for (auto& comment : info.m_common_comments) {
+        AddComment(*bioseq, comment);
+    }
+
+    for (auto& structured_comment : info.m_common_structured_comments) {
+        AddStructuredComment(*bioseq, structured_comment);
+    }
+
+    // CitSub
     if (cit_sub.NotEmpty()) {
         bioseq->SetDescr().Set().push_back(CreateCitSub(*cit_sub));
         if (contact_info.NotEmpty()) {
@@ -716,6 +831,7 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
     }
 
     // TODO
+
     if (info.m_biosource.NotEmpty()) {
         if (!CreateBiosource(*bioseq, *info.m_biosource, info.m_org_refs)) {
             return ret;
@@ -731,7 +847,9 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
         CreateUserObject(info, *bioseq);
     }
 
-    // TODO dblink
+    if (info.m_dblink_state == eDblinkNoProblem && info.m_dblink.NotEmpty()) {
+        CreateDbLink(*bioseq, *info.m_dblink);
+    }
 
     ret.Reset(new CSeq_entry);
     ret->SetSeq(*bioseq);
@@ -798,6 +916,12 @@ static bool IsDatePresent(const CSeq_entry& entry, CSeqdesc::E_Choice choice)
     return false;
 }
 
+static bool CheckCitSubsInBioseqSet(CMasterInfo& master_info)
+{
+    // TODO
+    return true;
+}
+
 bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 {
     const list<string>& files = GetParams().GetInputFiles();
@@ -807,6 +931,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 
     CRef<CContact_info> master_contact_info;
     CRef<CCit_sub> master_cit_sub;
+    CSeqEntryCommonInfo common_info;
 
     for (auto& file : files) {
 
@@ -851,7 +976,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                     ERR_POST_EX(0, 0, "Submission \"" << file << "\" is missing Submit-block.");
                 }
                 else if (same_submit) {
-                    same_submit = true; // TODO WGSCheckCitSubsInBioseqSet(ssp, widp, *b);
+                    same_submit = CheckCitSubsInBioseqSet(master_info);
                 }
             }
             else if (input_type != eSeqSubmit || GetParams().GetSource() == eNCBI) {
@@ -898,7 +1023,6 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                     break;
                 }
 
-                CSeqEntryCommonInfo common_info;
                 for (auto entry : seq_submit->GetData().GetEntrys()) {
 
                     if (NeedToGetAccessionPrefix()) {
@@ -914,7 +1038,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                         }
                     }
 
-                    CSeqEntryInfo info;
+                    CSeqEntryInfo info(master_info.m_keywords_set, master_info.m_keywords);
                     if (!CheckSeqEntry(*entry, file, info, common_info)) {
                         master_info.m_reject = true;
                     }
@@ -937,6 +1061,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 
                     master_info.m_has_targeted_keyword = master_info.m_has_targeted_keyword || info.m_has_targeted_keyword;
                     master_info.m_has_gmi_keyword = master_info.m_has_gmi_keyword || info.m_has_gmi_keyword;
+                    master_info.m_has_gb_block = master_info.m_has_gb_block || info.m_has_gb_block;
 
                     if (!GetParams().IsUpdateScaffoldsMode()) {
 
@@ -992,6 +1117,10 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 
                     master_info.m_object_ids.splice(master_info.m_object_ids.end(), info.m_object_ids);
                 }
+            }
+
+            if (!ret) {
+                break;
             }
         }
 

@@ -38,7 +38,7 @@
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
-
+#include <objects/general/User_object.hpp>
 
 #include "wgs_utils.hpp"
 
@@ -312,6 +312,19 @@ string GetIdStr(const CObject_id& obj_id)
     }
 
     return ret;
+}
+
+bool IsUserObjectOfType(const CSeqdesc& descr, const string& type)
+{
+    return descr.IsUser() && descr.GetUser().IsSetType() && descr.GetUser().GetType().IsStr() &&
+        descr.GetUser().GetType().GetStr() == type;
+}
+
+string ToString(const CSerialObject& obj)
+{
+    CNcbiOstrstream stream;
+    stream << MSerial_AsnText << obj;
+    return stream.str();
 }
 
 }
