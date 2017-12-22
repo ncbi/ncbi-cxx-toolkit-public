@@ -21522,7 +21522,6 @@ void CheckLocalId(const string& id, const string& badchar)
 BOOST_AUTO_TEST_CASE(VR_V48)
 {
     CheckLocalId("abc|def", "|");
-    CheckLocalId("abc=def", "=");
 }
 
 
