@@ -75,6 +75,9 @@ public:
     CRef<CSeq_entry> FetchEntry(const string& id_string,
                                 int max_complexity = 0);
 
+protected:
+    void x_Disconnect(void);
+
 private:
     bool m_AllowDeadEntries;
 
