@@ -391,7 +391,12 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
         code.MethodStart(false)
             << "void " << class_base << "::x_Disconnect(void)\n"
             << "{\n"
-            << "    AskFini();\n" // ignore/downgrade errors?
+            << "    try {\n"
+            << "        AskFini();\n"
+            << "    } catch (...) {\n"
+            << "        Tparent::x_Disconnect();\n"
+            << "        throw;\n"
+            << "    }\n"
             << "    Tparent::x_Disconnect();\n"
             << "}\n\n";
     }
