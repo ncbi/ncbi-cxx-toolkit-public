@@ -51,7 +51,9 @@ CRPCClient_Base::CRPCClient_Base(const string&     service,
 
 CRPCClient_Base::~CRPCClient_Base(void)
 {
-    Disconnect();
+    try {
+        Disconnect();
+    } STD_CATCH_ALL_XX(Serial_RPCClient, 2, "CRPCClient_Base::Disconnect()");
 }
 
 
