@@ -260,7 +260,7 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
     m_RetryCtx.Reset();
     // If there were any retries, force disconnect to prevent using old
     // retry url, args etc. with the next request.
-    if ( m_RetryCount > 0) {
+    if ( m_RetryCount > 0  &&  m_RecursionCount <= 1 ) {
         Disconnect();
     }
 }
