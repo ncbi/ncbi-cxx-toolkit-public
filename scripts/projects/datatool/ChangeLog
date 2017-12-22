@@ -164,4 +164,6 @@ Added generation of JSON schema from other specifications.
 Added support of data value restrictions.
 Added class member bitset to reference members not using their names.
 
-
+December 22, 2017
+version 2.18.0, CXX-9818
+Fixed problem in RPC client generator.
