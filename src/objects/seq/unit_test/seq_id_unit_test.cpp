@@ -455,7 +455,8 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaObsolete)
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("bbs|123")));
     BOOST_CHECK(id->IsGibbsq());
     BOOST_CHECK_EQUAL(id->GetGibbsq(), 123);
-    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("bbs|0")));
+//    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("bbs|0")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("bbs|0")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("bbs|123.4")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("bbs|123Z")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("bbs|xyz")));
@@ -751,8 +752,9 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromInt)
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Gi, 1234)));
     BOOST_CHECK(id->IsGi());
     BOOST_CHECK_EQUAL(id->GetGi(), 1234);
-
-    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id(CSeq_id::e_Gi, 0)));
+//    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id(CSeq_id::e_Gi, 0)));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Gi, 0)));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id(CSeq_id::e_Gi, -1)));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id(CSeq_id::e_Pdb, 1234)));
 
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Local, 1234)));
