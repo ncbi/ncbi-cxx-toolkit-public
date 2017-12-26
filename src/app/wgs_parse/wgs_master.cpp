@@ -649,6 +649,22 @@ static void CreateUserObject(const CMasterInfo& info, CBioseq& bioseq)
     bioseq.SetDescr().Set().push_back(descr);
 }
 
+static void CreateProtCountUserObject(size_t num_of_prot_seq, CBioseq& bioseq)
+{
+    CRef<CSeqdesc> descr(new CSeqdesc);
+
+    CUser_object& user_obj = descr->SetUser();
+    user_obj.SetType().SetStr("WGSProteinStatistics");
+
+    CRef<CUser_field> field(new CUser_field);
+    field->SetLabel().SetStr("TotalContigProteins");
+    field->SetInt(num_of_prot_seq);
+    user_obj.SetData().push_back(field);
+
+    bioseq.SetDescr().Set().push_back(descr);
+}
+
+
 static bool CreateDateDescr(CBioseq& bioseq, const CDate& date, EDateIssues issue, bool is_update_date)
 {
     if (date.Which() == CDate::e_not_set || issue != eDateNoIssues)
@@ -702,22 +718,30 @@ static bool FixTpaKeyword(set<string>& keywords)
 {
     static const string TPA_KEYWORD_OLD("TPA:reassembly");
 
-    bool ret = false;
+    bool ret = false,
+         reset_tpa_keyword = !GetParams().GetTpaKeyword().empty();
+
     if (GetParams().IsVDBMode()) {
 
         auto tpa_keyword_it = keywords.find(TPA_KEYWORD);
         if (tpa_keyword_it != keywords.end()) {
             ret = true;
-            keywords.erase(tpa_keyword_it);
+
+            if (reset_tpa_keyword) {
+                keywords.erase(tpa_keyword_it);
+            }
         }
 
         tpa_keyword_it = keywords.find(TPA_KEYWORD_OLD);
         if (tpa_keyword_it != keywords.end()) {
             ret = true;
-            keywords.erase(tpa_keyword_it);
+
+            if (reset_tpa_keyword) {
+                keywords.erase(tpa_keyword_it);
+            }
         }
 
-        if (ret) {
+        if (ret && reset_tpa_keyword) {
             keywords.insert(GetParams().GetTpaKeyword());
         }
     }
@@ -845,6 +869,10 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
 
     if (info.m_num_of_entries) {
         CreateUserObject(info, *bioseq);
+    }
+
+    if (info.m_num_of_prot_seq) {
+        CreateProtCountUserObject(info.m_num_of_prot_seq, *bioseq);
     }
 
     if (info.m_dblink_state == eDblinkNoProblem && info.m_dblink.NotEmpty()) {
@@ -1062,6 +1090,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                     master_info.m_has_targeted_keyword = master_info.m_has_targeted_keyword || info.m_has_targeted_keyword;
                     master_info.m_has_gmi_keyword = master_info.m_has_gmi_keyword || info.m_has_gmi_keyword;
                     master_info.m_has_gb_block = master_info.m_has_gb_block || info.m_has_gb_block;
+                    master_info.m_num_of_prot_seq += info.m_num_of_prot_seq;
 
                     if (!GetParams().IsUpdateScaffoldsMode()) {
 

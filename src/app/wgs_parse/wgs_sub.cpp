@@ -924,13 +924,39 @@ static void PackEntry(CSeq_entry& entry)
     }
 }
 
-static void PerformCleanup(CSeq_submit::C_Data::TEntrys& entries)
+static void RemoveBioSources(CSeq_entry& entry)
+{
+    CSeq_descr* descrs = nullptr;
+    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
+
+        for (auto& descr = descrs->Set().begin(); descr != descrs->Set().end();) {
+
+            if ((*descr)->IsSource()) {
+                descr = descrs->Set().erase(descr);
+            }
+            else {
+                ++descr;
+            }
+        }
+    }
+
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
+            RemoveBioSources(*cur_entry);
+        }
+    }
+}
+
+static void PerformCleanup(CSeq_submit::C_Data::TEntrys& entries, bool remove_bio_sources)
 {
     CCleanup cleanup;
     for (auto& entry : entries) {
         cleanup.ExtendedCleanup(*entry);
 
-        // TODO removeBioSources
+        if (remove_bio_sources) {
+            RemoveBioSources(*entry);
+        }
     }
 }
 
@@ -1357,7 +1383,8 @@ bool ParseSubmissions(CMasterInfo& master_info)
 
                 // TODO
                 
-                PerformCleanup(seq_submit->SetData().SetEntrys());
+                bool remove_bio_sources = GetParams().IsVDBMode() && master_info.m_biosource.NotEmpty() && master_info.m_same_org;
+                PerformCleanup(seq_submit->SetData().SetEntrys(), remove_bio_sources);
 
                 if (bioseq_set.Empty()) {
                     bioseq_set.Reset(new CBioseq_set);

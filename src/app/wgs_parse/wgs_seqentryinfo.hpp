@@ -237,6 +237,7 @@ struct CMasterInfo
     bool m_keywords_set;
     set<string> m_keywords;
 
+    size_t m_num_of_prot_seq;
 
     CMasterInfo() :
         m_num_of_pubs(0),
@@ -256,7 +257,8 @@ struct CMasterInfo
         m_creation_date_issues(eDateNoIssues),
         m_num_of_entries(0),
         m_accession_ver(-1),
-        m_keywords_set(false)
+        m_keywords_set(false),
+        m_num_of_prot_seq(0)
     {}
 
     void SetDblinkEmpty(const string& file, const string& id)
