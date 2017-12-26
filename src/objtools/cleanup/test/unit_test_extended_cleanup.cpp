@@ -1501,8 +1501,8 @@ void Test_WGSCleanupNoProt(const string& cds_product, const string& mrna_product
     BOOST_CHECK_EQUAL(cdsf->IsSetQual(), false);
 
     CBioseq_CI pseq(seh, CSeq_inst::eMol_aa);
-    if (!pseq) {
-        BOOST_ERROR("Protein sequence created incorrectly");
+    if (pseq) {
+        BOOST_ERROR("Protein sequence should not have been created");
     }
 
     CFeat_CI mrnaf(*nuc, CSeqFeatData::eSubtype_mRNA);
