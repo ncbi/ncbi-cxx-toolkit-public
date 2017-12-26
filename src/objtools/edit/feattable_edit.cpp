@@ -546,6 +546,7 @@ void CFeatTableEdit::xFeatureAddProteinIdCds(
     // if one exists already then police it
     // if it doen't have one then generate one following a strict set of rules
 
+
     auto orig_pid = mf.GetNamedQual("orig_protein_id");
     if (!orig_pid.empty()) {
         xFeatureRemoveQualifier(mf, "orig_protein_id");
@@ -559,6 +560,24 @@ void CFeatTableEdit::xFeatureAddProteinIdCds(
     //reformat any tags we already have:
     if (!pid.empty()) {
         pid = string("gnl|") + xGetCurrentLocusTagPrefix(mf) + "|" + pid;
+        xFeatureSetQualifier(mf, "protein_id", pid);
+        return;
+    }
+
+    auto id = mf.GetNamedQual("ID");
+    if (!id.empty()) {
+        pid = string("gnl|") + xGetCurrentLocusTagPrefix(mf) + "|cds." + id;
+        xFeatureSetQualifier(mf, "protein_id", pid);
+        return;
+    }
+
+    auto tid = mf.GetNamedQual("transcript_id");
+    if (!tid.empty()) {
+        //if (!NStr::StartsWith(NStr::ToLower(tid), "cds")) {
+        //    tid = string("cds.") + tid;
+        //}
+        tid = string("cds.") + tid;
+        pid = string("gnl|") + xGetCurrentLocusTagPrefix(mf) + tid;
         xFeatureSetQualifier(mf, "protein_id", pid);
         return;
     }
@@ -628,6 +647,13 @@ void CFeatTableEdit::xFeatureAddTranscriptIdMrna(
     //reformat any tags we already have:
     if (!tid.empty()) {
         tid = string("gnl|") + xGetCurrentLocusTagPrefix(mf) + "|" + tid;
+        xFeatureSetQualifier(mf, "transcript_id", tid);
+        return;
+    }
+
+    auto id = mf.GetNamedQual("ID");
+    if (!id.empty()) {
+        tid = string("gnl|") + xGetCurrentLocusTagPrefix(mf) + "|" + id;
         xFeatureSetQualifier(mf, "transcript_id", tid);
         return;
     }
