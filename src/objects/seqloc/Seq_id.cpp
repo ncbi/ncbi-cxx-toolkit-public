@@ -2216,7 +2216,8 @@ CSeq_id::CSeq_id(E_Choice the_type, TIntId the_id)
 
 CSeq_id& CSeq_id::Set(E_Choice the_type, TIntId the_id)
 {
-    if (the_id <= 0) {
+// see CSeq_id::Set below, it prohibits lcl|0, but allows gi|0
+    if ((the_id < 0) || (the_type == e_Local && the_id == 0)) {
         NCBI_THROW(CSeqIdException, eFormat,
                    "Non-positive numeric ID " + NStr::NumericToString(the_id));
     }
