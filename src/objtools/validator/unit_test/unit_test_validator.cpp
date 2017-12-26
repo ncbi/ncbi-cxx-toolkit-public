@@ -5044,7 +5044,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadOrgMod)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, 
-                              "OrganismNotFound", "Organism not found in taxonomy database"));
+                              "OrganismNotFound", "Organism not found in taxonomy database (suggested:Sebaea microphylla var. c)"));
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "BadOrgMod",
                               "Unknown orgmod subtype 0"));
@@ -5900,7 +5900,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
                               "Variety value specified is not found in taxname"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OrganismNotFound",
-        "Organism not found in taxonomy database"));
+        "Organism not found in taxonomy database (suggested:Arabidopsis thaliana var. foo)"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -5908,12 +5908,14 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_variety, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_forma, "foo");
     expected_errors[0]->SetErrMsg("Forma value specified is not found in taxname");
+    expected_errors[1]->SetErrMsg("Organism not found in taxonomy database (suggested:Arabidopsis thaliana f. foo)");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_forma, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_sub_species, "foo");
     expected_errors[0]->SetErrMsg("Subspecies value specified is not found in taxname");
+    expected_errors[1]->SetErrMsg("Organism not found in taxonomy database (suggested:Arabidopsis thaliana subsp. foo)");
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 

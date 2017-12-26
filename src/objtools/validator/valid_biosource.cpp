@@ -2615,8 +2615,16 @@ void CValidError_imp::HandleTaxonomyError(const CT3Error& error,
     const string err_str = error.IsSetMessage() ? error.GetMessage() : "?";
 
     if (NStr::Equal(err_str, "Organism not found")) {
+        string msg = "Organism not found in taxonomy database";
+        if (error.IsSetOrg() && error.GetOrg().IsSetTaxname() &&
+            !NStr::Equal(error.GetOrg().GetTaxname(), "Not valid") &&
+            (!desc.IsSource() || !desc.GetSource().IsSetOrg() ||
+             !desc.GetSource().GetOrg().IsSetTaxname() ||
+             !NStr::Equal(desc.GetSource().GetOrg().GetTaxname(), error.GetOrg().GetTaxname()))) {
+            msg += " (suggested:" + error.GetOrg().GetTaxname() + ")";
+        }
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_OrganismNotFound,
-            "Organism not found in taxonomy database",
+            msg,
             desc, entry);
     } else if (NStr::Equal(err_str, kInvalidReplyMsg)) {
         PostObjErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem,
