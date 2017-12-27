@@ -664,6 +664,21 @@ CChainer::CChainerImpl::ECompat CChainer::CChainerImpl::CheckCompatibility(const
     TSignedSeqRange gene_cds = (gene.size() > 1 || gene.front()->CompleteCds() || algn_good_enough_to_be_annotation) ? gene.RealCdsLimits() : gene.front()->MaxCdsLimits();
     TSignedSeqRange algn_cds = (algn.CompleteCds() || gene_good_enough_to_be_annotation) ? algn.RealCdsLimits() : algn.MaxCdsLimits();
 
+    if(!gene_good_enough_to_be_annotation && !algn_good_enough_to_be_annotation) { // both need ab initio
+        const CGeneModel& b = *gene.front();
+        for(int i = 1; i < (int)b.Exons().size(); ++i) {
+            if(b.Exons()[i].m_ssplice_sig == "XX" && b.Exons()[i].m_fsplice_sig == "XX" && b.Exons()[i].Limits().IntersectingWith(gene_cds)) { // if gap cds extend range to left exon
+                gene_cds.SetFrom(min(gene_cds.GetFrom(), b.Exons()[i-1].GetTo()));
+            }
+        }
+
+        for(int i = 1; i < (int)algn.Exons().size(); ++i) {
+            if(algn.Exons()[i].m_ssplice_sig == "XX" && algn.Exons()[i].m_fsplice_sig == "XX" && algn.Exons()[i].Limits().IntersectingWith(algn_cds)) { // if gap cds extend range to left exon
+                algn_cds.SetFrom(min(algn_cds.GetFrom(), algn.Exons()[i-1].GetTo()));
+            }
+        }
+    }
+
     if(!gene.Limits().IntersectingWith(algn.Limits()))             // don't overlap
         return eOtherGene;
     
