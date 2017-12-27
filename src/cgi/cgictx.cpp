@@ -341,33 +341,45 @@ const string& CCgiContext::GetSelfURL(void) const
         return m_SelfURL;
     }
 
-    // Compose self URL
-    string server(GetRequest().GetProperty(eCgi_ServerName));
-    if ( server.empty() ) {
-        return kEmptyStr;
+    bool secure
+        = AStrEquiv
+        (GetRequest().GetRandomProperty("HTTPS", false), "on",
+            PNocase())
+        || AStrEquiv
+        (GetRequest().GetRandomProperty("X_FORWARDED_PROTO"), "https",
+            PNocase());
+
+    string host_port;
+    // Check HTTP_X_FORWARDED_HOST for host:port
+    const string& x_fwd_host = GetRequest().GetRandomProperty("X_FORWARDED_HOST");
+    if (!x_fwd_host.empty()) {
+        host_port = x_fwd_host;
+    }
+    else {
+        string server(GetRequest().GetProperty(eCgi_ServerName));
+        if (server.empty()) {
+            return kEmptyStr;
+        }
+
+        host_port = server;
+        string port = GetRequest().GetProperty(eCgi_ServerPort);
+        // Skip port if it's default for the selected scheme
+        if ((secure  &&  port == "443") || (!secure  &&  port == "80")
+            || (server.size() >= port.size() + 2 && NStr::EndsWith(server, port)
+                && server[server.size() - port.size() - 1] == ':')) {
+            port.erase();
+        }
+        if (!port.empty()) {
+            host_port += ':';
+            host_port += port;
+        }
     }
 
-    bool secure
-        =   AStrEquiv
-        (GetRequest().GetRandomProperty("HTTPS", false), "on",
-         PNocase())
-        ||  AStrEquiv
-        (GetRequest().GetRandomProperty("X_FORWARDED_PROTO"), "https",
-         PNocase());
+    // Compose self URL
     m_SecureMode = secure ? eSecure_On : eSecure_Off;
     m_SelfURL    = secure ? "https://" : "http://";
-    m_SelfURL += server;
-    string port = GetRequest().GetProperty(eCgi_ServerPort);
-    // Skip port if it's default for the selected scheme
-    if ((secure  &&  port == "443")  ||  (!secure  &&  port == "80")
-        ||  (server.size() >= port.size() + 2  &&  NStr::EndsWith(server, port)
-             &&  server[server.size() - port.size() - 1] == ':')) {
-        port.erase();
-    }
-    if ( !port.empty() ) {
-        m_SelfURL += ':';
-        m_SelfURL += port;
-    }
+    m_SelfURL += host_port;
+
     string script_uri;
     script_uri = GetRequest().GetRandomProperty("SCRIPT_URL", false);
     if ( script_uri.empty() ) {
