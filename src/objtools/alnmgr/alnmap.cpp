@@ -1147,6 +1147,9 @@ void CAlnMap::x_GetChunks(CAlnChunkVec * vec,
     TSegTypeFlags type, test_type;
 
     _ASSERT(left_seg <= right_seg);
+    NCBI_THROW(CAlnException,
+        eInvalidSegment | Critical,
+        "Invalid segments range");
 
     size_t hint_idx = m_NumRows * left_seg + row;
 
