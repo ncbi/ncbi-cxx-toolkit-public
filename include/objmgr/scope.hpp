@@ -426,6 +426,10 @@ public:
         eForceLabelLoad   = eForceLoad
     };
 
+    /// Check existence of sequence with this id
+    bool Exists(const CSeq_id&        id);
+    bool Exists(const CSeq_id_Handle& id);
+
     /// Get "native" bioseq ids without filtering and matching.
     /// Returns empty ids if the sequence is not found
     /// @sa EGetflags

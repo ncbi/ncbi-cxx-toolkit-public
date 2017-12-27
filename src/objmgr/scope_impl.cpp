@@ -2564,6 +2564,10 @@ void CScope_Impl::x_PopulateBioseq_HandleSet(const CSeq_entry_Handle& seh,
     }
 }
 
+bool CScope_Impl::Exists(const CSeq_id_Handle& id)
+{
+    return GetSequenceType(id,0) != CSeq_inst::eMol_not_set;
+}
 
 CScope_Impl::TIds CScope_Impl::GetIds(const CSeq_id_Handle& idh,
                                       TGetFlags flags)

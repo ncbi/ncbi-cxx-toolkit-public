@@ -112,12 +112,14 @@ BOOST_AUTO_TEST_CASE(TestReResolve1)
     CRef<CSeq_entry> entry = s_GetEntry(1);
     BOOST_REQUIRE(!scope.GetBioseqHandle(*id));
     BOOST_REQUIRE(scope.GetIds(*id).empty());
+    BOOST_CHECK(!scope.Exists(*id));
     scope.AddTopLevelSeqEntry(*entry);
     BOOST_REQUIRE(scope.GetBioseqHandle(*id));
     BOOST_REQUIRE(scope.GetSynonyms(*id));
     BOOST_REQUIRE(scope.GetSynonyms(*s_GetId2(1))->ContainsSynonym(CSeq_id_Handle::GetHandle(*id2)));
     BOOST_REQUIRE(scope.GetSynonyms(*s_GetId2(1))->ContainsSynonym(CSeq_id_Handle::GetHandle(*id)));
     BOOST_REQUIRE(!scope.GetIds(*id).empty());
+    BOOST_CHECK(scope.Exists(*id));
 }
 
 
@@ -130,8 +132,10 @@ BOOST_AUTO_TEST_CASE(TestReResolve2)
     CRef<CSeq_entry> entry = s_GetEntry(1);
     BOOST_REQUIRE(!scope.GetBioseqHandle(*id));
     BOOST_REQUIRE(scope.GetIds(*id).empty());
+    BOOST_CHECK(!scope.Exists(*id));
     CSeq_entry_EditHandle seh = scope.AddTopLevelSeqEntry(*entry).GetEditHandle();
     BOOST_REQUIRE(!scope.GetIds(*id).empty());
+    BOOST_CHECK(scope.Exists(*id));
     BOOST_REQUIRE(scope.GetSynonyms(*id2));
     BOOST_REQUIRE(scope.GetSynonyms(*s_GetId2(1))->ContainsSynonym(CSeq_id_Handle::GetHandle(*id2)));
     BOOST_REQUIRE(scope.GetSynonyms(*s_GetId2(1))->ContainsSynonym(CSeq_id_Handle::GetHandle(*id)));
@@ -141,6 +145,7 @@ BOOST_AUTO_TEST_CASE(TestReResolve2)
     BOOST_REQUIRE(!scope.GetBioseqHandle(*id));
     seh.SelectSeq(bh);
     BOOST_REQUIRE(!scope.GetIds(*id).empty());
+    BOOST_CHECK(scope.Exists(*id));
     BOOST_REQUIRE(scope.GetBioseqHandle(*id));
     BOOST_REQUIRE(scope.GetSynonyms(*id2));
     BOOST_REQUIRE(scope.GetSynonyms(*s_GetId2(1))->ContainsSynonym(CSeq_id_Handle::GetHandle(*id2)));
@@ -157,13 +162,16 @@ BOOST_AUTO_TEST_CASE(TestReResolve3)
     CRef<CSeq_entry> entry = s_GetEntry(1);
     BOOST_REQUIRE(!scope.GetBioseqHandle(*id));
     BOOST_REQUIRE(scope.GetIds(*id).empty());
+    BOOST_CHECK(!scope.Exists(*id));
     CSeq_entry_EditHandle seh = scope.AddTopLevelSeqEntry(*entry).GetEditHandle();
     CBioseq_EditHandle bh = seh.SetSeq();
     seh.SelectNone();
     BOOST_REQUIRE(!scope.GetBioseqHandle(*id));
     BOOST_REQUIRE(scope.GetIds(*id).empty());
+    BOOST_CHECK(!scope.Exists(*id));
     seh.SelectSeq(bh);
     BOOST_REQUIRE(!scope.GetIds(*id).empty());
+    BOOST_CHECK(scope.Exists(*id));
     BOOST_REQUIRE(scope.GetBioseqHandle(*id));
     BOOST_REQUIRE(scope.GetSynonyms(*id2));
     BOOST_REQUIRE(scope.GetSynonyms(*s_GetId2(1))->ContainsSynonym(CSeq_id_Handle::GetHandle(*id2)));

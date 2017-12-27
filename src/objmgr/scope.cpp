@@ -366,7 +366,14 @@ void CScope::RemoveSeq_annot(const CSeq_annot_Handle& annot)
     m_Impl->RemoveTopLevelAnnot(annot);
 }
 
-
+bool CScope::Exists(const CSeq_id& id)
+{
+    return Exists(CSeq_id_Handle::GetHandle(id));
+}
+bool CScope::Exists(const CSeq_id_Handle& id)
+{
+    return m_Impl->Exists(id);
+}
 CScope::TIds CScope::GetIds(const CSeq_id& id, TGetFlags flags)
 {
     return GetIds(CSeq_id_Handle::GetHandle(id), flags);

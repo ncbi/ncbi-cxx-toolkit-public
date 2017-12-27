@@ -326,6 +326,7 @@ public:
 
     typedef int TGetFlags;
 
+    bool Exists(const CSeq_id_Handle& id);
     // Get "native" bioseq ids without filtering and matching.
     TIds GetIds(const CSeq_id_Handle& idh, TGetFlags flags = 0);
     CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh, TGetFlags flags);
