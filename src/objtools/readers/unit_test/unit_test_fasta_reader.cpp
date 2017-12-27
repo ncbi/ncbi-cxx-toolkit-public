@@ -761,7 +761,7 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
         seqTitles.clear();
     }
 
-
+/*
     {
         static const string kFastaDefLine = 
         ">contig1AGCTTTTCATTCTGCTGCAATGGGGGGGGGGGGGGGGGGGGGGG";
@@ -779,13 +779,14 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
                                    pMessageListener.GetPointer()); 
 
 
-        BOOST_CHECK( ids.size() == 1 );
+        BOOST_CHECK( ids.empty() );
         BOOST_CHECK( !hasRange );
         BOOST_CHECK( seqTitles.empty() );
 
         ids.clear();
         seqTitles.clear();
     }
+    */
 
 }
 
