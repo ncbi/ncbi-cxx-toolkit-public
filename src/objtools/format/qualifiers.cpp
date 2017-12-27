@@ -979,15 +979,16 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const CTempString& name,
             if( (*ref_iter)->Matches( **pub_iter ) ) {
                 // We have a match, so create the qual
                 string value;
-                if( (*ref_iter)->GetPMID() > 0 && bHtml ) {
+                string pub_id_str =
+                    ((*ref_iter)->GetPMID() ? NStr::IntToString((*ref_iter)->GetPMID()) :
+                     NStr::IntToString((*ref_iter)->GetSerial()));
+
+                if(bHtml ) {
                     // create a link
-                    const int pmid = (*ref_iter)->GetPMID();
                     value  = "[<a href=\"";
-                    value += strLinkBasePubmed + NStr::IntToString(pmid) + "\">" + 
-                        NStr::IntToString((*ref_iter)->GetSerial()) + 
-                        "</a>]";
+                    value += strLinkBasePubmed + pub_id_str + "\">" + pub_id_str + "</a>]";
                 } else {
-                    value = '[' + NStr::IntToString((*ref_iter)->GetSerial()) + ']';
+                    value = '[' + pub_id_str + ']';
                 }
                 x_AddFQ(q, name, value, CFormatQual::eUnquoted);
                 
@@ -1005,15 +1006,15 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const CTempString& name,
         for (; pub_iter != unusedPubs.end(); ++pub_iter) {
             if ((*pub_iter)->IsPmid()) {
                 const int pmid = (*pub_iter)->GetPmid().Get();
-
+                string pmid_str = NStr::NumericToString(pmid);
                 pubmed = "[PUBMED ";
                 if (bHtml) {
                     pubmed += "<a href=\"";
                     pubmed += strLinkBasePubmed;
-                    pubmed += NStr::NumericToString(pmid);
+                    pubmed += pmid_str;
                     pubmed += "\">";
                 }
-                pubmed += pmid;
+                pubmed += pmid_str;
                 if (bHtml) {
                     pubmed += "</a>";
                 }
