@@ -1098,6 +1098,13 @@ STypeLink::STypeLink(CSeqFeatData::ESubtype subtype,
     case CSeqFeatData::eSubtype_ncRNA:
         m_ParentType = CSeqFeatData::eSubtype_preRNA;
         break;
+    case CSeqFeatData::eSubtype_misc_feature:
+    case CSeqFeatData::eSubtype_regulatory:
+    case CSeqFeatData::eSubtype_protein_bind:
+    case CSeqFeatData::eSubtype_repeat_region:
+    case CSeqFeatData::eSubtype_misc_recomb:
+        m_ParentType = CSeqFeatData::eSubtype_region;
+        break;
     default:
         m_ParentType = CSeqFeatData::eSubtype_gene;
         break;
