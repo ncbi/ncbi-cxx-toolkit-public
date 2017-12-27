@@ -80,6 +80,8 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
         return;
     }
 
+    m_IsNuc = ctx.IsNuc();
+
     const CSeq_id& id = *ctx.GetPrimaryId();
 
     if (!ctx.GetLocation().IsWhole()) {

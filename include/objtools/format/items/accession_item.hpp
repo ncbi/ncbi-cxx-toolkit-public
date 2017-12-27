@@ -69,6 +69,8 @@ public:
     const TExtra_accessions& GetExtraAccessions(void) const;
     bool  IsSetRegion(void) const;
     const CSeq_loc& GetRegion(void) const;
+    bool  IsNuc(void) const;
+    bool  IsProt(void) const;
 private:
     void x_GatherInfo(CBioseqContext& ctx);
 
@@ -79,6 +81,7 @@ private:
     TExtra_accessions   m_ExtraAccessions;
     CConstRef<CSeq_loc> m_Region;
     bool                m_IsSetRegion;
+    bool                m_IsNuc;
 };
 
 
@@ -126,6 +129,17 @@ const CSeq_loc& CAccessionItem::GetRegion(void) const
     return *m_Region;
 }
 
+inline
+bool CAccessionItem::IsNuc(void) const
+{
+    return m_IsNuc;
+}
+
+inline
+bool CAccessionItem::IsProt(void) const
+{
+    return !m_IsNuc;
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

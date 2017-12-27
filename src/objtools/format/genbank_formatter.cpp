@@ -470,10 +470,14 @@ void CGenbankFormatter::FormatAccession
     CRef<IFlatTextOStream> p_text_os;
     IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, acc, orig_text_os);
 
-    string acc_line = x_FormatAccession(acc, ' ');
+    string acc_str = x_FormatAccession(acc, ' ');
+    string link_base = (acc.IsNuc() ? strLinkBaseNuc : strLinkBaseProt);
+    string acc_line;
     if( acc.GetContext()->Config().DoHTML() && ! acc.GetContext()->GetLocation().IsWhole() ) {
         acc_line = "<a href=\"";
-        acc_line += strLinkBaseEntrezViewer + acc_line + "\">" + acc_line + "</a>";
+        acc_line += link_base + acc_str + "\">" + acc_str + "</a>";
+    } else {
+        acc_line = acc_str;
     }
     if ( acc.IsSetRegion() ) {
         acc_line += " REGION: ";
