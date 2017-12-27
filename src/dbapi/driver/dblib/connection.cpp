@@ -621,20 +621,22 @@ RETCODE CDBL_Connection::CheckDead(RETCODE rc)
 {
     if (rc == FAIL) {
         if (DBDEAD(GetDBLibConnection()) == TRUE) {
-            CDB_ClientEx ex(DIAG_COMPILE_INFO,
-                            0,
-                            "Database connection is closed",
-                            eDiag_Error,
-                            220000);
+            unique_ptr<CDB_Exception> ex(new CDB_ClientEx(
+                                                DIAG_COMPILE_INFO,
+                                                0,
+                                                "Database connection is closed",
+                                                eDiag_Error,
+                                                220000));
 
             GetDBLExceptionStorage().Accept(ex);
             GetDBLExceptionStorage().SetRetriable(eRetriable_No);
         } else {
-            CDB_ClientEx ex(DIAG_COMPILE_INFO,
-                            0,
-                            "dblib function call failed",
-                            eDiag_Error,
-                            220001);
+            unique_ptr<CDB_Exception> ex(new CDB_ClientEx(
+                                                DIAG_COMPILE_INFO,
+                                                0,
+                                                "dblib function call failed",
+                                                eDiag_Error,
+                                                220001));
 
             GetDBLExceptionStorage().Accept(ex);
             GetDBLExceptionStorage().SetRetriable(eRetriable_No);

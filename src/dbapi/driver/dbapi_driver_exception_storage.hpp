@@ -50,7 +50,7 @@ public:
     ~CDBExceptionStorage(void) throw();
 
 public:
-    void Accept(const CDB_Exception& e);
+    void Accept(unique_ptr<CDB_Exception>& e);
     void Handle(const CDBHandlerStack& handler);
     void Handle(const CDBHandlerStack& handler,
                 const CDB_Exception::SContext* dbg_info = NULL,

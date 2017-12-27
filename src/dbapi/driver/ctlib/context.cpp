@@ -1086,27 +1086,24 @@ CS_RETCODE CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* 
 
 #ifdef FTDS_IN_USE
         if ((msg->msgnumber & 0xFF) == 25) {
-            CDB_TruncateEx ex(
-                DIAG_COMPILE_INFO,
-                0,
-                msg->msgstring,
-                msg->msgnumber);
+            unique_ptr<CDB_Exception> ex(new CDB_TruncateEx(
+                                                    DIAG_COMPILE_INFO,
+                                                    0,
+                                                    msg->msgstring,
+                                                    msg->msgnumber));
 
-            ex.SetSybaseSeverity(msg->severity);
+            ex->SetSybaseSeverity(msg->severity);
             GetCTLExceptionStorage().Accept(ex);
             GetCTLExceptionStorage().SetRetriable(eRetriable_No);
             return CS_SUCCEED;
         }
 #endif
 
-        CDB_ClientEx ex(
-            DIAG_COMPILE_INFO,
-            0, msg->msgstring,
-            sev,
-            msg->msgnumber
-            );
+        unique_ptr<CDB_Exception>   ex(new CDB_ClientEx(DIAG_COMPILE_INFO,
+                                                        0, msg->msgstring,
+                                                        sev, msg->msgnumber));
 
-        ex.SetSybaseSeverity(msg->severity);
+        ex->SetSybaseSeverity(msg->severity);
 
         GetCTLExceptionStorage().Accept(ex);
         if (msg->severity == CS_SV_INFORM)
@@ -1123,18 +1120,18 @@ CS_RETCODE CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* 
 
 
 static
-void PassException(CDB_Exception&   ex,
-                   const string&    server_name,
-                   const string&    user_name,
-                   CS_INT           severity,
-                   const CDBParams* params,
-                   ERetriable       retriable
+void PassException(unique_ptr<CDB_Exception>& ex,
+                   const string&              server_name,
+                   const string&              user_name,
+                   CS_INT                     severity,
+                   const CDBParams*           params,
+                   ERetriable                 retriable
                    )
 {
-    ex.SetServerName(server_name);
-    ex.SetUserName(user_name);
-    ex.SetSybaseSeverity(severity);
-    ex.SetParams(params);
+    ex->SetServerName(server_name);
+    ex->SetUserName(user_name);
+    ex->SetSybaseSeverity(severity);
+    ex->SetParams(params);
 
     impl::CDBExceptionStorage& ex_storage = GetCTLExceptionStorage();
     ex_storage.Accept(ex);
@@ -1170,11 +1167,12 @@ HandleConnStatus(CS_CONNECTION* conn,
                 return CS_SUCCEED;
 #if !defined(FTDS_IN_USE)
             case CS_TRYING: {
-                CDB_TimeoutEx ex(
-                    DIAG_COMPILE_INFO,
-                    0,
-                    "Got timeout on ct_cancel(CS_CANCEL_ALL)",
-                    msg->msgnumber);
+                unique_ptr<CDB_Exception>   ex(
+                    new CDB_TimeoutEx(
+                            DIAG_COMPILE_INFO,
+                            0,
+                            "Got timeout on ct_cancel(CS_CANCEL_ALL)",
+                            msg->msgnumber));
 
                 PassException(ex, server_name, user_name, msg->severity, NULL,
                               eRetriable_No);
@@ -1289,11 +1287,11 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
 
 #ifdef FTDS_IN_USE
         if (msg->msgnumber == 20003) {
-            CDB_TimeoutEx ex(
-                DIAG_COMPILE_INFO,
-                0,
-                message,
-                msg->msgnumber);
+            unique_ptr<CDB_Exception> ex(new CDB_TimeoutEx(
+                                                    DIAG_COMPILE_INFO,
+                                                    0,
+                                                    message,
+                                                    msg->msgnumber));
 
             PassException(ex, server_name, user_name, msg->severity, params,
                           eRetriable_Yes);
@@ -1317,11 +1315,11 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                 return CS_FAIL;
             }
         } else if ((msg->msgnumber & 0xFF) == 25) {
-            CDB_TruncateEx ex(
-                DIAG_COMPILE_INFO,
-                0,
-                message,
-                msg->msgnumber);
+            unique_ptr<CDB_Exception>  ex(new CDB_TruncateEx(
+                                                    DIAG_COMPILE_INFO,
+                                                    0,
+                                                    message,
+                                                    msg->msgnumber));
 
             PassException(ex, server_name, user_name, msg->severity, params,
                           eRetriable_No);
@@ -1332,11 +1330,12 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
         // Process the message ...
         switch (msg->severity) {
         case CS_SV_INFORM: {
-            CDB_ClientEx ex( DIAG_COMPILE_INFO,
-                               0,
-                               message,
-                               eDiag_Info,
-                               msg->msgnumber);
+            unique_ptr<CDB_Exception>   ex(new CDB_ClientEx(
+                                                    DIAG_COMPILE_INFO,
+                                                    0,
+                                                    message,
+                                                    eDiag_Info,
+                                                    msg->msgnumber));
 
             PassException(ex, server_name, user_name, msg->severity, params,
                           eRetriable_Yes);
@@ -1344,11 +1343,11 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
             break;
         }
         case CS_SV_RETRY_FAIL: {
-            CDB_TimeoutEx ex(
-                DIAG_COMPILE_INFO,
-                0,
-                message,
-                msg->msgnumber);
+            unique_ptr<CDB_Exception>   ex(new CDB_TimeoutEx(
+                                                    DIAG_COMPILE_INFO,
+                                                    0,
+                                                    message,
+                                                    msg->msgnumber));
 
             PassException(ex, server_name, user_name, msg->severity, params,
                           eRetriable_Yes);
@@ -1363,11 +1362,12 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
             ERetriable  retriable = eRetriable_No;
             if (msg->severity == CS_SV_INTERNAL_FAIL)
                 retriable = eRetriable_Unknown;
-            CDB_ClientEx ex( DIAG_COMPILE_INFO,
-                              0,
-                              message,
-                              eDiag_Error,
-                              msg->msgnumber);
+            unique_ptr<CDB_Exception>   ex(new CDB_ClientEx(
+                                                    DIAG_COMPILE_INFO,
+                                                    0,
+                                                    message,
+                                                    eDiag_Error,
+                                                    msg->msgnumber));
 
             PassException(ex, server_name, user_name, msg->severity, params,
                           retriable);
@@ -1375,12 +1375,12 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
             break;
         }
         default: {
-            CDB_ClientEx ex(
-                DIAG_COMPILE_INFO,
-                0,
-                message,
-                eDiag_Critical,
-                msg->msgnumber);
+            unique_ptr<CDB_Exception>   ex(new CDB_ClientEx(
+                                                    DIAG_COMPILE_INFO,
+                                                    0,
+                                                    message,
+                                                    eDiag_Critical,
+                                                    msg->msgnumber));
 
             PassException(ex, server_name, user_name, msg->severity, params,
                           eRetriable_No);
@@ -1503,9 +1503,10 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         }
 
         if (msg->msgnumber == 1205 /*DEADLOCK*/) {
-            CDB_DeadlockEx ex(DIAG_COMPILE_INFO,
-                              0,
-                              message);
+            unique_ptr<CDB_Exception>   ex(new CDB_DeadlockEx(
+                                                    DIAG_COMPILE_INFO,
+                                                    0,
+                                                    message));
 
             PassException(ex, server_name, user_name, msg->severity, params,
                           eRetriable_Yes);
@@ -1538,36 +1539,39 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                 msg->severity <  16 ? eDiag_Error : eDiag_Critical;
 
             if (msg->proclen > 0) {
-                CDB_RPCEx ex(DIAG_COMPILE_INFO,
-                              0,
-                              message,
-                              sev,
-                              (int) msg->msgnumber,
-                              msg->proc,
-                              (int) msg->line);
+                unique_ptr<CDB_Exception>   ex(new CDB_RPCEx(
+                                                    DIAG_COMPILE_INFO,
+                                                    0,
+                                                    message,
+                                                    sev,
+                                                    (int) msg->msgnumber,
+                                                    msg->proc,
+                                                    (int) msg->line));
 
                 PassException(ex, server_name, user_name, msg->severity,
                               params, eRetriable_No);
             }
             else if (msg->sqlstatelen > 1  &&
                      (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
-                CDB_SQLEx ex(DIAG_COMPILE_INFO,
-                              0,
-                              message,
-                              sev,
-                              (int) msg->msgnumber,
-                              (const char*) msg->sqlstate,
-                              (int) msg->line);
+                unique_ptr<CDB_Exception>   ex(new CDB_SQLEx(
+                                                    DIAG_COMPILE_INFO,
+                                                    0,
+                                                    message,
+                                                    sev,
+                                                    (int) msg->msgnumber,
+                                                    (const char*) msg->sqlstate,
+                                                    (int) msg->line));
 
                 PassException(ex, server_name, user_name, msg->severity,
                               params, eRetriable_No);
             }
             else {
-                CDB_DSEx ex(DIAG_COMPILE_INFO,
-                            0,
-                            message,
-                            sev,
-                            (int) msg->msgnumber);
+                unique_ptr<CDB_Exception> ex(new CDB_DSEx(
+                                                    DIAG_COMPILE_INFO,
+                                                    0,
+                                                    message,
+                                                    sev,
+                                                    (int) msg->msgnumber));
 
                 PassException(ex, server_name, user_name, msg->severity,
                               params, eRetriable_No);

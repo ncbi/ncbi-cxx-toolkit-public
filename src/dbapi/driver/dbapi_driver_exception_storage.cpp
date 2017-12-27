@@ -76,7 +76,7 @@ CDBExceptionStorage::~CDBExceptionStorage(void) throw()
 }
 
 
-void CDBExceptionStorage::Accept(CDB_Exception const& e)
+void CDBExceptionStorage::Accept(unique_ptr<CDB_Exception>& e)
 {
     CFastMutexGuard mg(m_Mutex);
 
@@ -84,15 +84,17 @@ void CDBExceptionStorage::Accept(CDB_Exception const& e)
     // paths. To avoid double output in a log file the accumulated list is
     // checked if there is this exception here already.
     for (const auto &  item: m_Exceptions) {
-        if (item->GetDBErrCode() == e.GetDBErrCode())
-            if (item->GetMsg() == e.GetMsg())
+        if (item->GetDBErrCode() == e->GetDBErrCode())
+            if (item->GetMsg() == e->GetMsg())
                 return;     // the same exception has already been registered
     }
 
-    CDB_Exception* ex = e.Clone(); // for debugging ...
-    m_Exceptions.push_back(ex);
+    CDB_Exception *  raw_pointer = e.get();
+    m_Exceptions.push_back(raw_pointer);
+    e.release();
 
-    const CDB_TimeoutEx *  timeout_exc = dynamic_cast<const CDB_TimeoutEx *>(&e);
+    const CDB_TimeoutEx *  timeout_exc =
+                            dynamic_cast<const CDB_TimeoutEx *>(raw_pointer);
     if (timeout_exc)
         m_HasTimeout = true;
 }

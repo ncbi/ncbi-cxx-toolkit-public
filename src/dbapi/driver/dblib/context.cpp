@@ -431,14 +431,15 @@ bool CDBLibContext::DBLIB_SetMaxNofConns(int n)
 
 
 static
-void s_PassException(CDB_Exception& ex, const string& server_name,
+void s_PassException(unique_ptr<CDB_Exception>& ex,
+                     const string& server_name,
                      const string& user_name, CS_INT severity,
                      const CDBParams* params)
 {
-    ex.SetServerName(server_name);
-    ex.SetUserName(user_name);
-    ex.SetSybaseSeverity(severity);
-    ex.SetParams(params);
+    ex->SetServerName(server_name);
+    ex->SetUserName(user_name);
+    ex->SetSybaseSeverity(severity);
+    ex->SetParams(params);
     GetDBLExceptionStorage().Accept(ex);
 }
 
@@ -473,10 +474,11 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     case SYBEFCON:
     case SYBECONN:
         {
-            CDB_TimeoutEx ex(DIAG_COMPILE_INFO,
-                             0,
-                             message,
-                             dberr);
+            unique_ptr<CDB_Exception> ex(new CDB_TimeoutEx(
+                                                DIAG_COMPILE_INFO,
+                                                0,
+                                                message,
+                                                dberr));
 
             s_PassException(ex, server_name, user_name, severity, params);
         }
@@ -484,9 +486,10 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
 
     default:
         if(dberr == 1205) {
-            CDB_DeadlockEx ex(DIAG_COMPILE_INFO,
-                              0,
-                              message);
+            unique_ptr<CDB_Exception> ex(new CDB_DeadlockEx(
+                                                DIAG_COMPILE_INFO,
+                                                0,
+                                                message));
 
             s_PassException(ex, server_name, user_name, severity, params);
 
@@ -501,11 +504,12 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     case EXINFO:
     case EXUSER:
         {
-            CDB_ClientEx ex(DIAG_COMPILE_INFO,
-                            0,
-                            message,
-                            eDiag_Info,
-                            dberr);
+            unique_ptr<CDB_Exception> ex(new CDB_ClientEx(
+                                                DIAG_COMPILE_INFO,
+                                                0,
+                                                message,
+                                                eDiag_Info,
+                                                dberr));
 
             s_PassException(ex, server_name, user_name, severity, params);
         }
@@ -515,32 +519,35 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     case EXSERVER:
     case EXPROGRAM:
         if ( dberr != 20018 ) {
-            CDB_ClientEx ex(DIAG_COMPILE_INFO,
-                            0,
-                            message,
-                            eDiag_Error,
-                            dberr);
+            unique_ptr<CDB_Exception> ex(new CDB_ClientEx(
+                                                DIAG_COMPILE_INFO,
+                                                0,
+                                                message,
+                                                eDiag_Error,
+                                                dberr));
 
             s_PassException(ex, server_name, user_name, severity, params);
         }
         break;
     case EXTIME:
         {
-            CDB_TimeoutEx ex(DIAG_COMPILE_INFO,
-                             0,
-                             message,
-                             dberr);
+            unique_ptr<CDB_Exception> ex(new CDB_TimeoutEx(
+                                                DIAG_COMPILE_INFO,
+                                                0,
+                                                message,
+                                                dberr));
 
             s_PassException(ex, server_name, user_name, severity, params);
         }
         return INT_TIMEOUT;
     default:
         {
-            CDB_ClientEx ex(DIAG_COMPILE_INFO,
-                            0,
-                            message,
-                            eDiag_Critical,
-                            dberr);
+            unique_ptr<CDB_Exception> ex(new CDB_ClientEx(
+                                                DIAG_COMPILE_INFO,
+                                                0,
+                                                message,
+                                                eDiag_Critical,
+                                                dberr));
 
             s_PassException(ex, server_name, user_name, severity, params);
         }
@@ -583,9 +590,10 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
     }
 
     if (msgno == 1205/*DEADLOCK*/) {
-        CDB_DeadlockEx ex(DIAG_COMPILE_INFO,
-                          0,
-                          message);
+        unique_ptr<CDB_Exception> ex(new CDB_DeadlockEx(
+                                                DIAG_COMPILE_INFO,
+                                                0,
+                                                message));
 
         s_PassException(ex, server_name, user_name, severity, params);
     }
@@ -601,21 +609,23 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
             severity <  16 ? eDiag_Error : eDiag_Critical;
 
         if (!procname.empty()) {
-            CDB_RPCEx ex(DIAG_COMPILE_INFO,
-                         0,
-                         message,
-                         sev,
-                         msgno,
-                         procname,
-                         line);
+            unique_ptr<CDB_Exception> ex(new CDB_RPCEx(
+                                                DIAG_COMPILE_INFO,
+                                                0,
+                                                message,
+                                                sev,
+                                                msgno,
+                                                procname,
+                                                line));
 
             s_PassException(ex, server_name, user_name, severity, params);
         } else {
-            CDB_DSEx ex(DIAG_COMPILE_INFO,
-                        0,
-                        message,
-                        sev,
-                        msgno);
+            unique_ptr<CDB_Exception> ex(new CDB_DSEx(
+                                                DIAG_COMPILE_INFO,
+                                                0,
+                                                message,
+                                                sev,
+                                                msgno));
 
             s_PassException(ex, server_name, user_name, severity, params);
         }
