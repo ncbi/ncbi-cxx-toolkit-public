@@ -577,7 +577,7 @@ void CFeatTableEdit::xFeatureAddProteinIdCds(
         //    tid = string("cds.") + tid;
         //}
         tid = string("cds.") + tid;
-        pid = string("gnl|") + xGetCurrentLocusTagPrefix(mf) + tid;
+        pid = string("gnl|") + xGetCurrentLocusTagPrefix(mf) + "|" + tid;
         xFeatureSetQualifier(mf, "protein_id", pid);
         return;
     }
