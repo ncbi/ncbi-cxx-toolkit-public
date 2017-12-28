@@ -205,7 +205,9 @@ struct _hdesc
 {
 	SQLSMALLINT htype;	/* do not reorder this field */
 	struct _sql_errors errs;	/* do not reorder this field */
+#ifdef TDS_HAVE_MUTEX
 	tds_mutex mtx;
+#endif
 	int type;
 	SQLHANDLE parent;
 	struct _dheader header;
@@ -231,14 +233,18 @@ struct _hchk
 {
 	SQLSMALLINT htype;	/* do not reorder this field */
 	struct _sql_errors errs;	/* do not reorder this field */
+#ifdef TDS_HAVE_MUTEX
 	tds_mutex mtx;
+#endif
 };
 
 struct _henv
 {
 	SQLSMALLINT htype;	/* do not reorder this field */
 	struct _sql_errors errs;	/* do not reorder this field */
+#ifdef TDS_HAVE_MUTEX
 	tds_mutex mtx;
+#endif
 	TDSCONTEXT *tds_ctx;
 	struct _heattr attr;
 };
@@ -276,7 +282,9 @@ struct _hdbc
 {
 	SQLSMALLINT htype;	/* do not reorder this field */
 	struct _sql_errors errs;	/* do not reorder this field */
+#ifdef TDS_HAVE_MUTEX
 	tds_mutex mtx;
+#endif
 	struct _henv *env;
 	TDSSOCKET *tds_socket;
 	DSTR dsn;
@@ -382,7 +390,9 @@ struct _hstmt
 {
 	SQLSMALLINT htype;	/* do not reorder this field */
 	struct _sql_errors errs;	/* do not reorder this field */
+#ifdef TDS_HAVE_MUTEX
 	tds_mutex mtx;
+#endif
 	struct _hdbc *dbc;
 	/** query to execute */
 	DSTR query;

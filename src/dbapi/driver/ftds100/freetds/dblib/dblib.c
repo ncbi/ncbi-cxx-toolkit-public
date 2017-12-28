@@ -190,7 +190,9 @@ typedef struct dblib_context
 DBLIBCONTEXT;
 
 static DBLIBCONTEXT g_dblib_ctx;
+#ifdef TDS_HAVE_MUTEX
 static tds_mutex dblib_mutex = TDS_MUTEX_INITIALIZER;
+#endif
 
 static int g_dblib_version =
 #ifdef TDS42

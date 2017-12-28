@@ -1177,7 +1177,9 @@ struct tds_connection
 	TDSPACKET *send_packets;
 	unsigned send_pos, recv_pos;
 
+#ifdef TDS_HAVE_MUTEX
 	tds_mutex list_mtx;
+#endif
 #define BUSY_SOCKET ((TDSSOCKET*)(TDS_UINTPTR)1)
 #define TDSSOCKET_VALID(tds) (((TDS_UINTPTR)(tds)) > 1)
 	struct tds_socket **sessions;
@@ -1283,7 +1285,9 @@ struct tds_socket
 	TDS_OPERATION current_op;
 
 	int option_value;
+#ifdef TDS_HAVE_MUTEX
 	tds_mutex wire_mtx;
+#endif
 };
 
 #define tds_get_ctx(tds) ((tds)->conn->tds_ctx)
