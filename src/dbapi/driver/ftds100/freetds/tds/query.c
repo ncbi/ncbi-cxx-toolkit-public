@@ -147,8 +147,10 @@ tds_convert_string(TDSSOCKET * tds, TDSICONV * char_conv, const char *s,
 	/* allocate needed buffer (+1 is to exclude 0 case) */
 	ol = il * char_conv->to.charset.max_bytes_per_char / char_conv->from.charset.min_bytes_per_char + 1;
 	buf = tds_new(char, ol);
-	if (!buf)
+        if (buf == NULL) {
+                *out_len = 0;
 		return NULL;
+        }
 
 	ib = s;
 	ob = buf;
@@ -3270,6 +3272,7 @@ tds_put_param_as_string(TDSSOCKET * tds, TDSPARAMINFO * params, int n)
 	switch (curcol->column_type) {
 	/* binary/char, do conversion in line */
 	case SYBBINARY: case SYBVARBINARY: case SYBIMAGE: case XSYBBINARY: case XSYBVARBINARY:
+                assert(!converted);
 		tds_put_n(tds, "0x", 2);
 		for (i=0; src_len; ++src, --src_len) {
 			buf[i++] = tds_hex_digits[*src >> 4 & 0xF];

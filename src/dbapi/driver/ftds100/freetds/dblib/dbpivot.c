@@ -98,6 +98,7 @@ col_init(struct col_t *pcol, int sybtype, size_t collen)
 	if (pcol->type == TDS_INVALID_TYPE)
 		return NULL;
 	pcol->len = collen;
+        pcol->s = NULL;
 
 	switch(sybtype) {
 	case 0:
@@ -526,7 +527,7 @@ make_col_name(const KEY_T *k)
 	s = names = tds_new0(char *, k->nkeys);
 	
 	for(pc=k->keys; pc < k->keys + k->nkeys; pc++) {
-		*s++ = strdup(string_value(pc));
+                *s++ = string_value(pc);
 	}
 	
 	output = join(k->nkeys, names, "/");
