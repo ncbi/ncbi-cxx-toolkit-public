@@ -34,9 +34,6 @@
 #  define ENABLE_EXTRA_CHECKS 1
 #endif
 
-#include "../impl/rename_ftds_replacements.h"
-#include "../impl/rename_ftds_tds.h"
-
 #ifdef HAVE_LIBRT
 #  define HAVE_CLOCK_GETTIME 1
 #endif
@@ -67,6 +64,7 @@
 
 
 #ifdef NCBI_HAVE_GETPWUID_R
+#  define HAVE_GETPWUID_R 1
 #  if NCBI_HAVE_GETPWUID_R == 4
 #    define HAVE_FUNC_GETPWUID_R_4 1
 #    define HAVE_FUNC_GETPWUID_R_4_PW 1
@@ -121,6 +119,12 @@ typedef int socklen_t;
 #  define SIZEOF_SQLWCHAR SIZEOF_SHORT
 #endif
 
+#ifdef NCBI_HAVE_READDIR_R
+#  define HAVE_READDIR_R 1
+#endif
+
+#define SIZEOF_VOID_P SIZEOF_VOIDP
+
 #if defined(HAVE_ATTRIBUTE_DESTRUCTOR)
 #  define TDS_ATTRIBUTE_DESTRUCTOR 1
 #endif
@@ -161,5 +165,8 @@ typedef int socklen_t;
 #ifndef _THREAD_SAFE
 #  define TDS_NO_THREADSAFE 1
 #endif
+
+#include "../impl/rename_ftds_replacements.h"
+#include "../impl/rename_ftds_tds.h"
 
 #endif  /* DBAPI_DRIVER_FTDS95_FREETDS___CONFIG__H */
