@@ -464,7 +464,7 @@ COrgMod::IsStructuredVoucherValid(const string& val, const string& v_type)
             return "Institution code " + inst_code + " exists, but correct capitalization is " + correct_cap;
         } else if (NStr::Equal (coll_code, "DNA")) {
             // DNA is a valid collection for any institution (using bio_material)
-            if (!NStr::Equal (voucher_type, "b")) {
+            if (!NStr::Equal(v_type, "b")) {
                 return "DNA should be bio_material";
             }
         } else {
