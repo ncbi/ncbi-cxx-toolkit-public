@@ -180,7 +180,13 @@ CTL_RowResult::ConvDataType_Ctlib2DBAPI(const CS_DATAFMT& fmt)
     case CS_DATETIME_TYPE:      return eDB_DateTime;
     case CS_DATETIME4_TYPE:     return eDB_SmallDateTime;
     case CS_TINYINT_TYPE:       return eDB_TinyInt;
+#ifdef CS_USMALLINT_TYPE
+    case CS_USMALLINT_TYPE:
+#endif
     case CS_SMALLINT_TYPE:      return eDB_SmallInt;
+#ifdef CS_UINT_TYPE
+    case CS_UINT_TYPE:
+#endif
     case CS_INT_TYPE:           return eDB_Int;
 
 #ifdef CS_BIGINT_TYPE
@@ -390,7 +396,13 @@ static bool s_CanStore(CS_INT src, EDB_Type dst)
 
     case CS_BIT_TYPE:      if (dst == eDB_Bit)      { return true; }
     case CS_TINYINT_TYPE:  if (dst == eDB_TinyInt)  { return true; }
+#ifdef CS_USMALLINT_TYPE
+    case CS_USMALLINT_TYPE:
+#endif
     case CS_SMALLINT_TYPE: if (dst == eDB_SmallInt) { return true; }
+#ifdef CS_UINT_TYPE
+    case CS_UINT_TYPE:
+#endif
     case CS_INT_TYPE:      if (dst == eDB_Int)      { return true; }
 #ifdef CS_BIGINT_TYPE
     case CS_BIGINT_TYPE:
@@ -542,7 +554,13 @@ CDB_Object* CTL_RowResult::GetItemInternal(
 
     case CS_TINYINT_TYPE:
     case CS_SMALLINT_TYPE:
+#ifdef CS_USMALLINT_TYPE
+    case CS_USMALLINT_TYPE:
+#endif
     case CS_INT_TYPE:
+#ifdef CS_UINT_TYPE
+    case CS_UINT_TYPE:
+#endif
     case CS_BIT_TYPE:
 #ifdef CS_BIGINT_TYPE
     case CS_BIGINT_TYPE:
@@ -556,7 +574,13 @@ CDB_Object* CTL_RowResult::GetItemInternal(
         CS_INT sz;
         switch (datatype) {
         case CS_TINYINT_TYPE:  sz = sizeof(CS_TINYINT);  break;
+#ifdef CS_USMALLINT_TYPE
+        case CS_USMALLINT_TYPE:
+#endif
         case CS_SMALLINT_TYPE: sz = sizeof(CS_SMALLINT); break;
+#ifdef CS_UINT_TYPE
+        case CS_UINT_TYPE:
+#endif
         case CS_INT_TYPE:      sz = sizeof(CS_INT);      break;
         case CS_BIT_TYPE:      sz = sizeof(CS_BIT);      break;
 #ifdef CS_BIGINT_TYPE
