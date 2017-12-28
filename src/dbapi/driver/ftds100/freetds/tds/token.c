@@ -2652,7 +2652,7 @@ tds5_process_dyn_result2(TDSSOCKET * tds)
 	unsigned int col, num_cols;
 	TDSCOLUMN *curcol;
 	TDSPARAMINFO *info;
-	TDSDYNAMIC *dyn;
+        TDSDYNAMIC *dyn = NULL;
 
 	CHECK_TDS_EXTRA(tds);
 
