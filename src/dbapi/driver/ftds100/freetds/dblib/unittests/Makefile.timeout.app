@@ -12,6 +12,6 @@ LINK     = $(C_LINK)
 CHECK_CMD  = test-db100 db100_timeout
 CHECK_COPY = timeout.sql
 
-CHECK_REQUIRES = in-house-resources Linux
+CHECK_REQUIRES = in-house-resources
 
 WATCHERS = ucko satskyse

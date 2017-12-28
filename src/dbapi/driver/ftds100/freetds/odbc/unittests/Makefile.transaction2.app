@@ -11,6 +11,6 @@ LINK     = $(C_LINK)
 CHECK_CMD  = test-odbc100 --no-auto odbc100_transaction2
 CHECK_COPY = odbc.ini
 
-CHECK_REQUIRES = in-house-resources Linux
+CHECK_REQUIRES = in-house-resources
 
 WATCHERS = ucko satskyse
