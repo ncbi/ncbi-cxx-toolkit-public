@@ -179,9 +179,9 @@ static inline int tds_raw_cond_wait(tds_condition *cond, tds_raw_mutex *mtx)
 
 typedef HANDLE tds_thread;
 typedef DWORD  tds_thread_id;
-typedef void *(WINAPI *tds_thread_proc)(void *arg);
+typedef LPTHREAD_START_ROUTINE tds_thread_proc;
 #define TDS_THREAD_PROC_DECLARE(name, arg) \
-	void *WINAPI name(void *arg)
+        DWORD name(void *arg)
 
 static inline int tds_thread_create(tds_thread *ret, tds_thread_proc proc, void *arg)
 {

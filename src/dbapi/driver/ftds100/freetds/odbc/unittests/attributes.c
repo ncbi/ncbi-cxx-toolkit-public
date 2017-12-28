@@ -10,6 +10,10 @@
 static int g_result = 0;
 static unsigned int line_num;
 
+#ifdef __GNUC__
+static void fatal(const char *msg, ...) __attribute__((noreturn));
+#endif
+
 static void
 fatal(const char *msg, ...)
 {

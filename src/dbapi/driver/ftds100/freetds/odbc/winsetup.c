@@ -299,7 +299,7 @@ DSNDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 BOOL INSTAPI
 ConfigDSN(HWND hwndParent, WORD fRequest, LPCSTR lpszDriver, LPCSTR lpszAttributes)
 {
-	int result;
+        INT_PTR result;
 	DSNINFO *di;
 	const char *errmsg;
 
@@ -407,7 +407,7 @@ ConfigDriver(HWND hwndParent, WORD fRequest, LPCSTR lpszDriver, LPCSTR lpszArgs,
 
 	if (msg && lpszMsg && cbMsgMax > strlen(msg)) {
 		strcpy(lpszMsg, msg);
-		*pcbMsgOut = strlen(msg);
+                *pcbMsgOut = (WORD) strlen(msg);
 	}
 	return TRUE;
 }
@@ -424,8 +424,8 @@ ConfigTranslator(HWND hwndParent, DWORD * pvOption)
 HRESULT WINAPI
 DllRegisterServer(void)
 {
-	TCHAR fn[MAX_PATH], full_fn[MAX_PATH];
-	LPTSTR name;
+        char fn[MAX_PATH], full_fn[MAX_PATH];
+        char *name;
 	WORD len_out;
 	DWORD cnt;
 	char *desc = NULL;

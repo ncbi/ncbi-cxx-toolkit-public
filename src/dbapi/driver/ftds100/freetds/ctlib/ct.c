@@ -730,7 +730,7 @@ ct_cmd_alloc(CS_CONNECTION * con, CS_COMMAND ** pcmd)
 CS_RETCODE
 ct_command(CS_COMMAND * cmd, CS_INT type, const CS_VOID * buffer, CS_INT buflen, CS_INT option)
 {
-	int query_len, current_query_len;
+        ssize_t query_len, current_query_len;
 
 	tdsdump_log(TDS_DBG_FUNC, "ct_command(%p, %d, %p, %d, %d)\n", cmd, type, buffer, buflen, option);
 
@@ -2067,6 +2067,8 @@ _ct_get_client_type(CS_CONTEXT *ctx, TDSCOLUMN *col)
 	case SYB5BIGDATETIME:
 		return CS_BIGDATETIME_TYPE;
 		break;
+        default: /* SYBNTEXT, etc. */
+                break;
 	}
 
 	return _cs_convert_not_client(NULL, col, NULL, NULL);
@@ -2389,7 +2391,7 @@ ct_describe(CS_COMMAND * cmd, CS_INT item, CS_DATAFMT * datafmt)
 	curcol = resinfo->columns[item - 1];
 	/* name is always null terminated */
 	strlcpy(datafmt->name, tds_dstr_cstr(&curcol->column_name), sizeof(datafmt->name));
-	datafmt->namelen = strlen(datafmt->name);
+        datafmt->namelen = (TDS_INT) strlen(datafmt->name);
 	/* need to turn the SYBxxx into a CS_xxx_TYPE */
         datafmt->datatype = _ct_get_client_type(cmd->con->ctx, curcol);
 	if (datafmt->datatype == CS_ILLEGAL_TYPE)
@@ -2527,7 +2529,8 @@ ct_config(CS_CONTEXT * ctx, CS_INT action, CS_INT property, CS_VOID * buffer, CS
 					);
 					((char*)buffer)[buflen - 1]= 0;
 					if (*outlen < 0)
-						*outlen = strlen((char*) buffer);
+                                                *outlen = (CS_INT)
+                                                        strlen((char*) buffer);
 					ret = CS_SUCCEED;
 				}
 				break;
@@ -2547,7 +2550,8 @@ ct_config(CS_CONTEXT * ctx, CS_INT action, CS_INT property, CS_VOID * buffer, CS
 					*outlen= snprintf((char*) buffer, buflen, "%s", settings->freetds_version);
 					((char*)buffer)[buflen - 1]= 0;
 					if (*outlen < 0)
-						*outlen = strlen((char*) buffer);
+                                                *outlen = (CS_INT)
+                                                        strlen((char*) buffer);
 					ret = CS_SUCCEED;
 				}
 				break;
@@ -2660,7 +2664,7 @@ ct_cmd_props(CS_COMMAND * cmd, CS_INT action, CS_INT property, CS_VOID * buffer,
 				if ((CS_INT) len >= buflen)
 					return CS_FAIL;
 				strcpy((char*) buffer, cursor->cursor_name);
-				if (outlen) *outlen = len;
+                                if (outlen) *outlen = (CS_INT) len;
 			}
 			if (property == CS_CUR_ROWCOUNT) {
 				*(CS_INT *)buffer = cursor->cursor_rows;
@@ -2846,7 +2850,7 @@ ct_get_data(CS_COMMAND * cmd, CS_INT item, CS_VOID * buffer, CS_INT buflen, CS_I
 			(int) table_namelen, (int) table_namelen, tds_dstr_cstr(&curcol->table_name),
 			(int) column_namelen, (int) column_namelen, tds_dstr_cstr(&curcol->column_name));
 
-		cmd->iodesc->namelen = strlen(cmd->iodesc->name);
+                cmd->iodesc->namelen = (CS_INT) strlen(cmd->iodesc->name);
 
 		if (blob && blob->valid_ptr) {
 			memcpy(cmd->iodesc->timestamp, blob->timestamp, CS_TS_SIZE);
@@ -3216,7 +3220,7 @@ ct_capability(CS_CONNECTION * con, CS_INT action, CS_INT type, CS_INT capability
 CS_RETCODE
 ct_dynamic(CS_COMMAND * cmd, CS_INT type, CS_CHAR * id, CS_INT idlen, CS_CHAR * buffer, CS_INT buflen)
 {
-	int query_len;
+        size_t query_len;
 	CS_CONNECTION *con;
 	CS_DYNAMIC *dyn;
 
@@ -4774,7 +4778,7 @@ _ct_allocate_dynamic(CS_CONNECTION * con, char *id, int idlen)
 {
 	CS_DYNAMIC *dyn;
 	CS_DYNAMIC **pdyn;
-	int id_len;
+        size_t id_len;
 
 	tdsdump_log(TDS_DBG_FUNC, "_ct_allocate_dynamic(%p, %p, %d)\n", con, id, idlen);
 
@@ -4807,7 +4811,7 @@ static CS_DYNAMIC *
 _ct_locate_dynamic(CS_CONNECTION * con, char *id, int idlen)
 {
 	CS_DYNAMIC *dyn;
-	int id_len;
+        size_t id_len;
 
 	tdsdump_log(TDS_DBG_FUNC, "_ct_locate_dynamic(%p, %p, %d)\n", con, id, idlen);
 

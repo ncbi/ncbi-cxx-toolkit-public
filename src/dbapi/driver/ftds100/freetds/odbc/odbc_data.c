@@ -374,6 +374,9 @@ data_generic_set_type_info(TDSCOLUMN * col, struct _drecord *drec, SQLINTEGER od
 		drec->sql_desc_octet_length = drec->sql_desc_length =
 			SQL_SS_LENGTH_UNLIMITED;
 		SET_INFO("xml", "'", "'");
+
+        default: /* SYBNUMERIC, etc. */
+                break;
 	}
 	SET_INFO("", "", "");
 }

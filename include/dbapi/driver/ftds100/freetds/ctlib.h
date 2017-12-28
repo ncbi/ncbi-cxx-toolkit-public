@@ -28,6 +28,14 @@
  * Internal (not part of the exposed API) prototypes and such.
  */
 
+/* Forward declarations to fix "declared with greater visibility" warnings */
+struct cs_diag_msg_client;
+struct cs_diag_msg_svr;
+struct cs_diag_msg;
+typedef struct _cs_dynamic      CS_DYNAMIC;
+typedef struct _cs_param        CS_PARAM;
+typedef struct _csremote_proc   CS_REMOTE_PROC;
+
 #include <freetds/pushvis.h>
 
 #ifdef __cplusplus
@@ -111,7 +119,6 @@ typedef struct _ct_colinfo
 }
 CT_COLINFO;
 
-typedef struct _cs_dynamic CS_DYNAMIC;
 
 struct _cs_connection
 {
@@ -133,7 +140,7 @@ struct _cs_connection
  * places, too.
  */
 
-typedef struct _cs_param
+struct _cs_param
 {
 	struct _cs_param *next;
 	char *name;
@@ -148,7 +155,7 @@ typedef struct _cs_param
 	int param_by_value;
 	CS_INT datalen_value;
 	CS_SMALLINT indicator_value;
-} CS_PARAM;
+} /* CS_PARAM */;
 
 /*
  * Code added for RPC functionality - SUHA
@@ -253,9 +260,9 @@ struct _cs_locale
 
 /* internal defines for cursor processing */
 
-#define _CS_CURS_TYPE_UNACTIONED 0
-#define _CS_CURS_TYPE_REQUESTED  1
-#define _CS_CURS_TYPE_SENT       2
+#define _CS_CURS_TYPE_UNACTIONED TDS_CURSOR_STATE_UNACTIONED
+#define _CS_CURS_TYPE_REQUESTED  TDS_CURSOR_STATE_REQUESTED
+#define _CS_CURS_TYPE_SENT       TDS_CURSOR_STATE_SENT
 
 /*
  * internal prototypes

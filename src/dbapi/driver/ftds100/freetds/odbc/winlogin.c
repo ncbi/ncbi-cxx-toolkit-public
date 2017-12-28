@@ -171,5 +171,7 @@ LoginDlgProc(HWND hDlg, UINT message, WPARAM wParam,	/* */
 BOOL
 get_login_info(HWND hwndParent, TDSLOGIN * login)
 {
-	return DialogBoxParam(hinstFreeTDS, MAKEINTRESOURCE(IDD_LOGIN), hwndParent, (DLGPROC) LoginDlgProc, (LPARAM) login);
+    return (BOOL)DialogBoxParam(hinstFreeTDS, MAKEINTRESOURCE(IDD_LOGIN),
+                                hwndParent, (DLGPROC) LoginDlgProc,
+                                (LPARAM) login);
 }

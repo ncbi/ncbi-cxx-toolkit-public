@@ -219,7 +219,7 @@ main(int argc, char **argv)
 				break;
 			}
 			assert(src);
-			srclen = strlen(src);
+                        srclen = (TDS_UINT) strlen(src);
                         if (srctype == SYBNTEXT  ||  srctype == SYBNVARCHAR
                             ||  srctype == XSYBNCHAR
                             ||  srctype == XSYBNVARCHAR) {

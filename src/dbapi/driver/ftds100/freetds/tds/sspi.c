@@ -17,10 +17,10 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#include <config.h>
-
 /* enabled some additional definitions for getaddrinfo */
 #define _WIN32_WINNT 0x601
+
+#include <config.h>
 
 /* fix possible bug in sspi.h header */
 #define FreeCredentialHandle FreeCredentialsHandle
@@ -216,13 +216,15 @@ tds_sspi_get_auth(TDSSOCKET * tds)
 	user_name = tds_dstr_cstr(&login->user_name);
 	if ((p = strchr(user_name, '\\')) != NULL) {
 		identity.Flags = SEC_WINNT_AUTH_IDENTITY_ANSI;
-		identity.Password = (void *) tds_dstr_cstr(&login->password);
-		identity.PasswordLength = tds_dstr_len(&login->password);
-		identity.Domain = (void *) user_name;
-		identity.DomainLength = p - user_name;
+                identity.Password
+                    = (unsigned char *) tds_dstr_cstr(&login->password);
+                identity.PasswordLength
+                    = (unsigned long)tds_dstr_len(&login->password);
+                identity.Domain = (unsigned char *) user_name;
+                identity.DomainLength = (unsigned long)(p - user_name);
 		user_name = p + 1;
-		identity.User = (void *) user_name;
-		identity.UserLength = strlen(user_name);
+                identity.User = (unsigned char *) user_name;
+                identity.UserLength = (unsigned long)strlen(user_name);
 	}
 
 	auth = tds_new0(TDSSSPIAUTH, 1);

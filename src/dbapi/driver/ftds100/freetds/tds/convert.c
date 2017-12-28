@@ -93,7 +93,7 @@ static const char *parse_numeric(const char *buf, const char *pend,
 #define IS_UINT(x) (0 <= (x) && (x) <= TDS_UINT_MAX)
 
 #define TDS_INT8_MAX ((((TDS_INT8) 0x7fffffffl) << 32) + (TDS_INT8) 0xfffffffflu)
-#define TDS_INT8_MIN  (((TDS_INT8) (-0x7fffffffl-1)) << 32)
+#define TDS_INT8_MIN (-TDS_INT8_MAX - (TDS_INT8) 1)
 #define IS_INT8(x) (TDS_INT8_MIN <= (x) && (x) <= TDS_INT8_MAX)
 
 #define TDS_UINT8_MAX ((((TDS_UINT8) 0xfffffffflu) << 32) + 0xfffffffflu)
@@ -158,7 +158,7 @@ const char tds_hex_digits[] = "0123456789abcdef";
  * Copy a terminated string to result and return len or TDS_CONVERT_NOMEM
  */
 static TDS_INT
-string_to_result(int desttype, const char *s, CONV_RESULT * cr)
+string_to_result_(int desttype, const char *s, CONV_RESULT * cr)
 {
 	size_t len = strlen(s);
 
@@ -173,7 +173,7 @@ string_to_result(int desttype, const char *s, CONV_RESULT * cr)
 }
 
 #define string_to_result(s, cr) \
-	string_to_result(desttype, s, cr)
+        string_to_result_(desttype, s, cr)
 
 /**
  * Copy binary data to to result and return len or TDS_CONVERT_NOMEM
@@ -292,10 +292,11 @@ tds_convert_binary(const TDS_UCHAR * src, TDS_INT srclen, int desttype, CONV_RES
 	return TDS_CONVERT_NOAVAIL;
 }
 
-TDS_INT
-tds_char2hex(TDS_CHAR *dest, TDS_UINT destlen, const TDS_CHAR * src, TDS_UINT srclen)
+ssize_t
+tds_char2hex(TDS_CHAR *dest, size_t destlen,
+             const TDS_CHAR * src, size_t srclen)
 {
-	unsigned int i;
+        size_t i;
 	unsigned char hex1, c = 0;
 
 	/* if srclen if odd we must add a "0" before ... */
@@ -1487,7 +1488,7 @@ tds_convert_bigdatetime(const TDSCONTEXT * tds_ctx, const TDS_BIGDATETIME * bigd
 	dta.time = bdt % ((TDS_UINT8) 86400u * 1000000u) * 10u;
 	bdt /= (TDS_UINT8) 86400u * 1000000u;
 	dta.has_date = 1;
-	dta.date = bdt - BIGDATETIME_BIAS;
+        dta.date = (TDS_INT) (bdt - BIGDATETIME_BIAS);
 	return tds_convert_datetimeall(tds_ctx, SYBMSDATETIME2, &dta, desttype, cr);
 }
 
@@ -1849,7 +1850,10 @@ tds_convert_to_binary(int srctype, const TDS_CHAR * src, TDS_UINT srclen, int de
 			test_alloc(cr->ib);
 			ib = cr->ib;
 		}
-		return tds_char2hex(ib, desttype == TDS_CONVERT_BINARY ? cr->cb.len : 0xffffffffu, src, srclen);
+                return (TDS_INT) tds_char2hex(ib,
+                                              desttype == TDS_CONVERT_BINARY
+                                              ? cr->cb.len : 0xffffffffu,
+                                              src, srclen);
 
 	default:
 		return TDS_CONVERT_NOAVAIL;
@@ -3190,7 +3194,7 @@ tds_datecrack(TDS_INT datetype, const void *di, TDSDATEREC * dr)
 		secs = bigdatetime % 60u;
 		bigdatetime /= 60u;
 		dt_time = bigdatetime % (24u*60u);
-		dt_days = bigdatetime / (24u*60u) - BIGDATETIME_BIAS;
+                dt_days = (int) (bigdatetime / (24u*60u) - BIGDATETIME_BIAS);
 	} else {
 		return TDS_FAIL;
 	}
