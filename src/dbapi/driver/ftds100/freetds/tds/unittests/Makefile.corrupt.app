@@ -10,6 +10,6 @@ LINK     = $(C_LINK)
 
 CHECK_CMD  = test-tds100 tds100_corrupt
 
-CHECK_REQUIRES = in-house-resources -MSWin
+CHECK_REQUIRES = in-house-resources
 
 WATCHERS = ucko satskyse

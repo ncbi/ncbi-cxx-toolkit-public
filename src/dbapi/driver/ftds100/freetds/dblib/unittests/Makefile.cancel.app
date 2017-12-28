@@ -12,6 +12,6 @@ LINK     = $(C_LINK)
 CHECK_CMD  = test-db100 db100_cancel
 CHECK_COPY = cancel.sql
 
-CHECK_REQUIRES = in-house-resources -FreeBSD -MSWin
+CHECK_REQUIRES = in-house-resources -FreeBSD
 
 WATCHERS = ucko satskyse

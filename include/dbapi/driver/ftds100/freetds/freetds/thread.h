@@ -344,6 +344,14 @@ static inline int tds_mutex_trylock(tds_mutex *mtx)
 	assert(mtx);
 	ret = tds_raw_mutex_trylock(&mtx->mtx);
 	if (!ret) {
+#ifdef _WIN32
+                /* disallow recursive locking! */
+                if (mtx->locked
+                    &&  mtx->locked_by == tds_thread_get_current_id()) {
+                        tds_raw_mutex_unlock(&mtx->mtx);
+                        return -1;
+                }
+#endif
 		assert(!mtx->locked);
 		mtx->locked = 1;
 		mtx->locked_by = tds_thread_get_current_id();
