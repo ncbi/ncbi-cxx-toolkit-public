@@ -1086,6 +1086,7 @@ CEREAL_INCLUDE
 MONGODB_STATIC_LIBS
 MONGODB3_STATIC_LIBS
 LMDB_LIB
+LMDB_STATIC_LIBS
 LIBUV_STATIC_LIBS
 LIBSSH2_STATIC_LIBS
 CASSANDRA_STATIC_LIBS
@@ -49452,6 +49453,11 @@ _ACEOF
              WithPackages="$WithPackages${WithPackagesSep}LMDB"; WithPackagesSep=" "
              WithPackages="$WithPackages${WithPackagesSep}LocalLMDB"; WithPackagesSep=" "
 fi
+if test "$with_lmdb" != no -a -f "$LMDB_PATH/lib/liblmdb-static.a"; then
+    LMDB_STATIC_LIBS="-L$LMDB_PATH/lib -llmdb-static"
+else
+    LMDB_STATIC_LIBS=$LMDB_LIBS
+fi
 
 # libuv
 case "$with_libuv" in
@@ -51508,6 +51514,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -52827,13 +52834,13 @@ CEREAL_INCLUDE!$CEREAL_INCLUDE$ac_delim
 MONGODB_STATIC_LIBS!$MONGODB_STATIC_LIBS$ac_delim
 MONGODB3_STATIC_LIBS!$MONGODB3_STATIC_LIBS$ac_delim
 LMDB_LIB!$LMDB_LIB$ac_delim
+LMDB_STATIC_LIBS!$LMDB_STATIC_LIBS$ac_delim
 LIBUV_STATIC_LIBS!$LIBUV_STATIC_LIBS$ac_delim
 LIBSSH2_STATIC_LIBS!$LIBSSH2_STATIC_LIBS$ac_delim
 CASSANDRA_STATIC_LIBS!$CASSANDRA_STATIC_LIBS$ac_delim
 LIBXLSXWRITER_STATIC_LIBS!$LIBXLSXWRITER_STATIC_LIBS$ac_delim
 GRPC_UNSECURE_LIBS!$GRPC_UNSECURE_LIBS$ac_delim
 GRPC_REFLECTION_LIBS!$GRPC_REFLECTION_LIBS$ac_delim
-GRPC_BIN!$GRPC_BIN$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -52875,6 +52882,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+GRPC_BIN!$GRPC_BIN$ac_delim
 MSGSL_INCLUDE!$MSGSL_INCLUDE$ac_delim
 ncbi_xreader_pubseqos!$ncbi_xreader_pubseqos$ac_delim
 ncbi_xreader_pubseqos2!$ncbi_xreader_pubseqos2$ac_delim
@@ -52921,7 +52929,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 44; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 45; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
