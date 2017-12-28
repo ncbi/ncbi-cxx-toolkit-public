@@ -28,9 +28,6 @@
 #ifndef _sybdb_h_
 #define _sybdb_h_
 
-#ifndef NCBI_FTDS_RENAME_SYBDB
-#  define NCBI_FTDS_RENAME_SYBDB 1
-#endif
 #include "../impl/rename_ftds_dblib.h"
 
 #include "tds_sysdep_public.h"
@@ -848,10 +845,15 @@ RETCODE dbpivot(DBPROCESS *dbproc, int nkeys, int *keys, int ncols, int *cols, D
 
 DBPIVOT_FUNC dbpivot_lookup_name( const char name[] );
 
+#ifndef _FREETDS_LIBRARY_SOURCE
+#ifdef dbopen
+#undef dbopen
+#endif
 #ifdef MSDBLIB
 #define   dbopen(x,y) tdsdbopen((x),(y), 1)
 #else
 #define   dbopen(x,y) tdsdbopen((x),(y), 0)
+#endif
 #endif
 
 /* fix PHP problem */

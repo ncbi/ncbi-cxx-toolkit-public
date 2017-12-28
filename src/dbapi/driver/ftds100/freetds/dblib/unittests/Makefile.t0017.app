@@ -12,6 +12,6 @@ LINK     = $(C_LINK)
 CHECK_CMD  = test-db100 db100_t0017
 CHECK_COPY = t0017.sql t0017.in t0017.in.be
 
-CHECK_REQUIRES = in-house-resources -FreeBSD
+CHECK_REQUIRES = in-house-resources
 
 WATCHERS = ucko satskyse

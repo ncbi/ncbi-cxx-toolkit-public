@@ -12,6 +12,6 @@ LINK     = $(C_LINK)
 # CHECK_CMD  = test-db100 --no-auto db100_numeric
 # CHECK_COPY = numeric.sql numeric_2.sql
 
-# CHECK_REQUIRES = in-house-resources -FreeBSD
+# CHECK_REQUIRES = in-house-resources
 
 WATCHERS = ucko satskyse

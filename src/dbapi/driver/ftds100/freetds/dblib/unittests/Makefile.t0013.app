@@ -13,6 +13,6 @@ LINK     = $(C_LINK)
 CHECK_CMD  = test-db100 --ms-ver 7.1 --no-auto db100_t0013
 CHECK_COPY = t0013.sql data.bin
 
-CHECK_REQUIRES = in-house-resources -FreeBSD
+CHECK_REQUIRES = in-house-resources
 
 WATCHERS = ucko satskyse
