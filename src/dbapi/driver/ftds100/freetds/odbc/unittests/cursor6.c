@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include <common/test_assert.h>
+
 /* Test SQLFetchScroll with no bound columns */
 
 static int bind_all = 0;

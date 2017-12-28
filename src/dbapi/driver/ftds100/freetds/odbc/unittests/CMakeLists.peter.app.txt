@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_peter-app
+    peter common
+)
+
+set_target_properties(odbc100_peter-app PROPERTIES OUTPUT_NAME odbc100_peter)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_peter-app
+    odbc_ftds100
+)
+

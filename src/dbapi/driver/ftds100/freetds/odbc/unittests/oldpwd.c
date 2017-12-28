@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include <common/test_assert.h>
+
 /* change password on server */
 
 static void

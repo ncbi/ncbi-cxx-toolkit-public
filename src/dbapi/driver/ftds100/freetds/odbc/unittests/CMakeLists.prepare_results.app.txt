@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_prepare_results-app
+    prepare_results common
+)
+
+set_target_properties(odbc100_prepare_results-app PROPERTIES OUTPUT_NAME odbc100_prepare_results)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_prepare_results-app
+    odbc_ftds100
+)
+

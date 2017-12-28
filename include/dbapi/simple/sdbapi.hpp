@@ -1234,7 +1234,8 @@ public:
     /// @sa UseDriver
     enum EDriver {
         eDriver_FTDS64,
-        eDriver_FTDS95
+        eDriver_FTDS95,
+        eDriver_FTDS100
     };
     /// Use the specified driver for all connections.
     ///

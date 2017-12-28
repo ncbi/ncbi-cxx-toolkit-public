@@ -1,0 +1,13 @@
+#
+#
+#
+add_executable(test-tds100-app
+    test-tds100
+)
+
+set_target_properties(test-tds100-app PROPERTIES OUTPUT_NAME test-tds100)
+
+target_link_libraries(test-tds100-app
+    xncbi
+)
+

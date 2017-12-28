@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(tds100_toodynamic-app
+    toodynamic common
+)
+
+set_target_properties(tds100_toodynamic-app PROPERTIES OUTPUT_NAME tds100_toodynamic)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE})
+
+target_link_libraries(tds100_toodynamic-app
+    tds_ftds100
+)
+

@@ -9,6 +9,8 @@
 #include <ctpublic.h>
 #include "common.h"
 
+#include <common/test_assert.h>
+
 /* Testing: data truncation behavior of ct_fetch */
 int
 main(int argc, char *argv[])

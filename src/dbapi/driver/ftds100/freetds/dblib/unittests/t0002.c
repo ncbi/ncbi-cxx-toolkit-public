@@ -8,7 +8,8 @@
 #endif
 
 #include "common.h"
-#include <assert.h>
+
+#include <common/test_assert.h>
 
 int failed = 0;
 

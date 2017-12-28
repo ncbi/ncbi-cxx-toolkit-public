@@ -13,6 +13,8 @@
 #include <ctpublic.h>
 #include "common.h"
 
+#include <common/test_assert.h>
+
 static const char *printable_ret(CS_RETCODE ret)
 {
 #define CASE(x) case x: return #x;

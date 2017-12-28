@@ -8,6 +8,8 @@
 #include <unistd.h>
 #endif /* HAVE_UNISTD_H */
 
+#include <common/test_assert.h>
+
 static DBPROCESS *dbproc = NULL;
 static int failed = 0;
 

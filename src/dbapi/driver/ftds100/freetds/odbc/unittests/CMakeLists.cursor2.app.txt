@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_cursor2-app
+    cursor2 common
+)
+
+set_target_properties(odbc100_cursor2-app PROPERTIES OUTPUT_NAME odbc100_cursor2)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_cursor2-app
+    odbc_ftds100
+)
+

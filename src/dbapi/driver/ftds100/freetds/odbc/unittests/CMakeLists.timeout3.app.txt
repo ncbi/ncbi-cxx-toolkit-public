@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_timeout3-app
+    timeout3 common
+)
+
+set_target_properties(odbc100_timeout3-app PROPERTIES OUTPUT_NAME odbc100_timeout3)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_timeout3-app
+    odbc_ftds100
+)
+

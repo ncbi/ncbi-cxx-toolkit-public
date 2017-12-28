@@ -8,6 +8,8 @@
 #include <ctpublic.h>
 #include "common.h"
 
+#include <common/test_assert.h>
+
 /* Testing: Client Messages */
 int
 main(int argc, char *argv[])

@@ -8,7 +8,6 @@
 #include <config.h>
 
 #include <stdio.h>
-#include <assert.h>
 
 #if HAVE_STDLIB_H
 #include <stdlib.h>
@@ -26,6 +25,8 @@
 #include <ctpublic.h>
 #include <bkpublic.h>
 #include "common.h"
+
+#include <common/test_assert.h>
 
 static const char create_table_sql[] = "CREATE TABLE hogexxx (col varchar(100))";
 

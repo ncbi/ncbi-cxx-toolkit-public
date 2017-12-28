@@ -1,1 +1,1 @@
-#include "../../win32/initnet.c"
+#include "../win32/initnet.c"

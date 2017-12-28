@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include <common/test_assert.h>
+
 /* Test for store procedure and params */
 /* Test from Tom Rogers */
 

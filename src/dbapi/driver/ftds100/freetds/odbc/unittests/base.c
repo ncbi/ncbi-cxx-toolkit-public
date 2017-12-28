@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include <common/test_assert.h>
+
 /* TODO place comment here */
 
 int

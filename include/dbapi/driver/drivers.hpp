@@ -47,6 +47,7 @@ extern void DBAPI_RegisterDriver_DBLIB      (void);
 extern void DBAPI_RegisterDriver_FTDS       (void);
 extern void DBAPI_RegisterDriver_FTDS64     (void);
 extern void DBAPI_RegisterDriver_FTDS95     (void);
+extern void DBAPI_RegisterDriver_FTDS100    (void);
 extern void DBAPI_RegisterDriver_ODBC       (void);
 extern void DBAPI_RegisterDriver_MYSQL      (void);
 // Development ...

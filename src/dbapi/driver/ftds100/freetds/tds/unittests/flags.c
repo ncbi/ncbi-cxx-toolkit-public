@@ -21,6 +21,8 @@
 
 #include <freetds/convert.h>
 
+#include <common/test_assert.h>
+
 static TDSLOGIN *login;
 static TDSSOCKET *tds;
 

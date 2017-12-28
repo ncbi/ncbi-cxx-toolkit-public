@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_print-app
+    print common
+)
+
+set_target_properties(odbc100_print-app PROPERTIES OUTPUT_NAME odbc100_print)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_print-app
+    odbc_ftds100
+)
+

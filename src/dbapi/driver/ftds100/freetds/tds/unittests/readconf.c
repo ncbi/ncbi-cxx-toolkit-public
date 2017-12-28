@@ -18,6 +18,8 @@
  */
 #include "common.h"
 
+#include <common/test_assert.h>
+
 static FILE *f = NULL;
 static char *return_value = NULL;
 

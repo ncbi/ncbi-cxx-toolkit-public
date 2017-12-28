@@ -5,6 +5,11 @@
 
 #include <freetds/pushvis.h>
 
+/* Rename functions in order to avoid conflicts with other versions. */
+#define MD4Init   FTDS100_MD4Init
+#define MD4Update FTDS100_MD4Update
+#define MD4Final  FTDS100_MD4Final
+
 struct MD4Context
 {
 	TDS_UINT buf[4];

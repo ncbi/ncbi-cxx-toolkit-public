@@ -11,6 +11,8 @@
 #include <freetds/thread.h>
 #include "replacements.h"
 
+#include <common/test_assert.h>
+
 #if TDS_HAVE_MUTEX
 
 #ifdef _WIN32

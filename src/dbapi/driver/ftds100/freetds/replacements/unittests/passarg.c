@@ -29,11 +29,11 @@
 #include <unistd.h>
 #endif
 
-#include <assert.h>
-
 #include <freetds/sysdep_private.h>
 
 #include "replacements.h"
+
+#include <common/test_assert.h>
 
 int main(void)
 {

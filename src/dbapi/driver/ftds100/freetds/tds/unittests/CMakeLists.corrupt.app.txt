@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(tds100_corrupt-app
+    corrupt common
+)
+
+set_target_properties(tds100_corrupt-app PROPERTIES OUTPUT_NAME tds100_corrupt)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE})
+
+target_link_libraries(tds100_corrupt-app
+    tds_ftds100
+)
+

@@ -1,0 +1,24 @@
+# $Id$
+
+LIB = tds_ftds100
+SRC = mem token util login read write convert numeric config query iconv \
+      locale threadsafe vstrbuild tdsstring getmac data net tls tds_checks \
+      log dlist bulk packet stream random sec_negotiate \
+      challenge md4 md5 des gssapi hmac_md5 sspi \
+      rp_iconv ../replacements/gettimeofday ../replacements/poll \
+      ../replacements/getpassarg ../replacements/socketpair \
+      ../replacements/win_mutex ../replacements/tds_cond \
+      ../replacements/getaddrinfo ../replacements/sleep \
+      rp_asprintf ../replacements/basename rp_getopt \
+      ../replacements/readpassphrase rp_strlcat rp_strlcpy \
+      rp_strtok_r rp_strsep rp_vasprintf ../replacements/daemon
+
+CPPFLAGS = -D_FREETDS_LIBRARY_SOURCE -DHAVE_CONFIG_H=1 $(FTDS100_INCLUDE) \
+           $(ORIG_CPPFLAGS)
+
+# LIBS    = $(FTDS100_LIBS) $(NETWORK_LIBS) $(RT_LIBS) $(C_LIBS)
+# LINK    = $(C_LINK)
+
+LIB_OR_DLL = lib
+
+WATCHERS = ucko satskyse

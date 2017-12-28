@@ -3,7 +3,8 @@
 
 #include "common.h"
 #include <ctype.h>
-#include <assert.h>
+
+#include <common/test_assert.h>
 
 #define NBYTES 10000u
 

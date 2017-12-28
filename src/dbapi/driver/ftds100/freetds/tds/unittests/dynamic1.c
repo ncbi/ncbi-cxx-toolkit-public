@@ -18,6 +18,8 @@
  */
 #include "common.h"
 
+#include <common/test_assert.h>
+
 static int discard_result(TDSSOCKET * tds);
 
 static void

@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_paramcore-app
+    paramcore common
+)
+
+set_target_properties(odbc100_paramcore-app PROPERTIES OUTPUT_NAME odbc100_paramcore)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_paramcore-app
+    odbc_ftds100
+)
+

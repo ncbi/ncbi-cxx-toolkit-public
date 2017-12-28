@@ -1,0 +1,8 @@
+# $Id$
+
+SUB_PROJ = freetds ctlib
+
+REQUIRES = FreeTDS
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

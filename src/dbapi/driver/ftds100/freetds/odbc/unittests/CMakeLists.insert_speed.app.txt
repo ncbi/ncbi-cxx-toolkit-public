@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_insert_speed-app
+    insert_speed common
+)
+
+set_target_properties(odbc100_insert_speed-app PROPERTIES OUTPUT_NAME odbc100_insert_speed)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_insert_speed-app
+    odbc_ftds100
+)
+

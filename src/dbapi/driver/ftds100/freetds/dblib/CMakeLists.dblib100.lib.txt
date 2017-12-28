@@ -1,0 +1,13 @@
+#
+#
+#
+add_library(sybdb_ftds100
+    dblib dbutil rpc bcp xact dbpivot dbopen
+)
+# winmain?
+include_directories(SYSTEM ${FTDS100_INCLUDE})
+add_definitions(-D_FREETDS_LIBRARY_SOURCE -DHAVE_CONFIG_H=1)
+
+target_link_libraries(sybdb_ftds100
+    tds_ftds100 ${FTDS100_LIBS} ${NETWORK_LIBS} ${RT_LIBS} ${C_LIBS}
+)

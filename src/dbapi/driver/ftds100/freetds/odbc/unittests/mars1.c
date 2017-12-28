@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include <common/test_assert.h>
+
 /* first MARS test, test 2 concurrent recordset */
 
 #define SET_STMT(n) do { \

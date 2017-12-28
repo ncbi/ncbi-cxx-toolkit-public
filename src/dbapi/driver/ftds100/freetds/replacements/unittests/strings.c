@@ -26,9 +26,9 @@
 #include <stdlib.h>
 #endif /* HAVE_STDLIB_H */
 
-#include <assert.h>
-
 #include "replacements.h"
+
+#include <common/test_assert.h>
 
 /* If the system supplies these, we're going to simulate the situation
  * where it doesn't so we're always testing our own versions.

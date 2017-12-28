@@ -6,6 +6,8 @@
 
 #include "common.h"
 
+#include <common/test_assert.h>
+
 static int
 cancel_msg_handler(DBPROCESS * dbproc, DBINT msgno, int msgstate, int severity, char *msgtext, char *srvname, char *procname, int line)
 {

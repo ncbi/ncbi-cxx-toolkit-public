@@ -4,7 +4,8 @@
  */
 
 #include "common.h"
-#include <assert.h>
+
+#include <common/test_assert.h>
 
 static int failed = 0;
 static int got_error = 0;

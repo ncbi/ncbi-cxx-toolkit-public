@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_attributes-app
+    attributes common
+)
+
+set_target_properties(odbc100_attributes-app PROPERTIES OUTPUT_NAME odbc100_attributes)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_attributes-app
+    odbc_ftds100
+)
+

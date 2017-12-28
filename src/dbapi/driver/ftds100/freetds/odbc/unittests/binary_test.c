@@ -5,7 +5,8 @@
  */
 
 #include "common.h"
-#include <assert.h>
+
+#include <common/test_assert.h>
 
 #define ERR_BUF_SIZE 256
 /* 

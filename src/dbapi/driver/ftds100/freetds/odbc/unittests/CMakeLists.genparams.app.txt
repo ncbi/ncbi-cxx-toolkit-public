@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_genparams-app
+    genparams common c2string
+)
+
+set_target_properties(odbc100_genparams-app PROPERTIES OUTPUT_NAME odbc100_genparams)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_genparams-app
+    odbc_ftds100
+)
+

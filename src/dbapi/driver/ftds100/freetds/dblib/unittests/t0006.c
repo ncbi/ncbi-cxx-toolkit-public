@@ -5,6 +5,8 @@
 
 #include "common.h"
 
+#include <common/test_assert.h>
+
 static char teststr[1024];
 static DBINT testint;
 

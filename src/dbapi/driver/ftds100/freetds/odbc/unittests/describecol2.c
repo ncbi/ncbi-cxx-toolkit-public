@@ -1,6 +1,8 @@
 #include "common.h"
 #include <ctype.h>
 
+#include <common/test_assert.h>
+
 /*
  * SQLDescribeCol test
  */

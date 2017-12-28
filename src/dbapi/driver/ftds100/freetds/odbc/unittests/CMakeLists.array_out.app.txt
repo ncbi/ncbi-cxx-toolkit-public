@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_array_out-app
+    array_out common
+)
+
+set_target_properties(odbc100_array_out-app PROPERTIES OUTPUT_NAME odbc100_array_out)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_array_out-app
+    odbc_ftds100
+)
+

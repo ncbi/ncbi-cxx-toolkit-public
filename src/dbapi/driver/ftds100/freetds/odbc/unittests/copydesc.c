@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include <common/test_assert.h>
+
 /* Test SQLCopyDesc and SQLAllocHandle(SQL_HANDLE_DESC) */
 
 static char software_version[] = "$Id$";

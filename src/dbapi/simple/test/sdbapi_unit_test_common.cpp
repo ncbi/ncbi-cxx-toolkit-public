@@ -192,6 +192,8 @@ CTestArguments::CTestArguments(void)
             CSDBAPI::UseDriver(CSDBAPI::eDriver_FTDS64);
         } else if (driver == "ftds95") {
             CSDBAPI::UseDriver(CSDBAPI::eDriver_FTDS95);
+        } else if (driver == "ftds100") {
+            CSDBAPI::UseDriver(CSDBAPI::eDriver_FTDS100);
         } else {
             _ASSERT(driver == "ftds");
         }
@@ -238,7 +240,8 @@ NCBITEST_INIT_CMDLINE(arg_desc)
                             "DBAPI driver to use",
                             CArgDescriptions::eString, "ftds");
     arg_desc->SetConstraint
-        ("dr", &(*new CArgAllow_Strings, "ftds", "ftds64", "ftds95"));
+        ("dr", &(*new CArgAllow_Strings,
+                 "ftds", "ftds64", "ftds95", "ftds100"));
 
     arg_desc->AddOptionalKey("V", "version", "TDS protocol version to use",
                              CArgDescriptions::eString);

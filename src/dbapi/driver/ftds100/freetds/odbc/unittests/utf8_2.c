@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include <common/test_assert.h>
+
 /* test conversion of Hebrew characters (which have shift sequences) */
 
 static void init_connect(void);

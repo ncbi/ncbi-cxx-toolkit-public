@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_bcp-app
+    bcp common
+)
+
+set_target_properties(odbc100_bcp-app PROPERTIES OUTPUT_NAME odbc100_bcp)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_bcp-app
+    odbc_ftds100
+)
+

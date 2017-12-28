@@ -1,6 +1,8 @@
 #define TDS_DONT_DEFINE_DEFAULT_FUNCTIONS
 #include "common.h"
 
+#include <common/test_assert.h>
+
 char USER[512];
 char SERVER[512];
 char PASSWORD[512];

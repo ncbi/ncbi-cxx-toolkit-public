@@ -21,8 +21,9 @@
 
 #include <freetds/string.h>
 #include <ctype.h>
-#include <assert.h>
 #include <replacements.h>
+
+#include <common/test_assert.h>
 
 static TDSSOCKET *tds;
 

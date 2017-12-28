@@ -39,8 +39,6 @@
 #include "ctlib.h"
 #include "replacements.h"
 
-#undef cs_dt_crack
-
 static CS_INT cs_diag_storemsg(CS_CONTEXT *context, CS_CLIENTMSG *message);
 static CS_INT cs_diag_clearmsg(CS_CONTEXT *context, CS_INT type);
 static CS_INT cs_diag_getmsg(CS_CONTEXT *context, CS_INT idx, CS_CLIENTMSG *message);

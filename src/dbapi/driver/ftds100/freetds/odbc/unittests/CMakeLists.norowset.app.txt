@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_norowset-app
+    norowset common
+)
+
+set_target_properties(odbc100_norowset-app PROPERTIES OUTPUT_NAME odbc100_norowset)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_norowset-app
+    odbc_ftds100
+)
+

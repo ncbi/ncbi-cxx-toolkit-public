@@ -65,10 +65,11 @@
 #include <string.h>
 #endif /* HAVE_STRING_H */
 
-#include <assert.h>
 #include <ctpublic.h>
 #include "common.h"
 #include "replacements.h"
+
+#include <common/test_assert.h>
 
 static CS_CONTEXT *ctx;
 static CS_CONNECTION *conn;

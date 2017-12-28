@@ -21,11 +21,12 @@
  * Purpose: test challenge code.
  */
 #include "common.h"
-#include <assert.h>
 #include "md4.h"
 #include "md5.h"
 #include "hmac_md5.h"
 #include "des.h"
+
+#include <common/test_assert.h>
 
 static char *
 bin2ascii(char *dest, const void *data, size_t len)

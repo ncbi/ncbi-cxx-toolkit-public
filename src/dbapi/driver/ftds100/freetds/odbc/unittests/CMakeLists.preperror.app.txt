@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_preperror-app
+    preperror common
+)
+
+set_target_properties(odbc100_preperror-app PROPERTIES OUTPUT_NAME odbc100_preperror)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_preperror-app
+    odbc_ftds100
+)
+

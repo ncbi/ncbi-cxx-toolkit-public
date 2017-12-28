@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_descrec-app
+    descrec common
+)
+
+set_target_properties(odbc100_descrec-app PROPERTIES OUTPUT_NAME odbc100_descrec)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_descrec-app
+    odbc_ftds100
+)
+

@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_tables-app
+    tables common
+)
+
+set_target_properties(odbc100_tables-app PROPERTIES OUTPUT_NAME odbc100_tables)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_tables-app
+    odbc_ftds100
+)
+

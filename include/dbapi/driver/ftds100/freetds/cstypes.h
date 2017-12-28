@@ -22,6 +22,11 @@
 
 #include "tds_sysdep_public.h"
 
+#ifndef NCBI_DBAPI_RENAME_CTLIB
+#  define NCBI_DBAPI_RENAME_CTLIB
+#endif
+#include <../impl/rename_ftds_ctlib.h>
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -34,11 +39,11 @@ static const char rcsid_cstypes_h[] = "$Id$";
 static const void *const no_unused_cstypes_h_warn[] = { rcsid_cstypes_h, no_unused_cstypes_h_warn };
 
 typedef tds_sysdep_int32_type 		CS_INT;
-typedef unsigned tds_sysdep_int32_type 	CS_UINT;
+typedef tds_sysdep_uint32_type      CS_UINT;
 typedef tds_sysdep_int64_type 		CS_BIGINT;
-typedef unsigned tds_sysdep_int64_type 	CS_UBIGINT;
+typedef tds_sysdep_uint64_type      CS_UBIGINT;
 typedef tds_sysdep_int16_type 		CS_SMALLINT;
-typedef unsigned tds_sysdep_int16_type 	CS_USMALLINT;
+typedef tds_sysdep_uint16_type      CS_USMALLINT;
 typedef unsigned char 			CS_TINYINT;
 typedef char 				CS_CHAR;
 typedef unsigned char 			CS_BYTE;
@@ -52,7 +57,7 @@ typedef unsigned char 			CS_LONGBINARY;
 typedef unsigned char 			CS_LONGCHAR;
 typedef long 				CS_LONG;
 typedef unsigned char 			CS_BINARY;
-typedef unsigned tds_sysdep_int16_type 	CS_USHORT;
+typedef tds_sysdep_uint16_type      CS_USHORT;
 typedef unsigned char 			CS_BIT;
 
 typedef CS_INT CS_RETCODE;

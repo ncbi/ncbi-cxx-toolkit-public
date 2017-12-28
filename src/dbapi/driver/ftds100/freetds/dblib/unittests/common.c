@@ -20,6 +20,8 @@
 
 #include "replacements.h"
 
+#include <common/test_assert.h>
+
 #if !defined(PATH_MAX)
 #define PATH_MAX 256
 #endif

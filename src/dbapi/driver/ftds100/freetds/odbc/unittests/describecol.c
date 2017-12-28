@@ -3,6 +3,8 @@
 #include "parser.h"
 #include <odbcss.h>
 
+#include <common/test_assert.h>
+
 /*
  * SQLDescribeCol test for precision
  * test what say SQLDescribeCol about precision using some type

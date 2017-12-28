@@ -37,6 +37,8 @@ char *tds_strtok_r(char *str, const char *sep, char **lasts);
 
 #include <stdlib.h>
 
+#include <common/test_assert.h>
+
 static void
 test(const char *s, const char *sep)
 {

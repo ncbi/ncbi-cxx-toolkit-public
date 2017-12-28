@@ -758,6 +758,12 @@ FTDS95_LIB
 FTDS95_CTLIB_INCLUDE
 FTDS95_CTLIB_LIBS
 FTDS95_CTLIB_LIB
+FTDS100_INCLUDE
+FTDS100_LIBS
+FTDS100_LIB
+FTDS100_CTLIB_INCLUDE
+FTDS100_CTLIB_LIBS
+FTDS100_CTLIB_LIB
 FTDS_INCLUDE
 FTDS_LIBS
 FTDS_LIB
@@ -33197,6 +33203,9 @@ if test "$with_ftds" != "no" ; then
          ;;
       95 | 0.95 | yes | '' )
          ;;
+      100 | 1.00 )
+         ftds_ver=100
+         ;;
       * )
          FTDS_PATH=$with_ftds
          try_local=no
@@ -33265,6 +33274,22 @@ if test "$with_ftds" != "no" ; then
       FTDS95_LIB='$(FTDS95_CTLIB_LIB)'
       FTDS95_LIBS='$(FTDS95_CTLIB_LIBS)'
       FTDS95_INCLUDE='$(FTDS95_CTLIB_INCLUDE)'
+
+   d="dbapi/driver/ftds100/freetds"
+      if test $try_local = yes -a -f "${real_srcdir}/src/$d/Makefile.in" ; then
+         test "$ftds_ver" = 100  &&  FTDS_PATH="<$d>"
+         FTDS100_CTLIB_LIB="ct_ftds100${STATIC} tds_ftds100${STATIC}"
+         FTDS100_CTLIB_LIBS='$(ICONV_LIBS) $(KRB5_LIBS) $(NETWORK_LIBS)'
+         FTDS100_CTLIB_INCLUDE="-I\$(includedir)/$d -I\$(includedir0)/$d"
+         freetds=freetds
+      elif test -d "$FTDS_PATH" ; then
+         FTDS100_CTLIB_LIB=
+         FTDS100_CTLIB_LIBS=$FTDS_CTLIBS
+         FTDS100_CTLIB_INCLUDE=$FTDS_INCLUDE
+      fi
+      FTDS100_LIB='$(FTDS100_CTLIB_LIB)'
+      FTDS100_LIBS='$(FTDS100_CTLIB_LIBS)'
+      FTDS100_INCLUDE='$(FTDS100_CTLIB_INCLUDE)'
 
    if test -n "$freetds" ; then
       FTDS_LIB="\$(FTDS${ftds_ver}_LIB)"
@@ -33386,6 +33411,12 @@ if test "$with_ftds" = "no" ; then
    FTDS95_CTLIB_INCLUDE=
    FTDS95_CTLIB_LIBS=
    FTDS95_CTLIB_LIB=
+   FTDS100_INCLUDE=
+   FTDS100_LIBS=
+   FTDS100_LIB=
+   FTDS100_CTLIB_INCLUDE=
+   FTDS100_CTLIB_LIBS=
+   FTDS100_CTLIB_LIB=
    freetds=
 else
 
@@ -33395,6 +33426,12 @@ _ACEOF
 
              WithPackages="$WithPackages${WithPackagesSep}FreeTDS"; WithPackagesSep=" "
 fi
+
+
+
+
+
+
 
 
 
@@ -52339,6 +52376,12 @@ FTDS95_LIB!$FTDS95_LIB$ac_delim
 FTDS95_CTLIB_INCLUDE!$FTDS95_CTLIB_INCLUDE$ac_delim
 FTDS95_CTLIB_LIBS!$FTDS95_CTLIB_LIBS$ac_delim
 FTDS95_CTLIB_LIB!$FTDS95_CTLIB_LIB$ac_delim
+FTDS100_INCLUDE!$FTDS100_INCLUDE$ac_delim
+FTDS100_LIBS!$FTDS100_LIBS$ac_delim
+FTDS100_LIB!$FTDS100_LIB$ac_delim
+FTDS100_CTLIB_INCLUDE!$FTDS100_CTLIB_INCLUDE$ac_delim
+FTDS100_CTLIB_LIBS!$FTDS100_CTLIB_LIBS$ac_delim
+FTDS100_CTLIB_LIB!$FTDS100_CTLIB_LIB$ac_delim
 FTDS_INCLUDE!$FTDS_INCLUDE$ac_delim
 FTDS_LIBS!$FTDS_LIBS$ac_delim
 FTDS_LIB!$FTDS_LIB$ac_delim
@@ -52377,12 +52420,6 @@ LIBXSLT_INCLUDE!$LIBXSLT_INCLUDE$ac_delim
 LIBXSLT_LIBS!$LIBXSLT_LIBS$ac_delim
 XSLTPROC!$XSLTPROC$ac_delim
 LIBEXSLT_INCLUDE!$LIBEXSLT_INCLUDE$ac_delim
-LIBEXSLT_LIBS!$LIBEXSLT_LIBS$ac_delim
-SQLITE3_INCLUDE!$SQLITE3_INCLUDE$ac_delim
-SQLITE3_LIBS!$SQLITE3_LIBS$ac_delim
-OECHEM_INCLUDE!$OECHEM_INCLUDE$ac_delim
-OECHEM_LIBS!$OECHEM_LIBS$ac_delim
-SGE_INCLUDE!$SGE_INCLUDE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -52424,6 +52461,12 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+LIBEXSLT_LIBS!$LIBEXSLT_LIBS$ac_delim
+SQLITE3_INCLUDE!$SQLITE3_INCLUDE$ac_delim
+SQLITE3_LIBS!$SQLITE3_LIBS$ac_delim
+OECHEM_INCLUDE!$OECHEM_INCLUDE$ac_delim
+OECHEM_LIBS!$OECHEM_LIBS$ac_delim
+SGE_INCLUDE!$SGE_INCLUDE$ac_delim
 SGE_LIBS!$SGE_LIBS$ac_delim
 MUPARSER_INCLUDE!$MUPARSER_INCLUDE$ac_delim
 MUPARSER_LIBS!$MUPARSER_LIBS$ac_delim
@@ -52515,12 +52558,6 @@ has_dll_loadable!$has_dll_loadable$ac_delim
 LINK_LOADABLE!$LINK_LOADABLE$ac_delim
 CFLAGS_DLL!$CFLAGS_DLL$ac_delim
 CXXFLAGS_DLL!$CXXFLAGS_DLL$ac_delim
-ALLOW_UNDEF!$ALLOW_UNDEF$ac_delim
-FORBID_UNDEF!$FORBID_UNDEF$ac_delim
-AS_NEEDED!$AS_NEEDED$ac_delim
-NO_AS_NEEDED!$NO_AS_NEEDED$ac_delim
-WHOLE_ARCHIVE!$WHOLE_ARCHIVE$ac_delim
-NO_WHOLE_ARCHIVE!$NO_WHOLE_ARCHIVE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -52562,6 +52599,12 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+ALLOW_UNDEF!$ALLOW_UNDEF$ac_delim
+FORBID_UNDEF!$FORBID_UNDEF$ac_delim
+AS_NEEDED!$AS_NEEDED$ac_delim
+NO_AS_NEEDED!$NO_AS_NEEDED$ac_delim
+WHOLE_ARCHIVE!$WHOLE_ARCHIVE$ac_delim
+NO_WHOLE_ARCHIVE!$NO_WHOLE_ARCHIVE$ac_delim
 OPT_GROUPS!$OPT_GROUPS$ac_delim
 local_lbsm!$local_lbsm$ac_delim
 ncbi_crypt!$ncbi_crypt$ac_delim
@@ -52653,12 +52696,6 @@ BOOST_TAG!$BOOST_TAG$ac_delim
 BOOST_FILESYSTEM_LIBS!$BOOST_FILESYSTEM_LIBS$ac_delim
 BOOST_FILESYSTEM_STATIC_LIBS!$BOOST_FILESYSTEM_STATIC_LIBS$ac_delim
 BOOST_IOSTREAMS_LIBS!$BOOST_IOSTREAMS_LIBS$ac_delim
-BOOST_IOSTREAMS_STATIC_LIBS!$BOOST_IOSTREAMS_STATIC_LIBS$ac_delim
-BOOST_PROGRAM_OPTIONS_LIBS!$BOOST_PROGRAM_OPTIONS_LIBS$ac_delim
-BOOST_PROGRAM_OPTIONS_STATIC_LIBS!$BOOST_PROGRAM_OPTIONS_STATIC_LIBS$ac_delim
-BOOST_REGEX_LIBS!$BOOST_REGEX_LIBS$ac_delim
-BOOST_REGEX_STATIC_LIBS!$BOOST_REGEX_STATIC_LIBS$ac_delim
-BOOST_SYSTEM_LIBS!$BOOST_SYSTEM_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -52700,6 +52737,12 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+BOOST_IOSTREAMS_STATIC_LIBS!$BOOST_IOSTREAMS_STATIC_LIBS$ac_delim
+BOOST_PROGRAM_OPTIONS_LIBS!$BOOST_PROGRAM_OPTIONS_LIBS$ac_delim
+BOOST_PROGRAM_OPTIONS_STATIC_LIBS!$BOOST_PROGRAM_OPTIONS_STATIC_LIBS$ac_delim
+BOOST_REGEX_LIBS!$BOOST_REGEX_LIBS$ac_delim
+BOOST_REGEX_STATIC_LIBS!$BOOST_REGEX_STATIC_LIBS$ac_delim
+BOOST_SYSTEM_LIBS!$BOOST_SYSTEM_LIBS$ac_delim
 BOOST_SYSTEM_STATIC_LIBS!$BOOST_SYSTEM_STATIC_LIBS$ac_delim
 BOOST_TEST_PEM_LIBS!$BOOST_TEST_PEM_LIBS$ac_delim
 BOOST_TEST_PEM_STATIC_LIBS!$BOOST_TEST_PEM_STATIC_LIBS$ac_delim
@@ -52791,12 +52834,6 @@ LIBXLSXWRITER_STATIC_LIBS!$LIBXLSXWRITER_STATIC_LIBS$ac_delim
 GRPC_UNSECURE_LIBS!$GRPC_UNSECURE_LIBS$ac_delim
 GRPC_REFLECTION_LIBS!$GRPC_REFLECTION_LIBS$ac_delim
 GRPC_BIN!$GRPC_BIN$ac_delim
-MSGSL_INCLUDE!$MSGSL_INCLUDE$ac_delim
-ncbi_xreader_pubseqos!$ncbi_xreader_pubseqos$ac_delim
-ncbi_xreader_pubseqos2!$ncbi_xreader_pubseqos2$ac_delim
-UNLESS_PUBSEQOS!$UNLESS_PUBSEQOS$ac_delim
-PERL_INCLUDE!$PERL_INCLUDE$ac_delim
-PERL_LIBS!$PERL_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -52838,6 +52875,12 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+MSGSL_INCLUDE!$MSGSL_INCLUDE$ac_delim
+ncbi_xreader_pubseqos!$ncbi_xreader_pubseqos$ac_delim
+ncbi_xreader_pubseqos2!$ncbi_xreader_pubseqos2$ac_delim
+UNLESS_PUBSEQOS!$UNLESS_PUBSEQOS$ac_delim
+PERL_INCLUDE!$PERL_INCLUDE$ac_delim
+PERL_LIBS!$PERL_LIBS$ac_delim
 JDK_PATH!$JDK_PATH$ac_delim
 JDK_INCLUDE!$JDK_INCLUDE$ac_delim
 ncbi_java!$ncbi_java$ac_delim
@@ -52878,7 +52921,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 38; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 44; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

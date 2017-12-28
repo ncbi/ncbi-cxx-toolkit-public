@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_getdata-app
+    getdata common
+)
+
+set_target_properties(odbc100_getdata-app PROPERTIES OUTPUT_NAME odbc100_getdata)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_getdata-app
+    odbc_ftds100
+)
+

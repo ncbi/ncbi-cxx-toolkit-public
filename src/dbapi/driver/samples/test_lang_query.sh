@@ -9,7 +9,7 @@ ulimit -n 1536 > /dev/null 2>&1
 # ctlib against DBAPI_SYB155_TEST)
 unset LANG LC_ALL LC_CTYPE
 
-driver_list="ctlib dblib ftds64 ftds95 ftds95-v73 odbc"
+driver_list="ctlib dblib ftds64 ftds95 ftds95-v73 ftds100 ftds100-v74 odbc"
 
 if echo $FEATURES | grep "\-connext" > /dev/null ; then
     server_list="MSDEV1 DBAPI_DEV3 DBAPI_DEV16"
@@ -272,7 +272,7 @@ EOF
             cmd="dbapi_cursor -lb on -d $driver -S $server $v_flag"
             if test $driver = "ctlib" -a \( $SYSTEM_NAME = "SunOS" -a $PROCESSOR_TYPE = "i" \) ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped because of invalid Sybase client installation)"
-            elif test \( $driver = "ftds64" -o $driver = "ftds95" \) \
+            elif test \( $driver = "ftds64" -o $driver = "ftds95" -o $driver = "ftds100" \) \
                       -a $server != $server_mssql ; then
                 # -a $server != $server_mssql2008
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped)"

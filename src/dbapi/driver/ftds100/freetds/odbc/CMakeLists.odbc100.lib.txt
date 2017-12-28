@@ -1,0 +1,14 @@
+#
+#
+#
+add_library(odbc_ftds100
+    odbc connectparams convert_tds2sql descriptor prepare_query odbc_util
+    native sql2tds error odbc_checks sqlwchar odbc_data
+)
+# winlogin winsetup winmain; setup.rc?
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+add_definitions(-D_FREETDS_LIBRARY_SOURCE -DHAVE_CONFIG_H -DSQL_NOUNICODEMAP)
+
+target_link_libraries(odbc_ftds100
+    tds_ftds100
+)

@@ -14,6 +14,8 @@
 #include <ctpublic.h>
 #include "common.h"
 
+#include <common/test_assert.h>
+
 #if defined(HAVE_ALARM) && defined(HAVE_SETITIMER)
 
 /* protos */

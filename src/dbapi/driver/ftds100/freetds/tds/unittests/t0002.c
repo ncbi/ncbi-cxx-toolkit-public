@@ -21,6 +21,8 @@
 #include <freetds/string.h>
 #include <replacements.h>
 
+#include <common/test_assert.h>
+
 static char *
 value_as_string(TDSSOCKET * tds, int col_idx)
 {

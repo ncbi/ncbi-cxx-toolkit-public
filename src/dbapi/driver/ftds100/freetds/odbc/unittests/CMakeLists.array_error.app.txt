@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_array_error-app
+    array_error common
+)
+
+set_target_properties(odbc100_array_error-app PROPERTIES OUTPUT_NAME odbc100_array_error)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_array_error-app
+    odbc_ftds100
+)
+

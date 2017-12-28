@@ -4984,6 +4984,9 @@ if test "$with_ftds" != "no" ; then
          ;;
       95 | 0.95 | yes | '' )
          ;;
+      100 | 1.00 )
+         ftds_ver=100
+         ;;
       * )
          FTDS_PATH=$with_ftds
          try_local=no
@@ -4994,6 +4997,7 @@ if test "$with_ftds" != "no" ; then
    FTDS_INCLUDE="-I$FTDS_PATH/include"
    NCBI_LOCAL_FTDS(64)
    NCBI_LOCAL_FTDS(95)
+   NCBI_LOCAL_FTDS(100)
    if test -n "$freetds" ; then
       FTDS_LIB="\$(FTDS${ftds_ver}_LIB)"
       FTDS_LIBS="\$(FTDS${ftds_ver}_LIBS)"
@@ -5045,6 +5049,12 @@ if test "$with_ftds" = "no" ; then
    FTDS95_CTLIB_INCLUDE=
    FTDS95_CTLIB_LIBS=
    FTDS95_CTLIB_LIB=
+   FTDS100_INCLUDE=
+   FTDS100_LIBS=
+   FTDS100_LIB=
+   FTDS100_CTLIB_INCLUDE=
+   FTDS100_CTLIB_LIBS=
+   FTDS100_CTLIB_LIB=
    freetds=
 else
    AC_DEFINE(HAVE_LIBFTDS, 1,
@@ -5063,6 +5073,12 @@ AC_SUBST(FTDS95_LIB)
 AC_SUBST(FTDS95_CTLIB_INCLUDE)
 AC_SUBST(FTDS95_CTLIB_LIBS)
 AC_SUBST(FTDS95_CTLIB_LIB)
+AC_SUBST(FTDS100_INCLUDE)
+AC_SUBST(FTDS100_LIBS)
+AC_SUBST(FTDS100_LIB)
+AC_SUBST(FTDS100_CTLIB_INCLUDE)
+AC_SUBST(FTDS100_CTLIB_LIBS)
+AC_SUBST(FTDS100_CTLIB_LIB)
 AC_SUBST(FTDS_INCLUDE)
 AC_SUBST(FTDS_LIBS)
 AC_SUBST(FTDS_LIB)

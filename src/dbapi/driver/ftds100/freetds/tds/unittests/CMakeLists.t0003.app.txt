@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(tds100_t0003-app
+    t0003 common
+)
+
+set_target_properties(tds100_t0003-app PROPERTIES OUTPUT_NAME tds100_t0003)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE})
+
+target_link_libraries(tds100_t0003-app
+    tds_ftds100
+)
+

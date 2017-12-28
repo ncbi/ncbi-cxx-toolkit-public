@@ -4,9 +4,9 @@
 #include <unistd.h>
 #endif
 
-#include <assert.h>
-
 #include "replacements.h"
+
+#include <common/test_assert.h>
 
 /*
  * Test timeout on prepare

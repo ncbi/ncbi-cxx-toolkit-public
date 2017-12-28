@@ -10,7 +10,7 @@ my @fmt=split(/,\s*/,
 my %fmt;
 @fmt{@types} = @fmt;
 
-print "#undef tdsdump_log\n\n";
+print "#undef tdsdump_log\n#define tdsdump_log tdsdump_do_log\n";
 
 while(<IN>) {
 	chomp;
@@ -139,7 +139,7 @@ SQLRETURN ODBC_PUBLIC ODBC_API $func(
 }
 close(IN);
 
-print "#define tdsdump_log TDSDUMP_LOG_FAST\n";
+print "#undef tdsdump_log\n#define tdsdump_log TDSDUMP_LOG_FAST\n";
 
 exit 0;
 

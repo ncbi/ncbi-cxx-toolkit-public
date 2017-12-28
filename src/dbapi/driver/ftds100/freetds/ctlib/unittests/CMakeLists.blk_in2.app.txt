@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(ct100_blk_in2-app
+    blk_in2 common
+)
+
+set_target_properties(ct100_blk_in2-app PROPERTIES OUTPUT_NAME ct100_blk_in2)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE})
+
+target_link_libraries(ct100_blk_in2-app
+    ct_ftds100
+)
+

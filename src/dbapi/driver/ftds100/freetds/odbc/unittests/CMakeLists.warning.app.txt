@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_warning-app
+    warning common
+)
+
+set_target_properties(odbc100_warning-app PROPERTIES OUTPUT_NAME odbc100_warning)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_warning-app
+    odbc_ftds100
+)
+

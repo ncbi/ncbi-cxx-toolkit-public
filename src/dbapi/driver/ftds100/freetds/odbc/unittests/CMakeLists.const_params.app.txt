@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_const_params-app
+    const_params common
+)
+
+set_target_properties(odbc100_const_params-app PROPERTIES OUTPUT_NAME odbc100_const_params)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_const_params-app
+    odbc_ftds100
+)
+

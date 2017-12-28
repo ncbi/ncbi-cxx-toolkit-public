@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_copydesc-app
+    copydesc common
+)
+
+set_target_properties(odbc100_copydesc-app PROPERTIES OUTPUT_NAME odbc100_copydesc)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_copydesc-app
+    odbc_ftds100
+)
+

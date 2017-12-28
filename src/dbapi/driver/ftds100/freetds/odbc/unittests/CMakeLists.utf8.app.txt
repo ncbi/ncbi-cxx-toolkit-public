@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_utf8-app
+    utf8 common
+)
+
+set_target_properties(odbc100_utf8-app PROPERTIES OUTPUT_NAME odbc100_utf8)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_utf8-app
+    odbc_ftds100
+)
+

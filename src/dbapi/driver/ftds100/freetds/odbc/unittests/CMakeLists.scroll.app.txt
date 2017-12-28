@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(odbc100_scroll-app
+    scroll common
+)
+
+set_target_properties(odbc100_scroll-app PROPERTIES OUTPUT_NAME odbc100_scroll)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
+
+target_link_libraries(odbc100_scroll-app
+    odbc_ftds100
+)
+
