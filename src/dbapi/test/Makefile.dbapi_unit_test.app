@@ -30,7 +30,7 @@ CHECK_CMD = dbapi_unit_test -dr ftds64     -S MsSql
 CHECK_CMD = dbapi_unit_test -dr ftds95     -S MsSql
 CHECK_CMD = dbapi_unit_test -dr ftds95     -S MsSql -V 73
 CHECK_CMD = dbapi_unit_test -dr ftds100    -S MsSql
-# CHECK_CMD = dbapi_unit_test -dr ftds100    -S MsSql -V 74
+CHECK_CMD = dbapi_unit_test -dr ftds100    -S MsSql -V 74
 CHECK_CMD = dbapi_unit_test -dr odbc       -S MsSql --log_level=test_suite
 # CHECK_CMD = dbapi_unit_test -dr dblib      -S DBAPI_MS2008_TEST
 # CHECK_CMD = dbapi_unit_test -dr ftds64     -S DBAPI_MS2008_TEST
@@ -41,7 +41,7 @@ CHECK_CMD = dbapi_unit_test -dr ctlib      -S Sybase
 CHECK_CMD = dbapi_unit_test -dr dblib      -S Sybase
 CHECK_CMD = dbapi_unit_test -dr ftds64     -S Sybase
 CHECK_CMD = dbapi_unit_test -dr ftds95     -S Sybase
-# CHECK_CMD = dbapi_unit_test -dr ftds100    -S Sybase
+CHECK_CMD = dbapi_unit_test -dr ftds100    -S Sybase
 CHECK_CMD = dbapi_unit_test -dr ctlib      -S DBAPI_SYB160_TEST
 CHECK_CMD = dbapi_unit_test -dr dblib      -S DBAPI_SYB160_TEST
 CHECK_CMD = dbapi_unit_test -dr ftds64     -S DBAPI_SYB160_TEST

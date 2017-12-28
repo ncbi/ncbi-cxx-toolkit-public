@@ -493,6 +493,15 @@ cs_config(CS_CONTEXT * ctx, CS_INT action, CS_INT property, CS_VOID * buffer, CS
 CS_RETCODE
 cs_convert(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt, CS_VOID * srcdata, CS_DATAFMT * destfmt, CS_VOID * destdata, CS_INT * resultlen)
 {
+        return _cs_convert_ex(ctx, srcfmt, srcdata, destfmt, destdata,
+                              resultlen, NULL);
+}
+
+CS_RETCODE
+_cs_convert_ex(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt, CS_VOID * srcdata,
+               CS_DATAFMT * destfmt, CS_VOID * destdata, CS_INT * resultlen,
+               CS_VOID ** handle)
+{
 	TDS_SERVER_TYPE src_type, desttype;
 	int src_len, destlen, len, i = 0;
 	CONV_RESULT cres;
@@ -768,8 +777,14 @@ cs_convert(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt, CS_VOID * srcdata, CS_DATAFMT 
                         ret = CS_FAIL;
 			len = destlen;
 		}
-		memcpy(dest, cres.ib, len);
-		free(cres.ib);
+                if (handle == NULL) {
+                        memcpy(dest, cres.ib, len);
+                        free(cres.ib);
+                } else {
+                        free(*handle);
+                        *handle = cres.ib;
+                        destlen = len;
+                }
                 *resultlen = len;
 		if (destvc) {
 			destvc->len = len;
@@ -830,7 +845,12 @@ cs_convert(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt, CS_VOID * srcdata, CS_DATAFMT 
 				tdsdump_log(TDS_DBG_FUNC, "not enough room for data + a null terminator - error\n");
 				ret = CS_FAIL;	/* not enough room for data + a null terminator - error */
 			} else {
-				memcpy(dest, cres.c, len);
+                                if (handle == NULL) {
+                                        memcpy(dest, cres.c, len);
+                                } else {
+                                        *handle = cres.c;
+                                        dest = *handle;
+                                }
 				dest[len] = 0;
 				*resultlen = len + 1;
 			}
@@ -839,7 +859,12 @@ cs_convert(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt, CS_VOID * srcdata, CS_DATAFMT 
 		case CS_FMT_PADBLANK:
 			tdsdump_log(TDS_DBG_FUNC, "cs_convert() FMT_PADBLANK\n");
 			/* strcpy here can lead to a small buffer overflow */
-			memcpy(dest, cres.c, len);
+                        if (handle == NULL) {
+                                memcpy(dest, cres.c, len);
+                        } else {
+                                *handle = cres.c;
+                                destlen = len;
+                        }
 			for (i = len; i < destlen; i++)
 				dest[i] = ' ';
 			*resultlen = destlen;
@@ -848,14 +873,23 @@ cs_convert(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt, CS_VOID * srcdata, CS_DATAFMT 
 		case CS_FMT_PADNULL:
 			tdsdump_log(TDS_DBG_FUNC, "cs_convert() FMT_PADNULL\n");
 			/* strcpy here can lead to a small buffer overflow */
-			memcpy(dest, cres.c, len);
+                        if (handle == NULL) {
+                                memcpy(dest, cres.c, len);
+                        } else {
+                                *handle = cres.c;
+                                destlen = len;
+                        }
 			for (i = len; i < destlen; i++)
 				dest[i] = '\0';
 			*resultlen = destlen;
 			break;
 		case CS_FMT_UNUSED:
 			tdsdump_log(TDS_DBG_FUNC, "cs_convert() FMT_UNUSED\n");
-			memcpy(dest, cres.c, len);
+                        if (handle == NULL) {
+                                memcpy(dest, cres.c, len);
+                        } else {
+                                *handle = cres.c;
+                        }
 			*resultlen = len;
 			break;
 		default:
@@ -866,7 +900,9 @@ cs_convert(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt, CS_VOID * srcdata, CS_DATAFMT 
 			destvc->len = len;
 			*resultlen = sizeof(*destvc);
 		}
-		free(cres.c);
+                if (handle == NULL  ||  *handle != cres.c) {
+                        free(cres.c);
+                }
 		break;
 	default:
 		ret = CS_FAIL;
