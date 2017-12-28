@@ -3603,7 +3603,7 @@ fi
 ### Check for other standard library functions
 
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(alarm asprintf atoll basename euidaccess fseeko fstat \
+AC_CHECK_FUNCS(alarm asprintf atoll basename dbopen euidaccess fseeko fstat \
                getgrouplist getopt getpagesize getpass getpassphrase \
                getpwuid getrusage gettimeofday getuid lchown lutimes memrchr \
                putenv readpassphrase readv select setenv statfs statvfs \

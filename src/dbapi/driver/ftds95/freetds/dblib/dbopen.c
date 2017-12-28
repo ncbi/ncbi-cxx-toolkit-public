@@ -23,10 +23,6 @@
 #include <sybdb.h>
 #include <dblib.h>
 
-#ifdef dbopen
-#undef dbopen
-#endif
-
 TDS_RCSID(var, "$Id$");
 
 /**

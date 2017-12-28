@@ -162,6 +162,9 @@
 /* Define to 1 if you have the <cpuid.h> header file. */
 /* #undef HAVE_CPUID_H */
 
+/* Define to 1 if you have the `dbopen' function. */
+#define HAVE_DBOPEN 1
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define HAVE_DLFCN_H 1
 

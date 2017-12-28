@@ -34,6 +34,8 @@
  *
  */
 
+#include "../freetds/config.h"
+
 #if defined(NCBI_FTDS_RENAME_SYBDB)
 #  define bcp_batch         bcp_batch_ver95
 #  define bcp_bind          bcp_bind_ver95
@@ -138,7 +140,9 @@
 #  define dbnumcols         dbnumcols_ver95
 #  define dbnumcompute      dbnumcompute_ver95
 #  define dbnumrets         dbnumrets_ver95
-/* #  define dbopen            dbopen_ver95 */
+#  ifdef HAVE_DBOPEN
+#    define dbopen          dbopen_ver95
+#  endif
 #  define dbperror          dbperror_ver95
 #  define dbpivot           dbpivot_ver95
 #  define dbpivot_count     dbpivot_count_ver95

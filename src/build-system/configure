@@ -17159,7 +17159,8 @@ done
 
 
 
-for ac_func in alarm asprintf atoll basename euidaccess fseeko fstat \
+
+for ac_func in alarm asprintf atoll basename dbopen euidaccess fseeko fstat \
                getgrouplist getopt getpagesize getpass getpassphrase \
                getpwuid getrusage gettimeofday getuid lchown lutimes memrchr \
                putenv readpassphrase readv select setenv statfs statvfs \
