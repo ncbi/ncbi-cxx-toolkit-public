@@ -282,7 +282,6 @@ private:
     bool IsMrna(const CBioseq_Handle& bsh);
     bool IsPrerna(const CBioseq_Handle& bsh);
     size_t NumOfIntervals(const CSeq_loc& loc);
-    bool LocOnSeg(const CBioseq& seq, const CSeq_loc& loc);
     //bool NotPeptideException(const CFeat_CI& curr, const CFeat_CI& prev);
     //bool IsSameSeqAnnot(const CFeat_CI& fi1, const CFeat_CI& fi2);
     bool x_IsSameSeqAnnotDesc(const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2);

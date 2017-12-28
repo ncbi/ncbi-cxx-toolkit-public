@@ -2216,20 +2216,6 @@ size_t CValidError_bioseq::NumOfIntervals(const CSeq_loc& loc)
 }
 
 
-bool CValidError_bioseq::LocOnSeg(const CBioseq& seq, const CSeq_loc& loc) 
-{
-    for ( CSeq_loc_CI sli( loc ); sli;  ++sli ) {
-        const CSeq_id& loc_id = sli.GetSeq_id();
-        FOR_EACH_SEQID_ON_BIOSEQ (seq_id, seq) {
-            if ( loc_id.Match(**seq_id) ) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-
 static bool s_NotPeptideException
 (const CSeq_feat& curr,
  const CSeq_feat& prev)
@@ -6326,16 +6312,6 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                     }
                 }
 
-                if ( seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg ) {
-                    if ( LocOnSeg(seq, feat.GetLocation()) ) {
-                        if ( !IsDeltaOrFarSeg(fi->GetLocation(), m_Scope) ) {
-                            EDiagSev sev = is_nc ? eDiag_Warning : eDiag_Error;
-                            PostErr(sev, eErr_SEQ_FEAT_LocOnSegmentedBioseq,
-                                "Feature location on segmented bioseq, not on parts",
-                                feat);
-                        }
-                    }
-                }
             }  // end of for loop
 
             if (non_pseudo_16S_rRNA && m_CurrentHandle) {
