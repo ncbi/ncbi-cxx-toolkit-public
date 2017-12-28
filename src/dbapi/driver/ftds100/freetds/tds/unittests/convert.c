@@ -62,6 +62,7 @@ main(int argc, char **argv)
 	int i, j, iterations = 0, result;
 
 	TDS_CHAR *src = NULL;
+        TDS_SMALLINT widesrc[40];
 	TDS_UINT srclen;
 	CONV_RESULT cr;
 
@@ -153,10 +154,18 @@ main(int argc, char **argv)
 		case XSYBVARBINARY:
 		case XSYBCHAR:
 		case XSYBVARCHAR:
+                case SYBNTEXT:
+                case SYBNVARCHAR:
+                case XSYBNCHAR:
+                case XSYBNVARCHAR:
 			switch (desttype) {
 			case SYBCHAR:
 			case SYBVARCHAR:
 			case SYBTEXT:
+                        case SYBNTEXT:
+                        case SYBNVARCHAR:
+                        case XSYBNCHAR:
+                        case XSYBNVARCHAR:
 			case SYBDATETIME:
 			case SYBDATETIME4:
 				src = "Jan  1, 1999";
@@ -211,6 +220,16 @@ main(int argc, char **argv)
 			}
 			assert(src);
 			srclen = strlen(src);
+                        if (srctype == SYBNTEXT  ||  srctype == SYBNVARCHAR
+                            ||  srctype == XSYBNCHAR
+                            ||  srctype == XSYBNVARCHAR) {
+                                assert(srclen * sizeof(*widesrc)
+                                       < sizeof(widesrc));
+                                for (j = 0;  j <= srclen;  ++j) {
+                                        widesrc[j] = src[j];
+                                }
+                                srclen *= sizeof(*widesrc);
+                        }
 			break;
 		case SYBINT1:
 		case SYBUINT1:

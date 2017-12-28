@@ -39,40 +39,40 @@ static const TDS_TINYINT type2category[256] = {
 	0, /* SYBVOID */
 	0, /* 32 */
 	0, /* 33 */
-	7, /* SYBIMAGE */
-	2, /* SYBTEXT */
-	5, /* SYBBLOB */
-	7, /* SYBVARBINARY */
+	4, /* SYBIMAGE */
+	3, /* SYBTEXT */
+	2, /* SYBBLOB */
+	4, /* SYBVARBINARY */
 	0, /* SYBINTN */
-	2, /* SYBVARCHAR */
-	6, /* SYBMSDATE */
-	6, /* SYBMSTIME */
-	6, /* SYBMSDATETIME2 */
-	6, /* SYBMSDATETIMEOFFSET */
+	3, /* SYBVARCHAR */
+	5, /* SYBMSDATE */
+	5, /* SYBMSTIME */
+	5, /* SYBMSDATETIME2 */
+	5, /* SYBMSDATETIMEOFFSET */
 	0, /* 44 */
-	7, /* SYBBINARY */
+	4, /* SYBBINARY */
 	0, /* SYBINTERVAL */
-	2, /* SYBCHAR */
-	4, /* SYBINT1 */
-	6, /* SYBDATE */
-	1, /* SYBBIT */
-	6, /* SYBTIME */
-	4, /* SYBINT2 */
+	3, /* SYBCHAR */
+	1, /* SYBINT1 */
+	5, /* SYBDATE */
+	6, /* SYBBIT */
+	5, /* SYBTIME */
+	1, /* SYBINT2 */
 	0, /* 53 */
 	0, /* 54 */
 	0, /* 55 */
-	4, /* SYBINT4 */
+	1, /* SYBINT4 */
 	0, /* 57 */
-	6, /* SYBDATETIME4 */
-	4, /* SYBREAL */
-	4, /* SYBMONEY */
-	6, /* SYBDATETIME */
-	4, /* SYBFLT8 */
+	5, /* SYBDATETIME4 */
+	1, /* SYBREAL */
+	1, /* SYBMONEY */
+	5, /* SYBDATETIME */
+	1, /* SYBFLT8 */
 	0, /* 63 */
-	4, /* SYBUINT1 */
-	4, /* SYBUINT2 */
-	4, /* SYBUINT4 */
-	4, /* SYBUINT8 */
+	1, /* SYBUINT1 */
+	1, /* SYBUINT2 */
+	1, /* SYBUINT4 */
+	1, /* SYBUINT8 */
 	0, /* SYBUINTN */
 	0, /* 69 */
 	0, /* 70 */
@@ -104,16 +104,16 @@ static const TDS_TINYINT type2category[256] = {
 	0, /* 96 */
 	0, /* 97 */
 	0, /* SYBVARIANT */
-	0, /* SYBNTEXT */
+	3, /* SYBNTEXT */
 	0, /* 100 */
 	0, /* 101 */
 	0, /* 102 */
 	3, /* SYBSENSITIVITY */
-	1, /* SYBBOUNDARY */
+	6, /* SYBBOUNDARY */
 	0, /* 105 */
-	1, /* SYBDECIMAL */
+	6, /* SYBDECIMAL */
 	0, /* 107 */
-	1, /* SYBNUMERIC */
+	6, /* SYBNUMERIC */
 	0, /* SYBFLTN */
 	0, /* SYBMONEYN */
 	0, /* SYBDATETIMN */
@@ -127,12 +127,12 @@ static const TDS_TINYINT type2category[256] = {
 	0, /* 119 */
 	0, /* 120 */
 	0, /* 121 */
-	4, /* SYBMONEY4 */
+	1, /* SYBMONEY4 */
 	0, /* SYBDATEN */
 	0, /* 124 */
 	0, /* 125 */
 	0, /* 126 */
-	4, /* SYBINT8 */
+	1, /* SYBINT8 */
 	0, /* 128 */
 	0, /* 129 */
 	0, /* 130 */
@@ -170,17 +170,17 @@ static const TDS_TINYINT type2category[256] = {
 	0, /* 162 */
 	0, /* SYBXML */
 	0, /* 164 */
-	7, /* XSYBVARBINARY */
+	4, /* XSYBVARBINARY */
 	0, /* 166 */
-	2, /* XSYBVARCHAR */
+	3, /* XSYBVARCHAR */
 	0, /* 168 */
 	0, /* 169 */
 	0, /* 170 */
 	0, /* 171 */
 	0, /* 172 */
-	7, /* XSYBBINARY */
+	4, /* XSYBBINARY */
 	0, /* SYBUNITEXT */
-	2, /* SYBLONGCHAR */
+	3, /* SYBLONGCHAR */
 	0, /* SYBSINT1 */
 	0, /* 177 */
 	0, /* 178 */
@@ -192,8 +192,8 @@ static const TDS_TINYINT type2category[256] = {
 	0, /* 184 */
 	0, /* 185 */
 	0, /* 186 */
-	6, /* SYB5BIGDATETIME */
-	6, /* SYB5BIGTIME */
+	5, /* SYB5BIGDATETIME */
+	5, /* SYB5BIGTIME */
 	0, /* 189 */
 	0, /* 190 */
 	0, /* SYB5INT8 */
@@ -230,13 +230,13 @@ static const TDS_TINYINT type2category[256] = {
 	0, /* 222 */
 	0, /* 223 */
 	0, /* 224 */
-	7, /* SYBLONGBINARY */
+	4, /* SYBLONGBINARY */
 	0, /* 226 */
 	0, /* 227 */
 	0, /* 228 */
 	0, /* 229 */
 	0, /* 230 */
-	0, /* XSYBNVARCHAR */
+	3, /* XSYBNVARCHAR */
 	0, /* 232 */
 	0, /* 233 */
 	0, /* 234 */
@@ -244,7 +244,7 @@ static const TDS_TINYINT type2category[256] = {
 	0, /* 236 */
 	0, /* 237 */
 	0, /* 238 */
-	0, /* XSYBNCHAR */
+	3, /* XSYBNCHAR */
 	0, /* SYBMSUDT */
 	0, /* SYBMSXML */
 	0, /* 242 */
@@ -265,11 +265,10 @@ static const TDS_TINYINT type2category[256] = {
 
 static const TDS_UINT category_conversion[] = {
 	0,
-	150,	/* SYBBIT */
-	246,	/* SYBTEXT */
-	0,	/* SYBSENSITIVITY */
-	150,	/* SYBINT1 */
-	164,	/* SYBUNIQUE */
-	196,	/* SYBMSDATE */
-	148,	/* SYBIMAGE */
+	90,	/* SYBINT1 */
+	28,	/* SYBUNIQUE */
+	126,	/* SYBTEXT */
+	26,	/* SYBIMAGE */
+	56,	/* SYBMSDATE */
+	90,	/* SYBBIT */
 };
