@@ -102,6 +102,7 @@ check_function_exists(lutimes HAVE_LUTIMES)
 check_function_exists(malloc_options HAVE_MALLOC_OPTIONS)
 check_function_exists(memrchr HAVE_MEMRCHR)
 check_function_exists(nanosleep HAVE_NANOSLEEP)
+check_function_exists(poll HAVE_POLL)
 check_function_exists(pthread_atfork HAVE_PTHREAD_ATFORK)
 check_function_exists(pthread_cond_timedwait_relative_np
                       HAVE_PTHREAD_COND_TIMEDWAIT_RELATIVE_NP)
