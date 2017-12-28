@@ -831,6 +831,7 @@ tds7_send_login(TDSSOCKET * tds, TDSLOGIN * login)
 	unsigned char hwaddr[6];
 	size_t packet_size, current_pos;
 	TDSRET rc;
+        int dump_state = 0;
 
 	void *data = NULL;
 	TDSDYNAMICSTREAM data_stream;
@@ -954,6 +955,7 @@ tds7_send_login(TDSSOCKET * tds, TDSLOGIN * login)
 	packet_size += data_stream.size;
 
 #if !defined(TDS_DEBUG_LOGIN)
+        dump_state = tdsdump_state();
 	tdsdump_log(TDS_DBG_INFO2, "quietly sending TDS 7+ login packet\n");
 	tdsdump_off();
 #endif
@@ -1072,7 +1074,9 @@ tds7_send_login(TDSSOCKET * tds, TDSLOGIN * login)
 		tds_put_n(tds, tds->conn->authentication->packet, auth_len);
 
 	rc = tds_flush_packet(tds);
-	tdsdump_on();
+        if (dump_state) {
+                tdsdump_on();
+        }
 
 	free(data);
 	return rc;

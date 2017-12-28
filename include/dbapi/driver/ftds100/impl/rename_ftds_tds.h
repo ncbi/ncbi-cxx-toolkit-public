@@ -346,6 +346,7 @@
 #define tdsdump_off                     tdsdump_off_ver100
 #define tdsdump_on                      tdsdump_on_ver100
 #define tdsdump_open                    tdsdump_open_ver100
+#define tdsdump_state                   tdsdump_state_ver100
 #define tdserror                        tdserror_ver100
 
 #endif  /* DBAPI_DRIVER_FTDS100_IMPL___RENAME_FTDS_TDS__H */

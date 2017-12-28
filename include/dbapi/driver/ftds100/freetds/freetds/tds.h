@@ -1506,6 +1506,7 @@ char *tds_strndup(const void *s, TDS_INTPTR len);
 /* log.c */
 void tdsdump_off(void);
 void tdsdump_on(void);
+int tdsdump_state(void);
 int tdsdump_isopen(void);
 #include <freetds/popvis.h>
 int tdsdump_open(const char *filename);
