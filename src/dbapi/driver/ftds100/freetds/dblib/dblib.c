@@ -212,6 +212,7 @@ static int g_dblib_version =
 #else
 	DBVERSION_UNKNOWN;
 #endif
+static int g_dbsetversion_called = 0;
 
 
 static int
@@ -1255,6 +1256,21 @@ tdsdbopen(LOGINREC * login, const char *server, int msdblib)
 		connection->query_timeout = g_dblib_ctx.query_timeout;
 	}
 
+        /* override TDS version if dbsetversion() was called */
+        if (g_dbsetversion_called) {
+                switch (g_dblib_version) {
+                case DBVERSION_42:   connection->tds_version=0x402;  break;
+                case DBVERSION_46:   connection->tds_version=0x406;  break;
+                case DBVERSION_100:  connection->tds_version=0x500;  break;
+                case DBVERSION_70:   connection->tds_version=0x700;  break;
+                case DBVERSION_71:   connection->tds_version=0x701;  break;
+                case DBVERSION_72:   connection->tds_version=0x702;  break;
+                case DBVERSION_73:   connection->tds_version=0x703;  break;
+                case DBVERSION_74:   connection->tds_version=0x704;  break;
+                default:             connection->tds_version=0;      break;
+                };
+        }
+
 	tds_mutex_unlock(&dblib_mutex);
 
 	tdsdump_log(TDS_DBG_FUNC, "tdsdbopen: Calling tds_connect_and_login(%p, %p)\n",
@@ -1874,6 +1890,22 @@ dbcolname(DBPROCESS * dbproc, int column)
 		return NULL;
 		
 	return tds_dstr_buf(&colinfo->column_name);
+}
+
+static
+const char *
+dbcoltablename(DBPROCESS * dbproc, int column)
+{
+        TDSCOLUMN *colinfo;
+
+        tdsdump_log(TDS_DBG_FUNC, "dbcoltablename(%p, %d)\n", dbproc, column);
+        CHECK_PARAMETER(dbproc, SYBENULL, 0);
+
+        colinfo = dbcolptr(dbproc, column);
+        if (!colinfo)
+                return NULL;
+
+        return tds_dstr_cstr(&colinfo->table_name);
 }
 
 /**
@@ -2957,6 +2989,8 @@ dbcolinfo (DBPROCESS *dbproc, CI_TYPE type, DBINT column, DBINT computeid, DBCOL
 
 		strlcpy(pdbcol->Name, dbcolname(dbproc, column), sizeof(pdbcol->Name));
 		strlcpy(pdbcol->ActualName, dbcolname(dbproc, column), sizeof(pdbcol->ActualName));
+                strlcpy(pdbcol->TableName, dbcoltablename(dbproc, column),
+                        sizeof(pdbcol->TableName));
 
 		pdbcol->Type = dbcoltype(dbproc, column);
 		pdbcol->UserType = dbcolutype(dbproc, column);
@@ -5814,9 +5848,9 @@ dbgetuserdata(DBPROCESS * dbproc)
  * \ingroup dblib_core
  * \brief Specify a db-lib version level.
  * 
- * \param version anything, really. 
- * \retval SUCCEED Always.  
- * \remarks No effect on behavior of \c db-lib in \c FreeTDS.  
+ * \param version Any DBVERSION_* constant.
+ * \retval SUCCEED if version was valid, FAIL otherwise.
+ * \remarks Use the corresponding protocol version for subsequent connections.
  * \sa 
  */
 RETCODE
@@ -5832,7 +5866,9 @@ dbsetversion(DBINT version)
 	case DBVERSION_71:
 	case DBVERSION_72:
 	case DBVERSION_73:
+        case DBVERSION_74:
 		g_dblib_version = version;
+                g_dbsetversion_called = 1;
 		return SUCCEED;
 	default:
 		break;
@@ -6445,6 +6481,7 @@ RETCODE
 dbwritetext(DBPROCESS * dbproc, char *objname, DBBINARY * textptr, DBTINYINT textptrlen, DBBINARY * timestamp, DBBOOL log,
 	    DBINT size, BYTE * text)
 {
+        DBINT rc = 0;
 	char textptr_string[35];	/* 16 * 2 + 2 (0x) + 1 */
 	char timestamp_string[19];	/* 8 * 2 + 2 (0x) + 1 */
 	TDS_INT result_type;
@@ -6463,8 +6500,14 @@ dbwritetext(DBPROCESS * dbproc, char *objname, DBBINARY * textptr, DBTINYINT tex
 	if (textptrlen > DBTXPLEN)
 		return FAIL;
 
-	dbconvert(dbproc, SYBBINARY, (BYTE *) textptr, textptrlen, SYBCHAR, (BYTE *) textptr_string, -1);
-	dbconvert(dbproc, SYBBINARY, (BYTE *) timestamp, 8, SYBCHAR, (BYTE *) timestamp_string, -1);
+        rc = dbconvert(dbproc, SYBBINARY, (BYTE *) textptr, textptrlen,
+                       SYBCHAR, (BYTE *) textptr_string, -1);
+        if (rc < 0)
+                return FAIL;
+        rc = dbconvert(dbproc, SYBBINARY, (BYTE *) timestamp, 8, SYBCHAR,
+                       (BYTE *) timestamp_string, -1);
+        if (rc < 0)
+                return FAIL;
 
 	dbproc->dbresults_state = _DB_RES_INIT;
 
