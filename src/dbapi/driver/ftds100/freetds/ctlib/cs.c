@@ -536,7 +536,9 @@ cs_convert(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt, CS_VOID * srcdata, CS_DATAFMT 
 	if (src_type == TDS_INVALID_TYPE)
 		return CS_FAIL;
 	src_len = srcfmt->maxlength;
-	if (srcfmt->datatype == CS_VARCHAR_TYPE || srcfmt->datatype == CS_VARBINARY_TYPE) {
+        if (srcfmt->datatype == CS_VARCHAR_TYPE ||
+            srcfmt->datatype == CS_NVARCHAR_TYPE ||
+            srcfmt->datatype == CS_VARBINARY_TYPE) {
 		CS_VARCHAR *vc = (CS_VARCHAR *) srcdata;
 		src_len = vc->len;
 		srcdata = vc->str;
@@ -545,7 +547,9 @@ cs_convert(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt, CS_VOID * srcdata, CS_DATAFMT 
 	if (desttype == TDS_INVALID_TYPE)
 		return CS_FAIL;
 	destlen = destfmt->maxlength;
-	if (destfmt->datatype == CS_VARCHAR_TYPE || destfmt->datatype == CS_VARBINARY_TYPE) {
+        if (destfmt->datatype == CS_VARCHAR_TYPE ||
+            destfmt->datatype == CS_NVARCHAR_TYPE ||
+            destfmt->datatype == CS_VARBINARY_TYPE) {
 		destvc = (CS_VARCHAR *) destdata;
 		destlen  = sizeof(destvc->str);
 		destdata = destvc->str;
