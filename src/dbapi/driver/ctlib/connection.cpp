@@ -150,6 +150,11 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
         case 73:
             tds_version = CS_TDS_73;
             break;
+#  if NCBI_FTDS_VERSION >= 100
+        case 74:
+            tds_version = CS_TDS_74;
+            break;
+#  endif
 #else
         case 71:
         case 80:
