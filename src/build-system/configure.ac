@@ -4948,13 +4948,13 @@ SYBASE_LIBPATH=
 ## FreeTDS libraries
 freetds=
 if test "$with_ftds" != "no" ; then
-   ftds_ver=64
+   ftds_ver=95
    try_local=yes
    case "$with_ftds" in
       64 | 0.64 )
+         ftds_ver=64
          ;;
       95 | 0.95 | yes | '' )
-         ftds_ver=95
          ;;
       * )
          FTDS_PATH=$with_ftds
