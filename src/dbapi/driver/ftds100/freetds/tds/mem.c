@@ -1794,13 +1794,13 @@ void
 tds_deinit_bcpinfo(TDSBCPINFO *bcpinfo)
 {
         /*
-         * Historically needed for TDS 5.0, but the protocol version
-         * isn't available here, or even in blk_done anymore.
-         * Try doing without this call algogether.
-           if (bcpinfo->bindinfo->current_row) {
-                   TDS_ZERO_FREE(bcpinfo->bindinfo->current_row);
-           }
+         * Historically done for all TDS 5.0 transfers, but the protocol
+         * version isn't available here, or even in blk_done anymore.
          */
+        if (bcpinfo->direction == TDS_BCP_IN
+            &&  bcpinfo->bindinfo->current_row != NULL) {
+                TDS_ZERO_FREE(bcpinfo->bindinfo->current_row);
+        }
 	tds_dstr_free(&bcpinfo->tablename);
 	TDS_ZERO_FREE(bcpinfo->insert_stmt);
 	tds_free_results(bcpinfo->bindinfo);
