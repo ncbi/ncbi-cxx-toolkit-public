@@ -3,7 +3,7 @@
 #
 add_library(odbc_ftds100
     odbc connectparams convert_tds2sql descriptor prepare_query odbc_util
-    native sql2tds error odbc_checks sqlwchar odbc_data
+    bcp native sql2tds error odbc_checks sqlwchar odbc_data
 )
 # winlogin winsetup winmain; setup.rc?
 include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
