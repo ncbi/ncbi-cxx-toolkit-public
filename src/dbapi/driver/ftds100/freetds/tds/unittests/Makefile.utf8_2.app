@@ -10,6 +10,6 @@ LINK     = $(C_LINK)
 
 CHECK_CMD  = test-tds100 tds100_utf8_2
 
-CHECK_REQUIRES = in-house-resources -FreeBSD
+CHECK_REQUIRES = in-house-resources
 
 WATCHERS = ucko satskyse
