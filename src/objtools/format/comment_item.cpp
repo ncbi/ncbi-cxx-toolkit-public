@@ -1549,7 +1549,8 @@ void CCommentItem::x_GatherInfo(CBioseqContext& ctx)
 
 // returns the data_str, but wrapped in appropriate <a href...>...</a> if applicable
 static
-string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_str, const string &data_str, const char* provider, const char* status )
+string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_str, const string &data_str,
+                                       const char* provider, const char* status, bool has_name )
 {
     if( ! is_html ) {
         return data_str;
@@ -1566,7 +1567,16 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
                << data_str
                << "\">" << data_str << "</a>";
         return CNcbiOstrstreamToString(result);
-    } else if ( NStr::Equal (label_str, "Annotation Version") && NStr::Equal (provider, "NCBI") && NStr::Equal (status, "Full annotation") ) {
+    } else if ( NStr::Equal (label_str, "Annotation Name") && NStr::Equal (provider, "NCBI") ) {
+        string fst;
+        string snd;
+        NStr::Replace( data_str, " Annotation Release ", "/", fst );
+        NStr::Replace( fst, " ", "_", snd );
+        result << "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_euk/"
+               << snd
+               << "\">" << data_str << "</a>";
+        return CNcbiOstrstreamToString(result);
+    } else if ( NStr::Equal (label_str, "Annotation Version") && NStr::Equal (provider, "NCBI") && NStr::Equal (status, "Full annotation") && (! has_name) ) {
         string fst;
         string snd;
         NStr::Replace( data_str, " Annotation Release ", "/", fst );
@@ -1599,6 +1609,7 @@ void s_GetStrForStructuredComment(
     const char* suffix = "##Metadata-END##";
     const char* provider = "";
     const char* status = "";
+    bool has_name = false;
 
     bool fieldOverThreshold = false;
 
@@ -1619,6 +1630,8 @@ void s_GetStrForStructuredComment(
                     provider = (*it_for_len)->GetData().GetStr().c_str();
                 } else if ( label == "Annotation Status" ) {
                     status = (*it_for_len)->GetData().GetStr().c_str();
+                } else if ( label == "Annotation Name" ) {
+                    has_name = true;
                 }
                 const string::size_type label_len = label.length();
                 if( (label_len > longest_label_len) && (label_len <= kFieldLenThreshold) ) {
@@ -1668,7 +1681,7 @@ void s_GetStrForStructuredComment(
             next_line.resize( max( next_line.size(), longest_label_len), ' ' );
         }
         next_line.append( " :: " );
-        next_line.append( s_HtmlizeStructuredCommentData( is_html, (*it)->GetLabel().GetStr(), (*it)->GetData().GetStr(), provider, status ) );
+        next_line.append( s_HtmlizeStructuredCommentData( is_html, (*it)->GetLabel().GetStr(), (*it)->GetData().GetStr(), provider, status, has_name ) );
         next_line.append( "\n" );
 
         ExpandTildes(next_line, eTilde_comment);
