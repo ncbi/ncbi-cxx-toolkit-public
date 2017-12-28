@@ -66,10 +66,10 @@ void CRunTestApplication::Init(void)
         ("-ms-ver", "TDSVersion",
          "TDS protocol version to use for MS SQL servers",
          CArgDescriptions::eString, "7.3");
-    arg_desc->AddDefaultKey
+    arg_desc->AddOptionalKey
         ("-syb-ver", "TDSVersion",
          "TDS protocol version to use for Sybase servers",
-         CArgDescriptions::eString, "5.0");
+         CArgDescriptions::eString);
     arg_desc->AddOptionalKey
         ("-set-env", "Setting",
          "Set a custom environment variable; format: NAME=value; "
