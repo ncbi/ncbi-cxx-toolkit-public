@@ -2107,6 +2107,9 @@ _ct_get_server_type(TDSSOCKET *tds, int datatype)
 	case CS_UNIQUE_TYPE:		return SYBUNIQUE;
 	case CS_LONGBINARY_TYPE:	return SYBLONGBINARY;
 	case CS_UNICHAR_TYPE:		return SYBVARCHAR;
+        case CS_LONGCHAR_TYPE:
+                return (tds == NULL  ||  IS_TDS7_PLUS(tds->conn)) ? SYBVARCHAR
+                        : SYBLONGCHAR;
 	case CS_DATE_TYPE:
 		if (!tds || tds_capability_has_req(tds->conn, TDS_REQ_DATA_DATE))
 			return SYBDATE;
@@ -2125,6 +2128,10 @@ _ct_get_server_type(TDSSOCKET *tds, int datatype)
 		return SYBDATETIME;
 
 	default:
+                /*
+                 * SENSITIVITY, BOUNDARY, VOID, USHORT, BLOB, UNITEXT, XML,
+                 * USER
+                 */
 		return TDS_INVALID_TYPE;
 		break;
 	}
