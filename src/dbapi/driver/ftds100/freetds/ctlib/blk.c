@@ -706,7 +706,7 @@ _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bindcol, int offset)
                         srctype = _ct_get_client_type(CONN(blkdesc)->ctx,
                                                       bindcol);
                         datalen = &bindcol->column_def_size;
-                } else if (is_blob_type(bindcol->column_type)
+                } else if (is_blob_col(bindcol)
                            &&  bindcol->column_lenbind != NULL) {
                         bindcol->bcp_column_data->datalen = *datalen;
                         bindcol->bcp_column_data->is_null = 0;
