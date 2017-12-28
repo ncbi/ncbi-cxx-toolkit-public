@@ -1656,10 +1656,8 @@ CS_INT GetCtlibTdsVersion(int version)
     case 46:
     case 70:
     case 71:
-#ifdef CS_TDS_72
+#if NCBI_FTDS_VERSION >= 95
     case 72:
-#endif
-#ifdef CS_TDS_73
     case 73:
 #endif
     case 80:
