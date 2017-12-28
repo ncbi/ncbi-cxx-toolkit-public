@@ -194,7 +194,7 @@ blk_describe(CS_BLKDESC * blkdesc, CS_INT item, CS_DATAFMT * datafmt)
 	strlcpy(datafmt->name, tds_dstr_cstr(&curcol->column_name), sizeof(datafmt->name));
 	datafmt->namelen = strlen(datafmt->name);
 	/* need to turn the SYBxxx into a CS_xxx_TYPE */
-	datafmt->datatype = _ct_get_client_type(curcol);
+        datafmt->datatype = _ct_get_client_type(CONN(blkdesc)->ctx, curcol);
 	if (datafmt->datatype == CS_ILLEGAL_TYPE)
 		return CS_FAIL;
 	tdsdump_log(TDS_DBG_INFO1, "blk_describe() datafmt->datatype = %d server type %d\n", datafmt->datatype,
@@ -711,8 +711,10 @@ _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bindcol, int offset)
 			case CS_UBIGINT_TYPE:	    srclen = 8; break;
 			case CS_UNIQUE_TYPE:	    srclen = 16; break;
 			default:
-				printf("error not fixed length type (%d) and datalen not specified\n",
-					bindcol->column_bindtype);
+                                tdsdump_log(TDS_DBG_ERROR,
+                                            "Not fixed length type (%d)"
+                                            " and datalen not specified\n",
+                                            bindcol->column_bindtype);
 				return CS_FAIL;
 			}
 
@@ -733,7 +735,7 @@ _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bindcol, int offset)
 
 		destfmt.datatype = _cs_convert_not_client(ctx, bindcol, &convert_buffer, &src);
 		if (destfmt.datatype == CS_ILLEGAL_TYPE)
-			destfmt.datatype  = _ct_get_client_type(bindcol);
+                        destfmt.datatype = _ct_get_client_type(ctx, bindcol);
 		if (destfmt.datatype == CS_ILLEGAL_TYPE)
 			return CS_FAIL;
                 destfmt.maxlength = bindcol->on_server.column_size;
