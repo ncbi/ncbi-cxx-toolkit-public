@@ -116,6 +116,9 @@
 /* Define to 1 if you have the `alarm' function. */
 #define HAVE_ALARM 1
 
+/* Define to 1 if you have the <alloca.h> header file. */
+#define HAVE_ALLOCA_H 1
+
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #define HAVE_ARPA_INET_H 1
 
@@ -153,6 +156,12 @@
 /* Define to 1 if you have the <clapack.h> header file. */
 /* #undef HAVE_CLAPACK_H */
 
+/* Define to 1 if you have the `clock_gettime' function. */
+#define HAVE_CLOCK_GETTIME 1
+
+/* Define to 1 if you have the <com_err.h> header file. */
+#define HAVE_COM_ERR_H 1
+
 /* Define to 1 if the preprocessor supports GNU-style variadic macros. */
 #define HAVE_CPP_GNU_VARARGS 1
 
@@ -162,8 +171,26 @@
 /* Define to 1 if you have the <cpuid.h> header file. */
 /* #undef HAVE_CPUID_H */
 
+/* Define to 1 if you have the `daemon' function. */
+#define HAVE_DAEMON 1
+
 /* Define to 1 if you have the `dbopen' function. */
 #define HAVE_DBOPEN 1
+
+/* Define to 1 if you have the declaration of `CLOCK_MONOTONIC', and to 0 if
+   you don't. */
+#define HAVE_DECL_CLOCK_MONOTONIC 1
+
+/* Define to 1 if you have the declaration of `CLOCK_REALTIME', and to 0 if
+   you don't. */
+#define HAVE_DECL_CLOCK_REALTIME 1
+
+/* Define to 1 if you have the declaration of `CLOCK_SGI_CYCLE', and to 0 if
+   you don't. */
+#define HAVE_DECL_CLOCK_SGI_CYCLE 0
+
+/* Define to 1 if you have the <dirent.h> header file. */
+#define HAVE_DIRENT_H 1
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define HAVE_DLFCN_H 1
@@ -177,8 +204,17 @@
 /* Define to 1 if you have the <errno.h> header file. */
 #define HAVE_ERRNO_H 1
 
+/* Define to 1 if you have the `error_message' function. */
+#define HAVE_ERROR_MESSAGE 1
+
 /* Define to 1 if you have the `euidaccess' function. */
 /* #undef HAVE_EUIDACCESS */
+
+/* Define to 1 if you have the `eventfd' function. */
+/* #undef HAVE_EVENTFD */
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#define HAVE_FCNTL_H 1
 
 /* Define to 1 if you have the `freehostent' function. */
 #define HAVE_FREEHOSTENT 1
@@ -218,6 +254,9 @@
 /* Define to 1 if you have the `gethostent_r' function. */
 /* #undef HAVE_GETHOSTENT_R */
 
+/* Define to 1 if you have the `gethrtime' function. */
+/* #undef HAVE_GETHRTIME */
+
 /* Define to 1 if you have the `getipnodebyaddr' function. */
 #define HAVE_GETIPNODEBYADDR 1
 
@@ -232,6 +271,9 @@
 
 /* Define to 1 if you have the `getopt' function. */
 #define HAVE_GETOPT 1
+
+/* Define to 1 if you have the <getopt.h> header file. */
+#define HAVE_GETOPT_H 1
 
 /* Define to 1 if you have the `getnameinfo' function. */
 #define HAVE_GETNAMEINFO 1
@@ -254,6 +296,19 @@
 
 /* Define to 1 if you have the `getuid' function. */
 #define HAVE_GETUID 1
+
+/* Define to 1 if you have the <gnutls/abstract.h> header file. */
+/* #undef HAVE_GNUTLS_ABSTRACT_H */
+
+/* Define to 1 if you have the `gnutls_certificate_set_verify_function'
+   function. */
+/* #undef HAVE_GNUTLS_CERTIFICATE_SET_VERIFY_FUNCTION */
+
+/* Define to 1 if you have the `gnutls_record_disable_padding' function. */
+/* #undef HAVE_GNUTLS_RECORD_DISABLE_PADDING */
+
+/* Define to 1 if you have the `gnutls_rnd' function. */
+/* #undef HAVE_GNUTLS_RND */
 
 /* Define to 1 if you have the <ieeefp.h> header file. */
 /* #undef HAVE_IEEEFP_H */
@@ -278,6 +333,9 @@
 
 /* Define to 1 if you have `ios(_base)::register_callback'. */
 #define HAVE_IOS_REGISTER_CALLBACK 1
+
+/* Define to 1 if you have the <langinfo.h> header file. */
+#define HAVE_LANGINFO_H 1
 
 /* Define to 1 if you have the <lapacke.h> header file. */
 /* #undef HAVE_LAPACKE_H */
@@ -400,6 +458,9 @@
 /* Define to 1 if you have the <malloc.h> header file. */
 /* #undef HAVE_MALLOC_H */
 
+/* Define to 1 if you have the `malloc_options' function. */
+/* #undef HAVE_MALLOC_OPTIONS */
+
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
 
@@ -421,11 +482,20 @@
 /* Define to 1 if you have the <netinet/tcp.h> header file. */
 #define HAVE_NETINET_TCP_H 1
 
+/* Define to 1 if you have the <net/inet/in.h> header file. */
+/* #undef HAVE_NET_INET_IN_H */
+
+/* Define to 1 if you have the `nl_langinfo' function. */
+#define HAVE_NL_LANGINFO 1
+
 /* Define to 1 if the ORBacus CORBA package is available. */
 /* #undef HAVE_ORBACUS */
 
 /* Define to 1 if you have the <paths.h> header file. */
 #define HAVE_PATHS_H 1
+
+/* Define to 1 if you have the `poll' function. */
+#define HAVE_POLL 1
 
 /* Define to 1 if you have the <poll.h> header file. */
 #define HAVE_POLL_H 1
@@ -435,6 +505,10 @@
 
 /* Define to 1 if you have the `pthread_condattr_setclock' function. */
 /* #undef HAVE_PTHREAD_CONDATTR_SETCLOCK */
+
+/* Define to 1 if you have the `pthread_cond_timedwait_relative_np' function.
+   */
+#define HAVE_PTHREAD_COND_TIMEDWAIT_RELATIVE_NP 1
 
 /* Define to 1 if pthread mutexes are available. */
 #define HAVE_PTHREAD_MUTEX 1
@@ -465,11 +539,17 @@
    `restrict' keyword. */
 #define HAVE_RESTRICT_CXX 1
 
+/* Define to 1 if you have the <roken.h> header file. */
+/* #undef HAVE_ROKEN_H */
+
 /* Define to 1 if you have the `sched_yield' function. */
 #define HAVE_SCHED_YIELD 1
 
 /* Define to 1 if you have the `select' function. */
 #define HAVE_SELECT 1
+
+/* Define to 1 if you have the <select.h> header file. */
+/* #undef HAVE_SELECT_H */
 
 /* Define to 1 if you have `union semun'. */
 #define HAVE_SEMUN 1
@@ -477,11 +557,20 @@
 /* Define to 1 if you have the `setenv' function. */
 #define HAVE_SETENV 1
 
+/* Define to 1 if you have the `setitimer' function. */
+#define HAVE_SETITIMER 1
+
+/* Define to 1 if you have the `setrlimit' function. */
+#define HAVE_SETRLIMIT 1
+
 /* Define to 1 if you have the <signal.h> header file. */
 #define HAVE_SIGNAL_H 1
 
 /* Define to 1 if `sin_len' is a member of `struct sockaddr_in'. */
 #define HAVE_SIN_LEN 1
+
+/* Define to 1 if you have the `snprintf' function. */
+#define HAVE_SNPRINTF 1
 
 /* Define to 1 if you have the `socketpair' function. */
 #define HAVE_SOCKETPAIR 1
@@ -495,6 +584,12 @@
 /* Define to 1 if the system has the type `SQLLEN'. */
 #define HAVE_SQLLEN 1
 
+/* Define to 1 if the system has the type `SQLROWOFFSET'. */
+/* #undef HAVE_SQLROWOFFSET */
+
+/* Define to 1 if the system has the type `SQLROWSETSIZE'. */
+/* #undef HAVE_SQLROWSETSIZE */
+
 /* Define to 1 if the system has the type `SQLSETPOSIROW'. */
 #define HAVE_SQLSETPOSIROW 1
 
@@ -503,6 +598,9 @@
 
 /* Define to 1 if you have the `statvfs' function. */
 #define HAVE_STATVFS 1
+
+/* Define to 1 if you have the <stdbool.h> header file. */
+#define HAVE_STDBOOL_H 1
 
 /* Define to 1 if you have the <stddef.h> header file. */
 #define HAVE_STDDEF_H 1
@@ -573,11 +671,23 @@
 /* Define to 1 if you have SysV semaphores. */
 #define HAVE_SYSV_SEMAPHORES 1
 
+/* Define to 1 if you have the <sys/eventfd.h> header file. */
+/* #undef HAVE_SYS_EVENTFD_H */
+
+/* Define to 1 if you have the <sys/file.h> header file. */
+#define HAVE_SYS_FILE_H 1
+
 /* Define to 1 if you have the <sys/ioctl.h> header file. */
 #define HAVE_SYS_IOCTL_H 1
 
 /* Define to 1 if you have the <sys/mount.h> header file. */
 #define HAVE_SYS_MOUNT_H 1
+
+/* Define to 1 if you have the <sys/param.h> header file. */
+#define HAVE_SYS_PARAM_H 1
+
+/* Define to 1 if you have the <sys/resource.h> header file. */
+#define HAVE_SYS_RESOURCE_H 1
 
 /* Define to 1 if you have the <sys/select.h> header file. */
 #define HAVE_SYS_SELECT_H 1
@@ -605,6 +715,9 @@
 
 /* Define to 1 if you have the <sys/vfs.h> header file. */
 /* #undef HAVE_SYS_VFS_H */
+
+/* Define to 1 if you have the <sys/wait.h> header file. */
+#define HAVE_SYS_WAIT_H 1
 
 /* Define to 1 if you have the `timegm' function. */
 #define HAVE_TIMEGM 1
@@ -688,6 +801,9 @@
    takes (normally 2 or 3). */
 #define NCBI_HAVE_READDIR_R 3
 
+/* Define to 1 if stdio supports locking. */
+#define NCBI_HAVE_STDIO_LOCKED 1
+
 /* Define to whatever syntax, if any, your compiler supports for marking
    functions that never return. */
 #define NCBI_NORETURN __attribute__((__noreturn__))
@@ -727,6 +843,9 @@
 /* Define to 1 if the `select' function updates its timeout when interrupted
    by a signal. */
 /* #undef SELECT_UPDATES_TIMEOUT */
+
+/* The size of `SQLWCHAR', as computed by sizeof. */
+/* #undef SIZEOF_SQLWCHAR */
 
 /* Define to 1 if the stack grows down. */
 #define STACK_GROWS_DOWN 1

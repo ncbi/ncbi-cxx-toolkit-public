@@ -9,6 +9,9 @@
 /* Define to 1 if you have the `alarm' function. */
 #undef HAVE_ALARM
 
+/* Define to 1 if you have the <alloca.h> header file. */
+#undef HAVE_ALLOCA_H
+
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
 
@@ -71,8 +74,14 @@
 /* Define to 1 if you have the <clapack.h> header file. */
 #undef HAVE_CLAPACK_H
 
+/* Define to 1 if you have the `clock_gettime' function. */
+#undef HAVE_CLOCK_GETTIME
+
 /* Define to 1 if you have the <common/ncbi_build_ver.h> header file. */
 #undef HAVE_COMMON_NCBI_BUILD_VER_H
+
+/* Define to 1 if you have the <com_err.h> header file. */
+#undef HAVE_COM_ERR_H
 
 /* Define to 1 if the preprocessor supports GNU-style variadic macros. */
 #undef HAVE_CPP_GNU_VARARGS
@@ -89,8 +98,26 @@
 /* Define to 1 if you have the <cxxabi.h> header file. */
 #undef HAVE_CXXABI_H
 
+/* Define to 1 if you have the `daemon' function. */
+#undef HAVE_DAEMON
+
 /* Define to 1 if you have the `dbopen' function. */
 #undef HAVE_DBOPEN
+
+/* Define to 1 if you have the declaration of `CLOCK_MONOTONIC', and to 0 if
+   you don't. */
+#undef HAVE_DECL_CLOCK_MONOTONIC
+
+/* Define to 1 if you have the declaration of `CLOCK_REALTIME', and to 0 if
+   you don't. */
+#undef HAVE_DECL_CLOCK_REALTIME
+
+/* Define to 1 if you have the declaration of `CLOCK_SGI_CYCLE', and to 0 if
+   you don't. */
+#undef HAVE_DECL_CLOCK_SGI_CYCLE
+
+/* Define to 1 if you have the <dirent.h> header file. */
+#undef HAVE_DIRENT_H
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
@@ -104,11 +131,20 @@
 /* Define to 1 if you have the <errno.h> header file. */
 #undef HAVE_ERRNO_H
 
+/* Define to 1 if you have the `error_message' function. */
+#undef HAVE_ERROR_MESSAGE
+
 /* Define to 1 if you have the `euidaccess' function. */
 #undef HAVE_EUIDACCESS
 
+/* Define to 1 if you have the `eventfd' function. */
+#undef HAVE_EVENTFD
+
 /* Define to 1 if you have the `FCGX_Accept_r' function. */
 #undef HAVE_FCGX_ACCEPT_R
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#undef HAVE_FCNTL_H
 
 /* Define to 1 if you have the `freehostent' function. */
 #undef HAVE_FREEHOSTENT
@@ -151,6 +187,9 @@
 /* Define to 1 if you have the `gethostent_r' function. */
 #undef HAVE_GETHOSTENT_R
 
+/* Define to 1 if you have the `gethrtime' function. */
+#undef HAVE_GETHRTIME
+
 /* Define to 1 if you have the `getipnodebyaddr' function. */
 #undef HAVE_GETIPNODEBYADDR
 
@@ -168,6 +207,9 @@
 
 /* Define to 1 if you have the `getopt' function. */
 #undef HAVE_GETOPT
+
+/* Define to 1 if you have the <getopt.h> header file. */
+#undef HAVE_GETOPT_H
 
 /* Define to 1 if you have the `getpagesize' function. */
 #undef HAVE_GETPAGESIZE
@@ -193,6 +235,19 @@
 
 /* Define to 1 if you have the `getuid' function. */
 #undef HAVE_GETUID
+
+/* Define to 1 if you have the <gnutls/abstract.h> header file. */
+#undef HAVE_GNUTLS_ABSTRACT_H
+
+/* Define to 1 if you have the `gnutls_certificate_set_verify_function'
+   function. */
+#undef HAVE_GNUTLS_CERTIFICATE_SET_VERIFY_FUNCTION
+
+/* Define to 1 if you have the `gnutls_record_disable_padding' function. */
+#undef HAVE_GNUTLS_RECORD_DISABLE_PADDING
+
+/* Define to 1 if you have the `gnutls_rnd' function. */
+#undef HAVE_GNUTLS_RND
 
 /* Define to 1 if ICU libraries are available. */
 #undef HAVE_ICU
@@ -220,6 +275,9 @@
 
 /* Define to 1 if you have `ios(_base)::register_callback'. */
 #undef HAVE_IOS_REGISTER_CALLBACK
+
+/* Define to 1 if you have the <langinfo.h> header file. */
+#undef HAVE_LANGINFO_H
 
 /* Define to 1 if you have the <lapacke.h> header file. */
 #undef HAVE_LAPACKE_H
@@ -457,6 +515,9 @@
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
 
+/* Define to 1 if you have the `malloc_options' function. */
+#undef HAVE_MALLOC_OPTIONS
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
@@ -487,6 +548,12 @@
 /* Define to 1 if you have the <netinet/tcp.h> header file. */
 #undef HAVE_NETINET_TCP_H
 
+/* Define to 1 if you have the <net/inet/in.h> header file. */
+#undef HAVE_NET_INET_IN_H
+
+/* Define to 1 if you have the `nl_langinfo' function. */
+#undef HAVE_NL_LANGINFO
+
 /* Define to 1 if ODBC libraries are available. */
 #undef HAVE_ODBC
 
@@ -502,6 +569,9 @@
 /* Define to 1 if you have the <paths.h> header file. */
 #undef HAVE_PATHS_H
 
+/* Define to 1 if you have the `poll' function. */
+#undef HAVE_POLL
+
 /* Define to 1 if you have the <poll.h> header file. */
 #undef HAVE_POLL_H
 
@@ -510,6 +580,10 @@
 
 /* Define to 1 if you have the `pthread_condattr_setclock' function. */
 #undef HAVE_PTHREAD_CONDATTR_SETCLOCK
+
+/* Define to 1 if you have the `pthread_cond_timedwait_relative_np' function.
+   */
+#undef HAVE_PTHREAD_COND_TIMEDWAIT_RELATIVE_NP
 
 /* Define to 1 if pthread mutexes are available. */
 #undef HAVE_PTHREAD_MUTEX
@@ -552,11 +626,17 @@
    `restrict' keyword. */
 #undef HAVE_RESTRICT_CXX
 
+/* Define to 1 if you have the <roken.h> header file. */
+#undef HAVE_ROKEN_H
+
 /* Define to 1 if you have the `sched_yield' function. */
 #undef HAVE_SCHED_YIELD
 
 /* Define to 1 if you have the `select' function. */
 #undef HAVE_SELECT
+
+/* Define to 1 if you have the <select.h> header file. */
+#undef HAVE_SELECT_H
 
 /* Define to 1 if you have `union semun'. */
 #undef HAVE_SEMUN
@@ -564,11 +644,20 @@
 /* Define to 1 if you have the `setenv' function. */
 #undef HAVE_SETENV
 
+/* Define to 1 if you have the `setitimer' function. */
+#undef HAVE_SETITIMER
+
+/* Define to 1 if you have the `setrlimit' function. */
+#undef HAVE_SETRLIMIT
+
 /* Define to 1 if you have the <signal.h> header file. */
 #undef HAVE_SIGNAL_H
 
 /* Define to 1 if `sin_len' is a member of `struct sockaddr_in'. */
 #undef HAVE_SIN_LEN
+
+/* Define to 1 if you have the `snprintf' function. */
+#undef HAVE_SNPRINTF
 
 /* Define to 1 if you have the `socketpair' function. */
 #undef HAVE_SOCKETPAIR
@@ -588,6 +677,12 @@
 /* Define to 1 if the system has the type `SQLLEN'. */
 #undef HAVE_SQLLEN
 
+/* Define to 1 if the system has the type `SQLROWOFFSET'. */
+#undef HAVE_SQLROWOFFSET
+
+/* Define to 1 if the system has the type `SQLROWSETSIZE'. */
+#undef HAVE_SQLROWSETSIZE
+
 /* Define to 1 if the system has the type `SQLSETPOSIROW'. */
 #undef HAVE_SQLSETPOSIROW
 
@@ -596,6 +691,9 @@
 
 /* Define to 1 if you have the `statvfs' function. */
 #undef HAVE_STATVFS
+
+/* Define to 1 if you have the <stdbool.h> header file. */
+#undef HAVE_STDBOOL_H
 
 /* Define to 1 if you have the <stddef.h> header file. */
 #undef HAVE_STDDEF_H
@@ -669,11 +767,23 @@
 /* Define to 1 if you have the <sys/epoll.h> header file. */
 #undef HAVE_SYS_EPOLL_H
 
+/* Define to 1 if you have the <sys/eventfd.h> header file. */
+#undef HAVE_SYS_EVENTFD_H
+
+/* Define to 1 if you have the <sys/file.h> header file. */
+#undef HAVE_SYS_FILE_H
+
 /* Define to 1 if you have the <sys/ioctl.h> header file. */
 #undef HAVE_SYS_IOCTL_H
 
 /* Define to 1 if you have the <sys/mount.h> header file. */
 #undef HAVE_SYS_MOUNT_H
+
+/* Define to 1 if you have the <sys/param.h> header file. */
+#undef HAVE_SYS_PARAM_H
+
+/* Define to 1 if you have the <sys/resource.h> header file. */
+#undef HAVE_SYS_RESOURCE_H
 
 /* Define to 1 if you have the <sys/select.h> header file. */
 #undef HAVE_SYS_SELECT_H
@@ -701,6 +811,9 @@
 
 /* Define to 1 if you have the <sys/vfs.h> header file. */
 #undef HAVE_SYS_VFS_H
+
+/* Define to 1 if you have the <sys/wait.h> header file. */
+#undef HAVE_SYS_WAIT_H
 
 /* Define to 1 if you have the `timegm' function. */
 #undef HAVE_TIMEGM
@@ -858,6 +971,9 @@
    takes (normally 2 or 3). */
 #undef NCBI_HAVE_READDIR_R
 
+/* Define to 1 if stdio supports locking. */
+#undef NCBI_HAVE_STDIO_LOCKED
+
 /* Define to 1 if building Java Native Interface bindings. */
 #undef NCBI_JNI
 
@@ -974,6 +1090,9 @@
 
 /* The size of `size_t', as computed by sizeof. */
 #undef SIZEOF_SIZE_T
+
+/* The size of `SQLWCHAR', as computed by sizeof. */
+#undef SIZEOF_SQLWCHAR
 
 /* The size of `void*', as computed by sizeof. */
 #undef SIZEOF_VOIDP

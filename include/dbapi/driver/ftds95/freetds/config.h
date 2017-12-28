@@ -34,10 +34,6 @@
 #  define ENABLE_EXTRA_CHECKS 1
 #endif
 
-#ifdef HAVE_LIBRT
-#  define HAVE_CLOCK_GETTIME 1
-#endif
-
 #if defined(HAVE_GETHOSTBYADDR_R)
 #  if   HAVE_GETHOSTBYADDR_R == 5
 #    define HAVE_FUNC_GETHOSTBYADDR_R_5 1
@@ -95,10 +91,6 @@
 #  define HAVE_INT64 1
 #endif
 
-#ifdef HAVE_POLL_H
-#  define HAVE_POLL 1
-#endif
-
 #ifndef HAVE_SOCKLEN_T
 typedef int socklen_t;
 #endif
@@ -113,10 +105,12 @@ typedef int socklen_t;
 #  endif
 #endif
 
-#ifdef SQL_WCHART_CONVERT
-#  define SIZEOF_SQLWCHAR SIZEOF_WCHAR_T
-#else
-#  define SIZEOF_SQLWCHAR SIZEOF_SHORT
+#ifndef SIZEOF_SQLWCHAR
+#  ifdef SQL_WCHART_CONVERT
+#    define SIZEOF_SQLWCHAR SIZEOF_WCHAR_T
+#  else
+#    define SIZEOF_SQLWCHAR SIZEOF_SHORT
+#  endif
 #endif
 
 #ifdef NCBI_HAVE_READDIR_R
@@ -129,8 +123,20 @@ typedef int socklen_t;
 #  define TDS_ATTRIBUTE_DESTRUCTOR 1
 #endif
 
+#if defined(HAVE_DECL_CLOCK_MONOTONIC)  &&  HAVE_DECL_CLOCK_MONOTONIC
+#  define TDS_GETTIMEMILLI_CONST CLOCK_MONOTONIC
+#elif defined(HAVE_DECL_CLOCK_SGI_CYCLE)  &&  HAVE_DECL_CLOCK_SGI_CYCLE
+#  define TDS_GETTIMEMILLI_CONST CLOCK_SGI_CYCLE
+#elif defined(HAVE_DECL_CLOCK_REALTIME)  &&  HAVE_DECL_CLOCK_REALTIME
+#  define TDS_GETTIMEMILLI_CONST CLOCK_REALTIME
+#endif
+
 #if defined(HAVE_PTHREAD_MUTEX)
 #  define TDS_HAVE_PTHREAD_MUTEX 1
+#endif
+
+#if defined(NCBI_HAVE_STDIO_LOCKED)
+#  define TDS_HAVE_STDIO_LOCKED 1
 #endif
 
 #ifdef NCBI_SQLCOLATTRIBUTE_SQLLEN
@@ -143,12 +149,6 @@ typedef int socklen_t;
 #  endif
 #  define TDS_I64_PREFIX "I64"
 #  define inline __inline
-#  if _MSC_VER >= 1400 /* Visual Studio 2005 (MSVC 7.0) */
-#    define HAVE__FSEEKI64    1
-#    define HAVE__FTELLI64    1
-#    define HAVE__LOCK_FILE   1
-#    define HAVE__UNLOCK_FILE 1
-#  endif
 /* Defined here rather than via ncbiconf(_msvc).h because Microsoft's
  * implementation is too barebones for the connect tree, lacking in
  * particular EAI_SYSTEM.

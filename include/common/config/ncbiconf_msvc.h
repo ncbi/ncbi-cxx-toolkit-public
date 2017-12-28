@@ -45,6 +45,7 @@
 #define SIZEOF_LONG         4
 #define SIZEOF_LONG_DOUBLE  8
 #define SIZEOF_SHORT        2
+#define SIZEOF_SQLWCHAR     2
 #define SIZEOF_WCHAR_T      2
 
 #define STDC_HEADERS     1
@@ -105,6 +106,7 @@ typedef   int   ssize_t;
 #define HAVE_ALARM                      1
 #define HAVE_ATOLL                      1
 #define HAVE_ERRNO_H                    1
+#define HAVE_FCNTL_H                    1
 #define HAVE_FSTAT                      1
 #define HAVE_GETHOSTNAME                1
 #define HAVE_INT64                      1
@@ -112,10 +114,21 @@ typedef   int   ssize_t;
 #define HAVE_MALLOC_H                   1
 #define HAVE_MEMORY_H                   1
 #define HAVE_PUTENV                     1
+#define HAVE_SNPRINTF                   1
 #define HAVE_SQLLEN                     1
+#define HAVE_SQLROWOFFSET               1
+#define HAVE_SQLROWSETSIZE              1
 #define HAVE_SQLSETPOSIROW              1
+#define HAVE_STDBOOL_H                  1
 #define HAVE_STDLIB_H                   1
 #define HAVE_STRING_H                   1
+#define HAVE__FSEEKI64                  1
+#define HAVE__FTELLI64                  1
+#define HAVE__LOCK_FILE                 1
+#define HAVE__UNLOCK_FILE               1
+#define HAVE__VSCPRINTF                 1
+#define HAVE__VSNPRINTF                 1
+#define NCBI_HAVE_STDIO_LOCKED          1
 
 #ifdef __GNUC__
 #  define HAVE_SYS_TIME_H               1

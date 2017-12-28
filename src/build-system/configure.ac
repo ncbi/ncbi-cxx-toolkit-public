@@ -3376,10 +3376,12 @@ case "$host_os" in
    cygwin*) AC_CHECK_HEADERS(winternl.h) ;;
 esac
 # for FreeTDS
-AC_CHECK_HEADERS(arpa/inet.h errno.h libgen.h locale.h malloc.h netdb.h \
-                 netinet/in.h netinet/tcp.h paths.h signal.h stddef.h \
-                 sys/ioctl.h sys/select.h sys/socket.h sys/time.h \
-                 valgrind/memcheck.h wchar.h)
+AC_CHECK_HEADERS(alloca.h arpa/inet.h dirent.h errno.h fcntl.h getopt.h \
+                 langinfo.h libgen.h locale.h malloc.h net/inet/in.h netdb.h \
+                 netinet/in.h netinet/tcp.h paths.h select.h signal.h \
+                 stdbool.h stddef.h sys/eventfd.h sys/file.h sys/ioctl.h \
+                 sys/param.h sys/resource.h sys/select.h sys/socket.h \
+                 sys/time.h sys/wait.h valgrind/memcheck.h wchar.h)
 AC_HEADER_TIME
 
 AC_CHECK_HEADERS(cxxabi.h)
@@ -3603,12 +3605,14 @@ fi
 ### Check for other standard library functions
 
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(alarm asprintf atoll basename dbopen euidaccess fseeko fstat \
-               getgrouplist getopt getpagesize getpass getpassphrase \
-               getpwuid getrusage gettimeofday getuid lchown lutimes memrchr \
-               putenv readpassphrase readv select setenv statfs statvfs \
-               strcasecmp strdup strlcat strlcpy strndup strnlen strsep \
-               strtok_r sysmp timegm usleep utimes vasprintf vsnprintf writev)
+AC_CHECK_FUNCS(alarm asprintf atoll basename dbopen daemon euidaccess eventfd \
+               fseeko fstat getgrouplist gethrtime getopt getpagesize getpass \
+               getpassphrase getpwuid getrusage gettimeofday getuid lchown \
+               lutimes malloc_options memrchr nl_langinfo poll putenv \
+               readpassphrase readv select setenv setitimer setrlimit \
+               snprintf statfs statvfs strcasecmp strdup strlcat strlcpy \
+               strndup strnlen strsep strtok_r sysmp timegm usleep utimes \
+               vasprintf vsnprintf writev)
 AC_LANG_POP(C)
 
 AC_TYPE_SIGNAL
@@ -3700,6 +3704,19 @@ if test "$ncbi_cv_func_readdir_r" != "no" ; then
    AC_DEFINE_UNQUOTED(NCBI_HAVE_READDIR_R, $ncbi_cv_func_readdir_r,
     [If you have the `readdir_r' function, define to the number of
      arguments it takes (normally 2 or 3).])
+fi
+
+AC_CACHE_CHECK([whether stdio supports locking], ncbi_cv_c_stdio_locked,
+   [AC_LINK_IFELSE([AC_LANG_PROGRAM(
+      [[#include <stdio.h>]],
+      [[int c;
+        flockfile(stdin);
+        c = getc_unlocked(stdin);
+        funlockfile(stdin);]])],
+      [ncbi_cv_c_stdio_locked=yes], [ncbi_cv_c_stdio_locked=no])])
+if test "$ncbi_cv_c_stdio_locked" = yes; then
+   AC_DEFINE(NCBI_HAVE_STDIO_LOCKED, 1,
+      [Define to 1 if stdio supports locking.])
 fi
 
 ### Check for typedefs, structures, and compiler features.
@@ -4231,7 +4248,13 @@ if test -n "$DEMANGLE_LIBS$RT_LIBS"; then
     LIBS="$DEMANGLE_LIBS $RT_LIBS $LIBS"
     orig_LIBS="$DEMANGLE_LIBS $RT_LIBS $orig_LIBS"
 fi
-AC_CHECK_FUNCS([nanosleep pthread_condattr_setclock sched_yield])
+AC_CHECK_FUNCS([clock_gettime nanosleep pthread_cond_timedwait_relative_np \
+                pthread_condattr_setclock sched_yield])
+AC_CHECK_DECLS([CLOCK_MONOTONIC, CLOCK_SGI_CYCLE, CLOCK_REALTIME], [], [],
+   [[#include <time.h>
+     #ifdef HAVE_SYS_TIME_H
+     #  include <sys/time.h>
+     #endif]])
 
 dnl NCBI_CHECK_LIBS(ICONV, iconv, iconv)
 # We need to include <iconv.h>, since some implementations rename the symbols.
@@ -4574,6 +4597,9 @@ NCBI_CHECK_THIRD_PARTY_LIB(gnutls,
    [[gnutls_session_t s; gnutls_init(&s, GNUTLS_CLIENT);]])]],
  [$GNUTLS_CONFIG_LIBS], [$GCRYPT_LIBS $NETTLE_LIBS $GMP_LIBS])
 if test "x$with_gnutls" != xno; then
+   AC_CHECK_FUNCS([gnutls_certificate_set_verify_function \
+                   gnutls_record_disable_padding gnutls_rnd])
+   AC_CHECK_HEADERS([gnutls/abstract.h])
    if test -n "$GNUTLS_CONFIG_LIBS"; then
       NCBI_RPATHIFY_OUTPUT(GNUTLS_LIBS, [echo $GNUTLS_CONFIG_LIBS],
          [$no_usr_lib])
@@ -4666,6 +4692,8 @@ extern "C" {
      gss_release_buffer(&min_stat, &buf);]])]],
  $KRB5_CONFIG_LIBS)
 if test "x$with_krb5" != xno; then
+   AC_CHECK_FUNCS([error_message])
+   AC_CHECK_HEADERS([com_err.h roken.h])
    NCBI_RPATHIFY_OUTPUT(KRB5_LIBS, [echo $KRB5_CONFIG_LIBS], [$no_usr_lib])
 fi
 
@@ -5248,7 +5276,9 @@ case "$ODBC_PATH" in
       AC_CHECK_HEADERS(odbcss.h, [], [], [#include <sql.h>])
 
       AC_CHECK_FUNCS(SQLGetPrivateProfileString)
-      AC_CHECK_TYPES([SQLLEN, SQLSETPOSIROW],,,[#include <sqltypes.h>])
+      AC_CHECK_TYPES([SQLLEN, SQLROWOFFSET, SQLROWSETSIZE, SQLSETPOSIROW],,,
+         [#include <sqltypes.h>])
+      AC_CHECK_SIZEOF(SQLWCHAR, [], [#include <sqltypes.h>])
 
       AC_CACHE_CHECK([whether SQLColAttribute's last argument is an SQLLEN *],
          ncbi_cv_func_sqlcolattribute_sqllen,
@@ -5276,8 +5306,13 @@ case "$ODBC_PATH" in
    ODBC_LIBS=
    dnl AC_DEFINE(HAVE_SQLGETPRIVATEPROFILESTRING, 1)
    AC_DEFINE(HAVE_SQLLEN, 1)
+   if test $NCBI_PLATFORM_BITS -eq 32; then
+      AC_DEFINE(HAVE_SQLROWOFFSET, 1)
+      AC_DEFINE(HAVE_SQLROWSETSIZE, 1)
+   fi
    AC_DEFINE(HAVE_SQLSETPOSIROW, 1)
    AC_DEFINE(NCBI_SQLCOLATTRIBUTE_SQLLEN, 1)
+   dnl AC_DEFINE(SIZEOF_SQLWCHAR, 2) # depends on SQL_WCHART_CONVERT
    ;;
  *)
    NCBI_PACKAGE(ODBC)

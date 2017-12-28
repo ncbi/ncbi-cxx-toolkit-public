@@ -65,6 +65,8 @@
 #    define SIZEOF_SIZE_T 8
 #    define SIZEOF_VOIDP  8
 #  else
+#    define HAVE_SQLROWOFFSET  1
+#    define HAVE_SQLROWSETSIZE 1
 #    define SIZEOF_LONG   4
 #    define SIZEOF_SIZE_T 4
 #    define SIZEOF_VOIDP  4
