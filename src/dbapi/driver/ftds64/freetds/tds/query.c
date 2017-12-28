@@ -1904,7 +1904,7 @@ static int
 tds_put_params(TDSSOCKET * tds, TDSPARAMINFO * info, int flags)
 {
     int i, len;
-    char token = TDS5_PARAMFMT2_TOKEN;
+    unsigned char token = TDS5_PARAMFMT2_TOKEN;
 
     CHECK_TDS_EXTRA(tds);
     CHECK_PARAMINFO_EXTRA(info);

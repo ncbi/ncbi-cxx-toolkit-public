@@ -5220,7 +5220,7 @@ dbmnymaxneg(DBPROCESS * dbproc, DBMONEY * amount)
 	CHECK_NULP(amount, "dbmnymaxneg", 2, FAIL);
 
 	amount->mnylow = 0;
-    amount->mnyhigh = -1 << 31;
+    amount->mnyhigh = -0x7FFFFFFFL - 1;
 	return SUCCEED;
 }
 
@@ -5348,7 +5348,7 @@ dbmnydec(DBPROCESS * dbproc, DBMONEY * amount)
 		--amount->mnylow;
 		return SUCCEED;
 	}
-    if (amount->mnyhigh == -1 << 31)
+    if (amount->mnyhigh == -0x7FFFFFFFL - 1)
 		return FAIL;
 	amount->mnylow = 0xFFFFFFFFlu;
 	--amount->mnyhigh;
@@ -5373,7 +5373,7 @@ dbmnyminus(DBPROCESS * dbproc, DBMONEY * src, DBMONEY * dest)
 	CHECK_NULP(src, "dbmnyminus", 2, FAIL);
 	CHECK_NULP(dest, "dbmnyminus", 3, FAIL);
 
-    if (src->mnyhigh == -1 << 31 && src->mnylow == 0)
+    if (src->mnyhigh == -0x7FFFFFFFL - 1 && src->mnylow == 0)
 		return FAIL;
 	dest->mnyhigh = -src->mnyhigh;
 	dest->mnylow = (~src->mnylow) + 1u;

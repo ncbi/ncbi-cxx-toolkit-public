@@ -91,7 +91,7 @@ static int store_dd_mon_yyy_date(char *datestr, struct tds_time *t);
 #define IS_UINT(x) (0 <= (x) && (x) <= TDS_UINT_MAX)
 
 #define TDS_INT8_MAX ((((TDS_INT8) 0x7fffffffl) << 32) + (TDS_INT8) 0xfffffffflu)
-#define TDS_INT8_MIN  (((TDS_INT8) (-0x7fffffffl-1)) << 32)
+#define TDS_INT8_MIN (-TDS_INT8_MAX - (TDS_INT8) 1)
 #define IS_INT8(x) (TDS_INT8_MIN <= (x) && (x) <= TDS_INT8_MAX)
 
 #define TDS_UINT8_MAX ((((TDS_UINT8) 0xfffffffflu) << 32) + 0xfffffffflu)
