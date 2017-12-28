@@ -52,6 +52,9 @@ shutdown_socket(DBPROCESS *dbproc)
 	TDS_SYS_SOCKET sockets[2];
 
 	TDS_SYS_SOCKET socket = DBIOWDESC(dbproc);
+#if defined(__APPLE__) && defined(SO_NOSIGPIPE)
+        int on = 1;
+#endif
 
 	if (fstat(socket, &file_stat))
 		return 0;
@@ -65,6 +68,12 @@ shutdown_socket(DBPROCESS *dbproc)
 	/* replace socket with a new one */
 	if (socketpair(AF_UNIX, SOCK_STREAM, 0, sockets) < 0)
 		return 0;
+
+#if defined(__APPLE__)  &&  defined(SO_NOSIGPIPE)
+        if (setsockopt(sockets[0], SOL_SOCKET, SO_NOSIGPIPE,
+                       (const void *) &on, sizeof(on)))
+                return 0;
+#endif
 
 	/* substitute socket */
 	close(socket);

@@ -11,6 +11,6 @@ LINK     = $(C_LINK)
 
 CHECK_CMD  = test-db100 db100_hang
 
-CHECK_REQUIRES = in-house-resources -Darwin
+CHECK_REQUIRES = in-house-resources
 
 WATCHERS = ucko satskyse
