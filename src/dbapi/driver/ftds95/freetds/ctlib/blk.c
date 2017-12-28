@@ -762,9 +762,9 @@ _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bindcol, int offset)
             src = bindcol->column_default;
             srctype = _ct_get_client_type(blkdesc->con->ctx, bindcol);
             datalen = &bindcol->column_def_size;
-        } else if (is_blob_col(bindcol)) {
+        } else if (is_blob_col(bindcol)  &&  bindcol->column_lenbind != NULL) {
             bindcol->bcp_column_data->datalen = *datalen;
-            bindcol->bcp_column_data->is_null = !bindcol->column_lenbind;
+            bindcol->bcp_column_data->is_null = 0;
             /* Data will come piecemeal, via blk_textxfer. */
             return CS_BLK_HAS_TEXT;
         } else {
