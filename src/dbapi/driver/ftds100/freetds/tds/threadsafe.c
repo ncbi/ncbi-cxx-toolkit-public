@@ -458,7 +458,12 @@ tds_get_homedir(void)
 	 * only to store configuration files
 	 */
 	LPITEMIDLIST pidl;
-	char path[MAX_PATH];
+        /*
+         * SHGetPathFromIDListA() tries to count the length of "path",
+         * so we have to make sure that it has only zeros; otherwise,
+         * invalid memory access is inevitable.
+         */
+	char path[MAX_PATH] = "";
 	HRESULT hr;
 	LPMALLOC pMalloc = NULL;
 	char * res = NULL;
