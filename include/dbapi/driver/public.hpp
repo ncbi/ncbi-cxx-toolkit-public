@@ -36,8 +36,8 @@
 #include <dbapi/driver/interfaces.hpp>
 
 
-// Visual Studio 2013 overreacts on deprecated methods
-#if defined(_MSC_VER) && _MSC_VER < 1900
+// Visual Studio 2013 and 2015 overreact on deprecated methods
+#if defined(_MSC_VER) && _MSC_VER < 1910
     #pragma warning(push)
     #pragma warning(disable : 4996)
 #endif
@@ -1099,7 +1099,7 @@ END_NCBI_SCOPE
 
 /* @} */
 
-#if defined(_MSC_VER) && _MSC_VER < 1900
+#if defined(_MSC_VER) && _MSC_VER < 1910
     #pragma warning(pop)
 #endif
 
