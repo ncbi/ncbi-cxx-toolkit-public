@@ -326,7 +326,8 @@ ConfigDSN(HWND hwndParent, WORD fRequest, LPCSTR lpszDriver, LPCSTR lpszAttribut
 			DWORD errorcode = GetLastError();
 			char buf[1000];
 
-			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, errorcode, 0, buf, 1000, NULL);
+                        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL,
+                                       errorcode, 0, buf, 1000, NULL);
 		}
 
 		/* if user hit [Cancel] then clean up and return FALSE */
@@ -430,9 +431,10 @@ DllRegisterServer(void)
 	char *desc = NULL;
 	BOOL b_res;
 
-	if (!GetModuleFileName(hinstFreeTDS, fn, TDS_VECTOR_SIZE(fn)))
+        if ( !GetModuleFileNameA(hinstFreeTDS, fn, TDS_VECTOR_SIZE(fn)) )
 		return SELFREG_E_CLASS;
-	if (!GetFullPathName(fn, TDS_VECTOR_SIZE(full_fn), full_fn, &name) || !name || full_fn == name)
+        if ( !GetFullPathNameA(fn, TDS_VECTOR_SIZE(full_fn), full_fn, &name)
+            ||  !name  ||  full_fn == name)
 		return SELFREG_E_CLASS;
 
 	if (asprintf(&desc, "FreeTDS%c"

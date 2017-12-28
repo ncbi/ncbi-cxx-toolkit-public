@@ -90,8 +90,11 @@ static FILE *tdoGetIniFileName(void);
  *    expect see tdoGetIniFileName().
  *
  */
+#ifndef _WIN32
 static int SQLGetPrivateProfileString(LPCSTR pszSection, LPCSTR pszEntry, LPCSTR pszDefault, LPSTR pRetBuffer, int nRetBuffer,
 				      LPCSTR pszFileName);
+#endif
+
 #endif
 
 #if defined(FILENAME_MAX) && FILENAME_MAX < 512
@@ -503,7 +506,7 @@ odbc_build_connect_string(TDS_ERRS *errs, TDS_PARSED_PARAM *params, char **out)
 
 #if !HAVE_SQLGETPRIVATEPROFILESTRING
 
-#ifdef _WIN32
+#if defined(_WIN32)  &&  !defined(TDS_NO_DM)
 #  error There is something wrong  in configuration...
 #endif
 
@@ -530,7 +533,11 @@ tdoParseProfile(const char *option, const char *value, void *param)
 	}
 }
 
+#if defined(_WIN32)  &&  defined(TDS_NO_DM)
+int INSTAPI
+#else
 static int
+#endif
 SQLGetPrivateProfileString(LPCSTR pszSection, LPCSTR pszEntry, LPCSTR pszDefault, LPSTR pRetBuffer, int nRetBuffer,
 			   LPCSTR pszFileName)
 {

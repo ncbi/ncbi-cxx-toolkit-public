@@ -4,11 +4,12 @@
 #include <crtdbg.h>
 #endif
 
+#include <winsock2.h>
 #include <windows.h>
 
-#ifdef DLL_EXPORT
-
 HINSTANCE hinstFreeTDS;
+
+#ifdef DLL_EXPORT
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved);
 
