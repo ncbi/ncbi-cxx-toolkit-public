@@ -223,6 +223,9 @@
 #define tds_process_simple_query        tds_process_simple_query_ver95
 #define tds_process_tokens              tds_process_tokens_ver95
 #define tds_prtype                      tds_prtype_ver95
+#ifdef _WIN32
+#  define tds_prwsaerror                  tds_prwsaerror_ver95
+#endif
 #define tds_put_buf                     tds_put_buf_ver95
 #define tds_put_byte                    tds_put_byte_ver95
 #define tds_put_cancel                  tds_put_cancel_ver95
@@ -266,6 +269,10 @@
 #define tds_skip_quoted                 tds_skip_quoted_ver95
 #define tds_sleep_ms                    tds_sleep_ms_ver95
 #define tds_sleep_s                     tds_sleep_s_ver95
+#ifdef _WIN32
+#  define tds_socket_done                 tds_socket_done_ver95
+#  define tds_socket_init                 tds_socket_init_ver95
+#endif
 #define tds_srv_charset_changed         tds_srv_charset_changed_ver95
 #ifdef NCBI_FTDS_ALLOW_TDS_80
 #  define tds_ssl_deinit                  tds_ssl_deinit_ver95

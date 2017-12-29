@@ -87,6 +87,9 @@
 #ifndef HAVE_VASPRINTF
 #  define vasprintf                     vasprintf_ver95
 #endif
+#ifdef _WIN32
+#  define tds_win_mutex_lock            tds_win_mutex_lock_ver95
+#endif
 
 
 #endif  /* DBAPI_DRIVER_FTDS95_IMPL___RENAME_FTDS_REPLACEMENTS__H */
