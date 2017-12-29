@@ -8056,6 +8056,7 @@ DBAPI_DBLIB=
 DBAPI_FTDS=
 DBAPI_FTDS64=
 DBAPI_FTDS95=
+DBAPI_FTDS100=
 DBAPI_MYSQL=
 DBAPI_ODBC=
 if test "$with_dbapi" = "no" ; then
@@ -8067,6 +8068,7 @@ else
    DBAPI_FTDS=ncbi_xdbapi_ftds
    DBAPI_FTDS64=ncbi_xdbapi_ftds64
    DBAPI_FTDS95=ncbi_xdbapi_ftds95
+   DBAPI_FTDS100=ncbi_xdbapi_ftds100
    test -n "$SYBASE_LIBS"    &&  DBAPI_CTLIB=ncbi_xdbapi_ctlib
    test -n "$SYBASE_DBLIBS"  &&  DBAPI_DBLIB=ncbi_xdbapi_dblib
    test -n "$MYSQL_LIBS"     &&  DBAPI_MYSQL=ncbi_xdbapi_mysql
@@ -8471,6 +8473,7 @@ AC_SUBST(DBAPI_DBLIB)
 AC_SUBST(DBAPI_FTDS)
 AC_SUBST(DBAPI_FTDS64)
 AC_SUBST(DBAPI_FTDS95)
+AC_SUBST(DBAPI_FTDS100)
 AC_SUBST(DBAPI_MYSQL)
 AC_SUBST(DBAPI_ODBC)
 

@@ -949,6 +949,7 @@ DBAPI_DBLIB
 DBAPI_FTDS
 DBAPI_FTDS64
 DBAPI_FTDS95
+DBAPI_FTDS100
 DBAPI_MYSQL
 DBAPI_ODBC
 THREAD_LIBS
@@ -50878,6 +50879,7 @@ DBAPI_DBLIB=
 DBAPI_FTDS=
 DBAPI_FTDS64=
 DBAPI_FTDS95=
+DBAPI_FTDS100=
 DBAPI_MYSQL=
 DBAPI_ODBC=
 if test "$with_dbapi" = "no" ; then
@@ -50889,6 +50891,7 @@ else
    DBAPI_FTDS=ncbi_xdbapi_ftds
    DBAPI_FTDS64=ncbi_xdbapi_ftds64
    DBAPI_FTDS95=ncbi_xdbapi_ftds95
+   DBAPI_FTDS100=ncbi_xdbapi_ftds100
    test -n "$SYBASE_LIBS"    &&  DBAPI_CTLIB=ncbi_xdbapi_ctlib
    test -n "$SYBASE_DBLIBS"  &&  DBAPI_DBLIB=ncbi_xdbapi_dblib
    test -n "$MYSQL_LIBS"     &&  DBAPI_MYSQL=ncbi_xdbapi_mysql
@@ -51214,6 +51217,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 
@@ -52656,6 +52660,7 @@ DBAPI_DBLIB!$DBAPI_DBLIB$ac_delim
 DBAPI_FTDS!$DBAPI_FTDS$ac_delim
 DBAPI_FTDS64!$DBAPI_FTDS64$ac_delim
 DBAPI_FTDS95!$DBAPI_FTDS95$ac_delim
+DBAPI_FTDS100!$DBAPI_FTDS100$ac_delim
 DBAPI_MYSQL!$DBAPI_MYSQL$ac_delim
 DBAPI_ODBC!$DBAPI_ODBC$ac_delim
 THREAD_LIBS!$THREAD_LIBS$ac_delim
@@ -52702,7 +52707,6 @@ BOOST_LIBPATH!$BOOST_LIBPATH$ac_delim
 BOOST_TAG!$BOOST_TAG$ac_delim
 BOOST_FILESYSTEM_LIBS!$BOOST_FILESYSTEM_LIBS$ac_delim
 BOOST_FILESYSTEM_STATIC_LIBS!$BOOST_FILESYSTEM_STATIC_LIBS$ac_delim
-BOOST_IOSTREAMS_LIBS!$BOOST_IOSTREAMS_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -52744,6 +52748,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+BOOST_IOSTREAMS_LIBS!$BOOST_IOSTREAMS_LIBS$ac_delim
 BOOST_IOSTREAMS_STATIC_LIBS!$BOOST_IOSTREAMS_STATIC_LIBS$ac_delim
 BOOST_PROGRAM_OPTIONS_LIBS!$BOOST_PROGRAM_OPTIONS_LIBS$ac_delim
 BOOST_PROGRAM_OPTIONS_STATIC_LIBS!$BOOST_PROGRAM_OPTIONS_STATIC_LIBS$ac_delim
@@ -52840,7 +52845,6 @@ LIBSSH2_STATIC_LIBS!$LIBSSH2_STATIC_LIBS$ac_delim
 CASSANDRA_STATIC_LIBS!$CASSANDRA_STATIC_LIBS$ac_delim
 LIBXLSXWRITER_STATIC_LIBS!$LIBXLSXWRITER_STATIC_LIBS$ac_delim
 GRPC_UNSECURE_LIBS!$GRPC_UNSECURE_LIBS$ac_delim
-GRPC_REFLECTION_LIBS!$GRPC_REFLECTION_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -52882,6 +52886,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+GRPC_REFLECTION_LIBS!$GRPC_REFLECTION_LIBS$ac_delim
 GRPC_BIN!$GRPC_BIN$ac_delim
 MSGSL_INCLUDE!$MSGSL_INCLUDE$ac_delim
 ncbi_xreader_pubseqos!$ncbi_xreader_pubseqos$ac_delim
@@ -52929,7 +52934,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 45; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 46; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
