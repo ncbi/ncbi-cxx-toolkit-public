@@ -566,23 +566,23 @@ void CFeatTableEdit::xFeatureAddProteinIdCds(
 
     auto id = mf.GetNamedQual("ID");
     if (!id.empty()) {
-        pid = string("gnl|") + xGetCurrentLocusTagPrefix(mf) + "|cds." + id;
+        pid = string("gnl|") + xGetCurrentLocusTagPrefix(mf) + "|" + id;
         xFeatureSetQualifier(mf, "protein_id", pid);
         return;
     }
 
     auto tid = mf.GetNamedQual("transcript_id");
     if (!tid.empty()) {
-        //if (!NStr::StartsWith(NStr::ToLower(tid), "cds")) {
-        //    tid = string("cds.") + tid;
-        //}
-        tid = string("cds.") + tid;
+        CMappedFeat parent = feature::GetBestMrnaForCds(mf, &mTree);
+        auto mRnaTid = parent.GetNamedQual("transcript_id");
+        if (tid == mRnaTid) {
+            tid = string("cds.") + tid;
+        }
         pid = string("gnl|") + xGetCurrentLocusTagPrefix(mf) + "|" + tid;
         xFeatureSetQualifier(mf, "protein_id", pid);
         return;
     }
 
-    //pid = xGenerateTranscriptOrProteinId(mf, pid);
     pid = xNextProteinId(mf);
     if (!pid.empty()) {
         xFeatureSetQualifier(mf, "protein_id", pid);
