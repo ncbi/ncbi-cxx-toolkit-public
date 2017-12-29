@@ -521,6 +521,7 @@ void CDeflineGenerator::x_SetFlagsIdx (
     m_Cultivar = bsx->GetCultivar();
     m_Isolate = bsx->GetIsolate();
     m_Strain = bsx->GetStrain();
+    m_Substrain = bsx->GetSubstrain();
 
     m_IsUnverified = bsx->IsUnverified();
     m_IsPseudogene = bsx->IsPseudogene();
@@ -625,6 +626,7 @@ void CDeflineGenerator::x_SetFlags (
     m_Cultivar.clear();
     m_Isolate.clear();
     m_Strain.clear();
+    m_Substrain.clear();
 
     m_IsUnverified = false;
     m_IsPseudogene = false;
@@ -1056,6 +1058,7 @@ void CDeflineGenerator::x_SetBioSrcIdx (
     m_Multispecies = bsx->IsMultispecies();
 
     m_Strain = bsx->GetStrain();
+    m_Substrain = bsx->GetSubstrain();
     m_Cultivar = bsx->GetCultivar();
     m_Isolate = bsx->GetIsolate();
     m_Breed = bsx->GetBreed();
@@ -1151,6 +1154,11 @@ void CDeflineGenerator::x_SetBioSrc (
                 case NCBI_ORGMOD(strain):
                     if (m_Strain.empty()) {
                         m_Strain = str;
+                    }
+                    break;
+                case NCBI_ORGMOD(substrain):
+                    if (m_Substrain.empty()) {
+                        m_Substrain = str;
                     }
                     break;
                 case NCBI_ORGMOD(cultivar):
@@ -1308,6 +1316,12 @@ void CDeflineGenerator::x_SetTitleFromBioSrc (void)
         CTempString add(m_Strain, 0, m_Strain.find(';'));
         if (! x_EndsWithStrain (m_Taxname, add)) {
             joiner.Add("strain", add);
+        }
+    }
+    if (! m_Substrain.empty()) {
+        CTempString add(m_Substrain, 0, m_Substrain.find(';'));
+        if (! x_EndsWithStrain (m_Taxname, add)) {
+            joiner.Add("substr.", add);
         }
     }
     if (! m_Breed.empty()) {
@@ -1600,6 +1614,12 @@ void CDeflineGenerator::x_SetTitleFromGPipe (void)
         CTempString add(m_Strain, 0, m_Strain.find(';'));
         if (! x_EndsWithStrain (m_Taxname, add)) {
             joiner.Add("strain", add);
+        }
+    }
+    if (! m_Strain.empty()) {
+        CTempString add(m_Substrain, 0, m_Substrain.find(';'));
+        if (! x_EndsWithStrain (m_Taxname, add)) {
+            joiner.Add("substr.", add);
         }
     }
     if (! m_Chromosome.empty()) {
@@ -2409,6 +2429,9 @@ void CDeflineGenerator::x_SetTitleFromWGS (void)
         if (! x_EndsWithStrain (m_Taxname, m_Strain)) {
             joiner.Add("strain", m_Strain.substr (0, m_Strain.find(';')));
         }
+        if (! m_Substrain.empty() && ! x_EndsWithStrain (m_Taxname, m_Substrain)) {
+            joiner.Add("substr.", m_Substrain.substr (0, m_Substrain.find(';')));
+        }
     } else if (! m_Breed.empty()) {
         joiner.Add("breed", m_Breed.substr (0, m_Breed.find(';')));
     } else if (! m_Cultivar.empty()) {
@@ -2471,6 +2494,11 @@ void CDeflineGenerator::x_SetTitleFromMap (void)
     if (! m_Strain.empty()) {
         if (! x_EndsWithStrain (m_Taxname, m_Strain)) {
             joiner.Add("strain", m_Strain.substr (0, m_Strain.find(';')));
+        }
+    }
+    if (! m_Substrain.empty()) {
+        if (! x_EndsWithStrain (m_Taxname, m_Substrain)) {
+            joiner.Add("substr.", m_Substrain.substr (0, m_Substrain.find(';')));
         }
     }
     if (! m_Chromosome.empty()) {

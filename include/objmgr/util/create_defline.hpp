@@ -322,6 +322,7 @@ private:
     CTempString m_Cultivar;
     CTempString m_Isolate;
     CTempString m_Strain;
+    CTempString m_Substrain;
 
     /// user object fields
     bool m_IsUnverified;

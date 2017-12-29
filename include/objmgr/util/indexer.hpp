@@ -499,6 +499,7 @@ public:
     CTempString GetCultivar (void);
     CTempString GetIsolate (void);
     CTempString GetStrain (void);
+    CTempString GetSubstrain (void);
 
     bool IsHTGSCancelled (void);
     bool IsHTGSDraft (void);
@@ -653,6 +654,7 @@ private:
     CTempString m_Cultivar;
     CTempString m_Isolate;
     CTempString m_Strain;
+    CTempString m_Substrain;
 
     // Keyword fields (genbank or embl blocks)
     bool m_HTGSCancelled;

@@ -774,6 +774,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_Cultivar.clear();
     m_Isolate.clear();
     m_Strain.clear();
+    m_Substrain.clear();
 
     m_IsUnverified = false;
     m_IsPseudogene = false;
@@ -1276,6 +1277,11 @@ void CBioseqIndex::x_InitSource (void)
                     case NCBI_ORGMOD(strain):
                         if (m_Strain.empty()) {
                             m_Strain = str;
+                        }
+                        break;
+                    case NCBI_ORGMOD(substrain):
+                        if (m_Substrain.empty()) {
+                            m_Substrain = str;
                         }
                         break;
                     case NCBI_ORGMOD(cultivar):
@@ -2147,6 +2153,16 @@ CTempString CBioseqIndex::GetStrain (void)
     }
 
     return m_Strain;
+}
+
+CTempString CBioseqIndex::GetSubstrain (void)
+
+{
+    if (! m_SourcesInitialized) {
+        x_InitSource();
+    }
+
+    return m_Substrain;
 }
 
 bool CBioseqIndex::IsHTGSCancelled (void)
