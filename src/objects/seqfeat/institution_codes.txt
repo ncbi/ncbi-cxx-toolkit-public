@@ -7086,6 +7086,7 @@ UWIZM	s	The University of the West Indies Zoology Museum
 UWJ	s	University of Wisconsin, Biology Department		
 UWL	s	University of Wisconsin, Biology Department		
 UWM	s	University of Wisconsin, Biological Sciences Department		
+UWM<POL>	s	University of Warmia and Mazury in Olsztyn		
 UWMA	s	University of Wisconsin, Milwaukee, Department of Anthropology		
 UWMIL	s	University of Wisconsin, Milwaukee, Department of Biological Sciences		
 UWO	sc	University of Western Ontario		
@@ -7430,6 +7431,7 @@ XZDC	s	Tibet Institute for Drug Control
 XZTC	s	Xuzhou Teachers College, Biology Department		
 Y	s	Yale University, Samuel Jones Record Memorial Collection		
 YA	s	National Herbarium of Cameroon		
+YAAS	s	Herbarium of Yunnan Academy of Agricultural Sciences, Kunming, China		
 YAF	s	Yunnan Academy of Forestry		
 YAI	s	Armenian Agricultural Academy, Botany Department		
 YAK	s	Forest Survey and Design Institute		
