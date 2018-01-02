@@ -72,6 +72,10 @@ public:
         {
             return m_ItemInfo ? m_ItemInfo->GetIndex() : kInvalidMember;
         }
+    CTreeLevelIteratorOne* Clone(void)
+        {
+            return new CTreeLevelIteratorOne(*this);
+        }
 protected:
     void SetItemInfo(const CItemInfo* info)
         {
@@ -109,6 +113,10 @@ public:
     TMemberIndex GetIndex(void) const
         {
             return m_ItemInfo ? m_ItemInfo->GetIndex() : kInvalidMember;
+        }
+    CConstTreeLevelIteratorOne* Clone(void)
+        {
+            return new CConstTreeLevelIteratorOne(*this);
         }
 protected:
     void SetItemInfo(const CItemInfo* info)
@@ -157,6 +165,10 @@ public:
         {
             return m_Iterator.GetIndex();
         }
+    CTreeLevelIteratorMany* Clone(void)
+        {
+            return new CTreeLevelIteratorMany(*this);
+        }
 protected:
     void SetItemInfo(const CItemInfo* /*info*/)
         {
@@ -197,6 +209,10 @@ public:
     TMemberIndex GetIndex(void) const
         {
             return m_Iterator.GetIndex();
+        }
+    CConstTreeLevelIteratorMany* Clone(void)
+        {
+            return new CConstTreeLevelIteratorMany(*this);
         }
 protected:
     void SetItemInfo(const CItemInfo* /*info*/)
@@ -346,12 +362,15 @@ void CTreeIterator::Erase(void)
 }
 
 
+#if 0
+// these are obsolete
 template<class Parent>
 bool CLeafTypeIteratorBase<Parent>::CanSelect(const CConstObjectInfo& object)
 {
     return CParent::CanSelect(object) &&
         SIteratorFunctions::s_ContainsType(object, this->GetIteratorType());
 }
+#endif
 
 #if 0
 // There is an (unconfirmed) opinion that putting these two functions

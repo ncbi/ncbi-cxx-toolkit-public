@@ -115,7 +115,6 @@ public:
 };
 
 /// Class describing stack level of traversal
-/// do not use it directly
 class NCBI_XSERIAL_EXPORT CConstTreeLevelIterator {
 public:
     typedef CConstBeginInfo TBeginInfo;
@@ -135,6 +134,7 @@ public:
     }
     virtual TObjectInfo Get(void) const = 0;
     virtual const CItemInfo* GetItemInfo(void) const = 0;
+    virtual CConstTreeLevelIterator* Clone(void) = 0;
 
     static CConstTreeLevelIterator* Create(const TObjectInfo& object);
     static CConstTreeLevelIterator* CreateOne(const TObjectInfo& object);
@@ -164,6 +164,7 @@ public:
     }
     virtual TObjectInfo Get(void) const = 0;
     virtual const CItemInfo* GetItemInfo(void) const = 0;
+    virtual CTreeLevelIterator* Clone(void) = 0;
 
     static CTreeLevelIterator* Create(const TObjectInfo& object);
     static CTreeLevelIterator* CreateOne(const TObjectInfo& object);
@@ -179,19 +180,13 @@ template<class LevelIterator>
 class CTreeIteratorTmpl
 {
     typedef CTreeIteratorTmpl<LevelIterator> TThis;
+    typedef shared_ptr<LevelIterator>  TStackLevel;
+
 public:
     typedef typename LevelIterator::TObjectInfo TObjectInfo;
     typedef typename LevelIterator::TBeginInfo TBeginInfo;
     typedef set<TConstObjectPtr> TVisitedObjects;
     typedef list< pair< typename LevelIterator::TObjectInfo, const CItemInfo*> > TIteratorContext;
-
-protected:
-    // iterator debugging support
-    bool CheckValid(void) const
-        {
-            return m_CurrentObject;
-        }
-public:
 
     // construct object iterator
     CTreeIteratorTmpl(void)
@@ -232,9 +227,8 @@ public:
     void Reset(void)
         {
             m_CurrentObject.Reset();
-            m_VisitedObjects.reset(0);
-            while ( !m_Stack.empty() )
-                m_Stack.pop_back();
+            m_VisitedObjects.reset();
+            m_Stack.clear();
             _ASSERT(!*this);
         }
 
@@ -251,7 +245,7 @@ public:
     void SkipSubTree(void)
         {
             _ASSERT(CheckValid());
-            m_Stack.push_back(AutoPtr<LevelIterator>(LevelIterator::CreateOne(TObjectInfo())));
+            m_Stack.push_back(TStackLevel(LevelIterator::CreateOne(TObjectInfo())));
         }
 
 
@@ -281,7 +275,7 @@ public:
     TIteratorContext GetContextData(void) const
         {
             TIteratorContext stk_info;
-            typename vector< AutoPtr<LevelIterator> >::const_iterator i;
+            typename vector< TStackLevel >::const_iterator i;
             for (i = m_Stack.begin(); i != m_Stack.end(); ++i) {
                 stk_info.push_back( make_pair( (*i)->Get(), (*i)->GetItemInfo()));
             }
@@ -364,6 +358,12 @@ public:
         }
 
 protected:
+
+    bool CheckValid(void) const
+        {
+            return m_CurrentObject;
+        }
+
     virtual bool CanSelect(const CConstObjectInfo& obj)
         {
             if ( !obj )
@@ -383,17 +383,6 @@ protected:
             return CConstTreeLevelIterator::HaveChildren(object);
         }
 
-protected:
-    // have to make these methods protected instead of private due to
-    // bug in GCC
-#ifdef NCBI_OS_MSWIN
-    CTreeIteratorTmpl(const TThis&) { NCBI_THROW(CSerialException,eIllegalCall, "cannot copy"); }
-    TThis& operator=(const TThis&) { NCBI_THROW(CSerialException,eIllegalCall, "cannot copy"); }
-#else
-    CTreeIteratorTmpl(const TThis&);
-    TThis& operator=(const TThis&);
-#endif
-
     void Init(const TBeginInfo& beginInfo)
         {
             Reset();
@@ -401,9 +390,10 @@ protected:
                 return;
             if ( beginInfo.m_DetectLoops )
                 m_VisitedObjects.reset(new TVisitedObjects);
-            m_Stack.push_back(AutoPtr<LevelIterator>(LevelIterator::CreateOne(beginInfo)));
+            m_Stack.push_back(TStackLevel(LevelIterator::CreateOne(beginInfo)));
             Walk();
         }
+
     void Init(const TBeginInfo& beginInfo, const string& filter)
         {
             m_ContextFilter = filter;
@@ -414,7 +404,7 @@ private:
     bool Step(const TObjectInfo& current)
         {
             if ( CanEnter(current) ) {
-                AutoPtr<LevelIterator> nextLevel(LevelIterator::Create(current));
+                TStackLevel nextLevel(LevelIterator::Create(current));
                 if ( nextLevel && nextLevel->Valid() ) {
                     m_Stack.push_back(nextLevel);
                     return true;
@@ -461,14 +451,27 @@ private:
         }
 
     // stack of tree level iterators
-    vector< AutoPtr<LevelIterator> > m_Stack;
+    vector< TStackLevel > m_Stack;
     // currently selected object
     TObjectInfo m_CurrentObject;
-    auto_ptr<TVisitedObjects> m_VisitedObjects;
+    shared_ptr<TVisitedObjects> m_VisitedObjects;
     string m_ContextFilter;
 
     friend class CTreeIterator;
+
+protected:
+    void Assign(const CTreeIteratorTmpl& it)
+        {
+            m_Stack.clear();
+            for (const auto& e : it.m_Stack) {
+                m_Stack.push_back( TStackLevel(e.get()->Clone()));
+            }
+            m_CurrentObject  = it.m_CurrentObject;
+            m_VisitedObjects = it.m_VisitedObjects;
+            m_ContextFilter  = it.m_ContextFilter;
+        }
 }; /* NCBI_FAKE_WARNING: MSVC */
+
 
 typedef CTreeIteratorTmpl<CConstTreeLevelIterator> CTreeConstIterator;
 
@@ -545,36 +548,14 @@ protected:
             return m_NeedType;
         }
 
+    void Assign(const CTypeIteratorBase& it)
+        {
+            CParent::Assign(it);
+            m_NeedType = it.m_NeedType;
+        }
+
 private:
     TTypeInfo m_NeedType;
-};
-
-/// Template base class for CTypeIterator<> and CTypeConstIterator<>
-/// Do not use it directly
-template<class Parent>
-class CLeafTypeIteratorBase : public CTypeIteratorBase<Parent>
-{
-    typedef CTypeIteratorBase<Parent> CParent;
-protected:
-    typedef typename CParent::TBeginInfo TBeginInfo;
-
-    CLeafTypeIteratorBase(TTypeInfo needType)
-        : CParent(needType)
-        {
-        }
-    CLeafTypeIteratorBase(TTypeInfo needType, const TBeginInfo& beginInfo)
-        : CParent(needType)
-        {
-            Init(beginInfo);
-        }
-    CLeafTypeIteratorBase(TTypeInfo needType, const TBeginInfo& beginInfo,
-                          const string& filter)
-        : CParent(needType)
-        {
-            Init(beginInfo, filter);
-        }
-
-    virtual bool CanSelect(const CConstObjectInfo& object);
 };
 
 /// Template base class for CTypesIterator and CTypesConstIterator
@@ -688,7 +669,8 @@ private:
 
 /// Template class for iteration on objects of class C
 template<class C, class TypeGetter = C>
-class CTypeIterator : public CTypeIteratorBase<CTreeIterator>
+class CTypeIterator : public CTypeIteratorBase<CTreeIterator>,
+                      public iterator< forward_iterator_tag, C, ptrdiff_t, C*, C& >
 {
     typedef CTypeIteratorBase<CTreeIterator> CParent;
 public:
@@ -733,11 +715,52 @@ public:
         {
             return CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
         }
+    CTypeIterator(const CTypeIterator& it)
+        : CParent(TypeGetter::GetTypeInfo())
+        {
+            CParent::Assign(it);
+        }
+    CTypeIterator& operator=(const CTypeIterator& it)
+        {
+            CParent::Assign(it);
+            return *this;
+        }
+    CTypeIterator& begin(void)
+        {
+            return *this;
+        }    
+    CTypeIterator end(void)
+        {
+            return CTypeIterator();
+        }
+    CTypeIterator& operator++(void)
+        {
+            CParent::operator++();
+            return *this;
+        }
+    CTypeIterator operator++(int)
+        {
+            CTypeIterator tmp(*this);
+            CParent::operator++();
+            return tmp;
+        }
+    bool operator==(const CTypeIterator& it) const
+        {
+            if (IsValid() && it.IsValid()) {
+                return Get() == it.Get();
+            }
+            return IsValid() == it.IsValid();
+        }
+    bool operator!=(const CTypeIterator& it) const
+        {
+            return !operator==(it);
+        }
 };
 
 /// Template class for iteration on objects of class C (non-medifiable version)
 template<class C, class TypeGetter = C>
-class CTypeConstIterator : public CTypeIteratorBase<CTreeConstIterator>
+class CTypeConstIterator : public CTypeIteratorBase<CTreeConstIterator>,
+                           public iterator< forward_iterator_tag, C, ptrdiff_t, C*, C& >
 {
     typedef CTypeIteratorBase<CTreeConstIterator> CParent;
 public:
@@ -774,6 +797,76 @@ public:
         {
             return CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
         }
+    CTypeConstIterator(const CTypeConstIterator& it)
+        : CParent(TypeGetter::GetTypeInfo())
+        {
+            CParent::Assign(it);
+        }
+    CTypeConstIterator& operator=(const CTypeConstIterator& it)
+        {
+            CParent::Assign(it);
+            return *this;
+        }
+    CTypeConstIterator& begin(void)
+        {
+            return *this;
+        }    
+    CTypeConstIterator end(void)
+        {
+            return CTypeConstIterator();
+        }
+    CTypeConstIterator& operator++(void)
+        {
+            CParent::operator++();
+            return *this;
+        }
+    CTypeConstIterator operator++(int)
+        {
+            CTypeConstIterator tmp(*this);
+            CParent::operator++();
+            return tmp;
+        }
+    bool operator==(const CTypeConstIterator& it) const
+        {
+            if (IsValid() && it.IsValid()) {
+                return Get() == it.Get();
+            }
+            return IsValid() == it.IsValid();
+        }
+    bool operator!=(const CTypeConstIterator& it) const
+        {
+            return !operator==(it);
+        }
+};
+
+#if 0
+// these are obsolete (?) Use CTypeIterator and CTypeConstIterator instead
+
+/// Do not use it directly
+template<class Parent>
+class CLeafTypeIteratorBase : public CTypeIteratorBase<Parent>
+{
+    typedef CTypeIteratorBase<Parent> CParent;
+protected:
+    typedef typename CParent::TBeginInfo TBeginInfo;
+
+    CLeafTypeIteratorBase(TTypeInfo needType)
+        : CParent(needType)
+        {
+        }
+    CLeafTypeIteratorBase(TTypeInfo needType, const TBeginInfo& beginInfo)
+        : CParent(needType)
+        {
+            Init(beginInfo);
+        }
+    CLeafTypeIteratorBase(TTypeInfo needType, const TBeginInfo& beginInfo,
+                          const string& filter)
+        : CParent(needType)
+        {
+            Init(beginInfo, filter);
+        }
+
+    virtual bool CanSelect(const CConstObjectInfo& object);
 };
 
 /// Template class for iteration on objects of class C
@@ -865,69 +958,14 @@ public:
             return CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
         }
 };
+#endif
 
 /// Template class for iteration on objects of standard C++ type T
 template<typename T>
-class CStdTypeIterator : public CTypeIterator<T, CStdTypeInfo<T> >
-{
-    typedef CTypeIterator<T, CStdTypeInfo<T> > CParent;
-public:
-    typedef typename CParent::TBeginInfo TBeginInfo;
-
-    CStdTypeIterator(void)
-        {
-        }
-    CStdTypeIterator(const TBeginInfo& beginInfo)
-        : CParent(beginInfo)
-        {
-        }
-    CStdTypeIterator(const TBeginInfo& beginInfo, const string& filter)
-        : CParent(beginInfo, filter)
-        {
-        }
-    explicit CStdTypeIterator(CSerialObject& object)
-        : CParent(object)
-        {
-        }
-
-    CStdTypeIterator<T>& operator=(const TBeginInfo& beginInfo)
-        {
-            Init(beginInfo);
-            return *this;
-        }
-};
-
-/// Template class for iteration on objects of standard C++ type T
+using CStdTypeIterator = CTypeIterator<T, CStdTypeInfo<T> >;
 /// Non-modifiable version
 template<typename T>
-class CStdTypeConstIterator : public CTypeConstIterator<T, CStdTypeInfo<T> >
-{
-    typedef CTypeConstIterator<T, CStdTypeInfo<T> > CParent;
-public:
-    typedef typename CParent::TBeginInfo TBeginInfo;
-
-    CStdTypeConstIterator(void)
-        {
-        }
-    CStdTypeConstIterator(const TBeginInfo& beginInfo)
-        : CParent(beginInfo)
-        {
-        }
-    CStdTypeConstIterator(const TBeginInfo& beginInfo, const string& filter)
-        : CParent(beginInfo, filter)
-        {
-        }
-    explicit CStdTypeConstIterator(const CSerialObject& object)
-        : CParent(object)
-        {
-        }
-
-    CStdTypeConstIterator<T>& operator=(const TBeginInfo& beginInfo)
-        {
-            Init(beginInfo);
-            return *this;
-        }
-};
+using CStdTypeConstIterator = CTypeConstIterator<T, CStdTypeInfo<T> >;
 
 // get special typeinfo of CObject
 class NCBI_XSERIAL_EXPORT CObjectGetTypeInfo
