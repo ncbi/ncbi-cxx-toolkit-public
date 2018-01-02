@@ -4313,9 +4313,13 @@ bool CDir::Remove(TRemoveFlags flags) const
             }
             continue;
             
-        } else if ( !item.Remove(flags) ) {
-            // Regular file entry removal has failed
-            return false;
+        } else {
+            if (flags & fDir_Files) {
+                if (!item.Remove(flags)) {
+                    // Regular file entry removal has failed
+                    return false;
+                }
+            }
         }
     }
     
@@ -4383,10 +4387,13 @@ bool CDir::SetMode(TMode user_mode,  TMode group_mode,
             }
             continue;
             
-        } else if (!item.SetMode(user_mode, group_mode,
-                                other_mode, special_mode, flags)) {
-            // Regular file entry removal has failed
-            return false;
+        } else {
+            if (flags & fDir_Files) {
+                if (!item.SetMode(user_mode, group_mode, other_mode, special_mode, flags)) {
+                    // Changing mode for a regular file entry failed
+                    return false;
+                }
+            }
         }
     }
     // Process directory entry
