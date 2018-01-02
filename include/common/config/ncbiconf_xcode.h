@@ -157,7 +157,7 @@
 /* #undef HAVE_CLAPACK_H */
 
 /* Define to 1 if you have the `clock_gettime' function. */
-#define HAVE_CLOCK_GETTIME 1
+/* #unddef HAVE_CLOCK_GETTIME */
 
 /* Define to 1 if you have the <com_err.h> header file. */
 #define HAVE_COM_ERR_H 1
