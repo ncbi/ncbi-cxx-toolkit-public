@@ -3026,7 +3026,6 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     ITableFilter *filter
 )
 {
-
     string feat, qual, val;
     string curr_feat_name;
     Int4 start, stop;
@@ -3373,31 +3372,29 @@ bool CFeature_table_reader_imp::ParseInitialFeatureLine (
     }
     line = line.substr(1); // remove '>'
 
-
     // handle "Feature"
     NStr::TruncateSpacesInPlace(line, NStr::eTrunc_Begin);
     const CTempString kFeatureStr("Feature");
     if( ! NStr::StartsWith(line, kFeatureStr, NStr::eNocase) ) {
         return false;
     }
+    line = line.substr( kFeatureStr.length() ); // remove "Feature"
 
-    vector<string> tokens;
-    NStr::Split(line, " \t", tokens, NStr::fSplit_Tokenize);
-
-    const size_t num_tokens = tokens.size();
-
-    if (num_tokens > 1) {
-        out_seqid = tokens[1];
+    // throw out any non-space characters at the beginning,
+    // so we can, for example, handle ">Features" (note the "s")
+    while( !line.empty() && !isspace(line[0])  ) {
+        line = line.substr(1);
     }
 
-    // Any remaining tokens are bundled into the annotation name
-    if (num_tokens > 2) {
-        out_annotname = tokens[2];
-        for (size_t i=3; i<num_tokens; ++i) {
-            out_annotname += " " + tokens[i];
-        }
-    }
+    // extract seqid and annotname
+    NStr::TruncateSpacesInPlace(line, NStr::eTrunc_Begin);
+    string seqid;
+    string annotname;
+    NStr::SplitInTwo(line, " \t", seqid, annotname, NStr::fSplit_Tokenize);
 
+    // swap is faster than assignment
+    out_seqid.swap(seqid);
+    out_annotname.swap(annotname);
     return true;
 }
 
