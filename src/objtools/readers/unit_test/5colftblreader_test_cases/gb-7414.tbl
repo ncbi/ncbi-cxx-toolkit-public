@@ -1,0 +1,42 @@
+>Feature gb|KU761507|
+19	1719	gene		
+			gene	HA
+19	1719	CDS		
+			product	hemagglutinin
+			function	receptor binding and fusion protein
+			gene	HA
+19	69	sig_peptide
+70	1050	mat_peptide
+			product HA1
+1051	1716	mat_peptide
+			product HA2
+>Feature	gb|KU761508|
+6	1415	gene		
+			gene	NA
+6	1415	CDS		
+			product	neuraminidase
+			gene	NA
+>Feature	gb|KU761509|
+11	769	gene		
+			gene	M1
+11	769	CDS		
+			product	matrix protein 1
+			gene	M1
+11	>991	gene		
+			gene	M2
+11	36	CDS		
+725	>991			
+			product	matrix protein 2
+			gene	M2
+>Feature gb|KU761510|
+19	1719	gene		
+			gene	HA
+19	1719	CDS		
+			product	hemagglutinin
+			function	receptor binding and fusion protein
+			gene	HA
+19	69	sig_peptide
+70	1050	mat_peptide
+			product HA1
+1051	1716	mat_peptide
+			product HA2
