@@ -44,11 +44,9 @@ SWorkerNode::SWorkerNode(
     SNetService(automation_proc, CNetService::eSingleServerService),
     m_NetScheduleAPI(ns_api)
 {
-    m_Service = m_NetScheduleAPI.GetService();
+    m_WorkerNode = GetService().Iterate().GetServer();
 
-    m_WorkerNode = m_Service.Iterate().GetServer();
-
-    if (m_Service.GetServiceType() != CNetService::eSingleServerService) {
+    if (GetService().GetServiceType() != CNetService::eSingleServerService) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
                 "WorkerNode constructor: 'wn_address' "
                 "must be a host:port combination");
@@ -111,7 +109,7 @@ TCommands SWorkerNode::CallCommands()
 void SWorkerNode::ExecVersion(const TArguments&, SInputOutput& io)
 {
     auto& reply = io.reply;
-    reply.Append(g_ServerInfoToJson(m_Service, m_ActualServiceType, false));
+    reply.Append(g_ServerInfoToJson(GetService(), m_ActualServiceType, false));
 }
 
 void SWorkerNode::ExecWnInfo(const TArguments&, SInputOutput& io)

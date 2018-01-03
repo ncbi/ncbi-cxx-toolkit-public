@@ -64,6 +64,8 @@ struct SNetStorageService : public SNetServiceBase
 
     virtual const void* GetImplPtr() const;
 
+    CNetService GetService() { return m_NetStorageAdmin.GetService(); }
+
     void ExecClientsInfo(const TArguments& args, SInputOutput& io);
     void ExecUsersInfo(const TArguments& args, SInputOutput& io);
     void ExecClientObjects(const TArguments& args, SInputOutput& io);

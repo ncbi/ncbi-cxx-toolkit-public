@@ -64,6 +64,8 @@ struct SNetScheduleService : public SNetService
 
     virtual const void* GetImplPtr() const;
 
+    CNetService GetService() { return m_NetScheduleAPI.GetService(); }
+
     void ExecSetClientType(const TArguments& args, SInputOutput& io);
     void ExecSetNodeSession(const TArguments& args, SInputOutput& io);
     void ExecQueueInfo(const TArguments& args, SInputOutput& io);

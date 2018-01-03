@@ -209,10 +209,11 @@ struct SNetServiceBase : public CAutomationObject
     {
     }
 
+    virtual CNetService GetService() = 0;
+
     void ExecGetName(const TArguments& args, SInputOutput& io);
     void ExecGetAddress(const TArguments& args, SInputOutput& io);
 
-    CNetService m_Service;
     CNetService::EServiceType m_ActualServiceType;
 
     static TCommands CallCommands();

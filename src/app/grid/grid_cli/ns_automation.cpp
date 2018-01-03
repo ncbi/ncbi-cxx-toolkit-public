@@ -51,8 +51,7 @@ SNetScheduleService::SNetScheduleService(
     SNetService(automation_proc, type),
     m_NetScheduleAPI(ns_api)
 {
-    m_Service = m_NetScheduleAPI.GetService();
-    m_Service.SetEventHandler(
+    GetService().SetEventHandler(
             new CEventHandler(automation_proc, m_NetScheduleAPI));
 }
 
@@ -63,7 +62,7 @@ SNetScheduleServer::SNetScheduleServer(
             CNetService::eSingleServerService),
     m_NetServer(server)
 {
-    if (m_Service.IsLoadBalanced()) {
+    if (GetService().IsLoadBalanced()) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
                 "NetScheduleServer constructor: "
                 "'server_address' must be a host:port combination");

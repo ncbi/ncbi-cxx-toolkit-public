@@ -106,8 +106,7 @@ SNetStorageService::SNetStorageService(
     SNetServiceBase(automation_proc, type),
     m_NetStorageAdmin(nst_api)
 {
-    m_Service = m_NetStorageAdmin.GetService();
-    m_Service.SetEventHandler(
+    GetService().SetEventHandler(
             new CEventHandler(automation_proc, m_NetStorageAdmin));
 }
 
@@ -130,7 +129,7 @@ SNetStorageServer::SNetStorageServer(
             CNetService::eSingleServerService),
     m_NetServer(server)
 {
-    if (m_Service.IsLoadBalanced()) {
+    if (GetService().IsLoadBalanced()) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
                 "NetStorageServer constructor: "
                 "'server_address' must be a host:port combination");

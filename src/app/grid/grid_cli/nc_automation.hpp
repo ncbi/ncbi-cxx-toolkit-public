@@ -66,6 +66,8 @@ struct SNetCacheService : public SNetService
 
     virtual const void* GetImplPtr() const;
 
+    CNetService GetService() { return m_NetICacheClient.GetService(); }
+
     void ExecGetBlob(const TArguments& args, SInputOutput& io);
     void ExecGetServers(const TArguments& args, SInputOutput& io);
 

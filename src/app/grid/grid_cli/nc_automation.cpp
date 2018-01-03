@@ -204,8 +204,7 @@ SNetCacheService::SNetCacheService(CAutomationProc* automation_proc,
     m_NetICacheClient(ic_api),
     m_NetCacheAPI(ic_api.GetNetCacheAPI())
 {
-    m_Service = m_NetICacheClient.GetService();
-    m_Service.SetEventHandler(new CEventHandler(automation_proc, m_NetICacheClient));
+    GetService().SetEventHandler(new CEventHandler(automation_proc, m_NetICacheClient));
 }
 
 SNetCacheServer::SNetCacheServer(CAutomationProc* automation_proc,
@@ -214,7 +213,7 @@ SNetCacheServer::SNetCacheServer(CAutomationProc* automation_proc,
             CNetService::eSingleServerService),
     m_NetServer(server)
 {
-    if (m_Service.IsLoadBalanced()) {
+    if (GetService().IsLoadBalanced()) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
                 "NetCacheServer constructor: "
                 "'server_address' must be a host:port combination");
