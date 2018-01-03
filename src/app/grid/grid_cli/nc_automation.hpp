@@ -64,8 +64,6 @@ struct SNetCacheService : public SNetService
 
     virtual const string& GetType() const { return kName; }
 
-    virtual const void* GetImplPtr() const;
-
     CNetService GetService() { return m_NetICacheClient.GetService(); }
 
     void ExecGetBlob(const TArguments& args, SInputOutput& io);
@@ -99,8 +97,6 @@ struct SNetCacheBlob : public CAutomationObject
     SNetCacheBlob(SNetCacheService* nc_object, const string& blob_key);
 
     virtual const string& GetType() const { return kName; }
-
-    virtual const void* GetImplPtr() const;
 
     void ExecWrite(const TArguments& args, SInputOutput& io);
     void ExecRead(const TArguments& args, SInputOutput& io);
@@ -146,16 +142,11 @@ struct SNetCacheServer : public SNetCacheService
 
     virtual const string& GetType() const { return kName; }
 
-    virtual const void* GetImplPtr() const;
-
     static CCommand CallCommand();
     static CCommand NewCommand();
     static CAutomationObject* Create(const TArguments& args, CAutomationProc* automation_proc);
 
     static const string kName;
-
-private:
-    CNetServer m_NetServer;
 };
 
 }

@@ -44,7 +44,7 @@ SWorkerNode::SWorkerNode(
     SNetService(automation_proc, CNetService::eSingleServerService),
     m_NetScheduleAPI(ns_api)
 {
-    m_WorkerNode = GetService().Iterate().GetServer();
+    m_WorkerNode = GetServer();
 
     if (GetService().GetServiceType() != CNetService::eSingleServerService) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
@@ -72,11 +72,6 @@ CAutomationObject* SWorkerNode::Create(const TArguments& args, CAutomationProc* 
                 wn_address, client_name));
 
     return new SWorkerNode(automation_proc, ns_api);
-}
-
-const void* SWorkerNode::GetImplPtr() const
-{
-    return m_NetScheduleAPI;
 }
 
 CCommand SWorkerNode::CallCommand()

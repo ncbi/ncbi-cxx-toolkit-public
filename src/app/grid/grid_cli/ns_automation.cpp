@@ -40,11 +40,6 @@ using namespace NAutomation;
 const string SNetScheduleService::kName = "nssvc";
 const string SNetScheduleServer::kName = "nssrv";
 
-const void* SNetScheduleService::GetImplPtr() const
-{
-    return m_NetScheduleAPI;
-}
-
 SNetScheduleService::SNetScheduleService(
         CAutomationProc* automation_proc,
         CNetScheduleAPI ns_api, CNetService::EServiceType type) :
@@ -59,8 +54,7 @@ SNetScheduleServer::SNetScheduleServer(
         CAutomationProc* automation_proc,
         CNetScheduleAPIExt ns_api, CNetServer::TInstance server) :
     SNetScheduleService(automation_proc, ns_api.GetServer(server),
-            CNetService::eSingleServerService),
-    m_NetServer(server)
+            CNetService::eSingleServerService)
 {
     if (GetService().IsLoadBalanced()) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
@@ -117,20 +111,12 @@ CAutomationObject* SNetScheduleServer::Create(const TArguments& args, CAutomatio
     return new SNetScheduleServer(automation_proc, ns_api, server);
 }
 
-const void* SNetScheduleServer::GetImplPtr() const
-{
-    return m_NetServer;
-}
-
 TAutomationObjectRef CAutomationProc::ReturnNetScheduleServerObject(
         CNetScheduleAPI::TInstance ns_api,
         CNetServer::TInstance server)
 {
-    TAutomationObjectRef object(FindObjectByPtr(server));
-    if (!object) {
-        object = new SNetScheduleServer(this, ns_api, server);
-        AddObject(object, server);
-    }
+    TAutomationObjectRef object(new SNetScheduleServer(this, ns_api, server));
+    AddObject(object);
     return object;
 }
 
@@ -176,7 +162,7 @@ void SNetScheduleServer::ExecServerStatus(const TArguments& args, SInputOutput& 
 
     auto& reply = io.reply;
     const auto verbose = args["verbose"].AsBoolean();
-    reply.Append(g_LegacyStatToJson(m_NetServer, verbose));
+    reply.Append(g_LegacyStatToJson(GetServer(), verbose));
 }
 
 void SNetScheduleServer::ExecJobGroupInfo(const TArguments& args, SInputOutput& io)
@@ -185,7 +171,7 @@ void SNetScheduleServer::ExecJobGroupInfo(const TArguments& args, SInputOutput& 
 
     auto& reply = io.reply;
     const auto verbose = args["verbose"].AsBoolean();
-    reply.Append(g_GenericStatToJson(m_NetServer, eNetScheduleStatJobGroups, verbose));
+    reply.Append(g_GenericStatToJson(GetServer(), eNetScheduleStatJobGroups, verbose));
 }
 
 void SNetScheduleServer::ExecClientInfo(const TArguments& args, SInputOutput& io)
@@ -194,7 +180,7 @@ void SNetScheduleServer::ExecClientInfo(const TArguments& args, SInputOutput& io
 
     auto& reply = io.reply;
     const auto verbose = args["verbose"].AsBoolean();
-    reply.Append(g_GenericStatToJson(m_NetServer, eNetScheduleStatClients, verbose));
+    reply.Append(g_GenericStatToJson(GetServer(), eNetScheduleStatClients, verbose));
 }
 
 void SNetScheduleServer::ExecNotificationInfo(const TArguments& args, SInputOutput& io)
@@ -203,7 +189,7 @@ void SNetScheduleServer::ExecNotificationInfo(const TArguments& args, SInputOutp
 
     auto& reply = io.reply;
     const auto verbose = args["verbose"].AsBoolean();
-    reply.Append(g_GenericStatToJson(m_NetServer, eNetScheduleStatNotifications, verbose));
+    reply.Append(g_GenericStatToJson(GetServer(), eNetScheduleStatNotifications, verbose));
 }
 
 void SNetScheduleServer::ExecAffinityInfo(const TArguments& args, SInputOutput& io)
@@ -212,7 +198,7 @@ void SNetScheduleServer::ExecAffinityInfo(const TArguments& args, SInputOutput& 
 
     auto& reply = io.reply;
     const auto verbose = args["verbose"].AsBoolean();
-    reply.Append(g_GenericStatToJson(m_NetServer, eNetScheduleStatAffinities, verbose));
+    reply.Append(g_GenericStatToJson(GetServer(), eNetScheduleStatAffinities, verbose));
 }
 
 vector<string> s_ExtractVectorOfStrings(CJsonNode& arg)

@@ -181,8 +181,6 @@ public:
 
     virtual const string& GetType() const = 0;
 
-    virtual const void* GetImplPtr() const = 0;
-
     CAutomationProc* m_AutomationProc;
 
     template <class TDerived>
@@ -210,6 +208,7 @@ struct SNetServiceBase : public CAutomationObject
     }
 
     virtual CNetService GetService() = 0;
+    CNetServer GetServer() { return GetService().Iterate().GetServer(); }
 
     void ExecGetName(const TArguments& args, SInputOutput& io);
     void ExecGetAddress(const TArguments& args, SInputOutput& io);
@@ -257,9 +256,6 @@ public:
     void SendError(const CTempString& error_message);
 
     TObjectID AddObject(TAutomationObjectRef new_object);
-    TObjectID AddObject(TAutomationObjectRef new_object, const void* impl_ptr);
-
-    TAutomationObjectRef FindObjectByPtr(const void* impl_ptr) const;
 
     TAutomationObjectRef ReturnNetCacheServerObject(
             CNetICacheClient::TInstance ic_api,
@@ -281,8 +277,6 @@ private:
     IMessageSender* m_MessageSender;
 
     vector<TAutomationObjectRef> m_ObjectByIndex;
-    typedef map<const void*, TAutomationObjectRef> TPtrToObjectRefMap;
-    TPtrToObjectRefMap m_ObjectByPointer;
 
     CJsonNode m_OKNode;
     CJsonNode m_ErrNode;
@@ -306,13 +300,6 @@ inline TObjectID CAutomationProc::AddObject(TAutomationObjectRef new_object)
     new_object->SetID(new_object_id);
     m_ObjectByIndex.push_back(new_object);
     return new_object_id;
-}
-
-inline TObjectID CAutomationProc::AddObject(TAutomationObjectRef new_object,
-        const void* impl_ptr)
-{
-    m_ObjectByPointer[impl_ptr] = new_object;
-    return AddObject(new_object);
 }
 
 template <class TDerived>
@@ -355,7 +342,7 @@ void CAutomationObject::ExecNew(const TArguments& args, SInputOutput& io, void* 
                 "Error in '" << TDerived::kName << "' constructor: " << e.GetMsg());
     }
 
-    auto id = that->AddObject(new_object, new_object->GetImplPtr());
+    auto id = that->AddObject(new_object);
     reply.AppendInteger(id);
 }
 

@@ -117,17 +117,11 @@ void SNetStorageService::CEventHandler::OnWarning(
             ReturnNetStorageServerObject(m_NetStorageAdmin, server));
 }
 
-const void* SNetStorageService::GetImplPtr() const
-{
-    return m_NetStorageAdmin;
-}
-
 SNetStorageServer::SNetStorageServer(
         CAutomationProc* automation_proc,
         CNetStorageAdmin nst_api, CNetServer::TInstance server) :
     SNetStorageService(automation_proc, nst_api.GetServer(server),
-            CNetService::eSingleServerService),
-    m_NetServer(server)
+            CNetService::eSingleServerService)
 {
     if (GetService().IsLoadBalanced()) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
@@ -136,20 +130,12 @@ SNetStorageServer::SNetStorageServer(
     }
 }
 
-const void* SNetStorageServer::GetImplPtr() const
-{
-    return m_NetServer;
-}
-
 TAutomationObjectRef CAutomationProc::ReturnNetStorageServerObject(
         CNetStorageAdmin::TInstance nst_api,
         CNetServer::TInstance server)
 {
-    TAutomationObjectRef object(FindObjectByPtr(server));
-    if (!object) {
-        object = new SNetStorageServer(this, nst_api, server);
-        AddObject(object, server);
-    }
+    TAutomationObjectRef object(new SNetStorageServer(this, nst_api, server));
+    AddObject(object);
     return object;
 }
 
@@ -342,11 +328,6 @@ SNetStorageObject::SNetStorageObject(
     CAutomationObject(automation_proc),
     m_Object(object)
 {
-}
-
-const void* SNetStorageObject::GetImplPtr() const
-{
-    return m_Object;
 }
 
 CCommand SNetStorageObject::CallCommand()

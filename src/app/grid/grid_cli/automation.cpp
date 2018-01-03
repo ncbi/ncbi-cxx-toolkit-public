@@ -313,12 +313,6 @@ bool CCommand::Exec(SInputOutput& io, void* data)
     return m_Impl->Exec(m_Name, io, data);
 }
 
-TAutomationObjectRef CAutomationProc::FindObjectByPtr(const void* impl_ptr) const
-{
-    TPtrToObjectRefMap::const_iterator it = m_ObjectByPointer.find(impl_ptr);
-    return it != m_ObjectByPointer.end() ? it->second : TAutomationObjectRef();
-}
-
 CJsonNode SServerAddressToJson::ExecOn(CNetServer server)
 {
     switch (m_WhichPart) {
@@ -477,7 +471,6 @@ void CAutomationProc::ExecDel(const TArguments& args, SInputOutput&, void* data)
     auto that = static_cast<CAutomationProc*>(data);
     const auto object_id = args["object_id"].AsInteger();
     auto& object = that->ObjectIdToRef(object_id);
-    that->m_ObjectByPointer.erase(object->GetImplPtr());
     object = NULL;
 }
 

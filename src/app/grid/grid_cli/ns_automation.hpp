@@ -62,8 +62,6 @@ struct SNetScheduleService : public SNetService
 
     virtual const string& GetType() const { return kName; }
 
-    virtual const void* GetImplPtr() const;
-
     CNetService GetService() { return m_NetScheduleAPI.GetService(); }
 
     void ExecSetClientType(const TArguments& args, SInputOutput& io);
@@ -102,8 +100,6 @@ struct SNetScheduleServer : public SNetScheduleService
 
     virtual const string& GetType() const { return kName; }
 
-    virtual const void* GetImplPtr() const;
-
     void ExecServerStatus(const TArguments& args, SInputOutput& io);
     void ExecJobGroupInfo(const TArguments& args, SInputOutput& io);
     void ExecClientInfo(const TArguments& args, SInputOutput& io);
@@ -117,9 +113,6 @@ struct SNetScheduleServer : public SNetScheduleService
     static CAutomationObject* Create(const TArguments& args, CAutomationProc* automation_proc);
 
     static const string kName;
-
-private:
-    CNetServer m_NetServer;
 };
 
 }

@@ -62,8 +62,6 @@ struct SNetStorageService : public SNetServiceBase
 
     virtual const string& GetType() const { return kName; }
 
-    virtual const void* GetImplPtr() const;
-
     CNetService GetService() { return m_NetStorageAdmin.GetService(); }
 
     void ExecClientsInfo(const TArguments& args, SInputOutput& io);
@@ -99,8 +97,6 @@ struct SNetStorageServer : public SNetStorageService
 
     virtual const string& GetType() const { return kName; }
 
-    virtual const void* GetImplPtr() const;
-
     void ExecHealth(const TArguments& args, SInputOutput& io);
     void ExecConf(const TArguments& args, SInputOutput& io);
     void ExecMetadataInfo(const TArguments& args, SInputOutput& io);
@@ -113,9 +109,6 @@ struct SNetStorageServer : public SNetStorageService
     static CAutomationObject* Create(const TArguments& args, CAutomationProc* automation_proc);
 
     static const string kName;
-
-private:
-    CNetServer m_NetServer;
 };
 
 struct SNetStorageObject : public CAutomationObject
@@ -126,7 +119,6 @@ struct SNetStorageObject : public CAutomationObject
             CNetStorageObject::TInstance object);
 
     virtual const string& GetType() const override { return kName; }
-    virtual const void* GetImplPtr() const override;
 
     void ExecInfo(const TArguments& args, SInputOutput& io);
     void ExecAttrList(const TArguments& args, SInputOutput& io);

@@ -45,8 +45,6 @@ struct SWorkerNode : public SNetService
 
     virtual const string& GetType() const { return kName; }
 
-    virtual const void* GetImplPtr() const;
-
     CNetService GetService() { return m_NetScheduleAPI.GetService(); }
 
     void ExecVersion(const TArguments& args, SInputOutput& io);

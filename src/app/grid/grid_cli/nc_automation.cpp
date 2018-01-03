@@ -50,11 +50,6 @@ SNetCacheBlob::SNetCacheBlob(
 {
 }
 
-const void* SNetCacheBlob::GetImplPtr() const
-{
-    return this;
-}
-
 CCommand SNetCacheBlob::CallCommand()
 {
     return CCommand(kName, TCommandGroup(CallCommands(), CheckCall<TSelf>));
@@ -193,11 +188,6 @@ void SNetCacheService::CEventHandler::OnWarning(
             ReturnNetCacheServerObject(m_NetICacheClient, server));
 }
 
-const void* SNetCacheService::GetImplPtr() const
-{
-    return m_NetICacheClient;
-}
-
 SNetCacheService::SNetCacheService(CAutomationProc* automation_proc,
         CNetICacheClientExt ic_api, CNetService::EServiceType type) :
     SNetService(automation_proc, type),
@@ -210,8 +200,7 @@ SNetCacheService::SNetCacheService(CAutomationProc* automation_proc,
 SNetCacheServer::SNetCacheServer(CAutomationProc* automation_proc,
         CNetICacheClientExt ic_api, CNetServer::TInstance server) :
     SNetCacheService(automation_proc, ic_api.GetServer(server),
-            CNetService::eSingleServerService),
-    m_NetServer(server)
+            CNetService::eSingleServerService)
 {
     if (GetService().IsLoadBalanced()) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
@@ -264,20 +253,12 @@ CAutomationObject* SNetCacheServer::Create(const TArguments& args, CAutomationPr
     return new SNetCacheServer(automation_proc, ic_api, server);
 }
 
-const void* SNetCacheServer::GetImplPtr() const
-{
-    return m_NetServer;
-}
-
 TAutomationObjectRef CAutomationProc::ReturnNetCacheServerObject(
         CNetICacheClient::TInstance ic_api,
         CNetServer::TInstance server)
 {
-    TAutomationObjectRef object(FindObjectByPtr(server));
-    if (!object) {
-        object = new SNetCacheServer(this, ic_api, server);
-        AddObject(object, server);
-    }
+    TAutomationObjectRef object(new SNetCacheServer(this, ic_api, server));
+    AddObject(object);
     return object;
 }
 
