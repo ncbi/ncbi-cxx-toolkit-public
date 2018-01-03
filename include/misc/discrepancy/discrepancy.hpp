@@ -197,7 +197,8 @@ enum EGroup {
     eOncaller = 2,
     eSubmitter = 4,
     eSmart = 8,
-    eBig = 16
+    eBig = 16,
+    eAutofix = 64
 };
 typedef unsigned short TGroup;
 

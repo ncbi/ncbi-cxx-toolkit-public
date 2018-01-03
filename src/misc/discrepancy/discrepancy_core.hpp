@@ -662,7 +662,7 @@ protected:
     class CDiscrepancyCaseAConstructor_##name : public CDiscrepancyConstructor                                      \
     {                                                                                                               \
     public:                                                                                                         \
-        CDiscrepancyCaseAConstructor_##name(void){ Register(#name, descr_for_##name, group_for_##name, *this);}     \
+        CDiscrepancyCaseAConstructor_##name(void){ Register(#name, descr_for_##name, group_for_##name | eAutofix, *this);}     \
     protected:                                                                                                      \
         CRef<CDiscrepancyCase> Create(void) const { return CRef<CDiscrepancyCase>(new CDiscrepancyCaseA_##name);}   \
     };                                                                                                              \
