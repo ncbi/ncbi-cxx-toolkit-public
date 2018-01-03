@@ -1359,11 +1359,6 @@ void CNetScheduleAPIExt::UseOldStyleAuth()
     m_Impl->UseOldStyleAuth();
 }
 
-void CNetScheduleAPIExt::SetEventHandler(INetEventHandler* event_handler)
-{
-    m_Impl->m_Service->SetEventHandler(event_handler);
-}
-
 CCompoundIDPool CNetScheduleAPIExt::GetCompoundIDPool()
 {
     return m_Impl->m_CompoundIDPool;

@@ -174,7 +174,6 @@ struct NCBI_XCONNECT_EXPORT CNetScheduleAPIExt : CNetScheduleAPI
     void AddToClientNode(const string& data);
     void UpdateAuthString();
     void UseOldStyleAuth();
-    void SetEventHandler(INetEventHandler* event_handler);
     CCompoundIDPool GetCompoundIDPool();
 
     /// Extract one of the servers comprising this service

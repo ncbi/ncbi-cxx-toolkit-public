@@ -205,7 +205,7 @@ SNetCacheService::SNetCacheService(CAutomationProc* automation_proc,
     m_NetCacheAPI(ic_api.GetNetCacheAPI())
 {
     m_Service = m_NetICacheClient.GetService();
-    ic_api.SetEventHandler(new CEventHandler(automation_proc, m_NetICacheClient));
+    m_Service.SetEventHandler(new CEventHandler(automation_proc, m_NetICacheClient));
 }
 
 SNetCacheServer::SNetCacheServer(CAutomationProc* automation_proc,

@@ -77,6 +77,7 @@ class NCBI_XCONNECT_EXPORT CNetServerPool
 };
 
 struct SNetServiceImpl;
+class INetEventHandler;
 
 class NCBI_XCONNECT_EXPORT CNetService
 {
@@ -134,6 +135,8 @@ class NCBI_XCONNECT_EXPORT CNetService
         CNetService::EIterationMode = CNetService::eSortByLoad);
 
     CNetService Clone(const string& name);
+
+    void SetEventHandler(INetEventHandler* event_handler);
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     static void AllowXSiteConnections();

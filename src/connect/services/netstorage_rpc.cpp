@@ -1413,11 +1413,6 @@ CNetStorageAdmin CNetStorageAdmin::GetServer(CNetServer::TInstance server)
     return new SNetStorageRPC(server->m_ServerInPool, m_Impl->m_NetStorageRPC);
 }
 
-void CNetStorageAdmin::SetEventHandler(INetEventHandler* event_handler)
-{
-    m_Impl->m_NetStorageRPC->m_Service->SetEventHandler(event_handler);
-}
-
 CNetStorageObject CNetStorageAdmin::Open(const string& object_loc)
 {
     return m_Impl->m_NetStorageRPC->Open(object_loc);

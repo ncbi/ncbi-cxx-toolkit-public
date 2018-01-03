@@ -101,7 +101,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
     if (m_AdminMode)
         m_NetScheduleAPI.SetClientType(CNetScheduleAPI::eCT_Admin);
 
-    m_NetScheduleAPI.SetEventHandler(new CNetScheduleWarningLogger(this));
+    m_NetScheduleAPI.GetService().SetEventHandler(new CNetScheduleWarningLogger(this));
 
     if (IsOptionSet(eCompatMode)) {
         m_NetScheduleAPI.UseOldStyleAuth();

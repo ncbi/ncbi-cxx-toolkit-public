@@ -1006,11 +1006,6 @@ CNetICacheClientExt CNetICacheClientExt::GetServer(CNetServer::TInstance server)
     return new SNetICacheClientImpl(server->m_ServerInPool, m_Impl);
 }
 
-void CNetICacheClientExt::SetEventHandler(INetEventHandler* event_handler)
-{
-    m_Impl->m_Service->SetEventHandler(event_handler);
-}
-
 vector<CNetICacheClient::CBlobInfo> CNetICacheClient::Search(
         CNetICacheClient::CExpression expression,
         CNetICacheClient::CFields filter)

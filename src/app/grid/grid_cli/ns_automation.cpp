@@ -52,7 +52,7 @@ SNetScheduleService::SNetScheduleService(
     m_NetScheduleAPI(ns_api)
 {
     m_Service = m_NetScheduleAPI.GetService();
-    m_NetScheduleAPI.SetEventHandler(
+    m_Service.SetEventHandler(
             new CEventHandler(automation_proc, m_NetScheduleAPI));
 }
 

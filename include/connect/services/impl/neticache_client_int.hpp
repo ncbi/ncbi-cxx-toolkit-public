@@ -60,8 +60,6 @@ struct NCBI_NET_CACHE_EXPORT CNetICacheClientExt : CNetICacheClient
     const SNetCacheAPIImpl* GetNetCacheAPI() const;
 
     CNetICacheClientExt GetServer(CNetServer::TInstance server);
-
-    void SetEventHandler(INetEventHandler* event_handler);
 };
 
 

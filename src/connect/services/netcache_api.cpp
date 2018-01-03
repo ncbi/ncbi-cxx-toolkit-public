@@ -943,11 +943,6 @@ CNetCacheAPIExt CNetCacheAPIExt::GetServer(CNetServer::TInstance server)
     return new SNetCacheAPIImpl(server->m_ServerInPool, m_Impl);
 }
 
-void CNetCacheAPIExt::SetEventHandler(INetEventHandler* event_handler)
-{
-    m_Impl->m_Service->SetEventHandler(event_handler);
-}
-
 CCompoundIDPool CNetCacheAPI::GetCompoundIDPool()
 {
     return m_Impl->m_CompoundIDPool;

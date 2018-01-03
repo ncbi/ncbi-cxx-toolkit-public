@@ -1387,6 +1387,11 @@ CNetService CNetService::Clone(const string& name)
         new SNetServiceImpl(name, m_Impl);
 }
 
+void CNetService::SetEventHandler(INetEventHandler* event_handler)
+{
+    m_Impl->SetEventHandler(event_handler);
+}
+
 CNetService SNetServiceMap::GetServiceByName(const string& service_name,
         SNetServiceImpl* prototype)
 {

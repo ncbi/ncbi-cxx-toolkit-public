@@ -42,8 +42,6 @@ struct NCBI_XCONNECT_EXPORT CNetCacheAPIExt : CNetCacheAPI
     CNetCacheAPIExt(TInstance api) : CNetCacheAPI(api) {}
 
     CNetCacheAPIExt GetServer(CNetServer::TInstance server);
-
-    void SetEventHandler(INetEventHandler* event_handler);
 };
 
 

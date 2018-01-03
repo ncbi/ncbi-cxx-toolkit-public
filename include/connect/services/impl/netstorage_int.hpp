@@ -245,8 +245,6 @@ class NCBI_XCONNECT_EXPORT CNetStorageAdmin
 
     CNetStorageAdmin GetServer(CNetServer::TInstance server);
 
-    void SetEventHandler(INetEventHandler* event_handler);
-
     CNetStorageObject Open(const string& object_loc);
 };
 

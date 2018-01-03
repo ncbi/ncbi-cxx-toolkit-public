@@ -107,7 +107,7 @@ SNetStorageService::SNetStorageService(
     m_NetStorageAdmin(nst_api)
 {
     m_Service = m_NetStorageAdmin.GetService();
-    m_NetStorageAdmin.SetEventHandler(
+    m_Service.SetEventHandler(
             new CEventHandler(automation_proc, m_NetStorageAdmin));
 }
 
