@@ -7742,6 +7742,9 @@ if test -z "$LMDB_LIBS"; then
 fi
 if test "$with_lmdb" != no -a -f "$LMDB_PATH/lib/liblmdb-static.a"; then
     LMDB_STATIC_LIBS="-L$LMDB_PATH/lib -llmdb-static"
+    if test "x$with_bin_release" = "xyes"; then
+       LMDB_LIBS=$LMDB_STATIC_LIBS
+    fi
 else
     LMDB_STATIC_LIBS=$LMDB_LIBS
 fi
