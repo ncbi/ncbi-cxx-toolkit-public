@@ -46,6 +46,7 @@
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/util/feature.hpp>
+#include <objmgr/util/indexer.hpp>
 
 #include <util/range.hpp>
 
@@ -100,6 +101,8 @@ public:
     CBioseq_Handle& GetNextHandle(void) { return m_NextHandle; }
     CScope& GetScope(void) const { return m_Handle.GetScope(); }
     feature::CFeatTree& GetFeatTree(void) { return m_FeatTree; }
+    bool UsingSeqEntryIndex(void) const;
+    const CRef<CSeqEntryIndex> GetSeqEntryIndex(void) const;
 
     // -- id information
     CSeq_id* GetPrimaryId(void) { return m_PrimaryId; }
@@ -445,6 +448,11 @@ public:
     feature::CFeatTree* GetFeatTree(void) { return m_FeatTree; }
     void SetFeatTree(feature::CFeatTree* tree) { m_FeatTree.Reset(tree); }
     
+    bool UsingSeqEntryIndex(void) const { return (m_Idx != 0); }
+    const CRef<CSeqEntryIndex> GetSeqEntryIndex(void) const { return m_Idx; }
+    void SetSeqEntryIndex(CRef<CSeqEntryIndex> idx) { m_Idx = idx; }
+    void ResetSeqEntryIndex(void) { m_Idx.Reset(NULL); }
+
     bool GetSGS(void) const { return m_SmallGenomeSet; }
     void SetSGS(const bool sgs) { m_SmallGenomeSet = sgs; }
 
@@ -461,6 +469,7 @@ private:
     auto_ptr<SAnnotSelector>    m_Selector;
     CConstRef<CSeq_loc>         m_Loc;
     CRef<feature::CFeatTree>    m_FeatTree;
+    CRef<CSeqEntryIndex>        m_Idx;
     bool                        m_SmallGenomeSet;
 };
 
@@ -642,6 +651,19 @@ CBioseqContext::TUnverified CBioseqContext::GetUnverifiedType(void) const
 {
     return m_fUnverified;
 }
+
+inline
+bool CBioseqContext::UsingSeqEntryIndex(void) const
+{
+    return m_FFCtx.UsingSeqEntryIndex();
+}
+
+inline
+const CRef<CSeqEntryIndex> CBioseqContext::GetSeqEntryIndex(void) const
+{
+    return m_FFCtx.GetSeqEntryIndex();
+}
+
 
 inline
 const CFlatFileConfig& CBioseqContext::Config(void) const

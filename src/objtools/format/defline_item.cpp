@@ -80,7 +80,13 @@ void CDeflineItem::x_GatherInfo(CBioseqContext& ctx)
     sequence::CDeflineGenerator Defliner;
     CConstRef<CBioseq> bioseq = ctx.GetHandle().GetBioseqCore();
     CScope& scope = ctx.GetScope();
-    m_Defline = Defliner.GenerateDefline( *bioseq, scope );
+    if ( ctx.UsingSeqEntryIndex() ) {
+        CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
+        CBioseq_Handle bsh = scope.GetBioseqHandle(*bioseq);
+        m_Defline = Defliner.GenerateDefline( bsh, *idx );
+    } else {
+        m_Defline = Defliner.GenerateDefline( *bioseq, scope );
+    }
     // CompressSpaces( m_Defline );
     CleanAndCompress (m_Defline, m_Defline.c_str());
     ConvertQuotes(m_Defline);

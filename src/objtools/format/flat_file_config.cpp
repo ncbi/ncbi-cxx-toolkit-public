@@ -560,7 +560,8 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
                                  "Custom flat file output bits.  The value is the bitwise OR (logical addition) of:\n"
                                  "         1 - hide protein_id and transcript_id\n"
                                  "         2 - hide GI number\n"
-                                 "         4 - allow long locus lines",
+                                 "         4 - allow long locus lines"
+                                 "      2048 - use SeqEntryIndexer",
 
                                  CArgDescriptions::eInteger, "0");
 

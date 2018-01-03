@@ -253,6 +253,13 @@ void CFlatFileGenerator::Generate
     SAnnotSelector sel = m_Ctx->SetAnnotSelector();
     m_Ctx->SetEntry(entry);
 
+    if ( m_Ctx->GetConfig().UseSeqEntryIndexer() ) {
+        // CSeq_entry& top = const_cast<CSeq_entry&> (*topent);
+        CSeq_entry_Handle topseh = entry.GetTopLevelEntry();
+        CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, CSeqEntryIndex::fAdaptive ));
+        m_Ctx->SetSeqEntryIndex(idx);
+    }
+
 
     bool onlyNearFeats = false;
     bool nearFeatsSuppress = false;
@@ -405,6 +412,10 @@ void CFlatFileGenerator::Generate
     /// restore the selector to its former glory
     m_Ctx->Reset();
     m_Ctx->SetAnnotSelector() = sel;
+
+    if ( m_Ctx->GetConfig().UseSeqEntryIndexer() ) {
+        m_Ctx->ResetSeqEntryIndex();
+    }
 }
 
 
