@@ -446,8 +446,6 @@ public:
     ///
     /// @param access_timeout
     ///    Time in seconds. All objects older than this are deleted.
-    /// @param keep_last_version
-    ///    type of cleaning action
     virtual void Purge(time_t         access_timeout) { Purge(access_timeout, eDropAll); }
 
     /// Delete BLOBs with access time older than specified
@@ -460,8 +458,6 @@ public:
     ///    BLOB identification subkey
     /// @param access_timeout
     ///    Time in seconds. All objects older than this are deleted.
-    /// @param keep_last_version
-    ///    type of cleaning action
     virtual void Purge(const string&  key,
                        const string&  subkey,
                        time_t         access_timeout) { Purge(key, subkey, access_timeout, eDropAll); }
