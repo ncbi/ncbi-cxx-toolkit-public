@@ -1168,6 +1168,24 @@ void CCgiRequest::x_Init
 }
 
 
+static CTempString x_FirstWord(const CTempStringEx& forward)
+{
+    if (forward.empty()) {
+        return CTempString();
+    }
+
+    vector<CTempStringEx> words;
+    NStr::Split(forward, ", \t", words,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+    for (size_t i = 0; i < words.size(); ++i) {
+        if (NStr::IsIPAddress(words[i])) {
+            return words[i];
+        }
+    }
+    return CTempStringEx();
+}
+
+
 static CTempString x_LastWord(const CTempStringEx& forward)
 {
     if ( forward.empty() ) {
@@ -1215,6 +1233,12 @@ void CCgiRequest::x_SetClientIpProperty(TFlags flags) const
     }
     if ( client.empty() ) {
         client = x_GetPropertyByName("PROXIED_IP");
+    }
+    if ( client.empty() ) {
+        client = x_FirstWord(x_GetPropertyByName("HTTP_X_FORWARDED_FOR"));
+    }
+    if (client.empty()) {
+        client = x_GetPropertyByName("HTTP_X_REAL_IP");
     }
     if ( client.empty() ) {
         client = x_GetPropertyByName(GetPropertyName(eCgi_RemoteAddr));
