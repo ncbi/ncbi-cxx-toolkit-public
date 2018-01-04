@@ -1913,7 +1913,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "FCTH\ts\tForestry Commission of Tasmania\t\t",
 "FCU\ts\tFukien Christian University\t\t",
 "FCUG\tc\tFungal Cultures University of Goteborg\t\t",
-"FDA\tc\tUS Food and Drug Administration\t\t",
+"FDA\tsc\tUS Food and Drug Administration\t\t",
 "FDC\tc\tForsyth Dental Center\t\t",
 "FDG\ts\tGuyana Forestry Commission\t\t",
 "FDLW\ts\tUniversity of Wisconsin Center, Biology Department\t\t",

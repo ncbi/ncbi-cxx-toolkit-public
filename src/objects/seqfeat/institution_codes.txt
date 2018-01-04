@@ -1880,7 +1880,7 @@ FCT	c	FCT (Forestry Commission Tasmania)
 FCTH	s	Forestry Commission of Tasmania		
 FCU	s	Fukien Christian University		
 FCUG	c	Fungal Cultures University of Goteborg		
-FDA	c	US Food and Drug Administration		
+FDA	sc	US Food and Drug Administration		
 FDC	c	Forsyth Dental Center		
 FDG	s	Guyana Forestry Commission		
 FDLW	s	University of Wisconsin Center, Biology Department		
