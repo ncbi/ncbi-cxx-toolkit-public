@@ -43,8 +43,6 @@ USING_SCOPE(objects);
 namespace wgsparse
 {
 
-typedef set<string> TIdContainer;
-
 struct CParams_imp
 {
     bool m_test;
@@ -468,6 +466,21 @@ const string& CParams::GetLoadOrderFile() const
 const string& CParams::GetAccFile() const
 {
     return m_imp->m_acc_file;
+}
+
+const TIdContainer& CParams::GetBioProjectIds() const
+{
+    return m_imp->m_bioproject_ids;
+}
+
+const TIdContainer& CParams::GetBioSampleIds() const
+{
+    return m_imp->m_biosample_ids;
+}
+
+const TIdContainer& CParams::GetSRAIds() const
+{
+    return m_imp->m_sra_ids;
 }
 
 static std::unique_ptr<CParams> params;

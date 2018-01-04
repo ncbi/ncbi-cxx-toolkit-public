@@ -100,6 +100,7 @@ enum EFixTech
 };
 
 struct CParams_imp;
+typedef set<string> TIdContainer;
 
 class CParams
 {
@@ -166,6 +167,10 @@ public:
 
     const string& GetLoadOrderFile() const;
     const string& GetAccFile() const;
+
+    const TIdContainer& GetBioProjectIds() const;
+    const TIdContainer& GetBioSampleIds() const;
+    const TIdContainer& GetSRAIds() const;
 
 private:
     std::unique_ptr<CParams_imp> m_imp;

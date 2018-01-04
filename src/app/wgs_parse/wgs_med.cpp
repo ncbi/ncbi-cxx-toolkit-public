@@ -72,7 +72,7 @@ int GetPMID(const CPub& pub)
     try {
         pmid = GetMLA().AskCitmatchpmid(pub);
     }
-    catch (const CException& e) {
+    catch (const CException& ) {
         // Failed lookup is not an error
     }
 

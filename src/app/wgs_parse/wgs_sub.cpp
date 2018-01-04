@@ -454,9 +454,8 @@ static void FixDbNameInObject(CSerialObject& obj, const map<string, string>& ids
     }
 }
 
-static void FixDbName(CSeq_entry& entry)
+static void FixDbName(CSeq_entry& entry, map<string, string>& ids)
 {
-    map<string, string> ids;
     CollectObjectIds(entry, ids);
 
     CSeq_descr* descrs = nullptr;
@@ -487,7 +486,7 @@ static void FixDbName(CSeq_entry& entry)
     
     if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
         for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
-            FixDbName(*cur_entry);
+            FixDbName(*cur_entry, ids);
         }
     }
 }
@@ -1021,7 +1020,7 @@ static bool OutputSubmission(const CBioseq_set& bioseq_set, const string& in_fil
             out << MSerial_AsnText << bioseq_set;
     }
     catch (CException& e) {
-        ERR_POST_EX(0, 0, Fatal << "Failed to save processed submission to file: \"" << fname << "\" [" << e.GetMsg() << "]. Cannot proceed.");
+        ERR_POST_EX(0, 0, Critical << "Failed to save processed submission to file: \"" << fname << "\" [" << e.GetMsg() << "]. Cannot proceed.");
         return false;
     }
 
@@ -1287,6 +1286,7 @@ bool ParseSubmissions(CMasterInfo& master_info)
 
             if (seq_submit->IsSetData() && seq_submit->GetData().IsEntrys()) {
 
+                map<string, string> ids;
                 for (auto& entry : seq_submit->SetData().SetEntrys()) {
 
                     ++next_id; // TODO check correctness
@@ -1317,7 +1317,7 @@ bool ParseSubmissions(CMasterInfo& master_info)
                     }
 
                     if (GetParams().IsReplaceDBName() || HasLocals(*entry)) {
-                        FixDbName(*entry);
+                        FixDbName(*entry, ids);
                         FixOrigProtTransIds(*entry);
                     }
 
@@ -1352,7 +1352,7 @@ bool ParseSubmissions(CMasterInfo& master_info)
                     // TODO adddblink ...
 
                     if (!lookup_succeed) {
-                        ERR_POST_EX(0, 0, Fatal << "Taxonomy lookup failed on submission \"" << file << "\". Cannot proceed.");
+                        ERR_POST_EX(0, 0, Critical << "Taxonomy lookup failed on submission \"" << file << "\". Cannot proceed.");
                         break;
                     }
 
@@ -1418,8 +1418,11 @@ bool ParseSubmissions(CMasterInfo& master_info)
             //+++++
             // DEBUG pseudo cleanup step
             for (CTypeIterator<CUser_object> x(*bioseq_set); x; ++x) {
-                x->SetField("method").SetString("SeriousSeqEntryCleanup");
-                x->SetField("version").SetInt(8);
+
+                if (x->IsSetType() && x->GetType().IsStr() && x->GetType().GetStr() == "NcbiCleanup") {
+                    x->SetField("method").SetString("SeriousSeqEntryCleanup");
+                    x->SetField("version").SetInt(8);
+                }
             }
             //+++++
 

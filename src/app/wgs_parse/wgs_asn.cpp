@@ -145,7 +145,7 @@ static void CheckGeneralLocalIds(CBioseq::TId& ids)
     }
 
     if (general_id != local_id) {
-        ERR_POST_EX(0, 0, Fatal << "General and local ids within the same Bioseq are not identical: \"" << general_id << "\" vs \"" << local_id << "\".");
+        ERR_POST_EX(0, 0, Critical << "General and local ids within the same Bioseq are not identical: \"" << general_id << "\" vs \"" << local_id << "\".");
         // TODO -> reject (see wgsasn.c, line 2188)
     }
 }
@@ -346,7 +346,7 @@ static bool FixDescr(CSeq_descr& descrs, bool first)
             auto proc_func = DESCR_PROCESS_FUNC.find((*descr)->Which());
             if (proc_func != DESCR_PROCESS_FUNC.end()) {
 
-                proc_func->second(**descr, first);
+                good_descr = proc_func->second(**descr, first);
                 if (good_descr) {
                     ++descr;
                 }
@@ -491,7 +491,7 @@ bool FixSeqSubmit(CRef<CSeq_submit>& seq_submit, int& accession_ver, bool first)
 
 static EChromosomeSubtypeStatus CheckChromosome(const CSeq_descr& descrs)
 {
-    if (GetParams().GetScaffoldPrefix().empty() || GetParams().GetScaffoldType() == eRegularChromosomal || GetParams().GetScaffoldType() == eTPAChromosomal)
+    if (GetParams().GetScaffoldPrefix().empty() || GetParams().GetScaffoldType() != eRegularChromosomal || GetParams().GetScaffoldType() != eTPAChromosomal)
         return eChromosomeSubtypeValid;
 
     bool source_present = false;
@@ -942,7 +942,30 @@ static void CheckNucBioseqs(const CSeq_entry& entry, CSeqEntryInfo& info, CSeqEn
             }
 
             if (GetParams().IsAccessionAssigned()) {
-                // TODO
+                if (bioseq.IsSetId()) {
+
+                    for (auto& id : bioseq.GetId()) {
+                        const CTextseq_id* text_id = id->GetTextseq_Id();
+                        if (text_id != nullptr && text_id->IsSetAccession()) {
+
+                            ++info.m_num_of_accsessions;
+                            if (info.m_seqid_type == CSeq_id::e_not_set) {
+                                info.m_seqid_type = id->Which();
+                            }
+                            else if (id->Which() != info.m_seqid_type) {
+                                ERR_POST_EX(0, 0, Error << "One or more records have mismatching accession(s) and Seq-id type(s). First appearance: accession is \"" << text_id->GetAccession() <<
+                                            "\", Seq-id type = " << id->Which() << ".");
+
+                                info.m_seqid_state = eSeqIdDifferent;
+                                // TODO rejection
+                                break;
+                            }
+
+                            // TODO validate acc
+                            // TODO aids
+                        }
+                    }
+                }
             }
 
             CheckMolecule(bioseq, info);
@@ -974,7 +997,7 @@ bool CheckSeqEntry(const CSeq_entry& entry, const string& file, CSeqEntryInfo& i
         string err_str = "Empty or missing \"chromosome\" SubSource for one or more chromosomal scaffold(s). File \"" + file + "\".";
         if (info.m_chromosome_subtype_status != eChromosomeSubtypeMissing) {
             err_str += " Cannot proceed.";
-            ERR_POST_EX(0, 0, Fatal << err_str);
+            ERR_POST_EX(0, 0, Critical << err_str);
             ret = false;
         }
         else {
@@ -983,22 +1006,22 @@ bool CheckSeqEntry(const CSeq_entry& entry, const string& file, CSeqEntryInfo& i
     }
 
     if (info.m_secondary_accessions && !GetParams().IsSecondaryAccsAllowed()) {
-        ERR_POST_EX(0, 0, Fatal << "Found secondary accessions in Seq-entry from \"" << file << "\", which is prohibited. Cannot proceed.");
+        ERR_POST_EX(0, 0, Critical << "Found secondary accessions in Seq-entry from \"" << file << "\", which is prohibited. Cannot proceed.");
         ret = false;
     }
 
     if (info.m_hist_secondary_differs) {
-        ERR_POST_EX(0, 0, Fatal << "Mismatching sets of accessions in extra-accessions and Seq-hist blocks are not allowed. File \"" << file << "\". Cannot proceed.");
+        ERR_POST_EX(0, 0, Critical << "Mismatching sets of accessions in extra-accessions and Seq-hist blocks are not allowed. File \"" << file << "\". Cannot proceed.");
         ret = false;
     }
 
     if (info.m_seqset) {
-        ERR_POST_EX(0, 0, Fatal << "Input Seq-entry from \"" << file << "\" contains segmented set. Cannot proceed.");
+        ERR_POST_EX(0, 0, Critical << "Input Seq-entry from \"" << file << "\" contains segmented set. Cannot proceed.");
         ret = false;
     }
 
     if (info.m_num_of_nuc_seq > 1) {
-        ERR_POST_EX(0, 0, Fatal << "Input Seq-entry from \"" << file << "\" contains more than one nucleic Bioseq. Cannot proceed.");
+        ERR_POST_EX(0, 0, Critical << "Input Seq-entry from \"" << file << "\" contains more than one nucleic Bioseq. Cannot proceed.");
         ret = false;
     }
 
@@ -1006,13 +1029,13 @@ bool CheckSeqEntry(const CSeq_entry& entry, const string& file, CSeqEntryInfo& i
     if (fix_tech_mol_biomol_not_set || !GetParams().IsTsa()) {
         
         if (info.m_bad_tech) {
-            ERR_POST_EX(0, 0, (fix_tech_mol_biomol_not_set ? Fatal : Warning) << "Input Seq-entry with Seq-id \"" << info.m_cur_seqid << "\" has missing or incorrect Molinfo.tech.");
+            ERR_POST_EX(0, 0, (fix_tech_mol_biomol_not_set ? Critical : Warning) << "Input Seq-entry with Seq-id \"" << info.m_cur_seqid << "\" has missing or incorrect Molinfo.tech.");
             if (fix_tech_mol_biomol_not_set)
                 ret = false;
         }
 
         if (info.m_bad_mol) {
-            ERR_POST_EX(0, 0, (fix_tech_mol_biomol_not_set ? Fatal : Warning) << "Input Seq-entry with Seq-id \"" << info.m_cur_seqid << "\" has missing or incorrect Seq-inst.mol.");
+            ERR_POST_EX(0, 0, (fix_tech_mol_biomol_not_set ? Critical : Warning) << "Input Seq-entry with Seq-id \"" << info.m_cur_seqid << "\" has missing or incorrect Seq-inst.mol.");
             if (fix_tech_mol_biomol_not_set)
                 ret = false;
         }
@@ -1032,14 +1055,14 @@ bool CheckSeqEntry(const CSeq_entry& entry, const string& file, CSeqEntryInfo& i
             report = false;
 
         if (report) {
-            ERR_POST_EX(0, 0, (severity_reject ? Fatal : Warning) << "Input Seq-entry with Seq-id \"" << file << "\" has missing or incorrect Molinfo.biomol.");
+            ERR_POST_EX(0, 0, (severity_reject ? Critical : Warning) << "Input Seq-entry with Seq-id \"" << file << "\" has missing or incorrect Molinfo.biomol.");
             if (severity_reject)
                 ret = false;
         }
     }
 
     if (!info.m_diff_dbname.empty()) {
-        ERR_POST_EX(0, 0, Fatal << "Dbname \"" << info.m_diff_dbname << "\" from general id Seq-id differs from the others. Submission = \"" << file << "\".");
+        ERR_POST_EX(0, 0, Critical << "Dbname \"" << info.m_diff_dbname << "\" from general id Seq-id differs from the others. Submission = \"" << file << "\".");
         ret = false;
     }
 
@@ -1047,17 +1070,17 @@ bool CheckSeqEntry(const CSeq_entry& entry, const string& file, CSeqEntryInfo& i
 
         if (info.m_seqid_state == eSeqIdMultiple)
         {
-            ERR_POST_EX(0, 0, Fatal << "One or more scaffolds Bioseqs from submission \"" << file << "\" have more than one Seq-id.");
+            ERR_POST_EX(0, 0, Critical << "One or more scaffolds Bioseqs from submission \"" << file << "\" have more than one Seq-id.");
             ret = false;
         }
         else if (info.m_seqid_state == eSeqIdIncorrect)
         {
-            ERR_POST_EX(0, 0, Fatal << "One or more scaffolds Bioseqs from submission \"" << file << "\" have incorrect Seq-id type.");
+            ERR_POST_EX(0, 0, Critical << "One or more scaffolds Bioseqs from submission \"" << file << "\" have incorrect Seq-id type.");
             ret = false;
         }
 
         if (info.m_id_problem == eIdNoDbTag && GetParams().IgnoreGeneralIds()) {
-            ERR_POST_EX(0, 0, Fatal << "Required general or local Seq-id from Seq-entry is missing or incorrect. Submission = \"" << file << "\".");
+            ERR_POST_EX(0, 0, Critical << "Required general or local Seq-id from Seq-entry is missing or incorrect. Submission = \"" << file << "\".");
             ret = false;
         }
     }
@@ -1074,29 +1097,29 @@ bool CheckSeqEntry(const CSeq_entry& entry, const string& file, CSeqEntryInfo& i
             if (info.m_dbname_problem == eDBNameBadNucDB && !common_info.m_nuc_warn) {
 
                 string correct_dbname = GetParams().IsChromosomal() ? GetParams().GetProjAccStr() : GetParams().GetProjAccVerStr();
-                ERR_POST_EX(0, 0, Fatal << "One or more nucleic Bioseqs have incorrect dbname supplied: \"" << dbname << "\". Must be \"" << correct_dbname << "\". Submission = \"" << file << "\".");
+                ERR_POST_EX(0, 0, Critical << "One or more nucleic Bioseqs have incorrect dbname supplied: \"" << dbname << "\". Must be \"" << correct_dbname << "\". Submission = \"" << file << "\".");
                 common_info.m_nuc_warn = true;
             }
 
             if (info.m_dbname_problem == eDBNameBadProtDB && !common_info.m_prot_warn) {
-                ERR_POST_EX(0, 0, Fatal << "One or more protein Bioseqs have incorrect dbname supplied: \"" << dbname << "\". Must be \"" << GetParams().GetProjAccVerStr() << "\". Submission = \"" << file << "\".");
+                ERR_POST_EX(0, 0, Critical << "One or more protein Bioseqs have incorrect dbname supplied: \"" << dbname << "\". Must be \"" << GetParams().GetProjAccVerStr() << "\". Submission = \"" << file << "\".");
                 common_info.m_prot_warn = true;
             }
             ret = false;
         }
 
         if (info.m_id_problem == eIdNoDbTag) {
-            ERR_POST_EX(0, 0, Fatal << "Required general or local Seq-id from Seq-entry is missing or incorrect. Submission = \"" << file << "\".");
+            ERR_POST_EX(0, 0, Critical << "Required general or local Seq-id from Seq-entry is missing or incorrect. Submission = \"" << file << "\".");
             ret = false;
         }
 
         if (info.m_id_problem == eIdManyGeneralIds) {
-            ERR_POST_EX(0, 0, Fatal << "One or more Bioseqs from submission \"" << file << "\" have more than one general or local ids.");
+            ERR_POST_EX(0, 0, Critical << "One or more Bioseqs from submission \"" << file << "\" have more than one general or local ids.");
             ret = false;
         }
 
         if (GetParams().GetUpdateMode() == eUpdateScaffoldsNew && info.m_seqid_state == eSeqIdDifferent) {
-            ERR_POST_EX(0, 0, Fatal << "One or more scaffolds Bioseqs from submission \"" << file << "\" have different Seq-id types.");
+            ERR_POST_EX(0, 0, Critical << "One or more scaffolds Bioseqs from submission \"" << file << "\" have different Seq-id types.");
             ret = false;
         }
     }
@@ -1105,28 +1128,24 @@ bool CheckSeqEntry(const CSeq_entry& entry, const string& file, CSeqEntryInfo& i
 
         if (info.m_seqid_state != eSeqIdOK) {
             if (info.m_seqid_state == eSeqIdDifferent) {
-                ERR_POST_EX(0, 0, Fatal << "Seq-entry from submission \"" << file << "\" has different types of accessions in Seq-id block.");
+                ERR_POST_EX(0, 0, Critical << "Seq-entry from submission \"" << file << "\" has different types of accessions in Seq-id block.");
             }
             ret = false;
         }
 
-        // TODO
-        /*if (info.m_wsecp->noacc != FALSE) {
-            ErrPostEx(SEV_FATAL, ERR_SUBMISSION_MissingAccession,
-                      "Submission \"%s\" is lacking accession.", filename);
-            ret = FALSE;
+        if (info.m_num_of_accsessions == 0) {
+            ERR_POST_EX(0, 0, Error << "Submission \"" << file << "\" is lacking accession.");
+            ret = false;
+        }
+        else if (info.m_num_of_accsessions > 1) {
+            ERR_POST_EX(0, 0, Critical << "Seq-entry from submission \"" << file << "\" has more than one accession.");
+            ret = false;
         }
 
-        if (wsecp->badacc != FALSE) {
+        // TODO
+        /*if (wsecp->badacc != FALSE) {
             ErrPostEx(SEV_FATAL, ERR_SUBMISSION_IncorrectAccession,
                       "Seq-entry from submission \"%s\" has incorrect accession prefix+version.",
-                      filename);
-            ret = FALSE;
-        }
-
-        if (wsecp->manyaccs != FALSE) {
-            ErrPostEx(SEV_FATAL, ERR_SUBMISSION_TooManyAccessions,
-                      "Seq-entry from submission \"%s\" has more than one accession.",
                       filename);
             ret = FALSE;
         }*/

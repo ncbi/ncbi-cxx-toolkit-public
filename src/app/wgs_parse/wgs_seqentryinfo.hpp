@@ -103,6 +103,7 @@ struct CSeqEntryInfo
 
     size_t m_num_of_prot_seq;
     size_t m_num_of_nuc_seq;
+    size_t m_num_of_accsessions;
 
     EChromosomeSubtypeStatus m_chromosome_subtype_status;
     EIdProblem m_id_problem;
@@ -136,6 +137,7 @@ struct CSeqEntryInfo
         m_keywords(keywords),
         m_num_of_prot_seq(0),
         m_num_of_nuc_seq(0),
+        m_num_of_accsessions(0),
         m_chromosome_subtype_status(eChromosomeSubtypeValid),
         m_id_problem(eIdNoProblem),
         m_dbname_problem(eDBNameNoProblem),
@@ -228,6 +230,7 @@ struct CMasterInfo
     EDateIssues m_creation_date_issues;
 
     CRef<CSeq_entry> m_master_bioseq;
+    CRef<CSeq_entry> m_id_master_bioseq;
 
     int m_num_of_entries;
     int m_accession_ver;

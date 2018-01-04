@@ -323,7 +323,7 @@ bool IsUserObjectOfType(const CSeqdesc& descr, const string& type)
 string ToString(const CSerialObject& obj)
 {
     CNcbiOstrstream stream;
-    stream << MSerial_AsnText << obj;
+    stream << MSerial_AsnText << obj << ends;
     return stream.str();
 }
 

@@ -308,21 +308,33 @@ int CWGSParseApp::Run(void)
 
     if (SetParams(GetArgs())) {
 
+        CCleanup cleanup;
+
         CRef<CSeq_entry> master_entry = GetMasterEntry();
         if (GetParams().GetUpdateMode() == eUpdateNew) {
             if (master_entry.NotEmpty()) {
                 if (!GetParams().EnforceNew()) {
-                    ERR_POST_EX(0, 0, "Incorrect parsing mode set in command line: this is not a brand new project.");
+                    ERR_POST_EX(0, 0, Critical << "Incorrect parsing mode set in command line: this is not a brand new project.");
                     return ERROR_RET;
                 }
                 master_entry.Reset();
             }
         }
         else {
-            // TODO - CR put some error 
+
+            if (master_entry.Empty()) {
+                ERR_POST_EX(0, 0, Critical << "Failed to retrieve master sequence from ID.");
+                return ERROR_RET;
+            }
+
+            cleanup.ExtendedCleanup(*master_entry);
+
+            // TODO additional for some special modes
         }
 
         CMasterInfo master_info;
+        master_info.m_id_master_bioseq = master_entry;
+
         if (!CreateMasterBioseqWithChecks(master_info)) {
 
             switch (GetParams().GetUpdateMode()) {
@@ -342,7 +354,6 @@ int CWGSParseApp::Run(void)
 
         // TODO ...
 
-        CCleanup cleanup;
         cleanup.ExtendedCleanup(*master_info.m_master_bioseq);
 
         // TODO ...

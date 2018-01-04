@@ -142,11 +142,10 @@ template <typename Func, typename Container> void CollectDataFromDescr(const CSe
         }
     }
 
-    if (entry.IsSet()) {
-        if (entry.GetSet().IsSetSeq_set()) {
-            for_each(entry.GetSet().GetSeq_set().begin(), entry.GetSet().GetSeq_set().end(),
-                     [&container, &process](const CRef<CSeq_entry>& cur_entry) { CollectDataFromDescr(*cur_entry, container, process); });
-        }
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for_each(entry.GetSet().GetSeq_set().begin(), entry.GetSet().GetSeq_set().end(),
+                    [&container, &process](const CRef<CSeq_entry>& cur_entry) { CollectDataFromDescr(*cur_entry, container, process); });
     }
 }
 
@@ -223,7 +222,7 @@ static bool CheckBioSource(const CSeq_entry& entry, CMasterInfo& info, const str
             size_t num_of_biosources = count_if(descrs->Get().begin(), descrs->Get().end(), is_biosource);
 
             if (num_of_biosources > 1) {
-                ERR_POST_EX(0, 0, Fatal << "Multiple BioSource descriptors encountered in record from file \"" << file << "\".");
+                ERR_POST_EX(0, 0, Critical << "Multiple BioSource descriptors encountered in record from file \"" << file << "\".");
                 ret = false;
             }
             else if (num_of_biosources < 1) {
@@ -442,15 +441,185 @@ static bool DBLinkProblemReport(const CMasterInfo& info)
     return reject;
 }
 
-static void CheckMasterDblink(const CMasterInfo& info)
+static void ReplaceFieldInDBLink(const TIdContainer& values, const string& tag, CUser_object& user_obj)
 {
-    // TODO
+    user_obj.RemoveNamedField(tag);
+
+    vector<string> value_list(values.begin(), values.end());
+    user_obj.AddField(tag, value_list);
+}
+
+static void CheckSetOfIds(CUser_object& user_obj, const string& tag, const TIdContainer& ids, const string& what, const string& cmd_line_param, bool& reject)
+{
+    if (!user_obj.IsSetData()) {
+        return;
+    }
+
+    TIdContainer cur_ids;
+
+    auto& tag_field = user_obj.GetFieldRef(tag);
+    if (tag_field.NotEmpty() && tag_field->IsSetData() && tag_field->GetData().IsStrs()) {
+
+        for (auto& id : tag_field->GetData().GetStrs()) {
+            cur_ids.insert(id);
+        }
+    }
+
+    if (!cur_ids.empty()) {
+
+        if (!ids.empty() && ids != cur_ids) {
+
+            CNcbiOstrstream msg;
+            msg << "Submission supplied " << tag << " values do not match the ones provided in command line : \"" << NStr::Join(cur_ids, ",") << "\" vs \"" << NStr::Join(ids, ",") << ends;
+            if (GetParams().IsDblinkOverride()) {
+                ERR_POST_EX(0, 0, Warning << msg.str() << "\". Using values from the command line.");
+            }
+            else {
+                reject = true;
+                ERR_POST_EX(0, 0, Critical << msg.str() << "\". Rejecting the whole project.");
+            }
+
+            ReplaceFieldInDBLink(ids, tag, user_obj);
+        }
+    }
+    else if (!ids.empty()) {
+        ReplaceFieldInDBLink(ids, tag, user_obj);
+        ERR_POST_EX(0, 0, Info << "All records from files being processed are lacking " << what << ". Using command line \"" << cmd_line_param << "\" values.");
+    }
+}
+
+static CUser_object* GetDBLinkFromIdMasterBioseq(CRef<CSeq_entry>& bioseq)
+{
+    CUser_object* dblink_user_obj = nullptr;
+    if (bioseq.NotEmpty() && bioseq->IsSetDescr() && bioseq->GetDescr().IsSet()) {
+
+        auto& dblink_user_obj_it = find_if(bioseq->SetDescr().Set().begin(), bioseq->SetDescr().Set().end(), [](const CRef<CSeqdesc>& descr) { return IsUserObjectOfType(*descr, "DBLink"); });
+        if (dblink_user_obj_it != bioseq->GetDescr().Get().end()) {
+
+            dblink_user_obj = &(*dblink_user_obj_it)->SetUser();
+        }
+    }
+
+    return dblink_user_obj;
+}
+
+static void ReportLackOfDBLinkData(const string& tag, const string& val, bool& reject)
+{
+    CNcbiOstrstream msg;
+    msg << "The DBLink User-object content from the files being processed lacks \"" << tag << ":" << val << "\" link that is present in the current WGS-Master for this WGS project. " << ends;
+
+    if (GetParams().IsDblinkOverride()) {
+        ERR_POST_EX(0, 0, Warning << msg.str() << "Using DBLink from the input data.");
+    }
+    else {
+        reject = true;
+        ERR_POST_EX(0, 0, Critical << msg.str() << "Rejecting the whole project.");
+    }
+}
+
+static void ReportLackOfDBLinkDataAll(const string& tag, const CUser_field::C_Data::TStrs& vals, bool& reject)
+{
+    for (auto& val : vals) {
+        ReportLackOfDBLinkData(tag, val, reject);
+    }
+}
+
+static void ReportNewDBLinkData(const string& tag, const string& val, bool& reject)
+{
+    CNcbiOstrstream msg;
+    msg << "The DBLink User-object content from the files being processed contains new link \"" << tag << ":" << val << "\", not present in the current WGS-Master for this WGS project. " << ends;
+
+    if (GetParams().IsDblinkOverride()) {
+        ERR_POST_EX(0, 0, Warning << msg.str() << "Using DBLink from the input data.");
+    }
+    else {
+        reject = true;
+        ERR_POST_EX(0, 0, Critical << msg.str() << "Rejecting the whole project.");
+    }
+}
+
+static void ReportNewDBLinkDataAll(const string& tag, const CUser_field::C_Data::TStrs& , bool& )
+{
+    ERR_POST_EX(0, 0, Warning << "The DBLink User-object content from the files being processed contains new type of link \"" << tag << "\", not present in the current WGS-Master for this WGS project.");
+}
+
+typedef void(*ReportIssue)(const string& tag, const string& val, bool& reject);
+typedef void(*ReportAllIssues)(const string& tag, const CUser_field::C_Data::TStrs& vals, bool& reject);
+
+static void CheckCurrentDBLinkConsistency(const CUser_object& first, const CUser_object& second, bool& reject, ReportIssue report, ReportAllIssues reportAll)
+{
+    if (first.IsSetData()) {
+
+        for (auto& id_field : first.GetData()) {
+
+            if (id_field->IsSetLabel() && id_field->GetLabel().IsStr() &&
+                id_field->IsSetData() && id_field->GetData().IsStrs()) {
+
+                auto& tag = id_field->GetLabel().GetStr();
+                auto& cur_field = second.GetFieldRef(tag);
+                if (cur_field.Empty()) {
+
+                    reportAll(tag, id_field->GetData().GetStrs(), reject);
+                }
+                else {
+
+                    auto& cur_vals = cur_field->GetData().GetStrs();
+                    for (auto& val : id_field->GetData().GetStrs()) {
+
+                        auto& cur_val = find_if(cur_vals.begin(), cur_vals.end(), [&val](const string& item) { return item == val; });
+                        if (cur_val == cur_vals.end()) {
+                            report(tag, val, reject);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+static void CheckMasterDblink(CMasterInfo& info)
+{
+    if (info.m_dblink.NotEmpty()) {
+        
+        CheckSetOfIds(*info.m_dblink, "BioProject", GetParams().GetBioProjectIds(), "BioProject Accession Numbers", "-B", info.m_reject);
+        CheckSetOfIds(*info.m_dblink, "BioSample", GetParams().GetBioSampleIds(), "BioSample ids", "-C", info.m_reject);
+        CheckSetOfIds(*info.m_dblink, "Sequence Read Archive", GetParams().GetSRAIds(), "SRA accessions", "-C", info.m_reject);
+    }
+
+    CUser_object* id_dblink_user_obj = GetDBLinkFromIdMasterBioseq(info.m_id_master_bioseq);
+    if (info.m_dblink.Empty() && id_dblink_user_obj == nullptr) {
+        return;
+    }
+
+    if (GetParams().IsDblinkOverride() && id_dblink_user_obj && info.m_dblink->GetFieldRef("BioSample").Empty()) {
+
+        auto& biosample_field = id_dblink_user_obj->GetFieldRef("BioSample");
+        if (biosample_field.NotEmpty() && biosample_field->IsSetData() && biosample_field->GetData().IsStrs()) {
+            ERR_POST_EX(0, 0, Warning << "The DBLink User-object content from the files being processed lacks BioSample link that is present in the current WGS-Master for this WGS project. Using the one from the current Master.");
+            info.m_dblink->AddField("BioSample", biosample_field->GetData().GetStrs());
+        }
+    }
+
+    if (info.m_dblink.Empty()) {
+        // TODO
+
+        return;
+    }
+
+    if (id_dblink_user_obj == nullptr) {
+        // TODO
+
+        return;
+    }
+
+    CheckCurrentDBLinkConsistency(*id_dblink_user_obj, *info.m_dblink, info.m_reject, ReportLackOfDBLinkData, ReportLackOfDBLinkDataAll);
+    CheckCurrentDBLinkConsistency(*info.m_dblink, *id_dblink_user_obj, info.m_reject, ReportNewDBLinkData, ReportNewDBLinkDataAll);
 }
 
 static string GetAccessionValue(size_t val_len, int val)
 {
     CNcbiOstrstream sstream;
-    sstream << setfill('0') << setw(2) << GetParams().GetAssemblyVersion() << setw(val_len) << val << '\0';
+    sstream << setfill('0') << setw(2) << GetParams().GetAssemblyVersion() << setw(val_len) << val << ends;
     return sstream.str();
 }
 
@@ -468,7 +637,7 @@ static CRef<CSeq_id> CreateAccession(int last_accession_num, size_t accession_le
     if (accession_len != max_accession_len) {
 
         CNcbiStrstream msg;
-        msg << "Incorrect format for accessions, given the total number of contigs in the project: \"N+2+" << accession_len << "\" was used, but only \"N+2+" << max_accession_len << "\" is needed.";
+        msg << "Incorrect format for accessions, given the total number of contigs in the project: \"N+2+" << accession_len << "\" was used, but only \"N+2+" << max_accession_len << "\" is needed." << ends;
 
         if (GetParams().GetSource() == eNCBI) {
             ERR_POST_EX(0, 0, Critical << msg.str());
@@ -658,7 +827,7 @@ static void CreateProtCountUserObject(size_t num_of_prot_seq, CBioseq& bioseq)
 
     CRef<CUser_field> field(new CUser_field);
     field->SetLabel().SetStr("TotalContigProteins");
-    field->SetInt(num_of_prot_seq);
+    field->SetInt(static_cast<int>(num_of_prot_seq));
     user_obj.SetData().push_back(field);
 
     bioseq.SetDescr().Set().push_back(descr);
@@ -1190,6 +1359,10 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
     // TODO...
 
     CheckMasterDblink(master_info);
+    if (master_info.m_reject) {
+        return false;
+    }
+
 
     // TODO ...
 
