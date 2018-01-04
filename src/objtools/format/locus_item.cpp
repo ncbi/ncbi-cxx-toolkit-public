@@ -57,6 +57,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/indexer.hpp>
 
 #include <objtools/format/formatter.hpp>
 #include <objtools/format/text_ostream.hpp>
@@ -428,6 +429,169 @@ void CLocusItem::x_SetTopology(CBioseqContext& ctx)
 
 // Division
 
+static CTempString x_GetDivisionProcIdx(CBioseqContext& ctx, const CBioseq_Handle& bsh,
+                                     bool is_prot, CMolInfo::TTech tech)
+
+{
+    CTempString division;
+
+    const CBioSource* bsrc = 0;
+
+    CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
+    if (! idx) return division;
+    CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (bsh);
+    if (! bsx) return division;
+
+    // Find the BioSource object for this sequnece.
+    CConstRef<CBioSource> srcr = bsx->GetBioSource();
+    if (srcr) {
+        bsrc = &(*srcr);
+    } else if ( is_prot ) {
+        CRef<CFeatureIndex> sfxp = bsx->GetFeatureForProduct();
+        if (sfxp) {
+            CRef<CFeatureIndex> fsx = sfxp->GetOverlappingSource();
+            if (fsx) {
+                bsrc = &(fsx->GetMappedFeat().GetData().GetBiosrc());
+            }
+        }
+    }
+
+    bool is_transgenic = false;
+    bool is_env_sample = false;
+
+    CBioSource::TOrigin origin = CBioSource::eOrigin_unknown;
+    if ( bsrc ) {
+        origin = bsrc->GetOrigin();
+        if ( bsrc->CanGetOrg() ) {
+            const COrg_ref& org = bsrc->GetOrg();
+            if ( org.CanGetOrgname()  &&  org.GetOrgname().CanGetDiv() ) {
+                division = org.GetOrgname().GetDiv();
+            }
+        }
+
+        ITERATE(CBioSource::TSubtype, it, bsrc->GetSubtype() ) {
+            CSubSource::TSubtype subtype = (*it)->IsSetSubtype() ?
+                (*it)->GetSubtype() : CSubSource::eSubtype_other;
+            if (subtype == CSubSource::eSubtype_transgenic) {
+                is_transgenic = true;
+            } else if (subtype == CSubSource::eSubtype_environmental_sample) {
+                is_env_sample = true;
+            }
+        }
+    }
+
+    switch (tech) {
+    case CMolInfo::eTech_est:
+        division = "EST";
+        break;
+    case CMolInfo::eTech_sts:
+        division = "STS";
+        break;
+    case CMolInfo::eTech_survey:
+        division = "GSS";
+        break;
+    case CMolInfo::eTech_htgs_0:
+    case CMolInfo::eTech_htgs_1:
+    case CMolInfo::eTech_htgs_2:
+        division = "HTG";
+        break;
+    case CMolInfo::eTech_htc:
+        division = "HTC";
+        break;
+    case CMolInfo::eTech_tsa:
+        division = "TSA";
+        break;
+    default:
+        break;
+    }
+
+    if (origin == CBioSource::eOrigin_synthetic   ||
+        origin == CBioSource::eOrigin_mut         ||
+        origin == CBioSource::eOrigin_artificial  ||
+        is_transgenic ) {
+        division = "SYN";
+    } else if (is_env_sample) {
+        if (tech == CMolInfo::eTech_unknown  ||
+            tech == CMolInfo::eTech_standard ||
+            tech == CMolInfo::eTech_htgs_3   ||
+            tech == CMolInfo::eTech_wgs      ||
+            tech == CMolInfo::eTech_other) {
+            division = "ENV";
+        }
+    }
+
+    if (is_transgenic && tech == CMolInfo::eTech_survey) {
+        division = "GSS";
+    }
+
+    ITERATE (CBioseq_Handle::TId, iter, bsh.GetId()) {
+        if (*iter  &&  iter->GetSeqId()->IsPatent()) {
+            division = "PAT";
+            break;
+        }
+    }
+    if ( is_prot ) {
+        CRef<CFeatureIndex> sfxp = bsx->GetFeatureForProduct();
+        if (sfxp) {
+            CSeq_feat_Handle hdl = sfxp->GetSeqFeatHandle();
+            if (hdl) {
+                const CSeq_loc & cds_loc = hdl.GetLocation();
+                const CSeq_id *pSeqId = cds_loc.GetId();
+                CBioseq_Handle nuc;
+                if( pSeqId ) {
+                    nuc = bsh.GetScope().GetBioseqHandle(*pSeqId);
+                } else {
+                    // fall back on first Seq-id in location that is local to this Seq-entry
+                    // (example where this code is needed to prevent a crash: AL772325.4 proteins)
+                    ITERATE( CSeq_loc, cds_loc_iter, cds_loc ) {
+                        try {
+                            CSeq_id_Handle cds_loc_piece_id = cds_loc_iter.GetSeq_id_Handle();
+                            if( cds_loc_piece_id ) {
+                                nuc = bsh.GetScope().GetBioseqHandleFromTSE(
+                                    cds_loc_piece_id, bsh );
+                                if( nuc ) {
+                                    break;
+                                }
+                            }
+                        } catch(...) {
+                            // ignore exceptions because it's common for us to fail
+                            // to find something since we're only looking locally
+                        }
+                    }
+                }
+                if( nuc ) {
+                    ITERATE (CBioseq_Handle::TId, iter, nuc.GetId()) {
+                        if (*iter  &&  iter->GetSeqId()->IsPatent()) {
+                            division = "PAT";
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // more complicated code for division, if necessary, goes here
+
+    for (CSeqdesc_CI gb_desc(bsh, CSeqdesc::e_Genbank); gb_desc; ++gb_desc) {
+        const CGB_block& gb = gb_desc->GetGenbank();
+        if (gb.CanGetDiv()) {
+            if (division.empty()    ||
+                gb.GetDiv() == "SYN"  ||
+                gb.GetDiv() == "PAT") {
+                    division = gb.GetDiv();
+            }
+        }
+    }
+
+    // Set a default value (3 spaces)
+    if ( division.empty() ) {
+        division = "   ";
+    }
+
+    return division;
+}
+
 static CTempString x_GetDivisionProc(const CBioseq_Handle& bsh, bool is_prot,
                                      CMolInfo::TTech tech)
 
@@ -630,6 +794,11 @@ string CLocusItem::GetDivision(const CBioseq_Handle& bsh)
         }
     }
 
+    CBioseqContext* ctx = GetContext();
+    if (ctx && ctx->UsingSeqEntryIndex()) {
+        return x_GetDivisionProcIdx (*ctx, bsh, bsh.IsAa(), tech);
+    }
+
     return x_GetDivisionProc (bsh, bsh.IsAa(), tech);
 }
 
@@ -648,7 +817,11 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
 
     const CBioseq_Handle& bsh = ctx.GetHandle();
 
-    m_Division = x_GetDivisionProc (bsh, ctx.IsProt(), ctx.GetTech());
+    if ( ctx.UsingSeqEntryIndex() ) {
+        m_Division = x_GetDivisionProcIdx (ctx, bsh, ctx.IsProt(), ctx.GetTech());
+    } else {
+        m_Division = x_GetDivisionProc (bsh, ctx.IsProt(), ctx.GetTech());
+    }
 
     const CMolInfo* molinfo = dynamic_cast<const CMolInfo*>(GetObject());
     if ( ctx.Config().IsFormatEMBL() ) {

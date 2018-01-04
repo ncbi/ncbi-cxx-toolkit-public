@@ -73,7 +73,7 @@ public:
     const string& GetDivision (void) const;
     const string& GetDate     (void) const;
 
-    static string GetDivision(const CBioseq_Handle& bsh);
+    string GetDivision(const CBioseq_Handle& bsh);
 
 private:
 
