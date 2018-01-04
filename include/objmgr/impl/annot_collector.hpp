@@ -72,6 +72,7 @@ class CMappedFeat;
 class CAnnot_CI;
 class CSeqMap_CI;
 class CGraphRanges;
+class CIdRangeMap;
 
 class NCBI_XOBJMGR_EXPORT CAnnotMapping_Info
 {
@@ -92,7 +93,8 @@ public:
         eMappedObjType_Seq_feat,
         eMappedObjType_Seq_align,
         eMappedObjType_Seq_loc_Conv,
-        eMappedObjType_Seq_loc_Conv_Set
+        eMappedObjType_Seq_loc_Conv_Set,
+        eMappedObjType_IdRangeMap // id/range map used for sorting
     };
 
     CAnnotMapping_Info(void);
@@ -162,6 +164,9 @@ public:
 
     void SetAnnotObjectRange(const TRange& range, bool product);
     
+    void SetIdRangeMap(CIdRangeMap& id_range_map);
+    const CIdRangeMap& GetIdRangeMap(void) const;
+
     void Swap(CAnnotMapping_Info& info);
 
 private:
@@ -637,7 +642,8 @@ bool CAnnotMapping_Info::IsMapped(void) const
 {
     _ASSERT((GetMappedObjectType() == eMappedObjType_not_set) ==
             !m_MappedObject);
-    return GetMappedObjectType() != eMappedObjType_not_set;
+    return GetMappedObjectType() != eMappedObjType_not_set  &&
+        GetMappedObjectType() != eMappedObjType_IdRangeMap;
 }
 
 
