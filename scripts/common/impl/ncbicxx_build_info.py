@@ -15,13 +15,17 @@ class IrrelevantCommandError(Exception):
     pass
 
 class Collector(object):
-    def collect(self, command, status_dir, wanted = ('*',), sc_version = None):
-        try:
-            command_info = self.parse_command(command)
-        except IrrelevantCommandError:
-            os.execv(command[0], command)
-
+    def init(self, wanted):
         self.info    = { }
+        self.wanted  = wanted
+
+    def in_want_list(self, key):
+        if key in self.wanted or '*' in self.wanted:
+            return True
+        else:
+            return False
+
+    def run_command(self, command):
         start_time   = datetime.now(timezone.utc)
         status       = subprocess.call(command, close_fds = False)
         end_time     = datetime.now(timezone.utc)
@@ -30,70 +34,73 @@ class Collector(object):
                 status = 128 - status
             os._exit(status) # continue in background
 
-        target_type = command_info['target_type']
-        mfname = 'Makefile.%s.%s' % (command_info['target_name'], target_type)
-        srcdir = os.path.realpath(self.get_srcdir(command_info, mfname))
-        mf = self.read_makefile(os.path.join(srcdir, mfname),
-                                command_info['target_name'], target_type)
-        target_name = expand_makefile_vars('$(%s)' % target_type.upper(), mf)
-        tcprops = self.read_teamcity_properties(wanted)
-        if 'vcs_type' in wanted or '*' in wanted:
-            vcs_info = self.get_vcs_info(srcdir)
-        else:
-            vcs_info = None
+        self.info['start_time']   = start_time
+        self.info['end_time']     = end_time
+        self.info['duration']     = (end_time - start_time).total_seconds()
+        self.info['succeeded']    = status == 0
+        self.info['command_line'] = ' '.join(command)
+        self.info['directory']    = os.getcwd()
 
+        return status
+
+    def collect_target_info(self, target_name, target_type, target_fullpath, srcdir, mf):
         self.info['name'] = target_name
+        self.info['source_directory'] = srcdir
+
         if target_type == 'lib':
             self.info['type'] = 'library'
         else:
             self.info['type'] = 'app'
         if target_type == 'app' and False:
             try:
-                cmd = [os.path.join('.', target_name), '-version']
+                cmd = [target_fullpath, '-version']
                 self.info['app_version'] = subprocess.check_output(cmd)
             except subprocess.CalledProcessError:
                 pass
-        if 'contact' in wanted or '*' in wanted:
+
+        if self.in_want_list('contact'):
             self.info['contact'] = self.get_contact(mf)
-        self.info['start_time'] = start_time
-        self.info['end_time']   = end_time
-        self.info['duration']   = (end_time - start_time).total_seconds()
-        self.info['succeeded']  = status == 0
+
+    def collect_vcs_info(self):
+        if 'source_directory' not in self.info:
+            return
+
+        if self.in_want_list('vcs_type'):
+            vcs_info = self.get_vcs_info(self.info['source_directory'])
+        else:
+            vcs_info = None
+
+        if vcs_info is not None:
+            self.info.update(vcs_info)
+
+    def collect_tc_info(self):
+        tcprops = self.read_teamcity_properties()
+
         if 'teamcity.version' in tcprops:
             self.info['build_type'] = 'standard'
         else:
             self.info['build_type'] = 'legacy'
-        if 'NCBI_AUTOMATED_BUILD' in os.environ:
-            self.info['execution_type'] = 'automated'
-        else:
-            self.info['execution_type'] = 'manual'
-        self.info['directory'] = os.getcwd()
-        self.info['source_directory'] = srcdir
         if 'teamcity.build.id' in tcprops:
             self.info['build_id'] = tcprops['teamcity.build.id']
         if 'build.number' in tcprops:
             self.info['build_number'] = tcprops['build.number']
-        if vcs_info is not None:
-            self.info.update(vcs_info)
-        self.info['artifact_name'] = target_name
-        if sc_version is not None and sc_version > 0:
-            self.info['artifact_version'] = 'SC-%d' % sc_version
-        else:
-            self.info['artifact_version'] = 'trunk'
-        if status == 0 and ('artifact_hash' in wanted or '*' in wanted):
-              h = self.get_artifact_hash(target_name, target_type)
-              if h is not None:
-                  self.info['artifact_hash'] = h
-        self.info['command_line'] = ' '.join(command)
-        # deployment-regions -- needs clarification
-        # devops_step_name -- ???
-        if 'env_vars' in wanted or '*' in wanted:
-            self.info['env_vars']   = dict(os.environ)
+
         if 'teamcity.version' in tcprops:
             self.info['tc_vars']    = tcprops
             if 'teamcity.agent.name' in tcprops:
                 self.info['tc_agent_name'] = tcprops['teamcity.agent.name']
-        elif 'build_config' in wanted or '*' in wanted:
+
+    def collect_env_info(self):
+        if 'NCBI_AUTOMATED_BUILD' in os.environ:
+            self.info['execution_type'] = 'automated'
+        else:
+            self.info['execution_type'] = 'manual'
+
+        if self.in_want_list('env_vars'):
+            self.info['env_vars']   = dict(os.environ)
+
+    def collect_build_config(self, status_dir):
+        if self.in_want_list('build_config'):
             bcfg = {}
             with open(os.path.join(status_dir, 'config.log'), 'r') as f:
                 uid = os.fstat(f.fileno()).st_uid
@@ -109,6 +116,44 @@ class Collector(object):
                     elif ' configurables below ' in l:
                         bcfg['cwd'] = l[l.find(' below ') + 7:].rstrip('.\n')
             self.info['build_config'] = bcfg
+
+    def collect_artifact_info(self, sc_version, status):
+        if sc_version is not None and sc_version > 0:
+            self.info['artifact_version'] = 'SC-%d' % sc_version
+        else:
+            self.info['artifact_version'] = 'trunk'
+        
+        self.info['artifact_name'] = self.info['name']
+        if status == 0 and self.in_want_list('artifact_hash'):
+            filename = self.get_target_path(self.info['artifact_name'], self.info['type'])
+            h = self.get_artifact_hash(filename)
+            if h is not None:
+                self.info['artifact_hash'] = h
+ 
+    def collect(self, command, status_dir, wanted = ('*',), sc_version = None):
+        try:
+            command_info = self.parse_command(command)
+        except IrrelevantCommandError:
+            os.execv(command[0], command)
+
+        self.init(wanted)
+        status = self.run_command(command)
+
+        target_type = command_info['target_type']
+        mfname = 'Makefile.%s.%s' % (command_info['target_name'], target_type)
+        srcdir = os.path.realpath(self.get_srcdir(command_info, mfname))
+        mf = self.read_makefile(os.path.join(srcdir, mfname),
+                                command_info['target_name'], target_type)
+        target_name = expand_makefile_vars('$(%s)' % target_type.upper(), mf)
+        target_fullpath = os.path.join('.', target_name)
+
+        # order matters in some cases. Reorder these call at your own peril
+        self.collect_target_info(target_name, target_type, target_fullpath, srcdir, mf)
+        self.collect_vcs_info()
+        self.collect_tc_info()
+        self.collect_env_info()
+        self.collect_build_config(status_dir)
+        self.collect_artifact_info(sc_version, status)
 
     def get_as_string(self, name):
         v = self.info[name]
@@ -182,12 +227,12 @@ class Collector(object):
         except IOError:
             return { target_type.upper(): target_name }
 
-    def read_teamcity_properties(self, wanted):
+    def read_teamcity_properties(self):
         props = {}
         if 'TEAMCITY_BUILD_PROPERTIES_FILE' in os.environ and \
-           ('build_type' in wanted or 'build_id' in wanted
-            or 'build_number' in wanted or 'tc_vars' in wanted
-            or 'tc_agent_name' in wanted or '*' in wanted):
+           (self.in_want_list('build_type')
+            or self.in_want_list('build_number')
+            or self.in_want_list('tc_agent_name')):
             fname = os.environ['TEAMCITY_BUILD_PROPERTIES_FILE']
             try:
                 with open(fname, 'r') as f:
@@ -395,7 +440,7 @@ class Collector(object):
         #     except:
         #         return str(uid)
 
-    def get_artifact_hash(self, target_name, target_type):
+    def get_target_path(self, target_name, target_type):
         if target_type == 'app':
             filename = target_name
         else:
@@ -404,9 +449,66 @@ class Collector(object):
                 if os.path.exists(filename + x):
                     filename = filename + x
                     break
+
+        return filename
+ 
+    def get_artifact_hash(self, filename):
         if not os.path.exists(filename):
             warn('Unable to find ' + filename + ' to hash')
             return None
         with open(filename, 'rb') as f:
             with mmap.mmap(f.fileno(), 0, access = mmap.ACCESS_READ) as mm:
                 return hashlib.md5(mm).hexdigest()
+
+
+class CollectorCMake(Collector):
+    def collect(self, command, top_src_dir, wanted = ('*',), sc_version = None):
+        try:
+            command_info = self.parse_command(command)
+        except IrrelevantCommandError:
+            os.execv(command[0], command)
+
+        self.init(wanted)
+        status = self.run_command(command)
+
+        target_type = command_info['target_type']
+        target_name = command_info['target_name']
+        self.target_fullpath = command_info['target_fullpath']
+
+        # order matters in some cases. Reorder these call at your own peril
+        self.collect_target_info(target_name, target_type, self.target_fullpath, top_src_dir, None)
+        self.collect_vcs_info()
+        self.collect_tc_info()
+        self.collect_env_info()
+        self.collect_artifact_info(sc_version, status)
+
+    def get_target_path(self, target_name, target_type):
+        return self.target_fullpath
+
+    def parse_command(self, command):
+        if not command[0].endswith('g++') and not command[0].endswith('gcc'):
+            raise IrrelevantCommandError
+
+        info                = {}
+        value_expected      = False
+        for x in command[1:]:
+            if value_expected:
+                output_path = x
+                info['target_fullpath'] = os.path.abspath(output_path)
+                target_filename = os.path.basename(output_path)
+                (target_name,ext) = os.path.splitext(target_filename)
+                info['target_name'] = target_name
+                if ext == '.so' or ext == '.a' or ext == '.lib' or ext == '.dll':
+                    info['target_type'] = 'lib'
+                elif not ext or ext == '.exe':
+                    info['target_type'] = 'app'
+                value_expected = False
+            elif x == '-o':
+                value_expected = True
+
+        if len(info) != 3:
+            raise IrrelevantCommandError
+
+        return info
+
+

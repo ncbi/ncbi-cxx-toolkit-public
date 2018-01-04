@@ -16,9 +16,13 @@ wanted      = frozenset(('name', 'type', 'contact', 'start_time', 'end_time',
                          'artifact_name', 'artifact_version', 'artifact_hash',
                          'command_line'))
 
+cmake_ver = '@CMAKE_VERSION@'
 ## XXX - favor the real PyYAML installation accompanying cd_reporter?
 sys.path.append(scriptdir + '/common/impl')
-from ncbicxx_build_info import Collector
+if cmake_ver:
+    from ncbicxx_build_info import CollectorCMake
+else:
+    from ncbicxx_build_info import Collector
 # from yaml import dump
 # try:
 #     from yaml import CDumper as Dumper
@@ -26,8 +30,13 @@ from ncbicxx_build_info import Collector
 #     from yaml import Dumper
 
 pid = os.getpid()
-collector = Collector()
-collector.collect(sys.argv[1:], status_dir, wanted, @NCBI_SC_VERSION@)
+if cmake_ver:
+    collector = CollectorCMake()
+    collector.collect(sys.argv[1:], '@top_src_dir@', wanted, @NCBI_SC_VERSION@)
+    pass
+else:
+    collector = Collector()
+    collector.collect(sys.argv[1:], status_dir, wanted, @NCBI_SC_VERSION@)
 args = [cd_reporter] # , '--dry-run', '-vvv'
 for x in wanted:
     try:

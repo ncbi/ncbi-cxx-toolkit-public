@@ -866,6 +866,24 @@ set(SYBASE_PATH "")
 set(FEATURES "")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/corelib/ncbicfg.c.in ${CMAKE_BINARY_DIR}/corelib/ncbicfg.c)
 
+message(STATUS "Generating ${build_root}/run_with_cd_reporter.py...")
+
+set(Python_ADDITIONAL_VERSIONS 3.6)
+find_package(PythonInterp)
+message(STATUS "Python3 path: ${PYTHON_EXECUTABLE}")
+
+set(PYTHON3 ${PYTHON_EXECUTABLE})
+set(CD_REPORTER "/am/ncbiapdata/bin/cd_reporter")
+set(abs_top_srcdir ${abs_top_src_dir})
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/run_with_cd_reporter.py.in ${build_root}/build-system/run_with_cd_reporter.py)
+
+# copy to build_root and set executable permissions (workaround because configure_file doesn't set permissions)
+file(COPY ${build_root}/build-system/run_with_cd_reporter.py DESTINATION ${build_root}
+    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+
+set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ${build_root}/run_with_cd_reporter.py)
+
+
 ENABLE_TESTING()
 include_directories(${incdir} ${includedir0} ${incinternal})
 
