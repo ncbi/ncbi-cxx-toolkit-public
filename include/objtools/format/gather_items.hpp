@@ -123,6 +123,8 @@ protected:
         CBioseqContext& ctx) const;
     void x_GatherFeaturesOnWholeLocation(const CSeq_loc& loc, SAnnotSelector& sel,
         CBioseqContext& ctx) const;
+    void x_GatherFeaturesOnRangeIdx(const CSeq_loc& loc, SAnnotSelector& sel,
+        CBioseqContext& ctx) const;
     void x_GatherFeaturesOnRange(const CSeq_loc& loc, SAnnotSelector& sel,
         CBioseqContext& ctx) const;
 
