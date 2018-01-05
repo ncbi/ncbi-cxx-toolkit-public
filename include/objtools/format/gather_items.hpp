@@ -119,6 +119,8 @@ protected:
     bool x_SkipFeature(const CSeq_feat& feat, const CBioseqContext& ctx) const;
     virtual void x_GatherFeaturesOnLocation(const CSeq_loc& loc, SAnnotSelector& sel,
         CBioseqContext& ctx) const;
+    void x_GatherFeaturesOnWholeLocationIdx(const CSeq_loc& loc, SAnnotSelector& sel,
+        CBioseqContext& ctx) const;
     void x_GatherFeaturesOnWholeLocation(const CSeq_loc& loc, SAnnotSelector& sel,
         CBioseqContext& ctx) const;
     void x_GatherFeaturesOnRange(const CSeq_loc& loc, SAnnotSelector& sel,

@@ -2515,6 +2515,27 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
 }
 
 
+static CRef<CGapItem> s_NewGapItem(TSeqPos gap_start, TSeqPos gap_end,
+                                   TSeqPos gap_length, const string& gap_type,
+                                   const vector<string>& evidence,
+                                   bool isUnknownLength, bool isAssemblyGap,
+                                   CBioseqContext& ctx)
+{
+    const static string kRegularGap  = "gap";
+    const static string kAssemblyGap = "assembly_gap";
+
+    // feature name depends on what quals we use
+    const bool bIsAssemblyGap = ( ! gap_type.empty() || ! evidence.empty() );
+    const string & sFeatName = ( bIsAssemblyGap ? kAssemblyGap : kRegularGap );
+
+    CRef<CGapItem> retval(isUnknownLength ?
+        new CGapItem(gap_start, gap_end, ctx, sFeatName, gap_type, evidence) :
+        new CGapItem(gap_start, gap_end, ctx, sFeatName, gap_type, evidence, 
+            gap_length ));
+    return retval;
+}
+
+
 static bool s_IsDuplicateFeatures(const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2)
 {
     _ASSERT(f1  &&  f2);
@@ -2698,6 +2719,267 @@ static bool s_IsCDD(const CSeq_feat_Handle& feat)
         }
     }
     return false;
+}
+
+
+void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
+(const CSeq_loc& loc,
+ SAnnotSelector& sel,
+ CBioseqContext& ctx) const
+{
+    CScope& scope = ctx.GetScope();
+    CFlatItemOStream& out = *m_ItemOS;
+
+    CSeqMap_CI gap_it = s_CreateGapMapIter(loc, ctx);
+
+    // logic to handle offsets that occur when user sets 
+    // the -from and -to command-line parameters
+    CRef<CSeq_loc_Mapper> slice_mapper; // NULL (unset) if no slicing
+
+    // Gaps of length zero are only shown for SwissProt Genpept records
+    const bool showGapsOfSizeZero = ( ctx.IsProt() && ctx.GetPrimaryId()->Which() == CSeq_id_Base::e_Swissprot );
+
+    // cache to avoid repeated calculations
+    const int loc_len = sequence::GetLength(*loc.GetId(), &ctx.GetScope() ) ;
+
+    CSeq_feat_Handle prev_feat;
+    CConstRef<IFlatItem> item;
+    /*
+    CFeat_CI it(scope, loc, sel);
+    ctx.GetFeatTree().AddFeatures(it);
+    for ( ;  it;  ++it)
+    */
+    CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
+    if (! idx) return;
+    CBioseq_Handle hdl = ctx.GetHandle();
+    CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (hdl);
+    if (! bsx) return;
+
+    const vector<CRef<CGapIndex>>& gaps = bsx->GetGapIndices();
+    string gap_type = "";
+    int num_gaps = gaps.size();
+    int next_gap = 0;
+    TSeqPos gap_start = 0;
+    TSeqPos gap_end = 0;
+    TSeqPos gap_length = 0;
+    vector<string> gap_evidence;
+    bool is_unknown_length = false;
+    bool is_assembly_gap = false;
+    bool has_gap = false;
+    if (num_gaps > 0) {
+        CRef<CGapIndex> sgr = gaps[next_gap];
+        gap_start = sgr->GetStart();
+        gap_end = sgr->GetEnd();
+        gap_length = sgr->GetLength();
+        gap_type = sgr->GetGapType();
+        gap_evidence = sgr->GetGapEvidence();
+        is_unknown_length = sgr->IsUnknownLength();
+        is_assembly_gap = sgr->IsAssemblyGap();
+        has_gap = true;
+        next_gap++;
+    }
+
+    bsx->IterateFeatures([this, &ctx, &scope, &prev_feat, &gap_it, &loc_len, &item, &out, &slice_mapper,
+                          gaps, num_gaps, &next_gap, &has_gap, &gap_start, &gap_end, &gap_length, &gap_type, &gap_evidence,
+                          &is_unknown_length, &is_assembly_gap, showGapsOfSizeZero, bsx](CFeatureIndex& sfx) {
+        try {
+            CMappedFeat mf = sfx.GetMappedFeat();
+            CSeq_feat_Handle feat = sfx.GetSeqFeatHandle(); // it->GetSeq_feat_Handle();
+            const CSeq_feat& original_feat = sfx.GetMappedFeat().GetOriginalFeature(); // it->GetOriginalFeature();
+
+            ///
+            /// HACK HACK HACK
+            /// we need to cleanse CDD features
+            ///
+
+            s_CleanCDDFeature(original_feat);
+
+            ///
+            /// HACK HACK HACK
+            ///
+
+            ///
+            /// HACK HACK HACK
+            /// we may need to assert proper product resolution
+            ///
+
+
+            if (original_feat.GetData().IsRna()  &&  original_feat.IsSetProduct()) {
+                vector<CMappedFeat> children =
+                    ctx.GetFeatTree().GetChildren(mf);
+                if (children.size() == 1  &&
+                    children.front().IsSetProduct()) {
+
+                    /// resolve sequences
+                    CSeq_id_Handle rna =
+                        sequence::GetIdHandle(original_feat.GetProduct(), &scope);
+                    CSeq_id_Handle prot =
+                        sequence::GetIdHandle(children.front().GetProduct(),
+                                              &scope);
+
+                    CBioseq_Handle rna_bsh;
+                    CBioseq_Handle prot_bsh;
+                    GetResolveOrder(scope,
+                                    rna, prot,
+                                    rna_bsh, prot_bsh);
+                }
+            }
+
+            ///
+            /// HACK HACK HACK
+            ///
+
+            // supress dupliacte features
+            if (prev_feat  &&  s_IsDuplicateFeatures(prev_feat, feat)) {
+                return; // continue;
+            }
+            prev_feat = feat;
+
+            CConstRef<CSeq_loc> feat_loc( sfx.GetMappedLocation()); // &it->GetLocation()); 
+
+            feat_loc = s_NormalizeNullsBetween( feat_loc );
+        
+            // make sure location ends on the current bioseq
+            if ( !s_SeqLocEndsOnBioseq(*feat_loc, ctx, eEndsOnBioseqOpt_LastPartOfSeqLoc, feat.GetData().Which() ) ) {
+                // may need to map sig_peptide on a different segment
+                if (feat.GetData().IsCdregion()) {
+                    if (!ctx.Config().IsFormatFTable()) {
+                        x_GetFeatsOnCdsProduct(original_feat, ctx, slice_mapper);
+                    }
+                }
+                return; // continue;
+            }
+
+            // handle gaps
+            const int feat_end   = feat_loc->GetStop(eExtreme_Positional);
+            int feat_start = feat_loc->GetStart(eExtreme_Positional);
+            if( feat_start > feat_end ) {
+                feat_start -= loc_len;
+            }
+
+            while (has_gap && gap_start < feat_start) {
+                const bool noGapSizeProblem = ( showGapsOfSizeZero || (gap_start <= gap_end) );
+                if( noGapSizeProblem /* && ! s_CoincidingGapFeatures( it, gap_start, gap_end ) */ ) {
+                    item.Reset( s_NewGapItem(gap_start, gap_end, gap_length, gap_type, gap_evidence, is_unknown_length, is_assembly_gap, ctx) );
+                    out << item;
+                }
+                if (next_gap < num_gaps) {
+                    CRef<CGapIndex> sgr = gaps[next_gap];
+                    gap_start = sgr->GetStart();
+                    gap_end = sgr->GetEnd();
+                    gap_length = sgr->GetLength();
+                    gap_type = sgr->GetGapType();
+                    gap_evidence = sgr->GetGapEvidence();
+                    is_unknown_length = sgr->IsUnknownLength();
+                    is_assembly_gap = sgr->IsAssemblyGap();
+                    has_gap = true;
+                    next_gap++;
+                } else {
+                    has_gap = false;
+                }
+            }
+
+            while (gap_it) {
+                const int gap_start = gap_it.GetPosition();
+                const int gap_end   = (gap_it.GetEndPosition() - 1);
+
+                // if feature after gap first output the gap 
+                if ( feat_start >= gap_start ) {
+                    // - Don't output gaps of size zero (except: see showGapsOfSizeZero's definition)
+                    // - Don't output if there's an explicit gap that overlaps this one
+                    const bool noGapSizeProblem = ( showGapsOfSizeZero || (gap_start <= gap_end) );
+                    if( noGapSizeProblem /* && ! s_CoincidingGapFeatures( it, gap_start, gap_end ) */ ) {
+                        item.Reset( s_NewGapItem(gap_it, ctx) );
+                        out << item;
+                    }
+                    ++gap_it;
+                } else {
+                    break;
+                }
+            }
+
+            item.Reset( x_NewFeatureItem(mf, ctx, feat_loc, m_Feat_Tree) );
+            out << item;
+
+            // Add more features depending on user preferences
+
+            switch (feat.GetFeatSubtype()) {
+                case CSeqFeatData::eSubtype_mRNA:
+                {{
+                    // optionally map CDS from cDNA onto genomic
+                    if (s_CopyCDSFromCDNA(ctx)   &&  feat.IsSetProduct()) {
+                        x_CopyCDSFromCDNA(original_feat, ctx);
+                    }
+                    break;
+                }}
+                case CSeqFeatData::eSubtype_cdregion:
+                    {{  
+                        // map features from protein
+                        if (!ctx.Config().IsFormatFTable()) {
+                            x_GetFeatsOnCdsProduct(original_feat, ctx, 
+                                slice_mapper,
+                                CConstRef<CFeatureItem>(static_cast<const CFeatureItem*>(item.GetNonNullPointer())) );
+                        }
+                        break;
+                    }}
+                default:
+                    break;
+            }
+        } catch (CException& e) {
+            // special case: Job cancellation exceptions make us stop
+            // generating features.
+            CMappedFeat mf = sfx.GetMappedFeat();
+            if( NStr::EqualNocase(e.what(), "job cancelled") ||
+                NStr::EqualNocase(e.what(), "job canceled") )
+            {
+                LOG_POST_X(2, Error << "Job canceled while processing feature "
+                                << s_GetFeatDesc(mf.GetSeq_feat_Handle())
+                                << " [" << e << "]; flatfile may be truncated");
+                return;
+            }
+
+            // for cases where a halt is requested, just rethrow the exception
+            if( e.GetErrCodeString() == string("eHaltRequested") ) {
+                throw e;
+            }
+
+            // post to log, go on to next feature
+            LOG_POST_X(2, Error << "Error processing feature "
+                                << s_GetFeatDesc(mf.GetSeq_feat_Handle())
+                                << " [" << e << "]");
+        }
+    });  //  end of iterate loop
+
+    // when all features are done, output remaining gaps
+    while (has_gap) {
+        const bool noGapSizeProblem = ( showGapsOfSizeZero || (gap_start <= gap_end) );
+        if( noGapSizeProblem /* && ! s_CoincidingGapFeatures( it, gap_start, gap_end ) */ ) {
+            item.Reset( s_NewGapItem(gap_start, gap_end, gap_length, gap_type, gap_evidence, is_unknown_length, is_assembly_gap, ctx) );
+            out << item;
+        }
+        if (next_gap < num_gaps) {
+            CRef<CGapIndex> sgr = gaps[next_gap];
+            gap_start = sgr->GetStart();
+            gap_end = sgr->GetEnd();
+            gap_length = sgr->GetLength();
+            gap_type = sgr->GetGapType();
+            gap_evidence = sgr->GetGapEvidence();
+            is_unknown_length = sgr->IsUnknownLength();
+            is_assembly_gap = sgr->IsAssemblyGap();
+            has_gap = true;
+            next_gap++;
+        } else {
+            has_gap = false;
+        }
+    }
+    while (gap_it) {
+        // we don't output gaps of size zero (except: see showGapsOfSizeZero)
+        if( showGapsOfSizeZero || (gap_it.GetPosition() < gap_it.GetEndPosition()) ) {
+            item.Reset( s_NewGapItem(gap_it, ctx) );
+            out << item;
+        }
+        ++gap_it;
+    }
 }
 
 
