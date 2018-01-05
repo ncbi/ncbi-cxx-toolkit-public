@@ -80,6 +80,8 @@ public:
     void FormatModelEvidence(string& str, const SModelEvidance& me) const;
     void FormatTranscript(string& str, const string& name) const;
     void FormatGeneralId(CNcbiOstream& os, const string& id) const;
+    void FormatGapLink(CNcbiOstream& os, TSeqPos gap_size, const string& id, bool is_prot) const;
+
 private:
     mutable CRef<CScope> m_scope;
 };
@@ -241,6 +243,16 @@ void CHTMLFormatterEx::FormatGeneralId(CNcbiOstream& os, const string& id) const
 {
     os << "<a href=\"" << strLinkBaseNuc << id << "\">" << id << "</a>";
 }
+
+void CHTMLFormatterEx::FormatGapLink(CNcbiOstream& os, TSeqPos gap_size,
+                                     const string& id, bool is_prot) const
+{
+    const string link_base = (is_prot ? strLinkBaseProt : strLinkBaseNuc);
+    const char *mol_type = (is_prot ? "aa" : "bp" );
+    os << "          [gap " << gap_size << " " << mol_type << "]" <<
+        "    <a href=\"" << link_base << id << "?expand-gaps=on\">Expand Ns</a>";
+}
+
 
 class CAsn2FlatApp : public CNcbiApplication, public CGBReleaseFile::ISeqEntryHandler
 {
