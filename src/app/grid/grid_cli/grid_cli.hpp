@@ -522,7 +522,7 @@ private:
         {
         }
 
-        virtual void OnWarning(const string& warn_msg, CNetServer server);
+        bool OnWarning(const string& warn_msg, CNetServer server) override;
 
     private:
         CGridCommandLineInterfaceApp* m_GridCLIApp;

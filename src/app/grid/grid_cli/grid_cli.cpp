@@ -1695,7 +1695,7 @@ int CGridCommandLineInterfaceApp::Run()
     }
 }
 
-void CGridCommandLineInterfaceApp::CNetScheduleWarningLogger::OnWarning(
+bool CGridCommandLineInterfaceApp::CNetScheduleWarningLogger::OnWarning(
         const string& warn_msg, CNetServer server)
 {
     string warning(warn_msg);
@@ -1717,6 +1717,8 @@ void CGridCommandLineInterfaceApp::CNetScheduleWarningLogger::OnWarning(
                 server_type,
                 server.GetServerAddress().c_str(),
                 warning.c_str());
+
+    return true;
 }
 
 void CGridCommandLineInterfaceApp::PrintLine(const string& line)

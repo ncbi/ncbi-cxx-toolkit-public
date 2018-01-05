@@ -150,7 +150,7 @@ class NCBI_XCONNECT_EXPORT INetEventHandler : public CObject
 {
 public:
     virtual bool OnError(const string&) { return false; }
-    virtual void OnWarning(const string&, CNetServer) {}
+    virtual bool OnWarning(const string&, CNetServer) { return false; }
 };
 
 /// This class is for use by the grid_cli utility only.

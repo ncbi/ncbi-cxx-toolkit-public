@@ -110,11 +110,13 @@ SNetStorageService::SNetStorageService(
             new CEventHandler(automation_proc, m_NetStorageAdmin));
 }
 
-void SNetStorageService::CEventHandler::OnWarning(
+bool SNetStorageService::CEventHandler::OnWarning(
         const string& warn_msg, CNetServer server)
 {
     m_AutomationProc->SendWarning(warn_msg, m_AutomationProc->
             ReturnNetStorageServerObject(m_NetStorageAdmin, server));
+
+    return true;
 }
 
 SNetStorageServer::SNetStorageServer(

@@ -53,7 +53,7 @@ struct SNetStorageService : public SNetServiceBase
         {
         }
 
-        virtual void OnWarning(const string& warn_msg, CNetServer server);
+        bool OnWarning(const string& warn_msg, CNetServer server) override;
 
     private:
         CAutomationProc* m_AutomationProc;

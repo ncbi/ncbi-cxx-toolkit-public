@@ -229,11 +229,13 @@ void SNetScheduleServer::ExecChangePreferredAffinities(const TArguments& args, S
     m_NetScheduleAPI.GetExecutor().ChangePreferredAffinities(&to_add, &to_del);
 }
 
-void SNetScheduleService::CEventHandler::OnWarning(
+bool SNetScheduleService::CEventHandler::OnWarning(
         const string& warn_msg, CNetServer server)
 {
     m_AutomationProc->SendWarning(warn_msg, m_AutomationProc->
             ReturnNetScheduleServerObject(m_NetScheduleAPI, server));
+
+    return true;
 }
 
 CCommand SNetScheduleService::CallCommand()

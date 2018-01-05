@@ -181,11 +181,13 @@ void SNetICacheBlob::ExecGetKey(const TArguments&, SInputOutput& io)
     reply.AppendString(m_BlobSubKey);
 }
 
-void SNetCacheService::CEventHandler::OnWarning(
+bool SNetCacheService::CEventHandler::OnWarning(
         const string& warn_msg, CNetServer server)
 {
     m_AutomationProc->SendWarning(warn_msg, m_AutomationProc->
             ReturnNetCacheServerObject(m_NetICacheClient, server));
+
+    return true;
 }
 
 SNetCacheService::SNetCacheService(CAutomationProc* automation_proc,
