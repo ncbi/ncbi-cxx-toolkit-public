@@ -1949,7 +1949,8 @@ void CGenbankFormatter::FormatSequence
 
     const bool bGapsHiddenUntilClicked = ( 
         GetContext().GetConfig().DoHTML() && 
-        GetContext().GetConfig().IsModeEntrez() );
+        GetContext().GetConfig().IsModeEntrez() &&
+        !GetContext().GetConfig().ExpandGaps());
 
     const CSeqVector& vec = seq.GetSequence();
     TSeqPos from = seq.GetFrom();
@@ -1995,17 +1996,10 @@ void CGenbankFormatter::FormatSequence
                 }
 
                 // build gap size text and "Expand Ns" link
-                const static int kExpandedGapDisplay = 65536;
                 CNcbiOstrstream gap_link;
-                const char *mol_type = ( seq.GetContext()->IsProt() ? "aa" : "bp" );
-                gap_link << "          [gap " << gap_size << " " << mol_type << "]";
-                const TGi gi = seq.GetContext()->GetGI();
-                if( gi > ZERO_GI ) {
-                    gap_link << "    <a href=\"" << strLinkBaseEntrezViewer 
-                        << gi << "?fmt_mask=" << kExpandedGapDisplay
-                        << "\">Expand Ns</a>";
-                }
-
+                GetContext().GetConfig().GetHTMLFormatter().FormatGapLink(gap_link, gap_size, 
+                                                                          seq.GetContext()->GetAccession(), 
+                                                                          seq.GetContext()->IsProt());
                 text_os.AddLine( (string)CNcbiOstrstreamToString(gap_link) );
             } else {
                 // create a fake total so we stop before the next gap

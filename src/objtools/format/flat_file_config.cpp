@@ -915,6 +915,11 @@ void CHTMLEmptyFormatter::FormatGeneralId(CNcbiOstream& os, const string& id) co
 {
     os << id;
 }
+
+void CHTMLEmptyFormatter::FormatGapLink(CNcbiOstream& os, TSeqPos gap_size, const string& id, bool is_prot) const
+{
+    os << "          [gap " << gap_size << " " << (is_prot ? "aa" : "bp" ) << "]";
+}
 #endif
 
 END_SCOPE(objects)

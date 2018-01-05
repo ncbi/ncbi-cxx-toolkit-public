@@ -92,6 +92,7 @@ public:
     virtual void FormatModelEvidence(string& str, const SModelEvidance& me) const = 0;
     virtual void FormatTranscript(string& str, const string& name) const = 0;
     virtual void FormatGeneralId(CNcbiOstream& os, const string& id) const = 0;
+    virtual void FormatGapLink(CNcbiOstream& os, TSeqPos gap_size, const string& id, bool is_prot) const = 0;
 };
 
 class NCBI_FORMAT_EXPORT CHTMLEmptyFormatter : public IHTMLFormatter
@@ -107,6 +108,7 @@ public:
     void FormatModelEvidence(string& str, const SModelEvidance& me) const;
     void FormatTranscript(string& str, const string& name) const;
     void FormatGeneralId(CNcbiOstream& os, const string& id) const;
+    void FormatGapLink(CNcbiOstream& os, TSeqPos gap_size, const string& id, bool is_prot) const;
 };
 
 class NCBI_FORMAT_EXPORT CFlatFileConfig
@@ -184,7 +186,8 @@ public:
         fHideProteinID         = 1,
         fHideGI                = 1 << 1,
         fLongLocusNames        = 1 << 2,
-        fUseSeqEntryIndexer    = 2048
+        fExpandGaps            = 1 << 3,
+        fUseSeqEntryIndexer    = 1 << 11
     };
 
     enum EView {
@@ -563,6 +566,7 @@ public:
     bool HideProteinID         (void) const;
     bool HideGI                (void) const;
     bool LongLocusNames        (void) const;
+    bool ExpandGaps            (void) const;
     bool UseSeqEntryIndexer    (void) const;
 
     // setters
@@ -570,6 +574,7 @@ public:
     CFlatFileConfig& SetHideProteinID        (bool val = true);
     CFlatFileConfig& SetHideGI               (bool val = true);
     CFlatFileConfig& SetLongLocusNames       (bool val = true);
+    CFlatFileConfig& SetExpandGaps           (bool val = true);
     CFlatFileConfig& SetUseSeqEntryIndexer   (bool val = true);
 
     // adjust mode dependant flags for RefSeq
@@ -750,6 +755,7 @@ CUSTOM_ARG_SET(x)
 CUSTOM_ARG_IMP(HideProteinID)
 CUSTOM_ARG_IMP(HideGI)
 CUSTOM_ARG_IMP(LongLocusNames)
+CUSTOM_ARG_IMP(ExpandGaps)
 CUSTOM_ARG_IMP(UseSeqEntryIndexer)
 
 #undef FLAG_ARG_IMP
