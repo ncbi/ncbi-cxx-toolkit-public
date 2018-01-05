@@ -909,8 +909,8 @@ void CProcessor::AddWGSMaster(CLoadLockSetter& blob)
         if ( CSeq_id_Handle id = s_GetWGSMasterSeq_id(*it) ) {
             int mask = kGoodDescrMask;
             if ( kAddMasterDescrToTSE ) {
-                // exclude existing descr types
-                mask &= ~lock->x_GetBaseInfo().x_GetExistingDescrMask();
+                // exclude existing descr types except User
+                mask &= ~lock->x_GetBaseInfo().x_GetExistingDescrMask() | (1<<CSeqdesc::e_User);
             }
             CRef<CTSE_Chunk_Info> chunk(new CWGSMasterChunkInfo(id, mask));
             lock->GetSplitInfo().AddChunk(*chunk);
