@@ -103,7 +103,7 @@ bool IsPubdescContainsSub(const CPubdesc& pub)
     if (pub.IsSetPub() && pub.GetPub().IsSet()) {
 
         const CPub_equiv::Tdata& pubs = pub.GetPub().Get();
-        return find_if(pubs.begin(), pubs.end(), [](const CRef<CPub>& pub) { return pub->IsSub(); } ) != pubs.end();
+        return find_if(pubs.begin(), pubs.end(), [](const CRef<CPub>& pub) { return pub->IsSub(); }) != pubs.end();
     }
 
     return false;
@@ -325,6 +325,16 @@ string ToString(const CSerialObject& obj)
     CNcbiOstrstream stream;
     stream << MSerial_AsnText << obj << ends;
     return stream.str();
+}
+
+string::size_type GetLastSlashPos(const string& str)
+{
+    string::size_type ret = str.rfind('/');;
+    if (ret == string::npos) {
+        ret = str.rfind('\\');
+    }
+
+    return ret;
 }
 
 }

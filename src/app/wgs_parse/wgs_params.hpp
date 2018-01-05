@@ -166,6 +166,7 @@ public:
     ESortOrder GetSortOrder() const;
 
     const string& GetLoadOrderFile() const;
+    const string& GetIdAccFile() const;
     const string& GetAccFile() const;
 
     const TIdContainer& GetBioProjectIds() const;

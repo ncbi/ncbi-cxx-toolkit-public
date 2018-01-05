@@ -264,6 +264,24 @@ static void RemoveBioSourseDesc(CSeq_descr& descrs)
     }
 }
 
+static bool OpenOutputFile(const string& fname, const string& description, CNcbiOfstream& stream)
+{
+    if (!GetParams().IsOverrideExisting() && CFile(fname).Exists()) {
+        ERR_POST_EX(0, 0, Critical << "The " << description << " file already exists: \"" << fname << "\". Override is not allowed.");
+        return false;
+    }
+
+    try {
+        stream.open(fname);
+    }
+    catch (CException& e) {
+        ERR_POST_EX(0, 0, Critical << "Failed to open " << description << " file: \"" << fname << "\" [" << e.GetMsg() << "]. Cannot proceed.");
+        return false;
+    }
+
+    return true;
+}
+
 static bool OutputMaster(const CMasterInfo& info)
 {
     // TODO FixMasterDates
@@ -276,14 +294,12 @@ static bool OutputMaster(const CMasterInfo& info)
         fname += info.m_master_file_name;
     }
 
-    if (!GetParams().IsOverrideExisting() && CFile(fname).Exists()) {
-        ERR_POST_EX(0, 0, Error << "File to print out processed submission already exists: \"" << fname << "\". Override is not allowed.");
+    CNcbiOfstream out;
+    if (!OpenOutputFile(fname, "processed submission", out)) {
         return false;
     }
 
     try {
-        CNcbiOfstream out(fname);
-
         if (GetParams().IsBinaryOutput())
             out << MSerial_AsnBinary << info.m_master_bioseq;
         else
@@ -297,6 +313,64 @@ static bool OutputMaster(const CMasterInfo& info)
     ERR_POST_EX(0, 0, Info << "Master Bioseq saved in file \"" << fname << "\".");
 
     return true;
+}
+
+static void PrintOrderList(const list<CIdInfo>& infos, CNcbiOfstream& out)
+{
+    set<string> written_files;
+    for (auto info : infos) {
+        if (written_files.insert(info.m_file).second) { // new item
+
+            const char* fname = info.m_file.c_str();
+            if (!GetParams().IsPreserveInputPath()) {
+                size_t last_slash = GetLastSlashPos(info.m_file);
+                if (last_slash != string::npos) {
+                    fname += last_slash + 1;
+                }
+            }
+
+            out << fname << ".bss\n";
+        }
+    }
+}
+
+static const string& GetIdHeader()
+{
+    static const string SCAFFOLD_ID("Scaffold id");
+    static const string CONTIG_ID("Contig id");
+
+    return GetParams().IsUpdateScaffoldsMode() ? SCAFFOLD_ID : CONTIG_ID;
+}
+
+static void PrintGenAccList(const list<CIdInfo>& infos, CNcbiOfstream& out)
+{
+    out << GetIdHeader() << '\t' << "Accession\n";
+    out << "------------------------------------\n";
+    for (auto info : infos) {
+        out << info.m_dbtag << '\t' << info.m_accession << '\n';
+    }
+}
+
+static void PrintGenAccOrderList(CMasterInfo& info)
+{
+    const string& id_acc_file = GetParams().GetIdAccFile();
+    const string& load_order_file = GetParams().GetLoadOrderFile();
+
+    if (id_acc_file.empty() && load_order_file.empty()) {
+        return;
+    }
+
+    info.m_id_infos.sort();
+
+    CNcbiOfstream out;
+    if (!load_order_file.empty() && OpenOutputFile(load_order_file, "load order", out)) {
+        PrintOrderList(info.m_id_infos, out);
+    }
+
+    out.close();
+    if (!id_acc_file.empty() && OpenOutputFile(id_acc_file, "list of general ids and accessions", out)) {
+        PrintGenAccList(info.m_id_infos, out);
+    }
 }
 
 static const int ERROR_RET = 1;
@@ -386,7 +460,13 @@ int CWGSParseApp::Run(void)
         }
 
         if (!GetParams().IsTest()) {
-            // TODO
+
+            if (GetParams().IsVDBMode()) {
+                // TODO
+            }
+            else {
+                PrintGenAccOrderList(master_info);
+            }
         }
     }
 

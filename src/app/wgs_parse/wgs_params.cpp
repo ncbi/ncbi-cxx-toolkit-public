@@ -468,6 +468,11 @@ const string& CParams::GetAccFile() const
     return m_imp->m_acc_file;
 }
 
+const string& CParams::GetIdAccFile() const
+{
+    return m_imp->m_id_acc_file;
+}
+
 const TIdContainer& CParams::GetBioProjectIds() const
 {
     return m_imp->m_bioproject_ids;

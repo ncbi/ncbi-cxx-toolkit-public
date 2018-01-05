@@ -534,8 +534,36 @@ static void FixOrigProtTransIds(CSeq_entry& entry)
     }
 }
 
-static void CollectAccGenid()
+static bool NeedToProcess(const CSeq_id& id)
 {
+    return id.IsGenbank() || id.IsDdbj() || id.IsEmbl() || id.IsOther() || id.IsTpd() || id.IsTpe() || id.IsTpg();
+}
+
+static void CollectAccGenid(const CBioseq::TId& ids, const string& file, list<CIdInfo>& id_infos)
+{
+    CIdInfo cur_info;
+    for (auto& id : ids) {
+        if (NeedToProcess(*id)) {
+            const CTextseq_id* text_id = id->GetTextseq_Id();
+            if (text_id && text_id->IsSetAccession()) {
+                cur_info.m_accession = text_id->GetAccession();
+            }
+        }
+        else if (id->IsGeneral()) {
+
+            if (id->GetGeneral().IsSetTag()) {
+                const string& dbtag = GetIdStr(id->GetGeneral().GetTag());
+                if (!dbtag.empty()) {
+                    cur_info.m_dbtag = dbtag;
+                }
+            }
+        }
+    }
+
+    if (!cur_info.m_accession.empty() && !cur_info.m_dbtag.empty()) {
+        cur_info.m_file = file;
+        id_infos.emplace_front(move(cur_info));
+    }
 }
 
 static CRef<CSeq_id> CreateNewAccession(int num)
@@ -577,15 +605,14 @@ static void RemovePreviousAccession(const string& new_acc, CBioseq::TId& ids)
     }
 }
 
-static void AssignNucAccession(CSeq_entry& entry, int& next_id)
+static void AssignNucAccession(CSeq_entry& entry, const string& file, int& next_id, list<CIdInfo>& id_infos)
 {
     if (entry.IsSeq() && entry.GetSeq().IsNa()) {
 
         if (GetParams().IsAccessionAssigned()) {
 
-            if (!GetParams().IsTest()) {
-                // TODO
-                CollectAccGenid();
+            if (!GetParams().IsTest() && entry.GetSeq().IsSetId()) {
+                CollectAccGenid(entry.GetSeq().GetId(), file, id_infos);
             }
             return;
         }
@@ -603,9 +630,8 @@ static void AssignNucAccession(CSeq_entry& entry, int& next_id)
             entry.SetSeq().SetId().push_front(new_id);
         }
 
-        if (!GetParams().IsTest()) {
-            // TODO
-            CollectAccGenid();
+        if (!GetParams().IsTest() && entry.GetSeq().IsSetId()) {
+            CollectAccGenid(entry.GetSeq().GetId(), file, id_infos);
         }
 
         if (GetParams().GetUpdateMode() != eUpdateScaffoldsNew || GetParams().IsScaffoldTestMode()) {
@@ -618,7 +644,7 @@ static void AssignNucAccession(CSeq_entry& entry, int& next_id)
     if (entry.IsSet()) {
         if (entry.GetSet().IsSetSeq_set()) {
             for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
-                AssignNucAccession(*cur_entry, next_id);
+                AssignNucAccession(*cur_entry, file, next_id, id_infos);
             }
         }
     }
@@ -965,11 +991,8 @@ static string MakeOutputFileName(const string& in_file)
 
     size_t start = string::npos;
     if (!GetParams().IsPreserveInputPath()) {
-        start = in_file.rfind('/');
-        if (start == string::npos) {
-            start = in_file.rfind('\\');
-        }
 
+        start = GetLastSlashPos(in_file);
         if (start != string::npos) {
             ++start;
         }
@@ -989,14 +1012,9 @@ static string MakeOutputFileName(const string& in_file)
 static bool OutputSubmission(const CBioseq_set& bioseq_set, const string& in_file)
 {
     const string& fname = MakeOutputFileName(in_file) + ".bss";
-
-    size_t delimiter = fname.rfind('/');
-    if (delimiter == string::npos) {
-        delimiter = fname.rfind('\\');
-    }
-
     string dir_name;
     
+    size_t delimiter = GetLastSlashPos(fname);
     if (delimiter != string::npos) {
         dir_name = fname.substr(0, delimiter);
     }
@@ -1322,7 +1340,7 @@ bool ParseSubmissions(CMasterInfo& master_info)
                     }
 
                     if (!GetParams().IsVDBMode()) {
-                        AssignNucAccession(*entry, next_id);
+                        AssignNucAccession(*entry, file, next_id, master_info.m_id_infos);
                     }
 
                     if (GetParams().IsUpdateScaffoldsMode()) {

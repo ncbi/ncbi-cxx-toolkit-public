@@ -91,6 +91,8 @@ string GetIdStr(const CObject_id& obj_id);
 bool IsUserObjectOfType(const CSeqdesc& descr, const string& type);
 string ToString(const CSerialObject& obj);
 
+string::size_type GetLastSlashPos(const string& str);
+
 CScope& GetScope();
 
 }

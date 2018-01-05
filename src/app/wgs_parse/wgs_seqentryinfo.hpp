@@ -189,6 +189,18 @@ struct COrgRefInfo
         m_org_ref_after_lookup;
 };
 
+struct CIdInfo
+{
+    string m_dbtag,
+           m_accession,
+           m_file;
+
+    bool operator<(const CIdInfo& other) const
+    {
+        return m_accession < other.m_accession;
+    }
+};
+
 enum EDateIssues
 {
     eDateNoIssues,
@@ -216,6 +228,8 @@ struct CMasterInfo
     CRef<CBioSource> m_biosource;
     list<COrgRefInfo> m_org_refs;
     list<string> m_object_ids;
+
+    list<CIdInfo> m_id_infos;
 
     pair<string, string> m_dblink_empty_info; // filename and bioseq ID of the first sequence with lack of DBLink
     pair<string, string> m_dblink_diff_info;  // filename and bioseq ID of the first sequence with different DBLink
