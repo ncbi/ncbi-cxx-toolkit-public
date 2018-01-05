@@ -147,6 +147,8 @@ Options:
    --with-ninja            use ninja instead of make
    --trace                 print CMake trace to stdout
 
+   --fake-linking          compilation without linking to use with cmake_dependencies_generator
+
   -h, --help              display this help and exit
   --pass-thru             pass remaining arguments through to CMake
   --prefix=PREFIX         install architecture-independent files in PREFIX [$PREFIX]
@@ -422,6 +424,11 @@ while [ $# != 0 ]; do
 
         "--debug-trycompile")
             TRACE_CMAKE="${TRACE_CMAKE} --debug-trycompile";;
+
+        "--fake-linking")
+            BUILD_SHARED_LIBS=OFF
+            CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS -DCMAKE_LINKER=/bin/touch -DCMAKE_CXX_LINK_EXECUTABLE=\"<CMAKE_LINKER> <TARGET>\""
+            ;;
 
         "--enable-"*)
             set_config_var "$1"
