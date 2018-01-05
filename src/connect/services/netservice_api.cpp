@@ -1466,8 +1466,10 @@ CNetService g_DiscoverService(const string& service_name,
         INetServerConnectionListener* Clone() override { return new SNoOpConnectionListener(*this); }
         void OnInit(CObject*, CSynRegistry&, SRegSynonyms&) override {}
         void OnConnected(CNetServerConnection&) override {}
-        void OnError(const string&, CNetServer&) override {}
-        void OnWarning(const string&, CNetServer&) override {}
+
+    private:
+        void OnErrorImpl(const string&, CNetServer&) override {}
+        void OnWarningImpl(const string&, CNetServer&) override {}
     };
 
     CNetService service(new SNetServiceImpl("Discovery", service_name, client_name, new SNoOpConnectionListener));

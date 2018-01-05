@@ -666,11 +666,9 @@ void CNetScheduleServerListener::OnConnected(CNetServerConnection& connection)
         connection->WriteLine(m_Auth);
 }
 
-void CNetScheduleServerListener::OnError(
+void CNetScheduleServerListener::OnErrorImpl(
     const string& err_msg, CNetServer& server)
 {
-    if (m_EventHandler && m_EventHandler->OnError(err_msg)) return;
-
     string code;
     string msg;
 
@@ -704,15 +702,11 @@ void CNetScheduleServerListener::OnError(
     }
 }
 
-void CNetScheduleServerListener::OnWarning(const string& warn_msg,
+void CNetScheduleServerListener::OnWarningImpl(const string& warn_msg,
         CNetServer& server)
 {
-    if (m_EventHandler)
-        m_EventHandler->OnWarning(warn_msg, server);
-    else {
         LOG_POST(Warning << server->m_ServerInPool->m_Address.AsString() <<
                 ": " << warn_msg);
-    }
 }
 
 const char* const kNetScheduleAPIDriverName = "netschedule_api";

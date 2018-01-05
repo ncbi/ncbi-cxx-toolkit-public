@@ -200,10 +200,11 @@ public:
 
     void OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections) override;
     void OnConnected(CNetServerConnection& connection) override;
-    void OnError(const string& err_msg, CNetServer& server) override;
-    void OnWarning(const string& warn_msg, CNetServer& server) override;
 
 private:
+    void OnErrorImpl(const string& err_msg, CNetServer& server) override;
+    void OnWarningImpl(const string& warn_msg, CNetServer& server) override;
+
     string m_Auth;
     const bool m_NonWn;
     string m_Scope;

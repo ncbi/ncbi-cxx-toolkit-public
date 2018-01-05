@@ -438,10 +438,11 @@ public:
 
     void OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections) override;
     void OnConnected(CNetServerConnection& connection) override;
-    void OnError(const string& err_msg, CNetServer& server) override;
-    void OnWarning(const string& warn_msg, CNetServer& server) override;
  
 private:
+    void OnErrorImpl(const string& err_msg, CNetServer& server) override;
+    void OnWarningImpl(const string& warn_msg, CNetServer& server) override;
+
     const CJsonNode m_Hello;
     const SNetStorage::SConfig::EErrMode m_ErrMode;
 };
@@ -470,7 +471,7 @@ void CNetStorageServerListener::OnConnected(
     s_ReadMessage(m_Hello, connection, m_ErrMode, *this);
 }
 
-void CNetStorageServerListener::OnError(const string& err_msg,
+void CNetStorageServerListener::OnErrorImpl(const string& err_msg,
         CNetServer& server)
 {
     LOG_POST(Error << "NetStorage server " <<
@@ -478,16 +479,12 @@ void CNetStorageServerListener::OnError(const string& err_msg,
             " issued error " << err_msg);
 }
 
-void CNetStorageServerListener::OnWarning(const string& warn_msg,
+void CNetStorageServerListener::OnWarningImpl(const string& warn_msg,
         CNetServer& server)
 {
-    if (m_EventHandler)
-        m_EventHandler->OnWarning(warn_msg, server);
-    else {
         LOG_POST(Warning << "NetStorage server " <<
                 server->m_ServerInPool->m_Address.AsString() <<
                 " issued warning " << warn_msg);
-    }
 }
 
 class CJsonOverUTTPExecHandler : public INetServerExecHandler

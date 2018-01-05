@@ -186,7 +186,7 @@ void CNetCacheServerListener::OnConnected(CNetServerConnection& connection)
     }
 }
 
-void CNetCacheServerListener::OnError(const string& err_msg, CNetServer& server)
+void CNetCacheServerListener::OnErrorImpl(const string& err_msg, CNetServer& server)
 {
     static const char s_BlobNotFoundMsg[] = "BLOB not found";
     if (NStr::strncmp(err_msg.c_str(), s_BlobNotFoundMsg,
@@ -213,16 +213,12 @@ void CNetCacheServerListener::OnError(const string& err_msg, CNetServer& server)
     CONNSERV_THROW_FMT(CNetCacheException, eServerError, server, err_msg);
 }
 
-void CNetCacheServerListener::OnWarning(const string& warn_msg,
+void CNetCacheServerListener::OnWarningImpl(const string& warn_msg,
         CNetServer& server)
 {
-    if (m_EventHandler)
-        m_EventHandler->OnWarning(warn_msg, server);
-    else {
         LOG_POST(Warning << "NetCache server at "
                 << server->m_ServerInPool->m_Address.AsString() <<
                 ": WARNING: " << warn_msg);
-    }
 }
 
 const char* const kNetCacheAPIDriverName = "netcache_api";

@@ -71,7 +71,7 @@ class INetServerProperties : public CObject
 {
 };
 
-struct INetServerConnectionListener : CObject
+struct NCBI_XCONNECT_EXPORT INetServerConnectionListener : CObject
 {
     virtual CRef<INetServerProperties> AllocServerProperties() = 0;
     virtual INetServerConnectionListener* Clone() = 0;
@@ -80,9 +80,15 @@ struct INetServerConnectionListener : CObject
     virtual void OnPreInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections, string& client_name);
     virtual void OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections) = 0;
     virtual void OnConnected(CNetServerConnection& connection) = 0;
-    virtual void OnError(const string& err_msg, CNetServer& server) = 0;
-    virtual void OnWarning(const string& warn_msg, CNetServer& server) = 0;
 
+    void OnError(const string& err_msg, CNetServer& server);
+    void OnWarning(const string& warn_msg, CNetServer& server);
+
+private:
+    virtual void OnErrorImpl(const string& err_msg, CNetServer& server) = 0;
+    virtual void OnWarningImpl(const string& warn_msg, CNetServer& server) = 0;
+
+public:
     CRef<CNetService::IEventHandler> m_EventHandler;
 };
 

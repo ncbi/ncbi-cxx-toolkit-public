@@ -97,6 +97,20 @@ void INetServerConnectionListener::OnPreInit(CObject*, CSynRegistry&, SRegSynony
 {
 }
 
+void INetServerConnectionListener::OnError(const string& err_msg, CNetServer& server)
+{
+    if (m_EventHandler && m_EventHandler->OnError(err_msg)) return;
+
+    OnErrorImpl(err_msg, server);
+}
+
+void INetServerConnectionListener::OnWarning(const string& warn_msg, CNetServer& server)
+{
+    if (m_EventHandler && m_EventHandler->OnWarning(warn_msg, server)) return;
+
+    OnWarningImpl(warn_msg, server);
+}
+
 inline SNetServerConnectionImpl::SNetServerConnectionImpl(
         SNetServerImpl* server) :
     m_Server(server),
