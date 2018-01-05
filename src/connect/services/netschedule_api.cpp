@@ -669,6 +669,8 @@ void CNetScheduleServerListener::OnConnected(CNetServerConnection& connection)
 void CNetScheduleServerListener::OnError(
     const string& err_msg, CNetServer& server)
 {
+    if (m_EventHandler && m_EventHandler->OnError(err_msg)) return;
+
     string code;
     string msg;
 
@@ -681,10 +683,6 @@ void CNetScheduleServerListener::OnError(
 
     // Map code into numeric value
     CException::TErrCode err_code = CNetScheduleExceptionMap::GetCode(code);
-
-    if (m_EventHandler && m_EventHandler->OnError(err_code)) {
-        return;
-    }
 
     switch (err_code) {
     case CException::eInvalid:

@@ -64,7 +64,7 @@ class SNetServiceImpl::CTry
 {
     struct SHandler : public INetEventHandler
     {
-        bool OnError(CException::TErrCode) { return true; }
+        bool OnError(const string&) override { return true; }
     };
 
 public:

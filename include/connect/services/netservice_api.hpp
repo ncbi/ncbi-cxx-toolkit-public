@@ -149,7 +149,7 @@ class NCBI_XCONNECT_EXPORT CNetService
 class NCBI_XCONNECT_EXPORT INetEventHandler : public CObject
 {
 public:
-    virtual bool OnError(CException::TErrCode) { return false; }
+    virtual bool OnError(const string&) { return false; }
     virtual void OnWarning(const string&, CNetServer) {}
 };
 
