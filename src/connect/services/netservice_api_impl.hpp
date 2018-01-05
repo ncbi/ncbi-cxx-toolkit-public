@@ -291,6 +291,7 @@ private:
 struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
 {
     class CTry;
+    using IEventHandler = CNetService::IEventHandler;
 
     // Construct a new object.
     SNetServiceImpl(const string& api_name, const string& service_name, const string& client_name,
@@ -362,9 +363,9 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
 
     const string& GetClientName() const { return m_ClientName; }
 
-    CRef<INetEventHandler> SetEventHandler(INetEventHandler* new_handler)
+    CRef<IEventHandler> SetEventHandler(IEventHandler* new_handler)
     {
-        CRef<INetEventHandler> old_handler(m_Listener->m_EventHandler.ReleaseOrNull());
+        CRef<IEventHandler> old_handler(m_Listener->m_EventHandler.ReleaseOrNull());
         m_Listener->m_EventHandler.Reset(new_handler);
         return old_handler;
     }

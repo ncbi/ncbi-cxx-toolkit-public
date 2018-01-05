@@ -45,7 +45,7 @@ struct SNetCacheService : public SNetService
 {
     using TSelf = SNetCacheService;
 
-    class CEventHandler : public INetEventHandler
+    class CEventHandler : public CNetService::IEventHandler
     {
     public:
         CEventHandler(CAutomationProc* automation_proc,

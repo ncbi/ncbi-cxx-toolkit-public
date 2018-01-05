@@ -43,7 +43,7 @@ struct SNetScheduleService : public SNetService
 {
     using TSelf = SNetScheduleService;
 
-    class CEventHandler : public INetEventHandler
+    class CEventHandler : public CNetService::IEventHandler
     {
     public:
         CEventHandler(CAutomationProc* automation_proc,

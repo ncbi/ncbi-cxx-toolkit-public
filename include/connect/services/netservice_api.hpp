@@ -77,7 +77,6 @@ class NCBI_XCONNECT_EXPORT CNetServerPool
 };
 
 struct SNetServiceImpl;
-class INetEventHandler;
 
 class NCBI_XCONNECT_EXPORT CNetService
 {
@@ -136,21 +135,18 @@ class NCBI_XCONNECT_EXPORT CNetService
 
     CNetService Clone(const string& name);
 
-    void SetEventHandler(INetEventHandler* event_handler);
+    struct IEventHandler : CObject
+    {
+        virtual bool OnError(const string&)               { return false; }
+        virtual bool OnWarning(const string&, CNetServer) { return false; }
+    };
+
+    void SetEventHandler(IEventHandler* event_handler);
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     static void AllowXSiteConnections();
     static bool IsUsingXSiteProxy();
 #endif
-};
-
-/// This class is for use by the grid_cli utility only.
-/// @internal
-class NCBI_XCONNECT_EXPORT INetEventHandler : public CObject
-{
-public:
-    virtual bool OnError(const string&) { return false; }
-    virtual bool OnWarning(const string&, CNetServer) { return false; }
 };
 
 /// This class is for use by the grid_cli utility only.

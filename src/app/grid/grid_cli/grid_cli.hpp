@@ -514,7 +514,7 @@ public:
 
 // Implementation details.
 private:
-    class CNetScheduleWarningLogger : public INetEventHandler
+    class CNetScheduleWarningLogger : public CNetService::IEventHandler
     {
     public:
         CNetScheduleWarningLogger(CGridCommandLineInterfaceApp* grid_cli_app) :

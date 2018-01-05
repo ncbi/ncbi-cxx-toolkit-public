@@ -43,7 +43,7 @@ struct SNetStorageService : public SNetServiceBase
 {
     using TSelf = SNetStorageService;
 
-    class CEventHandler : public INetEventHandler
+    class CEventHandler : public CNetService::IEventHandler
     {
     public:
         CEventHandler(CAutomationProc* automation_proc,

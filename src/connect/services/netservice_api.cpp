@@ -62,7 +62,7 @@ BEGIN_NCBI_SCOPE
 // The purpose of this class is to execute commands suppressing possible errors and avoiding retries
 class SNetServiceImpl::CTry
 {
-    struct SHandler : public INetEventHandler
+    struct SHandler : public IEventHandler
     {
         bool OnError(const string&) override { return true; }
     };
@@ -81,14 +81,14 @@ public:
     }
 
 private:
-    void Swap(INetEventHandler* handler)
+    void Swap(IEventHandler* handler)
     {
         m_OriginalHandler = m_Service->SetEventHandler(handler);
         swap(m_MaxRetries, m_Service->m_ConnectionMaxRetries);
     }
 
     CNetRef<SNetServiceImpl> m_Service;
-    CRef<INetEventHandler> m_OriginalHandler;
+    CRef<IEventHandler> m_OriginalHandler;
     unsigned m_MaxRetries = 0;
 };
 
@@ -1387,7 +1387,7 @@ CNetService CNetService::Clone(const string& name)
         new SNetServiceImpl(name, m_Impl);
 }
 
-void CNetService::SetEventHandler(INetEventHandler* event_handler)
+void CNetService::SetEventHandler(IEventHandler* event_handler)
 {
     m_Impl->SetEventHandler(event_handler);
 }
