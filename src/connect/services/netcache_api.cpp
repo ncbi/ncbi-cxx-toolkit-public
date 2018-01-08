@@ -350,8 +350,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
     const CNetCacheKey& key, const string& cmd,
     bool multiline_output,
     const CNetCacheAPIParameters* parameters,
-    SNetServiceImpl::EServerErrorHandling error_handling,
-    INetServerConnectionListener* conn_listener)
+    SNetServiceImpl::EServerErrorHandling error_handling)
 {
     const string& service_name(key.GetServiceName());
 
@@ -398,8 +397,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
                 // them into host:port immediately.
 
                 if (!key_is_mirrored)
-                    return server.ExecWithRetry(cmd, multiline_output,
-                            conn_listener);
+                    return server.ExecWithRetry(cmd, multiline_output);
 
                 CNetServer::SExecResult exec_result;
 
@@ -409,8 +407,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
                                         through this service */);
 
                 service->IterateUntilExecOK(cmd, multiline_output,
-                        exec_result, &mirror_traversal, error_handling,
-                        conn_listener);
+                        exec_result, &mirror_traversal, error_handling);
 
                 return exec_result;
             }
@@ -436,7 +433,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
                 primary_server, server_check);
 
         service->IterateUntilExecOK(cmd, multiline_output, exec_result,
-                &mirror_traversal, error_handling, conn_listener);
+                &mirror_traversal, error_handling);
 
         return exec_result;
     }
@@ -463,7 +460,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
 
     }
 
-    return primary_server.ExecWithRetry(cmd, multiline_output, conn_listener);
+    return primary_server.ExecWithRetry(cmd, multiline_output);
 }
 
 CNetCacheAPI::CNetCacheAPI(CNetCacheAPI::EAppRegistry /* use_app_reg */,

@@ -168,8 +168,7 @@ void SNetServerConnectionImpl::DeleteThis()
 #define WARNING_PREFIX_LEN STRING_LEN(WARNING_PREFIX)
 
 void SNetServerConnectionImpl::ReadCmdOutputLine(string& result,
-        bool multiline_output,
-        INetServerConnectionListener* conn_listener)
+        bool multiline_output)
 {
     switch (m_Socket.ReadLine(result))
     {
@@ -193,6 +192,8 @@ void SNetServerConnectionImpl::ReadCmdOutputLine(string& result,
                 "Communication error while reading");
     }
 
+    auto& conn_listener = m_Server->m_Service->m_Listener;
+
     if (NStr::StartsWith(result, "OK:")) {
         const char* reply = result.c_str() + STRING_LEN("OK:");
         size_t reply_len = result.length() - STRING_LEN("OK:");
@@ -201,8 +202,6 @@ void SNetServerConnectionImpl::ReadCmdOutputLine(string& result,
             reply += WARNING_PREFIX_LEN;
             reply_len -= WARNING_PREFIX_LEN;
             const char* semicolon = strchr(reply, ';');
-            if (conn_listener == NULL)
-                conn_listener = m_Server->m_Service->m_Listener;
             if (semicolon == NULL) {
                 conn_listener->OnWarning(string(reply, reply + reply_len),
                         m_Server);
@@ -217,8 +216,7 @@ void SNetServerConnectionImpl::ReadCmdOutputLine(string& result,
     } else if (NStr::StartsWith(result, "ERR:")) {
         result.erase(0, STRING_LEN("ERR:"));
         result = NStr::ParseEscapes(result);
-        (conn_listener != NULL ? conn_listener :
-                m_Server->m_Service->m_Listener)->OnError(result, m_Server);
+        conn_listener->OnError(result, m_Server);
         result = multiline_output ? string(END_OF_MULTILINE_OUTPUT) : kEmptyStr;
     }
 }
@@ -265,8 +263,7 @@ void SNetServerConnectionImpl::WriteLine(const string& line)
 
 string CNetServerConnection::Exec(const string& cmd,
         bool multiline_output,
-        STimeout* timeout,
-        INetServerConnectionListener* conn_listener)
+        STimeout* timeout)
 {
     CTimeoutKeeper timeout_keeper(&m_Impl->m_Socket, timeout);
 
@@ -281,7 +278,7 @@ string CNetServerConnection::Exec(const string& cmd,
 
     string output;
 
-    m_Impl->ReadCmdOutputLine(output, multiline_output, conn_listener);
+    m_Impl->ReadCmdOutputLine(output, multiline_output);
 
     return output;
 }
@@ -515,8 +512,7 @@ const STimeout SNetServerImpl::SConnectDeadline::kMaxTryTimeout = {0, 250 * 1000
 const STimeout SNetServerImpl::SConnectDeadline::kMaxTryTimeout = {1, 250 * 1000};
 #endif
 
-CNetServerConnection SNetServerImpl::Connect(STimeout* timeout,
-        INetServerConnectionListener* conn_listener)
+CNetServerConnection SNetServerImpl::Connect(STimeout* timeout)
 {
     CNetServerConnection conn = new SNetServerConnectionImpl(this);
 
@@ -534,9 +530,7 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout,
     socket.DisableOSSendDelay();
     socket.SetReuseAddress(eOn);
 
-    if (!conn_listener) conn_listener = m_Service->m_Listener;
-
-    conn_listener->OnConnected(conn);
+    m_Service->m_Listener->OnConnected(conn);
 
     if (timeout) socket.SetTimeout(eIO_ReadWrite, &server_pool->m_CommTimeout);
 
@@ -567,7 +561,7 @@ void SNetServerImpl::ConnectImpl(CSocket& socket, SConnectDeadline& deadline,
 }
 
 void SNetServerImpl::TryExec(INetServerExecHandler& handler,
-        STimeout* timeout, INetServerConnectionListener* conn_listener)
+        STimeout* timeout)
 {
     m_ServerInPool->CheckIfThrottled();
 
@@ -594,7 +588,7 @@ void SNetServerImpl::TryExec(INetServerExecHandler& handler,
     }
 
     try {
-        handler.Exec(Connect(timeout, conn_listener), timeout);
+        handler.Exec(Connect(timeout), timeout);
     }
     catch (CNetSrvConnException&) {
         m_ServerInPool->AdjustThrottlingParameters(
@@ -609,13 +603,11 @@ public:
     CNetServerExecHandler(const string& cmd,
             bool multiline_output,
             CNetServer::SExecResult& exec_result,
-            INetServerExecListener* exec_listener,
-            INetServerConnectionListener* conn_listener) :
+            INetServerExecListener* exec_listener) :
         m_Cmd(cmd),
         m_MultilineOutput(multiline_output),
         m_ExecResult(exec_result),
-        m_ExecListener(exec_listener),
-        m_ConnListener(conn_listener)
+        m_ExecListener(exec_listener)
     {
     }
 
@@ -626,7 +618,6 @@ public:
     bool m_MultilineOutput;
     CNetServer::SExecResult& m_ExecResult;
     INetServerExecListener* m_ExecListener;
-    INetServerConnectionListener* m_ConnListener;
 };
 
 void CNetServerExecHandler::Exec(CNetServerConnection::TInstance conn_impl,
@@ -639,22 +630,18 @@ void CNetServerExecHandler::Exec(CNetServerConnection::TInstance conn_impl,
 
     m_ExecResult.response = m_ExecResult.conn.Exec(m_Cmd,
             m_MultilineOutput,
-            timeout, m_ConnListener);
+            timeout);
 }
 
 void SNetServerImpl::ConnectAndExec(const string& cmd,
         bool multiline_output,
         CNetServer::SExecResult& exec_result, STimeout* timeout,
-        INetServerExecListener* exec_listener,
-        INetServerConnectionListener* conn_listener)
+        INetServerExecListener* exec_listener)
 {
-    if (conn_listener == NULL)
-        conn_listener = m_Service->m_Listener;
-
     CNetServerExecHandler exec_handler(cmd, multiline_output,
-            exec_result, exec_listener, conn_listener);
+            exec_result, exec_listener);
 
-    TryExec(exec_handler, timeout, conn_listener);
+    TryExec(exec_handler, timeout);
 }
 
 void SNetServerInPool::AdjustThrottlingParameters(EConnOpResult op_result)
@@ -739,8 +726,7 @@ void SNetServerInPool::ResetThrottlingParameters()
 }
 
 CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
-        bool multiline_output,
-        INetServerConnectionListener* conn_listener)
+        bool multiline_output)
 {
     CNetServer::SExecResult exec_result;
 
@@ -750,9 +736,6 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
     unsigned attempt = 0;
     auto& service = m_Impl->m_Service;
 
-    if (conn_listener == NULL)
-        conn_listener = service->m_Listener;
-
     const auto max_retries = service->GetConnectionMaxRetries();
     const auto retry_delay = service->GetConnectionRetryDelay();
 
@@ -761,7 +744,7 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
 
         try {
             m_Impl->ConnectAndExec(cmd, multiline_output,
-                    exec_result, NULL, NULL, conn_listener);
+                    exec_result);
             return exec_result;
         }
         catch (CNetSrvConnException& e) {
@@ -796,7 +779,7 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
         warning += " of ";
         warning += NStr::NumericToString(max_retries);
 
-        conn_listener->OnWarning(warning, *this);
+        service->m_Listener->OnWarning(warning, *this);
 
         SleepMilliSec(retry_delay);
     }

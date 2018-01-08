@@ -880,8 +880,7 @@ CNetServer::SExecResult SNetServiceImpl::FindServerAndExec(const string& cmd,
 
             IterateUntilExecOK(cmd, multiline_output,
                     exec_result, &random_traversal,
-                    SNetServiceImpl::eIgnoreServerErrors,
-                    m_Listener);
+                    SNetServiceImpl::eIgnoreServerErrors);
 
             return exec_result;
         }
@@ -1048,12 +1047,8 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
     bool multiline_output,
     CNetServer::SExecResult& exec_result,
     IServiceTraversal* service_traversal,
-    SNetServiceImpl::EServerErrorHandling error_handling,
-    INetServerConnectionListener* conn_listener)
+    SNetServiceImpl::EServerErrorHandling error_handling)
 {
-    if (conn_listener == NULL)
-        conn_listener = m_Listener;
-
     int retry_count = m_ConnectionMaxRetries;
 
     const unsigned long retry_delay = m_ConnectionRetryDelay;
@@ -1087,7 +1082,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
 
         try {
             server->ConnectAndExec(cmd, multiline_output, exec_result,
-                    timeout, NULL, conn_listener);
+                    timeout);
             return;
         }
         catch (CNetCacheBlobTooOldException& /*ex rethrown*/) {
@@ -1102,7 +1097,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
             } else if (error_handling == eRethrowServerErrors)
                 throw;
             else
-                conn_listener->OnWarning(ex.GetMsg(), server);
+                m_Listener->OnWarning(ex.GetMsg(), server);
 
             err_listener.PostMessage(CMessage_Basic(ex.GetMsg(), eDiag_Warning));
         }
@@ -1115,7 +1110,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
             } else if (error_handling == eRethrowServerErrors)
                 throw;
             else
-                conn_listener->OnWarning(ex.GetMsg(), server);
+                m_Listener->OnWarning(ex.GetMsg(), server);
 
             err_listener.PostMessage(CMessage_Basic(ex.GetMsg(), eDiag_Warning));
         }
@@ -1126,7 +1121,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
             case CNetSrvConnException::eReadTimeout:
                 break;
             case CNetSrvConnException::eConnectionFailure:
-                conn_listener->OnWarning(ex.GetMsg(), server);
+                m_Listener->OnWarning(ex.GetMsg(), server);
                 break;
 
             case CNetSrvConnException::eServerThrottle:

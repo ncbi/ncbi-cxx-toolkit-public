@@ -107,8 +107,7 @@ struct SNetServerConnectionImpl : public CObject
 
     void WriteLine(const string& line);
     void ReadCmdOutputLine(string& result,
-            bool multiline_output,
-            INetServerConnectionListener* conn_listener = NULL);
+            bool multiline_output);
 
     void Close();
     void Abort();
@@ -274,15 +273,13 @@ struct SNetServerImpl : public CObject
     CNetServerConnection GetConnectionFromPool();
 
     void TryExec(INetServerExecHandler& handler,
-            STimeout* timeout = NULL,
-            INetServerConnectionListener* conn_listener = NULL);
+            STimeout* timeout = NULL);
 
     void ConnectAndExec(const string& cmd,
             bool multiline_output,
             CNetServer::SExecResult& exec_result,
             STimeout* timeout = NULL,
-            INetServerExecListener* exec_listener = NULL,
-            INetServerConnectionListener* conn_listener = NULL);
+            INetServerExecListener* exec_listener = NULL);
 
     static void ConnectImpl(CSocket&, SConnectDeadline&, const SServerAddress&,
             const SServerAddress&);
@@ -298,8 +295,7 @@ struct SNetServerImpl : public CObject
     CRef<SNetServerInPool> m_ServerInPool;
 
 private:
-    CNetServerConnection Connect(STimeout* timeout,
-            INetServerConnectionListener* conn_listener);
+    CNetServerConnection Connect(STimeout* timeout);
 };
 
 class CTimeoutKeeper

@@ -114,8 +114,7 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
         bool multiline_output,
         const CNetCacheAPIParameters* parameters,
         SNetServiceImpl::EServerErrorHandling error_handling =
-            SNetServiceImpl::eRethrowServerErrors,
-        INetServerConnectionListener* conn_listener = NULL);
+            SNetServiceImpl::eRethrowServerErrors);
 
     void Init(CSynRegistry& registry, const SRegSynonyms& sections);
 

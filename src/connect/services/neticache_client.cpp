@@ -150,8 +150,7 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl
     CNetServer::SExecResult ChooseServerAndExec(const string& cmd,
             const string& key,
             bool multiline_output,
-            const CNetCacheAPIParameters* parameters,
-            INetServerConnectionListener* conn_listener = NULL);
+            const CNetCacheAPIParameters* parameters);
 
     string MakeStdCmd(const char* cmd_base, const string& blob_id,
         const CNetCacheAPIParameters* parameters,
@@ -308,8 +307,7 @@ CNetServer::SExecResult SNetICacheClientImpl::ChooseServerAndExec(
         const string& cmd,
         const string& key,
         bool multiline_output,
-        const CNetCacheAPIParameters* parameters,
-        INetServerConnectionListener* conn_listener)
+        const CNetCacheAPIParameters* parameters)
 {
     CNetServer selected_server(parameters->GetServerToUse());
     CNetServer* server_last_used_ptr(parameters->GetServerLastUsedPtr());
@@ -318,7 +316,7 @@ CNetServer::SExecResult SNetICacheClientImpl::ChooseServerAndExec(
         if (selected_server) {
             CNetServer::SExecResult exec_result(
                     selected_server.ExecWithRetry(cmd,
-                        multiline_output, conn_listener));
+                        multiline_output));
 
             if (server_last_used_ptr) *server_last_used_ptr = selected_server;
             return exec_result;
@@ -330,7 +328,7 @@ CNetServer::SExecResult SNetICacheClientImpl::ChooseServerAndExec(
         do {
             try {
                 exec_result = (*it).ExecWithRetry(cmd,
-                        multiline_output, conn_listener);
+                        multiline_output);
                 selected_server = *it;
                 break;
             }
@@ -360,14 +358,12 @@ CNetServer::SExecResult SNetICacheClientImpl::ChooseServerAndExec(
                 selected_server, server_check);
 
         m_Service->IterateUntilExecOK(cmd, multiline_output, exec_result,
-                &mirror_traversal, SNetServiceImpl::eIgnoreServerErrors,
-                conn_listener);
+                &mirror_traversal, SNetServiceImpl::eIgnoreServerErrors);
     } else {
         SWeightedServiceTraversal service_traversal(m_Service, key);
 
         m_Service->IterateUntilExecOK(cmd, multiline_output, exec_result,
-                &service_traversal, SNetServiceImpl::eIgnoreServerErrors,
-                conn_listener);
+                &service_traversal, SNetServiceImpl::eIgnoreServerErrors);
     }
 
     if (server_last_used_ptr != NULL)

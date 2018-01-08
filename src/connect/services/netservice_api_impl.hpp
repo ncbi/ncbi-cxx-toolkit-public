@@ -355,8 +355,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
         bool multiline_output,
         CNetServer::SExecResult& exec_result,
         IServiceTraversal* service_traversal,
-        EServerErrorHandling error_handling,
-        INetServerConnectionListener* conn_listener);
+        EServerErrorHandling error_handling);
 
     SDiscoveredServers* AllocServerGroup(unsigned discovery_iteration);
     CNetServer GetServer(const SServerAddress& server_address);
