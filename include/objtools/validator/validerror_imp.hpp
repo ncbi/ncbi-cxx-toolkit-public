@@ -173,7 +173,7 @@ public:
 
     void SetTSE(const CSeq_entry_Handle& seh);
 
-    bool ShouldSubdivide() const { if (m_NumTopSetSiblings > 10) return true; else return false; }
+    bool ShouldSubdivide() const { if (m_NumTopSetSiblings > 1000) return true; else return false; }
 
 public:
     // interface to be used by the various validation classes
