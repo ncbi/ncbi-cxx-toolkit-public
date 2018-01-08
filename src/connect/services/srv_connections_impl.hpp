@@ -84,11 +84,17 @@ struct NCBI_XCONNECT_EXPORT INetServerConnectionListener : CObject
     void OnError(const string& err_msg, CNetServer& server);
     void OnWarning(const string& warn_msg, CNetServer& server);
 
+    void SetEventHandler(CNetService::IEventHandler* event_handler);
+
+protected:
+    INetServerConnectionListener() = default;
+    INetServerConnectionListener(const INetServerConnectionListener&);
+    INetServerConnectionListener& operator=(const INetServerConnectionListener&);
+
 private:
     virtual void OnErrorImpl(const string& err_msg, CNetServer& server) = 0;
     virtual void OnWarningImpl(const string& warn_msg, CNetServer& server) = 0;
 
-public:
     CRef<CNetService::IEventHandler> m_EventHandler;
 };
 

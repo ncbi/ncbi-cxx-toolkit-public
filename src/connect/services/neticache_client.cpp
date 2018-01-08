@@ -818,70 +818,53 @@ IReader* SNetICacheClientImpl::ReadCurrentBlobNotOlderThan(const string& key,
     }
 }
 
-class CSetValidWarningSuppressor : public CNetICacheServerListener
+class CSetValidWarningSuppressor
 {
+    struct SHandler : CNetService::IEventHandler
+    {
+        SHandler(const string& k, const string& sk, int v) : m_Key(k), m_Subkey(sk), m_Version(v) {}
+
+        bool OnWarning(const string& warn_msg, CNetServer) override;
+
+    private:
+        string m_Key;
+        string m_Subkey;
+        int m_Version;
+    };
+
 public:
     CSetValidWarningSuppressor(
-            INetServerConnectionListener* delegate_listener,
+            INetServerConnectionListener* listener,
             const string& key,
             const string& subkey,
             int version) :
-        m_DelegateListener(delegate_listener),
-        m_Key(key),
-        m_Subkey(subkey),
-        m_Version(version)
+        m_Listener(listener)
     {
+        _ASSERT(m_Listener);
+        Set(new SHandler(key, subkey, version));
     }
 
-    CRef<INetServerProperties> AllocServerProperties() override;
-    void OnPreInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections, string& client_name) override;
-    void OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections) override;
-    void OnConnected(CNetServerConnection& connection) override;
+    ~CSetValidWarningSuppressor()
+    {
+        Set(nullptr);
+    }
 
 private:
-    void OnErrorImpl(const string& err_msg, CNetServer& server) override;
-    void OnWarningImpl(const string& warn_msg, CNetServer& server) override;
+    void Set(CNetService::IEventHandler* handler)
+    {
+        m_Listener->SetEventHandler(handler);
+    }
 
-    CRef<INetServerConnectionListener> m_DelegateListener;
-    string m_Key;
-    string m_Subkey;
-    int m_Version;
+    CRef<INetServerConnectionListener> m_Listener;
 };
 
-CRef<INetServerProperties> CSetValidWarningSuppressor::AllocServerProperties()
-{
-    return m_DelegateListener->AllocServerProperties();
-}
-
-void CSetValidWarningSuppressor::OnPreInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections, string& client_name)
-{
-    m_DelegateListener->OnPreInit(api_impl, registry, sections, client_name);
-}
-
-void CSetValidWarningSuppressor::OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections)
-{
-    m_DelegateListener->OnInit(api_impl, registry, sections);
-}
-
-void CSetValidWarningSuppressor::OnConnected(CNetServerConnection& connection)
-{
-    m_DelegateListener->OnConnected(connection);
-}
-
-void CSetValidWarningSuppressor::OnErrorImpl(
-        const string& err_msg, CNetServer& server)
-{
-    m_DelegateListener->OnError(err_msg, server);
-}
-
-void CSetValidWarningSuppressor::OnWarningImpl(
-        const string& warn_msg, CNetServer& server)
+bool CSetValidWarningSuppressor::SHandler::OnWarning(const string& warn_msg, CNetServer)
 {
     SIZE_TYPE ver_pos = NStr::FindCase(warn_msg,
             CTempString("VER=", sizeof("VER=") - 1));
 
     if (ver_pos == NPOS)
-        m_DelegateListener->OnWarning(warn_msg, server);
+        return false;
     else {
         int version = atoi(warn_msg.c_str() + ver_pos + sizeof("VER=") - 1);
         if (version < m_Version) {
@@ -891,14 +874,14 @@ void CSetValidWarningSuppressor::OnWarningImpl(
                     m_Version << " to " << version);
         }
     }
+
+    return true;
 }
 
 void CNetICacheClient::SetBlobVersionAsCurrent(const string& key,
         const string& subkey, int version)
 {
-    CRef<INetServerConnectionListener> warning_suppressor(
-            new CSetValidWarningSuppressor(m_Impl->m_Service->m_Listener,
-                    key, subkey, version));
+    CSetValidWarningSuppressor warning_suppressor(m_Impl->m_Service->m_Listener, key, subkey, version);
 
     CNetServer::SExecResult exec_result(
             m_Impl->ChooseServerAndExec(
@@ -907,8 +890,7 @@ void CNetICacheClient::SetBlobVersionAsCurrent(const string& key,
                             &m_Impl->m_DefaultParameters),
                     key,
                     false,
-                    &m_Impl->m_DefaultParameters,
-                    warning_suppressor));
+                    &m_Impl->m_DefaultParameters));
 
     if (!exec_result.response.empty()) {
         ERR_POST("SetBlobVersionAsCurrent(\"" << key << "\", " <<

@@ -77,18 +77,17 @@ public:
 
     ~CTry()
     {
-        Swap(m_OriginalHandler);
+        Swap(nullptr);
     }
 
 private:
     void Swap(IEventHandler* handler)
     {
-        m_OriginalHandler = m_Service->SetEventHandler(handler);
+        m_Service->m_Listener->SetEventHandler(handler);
         swap(m_MaxRetries, m_Service->m_ConnectionMaxRetries);
     }
 
     CNetRef<SNetServiceImpl> m_Service;
-    CRef<IEventHandler> m_OriginalHandler;
     unsigned m_MaxRetries = 0;
 };
 
@@ -1389,7 +1388,7 @@ CNetService CNetService::Clone(const string& name)
 
 void CNetService::SetEventHandler(IEventHandler* event_handler)
 {
-    m_Impl->SetEventHandler(event_handler);
+    m_Impl->m_Listener->SetEventHandler(event_handler);
 }
 
 CNetService SNetServiceMap::GetServiceByName(const string& service_name,

@@ -111,6 +111,24 @@ void INetServerConnectionListener::OnWarning(const string& warn_msg, CNetServer&
     OnWarningImpl(warn_msg, server);
 }
 
+INetServerConnectionListener::INetServerConnectionListener(const INetServerConnectionListener&)
+{
+    // No m_EventHandler sharing
+}
+
+INetServerConnectionListener& INetServerConnectionListener::operator=(const INetServerConnectionListener&)
+{
+    // No m_EventHandler sharing
+    return *this;
+}
+
+void INetServerConnectionListener::SetEventHandler(CNetService::IEventHandler* event_handler)
+{
+    // Event handlers are not allowed to be changed, only to be set or reset
+    _ASSERT(!(m_EventHandler.GetPointer() && event_handler));
+    m_EventHandler.Reset(event_handler);
+}
+
 inline SNetServerConnectionImpl::SNetServerConnectionImpl(
         SNetServerImpl* server) :
     m_Server(server),

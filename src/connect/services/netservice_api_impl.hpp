@@ -363,13 +363,6 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
 
     const string& GetClientName() const { return m_ClientName; }
 
-    CRef<IEventHandler> SetEventHandler(IEventHandler* new_handler)
-    {
-        CRef<IEventHandler> old_handler(m_Listener->m_EventHandler.ReleaseOrNull());
-        m_Listener->m_EventHandler.Reset(new_handler);
-        return old_handler;
-    }
-
     unsigned GetConnectionMaxRetries() const { return m_ConnectionMaxRetries; }
     unsigned long GetConnectionRetryDelay() const { return m_ConnectionRetryDelay; }
     shared_ptr<CTry> GetTryGuard();
