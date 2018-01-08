@@ -313,7 +313,7 @@ bool SNetServiceIterator_Weighted::Prev()
 
 SNetServerPoolImpl::SNetServerPoolImpl(INetServerConnectionListener* listener,
         bool old_style_auth) :
-    m_Listener(listener),
+    m_PropCreator(listener->GetPropCreator()),
     m_EnforcedServer(0, 0),
     m_MaxTotalTime(CTimeout::eInfinite),
     m_UseOldStyleAuth(old_style_auth)
@@ -571,14 +571,14 @@ void SNetServiceImpl::Init(CObject* api_impl, CSynRegistryBuilder registry_build
         m_ClientName = app->GetProgramDisplayName();
     }
 
-    m_ServerPool->Init(registry, sections, m_Listener.GetPointerOrNull());
+    m_ServerPool->Init(registry, sections);
 
     Construct();
 
     m_Listener->OnInit(api_impl, registry, sections);
 }
 
-void SNetServerPoolImpl::Init(CSynRegistry& registry, const SRegSynonyms& sections, INetServerConnectionListener* listener)
+void SNetServerPoolImpl::Init(CSynRegistry& registry, const SRegSynonyms& sections)
 {
     int max_requests = CSimpleRebalanceStrategy::DefaultMaxRequests();
     double max_seconds = CSimpleRebalanceStrategy::DefaultMaxSeconds();
@@ -621,8 +621,6 @@ void SNetServerPoolImpl::Init(CSynRegistry& registry, const SRegSynonyms& sectio
     m_ThrottleParams.Init(registry, sections);
 
     m_RebalanceStrategy = new CSimpleRebalanceStrategy(max_requests, max_seconds);
-
-    m_Listener = listener;
 }
 
 void SNetServerPoolImpl::SThrottleParams::Init(CSynRegistry& registry, const SRegSynonyms& sections)
@@ -794,7 +792,7 @@ SNetServerInPool* SNetServerPoolImpl::FindOrCreateServerImpl(
         return loc.first->second;
 
     SNetServerInPool* server = new SNetServerInPool(server_address.host, server_address.port,
-            m_Listener->AllocServerProperties().GetPointerOrNull());
+            m_PropCreator());
 
     loc.first->second = server;
 
@@ -1452,11 +1450,6 @@ CNetService g_DiscoverService(const string& service_name,
 {
     struct SNoOpConnectionListener : public INetServerConnectionListener
     {
-        CRef<INetServerProperties> AllocServerProperties() override
-        {
-            return CRef<INetServerProperties>(new INetServerProperties);
-        }
-
         INetServerConnectionListener* Clone() override { return new SNoOpConnectionListener(*this); }
         void OnInit(CObject*, CSynRegistry&, SRegSynonyms&) override {}
         void OnConnected(CNetServerConnection&) override {}

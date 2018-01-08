@@ -555,9 +555,9 @@ string SNetScheduleAPIImpl::MakeAuthString()
     return auth;
 }
 
-CRef<INetServerProperties> CNetScheduleServerListener::AllocServerProperties()
+INetServerConnectionListener::TPropCreator CNetScheduleServerListener::GetPropCreator() const
 {
-    return CRef<INetServerProperties>(new SNetScheduleServerProperties);
+    return [] { return new SNetScheduleServerProperties; };
 }
 
 INetServerConnectionListener* CNetScheduleServerListener::Clone()

@@ -40,6 +40,8 @@
 
 #include <util/ncbi_url.hpp>
 
+#include <functional>
+
 BEGIN_NCBI_SCOPE
 
 struct SNetServerMultilineCmdOutputImpl : public CObject
@@ -73,7 +75,9 @@ class INetServerProperties : public CObject
 
 struct NCBI_XCONNECT_EXPORT INetServerConnectionListener : CObject
 {
-    virtual CRef<INetServerProperties> AllocServerProperties() = 0;
+    using TPropCreator = function<INetServerProperties*()>;
+
+    virtual TPropCreator GetPropCreator() const;
     virtual INetServerConnectionListener* Clone() = 0;
 
     // Event handlers.

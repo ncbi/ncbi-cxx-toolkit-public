@@ -195,7 +195,7 @@ public:
     void SetAuthString(const string& auth) { m_Auth = auth; }
     string& Scope() { return m_Scope; }
 
-    CRef<INetServerProperties> AllocServerProperties() override;
+    TPropCreator GetPropCreator() const override;
     INetServerConnectionListener* Clone() override;
 
     void OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections) override;

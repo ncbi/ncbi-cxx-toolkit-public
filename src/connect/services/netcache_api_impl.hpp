@@ -54,7 +54,7 @@ struct SNetCacheServerProperties : public INetServerProperties
 class NCBI_XCONNECT_EXPORT CNetCacheServerListener : public INetServerConnectionListener
 {
 public:
-    CRef<INetServerProperties> AllocServerProperties() override;
+    TPropCreator GetPropCreator() const override;
     INetServerConnectionListener* Clone() override;
 
     void OnPreInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections, string& client_name) override;

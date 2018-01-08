@@ -433,7 +433,6 @@ public:
     {
     }
 
-    CRef<INetServerProperties> AllocServerProperties() override;
     INetServerConnectionListener* Clone() override;
 
     void OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections) override;
@@ -446,11 +445,6 @@ private:
     const CJsonNode m_Hello;
     const SNetStorage::SConfig::EErrMode m_ErrMode;
 };
-
-CRef<INetServerProperties> CNetStorageServerListener::AllocServerProperties()
-{
-    return CRef<INetServerProperties>(new INetServerProperties);
-}
 
 INetServerConnectionListener* CNetStorageServerListener::Clone()
 {

@@ -83,9 +83,9 @@ static SServerAddress* s_GetFallbackServer()
     return s_FallbackServer->get();
 }
 
-CRef<INetServerProperties> CNetCacheServerListener::AllocServerProperties()
+INetServerConnectionListener::TPropCreator CNetCacheServerListener::GetPropCreator() const
 {
-    return CRef<INetServerProperties>(new SNetCacheServerProperties);
+    return [] { return new SNetCacheServerProperties; };
 }
 
 INetServerConnectionListener* CNetCacheServerListener::Clone()

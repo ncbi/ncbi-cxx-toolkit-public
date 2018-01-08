@@ -93,6 +93,11 @@ bool CNetServerMultilineCmdOutput::ReadLine(string& output)
     }
 }
 
+INetServerConnectionListener::TPropCreator INetServerConnectionListener::GetPropCreator() const
+{
+    return [] { return new INetServerProperties; };
+}
+
 void INetServerConnectionListener::OnPreInit(CObject*, CSynRegistry&, SRegSynonyms&, string&)
 {
 }

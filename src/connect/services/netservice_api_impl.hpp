@@ -114,7 +114,7 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
     SNetServerPoolImpl(INetServerConnectionListener* listener,
             bool old_style_auth);
 
-    void Init(CSynRegistry& registry, const SRegSynonyms& sections, INetServerConnectionListener* listener);
+    void Init(CSynRegistry& registry, const SRegSynonyms& sections);
 
     SNetServerInPool* FindOrCreateServerImpl(const SServerAddress& server_address);
     CRef<SNetServerInPool> ReturnServer(SNetServerInPool* server_impl);
@@ -124,8 +124,10 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
 
     virtual ~SNetServerPoolImpl();
 
-    CRef<INetServerConnectionListener> m_Listener;
+private:
+    INetServerConnectionListener::TPropCreator m_PropCreator;
 
+public:
     SServerAddress m_EnforcedServer;
 
     CRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
