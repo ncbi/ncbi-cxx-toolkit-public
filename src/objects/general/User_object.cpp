@@ -52,6 +52,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 SAFE_CONST_STATIC_STRING(kUnverifiedOrganism,     "Organism");
 SAFE_CONST_STATIC_STRING(kUnverifiedMisassembled, "Misassembled");
 SAFE_CONST_STATIC_STRING(kUnverifiedFeature,      "Features");
+SAFE_CONST_STATIC_STRING(kUnverifiedContaminant, "Contaminant");
 
 
 // destructor
@@ -767,6 +768,24 @@ void CUser_object::AddUnverifiedMisassembled()
 void CUser_object::RemoveUnverifiedMisassembled()
 {
     x_RemoveUnverifiedType(kUnverifiedMisassembled.Get());
+}
+
+
+bool CUser_object::IsUnverifiedContaminant() const
+{
+    return x_IsUnverifiedType(kUnverifiedContaminant.Get());
+}
+
+
+void CUser_object::AddUnverifiedContaminant()
+{
+    x_AddUnverifiedType(kUnverifiedContaminant.Get());
+}
+
+
+void CUser_object::RemoveUnverifiedContaminant()
+{
+    x_RemoveUnverifiedType(kUnverifiedContaminant.Get());
 }
 
 

@@ -2054,3 +2054,78 @@ BOOST_AUTO_TEST_CASE(Test_IsValidLocalID)
     BOOST_CHECK_EQUAL(CSeq_id::IsValidLocalID("nuc@1"), true);
     BOOST_CHECK_EQUAL(CSeq_id::IsValidLocalID("nuc{1"), true);
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_Unverified)
+{
+    CRef<CUser_object> obj(new CUser_object());
+    BOOST_CHECK_EQUAL(obj->IsUnverified(), false);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedContaminant(), false);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedFeature(), false);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedMisassembled(), false);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedOrganism(), false);
+
+    obj->SetObjectType(CUser_object::eObjectType_Unverified);
+    BOOST_CHECK_EQUAL(obj->IsUnverified(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedContaminant(), false);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedFeature(), false);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedMisassembled(), false);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedOrganism(), false);
+
+    obj->AddUnverifiedContaminant();
+    BOOST_CHECK_EQUAL(obj->IsUnverified(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedContaminant(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedFeature(), false);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedMisassembled(), false);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedOrganism(), false);
+
+    obj->AddUnverifiedFeature();
+    BOOST_CHECK_EQUAL(obj->IsUnverified(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedContaminant(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedFeature(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedMisassembled(), false);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedOrganism(), false);
+
+    obj->AddUnverifiedMisassembled();
+    BOOST_CHECK_EQUAL(obj->IsUnverified(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedContaminant(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedFeature(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedMisassembled(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedOrganism(), false);
+
+    obj->AddUnverifiedOrganism();
+    BOOST_CHECK_EQUAL(obj->IsUnverified(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedContaminant(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedFeature(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedMisassembled(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedOrganism(), true);
+
+    obj->RemoveUnverifiedContaminant();
+    BOOST_CHECK_EQUAL(obj->IsUnverified(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedContaminant(), false);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedFeature(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedMisassembled(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedOrganism(), true);
+
+    obj->RemoveUnverifiedFeature();
+    BOOST_CHECK_EQUAL(obj->IsUnverified(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedContaminant(), false);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedFeature(), false);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedMisassembled(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedOrganism(), true);
+
+    obj->RemoveUnverifiedMisassembled();
+    BOOST_CHECK_EQUAL(obj->IsUnverified(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedContaminant(), false);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedFeature(), false);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedMisassembled(), false);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedOrganism(), true);
+
+    obj->RemoveUnverifiedOrganism();
+    BOOST_CHECK_EQUAL(obj->IsUnverified(), true);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedContaminant(), false);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedFeature(), false);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedMisassembled(), false);
+    BOOST_CHECK_EQUAL(obj->IsUnverifiedOrganism(), false);
+
+}

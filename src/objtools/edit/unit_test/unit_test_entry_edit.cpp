@@ -1462,6 +1462,13 @@ BOOST_AUTO_TEST_CASE(Test_Unverified)
     unv = edit::FindUnverified(entry->GetSeq());
     BOOST_CHECK_EQUAL(unv.GetPointer(), new_unv.GetPointer());
 
+    new_unv->SetUser().AddUnverifiedContaminant();
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedOrganism(entry->GetSeq()), false);
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedFeature(entry->GetSeq()), false);
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedMisassembled(entry->GetSeq()), true);
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedContaminant(entry->GetSeq()), true);
+    unv = edit::FindUnverified(entry->GetSeq());
+    BOOST_CHECK_EQUAL(unv.GetPointer(), new_unv.GetPointer());
 
 }
 

@@ -316,6 +316,7 @@ NCBI_XOBJEDIT_EXPORT CRef<CSeqdesc> FindUnverified(const CBioseq& seq);
 NCBI_XOBJEDIT_EXPORT bool IsUnverifiedOrganism(const CBioseq& seq);
 NCBI_XOBJEDIT_EXPORT bool IsUnverifiedFeature(const CBioseq& seq);
 NCBI_XOBJEDIT_EXPORT bool IsUnverifiedMisassembled(const CBioseq& seq);
+NCBI_XOBJEDIT_EXPORT bool IsUnverifiedContaminant(const CBioseq& seq);
 
 // For TargetedLocusSequences
 NCBI_XOBJEDIT_EXPORT string GetTargetedLocusName(const CSeq_feat& feat);

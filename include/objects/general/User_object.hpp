@@ -193,6 +193,9 @@ public:
     bool IsUnverifiedMisassembled() const;
     void AddUnverifiedMisassembled();
     void RemoveUnverifiedMisassembled();
+    bool IsUnverifiedContaminant() const;
+    void AddUnverifiedContaminant();
+    void RemoveUnverifiedContaminant();
 
     void UpdateNcbiCleanup(int version);
 

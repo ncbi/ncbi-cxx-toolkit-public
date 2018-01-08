@@ -3307,6 +3307,21 @@ bool IsUnverifiedMisassembled(const CBioseq& seq)
     return false;
 }
 
+
+bool IsUnverifiedContaminant(const CBioseq& seq)
+{
+    if (!seq.IsSetDescr()) {
+        return false;
+    }
+    ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()) {
+        if ((*it)->IsUser() && (*it)->GetUser().IsUnverifiedContaminant()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void SortSeqDescr(CSeq_descr& descr)
 {
     descr.Set().sort(CompareSeqdesc());
