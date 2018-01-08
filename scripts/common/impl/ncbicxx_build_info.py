@@ -500,6 +500,8 @@ class CollectorCMake(Collector):
                 info['target_name'] = target_name
                 if ext == '.so' or ext == '.a' or ext == '.lib' or ext == '.dll':
                     info['target_type'] = 'lib'
+                    if info['target_name'].startswith("lib"):
+                        info['target_name'] = info['target_name'][3:]
                 elif not ext or ext == '.exe':
                     info['target_type'] = 'app'
                 value_expected = False
