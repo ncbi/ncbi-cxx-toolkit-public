@@ -3552,6 +3552,7 @@ BOOST_AUTO_TEST_CASE(s_VersionInfo)
 0xc3,0xb0,0xc3,0xb1,0xc3,0xb2,0xc3,0xb3,0xc3,0xb4,0xc3,0xb5,0xc3,0xb6,0xc3,0xb7,
 0xc3,0xb8,0xc3,0xb9,0xc3,0xba,0xc3,0xbb,0xc3,0xbc,0xc3,0xbd,0xc3,0xbe,0xc3,0xbf};
 
+
 BOOST_AUTO_TEST_CASE(s_CUtf8)
 {
     const char *src, *res, *conv;
@@ -3779,6 +3780,69 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
             BOOST_CHECK( NStr::FindCase(msg, expected) != NPOS);
         }
     }
+
+// locales
+#if defined(HAVE_WSTRING) && defined(NCBI_OS_MSWIN)
+    {
+        typedef unsigned short xxxMywchar;
+        basic_string<xxxMywchar> xxxwss, wstest;
+        string u8, u8x, res;
+        const char* lcl_name;
+        {
+            lcl_name = "ru-RU";
+            try {
+                locale lcl(lcl_name);
+                string t(" ÓÏ‡Ì‰˚");
+                wstest = {1050, 1086, 1084, 1072, 1085, 1076, 1099};
+                u8 = CUtf8::AsUTF8(t, lcl);
+                xxxwss = CUtf8::AsBasicString<xxxMywchar>(u8);
+                u8x = CUtf8::AsUTF8(xxxwss);
+                res = CUtf8::AsSingleByteString(u8, lcl);
+                BOOST_CHECK(xxxwss == wstest);
+                BOOST_CHECK(u8 == u8x);
+                BOOST_CHECK(t == res);
+                res = CUtf8::AsSingleByteString(u8, locale("pl"), "");
+                BOOST_CHECK(res.empty());
+            } catch(const exception& e) {
+                cout << lcl_name << ": " << e.what() << endl;
+            }
+        }
+        lcl_name = "pl-PL";
+        {
+            try {
+                locale lcl(lcl_name);
+                string t("Moøesz uøywaÊ wy≥πczyÊ");
+                wstest = {77,111,380,101,115,122,32,117,380,121,119,97,263,32,119,121,322,261,99,122,121,263};
+                u8 = CUtf8::AsUTF8(t, lcl);
+                xxxwss = CUtf8::AsBasicString<xxxMywchar>(u8);
+                u8x = CUtf8::AsUTF8(xxxwss);
+                res = CUtf8::AsSingleByteString(u8, lcl);
+                BOOST_CHECK(xxxwss == wstest);
+                BOOST_CHECK(u8 == u8x);
+                BOOST_CHECK(t == res);
+            } catch(const exception& e) {
+                cout << lcl_name << ": " << e.what() << endl;
+            }
+        }
+        lcl_name = "ar-EG";
+        {
+            try {
+                locale lcl(lcl_name);
+                string t("≈⁄œ«œ«  ≈÷«›Ì…");
+                wstest = {1573,1593,1583,1575,1583,1575,1578,32,1573,1590,1575,1601,1610,1577};
+                u8 = CUtf8::AsUTF8(t, lcl);
+                xxxwss = CUtf8::AsBasicString<xxxMywchar>(u8);
+                u8x = CUtf8::AsUTF8(xxxwss);
+                res = CUtf8::AsSingleByteString(u8, lcl);
+                BOOST_CHECK(xxxwss == wstest);
+                BOOST_CHECK(u8 == u8x);
+                BOOST_CHECK(t == res);
+            } catch(const exception& e) {
+                cout << lcl_name << ": " << e.what() << endl;
+            }
+        }
+    }
+#endif
 }
 
 
