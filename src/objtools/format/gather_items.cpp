@@ -3367,7 +3367,7 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
             CConstRef<CSeq_loc> feat_loc( sfx.GetMappedLocation()); // &it->GetLocation()); 
 
             feat_loc = s_NormalizeNullsBetween( feat_loc );
-        
+
             // make sure location ends on the current bioseq
             if ( !s_SeqLocEndsOnBioseq(*feat_loc, ctx, eEndsOnBioseqOpt_LastPartOfSeqLoc, feat.GetData().Which() ) ) {
                 // may need to map sig_peptide on a different segment
@@ -3383,7 +3383,12 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
             // HANDLE GAPS SECTION GOES HERE
 
 
-            item.Reset( x_NewFeatureItem(mf, ctx, feat_loc, m_Feat_Tree) );
+            const CSeq_loc& loc = original_feat.GetLocation();
+            CRef<CSeq_loc> loc2(new CSeq_loc);
+            loc2->Assign(*feat_loc);
+            loc2->SetId(*loc.GetId());
+ 
+            item.Reset( x_NewFeatureItem(mf, ctx, loc2, m_Feat_Tree) );
             out << item;
 
             // Add more features depending on user preferences
