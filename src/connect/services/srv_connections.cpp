@@ -414,15 +414,20 @@ SNetServerInfoImpl::SNetServerInfoImpl(const string& version_string)
     m_NextAttribute = m_Attributes->begin();
 }
 
-bool CNetServerInfo::GetNextAttribute(string& attr_name, string& attr_value)
+bool SNetServerInfoImpl::GetNextAttribute(string& attr_name, string& attr_value)
 {
-    if (m_Impl->m_NextAttribute == m_Impl->m_Attributes->end())
+    if (m_NextAttribute == m_Attributes->end())
         return false;
 
-    attr_name = m_Impl->m_NextAttribute->name;
-    attr_value = m_Impl->m_NextAttribute->value;
-    ++m_Impl->m_NextAttribute;
+    attr_name = m_NextAttribute->name;
+    attr_value = m_NextAttribute->value;
+    ++m_NextAttribute;
     return true;
+}
+
+bool CNetServerInfo::GetNextAttribute(string& attr_name, string& attr_value)
+{
+    return m_Impl->GetNextAttribute(attr_name, attr_value);
 }
 
 unsigned CNetServer::GetHost() const

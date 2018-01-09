@@ -253,6 +253,10 @@ struct SNetServerInPool : public CObject
 
 struct SNetServerInfoImpl : public CObject
 {
+    SNetServerInfoImpl(const string& version_string);
+    bool GetNextAttribute(string& attr_name, string& attr_value);
+
+private:
     typedef CUrlArgs::TArgs TAttributes;
 
     auto_ptr<CUrlArgs> m_URLParser;
@@ -261,8 +265,6 @@ struct SNetServerInfoImpl : public CObject
 
     TAttributes* m_Attributes;
     TAttributes::const_iterator m_NextAttribute;
-
-    SNetServerInfoImpl(const string& version_string);
 };
 
 struct SNetServerImpl : public CObject
