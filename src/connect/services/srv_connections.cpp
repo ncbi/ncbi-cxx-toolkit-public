@@ -528,27 +528,26 @@ const STimeout SNetServerImpl::SConnectDeadline::kMaxTryTimeout = {0, 250 * 1000
 const STimeout SNetServerImpl::SConnectDeadline::kMaxTryTimeout = {1, 250 * 1000};
 #endif
 
-CNetServerConnection SNetServerImpl::Connect(STimeout* timeout)
+CNetServerConnection SNetServerInPool::Connect(SNetServerImpl* server, STimeout* timeout)
 {
-    CNetServerConnection conn = new SNetServerConnectionImpl(this);
+    CNetServerConnection conn = new SNetServerConnectionImpl(server);
 
-    auto& server_pool = m_ServerInPool->m_ServerPool;
-    SConnectDeadline deadline(timeout ? *timeout : server_pool->m_ConnTimeout);
+    SNetServerImpl::SConnectDeadline deadline(timeout ? *timeout : m_ServerPool->m_ConnTimeout);
     auto& socket = conn->m_Socket;
 
-    SNetServiceXSiteAPI::ConnectXSite(socket, deadline, m_ServerInPool->m_Address);
+    SNetServiceXSiteAPI::ConnectXSite(socket, deadline, m_Address);
 
-    m_ServerInPool->AdjustThrottlingParameters(SNetServerInPool::eCOR_Success);
+    AdjustThrottlingParameters(eCOR_Success);
 
     socket.SetDataLogging(TServConn_ConnDataLogging::GetDefault() ? eOn : eOff);
     socket.SetTimeout(eIO_ReadWrite, timeout ? timeout :
-                              &server_pool->m_CommTimeout);
+                              &m_ServerPool->m_CommTimeout);
     socket.DisableOSSendDelay();
     socket.SetReuseAddress(eOn);
 
-    m_Service->m_Listener->OnConnected(conn);
+    server->m_Service->m_Listener->OnConnected(conn);
 
-    if (timeout) socket.SetTimeout(eIO_ReadWrite, &server_pool->m_CommTimeout);
+    if (timeout) socket.SetTimeout(eIO_ReadWrite, &m_ServerPool->m_CommTimeout);
 
     return conn;
 }
@@ -604,7 +603,7 @@ void SNetServerImpl::TryExec(INetServerExecHandler& handler,
     }
 
     try {
-        handler.Exec(Connect(timeout), timeout);
+        handler.Exec(m_ServerInPool->Connect(this, timeout), timeout);
     }
     catch (CNetSrvConnException&) {
         m_ServerInPool->AdjustThrottlingParameters(

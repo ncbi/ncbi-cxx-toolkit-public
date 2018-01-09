@@ -224,6 +224,7 @@ struct SNetServerInPool : public CObject
     void CheckIfThrottled();
     void ResetThrottlingParameters();
     CNetServerConnection GetConnectionFromPool(SNetServerImpl* server);
+    CNetServerConnection Connect(SNetServerImpl* server, STimeout* timeout);
 
     // A smart pointer to the server pool object that contains
     // this NetServer. Valid only when this object is returned
@@ -300,9 +301,6 @@ struct SNetServerImpl : public CObject
 
     CNetService m_Service;
     CRef<SNetServerInPool> m_ServerInPool;
-
-private:
-    CNetServerConnection Connect(STimeout* timeout);
 };
 
 class CTimeoutKeeper
