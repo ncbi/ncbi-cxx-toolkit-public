@@ -217,7 +217,7 @@ protected:
     };
 
 
-    virtual CRef<CSeq_entry> x_ReadSegSet(ILineErrorListener * pMessageListener);
+    NCBI_DEPRECATED virtual CRef<CSeq_entry> x_ReadSegSet(ILineErrorListener * pMessageListener);
 
     virtual void   ParseDefLine  (const TStr& s, ILineErrorListener * pMessageListener);
 

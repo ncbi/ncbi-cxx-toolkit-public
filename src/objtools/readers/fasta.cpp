@@ -339,6 +339,8 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(ILineErrorListener * pMessageListener)
                     break;
                 }
             }
+        }
+   /*     
         } else if (c == '[') {
             return x_ReadSegSet(pMessageListener);
         } else if (c == ']') {
@@ -348,7 +350,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(ILineErrorListener * pMessageListener)
                             CObjReaderParseException::eEOF );
             }
         }
-
+*/
         CTempString line = NStr::TruncateSpaces_Unsafe(*++GetLineReader());
 
         if (line.empty()) {
