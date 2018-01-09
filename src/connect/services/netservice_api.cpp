@@ -1471,10 +1471,9 @@ void SNetServiceMap::AddToAllowed(const string& service_name)
 }
 
 CJsonNode g_ExecToJson(IExecToJson& exec_to_json, CNetService service,
-        CNetService::EServiceType service_type,
         CNetService::EIterationMode iteration_mode)
 {
-    if (service_type == CNetService::eSingleServerService)
+    if (service.GetServiceType() == CNetService::eSingleServerService)
         return exec_to_json.ExecOn(service.Iterate().GetServer());
 
     CJsonNode result(CJsonNode::NewObjectNode());

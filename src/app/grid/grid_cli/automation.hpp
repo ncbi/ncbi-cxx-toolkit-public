@@ -200,10 +200,8 @@ struct SNetServiceBase : public CAutomationObject
 {
     using TSelf = SNetServiceBase;
 
-    SNetServiceBase(CAutomationProc* automation_proc,
-            CNetService::EServiceType actual_service_type) :
-        CAutomationObject(automation_proc),
-        m_ActualServiceType(actual_service_type)
+    SNetServiceBase(CAutomationProc* automation_proc) :
+        CAutomationObject(automation_proc)
     {
     }
 
@@ -213,8 +211,6 @@ struct SNetServiceBase : public CAutomationObject
     void ExecGetName(const TArguments& args, SInputOutput& io);
     void ExecGetAddress(const TArguments& args, SInputOutput& io);
 
-    CNetService::EServiceType m_ActualServiceType;
-
     static TCommands CallCommands();
 };
 
@@ -222,9 +218,8 @@ struct SNetService : public SNetServiceBase
 {
     using TSelf = SNetService;
 
-    SNetService(CAutomationProc* automation_proc,
-            CNetService::EServiceType actual_service_type) :
-        SNetServiceBase(automation_proc, actual_service_type)
+    SNetService(CAutomationProc* automation_proc) :
+        SNetServiceBase(automation_proc)
     {
     }
 

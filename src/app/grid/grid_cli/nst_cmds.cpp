@@ -201,7 +201,7 @@ int CGridCommandLineInterfaceApp::PrintNetStorageServerInfo()
         NNetStorage::CExecToJson info_to_json(m_NetStorageAdmin, "INFO");
 
         g_PrintJSON(stdout, g_ExecToJson(info_to_json, service,
-                service.GetServiceType(), CNetService::eIncludePenalized));
+                CNetService::eIncludePenalized));
     } else {
         bool print_server_address = service.IsLoadBalanced();
 
@@ -274,7 +274,7 @@ int CGridCommandLineInterfaceApp::ReconfigureNetStorageServer()
     NNetStorage::CExecToJson reconf_to_json(m_NetStorageAdmin, "RECONFIGURE");
 
     g_PrintJSON(stdout, g_ExecToJson(reconf_to_json, service,
-            service.GetServiceType(), CNetService::eIncludePenalized));
+            CNetService::eIncludePenalized));
     return 0;
 }
 

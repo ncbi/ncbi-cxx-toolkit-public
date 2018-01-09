@@ -41,13 +41,11 @@ BEGIN_NCBI_SCOPE
 CJsonNode g_LegacyStatToJson(CNetServer server, bool verbose);
 
 CJsonNode g_QueueInfoToJson(CNetScheduleAPI ns_api,
-        const string& queue_name, CNetService::EServiceType service_type);
+        const string& queue_name);
 
-CJsonNode g_QueueClassInfoToJson(CNetScheduleAPI ns_api,
-        CNetService::EServiceType service_type);
+CJsonNode g_QueueClassInfoToJson(CNetScheduleAPI ns_api);
 
-CJsonNode g_ReconfAndReturnJson(CNetScheduleAPI ns_api,
-        CNetService::EServiceType service_type);
+CJsonNode g_ReconfAndReturnJson(CNetScheduleAPI ns_api);
 
 class IJobInfoProcessor
 {
@@ -105,11 +103,9 @@ void g_PrintJSON(FILE* output_stream, CJsonNode node,
         const char* indent = "\t");
 
 CJsonNode g_ExecAnyCmdToJson(CNetService service,
-        CNetService::EServiceType service_type,
         const string& command, bool multiline);
 
 CJsonNode g_ServerInfoToJson(CNetService service,
-        CNetService::EServiceType service_type,
         bool server_version_key);
 
 void g_SuspendNetSchedule(CNetScheduleAPI netschedule_api, bool pullback_mode);

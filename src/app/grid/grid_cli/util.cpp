@@ -192,37 +192,35 @@ CJsonNode SQueueInfoToJson::ExecOn(CNetServer server)
 }
 
 CJsonNode g_QueueInfoToJson(CNetScheduleAPI ns_api,
-        const string& queue_name, CNetService::EServiceType service_type)
+        const string& queue_name)
 {
     if (queue_name.empty()) {
         SQueueInfoToJson queue_info_proc("STAT QUEUES", "[queue ");
 
         return g_ExecToJson(queue_info_proc, ns_api.GetService(),
-                service_type, CNetService::eIncludePenalized);
+                CNetService::eIncludePenalized);
     }
 
     SSingleQueueInfoToJson single_queue_proc(ns_api.GetAdmin(), queue_name);
 
     return g_ExecToJson(single_queue_proc, ns_api.GetService(),
-            service_type, CNetService::eIncludePenalized);
+            CNetService::eIncludePenalized);
 }
 
-CJsonNode g_QueueClassInfoToJson(CNetScheduleAPI ns_api,
-        CNetService::EServiceType service_type)
+CJsonNode g_QueueClassInfoToJson(CNetScheduleAPI ns_api)
 {
     SQueueInfoToJson queue_info_proc("STAT QCLASSES", "[qclass ");
 
     return g_ExecToJson(queue_info_proc, ns_api.GetService(),
-            service_type, CNetService::eIncludePenalized);
+            CNetService::eIncludePenalized);
 }
 
-CJsonNode g_ReconfAndReturnJson(CNetScheduleAPI ns_api,
-        CNetService::EServiceType service_type)
+CJsonNode g_ReconfAndReturnJson(CNetScheduleAPI ns_api)
 {
     CExecAndParseStructuredOutput exec_and_parse_structured_output("RECO");
 
     return g_ExecToJson(exec_and_parse_structured_output,
-            ns_api.GetService(), service_type, CNetService::eIncludePenalized);
+            ns_api.GetService(), CNetService::eIncludePenalized);
 }
 
 void CJobInfoToJSON::ProcessJobMeta(const CNetScheduleKey& key)
@@ -772,12 +770,11 @@ CJsonNode SExecAnyCmdToJson::ExecOn(CNetServer server)
 }
 
 CJsonNode g_ExecAnyCmdToJson(CNetService service,
-        CNetService::EServiceType service_type,
         const string& command, bool multiline)
 {
     SExecAnyCmdToJson exec_any_cmd_proc(command, multiline);
 
-    return g_ExecToJson(exec_any_cmd_proc, service, service_type);
+    return g_ExecToJson(exec_any_cmd_proc, service);
 }
 
 struct SServerInfoToJson : public IExecToJson
@@ -798,13 +795,12 @@ CJsonNode SServerInfoToJson::ExecOn(CNetServer server)
 }
 
 CJsonNode g_ServerInfoToJson(CNetService service,
-        CNetService::EServiceType service_type,
         bool server_version_key)
 {
     SServerInfoToJson server_info_proc(server_version_key);
 
     return g_ExecToJson(server_info_proc, service,
-            service_type, CNetService::eIncludePenalized);
+            CNetService::eIncludePenalized);
 }
 
 void g_SuspendNetSchedule(CNetScheduleAPI netschedule_api, bool pullback_mode)

@@ -88,8 +88,7 @@ CAutomationObject* SNetStorageService::Create(const TArguments& args, CAutomatio
 {
     CNetStorage nst_api(s_GetInitString(args));
     CNetStorageAdmin nst_api_admin(nst_api);
-    return new SNetStorageService(automation_proc, nst_api_admin,
-            CNetService::eLoadBalancedService);
+    return new SNetStorageService(automation_proc, nst_api_admin);
 }
 
 CAutomationObject* SNetStorageServer::Create(const TArguments& args, CAutomationProc* automation_proc)
@@ -102,8 +101,8 @@ CAutomationObject* SNetStorageServer::Create(const TArguments& args, CAutomation
 
 SNetStorageService::SNetStorageService(
         CAutomationProc* automation_proc,
-        CNetStorageAdmin nst_api, CNetService::EServiceType type) :
-    SNetServiceBase(automation_proc, type),
+        CNetStorageAdmin nst_api) :
+    SNetServiceBase(automation_proc),
     m_NetStorageAdmin(nst_api)
 {
     GetService().SetEventHandler(
@@ -122,8 +121,7 @@ bool SNetStorageService::CEventHandler::OnWarning(
 SNetStorageServer::SNetStorageServer(
         CAutomationProc* automation_proc,
         CNetStorageAdmin nst_api, CNetServer::TInstance server) :
-    SNetStorageService(automation_proc, nst_api.GetServer(server),
-            CNetService::eSingleServerService)
+    SNetStorageService(automation_proc, nst_api.GetServer(server))
 {
     if (GetService().IsLoadBalanced()) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
@@ -234,7 +232,7 @@ void SNetStorageService::ExecServerInfo(const TArguments&, SInputOutput& io)
     CNetService service(m_NetStorageAdmin.GetService());
 
     CJsonNode response(g_ExecToJson(info_to_json, service,
-            m_ActualServiceType, CNetService::eIncludePenalized));
+            CNetService::eIncludePenalized));
     reply.Append(response);
 }
 

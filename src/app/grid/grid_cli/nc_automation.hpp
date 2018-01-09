@@ -84,7 +84,7 @@ struct SNetCacheService : public SNetService
 
 protected:
     SNetCacheService(CAutomationProc* automation_proc,
-            CNetICacheClientExt ic_api, CNetService::EServiceType type);
+            CNetICacheClientExt ic_api);
 
     CNetICacheClientExt m_NetICacheClient;
     CNetCacheAPI m_NetCacheAPI;

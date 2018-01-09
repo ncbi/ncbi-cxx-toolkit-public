@@ -164,7 +164,6 @@ public:
 extern NCBI_XCONNECT_EXPORT
 CJsonNode g_ExecToJson(IExecToJson& exec_to_json,
         CNetService service,
-        CNetService::EServiceType service_type,
         CNetService::EIterationMode iteration_mode = CNetService::eSortByLoad);
 
 /// This function is for use by the grid_cli utility only.

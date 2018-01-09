@@ -88,7 +88,7 @@ protected:
     CNetScheduleAPIExt m_NetScheduleAPI;
 
     SNetScheduleService(CAutomationProc* automation_proc,
-            CNetScheduleAPI ns_api, CNetService::EServiceType type);
+            CNetScheduleAPI ns_api);
 };
 
 struct SNetScheduleServer : public SNetScheduleService

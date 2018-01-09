@@ -41,7 +41,7 @@ const string SWorkerNode::kName = "wn";
 
 SWorkerNode::SWorkerNode(
         CAutomationProc* automation_proc, CNetScheduleAPI ns_api) :
-    SNetService(automation_proc, CNetService::eSingleServerService),
+    SNetService(automation_proc),
     m_NetScheduleAPI(ns_api)
 {
     m_WorkerNode = GetServer();
@@ -104,7 +104,7 @@ TCommands SWorkerNode::CallCommands()
 void SWorkerNode::ExecVersion(const TArguments&, SInputOutput& io)
 {
     auto& reply = io.reply;
-    reply.Append(g_ServerInfoToJson(GetService(), m_ActualServiceType, false));
+    reply.Append(g_ServerInfoToJson(GetService(), false));
 }
 
 void SWorkerNode::ExecWnInfo(const TArguments&, SInputOutput& io)

@@ -125,7 +125,7 @@ int CGridCommandLineInterfaceApp::Cmd_ServerInfo()
 
     if (m_Opts.output_format == eJSON)
         g_PrintJSON(stdout, g_ServerInfoToJson(service,
-                service.GetServiceType(), server_version_key));
+                server_version_key));
     else if (m_Opts.output_format == eRaw)
         service.PrintCmdOutput("VERSION", NcbiCout,
                 CNetService::eSingleLineOutput,
@@ -427,8 +427,7 @@ int CGridCommandLineInterfaceApp::Cmd_Reconf()
         return 0;
 
     case eNetScheduleAdmin:
-        g_PrintJSON(stdout, g_ReconfAndReturnJson(m_NetScheduleAPI,
-                m_NetScheduleAPI.GetService().GetServiceType()));
+        g_PrintJSON(stdout, g_ReconfAndReturnJson(m_NetScheduleAPI));
         return 0;
 
     case eNetStorageAdmin:
@@ -717,7 +716,6 @@ int CGridCommandLineInterfaceApp::Cmd_Exec()
                 CNetService::eSingleLineOutput);
     else // Output format is eJSON.
         g_PrintJSON(stdout, g_ExecAnyCmdToJson(service,
-                service.GetServiceType(),
                 m_Opts.command, IsOptionSet(eMultiline)));
 
     return 0;

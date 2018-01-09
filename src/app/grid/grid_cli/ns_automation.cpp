@@ -42,8 +42,8 @@ const string SNetScheduleServer::kName = "nssrv";
 
 SNetScheduleService::SNetScheduleService(
         CAutomationProc* automation_proc,
-        CNetScheduleAPI ns_api, CNetService::EServiceType type) :
-    SNetService(automation_proc, type),
+        CNetScheduleAPI ns_api) :
+    SNetService(automation_proc),
     m_NetScheduleAPI(ns_api)
 {
     GetService().SetEventHandler(
@@ -53,8 +53,7 @@ SNetScheduleService::SNetScheduleService(
 SNetScheduleServer::SNetScheduleServer(
         CAutomationProc* automation_proc,
         CNetScheduleAPIExt ns_api, CNetServer::TInstance server) :
-    SNetScheduleService(automation_proc, ns_api.GetServer(server),
-            CNetService::eSingleServerService)
+    SNetScheduleService(automation_proc, ns_api.GetServer(server))
 {
     if (GetService().IsLoadBalanced()) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
@@ -83,8 +82,7 @@ CAutomationObject* SNetScheduleService::Create(const TArguments& args, CAutomati
     CNetScheduleAPIExt ns_api(CNetScheduleAPIExt::CreateNoCfgLoad(
                 service_name, client_name, queue_name));
 
-    return new SNetScheduleService(automation_proc, ns_api,
-            CNetService::eLoadBalancedService);
+    return new SNetScheduleService(automation_proc, ns_api);
 }
 
 CCommand SNetScheduleServer::NewCommand()
@@ -310,19 +308,19 @@ void SNetScheduleService::ExecQueueInfo(const TArguments& args, SInputOutput& io
 
     auto& reply = io.reply;
     const auto queue_name = args["queue_name"].AsString();
-    reply.Append(g_QueueInfoToJson(m_NetScheduleAPI, queue_name, m_ActualServiceType));
+    reply.Append(g_QueueInfoToJson(m_NetScheduleAPI, queue_name));
 }
 
 void SNetScheduleService::ExecQueueClassInfo(const TArguments&, SInputOutput& io)
 {
     auto& reply = io.reply;
-    reply.Append(g_QueueClassInfoToJson(m_NetScheduleAPI, m_ActualServiceType));
+    reply.Append(g_QueueClassInfoToJson(m_NetScheduleAPI));
 }
 
 void SNetScheduleService::ExecReconf(const TArguments&, SInputOutput& io)
 {
     auto& reply = io.reply;
-    reply.Append(g_ReconfAndReturnJson(m_NetScheduleAPI, m_ActualServiceType));
+    reply.Append(g_ReconfAndReturnJson(m_NetScheduleAPI));
 }
 
 void SNetScheduleService::ExecSuspend(const TArguments& args, SInputOutput&)

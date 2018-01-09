@@ -191,8 +191,8 @@ bool SNetCacheService::CEventHandler::OnWarning(
 }
 
 SNetCacheService::SNetCacheService(CAutomationProc* automation_proc,
-        CNetICacheClientExt ic_api, CNetService::EServiceType type) :
-    SNetService(automation_proc, type),
+        CNetICacheClientExt ic_api) :
+    SNetService(automation_proc),
     m_NetICacheClient(ic_api),
     m_NetCacheAPI(ic_api.GetNetCacheAPI())
 {
@@ -201,8 +201,7 @@ SNetCacheService::SNetCacheService(CAutomationProc* automation_proc,
 
 SNetCacheServer::SNetCacheServer(CAutomationProc* automation_proc,
         CNetICacheClientExt ic_api, CNetServer::TInstance server) :
-    SNetCacheService(automation_proc, ic_api.GetServer(server),
-            CNetService::eSingleServerService)
+    SNetCacheService(automation_proc, ic_api.GetServer(server))
 {
     if (GetService().IsLoadBalanced()) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
@@ -229,8 +228,7 @@ CAutomationObject* SNetCacheService::Create(const TArguments& args, CAutomationP
     const auto cache_name   = args["cache_name"].AsString();
 
     CNetICacheClientExt ic_api(CNetICacheClient(service_name, cache_name, client_name));
-    return new SNetCacheService(automation_proc, ic_api,
-            CNetService::eLoadBalancedService);
+    return new SNetCacheService(automation_proc, ic_api);
 }
 
 CCommand SNetCacheServer::NewCommand()

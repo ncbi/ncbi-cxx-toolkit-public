@@ -85,7 +85,7 @@ protected:
     CNetStorageAdmin m_NetStorageAdmin;
 
     SNetStorageService(CAutomationProc* automation_proc,
-            CNetStorageAdmin nst_api, CNetService::EServiceType type);
+            CNetStorageAdmin nst_api);
 };
 
 struct SNetStorageServer : public SNetStorageService

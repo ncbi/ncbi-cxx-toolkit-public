@@ -355,7 +355,7 @@ void SNetServiceBase::ExecGetAddress(const TArguments& args, SInputOutput& io)
     auto& reply = io.reply;
     const auto which_part = args["which_part"].AsInteger<int>();
     SServerAddressToJson server_address_proc(which_part);
-    reply.Append(g_ExecToJson(server_address_proc, GetService(), m_ActualServiceType));
+    reply.Append(g_ExecToJson(server_address_proc, GetService()));
 }
 
 TCommands SNetService::CallCommands()
@@ -378,7 +378,7 @@ TCommands SNetService::CallCommands()
 void SNetService::ExecServerInfo(const TArguments&, SInputOutput& io)
 {
     auto& reply = io.reply;
-    reply.Append(g_ServerInfoToJson(GetService(), m_ActualServiceType, true));
+    reply.Append(g_ServerInfoToJson(GetService(), true));
 }
 
 void SNetService::ExecExec(const TArguments& args, SInputOutput& io)
@@ -388,7 +388,7 @@ void SNetService::ExecExec(const TArguments& args, SInputOutput& io)
     auto& reply = io.reply;
     const auto command   = args["command"].AsString();
     const auto multiline = args["multiline"].AsBoolean();
-    reply.Append(g_ExecAnyCmdToJson(GetService(), m_ActualServiceType, command, multiline));
+    reply.Append(g_ExecAnyCmdToJson(GetService(), command, multiline));
 }
 
 CAutomationProc::CAutomationProc(IMessageSender* message_sender) :
