@@ -59,7 +59,9 @@ struct SNetServerMultilineCmdOutputImpl : public CObject
     virtual ~SNetServerMultilineCmdOutputImpl();
 
     void SetNetCacheCompatMode() { m_NetCacheCompatMode = true; }
+    bool ReadLine(string& output);
 
+private:
     CNetServerConnection m_Connection;
 
     string m_FirstOutputLine;

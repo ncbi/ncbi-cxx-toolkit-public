@@ -62,25 +62,25 @@ SNetServerMultilineCmdOutputImpl::~SNetServerMultilineCmdOutputImpl()
         m_Connection->Close();
 }
 
-bool CNetServerMultilineCmdOutput::ReadLine(string& output)
+bool SNetServerMultilineCmdOutputImpl::ReadLine(string& output)
 {
-    _ASSERT(!m_Impl->m_ReadCompletely);
+    _ASSERT(!m_ReadCompletely);
 
-    if (!m_Impl->m_FirstLineConsumed) {
-        output = m_Impl->m_FirstOutputLine;
-        m_Impl->m_FirstOutputLine = kEmptyStr;
-        m_Impl->m_FirstLineConsumed = true;
-    } else if (!m_Impl->m_NetCacheCompatMode)
-        m_Impl->m_Connection->ReadCmdOutputLine(output, true);
+    if (!m_FirstLineConsumed) {
+        output = m_FirstOutputLine;
+        m_FirstOutputLine = kEmptyStr;
+        m_FirstLineConsumed = true;
+    } else if (!m_NetCacheCompatMode)
+        m_Connection->ReadCmdOutputLine(output, true);
     else {
         try {
-            m_Impl->m_Connection->ReadCmdOutputLine(output, true);
+            m_Connection->ReadCmdOutputLine(output, true);
         }
         catch (CNetSrvConnException& e) {
             if (e.GetErrCode() != CNetSrvConnException::eConnClosedByServer)
                 throw;
 
-            m_Impl->m_ReadCompletely = true;
+            m_ReadCompletely = true;
             return false;
         }
     }
@@ -88,9 +88,14 @@ bool CNetServerMultilineCmdOutput::ReadLine(string& output)
     if (output != END_OF_MULTILINE_OUTPUT)
         return true;
     else {
-        m_Impl->m_ReadCompletely = true;
+        m_ReadCompletely = true;
         return false;
     }
+}
+
+bool CNetServerMultilineCmdOutput::ReadLine(string& output)
+{
+    return m_Impl->ReadLine(output);
 }
 
 INetServerConnectionListener::TPropCreator INetServerConnectionListener::GetPropCreator() const
