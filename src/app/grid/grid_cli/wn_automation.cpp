@@ -46,7 +46,7 @@ SWorkerNode::SWorkerNode(
 {
     m_WorkerNode = GetServer();
 
-    if (GetService().GetServiceType() != CNetService::eSingleServerService) {
+    if (GetService().IsLoadBalanced()) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
                 "WorkerNode constructor: 'wn_address' "
                 "must be a host:port combination");

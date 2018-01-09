@@ -375,7 +375,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
 
     if (key.GetVersion() == 3) {
         /* Version 3 - no server address, only CRC32 of it: */
-        if (service.GetServiceType() != CNetService::eLoadBalancedService) {
+        if (!service.IsLoadBalanced()) {
             NCBI_THROW_FMT(CNetSrvConnException, eLBNameNotFound,
                 key.GetKey() << ": NetCache key version 3 "
                 "requires an LBSM service name.");

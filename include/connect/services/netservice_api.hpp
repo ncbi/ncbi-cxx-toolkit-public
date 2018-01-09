@@ -86,12 +86,6 @@ class NCBI_XCONNECT_EXPORT CNetService
 
     CNetServerPool GetServerPool();
 
-    enum EServiceType {
-        eServiceNotDefined,
-        eLoadBalancedService,
-        eSingleServerService
-    };
-
     enum EIterationMode {
         eSortByLoad,
         eRandomize,
@@ -112,7 +106,6 @@ class NCBI_XCONNECT_EXPORT CNetService
     CNetServiceIterator FindServer(INetServerFinder* finder,
         EIterationMode mode = eSortByLoad);
 
-    EServiceType GetServiceType() const;
     bool IsLoadBalanced() const;
 
     CNetServer::SExecResult FindServerAndExec(const string& cmd,

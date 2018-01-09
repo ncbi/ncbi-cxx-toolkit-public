@@ -293,6 +293,12 @@ private:
 
 struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
 {
+    enum EServiceType {
+        eServiceNotDefined,
+        eLoadBalancedService,
+        eSingleServerService
+    };
+
     class CTry;
     using IEventHandler = CNetService::IEventHandler;
 
@@ -336,6 +342,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
 
     unsigned GetConnectionMaxRetries() const { return m_ConnectionMaxRetries; }
     unsigned long GetConnectionRetryDelay() const { return m_ConnectionRetryDelay; }
+    bool IsLoadBalanced() const { return m_ServiceType == eLoadBalancedService; }
     shared_ptr<CTry> GetTryGuard();
 
     virtual ~SNetServiceImpl();
@@ -347,7 +354,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
     CNetServerPool m_ServerPool;
 
     string m_ServiceName;
-    CNetService::EServiceType m_ServiceType = CNetService::eServiceNotDefined;
+    EServiceType m_ServiceType = eServiceNotDefined;
 
     CFastMutex m_DiscoveryMutex;
     SDiscoveredServers* m_DiscoveredServers = nullptr;
