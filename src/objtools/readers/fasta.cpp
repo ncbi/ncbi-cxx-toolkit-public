@@ -342,15 +342,15 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(ILineErrorListener * pMessageListener)
         } else if (c == '[') {
             return x_ReadSegSet(pMessageListener);
         } else if (c == ']') {
-            if (need_defline) {
+             if (need_defline) {
                 FASTA_ERROR(LineNumber(), 
-                    "CFastaReader: Reached unexpected end of segmented set around line " << LineNumber(),
-                    CObjReaderParseException::eEOF );
+                            "CFastaReader: Reached unexpected end of segmented set around line " << LineNumber(),
+                            CObjReaderParseException::eEOF );
             }
-            break;
         }
 
         CTempString line = NStr::TruncateSpaces_Unsafe(*++GetLineReader());
+
         if (line.empty()) {
             continue; // ignore lines containing only whitespace
         }
