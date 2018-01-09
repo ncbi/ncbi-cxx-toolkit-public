@@ -69,15 +69,6 @@ CJsonNode CExecAndParseStructuredOutput::ExecOn(CNetServer server)
     return CJsonNode::ParseJSON(response);
 }
 
-CJsonNode g_ExecStructuredNetScheduleCmdToJson(CNetScheduleAPI ns_api,
-        const string& cmd, CNetService::EServiceType service_type)
-{
-    CExecAndParseStructuredOutput exec_and_parse_structured_output(cmd);
-
-    return g_ExecToJson(exec_and_parse_structured_output,
-            ns_api.GetService(), service_type, CNetService::eIncludePenalized);
-}
-
 CJsonNode g_LegacyStatToJson(CNetServer server, bool verbose)
 {
     const string stat_cmd(verbose ? "STAT ALL" : "STAT");
@@ -228,7 +219,10 @@ CJsonNode g_QueueClassInfoToJson(CNetScheduleAPI ns_api,
 CJsonNode g_ReconfAndReturnJson(CNetScheduleAPI ns_api,
         CNetService::EServiceType service_type)
 {
-    return g_ExecStructuredNetScheduleCmdToJson(ns_api, "RECO", service_type);
+    CExecAndParseStructuredOutput exec_and_parse_structured_output("RECO");
+
+    return g_ExecToJson(exec_and_parse_structured_output,
+            ns_api.GetService(), service_type, CNetService::eIncludePenalized);
 }
 
 void CJobInfoToJSON::ProcessJobMeta(const CNetScheduleKey& key)
