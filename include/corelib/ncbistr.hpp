@@ -3453,6 +3453,13 @@ private:
     {
         DoubleToString(out_str, value, -1, flags);
     }
+#ifdef NCBI_STRICT_GI
+    static inline void
+    x_NumericToString(string& out_str, const CStrictId64& value, TNumToStringFlags flags, int base)
+    {
+        x_NumericToString(out_str, TIntId(value), flags, base);
+    }
+#endif
 
 
 // Join
