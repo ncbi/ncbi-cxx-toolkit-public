@@ -429,7 +429,7 @@ void CLocusItem::x_SetTopology(CBioseqContext& ctx)
 
 // Division
 
-static CTempString x_GetDivisionProcIdx(CBioseqContext& ctx, const CBioseq_Handle& bsh,
+static CTempString x_GetDivisionProcIdx(const CBioseqContext& ctx, const CBioseq_Handle& bsh,
                                      bool is_prot, CMolInfo::TTech tech)
 
 {
@@ -765,7 +765,7 @@ static CTempString x_GetDivisionProc(const CBioseq_Handle& bsh, bool is_prot,
     return division;
 }
 
-string CLocusItem::GetDivision(const CBioseq_Handle& bsh)
+string CLocusItem::GetDivision(const CBioseq_Handle& bsh, const CBioseqContext* ctx)
 
 {
     if ( bsh.IsSetInst_Repr() && bsh.GetInst_Repr() == CSeq_inst::eRepr_delta) {
@@ -794,7 +794,6 @@ string CLocusItem::GetDivision(const CBioseq_Handle& bsh)
         }
     }
 
-    CBioseqContext* ctx = GetContext();
     if (ctx && ctx->UsingSeqEntryIndex()) {
         return x_GetDivisionProcIdx (*ctx, bsh, bsh.IsAa(), tech);
     }
