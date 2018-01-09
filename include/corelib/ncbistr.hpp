@@ -3328,6 +3328,14 @@ private:
     {
         return StringToDouble(str, flags);
     }
+#ifdef NCBI_STRICT_GI
+    template <typename TNumeric>
+    static typename enable_if< is_same<TNumeric, TGi>::value, TNumeric>::type
+    x_StringToNumeric(const CTempString str, TStringToNumFlags flags, int base)
+    {
+        return x_StringToNumeric<TIntId>(str, flags, base);
+    }
+#endif
 
     template <typename TNumeric>
     static typename enable_if< is_integral<TNumeric>::value && is_signed<TNumeric>::value && (sizeof(TNumeric) < sizeof(int)), bool>::type
@@ -3410,7 +3418,13 @@ private:
         *value = StringToDouble(str, flags);
         return (*value || !errno);
     }
-
+#ifdef NCBI_STRICT_GI
+    static bool
+    x_StringToNumeric(const CTempString str, TGi* value, TStringToNumFlags flags, int base)
+    {
+        return x_StringToNumeric(str, reinterpret_cast<TIntId*>(value), flags, base);
+    }
+#endif
 
 // NumericToString
     template<typename TNumeric>
@@ -3454,8 +3468,8 @@ private:
         DoubleToString(out_str, value, -1, flags);
     }
 #ifdef NCBI_STRICT_GI
-    static inline void
-    x_NumericToString(string& out_str, const CStrictId64& value, TNumToStringFlags flags, int base)
+    static void
+    x_NumericToString(string& out_str, TGi value, TNumToStringFlags flags, int base)
     {
         x_NumericToString(out_str, TIntId(value), flags, base);
     }

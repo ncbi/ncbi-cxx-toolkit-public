@@ -697,6 +697,16 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         }
       }
     }
+// TGi
+    {
+        TIntId id = 123;
+        TGi gi(id), gi2, gi3;
+        string s = NStr::NumericToString(gi);
+        gi2 = NStr::StringToNumeric<TGi>(s);
+        BOOST_CHECK(NStr::StringToNumeric(s, &gi3));
+        BOOST_CHECK(gi2 == gi);
+        BOOST_CHECK(gi2 == gi3);
+    }
 }
 
 struct SStringDoublePosixTest
