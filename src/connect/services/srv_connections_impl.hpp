@@ -214,6 +214,9 @@ struct SNetServerInPool : public CObject
 
     virtual ~SNetServerInPool();
 
+    void TryExec(SNetServerImpl* server, INetServerExecHandler& handler, STimeout* timeout);
+
+private:
     // Server throttling implementation.
     enum EConnOpResult {
         eCOR_Success,
@@ -226,6 +229,7 @@ struct SNetServerInPool : public CObject
     CNetServerConnection GetConnectionFromPool(SNetServerImpl* server);
     CNetServerConnection Connect(SNetServerImpl* server, STimeout* timeout);
 
+public:
     // A smart pointer to the server pool object that contains
     // this NetServer. Valid only when this object is returned
     // to an outside caller via ReturnServer() or GetServer().

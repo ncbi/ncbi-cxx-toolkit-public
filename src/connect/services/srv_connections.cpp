@@ -575,17 +575,17 @@ void SNetServerImpl::ConnectImpl(CSocket& socket, SConnectDeadline& deadline,
     NCBI_THROW(CNetSrvConnException, eConnectionFailure, os.str());
 }
 
-void SNetServerImpl::TryExec(INetServerExecHandler& handler,
+void SNetServerInPool::TryExec(SNetServerImpl* server, INetServerExecHandler& handler,
         STimeout* timeout)
 {
-    m_ServerInPool->CheckIfThrottled();
+    CheckIfThrottled();
 
     CNetServerConnection conn;
 
     // Silently reconnect if the connection was taken
     // from the pool and it was closed by the server
     // due to inactivity.
-    while ((conn = m_ServerInPool->GetConnectionFromPool(this)) != NULL) {
+    while ((conn = GetConnectionFromPool(server)) != NULL) {
         try {
             handler.Exec(conn, timeout);
             return;
@@ -595,21 +595,24 @@ void SNetServerImpl::TryExec(INetServerExecHandler& handler,
             if (err_code != CNetSrvConnException::eWriteFailure &&
                 err_code != CNetSrvConnException::eConnClosedByServer)
             {
-                m_ServerInPool->AdjustThrottlingParameters(
-                        SNetServerInPool::eCOR_Failure);
+                AdjustThrottlingParameters(eCOR_Failure);
                 throw;
             }
         }
     }
 
     try {
-        handler.Exec(m_ServerInPool->Connect(this, timeout), timeout);
+        handler.Exec(Connect(server, timeout), timeout);
     }
     catch (CNetSrvConnException&) {
-        m_ServerInPool->AdjustThrottlingParameters(
-                SNetServerInPool::eCOR_Failure);
+        AdjustThrottlingParameters(eCOR_Failure);
         throw;
     }
+}
+
+void SNetServerImpl::TryExec(INetServerExecHandler& handler, STimeout* timeout)
+{
+    return m_ServerInPool->TryExec(this, handler, timeout);
 }
 
 class CNetServerExecHandler : public INetServerExecHandler
