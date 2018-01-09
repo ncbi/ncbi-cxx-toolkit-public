@@ -901,36 +901,20 @@ bool CTL_LangCmd::Send()
 
     SetHasFailed(false);
 
-    if (m_DynamicID.empty()  &&  GetBindParamsImpl().NofParams() > 0
-        &&  GetQuery().find('?') != NPOS) {
-        m_DynamicID = NStr::NumericToString(reinterpret_cast<uintptr_t>(this),
-                                            0, 16);
-        CheckSFB(ct_dynamic(x_GetSybaseCmd(), CS_PREPARE,
-                            const_cast<char*>(m_DynamicID.data()),
-                            m_DynamicID.size(),
-                            const_cast<char*>(GetQuery().data()),
-                            GetQuery().size()),
-                 "ct_dynamic(CS_PREPARE) failed", 120002);
-        if ( !SendInternal() ) {
-            return false;
-        }
-        while (HasMoreResults()) {
-            unique_ptr<CDB_Result> r(Result());
-        }
-    }
-
-    if (m_DynamicID.empty()) {
+    CTempString dyn_id = x_GetDynamicID();
+    if (dyn_id.empty()) {
         CheckSFB(ct_command(x_GetSybaseCmd(), CS_LANG_CMD,
                             const_cast<char*>(GetQuery().data()),
                             GetQuery().size(), CS_END),
                  "ct_command failed", 120001);
+    } else if (dyn_id == "!") {
+        return false;
     } else {
         CheckSFB(ct_dynamic(x_GetSybaseCmd(), CS_EXECUTE,
-                            const_cast<char*>(m_DynamicID.data()),
-                            m_DynamicID.size(), NULL, 0),
+                            const_cast<char*>(dyn_id.data()), dyn_id.size(),
+                            NULL, 0),
                  "ct_dynamic(CS_EXECUTE) failed", 120004);
     }
-
 
     SetHasFailed(!x_AssignParams());
     CHECK_DRIVER_ERROR( HasFailed(), "Cannot assign the params." + GetDbgInfo(), 120003 );
@@ -1021,6 +1005,73 @@ bool CTL_LangCmd::x_AssignParams()
     return true;
 }
 
+
+CTempString CTL_LangCmd::x_GetDynamicID(void)
+{
+    CTempString query = GetQuery();
+    static const char kValid[] =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@$#_";
+    
+    if ( !m_DynamicID.empty() ) {
+        // Perhaps double check that we still want to use it?
+        return m_DynamicID;
+    }
+
+    if (GetBindParamsImpl().NofParams() == 0  ||  query.find('?') == NPOS) {
+        return kEmptyStr;
+    } else if (query.find('@') != NPOS) {
+        set<CTempString> used, found, not_found;
+        SIZE_TYPE pos = query.find('@');
+        do {
+            SIZE_TYPE pos2 = query.find_first_not_of(kValid, pos);
+            if (pos2 == NPOS) {
+                used.insert(query.substr(pos));
+                break;
+            } else {
+                used.insert(query.substr(pos, pos2 - pos));
+                pos = query.find('@', pos2);
+            }
+        } while (pos != NPOS);
+        for (unsigned int i = 0;  i < GetBindParamsImpl().NofParams();  i++) {
+            if (GetBindParamsImpl().GetParamStatus(i) == 0) continue;
+            const string& name = GetBindParamsImpl().GetParamName(i);
+            if (used.find(name) == used.end()) {
+                not_found.insert(name);
+            } else {
+                found.insert(name);
+            }
+        }
+        if (not_found.empty()) {
+            ERR_POST_X(7, Info << "Query " << NStr::CEncode(query)
+                       << " contains both ? and @.  Treating @ as the"
+                       " parameter indicator because all supplied parameter"
+                       " names appear: "
+                       << NStr::Join(found, ", "));
+            return kEmptyStr;
+        } else {
+            ERR_POST_X(8, Info << "Query " << NStr::CEncode(query)
+                       << " contains both ? and @.  Treating ? as the"
+                       " parameter indicator because some or all supplied"
+                       " parameter names are absent: "
+                       << NStr::Join(not_found, ", "));
+        }
+    }
+    
+    m_DynamicID = NStr::NumericToString(reinterpret_cast<uintptr_t>(this),
+                                        0, 16);
+    CheckSFB(ct_dynamic(x_GetSybaseCmd(), CS_PREPARE,
+                        const_cast<char*>(m_DynamicID.data()),
+                        m_DynamicID.size(),
+                        const_cast<char*>(query.data()), query.size()),
+             "ct_dynamic(CS_PREPARE) failed", 120002);
+    if ( !SendInternal() ) {
+        return "!";
+    }
+    while (HasMoreResults()) {
+        unique_ptr<CDB_Result> r(Result());
+    }
+    return m_DynamicID;
+}
 
 #ifdef FTDS_IN_USE
 } // namespace NCBI_NS_FTDS_CTLIB

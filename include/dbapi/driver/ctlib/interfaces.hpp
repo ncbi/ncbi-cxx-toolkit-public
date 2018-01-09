@@ -821,6 +821,7 @@ protected:
 
 private:
     bool x_AssignParams(void);
+    CTempString x_GetDynamicID(void);
 
     string m_DynamicID;
 };
