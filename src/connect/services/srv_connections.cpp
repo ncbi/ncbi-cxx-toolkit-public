@@ -445,27 +445,28 @@ string CNetServer::GetServerAddress() const
     return m_Impl->m_ServerInPool->m_Address.AsString();
 }
 
-CNetServerConnection SNetServerImpl::GetConnectionFromPool()
+
+CNetServerConnection SNetServerInPool::GetConnectionFromPool(SNetServerImpl* server)
 {
     for (;;) {
-        TFastMutexGuard guard(m_ServerInPool->m_FreeConnectionListLock);
+        TFastMutexGuard guard(m_FreeConnectionListLock);
 
-        if (m_ServerInPool->m_FreeConnectionListSize == 0)
+        if (m_FreeConnectionListSize == 0)
             return NULL;
 
         // Get an existing connection object from the connection pool.
-        CNetServerConnection conn = m_ServerInPool->m_FreeConnectionListHead;
+        CNetServerConnection conn = m_FreeConnectionListHead;
 
-        m_ServerInPool->m_FreeConnectionListHead = conn->m_NextFree;
-        --m_ServerInPool->m_FreeConnectionListSize;
-        conn->m_Server = this;
+        m_FreeConnectionListHead = conn->m_NextFree;
+        --m_FreeConnectionListSize;
+        conn->m_Server = server;
 
         guard.Release();
 
         // Check if the socket is already connected.
         if (conn->m_Socket.GetStatus(eIO_Open) != eIO_Success ||
                 conn->m_Generation !=
-                        m_ServerInPool->m_CurrentConnectionGeneration.Get())
+                        m_CurrentConnectionGeneration.Get())
             continue;
 
         SSOCK_Poll conn_socket_poll_struct = {
@@ -585,7 +586,7 @@ void SNetServerImpl::TryExec(INetServerExecHandler& handler,
     // Silently reconnect if the connection was taken
     // from the pool and it was closed by the server
     // due to inactivity.
-    while ((conn = GetConnectionFromPool()) != NULL) {
+    while ((conn = m_ServerInPool->GetConnectionFromPool(this)) != NULL) {
         try {
             handler.Exec(conn, timeout);
             return;

@@ -223,6 +223,7 @@ struct SNetServerInPool : public CObject
     void AdjustThrottlingParameters(EConnOpResult op_result);
     void CheckIfThrottled();
     void ResetThrottlingParameters();
+    CNetServerConnection GetConnectionFromPool(SNetServerImpl* server);
 
     // A smart pointer to the server pool object that contains
     // this NetServer. Valid only when this object is returned
@@ -277,8 +278,6 @@ struct SNetServerImpl : public CObject
         m_ServerInPool(server_in_pool)
     {
     }
-
-    CNetServerConnection GetConnectionFromPool();
 
     void TryExec(INetServerExecHandler& handler,
             STimeout* timeout = NULL);
