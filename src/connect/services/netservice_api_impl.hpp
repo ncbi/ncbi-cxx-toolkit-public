@@ -118,6 +118,7 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
 
     SNetServerInPool* FindOrCreateServerImpl(const SServerAddress& server_address);
     CRef<SNetServerInPool> ReturnServer(SNetServerInPool* server_impl);
+    CNetServer GetServer(SNetServiceImpl* service, const SServerAddress& server_address);
 
     void ResetServerConnections();
     const SThrottleParams& GetThrottleParams() const { return m_ThrottleParams; }

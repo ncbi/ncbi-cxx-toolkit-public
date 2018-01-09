@@ -810,19 +810,21 @@ CRef<SNetServerInPool> SNetServerPoolImpl::ReturnServer(
     return CRef<SNetServerInPool>(server_impl);
 }
 
+CNetServer SNetServerPoolImpl::GetServer(SNetServiceImpl* service, const SServerAddress& server_address)
+{
+    m_RebalanceStrategy->OnResourceRequested();
+
+    CFastMutexGuard server_mutex_lock(m_ServerMutex);
+
+    SNetServerInPool* server = FindOrCreateServerImpl(m_EnforcedServer.host == 0 ? server_address : m_EnforcedServer);
+    server->m_ServerPool = this;
+
+    return new SNetServerImpl(service, server);
+}
+
 CNetServer SNetServiceImpl::GetServer(const SServerAddress& server_address)
 {
-    m_ServerPool->m_RebalanceStrategy->OnResourceRequested();
-
-    CFastMutexGuard server_mutex_lock(m_ServerPool->m_ServerMutex);
-
-    SNetServerInPool* server = m_ServerPool->FindOrCreateServerImpl(
-            m_ServerPool->m_EnforcedServer.host == 0 ?
-            server_address : m_ServerPool->m_EnforcedServer);
-
-    server->m_ServerPool = m_ServerPool;
-
-    return new SNetServerImpl(this, server);
+    return m_ServerPool->GetServer(this, server_address);
 }
 
 CNetServer CNetService::GetServer(const string& host,
