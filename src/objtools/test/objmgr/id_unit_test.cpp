@@ -701,7 +701,109 @@ BOOST_AUTO_TEST_CASE(CheckNAZoom10)
 }
 
 
+static CRef<CBioseq> s_MakeTemporaryDelta(const CSeq_loc& loc, CScope& scope)
+
+{
+    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
+    CRef<CBioseq> seq(new CBioseq());
+    // TODO: Need to make thread-safe unique seq-id
+    seq->SetId().push_back(CRef<CSeq_id>(new CSeq_id("lcl|temporary_delta")));
+    seq->SetInst().Assign(bsh.GetInst());
+    seq->SetInst().ResetSeq_data();
+    seq->SetInst().SetRepr(CSeq_inst::eRepr_delta);
+    CRef<CDelta_seq> element(new CDelta_seq());
+    element->SetLoc().Assign(loc);
+    seq->SetInst().ResetExt();
+    seq->SetInst().SetExt().SetDelta().Set().push_back(element);
+    seq->SetInst().ResetLength();
+    return seq;
+}
+ 
+ 
+BOOST_AUTO_TEST_CASE(Test_DeltaSAnnot)
+{
+    // set up objmgr with fetching
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*objmgr);
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+ 
+    CRef<CSeq_loc> loc(new CSeq_loc());
+    loc->SetInt().SetId().SetOther().SetAccession("NC_000019");
+    loc->SetInt().SetId().SetOther().SetVersion(10);
+    loc->SetInt().SetFrom(50000);
+    loc->SetInt().SetTo(100000);
+ 
+    CRef<CBioseq> delta = s_MakeTemporaryDelta(*loc, scope);
+ 
+    CBioseq_Handle delta_bsh = scope.AddBioseq(*delta);
+    //LOG_POST("Bioseq: "<<MSerial_AsnText<<*delta_bsh.GetCompleteBioseq());
+ 
+    SAnnotSelector sel_cpy;
+    sel_cpy.SetResolveAll();
+    sel_cpy.SetAdaptiveDepth(true);
+    sel_cpy.ExcludeFeatSubtype(CSeqFeatData::eSubtype_variation);
+    sel_cpy.ExcludeFeatSubtype(CSeqFeatData::eSubtype_STS);
+    CFeat_CI it(delta_bsh, sel_cpy);
+    size_t num_feat = 0;
+    while (it) {
+        //LOG_POST("Feature: "<<MSerial_AsnText<<*it->GetSeq_feat());
+        ++num_feat;
+        CSeqFeatData::ESubtype subtype = it->GetData().GetSubtype();
+        if (it->GetSeq_feat()->GetLocation().IsInt()) {
+            const CSeq_id& id = it->GetOriginalSeq_feat()->GetLocation().GetInt().GetId();
+            CBioseq_Handle local_bsh = scope.GetBioseqHandle(id);
+            ITERATE(CBioseq_Handle::TId, id_it, local_bsh.GetId()) {
+                string label;
+                id_it->GetSeqId()->GetLabel(&label);
+                TSeqPos start = it->GetLocation().GetStart(eExtreme_Biological);
+                TSeqPos stop = it->GetLocation().GetStop(eExtreme_Biological);
+            }
+            TSeqPos start = it->GetLocation().GetStart(eExtreme_Biological);
+            TSeqPos stop = it->GetLocation().GetStop(eExtreme_Biological);
+        }
+        ++it;
+    }
+ 
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_HUP)
+{
+    // set up objmgr with fetching
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    string gb_main = CGBDataLoader::RegisterInObjectManager(*objmgr).GetLoader()->GetName();
+    BOOST_REQUIRE_EQUAL(gb_main, "GBLOADER");
+    string gb_hup = CGBDataLoader::RegisterInObjectManager(*objmgr, CGBDataLoader::eIncludeHUP).GetLoader()->GetName();
+    BOOST_REQUIRE_EQUAL(gb_hup, "GBLOADER-HUP");
+
+    CSeq_id_Handle id_main = CSeq_id_Handle::GetHandle("NC_000001");
+    CSeq_id_Handle id_hup = CSeq_id_Handle::GetHandle("AY263392");
+    {{
+        CScope scope(*objmgr);
+        scope.AddDataLoader(gb_hup);
+        BOOST_REQUIRE(scope.GetBioseqHandle(id_hup));
+        BOOST_REQUIRE(scope.GetBioseqHandle(id_main));
+    }}
+
+    {{
+        CScope scope(*objmgr);
+        scope.AddDefaults();
+        
+        BOOST_REQUIRE(!scope.GetBioseqHandle(id_hup));
+        scope.AddDataLoader(gb_hup);
+        BOOST_REQUIRE(scope.GetBioseqHandle(id_hup));
+        BOOST_REQUIRE(scope.GetBioseqHandle(id_main));
+        scope.RemoveDataLoader(gb_hup);
+        BOOST_REQUIRE(!scope.GetBioseqHandle(id_hup));
+    }}
+    
+    objmgr->RevokeDataLoader(gb_hup);
+}
+
+
 NCBITEST_INIT_TREE()
 {
     NCBITEST_DISABLE(CheckAll);
+    NCBITEST_DISABLE(CheckExtHPRD);
 }
