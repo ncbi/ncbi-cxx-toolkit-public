@@ -313,9 +313,11 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         // int
         try {
             errno = kTestErrno;
-            int value = NStr::StringToInt(str, flags);
+            int value = NStr::StringToInt(str, flags), v2;
             CHECK_ERRNO;
             BOOST_CHECK_EQUAL(value, NStr::StringToNumeric<int>(str, flags));
+            BOOST_CHECK(NStr::StringToNumeric(str, &v2, flags));
+            BOOST_CHECK_EQUAL(v2, value);
             BOOST_CHECK(test->IsGoodInt());
             BOOST_CHECK_EQUAL(value, test->i);
             if (allow_same_test) {
@@ -354,9 +356,11 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         // unsigned int
         try {
             errno = kTestErrno;
-            unsigned int value = NStr::StringToUInt(str, flags);
+            unsigned int value = NStr::StringToUInt(str, flags), v2;
             CHECK_ERRNO;
             BOOST_CHECK_EQUAL(value, NStr::StringToNumeric<unsigned int>(str, flags));
+            BOOST_CHECK(NStr::StringToNumeric(str, &v2, flags));
+            BOOST_CHECK_EQUAL(v2, value);
             BOOST_CHECK(test->IsGoodUInt());
             BOOST_CHECK_EQUAL(value, test->u);
             if (allow_same_test) {
@@ -395,9 +399,11 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         // long
         try {
             errno = kTestErrno;
-            long value = NStr::StringToLong(str, flags);
+            long value = NStr::StringToLong(str, flags), v2;
             CHECK_ERRNO;
             BOOST_CHECK_EQUAL(value, NStr::StringToNumeric<long>(str, flags));
+            BOOST_CHECK(NStr::StringToNumeric(str, &v2, flags));
+            BOOST_CHECK_EQUAL(v2, value);
 
             #if (SIZEOF_LONG == SIZEOF_INT)
                 BOOST_CHECK(test->IsGoodInt());
@@ -463,9 +469,11 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         // unsigned long
         try {
             errno = kTestErrno;
-            unsigned long value = NStr::StringToULong(str, flags);
+            unsigned long value = NStr::StringToULong(str, flags), v2;
             CHECK_ERRNO;
             BOOST_CHECK_EQUAL(value, NStr::StringToNumeric<unsigned long>(str, flags));
+            BOOST_CHECK(NStr::StringToNumeric(str, &v2, flags));
+            BOOST_CHECK_EQUAL(v2, value);
             #if (SIZEOF_LONG == SIZEOF_INT)
                 BOOST_CHECK(test->IsGoodUInt());
                 BOOST_CHECK_EQUAL(value, test->u);
@@ -530,9 +538,11 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         // Int8
         try {
             errno = kTestErrno;
-            Int8 value = NStr::StringToInt8(str, flags);
+            Int8 value = NStr::StringToInt8(str, flags), v2;
             CHECK_ERRNO;
             BOOST_CHECK_EQUAL(value, NStr::StringToNumeric<Int8>(str, flags));
+            BOOST_CHECK(NStr::StringToNumeric(str, &v2, flags));
+            BOOST_CHECK_EQUAL(v2, value);
             BOOST_CHECK(test->IsGoodInt8());
             BOOST_CHECK_EQUAL(value, test->i8);
             if (allow_same_test) {
@@ -571,9 +581,11 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         // Uint8
         try {
             errno = kTestErrno;
-            Uint8 value = NStr::StringToUInt8(str, flags);
+            Uint8 value = NStr::StringToUInt8(str, flags), v2;
             CHECK_ERRNO;
             BOOST_CHECK_EQUAL(value, NStr::StringToNumeric<Uint8>(str, flags));
+            BOOST_CHECK(NStr::StringToNumeric(str, &v2, flags));
+            BOOST_CHECK_EQUAL(v2, value);
             BOOST_CHECK(test->IsGoodUInt8());
             BOOST_CHECK_EQUAL(value, test->u8);
             if (allow_same_test) {

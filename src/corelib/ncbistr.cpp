@@ -6104,6 +6104,22 @@ CTempString NStr::GetField_Unsafe(const CTempString str,
          merge);
 }
 
+bool NStr::x_ReportLimitsError(const CTempString str, TStringToNumFlags flags)
+{
+    if (flags & NStr::fConvErr_NoThrow) {
+//            if ((flags & fConvErr_NoErrno) == 0) {
+        if (flags & fConvErr_NoErrMessage) {
+            CNcbiError::SetErrno(errno = ERANGE);
+        } else {
+            CNcbiError::SetErrno(errno = ERANGE, str);
+        }
+//            }
+        return false;
+    } else {
+        NCBI_THROW2(CStringException, eConvert, 
+            "NStr::StringToNumeric overflow", 0);
+    }
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
