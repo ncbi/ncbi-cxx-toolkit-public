@@ -3304,13 +3304,13 @@ private:
         return StringToULong(str, flags, base);
     }
     template <typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_signed<TNumeric>::value && (sizeof(TNumeric) > sizeof(long)), TNumeric>::type
+    static typename enable_if< is_integral<TNumeric>::value && is_signed<TNumeric>::value && (sizeof(TNumeric) > sizeof(long) || is_same<TNumeric, long long>::value), TNumeric>::type
     x_StringToNumeric(const CTempString str, TStringToNumFlags flags, int base)
     {
         return StringToInt8(str, flags, base);
     }
     template <typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_unsigned<TNumeric>::value && (sizeof(TNumeric) > sizeof(unsigned long)), TNumeric>::type
+    static typename enable_if< is_integral<TNumeric>::value && is_unsigned<TNumeric>::value && (sizeof(TNumeric) > sizeof(unsigned long) || is_same<TNumeric, unsigned long long>::value), TNumeric>::type
     x_StringToNumeric(const CTempString str, TStringToNumFlags flags, int base)
     {
         return StringToUInt8(str, flags, base);
@@ -3388,14 +3388,14 @@ private:
         return (*value || !errno);
     }
     template <typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_signed<TNumeric>::value && (sizeof(TNumeric) > sizeof(long)), bool>::type
+    static typename enable_if< is_integral<TNumeric>::value && is_signed<TNumeric>::value && (sizeof(TNumeric) > sizeof(long) || is_same<TNumeric, long long>::value), bool>::type
     x_StringToNumeric(const CTempString str, TNumeric* value, TStringToNumFlags flags, int base)
     {
         *value = StringToInt8(str, flags, base);
         return (*value || !errno);
     }
     template <typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_unsigned<TNumeric>::value && (sizeof(TNumeric) > sizeof(unsigned long)), bool>::type
+    static typename enable_if< is_integral<TNumeric>::value && is_unsigned<TNumeric>::value && (sizeof(TNumeric) > sizeof(unsigned long) || is_same<TNumeric, unsigned long long>::value), bool>::type
     x_StringToNumeric(const CTempString str, TNumeric* value, TStringToNumFlags flags, int base)
     {
         *value = StringToUInt8(str, flags, base);
@@ -3450,13 +3450,13 @@ private:
         ULongToString(out_str, value, flags, base);
     }
     template<typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_signed<TNumeric>::value && (sizeof(TNumeric) > sizeof(long)), void>::type
+    static typename enable_if< is_integral<TNumeric>::value && is_signed<TNumeric>::value && (sizeof(TNumeric) > sizeof(long) || is_same<TNumeric, long long>::value), void>::type
     x_NumericToString(string& out_str, TNumeric value, TNumToStringFlags flags, int base)
     {
         Int8ToString(out_str, value, flags, base);
     }
     template<typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_unsigned<TNumeric>::value && (sizeof(TNumeric) > sizeof(unsigned long)), void>::type
+    static typename enable_if< is_integral<TNumeric>::value && is_unsigned<TNumeric>::value && (sizeof(TNumeric) > sizeof(unsigned long) || is_same<TNumeric, unsigned long long>::value), void>::type
     x_NumericToString(string& out_str, TNumeric value, TNumToStringFlags flags, int base)
     {
         UInt8ToString(out_str, value, flags, base);

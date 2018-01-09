@@ -707,6 +707,14 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         BOOST_CHECK(gi2 == gi);
         BOOST_CHECK(gi2 == gi3);
     }
+    {
+        unsigned long long n1 = 456, n2, n3;
+        string s = NStr::NumericToString(n1);
+        n2 = NStr::StringToNumeric<unsigned long long>(s);
+        BOOST_CHECK(NStr::StringToNumeric(s, &n3));
+        BOOST_CHECK(n2 == n1);
+        BOOST_CHECK(n2 == n3);
+    }
 }
 
 struct SStringDoublePosixTest
