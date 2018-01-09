@@ -2331,6 +2331,8 @@ private:
                         const string&            message);
     // Start request or report error if one is already running
     static void x_StartRequest(void);
+    // Log environment and registry variables as an extra message.
+    static void x_LogEnvironment(void);
 
     typedef map<string, string> TProperties;
     friend class CDiagContext_Extra;

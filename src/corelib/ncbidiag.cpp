@@ -402,7 +402,7 @@ typedef NCBI_PARAM_TYPE(Log, NoCreate) TLogNoCreate;
 
 
 // Logging of environment variables: space separated list of names which
-// should be logged after each request start.
+// should be logged after app start and after each request start.
 NCBI_PARAM_DECL(string, Log, LogEnvironment);
 NCBI_PARAM_DEF_EX(string, Log, LogEnvironment, "",
                   eParam_NoThread,
@@ -1995,6 +1995,8 @@ void CDiagContext::PrintStart(const string& message)
         ex.Flush();
     }
 
+    x_LogEnvironment();
+
     // Log hit id if already available.
     x_GetDefaultHitID(eHitID_NoCreate);
 }
@@ -2867,7 +2869,12 @@ void CDiagContext::x_StartRequest(void)
     }
 
     ctx.StartRequest();
+    x_LogEnvironment();
+}
 
+
+void CDiagContext::x_LogEnvironment(void)
+{
     // Print selected environment and registry values.
     static CSafeStatic<TLogEnvironment> s_LogEnvironment;
     string log_args = s_LogEnvironment->Get();
