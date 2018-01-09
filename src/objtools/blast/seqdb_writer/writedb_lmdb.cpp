@@ -249,7 +249,7 @@ void CWriteDB_LMDB::x_CreateOidToSeqidsLookupFile()
 	Uint8 total_num_oids = m_list.back().oid + 1;
 	string filename = GetFileNameFromExistingLMDBFile(m_Db, ELMDBFileType::eOid2SeqIds);
 	Uint8 offset = 0;
-	CNcbiOfstream os(filename.c_str());
+	CNcbiOfstream os(filename.c_str(), IOS_BASE::out | IOS_BASE::binary);
 	vector<Uint4> offsets(total_num_oids, 0);
 
 	os.write((char *)&total_num_oids, 8);
@@ -385,7 +385,7 @@ void CWriteDB_TaxID::x_CreateOidToTaxIdsLookupFile()
 	Uint8 total_num_oids = m_TaxId2OidList.back().value + 1;
 	string filename = GetFileNameFromExistingLMDBFile(m_Db, ELMDBFileType::eOid2TaxIds);
 	Uint8 offset = 0;
-	CNcbiOfstream os(filename.c_str());
+	CNcbiOfstream os(filename.c_str(), IOS_BASE::out | IOS_BASE::binary);
 	vector<Uint4> offsets(total_num_oids, 0);
 
 	os.write((char *)&total_num_oids, 8);
@@ -437,7 +437,7 @@ void CWriteDB_TaxID::x_CreateTaxIdToOidsLookupFile()
 {
     sort (m_TaxId2OidList.begin(), m_TaxId2OidList.end(), SKeyValuePair<blastdb::TOid>::cmp_key);
 	string filename = GetFileNameFromExistingLMDBFile(m_Db, ELMDBFileType::eTaxId2Oids);
-	CNcbiOfstream os(filename.c_str());
+	CNcbiOfstream os(filename.c_str(), IOS_BASE::out | IOS_BASE::binary);
 	Uint8 offset =0;
 
 	vector<blastdb::TOid> tmp_oids;
