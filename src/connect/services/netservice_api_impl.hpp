@@ -298,42 +298,11 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
 
     // Construct a new object.
     SNetServiceImpl(const string& api_name, const string& service_name, const string& client_name,
-            INetServerConnectionListener* listener, bool old_style_auth = false) :
-        m_Listener(listener),
-        m_ServerPool(new SNetServerPoolImpl(listener, old_style_auth)),
-        m_ServiceName(service_name),
-        m_APIName(api_name),
-        m_ClientName(client_name)
-    {
-    }
+            INetServerConnectionListener* listener, bool old_style_auth = false);
 
     // Constructors for 'spawning'.
-    SNetServiceImpl(SNetServerInPool* server, SNetServiceImpl* prototype) :
-        m_Listener(prototype->m_Listener->Clone()),
-        m_ServerPool(prototype->m_ServerPool),
-        m_ServiceName(server->m_Address.AsString()),
-        m_APIName(prototype->m_APIName),
-        m_ClientName(prototype->m_ClientName),
-        m_UseSmartRetries(prototype->m_UseSmartRetries),
-        m_ConnectionMaxRetries(prototype->m_ConnectionMaxRetries),
-        m_ConnectionRetryDelay(prototype->m_ConnectionRetryDelay),
-        m_NetInfo(prototype->m_NetInfo)
-    {
-        Construct(server);
-    }
-    SNetServiceImpl(const string& service_name, SNetServiceImpl* prototype) :
-        m_Listener(prototype->m_Listener->Clone()),
-        m_ServerPool(prototype->m_ServerPool),
-        m_ServiceName(service_name),
-        m_APIName(prototype->m_APIName),
-        m_ClientName(prototype->m_ClientName),
-        m_UseSmartRetries(prototype->m_UseSmartRetries),
-        m_ConnectionMaxRetries(prototype->m_ConnectionMaxRetries),
-        m_ConnectionRetryDelay(prototype->m_ConnectionRetryDelay),
-        m_NetInfo(prototype->m_NetInfo)
-    {
-        Construct();
-    }
+    SNetServiceImpl(SNetServerInPool* server, SNetServiceImpl* prototype);
+    SNetServiceImpl(const string& service_name, SNetServiceImpl* prototype);
 
     void Construct(SNetServerInPool* server);
     void Construct();
