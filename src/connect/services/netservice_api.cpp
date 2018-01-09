@@ -311,19 +311,18 @@ bool SNetServiceIterator_Weighted::Prev()
     return true;
 }
 
-SNetServerPoolImpl::SNetServerPoolImpl(INetServerConnectionListener* listener,
-        bool old_style_auth) :
+SNetServerPoolImpl::SNetServerPoolImpl(INetServerConnectionListener* listener) :
     m_PropCreator(listener->GetPropCreator()),
     m_EnforcedServer(0, 0),
     m_MaxTotalTime(CTimeout::eInfinite),
-    m_UseOldStyleAuth(old_style_auth)
+    m_UseOldStyleAuth(false)
 {
 }
 
 SNetServiceImpl::SNetServiceImpl(const string& api_name, const string& service_name, const string& client_name,
-        INetServerConnectionListener* listener, bool old_style_auth) :
+        INetServerConnectionListener* listener) :
     m_Listener(listener),
-    m_ServerPool(new SNetServerPoolImpl(listener, old_style_auth)),
+    m_ServerPool(new SNetServerPoolImpl(listener)),
     m_ServiceName(service_name),
     m_APIName(api_name),
     m_ClientName(client_name)

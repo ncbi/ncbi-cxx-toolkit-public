@@ -111,8 +111,7 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
     };
 
     // Construct a new object.
-    SNetServerPoolImpl(INetServerConnectionListener* listener,
-            bool old_style_auth);
+    SNetServerPoolImpl(INetServerConnectionListener* listener);
 
     void Init(CSynRegistry& registry, const SRegSynonyms& sections);
 
@@ -304,7 +303,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
 
     // Construct a new object.
     SNetServiceImpl(const string& api_name, const string& service_name, const string& client_name,
-            INetServerConnectionListener* listener, bool old_style_auth = false);
+            INetServerConnectionListener* listener);
 
     // Constructors for 'spawning'.
     SNetServiceImpl(SNetServerInPool* server, SNetServiceImpl* prototype);
