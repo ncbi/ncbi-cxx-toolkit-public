@@ -945,15 +945,16 @@ void CFlatGatherer::x_UnverifiedComment(CBioseqContext& ctx) const
         return;
     }
 
-    static const string kUnverifiedPrefix = "GenBank staff is unable to verify ";
-    static const string kUnverifiedSuffix = " provided by the submitter.";
-
     typedef SStaticPair<CBioseqContext::TUnverified, const char*> TUnverifiedElem;
     static const TUnverifiedElem sc_unverified_map[] = {
-        { CBioseqContext::fUnverified_Organism,              "source organism" },
-        { CBioseqContext::fUnverified_SequenceOrAnnotation,  "sequence and/or annotation" },
-        { CBioseqContext::fUnverified_Misassembled,          "sequence assembly" },
-        { CBioseqContext::fUnverified_Contaminant,           "contaminant" }
+        { CBioseqContext::fUnverified_Organism,
+            "GenBank staff is unable to verify source organism provided by the submitter." },
+        { CBioseqContext::fUnverified_SequenceOrAnnotation,
+            "GenBank staff is unable to verify sequence and/or annotation provided by the submitter." },
+        { CBioseqContext::fUnverified_Misassembled,
+            "GenBank staff is unable to verify sequence assembly provided by the submitter." },
+        { CBioseqContext::fUnverified_Contaminant,
+            "GenBank staff has noted that the sequence(s) may be contaminated." }
     };
     typedef CStaticArrayMap<CBioseqContext::TUnverified, const char*> TUnverifiedMap;
     DEFINE_STATIC_ARRAY_MAP(TUnverifiedMap, sc_UnverifiedMap, sc_unverified_map);
@@ -981,7 +982,7 @@ void CFlatGatherer::x_UnverifiedComment(CBioseqContext& ctx) const
         type_string = "[ERROR:what?]";
     }
 
-    x_AddComment( new CCommentItem(kUnverifiedPrefix + type_string + kUnverifiedSuffix, ctx) );
+    x_AddComment( new CCommentItem(type_string, ctx) );
 }
 
 void CFlatGatherer::x_MapComment(CBioseqContext& ctx) const
