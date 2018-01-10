@@ -722,6 +722,7 @@ static CRef<CBioseq> s_MakeTemporaryDelta(const CSeq_loc& loc, CScope& scope)
  
 BOOST_AUTO_TEST_CASE(Test_DeltaSAnnot)
 {
+    LOG_POST("Checking DeltaSAnnot");
     // set up objmgr with fetching
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*objmgr);
@@ -770,6 +771,7 @@ BOOST_AUTO_TEST_CASE(Test_DeltaSAnnot)
 
 BOOST_AUTO_TEST_CASE(Test_HUP)
 {
+    LOG_POST("Checking HUP access");
     // set up objmgr with fetching
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     string gb_main = CGBDataLoader::RegisterInObjectManager(*objmgr).GetLoader()->GetName();
@@ -799,6 +801,51 @@ BOOST_AUTO_TEST_CASE(Test_HUP)
     }}
     
     objmgr->RevokeDataLoader(gb_hup);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestHistory)
+{
+    LOG_POST("Checking CScope::ResetHistory()");
+    // set up objmgr with fetching
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*objmgr);
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    SAnnotSelector sel;
+    sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_variation);
+    for ( int t = 0; t < 2; ++t ) {
+        vector <CSeq_feat_Handle> h1;
+        {
+            auto seq_id = Ref(new CSeq_id("NM_002020"));
+            auto handle = scope.GetBioseqHandle(*seq_id);
+            CFeat_CI feat_it(handle, TSeqRange(1, 500), sel);
+            while (feat_it) {
+                h1.push_back(feat_it->GetSeq_feat_Handle());
+                ++feat_it;
+            }
+        }
+        for (auto&& h : h1) {
+            auto& annot = h.GetAnnot();
+            BOOST_CHECK(annot);
+            if ( annot ) {
+                CDataLoader::TBlobId blob_id = annot.GetTSE_Handle().GetBlobId();
+                cout << "BlobId: " << blob_id.ToString() << endl;
+            }
+        }
+        cout << "ResetHistory()" << endl;
+        scope.ResetHistory();
+        for (auto&& h : h1) {
+            auto& annot = h.GetAnnot();
+            BOOST_CHECK(annot);
+        }
+        cout << "ResetHistory(eRemoveIfLocked)" << endl;
+        scope.ResetHistory(scope.eRemoveIfLocked);
+        for (auto&& h : h1) {
+            auto& annot = h.GetAnnot();
+            BOOST_CHECK(!annot);
+        }
+    }
 }
 
 

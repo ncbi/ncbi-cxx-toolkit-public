@@ -556,11 +556,16 @@ void CDataSource_ScopeInfo::ResetHistory(int action_if_locked)
         TTSE_InfoMapMutex::TWriteLockGuard guard1(m_TSE_InfoMapMutex);
         tses.reserve(m_TSE_InfoMap.size());
         ITERATE ( TTSE_InfoMap, it, m_TSE_InfoMap ) {
+            if ( action_if_locked == CScope::eKeepIfLocked && it->second->IsUserLocked() ) {
+                // skip locked TSEs
+                continue;
+            }
             tses.push_back(it->second);
         }
     }}
     CUnlockedTSEsGuard guard;
     ITERATE ( TTSEs, it, tses ) {
+        CTSE_ScopeUserLock lock(it->GetNCPointer()); // RemoveFromHistory() assumes one extra lock in stack
         it->GetNCObject().RemoveFromHistory(action_if_locked);
     }
 }
