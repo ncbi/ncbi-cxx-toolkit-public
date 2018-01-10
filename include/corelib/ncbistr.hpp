@@ -3317,14 +3317,14 @@ private:
     }
     template <typename TNumeric>
     static typename enable_if< is_same<TNumeric, float>::value, TNumeric>::type
-    x_StringToNumeric(const CTempString str, TStringToNumFlags flags, int base)
+    x_StringToNumeric(const CTempString str, TStringToNumFlags flags, int /*base*/)
     {
         double n = StringToDouble(str, flags);
         return x_VerifyFloatLimits<TNumeric>(n, str, flags) ? (TNumeric)n : 0;
     }
     template <typename TNumeric>
     static typename enable_if< is_same<TNumeric, double>::value, TNumeric>::type
-    x_StringToNumeric(const CTempString str, TStringToNumFlags flags, int base)
+    x_StringToNumeric(const CTempString str, TStringToNumFlags flags, int /*base*/)
     {
         return StringToDouble(str, flags);
     }
@@ -3402,7 +3402,7 @@ private:
         return (*value || !errno);
     }
     static bool
-    x_StringToNumeric(const CTempString str, float* value, TStringToNumFlags flags, int base)
+    x_StringToNumeric(const CTempString str, float* value, TStringToNumFlags flags, int /*base*/)
     {
         double n = StringToDouble(str, flags);
         *value = 0;
@@ -3413,7 +3413,7 @@ private:
         return true;
     }
     static bool
-    x_StringToNumeric(const CTempString str, double* value, TStringToNumFlags flags, int base)
+    x_StringToNumeric(const CTempString str, double* value, TStringToNumFlags flags, int /*base*/)
     {
         *value = StringToDouble(str, flags);
         return (*value || !errno);
