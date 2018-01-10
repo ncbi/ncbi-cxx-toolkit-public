@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <misc/data_loaders_util/data_loaders_util.hpp>
 #include <misc/discrepancy/discrepancy.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objmgr/object_manager.hpp>
@@ -63,9 +64,6 @@ protected:
     void x_ProcessAll(const string& outname);
     void x_Output(const string& filename, CDiscrepancySet& tests);
     void x_OutputXml(const string& filename, CDiscrepancySet& tests);
-    //void x_RecursiveOutput(CNcbiOfstream& out, const TReportItemList& list);
-    //void x_RecursiveXmlOutput(CNcbiOfstream& out, const TReportItemList& list, size_t indent);
-    void x_OutputMacro(const string& filename, const TDiscrepancyCaseMap& tests);
     void x_Autofix(const TDiscrepancyCaseMap& tests);
     void x_OutputObject(const string& filename, const CSerialObject& obj);
 
@@ -78,13 +76,13 @@ protected:
     bool m_Ext;
     bool m_Fat;
     bool m_AutoFix;
-    bool m_Macro;
+    //bool m_Macro;
     bool m_Xml;
     bool m_Print;
 };
 
 
-CDiscRepApp::CDiscRepApp(void) : m_Scope(*CObjectManager::GetInstance()), m_SuspectProductNames(false), m_Ext(false), m_Fat(false), m_AutoFix(false), m_Macro(false), m_Xml(false), m_Print(false)
+CDiscRepApp::CDiscRepApp(void) : m_Scope(*CObjectManager::GetInstance()), m_SuspectProductNames(false), m_Ext(false), m_Fat(false), m_AutoFix(false), /*m_Macro(false),*/ m_Xml(false), m_Print(false)
 {
   SetVersionByBuild(1);
 }
@@ -150,7 +148,7 @@ void CDiscRepApp::Init(void)
     arg_desc->AddOptionalKey("X", "ExpandCategories", "Expand Report Categories (comma-delimited list of test names or ALL)", CArgDescriptions::eString);
     arg_desc->AddFlag("N", "Check Product Names");
     arg_desc->AddFlag("F", "Autofix");
-    arg_desc->AddFlag("R", "Generate Autofix MACRO file");
+    //arg_desc->AddFlag("R", "Generate Autofix MACRO file");
     arg_desc->AddFlag("XML", "Generate XML output");
     arg_desc->AddFlag("STDOUT", "Copy the output to STDOUT");
 
@@ -283,6 +281,9 @@ void CDiscRepApp::x_ParseDirectory(const string& name, bool recursive)
 {
     CDir Dir(name);
     string ext = GetArgs()["x"].AsString();
+    if (!ext.empty() && ext[0] != '.') {
+        ext = "." + ext;
+    }
     if (!Dir.Exists() || !Dir.IsDir()) return;
     CDir::TEntries Entries = Dir.GetEntries();
     ITERATE (CDir::TEntries, entry, Entries) {
@@ -316,9 +317,6 @@ void CDiscRepApp::x_ProcessFile(const string& fname)
         Tests->SetLineage(m_Lineage);
         Tests->Parse(*obj);
         Tests->Summarize();
-        if (m_Macro) {
-            x_OutputMacro(x_ConstructMacroName(fname), Tests->GetTests());
-        }
         if (m_AutoFix) {
             x_Autofix(Tests->GetTests());
             x_OutputObject(x_ConstructAutofixName(fname), *obj);
@@ -373,9 +371,6 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
             }
         }
         Tests->Summarize();
-        if (m_Macro) {
-            x_OutputMacro(x_ConstructMacroName(outname), Tests->GetTests());
-        }
         if (m_AutoFix) {
             x_Autofix(Tests->GetTests());
             ITERATE (TStr2Obj, it, objects) {
@@ -402,33 +397,6 @@ void CDiscRepApp::x_OutputXml(const string& filename, CDiscrepancySet& tests)
 {
     CNcbiOfstream out(filename.c_str(), ofstream::out);
     tests.OutputXML(out);
-}
-
-
-void CDiscRepApp::x_OutputMacro(const string& filename, const TDiscrepancyCaseMap& tests)
-{
-    if (tests.empty()) {
-        return;
-    }
-    set<string> Fixes;
-    ITERATE (TDiscrepancyCaseMap, tst, tests) {
-        const TReportItemList& list = tst->second->GetReport();
-        ITERATE (TReportItemList, it, list) {
-            if ((*it)->CanAutofix()) {
-                Fixes.insert((*it)->GetTitle());
-            }
-        }
-    }
-    if (Fixes.empty()) {
-        cout << "No Autofixes found!\n";
-        return;
-    }
-    CNcbiOfstream out(filename.c_str(), ofstream::out);
-    out << "MACRO Autofix \"Perform autofix\"\nFOR EACH TSEntry\nDo\n";
-    ITERATE (set<string>, it, Fixes) {
-        out << "    PerformDiscrAutofix(\"" << *it << "\")\n";
-    }
-    out << "Done\n";
 }
 
 
@@ -569,7 +537,7 @@ int CDiscRepApp::Run(void)
     if (args["w"]) m_SuspectRules = args["w"].AsString();
     if (args["L"]) m_Lineage = args["L"].AsString();
     if (args["F"]) m_AutoFix = args["F"].AsBoolean();
-    if (args["R"]) m_Macro = args["R"].AsBoolean();
+    //if (args["R"]) m_Macro = args["R"].AsBoolean();
     if (args["XML"]) m_Xml = args["XML"].AsBoolean();
     if (args["STDOUT"]) m_Print = args["STDOUT"].AsBoolean();
 
