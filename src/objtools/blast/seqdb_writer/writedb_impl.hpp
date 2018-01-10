@@ -529,6 +529,7 @@ private:
                                   const vector< vector<int> >    & membbits,
                                   const vector< vector<int> >    & linkouts,
                                   int                              pig,
+                                  set<Int4>                      & tax_ids,
                                   int                              OID=-1,
                                   bool                             parse_ids=true,
                                   bool                             long_seqid=false);
@@ -607,6 +608,8 @@ private:
     /// Binary header in format that will be written to disk.
     string m_BinHdr;
 
+    set<Int4> m_TaxIds;
+
     // Volumes
 
     /// This volume is currently accepting sequences.
@@ -626,6 +629,9 @@ private:
 
     ///Write lmdb handle
     CRef <CWriteDB_LMDB>    m_Lmdbdb;
+
+    ///Write tax info handle
+    CRef <CWriteDB_TaxID>    m_Taxdb;
 
     /// If true, use long sequence id format (database|accession) for all
     /// acessions

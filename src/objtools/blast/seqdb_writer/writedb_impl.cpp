@@ -116,6 +116,8 @@ void CWriteDB_Impl::x_ResetSequenceData()
     m_Ambig.erase();
     m_BinHdr.erase();
 
+    m_TaxIds.clear();
+
     NON_CONST_ITERATE(vector<int>, iter, m_HaveBlob) {
         *iter = 0;
     }
@@ -691,6 +693,7 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                  const vector< vector<int> >    & membbits,
                                  const vector< vector<int> >    & linkouts,
                                  int                              pig,
+                                 set<Int4>                      & tax_ids,
                                  int                              OID,
                                  bool                             parse_ids,
                                  bool                             long_ids)
@@ -802,6 +805,13 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
 
         x_SetDeflinesFromBinary(bin_hdr, deflines);
     }
+
+    if ((! deflines.Empty()) && deflines->CanGet()) {
+    	ITERATE(list< CRef<CBlast_def_line> >, defline, deflines->Get()) {
+    		CBlast_def_line::TTaxIds taxid_set = (*defline)->GetTaxIds();
+            tax_ids.insert(taxid_set.begin(), taxid_set.end());
+        }
+    }
 }
 
 void CWriteDB_Impl::x_CookHeader()
@@ -816,6 +826,7 @@ void CWriteDB_Impl::x_CookHeader()
                       m_Memberships,
                       m_Linkouts,
                       m_Pig,
+                      m_TaxIds,
                       OID,
                       m_ParseIDs,
                       m_LongSeqId);
@@ -1034,6 +1045,8 @@ void CWriteDB_Impl::x_Publish()
     if(m_DbVersion == eBDB_Version5 && m_Lmdbdb.Empty()) {
         const string lmdb_fname_w_path = BuildLMDBFileName(m_Dbname, m_Protein);
         m_Lmdbdb.Reset(new CWriteDB_LMDB(lmdb_fname_w_path));
+        m_Taxdb.Reset(new CWriteDB_TaxID(
+        		          GetFileNameFromExistingLMDBFile(lmdb_fname_w_path, ELMDBFileType::eTaxId2Offsets)));
     }
     
     x_CookData();
@@ -1050,7 +1063,9 @@ void CWriteDB_Impl::x_Publish()
                                        m_Blobs,
                                        m_MaskDataColumn);
         if (done  &&  (m_DbVersion == eBDB_Version5)  &&  m_Lmdbdb) {            
-            m_Lmdbdb->InsertEntries(m_Ids,m_LmdbOid++);
+            m_Lmdbdb->InsertEntries(m_Ids,m_LmdbOid);
+            m_Taxdb->InsertEntries(m_TaxIds, m_LmdbOid);
+            m_LmdbOid++;
         }
     }
     
@@ -1103,7 +1118,9 @@ void CWriteDB_Impl::x_Publish()
                                        m_MaskDataColumn);
 
         if (done  &&  (m_DbVersion == eBDB_Version5)  &&  m_Lmdbdb) {
-            m_Lmdbdb->InsertEntries(m_Ids,m_LmdbOid++);
+            m_Lmdbdb->InsertEntries(m_Ids,m_LmdbOid);
+            m_Taxdb->InsertEntries(m_TaxIds, m_LmdbOid);
+            m_LmdbOid++;
         }
 
         if (! done) {
@@ -1448,9 +1465,10 @@ CWriteDB_Impl::ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids,
     CConstRef<CBlast_def_line_set> deflines;
     string binary_header;
     vector< vector<int> > v1, v2;
+    set<Int4> t;
 
     CConstRef<CBioseq> bsref(& bs);
-    x_ExtractDeflines(bsref, deflines, binary_header, v2, v2, 0, -1, parse_ids,
+    x_ExtractDeflines(bsref, deflines, binary_header, v2, v2, 0, t, -1, parse_ids,
                       long_seqids);
 
     // Convert to return type
