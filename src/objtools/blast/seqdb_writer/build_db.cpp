@@ -978,7 +978,9 @@ bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
                     }
                 }
             }
-            m_OutputDb->SetMaskData(mask_data, gis);
+            if (!mask_data.empty()) {
+                m_OutputDb->SetMaskData(mask_data, gis);
+            }
 #endif
 
             rv = true;
