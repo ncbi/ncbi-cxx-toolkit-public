@@ -234,10 +234,10 @@ const string kArgArchive("archive");
 
 const string kArgQueryCovHspPerc("qcov_hsp_perc");
 const string kArgLineLength("line_length");
-const string kArgTaxIdList("tax_list");
-const string kArgTaxIdListFile("tax_list_file");
-const string kArgNegativeTaxIdList("negative_tax_list");
-const string kArgNegativeTaxIdListFile("negative_tax_list_file");
+const string kArgTaxIdList("taxids");
+const string kArgTaxIdListFile("taxidlist");
+const string kArgNegativeTaxIdList("negative_taxids");
+const string kArgNegativeTaxIdListFile("negative_taxidlist");
 
 const string kArgPaired("paired");
 const string kArgScore("score");

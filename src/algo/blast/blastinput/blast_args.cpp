@@ -2092,119 +2092,69 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     // GI list
     if (!m_IsRpsBlast) {
         arg_desc.AddOptionalKey(kArgGiList, "filename",
-                                "Restrict search of database to list of GI's",
+                                "Restrict search of database to list of GIs",
                                 CArgDescriptions::eString);
         // SeqId list
         arg_desc.AddOptionalKey(kArgSeqIdList, "filename",
-                                "Restrict search of database to list of SeqId's",
+                                "Restrict search of database to list of SeqIDs",
                                 CArgDescriptions::eString);
         // Negative GI list
         arg_desc.AddOptionalKey(kArgNegativeGiList, "filename",
                                 "Restrict search of database to everything"
-                                " except the listed GIs",
+                                " except the specified GIs",
                                 CArgDescriptions::eString);
 
         // Negative SeqId list
         arg_desc.AddOptionalKey(kArgNegativeSeqidList, "filename",
                                 "Restrict search of database to everything"
-                                " except the listed SeqIDs",
+                                " except the specified SeqIDs",
                                 CArgDescriptions::eString);
 
         // Tax ID list
-        arg_desc.AddOptionalKey(kArgTaxIdList, "string",
-                                "Restrict search of database to list of taxonomy ids"
-        		                "(delimited by ','",
+        arg_desc.AddOptionalKey(kArgTaxIdList, "taxids",
+                                "Restrict search of database to include only "
+                                "the specified taxonomy IDs "
+                                "(multiple IDs delimited by ',')",
+                                CArgDescriptions::eString);
+        arg_desc.AddOptionalKey(kArgNegativeTaxIdList, "taxids",
+                                "Restrict search of database to everything "
+                                "except the specified taxonomy IDs "
+                                "(multiple IDs delimited by ',')",
                                 CArgDescriptions::eString);
 	    // Tax ID list file
         arg_desc.AddOptionalKey(kArgTaxIdListFile, "filename",
-                                "Restrict search of database to list of taxonomy ids in the file"
-        		                "(delimited by eol",
-                                CArgDescriptions::eString);
-        arg_desc.AddOptionalKey(kArgNegativeTaxIdList, "string",
-                                "Restrict search of database to exclude list of taxonomy ids"
-        		                "(delimited by ','",
+                                "Restrict search of database to include only "
+                                "the specified taxonomy IDs",
                                 CArgDescriptions::eString);
         arg_desc.AddOptionalKey(kArgNegativeTaxIdListFile, "filename",
-                                "Restrict search of database to exclude list of taxonomy ids in the file"
-        		                "(delimited by eol",
+                                "Restrict search of database to everything "
+                                "except the specified taxonomy IDs",
                                 CArgDescriptions::eString);
 
+        // N.B.: all restricting options are mutually exclusive
+        const vector<string> kBlastDBFilteringOptions = {
+            kArgGiList, 
+            kArgSeqIdList, 
+            kArgTaxIdList,
+            kArgTaxIdListFile,
 
-        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
-                               kArgNegativeGiList);
-        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes,
-                               kArgSeqIdList);
-        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes,
-                               kArgNegativeSeqidList);
-
-        arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes,
-                               kArgNegativeGiList);
-        arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes,
-                               kArgNegativeSeqidList);
-        
-        arg_desc.SetDependency(kArgTaxIdList, CArgDescriptions::eExcludes,
-                               kArgNegativeGiList);
-        arg_desc.SetDependency(kArgTaxIdList, CArgDescriptions::eExcludes,
-                               kArgNegativeSeqidList);
-        arg_desc.SetDependency(kArgTaxIdList, CArgDescriptions::eExcludes,
-        		               kArgSeqIdList);
-        arg_desc.SetDependency(kArgTaxIdList, CArgDescriptions::eExcludes,
-        		               kArgGiList);
-
-	    arg_desc.SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes,
-                               kArgNegativeGiList);
-        arg_desc.SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes,
-                               kArgNegativeSeqidList);
-        arg_desc.SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes,
-        		               kArgSeqIdList);
-        arg_desc.SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes,
-        		               kArgGiList);
-        arg_desc.SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes,
-        		               kArgTaxIdList);
-
-        arg_desc.SetDependency(kArgNegativeTaxIdListFile, CArgDescriptions::eExcludes,
-                               kArgNegativeGiList);
-        arg_desc.SetDependency(kArgNegativeTaxIdListFile, CArgDescriptions::eExcludes,
-                               kArgNegativeSeqidList);
-        arg_desc.SetDependency(kArgNegativeTaxIdListFile, CArgDescriptions::eExcludes,
-           		               kArgSeqIdList);
-        arg_desc.SetDependency(kArgNegativeTaxIdListFile, CArgDescriptions::eExcludes,
-           		               kArgGiList);
-        arg_desc.SetDependency(kArgNegativeTaxIdListFile, CArgDescriptions::eExcludes,
-        		               kArgTaxIdListFile);
-
-        arg_desc.SetDependency(kArgNegativeTaxIdList, CArgDescriptions::eExcludes,
-                               kArgNegativeGiList);
-        arg_desc.SetDependency(kArgNegativeTaxIdList, CArgDescriptions::eExcludes,
-                               kArgNegativeSeqidList);
-        arg_desc.SetDependency(kArgNegativeTaxIdList, CArgDescriptions::eExcludes,
-           		               kArgSeqIdList);
-        arg_desc.SetDependency(kArgNegativeTaxIdList, CArgDescriptions::eExcludes,
-           		               kArgGiList);
-        arg_desc.SetDependency(kArgNegativeTaxIdList, CArgDescriptions::eExcludes,
-           		               kArgTaxIdList);
-        arg_desc.SetDependency(kArgNegativeTaxIdList, CArgDescriptions::eExcludes,
-           		               kArgTaxIdListFile);
-
+            kArgNegativeGiList, 
+            kArgNegativeSeqidList,
+            kArgNegativeTaxIdList,
+            kArgNegativeTaxIdListFile
+        };
+        for (size_t i = 0; i < kBlastDBFilteringOptions.size(); i++) {
+            for (size_t j = i+1; j < kBlastDBFilteringOptions.size(); j++) {
+                arg_desc.SetDependency(kBlastDBFilteringOptions[i], CArgDescriptions::eExcludes, 
+                                       kBlastDBFilteringOptions[j]);
+            }
+        }
 
         // For now, disable pairing -remote with either -gilist or
         // -negative_gilist as this is not implemented in the BLAST server
-        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes,
-                               kArgRemote);
-        arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes,
-                               kArgRemote);
-        arg_desc.SetDependency(kArgNegativeGiList, CArgDescriptions::eExcludes,
-                               kArgRemote);
-        arg_desc.SetDependency(kArgNegativeSeqidList, CArgDescriptions::eExcludes,
-                               kArgRemote);
-        arg_desc.SetDependency(kArgTaxIdList, CArgDescriptions::eExcludes,
-                               kArgRemote);
-    	arg_desc.SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes,
-                               kArgRemote);
-    	arg_desc.SetDependency(kArgNegativeTaxIdList, CArgDescriptions::eExcludes,
-                               kArgRemote);
-    	arg_desc.SetDependency(kArgNegativeTaxIdListFile, CArgDescriptions::eExcludes,
-                               kArgRemote);
+        for (const string& s: kBlastDBFilteringOptions) {
+            arg_desc.SetDependency(kArgRemote, CArgDescriptions::eExcludes, s);
+        }
     }
 
     // Entrez Query
