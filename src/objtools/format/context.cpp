@@ -546,8 +546,9 @@ void CBioseqContext::x_SetDataFromUserObjects(void)
 
     for (CSeqdesc_CI it(m_Handle, CSeqdesc::e_User);  it;  ++it) {
         const CUser_object& uo = it->GetUser();
+        CUser_object::EObjectType utype = uo.GetObjectType();
         if (uo.IsSetType()  &&  uo.GetType().IsStr()) {
-            if (NStr::EqualNocase(uo.GetType().GetStr(), "StructuredComment")) {
+            if (utype == CUser_object::eObjectType_StructuredComment) {
                 if( uo.IsSetData() ) {
                     ITERATE( CUser_object::TData, field_iter, uo.GetData() ) {
                         const CUser_field &field = **field_iter;
@@ -571,37 +572,25 @@ void CBioseqContext::x_SetDataFromUserObjects(void)
                         }
                     }
                 }
-            } else if(NStr::EqualNocase(uo.GetType().GetStr(), "Unverified")) {
-                if( uo.IsSetData() ) {
-                    ITERATE( CUser_object::TData, field_iter, uo.GetData() ) {
-                        const CUser_field &field = **field_iter;
-                        if( ! field.IsSetLabel() || ! field.GetLabel().IsStr() ||
-                            field.GetLabel().GetStr() != "Type" ) 
-                        {
-                                continue;
-                        }
-                        if( ! field.IsSetData() || ! field.GetData().IsStr() )
-                        {
-                            continue;
-                        }
-                        if( NStr::EqualNocase( field.GetData().GetStr(), "Organism") ) {
-                            m_fUnverified |= fUnverified_Organism;
-                        } else if( NStr::EqualNocase( field.GetData().GetStr(), "Features") ) {
-                            m_fUnverified |= fUnverified_SequenceOrAnnotation;
-                        } else if( NStr::EqualNocase( field.GetData().GetStr(), "Misassembled") ) {
-                            m_fUnverified |= fUnverified_Misassembled;
-                        }
-                    }
+            } else if (utype == CUser_object::eObjectType_Unverified) {
+                if (uo.IsUnverifiedOrganism()) {
+                    m_fUnverified |= fUnverified_Organism;
+                } else if (uo.IsUnverifiedFeature()) {
+                    m_fUnverified |= fUnverified_SequenceOrAnnotation;
+                } else if (uo.IsUnverifiedMisassembled()) {
+                    m_fUnverified |= fUnverified_Misassembled;
+                } else if (uo.IsUnverifiedContaminant()) {
+                    m_fUnverified |= fUnverified_Contaminant;
                 }
                 // default in the past was to use feature
                 if( m_fUnverified == fUnverified_None ) {
                     m_fUnverified = fUnverified_SequenceOrAnnotation;
                 }
-            } else if( NStr::EqualNocase(uo.GetType().GetStr(), "FileTrack") ) {
+            } else if ( utype == CUser_object::eObjectType_FileTrack ) {
                 x_SetFiletrackURL(uo);
-            } else if( NStr::EqualNocase(uo.GetType().GetStr(), "AuthorizedAccess") ) {
+            } else if ( NStr::EqualNocase(uo.GetType().GetStr(), "AuthorizedAccess") ) {
                 x_SetAuthorizedAccess(uo);
-            } else if( NStr::EqualNocase(uo.GetType().GetStr(), "ENCODE") ) {
+            } else if ( NStr::EqualNocase(uo.GetType().GetStr(), "ENCODE") ) {
                 x_SetEncode(uo);
             }
         }

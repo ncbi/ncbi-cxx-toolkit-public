@@ -219,7 +219,8 @@ public:
 
         fUnverified_Organism              = 1 << 0,
         fUnverified_SequenceOrAnnotation  = 1 << 1,
-        fUnverified_Misassembled          = 1 << 2
+        fUnverified_Misassembled          = 1 << 2,
+        fUnverified_Contaminant           = 1 << 3
         // if you add more here, make sure 
         // to update CFlatGatherer::x_UnverifiedComment
     };

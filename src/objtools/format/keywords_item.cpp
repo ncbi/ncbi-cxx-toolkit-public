@@ -292,6 +292,8 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
         x_AddKeyword("UNVERIFIED_ORGANISM");
     } else if ((unv & CBioseqContext::fUnverified_Misassembled) != 0) {
         x_AddKeyword("UNVERIFIED_MISASSEMBLY");
+    } else if ((unv & CBioseqContext::fUnverified_Contaminant) != 0) {
+        x_AddKeyword("UNVERIFIED_CONTAMINANT");
     } else if ((unv & CBioseqContext::fUnverified_SequenceOrAnnotation) != 0) {
         x_AddKeyword("UNVERIFIED");
     }
