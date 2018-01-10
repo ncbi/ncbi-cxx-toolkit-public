@@ -730,8 +730,8 @@ BOOST_AUTO_TEST_CASE(Test_DeltaSAnnot)
     scope.AddDefaults();
  
     CRef<CSeq_loc> loc(new CSeq_loc());
-    loc->SetInt().SetId().SetOther().SetAccession("NC_000019");
-    loc->SetInt().SetId().SetOther().SetVersion(10);
+    loc->SetInt().SetId().SetOther().SetAccession("NT_077402");
+    loc->SetInt().SetId().SetOther().SetVersion(3);
     loc->SetInt().SetFrom(50000);
     loc->SetInt().SetTo(100000);
  
@@ -779,7 +779,7 @@ BOOST_AUTO_TEST_CASE(Test_HUP)
     string gb_hup = CGBDataLoader::RegisterInObjectManager(*objmgr, CGBDataLoader::eIncludeHUP).GetLoader()->GetName();
     BOOST_REQUIRE_EQUAL(gb_hup, "GBLOADER-HUP");
 
-    CSeq_id_Handle id_main = CSeq_id_Handle::GetHandle("NC_000001");
+    CSeq_id_Handle id_main = CSeq_id_Handle::GetHandle("NT_077402");
     CSeq_id_Handle id_hup = CSeq_id_Handle::GetHandle("AY263392");
     {{
         CScope scope(*objmgr);
