@@ -629,8 +629,10 @@ void CDeflineGenerator::x_SetFlags (
     m_Substrain.clear();
 
     m_IsUnverified = false;
-    m_IsPseudogene = false;
+    m_UnverifiedPrefix.clear();
     m_TargetedLocus.clear();
+
+    m_IsPseudogene = false;
 
     m_rEnzyme.clear();
 
@@ -844,9 +846,18 @@ void CDeflineGenerator::x_SetFlags (
 
             const CUser_object& user_obj = desc_it->GetUser();
             if (FIELD_IS_SET_AND_IS(user_obj, Type, Str)) {
-                if (user_obj.GetType().GetStr() == "Unverified" ) {
+                if (user_obj.IsUnverified()) {
                     m_IsUnverified = true;
                     needed_desc_choices &= ~fUser;
+                    if (user_obj.IsUnverifiedOrganism()) {
+                        m_UnverifiedPrefix = "UNVERIFIED_ORG: ";
+                    } else if (user_obj.IsUnverifiedMisassembled()) {
+                        m_UnverifiedPrefix = "UNVERIFIED_ASMBLY: ";
+                    } else if (user_obj.IsUnverifiedContaminant()) {
+                        m_UnverifiedPrefix = "UNVERIFIED_CONTAM: ";
+                    } else if (user_obj.IsUnverifiedFeature()) {
+                        m_UnverifiedPrefix = "UNVERIFIED: ";
+                    }
                 } else if (user_obj.GetType().GetStr() == "AutodefOptions" ) {
                     FOR_EACH_USERFIELD_ON_USEROBJECT (uitr, user_obj) {
                         const CUser_field& fld = **uitr;
@@ -2533,7 +2544,7 @@ void CDeflineGenerator::x_SetPrefix (
 
     if (m_IsUnverified) {
         if (m_MainTitle.find ("UNVERIFIED") == NPOS) {
-            prefix = "UNVERIFIED: ";
+            prefix = m_UnverifiedPrefix;
         }
     } else if (m_IsTSA) {
         prefix = "TSA: ";
@@ -3124,6 +3135,9 @@ static const char* s_tpaPrefixList [] = {
   "TPA_reasm:",
   "TPA_asm:",
   "TSA:",
+  "UNVERIFIED_ORG:",
+  "UNVERIFIED_ASMBLY:",
+  "UNVERIFIED_CONTAM:",
   "UNVERIFIED:"
 };
 string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)

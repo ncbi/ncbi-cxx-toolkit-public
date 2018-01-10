@@ -326,6 +326,7 @@ private:
 
     /// user object fields
     bool m_IsUnverified;
+    CTempString m_UnverifiedPrefix;
     CTempString m_TargetedLocus;
 
     /// comment fields
