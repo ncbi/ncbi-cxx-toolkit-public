@@ -67,10 +67,10 @@ CItemsInfo::~CItemsInfo(void)
 void CItemsInfo::AddItem(CItemInfo* item)
 {
     // clear cached maps (byname and bytag)
-    m_ItemsByName.reset(0);
+    m_ItemsByName.reset();
     m_ZeroTagIndex = kInvalidMember;
-    m_ItemsByTag.reset(0);
-    m_ItemsByOffset.reset(0);
+    m_ItemsByTag.reset();
+    m_ItemsByOffset.reset();
 
     // add item
     m_Items.push_back(AutoPtr<CItemInfo>(item));
@@ -122,7 +122,7 @@ const CItemsInfo::TItemsByName& CItemsInfo::GetItemsByName(void) const
         CFastMutexGuard GUARD(s_ItemsMapMutex);
         items = m_ItemsByName.get();
         if ( !items ) {
-            auto_ptr<TItemsByName> keep(items = new TItemsByName);
+            shared_ptr<TItemsByName> keep(items = new TItemsByName);
             for ( CIterator i(*this); i.Valid(); ++i ) {
                 const CItemInfo* itemInfo = GetItemInfo(i);
                 const string& name = itemInfo->GetId().GetName();
@@ -147,7 +147,7 @@ CItemsInfo::GetItemsByOffset(void) const
         items = m_ItemsByOffset.get();
         if ( !items ) {
             // create map
-            auto_ptr<TItemsByOffset> keep(items = new TItemsByOffset);
+            shared_ptr<TItemsByOffset> keep(items = new TItemsByOffset);
             // fill map 
             for ( CIterator i(*this); i.Valid(); ++i ) {
                 const CItemInfo* itemInfo = GetItemInfo(i);
@@ -231,7 +231,7 @@ CItemsInfo::GetItemsByTagInfo(void) const
                 m_ZeroTagIndex = ret.first;
             }
             else {
-                auto_ptr<TItemsByTag> items(new TItemsByTag);
+                shared_ptr<TItemsByTag> items(new TItemsByTag);
                 for ( CIterator i(*this); i.Valid(); ++i ) {
                     TTagAndClass tc = GetTagAndClass(i);
                     if (tc.first >= 0) {

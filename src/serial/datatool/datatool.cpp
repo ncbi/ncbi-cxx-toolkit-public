@@ -98,7 +98,7 @@ void CDataTool::Init(void)
 {
     SetDiagPostLevel(eDiag_Warning);
 
-    auto_ptr<CArgDescriptions> d(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> d(new CArgDescriptions);
 
     d->SetUsageContext("datatool", "work with ASN.1/XML data");
 
@@ -416,7 +416,7 @@ bool CDataTool::ProcessData(void)
     else // no input data
         return true;
 
-    auto_ptr<CObjectIStream>
+    unique_ptr<CObjectIStream>
         in(CObjectIStream::Open(inFormat, inFileName, eSerial_StdWhenAny));
     if (inFormat == eSerial_Xml) {
         CObjectIStreamXml *is = dynamic_cast<CObjectIStreamXml*>(in.get());
@@ -520,7 +520,7 @@ bool CDataTool::ProcessData(void)
     bool readFull = bool(args["F"]);
     if ( outFormat != eSerial_None ) {
         // copy
-        auto_ptr<CObjectOStream>
+        unique_ptr<CObjectOStream>
             out(CObjectOStream::Open(outFormat, outFileName,
                                         eSerial_StdWhenAny));
         if ( outFormat == eSerial_Xml ) {

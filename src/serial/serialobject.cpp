@@ -115,7 +115,7 @@ void CSerialObject::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     CNcbiOstrstream ostr;
     ostr << "\n****** begin ASN dump ******\n";
     {{
-        auto_ptr<CObjectOStream> oos(CObjectOStream::Open(eSerial_AsnText,
+        unique_ptr<CObjectOStream> oos(CObjectOStream::Open(eSerial_AsnText,
                                                           ostr));
         oos->SetAutoSeparator(false);
         oos->SetVerifyData(eSerialVerifyData_No);
@@ -753,7 +753,7 @@ CNcbiIstream& operator>> (CNcbiIstream& is, const CObjectInfo& obj)
 
 CNcbiOstream& WriteObject(CNcbiOstream& os, TConstObjectPtr ptr, TTypeInfo info)
 {
-    auto_ptr<CObjectOStream> ostr( CObjectOStream::Open( s_FlagsToFormat(os), os) );
+    unique_ptr<CObjectOStream> ostr( CObjectOStream::Open( s_FlagsToFormat(os), os) );
     ostr->SetVerifyData( s_FlagsToVerify(os) );
     ostr->SetFormattingFlags( s_FlagsToFormatFlags(os) );
     if (ostr->GetDataFormat() == eSerial_Xml) {
@@ -765,7 +765,7 @@ CNcbiOstream& WriteObject(CNcbiOstream& os, TConstObjectPtr ptr, TTypeInfo info)
 }
 CNcbiIstream& ReadObject(CNcbiIstream& is, TObjectPtr ptr, TTypeInfo info)
 {
-    auto_ptr<CObjectIStream> istr( CObjectIStream::Open(s_FlagsToFormat(is), is) );
+    unique_ptr<CObjectIStream> istr( CObjectIStream::Open(s_FlagsToFormat(is), is) );
     istr->SetVerifyData(s_FlagsToVerify(is));
     istr->SetSkipUnknownMembers( s_FlagsToSkipUnkMembers(is));
     istr->SetSkipUnknownVariants( s_FlagsToSkipUnkVariants(is));

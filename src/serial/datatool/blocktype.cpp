@@ -762,7 +762,7 @@ CClassTypeInfo* CDataContainerType::CreateClassInfo(void)
         if ( mem->Optional() || mem->GetDefault() || mem->Nillable() )
             ++itemCount;
     }
-    auto_ptr<CAnyTypeClassInfo> typeInfo(new CAnyTypeClassInfo(
+    unique_ptr<CAnyTypeClassInfo> typeInfo(new CAnyTypeClassInfo(
         HasExternalName() ? GlobalName() : kEmptyStr, itemCount));
     size_t index = 0;
     for ( TMembers::const_iterator i = GetMembers().begin();

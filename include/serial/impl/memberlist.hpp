@@ -138,14 +138,14 @@ private:
     TItems m_Items;
 
     // items by name
-    mutable auto_ptr<TItemsByName> m_ItemsByName;
+    mutable shared_ptr<TItemsByName> m_ItemsByName;
 
     // items by tag
     mutable TMemberIndex m_ZeroTagIndex;
-    mutable auto_ptr<TItemsByTag> m_ItemsByTag;
+    mutable shared_ptr<TItemsByTag> m_ItemsByTag;
 
     // items by offset
-    mutable auto_ptr<TItemsByOffset> m_ItemsByOffset;
+    mutable shared_ptr<TItemsByOffset> m_ItemsByOffset;
 };
 
 

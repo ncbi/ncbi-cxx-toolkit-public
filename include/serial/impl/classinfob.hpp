@@ -132,7 +132,7 @@ private:
 
     CItemsInfo m_Items;
 
-    mutable auto_ptr<TContainedTypes> m_ContainedTypes;
+    mutable unique_ptr<TContainedTypes> m_ContainedTypes;
 
     // class mapping
     typedef set<CClassTypeInfoBase*> TClasses;

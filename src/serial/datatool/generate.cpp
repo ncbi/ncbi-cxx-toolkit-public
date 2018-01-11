@@ -761,7 +761,7 @@ void CCodeGenerator::GenerateModuleHPP(const string& path, list<string>& generat
 {
     set<string> modules;
     string module_name, current_module, filename, hppDefine;
-    auto_ptr<CDelayedOfstream> out;
+    unique_ptr<CDelayedOfstream> out;
     CNamespace ns;
 
     bool isfound = false;
@@ -844,7 +844,7 @@ void CCodeGenerator::GenerateModuleCPP(const string& path, list<string>& generat
 {
     set<string> modules;
     string module_name, current_module, filename, hppDefine;
-    auto_ptr<CDelayedOfstream> out;
+    unique_ptr<CDelayedOfstream> out;
     CNcbiOstrstream out_inc;
     CNcbiOstrstream out_code;
     CNamespace ns;

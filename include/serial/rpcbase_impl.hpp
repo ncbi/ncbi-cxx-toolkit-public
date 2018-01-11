@@ -115,9 +115,9 @@ private:
 protected:
     string                   m_Service; ///< Used by default Connect().
     string                   m_Args;
-    auto_ptr<CNcbiIostream>  m_Stream; // This must be destroyed after m_In/m_Out.
-    auto_ptr<CObjectIStream> m_In;
-    auto_ptr<CObjectOStream> m_Out;
+    unique_ptr<CNcbiIostream>  m_Stream; // This must be destroyed after m_In/m_Out.
+    unique_ptr<CObjectIStream> m_In;
+    unique_ptr<CObjectOStream> m_Out;
     string                   m_Affinity;
     unsigned int             m_RetryLimit;
     CHttpRetryContext        m_RetryCtx;

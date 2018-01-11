@@ -138,7 +138,7 @@ private:
     EClassType m_ClassType;
 
     const CClassTypeInfo* m_ParentClassInfo;
-    auto_ptr<TSubClasses> m_SubClasses;
+    unique_ptr<TSubClasses> m_SubClasses;
 
     TGetTypeIdFunction m_GetTypeIdFunction;
 

@@ -64,7 +64,7 @@ void CDelayBuffer::DoUpdate(void)
     SInfo& info = *m_Info;
 
     {
-        auto_ptr<CObjectIStream> in(CObjectIStream::Create(info.m_DataFormat,
+        unique_ptr<CObjectIStream> in(CObjectIStream::Create(info.m_DataFormat,
                                                            *info.m_Source));
         in->SetFlags(info.m_Flags);
         info.m_ItemInfo->UpdateDelayedBuffer(*in, info.m_Object);

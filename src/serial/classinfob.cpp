@@ -163,7 +163,7 @@ CClassTypeInfoBase::TClassesById& CClassTypeInfoBase::ClassesById(void)
         classes = sm_ClassesById;
         if ( !classes ) {
             const TClasses& cc = Classes();
-            auto_ptr<TClassesById> keep(classes = new TClassesById);
+            unique_ptr<TClassesById> keep(classes = new TClassesById);
             ITERATE ( TClasses, i , cc ) {
                 const CClassTypeInfoBase* info = *i;
                 if ( info->GetId() != typeid(bool) ) {
@@ -190,7 +190,7 @@ CClassTypeInfoBase::TClassesByName& CClassTypeInfoBase::ClassesByName(void)
         CMutexGuard GUARD(s_ClassInfoMutex);
         classes = sm_ClassesByName;
         if ( !classes ) {
-            auto_ptr<TClassesByName> keep(classes = new TClassesByName);
+            unique_ptr<TClassesByName> keep(classes = new TClassesByName);
             const TClasses& cc = Classes();
             ITERATE ( TClasses, i, cc ) {
                 const CClassTypeInfoBase* info = *i;

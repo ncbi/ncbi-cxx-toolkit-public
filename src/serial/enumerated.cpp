@@ -196,8 +196,8 @@ void CEnumeratedTypeValues::AddValue(const string& name,
     }
     m_Values.push_back(make_pair(name, value));
     m_ValueFlags[value] = flags;
-    m_ValueToName.reset(0);
-    m_NameToValue.reset(0);
+    m_ValueToName.reset();
+    m_NameToValue.reset();
 }
 
 
@@ -218,7 +218,7 @@ CEnumeratedTypeValues::ValueToName(void) const
         CFastMutexGuard GUARD(s_EnumValuesMutex);
         m = m_ValueToName.get();
         if ( !m ) {
-            auto_ptr<TValueToName> keep(m = new TValueToName);
+            shared_ptr<TValueToName> keep(m = new TValueToName);
             ITERATE ( TValues, i, m_Values ) {
                 (*m)[i->second] = &i->first;
             }
@@ -236,7 +236,7 @@ CEnumeratedTypeValues::NameToValue(void) const
         CFastMutexGuard GUARD(s_EnumValuesMutex);
         m = m_NameToValue.get();
         if ( !m ) {
-            auto_ptr<TNameToValue> keep(m = new TNameToValue);
+            shared_ptr<TNameToValue> keep(m = new TNameToValue);
             ITERATE ( TValues, i, m_Values ) {
                 const string& s = i->first;
                 pair<TNameToValue::iterator, bool> p =

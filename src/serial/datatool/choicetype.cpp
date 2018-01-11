@@ -269,7 +269,7 @@ bool CChoiceDataType::CheckValue(const CDataValue& value) const
 
 CTypeInfo* CChoiceDataType::CreateTypeInfo(void)
 {
-    auto_ptr<CChoiceTypeInfo>
+    unique_ptr<CChoiceTypeInfo>
         typeInfo(new CChoiceTypeInfo(sizeof(CAnyTypeChoice),
                                      HasExternalName() ? GlobalName() : kEmptyStr,
                                      TObjectPtr(0), &CreateAnyTypeChoice,

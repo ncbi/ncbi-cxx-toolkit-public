@@ -138,8 +138,8 @@ protected:
 
 private:
     string m_FileName;
-    auto_ptr<CNcbiIfstream> m_Istream;
-    auto_ptr<CNcbiOfstream> m_Ostream;
+    unique_ptr<CNcbiIfstream> m_Istream;
+    unique_ptr<CNcbiOfstream> m_Ostream;
 };
 
 string MakeAbsolutePath(const string& path);

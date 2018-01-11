@@ -158,8 +158,8 @@ private:
     bool m_IsInternal;
     TValues m_Values;
     map<TEnumValueType, TValueFlags> m_ValueFlags;
-    mutable auto_ptr<TNameToValue> m_NameToValue;
-    mutable auto_ptr<TValueToName> m_ValueToName;
+    mutable shared_ptr<TNameToValue> m_NameToValue;
+    mutable shared_ptr<TValueToName> m_ValueToName;
 };
 
 

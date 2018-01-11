@@ -139,7 +139,7 @@ private:
 
     void DoUpdate(void);
 
-    auto_ptr<SInfo> m_Info;
+    unique_ptr<SInfo> m_Info;
 };
 
 /* @} */
