@@ -123,8 +123,8 @@ void CSoapHttpClient::Invoke(CSoapMessage& response,
         eENCOD_None, content_type, sizeof(content_type) - 1)),
         x_ParseHttpHeader);
 
-    auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_Xml, http));
-    auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml, http));
+    unique_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_Xml, http));
+    unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml, http));
 
 // allow unknown data
     is->SetSkipUnknownMembers(eSerialSkipUnknown_Yes);
