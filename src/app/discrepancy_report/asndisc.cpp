@@ -67,7 +67,7 @@ protected:
     void x_Autofix(const TDiscrepancyCaseMap& tests);
     void x_OutputObject(const string& filename, const CSerialObject& obj);
 
-    CScope m_Scope;
+    CRef<CScope> m_Scope;
     string m_SuspectRules;
     string m_Lineage;   // override lineage
     vector<string> m_Files;
@@ -76,13 +76,12 @@ protected:
     bool m_Ext;
     bool m_Fat;
     bool m_AutoFix;
-    //bool m_Macro;
     bool m_Xml;
     bool m_Print;
 };
 
 
-CDiscRepApp::CDiscRepApp(void) : m_Scope(*CObjectManager::GetInstance()), m_SuspectProductNames(false), m_Ext(false), m_Fat(false), m_AutoFix(false), /*m_Macro(false),*/ m_Xml(false), m_Print(false)
+CDiscRepApp::CDiscRepApp(void) : m_SuspectProductNames(false), m_Ext(false), m_Fat(false), m_AutoFix(false), m_Xml(false), m_Print(false)
 {
   SetVersionByBuild(1);
 }
@@ -148,20 +147,18 @@ void CDiscRepApp::Init(void)
     arg_desc->AddOptionalKey("X", "ExpandCategories", "Expand Report Categories (comma-delimited list of test names or ALL)", CArgDescriptions::eString);
     arg_desc->AddFlag("N", "Check Product Names");
     arg_desc->AddFlag("F", "Autofix");
-    //arg_desc->AddFlag("R", "Generate Autofix MACRO file");
     arg_desc->AddFlag("XML", "Generate XML output");
     arg_desc->AddFlag("STDOUT", "Copy the output to STDOUT");
 
     //arg_desc->AddOptionalKey("P", "ReportType", "Report type: g - Genome, b - Big Sequence, m - MegaReport, t - Include FATAL Tag, s - FATAL Tag for Superuser", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("P", "ReportType", "Report type: q - SMART, b - Big Sequence, t - Include FATAL Tag, s - FATAL Tag for Superuser", CArgDescriptions::eString);
 
+    CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, CDataLoadersUtil::fDefault | CDataLoadersUtil::fGenbankOffByDefault);
+
 /*
     arg_desc->AddOptionalKey("M", "MessageLevel", 
         "Output message level: 'a': add FATAL tags and output all messages, 'f': add FATAL tags and output FATAL messages only",
                                 CArgDescriptions::eString);
-    arg_desc->AddDefaultKey("R", "Remote", 
-                          "Allow GenBank data loader: 'T' = true, 'F' = false",
-                           CArgDescriptions::eBoolean, "T");
 */
     SetupArgDescriptions(arg_desc.release());  // call CreateArgs
 };
@@ -247,28 +244,28 @@ CRef<CSerialObject> CDiscRepApp::x_ReadFile(const string& fname)
         in->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
         if (ss->IsSetData() && ss->GetData().IsEntrys()) {
             NON_CONST_ITERATE (CSeq_submit::TData::TEntrys, it, ss->SetData().SetEntrys()) {
-                m_Scope.AddTopLevelSeqEntry(**it);
+                m_Scope->AddTopLevelSeqEntry(**it);
             }
         }
         return CRef<CSerialObject>(ss);
     } else if (header == "Seq-entry") {
         CRef<CSeq_entry> se(new CSeq_entry);
         in->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
-        m_Scope.AddTopLevelSeqEntry(*se);
+        m_Scope->AddTopLevelSeqEntry(*se);
         return CRef<CSerialObject>(se);
     } else if (header == "Bioseq-set" ) {
         CRef<CBioseq_set> set(new CBioseq_set);
         in->Read(ObjectInfo(*set), CObjectIStream::eNoFileHeader);
         CRef<CSeq_entry> se(new CSeq_entry());
         se->SetSet().Assign(*set);
-        m_Scope.AddTopLevelSeqEntry(*se);
+        m_Scope->AddTopLevelSeqEntry(*se);
         return CRef<CSerialObject>(se);
     } else if (header == "Bioseq" ) {
         CRef<CBioseq> seq(new CBioseq);
         in->Read(ObjectInfo(*seq), CObjectIStream::eNoFileHeader);
         CRef<CSeq_entry> se(new CSeq_entry());
         se->SetSeq().Assign(*seq);
-        m_Scope.AddTopLevelSeqEntry(*se);
+        m_Scope->AddTopLevelSeqEntry(*se);
         return CRef<CSerialObject>(se);
     } else {
         NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
@@ -296,7 +293,7 @@ void CDiscRepApp::x_ParseDirectory(const string& name, bool recursive)
 
 void CDiscRepApp::x_ProcessFile(const string& fname)
 {
-    CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(m_Scope);
+    CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(*m_Scope);
     if (m_SuspectProductNames) {
         Tests->AddTest("_SUSPECT_PRODUCT_NAMES");
         CNcbiIfstream istr(fname.c_str());
@@ -332,7 +329,7 @@ void CDiscRepApp::x_ProcessFile(const string& fname)
 void CDiscRepApp::x_ProcessAll(const string& outname)
 {
     int count = 0;
-    CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(m_Scope);
+    CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(*m_Scope);
     if (m_SuspectProductNames) {
         Tests->AddTest("_SUSPECT_PRODUCT_NAMES");
         ITERATE (vector<string>, fname, m_Files) {
@@ -367,7 +364,7 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
                 objects[*fname] = obj;
             }
             else {
-                m_Scope.ResetDataAndHistory();
+                m_Scope->ResetDataAndHistory();
             }
         }
         Tests->Summarize();
@@ -405,7 +402,7 @@ void CDiscRepApp::x_Autofix(const TDiscrepancyCaseMap& tests)
     ITERATE (TDiscrepancyCaseMap, tst, tests) {
         const TReportItemList& list = tst->second->GetReport();
         ITERATE (TReportItemList, it, list) {
-            (*it)->Autofix(m_Scope);
+            (*it)->Autofix(*m_Scope);
         }
     }
 }
@@ -537,11 +534,12 @@ int CDiscRepApp::Run(void)
     if (args["w"]) m_SuspectRules = args["w"].AsString();
     if (args["L"]) m_Lineage = args["L"].AsString();
     if (args["F"]) m_AutoFix = args["F"].AsBoolean();
-    //if (args["R"]) m_Macro = args["R"].AsBoolean();
     if (args["XML"]) m_Xml = args["XML"].AsBoolean();
     if (args["STDOUT"]) m_Print = args["STDOUT"].AsBoolean();
 
-
+    CRef<CObjectManager> ObjMgr = CObjectManager::GetInstance();
+    CDataLoadersUtil::SetupObjectManager(args, *ObjMgr, CDataLoadersUtil::fDefault | CDataLoadersUtil::fGenbankOffByDefault);
+    m_Scope.Reset(new CScope (*ObjMgr));
 
     // run tests
     if (args["o"]) {
