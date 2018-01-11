@@ -190,7 +190,7 @@ protected:
     const SPchInfo& GetPchInfo(void) const;
 
 private:
-    auto_ptr<SPchInfo> m_PchInfo;
+    unique_ptr<SPchInfo> m_PchInfo;
 
     CMsvcMetaMakefile(const CMsvcMetaMakefile&);
     CMsvcMetaMakefile& operator= (const CMsvcMetaMakefile&);

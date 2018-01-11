@@ -59,7 +59,7 @@ struct SProjectTreeInfo
 
     /// Subtree to buil (default is m_Src).
     /// More enhanced version of "subtree to build"
-    auto_ptr<IProjectFilter> m_IProjectFilter;
+    unique_ptr<IProjectFilter> m_IProjectFilter;
 
     /// Branch of tree to be implicit exclude from build
     list<string> m_ImplicitExcludedAbsDirs;

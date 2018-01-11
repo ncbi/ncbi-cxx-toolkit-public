@@ -50,13 +50,13 @@ BEGIN_NCBI_SCOPE
 
 CVisualStudioProject* LoadFromXmlFile(const string& file_path)
 {
-    auto_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_Xml, 
+    unique_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_Xml, 
                                                     file_path, 
                                                     eSerial_StdWhenAny));
     if ( in->fail() )
         NCBI_THROW(CProjBulderAppException, eFileOpen, file_path);
     
-    auto_ptr<CVisualStudioProject> prj(new CVisualStudioProject());
+    unique_ptr<CVisualStudioProject> prj(new CVisualStudioProject());
     in->Read(prj.get(), prj->GetThisTypeInfo());
     return prj.release();
 }

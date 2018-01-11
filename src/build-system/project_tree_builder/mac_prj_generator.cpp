@@ -386,7 +386,7 @@ void CMacProjectGenerator::Save(const string& solution_name, CPlist& xproj)
         solution_file += ".candidate";
     }
     {
-        auto_ptr<CObjectOStream> out(CObjectOStream::Open(solution_file, eSerial_Xml));
+        unique_ptr<CObjectOStream> out(CObjectOStream::Open(solution_file, eSerial_Xml));
         CObjectOStreamXml *ox = dynamic_cast<CObjectOStreamXml*>(out.get());
         ox->SetReferenceDTD(true);
         ox->SetDTDPublicId("-//Apple//DTD PLIST 1.0//EN");

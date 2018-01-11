@@ -84,19 +84,19 @@ private:
     typedef map<string, CSimpleMakeFileContents> TFiles;
     void DumpFiles(const TFiles& files, const string& filename) const;
     
-    auto_ptr<CMsvc7RegSettings> m_MsvcRegSettings;
-    auto_ptr<CMsvcSite>         m_MsvcSite;
-    auto_ptr<CMsvcMetaMakefile> m_MsvcMetaMakefile;
+    unique_ptr<CMsvc7RegSettings> m_MsvcRegSettings;
+    unique_ptr<CMsvcSite>         m_MsvcSite;
+    unique_ptr<CMsvcMetaMakefile> m_MsvcMetaMakefile;
 
-    auto_ptr<SProjectTreeInfo>  m_ProjectTreeInfo;
+    unique_ptr<SProjectTreeInfo>  m_ProjectTreeInfo;
 
-    auto_ptr<CBuildType>        m_BuildType;
+    unique_ptr<CBuildType>        m_BuildType;
 
-//    auto_ptr<CMsvcDllsInfo>     m_DllsInfo;
+//    unique_ptr<CMsvcDllsInfo>     m_DllsInfo;
 
-    auto_ptr<CProjectItemsTree> m_WholeTree;
+    unique_ptr<CProjectItemsTree> m_WholeTree;
 
-    auto_ptr<CDllSrcFilesDistr> m_DllSrcFilesDistr;
+    unique_ptr<CDllSrcFilesDistr> m_DllSrcFilesDistr;
 
     const CProjectItemsTree*    m_CurrentBuildTree;
     const CProjectItemsTree*    m_IncompleteBuildTree;

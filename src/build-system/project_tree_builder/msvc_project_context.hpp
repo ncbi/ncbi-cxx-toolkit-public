@@ -181,8 +181,8 @@ private:
 
     void CreateLibsList(list<string>* libs_list) const;
 
-    auto_ptr<CMsvcProjectMakefile>         m_MsvcProjectMakefile;
-    auto_ptr<CMsvcCombinedProjectMakefile> m_MsvcCombinedProjectMakefile;
+    unique_ptr<CMsvcProjectMakefile>         m_MsvcProjectMakefile;
+    unique_ptr<CMsvcCombinedProjectMakefile> m_MsvcCombinedProjectMakefile;
 
     string       m_SourcesBaseDir;
     list<string> m_Requires;
@@ -529,28 +529,28 @@ public:
                           AuxiliaryManagedWrapperGenerator(void) const;
 
 private:
-    auto_ptr<IConfiguration>        m_Configuration;
-    auto_ptr<ICompilerTool>         m_Compiler;
-    auto_ptr<ILinkerTool>           m_Linker;
-    auto_ptr<ILibrarianTool>        m_Librarian;
+    unique_ptr<IConfiguration>        m_Configuration;
+    unique_ptr<ICompilerTool>         m_Compiler;
+    unique_ptr<ILinkerTool>           m_Linker;
+    unique_ptr<ILibrarianTool>        m_Librarian;
     
-    auto_ptr<ICustomBuildTool>      m_CustomBuid;
-    auto_ptr<IMIDLTool>             m_MIDL;
-    auto_ptr<IPostBuildEventTool>	m_PostBuildEvent;
-    auto_ptr<IPreBuildEventTool>	m_PreBuildEvent;
-    auto_ptr<IPreLinkEventTool>		m_PreLinkEvent;
+    unique_ptr<ICustomBuildTool>      m_CustomBuid;
+    unique_ptr<IMIDLTool>             m_MIDL;
+    unique_ptr<IPostBuildEventTool>	m_PostBuildEvent;
+    unique_ptr<IPreBuildEventTool>	m_PreBuildEvent;
+    unique_ptr<IPreLinkEventTool>		m_PreLinkEvent;
     
-    auto_ptr<IResourceCompilerTool>	m_ResourceCompiler;
+    unique_ptr<IResourceCompilerTool>	m_ResourceCompiler;
 
-    auto_ptr<IWebServiceProxyGeneratorTool>	
+    unique_ptr<IWebServiceProxyGeneratorTool>	
                                     m_WebServiceProxyGenerator;
     
-    auto_ptr<IXMLDataGeneratorTool>	m_XMLDataGenerator;
+    unique_ptr<IXMLDataGeneratorTool>	m_XMLDataGenerator;
     
-    auto_ptr<IManagedWrapperGeneratorTool>	
+    unique_ptr<IManagedWrapperGeneratorTool>	
                                     m_ManagedWrapperGenerator;
     
-    auto_ptr<IAuxiliaryManagedWrapperGeneratorTool> 
+    unique_ptr<IAuxiliaryManagedWrapperGeneratorTool> 
                                     m_AuxiliaryManagedWrapperGenerator;
 
     //this is not a value-type class

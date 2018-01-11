@@ -589,7 +589,7 @@ CMsvcPrjProjectContext::GetMsvcProjectMakefile(void) const
 
 
     // temporary fix with const_cast
-    (const_cast<auto_ptr<CMsvcCombinedProjectMakefile>&>
+    (const_cast<unique_ptr<CMsvcCombinedProjectMakefile>&>
         (m_MsvcCombinedProjectMakefile)).reset(new CMsvcCombinedProjectMakefile
                                                   (m_ProjType,
                                                    m_MsvcProjectMakefile.get(),

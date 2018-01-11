@@ -156,7 +156,7 @@ public:
     }
 
 private:
-    auto_ptr<CDiagHandler> m_OrigHandler;
+    unique_ptr<CDiagHandler> m_OrigHandler;
 
     /// the original diagnostics handler
     string        m_AppName;
@@ -439,7 +439,7 @@ void CProjBulderApp::Init(void)
         }
     }
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     string context;

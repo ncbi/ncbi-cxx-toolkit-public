@@ -535,7 +535,7 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
     }}
     
     // Insert sources, headers, inlines:
-    auto_ptr<IFilesToProjectInserter> inserter;
+    unique_ptr<IFilesToProjectInserter> inserter;
 
     if (prj.m_ProjType == CProjKey::eDll) {
         inserter.reset(new CDllProjectFilesInserter
