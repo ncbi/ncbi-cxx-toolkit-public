@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
         
         CRef<TObject> obj(new TObject);
         {
-            auto_ptr<CObjectIStream> in(CObjectIStream::Open(loc_name,
+            unique_ptr<CObjectIStream> in(CObjectIStream::Open(loc_name,
                                                              fmt[in_i]));
             if ( std_xml[in_i] ) {
                 dynamic_cast<CObjectIStreamXml*>(in.get())
@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
             LOG_POST(sw.Elapsed() << "s:  Skip");
         }
         {
-            auto_ptr<CObjectIStream> in(CObjectIStream::Open(loc_name,
+            unique_ptr<CObjectIStream> in(CObjectIStream::Open(loc_name,
                                                              fmt[in_i]));
             if ( std_xml[in_i] ) {
                 dynamic_cast<CObjectIStreamXml*>(in.get())
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
             string ref_name = CDirEntry::MakePath(src_dir, filename, ext[out_i]);
             string out_name = CDirEntry::MakePath(dst_dir, filename, ext[out_i]);
             {
-                auto_ptr<CObjectOStream> out(CObjectOStream::Open(out_name,
+                unique_ptr<CObjectOStream> out(CObjectOStream::Open(out_name,
                                                                   fmt[out_i]));
                 if ( std_xml[out_i] ) {
                     dynamic_cast<CObjectOStreamXml*>(out.get())
@@ -249,7 +249,7 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationWithHook)
         
         CRef<TObject> obj(new TObject);
         {
-            auto_ptr<CObjectIStream> in(CObjectIStream::Open(loc_name,
+            unique_ptr<CObjectIStream> in(CObjectIStream::Open(loc_name,
                                                              fmt[in_i]));
             if ( std_xml[in_i] ) {
                 dynamic_cast<CObjectIStreamXml*>(in.get())
@@ -261,7 +261,7 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationWithHook)
             LOG_POST(sw.Elapsed() << "s:  Skip");
         }
         {
-            auto_ptr<CObjectIStream> in(CObjectIStream::Open(loc_name,
+            unique_ptr<CObjectIStream> in(CObjectIStream::Open(loc_name,
                                                              fmt[in_i]));
             if ( std_xml[in_i] ) {
                 dynamic_cast<CObjectIStreamXml*>(in.get())
@@ -277,7 +277,7 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationWithHook)
             string ref_name = CDirEntry::MakePath(src_dir, filename, ext[out_i]);
             string out_name = CDirEntry::MakePath(dst_dir, filename, ext[out_i]);
             {
-                auto_ptr<CObjectOStream> out(CObjectOStream::Open(out_name,
+                unique_ptr<CObjectOStream> out(CObjectOStream::Open(out_name,
                                                                   fmt[out_i]));
                 if ( std_xml[out_i] ) {
                     dynamic_cast<CObjectOStreamXml*>(out.get())
@@ -356,14 +356,14 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationCopy)
             string out_name = CDirEntry::MakePath(dst_dir, filename, ext[out_i]);
 
             {
-                auto_ptr<CObjectIStream> in(CObjectIStream::Open(loc_name,
+                unique_ptr<CObjectIStream> in(CObjectIStream::Open(loc_name,
                                                                  fmt[in_i]));
                 if ( std_xml[in_i] ) {
                     dynamic_cast<CObjectIStreamXml*>(in.get())
                         ->SetEnforcedStdXml(true);
                 }
 
-                auto_ptr<CObjectOStream> out(CObjectOStream::Open(out_name,
+                unique_ptr<CObjectOStream> out(CObjectOStream::Open(out_name,
                                                                     fmt[out_i]));
                 if ( std_xml[out_i] ) {
                     dynamic_cast<CObjectOStreamXml*>(out.get())
