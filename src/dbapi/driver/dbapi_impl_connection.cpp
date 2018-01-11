@@ -105,6 +105,7 @@ CConnection::CConnection(CDriverContext& dc,
 , m_Pool(params.GetParam("pool_name"))
 , m_PoolMinSize(0)
 , m_PoolMaxSize(kMax_UInt)
+, m_PoolMaxConnUse(kMax_UInt)
 , m_PoolIdleTimeParam(-1, 0)
 , m_CleanupTime(CTime::eEmpty)
 , m_ReuseCount(0)
@@ -119,9 +120,10 @@ CConnection::CConnection(CDriverContext& dc,
     _ASSERT(m_MsgHandlers.GetSize() > 0);
     m_OpeningMsgHandlers = params.GetOpeningMsgHandlers();
 
-    string pool_min_str  = params.GetParam("pool_minsize"),
-           pool_max_str  = params.GetParam("pool_maxsize"),
-           pool_idle_str = params.GetParam("pool_idle_time");
+    string pool_min_str      = params.GetParam("pool_minsize"),
+           pool_max_str      = params.GetParam("pool_maxsize"),
+           pool_idle_str     = params.GetParam("pool_idle_time"),
+           pool_max_conn_use = params.GetParam("pool_max_conn_use");
 
     if ( !pool_min_str.empty()  &&  pool_min_str != "default") {
         m_PoolMinSize = NStr::StringToUInt(pool_min_str);
@@ -132,7 +134,12 @@ CConnection::CConnection(CDriverContext& dc,
     if ( !pool_idle_str.empty()  &&  pool_idle_str != "default") {
         m_PoolIdleTimeParam = CTimeSpan(NStr::StringToDouble(pool_idle_str));
     }
-        
+    if ( !pool_max_conn_use.empty() && pool_max_conn_use != "default") {
+        m_PoolMaxConnUse = NStr::StringToUInt(pool_max_conn_use);
+        if (m_PoolMaxConnUse == 0)
+            m_PoolMaxConnUse = kMax_UInt;
+    }
+
     CheckCanOpen();
 }
 

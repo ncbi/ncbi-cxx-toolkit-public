@@ -59,25 +59,26 @@ class CConnection;
 struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
 {
     enum EFlags {
-        fServerSet       = 0x0001,
-        fPortSet         = 0x0002,
-        fDatabaseSet     = 0x0004,
-        fUsernameSet     = 0x0008,
-        fPasswordSet     = 0x0010,
-        fLoginTimeoutSet = 0x0020,
-        fIOTimeoutSet    = 0x0040,
-        fCancelTimeoutSet= 0x0080,
-        fSingleServerSet = 0x0100,
-        fIsPooledSet     = 0x0200,
-        fPoolMinSizeSet  = 0x0400,
-        fPoolMaxSizeSet  = 0x0800,
-        fArgsSet         = 0x1000,
-        fPasswordFileSet = 0x2000,
-        fPasswordKeySet  = 0x4000,
-        fPoolIdleTimeSet = 0x8000,
-        fPoolWaitTimeSet = 0x10000,
-        fPoolAllowTempSet= 0x20000,
-        fContRaiserrorSet= 0x40000
+        fServerSet         = 0x0001,
+        fPortSet           = 0x0002,
+        fDatabaseSet       = 0x0004,
+        fUsernameSet       = 0x0008,
+        fPasswordSet       = 0x0010,
+        fLoginTimeoutSet   = 0x0020,
+        fIOTimeoutSet      = 0x0040,
+        fCancelTimeoutSet  = 0x0080,
+        fSingleServerSet   = 0x0100,
+        fIsPooledSet       = 0x0200,
+        fPoolMinSizeSet    = 0x0400,
+        fPoolMaxSizeSet    = 0x0800,
+        fArgsSet           = 0x1000,
+        fPasswordFileSet   = 0x2000,
+        fPasswordKeySet    = 0x4000,
+        fPoolIdleTimeSet   = 0x8000,
+        fPoolWaitTimeSet   = 0x10000,
+        fPoolAllowTempSet  = 0x20000,
+        fContRaiserrorSet  = 0x40000,
+        fPoolMaxConnUseSet = 0x80000
         // , fPoolNameSet     = 0x40000
     };
     typedef unsigned int  TFlags;
@@ -102,33 +103,35 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
     string  pool_wait_time;
     string  pool_allow_temp_overflow;
     string  continue_after_raiserror;
+    string  pool_max_conn_use;
     string  args;
 
 
     bool IsFlagSet(EFlags one_flag) { return (flags & one_flag) != 0; }
 
-    bool IsServerSet(void)       { return IsFlagSet(fServerSet);        }
-    bool IsPortSet(void)         { return IsFlagSet(fPortSet);          }
-    bool IsDatabaseSet(void)     { return IsFlagSet(fDatabaseSet);      }
-    bool IsUsernameSet(void)     { return IsFlagSet(fUsernameSet);      }
-    bool IsPasswordSet(void)     { return IsFlagSet(fPasswordSet);      }
-    bool IsPasswordFileSet(void) { return IsFlagSet(fPasswordFileSet);  }
-    bool IsPasswordKeySet(void)  { return IsFlagSet(fPasswordKeySet);   }
-    bool IsLoginTimeoutSet(void) { return IsFlagSet(fLoginTimeoutSet);  }
-    bool IsIOTimeoutSet(void)    { return IsFlagSet(fIOTimeoutSet);     }
-    bool IsCancelTimeoutSet(void){ return IsFlagSet(fCancelTimeoutSet); }
-    bool IsSingleServerSet(void) { return IsFlagSet(fSingleServerSet);  }
-    bool IsPooledSet(void)       { return IsFlagSet(fIsPooledSet);      }
+    bool IsServerSet(void)         { return IsFlagSet(fServerSet);         }
+    bool IsPortSet(void)           { return IsFlagSet(fPortSet);           }
+    bool IsDatabaseSet(void)       { return IsFlagSet(fDatabaseSet);       }
+    bool IsUsernameSet(void)       { return IsFlagSet(fUsernameSet);       }
+    bool IsPasswordSet(void)       { return IsFlagSet(fPasswordSet);       }
+    bool IsPasswordFileSet(void)   { return IsFlagSet(fPasswordFileSet);   }
+    bool IsPasswordKeySet(void)    { return IsFlagSet(fPasswordKeySet);    }
+    bool IsLoginTimeoutSet(void)   { return IsFlagSet(fLoginTimeoutSet);   }
+    bool IsIOTimeoutSet(void)      { return IsFlagSet(fIOTimeoutSet);      }
+    bool IsCancelTimeoutSet(void)  { return IsFlagSet(fCancelTimeoutSet);  }
+    bool IsSingleServerSet(void)   { return IsFlagSet(fSingleServerSet);   }
+    bool IsPooledSet(void)         { return IsFlagSet(fIsPooledSet);       }
     // bool IsPoolNameSet(void)     { return IsFlagSet(fPoolNameSet);      }
-    bool IsPoolMinSizeSet(void)  { return IsFlagSet(fPoolMinSizeSet);   }
-    bool IsPoolMaxSizeSet(void)  { return IsFlagSet(fPoolMaxSizeSet);   }
-    bool IsPoolIdleTimeSet(void) { return IsFlagSet(fPoolIdleTimeSet);  }
-    bool IsPoolWaitTimeSet(void) { return IsFlagSet(fPoolWaitTimeSet);  }
+    bool IsPoolMinSizeSet(void)    { return IsFlagSet(fPoolMinSizeSet);    }
+    bool IsPoolMaxSizeSet(void)    { return IsFlagSet(fPoolMaxSizeSet);    }
+    bool IsPoolIdleTimeSet(void)   { return IsFlagSet(fPoolIdleTimeSet);   }
+    bool IsPoolWaitTimeSet(void)   { return IsFlagSet(fPoolWaitTimeSet);   }
     bool IsPoolAllowTempOverflowSet(void)
-                                 { return IsFlagSet(fPoolAllowTempSet); }
+                                   { return IsFlagSet(fPoolAllowTempSet);  }
     bool IsContinueAfterRaiserrorSet(void)
-                                 { return IsFlagSet(fContRaiserrorSet); }
-    bool IsArgsSet(void)         { return IsFlagSet(fArgsSet);          }
+                                   { return IsFlagSet(fContRaiserrorSet);  }
+    bool IsPoolMaxConnUseSet(void) { return IsFlagSet(fPoolMaxConnUseSet); }
+    bool IsArgsSet(void)           { return IsFlagSet(fArgsSet);           }
 
     void Clear(void);
 };

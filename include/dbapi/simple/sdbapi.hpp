@@ -941,6 +941,7 @@ public:
     ///   - conn_pool_wait_time
     ///   - conn_pool_allow_temp_overflow
     ///   - continue_after_raiserror
+    ///   - conn_pool_max_conn_use
     ///   - password_file
     ///   - password_key
     ///
@@ -999,6 +1000,7 @@ public:
         eConnPoolWaitTime,
         eConnPoolAllowTempOverflow,
         eContinueAfterRaiserror,
+        eConnPoolMaxConnUse,
         eArgsString
     };
  
@@ -1423,6 +1425,8 @@ CSDB_ConnectionParam::x_GetName(EParam param)
                             return "allow_temp_overflow";
     case eContinueAfterRaiserror:
                             return "continue_after_raiserror";
+    case eConnPoolMaxConnUse:
+                            return "conn_pool_max_conn_use";
     case eArgsString:       return "args_string";
     }
     _TROUBLE;
@@ -1485,6 +1489,7 @@ CSDB_ConnectionParam::Get(EParam param, EWithOverrides with_overrides) const
     case eConnPoolWaitTime:
     case eConnPoolAllowTempOverflow:
     case eContinueAfterRaiserror:
+    case eConnPoolMaxConnUse:
     {
         bool found_dummy = false;
         return m_Url.GetArgs().GetValue(x_GetName(param), &found_dummy);
@@ -1554,6 +1559,7 @@ CSDB_ConnectionParam::Set(EParam param, const string& value, TSetFlags flags)
     case eConnPoolWaitTime:
     case eConnPoolAllowTempOverflow:
     case eContinueAfterRaiserror:
+    case eConnPoolMaxConnUse:
     {
         string name = x_GetName(param);
         if ( !value.empty()  ||  m_Url.GetArgs().IsSetValue(name)) {

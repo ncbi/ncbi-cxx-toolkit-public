@@ -323,6 +323,11 @@ void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
                 keep = false;
             }
         }
+
+        if (keep && conn->m_ReuseCount + 1 > conn->m_PoolMaxConnUse) {
+            // CXX-4420: limit the number of time the connection is reused
+            keep = false;
+        }
     }
 
     if (keep) {
@@ -803,6 +808,7 @@ SDBConfParams::Clear(void)
     pool_idle_time.clear();
     pool_wait_time.clear();
     pool_allow_temp_overflow.clear();
+    pool_max_conn_use.clear();
     args.clear();
 }
 
@@ -922,6 +928,12 @@ CDriverContext::ReadDBConfParams(const string&  service_name,
         params->continue_after_raiserror
             = reg.Get(section_name, "continue_after_raiserror");
     }
+    if (reg.HasEntry(section_name, "conn_pool_max_conn_use",
+                     IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fPoolMaxConnUseSet;
+        params->pool_max_conn_use
+            = reg.Get(section_name, "conn_pool_max_conn_use");
+    }
     if (reg.HasEntry(section_name, "args", IRegistry::fCountCleared)) {
         params->flags += SDBConfParams::fArgsSet;
         params->args = reg.Get(section_name, "args");
@@ -978,6 +990,7 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
     CMutexGuard mg(x_GetCtxMtx());
 
     CMakeConnActualParams act_params(params);
+
     SDBConfParams conf_params;
     conf_params.Clear();
     if (params.GetParam("do_not_read_conf") != "true") {
@@ -1100,7 +1113,7 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
             }
             else {
                 act_params.SetParam
-                    ("pool_allow_temp_overflow", 
+                    ("pool_allow_temp_overflow",
                      NStr::BoolToString(
                          NStr::StringToBool(
                              conf_params.pool_allow_temp_overflow)));
@@ -1108,6 +1121,12 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
         }
         else if (params.GetParam("pool_allow_temp_overflow") == "default") {
             act_params.SetParam("pool_allow_temp_overflow", "false");
+        }
+        if (conf_params.IsPoolMaxConnUseSet())
+            act_params.SetParam("pool_max_conn_use",
+                                conf_params.pool_max_conn_use);
+        else if (params.GetParam("pool_max_conn_use") == "default") {
+            act_params.SetParam("pool_max_conn_use", "0");
         }
         if (conf_params.IsContinueAfterRaiserrorSet()) {
             if (conf_params.continue_after_raiserror.empty()) {

@@ -243,7 +243,7 @@ public:
     {
         m_UserData.Reset(data);
     }
-    
+
 protected:
     /// These methods to allow the children of CConnection to create
     /// various command-objects
@@ -287,7 +287,7 @@ protected:
     {
         return m_ReuseCount;
     }
-    
+
     //
     bool IsBCPable(void) const
     {
@@ -342,6 +342,8 @@ private:
     const string   m_Pool;
     unsigned int   m_PoolMinSize;
     unsigned int   m_PoolMaxSize;
+    unsigned int   m_PoolMaxConnUse;    // Max number of time a connection is
+                                        // used before it is closed.
     CTimeSpan      m_PoolIdleTimeParam;
     CTime          m_CleanupTime;
     CRef<CObject>  m_UserData;

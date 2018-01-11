@@ -1059,6 +1059,7 @@ void CSDB_ConnectionParam::x_FillParamMap(void)
                     pool_allow_temp_overflow);
     COPY_BOOL_PARAM(ContinueAfterRaiserror, ContinueAfterRaiserror,
                     continue_after_raiserror);
+    COPY_NUM_PARAM (ConnPoolMaxConnUse, PoolMaxConnUse,  pool_max_conn_use);
 
 #undef COPY_PARAM_EX
 #undef COPY_PARAM
@@ -1164,6 +1165,9 @@ CSDB_ConnectionParam::x_FillLowerParams(CDBConnParamsBase* params) const
     params->SetParam("pool_maxsize",  Get(eConnPoolMaxSize, eWithOverrides));
     params->SetParam("pool_idle_time", Get(eConnPoolIdleTime, eWithOverrides));
     params->SetParam("pool_wait_time", Get(eConnPoolWaitTime, eWithOverrides));
+    params->SetParam("pool_max_conn_use",
+                     Get(eConnPoolMaxConnUse, eWithOverrides));
+
     x_FillBoolParam(params, "pool_allow_temp_overflow",
                     eConnPoolAllowTempOverflow);
     x_FillBoolParam(params, "continue_after_raiserror",
@@ -1179,7 +1183,7 @@ CSDB_ConnectionParam::x_FillLowerParams(CDBConnParamsBase* params) const
     typedef vector<CUrlArgs*> TAllArgs;
     TAllArgs all_args;
     all_args.push_back(&m_Url.GetArgs());
-    
+
     unique_ptr<CUrlArgs> conf_args;
     {{
         TParamMap::const_iterator it = m_ParamMap.find(eArgsString);
