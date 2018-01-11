@@ -373,6 +373,167 @@ static void PrintGenAccOrderList(CMasterInfo& info)
     }
 }
 
+static bool GetAccessionIdInfo(const CSeq_id& id, string& accession, int& version)
+{
+    if (NeedToProcessId(id)) {
+        const CTextseq_id* text_id = id.GetTextseq_Id();
+        if (text_id && text_id->IsSetName()) {
+
+            const string& cur_name = text_id->GetName();
+            auto& digits = find_if(cur_name.begin(), cur_name.end(), [](char c){ return isdigit(c); });
+
+            if (digits != cur_name.end()) {
+                string version_str = cur_name.substr(digits - cur_name.begin());
+
+                if (version_str.size() >= 2) {
+                    version = NStr::StringToInt(version_str.substr(0, 2), NStr::fAllowLeadingSymbols | NStr::fAllowTrailingSymbols);
+                    if (version > 0) {
+                        accession = text_id->GetAccession();
+                    }
+                }
+            }
+        }
+    }
+
+    return version > 0;
+}
+
+static bool GetAccessionInfo(const CSeq_entry& entry, string& accession, int& version)
+{
+    if (entry.IsSeq() && entry.GetSeq().IsNa()) {
+
+        if (entry.GetSeq().IsSetId()) {
+
+            for (auto id : entry.GetSeq().GetId()) {
+                if (GetAccessionIdInfo(*id, accession, version)) {
+                    break;
+                }
+            }
+        }
+    }
+
+    if (entry.IsSet()) {
+        if (entry.GetSet().IsSetSeq_set()) {
+
+            for (auto cur_entry : entry.GetSet().GetSeq_set()) {
+                if (GetAccessionInfo(*cur_entry, accession, version)) {
+                    break;
+                }
+            }
+        }
+    }
+
+    return version > 0;
+}
+
+static void GetContigNum(CConstRef<CUser_field>& field, int& contig, size_t& num_len)
+{
+    if (field.NotEmpty() && field->IsSetData() && field->GetData().IsStr()) {
+
+        const string& accession = field->GetData().GetStr();
+
+        if (NStr::StartsWith(accession, GetParams().GetIdPrefix())) {
+
+            const char* contig_num = accession.c_str() + GetParams().GetIdPrefix().size();
+            int value = NStr::StringToInt(contig_num, NStr::fAllowLeadingSymbols | NStr::fAllowTrailingSymbols);
+            if (value > 0) {
+                contig = value;
+            }
+
+            if (num_len == 0) {
+                num_len = accession.size() - GetParams().GetIdPrefix().size();
+            }
+        }
+    }
+}
+
+static void GetDescriptorsInfo(const CSeq_entry& entry, const vector<string>& user_obj_tags, const string& first_contig_field, const string& last_contig_field, int& first_contig, int& last_contig, size_t& num_len)
+{
+    if (entry.IsSeq() && entry.GetSeq().IsNa()) {
+
+        if (entry.GetSeq().IsSetDescr() && entry.GetSeq().GetDescr().IsSet()) {
+
+            for (auto descr : entry.GetSeq().GetDescr().Get()) {
+
+                for (auto& tag : user_obj_tags) {
+                    if (IsUserObjectOfType(*descr, tag)) {
+
+                        const CUser_object& cur_obj = descr->GetUser();
+
+                        {
+                            auto& contig = cur_obj.GetFieldRef(first_contig_field);
+                            GetContigNum(contig, first_contig, num_len);
+                        }
+
+                        {
+                            auto& contig = cur_obj.GetFieldRef(last_contig_field);
+                            GetContigNum(contig, last_contig, num_len);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (entry.IsSet()) {
+        if (entry.GetSet().IsSetSeq_set()) {
+
+            for (auto cur_entry : entry.GetSet().GetSeq_set()) {
+                GetDescriptorsInfo(*cur_entry, user_obj_tags, first_contig_field, last_contig_field, first_contig, last_contig, num_len);
+            }
+        }
+    }
+}
+
+static void GetUserObjAndFieldNames(vector<string>& user_obj_tags, string& first_contig, string& last_contig)
+{
+    if (GetParams().IsTls()) {
+        user_obj_tags.push_back("TLSProjects");
+        first_contig = "TLS_accession_first";
+        last_contig = "TLS_accession_last";
+    }
+    else if (GetParams().IsTsa()) {
+        user_obj_tags.push_back("TSA-RNA-List");
+        user_obj_tags.push_back("TSA-mRNA-List");
+        first_contig = "TSA_accession_first";
+        last_contig = "TSA_accession_last";
+    }
+    else {
+        user_obj_tags.push_back("WGSProjects");
+        first_contig = "WGS_accession_first";
+        last_contig = "WGS_accession_last";
+    }
+}
+
+static void GetCurrentMasterInfo(const CSeq_entry& entry, CCurrentMasterInfo& current_master)
+{
+    GetAccessionInfo(entry, current_master.m_accession, current_master.m_version);
+
+    vector<string> user_obj_tags;
+    string first_contig,
+           last_contig;
+
+    GetUserObjAndFieldNames(user_obj_tags, first_contig, last_contig);
+    GetDescriptorsInfo(entry, user_obj_tags, first_contig, last_contig, current_master.m_first_contig, current_master.m_last_contig, current_master.m_num_len);
+
+    //TODO working with pubs
+}
+
+static bool SaveAccessionsRange(int first, int last, size_t num_len)
+{
+    CNcbiOfstream out;
+    if (!OpenOutputFile(GetParams().GetAccFile(), "", out)) {
+        return false;
+    }
+
+    const string& prefix = GetParams().GetIdPrefix();
+    for (int i = first; i <= last; ++i) {
+        out << prefix << ToStringLeadZeroes(i, num_len) << '\n';
+    }
+
+    return true;
+}
+
 static const int ERROR_RET = 1;
 
 // CR Use ZZZZ prefix to mock completely new submission
@@ -383,6 +544,9 @@ int CWGSParseApp::Run(void)
     if (SetParams(GetArgs())) {
 
         CCleanup cleanup;
+
+        CMasterInfo master_info;
+        CCurrentMasterInfo current_master;
 
         CRef<CSeq_entry> master_entry = GetMasterEntry();
         if (GetParams().GetUpdateMode() == eUpdateNew) {
@@ -403,10 +567,43 @@ int CWGSParseApp::Run(void)
 
             cleanup.ExtendedCleanup(*master_entry);
 
-            // TODO additional for some special modes
+            if (GetParams().IsUpdateScaffoldsMode() || GetParams().GetUpdateMode() == eUpdateAssembly || GetParams().GetUpdateMode() == eUpdateExtraContigs) {
+
+                if (GetParams().GetUpdateMode() == eUpdateScaffoldsUpd && GetParams().GetSource() != eNCBI) {
+                    // TODO
+                }
+
+                GetCurrentMasterInfo(*master_entry, current_master);
+                if (current_master.m_version <= 0) {
+
+                    ERR_POST_EX(0, 0, Critical << "Failed to get current assembly version from master sequence from ID.");
+                    return ERROR_RET;
+                }
+
+                if (current_master.m_last_contig <= 0) {
+                    ERR_POST_EX(0, 0, Critical << "Failed to get the range of accession from previous version master.");
+                    return ERROR_RET;
+                }
+
+                if (!GetParams().IsTest() && !GetParams().GetAccFile().empty()) {
+                    if (!SaveAccessionsRange(current_master.m_first_contig, current_master.m_last_contig, current_master.m_num_len)) {
+                        ERR_POST_EX(0, 0, Critical << "Failed to save the range of accessions from previous version master to file \"" << GetParams().GetAccFile() << "\".");
+                        return ERROR_RET;
+                    }
+                }
+
+                if (GetParams().GetUpdateMode() == eUpdateAssembly) {
+                    ++current_master.m_version;
+
+                    // TODO pubs
+                }
+
+                // TODO other stuff
+
+                master_info.m_current_master = &current_master;
+            }
         }
 
-        CMasterInfo master_info;
         master_info.m_id_master_bioseq = master_entry;
 
         if (!CreateMasterBioseqWithChecks(master_info)) {

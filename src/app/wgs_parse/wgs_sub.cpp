@@ -534,16 +534,11 @@ static void FixOrigProtTransIds(CSeq_entry& entry)
     }
 }
 
-static bool NeedToProcess(const CSeq_id& id)
-{
-    return id.IsGenbank() || id.IsDdbj() || id.IsEmbl() || id.IsOther() || id.IsTpd() || id.IsTpe() || id.IsTpg();
-}
-
 static void CollectAccGenid(const CBioseq::TId& ids, const string& file, list<CIdInfo>& id_infos)
 {
     CIdInfo cur_info;
     for (auto& id : ids) {
-        if (NeedToProcess(*id)) {
+        if (NeedToProcessId(*id)) {
             const CTextseq_id* text_id = id->GetTextseq_Id();
             if (text_id && text_id->IsSetAccession()) {
                 cur_info.m_accession = text_id->GetAccession();

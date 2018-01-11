@@ -208,6 +208,22 @@ enum EDateIssues
     eDateMissing
 };
 
+struct CCurrentMasterInfo
+{
+    string m_accession;
+    int m_version,
+        m_first_contig,
+        m_last_contig;
+    size_t m_num_len; // length of the numeric part of an accession
+
+    CCurrentMasterInfo() :
+        m_version(0),
+        m_first_contig(0),
+        m_last_contig(0),
+        m_num_len(0)
+    {}
+};
+
 struct CMasterInfo
 {
     size_t m_num_of_pubs;
@@ -256,6 +272,8 @@ struct CMasterInfo
 
     size_t m_num_of_prot_seq;
 
+    CCurrentMasterInfo* m_current_master;
+
     CMasterInfo() :
         m_num_of_pubs(0),
         m_common_comments_not_set(true),
@@ -275,7 +293,8 @@ struct CMasterInfo
         m_num_of_entries(0),
         m_accession_ver(-1),
         m_keywords_set(false),
-        m_num_of_prot_seq(0)
+        m_num_of_prot_seq(0),
+        m_current_master(nullptr)
     {}
 
     void SetDblinkEmpty(const string& file, const string& id)

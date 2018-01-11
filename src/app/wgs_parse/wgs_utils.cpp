@@ -337,4 +337,9 @@ string::size_type GetLastSlashPos(const string& str)
     return ret;
 }
 
+bool NeedToProcessId(const CSeq_id& id)
+{
+    return id.IsGenbank() || id.IsDdbj() || id.IsEmbl() || id.IsOther() || id.IsTpd() || id.IsTpe() || id.IsTpg();
+}
+
 }

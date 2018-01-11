@@ -92,6 +92,7 @@ bool IsUserObjectOfType(const CSeqdesc& descr, const string& type);
 string ToString(const CSerialObject& obj);
 
 string::size_type GetLastSlashPos(const string& str);
+bool NeedToProcessId(const CSeq_id& id);
 
 CScope& GetScope();
 

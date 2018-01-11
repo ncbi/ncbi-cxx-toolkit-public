@@ -443,25 +443,25 @@ static bool DBLinkProblemReport(const CMasterInfo& info)
 
 static void ReplaceFieldInDBLink(const TIdContainer& values, const string& tag, CUser_object& user_obj)
 {
-    user_obj.RemoveNamedField(tag);
+    if (!values.empty()) {
 
-    vector<string> value_list(values.begin(), values.end());
-    user_obj.AddField(tag, value_list);
+        user_obj.RemoveNamedField(tag);
+        vector<string> value_list(values.begin(), values.end());
+        user_obj.AddField(tag, value_list);
+    }
 }
 
-static void CheckSetOfIds(CUser_object& user_obj, const string& tag, const TIdContainer& ids, const string& what, const string& cmd_line_param, bool& reject)
+static void CheckSetOfIds(CRef<CUser_object>& user_obj, const string& tag, const TIdContainer& ids, const string& what, const string& cmd_line_param, bool& reject)
 {
-    if (!user_obj.IsSetData()) {
-        return;
-    }
-
     TIdContainer cur_ids;
 
-    auto& tag_field = user_obj.GetFieldRef(tag);
-    if (tag_field.NotEmpty() && tag_field->IsSetData() && tag_field->GetData().IsStrs()) {
+    if (user_obj.NotEmpty() && user_obj->IsSetData()) {
+        auto& tag_field = user_obj->GetFieldRef(tag);
+        if (tag_field.NotEmpty() && tag_field->IsSetData() && tag_field->GetData().IsStrs()) {
 
-        for (auto& id : tag_field->GetData().GetStrs()) {
-            cur_ids.insert(id);
+            for (auto& id : tag_field->GetData().GetStrs()) {
+                cur_ids.insert(id);
+            }
         }
     }
 
@@ -479,11 +479,13 @@ static void CheckSetOfIds(CUser_object& user_obj, const string& tag, const TIdCo
                 ERR_POST_EX(0, 0, Critical << msg.str() << "\". Rejecting the whole project.");
             }
 
-            ReplaceFieldInDBLink(ids, tag, user_obj);
+            ReplaceFieldInDBLink(ids, tag, *user_obj);
         }
     }
     else if (!ids.empty()) {
-        ReplaceFieldInDBLink(ids, tag, user_obj);
+        if (user_obj.NotEmpty()) {
+            ReplaceFieldInDBLink(ids, tag, *user_obj);
+        }
         ERR_POST_EX(0, 0, Info << "All records from files being processed are lacking " << what << ". Using command line \"" << cmd_line_param << "\" values.");
     }
 }
@@ -577,18 +579,33 @@ static void CheckCurrentDBLinkConsistency(const CUser_object& first, const CUser
     }
 }
 
+static void FixDBLink(CRef<CUser_object>& user_obj)
+{
+    if (user_obj.Empty()) {
+        user_obj.Reset(new CUser_object);
+        user_obj->SetType().SetStr("DBLink");
+    }
+
+    ReplaceFieldInDBLink(GetParams().GetBioProjectIds(), "BioProject", *user_obj);
+    ReplaceFieldInDBLink(GetParams().GetBioSampleIds(), "BioSample", *user_obj);
+    ReplaceFieldInDBLink(GetParams().GetSRAIds(), "Sequence Read Archive", *user_obj);
+}
+
 static void CheckMasterDblink(CMasterInfo& info)
 {
-    if (info.m_dblink.NotEmpty()) {
-        
-        CheckSetOfIds(*info.m_dblink, "BioProject", GetParams().GetBioProjectIds(), "BioProject Accession Numbers", "-B", info.m_reject);
-        CheckSetOfIds(*info.m_dblink, "BioSample", GetParams().GetBioSampleIds(), "BioSample ids", "-C", info.m_reject);
-        CheckSetOfIds(*info.m_dblink, "Sequence Read Archive", GetParams().GetSRAIds(), "SRA accessions", "-C", info.m_reject);
-    }
+    CheckSetOfIds(info.m_dblink, "BioProject", GetParams().GetBioProjectIds(), "BioProject Accession Numbers", "-B", info.m_reject);
+    CheckSetOfIds(info.m_dblink, "BioSample", GetParams().GetBioSampleIds(), "BioSample ids", "-C", info.m_reject);
+    CheckSetOfIds(info.m_dblink, "Sequence Read Archive", GetParams().GetSRAIds(), "SRA accessions", "-C", info.m_reject);
 
     CUser_object* id_dblink_user_obj = GetDBLinkFromIdMasterBioseq(info.m_id_master_bioseq);
     if (info.m_dblink.Empty() && id_dblink_user_obj == nullptr) {
         return;
+    }
+
+    FixDBLink(info.m_dblink);
+
+    if (info.m_dblink_state == eDblinkNoDblink) {
+        info.m_dblink_state = eDblinkNoProblem;
     }
 
     if (GetParams().IsDblinkOverride() && id_dblink_user_obj && info.m_dblink->GetFieldRef("BioSample").Empty()) {
@@ -598,12 +615,6 @@ static void CheckMasterDblink(CMasterInfo& info)
             ERR_POST_EX(0, 0, Warning << "The DBLink User-object content from the files being processed lacks BioSample link that is present in the current WGS-Master for this WGS project. Using the one from the current Master.");
             info.m_dblink->AddField("BioSample", biosample_field->GetData().GetStrs());
         }
-    }
-
-    if (info.m_dblink.Empty()) {
-        // TODO
-
-        return;
     }
 
     if (id_dblink_user_obj == nullptr) {
