@@ -48,13 +48,13 @@ void InitializeTestObject(
     string text_in("webenv.ent");
 #ifdef HAVE_NCBI_C
     {
-        auto_ptr<CObjectIStream> in(
+        unique_ptr<CObjectIStream> in(
             CObjectIStream::Open(text_in, eSerial_AsnText));
         in->Read(&env, GetSequenceTypeRef(&env).Get());
     }
 #else
     {
-        auto_ptr<CObjectIStream> in(CObjectIStream::Open(text_in,eSerial_AsnText));
+        unique_ptr<CObjectIStream> in(CObjectIStream::Open(text_in,eSerial_AsnText));
         *in >> *env;
     }
 #endif

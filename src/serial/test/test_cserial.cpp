@@ -47,14 +47,14 @@ BOOST_AUTO_TEST_CASE(s_TestCAsnSerialization)
         {
             // read ASN text
             // specify input as a file name, use Read method
-            auto_ptr<CObjectIStream> in(
+            unique_ptr<CObjectIStream> in(
                 CObjectIStream::Open(text_in, eSerial_AsnText));
             in->Read(&env, GetSequenceTypeRef(&env).Get());
         }
         {
             // write ASN binary
             // specify output as a file name, use Write method
-            auto_ptr<CObjectOStream> out(
+            unique_ptr<CObjectOStream> out(
                 CObjectOStream::Open(bin_out,eSerial_AsnBinary));
             out->Write(&env, GetSequenceTypeRef(&env).Get());
         }
@@ -64,12 +64,12 @@ BOOST_AUTO_TEST_CASE(s_TestCAsnSerialization)
             // C-style Object must be clean before loading: using new WebEnv instance
             WebEnv* env2 = 0;
             // read ASN binary
-            auto_ptr<CObjectIStream> in(
+            unique_ptr<CObjectIStream> in(
                 CObjectIStream::Open(bin_in,eSerial_AsnBinary));
             in->Read(&env2, GetSequenceTypeRef(&env2).Get());
 
             // write ASN text
-            auto_ptr<CObjectOStream> out(
+            unique_ptr<CObjectOStream> out(
                 CObjectOStream::Open(text_out,eSerial_AsnText));
             out->Write(&env2, GetSequenceTypeRef(&env2).Get());
             WebEnvFree(env2);
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(s_TestCPrintAsn)
         WebEnv* env = 0;
         {
             // read ASN text
-            auto_ptr<CObjectIStream> in(
+            unique_ptr<CObjectIStream> in(
                 CObjectIStream::Open(text_in, eSerial_AsnText));
             in->Read(&env, GetSequenceTypeRef(&env).Get());
         }

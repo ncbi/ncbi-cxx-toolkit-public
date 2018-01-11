@@ -46,14 +46,14 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
         {
             // read ASN text
             // specify input as a file name
-            auto_ptr<CObjectIStream> in(
+            unique_ptr<CObjectIStream> in(
                 CObjectIStream::Open(text_in,eSerial_AsnText));
             *in >> *env;
         }
         {
             // write ASN binary
             // specify output as a file name
-            auto_ptr<CObjectOStream> out(
+            unique_ptr<CObjectOStream> out(
                 CObjectOStream::Open(bin_out,eSerial_AsnBinary));
             *out << *env;
         }
@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
         {
             // write ASN binary
             // specify output as a file name, use Write method
-            auto_ptr<CObjectOStream> out(
+            unique_ptr<CObjectOStream> out(
                 CObjectOStream::Open(bin_out,eSerial_AsnBinary));
             out->Write( env, env->GetThisTypeInfo());
         }
@@ -80,14 +80,14 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
         {
             // read ASN binary
             // specify input as a file name
-            auto_ptr<CObjectIStream> in(
+            unique_ptr<CObjectIStream> in(
                 CObjectIStream::Open(bin_in,eSerial_AsnBinary));
             *in >> *env;
         }
         {
             // write ASN text
             // specify output as a file name
-            auto_ptr<CObjectOStream> out(
+            unique_ptr<CObjectOStream> out(
                 CObjectOStream::Open(text_out,eSerial_AsnText));
             *out << *env;
         }
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(s_TestObjectHooks)
         // write hook
         CNcbiOstrstream ostrs;
         {
-            auto_ptr<CObjectOStream> os(
+            unique_ptr<CObjectOStream> os(
                 CObjectOStream::Open(eSerial_AsnText, ostrs));
             // set local write hook
             // use CObjectHookGuard
@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(s_TestObjectHooks)
         // read hook
         // use CObjectHookGuard
         CNcbiIstrstream istrs(buf);
-        auto_ptr<CObjectIStream> is(
+        unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CTestSerialObject obj_copy;
         CObjectHookGuard<CTestSerialObject> r_hook(
@@ -155,7 +155,7 @@ BOOST_AUTO_TEST_CASE(s_TestObjectHooks)
         // write hook
         CNcbiOstrstream ostrs;
         {
-            auto_ptr<CObjectOStream> os(
+            unique_ptr<CObjectOStream> os(
                 CObjectOStream::Open(eSerial_AsnText, ostrs));
             // set local write hook
             CObjectTypeInfo type = CType<CTestSerialObject>();
@@ -168,7 +168,7 @@ BOOST_AUTO_TEST_CASE(s_TestObjectHooks)
     {
         // read hook
         CNcbiIstrstream istrs(buf);
-        auto_ptr<CObjectIStream> is(
+        unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CTestSerialObject obj_copy;
         // set local read hook
@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE(s_TestObjectStackPathHooks)
         // write, stack path hook
         CNcbiOstrstream ostrs;
         {
-            auto_ptr<CObjectOStream> os(
+            unique_ptr<CObjectOStream> os(
                 CObjectOStream::Open(eSerial_AsnText, ostrs));
             CObjectTypeInfo(type_info).SetPathWriteHook(
                 os.get(), "CTestSerialObject.*", new CWriteSerialObjectHook(&obj));
@@ -220,7 +220,7 @@ BOOST_AUTO_TEST_CASE(s_TestObjectStackPathHooks)
     {
         // read, stack path hook
         CNcbiIstrstream istrs(buf);
-        auto_ptr<CObjectIStream> is(
+        unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CTestSerialObject obj_copy;
         CObjectTypeInfo(type_info).SetPathReadHook(
@@ -646,7 +646,7 @@ BOOST_AUTO_TEST_CASE(s_TestMemberHooks)
         // write hook
         // use CObjectHookGuard
         CNcbiOstrstream ostrs;
-        auto_ptr<CObjectOStream> os(
+        unique_ptr<CObjectOStream> os(
             CObjectOStream::Open(eSerial_AsnText, ostrs));
         CObjectHookGuard<CTestSerialObject> w_hook(
             "m_Name", *(new CWriteSerialObject_NameHook), &(*os));
@@ -659,7 +659,7 @@ BOOST_AUTO_TEST_CASE(s_TestMemberHooks)
         // read hook
         // use CObjectHookGuard
         CNcbiIstrstream istrs(buf);
-        auto_ptr<CObjectIStream> is(
+        unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CTestSerialObject obj_copy;
         CObjectHookGuard<CTestSerialObject> r_hook(
@@ -674,7 +674,7 @@ BOOST_AUTO_TEST_CASE(s_TestMemberHooks)
     {
         // write hook
         CNcbiOstrstream ostrs;
-        auto_ptr<CObjectOStream> os(
+        unique_ptr<CObjectOStream> os(
             CObjectOStream::Open(eSerial_AsnText, ostrs));
         // set local write hook
         CObjectTypeInfo type = CType<CTestSerialObject>();
@@ -688,7 +688,7 @@ BOOST_AUTO_TEST_CASE(s_TestMemberHooks)
     {
         // read hook
         CNcbiIstrstream istrs(buf);
-        auto_ptr<CObjectIStream> is(
+        unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CTestSerialObject obj_copy;
         // set local read hook
@@ -704,7 +704,7 @@ BOOST_AUTO_TEST_CASE(s_TestMemberHooks)
     {
         // read, stack path hook
         CNcbiIstrstream istrs(buf);
-        auto_ptr<CObjectIStream> is(
+        unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CTestSerialObject obj_copy;
         is->SetPathReadMemberHook( "CTestSerialObject.m_Name",new CReadSerialObject_NameHook);
@@ -899,7 +899,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialization2)
     {
         {
             // write ASN text
-            auto_ptr<CObjectOStream> out(
+            unique_ptr<CObjectOStream> out(
                 CObjectOStream::Open(text_out,eSerial_AsnText));
             *out << write;
         }
@@ -912,7 +912,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialization2)
         CTestSerialObject read;
         {
             // read ASN text
-            auto_ptr<CObjectIStream> in(
+            unique_ptr<CObjectIStream> in(
                 CObjectIStream::Open(text_in,eSerial_AsnText));
             *in >> read;
         }
@@ -935,7 +935,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialization2)
 #ifndef HAVE_NCBI_C
         {
             // skip data
-            auto_ptr<CObjectIStream> in(
+            unique_ptr<CObjectIStream> in(
                 CObjectIStream::Open(text_in,eSerial_AsnText));
             in->Skip(ObjectType(read));
         }
@@ -945,7 +945,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialization2)
     {
         {
             // write ASN binary
-            auto_ptr<CObjectOStream> out(
+            unique_ptr<CObjectOStream> out(
                 CObjectOStream::Open(bin_out,eSerial_AsnBinary));
             *out << write;
         }
@@ -953,7 +953,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialization2)
         CTestSerialObject read;
         {
             // read ASN binary
-            auto_ptr<CObjectIStream> in(
+            unique_ptr<CObjectIStream> in(
                 CObjectIStream::Open(bin_in,eSerial_AsnBinary));
             *in >> read;
         }
@@ -976,7 +976,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialization2)
 #ifndef HAVE_NCBI_C
         {
             // skip data
-            auto_ptr<CObjectIStream> in(
+            unique_ptr<CObjectIStream> in(
                 CObjectIStream::Open(bin_in,eSerial_AsnBinary));
             in->Skip(ObjectType(read));
         }
@@ -998,7 +998,7 @@ BOOST_AUTO_TEST_CASE(s_TestPrintAsn)
         CRef<CWeb_Env> env(new CWeb_Env);
         {
             // read ASN text
-            auto_ptr<CObjectIStream> in(
+            unique_ptr<CObjectIStream> in(
                 CObjectIStream::Open(text_in,eSerial_AsnText));
             *in >> *env;
         }
