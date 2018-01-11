@@ -373,6 +373,36 @@ static void PrintGenAccOrderList(CMasterInfo& info)
     }
 }
 
+static void OutUnorderedList(const list<string>& files, CNcbiOfstream& out)
+{
+    for (auto file : files) {
+        const char* fname = file.c_str();
+        if (!GetParams().IsPreserveInputPath()) {
+            size_t last_slash = GetLastSlashPos(file);
+            if (last_slash != string::npos) {
+                fname += last_slash + 1;
+            }
+        }
+
+        out << fname << ".bss\n";
+    }
+}
+
+static void PrintUnorderedList(CMasterInfo& info)
+{
+    const string& load_order_file = GetParams().GetLoadOrderFile();
+
+    if (load_order_file.empty()) {
+        return;
+    }
+
+    CNcbiOfstream out;
+    if (!load_order_file.empty() && OpenOutputFile(load_order_file, "load order", out)) {
+
+        OutUnorderedList(GetParams().GetInputFiles(), out);
+    }
+}
+
 static bool GetAccessionIdInfo(const CSeq_id& id, string& accession, int& version)
 {
     if (NeedToProcessId(id)) {
@@ -659,7 +689,7 @@ int CWGSParseApp::Run(void)
         if (!GetParams().IsTest()) {
 
             if (GetParams().IsVDBMode()) {
-                // TODO
+                PrintUnorderedList(master_info);
             }
             else {
                 PrintGenAccOrderList(master_info);
