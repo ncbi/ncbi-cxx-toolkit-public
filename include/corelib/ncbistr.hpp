@@ -2443,19 +2443,6 @@ public:
         /// All delimiters are merged and trimmed, to get non-empty tokens only
         fSplit_Tokenize        = fSplit_MergeDelimiters | fSplit_Truncate
     };
-    /// Deprecated flags for Split*() methods.
-    /// @deprecated
-    enum ESplitFlags_DEPRECATED {
-        /// Legacy merge delimiters flag
-        /// Note that it truncates leading and trailing delimiters as well.
-        /// Please use ESplitFlags instead.
-        fSplit_MergeDelims = fSplit_MergeDelimiters | fSplit_Truncate,
-        /// Do not merge the delimiters.
-        /// fSplit_NoMergeDelims can be temporary used for semantics
-        /// purposes only, because we still have legacy Split() version
-        /// without flags, that use fSplit_MergeDelims by default.
-        fSplit_NoMergeDelims = 0
-    };
     typedef int TSplitFlags; ///< Bitwise OR of ESplitFlags
 
     /// Whether to merge adjacent delimiters.
