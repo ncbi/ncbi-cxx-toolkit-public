@@ -251,7 +251,7 @@ private:
     TStatusOpenTimes m_SocksByStatus;
     CSrvStatTerm<Uint4> m_CntThreads;
     CSrvStatTerm<Uint4> m_CntSockets;
-    auto_ptr<SMMStat> m_MMStat;
+    unique_ptr<SMMStat> m_MMStat;
 };
 
 
