@@ -250,7 +250,7 @@ int CBlastDBCmdApp::x_ModifyConfigForBatchEntry(const string & format)
    	m_Config.m_FiltAlgoId = -1;
    	if(!format.empty()) {
    		vector<string> tmp;
-   		NStr::Split(format, " \t", tmp, NStr::fSplit_MergeDelims);
+   		NStr::Split(format, " \t", tmp, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
    		for(unsigned int i=0; i < tmp.size(); i++) {
    			if(tmp[i].find('-')!= string::npos) {
    				try {
@@ -338,7 +338,7 @@ CBlastDBCmdApp::x_ProcessBatchEntry_NoDup(CBlastDB_Formatter & fmt)
         NcbiGetlineEOL(input, line);
         if ( !line.empty() ) {
         	string id, format;
-        	NStr::SplitInTwo(line, " \t", id, format, NStr::fSplit_MergeDelims);
+        	NStr::SplitInTwo(line, " \t", id, format, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         	if(id.empty()) {
         		continue;
         	}
@@ -396,7 +396,7 @@ CBlastDBCmdApp::x_ProcessBatchEntry(CBlastDB_Formatter & fmt)
         NcbiGetlineEOL(input, line);
         if ( !line.empty() ) {
         	string id, format;
-        	NStr::SplitInTwo(line, " \t", id, format, NStr::fSplit_MergeDelims);
+        	NStr::SplitInTwo(line, " \t", id, format, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         	if(id.empty()) {
         		continue;
         	}
