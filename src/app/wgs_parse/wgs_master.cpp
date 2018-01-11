@@ -125,7 +125,9 @@ static size_t CheckPubs(const CSeq_entry& entry, const string& file, list<CPubDe
     return num_of_pubs;
 }
 
-template <typename Func, typename Container> void CollectDataFromDescr(const CSeq_entry& entry, Container& container, Func process)
+typedef void(*StringProcessFunc) (const CSeqdesc& , list<string>& , const CDataChecker& );
+
+static void CollectDataFromDescr(const CSeq_entry& entry, list<string>& container, StringProcessFunc process, const CDataChecker& checker)
 {
     if (entry.IsSeq() && !entry.GetSeq().IsNa()) {
         return;
@@ -137,7 +139,7 @@ template <typename Func, typename Container> void CollectDataFromDescr(const CSe
         if (descrs && descrs->IsSet()) {
 
             for (auto& descr : descrs->Get()) {
-                process(*descr, container);
+                process(*descr, container, checker);
             }
         }
     }
@@ -145,66 +147,48 @@ template <typename Func, typename Container> void CollectDataFromDescr(const CSe
     if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
 
         for_each(entry.GetSet().GetSeq_set().begin(), entry.GetSet().GetSeq_set().end(),
-                    [&container, &process](const CRef<CSeq_entry>& cur_entry) { CollectDataFromDescr(*cur_entry, container, process); });
+                    [&container, &process, &checker](const CRef<CSeq_entry>& cur_entry) { CollectDataFromDescr(*cur_entry, container, process, checker); });
     }
 }
 
-static void ProcessComment(const CSeqdesc& descr, set<string>& comments)
+static void ProcessComment(const CSeqdesc& descr, list<string>& comments, const CDataChecker& checker)
 {
-    if (descr.IsComment() && !descr.GetComment().empty()) {
-        comments.insert(descr.GetComment());
+    if (descr.IsComment() && !descr.GetComment().empty() && checker.IsStringPresent(descr.GetComment())) {
+        comments.push_back(descr.GetComment());
     }
 }
 
-
-static void CheckComments(const CSeq_entry& entry, CMasterInfo& info)
-{
-    if (info.m_common_comments_not_set) {
-        CollectDataFromDescr(entry, info.m_common_comments, ProcessComment);
-        info.m_common_comments_not_set = info.m_common_comments.empty();
-    }
-    else {
-
-        if (!info.m_common_comments.empty()) {
-
-            set<string> cur_comments;
-            CollectDataFromDescr(entry, cur_comments, ProcessComment);
-
-            set<string> common_comments;
-            set_intersection(info.m_common_comments.begin(), info.m_common_comments.end(), cur_comments.begin(), cur_comments.end(), inserter(common_comments, common_comments.begin()));
-
-            info.m_common_comments.swap(common_comments);
-        }
-    }
-}
-
-static void ProcessStructuredComment(const CSeqdesc& descr, set<string>& comments)
+static void ProcessStructuredComment(const CSeqdesc& descr, list<string>& comments, const CDataChecker& checker)
 {
     if (IsUserObjectOfType(descr, "StructuredComment")) {
 
         const CUser_object& user_obj = descr.GetUser();
-        comments.insert(ToString(user_obj));
+        const string& comment = ToString(user_obj);
+
+        if (checker.IsStringPresent(comment)) {
+            comments.push_back(comment);
+        }
     }
 }
 
-// TODO may be combined with 'CheckComments'
-static void CheckStructuredComments(const CSeq_entry& entry, CMasterInfo& info)
+static void CheckComments(const CSeq_entry& entry, StringProcessFunc process, bool& comments_not_set, list<string>& comments)
 {
-    if (info.m_common_structured_comments_not_set) {
-        CollectDataFromDescr(entry, info.m_common_structured_comments, ProcessStructuredComment);
-        info.m_common_structured_comments_not_set = info.m_common_structured_comments.empty();
+    if (comments_not_set) {
+
+        CDataChecker checker(true, comments);
+        CollectDataFromDescr(entry, comments, process, checker);
+        comments_not_set = comments.empty();
     }
     else {
 
-        if (!info.m_common_structured_comments.empty()) {
+        if (!comments.empty()) {
 
-            set<string> cur_comments;
-            CollectDataFromDescr(entry, cur_comments, ProcessStructuredComment);
+            list<string> common_comments;
+            CDataChecker checker(false, comments);
 
-            set<string> common_comments;
-            set_intersection(info.m_common_structured_comments.begin(), info.m_common_structured_comments.end(), cur_comments.begin(), cur_comments.end(), inserter(common_comments, common_comments.begin()));
+            CollectDataFromDescr(entry, common_comments, process, checker);
 
-            info.m_common_structured_comments.swap(common_comments);
+            comments.swap(common_comments);
         }
     }
 }
@@ -1277,10 +1261,10 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                         if (!GetParams().IsKeepRefs()) {
 
                             master_info.m_num_of_pubs = max(CheckPubs(*entry, file, master_info.m_common_pubs), master_info.m_num_of_pubs);
-                            CheckComments(*entry, master_info);
+                            CheckComments(*entry, ProcessComment, master_info.m_common_comments_not_set, master_info.m_common_comments);
                         }
 
-                        CheckStructuredComments(*entry, master_info);
+                        CheckComments(*entry, ProcessStructuredComment, master_info.m_common_structured_comments_not_set, master_info.m_common_structured_comments);
                     }
 
                     if (!CheckBioSource(*entry, master_info, file)) {

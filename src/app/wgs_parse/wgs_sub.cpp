@@ -1081,41 +1081,25 @@ static void RemoveKeywords(CSeq_entry& entry, const set<string>& keywords)
     }
 }
 
-static void RemoveComments(CSeq_entry& entry, const set<string>& comments)
+
+typedef string (*GetCommentFunc) (const CSeqdesc& );
+
+static string GetCommentString(const CSeqdesc& descr)
 {
-    if (comments.empty()) {
-        return;
-    }
-
-    CSeq_descr* descrs = nullptr;
-    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
-
-        for (auto& descr = descrs->Set().begin(); descr != descrs->Set().end();) {
-
-            bool removed = false;
-            if ((*descr)->IsComment()) {
-
-                if (comments.find((*descr)->GetComment()) != comments.end()) {
-                    descr = descrs->Set().erase(descr);
-                    removed = true;
-                }
-            }
-
-            if (!removed) {
-                ++descr;
-            }
-        }
-    }
-
-    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
-
-        for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
-            RemoveComments(*cur_entry, comments);
-        }
-    }
+    return descr.IsComment() ? descr.GetComment() : kEmptyStr;
 }
 
-static void RemoveStructuredComments(CSeq_entry& entry, const set<string>& comments)
+static string GetStructuredCommentString(const CSeqdesc& descr)
+{
+    if (IsUserObjectOfType(descr, "StructuredComment")) {
+        const CUser_object& user_obj = descr.GetUser();
+        return ToString(user_obj);
+    }
+
+    return kEmptyStr;
+}
+
+static void RemoveComments(CSeq_entry& entry, const list<string>& comments, GetCommentFunc getComment)
 {
     if (comments.empty()) {
         return;
@@ -1124,13 +1108,14 @@ static void RemoveStructuredComments(CSeq_entry& entry, const set<string>& comme
     CSeq_descr* descrs = nullptr;
     if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
 
+        CDataChecker checker(false, comments);
         for (auto& descr = descrs->Set().begin(); descr != descrs->Set().end();) {
 
             bool removed = false;
-            if (IsUserObjectOfType(**descr, "StructuredComment")) {
+            const string& comment = getComment(**descr);
+            if (!comment.empty()) {
 
-                const CUser_object& user_obj = (*descr)->GetUser();
-                if (comments.find(ToString(user_obj)) != comments.end()) {
+                if (checker.IsStringPresent(comment)) {
                     descr = descrs->Set().erase(descr);
                     removed = true;
                 }
@@ -1145,7 +1130,7 @@ static void RemoveStructuredComments(CSeq_entry& entry, const set<string>& comme
     if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
 
         for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
-            RemoveStructuredComments(*cur_entry, comments);
+            RemoveComments(*cur_entry, comments, getComment);
         }
     }
 }
@@ -1320,8 +1305,8 @@ bool ParseSubmissions(CMasterInfo& master_info)
                     }
 
                     if (GetParams().GetUpdateMode() != eUpdatePartial) {
-                        RemoveComments(*entry, master_info.m_common_comments);
-                        RemoveStructuredComments(*entry, master_info.m_common_structured_comments);
+                        RemoveComments(*entry, master_info.m_common_comments, GetCommentString);
+                        RemoveComments(*entry, master_info.m_common_structured_comments, GetStructuredCommentString);
 
                         if (!master_info.m_common_pubs.empty()) {
                             
@@ -1410,8 +1395,8 @@ bool ParseSubmissions(CMasterInfo& master_info)
 
         if (GetParams().GetUpdateMode() == eUpdatePartial) {
             for (auto& cur_entry : bioseq_set->SetSeq_set()) {
-                RemoveComments(*cur_entry, master_info.m_common_comments);
-                RemoveStructuredComments(*cur_entry, master_info.m_common_structured_comments);
+                RemoveComments(*cur_entry, master_info.m_common_comments, GetCommentString);
+                RemoveComments(*cur_entry, master_info.m_common_structured_comments, GetStructuredCommentString);
 
                 if (!master_info.m_common_pubs.empty()) {
 

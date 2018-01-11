@@ -239,8 +239,8 @@ struct CMasterInfo
     bool m_gpid;
 
     list<CPubDescriptionInfo> m_common_pubs;
-    set<string> m_common_comments;
-    set<string> m_common_structured_comments;
+    list<string> m_common_comments;
+    list<string> m_common_structured_comments;
     CRef<CBioSource> m_biosource;
     list<COrgRefInfo> m_org_refs;
     list<string> m_object_ids;

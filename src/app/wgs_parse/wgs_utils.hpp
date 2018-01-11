@@ -96,6 +96,29 @@ bool NeedToProcessId(const CSeq_id& id);
 
 CScope& GetScope();
 
+
+class CDataChecker
+{
+public:
+    CDataChecker(bool new_data, const list<string>& data) :
+        m_new(new_data),
+        m_data(data)
+    {}
+
+    bool IsStringPresent(const string& str) const
+    {
+        if (m_new) {
+            return true; // all strings are considered to be present in a new data collection
+        }
+
+        return find(m_data.begin(), m_data.end(), str) != m_data.end();
+    }
+
+private:
+    bool m_new;
+    const list<string>& m_data;
+};
+
 }
 
 #endif // WGS_UTILS_H
