@@ -253,6 +253,19 @@ void CFastaDeflineReader::x_ProcessIDs(
             info,
             pMessageListener);
 
+    if (x_ExceedsMaxLength(id_string, info.maxIdLength)) {
+        const string err_message =
+            "CFastaReader: Near line " + NStr::NumericToString(info.lineNumber)
+            + ", the sequence ID is too long.  Its length is " + NStr::NumericToString(id_string.length())
+            + " but the max length allowed is "+  NStr::NumericToString(info.maxIdLength)
+            + ".  Please find and correct all sequence IDs that are too long.";
+        
+        x_PostError(pMessageListener, 
+            info.lineNumber,
+            err_message,
+            CObjReaderParseException::eIDTooLong);
+    }
+
 
     if (info.fBaseFlags & CReaderBase::fAllIdsAsLocal) 
     {
@@ -301,7 +314,6 @@ void CFastaDeflineReader::x_ProcessIDs(
         x_ConvertNumericToLocal(ids);
     }
 
-
     for (const auto& id : ids) {
         if (id->IsLocal() &&
             !x_IsValidLocalID(*id, info.fFastaFlags)) {
@@ -310,18 +322,7 @@ void CFastaDeflineReader::x_ProcessIDs(
         }
     }
 
-    if (x_ExceedsMaxLength(id_string, info.maxIdLength)) {
-        const string err_message =
-            "CFastaReader: Near line " + NStr::NumericToString(info.lineNumber)
-            + ", the sequence ID is too long.  Its length is " + NStr::NumericToString(id_string.length())
-            + " but the max length allowed is "+  NStr::NumericToString(info.maxIdLength)
-            + ".  Please find and correct all sequence IDs that are too long.";
-        
-        x_PostError(pMessageListener, 
-            info.lineNumber,
-            err_message,
-            CObjReaderParseException::eIDTooLong);
-    }
+
 }
 
 
