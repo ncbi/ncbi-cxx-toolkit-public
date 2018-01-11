@@ -540,6 +540,7 @@ int CDiscRepApp::Run(void)
     CRef<CObjectManager> ObjMgr = CObjectManager::GetInstance();
     CDataLoadersUtil::SetupObjectManager(args, *ObjMgr, CDataLoadersUtil::fDefault | CDataLoadersUtil::fGenbankOffByDefault);
     m_Scope.Reset(new CScope (*ObjMgr));
+    m_Scope->AddDefaults();
 
     // run tests
     if (args["o"]) {
