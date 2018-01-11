@@ -127,13 +127,13 @@ void CDiscRepApp::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), "Discrepancy Report");
 
     arg_desc->AddOptionalKey("i", "InFile", "Single Input File", CArgDescriptions::eInputFile);
-    arg_desc->AddOptionalKey("p", "Directory", "Path to ASN.1 Files", CArgDescriptions::eInputFile);
+    arg_desc->AddOptionalKey("indir", "InputDirectory", "Path to ASN.1 Files", CArgDescriptions::eInputFile);
     arg_desc->AddFlag("u", "Recurse");
     arg_desc->AddOptionalKey("o", "OutFile", "Single Output File", CArgDescriptions::eOutputFile);
 
     arg_desc->AddDefaultKey("s", "OutputFileSuffix", "Output File Suffix", CArgDescriptions::eString, ".dr");
     arg_desc->AddDefaultKey("x", "Suffix", "File Selection Substring", CArgDescriptions::eString, ".sqn");
-    arg_desc->AddOptionalKey("r", "OutPath", "Output Directory", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("outdir", "OutputDirectory", "Output Directory", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("e", "EnableTests", "List of enabled tests, seperated by ','", CArgDescriptions::eString); 
     arg_desc->AddOptionalKey("d", "DisableTests",  "List of disabled tests, seperated by ','", CArgDescriptions::eString);
@@ -171,7 +171,7 @@ string CDiscRepApp::x_ConstructOutputName(const string& input)
 {
     const CArgs& args = GetArgs();
     CDirEntry fname(input);
-    string path = args["r"] ? args["r"].AsString() : fname.GetDir();
+    string path = args["outdir"] ? args["outdir"].AsString() : fname.GetDir();
     string ext = args["s"] ? args["s"].AsString() : ".dr";
     if (m_Xml) {
         ext += ".xml";
@@ -184,7 +184,7 @@ string CDiscRepApp::x_ConstructMacroName(const string& input)
 {
     const CArgs& args = GetArgs();
     CDirEntry fname(input);
-    string path = args["r"] ? args["r"].AsString() : fname.GetDir();
+    string path = args["outdir"] ? args["outdir"].AsString() : fname.GetDir();
     return CDirEntry::MakePath(path, fname.GetBase(), "macro.txt");
 }
 
@@ -193,7 +193,7 @@ string CDiscRepApp::x_ConstructAutofixName(const string& input)
 {
     const CArgs& args = GetArgs();
     CDirEntry fname(input);
-    string path = args["r"] ? args["r"].AsString() : fname.GetDir();
+    string path = args["outdir"] ? args["outdir"].AsString() : fname.GetDir();
     return CDirEntry::MakePath(path, fname.GetBase(), "autofix.asn");
 }
 
@@ -527,7 +527,7 @@ int CDiscRepApp::Run(void)
 
     // input files
     if (args["i"]) m_Files.push_back(args["i"].AsString());
-    if (args["p"]) x_ParseDirectory(args["p"].AsString(), args["u"].AsBoolean());
+    if (args["indir"]) x_ParseDirectory(args["indir"].AsString(), args["u"].AsBoolean());
     if (m_Files.empty()) {
         ERR_POST("No input files");
         return 1;
