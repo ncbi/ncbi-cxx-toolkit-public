@@ -3379,6 +3379,9 @@ CFastaOstream::GetGapModText(
             gap_type = "within scaffold";
             need_evidence = is_linkage;
             break;
+        case CSeq_gap::eType_contamination:
+            gap_type = "contamination";
+            break;
         case CSeq_gap::eType_other:
             gap_type = "other";
             break;
