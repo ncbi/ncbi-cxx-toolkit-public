@@ -58,9 +58,9 @@ protected:
     string x_ConstructOutputName(const string& input);
     string x_ConstructAutofixName(const string& input);
     string x_ConstructMacroName(const string& input);
-    CRef<CSerialObject> x_ReadFile(const string& filename);
+    void x_ProcessFile(const string& filename, CDiscrepancySet& tests);
     void x_ParseDirectory(const string& name, bool recursive);
-    void x_ProcessFile(const string& filename);
+    void x_ProcessOne(const string& filename);
     void x_ProcessAll(const string& outname);
     void x_Output(const string& filename, CDiscrepancySet& tests);
     void x_OutputXml(const string& filename, CDiscrepancySet& tests);
@@ -72,6 +72,8 @@ protected:
     string m_Lineage;   // override lineage
     vector<string> m_Files;
     vector<string> m_Tests;
+    map<string, CRef<CSerialObject> > m_Objects;
+
     bool m_SuspectProductNames;
     bool m_Ext;
     bool m_Fat;
@@ -229,49 +231,82 @@ auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname) // JIRA: CX
 }
 
 
-CRef<CSerialObject> CDiscRepApp::x_ReadFile(const string& fname)
+void CDiscRepApp::x_ProcessFile(const string& fname, CDiscrepancySet& tests)
 {
     auto_ptr<CObjectIStream> in = OpenUncompressedStream(fname);
-    string header = in->ReadFileHeader();
-    if (header.empty() && GetArgs()["a"]) {
-        string type = GetArgs()["a"].AsString();
-        if (type == "e") header = "Seq-entry";
-        else if (type == "m") header = "Seq-submit";
-        else if (type == "s") header = "Bioseq-set";
-        else if (type == "b") header = "Bioseq";
-    }
-    if (header == "Seq-submit" ) {
-        CRef<CSeq_submit> ss(new CSeq_submit);
-        in->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
-        if (ss->IsSetData() && ss->GetData().IsEntrys()) {
-            NON_CONST_ITERATE (CSeq_submit::TData::TEntrys, it, ss->SetData().SetEntrys()) {
-                m_Scope->AddTopLevelSeqEntry(**it);
+    CRef<CSerialObject> obj;
+
+    if (GetArgs()["a"] && GetArgs()["a"].AsString() == "c") {
+        while (true) {
+            CRef<CSeq_entry> se(new CSeq_entry);
+            try {
+                in->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
             }
+            catch (const CSerialException& e) {
+                if (e.GetErrCode() == CSerialException::eEOF) {
+                    break;
+                }
+                else {
+                    ERR_POST(Error << e);
+                    exit(1);
+                }
+            }
+            tests.Parse(*se);
+            m_Scope->ResetDataAndHistory();
         }
-        return CRef<CSerialObject>(ss);
-    } else if (header == "Seq-entry") {
-        CRef<CSeq_entry> se(new CSeq_entry);
-        in->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
-        m_Scope->AddTopLevelSeqEntry(*se);
-        return CRef<CSerialObject>(se);
-    } else if (header == "Bioseq-set" ) {
-        CRef<CBioseq_set> set(new CBioseq_set);
-        in->Read(ObjectInfo(*set), CObjectIStream::eNoFileHeader);
-        CRef<CSeq_entry> se(new CSeq_entry());
-        se->SetSet().Assign(*set);
-        m_Scope->AddTopLevelSeqEntry(*se);
-        return CRef<CSerialObject>(se);
-    } else if (header == "Bioseq" ) {
-        CRef<CBioseq> seq(new CBioseq);
-        in->Read(ObjectInfo(*seq), CObjectIStream::eNoFileHeader);
-        CRef<CSeq_entry> se(new CSeq_entry());
-        se->SetSeq().Assign(*seq);
-        m_Scope->AddTopLevelSeqEntry(*se);
-        return CRef<CSerialObject>(se);
-    } else {
-        NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
     }
-    return CRef<CSerialObject>();
+    else {
+        string header = in->ReadFileHeader();
+        if (header.empty() && GetArgs()["a"]) {
+            string type = GetArgs()["a"].AsString();
+            if (type == "e") header = "Seq-entry";
+            else if (type == "m") header = "Seq-submit";
+            else if (type == "s") header = "Bioseq-set";
+            else if (type == "b") header = "Bioseq";
+        }
+        if (header == "Seq-submit" ) {
+            CRef<CSeq_submit> ss(new CSeq_submit);
+            in->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
+            if (ss->IsSetData() && ss->GetData().IsEntrys()) {
+                NON_CONST_ITERATE (CSeq_submit::TData::TEntrys, it, ss->SetData().SetEntrys()) {
+                    m_Scope->AddTopLevelSeqEntry(**it);
+                }
+            }
+            obj.Reset(ss);
+        }
+        else if (header == "Seq-entry") {
+            CRef<CSeq_entry> se(new CSeq_entry);
+            in->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
+            m_Scope->AddTopLevelSeqEntry(*se);
+            obj.Reset(se);
+        }
+        else if (header == "Bioseq-set" ) {
+            CRef<CBioseq_set> set(new CBioseq_set);
+            in->Read(ObjectInfo(*set), CObjectIStream::eNoFileHeader);
+            CRef<CSeq_entry> se(new CSeq_entry());
+            se->SetSet().Assign(*set);
+            m_Scope->AddTopLevelSeqEntry(*se);
+            obj.Reset(se);
+        }
+        else if (header == "Bioseq" ) {
+            CRef<CBioseq> seq(new CBioseq);
+            in->Read(ObjectInfo(*seq), CObjectIStream::eNoFileHeader);
+            CRef<CSeq_entry> se(new CSeq_entry());
+            se->SetSeq().Assign(*seq);
+            m_Scope->AddTopLevelSeqEntry(*se);
+            obj.Reset(se);
+        }
+        else {
+            NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
+        }
+        tests.Parse(*obj);
+        if (m_AutoFix) {
+            m_Objects[fname] = obj;
+        }
+        else {
+            m_Scope->ResetDataAndHistory();
+        }
+    }
 }
 
 
@@ -292,7 +327,7 @@ void CDiscRepApp::x_ParseDirectory(const string& name, bool recursive)
 }
 
 
-void CDiscRepApp::x_ProcessFile(const string& fname)
+void CDiscRepApp::x_ProcessOne(const string& fname)
 {
     CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(*m_Scope);
     if (m_SuspectProductNames) {
@@ -309,15 +344,16 @@ void CDiscRepApp::x_ProcessFile(const string& fname)
         ITERATE (vector<string>, tname, m_Tests) {
             Tests->AddTest(*tname);
         }
-        CRef<CSerialObject> obj = x_ReadFile(fname);
         Tests->SetKeepRef(m_AutoFix);
         Tests->SetSuspectRules(m_SuspectRules);
         Tests->SetLineage(m_Lineage);
-        Tests->Parse(*obj);
+        x_ProcessFile(fname, *Tests);
         Tests->Summarize();
         if (m_AutoFix) {
             x_Autofix(Tests->GetTests());
-            x_OutputObject(x_ConstructAutofixName(fname), *obj);
+            x_Autofix(Tests->GetTests());
+            x_OutputObject(x_ConstructAutofixName(fname), *m_Objects.begin()->second);
+            m_Objects.clear();
         }
     }
     m_Xml ? x_OutputXml(x_ConstructOutputName(fname), *Tests) : x_Output(x_ConstructOutputName(fname), *Tests);
@@ -353,26 +389,17 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
         Tests->SetKeepRef(m_AutoFix);
         Tests->SetSuspectRules(m_SuspectRules);
         Tests->SetLineage(m_Lineage);
-        typedef map<string, CRef<CSerialObject> > TStr2Obj;
-        TStr2Obj objects;
         ITERATE (vector<string>, fname, m_Files) {
             ++count;
             LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
-            CRef<CSerialObject> obj = x_ReadFile(*fname);
             Tests->SetFile(*fname);
-            Tests->Parse(*obj);
-            if (m_AutoFix) {
-                objects[*fname] = obj;
-            }
-            else {
-                m_Scope->ResetDataAndHistory();
-            }
+            x_ProcessFile(*fname, *Tests);
         }
         Tests->Summarize();
         if (m_AutoFix) {
             x_Autofix(Tests->GetTests());
-            ITERATE (TStr2Obj, it, objects) {
-                x_OutputObject(x_ConstructAutofixName(it->first), *it->second);
+            for (auto it: m_Objects) {
+                x_OutputObject(x_ConstructAutofixName(it.first), *it.second);
             }
         }
     }
@@ -535,9 +562,16 @@ int CDiscRepApp::Run(void)
     // set defaults
     if (args["w"]) m_SuspectRules = args["w"].AsString();
     if (args["L"]) m_Lineage = args["L"].AsString();
-    if (args["F"]) m_AutoFix = args["F"].AsBoolean();
     if (args["XML"]) m_Xml = args["XML"].AsBoolean();
     if (args["STDOUT"]) m_Print = args["STDOUT"].AsBoolean();
+
+    if (args["F"]) {
+        if (GetArgs()["a"] && GetArgs()["a"].AsString() == "c") {
+            ERR_POST("Options -F and -a c are mutually exclusive");
+            return 1;
+        }
+        m_AutoFix = args["F"].AsBoolean();
+    }
 
     CRef<CObjectManager> ObjMgr = CObjectManager::GetInstance();
     CDataLoadersUtil::SetupObjectManager(args, *ObjMgr, CDataLoadersUtil::fDefault | CDataLoadersUtil::fGenbankOffByDefault);
@@ -553,7 +587,7 @@ int CDiscRepApp::Run(void)
         ITERATE (vector<string>, f, m_Files) {
             ++count;
             LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
-            x_ProcessFile(*f);
+            x_ProcessOne(*f);
         }
     }
    return 0;
