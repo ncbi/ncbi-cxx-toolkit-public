@@ -2753,7 +2753,7 @@ CQueryImpl::x_Close(void)
         try {
             VerifyDone(CQuery::eAllResultSets);
         } catch (CSDB_Exception& e) {
-            ERR_POST_X(14, Error << e <<
+            ERR_POST_X(14, Critical << e <<
                            "Problem while closing DB query "
                            "(result is at row number " << m_CurRowNo << ").");
         }
