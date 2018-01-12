@@ -158,6 +158,21 @@ private:
     CBioseq_Handle x_GetCachedBsh(const CSeq_loc& loc);
 
     void x_ValidateSeqFeatLoc(const CSeq_feat& feat);
+
+    typedef enum {
+        eLocationGapNoProblems = 0,
+        eLocationGapFeatureMatchesGap = 1,
+        eLocationGapContainedInGap = 4,
+        eLocationGapContainedInGapOfNs = 8,
+        eLocationGapInternalIntervalEndpointInGap = 16,
+        eLocationGapCrossesUnknownGap = 32,
+        eLocationGapMostlyNs = 64
+
+    } ELocationGap;
+
+    static size_t x_CalculateLocationGaps(CBioseq_Handle bsh, const CSeq_loc& loc, vector<TSeqPos>& gap_starts);
+    static bool x_IsMostlyNs(const CSeq_loc& loc, CBioseq_Handle bsh);
+
     static size_t x_FindStartOfGap (CBioseq_Handle bsh, int pos, CScope* scope);
     void ValidateSeqFeatData(const CSeqFeatData& data, const CSeq_feat& feat);
     void ValidateSeqFeatProduct(const CSeq_loc& prod, const CSeq_feat& feat, CBioseq_Handle prot);
@@ -289,13 +304,19 @@ public:
 
     virtual void Validate();
 
+    static bool x_HasSeqLocBond(const CSeq_feat& feat);
+
 protected:
     const CSeq_feat& m_Feat;
     CScope& m_Scope;
     CValidError_imp& m_Imp;
+    CBioseq_Handle m_LocationBioseq;
+    CBioseq_Handle m_ProductBioseq;
 
     void PostErr(EDiagSev sv, EErrType et, const string& msg);
 
+    CBioseq_Handle x_GetBioseqByLocation(const CSeq_loc& loc);
+    void x_ValidateSeqFeatProduct();
     void x_ValidateBothStrands();
     static void x_LocHasStrandBoth(const CSeq_loc& feat, bool& both, bool& both_rev);
     void x_ValidateGeneId();

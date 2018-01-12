@@ -157,26 +157,7 @@ CBioseq_Handle CValidError_feat::x_GetCachedBsh(const CSeq_loc& loc)
 void CValidError_feat::x_ValidateSeqFeatExceptXref(const CSeq_feat& feat)
 {
     try {
-        if (!feat.IsSetLocation()) {
-            PostErr(eDiag_Critical, eErr_SEQ_FEAT_MissingLocation,
-                "The feature is missing a location", feat);
-            return;
-        }
 
-        if (m_Scope) {
-            CBioseq_Handle bsh = x_GetCachedBsh(feat.GetLocation());
-            m_Imp.ValidateSeqLoc(feat.GetLocation(), bsh,
-                (feat.GetData().IsGene() || !m_Imp.IsGpipe()),
-                "Location", feat);
-
-            if (feat.CanGetProduct()) {
-                CBioseq_Handle p_bsh = x_GetCachedBsh(feat.GetProduct());
-                if (p_bsh == bsh) {
-                    PostErr(eDiag_Error, eErr_SEQ_FEAT_SelfReferentialProduct, "Self-referential feature product", feat);
-                }
-                ValidateSeqFeatProduct(feat.GetProduct(), feat, p_bsh);
-            }
-        }
         x_ValidateSeqFeatLoc(feat);
 
         ValidateFeatPartialness(feat);
@@ -185,43 +166,10 @@ void CValidError_feat::x_ValidateSeqFeatExceptXref(const CSeq_feat& feat)
 
         ValidateSeqFeatData(feat.GetData(), feat);
 
-#if 1
         CSingleFeatValidator* fval = FeatValidatorFactory(feat, *m_Scope, m_Imp);
         if (fval) {
             fval->Validate();
         }
-#else
-        ValidateBothStrands(feat);
-
-        if (feat.CanGetDbxref()) {
-            m_Imp.ValidateDbxref(feat.GetDbxref(), feat);
-            x_ValidateGeneId(feat);
-        }
-
-        if (feat.CanGetComment()) {
-            ValidateFeatComment(feat.GetComment(), feat);
-        }
-
-        if (feat.CanGetCit()) {
-            ValidateFeatCit(feat.GetCit(), feat);
-        }
-
-        FOR_EACH_GBQUAL_ON_FEATURE(it, feat) {
-            x_ValidateGbQual(**it, feat);
-        }
-
-        if (feat.IsSetExt()) {
-            ValidateExtUserObject(feat.GetExt(), feat);
-        }
-
-        if (feat.IsSetExp_ev() && feat.GetExp_ev() > 0 &&
-            !s_HasNamedQual(feat, "inference") &&
-            !s_HasNamedQual(feat, "experiment") &&
-            !m_Imp.DoesAnyFeatLocHaveGI()) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue,
-                "Inference or experiment qualifier missing but obsolete experimental evidence qualifier set", feat);
-        }
-#endif
     } catch (const exception& e) {
         PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
             string("Exception while validating feature. EXCEPTION: ") +
@@ -7133,41 +7081,206 @@ bool CGapCache::IsUnknownGap(size_t pos)
 }
 
 
-
-
-void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
+size_t CValidError_feat::x_CalculateLocationGaps(CBioseq_Handle bsh, const CSeq_loc& loc, vector<TSeqPos>& gap_starts)
 {
-    // check for bond locations - only allowable in bond feature and under special circumstances for het
-    bool is_seqloc_bond = false;
-    if (feat.IsSetData()) {
-        if (feat.GetData().IsHet()) {
-            // heterogen can have mix of bonds with just "a" point specified */
-            for ( CSeq_loc_CI it(feat.GetLocation()); it; ++it ) {
-                if (it.GetEmbeddingSeq_loc().IsBond() 
-                    && (!it.GetEmbeddingSeq_loc().GetBond().IsSetA()
-                        || it.GetEmbeddingSeq_loc().GetBond().IsSetB())) {
-                    is_seqloc_bond = true;
+    size_t rval = eLocationGapNoProblems;
+    if (!bsh.IsNa() || !bsh.IsSetInst_Repr() || bsh.GetInst().GetRepr() != CSeq_inst::eRepr_delta) {
+        return rval;
+    }
+    // look for features inside gaps, crossing unknown gaps, or starting or ending in gaps
+    // ignore gap features for this
+    int num_n = 0;
+    int num_real = 0;
+    int num_gap = 0;
+    int num_unknown_gap = 0;
+    bool first_in_gap = false, last_in_gap = false;
+    bool local_first_gap = false, local_last_gap = false;
+    bool startsOrEndsInGap = false;
+    bool first = true;
+
+    for (CSeq_loc_CI loc_it(loc); loc_it; ++loc_it) {
+        CConstRef<CSeq_loc> this_loc = loc_it.GetRangeAsSeq_loc();
+        CSeqVector vec = GetSequenceFromLoc(*this_loc, bsh.GetScope());
+        if (!vec.empty()) {
+            CBioseq_Handle ph;
+            bool match = false;
+            for (auto id_it : bsh.GetBioseqCore()->GetId()) {
+                if (id_it->Equals(loc_it.GetSeq_id())) {
+                    match = true;
                     break;
                 }
             }
-        } else if (!feat.GetData().IsBond()) {
-            for ( CSeq_loc_CI it(feat.GetLocation()); it; ++it ) {
-                if (it.GetEmbeddingSeq_loc().IsBond()) {
-                    is_seqloc_bond = true;
-                    break;
+            if (match) {
+                ph = bsh;
+            } else {
+                ph = bsh.GetScope().GetBioseqHandle(*this_loc);
+            }
+            try {
+                CGapCache gap_cache(*this_loc, ph);
+                string vec_data;
+                vec.GetSeqData(0, vec.size(), vec_data);
+
+                local_first_gap = false;
+                local_last_gap = false;
+                TSeqLength len = loc_it.GetRange().GetLength();
+                ENa_strand strand = loc_it.GetStrand();
+
+                int pos = 0;
+                string::iterator it = vec_data.begin();
+                while (it != vec_data.end() && pos < len) {
+                    bool is_gap = false;
+                    bool unknown_length = false;
+                    if (strand == eNa_strand_minus) {
+                        if (gap_cache.IsKnownGap(len - pos - 1)) {
+                            is_gap = true;
+                        } else if (gap_cache.IsUnknownGap(len - pos - 1)) {
+                            is_gap = true;
+                            unknown_length = true;
+                        }
+                    } else {
+                        if (gap_cache.IsKnownGap(pos)) {
+                            is_gap = true;
+                        } else if (gap_cache.IsUnknownGap(pos)) {
+                            is_gap = true;
+                            unknown_length = true;
+                        }
+
+                    }
+                    if (is_gap) {
+                        if (pos == 0) {
+                            local_first_gap = true;
+                        } else if (pos == len - 1) {
+                            local_last_gap = true;
+                        }
+                        if (unknown_length) {
+                            num_unknown_gap++;
+                        } else {
+                            num_gap++;
+                        }
+                    } else if (*it == 'N') {
+                        num_n++;
+                    } else {
+                        num_real++;
+                    }
+                    ++it;
+                    ++pos;
                 }
+            } catch (CException& ex) {
+                /*
+                PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
+                string("Exception while checking for intervals in gaps. EXCEPTION: ") +
+                ex.what(), feat);
+                */
             }
         }
-    } else {
-        for ( CSeq_loc_CI it(feat.GetLocation()); it; ++it ) {
-            if (it.GetEmbeddingSeq_loc().IsBond()) {
-                is_seqloc_bond = true;
-                break;
+        if (first) {
+            first_in_gap = local_first_gap;
+            first = false;
+        }
+        last_in_gap = local_last_gap;
+        if (local_first_gap || local_last_gap) {
+            startsOrEndsInGap = true;
+        }
+    }
+    bool misc_feature_matches_gap = false;
+
+    if (num_real == 0 && num_n == 0) {
+        TSeqPos start = loc.GetStart(eExtreme_Positional);
+        TSeqPos stop = loc.GetStop(eExtreme_Positional);
+        if ((start == 0 || CSeqMap_CI(bsh, SSeqMapSelector(), start - 1).GetType() != CSeqMap::eSeqGap)
+            && (stop == bsh.GetBioseqLength() - 1 || CSeqMap_CI(bsh, SSeqMapSelector(), stop + 1).GetType() != CSeqMap::eSeqGap)) {
+            rval |= eLocationGapFeatureMatchesGap;
+        }
+    }
+
+
+    if (num_gap == 0 && num_unknown_gap == 0 && num_n == 0) {
+        // ignore features that do not cover any gap characters
+    } else if (first_in_gap || last_in_gap) {
+        if (num_real > 0) {
+            TSeqPos gap_start = x_FindStartOfGap(bsh,
+                first_in_gap ? loc.GetStart(eExtreme_Biological)
+                : loc.GetStop(eExtreme_Biological), &(bsh.GetScope()));
+            gap_starts.push_back(gap_start);
+        } else {
+            rval |= eLocationGapContainedInGap;
+        }
+    } else if (num_real == 0 && num_gap == 0 && num_unknown_gap == 0 && num_n >= 50) {
+        rval |= eLocationGapContainedInGapOfNs;
+    } else if (startsOrEndsInGap) {
+        rval |= eLocationGapInternalIntervalEndpointInGap;
+    } else if (num_unknown_gap > 0) {
+        rval |= eLocationGapCrossesUnknownGap;
+    }
+
+    if (num_n > num_real && num_real > 0 && xf_IsDeltaLitOnly(bsh)) {
+        rval |= eLocationGapMostlyNs;
+    }
+
+    return rval;
+}
+
+
+bool CValidError_feat::x_IsMostlyNs(const CSeq_loc& loc, CBioseq_Handle bsh)
+{
+    if (!bsh.IsNa() || !bsh.IsSetInst_Repr() || bsh.GetInst_Repr() != CSeq_inst::eRepr_raw) {
+        return false;
+    }
+    int num_n = 0;
+    int real_bases = 0;
+
+    for (CSeq_loc_CI loc_it(loc); loc_it; ++loc_it) {
+        CConstRef<CSeq_loc> this_loc = loc_it.GetRangeAsSeq_loc();
+        CSeqVector vec = GetSequenceFromLoc(*this_loc, bsh.GetScope());
+        if (!vec.empty()) {
+            CBioseq_Handle ph;
+            bool match = false;
+            for (auto id_it : bsh.GetBioseqCore()->GetId()) {
+                if (id_it->Equals(loc_it.GetSeq_id())) {
+                    match = true;
+                    break;
+                }
+            }
+            if (match) {
+                ph = bsh;
+            } else {
+                ph = bsh.GetScope().GetBioseqHandle(*this_loc);
+            }
+            TSeqPos offset = this_loc->GetStart(eExtreme_Positional);
+            string vec_data;
+            try {
+                vec.GetSeqData(0, vec.size(), vec_data);
+
+                int pos = 0;
+                string::iterator it = vec_data.begin();
+                while (it != vec_data.end()) {
+                    if (*it == 'N') {
+                        CSeqMap_CI map_iter(ph, SSeqMapSelector(), offset + pos);
+                        if (map_iter.GetType() == CSeqMap::eSeqGap) {
+                        } else {
+                            num_n++;
+                        }
+                    } else {
+                        if ((unsigned)(*it + 1) <= 256 && isalpha(*it)) {
+                            real_bases++;
+                        }
+                    }
+                    ++it;
+                    ++pos;
+                }
+            } catch (CException) {
+            } catch (std::exception) {
             }
         }
     }
 
-    if (is_seqloc_bond) {
+    return (num_n > real_bases);
+}
+
+
+void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
+{
+    if (CSingleFeatValidator::x_HasSeqLocBond(feat)) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_ImproperBondLocation,
                 "Bond location should only be on bond features", feat);
     }
@@ -7215,192 +7328,48 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                          feat);
             }    
 
-            // look for features inside gaps, crossing unknown gaps, or starting or ending in gaps
-            // ignore gap features for this
-            if (bsh.IsNa() && bsh.IsSetInst_Repr() && bsh.GetInst_Repr() == CSeq_inst::eRepr_delta
-                && (!feat.GetData().IsImp() 
-                    || !feat.GetData().GetImp().IsSetKey() 
-                    || !NStr::EqualNocase(feat.GetData().GetImp().GetKey(), "gap"))) {
+            if (!feat.GetData().IsImp()
+                || !feat.GetData().GetImp().IsSetKey()
+                || !NStr::EqualNocase(feat.GetData().GetImp().GetKey(), "gap")) {
                 try {
-                    int num_n = 0;
-                    int num_real = 0;
-                    int num_gap = 0;
-                    int num_unknown_gap = 0;
-                    bool first_in_gap = false, last_in_gap = false;
-                    bool local_first_gap = false, local_last_gap = false;
-                    bool startsOrEndsInGap = false;
-                    bool first = true;
-
-                    for ( CSeq_loc_CI loc_it(feat.GetLocation()); loc_it; ++loc_it ) {        
-                        CSeqVector vec = GetSequenceFromLoc(*(loc_it.GetRangeAsSeq_loc()), *m_Scope);
-                        if (!vec.empty()) {
-                            CBioseq_Handle ph = x_GetCachedBsh(loc_it.GetEmbeddingSeq_loc());
-                            try {
-                                CGapCache gap_cache(*(loc_it.GetRangeAsSeq_loc()), ph);
-                                string vec_data;
-                                vec.GetSeqData(0, vec.size(), vec_data);
-
-                                local_first_gap = false;
-                                local_last_gap = false;
-                                TSeqLength len = loc_it.GetRange().GetLength();
-                                ENa_strand strand = loc_it.GetStrand();
-
-                                int pos = 0;
-                                string::iterator it = vec_data.begin();
-                                while (it != vec_data.end() && pos < len) {
-                                    bool is_gap = false;
-                                    bool unknown_length = false;
-                                    if (strand == eNa_strand_minus) {
-                                        if (gap_cache.IsKnownGap(len - pos - 1)) {
-                                            is_gap = true;
-                                        } else if (gap_cache.IsUnknownGap(len - pos - 1)) {
-                                            is_gap = true;
-                                            unknown_length = true;
-                                        }
-                                    } else {
-                                        if (gap_cache.IsKnownGap(pos)) {
-                                            is_gap = true;
-                                        } else if (gap_cache.IsUnknownGap(pos)) {
-                                            is_gap = true;
-                                            unknown_length = true;
-                                        }
-
-                                    }
-                                    if (is_gap) {
-                                        if (pos == 0) {
-                                            local_first_gap = true;
-                                        } else if (pos == len - 1) {
-                                            local_last_gap = true;
-                                        }
-                                        if (unknown_length) {
-                                            num_unknown_gap++;
-                                        } else {
-                                            num_gap++;
-                                        }
-                                    } else if (*it == 'N') {
-                                        num_n++;
-                                    } else {
-                                        num_real++;
-                                    }
-                                    ++it;
-                                    ++pos;
-                                }
-                            } catch (CException& ex) {
-                                /*
-                                PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
-                                    string("Exception while checking for intervals in gaps. EXCEPTION: ") +
-                                    ex.what(), feat);
-                                */
-                            }
+                    vector<TSeqPos> gap_starts;
+                    size_t rval = x_CalculateLocationGaps(bsh, feat.GetLocation(), gap_starts);
+                    bool mostly_raw_ns = x_IsMostlyNs(feat.GetLocation(), bsh);
+                        
+                    if ((rval & eLocationGapMostlyNs) || mostly_raw_ns) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_FeatureIsMostlyNs,
+                            "Feature contains more than 50% Ns", feat);
+                    }
+                    for (auto gap_start : gap_starts) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_FeatureBeginsOrEndsInGap,
+                            "Feature begins or ends in gap starting at " + NStr::NumericToString(gap_start + 1), feat);
+                    }
+                    if (rval & eLocationGapContainedInGap &&
+                        (!(rval & eLocationGapFeatureMatchesGap) ||
+                         feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_misc_feature)) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_FeatureInsideGap,
+                            "Feature inside sequence gap", feat);
+                    }
+                    if (rval & eLocationGapContainedInGapOfNs) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_FeatureInsideGap,
+                            "Feature inside gap of Ns", feat);
+                    }
+                    if (feat.GetData().IsCdregion() || feat.GetData().IsRna()) {
+                        if (rval & eLocationGapInternalIntervalEndpointInGap) {
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_IntervalBeginsOrEndsInGap,
+                                "Internal interval begins or ends in gap", feat);
                         }
-                        if (first) {
-                            first_in_gap = local_first_gap;
-                            first = false;
-                        }
-                        last_in_gap = local_last_gap;
-                        if (local_first_gap || local_last_gap) {
-                            startsOrEndsInGap = true;
+                        if (rval & eLocationGapCrossesUnknownGap) {
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_FeatureCrossesGap,
+                                "Feature crosses gap of unknown length", feat);
                         }
                     }
-                    bool misc_feature_matches_gap = false;
-
-                    if (num_real == 0 && num_n == 0
-                        && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature) {
-                        TSeqPos start = feat.GetLocation().GetStart(eExtreme_Positional);
-                        TSeqPos stop = feat.GetLocation().GetStop(eExtreme_Positional);
-                        if ((start == 0 || CSeqMap_CI(bsh, SSeqMapSelector(), start - 1).GetType() != CSeqMap::eSeqGap ) 
-                            && (stop == bsh.GetBioseqLength() - 1 || CSeqMap_CI(bsh, SSeqMapSelector(), stop + 1).GetType() != CSeqMap::eSeqGap )) {
-                            misc_feature_matches_gap = true;
-                        }
-                    }
-                            
-
-                    if (num_gap == 0 && num_unknown_gap == 0 && num_n == 0) {
-                        // ignore features that do not cover any gap characters
-                    } else if (first_in_gap || last_in_gap) {
-                        if (num_real > 0) {
-                            size_t gap_start = x_FindStartOfGap(bsh, 
-                                first_in_gap ? feat.GetLocation().GetStart(eExtreme_Biological)
-                                : feat.GetLocation().GetStop(eExtreme_Biological), m_Scope);
-
-                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureBeginsOrEndsInGap, 
-                                    "Feature begins or ends in gap starting at " + NStr::NumericToString(gap_start + 1), feat);
-
-                        } else if (misc_feature_matches_gap) {
-                            // ignore (misc_) features that exactly cover the gap
-                        } else {
-                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureInsideGap, 
-                                     "Feature inside sequence gap", feat);
-                        }
-                    } else if (num_real == 0 && num_gap == 0 && num_unknown_gap == 0 && num_n >= 50) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureInsideGap, 
-                                 "Feature inside gap of Ns", feat);
-                    } else if ((feat.GetData().IsCdregion() || feat.GetData().IsRna()) && startsOrEndsInGap) {
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_IntervalBeginsOrEndsInGap,
-                            "Internal interval begins or ends in gap", feat);
-                    } else if ((feat.GetData().IsCdregion() || feat.GetData().IsRna()) && num_unknown_gap > 0) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCrossesGap, 
-                                 "Feature crosses gap of unknown length", feat);
-                    }            
                 } catch (CException &e) {
                     PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
                         string("Exception while checking for intervals in gaps. EXCEPTION: ") +
                         e.what(), feat);
                 } catch (std::exception ) {
-                }
-            }
-
-            // look for features with > 50% Ns
-            // ignore gap features for this
-            if (bsh.IsNa() && bsh.IsSetInst_Repr()) {
-                CSeq_inst::TRepr repr = bsh.GetInst_Repr();
-                if (repr == CSeq_inst::eRepr_raw ||
-                    (repr == CSeq_inst::eRepr_delta && xf_IsDeltaLitOnly(bsh))) {
-                    if (feat.GetData().IsImp() && feat.GetData().GetImp().IsSetKey() &&
-                        (NStr::EqualNocase(feat.GetData().GetImp().GetKey(), "gap") || feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature)) {
-                    } else {
-                        try {
-                            int num_n = 0;
-                            int real_bases = 0;
-
-                            for (CSeq_loc_CI loc_it(feat.GetLocation()); loc_it; ++loc_it) {
-                                CSeqVector vec = GetSequenceFromLoc (loc_it.GetEmbeddingSeq_loc(), *m_Scope);
-                                if ( !vec.empty() ) {
-                                    CBioseq_Handle ph = x_GetCachedBsh(loc_it.GetEmbeddingSeq_loc());
-                                    TSeqPos offset = loc_it.GetEmbeddingSeq_loc().GetStart (eExtreme_Positional);
-                                    string vec_data;
-                                    vec.GetSeqData(0, vec.size(), vec_data);
-
-                                    int pos = 0;
-                                    string::iterator it = vec_data.begin();
-                                    while (it != vec_data.end()) {
-                                        if (*it == 'N') {
-                                            CSeqMap_CI map_iter(ph, SSeqMapSelector(), offset + pos);
-                                            if (map_iter.GetType() == CSeqMap::eSeqGap) {
-                                            } else {
-                                                num_n++;
-                                            }
-                                        } else {
-                                            if ((unsigned)(*it + 1) <= 256 && isalpha(*it)) {
-                                              real_bases++;
-                                            }
-                                        }
-                                        ++it;
-                                        ++pos;
-                                    }
-                                }
-                            }
-
-                            if (num_n > real_bases) {
-                                PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureIsMostlyNs, 
-                                         "Feature contains more than 50% Ns", feat);
-                            }
-
-                        } catch (CException ) {
-                        } catch (std::exception ) {
-                        }
-                    }
-                }
+                } 
             }
         }
     }
@@ -7460,6 +7429,24 @@ CSingleFeatValidator::CSingleFeatValidator(const CSeq_feat& feat, CScope& scope,
 
 void CSingleFeatValidator::Validate()
 {
+    if (!m_Feat.IsSetLocation()) {
+        PostErr(eDiag_Critical, eErr_SEQ_FEAT_MissingLocation,
+            "The feature is missing a location");
+        return;
+    }
+
+    m_LocationBioseq = x_GetBioseqByLocation(m_Feat.GetLocation());
+    m_Imp.ValidateSeqLoc(m_Feat.GetLocation(), m_LocationBioseq,
+        (m_Feat.GetData().IsGene() || !m_Imp.IsGpipe()),
+        "Location", m_Feat);
+
+    if (m_Feat.IsSetProduct()) {
+        m_ProductBioseq = x_GetBioseqByLocation(m_Feat.GetProduct());
+        if (m_ProductBioseq == m_LocationBioseq) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_SelfReferentialProduct, "Self-referential feature product");
+        }
+        x_ValidateSeqFeatProduct();
+    }
 
     x_ValidateBothStrands();
 
@@ -7490,6 +7477,134 @@ void CSingleFeatValidator::Validate()
 void CSingleFeatValidator::PostErr(EDiagSev sv, EErrType et, const string& msg)
 {
     m_Imp.PostErr(sv, et, msg, m_Feat);
+}
+
+
+CBioseq_Handle
+CSingleFeatValidator::x_GetBioseqByLocation(const CSeq_loc& loc)
+{
+    if (loc.IsInt() || loc.IsWhole()) {
+        return m_Scope.GetBioseqHandle(loc);
+    }
+    CBioseq_Handle rval;
+    CConstRef<CSeq_id> prev(NULL);
+    for (CSeq_loc_CI citer(loc); citer; ++citer) {
+        const CSeq_id& this_id = citer.GetSeq_id();
+        if (!prev || !prev->Equals(this_id)) {
+            rval = m_Scope.GetBioseqHandle(this_id);
+            if (rval) {
+                break;
+            }
+            prev.Reset(&this_id);
+        }
+    }
+    return rval;
+}
+
+
+void CSingleFeatValidator::x_ValidateSeqFeatProduct()
+{
+    if (!m_Feat.IsSetProduct()) {
+        return;
+    }
+    const CSeq_id& sid = GetId(m_Feat.GetProduct(), &m_Scope);
+
+    switch (sid.Which()) {
+    case CSeq_id::e_Genbank:
+    case CSeq_id::e_Embl:
+    case CSeq_id::e_Ddbj:
+    case CSeq_id::e_Tpg:
+    case CSeq_id::e_Tpe:
+    case CSeq_id::e_Tpd:
+    {
+        const CTextseq_id* tsid = sid.GetTextseq_Id();
+        if (tsid != NULL) {
+            if (!tsid->CanGetAccession() && tsid->CanGetName()) {
+                if (ValidateAccessionString(tsid->GetName(), false) == eAccessionFormat_valid) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadProductSeqId,
+                        "Feature product should not put an accession in the Textseq-id 'name' slot");
+                } else {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadProductSeqId,
+                        "Feature product should not use "
+                        "Textseq-id 'name' slot");
+                }
+            }
+        }
+    }
+    break;
+
+    default:
+        break;
+    }
+
+    if (m_ProductBioseq) {
+        m_Imp.ValidateSeqLoc(m_Feat.GetProduct(), m_ProductBioseq, true, "Product", m_Feat);
+
+        FOR_EACH_SEQID_ON_BIOSEQ(id, *(m_ProductBioseq.GetCompleteBioseq())) {
+            switch ((*id)->Which()) {
+            case CSeq_id::e_Genbank:
+            case CSeq_id::e_Embl:
+            case CSeq_id::e_Ddbj:
+            case CSeq_id::e_Tpg:
+            case CSeq_id::e_Tpe:
+            case CSeq_id::e_Tpd:
+            {
+                const CTextseq_id* tsid = (*id)->GetTextseq_Id();
+                if (tsid != NULL) {
+                    if (!tsid->IsSetAccession() && tsid->IsSetName()) {
+                        if (ValidateAccessionString(tsid->GetName(), false) == eAccessionFormat_valid) {
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadProductSeqId,
+                                "Protein bioseq has Textseq-id 'name' that "
+                                "looks like it is derived from a nucleotide "
+                                "accession");
+                        } else {
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadProductSeqId,
+                                "Protein bioseq has Textseq-id 'name' and no accession");
+                        }
+                    }
+                }
+            }
+            break;
+            default:
+                break;
+            }
+        }
+    }
+}
+
+
+bool CSingleFeatValidator::x_HasSeqLocBond(const CSeq_feat& feat)
+{
+    // check for bond locations - only allowable in bond feature and under special circumstances for het
+    bool is_seqloc_bond = false;
+    if (feat.IsSetData()) {
+        if (feat.GetData().IsHet()) {
+            // heterogen can have mix of bonds with just "a" point specified */
+            for (CSeq_loc_CI it(feat.GetLocation()); it; ++it) {
+                if (it.GetEmbeddingSeq_loc().IsBond()
+                    && (!it.GetEmbeddingSeq_loc().GetBond().IsSetA()
+                    || it.GetEmbeddingSeq_loc().GetBond().IsSetB())) {
+                    is_seqloc_bond = true;
+                    break;
+                }
+            }
+        } else if (!feat.GetData().IsBond()) {
+            for (CSeq_loc_CI it(feat.GetLocation()); it; ++it) {
+                if (it.GetEmbeddingSeq_loc().IsBond()) {
+                    is_seqloc_bond = true;
+                    break;
+                }
+            }
+        }
+    } else {
+        for (CSeq_loc_CI it(feat.GetLocation()); it; ++it) {
+            if (it.GetEmbeddingSeq_loc().IsBond()) {
+                is_seqloc_bond = true;
+                break;
+            }
+        }
+    }
+    return is_seqloc_bond;
 }
 
 

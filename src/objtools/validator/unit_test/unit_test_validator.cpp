@@ -958,15 +958,15 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ReprInvalid)
 
 BOOST_AUTO_TEST_CASE(Test_CollidingLocusTags)
 {
-    CSeq_entry entry;
+    CRef<CSeq_entry> entry(new CSeq_entry());
     {{
          CNcbiIstrstream istr(sc_TestEntryCollidingLocusTags);
-         istr >> MSerial_AsnText >> entry;
+         istr >> MSerial_AsnText >> *entry;
      }}
 
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CScope scope(*objmgr);
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
     CValidator validator(*objmgr);
 
