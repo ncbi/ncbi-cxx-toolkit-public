@@ -75,15 +75,16 @@ protected:
     bool m_SuspectProductNames;
     bool m_Ext;
     bool m_Fat;
+    bool m_Big;
     bool m_AutoFix;
     bool m_Xml;
     bool m_Print;
 };
 
 
-CDiscRepApp::CDiscRepApp(void) : m_SuspectProductNames(false), m_Ext(false), m_Fat(false), m_AutoFix(false), m_Xml(false), m_Print(false)
+CDiscRepApp::CDiscRepApp(void) : m_SuspectProductNames(false), m_Ext(false), m_Fat(false), m_Big(false), m_AutoFix(false), m_Xml(false), m_Print(false)
 {
-  SetVersionByBuild(1);
+    SetVersionByBuild(1);
 }
 
 
@@ -386,7 +387,7 @@ void CDiscRepApp::x_Output(const string& filename, CDiscrepancySet& tests)
 {
     bool summary = GetArgs()["S"].AsBoolean();
     CNcbiOfstream out(filename.c_str(), ofstream::out);
-    tests.OutputText(out, m_Fat, summary, m_Ext);
+    tests.OutputText(out, m_Fat, summary, m_Ext, m_Big);
 }
 
 
@@ -474,6 +475,7 @@ int CDiscRepApp::Run(void)
                 break;
             case 'b':
                 AllTests = GetDiscrepancyNames(eBig);
+                m_Big = true;
                 break;
             default:
                 AllTests = GetDiscrepancyNames();

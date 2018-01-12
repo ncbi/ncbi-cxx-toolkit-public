@@ -113,10 +113,10 @@ static void RecursiveSummary(ostream& out, const TReportItemList& list, bool fat
 }
 
 
-void CDiscrepancyContext::OutputText(ostream& out, bool fatal, bool summary, bool ext)
+void CDiscrepancyContext::OutputText(ostream& out, bool fatal, bool summary, bool ext, bool big)
 {
     const TDiscrepancyCaseMap& tests = GetTests();
-    out << "Discrepancy Report Results\n\n";
+    out << (big ? "Discrepancy Report Results (due to the large size of the file some checks may not have run)\n\n" : "Discrepancy Report Results\n\n");
 
     out << "Summary\n";
     ITERATE(TDiscrepancyCaseMap, tst, tests) {
