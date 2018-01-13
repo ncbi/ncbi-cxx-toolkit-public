@@ -2543,6 +2543,9 @@ HSUD	h	Station of Nature Research and Environmental Education
 HSUE	s	Natural History Museum, Addis Ababa		
 HSUMZ	s	Henderson State University, Museum of Zoology		
 HSUVM	s	Humboldt State University Vertebrate Museum		
+HSUVM:Bird	s	Humboldt State University Vertebrate Museum, Bird Collection
+HSUVM:Herp	s	Humboldt State University Vertebrate Museum, Herpetology Collection
+HSUVM:Mamm	s	Humboldt State University Vertebrate Museum, Mammal collection
 HTC	s	Hangzhou Normal College, Biology Department		
 HTD	s	College Natural History Society		
 HTE	s	Queen Ethelburga's School		
