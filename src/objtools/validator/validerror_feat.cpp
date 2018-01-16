@@ -7125,7 +7125,7 @@ size_t CValidError_feat::x_CalculateLocationGaps(CBioseq_Handle bsh, const CSeq_
                 TSeqLength len = loc_it.GetRange().GetLength();
                 ENa_strand strand = loc_it.GetStrand();
 
-                int pos = 0;
+                size_t pos = 0;
                 string::iterator it = vec_data.begin();
                 while (it != vec_data.end() && pos < len) {
                     bool is_gap = false;
@@ -7182,7 +7182,6 @@ size_t CValidError_feat::x_CalculateLocationGaps(CBioseq_Handle bsh, const CSeq_
             startsOrEndsInGap = true;
         }
     }
-    bool misc_feature_matches_gap = false;
 
     if (num_real == 0 && num_n == 0) {
         TSeqPos start = loc.GetStart(eExtreme_Positional);
@@ -7213,7 +7212,7 @@ size_t CValidError_feat::x_CalculateLocationGaps(CBioseq_Handle bsh, const CSeq_
         rval |= eLocationGapCrossesUnknownGap;
     }
 
-    if (num_n > num_real && num_real > 0 && xf_IsDeltaLitOnly(bsh)) {
+    if (num_n > num_real && xf_IsDeltaLitOnly(bsh)) {
         rval |= eLocationGapMostlyNs;
     }
 

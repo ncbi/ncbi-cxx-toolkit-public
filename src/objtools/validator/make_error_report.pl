@@ -70,11 +70,22 @@ foreach $text (@unknown) {
   print "$text\n";
 }
 
+my $max = 0;
+my $biggest = "";
+my %reuse_count;
+
 print "\nBy error code:\n";
 foreach $text (keys %codes) {
-  print "$text:\n$codes{$text}\n";
+  my @foo = split(/\n/, $codes{$text});
+  $count = @foo;
+  $reuse_count{$text} = $count;
+  print "$text ($count):\n$codes{$text}\n";
 }
 
+print "\nCountSummary\n";
+foreach $text (keys %reuse_count) {
+  print "$reuse_count{$text}:$text\n";
+}
 
 sub process_file
 {
@@ -90,7 +101,7 @@ sub process_file
   while($thisline=<IN>) {
     $thisline =~ s/\r//;
     $thisline =~ s/\n//;
-    if ($thisline =~ /PostErr/) {
+    if ($thisline =~ /PostErr/ || $thisline =~ /PostObjErr/) {
       $in_err = 1;
     }
     if ($in_err) {
