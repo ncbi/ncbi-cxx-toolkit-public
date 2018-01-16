@@ -3503,154 +3503,129 @@ bool NStr::SplitInTwo(const CTempString str, const CTempString delim,
 }
 
 
-// Auxiliary macros for NStr::Sanitize()
+#define SS_ADD_CHAR(c) \
+    out.push_back(c); \
+    last = c;
 
-#define SS_WRITE_SUBSTR \
-    if (!out.get()) { \
-        out.reset(new CNcbiOstrstream); \
-    } \
-    out->write(str.data() + pos, n_good); \
-    n_good = 0; \
-    pos = i
-
-#define SS_WRITE_SPACES \
-    if (!out.get()) { \
-        out.reset(new CNcbiOstrstream); \
-    } \
-    SIZE_TYPE n = (flags & fSS_NoMerge) ? n_spaces : 1; \
-    for (SIZE_TYPE j = n; j > 0; j--) { \
-        out->put(' '); \
-    } 
-
-string NStr::Sanitize(CTempString str, TSS_Flags flags)
+string NStr::Sanitize(CTempString str, CTempString allow_chars, CTempString reject_chars,
+                      char reject_replacement, TSS_Flags flags)
 {
-    unique_ptr<CNcbiOstrstream> out;
-    SIZE_TYPE i;
-    SIZE_TYPE pos      = 0;  // start position of the substring
-    SIZE_TYPE n_good   = 0;  // length of substring (good symbols)
-    SIZE_TYPE n_spaces = 0;  // number of accumulated spaces
+    string out;
+    out.reserve(str.size());
 
-    // Use fSS_print by default if no any other filter
-    if ( !(flags & (fSS_alpha | fSS_digit | fSS_alnum |
-                    fSS_print | fSS_cntrl | fSS_punct)) ) {
+    // Use fSS_print by default if no any other filter, including custom
+    bool have_class = (flags & (fSS_alpha | fSS_digit | fSS_alnum | fSS_print | fSS_cntrl | fSS_punct)) > 0;
+    if ( allow_chars.empty()   &&  reject_chars.empty()  &&  !have_class ) {
         flags |= fSS_print;
+        have_class = true;
     }
 
-    for (i = 0;  i < str.size();  i++) 
-    {
-        char c = str[i];
+    bool have_allowed = false;
+    char last = '\0';
 
-        // Check on bare space.
-        // Do not use ::isspace() here due it interference with ::iscntrl().
-        if ( c == ' ' )  {
-            // Spaces starts and we have good chars before? -- write it immediately
-            if ( n_good ) {
-                SS_WRITE_SUBSTR;
+    for (char c : str) {
+
+        // Check against filters: character classes via flags, allowed chars, rejected chars.
+		bool allowed = false;
+        if ( have_class ) {
+            allowed = ((flags & fSS_Reject) != 0);
+            if (((flags & fSS_print)  &&  isprint((unsigned char)c))  ||
+                ((flags & fSS_alnum)  &&  isalnum((unsigned char)c))  ||
+                ((flags & fSS_alpha)  &&  isalpha((unsigned char)c))  ||
+                ((flags & fSS_digit)  &&  isdigit((unsigned char)c))  ||
+                ((flags & fSS_cntrl)  &&  iscntrl((unsigned char)c))  ||
+                ((flags & fSS_punct)  &&  ispunct((unsigned char)c))  ) {
+
+                // If matched and reverse logic -- treat char as rejected
+                allowed = ((flags & fSS_Reject) == 0);
             }
-            // Count and skip all consecutive spaces
-            ++n_spaces;
+        }
+        else {
+            // Special case: no any character class specified in flags
+
+            // If <allow_chars> and fSS_Reject flag, then no any character allowed except <allow_chars>
+            // -- "allow" already FALSE, no need to check this;
+            // -- <allow_chars> will be checked below.
+
+            // If <reject_chars> and no fSS_Reject flag, then all characters allowed except <reject_chars>.
+            if (!reject_chars.empty()  &&  ((flags & fSS_Reject) == 0)) {
+                allowed = true;
+            }
+            // -- <reject_chars> will be checked below.
+        }
+        if (!allowed  &&  !allow_chars.empty()  &&  allow_chars.find(c) != NPOS ) {
+            allowed = true;
+        }
+        if (allowed  &&  !reject_chars.empty()  &&  reject_chars.find(c) != NPOS ) {
+            allowed = false;
+        }
+
+        // Good character?
+        if ( allowed )  {
+            // Special processing for allowed spaces.
+            // Truncate leading spaces and merge if necessary
+            if ( c == ' ' )  {
+                if (!have_allowed  &&  !(flags & fSS_NoTruncate_Begin)) {
+                    // Skip spaces at start of the string
+                    continue;
+                }
+                if (flags & fSS_NoMerge) {
+                    SS_ADD_CHAR(c);
+                }
+                else {
+                    // Merge spaces
+                    if (last != ' ') {
+                        SS_ADD_CHAR(c);
+                    }
+                }
+            }
+            else {
+                // Some other allowed character
+                SS_ADD_CHAR(c);
+                have_allowed = true;
+            }
             continue;
         }
 
-        // Check against filters
-        bool allowed = ((flags & fSS_Reject) != 0);
-        if (((flags & fSS_print)  &&  isprint((unsigned char)c)) ||
-            ((flags & fSS_alnum)  &&  isalnum((unsigned char)c)) ||
-            ((flags & fSS_alpha)  &&  isalpha((unsigned char)c)) ||
-            ((flags & fSS_digit)  &&  isdigit((unsigned char)c)) ||
-            ((flags & fSS_cntrl)  &&  iscntrl((unsigned char)c)) ||
-            ((flags & fSS_punct)  &&  ispunct((unsigned char)c)) ) {
-
-            // If matched and reverse logic -- treat char as rejected
-            allowed = ((flags & fSS_Reject) == 0);
-        }
-
-        // Good character and no spaces before?
-        if ( allowed  &&  !n_spaces )  {
-            // Continue to build substring or start new one
-            if ( n_good ) {
-                ++n_good;
-            } else {
-                n_good = 1;
-                pos = i;
-            }
+        // Rejected
+        if ( flags & fSS_Remove ) {
             continue;
         }
-
-        // Rejected character?
-        if ( !allowed ) {
-            // Write previously accumulated substring
-            if ( n_good ) {
-                SS_WRITE_SUBSTR;
+        // Special check on leading spaces, if <reject_replacement> is a space
+        if (reject_replacement == ' ') {
+            if (!have_allowed  &&  !(flags & fSS_NoTruncate_Begin)) {
+                // Skip spaces at start of the string
+                continue;
             }
-            // Increase space pool or just ignore
-            if ( !(flags & fSS_Remove) ) {
-                ++n_spaces;
-            }
-            continue;
         }
-
-        _ASSERT( allowed );
-        _ASSERT( !n_good );
-
-        // Otherwise need to process accumulated spaces first
-        if ( n_spaces ) {
-            // Don't write leading spaces
-            if ( pos  ||  (!pos && (flags & fSS_NoTruncate_Begin))) {
-                SS_WRITE_SPACES;
-            }
-            n_spaces = 0;
-        }
-        // Start new substring
-        n_good = 1;
-        pos = i;
-
-    } /* for */
-
-    // Some good characters?
-    if ( n_good ) {
-        if (i == n_good) {
-            // All are good - return (a copy of) the original string
-            return str;
-        }
-        if ( !out.get() ) {
-            // All leading characters are bad - return a second part of
-            // the original string, to avoid copying (below).
-            return str.substr(pos, n_good);
-        }
-        // Write last accumulated substring
-        SS_WRITE_SUBSTR;
-    }
-
-    // Empty string, or all spaces (or rejected chars replaced with spaces)?
-    if ( (i == n_spaces) || (n_spaces  &&  !out.get()) ) {
-        if (!n_spaces  ||  ((flags & fSS_NoTruncate) != fSS_NoTruncate) ) {
-            return kEmptyStr;
-        }
+        // Replace rejected character
         if (flags & fSS_NoMerge) {
-            SS_WRITE_SPACES;
-            return CNcbiOstrstreamToString(*out);
-        } else {
-            return " ";
+            SS_ADD_CHAR(reject_replacement);
+            have_allowed = true;
         }
-        return kEmptyStr;
+        else {
+            // Merge rejected
+            if (last != reject_replacement) {
+                SS_ADD_CHAR(reject_replacement);
+                have_allowed = true;
+            }
+        }
     }
 
-    // Trailing spaces?
-    if ( n_spaces ) {
-        _ASSERT(out.get());
-        if (flags & fSS_NoTruncate_End) {
-            SS_WRITE_SPACES;
-        } 
-    }
-    if (out.get()) {
-        // Return sanitized string
-        return CNcbiOstrstreamToString(*out);
+    // Truncate trailing spaces if necessary
+    if (last == ' '  &&  !(flags & fSS_NoTruncate_End)) {
+        SIZE_TYPE pos = out.find_last_not_of(last);
+        if (pos == NPOS) {
+            out.clear();
+        }
+        else {
+            out.resize(pos+1);
+        }
     }
 
-    // All rejected
-    return kEmptyStr;
+    return out;
 }
+
 
 
 enum ELanguage {
@@ -3764,8 +3739,44 @@ static string s_PrintableString(const CTempString    str,
 }
 
         
-string NStr::PrintableString(const CTempString    str,
-                             NStr::TPrintableMode mode)
+string NStr::Escape(const CTempString str, const CTempString metacharacters, char escape_char)
+{
+    string out;
+    out.reserve(str.size() * 2); // maximum size for a new string (have all metacharacters)
+
+    for (char c : str) {
+        if (c == escape_char || metacharacters.find(c) != NPOS) {
+            out += escape_char;
+        }
+        out += c;
+    }
+    return out;
+}
+
+
+string NStr::Unescape(const CTempString str, char escape_char)
+{
+    string out;
+    out.reserve(str.size());
+    bool escaped = false;
+
+    for (char c : str) {
+        if (c == escape_char) {
+            if (escaped) {
+                out += c;
+            }
+            escaped = !escaped;
+        }
+        else {
+            out += c;
+            escaped = false;
+        }
+    }
+    return out;
+}
+
+
+string NStr::PrintableString(const CTempString str, NStr::TPrintableMode mode)
 {
     return s_PrintableString(str, mode, eLanguage_C);
 }

@@ -2153,14 +2153,61 @@ BOOST_AUTO_TEST_CASE(s_PrintableString)
 
 
 //----------------------------------------------------------------------------
+// NStr::Escape()
+//----------------------------------------------------------------------------
+
+struct SEscapeTest {
+    const char*  str;
+    const char*  meta;
+    char         esc;
+    const char*  result;
+};
+
+static const SEscapeTest s_EscapeTests[] = {
+    { "",           "",    '\\',  "" },
+    { "ABC",        "#",   '\\',  "ABC" },
+    { "#",          "#",   '\\',  "\\#" },
+    { "###",        "#",   '\\',  "\\#\\#\\#" },
+    { "##A",        "#",   '\\',  "\\#\\#A" },
+    { "A##",        "#",   '\\',  "A\\#\\#" },
+    { "A#B##C###D", "#",   '\\',  "A\\#B\\#\\#C\\#\\#\\#D" },
+    { "A#B##C###D", "#",   ' ',   "A #B # #C # # #D" },
+    { "A*B=#C#=*D", "#*=", '\\',  "A\\*B\\=\\#C\\#\\=\\*D" },
+    { "*",          "#",   '*',   "**" },
+    { "*A**",       "#",   '*',   "**A****" },
+    { "**A***B*",   "#",   '*',   "****A******B**" },
+    { "********",   "#",   '*',   "****************" }
+};
+
+BOOST_AUTO_TEST_CASE(s_Escape)
+{
+    const size_t count = sizeof(s_EscapeTests) / sizeof(s_EscapeTests[0]);
+    for (size_t i = 0;  i < count;  ++i)
+    {
+        const SEscapeTest* test = &s_EscapeTests[i];
+        string s = NStr::Escape(test->str, test->meta, test->esc);
+        BOOST_CHECK(s.compare(test->result) == 0);
+        BOOST_CHECK(NStr::Unescape(s, test->esc).compare(test->str) == 0);
+    }
+}
+
+
+//----------------------------------------------------------------------------
 // NStr::Sanitize()
 //----------------------------------------------------------------------------
 
 struct SSanitizeTest {
     const char*     str;
     NStr::TSS_Flags flags;
-    const char*     allowed;    // flags
-    const char*     rejected;   // flags + fSS_Reject
+    const char*     allow; 
+    const char*     reject;
+    char            replacement;
+    // Results for simplified version, that don't use (allow + reject + replacement) fields
+    const char*     res_allowed;       // flags
+    const char*     res_rejected;      // flags + fSS_Reject
+    // Results for extended version
+    const char*     res_ex_allowed;    // flags
+    const char*     res_ex_rejected;   // flags + fSS_Reject
 };
 
 // Abbreviations to shorten tests description
@@ -2179,310 +2226,426 @@ const NStr::TSS_Flags NTE = NStr::fSS_NoTruncate_End;
 static const SSanitizeTest s_SanitizeTests[] = {
 
     // Default flags
-    { "",                 0,   "",         "" },
-    { "   ",              0,   "",         "" },
-    { "ABC",              0,   "ABC",      "" },
-    { "  ABC",            0,   "ABC",      "" },
-    { "ABC  ",            0,   "ABC",      "" },
-    { " ABC ",            0,   "ABC",      "" },
-    { "   ABC   ",        0,   "ABC",      "" },
-    { "   A B C   ",      0,   "A B C",    "" },
-    { "   A  B  C   ",    0,   "A B C",    "" },
-    { "   AB CD EF   ",   0,   "AB CD EF", "" },
-    { "   AB  CD  EF   ", 0,   "AB CD EF", "" },
-    { "\nA\tB""\x01 ""C", 0,   "A B C",    "\n \t \x01"     },
-    { "\n \nA B\nC\n \n", 0,   "A B C",    "\n \n \n \n \n" },
-    { "\n\nA B\nC\n\n",   0,   "A B C",    "\n\n \n \n\n"   },
-    { "  \nA B\nC\n  ",   0,   "A B C",    "\n \n \n"       },
 
-    // Simple filters
-    { "A123,BC45\nD6!",   0,   "A123,BC45 D6!", "\n"            },
-    { "A123,BC45\nD6!",   PR,  "A123,BC45 D6!", "\n"            },
-    { "A123,BC45\nD6!",   A,   "A BC D",        "123, 45\n 6!"  },
-    { "A123,BC45\nD6!",   D,   "123 45 6",      "A ,BC \nD !"   },
-    { "A123,BC45\nD6!",   AD,  "A123 BC45 D6",  ", \n !"        },
-    { "A123,BC45\nD6!",   A+D, "A123 BC45 D6",  ", \n !"        },
-    { "A123,BC45\nD6!",   I,   ", !",           "A123 BC45\nD6" },
-    { "A123,BC45\nD6!",   C,   "\n",            "A123,BC45 D6!" },
-    { "A123,BC45\nD6!",   I+C, ", \n !",        "A123 BC45 D6"  },
+    { "",                 0,   "",  "",  '?',  ""         , ""               , ""            , ""               }, // 0
+    { "   ",              0,   "",  "",  '?',  ""         , ""               , ""            , "?"              },
+    { "ABC",              0,   "",  "",  '?',  "ABC"      , ""               , "ABC"         , "?"              },
+    { "  ABC",            0,   "",  "",  '?',  "ABC"      , ""               , "ABC"         , "?"              },
+    { "ABC  ",            0,   "",  "",  '?',  "ABC"      , ""               , "ABC"         , "?"              },
+    { " ABC ",            0,   "",  "",  '?',  "ABC"      , ""               , "ABC"         , "?"              },
+    { "   ABC   ",        0,   "",  "",  '?',  "ABC"      , ""               , "ABC"         , "?"              },
+    { "   A B C   ",      0,   "",  "",  '?',  "A B C"    , ""               , "A B C"       , "?"              },
+    { "   A  B  C   ",    0,   "",  "",  '?',  "A B C"    , ""               , "A B C"       , "?"              },
+    { "   AB CD EF   ",   0,   "",  "",  '?',  "AB CD EF" , ""               , "AB CD EF"    , "?"              },
+    { "   AB  CD  EF   ", 0,   "",  "",  '?',  "AB CD EF" , ""               , "AB CD EF"    , "?"              }, // 10
+    { "\nA\tB""\x01 ""C", 0,   "",  "",  '?',  "A B C"    , "\n \t \x01"     , "?A?B? C"     , "\n?\t?\x01?"    },
+    { "\n \nA B\nC\n \n", 0,   "",  "",  '?',  "A B C"    , "\n \n \n \n \n" , "? ?A B?C? ?" , "\n?\n?\n?\n?\n" },
+    { "\n\nA B\nC\n\n",   0,   "",  "",  '?',  "A B C"    , "\n\n \n \n\n"   , "?A B?C?"     , "\n\n?\n?\n\n"   },
+    { "  \nA B\nC\n  ",   0,   "",  "",  '?',  "A B C"    , "\n \n \n"       , "?A B?C?"     , "?\n?\n?\n?"     },
+
+    // Default flags (use custom filters only, so no character classes)
+    // Affects extended Sanitize() only, simplified results are same as before.
+
+    { "",                 0,   "A\t",  "BE",  '?',  ""         , ""               , ""                , ""      }, // 15
+    { "   ",              0,   "A\t",  "BE",  '?',  ""         , ""               , ""                , "?"     },
+    { "   ",              0,   "",     " ",   '?',  ""         , ""               , "?"               , "?"     },
+    { "   ",              0,   " ",    "",    '?',  ""         , ""               , ""                , ""      },
+    { "   ",              0,   " ",    " ",   '?',  ""         , ""               , "?"               , "?"     },
+    { "ABC",              0,   "A\t",  "BE",  '?',  "ABC"      , ""               , "A?C"             , "A?"    }, // 20
+    { "  ABC",            0,   "A\t",  "BE",  '?',  "ABC"      , ""               , "A?C"             , "?A?"   },
+    { "ABC  ",            0,   "A\t",  "BE",  '?',  "ABC"      , ""               , "A?C"             , "A?"    },
+    { " ABC ",            0,   "A\t",  "BE",  '?',  "ABC"      , ""               , "A?C"             , "?A?"   },
+    { "   ABC   ",        0,   "A\t",  "BE",  '?',  "ABC"      , ""               , "A?C"             , "?A?"   },
+    { "   A B C   ",      0,   "A\t",  "BE",  '?',  "A B C"    , ""               , "A ? C"           , "?A?"   },
+    { "   A  B  C   ",    0,   "A\t",  "BE",  '?',  "A B C"    , ""               , "A ? C"           , "?A?"   },
+    { "   AB CD EF   ",   0,   "A\t",  "BE",  '?',  "AB CD EF" , ""               , "A? CD ?F"        , "?A?"   },
+    { "   AB  CD  EF   ", 0,   "A\t",  "BE",  '?',  "AB CD EF" , ""               , "A? CD ?F"        , "?A?"   },
+    { "\nA\tB""\x01 ""C", 0,   "A\t",  "BE",  '?',  "A B C"    , "\n \t \x01"     , "\nA\t?\x01 C"    , "?A\t?" },
+    { "\n \nA B\nC\n \n", 0,   "A\t",  "BE",  '?',  "A B C"    , "\n \n \n \n \n" , "\n \nA ?\nC\n \n", "?A?"   }, // 30
+    { "\n\nA B\nC\n\n",   0,   "A\t",  "BE",  '?',  "A B C"    , "\n\n \n \n\n"   , "\n\nA ?\nC\n\n"  , "?A?"   },
+    { "  \nA B\nC\n  ",   0,   "A\t",  "BE",  '?',  "A B C"    , "\n \n \n"       , "\nA ?\nC\n"      , "?A?"   },
+
+    // Default flags (use custom filters + fSS_Print)
+    // Affects extended Sanitize() only, simplified results are same as before.
+
+    { "",                 PR,   "A\t",  "BE",  '?',  ""         , ""               , ""           , ""                }, // 33
+    { "   ",              PR,   "A\t",  "BE",  '?',  ""         , ""               , ""           , "?"               },
+    { "   ",              PR,   " ",    "",    '?',  ""         , ""               , ""           , ""                },
+    { "   ",              PR,   "",     " ",   '?',  ""         , ""               , "?"          , "?"               },
+    { "   ",              PR,   " ",    " ",   '?',  ""         , ""               , "?"          , "?"               },
+    { "ABC",              PR,   "A\t",  "BE",  '?',  "ABC"      , ""               , "A?C"        , "A?"              },
+    { "  ABC",            PR,   "A\t",  "BE",  '?',  "ABC"      , ""               , "A?C"        , "?A?"             },
+    { "ABC  ",            PR,   "A\t",  "BE",  '?',  "ABC"      , ""               , "A?C"        , "A?"              }, // 40
+    { " ABC ",            PR,   "A\t",  "BE",  '?',  "ABC"      , ""               , "A?C"        , "?A?"             },
+    { "   ABC   ",        PR,   "A\t",  "BE",  '?',  "ABC"      , ""               , "A?C"        , "?A?"             },
+    { "   A B C   ",      PR,   "A\t",  "BE",  '?',  "A B C"    , ""               , "A ? C"      , "?A?"             },
+    { "   A  B  C   ",    PR,   "A\t",  "BE",  '?',  "A B C"    , ""               , "A ? C"      , "?A?"             },
+    { "   AB CD EF   ",   PR,   "A\t",  "BE",  '?',  "AB CD EF" , ""               , "A? CD ?F"   , "?A?"             },
+    { "   AB  CD  EF   ", PR,   "A\t",  "BE",  '?',  "AB CD EF" , ""               , "A? CD ?F"   , "?A?"             },
+    { "\nA\tB""\x01 ""C", PR,   "A\t",  "BE",  '?',  "A B C"    , "\n \t \x01"     , "?A\t? C"    , "\nA\t?\x01?"     },
+    { "\n \nA B\nC\n \n", PR,   "A\t",  "BE",  '?',  "A B C"    , "\n \n \n \n \n" , "? ?A ?C? ?" , "\n?\nA?\n?\n?\n" },
+    { "\n\nA B\nC\n\n",   PR,   "A\t",  "BE",  '?',  "A B C"    , "\n\n \n \n\n"   , "?A ?C?"     , "\n\nA?\n?\n\n"   },
+    { "  \nA B\nC\n  ",   PR,   "A\t",  "BE",  '?',  "A B C"    , "\n \n \n"       , "?A ?C?"     , "?\nA?\n?\n?"     }, // 50
+
+    // same as before + allowed space
+
+    { "",                 PR,   " A\t",  "BE",  '?',  ""         , ""               , ""           , ""                 }, // 51
+    { "   ",              PR,   " A\t",  "BE",  '?',  ""         , ""               , ""           , ""                 },
+    { "   ",              PR,   " ",     "",    '?',  ""         , ""               , ""           , ""                 },
+    { "   ",              PR,   "",      " ",   '?',  ""         , ""               , "?"          , "?"                },
+    { "   ",              PR,   " ",     " ",   '?',  ""         , ""               , "?"          , "?"                },
+    { "ABC",              PR,   " A\t",  "BE",  '?',  "ABC"      , ""               , "A?C"        , "A?"               },
+    { "  ABC",            PR,   " A\t",  "BE",  '?',  "ABC"      , ""               , "A?C"        , "A?"               },
+    { "ABC  ",            PR,   " A\t",  "BE",  '?',  "ABC"      , ""               , "A?C"        , "A?"               },
+    { " ABC ",            PR,   " A\t",  "BE",  '?',  "ABC"      , ""               , "A?C"        , "A?"               },
+    { "   ABC   ",        PR,   " A\t",  "BE",  '?',  "ABC"      , ""               , "A?C"        , "A?"               }, // 60
+    { "   A B C   ",      PR,   " A\t",  "BE",  '?',  "A B C"    , ""               , "A ? C"      , "A ? ?"            },
+    { "   A  B  C   ",    PR,   " A\t",  "BE",  '?',  "A B C"    , ""               , "A ? C"      , "A ? ?"            },
+    { "   AB CD EF   ",   PR,   " A\t",  "BE",  '?',  "AB CD EF" , ""               , "A? CD ?F"   , "A? ? ?"           },
+    { "   AB  CD  EF   ", PR,   " A\t",  "BE",  '?',  "AB CD EF" , ""               , "A? CD ?F"   , "A? ? ?"           },
+    { "\nA\tB""\x01 ""C", PR,   " A\t",  "BE",  '?',  "A B C"    , "\n \t \x01"     , "?A\t? C"    , "\nA\t?\x01 ?"     },
+    { "\n \nA B\nC\n \n", PR,   " A\t",  "BE",  '?',  "A B C"    , "\n \n \n \n \n" , "? ?A ?C? ?" , "\n \nA ?\n?\n \n" },
+    { "\n\nA B\nC\n\n",   PR,   " A\t",  "BE",  '?',  "A B C"    , "\n\n \n \n\n"   , "?A ?C?"     , "\n\nA ?\n?\n\n"   },
+    { "  \nA B\nC\n  ",   PR,   " A\t",  "BE",  '?',  "A B C"    , "\n \n \n"       , "?A ?C?"     , "\nA ?\n?\n"       },
+
+    // Character classes filters
+
+    { "A123,BC45\nD6!",   0,    "A\t",   "BE",  '?',  "A123,BC45 D6!"  , "\n"            , "A123,?C45\nD6!" , "A?"            },
+    { "A123,BC45\nD6!",   PR,   "A\t",   "BE",  '?',  "A123,BC45 D6!"  , "\n"            , "A123,?C45?D6!"  , "A?\n?"         }, // 70
+    { "A123,BC45\nD6!",   A,    "A\t",   "BE",  '?',  "A BC D"         , "123, 45\n 6!"  , "A?C?D?"         , "A123,?45\n?6!" },
+    { "A123,BC45\nD6!",   D,    "A\t",   "BE",  '?',  "123 45 6"       , "A ,BC \nD !"   , "A123?45?6?"     , "A?,?C?\nD?!"   },
+    { "A123,BC45\nD6!",   AD,   "A\t",   "BE",  '?',  "A123 BC45 D6"   , ", \n !"        , "A123?C45?D6?"   , "A?,?\n?!"      },
+    { "A123,BC45\nD6!",   A+D,  "A\t",   "BE",  '?',  "A123 BC45 D6"   , ", \n !"        , "A123?C45?D6?"   , "A?,?\n?!"      },
+    { "A123,BC45\nD6!",   I,    "A\t",   "BE",  '?',  ", !"            , "A123 BC45\nD6" , "A?,?!"          , "A123?C45\nD6?" },
+    { "A123,BC45\nD6!",   C,    "A\t",   "BE",  '?',  "\n"             , "A123,BC45 D6!" , "A?\n?"          , "A123,?C45?D6!" },
+    { "A123,BC45\nD6!",   I+C,  "A\t",   "BE",  '?',   ", \n !"        , "A123 BC45 D6"  , "A?,?\n?!"       , "A123?C45?D6?"  },
+
 
     // fSS_NoMerge
-    { "",                 NM,     "",              "" },
-    { "   ",              NM,     "",              "" },
-    { "ABC",              NM,     "ABC",           "" },
-    { "  ABC",            NM,     "ABC",           "" },
-    { "ABC  ",            NM,     "ABC",           "" },
-    { " ABC ",            NM,     "ABC",           "" },
-    { "   ABC   ",        NM,     "ABC",           "" },
-    { "   A B C   ",      NM,     "A B C",         "" },
-    { "   A  B  C   ",    NM,     "A  B  C",       "" },
-    { "   AB CD EF   ",   NM,     "AB CD EF",      "" },
-    { "   AB  CD  EF   ", NM,     "AB  CD  EF",    "" },
-    { "\nA\tB""\x01 ""C", NM,     "A B  C",        "\n \t \x01"       },
-    { "\n \nA B\nC\n \n", NM,     "A B C",         "\n \n   \n \n \n" },
-    { "\n\nA B\nC\n\n",   NM,     "A B C",         "\n\n   \n \n\n"   },
-    { "  \nA B\nC\n  ",   NM,     "A B C",         "\n   \n \n"       },
-    { "A123,BC45\nD6!",   NM,     "A123,BC45 D6!", "\n"               },
-    { "A123,BC45\nD6!",   NM+PR,  "A123,BC45 D6!", "\n"               },
-    { "A123,BC45\nD6!",   NM+A,   "A    BC   D",   "123,  45\n 6!"    },
-    { "A123,BC45\nD6!",   NM+D,   "123   45  6",   "A   ,BC  \nD !"   },
-    { "A123,BC45\nD6!",   NM+AD,  "A123 BC45 D6",  ",    \n  !"       },
-    { "A123,BC45\nD6!",   NM+A+D, "A123 BC45 D6",  ",    \n  !"       },
-    { "A123,BC45\nD6!",   NM+I,   ",       !",     "A123 BC45\nD6"    },
-    { "A123,BC45\nD6!",   NM+C,   "\n",            "A123,BC45 D6!"    },
-    { "A123,BC45\nD6!",   NM+I+C, ",    \n  !",    "A123 BC45 D6"     },
+ 
+    { "",                 NM,     " A\t",  "BE",  '?',  ""              , ""                 , ""                 , ""               },
+    { "   ",              NM,     " A\t",  "BE",  '?',  ""              , ""                 , ""                 , ""               },
+    { "   ",              NM,     " ",     "",    '?',  ""              , ""                 , ""                 , ""               }, // 80
+    { "   ",              NM,     "",      " ",   '?',  ""              , ""                 , "???"              , "???"            },
+    { "   ",              NM,     " ",     " ",   '?',  ""              , ""                 , "???"              , "???"            },
+    { "ABC",              NM,     " A\t",  "BE",  '?',  "ABC"           , ""                 , "A?C"              , "A??"            },
+    { "  ABC",            NM,     " A\t",  "BE",  '?',  "ABC"           , ""                 , "A?C"              , "A??"            },
+    { "ABC  ",            NM,     " A\t",  "BE",  '?',  "ABC"           , ""                 , "A?C"              , "A??"            },
+    { " ABC ",            NM,     " A\t",  "BE",  '?',  "ABC"           , ""                 , "A?C"              , "A??"            },
+    { "   ABC   ",        NM,     " A\t",  "BE",  '?',  "ABC"           , ""                 , "A?C"              , "A??"            },
+    { "   A B C   ",      NM,     " A\t",  "BE",  '?',  "A B C"         , ""                 , "A ? C"            , "A ? ?"          },
+    { "   A  B  C   ",    NM,     " A\t",  "BE",  '?',  "A  B  C"       , ""                 , "A  ?  C"          , "A  ?  ?"        },
+    { "   AB CD EF   ",   NM,     " A\t",  "BE",  '?',  "AB CD EF"      , ""                 , "A? CD ?F"         , "A? ?? ??"       }, // 90
+    { "   AB  CD  EF   ", NM,     " A\t",  "BE",  '?',  "AB  CD  EF"    , ""                 , "A?  CD  ?F"       , "A?  ??  ??"     },
+    { "\nA\tB""\x01 ""C", NM,     " A\t",  "BE",  '?',  "A B  C"        , "\n \t \x01"       , "\nA\t?\x01 C"     , "?A\t?? ?"       },
+    { "\n \nA B\nC\n \n", NM,     " A\t",  "BE",  '?',  "A B C"         , "\n \n   \n \n \n" , "\n \nA ?\nC\n \n" , "? ?A ???? ?"    },
+    { "\n\nA B\nC\n\n",   NM,     " A\t",  "BE",  '?',  "A B C"         , "\n\n   \n \n\n"   , "\n\nA ?\nC\n\n"   , "??A ?????"      },
+    { "  \nA B\nC\n  ",   NM,     " A\t",  "BE",  '?',  "A B C"         , "\n   \n \n"       , "\nA ?\nC\n"       , "?A ????"        },
+    { "A123,BC45\nD6!",   NM,     " A\t",  "BE",  '?',  "A123,BC45 D6!" , "\n"               , "A123,?C45\nD6!"   , "A????????????"  },
+    { "A123,BC45\nD6!",   NM+PR,  " A\t",  "BE",  '?',  "A123,BC45 D6!" , "\n"               , "A123,?C45?D6!"    , "A????????\n???" },
+    { "A123,BC45\nD6!",   NM+A,   " A\t",  "BE",  '?',  "A    BC   D"   , "123,  45\n 6!"    , "A?????C???D??"    , "A123,??45\n?6!" },
+    { "A123,BC45\nD6!",   NM+D,   " A\t",  "BE",  '?',  "123   45  6"   , "A   ,BC  \nD !"   , "A123???45??6?"    , "A???,?C??\nD?!" },
+    { "A123,BC45\nD6!",   NM+AD,  " A\t",  "BE",  '?',  "A123 BC45 D6"  , ",    \n  !"       , "A123??C45?D6?"    , "A???,????\n??!" }, // 100
+    { "A123,BC45\nD6!",   NM+A+D, " A\t",  "BE",  '?',  "A123 BC45 D6"  , ",    \n  !"       , "A123??C45?D6?"    , "A???,????\n??!" },
+    { "A123,BC45\nD6!",   NM+I,   " A\t",  "BE",  '?',  ",       !"     , "A123 BC45\nD6"    , "A???,???????!"    , "A123??C45\nD6?" },
+    { "A123,BC45\nD6!",   NM+C,   " A\t",  "BE",  '?',  "\n"            , "A123,BC45 D6!"    , "A????????\n???"   , "A123,?C45?D6!"  },
+    { "A123,BC45\nD6!",   NM+I+C, " A\t",  "BE",  '?',  ",    \n  !"    , "A123 BC45 D6"     , "A???,????\n??!"   , "A123??C45?D6?"  },
 
-    // fSS_Remove (remove not allowed + merge spaces by default)
-    { "",                 RM,     "",              "" },
-    { "   ",              RM,     "",              "" },
-    { "ABC",              RM,     "ABC",           "" },
-    { "  ABC",            RM,     "ABC",           "" },
-    { "ABC  ",            RM,     "ABC",           "" },
-    { " ABC ",            RM,     "ABC",           "" },
-    { "   ABC   ",        RM,     "ABC",           "" },
-    { "   A B C   ",      RM,     "A B C",         "" },
-    { "   A  B  C   ",    RM,     "A B C",         "" },
-    { "   AB CD EF   ",   RM,     "AB CD EF",      "" },
-    { "   AB  CD  EF   ", RM,     "AB CD EF",      "" },
-    { "\nA\tB""\x01 ""C", RM,     "AB C",          "\n\t\x01"     },
-    { "\n \nA B\nC\n \n", RM,     "A BC",          "\n \n \n\n \n"},
-    { "\n\nA B\nC\n\n",   RM,     "A BC",          "\n\n \n\n\n"  },
-    { "  \nA B\nC\n  ",   RM,     "A BC",          "\n \n\n"      },
-    { "A123,BC45\nD6!",   RM,     "A123,BC45D6!",  "\n"           },
-    { "A123,BC45\nD6!",   RM+PR,  "A123,BC45D6!",  "\n"           },
-    { "A123,BC45\nD6!",   RM+A,   "ABCD",          "123,45\n6!"   },
-    { "A123,BC45\nD6!",   RM+D,   "123456",        "A,BC\nD!"     },
-    { "A123,BC45\nD6!",   RM+AD,  "A123BC45D6",    ",\n!"         },
-    { "A123,BC45\nD6!",   RM+A+D, "A123BC45D6",    ",\n!"         },
-    { "A123,BC45\nD6!",   RM+I,   ",!",            "A123BC45\nD6" },
-    { "A123,BC45\nD6!",   RM+C,   "\n",            "A123,BC45D6!" },
-    { "A123,BC45\nD6!",   RM+I+C, ",\n!",          "A123BC45D6"   },
+    // fSS_Remove (remove not allowed + merge by default)
+
+    { "",                 RM,     " A\t",  "BE",  '?',  ""             , ""             , ""                , ""             }, // 105
+    { "   ",              RM,     " A\t",  "BE",  '?',  ""             , ""             , ""                , ""             },
+    { "   ",              RM,     " ",     "",    '?',  ""             , ""             , ""                , ""             },
+    { "   ",              RM,     "",      " ",   '?',  ""             , ""             , ""                , ""             },
+    { "   ",              RM,     " ",     " ",   '?',  ""             , ""             , ""                , ""             },
+    { "ABC",              RM,     " A\t",  "BE",  '?',  "ABC"          , ""             , "AC"              , "A"            }, // 110
+    { "  ABC",            RM,     " A\t",  "BE",  '?',  "ABC"          , ""             , "AC"              , "A"            },
+    { "ABC  ",            RM,     " A\t",  "BE",  '?',  "ABC"          , ""             , "AC"              , "A"            },
+    { " ABC ",            RM,     " A\t",  "BE",  '?',  "ABC"          , ""             , "AC"              , "A"            },
+    { "   ABC   ",        RM,     " A\t",  "BE",  '?',  "ABC"          , ""             , "AC"              , "A"            },
+    { "   A B C   ",      RM,     " A\t",  "BE",  '?',  "A B C"        , ""             , "A C"             , "A"            },
+    { "   A  B  C   ",    RM,     " A\t",  "BE",  '?',  "A B C"        , ""             , "A C"             , "A"            },
+    { "   AB CD EF   ",   RM,     " A\t",  "BE",  '?',  "AB CD EF"     , ""             , "A CD F"          , "A"            },
+    { "   AB  CD  EF   ", RM,     " A\t",  "BE",  '?',  "AB CD EF"     , ""             , "A CD F"          , "A"            },
+    { "\nA\tB""\x01 ""C", RM,     " A\t",  "BE",  '?',  "AB C"         , "\n\t\x01"     , "\nA\t\x01 C"     , "A\t"          },
+    { "\n \nA B\nC\n \n", RM,     " A\t",  "BE",  '?',  "A BC"         , "\n\n\n\n\n"   , "\n \nA \nC\n \n" , "A"            }, // 120
+    { "\n\nA B\nC\n\n",   RM,     " A\t",  "BE",  '?',  "A BC"         , "\n\n\n\n\n"   , "\n\nA \nC\n\n"   , "A"            },
+    { "  \nA B\nC\n  ",   RM,     " A\t",  "BE",  '?',  "A BC"         , "\n\n\n"       , "\nA \nC\n"       , "A"            },
+    { "A123,BC45\nD6!",   RM,     " A\t",  "BE",  '?',  "A123,BC45D6!" , "\n"           , "A123,C45\nD6!"   , "A"            },
+    { "A123,BC45\nD6!",   RM+PR,  " A\t",  "BE",  '?',  "A123,BC45D6!" , "\n"           , "A123,C45D6!"     , "A\n"          },
+    { "A123,BC45\nD6!",   RM+A,   " A\t",  "BE",  '?',  "ABCD"         , "123,45\n6!"   , "ACD"             , "A123,45\n6!"  },
+    { "A123,BC45\nD6!",   RM+D,   " A\t",  "BE",  '?',  "123456"       , "A,BC\nD!"     , "A123456"         , "A,C\nD!"      },
+    { "A123,BC45\nD6!",   RM+AD,  " A\t",  "BE",  '?',  "A123BC45D6"   , ",\n!"         , "A123C45D6"       , "A,\n!"        },
+    { "A123,BC45\nD6!",   RM+A+D, " A\t",  "BE",  '?',  "A123BC45D6"   , ",\n!"         , "A123C45D6"       , "A,\n!"        },
+    { "A123,BC45\nD6!",   RM+I,   " A\t",  "BE",  '?',  ",!"           , "A123BC45\nD6" , "A,!"             , "A123C45\nD6"  },
+    { "A123,BC45\nD6!",   RM+C,   " A\t",  "BE",  '?',  "\n"           , "A123,BC45D6!" , "A\n"             , "A123,C45D6!"  }, //130
+    { "A123,BC45\nD6!",   RM+I+C, " A\t",  "BE",  '?',  ",\n!"         , "A123BC45D6"   , "A,\n!"           , "A123C45D6"    },
 
     // fSS_Remove + fSS_NoMerge
-    { "",                 NM+RM,     "",              "" },
-    { "   ",              NM+RM,     "",              "" },
-    { "ABC",              NM+RM,     "ABC",           "" },
-    { "  ABC",            NM+RM,     "ABC",           "" },
-    { "ABC  ",            NM+RM,     "ABC",           "" },
-    { " ABC ",            NM+RM,     "ABC",           "" },
-    { "   ABC   ",        NM+RM,     "ABC",           "" },
-    { "   A B C   ",      NM+RM,     "A B C",         "" },
-    { "   A  B  C   ",    NM+RM,     "A  B  C",       "" },
-    { "   AB CD EF   ",   NM+RM,     "AB CD EF",      "" },
-    { "   AB  CD  EF   ", NM+RM,     "AB  CD  EF",    "" },
-    { "\nA\tB""\x01 ""C", NM+RM,     "AB C",          "\n\t\x01"       },
-    { "\n \nA B\nC\n \n", NM+RM,     "A BC",          "\n \n \n\n \n"  },
-    { "\n\nA B\nC\n\n",   NM+RM,     "A BC",          "\n\n \n\n\n"    },
-    { "  \nA B\nC\n  ",   NM+RM,     "A BC",          "\n \n\n"        },
-    { "A123,BC45\nD6!",   NM+RM,     "A123,BC45D6!",  "\n"             },
-    { "A123,BC45\nD6!",   NM+RM+PR,  "A123,BC45D6!",  "\n"             },
-    { "A123,BC45\nD6!",   NM+RM+A,   "ABCD",          "123,45\n6!"     },
-    { "A123,BC45\nD6!",   NM+RM+D,   "123456",        "A,BC\nD!"       },
-    { "A123,BC45\nD6!",   NM+RM+AD,  "A123BC45D6",    ",\n!"           },
-    { "A123,BC45\nD6!",   NM+RM+A+D, "A123BC45D6",    ",\n!"           },
-    { "A123,BC45\nD6!",   NM+RM+I,   ",!",            "A123BC45\nD6"   },
-    { "A123,BC45\nD6!",   NM+RM+C,   "\n",            "A123,BC45D6!"   },
-    { "A123,BC45\nD6!",   NM+RM+I+C, ",\n!",          "A123BC45D6"     },
 
-    // fSS_NoTruncate_* (+ merge spaces by default)
+    { "",                 NM+RM,     " A\t",  "BE",  '?',  ""             , ""             , ""                 , ""            }, // 132
+    { "   ",              NM+RM,     " A\t",  "BE",  '?',  ""             , ""             , ""                 , ""            },
+    { "   ",              NM+RM,     " ",     "",    '?',  ""             , ""             , ""                 , ""            },
+    { "   ",              NM+RM,     "",      " ",   '?',  ""             , ""             , ""                 , ""            },
+    { "   ",              NM+RM,     " ",     " ",   '?',  ""             , ""             , ""                 , ""            },
+    { "ABC",              NM+RM,     " A\t",  "BE",  '?',  "ABC"          , ""             , "AC"               , "A"           },
+    { "  ABC",            NM+RM,     " A\t",  "BE",  '?',  "ABC"          , ""             , "AC"               , "A"           },
+    { "ABC  ",            NM+RM,     " A\t",  "BE",  '?',  "ABC"          , ""             , "AC"               , "A"           },
+    { " ABC ",            NM+RM,     " A\t",  "BE",  '?',  "ABC"          , ""             , "AC"               , "A"           }, // 140
+    { "   ABC   ",        NM+RM,     " A\t",  "BE",  '?',  "ABC"          , ""             , "AC"               , "A"           },
+    { "   A B C   ",      NM+RM,     " A\t",  "BE",  '?',  "A B C"        , ""             , "A  C"             , "A"           },
+    { "   A  B  C   ",    NM+RM,     " A\t",  "BE",  '?',  "A  B  C"      , ""             , "A    C"           , "A"           },
+    { "   AB CD EF   ",   NM+RM,     " A\t",  "BE",  '?',  "AB CD EF"     , ""             , "A CD F"           , "A"           },
+    { "   AB  CD  EF   ", NM+RM,     " A\t",  "BE",  '?',  "AB  CD  EF"   , ""             , "A  CD  F"         , "A"           },
+    { "\nA\tB""\x01 ""C", NM+RM,     " A\t",  "BE",  '?',  "AB C"         , "\n\t\x01"     , "\nA\t\x01 C"      , "A\t"         },
+    { "\n \nA B\nC\n \n", NM+RM,     " A\t",  "BE",  '?',  "A BC"         , "\n\n\n\n\n"   , "\n \nA \nC\n \n"  , "A"           },
+    { "\n\nA B\nC\n\n",   NM+RM,     " A\t",  "BE",  '?',  "A BC"         , "\n\n\n\n\n"   , "\n\nA \nC\n\n"    , "A"           },
+    { "  \nA B\nC\n  ",   NM+RM,     " A\t",  "BE",  '?',  "A BC"         , "\n\n\n"       , "\nA \nC\n"        , "A"           },
+    { "A123,BC45\nD6!",   NM+RM,     " A\t",  "BE",  '?',  "A123,BC45D6!" , "\n"           , "A123,C45\nD6!"    , "A"           }, // 150
+    { "A123,BC45\nD6!",   NM+RM+PR,  " A\t",  "BE",  '?',  "A123,BC45D6!" , "\n"           , "A123,C45D6!"      , "A\n"         },
+    { "A123,BC45\nD6!",   NM+RM+A,   " A\t",  "BE",  '?',  "ABCD"         , "123,45\n6!"   , "ACD"              , "A123,45\n6!" },
+    { "A123,BC45\nD6!",   NM+RM+D,   " A\t",  "BE",  '?',  "123456"       , "A,BC\nD!"     , "A123456"          , "A,C\nD!"     },
+    { "A123,BC45\nD6!",   NM+RM+AD,  " A\t",  "BE",  '?',  "A123BC45D6"   , ",\n!"         , "A123C45D6"        , "A,\n!"       },
+    { "A123,BC45\nD6!",   NM+RM+A+D, " A\t",  "BE",  '?',  "A123BC45D6"   , ",\n!"         , "A123C45D6"        , "A,\n!"       },
+    { "A123,BC45\nD6!",   NM+RM+I,   " A\t",  "BE",  '?',  ",!"           , "A123BC45\nD6" , "A,!"              , "A123C45\nD6" },
+    { "A123,BC45\nD6!",   NM+RM+C,   " A\t",  "BE",  '?',  "\n"           , "A123,BC45D6!" , "A\n"              , "A123,C45D6!" },
+    { "A123,BC45\nD6!",   NM+RM+I+C, " A\t",  "BE",  '?',  ",\n!"         , "A123BC45D6"   , "A,\n!"            , "A123C45D6"   },
 
-    { "",                 NTB,   "",            "" },
-    { "   ",              NTB,   "",            "" },
-    { "ABC",              NTB,   "ABC",         "" },
-    { "  ABC",            NTB,   " ABC",        "" },
-    { "ABC  ",            NTB,   "ABC",         "" },
-    { " ABC ",            NTB,   " ABC",        "" },
-    { "   ABC   ",        NTB,   " ABC",        "" },
-    { "   A B C   ",      NTB,   " A B C",      "" },
-    { "   A  B  C   ",    NTB,   " A B C",      "" },
-    { "   AB CD EF   ",   NTB,   " AB CD EF",   "" },
-    { "   AB  CD  EF   ", NTB,   " AB CD EF",   "" },
-    { "\n\nA  B\nC\n\n",  NTB,   " A B C",      "\n\n \n \n\n"   },
-    { "\n \nA B\nC\n \n", NTB,   " A B C",      "\n \n \n \n \n" },
-    { " \nA  B\nC\n ",    NTB,   " A B C",      " \n \n \n"      },
-    { "  \nA B\nC\n  ",   NTB,   " A B C",      " \n \n \n"      },
+    // fSS_NoTruncate_* (+ merge by default)
 
-    { "",                 NTE,   "",            "" },
-    { "   ",              NTE,   "",            "" },
-    { "ABC",              NTE,   "ABC",         "" },
-    { "  ABC",            NTE,   "ABC",         "" },
-    { "ABC  ",            NTE,   "ABC ",        "" },
-    { " ABC ",            NTE,   "ABC ",        "" },
-    { "   ABC   ",        NTE,   "ABC ",        "" },
-    { "   A B C   ",      NTE,   "A B C ",      "" },
-    { "   A  B  C   ",    NTE,   "A B C ",      "" },
-    { "   AB CD EF   ",   NTE,   "AB CD EF ",   "" },
-    { "   AB  CD  EF   ", NTE,   "AB CD EF ",   "" },
-    { "\n\nA  B\nC\n\n",  NTE,   "A B C ",      "\n\n \n \n\n"   },
-    { "\n \nA B\nC\n \n", NTE,   "A B C ",      "\n \n \n \n \n" },
-    { " \nA  B\nC\n ",    NTE,   "A B C ",      "\n \n \n "      },
-    { "  \nA B\nC\n  ",   NTE,   "A B C ",      "\n \n \n "      },
+    { "",                 NTB,  " A\t",  "BE",  '?',  ""           , ""                , ""                 , ""          },
+    { "   ",              NTB,  " A\t",  "BE",  '?',  ""           , ""                , ""                 , ""          }, // 160
+    { "   ",              NTB,  " ",     "",    '?',  ""           , ""                , ""                 , ""          },
+    { "   ",              NTB,  "",      " ",   '?',  ""           , ""                , "?"                , "?"         },
+    { "   ",              NTB,  " ",     " ",   '?',  ""           , ""                , "?"                , "?"         },
+    { "ABC",              NTB,  " A\t",  "BE",  '?',  "ABC"        , ""                , "A?C"              , "A?"        },
+    { "  ABC",            NTB,  " A\t",  "BE",  '?',  " ABC"       , ""                , " A?C"             , " A?"       },
+    { "ABC  ",            NTB,  " A\t",  "BE",  '?',  "ABC"        , ""                , "A?C"              , "A?"        },
+    { " ABC ",            NTB,  " A\t",  "BE",  '?',  " ABC"       , ""                , " A?C"             , " A?"       },
+    { "   ABC   ",        NTB,  " A\t",  "BE",  '?',  " ABC"       , ""                , " A?C"             , " A?"       },
+    { "   A B C   ",      NTB,  " A\t",  "BE",  '?',  " A B C"     , ""                , " A ? C"           , " A ? ?"    },
+    { "   A  B  C   ",    NTB,  " A\t",  "BE",  '?',  " A B C"     , ""                , " A ? C"           , " A ? ?"    }, // 170
+    { "   AB CD EF   ",   NTB,  " A\t",  "BE",  '?',  " AB CD EF"  , ""                , " A? CD ?F"        , " A? ? ?"   },
+    { "   AB  CD  EF   ", NTB,  " A\t",  "BE",  '?',  " AB CD EF"  , ""                , " A? CD ?F"        , " A? ? ?"   },
+    { "\n\nA  B\nC\n\n",  NTB,  " A\t",  "BE",  '?',  " A B C"     , "\n\n \n \n\n"    , "\n\nA ?\nC\n\n"   , "?A ?"      },
+    { "\n \nA B\nC\n \n", NTB,  " A\t",  "BE",  '?',  " A B C"     , "\n \n \n \n \n"  , "\n \nA ?\nC\n \n" , "? ?A ? ?"  },
+    { " \nA  B\nC\n ",    NTB,  " A\t",  "BE",  '?',  " A B C"     , " \n \n \n"       , " \nA ?\nC\n"      , " ?A ?"     },
+    { "  \nA B\nC\n  ",   NTB,  " A\t",  "BE",  '?',  " A B C"     , " \n \n \n"       , " \nA ?\nC\n"      , " ?A ?"     },
 
-    { "",                 NT,    "",            ""  },
-    { "   ",              NT,    " ",           " " },
-    { "ABC",              NT,    "ABC",         " " },
-    { "  ABC",            NT,    " ABC",        " " },
-    { "ABC  ",            NT,    "ABC ",        " " },
-    { " ABC ",            NT,    " ABC ",       " " },
-    { "   ABC   ",        NT,    " ABC ",       " " },
-    { "   A B C   ",      NT,    " A B C ",     " " },
-    { "   A  B  C   ",    NT,    " A B C ",     " " },
-    { "   AB CD EF   ",   NT,    " AB CD EF ",  " " },
-    { "   AB  CD  EF   ", NT,    " AB CD EF ",  " " },
-    { "\n\nA  B\nC\n\n",  NT,    " A B C ",     "\n\n \n \n\n"   },
-    { "\n \nA B\nC\n \n", NT,    " A B C ",     "\n \n \n \n \n" },
-    { " \nA  B\nC\n ",    NT,    " A B C ",     " \n \n \n "     },
-    { "  \nA B\nC\n  ",   NT,    " A B C ",     " \n \n \n "     },
+    { "",                 NTE,  " A\t",  "BE",  '?',  ""           , ""                , ""                 , ""          },
+    { "   ",              NTE,  " A\t",  "BE",  '?',  ""           , ""                , ""                 , ""          },
+    { "   ",              NTE,  " ",     "",    '?',  ""           , ""                , ""                 , ""          },
+    { "   ",              NTE,  "",      " ",   '?',  ""           , ""                , "?"                , "?"         }, // 180
+    { "   ",              NTE,  " ",     " ",   '?',  ""           , ""                , "?"                , "?"         },
+    { "ABC",              NTE,  " A\t",  "BE",  '?',  "ABC"        , ""                , "A?C"              , "A?"        },
+    { "  ABC",            NTE,  " A\t",  "BE",  '?',  "ABC"        , ""                , "A?C"              , "A?"        },
+    { "ABC  ",            NTE,  " A\t",  "BE",  '?',  "ABC "       , ""                , "A?C "             , "A? "       },
+    { " ABC ",            NTE,  " A\t",  "BE",  '?',  "ABC "       , ""                , "A?C "             , "A? "       },
+    { "   ABC   ",        NTE,  " A\t",  "BE",  '?',  "ABC "       , ""                , "A?C "             , "A? "       },
+    { "   A B C   ",      NTE,  " A\t",  "BE",  '?',  "A B C "     , ""                , "A ? C "           , "A ? ? "    },
+    { "   A  B  C   ",    NTE,  " A\t",  "BE",  '?',  "A B C "     , ""                , "A ? C "           , "A ? ? "    },
+    { "   AB CD EF   ",   NTE,  " A\t",  "BE",  '?',  "AB CD EF "  , ""                , "A? CD ?F "        , "A? ? ? "   },
+    { "   AB  CD  EF   ", NTE,  " A\t",  "BE",  '?',  "AB CD EF "  , ""                , "A? CD ?F "        , "A? ? ? "   }, // 190
+    { "\n\nA  B\nC\n\n",  NTE,  " A\t",  "BE",  '?',  "A B C "     , "\n\n \n \n\n"    , "\n\nA ?\nC\n\n"   , "?A ?"      },
+    { "\n \nA B\nC\n \n", NTE,  " A\t",  "BE",  '?',  "A B C "     , "\n \n \n \n \n"  , "\n \nA ?\nC\n \n" , "? ?A ? ?"  },
+    { " \nA  B\nC\n ",    NTE,  " A\t",  "BE",  '?',  "A B C "     ,  "\n \n \n "      , "\nA ?\nC\n "      , "?A ? "     },
+    { "  \nA B\nC\n  ",   NTE,  " A\t",  "BE",  '?',  "A B C "     , "\n \n \n "       , "\nA ?\nC\n "      , "?A ? "     },
+
+    { "",                 NT,   " A\t",  "BE",  '?',  ""           , ""                , ""                 , ""          },
+    { "   ",              NT,   " A\t",  "BE",  '?',  " "          , " "               , " "                , " "         },
+    { "   ",              NT,   " ",     "",    '?',  " "          , " "               , " "                , " "         },
+    { "   ",              NT,   "",      " ",   '?',  " "          , " "               , "?"                , "?"         },
+    { "   ",              NT,   " ",     " ",   '?',  " "          , " "               , "?"                , "?"         },
+    { "ABC",              NT,   " A\t",  "BE",  '?',  "ABC"        , " "               , "A?C"              , "A?"        }, // 200
+    { "  ABC",            NT,   " A\t",  "BE",  '?',  " ABC"       , " "               , " A?C"             , " A?"       },
+    { "ABC  ",            NT,   " A\t",  "BE",  '?',  "ABC "       , " "               , "A?C "             , "A? "       },
+    { " ABC ",            NT,   " A\t",  "BE",  '?',  " ABC "      , " "               , " A?C "            , " A? "      },
+    { "   ABC   ",        NT,   " A\t",  "BE",  '?',  " ABC "      , " "               , " A?C "            , " A? "      },
+    { "   A B C   ",      NT,   " A\t",  "BE",  '?',  " A B C "    , " "               , " A ? C "          , " A ? ? "   },
+    { "   A  B  C   ",    NT,   " A\t",  "BE",  '?',  " A B C "    , " "               , " A ? C "          , " A ? ? "   },
+    { "   AB CD EF   ",   NT,   " A\t",  "BE",  '?',  " AB CD EF " , " "               , " A? CD ?F "       , " A? ? ? "  },
+    { "   AB  CD  EF   ", NT,   " A\t",  "BE",  '?',  " AB CD EF " , " "               , " A? CD ?F "       , " A? ? ? "  },
+    { "\n\nA  B\nC\n\n",  NT,   " A\t",  "BE",  '?',  " A B C "    , "\n\n \n \n\n"    , "\n\nA ?\nC\n\n"   , "?A ?"      },
+    { "\n \nA B\nC\n \n", NT,   " A\t",  "BE",  '?',  " A B C "    , "\n \n \n \n \n"  , "\n \nA ?\nC\n \n" , "? ?A ? ?"  }, // 210
+    { " \nA  B\nC\n ",    NT,   " A\t",  "BE",  '?',  " A B C "    , " \n \n \n "      , " \nA ?\nC\n "     , " ?A ? "    },
+    { "  \nA B\nC\n  ",   NT,   " A\t",  "BE",  '?',  " A B C "    , " \n \n \n "      , " \nA ?\nC\n "     , " ?A ? "    },
 
     // fSS_NoTruncate_* + fSS_NoMerge
 
-    { "",                 NTB+NM,  "",               "" },
-    { "   ",              NTB+NM,  "",               "" },
-    { "ABC",              NTB+NM,  "ABC",            "" },
-    { "  ABC",            NTB+NM,  "  ABC",          "" },
-    { "ABC  ",            NTB+NM,  "ABC",            "" },
-    { " ABC ",            NTB+NM,  " ABC",           "" },
-    { "   ABC   ",        NTB+NM,  "   ABC",         "" },
-    { "   A B C   ",      NTB+NM,  "   A B C",       "" },
-    { "   A  B  C   ",    NTB+NM,  "   A  B  C",     "" },
-    { "   AB CD EF   ",   NTB+NM,  "   AB CD EF",    "" },
-    { "   AB  CD  EF   ", NTB+NM,  "   AB  CD  EF",  "" },
-    { "\n\nA  B\nC\n\n",  NTB+NM,  "  A  B C",       "\n\n    \n \n\n"  },
-    { "\n \nA B\nC\n \n", NTB+NM,  "   A B C",       "\n \n   \n \n \n" },
-    { " \nA  B\nC\n ",    NTB+NM,  "  A  B C",       " \n    \n \n"     },
-    { "  \nA B\nC\n  ",   NTB+NM,  "   A B C",       "  \n   \n \n"     },
+    { "",                 NTB+NM,  " A\t",  "BE",  '?',  ""              ,  ""                  , ""                 , ""               },
+    { "   ",              NTB+NM,  " A\t",  "BE",  '?',  ""              ,  ""                  , ""                 , ""               },
+    { "   ",              NTB+NM,  " ",     "",    '?',  ""              ,  ""                  , ""                 , ""               },
+    { "   ",              NTB+NM,  "",      " ",   '?',  ""              ,  ""                  , "???"              , "???"            },
+    { "   ",              NTB+NM,  " ",     " ",   '?',  ""              ,  ""                  , "???"              , "???"            },
+    { "ABC",              NTB+NM,  " A\t",  "BE",  '?',  "ABC"           ,  ""                  , "A?C"              , "A??"            },
+    { "  ABC",            NTB+NM,  " A\t",  "BE",  '?',  "  ABC"         ,  ""                  , "  A?C"            , "  A??"          },
+    { "ABC  ",            NTB+NM,  " A\t",  "BE",  '?',  "ABC"           ,  ""                  , "A?C"              , "A??"            }, // 220
+    { " ABC ",            NTB+NM,  " A\t",  "BE",  '?',  " ABC"          ,  ""                  , " A?C"             , " A??"           },
+    { "   ABC   ",        NTB+NM,  " A\t",  "BE",  '?',  "   ABC"        ,  ""                  , "   A?C"           , "   A??"         },
+    { "   A B C   ",      NTB+NM,  " A\t",  "BE",  '?',  "   A B C"      ,  ""                  , "   A ? C"         , "   A ? ?"       },
+    { "   A  B  C   ",    NTB+NM,  " A\t",  "BE",  '?',  "   A  B  C"    ,  ""                  , "   A  ?  C"       , "   A  ?  ?"     },
+    { "   AB CD EF   ",   NTB+NM,  " A\t",  "BE",  '?',  "   AB CD EF"   ,  ""                  , "   A? CD ?F"      , "   A? ?? ??"    },
+    { "   AB  CD  EF   ", NTB+NM,  " A\t",  "BE",  '?',  "   AB  CD  EF" ,  ""                  , "   A?  CD  ?F"    , "   A?  ??  ??"  },
+    { "\n\nA  B\nC\n\n",  NTB+NM,  " A\t",  "BE",  '?',  "  A  B C"      ,  "\n\n    \n \n\n"   , "\n\nA  ?\nC\n\n"  , "??A  ?????"     },
+    { "\n \nA B\nC\n \n", NTB+NM,  " A\t",  "BE",  '?',  "   A B C"      ,  "\n \n   \n \n \n"  , "\n \nA ?\nC\n \n" , "? ?A ???? ?"    },
+    { " \nA  B\nC\n ",    NTB+NM,  " A\t",  "BE",  '?',  "  A  B C"      ,  " \n    \n \n"      , " \nA  ?\nC\n"     , " ?A  ????"      },
+    { "  \nA B\nC\n  ",   NTB+NM,  " A\t",  "BE",  '?',  "   A B C"      ,  "  \n   \n \n"      , "  \nA ?\nC\n"     , "  ?A ????"      }, // 230
 
-    { "",                 NTE+NM,  "",               "" },
-    { "   ",              NTE+NM,  "",               "" },
-    { "ABC",              NTE+NM,  "ABC",            "" },
-    { "  ABC",            NTE+NM,  "ABC",            "" },
-    { "ABC  ",            NTE+NM,  "ABC  ",          "" },
-    { " ABC ",            NTE+NM,  "ABC ",           "" },
-    { "   ABC   ",        NTE+NM,  "ABC   ",         "" },
-    { "   A B C   ",      NTE+NM,  "A B C   ",       "" },
-    { "   A  B  C   ",    NTE+NM,  "A  B  C   ",     "" },
-    { "   AB CD EF   ",   NTE+NM,  "AB CD EF   ",    "" },
-    { "   AB  CD  EF   ", NTE+NM,  "AB  CD  EF   ",  "" },
-    { "\n\nA  B\nC\n\n",  NTE+NM,  "A  B C  ",       "\n\n    \n \n\n"  },
-    { "\n \nA B\nC\n \n", NTE+NM,  "A B C   ",       "\n \n   \n \n \n" },
-    { " \nA  B\nC\n ",    NTE+NM,  "A  B C  ",       "\n    \n \n "     },
-    { "  \nA B\nC\n  ",   NTE+NM,  "A B C   ",       "\n   \n \n  "     },
+    { "",                 NTE+NM,  " A\t",  "BE",  '?',  ""              ,  ""                  , ""                 , ""               },
+    { "   ",              NTE+NM,  " A\t",  "BE",  '?',  ""              ,  ""                  , ""                 , ""               },
+    { "   ",              NTE+NM,  " ",     "",    '?',  ""              ,  ""                  , ""                 , ""               },
+    { "   ",              NTE+NM,  "",      " ",   '?',  ""              ,  ""                  , "???"              , "???"            },
+    { "   ",              NTE+NM,  " ",     " ",   '?',  ""              ,  ""                  , "???"              , "???"            },
+    { "ABC",              NTE+NM,  " A\t",  "BE",  '?',  "ABC"           ,  ""                  , "A?C"              , "A??"            },
+    { "  ABC",            NTE+NM,  " A\t",  "BE",  '?',  "ABC"           ,  ""                  , "A?C"              , "A??"            },
+    { "ABC  ",            NTE+NM,  " A\t",  "BE",  '?',  "ABC  "         ,  ""                  , "A?C  "            , "A??  "          },
+    { " ABC ",            NTE+NM,  " A\t",  "BE",  '?',  "ABC "          ,  ""                  , "A?C "             , "A?? "           },
+    { "   ABC   ",        NTE+NM,  " A\t",  "BE",  '?',  "ABC   "        ,  ""                  , "A?C   "           , "A??   "         }, // 240
+    { "   A B C   ",      NTE+NM,  " A\t",  "BE",  '?',  "A B C   "      ,  ""                  , "A ? C   "         , "A ? ?   "       },
+    { "   A  B  C   ",    NTE+NM,  " A\t",  "BE",  '?',  "A  B  C   "    ,  ""                  , "A  ?  C   "       , "A  ?  ?   "     },
+    { "   AB CD EF   ",   NTE+NM,  " A\t",  "BE",  '?',  "AB CD EF   "   ,  ""                  , "A? CD ?F   "      , "A? ?? ??   "    },
+    { "   AB  CD  EF   ", NTE+NM,  " A\t",  "BE",  '?',  "AB  CD  EF   " ,  ""                  , "A?  CD  ?F   "    , "A?  ??  ??   "  },
+    { "\n\nA  B\nC\n\n",  NTE+NM,  " A\t",  "BE",  '?',  "A  B C  "      ,  "\n\n    \n \n\n"   , "\n\nA  ?\nC\n\n"  , "??A  ?????"     },
+    { "\n \nA B\nC\n \n", NTE+NM,  " A\t",  "BE",  '?',  "A B C   "      ,  "\n \n   \n \n \n"  , "\n \nA ?\nC\n \n" , "? ?A ???? ?"    },
+    { " \nA  B\nC\n ",    NTE+NM,  " A\t",  "BE",  '?',  "A  B C  "      ,  "\n    \n \n "      , "\nA  ?\nC\n "     , "?A  ???? "      },
+    { "  \nA B\nC\n  ",   NTE+NM,  " A\t",  "BE",  '?',  "A B C   "      ,  "\n   \n \n  "      , "\nA ?\nC\n  "     , "?A ????  "      },
 
-    { "",                 NT+NM,   "",                 ""       },
-    { "   ",              NT+NM,   "   ",              "   "    },
-    { "ABC",              NT+NM,   "ABC",              "   "    },
-    { "  ABC",            NT+NM,   "  ABC",            "     "  },
-    { "ABC  ",            NT+NM,   "ABC  ",            "     "  },
-    { " ABC ",            NT+NM,   " ABC ",            "     "  },
-    { "   ABC   ",        NT+NM,   "   ABC   ",        "         "        },
-    { "   A B C   ",      NT+NM,   "   A B C   ",      "           "      },
-    { "   A  B  C   ",    NT+NM,   "   A  B  C   ",    "             "    },
-    { "   AB CD EF   ",   NT+NM,   "   AB CD EF   ",   "              "   },
-    { "   AB  CD  EF   ", NT+NM,   "   AB  CD  EF   ", "                " },
-    { "\n\nA  B\nC\n\n",  NT+NM,   "  A  B C  ",       "\n\n    \n \n\n"  },
-    { "\n \nA B\nC\n \n", NT+NM,   "   A B C   ",      "\n \n   \n \n \n" },
-    { " \nA  B\nC\n ",    NT+NM,   "  A  B C  ",       " \n    \n \n "    },
-    { "  \nA B\nC\n  ",   NT+NM,   "   A B C   ",      "  \n   \n \n  "   },
+    { "",                 NT+NM,   " A\t",  "BE",  '?',  ""                 ,  ""                  , ""                 , ""                 },
+    { "   ",              NT+NM,   " A\t",  "BE",  '?',  "   "              ,  "   "               , "   "              , "   "              }, // 250
+    { "   ",              NT+NM,   " ",     "",    '?',  "   "              ,  "   "               , "   "              , "   "              },
+    { "   ",              NT+NM,   "",      " ",   '?',  "   "              ,  "   "               , "???"              , "???"              },
+    { "   ",              NT+NM,   " ",     " ",   '?',  "   "              ,  "   "               , "???"              , "???"              },
+    { "ABC",              NT+NM,   " A\t",  "BE",  '?',  "ABC"              ,  "   "               , "A?C"              , "A??"              },
+    { "  ABC",            NT+NM,   " A\t",  "BE",  '?',  "  ABC"            ,  "     "             , "  A?C"            , "  A??"            },
+    { "ABC  ",            NT+NM,   " A\t",  "BE",  '?',  "ABC  "            ,  "     "             , "A?C  "            , "A??  "            },
+    { " ABC ",            NT+NM,   " A\t",  "BE",  '?',  " ABC "            ,  "     "             , " A?C "            , " A?? "            },
+    { "   ABC   ",        NT+NM,   " A\t",  "BE",  '?',  "   ABC   "        ,  "         "         , "   A?C   "        , "   A??   "        },
+    { "   A B C   ",      NT+NM,   " A\t",  "BE",  '?',  "   A B C   "      ,  "           "       , "   A ? C   "      , "   A ? ?   "      },
+    { "   A  B  C   ",    NT+NM,   " A\t",  "BE",  '?',  "   A  B  C   "    ,  "             "     , "   A  ?  C   "    , "   A  ?  ?   "    }, // 260
+    { "   AB CD EF   ",   NT+NM,   " A\t",  "BE",  '?',  "   AB CD EF   "   ,  "              "    , "   A? CD ?F   "   , "   A? ?? ??   "   },
+    { "   AB  CD  EF   ", NT+NM,   " A\t",  "BE",  '?',  "   AB  CD  EF   " ,  "                "  , "   A?  CD  ?F   " , "   A?  ??  ??   " },
+    { "\n\nA  B\nC\n\n",  NT+NM,   " A\t",  "BE",  '?',  "  A  B C  "       ,  "\n\n    \n \n\n"   , "\n\nA  ?\nC\n\n"  , "??A  ?????"       },
+    { "\n \nA B\nC\n \n", NT+NM,   " A\t",  "BE",  '?',  "   A B C   "      ,  "\n \n   \n \n \n"  , "\n \nA ?\nC\n \n" , "? ?A ???? ?"      },
+    { " \nA  B\nC\n ",    NT+NM,   " A\t",  "BE",  '?',  "  A  B C  "       ,  " \n    \n \n "     , " \nA  ?\nC\n "    , " ?A  ???? "       },
+    { "  \nA B\nC\n  ",   NT+NM,   " A\t",  "BE",  '?',  "   A B C   "      ,  "  \n   \n \n  "    , "  \nA ?\nC\n  "   , "  ?A ????  "      },
 
     // fSS_NoTruncate_* + fSS_Remove
 
-    { "",                 NTB+RM,  "",            ""  },
-    { "   ",              NTB+RM,  "",            ""  },
-    { "ABC",              NTB+RM,  "ABC",         ""  },
-    { "  ABC",            NTB+RM,  " ABC",        ""  },
-    { "ABC  ",            NTB+RM,  "ABC",         ""  },
-    { " ABC ",            NTB+RM,  " ABC",        ""  },
-    { "   ABC   ",        NTB+RM,  " ABC",        ""  },
-    { "   A B C   ",      NTB+RM,  " A B C",      ""  },
-    { "   A  B  C   ",    NTB+RM,  " A B C",      ""  },
-    { "   AB CD EF   ",   NTB+RM,  " AB CD EF",   ""  },
-    { "   AB  CD  EF   ", NTB+RM,  " AB CD EF",   ""  },
-    { "\n\nA  B\nC\n\n",  NTB+RM,  "A BC",        "\n\n \n\n\n"   },
-    { "\n \nA B\nC\n \n", NTB+RM,  " A BC",       "\n \n \n\n \n" },
-    { " \nA  B\nC\n ",    NTB+RM,  " A BC",       " \n \n\n"      },
-    { "  \nA B\nC\n  ",   NTB+RM,  " A BC",       " \n \n\n"      },
+    { "",                 NTB+RM,  " A\t",  "BE",  '?',  ""          ,  ""            , ""                 , ""     },
+    { "   ",              NTB+RM,  " A\t",  "BE",  '?',  ""          ,  ""            , ""                 , ""     },
+    { "   ",              NTB+RM,  " ",     "",    '?',  ""          ,  ""            , ""                 , ""     },
+    { "   ",              NTB+RM,  "",      " ",   '?',  ""          ,  ""            , ""                 , ""     }, // 270
+    { "   ",              NTB+RM,  " ",     " ",   '?',  ""          ,  ""            , ""                 , ""     },
+    { "ABC",              NTB+RM,  " A\t",  "BE",  '?',  "ABC"       ,  ""            , "AC"               , "A"    },
+    { "  ABC",            NTB+RM,  " A\t",  "BE",  '?',  " ABC"      ,  ""            , " AC"              , " A"   },
+    { "ABC  ",            NTB+RM,  " A\t",  "BE",  '?',  "ABC"       ,  ""            , "AC"               , "A"    },
+    { " ABC ",            NTB+RM,  " A\t",  "BE",  '?',  " ABC"      ,  ""            , " AC"              , " A"   },
+    { "   ABC   ",        NTB+RM,  " A\t",  "BE",  '?',  " ABC"      ,  ""            , " AC"              , " A"   },
+    { "   A B C   ",      NTB+RM,  " A\t",  "BE",  '?',  " A B C"    ,  ""            , " A C"             , " A"   },
+    { "   A  B  C   ",    NTB+RM,  " A\t",  "BE",  '?',  " A B C"    ,  ""            , " A C"             , " A"   },
+    { "   AB CD EF   ",   NTB+RM,  " A\t",  "BE",  '?',  " AB CD EF" ,  ""            , " A CD F"          , " A"   },
+    { "   AB  CD  EF   ", NTB+RM,  " A\t",  "BE",  '?',  " AB CD EF" ,  ""            , " A CD F"          , " A"   }, // 280
+    { "\n\nA  B\nC\n\n",  NTB+RM,  " A\t",  "BE",  '?',  "A BC"      ,  "\n\n\n\n\n"  , "\n\nA \nC\n\n"    , "A"    },
+    { "\n \nA B\nC\n \n", NTB+RM,  " A\t",  "BE",  '?',  " A BC"     ,  "\n\n\n\n\n"  , "\n \nA \nC\n \n"  , " A"   },
+    { " \nA  B\nC\n ",    NTB+RM,  " A\t",  "BE",  '?',  " A BC"     ,  "\n\n\n"      , " \nA \nC\n"       , " A"   },
+    { "  \nA B\nC\n  ",   NTB+RM,  " A\t",  "BE",  '?',  " A BC"     ,  "\n\n\n"      , " \nA \nC\n"       , " A"   },
 
-    { "",                 NTE+RM,  "",            ""  },
-    { "   ",              NTE+RM,  "",            ""  },
-    { "ABC",              NTE+RM,  "ABC",         ""  },
-    { "  ABC",            NTE+RM,  "ABC",         ""  },
-    { "ABC  ",            NTE+RM,  "ABC ",        ""  },
-    { " ABC ",            NTE+RM,  "ABC ",        ""  },
-    { "   ABC   ",        NTE+RM,  "ABC ",        ""  },
-    { "   A B C   ",      NTE+RM,  "A B C ",      ""  },
-    { "   A  B  C   ",    NTE+RM,  "A B C ",      ""  },
-    { "   AB CD EF   ",   NTE+RM,  "AB CD EF ",   ""  },
-    { "   AB  CD  EF   ", NTE+RM,  "AB CD EF ",   ""  },
-    { "\n\nA  B\nC\n\n",  NTE+RM,  "A BC",        "\n\n \n\n\n"   },
-    { "\n \nA B\nC\n \n", NTE+RM,  "A BC ",       "\n \n \n\n \n" },
-    { " \nA  B\nC\n ",    NTE+RM,  "A BC ",       "\n \n\n "      },
-    { "  \nA B\nC\n  ",   NTE+RM,  "A BC ",       "\n \n\n "      },
+    { "",                 NTE+RM,  " A\t",  "BE",  '?',  ""          ,  ""            , ""                 , ""     },
+    { "   ",              NTE+RM,  " A\t",  "BE",  '?',  ""          ,  ""            , ""                 , ""     },
+    { "   ",              NTE+RM,  " ",     "",    '?',  ""          ,  ""            , ""                 , ""     },
+    { "   ",              NTE+RM,  "",      " ",   '?',  ""          ,  ""            , ""                 , ""     },
+    { "   ",              NTE+RM,  " ",     " ",   '?',  ""          ,  ""            , ""                 , ""     },
+    { "ABC",              NTE+RM,  " A\t",  "BE",  '?',  "ABC"       ,  ""            , "AC"               , "A"    }, // 290
+    { "  ABC",            NTE+RM,  " A\t",  "BE",  '?',  "ABC"       ,  ""            , "AC"               , "A"    },
+    { "ABC  ",            NTE+RM,  " A\t",  "BE",  '?',  "ABC "      ,  ""            , "AC "              , "A "   },
+    { " ABC ",            NTE+RM,  " A\t",  "BE",  '?',  "ABC "      ,  ""            , "AC "              , "A "   },
+    { "   ABC   ",        NTE+RM,  " A\t",  "BE",  '?',  "ABC "      ,  ""            , "AC "              , "A "   },
+    { "   A B C   ",      NTE+RM,  " A\t",  "BE",  '?',  "A B C "    ,  ""            , "A C "             , "A "   },
+    { "   A  B  C   ",    NTE+RM,  " A\t",  "BE",  '?',  "A B C "    ,  ""            , "A C "             , "A "   },
+    { "   AB CD EF   ",   NTE+RM,  " A\t",  "BE",  '?',  "AB CD EF " ,  ""            , "A CD F "          , "A "   },
+    { "   AB  CD  EF   ", NTE+RM,  " A\t",  "BE",  '?',  "AB CD EF " ,  ""            , "A CD F "          , "A "   },
+    { "\n\nA  B\nC\n\n",  NTE+RM,  " A\t",  "BE",  '?',  "A BC"      ,  "\n\n\n\n\n"  , "\n\nA \nC\n\n"    , "A "   },
+    { "\n \nA B\nC\n \n", NTE+RM,  " A\t",  "BE",  '?',  "A BC "     ,  "\n\n\n\n\n"  , "\n \nA \nC\n \n"  , "A "   }, // 300
+    { " \nA  B\nC\n ",    NTE+RM,  " A\t",  "BE",  '?',  "A BC "     ,  "\n\n\n"      , "\nA \nC\n "       , "A "   },
+    { "  \nA B\nC\n  ",   NTE+RM,  " A\t",  "BE",  '?',  "A BC "     ,  "\n\n\n"      , "\nA \nC\n "       , "A "   },
 
-    { "",                 NT+RM,   "",            ""  },
-    { "   ",              NT+RM,   " ",           " " },
-    { "ABC",              NT+RM,   "ABC",         ""  },
-    { "  ABC",            NT+RM,   " ABC",        " " },
-    { "ABC  ",            NT+RM,   "ABC ",        " " },
-    { " ABC ",            NT+RM,   " ABC ",       " " },
-    { "   ABC   ",        NT+RM,   " ABC ",       " " },
-    { "   A B C   ",      NT+RM,   " A B C ",     " " },
-    { "   A  B  C   ",    NT+RM,   " A B C ",     " " },
-    { "   AB CD EF   ",   NT+RM,   " AB CD EF ",  " " },
-    { "   AB  CD  EF   ", NT+RM,   " AB CD EF ",  " " },
-    { "\n\nA  B\nC\n\n",  NT+RM,   "A BC",        "\n\n \n\n\n"   },
-    { "\n \nA B\nC\n \n", NT+RM,   " A BC ",      "\n \n \n\n \n" },
-    { " \nA  B\nC\n ",    NT+RM,   " A BC ",      " \n \n\n "     },
-    { "  \nA B\nC\n  ",   NT+RM,   " A BC ",      " \n \n\n "     },
+    { "",                 NT+RM,   " A\t",  "BE",  '?',  ""           ,  ""            , ""                , ""     },
+    { "   ",              NT+RM,   " A\t",  "BE",  '?',  " "          ,  ""            , " "               , " "    },
+    { "   ",              NT+RM,   " ",     "",    '?',  " "          ,  ""            , " "               , " "    },
+    { "   ",              NT+RM,   "",      " ",   '?',  " "          ,  ""            , ""                , ""     },
+    { "   ",              NT+RM,   " ",     " ",   '?',  " "          ,  ""            , ""                , ""     },
+    { "ABC",              NT+RM,   " A\t",  "BE",  '?',  "ABC"        ,  ""            , "AC"              , "A"    },
+    { "  ABC",            NT+RM,   " A\t",  "BE",  '?',  " ABC"       ,  ""            , " AC"             , " A"   },
+    { "ABC  ",            NT+RM,   " A\t",  "BE",  '?',  "ABC "       ,  ""            , "AC "             , "A "   }, // 310
+    { " ABC ",            NT+RM,   " A\t",  "BE",  '?',  " ABC "      ,  ""            , " AC "            , " A "  },
+    { "   ABC   ",        NT+RM,   " A\t",  "BE",  '?',  " ABC "      ,  ""            , " AC "            , " A "  },
+    { "   A B C   ",      NT+RM,   " A\t",  "BE",  '?',  " A B C "    ,  ""            , " A C "           , " A "  },
+    { "   A  B  C   ",    NT+RM,   " A\t",  "BE",  '?',  " A B C "    ,  ""            , " A C "           , " A "  },
+    { "   AB CD EF   ",   NT+RM,   " A\t",  "BE",  '?',  " AB CD EF " ,  ""            , " A CD F "        , " A "  },
+    { "   AB  CD  EF   ", NT+RM,   " A\t",  "BE",  '?',  " AB CD EF " ,  ""            , " A CD F "        , " A "  },
+    { "\n\nA  B\nC\n\n" , NT+RM,   " A\t",  "BE",  '?',  "A BC"       ,  "\n\n\n\n\n"  , "\n\nA \nC\n\n"   , "A "   },
+    { "\n \nA B\nC\n \n", NT+RM,   " A\t",  "BE",  '?',  " A BC "     ,  "\n\n\n\n\n"  , "\n \nA \nC\n \n" , " A "  },
+    { " \nA  B\nC\n ",    NT+RM,   " A\t",  "BE",  '?',  " A BC "     ,  "\n\n\n"      , " \nA \nC\n "     , " A "  },
+    { "  \nA B\nC\n  ",   NT+RM,   " A\t",  "BE",  '?',  " A BC "     ,  "\n\n\n"      , " \nA \nC\n "     , " A "  }, // 320
 
     // fSS_NoTruncate_* + fSS_NoMerge + fSS_Remove
 
-    { "",                 NTB+NM+RM,  "",               ""  },
-    { "   ",              NTB+NM+RM,  "",               ""  },
-    { "ABC",              NTB+NM+RM,  "ABC",            ""  },
-    { "  ABC",            NTB+NM+RM,  "  ABC",          ""  },
-    { "ABC  ",            NTB+NM+RM,  "ABC",            ""  },
-    { " ABC ",            NTB+NM+RM,  " ABC",           ""  },
-    { "   ABC   ",        NTB+NM+RM,  "   ABC",         ""  },
-    { "   A B C   ",      NTB+NM+RM,  "   A B C",       ""  },
-    { "   A  B  C   ",    NTB+NM+RM,  "   A  B  C",     ""  },
-    { "   AB CD EF   ",   NTB+NM+RM,  "   AB CD EF",    ""  },
-    { "   AB  CD  EF   ", NTB+NM+RM,  "   AB  CD  EF",  ""  },
-    { "\n\nA  B\nC\n\n",  NTB+NM+RM,  "A  BC",          "\n\n  \n\n\n"  },
-    { "\n \nA B\nC\n \n", NTB+NM+RM,  " A BC",          "\n \n \n\n \n" },
-    { " \nA  B\nC\n ",    NTB+NM+RM,  " A  BC",         " \n  \n\n"     },
-    { "  \nA B\nC\n  ",   NTB+NM+RM,  "  A BC",         "  \n \n\n"     },
+    { "",                 NTB+NM+RM,  " A\t",  "BE",  '?',  ""              ,  ""            , ""                , ""      },
+    { "   ",              NTB+NM+RM,  " A\t",  "BE",  '?',  ""              ,  ""            , ""                , ""      },
+    { "   ",              NTB+NM+RM,  " ",     "",    '?',  ""              ,  ""            , ""                , ""      },
+    { "   ",              NTB+NM+RM,  "",      " ",   '?',  ""              ,  ""            , ""                , ""      },
+    { "   ",              NTB+NM+RM,  " ",     " ",   '?',  ""              ,  ""            , ""                , ""      },
+    { "ABC",              NTB+NM+RM,  " A\t",  "BE",  '?',  "ABC"           ,  ""            , "AC"              , "A"     },
+    { "  ABC",            NTB+NM+RM,  " A\t",  "BE",  '?',  "  ABC"         ,  ""            , "  AC"            , "  A"   },
+    { "ABC  ",            NTB+NM+RM,  " A\t",  "BE",  '?',  "ABC"           ,  ""            , "AC"              , "A"     },
+    { " ABC ",            NTB+NM+RM,  " A\t",  "BE",  '?',  " ABC"          ,  ""            , " AC"             , " A"    },
+    { "   ABC   ",        NTB+NM+RM,  " A\t",  "BE",  '?',  "   ABC"        ,  ""            , "   AC"           , "   A"  }, // 330
+    { "   A B C   ",      NTB+NM+RM,  " A\t",  "BE",  '?',  "   A B C"      ,  ""            , "   A  C"         , "   A"  },
+    { "   A  B  C   ",    NTB+NM+RM,  " A\t",  "BE",  '?',  "   A  B  C"    ,  ""            , "   A    C"       , "   A"  },
+    { "   AB CD EF   ",   NTB+NM+RM,  " A\t",  "BE",  '?',  "   AB CD EF"   ,  ""            , "   A CD F"       , "   A"  },
+    { "   AB  CD  EF   ", NTB+NM+RM,  " A\t",  "BE",  '?',  "   AB  CD  EF" ,  ""            , "   A  CD  F"     , "   A"  },
+    { "\n\nA  B\nC\n\n",  NTB+NM+RM,  " A\t",  "BE",  '?',  "A  BC"         ,  "\n\n\n\n\n"  , "\n\nA  \nC\n\n"  , "A"     },
+    { "\n \nA B\nC\n \n", NTB+NM+RM,  " A\t",  "BE",  '?',  " A BC"         ,  "\n\n\n\n\n"  , "\n \nA \nC\n \n" , " A"    },
+    { " \nA  B\nC\n ",    NTB+NM+RM,  " A\t",  "BE",  '?',  " A  BC"        ,  "\n\n\n"      , " \nA  \nC\n"     , " A"    },
+    { "  \nA B\nC\n  ",   NTB+NM+RM,  " A\t",  "BE",  '?',  "  A BC"        ,  "\n\n\n"      , "  \nA \nC\n"     , "  A"   },
 
-    { "",                 NTE+NM+RM,  "",               ""  },
-    { "   ",              NTE+NM+RM,  "",               ""  },
-    { "ABC",              NTE+NM+RM,  "ABC",            ""  },
-    { "  ABC",            NTE+NM+RM,  "ABC",            ""  },
-    { "ABC  ",            NTE+NM+RM,  "ABC  ",          ""  },
-    { " ABC ",            NTE+NM+RM,  "ABC ",           ""  },
-    { "   ABC   ",        NTE+NM+RM,  "ABC   ",         ""  },
-    { "   A B C   ",      NTE+NM+RM,  "A B C   ",       ""  },
-    { "   A  B  C   ",    NTE+NM+RM,  "A  B  C   ",     ""  },
-    { "   AB CD EF   ",   NTE+NM+RM,  "AB CD EF   ",    ""  },
-    { "   AB  CD  EF   ", NTE+NM+RM,  "AB  CD  EF   ",  ""  },
-    { "\n\nA  B\nC\n\n",  NTE+NM+RM,  "A  BC",          "\n\n  \n\n\n"  },
-    { "\n \nA B\nC\n \n", NTE+NM+RM,  "A BC ",          "\n \n \n\n \n" },
-    { " \nA  B\nC\n ",    NTE+NM+RM,  "A  BC ",         "\n  \n\n "     },
-    { "  \nA B\nC\n  ",   NTE+NM+RM,  "A BC  ",         "\n \n\n  "     },
+    { "",                 NTE+NM+RM,  " A\t",  "BE",  '?',  ""              ,  ""            , ""                , ""          },
+    { "   ",              NTE+NM+RM,  " A\t",  "BE",  '?',  ""              ,  ""            , ""                , ""          }, // 340
+    { "   ",              NTE+NM+RM,  " ",     "",    '?',  ""              ,  ""            , ""                , ""          },
+    { "   ",              NTE+NM+RM,  "",      " ",   '?',  ""              ,  ""            , ""                , ""          },
+    { "   ",              NTE+NM+RM,  " ",     " ",   '?',  ""              ,  ""            , ""                , ""          },
+    { "ABC",              NTE+NM+RM,  " A\t",  "BE",  '?',  "ABC"           ,  ""            , "AC"              , "A"         },
+    { "  ABC",            NTE+NM+RM,  " A\t",  "BE",  '?',  "ABC"           ,  ""            , "AC"              , "A"         },
+    { "ABC  ",            NTE+NM+RM,  " A\t",  "BE",  '?',  "ABC  "         ,  ""            , "AC  "            , "A  "       },
+    { " ABC ",            NTE+NM+RM,  " A\t",  "BE",  '?',  "ABC "          ,  ""            , "AC "             , "A "        },
+    { "   ABC   ",        NTE+NM+RM,  " A\t",  "BE",  '?',  "ABC   "        ,  ""            , "AC   "           , "A   "      },
+    { "   A B C   ",      NTE+NM+RM,  " A\t",  "BE",  '?',  "A B C   "      ,  ""            , "A  C   "         , "A     "    },
+    { "   A  B  C   ",    NTE+NM+RM,  " A\t",  "BE",  '?',  "A  B  C   "    ,  ""            , "A    C   "       , "A       "  }, // 350
+    { "   AB CD EF   ",   NTE+NM+RM,  " A\t",  "BE",  '?',  "AB CD EF   "   ,  ""            , "A CD F   "       , "A     "    },
+    { "   AB  CD  EF   ", NTE+NM+RM,  " A\t",  "BE",  '?',  "AB  CD  EF   " ,  ""            , "A  CD  F   "     , "A       "  },
+    { "\n\nA  B\nC\n\n",  NTE+NM+RM,  " A\t",  "BE",  '?',  "A  BC"         ,  "\n\n\n\n\n"  , "\n\nA  \nC\n\n"  , "A  "       },
+    { "\n \nA B\nC\n \n", NTE+NM+RM,  " A\t",  "BE",  '?',  "A BC "         ,  "\n\n\n\n\n"  , "\n \nA \nC\n \n" , "A  "       },
+    { " \nA  B\nC\n ",    NTE+NM+RM,  " A\t",  "BE",  '?',  "A  BC "        ,  "\n\n\n"      , "\nA  \nC\n "     , "A   "      },
+    { "  \nA B\nC\n  ",   NTE+NM+RM,  " A\t",  "BE",  '?',  "A BC  "        ,  "\n\n\n"      , "\nA \nC\n  "     , "A   "      },
 
-    { "",                 NT+NM+RM,   "",                  ""              },
-    { "   ",              NT+NM+RM,   "   ",               "   "           },
-    { "ABC",              NT+NM+RM,   "ABC",               ""              },
-    { "  ABC",            NT+NM+RM,   "  ABC",             "  "            },
-    { "ABC  ",            NT+NM+RM,   "ABC  ",             "  "            },
-    { " ABC ",            NT+NM+RM,   " ABC ",             "  "            },
-    { "   ABC   ",        NT+NM+RM,   "   ABC   ",         "      "        },
-    { "   A B C   ",      NT+NM+RM,   "   A B C   ",       "        "      },
-    { "   A  B  C   ",    NT+NM+RM,   "   A  B  C   ",     "          "    },
-    { "   AB CD EF   ",   NT+NM+RM,   "   AB CD EF   ",    "        "      },
-    { "   AB  CD  EF   ", NT+NM+RM,   "   AB  CD  EF   ",  "          "    },
-    { "\n\nA  B\nC\n\n",  NT+NM+RM,   "A  BC",             "\n\n  \n\n\n"  },
-    { "\n \nA B\nC\n \n", NT+NM+RM,   " A BC ",            "\n \n \n\n \n" },
-    { " \nA  B\nC\n ",    NT+NM+RM,   " A  BC ",           " \n  \n\n "    },
-    { "  \nA B\nC\n  ",   NT+NM+RM,   "  A BC  ",          "  \n \n\n  "   }
+    { "",                 NT+NM+RM,   " A\t",  "BE",  '?',  ""                 ,  ""            , ""                , ""             },
+    { "   ",              NT+NM+RM,   " A\t",  "BE",  '?',  "   "              ,  ""            , "   "             , "   "          },
+    { "   ",              NT+NM+RM,   " ",     "",    '?',  "   "              ,  ""            , "   "             , "   "          },
+    { "   ",              NT+NM+RM,   "",      " ",   '?',  "   "              ,  ""            , ""                , ""             }, // 360
+    { "   ",              NT+NM+RM,   " ",     " ",   '?',  "   "              ,  ""            , ""                , ""             },
+    { "ABC",              NT+NM+RM,   " A\t",  "BE",  '?',  "ABC"              ,  ""            , "AC"              , "A"            },
+    { "  ABC",            NT+NM+RM,   " A\t",  "BE",  '?',  "  ABC"            ,  ""            , "  AC"            , "  A"          },
+    { "ABC  ",            NT+NM+RM,   " A\t",  "BE",  '?',  "ABC  "            ,  ""            , "AC  "            , "A  "          },
+    { " ABC ",            NT+NM+RM,   " A\t",  "BE",  '?',  " ABC "            ,  ""            , " AC "            , " A "          },
+    { "   ABC   ",        NT+NM+RM,   " A\t",  "BE",  '?',  "   ABC   "        ,  ""            , "   AC   "        , "   A   "      },
+    { "   A B C   ",      NT+NM+RM,   " A\t",  "BE",  '?',  "   A B C   "      ,  ""            , "   A  C   "      , "   A     "    },
+    { "   A  B  C   ",    NT+NM+RM,   " A\t",  "BE",  '?',  "   A  B  C   "    ,  ""            , "   A    C   "    , "   A       "  },
+    { "   AB CD EF   ",   NT+NM+RM,   " A\t",  "BE",  '?',  "   AB CD EF   "   ,  ""            , "   A CD F   "    , "   A     "    },
+    { "   AB  CD  EF   ", NT+NM+RM,   " A\t",  "BE",  '?',  "   AB  CD  EF   " ,  ""            , "   A  CD  F   "  , "   A       "  }, // 370
+    { "\n\nA  B\nC\n\n",  NT+NM+RM,   " A\t",  "BE",  '?',  "A  BC"            ,  "\n\n\n\n\n"  , "\n\nA  \nC\n\n"  , "A  "          },
+    { "\n \nA B\nC\n \n", NT+NM+RM,   " A\t",  "BE",  '?',  " A BC "           ,  "\n\n\n\n\n"  , "\n \nA \nC\n \n" , " A  "         },
+    { " \nA  B\nC\n ",    NT+NM+RM,   " A\t",  "BE",  '?',  " A  BC "          ,  "\n\n\n"      , " \nA  \nC\n "    , " A   "        },
+    { "  \nA B\nC\n  ",   NT+NM+RM,   " A\t",  "BE",  '?',  "  A BC  "         ,  "\n\n\n"      , "  \nA \nC\n  "   , "  A   "       }
 };
 
 BOOST_AUTO_TEST_CASE(s_Sanitize)
@@ -2491,12 +2654,40 @@ BOOST_AUTO_TEST_CASE(s_Sanitize)
     for (size_t i = 0;  i < count;  ++i)
     {
         const SSanitizeTest* test = &s_SanitizeTests[i];
-        BOOST_CHECK_EQUAL(
-            NStr::Sanitize(test->str, test->flags)
-            .compare(test->allowed), 0);
-        BOOST_CHECK_EQUAL(
-            NStr::Sanitize(test->str, test->flags | NStr::fSS_Reject)
-            .compare(test->rejected), 0);
+		string out;
+
+        out = NStr::Sanitize(test->str, test->flags);
+		BOOST_CHECK_EQUAL(out.compare(test->res_allowed), 0);
+        if (out.compare(test->res_allowed) != 0) {
+			cout << i << ". A    : " 
+			     << "str = '" << NStr::PrintableString(test->str) << "', "
+			  	 << "res = '" << NStr::PrintableString(out) << "', "
+			  	 << "expected = '" << NStr::PrintableString(test->res_allowed) << "'" << endl;
+        }
+        out = NStr::Sanitize(test->str, test->flags | NStr::fSS_Reject);
+		BOOST_CHECK_EQUAL(out.compare(test->res_rejected), 0);
+        if (out.compare(test->res_rejected) != 0) {
+			cout << i << ". R    : "
+			     << "str = '" << NStr::PrintableString(test->str) << "', "
+				 << "res = '" << NStr::PrintableString(out) << "', "
+				 << "expected = '" << NStr::PrintableString(test->res_rejected) << "'" << endl;
+        }
+        out = NStr::Sanitize(test->str, test->allow, test->reject, test->replacement, test->flags);
+		BOOST_CHECK_EQUAL(out.compare(test->res_ex_allowed), 0);
+        if (out.compare(test->res_ex_allowed) != 0) {
+			cout << i << ". A ex : "
+			     << "str = '" << NStr::PrintableString(test->str) << "', "
+				 << "res = '" << NStr::PrintableString(out) << "', "
+				 << "expected = '" << NStr::PrintableString(test->res_ex_allowed) << "'" << endl;
+        }
+        out = NStr::Sanitize(test->str, test->allow, test->reject, test->replacement, test->flags | NStr::fSS_Reject);
+		BOOST_CHECK_EQUAL(out.compare(test->res_ex_rejected), 0);
+        if (out.compare(test->res_ex_rejected) != 0) {
+			cout << i << ". R ex : "
+			     << "str = '" << NStr::PrintableString(test->str) << "', "
+				 << "res = '" << NStr::PrintableString(out) << "', "
+				 << "expected = '" << NStr::PrintableString(test->res_ex_rejected) << "'" << endl;
+        }
     }
 }
 
@@ -2534,13 +2725,8 @@ BOOST_AUTO_TEST_CASE(s_CEncode)
         try {
             ce = NStr::CEncode(test->str, NStr::eNotQuoted);
             BOOST_CHECK_EQUAL(ce, test->expected_nonquoted);
-            try {
-                cp = NStr::CParse(ce, NStr::eNotQuoted);
-                BOOST_CHECK_EQUAL(cp, test->str);
-            }
-            catch (CStringException&) {
-                _TROUBLE;
-            }
+            cp = NStr::CParse(ce, NStr::eNotQuoted);
+            BOOST_CHECK_EQUAL(cp, test->str);
         }
         catch (CStringException&) {
             _TROUBLE;
@@ -2550,13 +2736,8 @@ BOOST_AUTO_TEST_CASE(s_CEncode)
         try {
             ce = NStr::CEncode(test->str, NStr::eQuoted);
             BOOST_CHECK_EQUAL(ce, test->expected_quoted);
-            try {
-                cp = NStr::CParse(ce, NStr::eQuoted);
-                BOOST_CHECK_EQUAL(cp, test->str);
-            }
-            catch (CStringException&) {
-                _TROUBLE;
-            }
+            cp = NStr::CParse(ce, NStr::eQuoted);
+            BOOST_CHECK_EQUAL(cp, test->str);
         }
         catch (CStringException&) {
             _TROUBLE;

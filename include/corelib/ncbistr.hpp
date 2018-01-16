@@ -2692,13 +2692,47 @@ public:
     /// @return
     ///   Return a printable version of "str".
     /// @sa
-    ///   ParseEscapes, CEncode, CParse, Sanitize
+    ///   ParseEscapes, Escape, CEncode, CParse, Sanitize
     static string PrintableString(const CTempString str,
                                   TPrintableMode    mode = fNewLine_Quote | fNonAscii_Passthru);
 
+    /// Escape string.
+    ///
+    /// Generic string escape method.
+    /// Prefix any occurrences of the metacharacters with the escape character.
+    /// @param str
+    ///   The string to be escaped.
+    /// @metacharacters
+    ///   List of characters that need to be escaped.
+    ///   Use NStr::Join() if you have metacharacters in list<>, vector<> or set<>. 
+    /// @param escape_char
+    ///   Character used for escaping metacharacters.
+    ///   Each metacharacter will be replaced with pair "escape_char + metacharacter".
+    ///   Each escape character will be replaced with pair "escape_char + escape_char".
+    /// @return
+    ///   Escaped string.
+    /// @sa 
+    ///   Unescape, PrintableString, Join
+    static string Escape(const CTempString str, const CTempString metacharacters,
+                         char escape_char = '\\');
+
+    /// Unescape string.
+    ///
+    /// Remove escape characters added by Escape().
+    /// @param str
+    ///   The string to be processed.
+    /// @param escape_char
+    ///   Character used for escaping.
+    /// @return
+    ///   Unescaped string.
+    /// @sa 
+    ///   Escape
+    static string Unescape(const CTempString str, char escape_char = '\\');
+
+
     /// Flags for Sanitize().
     enum ESS_Flags {
-        // Character filters (if no filters are set, then use fSS_print)
+        // Character filters
         fSS_alpha = 1 << 0,    ///< Check on ::isalpha()
         fSS_digit = 1 << 1,    ///< Check on ::isdigit()
         fSS_alnum = 1 << 2,    ///< Check on ::isalnum()
@@ -2712,7 +2746,7 @@ public:
                                ///< characters and reject all other.
         // Utility flags
         fSS_Remove           = 1 << 12,  ///< Remove (rather than replace) rejected chars
-        fSS_NoMerge          = 1 << 13,  ///< Do not merge adjacent spaces
+        fSS_NoMerge          = 1 << 13,  ///< Do not merge adjacent spaces (rejected chars)
         fSS_NoTruncate_Begin = 1 << 14,  ///< Do not truncate leading spaces
         fSS_NoTruncate_End   = 1 << 15,  ///< Do not truncate trailing spaces
         fSS_NoTruncate       = fSS_NoTruncate_Begin | fSS_NoTruncate_End
@@ -2729,7 +2763,7 @@ public:
     ///   - All coalescent leading/trailing spaces also will be merged
     ///     by default if fSS_NoMerge has not specified.
     ///   - The truncation of leading/trailing spaces is doing after
-    ///     allowing/rejecting characters. Defending on the specified flags,
+    ///     allowing/rejecting characters. Depending on the specified flags,
     ///     all rejected characters adjacent to it can be treat as part
     ///     of leading/trailing spaces.
     /// @param str
@@ -2740,7 +2774,62 @@ public:
     ///   Sanitized string
     /// @sa
     ///   PrintableString
-    static string Sanitize(CTempString str, TSS_Flags flags = 0);
+    static string Sanitize(CTempString str, TSS_Flags flags = fSS_print)
+    {
+        return Sanitize(str, CTempString(), CTempString(), ' ', flags);
+    }
+
+
+    /// Sanitize a string, allowing only specified characters or character classes.
+    ///
+    /// More customizable version of Sanitize():
+    ///    - allow to specify custom sets of allowed and rejected characters, 
+    ///      in addition to predefined classes if specified, see TSS_Flags;
+    ///    - allow to specify replacement character for rejected symbols;
+    /// By default:
+    ///    - replace all rejected characters with <reject_replacement>;
+    ///    - merge coalescent spaces and <reject_replacement>s (separately if differ);
+    ///    - truncate leading and trailing spaces.
+    /// Filters check order:
+    ///    - character classes via flags. 
+    ///      Note, that if no character classes are set, and no custom <allow_chars>
+    ///      or <reject_chars>, fSS_print will be used;
+    ///    - <allow_chars> if not empty, have priority over flags. 
+    ///    - <reject_chars> if not empty, have priority over flags and <allow_chars> if have intersections.
+    /// @note
+    ///   - All coalescent leading/trailing spaces also will be merged
+    ///     by default if fSS_NoMerge has not specified.
+    ///   - The truncation of leading/trailing spaces is doing after
+    ///     allowing/rejecting characters.
+    /// @note
+    ///   Spaces processes after checks on allowance, so if it isn't allowed
+    ///   it will be threatened as regular rejected character.
+    /// @param str
+    ///   String to sanitize.
+    /// @param allow_chars
+    ///   Additional list of allowed characters, in addition to character classes in <flags>.
+    ///   Have priority over character classes.
+    ///   Use NStr::Join() if you have it in list<>, vector<> or set<>. 
+    /// @param reject_chars
+    ///   Additional list of rejected characters, in addition to character classes in <flags>.
+    ///   Have priority over character classes and <allow_chars>.
+    ///   Use NStr::Join() if you have it in list<>, vector<> or set<>. 
+    /// @param reject_replacement
+    ///   Replacement character for all rejected characters.
+    /// @param flags
+    ///   Alternative sanitation options.
+    ///   If no custom <allow_chars> or <reject_chars>, and no character classes are set, then use fSS_print by default.
+    ///   If <reject_chars>, no class, and no fSS_Reject flag, then all characters allowed except <reject_chars>.
+    ///   If <allow_chars>,  no class, and fSS_Reject flag, then no any character allowed except <allow_chars>.
+    /// @return
+    ///   Sanitized string
+    /// @sa
+    ///   PrintableString, Join
+    static string Sanitize(CTempString str,
+                           CTempString allow_chars,
+                           CTempString reject_chars,
+                           char reject_replacement = ' ',
+                           TSS_Flags flags = 0);
 
     /// C-style escape sequences parsing mode.
     /// For escape sequences with a value outside the range of [0-255] 
