@@ -239,14 +239,14 @@ void CDiscRepApp::x_ProcessFile(const string& fname, CDiscrepancySet& tests)
         CRef<CSerialObject> obj;
         try {
             header = in->ReadFileHeader();
-            if (header.empty() && GetArgs()["a"]) {
-                string type = GetArgs()["a"].AsString();
-                if (type == "e") header = "Seq-entry";
-                else if (type == "m") header = "Seq-submit";
-                else if (type == "s") header = "Bioseq-set";
-                else if (type == "b") header = "Bioseq";
-            }
-            if (header == "Seq-submit" ) {
+            //if (header.empty() && GetArgs()["a"]) {
+            //    string type = GetArgs()["a"].AsString();
+            //    if (type == "e") header = "Seq-entry";
+            //    else if (type == "m") header = "Seq-submit";
+            //    else if (type == "s") header = "Bioseq-set";
+            //    else if (type == "b") header = "Bioseq";
+            //}
+            if (header == CSeq_submit::GetTypeInfo()->GetName()) {
                 CRef<CSeq_submit> ss(new CSeq_submit);
                 in->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
                 if (ss->IsSetData() && ss->GetData().IsEntrys()) {
@@ -256,13 +256,13 @@ void CDiscRepApp::x_ProcessFile(const string& fname, CDiscrepancySet& tests)
                 }
                 obj.Reset(ss);
             }
-            else if (header == "Seq-entry") {
+            else if (header == CSeq_entry::GetTypeInfo()->GetName()) {
                 CRef<CSeq_entry> se(new CSeq_entry);
                 in->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
                 m_Scope->AddTopLevelSeqEntry(*se);
                 obj.Reset(se);
             }
-            else if (header == "Bioseq-set" ) {
+            else if (header == CBioseq_set::GetTypeInfo()->GetName()) {
                 CRef<CBioseq_set> set(new CBioseq_set);
                 in->Read(ObjectInfo(*set), CObjectIStream::eNoFileHeader);
                 CRef<CSeq_entry> se(new CSeq_entry());
@@ -270,7 +270,7 @@ void CDiscRepApp::x_ProcessFile(const string& fname, CDiscrepancySet& tests)
                 m_Scope->AddTopLevelSeqEntry(*se);
                 obj.Reset(se);
             }
-            else if (header == "Bioseq" ) {
+            else if (header == CBioseq::GetTypeInfo()->GetName()) {
                 CRef<CBioseq> seq(new CBioseq);
                 in->Read(ObjectInfo(*seq), CObjectIStream::eNoFileHeader);
                 CRef<CSeq_entry> se(new CSeq_entry());
@@ -279,7 +279,7 @@ void CDiscRepApp::x_ProcessFile(const string& fname, CDiscrepancySet& tests)
                 obj.Reset(se);
             }
             else {
-                NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
+                NCBI_THROW(CException, eUnknown, "Unsupported type " + header);
             }
             tests.Parse(*obj);
             if (m_AutoFix) {
@@ -292,23 +292,8 @@ void CDiscRepApp::x_ProcessFile(const string& fname, CDiscrepancySet& tests)
                 break;
             }
         }
-        catch (const CSerialException& e) {
-            if (e.GetErrCode() == CSerialException::eEOF) {
-                break;
-            }
-            else {
-                ERR_POST(Error << e);
-                exit(1);
-            }
-        }
         catch (const CEofException& e) {
-            if (e.GetErrCode() == CEofException::eEof) {
-                break;
-            }
-            else {
-                ERR_POST(Error << e);
-                exit(1);
-            }
+            break;
         }
     }
 }
