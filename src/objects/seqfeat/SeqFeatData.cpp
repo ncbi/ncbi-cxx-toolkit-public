@@ -3962,7 +3962,6 @@ vector<string> CSeqFeatData::GetRegulatoryClassList()
     choices.push_back("imprinting_control_region");
     choices.push_back("insulator");
     choices.push_back("locus_control_region");
-    choices.push_back("LTR");
     choices.push_back("matrix_attachment_region");
     choices.push_back("minus_10_signal");
     choices.push_back("minus_35_signal");

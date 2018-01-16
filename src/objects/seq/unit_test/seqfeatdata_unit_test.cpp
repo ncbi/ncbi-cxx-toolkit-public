@@ -999,7 +999,6 @@ BOOST_AUTO_TEST_CASE(Test_Regulatory)
     BOOST_CHECK_EQUAL(CSeqFeatData::GetRegulatoryClass(CSeqFeatData::eSubtype_RBS), "ribosome_binding_site");
     BOOST_CHECK_EQUAL(CSeqFeatData::GetRegulatoryClass(CSeqFeatData::eSubtype_terminator), "terminator");
     BOOST_CHECK_EQUAL(CSeqFeatData::IsRegulatory(CSeqFeatData::eSubtype_LTR), true);
-    BOOST_CHECK_EQUAL(CSeqFeatData::GetRegulatoryClass(CSeqFeatData::eSubtype_LTR), "LTR");
 }
 
 
