@@ -434,10 +434,17 @@ bool CFastaDeflineReader::x_IsValidLocalID(const CSeq_id& id, TFastaFlags fasta_
 bool CFastaDeflineReader::x_IsValidLocalID(const string& id_string,
     const TFastaFlags fasta_flags)
 {
+    const string& string_to_check = (fasta_flags & CFastaReader::fQuickIDCheck)  ?
+                                    id_string.substr(0,1) :
+                                    id_string;
+
+    return (CSeq_id::CheckLocalID(string_to_check) != CSeq_id::eInvalidChar);
+/*
     if ( fasta_flags & CFastaReader::fQuickIDCheck) { // check only the first character
         return CSeq_id::IsValidLocalID(id_string.substr(0,1));
     }
     return CSeq_id::IsValidLocalID(id_string);
+    */
 }
 
 
