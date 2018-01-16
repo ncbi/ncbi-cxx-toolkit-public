@@ -234,77 +234,81 @@ auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname) // JIRA: CX
 void CDiscRepApp::x_ProcessFile(const string& fname, CDiscrepancySet& tests)
 {
     auto_ptr<CObjectIStream> in = OpenUncompressedStream(fname);
-    CRef<CSerialObject> obj;
-
-    if (GetArgs()["a"] && GetArgs()["a"].AsString() == "c") {
-        while (true) {
-            CRef<CSeq_entry> se(new CSeq_entry);
-            try {
+    while (true) {
+        string header;
+        CRef<CSerialObject> obj;
+        try {
+            header = in->ReadFileHeader();
+            if (header.empty() && GetArgs()["a"]) {
+                string type = GetArgs()["a"].AsString();
+                if (type == "e") header = "Seq-entry";
+                else if (type == "m") header = "Seq-submit";
+                else if (type == "s") header = "Bioseq-set";
+                else if (type == "b") header = "Bioseq";
+            }
+            if (header == "Seq-submit" ) {
+                CRef<CSeq_submit> ss(new CSeq_submit);
+                in->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
+                if (ss->IsSetData() && ss->GetData().IsEntrys()) {
+                    NON_CONST_ITERATE (CSeq_submit::TData::TEntrys, it, ss->SetData().SetEntrys()) {
+                        m_Scope->AddTopLevelSeqEntry(**it);
+                    }
+                }
+                obj.Reset(ss);
+            }
+            else if (header == "Seq-entry") {
+                CRef<CSeq_entry> se(new CSeq_entry);
                 in->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
+                m_Scope->AddTopLevelSeqEntry(*se);
+                obj.Reset(se);
             }
-            catch (const CSerialException& e) {
-                if (e.GetErrCode() == CSerialException::eEOF) {
-                    break;
-                }
-                else {
-                    ERR_POST(Error << e);
-                    exit(1);
-                }
+            else if (header == "Bioseq-set" ) {
+                CRef<CBioseq_set> set(new CBioseq_set);
+                in->Read(ObjectInfo(*set), CObjectIStream::eNoFileHeader);
+                CRef<CSeq_entry> se(new CSeq_entry());
+                se->SetSet().Assign(*set);
+                m_Scope->AddTopLevelSeqEntry(*se);
+                obj.Reset(se);
             }
-            tests.Parse(*se);
-            m_Scope->ResetDataAndHistory();
-        }
-    }
-    else {
-        string header = in->ReadFileHeader();
-        if (header.empty() && GetArgs()["a"]) {
-            string type = GetArgs()["a"].AsString();
-            if (type == "e") header = "Seq-entry";
-            else if (type == "m") header = "Seq-submit";
-            else if (type == "s") header = "Bioseq-set";
-            else if (type == "b") header = "Bioseq";
-        }
-        if (header == "Seq-submit" ) {
-            CRef<CSeq_submit> ss(new CSeq_submit);
-            in->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
-            if (ss->IsSetData() && ss->GetData().IsEntrys()) {
-                NON_CONST_ITERATE (CSeq_submit::TData::TEntrys, it, ss->SetData().SetEntrys()) {
-                    m_Scope->AddTopLevelSeqEntry(**it);
-                }
+            else if (header == "Bioseq" ) {
+                CRef<CBioseq> seq(new CBioseq);
+                in->Read(ObjectInfo(*seq), CObjectIStream::eNoFileHeader);
+                CRef<CSeq_entry> se(new CSeq_entry());
+                se->SetSeq().Assign(*seq);
+                m_Scope->AddTopLevelSeqEntry(*se);
+                obj.Reset(se);
             }
-            obj.Reset(ss);
+            else {
+                NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
+            }
+            tests.Parse(*obj);
+            if (m_AutoFix) {
+                m_Objects[fname] = obj;
+            }
+            else {
+                m_Scope->ResetDataAndHistory();
+            }
+            if (!GetArgs()["a"] || GetArgs()["a"].AsString() != "c") {
+                break;
+            }
         }
-        else if (header == "Seq-entry") {
-            CRef<CSeq_entry> se(new CSeq_entry);
-            in->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
-            m_Scope->AddTopLevelSeqEntry(*se);
-            obj.Reset(se);
+        catch (const CSerialException& e) {
+            if (e.GetErrCode() == CSerialException::eEOF) {
+                break;
+            }
+            else {
+                ERR_POST(Error << e);
+                exit(1);
+            }
         }
-        else if (header == "Bioseq-set" ) {
-            CRef<CBioseq_set> set(new CBioseq_set);
-            in->Read(ObjectInfo(*set), CObjectIStream::eNoFileHeader);
-            CRef<CSeq_entry> se(new CSeq_entry());
-            se->SetSet().Assign(*set);
-            m_Scope->AddTopLevelSeqEntry(*se);
-            obj.Reset(se);
-        }
-        else if (header == "Bioseq" ) {
-            CRef<CBioseq> seq(new CBioseq);
-            in->Read(ObjectInfo(*seq), CObjectIStream::eNoFileHeader);
-            CRef<CSeq_entry> se(new CSeq_entry());
-            se->SetSeq().Assign(*seq);
-            m_Scope->AddTopLevelSeqEntry(*se);
-            obj.Reset(se);
-        }
-        else {
-            NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
-        }
-        tests.Parse(*obj);
-        if (m_AutoFix) {
-            m_Objects[fname] = obj;
-        }
-        else {
-            m_Scope->ResetDataAndHistory();
+        catch (const CEofException& e) {
+            if (e.GetErrCode() == CEofException::eEof) {
+                break;
+            }
+            else {
+                ERR_POST(Error << e);
+                exit(1);
+            }
         }
     }
 }
@@ -371,7 +375,9 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
         Tests->AddTest("_SUSPECT_PRODUCT_NAMES");
         ITERATE (vector<string>, fname, m_Files) {
             ++count;
-            LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
+            if (m_Files.size() > 1) {
+                LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
+            }
             Tests->SetFile(*fname);
             CNcbiIfstream istr(fname->c_str());
             CStreamLineReader line_reader(istr);
@@ -391,7 +397,9 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
         Tests->SetLineage(m_Lineage);
         ITERATE (vector<string>, fname, m_Files) {
             ++count;
-            LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
+            if (m_Files.size() > 1) {
+                LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
+            }
             Tests->SetFile(*fname);
             x_ProcessFile(*fname, *Tests);
         }
@@ -586,7 +594,9 @@ int CDiscRepApp::Run(void)
         int count = 0;
         ITERATE (vector<string>, f, m_Files) {
             ++count;
-            LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
+            if (m_Files.size() > 1) {
+                LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
+            }
             x_ProcessOne(*f);
         }
     }
