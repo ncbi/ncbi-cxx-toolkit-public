@@ -46,6 +46,7 @@
 #include <connect/ncbi_server_info.h>
 
 #include <ctype.h>
+#include <math.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -566,37 +567,35 @@ static int/*bool*/ s_AddServerInfo(struct SNAMERD_Data* data, SSERV_Info* info)
     */
 static TNCBI_Time s_ParseExpires(time_t tt_now, const char* expires)
 {
-    int     tm_year, tm_mon, tm_mday, tm_hour, tm_min, tm_sec;
-    char    tm_zulu;
+    int     exp_year, exp_mon, exp_mday, exp_hour, exp_min, exp_sec;
+    char    exp_zulu;
 
     assert(expires);
 
-    if (sscanf(expires, "%d-%d-%dT%d:%d:%d%c", &tm_year, &tm_mon, &tm_mday,
-            &tm_hour, &tm_min, &tm_sec, &tm_zulu) != 7  ||
-        tm_year < 2017  ||
-        (tm_mon < 1  || tm_mon > 12)  ||
-        (tm_mday < 1  || tm_mday > 31)  ||
-        (tm_hour < 0  || tm_hour > 23)  ||
-        (tm_min < 0  || tm_min > 59)  ||
-        (tm_sec < 0  || tm_sec > 60)  ||
-        tm_zulu != 'Z')
+    if (sscanf(expires, "%d-%d-%dT%d:%d:%d%c", &exp_year, &exp_mon, &exp_mday,
+            &exp_hour, &exp_min, &exp_sec, &exp_zulu) != 7  ||
+        (exp_year < 2017  ||  exp_year > 9999)  ||
+        (exp_mon  < 1     ||  exp_mon  > 12)    ||
+        (exp_mday < 1     ||  exp_mday > 31)    ||
+        (exp_hour < 0     ||  exp_hour > 23)    ||
+        (exp_min  < 0     ||  exp_min  > 59)    ||
+        (exp_sec  < 0     ||  exp_sec  > 60)    ||  /* 60 for leap second */
+        exp_zulu != 'Z')
     {
         CORE_LOGF_X(eNSub_Json, eLOG_Error,
             ("Unexpected JSON {\"addrs[i].meta.expires\"} "
              "value '%s'.", expires));
         return 0;
     }
-    tm_year -= 1900;    /* years since 1900 */
-    tm_mon  -= 1;       /* months since January: 0-11 */
 
     /* Get the UTC epoch time for the expires value. */
     struct tm   tm_expires;
-    tm_expires.tm_year  = tm_year;
-    tm_expires.tm_mon   = tm_mon;
-    tm_expires.tm_mday  = tm_mday;
-    tm_expires.tm_hour  = tm_hour;
-    tm_expires.tm_min   = tm_min;
-    tm_expires.tm_sec   = tm_sec;
+    tm_expires.tm_year  = exp_year - 1900;    /* years since 1900 */
+    tm_expires.tm_mon   = exp_mon - 1;        /* months since January: 0-11 */
+    tm_expires.tm_mday  = exp_mday;
+    tm_expires.tm_hour  = exp_hour;
+    tm_expires.tm_min   = exp_min;
+    tm_expires.tm_sec   = exp_sec;
     tm_expires.tm_isdst = 0;
     tm_expires.tm_wday  = 0;
     tm_expires.tm_yday  = 0;
@@ -611,9 +610,49 @@ static TNCBI_Time s_ParseExpires(time_t tt_now, const char* expires)
     CORE_UNLOCK;
     tdiff = difftime(mktime(&tm_expires), mktime(&tm_now));
     if (tdiff < -14.0 * 3600.0  ||  tdiff > 12.0 * 3600.0) {
+        int     now_year = tm_now.tm_year + 1900;
+        int     now_mon  = tm_now.tm_mon + 1;
+        int     now_mday = tm_now.tm_mday;
+        int     now_hour = tm_now.tm_hour;
+        int     now_min  = tm_now.tm_min;
+        int     now_sec  = tm_now.tm_sec;
+        char    now_str[32]; /* need 21 for 'yyyy-mm-ddThh:mm:ssZ' */
+        char*   td_sign;
+        double  td_diff, td_hour, td_min, td_sec;
+
+        if ((now_year < 2017  ||  now_year > 9999)  ||
+            (now_mon  < 1     ||  now_mon  > 12)    ||
+            (now_mday < 1     ||  now_mday > 31)    ||
+            (now_hour < 0     ||  now_hour > 23)    ||
+            (now_min  < 0     ||  now_min  > 59)    ||
+            (now_sec  < 0     ||  now_sec  > 60))  /* 60 for leap second */
+        {
+            CORE_LOGF_X(eNSub_Json, eLOG_Error,
+                ("Invalid 'struct tm' for current time (adjusted to UTC): {"
+                 "tm_year = %d, tm_mon = %d, tm_mday = %d, "
+                 "tm_hour = %d, tm_min = %d, tm_sec = %d, }.",
+                 tm_now.tm_year + 1900, tm_now.tm_mon + 1, tm_now.tm_mday,
+                 tm_now.tm_hour, tm_now.tm_min, tm_now.tm_sec));
+            return 0;
+        }
+        if (tdiff < 0.0) {
+            td_sign = "-";
+            td_diff = -tdiff;
+        } else {
+            td_sign = "";
+            td_diff = tdiff;
+        }
+        td_hour  = floor(td_diff / 3600.0);
+        td_diff -= td_hour * 3600.0;
+        td_min   = floor(td_diff / 60.0);
+        td_sec   = td_diff - td_min * 60.0;
+        sprintf(now_str, "%d-%02d-%02dT%02d:%02d:%02dZ",
+                now_year, now_mon, now_mday, now_hour, now_min, now_sec);
         CORE_LOGF_X(eNSub_Json, eLOG_Error,
             ("Unexpected JSON {\"addrs[i].meta.expires\"} "
-             "value '%s' - tdiff = %lf", expires, tdiff));
+             "value '%s' - excessive difference (%.0lfs = %s%.0lf:%.0lf:%.0lf) "
+             "from current time '%s'",
+             expires, tdiff, td_sign, td_hour, td_min, td_sec, now_str));
         return 0;
     }
     TNCBI_Time  timeval = (TNCBI_Time)((double)tt_now + tdiff);
