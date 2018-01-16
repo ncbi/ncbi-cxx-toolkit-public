@@ -1994,13 +1994,33 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
 
 bool CSeq_id::IsValidLocalID(const CTempString& s)
 {
-    if (s.length() > 50) {
-        return false;
+    return (eNoError == CheckLocalID(s));
+}
+
+
+CSeq_id::TErrorCode 
+CSeq_id::CheckLocalID(const CTempString& s)
+{
+
+    if (s.empty()) {
+        return eEmptyId;
     }
+
+    TErrorCode error_code = eNoError;
+    if (s.length() > 50) {
+        error_code |= eExceedsMaxLength;
+    }
+
     static const char* kIllegal = " >[]|\"";
     CSeq_id_find_pred pred; pred.kSymbols = kIllegal;
-    return (!s.empty() && find_if(s.begin(), s.end(), pred) == s.end());
+    if (find_if(s.begin(), s.end(), pred) != s.end()) {
+        error_code |= eInvalidChar;
+    }
+    return error_code;
 }
+
+
+
 
 SIZE_TYPE CSeq_id::ParseFastaIds(CBioseq::TId& ids, const CTempString& s,
                                  bool allow_partial_failure)

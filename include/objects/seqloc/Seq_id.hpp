@@ -103,6 +103,16 @@ public:
     };
     typedef int TParseFlags; // binary OR of EParseFlags
 
+
+    enum EErrorCode {
+        eNoError            = 0,
+        eEmptyId            = 1, // Id may consists of empty string(s)
+        eInvalidChar        = 1 << 1,
+        eExceedsMaxLength   = 1 << 2
+    };
+    using TErrorCode = int;
+
+
     ///
     /// See also CSeq_id related functions in "util/sequence.hpp":
     ///
@@ -503,6 +513,11 @@ public:
     /// contents should be pure ASCII and limited to letters, digits,
     /// and certain punctuation characters (-_.:*# as of August 2010).
     static bool IsValidLocalID(const CTempString& s);
+
+    /// Perform rudimentary validation on potential local IDs, whose 
+    /// contents should not exceed fifty characters and are limited 
+    /// to ASCII characters excluding >[]|\""
+    static TErrorCode CheckLocalID(const CTempString& s);
 
     /// Parse a string representing one or more Seq-ids, appending the
     /// results to IDS.  Multiple IDs must appear in FASTA style.
