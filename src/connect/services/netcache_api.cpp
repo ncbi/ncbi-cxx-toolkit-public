@@ -231,7 +231,8 @@ SNetCacheAPIImpl::SNetCacheAPIImpl(CSynRegistryBuilder registry_builder, const s
     m_NetScheduleAPI(ns_api),
     m_DefaultParameters(eVoid)
 {
-    m_Service->Init(this, registry_builder, { section, kNetCacheAPIDriverName, "netcache_client", "netcache" });
+    SRegSynonyms sections{ section, kNetCacheAPIDriverName, "netcache_client", "netcache" };
+    m_Service->Init(this, registry_builder, sections);
 }
 
 SNetCacheAPIImpl::SNetCacheAPIImpl(const string& api_name, const string& service,

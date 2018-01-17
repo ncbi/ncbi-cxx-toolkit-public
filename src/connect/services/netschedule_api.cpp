@@ -720,7 +720,8 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(CSynRegistryBuilder registry_builder, c
                 new CNetScheduleServerListener(m_Mode & fNonWnCompatible, m_SharedData))),
     m_Queue(queue_name)
 {
-    m_Service->Init(this, registry_builder, { section, kNetScheduleAPIDriverName });
+    SRegSynonyms sections{ section, kNetScheduleAPIDriverName };
+    m_Service->Init(this, registry_builder, sections);
 }
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(
