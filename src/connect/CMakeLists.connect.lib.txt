@@ -7,5 +7,5 @@ add_library(connect
 )
 
 target_link_libraries(connect
-    ${NETWORK_LIBS} ${LIBS}
+    ${NETWORK_LIBS} ${MATH_LIBS} ${LIBS}
 )
