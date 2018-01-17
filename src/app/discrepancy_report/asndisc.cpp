@@ -239,13 +239,13 @@ void CDiscRepApp::x_ProcessFile(const string& fname, CDiscrepancySet& tests)
         CRef<CSerialObject> obj;
         try {
             header = in->ReadFileHeader();
-            //if (header.empty() && GetArgs()["a"]) {
-            //    string type = GetArgs()["a"].AsString();
-            //    if (type == "e") header = "Seq-entry";
-            //    else if (type == "m") header = "Seq-submit";
-            //    else if (type == "s") header = "Bioseq-set";
-            //    else if (type == "b") header = "Bioseq";
-            //}
+            if (header.empty() && GetArgs()["a"]) {
+                string type = GetArgs()["a"].AsString();
+                if (type == "e") header = "Seq-entry";
+                else if (type == "m") header = "Seq-submit";
+                else if (type == "s") header = "Bioseq-set";
+                else if (type == "b") header = "Bioseq";
+            }
             if (header == CSeq_submit::GetTypeInfo()->GetName()) {
                 CRef<CSeq_submit> ss(new CSeq_submit);
                 in->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
