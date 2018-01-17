@@ -2696,9 +2696,8 @@ public:
     static string PrintableString(const CTempString str,
                                   TPrintableMode    mode = fNewLine_Quote | fNonAscii_Passthru);
 
-    /// Escape string.
+    /// Escape string (generic version).
     ///
-    /// Generic string escape method.
     /// Prefix any occurrences of the metacharacters with the escape character.
     /// @param str
     ///   The string to be escaped.
@@ -2716,7 +2715,7 @@ public:
     static string Escape(const CTempString str, const CTempString metacharacters,
                          char escape_char = '\\');
 
-    /// Unescape string.
+    /// Unescape string (generic version).
     ///
     /// Remove escape characters added by Escape().
     /// @param str
@@ -2728,6 +2727,41 @@ public:
     /// @sa 
     ///   Escape
     static string Unescape(const CTempString str, char escape_char = '\\');
+
+
+    /// Quote string (generic version).
+    ///
+    /// Prepend and append a specified quote character, but escaping any occurrence
+    /// of the quote character using either a specified escape character (default '\')
+    /// or as option, by doubling the quoting character if escape character is the same
+    /// (e.g. like the single quote in SQL, double-quote in CSV).
+    ///
+    /// @param str
+    ///   The string to be quoted.
+    /// @param quote_char
+    ///   Character used for quoting, default to double quote '"'.
+    /// @param escape_char
+    ///   Character used for escaping other quote characters inside string (default '\').
+    ///   Each <quote_char>  in the string will be replaced with pair "escape_char + quote_char".
+    ///   Each <escape_char> in the string will be replaced with pair "escape_char + escape_char".
+    /// @return
+    ///   Quoted string.
+    /// @sa 
+    ///   Unquote, ParseQuoted, CEncode
+    static string Quote(const CTempString str, char quote_char = '"', char escape_char = '\\');
+
+    /// Unquote string (generic version).
+    ///
+    /// Remove quotation added by Quote(). Uses first character as quoting character.
+    /// @param str
+    ///   The string to be processed.
+    /// @param escape_char
+    ///   Character used for escaping.
+    /// @return
+    ///   Unquoted string.
+    /// @sa 
+    ///   Quote, ParseQuoted, CEncode
+    static string Unquote(const CTempString str, char escape_char = '\\');
 
 
     /// Flags for Sanitize().

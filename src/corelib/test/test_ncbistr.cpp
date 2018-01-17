@@ -984,12 +984,12 @@ BOOST_AUTO_TEST_CASE(s_StringToDouble)
         if (!setlocale(LC_NUMERIC,"de")) {
             if (!setlocale(LC_NUMERIC,"de_DE")) {
                 if (!setlocale(LC_NUMERIC,"fr")) {
-		            // cannot find suitable locale, skip the test
+                    // cannot find suitable locale, skip the test
                     free(prevlocal);
-		            return;
-		        }
-		    }
-		}
+                    return;
+                }
+            }
+        }
     }
     const size_t count = sizeof(s_Str2NumNonPosixTests) / sizeof(s_Str2NumNonPosixTests[0]);
 
@@ -2193,6 +2193,104 @@ BOOST_AUTO_TEST_CASE(s_Escape)
 
 
 //----------------------------------------------------------------------------
+// NStr::Quote()
+//----------------------------------------------------------------------------
+
+struct SQuoteTest {
+    const char* str;
+    char        quote;
+    char        esc;  
+    const char* result;
+};
+
+static const SQuoteTest s_QuoteTests[] = {
+
+    // single quoting
+
+    { "ABC",        '"',   '\\',   "\"ABC\""          },
+    { "'ABC'",      '"',   '\\',   "\"'ABC'\""        },
+    { "\"ABC\"",    '"',   '\\',   "\"\\\"ABC\\\"\""  },
+    { "-ABC-",      '"',   '\\',   "\"-ABC-\""        },
+    { "A'B'C",      '"',   '\\',   "\"A'B'C\""        },
+    { "A\"B\"C",    '"',   '\\',   "\"A\\\"B\\\"C\""  },
+    { "A-B-C",      '"',   '\\',   "\"A-B-C\""        },
+    { "A\\B\\C",    '"',   '\\',   "\"A\\\\B\\\\C\""  },
+
+    { "ABC",        '\'',  '\\',   "'ABC'"            },
+    { "'ABC'",      '\'',  '\\',   "'\\'ABC\\''"      },
+    { "\"ABC\"",    '\'',  '\\',   "'\"ABC\"'"        },
+    { "-ABC-",      '\'',  '\\',   "'-ABC-'"          },
+    { "A'B'C",      '\'',  '\\',   "'A\\'B\\'C'"      },
+    { "A\"B\"C",    '\'',  '\\',   "'A\"B\"C'"        },
+    { "A-B-C",      '\'',  '\\',   "'A-B-C'"          },
+    { "A\\B\\C",    '\'',  '\\',   "'A\\\\B\\\\C'"    },
+
+    { "ABC",        '-',   '\\',   "-ABC-"            },
+    { "'ABC'",      '-',   '\\',   "-'ABC'-"          },
+    { "\"ABC\"",    '-',   '\\',   "-\"ABC\"-"        },
+    { "-ABC-",      '-',   '\\',   "-\\-ABC\\--"      },
+    { "A'B'C",      '-',   '\\',   "-A'B'C-"          },
+    { "A\"B\"C",    '-',   '\\',   "-A\"B\"C-"        },
+    { "A-B-C",      '-',   '\\',   "-A\\-B\\-C-"      },
+    { "A\\B\\C",    '-',   '\\',   "-A\\\\B\\\\C-"    },
+
+    // double quoting
+
+    { "ABC",        '"',   '"',    "\"ABC\""          },
+    { "'ABC'",      '"',   '"',    "\"'ABC'\""        },
+    { "\"ABC\"",    '"',   '"',    "\"\"\"ABC\"\"\""  },
+    { "-ABC-",      '"',   '"',    "\"-ABC-\""        },
+    { "A'B'C",      '"',   '"',    "\"A'B'C\""        },
+    { "A\"B\"C",    '"',   '"',    "\"A\"\"B\"\"C\""  },
+    { "A-B-C",      '"',   '"',    "\"A-B-C\""        },
+    { "A\\B\\C",    '"',   '"',    "\"A\\B\\C\""      },
+
+    { "ABC",        '\'',  '\'',   "'ABC'"            },
+    { "'ABC'",      '\'',  '\'',   "'''ABC'''"        },
+    { "\"ABC\"",    '\'',  '\'',   "'\"ABC\"'"        },
+    { "-ABC-",      '\'',  '\'',   "'-ABC-'"          },
+    { "A'B'C",      '\'',  '\'',   "'A''B''C'"        },
+    { "A\"B\"C",    '\'',  '\'',   "'A\"B\"C'"        },
+    { "A-B-C",      '\'',  '\'',   "'A-B-C'"          },
+    { "A\\B\\C",    '\'',  '\'',   "'A\\B\\C'"        },
+
+    { "ABC",        '-',   '-',    "-ABC-"            },
+    { "'ABC'",      '-',   '-',    "-'ABC'-"          },
+    { "\"ABC\"",    '-',   '-',    "-\"ABC\"-"        },
+    { "-ABC-",      '-',   '-',    "---ABC---"        },
+    { "A'B'C",      '-',   '-',    "-A'B'C-"          },
+    { "A\"B\"C",    '-',   '-',    "-A\"B\"C-"        },
+    { "A-B-C",      '-',   '-',    "-A--B--C-"        },
+    { "A\\B\\C",    '-',   '-',   "-A\\B\\C-"         }
+};
+
+BOOST_AUTO_TEST_CASE(s_Quote)
+{
+    const size_t count = sizeof(s_QuoteTests) / sizeof(s_QuoteTests[0]);
+    for (size_t i = 0; i < count; ++i)
+    {
+        const SQuoteTest* test = &s_QuoteTests[i];
+        BOOST_CHECK(NStr::Quote(test->str, test->quote, test->esc).compare(test->result) == 0);
+        BOOST_CHECK(NStr::Unquote(test->result, test->esc).compare(test->str) == 0);
+    }
+    // Matrix test
+    {
+        for (unsigned i1 = 1; i1 < 256; i1++) {
+            for (unsigned i2 = 0; i2 < 256; i2++) {
+                char s[3];
+                s[0] = (char)i1;
+                s[1] = (char)i2;
+                s[2] = '\0';
+                string sq = NStr::Quote(s);
+                string su = NStr::Unquote(sq);
+                BOOST_CHECK_EQUAL(su, CTempString(s));
+            }
+        }
+    }
+}
+
+
+//----------------------------------------------------------------------------
 // NStr::Sanitize()
 //----------------------------------------------------------------------------
 
@@ -2654,39 +2752,39 @@ BOOST_AUTO_TEST_CASE(s_Sanitize)
     for (size_t i = 0;  i < count;  ++i)
     {
         const SSanitizeTest* test = &s_SanitizeTests[i];
-		string out;
+        string out;
 
         out = NStr::Sanitize(test->str, test->flags);
-		BOOST_CHECK_EQUAL(out.compare(test->res_allowed), 0);
+        BOOST_CHECK_EQUAL(out.compare(test->res_allowed), 0);
         if (out.compare(test->res_allowed) != 0) {
-			cout << i << ". A    : " 
-			     << "str = '" << NStr::PrintableString(test->str) << "', "
-			  	 << "res = '" << NStr::PrintableString(out) << "', "
-			  	 << "expected = '" << NStr::PrintableString(test->res_allowed) << "'" << endl;
+            cout << i << ". A    : " 
+                 << "str = '" << NStr::PrintableString(test->str) << "', "
+                 << "res = '" << NStr::PrintableString(out) << "', "
+                 << "expected = '" << NStr::PrintableString(test->res_allowed) << "'" << endl;
         }
         out = NStr::Sanitize(test->str, test->flags | NStr::fSS_Reject);
-		BOOST_CHECK_EQUAL(out.compare(test->res_rejected), 0);
+        BOOST_CHECK_EQUAL(out.compare(test->res_rejected), 0);
         if (out.compare(test->res_rejected) != 0) {
-			cout << i << ". R    : "
-			     << "str = '" << NStr::PrintableString(test->str) << "', "
-				 << "res = '" << NStr::PrintableString(out) << "', "
-				 << "expected = '" << NStr::PrintableString(test->res_rejected) << "'" << endl;
+            cout << i << ". R    : "
+                 << "str = '" << NStr::PrintableString(test->str) << "', "
+                 << "res = '" << NStr::PrintableString(out) << "', "
+                 << "expected = '" << NStr::PrintableString(test->res_rejected) << "'" << endl;
         }
         out = NStr::Sanitize(test->str, test->allow, test->reject, test->replacement, test->flags);
-		BOOST_CHECK_EQUAL(out.compare(test->res_ex_allowed), 0);
+        BOOST_CHECK_EQUAL(out.compare(test->res_ex_allowed), 0);
         if (out.compare(test->res_ex_allowed) != 0) {
-			cout << i << ". A ex : "
-			     << "str = '" << NStr::PrintableString(test->str) << "', "
-				 << "res = '" << NStr::PrintableString(out) << "', "
-				 << "expected = '" << NStr::PrintableString(test->res_ex_allowed) << "'" << endl;
+            cout << i << ". A ex : "
+                 << "str = '" << NStr::PrintableString(test->str) << "', "
+                 << "res = '" << NStr::PrintableString(out) << "', "
+                 << "expected = '" << NStr::PrintableString(test->res_ex_allowed) << "'" << endl;
         }
         out = NStr::Sanitize(test->str, test->allow, test->reject, test->replacement, test->flags | NStr::fSS_Reject);
-		BOOST_CHECK_EQUAL(out.compare(test->res_ex_rejected), 0);
+        BOOST_CHECK_EQUAL(out.compare(test->res_ex_rejected), 0);
         if (out.compare(test->res_ex_rejected) != 0) {
-			cout << i << ". R ex : "
-			     << "str = '" << NStr::PrintableString(test->str) << "', "
-				 << "res = '" << NStr::PrintableString(out) << "', "
-				 << "expected = '" << NStr::PrintableString(test->res_ex_rejected) << "'" << endl;
+            cout << i << ". R ex : "
+                 << "str = '" << NStr::PrintableString(test->str) << "', "
+                 << "res = '" << NStr::PrintableString(out) << "', "
+                 << "expected = '" << NStr::PrintableString(test->res_ex_rejected) << "'" << endl;
         }
     }
 }
