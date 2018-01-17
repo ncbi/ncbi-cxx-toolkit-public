@@ -491,7 +491,9 @@ public:
     void PreprocessIdsForISAMSiLookup();
 
     /// TODO Reserve space for seqids?
-
+    void SetListInfo(const SBlastSeqIdListInfo & list_info) {
+       	m_ListInfo = list_info;
+    }
 
     const SBlastSeqIdListInfo & GetListInfo()
     {
