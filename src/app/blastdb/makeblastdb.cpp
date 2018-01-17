@@ -278,7 +278,7 @@ void CMakeBlastDBApp::Init()
                              CArgDescriptions::eString);
     arg_desc->AddDefaultKey("blastdb_version", "version",
                              "Version of BLAST database to be created",
-                             CArgDescriptions::eInteger, 
+                             CArgDescriptions::eInteger,
                              NStr::NumericToString(static_cast<int>(eBDB_Version4)));
     arg_desc->SetConstraint("blastdb_version",
                             new CArgAllow_Integers(eBDB_Version4, eBDB_Version5));
@@ -948,6 +948,7 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
     vector<CTempString> names;
     SeqDB_SplitQuoted(paths, names);
     vector<string> blastdb;
+    TIdToLeafs leafTaxIds;
 
     ESupportedInputFormats input_fmt = x_GetUserInputTypeHint();
     CMakeBlastDBApp::TFormat build_fmt = x_ConvertToCFormatGuessType(input_fmt);
@@ -984,7 +985,6 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
             }
             final_blastdb.push_back(blastdb[0]);
         } else {
-
             ITERATE(vector<string>, iter, blastdb) {
                 const string & s = *iter;
 
@@ -1002,7 +1002,31 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
         if (final_blastdb.size()) {
             string quoted;
             SeqDB_CombineAndQuote(final_blastdb, quoted);
-            CRef<IRawSequenceSource> raw(new CRawSeqDBSource(quoted, is_protein, m_DB));
+
+            CRef<CSeqDB> indb(new CSeqDB(
+                    quoted,
+                    is_protein ? CSeqDB::eProtein : CSeqDB::eNucleotide
+            ));
+            const int numoids = indb->GetNumOIDs();
+            for (int oid = 0; oid < numoids; ++oid) {
+                CRef<CBlast_def_line_set> hdr = indb->GetHdr(oid);
+                ITERATE(CBlast_def_line_set::Tdata, itr, hdr->Get()) {
+                    CRef<CBlast_def_line> bdl = *itr;
+                    CBlast_def_line::TTaxIds leafs = bdl->GetLeafTaxIds();
+                    if (!leafs.empty()) {
+                        const string id =
+                                bdl->GetSeqid().front()->AsFastaString();
+                        set<int> ids = leafTaxIds[id];
+                        ids.insert(leafs.begin(), leafs.end());
+                        leafTaxIds[id] = ids;
+                    }
+                }
+            }
+
+            m_DB->SetLeafTaxIds(leafTaxIds, true);
+            CRef<IRawSequenceSource> raw(
+                    new CRawSeqDBSource(quoted, is_protein, m_DB)
+            );
             m_DB->AddSequences(*raw);
         } else {
             NCBI_THROW(CInvalidDataException, eInvalidInput,
@@ -1093,7 +1117,7 @@ void CMakeBlastDBApp::x_BuildDatabase()
         long_seqids = (registry.Get("BLAST", "LONG_SEQID") == "1");
     }
 
-    const EBlastDbVersion dbver = 
+    const EBlastDbVersion dbver =
         static_cast<EBlastDbVersion>(args["blastdb_version"].AsInteger());
 
     m_DB.Reset(new CBuildDatabase(dbname,
@@ -1128,7 +1152,7 @@ void CMakeBlastDBApp::x_BuildDatabase()
 
     // Max file size
 
-    Uint8 bytes = NStr::StringToUInt8_DataSize(args["max_file_sz"].AsString());            
+    Uint8 bytes = NStr::StringToUInt8_DataSize(args["max_file_sz"].AsString());
     if (bytes >= (1UL << 32)) {
         NCBI_THROW(CInvalidDataException, eInvalidInput,
                 "max_file_sz must be < 4 GiB");
