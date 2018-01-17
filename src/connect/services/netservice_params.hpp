@@ -193,10 +193,11 @@ private:
 struct NCBI_XCONNECT_EXPORT CSynRegistryBuilder
 {
     CSynRegistryBuilder(const IRegistry& registry);
-    CSynRegistryBuilder(CConfig* config);
+    CSynRegistryBuilder(CConfig* config = nullptr);
     CSynRegistryBuilder(const CNcbiApplication& app);
 
     CSynRegistry::TPtr Get() { return m_Registry; }
+    operator CSynRegistry&() { return *m_Registry; }
 
 private:
     CSynRegistry::TPtr m_Registry;

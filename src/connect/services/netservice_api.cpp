@@ -534,11 +534,9 @@ void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
 
 #endif
 
-void SNetServiceImpl::Init(CObject* api_impl, CSynRegistryBuilder registry_builder, SRegSynonyms sections)
+void SNetServiceImpl::Init(CObject* api_impl, CSynRegistry& registry, SRegSynonyms sections)
 {
     _ASSERT(m_Listener);
-
-    CSynRegistry& registry = *registry_builder.Get();
 
     // Initialize the connect library and LBSM structures
     // used in DiscoverServersIfNeeded().
@@ -1494,7 +1492,8 @@ CNetService g_DiscoverService(const string& service_name,
 
     CNetService service(new SNetServiceImpl("Discovery", service_name, client_name, new SNoOpConnectionListener));
 
-    service->Init(nullptr, nullptr, "discovery");
+    CSynRegistryBuilder registry_builder;
+    service->Init(nullptr, registry_builder, "discovery");
 
     return service;
 }
