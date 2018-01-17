@@ -313,10 +313,9 @@ private:
     }
 
 public:
-    SNetScheduleAPIImpl(CSynRegistryBuilder registry_builder, const string& section);
-
-    SNetScheduleAPIImpl(const string& service_name, const string& client_name,
-        const string& queue_name, bool wn = false, bool try_config = true);
+    SNetScheduleAPIImpl(CSynRegistryBuilder registry_builder, const string& section,
+        const string& service_name = kEmptyStr, const string& client_name = kEmptyStr,
+        const string& queue_name = kEmptyStr, bool wn = false, bool try_config = true);
 
     // Special constructor for CNetScheduleAPI::GetServer().
     SNetScheduleAPIImpl(SNetServerInPool* server, SNetScheduleAPIImpl* parent);
