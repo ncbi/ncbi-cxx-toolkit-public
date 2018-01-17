@@ -570,12 +570,13 @@ void CNetScheduleServerListener::OnInit(CObject* api_impl, CSynRegistry& registr
     SNetScheduleAPIImpl* ns_impl = static_cast<SNetScheduleAPIImpl*>(api_impl);
     _ASSERT(ns_impl);
 
-    SetDiagUserAndHost();
     ns_impl->Init(registry, sections);
 }
 
 void SNetScheduleAPIImpl::Init(CSynRegistry& registry, SRegSynonyms& sections)
 {
+    SetDiagUserAndHost();
+
     if (!m_Queue.empty()) limits::Check<limits::SQueueName>(m_Queue);
 
     const string& user(GetDiagContext().GetUsername());

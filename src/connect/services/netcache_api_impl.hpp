@@ -54,6 +54,8 @@ struct SNetCacheServerProperties : public INetServerProperties
 class NCBI_XCONNECT_EXPORT CNetCacheServerListener : public INetServerConnectionListener
 {
 public:
+    void SetAuthString(const string& auth) { m_Auth = auth; }
+
     TPropCreator GetPropCreator() const override;
     INetServerConnectionListener* Clone() override;
 
@@ -80,6 +82,11 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
 
     // Special constructor for CNetCacheAPI::GetServer().
     SNetCacheAPIImpl(SNetServerInPool* server, SNetCacheAPIImpl* parent);
+
+    CNetCacheServerListener* GetListener()
+    {
+        return static_cast<CNetCacheServerListener*>(m_Service->m_Listener.GetPointer());
+    }
 
     CNetCacheReader* GetPartReader(
         const string& blob_id,
