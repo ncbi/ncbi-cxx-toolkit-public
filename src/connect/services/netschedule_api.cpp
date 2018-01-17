@@ -380,7 +380,7 @@ CTempString s_GetSection(bool ns_conf)
 CNetScheduleConfigLoader::CNetScheduleConfigLoader(CSynRegistry& registry, SRegSynonyms& sections, bool ns_conf) :
     m_Registry(registry), m_Sections(sections), m_NsConf(ns_conf), m_Mode(eImplicit)
 {
-    sections.insert(sections.begin(), s_GetSection(m_NsConf));
+    sections.Insert(s_GetSection(m_NsConf));
 
     const auto param = "load_config_from_ns";
 

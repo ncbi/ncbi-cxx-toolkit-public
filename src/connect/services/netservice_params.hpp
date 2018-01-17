@@ -124,31 +124,15 @@ private:
 
 struct SRegSynonyms : vector<CTempString>
 {
-    using TBase = vector<CTempString>;
+    SRegSynonyms(const char*   s) { Append(s); }
+    SRegSynonyms(const string& s) { Append(s); }
+    SRegSynonyms(initializer_list<SRegSynonyms> src) { for (auto& v : src) for (auto& s : v) Append(s); }
 
-    SRegSynonyms(const char* v) : TBase({v}) {}
-    SRegSynonyms(const string& v) : TBase({v}) {}
-
-    template <typename T>
-    SRegSynonyms(initializer_list<T> l)
-    {
-        for (auto& s : l) {
-            if (NotFound(s)) emplace_back(s);
-        }
-    }
-
-    SRegSynonyms(initializer_list<SRegSynonyms> src)
-    {
-        auto i = back_inserter(*this);
-        auto f = [&](CTempString s) { return NotFound(s); };
-
-        for (auto& s : src) {
-            copy_if(s.begin(), s.end(), i, f);
-        }
-    }
+    void Insert(CTempString s) { if (NotFound(s)) insert(begin(), s); }
 
 private:
-    bool NotFound(CTempString s) const { return find(begin(), end(), s) == end(); }
+    bool NotFound(CTempString s) const { return !s.empty() && find(begin(), end(), s) == end(); }
+    void Append(CTempString s) { if (NotFound(s)) push_back(s); }
 };
 
 class NCBI_XCONNECT_EXPORT CSynRegistry

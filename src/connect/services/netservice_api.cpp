@@ -569,19 +569,6 @@ void SNetServiceImpl::Init(CObject* api_impl, CSynRegistry& registry, SRegSynony
         conn_initer.NoOp();
     }
 
-    // Remove empty sections
-    for (auto it = sections.begin(); it != sections.end(); ) {
-        if (it->empty()) {
-            it = sections.erase(it);
-        } else {
-            ++it;
-        }
-    }
-
-    if (sections.empty()) {
-        NCBI_THROW_FMT(CArgException, eNoValue, "Configuration section was not provided");
-    }
-
     NStr::TruncateSpacesInPlace(m_ServiceName);
 
     // TODO:
