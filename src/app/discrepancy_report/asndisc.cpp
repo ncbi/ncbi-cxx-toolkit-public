@@ -241,10 +241,10 @@ void CDiscRepApp::x_ProcessFile(const string& fname, CDiscrepancySet& tests)
             header = in->ReadFileHeader();
             if (header.empty() && GetArgs()["a"]) {
                 string type = GetArgs()["a"].AsString();
-                if (type == "e") header = "Seq-entry";
-                else if (type == "m") header = "Seq-submit";
-                else if (type == "s") header = "Bioseq-set";
-                else if (type == "b") header = "Bioseq";
+                if (type == "e") header = CSeq_entry::GetTypeInfo()->GetName();
+                else if (type == "m") header = CSeq_submit::GetTypeInfo()->GetName();
+                else if (type == "s") header = CBioseq_set::GetTypeInfo()->GetName();
+                else if (type == "b") header = CBioseq::GetTypeInfo()->GetName();
             }
             if (header == CSeq_submit::GetTypeInfo()->GetName()) {
                 CRef<CSeq_submit> ss(new CSeq_submit);
