@@ -301,6 +301,14 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
     class CTry;
     using IEventHandler = CNetService::IEventHandler;
 
+    static SNetServiceImpl* Create(const string& api_name, const string& service_name, const string& client_name,
+            INetServerConnectionListener* listener,
+            CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections);
+
+    static SNetServiceImpl* Clone(SNetServerInPool* server, SNetServiceImpl* prototype);
+    static SNetServiceImpl* Clone(const string& service_name, SNetServiceImpl* prototype);
+
+private:
     // Construct a new object.
     SNetServiceImpl(const string& api_name, const string& service_name, const string& client_name,
             INetServerConnectionListener* listener);
@@ -314,6 +322,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
 
     void Init(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections);
 
+public:
     string MakeAuthString();
 
     CNetServer::SExecResult FindServerAndExec(const string& cmd,

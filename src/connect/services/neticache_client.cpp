@@ -126,13 +126,13 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl
             const string& service_name,
             const string& client_name,
             const string& cache_name) :
-        SNetCacheAPIImpl(s_NetICacheAPIName, service_name, client_name,
-                new CNetCacheServerListener),
         m_CacheFlags(ICache::fBestPerformance)
     {
         m_DefaultParameters.SetCacheName(cache_name);
         SRegSynonyms sections{ section, "netcache_api", "netcache_client", kNetICacheDriverName };
-        m_Service->Init(this, registry_builder, sections);
+        m_Service = SNetServiceImpl::Create(s_NetICacheAPIName, service_name, client_name,
+                new CNetCacheServerListener,
+                this, registry_builder, sections);
         Init(registry_builder, sections);
     }
 

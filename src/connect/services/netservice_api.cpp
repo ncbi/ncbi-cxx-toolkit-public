@@ -380,6 +380,26 @@ void SNetServiceImpl::Construct()
     }
 }
 
+SNetServiceImpl* SNetServiceImpl::Create(
+        const string& api_name, const string& service_name, const string& client_name,
+        INetServerConnectionListener* listener,
+        CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections)
+{
+    CNetRef<SNetServiceImpl> rv(new SNetServiceImpl(api_name, service_name, client_name, listener));
+    rv->Init(api_impl, registry, sections);
+    return rv.Release();
+}
+
+SNetServiceImpl* SNetServiceImpl::Clone(SNetServerInPool* server, SNetServiceImpl* prototype)
+{
+    return new SNetServiceImpl(server, prototype);
+}
+
+SNetServiceImpl* SNetServiceImpl::Clone(const string& service_name, SNetServiceImpl* prototype)
+{
+    return new SNetServiceImpl(service_name, prototype);
+}
+
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
 void CNetService::AllowXSiteConnections()
 {
@@ -1406,7 +1426,7 @@ CNetService CNetService::Clone(const string& name)
 {
     _ASSERT(m_Impl);
     return name == m_Impl->m_ServiceName ? m_Impl :
-        new SNetServiceImpl(name, m_Impl);
+        SNetServiceImpl::Clone(name, m_Impl);
 }
 
 void CNetService::SetEventHandler(IEventHandler* event_handler)
@@ -1429,7 +1449,7 @@ CNetService SNetServiceMap::GetServiceByNameImpl(const string& service_name,
 
     return !loc.second ? loc.first->second :
             (loc.first->second =
-                    new SNetServiceImpl(service_name, prototype));
+                    SNetServiceImpl::Clone(service_name, prototype));
 }
 
 bool SNetServiceMap::IsAllowed(const string& service_name) const
@@ -1487,13 +1507,11 @@ CNetService g_DiscoverService(const string& service_name,
         void OnWarningImpl(const string&, CNetServer&) override {}
     };
 
-    CNetService service(new SNetServiceImpl("Discovery", service_name, client_name, new SNoOpConnectionListener));
-
     CSynRegistryBuilder registry_builder;
     SRegSynonyms sections("discovery");
-    service->Init(nullptr, registry_builder, sections);
 
-    return service;
+    return SNetServiceImpl::Create("Discovery", service_name, client_name, new SNoOpConnectionListener,
+            nullptr, registry_builder, sections);
 }
 
 void g_AppendClientIPSessionIDHitID(string& cmd, bool use_next_sub_hit_id)

@@ -219,26 +219,24 @@ const char* const kNetCacheAPIDriverName = "netcache_api";
 SNetCacheAPIImpl::SNetCacheAPIImpl(CSynRegistryBuilder registry_builder, const string& section,
         const string& service, const string& client_name,
         CNetScheduleAPI::TInstance ns_api) :
-    m_Service(new SNetServiceImpl("NetCacheAPI", service, client_name,
-        new CNetCacheServerListener)),
     m_NetScheduleAPI(ns_api),
     m_DefaultParameters(eVoid)
 {
     SRegSynonyms sections{ section, kNetCacheAPIDriverName, "netcache_client", "netcache" };
-    m_Service->Init(this, registry_builder, sections);
+    m_Service = SNetServiceImpl::Create("NetCacheAPI", service, client_name,
+            new CNetCacheServerListener,
+            this, registry_builder, sections);
     Init(registry_builder, sections);
 }
 
-SNetCacheAPIImpl::SNetCacheAPIImpl(const string& api_name, const string& service,
-        const string& client_name, INetServerConnectionListener* listener) :
-    m_Service(new SNetServiceImpl(api_name, service, client_name, listener)),
+SNetCacheAPIImpl::SNetCacheAPIImpl() :
     m_DefaultParameters(eVoid)
 {
 }
 
 SNetCacheAPIImpl::SNetCacheAPIImpl(SNetServerInPool* server,
         SNetCacheAPIImpl* parent) :
-    m_Service(new SNetServiceImpl(server, parent->m_Service)),
+    m_Service(SNetServiceImpl::Clone(server, parent->m_Service)),
     m_ServiceMap(parent->m_ServiceMap),
     m_TempDir(parent->m_TempDir),
     m_CacheInput(parent->m_CacheInput),

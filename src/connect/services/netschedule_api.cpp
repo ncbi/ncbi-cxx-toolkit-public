@@ -709,12 +709,12 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(CSynRegistryBuilder registry_builder, c
         const string& queue_name, bool wn, bool try_config) :
     m_Mode(GetMode(wn, try_config)),
     m_SharedData(new SNetScheduleSharedData),
-    m_Service(new SNetServiceImpl("NetScheduleAPI", service_name, client_name,
-                new CNetScheduleServerListener(m_Mode & fNonWnCompatible, m_SharedData))),
     m_Queue(queue_name)
 {
     SRegSynonyms sections{ section, kNetScheduleAPIDriverName };
-    m_Service->Init(this, registry_builder, sections);
+    m_Service = SNetServiceImpl::Create("NetScheduleAPI", service_name, client_name,
+            new CNetScheduleServerListener(m_Mode & fNonWnCompatible, m_SharedData),
+            this, registry_builder, sections);
     Init(registry_builder, sections);
 }
 
@@ -722,7 +722,7 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
         SNetServerInPool* server, SNetScheduleAPIImpl* parent) :
     m_Mode(parent->m_Mode),
     m_SharedData(parent->m_SharedData),
-    m_Service(new SNetServiceImpl(server, parent->m_Service)),
+    m_Service(SNetServiceImpl::Clone(server, parent->m_Service)),
     m_Queue(parent->m_Queue),
     m_ProgramVersion(parent->m_ProgramVersion),
     m_ClientNode(parent->m_ClientNode),

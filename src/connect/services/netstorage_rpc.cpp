@@ -778,18 +778,17 @@ SNetStorageRPC::SNetStorageRPC(const TConfig& config,
     hello.SetString("ProtocolVersion", NST_PROTOCOL_VERSION);
     if (!m_Config.ticket.empty()) hello.SetString("Ticket", m_Config.ticket);
 
-    m_Service = new SNetServiceImpl("NetStorageAPI", m_Config.service, m_Config.client_name,
-            new CNetStorageServerListener(hello, m_Config.err_mode));
-
     CSynRegistryBuilder registry_builder;
     SRegSynonyms sections("netstorage_api");
-    m_Service->Init(this, registry_builder, sections);
+    m_Service = SNetServiceImpl::Create("NetStorageAPI", m_Config.service, m_Config.client_name,
+            new CNetStorageServerListener(hello, m_Config.err_mode),
+            this, registry_builder, sections);
 }
 
 SNetStorageRPC::SNetStorageRPC(SNetServerInPool* server,
         SNetStorageRPC* parent) :
     m_DefaultFlags(parent->m_DefaultFlags),
-    m_Service(new SNetServiceImpl(server, parent->m_Service)),
+    m_Service(SNetServiceImpl::Clone(server, parent->m_Service)),
     m_Config(parent->m_Config),
     m_CompoundIDPool(parent->m_CompoundIDPool),
     m_NetCacheAPI(parent->m_NetCacheAPI),
