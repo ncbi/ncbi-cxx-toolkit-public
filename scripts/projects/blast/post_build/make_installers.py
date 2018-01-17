@@ -9,7 +9,6 @@ from __future__ import print_function
 import os, sys, os.path
 from optparse import OptionParser
 import blast_utils
-import shutil
 
 VERBOSE = False
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -21,11 +20,11 @@ def main(): #IGNORE:R0911
     parser.add_option("-v", "--verbose", action="store_true", default=False,
                       help="Show verbose output", dest="VERBOSE")
     options, args = parser.parse_args()
-    if len(args) != 5:
+    if len(args) != 4:
         parser.error("Incorrect number of arguments")
         return 1
 
-    blast_version, platform, installdir, srctarball, libdir = args
+    blast_version, platform, installdir, srctarball = args
 
     global VERBOSE #IGNORE:W0603
     VERBOSE = options.VERBOSE
@@ -34,7 +33,6 @@ def main(): #IGNORE:R0911
         print("Platform:", platform)
         print("Installation directory:", installdir)
         print("Source tarball:", srctarball)
-        print("Lib directory:", libdir)
 
     if platform.startswith("Win"):
         import glob
