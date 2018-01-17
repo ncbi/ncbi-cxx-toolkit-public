@@ -93,24 +93,6 @@ INetServerConnectionListener* CNetCacheServerListener::Clone()
     return new CNetCacheServerListener(*this);
 }
 
-void CNetCacheServerListener::OnPreInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections, string& client_name)
-{
-    SNetCacheAPIImpl* nc_impl = static_cast<SNetCacheAPIImpl*>(api_impl);
-
-    _ASSERT(nc_impl);
-
-    if (CNetScheduleAPI api = nc_impl->m_NetScheduleAPI) {
-        // Use client name from NetSchedule if it's not provided for NetCache
-        if (client_name.empty()) {
-            client_name = api.GetExecutor().GetClientName();
-        }
-
-        CNetScheduleConfigLoader loader(registry, sections, false);
-
-        loader(api);
-    }
-}
-
 void SNetCacheAPIImpl::Init(CSynRegistry& registry, const SRegSynonyms& sections)
 {
     GetListener()->SetAuthString(m_Service->MakeAuthString());
@@ -223,9 +205,19 @@ SNetCacheAPIImpl::SNetCacheAPIImpl(CSynRegistryBuilder registry_builder, const s
     m_DefaultParameters(eVoid)
 {
     SRegSynonyms sections{ section, kNetCacheAPIDriverName, "netcache_client", "netcache" };
+
+    string ns_client_name;
+
+    if (ns_api) {
+        ns_client_name = ns_api->m_Service->GetClientName();
+
+        CNetScheduleConfigLoader loader(registry_builder, sections, false);
+        loader(ns_api);
+    }
+
     m_Service = SNetServiceImpl::Create("NetCacheAPI", service, client_name,
             new CNetCacheServerListener,
-            this, registry_builder, sections);
+            registry_builder, sections, ns_client_name);
     Init(registry_builder, sections);
 }
 

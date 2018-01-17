@@ -132,7 +132,7 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl
         SRegSynonyms sections{ section, "netcache_api", "netcache_client", kNetICacheDriverName };
         m_Service = SNetServiceImpl::Create(s_NetICacheAPIName, service_name, client_name,
                 new CNetCacheServerListener,
-                this, registry_builder, sections);
+                registry_builder, sections);
         Init(registry_builder, sections);
     }
 

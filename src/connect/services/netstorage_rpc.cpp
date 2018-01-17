@@ -782,7 +782,7 @@ SNetStorageRPC::SNetStorageRPC(const TConfig& config,
     SRegSynonyms sections("netstorage_api");
     m_Service = SNetServiceImpl::Create("NetStorageAPI", m_Config.service, m_Config.client_name,
             new CNetStorageServerListener(hello, m_Config.err_mode),
-            this, registry_builder, sections);
+            registry_builder, sections);
 }
 
 SNetStorageRPC::SNetStorageRPC(SNetServerInPool* server,

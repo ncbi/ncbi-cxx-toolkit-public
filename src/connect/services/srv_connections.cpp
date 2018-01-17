@@ -103,10 +103,6 @@ INetServerConnectionListener::TPropCreator INetServerConnectionListener::GetProp
     return [] { return new INetServerProperties; };
 }
 
-void INetServerConnectionListener::OnPreInit(CObject*, CSynRegistry&, SRegSynonyms&, string&)
-{
-}
-
 void INetServerConnectionListener::OnError(const string& err_msg, CNetServer& server)
 {
     if (m_EventHandler && m_EventHandler->OnError(err_msg)) return;

@@ -403,6 +403,9 @@ bool CNetScheduleConfigLoader::Transform(const string& prefix, string& name) con
         }
     }
 
+    // Do not load client_name from server
+    if (name == "client_name") return false;
+
     // Only params starting with provided prefix are used
     if (NStr::StartsWith(name, prefix)) {
         name.erase(0, prefix.size());
@@ -714,7 +717,7 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(CSynRegistryBuilder registry_builder, c
     SRegSynonyms sections{ section, kNetScheduleAPIDriverName };
     m_Service = SNetServiceImpl::Create("NetScheduleAPI", service_name, client_name,
             new CNetScheduleServerListener(m_Mode & fNonWnCompatible, m_SharedData),
-            this, registry_builder, sections);
+            registry_builder, sections);
     Init(registry_builder, sections);
 }
 

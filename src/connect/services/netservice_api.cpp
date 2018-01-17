@@ -383,10 +383,10 @@ void SNetServiceImpl::Construct()
 SNetServiceImpl* SNetServiceImpl::Create(
         const string& api_name, const string& service_name, const string& client_name,
         INetServerConnectionListener* listener,
-        CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections)
+        CSynRegistry& registry, SRegSynonyms& sections, const string& ns_client_name)
 {
     CNetRef<SNetServiceImpl> rv(new SNetServiceImpl(api_name, service_name, client_name, listener));
-    rv->Init(api_impl, registry, sections);
+    rv->Init(registry, sections, ns_client_name);
     return rv.Release();
 }
 
@@ -554,10 +554,8 @@ void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
 
 #endif
 
-void SNetServiceImpl::Init(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections)
+void SNetServiceImpl::Init(CSynRegistry& registry, SRegSynonyms& sections, const string& ns_client_name)
 {
-    _ASSERT(m_Listener);
-
     // Initialize the connect library and LBSM structures
     // used in DiscoverServersIfNeeded().
     {
@@ -578,7 +576,8 @@ void SNetServiceImpl::Init(CObject* api_impl, CSynRegistry& registry, SRegSynony
     // Do not override explicitly set client name
     if (m_ClientName.empty()) m_ClientName = registry.Get(sections, { "client_name", "client" }, "");
 
-    m_Listener->OnPreInit(api_impl, registry, sections, m_ClientName);
+    // Use client name from NetSchedule API if it's not provided for NetCache API
+    if (m_ClientName.empty()) m_ClientName = ns_client_name;
 
     if (m_ServiceName.empty()) {
         m_ServiceName = registry.Get(sections, { "service", "service_name" }, "");
@@ -1498,7 +1497,7 @@ CNetService g_DiscoverService(const string& service_name,
     SRegSynonyms sections("discovery");
 
     return SNetServiceImpl::Create("Discovery", service_name, client_name, new SNoOpConnectionListener,
-            nullptr, registry_builder, sections);
+            registry_builder, sections);
 }
 
 void g_AppendClientIPSessionIDHitID(string& cmd, bool use_next_sub_hit_id)

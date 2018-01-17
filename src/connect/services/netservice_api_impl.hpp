@@ -303,7 +303,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
 
     static SNetServiceImpl* Create(const string& api_name, const string& service_name, const string& client_name,
             INetServerConnectionListener* listener,
-            CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections);
+            CSynRegistry& registry, SRegSynonyms& sections, const string& ns_client_name = kEmptyStr);
 
     static SNetServiceImpl* Clone(SNetServerInPool* server, SNetServiceImpl* prototype);
     static SNetServiceImpl* Clone(const string& service_name, SNetServiceImpl* prototype);
@@ -320,7 +320,7 @@ private:
     void Construct(SNetServerInPool* server);
     void Construct();
 
-    void Init(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections);
+    void Init(CSynRegistry& registry, SRegSynonyms& sections, const string& ns_client_name);
 
 public:
     string MakeAuthString();
