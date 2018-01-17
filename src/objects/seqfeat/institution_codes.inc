@@ -7138,7 +7138,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UWYMV:Mamm\ts\tUniversity of Wyoming Museum of Vertebrates, Mammal Collection",
 "UWZM\ts\tUniversity of Wisconsin, Zoological Museum\t\t",
 "UYIC\ts\tInstituto de Biologia\t\t",
-"UZ<ESP>\ts\tHerbario de la Universidad de Zaragoza\t\t",
+"UZ\ts\tHerbario de la Universidad de Zaragoza\t\t",
 "UZA\ts\tUnidad de Zoologia Aplicada, Departamento de Ecologia\t\t",
 "UZIU\ts\tUppsala University\t\t",
 "UZL\ts\tUniversity of Zambia, Biological Sciences Department\t\t",

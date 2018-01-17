@@ -7105,7 +7105,7 @@ UWYMV:Herp	s	University of Wyoming Museum of Vertebrates, Herpetology Collection
 UWYMV:Mamm	s	University of Wyoming Museum of Vertebrates, Mammal Collection
 UWZM	s	University of Wisconsin, Zoological Museum		
 UYIC	s	Instituto de Biologia		
-UZ<ESP>	s	Herbario de la Universidad de Zaragoza		
+UZ	s	Herbario de la Universidad de Zaragoza		
 UZA	s	Unidad de Zoologia Aplicada, Departamento de Ecologia		
 UZIU	s	Uppsala University		
 UZL	s	University of Zambia, Biological Sciences Department		
