@@ -198,7 +198,6 @@ public:
     TPropCreator GetPropCreator() const override;
     INetServerConnectionListener* Clone() override;
 
-    void OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections) override;
     void OnConnected(CNetServerConnection& connection) override;
 
 private:

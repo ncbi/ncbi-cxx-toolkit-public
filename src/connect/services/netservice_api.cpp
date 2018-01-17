@@ -609,8 +609,6 @@ void SNetServiceImpl::Init(CObject* api_impl, CSynRegistry& registry, SRegSynony
     m_ServerPool->Init(registry, sections);
 
     Construct();
-
-    m_Listener->OnInit(api_impl, registry, sections);
 }
 
 void SNetServerPoolImpl::Init(CSynRegistry& registry, const SRegSynonyms& sections)
@@ -1482,7 +1480,6 @@ CNetService g_DiscoverService(const string& service_name,
     struct SNoOpConnectionListener : public INetServerConnectionListener
     {
         INetServerConnectionListener* Clone() override { return new SNoOpConnectionListener(*this); }
-        void OnInit(CObject*, CSynRegistry&, SRegSynonyms&) override {}
         void OnConnected(CNetServerConnection&) override {}
 
     private:

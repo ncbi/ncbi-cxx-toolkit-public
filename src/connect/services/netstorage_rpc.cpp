@@ -435,7 +435,6 @@ public:
 
     INetServerConnectionListener* Clone() override;
 
-    void OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections) override;
     void OnConnected(CNetServerConnection& connection) override;
  
 private:
@@ -449,10 +448,6 @@ private:
 INetServerConnectionListener* CNetStorageServerListener::Clone()
 {
     return new CNetStorageServerListener(*this);
-}
-
-void CNetStorageServerListener::OnInit(CObject*, CSynRegistry&, SRegSynonyms&)
-{
 }
 
 void CNetStorageServerListener::OnConnected(

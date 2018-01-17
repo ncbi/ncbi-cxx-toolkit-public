@@ -60,7 +60,6 @@ public:
     INetServerConnectionListener* Clone() override;
 
     void OnPreInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections, string& client_name) override;
-    void OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections) override;
     void OnConnected(CNetServerConnection& connection) override;
 
 private:

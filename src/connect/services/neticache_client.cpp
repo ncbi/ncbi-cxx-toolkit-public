@@ -62,12 +62,6 @@
 
 BEGIN_NCBI_SCOPE
 
-class CNetICacheServerListener : public CNetCacheServerListener
-{
-protected:
-    void OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections) override;
-};
-
 const char* const kNetICacheDriverName = "netcache";
 
 static string s_CheckKeySubkey(
@@ -133,12 +127,13 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl
             const string& client_name,
             const string& cache_name) :
         SNetCacheAPIImpl(s_NetICacheAPIName, service_name, client_name,
-                new CNetICacheServerListener),
+                new CNetCacheServerListener),
         m_CacheFlags(ICache::fBestPerformance)
     {
         m_DefaultParameters.SetCacheName(cache_name);
         SRegSynonyms sections{ section, "netcache_api", "netcache_client", kNetICacheDriverName };
         m_Service->Init(this, registry_builder, sections);
+        Init(registry_builder, sections);
     }
 
     SNetICacheClientImpl(SNetServerInPool* server, SNetICacheClientImpl* parent) :
@@ -181,18 +176,10 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl
     ICache::TFlags m_CacheFlags;
 };
 
-void CNetICacheServerListener::OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections)
-{
-    CNetCacheServerListener::OnInit(api_impl, registry, sections);
-
-    SNetICacheClientImpl* icache_impl =
-        static_cast<SNetICacheClientImpl*>(api_impl);
-
-    icache_impl->Init(registry, sections);
-}
-
 void SNetICacheClientImpl::Init(CSynRegistry& registry, const SRegSynonyms& sections)
 {
+    SNetCacheAPIImpl::Init(registry, sections);
+
     auto cache_name = m_DefaultParameters.GetCacheName();
 
     if (cache_name.empty()) cache_name = registry.Get(sections, { "name", "cache_name" }, "default_cache");

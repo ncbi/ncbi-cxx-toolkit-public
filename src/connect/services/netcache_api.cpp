@@ -111,13 +111,6 @@ void CNetCacheServerListener::OnPreInit(CObject* api_impl, CSynRegistry& registr
     }
 }
 
-void CNetCacheServerListener::OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections)
-{
-    SNetCacheAPIImpl* nc_impl = static_cast<SNetCacheAPIImpl*>(api_impl);
-
-    nc_impl->Init(registry, sections);
-}
-
 void SNetCacheAPIImpl::Init(CSynRegistry& registry, const SRegSynonyms& sections)
 {
     GetListener()->SetAuthString(m_Service->MakeAuthString());
@@ -233,6 +226,7 @@ SNetCacheAPIImpl::SNetCacheAPIImpl(CSynRegistryBuilder registry_builder, const s
 {
     SRegSynonyms sections{ section, kNetCacheAPIDriverName, "netcache_client", "netcache" };
     m_Service->Init(this, registry_builder, sections);
+    Init(registry_builder, sections);
 }
 
 SNetCacheAPIImpl::SNetCacheAPIImpl(const string& api_name, const string& service,

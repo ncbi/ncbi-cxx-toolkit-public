@@ -565,14 +565,6 @@ INetServerConnectionListener* CNetScheduleServerListener::Clone()
     return new CNetScheduleServerListener(*this);
 }
 
-void CNetScheduleServerListener::OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections)
-{
-    SNetScheduleAPIImpl* ns_impl = static_cast<SNetScheduleAPIImpl*>(api_impl);
-    _ASSERT(ns_impl);
-
-    ns_impl->Init(registry, sections);
-}
-
 void SNetScheduleAPIImpl::Init(CSynRegistry& registry, SRegSynonyms& sections)
 {
     SetDiagUserAndHost();
@@ -589,7 +581,7 @@ void SNetScheduleAPIImpl::Init(CSynRegistry& registry, SRegSynonyms& sections)
 
     bool affinities_initialized = false;
 
-    // There are two phases of OnInit in case we need to load config from server
+    // There are two phases of Init in case we need to load config from server
     // 1) Setup as much as possible and try to get config from server
     // 2) Setup everything using received config from server
     do {
@@ -723,6 +715,7 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(CSynRegistryBuilder registry_builder, c
 {
     SRegSynonyms sections{ section, kNetScheduleAPIDriverName };
     m_Service->Init(this, registry_builder, sections);
+    Init(registry_builder, sections);
 }
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(

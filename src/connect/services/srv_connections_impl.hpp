@@ -84,7 +84,6 @@ struct NCBI_XCONNECT_EXPORT INetServerConnectionListener : CObject
 
     // Event handlers.
     virtual void OnPreInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections, string& client_name);
-    virtual void OnInit(CObject* api_impl, CSynRegistry& registry, SRegSynonyms& sections) = 0;
     virtual void OnConnected(CNetServerConnection& connection) = 0;
 
     void OnError(const string& err_msg, CNetServer& server);
