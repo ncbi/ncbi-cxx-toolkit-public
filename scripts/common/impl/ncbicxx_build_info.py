@@ -154,6 +154,9 @@ class Collector(object):
         self.collect_env_info()
         self.collect_build_config(status_dir)
         self.collect_artifact_info(sc_version, status)
+        if self.in_want_list('libs'):
+            self.info['libs'] \
+                = ','.join(self.get_libs_from_log(command_info['target_name']))
 
     def get_as_string(self, name):
         v = self.info[name]
@@ -460,6 +463,31 @@ class Collector(object):
             with mmap.mmap(f.fileno(), 0, access = mmap.ACCESS_READ) as mm:
                 return hashlib.md5(mm).hexdigest()
 
+    def get_libs_from_log(self, project_name):
+        filename = 'make_' + project_name + '.log'
+        if not os.path.exists(filename):
+            warn('Unable to find ' + filename + ' to examine')
+            # Fall back on readelf -d (or otool, on macOS)?
+            return set()
+        last_link_line = ''
+        with open(filename, 'r') as f:
+            for l in f:
+                if l.find(' -l') >= 0:
+                    last_link_line = l
+        return self.get_libs_from_command(last_link_line)
+
+    def get_libs_from_command(self, command):
+        libs = set()
+        for x in command.split():
+            if x.startswith('-l'):
+                x = x[2:]
+                if x.endswith('-dll'):
+                    x = x[:-4]
+                elif x.endswith('-static'):
+                    x = x[:-7]
+                libs.add(x)
+        return libs
+
 
 class CollectorCMake(Collector):
     def collect(self, command, top_src_dir, wanted = ('*',), sc_version = None):
@@ -481,6 +509,8 @@ class CollectorCMake(Collector):
         self.collect_tc_info()
         self.collect_env_info()
         self.collect_artifact_info(sc_version, status)
+        if self.in_want_list('libs'):
+            self.info['libs'] = ','.join(self.get_libs_from_command(command))
 
     def get_target_path(self, target_name, target_type):
         return self.target_fullpath
