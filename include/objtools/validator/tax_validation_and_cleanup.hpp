@@ -296,7 +296,8 @@ public:
     void ReportTaxLookupErrors(const CTaxon3_reply& reply, CValidError_imp& imp, bool is_insd_patent) const;
     bool AdjustOrgRefsWithTaxLookupReply(const CTaxon3_reply& reply, 
                                          vector<CRef<COrg_ref> > org_refs, 
-                                         string& error_message) const;
+                                         string& error_message,
+                                         bool use_error_orgrefs = false) const;
 
     // for specific host validation/replacement
     vector<CRef<COrg_ref> > GetSpecificHostLookupRequest(bool for_fix);

@@ -794,16 +794,27 @@ void CTaxValidationAndCleanup::ReportTaxLookupErrors
 bool CTaxValidationAndCleanup::AdjustOrgRefsWithTaxLookupReply
 ( const CTaxon3_reply& reply, 
  vector<CRef<COrg_ref> > org_refs, 
- string& error_message) const
+ string& error_message,
+ bool use_error_orgrefs) const
 {
     bool changed = false;
     CTaxon3_reply::TReply::const_iterator reply_it = reply.GetReply().begin();
     vector<CRef<COrg_ref> >::iterator org_it = org_refs.begin();
     while (reply_it != reply.GetReply().end() && org_it != org_refs.end()) {
+        CRef<COrg_ref> cpy(NULL);
         if ((*reply_it)->IsData() && 
             (*reply_it)->GetData().IsSetOrg()) {
-            CRef<COrg_ref> cpy(new COrg_ref());
+            cpy.Reset(new COrg_ref());
             cpy->Assign((*reply_it)->GetData().GetOrg());
+        } else if (use_error_orgrefs &&
+            (*reply_it)->IsError() &&
+            (*reply_it)->GetError().IsSetOrg() &&
+            (*reply_it)->GetError().GetOrg().IsSetTaxname() &&
+            !NStr::Equal((*reply_it)->GetError().GetOrg().GetTaxname(), "Not valid")) {
+            cpy.Reset(new COrg_ref());
+            cpy->Assign((*reply_it)->GetError().GetOrg());
+        }
+        if (cpy) {
             cpy->CleanForGenBank();
             if (!cpy->Equals(**org_it)) {
                 (*org_it)->Assign(*cpy);

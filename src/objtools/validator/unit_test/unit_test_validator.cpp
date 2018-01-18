@@ -16680,6 +16680,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureInsideGap)
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "FeatureIsMostlyNs",
+        "Feature contains more than 50% Ns"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -20842,6 +20844,68 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
     // only five of the feats will be updated, because their taxnames cannot be
     // recognized, and only five of the specific hosts are altered.
     BOOST_CHECK_EQUAL(num_updated_feats, 5);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_787)
+{
+    CRef<COrg_ref> org(new COrg_ref());
+
+    org->SetTaxname("Dickeya dadantii subsp. dieffenbachiae");
+    CRef<CDbtag> dbtag(new CDbtag());
+    dbtag->SetDb("taxon");
+    dbtag->SetTag().SetId(204040);
+    org->SetDb().push_back(dbtag);
+    org->SetOrgname().SetName().SetBinomial().SetGenus("Dickeya");
+    org->SetOrgname().SetName().SetBinomial().SetSpecies("dadantii");
+    org->SetOrgname().SetName().SetBinomial().SetSubspecies("dieffenbachiae");
+    org->SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_strain, "PA1")));
+    org->SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_nat_host, "Phalaenopsis sp. (orchid)")));
+    org->SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_sub_species, "dieffenbachiae")));
+    org->SetOrgname().SetLineage("Bacteria; Proteobacteria; Gammaproteobacteria");
+    org->SetOrgname().SetGcode(11);
+    org->SetOrgname().SetDiv("BCT");
+
+    vector<CRef<COrg_ref> > org_rq;
+    org_rq.push_back(org);
+
+    vector<CRef<COrg_ref> > edited_orgs;
+    CRef<COrg_ref> cpy(new COrg_ref());
+    cpy->Assign(*org);
+    edited_orgs.push_back(cpy);
+
+    CTaxValidationAndCleanup tval;
+
+    objects::CTaxon3 taxon3;
+    taxon3.Init();
+
+    CRef<CTaxon3_reply> org_reply = taxon3.SendOrgRefList(org_rq);
+    string error_message;
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithTaxLookupReply(*org_reply, edited_orgs, error_message), true);
+    BOOST_CHECK_EQUAL(cpy->GetTaxname(), "Dickeya sp. PA1");
+
+    org->Reset();
+    org->SetTaxname("Alnus cordata");
+    dbtag->SetTag().SetId(109058);
+    org->SetDb().push_back(dbtag);
+    org->SetOrgname().SetName().SetBinomial().SetGenus("Alnus");
+    org->SetOrgname().SetName().SetBinomial().SetSpecies("cordata");
+    org->SetOrgname().SetAttrib("specified");
+    org->SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_isolate, "AZ12-2")));
+    org->SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_sub_species, "Alnus cordata AZ12-2 chloroplast, complete genome")));
+    org->SetOrgname().SetLineage("Eukaryota; Viridiplantae; Streptophyta; Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons; Gunneridae; Pentapetalae; rosids; fabids; Fagales; Betulaceae; Alnus");
+    org->SetOrgname().SetGcode(1);
+    org->SetOrgname().SetMgcode(1);
+    org->SetOrgname().SetDiv("PLN");
+    org->SetOrgname().SetPgcode(11);
+
+    cpy->Assign(*org);
+
+    org_reply = taxon3.SendOrgRefList(org_rq);
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithTaxLookupReply(*org_reply, edited_orgs, error_message), false);
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithTaxLookupReply(*org_reply, edited_orgs, error_message, true), true);
+    BOOST_CHECK_EQUAL(cpy->GetTaxname(), "Alnus cordata subsp. Alnus cordata AZ12-2 chloroplast, complete genome");
+
 }
 
 
