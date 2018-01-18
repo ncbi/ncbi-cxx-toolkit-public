@@ -149,6 +149,8 @@ public:
     void ValidatemRNAGene (const CSeq_feat &feat);
     bool GetTSACDSOnMinusStrandErrors(const CSeq_feat& feat, const CBioseq& seq);
 
+    static bool IsPlastid(int genome);
+
 private:
 
     CSeq_entry_Handle  m_TSE;
@@ -273,7 +275,6 @@ private:
 
     void x_ValidateGbQual(const CGb_qual& qual, const CSeq_feat& feat);
 
-    static bool IsPlastid(int genome);
     bool IsOverlappingGenePseudo(const CSeq_feat& feat, CScope* scope);
 
     string MapToNTCoords(const CSeq_feat& feat, const CSeq_loc& product,
@@ -335,11 +336,16 @@ protected:
 class CCdregionValidator : public CSingleFeatValidator
 {
 public:
-    CCdregionValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
-        CSingleFeatValidator(feat, scope, imp) {};
+    CCdregionValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp);
+
+    virtual void Validate();
 
 protected:
     virtual void x_ValidateFeatComment();
+    void x_ValidateQuals();
+    void x_ValidateGeneticCode();
+
+    bool m_GeneIsPseudo;
 };
 
 

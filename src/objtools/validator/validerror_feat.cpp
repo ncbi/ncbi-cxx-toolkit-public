@@ -426,7 +426,49 @@ static string s_LegalMobileElementStrings[] = {
 };
 
 
+bool s_HasNamedQual(const CSeq_feat& feat, const string& qual)
+{
+    bool rval = false;
+    if (feat.IsSetQual()) {
+        for (auto it : feat.GetQual()) {
+            if (it->IsSetQual() && NStr::EqualNocase(it->GetQual(), qual)) {
+                rval = true;
+                break;
+            }
+        }
+    }
+    return rval;
+}
+
+
+static bool s_IsPseudo(const CGene_ref& ref)
+{
+    if (ref.IsSetPseudo() && ref.GetPseudo()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+static bool s_IsPseudo(const CSeq_feat& feat)
+{
+    if (feat.IsSetPseudo() && feat.GetPseudo()) {
+        return true;
+    } else if (s_HasNamedQual(feat, "pseudogene")) {
+        return true;
+    } else if (feat.IsSetData() && feat.GetData().IsGene() &&
+        s_IsPseudo(feat.GetData().GetGene())) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 // private member functions:
+
+//#define TEST_LONGTIME
 
 void CValidError_feat::ValidateSeqFeatData
 (const CSeqFeatData& data,
@@ -434,15 +476,18 @@ void CValidError_feat::ValidateSeqFeatData
 {
     switch ( data.Which () ) {
     case CSeqFeatData::e_Gene:
+#ifndef TEST_LONGTIME
         // Validate CGene_ref
         ValidateGene(data.GetGene (), feat);
         ValidateOperon(feat);
         ValidateGeneCdsPair(feat);
+#endif
         break;
     case CSeqFeatData::e_Cdregion:
         // Validate CCdregion
         ValidateCdregion(data.GetCdregion (), feat);
         break;
+#ifndef TEST_LONGTIME
     case CSeqFeatData::e_Prot:
         // Validate CProt_ref
         ValidateProt(data.GetProt (), feat);
@@ -480,14 +525,17 @@ void CValidError_feat::ValidateSeqFeatData
     case CSeqFeatData::e_Clone:
     case CSeqFeatData::e_Variation:
         break;
-
+#endif
     default:
+#ifndef TEST_LONGTIME
         PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidType,
             "Invalid SeqFeat type [" + NStr::IntToString(data.Which()) + "]",
             feat);
+#endif
         break;
     }
 
+#ifndef TEST_LONGTIME
     if ( !data.IsGene() ) {
         ValidateGeneXRef(feat);
 
@@ -501,16 +549,13 @@ void CValidError_feat::ValidateSeqFeatData
             }
         }
         if (!NStr::IsBlank (feat_old_locus_tag)) {
-            bool pseudo = false;
-            if (feat.IsSetPseudo() && feat.GetPseudo()) {
-              pseudo = true;
-            }
+            bool pseudo = s_IsPseudo(feat);
             const CGene_ref* grp = feat.GetGeneXref();
             if ( !grp) {
                 // check overlapping gene
                 CConstRef<CSeq_feat> overlap = m_GeneCache.GetGeneFromCache(&feat, *m_Scope);
                 if ( overlap ) {
-                    if (overlap->IsSetPseudo() && overlap->GetPseudo()) {
+                    if (s_IsPseudo(*overlap)) {
                         pseudo = true;
                     }
                     string gene_old_locus_tag;
@@ -540,7 +585,7 @@ void CValidError_feat::ValidateSeqFeatData
                     }
                 }
             }
-            if (grp && grp->IsSetPseudo() && grp->GetPseudo()) {
+            if (grp && s_IsPseudo(*grp)) {
                 pseudo = true;
             }
             if (grp == 0 || ! grp->IsSetLocus_tag() || NStr::IsBlank (grp->GetLocus_tag())) {
@@ -555,6 +600,7 @@ void CValidError_feat::ValidateSeqFeatData
     if ( !data.IsImp() ) {
         ValidateNonImpFeat (feat);
     }
+#endif
 }
 
 
@@ -871,14 +917,14 @@ bool CValidError_feat::IsPlastid(int genome)
 bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat, CScope *scope)
 {
     const CGene_ref* grp = feat.GetGeneXref();
-    if ( grp  ) {
-        return (grp->CanGetPseudo()  &&  grp->GetPseudo());
+    if ( grp  && s_IsPseudo(*grp)) {
+        return true;
     }
 
     // check overlapping gene
     CConstRef<CSeq_feat> overlap = m_GeneCache.GetGeneFromCache(&feat, *m_Scope);
     if ( overlap ) {
-        return sequence::IsPseudo(*overlap, *scope);
+        return s_IsPseudo(*overlap);
     }
 
     return false;
@@ -1300,33 +1346,6 @@ static bool IsGeneticCodeValid(int gcode)
 }
 
 
-bool s_HasNamedQual(const CSeq_feat& feat, const string& qual)
-{
-    bool rval = false;
-    if (feat.IsSetQual()) {
-        for (auto it : feat.GetQual()) {
-            if (it->IsSetQual() && NStr::EqualNocase(it->GetQual(), qual)) {
-                rval = true;
-                break;
-            }
-        }
-    }
-    return rval;
-}
-
-
-static bool s_IsPseudo(const CSeq_feat& feat)
-{
-    if (feat.CanGetPseudo() && feat.GetPseudo()) {
-        return true;
-    } else if (s_HasNamedQual(feat, "pseudogene")) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
 void CValidError_feat::ValidateCdregion (
     const CCdregion& cdregion, 
     const CSeq_feat& feat
@@ -1337,42 +1356,6 @@ void CValidError_feat::ValidateCdregion (
     bool pseudo = feat_is_pseudo  ||  gene_is_pseudo;
     bool nonsense_intron;
 
-    FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
-        const CGb_qual& qual = **it;
-        if ( qual.CanGetQual() ) {
-            const string& key = qual.GetQual();
-            if ( NStr::EqualNocase(key, "pseudo") ) {
-                pseudo = true;
-            } else if ( NStr::EqualNocase(key, "exception") ) {
-                if ( !feat.IsSetExcept() ) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_ExceptInconsistent,
-                        "Exception flag should be set in coding region", feat);
-                }
-            } else if ( NStr::EqualNocase(key, "codon") ) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_CodonQualifierUsed,
-                    "Use the proper genetic code, if available, "
-                    "or set transl_excepts on specific codons", feat);
-            } else if ( NStr::EqualNocase(key, "protein_id") ) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
-                    "protein_id should not be a gbqual on a CDS feature", feat);
-            } else if ( NStr::EqualNocase(key, "gene_synonym") ) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnCDS,
-                    "gene_synonym should not be a gbqual on a CDS feature", feat);
-            } else if ( NStr::EqualNocase(key, "transcript_id") ) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
-                    "transcript_id should not be a gbqual on a CDS feature", feat);
-            } else if ( NStr::EqualNocase(key, "codon_start") ) {
-                if (cdregion.IsSetFrame() && cdregion.GetFrame() != CCdregion::eFrame_not_set) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
-                        "conflicting codon_start values", feat);
-                } else {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidCodonStart,
-                        "codon_start value should be 1, 2, or 3", feat);
-                }
-            }
-        }
-    }
-
     if ( cdregion.IsSetCode_break()  &&  feat.IsSetExcept_text()  &&
          NStr::FindNoCase(feat.GetExcept_text(), "RNA editing") != NPOS ) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_TranslExceptAndRnaEditing,
@@ -1381,116 +1364,29 @@ void CValidError_feat::ValidateCdregion (
     
     bool conflict = cdregion.CanGetConflict()  &&  cdregion.GetConflict();
     nonsense_intron = false;
+#ifndef TEST_LONGTIME
     if ( !pseudo  &&  !conflict ) {
         ValidateCdTrans(feat, nonsense_intron);
         ValidateSplice(feat);
     } else if ( conflict ) {
         ValidateCdConflict(cdregion, feat);
     }
-    ValidateCdsProductId(feat);
-
-    CBioseq_Handle bsh = x_GetCachedBsh(feat.GetLocation());
-
-    if ( cdregion.IsSetOrf()  &&  cdregion.GetOrf ()  &&
-         feat.IsSetProduct () ) {
-        PostErr (eDiag_Warning, eErr_SEQ_FEAT_OrfCdsHasProduct,
-            "An ORF coding region should not have a product", feat);
-    }
-
-    if ( pseudo ) {
-        if (feat.IsSetProduct () ) {
-            if (feat_is_pseudo) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_PseudoCdsHasProduct,
-                    "A pseudo coding region should not have a product", feat);
-            } else if (gene_is_pseudo) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_PseudoCdsViaGeneHasProduct,
-                    "A coding region overlapped by a pseudogene should not have a product", feat);
-            } else {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_PseudoCdsHasProduct,
-                    "A pseudo coding region should not have a product", feat);
-            }
-        }
-    }
-    
-    int cdsgencode = 0;
-
-    if (cdregion.CanGetCode()) {
-        cdsgencode = cdregion.GetCode().GetId();
-
-        if (!IsGeneticCodeValid(cdsgencode)) {
-            PostErr(eDiag_Error, eErr_SEQ_FEAT_GenCodeInvalid,
-                    "A coding region contains invalid genetic code [" + NStr::IntToString(cdsgencode) + "]", feat);
-        }
-    }
-
-    if (bsh) {
-        // debug
-        string label;
-        (*(bsh.GetCompleteBioseq())).GetLabel(&label, CBioseq::eBoth);
-
-        CSeqdesc_CI diter (bsh, CSeqdesc::e_Source);
-        if ( diter ) {
-            const CBioSource& src = diter->GetSource();
-            int biopgencode = s_GetStrictGenCode(src);
-            
-            if ( biopgencode != cdsgencode 
-                 && (!feat.IsSetExcept()
-                     || !feat.IsSetExcept_text() 
-                     || NStr::Find(feat.GetExcept_text(), "genetic code exception") == string::npos)) {
-                int genome = 0;
-                
-                if ( src.CanGetGenome() ) {
-                    genome = src.GetGenome();
-                }
-                
-                if ( IsPlastid(genome) ) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_GenCodeMismatch,
-                        "Genetic code conflict between CDS (code " +
-                        NStr::IntToString (cdsgencode) +
-                        ") and BioSource.genome biological context (" +
-                        s_PlastidTxt[genome] + ") (uses code 11)", feat);
-                } else {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_GenCodeMismatch,
-                        "Genetic code conflict between CDS (code " +
-                        NStr::IntToString(cdsgencode) +
-                        ") and BioSource (code " +
-                        NStr::IntToString(biopgencode) + ")", feat);
-                }
-            }
-        }
-    }
+#endif
 
     ValidateBadMRNAOverlap(feat);
-    ValidateCommonCDSProduct(feat);
     ValidateFarProducts(feat);
     ValidateCDSPartial(feat);
-
-    if(nonsense_intron == false && !feat.IsSetExcept() &&
-       DoesCDSHaveShortIntrons(feat))
-    {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_ShortIntron,
+    if (!pseudo) {
+        ValidateCdsProductId(feat);
+        ValidateCommonCDSProduct(feat);
+        if (nonsense_intron == false && !feat.IsSetExcept() &&
+            DoesCDSHaveShortIntrons(feat))
+        {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_ShortIntron,
                 "Introns should be at least 10 nt long", feat);
-    }
-
-
-    // look for EC number in comment
-    if (feat.IsSetComment() && HasECnumberPattern(feat.GetComment())) {
-        // suppress if protein has EC numbers
-        bool suppress = false;
-        if (feat.IsSetProduct()) {
-            CBioseq_Handle pbsh = x_GetCachedBsh(feat.GetProduct());
-            if (pbsh) {
-                CFeat_CI prot_feat(pbsh, SAnnotSelector(CSeqFeatData::eSubtype_prot));
-                if (prot_feat && prot_feat->GetData().GetProt().IsSetEc()) {
-                    suppress = true;
-                }
-            }
-        }
-        if (!suppress) {
-            PostErr(eDiag_Info, eErr_SEQ_FEAT_EcNumberInCDSComment,
-                     "Apparent EC number in CDS comment", feat);
         }
     }
+
 }
 
 
@@ -1556,12 +1452,6 @@ void CValidError_feat::ValidateCdsProductId(const CSeq_feat& feat)
 {
     // bail if product exists
     if ( feat.CanGetProduct() ) {
-        return;
-    }
-    // bail if pseudo
-    bool pseudo = s_IsPseudo(feat) ||
-        IsOverlappingGenePseudo(feat, m_Scope);
-    if ( pseudo ) {
         return;
     }
     // bail if location has just stop
@@ -4788,12 +4678,7 @@ void CValidError_feat::x_ReportMisplacedCodingRegionProduct(const CSeq_feat& fea
 // Precondition: feat is a coding region
 void CValidError_feat::ValidateCommonCDSProduct
 (const CSeq_feat& feat)
-{
-    if ( (feat.CanGetPseudo()  &&  feat.GetPseudo())  ||
-          IsOverlappingGenePseudo(feat, m_Scope) ) {
-        return;
-    }
-    
+{    
     if ( !feat.CanGetProduct() ) {
         return;
     }
@@ -4888,8 +4773,7 @@ void CValidError_feat::ValidateCommonCDSProduct
 bool CValidError_feat::DoesCDSHaveShortIntrons(const CSeq_feat& feat)
 {
     if (!feat.IsSetData() || !feat.GetData().IsCdregion() 
-        || !feat.IsSetLocation() 
-        || feat.IsSetPseudo() || IsOverlappingGenePseudo(feat, m_Scope)) {
+        || !feat.IsSetLocation()) {
         return false;
     }
 
@@ -4897,16 +4781,14 @@ bool CValidError_feat::DoesCDSHaveShortIntrons(const CSeq_feat& feat)
     bool found_short = false;
 
     CSeq_loc_CI li(loc);
-    const CSeq_loc& start_loc = li.GetEmbeddingSeq_loc();
 
-    TSeqPos last_start = start_loc.GetStart(eExtreme_Positional);
-    TSeqPos last_stop = start_loc.GetStop(eExtreme_Positional);
+    TSeqPos last_start = li.GetRange().GetFrom();
+    TSeqPos last_stop = li.GetRange().GetTo();
 
     ++li;
     while (li && !found_short) {
-        const CSeq_loc& this_loc = li.GetEmbeddingSeq_loc();
-        TSeqPos this_start = this_loc.GetStart(eExtreme_Positional);
-        TSeqPos this_stop = this_loc.GetStop(eExtreme_Positional);
+        TSeqPos this_start = li.GetRange().GetFrom();
+        TSeqPos this_stop = li.GetRange().GetTo();
         if (abs ((int)this_start - (int)last_stop) < 11 || abs ((int)this_stop - (int)last_start) < 11) {
             found_short = true;
         }
@@ -4960,10 +4842,6 @@ bool CValidError_feat::IsIntronShort(const CSeq_feat& feat)
 
 bool CValidError_feat::x_CDS3primePartialTest (const CSeq_feat& feat)
 {
-    CBioseq_Handle bsh = x_GetCachedBsh(feat.GetLocation());
-    if (!bsh) {
-        return false;
-    }
     CSeq_loc_CI last;
     for ( CSeq_loc_CI sl_iter(feat.GetLocation()); sl_iter; ++sl_iter ) { 
         last = sl_iter;
@@ -4975,6 +4853,10 @@ bool CValidError_feat::x_CDS3primePartialTest (const CSeq_feat& feat)
                 return true;
             }
         } else {
+            CBioseq_Handle bsh = x_GetCachedBsh(feat.GetLocation());
+            if (!bsh) {
+                return false;
+            }
             if (last.GetRange().GetTo() == bsh.GetInst_Length() - 1) {
                 return true;
             }
@@ -4986,14 +4868,14 @@ bool CValidError_feat::x_CDS3primePartialTest (const CSeq_feat& feat)
 
 bool CValidError_feat::x_CDS5primePartialTest (const CSeq_feat& feat)
 {
-    CBioseq_Handle bsh = x_GetCachedBsh(feat.GetLocation());
-    if (!bsh) {
-        return false;
-    }
     CSeq_loc_CI first(feat.GetLocation());
 
     if (first) {
         if (first.GetStrand() == eNa_strand_minus) {
+            CBioseq_Handle bsh = x_GetCachedBsh(feat.GetLocation());
+            if (!bsh) {
+                return false;
+            }
             if (first.GetRange().GetTo() == bsh.GetInst_Length() - 1) {
                 return true;
             }
@@ -8004,6 +7886,17 @@ void CSingleFeatValidator::x_ValidateFeatComment()
 }
 
 
+CCdregionValidator::CCdregionValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
+CSingleFeatValidator(feat, scope, imp) {
+    CConstRef<CSeq_feat> overlap = m_Imp.GetGeneCache().GetGeneFromCache(&feat, m_Scope);
+    if (overlap) {
+        m_GeneIsPseudo = s_IsPseudo(*overlap);
+    } else {
+        m_GeneIsPseudo = false;
+    }
+}
+
+
 void CCdregionValidator::x_ValidateFeatComment()
 {
     if (!m_Feat.IsSetComment()) {
@@ -8031,6 +7924,152 @@ void CCdregionValidator::x_ValidateFeatComment()
                 m_Imp.PostErr(eDiag_Error, eErr_SEQ_FEAT_BadComment,
                     "Feature comment indicates ambiguity in stop codon "
                     "but no ambiguities are present in stop codon.", m_Feat);
+            }
+        }
+    }
+
+    // look for EC number in comment
+    if (HasECnumberPattern(m_Feat.GetComment())) {
+        // suppress if protein has EC numbers
+        bool suppress = false;
+        if (m_ProductBioseq) {
+            CFeat_CI prot_feat(m_ProductBioseq, SAnnotSelector(CSeqFeatData::eSubtype_prot));
+            if (prot_feat && prot_feat->GetData().GetProt().IsSetEc()) {
+                suppress = true;
+            }
+        }
+        if (!suppress) {
+            PostErr(eDiag_Info, eErr_SEQ_FEAT_EcNumberInCDSComment,
+                "Apparent EC number in CDS comment");
+        }
+    }
+
+}
+
+
+void CCdregionValidator::Validate()
+{
+    CSingleFeatValidator::Validate();
+
+    bool feat_is_pseudo = s_IsPseudo(m_Feat);
+    bool pseudo = feat_is_pseudo || m_GeneIsPseudo;
+
+    x_ValidateQuals();
+    x_ValidateGeneticCode();
+
+    const CCdregion& cdregion = m_Feat.GetData().GetCdregion();
+    if (cdregion.IsSetOrf() && cdregion.GetOrf() &&
+        m_Feat.IsSetProduct()) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_OrfCdsHasProduct,
+            "An ORF coding region should not have a product");
+    }
+
+    if (pseudo) {
+        if (m_Feat.IsSetProduct()) {
+            if (feat_is_pseudo) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_PseudoCdsHasProduct,
+                    "A pseudo coding region should not have a product");
+            } else if (m_GeneIsPseudo) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_PseudoCdsViaGeneHasProduct,
+                    "A coding region overlapped by a pseudogene should not have a product");
+            } else {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_PseudoCdsHasProduct,
+                    "A pseudo coding region should not have a product");
+            }
+        }
+    }
+
+}
+
+
+void CCdregionValidator::x_ValidateQuals()
+{
+    bool pseudo = false;
+
+    FOR_EACH_GBQUAL_ON_FEATURE(it, m_Feat) {
+        const CGb_qual& qual = **it;
+        if (qual.CanGetQual()) {
+            const string& key = qual.GetQual();
+            if (NStr::EqualNocase(key, "pseudo")) {
+                pseudo = true;
+            } else if (NStr::EqualNocase(key, "exception")) {
+                if (!m_Feat.IsSetExcept()) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_ExceptInconsistent,
+                        "Exception flag should be set in coding region");
+                }
+            } else if (NStr::EqualNocase(key, "codon")) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_CodonQualifierUsed,
+                    "Use the proper genetic code, if available, "
+                    "or set transl_excepts on specific codons");
+            } else if (NStr::EqualNocase(key, "protein_id")) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
+                    "protein_id should not be a gbqual on a CDS feature");
+            } else if (NStr::EqualNocase(key, "gene_synonym")) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnCDS,
+                    "gene_synonym should not be a gbqual on a CDS feature");
+            } else if (NStr::EqualNocase(key, "transcript_id")) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
+                    "transcript_id should not be a gbqual on a CDS feature");
+            } else if (NStr::EqualNocase(key, "codon_start")) {
+                const CCdregion& cdregion = m_Feat.GetData().GetCdregion();
+                if (cdregion.IsSetFrame() && cdregion.GetFrame() != CCdregion::eFrame_not_set) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
+                        "conflicting codon_start values");
+                } else {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidCodonStart,
+                        "codon_start value should be 1, 2, or 3");
+                }
+            }
+        }
+    }
+}
+
+
+void CCdregionValidator::x_ValidateGeneticCode()
+{
+    if (!m_LocationBioseq) {
+        return;
+    }
+    int cdsgencode = 0;
+
+    const CCdregion& cdregion = m_Feat.GetData().GetCdregion();
+
+    if (cdregion.CanGetCode()) {
+        cdsgencode = cdregion.GetCode().GetId();
+
+        if (!IsGeneticCodeValid(cdsgencode)) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_GenCodeInvalid,
+                "A coding region contains invalid genetic code [" + NStr::IntToString(cdsgencode) + "]");
+        }
+    }
+
+    CSeqdesc_CI diter(m_LocationBioseq, CSeqdesc::e_Source);
+    if (diter) {
+        const CBioSource& src = diter->GetSource();
+        int biopgencode = s_GetStrictGenCode(src);
+
+        if (biopgencode != cdsgencode
+            && (!m_Feat.IsSetExcept()
+            || !m_Feat.IsSetExcept_text()
+            || NStr::Find(m_Feat.GetExcept_text(), "genetic code exception") == string::npos)) {
+            int genome = 0;
+
+            if (src.CanGetGenome()) {
+                genome = src.GetGenome();
+            }
+
+            if (CValidError_feat::IsPlastid(genome)) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GenCodeMismatch,
+                    "Genetic code conflict between CDS (code " +
+                    NStr::IntToString(cdsgencode) +
+                    ") and BioSource.genome biological context (" +
+                    s_PlastidTxt[genome] + ") (uses code 11)");
+            } else {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GenCodeMismatch,
+                    "Genetic code conflict between CDS (code " +
+                    NStr::IntToString(cdsgencode) +
+                    ") and BioSource (code " +
+                    NStr::IntToString(biopgencode) + ")");
             }
         }
     }
