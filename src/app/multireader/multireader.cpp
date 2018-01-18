@@ -1317,7 +1317,7 @@ void CMultiReaderApp::xPostProcessAnnot(
     fte.GenerateMissingParentFeatures(args["euk"].AsBoolean());
     fte.GenerateLocusTags();
     fte.GenerateProteinAndTranscriptIds();
-    fte.InstantiateProducts();
+    //fte.InstantiateProducts();
     fte.EliminateBadQualifiers();
     fte.SubmitFixProducts();
 
