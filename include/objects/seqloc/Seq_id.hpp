@@ -104,13 +104,13 @@ public:
     typedef int TParseFlags; // binary OR of EParseFlags
 
 
-    enum EErrorCode {
-        eNoError            = 0,
-        eEmptyId            = 1, // Id may consists of empty string(s)
-        eInvalidChar        = 1 << 1,
-        eExceedsMaxLength   = 1 << 2
+    enum EErrorFlags {
+        fNoError            = 0,
+        fEmptyId            = 1, // Id may consists of empty string(s)
+        fInvalidChar        = 1 << 1,
+        fExceedsMaxLength   = 1 << 2
     };
-    using TErrorCode = int;
+    using TErrorFlags = int;
 
 
     ///
@@ -517,7 +517,7 @@ public:
     /// Perform rudimentary validation on potential local IDs, whose 
     /// contents should not exceed fifty characters and are limited 
     /// to ASCII characters excluding >[]|\""
-    static TErrorCode CheckLocalID(const CTempString& s);
+    static TErrorFlags CheckLocalID(const CTempString& s);
 
     /// Parse a string representing one or more Seq-ids, appending the
     /// results to IDS.  Multiple IDs must appear in FASTA style.
@@ -610,6 +610,13 @@ public:
     /// Check if the option to avoid GI ids is enabled
     /// (SeqId/AvoidGi or SEQ_ID_AVOID_GI).
     static bool AvoidGi(void);
+
+
+    /// ID length restrictions
+    const static size_t kMaxLocalIDLength    = 50;
+    const static size_t kMaxGeneralDBLength  = 20;
+    const static size_t kMaxGeneralTagLength = 50;
+    const static size_t kMaxAccessionLength  = 19;
 
 private:
     // returns next type if determined along the way

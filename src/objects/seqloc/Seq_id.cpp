@@ -1994,32 +1994,29 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
 
 bool CSeq_id::IsValidLocalID(const CTempString& s)
 {
-    return (eNoError == CheckLocalID(s));
+    return (fNoError == CheckLocalID(s));
 }
 
 
-CSeq_id::TErrorCode 
+CSeq_id::TErrorFlags
 CSeq_id::CheckLocalID(const CTempString& s)
 {
-
-    if (s.empty()) {
-        return eEmptyId;
+    if (NStr::IsBlank(s)) {
+        return fEmptyId;
     }
 
-    TErrorCode error_code = eNoError;
-    if (s.length() > 50) {
-        error_code |= eExceedsMaxLength;
+    TErrorFlags error_flags = fNoError;
+    if (s.length() > kMaxLocalIDLength) {
+        error_flags |= fExceedsMaxLength;
     }
 
     static const char* kIllegal = " >[]|\"";
     CSeq_id_find_pred pred; pred.kSymbols = kIllegal;
     if (find_if(s.begin(), s.end(), pred) != s.end()) {
-        error_code |= eInvalidChar;
+        error_flags |= fInvalidChar;
     }
-    return error_code;
+    return error_flags;
 }
-
-
 
 
 SIZE_TYPE CSeq_id::ParseFastaIds(CBioseq::TId& ids, const CTempString& s,
