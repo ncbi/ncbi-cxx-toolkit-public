@@ -563,14 +563,16 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                 } else if (m_Imp.IsIndexerVersion()) {
                     sev = eDiag_Error;
                 }
-                if (dblen > 20) {
-                    PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General database longer than 20 characters", ctx);
+                static const auto max_dblen = CSeq_id::kMaxGeneralDBLength;
+                if (dblen > max_dblen) {
+                    PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General database longer than " + NStr::NumericToString(max_dblen) + " characters", ctx);
                 }
                 if (! s_IsSkippableDbtag(dbt)) {
                     if (dbt.IsSetTag() && dbt.GetTag().IsStr()) {
                         size_t idlen = dbt.GetTag().GetStr().length();
-                        if (idlen > 64) {
-                            PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General identifier longer than 64 characters", ctx);
+                        static const auto maxlen = CSeq_id::kMaxGeneralTagLength;
+                        if (idlen > maxlen) {
+                            PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General identifier longer than " + NStr::NumericToString(maxlen) + " characters", ctx);
                         }
                     }
                 }
@@ -590,14 +592,14 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
              }
            break;
         case CSeq_id::e_Local:
-            if (id.IsLocal() && id.GetLocal().IsStr() && id.GetLocal().GetStr().length() > 50) {
+            if (id.IsLocal() && id.GetLocal().IsStr() && id.GetLocal().GetStr().length() > CSeq_id::kMaxLocalIDLength) {
                 EDiagSev sev = eDiag_Error;
                 if (! m_Imp.IsINSDInSep()) {
                     sev = eDiag_Critical;
                 } else if (! m_Imp.IsIndexerVersion()) {
                     sev = eDiag_Error;
                 }
-                PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "Local identifier longer than 50 characters", ctx);
+                PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "Local identifier longer than " + NStr::NumericToString(CSeq_id::kMaxLocalIDLength) + " characters", ctx);
             }
             if (id.IsLocal() && id.GetLocal().IsStr()) {
                 const string& acc = id.GetLocal().GetStr();
