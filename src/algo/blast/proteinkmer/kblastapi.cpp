@@ -62,51 +62,34 @@ USING_SCOPE(blast);
 static void 
 s_GetSequencesIntoScope(CRef<CBlastKmerResultsSet> resultSet, CRef<CScope> scope, CRef<CSeqDB> seqdb)
 {
-	int numSearches=resultSet->GetNumQueries();
-	CRef<CSeqDBGiList> seqid_list(new CSeqDBGiList());
-	for (int index=0; index<numSearches; index++)
-	{
-		CBlastKmerResults& results = (*resultSet)[index];
-		TBlastKmerScoreVector scores = results.GetScores();
+        int numSearches=resultSet->GetNumQueries();
+        vector<int> oid_v;
+        for (int index=0; index<numSearches; index++)
+        {
+                CBlastKmerResults& results = (*resultSet)[index];
+                TBlastKmerScoreVector scores = results.GetScores();
+                int oid;
                 for(TBlastKmerScoreVector::const_iterator iter=scores.begin(); iter != scores.end(); ++iter)
                 {
-                      	CRef<CSeq_id> sid = (*iter).first;
+                        CRef<CSeq_id> sid = (*iter).first;
 			if (sid->IsGi())
-				seqid_list->AddGi(sid->GetGi());
+				seqdb->GiToOid(sid->GetGi(), oid);
 			else
-                       		seqid_list->AddSi(sid->GetSeqIdString());
+                        	seqdb->SeqidToOid(*sid, oid);
+                        oid_v.push_back(oid);
                 }
-	}
-	int totalSi=seqid_list->GetNumSis();
-	int totalGi=seqid_list->GetNumGis();
-	int total=totalSi+totalGi;
-        if (total <= 0) // Nothing to be loaded.
+        }
+        if (oid_v.size() == 0) // Nothing to be loaded.
                 return;
-
-	// This CSeqDB is just for the lookups of IDs.
-	CRef<CSeqDB> privseqdb(new CSeqDB(seqdb->GetDBNameList(), CSeqDB::eProtein, seqid_list));
-
-	vector<int> oid_v;
-        oid_v.reserve(total);
-        for (int index=0; index<totalSi; index++)
-        {
-                const CSeqDBGiList::SSiOid& sOid = seqid_list->GetSiOid(index);
-                oid_v.push_back(sOid.oid);
-        }
-        for (int index=0; index<totalGi; index++)
-        {
-                const CSeqDBGiList::SGiOid& gOid = seqid_list->GetGiOid(index);
-                oid_v.push_back(gOid.oid);
-        }
 
         sort(oid_v.begin(), oid_v.end());
 
         for(vector<int>::iterator iter=oid_v.begin(); iter!=oid_v.end(); ++iter)
         {
-                CRef<CBioseq> bioseq = privseqdb->GetBioseq(*iter);
+                CRef<CBioseq> bioseq = seqdb->GetBioseq(*iter);
                 scope->AddBioseq(*bioseq);
         }
-	return;
+        return;
 }
 
 void s_AddNewResultSet(CRef<CSearchResultSet> resultSet, CRef<CSearchResultSet> myResultSet)
