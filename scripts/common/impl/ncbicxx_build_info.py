@@ -474,11 +474,11 @@ class Collector(object):
             for l in f:
                 if l.find(' -l') >= 0:
                     last_link_line = l
-        return self.get_libs_from_command(last_link_line)
+        return self.get_libs_from_command(last_link_line.split())
 
     def get_libs_from_command(self, command):
         libs = set()
-        for x in command.split():
+        for x in command:
             if x.startswith('-l'):
                 x = x[2:]
                 if x.endswith('-dll'):
