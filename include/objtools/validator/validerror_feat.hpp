@@ -215,8 +215,6 @@ private:
     void ValidateBadMRNAOverlap(const CSeq_feat& feat);
     bool x_CDSHasGoodParent(const CSeq_feat& feat);
     void ValidateCDSPartial(const CSeq_feat& feat);
-    bool x_ValidateCodeBreakNotOnCodon(const CSeq_feat& feat,const CSeq_loc& loc,
-        const CCdregion& cdregion, bool report_erros);
 
     void x_ValidateCdregionCodebreak(const CSeq_feat& feat);
 
