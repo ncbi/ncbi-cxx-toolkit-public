@@ -1654,7 +1654,7 @@ x_with_list="\
 debug max-debug symbols optimization sse42 profiling code-coverage \
 tcheck dll static static-exe \
 plugin-auto-load bundles bin-release mt 64 exe runpath hard-runpath \
-lfs limited-linker openmp \
+lfs limited-linker skew-guard openmp \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
@@ -1899,6 +1899,7 @@ Optional Packages:
  --with-lfs              enable large file support to the extent possible
  --with-limited-linker   don't attempt to build especially large projects
  --with-experimental=... enable named experimental feature(s)
+ --with-skew-guard       catch incomplete rebuilds
  --with-extra-action=    script to call after the configuration is complete
  --with-autodep          automatic generation of dependencies (GNU make)
  --with-build-root=DIR   specify a non-default build directory name
@@ -3207,6 +3208,12 @@ fi
 # Check whether --with-experimental was given.
 if test "${with_experimental+set}" = set; then
   withval=$with_experimental;
+fi
+
+
+# Check whether --with-skew-guard was given.
+if test "${with_skew_guard+set}" = set; then
+  withval=$with_skew_guard;
 fi
 
 
@@ -51113,6 +51120,14 @@ esac
 
 if test "${with_limited_linker}" = "yes"; then
              WithFeatures="$WithFeatures${WithFeaturesSep}LimitedLinker"; WithFeaturesSep=" "
+fi
+
+if test "${with_skew_guard-$with_ncbi_public}" = "yes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_NCBI_SKEW_GUARD 1
+_ACEOF
+
 fi
 
 FEATURES="$WithFeatures $WithPackages $WithProjects"

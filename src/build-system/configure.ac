@@ -168,6 +168,8 @@ AC_ARG_WITH(limited-linker,
    [ --with-limited-linker   don't attempt to build especially large projects])
 AC_ARG_WITH(experimental,
    [ --with-experimental=... enable named experimental feature(s)])
+AC_ARG_WITH(skew-guard,
+   [ --with-skew-guard       catch incomplete rebuilds])
 
 ## Scripts, make features, and directory naming
 AC_ARG_WITH(extra-action,
@@ -587,7 +589,7 @@ x_with_list="\
 debug max-debug symbols optimization sse42 profiling code-coverage \
 tcheck dll static static-exe \
 plugin-auto-load bundles bin-release mt 64 exe runpath hard-runpath \
-lfs limited-linker openmp \
+lfs limited-linker skew-guard openmp \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
@@ -8285,6 +8287,11 @@ esac
 
 if test "${with_limited_linker}" = "yes"; then
    NCBI_FEATURE(LimitedLinker)
+fi
+
+if test "${with_skew_guard-$with_ncbi_public}" = "yes"; then
+    AC_DEFINE(HAVE_NCBI_SKEW_GUARD, 1,
+       [Define to 1 to catch incomplete rebuilds.])
 fi
 
 FEATURES="$WithFeatures $WithPackages $WithProjects"
