@@ -135,6 +135,18 @@ private:
 
     static bool x_ExceedsMaxLength(const string& title, 
         TSeqPos max_length);
+
+    static void x_CheckIDLength(
+        const CSeq_id& seq_id,
+        const int line_number,
+        ILineErrorListener* pMessageListener);
+
+    static void x_PostIDLengthError(const size_t id_length,
+        const string& type_string,
+        const size_t max_length,
+        const int line_number,
+        ILineErrorListener* pMessageListener);
+
 };
 
 

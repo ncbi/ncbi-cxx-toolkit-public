@@ -36,6 +36,7 @@
 #include <corelib/ncbidiag.hpp>
 #include <objtools/error_codes.hpp>
 #include <objtools/readers/fasta.hpp>
+#include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objtools/readers/fasta_reader_utils.hpp>
 
@@ -240,32 +241,89 @@ TSeqPos CFastaDeflineReader::ParseRange(
 }
 
 
+
+void CFastaDeflineReader::x_PostIDLengthError(const size_t id_length,
+                                             const string& type_string,
+                                             const size_t max_length,
+                                             const int line_number,
+                                             ILineErrorListener* pMessageListener)
+
+{
+    const string& err_message =
+        "CFastaReader: Near line " + NStr::NumericToString(line_number) +
+        + ", the " + type_string + " is too long.  Its length is " + NStr::NumericToString(id_length)
+        + " but the maximum allowed " + type_string + " length is "+  NStr::NumericToString(max_length)
+        + ".  Please find and correct all " + type_string + "s that are too long.";
+
+    x_PostError(pMessageListener, 
+        line_number,
+        err_message,
+        CObjReaderParseException::eIDTooLong);
+}
+
+
+
+void CFastaDeflineReader::x_CheckIDLength(
+        const CSeq_id& seq_id, 
+        const int line_number,
+        ILineErrorListener* pMessageListener)
+{
+
+    if (seq_id.IsLocal()) {
+        if (seq_id.GetLocal().IsStr() &&
+            seq_id.GetLocal().GetStr().length() > CSeq_id::kMaxLocalIDLength) {
+            x_PostIDLengthError(seq_id.GetLocal().GetStr().length(),
+                                "local id",
+                                CSeq_id::kMaxLocalIDLength,
+                                line_number,
+                                pMessageListener);
+        }
+        return;
+    }
+
+
+    if (seq_id.IsGeneral()) {
+        if (seq_id.GetGeneral().IsSetTag() &&
+            seq_id.GetGeneral().GetTag().IsStr()) {
+            const auto length = seq_id.GetGeneral().GetTag().GetStr().length();
+            if (length > CSeq_id::kMaxGeneralTagLength) {
+                x_PostIDLengthError(length,
+                                    "general id string",
+                                    CSeq_id::kMaxGeneralTagLength,
+                                    line_number,
+                                    pMessageListener);
+            }
+        }
+        return;
+    }
+
+
+   auto pTextId = seq_id.GetTextseq_Id();
+   if (pTextId &&
+       pTextId->IsSetAccession()) {
+        const auto length = pTextId->GetAccession().length();
+        if (length > CSeq_id::kMaxAccessionLength) {
+            x_PostIDLengthError(length,
+                                "accession",
+                                CSeq_id::kMaxAccessionLength,
+                                line_number,
+                                pMessageListener);
+        }
+   }
+}
+        
+
+
 void CFastaDeflineReader::x_ProcessIDs(
     const string& id_string,
     const SDeflineParseInfo& info,
     list<CRef<CSeq_id>>& ids,
     ILineErrorListener* pMessageListener)
 {
-
-
     x_CheckForExcessiveSeqDataInID(
             id_string,
             info,
             pMessageListener);
-
-    if (x_ExceedsMaxLength(id_string, info.maxIdLength)) {
-        const string err_message =
-            "CFastaReader: Near line " + NStr::NumericToString(info.lineNumber)
-            + ", the sequence ID is too long.  Its length is " + NStr::NumericToString(id_string.length())
-            + " but the max length allowed is "+  NStr::NumericToString(info.maxIdLength)
-            + ".  Please find and correct all sequence IDs that are too long.";
-        
-        x_PostError(pMessageListener, 
-            info.lineNumber,
-            err_message,
-            CObjReaderParseException::eIDTooLong);
-    }
-
 
     if (info.fBaseFlags & CReaderBase::fAllIdsAsLocal) 
     {
@@ -273,9 +331,12 @@ void CFastaDeflineReader::x_ProcessIDs(
             NCBI_THROW2(CObjReaderParseException, eFormat, 
                 "'" + id_string + "' is not a valid local ID", 0);
         }
-        ids.push_back(Ref(new CSeq_id(CSeq_id::e_Local, id_string)));
+        CRef<CSeq_id> pSeqId(new CSeq_id(CSeq_id::e_Local, id_string));
+        x_CheckIDLength(*pSeqId, info.lineNumber, pMessageListener);
+        ids.push_back(pSeqId);
         return;
     }
+
 
     CSeq_id::TParseFlags flags = 
         CSeq_id::fParse_PartialOK |
@@ -303,6 +364,7 @@ void CFastaDeflineReader::x_ProcessIDs(
     }
 
     CSeq_id::ParseIDs(ids, local_id_string, flags);
+
     ids.remove_if([](CRef<CSeq_id> id_ref){ return NStr::IsBlank(id_ref->GetSeqIdString()); });
     if (ids.empty()) {
         NCBI_THROW2(CObjReaderParseException, eNoIDs,
@@ -314,15 +376,14 @@ void CFastaDeflineReader::x_ProcessIDs(
         x_ConvertNumericToLocal(ids);
     }
 
-    for (const auto& id : ids) {
-        if (id->IsLocal() &&
-            !x_IsValidLocalID(*id, info.fFastaFlags)) {
+    for (const auto& pId : ids) {
+        if (pId->IsLocal() &&
+            !x_IsValidLocalID(*pId, info.fFastaFlags)) {
             NCBI_THROW2(CObjReaderParseException, eInvalidID, 
-             "'" + id->GetLocal().GetStr() + "' is not a valid local ID", 0);
+             "'" + pId->GetLocal().GetStr() + "' is not a valid local ID", 0);
         }
+        x_CheckIDLength(*pId, info.lineNumber, pMessageListener);
     }
-
-
 }
 
 
@@ -438,13 +499,7 @@ bool CFastaDeflineReader::x_IsValidLocalID(const string& id_string,
                                     id_string.substr(0,1) :
                                     id_string;
 
-    return (CSeq_id::CheckLocalID(string_to_check) != CSeq_id::eInvalidChar);
-/*
-    if ( fasta_flags & CFastaReader::fQuickIDCheck) { // check only the first character
-        return CSeq_id::IsValidLocalID(id_string.substr(0,1));
-    }
-    return CSeq_id::IsValidLocalID(id_string);
-    */
+    return (CSeq_id::CheckLocalID(string_to_check)^CSeq_id::fInvalidChar);
 }
 
 
