@@ -320,12 +320,19 @@ private:
 
 #undef CHECKME_VALIDATE
 
-
-
 /////////////////////////////////////////////////////////////////////////////
 
 END_NCBI_SCOPE
 
+#ifdef HAVE_NCBI_SKEW_GUARD
+#include <common/ncbi_source_ver.h>
+#define     NAME_NCBI_LIBRARY_VERSION_MISMATCH(a)           Ncbi_library_version_mismatch__Full_rebuild_to_fix_##a
+#define MAKENAME_NCBI_LIBRARY_VERSION_MISMATCH(a)      NAME_NCBI_LIBRARY_VERSION_MISMATCH(a)
+#define    CHECK_NCBI_LIBRARY_VERSION_MISMATCH     MAKENAME_NCBI_LIBRARY_VERSION_MISMATCH(NCBI_DEVELOPMENT_VER)
+
+NCBI_XNCBI_EXPORT int CHECK_NCBI_LIBRARY_VERSION_MISMATCH(void);
+static int s__check_ncbi_library_version_mismatch = CHECK_NCBI_LIBRARY_VERSION_MISMATCH();
+#endif
 
 /* @} */
 

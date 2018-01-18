@@ -36,6 +36,14 @@
 #include "ncbidbg_p.hpp"
 
 
+#ifdef HAVE_NCBI_SKEW_GUARD
+int CHECK_NCBI_LIBRARY_VERSION_MISMATCH(void)
+{
+    static int v;
+    return ++v;
+}
+#endif
+
 BEGIN_NCBI_SCOPE
 
 
