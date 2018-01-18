@@ -1050,7 +1050,7 @@ CSeqDBVol::x_GetTaxonomy(int                    oid,
 
 {
     const bool provide_new_taxonomy_info = true;
-    const bool use_taxinfo_cache         = true;
+    const bool use_taxinfo_cache         = (CThread::GetSelf() == 0 ? true : false);
 
     const char * TAX_ORGREF_DB_NAME = "taxon";
 
@@ -1826,9 +1826,10 @@ CSeqDBVol::x_GetFilteredHeader(int                    oid,
 
     //m_Atlas.Lock(locked);
 
+    const bool useCache = (CThread::GetSelf() == 0 ? true : false);
     TDeflineCacheItem & cached = m_DeflineCache.Lookup(oid);
 
-    if (cached.first.NotEmpty()) {
+    if (useCache && cached.first.NotEmpty()) {
         if (changed) {
             *changed = cached.second;
         }
@@ -1905,12 +1906,15 @@ CSeqDBVol::x_GetFilteredHeader(int                    oid,
         }
     }
 
-    if (asn_changed) {
-        cached.first = BDLS;
-        cached.second = asn_changed;
-    } else {
-        cached.first = BDLS;
-        cached.second = asn_changed;
+    if (useCache)
+    {
+    	if (asn_changed) {
+       	 cached.first = BDLS;
+       	 cached.second = asn_changed;
+    	} else {
+       	 cached.first = BDLS;
+       	 cached.second = asn_changed;
+    	}
     }
 
     return BDLS;

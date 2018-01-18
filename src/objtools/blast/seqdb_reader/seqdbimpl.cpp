@@ -609,6 +609,7 @@ CSeqDBImpl::GetBioseq(int oid, TGi target_gi, const CSeq_id * target_seq_id, boo
     if (! m_OidListSetup) {
         x_GetOidList(locked);
     }
+    m_Atlas.Unlock(locked);
 
     if (CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetBioseq(vol_oid,
@@ -808,6 +809,7 @@ list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(int oid)
     if (! m_OidListSetup) {
         x_GetOidList(locked);
     }
+    m_Atlas.Unlock(locked);
 
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetSeqIDs(vol_oid);
@@ -899,6 +901,7 @@ TGi CSeqDBImpl::x_GetSeqGI(int oid, CSeqDBLockHold & locked)
     if (! m_OidListSetup) {
         x_GetOidList(locked);
     }
+    m_Atlas.Unlock(locked);
 
     int vol_oid = 0;
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
@@ -1059,6 +1062,7 @@ CSeqDBImpl::x_GetHdr(int oid, CSeqDBLockHold & locked)
     if (! m_OidListSetup) {
         x_GetOidList(locked);
     }
+    m_Atlas.Unlock(locked);
 
     int vol_oid = 0;
 
