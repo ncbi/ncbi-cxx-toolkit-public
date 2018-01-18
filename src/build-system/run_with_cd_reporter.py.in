@@ -19,7 +19,7 @@ wanted      = frozenset(('name', 'type', 'contact', 'start_time', 'end_time',
 cmake_ver = '@CMAKE_VERSION@'
 ## XXX - favor the real PyYAML installation accompanying cd_reporter?
 sys.path.append(scriptdir + '/common/impl')
-if cmake_ver:
+if cmake_ver and not cmake_ver.startswith('@'):
     from ncbicxx_build_info import CollectorCMake
 else:
     from ncbicxx_build_info import Collector
@@ -30,7 +30,7 @@ else:
 #     from yaml import Dumper
 
 pid = os.getpid()
-if cmake_ver:
+if cmake_ver and not cmake_ver.startswith('@'):
     collector = CollectorCMake()
     collector.collect(sys.argv[1:], '@top_src_dir@', wanted, @NCBI_SC_VERSION@)
     pass
