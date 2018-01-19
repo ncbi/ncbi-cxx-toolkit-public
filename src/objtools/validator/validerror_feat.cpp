@@ -463,7 +463,7 @@ static bool s_IsPseudo(const CSeq_feat& feat)
 
 // private member functions:
 
-#define TEST_LONGTIME
+//#define TEST_LONGTIME
 
 void CValidError_feat::ValidateSeqFeatData
 (const CSeqFeatData& data,
