@@ -159,23 +159,6 @@ private:
 
     CBioseq_Handle x_GetCachedBsh(const CSeq_loc& loc);
 
-    void x_ValidateSeqFeatLoc(const CSeq_feat& feat);
-
-    typedef enum {
-        eLocationGapNoProblems = 0,
-        eLocationGapFeatureMatchesGap = 1,
-        eLocationGapContainedInGap = 4,
-        eLocationGapContainedInGapOfNs = 8,
-        eLocationGapInternalIntervalEndpointInGap = 16,
-        eLocationGapCrossesUnknownGap = 32,
-        eLocationGapMostlyNs = 64
-
-    } ELocationGap;
-
-    static size_t x_CalculateLocationGaps(CBioseq_Handle bsh, const CSeq_loc& loc, vector<TSeqPos>& gap_starts);
-    static bool x_IsMostlyNs(const CSeq_loc& loc, CBioseq_Handle bsh);
-
-    static size_t x_FindStartOfGap (CBioseq_Handle bsh, int pos, CScope* scope);
     void ValidateSeqFeatData(const CSeqFeatData& data, const CSeq_feat& feat);
     void ValidateSeqFeatProduct(const CSeq_loc& prod, const CSeq_feat& feat, CBioseq_Handle prot);
     void ValidateGene(const CGene_ref& gene, const CSeq_feat& feat);
@@ -329,6 +312,27 @@ protected:
 
     bool x_HasNamedQual(const string& qual_name);
 
+    void x_ValidateFeatPartialness();
+    virtual void x_ValidateSeqFeatLoc();
+
+    typedef enum {
+        eLocationGapNoProblems = 0,
+        eLocationGapFeatureMatchesGap = 1,
+        eLocationGapContainedInGap = 4,
+        eLocationGapContainedInGapOfNs = 8,
+        eLocationGapInternalIntervalEndpointInGap = 16,
+        eLocationGapCrossesUnknownGap = 32,
+        eLocationGapMostlyNs = 64
+
+    } ELocationGap;
+
+    static size_t x_CalculateLocationGaps(CBioseq_Handle bsh, const CSeq_loc& loc, vector<TSeqPos>& gap_starts);
+    static bool x_IsMostlyNs(const CSeq_loc& loc, CBioseq_Handle bsh);
+    static size_t x_FindStartOfGap(CBioseq_Handle bsh, int pos, CScope* scope);
+
+    CBioseq_Handle x_GetFeatureProduct(bool look_far, bool& is_far);
+    CBioseq_Handle x_GetFeatureProduct(bool& is_far);
+
 };
 
 class CCdregionValidator : public CSingleFeatValidator
@@ -343,6 +347,7 @@ protected:
     void x_ValidateQuals();
     void x_ValidateGeneticCode();
 
+    virtual void x_ValidateSeqFeatLoc();
     bool m_GeneIsPseudo;
 };
 
