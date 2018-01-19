@@ -106,30 +106,38 @@ bool CStringConstraint::DoesTextMatch (const string& text)
         NStr::ToLower(tmp);
     }
     
-    vector<string> tokens;
-    if (m_MatchType == eMatchType_Equals)
-        tokens.push_back(match);
-    else
-        NStr::Split(match, ",; ", tokens);
-    ITERATE(vector<string>, it, tokens) {
-        switch (m_MatchType) {
+    switch (m_MatchType) {
         case eMatchType_Contains: 
-            rval |= (NStr::Find(tmp, *it) != string::npos);
+            if (NStr::Find(tmp, match) != string::npos) {
+                rval = true;
+            }
             break;
         case eMatchType_Equals:
-            rval |= NStr::Equal(tmp, *it);
+            if (NStr::Equal(tmp, match)) {
+                rval = true;
+            }
             break;
         case eMatchType_StartsWith:
-            rval |= NStr::StartsWith(tmp, *it);
+            if (NStr::StartsWith(tmp, match)) {
+                rval = true;
+            }
             break;
         case eMatchType_EndsWith:
-            rval |= NStr::EndsWith(tmp, *it);
+            if (NStr::EndsWith(tmp, match)) {
+                rval = true;
+            }
             break;
         case eMatchType_IsOneOf:
-            rval |= (IsInRange(*it, tmp) || NStr::Equal(*it, tmp));
-            break;
-        }
-        if (rval)
+            {
+                vector<string> tokens;
+                NStr::Split(match, ",; ", tokens);
+                ITERATE(vector<string>, it, tokens) {
+                    if (IsInRange(*it, tmp) || NStr::Equal(*it, tmp)) {
+                        rval = true;
+                        break;
+                    }
+                }
+            }
             break;
     }
     if (m_NotPresent) {
