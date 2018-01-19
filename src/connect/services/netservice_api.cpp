@@ -62,17 +62,17 @@ BEGIN_NCBI_SCOPE
 // The purpose of this class is to execute commands suppressing possible errors and avoiding retries
 class SNetServiceImpl::CTry
 {
-    struct SHandler : public IEventHandler
-    {
-        bool OnError(const string&) override { return true; }
-    };
-
 public:
     CTry(SNetServiceImpl* service) :
         m_Service(service)
     {
         _ASSERT(m_Service);
-        Swap(new SHandler);
+
+        auto error_handler = [](const string&, CNetServer) {
+            return true;
+        };
+
+        Swap(error_handler);
     }
 
     ~CTry()
@@ -81,9 +81,9 @@ public:
     }
 
 private:
-    void Swap(IEventHandler* handler)
+    void Swap(CNetService::TEventHandler error_handler)
     {
-        m_Service->m_Listener->SetEventHandler(handler);
+        m_Service->m_Listener->SetErrorHandler(error_handler);
         swap(m_MaxRetries, m_Service->m_ConnectionMaxRetries);
     }
 
@@ -1415,9 +1415,14 @@ CNetService CNetService::Clone(const string& name)
         SNetServiceImpl::Clone(name, m_Impl);
 }
 
-void CNetService::SetEventHandler(IEventHandler* event_handler)
+void CNetService::SetErrorHandler(TEventHandler error_handler)
 {
-    m_Impl->m_Listener->SetEventHandler(event_handler);
+    m_Impl->m_Listener->SetErrorHandler(error_handler);
+}
+
+void CNetService::SetWarningHandler(TEventHandler warning_handler)
+{
+    m_Impl->m_Listener->SetWarningHandler(warning_handler);
 }
 
 CNetService SNetServiceMap::GetServiceByName(const string& service_name,

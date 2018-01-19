@@ -101,7 +101,11 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
     if (m_AdminMode)
         m_NetScheduleAPI.SetClientType(CNetScheduleAPI::eCT_Admin);
 
-    m_NetScheduleAPI.GetService().SetEventHandler(new CNetScheduleWarningLogger(this));
+    auto warning_handler = [&](const string& m, CNetServer s) {
+        return OnWarning(m_APIClass != eWorkerNodeAdmin, m, s);
+    };
+
+    m_NetScheduleAPI.GetService().SetWarningHandler(warning_handler);
 
     if (IsOptionSet(eCompatMode)) {
         m_NetScheduleAPI.UseOldStyleAuth();

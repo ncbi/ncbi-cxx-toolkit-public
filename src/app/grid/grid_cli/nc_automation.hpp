@@ -45,23 +45,6 @@ struct SNetCacheService : public SNetService
 {
     using TSelf = SNetCacheService;
 
-    class CEventHandler : public CNetService::IEventHandler
-    {
-    public:
-        CEventHandler(CAutomationProc* automation_proc,
-                CNetICacheClientExt::TInstance ic_api) :
-            m_AutomationProc(automation_proc),
-            m_NetICacheClient(ic_api)
-        {
-        }
-
-        bool OnWarning(const string& warn_msg, CNetServer server) override;
-
-    private:
-        CAutomationProc* m_AutomationProc;
-        CNetICacheClientExt::TInstance m_NetICacheClient;
-    };
-
     virtual const string& GetType() const { return kName; }
 
     CNetService GetService() { return m_NetICacheClient.GetService(); }

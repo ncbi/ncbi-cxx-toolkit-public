@@ -40,8 +40,6 @@
 
 #include <util/ncbi_url.hpp>
 
-#include <functional>
-
 BEGIN_NCBI_SCOPE
 
 struct SNetServerMultilineCmdOutputImpl : public CObject
@@ -78,6 +76,7 @@ class INetServerProperties : public CObject
 struct NCBI_XCONNECT_EXPORT INetServerConnectionListener : CObject
 {
     using TPropCreator = function<INetServerProperties*()>;
+    using TEventHandler = CNetService::TEventHandler;
 
     virtual TPropCreator GetPropCreator() const;
     virtual INetServerConnectionListener* Clone() = 0;
@@ -88,7 +87,8 @@ struct NCBI_XCONNECT_EXPORT INetServerConnectionListener : CObject
     void OnError(const string& err_msg, CNetServer& server);
     void OnWarning(const string& warn_msg, CNetServer& server);
 
-    void SetEventHandler(CNetService::IEventHandler* event_handler);
+    void SetErrorHandler(TEventHandler error_handler);
+    void SetWarningHandler(TEventHandler warning_handler);
 
 protected:
     INetServerConnectionListener() = default;
@@ -99,7 +99,8 @@ private:
     virtual void OnErrorImpl(const string& err_msg, CNetServer& server) = 0;
     virtual void OnWarningImpl(const string& warn_msg, CNetServer& server) = 0;
 
-    CRef<CNetService::IEventHandler> m_EventHandler;
+    TEventHandler m_ErrorHandler;
+    TEventHandler m_WarningHandler;
 };
 
 struct SNetServerConnectionImpl : public CObject

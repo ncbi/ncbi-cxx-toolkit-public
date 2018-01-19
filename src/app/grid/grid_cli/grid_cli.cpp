@@ -1695,12 +1695,12 @@ int CGridCommandLineInterfaceApp::Run()
     }
 }
 
-bool CGridCommandLineInterfaceApp::CNetScheduleWarningLogger::OnWarning(
+bool CGridCommandLineInterfaceApp::OnWarning(bool not_worker_node_admin,
         const string& warn_msg, CNetServer server)
 {
     string warning(warn_msg);
 
-    const char* server_type = m_GridCLIApp->m_APIClass != eWorkerNodeAdmin ?
+    const char* server_type = not_worker_node_admin ?
             "NetSchedule server" : "Worker node";
 
     CNetScheduleAPI::ENetScheduleWarningType warning_type =

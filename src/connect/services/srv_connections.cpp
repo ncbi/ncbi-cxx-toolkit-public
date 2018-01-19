@@ -105,34 +105,41 @@ INetServerConnectionListener::TPropCreator INetServerConnectionListener::GetProp
 
 void INetServerConnectionListener::OnError(const string& err_msg, CNetServer& server)
 {
-    if (m_EventHandler && m_EventHandler->OnError(err_msg)) return;
+    if (m_ErrorHandler && m_ErrorHandler(err_msg, server)) return;
 
     OnErrorImpl(err_msg, server);
 }
 
 void INetServerConnectionListener::OnWarning(const string& warn_msg, CNetServer& server)
 {
-    if (m_EventHandler && m_EventHandler->OnWarning(warn_msg, server)) return;
+    if (m_WarningHandler && m_WarningHandler(warn_msg, server)) return;
 
     OnWarningImpl(warn_msg, server);
 }
 
 INetServerConnectionListener::INetServerConnectionListener(const INetServerConnectionListener&)
 {
-    // No m_EventHandler sharing
+    // No m_ErrorHandler/m_WarningHandler sharing
 }
 
 INetServerConnectionListener& INetServerConnectionListener::operator=(const INetServerConnectionListener&)
 {
-    // No m_EventHandler sharing
+    // No m_ErrorHandler/m_WarningHandler sharing
     return *this;
 }
 
-void INetServerConnectionListener::SetEventHandler(CNetService::IEventHandler* event_handler)
+void INetServerConnectionListener::SetErrorHandler(TEventHandler error_handler)
 {
     // Event handlers are not allowed to be changed, only to be set or reset
-    _ASSERT(!(m_EventHandler.GetPointer() && event_handler));
-    m_EventHandler.Reset(event_handler);
+    _ASSERT(!(m_ErrorHandler && error_handler));
+    m_ErrorHandler = error_handler;
+}
+
+void INetServerConnectionListener::SetWarningHandler(TEventHandler warning_handler)
+{
+    // Event handlers are not allowed to be changed, only to be set or reset
+    _ASSERT(!(m_WarningHandler && warning_handler));
+    m_WarningHandler = warning_handler;
 }
 
 inline SNetServerConnectionImpl::SNetServerConnectionImpl(

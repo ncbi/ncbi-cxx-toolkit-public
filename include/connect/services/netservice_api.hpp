@@ -37,6 +37,8 @@
 #include "srv_connections.hpp"
 #include "json_over_uttp.hpp"
 
+#include <functional>
+
 BEGIN_NCBI_SCOPE
 
 struct SNetServiceIteratorImpl;
@@ -128,13 +130,10 @@ class NCBI_XCONNECT_EXPORT CNetService
 
     CNetService Clone(const string& name);
 
-    struct IEventHandler : CObject
-    {
-        virtual bool OnError(const string&)               { return false; }
-        virtual bool OnWarning(const string&, CNetServer) { return false; }
-    };
+    using TEventHandler = function<bool(const string&, CNetServer)>;
 
-    void SetEventHandler(IEventHandler* event_handler);
+    void SetErrorHandler(TEventHandler error_handler);
+    void SetWarningHandler(TEventHandler warning_handler);
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     static void AllowXSiteConnections();

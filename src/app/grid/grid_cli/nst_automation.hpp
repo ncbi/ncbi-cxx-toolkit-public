@@ -43,23 +43,6 @@ struct SNetStorageService : public SNetServiceBase
 {
     using TSelf = SNetStorageService;
 
-    class CEventHandler : public CNetService::IEventHandler
-    {
-    public:
-        CEventHandler(CAutomationProc* automation_proc,
-                CNetStorageAdmin::TInstance ns_api) :
-            m_AutomationProc(automation_proc),
-            m_NetStorageAdmin(ns_api)
-        {
-        }
-
-        bool OnWarning(const string& warn_msg, CNetServer server) override;
-
-    private:
-        CAutomationProc* m_AutomationProc;
-        CNetStorageAdmin::TInstance m_NetStorageAdmin;
-    };
-
     virtual const string& GetType() const { return kName; }
 
     CNetService GetService() { return m_NetStorageAdmin.GetService(); }

@@ -514,19 +514,7 @@ public:
 
 // Implementation details.
 private:
-    class CNetScheduleWarningLogger : public CNetService::IEventHandler
-    {
-    public:
-        CNetScheduleWarningLogger(CGridCommandLineInterfaceApp* grid_cli_app) :
-            m_GridCLIApp(grid_cli_app)
-        {
-        }
-
-        bool OnWarning(const string& warn_msg, CNetServer server) override;
-
-    private:
-        CGridCommandLineInterfaceApp* m_GridCLIApp;
-    };
+    static bool OnWarning(bool worker_node_admin, const string& warn_msg, CNetServer server);
 
     enum EAPIClass {
         eNetCacheAPI,

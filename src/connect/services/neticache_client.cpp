@@ -803,45 +803,41 @@ IReader* SNetICacheClientImpl::ReadCurrentBlobNotOlderThan(const string& key,
 
 class CSetValidWarningSuppressor
 {
-    struct SHandler : CNetService::IEventHandler
-    {
-        SHandler(const string& k, const string& sk, int v) : m_Key(k), m_Subkey(sk), m_Version(v) {}
-
-        bool OnWarning(const string& warn_msg, CNetServer) override;
-
-    private:
-        string m_Key;
-        string m_Subkey;
-        int m_Version;
-    };
-
 public:
     CSetValidWarningSuppressor(
             INetServerConnectionListener* listener,
             const string& key,
             const string& subkey,
             int version) :
-        m_Listener(listener)
+        m_Listener(listener),
+        m_Key(key),
+        m_Subkey(subkey),
+        m_Version(version)
     {
         _ASSERT(m_Listener);
-        Set(new SHandler(key, subkey, version));
+
+        auto warning_handler = [&](const string& m, CNetServer s) {
+            return OnWarning(m, s);
+        };
+
+        m_Listener->SetWarningHandler(warning_handler);
     }
 
     ~CSetValidWarningSuppressor()
     {
-        Set(nullptr);
+        m_Listener->SetWarningHandler(nullptr);
     }
 
 private:
-    void Set(CNetService::IEventHandler* handler)
-    {
-        m_Listener->SetEventHandler(handler);
-    }
+    bool OnWarning(const string& warn_msg, CNetServer server);
 
     CRef<INetServerConnectionListener> m_Listener;
+    const string m_Key;
+    const string m_Subkey;
+    const int m_Version;
 };
 
-bool CSetValidWarningSuppressor::SHandler::OnWarning(const string& warn_msg, CNetServer)
+bool CSetValidWarningSuppressor::OnWarning(const string& warn_msg, CNetServer)
 {
     SIZE_TYPE ver_pos = NStr::FindCase(warn_msg,
             CTempString("VER=", sizeof("VER=") - 1));

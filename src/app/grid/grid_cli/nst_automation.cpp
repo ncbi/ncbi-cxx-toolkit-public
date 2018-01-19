@@ -105,17 +105,13 @@ SNetStorageService::SNetStorageService(
     SNetServiceBase(automation_proc),
     m_NetStorageAdmin(nst_api)
 {
-    GetService().SetEventHandler(
-            new CEventHandler(automation_proc, m_NetStorageAdmin));
-}
+    auto warning_handler = [&](const string& m, CNetServer s) {
+        auto o = automation_proc->ReturnNetStorageServerObject(m_NetStorageAdmin, s);
+        automation_proc->SendWarning(m, o);
+        return true;
+    };
 
-bool SNetStorageService::CEventHandler::OnWarning(
-        const string& warn_msg, CNetServer server)
-{
-    m_AutomationProc->SendWarning(warn_msg, m_AutomationProc->
-            ReturnNetStorageServerObject(m_NetStorageAdmin, server));
-
-    return true;
+    GetService().SetWarningHandler(warning_handler);
 }
 
 SNetStorageServer::SNetStorageServer(

@@ -46,8 +46,13 @@ SNetScheduleService::SNetScheduleService(
     SNetService(automation_proc),
     m_NetScheduleAPI(ns_api)
 {
-    GetService().SetEventHandler(
-            new CEventHandler(automation_proc, m_NetScheduleAPI));
+    auto warning_handler = [&](const string& m, CNetServer s) {
+        auto o = automation_proc->ReturnNetScheduleServerObject(m_NetScheduleAPI, s);
+        automation_proc->SendWarning(m, o);
+        return true;
+    };
+
+    GetService().SetWarningHandler(warning_handler);
 }
 
 SNetScheduleServer::SNetScheduleServer(
@@ -225,15 +230,6 @@ void SNetScheduleServer::ExecChangePreferredAffinities(const TArguments& args, S
     auto to_del = s_ExtractVectorOfStrings(affs_to_del);
 
     m_NetScheduleAPI.GetExecutor().ChangePreferredAffinities(&to_add, &to_del);
-}
-
-bool SNetScheduleService::CEventHandler::OnWarning(
-        const string& warn_msg, CNetServer server)
-{
-    m_AutomationProc->SendWarning(warn_msg, m_AutomationProc->
-            ReturnNetScheduleServerObject(m_NetScheduleAPI, server));
-
-    return true;
 }
 
 CCommand SNetScheduleService::CallCommand()

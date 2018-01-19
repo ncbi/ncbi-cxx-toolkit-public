@@ -299,7 +299,6 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
     };
 
     class CTry;
-    using IEventHandler = CNetService::IEventHandler;
 
     static SNetServiceImpl* Create(const string& api_name, const string& service_name, const string& client_name,
             INetServerConnectionListener* listener,
