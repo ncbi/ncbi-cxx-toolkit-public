@@ -69,7 +69,7 @@ res_log="$build_dir/check.sh.log"
 res_concat="$build_dir/check.sh.out"
 res_concat_err="$build_dir/check.sh.out_err"
 
-cfgs="`cat cfgs.log`"
+cfgs="`cat cfgs.log | tr -d '\r'`"
 if [ -z "$cfgs" ] ; then
     Error "Build some configurations first"
 fi
