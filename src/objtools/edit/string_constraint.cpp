@@ -130,7 +130,7 @@ bool CStringConstraint::DoesTextMatch (const string& text)
         case eMatchType_IsOneOf:
             {
                 vector<string> tokens;
-                NStr::Split(match, ",; ", tokens);
+                NStr::Split(match, ",; ", tokens, NStr::fSplit_Tokenize);
                 ITERATE(vector<string>, it, tokens) {
                     if (IsInRange(*it, tmp) || NStr::Equal(*it, tmp)) {
                         rval = true;
