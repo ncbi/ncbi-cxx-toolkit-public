@@ -338,7 +338,7 @@ string GetLabel(const vector<CSeq_id_Handle>& ids)
         if ( gi != ZERO_GI && !best_id.IsGi() ) {
             CConstRef<CSeq_id> best_seq_id = best_id.GetSeqId();
             const CTextseq_id* txt_id = best_seq_id->GetTextseq_Id();
-            if ( txt_id && !txt_id->IsSetVersion() ) {
+            if ( txt_id  &&  txt_id->IsSetAccession()  &&  !txt_id->IsSetVersion() ) {
                 ERR_POST("Using version-less accession " << txt_id->GetAccession()
                          << " instead of GI " << gi);
             }
