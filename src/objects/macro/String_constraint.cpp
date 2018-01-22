@@ -414,12 +414,16 @@ bool CString_constraint :: x_AdvancedStringMatch(const string& str, const string
           while (pos < len && isalpha (Uint1(str[pos-1]))) pos++;
       }
       if (pos < len) {
+        size_t sub_match_len = 0;
         if (x_AdvancedStringCompare (CTempString(str).substr(pos),
                                       match_text,
-                                      0)) {
-            rval = true;
-        }
-        else {
+                                      0, &sub_match_len)) {
+            if (sub_match_len < len - pos && GetMatch_location() == eString_location_ends) {
+                pos++;
+            } else {
+                rval = true;
+            }
+        } else {
             pos++;
         }
       }

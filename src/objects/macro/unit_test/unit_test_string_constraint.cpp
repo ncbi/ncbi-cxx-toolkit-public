@@ -703,7 +703,7 @@ BOOST_AUTO_TEST_CASE(Test_MatchEnd)
     subst1->SetWord("aceae");
     subst1->SetSynonyms().push_back("ales");
     s.SetIgnore_words().Set().push_back(subst1);
-    //BOOST_CHECK_EQUAL(s.Match("Methylophilaceae bacterium"), false);
+    BOOST_CHECK_EQUAL(s.Match("Methylophilaceae bacterium"), false);
 
     BOOST_CHECK_EQUAL(s.Match("Methylophilaceae"), true);
     BOOST_CHECK_EQUAL(s.Match("bacterium"), false);
