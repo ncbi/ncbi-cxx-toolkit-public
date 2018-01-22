@@ -480,15 +480,18 @@ string CSourceModParser::ParseTitle(const CTempString& title,
         lb_pos = pos;
         if (x_FindBrackets(title, lb_pos, end_pos, eq_pos))
         {            
-            CTempString key = NStr::TruncateSpaces_Unsafe(title.substr(lb_pos+1, eq_pos - lb_pos - 1));
-            CTempString value = NStr::TruncateSpaces_Unsafe(title.substr(eq_pos + 1, end_pos - eq_pos - 1));
             CTempString skipped = NStr::TruncateSpaces_Unsafe(title.substr(pos, lb_pos - pos));
 
-            mod.key = key;
-            mod.value = value;
-            mod.pos = lb_pos;
-            mod.used = false;
-            m_Mods.emplace(mod);
+            if (eq_pos < end_pos) {
+                CTempString key = NStr::TruncateSpaces_Unsafe(title.substr(lb_pos+1, eq_pos - lb_pos - 1));
+                CTempString value = NStr::TruncateSpaces_Unsafe(title.substr(eq_pos + 1, end_pos - eq_pos - 1));
+
+                mod.key = key;
+                mod.value = value;
+                mod.pos = lb_pos;
+                mod.used = false;
+                m_Mods.emplace(mod);
+            }
 
             x_AppendIfNonEmpty(stripped_title, skipped);
 
