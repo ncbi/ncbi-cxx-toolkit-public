@@ -691,3 +691,20 @@ BOOST_AUTO_TEST_CASE(Test_Matching_Space)
 
     BOOST_CHECK_EQUAL(s.Match("Bacillus"), false);
 }
+
+BOOST_AUTO_TEST_CASE(Test_MatchEnd)
+{
+    CString_constraint s;
+    s.SetMatch_text("aceae");
+    s.SetMatch_location(eString_location_ends);
+    s.SetCase_sensitive(true);
+
+    CRef<CWord_substitution> subst1(new CWord_substitution());
+    subst1->SetWord("aceae");
+    subst1->SetSynonyms().push_back("ales");
+    s.SetIgnore_words().Set().push_back(subst1);
+    //BOOST_CHECK_EQUAL(s.Match("Methylophilaceae bacterium"), false);
+
+    BOOST_CHECK_EQUAL(s.Match("Methylophilaceae"), true);
+    BOOST_CHECK_EQUAL(s.Match("bacterium"), false);
+}
