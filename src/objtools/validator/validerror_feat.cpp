@@ -7782,7 +7782,7 @@ CBioseq_Handle CSingleFeatValidator::x_GetFeatureProduct(bool look_far, bool& is
     }
 
     // try "local" scope
-    prot_handle = m_Scope.GetBioseqHandleFromTSE(*protid, m_Imp.GetTSE());
+    prot_handle = m_Scope.GetBioseqHandleFromTSE(*protid, m_LocationBioseq.GetTSE_Handle());
     if (!prot_handle  &&  look_far) {
         prot_handle = m_Scope.GetBioseqHandle(*protid);
         if (prot_handle) {
