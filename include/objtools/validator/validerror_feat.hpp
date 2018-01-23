@@ -191,8 +191,6 @@ private:
     void ValidateSplice(const CSeq_feat& feat, bool check_all = false);
     static void x_FeatLocHasBadStrandBoth(const CSeq_feat& feat, bool& both, bool& both_rev);
     void ValidateCommonCDSProduct(const CSeq_feat& feat);
-    void ValidateFarProducts(const CSeq_feat& feat);
-    void ValidateCDSPartial(const CSeq_feat& feat);
 
     void x_ValidateCdregionCodebreak(const CSeq_feat& feat);
 
@@ -255,8 +253,6 @@ private:
     void ReportDonorSpliceSiteReadErrors(const CSpliceProblems::TSpliceProblem& problem, const string& label, const CSeq_feat& feat);
     void ReportAcceptorSpliceSiteReadErrors(const CSpliceProblems::TSpliceProblem& problem, const string& label, const CSeq_feat& feat);
 
-    bool x_CDS3primePartialTest(const CSeq_feat& feat);
-    bool x_CDS5primePartialTest(const CSeq_feat& feat);
     bool x_HasNonReciprocalXref(const CSeq_feat& feat, const CFeat_id& id, CSeqFeatData::ESubtype subtype);
     bool x_LocIsNmAccession(const CSeq_loc& loc);
     void x_ReportMisplacedCodingRegionProduct(const CSeq_feat& feat);
@@ -334,11 +330,17 @@ public:
 
 protected:
     virtual void x_ValidateFeatComment();
+    virtual void x_ValidateExceptText(const string& text);
     void x_ValidateQuals();
     void x_ValidateGeneticCode();
     void x_ValidateBadMRNAOverlap();
     bool x_HasGoodParent();
     virtual void x_ValidateSeqFeatLoc();
+    void x_ValidateFarProducts();
+    void x_ValidateCDSPartial();
+    bool x_BypassCDSPartialTest() const;
+    bool x_CDS3primePartialTest() const;
+    bool x_CDS5primePartialTest() const;
 
     CConstRef<CSeq_feat> m_Gene;
     bool m_GeneIsPseudo;

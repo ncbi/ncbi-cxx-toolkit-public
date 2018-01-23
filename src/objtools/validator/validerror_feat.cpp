@@ -926,12 +926,6 @@ void CValidError_feat::ValidateCdregion (
     bool gene_is_pseudo = IsOverlappingGenePseudo(feat, m_Scope);
     bool pseudo = feat_is_pseudo  ||  gene_is_pseudo;
     bool nonsense_intron;
-
-    if ( cdregion.IsSetCode_break()  &&  feat.IsSetExcept_text()  &&
-         NStr::FindNoCase(feat.GetExcept_text(), "RNA editing") != NPOS ) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_TranslExceptAndRnaEditing,
-            "CDS has both RNA editing /exception and /transl_except qualifiers", feat);
-    }
     
     bool conflict = cdregion.CanGetConflict()  &&  cdregion.GetConflict();
     nonsense_intron = false;
@@ -944,8 +938,6 @@ void CValidError_feat::ValidateCdregion (
     }
 #endif
 
-    ValidateFarProducts(feat);
-    ValidateCDSPartial(feat);
     if (!pseudo) {
         ValidateCdsProductId(feat);
         ValidateCommonCDSProduct(feat);
@@ -4127,73 +4119,6 @@ bool HasGeneIdXref(const CMappedFeat& sf, const CObject_id& tag)
 }
 
 
-// VR-619
-// for an mRNA / CDS pair where both have far products
-// (which is only true for genomic RefSeqs with instantiated mRNA products), 
-// please check that the pair found by CFeatTree corresponds to the nuc-prot pair in ID
-// (i.e.the CDS product is annotated on the mRNA product).
-void CValidError_feat::ValidateFarProducts(const CSeq_feat& feat)
-{
-    // no point if not far-fetching
-    if (!m_Imp.IsRemoteFetch()) {
-        return;
-    }
-    if (!feat.GetData().IsCdregion() || !feat.IsSetProduct()) {
-        return;
-    }
-    if (!m_Imp.IsRefSeq()) {
-        return;
-    }
-    const CSeq_id * cds_sid = feat.GetProduct().GetId();
-    if (!cds_sid) {
-        return;
-    }
-    CBioseq_Handle cds_prod = m_Scope->GetBioseqHandleFromTSE(*cds_sid, m_TSE);
-    if (cds_prod) {
-        // coding region product is not far
-        return;
-    }
-    CRef<feature::CFeatTree> feat_tree = m_Imp.GetGeneCache().GetFeatTreeFromCache(feat, *m_Scope);
-    if (!feat_tree) {
-        return;
-    }
-    CSeq_feat_Handle fh = m_Scope->GetSeq_featHandle(feat);
-    if (!fh) {
-        return;
-    }
-    CMappedFeat mrna = feat_tree->GetParent(fh, CSeqFeatData::eSubtype_mRNA);
-    if (!mrna || !mrna.IsSetProduct()) {
-        // no mRNA or no mRNA product
-        return;
-    }
-    const CSeq_id * mrna_sid = mrna.GetProduct().GetId();
-    if (!mrna_sid) {
-        return;
-    }
-    CBioseq_Handle mrna_prod = m_Scope->GetBioseqHandleFromTSE(*mrna_sid, m_TSE);
-    if (mrna_prod) {
-        // mRNA product is not far
-        return;
-    }
-    mrna_prod = m_Scope->GetBioseqHandle(*mrna_sid);
-    if (!mrna_prod) {
-        // can't be fetched, will be reported elsewhere
-        return;
-    }
-    CSeq_entry_Handle far_mrna_nps =
-        mrna_prod.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
-    if (!far_mrna_nps) {
-        PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSmRNAmismatch, "no Far mRNA nuc-prot-set", feat);
-    } else {
-        CBioseq_Handle cds_prod = m_Scope->GetBioseqHandleFromTSE(*cds_sid, far_mrna_nps);
-        if (!cds_prod) {
-            PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSmRNAmismatch, "Far CDS product and far mRNA product are not packaged together", feat);
-            PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSmRNAmismatch, "Far CDS product and far mRNA product are not packaged together", *(mrna.GetSeq_feat()));
-        }
-    }
-}
-
-
 void CValidError_feat::x_ReportMisplacedCodingRegionProduct(const CSeq_feat& feat)
 {
     if (m_Imp.IsSmallGenomeSet()) {
@@ -4370,187 +4295,6 @@ bool CValidError_feat::IsIntronShort(const CSeq_feat& feat)
         }
     }
     return is_short;
-}
-
-
-bool CValidError_feat::x_CDS3primePartialTest (const CSeq_feat& feat)
-{
-    CSeq_loc_CI last;
-    for ( CSeq_loc_CI sl_iter(feat.GetLocation()); sl_iter; ++sl_iter ) { 
-        last = sl_iter;
-    }
-
-    if (last) {
-        if (last.GetStrand() == eNa_strand_minus) {
-            if (last.GetRange().GetFrom() == 0) {
-                return true;
-            }
-        } else {
-            CBioseq_Handle bsh = x_GetCachedBsh(feat.GetLocation());
-            if (!bsh) {
-                return false;
-            }
-            if (last.GetRange().GetTo() == bsh.GetInst_Length() - 1) {
-                return true;
-            }
-        }
-    }
-    return false;    
-}
-
-
-bool CValidError_feat::x_CDS5primePartialTest (const CSeq_feat& feat)
-{
-    CSeq_loc_CI first(feat.GetLocation());
-
-    if (first) {
-        if (first.GetStrand() == eNa_strand_minus) {
-            CBioseq_Handle bsh = x_GetCachedBsh(feat.GetLocation());
-            if (!bsh) {
-                return false;
-            }
-            if (first.GetRange().GetTo() == bsh.GetInst_Length() - 1) {
-                return true;
-            }
-        } else {
-            if (first.GetRange().GetFrom() == 0) {
-                return true;
-            }
-        }
-    }
-    return false;    
-}
-
-
-static const char* const sc_BypassCdsPartialCheckText[] = {
-  "RNA editing",
-  "annotated by transcript or proteomic data",
-  "artificial frameshift",
-  "mismatches in translation",
-  "rearrangement required for product",
-  "reasons given in citation",
-  "translated product replaced",
-  "unclassified translation discrepancy"
-};
-typedef CStaticArraySet<const char*, PCase_CStr> TBypassCdsPartialCheckSet;
-DEFINE_STATIC_ARRAY_MAP(TBypassCdsPartialCheckSet, sc_BypassCdsPartialCheck, sc_BypassCdsPartialCheckText);
-
-
-void CValidError_feat::ValidateCDSPartial(const CSeq_feat& feat)
-{
-    if ( !feat.CanGetProduct()  ||  !feat.CanGetLocation() ) {
-        return;
-    }
-
-    bool is_far;
-    CBioseq_Handle bsh = x_GetCDSProduct(feat, is_far);
-    if ( !bsh ) {
-        return;
-    }
-
-    if (feat.CanGetExcept()  &&  feat.GetExcept()  &&  feat.CanGetExcept_text()) {
-        const string& except_text = feat.GetExcept_text();
-        ITERATE (TBypassCdsPartialCheckSet, it, sc_BypassCdsPartialCheck) {
-            if (NStr::FindNoCase(except_text, *it) != NPOS) {
-                return;  // biological exception
-            }
-        }
-    }
-
-    CSeqdesc_CI sd(bsh, CSeqdesc::e_Molinfo);
-    if ( !sd ) {
-        return;
-    }
-    const CMolInfo& molinfo = sd->GetMolinfo();
-
-    const CSeq_loc& loc = feat.GetLocation();
-    bool partial5 = loc.IsPartialStart(eExtreme_Biological);
-    bool partial3 = loc.IsPartialStop(eExtreme_Biological);
-
-    if ( molinfo.CanGetCompleteness() ) {
-        switch ( molinfo.GetCompleteness() ) {
-        case CMolInfo::eCompleteness_unknown:
-            break;
-
-        case CMolInfo::eCompleteness_complete:
-            if ( partial5 || partial3 ) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
-                    "CDS is partial but protein is complete", feat);
-            }
-            break;
-
-        case CMolInfo::eCompleteness_partial:
-            break;
-
-        case CMolInfo::eCompleteness_no_left:
-            if ( !partial5 ) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
-                    "CDS is 5' complete but protein is NH2 partial", feat);
-            }
-            if ( partial3 ) {
-                EDiagSev sev = eDiag_Error;
-                if (x_CDS3primePartialTest(feat))
-                {
-                    sev = eDiag_Warning;
-                }
-                PostErr(sev, eErr_SEQ_FEAT_PartialProblem,
-                    "CDS is 3' partial but protein is NH2 partial", feat);
-            }
-            break;
-
-        case CMolInfo::eCompleteness_no_right:
-            if (! partial3) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
-                    "CDS is 3' complete but protein is CO2 partial", feat);
-            }
-            if (partial5) {
-                EDiagSev sev = eDiag_Error;
-                if (x_CDS5primePartialTest(feat))
-                {
-                    sev = eDiag_Warning;
-                }
-                PostErr(sev, eErr_SEQ_FEAT_PartialProblem,
-                    "CDS is 5' partial but protein is CO2 partial", feat);
-            }
-            break;
-
-        case CMolInfo::eCompleteness_no_ends:
-            if ( partial5 && partial3 ) {
-            } else if ( partial5 ) {
-                EDiagSev sev = eDiag_Error;
-                if (x_CDS5primePartialTest(feat))
-                {
-                    sev = eDiag_Warning;
-                }
-                PostErr(sev, eErr_SEQ_FEAT_PartialProblem,
-                    "CDS is 5' partial but protein has neither end", feat);
-            } else if ( partial3 ) {
-                EDiagSev sev = eDiag_Error;
-                if (x_CDS3primePartialTest(feat)) {
-                    sev = eDiag_Warning;
-                }
-
-                PostErr(sev, eErr_SEQ_FEAT_PartialProblem,
-                    "CDS is 3' partial but protein has neither end", feat);
-            } else {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
-                    "CDS is complete but protein has neither end", feat);
-            }
-            break;
-
-        case CMolInfo::eCompleteness_has_left:
-            break;
-
-        case CMolInfo::eCompleteness_has_right:
-            break;
-
-        case CMolInfo::eCompleteness_other:
-            break;
-
-        default:
-            break;
-        }
-    }
 }
 
 
@@ -7216,6 +6960,17 @@ void CCdregionValidator::x_ValidateFeatComment()
 }
 
 
+void CCdregionValidator::x_ValidateExceptText(const string& text)
+{
+    CSingleFeatValidator::x_ValidateExceptText(text);
+    if (m_Feat.GetData().GetCdregion().IsSetCode_break() &&
+        NStr::FindNoCase(text, "RNA editing") != NPOS) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_TranslExceptAndRnaEditing,
+            "CDS has both RNA editing /exception and /transl_except qualifiers");
+    }
+}
+
+
 void CCdregionValidator::Validate()
 {
     CSingleFeatValidator::Validate();
@@ -7249,6 +7004,8 @@ void CCdregionValidator::Validate()
     }
 
     x_ValidateBadMRNAOverlap();
+    x_ValidateFarProducts();
+    x_ValidateCDSPartial();
 }
 
 
@@ -7480,6 +7237,250 @@ bool CCdregionValidator::x_HasGoodParent()
                                                        &m_Scope, 
                                                        sequence::fCompareOverlapping);
             if (cmp == sequence::eContained || cmp == sequence::eSame) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+// VR-619
+// for an mRNA / CDS pair where both have far products
+// (which is only true for genomic RefSeqs with instantiated mRNA products), 
+// please check that the pair found by CFeatTree corresponds to the nuc-prot pair in ID
+// (i.e.the CDS product is annotated on the mRNA product).
+void CCdregionValidator::x_ValidateFarProducts()
+{
+    // if coding region doesn't have a far product, nothing to check
+    if (!m_ProductIsFar) {
+        return;
+    }
+    // no point if not far-fetching
+    if (!m_Imp.IsRemoteFetch()) {
+        return;
+    }
+    if (!m_Feat.GetData().IsCdregion() || !m_Feat.IsSetProduct()) {
+        return;
+    }
+    if (!m_Imp.IsRefSeq()) {
+        return;
+    }
+    const CSeq_id * cds_sid = m_Feat.GetProduct().GetId();
+    if (!cds_sid) {
+        return;
+    }
+    CRef<feature::CFeatTree> feat_tree = m_Imp.GetGeneCache().GetFeatTreeFromCache(m_Feat, m_Scope);
+    if (!feat_tree) {
+        return;
+    }
+    CSeq_feat_Handle fh = m_Scope.GetSeq_featHandle(m_Feat);
+    if (!fh) {
+        return;
+    }
+    CMappedFeat mrna = feat_tree->GetParent(fh, CSeqFeatData::eSubtype_mRNA);
+    if (!mrna || !mrna.IsSetProduct()) {
+        // no mRNA or no mRNA product
+        return;
+    }
+    const CSeq_id * mrna_sid = mrna.GetProduct().GetId();
+    if (!mrna_sid) {
+        return;
+    }
+    bool is_far = false;
+    CBioseq_Handle mrna_prod = m_Scope.GetBioseqHandleFromTSE(*mrna_sid, m_LocationBioseq.GetTSE_Handle());
+    if (mrna_prod) {
+        // mRNA product is not far
+        return;
+    }
+    mrna_prod = m_Scope.GetBioseqHandle(*mrna_sid);
+    if (!mrna_prod) {
+        // can't be fetched, will be reported elsewhere
+        return;
+    }
+    CSeq_entry_Handle far_mrna_nps =
+        mrna_prod.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
+    if (!far_mrna_nps) {
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSmRNAmismatch, "no Far mRNA nuc-prot-set");
+    } else {
+        CBioseq_Handle cds_prod = m_Scope.GetBioseqHandleFromTSE(*cds_sid, far_mrna_nps);
+        if (!cds_prod) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSmRNAmismatch, "Far CDS product and far mRNA product are not packaged together");
+            m_Imp.PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSmRNAmismatch, "Far CDS product and far mRNA product are not packaged together", *(mrna.GetSeq_feat()));
+        }
+    }
+}
+
+
+void CCdregionValidator::x_ValidateCDSPartial()
+{
+    if (!m_ProductBioseq || x_BypassCDSPartialTest()) {
+        return;
+    }
+
+    CSeqdesc_CI sd(m_ProductBioseq, CSeqdesc::e_Molinfo);
+    if (!sd) {
+        return;
+    }
+    const CMolInfo& molinfo = sd->GetMolinfo();
+
+    const CSeq_loc& loc = m_Feat.GetLocation();
+    bool partial5 = loc.IsPartialStart(eExtreme_Biological);
+    bool partial3 = loc.IsPartialStop(eExtreme_Biological);
+
+    if (molinfo.CanGetCompleteness()) {
+        switch (molinfo.GetCompleteness()) {
+        case CMolInfo::eCompleteness_unknown:
+            break;
+
+        case CMolInfo::eCompleteness_complete:
+            if (partial5 || partial3) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
+                    "CDS is partial but protein is complete");
+            }
+            break;
+
+        case CMolInfo::eCompleteness_partial:
+            break;
+
+        case CMolInfo::eCompleteness_no_left:
+            if (!partial5) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
+                    "CDS is 5' complete but protein is NH2 partial");
+            }
+            if (partial3) {
+                EDiagSev sev = eDiag_Error;
+                if (x_CDS3primePartialTest())
+                {
+                    sev = eDiag_Warning;
+                }
+                PostErr(sev, eErr_SEQ_FEAT_PartialProblem,
+                    "CDS is 3' partial but protein is NH2 partial");
+            }
+            break;
+
+        case CMolInfo::eCompleteness_no_right:
+            if (!partial3) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
+                    "CDS is 3' complete but protein is CO2 partial");
+            }
+            if (partial5) {
+                EDiagSev sev = eDiag_Error;
+                if (x_CDS5primePartialTest())
+                {
+                    sev = eDiag_Warning;
+                }
+                PostErr(sev, eErr_SEQ_FEAT_PartialProblem,
+                    "CDS is 5' partial but protein is CO2 partial");
+            }
+            break;
+
+        case CMolInfo::eCompleteness_no_ends:
+            if (partial5 && partial3) {
+            } else if (partial5) {
+                EDiagSev sev = eDiag_Error;
+                if (x_CDS5primePartialTest())
+                {
+                    sev = eDiag_Warning;
+                }
+                PostErr(sev, eErr_SEQ_FEAT_PartialProblem,
+                    "CDS is 5' partial but protein has neither end");
+            } else if (partial3) {
+                EDiagSev sev = eDiag_Error;
+                if (x_CDS3primePartialTest()) {
+                    sev = eDiag_Warning;
+                }
+
+                PostErr(sev, eErr_SEQ_FEAT_PartialProblem,
+                    "CDS is 3' partial but protein has neither end");
+            } else {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
+                    "CDS is complete but protein has neither end");
+            }
+            break;
+
+        case CMolInfo::eCompleteness_has_left:
+            break;
+
+        case CMolInfo::eCompleteness_has_right:
+            break;
+
+        case CMolInfo::eCompleteness_other:
+            break;
+
+        default:
+            break;
+        }
+    }
+}
+
+
+static const char* const sc_BypassCdsPartialCheckText[] = {
+    "RNA editing",
+    "annotated by transcript or proteomic data",
+    "artificial frameshift",
+    "mismatches in translation",
+    "rearrangement required for product",
+    "reasons given in citation",
+    "translated product replaced",
+    "unclassified translation discrepancy"
+};
+typedef CStaticArraySet<const char*, PCase_CStr> TBypassCdsPartialCheckSet;
+DEFINE_STATIC_ARRAY_MAP(TBypassCdsPartialCheckSet, sc_BypassCdsPartialCheck, sc_BypassCdsPartialCheckText);
+
+bool CCdregionValidator::x_BypassCDSPartialTest() const
+{
+    if (m_Feat.CanGetExcept() && m_Feat.GetExcept() && m_Feat.CanGetExcept_text()) {
+        const string& except_text = m_Feat.GetExcept_text();
+        ITERATE(TBypassCdsPartialCheckSet, it, sc_BypassCdsPartialCheck) {
+            if (NStr::FindNoCase(except_text, *it) != NPOS) {
+                return true;  // biological exception
+            }
+        }
+    }
+    return false;
+}
+
+
+bool CCdregionValidator::x_CDS3primePartialTest() const
+{
+    CSeq_loc_CI last;
+    for (CSeq_loc_CI sl_iter(m_Feat.GetLocation()); sl_iter; ++sl_iter) {
+        last = sl_iter;
+    }
+
+    if (last) {
+        if (last.GetStrand() == eNa_strand_minus) {
+            if (last.GetRange().GetFrom() == 0) {
+                return true;
+            }
+        } else {
+            if (!m_LocationBioseq) {
+                return false;
+            }
+            if (last.GetRange().GetTo() == m_LocationBioseq.GetInst_Length() - 1) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+bool CCdregionValidator::x_CDS5primePartialTest() const
+{
+    CSeq_loc_CI first(m_Feat.GetLocation());
+
+    if (first) {
+        if (first.GetStrand() == eNa_strand_minus) {
+            if (!m_LocationBioseq) {
+                return false;
+            }
+            if (first.GetRange().GetTo() == m_LocationBioseq.GetInst_Length() - 1) {
+                return true;
+            }
+        } else {
+            if (first.GetRange().GetFrom() == 0) {
                 return true;
             }
         }
