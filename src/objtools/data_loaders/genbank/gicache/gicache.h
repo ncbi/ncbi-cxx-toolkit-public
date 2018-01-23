@@ -51,11 +51,11 @@ int64_t     GICache_GetMaxGi(void);
 void         GICache_ReadEnd(void);
 /* Internal loading interface, non MT safe */
 /* Initialize cache for loading */
-int         GICache_LoadStart(const char *cache_prefix, int enablesync);
+int         GICache_LoadStart(const char *cache_prefix);
 /* Add gi's data to cache */
 int         GICache_LoadAdd(int64_t gi, int64_t gi_len, const char* accession, int version, int is_incremental);
 /* Finish load, flush modifications to disk */
-int 		GiDataIndex_Commit(void);
+int 		GiDataIndex_Commit(int force_sync);
 /* Close DB handle */
 int         GICache_LoadEnd(void);
 /* Erase data in DB before full update */

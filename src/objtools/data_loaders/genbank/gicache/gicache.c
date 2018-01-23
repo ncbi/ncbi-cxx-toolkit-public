@@ -59,7 +59,8 @@
 #define MAP_SIZE_DELTA		(16L * 1024 * 1024 * 1024)
 #define GI_DBI					"#GI_DBI"
 #define META_DBI				"#META_DBI"
-#define MAX_ROWS_PER_TRANSACTION	32
+#define MAX_ROWS_PER_TRANSACTION	128
+#define SYNC_PERIOD_SEC         5
 
 typedef struct {
     Uint1   m_ReadOnlyMode;
@@ -69,6 +70,7 @@ typedef struct {
 	MDB_dbi m_meta_dbi;
 	MDB_txn *m_txn;
 	int		m_txn_rowcount;
+    time_t  m_last_sync;
 } SGiDataIndex;
 
 static SGiDataIndex *gi_cache = NULL;
@@ -118,10 +120,10 @@ static int x_mdb_txn_begin(MDB_env *env, MDB_txn *parent, unsigned int flags, MD
 	return rv;
 }
 
-int x_Commit(SGiDataIndex* data_index) {
+int x_Commit(SGiDataIndex* data_index, int force_sync) {
 	int rv = 0;
+    int rc;
 	if (data_index && data_index->m_txn) {
-		int rc;
 		rc = mdb_txn_commit(data_index->m_txn);
 		data_index->m_txn = NULL;
 		data_index->m_txn_rowcount = 0;
@@ -130,18 +132,30 @@ int x_Commit(SGiDataIndex* data_index) {
 			rv = -1;
 		}
 	}
+    if (data_index && rv == 0) {
+        time_t t =  time(0);
+        if (force_sync || t > data_index->m_last_sync + SYNC_PERIOD_SEC) {
+            rc = mdb_env_sync(data_index->m_env, 1);
+            if (rc) {
+                LOG(SEV_ERROR, "GI_CACHE: failed to sync env: %s\n", mdb_strerror(rc));
+                rv = -1;
+            }
+            else
+                data_index->m_last_sync = t;
+        }
+    } 
 	return rv;
 }
 
-int GiDataIndex_Commit(void) {
-	return x_Commit(gi_cache);
+int GiDataIndex_Commit(int force_sync) {
+	return x_Commit(gi_cache, force_sync);
 }
 
 /* Destructor */
 static void GiDataIndex_Free(SGiDataIndex* data_index) {
 	if (data_index) {
 		if (data_index->m_txn)
-			x_Commit(data_index);
+			x_Commit(data_index, 1);
 		if (data_index->m_env) {
 			if (data_index->m_gi_dbi) {
 				mdb_dbi_close(data_index->m_env, data_index->m_gi_dbi);
@@ -168,7 +182,7 @@ xFindFile(SGiDataIndex* data_index, struct stat* fstat) {
 
 /* Constructor */
 static SGiDataIndex*
-GiDataIndex_New(const char* prefix, Uint1 readonly, Uint1 enablesync) { 
+GiDataIndex_New(const char* prefix, Uint1 readonly) { 
 	int rc;
 	char logmsg[256];
 	SGiDataIndex*  data_index;
@@ -186,7 +200,6 @@ GiDataIndex_New(const char* prefix, Uint1 readonly, Uint1 enablesync) {
 	fstat_err = xFindFile(data_index, &fstat);
 	if (fstat_err != 0 || fstat.st_size == 0) {
 		/* file does not exist */
-		enablesync = 0;
 		if (readonly) {
 			rc = errno;
 			snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to access file (%s): %s\n", data_index->m_FileName, strerror(rc));
@@ -222,7 +235,7 @@ GiDataIndex_New(const char* prefix, Uint1 readonly, Uint1 enablesync) {
 		goto ERROR;
 	}
 
-	rc = mdb_env_open(data_index->m_env, data_index->m_FileName, MDB_NOSUBDIR | (readonly ? MDB_RDONLY : 0) | (enablesync ? 0 : (MDB_NOSYNC | MDB_NOMETASYNC)), 0644);
+	rc = mdb_env_open(data_index->m_env, data_index->m_FileName, MDB_NOSUBDIR | (readonly ? MDB_RDONLY : 0) | (MDB_NOSYNC | MDB_NOMETASYNC), 0644);
 	if (rc) {
 		snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to open LMDB db (%s): %s\n", data_index->m_FileName, mdb_strerror(rc));
 		goto ERROR;
@@ -508,7 +521,7 @@ static int x_PutData(SGiDataIndex* data_index, int64_t gi, int64_t gi_len, const
 	}
 
 	if (data_index->m_txn_rowcount++ > MAX_ROWS_PER_TRANSACTION) {
-		int rv = x_Commit(gi_cache);
+		int rv = x_Commit(gi_cache, 0);
 		if (rv != 0)
 			goto ERROR;
 	}
@@ -530,7 +543,7 @@ ERROR:
 	return 0;
 }
 
-static int x_GICacheInit(const char* prefix, Uint1 readonly, Uint1 enablesync) {
+static int x_GICacheInit(const char* prefix, Uint1 readonly) {
     char prefix_str[PATH_MAX];
 
     // First try local files
@@ -541,7 +554,7 @@ static int x_GICacheInit(const char* prefix, Uint1 readonly, Uint1 enablesync) {
 		GiDataIndex_Free(gi_cache);
 		gi_cache = NULL;
 	}
-    gi_cache = GiDataIndex_New(prefix_str, readonly, !readonly && enablesync);
+    gi_cache = GiDataIndex_New(prefix_str, readonly);
 
     if (readonly) {
         /* Check whether gi cache is available at this location, by trying to
@@ -553,7 +566,7 @@ static int x_GICacheInit(const char* prefix, Uint1 readonly, Uint1 enablesync) {
 
         if (!cache_found && !prefix) {
             snprintf(prefix_str, sizeof(prefix_str), "%s/%s", DEFAULT_GI_CACHE_PATH, DEFAULT_GI_CACHE_PREFIX);            
-            gi_cache = GiDataIndex_New(prefix_str, readonly, 0);
+            gi_cache = GiDataIndex_New(prefix_str, readonly);
         }
     }
 
@@ -562,7 +575,7 @@ static int x_GICacheInit(const char* prefix, Uint1 readonly, Uint1 enablesync) {
 
 int GICache_ReadData(const char *prefix) {
     int rc;
-    rc = x_GICacheInit(prefix, 1, 0);
+    rc = x_GICacheInit(prefix, 1);
     return rc;
 }
 
@@ -605,9 +618,9 @@ int64_t GICache_GetMaxGi(void) {
     return x_GetMaxGi(gi_cache);
 }
 
-int GICache_LoadStart(const char* cache_prefix, int enablesync) {
+int GICache_LoadStart(const char* cache_prefix) {
     int rc;
-    rc = x_GICacheInit(cache_prefix, 0, enablesync);
+    rc = x_GICacheInit(cache_prefix, 0);
     return rc;
 }
 
@@ -634,7 +647,7 @@ int GICache_LoadAdd(int64_t gi, int64_t gi_len, const char* acc, int version, in
 
 int GICache_LoadEnd() {
 	if (gi_cache) {
-		x_Commit(gi_cache);
+		x_Commit(gi_cache, 1);
 		GiDataIndex_Free(gi_cache);
 		gi_cache = NULL;
 	}
@@ -661,7 +674,7 @@ void GICache_Dump(const char* cache_prefix, const char* filename, volatile int *
 
 	needopen = gi_cache == NULL;
 	if (needopen) {
-		rc = x_GICacheInit(cache_prefix, 1, 0);
+		rc = x_GICacheInit(cache_prefix, 1);
 		if(!gi_cache) return;
 	}
 	f = fopen(filename, "w");
