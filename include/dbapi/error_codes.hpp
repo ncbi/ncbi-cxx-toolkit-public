@@ -54,8 +54,6 @@ NCBI_DEFINE_ERRCODE_X(Dbapi_Dblib_Conn,    1113,  3);
 NCBI_DEFINE_ERRCODE_X(Dbapi_Dblib_Context, 1114,  6);
 NCBI_DEFINE_ERRCODE_X(Dbapi_Dblib_Cmds,    1115,  4);
 NCBI_DEFINE_ERRCODE_X(Dbapi_Dblib_Results, 1116,  5);
-NCBI_DEFINE_ERRCODE_X(Dbapi_SQLt3_Conn,    1117,  2);
-NCBI_DEFINE_ERRCODE_X(Dbapi_SQLt3_Cmds,    1118,  1);
 NCBI_DEFINE_ERRCODE_X(Dbapi_CTlib_Conn,    1119,  3);
 NCBI_DEFINE_ERRCODE_X(Dbapi_CTlib_Cmds,    1120,  8);
 NCBI_DEFINE_ERRCODE_X(Dbapi_CTlib_Results, 1121,  3);
