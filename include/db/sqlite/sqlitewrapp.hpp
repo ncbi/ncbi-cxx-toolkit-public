@@ -70,11 +70,6 @@ public:
     /// Method can be called only before SQLite is initialized with
     /// Initialize() method.
     static void SetCustomPageCache(sqlite3_pcache_methods* methods);
-    /// Install non-default memory management for SQLite. For more details on
-    /// sqlite3_mem_methods look into comments before it in sqlite3.h.
-    /// Method can be called only before SQLite is initialized with
-    /// Initialize() method.
-    static void SetCustomMallocFuncs(sqlite3_mem_methods* methods);
 
     /// Initialization of SQLite and tuning some default parameters.
     /// For these SQLite wrappers to work properly this method should be

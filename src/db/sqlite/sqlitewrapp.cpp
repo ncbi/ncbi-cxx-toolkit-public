@@ -346,16 +346,6 @@ CSQLITE_Global::SetCustomPageCache(sqlite3_pcache_methods* methods)
     }
 }
 
-void
-CSQLITE_Global::SetCustomMallocFuncs(sqlite3_mem_methods* methods)
-{
-    int res = sqlite3_config(SQLITE_CONFIG_MALLOC, methods);
-    if (res != SQLITE_OK) {
-        NCBI_THROW_FMT(CSQLITE_Exception, eBadCall,
-                       "Custom malloc functions are not set, err_code = " << res);
-    }
-}
-
 sqlite3_vfs*
 CSQLITE_Global::GetDefaultVFS(void)
 {
