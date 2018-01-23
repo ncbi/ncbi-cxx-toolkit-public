@@ -36,13 +36,10 @@
 #include <objtools/data_loaders/asn_cache/asn_cache_export.h>
 #include <db/bdb/bdb_file.hpp>
 
-class CAsnSubCacheCreateApplication;
-class CAsnCacheTestApplication;
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
-class CAsnCache_DataLoader;
 class CBioseq;
 END_SCOPE(objects)
 
@@ -100,6 +97,42 @@ public:
     void SetSeqLength(TSeqLength val);
     void SetTaxId(TTaxId val);
 
+    struct SIndexInfo {
+        TSeqId      seq_id;
+        TVersion    version;
+        TGi         gi;
+        TTimestamp  timestamp;
+        TChunkId    chunk;
+        TOffset     offs;
+        TSize       size;
+        TSeqLength  sequence_length;
+        TTaxId      taxonomy_id;
+
+        SIndexInfo(const CAsnIndex &index)
+        : seq_id(index.GetSeqId())
+        , version(index.GetVersion())
+        , gi(index.GetGi())
+        , timestamp(index.GetTimestamp())
+        , chunk(index.GetChunkId())
+        , offs(index.GetOffset())
+        , size(index.GetSize())
+        , sequence_length(index.GetSeqLength())
+        , taxonomy_id(index.GetTaxId())
+        {}
+
+        SIndexInfo()
+        : version(0)
+        , gi(0)
+        , timestamp(0)
+        , chunk(0)
+        , offs(0)
+        , size(0)
+        , sequence_length(0)
+        , taxonomy_id(0)
+        {}
+    };
+
+
 private:
 
     /// Flag indicating which type of index this is.
@@ -136,47 +169,7 @@ private:
 
     /// @}
 
-    struct SIndexInfo {
-        TSeqId      seq_id;
-        TVersion    version;
-        TGi         gi;
-        TTimestamp  timestamp;
-        TChunkId    chunk;
-        TOffset     offs;
-        TSize       size;
-        TSeqLength  sequence_length;
-        TTaxId      taxonomy_id;
-
-        SIndexInfo(const CAsnIndex &index)
-        : seq_id(index.GetSeqId())
-        , version(index.GetVersion())
-        , gi(index.GetGi())
-        , timestamp(index.GetTimestamp())
-        , chunk(index.GetChunkId())
-        , offs(index.GetOffset())
-        , size(index.GetSize())
-        , sequence_length(index.GetSeqLength())
-        , taxonomy_id(index.GetTaxId())
-        {}
-
-        SIndexInfo()
-        : version(0)
-        , gi(0)
-        , timestamp(0)
-        , chunk(0)
-        , offs(0)
-        , size(0)
-        , sequence_length(0)
-        , taxonomy_id(0)
-        {}
-    };
-
     friend CNcbiOstream &operator<<(CNcbiOstream &ostr, const CAsnIndex::SIndexInfo &info);
-
-    friend class CAsnCache;
-    friend class ::CAsnSubCacheCreateApplication;
-    friend class ::CAsnCacheTestApplication;
-    friend class objects::CAsnCache_DataLoader;
 };
 
 

@@ -149,7 +149,7 @@ void    CSeqIdChunkFile::Read( vector<CSeq_id_Handle> & target, streampos offset
 
     CObjectIStreamAsnBinary asn_stream( &m_Buffer[0], seq_ids_size );
     CSeq_id id;
-    while(asn_stream.GetStreamPos() < seq_ids_size){
+    while((size_t)asn_stream.GetStreamPos() < seq_ids_size){
         asn_stream >> id;
         target.push_back(CSeq_id_Handle::GetHandle(id));
     }

@@ -36,7 +36,6 @@
 
 BEGIN_NCBI_SCOPE
 
-class CAsnIndex;
 class CAsnCache;
 class CAsnCacheStats
 {
@@ -54,11 +53,12 @@ public:
     typedef int TIncludeFlags;
 
     CAsnCacheStats( CAsnCache & asn_cache_ref, TIncludeFlags include_flags = eIncludeDefault )
-        : m_AsnCacheRef( asn_cache_ref ), m_AsnIndexRef( asn_cache_ref.GetIndexRef() ), m_IncludeFlags(include_flags)
-            {}
+        : m_AsnCacheRef( asn_cache_ref ), 
+          m_IncludeFlags(include_flags)
+    {
+    }
 private:
     CAsnCache & m_AsnCacheRef;
-    CAsnIndex & m_AsnIndexRef;
     TIncludeFlags m_IncludeFlags;
 };
 

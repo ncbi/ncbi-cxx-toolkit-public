@@ -34,75 +34,88 @@
 
 #include <db/bdb/bdb_cursor.hpp>
 
-#include <objtools/data_loaders/asn_cache/asn_cache.hpp>
-#include <objtools/data_loaders/asn_cache/asn_index.hpp>
 #include <objtools/data_loaders/asn_cache/asn_cache_stats.hpp>
-
+#include <objtools/data_loaders/asn_cache/asn_cache.hpp>
 
 USING_NCBI_SCOPE;
 
 size_t    CAsnCacheStats::GetGICount( CNcbiOstream * stream ) const
 {
-    std::set<long>    gi_set;
-    CBDB_FileCursor cursor( m_AsnIndexRef );
-    cursor.SetCondition(CBDB_FileCursor::eFirst, CBDB_FileCursor::eLast);
-    while (cursor.Fetch() == eBDB_Ok) {
-        long    gi = m_AsnIndexRef.GetGi();
-        gi_set.insert( gi );
-        if ( stream ) {
-            *stream << gi << '\n';
-        }
+    if ( !stream ) {
+        return m_AsnCacheRef.GetGiCount();
     }
-
-    return gi_set.size();
+    else {
+        std::set<uint64_t> gi_coll;
+        m_AsnCacheRef.EnumSeqIds([stream, &gi_coll](string /*seq_id*/, 
+                                                        uint32_t /*version*/, 
+                                                        uint64_t gi, 
+                                                        uint32_t /*timestamp*/) {
+            gi_coll.insert( gi );
+            *stream << gi << '\n';
+     
+        });
+        return gi_coll.size();
+    }
 }
-
 
 void    CAsnCacheStats::DumpSeqIds( CNcbiOstream & stream ) const
 {
-    CBDB_FileCursor cursor( m_AsnIndexRef );
-    cursor.SetCondition(CBDB_FileCursor::eFirst, CBDB_FileCursor::eLast);
-    unsigned long   seqid_count = 0;
-    while (cursor.Fetch() == eBDB_Ok) {
-        stream << m_AsnIndexRef.GetSeqId() << " | "
-            << m_AsnIndexRef.GetVersion() << " | "
-            << m_AsnIndexRef.GetGi();
+    size_t seqid_count = 0;
+ 
+    m_AsnCacheRef.EnumSeqIds([this, &stream, &seqid_count](string seq_id, 
+                                                           uint32_t version, 
+                                                           uint64_t gi, 
+                                                           uint32_t timestamp) {
+        stream << seq_id  << " | "
+               << version << " | "
+               << gi;
+
         if (m_IncludeFlags & eIncludeTimestamp) {
-            stream << " | " << m_AsnIndexRef.GetTimestamp();
+            stream << " | " << timestamp;
         }
-        stream << '\n';
+
         seqid_count++;
-    }
-    
+    });
+ 
     stream << "Total " << seqid_count << " seq_ids found\n.";
 }
 
-
-
 void    CAsnCacheStats::DumpIndex( CNcbiOstream & stream ) const
 {
-    CBDB_FileCursor cursor( m_AsnIndexRef );
-    cursor.SetCondition(CBDB_FileCursor::eFirst, CBDB_FileCursor::eLast);
-    unsigned long   seqid_count = 0;
-    while (cursor.Fetch() == eBDB_Ok) {
-        stream << m_AsnIndexRef.GetSeqId() << " | "
-            << m_AsnIndexRef.GetVersion() << " | "
-            << m_AsnIndexRef.GetGi();
+    size_t seqid_count = 0;
+ 
+    m_AsnCacheRef.EnumIndex([this, &stream, &seqid_count](string seq_id, 
+                                                          uint32_t version, 
+                                                          uint64_t gi, 
+                                                          uint32_t timestamp, 
+                                                          uint32_t chunk, 
+                                                          uint32_t offset, 
+                                                          uint32_t size, 
+                                                          uint32_t seq_len, 
+                                                          uint32_t taxid) {
+                stream << seq_id  << " | "
+               << version << " | "
+               << gi;
+
         if (m_IncludeFlags & eIncludeTimestamp) {
-            stream << " | " << m_AsnIndexRef.GetTimestamp();
+            stream << " | " << timestamp;
         }
+
         if (m_IncludeFlags & eIncludeLocation) {
-            stream << " | " << m_AsnIndexRef.GetChunkId() << " | "
-                << m_AsnIndexRef.GetOffset() << " | "
-                << m_AsnIndexRef.GetSize();
+            stream << " | " 
+                   << chunk << " | "
+                   << offset << " | "
+                   << size;
         }
+
         stream << " | "
-            << m_AsnIndexRef.GetSeqLength() << " | "
-            << m_AsnIndexRef.GetTaxId()
-            << '\n';
+               << seq_len << " | "
+               << taxid
+               << '\n';
+
         seqid_count++;
-    }
-    
+    });
+ 
     stream << "Total " << seqid_count << " seq_ids found\n.";
 }
 
