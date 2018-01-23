@@ -5,6 +5,7 @@ util$
 util/bitset$
 util/regexp$
 util/xregexp$
+util/cache$
 serial$
 serial/impl$
 serial/datatool$
