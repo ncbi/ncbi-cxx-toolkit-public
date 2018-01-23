@@ -360,6 +360,15 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
     // Start sln file
     ofs << MSVC_SOLUTION_HEADER_LINE
         << GetApp().GetRegSettings().GetSolutionFileFormatVersion() << endl;
+    string tmp;
+    tmp = GetApp().GetMetaMakefile().GetConfigurationOpt( "VisualStudioVersion", SConfigInfo());
+    if (!tmp.empty()) {
+        ofs << "VisualStudioVersion" << " = " << tmp << endl;
+    }
+    tmp = GetApp().GetMetaMakefile().GetConfigurationOpt( "MinimumVisualStudioVersion", SConfigInfo());
+    if (!tmp.empty()) {
+        ofs << "MinimumVisualStudioVersion" << " = " << tmp << endl;
+    }
 
     list<string> proj_guid;
     // Utility projects

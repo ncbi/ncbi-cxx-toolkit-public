@@ -695,8 +695,11 @@ void CMsvc7RegSettings::IdentifyPlatform()
             sm_MsvcVersion = eMsvc1400;
             sm_MsvcVersionName = NStr::NumericToString(ide);
             break;
+        case 1500:
         default:
-            NCBI_THROW(CProjBulderAppException, eBuildConfiguration, "Unsupported IDE version");
+            sm_MsvcVersion = eMsvc1500;
+            sm_MsvcVersionName = NStr::NumericToString(ide);
+//            NCBI_THROW(CProjBulderAppException, eBuildConfiguration, "Unsupported IDE version");
             break;
         }
     }    
@@ -783,7 +786,7 @@ string CMsvc7RegSettings::GetSolutionFileFormatVersion(void)
         return "12.00\n# Visual Studio 2012";
     } else if (GetMsvcVersion() == eMsvc1200) {
         return "12.00\n# Visual Studio 2013";
-    } else if (GetMsvcVersion() == eMsvc1400) {
+    } else if (GetMsvcVersion() >= eMsvc1400) {
         return GetApp().GetRegSettings().m_Version;
     }
     return "";

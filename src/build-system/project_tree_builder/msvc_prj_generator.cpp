@@ -949,7 +949,11 @@ void CMsvcProjectGenerator::GeneratePropertySheets()
         {
             //default is very simple and empty
             msbuild::CProject project;
-            project.SetAttlist().SetToolsVersion("4.0");
+            string tmp = GetApp().GetMetaMakefile().GetConfigurationOpt( "ToolsVersion", SConfigInfo());
+            if (tmp.empty()) {
+                tmp = "4.0";
+            }
+            project.SetAttlist().SetToolsVersion(tmp);
 
             // NCBI base prop sheet
             {
@@ -1012,7 +1016,11 @@ void CMsvcProjectGenerator::GeneratePropertySheets()
     {
         //default is very simple and empty
         msbuild::CProject project;
-        project.SetAttlist().SetToolsVersion("4.0");
+        string tmp = GetApp().GetMetaMakefile().GetConfigurationOpt( "ToolsVersion", SConfigInfo());
+        if (tmp.empty()) {
+            tmp = "4.0";
+        }
+        project.SetAttlist().SetToolsVersion(tmp);
 
         // NCBI base prop sheet
         {
@@ -1078,7 +1086,11 @@ void CMsvcProjectGenerator::GeneratePropertySheets()
     string file_base(CDirEntry::ConcatPath(ps_dir, ps_base));
     {
         msbuild::CProject project;
-        project.SetAttlist().SetToolsVersion("4.0");
+        string tmp = GetApp().GetMetaMakefile().GetConfigurationOpt( "ToolsVersion", SConfigInfo());
+        if (tmp.empty()) {
+            tmp = "4.0";
+        }
+        project.SetAttlist().SetToolsVersion(tmp);
 
         // NCBI base prop sheet
         {
@@ -1194,7 +1206,12 @@ void CMsvcProjectGenerator::GenerateMsbuild(
 {
     msbuild::CProject project;
     project.SetAttlist().SetDefaultTargets("Build");
-    project.SetAttlist().SetToolsVersion("4.0");
+    string tmp;
+    tmp = GetApp().GetMetaMakefile().GetConfigurationOpt( "ToolsVersion", SConfigInfo());
+    if (tmp.empty()) {
+        tmp = "4.0";
+    }
+    project.SetAttlist().SetToolsVersion(tmp);
 #if __USE_DISABLED_CFGS__
     const list<SConfigInfo>& all_cfgs = GetApp().GetRegSettings().m_ConfigInfo;
 #else
@@ -1213,6 +1230,14 @@ void CMsvcProjectGenerator::GenerateMsbuild(
             __SET_PROPGROUP_ELEMENT( t, "ProjectName", prj.m_Name);
         } else {
             __SET_PROPGROUP_ELEMENT( t, "ProjectName", project_context.ProjectName());
+        }
+        tmp = GetApp().GetMetaMakefile().GetConfigurationOpt( "VCProjectVersion", SConfigInfo());
+        if (!tmp.empty()) {
+            __SET_PROPGROUP_ELEMENT( t, "VCProjectVersion", tmp);
+        }
+        tmp = GetApp().GetMetaMakefile().GetConfigurationOpt( "WindowsTargetPlatformVersion", SConfigInfo());
+        if (!tmp.empty()) {
+            __SET_PROPGROUP_ELEMENT( t, "WindowsTargetPlatformVersion", tmp);
         }
     }
     {
@@ -1900,7 +1925,11 @@ void CMsvcProjectGenerator::GenerateMsbuildFilters(
     CMsvcPrjProjectContext& project_context, CProjItem& prj)
 {
     msbuild::CProject filters;
-    filters.SetAttlist().SetToolsVersion("4.0");
+    string tmp = GetApp().GetMetaMakefile().GetConfigurationOpt( "ToolsVersion", SConfigInfo());
+    if (tmp.empty()) {
+        tmp = "4.0";
+    }
+    filters.SetAttlist().SetToolsVersion(tmp);
     string project_dir(project_context.ProjectDir());
 #if __USE_DISABLED_CFGS__
     const list<SConfigInfo>& all_cfgs = GetApp().GetRegSettings().m_ConfigInfo;
@@ -2059,7 +2088,11 @@ void CMsvcProjectGenerator::GenerateMsbuildUser(
     const list<SConfigInfo>& all_cfgs = m_project_configs;
 #endif
     msbuild::CProject project;
-    project.SetAttlist().SetToolsVersion("4.0");
+    string tmp = GetApp().GetMetaMakefile().GetConfigurationOpt( "ToolsVersion", SConfigInfo());
+    if (tmp.empty()) {
+        tmp = "4.0";
+    }
+    project.SetAttlist().SetToolsVersion(tmp);
 
     ITERATE(list<SConfigInfo>, c , all_cfgs) {
         const SConfigInfo& cfg_info = *c;
