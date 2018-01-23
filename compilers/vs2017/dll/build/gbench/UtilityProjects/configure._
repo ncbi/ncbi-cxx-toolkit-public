@@ -1,0 +1,5 @@
+set NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI-UNICODE=1
+set PTB_FLAGS= -dll
+set PTB_PROJECT_REQ=scripts\projects\ncbi_gbench.lst
+call "%BUILD_TREE_ROOT%\ptb.bat"
+if errorlevel 1 exit 1
