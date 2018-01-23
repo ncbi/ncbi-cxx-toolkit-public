@@ -87,7 +87,7 @@ CLiteAlign::CLiteAlign(const SSamData& ad, const string& contig, set<CLiteIndel>
     while(istr_cigar >> len >> c) {
         switch(c) {
         case 'S':
-            seq_pos =+ len; 
+            seq_pos += len; 
         case 'H':
             break;
 
