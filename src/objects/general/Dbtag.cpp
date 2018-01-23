@@ -663,8 +663,8 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_TIGRFAM, "http://www.jcvi.org/cgi-bin/tigrfams/HmmReportPage.cgi?acc=" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_UNITE, "https://unite.ut.ee/bl_forw.php?nimi=" },
     { CDbtag::eDbtagType_UniGene, "https://www.ncbi.nlm.nih.gov/unigene?term=" }, 
-    { CDbtag::eDbtagType_UniProt_SwissProt, "http://www.uniprot.org/uniprot/" }, // https not available tested 7/13/2016
-    { CDbtag::eDbtagType_UniProt_TrEMBL, "http://www.uniprot.org/uniprot/" }, // https not available tested 7/13/2016
+    { CDbtag::eDbtagType_UniProt_SwissProt, "https://www.uniprot.org/uniprot/" },
+    { CDbtag::eDbtagType_UniProt_TrEMBL, "https://www.uniprot.org/uniprot/" },
     { CDbtag::eDbtagType_UniSTS, "https://www.ncbi.nlm.nih.gov/probe?term=" },
     { CDbtag::eDbtagType_VBASE2, "http://www.vbase2.org/vgene.php?id=" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_VBRC, "http://vbrc.org/query.asp?web_view=curation&web_id=" }, // https not available tested 7/13/2016
