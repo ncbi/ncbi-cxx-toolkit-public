@@ -79,11 +79,11 @@ define make_c_dep
 endef
 
 ifeq "" "$(OBJ_DIRS)"
-  %.d: %.cpp
+  %.d: $(HERE)%.cpp
 	$(make_cpp_dep)
   %.d: $(srcdir)/%.cpp
 	$(make_cpp_dep)
-  %.d: %.c
+  %.d: $(HERE)%.c
 	$(make_c_dep)
   %.d: $(srcdir)/%.c
 	$(make_c_dep)
@@ -94,11 +94,11 @@ else
     CPP_DEP_THERE = $(CPP_OBJ_THERE:%@obj_ext@=%.d)
     C_DEP_THERE   = $(C_OBJ_THERE:%@obj_ext@=%.d)
   endif
-  $(CPP_DEP_HERE): %.d: %.cpp
+  $(CPP_DEP_HERE): %.d: $(HERE)%.cpp
 	$(make_cpp_dep)
   $(CPP_DEP_THERE): %.d: $(srcdir)/%.cpp $(OBJ_DIRS)
 	$(make_cpp_dep)
-  $(C_DEP_HERE): %.d: %.c
+  $(C_DEP_HERE): %.d: $(HERE)%.c
 	$(make_c_dep)
   $(C_DEP_THERE): %.d: $(srcdir)/%.c $(OBJ_DIRS)
 	$(make_c_dep)

@@ -69,12 +69,16 @@ SRC := $(strip $(SRC))
 
 OBJ_DIRS = $(filter-out ./.exists,$(patsubst %/,%/.exists,$(sort $(dir $(SRC)))))
 
+ifneq "" "$(filter-out 0 N% n% F% f% OFF Off off, $(USE_FULL_PATHS))"
+  HERE = $(CURDIR)/
+endif
+
 ifeq "" "$(OBJ_DIRS)"
-  %@obj_ext@: %.cpp $(config_status)
+  %@obj_ext@: $(HERE)%.cpp $(config_status)
 	$(make_cpp)
   %@obj_ext@: $(srcdir)/%.cpp $(config_status)
 	$(make_cpp)
-  %@obj_ext@: %.c $(config_status)
+  %@obj_ext@: $(HERE)%.c $(config_status)
 	$(make_c)
   %@obj_ext@: $(srcdir)/%.c $(config_status)
 	$(make_c)
@@ -89,17 +93,17 @@ else
 	@-echo $(OBJ_DIRS:%/.exists=%) > .$(TMPL).dirs
 
   STD_SRC = $(filter-out $(OVERRIDDEN_SRC),$(SRC) $(UNIX_SRC))
-  CPP_OBJ_HERE = $(patsubst %.cpp,%@obj_ext@,$(wildcard $(STD_SRC:%=%.cpp)))
-  C_OBJ_HERE = $(patsubst %.c,%@obj_ext@,$(wildcard $(STD_SRC:%=%.c)))
+  CPP_OBJ_HERE = $(patsubst $(HERE)%.cpp,%@obj_ext@,$(wildcard $(STD_SRC:%=$(HERE)%.cpp)))
+  C_OBJ_HERE = $(patsubst $(HERE)%.c,%@obj_ext@,$(wildcard $(STD_SRC:%=$(HERE)%.c)))
   ifneq "$(srcdir)" "."
     CPP_OBJ_THERE = $(patsubst $(srcdir)/%.cpp,%@obj_ext@,$(wildcard $(STD_SRC:%=$(srcdir)/%.cpp)))
     C_OBJ_THERE = $(patsubst $(srcdir)/%.c,%@obj_ext@,$(wildcard $(STD_SRC:%=$(srcdir)/%.c)))
   endif
-  $(CPP_OBJ_HERE): %@obj_ext@: %.cpp $(config_status)
+  $(CPP_OBJ_HERE): %@obj_ext@: $(HERE)%.cpp $(config_status)
 	$(make_cpp)
   $(CPP_OBJ_THERE): %@obj_ext@: $(srcdir)/%.cpp $(config_status) $(OBJ_DIRS)
 	$(make_cpp)
-  $(C_OBJ_HERE): %@obj_ext@: %.c $(config_status)
+  $(C_OBJ_HERE): %@obj_ext@: $(HERE)%.c $(config_status)
 	$(make_c)
   $(C_OBJ_THERE): %@obj_ext@: $(srcdir)/%.c $(config_status) $(OBJ_DIRS)
 	$(make_c)
