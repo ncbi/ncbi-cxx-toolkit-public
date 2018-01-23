@@ -205,3 +205,4 @@ install(
 install(EXPORT ncbi-cpp-toolkit
     DESTINATION lib/cmake/ncbi-cpp-toolkit-${NCBI_CPP_TOOLKIT_VERSION}
     )
+
