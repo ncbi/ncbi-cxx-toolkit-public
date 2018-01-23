@@ -2,14 +2,16 @@
 
 [Configuration]
 
-[Configuration.1100]
-PlatformToolset=v110
-
 [Configuration.1200]
 PlatformToolset=v120
 
 [Configuration.1400]
 PlatformToolset=v140
+
+[Configuration.1500]
+PlatformToolset=v141
+ToolsVersion = 15.0
+VCProjectVersion = 15.0
 
 
 [Compiler]
@@ -31,25 +33,14 @@ UndefinePreprocessorDefinitions=
 AdditionalOptions=
 ProgramDataBaseFileName=$(IntDir)$(TargetName).pdb
 
-[Compiler.800]
-PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
-Detect64BitPortabilityProblems=false
-
-[Compiler.900]
-PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
-Detect64BitPortabilityProblems=false
-
-[Compiler.1000]
-PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)
-
-[Compiler.1100]
-PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)
-
 [Compiler.1200]
 PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)
 
 [Compiler.1400]
 PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)
+
+[Compiler.1500]
+PreprocessorDefinitions=_CRT_SECURE_NO_WARNINGS=1;%(PreprocessorDefinitions)
 
 
 
@@ -92,15 +83,6 @@ RuntimeLibrary=2
 [Compiler.release.ReleaseMT]
 RuntimeLibrary=0
 
-[Compiler.800.release]
-PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
-
-[Compiler.900.release]
-Optimization=2
-PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
-AdditionalOptions=/MP
-
-
 
 [Linker]
 TargetMachine=1
@@ -115,12 +97,6 @@ IgnoreDefaultLibraryNames=
 GenerateManifest=true
 EmbedManifest=false
 FixedBaseAddress=0
-
-[Linker.1000]
-AdditionalOptions=advapi32.lib ole32.lib user32.lib gdi32.lib shell32.lib
-
-[Linker.1100]
-AdditionalOptions=advapi32.lib ole32.lib user32.lib gdi32.lib shell32.lib
 
 [Linker.1200]
 AdditionalOptions=advapi32.lib ole32.lib user32.lib gdi32.lib shell32.lib
@@ -163,7 +139,7 @@ Culture=
 PreprocessorDefinitions=
 
 ###############################################################################
-#  Conversions to MSVC2010
+#  Conversions to MSVC2010 and later
 [Translate]
 
 Configuration_ConfigurationType_1  = Application
