@@ -478,14 +478,30 @@ class Collector(object):
 
     def get_libs_from_command(self, command):
         libs = set()
+        skip = False
         for x in command:
-            if x.startswith('-l'):
-                x = x[2:]
-                if x.endswith('-dll'):
-                    x = x[:-4]
-                elif x.endswith('-static'):
-                    x = x[:-7]
-                libs.add(x)
+            if skip:
+                skip = False
+                continue
+            elif x.startswith('-'):
+                if x.startswith('-l'):
+                    l = x[2:]
+                elif x == '-o':
+                    skip = True
+                    continue
+                else:
+                    continue
+            elif x.endswith('.a') or x.endswith('.so') or x.endswith('.dylib'):
+                l = x[x.rfind('/')+1:x.rfind('.')]
+                if l.startswith('lib'):
+                    l = l[3:]
+            else:
+                continue
+            if l.endswith('-dll'):
+                l = l[:-4]
+            elif l.endswith('-static'):
+                l = l[:-7]
+            libs.add(l)
         return libs
 
 
