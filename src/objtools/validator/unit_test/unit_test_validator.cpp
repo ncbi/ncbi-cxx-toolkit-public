@@ -22229,3 +22229,56 @@ BOOST_AUTO_TEST_CASE(Test_InconsistentBioSources_ConLocation)
 
     CLEAR_ERRORS
 }
+
+
+void TestOverlappingRNAFeatures(const CSeq_loc& loc1, const CSeq_loc& loc2, bool expect_err)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> rrna = unit_test_util::AddMiscFeature(entry);
+    rrna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    rrna->SetData().SetRna().SetExt().SetName("16S ribosomal RNA");
+    rrna->SetLocation().Assign(loc1);
+
+    CRef<CSeq_feat> trna = unit_test_util::AddMiscFeature(entry);
+    trna->SetData().SetRna().SetType(CRNA_ref::eType_tRNA);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAa().SetIupacaa('A');
+    trna->SetLocation().Assign(loc2);
+
+    STANDARD_SETUP
+
+    if (expect_err) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadRRNAcomponentOverlapTRNA",
+                                 "tRNA-rRNA overlap"));
+    }
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_BADRRNAcomponentOverlapTRNA)
+{
+    CRef<CSeq_loc> loc1(new CSeq_loc());
+    loc1->SetInt().SetId().SetLocal().SetStr("good");
+    loc1->SetInt().SetFrom(0);
+    loc1->SetInt().SetTo(10);
+
+    CRef<CSeq_loc> loc2(new CSeq_loc());
+    loc2->Assign(*loc1);
+
+    TestOverlappingRNAFeatures(*loc1, *loc2, true);
+
+    loc2->SetInt().SetFrom(6);
+    loc2->SetInt().SetTo(16);
+    TestOverlappingRNAFeatures(*loc1, *loc2, true);
+
+    loc2->SetInt().SetFrom(7);
+    loc2->SetInt().SetTo(17);
+    TestOverlappingRNAFeatures(*loc1, *loc2, false);
+
+    loc2->SetInt().SetFrom(11);
+    loc2->SetInt().SetTo(17);
+    TestOverlappingRNAFeatures(*loc1, *loc2, false);
+
+}

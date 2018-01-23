@@ -2015,9 +2015,22 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
                                CSeqFeatData::eSubtype_rRNA,
                                eOverlap_Interval,
                                scores, *m_Scope);
-        if (scores.size() > 0) {
+        bool found_bad = false;
+        for (auto it : scores) {
+            CRef<CSeq_loc> intersection = it.second->GetLocation().Intersect(feat.GetLocation(),
+                0 /* flags*/,
+                NULL /* synonym mapper */);
+            if (intersection) {
+                TSeqPos length = sequence::GetLength(*intersection, m_Scope);
+                if (length >= 5) {
+                    found_bad = true;
+                    break;
+                }
+            }
+        }
+        if (found_bad) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOverlapTRNA,
-                     "tRNA-rRNA overlap", feat);
+                "tRNA-rRNA overlap", feat);
         }
     }
 }
