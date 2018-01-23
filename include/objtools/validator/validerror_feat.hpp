@@ -160,7 +160,6 @@ private:
     CBioseq_Handle x_GetCachedBsh(const CSeq_loc& loc);
 
     void ValidateSeqFeatData(const CSeqFeatData& data, const CSeq_feat& feat);
-    void ValidateSeqFeatProduct(const CSeq_loc& prod, const CSeq_feat& feat, CBioseq_Handle prot);
     void ValidateGene(const CGene_ref& gene, const CSeq_feat& feat);
     void ValidateGeneXRef(const CSeq_feat& feat);
     void ValidateGeneFeaturePair(const CSeq_feat& feat, const CSeq_feat& gene);
@@ -190,13 +189,9 @@ private:
 
     EDiagSev x_SeverityForConsensusSplice(void);
     void ValidateSplice(const CSeq_feat& feat, bool check_all = false);
-    void ValidateBothStrands(const CSeq_feat& feat);
     static void x_FeatLocHasBadStrandBoth(const CSeq_feat& feat, bool& both, bool& both_rev);
     void ValidateCommonCDSProduct(const CSeq_feat& feat);
     void ValidateFarProducts(const CSeq_feat& feat);
-    void x_ValidateGeneId(const CSeq_feat& feat);
-    void ValidateBadMRNAOverlap(const CSeq_feat& feat);
-    bool x_CDSHasGoodParent(const CSeq_feat& feat);
     void ValidateCDSPartial(const CSeq_feat& feat);
 
     void x_ValidateCdregionCodebreak(const CSeq_feat& feat);
@@ -233,9 +228,6 @@ private:
     void ValidatePeptideOnCodonBoundry(const CSeq_feat& feat, 
         const string& key);
 
-    void ValidateFeatPartialness(const CSeq_feat& feat);
-    void ValidateExcept(const CSeq_feat& feat);
-    void ValidateExceptText(const string& text, const CSeq_feat& feat);
     void ValidateSeqFeatXref(const CSeq_feat& feat);
     void ValidateSeqFeatXref(const CSeq_feat& feat, const CTSE_Handle& tse);
     void ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq_feat& feat);
@@ -247,14 +239,9 @@ private:
                                      const CFeat_id& id, CSeqFeatData::ESubtype subtype,
                                      const CTSE_Handle& tse);
     void ValidateOneFeatXrefPair(const CSeq_feat& feat, const CSeq_feat& far_feat, const CSeqFeatXref& xref);
-    void ValidateExtUserObject (const CUser_object& user_object, const CSeq_feat& feat);
-    void ValidateGoTerms (CUser_object::TData field_list, const CSeq_feat& feat, vector<pair<string, string> >& id_terms);
 
     void ValidateFeatCit(const CPub_set& cit, const CSeq_feat& feat);
-    void ValidateFeatComment(const string& comment, const CSeq_feat& feat);
     void ValidateFeatBioSource(const CBioSource& bsrc, const CSeq_feat& feat);
-
-    void x_ValidateGbQual(const CGb_qual& qual, const CSeq_feat& feat);
 
     bool IsOverlappingGenePseudo(const CSeq_feat& feat, CScope* scope);
 
@@ -270,7 +257,6 @@ private:
 
     bool x_CDS3primePartialTest(const CSeq_feat& feat);
     bool x_CDS5primePartialTest(const CSeq_feat& feat);
-    bool x_IsNTNCNWACAccession(const CSeq_loc& loc);
     bool x_HasNonReciprocalXref(const CSeq_feat& feat, const CFeat_id& id, CSeqFeatData::ESubtype subtype);
     bool x_LocIsNmAccession(const CSeq_loc& loc);
     void x_ReportMisplacedCodingRegionProduct(const CSeq_feat& feat);
@@ -294,6 +280,7 @@ protected:
     CValidError_imp& m_Imp;
     CBioseq_Handle m_LocationBioseq;
     CBioseq_Handle m_ProductBioseq;
+    bool m_ProductIsFar;
 
     void PostErr(EDiagSev sv, EErrType et, const string& msg);
 
@@ -330,6 +317,9 @@ protected:
     static bool x_IsMostlyNs(const CSeq_loc& loc, CBioseq_Handle bsh);
     static size_t x_FindStartOfGap(CBioseq_Handle bsh, int pos, CScope* scope);
 
+    void x_ValidateExcept();
+    virtual void x_ValidateExceptText(const string& text);
+
     CBioseq_Handle x_GetFeatureProduct(bool look_far, bool& is_far);
     CBioseq_Handle x_GetFeatureProduct(bool& is_far);
 
@@ -346,9 +336,24 @@ protected:
     virtual void x_ValidateFeatComment();
     void x_ValidateQuals();
     void x_ValidateGeneticCode();
-
+    void x_ValidateBadMRNAOverlap();
+    bool x_HasGoodParent();
     virtual void x_ValidateSeqFeatLoc();
+
+    CConstRef<CSeq_feat> m_Gene;
     bool m_GeneIsPseudo;
+};
+
+
+class CGeneValidator : public CSingleFeatValidator
+{
+public:
+    CGeneValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
+        CSingleFeatValidator(feat, scope, imp) {}
+
+
+protected:
+    virtual void x_ValidateExceptText(const string& text);
 };
 
 
