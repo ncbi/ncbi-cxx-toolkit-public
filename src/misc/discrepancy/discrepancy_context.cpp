@@ -886,11 +886,14 @@ void CDiscrepancyContext::CollectFeature(const CSeq_feat& feat)
 
 sequence::ECompare CDiscrepancyContext::Compare(const CSeq_loc& loc1, const CSeq_loc& loc2) const
 {
-    CSeq_loc::TRange r1 = loc1.GetTotalRange();
-    CSeq_loc::TRange r2 = loc2.GetTotalRange();
-    if (r1.GetFrom() >= r2.GetToOpen() || r2.GetFrom() >= r1.GetToOpen()) {
-        return sequence::eNoOverlap;
+    try {
+        CSeq_loc::TRange r1 = loc1.GetTotalRange();
+        CSeq_loc::TRange r2 = loc2.GetTotalRange();
+        if (r1.GetFrom() >= r2.GetToOpen() || r2.GetFrom() >= r1.GetToOpen()) {
+            return sequence::eNoOverlap;
+        }
     }
+    catch (exception& e) {}
     return sequence::Compare(loc1, loc2, &GetScope(), sequence::fCompareOverlapping);
 }
 
