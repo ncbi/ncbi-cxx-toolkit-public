@@ -46,6 +46,46 @@ BEGIN_objects_SCOPE
 
 class CTaxon1Node;
 
+class CDomainStorage {
+public:
+    static const int kIllegalValue = 0x7fffffff;
+    CDomainStorage();
+    ~CDomainStorage() {};
+
+    void SetId( int id ) { m_id = id; }
+    int  GetId() const { return m_id; }
+
+    void SetName( const string& n ) { m_name = n; }
+    const string& GetName() const { return m_name; }
+
+    void AddField( int field_no, int val_type, const string& name );
+    bool HasField( const string& field_name ) const;
+
+    void InsertFieldValue( int val_id, int str_len, const string& str );
+    void InsertFieldValue( int val_id, int value );
+
+    int  FindValueIdByField( const string& fieldName, const string& searchstring ) const;
+    int  FindValueIdByField( const string& fieldName, int fieldValue ) const;
+
+    int  FindFieldValueById( int value_id, const string& fieldName ) const;
+    const string&  FindFieldStringById( int value_id, const string& fieldName ) const;
+
+    bool empty() const { return m_values.empty(); }
+
+private:
+    int    m_id;
+    string m_name;
+    typedef map<string, size_t> TFieldMap;
+    typedef vector<int> TValueTypes;
+    typedef struct {
+	int    m_int;
+        string m_str;
+    } TValue;
+    typedef map< int, vector<TValue> > TValues;
+    TFieldMap   m_fields;
+    TValueTypes m_types;
+    TValues     m_values;
+};
 
 class COrgRefCache
 {
@@ -109,11 +149,9 @@ private:
     TTaxRank m_nSpeciesRank;
     TTaxRank m_nSubspeciesRank;
 
-    typedef map<TTaxRank, string> TRankMap;
-    typedef TRankMap::const_iterator TRankMapCI;
-    typedef TRankMap::iterator TRankMapI;
+    bool          InitDomain( const string& name, CDomainStorage& storage );
 
-    TRankMap m_rankStorage;
+    CDomainStorage     m_rankStorage;
 
     bool          InitRanks();
     TTaxRank      FindRankByName( const char* pchName );
@@ -130,14 +168,7 @@ private:
     bool          InitNameClasses();
     TTaxNameClass FindNameClassByName( const char* pchName );
     // Division stuff
-    struct SDivision {
-        string m_sCode;
-        string m_sName;
-    };
-    typedef map<TTaxDivision, struct SDivision> TDivisionMap;
-    typedef TDivisionMap::const_iterator TDivisionMapCI;
-    typedef TDivisionMap::iterator TDivisionMapI;
-    TDivisionMap m_divStorage;
+    CDomainStorage m_divStorage;
 
     bool          InitDivisions();
     TTaxDivision  FindDivisionByCode( const char* pchCode );
@@ -162,6 +193,7 @@ public:
     virtual const string&    GetBlastName() const
     { return m_ref->CanGetUname() ? m_ref->GetUname() : kEmptyStr; }
     virtual TTaxRank         GetRank() const;
+    //virtual const CTaxRank&  GetRankEx() const;
     virtual TTaxDivision     GetDivision() const;
     virtual TTaxGeneticCode  GetGC() const;
     virtual TTaxGeneticCode  GetMGC() const;

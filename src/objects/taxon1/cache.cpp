@@ -263,12 +263,12 @@ COrgRefCache::Insert2( CTaxon1Node& node )
 TTaxRank
 COrgRefCache::FindRankByName( const char* pchName )
 {
-    if( InitRanks() )
-      for( TRankMapCI ci = m_rankStorage.begin();
-         ci != m_rankStorage.end();
-         ++ci )
-        if( ci->second.compare( pchName ) == 0 )
-            return ci->first;
+    if( InitRanks() ) {
+	int vid = m_rankStorage.FindValueIdByField( "rank_txt", pchName );
+        if( vid != CDomainStorage::kIllegalValue ) {
+	    return m_rankStorage.HasField("oldid") ? m_rankStorage.FindFieldValueById( vid, "oldid" ) : vid;
+	}
+    }
     return -1000;
 }
 
@@ -277,63 +277,90 @@ const char*
 COrgRefCache::GetRankName( int rank )
 {
     if( InitRanks() ) {
-        TRankMapCI ci( m_rankStorage.find( rank ) );
-        if( ci != m_rankStorage.end() ) {
-            return ci->second.c_str();
+        if( m_rankStorage.HasField("oldid") ) {
+	    int vid = m_rankStorage.FindValueIdByField( "oldid", rank );
+            if( vid != CDomainStorage::kIllegalValue ) {
+	        return m_rankStorage.FindFieldStringById( vid, "rank_txt" ).c_str();
+	    }
+        } else { // old style ranks, use rank_txt
+            const string& s = m_rankStorage.FindFieldStringById( rank, "rank_txt" );
+            if( !s.empty() ) {
+                return s.c_str();
+            }
         }
     }
     return NULL;
 }
 
 bool
+COrgRefCache::InitDomain( const string& name, CDomainStorage& storage )
+{
+    CTaxon1_req  req;
+    CTaxon1_resp resp;
+    
+    req.SetGetdomain(name);
+
+    if( m_host.SendRequest( req, resp ) ) {
+	if( resp.IsGetdomain() ) {
+	    // Correct response, return object
+	    list< CRef< CTaxon1_info > >& lRecords = resp.SetGetdomain();
+	    // Get header [0]:id,nof_fields,name
+	    storage.SetId( lRecords.front()->GetIval1() );
+	    int nof_fields = lRecords.front()->GetIval2();
+	    storage.SetName( lRecords.front()->GetSval() );
+	    lRecords.pop_front();
+	    // read in field descriptions [1..nof_fields]:field_no,val_type,field_name
+	    while( nof_fields-- && !lRecords.empty() ) {
+		storage.AddField( lRecords.front()->GetIval1(), lRecords.front()->GetIval2(), lRecords.front()->GetSval() );
+		lRecords.pop_front();
+	    }
+	    // Fill in storage
+	    for( list< CRef< CTaxon1_info > >::const_iterator i = lRecords.begin();
+		 i != lRecords.end(); ++i ) {
+		if( (*i)->IsSetSval() ) {
+		    storage.InsertFieldValue( (*i)->GetIval1(), (*i)->GetIval2(), (*i)->GetSval() );
+		} else {
+		    storage.InsertFieldValue( (*i)->GetIval1(), (*i)->GetIval2() );
+		}
+	    }
+	    return true;
+	} else { // Internal: wrong respond type
+	    m_host.SetLastError( "Invalid response type" );
+	    return false;
+	}
+    }
+    return false;
+}
+
+bool
 COrgRefCache::InitRanks()
 {
-    if( m_rankStorage.size() == 0 ) {
-
-        CTaxon1_req  req;
-        CTaxon1_resp resp;
-
-        req.SetGetranks();
-
-        if( m_host.SendRequest( req, resp ) ) {
-            if( resp.IsGetranks() ) {
-                // Correct response, return object
-                const list< CRef< CTaxon1_info > >&
-                    lRanks = ( resp.GetGetranks() );
-                // Fill in storage
-                for( list< CRef< CTaxon1_info > >::const_iterator
-                         i = lRanks.begin();
-                     i != lRanks.end(); ++i ) {
-                    m_rankStorage
-                        .insert( TRankMap::value_type((*i)->GetIval1(),
-                                                      (*i)->GetSval()) );
-                }
-            } else { // Internal: wrong respond type
-                m_host.SetLastError( "Response type is not Getranks" );
-                return false;
-            }
-        }
-
-        m_nSuperkingdomRank = FindRankByName( "superkingdom" );
-        if( m_nSuperkingdomRank < -10 ) {
-            m_host.SetLastError( "Superkingdom rank was not found" );
-            return false;
-        }
-        m_nGenusRank = FindRankByName( "genus" );
-        if( m_nGenusRank < -10 ) {
-            m_host.SetLastError( "Genus rank was not found" );
-            return false;
-        }
-        m_nSpeciesRank = FindRankByName( "species" );
-        if( m_nSpeciesRank < -10 ) {
-            m_host.SetLastError( "Species rank was not found" );
-            return false;
-        }
-        m_nSubspeciesRank = FindRankByName( "subspecies" );
-        if( m_nSubspeciesRank < -10 ) {
-            m_host.SetLastError( "Subspecies rank was not found" );
-            return false;
-        }
+    if( m_rankStorage.empty() ) {
+	if( InitDomain("rank",m_rankStorage) ) {
+	    // Find some old ranks
+	    m_nSuperkingdomRank = FindRankByName( "superkingdom" );
+	    if( m_nSuperkingdomRank < -10 ) {
+		m_host.SetLastError( "Superkingdom rank was not found" );
+		return false;
+	    }
+	    m_nGenusRank = FindRankByName( "genus" );
+	    if( m_nGenusRank < -10 ) {
+		m_host.SetLastError( "Genus rank was not found" );
+		return false;
+	    }
+	    m_nSpeciesRank = FindRankByName( "species" );
+	    if( m_nSpeciesRank < -10 ) {
+		m_host.SetLastError( "Species rank was not found" );
+		return false;
+	    }
+	    m_nSubspeciesRank = FindRankByName( "subspecies" );
+	    if( m_nSubspeciesRank < -10 ) {
+		m_host.SetLastError( "Subspecies rank was not found" );
+		return false;
+	    }
+	} else {
+	    return false;
+	}
     }
     return true;
 }
@@ -407,37 +434,33 @@ TTaxDivision
 COrgRefCache::FindDivisionByCode( const char* pchCode )
 {
     if( !InitDivisions() || pchCode == 0 ) return -1;
-    for( TDivisionMapCI ci = m_divStorage.begin();
-         ci != m_divStorage.end();
-         ++ci ) {
-        const char* cp = ( ci->second.m_sCode.c_str() );
-        if( strcmp( cp, pchCode ) == 0 )
-            return ci->first;
+    int result = -1;
+    result = m_divStorage.FindValueIdByField( "div_cde", pchCode );
+    if( result == CDomainStorage::kIllegalValue ) {
+	result = -1;
     }
-    return -1;
+    return result;
 }
 
 TTaxDivision
 COrgRefCache::FindDivisionByName( const char* pchName )
 {
     if( !InitDivisions() || pchName == 0 ) return -1;
-    for( TDivisionMapCI ci = m_divStorage.begin();
-         ci != m_divStorage.end();
-         ++ci ) {
-        const char* cp = ( ci->second.m_sName.c_str() );
-        if( strcmp( cp, pchName ) == 0 )
-            return ci->first;
+    int result = -1;
+    result = m_divStorage.FindValueIdByField( "div_txt", pchName );
+    if( result == CDomainStorage::kIllegalValue ) {
+	result = -1;
     }
-    return -1;
+    return result;
 }
 
 const char*
 COrgRefCache::GetDivisionCode( short div_id )
 {
     if( !InitDivisions() ) return NULL;
-    TDivisionMapCI ci( m_divStorage.find( div_id ) );
-    if( ci != m_divStorage.end() ) {
-        return ci->second.m_sCode.c_str();
+    const string& sCode = m_divStorage.FindFieldStringById( div_id, "div_cde" );
+    if( !sCode.empty() ) {
+        return sCode.c_str();
     }
     return NULL;
 }
@@ -446,9 +469,9 @@ const char*
 COrgRefCache::GetDivisionName( short div_id )
 {
     if( !InitDivisions() ) return NULL;
-    TDivisionMapCI ci( m_divStorage.find( div_id ) );
-    if( ci != m_divStorage.end() ) {
-        return ci->second.m_sName.c_str();
+    const string& s = m_divStorage.FindFieldStringById( div_id, "div_txt" );
+    if( !s.empty() ) {
+        return s.c_str();
     }
     return NULL;
 }
@@ -457,35 +480,38 @@ COrgRefCache::GetDivisionName( short div_id )
 bool
 COrgRefCache::InitDivisions()
 {
-    if( m_divStorage.size() == 0 ) {
+    if( m_divStorage.empty() ) {
 
-        CTaxon1_req  req;
-        CTaxon1_resp resp;
+	if( !InitDomain("division", m_divStorage) ) {
+	    return false;
+	}
+//         CTaxon1_req  req;
+//         CTaxon1_resp resp;
 
-        req.SetGetdivs();
+//         req.SetGetdivs();
 
-        if( m_host.SendRequest( req, resp ) ) {
-            if( resp.IsGetdivs() ) {
-                // Correct response, return object
-                const list< CRef< CTaxon1_info > >&
-                    l = ( resp.GetGetdivs() );
-                // Fill in storage
-                for( list< CRef< CTaxon1_info > >::const_iterator
-                         i = l.begin();
-                     i != l.end(); ++i ) {
-                    SDivision& div = ( m_divStorage[(*i)->GetIval1()] );
-                    div.m_sName.assign( (*i)->GetSval() );
-                    int code = (*i)->GetIval2();
-                    for(int k= 0; k < 3; k++) {
-                        div.m_sCode.append( 1U, (code >> (8*(3-k))) & 0xFF );
-                    }
-                    div.m_sCode.append( 1U, code & 0xFF );
-                }
-            } else { // Internal: wrong response type
-                m_host.SetLastError( "Response type is not Getdivs" );
-                return false;
-            }
-        }
+//         if( m_host.SendRequest( req, resp ) ) {
+//             if( resp.IsGetdivs() ) {
+//                 // Correct response, return object
+//                 const list< CRef< CTaxon1_info > >&
+//                     l = ( resp.GetGetdivs() );
+//                 // Fill in storage
+//                 for( list< CRef< CTaxon1_info > >::const_iterator
+//                          i = l.begin();
+//                      i != l.end(); ++i ) {
+//                     SDivision& div = ( m_divStorage[(*i)->GetIval1()] );
+//                     div.m_sName.assign( (*i)->GetSval() );
+//                     int code = (*i)->GetIval2();
+//                     for(int k= 0; k < 3; k++) {
+//                         div.m_sCode.append( 1U, (code >> (8*(3-k))) & 0xFF );
+//                     }
+//                     div.m_sCode.append( 1U, code & 0xFF );
+//                 }
+//             } else { // Internal: wrong response type
+//                 m_host.SetLastError( "Response type is not Getdivs" );
+//                 return false;
+//             }
+//         }
     }
     return true;
 }
@@ -745,6 +771,95 @@ CTreeBlastIterator::IsVisible( const CTreeContNodeBase* pNode ) const
                       !CastCI(pNode)->GetBlastName().empty() );
 }
 
+/////////////////////////////////////////////////////////////////
+//  CDomainStorage impl
+//
+CDomainStorage::CDomainStorage()
+    : m_id(0)
+{
+}
+
+void
+CDomainStorage::AddField( int field_no, int val_type, const string& name )
+{
+    m_fields.insert( TFieldMap::value_type( name, field_no ) );
+    if( m_types.size() <= field_no ) {
+        m_types.resize(field_no+1);
+    }
+    m_types[field_no] = val_type;
+}
+
+bool
+CDomainStorage::HasField( const string& field_name ) const
+{
+    return m_fields.find( field_name ) != m_fields.end();
+}
+
+void
+CDomainStorage::InsertFieldValue( int val_id, int str_len, const string& str )
+{
+    vector< CDomainStorage::TValue >& val = m_values[val_id];
+    val.resize( val.size()+1 );
+    TValue& v = val.back();
+    v.m_int = str_len;
+    v.m_str = str;
+}
+
+void
+CDomainStorage::InsertFieldValue( int val_id, int value )
+{
+    InsertFieldValue( val_id, value, "" );
+}
+
+int
+CDomainStorage::FindValueIdByField( const string& fieldName, const string& searchstring ) const
+{
+    TFieldMap::const_iterator ci = m_fields.find(fieldName);
+    if( ci != m_fields.end() ) {
+	ITERATE( TValues, cj, m_values ) {
+	    if( cj->second[ci->second].m_str == searchstring ) {
+                return cj->first;
+            }
+        }
+    }
+    return kIllegalValue;
+}
+
+int
+CDomainStorage::FindValueIdByField( const string& fieldName, int fieldValue ) const
+{
+    TFieldMap::const_iterator ci = m_fields.find(fieldName);
+    if( ci != m_fields.end() ) {
+	ITERATE( TValues, cj, m_values ) {
+	    if( cj->second[ci->second].m_int == fieldValue ) {
+		return cj->first;
+	    }
+	}
+    }
+    return kIllegalValue;
+}
+
+int
+CDomainStorage::FindFieldValueById( int value_id, const string& fieldName ) const
+{
+    TFieldMap::const_iterator ci = m_fields.find(fieldName);
+    TValues::const_iterator cj = m_values.find(value_id);
+    if( ci != m_fields.end() && cj != m_values.end() ) {
+	return cj->second[ci->second].m_int;
+    }
+    return kIllegalValue;
+}
+
+const string&
+CDomainStorage::FindFieldStringById( int value_id, const string& fieldName ) const
+{
+    TFieldMap::const_iterator ci = m_fields.find(fieldName);
+    TValues::const_iterator cj = m_values.find(value_id);
+    if( ci != m_fields.end() && cj != m_values.end() ) {
+	return cj->second[ci->second].m_str;
+    }
+    return kEmptyStr;
+}
 
 END_objects_SCOPE
 END_NCBI_SCOPE
