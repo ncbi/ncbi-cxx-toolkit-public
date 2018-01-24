@@ -90,8 +90,8 @@ public:
     void PrintStat(void) const;
     static void PrintStatistics(void);
     
-    void AddTime(double time) {
-        m_Count += 1;
+    void AddTime(double time, size_t count = 1) {
+        m_Count += count;
         m_Time += time;
     }
 

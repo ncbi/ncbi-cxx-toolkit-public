@@ -259,6 +259,12 @@ bool CReadDispatcherCommand::MayBeSkipped(void) const
 }
 
 
+size_t CReadDispatcherCommand::GetStatisticsCount(void) const
+{
+    return 1;
+}
+
+
 namespace {
     class CCommandLoadSeq_idSeq_ids : public CReadDispatcherCommand
     {
@@ -735,6 +741,10 @@ namespace {
             {
                 return CGBRequestStatistics::eStat_Seq_idAcc;
             }
+        size_t GetStatisticsCount(void) const
+            {
+                return m_Key.size();
+            }
         
     private:
         const TKey& m_Key;
@@ -780,6 +790,10 @@ namespace {
             {
                 return CGBRequestStatistics::eStat_Seq_idGi;
             }
+        size_t GetStatisticsCount(void) const
+            {
+                return m_Key.size();
+            }
         
     private:
         const TKey& m_Key;
@@ -824,6 +838,10 @@ namespace {
         CGBRequestStatistics::EStatType GetStatistics(void) const
             {
                 return CGBRequestStatistics::eStat_Seq_idLabel;
+            }
+        size_t GetStatisticsCount(void) const
+            {
+                return m_Key.size();
             }
         
     private:
@@ -873,6 +891,10 @@ namespace {
         CGBRequestStatistics::EStatType GetStatistics(void) const
             {
                 return CGBRequestStatistics::eStat_Seq_idTaxId;
+            }
+        size_t GetStatisticsCount(void) const
+            {
+                return m_Key.size();
             }
         
     private:
@@ -926,6 +948,10 @@ namespace {
             {
                 return CGBRequestStatistics::eStat_Hash;
             }
+        size_t GetStatisticsCount(void) const
+            {
+                return m_Key.size();
+            }
         
     private:
         const TKey& m_Key;
@@ -976,6 +1002,10 @@ namespace {
             {
                 return CGBRequestStatistics::eStat_Length;
             }
+        size_t GetStatisticsCount(void) const
+            {
+                return m_Key.size();
+            }
         
     private:
         const TKey& m_Key;
@@ -1025,6 +1055,10 @@ namespace {
             {
                 return CGBRequestStatistics::eStat_Type;
             }
+        size_t GetStatisticsCount(void) const
+            {
+                return m_Key.size();
+            }
         
     private:
         const TKey& m_Key;
@@ -1069,6 +1103,10 @@ namespace {
         CGBRequestStatistics::EStatType GetStatistics(void) const
             {
                 return CGBRequestStatistics::eStat_BlobState;
+            }
+        size_t GetStatisticsCount(void) const
+            {
+                return m_Key.size();
             }
         
     private:
@@ -1874,8 +1912,9 @@ void CReadDispatcher::LogStat(CReadDispatcherCommand& command,
 {
     CReaderRequestResult& result = command.GetResult();
     double time = recursion.GetCurrentRequestTime();
+    size_t count = command.GetStatisticsCount();
     CGBRequestStatistics& stat = sx_Statistics[command.GetStatistics()];
-    stat.AddTime(time);
+    stat.AddTime(time, count);
     if ( CollectStatistics() >= 2 ) {
         string descr = command.GetStatisticsDescription();
         const CSeq_id_Handle& idh = result.GetRequestedId();
