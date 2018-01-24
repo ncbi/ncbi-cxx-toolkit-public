@@ -33,6 +33,7 @@
 #include <objtools/data_loaders/genbank/cache/reader_cache_params.h>
 #include <objtools/data_loaders/genbank/readers.hpp> // for entry point
 #include <objtools/data_loaders/genbank/impl/dispatcher.hpp>
+#include <objtools/data_loaders/genbank/impl/processors.hpp>
 #include <objtools/data_loaders/genbank/impl/request_result.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
@@ -694,6 +695,8 @@ bool CCacheReader::LoadSeq_idGi(CReaderRequestResult& result,
     if ( lock.IsLoadedGi() ) {
         return true;
     }
+
+    GoingToLoad(eCacheEntry_Gi);
     
     CConn conn(result, this);
     CParseBuffer str(result, m_IdCache, GetIdKey(seq_id), GetGiSubkey());
@@ -742,6 +745,8 @@ bool CCacheReader::LoadSeq_idAccVer(CReaderRequestResult& result,
         return true;
     }
 
+    GoingToLoad(eCacheEntry_AccVer);
+    
     CConn conn(result, this);
     CParseBuffer str(result, m_IdCache, GetIdKey(seq_id), GetAccVerSubkey());
     if ( str.Found() ) {
@@ -1142,6 +1147,41 @@ bool CCacheReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
 }
 
 
+struct SCacheEntryAccessCount {
+    Uint8 load_count, save_count;
+
+    void GoingToLoad() {
+        ++load_count;
+    }
+    bool NoNeedToSave() {
+        if ( save_count >= load_count ) {
+            return true;
+        }
+        ++save_count;
+        return false;
+    }
+};
+
+static SCacheEntryAccessCount s_CacheEntryAccessCounts[CCacheReader::eCacheEntry_Count];
+
+
+void CCacheReader::GoingToLoad(ECacheEntryType type)
+{
+    if ( type < eCacheEntry_Count ) {
+        s_CacheEntryAccessCounts[type].GoingToLoad();
+    }
+}
+
+
+bool CCacheReader::NoNeedToSave(ECacheEntryType type)
+{
+    if ( type < eCacheEntry_Count ) {
+        return s_CacheEntryAccessCounts[type].NoNeedToSave();
+    }
+    return false;
+}
+
+
 bool CCacheReader::LoadBlobState(CReaderRequestResult& result,
                                  const TBlobId& blob_id)
 {
@@ -1153,6 +1193,8 @@ bool CCacheReader::LoadBlobState(CReaderRequestResult& result,
     if( lock.IsLoadedBlobState() ) {
         return true;
     }
+
+    GoingToLoad(eCacheEntry_BlobState);
     
     CConn conn(result, this);
     CParseBuffer str(result, m_IdCache,
@@ -1183,6 +1225,8 @@ bool CCacheReader::LoadBlobVersion(CReaderRequestResult& result,
     if( lock.IsLoadedBlobVersion() ) {
         return true;
     }
+    
+    GoingToLoad(eCacheEntry_BlobVersion);
     
     CConn conn(result, this);
     CParseBuffer str(result, m_IdCache,
@@ -1242,6 +1286,9 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
     string subkey = GetBlobSubkey(blob, chunk_id);
     TBlobVersion cache_version = -1;
     TBlobVersion version = blob.GetKnownBlobVersion();
+    if ( chunk_id == kMain_ChunkId && CProcessor_ExtAnnot::IsExtAnnot(blob_id) ) {
+        version = 0;
+    }
     if ( version < 0 ) {
         CLoadLockBlobVersion lock(result, blob_id, eAlreadyLoaded);
         if ( lock ) {

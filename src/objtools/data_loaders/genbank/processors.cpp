@@ -2557,7 +2557,7 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
 
     CWriter* writer = GetWriter(result);
     if ( writer ) {
-        m_Dispatcher->LoadBlobVersion(result, blob_id);
+        //m_Dispatcher->LoadBlobVersion(result, blob_id);
         CRef<CWriter::CBlobStream> stream =
             (OpenStream(writer, result, blob_id, chunk_id, this));
         if ( stream ) {

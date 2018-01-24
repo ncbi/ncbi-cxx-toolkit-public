@@ -209,6 +209,17 @@ public:
                                  const TPluginManagerParamTree* params);
     virtual void ResetCache(void);
 
+    enum ECacheEntryType {
+        eCacheEntry_Gi,
+        eCacheEntry_AccVer,
+        eCacheEntry_BlobState,
+        eCacheEntry_BlobVersion,
+        eCacheEntry_Count
+    };
+
+    static void GoingToLoad(ECacheEntryType type);
+    static bool NoNeedToSave(ECacheEntryType type);
+    
 protected:
     void x_AddConnectionSlot(TConn conn);
     void x_RemoveConnectionSlot(TConn conn);

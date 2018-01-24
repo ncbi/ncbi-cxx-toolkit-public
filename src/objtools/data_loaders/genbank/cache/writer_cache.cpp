@@ -34,6 +34,7 @@
 #include <objtools/data_loaders/genbank/readers.hpp> // for entry point
 #include <objtools/data_loaders/genbank/impl/request_result.hpp>
 #include <objtools/data_loaders/genbank/impl/dispatcher.hpp>
+#include <objtools/data_loaders/genbank/impl/processors.hpp>
 
 #include <corelib/rwstream.hpp>
 #include <corelib/plugin_manager_store.hpp>
@@ -192,6 +193,9 @@ void CCacheWriter::SaveSeq_idGi(CReaderRequestResult& result,
     if( !m_IdCache) {
         return;
     }
+    if ( CCacheReader::NoNeedToSave(CCacheReader::eCacheEntry_Gi) ) {
+        return;
+    }
 
     CLoadLockGi lock(result, seq_id);
     if ( lock.IsLoadedGi() && lock.GetExpType() == GBL::eExpire_normal ) {
@@ -208,6 +212,9 @@ void CCacheWriter::SaveSeq_idAccVer(CReaderRequestResult& result,
                                     const CSeq_id_Handle& seq_id)
 {
     if( !m_IdCache) {
+        return;
+    }
+    if ( CCacheReader::NoNeedToSave(CCacheReader::eCacheEntry_AccVer) ) {
         return;
     }
 
@@ -422,7 +429,10 @@ void CCacheWriter::SaveBlobState(CReaderRequestResult& /*result*/,
     if( !m_IdCache ) {
         return;
     }
-
+    if ( CCacheReader::NoNeedToSave(CCacheReader::eCacheEntry_BlobState) ) {
+        return;
+    }
+    
     _ASSERT(blob_state >= 0);
     CStoreBuffer str;
     str.StoreInt4(blob_state);
@@ -437,7 +447,10 @@ void CCacheWriter::SaveBlobVersion(CReaderRequestResult& /*result*/,
     if( !m_IdCache ) {
         return;
     }
-
+    if ( 0 && CCacheReader::NoNeedToSave(CCacheReader::eCacheEntry_BlobVersion) ) {
+        return;
+    }
+    
     _ASSERT(version >= 0);
     CStoreBuffer str;
     str.StoreInt4(version);
@@ -534,6 +547,9 @@ CCacheWriter::OpenBlobStream(CReaderRequestResult& result,
     try {
         CLoadLockBlob blob(result, blob_id, chunk_id);
         TBlobVersion version = blob.GetKnownBlobVersion();
+        if ( chunk_id == kMain_ChunkId && CProcessor_ExtAnnot::IsExtAnnot(blob_id) ) {
+            version = 0;
+        }
         if ( version < 0 ) {
             CLoadLockBlobVersion version_lock(result, blob_id, eAlreadyLoaded);
             if ( version_lock ) {
