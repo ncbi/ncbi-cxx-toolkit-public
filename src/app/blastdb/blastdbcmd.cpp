@@ -131,7 +131,7 @@ private:
 string s_PreProcessAccessionsForDBv5(const string & id)
 {
 	string rv = id;
-	if (id.find('|') != NPOS) {
+	if ((id.find('|') != NPOS) || (id.find('_') != NPOS)) {
 
 		CRef<CSeq_id> seqid;
 		try {
@@ -447,6 +447,7 @@ CBlastDBCmdApp::x_PrintBlastDatabaseInformation()
     _ASSERT(m_BlastDb.NotEmpty());
     static const NStr::TNumToStringFlags kFlags = NStr::fWithCommas;
     const string kLetters = m_DbIsProtein ? "residues" : "bases";
+    const string kVersion = (m_BlastDb->GetBlastDbVersion() == EBlastDbVersion::eBDB_Version5) ? "5":"4";
     const CArgs& args = GetArgs();
 
     CNcbiOstream& out = args[kArgOutput].AsOutputFile();
@@ -463,7 +464,9 @@ CBlastDBCmdApp::x_PrintBlastDatabaseInformation()
         << "Date: " << m_BlastDb->GetDate()
         << "\tLongest sequence: "
         << NStr::IntToString(m_BlastDb->GetMaxLength(), kFlags) << " "
-        << kLetters << endl;
+        << kLetters << endl << endl;
+
+    out << "BLASTDB Version: " << kVersion << endl;
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
