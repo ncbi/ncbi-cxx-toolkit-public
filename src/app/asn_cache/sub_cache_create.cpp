@@ -813,6 +813,13 @@ int CAsnSubCacheCreateApplication::Run(void)
             return 2;
         }
         main_cache_roots.push_back(cache_root);
+
+        /// Handle subcache directories
+        CDir::TEntries cache_subdirectories =
+            cache_root.GetEntries("subcache_*", CDir::fCreateObjects);
+        ITERATE (CDir::TEntries, subdir_it, cache_subdirectories) {
+            main_cache_roots.push_back(dynamic_cast<const CDir &>(**subdir_it));
+        }
     }
 
     CDir    subcache_root( args["subcache"].AsString() );
