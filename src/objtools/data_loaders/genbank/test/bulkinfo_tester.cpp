@@ -350,6 +350,90 @@ public:
 };
 
 
+class CDataTesterSequence : public IBulkTester
+{
+public:
+    typedef string TDataValue;
+    typedef vector<TDataValue> TDataSet;
+    TDataSet data, data_verify;
+
+    const char* GetType(void) const
+        {
+            return "seq";
+        }
+    string GetData(CBioseq_Handle bh) const
+        {
+            CNcbiOstrstream s;
+            if ( bh ) {
+                set<CSeq_id_Handle> ids;
+                for ( auto& id : bh.GetId() ) {
+                    ids.insert(id);
+                }
+                for ( auto& id : ids ) {
+                    s << id << ' ';
+                }
+                s << bh.GetBioseqLength() << ": ";
+                string seq;
+                bh.GetSeqVector(bh.eCoding_Iupac).GetSeqData(0, 20, seq);
+                s << seq;
+            }
+            return CNcbiOstrstreamToString(s);
+        }
+    void LoadBulk(CScope& scope)
+        {
+            data.resize(ids.size());
+            vector<CBioseq_Handle> bhs = scope.GetBioseqHandles(ids);
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                data[i] = GetData(bhs[i]);
+            }
+        }
+    void LoadSingle(CScope& scope)
+        {
+            data.resize(ids.size());
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                data[i] = GetData(scope.GetBioseqHandle(ids[i]));
+            }
+        }
+    void LoadVerify(CScope& scope)
+        {
+            data_verify.resize(ids.size());
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                CBioseq_Handle h = scope.GetBioseqHandle(ids[i]);
+                data_verify[i] = GetData(h);
+                if ( h ) {
+                    scope.RemoveFromHistory(h);
+                }
+            }
+        }
+    void LoadVerify(const vector<string>& lines)
+        {
+            data_verify = lines;
+        }
+    void SaveResults(CNcbiOstream& out) const
+        {
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                out << data[i] << NcbiEndl;
+            }
+        }
+    bool Valid(size_t i) const
+        {
+            return !data[i].empty();
+        }
+    bool Correct(size_t i) const
+        {
+            return data[i] == data_verify[i];
+        }
+    void DisplayData(CNcbiOstream& out, size_t i) const
+        {
+            out << data[i];
+        }
+    void DisplayDataVerify(CNcbiOstream& out, size_t i) const
+        {
+            out << data_verify[i];
+        }
+};
+
+
 class CDataTesterLabel : public IBulkTester
 {
 public:
@@ -803,6 +887,7 @@ IBulkTester* IBulkTester::CreateTester(EBulkType type)
     case eBulk_type:   return new CDataTesterType();
     case eBulk_state:  return new CDataTesterState();
     case eBulk_general:return new CDataTesterGeneral();
+    case eBulk_sequence:return new CDataTesterSequence();
     default: return 0;
     }
 }

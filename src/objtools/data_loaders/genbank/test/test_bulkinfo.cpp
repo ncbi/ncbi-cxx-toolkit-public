@@ -125,7 +125,7 @@ void CTestApplication::TestApp_Args(CArgDescriptions& args)
     args.SetConstraint("type",
                        &(*new CArgAllow_Strings,
                          "gi", "acc", "label", "taxid", "hash",
-                         "length", "type", "state", "general"));
+                         "length", "type", "state", "general", "sequence"));
     args.AddFlag("no-force", "Do not force info loading");
     args.AddFlag("throw-on-missing-seq", "Throw exception for missing sequence");
     args.AddFlag("throw-on-missing-data", "Throw exception for missing data");
@@ -243,6 +243,9 @@ bool CTestApplication::TestApp_Init(const CArgs& args)
     else if ( args["type"].AsString() == "general" ) {
         m_Type = IBulkTester::eBulk_general;
     }
+    else if ( args["type"].AsString() == "sequence" ) {
+        m_Type = IBulkTester::eBulk_sequence;
+    }
     m_GetFlags = 0;
     if ( !args["no-force"] ) {
         m_GetFlags |= CScope::fForceLoad;
@@ -315,10 +318,18 @@ bool CTestApplication::RunPass(int pass)
         else {
             data->LoadBulk(*scope);
         }
-        ITERATE ( TIds, it, m_Ids ) {
-            _ASSERT((m_Type == IBulkTester::eBulk_hash &&
-                     !(m_GetFlags & CScope::fDoNotRecalculate)) ||
-                     !scope->GetBioseqHandle(*it, CScope::eGetBioseq_Loaded));
+        if ( m_Type == IBulkTester::eBulk_sequence ) {
+            // loaded fully
+        }
+        else if ( m_Type == IBulkTester::eBulk_hash &&
+                  !(m_GetFlags & CScope::fDoNotRecalculate) ) {
+            // may be loaded fully for recalculation
+        }
+        else {
+            // should not be loaded
+            ITERATE ( TIds, it, m_Ids ) {
+                _ASSERT(!scope->GetBioseqHandle(*it, CScope::eGetBioseq_Loaded));
+            }
         }
     }}
     vector<bool> errors;
