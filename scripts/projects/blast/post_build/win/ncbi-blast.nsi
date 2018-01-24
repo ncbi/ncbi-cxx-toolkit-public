@@ -81,7 +81,6 @@ Section "DefaultSection" SecDflt
   File "blastdbcheck.exe"
   File "blast_formatter.exe"
   File "deltablast.exe"
-  File "msvcp140.dll"
   
   SetOutPath "$INSTDIR\doc"
   File "README.txt"

@@ -62,8 +62,7 @@ def main():
              "blast_formatter.exe",
              "deltablast.exe",
              "legacy_blast.pl",
-             "update_blastdb.pl",
-             "msvcp140.dll"
+             "update_blastdb.pl"
              ]
     
     cwd = os.getcwd()
