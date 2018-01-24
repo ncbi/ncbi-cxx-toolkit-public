@@ -1,0 +1,9 @@
+corelib$
+corelib/test$
+check
+app$
+app/pubseq_gateway$
+dll
+misc$
+misc/third_party
+misc/third_party_static
