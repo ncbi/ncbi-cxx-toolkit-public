@@ -206,6 +206,7 @@ public:
     
     virtual CGBRequestStatistics::EStatType GetStatistics(void) const = 0;
     virtual string GetStatisticsDescription(void) const = 0;
+    virtual size_t GetStatisticsCount(void) const;
     
 private:
     CReaderRequestResult& m_Result;
