@@ -2689,6 +2689,34 @@ void CSeq_id::GetMatchingIds(TSeqIdHandles& matches) const
         }
         break;
 
+    case CSeq_id::e_General:   // CDbtag
+        if ( GetGeneral().IsSetTag() ) {
+            CSeq_id match;
+            match.Assign(*this);
+            CObject_id& tag = match.SetGeneral().SetTag();
+            switch ( tag.Which() ) {
+            case CObject_id::e_Id:
+                tag.SetStr(NStr::NumericToString(tag.GetId()));
+                break;
+            case CObject_id::e_Str:
+            {
+                const string& str = tag.GetStr();
+                if (str.find_first_not_of("0123456789") != NPOS) return;
+                try {
+                    tag.SetId(NStr::StringToNumeric<CObject_id::TId>(str));
+                }
+                catch (CStringException) {
+                    // String id can not be converted to integer.
+                    return;
+                }
+                break;
+            }
+            default:
+                return;
+            }
+            matches.insert(CSeq_id_Handle::GetHandle(match));
+        }
+        break;
     // Other types have no matching versions.
     case CSeq_id::e_not_set:
     case CSeq_id::e_Local:     // CObject_id
@@ -2696,7 +2724,6 @@ void CSeq_id::GetMatchingIds(TSeqIdHandles& matches) const
     case CSeq_id::e_Gibbmt:    // int
     case CSeq_id::e_Giim:      // CGiimport_id
     case CSeq_id::e_Patent:    // CPatent_seq_id
-    case CSeq_id::e_General:   // CDbtag
     case CSeq_id::e_Gi:        // TGi
         return;
     }

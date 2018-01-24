@@ -2263,6 +2263,8 @@ CSeq_loc_Mapper_Base::CollectSynonyms(const CSeq_id_Handle& id) const
     TSynonyms synonyms;
     m_MapOptions.GetSeqInfo().CollectSynonyms(id, synonyms);
     ITERATE(TSynonyms, syn, synonyms) {
+        // If an id is already mapped, do not touch it.
+        if (m_SynonymMap.find(*syn) != m_SynonymMap.end()) continue;
         m_SynonymMap[*syn] = id;
         // Add matching (e.g. versionless) synonyms.
         CConstRef<CSeq_id> syn_id = syn->GetSeqId();
