@@ -82,9 +82,9 @@ bool CObject_id::Match(const CObject_id& oid2) const
 
 CObject_id::E_Choice CObject_id::GetIdType(TId8& value) const
 {
-    switch ( Which() ) {
+    switch ( Tparent::Which() ) {
     case e_Id:
-        value = GetId();
+        value = Tparent::GetId();
         return e_Id;
     case e_Str:
         value = NStr::StringToInt8(GetStr(), NStr::fConvErr_NoThrow);
@@ -172,12 +172,12 @@ void CObject_id::SetId8(TId8 value)
 // format contents into a stream
 ostream& CObject_id::AsString(ostream &s) const
 {
-    switch ( Which() ) {
+    switch ( Tparent::Which() ) {
     case e_Id:
-        s << GetId();
+        s << Tparent::GetId();
         break;
     case e_Str:
-        s << GetStr(); // no Upcase() on output as per Ostell 7/2001 - Karl
+        s << Tparent::GetStr(); // no Upcase() on output as per Ostell 7/2001 - Karl
         break;
     default:
         break;
