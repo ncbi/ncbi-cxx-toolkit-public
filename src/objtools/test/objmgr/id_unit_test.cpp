@@ -771,7 +771,25 @@ BOOST_AUTO_TEST_CASE(Test_DeltaSAnnot)
 
 BOOST_AUTO_TEST_CASE(Test_HUP)
 {
-    LOG_POST("Checking HUP access");
+    bool authorized;
+    string user_name = GetProcessUserName();
+    if ( user_name == "vasilche" ) {
+        authorized = true;
+    }
+    else if ( user_name == "coremake" ) {
+        authorized = false;
+    }
+    else {
+        LOG_POST("Skipping HUP access for unknown user");
+        return;
+    }
+    if ( authorized ) {
+        LOG_POST("Checking HUP access for authorized user");
+    }
+    else {
+        LOG_POST("Checking HUP access for unauthorized user");
+    }
+    
     // set up objmgr with fetching
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     string gb_main = CGBDataLoader::RegisterInObjectManager(*objmgr).GetLoader()->GetName();
@@ -784,20 +802,30 @@ BOOST_AUTO_TEST_CASE(Test_HUP)
     {{
         CScope scope(*objmgr);
         scope.AddDataLoader(gb_hup);
-        BOOST_REQUIRE(scope.GetBioseqHandle(id_hup));
-        BOOST_REQUIRE(scope.GetBioseqHandle(id_main));
+        if ( authorized ) {
+            BOOST_CHECK(scope.GetBioseqHandle(id_hup));
+        }
+        else {
+            BOOST_CHECK(!scope.GetBioseqHandle(id_hup));
+        }
+        BOOST_CHECK(scope.GetBioseqHandle(id_main));
     }}
 
     {{
         CScope scope(*objmgr);
         scope.AddDefaults();
         
-        BOOST_REQUIRE(!scope.GetBioseqHandle(id_hup));
+        BOOST_CHECK(!scope.GetBioseqHandle(id_hup));
         scope.AddDataLoader(gb_hup);
-        BOOST_REQUIRE(scope.GetBioseqHandle(id_hup));
-        BOOST_REQUIRE(scope.GetBioseqHandle(id_main));
+        if ( authorized ) {
+            BOOST_CHECK(scope.GetBioseqHandle(id_hup));
+        }
+        else {
+            BOOST_CHECK(!scope.GetBioseqHandle(id_hup));
+        }
+        BOOST_CHECK(scope.GetBioseqHandle(id_main));
         scope.RemoveDataLoader(gb_hup);
-        BOOST_REQUIRE(!scope.GetBioseqHandle(id_hup));
+        BOOST_CHECK(!scope.GetBioseqHandle(id_hup));
     }}
     
     objmgr->RevokeDataLoader(gb_hup);
