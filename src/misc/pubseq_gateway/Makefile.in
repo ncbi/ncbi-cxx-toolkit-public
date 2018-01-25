@@ -1,6 +1,0 @@
-# $Id$
-
-SUB_PROJ = rpc
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
