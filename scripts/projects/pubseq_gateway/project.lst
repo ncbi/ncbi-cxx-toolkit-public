@@ -13,3 +13,10 @@ objtools$
 objtools/pubseq_gateway$
 objtools/pubseq_gateway/cassandra
 objtools/pubseq_gateway/rpc
+
+#define LST_COMMENT_1   objtools requires objects
+objects$
+serial$
+util$
+util/bitset$
+util/cache$
