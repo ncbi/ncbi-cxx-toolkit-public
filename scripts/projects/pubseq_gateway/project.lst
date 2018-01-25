@@ -19,5 +19,8 @@ misc/pubseq_gateway/cassandra
 
 # objtools requires src/objects/Makefile.in
 objects$
-
 serial$
+
+util$
+util/bitset$
+
