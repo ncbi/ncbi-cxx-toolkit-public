@@ -1,0 +1,7 @@
+#
+
+LIB_PROJ = DdRpc
+APP_PROJ = AccVerCache AccVerCacheD
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

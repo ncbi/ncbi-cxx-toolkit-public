@@ -1,0 +1,15 @@
+
+LIB = DdRpc
+SRC = HttpClientTransport DdRpcClient HttpServerTransport DdRpcDataPacker uv_extra
+
+CPPFLAGS = $(ORIG_CPPFLAGS) -I./external/include -I./external
+
+ifeq "$(MODE)" "Debug"
+#EXTRA=-fno-omit-frame-pointer -fsanitize=address
+EXTRA=-fno-omit-frame-pointer -fsanitize=leak
+LOCAL_CPPFLAGS += -O0 -g $(EXTRA)
+LOCAL_LDFLAGS = $(EXTRA)
+else
+LOCAL_CPPFLAGS += -g $(EXTRA)
+endif
+
