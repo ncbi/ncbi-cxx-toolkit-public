@@ -1,5 +1,5 @@
 corelib$
-corelib/test$
+corelib/hash_impl$
 check
 app$
 app/pubseq_gateway$
@@ -16,3 +16,6 @@ objtools/data_loaders/genbank/psg/rpc
 
 misc/pubseq_gateway$
 misc/pubseq_gateway/cassandra
+
+# objtools requires src/objects/Makefile.in
+objects$
