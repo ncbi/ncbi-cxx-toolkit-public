@@ -38,6 +38,8 @@
 #include <objtools/data_loaders/asn_cache/asn_index.hpp>
 #include <objtools/data_loaders/asn_cache/Cache_blob.hpp>
 
+#include <functional> 
+
 
 BEGIN_NCBI_SCOPE
 
