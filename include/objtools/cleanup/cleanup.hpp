@@ -50,6 +50,7 @@ class CSeq_annot;
 class CSeq_feat;
 class CSeq_submit;
 class COrgName;
+class CSubmit_block;
 
 
 class CSeq_entry_Handle;
