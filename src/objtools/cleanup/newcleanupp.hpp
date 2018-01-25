@@ -151,6 +151,8 @@ public:
         CSeq_submit& ss
     );
 
+	void BasicCleanupSubmitblock(CSubmit_block& sb);
+
     void BasicCleanupSeqAnnot (
         CSeq_annot& sa
     );

@@ -240,6 +240,14 @@ void CNewCleanup_imp::BasicCleanupSeqSubmit (
     }
 }
 
+
+void CNewCleanup_imp::BasicCleanupSubmitblock(CSubmit_block& block)
+
+{
+	SubmitblockBC(block);
+}
+
+
 void CNewCleanup_imp::BasicCleanupSeqAnnot (
     CSeq_annot& sa
 )
@@ -13516,6 +13524,14 @@ void CNewCleanup_imp::SetGlobalFlags(const CBioseq& bs, bool reset)
                 break;
         }
     }
+}
+
+
+void CNewCleanup_imp::SubmitblockBC(CSubmit_block& sb)
+{
+	if (sb.IsSetCit() && sb.GetCit().IsSetAuthors()) {
+		x_AuthListBCWithFixInitials(sb.SetCit().SetAuthors());
+	}
 }
 
 END_SCOPE(objects)

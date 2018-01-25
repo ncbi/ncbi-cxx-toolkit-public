@@ -138,6 +138,14 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_submit& ss, Uint4 options)
 }
 
 
+CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSubmit_block& block, Uint4 options)
+{
+	CLEANUP_SETUP
+	clean_i.BasicCleanupSubmitblock(block);
+	return changes;
+}
+
+
 /// Cleanup a Bioseq. 
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq& bs, Uint4 options)
 {

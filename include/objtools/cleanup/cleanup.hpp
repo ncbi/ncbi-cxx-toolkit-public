@@ -99,6 +99,8 @@ public:
     CConstRef<CCleanupChange> BasicCleanup(CSeq_feat& sf,   Uint4 options = 0);
     /// Cleanup a BioSource. 
     CConstRef<CCleanupChange> BasicCleanup(CBioSource& src,   Uint4 options = 0);
+	// Cleanup a Submit-block
+	CConstRef<CCleanupChange> BasicCleanup(CSubmit_block& block, Uint4 options = 0);
 
     // Handle versions.
     CConstRef<CCleanupChange> BasicCleanup(CSeq_entry_Handle& seh, Uint4 options = 0);

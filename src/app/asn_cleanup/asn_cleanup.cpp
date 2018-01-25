@@ -87,6 +87,7 @@ public:
     void Init(void);
     int  Run (void);
 
+	bool HandleSubmitBlock(CSubmit_block& block);
     bool HandleSeqEntry(CRef<CSeq_entry>& se);
     bool HandleSeqEntry(CSeq_entry_Handle entry);
     bool HandleSeqID( const string& seqID );
@@ -991,6 +992,30 @@ bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& labe
         }
     }
     return any_changes;
+}
+
+
+bool CCleanupApp::HandleSubmitBlock(CSubmit_block& block)
+{
+	CCleanup cleanup;
+	bool any_changes = false;
+	try {
+		CConstRef<CCleanupChange> changes = cleanup.BasicCleanup(block);
+		vector<string> changes_str = changes->GetAllDescriptions();
+		if (changes_str.size() == 0) {
+			LOG_POST(Error << "No changes from BasicCleanup of SubmitBlock\n");
+		} else {
+			LOG_POST(Error << "Changes from BasicCleanup of SubmitBlock:\n");
+			ITERATE(vector<string>, vit, changes_str) {
+				LOG_POST(Error << (*vit).c_str());
+			}
+			any_changes = true;
+		}
+	} catch (CException& e) {
+		LOG_POST(Error << "error in cleanup of SubmitBlock: " << e.GetMsg());
+	}
+	return any_changes;
+
 }
 
 

@@ -156,6 +156,8 @@ public:
         CSeq_annot& sa
     );
 
+	void SubmitblockBC(CSubmit_block& sb);
+
 private:
 
     // many more methods and variables ...
@@ -168,8 +170,6 @@ private:
     void ChangeMade (CCleanupChange::EChanges e);
 
     void SetupBC (CSeq_entry& se);
-
-    void SubmitblockBC (CSubmit_block& sb);
 
     void SeqsetBC (CBioseq_set& bss);
 
