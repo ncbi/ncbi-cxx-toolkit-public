@@ -10,8 +10,8 @@ misc/third_party_static
 
 objtools$
 objtools/data_loaders$
-objtools/data_loaders/genbank$
-objtools/data_loaders/genbank/psg$
+objtools/data_loaders/genbank/Makefile.in
+objtools/data_loaders/genbank/psg/Makefile.in
 objtools/data_loaders/genbank/psg/rpc
 
 misc/pubseq_gateway$
@@ -23,4 +23,4 @@ serial$
 
 util$
 util/bitset$
-
+util/cache$
