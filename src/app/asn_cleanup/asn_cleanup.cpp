@@ -80,7 +80,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-class CCleanupApp : public CNcbiApplication, public CGBReleaseFile::ISeqEntryHandler
+class CCleanupApp : public CNcbiApplication, public CGBReleaseFile::ISeqEntryHandler, public ISubmitBlockHandler
 {
 public:
     CCleanupApp();
@@ -397,7 +397,7 @@ bool CCleanupApp::x_ProcessSeqSubmit(auto_ptr<CObjectIStream>& is)
         //auto_ptr<CObjectOStream> out(CreateTmpOStream(outFileName, tmpFile.GetFileName()));
 
         CObjectTypeInfoMI submitBlockObj = GetSubmitBlockTypeInfo();
-        submitBlockObj.SetLocalReadHook(*is, new CReadSubmitBlockHook(*m_Out));
+        submitBlockObj.SetLocalReadHook(*is, new CReadSubmitBlockHook(*this, *m_Out));
 
         auto_ptr<CObjectTypeInfo> entryObj = GetEntryTypeInfo();
         entryObj->SetLocalReadHook(*is, new CReadEntryHook(*this, *m_Out));

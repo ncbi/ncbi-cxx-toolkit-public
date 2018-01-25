@@ -38,6 +38,7 @@
 
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/submit/Submit_block.hpp>
 
 #include "read_hooks.hpp"
 
@@ -52,21 +53,30 @@ static void WriteClassMember(CObjectOStream& out, const CObjectInfoMI &member)
 
 ////////////////////////////////////////////////
 // class CReadSubmitBlockHook
-CReadSubmitBlockHook::CReadSubmitBlockHook(CObjectOStream& out) :
-    m_out(out)
+CReadSubmitBlockHook::CReadSubmitBlockHook(ISubmitBlockHandler& handler, CObjectOStream& out) :
+    m_out(out),
+	m_handler(handler)
 {
 }
 
 void CReadSubmitBlockHook::ReadClassMember(CObjectIStream &in, const CObjectInfoMI &member)
 {
-    ncbi::TTypeInfo seqSubmitType = CType<CSeq_submit>::GetTypeInfo();
-    m_out.WriteFileHeader(seqSubmitType);
+	ncbi::TTypeInfo seqSubmitType = CType<CSeq_submit>::GetTypeInfo();
+	m_out.WriteFileHeader(seqSubmitType);
 
-    const CClassTypeInfo* classTypeInfo = CTypeConverter<CClassTypeInfo>::SafeCast(seqSubmitType);
-    m_out.BeginClass(classTypeInfo);
+	const CClassTypeInfo* classTypeInfo = CTypeConverter<CClassTypeInfo>::SafeCast(seqSubmitType);
+	m_out.BeginClass(classTypeInfo);
 
-    // writing 'sub' member
-    in.ReadClassMember(member);
+	// writing 'sub' member
+	in.ReadClassMember(member);
+
+    // Is there another way to get pointer to object?
+	CSeq_submit* submit = reinterpret_cast<CSeq_submit*>(member.GetClassObject().GetObjectPtr());
+
+    if (submit && submit->IsSetSub()) {
+        m_handler.HandleSubmitBlock(submit->SetSub());
+    }
+
     WriteClassMember(m_out, member);
 
     // start writing 'data' member
