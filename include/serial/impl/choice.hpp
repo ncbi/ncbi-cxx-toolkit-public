@@ -131,6 +131,9 @@ public:
     }
 
     void SetSelectDelay(TSelectDelayFunction func);
+
+    void SetSelectorInfo(const void* offset, size_t sz);
+    TMemberIndex Which(const void* object) const;
 protected:
     void CallUserOp_Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
@@ -145,6 +148,8 @@ protected:
     TSelectFunction m_SelectFunction;
     TSelectDelayFunction m_SelectDelayFunction;
     bool m_AllowEmpty;
+    TPointerOffsetType m_WhichOffset;
+    size_t m_WhichSize;
 };
 
 

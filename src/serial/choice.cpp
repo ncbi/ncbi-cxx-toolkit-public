@@ -132,6 +132,8 @@ void CChoiceTypeInfo::InitChoiceTypeInfoFunctions(void)
     SetSkipFunction(&TFunc::SkipChoiceDefault);
     m_SelectDelayFunction = 0;
     m_AllowEmpty = false;
+    m_WhichOffset = 0;
+    m_WhichSize = 0;
 }
 
 void CChoiceTypeInfo::AdjustChoiceTypeInfoFunctions(void)
@@ -343,6 +345,29 @@ void CChoiceTypeInfo::SetSelectDelay(TSelectDelayFunction func)
     _ASSERT(m_SelectDelayFunction == 0);
     _ASSERT(func != 0);
     m_SelectDelayFunction = func;
+}
+
+void CChoiceTypeInfo::SetSelectorInfo(const void* offset, size_t sz)
+{
+    m_WhichOffset = TPointerOffsetType(offset);
+    m_WhichSize = sz;
+}
+
+TMemberIndex CChoiceTypeInfo::Which(const void* object) const
+{
+    _ASSERT(m_WhichSize != 0);
+    const void* p = CRawPointer::Add(object, m_WhichOffset);
+    switch (m_WhichSize) {
+    case 1:
+        return *CTypeConverter<Uint1>::SafeCast(p);
+    case 2:
+        return *CTypeConverter<Uint2>::SafeCast(p);
+    case 4:
+        return *CTypeConverter<Uint4>::SafeCast(p);
+    default:
+        break;
+    }
+    return *CTypeConverter<Uint8>::SafeCast(p);
 }
 
 void CChoiceTypeInfo::SetDelayIndex(TObjectPtr objectPtr,

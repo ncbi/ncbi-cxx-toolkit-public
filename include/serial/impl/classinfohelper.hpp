@@ -143,11 +143,10 @@ public:
         eMemberIndexToGeneratedChoice = eGeneratedChoiceEmpty - kEmptyChoice
     };
 
-    static TMemberIndex WhichChoice(const CChoiceTypeInfo* /*choiceType*/,
+    static TMemberIndex WhichChoice(const CChoiceTypeInfo* choiceType,
                                     const void* choicePtr)
         {
-            return static_cast<TMemberIndex>(Get(choicePtr).Which())
-                + eGeneratedChoiceToMemberIndex;
+            return choiceType->Which(choicePtr) + eGeneratedChoiceToMemberIndex;
         }
     static void ResetChoice(const CChoiceTypeInfo* choiceType,
                             void* choicePtr)
