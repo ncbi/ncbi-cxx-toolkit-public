@@ -1,8 +1,0 @@
-# $Id$
-
-SUB_PROJ = rpc
-
-LIB_PROJ = ncbi_xreader_psg
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
