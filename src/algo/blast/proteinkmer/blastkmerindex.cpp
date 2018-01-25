@@ -28,6 +28,63 @@
  * File Description:
  *   Build index for BLAST-kmer searches
  *
+ * These comments describes the indices used for the KMER (QuickBLASTP) program.
+ * These indices are created by the code in this file.
+ * This document applies to the version 3 index.  Others are not supported.
+ *
+ * There are two file extensions:
+ * 1.) pki: contain the values for quick matching of the query with database sequence.  After the initial
+ * match, the Jaccard distance is calculated using the data in the pkd file.
+ * 2.) pkd: contains the data arrays used for Jaccard calculation.
+ *
+ * Description of pki files:
+ * ---------------------------------
+ *  1.) version - 4 bytes
+ *  2.) number of sequences - 4 bytes
+ *  3.) number of hash functions - 4 bytes
+ *  4.) number of samples (not used except in version 2) - 4 bytes
+ *  5.) KMER size - 4 bytes
+ *  6.) Rows per band.  Used for LSH and typically 2 - 4 bytes
+ *  7.) compression.  Used for data (pkd file) to say how many bytes per hash value - 4 bytes
+ *  8.) Alphabet (size or number?) - 4 bytes
+ *  8.) Start of the LSH array - 4 bytes.
+ *  9.) Size of the LSH array. Typically 16777217 bytes (2**24 + 1) - 4 bytes
+ *  10.) Offset for the end of the LSH matches (not array!) Also, this is the total size of the 
+ *  file in bytes. - 8 bytes
+ *  11.) Target chunk size. Typically 150. - 4 bytes
+ *  12.) Reserved for future use - 4 bytes
+ *  13.) Number of bad kmers These are overrepresented kmers - 4 bytes
+ *  14.) Hash values for bad kmers.  This area will be filled with zeros if there
+ *  are no badmers. - (2*4*number of hash functions-4) bytes
+ *  15.) LSH array with each entry (corresponding to hash value for two kmers) 
+ *  containing the offset to the list of data arrays in the pkd files. - size of LSH array (given
+ *  in item 9 above) * 8 bytes.
+ *  16.) An entry at the end of the LSH array with the final offset in bytes. Should be
+ *  same as entry 10 and is the size of the pki file. - 8 bytes.
+ *  17.) A list of entries for the data arrays in the pkd files - 4 bytes times the number of entries 
+ *
+ *  Description of pkd files:
+ *  ---------------------------------
+ *  This file contains the data arrays used in the calculation of the Jaccard distance.
+ *  Each array has (number of hash functions) * width.  Width can be 1, 2, or 4 bytes. 
+ *  Typically 2 bytes is used.  Note that this compresses the hash values from 4 to 2 bytes, 
+ *  so collisions may occur. The number of collisions is small.  At the end of 
+ *  each array 4 bytes are reserved for the OID in the BLAST database.  Note that multiple
+ *  arrays may refer to the same OID.  Also, duplicate arrays with the same OID are eliminated.
+ *  Note that the hash values (before compression) are ordered from largest to smallest. 
+ *
+ *  Locality Sensitive Hashing (LSH):
+ *  ---------------------------------
+ *  The idea here is to have some criteria to quickly identify data arrays that are similar to 
+ *  the ones in the query and only calculate the Jaccard distance on those arrays.  We do
+ *  this by taking two hash values from a data array and producing another hash value from it.
+ *  In version 3 index, we have two different ways of producing such LSH hash values.  First, we
+ *  take two neighboring hash values (from elements 0 and 1, 1 and 2, 2 and 3, etc.)
+ *  and combine them to make one LSH hash value.  Typically, we use 32 hash values in an array,
+ *  so this gives us 31 LSH hash values.  Second, we take every other value and hash them to
+ *  one LSH hash value (from elements 0 and 2, 1 and 3, etc.)  For 32 hash values in an 
+ *  array, this gives us 30 LSH hash values.  
+ *
  */
 
 #include <ncbi_pch.hpp>

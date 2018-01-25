@@ -701,7 +701,7 @@ BOOST_AUTO_TEST_CASE(CheckQueryHashesVersion3)
 	
 	// Expected (correct) values.
 	const int lsh_hash_length = 13;
-	const int lsh_hash_vals[lsh_hash_length] = { 700168,1293774,1377419,1712432,1819660,2314660,2484152,2944352,2951476,3273866,3625878,3709806,3714709};
+	const int lsh_hash_vals[lsh_hash_length] = { 700168,1293774,1377419,1712432,1819660,2314660,2484152,2944352,2951476,3273866,3625878,3709806,3837843};
 
 	const int kRowsPerBand=2;
 	vector< vector <uint32_t> > lsh_hash_vec;
@@ -757,7 +757,7 @@ BOOST_AUTO_TEST_CASE(BuildIndex)
 	BOOST_REQUIRE_EQUAL(0x1000001, lsh_size);
 
 	int lsh_counts = s_GetNumLSHHits(lsh_array, lsh_size-1);
-	BOOST_REQUIRE_EQUAL(166, lsh_counts);
+	BOOST_REQUIRE_EQUAL(187, lsh_counts);
 }
 
 BOOST_AUTO_TEST_CASE(BuildIndexRepeats)
@@ -784,7 +784,7 @@ BOOST_AUTO_TEST_CASE(BuildIndexRepeats)
 	BOOST_REQUIRE_EQUAL(0x1000001, lsh_size);
 
 	int lsh_counts = s_GetNumLSHHits(lsh_array, lsh_size-1);
- 	BOOST_REQUIRE_EQUAL(168, lsh_counts);
+ 	BOOST_REQUIRE_EQUAL(213, lsh_counts);
 
 }
 
@@ -833,7 +833,7 @@ BOOST_AUTO_TEST_CASE(BuildIndexWidth4Kmer4)
 	BOOST_REQUIRE_EQUAL(0x1000001, lsh_size);
 
 	int lsh_counts = s_GetNumLSHHits(lsh_array, lsh_size-1);
-	BOOST_REQUIRE_EQUAL(159, lsh_counts);
+	BOOST_REQUIRE_EQUAL(172, lsh_counts);
 }
 
 BOOST_AUTO_TEST_CASE(BuildIndexFewerBands)
@@ -862,7 +862,7 @@ BOOST_AUTO_TEST_CASE(BuildIndexFewerBands)
 	BOOST_REQUIRE_EQUAL(0x1000001, lsh_size);
 
 	int lsh_counts = s_GetNumLSHHits(lsh_array, lsh_size-1);
-	BOOST_REQUIRE_EQUAL(312, lsh_counts);
+	BOOST_REQUIRE_EQUAL(339, lsh_counts);
 }
 
 BOOST_AUTO_TEST_CASE(BuildIndex10letterAlphabet)
@@ -893,7 +893,7 @@ BOOST_AUTO_TEST_CASE(BuildIndex10letterAlphabet)
 	BOOST_REQUIRE_EQUAL(0x1000001, lsh_size);
 
 	int lsh_counts = s_GetNumLSHHits(lsh_array, lsh_size-1);
-	BOOST_REQUIRE_EQUAL(155, lsh_counts);
+	BOOST_REQUIRE_EQUAL(173, lsh_counts);
 }
 
 BOOST_AUTO_TEST_CASE(BuildIndex10letterVersion3)
@@ -929,7 +929,7 @@ BOOST_AUTO_TEST_CASE(BuildIndex10letterVersion3)
 	BOOST_REQUIRE_EQUAL(0x1000001, lsh_size);
 
 	int lsh_counts = s_GetNumLSHHits(lsh_array, lsh_size-1);
-	BOOST_REQUIRE_EQUAL(526, lsh_counts);
+	BOOST_REQUIRE_EQUAL(563, lsh_counts);
 
 	int chunkSize = mhfile.GetChunkSize();
 	BOOST_REQUIRE_EQUAL(150, chunkSize);

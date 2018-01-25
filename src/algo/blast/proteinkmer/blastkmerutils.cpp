@@ -362,10 +362,26 @@ void BlastKmerGetCompressedTranslationTable(vector<Uint1>& trans_table, int alph
 int BlastKmerBreakUpSequence(int length, vector<TSeqRange>& range_v, int ChunkSize)
 {
 	int numChunks=0;
+        int newChunkSize=0;
 	const int kOverlap=50;
-	numChunks = 1 + length/ChunkSize;
 	// Adjust chunk size so chunks are all about same length.
-	ChunkSize = (length + (numChunks-1)*kOverlap + numChunks)/numChunks;
+        if(length <= ChunkSize)
+	{
+		numChunks=1;
+		newChunkSize=length;
+	} else {
+		if (ChunkSize <= kOverlap)
+			numChunks=1;
+		else
+			numChunks = MAX(1, (length - kOverlap)/(ChunkSize - kOverlap));
+        	newChunkSize = (length + (numChunks-1)*kOverlap)/numChunks;
+		if(newChunkSize > 1.1*ChunkSize)
+		{  
+			numChunks++;
+        		newChunkSize = (length + (numChunks-1)*kOverlap)/numChunks;
+		}
+	}
+	ChunkSize=newChunkSize;
 	TSeqPos last=0;
 	for (int i=0; i<numChunks; i++)
 	{
