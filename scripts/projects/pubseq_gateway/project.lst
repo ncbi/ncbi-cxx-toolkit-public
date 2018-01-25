@@ -1,26 +1,15 @@
 corelib$
 corelib/hash_impl$
 check
-app$
-app/pubseq_gateway$
 dll
 misc$
 misc/third_party
 misc/third_party_static
 
+app$
+app/pubseq_gateway$
+
 objtools$
-objtools/data_loaders$
-objtools/data_loaders/genbank/Makefile.in
-objtools/data_loaders/genbank/psg/Makefile.in
-objtools/data_loaders/genbank/psg/rpc
-
-misc/pubseq_gateway$
-misc/pubseq_gateway/cassandra
-
-# objtools requires src/objects/Makefile.in
-objects$
-serial$
-
-util$
-util/bitset$
-util/cache$
+objtools/pubseq_gateway$
+objtools/pubseq_gateway/cassandra
+objtools/pubseq_gateway/rpc
