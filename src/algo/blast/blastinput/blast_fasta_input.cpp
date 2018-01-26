@@ -486,7 +486,7 @@ CShortReadFastaInputSource::CShortReadFastaInputSource(CNcbiIstream& infile,
       m_ParseSeqIds(false)
 {
     // allocate sequence buffer
-    m_Sequence.reserve(m_SeqBuffLen + 1);
+    m_Sequence.resize(m_SeqBuffLen + 1);
 
     // read the first line for FASTA input
     if (m_Format == eFasta) {
@@ -523,7 +523,7 @@ CShortReadFastaInputSource::CShortReadFastaInputSource(CNcbiIstream& infile1,
     }
 
     // allocate sequence buffer
-    m_Sequence.reserve(m_SeqBuffLen + 1);
+    m_Sequence.resize(m_SeqBuffLen + 1);
 
     // read the first line for FASTA input
     if (m_Format == eFasta) {
@@ -809,7 +809,7 @@ CShortReadFastaInputSource::x_ReadFastaOneSeq(CRef<ILineReader> line_reader)
         if (start + line.length() + 1 > m_SeqBuffLen) {
             string tmp;
             m_SeqBuffLen = 2 * (start + line.length() + 1);
-            tmp.reserve(m_SeqBuffLen);
+            tmp.resize(m_SeqBuffLen);
             memcpy(&tmp[0], &m_Sequence[0], start);
             m_Sequence.swap(tmp);
         }
