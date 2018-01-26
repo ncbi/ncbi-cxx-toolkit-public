@@ -304,6 +304,13 @@ public:
                         string feat_seq = sfx.GetSequence();
                         *m_out << "CdRegion seq: " << feat_seq << '\n';
                     }
+
+                    const CMappedFeat mf = sfx.GetMappedFeat();
+                    const CSeq_feat& mpped = mf.GetMappedFeature();
+                    *m_out << "MappedFeat: " << MSerial_AsnText << mpped << '\n';
+
+                    const CSeq_feat& sf = mf.GetOriginalFeature();
+                    *m_out << "Original: " << MSerial_AsnText << sf << '\n';
                 }
 
                 *m_out << '\n';
