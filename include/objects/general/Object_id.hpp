@@ -60,6 +60,7 @@ public:
     ~CObject_id(void);
 
     // override base class methods
+    E_Choice Which(void) const;
     bool IsId(void) const;
     TId GetId(void) const;
 
@@ -104,6 +105,13 @@ private:
 inline
 CObject_id::CObject_id(void)
 {
+}
+
+inline
+CObject_id::E_Choice CObject_id::Which(void) const
+{
+    TId8 t;
+    return GetIdType(t);
 }
 
 inline
