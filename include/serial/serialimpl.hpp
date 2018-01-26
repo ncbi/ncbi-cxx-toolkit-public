@@ -497,7 +497,7 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 
 #define END_CHOICE_INFO                                                 \
     NCBI_NS_NCBI::CClassInfoHelper<CClass>::SetReadWriteVariantMethods(info); \
-    info->SetSelectorInfo(MEMBER_PTR(m_choice), sizeof(m_choice)); \
+    info->SetSelectorInfo(MEMBER_PTR(m_choice), sizeof(BASE_OBJECT()->m_choice)); \
     END_STRUCT_INFO
 
 // sub class definition
