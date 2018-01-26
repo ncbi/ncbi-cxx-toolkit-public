@@ -3,9 +3,9 @@
 
 #include <string>
 
-#include "lmdbxx/lmdb++.h"
+#include <util/lmdbxx/lmdb++.h>
 
-#include "UtilException.hpp"
+#include <objtools/pubseq_gateway/rpc/UtilException.hpp>
 
 class CAccVerCacheStorage {
 private:

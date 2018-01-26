@@ -1,7 +1,6 @@
-#
+# $Id$
 
-LIB_PROJ = DdRpc
-APP_PROJ = AccVerCache AccVerCacheD
+APP_PROJ = pubseq_gateway
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

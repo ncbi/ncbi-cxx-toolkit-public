@@ -6,10 +6,10 @@
 #include <vector>
 #include <memory>
 
-#include "lmdbxx/lmdb++.h"
+#include <util/lmdbxx/lmdb++.h>
 
-#include "UtilException.hpp"
-#include "DdRpcDataPacker.hpp"
+#include <objtools/pubseq_gateway/rpc/UtilException.hpp>
+#include <objtools/pubseq_gateway/rpc/DdRpcDataPacker.hpp>
 
 #include "AccVerCacheStorage.hpp"
 

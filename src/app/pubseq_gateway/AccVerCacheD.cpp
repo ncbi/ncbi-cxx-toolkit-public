@@ -8,14 +8,14 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbithr.hpp>
 
-#include "IdLogUtil/AppLog.hpp"
-#include "IdLogUtil/AppPerf.hpp"
-#include "Lib/CassBlobOp.hpp"
-#include "Cass/CassFactory.hpp"
+#include <objtools/pubseq_gateway/diag/AppLog.hpp>
+#include <objtools/pubseq_gateway/diag/AppPerf.hpp>
+#include <objtools/pubseq_gateway/cassandra/CassBlobOp.hpp>
+#include <objtools/pubseq_gateway/cassandra/CassFactory.hpp>
 
-#include "UtilException.hpp"
-#include "HttpServerTransport.hpp"
-#include "DdRpcDataPacker.hpp"
+#include <objtools/pubseq_gateway/rpc/UtilException.hpp>
+#include <objtools/pubseq_gateway/rpc/HttpServerTransport.hpp>
+#include <objtools/pubseq_gateway/rpc/DdRpcDataPacker.hpp>
 
 #include "AccVerCacheDB.hpp"
 
