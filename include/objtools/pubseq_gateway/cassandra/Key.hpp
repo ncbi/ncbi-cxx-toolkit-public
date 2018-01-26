@@ -38,9 +38,8 @@
 #include <vector>
 #include <corelib/ncbistd.hpp>
 
-#include "IdLogUtil/AutoBuf.hpp"
-#include "IdLogUtil/IdLogUtl.hpp"
-#include "IdCassScope.hpp"
+#include <objtools/pubseq_gateway/diag/AutoBuf.hpp>
+#include <objtools/pubseq_gateway/diag/IdLogUtl.hpp>
 #include "IdCassScope.hpp"
 
 

@@ -34,9 +34,9 @@
 #ifndef _CASSAPPLAYER_H_
 #define _CASSAPPLAYER_H_
 
-#include "IdLogUtil/IdLogUtl.hpp"
-#include "Cass/CassDriver.hpp"
-#include "../Lib/Key.hpp"
+#include <objtools/pubseq_gateway/diag/IdLogUtl.hpp>
+#include "CassDriver.hpp"
+#include "Key.hpp"
 #include "IdCassScope.hpp"
 
 BEGIN_IDBLOB_SCOPE

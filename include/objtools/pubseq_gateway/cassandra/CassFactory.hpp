@@ -36,10 +36,10 @@
 
 #include <corelib/ncbiargs.hpp>
 
-#include "IdLogUtil/IdLogUtl.hpp"
-#include "IdLogUtil/AppLog.hpp"
+#include <objtools/pubseq_gateway/diag/IdLogUtl.hpp>
+#include <objtools/pubseq_gateway/diag/AppLog.hpp>
 #include "CassDriver.hpp"
-#include "../IdCassScope.hpp"
+#include "IdCassScope.hpp"
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;

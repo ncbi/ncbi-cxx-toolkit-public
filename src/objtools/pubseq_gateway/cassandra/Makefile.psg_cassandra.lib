@@ -1,0 +1,11 @@
+# $Id$
+
+SRC = CassBlobOp Key CassDriver CassFactory LbsmResolver SyncObj
+LIB = psg_cassandra
+
+LIBS = $(CASSANDRA_LIBS)
+CPPFLAGS = $(ORIG_CPPFLAGS) $(CASSANDRA_INCLUDE)
+
+REQUIRES = CASSANDRA MT Linux
+
+WATCHERS = satskyse dmitrie1
