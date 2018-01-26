@@ -59,10 +59,12 @@ public:
     // destructor
     ~CObject_id(void);
 
+#if 0
     // override base class methods
     E_Choice Which(void) const;
     bool IsId(void) const;
     TId GetId(void) const;
+#endif
 
     // identical ids?
     bool Match(const CObject_id& oid2) const;
@@ -107,6 +109,7 @@ CObject_id::CObject_id(void)
 {
 }
 
+#if 0
 inline
 CObject_id::E_Choice CObject_id::Which(void) const
 {
@@ -127,7 +130,7 @@ CObject_id::TId CObject_id::GetId(void) const
     TId8 t;
     return (GetIdType(t) == e_Id) ? TId(t) : Tparent::GetId();
 }
-
+#endif
 
 inline
 bool CObject_id::operator<(const CObject_id& id2) const
