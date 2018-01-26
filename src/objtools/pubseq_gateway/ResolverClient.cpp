@@ -7,11 +7,11 @@
 
 #include <corelib/ncbitime.hpp>
 
-#include "DdRpcCommon.hpp"
-#include "DdRpcClient.hpp"
-#include "DdRpcDataPacker.hpp"
-#include "ResolverClient.hpp"
-#include "HttpClientTransportP.hpp"
+#include <objtools/pubseq_gateway/rpc/DdRpcCommon.hpp>
+#include <objtools/pubseq_gateway/rpc/DdRpcClient.hpp>
+#include <objtools/pubseq_gateway/rpc/DdRpcDataPacker.hpp>
+#include <objtools/pubseq_gateway/rpc/HttpClientTransportP.hpp>
+#include <objtools/pubseq_gateway/ResolverClient.hpp>
 
 
 

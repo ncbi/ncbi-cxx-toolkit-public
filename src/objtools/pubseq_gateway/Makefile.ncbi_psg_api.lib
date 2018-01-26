@@ -1,0 +1,7 @@
+# $Id$
+
+SRC = ResolverClient
+
+LIB = ncbi_psg_api
+
+WATCHERS = sadyrovr
