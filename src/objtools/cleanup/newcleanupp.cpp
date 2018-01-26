@@ -13015,9 +13015,16 @@ void CNewCleanup_imp::ResynchProteinPartials ( CSeq_feat& feat )
 
     if (feat.GetData().GetProt().IsSetProcessed() &&
         feat.GetData().GetProt().GetProcessed() != CProt_ref::eProcessed_not_set) {
-        // not a "real" protein feature
-        return;
-    }
+        // not a "real" protein feature, just set feature partial 
+		// to match location partial
+		const unsigned int partial_loc =
+			sequence::SeqLocPartialCheck(feat.GetLocation(), m_Scope);
+		if (partial_loc == sequence::eSeqlocPartial_Complete &&
+			feat.IsSetPartial() && feat.GetPartial()) {
+			feat.ResetPartial();
+			ChangeMade(CCleanupChange::eChangePartial);
+		}
+	}
 
     CBioseq_Handle prot = m_Scope->GetBioseqHandle(feat.GetLocation());
     if (!prot) {

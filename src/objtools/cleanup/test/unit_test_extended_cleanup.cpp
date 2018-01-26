@@ -1524,3 +1524,33 @@ BOOST_AUTO_TEST_CASE(Test_RW_492)
 
     Test_WGSCleanupNoProt("X", "X");
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_782)
+{
+	CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+	CRef<CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(entry);
+	CRef<CSeq_feat> pfeat = prot->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+	CRef<CSeq_feat> mfeat(new CSeq_feat());
+	mfeat->Assign(*pfeat);
+	mfeat->SetData().SetProt().ResetName();
+	mfeat->SetData().SetProt().SetProcessed(CProt_ref::eProcessed_mature);
+	prot->SetSeq().SetAnnot().front()->SetData().SetFtable().push_back(mfeat);
+	pfeat->SetPartial(true);
+	mfeat->SetPartial(true);
+
+	CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+	CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+	entry->Parentize();
+
+	CCleanup cleanup;
+	CConstRef<CCleanupChange> changes;
+
+	cleanup.SetScope(scope);
+	changes = cleanup.ExtendedCleanup(*entry);
+	prot = GetProteinSequenceFromGoodNucProtSet(entry);
+	pfeat = prot->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+	mfeat = prot->SetSeq().SetAnnot().front()->SetData().SetFtable().back();
+	BOOST_CHECK_EQUAL(pfeat->GetPartial(), false);
+	BOOST_CHECK_EQUAL(mfeat->IsSetPartial(), false);
+}
