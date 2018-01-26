@@ -13,6 +13,7 @@ objtools$
 objtools/pubseq_gateway$
 objtools/pubseq_gateway/cassandra
 objtools/pubseq_gateway/rpc
+objtools/pubseq_gateway/diag
 
 util/lmdbxx
 
