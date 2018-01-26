@@ -1,0 +1,6 @@
+# $Id$
+
+LIB_PROJ = psg_diag
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
