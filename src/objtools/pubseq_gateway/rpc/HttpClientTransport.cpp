@@ -14,8 +14,8 @@
 #include <utility>
 #include <functional>
 
-#include "mpmc_nw.hpp"
-#include "uv.h"
+#include <objtools/pubseq_gateway/rpc/mpmc_nw.hpp>
+#include <uv.h>
 
 #define __STDC_FORMAT_MACROS
 #include <nghttp2/nghttp2.h>
@@ -24,9 +24,9 @@
 #include "IdLogUtil/AppLog.hpp"
 #include "UvHelper.hpp"
 
-#include "DdRpcCommon.hpp"
-#include "HttpClientTransport.hpp"
-#include "HttpClientTransportP.hpp"
+#include <objtools/pubseq_gateway/rpc/DdRpcCommon.hpp>
+#include <objtools/pubseq_gateway/rpc/HttpClientTransport.hpp>
+#include <objtools/pubseq_gateway/rpc/HttpClientTransportP.hpp>
 
 
 using namespace std;

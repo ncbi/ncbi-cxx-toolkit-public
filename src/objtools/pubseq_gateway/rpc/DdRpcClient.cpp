@@ -5,8 +5,8 @@
 #include <memory>
 #include <mutex>
 
-#include "DdRpcClient.hpp"
-#include "HttpClientTransportP.hpp"
+#include <objtools/pubseq_gateway/rpc/DdRpcClient.hpp>
+#include <objtools/pubseq_gateway/rpc/HttpClientTransportP.hpp>
 
 using namespace std;
 

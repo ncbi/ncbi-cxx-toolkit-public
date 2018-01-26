@@ -1,4 +1,0 @@
-# $Id$
-
-LIB = DdRpc
-SRC = HttpClientTransport DdRpcClient HttpServerTransport DdRpcDataPacker uv_extra
