@@ -143,7 +143,7 @@ esac
 
 : ${BOOST_PATH=$NCBI/boost-1.62.0-ncbi1}
 
-: ${CASSANDRA_PATH=$NCBI/datastax-cpp-driver-2.4.3}
+: ${CASSANDRA_PATH=$NCBI/datastax-cpp-driver-2.7.1}
 
 : ${CEREAL_PATH=$NCBI/cereal-1.1.0}
 
@@ -198,7 +198,7 @@ esac
 
 : ${LIBUNWIND_PATH=$NCBI/libunwind-1.1}
 
-: ${LIBUV_PATH=$NCBI/libuv-1.9.1}
+: ${LIBUV_PATH=$NCBI/libuv-1.14.1}
 
 : ${LIBXML_PATH=$NCBI/libxml-2.7.8}
 
