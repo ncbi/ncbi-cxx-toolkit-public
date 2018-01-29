@@ -4496,6 +4496,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MZUESC<BRA>\ts\tMuseu de Zoologia da Universidade Estadual de Santa Cruz\t\t",
 "MZUF\ts\tMuseo Zoologico La Specola, Universita di Firenze\t\t",
 "MZUFBA\ts\tMuseu de Zoologia, Universidade Federal da Bahia, Salvador\t\t",
+"MZUFV\ts\tMuseu de Zoologia Joao Mojeen da Universidade Federal de Vicosa\t\t",
 "MZUN\ts\tMuseo Zoologico di Universita degli Studi\t\t",
 "MZUNAP\ts\tMuseo de Zoologia de la Universidad Nacional de la Amazonia Peruana\t\t",
 "MZUP<ITA-Padova>\ts\tMuseo Zoologia\t\t",

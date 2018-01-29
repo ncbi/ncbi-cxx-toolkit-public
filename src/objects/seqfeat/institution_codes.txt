@@ -4463,6 +4463,7 @@ MZUEL	s	Museu de Zoologia da Universidade Estadual de Londrina	MZUEL
 MZUESC<BRA>	s	Museu de Zoologia da Universidade Estadual de Santa Cruz		
 MZUF	s	Museo Zoologico La Specola, Universita di Firenze		
 MZUFBA	s	Museu de Zoologia, Universidade Federal da Bahia, Salvador		
+MZUFV	s	Museu de Zoologia Joao Mojeen da Universidade Federal de Vicosa		
 MZUN	s	Museo Zoologico di Universita degli Studi		
 MZUNAP	s	Museo de Zoologia de la Universidad Nacional de la Amazonia Peruana		
 MZUP<ITA-Padova>	s	Museo Zoologia		
