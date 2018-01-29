@@ -12,10 +12,13 @@
 #include <objects/id2/ID2_Reply_Get_Blob_Id.hpp>
 #include <corelib/ncbitime.hpp>
 
+
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
+
 /// Base class for the user-defined context
+///
 class IBioIdContext
 {
 public:
@@ -24,6 +27,7 @@ public:
 
 
 /// Bio-id + context
+///
 class CBioId
 {
 public:
@@ -40,7 +44,9 @@ private:
 
 using TBioIds = vector<CBioId>;
 
+
 class CBioIdResolutionQueue;
+
 
 /// The generic part of the results of id resolution.
 ///
@@ -65,13 +71,11 @@ public:
     /// Blob storage location and other attributes
     struct SBlobInfo {
         SID2BlobId                           id2_blob_id;
-        CID2_Reply_Get_Blob_Id::TBlob_state  state;
-        TGi                                  gi;          // informational only
-        time_t                               date_queued; // informational only
-        TTaxId                               tax_id;
-        Uint8                                seq_length;
-        SBlobInfo() 
-            : state(0), gi(0), tax_id(0), seq_length(0) {}
+        CID2_Reply_Get_Blob_Id::TBlob_state  state = 0;
+        TGi                                  gi = 0;          // informational only
+        time_t                               date_queued = 0; // informational only
+        TTaxId                               tax_id = 0;
+        Uint8                                seq_length = 0;
     };
 
     /// Get info about the blob (obtained as a result of its id resolving)
@@ -100,6 +104,7 @@ public:
         eCanceled,   ///< Request canceled
         eError       ///< Unknown error
     };
+
     /// Get result of this id resolution
     EStatusEx GetStatusEx() const { return m_StatusEx; }
 
@@ -109,19 +114,18 @@ public:
     /// Get the bio-blob id (such as an accession) which this result is for
     const CBioId& GetBioId() const { return m_BioId; }
 
-
-    // TODO:  ctor, dtor, mover, etc
-
 private:
     CBioId     m_BioId;
     SBlobInfo  m_BlobInfo;
     EStatus    m_Status;
     EStatusEx  m_StatusEx;
     string     m_Message;
+
     friend class CBioIdResolutionQueue;
 };
 
 using TBlobIds = vector<CBlobId>;
+
 
 /// A queue to resolve "biological" blob ids (such as accessions) into the
 /// storage specific blob ids.
@@ -136,7 +140,7 @@ using TBlobIds = vector<CBlobId>;
 /// Resolution results for the ids which were added to a given instance of
 /// the queue will be available for retrieval using this (and only this) queue
 /// instance regardless of which threads were used to add the ids to the queue.
-
+///
 class CBioIdResolutionQueue
 {
 public:
@@ -191,6 +195,7 @@ public:
     /// Returns true if Queue has finished all resolutions
     /// and all items have been fetched or nothing was added for resolution at all
     bool IsEmpty() const;
+
 private:
     mutable mutex m_ItemsMtx;
     
@@ -211,8 +216,8 @@ private:
 };
 
 
-
 /// Blob that is ready to get its data retrieved
+///
 class CBlob
 {
 public:
@@ -228,7 +233,6 @@ private:
 };
 
 
-
 /// A queue to retrieve bio-blob data from the storage.
 ///
 /// Call Retrieve() to schedule more bio-ids (or blob-ids) for retrieval, then
@@ -241,7 +245,7 @@ private:
 /// Results for the ids which were added to a given instance of
 /// the queue will be available for retrieval using this (and only this) queue
 /// instance regardless of which threads were used to add the ids to the queue.
-
+///
 class CBlobRetrievalQueue
 {
 public:
@@ -259,6 +263,7 @@ public:
     /// @param deadline
     ///  For how long to try to push the bio-ids into the queue.
     void Retrieve(TBioIds* bio_ids, const CDeadline& deadline = 0);
+
     /// @param blob_ids
     ///  List of blob ids.
     ///  Those blob ids from the "blob_ids" container that make it
@@ -301,7 +306,9 @@ public:
     bool IsEmpty() const;
 };
 
+
 END_objects_SCOPE
 END_NCBI_SCOPE
+
 
 #endif
