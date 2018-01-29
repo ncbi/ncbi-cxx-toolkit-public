@@ -201,7 +201,7 @@ public:
     /// and all items have been fetched or nothing was added for resolution at all
     bool IsEmpty() const;
 private:
-    mutable std::mutex m_items_mtx;
+    mutable std::mutex m_ItemsMtx;
     
     struct CBioIdResolutionQueueItem {
         CBioIdResolutionQueueItem(std::shared_ptr<HCT::io_future> afuture, CBioId bio_id);
@@ -211,12 +211,12 @@ private:
         bool IsDone() const;
         void Cancel();
         void PopulateData(CBlobId& blob_id) const;
-        std::shared_ptr<HCT::http2_request> m_request;
+        std::shared_ptr<HCT::http2_request> m_Request;
         CBioId m_BioId;
     };
 
-    std::vector<std::unique_ptr<CBioIdResolutionQueueItem>> m_items;
-    std::shared_ptr<HCT::io_future> m_future;
+    std::vector<std::unique_ptr<CBioIdResolutionQueueItem>> m_Items;
+    std::shared_ptr<HCT::io_future> m_Future;
 };
 
 

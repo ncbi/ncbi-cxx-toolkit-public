@@ -53,17 +53,17 @@ void DumpEntry(const CBlobId& blob_id)
 /** CBioIdResolutionQueue::CBioIdResolutionQueueItem */
 
 CBioIdResolutionQueue::CBioIdResolutionQueueItem::CBioIdResolutionQueueItem(std::shared_ptr<HCT::io_future> afuture, CBioId bio_id) 
-    :   m_request(make_shared<HCT::http2_request>()),
+    :   m_Request(make_shared<HCT::http2_request>()),
         m_BioId(std::move(bio_id))
 {
     if (!HCT::HttpClientTransport::s_ioc)
         DDRPC::EDdRpcException::raise("DDRPC is not initialized, call DdRpcClient::Init() first");
-    m_request->init_request(DDRPC::DdRpcClient::SericeIdToEndPoint(ACCVER_RESOLVER_SERVICE_ID), afuture, "accver=" + m_BioId.GetId());
+    m_Request->init_request(DDRPC::DdRpcClient::SericeIdToEndPoint(ACCVER_RESOLVER_SERVICE_ID), afuture, "accver=" + m_BioId.GetId());
 }
 
 void CBioIdResolutionQueue::CBioIdResolutionQueueItem::SyncResolve(CBlobId& blob_id, const CDeadline& deadline) {
     long wait_ms = RemainingTimeMs(deadline);
-    bool rv = HCT::HttpClientTransport::s_ioc->add_request(m_request, wait_ms);
+    bool rv = HCT::HttpClientTransport::s_ioc->add_request(m_Request, wait_ms);
     if (!rv) {
         blob_id.m_Status = CBlobId::eFailed;
         blob_id.m_StatusEx = CBlobId::eError;
@@ -88,39 +88,39 @@ void CBioIdResolutionQueue::CBioIdResolutionQueueItem::SyncResolve(CBlobId& blob
 
 void CBioIdResolutionQueue::CBioIdResolutionQueueItem::WaitFor(long timeout_ms)
 {
-    m_request->get_result_data().wait_for(timeout_ms);
+    m_Request->get_result_data().wait_for(timeout_ms);
 }
 
 void CBioIdResolutionQueue::CBioIdResolutionQueueItem::Wait()
 {
-    m_request->get_result_data().wait();
+    m_Request->get_result_data().wait();
 }
 
 bool CBioIdResolutionQueue::CBioIdResolutionQueueItem::IsDone() const 
 {
-    return m_request->get_result_data().get_finished();
+    return m_Request->get_result_data().get_finished();
 }
 
 void CBioIdResolutionQueue::CBioIdResolutionQueueItem::Cancel()
 {
-    m_request->send_cancel();
+    m_Request->send_cancel();
 }
 
 void CBioIdResolutionQueue::CBioIdResolutionQueueItem::PopulateData(CBlobId& blob_id) const
 {
-    if (m_request->get_result_data().get_cancelled()) {
+    if (m_Request->get_result_data().get_cancelled()) {
         blob_id.m_Status = CBlobId::eFailed;
         blob_id.m_StatusEx = CBlobId::eCanceled;
         blob_id.m_Message = "Request for resolution was canceled";
     }
-    else if (m_request->has_error()) {
+    else if (m_Request->has_error()) {
         blob_id.m_Status = CBlobId::eFailed;
         blob_id.m_StatusEx = CBlobId::eError;
-        blob_id.m_Message = m_request->get_error_description();
+        blob_id.m_Message = m_Request->get_error_description();
     }
-    else switch (m_request->get_result_data().get_http_status()) {
+    else switch (m_Request->get_result_data().get_http_status()) {
         case 200: {
-            string data = m_request->get_reply_data_move();
+            string data = m_Request->get_reply_data_move();
             DDRPC::DataRow rec;
             try {
                 AccVerResolverUnpackData(rec, data);
@@ -159,7 +159,7 @@ void CBioIdResolutionQueue::CBioIdResolutionQueueItem::PopulateData(CBlobId& blo
 /** CBioIdResolutionQueue */
 
 CBioIdResolutionQueue::CBioIdResolutionQueue()
-    :   m_future(make_shared<HCT::io_future>())
+    :   m_Future(make_shared<HCT::io_future>())
 {
 }
 
@@ -172,15 +172,15 @@ void CBioIdResolutionQueue::Resolve(std::vector<CBioId>* bio_ids, const CDeadlin
     if (!bio_ids)
         return;
     bool has_timeout = !deadline.IsInfinite();
-    unique_lock<mutex> _(m_items_mtx);
+    unique_lock<mutex> _(m_ItemsMtx);
     long wait_ms = 0;
     auto rev_it = bio_ids->rbegin();
     while (rev_it != bio_ids->rend()) {
         
-        unique_ptr<CBioIdResolutionQueueItem> Qi(new CBioIdResolutionQueueItem(m_future, *rev_it));
+        unique_ptr<CBioIdResolutionQueueItem> Qi(new CBioIdResolutionQueueItem(m_Future, *rev_it));
 
         while (true) {
-            bool rv = HCT::HttpClientTransport::s_ioc->add_request(Qi->m_request, wait_ms);
+            bool rv = HCT::HttpClientTransport::s_ioc->add_request(Qi->m_Request, wait_ms);
 
             if (!rv) { // internal queue is full
                 if (has_timeout) {
@@ -192,7 +192,7 @@ void CBioIdResolutionQueue::Resolve(std::vector<CBioId>* bio_ids, const CDeadlin
                     wait_ms = DDRPC::INDEFINITE;
             }
             else {
-                m_items.emplace_back(std::move(Qi));
+                m_Items.emplace_back(std::move(Qi));
                 bio_ids->erase(std::next(rev_it.base()));
                 ++rev_it;
                 break;
@@ -215,15 +215,15 @@ std::vector<CBlobId> CBioIdResolutionQueue::GetBlobIds(const CDeadline& deadline
 {
     std::vector<CBlobId> rv;
     bool has_limit = max_results != 0;
-    unique_lock<mutex> _(m_items_mtx);
-    if (m_items.size() > 0) {
+    unique_lock<mutex> _(m_ItemsMtx);
+    if (m_Items.size() > 0) {
         bool has_timeout = !deadline.IsInfinite();
         if (has_timeout) {
             long wait_ms = RemainingTimeMs(deadline);
-            auto& last = m_items.front();
+            auto& last = m_Items.front();
             last->WaitFor(wait_ms);
         }
-        for (auto rev_it = m_items.rbegin(); rev_it != m_items.rend(); ++rev_it) {
+        for (auto rev_it = m_Items.rbegin(); rev_it != m_Items.rend(); ++rev_it) {
             if (has_limit && max_results-- == 0)
                 break;
             const auto& req = *rev_it;
@@ -231,7 +231,7 @@ std::vector<CBlobId> CBioIdResolutionQueue::GetBlobIds(const CDeadline& deadline
                 auto fw_it = std::next(rev_it).base();
                 rv.emplace_back(std::move((*fw_it)->m_BioId));
                 req->PopulateData(rv.back());
-                m_items.erase(fw_it);
+                m_Items.erase(fw_it);
             }
         }
     }
@@ -240,23 +240,23 @@ std::vector<CBlobId> CBioIdResolutionQueue::GetBlobIds(const CDeadline& deadline
 
 void CBioIdResolutionQueue::Clear(std::vector<CBioId>* bio_ids)
 {
-    unique_lock<mutex> _(m_items_mtx);
+    unique_lock<mutex> _(m_ItemsMtx);
     if (bio_ids) {
         bio_ids->clear();
-        bio_ids->reserve(m_items.size());
+        bio_ids->reserve(m_Items.size());
     }
-    for (auto& it : m_items) {
+    for (auto& it : m_Items) {
         it->Cancel();
         if (bio_ids)
             bio_ids->emplace_back(std::move(it->m_BioId));
     }
-    m_items.clear();
+    m_Items.clear();
 }
 
 bool CBioIdResolutionQueue::IsEmpty() const
 {
-    unique_lock<mutex> _(m_items_mtx);
-    return m_items.size() == 0;
+    unique_lock<mutex> _(m_ItemsMtx);
+    return m_Items.size() == 0;
 }
 
 
