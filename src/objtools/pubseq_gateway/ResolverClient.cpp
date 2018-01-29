@@ -167,7 +167,7 @@ CBioIdResolutionQueue::~CBioIdResolutionQueue()
 {
 }
 
-void CBioIdResolutionQueue::Resolve(vector<CBioId>* bio_ids, const CDeadline& deadline)
+void CBioIdResolutionQueue::Resolve(TBioIds* bio_ids, const CDeadline& deadline)
 {    
     if (!bio_ids)
         return;
@@ -211,9 +211,9 @@ CBlobId CBioIdResolutionQueue::Resolve(CBioId bio_id, const CDeadline& deadline)
     return rv;
 }
 
-vector<CBlobId> CBioIdResolutionQueue::GetBlobIds(const CDeadline& deadline, size_t max_results)
+TBlobIds CBioIdResolutionQueue::GetBlobIds(const CDeadline& deadline, size_t max_results)
 {
-    vector<CBlobId> rv;
+    TBlobIds rv;
     bool has_limit = max_results != 0;
     unique_lock<mutex> _(m_ItemsMtx);
     if (m_Items.size() > 0) {
@@ -238,7 +238,7 @@ vector<CBlobId> CBioIdResolutionQueue::GetBlobIds(const CDeadline& deadline, siz
     return rv;
 }
 
-void CBioIdResolutionQueue::Clear(vector<CBioId>* bio_ids)
+void CBioIdResolutionQueue::Clear(TBioIds* bio_ids)
 {
     unique_lock<mutex> _(m_ItemsMtx);
     if (bio_ids) {

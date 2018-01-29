@@ -47,6 +47,8 @@ private:
     IBioIdContext* m_Context;
 };
 
+using TBioIds = vector<CBioId>;
+
 class CBioIdResolutionQueue;
 
 /// The generic part of the results of id resolution.
@@ -130,6 +132,7 @@ private:
     friend class CBioIdResolutionQueue;
 };
 
+using TBlobIds = vector<CBlobId>;
 
 /// A queue to resolve "biological" blob ids (such as accessions) into the
 /// storage specific blob ids.
@@ -162,7 +165,7 @@ public:
     ///  into the queue will be removed from the "bio_ids" container.
     /// @param deadline
     ///  For how long to try to push the bio-ids into the queue.
-    void Resolve(vector<CBioId>*  bio_ids,
+    void Resolve(TBioIds*         bio_ids,
                  const CDeadline& deadline = CDeadline(0));
 
     /// Perform signle bio-ids resolution
@@ -187,8 +190,8 @@ public:
     ///  List of id resolution results
     /// @throw
     ///  If unrecoverable retrieval error has been detected.
-    vector<CBlobId> GetBlobIds(const CDeadline& deadline = CDeadline(0), 
-                                    size_t max_results = 0);
+    TBlobIds GetBlobIds(const CDeadline& deadline = CDeadline(0), 
+                                  size_t max_results = 0);
 
     /// Cancel all ongoing retrievals and return all not yet resolved bio-ids.
     /// You can continue working with the queue after that in a usual manner.
@@ -197,7 +200,7 @@ public:
     /// @param bio_ids
     ///  The not yet resolved bio-ids will be added to "bio_ids". If "bio_ids"
     ///  is NULL, then they be discarded.
-    void Clear(vector<CBioId>* bio_ids);
+    void Clear(TBioIds* bio_ids);
 
     /// Returns true if Queue has finished all resolutions
     /// and all items have been fetched or nothing was added for resolution at all
@@ -269,14 +272,14 @@ public:
     ///  into the queue will be removed from the "bio_ids" container.
     /// @param deadline
     ///  For how long to try to push the bio-ids into the queue.
-    void Retrieve(vector<CBioId>*  bio_ids,
+    void Retrieve(TBioIds*         bio_ids,
                   const CDeadline& deadline = CDeadline(0));
     /// @param blob_ids
     ///  List of blob ids.
     ///  Those blob ids from the "blob_ids" container that make it
     ///  into the queue will be removed from the "blob_ids" container.
-    void Retrieve(vector<CBlobId>* blob_ids,
-                  const CDeadline& deadline = CDeadline(0));
+    void Retrieve(TBlobIds* blob_ids,
+           const CDeadline& deadline = CDeadline(0));
 
     /// Get blobs that are ready for the immediate retrieval (and/or those that
     /// cannot be retrieved for whatever reason).
@@ -308,7 +311,7 @@ public:
     /// @param blob_ids
     ///  The bio-ids for which no retrievable blobs have yet been obtained will
     ///  be added to "blob_ids". If "blob_ids" is NULL, then they be discarded.
-    void Clear(vector<CBioId>* bio_ids, vector<CBlobId>* blob_ids);
+    void Clear(TBioIds* bio_ids, TBlobIds* blob_ids);
 
     /// Returns true if Queue has finished all retrieval work
     /// and all items have been fetched or nothing was added for retrieval at all
