@@ -74,7 +74,8 @@ case "$with_3psw" in
                      oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm, magic,
                      curl, gsoap, avro, cereal, sasl2,
                      mongodb, mongodb3, gmock, lapack,
-                     libuv, libssh2, cassandra, libxlsxwriter, grpc, msgsl],
+                     libuv, libssh2, cassandra, nghttp2, h2o,
+                     libxlsxwriter, grpc, msgsl],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -528,6 +529,14 @@ AC_ARG_WITH(cassandra,
    [ --with-cassandra=DIR    use Datastax Cassandra driver installation in DIR])
 AC_ARG_WITH(cassandra,
    [ --without-cassandra     do not use Datastax Cassandra driver])
+AC_ARG_WITH(nghttp2,
+   [ --with-nghttp2=DIR      use nghttp2 installation in DIR])
+AC_ARG_WITH(nghttp2,
+   [ --without-nghttp2       do not use nghttp2])
+AC_ARG_WITH(h2o,
+   [ --with-h2o=DIR          use h2o installation in DIR])
+AC_ARG_WITH(h2o,
+   [ --without-h2o           do not use h2o])
 AC_ARG_WITH(libxlsxwriter,
    [ --with-libxlsxwriter=DIR use libxlsxwriter installation in DIR])
 AC_ARG_WITH(libxlsxwriter,
@@ -603,7 +612,7 @@ sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 mongodb mongodb3 gmock lapack lmdb \
-libuv libssh2 cassandra libxlsxwriter grpc msgsl 3psw \
+libuv libssh2 cassandra nghttp2 h2o libxlsxwriter grpc msgsl 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -676,8 +685,9 @@ for x_arg in "$@" ; do
       | --with-avro=* | --with-cereal=* | --with-sasl2=* \
       | --with-mongodb=* | --with-mongodb3=* \
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
-      | --with-libssh2=* | --with-cassandra=* | --with-libxlsxwriter=* \
-      | --with-grpc=* | --with-msgsl=* )
+      | --with-libssh2=* | --with-cassandra=* | --with-nghttp2=* \
+      | --with-h2o=* | --with-libxlsxwriter=* | --with-grpc=* \
+      | --with-msgsl=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
       case "$x_arg" in
@@ -7831,6 +7841,50 @@ else
     CASSANDRA_STATIC_LIBS=$CASSANDRA_LIBS
 fi
 
+# HTTP/2 libraries
+if test -d "$NGHTTP2_PATH"; then
+   NCBI_FIX_DIR(NGHTTP2_PATH)
+   for d in "$NGHTTP2_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$NGHTTP2_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$NGHTTP2_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+            "$NGHTTP2_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+      if test -d "$d/lib"; then
+         NGHTTP2_LIBDIR=$d/lib
+         NCBI_FIX_DIR(NGHTTP2_LIBDIR)
+         break
+      fi
+   done
+fi
+NCBI_RPATHIFY(NGHTTP2_LIBPATH, $NGHTTP2_LIBDIR)
+NCBI_CHECK_THIRD_PARTY_LIB(nghttp2,
+   [AC_LANG_PROGRAM([[#include <nghttp2/nghttp2.h>]],
+       [[nghttp2_session_client_new(NULL, NULL, NULL);]])])
+if test "$with_nghttp2" != no -a \
+     -f "$NGHTTP2_LIBDIR/libnghttp2-static.a"; then
+   NGHTTP2_STATIC_LIBS="-L$NGHTTP2_LIBDIR -lnghttp2-static"
+else
+   NGHTTP2_STATIC_LIBS=$NGHTTP2_LIBS
+fi
+
+if test -d "$H2O_PATH"; then
+   NCBI_FIX_DIR(H2O_PATH)
+   for d in "$H2O_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$H2O_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$H2O_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+            "$H2O_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+      if test -d "$d"; then
+         H2O_PATH=$d
+         NCBI_FIX_DIR(H2O_PATH)
+         break
+      fi
+   done
+fi
+NCBI_CHECK_THIRD_PARTY_LIB_EX(h2o, H2O, h2o-evloop,
+   [AC_LANG_PROGRAM([[#include <h2o.h>>]],
+       [[h2o_init_request(NULL, NULL, NULL);]])],
+   [$OPENSSL_LIBS $Z_LIBS])
+       
+
 NCBI_CHECK_THIRD_PARTY_LIB_EX(libxlsxwriter, LIBXLSXWRITER, xlsxwriter,
    [AC_LANG_PROGRAM([[#include <xlsxwriter.h>]],
       [[lxw_workbook* wb = workbook_new("conftest.xlsx");]])],
@@ -8624,6 +8678,7 @@ AC_SUBST(LMDB_STATIC_LIBS)
 AC_SUBST(LIBUV_STATIC_LIBS)
 AC_SUBST(LIBSSH2_STATIC_LIBS)
 AC_SUBST(CASSANDRA_STATIC_LIBS)
+AC_SUBST(NGHTTP2_STATIC_LIBS)
 AC_SUBST(LIBXLSXWRITER_STATIC_LIBS)
 AC_SUBST(GRPC_UNSECURE_LIBS)
 AC_SUBST(GRPC_REFLECTION_LIBS)

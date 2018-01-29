@@ -55,6 +55,7 @@ try_local() {
         test -f "$d/include/gsl/gsl"       &&  : ${MSGSL_PATH=$d}
         test -f "$d/include/stdsoap2.h"    &&  : ${GSOAP_PATH=$d}
         test -f "$d/include/hdf5.h"        &&  : ${HDF5_PATH=$d}
+        test -f "$d/include/h2o.h"         &&  : ${H2O_PATH=$d}
         test -x "$d/bin/icu-config"        &&  : ${ICU_PATH=$d}
         test -f "$d/include/jpeglib.h"     &&  : ${JPEG_PATH=$d}
         test -x "$d/bin/krb5-config"       &&  : ${KRB5_PATH=$d}
@@ -73,6 +74,7 @@ try_local() {
         test -d "$d/include/muParser"      &&  : ${MUPARSER_PATH=$d}
         test -x "$d/bin/mysql-config"      &&  : ${MYSQL_PATH=$d}
         test -d "$d/include/nettle"        &&  : ${NETTLE_PATH=$d}
+        test -d "$d/include/nghttp2"       &&  : ${NGHTTP2_PATH=$d}
         test -d "$d/include/GL"            &&  : ${OPENGL_PATH=$d}
         test -d "$d/include/OB"            &&  : ${ORBACUS_PATH=$d}
         test -f "$d/include/png.h"         &&  : ${PNG_PATH=$d}
@@ -186,6 +188,8 @@ case "$ncbi_platform" in
     Linux64    ) : ${GSOAP_PATH=$NCBI/gsoap-2.8.15} ;;
 esac
 
+: ${H2O_PATH=$NCBI/h2o-2.2.4}
+
 : ${HDF5_PATH=$NCBI/hdf5-1.8.3}
 
 case "$ncbi_platform" in
@@ -237,6 +241,8 @@ case "$ncbi_platform" in
     Linux64    ) : ${NETTLE_PATH=$NCBI/nettle-3.1.1} ;;
     *MAC       ) : ${NETTLE_PATH=$NCBI/nettle-3.1.1} ;;
 esac
+
+: ${NGHTTP2_PATH=$NCBI/nghttp2-1.29.0}
 
 # : ${ODBC_PATH:="/opt/machine/merant"}
 

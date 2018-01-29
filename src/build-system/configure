@@ -857,6 +857,10 @@ LIBSSH2_INCLUDE
 LIBSSH2_LIBS
 CASSANDRA_INCLUDE
 CASSANDRA_LIBS
+NGHTTP2_INCLUDE
+NGHTTP2_LIBS
+H2O_INCLUDE
+H2O_LIBS
 LIBXLSXWRITER_INCLUDE
 LIBXLSXWRITER_LIBS
 GRPC_INCLUDE
@@ -1090,6 +1094,7 @@ LMDB_STATIC_LIBS
 LIBUV_STATIC_LIBS
 LIBSSH2_STATIC_LIBS
 CASSANDRA_STATIC_LIBS
+NGHTTP2_STATIC_LIBS
 LIBXLSXWRITER_STATIC_LIBS
 GRPC_UNSECURE_LIBS
 GRPC_REFLECTION_LIBS
@@ -1667,7 +1672,7 @@ sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 mongodb mongodb3 gmock lapack lmdb \
-libuv libssh2 cassandra libxlsxwriter grpc msgsl 3psw \
+libuv libssh2 cassandra nghttp2 h2o libxlsxwriter grpc msgsl 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -1741,8 +1746,9 @@ for x_arg in "$@" ; do
       | --with-avro=* | --with-cereal=* | --with-sasl2=* \
       | --with-mongodb=* | --with-mongodb3=* \
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
-      | --with-libssh2=* | --with-cassandra=* | --with-libxlsxwriter=* \
-      | --with-grpc=* | --with-msgsl=* )
+      | --with-libssh2=* | --with-cassandra=* | --with-nghttp2=* \
+      | --with-h2o=* | --with-libxlsxwriter=* | --with-grpc=* \
+      | --with-msgsl=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[^=]*=//'`
       case "$x_arg" in
@@ -2075,6 +2081,10 @@ Optional Packages:
  --without-libssh2       do not use libssh2
  --with-cassandra=DIR    use Datastax Cassandra driver installation in DIR
  --without-cassandra     do not use Datastax Cassandra driver
+ --with-nghttp2=DIR      use nghttp2 installation in DIR
+ --without-nghttp2       do not use nghttp2
+ --with-h2o=DIR          use h2o installation in DIR
+ --without-h2o           do not use h2o
  --with-libxlsxwriter=DIR use libxlsxwriter installation in DIR
  --without-libxlsxwriter do not use libxlsxwriter
  --with-grpc=DIR         use GRPC installation in DIR
@@ -2659,6 +2669,18 @@ case "$with_3psw" in
    { (exit 1); exit 1; }; }
          else
             with_cassandra=no
+         fi
+        if test "${with_nghttp2-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-nghttp2 but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_nghttp2=no
+         fi
+        if test "${with_h2o-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-h2o but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_h2o=no
          fi
         if test "${with_libxlsxwriter-no}" != "no"; then
             { echo "$as_me: error: incompatible options: --with-libxlsxwriter but --without-3psw" >&2
@@ -4274,6 +4296,30 @@ fi
 # Check whether --with-cassandra was given.
 if test "${with_cassandra+set}" = set; then
   withval=$with_cassandra;
+fi
+
+
+# Check whether --with-nghttp2 was given.
+if test "${with_nghttp2+set}" = set; then
+  withval=$with_nghttp2;
+fi
+
+
+# Check whether --with-nghttp2 was given.
+if test "${with_nghttp2+set}" = set; then
+  withval=$with_nghttp2;
+fi
+
+
+# Check whether --with-h2o was given.
+if test "${with_h2o+set}" = set; then
+  withval=$with_h2o;
+fi
+
+
+# Check whether --with-h2o was given.
+if test "${with_h2o+set}" = set; then
+  withval=$with_h2o;
 fi
 
 
@@ -50197,6 +50243,472 @@ else
     CASSANDRA_STATIC_LIBS=$CASSANDRA_LIBS
 fi
 
+# HTTP/2 libraries
+if test -d "$NGHTTP2_PATH"; then
+   ncbi_fix_dir_tmp=`if cd $NGHTTP2_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $NGHTTP2_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            NGHTTP2_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$NGHTTP2_PATH" in
+               /*) ;;
+               * ) NGHTTP2_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) NGHTTP2_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+   for d in "$NGHTTP2_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$NGHTTP2_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$NGHTTP2_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+            "$NGHTTP2_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+      if test -d "$d/lib"; then
+         NGHTTP2_LIBDIR=$d/lib
+         ncbi_fix_dir_tmp=`if cd $NGHTTP2_LIBDIR; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $NGHTTP2_LIBDIR && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            NGHTTP2_LIBDIR=$ncbi_fix_dir_tmp2
+         else
+            case "$NGHTTP2_LIBDIR" in
+               /*) ;;
+               * ) NGHTTP2_LIBDIR=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) NGHTTP2_LIBDIR=$ncbi_fix_dir_tmp ;;
+ esac
+         break
+      fi
+   done
+fi
+ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $NGHTTP2_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    NGHTTP2_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $NGHTTP2_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    NGHTTP2_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+if test "$with_nghttp2" != "no"; then
+    case "$with_nghttp2" in
+       yes | "" ) ;;
+       *        ) NGHTTP2_PATH=$with_nghttp2 ;;
+    esac
+    if test "$NGHTTP2_PATH" != /usr -a -d "$NGHTTP2_PATH"; then
+       in_path=" in $NGHTTP2_PATH"
+       if test -z "$NGHTTP2_INCLUDE" -a -d "$NGHTTP2_PATH/include"; then
+          NGHTTP2_INCLUDE="-I$NGHTTP2_PATH/include"
+       fi
+       if test -n "$NGHTTP2_LIBPATH"; then
+          :
+       elif test -d "$NGHTTP2_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $NGHTTP2_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    NGHTTP2_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $NGHTTP2_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    NGHTTP2_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$NGHTTP2_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $NGHTTP2_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    NGHTTP2_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $NGHTTP2_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    NGHTTP2_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       NGHTTP2_LIBS="$NGHTTP2_LIBPATH -lnghttp2 "
+    else
+       NGHTTP2_INCLUDE=""
+       NGHTTP2_LIBS="-lnghttp2 "
+       in_path=
+    fi
+    { echo "$as_me:$LINENO: checking for libnghttp2$in_path" >&5
+echo $ECHO_N "checking for libnghttp2$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_nghttp2+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS=" $NGHTTP2_INCLUDE $orig_CPPFLAGS"
+       LIBS="$NGHTTP2_LIBS  $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <nghttp2/nghttp2.h>
+int
+main ()
+{
+nghttp2_session_client_new(NULL, NULL, NULL);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_nghttp2=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_nghttp2=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_nghttp2" >&5
+echo "${ECHO_T}$ncbi_cv_lib_nghttp2" >&6; }
+    if test "$ncbi_cv_lib_nghttp2" = "no"; then
+       if test "${with_nghttp2:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-nghttp2 explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-nghttp2 explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    fi
+ fi
+ if test "$with_nghttp2" = "no"; then
+    NGHTTP2_PATH="No_NGHTTP2"
+    NGHTTP2_INCLUDE=
+    NGHTTP2_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}NGHTTP2"; WithPackagesSep=" "
+    NGHTTP2_INCLUDE=" $NGHTTP2_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBNGHTTP2 1
+_ACEOF
+
+ fi
+
+
+
+if test "$with_nghttp2" != no -a \
+     -f "$NGHTTP2_LIBDIR/libnghttp2-static.a"; then
+   NGHTTP2_STATIC_LIBS="-L$NGHTTP2_LIBDIR -lnghttp2-static"
+else
+   NGHTTP2_STATIC_LIBS=$NGHTTP2_LIBS
+fi
+
+if test -d "$H2O_PATH"; then
+   ncbi_fix_dir_tmp=`if cd $H2O_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $H2O_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            H2O_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$H2O_PATH" in
+               /*) ;;
+               * ) H2O_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) H2O_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+   for d in "$H2O_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$H2O_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$H2O_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+            "$H2O_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+      if test -d "$d"; then
+         H2O_PATH=$d
+         ncbi_fix_dir_tmp=`if cd $H2O_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $H2O_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            H2O_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$H2O_PATH" in
+               /*) ;;
+               * ) H2O_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) H2O_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+         break
+      fi
+   done
+fi
+if test "$with_h2o" != "no"; then
+    case "$with_h2o" in
+       yes | "" ) ;;
+       *        ) H2O_PATH=$with_h2o ;;
+    esac
+    if test "$H2O_PATH" != /usr -a -d "$H2O_PATH"; then
+       in_path=" in $H2O_PATH"
+       if test -z "$H2O_INCLUDE" -a -d "$H2O_PATH/include"; then
+          H2O_INCLUDE="-I$H2O_PATH/include"
+       fi
+       if test -n "$H2O_LIBPATH"; then
+          :
+       elif test -d "$H2O_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $H2O_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    H2O_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $H2O_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    H2O_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$H2O_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $H2O_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    H2O_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $H2O_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    H2O_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       H2O_LIBS="$H2O_LIBPATH -lh2o-evloop $OPENSSL_LIBS $Z_LIBS"
+    else
+       H2O_INCLUDE=""
+       H2O_LIBS="-lh2o-evloop $OPENSSL_LIBS $Z_LIBS"
+       in_path=
+    fi
+    { echo "$as_me:$LINENO: checking for libh2o-evloop$in_path" >&5
+echo $ECHO_N "checking for libh2o-evloop$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_h2o+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS=" $H2O_INCLUDE $orig_CPPFLAGS"
+       LIBS="$H2O_LIBS  $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <h2o.h>>
+int
+main ()
+{
+h2o_init_request(NULL, NULL, NULL);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_h2o=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_h2o=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_h2o" >&5
+echo "${ECHO_T}$ncbi_cv_lib_h2o" >&6; }
+    if test "$ncbi_cv_lib_h2o" = "no"; then
+       if test "${with_h2o:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-h2o explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-h2o explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    fi
+ fi
+ if test "$with_h2o" = "no"; then
+    H2O_PATH="No_H2O"
+    H2O_INCLUDE=
+    H2O_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}H2O"; WithPackagesSep=" "
+    H2O_INCLUDE=" $H2O_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBH2O 1
+_ACEOF
+
+ fi
+
+
+
+
+
 if test "$with_libxlsxwriter" != "no"; then
     case "$with_libxlsxwriter" in
        yes | "" ) ;;
@@ -51140,7 +51652,7 @@ for x in ChaosMonkey Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray W
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA LIBXLSXWRITER GRPC MSGSL; do
+  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O LIBXLSXWRITER GRPC MSGSL; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -51233,6 +51745,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 
@@ -52542,6 +53055,10 @@ LIBSSH2_INCLUDE!$LIBSSH2_INCLUDE$ac_delim
 LIBSSH2_LIBS!$LIBSSH2_LIBS$ac_delim
 CASSANDRA_INCLUDE!$CASSANDRA_INCLUDE$ac_delim
 CASSANDRA_LIBS!$CASSANDRA_LIBS$ac_delim
+NGHTTP2_INCLUDE!$NGHTTP2_INCLUDE$ac_delim
+NGHTTP2_LIBS!$NGHTTP2_LIBS$ac_delim
+H2O_INCLUDE!$H2O_INCLUDE$ac_delim
+H2O_LIBS!$H2O_LIBS$ac_delim
 LIBXLSXWRITER_INCLUDE!$LIBXLSXWRITER_INCLUDE$ac_delim
 LIBXLSXWRITER_LIBS!$LIBXLSXWRITER_LIBS$ac_delim
 GRPC_INCLUDE!$GRPC_INCLUDE$ac_delim
@@ -52580,10 +53097,6 @@ FORCE_STATIC_LIB!$FORCE_STATIC_LIB$ac_delim
 APP_LIB_SETTING!$APP_LIB_SETTING$ac_delim
 APP_LIBS_SETTING!$APP_LIBS_SETTING$ac_delim
 LINK_DLL!$LINK_DLL$ac_delim
-has_dll_loadable!$has_dll_loadable$ac_delim
-LINK_LOADABLE!$LINK_LOADABLE$ac_delim
-CFLAGS_DLL!$CFLAGS_DLL$ac_delim
-CXXFLAGS_DLL!$CXXFLAGS_DLL$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -52625,6 +53138,10 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+has_dll_loadable!$has_dll_loadable$ac_delim
+LINK_LOADABLE!$LINK_LOADABLE$ac_delim
+CFLAGS_DLL!$CFLAGS_DLL$ac_delim
+CXXFLAGS_DLL!$CXXFLAGS_DLL$ac_delim
 ALLOW_UNDEF!$ALLOW_UNDEF$ac_delim
 FORBID_UNDEF!$FORBID_UNDEF$ac_delim
 AS_NEEDED!$AS_NEEDED$ac_delim
@@ -52718,10 +53235,6 @@ ODBC_INCLUDE!$ODBC_INCLUDE$ac_delim
 ODBC_LIBS!$ODBC_LIBS$ac_delim
 BOOST_INCLUDE!$BOOST_INCLUDE$ac_delim
 BOOST_LIBPATH!$BOOST_LIBPATH$ac_delim
-BOOST_TAG!$BOOST_TAG$ac_delim
-BOOST_FILESYSTEM_LIBS!$BOOST_FILESYSTEM_LIBS$ac_delim
-BOOST_FILESYSTEM_STATIC_LIBS!$BOOST_FILESYSTEM_STATIC_LIBS$ac_delim
-BOOST_IOSTREAMS_LIBS!$BOOST_IOSTREAMS_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -52763,6 +53276,10 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+BOOST_TAG!$BOOST_TAG$ac_delim
+BOOST_FILESYSTEM_LIBS!$BOOST_FILESYSTEM_LIBS$ac_delim
+BOOST_FILESYSTEM_STATIC_LIBS!$BOOST_FILESYSTEM_STATIC_LIBS$ac_delim
+BOOST_IOSTREAMS_LIBS!$BOOST_IOSTREAMS_LIBS$ac_delim
 BOOST_IOSTREAMS_STATIC_LIBS!$BOOST_IOSTREAMS_STATIC_LIBS$ac_delim
 BOOST_PROGRAM_OPTIONS_LIBS!$BOOST_PROGRAM_OPTIONS_LIBS$ac_delim
 BOOST_PROGRAM_OPTIONS_STATIC_LIBS!$BOOST_PROGRAM_OPTIONS_STATIC_LIBS$ac_delim
@@ -52856,10 +53373,6 @@ LMDB_LIB!$LMDB_LIB$ac_delim
 LMDB_STATIC_LIBS!$LMDB_STATIC_LIBS$ac_delim
 LIBUV_STATIC_LIBS!$LIBUV_STATIC_LIBS$ac_delim
 LIBSSH2_STATIC_LIBS!$LIBSSH2_STATIC_LIBS$ac_delim
-CASSANDRA_STATIC_LIBS!$CASSANDRA_STATIC_LIBS$ac_delim
-LIBXLSXWRITER_STATIC_LIBS!$LIBXLSXWRITER_STATIC_LIBS$ac_delim
-GRPC_UNSECURE_LIBS!$GRPC_UNSECURE_LIBS$ac_delim
-GRPC_REFLECTION_LIBS!$GRPC_REFLECTION_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -52901,6 +53414,11 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+CASSANDRA_STATIC_LIBS!$CASSANDRA_STATIC_LIBS$ac_delim
+NGHTTP2_STATIC_LIBS!$NGHTTP2_STATIC_LIBS$ac_delim
+LIBXLSXWRITER_STATIC_LIBS!$LIBXLSXWRITER_STATIC_LIBS$ac_delim
+GRPC_UNSECURE_LIBS!$GRPC_UNSECURE_LIBS$ac_delim
+GRPC_REFLECTION_LIBS!$GRPC_REFLECTION_LIBS$ac_delim
 GRPC_BIN!$GRPC_BIN$ac_delim
 MSGSL_INCLUDE!$MSGSL_INCLUDE$ac_delim
 ncbi_xreader_pubseqos!$ncbi_xreader_pubseqos$ac_delim
@@ -52948,7 +53466,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 45; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 50; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
