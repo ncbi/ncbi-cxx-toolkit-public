@@ -100,7 +100,6 @@ const char* ftds_driver = "ftds";
 
 const char* odbc_driver = "odbc";
 const char* ctlib_driver = "ctlib";
-const char* dblib_driver = "dblib";
 
 ////////////////////////////////////////////////////////////////////////////////
 const char* msg_record_expected = "Record expected";
@@ -408,7 +407,6 @@ NCBITEST_INIT_VARIABLES(parser)
     parser->AddSymbol("DRIVER_ftds100", GetArgs().GetDriverName() == ftds100_driver);
     parser->AddSymbol("DRIVER_odbc", GetArgs().GetDriverName() == odbc_driver);
     parser->AddSymbol("DRIVER_ctlib", GetArgs().GetDriverName() == ctlib_driver);
-    parser->AddSymbol("DRIVER_dblib", GetArgs().GetDriverName() == dblib_driver);
     parser->AddSymbol("DRIVER_mysql", GetArgs().GetDriverName() == "mysql");
 
     parser->AddSymbol("DRIVER_IsBcpAvailable", GetArgs().IsBCPAvailable());
@@ -450,18 +448,6 @@ string CUnitTestParams::GetServerName(void) const
 CDBConnParams::EServerType
 CUnitTestParams::GetServerType(void) const
 {
-    const string server_name = GetThis().GetServerName();
-    const string driver_name = GetThis().GetDriverName();
-
-    if (driver_name == "dblib") {
-        if (NStr::EqualNocase(server_name, 0, 6, "DBAPI_")
-            &&  (NStr::EqualNocase(server_name, 6, 3, "DEV")
-                 ||  NStr::EqualNocase(server_name, 6, 3, "SYB")))
-        { // DBAPI_DEV3, DBAPI_SYB155_TEST, etc.
-            return eSybaseSQLServer;
-        }
-    }
-
     return CDBConnParamsDelegate::GetServerType();
 }
 
@@ -538,9 +524,7 @@ CTestArguments::IsBCPAvailable(void) const
     const bool os_solaris = false;
 #endif
 
-    if (os_solaris && HOST_CPU[0] == 'i' &&
-        (GetDriverName() == dblib_driver || GetDriverName() == ctlib_driver)
-        ) {
+    if (os_solaris && HOST_CPU[0] == 'i' && GetDriverName() == ctlib_driver) {
         // Solaris Intel native Sybase drivers ...
         // There is no apropriate client
         return false;
@@ -610,17 +594,17 @@ NCBITEST_INIT_CMDLINE(arg_desc)
 
 #define DEF_SERVER    "MSSQL"
 #define DEF_DRIVER    ftds_driver
-#define ALL_DRIVERS   ctlib_driver, dblib_driver, FTDS_DRIVERS, odbc_driver
+#define ALL_DRIVERS   ctlib_driver, FTDS_DRIVERS, odbc_driver
 
 //#if defined(NCBI_OS_MSWIN)
 //#define DEF_SERVER    "MSSQL"
 //#define DEF_DRIVER    ftds_driver
-//#define ALL_DRIVERS   ctlib_driver, dblib_driver, FTDS_DRIVERS, odbc_driver
+//#define ALL_DRIVERS   ctlib_driver, FTDS_DRIVERS, odbc_driver
 
 //#elif defined(HAVE_LIBSYBASE)
 //#define DEF_SERVER    "Sybase"
 //#define DEF_DRIVER    ctlib_driver
-//#define ALL_DRIVERS   ctlib_driver, dblib_driver, FTDS_DRIVERS
+//#define ALL_DRIVERS   ctlib_driver, FTDS_DRIVERS
 //#else
 //#define DEF_SERVER    "MSSQL"
 //#define DEF_DRIVER    ftds_driver

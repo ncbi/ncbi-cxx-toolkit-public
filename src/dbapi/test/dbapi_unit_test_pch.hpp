@@ -284,7 +284,6 @@ extern const char* ftds_driver;
 
 extern const char* odbc_driver;
 extern const char* ctlib_driver;
-extern const char* dblib_driver;
 
 extern const char* msg_record_expected;
 

@@ -32,8 +32,6 @@
 
 #include <map>
 
-map<string, string> dblib_version;
-
 const char*  file_name[] = {
     "../test1.txt",
     "../test2.txt",

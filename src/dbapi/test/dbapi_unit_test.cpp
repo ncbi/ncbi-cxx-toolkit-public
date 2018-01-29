@@ -1635,7 +1635,6 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         }
 
         // numeric
-        if (GetArgs().GetDriverName() != dblib_driver  ||  GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
         {
             //
             {
@@ -1685,7 +1684,6 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         }
 
         // decimal
-        if (GetArgs().GetDriverName() != dblib_driver  ||  GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
         {
             sql = "select Convert(decimal(38, 0), 1)";
 
@@ -2012,7 +2010,6 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
 
     // Second test ...
     {
-        if (!(GetArgs().GetDriverName() == dblib_driver && GetArgs().GetServerType() == CDBConnParams::eMSSqlServer))
         {
             sql = "select 1, 2.0, '3'";
 
@@ -2036,7 +2033,6 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
             }
         }
 
-        if (!(GetArgs().GetDriverName() == dblib_driver && GetArgs().GetServerType() == CDBConnParams::eMSSqlServer))
         {
             sql = "select 1, 2.0, '3'";
 
@@ -2062,7 +2058,6 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
             }
         }
 
-        if (!(GetArgs().GetDriverName() == dblib_driver && GetArgs().GetServerType() == CDBConnParams::eMSSqlServer))
         {
             sql = "select 1, 2.0, '3'";
 
@@ -2363,11 +2358,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
                 while (rs->Fetch()) {
                     string string_value = ConvertSafe(*rs);
 
-                    if (GetArgs().GetDriverName() == dblib_driver) {
-                        BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), string("12345"));
-                    } else {
-                        BOOST_CHECK_EQUAL(string_value, string("12345"));
-                    }
+                    BOOST_CHECK_EQUAL(string_value, string("12345"));
                 }
             }
         }
@@ -2447,7 +2438,6 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
 
     // Second test ...
     {
-        if (GetArgs().GetDriverName() != dblib_driver)
         {
             sql = "select 1, 2.0, '3'";
 
@@ -2497,12 +2487,11 @@ void DoTest_CDBCmdConvertSafe(const string& sql, const T& v)
 ////////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(Test_CDBCmdConvertSafe)
 {
-    if (!(GetArgs().GetDriverName() == dblib_driver && GetArgs().GetServerType() == CDBConnParams::eMSSqlServer)) {
+    {
         DoTest_CDBCmdConvertSafe<Uint1>("select Convert(tinyint, 1), 2.0, '3'", 1);
         DoTest_CDBCmdConvertSafe<Int2>("select Convert(smallint, 1), 2.0, '3'", 1);
         DoTest_CDBCmdConvertSafe<Int4>("select 1, 2.0, '3'", 1);
-        if (!((GetArgs().GetDriverName() == dblib_driver ||
-                GetArgs().IsFreeTDS() ||
+        if (!((GetArgs().IsFreeTDS() ||
                 GetArgs().GetDriverName() == ctlib_driver)
             && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
             )
@@ -2668,7 +2657,6 @@ BOOST_AUTO_TEST_CASE(Test_CDBCmdConvert2)
     // LangCmd ...
     {
         // pair ...
-        if (!(GetArgs().GetDriverName() == dblib_driver && GetArgs().GetServerType() == CDBConnParams::eMSSqlServer))
         {
             sql = "select 1, 2.0, '3'";
 
@@ -2898,7 +2886,6 @@ BOOST_AUTO_TEST_CASE(Test_CDBCmdConvert3)
 {
     string sql;
 
-    if (!(GetArgs().GetDriverName() == dblib_driver && GetArgs().GetServerType() == CDBConnParams::eMSSqlServer))
     {
         // vector ...
         {
@@ -2974,13 +2961,11 @@ void DoTest_CDBCmdConvert(const string& sql, const T& v)
 ////////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(Test_CDBCmdConvert)
 {
-    if (!(GetArgs().GetDriverName() == dblib_driver && GetArgs().GetServerType() == CDBConnParams::eMSSqlServer))
     {
         DoTest_CDBCmdConvert<Uint1>("select Convert(tinyint, 1), 2.0, '3'", 1);
         DoTest_CDBCmdConvert<Int2>("select Convert(smallint, 1), 2.0, '3'", 1);
         DoTest_CDBCmdConvert<Int4>("select 1, 2.0, '3'", 1);
-        if (!((GetArgs().GetDriverName() == dblib_driver ||
-                GetArgs().IsFreeTDS() ||
+        if (!((GetArgs().IsFreeTDS() ||
                 GetArgs().GetDriverName() == ctlib_driver)
             && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
             )

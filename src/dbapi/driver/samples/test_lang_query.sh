@@ -1,7 +1,6 @@
 #! /bin/sh
 # $Id$
 
-# DBLIB does not work (on Linux at least) when this limit is > 1024
 # CTLIB does not work on Solaris sparc when this limit is < ~1300
 ulimit -n 1536 > /dev/null 2>&1
 
@@ -9,7 +8,7 @@ ulimit -n 1536 > /dev/null 2>&1
 # ctlib against DBAPI_SYB155_TEST)
 unset LANG LC_ALL LC_CTYPE
 
-driver_list="ctlib dblib ftds64 ftds95 ftds95-v73 ftds100 ftds100-v74 odbc"
+driver_list="ctlib ftds64 ftds95 ftds95-v73 ftds100 ftds100-v74 odbc"
 
 if echo $FEATURES | grep "\-connext" > /dev/null ; then
     server_list="MSDEV1 DBAPI_DEV3 DBAPI_DEV16"
@@ -207,8 +206,7 @@ EOF
                 ;;
             esac
 
-            if test \( $driver = "ctlib" -o $driver = "dblib" \) \
-                    -a \( $server = $server_mssql \
+            if test $driver = "ctlib" -a \( $server = $server_mssql \
                        -o \( $static_config = 1 -a $win_config = 1 \) \) ; then
                 # ... -o $server = $server_mssql2008 ...
                 continue
@@ -233,25 +231,13 @@ EOF
         # lang_query
 
             cmd="lang_query -lb on -d $driver -S $server $v_flag -Q"
-            if test $driver != 'dblib' \
-                    -o \( $driver = 'dblib' \
-                          -a $server != $server_mssql \) ; then
-                # -a $server != $server_mssql2008
-                RunTest2 'select qq = 57.55 + 0.0033' '<ROW><qq>57\.5533<'
-            fi
-
+            RunTest2 'select qq = 57.55 + 0.0033' '<ROW><qq>57\.5533<'
             RunTest2 'select qq = convert(real, 57.55 + 0.0033)' '<ROW><qq>57\.5533<'
             RunTest2 'select qq = 57 + 33' '<ROW><qq>90<'
             RunTest2 'select qq = GETDATE()' '<ROW><qq>../../.... ..:..:..<'
             RunTest2 'select name, type from sysobjects' '<ROW><name>'
 
         # simple tests
-
-            # dblib is not  supposed to work with MS SQL Server
-            if test $driver = "dblib" -a $server = $server_mssql ; then
-                # -o $server = $server_mssql2008
-                continue
-            fi
 
             cmd="dbapi_conn_policy -lb on -d $driver -S $server $v_flag"
             RunSimpleTest "dbapi_conn_policy"

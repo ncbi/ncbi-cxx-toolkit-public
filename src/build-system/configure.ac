@@ -8058,7 +8058,6 @@ fi
 
 DBAPI_DRIVER=
 DBAPI_CTLIB=
-DBAPI_DBLIB=
 DBAPI_FTDS=
 DBAPI_FTDS64=
 DBAPI_FTDS95=
@@ -8076,7 +8075,6 @@ else
    DBAPI_FTDS95=ncbi_xdbapi_ftds95
    DBAPI_FTDS100=ncbi_xdbapi_ftds100
    test -n "$SYBASE_LIBS"    &&  DBAPI_CTLIB=ncbi_xdbapi_ctlib
-   test -n "$SYBASE_DBLIBS"  &&  DBAPI_DBLIB=ncbi_xdbapi_dblib
    test -n "$MYSQL_LIBS"     &&  DBAPI_MYSQL=ncbi_xdbapi_mysql
    test -n "$ODBC_LIBS"      &&  DBAPI_ODBC=ncbi_xdbapi_odbc
 fi
@@ -8480,7 +8478,6 @@ AC_SUBST(BDB_CACHE_LIB)
 AC_SUBST(SQLITE3_WRAPPER)
 AC_SUBST(DBAPI_DRIVER)
 AC_SUBST(DBAPI_CTLIB)
-AC_SUBST(DBAPI_DBLIB)
 AC_SUBST(DBAPI_FTDS)
 AC_SUBST(DBAPI_FTDS64)
 AC_SUBST(DBAPI_FTDS95)

@@ -438,7 +438,6 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
             }
 
             // numeric
-            if (GetArgs().GetDriverName() != dblib_driver  ||  GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
             {
                 //
                 {
@@ -505,7 +504,6 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
             }
 
             // decimal
-            if (GetArgs().GetDriverName() != dblib_driver  ||  GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
             {
                 sql = "select Convert(decimal(38, 0), 1)";
 

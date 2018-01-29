@@ -25,7 +25,7 @@
  *
  * Author:  Vladimir Soussov
  *
- * File Description:  DBLib Results
+ * File Description:  ODBC Results
  *
  */
 

@@ -104,7 +104,7 @@ ExecuteSQL(const string& sql)
 
 NCBITEST_INIT_CMDLINE(arg_desc)
 {
-#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds64", "ftds95", "ftds100", "odbc"
+#define ALL_DRIVERS   "ctlib", "ftds", "ftds64", "ftds95", "ftds100", "odbc"
 #if defined(NCBI_OS_MSWIN)
 #define DEF_SERVER    "MSDEV1"
 #define DEF_DRIVER    "ftds"
@@ -178,7 +178,6 @@ NCBITEST_INIT_VARIABLES(parser)
                       NStr::StartsWith(GetArgs().GetDriverName(), "ftds"));
     parser->AddSymbol("DRIVER_odbc", GetArgs().GetDriverName() == "odbc");
     parser->AddSymbol("DRIVER_ctlib", GetArgs().GetDriverName() == "ctlib");
-    parser->AddSymbol("DRIVER_dblib", GetArgs().GetDriverName() == "dblib");
 }
 
 NCBITEST_AUTO_INIT()
@@ -1345,11 +1344,7 @@ void
 CTestArguments::SetDatabaseParameters(void)
 {
     if (GetServerType() == eSybase) {
-        if ( GetDriverName() == "dblib") {
-                // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
-                // BcpIn to it using protocol version other than "100".
-                m_DatabaseParameters["version"] = "100";
-        } else if ( (GetDriverName() == "ftds")) {
+        if ( (GetDriverName() == "ftds")) {
                 m_DatabaseParameters["version"] = "42";
         }
     }

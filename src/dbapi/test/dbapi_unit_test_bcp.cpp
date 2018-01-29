@@ -1208,22 +1208,12 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Overflow)
                 exception_catched = true;
             }
 
-            if (GetArgs().GetDriverName() == dblib_driver) {
-                GetArgs().PutMsgDisabled("Unexceptional overflow of varchar in bulk-insert");
-
-                if ( !exception_catched ) {
-                    BOOST_FAIL("Exception CDB_ClientEx was expected.");
-                }
-            }
-            else {
-                if ( exception_catched ) {
-                    BOOST_FAIL("Exception CDB_ClientEx was not expected.");
-                }
+            if ( exception_catched ) {
+                BOOST_FAIL("Exception CDB_ClientEx was not expected.");
             }
         }
 
         // Retrieve data ...
-        if (GetArgs().GetDriverName() != dblib_driver)
         {
             sql = "SELECT * FROM #test_bulk_overflow";
 
@@ -1394,8 +1384,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
 
             // Retrieve data ...
             // Some drivers limit size of text/binary to 255 bytes ...
-            if ( GetArgs().GetDriverName() != dblib_driver
-                ) {
+            {
                 unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
                 sql  = " SELECT id, vb8000_field FROM " + table_name;
@@ -1423,8 +1412,6 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
 
                 // Dump results ...
                 DumpResults( auto_stmt.get() );
-            } else {
-                // GetArgs().PutMsgDisabled("Test_Bulk_Writing Retrieve data");
             }
         }
 
@@ -1670,8 +1657,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
 
             // Retrieve data ...
             // Some drivers limit size of text/binary to 255 bytes ...
-            if (GetArgs().GetDriverName() != dblib_driver
-                ) {
+            {
                 sql  = " SELECT id, vc8000_field FROM " + table_name;
                 sql += " ORDER BY id";
 
@@ -1727,8 +1713,6 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
                         }
                     }
                 }
-            } else {
-                GetArgs().PutMsgDisabled("Test_Bulk_Writing Retrieve data");
             }
         }
     }
@@ -1837,9 +1821,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing2)
             col1 = 15001;
             col2 = 1;
             col3 = 2;
-            if (GetArgs().IsODBCBased()
-                || GetArgs().GetDriverName() == dblib_driver
-                )
+            if (GetArgs().IsODBCBased())
             {
                 GetArgs().PutMsgDisabled("Bulk-insert NULLs when there are defaults");
 
@@ -2523,9 +2505,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing8)
             BOOST_CHECK_EQUAL(rs->GetVariant(1).GetInt4(), 15001);
             BOOST_CHECK( !rs->GetVariant(2).IsNull() );
             // Old protocol version has this strange feature
-            if (GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer
-                || GetArgs().GetDriverName() == dblib_driver
-                )
+            if (GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
             {
                 BOOST_CHECK_EQUAL(rs->GetVariant(2).GetString(), string(" "));
             }

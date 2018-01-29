@@ -359,7 +359,6 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
             }
 
             // numeric
-            if (GetArgs().GetDriverName() != dblib_driver  ||  GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
             {
                 //
                 try {
@@ -387,7 +386,6 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
             }
 
             // decimal
-            if (GetArgs().GetDriverName() != dblib_driver  ||  GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
             try {
                 rs = auto_stmt->ExecuteQuery("select convert(decimal(38, 0), 1)");
                 BOOST_REQUIRE(rs != NULL);
@@ -653,7 +651,6 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
             }
 
             // numeric
-            if (GetArgs().GetDriverName() != dblib_driver  ||  GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
             {
                 //
                 try {
@@ -724,7 +721,6 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
             }
 
             // decimal
-            if (GetArgs().GetDriverName() != dblib_driver  ||  GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
             try {
                 rs = auto_stmt->ExecuteQuery("select convert(decimal(38, 0), 1)");
                 BOOST_REQUIRE(rs != NULL);
@@ -1158,9 +1154,7 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
             }
 
             // long binary
-            // dblib cannot transfer more than 255 bytes ...
-            if (GetArgs().GetDriverName() != dblib_driver
-                ) try {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(binary(1000), '12345')");
                 BOOST_REQUIRE(rs != NULL);
 
@@ -1224,8 +1218,6 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
 
                 DumpResults(auto_stmt.get());
             } catch (boost::execution_aborted) {
-            } else {
-                GetArgs().PutMsgDisabled("Test_Recordset: Second test - long binary");
             }
 
             // varbinary
@@ -1278,7 +1270,7 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
             }
 
             // text
-            if (GetArgs().GetDriverName() != dblib_driver) try {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(text, '12345')");
                 BOOST_REQUIRE(rs != NULL);
 
@@ -1292,12 +1284,10 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
 
                 DumpResults(auto_stmt.get());
             } catch (boost::execution_aborted) {
-            } else {
-                GetArgs().PutMsgDisabled("Test_Recordset: Second test - text");
             }
 
             // image
-            if (GetArgs().GetDriverName() != dblib_driver) try {
+            try {
                 rs = auto_stmt->ExecuteQuery("select convert(image, '12345')");
                 BOOST_REQUIRE(rs != NULL);
 
@@ -1311,8 +1301,6 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
 
                 DumpResults(auto_stmt.get());
             } catch (boost::execution_aborted) {
-            } else {
-                GetArgs().PutMsgDisabled("Test_Recordset: Second test - image");
             }
         }
 
@@ -1636,7 +1624,6 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
 
                 EDB_Type curr_type = md->GetType(1);
                 if (GetArgs().IsFreeTDS() ||
-                    GetArgs().GetDriverName() == dblib_driver ||
                     GetArgs().GetDriverName() == ctlib_driver
                     ) {
                     BOOST_CHECK_EQUAL(curr_type, eDB_VarChar);
@@ -1646,11 +1633,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                     BOOST_CHECK_EQUAL(curr_type, eDB_Char);
                 }
 
-                if (GetArgs().GetDriverName() == dblib_driver) {
-                    BOOST_CHECK_EQUAL(md->GetMaxSize(1), 255);
-                } else {
-                    // BOOST_CHECK_EQUAL(md->GetMaxSize(1), 8000);
-                }
+                // BOOST_CHECK_EQUAL(md->GetMaxSize(1), 8000);
 
                 DumpResults(auto_stmt.get());
             } catch (boost::execution_aborted) {
@@ -1734,7 +1717,6 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 EDB_Type curr_type = md->GetType(1);
                 if ((GetArgs().IsFreeTDS() &&
                         GetArgs().GetServerType() == CDBConnParams::eMSSqlServer) ||
-                    GetArgs().GetDriverName() == dblib_driver ||
                     (GetArgs().GetDriverName() == ctlib_driver &&
                         NStr::CompareNocase(GetSybaseClientVersion(), 0, 4, "12.0") == 0)
                     ) {
@@ -1749,9 +1731,8 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                     BOOST_CHECK_EQUAL(curr_type, eDB_Binary);
                 }
 
-                if (GetArgs().GetDriverName() == dblib_driver ||
-                    (GetArgs().GetDriverName() == ctlib_driver &&
-                        NStr::CompareNocase(GetSybaseClientVersion(), 0, 4, "12.0") == 0)
+                if (GetArgs().GetDriverName() == ctlib_driver &&
+                    NStr::CompareNocase(GetSybaseClientVersion(), 0, 4, "12.0") == 0
                     ) {
                     BOOST_CHECK_EQUAL(md->GetMaxSize(1), 255);
                 } else {
@@ -2158,11 +2139,6 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
         }
 
         // Check NULL with stored procedures ...
-#ifdef NCBI_OS_SOLARIS
-        // On Solaris GetNumOfRecords gives an error with MS SQL database
-        if (GetArgs().GetDriverName() != dblib_driver
-            ||  GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
-#endif
         {
             {
                 unique_ptr<ICallableStatement> auto_stmt(
@@ -2267,7 +2243,6 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                         BOOST_CHECK( !vc1000_field.IsNull() );
                         // Old protocol version has this strange feature
                         if (GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer
-                            || GetArgs().GetDriverName() == dblib_driver
                            )
                         {
                             BOOST_CHECK_EQUAL( vc1000_field.GetString(), string(" ") );
@@ -2345,7 +2320,6 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                         BOOST_CHECK( !vc1000_field.IsNull() );
                         // Old protocol version has this strange feature
                         if (GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer
-                            || GetArgs().GetDriverName() == dblib_driver
                            )
                         {
                             BOOST_CHECK_EQUAL( vc1000_field.GetString(), string(" ") );

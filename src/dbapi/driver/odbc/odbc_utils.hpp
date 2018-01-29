@@ -1,5 +1,5 @@
-#ifndef DBAPI_DRIVER_DBLIB___DBAPI_DRIVER_ODBC_UTILS__HPP
-#define DBAPI_DRIVER_DBLIB___DBAPI_DRIVER_ODBC_UTILS__HPP
+#ifndef DBAPI_DRIVER_ODBC___DBAPI_DRIVER_ODBC_UTILS__HPP
+#define DBAPI_DRIVER_ODBC___DBAPI_DRIVER_ODBC_UTILS__HPP
 
 /* $Id$
  * ===========================================================================
@@ -188,6 +188,6 @@ NCBI_EntryPoint_xdbapi_odbc(
 END_NCBI_SCOPE
 
 
-#endif // DBAPI_DRIVER_DBLIB___DBAPI_DRIVER_ODBC_UTILS__HPP
+#endif // DBAPI_DRIVER_ODBC___DBAPI_DRIVER_ODBC_UTILS__HPP
 
 

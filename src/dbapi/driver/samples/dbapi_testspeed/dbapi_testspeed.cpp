@@ -86,7 +86,7 @@ CDbapiTestSpeedApp::GetTableName(void) const
 // "USAGE:   dbapi_testspeed -parameters [file]\n"
 // "REQUIRED PARAMETERS:\n"
 // "  -S server\n"
-// "  -d driver (e.g. ctlib dblib ftds odbc gateway)\n"
+// "  -d driver (e.g. ctlib ftds odbc gateway)\n"
 // "  -g sss_server:port for gateway database driver\n"
 // "     (only one of -d/-g is required to be present)\n"
 // "OPTIONAL PARAMETERS:\n"

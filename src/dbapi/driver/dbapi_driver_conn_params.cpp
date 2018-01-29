@@ -91,14 +91,6 @@ Uint4  CDBConnParamsBase::GetProtocolVersion(void) const
                 if (NStr::Compare(driver_name, "ftds") == 0) {
                     return 125;
                 }
-            case eSybaseSQLServer:
-                // ftds64 can autodetect tds version by itself.
-
-                if (NStr::Compare(driver_name, "dblib") == 0) {
-                    // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
-                    // BcpIn to it using protocol version other than "100".
-                    return 100;
-                }
             default:
                 break;
         }

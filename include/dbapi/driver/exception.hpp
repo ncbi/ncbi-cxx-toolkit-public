@@ -223,7 +223,7 @@ public:
     
 
     /// WARNING !!! Sybase severity value can be provided by Sybase/FreeTDS
-    /// ctlib/dblib drivers only.
+    /// ctlib drivers only.
     void SetSybaseSeverity(int severity) { m_SybaseSeverity = severity;}
     int GetSybaseSeverity(void) const { return m_SybaseSeverity;       }
 

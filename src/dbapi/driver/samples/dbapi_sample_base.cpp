@@ -158,11 +158,11 @@ CDbapiSampleApp::Init()
 #if defined(NCBI_OS_MSWIN)
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
-#define ALL_DRIVERS   "ctlib", "dblib", FTDS_DRIVERS, "gateway", "odbc"
+#define ALL_DRIVERS   "ctlib", FTDS_DRIVERS, "gateway", "odbc"
 #elif defined(HAVE_LIBSYBASE)
 #define DEF_SERVER    "DBAPI_DEV3"
 #define DEF_DRIVER    "ctlib"
-#define ALL_DRIVERS   "ctlib", "dblib", FTDS_DRIVERS, "gateway", "odbc"
+#define ALL_DRIVERS   "ctlib", FTDS_DRIVERS, "gateway", "odbc"
 #else
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
@@ -242,14 +242,9 @@ CDbapiSampleApp::Run()
 
     if ( m_TDSVersion.empty() ) {
         // Setup some driver-specific attributes
-        if ( GetDriverName() == "dblib" &&
-             GetServerType() == eSybase ) {
-            // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
-            // BcpIn to it using protocol version other than "100".
-            SetDatabaseParameter("version", "100");
-//         } else if ( GetDriverName() == "ftds"  &&  GetServerType() == eMsSql ) {
+//         } if ( GetDriverName() == "ftds"  &&  GetServerType() == eMsSql ) {
 //             SetDatabaseParameter("version", "100");
-        }
+//         }
     } else {
         SetDatabaseParameter("version", m_TDSVersion);
     }
