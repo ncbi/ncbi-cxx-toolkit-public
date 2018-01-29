@@ -304,7 +304,8 @@ public:
     ///
     /// fSort - forces sorting of the resulting ranges. All ranges on the
     /// same ID are grouped together, but the order of IDs is undefined. Strand
-    /// is reset to plus and minuns (in strand-preserve mode) or unknown (in
+    /// is preserved if all values having the same direction are equal. Otherwise
+    /// strand is reset to plus and minuns (in strand-preserve mode) or unknown (in
     /// strand-ignore mode). NULLs are always merged to a single NULL. The order
     /// of locations for each ID is: NULL, whole, empty, plus strand intervals,
     /// minus strand intervals.

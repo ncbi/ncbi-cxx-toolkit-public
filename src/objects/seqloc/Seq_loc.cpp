@@ -4620,10 +4620,6 @@ void x_MergeNoSort(CSeq_loc& dst,
 }
 
 
-static const bool force_strand_merge = true;
-static const bool force_strand_subtract = true;
-
-
 static
 void x_MergeAndSort(CSeq_loc& dst,
                     const CSeq_loc& src,
@@ -4639,19 +4635,34 @@ void x_MergeAndSort(CSeq_loc& dst,
         *pid_map_minus.get() : id_map_plus;
 
     // Prepare default strands
-    ENa_strand default_plus = force_strand_merge && use_strand ?
-        eNa_strand_plus : eNa_strand_unknown;
-    ENa_strand default_minus = use_strand ?
-        eNa_strand_minus : eNa_strand_unknown;
+    ENa_strand default_plus = eNa_strand_unknown;
+    ENa_strand default_minus = eNa_strand_unknown;
 
     // Split location by by id/strand/range
     for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
         CSeq_id_Handle_Wrapper idh(syn_mapper.GetBestSynonym(it.GetSeq_id()), it.GetSeq_id());
-        if ( IsReverse(it.GetStrand()) ) {
+        ENa_strand strand = it.GetStrand();
+        if ( IsReverse(strand) ) {
             id_map_minus[idh].push_back(TRangeWithFuzz(it));
+            if (use_strand) {
+                if (default_minus == eNa_strand_unknown) {
+                    default_minus = strand;
+                }
+                else if (default_minus != strand) {
+                    default_minus = eNa_strand_minus;
+                }
+            }
         }
         else {
             id_map_plus[idh].push_back(TRangeWithFuzz(it));
+            if (use_strand) {
+                if (default_plus == eNa_strand_unknown) {
+                    default_plus = strand;
+                }
+                else if (default_plus != strand) {
+                    default_plus = eNa_strand_plus;
+                }
+            }
         }
     }
 
@@ -4909,7 +4920,7 @@ void x_SubAndSort(CSeq_loc& dst,
         *p_id_map_minus.get() : id_map_plus;
 
     // Prepare default strands
-    ENa_strand default_plus = force_strand_subtract && use_strand ?
+    ENa_strand default_plus = use_strand ?
         eNa_strand_plus : eNa_strand_unknown;
     ENa_strand default_minus = use_strand ?
         eNa_strand_minus : eNa_strand_unknown;
