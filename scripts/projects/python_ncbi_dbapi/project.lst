@@ -12,7 +12,6 @@ dbapi/driver/samples
 dbapi/driver/util$ update-only
 dbapi/driver/odbc/unix_odbc$ update-only
 dbapi/driver/ctlib$
-dbapi/driver/dblib$
 dbapi/driver/ftds64$
 dbapi/driver/ftds64/impl$ update-only
 dbapi/driver/ftds64/freetds$
