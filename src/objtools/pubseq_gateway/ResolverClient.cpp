@@ -4,6 +4,7 @@
 #include <string>
 #include <chrono>
 #include <thread>
+#include <type_traits>
 
 #include <corelib/ncbitime.hpp>
 
@@ -17,6 +18,9 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
+
+static_assert(std::is_nothrow_move_constructible<CBioId>::value, "CBioId move constructor must be noexcept");
+static_assert(std::is_nothrow_move_constructible<CBlobId>::value, "CBlobId move constructor must be noexcept");
 
 namespace {
 
@@ -48,17 +52,7 @@ void DumpEntry(const CBlobId& BlobId)
 
 /** CBioIdResolutionQueue::CBioIdResolutionQueueItem */
 
-CBioIdResolutionQueue::CBioIdResolutionQueueItem::CBioIdResolutionQueueItem(std::shared_ptr<HCT::io_future> afuture, CBioId&& BioId) 
-    :   m_request(make_shared<HCT::http2_request>()),
-        m_BioId(std::move(BioId))
-        
-{
-    if (!HCT::HttpClientTransport::s_ioc)
-        DDRPC::EDdRpcException::raise("DDRPC is not initialized, call DdRpcClient::Init() first");
-    m_request->init_request(DDRPC::DdRpcClient::SericeIdToEndPoint(ACCVER_RESOLVER_SERVICE_ID), afuture, "accver=" + m_BioId.GetId());
-}
-
-CBioIdResolutionQueue::CBioIdResolutionQueueItem::CBioIdResolutionQueueItem(std::shared_ptr<HCT::io_future> afuture, const CBioId& BioId)
+CBioIdResolutionQueue::CBioIdResolutionQueueItem::CBioIdResolutionQueueItem(std::shared_ptr<HCT::io_future> afuture, CBioId BioId) 
     :   m_request(make_shared<HCT::http2_request>()),
         m_BioId(std::move(BioId))
 {
@@ -209,15 +203,7 @@ void CBioIdResolutionQueue::Resolve(std::vector<CBioId>* bio_ids, const CDeadlin
     }
 }
 
-CBlobId CBioIdResolutionQueue::Resolve(const CBioId& bio_id, const CDeadline& deadline) 
-{
-    CBlobId rv(bio_id);
-    unique_ptr<CBioIdResolutionQueueItem> Qi(new CBioIdResolutionQueueItem(HCT::io_coordinator::get_tls_future(), bio_id));
-    Qi->SyncResolve(rv, deadline);
-    return rv;
-}
-
-CBlobId CBioIdResolutionQueue::Resolve(CBioId&& bio_id, const CDeadline& deadline)
+CBlobId CBioIdResolutionQueue::Resolve(CBioId bio_id, const CDeadline& deadline)
 {
     CBlobId rv(bio_id);
     unique_ptr<CBioIdResolutionQueueItem> Qi(new CBioIdResolutionQueueItem(HCT::io_coordinator::get_tls_future(), std::move(bio_id)));

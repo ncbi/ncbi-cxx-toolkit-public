@@ -34,9 +34,7 @@ public:
 class CBioId
 {
 public:
-    CBioId(const std::string& id, IBioIdContext* ctx = nullptr)
-        : m_Id(id), m_Context(ctx) {}
-    CBioId(std::string&& id, IBioIdContext* ctx = nullptr)
+    CBioId(std::string id, IBioIdContext* ctx = nullptr)
         : m_Id(std::move(id)), m_Context(ctx) {}
 
     const std::string& GetId() const { return m_Id; }
@@ -169,9 +167,7 @@ public:
     /// @note
     /// This method is works synchronously static and does not require 
     /// CBioIdResolutionQueue instance
-    static CBlobId Resolve(const CBioId& bio_ids,
-                 const CDeadline& deadline = CDeadline(0));
-    static CBlobId Resolve(CBioId&& bio_ids,
+    static CBlobId Resolve(CBioId bio_ids,
                  const CDeadline& deadline = CDeadline(0));
 
     /// Retrieve results of the id resolution that are currently ready.
@@ -208,8 +204,7 @@ private:
     mutable std::mutex m_items_mtx;
     
     struct CBioIdResolutionQueueItem {
-        CBioIdResolutionQueueItem(std::shared_ptr<HCT::io_future> afuture, CBioId&& BioId);
-        CBioIdResolutionQueueItem(std::shared_ptr<HCT::io_future> afuture, const CBioId& BioId);
+        CBioIdResolutionQueueItem(std::shared_ptr<HCT::io_future> afuture, CBioId BioId);
         void SyncResolve(CBlobId& BlobId, const CDeadline& deadline);
         void WaitFor(long timeout_ms);
         void Wait();
