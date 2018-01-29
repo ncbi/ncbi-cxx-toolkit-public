@@ -71,6 +71,7 @@ private:
 class NCBI_XALGOGNOMON_EXPORT CGnomonEngine {
 public:
     CGnomonEngine(CConstRef<CHMMParameters> hmm_params, const CResidueVec& sequence, TSignedSeqRange range = TSignedSeqRange::GetWhole());
+    CGnomonEngine(CConstRef<CHMMParameters> hmm_params, CResidueVec&& sequence, TSignedSeqRange range = TSignedSeqRange::GetWhole());
     ~CGnomonEngine();
 
     void ResetRange(TSignedSeqRange range);

@@ -45,12 +45,22 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
 CGnomonEngine::SGnomonEngineImplData::SGnomonEngineImplData
-(CConstRef<CHMMParameters> hmm_params, const CResidueVec& sequence, TSignedSeqRange range) :
-    m_seq(sequence), m_range(range), m_gccontent(0), m_hmm_params(hmm_params)
-{}
+(CConstRef<CHMMParameters> hmm_params, CResidueVec&& sequence, TSignedSeqRange range) : m_seq(move(sequence)), m_range(range), m_gccontent(0), m_hmm_params(hmm_params) {}
+//for consistency with old code
+CGnomonEngine::SGnomonEngineImplData::SGnomonEngineImplData
+(CConstRef<CHMMParameters> hmm_params, const CResidueVec& sequence, TSignedSeqRange range) : m_seq(sequence), m_range(range), m_gccontent(0), m_hmm_params(hmm_params) {}
 
 CGnomonEngine::SGnomonEngineImplData::~SGnomonEngineImplData() {}
 
+CGnomonEngine::CGnomonEngine(CConstRef<CHMMParameters> hmm_params, CResidueVec&& sequence, TSignedSeqRange range)
+    : m_data(new SGnomonEngineImplData(hmm_params,move(sequence),range))
+{
+    CheckRange();
+    Convert(m_data->m_seq,m_data->m_ds);
+    
+    ResetRange(m_data->m_range);
+}
+//for consistency with old code
 CGnomonEngine::CGnomonEngine(CConstRef<CHMMParameters> hmm_params, const CResidueVec& sequence, TSignedSeqRange range)
     : m_data(new SGnomonEngineImplData(hmm_params,sequence,range))
 {

@@ -46,6 +46,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
 struct CGnomonEngine::SGnomonEngineImplData {
+    SGnomonEngineImplData(CConstRef<CHMMParameters> hmm_params, CResidueVec&& sequence, TSignedSeqRange range);
     SGnomonEngineImplData(CConstRef<CHMMParameters> hmm_params, const CResidueVec& sequence, TSignedSeqRange range);
     ~SGnomonEngineImplData();
 

@@ -7009,11 +7009,17 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
 {
     m_contig_acc = CIdHandler::ToString(contig);
 
+    int length;
+    CResidueVec seq;
+
     CBioseq_Handle bh(scope.GetBioseqHandle(contig));
-    CSeqVector sv (bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac));
-    int length (sv.size());
-    string seq_txt;
-    sv.GetSeqData(0, length, seq_txt);
+    {
+        CSeqVector sv (bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac));
+        length = sv.size(); 
+        seq.reserve(length);
+        for(int i = 0; i < length; ++i)
+            seq.push_back(sv[i]);
+    }
 
     if (m_masking) {
         SAnnotSelector sel;
@@ -7030,12 +7036,9 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
         for (CFeat_CI it(bh, sel);  it;  ++it) {
             TSeqRange range = it->GetLocation().GetTotalRange();
             for(unsigned int i = range.GetFrom(); i <= range.GetTo(); ++i)
-                seq_txt[i] = tolower(seq_txt[i]);
+                seq[i] = tolower(seq[i]);
         }
     }
-
-    CResidueVec seq(length);
-    copy(seq_txt.begin(), seq_txt.end(), seq.begin());
 
     m_editing_indels.clear();
     m_reversed_corrections.clear();
@@ -7058,7 +7061,7 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
         } else {                              // ggap
             int l = ig->Loc();
             l = max(0,l);
-            l = min((int)seq_txt.size(),l);
+            l = min(length, l);
             CInDelInfo g(l, ig->Len(), ig->GetType(), ig->GetInDelV(), ig->GetSource());
             //surround ggap with Ns to satisfy MinIntron
             CInDelInfo Ns(l, BLOCK_OF_Ns, CInDelInfo::eDel, string(BLOCK_OF_Ns,'N'));
@@ -7068,10 +7071,12 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
         }
     }
                 
-    m_edited_contig_map = CAlignMap(0, seq_txt.size()-1, m_editing_indels.begin(), m_editing_indels.end());
-    CResidueVec editedseq;
-    m_edited_contig_map.EditedSequence(seq,editedseq);
-    seq = editedseq;
+    m_edited_contig_map = CAlignMap(0, length-1, m_editing_indels.begin(), m_editing_indels.end());
+    {
+        CResidueVec editedseq;
+        m_edited_contig_map.EditedSequence(seq,editedseq);
+        swap(seq, editedseq);
+    }
            
     ITERATE(TInDels, ig, m_editing_indels) {
         TInDels::const_iterator next = ig;
@@ -7098,7 +7103,7 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
             int loc = m_edited_contig_map.MapOrigToEdited(ig->InDelEnd());
             _ASSERT(loc >= 0);
             if(ig->IsInsertion()) {
-                string s = seq_txt.substr(ig->Loc(), ig->Len());
+                string s(seq.begin()+ig->Loc(), seq.begin()+ig->Len());
                 m_reversed_corrections.push_back(CInDelInfo(loc, ig->Len(), CInDelInfo::eDel, NStr::ToUpper(s)));
             } else {
                 m_reversed_corrections.push_back(CInDelInfo(loc-ig->Len(), ig->Len(), CInDelInfo::eIns));
@@ -7138,7 +7143,7 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
     m_notbridgeable_gaps_len = notbridgeable_gaps_len;
 
     
-    m_gnomon.reset(new CGnomonEngine(m_hmm_params, seq, TSignedSeqRange::GetWhole()));
+    m_gnomon.reset(new CGnomonEngine(m_hmm_params, move(seq), TSignedSeqRange::GetWhole()));
 }
 
 CGnomonEngine& CGnomonAnnotator_Base::GetGnomon()
