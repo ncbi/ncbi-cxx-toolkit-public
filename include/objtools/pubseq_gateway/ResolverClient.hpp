@@ -1,5 +1,5 @@
-#ifndef _RESOLVER_CLIENT_HPP_
-#define _RESOLVER_CLIENT_HPP_
+#ifndef OBJTOOLS_PUBSEQ_GATEWAY_RESOLVERCLIENT_HPP
+#define OBJTOOLS_PUBSEQ_GATEWAY_RESOLVERCLIENT_HPP
 
 #include <string>
 #include <utility>
@@ -7,21 +7,12 @@
 #include <memory>
 #include <vector>
 
+#include <objtools/pubseq_gateway/rpc/HttpClientTransportP.hpp>
 #include <objects/id2/ID2_Blob_Id.hpp>
 #include <objects/id2/ID2_Reply_Get_Blob_Id.hpp>
 #include <corelib/ncbitime.hpp>
 
-namespace HCT {
-    class io_future;
-    class http2_request;
-};
-
 BEGIN_NCBI_SCOPE
-
-constexpr const char ACCVER_RESOLVER_SERVICE_ID[] = "ID.RESOLVER.ACCVER.1";
-constexpr const char ACCVER_RESOLVER_COLUMNS[] = "ACCVER CVARCHAR NOTNULL KEY, GI INT8, LEN UINT4, SAT INT2, SAT_KEY UINT4, TAXID UINT4, DATE DATETIME, SUPPRESS BIT NOTNULL";
-//                                                                             0        1          2          3              4            5              6
-
 BEGIN_objects_SCOPE
 
 /// Base class for the user-defined context
