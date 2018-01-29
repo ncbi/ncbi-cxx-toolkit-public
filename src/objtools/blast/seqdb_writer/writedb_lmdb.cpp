@@ -60,6 +60,8 @@ CWriteDB_LMDB::~CWriteDB_LMDB()
 	x_CreateOidToSeqidsLookupFile();
 	x_CommitTransaction();
     CBlastLMDBManager::GetInstance().CloseEnv(m_Db);
+    CFile(m_Db+"-lock").Remove();
+
 }
 
 void CWriteDB_LMDB::InsertVolumesInfo(const vector<string> & vol_names, const vector<blastdb::TOid> & vol_num_oids)
@@ -315,6 +317,7 @@ CWriteDB_TaxID::~CWriteDB_TaxID()
 	x_CreateTaxIdToOidsLookupFile();
 	x_CommitTransaction();
     CBlastLMDBManager::GetInstance().CloseEnv(m_Db);
+    CFile(m_Db+"-lock").Remove();
 }
 
 int CWriteDB_TaxID::InsertEntries(const set<Int4> & tax_ids, const blastdb::TOid oid)
