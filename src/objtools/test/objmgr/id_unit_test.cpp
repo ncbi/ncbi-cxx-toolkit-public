@@ -881,7 +881,8 @@ NCBITEST_INIT_TREE()
 {
     NCBITEST_DISABLE(CheckAll);
     NCBITEST_DISABLE(CheckExtHPRD);
-#ifndef HAVE_PUBSEQ_OS
+#if !defined(HAVE_PUBSEQ_OS) || (defined(NCBI_THREADS) && !defined(HAVE_SYBASE_REENTRANT))
+    // HUP test needs multiple PubSeqOS readers
     NCBITEST_DISABLE(Test_HUP);
 #endif
 }
