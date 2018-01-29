@@ -162,7 +162,7 @@ public:
     /// @note
     /// This method is works synchronously static and does not require 
     /// CBioIdResolutionQueue instance
-    static CBlobId Resolve(CBioId bio_ids, const CDeadline& deadline = 0);
+    static CBlobId Resolve(CBioId bio_id, const CDeadline& deadline = 0);
 
     /// Retrieve results of the id resolution that are currently ready.
     /// @note

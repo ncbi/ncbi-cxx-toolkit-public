@@ -175,15 +175,15 @@ void CBioIdResolutionQueue::Resolve(TBioIds* bio_ids, const CDeadline& deadline)
     if (!bio_ids)
         return;
     bool has_timeout = !deadline.IsInfinite();
-    unique_lock<mutex> _(m_ItemsMtx);
+    unique_lock<mutex> lock(m_ItemsMtx);
     long wait_ms = 0;
     auto rev_it = bio_ids->rbegin();
     while (rev_it != bio_ids->rend()) {
         
-        unique_ptr<CBioIdResolutionQueueItem> Qi(new CBioIdResolutionQueueItem(m_Future, *rev_it));
+        unique_ptr<CBioIdResolutionQueueItem> qi(new CBioIdResolutionQueueItem(m_Future, *rev_it));
 
         while (true) {
-            bool rv = HCT::HttpClientTransport::s_ioc->add_request(Qi->m_Request, wait_ms);
+            bool rv = HCT::HttpClientTransport::s_ioc->add_request(qi->m_Request, wait_ms);
 
             if (!rv) { // internal queue is full
                 if (has_timeout) {
@@ -195,7 +195,7 @@ void CBioIdResolutionQueue::Resolve(TBioIds* bio_ids, const CDeadline& deadline)
                     wait_ms = DDRPC::INDEFINITE;
             }
             else {
-                m_Items.emplace_back(move(Qi));
+                m_Items.emplace_back(move(qi));
                 bio_ids->erase(next(rev_it.base()));
                 ++rev_it;
                 break;
@@ -209,8 +209,8 @@ void CBioIdResolutionQueue::Resolve(TBioIds* bio_ids, const CDeadline& deadline)
 CBlobId CBioIdResolutionQueue::Resolve(CBioId bio_id, const CDeadline& deadline)
 {
     CBlobId rv(bio_id);
-    unique_ptr<CBioIdResolutionQueueItem> Qi(new CBioIdResolutionQueueItem(HCT::io_coordinator::get_tls_future(), move(bio_id)));
-    Qi->SyncResolve(rv, deadline);
+    unique_ptr<CBioIdResolutionQueueItem> qi(new CBioIdResolutionQueueItem(HCT::io_coordinator::get_tls_future(), move(bio_id)));
+    qi->SyncResolve(rv, deadline);
     return rv;
 }
 
@@ -218,7 +218,7 @@ TBlobIds CBioIdResolutionQueue::GetBlobIds(const CDeadline& deadline, size_t max
 {
     TBlobIds rv;
     bool has_limit = max_results != 0;
-    unique_lock<mutex> _(m_ItemsMtx);
+    unique_lock<mutex> lock(m_ItemsMtx);
     if (m_Items.size() > 0) {
         bool has_timeout = !deadline.IsInfinite();
         if (has_timeout) {
@@ -243,7 +243,7 @@ TBlobIds CBioIdResolutionQueue::GetBlobIds(const CDeadline& deadline, size_t max
 
 void CBioIdResolutionQueue::Clear(TBioIds* bio_ids)
 {
-    unique_lock<mutex> _(m_ItemsMtx);
+    unique_lock<mutex> lock(m_ItemsMtx);
     if (bio_ids) {
         bio_ids->clear();
         bio_ids->reserve(m_Items.size());
@@ -258,7 +258,7 @@ void CBioIdResolutionQueue::Clear(TBioIds* bio_ids)
 
 bool CBioIdResolutionQueue::IsEmpty() const
 {
-    unique_lock<mutex> _(m_ItemsMtx);
+    unique_lock<mutex> lock(m_ItemsMtx);
     return m_Items.size() == 0;
 }
 
