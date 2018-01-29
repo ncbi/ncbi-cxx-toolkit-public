@@ -36,7 +36,7 @@
 #include <sys/time.h>
 
 #include <iostream>
-#include "IdLogUtl.hpp"
+#include <objtools/pubseq_gateway/diag/IdLogUtl.hpp>
 
 namespace IdLogUtil {
 
