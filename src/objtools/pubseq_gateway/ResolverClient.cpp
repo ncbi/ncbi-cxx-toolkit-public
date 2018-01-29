@@ -48,7 +48,8 @@ void AccVerResolverUnpackData(DDRPC::DataRow& row, const string& data)
 
 void DumpEntry(const CBlobId& blob_id)
 {
-    cout << blob_id.GetBioId().GetId() << " => sat: " << blob_id.GetBlobId().sat << " => sat_key: " << blob_id.GetBlobId().sat_key << endl;
+    const auto& id2_blob_id = blob_id.GetID2BlobId();
+    cout << blob_id.GetBioId().GetId() << " => sat: " << id2_blob_id.sat << " => sat_key: " << id2_blob_id.sat_key << endl;
 }
 
 }
@@ -131,8 +132,8 @@ void CBioIdResolutionQueue::CBioIdResolutionQueueItem::PopulateData(CBlobId& blo
                 blob_id.m_StatusEx = CBlobId::eNone;
                 blob_id.m_BlobInfo.gi              = rec[0].AsUint8;
                 blob_id.m_BlobInfo.seq_length      = rec[1].AsUint4;
-                blob_id.m_BlobInfo.blob_id.sat     = rec[2].AsUint1;
-                blob_id.m_BlobInfo.blob_id.sat_key = rec[3].AsUint4;
+                blob_id.m_BlobInfo.id2_blob_id.sat     = rec[2].AsUint1;
+                blob_id.m_BlobInfo.id2_blob_id.sat_key = rec[3].AsUint4;
                 blob_id.m_BlobInfo.tax_id          = rec[4].AsUint4;
                 blob_id.m_BlobInfo.date_queued     = rec[5].AsDateTime;
                 blob_id.m_BlobInfo.state           = rec[6].AsUint1;

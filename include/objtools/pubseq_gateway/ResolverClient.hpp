@@ -49,24 +49,22 @@ class CBlobId
 public:
     explicit CBlobId(const CBioId& bio_id) 
         : m_BioId(bio_id), m_Status(eResNone), m_StatusEx(eNone) {}
+
     /// Storage blob id (as accepted by the CBlobRetrieveQueue)
-    struct SBlobId {
-        CID2_Blob_Id::TSat     sat;
-        CID2_Blob_Id::TSat_key sat_key;
-        // CID2_Blob_Id::TSub_sat sub_sat;
-        CID2_Blob_Id::TVersion version;
-        SBlobId()
-            : sat(0), sat_key(0), version(0) {}
+    struct SID2BlobId {
+        CID2_Blob_Id::TSat     sat = 0;
+        CID2_Blob_Id::TSat_key sat_key = 0;
+        CID2_Blob_Id::TVersion version = 0;
     };
 
     /// Get storage blob id (as accepted by the CBlobRetrieveQueue)
     /// @throw
     ///  If not in "eResolved" state
-    const SBlobId& GetBlobId() const { return m_BlobInfo.blob_id; }
+    const SID2BlobId& GetID2BlobId() const { return m_BlobInfo.id2_blob_id; }
 
     /// Blob storage location and other attributes
     struct SBlobInfo {
-        SBlobId                              blob_id;
+        SID2BlobId                           id2_blob_id;
         CID2_Reply_Get_Blob_Id::TBlob_state  state;
         TGi                                  gi;          // informational only
         time_t                               date_queued; // informational only
