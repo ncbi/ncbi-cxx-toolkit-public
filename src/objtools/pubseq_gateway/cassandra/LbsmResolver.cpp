@@ -46,19 +46,19 @@ BEGIN_NCBI_SCOPE;
 
 bool LbsmLookup::Resolve(const string& Service, vector<pair<string, int> >& Result, TSERV_Type ServType) {
 
-	unique_ptr<SConnNetInfo, function<void(SConnNetInfo*)> > net_info(ConnNetInfo_Create(Service.c_str()), 
-		[](SConnNetInfo* net_info) {
-			ConnNetInfo_Destroy(net_info);
-		}
-	);
-	unique_ptr<SSERV_IterTag, function<void(SSERV_IterTag*)> > iter(
+    unique_ptr<SConnNetInfo, function<void(SConnNetInfo*)> > net_info(ConnNetInfo_Create(Service.c_str()),
+        [](SConnNetInfo* net_info) {
+            ConnNetInfo_Destroy(net_info);
+        }
+    );
+    unique_ptr<SSERV_IterTag, function<void(SSERV_IterTag*)> > iter(
         SERV_Open(
             Service.c_str(),
             ServType,
-            0, 					// prefered host
+            0,                  // prefered host
             net_info.get()
         ),
-		[](SSERV_IterTag* iter) {
+        [](SSERV_IterTag* iter) {
             SERV_Close(iter);
         }
     );

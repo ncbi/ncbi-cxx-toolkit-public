@@ -1,6 +1,36 @@
+#ifndef TCPDAEMON__HPP
+#define TCPDAEMON__HPP
 
-#ifndef _TCP_DAEMON_HPP_
-#define _TCP_DAEMON_HPP_
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors: Dmitri Dmitrienko
+ *
+ * File Description:
+ *
+ */
 
 #include <stdexcept>
 #include <sstream>
@@ -12,7 +42,7 @@
 #include "uv.h"
 #include "uv_extra.h"
 
-#include "IdLogUtil/AppLog.hpp"
+#include <objtools/pubseq_gateway/diag/AppLog.hpp>
 #include "UvHelper.hpp"
 #include "UtilException.hpp"
 
@@ -49,7 +79,7 @@ protected:
     }
 public:
     static uv_key_t s_thread_worker_key;
-    
+
     CTcpWorkersList(CTcpDaemon<P, U, D>* daemon) : 
         m_daemon(daemon)
     {}
@@ -217,7 +247,7 @@ struct CTcpWorker {
             if (e != 0)
                 EUvException::raise("uv_timer_init failed", e);
             m_internal->m_timer.data = this;
-            
+
             uv_timer_start(&m_internal->m_timer, s_OnTimer, 1000, 1000);
 
             m_internal->m_sigint.Start(SIGINT, s_OnWorkerSigInt);
@@ -226,7 +256,6 @@ struct CTcpWorker {
 
             e = uv_run(m_internal->m_loop.Handle(), UV_RUN_DEFAULT);
             LOG2(("uv_run (1) worker %d returned %d", m_id, e));
-
         }
         catch (const EException& e) {
             m_error = e.code();
@@ -257,7 +286,7 @@ struct CTcpWorker {
                 m_protocol.ThreadStop();
 
                 e = uv_run(m_internal->m_loop.Handle(), UV_RUN_DEFAULT);
-                
+
                 if (e != 0)
                     LOG2(("worker %d, uv_run (2) returned %d, st: %x", m_id, e, m_started.load()));
             //    uv_walk(m_internal->m_loop.Handle(), s_LoopWalk, this);
@@ -273,7 +302,7 @@ struct CTcpWorker {
             }
         }
     }
-    
+
     void CloseAll() {
         assert(m_shuttingdown);
         if (!m_close_all_issued) {
@@ -288,7 +317,7 @@ struct CTcpWorker {
     void OnCliClosed(uv_handle_t* handle) {
         m_daemon->ClientDisconnected();
         --m_connection_count;
-        
+
         uv_tcp_t *tcp = reinterpret_cast<uv_tcp_t*>(handle);
         for (auto it = m_connected_list.begin(); it != m_connected_list.end(); ++it) {
             if (tcp == &std::get<0>(*it)) {
@@ -348,12 +377,12 @@ private:
         CTcpWorker<P, U, D>* worker = static_cast<CTcpWorker<P, U, D>*>(uv_key_get(&CTcpWorkersList<P, U, D>::s_thread_worker_key));
         worker->OnCliClosed(handle);
     }
-    
+
     static void s_LoopWalk(uv_handle_t* handle, void* arg) {
         CTcpWorker<P, U, D> *worker = arg ? static_cast<CTcpWorker<P, U, D>*>(arg) : NULL;
         LOG3(("Handle %p (%d) @ worker %d (%p)", handle, handle->type, worker ? worker->m_id : -1, worker));
     }
-    
+
     static void s_OnWorkerSigInt(uv_signal_t *req, int signum) {
         LOG1(("Worker SIGINT delivered"));
         uv_stop(req->loop);
@@ -396,7 +425,7 @@ private:
     unsigned short m_max_connections;
     CTcpWorkersList<P, U, D> *m_workers;
     std::atomic_uint_fast16_t m_connection_count;
-    
+
     friend class CTcpWorkersList<P, U, D>;
     friend class CTcpWorker<P, U, D>;
 private:
@@ -474,9 +503,9 @@ public:
             rc = uv_export_start(loop.Handle(), reinterpret_cast<uv_stream_t*>(listener.Handle()), IPC_PIPE_NAME, m_num_workers, &exp);
             if (rc)
                 EUvException::raise("uv_export_start failed", rc);
-                
+
             workers.Start(exp, m_num_workers, d, OnWatchDog);
-            
+
             rc = uv_export_finish(exp);
             if (rc)
                 EUvException::raise("uv_export_wait failed", rc);
@@ -494,7 +523,7 @@ public:
 
             uv_close(reinterpret_cast<uv_handle_t*>(&watch_dog), NULL);
             workers.KillAll();
-        
+
             P::DaemonStopped();
         }}
     }
@@ -507,5 +536,5 @@ template<typename P, typename U, typename D>
 constexpr const char CTcpDaemon<P, U, D>::IPC_PIPE_NAME[];
 
 }
-#endif
 
+#endif

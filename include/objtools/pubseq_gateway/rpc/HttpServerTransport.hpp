@@ -1,6 +1,36 @@
+#ifndef HTTPSERVERTRANSPORT__HPP
+#define HTTPSERVERTRANSPORT__HPP
 
-#ifndef _HTTP_DAEMON_HPP_
-#define _HTTP_DAEMON_HPP_
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors: Dmitri Dmitrienko
+ *
+ * File Description:
+ *
+ */
 
 #include <string>
 #include <vector>
@@ -107,7 +137,7 @@ public:
         else
             EException::raise("Reply has already started");
     }
-    
+
     void Send(const char* payload, size_t payload_len, bool is_persist, bool is_last) {
         h2o_iovec_t body;
         if (payload_len == 0 || (is_persist && !is_last)) {
@@ -335,7 +365,7 @@ private:
             DoCancel();
             NeedOutput();
         }
-        
+
         m_resp_generator = {0};
         m_req = nullptr;
     }
@@ -539,7 +569,7 @@ private:
         }
         return list.back();
     }
-    
+
     void MaintainFinished() {
         auto it = m_pending.begin();
         while (it != m_pending.end()) {
@@ -559,7 +589,7 @@ private:
             auto it = m_backlog.begin();
             m_pending.splice(m_pending.cend(), m_backlog, it);
             it->PostponedStart();
-        }   
+        }
     }
 };
 
@@ -815,7 +845,7 @@ public:
         SSL_load_error_strings();
         SSL_library_init();
         OpenSSL_add_all_algorithms();
-            
+
         m_http_accept_ctx.ssl_ctx = SSL_CTX_new(SSLv23_server_method());
         SSL_CTX_set_options(m_http_accept_ctx.ssl_ctx, SSL_OP_NO_SSLv2);
     */

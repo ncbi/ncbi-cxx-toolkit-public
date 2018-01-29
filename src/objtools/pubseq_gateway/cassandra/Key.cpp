@@ -34,8 +34,8 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbistd.hpp>
-#include "Key.hpp"
-#include "IdCassScope.hpp"
+#include <objtools/pubseq_gateway/cassandra/Key.hpp>
+#include <objtools/pubseq_gateway/cassandra/IdCassScope.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -43,42 +43,42 @@ USING_NCBI_SCOPE;
 /** CBlobFullStatMap */
 
 void CBlobFullStatMap::Copy(const CBlobFullStatMap& src) {
-	clear();
-	Append(src);
+    clear();
+    Append(src);
 }
 
 void CBlobFullStatMap::Append(const CBlobFullStatMap& src) {
-	reserve(src.size());
-	for (const auto& it : src) {
-		operator[](it.first) = it.second;
-	}
+    reserve(src.size());
+    for (const auto& it : src) {
+        operator[](it.first) = it.second;
+    }
 }
 
 void CBlobFullStatMap::Append(const CBlobFullStatVec& src) {
-	reserve(src.size());
-	for (const auto& it : src) {
-		operator[](it.first) = it.second;
-	}
+    reserve(src.size());
+    for (const auto& it : src) {
+        operator[](it.first) = it.second;
+    }
 }
 
 
 /** CBlobFullStatVec */
 
 void CBlobFullStatVec::Copy(const CBlobFullStatMap& src) {
-	clear();
-	Append(src);
+    clear();
+    Append(src);
 }
 
 void CBlobFullStatVec::Append(const CBlobFullStatMap& src) {
-	for (const auto& it : src) {
-		push_back(it);
-	}
+    for (const auto& it : src) {
+        push_back(it);
+    }
 }
 
 void CBlobFullStatVec::Append(const CBlobFullStatVec& src) {
-	for (const auto& it : src) {
-		push_back(it);
-	}
+    for (const auto& it : src) {
+        push_back(it);
+    }
 }
 
 END_IDBLOB_SCOPE

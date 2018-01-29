@@ -5,6 +5,7 @@ SRC = AccVerCacheD AccVerCacheDB AccVerCacheStorage
 
 LIBS = $(CASSANDRA_LIBS) $(ORIG_LIBS)
 CPPFLAGS = $(CASSANDRA_INCLUDE) $(ORIG_CPPFLAGS)
+LIB = psg_diag
 
 REQUIRES = CASSANDRA MT Linux
 

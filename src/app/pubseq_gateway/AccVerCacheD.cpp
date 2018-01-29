@@ -1,3 +1,33 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors: Dmitri Dmitrienko
+ *
+ * File Description:
+ *
+ */
 #include <ncbi_pch.hpp>
 
 #include <string>
@@ -57,7 +87,7 @@ public:
         m_cancelled = false;
         m_finished_read = false;
     }
-    
+
     void Start(HST::CHttpReply<CPendingOperation>& resp) {
         m_reply = &resp;
 
@@ -94,7 +124,7 @@ public:
 
         m_loader->Wait();
     }
-    
+
     void Peek(HST::CHttpReply<CPendingOperation>& resp) {
         if (m_cancelled) {
             if (resp.IsOutputReady() && !resp.IsFinished()) {
@@ -121,7 +151,7 @@ public:
 /*
                 void *dest = m_buf.Reserve(Size);
                 if (resp.IsReady()) {
-                    
+
                     size_t sz = m_len;
                     if (sz > sizeof(m_buf))
                         sz = sizeof(m_buf);
@@ -147,7 +177,7 @@ public:
     void Cancel() {
         m_cancelled = true;
     }
-    
+
 private:
     HST::CHttpReply<CPendingOperation>* m_reply;
     bool m_cancelled;
@@ -166,7 +196,7 @@ class CAccVerCacheDaemonApplication: public CNcbiApplication {
     unsigned int m_log_level_file;
     string m_address;
     vector<string> m_sat_names;
-    
+
     unsigned short m_http_port;
     unsigned short m_http_workers;
     unsigned int m_lstnr_backlog;
@@ -179,7 +209,7 @@ class CAccVerCacheDaemonApplication: public CNcbiApplication {
     shared_ptr<CCassConnectionFactory> m_cass_fact;
     unsigned int m_timeout_ms;
 public:
-	CAccVerCacheDaemonApplication() :
+    CAccVerCacheDaemonApplication() :
         m_log_level(0),
         m_log_level_file(1),
         m_http_port(2180),
@@ -190,21 +220,21 @@ public:
         m_http_max_pending(512),
         m_cass_fact(CCassConnectionFactory::Create()),
         m_timeout_ms(30000)
-	{
+    {
     }
-	virtual void Init() {
-		unique_ptr<CArgDescriptions> argdesc(new CArgDescriptions());
+    virtual void Init() {
+        unique_ptr<CArgDescriptions> argdesc(new CArgDescriptions());
         m_cass_fact->AppInit(argdesc.get());
 
-		argdesc->SetUsageContext(GetArguments().GetProgramBasename(), "AccVerCacheD -- Daemon to service Accession.Version Cache requests");
-		argdesc->AddDefaultKey ( "ini", "IniFile",      "File with configuration information",  CArgDescriptions::eString, "AccVerCacheD.ini");
-		argdesc->AddDefaultKey ( "P",   "port",         "HTTP port",                            CArgDescriptions::eInteger, "2180");
+        argdesc->SetUsageContext(GetArguments().GetProgramBasename(), "AccVerCacheD -- Daemon to service Accession.Version Cache requests");
+        argdesc->AddDefaultKey ( "ini", "IniFile",      "File with configuration information",  CArgDescriptions::eString, "AccVerCacheD.ini");
+        argdesc->AddDefaultKey ( "P",   "port",         "HTTP port",                            CArgDescriptions::eInteger, "2180");
         argdesc->SetConstraint(  "P",   new CArgAllow_Integers(1, 65534));
-		argdesc->AddDefaultKey ( "H",   "Address",      "Address to bind listening socket to, 0.0.0.0 by default",  CArgDescriptions::eString, "0.0.0.0");
-		argdesc->AddOptionalKey( "o",   "log",          "Output log to",                        CArgDescriptions::eString);
-		argdesc->AddOptionalKey( "l",   "loglevel",     "Output verbosity level from 0 to 5",   CArgDescriptions::eInteger);
-		argdesc->AddOptionalKey( "lf",  "loglevelfile", "File logging verbosity level from 0 to 5",   CArgDescriptions::eInteger);
-		argdesc->AddOptionalKey( "db",  "database",     "Path to LMDB database",                CArgDescriptions::eString);
+        argdesc->AddDefaultKey ( "H",   "Address",      "Address to bind listening socket to, 0.0.0.0 by default",  CArgDescriptions::eString, "0.0.0.0");
+        argdesc->AddOptionalKey( "o",   "log",          "Output log to",                        CArgDescriptions::eString);
+        argdesc->AddOptionalKey( "l",   "loglevel",     "Output verbosity level from 0 to 5",   CArgDescriptions::eInteger);
+        argdesc->AddOptionalKey( "lf",  "loglevelfile", "File logging verbosity level from 0 to 5",   CArgDescriptions::eInteger);
+        argdesc->AddOptionalKey( "db",  "database",     "Path to LMDB database",                CArgDescriptions::eString);
         argdesc->AddOptionalKey( "w",   "HttpWorkers",  "HTTP workers from 1 to 100",           CArgDescriptions::eInteger);
         argdesc->SetConstraint(  "w",   new CArgAllow_Integers(1, 100));
         argdesc->AddOptionalKey( "b",   "backlog",      "Listener backlog from 5 to 2048",      CArgDescriptions::eInteger);
@@ -212,34 +242,34 @@ public:
         argdesc->AddOptionalKey( "n",   "maxcon",       "Max number of connections 5 to 65000",      CArgDescriptions::eInteger);
         argdesc->SetConstraint(  "n",   new CArgAllow_Integers(5, 65000));
 
-		SetupArgDescriptions(argdesc.release());
-	}
-	void ParseArgs() {        
-		const CArgs& args = GetArgs();
-		m_ini_file = args[ "ini" ].AsString();
-		string logfile;
-		
-		filebuf fb;
-		fb.open(m_ini_file.c_str(), ios::in | ios::binary);
-		CNcbiIstream is(&fb);
-		CNcbiRegistry Registry(is, 0);
-		fb.close();
+        SetupArgDescriptions(argdesc.release());
+    }
+    void ParseArgs() {        
+        const CArgs& args = GetArgs();
+        m_ini_file = args[ "ini" ].AsString();
+        string logfile;
 
-		if (!Registry.Empty() ) {
+        filebuf fb;
+        fb.open(m_ini_file.c_str(), ios::in | ios::binary);
+        CNcbiIstream is(&fb);
+        CNcbiRegistry Registry(is, 0);
+        fb.close();
+
+        if (!Registry.Empty() ) {
             m_log_level  = Registry.GetInt("COMMON", "LOGLEVEL", 0);
             m_log_level_file = Registry.GetInt("COMMON", "LOGLEVELFILE", 1);
-			m_log_file   = Registry.GetString("COMMON", "LOGFILE", "");
-			m_http_port  = Registry.GetInt("HTTP", "PORT", 2180);
-			m_address   = Registry.GetString("HTTP", "Address", "");
+            m_log_file   = Registry.GetString("COMMON", "LOGFILE", "");
+            m_http_port  = Registry.GetInt("HTTP", "PORT", 2180);
+            m_address   = Registry.GetString("HTTP", "Address", "");
             m_http_workers = Registry.GetInt("HTTP", "Workers", 32);
             m_lstnr_backlog = Registry.GetInt("HTTP", "Backlog", 256);
             m_tcp_max_conn = Registry.GetInt("HTTP", "MaxConn", 4096);
             m_timeout_ms = Registry.GetInt("COMMON", "OPTIMEOUT", 30000);
-		}
-		if (args["o"])
-			m_log_file = args["o"].AsString();
-		if (args["l"])
-			m_log_level = args["l"].AsInteger();
+        }
+        if (args["o"])
+            m_log_file = args["o"].AsString();
+        if (args["l"])
+            m_log_level = args["l"].AsInteger();
         if (args["lf"])
             m_log_level_file = args["lf"].AsInteger();
         IdLogUtil::CAppLog::SetLogLevel(m_log_level);
@@ -250,17 +280,17 @@ public:
         m_cass_fact->AppParseArgs(args);
         m_cass_fact->LoadConfig(m_ini_file, "");
 
-		if (args["P"])
-			m_http_port = args["P"].AsInteger();
-		if (args["H"])
-			m_address = args["H"].AsString();
+        if (args["P"])
+            m_http_port = args["P"].AsInteger();
+        if (args["H"])
+            m_address = args["H"].AsString();
         if (args["w"])
             m_http_workers = args["w"].AsInteger();
         if (args["b"])
             m_lstnr_backlog = args["b"].AsInteger();
         if (args["n"])
             m_tcp_max_conn = args["n"].AsInteger();
-		if (args["db"])
+        if (args["db"])
             m_db_path = args["db"].AsString();
 
         list<string> entries;
@@ -273,7 +303,7 @@ public:
         }
         if (m_sat_names.size() == 0)
             EAccVerException::raise("[satnames] section in ini file is empty");
-	}
+    }
 
     void OpenDb(bool Initialize, bool Readonly) {
         if (m_db_path.empty())
@@ -307,8 +337,8 @@ public:
         size_t value_len;
 
         if (req.GetParam("accver", sizeof("accver") - 1, true, &value, &value_len)) {
-            string AccVer(value, value_len);            
-            
+            string AccVer(value, value_len);
+
             string Data;
             if (m_db->Storage().Get(AccVer, Data))
                 resp.SendOk(Data.c_str(), Data.length(), false);
@@ -346,7 +376,7 @@ public:
         return 0;
     }
 
-	virtual int Run(void) {
+    virtual int Run(void) {
         srand(time(NULL));
         ParseArgs();
         OpenDb(false, true);
@@ -370,8 +400,8 @@ public:
 
 int main(int argc, const char* argv[])
 {
-	srand(time(NULL));
-	CThread::InitializeMainThreadId();
+    srand(time(NULL));
+    CThread::InitializeMainThreadId();
     CAppLog::FormatTimeStamp(true);
-	return CAccVerCacheDaemonApplication().AppMain(argc, argv);
+    return CAccVerCacheDaemonApplication().AppMain(argc, argv);
 }

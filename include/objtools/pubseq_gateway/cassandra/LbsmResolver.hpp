@@ -1,3 +1,6 @@
+#ifndef LBSMRESOLVER__HPP
+#define LBSMRESOLVER__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -31,9 +34,6 @@
  *
  */
 
-#ifndef _LBSM_DISCOVER_H_
-#define _LBSM_DISCOVER_H_
-
 #include <corelib/ncbistr.hpp>
 #include <connect/ncbi_service.h>
 
@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE;
 
 class LbsmLookup {
 public:
-	static bool Resolve(const string& Service, vector<pair<string, int> >& Result, TSERV_Type ServType = fSERV_Any);
+    static bool Resolve(const string& Service, vector<pair<string, int> >& Result, TSERV_Type ServType = fSERV_Any);
     static string Resolve(const string& Service, char Delimiter, TSERV_Type ServType = fSERV_Any);
 };
 

@@ -40,12 +40,12 @@
 
 #include <corelib/ncbireg.hpp>
 
-#include "IdLogUtil/AppPerf.hpp"
-#include "IdLogUtil/IdLogUtl.hpp"
-#include "Cass/CassDriver.hpp"
-#include "CassBlobOp.hpp"
-#include "IdCassScope.hpp"
-#include "SyncObj.hpp"
+#include <objtools/pubseq_gateway/diag/AppPerf.hpp>
+#include <objtools/pubseq_gateway/diag/IdLogUtl.hpp>
+#include <objtools/pubseq_gateway/cassandra/CassDriver.hpp>
+#include <objtools/pubseq_gateway/cassandra/CassBlobOp.hpp>
+#include <objtools/pubseq_gateway/cassandra/IdCassScope.hpp>
+#include <objtools/pubseq_gateway/cassandra/SyncObj.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -72,7 +72,7 @@ using namespace IdLogUtil;
 
 
 static string KeySpaceDot(const string& keyspace) {
-	return keyspace.empty() ? keyspace : keyspace + ".";
+    return keyspace.empty() ? keyspace : keyspace + ".";
 }
 
 
@@ -85,23 +85,23 @@ bool CCassBlobWaiter::CheckMaxActive() {
 
 /*****************************************************
 
-				BLOB    READ
-  
+                BLOB    READ
+
 *****************************************************/
 
 /* CCassBlobLoader */
 
 void CCassBlobLoader::RequestChunk(shared_ptr<CCassQuery> qry, int local_id) {
-	CassConsistency c = (m_restart_counter > 0 && m_conn->GetFallBackRdConsistency()) ? CASS_CONSISTENCY_LOCAL_QUORUM : CASS_CONSISTENCY_LOCAL_ONE;
-	string sql = "SELECT data FROM " + KeySpaceDot(m_keyspace) + "largeentity WHERE ent = ? AND local_id = ?";
-	LOG5(("reading LARGE blob part, key=%s.%d, local_id=%d, qry: %p", m_keyspace.c_str(), m_key, local_id, LOG_SPTR(qry)));
-	qry->SetSQL(sql, 2);
-	qry->BindInt32(0, m_key);
-	qry->BindInt32(1, local_id);
+    CassConsistency c = (m_restart_counter > 0 && m_conn->GetFallBackRdConsistency()) ? CASS_CONSISTENCY_LOCAL_QUORUM : CASS_CONSISTENCY_LOCAL_ONE;
+    string sql = "SELECT data FROM " + KeySpaceDot(m_keyspace) + "largeentity WHERE ent = ? AND local_id = ?";
+    LOG5(("reading LARGE blob part, key=%s.%d, local_id=%d, qry: %p", m_keyspace.c_str(), m_key, local_id, LOG_SPTR(qry)));
+    qry->SetSQL(sql, 2);
+    qry->BindInt32(0, m_key);
+    qry->BindInt32(1, local_id);
     if (m_data_ready_cb)
         qry->SetOnData2(m_data_ready_cb, m_data_ready_data);
     UpdateLastActivity();
-	qry->Query(c, true);
+    qry->Query(c, true);
 }
 
 void CCassBlobLoader::RequestFlags(shared_ptr<CCassQuery> qry, bool with_data) {
@@ -135,7 +135,7 @@ void CCassBlobLoader::RequestChunksAhead() {
 
 
 void CCassBlobLoader::Wait1() {
-	char msg[1024];
+    char msg[1024];
     msg[0] = '\0';
     bool b_need_repeat;
 
@@ -194,7 +194,7 @@ void CCassBlobLoader::Wait1() {
                         m_blob_stat.flags = qry->FieldGetInt64Value(1);
                         m_expected_size = m_remaining_size = qry->FieldGetInt64Value(2);
                         m_large_parts = qry->FieldGetInt32Value(3, 0);
-                        int64_t len = qry->FieldGetBlobRaw(4, &rawdata);					
+                        int64_t len = qry->FieldGetBlobRaw(4, &rawdata);
                         m_remaining_size -= len;
                         m_stat_loaded = true;
                         if ((m_blob_stat.flags & (bfCheckFailed | bfComplete)) != bfComplete) {
@@ -387,8 +387,8 @@ void CCassBlobLoader::Wait1() {
 
 /*****************************************************
 
-				BLOB    INSERT
-  
+                BLOB    INSERT
+
 *****************************************************/
 
 /* CCassBlobInserter */
@@ -431,7 +431,7 @@ void CCassBlobInserter::Wait1() {
 
             case stFetchOldLargeParts: {
                 auto qry = m_query_arr[0];
-                
+
 
                 if (!CheckReady(qry, stInit, &b_need_repeat)) {
                     if (b_need_repeat)
@@ -530,7 +530,7 @@ void CCassBlobInserter::Wait1() {
 
                     UpdateLastActivity();
                     qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_async);
-                    
+
                 }
                 if (m_large_parts != 0) {
                     int32_t i;
@@ -630,8 +630,8 @@ void CCassBlobInserter::Wait1() {
 
 /*****************************************************
 
-				BLOB    DELETE
-  
+                BLOB    DELETE
+
 *****************************************************/
 
 /* CCassBlobDeleter */
@@ -639,7 +639,7 @@ void CCassBlobInserter::Wait1() {
 void CCassBlobDeleter::Wait1() {
     bool b_need_repeat;
     do {
-        b_need_repeat = false; 
+        b_need_repeat = false;
         switch (m_state) {
             case stError:
             case stDone:
@@ -730,7 +730,7 @@ void CCassBlobDeleter::Wait1() {
                 m_state = stDeleteEnt;
                 b_need_repeat = true;
                 break;
-            }   
+            }
 
             case stDeleteEnt: {
                 auto qry = m_query_arr[0];
@@ -769,29 +769,29 @@ void CCassBlobDeleter::Wait1() {
 /* CCassBlobOp */
 
 void CCassBlobOp::CassExecuteScript(const string& scriptstr, CassConsistency c) {
-	if (scriptstr.empty())
-		return;
+    if (scriptstr.empty())
+        return;
 
-	const char* hd = scriptstr.c_str();
-	const char* tl;
-	while (*hd != 0) {
-		while (*hd != 0 && (*hd == ' ' || *hd == '\t' || *hd == '\n' || *hd == '\r' )) hd++;
+    const char* hd = scriptstr.c_str();
+    const char* tl;
+    while (*hd != 0) {
+        while (*hd != 0 && (*hd == ' ' || *hd == '\t' || *hd == '\n' || *hd == '\r' )) hd++;
 
-		tl = hd;
-		while (*hd != 0 && *hd != ';') hd++;
-		int sz = hd - tl;
-		if (sz > 0) {
-			string qry;
-			qry.assign(tl, sz);
+        tl = hd;
+        while (*hd != 0 && *hd != ';') hd++;
+        int sz = hd - tl;
+        if (sz > 0) {
+            string qry;
+            qry.assign(tl, sz);
 #if 0
-			NcbiCout << NcbiEndl << "SCRIPTSQL(" << sz << "):" << NcbiEndl << qry << NcbiEndl;
+            NcbiCout << NcbiEndl << "SCRIPTSQL(" << sz << "):" << NcbiEndl << qry << NcbiEndl;
 #endif
-			shared_ptr<CCassQuery> query(m_conn->NewQuery());
-			query->SetSQL(qry, 0);
-			query->Execute(c, false, false);
-		}
-		if (*hd != 0) hd++; // skip ';'
-	}
+            shared_ptr<CCassQuery> query(m_conn->NewQuery());
+            query->SetSQL(qry, 0);
+            query->Execute(c, false, false);
+        }
+        if (*hd != 0) hd++; // skip ';'
+    }
 }
 
 void CCassBlobOp::CreateScheme(const string& filename, const string& keyspace) {
@@ -799,92 +799,92 @@ void CCassBlobOp::CreateScheme(const string& filename, const string& keyspace) {
     string scheme;
     StringFromFile(filename, scheme);
     if (scheme.empty())
-    	RAISE_ERROR(eGeneric, string("cassandra scheme not found or file is empty"));
-	if (keyspace.empty())
-    	RAISE_ERROR(eGeneric, string("cassandra namespace is not specified"));
-	StringReplace(scheme, "%KeySpace%", keyspace);
-	CAppOp op;
-	CAppPerf::StartOp(&op);
+        RAISE_ERROR(eGeneric, string("cassandra scheme not found or file is empty"));
+    if (keyspace.empty())
+        RAISE_ERROR(eGeneric, string("cassandra namespace is not specified"));
+    StringReplace(scheme, "%KeySpace%", keyspace);
+    CAppOp op;
+    CAppPerf::StartOp(&op);
     CassExecuteScript(scheme, CASS_CONSISTENCY_ALL);
     m_conn->SetKeyspace(keyspace);
-	LOG1(("Updating default settings"));
-	UpdateSetting(op, 0, SETTING_LARGE_TRESHOLD, NStr::NumericToString(DFLT_LARGE_TRESHOLD));
-	UpdateSetting(op, 0, SETTING_LARGE_CHUNK_SZ, NStr::NumericToString(DFLT_LARGE_CHUNK_SZ));
-	CAppPerf::StopOp(&op);
+    LOG1(("Updating default settings"));
+    UpdateSetting(op, 0, SETTING_LARGE_TRESHOLD, NStr::NumericToString(DFLT_LARGE_TRESHOLD));
+    UpdateSetting(op, 0, SETTING_LARGE_CHUNK_SZ, NStr::NumericToString(DFLT_LARGE_CHUNK_SZ));
+    CAppPerf::StopOp(&op);
     LOG1(("Cassandra Scheme is ok"));
 }
 
 void CCassBlobOp::GetBlobChunkTresholds(unsigned int op_timeout_ms, int64_t *LargeTreshold, int64_t *LargeChunkSize) {
-	string s;
-	CAppOp op; 
-	if (!GetSetting(op, op_timeout_ms, SETTING_LARGE_TRESHOLD, s) || !NStr::StringToNumeric(s, LargeTreshold) || *LargeTreshold < ABS_MIN_LARGE_TRESHOLD) {
-		*LargeTreshold = DFLT_LARGE_TRESHOLD;
-		UpdateSetting(op, op_timeout_ms, SETTING_LARGE_TRESHOLD, NStr::NumericToString(*LargeTreshold));
-	}
-	if (!GetSetting(op, op_timeout_ms, SETTING_LARGE_CHUNK_SZ, s) || !NStr::StringToNumeric(s, LargeChunkSize) || *LargeChunkSize < ABS_MIN_LARGE_CHUNK_SZ) {
-		*LargeChunkSize = DFLT_LARGE_CHUNK_SZ;
-		UpdateSetting(op, op_timeout_ms, SETTING_LARGE_CHUNK_SZ, NStr::NumericToString(*LargeChunkSize));
-	}
+    string s;
+    CAppOp op; 
+    if (!GetSetting(op, op_timeout_ms, SETTING_LARGE_TRESHOLD, s) || !NStr::StringToNumeric(s, LargeTreshold) || *LargeTreshold < ABS_MIN_LARGE_TRESHOLD) {
+        *LargeTreshold = DFLT_LARGE_TRESHOLD;
+        UpdateSetting(op, op_timeout_ms, SETTING_LARGE_TRESHOLD, NStr::NumericToString(*LargeTreshold));
+    }
+    if (!GetSetting(op, op_timeout_ms, SETTING_LARGE_CHUNK_SZ, s) || !NStr::StringToNumeric(s, LargeChunkSize) || *LargeChunkSize < ABS_MIN_LARGE_CHUNK_SZ) {
+        *LargeChunkSize = DFLT_LARGE_CHUNK_SZ;
+        UpdateSetting(op, op_timeout_ms, SETTING_LARGE_CHUNK_SZ, NStr::NumericToString(*LargeChunkSize));
+    }
 }
 
 void CCassBlobOp::GetBlob(CAppOp& op, unsigned int op_timeout_ms, int32_t key, unsigned int max_retries, SBlobStat* blob_stat, const DataChunkCB_t& data_chunk_cb) {
-	string errmsg;
-	bool is_error = false;
-	CCassBlobLoader loader(&op, op_timeout_ms, m_conn, m_keyspace, key, false, true, data_chunk_cb, 
-		[&is_error, &errmsg](const char* Text, CCassBlobWaiter* Waiter) {
-			is_error = 1;
-			errmsg = Text;
-		}
-	);
-	CCassConnection::Perform(op, op_timeout_ms, nullptr, nullptr, 
-		[&loader](bool is_repeated) {
-			if (is_repeated)
-				loader.Restart();
-			bool b = loader.Wait();
-			return b;
-		}
-	);
-	if (is_error)
-		RAISE_DB_ERROR(eQueryFailedRestartable, errmsg);
+    string errmsg;
+    bool is_error = false;
+    CCassBlobLoader loader(&op, op_timeout_ms, m_conn, m_keyspace, key, false, true, data_chunk_cb, 
+        [&is_error, &errmsg](const char* Text, CCassBlobWaiter* Waiter) {
+            is_error = 1;
+            errmsg = Text;
+        }
+    );
+    CCassConnection::Perform(op, op_timeout_ms, nullptr, nullptr, 
+        [&loader](bool is_repeated) {
+            if (is_repeated)
+                loader.Restart();
+            bool b = loader.Wait();
+            return b;
+        }
+    );
+    if (is_error)
+        RAISE_DB_ERROR(eQueryFailedRestartable, errmsg);
     if (blob_stat) 
         *blob_stat = loader.GetBlobStat();
 }
 
 void CCassBlobOp::GetBlobAsync(CAppOp& op, unsigned int op_timeout_ms, int32_t key, unsigned int max_retries, const DataChunkCB_t& data_chunk_cb, unique_ptr<CCassBlobWaiter>& Waiter) {
-	Waiter.reset(new CCassBlobLoader(&op, op_timeout_ms, m_conn, m_keyspace, key, true, max_retries, data_chunk_cb, nullptr));
+    Waiter.reset(new CCassBlobLoader(&op, op_timeout_ms, m_conn, m_keyspace, key, true, max_retries, data_chunk_cb, nullptr));
 }
 
 void CCassBlobOp::InsertBlobAsync(CAppOp& op, unsigned int op_timeout_ms, int32_t key, unsigned int max_retries, CBlob* blob_rslt, triple_t is_new, int64_t LargeTreshold, int64_t LargeChunkSz, unique_ptr<CCassBlobWaiter>& Waiter) {
-	Waiter.reset(new CCassBlobInserter(&op, op_timeout_ms, m_conn, m_keyspace, key, blob_rslt, is_new, LargeTreshold, LargeChunkSz, true, max_retries, nullptr));
+    Waiter.reset(new CCassBlobInserter(&op, op_timeout_ms, m_conn, m_keyspace, key, blob_rslt, is_new, LargeTreshold, LargeChunkSz, true, max_retries, nullptr));
 }
 
 void CCassBlobOp::DeleteBlobAsync(CAppOp& op, unsigned int op_timeout_ms, int32_t key, unsigned int max_retries, unique_ptr<CCassBlobWaiter>& Waiter) {
-	Waiter.reset(new CCassBlobDeleter(&op, op_timeout_ms, m_conn, m_keyspace, key, true, max_retries, nullptr));
+    Waiter.reset(new CCassBlobDeleter(&op, op_timeout_ms, m_conn, m_keyspace, key, true, max_retries, nullptr));
 }
 
 struct SLoadKeysContext
 {
-	atomic_ulong m_max_running;
-	atomic_ulong m_running_count;
-	atomic_ulong m_fetched;
-	vector<pair<int64_t, int64_t>> const &m_ranges;
-	string m_sql;
-	CBlobFullStatMap* m_keys;
+    atomic_ulong m_max_running;
+    atomic_ulong m_running_count;
+    atomic_ulong m_fetched;
+    vector<pair<int64_t, int64_t>> const &m_ranges;
+    string m_sql;
+    CBlobFullStatMap* m_keys;
     CFutex m_wakeup;
     function<void()> m_tick;
 
-	SLoadKeysContext() = delete;
-	SLoadKeysContext(SLoadKeysContext&&) = delete;
-	SLoadKeysContext(const SLoadKeysContext&) = delete;
-	SLoadKeysContext(
-		unsigned long max_running,
-		unsigned long running_count,
-		unsigned long fetched,
-		vector< pair<int64_t, int64_t> > const &ranges,
-		string const & sql,
-		CBlobFullStatMap* keys,
+    SLoadKeysContext() = delete;
+    SLoadKeysContext(SLoadKeysContext&&) = delete;
+    SLoadKeysContext(const SLoadKeysContext&) = delete;
+    SLoadKeysContext(
+        unsigned long max_running,
+        unsigned long running_count,
+        unsigned long fetched,
+        vector< pair<int64_t, int64_t> > const &ranges,
+        string const & sql,
+        CBlobFullStatMap* keys,
         function<void()> tick
-	) :
+    ) :
         m_max_running(max_running),
         m_running_count(running_count),
         m_fetched(fetched),
@@ -892,180 +892,180 @@ struct SLoadKeysContext
         m_sql(sql),
         m_keys(keys),
         m_tick(tick)
-	{}
+    {}
 
-	int64_t getStep(size_t range_id) const {
-		int64_t lower_bound = m_ranges[range_id].first;
-		int64_t upper_bound = m_ranges[range_id].second;
-		if (upper_bound - lower_bound < KEYLOAD_SPLIT_COUNT) {
-			return upper_bound - lower_bound;
-		}
-		else {
-			return (upper_bound - lower_bound) / KEYLOAD_SPLIT_COUNT;
-		}
-	}
+    int64_t getStep(size_t range_id) const {
+        int64_t lower_bound = m_ranges[range_id].first;
+        int64_t upper_bound = m_ranges[range_id].second;
+        if (upper_bound - lower_bound < KEYLOAD_SPLIT_COUNT) {
+            return upper_bound - lower_bound;
+        }
+        else {
+            return (upper_bound - lower_bound) / KEYLOAD_SPLIT_COUNT;
+        }
+    }
 };
 
 struct SLoadKeysOnDataContext {
-	SLoadKeysContext& common;
-	CAppOp op;
-	int64_t lower_bound;
-	int64_t upper_bound;
-	size_t range_offset;
+    SLoadKeysContext& common;
+    CAppOp op;
+    int64_t lower_bound;
+    int64_t upper_bound;
+    size_t range_offset;
     unsigned int run_id;
-	unsigned int restart_count;
+    unsigned int restart_count;
     atomic_bool data_triggered;
     vector<pair<int32_t, SBlobFullStat>> keys;
 
-	SLoadKeysOnDataContext() = delete;
-	SLoadKeysOnDataContext(SLoadKeysOnDataContext&&) = delete;
-	SLoadKeysOnDataContext(const SLoadKeysOnDataContext&) = delete;
-	SLoadKeysOnDataContext(SLoadKeysContext & v_common, CAppOp* parent, int64_t v_lower_bound, int64_t v_upper_bound, size_t v_range_offset, unsigned int v_run_id) : 
-		common(v_common),
-		op(parent),
-		lower_bound(v_lower_bound),
-		upper_bound(v_upper_bound),
-		range_offset(v_range_offset),
+    SLoadKeysOnDataContext() = delete;
+    SLoadKeysOnDataContext(SLoadKeysOnDataContext&&) = delete;
+    SLoadKeysOnDataContext(const SLoadKeysOnDataContext&) = delete;
+    SLoadKeysOnDataContext(SLoadKeysContext & v_common, CAppOp* parent, int64_t v_lower_bound, int64_t v_upper_bound, size_t v_range_offset, unsigned int v_run_id) : 
+        common(v_common),
+        op(parent),
+        lower_bound(v_lower_bound),
+        upper_bound(v_upper_bound),
+        range_offset(v_range_offset),
         run_id(v_run_id),
-		restart_count(0),
+        restart_count(0),
         data_triggered(false)
-	{}
+    {}
 };
 
 static void InternalLoadKeys_ondata(CCassQuery& query, void* data) {
-	SLoadKeysOnDataContext* context = static_cast<SLoadKeysOnDataContext*>(data);
+    SLoadKeysOnDataContext* context = static_cast<SLoadKeysOnDataContext*>(data);
     LOG5(("Query[%d] wake: %p", context->run_id, &query));
     context->data_triggered = true;
     context->common.m_wakeup.Inc();
 }
 
 void CCassBlobOp::LoadKeysScheduleNext(CCassQuery& query, void* data) {
-	SLoadKeysOnDataContext* context = static_cast<SLoadKeysOnDataContext*>(data);
-	bool restart_request = false;
-	int32_t ent_current = 0;
+    SLoadKeysOnDataContext* context = static_cast<SLoadKeysOnDataContext*>(data);
+    bool restart_request = false;
+    int32_t ent_current = 0;
     bool is_eof = false;
-	try {
-//		query.ProcessFutureResult(false);
-		unsigned int counter = 0;
+    try {
+//      query.ProcessFutureResult(false);
+        unsigned int counter = 0;
         CAppPerf::BeginRow(&context->op);
-		while (true) {
-			async_rslt_t wr;
-			if ((wr = query.NextRow()) == ar_dataready) {
-				pair<int32_t, SBlobFullStat> row;
-				row.first = query.FieldGetInt32Value(0);
-				ent_current = row.first;
-				row.second.modified = query.FieldIsNull(1) ? 0 : query.FieldGetInt64Value(1);
-				row.second.size = query.FieldIsNull(2) ? 0 : query.FieldGetInt64Value(2);
-				row.second.flags = query.FieldIsNull(3) ? (bfCheckFailed | bfComplete) : query.FieldGetInt64Value(3);
-				row.second.seen = false;
+        while (true) {
+            async_rslt_t wr;
+            if ((wr = query.NextRow()) == ar_dataready) {
+                pair<int32_t, SBlobFullStat> row;
+                row.first = query.FieldGetInt32Value(0);
+                ent_current = row.first;
+                row.second.modified = query.FieldIsNull(1) ? 0 : query.FieldGetInt64Value(1);
+                row.second.size = query.FieldIsNull(2) ? 0 : query.FieldGetInt64Value(2);
+                row.second.flags = query.FieldIsNull(3) ? (bfCheckFailed | bfComplete) : query.FieldGetInt64Value(3);
+                row.second.seen = false;
                 LOG4(("CASS got key=%s:%-9d mod=%ld sz=%-5ld flags=%lx", query.GetConnection()->Keyspace().c_str(), row.first, row.second.modified, row.second.size, row.second.flags));
-				context->keys.push_back(std::move(row));
+                context->keys.push_back(std::move(row));
 
-				++(context->common.m_fetched);
-				++counter;
-				//LOG1(("Fetched blob with key: %i", key));
-			}
-			else if (wr == ar_wait) {
-                LOG5(("Query[%d] ar_wait: %p", context->run_id, &query));
-				break; // expecting next data event triggered on this same query rowset
+                ++(context->common.m_fetched);
+                ++counter;
+                //LOG1(("Fetched blob with key: %i", key));
             }
-			else if (wr == ar_done) {
+            else if (wr == ar_wait) {
+                LOG5(("Query[%d] ar_wait: %p", context->run_id, &query));
+                break; // expecting next data event triggered on this same query rowset
+            }
+            else if (wr == ar_done) {
                 is_eof = true;
-				break; // EOF
+                break; // EOF
             }
             else {
                 RAISE_ERROR(eGeneric, "CASS unexpected condition");
             }
-		}
+        }
         context->restart_count = 0;
         CAppPerf::EndRow(&context->op, context->common.m_fetched.load(), counter, -1, true);
 
-		LOG5(("Fetched records by one query: %u", counter));
+        LOG5(("Fetched records by one query: %u", counter));
         if (!is_eof)
             return;
-	}
-	catch (const EDatabase& e) {
-		if ((e.GetErrCode() == EDatabase::eQueryTimeout || e.GetErrCode() == EDatabase::eQueryFailedRestartable) && context->restart_count < 5) {
-			restart_request = true;
-		}
-		else {
+    }
+    catch (const EDatabase& e) {
+        if ((e.GetErrCode() == EDatabase::eQueryTimeout || e.GetErrCode() == EDatabase::eQueryFailedRestartable) && context->restart_count < 5) {
+            restart_request = true;
+        }
+        else {
             LOG3(("LoadKeys ... exception for entity: %d, %s", ent_current, e.what()));
-			throw;
-		}
-	}
-	catch(...) {
-	    LOG3(("LoadKeys ... exception for entity: %d", ent_current));
-	    throw;
-	}
+            throw;
+        }
+    }
+    catch(...) {
+        LOG3(("LoadKeys ... exception for entity: %d", ent_current));
+        throw;
+    }
 
-	query.Close();
+    query.Close();
 
-	if (restart_request) {
-		CAppPerf::Relax(&context->op);
-		LOG3(("QUERY TIMEOUT! Offset %lu - %lu. Error count %u", context->lower_bound, context->upper_bound , context->restart_count));
-		query.SetSQL(context->common.m_sql, 2);
-		query.BindInt64(0, context->lower_bound);
-		query.BindInt64(1, context->upper_bound);
-		query.Query(KEYLOAD_CONSISTENCY, true, true, KEYLOAD_PAGESIZE);
-		++(context->restart_count);
-	}
-	else {        
-		int64_t upper_bound = context->common.m_ranges[context->range_offset].second;
-		int64_t step = context->common.getStep(context->range_offset);
+    if (restart_request) {
+        CAppPerf::Relax(&context->op);
+        LOG3(("QUERY TIMEOUT! Offset %lu - %lu. Error count %u", context->lower_bound, context->upper_bound , context->restart_count));
+        query.SetSQL(context->common.m_sql, 2);
+        query.BindInt64(0, context->lower_bound);
+        query.BindInt64(1, context->upper_bound);
+        query.Query(KEYLOAD_CONSISTENCY, true, true, KEYLOAD_PAGESIZE);
+        ++(context->restart_count);
+    }
+    else {
+        int64_t upper_bound = context->common.m_ranges[context->range_offset].second;
+        int64_t step = context->common.getStep(context->range_offset);
 
-		query.SetSQL(context->common.m_sql, 2);
-		if (context->upper_bound < upper_bound) {
-			int64_t new_upper_bound = (upper_bound - context->upper_bound > step) ? context->upper_bound + step : upper_bound;
-			context->lower_bound = context->upper_bound;
-			context->upper_bound = new_upper_bound;
-			query.BindInt64(0, context->lower_bound);
-			query.BindInt64(1, context->upper_bound);
-			query.Query(KEYLOAD_CONSISTENCY, true, true, KEYLOAD_PAGESIZE);
-			//LOG3(("QUERY DATA %lu %li - %li", context->range_offset, context->lower_bound, context->upper_bound));
-		}
-		else {
-			bool need_run = false;
-			{
-				if( (context->common.m_max_running + 1) < context->common.m_ranges.size()) {
-					context->range_offset = ++(context->common.m_max_running);
-					need_run = true;
-				}
-			}
+        query.SetSQL(context->common.m_sql, 2);
+        if (context->upper_bound < upper_bound) {
+            int64_t new_upper_bound = (upper_bound - context->upper_bound > step) ? context->upper_bound + step : upper_bound;
+            context->lower_bound = context->upper_bound;
+            context->upper_bound = new_upper_bound;
+            query.BindInt64(0, context->lower_bound);
+            query.BindInt64(1, context->upper_bound);
+            query.Query(KEYLOAD_CONSISTENCY, true, true, KEYLOAD_PAGESIZE);
+            //LOG3(("QUERY DATA %lu %li - %li", context->range_offset, context->lower_bound, context->upper_bound));
+        }
+        else {
+            bool need_run = false;
+            {
+                if( (context->common.m_max_running + 1) < context->common.m_ranges.size()) {
+                    context->range_offset = ++(context->common.m_max_running);
+                    need_run = true;
+                }
+            }
 
-			if (need_run) {
-				int64_t lower_bound = context->common.m_ranges[context->range_offset].first;
-				int64_t step = context->common.getStep(context->range_offset);
-				context->lower_bound = lower_bound;
-				context->upper_bound = lower_bound + step;
-				query.BindInt64(0, context->lower_bound);
-				query.BindInt64(1, context->upper_bound);
-				query.Query(KEYLOAD_CONSISTENCY, true, true, KEYLOAD_PAGESIZE);
-				//LOG3(("QUERY DATA %lu %li - %li", context->range_offset, context->lower_bound, context->upper_bound));
-			}
-			else {
-				query.SetOnData(nullptr, nullptr);
-				--(context->common.m_running_count);
-			}
-		}
-	}
+            if (need_run) {
+                int64_t lower_bound = context->common.m_ranges[context->range_offset].first;
+                int64_t step = context->common.getStep(context->range_offset);
+                context->lower_bound = lower_bound;
+                context->upper_bound = lower_bound + step;
+                query.BindInt64(0, context->lower_bound);
+                query.BindInt64(1, context->upper_bound);
+                query.Query(KEYLOAD_CONSISTENCY, true, true, KEYLOAD_PAGESIZE);
+                //LOG3(("QUERY DATA %lu %li - %li", context->range_offset, context->lower_bound, context->upper_bound));
+            }
+            else {
+                query.SetOnData(nullptr, nullptr);
+                --(context->common.m_running_count);
+            }
+        }
+    }
 }
 
 void CCassBlobOp::LoadKeys(CAppOp& op, CBlobFullStatMap* keys, function<void()> tick) {
     unsigned int run_id;
-	vector< pair<int64_t, int64_t> > ranges;
-	m_conn->getTokenRanges(ranges);
-	unsigned int concurrent = min<unsigned int>(KEYLOAD_CONCURRENCY, static_cast<unsigned int>(ranges.size()));
+    vector< pair<int64_t, int64_t> > ranges;
+    m_conn->getTokenRanges(ranges);
+    unsigned int concurrent = min<unsigned int>(KEYLOAD_CONCURRENCY, static_cast<unsigned int>(ranges.size()));
 
-	string common = "SELECT ent, modified, size, flags FROM " + KeySpaceDot(m_keyspace) + "entity WHERE";
-	string fsql = common + " TOKEN(ent) >= ? and TOKEN(ent) <= ?";
-	string sql = common	+ " TOKEN(ent) > ? and TOKEN(ent) <= ?";
+    string common = "SELECT ent, modified, size, flags FROM " + KeySpaceDot(m_keyspace) + "entity WHERE";
+    string fsql = common + " TOKEN(ent) >= ? and TOKEN(ent) <= ?";
+    string sql = common + " TOKEN(ent) > ? and TOKEN(ent) <= ?";
     string error;
 
-	SLoadKeysContext loadkeys_context(0, concurrent, 0, ranges, sql, keys, tick);
+    SLoadKeysContext loadkeys_context(0, concurrent, 0, ranges, sql, keys, tick);
     int val = loadkeys_context.m_wakeup.Value();
-	vector<shared_ptr<CCassQuery>> queries;
-	list<SLoadKeysOnDataContext> contexts;
-	queries.resize(concurrent);	
+    vector<shared_ptr<CCassQuery>> queries;
+    list<SLoadKeysOnDataContext> contexts;
+    queries.resize(concurrent);
 
     try {
         for (run_id = 0; run_id < concurrent; ++run_id) {
@@ -1117,11 +1117,11 @@ void CCassBlobOp::LoadKeys(CAppOp& op, CBlobFullStatMap* keys, function<void()> 
         }
         RAISE_ERROR(eGeneric, error);
     }
-    
+
     LOG5(("LoadKeys: reloading keys from vectors to map"));
     for (auto& it : contexts) {
-		CBlobFullStatMap* all_keys = it.common.m_keys;
-		if (!it.keys.empty()) {
+        CBlobFullStatMap* all_keys = it.common.m_keys;
+        if (!it.keys.empty()) {
             for (auto const& row : it.keys) {
                 auto it = all_keys->find(row.first);
                 if (it != all_keys->end()) {
@@ -1133,177 +1133,177 @@ void CCassBlobOp::LoadKeys(CAppOp& op, CBlobFullStatMap* keys, function<void()> 
             }
             it.keys.clear();
             it.keys.resize(0);
-		}
+        }
     }
 
 
-	LOG3(("LoadKeys: finished"));
+    LOG3(("LoadKeys: finished"));
 }
 
 /*****************************************************
 
-				ASYNC   DATA   REC
-  
+                ASYNC   DATA   REC
+
 *****************************************************/
 
 struct SAsyncData_rec_t {
-	bool m_run_async;
-	CassConsistency m_cons;
-	vector<shared_ptr<CCassQuery> > m_queryarr;
-	int m_activequeryidx;
-	shared_ptr<CCassConnection> m_conn;
-	SAsyncData_rec_t(CassConsistency cons = CASS_CONSISTENCY_LOCAL_QUORUM, bool run_async = false, shared_ptr<CCassConnection> conn = nullptr) :
-		m_run_async(run_async), 
-		m_cons(cons), 
-		m_activequeryidx(-1),
-		m_conn(conn)
-		{}
-	shared_ptr<CCassQuery> ActiveQuery() {
-		if (m_activequeryidx >= 0) {
-			if (m_activequeryidx >= (int)m_queryarr.size()) {
-				RAISE_ERROR(eGeneric, "SAsyncData_rec_t::ActiveQuery: index out of range");
-			}
-			return m_queryarr[m_activequeryidx];
-		}
-		else
-			return nullptr;
-	};
-	void AddQuery(shared_ptr<CCassQuery> qry) {
-		m_queryarr.push_back(qry);
-		if (m_activequeryidx < 0)
-			m_activequeryidx = 0;
-	}
-	virtual async_rslt_t WaitAsync(unsigned int timeoutmks) {
-		shared_ptr<CCassQuery> aq = ActiveQuery();
-		if (aq) {
-			LOG5(("WA qry=%p >>", LOG_SPTR(aq)));
-			async_rslt_t rv = aq->WaitAsync(timeoutmks);
-			LOG5(("WA qry=%p rv=%d <<", LOG_SPTR(aq), rv));
-			shared_ptr<CCassQuery> newaq = ActiveQuery();
-			if (rv != ar_wait && newaq != nullptr && aq != newaq) {
-				rv = ar_wait;
-				LOG5(("WA qry=%p OVERRIDE rv=%d, new qry=%p", LOG_SPTR(aq), rv, LOG_SPTR(newaq)));
-			}
-			return rv;
-		}
-		else
-			return ar_done;
-	}
-	virtual bool IsAsync() {
-		return m_run_async;
-	}
-	virtual bool IsEOF() {
-		for(auto q : m_queryarr)
-			if (!q->IsEOF())
-				return false;
-		return true;
-	}
-	virtual void Close() {
-		for(auto q : m_queryarr)
-			q->Close();
-		m_queryarr.clear();
-		m_activequeryidx = -1;
-	}
-	virtual string ToString() {
-		shared_ptr<CCassQuery> aq = ActiveQuery();
-		return aq ? aq->ToString() : "<nullptr>";
-	}
+    bool m_run_async;
+    CassConsistency m_cons;
+    vector<shared_ptr<CCassQuery> > m_queryarr;
+    int m_activequeryidx;
+    shared_ptr<CCassConnection> m_conn;
+    SAsyncData_rec_t(CassConsistency cons = CASS_CONSISTENCY_LOCAL_QUORUM, bool run_async = false, shared_ptr<CCassConnection> conn = nullptr) :
+        m_run_async(run_async),
+        m_cons(cons),
+        m_activequeryidx(-1),
+        m_conn(conn)
+        {}
+    shared_ptr<CCassQuery> ActiveQuery() {
+        if (m_activequeryidx >= 0) {
+            if (m_activequeryidx >= (int)m_queryarr.size()) {
+                RAISE_ERROR(eGeneric, "SAsyncData_rec_t::ActiveQuery: index out of range");
+            }
+            return m_queryarr[m_activequeryidx];
+        }
+        else
+            return nullptr;
+    };
+    void AddQuery(shared_ptr<CCassQuery> qry) {
+        m_queryarr.push_back(qry);
+        if (m_activequeryidx < 0)
+            m_activequeryidx = 0;
+    }
+    virtual async_rslt_t WaitAsync(unsigned int timeoutmks) {
+        shared_ptr<CCassQuery> aq = ActiveQuery();
+        if (aq) {
+            LOG5(("WA qry=%p >>", LOG_SPTR(aq)));
+            async_rslt_t rv = aq->WaitAsync(timeoutmks);
+            LOG5(("WA qry=%p rv=%d <<", LOG_SPTR(aq), rv));
+            shared_ptr<CCassQuery> newaq = ActiveQuery();
+            if (rv != ar_wait && newaq != nullptr && aq != newaq) {
+                rv = ar_wait;
+                LOG5(("WA qry=%p OVERRIDE rv=%d, new qry=%p", LOG_SPTR(aq), rv, LOG_SPTR(newaq)));
+            }
+            return rv;
+        }
+        else
+            return ar_done;
+    }
+    virtual bool IsAsync() {
+        return m_run_async;
+    }
+    virtual bool IsEOF() {
+        for(auto q : m_queryarr)
+            if (!q->IsEOF())
+                return false;
+        return true;
+    }
+    virtual void Close() {
+        for(auto q : m_queryarr)
+            q->Close();
+        m_queryarr.clear();
+        m_activequeryidx = -1;
+    }
+    virtual string ToString() {
+        shared_ptr<CCassQuery> aq = ActiveQuery();
+        return aq ? aq->ToString() : "<nullptr>";
+    }
 };
 
 
 /*****************************************************
 
-				UPDATE    FLAGS
-  
+                UPDATE    FLAGS
+
 *****************************************************/
 
 void CCassBlobOp::UpdateBlobFlags(CAppOp& op, unsigned int op_timeout_ms, int32_t key, uint64_t flags, flagop_t flag_op) {
-	CCassConnection::Perform(op, op_timeout_ms, nullptr, nullptr, 
-		[this, flags, flag_op, key](bool is_repeated) {
-			int64_t new_flags = 0;
-			string sql;
-			shared_ptr<CCassQuery> qry = m_conn->NewQuery();
-			switch (flag_op) {
-				case FLAG_OP_OR:
-				case FLAG_OP_AND: {
-					sql = "SELECT flags FROM " + KeySpaceDot(m_keyspace) + "entity WHERE ent = ?";
-					qry->SetSQL(sql, 1);
-					qry->BindInt32(0, key);
-					qry->Query(CASS_CONSISTENCY_LOCAL_QUORUM);
-					if (!qry->IsEOF() && qry->NextRow() == ar_dataready) {
-						switch (flag_op) {
-							case FLAG_OP_OR:
-								new_flags = qry->FieldGetInt64Value(0) | flags;
-								break;
-							case FLAG_OP_AND:
-								new_flags = qry->FieldGetInt64Value(0) & flags;
-								break;
-							default:				
-								RAISE_ERROR(eFatal, "Unexpected flag operation");
-						}
-						qry->Close();
-					}
-					break;
-				}
-				case FLAG_OP_SET:
-					new_flags = flags;
-					break;
-				default:
-					RAISE_ERROR(eFatal, "Unexpected flag operation");
-			}
-			sql = "UPDATE " + KeySpaceDot(m_keyspace) + "entity SET flags = ? WHERE ent = ?";
-			qry->SetSQL(sql, 2);
-			qry->BindInt64(0, new_flags);
-			qry->BindInt32(1, key);
-			qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM);
-			return true;
-		}
-	);
+    CCassConnection::Perform(op, op_timeout_ms, nullptr, nullptr,
+        [this, flags, flag_op, key](bool is_repeated) {
+            int64_t new_flags = 0;
+            string sql;
+            shared_ptr<CCassQuery> qry = m_conn->NewQuery();
+            switch (flag_op) {
+                case FLAG_OP_OR:
+                case FLAG_OP_AND: {
+                    sql = "SELECT flags FROM " + KeySpaceDot(m_keyspace) + "entity WHERE ent = ?";
+                    qry->SetSQL(sql, 1);
+                    qry->BindInt32(0, key);
+                    qry->Query(CASS_CONSISTENCY_LOCAL_QUORUM);
+                    if (!qry->IsEOF() && qry->NextRow() == ar_dataready) {
+                        switch (flag_op) {
+                            case FLAG_OP_OR:
+                                new_flags = qry->FieldGetInt64Value(0) | flags;
+                                break;
+                            case FLAG_OP_AND:
+                                new_flags = qry->FieldGetInt64Value(0) & flags;
+                                break;
+                            default:
+                                RAISE_ERROR(eFatal, "Unexpected flag operation");
+                        }
+                        qry->Close();
+                    }
+                    break;
+                }
+                case FLAG_OP_SET:
+                    new_flags = flags;
+                    break;
+                default:
+                    RAISE_ERROR(eFatal, "Unexpected flag operation");
+            }
+            sql = "UPDATE " + KeySpaceDot(m_keyspace) + "entity SET flags = ? WHERE ent = ?";
+            qry->SetSQL(sql, 2);
+            qry->BindInt64(0, new_flags);
+            qry->BindInt32(1, key);
+            qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM);
+            return true;
+        }
+    );
 }
 
 /*****************************************************
 
-				IN-TABLE    SETTINGS
-  
+                IN-TABLE    SETTINGS
+
 *****************************************************/
 
 void CCassBlobOp::UpdateSetting(CAppOp& op, unsigned int op_timeout_ms, const string& name, const string& value) {
-	CCassConnection::Perform(op, op_timeout_ms, nullptr, nullptr, 
-		[this, name, value](bool is_repeated) {
-			string sql;
-			sql = "INSERT INTO " + KeySpaceDot(m_keyspace) + "settings (name, value) VALUES(?, ?)";
-			shared_ptr<CCassQuery>qry(m_conn->NewQuery());
-			qry->SetSQL(sql, 2);
-			LOG5(("InternalUpdateSetting: %s=>%s, %s", name.c_str(), value.c_str(), sql.c_str()));
-			qry->BindStr(0, name);
-			qry->BindStr(1, value);
-			qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, false, false);
-			return true;
-		}
-	);
+    CCassConnection::Perform(op, op_timeout_ms, nullptr, nullptr,
+        [this, name, value](bool is_repeated) {
+            string sql;
+            sql = "INSERT INTO " + KeySpaceDot(m_keyspace) + "settings (name, value) VALUES(?, ?)";
+            shared_ptr<CCassQuery>qry(m_conn->NewQuery());
+            qry->SetSQL(sql, 2);
+            LOG5(("InternalUpdateSetting: %s=>%s, %s", name.c_str(), value.c_str(), sql.c_str()));
+            qry->BindStr(0, name);
+            qry->BindStr(1, value);
+            qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, false, false);
+            return true;
+        }
+    );
 }
 
 bool CCassBlobOp::GetSetting(CAppOp& op, unsigned int op_timeout_ms, const string& name, string& value) {
-	bool rslt = false;
-	CCassConnection::Perform(op, op_timeout_ms, nullptr, nullptr, 
-		[this, name, &value, &rslt](bool is_repeated) {
-			string sql;
-			sql = "SELECT value FROM " + KeySpaceDot(m_keyspace) + "settings WHERE name=?";
-			shared_ptr<CCassQuery>qry(m_conn->NewQuery());
-			LOG5(("InternalGetSetting: %s: %s", name.c_str(), sql.c_str()));
-			qry->SetSQL(sql, 1);
-			qry->BindStr(0, name);
-			CassConsistency cons = is_repeated && m_conn->GetFallBackRdConsistency() ? CASS_CONSISTENCY_LOCAL_ONE : CASS_CONSISTENCY_LOCAL_QUORUM;
-			qry->Query(cons, false, false);
-			async_rslt_t rv = qry->NextRow();
-			if (rv == ar_dataready) {
-				qry->FieldGetStrValue(0, value);
-				rslt = true;
-			}
-			return true;
-		}
-	);
-	return rslt;
+    bool rslt = false;
+    CCassConnection::Perform(op, op_timeout_ms, nullptr, nullptr,
+        [this, name, &value, &rslt](bool is_repeated) {
+            string sql;
+            sql = "SELECT value FROM " + KeySpaceDot(m_keyspace) + "settings WHERE name=?";
+            shared_ptr<CCassQuery>qry(m_conn->NewQuery());
+            LOG5(("InternalGetSetting: %s: %s", name.c_str(), sql.c_str()));
+            qry->SetSQL(sql, 1);
+            qry->BindStr(0, name);
+            CassConsistency cons = is_repeated && m_conn->GetFallBackRdConsistency() ? CASS_CONSISTENCY_LOCAL_ONE : CASS_CONSISTENCY_LOCAL_QUORUM;
+            qry->Query(cons, false, false);
+            async_rslt_t rv = qry->NextRow();
+            if (rv == ar_dataready) {
+                qry->FieldGetStrValue(0, value);
+                rslt = true;
+            }
+            return true;
+        }
+    );
+    return rslt;
 }
 
 

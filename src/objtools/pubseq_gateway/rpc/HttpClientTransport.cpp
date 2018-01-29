@@ -20,9 +20,8 @@
 #define __STDC_FORMAT_MACROS
 #include <nghttp2/nghttp2.h>
 
-#include "http-parser/http_parser.h"
-#include "IdLogUtil/AppLog.hpp"
-#include "UvHelper.hpp"
+#include <objtools/pubseq_gateway/diag/AppLog.hpp>
+#include <objtools/pubseq_gateway/rpc/UvHelper.hpp>
 
 #include <objtools/pubseq_gateway/rpc/DdRpcCommon.hpp>
 #include <objtools/pubseq_gateway/rpc/HttpClientTransport.hpp>
@@ -61,13 +60,13 @@ void http2_request::init_request(shared_ptr<http2_end_point> endpoint, shared_pt
     if (m_stream_id >= 0)
         DDRPC::EDdRpcException::raise("Request has already been started");
 
-    m_endpoint = std::move(endpoint);    
+    m_endpoint = std::move(endpoint);
     m_query = query;
     m_tag = tag;
 
     m_reply_data.init(std::move(afuture));
     m_full_path = m_endpoint->path + "?" + m_query;
-    
+
     if (!m_endpoint)
         DDRPC::EDdRpcException::raise("EndPoint is null");
     if (m_endpoint->error.has_error())
@@ -397,13 +396,13 @@ void http2_session::close_session() {
             ERRLOG0(("unexpected m_num_requests=%lu, requests=%lu", m_num_requests.load(), sz));
             assert(m_num_requests.load() == 0);
         }
-        
+
     }
 }
 
 void http2_session::start_close() {
     LOG2(("%p: start_close", this));
-    if (m_session_state < session_state_t::ss_closing) {            
+    if (m_session_state < session_state_t::ss_closing) {
         if (m_connection_state == connection_state_t::cs_connected && m_session) {
             LOG1(("%p: nghttp2_session_terminate_session", this));
             nghttp2_session_terminate_session(m_session, NGHTTP2_NO_ERROR);
@@ -419,7 +418,7 @@ void http2_session::start_close() {
 }
 
 void http2_session::finalize_close() {
-	LOG1(("%p: finalize_close", this));
+    LOG1(("%p: finalize_close", this));
     assert(m_session_state == session_state_t::ss_closing);
     assert(m_connection_state == connection_state_t::cs_initial);
     m_session_state = session_state_t::ss_closed;
@@ -434,7 +433,7 @@ void http2_session::notify_cancel() {
 }
 
 void http2_session::initialize_nghttp2_session() {
-    
+
     nghttp2_session_callbacks* _callbacks;
     nghttp2_session_callbacks_new(&_callbacks);
     unique_ptr<nghttp2_session_callbacks, function<void(nghttp2_session_callbacks*)>> callbacks(_callbacks, [](nghttp2_session_callbacks* callbacks)->void {
@@ -455,10 +454,10 @@ void http2_session::initialize_nghttp2_session() {
 /* Send HTTP request to the remote peer */
 int http2_session::write_ng_data() {
     int rv = 0;
-    
+
     if (m_connection_state != connection_state_t::cs_connected) {
         LOG4(("%p: write_ng_data: connection is not open", this));
-        return 0;        
+        return 0;
     }
 
     if (m_wr.is_pending_wr) {
@@ -595,7 +594,7 @@ void http2_session::connect_cb(uv_connect_t *req, int status) {
             error_libuv(rv, "failed to start read");
             return;
         }
-       
+
         LOG1(("%p: connected", this));
         process_requests();
     }
@@ -622,7 +621,7 @@ void http2_session::write_cb(uv_write_t* req, int status) {
     assert(req->handle == (uv_stream_t*)m_tcp.Handle());
     assert(m_wr.is_pending_wr || (status < 0 && m_connection_state == connection_state_t::cs_closing));
 
-    try {        
+    try {
         if (req != &m_wr.wr_req) {
             error(ERR_HCT_UNEXP_CB, "Unexpected write_cb call");
             return;
@@ -660,7 +659,7 @@ void http2_session::s_read_cb(uv_stream_t *strm, ssize_t nread, const uv_buf_t* 
     http2_session *session_data = (http2_session*)strm->data;
     session_data->read_cb(strm, nread, buf);
 }
-    
+
 void http2_session::read_cb(uv_stream_t *strm, ssize_t nread, const uv_buf_t* buf) {
     try {
         LOG2(("%p: read_cb %ld", this, nread));
@@ -1061,12 +1060,12 @@ void http2_session::process_requests() {
             }
         }
         LOG3(("%p: submitted %lu", this, count));
-            
+
         m_requests_at_once = count;
     //    debug_print_counts();
     }
     m_wake_enabled = (m_num_requests < m_max_streams);
-        
+
 
     if (m_connection_state == connection_state_t::cs_connected) {
         check_next_request();
@@ -1150,7 +1149,7 @@ void io_thread::on_timer(uv_timer_t* handle) {
     catch(...) {
         cerr << "failure in timer";
     }
-    
+
 }
 
 void io_thread::attach(http2_session* sess) {
@@ -1170,7 +1169,7 @@ bool io_thread::add_request_move(shared_ptr<http2_request>& req) {
     if (m_sessions.size() == 0 || m_state != io_thread_state_t::started)
         EException::raise("No sessions started");
 
-        
+
     bool rv = false;
 //LOG1(("sz: %lu, %p, idx: %lu", m_sessions.size(), m_sessions[m_cur_idx].get(), m_cur_idx));
     size_t idx = m_cur_idx.load();
@@ -1186,7 +1185,7 @@ bool io_thread::add_request_move(shared_ptr<http2_request>& req) {
 
 void io_thread::run() {
     uv_timer_start(&m_timer, s_on_timer, 1000, 1000);
-    
+
     while (!m_shutdown_req) {
         uv_run(m_loop->Handle(), UV_RUN_DEFAULT);
     }
@@ -1214,7 +1213,7 @@ void io_thread::execute(uv_sem_t* sem) {
         io_thread_state_t st = io_thread_state_t::initialized;
         m_state.compare_exchange_weak(st, io_thread_state_t::stopped,  memory_order_release, memory_order_relaxed);
     }
-    
+
     io_thread_state_t st = io_thread_state_t::initialized;
     if (m_state.compare_exchange_weak(st, io_thread_state_t::started,  memory_order_release, memory_order_relaxed)) {
         usem = nullptr; // release semaphore before run in case of success, otherwise release it at the exit using unique_ptr
@@ -1225,15 +1224,15 @@ void io_thread::execute(uv_sem_t* sem) {
     });
     st = io_thread_state_t::started;
     m_state.compare_exchange_weak(st, io_thread_state_t::stopped,  memory_order_release, memory_order_relaxed);
-    
+
     for (auto it = m_sessions.begin(); it != m_sessions.end(); ++it) {
         http2_session *sess = it->get();
         sess->start_close();
     }
-    
+
     uv_close((uv_handle_t*)&m_wake, nullptr);
     uv_close((uv_handle_t*)&m_timer, nullptr);
-    
+
     uv_run(m_loop->Handle(), UV_RUN_DEFAULT);
 
     for (auto it = m_sessions.begin(); it != m_sessions.end(); ++it) {
@@ -1289,7 +1288,7 @@ bool io_coordinator::add_request(shared_ptr<http2_request> req, long timeout_ms)
         bool rv = m_io[idx]->add_request_move(req);
         if (rv)
             return true;
-            
+
         ERRLOG1(("io failed to queue %p, keep trying", req.get()));
         if (++iteration > NUM_IO * NUM_CONN_PER_IO) {
             if (timeout_ms < 0) {

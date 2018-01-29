@@ -1,3 +1,6 @@
+#ifndef CASSFACTORY__HPP
+#define CASSFACTORY__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -31,9 +34,6 @@
  *
  */
 
-#ifndef _CASS_FACTORY_H_
-#define _CASS_FACTORY_H_
-
 #include <corelib/ncbiargs.hpp>
 
 #include <objtools/pubseq_gateway/diag/IdLogUtl.hpp>
@@ -49,24 +49,24 @@ USING_NCBI_SCOPE;
 
 class CCassConnectionFactory: public enable_shared_from_this<CCassConnectionFactory> {
 private:
-	DISALLOW_COPY_AND_ASSIGN(CCassConnectionFactory);
-	CFastMutex m_RunTimeParams;
-	string  m_CfgName;
-	string  m_Section;
-	string  m_BigDataHost;
+    DISALLOW_COPY_AND_ASSIGN(CCassConnectionFactory);
+    CFastMutex m_RunTimeParams;
+    string  m_CfgName;
+    string  m_Section;
+    string  m_BigDataHost;
     short   m_BigDataPort;
     string  m_BigDataUser;
     string  m_BigDataPassword;
     string  m_BigDataNameSpace;
     string  m_BigDataLog;
-	string  m_PassFile;
-	string  m_PassSection;
-	string  m_LoadBalancingStr;
-	string  m_tokenAwareStr;
-	string  m_latencyAwareStr;
+    string  m_PassFile;
+    string  m_PassSection;
+    string  m_LoadBalancingStr;
+    string  m_tokenAwareStr;
+    string  m_latencyAwareStr;
     unsigned int m_BigDataCTimeoutMS;
     unsigned int m_BigDataQTimeoutMS;
-	bool m_BigDataFallBackRdConsistency;
+    bool m_BigDataFallBackRdConsistency;
     loadbalancing_policy_t m_LoadBalancing;
     bool m_tokenAware;
     bool m_latencyAware;
@@ -75,33 +75,33 @@ private:
     unsigned int m_maxConnPerHost;
     unsigned int m_keepalive;
 protected:
-	CCassConnectionFactory() : 
+    CCassConnectionFactory() :
         m_BigDataPort(0),
-		m_BigDataCTimeoutMS(DFLT_C_TIMEOUT_MS), 
-		m_BigDataQTimeoutMS(DFLT_Q_TIMEOUT_MS), 
-		m_BigDataFallBackRdConsistency(false), 
-		m_LoadBalancing(LB_DCAWARE), 
-		m_tokenAware(true), 
-		m_latencyAware(true), 
-		m_numThreadsIo(0), 
-		m_numConnPerHost(0), 
-		m_maxConnPerHost(0),
-		m_keepalive(0) 
-	{}
-	void ProcessParams();
+        m_BigDataCTimeoutMS(DFLT_C_TIMEOUT_MS),
+        m_BigDataQTimeoutMS(DFLT_Q_TIMEOUT_MS),
+        m_BigDataFallBackRdConsistency(false),
+        m_LoadBalancing(LB_DCAWARE),
+        m_tokenAware(true),
+        m_latencyAware(true),
+        m_numThreadsIo(0),
+        m_numConnPerHost(0),
+        m_maxConnPerHost(0),
+        m_keepalive(0)
+    {}
+    void ProcessParams();
     void GetHostPort(string &host, short &port);
 public:
-	~CCassConnectionFactory();
-	void AppInit(CArgDescriptions* argdesc);
-	void AppParseArgs(const CArgs& args);
-	void LoadConfig(string CfgName, string section);
+    ~CCassConnectionFactory();
+    void AppInit(CArgDescriptions* argdesc);
+    void AppParseArgs(const CArgs& args);
+    void LoadConfig(string CfgName, string section);
     void LoadConfig(const CNcbiRegistry &Registry, string section);
-	void ReloadConfig();
+    void ReloadConfig();
     void ReloadConfig(const CNcbiRegistry &Registry);
-	shared_ptr<CCassConnection> CreateInstance();
-	static shared_ptr<CCassConnectionFactory> Create() {
-		return shared_ptr<CCassConnectionFactory>(new CCassConnectionFactory());
-	}
+    shared_ptr<CCassConnection> CreateInstance();
+    static shared_ptr<CCassConnectionFactory> Create() {
+        return shared_ptr<CCassConnectionFactory>(new CCassConnectionFactory());
+    }
 };
 
 END_IDBLOB_SCOPE

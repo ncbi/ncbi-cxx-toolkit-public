@@ -1,3 +1,33 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors: Dmitri Dmitrienko
+ *
+ * File Description:
+ *
+ */
 #include <ncbi_pch.hpp>
 
 #include <sys/stat.h>
@@ -11,13 +41,13 @@ using namespace std;
 #define DBI_COUNT       6
 #define THREAD_COUNT    1024
 
-#define MAP_SIZE_INIT	(256L * 1024 * 1024 * 1024)
-#define MAP_SIZE_DELTA	(16L * 1024 * 1024 * 1024)
+#define MAP_SIZE_INIT   (256L * 1024 * 1024 * 1024)
+#define MAP_SIZE_DELTA  (16L * 1024 * 1024 * 1024)
 
 constexpr const char* const CAccVerCacheDB::META_DB;
 
 /** CAccVerCacheDB */
-    
+
 void CAccVerCacheDB::InitializeDb(const lmdb::env& Env) {
     unsigned int flags;
     lmdb::env_get_flags(Env, &flags);
@@ -25,7 +55,7 @@ void CAccVerCacheDB::InitializeDb(const lmdb::env& Env) {
         return;
     auto wtxn = lmdb::txn::begin(Env);
     auto meta_dbi = lmdb::dbi::open(wtxn, CAccVerCacheDB::META_DB, MDB_CREATE);
-    wtxn.commit();    
+    wtxn.commit();
 
     CAccVerCacheStorage::InitializeDb(Env);
 }
@@ -37,35 +67,35 @@ void CAccVerCacheDB::Open(const string& DbPath, bool Initialize, bool Readonly) 
     if (Initialize && Readonly)
         EAccVerException::raise("DB create & readonly flags are mutually exclusive");
 
-	int stat_rv;
+    int stat_rv;
     bool need_sync = !Initialize;
-	struct stat st;
-	stat_rv = stat(m_DbPath.c_str(), &st);
-	if (stat_rv != 0 || st.st_size == 0) {
-		/* file does not exist */
-		need_sync = false;
-		if (Readonly || !Initialize)
+    struct stat st;
+    stat_rv = stat(m_DbPath.c_str(), &st);
+    if (stat_rv != 0 || st.st_size == 0) {
+        /* file does not exist */
+        need_sync = false;
+        if (Readonly || !Initialize)
             EAccVerException::raise("DB file is not initialized. Run full update first");
-	}
+    }
 
     m_Env.set_max_dbs(DBI_COUNT);
     m_Env.set_max_readers(THREAD_COUNT);
 
     int64_t mapsize = MAP_SIZE_INIT;
-	if (stat_rv == 0 && st.st_size + MAP_SIZE_DELTA >  mapsize)
-		mapsize = st.st_size + MAP_SIZE_DELTA;
+    if (stat_rv == 0 && st.st_size + MAP_SIZE_DELTA >  mapsize)
+        mapsize = st.st_size + MAP_SIZE_DELTA;
 
     m_Env.set_mapsize(mapsize);
     m_Env.open(DbPath.c_str(), (Readonly ?  MDB_RDONLY : 0) | MDB_NOSUBDIR | (need_sync ? 0 : (MDB_NOSYNC | MDB_NOMETASYNC)), 0664);
     m_IsReadOnly = Readonly;
 
     if (Initialize) {
-        InitializeDb(m_Env);        
+        InitializeDb(m_Env);
     }
 
     auto wtxn = lmdb::txn::begin(m_Env, nullptr, Readonly ? MDB_RDONLY : 0);
     m_MetaDbi = lmdb::dbi::open(wtxn, META_DB, 0);
-    wtxn.commit();    
+    wtxn.commit();
 
     m_Storage.reset(new CAccVerCacheStorage(m_Env));
 
@@ -78,7 +108,7 @@ void CAccVerCacheDB::Close() {
 void CAccVerCacheDB::SaveColumns(const DDRPC::DataColumns& Clms) {
     stringstream os;
     Clms.GetAsBin(os);
-    
+
     auto wtxn = lmdb::txn::begin(m_Env);
     m_MetaDbi.put(wtxn, STORAGE_COLUMNS, os.str());
     wtxn.commit();

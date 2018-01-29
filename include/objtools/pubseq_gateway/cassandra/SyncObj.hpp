@@ -1,3 +1,6 @@
+#ifndef SYNCOBJ__HPP
+#define SYNCOBJ__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -31,16 +34,13 @@
  *
  */
 
-#ifndef _SYNC_OBJ_HPP_
-#define _SYNC_OBJ_HPP_
-
 #include <atomic>
 #include <thread>
 
 #include <corelib/ncbithr.hpp>
 
-#include "IdLogUtil/IdLogUtl.hpp"
-#include "IdLogUtil/AppLog.hpp"
+#include <objtools/pubseq_gateway/diag/IdLogUtl.hpp>
+#include <objtools/pubseq_gateway/diag/AppLog.hpp>
 #include "IdCassScope.hpp"
 
 
@@ -53,76 +53,76 @@ bool WaitCondVar(unsigned int timeoutmks, CFastMutex& Mux, CConditionVariable& E
 #ifdef __linux__
 class CFutex {
 private:
-	volatile atomic_int m_value;
+    volatile atomic_int m_value;
 public:
-	typedef enum {
-		wrTimeOut,   // value hasn't changed
-		wrOk,        // value is changed and we waited
-		wrOkFast     // value is changed but we didn't wait
-	} WaitResult_t;
-	void DoWake(int Waiters = INT_MAX);
+    typedef enum {
+        wrTimeOut,   // value hasn't changed
+        wrOk,        // value is changed and we waited
+        wrOkFast     // value is changed but we didn't wait
+    } WaitResult_t;
+    void DoWake(int Waiters = INT_MAX);
 public:
-	CFutex(int start = 0) : m_value(start) {}
-	CFutex& operator=(const CFutex&) = delete;
-	CFutex(const CFutex&) = delete;
-	bool CompareExchange(int Expected, int ReplaceWith, bool WakeOthers = true) {
-		bool rv = m_value.compare_exchange_weak(Expected, ReplaceWith, std::memory_order_relaxed);
-		if (rv && WakeOthers)
-			DoWake();
-		return rv;
-	}
-	int Value() {
-		return m_value;
-	}
-	WaitResult_t WaitWhile(int Value, int TimeoutMks = -1);
-	void Wake() {
-		DoWake();
-	}
-	int Set(int Value, bool WakeOthers = true) {
-		int rv = m_value.exchange(Value);
-		if ((rv != Value) && WakeOthers)
-			DoWake();
-		return rv;
-	}
-	int Inc(bool WakeOthers = true) {
-		int rv = atomic_fetch_add(&m_value, 1);
-		if (WakeOthers)
-			DoWake();
-		return rv;
-	}
-	int Dec(int Value, bool WakeOthers = true) {
-		int rv = atomic_fetch_sub(&m_value, 1);
-		if (WakeOthers)
-			DoWake();
-		return rv;
-	}
-	int SemInc() {
-		int rv = atomic_fetch_add(&m_value, 1);
-		return rv;
-	}
-	int SemDec(int value) {
-		int rv = atomic_fetch_sub(&m_value, 1);
-		if (rv < 0)
-			DoWake();
-		return rv;
-	}	
+    CFutex(int start = 0) : m_value(start) {}
+    CFutex& operator=(const CFutex&) = delete;
+    CFutex(const CFutex&) = delete;
+    bool CompareExchange(int Expected, int ReplaceWith, bool WakeOthers = true) {
+        bool rv = m_value.compare_exchange_weak(Expected, ReplaceWith, std::memory_order_relaxed);
+        if (rv && WakeOthers)
+            DoWake();
+        return rv;
+    }
+    int Value() {
+        return m_value;
+    }
+    WaitResult_t WaitWhile(int Value, int TimeoutMks = -1);
+    void Wake() {
+        DoWake();
+    }
+    int Set(int Value, bool WakeOthers = true) {
+        int rv = m_value.exchange(Value);
+        if ((rv != Value) && WakeOthers)
+            DoWake();
+        return rv;
+    }
+    int Inc(bool WakeOthers = true) {
+        int rv = atomic_fetch_add(&m_value, 1);
+        if (WakeOthers)
+            DoWake();
+        return rv;
+    }
+    int Dec(int Value, bool WakeOthers = true) {
+        int rv = atomic_fetch_sub(&m_value, 1);
+        if (WakeOthers)
+            DoWake();
+        return rv;
+    }
+    int SemInc() {
+        int rv = atomic_fetch_add(&m_value, 1);
+        return rv;
+    }
+    int SemDec(int value) {
+        int rv = atomic_fetch_sub(&m_value, 1);
+        if (rv < 0)
+            DoWake();
+        return rv;
+    }
 };
 #endif
 
 class SSignalHandler {
 private:
-	static volatile sig_atomic_t m_CtrlCPressed;
+    static volatile sig_atomic_t m_CtrlCPressed;
 #ifdef __linux__
-	static CFutex m_CtrlCPressedEvent;
+    static CFutex m_CtrlCPressedEvent;
 #endif
-	static unique_ptr<thread, function<void(thread*)> > m_WatchThread;
-	static std::function<void()> m_OnCtrlCPressed;
-	static volatile bool m_Quit;
+    static unique_ptr<thread, function<void(thread*)> > m_WatchThread;
+    static std::function<void()> m_OnCtrlCPressed;
+    static volatile bool m_Quit;
 public:
-	static bool CtrlCPressed() {
-		return m_CtrlCPressed != 0;
-	}
-	static void WatchCtrlCPressed(bool Enable, std::function<void()> OnCtrlCPressed = NULL);
+    static bool CtrlCPressed() {
+        return m_CtrlCPressed != 0;
+    }
+    static void WatchCtrlCPressed(bool Enable, std::function<void()> OnCtrlCPressed = NULL);
 };
 
 
