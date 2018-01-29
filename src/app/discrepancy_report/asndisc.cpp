@@ -154,7 +154,7 @@ void CDiscRepApp::Init(void)
     arg_desc->AddFlag("STDOUT", "Copy the output to STDOUT");
 
     //arg_desc->AddOptionalKey("P", "ReportType", "Report type: g - Genome, b - Big Sequence, m - MegaReport, t - Include FATAL Tag, s - FATAL Tag for Superuser", CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("P", "ReportType", "Report type: q - SMART, b - Big Sequence, t - Include FATAL Tag, s - FATAL Tag for Superuser", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("P", "ReportType", "Report type: q - SMART, u - Submitter, b - Big Sequence, t - Include FATAL Tag, s - FATAL Tag for Superuser", CArgDescriptions::eString);
 
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, CDataLoadersUtil::fDefault | CDataLoadersUtil::fGenbankOffByDefault);
 
@@ -292,7 +292,7 @@ void CDiscRepApp::x_ProcessFile(const string& fname, CDiscrepancySet& tests)
                 break;
             }
         }
-        catch (const CEofException& e) {
+        catch (const CEofException&) {
             break;
         }
     }
@@ -319,6 +319,7 @@ void CDiscRepApp::x_ParseDirectory(const string& name, bool recursive)
 void CDiscRepApp::x_ProcessOne(const string& fname)
 {
     CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(*m_Scope);
+    Tests->SetSuspectRules(m_SuspectRules, false);
     if (m_SuspectProductNames) {
         Tests->AddTest("_SUSPECT_PRODUCT_NAMES");
         CNcbiIfstream istr(fname.c_str());
@@ -334,7 +335,6 @@ void CDiscRepApp::x_ProcessOne(const string& fname)
             Tests->AddTest(*tname);
         }
         Tests->SetKeepRef(m_AutoFix);
-        Tests->SetSuspectRules(m_SuspectRules);
         Tests->SetLineage(m_Lineage);
         x_ProcessFile(fname, *Tests);
         Tests->Summarize();
@@ -356,6 +356,7 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
 {
     int count = 0;
     CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(*m_Scope);
+    Tests->SetSuspectRules(m_SuspectRules, false);
     if (m_SuspectProductNames) {
         Tests->AddTest("_SUSPECT_PRODUCT_NAMES");
         ITERATE (vector<string>, fname, m_Files) {
@@ -378,7 +379,6 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
             Tests->AddTest(*tname);
         }
         Tests->SetKeepRef(m_AutoFix);
-        Tests->SetSuspectRules(m_SuspectRules);
         Tests->SetLineage(m_Lineage);
         ITERATE (vector<string>, fname, m_Files) {
             ++count;
@@ -453,12 +453,13 @@ int CDiscRepApp::Run(void)
                 m_Ext = true;
                 m_Fat = true;
             }
-            else if (s[i] == 'q' || s[i] == 'b' ) {
+            else if (s[i] == 'q' || s[i] == 'b' || s[i] == 'u') {
                 if (group && group != s[i]) {
                     ERR_POST(string("-P options are not compatible: ") + group + " and " + s[i]);
                     return 1;
                 }
                 group = s[i];
+                m_Fat = true;
             }
             else {
                 ERR_POST(string("Unrecognized character in -P argument: ") + s[i]);
@@ -485,13 +486,19 @@ int CDiscRepApp::Run(void)
                 Tests.insert(name);
             }
         }
-        LOG_POST(string("Option ignored: -P ") + group);
+        if (group) {
+            LOG_POST(string("Option ignored: -P ") + group);
+        }
     }
     else if (!args["N"]) {
         vector<string> AllTests;
         switch (group) {
             case 'q':
                 AllTests = GetDiscrepancyNames(eSmart);
+                break;
+            case 'u':
+                AllTests = GetDiscrepancyNames(eSubmitter);
+                m_Big = true;
                 break;
             case 'b':
                 AllTests = GetDiscrepancyNames(eBig);

@@ -108,11 +108,13 @@ CConstRef<CBioseq> CDiscrepancyContext::GetCurrentBioseq(void) const
 }
 
 
-void CDiscrepancyContext::SetSuspectRules(const string& name)
+void CDiscrepancyContext::SetSuspectRules(const string& name, bool read)
 {
     if (!m_ProductRules || m_SuspectRules != name) {
         m_SuspectRules = name;
-        m_ProductRules = CSuspect_rule_set::GetProductRules(m_SuspectRules);
+        if (read) {
+            m_ProductRules = CSuspect_rule_set::GetProductRules(m_SuspectRules);
+        }
     }
 }
 

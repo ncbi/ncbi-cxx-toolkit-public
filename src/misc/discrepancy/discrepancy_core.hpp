@@ -402,7 +402,7 @@ public:
     size_t GetCountSeq_feat(void) const { return m_Count_Seq_feat;}
     objects::CScope& GetScope(void) const { return const_cast<objects::CScope&>(*m_Scope);}
 
-    void SetSuspectRules(const string& name);
+    void SetSuspectRules(const string& name, bool read = true);
     CConstRef<CSuspect_rule_set> GetProductRules(void);
     CConstRef<CSuspect_rule_set> GetOrganelleProductRules(void);
     const TReportObjectList& GetNaSeqs(void) const { return m_NaSeqs; }

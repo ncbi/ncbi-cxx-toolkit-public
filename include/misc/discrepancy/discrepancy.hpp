@@ -158,7 +158,7 @@ public:
     void SetLineage(const string& s){ m_Lineage = s; }
     void SetEucariote(bool b){ m_Eucariote = b; }
     void SetSesameStreetCutoff(float f){ m_SesameStreetCutoff = f; }
-    virtual void SetSuspectRules(const string&) = 0;
+    virtual void SetSuspectRules(const string& name, bool read = true) = 0;
     void SetGui(bool b){ m_Gui = b; }
     void SetKeepRef(bool b){ m_KeepRef = b; }
     void SetUserData(void* p){ m_UserData = p; }
