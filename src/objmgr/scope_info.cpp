@@ -556,17 +556,24 @@ void CDataSource_ScopeInfo::ResetHistory(int action_if_locked)
         TTSE_InfoMapMutex::TWriteLockGuard guard1(m_TSE_InfoMapMutex);
         tses.reserve(m_TSE_InfoMap.size());
         ITERATE ( TTSE_InfoMap, it, m_TSE_InfoMap ) {
-            if ( action_if_locked == CScope::eKeepIfLocked && it->second->IsUserLocked() ) {
-                // skip locked TSEs
-                continue;
+            if ( it->second->IsUserLocked() ) {
+                if ( action_if_locked == CScope::eKeepIfLocked ) {
+                    // skip locked TSEs
+                    continue;
+                }
+                if ( action_if_locked == CScope::eThrowIfLocked ) {
+                    // there are locked TSEs
+                    NCBI_THROW(CObjMgrException, eLockedData,
+                               "Cannot reset scope's history "
+                               "because TSE is locked");
+                }
             }
             tses.push_back(it->second);
         }
     }}
     CUnlockedTSEsGuard guard;
     ITERATE ( TTSEs, it, tses ) {
-        CTSE_ScopeUserLock lock(it->GetNCPointer()); // RemoveFromHistory() assumes one extra lock in stack
-        it->GetNCObject().RemoveFromHistory(action_if_locked);
+        RemoveFromHistory(it->GetNCObject());
     }
 }
 
@@ -1341,7 +1348,7 @@ int CTSE_ScopeInfo::x_GetDSLocksCount(void) const
 
 bool CTSE_ScopeInfo::IsUserLocked(void) const
 {
-    return int(m_TSE_LockCounter.Get()) > 0;
+    return int(m_UserLockCounter.Get()) > 0;
 }
 
 
