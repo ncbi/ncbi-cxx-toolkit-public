@@ -461,12 +461,12 @@ void CIgBlast::x_SetupDJSearch(const vector<CRef <CIgAnnotation> > &annots,
               (*annot)->m_GeneInfo[0] - max_allowed_V_end_to_J_end: (*annot)->m_GeneInfo[1] - 1 - v_overlap;
             int end = (ms)? 
               (*annot)->m_GeneInfo[0] + v_overlap: (*annot)->m_GeneInfo[1] + max_allowed_V_end_to_J_end;
-            if (begin > 0) {
+            if (begin > 0 && begin <= len-1) {
                 CRef<CSeqLocInfo> mask(
                   new CSeqLocInfo(new CSeq_interval(*q_id, 0, begin), 0));
                 m_Query->AddMask(iq, mask);
             }
-            if (end < len -1 && end > 0) {
+            if (end < len -1 && end >= 0) {
                 CRef<CSeqLocInfo> mask(
                   new CSeqLocInfo(new CSeq_interval(*q_id, end, len-1), 0));
                 m_Query->AddMask(iq, mask);
