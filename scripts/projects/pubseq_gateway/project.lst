@@ -1,5 +1,9 @@
 corelib$
 corelib/hash_impl$
+connect$
+connect/ext$
+connect/mbedtls
+
 check
 dll
 misc$
