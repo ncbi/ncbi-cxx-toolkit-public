@@ -550,7 +550,9 @@ void CFlatGatherer::x_GatherReferences(const CSeq_loc& loc, TReferences& refs) c
     }
 
     // also gather references from annotations
-    {{
+    CBioseqContext& ctx = *m_Current;
+    const CFlatFileConfig& cfg = ctx.Config();
+    if (! cfg.DisableAnnotRefs()) {
          SAnnotSelector sel = m_Current->SetAnnotSelector();
          for (CAnnot_CI annot_it(seq, sel);
               annot_it; ++annot_it) {
@@ -577,7 +579,7 @@ void CFlatGatherer::x_GatherReferences(const CSeq_loc& loc, TReferences& refs) c
                                 (new CReferenceItem(*desc, *m_Current)));
              }
          }
-     }}
+     }
 
     // if near segmented, collect pubs from segments under location
     CSeq_entry_Handle segset =

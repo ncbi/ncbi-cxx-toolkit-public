@@ -561,6 +561,7 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
                                  "         1 - hide protein_id and transcript_id\n"
                                  "         2 - hide GI number\n"
                                  "         4 - allow long locus lines"
+                                 "      1024 - disable annot references"
                                  "      2048 - use SeqEntryIndexer",
 
                                  CArgDescriptions::eInteger, "0");
