@@ -52,8 +52,8 @@ class CBioIdResolutionQueue;
 class CBlobId
 {
 public:
-    explicit CBlobId(const CBioId& BioId) 
-        : m_BioId(BioId), m_Status(eResNone), m_StatusEx(eNone) {}
+    explicit CBlobId(const CBioId& bio_id) 
+        : m_BioId(bio_id), m_Status(eResNone), m_StatusEx(eNone) {}
     /// Storage blob id (as accepted by the CBlobRetrieveQueue)
     struct SBlobId {
         CID2_Blob_Id::TSat     sat;
@@ -204,13 +204,13 @@ private:
     mutable std::mutex m_items_mtx;
     
     struct CBioIdResolutionQueueItem {
-        CBioIdResolutionQueueItem(std::shared_ptr<HCT::io_future> afuture, CBioId BioId);
-        void SyncResolve(CBlobId& BlobId, const CDeadline& deadline);
+        CBioIdResolutionQueueItem(std::shared_ptr<HCT::io_future> afuture, CBioId bio_id);
+        void SyncResolve(CBlobId& blob_id, const CDeadline& deadline);
         void WaitFor(long timeout_ms);
         void Wait();
         bool IsDone() const;
         void Cancel();
-        void PopulateData(CBlobId& BlobId) const;
+        void PopulateData(CBlobId& blob_id) const;
         std::shared_ptr<HCT::http2_request> m_request;
         CBioId m_BioId;
     };

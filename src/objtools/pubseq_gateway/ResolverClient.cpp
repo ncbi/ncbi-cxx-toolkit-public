@@ -43,43 +43,43 @@ void AccVerResolverUnpackData(DDRPC::DataRow& row, const string& data)
     row.Unpack(data, false, *s_accver_resolver_data_columns);
 }
 
-void DumpEntry(const CBlobId& BlobId)
+void DumpEntry(const CBlobId& blob_id)
 {
-    cout << BlobId.GetBioId().GetId() << " => sat: " << BlobId.GetBlobId().sat << " => sat_key: " << BlobId.GetBlobId().sat_key << endl;
+    cout << blob_id.GetBioId().GetId() << " => sat: " << blob_id.GetBlobId().sat << " => sat_key: " << blob_id.GetBlobId().sat_key << endl;
 }
 
 }
 
 /** CBioIdResolutionQueue::CBioIdResolutionQueueItem */
 
-CBioIdResolutionQueue::CBioIdResolutionQueueItem::CBioIdResolutionQueueItem(std::shared_ptr<HCT::io_future> afuture, CBioId BioId) 
+CBioIdResolutionQueue::CBioIdResolutionQueueItem::CBioIdResolutionQueueItem(std::shared_ptr<HCT::io_future> afuture, CBioId bio_id) 
     :   m_request(make_shared<HCT::http2_request>()),
-        m_BioId(std::move(BioId))
+        m_BioId(std::move(bio_id))
 {
     if (!HCT::HttpClientTransport::s_ioc)
         DDRPC::EDdRpcException::raise("DDRPC is not initialized, call DdRpcClient::Init() first");
     m_request->init_request(DDRPC::DdRpcClient::SericeIdToEndPoint(ACCVER_RESOLVER_SERVICE_ID), afuture, "accver=" + m_BioId.GetId());
 }
 
-void CBioIdResolutionQueue::CBioIdResolutionQueueItem::SyncResolve(CBlobId& BlobId, const CDeadline& deadline) {
+void CBioIdResolutionQueue::CBioIdResolutionQueueItem::SyncResolve(CBlobId& blob_id, const CDeadline& deadline) {
     long wait_ms = RemainingTimeMs(deadline);
     bool rv = HCT::HttpClientTransport::s_ioc->add_request(m_request, wait_ms);
     if (!rv) {
-        BlobId.m_Status = CBlobId::eFailed;
-        BlobId.m_StatusEx = CBlobId::eError;
-        BlobId.m_Message = "Resolver queue is full";
+        blob_id.m_Status = CBlobId::eFailed;
+        blob_id.m_StatusEx = CBlobId::eError;
+        blob_id.m_Message = "Resolver queue is full";
         return;
     }
     while (true) {
         if (IsDone()) {
-            PopulateData(BlobId);
+            PopulateData(blob_id);
             return;
         }
         wait_ms = RemainingTimeMs(deadline);
         if (wait_ms <= 0) {
-            BlobId.m_Status = CBlobId::eFailed;
-            BlobId.m_StatusEx = CBlobId::eError;
-            BlobId.m_Message = "Timeout expired";
+            blob_id.m_Status = CBlobId::eFailed;
+            blob_id.m_StatusEx = CBlobId::eError;
+            blob_id.m_Message = "Timeout expired";
             return;
         }
         WaitFor(wait_ms);
@@ -106,17 +106,17 @@ void CBioIdResolutionQueue::CBioIdResolutionQueueItem::Cancel()
     m_request->send_cancel();
 }
 
-void CBioIdResolutionQueue::CBioIdResolutionQueueItem::PopulateData(CBlobId& BlobId) const
+void CBioIdResolutionQueue::CBioIdResolutionQueueItem::PopulateData(CBlobId& blob_id) const
 {
     if (m_request->get_result_data().get_cancelled()) {
-        BlobId.m_Status = CBlobId::eFailed;
-        BlobId.m_StatusEx = CBlobId::eCanceled;
-        BlobId.m_Message = "Request for resolution was canceled";
+        blob_id.m_Status = CBlobId::eFailed;
+        blob_id.m_StatusEx = CBlobId::eCanceled;
+        blob_id.m_Message = "Request for resolution was canceled";
     }
     else if (m_request->has_error()) {
-        BlobId.m_Status = CBlobId::eFailed;
-        BlobId.m_StatusEx = CBlobId::eError;
-        BlobId.m_Message = m_request->get_error_description();
+        blob_id.m_Status = CBlobId::eFailed;
+        blob_id.m_StatusEx = CBlobId::eError;
+        blob_id.m_Message = m_request->get_error_description();
     }
     else switch (m_request->get_result_data().get_http_status()) {
         case 200: {
@@ -124,33 +124,33 @@ void CBioIdResolutionQueue::CBioIdResolutionQueueItem::PopulateData(CBlobId& Blo
             DDRPC::DataRow rec;
             try {
                 AccVerResolverUnpackData(rec, data);
-                BlobId.m_Status = CBlobId::eResolved;
-                BlobId.m_StatusEx = CBlobId::eNone;
-                BlobId.m_BlobInfo.gi              = rec[0].AsUint8;
-                BlobId.m_BlobInfo.seq_length      = rec[1].AsUint4;
-                BlobId.m_BlobInfo.blob_id.sat     = rec[2].AsUint1;
-                BlobId.m_BlobInfo.blob_id.sat_key = rec[3].AsUint4;
-                BlobId.m_BlobInfo.tax_id          = rec[4].AsUint4;
-                BlobId.m_BlobInfo.date_queued     = rec[5].AsDateTime;
-                BlobId.m_BlobInfo.state           = rec[6].AsUint1;
+                blob_id.m_Status = CBlobId::eResolved;
+                blob_id.m_StatusEx = CBlobId::eNone;
+                blob_id.m_BlobInfo.gi              = rec[0].AsUint8;
+                blob_id.m_BlobInfo.seq_length      = rec[1].AsUint4;
+                blob_id.m_BlobInfo.blob_id.sat     = rec[2].AsUint1;
+                blob_id.m_BlobInfo.blob_id.sat_key = rec[3].AsUint4;
+                blob_id.m_BlobInfo.tax_id          = rec[4].AsUint4;
+                blob_id.m_BlobInfo.date_queued     = rec[5].AsDateTime;
+                blob_id.m_BlobInfo.state           = rec[6].AsUint1;
             }
             catch (const DDRPC::EDdRpcException& e) {
-                BlobId.m_Status = CBlobId::eFailed;
-                BlobId.m_StatusEx = CBlobId::eError;
-                BlobId.m_Message = e.what();
+                blob_id.m_Status = CBlobId::eFailed;
+                blob_id.m_StatusEx = CBlobId::eError;
+                blob_id.m_Message = e.what();
             }
             break;
         }
         case 404: {
-            BlobId.m_Status = CBlobId::eFailed;
-            BlobId.m_StatusEx = CBlobId::eNotFound;
-            BlobId.m_Message = "Bio id is not found";
+            blob_id.m_Status = CBlobId::eFailed;
+            blob_id.m_StatusEx = CBlobId::eNotFound;
+            blob_id.m_Message = "Bio id is not found";
             break;
         }
         default: {
-            BlobId.m_Status = CBlobId::eFailed;
-            BlobId.m_StatusEx = CBlobId::eError;
-            BlobId.m_Message = "Unexpected result";
+            blob_id.m_Status = CBlobId::eFailed;
+            blob_id.m_StatusEx = CBlobId::eError;
+            blob_id.m_Message = "Unexpected result";
         }
     }
         
