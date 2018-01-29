@@ -234,13 +234,15 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
         CRef<CLocalDbAdapter> l_blastdb;
         Int4 l_num_alignments = 0;
         CRef<CQueryOptionsArgs>       l_query_opts;
+
 	{
 	    CFastMutexGuard g1(  thm_Mutex_Global  ); // GENERAL?
 	    if( thm_CmdLineArgs->GetTask() == "megablast" ) is_megablast = true;
 	    l_ig_args.Reset(thm_CmdLineArgs->GetIgBlastArgs());
             l_ig_opts.Reset(l_ig_args->GetIgBlastOptions());
             l_fmt_args.Reset( thm_CmdLineArgs->GetFormattingArgs() );
-
+            
+  
             if (l_db_args->GetDatabaseName() == kEmptyStr && 
                 l_db_args->GetSubjects().Empty()) {
                 l_full_db_list =  l_ig_opts->m_Db[0]->GetDatabaseName() + " " +
@@ -267,7 +269,7 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
 	    }
             l_query_opts = thm_CmdLineArgs->GetQueryOptionsArgs();
 	}
-	CFormattingArgs::EOutputFormat l_fmt_output_choice = l_fmt_args->GetFormattedOutputChoice();
+        CFormattingArgs::EOutputFormat l_fmt_output_choice = l_fmt_args->GetFormattedOutputChoice();
 
     	if(     l_fmt_output_choice == CFormattingArgs::eFlatQueryAnchoredIdentities ||
 	    l_fmt_output_choice == CFormattingArgs::eFlatQueryAnchoredNoIdentities)
@@ -280,10 +282,98 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
                 CBlastFormatUtil::PrintDbReport(db_info, 68, thm_CmdLineArgs->GetOutputStream(), true);
             }
     	}
-    	const CBlastOptions& l_opt = thm_opts_hndl->GetOptions();  // MUTEX NEEDED?
+    	
+
     //  HEADER -  END
+   	const CBlastOptions& l_opt = thm_opts_hndl->GetOptions();  // MUTEX NEEDED?
+
+        const char* matrix_name = l_opt.GetMatrixName();
+        int query_gcode = l_opt.GetQueryGeneticCode();
+        int db_gcode = l_opt.GetDbGeneticCode();
+        bool sum_stats = l_opt.GetSumStatisticsMode();
+        bool index_load = l_opt.GetMBIndexLoaded();
+
+        int filter_algo = l_blastdb->GetFilteringAlgorithm();
+     
+        TSeqPos num_description = l_fmt_args->GetNumDescriptions();
+        bool show_gi = l_fmt_args->ShowGis();
+        bool show_html = l_fmt_args->DisplayHtmlOutput();
+        string custom_format = l_fmt_args->GetCustomOutputFormatSpec();
+        CFormattingArgs::EOutputFormat output_choice = l_fmt_args->GetFormattedOutputChoice();
+        bool parse_defline = l_query_opts->GetParseDeflines();
+        CNcbiOstream& out_stream = thm_CmdLineArgs->GetOutputStream();
+
+
     //
     //
+
+        l_ig_opts->m_AirrField.push_back("rearrangement_id");
+        l_ig_opts->m_AirrField.push_back("sequence");
+        l_ig_opts->m_AirrField.push_back("sample_id");
+        l_ig_opts->m_AirrField.push_back("chain_type");
+        l_ig_opts->m_AirrField.push_back("stop_codon");
+        l_ig_opts->m_AirrField.push_back("v_j_in_frame");
+        l_ig_opts->m_AirrField.push_back("functional");
+        l_ig_opts->m_AirrField.push_back("rev_comp");
+        l_ig_opts->m_AirrField.push_back("v_call");
+        l_ig_opts->m_AirrField.push_back("d_call");
+        l_ig_opts->m_AirrField.push_back("j_call");
+        l_ig_opts->m_AirrField.push_back("c_call");
+        l_ig_opts->m_AirrField.push_back("junction_nt");
+        l_ig_opts->m_AirrField.push_back("junction_nt_length");
+        l_ig_opts->m_AirrField.push_back("junction_aa");
+        l_ig_opts->m_AirrField.push_back("junction_aa_length");
+        l_ig_opts->m_AirrField.push_back("v_score");
+        l_ig_opts->m_AirrField.push_back("d_score");
+        l_ig_opts->m_AirrField.push_back("j_score");
+        l_ig_opts->m_AirrField.push_back("c_score");
+        l_ig_opts->m_AirrField.push_back("v_cigar");
+        l_ig_opts->m_AirrField.push_back("d_cigar");
+        l_ig_opts->m_AirrField.push_back("j_cigar");
+        l_ig_opts->m_AirrField.push_back("c_cigar");
+        l_ig_opts->m_AirrField.push_back("v_evalue");
+        l_ig_opts->m_AirrField.push_back("d_evalue");
+        l_ig_opts->m_AirrField.push_back("j_evalue");
+        l_ig_opts->m_AirrField.push_back("v_identity");
+        l_ig_opts->m_AirrField.push_back("d_identity");
+        l_ig_opts->m_AirrField.push_back("j_identity");
+        l_ig_opts->m_AirrField.push_back("v_start");
+        l_ig_opts->m_AirrField.push_back("v_end");
+        l_ig_opts->m_AirrField.push_back("v_germ_start");
+        l_ig_opts->m_AirrField.push_back("v_germ_end");
+        l_ig_opts->m_AirrField.push_back("d_start");
+        l_ig_opts->m_AirrField.push_back("d_end");
+        l_ig_opts->m_AirrField.push_back("d_germ_start");
+        l_ig_opts->m_AirrField.push_back("d_germ_end");
+        l_ig_opts->m_AirrField.push_back("j_start");
+        l_ig_opts->m_AirrField.push_back("j_end");
+        l_ig_opts->m_AirrField.push_back("j_germ_start");
+        l_ig_opts->m_AirrField.push_back("j_germ_end");
+        l_ig_opts->m_AirrField.push_back("fwr1_start");
+        l_ig_opts->m_AirrField.push_back("fwr1_end");
+        l_ig_opts->m_AirrField.push_back("fwr1_identity");
+        l_ig_opts->m_AirrField.push_back("cdr1_start");
+        l_ig_opts->m_AirrField.push_back("cdr1_end");
+        l_ig_opts->m_AirrField.push_back("cdr1_identity");
+        l_ig_opts->m_AirrField.push_back("fwr2_start");
+        l_ig_opts->m_AirrField.push_back("fwr2_end");
+        l_ig_opts->m_AirrField.push_back("fwr2_identity");
+        l_ig_opts->m_AirrField.push_back("cdr2_start");
+        l_ig_opts->m_AirrField.push_back("cdr2_end");
+        l_ig_opts->m_AirrField.push_back("cdr2_identity");
+        l_ig_opts->m_AirrField.push_back("fwr3_start");
+        l_ig_opts->m_AirrField.push_back("fwr3_end");
+        l_ig_opts->m_AirrField.push_back("fwr3_identity");
+        l_ig_opts->m_AirrField.push_back("cdr3_start");
+        l_ig_opts->m_AirrField.push_back("cdr3_end");
+        l_ig_opts->m_AirrField.push_back("np1_seq");
+        l_ig_opts->m_AirrField.push_back("np1_length");
+        l_ig_opts->m_AirrField.push_back("np2_seq");
+        l_ig_opts->m_AirrField.push_back("np2_length");
+
+                
+        int align_index = 0;
+        
     while( true ){
 	CRef <CIgBlastContext> local_results_context;
 	// STEP A try to get next ready batch from  IG_ResultsMap  &thm_all_results;  if possible
@@ -344,32 +434,33 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
 	    query.Reset(   local_results_context->m_queries );
 
 	    CRef <CBlastFormat> fmt;
-
-		fmt.Reset( new  CBlastFormat(l_opt, *l_blastdb_full,
-                               l_fmt_args->GetFormattedOutputChoice(),
-                               l_query_opts->GetParseDeflines(),
-                               thm_CmdLineArgs->GetOutputStream(),
-                               l_fmt_args->GetNumDescriptions(),
-                               l_num_alignments,
-                               *scope,
-                               l_opt.GetMatrixName(),
-                               l_fmt_args->ShowGis(),
-                               l_fmt_args->DisplayHtmlOutput(),
-                               l_opt.GetQueryGeneticCode(),
-                               l_opt.GetDbGeneticCode(),
-                               l_opt.GetSumStatisticsMode(),
-                               false,
-                               l_blastdb->GetFilteringAlgorithm(),
-                               l_fmt_args->GetCustomOutputFormatSpec(),
-                               is_megablast, //thm_CmdLineArgs->GetTask() == "megablast",
-                               l_opt.GetMBIndexLoaded(),
-                               &*l_ig_opts) );
-
-
+            
+            fmt.Reset( new  CBlastFormat(l_opt, *l_blastdb_full,
+                                         output_choice,
+                                         parse_defline,
+                                         out_stream,
+                                         num_description,
+                                         l_num_alignments,
+                                         *scope,
+                                         matrix_name,
+                                         show_gi,
+                                         show_html,
+                                         query_gcode,
+                                         db_gcode,
+                                         sum_stats,
+                                         false,
+                                         filter_algo,
+                                         custom_format,
+                                         is_megablast, //thm_CmdLineArgs->GetTask() == "megablast",
+                                         index_load,
+                                         &*l_ig_opts) );
 
 
-			BlastFormatter_PreFetchSequenceData(*results, scope, l_fmt_output_choice );
 
+
+            BlastFormatter_PreFetchSequenceData(*results, scope, l_fmt_output_choice );
+
+        
             for( vector< CRef<CSearchResults> >::const_iterator result = results->begin(); result != results->end(); result ++) { //ITERATE(CSearchResultSet, result, *results) 
                 CBlastFormat::SClone clone_info;
                 SCloneNuc clone_nuc;
@@ -377,8 +468,8 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
                 CIgBlastResults &ig_result = *const_cast<CIgBlastResults *>
                         (dynamic_cast<const CIgBlastResults *>(&(**result)));
                 
-		    	fmt->PrintOneResultSet(ig_result, query, clone_info, true /* not protein */ ) ; 
-	
+                fmt->PrintOneResultSet(ig_result, query, clone_info, true, (align_index == 0 ? true:false) ) ; 
+                align_index ++;
                 thm_total_input ++;
                 // if ( clone_info.na != NcbiEmptyString && clone_info.aa != NcbiEmptyString)
                 if ( !clone_info.na.empty() && !clone_info.aa.empty() ){
@@ -670,6 +761,7 @@ int CIgBlastnApp::Run(void)
 	}
 	//################ Main thread:  run worker & format threads - end  #####################################
 
+        if (fmt_args->GetFormattedOutputChoice() != CFormattingArgs::eAirrRearrangement) {
         typedef vector<pair<const SCloneNuc*,  AaMap*> * > MapVec;
         MapVec map_vec; 
 	// POST FORMAT
@@ -816,11 +908,11 @@ int CIgBlastnApp::Run(void)
         } else {
             m_CmdLineArgs->GetOutputStream() << "# BLAST processed " << m_total_input << " queries" << endl;
         }
-        
+        }
         if (m_CmdLineArgs->ProduceDebugOutput()) {
             m_opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
         }
-
+        
     } CATCH_ALL(status)
     return status;
 }

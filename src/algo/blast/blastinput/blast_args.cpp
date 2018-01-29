@@ -2422,7 +2422,8 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     "alignment view options:\n"
     "  3 = Flat query-anchored, show identities,\n"
     "  4 = Flat query-anchored, no identities,\n"
-    "  7 = Tabular with comment lines\n\n"
+    "  7 = Tabular with comment lines\n"
+    "  19 = Rearrangement summary report (AIRR format)\n\n"
     "Options 7 can be additionally configured to produce\n"
     "a custom format specified by space delimited format specifiers.\n"
     "The supported format specifiers are:\n") +
@@ -2526,7 +2527,7 @@ CFormattingArgs::ParseFormattingString(const CArgs& args,
             string msg("Formatting choice is out of range");
             throw std::out_of_range(msg);
         }
-        if (m_IsIgBlast && (val != 3 && val != 4 && val != 7)) {
+        if (m_IsIgBlast && (val != 3 && val != 4 && val != 7 && val != eAirrRearrangement)) {
             string msg("Formatting choice is not valid");
             throw std::out_of_range(msg);
         }
@@ -2550,6 +2551,11 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     		NCBI_THROW(CInputException, eInvalidInput,
     		                        "SAM format is only applicable to blastn" );
     }
+    if((m_OutputFormat == eAirrRearrangement) && !(m_FormatFlags & eIsAirrRearrangement) ){
+        NCBI_THROW(CInputException, eInvalidInput,
+                   "AIRR rearrangement format is only applicable to igblastn" );
+    }
+    
     m_ShowGis = static_cast<bool>(args[kArgShowGIs]);
     if(m_IsIgBlast){
         m_Html = false;

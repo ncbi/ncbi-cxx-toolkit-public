@@ -213,7 +213,7 @@ int CIgBlastpApp::Run(void)
                 CBlastFormat::SClone clone_info;
                 CIgBlastResults &ig_result = *const_cast<CIgBlastResults *>
                         (dynamic_cast<const CIgBlastResults *>(&(**result)));
-                formatter.PrintOneResultSet(ig_result, query, clone_info, false);
+                formatter.PrintOneResultSet(ig_result, query, clone_info, false, false);
             }
         }
 

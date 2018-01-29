@@ -230,6 +230,7 @@ public:
                            CConstRef<blast::CBlastQueryVector> queries, 
                            SClone& clone_info,
                            bool fill_clone_info,
+                           bool print_airr_format_header,
                            int index = -1);
 
     /// Print all alignment information for aa PHI-BLAST run.
@@ -453,6 +454,14 @@ private:
    void x_PrintIgTabularReport(const blast::CIgBlastResults& results,
                                SClone& clone_info,
                                bool fill_clone_info);
+
+    /// Prints AirrRearrangement format
+   /// @param results Results for one query or Phi-blast iteration [in]
+   void x_PrintAirrRearrangement(const blast::CIgBlastResults& results,
+                                 SClone& clone_info,
+                                 bool fill_clone_info,
+                                 bool print_airr_format_header);
+    
 
    /// Replace the query with its reversed-compliement
    /// @param results Ig Blast results [in, out]

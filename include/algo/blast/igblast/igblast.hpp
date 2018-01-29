@@ -82,6 +82,7 @@ public:
     int m_MinVLength;
     int m_MinJLength;
     bool m_DetectOverlap;
+    list<string> m_AirrField;
 };
 
 class CIgAnnotation : public CObject

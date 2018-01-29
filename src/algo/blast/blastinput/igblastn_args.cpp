@@ -94,7 +94,7 @@ CIgBlastnAppArgs::CIgBlastnAppArgs()
     arg.Reset(m_QueryOptsArgs);
     m_Args.push_back(arg);
 
-    m_FormattingArgs.Reset(new CFormattingArgs(true));
+    m_FormattingArgs.Reset(new CFormattingArgs(true, CFormattingArgs::eIsAirrRearrangement));
     arg.Reset(m_FormattingArgs);
     m_Args.push_back(arg);
 

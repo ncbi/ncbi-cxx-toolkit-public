@@ -1038,8 +1038,12 @@ public:
         eSAM,
 
         eTaxFormat,
+        
+        ///igblast AIRR rearrangement, 19
+        eAirrRearrangement,
         /// Sentinel value for error checking
         eEndValue
+        
     };
 
     enum EFormatFlags {
@@ -1049,7 +1053,9 @@ public:
     	// Set if SAM format is supported
     	eIsSAM = 0x02,
     	// Set if both VDB and SAM is true
-    	eIsVDB_SAM = eIsVDB | eIsSAM
+    	eIsVDB_SAM = eIsVDB | eIsSAM,
+        //Is eAirrRearrangement format supported?
+        eIsAirrRearrangement = 0x04
     };
     /// Default constructor
     CFormattingArgs(bool isIgblast = false, EFormatFlags flag = eDefaultFlag)

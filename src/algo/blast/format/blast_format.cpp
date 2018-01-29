@@ -906,12 +906,12 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results,
             s_SetCloneInfo(tabinfo, bhandle, clone_info);
         }
         tabinfo.PrintHeader(strProgVersion, *(bhandle.GetBioseqCore()),
-                                m_DbName, 
-                                m_IgOptions->m_DomainSystem,
-                                results.GetRID(), 
-                                numeric_limits<unsigned int>::max(),
-                                aln_set, subject_bioseq);
- 
+                            m_DbName, 
+                            m_IgOptions->m_DomainSystem,
+                            results.GetRID(), 
+                            numeric_limits<unsigned int>::max(),
+                            aln_set, subject_bioseq);
+        
         int j = 1;
         for (; itr != aln_set->Get().end(); ++itr) {
             tabinfo.SetFields(**itr, *m_Scope, 
@@ -928,6 +928,67 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results,
                                 numeric_limits<unsigned int>::max(),
                                 0, subject_bioseq);
     }
+    if (m_IsHTML) {
+        m_Outfile << "\n</pre></body></html>\n";
+    }
+}
+
+
+void CBlastFormat::x_PrintAirrRearrangement(const blast::CIgBlastResults& results,
+                                            SClone& clone_info,
+                                            bool fill_clone_info,
+                                            bool print_airr_format_header)
+{
+    CConstRef<CSeq_align_set> aln_set = results.GetSeqAlign();
+
+    // other output types will need a bioseq handle
+    CBioseq_Handle bhandle = m_Scope->GetBioseqHandle(*results.GetSeqId(),
+                                                      CScope::eGetBioseq_All);
+
+    // tabular formatting just prints each alignment in turn
+    // (plus a header)
+
+    const CBlastTabularInfo::EFieldDelimiter kDelim =
+            (m_FormatType == CFormattingArgs::eCommaSeparatedValues
+             ? CBlastTabularInfo::eComma : CBlastTabularInfo::eTab);
+
+    CIgBlastTabularInfo tabinfo(m_Outfile, m_CustomOutputFormatSpec, kDelim);
+    tabinfo.SetParseLocalIds(m_BelieveQuery);
+
+    string strProgVersion =
+        "IG" + NStr::ToUpper(m_Program);
+    CConstRef<CBioseq> subject_bioseq = x_CreateSubjectBioseq();
+
+    if (m_IsHTML) {
+        m_Outfile << "<html><body><pre>\n";
+    }
+    CRef<CIgAnnotation> annots(null);
+    if (results.HasAlignments()) {
+        annots = results.GetIgAnnotation();
+        CSeq_align_set::Tdata::const_iterator itr = aln_set->Get().begin();
+        tabinfo.SetMasterFields(**itr, *m_Scope, 
+                                annots->m_ChainType[0], 
+                                annots->m_ChainTypeToShow, 
+                                &m_ScoringMatrix);
+        tabinfo.SetIgAnnotation(annots, m_IgOptions);
+        if (fill_clone_info) {
+            s_SetCloneInfo(tabinfo, bhandle, clone_info);
+        }
+    }
+    tabinfo.SetAirrFormatData(*m_Scope, annots, 
+                              bhandle, aln_set, m_IgOptions);
+    
+    
+    tabinfo.PrintAirrRearrangement(*m_Scope, annots, strProgVersion,
+                                   *(bhandle.GetBioseqCore()),
+                                   m_DbName, 
+                                   m_IgOptions->m_DomainSystem,
+                                       results.GetRID(), 
+                                       numeric_limits<unsigned int>::max(),
+                                       aln_set, subject_bioseq, &m_ScoringMatrix,
+                                       print_airr_format_header,
+                                       m_IgOptions);
+
     if (m_IsHTML) {
         m_Outfile << "\n</pre></body></html>\n";
     }
@@ -1207,6 +1268,7 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
                                 CConstRef<blast::CBlastQueryVector> queries, 
                                 SClone& clone_info,
                                 bool fill_clone_info,
+                                bool print_airr_format_header,
                                 int index)
 {
     clone_info.na = NcbiEmptyString;
@@ -1261,6 +1323,11 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
         m_FormatType == CFormattingArgs::eCommaSeparatedValues) {
         m_FormatType = CFormattingArgs::eTabularWithComments;
         x_PrintIgTabularReport(results, clone_info, fill_clone_info);
+        return;
+    }
+    
+    if (m_FormatType == CFormattingArgs::eAirrRearrangement) {
+        x_PrintAirrRearrangement(results, clone_info, fill_clone_info, print_airr_format_header);
         return;
     }
 

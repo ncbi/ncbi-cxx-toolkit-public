@@ -89,6 +89,10 @@ public:
     /// Set query id from a Bioseq handle
     /// @param bh Bioseq handle to get Seq-ids from
     void SetQueryId(const objects::CBioseq_Handle& bh);
+    ///Get query seqid list
+    const list<CRef<CSeq_id> >& GetQueryId() const {
+        return m_QueryId;
+    };
     /// Set subject id from a objects::CSeq_id
     /// @param id List of Seq-ids to use [in]
     void SetSubjectId(list<CRef<objects::CSeq_id> >& id);
@@ -589,6 +593,26 @@ public:
 
     /// Print domain information
     void PrintMasterAlign(const string& header = "# ") const;
+    
+    void SetAirrFormatData(CScope& scope,
+                           const CRef<blast::CIgAnnotation> &annot,
+                           const CBioseq_Handle& query_handle, 
+                           CConstRef<CSeq_align_set> align_result,
+                           const CConstRef<blast::CIgBlastOptions>& ig_opts);
+
+    void PrintAirrRearrangement(CScope& scope,
+                                const CRef<blast::CIgAnnotation> &annot,
+                                const string& program_version, 
+                                const CBioseq& query_bioseq, 
+                                const string& dbname, 
+                                const string& domain_sys,
+                                const string& rid,
+                                unsigned int iteration,
+                                const CSeq_align_set* align_set,
+                                CConstRef<CBioseq> subj_bioseq,
+                                CNcbiMatrix<int>* matrix,
+                                bool print_airr_format_header,
+                                const CConstRef<blast::CIgBlastOptions>& ig_opts);
 
     /// Print Html style summary
     void PrintHtmlSummary() const;
@@ -669,6 +693,7 @@ protected:
     void x_PrintIgDomainHtml(const SIgDomain &domain) const;
     void x_PrintPartialQuery(int start, int end, bool isHtml=false) const;
 
+                                  
 private:
     string m_Query;
     bool m_IsNucl;
@@ -688,7 +713,13 @@ private:
     int m_Cdr3End;
     string m_Cdr3Seq;
     string m_Cdr3SeqTrans;
-        
+    
+    string m_AirrCdr3Seq; 
+    string m_AirrCdr3SeqTrans;
+    CRef<CSeq_align> m_TopAlign_V;
+    CRef<CSeq_align> m_TopAlign_D;
+    CRef<CSeq_align> m_TopAlign_J;  
+    map<string, string> m_AirrData;
 };
 
 END_SCOPE(align_format)
