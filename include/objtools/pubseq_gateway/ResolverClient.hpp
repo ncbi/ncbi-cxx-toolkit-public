@@ -156,15 +156,13 @@ public:
     ///  into the queue will be removed from the "bio_ids" container.
     /// @param deadline
     ///  For how long to try to push the bio-ids into the queue.
-    void Resolve(TBioIds*         bio_ids,
-                 const CDeadline& deadline = CDeadline(0));
+    void Resolve(TBioIds* bio_ids, const CDeadline& deadline = 0);
 
     /// Perform signle bio-ids resolution
     /// @note
     /// This method is works synchronously static and does not require 
     /// CBioIdResolutionQueue instance
-    static CBlobId Resolve(CBioId bio_ids,
-                 const CDeadline& deadline = CDeadline(0));
+    static CBlobId Resolve(CBioId bio_ids, const CDeadline& deadline = 0);
 
     /// Retrieve results of the id resolution that are currently ready.
     /// @note
@@ -181,8 +179,7 @@ public:
     ///  List of id resolution results
     /// @throw
     ///  If unrecoverable retrieval error has been detected.
-    TBlobIds GetBlobIds(const CDeadline& deadline = CDeadline(0), 
-                                  size_t max_results = 0);
+    TBlobIds GetBlobIds(const CDeadline& deadline = 0, size_t max_results = 0);
 
     /// Cancel all ongoing retrievals and return all not yet resolved bio-ids.
     /// You can continue working with the queue after that in a usual manner.
@@ -263,14 +260,12 @@ public:
     ///  into the queue will be removed from the "bio_ids" container.
     /// @param deadline
     ///  For how long to try to push the bio-ids into the queue.
-    void Retrieve(TBioIds*         bio_ids,
-                  const CDeadline& deadline = CDeadline(0));
+    void Retrieve(TBioIds* bio_ids, const CDeadline& deadline = 0);
     /// @param blob_ids
     ///  List of blob ids.
     ///  Those blob ids from the "blob_ids" container that make it
     ///  into the queue will be removed from the "blob_ids" container.
-    void Retrieve(TBlobIds* blob_ids,
-           const CDeadline& deadline = CDeadline(0));
+    void Retrieve(TBlobIds* blob_ids, const CDeadline& deadline = 0);
 
     /// Get blobs that are ready for the immediate retrieval (and/or those that
     /// cannot be retrieved for whatever reason).
@@ -288,8 +283,7 @@ public:
     ///  List of blobs available for retrieval
     /// @throw
     ///  If unrecoverable resolution or retrieval error has been detected.
-    vector<CBlob> GetBlobs(const CDeadline& deadline = CDeadline(0), 
-                                size_t max_results = 0);
+    vector<CBlob> GetBlobs(const CDeadline& deadline = 0, size_t max_results = 0);
 
     /// Cancel all ongoing retrievals and return all bio- and blob-ids
     /// for which there is no ready-to-retrieve blob obtained yet.
