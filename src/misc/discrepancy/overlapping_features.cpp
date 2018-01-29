@@ -402,7 +402,7 @@ DISCREPANCY_CASE(DUP_GENES_OPPOSITE_STRANDS, COverlappingFeatures, eDisc | eOnca
         ENa_strand strand_i = loc_i.GetStrand();
         for (size_t j = i + 1; j < genes.size(); j++) {
             const CSeq_loc& loc_j = genes[j]->GetLocation();
-            if (loc_j.GetStrand() == strand_i) {
+            if ((loc_j.GetStrand() == eNa_strand_minus) == (strand_i == eNa_strand_minus)) {
                 continue;
             }
             sequence::ECompare ovlp = context.Compare(loc_i, loc_j);
