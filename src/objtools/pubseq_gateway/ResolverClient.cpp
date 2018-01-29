@@ -19,8 +19,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
-static_assert(std::is_nothrow_move_constructible<CBioId>::value, "CBioId move constructor must be noexcept");
-static_assert(std::is_nothrow_move_constructible<CBlobId>::value, "CBlobId move constructor must be noexcept");
+static_assert(is_nothrow_move_constructible<CBioId>::value, "CBioId move constructor must be noexcept");
+static_assert(is_nothrow_move_constructible<CBlobId>::value, "CBlobId move constructor must be noexcept");
 
 namespace {
 
@@ -52,9 +52,9 @@ void DumpEntry(const CBlobId& blob_id)
 
 /** CBioIdResolutionQueue::CBioIdResolutionQueueItem */
 
-CBioIdResolutionQueue::CBioIdResolutionQueueItem::CBioIdResolutionQueueItem(std::shared_ptr<HCT::io_future> afuture, CBioId bio_id) 
+CBioIdResolutionQueue::CBioIdResolutionQueueItem::CBioIdResolutionQueueItem(shared_ptr<HCT::io_future> afuture, CBioId bio_id) 
     :   m_Request(make_shared<HCT::http2_request>()),
-        m_BioId(std::move(bio_id))
+        m_BioId(move(bio_id))
 {
     if (!HCT::HttpClientTransport::s_ioc)
         DDRPC::EDdRpcException::raise("DDRPC is not initialized, call DdRpcClient::Init() first");
@@ -167,7 +167,7 @@ CBioIdResolutionQueue::~CBioIdResolutionQueue()
 {
 }
 
-void CBioIdResolutionQueue::Resolve(std::vector<CBioId>* bio_ids, const CDeadline& deadline)
+void CBioIdResolutionQueue::Resolve(vector<CBioId>* bio_ids, const CDeadline& deadline)
 {    
     if (!bio_ids)
         return;
@@ -192,8 +192,8 @@ void CBioIdResolutionQueue::Resolve(std::vector<CBioId>* bio_ids, const CDeadlin
                     wait_ms = DDRPC::INDEFINITE;
             }
             else {
-                m_Items.emplace_back(std::move(Qi));
-                bio_ids->erase(std::next(rev_it.base()));
+                m_Items.emplace_back(move(Qi));
+                bio_ids->erase(next(rev_it.base()));
                 ++rev_it;
                 break;
             }
@@ -206,14 +206,14 @@ void CBioIdResolutionQueue::Resolve(std::vector<CBioId>* bio_ids, const CDeadlin
 CBlobId CBioIdResolutionQueue::Resolve(CBioId bio_id, const CDeadline& deadline)
 {
     CBlobId rv(bio_id);
-    unique_ptr<CBioIdResolutionQueueItem> Qi(new CBioIdResolutionQueueItem(HCT::io_coordinator::get_tls_future(), std::move(bio_id)));
+    unique_ptr<CBioIdResolutionQueueItem> Qi(new CBioIdResolutionQueueItem(HCT::io_coordinator::get_tls_future(), move(bio_id)));
     Qi->SyncResolve(rv, deadline);
     return rv;
 }
 
-std::vector<CBlobId> CBioIdResolutionQueue::GetBlobIds(const CDeadline& deadline, size_t max_results)
+vector<CBlobId> CBioIdResolutionQueue::GetBlobIds(const CDeadline& deadline, size_t max_results)
 {
-    std::vector<CBlobId> rv;
+    vector<CBlobId> rv;
     bool has_limit = max_results != 0;
     unique_lock<mutex> _(m_ItemsMtx);
     if (m_Items.size() > 0) {
@@ -228,8 +228,8 @@ std::vector<CBlobId> CBioIdResolutionQueue::GetBlobIds(const CDeadline& deadline
                 break;
             const auto& req = *rev_it;
             if (req->IsDone()) {
-                auto fw_it = std::next(rev_it).base();
-                rv.emplace_back(std::move((*fw_it)->m_BioId));
+                auto fw_it = next(rev_it).base();
+                rv.emplace_back(move((*fw_it)->m_BioId));
                 req->PopulateData(rv.back());
                 m_Items.erase(fw_it);
             }
@@ -238,7 +238,7 @@ std::vector<CBlobId> CBioIdResolutionQueue::GetBlobIds(const CDeadline& deadline
     return rv;
 }
 
-void CBioIdResolutionQueue::Clear(std::vector<CBioId>* bio_ids)
+void CBioIdResolutionQueue::Clear(vector<CBioId>* bio_ids)
 {
     unique_lock<mutex> _(m_ItemsMtx);
     if (bio_ids) {
@@ -248,7 +248,7 @@ void CBioIdResolutionQueue::Clear(std::vector<CBioId>* bio_ids)
     for (auto& it : m_Items) {
         it->Cancel();
         if (bio_ids)
-            bio_ids->emplace_back(std::move(it->m_BioId));
+            bio_ids->emplace_back(move(it->m_BioId));
     }
     m_Items.clear();
 }

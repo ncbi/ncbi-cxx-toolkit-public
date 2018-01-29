@@ -4,6 +4,8 @@
 #include <string>
 #include <utility>
 #include <mutex>
+#include <memory>
+#include <vector>
 
 #include <objects/id2/ID2_Blob_Id.hpp>
 #include <objects/id2/ID2_Reply_Get_Blob_Id.hpp>
@@ -34,14 +36,14 @@ public:
 class CBioId
 {
 public:
-    CBioId(std::string id, IBioIdContext* ctx = nullptr)
-        : m_Id(std::move(id)), m_Context(ctx) {}
+    CBioId(string id, IBioIdContext* ctx = nullptr)
+        : m_Id(move(id)), m_Context(ctx) {}
 
-    const std::string& GetId() const { return m_Id; }
+    const string& GetId() const { return m_Id; }
     const IBioIdContext* GetContext() const  { return m_Context; }
 
 private:
-    std::string    m_Id;
+    string         m_Id;
     IBioIdContext* m_Context;
 };
 
@@ -111,7 +113,7 @@ public:
     EStatusEx GetStatusEx() const { return m_StatusEx; }
 
     /// Unstructured text containing auxiliary info about the result
-    const std::string& GetMessage() const { return m_Message; };
+    const string& GetMessage() const { return m_Message; };
 
     /// Get the bio-blob id (such as an accession) which this result is for
     const CBioId& GetBioId() const { return m_BioId; }
@@ -124,7 +126,7 @@ private:
     SBlobInfo  m_BlobInfo;
     EStatus    m_Status;
     EStatusEx  m_StatusEx;
-    std::string  m_Message;
+    string     m_Message;
     friend class CBioIdResolutionQueue;
 };
 
@@ -160,7 +162,7 @@ public:
     ///  into the queue will be removed from the "bio_ids" container.
     /// @param deadline
     ///  For how long to try to push the bio-ids into the queue.
-    void Resolve(std::vector<CBioId>*  bio_ids,
+    void Resolve(vector<CBioId>*  bio_ids,
                  const CDeadline& deadline = CDeadline(0));
 
     /// Perform signle bio-ids resolution
@@ -185,7 +187,7 @@ public:
     ///  List of id resolution results
     /// @throw
     ///  If unrecoverable retrieval error has been detected.
-    std::vector<CBlobId> GetBlobIds(const CDeadline& deadline = CDeadline(0), 
+    vector<CBlobId> GetBlobIds(const CDeadline& deadline = CDeadline(0), 
                                     size_t max_results = 0);
 
     /// Cancel all ongoing retrievals and return all not yet resolved bio-ids.
@@ -195,28 +197,28 @@ public:
     /// @param bio_ids
     ///  The not yet resolved bio-ids will be added to "bio_ids". If "bio_ids"
     ///  is NULL, then they be discarded.
-    void Clear(std::vector<CBioId>* bio_ids);
+    void Clear(vector<CBioId>* bio_ids);
 
     /// Returns true if Queue has finished all resolutions
     /// and all items have been fetched or nothing was added for resolution at all
     bool IsEmpty() const;
 private:
-    mutable std::mutex m_ItemsMtx;
+    mutable mutex m_ItemsMtx;
     
     struct CBioIdResolutionQueueItem {
-        CBioIdResolutionQueueItem(std::shared_ptr<HCT::io_future> afuture, CBioId bio_id);
+        CBioIdResolutionQueueItem(shared_ptr<HCT::io_future> afuture, CBioId bio_id);
         void SyncResolve(CBlobId& blob_id, const CDeadline& deadline);
         void WaitFor(long timeout_ms);
         void Wait();
         bool IsDone() const;
         void Cancel();
         void PopulateData(CBlobId& blob_id) const;
-        std::shared_ptr<HCT::http2_request> m_Request;
+        shared_ptr<HCT::http2_request> m_Request;
         CBioId m_BioId;
     };
 
-    std::vector<std::unique_ptr<CBioIdResolutionQueueItem>> m_Items;
-    std::shared_ptr<HCT::io_future> m_Future;
+    vector<unique_ptr<CBioIdResolutionQueueItem>> m_Items;
+    shared_ptr<HCT::io_future> m_Future;
 };
 
 
@@ -267,13 +269,13 @@ public:
     ///  into the queue will be removed from the "bio_ids" container.
     /// @param deadline
     ///  For how long to try to push the bio-ids into the queue.
-    void Retrieve(std::vector<CBioId>*  bio_ids,
+    void Retrieve(vector<CBioId>*  bio_ids,
                   const CDeadline& deadline = CDeadline(0));
     /// @param blob_ids
     ///  List of blob ids.
     ///  Those blob ids from the "blob_ids" container that make it
     ///  into the queue will be removed from the "blob_ids" container.
-    void Retrieve(std::vector<CBlobId>* blob_ids,
+    void Retrieve(vector<CBlobId>* blob_ids,
                   const CDeadline& deadline = CDeadline(0));
 
     /// Get blobs that are ready for the immediate retrieval (and/or those that
@@ -292,7 +294,7 @@ public:
     ///  List of blobs available for retrieval
     /// @throw
     ///  If unrecoverable resolution or retrieval error has been detected.
-    std::vector<CBlob> GetBlobs(const CDeadline& deadline = CDeadline(0), 
+    vector<CBlob> GetBlobs(const CDeadline& deadline = CDeadline(0), 
                                 size_t max_results = 0);
 
     /// Cancel all ongoing retrievals and return all bio- and blob-ids
@@ -306,7 +308,7 @@ public:
     /// @param blob_ids
     ///  The bio-ids for which no retrievable blobs have yet been obtained will
     ///  be added to "blob_ids". If "blob_ids" is NULL, then they be discarded.
-    void Clear(std::vector<CBioId>* bio_ids, std::vector<CBlobId>* blob_ids);
+    void Clear(vector<CBioId>* bio_ids, vector<CBlobId>* blob_ids);
 
     /// Returns true if Queue has finished all retrieval work
     /// and all items have been fetched or nothing was added for retrieval at all
