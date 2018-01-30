@@ -189,10 +189,6 @@ public:
 
 #define STANDARD_SETUP_NO_DATABASE \
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance(); \
-    try { \
-        objmgr->RevokeDataLoader("GBLOADER"); \
-    } catch (CException ) { \
-    } \
     CScope scope(*objmgr); \
     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry); \
     CConstRef<CValidError> eval; \
