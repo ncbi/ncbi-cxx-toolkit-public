@@ -1,5 +1,7 @@
 # $Id$
 
+LIB_PROJ = psg_api
+
 SUB_PROJ = diag rpc cassandra
 
 srcdir = @srcdir@

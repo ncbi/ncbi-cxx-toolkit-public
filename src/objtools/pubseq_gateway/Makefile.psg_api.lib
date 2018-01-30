@@ -4,4 +4,9 @@ SRC = ResolverClient
 
 LIB = psg_api
 
-WATCHERS = sadyrovr
+LIBS = $(PSG_RPC_LIBS)
+CPPFLAGS= $(ORIG_CPPFLAGS) $(PSG_RPC_INCLUDE)
+
+WATCHERS = sadyrovr dmitrie1
+
+USES_LIBRARIES = psg_rpc
