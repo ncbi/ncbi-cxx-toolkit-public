@@ -2,6 +2,6 @@
 
 SRC = ResolverClient
 
-LIB = ncbi_psg_api
+LIB = psg_api
 
 WATCHERS = sadyrovr
