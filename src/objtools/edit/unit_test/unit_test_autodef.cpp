@@ -2307,5 +2307,55 @@ BOOST_AUTO_TEST_CASE(Test_GB_7485)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GB_7534)
+{
+	CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+	unit_test_util::SetTaxname(entry, "Amomum chryseum");
+	unit_test_util::SetGenome(entry, CBioSource::eGenome_chloroplast);
+	CRef<CSeq_feat> prot = unit_test_util::GetProtFeatFromGoodNucProtSet(entry);
+	prot->SetData().SetProt().SetName().front() = "maturase K";
+
+	CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+	CRef<CSeq_feat> gene1 = unit_test_util::MakeGeneForFeature(cds);
+	gene1->SetData().SetGene().SetLocus("matK");
+	CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+	AddFeat(gene1, nuc);
+	cds->SetXref().push_back(CRef<CSeqFeatXref>(new CSeqFeatXref()));
+	cds->SetXref().front()->SetData().Assign(gene1->GetData());
+
+	CRef<CSeq_feat> gene2(new CSeq_feat());
+	gene2->Assign(*gene1);
+	gene2->SetData().SetGene().SetLocus("trnK");
+	gene2->SetData().SetGene().SetDesc("tRNA-Lys");
+	AddFeat(gene2, nuc);
+	CRef<CSeq_feat> intron(new CSeq_feat());
+	intron->Assign(*gene2);
+	intron->SetData().SetImp().SetKey("intron");
+	intron->SetXref().push_back(CRef<CSeqFeatXref>(new CSeqFeatXref()));
+	intron->SetXref().front()->SetData().Assign(gene2->GetData());
+	AddFeat(intron, nuc);
+
+	AddTitle(entry, "Amomum chryseum tRNA-Lys (trnK) gene, intron; and maturase K (matK) gene, complete cds; chloroplast.");
+
+	CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+
+	CRef<CScope> scope(new CScope(*object_manager));
+	CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+	objects::CAutoDefWithTaxonomy autodef;
+
+	// add to autodef 
+	autodef.AddSources(seh);
+	autodef.SetKeepIntrons(true);
+
+	CRef<CAutoDefModifierCombo> mod_combo;
+	mod_combo = autodef.FindBestModifierCombo();
+
+
+	CheckDeflineMatches(seh, autodef, mod_combo);
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

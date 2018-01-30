@@ -1400,6 +1400,12 @@ CAutoDefFeatureClause_Base *CAutoDefFeatureClause::FindBestParentClause(CAutoDef
     if (subclause == NULL || subclause == this) {
         return NULL;
     }
+
+	if (!NStr::IsBlank(subclause->GetGeneName()) &&
+		!NStr::IsBlank(this->GetGeneName()) &&
+		!NStr::Equal(subclause->GetGeneName(), this->GetGeneName())) {
+		return NULL;
+	}
     
     best_parent = CAutoDefFeatureClause_Base::FindBestParentClause(subclause, gene_cluster_opp_strand);
     
