@@ -159,7 +159,7 @@ void CValidError_feat::x_ValidateSeqFeatExceptXref(const CSeq_feat& feat)
 
         ValidateSeqFeatData(feat.GetData(), feat);
 
-        CSingleFeatValidator* fval = FeatValidatorFactory(feat, *m_Scope, m_Imp);
+        unique_ptr<CSingleFeatValidator> fval(FeatValidatorFactory(feat, *m_Scope, m_Imp));
         if (fval) {
             fval->Validate();
         }
