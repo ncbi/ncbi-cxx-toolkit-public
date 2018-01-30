@@ -323,8 +323,7 @@ void CAccVerCacheApp::RemoteLookup(const string& AccVer) {
         Req->Wait();
         Data = Req->Get();
     }
-    stringstream ss(ACCVER_RESOLVER_COLUMNS);
-    DDRPC::DataColumns Clms(ss);
+    DDRPC::DataColumns Clms(ACCVER_RESOLVER_COLUMNS);
     DumpEntry(cout, m_Delimiter, Clms, AccVer, Data);
 }
 
@@ -591,8 +590,7 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, CSyncType sync, u
         }
     }
     else {
-        stringstream ss(ACCVER_RESOLVER_COLUMNS);
-        DDRPC::DataColumns Clms(ss);
+        DDRPC::DataColumns Clms(ACCVER_RESOLVER_COLUMNS);
         size_t index = 0;
         for (const auto& it : data) {
             try {
