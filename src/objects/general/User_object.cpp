@@ -1167,7 +1167,6 @@ CConstRef<CUser_object::CRefGeneTrackingAccession> CUser_object::GetRefGeneTrack
     if (GetObjectType() != eObjectType_RefGeneTracking) {
         return CConstRef<CUser_object::CRefGeneTrackingAccession>(NULL);
     }
-    bool rval = false;
     CConstRef<CUser_field> field = GetFieldRef(kRefGeneTrackingIdenticalTo);
     if (field && field->IsSetData() && field->GetData().IsFields() && !field->GetData().GetFields().empty()) {
         return CRefGeneTrackingAccession::MakeAccessionFromUserField(*(field->GetData().GetFields().front()));
