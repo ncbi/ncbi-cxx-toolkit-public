@@ -3,13 +3,10 @@
 APP = pubseq_gateway
 SRC = AccVerCacheD AccVerCacheDB AccVerCacheStorage
 
-LIBS = $(CASSANDRA_LIBS) $(ORIG_LIBS)
-CPPFLAGS = $(CASSANDRA_INCLUDE) $(ORIG_CPPFLAGS)
-LIB = psg_diag
+LIBS = $(CASSANDRA_STATIC_LIBS) $(LIBUV_STATIC_LIBS) $(H2O_STATIC_LIBS) $(LMDB_LIBS) $(NGHTTP2_STATIC_LIBS) $(ORIG_LIBS)
+CPPFLAGS = $(CASSANDRA_INCLUDE) $(H2O_INCLUDE) $(LMDB_INCLUDE) $(ORIG_CPPFLAGS)
+LIB = psg_diag psg_rpc psg_cassandra xconnect xncbi
 
-REQUIRES = CASSANDRA MT Linux
+REQUIRES = CASSANDRA MT Linux H2O LMDB LIBUV NGHTTP2
 
 WATCHERS = satskyse dmitrie1
-
-#LIB = DdRpc h2o ssl crypto idcassandra xncbi connect IdLogUtil
-#LIBS = $(LMDB_LIBS) -L./external/lib/linux/$(MODE) -L./external/lib64 -L./external/lib -lcassandra_static  -luv-static $(DL_LIBS)
