@@ -1095,6 +1095,7 @@ LIBUV_STATIC_LIBS
 LIBSSH2_STATIC_LIBS
 CASSANDRA_STATIC_LIBS
 NGHTTP2_STATIC_LIBS
+H2O_STATIC_LIBS
 LIBXLSXWRITER_STATIC_LIBS
 GRPC_UNSECURE_LIBS
 GRPC_REFLECTION_LIBS
@@ -50608,18 +50609,18 @@ if test "$with_h2o" != "no"; then
     H2O_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       H2O_LIBS="$H2O_LIBPATH -lh2o-evloop $OPENSSL_LIBS $Z_LIBS"
+       H2O_LIBS="$H2O_LIBPATH -lh2o $LIBUV_LIBS $OPENSSL_LIBS $Z_LIBS"
     else
        H2O_INCLUDE=""
-       H2O_LIBS="-lh2o-evloop $OPENSSL_LIBS $Z_LIBS"
+       H2O_LIBS="-lh2o $LIBUV_LIBS $OPENSSL_LIBS $Z_LIBS"
        in_path=
     fi
-    { echo "$as_me:$LINENO: checking for libh2o-evloop$in_path" >&5
-echo $ECHO_N "checking for libh2o-evloop$in_path... $ECHO_C" >&6; }
+    { echo "$as_me:$LINENO: checking for libh2o$in_path" >&5
+echo $ECHO_N "checking for libh2o$in_path... $ECHO_C" >&6; }
 if test "${ncbi_cv_lib_h2o+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  CPPFLAGS=" $H2O_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS="$LIBUV_INCLUDE $H2O_INCLUDE $orig_CPPFLAGS"
        LIBS="$H2O_LIBS  $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -50697,7 +50698,7 @@ echo "$as_me: error: --with-h2o explicitly specified, but no usable version foun
     H2O_LIBS=
  else
               WithPackages="$WithPackages${WithPackagesSep}H2O"; WithPackagesSep=" "
-    H2O_INCLUDE=" $H2O_INCLUDE"
+    H2O_INCLUDE="$LIBUV_INCLUDE $H2O_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBH2O 1
@@ -50707,7 +50708,12 @@ _ACEOF
 
 
 
-
+if test "$with_h2o" != no -a \
+     -f "$H2O_PATH/lib/libh2o-static.a"; then
+    H2O_STATIC_LIBS="-L$H2O_PATH/lib -lh2o-static $LIBUV_STATIC_LIBS $OPENSSL_LIBS $Z_LIBS"
+else
+    H2O_STATIC_LIBS=$H2O_LIBS
+fi
 
 if test "$with_libxlsxwriter" != "no"; then
     case "$with_libxlsxwriter" in
@@ -51745,6 +51751,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 
@@ -53416,6 +53423,7 @@ for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
 CASSANDRA_STATIC_LIBS!$CASSANDRA_STATIC_LIBS$ac_delim
 NGHTTP2_STATIC_LIBS!$NGHTTP2_STATIC_LIBS$ac_delim
+H2O_STATIC_LIBS!$H2O_STATIC_LIBS$ac_delim
 LIBXLSXWRITER_STATIC_LIBS!$LIBXLSXWRITER_STATIC_LIBS$ac_delim
 GRPC_UNSECURE_LIBS!$GRPC_UNSECURE_LIBS$ac_delim
 GRPC_REFLECTION_LIBS!$GRPC_REFLECTION_LIBS$ac_delim
@@ -53466,7 +53474,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 50; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 51; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
