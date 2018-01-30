@@ -1,8 +1,8 @@
 # $Id$
 
-SRC = ResolverClient
+SRC = psg_client
 
-LIB = psg_api
+LIB = psg_client
 
 LIBS = $(PSG_RPC_LIBS)
 CPPFLAGS= $(ORIG_CPPFLAGS) $(PSG_RPC_INCLUDE)

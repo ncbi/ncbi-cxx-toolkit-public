@@ -29,7 +29,7 @@
 #include <objtools/pubseq_gateway/rpc/UtilException.hpp>
 #include <objtools/pubseq_gateway/rpc/DdRpcDataPacker.hpp>
 #include <objtools/pubseq_gateway/rpc/DdRpcClient.hpp>
-#include <objtools/pubseq_gateway/ResolverClient.hpp>
+#include <objtools/pubseq_gateway/client/psg_client.hpp>
 
 #if 0
 #include "AccVerCacheDB.hpp"

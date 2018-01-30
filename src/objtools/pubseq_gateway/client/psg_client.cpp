@@ -12,7 +12,7 @@
 #include <objtools/pubseq_gateway/rpc/DdRpcClient.hpp>
 #include <objtools/pubseq_gateway/rpc/DdRpcDataPacker.hpp>
 #include <objtools/pubseq_gateway/rpc/HttpClientTransportP.hpp>
-#include <objtools/pubseq_gateway/ResolverClient.hpp>
+#include <objtools/pubseq_gateway/client/psg_client.hpp>
 
 
 BEGIN_NCBI_SCOPE
