@@ -2481,7 +2481,7 @@ static const string kLongerFound = "LongSeq";
 static const size_t MIN_SEQUENCE_LEN = 20000;
 
 
-DISCREPANCY_CASE(SEQUENCES_ARE_SHORT, CSeq_inst, eDisc | eSubmitter, "Short sequences test")
+DISCREPANCY_CASE(SEQUENCES_ARE_SHORT, CSeq_inst, eDisc | eSmart, "Short sequences test")
 {
     if (obj.GetLength() > MIN_SEQUENCE_LEN) {
         m_Objs[kLongerFound].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()), false);
