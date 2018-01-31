@@ -367,6 +367,9 @@
 /* Define to 1 if libgsoapssl++ is available. */
 #undef HAVE_LIBGSOAP
 
+/* Define to 1 if libh2o is available. */
+#undef HAVE_LIBH2O
+
 /* Define to 1 if libhdf5_cpp is available. */
 #undef HAVE_LIBHDF5
 
@@ -413,6 +416,9 @@
 
 /* Define to 1 if libhogweed is available. */
 #undef HAVE_LIBNETTLE
+
+/* Define to 1 if libnghttp2 is available. */
+#undef HAVE_LIBNGHTTP2
 
 /* Define to 1 if liboechem is available. */
 #undef HAVE_LIBOECHEM
