@@ -6871,7 +6871,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UNAM:CNPGG\ts\tUniversidad Nacional Autonoma de Mexico, Coleccion Nacional del Phylum Porifera Gerardo Green",
 "UNAN\ts\tUniversidad Nacional Autonoma de Nicaragua\t\t",
 "UNB\ts\tConnell Memorial Herbarium\t\t",
-"UNB<BRA>\ts\tUniversidade de Brasilia, Departamento de Zoologia,\t\t",
+"UNB<BRA>\ts\tUniversidade de Brasilia, Departamento de Zoologia\t\t",
 "UNC-B\ts\tUniversity of Northern Colorado\t\t",
 "UNCA\th\tUniversity of North Carolina at Asheville\t\t",
 "UNCB\ts\tUniversidad Nacional de Colombia, Insituto de Ciencias Naturales de la Universidad Nacional\t\t",

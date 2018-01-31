@@ -6838,7 +6838,7 @@ UNAM:CNPE	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Peces
 UNAM:CNPGG	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional del Phylum Porifera Gerardo Green
 UNAN	s	Universidad Nacional Autonoma de Nicaragua		
 UNB	s	Connell Memorial Herbarium		
-UNB<BRA>	s	Universidade de Brasilia, Departamento de Zoologia,		
+UNB<BRA>	s	Universidade de Brasilia, Departamento de Zoologia		
 UNC-B	s	University of Northern Colorado		
 UNCA	h	University of North Carolina at Asheville		
 UNCB	s	Universidad Nacional de Colombia, Insituto de Ciencias Naturales de la Universidad Nacional		
