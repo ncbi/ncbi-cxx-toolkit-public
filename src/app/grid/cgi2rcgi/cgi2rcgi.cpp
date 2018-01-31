@@ -1220,6 +1220,7 @@ void CCgi2RCgiApp::OnJobDone(CGridCgiContext& ctx)
         // No need to amend anything
         if (no_jquery && !m_AddJobIdToHeader) {
             NcbiStreamCopy(out, is);
+            ctx.NeedRenderPage(false);
             return;
         }
 
