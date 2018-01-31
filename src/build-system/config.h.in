@@ -47,6 +47,9 @@
 /* Define to 1 if the Berkeley `db_cxx' library is available. */
 #undef HAVE_BERKELEY_DB_CXX
 
+/* Define to 1 if the `Boost.Chrono' library is available. */
+#undef HAVE_BOOST_CHRONO
+
 /* Define to 1 if the `Boost.Filesystem' library is available. */
 #undef HAVE_BOOST_FILESYSTEM
 

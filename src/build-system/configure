@@ -997,6 +997,8 @@ ODBC_LIBS
 BOOST_INCLUDE
 BOOST_LIBPATH
 BOOST_TAG
+BOOST_CHRONO_LIBS
+BOOST_CHRONO_STATIC_LIBS
 BOOST_FILESYSTEM_LIBS
 BOOST_FILESYSTEM_STATIC_LIBS
 BOOST_IOSTREAMS_LIBS
@@ -37182,6 +37184,85 @@ fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_lib_boost_system" >&5
 echo "${ECHO_T}$ncbi_cv_lib_boost_system" >&6; }
 
+   boost_chrono_lib=-lboost_chrono${BOOST_TAG}
+   if test -f "$BOOST_LIBPATH_/libboost_chrono${BOOST_TAG}-static.a"; then
+       boost_chrono_static_lib=-lboost_chrono${BOOST_TAG}-static
+   else
+       boost_chrono_static_lib=$boost_chrono_lib
+   fi
+   BOOST_CHRONO_LIBS="$boost_chrono_lib $BOOST_CHRONO_LIBS"
+   BOOST_CHRONO_STATIC_LIBS="$boost_chrono_static_lib $BOOST_SYSTEM_STATIC_LIBS"
+
+   { echo "$as_me:$LINENO: checking for Boost.Chrono$in_path" >&5
+echo $ECHO_N "checking for Boost.Chrono$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_boost_chrono+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
+      LIBS="$BOOST_LIBPATH $BOOST_CHRONO_LIBS $RT_LIBS $orig_LIBS"
+      cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <boost/chrono.hpp>
+int
+main ()
+{
+boost::chrono::system_clock::now();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_boost_chrono=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_boost_chrono=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_boost_chrono" >&5
+echo "${ECHO_T}$ncbi_cv_lib_boost_chrono" >&6; }
+
    boost_fs_lib=-lboost_filesystem${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_filesystem${BOOST_TAG}-static.a"; then
        boost_fs_static_lib=-lboost_filesystem${BOOST_TAG}-static
@@ -37608,6 +37689,7 @@ else
    BOOST_INCLUDE=
    BOOST_LIBPATH=
    BOOST_TAG=
+   ncbi_cv_lib_boost_chrono=no
    ncbi_cv_lib_boost_filesystem=no
    ncbi_cv_lib_boost_iostreams=no
    ncbi_cv_lib_boost_program_options=no
@@ -37616,6 +37698,20 @@ else
    ncbi_cv_lib_boost_system=no
    ncbi_cv_lib_boost_test=no
    ncbi_cv_lib_boost_thread=no
+fi
+
+if test "$ncbi_cv_lib_boost_chrono" != "no"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_BOOST_CHRONO 1
+_ACEOF
+
+             WithPackages="$WithPackages${WithPackagesSep}Boost.Chrono"; WithPackagesSep=" "
+else
+   boost_chrono_lib=
+   boost_chrono_static_lib=
+   BOOST_CHRONO_LIBS=
+   BOOST_CHRONO_STATIC_LIBS=
 fi
 
 if test "$ncbi_cv_lib_boost_filesystem" != "no"; then
@@ -50138,10 +50234,12 @@ if test "$with_cassandra" != "no"; then
     CASSANDRA_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       CASSANDRA_LIBS="$CASSANDRA_LIBPATH -lcassandra $LIBSSH2_LIBS $LIBUV_LIBS"
+       CASSANDRA_LIBS="$CASSANDRA_LIBPATH -lcassandra $LIBSSH2_LIBS $LIBUV_LIBS $BOOST_LIBPATH $BOOST_CHRONO_LIBS
+    $BOOST_THREAD_LIBS $BOOST_TEST_UTF_LIBS"
     else
        CASSANDRA_INCLUDE=""
-       CASSANDRA_LIBS="-lcassandra $LIBSSH2_LIBS $LIBUV_LIBS"
+       CASSANDRA_LIBS="-lcassandra $LIBSSH2_LIBS $LIBUV_LIBS $BOOST_LIBPATH $BOOST_CHRONO_LIBS
+    $BOOST_THREAD_LIBS $BOOST_TEST_UTF_LIBS"
        in_path=
     fi
     { echo "$as_me:$LINENO: checking for libcassandra$in_path" >&5
@@ -50239,7 +50337,7 @@ _ACEOF
 
 if test "$with_cassandra" != no -a \
      -f "$CASSANDRA_PATH/lib/libcassandra_static.a"; then
-    CASSANDRA_STATIC_LIBS="-L$CASSANDRA_PATH/lib -lcassandra_static $LIBSSH2_STATIC_LIBS $LIBUV_STATIC_LIBS"
+    CASSANDRA_STATIC_LIBS="-L$CASSANDRA_PATH/lib -lcassandra_static $LIBSSH2_STATIC_LIBS $LIBUV_STATIC_LIBS $BOOST_LIBPATH $BOOST_CHRONO_STATIC_LIBS $BOOST_THREAD_STATIC_LIBS $BOOST_TEST_UTF_STATIC_LIBS"
 else
     CASSANDRA_STATIC_LIBS=$CASSANDRA_LIBS
 fi
@@ -51658,7 +51756,7 @@ for x in ChaosMonkey Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray W
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O LIBXLSXWRITER GRPC MSGSL; do
+  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O LIBXLSXWRITER GRPC MSGSL; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -51751,6 +51849,8 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
+
 
 
 
@@ -53284,6 +53384,8 @@ ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
 BOOST_TAG!$BOOST_TAG$ac_delim
+BOOST_CHRONO_LIBS!$BOOST_CHRONO_LIBS$ac_delim
+BOOST_CHRONO_STATIC_LIBS!$BOOST_CHRONO_STATIC_LIBS$ac_delim
 BOOST_FILESYSTEM_LIBS!$BOOST_FILESYSTEM_LIBS$ac_delim
 BOOST_FILESYSTEM_STATIC_LIBS!$BOOST_FILESYSTEM_STATIC_LIBS$ac_delim
 BOOST_IOSTREAMS_LIBS!$BOOST_IOSTREAMS_LIBS$ac_delim
@@ -53378,8 +53480,6 @@ MONGODB_STATIC_LIBS!$MONGODB_STATIC_LIBS$ac_delim
 MONGODB3_STATIC_LIBS!$MONGODB3_STATIC_LIBS$ac_delim
 LMDB_LIB!$LMDB_LIB$ac_delim
 LMDB_STATIC_LIBS!$LMDB_STATIC_LIBS$ac_delim
-LIBUV_STATIC_LIBS!$LIBUV_STATIC_LIBS$ac_delim
-LIBSSH2_STATIC_LIBS!$LIBSSH2_STATIC_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -53421,6 +53521,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+LIBUV_STATIC_LIBS!$LIBUV_STATIC_LIBS$ac_delim
+LIBSSH2_STATIC_LIBS!$LIBSSH2_STATIC_LIBS$ac_delim
 CASSANDRA_STATIC_LIBS!$CASSANDRA_STATIC_LIBS$ac_delim
 NGHTTP2_STATIC_LIBS!$NGHTTP2_STATIC_LIBS$ac_delim
 H2O_STATIC_LIBS!$H2O_STATIC_LIBS$ac_delim
@@ -53474,7 +53576,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 51; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 53; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

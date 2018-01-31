@@ -5695,6 +5695,24 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
            BOOST_SYSTEM_LIBS=
            BOOST_SYSTEM_STATIC_LIBS=])])
 
+   boost_chrono_lib=-lboost_chrono${BOOST_TAG}
+   if test -f "$BOOST_LIBPATH_/libboost_chrono${BOOST_TAG}-static.a"; then
+       boost_chrono_static_lib=-lboost_chrono${BOOST_TAG}-static
+   else
+       boost_chrono_static_lib=$boost_chrono_lib
+   fi
+   BOOST_CHRONO_LIBS="$boost_chrono_lib $BOOST_CHRONO_LIBS"
+   BOOST_CHRONO_STATIC_LIBS="$boost_chrono_static_lib $BOOST_SYSTEM_STATIC_LIBS"
+
+   AC_CACHE_CHECK([for Boost.Chrono$in_path], ncbi_cv_lib_boost_chrono,
+      CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
+      LIBS="$BOOST_LIBPATH $BOOST_CHRONO_LIBS $RT_LIBS $orig_LIBS"
+      [AC_LINK_IFELSE(
+          [AC_LANG_PROGRAM([[#include <boost/chrono.hpp>]],
+              [[boost::chrono::system_clock::now();]])],
+          [ncbi_cv_lib_boost_chrono=yes],
+          [ncbi_cv_lib_boost_chrono=no])])
+
    boost_fs_lib=-lboost_filesystem${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_filesystem${BOOST_TAG}-static.a"; then
        boost_fs_static_lib=-lboost_filesystem${BOOST_TAG}-static
@@ -5825,6 +5843,7 @@ else
    BOOST_INCLUDE=
    BOOST_LIBPATH=
    BOOST_TAG=
+   ncbi_cv_lib_boost_chrono=no
    ncbi_cv_lib_boost_filesystem=no
    ncbi_cv_lib_boost_iostreams=no
    ncbi_cv_lib_boost_program_options=no
@@ -5833,6 +5852,17 @@ else
    ncbi_cv_lib_boost_system=no
    ncbi_cv_lib_boost_test=no
    ncbi_cv_lib_boost_thread=no
+fi
+
+if test "$ncbi_cv_lib_boost_chrono" != "no"; then
+   AC_DEFINE(HAVE_BOOST_CHRONO, 1,
+             [Define to 1 if the `Boost.Chrono' library is available.])
+   NCBI_PACKAGE(Boost.Chrono)
+else
+   boost_chrono_lib=
+   boost_chrono_static_lib=
+   BOOST_CHRONO_LIBS=
+   BOOST_CHRONO_STATIC_LIBS=
 fi
 
 if test "$ncbi_cv_lib_boost_filesystem" != "no"; then
@@ -7833,10 +7863,11 @@ fi
 NCBI_CHECK_THIRD_PARTY_LIB(cassandra,
    [AC_LANG_PROGRAM([[#include <cassandra.h>]],
       [[CassCluster* c = cass_cluster_new();]])],
-   [$LIBSSH2_LIBS $LIBUV_LIBS])
+   [$LIBSSH2_LIBS $LIBUV_LIBS $BOOST_LIBPATH $BOOST_CHRONO_LIBS
+    $BOOST_THREAD_LIBS $BOOST_TEST_UTF_LIBS])
 if test "$with_cassandra" != no -a \
      -f "$CASSANDRA_PATH/lib/libcassandra_static.a"; then
-    CASSANDRA_STATIC_LIBS="-L$CASSANDRA_PATH/lib -lcassandra_static $LIBSSH2_STATIC_LIBS $LIBUV_STATIC_LIBS"
+    CASSANDRA_STATIC_LIBS="-L$CASSANDRA_PATH/lib -lcassandra_static $LIBSSH2_STATIC_LIBS $LIBUV_STATIC_LIBS $BOOST_LIBPATH $BOOST_CHRONO_STATIC_LIBS $BOOST_THREAD_STATIC_LIBS $BOOST_TEST_UTF_STATIC_LIBS"
 else
     CASSANDRA_STATIC_LIBS=$CASSANDRA_LIBS
 fi
@@ -8586,6 +8617,8 @@ AC_SUBST(ODBC_LIBS)
 AC_SUBST(BOOST_INCLUDE)
 AC_SUBST(BOOST_LIBPATH)
 AC_SUBST(BOOST_TAG)
+AC_SUBST(BOOST_CHRONO_LIBS)
+AC_SUBST(BOOST_CHRONO_STATIC_LIBS)
 AC_SUBST(BOOST_FILESYSTEM_LIBS)
 AC_SUBST(BOOST_FILESYSTEM_STATIC_LIBS)
 AC_SUBST(BOOST_IOSTREAMS_LIBS)
