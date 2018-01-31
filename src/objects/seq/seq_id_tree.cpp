@@ -1588,22 +1588,111 @@ bool CSeq_id_Local_Tree::Empty(void) const
 }
 
 
-CSeq_id_Info* CSeq_id_Local_Tree::x_FindInfo(const CObject_id& oid) const
+static inline bool sx_AllDigits(const string& s)
 {
-    if ( oid.IsStr() ) {
-        TByStr::const_iterator it = m_ByStr.find(oid.GetStr());
-        if (it != m_ByStr.end()) {
-            return it->second;
+    ITERATE ( string, i, s ) {
+        if ( !isdigit(Uint1(*i)) ) {
+            return false;
         }
     }
-    else if ( oid.IsId() ) {
-        TById::const_iterator it = m_ById.find(oid.GetId());
-        if (it != m_ById.end()) {
-            return it->second;
+    return true;
+}
+
+
+static bool sx_ParseLocalStrId(const string& str, CObject_id::TId& id)
+{
+    CObject_id::TId value = NStr::StringToNumeric<CObject_id::TId>(str, NStr::fConvErr_NoThrow);
+    if ( !value ) {
+        if ( errno ) {
+            // not convertible to integer
+            return false;
         }
+        // converted to 0
+        if ( str.size() != 1 ) {
+            // leading zeroes are not allowed
+            return false;
+        }
+        // valid zero as a string
+        id = 0;
+        return true;
+    }
+    else if ( value > 0 ) {
+        // non-zero positive value
+        if ( str[0] == '0' || str[0] == '+' ) {
+            // redundant '+' or leading zeroes are not allowed
+            return false;
+        }
+        // valid positive as a string
+        id = value;
+        return true;
+    }
+    else {
+        // non-zero negative value
+        if ( str[0] != '-' || str[1] == '0' ) {
+            // leading zeroes are not allowed
+            return false;
+        }
+        // valid negative as a string
+        id = value;
+        return true;
+    }
+}
+
+
+CSeq_id_Local_Info::CSeq_id_Local_Info(const CObject_id& oid, CSeq_id_Mapper* mapper)
+    : CSeq_id_Info(CSeq_id::e_Local, mapper),
+      m_IsId(oid.IsId())
+{
+    CRef<CSeq_id> seq_id(new CSeq_id);
+    CObject_id& oid2 = seq_id->SetLocal();
+    if ( IsId() ) {
+        m_HasMatchingId = true;
+        m_MatchingId = oid.GetId();
+        oid2.SetId(oid.GetId());
+    }
+    else {
+        m_HasMatchingId = sx_ParseLocalStrId(oid.GetStr(), m_MatchingId);
+        oid2.SetStr(oid.GetStr());
+    }
+    m_Seq_id = move(seq_id);
+}
+
+
+CSeq_id_Local_Info::~CSeq_id_Local_Info()
+{
+}
+
+
+CSeq_id_Info* CSeq_id_Local_Tree::x_FindStrInfo(const string& str) const
+{
+    TByStr::const_iterator it = m_ByStr.find(str);
+    if ( it != m_ByStr.end() ) {
+        return it->second;
     }
     // Not found
     return 0;
+}
+
+
+CSeq_id_Info* CSeq_id_Local_Tree::x_FindIdInfo(CObject_id::TId id) const
+{
+    TById::const_iterator it = m_ById.find(id);
+    if ( it != m_ById.end() ) {
+        return it->second;
+    }
+    // Not found
+    return 0;
+}
+
+
+CSeq_id_Info* CSeq_id_Local_Tree::x_FindInfo(const CObject_id& oid) const
+{
+    if ( oid.IsStr() ) {
+        return x_FindStrInfo(oid.GetStr());
+    }
+    else {
+        return x_FindIdInfo(oid.GetId());
+    }
 }
 
 
@@ -1620,11 +1709,17 @@ CSeq_id_Handle CSeq_id_Local_Tree::FindOrCreate(const CSeq_id& id)
 {
     const CObject_id& oid = id.GetLocal();
     TWriteLockGuard guard(m_TreeLock);
-    CSeq_id_Info*& info = oid.IsStr()? m_ByStr[oid.GetStr()]: m_ById[oid.GetId()];
+    CSeq_id_Local_Info*& info = oid.IsStr()? m_ByStr[oid.GetStr()]: m_ById[oid.GetId()];
     if ( !info ) {
-        info = CreateInfo(id);
+        info = new CSeq_id_Local_Info(oid, m_Mapper);
     }
     return CSeq_id_Handle(info);
+}
+
+
+void CSeq_id_Local_Tree::DropInfo(const CSeq_id_Info* info)
+{
+    CSeq_id_Which_Tree::DropInfo(info);
 }
 
 
@@ -1643,26 +1738,52 @@ void CSeq_id_Local_Tree::x_Unindex(const CSeq_id_Info* info)
 }
 
 
-void CSeq_id_Local_Tree::FindMatchStr(const string& sid,
+bool CSeq_id_Local_Tree::HaveMatch(const CSeq_id_Handle& id) const
+{
+    // match id <-> str(number)
+    const CSeq_id_Local_Info* sinfo =
+        static_cast<const CSeq_id_Local_Info*>(id.x_GetInfo());
+    return sinfo->IsId() || sinfo->HasMatchingId();
+}
+
+
+void CSeq_id_Local_Tree::FindMatch(const CSeq_id_Handle& id,
+                                   TSeq_id_MatchList& id_list) const
+{
+    id_list.insert(id);
+    // match id <-> str(number)
+    const CSeq_id_Local_Info* sinfo =
+        static_cast<const CSeq_id_Local_Info*>(id.x_GetInfo());
+    TReadLockGuard guard(m_TreeLock);
+    if ( sinfo->IsId() ) {
+        // id -> str
+        if ( CSeq_id_Info* id2 = x_FindStrInfo(NStr::NumericToString(sinfo->GetMatchingId())) ) {
+            id_list.insert(CSeq_id_Handle(id2));
+        }
+    }
+    else if ( sinfo->HasMatchingId() ) {
+        // str -> id
+        if ( CSeq_id_Info* id2 = x_FindIdInfo(sinfo->GetMatchingId()) ) {
+            id_list.insert(CSeq_id_Handle(id2));
+        }
+    }
+}
+
+
+void CSeq_id_Local_Tree::FindMatchStr(const string& str,
                                       TSeq_id_MatchList& id_list) const
 {
+    CObject_id::TId id;
+    bool has_matching_id = sx_ParseLocalStrId(str, id);
     TReadLockGuard guard(m_TreeLock);
     // In any case search in strings
-    TByStr::const_iterator str_it = m_ByStr.find(sid);
-    if (str_it != m_ByStr.end()) {
-        id_list.insert(CSeq_id_Handle(str_it->second));
+    if ( CSeq_id_Info* id2 = x_FindStrInfo(str) ) {
+        id_list.insert(CSeq_id_Handle(id2));
     }
-    else {
-        try {
-            TPacked value = NStr::StringToNumeric<TPacked>(sid);
-            TById::const_iterator int_it = m_ById.find(value);
-            if (int_it != m_ById.end()) {
-                id_list.insert(CSeq_id_Handle(int_it->second));
-            }
-        }
-        catch (const CStringException& /*ignored*/) {
-            // Not an integer value
-            return;
+    // search possible int match
+    if ( has_matching_id ) {
+        if ( CSeq_id_Info* id2 = x_FindIdInfo(id) ) {
+            id_list.insert(CSeq_id_Handle(id2));
         }
     }
 }
@@ -2115,17 +2236,6 @@ void CSeq_id_General_Tree::x_Unindex(const CSeq_id_Info* info)
     }
     if (tm.m_ByStr.empty()  &&  tm.m_ById.empty())
         m_DbMap.erase(db_it);
-}
-
-
-static inline bool sx_AllDigits(const string& s)
-{
-    ITERATE ( string, i, s ) {
-        if ( !isdigit(Uint1(*i)) ) {
-            return false;
-        }
-    }
-    return true;
 }
 
 

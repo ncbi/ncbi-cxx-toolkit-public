@@ -1762,3 +1762,183 @@ BOOST_AUTO_TEST_CASE(s_TempTest)
         acc += "01";
     }
 }
+
+
+BOOST_AUTO_TEST_CASE(MatchStrId)
+{
+    LOG_POST("Matching local int<>str ids");
+    {{
+        CRef<CSeq_id> id1(new CSeq_id);
+        CRef<CSeq_id> id2(new CSeq_id);
+        id1->SetGeneral().SetDb("DB");
+        id2->SetGeneral().SetDb("DB");
+        CObject_id& oid1 = id1->SetGeneral().SetTag();
+        CObject_id& oid2 = id2->SetGeneral().SetTag();
+        oid1.SetId(12);
+        oid2.SetStr("12");
+        BOOST_CHECK(id1->Match(*id2));
+        BOOST_CHECK(id2->Match(*id1));
+        BOOST_CHECK(CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+        oid2.SetId(12);
+        BOOST_CHECK(id1->Match(*id2));
+        BOOST_CHECK(id2->Match(*id1));
+        BOOST_CHECK(CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+        oid2.SetId(13);
+        BOOST_CHECK(!id1->Match(*id2));
+        BOOST_CHECK(!id2->Match(*id1));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+        oid2.SetStr("012");
+        BOOST_CHECK(!id1->Match(*id2));
+        BOOST_CHECK(!id2->Match(*id1));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+        oid2.SetStr("13");
+        BOOST_CHECK(!id1->Match(*id2));
+        BOOST_CHECK(!id2->Match(*id1));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+        oid1.SetStr("13");
+        BOOST_CHECK(id1->Match(*id2));
+        BOOST_CHECK(id2->Match(*id1));
+        BOOST_CHECK(CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+        oid1.SetStr("12");
+        BOOST_CHECK(!id1->Match(*id2));
+        BOOST_CHECK(!id2->Match(*id1));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+    }}
+    {{
+        CRef<CSeq_id> id1(new CSeq_id);
+        CRef<CSeq_id> id2(new CSeq_id);
+        id1->SetGeneral().SetDb("DB1");
+        id2->SetGeneral().SetDb("DB2");
+        CObject_id& oid1 = id1->SetGeneral().SetTag();
+        CObject_id& oid2 = id2->SetGeneral().SetTag();
+        oid1.SetId(12);
+        oid2.SetStr("12");
+        BOOST_CHECK(!id1->Match(*id2));
+        BOOST_CHECK(!id2->Match(*id1));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+        oid2.SetId(12);
+        BOOST_CHECK(!id1->Match(*id2));
+        BOOST_CHECK(!id2->Match(*id1));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+        oid2.SetId(13);
+        BOOST_CHECK(!id1->Match(*id2));
+        BOOST_CHECK(!id2->Match(*id1));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+        oid2.SetStr("012");
+        BOOST_CHECK(!id1->Match(*id2));
+        BOOST_CHECK(!id2->Match(*id1));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+        oid2.SetStr("13");
+        BOOST_CHECK(!id1->Match(*id2));
+        BOOST_CHECK(!id2->Match(*id1));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+        oid1.SetStr("13");
+        BOOST_CHECK(!id1->Match(*id2));
+        BOOST_CHECK(!id2->Match(*id1));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+        oid1.SetStr("12");
+        BOOST_CHECK(!id1->Match(*id2));
+        BOOST_CHECK(!id2->Match(*id1));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+    }}
+    {{
+        CRef<CSeq_id> id1(new CSeq_id);
+        CRef<CSeq_id> id2(new CSeq_id);
+        CObject_id& oid1 = id1->SetLocal();
+        CObject_id& oid2 = id2->SetLocal();
+        oid1.SetId(12);
+        oid2.SetStr("12");
+        BOOST_CHECK(id1->Match(*id2));
+        BOOST_CHECK(id2->Match(*id1));
+        BOOST_CHECK(CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+        oid2.SetId(12);
+        BOOST_CHECK(id1->Match(*id2));
+        BOOST_CHECK(id2->Match(*id1));
+        BOOST_CHECK(CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+        oid2.SetId(13);
+        BOOST_CHECK(!id1->Match(*id2));
+        BOOST_CHECK(!id2->Match(*id1));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+        oid2.SetStr("012");
+        BOOST_CHECK(!id1->Match(*id2));
+        BOOST_CHECK(!id2->Match(*id1));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+        oid2.SetStr("13");
+        BOOST_CHECK(!id1->Match(*id2));
+        BOOST_CHECK(!id2->Match(*id1));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+        oid1.SetStr("13");
+        BOOST_CHECK(id1->Match(*id2));
+        BOOST_CHECK(id2->Match(*id1));
+        BOOST_CHECK(CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+        oid1.SetStr("12");
+        BOOST_CHECK(!id1->Match(*id2));
+        BOOST_CHECK(!id2->Match(*id1));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+        BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+    }}
+    const Int8 start_ids[] = { kMin_Int, 0, kMax_Int };
+    for ( auto v0 : start_ids ) {
+        for ( int d1 = -2; d1 <= 2; ++d1 ) {
+            Int8 v1 = v0+d1;
+            CRef<CSeq_id> id1(new CSeq_id);
+            CRef<CSeq_id> id2(new CSeq_id);
+            CObject_id& oid1 = id1->SetLocal();
+            CObject_id& oid2 = id2->SetLocal();
+            oid1.SetStr(NStr::NumericToString(v1));
+            BOOST_REQUIRE_EQUAL(oid1.GetId8(), v1);
+            for ( int d2 = -2; d2 <= 2; ++d2 ) {
+                Int8 v2 = v1+d2;
+                //LOG_POST("Matching "<<v1<<" to "<<v2);
+                oid2.SetId8(v2);
+                BOOST_REQUIRE_EQUAL(oid2.GetId8(), v2);
+                if ( v1 == v2 ) {
+                    BOOST_CHECK(id1->Match(*id2));
+                    BOOST_CHECK(id2->Match(*id1));
+                    BOOST_CHECK(CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+                    BOOST_CHECK(CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+                }
+                else {
+                    BOOST_CHECK(!id1->Match(*id2));
+                    BOOST_CHECK(!id2->Match(*id1));
+                    BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+                    BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+                }
+                oid2.SetStr(NStr::NumericToString(v2));
+                BOOST_REQUIRE_EQUAL(oid2.GetId8(), v2);
+                if ( v1 == v2 ) {
+                    BOOST_CHECK(id1->Match(*id2));
+                    BOOST_CHECK(id2->Match(*id1));
+                    BOOST_CHECK(CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+                    BOOST_CHECK(CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+                }
+                else {
+                    BOOST_CHECK(!id1->Match(*id2));
+                    BOOST_CHECK(!id2->Match(*id1));
+                    BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id1).MatchesTo(CSeq_id_Handle::GetHandle(*id2)));
+                    BOOST_CHECK(!CSeq_id_Handle::GetHandle(*id2).MatchesTo(CSeq_id_Handle::GetHandle(*id1)));
+                }
+            }
+        }
+    }
+}

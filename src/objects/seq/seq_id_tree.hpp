@@ -656,6 +656,28 @@ public:
 // e_Local tree
 
 
+class CSeq_id_Local_Info : public CSeq_id_Info {
+public:
+    CSeq_id_Local_Info(const CObject_id& oid, CSeq_id_Mapper* mapper);
+    ~CSeq_id_Local_Info(void);
+
+    bool IsId() const {
+        return m_IsId;
+    }
+    bool HasMatchingId() const {
+        return m_HasMatchingId;
+    }
+    CObject_id::TId GetMatchingId() const {
+        return m_MatchingId;
+    }
+    
+private:
+    bool m_IsId;
+    bool m_HasMatchingId;
+    CObject_id::TId m_MatchingId;
+};
+
+
 class CSeq_id_Local_Tree : public CSeq_id_Which_Tree
 {
 public:
@@ -667,6 +689,12 @@ public:
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
+    virtual void DropInfo(const CSeq_id_Info* info);
+    
+    // Get the list of matching seq-id (int id = str id).
+    virtual bool HaveMatch(const CSeq_id_Handle& id) const;
+    virtual void FindMatch(const CSeq_id_Handle& id,
+                           TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(const string& sid,
                               TSeq_id_MatchList& id_list) const;
 
@@ -677,9 +705,11 @@ public:
 private:
     virtual void x_Unindex(const CSeq_id_Info* info);
     CSeq_id_Info* x_FindInfo(const CObject_id& oid) const;
-
-    typedef unordered_map<string, CSeq_id_Info*, PHashNocase, PEqualNocase> TByStr;
-    typedef map<TPacked, CSeq_id_Info*>         TById;
+    CSeq_id_Info* x_FindStrInfo(const string& str) const;
+    CSeq_id_Info* x_FindIdInfo(CObject_id::TId id) const;
+    
+    typedef unordered_map<string, CSeq_id_Local_Info*, PHashNocase, PEqualNocase> TByStr;
+    typedef map<CObject_id::TId, CSeq_id_Local_Info*>         TById;
 
     TByStr m_ByStr;
     TById  m_ById;
@@ -706,7 +736,6 @@ public:
     }
     void Restore(CDbtag& id, TPacked param) const;
 
-    static TKey Parse(const CDbtag& id);
     static TPacked Pack(const TKey& key, const CDbtag& id);
     
     virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed) const;
@@ -719,7 +748,6 @@ private:
 class CSeq_id_General_Str_Info : public CSeq_id_Info {
 public:
     struct TKey {
-        // all upper case
         TPacked m_Key;
         string m_Db;
         string m_StrPrefix;
