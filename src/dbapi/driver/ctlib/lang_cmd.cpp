@@ -1020,6 +1020,13 @@ CTempString CTL_LangCmd::x_GetDynamicID(void)
     if (GetBindParamsImpl().NofParams() == 0  ||  query.find('?') == NPOS) {
         return kEmptyStr;
     } else if (query.find('@') != NPOS) {
+        if (count(query.begin(), query.end(), '?')
+            < GetBindParamsImpl().NofParams()) {
+            ERR_POST_X(7, Info << "Query " << NStr::CEncode(query)
+                       << " contains both ? and @.  Treating @ as the"
+                       " parameter indicator because there are more"
+                       " parameters than question marks.");
+        }
         set<CTempString> used, found, not_found;
         SIZE_TYPE pos = query.find('@');
         do {
@@ -1051,7 +1058,8 @@ CTempString CTL_LangCmd::x_GetDynamicID(void)
         } else {
             ERR_POST_X(8, Info << "Query " << NStr::CEncode(query)
                        << " contains both ? and @.  Treating ? as the"
-                       " parameter indicator because some or all supplied"
+                       " parameter indicator because there are enough"
+                       " question marks and some or all supplied"
                        " parameter names are absent: "
                        << NStr::Join(not_found, ", "));
         }
