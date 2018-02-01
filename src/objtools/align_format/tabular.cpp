@@ -1823,10 +1823,10 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
 
         if (m_Cdr3Start > 0){
             m_AirrData["cdr3_start"] = NStr::IntToString(m_Cdr3Start + 1); 
+            if (m_Cdr3End > 0) {
+                m_AirrData["cdr3_end"] = NStr::IntToString(m_Cdr3End + 1); 
+            }     
         }
-        if (m_Cdr3End > 0) {
-            m_AirrData["cdr3_end"] = NStr::IntToString(m_Cdr3End + 1); 
-        }        
 
     } else {
         SetQueryId(query_handle);
@@ -1835,6 +1835,10 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         CRef<CSeq_id> wid = FindBestChoice(query_seqid, CSeq_id::WorstRank); 
         wid->GetLabel(&query_id, CSeq_id::eContent);        
         m_AirrData["rearrangement_id"] = query_id;
+        string query_seq;
+        query_handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac)
+            .GetSeqData(0, query_handle.GetBioseqLength(), query_seq);
+        m_AirrData["sequence"] = query_seq;
     }
 }
 
