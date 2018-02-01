@@ -312,7 +312,7 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
         report[diagnosis];
 
         if ((num != total || bins != 1) && (it->first == "collection-date" || it->first == "country" || it->first == "isolation-source" || it->first == "strain")) {
-            report[diagnosis].Fatal();
+            final_report[diagnosis].Fatal();
         }
 
         if ((bins > capital.size() || (num < total && capital.size() == 1))
