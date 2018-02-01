@@ -232,7 +232,11 @@ static int check_match(EMatch flags, int idx_exp, int idx_got)
     if ((flags & fMatch_Host) &&
         strcmp(s_hits_exp[idx_exp].host, s_hits_got[idx_got].host) != 0)
     {
-        return 0;
+        /* always consider localhost a match */
+        if (strcmp("127.0.0.1", s_hits_got[idx_got].host) != 0)
+        {
+            return 0;
+        }
     }
 
     if ((flags & fMatch_Port) &&

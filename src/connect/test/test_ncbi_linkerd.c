@@ -139,8 +139,11 @@ static int run_tests(const char *test_nums);
 
 static int check_match(EMatch flags)
 {
-    if ((flags & fMatch_Host)  &&  strcmp(s_end_exp.host, s_end_got.host) != 0)
-        return 0;
+    if ((flags & fMatch_Host)  &&  strcmp(s_end_exp.host, s_end_got.host) != 0) {
+        /* always consider localhost a match */
+        if (strcmp("127.0.0.1", s_end_got.host) != 0)
+            return 0;
+    }
 
     if ((flags & fMatch_Hdr)  &&  strcmp(s_end_exp.hdr, s_end_got.hdr) != 0)
         return 0;

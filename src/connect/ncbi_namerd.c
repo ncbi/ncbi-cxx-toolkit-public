@@ -107,7 +107,7 @@ enum ENAMERD_Subcodes {
 #define REG_NAMERD_PROXY_HOST_DEF   "linkerd"
 #else
 #define REG_NAMERD_PROXY_HOST_DEF   \
-    "linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov"
+    "pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov"
 #endif
 
 #define REG_NAMERD_PROXY_PORT_KEY   "PROXY_PORT"
