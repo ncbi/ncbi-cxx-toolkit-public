@@ -743,8 +743,16 @@ const CSeq_entry *ctx)
                 "PCR primer does not have both sequences", obj, ctx);
         }
     }
+	
+	bool has_duplicate_primers = false;
+	if (!pcr_set_list.AreSetsUnique()) {
+		has_duplicate_primers = true;
+	}
+	if (bsrc.IsSetPcr_primers() && !CPCRSetList::AreSetsUnique(bsrc.GetPcr_primers())) {
+		has_duplicate_primers = true;
+	}
 
-    if (!pcr_set_list.AreSetsUnique()) {
+	if (has_duplicate_primers) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_DuplicatePCRPrimerSequence,
             "PCR primer sequence has duplicates", obj, ctx);
     }
@@ -3084,6 +3092,120 @@ bool CPCRSetList::AreSetsUnique(void)
         s_PCRSetEqual);
 
 }
+
+
+static int s_PCRPrimerCompare(const CPCRPrimer& p1, const CPCRPrimer& p2)
+{
+	if (!p1.IsSetSeq() && p2.IsSetSeq()) {
+		return -1;
+	} else if (p1.IsSetSeq() && !p2.IsSetSeq()) {
+		return 1;
+	} else if (p1.IsSetSeq() && p2.IsSetSeq()) {
+		int compare = NStr::CompareNocase(p1.GetSeq().Get(), p2.GetSeq().Get());
+		if (compare != 0) {
+			return compare;
+		}
+	}
+	if (!p1.IsSetName() && p2.IsSetName()) {
+		return -1;
+	}
+	else if (p1.IsSetName() && !p2.IsSetName()) {
+		return 1;
+	}
+	else if (p1.IsSetName() && p2.IsSetName()) {
+		int compare = NStr::CompareNocase(p1.GetName().Get(), p2.GetName().Get());
+		if (compare != 0) {
+			return compare;
+		}
+	}
+	return 0;
+}
+
+
+static int s_PCRPrimerSetCompare(const CPCRPrimerSet& s1, const CPCRPrimerSet& s2)
+{
+	if (!s1.IsSet() && s2.IsSet()) {
+		return -1;
+	} else if (s1.IsSet() && !s2.IsSet()) {
+		return 1;
+	} else if (!s1.IsSet() && !s2.IsSet()) {
+		return 0;
+	} else if (s1.Get().size() < s2.Get().size()) {
+		return -1;
+	} else if (s1.Get().size() > s2.Get().size()) {
+		return 1;
+	} else {
+		int compare = 0;
+		auto it1 = s1.Get().begin();
+		auto it2 = s2.Get().begin();
+		while (it1 != s1.Get().end() && compare == 0) {
+			compare = s_PCRPrimerCompare(**it1, **it2);
+			it1++;
+			it2++;
+		}
+		return compare;
+	}
+}
+
+
+static bool s_PCRReactionCompare(
+	const CPCRReaction* p1,
+	const CPCRReaction* p2
+)
+
+{
+	int compare = 0;
+	if (!p1->IsSetForward() && p2->IsSetForward()) {
+		return true;
+	} else if (p1->IsSetForward() && !p2->IsSetForward()) {
+		return false;
+	} else if (p1->IsSetForward() && p2->IsSetForward()) {
+		compare = s_PCRPrimerSetCompare(p1->GetForward(), p2->GetForward());
+	}
+	if (compare == 0) {
+		if (!p1->IsSetReverse() && p2->IsSetReverse()) {
+			return true;
+		}
+		else if (p1->IsSetReverse() && !p2->IsSetReverse()) {
+			return false;
+		}
+		else if (p1->IsSetReverse() && p2->IsSetReverse()) {
+			compare = s_PCRPrimerSetCompare(p1->GetReverse(), p2->GetReverse());
+		}
+	}
+	if (compare < 0) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+
+bool CPCRSetList::AreSetsUnique(const CPCRReactionSet& primers)
+{
+	if (!primers.IsSet() || primers.Get().size() < 2) {
+		return true;
+	}
+	bool has_duplicate_primers = false;
+	CRef<CPCRReactionSet> temp_set(new CPCRReactionSet());
+	temp_set->Assign(primers);
+	stable_sort(temp_set->Set().begin(),
+		temp_set->Set().end(),
+		s_PCRReactionCompare);
+	auto it1 = temp_set->Get().begin();
+	auto it2 = it1;
+	it2++;
+	do {
+		if ((*it1)->Equals(**it2)) {
+			return false;
+		}
+		it1++;
+		it2++;
+	} while (it2 != temp_set->Get().end());
+
+	return true;
+}
+
 
 
 // ===== for validating instituation and collection codes in specimen-voucher, ================

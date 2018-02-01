@@ -38,6 +38,7 @@
 #include <corelib/ncbi_autoinit.hpp>
 
 #include <objmgr/scope.hpp>
+#include <objects/seqfeat/PCRReactionSet.hpp>
 #include <objtools/validator/validator.hpp>
 #include <objtools/validator/validerror_imp.hpp>
 
@@ -87,6 +88,7 @@ public:
     void AddRevSeq (string name);
 
     bool AreSetsUnique(void);
+	static bool AreSetsUnique(const CPCRReactionSet& primers);
 
 private:
     vector <CPCRSet *> m_SetList;

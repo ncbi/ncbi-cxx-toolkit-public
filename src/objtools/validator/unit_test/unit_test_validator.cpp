@@ -6896,6 +6896,28 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceDbTagConflict)
 }
 
 
+bool s_ArePrimersUnique(const CPCRReactionSet& rset)
+{
+	CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+	CRef<CBioSource> src;
+	for (auto it : entry->SetSeq().SetDescr().Set()) {
+		if (it->IsSource()) {
+			src.Reset(&(it->SetSource()));
+			break;
+		}
+	}
+	src->SetPcr_primers().Assign(rset);
+	STANDARD_SETUP
+	eval = validator.Validate(seh, options);
+	for (CValidError_CI vit(*eval); vit; ++vit) {
+		if (NStr::Equal(vit->GetErrCode(), "DuplicatePCRPrimerSequence")) {
+			return false;
+		}
+	}
+	return true;
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_Descr_DuplicatePCRPrimerSequence)
 {
     // prepare entry
@@ -6912,6 +6934,40 @@ BOOST_AUTO_TEST_CASE(Test_Descr_DuplicatePCRPrimerSequence)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+
+    CRef<CPCRPrimer> f1(new CPCRPrimer());
+	CRef<CPCRPrimer> f2(new CPCRPrimer());
+	CRef<CPCRPrimer> rv1(new CPCRPrimer());
+	CRef<CPCRPrimer> rv2(new CPCRPrimer());
+	CRef<CPCRReaction> r1(new CPCRReaction());
+	CRef<CPCRReaction> r2(new CPCRReaction());
+    
+	CRef<CPCRReactionSet> rset(new CPCRReactionSet());
+	BOOST_CHECK_EQUAL(s_ArePrimersUnique(*rset), true);
+	rset->Set().push_back(r1);
+	BOOST_CHECK_EQUAL(s_ArePrimersUnique(*rset), true);
+	rset->Set().push_back(r2);
+	BOOST_CHECK_EQUAL(s_ArePrimersUnique(*rset), false);
+	r1->SetForward().Set().push_back(f1);
+	BOOST_CHECK_EQUAL(s_ArePrimersUnique(*rset), true);
+	r2->SetForward().Set().push_back(f2);
+	BOOST_CHECK_EQUAL(s_ArePrimersUnique(*rset), false);
+	f1->SetSeq().Set("aa");
+	BOOST_CHECK_EQUAL(s_ArePrimersUnique(*rset), true);
+	f2->SetSeq().Set("tt");
+	BOOST_CHECK_EQUAL(s_ArePrimersUnique(*rset), true);
+	f2->SetSeq().Set("aa");
+	BOOST_CHECK_EQUAL(s_ArePrimersUnique(*rset), false);
+	r1->SetReverse().Set().push_back(rv1);
+	BOOST_CHECK_EQUAL(s_ArePrimersUnique(*rset), true);
+	r2->SetReverse().Set().push_back(rv2);
+	BOOST_CHECK_EQUAL(s_ArePrimersUnique(*rset), false);
+	rv1->SetName().Set("a name");
+	BOOST_CHECK_EQUAL(s_ArePrimersUnique(*rset), true);
+	rv2->SetName().Set("a different name");
+	BOOST_CHECK_EQUAL(s_ArePrimersUnique(*rset), true);
+	rv2->SetName().Set("a name");
+	BOOST_CHECK_EQUAL(s_ArePrimersUnique(*rset), false);
 }
 
 
@@ -12885,10 +12941,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranslExceptPhase)
     CValidErrorFormat format(*objmgr);
     vector<string> expected;
     expected.push_back("Range");
-    expected.push_back("lcl|nuc:CDS\t fake protein name\tlcl|nuc:1-27\txyz");
+    expected.push_back("lcl|nuc:CDS\t fake protein name\tlcl|nuc:1-27");
     expected.push_back("");
     expected.push_back("TranslExceptPhase");
-    expected.push_back("lcl|nuc:CDS\t fake protein name\tlcl|nuc:1-27\txyz");
+    expected.push_back("lcl|nuc:CDS\t fake protein name\tlcl|nuc:1-27");
     expected.push_back("");
     vector<string> seen;
     vector<string> cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
@@ -12902,6 +12958,30 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranslExceptPhase)
 
     CheckStrings(seen, expected);
 
+
+	// only see locus tags when requested
+	eval = validator.Validate(seh, options | CValidator::eVal_collect_locus_tags);
+	CheckErrors(*eval, expected_errors);
+
+	expected.clear();
+	expected.push_back("Range");
+	expected.push_back("lcl|nuc:CDS\t fake protein name\tlcl|nuc:1-27\txyz");
+	expected.push_back("");
+	expected.push_back("TranslExceptPhase");
+	expected.push_back("lcl|nuc:CDS\t fake protein name\tlcl|nuc:1-27\txyz");
+	expected.push_back("");
+
+	cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
+	seen.clear();
+	ITERATE(vector<string>, it, cat_list) {
+		vector<string> sublist;
+		NStr::Split(*it, "\n", sublist, 0);
+		ITERATE(vector<string>, sit, sublist) {
+			seen.push_back(*sit);
+		}
+	}
+
+	CheckStrings(seen, expected);
 
     CLEAR_ERRORS
 }

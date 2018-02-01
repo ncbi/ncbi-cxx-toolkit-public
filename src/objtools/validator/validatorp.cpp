@@ -232,6 +232,7 @@ void CValidError_imp::SetOptions(Uint4 options)
     m_LatLonCheckState = (options & CValidator::eVal_latlon_check_state) != 0;
     m_LatLonIgnoreWater = (options & CValidator::eVal_latlon_ignore_water) != 0;
     m_genomeSubmission = (options & CValidator::eVal_genome_submission) != 0;
+	m_CollectLocusTags = (options & CValidator::eVal_collect_locus_tags) != 0;
 }
 
 
@@ -661,12 +662,14 @@ void CValidError_imp::PostErr
                 item->SetLocus_tag(ft.GetData().GetGene().GetLocus_tag());
             }
         } else {
-            // TODO: this should be part of post-processing
-            CConstRef<CSeq_feat> gene = GetGeneCache().GetGeneFromCache(&ft, *m_Scope);
-            if (gene && gene->GetData().GetGene().IsSetLocus_tag() &&
-                !NStr::IsBlank(gene->GetData().GetGene().GetLocus_tag())) {
-                item->SetLocus_tag(gene->GetData().GetGene().GetLocus_tag());
-            }
+			if (m_CollectLocusTags) {
+				// TODO: this should be part of post-processing
+				CConstRef<CSeq_feat> gene = GetGeneCache().GetGeneFromCache(&ft, *m_Scope);
+				if (gene && gene->GetData().GetGene().IsSetLocus_tag() &&
+					!NStr::IsBlank(gene->GetData().GetGene().GetLocus_tag())) {
+					item->SetLocus_tag(gene->GetData().GetGene().GetLocus_tag());
+				}
+			}
         }
     }
 

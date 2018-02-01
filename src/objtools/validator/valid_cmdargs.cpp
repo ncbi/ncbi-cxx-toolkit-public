@@ -62,6 +62,7 @@ void CValidatorArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
     argdescr->AddDefaultKey("N", "LatLonStrictness", "Flags for lat-lon tests (1 Test State/Province, 2 Ignore Water Exception)", CArgDescriptions::eInteger, "0"); 
     argdescr->AddFlag("B", "Do Barcode Validation");
     argdescr->AddFlag("refseq", "Use RefSeq Conventions");
+	argdescr->AddFlag("collect_locus_tags", "Collect locus tags for formatted reports");
 }
 
 
@@ -147,6 +148,10 @@ int CValidatorArgUtil::ArgsToValidatorOptions(const CArgs& args)
         options |= CValidator::eVal_far_fetch_cds_products;
         options |= CValidator::eVal_far_fetch_mrna_products;
     }
+
+	if (args["collect_locus_tags"]) {
+		options |= CValidator::eVal_collect_locus_tags;
+	}
 
     return options;
 }
