@@ -3149,28 +3149,30 @@ static int s_PCRPrimerSetCompare(const CPCRPrimerSet& s1, const CPCRPrimerSet& s
 
 
 static bool s_PCRReactionCompare(
-	const CPCRReaction* p1,
-	const CPCRReaction* p2
+	const CPCRReaction* pp1,
+	const CPCRReaction* pp2
 )
 
 {
+    const CPCRReaction& p1 = *pp1;
+    const CPCRReaction& p2 = *pp2;
 	int compare = 0;
-	if (!p1->IsSetForward() && p2->IsSetForward()) {
+	if (!p1.IsSetForward() && p2.IsSetForward()) {
 		return true;
-	} else if (p1->IsSetForward() && !p2->IsSetForward()) {
+	} else if (p1.IsSetForward() && !p2.IsSetForward()) {
 		return false;
-	} else if (p1->IsSetForward() && p2->IsSetForward()) {
-		compare = s_PCRPrimerSetCompare(p1->GetForward(), p2->GetForward());
+	} else if (p1.IsSetForward() && p2.IsSetForward()) {
+		compare = s_PCRPrimerSetCompare(p1.GetForward(), p2.GetForward());
 	}
 	if (compare == 0) {
-		if (!p1->IsSetReverse() && p2->IsSetReverse()) {
+		if (!p1.IsSetReverse() && p2.IsSetReverse()) {
 			return true;
 		}
-		else if (p1->IsSetReverse() && !p2->IsSetReverse()) {
+		else if (p1.IsSetReverse() && !p2.IsSetReverse()) {
 			return false;
 		}
-		else if (p1->IsSetReverse() && p2->IsSetReverse()) {
-			compare = s_PCRPrimerSetCompare(p1->GetReverse(), p2->GetReverse());
+		else if (p1.IsSetReverse() && p2.IsSetReverse()) {
+			compare = s_PCRPrimerSetCompare(p1.GetReverse(), p2.GetReverse());
 		}
 	}
 	if (compare < 0) {
@@ -3183,27 +3185,24 @@ static bool s_PCRReactionCompare(
 
 bool CPCRSetList::AreSetsUnique(const CPCRReactionSet& primers)
 {
-	if (!primers.IsSet() || primers.Get().size() < 2) {
-		return true;
-	}
-	bool has_duplicate_primers = false;
-	CRef<CPCRReactionSet> temp_set(new CPCRReactionSet());
-	temp_set->Assign(primers);
-	stable_sort(temp_set->Set().begin(),
-		temp_set->Set().end(),
-		s_PCRReactionCompare);
-	auto it1 = temp_set->Get().begin();
-	auto it2 = it1;
-	it2++;
-	do {
-		if ((*it1)->Equals(**it2)) {
-			return false;
-		}
-		it1++;
-		it2++;
-	} while (it2 != temp_set->Get().end());
+    if (!primers.IsSet() || primers.Get().size() < 2) {
+       	return true;
+    }
+    CRef<CPCRReactionSet> temp_set(new CPCRReactionSet());
+    temp_set->Assign(primers);
+    temp_set->Set().sort(s_PCRReactionCompare);
+    auto it1 = temp_set->Get().begin();
+    auto it2 = it1;
+    it2++;
+    do {
+        if ((*it1)->Equals(**it2)) {
+            return false;
+        }
+       	it1++;
+        it2++;
+    } while (it2 != temp_set->Get().end());
 
-	return true;
+    return true;
 }
 
 
