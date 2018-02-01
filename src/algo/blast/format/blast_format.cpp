@@ -1325,7 +1325,7 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
         if (m_Program == "blastn" || m_Program == "BLASTN") {
             x_PrintAirrRearrangement(results, clone_info, fill_clone_info, print_airr_format_header);
         } else {
-            m_Outfile << "This option is only available for nucleotide sequence search" << endl;
+            m_Outfile << "The AIRR format is only available for nucleotide sequence search" << endl;
         }
         return;
     }
