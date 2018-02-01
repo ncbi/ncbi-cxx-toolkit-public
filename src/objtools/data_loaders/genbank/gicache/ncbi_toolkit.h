@@ -28,3 +28,4 @@ typedef unsigned char	Nlm_Boolean;
 #define INLINE
 #endif
 #endif
+

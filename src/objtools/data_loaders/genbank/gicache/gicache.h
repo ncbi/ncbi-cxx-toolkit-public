@@ -78,3 +78,4 @@ int GICache_GetAccFreqTab(FreqTab* tab, const FreqTab* tablen);
 #endif
 
 #endif
+
