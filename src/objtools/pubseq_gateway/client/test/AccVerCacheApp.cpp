@@ -21,19 +21,11 @@
 
 #include <corelib/ncbiapp.hpp>
 
-#if 0
-#include <lmdb.h>
-#endif
-
 #include <objtools/pubseq_gateway/diag/AppLog.hpp>
 #include <objtools/pubseq_gateway/rpc/UtilException.hpp>
 #include <objtools/pubseq_gateway/rpc/DdRpcDataPacker.hpp>
 #include <objtools/pubseq_gateway/rpc/DdRpcClient.hpp>
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
-
-#if 0
-#include "AccVerCacheDB.hpp"
-#endif
 
 #define DFLT_LOG_LEVEL 1
 
@@ -67,22 +59,13 @@ private:
     string m_LookupRemote;
     string m_LookupFileRemote;
     string m_DumpTo;
-#if 0
-    unique_ptr<CAccVerCacheDB> m_DB;
-#endif
     char m_Delimiter;
     void TestLoadData();
-#if 0
-    void OpenDb(bool Initialize, bool Readonly);
-#endif
     void Lookup(const string& AccVer);
     void RemoteLookup(const string& AccVer);
     void RemoteLookupFile(const string& FileName, CSyncType sync, unsigned int NumThreads);
     void DumpTo(const string& FileName);
     void PerformUpdate(bool IsFull);
-#if 0
-    void CloseDb();
-#endif
     void DoDump(ostream& Out, const DDRPC::DataRow& Row, char Delimiter);
     void DumpEntry(ostream& Out, char Delimiter, const DDRPC::DataColumns &Clms, const string& Key, const string& Data);
 public:
@@ -93,11 +76,6 @@ public:
         m_Sync(CSyncType::stAsync),
         m_Delimiter('|')
 	{}
-#if 0
-	virtual ~CAccVerCacheApp() {
-        CloseDb();
-	}
-#endif
 	virtual void Init() {
 		unique_ptr<CArgDescriptions> argdesc(new CArgDescriptions());
 		argdesc->SetUsageContext(GetArguments().GetProgramBasename(), "AccVerCache -- Application to maintain Accession.Version Cache");
@@ -173,37 +151,12 @@ public:
             vector<pair<string, HCT::http2_end_point>> StaticMap;
             StaticMap.emplace_back(make_pair<string, HCT::http2_end_point>(ACCVER_RESOLVER_SERVICE_ID, {.schema = "http", .authority = m_HostPort, .path = "/ID/accver.resolver"}));
             DDRPC::DdRpcClient::Init(unique_ptr<DDRPC::ServiceResolver>(new DDRPC::ServiceResolver(&StaticMap)));
-#if 0
-            if (!m_Lookup.empty()) {
-                OpenDb(false, true);
-                Lookup(m_Lookup);
-            }
-            else
-#endif
             if (!m_LookupRemote.empty()) {
-#if 0
-                OpenDb(false, true);
-#endif
                 RemoteLookup(m_LookupRemote);
             }
             else if (!m_LookupFileRemote.empty()) {
-#if 0
-                OpenDb(false, true);
-#endif
                 RemoteLookupFile(m_LookupFileRemote, m_Sync, m_NumThreads);
             }
-#if 0
-            else if (!m_DumpTo.empty()) {
-                OpenDb(false, true);
-                DumpTo(m_DumpTo);
-            }
-            else {
-                OpenDb(m_FullUpdate, false);
-TestLoadData();
-                PerformUpdate(m_FullUpdate);
-            }
-            CloseDb();
-#endif
         }
         catch(const CException& e) {
             cerr << "Abnormally terminated: " << e.what() << endl;
@@ -222,64 +175,6 @@ TestLoadData();
 	}
 	
 };
-
-#if 0
-void CAccVerCacheApp::TestLoadData() {
-    ifstream infile("/export/home/dmitrie1/_GIACC_DUMP_");
-
-    if (infile) {
-        string line;
-        string sNULL = "NULL";
-        int64_t cnt = 0;
-        int64_t datalen = 0;
-        size_t lineno = 0;
-        bool got_columns = false;
-        DDRPC::DataColumns Clms, DataClms, KeyClms;
-
-        while (!infile.eof()) {
-            try {
-                lineno++;
-                getline(infile, line);
-                if (line == "")
-                    continue;
-
-                if (!got_columns) {
-                    got_columns = true;
-                    string tok;
-                    if (!getline(stringstream(line), tok, '|'))
-                        EAccVerException::raise("Pipe (|) is not found on 1st line");
-                    Clms.AssignAsText(tok);
-                    m_DB->SaveColumns(Clms);
-                    KeyClms = Clms.ExtractKeyColumns();
-                    DataClms = Clms.ExtractDataColumns();
-                }
-                else {
-                    string key;
-                    string data;
-                    Clms.ParseBCP(line, '|', KeyClms, DataClms, key, data);
-                    if (m_DB->Storage().Update(key, data, true))
-                        datalen += 4 + key.length()+ 4 + data.length();
-                }
-
-                cnt++;
-                if (cnt % 1000000 == 0) {
-                    cout << cnt << " :: " << datalen << endl;
-                }
-            }
-            catch (const EAccVerException& e) {
-                EAccVerException::raise(string(e.what()) + ", at line " +NStr::NumericToString(lineno), e.code());
-            }
-        }
-    }
-}
-
-void CAccVerCacheApp::OpenDb(bool Initialize, bool Readonly) {
-    if (m_DbPath.empty())
-        m_DbPath = "./accvercache.db";
-    m_DB.reset(new CAccVerCacheDB());
-    m_DB->Open(m_DbPath, Initialize, Readonly);
-}
-#endif
 
 void CAccVerCacheApp::DoDump(ostream& Out, const DDRPC::DataRow& Row, char Delimiter) {
     Row.GetAsTsv(Out, Delimiter);
@@ -300,17 +195,6 @@ void CAccVerCacheApp::DumpEntry(ostream& Out, char Delimiter, const DDRPC::DataC
 
     Out << endl;
 }
-
-#if 0
-void CAccVerCacheApp::Lookup(const string& AccVer) {
-    string Data;
-    auto Clms = m_DB->Columns();
-    if (m_DB->Storage().Get(AccVer, Data))
-        DumpEntry(cout, m_Delimiter, Clms, AccVer, Data);
-    else
-        cout << AccVer << " is not found" << endl;
-}
-#endif
 
 void CAccVerCacheApp::RemoteLookup(const string& AccVer) {
     string Data;
@@ -604,40 +488,9 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, CSyncType sync, u
     }
 }
 
-#if 0
-void CAccVerCacheApp::DumpTo(const string& FileName) {
-    ofstream ofile(FileName,  ofstream::out | ofstream::trunc);
-    if (ofile) {
-        auto Clms = m_DB->Columns();
-        DDRPC::DataColumns KeyClms = Clms.ExtractKeyColumns();
-        DDRPC::DataColumns DataClms = Clms.ExtractDataColumns();
-
-        auto end = m_DB->Storage().end();
-        for (auto it = m_DB->Storage().begin(); it != end; ++it) {
-            DDRPC::DataRow KeyRow;
-            KeyRow.Unpack(it->first, true, KeyClms);
-            DoDump(ofile, KeyRow, m_Delimiter);
-
-            DDRPC::DataRow DataRow;
-            DataRow.Unpack(it->second, false, DataClms);
-            DoDump(ofile, DataRow, m_Delimiter);
-
-            ofile << endl;
-        }
-    }
-}
-#endif
-
 void CAccVerCacheApp::PerformUpdate(bool IsFull) {
     
 }
-
-#if 0
-void CAccVerCacheApp::CloseDb() {
-    if (m_DB)
-        m_DB->Close();
-}
-#endif
 
 /////////////////////////////////////////////////////////////////////////////
 //  main
