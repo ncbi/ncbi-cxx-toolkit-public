@@ -959,9 +959,6 @@ void CBlastFormat::x_PrintAirrRearrangement(const blast::CIgBlastResults& result
         "IG" + NStr::ToUpper(m_Program);
     CConstRef<CBioseq> subject_bioseq = x_CreateSubjectBioseq();
 
-    if (m_IsHTML) {
-        m_Outfile << "<html><body><pre>\n";
-    }
     CRef<CIgAnnotation> annots(null);
     if (results.HasAlignments()) {
         annots = results.GetIgAnnotation();
@@ -989,9 +986,6 @@ void CBlastFormat::x_PrintAirrRearrangement(const blast::CIgBlastResults& result
                                        print_airr_format_header,
                                        m_IgOptions);
 
-    if (m_IsHTML) {
-        m_Outfile << "\n</pre></body></html>\n";
-    }
 }
 
 CConstRef<objects::CBioseq> CBlastFormat::x_CreateSubjectBioseq()
@@ -1327,7 +1321,12 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     }
     
     if (m_FormatType == CFormattingArgs::eAirrRearrangement) {
-        x_PrintAirrRearrangement(results, clone_info, fill_clone_info, print_airr_format_header);
+        
+        if (m_Program == "blastn" || m_Program == "BLASTN") {
+            x_PrintAirrRearrangement(results, clone_info, fill_clone_info, print_airr_format_header);
+        } else {
+            m_Outfile << "This option is only available for nucleotide sequence search" << endl;
+        }
         return;
     }
 
@@ -1524,8 +1523,9 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     }
     display.SetSequencePropertyLabel(&chain_type_list);
     // set the alignment flags
+   
     display.SetAlignOption(flags);
-    if (m_Program == "blastn") {
+    if (m_Program == "blastn" || m_Program == "BLASTN") {
         display.SetAlignType(CDisplaySeqalign::eNuc);
     } else {
         display.SetAlignType(CDisplaySeqalign::eProt);
