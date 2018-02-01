@@ -49,3 +49,4 @@ serial/datatool$
 util$
 util/bitset$
 util/cache$
+util/sequtil$
