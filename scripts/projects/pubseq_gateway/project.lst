@@ -24,24 +24,25 @@ util/lmdbxx
 
 #define LST_COMMENT_1   pubseq_gateway/client requires a few objects/...
 objects$
-objects/id2
-objects/omssa
-objects/access
-objects/biblio
-objects/blast
-objects/blastdb
-objects/blastxml2
-objects/cdd
-objects/cn3d
-objects/docsum
-objects/biotree
-objects/entrez2
-objects/entrezgene
-objects/featdef
-objects/gbseq
-objects/general
-objects/id1
-objects/seq
+objects/biblio$
+objects/featdef$
+objects/gbseq$
+objects/general$
+objects/genomecoll$
+objects/id[12]$
+objects/medlars$
+objects/medline$
+objects/mla$
+objects/misc$ update-only
+objects/objprt$
+objects/pub$
+objects/pubmed$
+objects/seq.*
+-objects/seq.*/.*test
+objects/submit$
+objects/taxon3$
+objects/valid$
+objects/variation$
 
 serial$
 util$
