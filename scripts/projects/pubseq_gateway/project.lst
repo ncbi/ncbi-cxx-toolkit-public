@@ -38,6 +38,7 @@ objects/objprt$
 objects/pub$
 objects/pubmed$
 objects/seq.*
+-objects/seqtest
 -objects/seq.*/.*test
 objects/submit$
 objects/taxon3$
