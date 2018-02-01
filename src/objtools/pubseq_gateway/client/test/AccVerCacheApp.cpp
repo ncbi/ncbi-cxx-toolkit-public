@@ -34,8 +34,6 @@ USING_SCOPE(objects);
 
 using namespace IdLogUtil;
 
-#define SYBASE_DT_FORMAT "%b %d %Y %H:%M:%S"
-
 //////////////////////////////////
 
 enum class CSyncType {
@@ -49,28 +47,19 @@ class CAccVerCacheApp: public CNcbiApplication {
 private:
 	string m_IniFile;
     string m_LogFile;
-    bool m_FullUpdate;
     unsigned int m_LogLevel;
     unsigned int m_NumThreads;
     CSyncType m_Sync;
     string m_HostPort;
-    string m_DbPath;
-    string m_Lookup;
     string m_LookupRemote;
     string m_LookupFileRemote;
-    string m_DumpTo;
     char m_Delimiter;
-    void TestLoadData();
-    void Lookup(const string& AccVer);
     void RemoteLookup(const string& AccVer);
     void RemoteLookupFile(const string& FileName, CSyncType sync, unsigned int NumThreads);
-    void DumpTo(const string& FileName);
-    void PerformUpdate(bool IsFull);
     void DoDump(ostream& Out, const DDRPC::DataRow& Row, char Delimiter);
     void DumpEntry(ostream& Out, char Delimiter, const DDRPC::DataColumns &Clms, const string& Key, const string& Data);
 public:
 	CAccVerCacheApp() : 
-        m_FullUpdate(false), 
         m_LogLevel(DFLT_LOG_LEVEL),
         m_NumThreads(1),
         m_Sync(CSyncType::stAsync),
@@ -83,12 +72,8 @@ public:
 		argdesc->AddOptionalKey( "o",   "log",      "Output log to",                        CArgDescriptions::eString);
 		argdesc->AddOptionalKey( "l",   "loglevel", "Output verbosity level from 0 to 5",   CArgDescriptions::eInteger);
 		argdesc->AddOptionalKey( "H",   "host",     "Host[:port] for remote lookups",       CArgDescriptions::eString);
-		argdesc->AddFlag       ( "f",               "Full update");
-		argdesc->AddOptionalKey( "db",  "database", "Path to LMDB database",                CArgDescriptions::eString);
-		argdesc->AddOptionalKey( "a",   "lookup",   "Lookup individual accession.version",  CArgDescriptions::eString);
 		argdesc->AddOptionalKey( "ra",  "rlookup",  "Lookup individual accession.version remotely",  CArgDescriptions::eString);
 		argdesc->AddOptionalKey( "fa",  "falookup", "Lookup accession.version from a file",  CArgDescriptions::eString);
-		argdesc->AddOptionalKey( "d",   "dump",     "Dump into a file",                     CArgDescriptions::eString);
 		argdesc->AddOptionalKey( "t",   "threads",  "Number of threads",                    CArgDescriptions::eInteger);
         argdesc->SetConstraint(  "t",   new CArgAllow_Integers(1, 256));
 		argdesc->AddOptionalKey( "s",   "sync",     "Algorithm to use: [s]ync, [a]sync, [cq1]-- single thread completion queue or [cq2]-- two thread completion queue", CArgDescriptions::eString);
@@ -117,18 +102,10 @@ public:
 
 		if (args["H"])
             m_HostPort = args["H"].AsString();
-		if (args["f"])
-			m_FullUpdate = args["f"].AsBoolean();
-		if (args["db"])
-            m_DbPath = args["db"].AsString();
-		if (args["a"])
-			m_Lookup = args["a"].AsString();
 		if (args["ra"])
 			m_LookupRemote = args["ra"].AsString();
 		if (args["fa"])
 			m_LookupFileRemote = args["fa"].AsString();
-		if (args["d"])
-			m_DumpTo = args["d"].AsString();
 		if (args["t"])
 			m_NumThreads = args["t"].AsInteger();
         if (args["s"]) {
@@ -488,10 +465,6 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, CSyncType sync, u
     }
 }
 
-void CAccVerCacheApp::PerformUpdate(bool IsFull) {
-    
-}
-
 /////////////////////////////////////////////////////////////////////////////
 //  main
 
@@ -502,6 +475,5 @@ int main(int argc, const char* argv[])
     IdLogUtil::CAppLog::SetLogLevelFile(0);
     IdLogUtil::CAppLog::SetLogLevel(0);
     IdLogUtil::CAppLog::SetLogFile("LOG1");
-//	CThread::InitializeMainThreadId();
 	return CAccVerCacheApp().AppMain(argc, argv);
 }
