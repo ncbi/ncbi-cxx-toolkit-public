@@ -17,7 +17,7 @@
 APP: pubseq_gateway
 ETC: src/app/pubseq_gateway/pubseq_gateway.ini
 
-DEFAULT_CONFIGURATIONS: Linux64-Centos7
+DEFAULT_CONFIGURATIONS: Linux64-Centos7:O2g
 
 # Each line describes a single configuration
 # The format is as follows:
