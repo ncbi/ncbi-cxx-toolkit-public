@@ -51,6 +51,7 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 using namespace validator;
+using namespace unit_test_util;
 
 static bool s_IsIllegal (string key) 
 {
@@ -4837,11 +4838,11 @@ static const TKeyQualVal s_KeyQualVal[] = {
 
 static const int k_NumKeyQualVals = sizeof (s_KeyQualVal) / sizeof (TKeyQualVal);
 
-BOOST_AUTO_TEST_CASE(Test_FEAT_WrongQualOnImpFeat)
+BOOST_FIXTURE_TEST_CASE(Test_FEAT_WrongQualOnImpFeat, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
     string last_key = "";
     CRef<CSeq_feat> imp;

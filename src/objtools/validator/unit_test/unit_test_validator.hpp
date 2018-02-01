@@ -36,6 +36,8 @@
 #include <objects/valerr/ValidErrItem.hpp>
 #include <objects/taxon3/itaxon3.hpp>
 #include <objects/taxon3/Taxon3_reply.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -131,7 +133,6 @@ public:
                                         } \
         expected_errors.pop_back(); \
                                                             }
-
 #define STANDARD_SETUP \
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance(); \
     CScope scope(*objmgr); \
@@ -173,31 +174,6 @@ public:
 	                      | CValidator::eVal_use_entrez; \
     vector< CExpectedError *> expected_errors;
 
-#define STANDARD_SETUP_WITH_DATABASE \
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance(); \
-    CGBDataLoader::RegisterInObjectManager(*objmgr); \
-    CScope scope(*objmgr); \
-    scope.AddDefaults(); \
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry); \
-    CConstRef<CValidError> eval; \
-    CValidator validator(*objmgr); \
-    unsigned int options = CValidator::eVal_need_isojta \
-                          | CValidator::eVal_far_fetch_mrna_products \
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version \
-	                      | CValidator::eVal_use_entrez; \
-    vector< CExpectedError *> expected_errors;
-
-#define STANDARD_SETUP_NO_DATABASE \
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance(); \
-    CScope scope(*objmgr); \
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry); \
-    CConstRef<CValidError> eval; \
-    CValidator validator(*objmgr); \
-    unsigned int options = CValidator::eVal_need_isojta \
-                          | CValidator::eVal_far_fetch_mrna_products \
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version \
-	                      | CValidator::eVal_use_entrez; \
-    vector< CExpectedError *> expected_errors;
 
 void CheckErrors(const CValidError& eval,
                  vector< CExpectedError* >& expected_errors);

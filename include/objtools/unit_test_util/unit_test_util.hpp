@@ -65,6 +65,7 @@
 #include <objects/general/Person_id.hpp>
 #include <objects/general/Name_std.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 
 
 #include <map>
@@ -74,6 +75,25 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 BEGIN_SCOPE(unit_test_util)
+
+// for controlling access to data loaders
+class CGenBankFixture
+{
+public:
+	CGenBankFixture()
+	{
+		m_Loader = CGBDataLoader::RegisterInObjectManager
+		(*CObjectManager::GetInstance()).GetLoader();
+	}
+	~CGenBankFixture()
+	{
+		CObjectManager::GetInstance()->RevokeDataLoader(*m_Loader);
+	}
+
+private:
+	CDataLoader * m_Loader;
+};
+
 
 // Dbxrefs, for sources and features
 NCBI_UNIT_TEST_UTIL_EXPORT void SetDbxref (objects::CBioSource& src, string db, objects::CObject_id::TId id);

@@ -113,7 +113,6 @@
 #include <objtools/validator/utilities.hpp>
 #include <objtools/validator/validerror_format.hpp>
 #include <objtools/validator/translation_problems.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <common/ncbi_export.h>
 #include <objtools/unit_test_util/unit_test_util.hpp>
@@ -131,6 +130,7 @@ BEGIN_SCOPE(objects)
 
 using namespace validator;
 using namespace unit_test_util;
+
 
 
 
@@ -1993,7 +1993,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingIdsOnBioseq)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
 
-    STANDARD_SETUP_NO_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "ConflictingIdsOnBioseq", "Conflicting ids on a Bioseq: (lcl|good - lcl|bad)"));
 
@@ -2355,7 +2355,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_TrailingX)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
+BOOST_FIXTURE_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
     CRef<CSeq_entry> nuc_entry = entry->SetSet().SetSeq_set().front();
@@ -2363,7 +2363,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
     CRef<CSeq_feat> prot_feat = prot_entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
     CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("",eDiag_Error, "BadSeqIdFormat", "Bad accession"));
 
@@ -2676,89 +2676,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
 }
 
 
-#if 0
-// Commenting out this unit test - we do not plan on supporting segmented sets in the future
-BOOST_AUTO_TEST_CASE(Test_SEQ_INST_PartsOutOfOrder)
-{
-    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSegSet();
-    CRef<CSeq_entry> master_seg = entry->SetSet().SetSeq_set().front();
-
-    STANDARD_SETUP_WITH_DATABASE
-
-    scope.RemoveTopLevelSeqEntry(seh);
-    CRef<CSeq_loc> loc4(new CSeq_loc());
-    loc4->SetWhole().SetLocal().SetStr("part1");
-    master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().push_back(loc4);
-    master_seg->SetSeq().SetInst().SetLength(240);
-    seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("master", eDiag_Error, "SeqLocOrder", "Segmented BioseqIntervals out of order in SeqLoc [[lcl|part1, lcl|part2, lcl|part3, lcl|part1]]"));
-    expected_errors.push_back(new CExpectedError("master", eDiag_Error, "DuplicateSegmentReferences", "Segmented sequence has multiple references to lcl|part1"));
-    expected_errors.push_back(new CExpectedError("master", eDiag_Error, "PartsOutOfOrder", "Parts set does not contain enough Bioseqs"));
-
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-    
-    scope.RemoveTopLevelSeqEntry(seh);
-    master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().pop_back();
-    master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().pop_back();
-    master_seg->SetSeq().SetInst().SetLength(120);
-    seh = scope.AddTopLevelSeqEntry(*entry);
-    /*
-    expected_errors.push_back(new CExpectedError("master", eDiag_Error, "SeqLocOrder", "Segmented BioseqIntervals out of order in SeqLoc [[lcl|part1, lcl|part2]]"));
-    */
-    expected_errors.push_back(new CExpectedError("master", eDiag_Error, "PartsOutOfOrder", "Parts set contains too many Bioseqs"));
-
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-
-    scope.RemoveTopLevelSeqEntry(seh);
-    master_seg->SetSeq().SetInst().ResetExt();
-    CRef<CSeq_loc> loc1(new CSeq_loc());
-    loc1->SetWhole().SetLocal().SetStr("part1");
-    CRef<CSeq_loc> loc3(new CSeq_loc());
-    loc3->SetWhole().SetLocal().SetStr("part3");
-    CRef<CSeq_loc> loc2(new CSeq_loc());
-    loc2->SetWhole().SetLocal().SetStr("part2");
-    master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().push_back(loc1);
-    master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().push_back(loc3);
-    master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().push_back(loc2);
-    master_seg->SetSeq().SetInst().SetLength(180);
-    seh = scope.AddTopLevelSeqEntry(*entry);
-
-    expected_errors.push_back(new CExpectedError("master", eDiag_Error, "PartsOutOfOrder", "Segmented bioseq seq_ext does not correspond to parts packaging order"));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    scope.RemoveTopLevelSeqEntry(seh);
-    master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().pop_back();
-    master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().pop_back();
-    master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().push_back(loc2);
-    loc3->SetWhole().SetLocal().SetStr("part4");
-    master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().push_back(loc3);
-    master_seg->SetSeq().SetInst().SetLength(120);
-    seh = scope.AddTopLevelSeqEntry(*entry);
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    scope.RemoveTopLevelSeqEntry(seh);
-    entry->SetSet().SetSeq_set().back()->SetSet().SetSeq_set().front()->SetSet().SetClass(CBioseq_set::eClass_parts);
-    seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.clear();
-    expected_errors.push_back(new CExpectedError("master", eDiag_Critical, "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [120]"));
-    expected_errors.push_back(new CExpectedError("master", eDiag_Error, "PartsOutOfOrder", "Parts set component is not Bioseq"));
-    expected_errors.push_back(new CExpectedError("", eDiag_Critical, "PartsSetHasSets", "Parts set contains unwanted Bioseq-set, its class is \"parts\"."));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-}
-#endif
-
-
 BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSecondaryAccn)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
@@ -2857,7 +2774,7 @@ BOOST_AUTO_TEST_CASE(Test_GiWithoutAccession)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_MultipleAccessions)
+BOOST_FIXTURE_TEST_CASE(Test_MultipleAccessions, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
@@ -3144,7 +3061,7 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_UnexpectedIdentifierChange)
+BOOST_FIXTURE_TEST_CASE(Test_UnexpectedIdentifierChange, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123457");
@@ -3297,7 +3214,7 @@ static void AddTpaAssemblyUserObject(CRef<CSeq_entry> entry)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_TpaAssmeblyProblem)
+BOOST_FIXTURE_TEST_CASE(Test_TpaAssmeblyProblem, CGenBankFixture)
 {
     CRef<CSeq_entry> entry(new CSeq_entry());
     entry->SetSet().SetClass(CBioseq_set::eClass_genbank);
@@ -3310,7 +3227,7 @@ BOOST_AUTO_TEST_CASE(Test_TpaAssmeblyProblem)
     AddTpaAssemblyUserObject(member2);
     entry->SetSet().SetSeq_set().push_back(member2);
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
     // two Tpa sequences, but neither has assembly and neither has GI, so no errors expected
     eval = validator.Validate(seh, options);
@@ -3343,7 +3260,7 @@ BOOST_AUTO_TEST_CASE(Test_TpaAssmeblyProblem)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SeqLocLength)
+BOOST_FIXTURE_TEST_CASE(Test_SeqLocLength, CGenBankFixture)
 {
     // prepare entry
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodDeltaSeq();
@@ -3663,7 +3580,7 @@ BOOST_AUTO_TEST_CASE(Test_TerminalGap)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_OverlappingDeltaRange)
+BOOST_FIXTURE_TEST_CASE(Test_OverlappingDeltaRange, CGenBankFixture)
 {
     // prepare entry
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodDeltaSeq();
@@ -3833,7 +3750,7 @@ BOOST_AUTO_TEST_CASE(Test_SelfReferentialSequence)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_WholeComponent)
+BOOST_FIXTURE_TEST_CASE(Test_WholeComponent, CGenBankFixture)
 {
     // prepare entry
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodDeltaSeq();
@@ -5095,7 +5012,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InconsistentProteinTitle)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
+BOOST_FIXTURE_TEST_CASE(Test_Descr_Inconsistent, CGenBankFixture)
 {
     // prepare entry
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
@@ -5186,7 +5103,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
     m_desc->SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_no_right);
     entry->SetSeq().SetDescr().Set().push_back(m_desc);
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InconsistentTPA",
                               "TPA:experimental and TPA:inferential should not both be in the same set of keywords"));
@@ -13668,7 +13585,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ImpCDSnotPseudo)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MissingMRNAproduct)
+BOOST_FIXTURE_TEST_CASE(Test_SEQ_FEAT_MissingMRNAproduct, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodGenProdSet();
     CRef<CSeq_entry> contig = entry->SetSet().SetSeq_set().front();
@@ -13677,7 +13594,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MissingMRNAproduct)
     feat->SetData().SetRna().SetExt().SetName("fake protein name");
     feat->SetProduct().SetWhole().SetLocal().SetStr("not_present_ever");
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAMismatchLocation",
                       "No CDS location match for 1 mRNA"));
@@ -15279,7 +15196,7 @@ BOOST_AUTO_TEST_CASE (Test_SEQ_FEAT_CDSwithNoMRNA)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureProductInconsistency)
+BOOST_FIXTURE_TEST_CASE(Test_SEQ_FEAT_FeatureProductInconsistency, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
     CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
@@ -15293,7 +15210,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureProductInconsistency)
     CRef<CSeq_feat> bad_mrna = unit_test_util::MakemRNAForCDS(bad_cds);
     unit_test_util::AddFeat (bad_mrna, nuc);
 
-    STANDARD_SETUP_NO_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "FeatureProductInconsistency",
                                 "2 CDS features have 1 product references"));
@@ -15329,8 +15246,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureProductInconsistency)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "FeatureProductInconsistency",
                                 "2 mRNA features have 1 product references"));
-    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Error, "ProductFetchFailure", 
-                                "Unable to fetch mRNA transcript 'gb|AY123456|'"));
+	expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "TranscriptLen",
+		"Transcript length [27] less than (far) product length [485], and tail < 95% polyA"));
+	expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "TranscriptMismatches",
+		"There are 16 mismatches out of 27 bases between the transcript and (far) product sequence"));
+	expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
+		"Inconsistent: Product= partial, Location= complete, Feature.partial= FALSE"));
+
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -15341,11 +15263,19 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureProductInconsistency)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "FeatureProductInconsistency",
                                 "mRNA products are not unique"));
-    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Error, "ProductFetchFailure", 
-                                "Unable to fetch mRNA transcript 'gb|AY123456|'"));
-    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Error, "ProductFetchFailure", 
-                                "Unable to fetch mRNA transcript 'gb|AY123456|'"));
-    eval = validator.Validate(seh, options);
+	expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "TranscriptLen",
+		"Transcript length [27] less than (far) product length [485], and tail < 95% polyA"));
+	expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "TranscriptMismatches",
+		"There are 16 mismatches out of 27 bases between the transcript and (far) product sequence"));
+	expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
+		"Inconsistent: Product= partial, Location= complete, Feature.partial= FALSE"));
+	expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "TranscriptLen",
+		"Transcript length [27] less than (far) product length [485], and tail < 95% polyA"));
+	expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "TranscriptMismatches",
+		"There are 16 mismatches out of 27 bases between the transcript and (far) product sequence"));
+	expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
+		"Inconsistent: Product= partial, Location= complete, Feature.partial= FALSE"));
+	eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS    
@@ -17052,7 +16982,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PseudoRnaHasProduct)
     rna->SetPseudo(true);
     rna->SetProduct().SetWhole().SetGenbank().SetAccession("AY123456");
 
-    STANDARD_SETUP_NO_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "PseudoRnaHasProduct",
                                 "A pseudo RNA should not have a product"));
@@ -18045,7 +17975,7 @@ static CRef<CSeq_align> BuildSetAlign(CRef<CSeq_entry> entry)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_SeqIdProblem)
+BOOST_FIXTURE_TEST_CASE(Test_SEQ_ALIGN_SeqIdProblem, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
     CRef<CSeq_annot> annot(new CSeq_annot());
@@ -18054,7 +17984,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_SeqIdProblem)
     annot->SetData().SetAlign().push_back(align);
     entry->SetSet().SetAnnot().push_back(annot);
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
 
     expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Warning, "FastaLike", 
@@ -18070,7 +18000,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_SeqIdProblem)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_DensegLenStart)
+BOOST_FIXTURE_TEST_CASE(Test_SEQ_ALIGN_DensegLenStart, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
 
@@ -18100,7 +18030,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_DensegLenStart)
     annot->SetData().SetAlign().push_back(align);
     entry->SetSet().SetAnnot().push_back(annot);
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Error, "DensegLenStart", 
              "Start/Length: There is a problem with sequence lcl|good2, in segment 1 (near sequence position 0), context good1: the segment is too long or short or the next segment has an incorrect start position"));
@@ -18111,7 +18041,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_DensegLenStart)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_SumLenStart)
+BOOST_FIXTURE_TEST_CASE(Test_SEQ_ALIGN_SumLenStart, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
     CRef<CSeq_align> align = BuildSetAlign(entry);
@@ -18127,7 +18057,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_SumLenStart)
     annot->SetData().SetAlign().push_back(align);
     entry->SetSet().SetAnnot().push_back(annot);
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Error, "SumLenStart", 
                   "Start: In sequence lcl|good1, segment 2 (near sequence position 5) context good1, the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment"));
@@ -18142,7 +18072,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_SumLenStart)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_AlignDimSeqIdNotMatch)
+BOOST_FIXTURE_TEST_CASE(Test_SEQ_ALIGN_AlignDimSeqIdNotMatch, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
     CRef<CSeq_align> align = BuildSetAlign(entry);
@@ -18153,7 +18083,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_AlignDimSeqIdNotMatch)
     entry->SetSet().SetAnnot().push_back(annot);
 
     SetDiagFilter(eDiagFilter_All, "!(1207.5)");
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
     SetDiagFilter(eDiagFilter_All, "");
 
     expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Error, "AlignDimSeqIdNotMatch", 
@@ -18167,7 +18097,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_AlignDimSeqIdNotMatch)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_FastaLike)
+BOOST_FIXTURE_TEST_CASE(Test_SEQ_ALIGN_FastaLike, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
     unit_test_util::RevComp(entry->SetSet().SetSeq_set().front());
@@ -18177,7 +18107,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_FastaLike)
     annot->SetData().SetAlign().push_back(align);
     entry->SetSet().SetAnnot().push_back(annot);
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Warning, "FastaLike", 
                   "Fasta: This may be a fasta-like alignment for SeqId: lcl|good1 in the context of good1"));
@@ -18207,7 +18137,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_FastaLike)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_NullSegs)
+BOOST_FIXTURE_TEST_CASE(Test_SEQ_ALIGN_NullSegs, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
     CRef<CSeq_align> align = BuildSetAlign(entry);
@@ -18217,7 +18147,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_NullSegs)
     annot->SetData().SetAlign().push_back(align);
     entry->SetSet().SetAnnot().push_back(annot);
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("", eDiag_Error, "NullSegs", 
                   "Segs: This alignment is missing all segments.  This is a non-correctable error -- look for serious formatting problems."));
@@ -18229,7 +18159,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_NullSegs)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_SegmentGap)
+BOOST_FIXTURE_TEST_CASE(Test_SEQ_ALIGN_SegmentGap, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
     CRef<CSeq_align> align = BuildSetAlign(entry);
@@ -18248,7 +18178,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_SegmentGap)
     annot->SetData().SetAlign().push_back(align);
     entry->SetSet().SetAnnot().push_back(annot);
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Error, "SegmentGap", 
                   "Segs: Segment 2 (near alignment position 5) in the context of good1 contains only gaps.  Each segment must contain at least one actual sequence -- look for columns with all gaps and delete them."));
@@ -18260,7 +18190,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_SegmentGap)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_AlignDimOne)
+BOOST_FIXTURE_TEST_CASE(Test_SEQ_ALIGN_AlignDimOne, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
     CRef<CSeq_align> align = BuildSetAlign(entry);
@@ -18274,7 +18204,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_AlignDimOne)
     annot->SetData().SetAlign().push_back(align);
     entry->SetSet().SetAnnot().push_back(annot);
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Error, "AlignDimOne", 
                   "Dim: This seqalign apparently has only one sequence.  Each alignment must have at least two sequences.  context lcl|good1"));
@@ -18286,7 +18216,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_AlignDimOne)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_Segtype)
+BOOST_FIXTURE_TEST_CASE(Test_SEQ_ALIGN_Segtype, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
     CRef<CSeq_align> align(new CSeq_align());
@@ -18296,7 +18226,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_Segtype)
     annot->SetData().SetAlign().push_back(align);
     entry->SetSet().SetAnnot().push_back(annot);
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("", eDiag_Warning, "Segtype", 
                   "Segs: This alignment has an undefined or unsupported Seqalign segtype 7 (alignment number 1)"));
@@ -18313,7 +18243,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_Segtype)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_BlastAligns)
+BOOST_FIXTURE_TEST_CASE(Test_SEQ_ALIGN_BlastAligns, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
     CRef<CSeq_align> align = BuildSetAlign(entry);
@@ -18326,7 +18256,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_BlastAligns)
     annot->SetDesc().Set().push_back(ad);
     entry->SetSet().SetAnnot().push_back(annot);
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Error, "BlastAligns", 
                   "Record contains BLAST alignments"));
@@ -18338,7 +18268,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_BlastAligns)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_PercentIdentity)
+BOOST_FIXTURE_TEST_CASE(Test_SEQ_ALIGN_PercentIdentity, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
     entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCTTGGCCAAAATTGGCCAA");
@@ -18349,7 +18279,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_PercentIdentity)
 
     entry->SetSet().SetAnnot().push_back(annot);
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Warning, "FastaLike", 
       "Fasta: This may be a fasta-like alignment for SeqId: lcl|good1 in the context of good1"));
@@ -18393,7 +18323,7 @@ static CRef<CSeq_align> BuildSetDendiagAlign(CRef<CSeq_entry> entry)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_UnexpectedAlignmentType)
+BOOST_FIXTURE_TEST_CASE(Test_SEQ_ALIGN_UnexpectedAlignmentType, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
     CRef<CSeq_align> align = BuildSetDendiagAlign(entry);
@@ -18403,7 +18333,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_UnexpectedAlignmentType)
 
     entry->SetSet().SetAnnot().push_back(annot);
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Error, "UnexpectedAlignmentType", 
                               "UnexpectedAlignmentType: This is not a DenseSeg alignment."));
@@ -18564,7 +18494,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphSeqLitLen)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphSeqLocLen)
+BOOST_FIXTURE_TEST_CASE(Test_SEQ_GRAPH_GraphSeqLocLen, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodDeltaSeq();
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetId().SetGenbank().SetAccession("AY123456");
@@ -18576,7 +18506,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphSeqLocLen)
     annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 22, 12));
     entry->SetSeq().SetAnnot().push_back(annot);
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "GraphGapScore", 
                               "1 gap bases have positive score value"));
@@ -18618,7 +18548,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphStartPhase)
 // note - GraphStopPhase exercised in Test_SEQ_GRAPH_GraphSeqLitLen
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphDiffNumber)
+BOOST_FIXTURE_TEST_CASE(Test_SEQ_GRAPH_GraphDiffNumber, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodDeltaSeq();
 
@@ -18628,7 +18558,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphDiffNumber)
     annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 22, 12));
     entry->SetSeq().SetAnnot().push_back(annot);
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "GraphSeqLitLen", 
                               "SeqGraph (6) and SeqLit (12) length mismatch"));
@@ -21182,7 +21112,7 @@ BOOST_AUTO_TEST_CASE(TEST_VR_15)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_VR_433)
+BOOST_FIXTURE_TEST_CASE(Test_VR_433, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodDeltaSeq();
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetId().SetGenbank().SetAccession("AY123456");
@@ -21190,7 +21120,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_433)
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetTo(11);
     unit_test_util::SetTech(entry, CMolInfo::eTech_wgs);
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
         "FarLocationExcludesFeatures",
@@ -21221,14 +21151,14 @@ BOOST_AUTO_TEST_CASE(Test_VR_433)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_VR_708)
+BOOST_FIXTURE_TEST_CASE(Test_VR_708, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_chromosome, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_chromosome, "_abc");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_linkage_group, "*123");
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
         "BioSourceInconsistency",
@@ -22205,7 +22135,7 @@ BOOST_AUTO_TEST_CASE(Test_InvalidCodonStart)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_InconsistentBioSources_ConLocation)
+BOOST_FIXTURE_TEST_CASE(Test_InconsistentBioSources_ConLocation, CGenBankFixture)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodDeltaSeq();
     unit_test_util::SetGenome(entry, CBioSource::eGenome_apicoplast);
@@ -22220,7 +22150,7 @@ BOOST_AUTO_TEST_CASE(Test_InconsistentBioSources_ConLocation)
 
     entry->SetSeq().SetInst().SetLength(210);
 
-    STANDARD_SETUP_WITH_DATABASE
+    STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentBioSources_ConLocation",
         "Genome difference between parent and component"));
