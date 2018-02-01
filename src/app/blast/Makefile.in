@@ -20,7 +20,7 @@ blast_formatter \
 deltablast \
 seedtop
 
-USR_PROJ = legacy_blast update_blastdb
+USR_PROJ = legacy_blast update_blastdb get_species_taxids
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
