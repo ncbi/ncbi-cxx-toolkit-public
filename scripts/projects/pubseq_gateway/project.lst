@@ -22,8 +22,9 @@ objtools/pubseq_gateway/client
 
 util/lmdbxx
 
-#define LST_COMMENT_1   objtools requires objects
+#define LST_COMMENT_1   client requires objects/id2
 objects$
+objects/id2
 serial$
 util$
 util/bitset$
