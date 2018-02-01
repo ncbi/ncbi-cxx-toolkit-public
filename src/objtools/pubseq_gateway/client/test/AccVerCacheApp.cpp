@@ -48,8 +48,7 @@ private:
     char m_Delimiter;
     void RemoteLookup(const string& AccVer);
     void RemoteLookupFile(const string& FileName, unsigned int NumThreads);
-    void DoDump(ostream& Out, const DDRPC::DataRow& Row, char Delimiter);
-    void DumpEntry(ostream& Out, char Delimiter, const DDRPC::DataColumns &Clms, const string& Key, const string& Data);
+    void PrintBlobId(const CBlobId& it);
 public:
 	CAccVerCacheApp() : 
         m_LogLevel(DFLT_LOG_LEVEL),
@@ -131,37 +130,23 @@ public:
 	
 };
 
-void CAccVerCacheApp::DoDump(ostream& Out, const DDRPC::DataRow& Row, char Delimiter) {
-    Row.GetAsTsv(Out, Delimiter);
-}
-
-void CAccVerCacheApp::DumpEntry(ostream& Out, char Delimiter, const DDRPC::DataColumns &Clms, const string& Key, const string& Data) {
-    DDRPC::DataColumns KeyClms = Clms.ExtractKeyColumns();
-    DDRPC::DataRow KeyRow; 
-    KeyRow.Unpack(Key, true, KeyClms);
-    DoDump(Out, KeyRow, Delimiter);
-
-    Out << Delimiter;
-
-    DDRPC::DataColumns DataClms = Clms.ExtractDataColumns();
-    DDRPC::DataRow DataRow;
-    DataRow.Unpack(Data, false, DataClms);
-    DoDump(Out, DataRow, Delimiter);
-
-    Out << endl;
-}
-
 void CAccVerCacheApp::RemoteLookup(const string& AccVer) {
-    string Data;
-    if (m_HostPort.empty())
-        EAccVerException::raise("Host is not specified, use -H command line argument");
-    {
-        auto Req = DDRPC::DdRpcClient::AsyncRequest(ACCVER_RESOLVER_SERVICE_ID, "accver=" + AccVer);
-        Req->Wait();
-        Data = Req->Get();
+    // XXX: THIS DOES NOT WORK
+    // auto blob_id = CBioIdResolutionQueue::Resolve(AccVer);
+    // PrintBlobId(blob_id);
+
+    TBioIds bio_ids(1, AccVer);
+    CBioIdResolutionQueue queue;
+    queue.Resolve(&bio_ids);
+
+    for (;;) {
+        const auto blob_ids = queue.GetBlobIds();
+
+        if (blob_ids.empty()) continue;
+
+        PrintBlobId(blob_ids.front());
+        return;
     }
-    DDRPC::DataColumns Clms(ACCVER_RESOLVER_COLUMNS);
-    DumpEntry(cout, m_Delimiter, Clms, AccVer, Data);
 }
 
 void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumThreads) {
@@ -273,6 +258,13 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
     }
     {
         for (const auto& it : rslt_data_ncbi) {
+            PrintBlobId(it);
+        }
+    }
+}
+
+void CAccVerCacheApp::PrintBlobId(const CBlobId& it)
+{
             if (it.GetStatus() == CBlobId::eResolved) {
                 cout 
                     << it.GetBioId().GetId() << "||" 
@@ -288,8 +280,6 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
             else {
                 cerr << it.GetBioId().GetId() << ": failed to resolve:" << it.GetMessage() << std::endl;
             }
-        }
-    }
 }
 
 /////////////////////////////////////////////////////////////////////////////

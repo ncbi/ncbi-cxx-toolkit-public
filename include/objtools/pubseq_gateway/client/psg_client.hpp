@@ -14,7 +14,6 @@
 
 
 constexpr const char ACCVER_RESOLVER_SERVICE_ID[] = "ID.RESOLVER.ACCVER.1";
-constexpr const char ACCVER_RESOLVER_COLUMNS[] = "ACCVER CVARCHAR NOTNULL KEY, GI INT8, LEN UINT4, SAT UINT1, SAT_KEY UINT4, TAXID UINT4, DATE DATETIME, SUPPRESS BIT NOTNULL";
 
 
 BEGIN_NCBI_SCOPE
@@ -164,6 +163,7 @@ public:
     ///  For how long to try to push the bio-ids into the queue.
     void Resolve(TBioIds* bio_ids, const CDeadline& deadline = 0);
 
+    /// XXX: THIS DOES NOT WORK
     /// Perform signle bio-ids resolution
     /// @note
     /// This method is works synchronously static and does not require 
