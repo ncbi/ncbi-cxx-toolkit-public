@@ -41,6 +41,7 @@ objects/featdef
 objects/gbseq
 objects/general
 objects/id1
+objects/seq
 
 serial$
 util$
