@@ -761,7 +761,16 @@ int CIgBlastnApp::Run(void)
 	}
 	//################ Main thread:  run worker & format threads - end  #####################################
 
-        if (fmt_args->GetFormattedOutputChoice() != CFormattingArgs::eAirrRearrangement) {
+        CNcbiOstream* outfile = NULL;
+            
+        if (args.Exist("clonotype_out") && args["clonotype_out"] && 
+            args["clonotype_out"].AsString() != NcbiEmptyString) {
+            outfile = &(args["clonotype_out"].AsOutputFile());
+        } else if (fmt_args->GetFormattedOutputChoice() != CFormattingArgs::eAirrRearrangement){
+            outfile = &m_CmdLineArgs->GetOutputStream();
+        }
+
+        if (outfile) {
         typedef vector<pair<const SCloneNuc*,  AaMap*> * > MapVec;
         MapVec map_vec; 
 	// POST FORMAT
@@ -783,13 +792,7 @@ int CIgBlastnApp::Run(void)
             }
         }
 
-        CNcbiOstream* outfile = NULL;
-            
-        if (args.Exist("clonotype_out") && args["clonotype_out"] && args["clonotype_out"].AsString() != NcbiEmptyString) {
-            outfile = &(args["clonotype_out"].AsOutputFile());
-        } else {
-            outfile = &m_CmdLineArgs->GetOutputStream();
-        }
+
         *outfile << "\nTotal queries = " << m_total_input << endl;
         *outfile << "Total identifiable CDR3 = " << total_elements << endl;
         *outfile << "Total unique clonotypes = " << total_unique_clones << endl;
@@ -866,19 +869,12 @@ int CIgBlastnApp::Run(void)
 	} // post format 
        
 	// deallocate
-	{
-        ITERATE(CloneInfo, iter, m_Clone) {
-            ITERATE(AaMap, iter2, *(iter->second)){
-                delete iter2->second;
-            }
-            delete iter->second;
-        }
 
         ITERATE(MapVec, iter, map_vec) {
             delete *iter;
         }
      
-	}
+
         if (fmt_args->GetFormattedOutputChoice() == CFormattingArgs::eFlatQueryAnchoredIdentities ||
 	    fmt_args->GetFormattedOutputChoice() == CFormattingArgs::eFlatQueryAnchoredNoIdentities) {
             CRef <CBlastFormat> print_fmt;
@@ -905,14 +901,21 @@ int CIgBlastnApp::Run(void)
                                                opt.GetMBIndexLoaded(),
                                                &*m_ig_opts));
             print_fmt->PrintEpilog(opt);
-        } else {
+        } else if (fmt_args->GetFormattedOutputChoice() == CFormattingArgs::eTabularWithComments) {
             m_CmdLineArgs->GetOutputStream() << "# BLAST processed " << m_total_input << " queries" << endl;
         }
         }
         if (m_CmdLineArgs->ProduceDebugOutput()) {
             m_opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
         }
-        
+        //deallocate
+        ITERATE(CloneInfo, iter, m_Clone) {
+            ITERATE(AaMap, iter2, *(iter->second)){
+                delete iter2->second;
+            }
+            delete iter->second;
+        }
+
     } CATCH_ALL(status)
     return status;
 }
