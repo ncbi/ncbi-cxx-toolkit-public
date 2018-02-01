@@ -1582,7 +1582,7 @@ struct SId2PacketInfo
 {
     int request_count, remaining_count;
     int start_serial_num;
-    vector<char> done;
+    vector<const CID2_Request*> requests;
 };
 
 
@@ -1645,6 +1645,12 @@ void CId2ReaderBase::x_SetContextData(CID2_Request& request)
         CRef<CID2_Param> param(new CID2_Param);
         param->SetName("log:ncbi_phid");
         param->SetValue().push_back(rctx.GetNextSubHitID());
+        request.SetParams().Set().push_back(param);
+    }
+    if ( rctx.IsSetClientIP() ) {
+        CRef<CID2_Param> param(new CID2_Param);
+        param->SetName("log:client_ip");
+        param->SetValue().push_back(rctx.GetClientIP());
         request.SetParams().Set().push_back(param);
     }
 }
@@ -1878,7 +1884,10 @@ void CId2ReaderBase::x_AssignSerialNumbers(SId2PacketInfo& info,
     }
 
     // prepare serial nums and result state
-    info.request_count = static_cast<int>(packet.Get().size());
+    for ( auto& i : packet.Get() ) {
+        info.requests.push_back(i.GetPointer());
+    }
+    info.request_count = static_cast<int>(info.requests.size());
     info.remaining_count = info.request_count;
     int end_serial_num =
         static_cast<int>(m_RequestSerialNumber.Add(info.request_count));
@@ -1902,7 +1911,6 @@ void CId2ReaderBase::x_AssignSerialNumbers(SId2PacketInfo& info,
             (*it)->SetSerial_number(cur_serial_num++);
         }
     }}
-    info.done.assign(info.request_count, false);
 }
 
 
@@ -1916,7 +1924,7 @@ int CId2ReaderBase::x_GetReplyIndex(CReaderRequestResult& result,
         // discard whole reply for now
         return -1;
     }
-    if ( num < 0 || num >= packet.request_count || packet.done[num] ) {
+    if ( num < 0 || num >= packet.request_count || !packet.requests[num] ) {
         // unknown serial num - bad reply
         string descr;
         if ( conn ) {
@@ -1954,7 +1962,7 @@ bool CId2ReaderBase::x_DoneReply(SId2PacketInfo& info,
                                  const CID2_Reply& reply)
 {
     if ( reply.IsSetEnd_of_reply() ) {
-        info.done[num] = true;
+        info.requests[num] = 0;
         --info.remaining_count;
         return true;
     }
@@ -1983,7 +1991,7 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
             int num = x_GetReplyIndex(result, state.conn.get(), packet_info, *reply);
             if ( num >= 0 ) {
                 try {
-                    x_ProcessReply(result, loaded_sets[num], *reply);
+                    x_ProcessReply(result, loaded_sets[num], *reply, *packet_info.requests[num]);
                 }
                 catch ( CException& exc ) {
                     NCBI_RETHROW(exc, CLoaderException, eOtherError,
@@ -2342,36 +2350,42 @@ CId2ReaderBase::x_GetBlobState(const CBlob_id& blob_id,
 
 void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
                                     SId2LoadedSet& loaded_set,
-                                    const CID2_Reply& reply)
+                                    const CID2_Reply& main_reply,
+                                    const CID2_Request& request)
 {
-    if ( x_GetError(result, reply) &
+    if ( x_GetError(result, main_reply) &
          (fError_bad_command | fError_bad_connection) ) {
         return;
     }
-    switch ( reply.GetReply().Which() ) {
+    auto& reply = main_reply.GetReply();
+    switch ( reply.Which() ) {
     case CID2_Reply::TReply::e_Get_seq_id:
-        x_ProcessGetSeqId(result, loaded_set, reply,
-                          reply.GetReply().GetGet_seq_id());
+        x_ProcessGetSeqId(result, loaded_set, main_reply,
+                          reply.GetGet_seq_id().GetRequest(),
+                          &reply.GetGet_seq_id());
         break;
     case CID2_Reply::TReply::e_Get_blob_id:
-        x_ProcessGetBlobId(result, loaded_set, reply,
-                           reply.GetReply().GetGet_blob_id());
+        x_ProcessGetBlobId(result, loaded_set, main_reply,
+                           reply.GetGet_blob_id());
         break;
     case CID2_Reply::TReply::e_Get_blob_seq_ids:
-        x_ProcessGetBlobSeqIds(result, loaded_set, reply,
-                               reply.GetReply().GetGet_blob_seq_ids());
+        x_ProcessGetBlobSeqIds(result, loaded_set, main_reply,
+                               reply.GetGet_blob_seq_ids());
         break;
     case CID2_Reply::TReply::e_Get_blob:
-        x_ProcessGetBlob(result, loaded_set, reply,
-                         reply.GetReply().GetGet_blob());
+        x_ProcessGetBlob(result, loaded_set, main_reply,
+                         reply.GetGet_blob());
         break;
     case CID2_Reply::TReply::e_Get_split_info:
-        x_ProcessGetSplitInfo(result, loaded_set, reply,
-                              reply.GetReply().GetGet_split_info());
+        x_ProcessGetSplitInfo(result, loaded_set, main_reply,
+                              reply.GetGet_split_info());
         break;
     case CID2_Reply::TReply::e_Get_chunk:
-        x_ProcessGetChunk(result, loaded_set, reply,
-                          reply.GetReply().GetGet_chunk());
+        x_ProcessGetChunk(result, loaded_set, main_reply,
+                          reply.GetGet_chunk());
+        break;
+    case CID2_Reply::TReply::e_Empty:
+        x_ProcessEmptyReply(result, loaded_set, main_reply, request);
         break;
     default:
         break;
@@ -2379,19 +2393,56 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
 }
 
 
+void CId2ReaderBase::x_ProcessEmptyReply(CReaderRequestResult& result,
+                                         SId2LoadedSet& loaded_set,
+                                         const CID2_Reply& main_reply,
+                                         const CID2_Request& main_request)
+{
+    TErrorFlags errors = x_GetMessageError(main_reply);
+    if ( errors & fError_no_data ) {
+        auto& request = main_request.GetRequest();
+        switch ( request.Which() ) {
+        case CID2_Request::TRequest::e_Get_seq_id:
+            x_ProcessGetSeqId(result, loaded_set, main_reply, request.GetGet_seq_id(), 0);
+            break;
+        case CID2_Request::TRequest::e_Get_blob_id:
+            if ( request.GetGet_blob_id().IsSetSeq_id() ) {
+                auto& req_id = request.GetGet_blob_id().GetSeq_id().GetSeq_id();
+                if ( req_id.IsSeq_id() ) {
+                    SetAndSaveNoSeq_idBlob_ids(result, CSeq_id_Handle::GetHandle(req_id.GetSeq_id()), 0, CBioseq_Handle::fState_no_data);
+                    return;
+                }
+            }
+            break;
+        case CID2_Request::TRequest::e_Get_blob_info:
+            if ( request.GetGet_blob_info().GetBlob_id().IsResolve() ) {
+                auto& req_id = request.GetGet_blob_info().GetBlob_id().GetResolve().GetRequest().GetSeq_id().GetSeq_id();
+                if ( req_id.IsSeq_id() ) {
+                    SetAndSaveNoSeq_idBlob_ids(result, CSeq_id_Handle::GetHandle(req_id.GetSeq_id()), 0, CBioseq_Handle::fState_no_data);
+                    return;
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+
 void CId2ReaderBase::x_ProcessGetSeqId(CReaderRequestResult& result,
                                        SId2LoadedSet& loaded_set,
                                        const CID2_Reply& main_reply,
-                                       const CID2_Reply_Get_Seq_id& reply)
+                                       const CID2_Request_Get_Seq_id& request,
+                                       const CID2_Reply_Get_Seq_id* reply)
 {
     // we can save this data in cache
-    const CID2_Request_Get_Seq_id& request = reply.GetRequest();
     const CID2_Seq_id& req_id = request.GetSeq_id();
     switch ( req_id.Which() ) {
     case CID2_Seq_id::e_Seq_id:
         x_ProcessGetSeqIdSeqId(result, loaded_set, main_reply,
                                CSeq_id_Handle::GetHandle(req_id.GetSeq_id()),
-                               reply);
+                               request, reply);
         break;
 
     default:
@@ -2415,11 +2466,11 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
     SId2LoadedSet& loaded_set,
     const CID2_Reply& main_reply,
     const CSeq_id_Handle& seq_id,
-    const CID2_Reply_Get_Seq_id& reply)
+    const CID2_Request_Get_Seq_id& req,
+    const CID2_Reply_Get_Seq_id* reply)
 {
     int state = 0;
     TErrorFlags errors = x_GetMessageError(main_reply);
-    const CID2_Request_Get_Seq_id& req = reply.GetRequest();
     if ( (errors & fError_no_data) &&
          (req.GetSeq_id_type() == req.eSeq_id_type_any ||
           (req.GetSeq_id_type()&req.eSeq_id_type_all)==req.eSeq_id_type_all) ) {
@@ -2459,14 +2510,14 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
     bool got_no_ids = false;
     if ( (req.GetSeq_id_type()&req.eSeq_id_type_all)==req.eSeq_id_type_all ) {
         CReader::TSeqIds seq_ids;
-        ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
+        if ( reply ) ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply->GetSeq_id() ) {
             if ( req.GetSeq_id_type() != req.eSeq_id_type_all &&
                  sx_IsSpecialId(**it) ) {
                 continue;
             }
             seq_ids.push_back(CSeq_id_Handle::GetHandle(**it));
         }
-        if ( reply.IsSetEnd_of_reply() ) {
+        if ( !reply || reply->IsSetEnd_of_reply() ) {
             got_no_ids = seq_ids.empty();
             SetAndSaveSeq_idSeq_ids(result, seq_id,
                                     CFixedSeq_ids(eTakeOwnership,
@@ -2480,7 +2531,7 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
     }
     if ( req.GetSeq_id_type() & req.eSeq_id_type_gi ) {
         TSequenceGi ret;
-        ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
+        if ( reply ) ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply->GetSeq_id() ) {
             if ( (**it).IsGi() ) {
                 ret.gi = (**it).GetGi();
                 break;
@@ -2491,7 +2542,7 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
     }
     if ( req.GetSeq_id_type() & req.eSeq_id_type_text ) {
         TSequenceAcc ret;
-        ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
+        if ( reply ) ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply->GetSeq_id() ) {
             if ( (**it).GetTextseq_Id() ) {
                 ret.acc_ver = CSeq_id_Handle::GetHandle(**it);
                 break;
@@ -2501,7 +2552,7 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
         SetAndSaveSeq_idAccVer(result, seq_id, ret);
     }
     if ( req.GetSeq_id_type() & req.eSeq_id_type_label ) {
-        ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
+        if ( reply ) ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply->GetSeq_id() ) {
             const CSeq_id& id = **it;
             if ( id.IsGeneral() ) {
                 const CDbtag& dbtag = id.GetGeneral();
@@ -2515,7 +2566,7 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
     }
     if ( req.GetSeq_id_type() & req.eSeq_id_type_taxid ) {
         int taxid = -1;
-        ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
+        if ( reply ) ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply->GetSeq_id() ) {
             const CSeq_id& id = **it;
             if ( id.IsGeneral() ) {
                 const CDbtag& dbtag = id.GetGeneral();
@@ -2530,7 +2581,7 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
     }
     if ( req.GetSeq_id_type() & req.eSeq_id_type_hash ) {
         TSequenceHash hash;
-        ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
+        if ( reply ) ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply->GetSeq_id() ) {
             const CSeq_id& id = **it;
             if ( id.IsGeneral() ) {
                 const CDbtag& dbtag = id.GetGeneral();
@@ -2547,7 +2598,7 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
     }
     if ( req.GetSeq_id_type() & req.eSeq_id_type_seq_length ) {
         TSeqPos length = kInvalidSeqPos;
-        ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
+        if ( reply ) ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply->GetSeq_id() ) {
             const CSeq_id& id = **it;
             if ( id.IsGeneral() ) {
                 const CDbtag& dbtag = id.GetGeneral();
@@ -2564,7 +2615,7 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
     }
     if ( req.GetSeq_id_type() & req.eSeq_id_type_seq_mol ) {
         TSequenceType type;
-        ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
+        if ( reply ) ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply->GetSeq_id() ) {
             const CSeq_id& id = **it;
             if ( id.IsGeneral() ) {
                 const CDbtag& dbtag = id.GetGeneral();

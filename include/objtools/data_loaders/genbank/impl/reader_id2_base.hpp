@@ -215,16 +215,23 @@ protected:
 
     void x_ProcessReply(CReaderRequestResult& result,
                         SId2LoadedSet& loaded_set,
-                        const CID2_Reply& reply);
+                        const CID2_Reply& main_reply,
+                        const CID2_Request& main_request);
+    void x_ProcessEmptyReply(CReaderRequestResult& result,
+                             SId2LoadedSet& loaded_set,
+                             const CID2_Reply& main_reply,
+                             const CID2_Request& main_request);
     void x_ProcessGetSeqId(CReaderRequestResult& result,
                            SId2LoadedSet& loaded_set,
                            const CID2_Reply& main_reply,
-                           const CID2_Reply_Get_Seq_id& reply);
+                           const CID2_Request_Get_Seq_id& request,
+                           const CID2_Reply_Get_Seq_id* reply);
     void x_ProcessGetSeqIdSeqId(CReaderRequestResult& result,
                                 SId2LoadedSet& loaded_set,
                                 const CID2_Reply& main_reply,
                                 const CSeq_id_Handle& seq_id,
-                                const CID2_Reply_Get_Seq_id& reply);
+                                const CID2_Request_Get_Seq_id& request,
+                                const CID2_Reply_Get_Seq_id* reply);
     void x_ProcessGetBlobId(CReaderRequestResult& result,
                             SId2LoadedSet& loaded_set,
                             const CID2_Reply& main_reply,
