@@ -51,3 +51,4 @@ util$
 util/bitset$
 util/cache$
 util/sequtil$
+util/xregexp
