@@ -94,8 +94,8 @@ public:
     ~CCassConnectionFactory();
     void AppInit(CArgDescriptions* argdesc);
     void AppParseArgs(const CArgs& args);
-    void LoadConfig(string CfgName, string section);
-    void LoadConfig(const CNcbiRegistry &Registry, string section);
+    void LoadConfig(const string &  CfgName, const string &  section);
+    void LoadConfig(const CNcbiRegistry &Registry, const string &  section);
     void ReloadConfig();
     void ReloadConfig(const CNcbiRegistry &Registry);
     shared_ptr<CCassConnection> CreateInstance();

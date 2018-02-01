@@ -1,7 +1,7 @@
 # $Id$
 
 APP = pubseq_gateway
-SRC = AccVerCacheD AccVerCacheDB AccVerCacheStorage
+SRC = pubseq_gateway AccVerCacheDB AccVerCacheStorage pending_operation
 
 LIBS = $(CASSANDRA_STATIC_LIBS) $(LIBUV_STATIC_LIBS) $(H2O_STATIC_LIBS) $(LMDB_LIBS) $(NGHTTP2_STATIC_LIBS) $(ORIG_LIBS)
 CPPFLAGS = $(CASSANDRA_INCLUDE) $(H2O_INCLUDE) $(LMDB_INCLUDE) $(ORIG_CPPFLAGS)

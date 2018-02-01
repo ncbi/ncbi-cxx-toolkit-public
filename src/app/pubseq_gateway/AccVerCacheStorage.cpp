@@ -40,50 +40,59 @@
 
 constexpr const char* const CAccVerCacheStorage::DATA_DB;
 
-CAccVerCacheStorage::CAccVerCacheStorage(const lmdb::env& Env) :
-    m_Env(Env),
+CAccVerCacheStorage::CAccVerCacheStorage(const lmdb::env &  env) :
+    m_Env(env),
     m_Dbi({0}),
     m_IsReadOnly(true)
 {
-    unsigned int flags = 0;
-    unsigned int env_flags = 0;
+    unsigned int    flags = 0;
+    unsigned int    env_flags = 0;
 
     lmdb::env_get_flags(m_Env, &env_flags);
     m_IsReadOnly = env_flags & MDB_RDONLY;
 
-    auto wtxn = lmdb::txn::begin(Env, nullptr, env_flags & MDB_RDONLY);
+    auto    wtxn = lmdb::txn::begin(env, nullptr, env_flags & MDB_RDONLY);
     m_Dbi = lmdb::dbi::open(wtxn, DATA_DB, flags);
     wtxn.commit();
 }
 
-void CAccVerCacheStorage::InitializeDb(const lmdb::env& Env) {
-    unsigned int flags = MDB_CREATE;
 
-    auto wtxn = lmdb::txn::begin(Env);
+void CAccVerCacheStorage::s_InitializeDb(const lmdb::env &  env)
+{
+    unsigned int    flags = MDB_CREATE;
+    auto            wtxn = lmdb::txn::begin(env);
+
     lmdb::dbi::open(wtxn, DATA_DB, flags);
     wtxn.commit();
 }
 
-bool CAccVerCacheStorage::Update(const std::string& Key, const std::string& Data, bool CheckIfExists) {
+
+bool CAccVerCacheStorage::Update(const string &  key,
+                                 const string &  data, bool  check_if_exists)
+{
     if (m_IsReadOnly)
         EAccVerException::raise("Can not update: DB open in readonly mode");
-    if (CheckIfExists) {
-        auto rtxn = lmdb::txn::begin(m_Env, nullptr, MDB_RDONLY);
-        std::string ExData;
-        bool found = m_Dbi.get(rtxn, Key, ExData);
+    if (check_if_exists) {
+        auto        rtxn = lmdb::txn::begin(m_Env, nullptr, MDB_RDONLY);
+        string      ex_data;
+        bool        found = m_Dbi.get(rtxn, key, ex_data);
+
         rtxn.commit();
-        if (found && ExData == Data)
+        if (found && ex_data == data)
             return false;
     }
-    auto wtxn = lmdb::txn::begin(m_Env);
-    m_Dbi.put(wtxn, Key, Data);
+    auto    wtxn = lmdb::txn::begin(m_Env);
+    m_Dbi.put(wtxn, key, data);
     wtxn.commit();
     return true;
 }
 
-bool CAccVerCacheStorage::Get(const std::string& Key, std::string& Data) const {
-    auto rtxn = lmdb::txn::begin(m_Env, nullptr, MDB_RDONLY);
-    bool found = m_Dbi.get(rtxn, Key, Data);
+
+bool CAccVerCacheStorage::Get(const string &  key, string &  data) const
+{
+    auto    rtxn = lmdb::txn::begin(m_Env, nullptr, MDB_RDONLY);
+    bool    found = m_Dbi.get(rtxn, key, data);
+
     rtxn.commit();
     return found;
 }

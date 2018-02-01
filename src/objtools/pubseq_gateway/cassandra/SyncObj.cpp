@@ -51,133 +51,158 @@ BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
 
-bool WaitCondVar(unsigned int timeoutmks, CFastMutex& Mux, CConditionVariable& Ev, const std::function<bool()>& IsDoneCB, const std::function<void(bool*)>& UpdateRsltCB) {
-    int64_t ns = 0, s = 0;
-    if (timeoutmks != INT_MAX && timeoutmks > 0) {
-        ns = (int64_t)timeoutmks * 1000LL;
+bool WaitCondVar(unsigned int  timeout_mks, CFastMutex &  mux,
+                 CConditionVariable &  ev,
+                 const function<bool()> &  is_done_cb,
+                 const function<void(bool*)> &  update_result_cb)
+{
+    int64_t     ns = 0;
+    int64_t     s = 0;
+    if (timeout_mks != INT_MAX && timeout_mks > 0) {
+        ns = (int64_t)timeout_mks * 1000LL;
         s = ns / 1000000000L;
         ns = ns % 1000000000L;
     }
-    bool rv;
 
-    if (IsDoneCB)
-        rv = IsDoneCB();
-    else
-        rv = false;
-    if (!rv && timeoutmks) {
-        CFastMutexGuard guard(Mux);
-        if (timeoutmks == INT_MAX) {
-            if (IsDoneCB)
-                rv = IsDoneCB();
+    bool rv = false;
+    if (is_done_cb)
+        rv = is_done_cb();
+
+    if (!rv && timeout_mks) {
+        CFastMutexGuard guard(mux);
+        if (timeout_mks == INT_MAX) {
+            if (is_done_cb)
+                rv = is_done_cb();
             while(!rv) {
-                Ev.WaitForSignal(Mux);
-                if (IsDoneCB)
-                    rv = IsDoneCB();
+                ev.WaitForSignal(mux);
+                if (is_done_cb)
+                    rv = is_done_cb();
                 else
                     break;
             }
         }
         else {
-            if (IsDoneCB)
-                rv = IsDoneCB();
-            if (!rv && timeoutmks > 0) {
-                Ev.WaitForSignal(Mux, CDeadline(s, ns));
-                if (IsDoneCB)
-                    rv = IsDoneCB();
+            if (is_done_cb)
+                rv = is_done_cb();
+            if (!rv && timeout_mks > 0) {
+                ev.WaitForSignal(mux, CDeadline(s, ns));
+                if (is_done_cb)
+                    rv = is_done_cb();
             }
         }
     }
-    if (UpdateRsltCB)
-        UpdateRsltCB(&rv);
+    if (update_result_cb)
+        update_result_cb(&rv);
     return (rv);
 }
 
 #ifdef __linux__
 /** CFutex */
 
-void CFutex::DoWake(int Waiters) {
-    int rt = syscall(__NR_futex, &m_value, FUTEX_WAKE, Waiters, NULL);
+void CFutex::DoWake(int waiters)
+{
+    int     rt = syscall(__NR_futex, &m_Value, FUTEX_WAKE, waiters, NULL);
     if (rt < 0)
-        RAISE_ERROR(eSeqFailed, string("CFutex::DoWake: failed, unexpected errno: ") + NStr::NumericToString(errno));
+        RAISE_ERROR(eSeqFailed,
+                    string("CFutex::DoWake: failed, unexpected errno: ") +
+                    NStr::NumericToString(errno));
 }
 
-CFutex::WaitResult_t CFutex::WaitWhile(int Value, int TimeoutMks) {
-    struct timespec timeout = {0}, *ptimeout = &timeout;
-    if (TimeoutMks < 0)
+
+CFutex::EWaitResult CFutex::WaitWhile(int  value, int  timeout_mks)
+{
+    struct timespec     timeout = {0};
+    struct timespec *   ptimeout = &timeout;
+
+    if (timeout_mks < 0) {
         ptimeout = NULL;
-    else {
-        timeout.tv_sec = TimeoutMks / 1000000L;
-        timeout.tv_nsec = (TimeoutMks % 1000000L) * 1000L;
+    } else {
+        timeout.tv_sec = timeout_mks / 1000000L;
+        timeout.tv_nsec = (timeout_mks % 1000000L) * 1000L;
     }
 
-    while (syscall( __NR_futex, &m_value, FUTEX_WAIT, Value, ptimeout, 0, 0) != 0) {
+    while (syscall(__NR_futex, &m_Value, FUTEX_WAIT,
+                   value, ptimeout, 0, 0) != 0) {
         switch (errno) {
             case EWOULDBLOCK:
-                return wrOkFast; /** someone has already changed value **/
+                /* someone has already changed value */
+                return eWaitResultOkFast;
             case EINTR:
                 break; /** keep waiting ***/
             case ETIMEDOUT:
-                return wrTimeOut;
+                return eWaitResultTimeOut;
             default:
-                RAISE_ERROR(eSeqFailed, string("CFutex::WaitWhile: failed, unexpected errno: ") + NStr::NumericToString(errno));
+                RAISE_ERROR(eSeqFailed,
+                            string("CFutex::WaitWhile: failed, "
+                                   "unexpected errno: ") +
+                            NStr::NumericToString(errno));
         }
     }
-    return wrOk;
+    return eWaitResultOk;
 }
 #endif
 
+
 /** SSignalHandler */
 
-volatile sig_atomic_t SSignalHandler::m_CtrlCPressed(0);
+volatile sig_atomic_t   SSignalHandler::sm_CtrlCPressed(0);
 #ifdef __linux__
-CFutex SSignalHandler::m_CtrlCPressedEvent;
+CFutex                  SSignalHandler::sm_CtrlCPressedEvent;
 #endif
-std::function<void()> SSignalHandler::m_OnCtrlCPressed(NULL);
-unique_ptr<thread, function<void(thread*)> > SSignalHandler::m_WatchThread;
-volatile bool SSignalHandler::m_Quit(false);
 
-void SSignalHandler::WatchCtrlCPressed(bool Enable, std::function<void()> OnCtrlCPressed) {
-    m_CtrlCPressed = 0;
-    m_OnCtrlCPressed = OnCtrlCPressed;
+function<void()>                        SSignalHandler::sm_OnCtrlCPressed(NULL);
+unique_ptr<thread,
+           function<void(thread*)> >    SSignalHandler::sm_WatchThread;
+volatile bool                           SSignalHandler::sm_Quit(false);
+
+
+void SSignalHandler::s_WatchCtrlCPressed(bool              enable,
+                                         function<void()>  on_ctrl_c_pressed)
+{
+    sm_CtrlCPressed = 0;
+    sm_OnCtrlCPressed = on_ctrl_c_pressed;
 #ifdef __linux__
-    m_CtrlCPressedEvent.Set(0);
+    sm_CtrlCPressedEvent.Set(0);
 #endif
-    if (m_WatchThread) {
+    if (sm_WatchThread) {
         LOG5(("Joining Ctrl+C watcher thread"));
-        m_WatchThread = NULL;
+        sm_WatchThread = NULL;
     }
 
-    if (Enable) {
-        if (!m_WatchThread) {
+    if (enable) {
+        if (!sm_WatchThread) {
             LOG5(("Creating Ctrl+C watcher thread"));
-            m_WatchThread = unique_ptr<thread, function<void(thread*)> >(new thread(
+            sm_WatchThread = unique_ptr<thread,
+                                        function<void(thread*)> >(new thread(
                 [](){
-                    m_Quit = false;
+                    sm_Quit = false;
                     signal(SIGINT, [](int signum) {
                         signal(SIGINT, SIG_DFL);
-                        SSignalHandler::m_CtrlCPressed = 1;
+                        SSignalHandler::sm_CtrlCPressed = 1;
 #ifdef __linux__
-                        SSignalHandler::m_CtrlCPressedEvent.Inc();
+                        SSignalHandler::sm_CtrlCPressedEvent.Inc();
 #endif
                     });
-                    while (m_OnCtrlCPressed && !m_Quit) {
+                    while (sm_OnCtrlCPressed && !sm_Quit) {
 #ifdef __linux__
-                        while (SSignalHandler::m_CtrlCPressedEvent.WaitWhile(SSignalHandler::m_CtrlCPressedEvent.Inc(), 100000) == CFutex::wrTimeOut && !m_Quit);
+                        while (SSignalHandler::sm_CtrlCPressedEvent.WaitWhile(
+                                    SSignalHandler::sm_CtrlCPressedEvent.Inc(),
+                                    100000) == CFutex::eWaitResultTimeOut && !sm_Quit);
 #endif
                         LOG5(("Ctr+C watcher thread woke up"));
-                        if (m_CtrlCPressed && SSignalHandler::m_OnCtrlCPressed) {
+                        if (sm_CtrlCPressed && SSignalHandler::sm_OnCtrlCPressed) {
                             LOG5(("Ctr+C watcher thread: calling closure"));
-                            SSignalHandler::m_OnCtrlCPressed();
+                            SSignalHandler::sm_OnCtrlCPressed();
                         }
                         LOG5(("Ctr+C watcher thread finished"));
                     }
                 }),
                 [](thread* th){
                     if (th) {
-                        m_Quit = true;
+                        sm_Quit = true;
                         th->join();
                         signal(SIGINT, SIG_DFL);
-                        m_Quit = false;
+                        sm_Quit = false;
                     }
                     delete th;
                 }

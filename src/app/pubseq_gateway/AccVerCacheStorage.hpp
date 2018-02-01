@@ -33,44 +33,40 @@
  */
 
 #include <string>
+using namespace std;
 
 #include <util/lmdbxx/lmdb++.h>
 
 #include <objtools/pubseq_gateway/rpc/UtilException.hpp>
 
-class CAccVerCacheStorage {
-private:
-    const lmdb::env& m_Env;
-    lmdb::dbi m_Dbi;
-    bool m_IsReadOnly;
+
+class CAccVerCacheStorage
+{
 public:
-    CAccVerCacheStorage(const lmdb::env& Env);
-    static void InitializeDb(const lmdb::env& Env);
+    CAccVerCacheStorage(const lmdb::env &  env);
+    static void s_InitializeDb(const lmdb::env &  env);
 
-    bool Update(const std::string& Key, const std::string& Data, bool CheckIfExists);
-    bool Get(const std::string& Key, std::string& Data) const;
+    bool Update(const string &  key, const string &  data,
+                bool  check_if_exists);
+    bool Get(const string &  key, string &  data) const;
 
-    class iterator: public std::iterator<std::forward_iterator_tag, std::pair<std::string, std::string>> {
-        const lmdb::dbi& m_Dbi;
-        lmdb::txn m_Txn;
-        lmdb::cursor m_Cursor;
-        bool m_BOF;
-        bool m_EOF;
-        std::pair<std::string, std::string> m_Current;
+    class iterator: public std::iterator<forward_iterator_tag,
+                                         pair<string, string>>
+    {
     public:
-        iterator(const lmdb::env& Env, const lmdb::dbi& Dbi) :
-            m_Dbi(Dbi),
+        iterator(const lmdb::env &  env, const lmdb::dbi &  dbi) :
+            m_Dbi(dbi),
             m_Txn(0),
             m_Cursor(0),
             m_BOF(true),
             m_EOF(false)
         {
-            m_Txn = lmdb::txn::begin(Env, nullptr, MDB_RDONLY);
-            m_Cursor = lmdb::cursor::open(m_Txn, Dbi);
+            m_Txn = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
+            m_Cursor = lmdb::cursor::open(m_Txn, dbi);
             operator++();
         }
-        iterator(const lmdb::dbi& Dbi) :
-            m_Dbi(Dbi),
+        iterator(const lmdb::dbi &  dbi) :
+            m_Dbi(dbi),
             m_Txn(0),
             m_Cursor(0),
             m_BOF(false),
@@ -79,7 +75,8 @@ public:
         iterator() = delete;
         iterator(iterator&&) = default;
         iterator(const iterator& from) = delete;
-        ~iterator() {
+        ~iterator()
+        {
             if (m_Cursor.handle()) {
                 m_Cursor.close();
             }
@@ -89,7 +86,8 @@ public:
         };
         iterator& operator= (const iterator&) = delete;
         iterator& operator= (iterator&&) = default;
-        iterator& operator++() {
+        iterator& operator++()
+        {
             if (!m_Txn.handle())
                 EAccVerException::raise("Sentinel iterator can't move forward");
             m_BOF = false;
@@ -99,33 +97,56 @@ public:
                 m_EOF = true;
             return *this;
         }
-        iterator operator++(int) {
+        iterator operator++(int)
+        {
             EAccVerException::raise("Post-increment is banned");
         }
-        bool operator==(const iterator& rhs) const {
-            return (m_Dbi == rhs.m_Dbi) && (m_EOF == rhs.m_EOF) && (m_BOF == rhs.m_BOF) && (m_EOF || m_BOF || m_Current.first == rhs.m_Current.first);
+        bool operator==(const iterator& rhs) const
+        {
+            return (m_Dbi == rhs.m_Dbi) && (m_EOF == rhs.m_EOF) &&
+                   (m_BOF == rhs.m_BOF) &&
+                   (m_EOF || m_BOF || m_Current.first == rhs.m_Current.first);
         }
-        bool operator!=(const iterator& rhs) const {
+        bool operator!=(const iterator& rhs) const
+        {
             return ! operator==(rhs);
         }
-        const std::pair<std::string, std::string>& operator*() const {
+        const pair<string, string>& operator*() const
+        {
             return m_Current;
         }
-        const std::pair<std::string, std::string>* operator->() const {
+        const pair<string, string>* operator->() const
+        {
             return &m_Current;
         }
+
+    private:
+        const lmdb::dbi &       m_Dbi;
+        lmdb::txn               m_Txn;
+        lmdb::cursor            m_Cursor;
+        bool                    m_BOF;
+        bool                    m_EOF;
+        pair<string, string>    m_Current;
     };
 
-    iterator begin() const {
-        iterator tmp(m_Env, m_Dbi);
+    iterator begin() const
+    {
+        iterator    tmp(m_Env, m_Dbi);
         return tmp;
     }
 
-    iterator end() const {
-        iterator tmp(m_Dbi);
+    iterator end() const
+    {
+        iterator    tmp(m_Dbi);
         return tmp;
     }
-    static constexpr const char* const DATA_DB        = "@DB";
+
+    static constexpr const char* const DATA_DB = "@DB";
+
+private:
+    const lmdb::env &   m_Env;
+    lmdb::dbi           m_Dbi;
+    bool                m_IsReadOnly;
 };
 
 #endif

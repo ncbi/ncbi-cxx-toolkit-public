@@ -43,45 +43,54 @@
 
 #include "AccVerCacheStorage.hpp"
 
-class CAccVerCacheDB {
-private:
-    std::string m_DbPath;
-    lmdb::env m_Env;
-    std::unique_ptr<CAccVerCacheStorage> m_Storage;
-    bool m_IsReadOnly;
-    lmdb::dbi m_MetaDbi;
+using namespace std;
+
+
+class CAccVerCacheDB
+{
 public:
     CAccVerCacheDB() :
         m_Env(lmdb::env::create()),
         m_IsReadOnly(true),
         m_MetaDbi({0})
     {}
+
     CAccVerCacheDB(CAccVerCacheDB&&) = default;
     CAccVerCacheDB(const CAccVerCacheDB&) = delete;
     CAccVerCacheDB& operator= (const CAccVerCacheDB&) = delete;
 
-    void Open(const std::string& DbPath, bool Initialize, bool Readonly);
+    void Open(const string &  db_path, bool  initialize, bool  readonly);
     void Close();
 
-    CAccVerCacheStorage& Storage() {
+    CAccVerCacheStorage& Storage()
+    {
         if (!m_Storage)
             EAccVerException::raise("DB is not open");
         return *m_Storage.get();
     }
 
     DDRPC::DataColumns Columns();
-    void SaveColumns(const DDRPC::DataColumns& Clms);
+    void SaveColumns(const DDRPC::DataColumns &  clms);
 
-    lmdb::env& Env() {
+    lmdb::env& Env(void)
+    {
         return m_Env;
     }
-    bool IsReadOnly() const {
+    bool IsReadOnly(void) const
+    {
         return m_IsReadOnly;
     }
 
-    static void InitializeDb(const lmdb::env& Env);
+    static void s_InitializeDb(const lmdb::env &  env);
     static constexpr const char* const META_DB         = "#META";
     static constexpr const char* const STORAGE_COLUMNS = "DATA_COLUMNS";
+
+private:
+    string                              m_DbPath;
+    lmdb::env                           m_Env;
+    unique_ptr<CAccVerCacheStorage>     m_Storage;
+    bool                                m_IsReadOnly;
+    lmdb::dbi                           m_MetaDbi;
 };
 
 

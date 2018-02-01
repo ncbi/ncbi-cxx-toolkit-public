@@ -45,8 +45,8 @@ USING_NCBI_SCOPE;
 class CCassBlobWaiter;
 
 typedef enum {tt_unknown, tt_true, tt_false} triple_t;
-typedef std::function<void(const unsigned char* Data, unsigned int Size, int ChunkNo, bool IsLast)> DataChunkCB_t;
-typedef std::function<void(const char* Text, CCassBlobWaiter* waiter)> DataErrorCB_t;
+typedef function<void(const unsigned char *  Data, unsigned int Size, int ChunkNo, bool IsLast)> DataChunkCB_t;
+typedef function<void(const char* Text, CCassBlobWaiter* waiter)> DataErrorCB_t;
 typedef void(*DataReadyCB_t)(void*);
 
 class CCassBlobWaiter {
@@ -138,7 +138,7 @@ protected:
     unsigned int m_max_retries;
     bool m_async;
     bool m_cancelled;
-    
+
     vector<shared_ptr<CCassQuery>> m_query_arr;
     void CloseAll() {
         for (auto& it : m_query_arr) {

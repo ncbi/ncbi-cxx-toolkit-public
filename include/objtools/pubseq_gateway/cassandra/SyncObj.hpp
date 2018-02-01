@@ -47,82 +47,117 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-bool WaitCondVar(unsigned int timeoutmks, CFastMutex& Mux, CConditionVariable& Ev, const std::function<bool()>& IsDoneCB, const std::function<void(bool*)>& UpdateRsltCB);
+bool WaitCondVar(unsigned int  timeoutmks, CFastMutex &  mtx,
+                 CConditionVariable &  ev,
+                 const function<bool()> &  is_done_cb,
+                 const function<void(bool*)> &  update_rslt_cb);
 
 
 #ifdef __linux__
-class CFutex {
-private:
-    volatile atomic_int m_value;
+class CFutex
+{
 public:
-    typedef enum {
-        wrTimeOut,   // value hasn't changed
-        wrOk,        // value is changed and we waited
-        wrOkFast     // value is changed but we didn't wait
-    } WaitResult_t;
-    void DoWake(int Waiters = INT_MAX);
+    enum EWaitResult {
+        eWaitResultTimeOut, // value hasn't changed
+        eWaitResultOk,      // value is changed and we waited
+        eWaitResultOkFast   // value is changed but we didn't wait
+    };
+
+    void DoWake(int waiters = INT_MAX);
+
 public:
-    CFutex(int start = 0) : m_value(start) {}
+    CFutex(int start = 0) :
+        m_Value(start)
+    {}
+
     CFutex& operator=(const CFutex&) = delete;
     CFutex(const CFutex&) = delete;
-    bool CompareExchange(int Expected, int ReplaceWith, bool WakeOthers = true) {
-        bool rv = m_value.compare_exchange_weak(Expected, ReplaceWith, std::memory_order_relaxed);
-        if (rv && WakeOthers)
+
+    bool CompareExchange(int expected, int replace_with,
+                         bool wake_others = true)
+    {
+        bool    rv = m_Value.compare_exchange_weak(expected, replace_with,
+                                                   memory_order_relaxed);
+        if (rv && wake_others)
             DoWake();
         return rv;
     }
-    int Value() {
-        return m_value;
+
+    int Value(void)
+    {
+        return m_Value;
     }
-    WaitResult_t WaitWhile(int Value, int TimeoutMks = -1);
-    void Wake() {
+
+    EWaitResult WaitWhile(int value, int timeout_mks = -1);
+
+    void Wake(void)
+    {
         DoWake();
     }
-    int Set(int Value, bool WakeOthers = true) {
-        int rv = m_value.exchange(Value);
-        if ((rv != Value) && WakeOthers)
+
+    int Set(int value, bool wake_others = true)
+    {
+        int rv = m_Value.exchange(value);
+        if ((rv != value) && wake_others)
             DoWake();
         return rv;
     }
-    int Inc(bool WakeOthers = true) {
-        int rv = atomic_fetch_add(&m_value, 1);
-        if (WakeOthers)
+
+    int Inc(bool wake_others = true)
+    {
+        int rv = atomic_fetch_add(&m_Value, 1);
+        if (wake_others)
             DoWake();
         return rv;
     }
-    int Dec(int Value, bool WakeOthers = true) {
-        int rv = atomic_fetch_sub(&m_value, 1);
-        if (WakeOthers)
+
+    int Dec(bool wake_others = true)
+    {
+        int     rv = atomic_fetch_sub(&m_Value, 1);
+        if (wake_others)
             DoWake();
         return rv;
     }
-    int SemInc() {
-        int rv = atomic_fetch_add(&m_value, 1);
+
+    int SemInc(void)
+    {
+        int     rv = atomic_fetch_add(&m_Value, 1);
         return rv;
     }
-    int SemDec(int value) {
-        int rv = atomic_fetch_sub(&m_value, 1);
+
+    int SemDec(void)
+    {
+        int     rv = atomic_fetch_sub(&m_Value, 1);
         if (rv < 0)
             DoWake();
         return rv;
     }
+
+private:
+    volatile atomic_int     m_Value;
 };
 #endif
 
-class SSignalHandler {
-private:
-    static volatile sig_atomic_t m_CtrlCPressed;
-#ifdef __linux__
-    static CFutex m_CtrlCPressedEvent;
-#endif
-    static unique_ptr<thread, function<void(thread*)> > m_WatchThread;
-    static std::function<void()> m_OnCtrlCPressed;
-    static volatile bool m_Quit;
+
+class SSignalHandler
+{
 public:
-    static bool CtrlCPressed() {
-        return m_CtrlCPressed != 0;
+    static bool s_CtrlCPressed(void)
+    {
+        return sm_CtrlCPressed != 0;
     }
-    static void WatchCtrlCPressed(bool Enable, std::function<void()> OnCtrlCPressed = NULL);
+
+    static void s_WatchCtrlCPressed(bool  enable,
+                                    function<void()> on_ctrl_c_pressed = NULL);
+
+private:
+    static volatile sig_atomic_t                        sm_CtrlCPressed;
+#ifdef __linux__
+    static CFutex                                       sm_CtrlCPressedEvent;
+#endif
+    static unique_ptr<thread, function<void(thread*)> > sm_WatchThread;
+    static function<void()>                             sm_OnCtrlCPressed;
+    static volatile bool                                sm_Quit;
 };
 
 

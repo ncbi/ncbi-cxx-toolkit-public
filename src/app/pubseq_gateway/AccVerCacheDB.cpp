@@ -48,82 +48,97 @@ constexpr const char* const CAccVerCacheDB::META_DB;
 
 /** CAccVerCacheDB */
 
-void CAccVerCacheDB::InitializeDb(const lmdb::env& Env) {
-    unsigned int flags;
-    lmdb::env_get_flags(Env, &flags);
+void CAccVerCacheDB::s_InitializeDb(const lmdb::env &  env)
+{
+    unsigned int        flags;
+
+    lmdb::env_get_flags(env, &flags);
     if (flags & MDB_RDONLY)
         return;
-    auto wtxn = lmdb::txn::begin(Env);
-    auto meta_dbi = lmdb::dbi::open(wtxn, CAccVerCacheDB::META_DB, MDB_CREATE);
+
+    auto    wtxn = lmdb::txn::begin(env);
+    auto    meta_dbi = lmdb::dbi::open(wtxn, CAccVerCacheDB::META_DB,
+                                       MDB_CREATE);
     wtxn.commit();
 
-    CAccVerCacheStorage::InitializeDb(Env);
+    CAccVerCacheStorage::s_InitializeDb(env);
 }
 
-void CAccVerCacheDB::Open(const string& DbPath, bool Initialize, bool Readonly) {
-    m_DbPath = DbPath;
+
+void CAccVerCacheDB::Open(const string &  db_path,
+                          bool  initialize, bool  readonly)
+{
+    m_DbPath = db_path;
     if (m_DbPath.empty())
         EAccVerException::raise("DB path is not specified");
-    if (Initialize && Readonly)
+    if (initialize && readonly)
         EAccVerException::raise("DB create & readonly flags are mutually exclusive");
 
-    int stat_rv;
-    bool need_sync = !Initialize;
-    struct stat st;
+    int             stat_rv;
+    bool            need_sync = !initialize;
+    struct stat     st;
+
     stat_rv = stat(m_DbPath.c_str(), &st);
     if (stat_rv != 0 || st.st_size == 0) {
         /* file does not exist */
         need_sync = false;
-        if (Readonly || !Initialize)
+        if (readonly || !initialize)
             EAccVerException::raise("DB file is not initialized. Run full update first");
     }
 
     m_Env.set_max_dbs(DBI_COUNT);
     m_Env.set_max_readers(THREAD_COUNT);
 
-    int64_t mapsize = MAP_SIZE_INIT;
+    int64_t     mapsize = MAP_SIZE_INIT;
     if (stat_rv == 0 && st.st_size + MAP_SIZE_DELTA >  mapsize)
         mapsize = st.st_size + MAP_SIZE_DELTA;
 
     m_Env.set_mapsize(mapsize);
-    m_Env.open(DbPath.c_str(), (Readonly ?  MDB_RDONLY : 0) | MDB_NOSUBDIR | (need_sync ? 0 : (MDB_NOSYNC | MDB_NOMETASYNC)), 0664);
-    m_IsReadOnly = Readonly;
+    m_Env.open(db_path.c_str(),
+               (readonly ?  MDB_RDONLY : 0) | MDB_NOSUBDIR |
+               (need_sync ? 0 : (MDB_NOSYNC | MDB_NOMETASYNC)), 0664);
+    m_IsReadOnly = readonly;
 
-    if (Initialize) {
-        InitializeDb(m_Env);
+    if (initialize) {
+        s_InitializeDb(m_Env);
     }
 
-    auto wtxn = lmdb::txn::begin(m_Env, nullptr, Readonly ? MDB_RDONLY : 0);
+    auto    wtxn = lmdb::txn::begin(m_Env, nullptr, readonly ? MDB_RDONLY : 0);
     m_MetaDbi = lmdb::dbi::open(wtxn, META_DB, 0);
     wtxn.commit();
 
     m_Storage.reset(new CAccVerCacheStorage(m_Env));
-
 }
 
-void CAccVerCacheDB::Close() {
+
+void CAccVerCacheDB::Close()
+{
     m_Env.close();
 }
 
-void CAccVerCacheDB::SaveColumns(const DDRPC::DataColumns& Clms) {
-    stringstream os;
-    Clms.GetAsBin(os);
 
-    auto wtxn = lmdb::txn::begin(m_Env);
+void CAccVerCacheDB::SaveColumns(const DDRPC::DataColumns &  clms)
+{
+    stringstream    os;
+    clms.GetAsBin(os);
+
+    auto    wtxn = lmdb::txn::begin(m_Env);
     m_MetaDbi.put(wtxn, STORAGE_COLUMNS, os.str());
     wtxn.commit();
 }
 
-DDRPC::DataColumns CAccVerCacheDB::Columns() {
-    auto rtxn = lmdb::txn::begin(m_Env, nullptr, MDB_RDONLY);
-    string Data;
-    bool found = m_MetaDbi.get(rtxn, STORAGE_COLUMNS, Data);
-    rtxn.commit();
 
+DDRPC::DataColumns CAccVerCacheDB::Columns()
+{
+    auto        rtxn = lmdb::txn::begin(m_Env, nullptr, MDB_RDONLY);
+    string      data;
+    bool        found = m_MetaDbi.get(rtxn, STORAGE_COLUMNS, data);
+
+    rtxn.commit();
     if (!found)
         EAccVerException::raise("DB file is not updated. Run full update first");
 
-    stringstream ss(Data);
-    DDRPC::DataColumns rv(ss);
+    stringstream        ss(data);
+    DDRPC::DataColumns  rv(ss);
     return rv;
 }

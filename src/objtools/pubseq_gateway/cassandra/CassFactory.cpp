@@ -173,14 +173,14 @@ void CCassConnectionFactory::ProcessParams() {
 }
 
 
-void CCassConnectionFactory::LoadConfig(const string CfgName, string section) {
+void CCassConnectionFactory::LoadConfig(const string &  CfgName, const string &  section) {
     LOG5(("CCassDataConnectionFactory::LoadConfig"));
     m_Section = section;
     m_CfgName = CfgName;
     ReloadConfig();
 }
 
-void CCassConnectionFactory::LoadConfig(const CNcbiRegistry &Registry, string section) {
+void CCassConnectionFactory::LoadConfig(const CNcbiRegistry &Registry, const string &  section) {
     LOG5(("CCassDataConnectionFactory::LoadConfig"));
     m_Section = section;
     m_CfgName = "";

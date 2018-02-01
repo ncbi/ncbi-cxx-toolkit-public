@@ -1092,18 +1092,18 @@ void CCassBlobOp::LoadKeys(CAppOp& op, CBlobFullStatMap* keys, function<void()> 
         }
 
         string error;
-        while (!SSignalHandler::CtrlCPressed() && loadkeys_context.m_running_count.load() > 0) {
+        while (!SSignalHandler::s_CtrlCPressed() && loadkeys_context.m_running_count.load() > 0) {
             loadkeys_context.m_wakeup.WaitWhile(val);
             val = loadkeys_context.m_wakeup.Value();
             for (auto& it : contexts) {
                 run_id = it.run_id;
-                if (!SSignalHandler::CtrlCPressed() && it.data_triggered) {
+                if (!SSignalHandler::s_CtrlCPressed() && it.data_triggered) {
                     it.data_triggered = false;
                     LoadKeysScheduleNext(*(queries[run_id].get()), &it);
                 }
             }
         }
-        if (SSignalHandler::CtrlCPressed())
+        if (SSignalHandler::s_CtrlCPressed())
             RAISE_ERROR(eFatal, "SIGINT delivered");
     }
     catch (const exception& e) { // don't re-throw, we have to wait until all data events are triggered

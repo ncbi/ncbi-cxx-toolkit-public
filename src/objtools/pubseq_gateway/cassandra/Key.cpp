@@ -42,21 +42,26 @@ USING_NCBI_SCOPE;
 
 /** CBlobFullStatMap */
 
-void CBlobFullStatMap::Copy(const CBlobFullStatMap& src) {
+void CBlobFullStatMap::Copy(const CBlobFullStatMap &  src)
+{
     clear();
     Append(src);
 }
 
-void CBlobFullStatMap::Append(const CBlobFullStatMap& src) {
+
+void CBlobFullStatMap::Append(const CBlobFullStatMap &  src)
+{
     reserve(src.size());
-    for (const auto& it : src) {
+    for (const auto &  it : src) {
         operator[](it.first) = it.second;
     }
 }
 
-void CBlobFullStatMap::Append(const CBlobFullStatVec& src) {
+
+void CBlobFullStatMap::Append(const CBlobFullStatVec &  src)
+{
     reserve(src.size());
-    for (const auto& it : src) {
+    for (const auto &  it : src) {
         operator[](it.first) = it.second;
     }
 }
@@ -64,19 +69,22 @@ void CBlobFullStatMap::Append(const CBlobFullStatVec& src) {
 
 /** CBlobFullStatVec */
 
-void CBlobFullStatVec::Copy(const CBlobFullStatMap& src) {
+void CBlobFullStatVec::Copy(const CBlobFullStatMap &  src)
+{
     clear();
     Append(src);
 }
 
-void CBlobFullStatVec::Append(const CBlobFullStatMap& src) {
-    for (const auto& it : src) {
+void CBlobFullStatVec::Append(const CBlobFullStatMap &  src)
+{
+    for (const auto &  it : src) {
         push_back(it);
     }
 }
 
-void CBlobFullStatVec::Append(const CBlobFullStatVec& src) {
-    for (const auto& it : src) {
+void CBlobFullStatVec::Append(const CBlobFullStatVec &  src)
+{
+    for (const auto &  it : src) {
         push_back(it);
     }
 }
