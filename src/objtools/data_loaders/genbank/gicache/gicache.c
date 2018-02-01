@@ -132,7 +132,7 @@ int x_Commit(SGiDataIndex* data_index, int force_sync) {
 			rv = -1;
 		}
 	}
-    if (data_index && rv == 0) {
+    if (data_index && rv == 0 && !data_index->m_ReadOnlyMode) {
         time_t t =  time(0);
         if (force_sync || t > data_index->m_last_sync + SYNC_PERIOD_SEC) {
             rc = mdb_env_sync(data_index->m_env, 1);
