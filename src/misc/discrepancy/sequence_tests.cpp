@@ -446,7 +446,7 @@ DISCREPANCY_SUMMARIZE(N_RUNS_14)
 
 const string kExternalRef = "[n] sequence[s] [has] external references";
 
-DISCREPANCY_CASE(EXTERNAL_REFERENCE, CSeq_inst, eDisc | eOncaller | eSubmitter | eSmart, "Sequence has extyernal reference")
+DISCREPANCY_CASE(EXTERNAL_REFERENCE, CSeq_inst, eDisc | eOncaller | eSubmitter | eSmart, "Sequence has external reference")
 {
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
     if (!seq || seq->IsAa()) {
