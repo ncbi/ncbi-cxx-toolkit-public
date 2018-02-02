@@ -19,6 +19,7 @@ objtools/pubseq_gateway/cassandra
 objtools/pubseq_gateway/rpc
 objtools/pubseq_gateway/diag
 objtools/pubseq_gateway/client
+objtools/pubseq_gateway/impl
 
 util/lmdbxx
 
