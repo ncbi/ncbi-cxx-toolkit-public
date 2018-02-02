@@ -654,7 +654,7 @@ void CAsnSubCacheCreateApplication::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "CArgDescriptions demo program");
 
-    arg_desc->AddKey("cache", "Cache",
+    arg_desc->AddOptionalKey("cache", "Cache",
                      "Comma-separated paths of one or more main caches",
                      CArgDescriptions::eString);
 
@@ -798,7 +798,7 @@ int CAsnSubCacheCreateApplication::Run(void)
     vector<string> main_cache_paths;
     if (args["cache"]) {
         NStr::Split(args["cache"].AsString(), ",", main_cache_paths);
-    } else {
+    } else if (args["cache-manifest"]) {
         main_cache_paths = CFileManifest(args["cache-manifest"].AsString()).GetAllFilePaths();
     }
     ITERATE (vector<string>, it, main_cache_paths) {
