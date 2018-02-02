@@ -7,7 +7,7 @@
 #include <uv.h>
 
 
-#include <objtools/pubseq_gateway/rpc/uv_extra.h>
+#include <objtools/pubseq_gateway/impl/rpc/uv_extra.h>
 
 #define CONTAINER_OF(ptr, type, member) ({                                                      \
     const typeof(((type*)(0))->member) *__mptr = ((const typeof(((type*)(0))->member) *)(ptr)); \
