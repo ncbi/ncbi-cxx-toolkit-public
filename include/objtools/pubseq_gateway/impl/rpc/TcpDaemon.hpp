@@ -42,7 +42,7 @@
 #include "uv.h"
 #include "uv_extra.h"
 
-#include <objtools/pubseq_gateway/diag/AppLog.hpp>
+#include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
 #include "UvHelper.hpp"
 #include "UtilException.hpp"
 

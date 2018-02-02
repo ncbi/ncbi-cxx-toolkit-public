@@ -40,12 +40,12 @@
 
 #include <corelib/ncbireg.hpp>
 
-#include <objtools/pubseq_gateway/diag/AppPerf.hpp>
-#include <objtools/pubseq_gateway/diag/IdLogUtl.hpp>
-#include <objtools/pubseq_gateway/cassandra/CassDriver.hpp>
-#include <objtools/pubseq_gateway/cassandra/CassBlobOp.hpp>
-#include <objtools/pubseq_gateway/cassandra/IdCassScope.hpp>
-#include <objtools/pubseq_gateway/cassandra/SyncObj.hpp>
+#include <objtools/pubseq_gateway/impl/diag/AppPerf.hpp>
+#include <objtools/pubseq_gateway/impl/diag/IdLogUtl.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/CassDriver.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/CassBlobOp.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/SyncObj.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;

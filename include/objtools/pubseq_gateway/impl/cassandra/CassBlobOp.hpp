@@ -34,7 +34,7 @@
  *
  */
 
-#include <objtools/pubseq_gateway/diag/IdLogUtl.hpp>
+#include <objtools/pubseq_gateway/impl/diag/IdLogUtl.hpp>
 #include "CassDriver.hpp"
 #include "Key.hpp"
 #include "IdCassScope.hpp"

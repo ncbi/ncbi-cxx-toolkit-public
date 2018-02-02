@@ -39,8 +39,8 @@
 
 #include <corelib/ncbithr.hpp>
 
-#include <objtools/pubseq_gateway/diag/IdLogUtl.hpp>
-#include <objtools/pubseq_gateway/diag/AppLog.hpp>
+#include <objtools/pubseq_gateway/impl/diag/IdLogUtl.hpp>
+#include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
 #include "IdCassScope.hpp"
 
 

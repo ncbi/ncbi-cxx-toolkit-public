@@ -37,7 +37,7 @@ using namespace std;
 
 #include <util/lmdbxx/lmdb++.h>
 
-#include <objtools/pubseq_gateway/rpc/UtilException.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/UtilException.hpp>
 
 
 class CAccVerCacheStorage

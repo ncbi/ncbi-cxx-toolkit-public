@@ -8,10 +8,10 @@
 
 #include <corelib/ncbitime.hpp>
 
-#include <objtools/pubseq_gateway/rpc/DdRpcCommon.hpp>
-#include <objtools/pubseq_gateway/rpc/DdRpcClient.hpp>
-#include <objtools/pubseq_gateway/rpc/DdRpcDataPacker.hpp>
-#include <objtools/pubseq_gateway/rpc/HttpClientTransportP.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/DdRpcCommon.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/DdRpcClient.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/DdRpcDataPacker.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/HttpClientTransportP.hpp>
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
 
 

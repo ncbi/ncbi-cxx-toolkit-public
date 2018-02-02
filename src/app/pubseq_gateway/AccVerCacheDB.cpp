@@ -34,7 +34,7 @@
 #include <sstream>
 
 #include "AccVerCacheDB.hpp"
-#include <objtools/pubseq_gateway/rpc/UtilException.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/UtilException.hpp>
 
 using namespace std;
 

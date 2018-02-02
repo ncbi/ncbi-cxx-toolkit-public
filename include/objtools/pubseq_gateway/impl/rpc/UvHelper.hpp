@@ -36,7 +36,7 @@
 
 #include "uv.h"
 #include "UtilException.hpp"
-#include <objtools/pubseq_gateway/diag/AppLog.hpp>
+#include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
 
 class CUvLoop {
 private:

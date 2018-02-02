@@ -41,8 +41,8 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbiexpt.hpp>
 
-#include <objtools/pubseq_gateway/diag/AppLog.hpp>
-#include <objtools/pubseq_gateway/diag/AppPerf.hpp>
+#include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
+#include <objtools/pubseq_gateway/impl/diag/AppPerf.hpp>
 
 namespace IdLogUtil {
 

@@ -34,8 +34,8 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbistd.hpp>
-#include <objtools/pubseq_gateway/cassandra/Key.hpp>
-#include <objtools/pubseq_gateway/cassandra/IdCassScope.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/Key.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;

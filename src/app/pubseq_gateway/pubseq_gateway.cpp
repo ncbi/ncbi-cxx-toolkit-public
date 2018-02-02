@@ -38,14 +38,14 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbithr.hpp>
 
-#include <objtools/pubseq_gateway/diag/AppLog.hpp>
-#include <objtools/pubseq_gateway/diag/AppPerf.hpp>
-#include <objtools/pubseq_gateway/cassandra/CassBlobOp.hpp>
-#include <objtools/pubseq_gateway/cassandra/CassFactory.hpp>
+#include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
+#include <objtools/pubseq_gateway/impl/diag/AppPerf.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/CassBlobOp.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/CassFactory.hpp>
 
-#include <objtools/pubseq_gateway/rpc/UtilException.hpp>
-#include <objtools/pubseq_gateway/rpc/HttpServerTransport.hpp>
-#include <objtools/pubseq_gateway/rpc/DdRpcDataPacker.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/UtilException.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/HttpServerTransport.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/DdRpcDataPacker.hpp>
 
 #include "AccVerCacheDB.hpp"
 #include "pending_operation.hpp"

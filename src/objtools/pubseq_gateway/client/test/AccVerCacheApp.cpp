@@ -21,10 +21,10 @@
 
 #include <corelib/ncbiapp.hpp>
 
-#include <objtools/pubseq_gateway/diag/AppLog.hpp>
-#include <objtools/pubseq_gateway/rpc/UtilException.hpp>
-#include <objtools/pubseq_gateway/rpc/DdRpcDataPacker.hpp>
-#include <objtools/pubseq_gateway/rpc/DdRpcClient.hpp>
+#include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/UtilException.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/DdRpcDataPacker.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/DdRpcClient.hpp>
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
 
 #define DFLT_LOG_LEVEL 1

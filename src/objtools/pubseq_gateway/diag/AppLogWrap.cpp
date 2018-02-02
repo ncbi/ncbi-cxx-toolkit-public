@@ -20,8 +20,8 @@
 #include <sched.h>
 #include <ctype.h>
 
-#include <objtools/pubseq_gateway/diag/AppLogWrap.h>
-#include <objtools/pubseq_gateway/diag/AppLogWrap_p.h>
+#include <objtools/pubseq_gateway/impl/diag/AppLogWrap.h>
+#include <objtools/pubseq_gateway/impl/diag/AppLogWrap_p.h>
 
 
 namespace IdLogUtil {

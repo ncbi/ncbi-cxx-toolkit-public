@@ -37,10 +37,10 @@
 
 #include <corelib/ncbireg.hpp>
 
-#include <objtools/pubseq_gateway/diag/AppPerf.hpp>
-#include <objtools/pubseq_gateway/cassandra/CassFactory.hpp>
-#include <objtools/pubseq_gateway/cassandra/LbsmResolver.hpp>
-#include <objtools/pubseq_gateway/cassandra/IdCassScope.hpp>
+#include <objtools/pubseq_gateway/impl/diag/AppPerf.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/CassFactory.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/LbsmResolver.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;

@@ -6,9 +6,9 @@
 #include <cstdint>
 #include <cassert>
 
-#include <objtools/pubseq_gateway/rpc/UtilException.hpp>
-#include <objtools/pubseq_gateway/rpc/DdRpcCommon.hpp>
-#include <objtools/pubseq_gateway/rpc/DdRpcDataPacker.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/UtilException.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/DdRpcCommon.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/DdRpcDataPacker.hpp>
 
 using namespace std;
 

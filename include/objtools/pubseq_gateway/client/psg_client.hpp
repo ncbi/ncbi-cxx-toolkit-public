@@ -7,7 +7,7 @@
 #include <memory>
 #include <vector>
 
-#include <objtools/pubseq_gateway/rpc/HttpClientTransportP.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/HttpClientTransportP.hpp>
 #include <objects/id2/ID2_Blob_Id.hpp>
 #include <objects/id2/ID2_Reply_Get_Blob_Id.hpp>
 #include <corelib/ncbitime.hpp>

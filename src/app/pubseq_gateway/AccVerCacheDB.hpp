@@ -38,8 +38,8 @@
 
 #include <util/lmdbxx/lmdb++.h>
 
-#include <objtools/pubseq_gateway/rpc/UtilException.hpp>
-#include <objtools/pubseq_gateway/rpc/DdRpcDataPacker.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/UtilException.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/DdRpcDataPacker.hpp>
 
 #include "AccVerCacheStorage.hpp"
 

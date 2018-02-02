@@ -46,7 +46,7 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbiexpt.hpp>
 
-#include <objtools/pubseq_gateway/diag/AppPerf.hpp>
+#include <objtools/pubseq_gateway/impl/diag/AppPerf.hpp>
 #include "IdCassScope.hpp"
 
 BEGIN_IDBLOB_SCOPE

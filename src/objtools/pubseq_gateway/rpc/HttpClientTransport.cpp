@@ -14,18 +14,18 @@
 #include <utility>
 #include <functional>
 
-#include <objtools/pubseq_gateway/rpc/mpmc_nw.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/mpmc_nw.hpp>
 #include <uv.h>
 
 #define __STDC_FORMAT_MACROS
 #include <nghttp2/nghttp2.h>
 
-#include <objtools/pubseq_gateway/diag/AppLog.hpp>
-#include <objtools/pubseq_gateway/rpc/UvHelper.hpp>
+#include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/UvHelper.hpp>
 
-#include <objtools/pubseq_gateway/rpc/DdRpcCommon.hpp>
-#include <objtools/pubseq_gateway/rpc/HttpClientTransport.hpp>
-#include <objtools/pubseq_gateway/rpc/HttpClientTransportP.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/DdRpcCommon.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/HttpClientTransport.hpp>
+#include <objtools/pubseq_gateway/impl/rpc/HttpClientTransportP.hpp>
 
 
 using namespace std;
