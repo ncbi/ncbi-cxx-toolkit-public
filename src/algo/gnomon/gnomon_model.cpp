@@ -480,7 +480,7 @@ void CCDSInfo::Remap(const CRangeMapper& mapper)
     NON_CONST_ITERATE(TPStops, s, m_p_stops) {
         *s = SPStop(mapper(*s, false), s->m_status);
     }
-    _ASSERT(Invariant());
+    _ASSERT(Invariant());    
 }
 
 void CCDSInfo::CombineWith(const CCDSInfo& another_cds_info)
@@ -1203,7 +1203,7 @@ void CGeneModel::TrimEdgesToFrameInOtherAlignGaps(const TExons& exons_with_gaps,
         if (exons_with_gaps[i].GetTo() < right_edge && right_edge < exons_with_gaps[i+1].GetFrom()) {
             _ASSERT( !exons_with_gaps[i].m_ssplice && !exons_with_gaps[i+1].m_fsplice );
             _ASSERT( left_edge <= exons_with_gaps[i].GetTo() );
-            TSignedSeqRange tlim = mrnamap.MapRangeOrigToEdited(TSignedSeqRange(exons_with_gaps[i].GetTo(),right_edge), CAlignMap::eSinglePoint, CAlignMap::eLeftEnd);
+            TSignedSeqRange tlim = mrnamap.MapRangeOrigToEdited(TSignedSeqRange(exons_with_gaps[i].GetTo(),right_edge), CAlignMap::eSinglePoint, CAlignMap::eRightEnd);
             _ASSERT(tlim.NotEmpty());
             int del = (tlim.GetLength()-1)%3;
             if(del > 0) {
