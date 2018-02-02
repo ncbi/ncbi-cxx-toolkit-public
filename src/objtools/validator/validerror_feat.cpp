@@ -5841,8 +5841,18 @@ void CSingleFeatValidator::x_ValidateSeqFeatProduct()
     if (m_ProductBioseq) {
         m_Imp.ValidateSeqLoc(m_Feat.GetProduct(), m_ProductBioseq, true, "Product", m_Feat);
 
-        FOR_EACH_SEQID_ON_BIOSEQ(id, *(m_ProductBioseq.GetCompleteBioseq())) {
-            switch ((*id)->Which()) {
+        for (auto id : m_ProductBioseq.GetCompleteBioseq()->GetId()) {
+            if (id->Which() == sid.Which()) {
+                // check to make sure capitalization is the same
+                string from_seq = id->AsFastaString();
+                string from_loc = sid.AsFastaString();
+                if (!NStr::EqualCase(from_seq, from_loc) &&
+                    NStr::EqualNocase(from_seq, from_loc)) {
+                    PostErr(eDiag_Critical, eErr_SEQ_FEAT_BadProductSeqId,
+                        "Capitalization change from product location on feature to product sequence");
+                }
+            }
+            switch (id->Which()) {
             case CSeq_id::e_Genbank:
             case CSeq_id::e_Embl:
             case CSeq_id::e_Ddbj:
@@ -5850,7 +5860,7 @@ void CSingleFeatValidator::x_ValidateSeqFeatProduct()
             case CSeq_id::e_Tpe:
             case CSeq_id::e_Tpd:
             {
-                const CTextseq_id* tsid = (*id)->GetTextseq_Id();
+                const CTextseq_id* tsid = id->GetTextseq_Id();
                 if (tsid != NULL) {
                     if (!tsid->IsSetAccession() && tsid->IsSetName()) {
                         if (ValidateAccessionString(tsid->GetName(), false) == eAccessionFormat_valid) {
