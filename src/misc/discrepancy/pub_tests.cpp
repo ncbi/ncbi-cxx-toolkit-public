@@ -378,7 +378,7 @@ bool HasUnpubWithoutTitle(const CPubdesc& pubdesc)
 
 const string kUnpubPubWithoutTitle = "[n] unpublished pub[s] [has] no title";
 
-DISCREPANCY_CASE(UNPUB_PUB_WITHOUT_TITLE, CPubdesc, eDisc | eOncaller | eSubmitter | eSmart, "Unpublished pubs should have titles")
+DISCREPANCY_CASE(UNPUB_PUB_WITHOUT_TITLE, CPubdesc, eDisc | eOncaller | eSubmitter | eSmart | eBig, "Unpublished pubs should have titles")
 {
     if (HasUnpubWithoutTitle(obj)) {
         if (context.GetCurrentSeqdesc() != NULL) {

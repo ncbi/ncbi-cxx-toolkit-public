@@ -151,7 +151,7 @@ DISCREPANCY_SUMMARIZE(DUP_DEFLINE)
 
 const string kTerminalNs = "[n] sequence[s] [has] terminal Ns";
 
-DISCREPANCY_CASE(TERMINAL_NS, CSeq_inst, eDisc | eSubmitter | eSmart, "Ns at end of sequences")
+DISCREPANCY_CASE(TERMINAL_NS, CSeq_inst, eDisc | eSubmitter | eSmart | eBig, "Ns at end of sequences")
 {
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
     if (!seq || seq->IsAa()) {
@@ -708,7 +708,7 @@ static bool EndsWithSequence(const string& title)
 
 static const string kEndsWithSeq = "[n] defline[s] appear[S] to end with sequence characters";
 
-DISCREPANCY_CASE(TITLE_ENDS_WITH_SEQUENCE, CSeqdesc, eDisc | eSubmitter | eSmart, "Sequence characters at end of defline")
+DISCREPANCY_CASE(TITLE_ENDS_WITH_SEQUENCE, CSeqdesc, eDisc | eSubmitter | eSmart | eBig, "Sequence characters at end of defline")
 {
     if (!obj.IsTitle()) {
         return;
@@ -908,7 +908,7 @@ void AddUserObjectFieldItems
 }
 
 
-DISCREPANCY_CASE(INCONSISTENT_DBLINK, CSeq_inst, eDisc | eSubmitter | eSmart, "Inconsistent DBLink fields")
+DISCREPANCY_CASE(INCONSISTENT_DBLINK, CSeq_inst, eDisc | eSubmitter | eSmart | eBig, "Inconsistent DBLink fields")
 {
     if (obj.IsAa()) {
         return;
@@ -1104,7 +1104,7 @@ const string kStructuredCommentReport = "collection";
 const string kStructuredCommentPrevious = "previous";
 const string kStructuredCommentFieldPrefix = "structured comment field ";
 
-DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, CSeq_inst, eDisc | eSubmitter | eSmart, "Inconsistent structured comments")
+DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, CSeq_inst, eDisc | eSubmitter | eSmart | eBig, "Inconsistent structured comments")
 {
     if (obj.IsAa()) {
         return;
