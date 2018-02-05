@@ -163,12 +163,11 @@ public:
     ///  For how long to try to push the bio-ids into the queue.
     void Resolve(TBioIds* bio_ids, const CDeadline& deadline = 0);
 
-    /// XXX: THIS DOES NOT WORK
     /// Perform signle bio-ids resolution
     /// @note
     /// This method is works synchronously static and does not require 
     /// CBioIdResolutionQueue instance
-    static CBlobId Resolve(CBioId bio_id, const CDeadline& deadline = 0);
+    static CBlobId Resolve(CBioId bio_id, const CDeadline& deadline = CTimeout::eInfinite);
 
     /// Retrieve results of the id resolution that are currently ready.
     /// @note

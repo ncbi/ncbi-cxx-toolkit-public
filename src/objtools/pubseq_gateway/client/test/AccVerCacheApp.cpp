@@ -126,22 +126,8 @@ public:
 };
 
 void CAccVerCacheApp::RemoteLookup(const string& AccVer) {
-    // XXX: THIS DOES NOT WORK
-    // auto blob_id = CBioIdResolutionQueue::Resolve(AccVer);
-    // PrintBlobId(blob_id);
-
-    TBioIds bio_ids(1, AccVer);
-    CBioIdResolutionQueue queue;
-    queue.Resolve(&bio_ids);
-
-    for (;;) {
-        const auto blob_ids = queue.GetBlobIds();
-
-        if (blob_ids.empty()) continue;
-
-        PrintBlobId(blob_ids.front());
-        return;
-    }
+    auto blob_id = CBioIdResolutionQueue::Resolve(AccVer);
+    PrintBlobId(blob_id);
 }
 
 void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumThreads) {

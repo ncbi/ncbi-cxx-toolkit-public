@@ -65,7 +65,8 @@ CBioIdResolutionQueue::CBioIdResolutionQueueItem::CBioIdResolutionQueueItem(shar
 }
 
 void CBioIdResolutionQueue::CBioIdResolutionQueueItem::SyncResolve(CBlobId& blob_id, const CDeadline& deadline) {
-    long wait_ms = RemainingTimeMs(deadline);
+    bool has_timeout = !deadline.IsInfinite();
+    long wait_ms = has_timeout ? RemainingTimeMs(deadline) : DDRPC::INDEFINITE;
     bool rv = HCT::HttpClientTransport::s_ioc->add_request(m_Request, wait_ms);
     if (!rv) {
         blob_id.m_Status = CBlobId::eFailed;
@@ -78,7 +79,7 @@ void CBioIdResolutionQueue::CBioIdResolutionQueueItem::SyncResolve(CBlobId& blob
             PopulateData(blob_id);
             return;
         }
-        wait_ms = RemainingTimeMs(deadline);
+        if (has_timeout) wait_ms = RemainingTimeMs(deadline);
         if (wait_ms <= 0) {
             blob_id.m_Status = CBlobId::eFailed;
             blob_id.m_StatusEx = CBlobId::eError;
