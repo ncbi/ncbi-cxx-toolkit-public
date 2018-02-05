@@ -41,6 +41,7 @@ BEGIN_NCBI_SCOPE
 
 namespace pythonpp
 {
+    bool g_CleaningUp = false;
 
 #if PY_VERSION_HEX >= 0x02050000 
 	typedef Py_ssize_t py_ssize_t; 
@@ -57,12 +58,16 @@ class CString;
 // Strong-typed operation ...
 inline PyObject* IncRefCount(PyObject* obj)
 {
-    Py_INCREF(obj);     // NCBI_FAKE_WARNING
+    if ( !g_CleaningUp ) {
+        Py_INCREF(obj);     // NCBI_FAKE_WARNING
+    }
     return obj;
 }
 inline PyObject* DecRefCount(PyObject* obj)
 {
-    Py_DECREF(obj);
+    if ( !g_CleaningUp ) {
+        Py_DECREF(obj);
+    }
     return obj;
 }
 
@@ -170,7 +175,9 @@ public:
     {
         // PyAPI_FUNC(void) IncRefCount(PyObject *);
         // PyAPI_FUNC(void) Py_DecRef(PyObject *);
-        Py_XDECREF(m_PyObject);     // NCBI_FAKE_WARNING
+        if ( !g_CleaningUp ) {
+            Py_XDECREF(m_PyObject);     // NCBI_FAKE_WARNING
+        }
         m_PyObject = NULL;
     }
 

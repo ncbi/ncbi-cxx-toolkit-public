@@ -4474,6 +4474,11 @@ static bool          s_WasUsingOldPostFormat;
 static
 void s_RestoreOrigDiagHandler(void)
 {
+    // Don't try to touch reference counts, since random(!) cleanup
+    // order [https://docs.python.org/3/c-api/init.html#c.Py_FinalizeEx]
+    // may otherwise result in crashes at exit.
+    pythonpp::g_CleaningUp = true;
+
     if (s_OrigDiagHandler != NULL) {
         CDiagContext::SetOldPostFormat(s_WasUsingOldPostFormat);
         SetDiagHandler(s_OrigDiagHandler, false);

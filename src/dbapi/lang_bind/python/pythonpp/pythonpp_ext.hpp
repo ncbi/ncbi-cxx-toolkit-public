@@ -435,7 +435,7 @@ public:
     virtual PyObject* Get(void) const
     {
         PyObject* obj = (m_Obj->*m_GetFunc)();
-        Py_INCREF(obj);
+        IncRefCount(obj);
         return obj;
     }
 
