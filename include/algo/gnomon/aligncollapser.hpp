@@ -33,6 +33,7 @@
  */
 
 #include <algo/gnomon/gnomon_model.hpp>
+#include <objmgr/seq_vector.hpp>
 
 BEGIN_SCOPE(ncbi)
 BEGIN_SCOPE(gnomon)
@@ -122,6 +123,7 @@ struct SCorrectionData {
 class CAlignCollapser {
 public:
     CAlignCollapser(string contig = "", CScope* scope = 0, bool nofilteringcollapsing = false);
+    void InitContig(string contig, CScope* scope);
     void AddAlignment(const CAlignModel& align);
     void FilterAlignments();
     void GetCollapsedAlgnments(TAlignModelClusterSet& clsset);
@@ -159,6 +161,26 @@ public:
         }
     };
 
+    class CPartialString {
+    public:
+        void Init(const CSeqVector& sv, int from, int to) {
+            m_string.reserve(to-from+1);
+            sv.GetSeqData(from, to+1, m_string);
+            m_shift = from;
+        }        
+        char& operator[](int p) { return m_string[p-m_shift]; }
+        const char& operator[](int p) const { return m_string[p-m_shift]; }
+        int FullLength() const { return m_shift+m_string.size(); }
+        string substr(int p, int l) const { return m_string.substr(p-m_shift, l); }
+        void ToUpper() {
+            for(char& c : m_string)
+                c = toupper(c);
+        }
+    private:
+        string m_string;
+        int m_shift = 0;
+    };
+
 
 private:
     void CollapsIdentical();
@@ -194,9 +216,9 @@ private:
 
     CScope* m_scope;
     TIntMap m_genomic_gaps_len;
-    string m_contig;
+    CPartialString m_contig;
     string m_contig_name;
-    CResidueVec m_contigrv;
+    TSignedSeqRange m_range;
 
     int m_left_end;
     vector<double> m_coverage;

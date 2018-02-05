@@ -141,6 +141,7 @@ public:
     EType GetType() const { return m_type; };
     void SetStatus(EStatus s) { m_status = s; }
     EStatus GetStatus() const { return m_status; }
+    void SetLoc(TSignedSeqPos l) { m_loc = l; }
 
 private:
     void Init(TSignedSeqPos l, int len, EType type, const string& v, const SSource& s) {
@@ -658,6 +659,10 @@ public:
     //    TInDels GetAllCorrections() const;
     int TargetLen() const { return m_target_len; }
     EStrand Orientation() const { return m_orientation; }
+    void MoveOrigin(TSignedSeqPos shift) {
+        for(auto& mrange : m_orig_ranges)
+            mrange.MoveOrigin(shift);
+    }
 
 // private: // breaks SMapRange on WorkShop. :-/
     struct SMapRangeEdge {
@@ -677,6 +682,10 @@ public:
         SMapRangeEdge GetEdgeTo() const { return m_to; }
         void SetEdgeFrom(SMapRangeEdge from) { m_from = from; }
         void SetEdgeTo(SMapRangeEdge to) { m_to = to; }
+        void MoveOrigin(TSignedSeqPos shift) {
+            m_from.m_pos -= shift;
+            m_to.m_pos -= shift;
+        }
         TSignedSeqPos GetFrom() const { return m_from.m_pos; }
         TSignedSeqPos GetTo() const { return m_to.m_pos; }
         TSignedSeqPos GetExtendedFrom() const { return m_from.m_pos - m_from.m_extra; }

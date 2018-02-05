@@ -60,7 +60,7 @@ public:
 class CAnnotationASN1 {
 public:
     CAnnotationASN1(const string& contig_name, const CResidueVec& seq, IEvidence& evidence,
-                    int genetic_code = 1);
+                    int genetic_code = 1, int shift = 0);
     ~CAnnotationASN1();
 
     void ResetASN1();

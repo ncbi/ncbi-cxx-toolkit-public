@@ -119,11 +119,12 @@ public:
     void EnableSeqMasking();
     void SetGenomic(const CResidueVec& seq);
     void SetGenomic(const CSeq_id& seqid, objects::CScope& scope, const string& mask_annots = kEmptyStr, const TGeneModelList* models = 0);
-    void SetGenomic(const CSeq_id& seqid, objects::CScope& scope, const SCorrectionData& correction_data, const string& mask_annots = kEmptyStr);
+    void SetGenomic(const CSeq_id& seqid, objects::CScope& scope, const SCorrectionData& correction_data, TSignedSeqRange range = TSignedSeqRange::GetWhole(), const string& mask_annots = kEmptyStr);
 
+    /*
     //for compatibilty with 'pre-correction' worker node
     NCBI_DEPRECATED
-    static TInDels GetGenomicGaps(const TGeneModelList& /*models*/) { return TInDels(); }
+    static TInDels GetGenomicGaps(const TGeneModelList& ) { return TInDels(); }
     NCBI_DEPRECATED
     void SetGenomic(const CSeq_id& seqid, CScope& scope, const string& mask_annots, const TInDels* contig_fix_indels, const TGeneModelList* models = 0) {
         if(models != 0 || contig_fix_indels == 0) {
@@ -131,9 +132,10 @@ public:
         } else {
             SCorrectionData correction_data;
             correction_data.m_correction_indels = *contig_fix_indels;
-            SetGenomic(seqid, scope, correction_data, mask_annots);
+            SetGenomic(seqid, scope, correction_data, TSignedSeqRange::GetWhole(), mask_annots);
         }
     }
+    */
 
     CGnomonEngine& GetGnomon();
     void MapAlignmentsToEditedContig(TAlignModelList& alignments) const;
@@ -145,6 +147,7 @@ public:
 
 protected:
     CAlignModel MapOneModelToEditedContig(const CGeneModel& align) const;
+    CGeneModel MapOneModelToOrigContig(const CGeneModel& srcmodel) const;
 
     bool m_masking;
     CRef<CHMMParameters> m_hmm_params;
@@ -158,6 +161,7 @@ protected:
     map<int,char> m_replaced_bases;     // in original coordinates; just in case
     TGgapInfo m_inserted_seqs;          // edited left coord to indelinfo for ggaps
     TIntMap m_notbridgeable_gaps_len;   // don't allow introns to cross this
+    TSignedSeqRange m_limits;           // limits on contig
     string m_contig_acc;
 };
 
@@ -194,11 +198,13 @@ public:
     void CutParts(TGeneModelList& models);
     TGeneModelList MakeChains(TGeneModelList& models, bool coding_estimates_only = false);
 
+    /*
     // dummy functions for compatibilty with 'pre-correction' worker node
     NCBI_DEPRECATED
-    void FilterOutInferiorProtAlignmentsWithIncompatibleFShifts(TGeneModelList& /*clust*/) { return; }
+    void FilterOutInferiorProtAlignmentsWithIncompatibleFShifts(TGeneModelList& ) { return; }
     NCBI_DEPRECATED
-    void ReplicateFrameShifts(TGeneModelList& /*models*/) { return; }
+    void ReplicateFrameShifts(TGeneModelList& ) { return; }
+    */
 
 private:
     // Prohibit copy constructor and assignment operator

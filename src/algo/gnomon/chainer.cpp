@@ -4077,6 +4077,14 @@ void CChain::CalculateSupportAndWeightFromMembers(bool keep_all_evidence) {
     protreadingframe &= readingframe;
     cds.SetReadingFrame(protreadingframe, true);
     cds.SetReadingFrame(readingframe, false);
+
+    {
+        CAlignMap mrnamap(Exons(),FrameShifts(),Strand());
+        CCDSInfo cds_info = cds;
+        if(cds_info.IsMappedToGenome())
+            cds_info = cds_info.MapFromOrigToEdited(mrnamap);
+    }
+
     SetCdsInfo(cds);
 
     SetWeight(weight);
@@ -6482,7 +6490,7 @@ TInDels CombineCorrectionsAndIndels(const TSignedSeqRange exona, int extra_left,
     return combined_indels;
 }
 
-CGeneModel MapOneModelToOrigContig(const CGeneModel& srcmodel, const TInDels& editing_indels, const map<int,char>& replacements, const CAlignMap& edited_contig_map, const CGnomonAnnotator_Base::TGgapInfo& inserted_seqs) {
+CGeneModel CGnomonAnnotator_Base::MapOneModelToOrigContig(const CGeneModel& srcmodel) const {
     CGeneModel model = srcmodel;
     model.SetCdsInfo(CCDSInfo());
     model.CutExons(model.Limits());  // empty model with all atributes
@@ -6493,8 +6501,8 @@ CGeneModel MapOneModelToOrigContig(const CGeneModel& srcmodel, const TInDels& ed
 
         string seq;
         CInDelInfo::SSource src;
-        CGnomonAnnotator_Base::TGgapInfo::const_iterator i = inserted_seqs.upper_bound(e.GetTo());          // first ggap on right or end()
-        if(i != inserted_seqs.begin()) {
+        CGnomonAnnotator_Base::TGgapInfo::const_iterator i = m_inserted_seqs.upper_bound(e.GetTo());          // first ggap on right or end()
+        if(i != m_inserted_seqs.begin()) {
             --i;                                                                       // first ggap left or equal GetTo()
             int ggapa = i->first;
             int ggapb = i->first+(int)i->second->GetInDelV().length()-1;
@@ -6530,27 +6538,26 @@ CGeneModel MapOneModelToOrigContig(const CGeneModel& srcmodel, const TInDels& ed
             _ASSERT((int)seq.length() == src.m_range.GetLength());
             model.AddGgapExon(0, seq, src, false);
         } else {  // normal exon
-            TSignedSeqRange exon = edited_contig_map.ShrinkToRealPointsOnEdited(e.Limits());
+            TSignedSeqRange exon = m_edited_contig_map.ShrinkToRealPointsOnEdited(e.Limits());
             if(exon.Empty()) {   // not projectable exon
                 return CGeneModel();
             }
             int extra_left = exon.GetFrom()-e.GetFrom();
             int extra_right = e.GetTo()-exon.GetTo();
 
-            exon = edited_contig_map.MapRangeEditedToOrig(exon,false);
+            exon = m_edited_contig_map.MapRangeEditedToOrig(exon,false);
             _ASSERT(exon.NotEmpty());
-            model.AddNormalExon(exon, e.m_fsplice_sig, e.m_ssplice_sig, 0, false);
 
             TInDels exon_indels;
             ITERATE(TInDels, indl, srcmodel.FrameShifts()) {
                 if(indl->IntersectingWith(e.GetFrom(),e.GetTo()))
                     exon_indels.push_back(*indl);
             }
-            TInDels efs = CombineCorrectionsAndIndels(e.Limits(), extra_left, extra_right, exon, editing_indels, exon_indels);
+            TInDels efs = CombineCorrectionsAndIndels(e.Limits(), extra_left, extra_right, exon, m_editing_indels, exon_indels);
 
             TInDels erepl;
-            map<int,char>::const_iterator ir = replacements.lower_bound(exon.GetFrom());  // first exon replacement or end()
-            for( ;ir != replacements.end() && ir->first <= exon.GetTo(); ++ir) {
+            map<int,char>::const_iterator ir = m_replacements.lower_bound(exon.GetFrom());  // first exon replacement or end()
+            for( ;ir != m_replacements.end() && ir->first <= exon.GetTo(); ++ir) {
                 int loc = ir->first;
                 char c = ir->second;
                 TInDels::const_iterator ic = upper_bound(efs.begin(), efs.end(), loc, OverlappingIndel);  // skip all indels ending before mismatch
@@ -6566,10 +6573,16 @@ CGeneModel MapOneModelToOrigContig(const CGeneModel& srcmodel, const TInDels& ed
                     erepl.back() = CInDelInfo(loc, s.size(), CInDelInfo::eMism, s);
                 }
             }
-
             efs.insert(efs.end(), erepl.begin(), erepl.end());
             sort(efs.begin(), efs.end());
-            editedframeshifts.insert(editedframeshifts.end(), efs.begin(), efs.end());
+            for(auto& indl : efs) {
+                indl.SetLoc(indl.Loc()+m_limits.GetFrom());
+                editedframeshifts.push_back(indl);
+            }
+
+            exon.SetFrom(exon.GetFrom()+m_limits.GetFrom());
+            exon.SetTo(exon.GetTo()+m_limits.GetFrom());
+            model.AddNormalExon(exon, e.m_fsplice_sig, e.m_ssplice_sig, 0, false);
         }
 
         if(ie < (int)srcmodel.Exons().size()-1 && (!e.m_ssplice || !srcmodel.Exons()[ie+1].m_fsplice)) // hole
@@ -6583,6 +6596,7 @@ CGeneModel MapOneModelToOrigContig(const CGeneModel& srcmodel, const TInDels& ed
 }
 
 
+/*
 //currently not used for anything; will need separation of indels and replacemnets inputs if used
 void MapAlignsToOrigContig(TAlignModelList& aligns, const TInDels& corrections, int contig_size) {
     CGnomonAnnotator_Base::TGgapInfo inserted_seqs;  // not used
@@ -6623,10 +6637,11 @@ void MapAlignsToOrigContig(TAlignModelList& aligns, const TInDels& corrections, 
         }
     }    
 }
+*/
 
 void CGnomonAnnotator_Base::MapModelsToOrigContig(TGeneModelList& models) const {
     ERASE_ITERATE(TGeneModelList, im, models) {
-        CGeneModel model = MapOneModelToOrigContig(*im, m_editing_indels, m_replacements, m_edited_contig_map, m_inserted_seqs);
+        CGeneModel model = MapOneModelToOrigContig(*im);
         if(model.Limits().Empty()) {
             models.erase(im);
         } else {
@@ -6659,8 +6674,25 @@ bool InDelEndOrder(int pos, const CInDelInfo& indl) {
 CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& align) const 
 {
     CAlignMap amap = align.GetAlignMap();
+    CCDSInfo acds = align.GetCdsInfo();
+    if(align.ReadingFrame().NotEmpty() && acds.IsMappedToGenome())
+        acds = acds.MapFromOrigToEdited(amap);
+    amap.MoveOrigin(m_limits.GetFrom());
+    if(align.ReadingFrame().NotEmpty())
+        acds = acds.MapFromEditedToOrig(amap);
+
     //mismatches are dropped at this point
     TInDels aindels = align.GetInDels(false);
+    for(auto& indel : aindels)
+        indel.SetLoc(indel.Loc()-m_limits.GetFrom());
+    CGeneModel::TExons aexons = align.Exons();
+    for(auto& e : aexons) {
+        if(e.Limits().NotEmpty()) {
+            e.AddFrom(-m_limits.GetFrom());
+            e.AddTo(-m_limits.GetFrom());
+        }
+    }
+
     CGeneModel editedmodel = align;
     editedmodel.ClearExons();  // empty alignment with all atributes
 
@@ -6668,8 +6700,8 @@ CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& a
     TInDels editedindels;
     bool snap_to_codons = (align.Type() == CAlignModel::eProt);
  
-    for(int i = 0; i < (int)align.Exons().size(); ++i) {
-        const CModelExon& e = align.Exons()[i];
+    for(int i = 0; i < (int)aexons.size(); ++i) {
+        const CModelExon& e = aexons[i];
                 
         if(e.Limits().NotEmpty()) {   // real exon
             list<CInDelInfo> exon_indels;
@@ -6691,13 +6723,9 @@ CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& a
             TSignedSeqRange right_codon;
             if(align.Type() == CAlignModel::eProt) {
                 if(i == 0)
-                    left_codon = (align.Strand() == ePlus ? align.GetCdsInfo().Start() :  align.GetCdsInfo().Stop());
-                if(i == (int)align.Exons().size()-1)
-                    right_codon = (align.Strand() == ePlus ? align.GetCdsInfo().Stop() :  align.GetCdsInfo().Start());
-                if(!align.GetCdsInfo().IsMappedToGenome()) {
-                    left_codon = amap.MapRangeEditedToOrig(left_codon, false);
-                    right_codon = amap.MapRangeEditedToOrig(right_codon, false);
-                }
+                    left_codon = (align.Strand() == ePlus ? acds.Start() :  acds.Stop());
+                if(i == (int)aexons.size()-1)
+                    right_codon = (align.Strand() == ePlus ? acds.Stop() :  acds.Start());
             }
 
             TInDels::const_iterator ileft = upper_bound(m_editing_indels.begin(), m_editing_indels.end(), left, OverlappingIndel);  // skip all correction left of exon (doesn't skip touching deletion)
@@ -6797,7 +6825,7 @@ CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& a
             corrected_exon.SetFrom(corrected_exon.GetFrom()-left_extend);
             corrected_exon.SetTo(corrected_exon.GetTo()+right_extend);
             editedmodel.AddExon(corrected_exon, e.m_fsplice_sig, e.m_ssplice_sig, e.m_ident);
-            if(i < (int)align.Exons().size()-1 && (!align.Exons()[i].m_ssplice || !align.Exons()[i+1].m_fsplice))  // hole
+            if(i < (int)aexons.size()-1 && (!aexons[i].m_ssplice || !aexons[i+1].m_fsplice))  // hole
                 editedmodel.AddHole();
 
 
@@ -6812,9 +6840,9 @@ CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& a
             TInDels::const_iterator gap = m_editing_indels.end();
             ITERATE(TInDels, ig, m_editing_indels) {
                 if(ig->GetSource().m_range.NotEmpty()) {  //ggap 
-                    if(i > 0 && ig->Loc() < align.Exons()[i-1].GetTo())
+                    if(i > 0 && ig->Loc() < aexons[i-1].GetTo())
                         continue;
-                    if(i == 0 && ig->Loc() > align.Exons()[i+1].GetFrom())
+                    if(i == 0 && ig->Loc() > aexons[i+1].GetFrom())
                         break;
                     if(ig->GetInDelV() == gap_seq) {
                         gap = ig;
@@ -6850,14 +6878,12 @@ CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& a
     _ASSERT(align.GetEdgeReadingFrames()->empty());
 
     if(align.ReadingFrame().NotEmpty()) {
-        CCDSInfo cds = align.GetCdsInfo();
-        if(cds.IsMappedToGenome())
-            cds = cds.MapFromOrigToEdited(amap);
-        double score = cds.Score();
-        bool open = cds.OpenCds();
-        cds.Clip(editedalign.TranscriptLimits());
-        cds.SetScore(score, open);
-        editedalign.SetCdsInfo(cds.MapFromEditedToOrig(editedamap));
+        acds = acds.MapFromOrigToEdited(amap);
+        double score = acds.Score();
+        bool open = acds.OpenCds();
+        acds.Clip(editedalign.TranscriptLimits());
+        acds.SetScore(score, open);
+        editedalign.SetCdsInfo(acds.MapFromEditedToOrig(editedamap));
     }
 
     return editedalign;
@@ -7002,22 +7028,31 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
         }
     }
 
-    SetGenomic(contig, scope, correction_data, mask_annots);
+    SetGenomic(contig, scope, correction_data,  TSignedSeqRange::GetWhole(), mask_annots);
 }
 
-void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, const SCorrectionData& correction_data, const string& mask_annots)
+void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, const SCorrectionData& correction_data, TSignedSeqRange limits, const string& mask_annots)
 {
     m_contig_acc = CIdHandler::ToString(contig);
 
-    int length;
     CResidueVec seq;
+    int length;
 
     CBioseq_Handle bh(scope.GetBioseqHandle(contig));
     {
         CSeqVector sv (bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac));
         length = sv.size(); 
+        if(limits == TSignedSeqRange::GetWhole()) {
+            limits.SetFrom(0);
+            limits.SetTo(length-1);
+        }
+        int GC_RANGE = 200000;
+        limits.SetFrom(max(0, limits.GetFrom()-GC_RANGE/2));
+        limits.SetTo(min(length-1, limits.GetTo()+GC_RANGE/2));
+        length = limits.GetLength();
+        m_limits = limits;
         seq.reserve(length);
-        for(int i = 0; i < length; ++i)
+        for(int i = limits.GetFrom(); i <= limits.GetTo(); ++i)
             seq.push_back(sv[i]);
     }
 
@@ -7035,8 +7070,10 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
             .SetAdaptiveDepth(true);
         for (CFeat_CI it(bh, sel);  it;  ++it) {
             TSeqRange range = it->GetLocation().GetTotalRange();
-            for(unsigned int i = range.GetFrom(); i <= range.GetTo(); ++i)
-                seq[i] = tolower(seq[i]);
+            for(unsigned int i = range.GetFrom(); i <= range.GetTo(); ++i) {
+                if(Include(limits, i))
+                    seq[i-limits.GetFrom()] = tolower(seq[i-limits.GetFrom()]);
+            }
         }
     }
 
@@ -7049,20 +7086,21 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
 
     m_replacements = correction_data.m_replacements;
     for(map<int,char>::iterator ir = m_replacements.begin(); ir != m_replacements.end(); ++ir) {
-        m_replaced_bases[ir->first] = seq[ir->first];
-        seq[ir->first] = ir->second;
+        if(Include(limits,ir->first)) {
+            m_replaced_bases[ir->first-limits.GetFrom()] = seq[ir->first-limits.GetFrom()];
+            seq[ir->first-limits.GetFrom()] = ir->second;
+        }
     }
 
 
 #define     BLOCK_OF_Ns 35
-    ITERATE(TInDels, ig, correction_data.m_correction_indels) {
-        if(ig->GetSource().m_range.Empty()) { // correction indel
-            m_editing_indels.push_back(*ig);
-        } else {                              // ggap
-            int l = ig->Loc();
-            l = max(0,l);
-            l = min(length, l);
-            CInDelInfo g(l, ig->Len(), ig->GetType(), ig->GetInDelV(), ig->GetSource());
+    for(auto cor :  correction_data.m_correction_indels) {
+        if(cor.GetSource().m_range.Empty() && Include(limits, cor.Loc())) { // correction indel
+            cor.SetLoc(cor.Loc()-limits.GetFrom());
+            m_editing_indels.push_back(cor);
+        } else if(cor.Loc() >= limits.GetFrom() && cor.Loc() <= limits.GetTo()+1) {     // ggap (1bp fake ggaps may be loctated right before or after contig)
+            int l = cor.Loc()-limits.GetFrom();
+            CInDelInfo g(l, cor.Len(), cor.GetType(), cor.GetInDelV(), cor.GetSource());
             //surround ggap with Ns to satisfy MinIntron
             CInDelInfo Ns(l, BLOCK_OF_Ns, CInDelInfo::eDel, string(BLOCK_OF_Ns,'N'));
             m_editing_indels.push_back(Ns);

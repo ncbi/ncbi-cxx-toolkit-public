@@ -69,7 +69,7 @@ const string kGnomonConstructed = "Is [re]constructed alignment";
 
 
 struct SModelData {
-    SModelData(const CAlignModel& model, const CEResidueVec& contig_seq);
+    SModelData(const CAlignModel& model, const CEResidueVec& contig_seq, int shift);
 
     CAlignModel model;
     CEResidueVec mrna_seq;
@@ -79,7 +79,7 @@ struct SModelData {
     bool is_ncrna;
 };
 
-SModelData::SModelData(const CAlignModel& m, const CEResidueVec& contig_seq) : model(m)
+SModelData::SModelData(const CAlignModel& m, const CEResidueVec& contig_seq, int shift) : model(m)
 {
     CAlignMap amap = model.GetAlignMap();
     CCDSInfo cds = model.GetCdsInfo();
@@ -88,6 +88,7 @@ SModelData::SModelData(const CAlignModel& m, const CEResidueVec& contig_seq) : m
         model.SetCdsInfo(cds);
     }
 
+    amap.MoveOrigin(shift);
     amap.EditedSequence(contig_seq, mrna_seq, true);
 
     prot_sid.Reset(new CSeq_id);
@@ -101,7 +102,7 @@ SModelData::SModelData(const CAlignModel& m, const CEResidueVec& contig_seq) : m
 
 class CAnnotationASN1::CImplementationData {
 public:
-    CImplementationData(const string& contig_name, const CResidueVec& seq, IEvidence& evdnc, int genetic_code);
+    CImplementationData(const string& contig_name, const CResidueVec& seq, IEvidence& evdnc, int genetic_code, int sh);
 
     void ResetASN1();
     void AddModel(const CAlignModel& model);
@@ -124,6 +125,7 @@ private:
     CEResidueVec contig_seq;
 
     int gencode;
+    int shift;
 
     CBioseq_set::TSeq_set* nucprots;
     CSeq_annot* gnomon_models_annot;
@@ -172,10 +174,11 @@ void CAnnotationASN1::CImplementationData::ResetASN1() {
     internal_feature_table = &seq_annot->SetData().SetFtable();
 }
 
-CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig_name, const CResidueVec& seq, IEvidence& evdnc, int genetic_code) :
+CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig_name, const CResidueVec& seq, IEvidence& evdnc, int genetic_code, int sh) :
     contig_name(a_contig_name),
     contig_sid(CIdHandler::ToSeq_id(a_contig_name)),
     gencode(genetic_code),
+    shift(sh),
     evidence(evdnc)
 {
     Convert(seq, contig_seq);
@@ -195,8 +198,8 @@ void CAnnotationASN1::ResetASN1() {
 }
 
 CAnnotationASN1::CAnnotationASN1(const string& contig_name, const CResidueVec& seq, IEvidence& evdnc,
-                    int genetic_code) :
-    m_data(new CImplementationData(contig_name, seq, evdnc, genetic_code))
+                                 int genetic_code, int shift) :
+    m_data(new CImplementationData(contig_name, seq, evdnc, genetic_code, shift))
 {
 }
 
@@ -244,7 +247,7 @@ void CAnnotationASN1::CImplementationData::AddInternalFeature(const SModelData& 
 
 void CAnnotationASN1::CImplementationData::AddModel(const CAlignModel& model)
 {
-    SModelData md(model, contig_seq);
+    SModelData md(model, contig_seq, shift);
 
     CRef< CSeq_align > align = model2spliced_seq_align(md);
     CRef<CSeq_feat> cds_feat;
@@ -431,7 +434,7 @@ void CAnnotationASN1::CImplementationData::DumpEvidence(const SModelData& md)
             const CAlignModel* m = evidence.GetModel(id);
             if (m != NULL && (m->Type()&CGeneModel::eChain)) { //output supporting chains (gnomon)
                 auto_ptr<SModelData> smd;
-                smd.reset( new SModelData(*m, contig_seq) );
+                smd.reset( new SModelData(*m, contig_seq, shift) );
                 AddInternalFeature(*smd);
                 CreateModelProducts(*smd);
                 aligns->push_back(model2spliced_seq_align(*smd));

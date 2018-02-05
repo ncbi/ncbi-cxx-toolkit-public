@@ -36,7 +36,6 @@
 #include <corelib/ncbiargs.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/scope.hpp>
-#include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
 #include "gnomon_seq.hpp"
 
@@ -240,6 +239,51 @@ void CAlignCollapser::SetupArgDescriptions(CArgDescriptions* arg_desc) {
     arg_desc->SetCurrentGroup("");
 }
 
+#define MAX_DIST_TO_FLANK_GAP 10000
+void CAlignCollapser::InitContig(string contig, CScope* scope) {
+    if(m_range.NotEmpty()) {
+        m_contig_name = contig;
+        m_scope = scope;
+
+        CRef<CSeq_id> contigid(new CSeq_id);
+        contigid->Assign(*CIdHandler::ToSeq_id(contig)); 
+        if(!contigid) 
+            contigid = new CSeq_id(CSeq_id::e_Local, contig);
+
+        CBioseq_Handle bh (m_scope->GetBioseqHandle(*contigid));
+        if (!bh) {
+            NCBI_THROW(CException, eUnknown, "contig '"+contig+"' retrieval failed");
+        }
+        CSeqVector sv (bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac));
+        int length (sv.size());
+
+        int from = 0;
+        int to = length-1;
+        if(m_range !=  TSignedSeqRange::GetWhole()) {            
+            from = max(0,m_range.GetFrom()-2*MAX_DIST_TO_FLANK_GAP);
+            to = min(length-1,m_range.GetTo()+2*MAX_DIST_TO_FLANK_GAP);
+        }
+        m_contig.Init(sv, from, to);
+
+        TIntMap::iterator current_gap = m_genomic_gaps_len.end();
+        for(int i = from; i <=to; ++i) {
+            if(sv.IsInGap(i)) {
+                if(current_gap == m_genomic_gaps_len.end())
+                    current_gap = m_genomic_gaps_len.insert(TIntMap::value_type(i,1)).first;
+                else
+                    ++current_gap->second;
+            } else {
+                current_gap = m_genomic_gaps_len.end();
+            }
+        }
+        
+        if(from == 0)
+            m_genomic_gaps_len[-1] = 1;     // fake gap at the beginning    
+        if(to == length-1)
+            m_genomic_gaps_len[length] = 1; // fake gap at the end  
+    }
+}
+
 CAlignCollapser::CAlignCollapser(string contig, CScope* scope, bool nofilteringcollapsing) : m_count(0), m_scope(scope) {
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
     
@@ -261,40 +305,8 @@ CAlignCollapser::CAlignCollapser(string contig, CScope* scope, bool nofilteringc
     m_fillgenomicgaps = args["fillgenomicgaps"];
 
     if(m_scope != 0 && contig != "") {
-
-        m_contig_name = contig;
-
-        CRef<CSeq_id> contigid(new CSeq_id);
-        contigid->Assign(*CIdHandler::ToSeq_id(contig)); 
-        if(!contigid) 
-            contigid = new CSeq_id(CSeq_id::e_Local, contig);
-
-        CBioseq_Handle bh (m_scope->GetBioseqHandle(*contigid));
-        if (!bh) {
-            NCBI_THROW(CException, eUnknown, "contig '"+contig+"' retrieval failed");
-        }
-        CSeqVector sv (bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac));
-        int length (sv.size());
-
-        sv.GetSeqData(0, length, m_contig);
-
-        m_contigrv.resize(length);
-        copy(m_contig.begin(),m_contig.end(),m_contigrv.begin());
-
-        TIntMap::iterator current_gap = m_genomic_gaps_len.end();
-        for(int i = 0; i < length; ++i) {
-            if(sv.IsInGap(i)) {
-                if(current_gap == m_genomic_gaps_len.end())
-                    current_gap = m_genomic_gaps_len.insert(TIntMap::value_type(i,1)).first;
-                else
-                    ++current_gap->second;
-            } else {
-                current_gap = m_genomic_gaps_len.end();
-            }
-        }
-
-        m_genomic_gaps_len[-1] = 1;     // fake gap at the beginning
-        m_genomic_gaps_len[length] = 1; // fake gap at the end
+        m_range = TSignedSeqRange::GetWhole();
+        InitContig(contig, scope);
     }
 }
 
@@ -683,7 +695,7 @@ void CAlignCollapser::CleanSelfTranscript(CAlignModel& align, const string& tran
             }
         }
         if(!exons[ie].m_ssplice) {
-            int glim = (ie+1 < (int)exons.size()) ? exons[ie+1].GetFrom() : m_contig.size();
+            int glim = (ie+1 < (int)exons.size()) ? exons[ie+1].GetFrom() : m_contig.FullLength();
             int tlim = (ie+1 < (int)exons.size()) ? transcript_exons[ie+1].GetFrom() : transcript.size();
             int g = exons[ie].GetTo();
             int t = transcript_exons[ie].GetTo();
@@ -882,7 +894,7 @@ void CAlignCollapser::CleanSelfTranscript(CAlignModel& align, const string& tran
                 edited_exons[piece_end].m_ssplice_sig = "NN";
             } else if(tlen-tlim.GetTo()-1 > BIG_NOT_ALIGNED && (piece_end == (int)edited_exons.size()-1 || tlim.GetTo() < edited_transcript_exons[piece_end+1].GetFrom()-1)) {
                 string splice = (align.Strand() == ePlus) ? "GT" : "CT";
-                for(int p = min((int)m_contig.size()-1,elim.GetTo()+2); p >= max(elim.GetTo()-EXTRA_CUT, elim.GetFrom()+MISM_PENALTY)+2; --p) {
+                for(int p = min((int)m_contig.FullLength()-1,elim.GetTo()+2); p >= max(elim.GetTo()-EXTRA_CUT, elim.GetFrom()+MISM_PENALTY)+2; --p) {
                     if(m_contig[p-1] == splice[0] && m_contig[p] == splice[1]) {
                         tlim.SetTo(tlim.GetTo()-elim.GetTo()+p-2);
 
@@ -1418,8 +1430,7 @@ void CAlignCollapser::FilterAlignments() {
     } 
 
     //restore contig
-    NON_CONST_ITERATE(string, ip, m_contig)
-        *ip = toupper(*ip);
+    m_contig.ToUpper();
 
     typedef pair<TSignedSeqRange,TInDels> TGapEnd;
     set<TGapEnd> right_gends;   //rightmost exon befor gap
@@ -1561,7 +1572,7 @@ void CAlignCollapser::FilterAlignments() {
         }
     }
 
-    enum EnpPoint { eRightPlus = 1, eRightMinus = 2, eLeftPlus = 4, eLeftMinus = 8};
+    enum EnpPoint { eUnknown = 0, eRightPlus = 1, eRightMinus = 2, eLeftPlus = 4, eLeftMinus = 8};
     vector<unsigned char> end_status(len, 0);
 
     //include gap's boundaries in no cross splices
@@ -1650,7 +1661,7 @@ void CAlignCollapser::FilterAlignments() {
                     int new_l = l;
 
                     TIVec* rights = 0;
-                    EnpPoint endp;
+                    EnpPoint endp = eUnknown;
                     if(((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == ePlus) && right_plus[r-m_left_end] > l+trim) { // crosses right plus splice            
                         new_l = right_plus[r-m_left_end];
                         rights = &right_plus;
@@ -1722,7 +1733,7 @@ void CAlignCollapser::FilterAlignments() {
                     int new_r = r;
 
                     TIVec* lefts = 0;
-                    EnpPoint endp;
+                    EnpPoint endp = eUnknown;
                     if(((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == ePlus) && left_plus[l-m_left_end] < r-trim) { // crosses left plus splice              
                         new_r = left_plus[l-m_left_end];
                         lefts = &left_plus;
@@ -2101,7 +2112,6 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
 }
 
 
-#define MAX_DIST_TO_FLANK_GAP 10000
 CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlignModel& align, int fill) {
 
     CGeneModel editedmodel = align;
@@ -2249,6 +2259,8 @@ void CAlignCollapser::AddAlignment(const CAlignModel& a) {
 
     if((align.Status()&CGeneModel::eUnknownOrientation) && align.Strand() == eMinus)
         align.ReverseComplementModel();
+
+    m_range += align.Limits();
 
     const CGeneModel::TExons& e = align.Exons();
     for(unsigned int l = 1; l < e.size(); ++l) {
