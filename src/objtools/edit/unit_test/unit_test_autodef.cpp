@@ -2357,5 +2357,26 @@ BOOST_AUTO_TEST_CASE(Test_GB_7534)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SQD_4451)
+{
+    CRef<CSeq_entry> entry = BuildSequence();
+    CRef<CSeqdesc> desc = AddSource(entry, "Fusarium incarnatum");
+    CRef<CSeq_feat> feat1(new CSeq_feat());
+    feat1->SetData().SetRna().SetType(CRNA_ref::eType_miscRNA);
+    feat1->SetData().SetRna().SetExt().SetName("internal transcribed spacer region");
+    AddFeat(feat1, entry);
+    feat1->SetLocation().SetInt().SetFrom(0);
+    feat1->SetLocation().SetInt().SetTo(59);
+    feat1->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    feat1->SetLocation().SetPartialStop(true, eExtreme_Biological);
+
+    AddTitle(entry, "Fusarium incarnatum internal transcribed spacer region, partial sequence.");
+
+    CheckDeflineMatches(entry);
+
+    CheckDeflineMatches(entry);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

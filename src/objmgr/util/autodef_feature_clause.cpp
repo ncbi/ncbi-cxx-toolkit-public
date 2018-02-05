@@ -1922,7 +1922,8 @@ void CAutoDefParsedClause::SetMiscRNAWord(const string& phrase)
             SetTypewordFirst(false);
             m_Description = phrase.substr(0, NStr::Find(phrase, item_name));
         }
-        if (NStr::EndsWith(phrase, " region")) {
+        if (NStr::EndsWith(phrase, " region") &&
+            (!m_ShowTypewordFirst || m_Description != " region")) {
             SetTypeword(item_name + " region");
         } else {
             SetTypeword(item_name);
