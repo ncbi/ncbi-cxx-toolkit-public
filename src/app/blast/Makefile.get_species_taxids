@@ -16,3 +16,9 @@ purge:
 
 clean:
 
+CHECK_REQUIRES = in-house-resources
+CHECK_COPY = ${SCRIPT_NAME}
+CHECK_CMD = ${SCRIPT_NAME} -t 9606
+CHECK_CMD = ${SCRIPT_NAME} -t mouse
+
+WATCHERS = fongah2 camacho
