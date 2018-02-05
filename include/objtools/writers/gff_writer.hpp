@@ -137,7 +137,7 @@ public:
     /// @param asmblyAccession
     ///   optional assembly accession to use for the file header
     ///
-    bool WriteAlign( 
+    virtual bool WriteAlign( 
         const CSeq_align&,
         const string& asmblyName="",
         const string& asmblyAccession="" );

@@ -87,7 +87,7 @@ public:
     bool WriteAlign(
         const CSeq_align&,
         const string& asmblyName="",
-        const string& asmblyAccession="" );
+        const string& asmblyAccession="" ) override;
 
 protected:
     typedef list<pair<CConstRef<CSeq_align>, string>> TAlignCache;
