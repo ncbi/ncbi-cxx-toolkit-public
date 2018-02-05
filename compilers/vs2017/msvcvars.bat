@@ -3,11 +3,12 @@ REM
 REM $Id$
 REM
 
-REM @if not "%VSINSTALLDIR%"=="" goto devenv
-REM @call "%VS140COMNTOOLS%vsvars32.bat"
+set VSVER=15.0
 
 :devenv
 
-if exist "%VSAPPIDDIR%devenv.*" set DEVENV="%VSAPPIDDIR%devenv"
+for /f "tokens=* USEBACKQ" %%i IN (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere" -version %VSVER% -property productPath`) do (
+    set DEVENV=%%i
+)
 
 :end
