@@ -238,7 +238,34 @@ protected:
     vector<TStreams> m_streams;
 };
 
+class NCBI_XOBJWRITE_EXPORT CQualScoreWriter
+{
+public:
+    CQualScoreWriter(CNcbiOstream& ostr, 
+                     bool enable_gi=false);
+
+    virtual ~CQualScoreWriter(void);
+
+    void Write(const CBioseq& bioseq);
+private:
+    void x_WriteHeader(const CBioseq& bioseq);
+
+    bool x_GetMaxMin(const vector<char>& values, int& max, int& min);
+
+    string x_ComposeHeaderEnding(
+        const string& graph_title,
+        TSeqPos length,
+        int max,
+        int min);
+
+    void x_Advance(int& column, const int num_columns);
+
+    CNcbiOstream& m_Ostr;
+    unique_ptr<CFastaOstreamEx> m_FastaOstr;
+};
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
 
 #endif // end of "include-guard"

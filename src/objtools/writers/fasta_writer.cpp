@@ -30,28 +30,32 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <objtools/writers/fasta_writer.hpp>
 
 #include <corelib/ncbifile.hpp>
 
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/object_manager.hpp>
+
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
+#include <objects/seqfeat/RNA_gen.hpp>
+#include <objects/seqres/Byte_graph.hpp>
+
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/context.hpp>
 #include <objtools/format/items/flat_seqloc.hpp>
 #include <objtools/writers/write_util.hpp>
 #include <objtools/writers/writer_exception.hpp>
-#include <objects/seqfeat/Imp_feat.hpp>
-#include <objects/seqfeat/RNA_gen.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/object_manager.hpp>
+#include <objtools/writers/fasta_writer.hpp>
+
 #include <util/sequtil/sequtil_convert.hpp>
 #include <util/sequtil/sequtil.hpp>
-#include <objmgr/util/seq_loc_util.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -1180,6 +1184,201 @@ void CFastaOstreamComp::x_Write(const CBioseq_Handle& handle, const CSeq_loc* lo
     }
     TStreams& res = x_GetStream(sel);
     res.m_fasta_stream->Write(handle, location);
+}
+
+
+CQualScoreWriter::CQualScoreWriter(CNcbiOstream& ostr,
+                                   bool enable_gi)
+    : m_Ostr(ostr),
+      m_FastaOstr(new CFastaOstreamEx(ostr))
+{
+    m_FastaOstr->SetAllFlags(CFastaOstreamEx::fHideGenBankPrefix |
+                             CFastaOstreamEx::fNoDupCheck);
+    if (enable_gi) {
+        m_FastaOstr->SetFlag(CFastaOstreamEx::fEnableGI);
+    } 
+}
+
+
+// Needs to be in same compilation unit as CFastaOStreamEx
+CQualScoreWriter::~CQualScoreWriter() = default;
+
+
+void CQualScoreWriter::Write(const CBioseq& bioseq) 
+{
+    TSeqPos current_pos=0;
+    TSeqPos length=0;
+    int column=1; 
+    int num_columns=20;
+
+    if (bioseq.GetLength()) {
+        length = bioseq.GetLength();
+    }
+    bool has_graph = false;
+    x_WriteHeader(bioseq);
+
+    if (bioseq.IsSetAnnot()) {
+        for (CRef<CSeq_annot> pAnnot : bioseq.GetAnnot()) {
+            if (!pAnnot->IsGraph()) {
+                continue;
+            }
+
+            has_graph = true;
+
+            for (CRef<CSeq_graph> pGraph : pAnnot->GetData().GetGraph()) {
+                if (!pGraph->GetGraph().IsByte()) {
+                    continue;
+                }
+
+                if (pGraph->IsSetLoc()) {
+                    TSeqPos left = pGraph->GetLoc().GetStart(eExtreme_Positional);
+                    while (current_pos < left) {
+                        m_Ostr << " -1";
+                        x_Advance(column, num_columns);
+                        ++current_pos;
+                    }
+                }
+
+                const CByte_graph& byte_graph = pGraph->GetGraph().GetByte();
+                if (byte_graph.IsSetValues()) {
+                    for (char ch : byte_graph.GetValues()) {
+                        m_Ostr << " " << setw(2) << static_cast<int>(ch);
+                        x_Advance(column, num_columns);
+                        ++current_pos;
+                    }
+                }
+            }
+        }
+    }
+    
+    if (has_graph) {
+        while (current_pos < length) {
+            m_Ostr << " -1";
+            x_Advance(column, num_columns);
+            ++current_pos;
+        }
+    }
+
+    if (column > 1) {
+        m_Ostr << '\n';
+    }
+}
+
+
+string CQualScoreWriter::x_ComposeHeaderEnding(
+        const string& graph_title,
+        TSeqPos length, 
+        int max,
+        int min) 
+{
+    string header = graph_title;
+    if (!NStr::IsBlank(header)) {
+        header += " ";
+    }
+
+    if (length>0) {
+        header += "(Length: ";
+        header += NStr::IntToString(length);
+        header += ", Min: ";
+    }
+    else {
+        header += "(Min: ";
+    }
+
+    header += NStr::IntToString(min);
+    header += ", Max: ";
+    header += NStr::IntToString(max);
+    header += ")";
+
+    return header;
+}
+
+
+bool CQualScoreWriter::x_GetMaxMin(const vector<char>& values, int& max, int& min)
+{
+    if (values.empty()) {
+        return false;
+    }
+
+    max = min = values[0];
+
+    for (size_t i=1; i<values.size(); ++i) {
+        const int current_value = static_cast<int>(values[i]);
+        if (current_value > max) {
+            max = current_value;
+        } 
+        else
+        if (current_value < min) {
+            min = current_value;
+        }
+    }
+    return true;
+}
+
+
+void CQualScoreWriter::x_WriteHeader(const CBioseq& bioseq)
+{
+    if (!bioseq.IsSetAnnot()) {
+        return;
+    }
+
+    int min=256;
+    int max=0;
+
+    bool have_title = false;
+    bool has_byte_graph = false;
+    string graph_title;
+
+    for (const CRef<CSeq_annot>& pAnnot : bioseq.GetAnnot()) {
+        if (!pAnnot->IsGraph()) {
+            continue;
+        }
+
+        for (const CRef<CSeq_graph>& pGraph : pAnnot->GetData().GetGraph()) {
+            if (!have_title && 
+                pGraph->IsSetTitle()) {
+                graph_title = pGraph->GetTitle();
+                have_title = true;
+            }
+
+            const auto& graph_data = pGraph->GetGraph();
+            if (graph_data.Which() == CSeq_graph::TGraph::e_Byte) {
+                has_byte_graph = true;
+                const CByte_graph& byte_graph = graph_data.GetByte();
+
+                int local_max;
+                int local_min;
+
+                if (x_GetMaxMin(byte_graph.GetValues(), local_max, local_min)) {
+                    if (local_min < min) {
+                        min = local_min;
+                    }
+                    if (local_max > max) {
+                        max = local_max;
+                    }
+                }
+            }
+        }
+    }
+
+    if (!has_byte_graph) { // Nothing to do
+        return;
+    }
+
+    const TSeqPos length = bioseq.IsSetLength() ? bioseq.GetLength() : 0;
+    const string ending = x_ComposeHeaderEnding(graph_title, length, max, min);
+
+    m_FastaOstr->WriteTitle(bioseq, 0, false, ending);
+}
+
+void CQualScoreWriter::x_Advance(int& column, const int num_columns)
+{
+    if (column == num_columns) {
+        m_Ostr << '\n';
+        column = 1;
+        return;
+    }
+    ++column;
 }
 
 END_NCBI_SCOPE

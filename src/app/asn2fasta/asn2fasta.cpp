@@ -99,7 +99,7 @@ private:
     CFastaOstreamEx* x_GetFastaOstream(CBioseq_Handle& handle);
     CObjectIStream* x_OpenIStream(const CArgs& args);
     bool x_IsOtherFeat(const CSeq_feat_Handle& feat) const;
-    void x_WriteScoreHeader(const CBioseq& bioseq, CNcbiOstream& ostream) const;
+  //  void x_WriteScoreHeader(const CBioseq& bioseq, CNcbiOstream& ostream) const;
 
     // data
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
@@ -112,7 +112,8 @@ private:
     auto_ptr<CFastaOstreamEx>     m_Or;           // RNA output stream
     auto_ptr<CFastaOstreamEx>     m_Op;           // protein output stream
     auto_ptr<CFastaOstreamEx>     m_Ou;           // unknown output stream
-    CNcbiOstream*               m_Oq;           // quality score output stream
+    CNcbiOstream*                 m_Oq;           // quality score output stream
+    unique_ptr<CQualScoreWriter>  m_pQualScoreWriter;
 
     string                      m_OgHead;
     string                      m_OgTail;
@@ -723,6 +724,7 @@ bool CAsn2FastaApp::HandleSeqEntry(CRef<CSeq_entry>& se)
     return ret;
 }
 
+/*
 namespace {
 
 bool s_GetMaxMin(const vector<char>& values, int& max, int& min) 
@@ -835,12 +837,21 @@ static void s_Advance(int& column, CNcbiOstream& ostream, const int num_columns)
     }
     ++column;
 }
-
+*/
 //  --------------------------------------------------------------------------
 void CAsn2FastaApp::PrintQualityScores(const CBioseq& bioseq,
         CNcbiOstream& ostream) 
 //  --------------------------------------------------------------------------
 {
+
+    if (!m_pQualScoreWriter) {
+        m_pQualScoreWriter.reset(new CQualScoreWriter(ostream, GetArgs()["enable-gi"]));
+    }
+
+    m_pQualScoreWriter->Write(bioseq);
+
+
+  /*  
     TSeqPos current_pos=0;
     TSeqPos length=0;
     int column=1; 
@@ -897,92 +908,9 @@ void CAsn2FastaApp::PrintQualityScores(const CBioseq& bioseq,
     if (column > 1) {
         ostream << '\n';
     }
+    */
 }
 
-/*
-void CAsn2FastaApp::PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_stream)
-{
-    TSeqPos curpos = 0;
-    TSeqPos len = 0;
-    int j = 0;
-    bool first = true;
-
-    if (bsp.IsSetLength()) {
-        len = bsp.GetLength();
-    }
-
-    x_WriteScoreHeader(bsp, *out_stream); 
-
-
-    FOR_EACH_SEQANNOT_ON_BIOSEQ (sa_itr, bsp) {
-        const CSeq_annot& annot = **sa_itr;
-        if (! annot.IsGraph()) continue;
-        FOR_EACH_SEQGRAPH_ON_SEQANNOT (gr_itr, annot) {
-            const CSeq_graph& graph = **gr_itr;
-            const CSeq_graph::TGraph& src_data = graph.GetGraph();
-
-            if (first) { // Strange logic here
-                first = false;
-            }
-
-            switch (src_data.Which()) {
-                case CSeq_graph::TGraph::e_Byte:
-                    {
-                    if (graph.IsSetLoc()) {
-                        const CSeq_loc& loc = graph.GetLoc();
-                        TSeqPos left = loc.GetStart(eExtreme_Positional);
-                        while (curpos < left) {
-                            *out_stream << " -1";
-                            if (j < 19) {
-                                j++;
-                            } else {
-                                *out_stream << '\n';
-                                j = 0;
-                            }
-                            curpos++;
-                        }
-                    }
-                    const CByte_graph& byte_graph = src_data.GetByte();
-                    if (byte_graph.IsSetValues()) {
-                        const CByte_graph::TValues& bytes = byte_graph.GetValues();
-                        for (auto i = 0; i < bytes.size(); i++) {
-                            *out_stream << " ";
-                            char ch = bytes [i];
-                            *out_stream << setw(2) << static_cast<int>(ch);
-                            if (j==19) {
-                                j = 0;
-                                *out_stream << '\n';
-                            } 
-                            else {
-                                ++j;
-                            }
-                            ++curpos;
-                        }
-                    }
-                    }
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
-    if (! first) {
-        while (curpos < len) {
-            *out_stream << " -1";
-            if (j < 19) {
-                j++;
-            } else {
-                *out_stream << '\n';
-                j = 0;
-            }
-            curpos++;
-        }
-    }
-    if (j > 0) {
-        *out_stream << '\n';
-    }
-}
-*/
 
 CFastaOstreamEx* CAsn2FastaApp::x_GetFastaOstream(CBioseq_Handle& bsh)
 {
