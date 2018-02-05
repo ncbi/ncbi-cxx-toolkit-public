@@ -32,15 +32,11 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-using namespace IdLogUtil;
-
 //////////////////////////////////
 
 class CAccVerCacheApp: public CNcbiApplication {
 private:
 	string m_IniFile;
-    string m_LogFile;
-    unsigned int m_LogLevel;
     unsigned int m_NumThreads;
     string m_HostPort;
     string m_LookupRemote;
@@ -51,7 +47,6 @@ private:
     void PrintBlobId(const CBlobId& it);
 public:
 	CAccVerCacheApp() : 
-        m_LogLevel(DFLT_LOG_LEVEL),
         m_NumThreads(1),
         m_Delimiter('|')
 	{}
@@ -80,13 +75,13 @@ public:
 		fb.close();
 
 		if (!Registry.Empty() ) {
-			m_LogLevel = Registry.GetInt("COMMON", "LOGLEVEL", DFLT_LOG_LEVEL);
-			m_LogFile = Registry.GetString("COMMON", "LOGFILE", "");
+            IdLogUtil::CAppLog::SetLogFile(Registry.GetString("COMMON", "LOGFILE", ""));
+            IdLogUtil::CAppLog::SetLogLevel(Registry.GetInt("COMMON", "LOGLEVEL", DFLT_LOG_LEVEL));
 		}
 		if (args["o"])
-			m_LogFile = args["o"].AsString();
+            IdLogUtil::CAppLog::SetLogFile(args["o"].AsString());
 		if (args["l"])
-			m_LogLevel = args["l"].AsInteger();
+            IdLogUtil::CAppLog::SetLogLevel(args["l"].AsInteger());
 
 		if (args["H"])
             m_HostPort = args["H"].AsString();
@@ -291,6 +286,5 @@ int main(int argc, const char* argv[])
 	
     IdLogUtil::CAppLog::SetLogLevelFile(0);
     IdLogUtil::CAppLog::SetLogLevel(0);
-    IdLogUtil::CAppLog::SetLogFile("LOG1");
 	return CAccVerCacheApp().AppMain(argc, argv);
 }
