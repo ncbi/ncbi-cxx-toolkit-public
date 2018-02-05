@@ -69,8 +69,7 @@ DISCREPANCY_CASE(CDS_TRNA_OVERLAP, COverlappingFeatures, eDisc | eSubmitter | eS
             sequence::ECompare ovlp = sequence::eNoOverlap;
             ENa_strand trna_strand = loc_j.IsSetStrand() ? loc_j.GetStrand() : eNa_strand_unknown;
 
-            bool need_to_compare = !(cds_strand == eNa_strand_plus && trna_strand == eNa_strand_minus ||
-                                     cds_strand == eNa_strand_minus && trna_strand == eNa_strand_plus);
+            bool need_to_compare = (cds_strand == eNa_strand_minus) == (trna_strand == eNa_strand_minus);
 
             if (need_to_compare) {
                 ovlp = context.Compare(loc_i, loc_j);
@@ -124,17 +123,17 @@ DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
         if (f->GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA) {
             const CSeq_loc& loc_t = f->GetLocation();
             ENa_strand trna_strand = loc_t.IsSetStrand() ? loc_t.GetStrand() : eNa_strand_unknown;
-            if (!(cds_strand == eNa_strand_plus && trna_strand == eNa_strand_minus || cds_strand == eNa_strand_minus && trna_strand == eNa_strand_plus)) {
+            if ((cds_strand == eNa_strand_minus) == (trna_strand == eNa_strand_minus)) {
                 CSeq_loc::TRange r2 = loc_t.GetTotalRange();
                 if (!(r1.GetFrom() >= r2.GetToOpen() || r2.GetFrom() >= r1.GetToOpen())) {
                     ovlp_len = r1.GetToOpen() - r2.GetFrom();
-                    if (ovlp_len > 0 && ovlp_len < 3) {
+                    if (ovlp_len > 0 && ovlp_len < 3 && cds_strand != eNa_strand_minus) {
                         other.Reset(&loc_t);
                         break;
                     }
                     else {
                         ovlp_len = r2.GetToOpen() - r1.GetFrom();
-                        if (ovlp_len > 0 && ovlp_len < 3) {
+                        if (ovlp_len > 0 && ovlp_len < 3 && cds_strand == eNa_strand_minus) {
                             other.Reset(&loc_t);
                             break;
                         }
