@@ -1125,9 +1125,11 @@ CAsnSubCacheCreateApplication::x_FetchMissingBlobs(TIndexMapById& index_map,
             }
 
             CBioseq_Handle bsh;
+            CSeq_id_Handle idh = (*it)->first.m_Idh;
+            index_map.erase(*it);
             bool is_withdrawn = false;
             try {
-                bsh = scope->GetBioseqHandle((*it)->first.m_Idh);
+                bsh = scope->GetBioseqHandle(idh);
                 if ( !bsh ) {
                     is_withdrawn =
                         bsh.GetState() & CBioseq_Handle::fState_withdrawn;
@@ -1138,16 +1140,15 @@ CAsnSubCacheCreateApplication::x_FetchMissingBlobs(TIndexMapById& index_map,
             }
             catch (CException& e) {
                 LOG_POST(Error << "failed to retrieve sequence: "
-                         << (*it)->first.m_Idh.AsString()
+                         << idh.AsString()
                          << ": " << e);
                 {{
-                    TCachedSeqIds::const_iterator idh
-                        = m_cached_seq_ids.find((*it)->first.m_Idh);
-                    if(idh != m_cached_seq_ids.end()) {
-                        m_cached_seq_ids.erase(idh);
+                    TCachedSeqIds::const_iterator cached_idh
+                        = m_cached_seq_ids.find(idh);
+                    if(cached_idh != m_cached_seq_ids.end()) {
+                        m_cached_seq_ids.erase(cached_idh);
                     }
                 }}
-                index_map.erase(*it);
                 ++ (is_withdrawn ? m_RecordsWithdrawn : m_RecordsNotFound);
                 continue;
             }
