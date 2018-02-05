@@ -1,3 +1,6 @@
+Version 1.19.4 (2018-02-05):
+* Work around a Python limitation that could lead to crashes at exit.
+
 Version 1.19.3 (2017-11-20):
 * Properly distinguish text and binary values for the sake of Python 3
   users and Python 2 users who've explicitly opted into Unicode.
