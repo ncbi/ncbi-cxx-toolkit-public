@@ -99,7 +99,6 @@ private:
     CFastaOstreamEx* x_GetFastaOstream(CBioseq_Handle& handle);
     CObjectIStream* x_OpenIStream(const CArgs& args);
     bool x_IsOtherFeat(const CSeq_feat_Handle& feat) const;
-  //  void x_WriteScoreHeader(const CBioseq& bioseq, CNcbiOstream& ostream) const;
 
     // data
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
@@ -724,120 +723,7 @@ bool CAsn2FastaApp::HandleSeqEntry(CRef<CSeq_entry>& se)
     return ret;
 }
 
-/*
-namespace {
 
-bool s_GetMaxMin(const vector<char>& values, int& max, int& min) 
-{
-    if (values.empty()) {
-        return false;
-    }
-    max = values[0];
-    min = values[0];
-    for (auto i=1; i<values.size(); ++i) {
-        int current_value = static_cast<int>(values[i]);
-        if (current_value > max) {
-            max = current_value;
-        } 
-        else if(current_value < min) {
-            min = current_value;
-        }
-    }
-    return true;
-}
-
-};
-
-//  --------------------------------------------------------------------------
-void CAsn2FastaApp::x_WriteScoreHeader(const CBioseq& bioseq, CNcbiOstream& ostream) const
-//  --------------------------------------------------------------------------
-{
-    const TSeqPos length = bioseq.IsSetLength() ? bioseq.GetLength() : 0;
-
-    string header;
-    if (!bioseq.IsSetAnnot()) {
-        return;
-    }
-
-    string score_header;
-    string graph_title;
-    int min=256;
-    int max=0;
-    bool have_title = false;
-    bool has_byte_graph = false;
-    for (const CRef<CSeq_annot>& pAnnot : bioseq.GetAnnot()) {
-        if (!pAnnot->IsGraph()) {
-            continue;
-        }
-
-        for (const CRef<CSeq_graph>& pGraph : pAnnot->GetData().GetGraph()) {
-            if (!have_title &&
-                pGraph->IsSetTitle()) {
-                graph_title = pGraph->GetTitle();
-                have_title = true;
-            }
-            const auto& graph_data = pGraph->GetGraph();
-            if (graph_data.Which() == CSeq_graph::TGraph::e_Byte) {
-                has_byte_graph = true;
-
-                const CByte_graph& byte_graph = graph_data.GetByte();
-
-                int local_max;
-                int local_min;
-
-                if (s_GetMaxMin(byte_graph.GetValues(), local_max, local_min)) {
-                    min = (local_min<min) ? local_min : min;
-                    max = (local_max>max) ? local_max : max;
-                }
-            }
-        }
-    }
-
-    if (!has_byte_graph) { // Nothing to do
-        return;
-    }
-
-    score_header = graph_title;
-    if (!NStr::IsBlank(score_header)) {
-        score_header += " ";
-    }
-
-    if (length>0) {
-        score_header += "(Length: ";
-        score_header += NStr::IntToString(length);
-        score_header += ", Min: ";
-    }
-    else {
-        score_header += "(Min: "; 
-    }
-    score_header += NStr::IntToString(min);
-    score_header += ", Max: ";
-    score_header += NStr::IntToString(max);
-    score_header += ")";
-
-    unique_ptr<CFastaOstreamEx> fasta_os(new CFastaOstreamEx(ostream));
-
-    fasta_os->SetAllFlags(        
-        CFastaOstreamEx::fHideGenBankPrefix );
-
-    if (GetArgs()["enable-gi"])
-    {
-        fasta_os->SetFlag(CFastaOstreamEx::fEnableGI);
-    }
-
-    fasta_os->WriteTitle(bioseq, 0, false, score_header);
-}
-
-static void s_Advance(int& column, CNcbiOstream& ostream, const int num_columns)
-{
-    if (column == num_columns) {
-        ostream << '\n';
-        column = 1;
-        return;
-    }
-    ++column;
-}
-*/
 //  --------------------------------------------------------------------------
 void CAsn2FastaApp::PrintQualityScores(const CBioseq& bioseq,
         CNcbiOstream& ostream) 
@@ -849,66 +735,6 @@ void CAsn2FastaApp::PrintQualityScores(const CBioseq& bioseq,
     }
 
     m_pQualScoreWriter->Write(bioseq);
-
-
-  /*  
-    TSeqPos current_pos=0;
-    TSeqPos length=0;
-    int column=1; 
-    int num_columns=20;
-
-    if (bioseq.GetLength()) {
-        length = bioseq.GetLength();
-    }
-    bool has_graph = false;
-    x_WriteScoreHeader(bioseq, ostream);
-
-    if (bioseq.IsSetAnnot()) {
-        for (CRef<CSeq_annot> pAnnot : bioseq.GetAnnot()) {
-            if (!pAnnot->IsGraph()) {
-                continue;
-            }
-
-            has_graph = true;
-
-            for (CRef<CSeq_graph> pGraph : pAnnot->GetData().GetGraph()) {
-                if (!pGraph->GetGraph().IsByte()) {
-                    continue;
-                }
-
-                if (pGraph->IsSetLoc()) {
-                    TSeqPos left = pGraph->GetLoc().GetStart(eExtreme_Positional);
-                    while (current_pos < left) {
-                        ostream << " -1";
-                        s_Advance(column, ostream, num_columns);
-                        ++current_pos;
-                    }
-                }
-
-                const CByte_graph& byte_graph = pGraph->GetGraph().GetByte();
-                if (byte_graph.IsSetValues()) {
-                    for (char ch : byte_graph.GetValues()) {
-                        ostream << " " << setw(2) << static_cast<int>(ch);
-                        s_Advance(column, ostream, num_columns);
-                        ++current_pos;
-                    }
-                }
-            }
-        }
-    }
-    
-    if (has_graph) {
-        while (current_pos < length) {
-            ostream << " -1";
-            s_Advance(column, ostream, num_columns);
-            ++current_pos;
-        }
-    }
-
-    if (column > 1) {
-        ostream << '\n';
-    }
-    */
 }
 
 
