@@ -35,24 +35,29 @@
 # ===========================================================================
 
 export PATH=/bin:/usr/bin:/am/ncbiapdata/bin:$HOME/edirect
+set -uo pipefail
 
-TMP1=`mktemp -t $(basename -s .sh $0)-XXXXXXX`
-TMP2=`mktemp -t $(basename -s .sh $0)-XXXXXXX`
-trap " /bin/rm -fr $TMP1 $TMP2" INT QUIT EXIT HUP KILL ALRM
+TOO_MANY_MATCHES=500
+OUTPUT=`mktemp -t $(basename -s .sh $0)-XXXXXXX`
+TMP=`mktemp -t $(basename -s .sh $0)-XXXXXXX`
+trap " /bin/rm -fr $OUTPUT $TMP" INT QUIT EXIT HUP KILL ALRM
 
 usage() { 
-    echo "Usage:"; 
-    echo -e "-t Input Tax ID\n\tGet taxonomy IDs at or below input taxonomy ID level"; 
-    echo -e "-n Scientific Name, Common Name or Keyword\n\tGet taxonomy information for organism";
-    echo -e "-o Output file name (default stdout)"; 
+    echo "$0 usage:"; 
+    echo -e "\t-t <taxonomy ID>\n\t\tGet taxonomy IDs at or below input taxonomy ID level"; 
+    echo -e "\t-n <Scientific Name, Common Name or Keyword>\n\t\tGet taxonomy information for organism";
     exit 1; 
 }
 
 error_exit() {
-    echo $1;
-    exit 1;
+    msg=$1
+    exit_code=${2:-1}
+    echo $msg;
+    exit $exit_code;
 }
 
+TAXID=""
+NAME=""
 while getopts  "ht::n::o::" OPT; do
     case $OPT in
         h)
@@ -63,9 +68,6 @@ while getopts  "ht::n::o::" OPT; do
             ;;
         n)
             NAME=${OPTARG}
-            ;;
-        o)
-            OUTFILE=${OPTARG}
             ;;
     esac
 done
@@ -79,68 +81,63 @@ if [ ! -z "${TAXID}" ] && [ ! -z "${NAME}" ]; then
 fi
 
 if  [ ! -z "${TAXID}" ]; then
-    esearch -db taxonomy -query "txid$TAXID[orgn] AND \"at or below species level\"[prop]" > $TMP1 
+    esearch -db taxonomy -query "txid$TAXID[orgn] AND \"at or below species level\"[prop]" > $OUTPUT 
     if [ $? -ne 0 ]; then
-        error_exit  "esearch error"
+        error_exit  "esearch error" $?
     fi
 
-    efetch -format uid < $TMP1 > $TMP2 
+    efetch -format uid < $OUTPUT > $TMP 
     if [ $? -ne 0 ]; then
-        error_exit "efetch error"
+        error_exit "efetch error" $?
     fi
 
-    if [ ! -s $TMP2 ]; then
-        error_exit "Tax Id not found"
+    if [ ! -s $TMP ]; then
+        error_exit "Taxonomy ID not found"
     fi
 
-    sort -n $TMP2 > $TMP1
+    sort -n $TMP > $OUTPUT
 fi
 
 if [ ! -z "${NAME}" ]; then
 
-    esearch -db taxonomy -query "$NAME[All Names]" > $TMP1 
+    esearch -db taxonomy -query "$NAME[All Names]" > $OUTPUT 
     if [ $? -ne 0 ]; then
-        error_exit "esearch error"
+        error_exit "esearch error" $?
     fi
 
-    NUM_RESULTS=$(grep "<Count>" $TMP1 | sed -e 's,.*<Count>\([^<]*\)</Count>.*,\1,g')
+    NUM_RESULTS=$(grep "<Count>" $OUTPUT | sed -e 's,.*<Count>\([^<]*\)</Count>.*,\1,g')
 
     if [ $NUM_RESULTS -eq 0 ]; then
         CORRECT_NAME=$(espell -db taxonomy -query "$NAME" | grep "<CorrectedQuery>" | sed -e 's,.*<CorrectedQuery>\([^<]*\)</CorrectedQuery>.*,\1,g')
 
         if [ ! -z "${CORRECT_NAME}" ]; then
-            echo "Do you mean? \"$CORRECT_NAME\"";
+            error_exit "No matches found for \"$NAME\". Did you mean \"$CORRECT_NAME\"?"
         fi
 
-        esearch -db taxonomy -query "$NAME[Name Tokens]" > $TMP1 
+        esearch -db taxonomy -query "$NAME[Name Tokens]" > $OUTPUT 
         if [ $? -ne 0 ]; then
             error_exit "esearch error"
         fi
-        NUM_RESULTS=$(grep "<Count>" $TMP1 | sed -e 's,.*<Count>\([^<]*\)</Count>.*,\1,g')
-        if [ $NUM_RESULTS -gt 500 ]; then
-            error_exit "More than 500 matches, please refine your search"
+        NUM_RESULTS=$(grep "<Count>" $OUTPUT | sed -e 's,.*<Count>\([^<]*\)</Count>.*,\1,g')
+        if [ $NUM_RESULTS -gt $TOO_MANY_MATCHES ]; then
+            error_exit "More than $TOO_MANY_MATCHES matches found, please refine your search."
         fi
         if [ $NUM_RESULTS -eq 0 ]; then
-            error_exit "No matches for \"$NAME\""
+            error_exit "No matches for \"$NAME\"."
         fi
     fi
 
-    esummary -db taxonomy -mode json < $TMP1 > $TMP2
+    esummary -db taxonomy -mode json < $OUTPUT > $TMP
 
     if [ $? -ne 0 ]; then
-        error_exit "esummary error"
+        error_exit "esummary error" $?
     fi
         
-    grep 'uid\|rank\|division\|scientificname\|commonname' $TMP2 | \
+    grep 'uid\|rank\|division\|scientificname\|commonname' $TMP | \
     grep -v "uids\|genbankdivision" | tr -d '"\|,' | tr -s ' ' | \
-    sed 's/uid/\nTaxid/g;s/name/ name/g' > $TMP1
+    sed 's/uid/\nTaxid/g;s/name/ name/g' > $OUTPUT
 
-    echo -e "\n$NUM_RESULTS matches found\n" >> $TMP1
+    echo -e "\n$NUM_RESULTS matche(s) found.\n" >> $OUTPUT
 fi
 
-if [ ! -z "${OUTFILE}" ]; then
-    mv $TMP1 $OUTFILE
-else
-    cat $TMP1
-fi
-
+cat $OUTPUT
