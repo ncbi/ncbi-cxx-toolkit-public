@@ -160,15 +160,6 @@ CConstRef<CSeq_entry> CMatchSetup::GetDBEntry(const CSeq_id& nuc_id)
 }
 
 
-static bool s_InList(const CSeq_id& id, const CBioseq::TId& id_list)
-{
-    for (auto pId : id_list) {
-        if (id.Match(*pId)) {
-            return true;
-        }
-    }
-    return false;
-}
 
 bool CMatchSetup::x_GetNucSeqIdsFromCDSs(const CSeq_annot& annot,
     set<CRef<CSeq_id>, SIdCompare>& ids) const
