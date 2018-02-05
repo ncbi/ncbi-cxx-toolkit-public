@@ -521,9 +521,9 @@ void CWriteDB_IsamIndex::x_AddTraceIds(int oid, const TIdList & idlist)
         if (seqid.IsGeneral() && seqid.GetGeneral().GetDb() == "ti") {
             const CObject_id & obj = seqid.GetGeneral().GetTag();
 
-            Int8 id = (obj.IsId8()
-                       ? obj.GetId8() 
-                       : obj.GetId());
+           Int8 id = (obj.IsId()
+                   ? obj.GetId()
+                   : NStr::StringToInt8(obj.GetStr()));
 
             SIdOid row(id, oid);
             m_NumberTable.push_back(row);
