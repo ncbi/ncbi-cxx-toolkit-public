@@ -177,6 +177,15 @@ class CBioIdResolutionQueue
 public:
     CBioIdResolutionQueue();
     ~CBioIdResolutionQueue();
+
+    /// Internal initialization.
+    /// Must be called before first use
+    static void Init(const string& service);
+
+    /// Internal finalization
+    /// Must be called after last use
+    static void Finalize();
+
     /// Schedule more bio-ids for resolution
     /// @note
     ///  If more than one thread is blocked on adding new set of bio-ids to the

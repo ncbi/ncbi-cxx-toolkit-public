@@ -207,6 +207,18 @@ CBioIdResolutionQueue::~CBioIdResolutionQueue()
 {
 }
 
+void CBioIdResolutionQueue::Init(const string& service)
+{
+    vector<pair<string, HCT::http2_end_point>> StaticMap;
+    StaticMap.emplace_back(make_pair<string, HCT::http2_end_point>(ACCVER_RESOLVER_SERVICE_ID, {.schema = "http", .authority = service, .path = "/ID/accver.resolver"}));
+    DDRPC::DdRpcClient::Init(unique_ptr<DDRPC::ServiceResolver>(new DDRPC::ServiceResolver(&StaticMap)));
+}
+
+void CBioIdResolutionQueue::Finalize()
+{
+    DDRPC::DdRpcClient::Finalize();
+}
+
 void CBioIdResolutionQueue::Resolve(TBioIds* bio_ids, const CDeadline& deadline)
 {    
     if (!bio_ids)

@@ -52,8 +52,6 @@
 
 #include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
 #include <objtools/pubseq_gateway/impl/rpc/UtilException.hpp>
-#include <objtools/pubseq_gateway/impl/rpc/DdRpcDataPacker.hpp>
-#include <objtools/pubseq_gateway/impl/rpc/DdRpcClient.hpp>
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
 
 #define DFLT_LOG_LEVEL 1
@@ -126,9 +124,7 @@ public:
         int rv = 0;
         try {
             ParseArgs();
-            vector<pair<string, HCT::http2_end_point>> StaticMap;
-            StaticMap.emplace_back(make_pair<string, HCT::http2_end_point>(ACCVER_RESOLVER_SERVICE_ID, {.schema = "http", .authority = m_HostPort, .path = "/ID/accver.resolver"}));
-            DDRPC::DdRpcClient::Init(unique_ptr<DDRPC::ServiceResolver>(new DDRPC::ServiceResolver(&StaticMap)));
+            CBioIdResolutionQueue::Init(m_HostPort);
             if (!m_LookupRemote.empty()) {
                 RemoteLookup(m_LookupRemote);
             }
@@ -148,7 +144,7 @@ public:
             cerr << "Abnormally terminated" << endl;
             rv = 3;
         }
-        DDRPC::DdRpcClient::Finalize();
+        CBioIdResolutionQueue::Finalize();
 		return rv;
 	}
 	
@@ -283,7 +279,7 @@ void CAccVerCacheApp::PrintBlobId(const CBlobId& it)
                     << it.GetID2BlobId().sat << "|"
                     << it.GetID2BlobId().sat_key << "|"
                     << it.GetBlobInfo().tax_id << "|"
-                    << (it.GetBlobInfo().date_queued ? DDRPC::DateTimeToStr(it.GetBlobInfo().date_queued) : "") << "|"
+                    << (it.GetBlobInfo().date_queued ? CTime(it.GetBlobInfo().date_queued).AsString() : "") << "|"
                     << it.GetBlobInfo().state << "|"
                 << std::endl;
             }
