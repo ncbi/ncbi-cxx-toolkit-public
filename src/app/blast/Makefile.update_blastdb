@@ -16,6 +16,3 @@ purge:
 
 clean:
 
-WATCHERS = madden camacho
-CHECK_COPY = ${SCRIPT_NAME}
-CHECK_CMD = perl-c ${SCRIPT_NAME}
