@@ -81,7 +81,7 @@ if [ ! -z "${TAXID}" ] && [ ! -z "${NAME}" ]; then
 fi
 
 if  [ ! -z "${TAXID}" ]; then
-    esearch -db taxonomy -query "txid$TAXID[orgn] AND \"at or below species level\"[prop]" > $OUTPUT 
+    esearch -db taxonomy -query "txid$TAXID[orgn] AND at-or-below-species-level[prop]" > $OUTPUT 
     if [ $? -ne 0 ]; then
         error_exit  "esearch error" $?
     fi
