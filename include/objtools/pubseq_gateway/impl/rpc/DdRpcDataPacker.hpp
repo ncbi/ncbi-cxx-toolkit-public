@@ -62,10 +62,6 @@ namespace DataType {
         FLOAT,
         DATETIME
     };
-    static const Type All[] =          {CVARCHAR,   SHORT_VARCHAR,   LONG_VARCHAR,     BIT,   UINT1,   INT1,   UINT2,   INT2,   UINT4,   INT4,   UINT8,   INT8,   FLOAT,   DATETIME};
-    static const char* Names[] =       {"CVARCHAR", "SHORT_VARCHAR", "LONG_VARCHAR",   "BIT", "UINT1", "INT1", "UINT2", "INT2", "UINT4", "INT4", "UINT8", "INT8", "FLOAT", "DATETIME"};
-//  static const uint8_t BitLength[] = {0,          sizeof(uint8_t), sizeof(uint32_t), 1,     0,       0,      1,       1,      1,       1,      1,       1,      0,       1};
-    static constexpr unsigned int Size = countof(All);
     static thread_local std::unordered_map<std::string, Type> s_NameToType;
     bool NameToDataType(const std::string& Name, Type* dt);
 }

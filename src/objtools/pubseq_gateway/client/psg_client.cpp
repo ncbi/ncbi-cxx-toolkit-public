@@ -74,12 +74,6 @@ void AccVerResolverUnpackData(DDRPC::DataRow& row, const string& data)
     row.Unpack(data, false, *s_accver_resolver_data_columns);
 }
 
-void DumpEntry(const CBlobId& blob_id)
-{
-    const auto& id2_blob_id = blob_id.GetID2BlobId();
-    cout << blob_id.GetBioId().GetId() << " => sat: " << id2_blob_id.sat << " => sat_key: " << id2_blob_id.sat_key << endl;
-}
-
 }
 
 /** CBioIdResolutionQueue::CBioIdResolutionQueueItem */
