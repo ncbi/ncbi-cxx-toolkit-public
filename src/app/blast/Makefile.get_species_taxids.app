@@ -1,11 +1,9 @@
 # $Id$
 ##################################
-BINCOPY = @:
-SCRIPT_NAME = get_species_taxids.sh
 
-CHECK_REQUIRES = in-house-resources Linux MacOS
-CHECK_COPY = ${SCRIPT_NAME}
-CHECK_CMD = ${SCRIPT_NAME} -t 9606
-CHECK_CMD = ${SCRIPT_NAME} -t mouse
+CHECK_REQUIRES = in-house-resources -MSWin -FreeBSD
+CHECK_COPY = get_species_taxids.sh
+CHECK_CMD = get_species_taxids.sh -t 9606
+CHECK_CMD = get_species_taxids.sh -t mouse
 
 WATCHERS = fongah2 camacho

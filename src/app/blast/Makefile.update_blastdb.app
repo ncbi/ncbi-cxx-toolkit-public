@@ -1,8 +1,6 @@
 # $Id$
 ##################################
-BINCOPY = @:
-SCRIPT_NAME = update_blastdb.pl
 
 WATCHERS = madden camacho
-CHECK_COPY = ${SCRIPT_NAME}
-CHECK_CMD = perl -c ${SCRIPT_NAME}
+CHECK_COPY = update_blastdb.pl
+CHECK_CMD = perl -c update_blastdb.pl
