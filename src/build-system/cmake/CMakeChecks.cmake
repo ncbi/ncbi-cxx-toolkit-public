@@ -866,6 +866,10 @@ set(SYBASE_PATH "")
 set(FEATURES "")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/corelib/ncbicfg.c.in ${CMAKE_BINARY_DIR}/corelib/ncbicfg.c)
 
+# temporarily include the standard python path when searching for Python3
+set(CMAKE_PREFIX_PATH_ORIG ${CMAKE_PREFIX_PATH})
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} /opt/python-all/)
+
 find_package(PythonInterp 3)
 if (PYTHONINTERP_FOUND)
     message(STATUS "Generating ${build_root}/run_with_cd_reporter.py...")
@@ -884,6 +888,7 @@ if (PYTHONINTERP_FOUND)
 else(PYTHONINTERP_FOUND)
     message(STATUS "Could not find Python3. Disabling cd_reporter.")
 endif(PYTHONINTERP_FOUND)
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH_ORIG})
 
 
 ENABLE_TESTING()
