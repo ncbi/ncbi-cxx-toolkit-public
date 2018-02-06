@@ -455,6 +455,8 @@ gpipe_clean_prot_names needs gpipe_attr
 gpipe_clean_prot_names needs macro
 gpipe_common needs $(COMPRESS_LIBS)
 gpipe_common needs $(SDBAPI_LIB)
+gpipe_common needs $(SOBJMGR_LIBS)
+gpipe_common needs $(SRAREAD_LIBS)
 gpipe_common needs eutils_client
 gpipe_common needs xcgi
 gpipe_common needs xregexp
