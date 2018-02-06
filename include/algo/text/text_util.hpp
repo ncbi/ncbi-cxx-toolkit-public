@@ -33,8 +33,6 @@
  */
 
 #include <corelib/ncbiobj.hpp>
-#include <corelib/hash_map.hpp>
-#include <corelib/hash_set.hpp>
 #include <util/simple_buffer.hpp>
 
 #include <algo/text/vector.hpp>
