@@ -55,6 +55,19 @@ void DumpEntry(const CBlobId& blob_id)
 
 /** CBioIdResolutionQueue::CBioIdResolutionQueueItem */
 
+struct CBioIdResolutionQueue::CBioIdResolutionQueueItem
+{
+    CBioIdResolutionQueueItem(shared_ptr<HCT::io_future> afuture, CBioId bio_id);
+    void SyncResolve(CBlobId& blob_id, const CDeadline& deadline);
+    void WaitFor(long timeout_ms);
+    void Wait();
+    bool IsDone() const;
+    void Cancel();
+    void PopulateData(CBlobId& blob_id) const;
+    shared_ptr<HCT::http2_request> m_Request;
+    CBioId m_BioId;
+};
+
 CBioIdResolutionQueue::CBioIdResolutionQueueItem::CBioIdResolutionQueueItem(shared_ptr<HCT::io_future> afuture, CBioId bio_id) 
     :   m_Request(make_shared<HCT::http2_request>()),
         m_BioId(move(bio_id))
@@ -181,7 +194,8 @@ void CBioIdResolutionQueue::Resolve(TBioIds* bio_ids, const CDeadline& deadline)
     auto rev_it = bio_ids->rbegin();
     while (rev_it != bio_ids->rend()) {
         
-        unique_ptr<CBioIdResolutionQueueItem> qi(new CBioIdResolutionQueueItem(m_Future, *rev_it));
+        auto future = static_pointer_cast<HCT::io_future>(m_Future);
+        unique_ptr<CBioIdResolutionQueueItem> qi(new CBioIdResolutionQueueItem(future, *rev_it));
 
         while (true) {
             bool rv = HCT::HttpClientTransport::s_ioc->add_request(qi->m_Request, wait_ms);

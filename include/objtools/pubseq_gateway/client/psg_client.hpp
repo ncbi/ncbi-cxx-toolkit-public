@@ -7,7 +7,6 @@
 #include <memory>
 #include <vector>
 
-#include <objtools/pubseq_gateway/impl/rpc/HttpClientTransportP.hpp>
 #include <objects/id2/ID2_Blob_Id.hpp>
 #include <objects/id2/ID2_Reply_Get_Blob_Id.hpp>
 #include <corelib/ncbitime.hpp>
@@ -202,20 +201,9 @@ public:
 private:
     mutable mutex m_ItemsMtx;
     
-    struct CBioIdResolutionQueueItem {
-        CBioIdResolutionQueueItem(shared_ptr<HCT::io_future> afuture, CBioId bio_id);
-        void SyncResolve(CBlobId& blob_id, const CDeadline& deadline);
-        void WaitFor(long timeout_ms);
-        void Wait();
-        bool IsDone() const;
-        void Cancel();
-        void PopulateData(CBlobId& blob_id) const;
-        shared_ptr<HCT::http2_request> m_Request;
-        CBioId m_BioId;
-    };
-
+    struct CBioIdResolutionQueueItem;
     vector<unique_ptr<CBioIdResolutionQueueItem>> m_Items;
-    shared_ptr<HCT::io_future> m_Future;
+    shared_ptr<void> m_Future;
 };
 
 
