@@ -41,9 +41,6 @@
 #include <corelib/ncbitime.hpp>
 
 
-constexpr const char ACCVER_RESOLVER_SERVICE_ID[] = "ID.RESOLVER.ACCVER.1";
-
-
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 

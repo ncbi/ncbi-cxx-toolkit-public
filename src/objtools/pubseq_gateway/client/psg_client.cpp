@@ -49,6 +49,7 @@ BEGIN_objects_SCOPE
 
 
 constexpr const char ACCVER_RESOLVER_COLUMNS[] = "ACCVER CVARCHAR NOTNULL KEY, GI INT8, LEN UINT4, SAT UINT1, SAT_KEY UINT4, TAXID UINT4, DATE DATETIME, SUPPRESS BIT NOTNULL";
+constexpr const char ACCVER_RESOLVER_SERVICE_ID[] = "ID.RESOLVER.ACCVER.1";
 
 static_assert(is_nothrow_move_constructible<CBioId>::value, "CBioId move constructor must be noexcept");
 static_assert(is_nothrow_move_constructible<CBlobId>::value, "CBlobId move constructor must be noexcept");
