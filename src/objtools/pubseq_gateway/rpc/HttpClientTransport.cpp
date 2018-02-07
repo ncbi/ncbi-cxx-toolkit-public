@@ -68,29 +68,13 @@ thread_local shared_ptr<io_future> io_coordinator::s_future;
 
 /** http2_request */
 
-void http2_request::init_request(shared_ptr<http2_end_point> endpoint, shared_ptr<io_future> afuture, string&& query, TagHCT tag) {
+void http2_request::init_request(shared_ptr<http2_end_point> endpoint, shared_ptr<io_future> afuture, string query, TagHCT tag)
+{
     if (m_stream_id >= 0)
         DDRPC::EDdRpcException::raise("Request has already been started");
 
     m_endpoint = std::move(endpoint);
     m_query = std::move(query);
-    m_tag = tag;
-
-    m_reply_data.init(std::move(afuture));
-    m_full_path = m_endpoint->path + "?" + m_query;
-
-    if (!m_endpoint)
-        DDRPC::EDdRpcException::raise("EndPoint is null");
-    if (m_endpoint->error.has_error())
-        error(m_endpoint->error);
-}
-
-void http2_request::init_request(shared_ptr<http2_end_point> endpoint, shared_ptr<io_future> afuture, const string& query, TagHCT tag) {
-    if (m_stream_id >= 0)
-        DDRPC::EDdRpcException::raise("Request has already been started");
-
-    m_endpoint = std::move(endpoint);
-    m_query = query;
     m_tag = tag;
 
     m_reply_data.init(std::move(afuture));

@@ -206,37 +206,23 @@ void Request::Wait() {
         WaitAny();
 }
 
-void Request::RunRequest(const string& ServiceId, string&& SerializedArgs) {
+void Request::RunRequest(const string& ServiceId, string SerializedArgs)
+{
     if (m_Pimpl->get_result_data().get_is_queued())
         EDdRpcException::raise("Request has already been started");
     m_Pimpl->init_request(DdRpcClient::SericeIdToEndPoint(ServiceId), HCT::io_coordinator::get_tls_future(), std::move(SerializedArgs));
     HCT::HttpClientTransport::s_ioc->add_request(m_Pimpl);
 }
 
-void Request::RunRequest(const string& ServiceId, const string& SerializedArgs) {
-    if (m_Pimpl->get_result_data().get_is_queued())
-        EDdRpcException::raise("Request has already been started");
-    m_Pimpl->init_request(DdRpcClient::SericeIdToEndPoint(ServiceId), HCT::io_coordinator::get_tls_future(), SerializedArgs);
-    HCT::HttpClientTransport::s_ioc->add_request(m_Pimpl);
-}
-
 
 /** CRequestQueueItem */
 
-CRequestQueueItem::CRequestQueueItem(shared_ptr<HCT::io_future> afuture, tuple<string, string, HCT::TagHCT>&& args) :
+CRequestQueueItem::CRequestQueueItem(shared_ptr<HCT::io_future> afuture, tuple<string, string, HCT::TagHCT> args) :
     RequestBase(std::get<2>(args)) 
 {
     if (!HCT::HttpClientTransport::s_ioc)
         EDdRpcException::raise("DDRPC is not initialized, call DdRpcClient::Init() first");
     m_Pimpl->init_request(DdRpcClient::SericeIdToEndPoint(std::move(std::get<0>(args))), afuture, std::move(std::get<1>(args)));
-}
-
-CRequestQueueItem::CRequestQueueItem(shared_ptr<HCT::io_future> afuture, const tuple<string, string, HCT::TagHCT>& args) :
-    RequestBase(std::get<2>(args)) 
-{
-    if (!HCT::HttpClientTransport::s_ioc)
-        EDdRpcException::raise("DDRPC is not initialized, call DdRpcClient::Init() first");
-    m_Pimpl->init_request(DdRpcClient::SericeIdToEndPoint(std::get<0>(args)), afuture, std::get<1>(args));
 }
 
 void CRequestQueueItem::WaitFor(long timeout_ms) {
@@ -347,21 +333,16 @@ void DdRpcClient::Finalize() {
     HCT::HttpClientTransport::Finalize();
 }
 
-string DdRpcClient::SyncRequest(const string& ServiceId, string&& SerializedArgs) {
+string DdRpcClient::SyncRequest(const string& ServiceId, string SerializedArgs)
+{
     Request request;
     request.RunRequest(ServiceId, std::move(SerializedArgs));
     request.Wait();
     return request.Get();
 }
 
-string DdRpcClient::SyncRequest(const string& ServiceId, const string& SerializedArgs) {
-    Request request;
-    request.RunRequest(ServiceId, SerializedArgs);
-    request.Wait();
-    return request.Get();
-}
-
-unique_ptr<Request> DdRpcClient::AsyncRequest(const string& ServiceId, string&& SerializedArgs, HCT::TagHCT tag) {
+unique_ptr<Request> DdRpcClient::AsyncRequest(const string& ServiceId, string SerializedArgs, HCT::TagHCT tag)
+{
     if (!HCT::HttpClientTransport::s_ioc)
         EDdRpcException::raise("DDRPC is not initialized, call DdRpcClient::Init() first");
 
@@ -369,17 +350,6 @@ unique_ptr<Request> DdRpcClient::AsyncRequest(const string& ServiceId, string&& 
     rv->RunRequest(ServiceId, std::move(SerializedArgs));
     return rv;
 }
-
-unique_ptr<Request> DdRpcClient::AsyncRequest(const string& ServiceId, const string& SerializedArgs, HCT::TagHCT tag) {
-    if (!HCT::HttpClientTransport::s_ioc)
-        EDdRpcException::raise("DDRPC is not initialized, call DdRpcClient::Init() first");
-
-    unique_ptr<Request> rv(new Request());
-    rv->RunRequest(ServiceId, SerializedArgs);
-    return rv;
-}
-
-
 
 
 };

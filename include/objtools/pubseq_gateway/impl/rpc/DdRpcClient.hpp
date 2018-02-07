@@ -109,8 +109,7 @@ public:
 class Request: public RequestBase {
 private:
     Request(HCT::TagHCT tag = 0);
-    void RunRequest(const std::string& ServiceId, std::string&& SerializedArgs);
-    void RunRequest(const std::string& ServiceId, const std::string& SerializedArgs);
+    void RunRequest(const std::string& ServiceId, std::string SerializedArgs);
     friend class DdRpcClient;
 public:
     void Wait();
@@ -122,8 +121,7 @@ class CRequestQueue;
 
 class CRequestQueueItem: public RequestBase {
 private:
-    CRequestQueueItem(std::shared_ptr<HCT::io_future> afuture, std::tuple<std::string, std::string, HCT::TagHCT>&& args);
-    CRequestQueueItem(std::shared_ptr<HCT::io_future> afuture, const std::tuple<std::string, std::string, HCT::TagHCT>& args);
+    CRequestQueueItem(std::shared_ptr<HCT::io_future> afuture, std::tuple<std::string, std::string, HCT::TagHCT> args);
     void WaitFor(long timeout_ms);
     void Wait();
     void Cancel();
@@ -153,10 +151,8 @@ private:
 public:
     static void Init(std::unique_ptr<ServiceResolver> Resolver);
     static void Finalize();
-    static std::unique_ptr<Request> AsyncRequest(const std::string& ServiceId, std::string&& SerializedArgs, HCT::TagHCT tag = 0);
-    static std::unique_ptr<Request> AsyncRequest(const std::string& ServiceId, const std::string& SerializedArgs, HCT::TagHCT tag = 0);
-    static std::string SyncRequest(const std::string& ServiceId, std::string&& SerializedArgs);
-    static std::string SyncRequest(const std::string& ServiceId, const std::string& SerializedArgs);
+    static std::unique_ptr<Request> AsyncRequest(const std::string& ServiceId, std::string SerializedArgs, HCT::TagHCT tag = 0);
+    static std::string SyncRequest(const std::string& ServiceId, std::string SerializedArgs);
     static std::shared_ptr<HCT::http2_end_point> SericeIdToEndPoint(const std::string& ServiceId) {
         if (!m_Resolver)
             EDdRpcException::raise("Resolver is not assigned");

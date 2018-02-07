@@ -300,8 +300,7 @@ public:
     ~http2_request() {
         assert(m_stream_id <= 0);
     }
-    void init_request(std::shared_ptr<http2_end_point> endpoint, std::shared_ptr<io_future> afuture, std::string&& query, TagHCT tag = 0);
-    void init_request(std::shared_ptr<http2_end_point> endpoint, std::shared_ptr<io_future> afuture, const std::string& query, TagHCT tag = 0);
+    void init_request(std::shared_ptr<http2_end_point> endpoint, std::shared_ptr<io_future> afuture, std::string query, TagHCT tag = 0);
     static bool s_compare_future(const std::shared_ptr<http2_request>& a, const std::shared_ptr<http2_request>& b);
 
     const std::string& get_schema() const {
