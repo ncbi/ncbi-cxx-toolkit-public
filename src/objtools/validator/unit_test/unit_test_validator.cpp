@@ -13946,6 +13946,19 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadProductSeqId)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+
+    // change capitalization
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    NStr::ToUpper(cds->SetProduct().SetWhole().SetLocal().SetStr());
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Critical, "BadProductSeqId",
+        "Capitalization change from product location on feature to product sequence"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
 }
 
 
