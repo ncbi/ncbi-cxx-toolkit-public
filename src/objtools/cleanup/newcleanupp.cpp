@@ -13024,6 +13024,7 @@ void CNewCleanup_imp::ResynchProteinPartials ( CSeq_feat& feat )
 			feat.ResetPartial();
 			ChangeMade(CCleanupChange::eChangePartial);
 		}
+        return;
 	}
 
     CBioseq_Handle prot = m_Scope->GetBioseqHandle(feat.GetLocation());
