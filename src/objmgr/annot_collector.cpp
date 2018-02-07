@@ -1263,7 +1263,7 @@ struct CAnnotObject_Less
         }
     }
 
-    static inline
+    static
     void GetRangeOpen(TSeqPos &out_from, TSeqPos &out_to, 
                       const CAnnotObject_Ref& obj_ref)
     {
@@ -1684,7 +1684,6 @@ CAnnot_Collector::~CAnnot_Collector(void)
 }
 
 
-inline
 bool CAnnot_Collector::x_NoMoreObjects(void) const
 {
     if ( x_MaxSearchSegmentsLimitIsReached() ) {
@@ -1781,7 +1780,6 @@ void CAnnot_Collector::x_Initialize0(const SAnnotSelector& selector)
 }
 
 
-inline
 void CAnnot_Collector::x_StopSearchLimits(void)
 {
     if ( m_SearchSegments != numeric_limits<TMaxSearchSegments>::max() ) {
@@ -2204,7 +2202,7 @@ bool CAnnot_Collector::x_SearchSegments(const CBioseq_Handle& bh,
 }
 
 
-static inline
+static
 CScope::EGetBioseqFlag sx_GetFlag(const SAnnotSelector& selector)
 {
     switch (selector.GetResolveMethod()) {
@@ -2415,7 +2413,6 @@ void CAnnot_Collector::x_AddObject(CAnnotObject_Ref& ref)
 }
 
 
-inline
 void CAnnot_Collector::x_AddObject(CAnnotObject_Ref&    object_ref,
                                    CSeq_loc_Conversion* cvt,
                                    unsigned int         loc_index)
@@ -2563,7 +2560,6 @@ void CAnnot_Collector::x_Sort(void)
 }
 
 
-inline
 bool
 CAnnot_Collector::x_MatchLimitObject(const CAnnotObject_Info& object) const
 {
@@ -2605,7 +2601,6 @@ CAnnot_Collector::x_MatchLimitObject(const CAnnotObject_Info& object) const
 }
 
 
-inline
 bool CAnnot_Collector::x_MatchLocIndex(const SAnnotObject_Index& index) const
 {
     return index.m_AnnotObject_Info->IsAlign()  ||
@@ -2613,7 +2608,6 @@ bool CAnnot_Collector::x_MatchLocIndex(const SAnnotObject_Index& index) const
 }
 
 
-inline
 bool CAnnot_Collector::x_MatchRange(const CHandleRange&       hr,
                                     const CRange<TSeqPos>&    range,
                                     const SAnnotObject_Index& index) const
