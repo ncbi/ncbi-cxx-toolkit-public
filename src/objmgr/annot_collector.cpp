@@ -423,31 +423,36 @@ public:
     typedef map<CSeq_id_Handle, SExtremes> TIdRangeMap;
     typedef CRange<TSeqPos> TRange;
 
-    const TIdRangeMap& GetMap(void) const { return m_Map; }
+    bool CanSort(void) const { return m_Map.get() != nullptr; }
+
+    const TIdRangeMap& GetMap(void) const { return *m_Map; }
 
 private:
-    TIdRangeMap m_Map;
+    unique_ptr<TIdRangeMap> m_Map;
 };
 
 
 CIdRangeMap::CIdRangeMap(const CAnnotObject_Ref& annot_ref,
                          const SAnnotSelector& sel)
 {
-    _ASSERT(annot_ref.HasAnnotObject_Info());
+    if ( !annot_ref.HasAnnotObject_Info() ) {
+        return;
+    }
     const CAnnotObject_Info& info = annot_ref.GetAnnotObject_Info();
     _ASSERT(info.IsRegular());
+    m_Map.reset(new TIdRangeMap);
     const CSeq_loc& loc = sel.GetFeatProduct() ?
         info.GetFeatFast()->GetProduct() : info.GetFeatFast()->GetLocation();
     const CSeq_id* id = loc.GetId();
     if ( id ) {
-        SExtremes& ext = m_Map[CSeq_id_Handle::GetHandle(*id)];
+        SExtremes& ext = (*m_Map)[CSeq_id_Handle::GetHandle(*id)];
         ext.from = loc.GetStart(eExtreme_Positional);
         ext.to = loc.GetStop(eExtreme_Positional);
     }
     else {
         for (CSeq_loc_CI it(loc); it; ++it) {
             TRange rg = it.GetRange();
-            SExtremes& ext = m_Map[it.GetSeq_id_Handle()];
+            SExtremes& ext = (*m_Map)[it.GetSeq_id_Handle()];
             if ( !ext.Empty() ) {
                 rg.CombineWith(TRange(ext.from, ext.to));
             }
@@ -460,6 +465,7 @@ CIdRangeMap::CIdRangeMap(const CAnnotObject_Ref& annot_ref,
 
 void CAnnotMapping_Info::SetIdRangeMap(CIdRangeMap& id_range_map)
 {
+    if ( IsMapped() ) return;
     _ASSERT(!IsMapped());
     m_MappedObject.Reset(&id_range_map);
     m_MappedObjectType = eMappedObjType_IdRangeMap;
@@ -1308,60 +1314,62 @@ struct CAnnotObject_Less
     // Compare CRef-s: both must be features
     bool operator()(const CAnnotObject_Ref& x,
                     const CAnnotObject_Ref& y) const
-        {
-            if (x.GetMappingInfo().GetMappedObjectType() == CAnnotMapping_Info::eMappedObjType_IdRangeMap  &&
-                y.GetMappingInfo().GetMappedObjectType() == CAnnotMapping_Info::eMappedObjType_IdRangeMap) {
-                // Perform full location comparison instead of using total range shortcut.
-                const CIdRangeMap::TIdRangeMap& x_idmap = x.GetMappingInfo().GetIdRangeMap().GetMap();
-                const CIdRangeMap::TIdRangeMap& y_idmap = y.GetMappingInfo().GetIdRangeMap().GetMap();
-                CIdRangeMap::TIdRangeMap::const_iterator x_it = x_idmap.begin();
-                CIdRangeMap::TIdRangeMap::const_iterator y_it = y_idmap.begin();
-                for (; x_it != x_idmap.end() && y_it != y_idmap.end(); ++x_it, ++y_it) {
-                    if (x_it->first != y_it->first) return x_it->first < y_it->first;
-                    int cmp = CompareRanges(x_it->second.from, x_it->second.to, y_it->second.from, y_it->second.to);
-                    if (cmp != 0) return cmp < 0;
-                }
-                if (y_it != y_idmap.end()) return true;
-                if (x_it != x_idmap.end()) return false;
-            }
-            else {
-                TSeqPos x_from = kInvalidSeqPos;
-                TSeqPos y_from = kInvalidSeqPos;
-                TSeqPos x_to = kInvalidSeqPos;
-                TSeqPos y_to = kInvalidSeqPos;
-
-                if( ignore_far_handle ) {
-                    x_GetExtremes( x_from, x_to, x );
-                    x_GetExtremes( y_from, y_to, y );
-                } else {
-                    GetRangeOpen(x_from, x_to, x);
-                    GetRangeOpen(y_from, y_to, y);
-                }
-
-                // (from >= to) means circular location.
-                // Any circular location is less than (before) non-circular one.
-                // If both are circular, compare them regular way.
-                bool x_circular = x_from >= x_to;
-                bool y_circular = y_from >= y_to;
-                if ( x_circular != y_circular ) {
-                    return x_circular;
-                }
-                // smallest left extreme first
-                if ( x_from != y_from ) {
-                    return x_from < y_from;
-                }
-                // longest feature first
-                if ( x_to != y_to ) {
-                    return x_to > y_to;
-                }
-            }
-
-            if ( x == y ) { // small speedup
-                return false;
-            }
-
-            return type_less(x, y);
+    {
+        if (x == y) { // small speedup
+            return false;
         }
+
+        if (x.GetMappingInfo().GetMappedObjectType() == CAnnotMapping_Info::eMappedObjType_IdRangeMap  &&
+            y.GetMappingInfo().GetMappedObjectType() == CAnnotMapping_Info::eMappedObjType_IdRangeMap  &&
+            !x.GetMappingInfo().GetIdRangeMap().CanSort()  &&
+            !y.GetMappingInfo().GetIdRangeMap().CanSort()) {
+            // Perform full location comparison instead of using total range shortcut.
+            const CIdRangeMap::TIdRangeMap& x_idmap = x.GetMappingInfo().GetIdRangeMap().GetMap();
+            const CIdRangeMap::TIdRangeMap& y_idmap = y.GetMappingInfo().GetIdRangeMap().GetMap();
+            CIdRangeMap::TIdRangeMap::const_iterator x_it = x_idmap.begin();
+            CIdRangeMap::TIdRangeMap::const_iterator y_it = y_idmap.begin();
+            for (; x_it != x_idmap.end() && y_it != y_idmap.end(); ++x_it, ++y_it) {
+                if (x_it->first != y_it->first) return x_it->first < y_it->first;
+                int cmp = CompareRanges(x_it->second.from, x_it->second.to, y_it->second.from, y_it->second.to);
+                if (cmp != 0) return cmp < 0;
+            }
+            if (y_it != y_idmap.end()) return true;
+            if (x_it != x_idmap.end()) return false;
+        }
+        else {
+            TSeqPos x_from = kInvalidSeqPos;
+            TSeqPos y_from = kInvalidSeqPos;
+            TSeqPos x_to = kInvalidSeqPos;
+            TSeqPos y_to = kInvalidSeqPos;
+
+            if( ignore_far_handle ) {
+                x_GetExtremes( x_from, x_to, x );
+                x_GetExtremes( y_from, y_to, y );
+            } else {
+                GetRangeOpen(x_from, x_to, x);
+                GetRangeOpen(y_from, y_to, y);
+            }
+
+            // (from >= to) means circular location.
+            // Any circular location is less than (before) non-circular one.
+            // If both are circular, compare them regular way.
+            bool x_circular = x_from >= x_to;
+            bool y_circular = y_from >= y_to;
+            if ( x_circular != y_circular ) {
+                return x_circular;
+            }
+            // smallest left extreme first
+            if ( x_from != y_from ) {
+                return x_from < y_from;
+            }
+            // longest feature first
+            if ( x_to != y_to ) {
+                return x_to > y_to;
+            }
+        }
+
+        return type_less(x, y);
+    }
     CAnnotObjectType_Less type_less;
     CBioseq_Handle ignore_far_handle;
 };
@@ -1377,11 +1385,30 @@ struct CAnnotObject_LessReverse
     // Compare CRef-s: both must be features
     bool operator()(const CAnnotObject_Ref& x,
                     const CAnnotObject_Ref& y) const
-        {
-            if ( x == y ) { // small speedup
-                return false;
-            }
+    {
+        if ( x == y ) { // small speedup
+            return false;
+        }
 
+        if (x.GetMappingInfo().GetMappedObjectType() == CAnnotMapping_Info::eMappedObjType_IdRangeMap  &&
+            y.GetMappingInfo().GetMappedObjectType() == CAnnotMapping_Info::eMappedObjType_IdRangeMap &&
+            !x.GetMappingInfo().GetIdRangeMap().CanSort() &&
+            !y.GetMappingInfo().GetIdRangeMap().CanSort()) {
+            // Perform full location comparison instead of using total range shortcut.
+            const CIdRangeMap::TIdRangeMap& x_idmap = x.GetMappingInfo().GetIdRangeMap().GetMap();
+            const CIdRangeMap::TIdRangeMap& y_idmap = y.GetMappingInfo().GetIdRangeMap().GetMap();
+            CIdRangeMap::TIdRangeMap::const_iterator x_it = x_idmap.begin();
+            CIdRangeMap::TIdRangeMap::const_iterator y_it = y_idmap.begin();
+            for (; x_it != x_idmap.end() && y_it != y_idmap.end(); ++x_it, ++y_it) {
+                if (x_it->first != y_it->first) return y_it->first < x_it->first;
+                int cmp = CAnnotObject_Less::CompareRanges(
+                    x_it->second.from, x_it->second.to, y_it->second.from, y_it->second.to);
+                if (cmp != 0) return cmp > 0;
+            }
+            if (x_it != x_idmap.end()) return true;
+            if (y_it != y_idmap.end()) return false;
+        }
+        else {
             TSeqPos x_from = kInvalidSeqPos;
             TSeqPos x_to = kInvalidSeqPos;
             TSeqPos y_from = kInvalidSeqPos;
@@ -1406,8 +1433,10 @@ struct CAnnotObject_LessReverse
             if ( x_from != y_from ) {
                 return x_from < y_from;
             }
-            return type_less(x, y);
         }
+
+        return type_less(x, y);
+    }
     CAnnotObjectType_Less type_less;
 };
 
