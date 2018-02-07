@@ -33,6 +33,10 @@
 #ifndef HASH_MAP__HPP
 #define HASH_MAP__HPP
 
+#if !defined(NCBI_OS_LINUX)
+#  error "HASH_SET/MAP are deprecated. Please try using UNORDERED_SET/MAP instead!"
+#endif
+
 #include <corelib/hash_impl/stlp_defs.hpp>
 #include <corelib/hash_impl/_hash_map.h>
 

@@ -13,3 +13,5 @@ LIB = xncbi
 CHECK_CMD = test_hash
 
 WATCHERS = grichenk
+
+REQUIRES = Linux
