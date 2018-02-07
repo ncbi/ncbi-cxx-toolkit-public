@@ -33,6 +33,8 @@
 #ifndef HASH_SET__HPP
 #define HASH_SET__HPP
 
+#include <ncbiconf.h>
+
 #if !defined(NCBI_OS_LINUX)
 #  error "HASH_SET/MAP are deprecated. Please try using UNORDERED_SET/MAP instead!"
 #endif
