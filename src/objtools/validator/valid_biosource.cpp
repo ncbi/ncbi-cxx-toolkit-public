@@ -3122,21 +3122,20 @@ static bool s_PCRPrimerLess(const CPCRPrimer& p1, const CPCRPrimer& p2)
 
 static bool s_PCRPrimerSetLess(const CPCRPrimerSet& s1, const CPCRPrimerSet& s2)
 {
-	if (!s1.IsSet() && s1.IsSet()) {
-		return true;
-    }
-    else if (s1.IsSet() && !s2.IsSet()) {
+    if (!s1.IsSet() && s1.IsSet()) {
+        return true;
+    } else if (s1.IsSet() && !s2.IsSet()) {
         return false;
     } else if (!s1.IsSet() && !s2.IsSet()) {
         return false;
-	} else if (s1.Get().size() < s2.Get().size()) {
-		return true;
-	} else if (s1.Get().size() > s2.Get().size()) {
-		return false;
-	} else {
-		auto it1 = s1.Get().begin();
-		auto it2 = s2.Get().begin();
-		while (it1 != s1.Get().end()) {
+    } else if (s1.Get().size() < s2.Get().size()) {
+        return true;
+    } else if (s1.Get().size() > s2.Get().size()) {
+        return false;
+    } else {
+        auto it1 = s1.Get().begin();
+        auto it2 = s2.Get().begin();
+        while (it1 != s1.Get().end()) {
             if (s_PCRPrimerLess(**it1, **it2)) {
                 return true;
             } else if (s_PCRPrimerLess(**it2, **it1)) {
