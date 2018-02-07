@@ -33,6 +33,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <corelib/test_boost.hpp>
 #include <objects/general/Object_id.hpp>
@@ -169,4 +170,69 @@ BOOST_AUTO_TEST_CASE(CheckSplit)
             }
         }
     }}
+}
+
+BOOST_AUTO_TEST_CASE(CheckUnresolved)
+{
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*object_manager);
+    CScope scope(*object_manager);
+
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    loc->SetWhole().SetGi(GI_CONST(2));
+
+    CRef<CSeq_feat> feat(new CSeq_feat);
+    feat->SetData().SetComment();
+    feat->SetLocation().Assign(*loc);
+
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    annot->SetData().SetFtable().push_back(feat);
+
+    CSeq_annot_Handle ah = scope.AddSeq_annot(*annot);
+    SAnnotSelector sel;
+    sel.SetLimitSeqAnnot(ah);
+    //sel.SetLimitTSE(ah.GetTSE_Handle());
+
+    if ( 1 ) {
+        cout << "Iterate by container" << endl;
+        CFeat_CI it(ah);
+        BOOST_CHECK(it);
+        for (; it; ++it) {
+            cout << MSerial_AsnText << it->GetMappedFeature() << endl;
+            cout << "Overlap (0 = exact match of the ranges, -1 = no overlap): "
+                 << objects::sequence::TestForOverlap(*loc, it->GetOriginalFeature().GetLocation(),
+                                   objects::sequence::eOverlap_Simple, kInvalidSeqPos, &scope)
+                 << endl;
+        }
+    }
+
+    if ( 1 ) {
+        cout << "Iterate by location, sequence not resolvable (feature not found!)" << endl;
+        CFeat_CI it(scope, *loc, sel);
+        BOOST_CHECK(!it);
+        for (; it; ++it) {
+            cout << MSerial_AsnText << it->GetMappedFeature() << endl;
+        }
+    }
+
+    if ( 1 ) {
+        cout << "Iterate by location, sequence not resolvable" << endl;
+        CFeat_CI it(scope, *loc, sel.SetSearchUnresolved());
+        BOOST_CHECK(it);
+        for (; it; ++it) {
+            cout << MSerial_AsnText << it->GetMappedFeature() << endl;
+        }
+    }
+
+    if ( 1 ) {
+        scope.AddDefaults();
+        cout << "Iterate by location, sequnce is resolvable" << endl;
+        CFeat_CI it(scope, *loc, sel);
+        BOOST_CHECK(it);
+        for (; it; ++it) {
+            cout << MSerial_AsnText << it->GetMappedFeature() << endl;
+        }
+    }
+    
+    cerr << "Done" << endl;
 }

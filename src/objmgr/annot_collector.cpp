@@ -3431,7 +3431,7 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
         }
         else if ( m_Selector->m_UnresolvedFlag == SAnnotSelector::eSearchUnresolved &&
                   m_Selector->m_ResolveMethod == SAnnotSelector::eResolve_TSE &&
-                  m_Selector->m_LimitObjectType == SAnnotSelector::eLimit_TSE_Info &&
+                  m_Selector->m_LimitObjectType != SAnnotSelector::eLimit_None &&
                   m_Selector->m_LimitObject ) {
             // external annotations only
             m_FromOtherTSE = true;
