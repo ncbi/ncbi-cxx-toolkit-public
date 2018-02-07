@@ -311,7 +311,7 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
         diagnosis += mul ? ", some multi)" : ")";
         report[diagnosis];
 
-        if ((num != total || bins != 1) && (it->first == "collection-date" || it->first == "country" || it->first == "isolation-source" || it->first == "strain")) {
+        if ((num != total || bins != 1) && (it->first == "collection-date" || it->first == "country" || it->first == "isolation-source" || it->first == "strain" || it->first == "isolate")) {
             final_report[diagnosis].Fatal();
         }
 
