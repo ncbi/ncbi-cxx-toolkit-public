@@ -95,7 +95,7 @@ public:
         eVal_do_tax_lookup           = 0x200000,  
         eVal_do_barcode_tests        = 0x400000,
         eVal_refseq_conventions      = 0x800000,
-		eVal_collect_locus_tags       = 0x1000000,
+        eVal_collect_locus_tags       = 0x1000000,
     };
 
     // Constructor / Destructor

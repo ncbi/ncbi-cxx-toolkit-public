@@ -528,7 +528,7 @@ private:
     bool m_DoTaxLookup;
     bool m_DoBarcodeTests;
     bool m_RefSeqConventions;
-	bool m_CollectLocusTags; // collect locus tags for use in special formatted reports
+    bool m_CollectLocusTags; // collect locus tags for use in special formatted reports
     bool m_SeqSubmitParent; // some errors are suppressed if this is run on a newly created submission
 
     // flags calculated by examining data in record

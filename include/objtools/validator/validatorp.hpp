@@ -88,7 +88,7 @@ public:
     void AddRevSeq (string name);
 
     bool AreSetsUnique(void);
-	static bool AreSetsUnique(const CPCRReactionSet& primers);
+    static bool AreSetsUnique(const CPCRReactionSet& primers);
 
 private:
     vector <CPCRSet *> m_SetList;

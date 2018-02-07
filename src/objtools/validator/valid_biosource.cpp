@@ -3094,114 +3094,123 @@ bool CPCRSetList::AreSetsUnique(void)
 }
 
 
-static int s_PCRPrimerCompare(const CPCRPrimer& p1, const CPCRPrimer& p2)
+static bool s_PCRPrimerLess(const CPCRPrimer& p1, const CPCRPrimer& p2)
 {
 	if (!p1.IsSetSeq() && p2.IsSetSeq()) {
-		return -1;
+		return true;
 	} else if (p1.IsSetSeq() && !p2.IsSetSeq()) {
-		return 1;
+		return false;
 	} else if (p1.IsSetSeq() && p2.IsSetSeq()) {
 		int compare = NStr::CompareNocase(p1.GetSeq().Get(), p2.GetSeq().Get());
-		if (compare != 0) {
-			return compare;
-		}
+		if (compare < 0) {
+			return true;
+        } else if (compare > 0) {
+            return false;
+        }
 	}
 	if (!p1.IsSetName() && p2.IsSetName()) {
-		return -1;
-	}
-	else if (p1.IsSetName() && !p2.IsSetName()) {
-		return 1;
-	}
-	else if (p1.IsSetName() && p2.IsSetName()) {
-		int compare = NStr::CompareNocase(p1.GetName().Get(), p2.GetName().Get());
-		if (compare != 0) {
-			return compare;
-		}
-	}
-	return 0;
+		return true;
+	} else if (p1.IsSetName() && !p2.IsSetName()) {
+		return false;
+	} else if (p1.IsSetName() && p2.IsSetName()) {
+		return (NStr::CompareNocase(p1.GetName().Get(), p2.GetName().Get()) < 0);
+	} else {
+	    return false;
+    }
 }
 
 
-static int s_PCRPrimerSetCompare(const CPCRPrimerSet& s1, const CPCRPrimerSet& s2)
+static bool s_PCRPrimerSetLess(const CPCRPrimerSet& s1, const CPCRPrimerSet& s2)
 {
-	if (!s1.IsSet() && s2.IsSet()) {
-		return -1;
-	} else if (s1.IsSet() && !s2.IsSet()) {
-		return 1;
-	} else if (!s1.IsSet() && !s2.IsSet()) {
-		return 0;
+	if (!s1.IsSet() && s1.IsSet()) {
+		return true;
+    }
+    else if (s1.IsSet() && !s2.IsSet()) {
+        return false;
+    } else if (!s1.IsSet() && !s2.IsSet()) {
+        return false;
 	} else if (s1.Get().size() < s2.Get().size()) {
-		return -1;
+		return true;
 	} else if (s1.Get().size() > s2.Get().size()) {
-		return 1;
+		return false;
 	} else {
-		int compare = 0;
 		auto it1 = s1.Get().begin();
 		auto it2 = s2.Get().begin();
-		while (it1 != s1.Get().end() && compare == 0) {
-			compare = s_PCRPrimerCompare(**it1, **it2);
+		while (it1 != s1.Get().end()) {
+            if (s_PCRPrimerLess(**it1, **it2)) {
+                return true;
+            } else if (s_PCRPrimerLess(**it2, **it1)) {
+                return false;
+            }  else {
+                // the two are equal, continue comparisons
+            }
 			it1++;
 			it2++;
 		}
-		return compare;
+		return false;
 	}
 }
 
 
-static bool s_PCRReactionCompare(
-	const CPCRReaction* pp1,
-	const CPCRReaction* pp2
+static bool s_PCRReactionLess(
+	CConstRef<CPCRReaction> pp1,
+    CConstRef<CPCRReaction> pp2
 )
 
 {
     const CPCRReaction& p1 = *pp1;
     const CPCRReaction& p2 = *pp2;
-	int compare = 0;
 	if (!p1.IsSetForward() && p2.IsSetForward()) {
 		return true;
-	} else if (p1.IsSetForward() && !p2.IsSetForward()) {
-		return false;
-	} else if (p1.IsSetForward() && p2.IsSetForward()) {
-		compare = s_PCRPrimerSetCompare(p1.GetForward(), p2.GetForward());
-	}
-	if (compare == 0) {
-		if (!p1.IsSetReverse() && p2.IsSetReverse()) {
-			return true;
-		}
-		else if (p1.IsSetReverse() && !p2.IsSetReverse()) {
-			return false;
-		}
-		else if (p1.IsSetReverse() && p2.IsSetReverse()) {
-			compare = s_PCRPrimerSetCompare(p1.GetReverse(), p2.GetReverse());
-		}
-	}
-	if (compare < 0) {
-		return true;
-	} else {
-		return false;
-	}
+    } else if (p1.IsSetForward() && !p2.IsSetForward()) {
+        return false;
+    } else if (p2.IsSetForward() && p1.IsSetForward()) {
+        if (s_PCRPrimerSetLess(p1.GetForward(), p2.GetForward())) {
+            return true;
+        } else if (s_PCRPrimerSetLess(p2.GetForward(), p1.GetForward())) {
+            return false;
+        }
+    } 
+    if (!p1.IsSetReverse() && p2.IsSetReverse()) {
+        return true;
+    } else if (p1.IsSetReverse() && !p2.IsSetReverse()) {
+        return false;
+    } else if (p1.IsSetReverse() && p2.IsSetReverse()) {
+        if (s_PCRPrimerSetLess(p1.GetReverse(), p2.GetReverse())) {
+            return true;
+        } else if (s_PCRPrimerSetLess(p2.GetReverse(), p1.GetReverse())) {
+            return false;
+        }
+    } 
+    return false;
 }
 
+struct SPCRReactionLess
+{
+    template <typename T>
+    bool operator()(T l, T r) const
+    {
+        _ASSERT(l.NotEmpty());
+        _ASSERT(r.NotEmpty());
+
+        return s_PCRReactionLess(l, r);
+    }
+};
+
+typedef set<CConstRef<CPCRReaction>, SPCRReactionLess> TPCRReactionHashSet;
 
 bool CPCRSetList::AreSetsUnique(const CPCRReactionSet& primers)
 {
     if (!primers.IsSet() || primers.Get().size() < 2) {
        	return true;
     }
-    CRef<CPCRReactionSet> temp_set(new CPCRReactionSet());
-    temp_set->Assign(primers);
-    temp_set->Set().sort(s_PCRReactionCompare);
-    auto it1 = temp_set->Get().begin();
-    auto it2 = it1;
-    it2++;
-    do {
-        if ((*it1)->Equals(**it2)) {
+    TPCRReactionHashSet already_seen;
+    for (auto it : primers.Get()) {
+        if (already_seen.find(it) != already_seen.end()) {
             return false;
         }
-       	it1++;
-        it2++;
-    } while (it2 != temp_set->Get().end());
-
+        already_seen.insert(it);
+    }
     return true;
 }
 
