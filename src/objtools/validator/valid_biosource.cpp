@@ -3096,13 +3096,13 @@ bool CPCRSetList::AreSetsUnique(void)
 
 static bool s_PCRPrimerLess(const CPCRPrimer& p1, const CPCRPrimer& p2)
 {
-	if (!p1.IsSetSeq() && p2.IsSetSeq()) {
-		return true;
-	} else if (p1.IsSetSeq() && !p2.IsSetSeq()) {
-		return false;
-	} else if (p1.IsSetSeq() && p2.IsSetSeq()) {
-		int compare = NStr::CompareNocase(p1.GetSeq().Get(), p2.GetSeq().Get());
-		if (compare < 0) {
+    if (!p1.IsSetSeq() && p2.IsSetSeq()) {
+        return true;
+    } else if (p1.IsSetSeq() && !p2.IsSetSeq()) {
+        return false;
+    } else if (p1.IsSetSeq() && p2.IsSetSeq()) {
+        int compare = NStr::CompareNocase(p1.GetSeq().Get(), p2.GetSeq().Get());
+        if (compare < 0) {
             return true;
         } else if (compare > 0) {
             return false;
