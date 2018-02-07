@@ -57,6 +57,7 @@ static int max_allowed_VD_distance = 55;
 static int extend_length = 30;
 static int max_allowed_V_end_to_J_end =150;
 static int max_v_j_overlap = 7;
+static int j_wordsize = 7;
 
 static void s_ReadLinesFromFile(const string& fn, vector<string>& lines)
 {
@@ -419,7 +420,7 @@ void CIgBlast::x_SetupDJSearch(const vector<CRef <CIgAnnotation> > &annots,
     CBlastOptions & opts = opts_hndl->SetOptions();
     opts.SetMatchReward(1);
     if (db_type == 2){ //J genes are longer so if can afford more reliable identification
-        opts.SetWordSize(7);
+        opts.SetWordSize(j_wordsize);
         opts.SetMismatchPenalty(m_IgOptions->m_J_penalty);
     } else {
         opts.SetWordSize(m_IgOptions->m_Min_D_match);
@@ -892,9 +893,9 @@ void CIgBlast::x_FindDJAln(CRef<CSeq_align_set>& align_D,
                 int q_js = (*it)->GetSeqStart(0);
                 int q_je = (*it)->GetSeqStop(0);
                 if (q_ms) { 
-                    if (q_je < q_ve - allowed_VJ_distance  || q_js > q_ve) keep = false;
+                    if (q_je < q_ve - allowed_VJ_distance  || q_js > q_ve - j_wordsize) keep = false;
                 } else {
-                    if (q_js > q_ve + allowed_VJ_distance || q_je < q_ve) keep = false;
+                    if (q_js > q_ve + allowed_VJ_distance || q_je < q_ve + j_wordsize) keep = false;
                 }
                 /* remove failed seq_align */
                 if (!keep) it = align_list.erase(it);
