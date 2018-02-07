@@ -3103,11 +3103,11 @@ static bool s_PCRPrimerLess(const CPCRPrimer& p1, const CPCRPrimer& p2)
 	} else if (p1.IsSetSeq() && p2.IsSetSeq()) {
 		int compare = NStr::CompareNocase(p1.GetSeq().Get(), p2.GetSeq().Get());
 		if (compare < 0) {
-			return true;
+            return true;
         } else if (compare > 0) {
             return false;
         }
-	}
+    }
 	if (!p1.IsSetName() && p2.IsSetName()) {
 		return true;
 	} else if (p1.IsSetName() && !p2.IsSetName()) {
@@ -3144,11 +3144,11 @@ static bool s_PCRPrimerSetLess(const CPCRPrimerSet& s1, const CPCRPrimerSet& s2)
             }  else {
                 // the two are equal, continue comparisons
             }
-			it1++;
-			it2++;
-		}
-		return false;
-	}
+            it1++;
+            it2++;
+        }
+        return false;
+    }
 }
 
 
@@ -3197,14 +3197,14 @@ struct SPCRReactionLess
     }
 };
 
-typedef set<CConstRef<CPCRReaction>, SPCRReactionLess> TPCRReactionHashSet;
+using TPCRReactionSet = set<CConstRef<CPCRReaction>, SPCRReactionLess>;
 
 bool CPCRSetList::AreSetsUnique(const CPCRReactionSet& primers)
 {
     if (!primers.IsSet() || primers.Get().size() < 2) {
        	return true;
     }
-    TPCRReactionHashSet already_seen;
+    TPCRReactionSet already_seen;
     for (auto it : primers.Get()) {
         if (already_seen.find(it) != already_seen.end()) {
             return false;
