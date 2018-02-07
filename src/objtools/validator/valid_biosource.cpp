@@ -3108,14 +3108,14 @@ static bool s_PCRPrimerLess(const CPCRPrimer& p1, const CPCRPrimer& p2)
             return false;
         }
     }
-	if (!p1.IsSetName() && p2.IsSetName()) {
-		return true;
-	} else if (p1.IsSetName() && !p2.IsSetName()) {
-		return false;
-	} else if (p1.IsSetName() && p2.IsSetName()) {
-		return (NStr::CompareNocase(p1.GetName().Get(), p2.GetName().Get()) < 0);
+    if (!p1.IsSetName() && p2.IsSetName()) {
+        return true;
+    } else if (p1.IsSetName() && !p2.IsSetName()) {
+        return false;
+    } else if (p1.IsSetName() && p2.IsSetName()) {
+        return (NStr::CompareNocase(p1.GetName().Get(), p2.GetName().Get()) < 0);
 	} else {
-	    return false;
+        return false;
     }
 }
 
