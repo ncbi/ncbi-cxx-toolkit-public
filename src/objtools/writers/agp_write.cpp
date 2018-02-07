@@ -69,7 +69,7 @@ inline string GetGapType(const CSeqMap_CI& iter,
         case CSeq_gap::eType_clone:
             return "clone";
         case CSeq_gap::eType_short_arm:
-            return "short arm";
+            return "short_arm";
         case CSeq_gap::eType_heterochromatin:
             return "heterochromatin";
         case CSeq_gap::eType_centromere:
