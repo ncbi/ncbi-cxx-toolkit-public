@@ -226,11 +226,11 @@ bool CProtIdUpdateApp::x_ProcessInputTable(CNcbiIstream& istr, TIdMap& id_map)
 
             if (entries[2] == "---" ||  // No local ID
                 entries[3] != "PROT" || // Not a protein
-                (entries[4] != "Same" && entries[4] != "New")) {
+                entries[4] == "Dead") {
                 continue;
             }
 
-            if (entries[1] == "___") {
+            if (entries[1] == "---") {
                 ERR_POST(Warning << entries[1] << ": Protein accession unspecified");
                 continue;
             }
