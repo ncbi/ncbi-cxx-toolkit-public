@@ -779,6 +779,13 @@ public:
     ///@ret: bool=true if the match is found
     static bool MatchSeqInSeqList(TGi cur_gi, CRef<objects::CSeq_id> &seqID, list<string> &use_this_seq,bool *isGiList = NULL);
 
+    ///Matches string of seqIDs (gis or text seqID)    
+    ///@param alnSeqID: CSeq_id to extract label info to match
+    ///@param use_this_seq: list<string> containg gi:sssssss or seqid:sssssssss
+    ///@param seqList: string contaning comma separated seqIds
+    ///@ret: bool=true if the match is found
+    static bool MatchSeqInSeqList(CConstRef<objects::CSeq_id> &alnSeqID, list<string> &use_this_seq,vector <string> &seqList);
+
     ///Check if use_this_seq conatins gi list
     ///@param use_this_seq: list<string> containg gi:sssssss or seqid:sssssssss
     ///@ret: bool= true if use_this_seq conatins gi list
@@ -1110,6 +1117,16 @@ public:
 	                                                                 double evalueHigh,
 	                                                                 double percentIdentLow,
 	                                                                 double percentIdentHigh);
+
+    ///function for Filtering seqalign by specific subjects
+    ///@param source_aln
+    /// CSeq_align_set original seqalign
+    ///@param seqList 
+    /// vector of strings with seqIDs    
+    ///@return
+    /// CRef<CSeq_align_set> - filtered seq align
+    static CRef<objects::CSeq_align_set> FilterSeqalignBySeqList(objects::CSeq_align_set& source_aln,
+                                                               vector <string> &seqList);
     ///function for Limitting seqalign by hsps number
     ///(by default results are not cut off within the query)
     ///@param source_aln
