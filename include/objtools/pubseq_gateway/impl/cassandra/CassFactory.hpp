@@ -41,67 +41,61 @@
 #include "CassDriver.hpp"
 #include "IdCassScope.hpp"
 
+
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-#define DFLT_C_TIMEOUT_MS  30000
-#define DFLT_Q_TIMEOUT_MS  5000
 
-class CCassConnectionFactory: public enable_shared_from_this<CCassConnectionFactory> {
-private:
-    DISALLOW_COPY_AND_ASSIGN(CCassConnectionFactory);
-    CFastMutex m_RunTimeParams;
-    string  m_CfgName;
-    string  m_Section;
-    string  m_BigDataHost;
-    short   m_BigDataPort;
-    string  m_BigDataUser;
-    string  m_BigDataPassword;
-    string  m_BigDataNameSpace;
-    string  m_BigDataLog;
-    string  m_PassFile;
-    string  m_PassSection;
-    string  m_LoadBalancingStr;
-    string  m_tokenAwareStr;
-    string  m_latencyAwareStr;
-    unsigned int m_BigDataCTimeoutMS;
-    unsigned int m_BigDataQTimeoutMS;
-    bool m_BigDataFallBackRdConsistency;
-    loadbalancing_policy_t m_LoadBalancing;
-    bool m_tokenAware;
-    bool m_latencyAware;
-    unsigned int m_numThreadsIo;
-    unsigned int m_numConnPerHost;
-    unsigned int m_maxConnPerHost;
-    unsigned int m_keepalive;
+class CCassConnectionFactory:
+    public enable_shared_from_this<CCassConnectionFactory>
+{
 protected:
-    CCassConnectionFactory() :
-        m_BigDataPort(0),
-        m_BigDataCTimeoutMS(DFLT_C_TIMEOUT_MS),
-        m_BigDataQTimeoutMS(DFLT_Q_TIMEOUT_MS),
-        m_BigDataFallBackRdConsistency(false),
-        m_LoadBalancing(LB_DCAWARE),
-        m_tokenAware(true),
-        m_latencyAware(true),
-        m_numThreadsIo(0),
-        m_numConnPerHost(0),
-        m_maxConnPerHost(0),
-        m_keepalive(0)
-    {}
-    void ProcessParams();
-    void GetHostPort(string &host, short &port);
+    CCassConnectionFactory();
+    void ProcessParams(void);
+    void GetHostPort(string &  cass_hosts, short &  cass_port);
+
 public:
     ~CCassConnectionFactory();
-    void AppInit(CArgDescriptions* argdesc);
-    void AppParseArgs(const CArgs& args);
-    void LoadConfig(const string &  CfgName, const string &  section);
-    void LoadConfig(const CNcbiRegistry &Registry, const string &  section);
-    void ReloadConfig();
-    void ReloadConfig(const CNcbiRegistry &Registry);
-    shared_ptr<CCassConnection> CreateInstance();
-    static shared_ptr<CCassConnectionFactory> Create() {
+    void AppInit(CArgDescriptions *  argdesc);
+    void AppParseArgs(const CArgs &  args);
+    void LoadConfig(const string &  cfg_name, const string &  section);
+    void LoadConfig(const CNcbiRegistry &  registry, const string &  section);
+    void ReloadConfig(void);
+    void ReloadConfig(const CNcbiRegistry &  registry);
+    shared_ptr<CCassConnection> CreateInstance(void);
+
+    static shared_ptr<CCassConnectionFactory> s_Create(void)
+    {
         return shared_ptr<CCassConnectionFactory>(new CCassConnectionFactory());
     }
+
+private:
+    void x_ValidateArgs(void);
+
+    DISALLOW_COPY_AND_ASSIGN(CCassConnectionFactory);
+
+    CFastMutex              m_RunTimeParams;
+    string                  m_CfgName;
+    string                  m_Section;
+    string                  m_CassHosts;
+    string                  m_CassUserName;
+    string                  m_CassPassword;
+    string                  m_CassDataNamespace;
+    string                  m_CassDriverLogFile;
+    string                  m_PassFile;
+    string                  m_PassSection;
+    string                  m_LoadBalancingStr;
+    unsigned int            m_CassConnTimeoutMs;
+    unsigned int            m_CassQueryTimeoutMs;
+    bool                    m_CassFallbackRdConsistency;
+    unsigned int            m_CassFallbackWrConsistency;
+    loadbalancing_policy_t  m_LoadBalancing;
+    bool                    m_TokenAware;
+    bool                    m_LatencyAware;
+    unsigned int            m_NumThreadsIo;
+    unsigned int            m_NumConnPerHost;
+    unsigned int            m_MaxConnPerHost;
+    unsigned int            m_Keepalive;
 };
 
 END_IDBLOB_SCOPE

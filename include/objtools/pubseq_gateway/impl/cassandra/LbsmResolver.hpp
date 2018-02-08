@@ -44,11 +44,13 @@ BEGIN_NCBI_SCOPE;
 class LbsmLookup
 {
 public:
-    static bool Resolve(const string &  service,
-                        vector<pair<string, int> > &  result,
-                        TSERV_Type  ServType = fSERV_Any);
-    static string Resolve(const string &  service, char  delimiter,
+    static bool s_Resolve(const string &  service,
+                          vector<pair<string, int> > &  result,
                           TSERV_Type  ServType = fSERV_Any);
+
+    // Returns a dilimited list of host:port items
+    static string s_Resolve(const string &  service, char  delimiter,
+                            TSERV_Type  ServType = fSERV_Any);
 };
 
 END_NCBI_SCOPE;

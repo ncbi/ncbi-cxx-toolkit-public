@@ -46,153 +46,118 @@ BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 using namespace IdLogUtil;
 
-/* CCassConnectionFactory */
 
-CCassConnectionFactory::~CCassConnectionFactory() {
+const string                    kCassConfigSection = "CASSANDRA_DB";
+
+const unsigned int              kCassConnTimeoutDefault = 30000;
+const unsigned int              kCassConnTimeoutMin = 0;
+const unsigned int              kCassConnTimeoutMax = UINT_MAX;
+const unsigned int              kCassQueryTimeoutDefault = 5000;
+const unsigned int              kCassQueryTimeoutMin = 0;
+const unsigned int              kCassQueryTimeoutMax = UINT_MAX;
+const loadbalancing_policy_t    kLoadBalancingDefaultPolicy = LB_DCAWARE;
+const unsigned int              kNumThreadsIoMin = 1;
+const unsigned int              kNumThreadsIoMax = 32;
+const unsigned int              kNumThreadsIoDefault = 4;
+const unsigned int              kNumConnPerHostMin = 1;
+const unsigned int              kNumConnPerHostMax = 8;
+const unsigned int              kNumConnPerHostDefault = 2;
+const unsigned int              kMaxConnPerHostMin = 1;
+const unsigned int              kMaxConnPerHostMax = 8;
+const unsigned int              kMaxConnPerHostDefault = 4;
+const unsigned int              kKeepaliveMin = 0;
+const unsigned int              kKeepaliveMax = UINT_MAX;
+const unsigned int              kKeepaliveDefault = 0;
+const unsigned int              kCassFallbackWrConsistencyMin = 0;
+const unsigned int              kCassFallbackWrConsistencyMax = UINT_MAX;
+const unsigned int              kCassFallbackWrConsistencyDefault = 0;
+
+
+const map<string, loadbalancing_policy_t>     kPolicyArgMap = {
+    {"", kLoadBalancingDefaultPolicy},
+    {"dcaware", LB_DCAWARE},
+    {"roundrobin", LB_ROUNDROBIN}
+};
+
+
+/* CCassConnectionFactory */
+CCassConnectionFactory::CCassConnectionFactory() :
+    m_CassConnTimeoutMs(kCassConnTimeoutDefault),
+    m_CassQueryTimeoutMs(kCassQueryTimeoutDefault),
+    m_CassFallbackRdConsistency(false),
+    m_CassFallbackWrConsistency(kCassFallbackWrConsistencyDefault),
+    m_LoadBalancing(kLoadBalancingDefaultPolicy),
+    m_TokenAware(true),
+    m_LatencyAware(true),
+    m_NumThreadsIo(kNumThreadsIoDefault),
+    m_NumConnPerHost(kNumConnPerHostDefault),
+    m_MaxConnPerHost(kMaxConnPerHostDefault),
+    m_Keepalive(kKeepaliveDefault)
+{}
+
+
+CCassConnectionFactory::~CCassConnectionFactory()
+{
     CCassConnection::UpdateLogging(true);
 }
 
-void CCassConnectionFactory::AppInit(CArgDescriptions* argdesc) {
-    argdesc->AddOptionalKey( "BDS", "bigdata_host", "BigData connection host (comma delimited list of database nodes)", CArgDescriptions::eString);
-    argdesc->AddOptionalKey( "BDN", "bigdata_namespace", "BigData namespace name", CArgDescriptions::eString);
-    argdesc->AddOptionalKey( "bpf", "bigdata_password_file", "Bigdata password file name", CArgDescriptions::eString);
-    argdesc->AddOptionalKey( "bps", "bigdata_password_section", "Bigdata password file section", CArgDescriptions::eString);
-    argdesc->AddOptionalKey( "BDCT", "bigdata_ctimeout", "Bigdata connection timeout, ms", CArgDescriptions::eInteger);
-    argdesc->AddOptionalKey( "BDQT", "bigdata_qtimeout", "Bigdata query timeout, ms", CArgDescriptions::eInteger);
 
-    argdesc->AddOptionalKey( "BDFBRDC", "bigdata_fallback_readconsistency", "Lower down consistency of BD read operations if local quorum can't be achieved", CArgDescriptions::eInteger);
-    argdesc->AddOptionalKey( "BDFBWRC", "bigdata_fallback_writeconsistency", "Lower down consistency of BD write operations if local quorum can't be achieved", CArgDescriptions::eInteger);
-
-    argdesc->AddOptionalKey( "dl", "dblog", "Output db-related messages to log", CArgDescriptions::eString);
-
-    argdesc->AddOptionalKey( "lb", "loadbalancing", "Load ballancing policy. DCAware is default.", CArgDescriptions::eString);
-    argdesc->SetConstraint
-            ("lb",
-            &(*new CArgAllow_Strings, "", "DCAware", "RoundRobin"),
-            CArgDescriptions::eConstraint);
-    argdesc->AddOptionalKey( "rta", "tokenaware", "Enables TokenAware routing. True is default.", CArgDescriptions::eString);
-    argdesc->AddOptionalKey( "rla", "latencyware", "Enables LatencyAware routing. False is default.", CArgDescriptions::eString);
-    argdesc->SetConstraint
-            ("rta",
-            &(*new CArgAllow_Strings, "", "True", "False"),
-            CArgDescriptions::eConstraint);
-
-    argdesc->AddOptionalKey( "nti", "numthreadio", "Number of io threads to async processing.", CArgDescriptions::eInteger);
-    argdesc->SetConstraint( "nti", &(*new CArgAllow_Integers(1,32)), CArgDescriptions::eConstraint);
-
-    argdesc->AddOptionalKey( "ncon", "numconnperhost", "Number of connections per node.", CArgDescriptions::eInteger);
-    argdesc->SetConstraint( "ncon", &(*new CArgAllow_Integers(1,8)), CArgDescriptions::eConstraint);
-
-    argdesc->AddOptionalKey( "mcon", "maxconnperhost", "Maximum count of connections per node.", CArgDescriptions::eInteger);
-    argdesc->SetConstraint( "mcon", &(*new CArgAllow_Integers(1,8)), CArgDescriptions::eConstraint);
+void CCassConnectionFactory::AppInit(CArgDescriptions *  argdesc)
+{
 }
 
-void CCassConnectionFactory::AppParseArgs(const CArgs& args) {
-    if (args["dl"])
-        m_BigDataLog = args["dl"].AsString();
 
-    if (args["BDS"])
-        m_BigDataHost = args["BDS"].AsString();
-    if (args["BDN"])
-        m_BigDataNameSpace = args["BDN"].AsString();
-    if (args["bpf"])
-        m_PassFile = args["bpf"].AsString();
-    if (args["bps"])
-        m_PassSection = args["bps"].AsString();
-
-    if (args["BDFBRDC"])
-        m_BigDataFallBackRdConsistency = args["BDFBRDC"].AsBoolean();
-
-    if (args["BDCT"])
-        m_BigDataCTimeoutMS = args["BDCT"].AsInteger();
-    if (args["BDQT"])
-        m_BigDataQTimeoutMS = args["BDQT"].AsInteger();
-
-    if (args["lb"])
-        m_LoadBalancingStr = args["lb"].AsString();
-    if (args["rta"])
-        m_tokenAwareStr = args["rta"].AsString();
-    if (args["rla"])
-        m_latencyAwareStr = args["rla"].AsString();
-    if (args["nti"])
-        m_numThreadsIo = args["nti"].AsInteger();
-    if (args["ncon"])
-        m_numConnPerHost = args["ncon"].AsInteger();
-    if (args["mcon"])
-        m_maxConnPerHost = args["mcon"].AsInteger();
-
+void CCassConnectionFactory::AppParseArgs(const CArgs &  args)
+{
     ProcessParams();
 }
 
-void CCassConnectionFactory::ProcessParams() {
+
+void CCassConnectionFactory::ProcessParams(void)
+{
     LOG5(("CCassDataConnectionFactory::ProcessParams"));
     if (!m_PassFile.empty()) {
-        filebuf fb;
+        filebuf     fb;
         if (!fb.open(m_PassFile.c_str(), ios::in | ios::binary))
             RAISE_ERROR(eGeneric, string(" Cannot open file: ") + m_PassFile);
-        CNcbiIstream is( &fb);
-        CNcbiRegistry Registry( is, 0);
+
+        CNcbiIstream        is(&fb);
+        CNcbiRegistry       registry(is, 0);
         fb.close();
 
-        m_BigDataUser = Registry.GetString(m_PassSection, "user", "");
-        m_BigDataPassword = Registry.GetString(m_PassSection, "password", "");
+        m_CassUserName = registry.GetString(m_PassSection, "user", "");
+        m_CassPassword = registry.GetString(m_PassSection, "password", "");
     }
 
-    //RoundRobin,TokenAware,TokenAwareRoundRobin,None
-    map<string, loadbalancing_policy_t> policy_arg_map = {
-        {"", LB_DCAWARE},
-        {"dcaware", LB_DCAWARE},
-        {"roundrobin", LB_ROUNDROBIN}
-    };
-    std::transform(m_LoadBalancingStr.begin(), m_LoadBalancingStr.end(), m_LoadBalancingStr.begin(), ::tolower);
-    auto policy_item = policy_arg_map.find(m_LoadBalancingStr);
-    if (policy_item != policy_arg_map.end()) {
-        m_LoadBalancing = policy_item->second;
-    } else {
-        NCBI_THROW_FMT(CArgException, CArgException::eConstraint, "Unexpected load balancing policy value!");
-    }
-
-    //True, False, None
-    map<string, bool> boolean_arg_map = { {"", true}, {"true", true}, {"false", false} };
-
-    std::transform(m_tokenAwareStr.begin(), m_tokenAwareStr.end(), m_tokenAwareStr.begin(), ::tolower);
-    auto tokenaware_item = boolean_arg_map.find(m_tokenAwareStr);
-    if (tokenaware_item != boolean_arg_map.end()) {
-        m_tokenAware = tokenaware_item->second;
-    } else {
-        NCBI_THROW_FMT(CArgException, CArgException::eConstraint, "Unexpected tokenaware value!");
-    }
-
-    std::transform(m_latencyAwareStr.begin(), m_latencyAwareStr.end(), m_latencyAwareStr.begin(), ::tolower);
-    auto latencyaware_item = boolean_arg_map.find(m_latencyAwareStr);
-    if (latencyaware_item != boolean_arg_map.end()) {
-        m_latencyAware = latencyaware_item->second;
-    } else {
-        NCBI_THROW_FMT(CArgException, CArgException::eConstraint, "Unexpected latencyaware value!");
-    }
+    x_ValidateArgs();
 }
 
 
-void CCassConnectionFactory::LoadConfig(const string &  CfgName, const string &  section) {
+void CCassConnectionFactory::LoadConfig(const string &  cfg_name,
+                                        const string &  section)
+{
     LOG5(("CCassDataConnectionFactory::LoadConfig"));
     m_Section = section;
-    m_CfgName = CfgName;
+    m_CfgName = cfg_name;
     ReloadConfig();
 }
 
-void CCassConnectionFactory::LoadConfig(const CNcbiRegistry &Registry, const string &  section) {
+
+void CCassConnectionFactory::LoadConfig(const CNcbiRegistry &  registry,
+                                        const string &  section)
+{
     LOG5(("CCassDataConnectionFactory::LoadConfig"));
     m_Section = section;
     m_CfgName = "";
-    ReloadConfig(Registry);
+    ReloadConfig(registry);
 }
 
-void CCassConnectionFactory::ReloadConfig() {
+
+void CCassConnectionFactory::ReloadConfig(void)
+{
     LOG5(("CCassDataConnectionFactory::ReloadConfig"));
     CFastMutexGuard _(m_RunTimeParams);
 
-    if (m_Section.empty())
-        m_Section = "BIGDATA";
     if (m_CfgName.empty())
         RAISE_ERROR(eGeneric, string("Configuration file is not specified"));
 
@@ -205,90 +170,227 @@ void CCassConnectionFactory::ReloadConfig() {
     ReloadConfig(Registry);
 }
 
-void CCassConnectionFactory::ReloadConfig(const CNcbiRegistry &Registry) {
-    if (!Registry.Empty()) {
-        m_BigDataHost           = Registry.GetString( m_Section, "HOST", "");
-        m_BigDataPort           = Registry.GetInt(    m_Section, "PORT", 0);
-        m_BigDataNameSpace      = Registry.GetString( m_Section, "NAMESPACE", "");
-        m_PassFile              = Registry.GetString( m_Section, "PASSWORD_FILE", "");
-        m_PassSection           = Registry.GetString( m_Section, "PASSWORD_SECTION", "");
-        m_BigDataCTimeoutMS     = Registry.GetInt(    m_Section, "CTIMEOUT", DFLT_C_TIMEOUT_MS);
-        m_BigDataQTimeoutMS     = Registry.GetInt(    m_Section, "QTIMEOUT", DFLT_Q_TIMEOUT_MS);
 
-        m_BigDataFallBackRdConsistency = Registry.GetBool(   m_Section, "FBRDC", false);
+void CCassConnectionFactory::ReloadConfig(const CNcbiRegistry &  registry)
+{
+    if (m_Section.empty())
+        m_Section = kCassConfigSection;
 
-        m_LoadBalancingStr      = Registry.GetString( m_Section, "LOADBALANCING", "");
-        m_tokenAwareStr         = Registry.GetString( m_Section, "TOKENAWARE", "");
-        m_latencyAwareStr       = Registry.GetString( m_Section, "LATENCYAWARE", "");
-        m_numThreadsIo          = Registry.GetInt(    m_Section, "NUMTHREADSIO", 0);
-        m_numConnPerHost        = Registry.GetInt(    m_Section, "NUMCONNPERHOST", 0);
-        m_maxConnPerHost        = Registry.GetInt(    m_Section, "MAXCONNPERHOST", 0);
-        m_keepalive             = Registry.GetInt(    m_Section, "KEEPALIVE", 0);
+    if (!registry.Empty()) {
+        m_CassConnTimeoutMs = registry.GetInt(m_Section, "ctimeout",
+                                              kCassConnTimeoutDefault);
+        m_CassQueryTimeoutMs = registry.GetInt(m_Section, "qtimeout",
+                                               kCassQueryTimeoutDefault);
+        m_CassDataNamespace = registry.GetString(m_Section, "namespace", "");
+        m_CassFallbackRdConsistency = registry.GetBool(
+            m_Section, "fallbackrdconsistency", false);
+        m_CassFallbackWrConsistency = registry.GetInt(
+            m_Section, "fallbackwriteconsistency",
+            kCassFallbackWrConsistencyDefault);
+        m_LoadBalancingStr = registry.GetString(m_Section, "loadbalancing", "");
+        m_TokenAware = registry.GetBool(m_Section, "tokenaware", true);
+        m_LatencyAware = registry.GetBool(m_Section, "latencyaware", true);
+        m_NumThreadsIo = registry.GetInt(m_Section, "numthreadsio",
+                                         kNumThreadsIoDefault);
+        m_NumConnPerHost = registry.GetInt(m_Section, "numconnperhost",
+                                           kNumConnPerHostDefault);
+        m_MaxConnPerHost = registry.GetInt(m_Section, "maxconnperhost",
+                                           kMaxConnPerHostDefault);
+        m_Keepalive = registry.GetInt(m_Section, "keepalive",
+                                      kKeepaliveDefault);
+        m_CassDriverLogFile = registry.GetString(m_Section, "drvlog", "");
+        m_PassFile = registry.GetString(m_Section, "password_file", "");
+        m_PassSection = registry.GetString(m_Section, "password_section", "");
+        m_CassHosts = registry.GetString(m_Section, "service", "");
 
-        m_BigDataLog            = Registry.GetString( m_Section, "DRVLOG", "");
         ProcessParams();
     }
 }
 
-void CCassConnectionFactory::GetHostPort(string &host, short &port) {
-    bool is_lbsm;
 
-    host = m_BigDataHost;
-    port = m_BigDataPort;
-    is_lbsm = host.find(':') != string::npos && host.find("lbsm:") == 0;
+void CCassConnectionFactory::GetHostPort(string &  cass_hosts,
+                                         short &  cass_port)
+{
+    string  hosts = m_CassHosts;
+    bool    is_lbsm = (m_CassHosts.find(':') == string::npos) &&
+                      (m_CassHosts.find(' ') == string::npos) &&
+                      (m_CassHosts.find(',') == string::npos);
 
     if (is_lbsm) {
-        string cleanhost = host.substr(sizeof("lbsm:") - 1);
-        host = LbsmLookup::Resolve(cleanhost, ',');
-        if (host.empty())
-            RAISE_ERROR(eGeneric, string("Failed to resolve: ") + cleanhost);
+        hosts = LbsmLookup::s_Resolve(m_CassHosts, ',');
+        if (hosts.empty())
+            RAISE_ERROR(eGeneric,
+                        string("Failed to resolve: ") + m_CassHosts);
     }
-    if (host.find(':') != string::npos || host.find(',') != string::npos) {
-        string cleanedhost;
-        stringstream sshosts(host);
-        string item;
-        while (getline(sshosts, item, ',')) {
-            size_t pos = item.find(':');
-            if (pos != string::npos) {
-                int aport = atoi(item.substr(pos + 1).c_str());
-                if (aport <= 0)
-                    RAISE_ERROR(eGeneric, string("Invalid port found in host:port pair: " + item));
-                item = item.substr(0, pos);
-                if (port == 0)
-                    port = aport;
-                else if (port != aport)
-                    RAISE_ERROR(eGeneric, string("Unexpected port found in host:port pair: " + item + ", expected: " + NStr::NumericToString(port) + ", found: " + NStr::NumericToString(aport)));
+
+    // Here: the 'hosts' variable has a list of host[:port] items came
+    //       from a config file or from an LBSM resolver.
+    vector<string>      items;
+    NStr::Split(hosts, ", ", items,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+
+    cass_port = 0;
+    for (const auto &  item: items) {
+        string      item_host;
+        string      item_port;
+
+        if (NStr::SplitInTwo(item, ":", item_host, item_port)) {
+            // Delimiter was found, i.e. there is a port number
+            short   item_port_number = NStr::StringToNumeric<short>(item_port);
+            if (cass_port == 0) {
+                cass_port = item_port_number;
+            } else {
+                if (item_port_number != cass_port)
+                    RAISE_ERROR(eGeneric,
+                                "Unmatching port numbers found: " +
+                                NStr::NumericToString(cass_port) + " and " +
+                                NStr::NumericToString(item_port_number));
             }
-            if (!cleanedhost.empty())
-                cleanedhost.append(1, ',');
-            cleanedhost.append(item);
         }
-        host = cleanedhost;
+
+        if (!cass_hosts.empty())
+            cass_hosts += ",";
+        cass_hosts += item_host;
     }
 }
 
 
-shared_ptr<CCassConnection> CCassConnectionFactory::CreateInstance() {
-    CAppOp op;
-    shared_ptr<CCassConnection> rv(new CCassConnection());
+shared_ptr<CCassConnection> CCassConnectionFactory::CreateInstance(void)
+{
+    CAppOp                          op;
+    shared_ptr<CCassConnection>     rv(new CCassConnection());
 
     rv->SetLoadBalancing(m_LoadBalancing);
-    rv->SetTokenAware(m_tokenAware);
-    rv->SetLatencyAware(m_latencyAware);
-    rv->SetRtLimits(m_numThreadsIo, m_numConnPerHost, m_maxConnPerHost);
-    rv->SetKeepAlive(m_keepalive);
+    rv->SetTokenAware(m_TokenAware);
+    rv->SetLatencyAware(m_LatencyAware);
+    rv->SetRtLimits(m_NumThreadsIo, m_NumConnPerHost, m_MaxConnPerHost);
+    rv->SetKeepAlive(m_Keepalive);
 
-    rv->SetTimeouts(m_BigDataCTimeoutMS, m_BigDataQTimeoutMS);
-    rv->SetFallBackRdConsistency(m_BigDataFallBackRdConsistency);
-    if (!m_BigDataLog.empty())
-        rv->SetLogFile(m_BigDataLog);
+    rv->SetTimeouts(m_CassConnTimeoutMs, m_CassQueryTimeoutMs);
+    rv->SetFallBackRdConsistency(m_CassFallbackRdConsistency);
+    if (!m_CassDriverLogFile.empty())
+        rv->SetLogFile(m_CassDriverLogFile);
 
-    string host;
-    short port;
+    if (m_CassFallbackWrConsistency != 0)
+        rv->SetFallBackWrConsistency(m_CassFallbackWrConsistency);
+
+    string      host;
+    short       port;
     GetHostPort(host, port);
-    rv->SetConnProp(host, m_BigDataUser, m_BigDataPassword, port);
-    rv->SetKeyspace(m_BigDataNameSpace);
+    rv->SetConnProp(host, m_CassUserName, m_CassPassword, port);
+    rv->SetKeyspace(m_CassDataNamespace);
     return rv;
+}
+
+
+void CCassConnectionFactory::x_ValidateArgs(void)
+{
+    if (m_CassConnTimeoutMs < kCassConnTimeoutMin ||
+        m_CassConnTimeoutMs > kCassConnTimeoutMax) {
+        string  err_msg =
+            "The cassandra connection timeout is out of range. Allowed "
+            "range: " + NStr::NumericToString(kCassConnTimeoutMin) + "..." +
+            NStr::NumericToString(kCassConnTimeoutMax) + ". Received: " +
+            NStr::NumericToString(m_CassConnTimeoutMs) + ". Reset to "
+            "default: " + NStr::NumericToString(kCassConnTimeoutDefault);
+        LOG1((err_msg.c_str()));
+        m_CassConnTimeoutMs = kCassConnTimeoutDefault;
+    }
+
+    if (m_CassQueryTimeoutMs < kCassQueryTimeoutMin ||
+        m_CassQueryTimeoutMs > kCassQueryTimeoutMax) {
+        string  err_msg =
+            "The cassandra query timeout is out of range. Allowed "
+            "range: " + NStr::NumericToString(kCassQueryTimeoutMin) + "..." +
+            NStr::NumericToString(kCassQueryTimeoutMax) + ". Received: " +
+            NStr::NumericToString(m_CassQueryTimeoutMs) + ". Reset to "
+            "default: " + NStr::NumericToString(kCassQueryTimeoutDefault);
+        LOG1((err_msg.c_str()));
+        m_CassQueryTimeoutMs = kCassQueryTimeoutDefault;
+    }
+
+    string      lowercase_policy = NStr::ToLower(m_LoadBalancingStr);
+    auto        policy_item = kPolicyArgMap.find(lowercase_policy);
+    if (policy_item != kPolicyArgMap.end()) {
+        m_LoadBalancing = policy_item->second;
+    } else {
+        string      allowed;
+        string      default_name;
+        for (const auto &  item: kPolicyArgMap) {
+            if (!item.first.empty()) {
+                if (!allowed.empty())
+                    allowed += ", ";
+                allowed += item.second;
+                if (item.second == kLoadBalancingDefaultPolicy)
+                    default_name = item.first;
+            }
+        }
+        string  err_msg =
+            "The load balancing value is not recognized. Allowed values: " +
+            allowed + ". Received: " + m_LoadBalancingStr + ". Reset to: " +
+            default_name;
+        m_LoadBalancing = LB_DCAWARE;
+    }
+
+    if (m_NumThreadsIo < kNumThreadsIoMin ||
+        m_NumThreadsIo > kNumThreadsIoMax) {
+        string  err_msg =
+            "The number of IO threads is out of range. Allowed "
+            "range: " + NStr::NumericToString(kNumThreadsIoMin) + "..." +
+            NStr::NumericToString(kNumThreadsIoMax) + ". Received: " +
+            NStr::NumericToString(m_NumThreadsIo) + ". Reset to "
+            "default: " + NStr::NumericToString(kNumThreadsIoDefault);
+        LOG1((err_msg.c_str()));
+        m_NumThreadsIo = kNumThreadsIoDefault;
+    }
+
+    if (m_NumConnPerHost < kNumConnPerHostMin ||
+        m_NumConnPerHost > kNumConnPerHostMax) {
+        string  err_msg =
+            "The number of connections per host is out of range. Allowed "
+            "range: " + NStr::NumericToString(kNumConnPerHostMin) + "..." +
+            NStr::NumericToString(kNumConnPerHostMax) + ". Received: " +
+            NStr::NumericToString(m_NumConnPerHost) + ". Reset to "
+            "default: " + NStr::NumericToString(kNumConnPerHostDefault);
+        LOG1((err_msg.c_str()));
+        m_NumConnPerHost = kNumConnPerHostDefault;
+    }
+
+    if (m_MaxConnPerHost < kMaxConnPerHostMin ||
+        m_MaxConnPerHost > kMaxConnPerHostMax) {
+        string  err_msg =
+            "The maximum count of connections per host is out of range. Allowed "
+            "range: " + NStr::NumericToString(kMaxConnPerHostMin) + "..." +
+            NStr::NumericToString(kMaxConnPerHostMax) + ". Received: " +
+            NStr::NumericToString(m_MaxConnPerHost) + ". Reset to "
+            "default: " + NStr::NumericToString(kMaxConnPerHostDefault);
+        LOG1((err_msg.c_str()));
+        m_MaxConnPerHost = kMaxConnPerHostDefault;
+    }
+
+    if (m_Keepalive < kKeepaliveMin ||
+        m_Keepalive > kKeepaliveMax) {
+        string  err_msg =
+            "The TCP keep-alive the initial delay is out of range. Allowed "
+            "range: " + NStr::NumericToString(kKeepaliveMin) + "..." +
+            NStr::NumericToString(kKeepaliveMax) + ". Received: " +
+            NStr::NumericToString(m_Keepalive) + ". Reset to "
+            "default: " + NStr::NumericToString(kKeepaliveDefault);
+        LOG1((err_msg.c_str()));
+        m_Keepalive = kKeepaliveDefault;
+    }
+
+    if (m_CassFallbackWrConsistency < kCassFallbackWrConsistencyMin ||
+        m_CassFallbackWrConsistency > kCassFallbackWrConsistencyMax) {
+        string  err_msg =
+            "The cassandra write quorum is out of range. Allowed "
+            "range: " + NStr::NumericToString(kCassFallbackWrConsistencyMin) + "..." +
+            NStr::NumericToString(kCassFallbackWrConsistencyMax) + ". Received: " +
+            NStr::NumericToString(m_CassFallbackWrConsistency) + ". Reset to "
+            "default: " + NStr::NumericToString(kCassFallbackWrConsistencyDefault);
+        LOG1((err_msg.c_str()));
+        m_CassFallbackWrConsistency = kKeepaliveDefault;
+    }
 }
 
 END_IDBLOB_SCOPE

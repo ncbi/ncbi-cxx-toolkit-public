@@ -44,46 +44,61 @@
 
 BEGIN_NCBI_SCOPE;
 
-bool LbsmLookup::Resolve(const string& Service, vector<pair<string, int> >& Result, TSERV_Type ServType) {
 
-    unique_ptr<SConnNetInfo, function<void(SConnNetInfo*)> > net_info(ConnNetInfo_Create(Service.c_str()),
-        [](SConnNetInfo* net_info) {
-            ConnNetInfo_Destroy(net_info);
-        }
-    );
+bool LbsmLookup::s_Resolve(const string &  service,
+                           vector<pair<string, int> > &  result,
+                           TSERV_Type  serv_type)
+{
+    unique_ptr<SConnNetInfo,
+               function<void(SConnNetInfo*)> > net_info(
+                        ConnNetInfo_Create(service.c_str()),
+                        [](SConnNetInfo* net_info)
+                        {
+                            ConnNetInfo_Destroy(net_info);
+                        });
+
     unique_ptr<SSERV_IterTag, function<void(SSERV_IterTag*)> > iter(
         SERV_Open(
-            Service.c_str(),
-            ServType,
+            service.c_str(),
+            serv_type,
             0,                  // prefered host
             net_info.get()
         ),
-        [](SSERV_IterTag* iter) {
+        [](SSERV_IterTag* iter)
+        {
             SERV_Close(iter);
         }
     );
-    const SSERV_Info *pInfo;
-    while (pInfo = SERV_GetNextInfo(iter.get()), pInfo != NULL) {
-        char sIpBuff[128];
-        SOCK_HostPortToString(pInfo->host, pInfo->port, sIpBuff, sizeof(sIpBuff));
-        Result.push_back(make_pair(sIpBuff, pInfo->rate));
+
+    const SSERV_Info *  info;
+    while (info = SERV_GetNextInfo(iter.get()), info != NULL) {
+        char    buff[128];
+
+        SOCK_HostPortToString(info->host, info->port, buff, sizeof(buff));
+        result.push_back(make_pair(buff, info->rate));
     }
-    sort(Result.begin(), Result.end(), 
-        [](const pair<string, int> & a, const pair<string, int> & b) -> bool {
-            return a.second > b.second;
-        }
-    );
+
+    sort(result.begin(), result.end(),
+         [](const pair<string, int> &  a, const pair<string, int> &  b) -> bool
+         {
+             return a.second > b.second;
+         });
+
     return true;
 }
 
-string LbsmLookup::Resolve(const string& Service, char Delimiter, TSERV_Type ServType) {
-    stringstream rv;
-    vector<pair<string,int> > Result;
-    if (Resolve(Service, Result, ServType)) {
-        bool is_first = true;
-        for (auto const & el : Result) {
+
+string LbsmLookup::s_Resolve(const string &  service, char  delimiter,
+                             TSERV_Type  serv_type)
+{
+    stringstream                rv;
+    vector<pair<string,int> >   result;
+
+    if (s_Resolve(service, result, serv_type)) {
+        bool    is_first = true;
+        for (auto const &  el: result) {
             if (!is_first)
-                rv << Delimiter;
+                rv << delimiter;
             is_first = false;
             rv << el.first;
         }

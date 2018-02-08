@@ -34,14 +34,14 @@
 
 
 CPendingOperation::CPendingOperation(string &&  sat_name, int  sat_key,
-                                     shared_ptr<CCassConnection>  Conn,
+                                     shared_ptr<CCassConnection>  conn,
                                      unsigned int  timeout) :
-    m_reply(nullptr),
-    m_cancelled(false),
-    m_finished_read(false),
-    m_sat_key(sat_key)
+    m_Reply(nullptr),
+    m_Cancelled(false),
+    m_FinishedRead(false),
+    m_SatKey(sat_key)
 {
-    m_loader.reset(new CCassBlobLoader(&m_op, timeout, Conn,
+    m_Loader.reset(new CCassBlobLoader(&m_Op, timeout, conn,
                                        std::move(sat_name), sat_key,
                                        true, true, nullptr,  nullptr));
 }
@@ -49,45 +49,45 @@ CPendingOperation::CPendingOperation(string &&  sat_name, int  sat_key,
 
 CPendingOperation::~CPendingOperation()
 {
-    LOG5(("CPendingOperation::CPendingOperation: this: %p, m_loader: %p",
-          this, m_loader.get()));
+    LOG5(("CPendingOperation::CPendingOperation: this: %p, m_Loader: %p",
+          this, m_Loader.get()));
 }
 
 
 void CPendingOperation::Clear()
 {
-    LOG5(("CPendingOperation::Clear: this: %p, m_loader: %p",
-          this, m_loader.get()));
-    if (m_loader) {
-        m_loader->SetDataReadyCB(nullptr, nullptr);
-        m_loader->SetErrorCB(nullptr);
-        m_loader->SetDataChunkCB(nullptr);
-        m_loader = nullptr;
+    LOG5(("CPendingOperation::Clear: this: %p, m_Loader: %p",
+          this, m_Loader.get()));
+    if (m_Loader) {
+        m_Loader->SetDataReadyCB(nullptr, nullptr);
+        m_Loader->SetErrorCB(nullptr);
+        m_Loader->SetDataChunkCB(nullptr);
+        m_Loader = nullptr;
     }
-    m_chunks.clear();
-    m_reply = nullptr;
-    m_cancelled = false;
-    m_finished_read = false;
+    m_Chunks.clear();
+    m_Reply = nullptr;
+    m_Cancelled = false;
+    m_FinishedRead = false;
 }
 
 
 void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
 {
-    m_reply = &resp;
+    m_Reply = &resp;
 
-    m_loader->SetDataReadyCB(HST::CHttpReply<CPendingOperation>::s_DataReady, &resp);
-    m_loader->SetErrorCB(
+    m_Loader->SetDataReadyCB(HST::CHttpReply<CPendingOperation>::s_DataReady, &resp);
+    m_Loader->SetErrorCB(
         [&resp](const char* Text, CCassBlobWaiter* Waiter) {
             ERRLOG1(("%s", Text));
         }
     );
-    m_loader->SetDataChunkCB(
+    m_Loader->SetDataChunkCB(
         [this, &resp](const unsigned char* Data, unsigned int Size, int ChunkNo, bool IsLast) {
             LOG3(("Chunk: [%d]: %u", ChunkNo, Size));
-            assert(!m_finished_read);
-            if (m_cancelled) {
-                m_loader->Cancel();
-                m_finished_read = true;
+            assert(!m_FinishedRead);
+            if (m_Cancelled) {
+                m_Loader->Cancel();
+                m_FinishedRead = true;
                 return;
             }
             if (resp.IsFinished()) {
@@ -95,43 +95,43 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
                 return;
             }
             if (resp.GetState() == HST::CHttpReply<CPendingOperation>::stInitialized) {
-                resp.SetContentLength(m_loader->GetBlobSize());
+                resp.SetContentLength(m_Loader->GetBlobSize());
             }
             if (Data && Size > 0)
-                m_chunks.push_back(resp.PrepadeChunk(Data, Size));
+                m_Chunks.push_back(resp.PrepadeChunk(Data, Size));
             if (IsLast)
-                m_finished_read = true;
+                m_FinishedRead = true;
             if (resp.IsOutputReady())
                 Peek(resp);
         }
     );
 
-    m_loader->Wait();
+    m_Loader->Wait();
 }
 
 
 void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp)
 {
-    if (m_cancelled) {
+    if (m_Cancelled) {
         if (resp.IsOutputReady() && !resp.IsFinished()) {
             resp.Send(nullptr, 0, true, true);
         }
         return;
     }
-    // 1 -> call m_loader->Wait1 to pick data
+    // 1 -> call m_Loader->Wait1 to pick data
     // 2 -> check if we have ready-to-send buffers
     // 3 -> call resp->  to send what we have if it is ready
-    if (m_loader) {
-        m_loader->Wait();
-        if (m_loader->HasError() && resp.IsOutputReady() && !resp.IsFinished()) {
-            resp.Send503("error", m_loader->LastError().c_str());
+    if (m_Loader) {
+        m_Loader->Wait();
+        if (m_Loader->HasError() && resp.IsOutputReady() && !resp.IsFinished()) {
+            resp.Send503("error", m_Loader->LastError().c_str());
             return;
         }
     }
 
-    if (resp.IsOutputReady() && (!m_chunks.empty() || m_finished_read)) {
-        resp.Send(m_chunks, m_finished_read);
-        m_chunks.clear();
+    if (resp.IsOutputReady() && (!m_Chunks.empty() || m_FinishedRead)) {
+        resp.Send(m_Chunks, m_FinishedRead);
+        m_Chunks.clear();
     }
 
 /*

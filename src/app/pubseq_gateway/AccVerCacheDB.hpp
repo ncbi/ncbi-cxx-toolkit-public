@@ -62,7 +62,7 @@ public:
     void Open(const string &  db_path, bool  initialize, bool  readonly);
     void Close();
 
-    CAccVerCacheStorage& Storage()
+    CAccVerCacheStorage &  Storage(void)
     {
         if (!m_Storage)
             EAccVerException::raise("DB is not open");
@@ -76,6 +76,7 @@ public:
     {
         return m_Env;
     }
+
     bool IsReadOnly(void) const
     {
         return m_IsReadOnly;

@@ -51,7 +51,7 @@ class CPendingOperation
 {
 public:
     CPendingOperation(string &&  sat_name, int  sat_key,
-                      shared_ptr<CCassConnection>  Conn,
+                      shared_ptr<CCassConnection>  conn,
                       unsigned int  timeout);
     ~CPendingOperation();
     void Clear();
@@ -60,7 +60,7 @@ public:
 
     void Cancel(void)
     {
-        m_cancelled = true;
+        m_Cancelled = true;
     }
 
 public:
@@ -70,13 +70,13 @@ public:
     CPendingOperation& operator=(CPendingOperation&&) = default;
 
 private:
-    HST::CHttpReply<CPendingOperation>*     m_reply;
-    bool                                    m_cancelled;
-    bool                                    m_finished_read;
-    const int                               m_sat_key;
-    CAppOp                                  m_op;
-    unique_ptr<CCassBlobLoader>             m_loader;
-    vector<h2o_iovec_t>                     m_chunks;
+    HST::CHttpReply<CPendingOperation>*     m_Reply;
+    bool                                    m_Cancelled;
+    bool                                    m_FinishedRead;
+    const int                               m_SatKey;
+    CAppOp                                  m_Op;
+    unique_ptr<CCassBlobLoader>             m_Loader;
+    vector<h2o_iovec_t>                     m_Chunks;
 };
 
 

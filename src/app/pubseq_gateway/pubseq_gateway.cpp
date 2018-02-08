@@ -55,18 +55,35 @@ USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
 using namespace IdLogUtil;
 
+
+const unsigned short    kWorkersMin = 1;
+const unsigned short    kWorkersMax = 100;
+const unsigned short    kWorkersDefault = 32;
+const unsigned short    kHttpPortMin = 1;
+const unsigned short    kHttpPortMax = 65534;
+const unsigned int      kListenerBacklogMin = 5;
+const unsigned int      kListenerBacklogMax = 2048;
+const unsigned int      kListenerBacklogDefault = 256;
+const unsigned short    kTcpMaxConnMax = 65000;
+const unsigned short    kTcpMaxConnMin = 5;
+const unsigned short    kTcpMaxConnDefault = 4096;
+const unsigned int      kTimeoutMsMin = 0;
+const unsigned int      kTimeoutMsMax = UINT_MAX;
+const unsigned int      kTimeoutDefault = 30000;
+
+
 class CPubseqGatewayApp: public CNcbiApplication
 {
 public:
     CPubseqGatewayApp() :
         m_LogLevel(0),
         m_LogLevelFile(1),
-        m_HttpPort(2180),
-        m_HttpWorkers(32),
-        m_ListenerBacklog(256),
-        m_TcpMaxConn(4096),
-        m_CassConnectionFactory(CCassConnectionFactory::Create()),
-        m_TimeoutMs(30000)
+        m_HttpPort(0),
+        m_HttpWorkers(kWorkersDefault),
+        m_ListenerBacklog(kListenerBacklogDefault),
+        m_TcpMaxConn(kTcpMaxConnDefault),
+        m_CassConnectionFactory(CCassConnectionFactory::s_Create()),
+        m_TimeoutMs(kTimeoutDefault)
     {}
 
     virtual void Init()
@@ -74,89 +91,63 @@ public:
         unique_ptr<CArgDescriptions>    argdesc(new CArgDescriptions());
 
         m_CassConnectionFactory->AppInit(argdesc.get());
-
-        argdesc->SetUsageContext(GetArguments().GetProgramBasename(),
-                                 "Daemon to service Accession.Version Cache requests");
-        argdesc->AddDefaultKey("P", "port", "HTTP port",
-                               CArgDescriptions::eInteger, "2180");
-        argdesc->SetConstraint("P",   new CArgAllow_Integers(1, 65534));
-
-        argdesc->AddDefaultKey("H", "Address", "Address to bind listening socket to, 0.0.0.0 by default",  CArgDescriptions::eString, "0.0.0.0");
-        argdesc->AddOptionalKey("o", "log",          "Output log to",                        CArgDescriptions::eString);
-        argdesc->AddOptionalKey("l", "loglevel",     "Output verbosity level from 0 to 5",   CArgDescriptions::eInteger);
-        argdesc->AddOptionalKey("lf", "loglevelfile", "File logging verbosity level from 0 to 5",   CArgDescriptions::eInteger);
-        argdesc->AddOptionalKey("db", "database",     "Path to LMDB database",                CArgDescriptions::eString);
-        argdesc->AddOptionalKey("w", "HttpWorkers",  "HTTP workers from 1 to 100",           CArgDescriptions::eInteger);
-        argdesc->SetConstraint("w", new CArgAllow_Integers(1, 100));
-        argdesc->AddOptionalKey("b", "backlog",      "Listener backlog from 5 to 2048",      CArgDescriptions::eInteger);
-        argdesc->SetConstraint("b", new CArgAllow_Integers(5, 2048));
-        argdesc->AddOptionalKey("n", "maxcon",       "Max number of connections 5 to 65000",      CArgDescriptions::eInteger);
-        argdesc->SetConstraint("n", new CArgAllow_Integers(5, 65000));
-
+        argdesc->SetUsageContext(
+            GetArguments().GetProgramBasename(),
+            "Daemon to service Accession.Version Cache requests");
         SetupArgDescriptions(argdesc.release());
     }
 
     void ParseArgs()
     {
         const CArgs &           args = GetArgs();
-        const CNcbiRegistry &   Registry = GetConfig();
+        const CNcbiRegistry &   registry = GetConfig();
 
-        if (!Registry.Empty() ) {
-            m_LogLevel = Registry.GetInt("COMMON", "LOGLEVEL", 0);
-            m_LogLevelFile = Registry.GetInt("COMMON", "LOGLEVELFILE", 1);
-            m_LogFile = Registry.GetString("COMMON", "LOGFILE", "");
-            m_HttpPort = Registry.GetInt("HTTP", "PORT", 2180);
-            m_Address = Registry.GetString("HTTP", "Address", "");
-            m_HttpWorkers = Registry.GetInt("HTTP", "Workers", 32);
-            m_ListenerBacklog = Registry.GetInt("HTTP", "Backlog", 256);
-            m_TcpMaxConn = Registry.GetInt("HTTP", "MaxConn", 4096);
-            m_TimeoutMs = Registry.GetInt("COMMON", "OPTIMEOUT", 30000);
-        }
-        if (args["o"])
-            m_LogFile = args["o"].AsString();
-        if (args["l"])
-            m_LogLevel = args["l"].AsInteger();
-        if (args["lf"])
-            m_LogLevelFile = args["lf"].AsInteger();
+        if (!registry.HasEntry("SERVER", "port"))
+            EAccVerException::raise(
+                "[SERVER]/port value is not fond in the configuration file. "
+                "The port must be provided to run the server. Exiting.");
+
+        m_DbPath = registry.GetString("LMDB_CACHE", "dbfile", "");
+        m_HttpPort = registry.GetInt("SERVER", "port", 0);
+        m_HttpWorkers = registry.GetInt("SERVER", "workers",
+                                        kWorkersDefault);
+        m_ListenerBacklog = registry.GetInt("SERVER", "backlog",
+                                            kListenerBacklogDefault);
+        m_TcpMaxConn = registry.GetInt("SERVER", "maxconn",
+                                       kTcpMaxConnDefault);
+        m_TimeoutMs = registry.GetInt("SERVER", "optimeout",
+                                      kTimeoutDefault);
+
+        m_LogLevel = registry.GetInt("COMMON", "loglevel", 0);
+        m_LogLevelFile = registry.GetInt("COMMON", "loglevelfile", 1);
+        m_LogFile = registry.GetString("COMMON", "logfile", "");
+
+
         IdLogUtil::CAppLog::SetLogLevel(m_LogLevel);
         IdLogUtil::CAppLog::SetLogLevelFile(m_LogLevelFile);
         if (!m_LogFile.empty())
             IdLogUtil::CAppLog::SetLogFile(m_LogFile);
 
         m_CassConnectionFactory->AppParseArgs(args);
-        m_CassConnectionFactory->LoadConfig(GetConfigPath(), "");
+        m_CassConnectionFactory->LoadConfig(registry, "");
 
-        if (args["P"])
-            m_HttpPort = args["P"].AsInteger();
-        if (args["H"])
-            m_Address = args["H"].AsString();
-        if (args["w"])
-            m_HttpWorkers = args["w"].AsInteger();
-        if (args["b"])
-            m_ListenerBacklog = args["b"].AsInteger();
-        if (args["n"])
-            m_TcpMaxConn = args["n"].AsInteger();
-        if (args["db"])
-            m_DbPath = args["db"].AsString();
-
-        list<string> entries;
-        Registry.EnumerateEntries("satnames", &entries);
-        for (const auto& it : entries) {
-            size_t idx = NStr::StringToNumeric<size_t>(it);
+        list<string>    entries;
+        registry.EnumerateEntries("satnames", &entries);
+        for (const auto &  it : entries) {
+            size_t      idx = NStr::StringToNumeric<size_t>(it);
             while (m_SatNames.size() <= idx)
                 m_SatNames.push_back("");
-            m_SatNames[idx] = Registry.GetString("satnames", it, "");
+            m_SatNames[idx] = registry.GetString("satnames", it, "");
         }
-        if (m_SatNames.size() == 0)
-            EAccVerException::raise("[satnames] section in ini file is empty");
+
+        // It throws an exception in case of inability to start
+        x_ValidateArgs();
     }
 
-    void OpenDb(bool  Initialize, bool  Readonly)
+    void OpenDb(bool  initialize, bool  readonly)
     {
-        if (m_DbPath.empty())
-            m_DbPath = "./accvercache.db";
         m_Db.reset(new CAccVerCacheDB());
-        m_Db->Open(m_DbPath, Initialize, Readonly);
+        m_Db->Open(m_DbPath, initialize, readonly);
     }
 
     void OpenCass()
@@ -188,9 +179,9 @@ public:
 
         if (req.GetParam("accver", sizeof("accver") - 1,
                          true, &value, &value_len)) {
-            string AccVer(value, value_len);
+            string      AccVer(value, value_len);
+            string      Data;
 
-            string Data;
             if (m_Db->Storage().Get(AccVer, Data)) {
                 resp.SendOk(Data.c_str(), Data.length(), false);
             } else {
@@ -213,19 +204,21 @@ public:
         size_t          sat_key_len;
 
         if (req.GetParam("sat", sizeof("sat") - 1, true, &ssat, &sat_len) &&
-            req.GetParam("sat_key", sizeof("sat_key") - 1, true, &ssat_key, &sat_key_len))
+            req.GetParam("sat_key", sizeof("sat_key") - 1, true,
+                         &ssat_key, &sat_key_len))
         {
-            int sat = atoi(ssat);
-            string sat_name;
+            int         sat = atoi(ssat);
+            string      sat_name;
+
             if (SatToSatName(sat, sat_name)) {
-                int sat_key = atoi(ssat_key);
+                int         sat_key = atoi(ssat_key);
                 resp.Postpone(CPendingOperation(std::move(sat_name), sat_key,
                                                 m_CassConnection, m_TimeoutMs));
                 return 0;
-            } else {
-                resp.Send404("not found",
-                             "invalid/unsupported satellite number");
             }
+
+            resp.Send404("not found",
+                         "invalid/unsupported satellite number");
         } else {
             resp.Send503("invalid", "invalid request");
         }
@@ -256,7 +249,7 @@ public:
                        }, &get_parser, nullptr);
 
         unique_ptr<HST::CHttpDaemon<CPendingOperation>>     d(
-                new HST::CHttpDaemon<CPendingOperation>(h, m_Address,
+                new HST::CHttpDaemon<CPendingOperation>(h, "0.0.0.0",
                                                         m_HttpPort,
                                                         m_HttpWorkers,
                                                         m_ListenerBacklog,
@@ -274,11 +267,74 @@ public:
     }
 
 private:
+    void x_ValidateArgs(void)
+    {
+        if (m_SatNames.size() == 0)
+            EAccVerException::raise("[satnames] section in ini file is empty");
+
+        if (m_DbPath.empty())
+            EAccVerException::raise("[LMDB_CACHE]/dbfile "
+                                    "is not found in the ini file");
+
+        if (m_HttpPort < kHttpPortMin || m_HttpPort > kHttpPortMax) {
+            EAccVerException::raise(
+                "[SERVER]/port value is out of range. Allowed range: " +
+                NStr::NumericToString(kHttpPortMin) + "..." +
+                NStr::NumericToString(kHttpPortMax) + ". Received: " +
+                NStr::NumericToString(m_HttpPort));
+        }
+
+        if (m_HttpWorkers < kWorkersMin || m_HttpWorkers > kWorkersMax) {
+            string  err_msg =
+                "The number of HTTP workers is out of range. Allowed "
+                "range: " + NStr::NumericToString(kWorkersMin) + "..." +
+                NStr::NumericToString(kWorkersMax) + ". Received: " +
+                NStr::NumericToString(m_HttpWorkers) + ". Reset to "
+                "default: " + NStr::NumericToString(kWorkersDefault);
+            LOG1((err_msg.c_str()));
+            m_HttpWorkers = kWorkersDefault;
+        }
+
+        if (m_ListenerBacklog < kListenerBacklogMin ||
+            m_ListenerBacklog > kListenerBacklogMax) {
+            string  err_msg =
+                "The listener backlog is out of range. Allowed "
+                "range: " + NStr::NumericToString(kListenerBacklogMin) + "..." +
+                NStr::NumericToString(kListenerBacklogMax) + ". Received: " +
+                NStr::NumericToString(m_ListenerBacklog) + ". Reset to "
+                "default: " + NStr::NumericToString(kListenerBacklogDefault);
+            LOG1((err_msg.c_str()));
+            m_ListenerBacklog = kListenerBacklogDefault;
+        }
+
+        if (m_TcpMaxConn < kTcpMaxConnMin || m_TcpMaxConn > kTcpMaxConnMax) {
+            string  err_msg =
+                "The max number of connections is out of range. Allowed "
+                "range: " + NStr::NumericToString(kTcpMaxConnMin) + "..." +
+                NStr::NumericToString(kTcpMaxConnMax) + ". Received: " +
+                NStr::NumericToString(m_TcpMaxConn) + ". Reset to "
+                "default: " + NStr::NumericToString(kTcpMaxConnDefault);
+            LOG1((err_msg.c_str()));
+            m_TcpMaxConn = kTcpMaxConnDefault;
+        }
+
+        if (m_TimeoutMs < kTimeoutMsMin || m_TimeoutMs > kTimeoutMsMax) {
+            string  err_msg =
+                "The operation timeout is out of range. Allowed "
+                "range: " + NStr::NumericToString(kTimeoutMsMin) + "..." +
+                NStr::NumericToString(kTimeoutMsMax) + ". Received: " +
+                NStr::NumericToString(m_TimeoutMs) + ". Reset to "
+                "default: " + NStr::NumericToString(kTimeoutDefault);
+            LOG1((err_msg.c_str()));
+            m_TimeoutMs = kTimeoutDefault;
+        }
+    }
+
+private:
     string                              m_DbPath;
     string                              m_LogFile;
     unsigned int                        m_LogLevel;
     unsigned int                        m_LogLevelFile;
-    string                              m_Address;
     vector<string>                      m_SatNames;
 
     unsigned short                      m_HttpPort;
