@@ -1006,14 +1006,18 @@ bool CDirEntry::SetMode(TMode user_mode, TMode group_mode,
     _ASSERT(eEntryOnly == fEntry);
 
     // Is this a directory ? (and processing not entry only)
-    if ( (flags & (fDir_All | fDir_Recursive)) != eEntryOnly  &&
-         IsDir(eIgnoreLinks) ) {
-        CDir dir(GetPath());
-        return dir.SetMode(user_mode, group_mode, other_mode, special_mode, flags);
+    if ( (flags & (fDir_All | fDir_Recursive)) != eEntryOnly  &&  IsDir(eIgnoreLinks) ) {
+        return CDir(GetPath()).SetMode(user_mode, group_mode, other_mode, special_mode, flags);
     }
-    
     // Other entries
+    return SetModeEntry(user_mode, group_mode, other_mode, special_mode, flags);
+}
 
+
+bool CDirEntry::SetModeEntry(TMode user_mode, TMode group_mode,
+                             TMode other_mode, TSpecialModeBits special_mode,
+                             TSetModeFlags flags) const
+{
     // Check on defaults modes
     if (user_mode & fDefault) {
         user_mode = m_DefaultMode[eUser];
@@ -1046,7 +1050,7 @@ bool CDirEntry::SetMode(TMode user_mode, TMode group_mode,
             if ( (flags & fIgnoreMissing)  &&  (errno == ENOENT) ) {
                 return true;
             }
-            LOG_ERROR_AND_RETURN_ERRNO(6, "CDirEntry::SetMode(): stat() failed for " + GetPath());
+            LOG_ERROR_AND_RETURN_ERRNO(6, "CDirEntry::SetModeEntry(): stat() failed for " + GetPath());
         }
         ModeFromModeT(st.st_mode, &user, &group, &other);
     }
@@ -1064,7 +1068,7 @@ bool CDirEntry::SetMode(TMode user_mode, TMode group_mode,
         if ( (flags & fIgnoreMissing)  &&  (errno == ENOENT) ) {
             return true;
         }
-        LOG_ERROR_AND_RETURN_ERRNO(7, "CDirEntry::SetMode(): chmod() failed for " + GetPath());
+        LOG_ERROR_AND_RETURN_ERRNO(7, "CDirEntry::SetModeEntry(): chmod() failed for " + GetPath());
     }
     return true;
 }
@@ -2419,20 +2423,11 @@ bool CDirEntry::Copy(const string& path, TCopyFlags flags, size_t buf_size)
     EType type = GetType(follow ? eFollowLinks : eIgnoreLinks);
     switch (type) {
         case eFile:
-            {
-                CFile entry(GetPath());
-                return entry.Copy(path, flags, buf_size);
-            }
+            return CFile(GetPath()).Copy(path, flags, buf_size);
         case eDir: 
-            {
-                CDir entry(GetPath());
-                return entry.Copy(path, flags, buf_size);
-            }
+            return CDir(GetPath()).Copy(path, flags, buf_size);
         case eLink:
-            {
-                CSymLink entry(GetPath());
-                return entry.Copy(path, flags, buf_size);
-            }
+            return CSymLink(GetPath()).Copy(path, flags, buf_size);
         case eUnknown:
             {
                 CNcbiError::Set(CNcbiError::eNoSuchFileOrDirectory, GetPath());
@@ -2492,7 +2487,7 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
          link(_T_XCSTRING(src.GetPath()),
               _T_XCSTRING(dst.GetPath())) == 0 ) {
         // Hard link successfully created, so we can just remove source file
-        if ( src.Remove() ) {
+        if ( src.RemoveEntry() ) {
             Reset(newname);
             return true;
         }
@@ -2584,12 +2579,16 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
 bool CDirEntry::Remove(TRemoveFlags flags) const
 {
     // Is this a directory ? (and processing not entry only)
-    if ( (flags & (fDir_All | fDir_Recursive)) != eEntryOnly  &&
-         IsDir(eIgnoreLinks) ) {
-        CDir dir(GetPath());
-        return dir.Remove(flags);
+    if ( (flags & (fDir_All | fDir_Recursive)) != eEntryOnly  &&  IsDir(eIgnoreLinks) ) {
+        return CDir(GetPath()).Remove(flags);
     }
     // Other entries
+    return RemoveEntry(flags);
+}
+
+
+bool CDirEntry::RemoveEntry(TRemoveFlags flags) const
+{
     if ( NcbiSys_remove(_T_XCSTRING(GetPath())) != 0 ) {
         switch (errno) {
         case ENOENT:
@@ -2600,14 +2599,14 @@ bool CDirEntry::Remove(TRemoveFlags flags) const
 #if defined(NCBI_OS_MSWIN)
         case EACCES:
             if ( NCBI_PARAM_TYPE(NCBI, DeleteReadOnlyFiles)::GetDefault() ) {
-                SetMode(eDefault);
+                SetModeEntry(fDefault);
                 if ( NcbiSys_remove(_T_XCSTRING(GetPath())) == 0 ) {
                     return true;
                 }
             }
 #endif
         }
-        LOG_ERROR_AND_RETURN_ERRNO(22, "CDirEntry::Remove(): remove() failed for " + GetPath());
+        LOG_ERROR_AND_RETURN_ERRNO(22, "CDirEntry::RemoveEntry(): remove() failed for " + GetPath());
     }
     return true;
 }
@@ -3357,7 +3356,7 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
 #if defined(NCBI_OS_MSWIN)
     if ( !::CopyFile(_T_XCSTRING(src.GetPath()),
                      _T_XCSTRING(dst.GetPath()), FALSE) ) {
-        dst.Remove();
+        dst.RemoveEntry();
         LOG_ERROR_AND_RETURN_WIN(44, "CFile::Copy(): Cannot copy " + src.GetPath() + " to " + dst.GetPath());
     }
 #else
@@ -3370,7 +3369,7 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
     // Safe copy -- renaming
     if (F_ISSET(flags, fCF_Safe)) {
         if (!dst.Rename(dst_safe_path, fRF_Overwrite)) {
-            dst.Remove();
+            dst.RemoveEntry();
             LOG_ERROR_AND_RETURN_NCBI(45, "CFile:Copy():"
                                           " Cannot rename temporary file " + dst.GetPath() +
                                           " to " + dst_safe_path, CNcbiError::eIoError);
@@ -4295,14 +4294,18 @@ bool CDir::Remove(TRemoveFlags flags) const
             // Update flags to process subdirectories itself,
             // because the top directory entry may not have
             // such flag.
-            int f = flags;
-            if (flags & fDir_Subdirs) {
-                f |= fDir_Self;
+            int f = (flags & fDir_Subdirs) ? (flags | fDir_Self) : flags;
+            if (item.IsDir(eIgnoreLinks)) {
+                if (!CDir(item.GetPath()).Remove(f)) {
+                    return false;
+                }
+            } else if (flags & fDir_Files) {
+                if (!item.Remove(f)) {
+                    return false;
+                }
             }
-            if (!item.Remove(f)) {
-                return false;
-            }
-        } else if (item.IsDir(eIgnoreLinks)) {
+        }
+        else if (item.IsDir(eIgnoreLinks)) {
             // Non-recursive directory removal
             if (flags & fDir_Subdirs) {
                 // Clear all flags to go inside directory,
@@ -4344,7 +4347,7 @@ bool CDir::SetMode(TMode user_mode,  TMode group_mode,
 
     // Default mode (backward compatibility) -- top entry only
     if ( (flags & (fDir_All | fDir_Recursive)) == eEntryOnly ) {
-        return CDirEntry::SetMode(user_mode, group_mode, other_mode, special_mode, flags);
+        return SetModeEntry(user_mode, group_mode, other_mode, special_mode, flags);
     }
     
     // Read all entries in directory
@@ -4361,35 +4364,36 @@ bool CDir::SetMode(TMode user_mode,  TMode group_mode,
         }
         // Get entry item with full pathname.
         CDirEntry item(GetPath() + GetPathSeparator() + name);
-
         if (flags & fDir_Recursive) {
             // Update flags to process subdirectories itself,
-            // because the top directory entry may not have
-            // such flag.
-            int f = flags;
-            if (flags & fDir_Subdirs) {
-                f |= fDir_Self;
+            // because the top directory entry may not have such flag.
+            int f = (flags & fDir_Subdirs) ? (flags | fDir_Self) : flags;
+            if (item.IsDir(eIgnoreLinks)) {
+                if (!CDir(item.GetPath()).SetMode(user_mode, group_mode, other_mode, special_mode, f)) {
+                    return false;
+                }
+            } else if (flags & fDir_Files) {
+                if (!item.SetModeEntry(user_mode, group_mode, other_mode, special_mode, f)) {
+                    return false;
+                }
             }
-            if (!item.SetMode(user_mode, group_mode,
-                              other_mode, special_mode, f)) {
-                return false;
-            }
-        } else if (item.IsDir(eIgnoreLinks)) {
+        } 
+        else if (item.IsDir(eIgnoreLinks)) {
             // Non-recursive directory processing
             if (flags & fDir_Subdirs) {
                 // Clear all flags to go inside directory,
                 // and try to change modes for entry only.
-                if (!item.SetMode(user_mode, group_mode,
-                                  other_mode, special_mode,
-                                  (flags & ~fDir_All) | fDir_Self)) {
+                if (!CDir(item.GetPath()).SetMode(user_mode, group_mode, other_mode, special_mode,
+                                                 (flags & ~fDir_All) | fDir_Self)) {
                     return false;
                 }
             }
             continue;
             
-        } else {
+        }
+        else {
             if (flags & fDir_Files) {
-                if (!item.SetMode(user_mode, group_mode, other_mode, special_mode, flags)) {
+                if (!item.SetModeEntry(user_mode, group_mode, other_mode, special_mode, flags)) {
                     // Changing mode for a regular file entry failed
                     return false;
                 }
@@ -4399,8 +4403,7 @@ bool CDir::SetMode(TMode user_mode,  TMode group_mode,
     // Process directory entry
     if (flags & fDir_Self) {
         // Change mode for entry/directory itself
-        return CDirEntry::SetMode(user_mode, group_mode, other_mode,
-                                  special_mode, fEntry);
+        return SetModeEntry(user_mode, group_mode, other_mode, special_mode, fEntry);
     }
     return true;
 }
@@ -7243,4 +7246,3 @@ void CFileAPI::SetDeleteReadOnlyFiles(ESwitch on_off_default)
 
 
 END_NCBI_SCOPE
-

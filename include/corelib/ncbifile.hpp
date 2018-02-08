@@ -760,9 +760,17 @@ public:
     ///   Entry processing flags.
     ///   See EProcessingFlags and CDir::Remove() for details.
     /// @sa
-    ///   CDir::Remove(), EProcessingFlags
+    ///   CDir::Remove, EProcessingFlags
     virtual bool Remove(TRemoveFlags flags = eRecursive) const;
-    
+
+    /// Remove a directory entry.
+    ///
+    /// Same as Remove(), but removes current entry only.
+    /// Don't process entries inside directories.
+    /// 
+    /// @sa Remove
+    virtual bool RemoveEntry(TRemoveFlags flags = eEntryOnly) const;
+
     /// Directory entry type.
     enum EType {
         eFile = 0,                ///< Regular file
@@ -1207,13 +1215,27 @@ public:
     /// @flags
     ///   Entry processing flags. Affect directories only,
     ///   see CDir::SetMode() for details. For other type entris
-    ///   donut have any effect.
+    ///   don't have any effect.
     /// @return
     ///   TRUE if permission successfully set;  FALSE, otherwise.
     /// @sa
     ///   SetDefaultMode, SetDefaultModeGlobal, GetMode, EMode,
-    ///   EModeRelative, ESpecialModeBits, CDir::SetMode, EProcessingFlags
+    ///   EModeRelative, ESpecialModeBits, SetModeEntry, CDir::SetMode,
+    ///   EProcessingFlags
     virtual bool SetMode(
+                 TMode            user_mode, // e.g. fDefault
+                 TMode            group_mode = fDefault,
+                 TMode            other_mode = fDefault,
+                 TSpecialModeBits special    = 0,
+                 TSetModeFlags    flags      = eEntryOnly) const;
+
+
+    /// Set permission mode(s) of a directory entry.
+    ///
+    /// Same as SetMode(), but process current entry only.
+    /// Don't process entries inside directories.
+    /// @sa SetMode
+    virtual bool SetModeEntry(
                  TMode            user_mode, // e.g. fDefault
                  TMode            group_mode = fDefault,
                  TMode            other_mode = fDefault,
