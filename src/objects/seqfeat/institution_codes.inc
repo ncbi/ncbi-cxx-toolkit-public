@@ -547,7 +547,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BIUB\ts\tMongolian Academy of Sciences\t\t",
 "BJ\th\tBi Jie University\t\t",
 "BJA\ts\tUniversity of Burundi, Biology Department\t\t",
-"BJFC\ts\tBeijing Forestry University\t\t",
+"BJFC\ts\tBeijing Forestry University\tBJFU",
 "BJM\ts\tBeijing Natural History Museum\t\t",
 "BJRI<BGD>\tb\tGene bank at Bangladesh Jute Research Institute\t\t",
 "BJTC\ts\tCapital Normal University, Biology Department\t\t",
