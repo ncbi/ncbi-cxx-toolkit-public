@@ -12671,6 +12671,29 @@ void CNewCleanup_imp::ProtRefEC(CProt_ref& pr)
 }
 
 
+bool CNewCleanup_imp::x_FixParentPartials(const CSeq_feat& sf, CSeq_feat& parent)
+{
+    bool any_changes = false;
+    if (!sf.IsSetLocation() || !parent.IsSetLocation()) {
+        // note - this is pathological
+        return any_changes;
+    }
+    if (sf.GetLocation().IsPartialStart(eExtreme_Biological) &&
+        !parent.GetLocation().IsPartialStart(eExtreme_Biological)) {
+        parent.SetLocation().SetPartialStart(true, eExtreme_Biological);
+        parent.SetPartial(true);
+        any_changes = true;
+    }
+    if (sf.GetLocation().IsPartialStop(eExtreme_Biological) &&
+        !parent.GetLocation().IsPartialStop(eExtreme_Biological)) {
+        parent.SetLocation().SetPartialStop(true, eExtreme_Biological);
+        parent.SetPartial(true);
+        any_changes = true;
+    }
+    return any_changes;
+}
+
+
 void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
 {
     if (!sf.IsSetData() || !sf.GetData().IsCdregion()) {
@@ -12716,27 +12739,52 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
         try {
             CRef<CSeq_feat> cds_cpy(new CSeq_feat());
             cds_cpy->Assign(sf);
+            CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(*cds_cpy, *m_Scope);
+            CRef<CSeq_feat> new_mrna(NULL);
+            if (mrna) {
+                new_mrna.Reset(new CSeq_feat());
+                new_mrna->Assign(*mrna);
+            }
+            bool altered_mrna = false;
+            CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(*cds_cpy, *m_Scope);
+            CRef<CSeq_feat> new_gene(NULL);
+            if (gene) {
+                new_gene.Reset(new CSeq_feat());
+                new_gene->Assign(*gene);
+            }
+            bool altered_gene = false;
+
             CBioseq_Handle bsh = m_Scope->GetBioseqHandle(sf.GetLocation());
             if (bsh && CCleanup::ExtendToStopIfShortAndNotPartial(sf, bsh)) {
-                CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(*cds_cpy, *m_Scope);
-                CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(*cds_cpy, *m_Scope);
-
-                if (gene && CCleanup::LocationMayBeExtendedToMatch(gene->GetLocation(), sf.GetLocation())) {
-                    CRef<CSeq_feat> new_gene(new CSeq_feat());
-                    new_gene->Assign(*gene);
+                if (new_gene && CCleanup::LocationMayBeExtendedToMatch(new_gene->GetLocation(), sf.GetLocation())) {
                     if (CCleanup::ExtendStopPosition(*new_gene, &sf)) {
-                        CSeq_feat_EditHandle efh = CSeq_feat_EditHandle(m_Scope->GetSeq_featHandle(*gene));
-                        efh.Replace(*new_gene);
+                        altered_gene = true;
                     }
                 }
-                if (mrna && CCleanup::LocationMayBeExtendedToMatch(mrna->GetLocation(), sf.GetLocation())) {
-                    CRef<CSeq_feat> new_mrna(new CSeq_feat());
-                    new_mrna->Assign(*mrna);
+                if (new_mrna && CCleanup::LocationMayBeExtendedToMatch(new_mrna->GetLocation(), sf.GetLocation())) {
                     if (CCleanup::ExtendStopPosition(*new_mrna, &sf)) {
-                        CSeq_feat_EditHandle efh = CSeq_feat_EditHandle(m_Scope->GetSeq_featHandle(*mrna));
-                        efh.Replace(*new_mrna);
+                        altered_mrna = true;
                     }
                 }
+                ChangeMade(CCleanupChange::eChangeFeatureLocation);
+            }
+            if (new_gene && x_FixParentPartials(sf, *new_gene)) {
+                altered_gene = true;
+            }
+            if (new_mrna && x_FixParentPartials(sf, *new_mrna)) {
+                altered_mrna = true;
+            }
+            if (new_mrna && new_gene && x_FixParentPartials(*new_mrna, *new_gene)) {
+                altered_gene = true;
+            }
+            if (altered_gene) {
+                CSeq_feat_EditHandle efh = CSeq_feat_EditHandle(m_Scope->GetSeq_featHandle(*gene));
+                efh.Replace(*new_gene);
+                ChangeMade(CCleanupChange::eChangeFeatureLocation);
+            }
+            if (altered_mrna) {
+                CSeq_feat_EditHandle efh = CSeq_feat_EditHandle(m_Scope->GetSeq_featHandle(*mrna));
+                efh.Replace(*new_mrna);
                 ChangeMade(CCleanupChange::eChangeFeatureLocation);
             }
         } catch (CException& ) {

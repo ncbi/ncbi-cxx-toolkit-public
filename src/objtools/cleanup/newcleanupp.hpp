@@ -324,6 +324,7 @@ private:
     void AddProteinTitles (CBioseq& seq);
     void ProtRefEC( CProt_ref& pr);
     void CdRegionEC( CSeq_feat& sf);
+    bool x_FixParentPartials(const CSeq_feat& sf, CSeq_feat& parent);
     void x_ExtendFeatureToCoverSequence(CSeq_feat_Handle fh, const CBioseq& seq);
     void x_ExtendProteinFeatureOnProteinSeq(CBioseq& seq);
     void x_ExtendSingleGeneOnMrna(CBioseq& seq);

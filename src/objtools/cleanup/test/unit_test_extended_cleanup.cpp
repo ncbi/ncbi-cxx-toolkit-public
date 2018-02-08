@@ -1554,3 +1554,121 @@ BOOST_AUTO_TEST_CASE(Test_VR_782)
 	BOOST_CHECK_EQUAL(pfeat->GetPartial(), false);
 	BOOST_CHECK_EQUAL(mfeat->IsSetPartial(), false);
 }
+
+
+void LinkPair(CSeq_feat& f1, CSeq_feat& f2)
+{
+    f1.SetXref().push_back(CRef<CSeqFeatXref>(new CSeqFeatXref()));
+    f1.SetXref().back()->SetId().SetLocal().SetId(f2.GetId().GetLocal().GetId());
+    f2.SetXref().push_back(CRef<CSeqFeatXref>(new CSeqFeatXref()));
+    f2.SetXref().back()->SetId().SetLocal().SetId(f1.GetId().GetLocal().GetId());
+}
+
+
+void MakeMrnaGeneTripletForCDS(CRef<CSeq_entry> entry, CRef<CSeq_feat> cds)
+{
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    size_t num_cds = entry->GetSet().GetAnnot().front()->GetData().GetFtable().size();
+    CRef<CSeq_entry> prot = entry->GetSet().GetSeq_set().back();
+    CRef<CSeq_feat> pfeat = prot->GetAnnot().front()->GetData().GetFtable().front();
+    // make mRNA
+    CRef<CSeq_feat> mrna = unit_test_util::MakemRNAForCDS(cds);
+    mrna->SetData().SetRna().SetExt().SetName(pfeat->GetData().GetProt().GetName().front());
+    mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    unit_test_util::AddFeat(mrna, nuc);
+    auto cds_id = cds->GetId().GetLocal().GetId();
+    auto mrna_id = cds_id + 1;
+    // assign ID to mRNA
+    mrna->SetId().SetLocal().SetId(mrna_id);
+    // make reciprocal xrefs between cds and mrna
+    LinkPair(*cds, *mrna);
+    // make gene
+    CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature(mrna);
+    unit_test_util::AddFeat(gene, nuc);
+    auto gene_id = cds_id + 2;
+    gene->SetId().SetLocal().SetId(gene_id);
+    // make reciprocal xrefs between cds and gene
+    LinkPair(*cds, *gene);
+    // make reciprocal xrefs between mrna and gene
+    LinkPair(*mrna, *gene);
+}
+
+
+void AddNextCDSToNucProt(CRef<CSeq_entry> entry)
+{
+    auto cds_ftable = entry->SetSet().SetAnnot().front()->SetData().SetFtable();
+    auto last_cds = cds_ftable.back();
+    size_t num_cds = cds_ftable.size();
+    string suffix = "_" + NStr::NumericToString(num_cds);
+    auto seq_it = entry->GetSet().GetSeq_set().begin();
+    // skip nuc
+    seq_it++;
+    CConstRef<CSeq_id> first_id = (*seq_it)->GetSeq().GetId().front();
+    CConstRef<CSeq_feat> first_prot = (*seq_it)->GetSeq().GetAnnot().front()->GetData().GetFtable().front();
+
+    // add protein sequence, but with new id
+    CRef<CSeq_entry> last_prot = entry->GetSet().GetSeq_set().back();
+    CRef<CSeq_entry> new_prot(new CSeq_entry());
+    new_prot->Assign(**seq_it);
+    CRef<CSeq_id> new_prot_id(new CSeq_id());
+    new_prot_id->SetLocal().SetStr(first_id->GetLocal().GetStr() + suffix);
+    ChangeId(new_prot, new_prot_id);
+    CRef<CSeq_feat> new_prot_feat = new_prot->SetAnnot().front()->SetData().SetFtable().front();
+    new_prot_feat->SetData().SetProt().SetName().front() = first_prot->GetData().GetProt().GetName().front() + suffix;
+    entry->SetSet().SetSeq_set().push_back(new_prot);
+
+    // add coding region
+    CRef<CSeq_feat> new_cds(new CSeq_feat());
+    new_cds->Assign(*(cds_ftable.front()));
+    new_cds->SetProduct().SetWhole().Assign(*new_prot_id);
+    new_cds->SetId().SetLocal().SetId(num_cds * 3 + 1);
+    entry->SetSet().SetAnnot().front()->SetData().SetFtable().push_back(new_cds);
+
+    MakeMrnaGeneTripletForCDS(entry, new_cds);
+}
+
+
+void TestWithNCodingRegions(size_t n, bool first_is_partial)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    cds->SetId().SetLocal().SetId(1);
+    MakeMrnaGeneTripletForCDS(entry, cds);
+    for (size_t i = 1; i < n; i++) {
+        AddNextCDSToNucProt(entry);
+    }
+    if (first_is_partial) {
+        cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    }
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.ExtendedCleanup(*entry);
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    auto ftable = nuc->GetAnnot().front()->GetData().GetFtable();
+
+    auto fit = ftable.begin();
+    BOOST_CHECK_EQUAL((*fit)->GetLocation().IsPartialStart(eExtreme_Biological), first_is_partial);
+    fit++;
+    BOOST_CHECK_EQUAL((*fit)->GetLocation().IsPartialStart(eExtreme_Biological), first_is_partial);
+    fit++;
+    for (size_t i = 1; i < n; i++) {
+        BOOST_CHECK_EQUAL((*fit)->GetLocation().IsPartialStart(eExtreme_Biological), false);
+        fit++;
+        BOOST_CHECK_EQUAL((*fit)->GetLocation().IsPartialStart(eExtreme_Biological), false);
+        fit++;
+    }
+}
+
+BOOST_AUTO_TEST_CASE(Test_RW_525)
+{
+    TestWithNCodingRegions(1, false);
+    TestWithNCodingRegions(1, true);
+    TestWithNCodingRegions(2, false);
+    TestWithNCodingRegions(2, true);
+}
