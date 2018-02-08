@@ -4316,6 +4316,31 @@ bool CAlignFormatUtil::MatchSeqInSeqList(TGi cur_gi, CRef<CSeq_id> &seqID, list<
 }
 
 
+bool CAlignFormatUtil::MatchSeqInSeqList(CConstRef<CSeq_id> &alnSeqID, list<string> &use_this_seq,vector <string> &seqList)
+{
+    bool isGi = false;        
+    string curSeqID;
+    if(alnSeqID->IsGi()) {
+        curSeqID = NStr::NumericToString(alnSeqID->GetGi());
+    }
+    else {
+        curSeqID = CAlignFormatUtil::GetLabel(alnSeqID,true); //uses GetSeqIdString(true)
+    }
+    //match with seqid in seq_align
+    bool found = std::find(seqList.begin(), seqList.end(), curSeqID) != seqList.end();
+    if(!found) {
+        //match in use_this_seq list
+        ITERATE(list<string>, iter_seq, use_this_seq){                    
+            string useThisSeq = s_UseThisSeqToTextSeqID(*iter_seq, isGi);            
+            if(curSeqID == useThisSeq){
+                found = true;            
+                break;
+            }
+        }
+    }    
+    return found;
+}
+
 
 CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
                                 const CSeq_id& aln_id,
@@ -4586,6 +4611,30 @@ bool CAlignFormatUtil::GetTextSeqID(const list<CRef<CSeq_id> > & ids, string *te
         if(textSeqID) seqID->GetLabel(textSeqID, CSeq_id::eContent);
     }
     return hasTextSeqID;
+}
+
+CRef<CSeq_align_set> CAlignFormatUtil::FilterSeqalignBySeqList(CSeq_align_set& source_aln,
+                                                               vector <string> &seqList)                                                                    
+{
+    CConstRef<CSeq_id> previous_id, subid; 
+    list<string> use_this_seq;
+    bool match;
+
+    CRef<CSeq_align_set> new_aln(new CSeq_align_set);
+    ITERATE(CSeq_align_set::Tdata, iter, source_aln.Get()){ 
+        subid = &((*iter)->GetSeq_id(1));
+        if(previous_id.Empty() || !subid->Match(*previous_id)){            
+            use_this_seq.clear();
+            CAlignFormatUtil::GetUseThisSequence(**iter,use_this_seq);            
+            match = MatchSeqInSeqList(subid, use_this_seq,seqList);            
+        }
+
+        previous_id = subid;        
+        if(match) {
+            new_aln->Set().push_back(*iter);
+        }
+    }    
+    return new_aln;
 }
 
 

@@ -1522,7 +1522,7 @@ string CShowBlastDefline::x_FormatSeqSetHeaders(int isGenomicSeq, bool formatHea
 
 string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo* iter,bool &first_new)
 {
-    string defLine = ((sdl->gi > ZERO_GI) && ((m_Option & eCheckboxChecked) || (m_Option & eCheckbox))) ? x_FormatPsi(sdl, first_new) : m_DeflineTemplates->defLineTmpl;
+    string defLine = (((m_Option & eCheckboxChecked) || (m_Option & eCheckbox))) ? x_FormatPsi(sdl, first_new) : m_DeflineTemplates->defLineTmpl;
     string dflGi = (m_Option & eShowGi) && (sdl->gi > ZERO_GI) ? "gi|" + NStr::NumericToString(sdl->gi) + "|" : "";
     string seqid;
     if(!sdl->id.Empty()){
@@ -1654,7 +1654,12 @@ string CShowBlastDefline::x_FormatPsi(SDeflineInfo* sdl, bool &first_new)
 
     replaceBy = (m_Option & eCheckboxChecked) ? "checked=\"checked\"" : "";
     defline = CAlignFormatUtil::MapTemplate(defline,"gi_checked",replaceBy);    
-    defline = CAlignFormatUtil::MapTemplate(defline,"psiGi",NStr::NumericToString(sdl->gi));
+    if(sdl->gi > ZERO_GI) {
+        defline = CAlignFormatUtil::MapTemplate(defline,"psiGi",NStr::NumericToString(sdl->gi));
+    }
+    else {
+        defline = CAlignFormatUtil::MapTemplate(defline,"psiGi",sdl->textSeqID);
+    }
     
     return defline;
 }
