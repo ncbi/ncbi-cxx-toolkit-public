@@ -3288,7 +3288,7 @@ BOOST_AUTO_TEST_CASE(CreateV5Seqidlist)
 		const string kTitle("Unit Test Seqidlist");
 		const size_t num_of_ids = 12;
 	    CTmpFile tmpfile;
-	    CNcbiOstream & os = tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset);
+	    CNcbiOstream & os = tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset, IOS_BASE::out | IOS_BASE::binary);
 	    SBlastSeqIdListInfo list_info;
 	    vector<CSeqDBGiList::SSiOid> read_idlist;
 		WriteBlastSeqidlistFile(idlist, os, kTitle);
@@ -3307,7 +3307,7 @@ BOOST_AUTO_TEST_CASE(CreateV5Seqidlist)
 		const string kTitle("Unit Test Seqidlist w DB");
 		const size_t num_of_ids = 9;
 	    CTmpFile tmpfile;
-	    CNcbiOstream & os = tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset);
+	    CNcbiOstream & os = tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset, IOS_BASE::out | IOS_BASE::binary);
 	    SBlastSeqIdListInfo list_info;
 	    vector<CSeqDBGiList::SSiOid> read_idlist;
 		CSeqDB db("data/writedb_nucl_v5", CSeqDB::eNucleotide);
@@ -3329,7 +3329,7 @@ BOOST_AUTO_TEST_CASE(CreateV5Seqidlist)
 		const string kTitle("Unit Test Seqidlist Duplicate");
 		const size_t num_of_ids = 12;
 	    CTmpFile tmpfile;
-	    CNcbiOstream & os = tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset);
+	    CNcbiOstream & os = tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset, IOS_BASE::out | IOS_BASE::binary);
 	    SBlastSeqIdListInfo list_info;
 	    vector<string> dup_list;
 	    dup_list.insert(dup_list.begin(), idlist.begin(), idlist.end());

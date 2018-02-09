@@ -171,7 +171,7 @@ CWriteDB_File::CWriteDB_File(const string & basename,
     // Define maximum allowed max_file_size.
 #ifdef _DEBUG        
     static const int MAX_OFFSET_BITS = (sizeof m_Offset * 8);    
-    static const Uint8 MAX_FILE_SIZE = (1UL << MAX_OFFSET_BITS);      
+    static const Uint8 MAX_FILE_SIZE = ((Uint8) 1 << MAX_OFFSET_BITS);      
 #endif
 
     if (m_MaxFileSize == 0) {
@@ -207,7 +207,7 @@ unsigned int CWriteDB_File::Write(const CTempString & data)
     // Define number of usable bits in m_Offset,
     // deducting one for the sign bit.    
     static const int MAX_OFFSET_BITS = (sizeof m_Offset * 8);    
-    static const Uint8 MAX_OFFSET = (1UL << MAX_OFFSET_BITS);        
+    static const Uint8 MAX_OFFSET = ((Uint8) 1 << MAX_OFFSET_BITS);        
 #endif
 
     _ASSERT(m_Created);
