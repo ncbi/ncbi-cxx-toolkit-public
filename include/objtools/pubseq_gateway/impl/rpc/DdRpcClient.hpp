@@ -88,69 +88,6 @@ public:
     virtual std::shared_ptr<HCT::http2_end_point> SericeIdToEndPoint(const std::string& ServiceId);
 };
 
-class RequestBase
-{
-protected:
-    HCT::TagHCT m_tag;
-    std::shared_ptr<HCT::http2_request> m_Pimpl;
-    RequestBase(HCT::TagHCT tag = 0);
-public:
-    ~RequestBase();
-    bool IsDone() const;
-    bool IsCancelled() const;
-    std::string Get();
-    bool HasError() const;
-    std::string GetErrorDescription() const;
-    HCT::TagHCT GetTag()
-    {
-        return m_tag;
-    }
-    void SetTag(HCT::TagHCT tag)
-    {
-        m_tag = tag;
-    }
-};
-
-class Request: public RequestBase
-{
-private:
-    Request(HCT::TagHCT tag = 0);
-    void RunRequest(const std::string& ServiceId, std::string SerializedArgs);
-    friend class DdRpcClient;
-public:
-    void Wait();
-    void WaitAny();
-};
-
-
-class CRequestQueue;
-
-class CRequestQueueItem: public RequestBase
-{
-private:
-    CRequestQueueItem(std::shared_ptr<HCT::io_future> afuture, std::tuple<std::string, std::string, HCT::TagHCT> args);
-    void WaitFor(long timeout_ms);
-    void Wait();
-    void Cancel();
-    friend class CRequestQueue;
-public:
-};
-
-class CRequestQueue
-{
-private:
-    mutable std::mutex m_items_mtx;
-    std::vector<std::unique_ptr<CRequestQueueItem>> m_items;
-    std::shared_ptr<HCT::io_future> m_future;
-public:
-    CRequestQueue();
-    ~CRequestQueue();
-    void Submit(std::vector<std::tuple<std::string, std::string, HCT::TagHCT>>& requests, const std::chrono::duration<long, std::chrono::milliseconds::period>& timeout);
-    std::vector<std::unique_ptr<CRequestQueueItem>> WaitResults(const std::chrono::duration<long, std::chrono::milliseconds::period>& timeout);
-    bool IsEmpty() const;
-    void Clear();
-};
-
 
 class DdRpcClient final
 {
@@ -160,8 +97,6 @@ private:
 public:
     static void Init(std::unique_ptr<ServiceResolver> Resolver);
     static void Finalize();
-    static std::unique_ptr<Request> AsyncRequest(const std::string& ServiceId, std::string SerializedArgs, HCT::TagHCT tag = 0);
-    static std::string SyncRequest(const std::string& ServiceId, std::string SerializedArgs);
     static std::shared_ptr<HCT::http2_end_point> SericeIdToEndPoint(const std::string& ServiceId)
     {
         if (!m_Resolver)
