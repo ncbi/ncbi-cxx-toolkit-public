@@ -104,6 +104,20 @@ static void s_GBSeqQualCleanup(string& val)
 CGBSeqFormatter::CGBSeqFormatter(bool isInsd)
     : m_IsInsd(isInsd)
 {
+    m_DidFeatStart = false;
+    m_DidJourStart = false;
+    m_DidKeysStart = false;
+    m_DidRefsStart = false;
+    m_NeedFeatEnd = false;
+    m_NeedJourEnd = false;
+    m_NeedKeysEnd = false;
+    m_NeedRefsEnd = false;
+    m_NeedComment = false;
+    m_NeedXrefs = false;
+    m_OtherSeqIDs.clear();
+    m_SecondaryAccns.clear();
+    m_Comments.clear();
+    m_Xrefs.clear();
 }
 
 // detructor
@@ -112,33 +126,152 @@ CGBSeqFormatter::~CGBSeqFormatter(void)
 }
 
 
-void CGBSeqFormatter::Start(IFlatTextOStream& text_os)
+static string s_CombineStrings (string spaces, string tag, string value)
+
 {
-    x_WriteFileHeader(text_os);
-        
-    // x_StartWriteGBSet(text_os);
+    string str = spaces + "<" + tag + ">" + NStr::XmlEncode(value) + "</" + tag + ">" + "\n";
+
+    return str;
 }
 
 
-void CGBSeqFormatter::StartSection(const CStartSectionItem&, IFlatTextOStream&)
+static string s_CombineStrings (string spaces, string tag, int value)
+
+{
+    string str = spaces + "<" + tag + ">" + NStr::NumericToString(value) + "</" + tag + ">" + "\n";
+
+    return str;
+}
+
+
+static string s_OpenTag (string spaces, string tag)
+
+{
+    string str = spaces + "<" + tag + ">" + "\n";
+
+    return str;
+}
+
+
+static string s_CloseTag (string spaces, string tag)
+
+{
+    string str = spaces + "</" + tag + ">" + "\n";
+
+    return str;
+}
+
+
+void CGBSeqFormatter::Start(IFlatTextOStream& text_os)
+{
+    // x_WriteFileHeader(text_os);
+        
+    // x_StartWriteGBSet(text_os);
+
+    CNcbiOstrstream tmp;
+
+    tmp << s_OpenTag("  ", "GBSeq");
+
+    string str = (string)CNcbiOstrstreamToString(tmp);
+
+    if ( m_IsInsd ) {
+        NStr::ReplaceInPlace(str, "<GB", "<INSD");
+        NStr::ReplaceInPlace(str,"</GB", "</INSD");
+    }
+
+    text_os.AddLine(str);
+
+    text_os.Flush();
+}
+
+
+void CGBSeqFormatter::StartSection(const CStartSectionItem&, IFlatTextOStream& text_os)
 {
     m_GBSeq.Reset(new CGBSeq);
-    _ASSERT(m_GBSeq);
+    // _ASSERT(m_GBSeq);
 }
 
 
 void CGBSeqFormatter::EndSection(const CEndSectionItem&, IFlatTextOStream& text_os)
 {
-    x_WriteGBSeq(text_os);
+    // x_WriteGBSeq(text_os);
+
+    CNcbiOstrstream tmp;
+
+    if (m_NeedRefsEnd) {
+        tmp << s_CloseTag("    ", "GBSeq_references");
+        m_NeedRefsEnd = false;
+    }
+
+    if (m_NeedComment) {
+        m_NeedComment = false;
+
+        string comm = NStr::Join( m_Comments, "; " );
+        tmp << s_CombineStrings("    ", "GBSeq_comment", comm);
+    }
+
+    if (m_NeedFeatEnd) {
+        tmp << s_CloseTag("    ", "GBSeq_feature-table");
+        m_NeedFeatEnd = false;
+    }
+
+    if (m_NeedXrefs) {
+        m_NeedXrefs = false;
+
+        tmp << s_OpenTag("    ", "GBSeq_xrefs");
+
+        bool firstOfPair = true;
+
+        FOR_EACH_STRING_IN_LIST (str, m_Xrefs) {
+            if (firstOfPair) {
+                firstOfPair = false;
+                tmp << s_OpenTag("      ", "GBXref");
+                tmp << s_CombineStrings("        ", "GBXref_dbname", *str);
+            } else {
+                firstOfPair = true;
+                tmp << s_CombineStrings("        ", "GBXref_id", *str);
+                tmp << s_CloseTag("      ", "GBXref");
+            }
+        }
+
+        tmp << s_CloseTag("    ", "GBSeq_xrefs");
+
+    }
+
+    string str = (string)CNcbiOstrstreamToString(tmp);
+
+    if ( m_IsInsd ) {
+        NStr::ReplaceInPlace(str, "<GB", "<INSD");
+        NStr::ReplaceInPlace(str,"</GB", "</INSD");
+    }
+
+    text_os.AddLine(str);
+
+    text_os.Flush();
 
     m_GBSeq.Reset();
-    _ASSERT(!m_GBSeq);
+    // _ASSERT(!m_GBSeq);
 }
 
 
 void CGBSeqFormatter::End(IFlatTextOStream& text_os)
 {
     // x_EndWriteGBSet(text_os);
+
+    CNcbiOstrstream tmp;
+
+    tmp << s_CloseTag("  ", "GBSeq");
+
+    string str = (string)CNcbiOstrstreamToString(tmp);
+
+    if ( m_IsInsd ) {
+        NStr::ReplaceInPlace(str, "<GB", "<INSD");
+        NStr::ReplaceInPlace(str,"</GB", "</INSD");
+    }
+
+    text_os.AddLine(str);
+
+    text_os.Flush();
 }
 
 
@@ -262,34 +395,49 @@ string s_GetDate(const CBioseq_Handle& bsh, CSeqdesc::E_Choice choice)
     return "01-JAN-1900";
 }
 
-
 void CGBSeqFormatter::FormatLocus
 (const CLocusItem& locus, 
- IFlatTextOStream&)
+ IFlatTextOStream& text_os)
 {
-    _ASSERT(m_GBSeq);
     CBioseqContext& ctx = *locus.GetContext();
 
-    m_GBSeq->SetLocus(locus.GetName());
-    m_GBSeq->SetLength(locus.GetLength());
-    CGBSeq::TMoltype sMolType = s_GBSeqMoltype(locus.GetBiomol());
-    if( ! sMolType.empty() ) {
-        m_GBSeq->SetMoltype(sMolType);
-    } else if (ctx.IsProt()) {
-        m_GBSeq->SetMoltype("AA");
-    }
-    CGBSeq::TStrandedness sStrandedness = 
+    CNcbiOstrstream tmp;
+
+    tmp << s_CombineStrings("    ", "GBSeq_locus", locus.GetName());
+
+    tmp << s_CombineStrings("    ", "GBSeq_length", locus.GetLength());
+
+   CGBSeq::TStrandedness sStrandedness =
         s_GBSeqStrandedness(locus.GetStrand(), locus.GetBiomol());
     if( ! sStrandedness.empty() ) {
-        m_GBSeq->SetStrandedness(sStrandedness);
+        tmp << s_CombineStrings("    ", "GBSeq_strandedness", sStrandedness);
     }
-    m_GBSeq->SetTopology(s_GBSeqTopology(locus.GetTopology()));
-    m_GBSeq->SetDivision(locus.GetDivision());
-    m_GBSeq->SetUpdate_date(s_GetDate(ctx.GetHandle(), CSeqdesc::e_Update_date));
-    m_GBSeq->SetCreate_date(s_GetDate(ctx.GetHandle(), CSeqdesc::e_Create_date));
-    ITERATE (CBioseq::TId, it, ctx.GetBioseqIds()) {
-        m_GBSeq->SetOther_seqids().push_back(CGBSeqid((*it)->AsFastaString()));
+
+    CGBSeq::TMoltype sMolType = s_GBSeqMoltype(locus.GetBiomol());
+    if( ! sMolType.empty() ) {
+        tmp << s_CombineStrings("    ", "GBSeq_moltype", sMolType);
+    } else if (ctx.IsProt()) {
+        tmp << s_CombineStrings("    ", "GBSeq_moltype", "AA");
     }
+ 
+    tmp << s_CombineStrings("    ", "GBSeq_topology", s_GBSeqTopology(locus.GetTopology()));
+
+    tmp << s_CombineStrings("    ", "GBSeq_division", locus.GetDivision());
+
+    tmp << s_CombineStrings("    ", "GBSeq_update-date", s_GetDate(ctx.GetHandle(), CSeqdesc::e_Update_date));
+
+    tmp << s_CombineStrings("    ", "GBSeq_create-date", s_GetDate(ctx.GetHandle(), CSeqdesc::e_Create_date));
+
+    string str = (string)CNcbiOstrstreamToString(tmp);
+
+    if ( m_IsInsd ) {
+        NStr::ReplaceInPlace(str, "<GB", "<INSD");
+        NStr::ReplaceInPlace(str,"</GB", "</INSD");
+    }
+
+    text_os.AddLine(str, locus.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -299,13 +447,27 @@ void CGBSeqFormatter::FormatLocus
 
 void CGBSeqFormatter::FormatDefline
 (const CDeflineItem& defline,
- IFlatTextOStream&)
+ IFlatTextOStream& text_os)
 {
-    _ASSERT(m_GBSeq);
-    m_GBSeq->SetDefinition(defline.GetDefline());
-    if ( NStr::EndsWith(m_GBSeq->GetDefinition(), '.') ) {
-        m_GBSeq->SetDefinition().resize(m_GBSeq->GetDefinition().length() - 1);
+    CNcbiOstrstream tmp;
+
+    string def = defline.GetDefline();
+    if ( NStr::EndsWith(def, '.') ) {
+        def.resize(def.length() - 1);
     }
+
+    tmp << s_CombineStrings("    ", "GBSeq_definition", def);
+
+    string str = (string)CNcbiOstrstreamToString(tmp);
+
+    if ( m_IsInsd ) {
+        NStr::ReplaceInPlace(str, "<GB", "<INSD");
+        NStr::ReplaceInPlace(str,"</GB", "</INSD");
+    }
+
+    text_os.AddLine(str, defline.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -315,12 +477,45 @@ void CGBSeqFormatter::FormatDefline
 
 void CGBSeqFormatter::FormatAccession
 (const CAccessionItem& acc, 
- IFlatTextOStream&)
+ IFlatTextOStream& text_os)
 {
-    m_GBSeq->SetPrimary_accession(acc.GetAccession());
-    ITERATE (CAccessionItem::TExtra_accessions, it, acc.GetExtraAccessions()) {
-        m_GBSeq->SetSecondary_accessions().push_back(CGBSecondary_accn(*it));
+    CBioseqContext& ctx = *acc.GetContext();
+
+    CNcbiOstrstream tmp;
+
+    tmp << s_CombineStrings("    ", "GBSeq_primary-accession", acc.GetAccession());
+
+    string str = (string)CNcbiOstrstreamToString(tmp);
+
+    if ( m_IsInsd ) {
+        NStr::ReplaceInPlace(str, "<GB", "<INSD");
+        NStr::ReplaceInPlace(str,"</GB", "</INSD");
     }
+
+    text_os.AddLine(str, acc.GetObject());
+
+    text_os.Flush();
+
+    bool hasOthers = false;
+    CNcbiOstrstream others;
+    ITERATE (CBioseq::TId, it, ctx.GetBioseqIds()) {
+        others << s_CombineStrings("      ", "GBSeqid", CGBSeqid((*it)->AsFastaString()));
+        hasOthers = true;
+    }
+    if (hasOthers) {
+        m_OtherSeqIDs = (string)CNcbiOstrstreamToString(others);
+    }
+
+    bool hasExtras = false;
+    CNcbiOstrstream extras;
+    ITERATE (CAccessionItem::TExtra_accessions, it, acc.GetExtraAccessions()) {
+        extras << s_CombineStrings("      ", "GBSecondary-accn", CGBSecondary_accn(*it));
+        hasExtras = true;
+    }
+    if (hasExtras) {
+        m_SecondaryAccns = (string)CNcbiOstrstreamToString(extras);
+    }
+
 }
 
 
@@ -330,9 +525,34 @@ void CGBSeqFormatter::FormatAccession
 
 void CGBSeqFormatter::FormatVersion
 (const CVersionItem& version,
- IFlatTextOStream&)
+ IFlatTextOStream& text_os)
 {
-    m_GBSeq->SetAccession_version(version.GetAccession());
+    CNcbiOstrstream tmp;
+
+    tmp << s_CombineStrings("    ", "GBSeq_accession-version", version.GetAccession());
+
+    if (! m_OtherSeqIDs.empty()) {
+        tmp << s_OpenTag("    ", "GBSeq_other-seqids");
+        tmp << m_OtherSeqIDs;
+        tmp << s_CloseTag("    ", "GBSeq_other-seqids");
+    }
+
+    if (! m_SecondaryAccns.empty()) {
+        tmp << s_OpenTag("    ", "GBSeq_secondary-accessions");
+        tmp << m_SecondaryAccns;
+        tmp << s_CloseTag("    ", "GBSeq_secondary-accessions");
+    }
+
+    string str = (string)CNcbiOstrstreamToString(tmp);
+
+    if ( m_IsInsd ) {
+        NStr::ReplaceInPlace(str, "<GB", "<INSD");
+        NStr::ReplaceInPlace(str,"</GB", "</INSD");
+    }
+
+    text_os.AddLine(str, version.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -342,12 +562,12 @@ void CGBSeqFormatter::FormatVersion
 
 void CGBSeqFormatter::FormatGenomeProject
 (const CGenomeProjectItem& gp,
- IFlatTextOStream&)
+ IFlatTextOStream& text_os)
 {
+    CNcbiOstrstream tmp;
+
     CGenomeProjectItem::TDBLinkLineVec dblinklines = gp.GetDBLinkLines();
     if (dblinklines.size() == 0) return;
-
-    CGBSeq::TXrefs& xlist = m_GBSeq->SetXrefs();;
 
     ITERATE( CGenomeProjectItem::TDBLinkLineVec, gp_it, dblinklines ) {
         string line = *gp_it;
@@ -360,12 +580,25 @@ void CGBSeqFormatter::FormatGenomeProject
         FOR_EACH_STRING_IN_LIST (s_itr, ids) {
             string id = *s_itr;
             id = NStr::TruncateSpaces(id);
-            CRef<CGBXref> xref(new CGBXref);
-            xref->SetDbname(first);
-            xref->SetId(id);
-            xlist.push_back(xref);
+            m_Xrefs.push_back(first);
+            m_Xrefs.push_back(id);
+            m_NeedXrefs = true;
+            if (NStr::EqualNocase(first, "BioProject")) {
+                tmp << s_CombineStrings("    ", "GBSeq_project", id);
+            }
         }
     }
+
+    string str = (string)CNcbiOstrstreamToString(tmp);
+
+    if ( m_IsInsd ) {
+        NStr::ReplaceInPlace(str, "<GB", "<INSD");
+        NStr::ReplaceInPlace(str,"</GB", "</INSD");
+    }
+
+    text_os.AddLine(str, gp.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -375,13 +608,22 @@ void CGBSeqFormatter::FormatGenomeProject
 
 void CGBSeqFormatter::FormatSegment
 (const CSegmentItem& seg,
- IFlatTextOStream&)
+ IFlatTextOStream& text_os)
 {
-    CNcbiOstrstream segment_line;
+    CNcbiOstrstream tmp;
 
-    segment_line << seg.GetNum() << " of " << seg.GetCount();
+    tmp << "    <GBSeq_segment>" << seg.GetNum() << " of " << seg.GetCount() << "</GBSeq_segment>" << "\n";
 
-    m_GBSeq->SetSegment(CNcbiOstrstreamToString(segment_line));
+    string str = (string)CNcbiOstrstreamToString(tmp);
+
+    if ( m_IsInsd ) {
+        NStr::ReplaceInPlace(str, "<GB", "<INSD");
+        NStr::ReplaceInPlace(str,"</GB", "</INSD");
+    }
+
+    text_os.AddLine(str, seg.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -391,23 +633,37 @@ void CGBSeqFormatter::FormatSegment
 
 void CGBSeqFormatter::FormatSource
 (const CSourceItem& source,
- IFlatTextOStream&)
+ IFlatTextOStream& text_os)
 {
-    _ASSERT(m_GBSeq);
+    CNcbiOstrstream tmp;
+
     CNcbiOstrstream source_line;
     source_line << source.GetOrganelle() << source.GetTaxname();
     if ( !source.GetCommon().empty() ) {
         source_line << (source.IsUsingAnamorph() ? " (anamorph: " : " (") 
                     << source.GetCommon() << ")";
     }
+    tmp << s_CombineStrings("    ", "GBSeq_source", CNcbiOstrstreamToString(source_line));
 
-    m_GBSeq->SetSource(CNcbiOstrstreamToString(source_line));
-    m_GBSeq->SetOrganism(source.GetTaxname());
-    m_GBSeq->SetTaxonomy(source.GetLineage());
-    string & sTaxonomy = m_GBSeq->SetTaxonomy();
-    if( NStr::EndsWith(sTaxonomy, ".") ) {
-        sTaxonomy.resize( sTaxonomy.length() - 1);
+    tmp << s_CombineStrings("    ", "GBSeq_organism", source.GetTaxname());
+
+    const string & sTaxonomy = source.GetLineage();
+    string staxon = sTaxonomy;
+    if( NStr::EndsWith(staxon, ".") ) {
+        staxon.resize( staxon.length() - 1);
     }
+    tmp << s_CombineStrings("    ", "GBSeq_taxonomy", staxon);
+
+    string str = (string)CNcbiOstrstreamToString(tmp);
+
+    if ( m_IsInsd ) {
+        NStr::ReplaceInPlace(str, "<GB", "<INSD");
+        NStr::ReplaceInPlace(str,"</GB", "</INSD");
+    }
+
+    text_os.AddLine(str, source.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -417,11 +673,32 @@ void CGBSeqFormatter::FormatSource
 
 void CGBSeqFormatter::FormatKeywords
 (const CKeywordsItem& keys,
- IFlatTextOStream&)
+ IFlatTextOStream& text_os)
 {
+    CNcbiOstrstream tmp;
+
     ITERATE (CKeywordsItem::TKeywords, it, keys.GetKeywords()) {
-        m_GBSeq->SetKeywords().push_back(CGBKeyword(*it));
+        if (! m_DidKeysStart) {
+            tmp << s_OpenTag("    ", "GBSeq_keywords");
+            m_DidKeysStart = true;
+            m_NeedKeysEnd = true;
+        }
+        tmp << s_CombineStrings("      ", "GBKeyword", CGBKeyword(*it));
     }
+    if (m_NeedKeysEnd) {
+        tmp << s_CloseTag("    ", "GBSeq_keywords");
+    }
+
+    string str = (string)CNcbiOstrstreamToString(tmp);
+
+    if ( m_IsInsd ) {
+        NStr::ReplaceInPlace(str, "<GB", "<INSD");
+        NStr::ReplaceInPlace(str,"</GB", "</INSD");
+    }
+
+    text_os.AddLine(str, keys.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -431,13 +708,21 @@ void CGBSeqFormatter::FormatKeywords
 
 void CGBSeqFormatter::FormatReference
 (const CReferenceItem& ref,
- IFlatTextOStream&)
+ IFlatTextOStream& text_os)
 {
-    _ASSERT(m_GBSeq);
+    CNcbiOstrstream tmp;
+
+    if (! m_DidRefsStart) {
+        tmp << s_OpenTag("    ", "GBSeq_references");
+        m_DidRefsStart = true;
+        m_NeedRefsEnd = true;
+    }
+
+    tmp << s_OpenTag("      ", "GBReference");
+
     CBioseqContext& ctx = *ref.GetContext();
 
-    CRef<CGBReference> gbref(new CGBReference);
-    gbref->SetReference(NStr::NumericToString(ref.GetSerial()));
+    tmp << s_CombineStrings("        ", "GBReference_reference", ref.GetSerial());
 
     CNcbiOstrstream refstr;
     const CSeq_loc* loc = &ref.GetLoc();
@@ -450,26 +735,33 @@ void CGBSeqFormatter::FormatReference
         refstr << pchDelim << range.GetFrom() + 1 << ".." << range.GetTo() + 1;
         pchDelim = "; ";
     }
-    gbref->SetPosition(CNcbiOstrstreamToString(refstr));
+    tmp << s_CombineStrings("        ", "GBReference_position", CNcbiOstrstreamToString(refstr));
 
     list<string> authors;
     if (ref.IsSetAuthors()) {
         CReferenceItem::GetAuthNames(ref.GetAuthors(), authors);
-    }
-    ITERATE (list<string>, it, authors) {
-        CGBAuthor author(*it);
-        gbref->SetAuthors().push_back(author);
+        bool hasAuthors = false;
+        ITERATE (list<string>, it, authors) {
+            if (! hasAuthors) {
+                tmp << s_OpenTag("        ", "GBReference_authors");
+                hasAuthors = true;
+            }
+            tmp << s_CombineStrings("          ", "GBAuthor", *it);
+        }
+        if (hasAuthors) {
+            tmp << s_CloseTag("        ", "GBReference_authors");
+        }
     }
     if ( !ref.GetConsortium().empty() ) {
-        gbref->SetConsortium(ref.GetConsortium());
+        tmp << s_CombineStrings("        ", "GBReference_consortium", ref.GetConsortium());
     }
     if ( !ref.GetTitle().empty() ) {
         if ( NStr::EndsWith(ref.GetTitle(), '.') ) {
             string title = ref.GetTitle();
             title.resize(title.length() - 1);
-            gbref->SetTitle(title);
+            tmp << s_CombineStrings("        ", "GBReference_title", title);
         } else {
-            gbref->SetTitle(ref.GetTitle());
+            tmp << s_CombineStrings("        ", "GBReference_title", ref.GetTitle());
         }
     }
     string journal;
@@ -481,18 +773,27 @@ void CGBSeqFormatter::FormatReference
         }
     }
     if ( !journal.empty() ) {
-        gbref->SetJournal(journal);
+        tmp << s_CombineStrings("        ", "GBReference_journal", journal);
     }
-    /*if ( ref.GetMUID() != 0 ) {
-        gbref->SetMedline(ref.GetMUID());
-    }*/
     if ( ref.GetPMID() != 0 ) {
-        gbref->SetPubmed(ref.GetPMID());
+        tmp << s_CombineStrings("        ", "GBReference_pubmed", ref.GetPMID());
     }
     if ( !ref.GetRemark().empty() ) {
-        gbref->SetRemark(ref.GetRemark());
+        tmp << s_CombineStrings("        ", "GBReference_remark", ref.GetRemark());
     }
-    m_GBSeq->SetReferences().push_back(gbref);
+
+    tmp << s_CloseTag("      ", "GBReference");
+
+    string str = (string)CNcbiOstrstreamToString(tmp);
+
+    if ( m_IsInsd ) {
+        NStr::ReplaceInPlace(str, "<GB", "<INSD");
+        NStr::ReplaceInPlace(str,"</GB", "</INSD");
+    }
+
+    text_os.AddLine(str, ref.GetObject());
+
+    text_os.Flush();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -502,17 +803,13 @@ void CGBSeqFormatter::FormatReference
 
 void CGBSeqFormatter::FormatComment
 (const CCommentItem& comment,
- IFlatTextOStream&)
+ IFlatTextOStream& text_os)
 {
-    string str = NStr::Join( comment.GetCommentList(), "\n" );
-    s_GBSeqStringCleanup(str);
-    
-    if ( !m_GBSeq->IsSetComment() ) {
-        m_GBSeq->SetComment(str);
-    } else {    
-        m_GBSeq->SetComment() += "; ";
-        m_GBSeq->SetComment() += str;
-    }
+    string comm = NStr::Join( comment.GetCommentList(), "\n" );
+    s_GBSeqStringCleanup(comm);
+
+    m_Comments.push_back(comm);
+    m_NeedComment = true;
 }
 
 
@@ -520,28 +817,50 @@ void CGBSeqFormatter::FormatComment
 //
 // FEATURES
 
-static void s_SetIntervals(CGBFeature::TIntervals& intervals,
-                    const CSeq_loc& loc,
-                    CScope& scope)
+void CGBSeqFormatter::FormatFeature
+(const CFeatureItemBase& f,
+ IFlatTextOStream& text_os)
 {
+    CNcbiOstrstream tmp;
+
+    if (m_NeedRefsEnd) {
+        tmp << s_CloseTag("    ", "GBSeq_references");
+        m_NeedRefsEnd = false;
+    }
+
+    if (m_NeedComment) {
+        m_NeedComment = false;
+
+        string comm = NStr::Join( m_Comments, "; " );
+        tmp << s_CombineStrings("    ", "GBSeq_comment", comm);
+    }
+
+    if (! m_DidFeatStart) {
+        tmp << s_OpenTag("    ", "GBSeq_feature-table");
+        m_DidFeatStart = true;
+        m_NeedFeatEnd = true;
+    }
+
+    tmp << s_OpenTag("      ", "GBFeature");
+
+    CConstRef<CFlatFeature> feat = f.Format();
+
+    tmp << s_CombineStrings("        ", "GBFeature_key", feat->GetKey());
+
+    string location = feat->GetLoc().GetString();
+    s_GBSeqStringCleanup(location, true);
+    tmp << s_CombineStrings("        ", "GBFeature_location", location);
+
+    tmp << s_OpenTag("        ", "GBFeature_intervals");
+
+    const CSeq_loc& loc = f.GetLoc();
+    CScope& scope = f.GetContext()->GetScope();
     for (CSeq_loc_CI it(loc); it; ++it) {
-        CRef<CGBInterval> ival(new CGBInterval);
+        tmp << s_OpenTag("          ", "GBInterval");
+
         CSeq_loc_CI::TRange range = it.GetRange();
-        CConstRef<CSeq_id> best(&it.GetSeq_id());
-        if ( best->IsGi() ) {
-            CConstRef<CSynonymsSet> syns = scope.GetSynonyms(*best);
-            vector< CRef<CSeq_id> > ids;
-            ITERATE (CSynonymsSet, id_iter, *syns) {
-                CConstRef<CSeq_id> id =
-                    syns->GetSeq_id_Handle(id_iter).GetSeqId();
-                CRef<CSeq_id> sip(const_cast<CSeq_id*>(id.GetPointerOrNull()));
-                ids.push_back(sip);
-            }
-            best.Reset(FindBestChoice(ids, CSeq_id::Score));
-        }
-        ival->SetAccession(best->GetSeqIdString(true));  
         if ( range.GetLength() == 1 ) {  // point
-            ival->SetPoint(range.GetFrom() + 1);
+            tmp << s_CombineStrings("            ", "GBInterval_point", range.GetFrom() + 1);
         } else {
             TSeqPos from, to;
             if ( range.IsWhole() ) {
@@ -554,51 +873,70 @@ static void s_SetIntervals(CGBFeature::TIntervals& intervals,
             if ( it.GetStrand() == eNa_strand_minus ) {
                 swap(from, to);
             }
-            ival->SetFrom(from);
-            ival->SetTo(to);
+            tmp << s_CombineStrings("            ", "GBInterval_from", from);
+            tmp << s_CombineStrings("            ", "GBInterval_to", to);
         }
-        
-        intervals.push_back(ival);
-    }
-}
 
-
-static void s_SetQuals(CGBFeature::TQuals& gbquals,
-                       const CFlatFeature::TQuals& quals)
-{
-    ITERATE (CFlatFeature::TQuals, it, quals) {
-        CRef<CGBQualifier> qual(new CGBQualifier);
-        qual->SetName((*it)->GetName());
-        if ((*it)->GetStyle() != CFormatQual::eEmpty) {
-            qual->SetValue((*it)->GetValue());
-            s_GBSeqQualCleanup(qual->SetValue());
+        CConstRef<CSeq_id> best(&it.GetSeq_id());
+        if ( best->IsGi() ) {
+            CConstRef<CSynonymsSet> syns = scope.GetSynonyms(*best);
+            vector< CRef<CSeq_id> > ids;
+            ITERATE (CSynonymsSet, id_iter, *syns) {
+                CConstRef<CSeq_id> id =
+                    syns->GetSeq_id_Handle(id_iter).GetSeqId();
+                CRef<CSeq_id> sip(const_cast<CSeq_id*>(id.GetPointerOrNull()));
+                ids.push_back(sip);
+            }
+            best.Reset(FindBestChoice(ids, CSeq_id::Score));
         }
-        gbquals.push_back(qual);
+        tmp << s_CombineStrings("            ", "GBInterval_accession", best->GetSeqIdString(true));
+
+        tmp << s_CloseTag("          ", "GBInterval");
     }
-}
 
+    tmp << s_CloseTag("        ", "GBFeature_intervals");
 
-void CGBSeqFormatter::FormatFeature
-(const CFeatureItemBase& f,
- IFlatTextOStream&)
-{
-    CConstRef<CFlatFeature> feat = f.Format();
+    if ( NStr::Find(location, "join") != NPOS ) {
+        tmp << s_CombineStrings("        ", "GBFeature_operator", "join");
+    } else if ( NStr::Find(location, "order") != NPOS ) {
+        tmp << s_CombineStrings("        ", "GBFeature_operator", "order");
+    }
 
-    CRef<CGBFeature>    gbfeat(new CGBFeature);
-    gbfeat->SetKey(feat->GetKey());
-    
-    string location = feat->GetLoc().GetString();
-    s_GBSeqStringCleanup(location, true);
-    gbfeat->SetLocation(location);
-    // if ( feat->GetKey() != "source" ) {
-        s_SetIntervals(gbfeat->SetIntervals(), f.GetLoc(), 
-            f.GetContext()->GetScope());
-    // }
+    if ( loc.IsPartialStart(eExtreme_Biological) ) {
+        tmp << "        <GBFeature_partial5 value=\"true\"/>" << "\n";
+    }
+    if ( loc.IsPartialStop(eExtreme_Biological) ) {
+        tmp << "        <GBFeature_partial3 value=\"true\"/>" << "\n";
+    }
+
     if ( !feat->GetQuals().empty() ) {
-        s_SetQuals(gbfeat->SetQuals(), feat->GetQuals());
+        tmp << s_OpenTag("        ", "GBFeature_quals");
+
+        const CFlatFeature::TQuals& quals = feat->GetQuals();
+        ITERATE (CFlatFeature::TQuals, it, quals) {
+            tmp << s_OpenTag("          ", "GBQualifier");
+            tmp << s_CombineStrings("            ", "GBQualifier_name", (*it)->GetName());
+            if ((*it)->GetStyle() != CFormatQual::eEmpty) {
+               tmp << s_CombineStrings("            ", "GBQualifier_value", (*it)->GetValue());
+            }
+            tmp << s_CloseTag("          ", "GBQualifier");
+        }
+
+        tmp << s_CloseTag("        ", "GBFeature_quals");
     }
-    
-    m_GBSeq->SetFeature_table().push_back(gbfeat);
+
+    tmp << s_CloseTag("      ", "GBFeature");
+
+    string str = (string)CNcbiOstrstreamToString(tmp);
+
+    if ( m_IsInsd ) {
+        NStr::ReplaceInPlace(str, "<GB", "<INSD");
+        NStr::ReplaceInPlace(str,"</GB", "</INSD");
+    }
+
+    text_os.AddLine(str, f.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -608,18 +946,45 @@ void CGBSeqFormatter::FormatFeature
 
 void CGBSeqFormatter::FormatSequence
 (const CSequenceItem& seq,
- IFlatTextOStream&)
+ IFlatTextOStream& text_os)
 {
+    CNcbiOstrstream tmp;
+
+    if (m_NeedRefsEnd) {
+        tmp << s_CloseTag("    ", "GBSeq_references");
+        m_NeedRefsEnd = false;
+    }
+
+    if (m_NeedComment) {
+        m_NeedComment = false;
+
+        string comm = NStr::Join( m_Comments, "; " );
+        tmp << s_CombineStrings("    ", "GBSeq_comment", comm);
+    }
+
+    if (m_NeedFeatEnd) {
+        tmp << s_CloseTag("    ", "GBSeq_feature-table");
+        m_NeedFeatEnd = false;
+    }
+
     string data;
 
     CSeqVector_CI vec_ci(seq.GetSequence(), 0, 
         CSeqVector_CI::eCaseConversion_lower);
     vec_ci.GetSeqData(data, seq.GetSequence().size() );
 
-    if ( !m_GBSeq->IsSetSequence() ) {
-        m_GBSeq->SetSequence(kEmptyStr);
+    tmp << s_CombineStrings("    ", "GBSeq_sequence", data);
+
+    string str = (string)CNcbiOstrstreamToString(tmp);
+
+    if ( m_IsInsd ) {
+        NStr::ReplaceInPlace(str, "<GB", "<INSD");
+        NStr::ReplaceInPlace(str,"</GB", "</INSD");
     }
-    m_GBSeq->SetSequence() += data;
+
+    text_os.AddLine(str, seq.GetObject());
+
+    text_os.Flush();
 }
 
 
@@ -629,12 +994,43 @@ void CGBSeqFormatter::FormatSequence
 
 void CGBSeqFormatter::FormatContig
 (const CContigItem& contig,
- IFlatTextOStream&)
+ IFlatTextOStream& text_os)
 {
+    CNcbiOstrstream tmp;
+
+    if (m_NeedRefsEnd) {
+        tmp << s_CloseTag("    ", "GBSeq_references");
+        m_NeedRefsEnd = false;
+    }
+
+    if (m_NeedComment) {
+        m_NeedComment = false;
+
+        string comm = NStr::Join( m_Comments, "; " );
+        tmp << s_CombineStrings("    ", "GBSeq_comment", comm);
+    }
+
+    if (m_NeedFeatEnd) {
+        tmp << s_CloseTag("    ", "GBSeq_feature-table");
+        m_NeedFeatEnd = false;
+    }
+
     string assembly = CFlatSeqLoc(contig.GetLoc(), *contig.GetContext(), 
         CFlatSeqLoc::eType_assembly).GetString();
     s_GBSeqStringCleanup(assembly, true);
-    m_GBSeq->SetContig(assembly);
+
+    tmp << s_CombineStrings("    ", "GBSeq_contig", assembly);
+
+    string str = (string)CNcbiOstrstreamToString(tmp);
+
+    if ( m_IsInsd ) {
+        NStr::ReplaceInPlace(str, "<GB", "<INSD");
+        NStr::ReplaceInPlace(str,"</GB", "</INSD");
+    }
+
+    text_os.AddLine(str, contig.GetObject());
+
+    text_os.Flush();
 }
 
 

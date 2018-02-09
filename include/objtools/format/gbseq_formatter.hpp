@@ -91,6 +91,20 @@ private:
     auto_ptr<CObjectOStream> m_Out;
     CNcbiOstrstream m_StrStream;
     bool m_IsInsd;
+    bool m_DidFeatStart;
+    bool m_DidJourStart;
+    bool m_DidKeysStart;
+    bool m_DidRefsStart;
+    bool m_NeedFeatEnd;
+    bool m_NeedJourEnd;
+    bool m_NeedKeysEnd;
+    bool m_NeedRefsEnd;
+    bool m_NeedComment;
+    bool m_NeedXrefs;
+    string m_OtherSeqIDs;
+    string m_SecondaryAccns;
+    list<string> m_Comments;
+    list<string> m_Xrefs;
 };
 
 
