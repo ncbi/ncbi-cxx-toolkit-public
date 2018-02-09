@@ -62,7 +62,8 @@ using end_point_weight_t = uint32_t;
 
 class ServiceResolver {
 private:
-    struct ResolverElement : std::enable_shared_from_this<ResolverElement> {
+    struct ResolverElement
+    {
         time_point_t m_end_of_live;
         std::vector<std::pair<std::shared_ptr<HCT::http2_end_point>, end_point_weight_t>> m_end_points;
         ResolverElement() : m_end_of_live(std::chrono::milliseconds::zero()) {}

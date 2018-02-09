@@ -72,7 +72,8 @@ class io_thread;
 class http2_session;
 
 
-class io_future: public std::enable_shared_from_this<io_future> {
+class io_future
+{
 private:
     uv_loop_t m_loop;
     uv_async_t m_async;
@@ -274,7 +275,8 @@ enum class http2_request_state {
     rs_done
 };
 
-class http2_request: public std::enable_shared_from_this<http2_request> {
+class http2_request
+{
 private:
     int m_id;
     http2_session *m_session_data;
