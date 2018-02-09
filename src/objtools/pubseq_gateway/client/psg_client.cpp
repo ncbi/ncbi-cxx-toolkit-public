@@ -92,7 +92,7 @@ struct CBioIdResolutionQueue::CBioIdResolutionQueueItem
     CBioId m_BioId;
 };
 
-CBioIdResolutionQueue::CBioIdResolutionQueueItem::CBioIdResolutionQueueItem(shared_ptr<HCT::io_future> afuture, CBioId bio_id) 
+CBioIdResolutionQueue::CBioIdResolutionQueueItem::CBioIdResolutionQueueItem(shared_ptr<HCT::io_future> afuture, CBioId bio_id)
     :   m_Request(make_shared<HCT::http2_request>()),
         m_BioId(move(bio_id))
 {
@@ -137,7 +137,7 @@ void CBioIdResolutionQueue::CBioIdResolutionQueueItem::Wait()
     m_Request->get_result_data().wait();
 }
 
-bool CBioIdResolutionQueue::CBioIdResolutionQueueItem::IsDone() const 
+bool CBioIdResolutionQueue::CBioIdResolutionQueueItem::IsDone() const
 {
     return m_Request->get_result_data().get_finished();
 }
@@ -194,7 +194,7 @@ void CBioIdResolutionQueue::CBioIdResolutionQueueItem::PopulateData(CBlobId& blo
             blob_id.m_Message = "Unexpected result";
         }
     }
-        
+
 }
 
 /** CBioIdResolutionQueue */
@@ -221,7 +221,7 @@ void CBioIdResolutionQueue::Finalize()
 }
 
 void CBioIdResolutionQueue::Resolve(TBioIds* bio_ids, const CDeadline& deadline)
-{    
+{
     if (!bio_ids)
         return;
     bool has_timeout = !deadline.IsInfinite();
@@ -229,7 +229,7 @@ void CBioIdResolutionQueue::Resolve(TBioIds* bio_ids, const CDeadline& deadline)
     long wait_ms = 0;
     auto rev_it = bio_ids->rbegin();
     while (rev_it != bio_ids->rend()) {
-        
+
         auto future = static_pointer_cast<HCT::io_future>(m_Future);
         unique_ptr<CBioIdResolutionQueueItem> qi(new CBioIdResolutionQueueItem(future, *rev_it));
 

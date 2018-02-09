@@ -63,7 +63,8 @@ const int eo_http = 2;
 const int eo_generic = 3;
 
 
-struct generic_error {
+struct generic_error
+{
     int error_origin;
     int error_code;
     std::string error_msg;
@@ -71,15 +72,18 @@ struct generic_error {
         error_origin(eo_none),
         error_code(0)
     {}
-    void clear_error() {
+    void clear_error()
+    {
         error_origin = eo_none;
         error_code = 0;
         error_msg.clear();
     }
-    bool has_error() const noexcept {
+    bool has_error() const noexcept
+    {
         return error_code != 0;
     }
-    void error(int errc, const char* details) noexcept {
+    void error(int errc, const char* details) noexcept
+    {
         if (!has_error() && errc != 0) {
             try {
                 error_origin = eo_generic;
@@ -94,7 +98,8 @@ struct generic_error {
         }
     }
 
-    void error(const generic_error& err) noexcept {
+    void error(const generic_error& err) noexcept
+    {
         if (!has_error() && err.error_code != 0) {
             try {
                 error_origin = err.error_origin;
@@ -107,18 +112,22 @@ struct generic_error {
         }
     }
 
-    std::string get_error_description() const {
+    std::string get_error_description() const
+    {
         return has_error() ? error_msg : std::string();
     }
-    void raise_error() const {
+    void raise_error() const
+    {
         if (has_error())
             DDRPC::EDdRpcException::raise(get_error_description(), error_code);
     }
 };
 
-struct http2_error : public generic_error {
+struct http2_error : public generic_error
+{
 
-    void error_nghttp2(int errc) {
+    void error_nghttp2(int errc)
+    {
         if (!has_error() && errc != 0) {
             try {
                 error_origin = eo_http;
@@ -133,7 +142,8 @@ struct http2_error : public generic_error {
         }
     }
 
-    void error_libuv(int errc, const char* details) {
+    void error_libuv(int errc, const char* details)
+    {
         if (!has_error() && errc != 0) {
             try {
                 error_origin = eo_tcp;
@@ -153,19 +163,22 @@ struct http2_error : public generic_error {
 };
 
 
-struct http2_end_point {
+struct http2_end_point
+{
     std::string schema;
     std::string authority;
     std::string path;
     generic_error error;
-    ~http2_end_point() {
+    ~http2_end_point()
+    {
         assert(true);
     }
 };
 
 class io_coordinator;
 
-class HttpClientTransport {
+class HttpClientTransport
+{
 public:
     static std::shared_ptr<io_coordinator> s_ioc;
 

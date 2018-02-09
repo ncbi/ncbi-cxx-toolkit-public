@@ -188,8 +188,8 @@ http2_session::http2_session(io_thread* aio) noexcept :
     m_port(0),
     m_cancel_requested(false)
 {
-	LOG2(("%p: created", this));
-    m_tcp.Handle()->data = this;    
+    LOG2(("%p: created", this));
+    m_tcp.Handle()->data = this;
     m_wr.wr_req.data = this;
     m_ai_req.data = this;
     m_conn_req.data = this;
@@ -318,7 +318,7 @@ int http2_session::s_ng_header_cb(nghttp2_session *session, const nghttp2_frame 
                     auto it = session_data->m_requests.find(frame->hd.stream_id);
                     if (it != session_data->m_requests.end()) {
                         auto status = atoi((const char*)value);
-                        it->second->on_status(status); 
+                        it->second->on_status(status);
                     }
                 }
                 catch(const std::exception& e) {
@@ -569,7 +569,7 @@ void http2_session::debug_print_counts() {
     LOG3(("%p: process_requests list=%lu (%lu, %lu, %lu, %lu, %lu, %lu)", this, m_requests.size(), counts[0], counts[1], counts[2], counts[3], counts[4], counts[5]));
 }
 
-/* s_connect_cb for libuv. 
+/* s_connect_cb for libuv.
    Initialize nghttp2 library session, and send client connection header. Then
    send HTTP request. */
 void http2_session::s_connect_cb(uv_connect_t *req, int status) {
@@ -864,7 +864,7 @@ bool http2_session::check_connection() {
     if (m_connection_state == connection_state_t::cs_initial && m_session_state == session_state_t::ss_work) {
         if (!initiate_connection())
             return false;
-        if (!send_client_connection_header()) 
+        if (!send_client_connection_header())
             return false;
     }
     else if ((m_connection_state != connection_state_t::cs_connected && m_connection_state != connection_state_t::cs_connecting) || m_session_state != session_state_t::ss_work)

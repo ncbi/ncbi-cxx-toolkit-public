@@ -40,7 +40,7 @@
 #include <cstring>
 #include <cassert>
 #include <sstream>
-#include <istream> 
+#include <istream>
 #include <iostream>
 #include <cstdio>
 #include <climits>
@@ -61,9 +61,10 @@ USING_SCOPE(objects);
 
 //////////////////////////////////
 
-class CAccVerCacheApp: public CNcbiApplication {
+class CAccVerCacheApp: public CNcbiApplication
+{
 private:
-	string m_IniFile;
+    string m_IniFile;
     unsigned int m_NumThreads;
     string m_HostPort;
     string m_LookupRemote;
@@ -73,54 +74,57 @@ private:
     void RemoteLookupFile(const string& FileName, unsigned int NumThreads);
     void PrintBlobId(const CBlobId& it);
 public:
-	CAccVerCacheApp() : 
+    CAccVerCacheApp() :
         m_NumThreads(1),
         m_Delimiter('|')
-	{}
-	virtual void Init() {
-		unique_ptr<CArgDescriptions> argdesc(new CArgDescriptions());
-		argdesc->SetUsageContext(GetArguments().GetProgramBasename(), "AccVerCache -- Application to maintain Accession.Version Cache");
-		argdesc->AddDefaultKey ( "ini", "IniFile",  "File with configuration information",  CArgDescriptions::eString, "AccVerCache.ini");
-		argdesc->AddOptionalKey( "o",   "log",      "Output log to",                        CArgDescriptions::eString);
-		argdesc->AddOptionalKey( "l",   "loglevel", "Output verbosity level from 0 to 5",   CArgDescriptions::eInteger);
-		argdesc->AddOptionalKey( "H",   "host",     "Host[:port] for remote lookups",       CArgDescriptions::eString);
-		argdesc->AddOptionalKey( "ra",  "rlookup",  "Lookup individual accession.version remotely",  CArgDescriptions::eString);
-		argdesc->AddOptionalKey( "fa",  "falookup", "Lookup accession.version from a file",  CArgDescriptions::eString);
-		argdesc->AddOptionalKey( "t",   "threads",  "Number of threads",                    CArgDescriptions::eInteger);
+    {}
+    virtual void Init()
+    {
+        unique_ptr<CArgDescriptions> argdesc(new CArgDescriptions());
+        argdesc->SetUsageContext(GetArguments().GetProgramBasename(), "AccVerCache -- Application to maintain Accession.Version Cache");
+        argdesc->AddDefaultKey ( "ini", "IniFile",  "File with configuration information",  CArgDescriptions::eString, "AccVerCache.ini");
+        argdesc->AddOptionalKey( "o",   "log",      "Output log to",                        CArgDescriptions::eString);
+        argdesc->AddOptionalKey( "l",   "loglevel", "Output verbosity level from 0 to 5",   CArgDescriptions::eInteger);
+        argdesc->AddOptionalKey( "H",   "host",     "Host[:port] for remote lookups",       CArgDescriptions::eString);
+        argdesc->AddOptionalKey( "ra",  "rlookup",  "Lookup individual accession.version remotely",  CArgDescriptions::eString);
+        argdesc->AddOptionalKey( "fa",  "falookup", "Lookup accession.version from a file",  CArgDescriptions::eString);
+        argdesc->AddOptionalKey( "t",   "threads",  "Number of threads",                    CArgDescriptions::eInteger);
         argdesc->SetConstraint(  "t",   new CArgAllow_Integers(1, 256));
-		SetupArgDescriptions(argdesc.release());
-	}
-	void ParseArgs() {
-		const CArgs& args = GetArgs();
-		m_IniFile = args[ "ini" ].AsString();
-		string logfile;
-		
-		filebuf fb;
-		fb.open(m_IniFile.c_str(), ios::in | ios::binary);
-		CNcbiIstream is( &fb);
-		CNcbiRegistry Registry( is, 0);
-		fb.close();
+        SetupArgDescriptions(argdesc.release());
+    }
+    void ParseArgs()
+    {
+        const CArgs& args = GetArgs();
+        m_IniFile = args[ "ini" ].AsString();
+        string logfile;
 
-		if (!Registry.Empty() ) {
+        filebuf fb;
+        fb.open(m_IniFile.c_str(), ios::in | ios::binary);
+        CNcbiIstream is( &fb);
+        CNcbiRegistry Registry( is, 0);
+        fb.close();
+
+        if (!Registry.Empty() ) {
             IdLogUtil::CAppLog::SetLogFile(Registry.GetString("COMMON", "LOGFILE", ""));
             IdLogUtil::CAppLog::SetLogLevel(Registry.GetInt("COMMON", "LOGLEVEL", DFLT_LOG_LEVEL));
-		}
-		if (args["o"])
+        }
+        if (args["o"])
             IdLogUtil::CAppLog::SetLogFile(args["o"].AsString());
-		if (args["l"])
+        if (args["l"])
             IdLogUtil::CAppLog::SetLogLevel(args["l"].AsInteger());
 
-		if (args["H"])
+        if (args["H"])
             m_HostPort = args["H"].AsString();
-		if (args["ra"])
-			m_LookupRemote = args["ra"].AsString();
-		if (args["fa"])
-			m_LookupFileRemote = args["fa"].AsString();
-		if (args["t"])
-			m_NumThreads = args["t"].AsInteger();
-	}
+        if (args["ra"])
+            m_LookupRemote = args["ra"].AsString();
+        if (args["fa"])
+            m_LookupFileRemote = args["fa"].AsString();
+        if (args["t"])
+            m_NumThreads = args["t"].AsInteger();
+    }
 
-	virtual int Run(void) {
+    virtual int Run(void)
+    {
         int rv = 0;
         try {
             ParseArgs();
@@ -145,9 +149,8 @@ public:
             rv = 3;
         }
         CBioIdResolutionQueue::Finalize();
-		return rv;
-	}
-	
+        return rv;
+    }
 };
 
 void CAccVerCacheApp::RemoteLookup(const string& AccVer) {
@@ -188,7 +191,7 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
             threads.resize(NumThreads);
             size_t start_index = 0, next_index, i = 0;
 
-            
+
             for (auto & it : threads) {
                 i++;
                 next_index = ((uint64_t)line_count * i) / NumThreads;
@@ -201,7 +204,7 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
                                 CBioIdResolutionQueue cq;
                                 vector<CBioId> srcvec;
                                 vector<CBlobId> l_rslt_data_ncbi;
-                                
+
                                 const unsigned int MAX_SRC_AT_ONCE = 1024;
                                 const unsigned int PUSH_TIMEOUT_MS = 15000;
                                 const unsigned int POP_TIMEOUT_MS = 15000;
@@ -228,7 +231,7 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
                                         LOG3(("Adding [%lu](%s)", i, it_data.GetId().c_str()));
 
                                         srcvec.emplace_back(std::move(it_data));
-                                        
+
                                         if (srcvec.size() >= MAX_SRC_AT_ONCE) {
                                             push(PUSH_TIMEOUT_MS);
                                             pop(0);
@@ -245,7 +248,7 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
                                 while (!cq.IsEmpty())
                                     pop(POP_TIMEOUT_MS);
                                 assert(cq.IsEmpty());
-                                
+
                                 {{
                                     unique_lock<mutex> _(rslt_data_ncbi_mux);
                                     std::move(l_rslt_data_ncbi.begin(), l_rslt_data_ncbi.end(), std::back_inserter(rslt_data_ncbi));
@@ -253,7 +256,7 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
                                 LOG3(("thread finished: start: %lu, max: %lu, count: %lu, pushed: %lu, popped: %lu", start_index, max, max - start_index, pushed, popped));
                             }
                         }
-                    }), 
+                    }),
                     [](thread* thrd){
                         thrd->join();
                         delete thrd;
@@ -272,9 +275,9 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
 void CAccVerCacheApp::PrintBlobId(const CBlobId& it)
 {
             if (it.GetStatus() == CBlobId::eResolved) {
-                cout 
-                    << it.GetBioId().GetId() << "||" 
-                    << it.GetBlobInfo().gi << "|" 
+                cout
+                    << it.GetBioId().GetId() << "||"
+                    << it.GetBlobInfo().gi << "|"
                     << it.GetBlobInfo().seq_length << "|"
                     << it.GetID2BlobId().sat << "|"
                     << it.GetID2BlobId().sat_key << "|"
@@ -293,9 +296,9 @@ void CAccVerCacheApp::PrintBlobId(const CBlobId& it)
 
 int main(int argc, const char* argv[])
 {
-	srand(time(NULL));
-	
+    srand(time(NULL));
+
     IdLogUtil::CAppLog::SetLogLevelFile(0);
     IdLogUtil::CAppLog::SetLogLevel(0);
-	return CAccVerCacheApp().AppMain(argc, argv);
+    return CAccVerCacheApp().AppMain(argc, argv);
 }

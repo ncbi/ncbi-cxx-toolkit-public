@@ -60,7 +60,8 @@ namespace DDRPC {
 using time_point_t = std::chrono::time_point<std::chrono::system_clock>;
 using end_point_weight_t = uint32_t;
 
-class ServiceResolver {
+class ServiceResolver
+{
 private:
     struct ResolverElement
     {
@@ -87,7 +88,8 @@ public:
     virtual std::shared_ptr<HCT::http2_end_point> SericeIdToEndPoint(const std::string& ServiceId);
 };
 
-class RequestBase {
+class RequestBase
+{
 protected:
     HCT::TagHCT m_tag;
     std::shared_ptr<HCT::http2_request> m_Pimpl;
@@ -99,15 +101,18 @@ public:
     std::string Get();
     bool HasError() const;
     std::string GetErrorDescription() const;
-    HCT::TagHCT GetTag() {
+    HCT::TagHCT GetTag()
+    {
         return m_tag;
     }
-    void SetTag(HCT::TagHCT tag) {
+    void SetTag(HCT::TagHCT tag)
+    {
         m_tag = tag;
     }
 };
 
-class Request: public RequestBase {
+class Request: public RequestBase
+{
 private:
     Request(HCT::TagHCT tag = 0);
     void RunRequest(const std::string& ServiceId, std::string SerializedArgs);
@@ -120,7 +125,8 @@ public:
 
 class CRequestQueue;
 
-class CRequestQueueItem: public RequestBase {
+class CRequestQueueItem: public RequestBase
+{
 private:
     CRequestQueueItem(std::shared_ptr<HCT::io_future> afuture, std::tuple<std::string, std::string, HCT::TagHCT> args);
     void WaitFor(long timeout_ms);
@@ -130,7 +136,8 @@ private:
 public:
 };
 
-class CRequestQueue {
+class CRequestQueue
+{
 private:
     mutable std::mutex m_items_mtx;
     std::vector<std::unique_ptr<CRequestQueueItem>> m_items;
@@ -145,7 +152,8 @@ public:
 };
 
 
-class DdRpcClient final {
+class DdRpcClient final
+{
 private:
     static std::unique_ptr<ServiceResolver> m_Resolver;
     static bool m_Initialized;
@@ -154,7 +162,8 @@ public:
     static void Finalize();
     static std::unique_ptr<Request> AsyncRequest(const std::string& ServiceId, std::string SerializedArgs, HCT::TagHCT tag = 0);
     static std::string SyncRequest(const std::string& ServiceId, std::string SerializedArgs);
-    static std::shared_ptr<HCT::http2_end_point> SericeIdToEndPoint(const std::string& ServiceId) {
+    static std::shared_ptr<HCT::http2_end_point> SericeIdToEndPoint(const std::string& ServiceId)
+    {
         if (!m_Resolver)
             EDdRpcException::raise("Resolver is not assigned");
         return m_Resolver->SericeIdToEndPoint(ServiceId);

@@ -81,11 +81,12 @@ class CBioIdResolutionQueue;
 class CBlobId
 {
 public:
-    explicit CBlobId(const CBioId& bio_id) 
+    explicit CBlobId(const CBioId& bio_id)
         : m_BioId(bio_id), m_Status(eResNone), m_StatusEx(eNone) {}
 
     /// Storage blob id (as accepted by the CBlobRetrieveQueue)
-    struct SID2BlobId {
+    struct SID2BlobId
+    {
         CID2_Blob_Id::TSat     sat = 0;
         CID2_Blob_Id::TSat_key sat_key = 0;
         CID2_Blob_Id::TVersion version = 0;
@@ -97,7 +98,8 @@ public:
     const SID2BlobId& GetID2BlobId() const { return m_BlobInfo.id2_blob_id; }
 
     /// Blob storage location and other attributes
-    struct SBlobInfo {
+    struct SBlobInfo
+    {
         SID2BlobId                           id2_blob_id;
         CID2_Reply_Get_Blob_Id::TBlob_state  state = 0;
         TGi                                  gi = 0;          // informational only
@@ -199,7 +201,7 @@ public:
 
     /// Perform signle bio-ids resolution
     /// @note
-    /// This method is works synchronously static and does not require 
+    /// This method is works synchronously static and does not require
     /// CBioIdResolutionQueue instance
     static CBlobId Resolve(CBioId bio_id, const CDeadline& deadline = CTimeout::eInfinite);
 
@@ -207,7 +209,7 @@ public:
     /// @note
     ///  If more than one thread tries to retrieve id resolution results, then
     ///  one of the threads gets the results as they become ready; other
-    ///  threads will continue waiting. 
+    ///  threads will continue waiting.
     /// @param deadline
     ///  Until when to wait for the results to get ready for retrieval.
     ///  If no resolution results are ready by the deadline expiration time,
@@ -235,7 +237,7 @@ public:
 
 private:
     mutable mutex m_ItemsMtx;
-    
+
     struct CBioIdResolutionQueueItem;
     vector<unique_ptr<CBioIdResolutionQueueItem>> m_Items;
     shared_ptr<void> m_Future;
@@ -247,10 +249,10 @@ private:
 class CBlob
 {
 public:
-    /// Blob ID and other non-data ID resolution and retrieval attributes 
+    /// Blob ID and other non-data ID resolution and retrieval attributes
     const CBlobId& GetBlobId() const  { return m_BlobId; };
 
-    /// Blob data retrieval API 
+    /// Blob data retrieval API
     // ........
 
 private:
@@ -301,7 +303,7 @@ public:
     /// @note
     ///  If more than one thread tries to retrieve list of the ready blobs,
     ///  then one of the threads gets the results as they become ready; other
-    ///  threads will continue waiting. 
+    ///  threads will continue waiting.
     /// @param deadline
     ///  Until when to wait for the blobs to get ready for retrieval.
     ///  If no blobs are ready for retrieval by the deadline expiration, then

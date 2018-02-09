@@ -62,7 +62,7 @@ ServiceResolver::ServiceResolver(const vector<pair<string, HCT::http2_end_point>
             auto existing_it = m_static_map.find(it.first);
             if (existing_it == m_static_map.end()) {
                 auto vec = make_shared<ResolverElement>();
-                existing_it = m_static_map.emplace(it.first, vec).first;                
+                existing_it = m_static_map.emplace(it.first, vec).first;
             }
             existing_it->second->m_end_of_live = chrono::system_clock::now() + chrono::milliseconds(m_alive_TTL_ms);
             existing_it->second->m_end_points.emplace_back(
@@ -78,7 +78,7 @@ ServiceResolver::ServiceResolver(const vector<pair<string, HCT::http2_end_point>
 void ServiceResolver::PopulateFromStatic(const string& ServiceId) {
     auto vec = make_shared<ResolverElement>();
     time_point_t t = chrono::system_clock::now();
-    
+
 // TODO begin:
 // ADD REAL RESOLVER
 
@@ -93,7 +93,7 @@ void ServiceResolver::PopulateFromStatic(const string& ServiceId) {
             vec->m_end_points.emplace_back(ep, ep_weight);
             vec->m_end_of_live = t + chrono::milliseconds(m_dead_TTL_ms);
         }
-        else {            
+        else {
             vec->m_end_points.assign(it->second->m_end_points.begin(), it->second->m_end_points.end());
             vec->m_end_of_live = t + chrono::milliseconds(m_alive_TTL_ms);
         }
@@ -139,7 +139,7 @@ shared_ptr<HCT::http2_end_point> ServiceResolver::SericeIdToEndPoint(const strin
             end_point_weight_t w = pep.second;
             m_stagering[i++] = w;
             total_w += w;
-        }    
+        }
         if (total_w <= 0) total_w = 1;
 
         int32_t counter = (++m_weight_counter) % WEIGHT_NORMALIZE_VALUE;
@@ -152,11 +152,11 @@ shared_ptr<HCT::http2_end_point> ServiceResolver::SericeIdToEndPoint(const strin
     assert(it->second->m_end_points[index].first.get());
     return it->second->m_end_points[index].first;
 }
-  
+
 /** RequestBase */
 
-RequestBase::RequestBase(HCT::TagHCT tag) : 
-    m_tag(tag), 
+RequestBase::RequestBase(HCT::TagHCT tag) :
+    m_tag(tag),
     m_Pimpl(make_shared<HCT::http2_request>())
 {
 }
@@ -218,7 +218,7 @@ void Request::RunRequest(const string& ServiceId, string SerializedArgs)
 /** CRequestQueueItem */
 
 CRequestQueueItem::CRequestQueueItem(shared_ptr<HCT::io_future> afuture, tuple<string, string, HCT::TagHCT> args) :
-    RequestBase(std::get<2>(args)) 
+    RequestBase(std::get<2>(args))
 {
     if (!HCT::HttpClientTransport::s_ioc)
         EDdRpcException::raise("DDRPC is not initialized, call DdRpcClient::Init() first");
