@@ -101,7 +101,8 @@ CBioIdResolutionQueue::CBioIdResolutionQueueItem::CBioIdResolutionQueueItem(shar
     m_Request->init_request(DDRPC::DdRpcClient::SericeIdToEndPoint(ACCVER_RESOLVER_SERVICE_ID), afuture, "accver=" + m_BioId.GetId());
 }
 
-void CBioIdResolutionQueue::CBioIdResolutionQueueItem::SyncResolve(CBlobId& blob_id, const CDeadline& deadline) {
+void CBioIdResolutionQueue::CBioIdResolutionQueueItem::SyncResolve(CBlobId& blob_id, const CDeadline& deadline)
+{
     bool has_timeout = !deadline.IsInfinite();
     long wait_ms = has_timeout ? RemainingTimeMs(deadline) : DDRPC::INDEFINITE;
     bool rv = HCT::HttpClientTransport::s_ioc->add_request(m_Request, wait_ms);

@@ -75,7 +75,8 @@ ServiceResolver::ServiceResolver(const vector<pair<string, HCT::http2_end_point>
     }
 }
 
-void ServiceResolver::PopulateFromStatic(const string& ServiceId) {
+void ServiceResolver::PopulateFromStatic(const string& ServiceId)
+{
     auto vec = make_shared<ResolverElement>();
     time_point_t t = chrono::system_clock::now();
 
@@ -108,7 +109,8 @@ void ServiceResolver::PopulateFromStatic(const string& ServiceId) {
     m_map.emplace(ServiceId, std::move(vec));
 }
 
-shared_ptr<ServiceResolver::ResolverElement> ServiceResolver::ResolveService(const string& ServiceId) {
+shared_ptr<ServiceResolver::ResolverElement> ServiceResolver::ResolveService(const string& ServiceId)
+{
     unique_lock<mutex> _(m_map_mux);
     auto it = m_map.end();
     if ((it = m_map.find(ServiceId)) == m_map.end() || it->second->m_end_of_live < chrono::system_clock::now()) {
@@ -120,7 +122,8 @@ shared_ptr<ServiceResolver::ResolverElement> ServiceResolver::ResolveService(con
     return it->second;
 }
 
-shared_ptr<HCT::http2_end_point> ServiceResolver::SericeIdToEndPoint(const string& ServiceId) {    
+shared_ptr<HCT::http2_end_point> ServiceResolver::SericeIdToEndPoint(const string& ServiceId)
+{
     auto it = m_local_map.end();
     if (m_local_version != m_version || (it = m_local_map.find(ServiceId)) == m_local_map.end() || it->second->m_end_of_live < chrono::system_clock::now()) {
         shared_ptr<ServiceResolver::ResolverElement> vec = ResolveService(ServiceId);
@@ -161,28 +164,34 @@ RequestBase::RequestBase(HCT::TagHCT tag) :
 {
 }
 
-RequestBase::~RequestBase() {
+RequestBase::~RequestBase()
+{
     if (!IsDone())
         EDdRpcException::raise("Request hasn't finished"); //TODO: consider auto-cancel
 }
 
-bool RequestBase::IsDone() const {
+bool RequestBase::IsDone() const
+{
     return m_Pimpl->get_result_data().get_finished();
 }
 
-bool RequestBase::IsCancelled() const {
+bool RequestBase::IsCancelled() const
+{
     return m_Pimpl->get_result_data().get_cancelled();
 }
 
-string RequestBase::Get() {
+string RequestBase::Get()
+{
     return m_Pimpl->get_reply_data_move();
 }
 
-bool RequestBase::HasError() const {
+bool RequestBase::HasError() const
+{
     return m_Pimpl->has_error();
 }
 
-string RequestBase::GetErrorDescription() const {
+string RequestBase::GetErrorDescription() const
+{
     return m_Pimpl->get_error_description();
 }
 
@@ -196,12 +205,14 @@ Request::Request(HCT::TagHCT tag) :
         EDdRpcException::raise("DDRPC is not initialized, call DdRpcClient::Init() first");
 }
 
-void Request::WaitAny() {
+void Request::WaitAny()
+{
     if (!IsDone())
         m_Pimpl->get_result_data().wait();
 }
 
-void Request::Wait() {
+void Request::Wait()
+{
     while (!IsDone())
         WaitAny();
 }
@@ -225,31 +236,37 @@ CRequestQueueItem::CRequestQueueItem(shared_ptr<HCT::io_future> afuture, tuple<s
     m_Pimpl->init_request(DdRpcClient::SericeIdToEndPoint(std::move(std::get<0>(args))), afuture, std::move(std::get<1>(args)));
 }
 
-void CRequestQueueItem::WaitFor(long timeout_ms) {
+void CRequestQueueItem::WaitFor(long timeout_ms)
+{
     if (!IsDone())
         m_Pimpl->get_result_data().wait_for(timeout_ms);
 }
 
-void CRequestQueueItem::Wait() {
+void CRequestQueueItem::Wait()
+{
     if (!IsDone())
         m_Pimpl->get_result_data().wait();
 }
 
-void CRequestQueueItem::Cancel() {
+void CRequestQueueItem::Cancel()
+{
     m_Pimpl->send_cancel();
 }
 
 /** CRequestQueue */
 
-CRequestQueue::CRequestQueue() {
+CRequestQueue::CRequestQueue()
+{
     m_future = make_shared<HCT::io_future>();
 }
 
-CRequestQueue::~CRequestQueue() {
+CRequestQueue::~CRequestQueue()
+{
     Clear();
 }
 
-void CRequestQueue::Submit(vector<tuple<string, string, HCT::TagHCT>>& requests, const chrono::duration<long, chrono::milliseconds::period>& time) {
+void CRequestQueue::Submit(vector<tuple<string, string, HCT::TagHCT>>& requests, const chrono::duration<long, chrono::milliseconds::period>& time)
+{
 
     bool has_timeout = time.count() < INDEFINITE;
     auto target_time = chrono::system_clock::now() + time;
@@ -275,7 +292,8 @@ void CRequestQueue::Submit(vector<tuple<string, string, HCT::TagHCT>>& requests,
     }
 }
 
-vector<unique_ptr<CRequestQueueItem>> CRequestQueue::WaitResults(const chrono::duration<long, chrono::milliseconds::period>& time) {
+vector<unique_ptr<CRequestQueueItem>> CRequestQueue::WaitResults(const chrono::duration<long, chrono::milliseconds::period>& time)
+{
     vector<unique_ptr<CRequestQueueItem>> rv;
     unique_lock<mutex> _(m_items_mtx);
     if (m_items.size() > 0) {
@@ -296,7 +314,8 @@ vector<unique_ptr<CRequestQueueItem>> CRequestQueue::WaitResults(const chrono::d
     return rv;
 }
 
-void CRequestQueue::Clear() {
+void CRequestQueue::Clear()
+{
     unique_lock<mutex> _(m_items_mtx);
     for (auto& it : m_items)
         it->Cancel();
@@ -306,7 +325,8 @@ void CRequestQueue::Clear() {
     m_items.clear();
 }
 
-bool CRequestQueue::IsEmpty() const {
+bool CRequestQueue::IsEmpty() const
+{
     unique_lock<mutex> _(m_items_mtx);
     return m_items.size() == 0;
 }
@@ -318,7 +338,8 @@ bool CRequestQueue::IsEmpty() const {
 bool DdRpcClient::m_Initialized(false);
 unique_ptr<ServiceResolver> DdRpcClient::m_Resolver;
 
-void DdRpcClient::Init(unique_ptr<ServiceResolver> Resolver) {
+void DdRpcClient::Init(unique_ptr<ServiceResolver> Resolver)
+{
     if (m_Initialized)
         EDdRpcException::raise("DDRPC has already been initialized");
     m_Initialized = true;
@@ -326,7 +347,8 @@ void DdRpcClient::Init(unique_ptr<ServiceResolver> Resolver) {
     HCT::HttpClientTransport::Init();
 }
 
-void DdRpcClient::Finalize() {
+void DdRpcClient::Finalize()
+{
     if (!m_Initialized)
         EDdRpcException::raise("DDRPC has not been initialized");
     m_Initialized = false;

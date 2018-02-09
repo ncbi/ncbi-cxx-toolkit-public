@@ -86,11 +86,13 @@ void http2_request::init_request(shared_ptr<http2_end_point> endpoint, shared_pt
         error(m_endpoint->error);
 }
 
-bool http2_request::s_compare_future(const shared_ptr<http2_request>& a, const shared_ptr<http2_request>& b) {
+bool http2_request::s_compare_future(const shared_ptr<http2_request>& a, const shared_ptr<http2_request>& b)
+{
     return a->get_result_data().get_future_raw() < b->get_result_data().get_future_raw(); // intention to compare adddresses there, not values
 }
 
-string http2_request::get_host() const {
+string http2_request::get_host() const
+{
     auto pos = m_endpoint->authority.find(':');
     if (pos == string::npos)
         return m_endpoint->authority;
@@ -98,7 +100,8 @@ string http2_request::get_host() const {
         return m_endpoint->authority.substr(0, pos);
 }
 
-uint16_t http2_request::get_port() const {
+uint16_t http2_request::get_port() const
+{
     auto pos = m_endpoint->authority.find(':');
     if (pos == string::npos)
         return 80;
@@ -106,7 +109,8 @@ uint16_t http2_request::get_port() const {
         return std::stoi(m_endpoint->authority.substr(pos + 1));
 }
 
-void http2_request::on_complete(uint32_t error_code) {
+void http2_request::on_complete(uint32_t error_code)
+{
     LOG4(("%p: on_complete: stream %d: result: %u, datalen: %lu", m_session_data, m_stream_id, error_code, m_reply_data.get_reply_data_size()));
     if (error_code)
         error_nghttp2(error_code);
@@ -114,7 +118,8 @@ void http2_request::on_complete(uint32_t error_code) {
         do_complete();
 }
 
-void http2_request::do_complete() {
+void http2_request::do_complete()
+{
     assert(m_state < http2_request_state::rs_done);
     m_state = http2_request_state::rs_done;
     m_reply_data.on_complete();
@@ -128,7 +133,8 @@ void http2_request::do_complete() {
 
 /** http2_reply_data */
 
-bool http2_reply_data::wait_for(long timeout_ms) const {
+bool http2_reply_data::wait_for(long timeout_ms) const
+{
     if (!m_future)
         EException::raise("Future is not assigned");
     bool has_timeout = timeout_ms < DDRPC::INDEFINITE;
@@ -149,7 +155,8 @@ bool http2_reply_data::wait_for(long timeout_ms) const {
     return true;
 }
 
-bool http2_reply_data::send_cancel() {
+bool http2_reply_data::send_cancel()
+{
     http2_session* session_data = m_session_data;
     if (m_finished)
         return true;
@@ -159,7 +166,8 @@ bool http2_reply_data::send_cancel() {
     return true;
 }
 
-void http2_reply_data::on_complete() {
+void http2_reply_data::on_complete()
+{
     assert(m_future);
     m_finished = true;
     if (m_session_data)
@@ -197,7 +205,8 @@ http2_session::http2_session(io_thread* aio) noexcept :
     m_session_state = session_state_t::ss_work;
 }
 
-void http2_session::dump_requests() {
+void http2_session::dump_requests()
+{
     LOG1(("DUMP REQ: [%lu]", m_requests.size()));
     for (const auto& it : m_requests) {
         LOG1(("%d => %s", it.first, it.second->get_full_path().c_str()));
@@ -206,7 +215,8 @@ void http2_session::dump_requests() {
 
 /* s_ng_send_cb. Here the |data|, |length| bytes would be transmitted to the network.
      we don't use this mechanism, so the callback is not expected at all */
-ssize_t http2_session::s_ng_send_cb(nghttp2_session *session, const uint8_t *data, size_t length, int flags, void *user_data) {
+ssize_t http2_session::s_ng_send_cb(nghttp2_session *session, const uint8_t *data, size_t length, int flags, void *user_data)
+{
     http2_session *session_data = (http2_session *)user_data;
     session_data->error(ERR_HCT_UNEXP_CB, "failed to send request, unexpected callback");
     ERRLOG0(("!ERROR: s_ng_send_cb"));
@@ -215,7 +225,8 @@ ssize_t http2_session::s_ng_send_cb(nghttp2_session *session, const uint8_t *dat
 
 /* s_ng_frame_recv_cb: Called when nghttp2 library
    received a complete frame from the remote peer. */
-int http2_session::s_ng_frame_recv_cb(nghttp2_session *session, const nghttp2_frame *frame, void *user_data) {
+int http2_session::s_ng_frame_recv_cb(nghttp2_session *session, const nghttp2_frame *frame, void *user_data)
+{
     http2_session *session_data = (http2_session *)user_data;
     switch (frame->hd.type) {
         case NGHTTP2_HEADERS:
@@ -246,7 +257,8 @@ int http2_session::s_ng_frame_recv_cb(nghttp2_session *session, const nghttp2_fr
    is meant to the stream we initiated, print the received data in
    stdout, so that the user can redirect its output to the file
    easily. */
-int http2_session::s_ng_data_chunk_recv_cb(nghttp2_session *session, uint8_t flags, int32_t stream_id, const uint8_t *data, size_t len, void *user_data) {
+int http2_session::s_ng_data_chunk_recv_cb(nghttp2_session *session, uint8_t flags, int32_t stream_id, const uint8_t *data, size_t len, void *user_data)
+{
     http2_session *session_data = (http2_session *)user_data;
     try {
         auto it = session_data->m_requests.find(stream_id);
@@ -270,12 +282,14 @@ int http2_session::s_ng_data_chunk_recv_cb(nghttp2_session *session, uint8_t fla
 }
 
 /* s_ng_stream_close_cb: Called when a stream is about to closed */
-int http2_session::s_ng_stream_close_cb(nghttp2_session *session, int32_t stream_id, uint32_t error_code, void *user_data) {
+int http2_session::s_ng_stream_close_cb(nghttp2_session *session, int32_t stream_id, uint32_t error_code, void *user_data)
+{
     http2_session *session_data = (http2_session *)user_data;
     return session_data->ng_stream_close_cb(stream_id, error_code);
 }
 
-int http2_session::ng_stream_close_cb(int32_t stream_id, uint32_t error_code) {
+int http2_session::ng_stream_close_cb(int32_t stream_id, uint32_t error_code)
+{
 //    int rv;
     LOG4(("%p: ng_stream_close_cb: id: %d, code %d", this,  stream_id, error_code));
 
@@ -309,7 +323,8 @@ int http2_session::ng_stream_close_cb(int32_t stream_id, uint32_t error_code) {
 /* s_ng_header_cb: Called when nghttp2 library emits
    single header name/value pair. */
 int http2_session::s_ng_header_cb(nghttp2_session *session, const nghttp2_frame *frame, const uint8_t *name, size_t namelen, const uint8_t *value,
-                              size_t valuelen, uint8_t flags, void *user_data) {
+                              size_t valuelen, uint8_t flags, void *user_data)
+{
     http2_session *session_data = (http2_session *)user_data;
     switch (frame->hd.type) {
         case NGHTTP2_HEADERS:
@@ -337,7 +352,8 @@ int http2_session::s_ng_header_cb(nghttp2_session *session, const nghttp2_frame 
 
 /* s_ng_begin_headers_cb: Called when nghttp2 library gets
    started to receive header block. */
-int http2_session::s_ng_begin_headers_cb(nghttp2_session *session, const nghttp2_frame *frame, void *user_data) {
+int http2_session::s_ng_begin_headers_cb(nghttp2_session *session, const nghttp2_frame *frame, void *user_data)
+{
 //    http2_session *session_data = (http2_session *)user_data;
     switch (frame->hd.type) {
         case NGHTTP2_HEADERS:
@@ -349,7 +365,8 @@ int http2_session::s_ng_begin_headers_cb(nghttp2_session *session, const nghttp2
     return 0;
 }
 
-int http2_session::s_ng_error_cb(nghttp2_session *session, const char *msg, size_t len, void *user_data) {
+int http2_session::s_ng_error_cb(nghttp2_session *session, const char *msg, size_t len, void *user_data)
+{
     http2_session *session_data = (http2_session *)user_data;
     ERRLOG0(("%p: !ERROR: %s", session_data,  msg));
     for (auto it = session_data->m_requests.begin(); it != session_data->m_requests.end();) {
@@ -360,20 +377,23 @@ int http2_session::s_ng_error_cb(nghttp2_session *session, const char *msg, size
     return 0;
 }
 
-void http2_session::s_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
+void http2_session::s_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf)
+{
     http2_session *session_data = (http2_session*)handle->data;
     buf->base = session_data->m_read_buf;
     buf->len = sizeof(session_data->m_read_buf);
 }
 
-void http2_session::s_on_close_cb(uv_handle_t *handle) {
+void http2_session::s_on_close_cb(uv_handle_t *handle)
+{
     http2_session *session_data = static_cast<http2_session*>(handle->data);
     LOG2(("%p: on_close_cb", session_data));
     if (session_data->m_connection_state == connection_state_t::cs_closing)
         session_data->m_connection_state = connection_state_t::cs_initial;
 }
 
-void http2_session::close_tcp() {
+void http2_session::close_tcp()
+{
     LOG2(("%p: close_tcp, state: %d", this, m_connection_state));
     if ((m_connection_state == connection_state_t::cs_connecting) ||
             (m_connection_state == connection_state_t::cs_connected))
@@ -383,7 +403,8 @@ void http2_session::close_tcp() {
     m_wr.clear();
 }
 
-void http2_session::close_session() {
+void http2_session::close_session()
+{
     if (m_session) {
         nghttp2_session *_session = m_session;
         m_session = nullptr;
@@ -414,7 +435,8 @@ void http2_session::close_session() {
     }
 }
 
-void http2_session::start_close() {
+void http2_session::start_close()
+{
     LOG2(("%p: start_close", this));
     if (m_session_state < session_state_t::ss_closing) {
         if (m_connection_state == connection_state_t::cs_connected && m_session) {
@@ -431,7 +453,8 @@ void http2_session::start_close() {
     }
 }
 
-void http2_session::finalize_close() {
+void http2_session::finalize_close()
+{
     LOG1(("%p: finalize_close", this));
     assert(m_session_state == session_state_t::ss_closing);
     assert(m_connection_state == connection_state_t::cs_initial);
@@ -439,14 +462,16 @@ void http2_session::finalize_close() {
     m_io = nullptr;
 }
 
-void http2_session::notify_cancel() {
+void http2_session::notify_cancel()
+{
     if (!m_cancel_requested) {
         m_cancel_requested = true;
         m_io->wake();
     }
 }
 
-void http2_session::initialize_nghttp2_session() {
+void http2_session::initialize_nghttp2_session()
+{
 
     nghttp2_session_callbacks* _callbacks;
     nghttp2_session_callbacks_new(&_callbacks);
@@ -466,7 +491,8 @@ void http2_session::initialize_nghttp2_session() {
 }
 
 /* Send HTTP request to the remote peer */
-int http2_session::write_ng_data() {
+int http2_session::write_ng_data()
+{
     int rv = 0;
 
     if (m_connection_state != connection_state_t::cs_connected) {
@@ -499,7 +525,8 @@ abort();
 }
 
 /* Serialize the frame and send (or buffer) the data to libuv. */
-bool http2_session::fetch_ng_data(bool commit) {
+bool http2_session::fetch_ng_data(bool commit)
+{
     int rv = 0;
     size_t tot_len = 0;
 
@@ -536,7 +563,8 @@ bool http2_session::fetch_ng_data(bool commit) {
     return rv == 0;
 }
 
-void http2_session::check_next_request() {
+void http2_session::check_next_request()
+{
     if (m_session) {
         bool want_read = nghttp2_session_want_read(m_session) != 0;
         bool want_write = nghttp2_session_want_write(m_session) != 0;
@@ -559,7 +587,8 @@ void http2_session::check_next_request() {
     }
 }
 
-void http2_session::debug_print_counts() {
+void http2_session::debug_print_counts()
+{
     size_t counts[6] = {0};
     for (auto & it : m_requests) {
         auto v = (int)it.second->get_state();
@@ -572,12 +601,14 @@ void http2_session::debug_print_counts() {
 /* s_connect_cb for libuv.
    Initialize nghttp2 library session, and send client connection header. Then
    send HTTP request. */
-void http2_session::s_connect_cb(uv_connect_t *req, int status) {
+void http2_session::s_connect_cb(uv_connect_t *req, int status)
+{
     http2_session *session_data = (http2_session*)req->data;
     session_data->connect_cb(req, status);
 }
 
-void http2_session::connect_cb(uv_connect_t *req, int status) {
+void http2_session::connect_cb(uv_connect_t *req, int status)
+{
     assert(req == &m_conn_req);
     assert(req->handle == (uv_stream_t*)m_tcp.Handle());
     LOG2(("%p: connect_cb %d", this, status));
@@ -625,12 +656,14 @@ void http2_session::connect_cb(uv_connect_t *req, int status) {
    receiving GOAWAY, we check the some conditions on the nghttp2
    library and output buffer of libuv. If it indicates we have
    no business to this session, tear down the connection. */
-void http2_session::s_write_cb(uv_write_t* req, int status) {
+void http2_session::s_write_cb(uv_write_t* req, int status)
+{
     http2_session *session_data = (http2_session*)req->data;
     session_data->write_cb(req, status);
 }
 
-void http2_session::write_cb(uv_write_t* req, int status) {
+void http2_session::write_cb(uv_write_t* req, int status)
+{
     assert(req == &m_wr.wr_req);
     assert(req->handle == (uv_stream_t*)m_tcp.Handle());
     assert(m_wr.is_pending_wr || (status < 0 && m_connection_state == connection_state_t::cs_closing));
@@ -669,12 +702,14 @@ void http2_session::write_cb(uv_write_t* req, int status) {
    of libuv and feed them to nghttp2 library. This may invoke
    nghttp2 callbacks. It may also queues the frame in nghttp2 session
    context. To send them, we call fetch_ng_data() in the end. */
-void http2_session::s_read_cb(uv_stream_t *strm, ssize_t nread, const uv_buf_t* buf) {
+void http2_session::s_read_cb(uv_stream_t *strm, ssize_t nread, const uv_buf_t* buf)
+{
     http2_session *session_data = (http2_session*)strm->data;
     session_data->read_cb(strm, nread, buf);
 }
 
-void http2_session::read_cb(uv_stream_t *strm, ssize_t nread, const uv_buf_t* buf) {
+void http2_session::read_cb(uv_stream_t *strm, ssize_t nread, const uv_buf_t* buf)
+{
     try {
         LOG2(("%p: read_cb %ld", this, nread));
         ssize_t readlen;
@@ -716,7 +751,8 @@ void http2_session::read_cb(uv_stream_t *strm, ssize_t nread, const uv_buf_t* bu
 }
 
 
-bool http2_session::try_connect(const struct sockaddr *addr) {
+bool http2_session::try_connect(const struct sockaddr *addr)
+{
     m_is_pending_connect = true;
     if (m_session_state >= session_state_t::ss_closing)
         return false;
@@ -739,7 +775,8 @@ bool http2_session::try_connect(const struct sockaddr *addr) {
     return true;
 }
 
-bool http2_session::try_next_addr() {
+bool http2_session::try_next_addr()
+{
     if (m_other_addr.empty()) {
         LOG2(("%p: try_next_addr: no more addresses to try", this));
         return false;
@@ -750,12 +787,14 @@ bool http2_session::try_next_addr() {
     return rv;
 }
 
-void http2_session::s_getaddrinfo_cb(uv_getaddrinfo_t *req, int status, struct addrinfo *ai) {
+void http2_session::s_getaddrinfo_cb(uv_getaddrinfo_t *req, int status, struct addrinfo *ai)
+{
     http2_session *session_data = (http2_session*)req->data;
     session_data->getaddrinfo_cb(req, status, ai);
 }
 
-void http2_session::getaddrinfo_cb(uv_getaddrinfo_t *req, int status, struct addrinfo *ai) {
+void http2_session::getaddrinfo_cb(uv_getaddrinfo_t *req, int status, struct addrinfo *ai)
+{
     try {
         struct sockaddr addr;
         LOG3(("%p: getaddrinfo_cb, status: %d", this, status));
@@ -795,7 +834,8 @@ void http2_session::getaddrinfo_cb(uv_getaddrinfo_t *req, int status, struct add
 }
 
 /* Start resolving the remote peer |host| */
-bool http2_session::initiate_connection() {
+bool http2_session::initiate_connection()
+{
     int rv;
     struct addrinfo hints;
     char sport[16];
@@ -841,7 +881,8 @@ bool http2_session::initiate_connection() {
     return true;
 }
 
-bool http2_session::send_client_connection_header() {
+bool http2_session::send_client_connection_header()
+{
     nghttp2_settings_entry iv[1] = {
         {NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, MAX_CONCURRENT_STREAMS}
     };
@@ -860,7 +901,8 @@ bool http2_session::send_client_connection_header() {
     return rv == 0;
 }
 
-bool http2_session::check_connection() {
+bool http2_session::check_connection()
+{
     if (m_connection_state == connection_state_t::cs_initial && m_session_state == session_state_t::ss_work) {
         if (!initiate_connection())
             return false;
@@ -872,14 +914,16 @@ bool http2_session::check_connection() {
     return true;
 }
 
-void http2_session::process_completion_list() {
+void http2_session::process_completion_list()
+{
     for (auto& it : m_completion_list) {
         it->signal();
     }
     m_completion_list.clear();
 }
 
-void http2_session::request_complete(http2_request* req) {
+void http2_session::request_complete(http2_request* req)
+{
     auto stream_id = req->get_stream_id();
     if (stream_id > 0) {
         req->drop_stream_id();
@@ -889,7 +933,8 @@ void http2_session::request_complete(http2_request* req) {
         --m_num_requests;
     }
 }
-void http2_session::add_to_completion(shared_ptr<io_future>& future) {
+void http2_session::add_to_completion(shared_ptr<io_future>& future)
+{
     if (DELAYED_COMPLETION) {
         assert(future.use_count() > 1);
         m_completion_list.insert(future);
@@ -898,7 +943,8 @@ void http2_session::add_to_completion(shared_ptr<io_future>& future) {
         future->signal();
 }
 
-bool http2_session::add_request_move(shared_ptr<http2_request>& req) {
+bool http2_session::add_request_move(shared_ptr<http2_request>& req)
+{
     if (!m_io || m_io->get_state() != io_thread_state_t::started)
         EException::raise("IO thread is dead");
 
@@ -915,7 +961,8 @@ bool http2_session::add_request_move(shared_ptr<http2_request>& req) {
 }
 
 /*
-static void print_header(FILE *f, const uint8_t *name, size_t namelen, const uint8_t *value, size_t valuelen) {
+static void print_header(FILE *f, const uint8_t *name, size_t namelen, const uint8_t *value, size_t valuelen)
+{
     fwrite(name, 1, namelen, f);
     fprintf(f, ": ");
     fwrite(value, 1, valuelen, f);
@@ -927,7 +974,8 @@ static void print_header(FILE *f, const uint8_t *name, size_t namelen, const uin
    take into account that header name and value are sequence of
    octets, therefore they may contain non-printable characters. */
 /*
-static void print_headers(FILE *f, nghttp2_nv *nva, size_t nvlen) {
+static void print_headers(FILE *f, nghttp2_nv *nva, size_t nvlen)
+{
     size_t i;
     for (i = 0; i < nvlen; ++i) {
         print_header(f, nva[i].name, nva[i].namelen, nva[i].value, nva[i].valuelen);
@@ -937,7 +985,8 @@ static void print_headers(FILE *f, nghttp2_nv *nva, size_t nvlen) {
 */
 
 
-void http2_session::release_cancelled_requests() {
+void http2_session::release_cancelled_requests()
+{
     for (auto it = m_requests.begin(); it != m_requests.end(); ) {
         auto cur = it++;
         if (cur->second->get_cancelled())
@@ -958,7 +1007,8 @@ void http2_session::release_cancelled_requests() {
   }
 
 
-void http2_session::process_requests() {
+void http2_session::process_requests()
+{
     if (m_cancel_requested) {
         m_cancel_requested = false;
         release_cancelled_requests();
@@ -1086,12 +1136,14 @@ void http2_session::process_requests() {
     }
 }
 
-void http2_session::on_timer() {
+void http2_session::on_timer()
+{
     if ((m_connection_state == connection_state_t::cs_connected || m_connection_state == connection_state_t::cs_initial) && m_session_state == session_state_t::ss_work)
         process_requests();
 }
 
-void http2_session::drain_queue() {
+void http2_session::drain_queue()
+{
     assert(has_error());
     shared_ptr<http2_request> req;
     while (m_req_queue.pop_move(req)) {
@@ -1101,7 +1153,8 @@ void http2_session::drain_queue() {
     }
 }
 
-void http2_session::purge_pending_requests() {
+void http2_session::purge_pending_requests()
+{
     assert(has_error());
     for (auto it = m_requests.begin(); it != m_requests.end(); ) {
         auto cur = it++;
@@ -1113,7 +1166,8 @@ void http2_session::purge_pending_requests() {
 
 /** io_thread */
 
-io_thread::~io_thread() {
+io_thread::~io_thread()
+{
     if (m_thrd.joinable() && m_state > io_thread_state_t::initialized) {
         m_shutdown_req = true;
         uv_async_send(&m_wake);
@@ -1121,7 +1175,8 @@ io_thread::~io_thread() {
     }
 }
 
-void io_thread::wake() {
+void io_thread::wake()
+{
     for (const auto& it : m_sessions) {
         if (it->get_wake_enabled()) {
             uv_async_send(&m_wake);
@@ -1130,7 +1185,8 @@ void io_thread::wake() {
     }
 }
 
-void io_thread::on_wake(uv_async_t* handle) {
+void io_thread::on_wake(uv_async_t* handle)
+{
     if (m_shutdown_req) {
         m_loop->Stop();
     }
@@ -1150,7 +1206,8 @@ void io_thread::on_wake(uv_async_t* handle) {
     }
 }
 
-void io_thread::on_timer(uv_timer_t* handle) {
+void io_thread::on_timer(uv_timer_t* handle)
+{
     try {
         stringstream ss;
         ss << hex << (uint64_t)this;
@@ -1166,11 +1223,13 @@ void io_thread::on_timer(uv_timer_t* handle) {
 
 }
 
-void io_thread::attach(http2_session* sess) {
+void io_thread::attach(http2_session* sess)
+{
     m_sessions.emplace_back(sess);
 }
 
-void io_thread::detach(http2_session* sess) {
+void io_thread::detach(http2_session* sess)
+{
     auto it = find_if(m_sessions.begin(), m_sessions.end(), [&sess](unique_ptr<http2_session>& asess)->bool {
         return asess.get() == sess;
     });
@@ -1179,7 +1238,8 @@ void io_thread::detach(http2_session* sess) {
         m_sessions.erase(it);
 }
 
-bool io_thread::add_request_move(shared_ptr<http2_request>& req) {
+bool io_thread::add_request_move(shared_ptr<http2_request>& req)
+{
     if (m_sessions.size() == 0 || m_state != io_thread_state_t::started)
         EException::raise("No sessions started");
 
@@ -1197,7 +1257,8 @@ bool io_thread::add_request_move(shared_ptr<http2_request>& req) {
     return rv;
 }
 
-void io_thread::run() {
+void io_thread::run()
+{
     uv_timer_start(&m_timer, s_on_timer, 1000, 1000);
 
     while (!m_shutdown_req) {
@@ -1207,7 +1268,8 @@ void io_thread::run() {
     uv_timer_stop(&m_timer);
 }
 
-void io_thread::execute(uv_sem_t* sem) {
+void io_thread::execute(uv_sem_t* sem)
+{
     CUvLoop loop;
     m_loop = &loop;
     uv_async_init(m_loop->Handle(), &m_wake, s_on_wake);
@@ -1267,13 +1329,15 @@ void io_thread::execute(uv_sem_t* sem) {
 
 /** io_coordinator */
 
-io_coordinator::io_coordinator() : m_cur_idx(0) {
+io_coordinator::io_coordinator() : m_cur_idx(0)
+{
     for (int i = 0; i < NUM_IO; i++) {
         create_io();
     }
 }
 
-void io_coordinator::create_io() {
+void io_coordinator::create_io()
+{
     uv_sem_t sem;
     int rv;
     rv = uv_sem_init(&sem, 0);
@@ -1287,13 +1351,15 @@ void io_coordinator::create_io() {
         EException::raise("Failed to run IO thread");
 }
 
-shared_ptr<io_future> io_coordinator::get_tls_future() {
+shared_ptr<io_future> io_coordinator::get_tls_future()
+{
     if (!s_future)
         s_future = make_shared<io_future>();
     return s_future;
 }
 
-bool io_coordinator::add_request(shared_ptr<http2_request> req, long timeout_ms) {
+bool io_coordinator::add_request(shared_ptr<http2_request> req, long timeout_ms)
+{
     if (m_io.size() == 0)
         EException::raise("IO is not open");
     size_t iteration = 0;
@@ -1330,13 +1396,15 @@ bool io_coordinator::add_request(shared_ptr<http2_request> req, long timeout_ms)
 
 shared_ptr<io_coordinator> HttpClientTransport::s_ioc;
 
-void HttpClientTransport::Init() {
+void HttpClientTransport::Init()
+{
     if (!s_ioc) {
         s_ioc = make_shared<io_coordinator>();
     }
 }
 
-void HttpClientTransport::Finalize() {
+void HttpClientTransport::Finalize()
+{
     s_ioc = nullptr;
 }
 

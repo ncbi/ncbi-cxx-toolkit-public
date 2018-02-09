@@ -153,12 +153,14 @@ public:
     }
 };
 
-void CAccVerCacheApp::RemoteLookup(const string& AccVer) {
+void CAccVerCacheApp::RemoteLookup(const string& AccVer)
+{
     auto blob_id = CBioIdResolutionQueue::Resolve(AccVer);
     PrintBlobId(blob_id);
 }
 
-void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumThreads) {
+void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumThreads)
+{
 
     ifstream infile(FileName);
     vector<CBioId> src_data_ncbi;
