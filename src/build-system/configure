@@ -865,6 +865,8 @@ LIBXLSXWRITER_INCLUDE
 LIBXLSXWRITER_LIBS
 GRPC_INCLUDE
 GRPC_LIBS
+AWS_SDK_INCLUDE
+AWS_SDK_LIBS
 signature
 build_root
 top_srcdir
@@ -1103,6 +1105,7 @@ GRPC_UNSECURE_LIBS
 GRPC_REFLECTION_LIBS
 GRPC_BIN
 MSGSL_INCLUDE
+AWS_SDK_STATIC_LIBS
 ncbi_xreader_pubseqos
 ncbi_xreader_pubseqos2
 UNLESS_PUBSEQOS
@@ -1675,7 +1678,7 @@ sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 mongodb mongodb3 gmock lapack lmdb \
-libuv libssh2 cassandra nghttp2 h2o libxlsxwriter grpc msgsl 3psw \
+libuv libssh2 cassandra nghttp2 h2o libxlsxwriter grpc msgsl aws-sdk 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -1751,7 +1754,7 @@ for x_arg in "$@" ; do
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
       | --with-libssh2=* | --with-cassandra=* | --with-nghttp2=* \
       | --with-h2o=* | --with-libxlsxwriter=* | --with-grpc=* \
-      | --with-msgsl=* )
+      | --with-msgsl=* | --with-aws-sdk=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[^=]*=//'`
       case "$x_arg" in
@@ -2094,6 +2097,8 @@ Optional Packages:
  --without-grpc          do not use GRPC
  --with-msgsl=DIR        use Guideline Support Library installation in DIR
  --without-msgsl         do not use the Guideline Support Library
+ --with-aws-sdk=DIR      use Amazon Web Services SDK installation in DIR
+ --without-aws-sdk       do not use the Amazon Web Services SDK
  --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.
  --without-3psw          do not use any of the above packages
  --without-local-lbsm    turn off support for IPC with locally running LBSMD
@@ -2702,6 +2707,12 @@ case "$with_3psw" in
    { (exit 1); exit 1; }; }
          else
             with_msgsl=no
+         fi
+        if test "${with_aws-sdk-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-aws-sdk but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_aws-sdk=no
          fi
 
       $as_unset NCBI || test "${NCBI+set}" != set || { NCBI=; export NCBI; }
@@ -4359,6 +4370,18 @@ fi
 # Check whether --with-msgsl was given.
 if test "${with_msgsl+set}" = set; then
   withval=$with_msgsl;
+fi
+
+
+# Check whether --with-aws-sdk was given.
+if test "${with_aws_sdk+set}" = set; then
+  withval=$with_aws_sdk;
+fi
+
+
+# Check whether --with-aws-sdk was given.
+if test "${with_aws_sdk+set}" = set; then
+  withval=$with_aws_sdk;
 fi
 
 
@@ -51298,6 +51321,226 @@ echo "$as_me: error: --with-msgsl explicitly specified, but no usable version fo
     fi
 fi
 
+if test -d "$AWS_SDK_PATH"; then
+   ncbi_fix_dir_tmp=`if cd $AWS_SDK_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $AWS_SDK_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            AWS_SDK_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$AWS_SDK_PATH" in
+               /*) ;;
+               * ) AWS_SDK_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) AWS_SDK_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+   for d in "$AWS_SDK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$AWS_SDK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$AWS_SDK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+            "$AWS_SDK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+      if test -d "$d"; then
+         AWS_SDK_PATH=$d
+         ncbi_fix_dir_tmp=`if cd $AWS_SDK_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $AWS_SDK_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            AWS_SDK_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$AWS_SDK_PATH" in
+               /*) ;;
+               * ) AWS_SDK_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) AWS_SDK_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+         break
+      fi
+   done
+fi
+if test "$with_aws_sdk" != "no"; then
+    case "$with_aws_sdk" in
+       yes | "" ) ;;
+       *        ) AWS_SDK_PATH=$with_aws_sdk ;;
+    esac
+    if test "$AWS_SDK_PATH" != /usr -a -d "$AWS_SDK_PATH"; then
+       in_path=" in $AWS_SDK_PATH"
+       if test -z "$AWS_SDK_INCLUDE" -a -d "$AWS_SDK_PATH/include"; then
+          AWS_SDK_INCLUDE="-I$AWS_SDK_PATH/include"
+       fi
+       if test -n "$AWS_SDK_LIBPATH"; then
+          :
+       elif test -d "$AWS_SDK_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $AWS_SDK_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    AWS_SDK_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $AWS_SDK_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    AWS_SDK_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$AWS_SDK_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $AWS_SDK_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    AWS_SDK_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $AWS_SDK_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    AWS_SDK_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       AWS_SDK_LIBS="$AWS_SDK_LIBPATH -laws-cpp-sdk-s3 -laws-cpp-sdk-core"
+    else
+       AWS_SDK_INCLUDE=""
+       AWS_SDK_LIBS="-laws-cpp-sdk-s3 -laws-cpp-sdk-core"
+       in_path=
+    fi
+    { echo "$as_me:$LINENO: checking for libaws-cpp-sdk-s3$in_path" >&5
+echo $ECHO_N "checking for libaws-cpp-sdk-s3$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_aws_sdk+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS=" $AWS_SDK_INCLUDE $orig_CPPFLAGS"
+       LIBS="$AWS_SDK_LIBS $CURL_LIBS $OPENSSL_LIBS $Z_LIBS $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <aws/s3/S3Client.h>
+int
+main ()
+{
+Aws::S3::S3Client s3cli;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_aws_sdk=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_aws_sdk=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_aws_sdk" >&5
+echo "${ECHO_T}$ncbi_cv_lib_aws_sdk" >&6; }
+    if test "$ncbi_cv_lib_aws_sdk" = "no"; then
+       if test "${with_aws_sdk:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-aws_sdk explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-aws_sdk explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    fi
+ fi
+ if test "$with_aws_sdk" = "no"; then
+    AWS_SDK_PATH="No_AWS_SDK"
+    AWS_SDK_INCLUDE=
+    AWS_SDK_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}AWS_SDK"; WithPackagesSep=" "
+    AWS_SDK_INCLUDE=" $AWS_SDK_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBAWS_SDK 1
+_ACEOF
+
+ fi
+
+
+
+if test "$with_aws_sdk" != no -a \
+     -f "$AWS_SDK_PATH/lib$bit64_sfx/libaws-cpp-sdk-s3-static.a"; then
+    AWS_SDK_STATIC_LIBS="-L$AWS_SDK_PATH/lib -laws-cpp-sdk-s3-static -laws-cpp-sdk-core-static"
+else
+    AWS_SDK_STATIC_LIBS=$AWS_SDK_LIBS
+fi
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -51754,7 +51997,7 @@ for x in ChaosMonkey Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray W
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O LIBXLSXWRITER GRPC MSGSL; do
+  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O LIBXLSXWRITER GRPC MSGSL AWS_SDK; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -51847,6 +52090,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 
@@ -53168,6 +53412,8 @@ LIBXLSXWRITER_INCLUDE!$LIBXLSXWRITER_INCLUDE$ac_delim
 LIBXLSXWRITER_LIBS!$LIBXLSXWRITER_LIBS$ac_delim
 GRPC_INCLUDE!$GRPC_INCLUDE$ac_delim
 GRPC_LIBS!$GRPC_LIBS$ac_delim
+AWS_SDK_INCLUDE!$AWS_SDK_INCLUDE$ac_delim
+AWS_SDK_LIBS!$AWS_SDK_LIBS$ac_delim
 signature!$signature$ac_delim
 build_root!$build_root$ac_delim
 top_srcdir!$top_srcdir$ac_delim
@@ -53200,8 +53446,6 @@ DEBUG_SFX!$DEBUG_SFX$ac_delim
 LIB_OR_DLL!$LIB_OR_DLL$ac_delim
 FORCE_STATIC_LIB!$FORCE_STATIC_LIB$ac_delim
 APP_LIB_SETTING!$APP_LIB_SETTING$ac_delim
-APP_LIBS_SETTING!$APP_LIBS_SETTING$ac_delim
-LINK_DLL!$LINK_DLL$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -53243,6 +53487,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+APP_LIBS_SETTING!$APP_LIBS_SETTING$ac_delim
+LINK_DLL!$LINK_DLL$ac_delim
 has_dll_loadable!$has_dll_loadable$ac_delim
 LINK_LOADABLE!$LINK_LOADABLE$ac_delim
 CFLAGS_DLL!$CFLAGS_DLL$ac_delim
@@ -53338,8 +53584,6 @@ BERKELEYDB_CXX_LIBS!$BERKELEYDB_CXX_LIBS$ac_delim
 BERKELEYDB_CXX_STATIC_LIBS!$BERKELEYDB_CXX_STATIC_LIBS$ac_delim
 ODBC_INCLUDE!$ODBC_INCLUDE$ac_delim
 ODBC_LIBS!$ODBC_LIBS$ac_delim
-BOOST_INCLUDE!$BOOST_INCLUDE$ac_delim
-BOOST_LIBPATH!$BOOST_LIBPATH$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -53381,6 +53625,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+BOOST_INCLUDE!$BOOST_INCLUDE$ac_delim
+BOOST_LIBPATH!$BOOST_LIBPATH$ac_delim
 BOOST_TAG!$BOOST_TAG$ac_delim
 BOOST_CHRONO_LIBS!$BOOST_CHRONO_LIBS$ac_delim
 BOOST_CHRONO_STATIC_LIBS!$BOOST_CHRONO_STATIC_LIBS$ac_delim
@@ -53476,8 +53722,6 @@ AVRO_STATIC_LIBS!$AVRO_STATIC_LIBS$ac_delim
 CEREAL_INCLUDE!$CEREAL_INCLUDE$ac_delim
 MONGODB_STATIC_LIBS!$MONGODB_STATIC_LIBS$ac_delim
 MONGODB3_STATIC_LIBS!$MONGODB3_STATIC_LIBS$ac_delim
-LMDB_LIB!$LMDB_LIB$ac_delim
-LMDB_STATIC_LIBS!$LMDB_STATIC_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -53519,6 +53763,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+LMDB_LIB!$LMDB_LIB$ac_delim
+LMDB_STATIC_LIBS!$LMDB_STATIC_LIBS$ac_delim
 LIBUV_STATIC_LIBS!$LIBUV_STATIC_LIBS$ac_delim
 LIBSSH2_STATIC_LIBS!$LIBSSH2_STATIC_LIBS$ac_delim
 CASSANDRA_STATIC_LIBS!$CASSANDRA_STATIC_LIBS$ac_delim
@@ -53529,6 +53775,7 @@ GRPC_UNSECURE_LIBS!$GRPC_UNSECURE_LIBS$ac_delim
 GRPC_REFLECTION_LIBS!$GRPC_REFLECTION_LIBS$ac_delim
 GRPC_BIN!$GRPC_BIN$ac_delim
 MSGSL_INCLUDE!$MSGSL_INCLUDE$ac_delim
+AWS_SDK_STATIC_LIBS!$AWS_SDK_STATIC_LIBS$ac_delim
 ncbi_xreader_pubseqos!$ncbi_xreader_pubseqos$ac_delim
 ncbi_xreader_pubseqos2!$ncbi_xreader_pubseqos2$ac_delim
 UNLESS_PUBSEQOS!$UNLESS_PUBSEQOS$ac_delim
@@ -53574,7 +53821,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 53; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 56; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

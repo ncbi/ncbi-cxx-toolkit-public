@@ -75,7 +75,7 @@ case "$with_3psw" in
                      curl, gsoap, avro, cereal, sasl2,
                      mongodb, mongodb3, gmock, lapack,
                      libuv, libssh2, cassandra, nghttp2, h2o,
-                     libxlsxwriter, grpc, msgsl],
+                     libxlsxwriter, grpc, msgsl, aws-sdk],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -549,6 +549,10 @@ AC_ARG_WITH(msgsl,
    [ --with-msgsl=DIR        use Guideline Support Library installation in DIR])
 AC_ARG_WITH(msgsl,
    [ --without-msgsl         do not use the Guideline Support Library])
+AC_ARG_WITH(aws-sdk,
+   [ --with-aws-sdk=DIR      use Amazon Web Services SDK installation in DIR])
+AC_ARG_WITH(aws-sdk,
+   [ --without-aws-sdk       do not use the Amazon Web Services SDK])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
 AC_ARG_WITH(3psw,
@@ -612,7 +616,7 @@ sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 mongodb mongodb3 gmock lapack lmdb \
-libuv libssh2 cassandra nghttp2 h2o libxlsxwriter grpc msgsl 3psw \
+libuv libssh2 cassandra nghttp2 h2o libxlsxwriter grpc msgsl aws-sdk 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -687,7 +691,7 @@ for x_arg in "$@" ; do
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
       | --with-libssh2=* | --with-cassandra=* | --with-nghttp2=* \
       | --with-h2o=* | --with-libxlsxwriter=* | --with-grpc=* \
-      | --with-msgsl=* )
+      | --with-msgsl=* | --with-aws-sdk=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
       case "$x_arg" in
@@ -7977,6 +7981,30 @@ else
    NCBI_MISSING_PACKAGE(msgsl)
 fi
 
+if test -d "$AWS_SDK_PATH"; then
+   NCBI_FIX_DIR(AWS_SDK_PATH)
+   for d in "$AWS_SDK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$AWS_SDK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$AWS_SDK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+            "$AWS_SDK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+      if test -d "$d"; then
+         AWS_SDK_PATH=$d
+         NCBI_FIX_DIR(AWS_SDK_PATH)
+         break
+      fi
+   done
+fi
+NCBI_CHECK_THIRD_PARTY_LIB_EX(aws_sdk, AWS_SDK, aws-cpp-sdk-s3,
+   [AC_LANG_PROGRAM([[#include <aws/s3/S3Client.h>]],
+       [[Aws::S3::S3Client s3cli;]])],
+   [-laws-cpp-sdk-core], [$CURL_LIBS $OPENSSL_LIBS $Z_LIBS])
+if test "$with_aws_sdk" != no -a \
+     -f "$AWS_SDK_PATH/lib$bit64_sfx/libaws-cpp-sdk-s3-static.a"; then
+    AWS_SDK_STATIC_LIBS="-L$AWS_SDK_PATH/lib -laws-cpp-sdk-s3-static -laws-cpp-sdk-core-static"
+else
+    AWS_SDK_STATIC_LIBS=$AWS_SDK_LIBS
+fi
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -8722,6 +8750,7 @@ AC_SUBST(GRPC_UNSECURE_LIBS)
 AC_SUBST(GRPC_REFLECTION_LIBS)
 AC_SUBST(GRPC_BIN)
 AC_SUBST(MSGSL_INCLUDE)
+AC_SUBST(AWS_SDK_STATIC_LIBS)
 AC_SUBST(ncbi_xreader_pubseqos)
 AC_SUBST(ncbi_xreader_pubseqos2)
 AC_SUBST(UNLESS_PUBSEQOS)

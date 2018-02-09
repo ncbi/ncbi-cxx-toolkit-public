@@ -294,6 +294,9 @@
 /* Define to 1 if libavrocpp is available. */
 #undef HAVE_LIBAVRO
 
+/* Define to 1 if libaws-cpp-sdk-s3 is available. */
+#undef HAVE_LIBAWS_SDK
+
 /* Define to 1 if libbackward is available. */
 #undef HAVE_LIBBACKWARD_CPP
 

@@ -756,6 +756,11 @@ GRPC_BIN             = @GRPC_BIN@
 # Microsoft Guidelines Support Library
 MSGSL_INCLUDE = @MSGSL_INCLUDE@
 
+# Amazon Web Services (just S3 for now)
+AWS_SDK_INCLUDE     = @AWS_SDK_INCLUDE@
+AWS_SDK_LIBS        = @AWS_SDK_LIBS@
+AWS_SDK_STATIC_LIBS = @AWS_SDK_STATIC_LIBS@
+
 # Compress
 COMPRESS_LDEP = $(CMPRS_LIB)
 COMPRESS_LIBS = xcompress $(COMPRESS_LDEP)
