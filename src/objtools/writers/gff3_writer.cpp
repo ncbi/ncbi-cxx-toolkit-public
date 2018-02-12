@@ -2707,6 +2707,9 @@ bool CGff3Writer::xAssignFeatureAttributeNcrnaClass(
     return true; 
 }
 
+
+
+
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeParent(
     CGffFeatureRecord& record,
@@ -2715,6 +2718,12 @@ bool CGff3Writer::xAssignFeatureAttributeParent(
 //  ----------------------------------------------------------------------------
 {
     if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
+
+        if (mf.GetFeatSubtype() == CSeqFeatData::eSubtype_ncRNA &&
+            xAssignFeatureAttributeParentpreRNA(record, fc, mf)) {
+            return true;
+        }
+
         xAssignFeatureAttributeParentGene(record, fc, mf);
         return true;
     }
@@ -2728,8 +2737,9 @@ bool CGff3Writer::xAssignFeatureAttributeParent(
         //  we just write the data given to us we don't check it.
         //  if there is a feature that should have a parent but doesn't
         //    then so be it.
+        xAssignFeatureAttributeParentVDJsegmentCregion(record, fc, mf) ||
         xAssignFeatureAttributeParentMrna(record, fc,mf)  ||
-            xAssignFeatureAttributeParentGene(record, fc, mf);
+        xAssignFeatureAttributeParentGene(record, fc, mf);
         return true;
     case CSeqFeatData::eSubtype_mRNA:
     case CSeqFeatData::eSubtype_C_region:
@@ -3223,7 +3233,11 @@ bool CGff3Writer::xWriteFeatureRna(
     }
     if (mf.GetFeatSubtype() == CSeqFeatData::eSubtype_mRNA) {
         m_MrnaMapNew[mf] = pRna;
-    }    
+    }   
+    else
+    if (mf.GetFeatSubtype() == CSeqFeatData::eSubtype_preRNA) {
+        m_PrernaMapNew[mf] = pRna;
+    } 
 
     const CSeq_loc& PackedInt = pRna->Location();
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
@@ -3268,6 +3282,19 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
         return false;
     }
 
+    // if mf is VDJ segment or C_region
+    switch(mf.GetFeatSubtype()) {
+    default:
+        break;
+    case CSeqFeatData::eSubtype_C_region:
+    case CSeqFeatData::eSubtype_V_segment:
+    case CSeqFeatData::eSubtype_D_segment:
+    case CSeqFeatData::eSubtype_J_segment:
+        {
+            m_VDJsegmentCregionMapNew[mf] = pSegment;
+        }
+    }
+    
     const CSeq_loc& PackedInt = pSegment->Location();
 
     if (PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
@@ -3408,6 +3435,91 @@ bool CGff3Writer::xAssignFeatureAttributeParentMrna(
     record.SetParent(parentId.front());
     return true;
 }
+
+//  ============================================================================
+bool CGff3Writer::xAssignFeatureAttributeParentpreRNA(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf)
+//  ============================================================================
+{
+    CMappedFeat parent = feature::GetBestParentForFeat(
+                mf, CSeqFeatData::eSubtype_preRNA, &fc.FeatTree());
+
+    if (!parent) {
+        return false;
+    }
+
+    TMrnaMapNew::iterator it = m_PrernaMapNew.find(parent);
+    if (it == m_PrernaMapNew.end()) {
+        return false;
+    }
+    vector<string> parentId;
+    if (!it->second->GetAttributes("ID", parentId)) {
+        return false;
+    }
+    record.SetParent(parentId.front());
+    return true;
+}
+
+
+//  ============================================================================
+bool CGff3Writer::xAssignFeatureAttributeParentVDJsegmentCregion(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf)
+//  ============================================================================
+{
+
+    static array<CSeqFeatData::ESubtype, 4> parent_types =
+    { CSeqFeatData::eSubtype_C_region,
+      CSeqFeatData::eSubtype_D_segment,
+      CSeqFeatData::eSubtype_J_segment,
+      CSeqFeatData::eSubtype_V_segment 
+    };
+
+
+    for (const auto& parent_type : parent_types) {
+        auto parent = feature::GetBestParentForFeat(
+            mf, parent_type, &fc.FeatTree());
+        if (parent) {
+            auto it = m_VDJsegmentCregionMapNew.find(parent);
+            if (it != m_VDJsegmentCregionMapNew.end()) {
+                vector<string> parentId;
+                if (!it->second->GetAttributes("ID", parentId)) {
+                    return false;
+                }
+                record.SetParent(parentId.front());
+                return true; 
+            }
+        }
+    }
+
+    return false;
+
+/*
+    switch (mf.GetFeatSubtype()) {
+        default:
+            mrna = feature::GetBestParentForFeat(
+                mf, CSeqFeatData::eSubtype_mRNA, &fc.FeatTree());
+            break;
+        case CSeqFeatData::eSubtype_cdregion:
+            mrna = feature::GetBestMrnaForCds(mf, &fc.FeatTree());
+            break;
+    }
+    TMrnaMapNew::iterator it = m_MrnaMapNew.find(mrna);
+    if (it == m_MrnaMapNew.end()) {
+        return false;
+    }
+    vector<string> parentId;
+    if (!it->second->GetAttributes("ID", parentId)) {
+        return false;
+    }
+    record.SetParent(parentId.front());
+    return true;
+*/
+}
+
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteRecord( 

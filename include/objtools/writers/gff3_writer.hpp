@@ -123,6 +123,16 @@ protected:
         CGffFeatureContext&,
         const CMappedFeat& );
 
+    virtual bool xAssignFeatureAttributeParentpreRNA(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
+    virtual bool xAssignFeatureAttributeParentVDJsegmentCregion(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
     virtual bool xWriteSequenceHeader(
         CBioseq_Handle );
     virtual bool xWriteSequenceHeader(
@@ -453,12 +463,20 @@ protected:
     unsigned int m_uRecordId;
     string m_sDefaultMethod;
 
+    using TFeatureMap = map<CMappedFeat, CRef<CGffFeatureRecord>>;
 
-    typedef map< CMappedFeat, CRef<CGffFeatureRecord> > TGeneMapNew;
+    //typedef map< CMappedFeat, CRef<CGffFeatureRecord> > TGeneMapNew;
+    using TGeneMapNew  = TFeatureMap;
     TGeneMapNew m_GeneMapNew;
 
-    typedef map< CMappedFeat, CRef<CGffFeatureRecord> > TMrnaMapNew;
+  //  typedef map< CMappedFeat, CRef<CGffFeatureRecord> > TMrnaMapNew;
+    using TMrnaMapNew = TFeatureMap;
     TMrnaMapNew m_MrnaMapNew;
+
+    TFeatureMap m_PrernaMapNew;
+
+    TFeatureMap m_VDJsegmentCregionMapNew;
+
 
     bool m_SortAlignments;
     unsigned int m_uPendingGeneId;
