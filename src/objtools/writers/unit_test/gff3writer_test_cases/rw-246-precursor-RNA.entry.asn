@@ -1,0 +1,741 @@
+Seq-entry ::= seq {
+  id {
+    general {
+      db "ASM:GCF_000313055.1",
+      tag str "contig_42338"
+    },
+    other {
+      accession "NW_007566280",
+      version 1
+    },
+    gpipe {
+      accession "GPS_004461950",
+      version 1
+    },
+    gi 655180629
+  },
+  descr {
+    title "Cucumis melo cultivar DHL92 unplaced genomic scaffold, ASM31304v1
+ contig_42338",
+    source {
+      genome genomic,
+      org {
+        taxname "Cucumis melo",
+        common "muskmelon",
+        db {
+          {
+            db "taxon",
+            tag id 3656
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Cucumis",
+            species "melo"
+          },
+          mod {
+            {
+              subtype cultivar,
+              subname "DHL92"
+            }
+          },
+          lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
+ Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons; Gunneridae;
+ Pentapetalae; rosids; fabids; Cucurbitales; Cucurbitaceae; Benincaseae;
+ Cucumis",
+          gcode 1,
+          mgcode 1,
+          div "PLN"
+        }
+      },
+      subtype {
+        {
+          subtype chromosome,
+          name "Unknown"
+        }
+      }
+    },
+    molinfo {
+      biomol genomic,
+      tech wgs
+    },
+    pub {
+      pub {
+        pmid 22753475,
+        article {
+          title {
+            name "The genome of melon (Cucumis melo L.)."
+          },
+          authors {
+            names std {
+              {
+                name name {
+                  last "Garcia-Mas",
+                  initials "J."
+                },
+                affil str "Institut de Recerca i Tecnologia Agroalimentaries,
+ Centre for Research in Agricultural Genomics Consejo Superior de
+ Investigaciones Cientificas-Institut de Recerca i Tecnologia
+ Agroalimentaries-Universitat Autonoma de Barcelona-Universitat de Barcelona,
+ 08193 Barcelona, Spain. jordi.garcia@irta.cat"
+              },
+              {
+                name name {
+                  last "Benjak",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Sanseverino",
+                  initials "W."
+                }
+              },
+              {
+                name name {
+                  last "Bourgeois",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Mir",
+                  initials "G."
+                }
+              },
+              {
+                name name {
+                  last "Gonzalez",
+                  initials "V.M."
+                }
+              },
+              {
+                name name {
+                  last "Henaff",
+                  initials "E."
+                }
+              },
+              {
+                name name {
+                  last "Camara",
+                  initials "F."
+                }
+              },
+              {
+                name name {
+                  last "Cozzuto",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Lowy",
+                  initials "E."
+                }
+              },
+              {
+                name name {
+                  last "Alioto",
+                  initials "T."
+                }
+              },
+              {
+                name name {
+                  last "Capella-Gutierrez",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Blanca",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Canizares",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Ziarsolo",
+                  initials "P."
+                }
+              },
+              {
+                name name {
+                  last "Gonzalez-Ibeas",
+                  initials "D."
+                }
+              },
+              {
+                name name {
+                  last "Rodriguez-Moreno",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Droege",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Du",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Alvarez-Tejado",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Lorente-Galdos",
+                  initials "B."
+                }
+              },
+              {
+                name name {
+                  last "Mele",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Yang",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Weng",
+                  initials "Y."
+                }
+              },
+              {
+                name name {
+                  last "Navarro",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Marques-Bonet",
+                  initials "T."
+                }
+              },
+              {
+                name name {
+                  last "Aranda",
+                  initials "M.A."
+                }
+              },
+              {
+                name name {
+                  last "Nuez",
+                  initials "F."
+                }
+              },
+              {
+                name name {
+                  last "Pico",
+                  initials "B."
+                }
+              },
+              {
+                name name {
+                  last "Gabaldon",
+                  initials "T."
+                }
+              },
+              {
+                name name {
+                  last "Roma",
+                  initials "G."
+                }
+              },
+              {
+                name name {
+                  last "Guigo",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Casacuberta",
+                  initials "J.M."
+                }
+              },
+              {
+                name name {
+                  last "Arus",
+                  initials "P."
+                }
+              },
+              {
+                name name {
+                  last "Puigdomenech",
+                  initials "P."
+                }
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "Proc. Natl. Acad. Sci. U.S.A.",
+              ml-jta "Proc Natl Acad Sci U S A",
+              issn "1091-6490"
+            },
+            imp {
+              date std {
+                year 2012,
+                month 7,
+                day 17
+              },
+              volume "109",
+              issue "29",
+              pages "11872-11877"
+            }
+          },
+          ids {
+            pii "1205415109",
+            doi "10.1073/pnas.1205415109",
+            pubmed 22753475,
+            other {
+              db "pmc",
+              tag str "PMC3406823"
+            },
+            other {
+              db "ELocationID doi",
+              tag str "10.1073/pnas.1205415109"
+            }
+          }
+        }
+      }
+    },
+    comment "Assembly name: ASM31304v1~The genomic sequence for this RefSeq
+ record is from the whole-genome assembly released by the Genetica Molecular,
+ Centre de Recerca en Agrigenomica (CRAG) on 2012/10/05. The original
+ whole-genome shotgun project has the accession CAJI00000000.1.",
+    user {
+      type str "DBLink",
+      data {
+        {
+          label str "BioProject",
+          num 1,
+          data strs {
+            "PRJNA246165"
+          }
+        },
+        {
+          label str "Assembly",
+          num 1,
+          data strs {
+            "GCF_000313045.1"
+          }
+        },
+        {
+          label str "BioSample",
+          num 1,
+          data strs {
+            "SAMEA2272451"
+          }
+        }
+      }
+    },
+    user {
+      type str "FeatureFetchPolicy",
+      data {
+        {
+          label str "Policy",
+          data str "OnlyNearFeatures"
+        }
+      }
+    },
+    user {
+      type str "GenomeBuild",
+      data {
+        {
+          label str "Assembly",
+          data str "ASM31304v1"
+        },
+        {
+          label str "NcbiAnnotation",
+          data str "1"
+        },
+        {
+          label str "NcbiVersion",
+          data str "2"
+        }
+      }
+    },
+    user {
+      type str "RefGeneTracking",
+      data {
+        {
+          label str "Status",
+          data str "Pipeline"
+        },
+        {
+          label str "IdenticalTo",
+          data fields {
+            {
+              label id 0,
+              data fields {
+                {
+                  label str "accession",
+                  data str "CAJI01042338.1"
+                },
+                {
+                  label str "gi",
+                  data int 393333301
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    user {
+      type str "StructuredComment",
+      data {
+        {
+          label str "StructuredCommentPrefix",
+          data str "##Genome-Annotation-Data-START##"
+        },
+        {
+          label str "Annotation Provider",
+          data str "NCBI"
+        },
+        {
+          label str "Annotation Status",
+          data str "Full annotation"
+        },
+        {
+          label str "Annotation Version",
+          data str "Cucumis melo Annotation Release 101"
+        },
+        {
+          label str "Annotation Pipeline",
+          data str "NCBI eukaryotic genome annotation pipeline"
+        },
+        {
+          label str "Annotation Software Version",
+          data str "7.0"
+        },
+        {
+          label str "Annotation Method",
+          data str "Best-placed RefSeq; Gnomon"
+        },
+        {
+          label str "Features Annotated",
+          data str "Gene; mRNA; CDS; ncRNA"
+        },
+        {
+          label str "StructuredCommentSuffix",
+          data str "##Genome-Annotation-Data-END##"
+        },
+        {
+          label str "Annotation Release Number",
+          data int 101
+        },
+        {
+          label str "Gpipe BuildRun ID",
+          data int 3685837
+        }
+      }
+    },
+    create-date std {
+      year 2014,
+      month 6,
+      day 25
+    },
+    update-date std {
+      year 2016,
+      month 6,
+      day 7
+    }
+  },
+  inst {
+    repr delta,
+    mol dna,
+    length 419,
+    strand ds,
+    ext delta {
+      loc int {
+        from 0,
+        to 418,
+        strand plus,
+        id gi 393333301
+      }
+    }
+  },
+  annot {
+    {
+      desc {
+        create-date std {
+          year 2016,
+          month 6,
+          day 7
+        },
+        user {
+          type str "AnnotSource",
+          data {
+            {
+              label str "Source",
+              data str "AnnotBuilder"
+            },
+            {
+              label str "Annot",
+              data str "Features"
+            }
+          }
+        }
+      },
+      data ftable {
+        {
+          id local id 1,
+          data gene {
+            locus "MIR156I",
+            desc "microRNA MIR156i",
+            syn {
+              "cme-MIR156i"
+            }
+          },
+          location int {
+            from 242,
+            to 414,
+            strand minus,
+            id gi 655180629
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 91103
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "BestRefSeq"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NW_007566280"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 655180629
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        242,
+                        414
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                label str "GeneWeight",
+                data int 423
+              }
+            }
+          },
+          xref {
+            {
+              id local id 2,
+              data rna {
+                type premsg
+              }
+            },
+            {
+              id local id 3,
+              data rna {
+                type ncRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 103318442
+            },
+            {
+              db "miRBase",
+              tag str "MI0023209"
+            }
+          }
+        },
+        {
+          id local id 2,
+          data rna {
+            type premsg,
+            ext gen {
+              product "microRNA MIR156i"
+            }
+          },
+          product whole gi 649572408,
+          location int {
+            from 242,
+            to 414,
+            strand minus,
+            id gi 655180629
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 91104
+              },
+              {
+                label str "ProductId",
+                data str "gi|649572408"
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "BestRefSeq"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NW_007566280"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 655180629
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        242,
+                        414
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 1,
+              data gene {
+                locus "MIR156I",
+                desc "microRNA MIR156i"
+              }
+            },
+            {
+              id local id 3,
+              data rna {
+                type ncRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 103318442
+            }
+          }
+        },
+        {
+          id local id 3,
+          data rna {
+            type ncRNA,
+            ext gen {
+              class "miRNA",
+              product "cme-miR156i"
+            }
+          },
+          location int {
+            from 338,
+            to 357,
+            strand minus,
+            id gi 655180629
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 91105
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "BestRefSeq"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NW_007566280"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 655180629
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        338,
+                        357
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 1,
+              data gene {
+                locus "MIR156I",
+                desc "microRNA MIR156i"
+              }
+            },
+            {
+              id local id 2,
+              data rna {
+                type premsg
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 103318442
+            },
+            {
+              db "miRBase",
+              tag str "MIMAT0026105"
+            }
+          }
+        }
+      }
+    }
+  }
+}
