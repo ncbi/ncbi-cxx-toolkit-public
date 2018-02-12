@@ -330,6 +330,7 @@ private:
     CTempString m_TargetedLocus;
 
     /// comment fields
+    CTempString m_Comment;
     bool m_IsPseudogene;
 
     /// map fields

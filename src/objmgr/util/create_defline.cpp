@@ -524,6 +524,7 @@ void CDeflineGenerator::x_SetFlagsIdx (
     m_Substrain = bsx->GetSubstrain();
 
     m_IsUnverified = bsx->IsUnverified();
+    m_Comment.clear();
     m_IsPseudogene = bsx->IsPseudogene();
     m_TargetedLocus = bsx->GetTargetedLocus();
 
@@ -632,6 +633,7 @@ void CDeflineGenerator::x_SetFlags (
     m_UnverifiedPrefix.clear();
     m_TargetedLocus.clear();
 
+    m_Comment.clear();
     m_IsPseudogene = false;
 
     m_rEnzyme.clear();
@@ -880,8 +882,8 @@ void CDeflineGenerator::x_SetFlags (
                 continue; // already covered
             }
 
-            const string& comment = desc_it->GetComment();
-            if (NStr::Find (comment, "[CAUTION] Could be the product of a pseudogene") != string::npos) {
+            m_Comment = desc_it->GetComment();
+            if (NStr::Find (m_Comment, "[CAUTION] Could be the product of a pseudogene") != string::npos) {
                 m_IsPseudogene = true;
             }
             break;
@@ -1603,7 +1605,11 @@ void CDeflineGenerator::x_SetTitleFromPDB (void)
     if (isprint ((unsigned char) m_PDBChain)) {
         string chain(1, (char) m_PDBChain);
         CTextJoiner<4, CTempString> joiner;
-        joiner.Add("Chain ").Add(chain).Add(", ").Add(m_PDBCompound);
+        if (m_Comment.empty()) {
+            joiner.Add("Chain ").Add(chain).Add(", ").Add(m_PDBCompound);
+        } else {
+            joiner.Add("Chain ").Add(chain).Add(", ").Add(m_Comment);
+        }
         joiner.Join(&m_MainTitle);
     } else {
         m_MainTitle = m_PDBCompound;
