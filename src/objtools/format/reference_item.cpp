@@ -707,7 +707,7 @@ void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
     }
 
     // gather Genbank specific fields (formats: Genbank, GBSeq, DDBJ)
-    if ( ctx.IsGenbankFormat() ) {
+    if ( ctx.IsGenbankFormat() || ctx.Config().IsFormatGBSeq() || ctx.Config().IsFormatINSDSeq() ) {
         x_GatherRemark(ctx);
     }
 
@@ -1521,13 +1521,14 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
         }
     }
 
-    // for GBSeq format collect remarks only from comments.
+    /*
     if ( ctx.Config().IsFormatGBSeq() || ctx.Config().IsFormatINSDSeq() ) {
         if ( !l.empty() ) {
             m_Remark = l.front();
         }
         return;
     }
+    */
 
     // GIBBSQ
     CSeq_id::TGibbsq gibbsq = 0;
@@ -1671,7 +1672,11 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
     }
 
     if (!l.empty()) {
-        m_Remark = NStr::Join(l, "\n");
+        if (ctx.Config().IsFormatGBSeq() || ctx.Config().IsFormatINSDSeq()) {
+            m_Remark = NStr::Join(l, "; ");
+        } else {
+            m_Remark = NStr::Join(l, "\n");
+        }
     }
 }
 
