@@ -167,7 +167,7 @@ string CValidErrorFormat::FormatForSubmitterReport(const CValidErrItem& error, C
         case eErr_SEQ_FEAT_RareSpliceConsensusDonor:
         case eErr_SEQ_FEAT_NotSpliceConsensusAcceptorTerminalIntron:
         case eErr_SEQ_FEAT_NotSpliceConsensusDonorTerminalIntron:
-            rval = x_FormatConsensusSpliceForSubmitterReport(error);
+            rval = x_FormatConsensusSpliceForSubmitterReport(error, scope);
             break;
         case eErr_SEQ_FEAT_BadEcNumberFormat:
         case eErr_SEQ_FEAT_BadEcNumberValue:
@@ -188,7 +188,7 @@ string CValidErrorFormat::FormatForSubmitterReport(const CValidErrItem& error, C
             rval = x_FormatLatLonCountryForSubmitterReport(error);
             break;
         default:
-            rval = x_FormatGenericForSubmitterReport(error);
+            rval = x_FormatGenericForSubmitterReport(error, scope);
             break;
     }
 
@@ -196,7 +196,7 @@ string CValidErrorFormat::FormatForSubmitterReport(const CValidErrItem& error, C
 }
 
 
-string CValidErrorFormat::x_FormatConsensusSpliceForSubmitterReport(const CValidErrItem& error) const
+string CValidErrorFormat::x_FormatConsensusSpliceForSubmitterReport(const CValidErrItem& error, CScope& scope) const
 {
     string rval = "";
     if (!error.IsSetMsg() || NStr::IsBlank(error.GetMsg())) {
@@ -277,7 +277,7 @@ void RemoveSuffix(string& str, const string& suffix)
 }
 
 
-string CValidErrorFormat::x_FormatGenericForSubmitterReport(const CValidErrItem& error) const
+string CValidErrorFormat::x_FormatGenericForSubmitterReport(const CValidErrItem& error, CScope& scope) const
 {
     string obj_desc = error.GetObjDesc();
     if (NStr::StartsWith(obj_desc, "FEATURE") && error.IsSetObj_content()) {
@@ -289,8 +289,12 @@ string CValidErrorFormat::x_FormatGenericForSubmitterReport(const CValidErrItem&
         }
         if (error.IsSetLocus_tag()) {
             obj_desc += "\t" + error.GetLocus_tag();
+        } else if (error.IsSetObject()) {
+            const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(&(error.GetObject()));
+            if (sf) {
+                obj_desc += "\t" + x_GetLocusTag(*sf, scope);
+            }
         }
-
     } else {
         RemovePrefix(obj_desc, "DESCRIPTOR: ");
         RemovePrefix(obj_desc, "BioSrc: ");
@@ -1226,6 +1230,47 @@ void CValidErrorFormat::SetSuppressionRules(const CBioseq& seq, CValidError& err
             }
         }
     }
+}
+
+
+void CValidErrorFormat::AddLocusTags(CValidError& errors, CScope& scope)
+{
+    for (auto it : errors.SetErrs()) {
+        if (it->IsSetLocus_tag()) {
+            continue;
+        }
+        if (it->IsSetObjectType() &&
+            it->GetObjectType() == CValidErrItem::eObjectType_seqfeat &&
+            it->IsSetObject()) {
+            const CSeq_feat* sf = dynamic_cast<const CSeq_feat *>(&(it->GetObject()));
+            if (sf && sf->IsSetData()) {
+                it->SetLocus_tag(x_GetLocusTag(*sf, scope));
+            }
+        }
+    }
+}
+
+
+string CValidErrorFormat::x_GetLocusTag(const CSeq_feat& sf, CScope& scope)
+{
+    string rval = kEmptyStr;
+
+    if (sf.GetData().IsGene()) {
+        if (sf.GetData().GetGene().IsSetLocus_tag()) {
+            rval = sf.GetData().GetGene().GetLocus_tag();
+        }
+    } else {
+        const CGene_ref* g = sf.GetGeneXref();
+        if (g && g->IsSetLocus_tag()) {
+            rval = g->GetLocus_tag();
+        } else {
+            CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(sf, scope);
+            if (gene && gene->GetData().GetGene().IsSetLocus_tag()) {
+                rval = gene->GetData().GetGene().GetLocus_tag();
+            }
+        }
+    }
+    return rval;
 }
 
 

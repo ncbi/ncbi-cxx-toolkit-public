@@ -275,10 +275,10 @@ void CheckErrors(const CValidError& eval,
 }
 
 
-void CheckStrings(vector<string>& seen, vector<string>& expected)
+void CheckStrings(const vector<string>& seen, const vector<string>& expected)
 {
-    vector<string>::iterator it1 = seen.begin();
-    vector<string>::iterator it2 = expected.begin();
+    auto it1 = seen.begin();
+    auto it2 = expected.begin();
     bool any = false;
     while (it1 != seen.end() && it2 != expected.end()) {
         BOOST_CHECK_EQUAL(*it1, *it2);
@@ -301,13 +301,13 @@ void CheckStrings(vector<string>& seen, vector<string>& expected)
 
     if (any) {
         printf("Seen:\n");
-        vector<string>::iterator it1 = seen.begin();
+        auto it1 = seen.begin();
         while (it1 != seen.end()) {
             printf("%s\n", (*it1).c_str());
             it1++;
         }
         printf("Expected:\n");
-        vector<string>::iterator it2 = expected.begin();
+        auto it2 = expected.begin();
         while (it2 != expected.end()) {
             printf("%s\n", (*it2).c_str());
             it2++;
@@ -512,6 +512,9 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
 
     CRef<CSeq_feat> other_intron = unit_test_util::AddMiscFeature(nuc);
     other_intron->SetData().SetImp().SetKey("intron");
+    CRef<CSeq_feat> gene = MakeGeneForFeature(cds);
+    gene->SetData().SetGene().SetLocus_tag("fake_locustag");
+    AddFeat(gene, nuc);
 
     // create EC number problems
     CRef<CSeq_feat> prot = entry->GetSet().GetSeq_set().back()->GetAnnot().front()->GetData().GetFtable().front();
@@ -535,7 +538,7 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
 
     STANDARD_SETUP
 
-        eval = validator.Validate(seh, options);
+    eval = validator.Validate(seh, options);
 
     CValidErrorFormat format(*objmgr);
 
@@ -11942,7 +11945,17 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_InternalStop)
     
     CValidErrorFormat format(*objmgr);
     string rval = format.FormatForSubmitterReport(*eval, scope, eErr_SEQ_FEAT_InternalStop);
-    BOOST_CHECK_EQUAL(rval, "InternalStop\nlcl|nuc:CDS\t fake protein name\tlcl|nuc:1-27\n");
+    BOOST_CHECK_EQUAL(rval, "InternalStop\nlcl|nuc:CDS\t fake protein name\tlcl|nuc:1-27\t\n");
+
+    // try again with locus tag for report
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_feat> gene = MakeGeneForFeature(cds);
+    gene->SetData().SetGene().SetLocus_tag("a_locus_tag");
+    AddFeat(gene, nuc_seq);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    rval = format.FormatForSubmitterReport(*eval, scope, eErr_SEQ_FEAT_InternalStop);
+    BOOST_CHECK_EQUAL(rval, "InternalStop\nlcl|nuc:CDS\t fake protein name\tlcl|nuc:1-27\ta_locus_tag\n");
 
     CLEAR_ERRORS
 }
@@ -12941,10 +12954,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranslExceptPhase)
     CValidErrorFormat format(*objmgr);
     vector<string> expected;
     expected.push_back("Range");
-    expected.push_back("lcl|nuc:CDS\t fake protein name\tlcl|nuc:1-27");
+    expected.push_back("lcl|nuc:CDS\t fake protein name\tlcl|nuc:1-27\txyz");
     expected.push_back("");
     expected.push_back("TranslExceptPhase");
-    expected.push_back("lcl|nuc:CDS\t fake protein name\tlcl|nuc:1-27");
+    expected.push_back("lcl|nuc:CDS\t fake protein name\tlcl|nuc:1-27\txyz");
     expected.push_back("");
     vector<string> seen;
     vector<string> cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
@@ -12960,8 +12973,16 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranslExceptPhase)
 
 
 	// only see locus tags when requested
+    for (auto it : eval->GetErrs()) {
+        BOOST_CHECK_EQUAL(it->IsSetLocus_tag(), false);
+    }
+
 	eval = validator.Validate(seh, options | CValidator::eVal_collect_locus_tags);
 	CheckErrors(*eval, expected_errors);
+    for (auto it : eval->GetErrs()) {
+        BOOST_CHECK_EQUAL(it->IsSetLocus_tag(), true);
+        BOOST_CHECK_EQUAL(it->GetLocus_tag(), "xyz");
+    }
 
 	expected.clear();
 	expected.push_back("Range");

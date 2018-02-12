@@ -114,18 +114,22 @@ public:
     static void SetSuppressionRules(const CBioseq& seq, CValidError& errors);
     static void AddSuppression(CUser_object& user, unsigned int error_code);
 
+    static void AddLocusTags(CValidError& errors, CScope& scope);
+
 private:
     // Prohibit copy constructor & assignment operator
     CValidErrorFormat(const CValidErrorFormat&);
     CValidErrorFormat& operator= (const CValidErrorFormat&);
 
 
-    string x_FormatConsensusSpliceForSubmitterReport(const CValidErrItem& error) const;
+    string x_FormatConsensusSpliceForSubmitterReport(const CValidErrItem& error, CScope& scope) const;
     string x_FormatECNumberForSubmitterReport(const CValidErrItem& error, CScope& scope) const;
     string x_FormatBadSpecificHostForSubmitterReport(const CValidErrItem& error) const;
     string x_FormatBadInstCodeForSubmitterReport(const CValidErrItem& error) const;
     string x_FormatLatLonCountryForSubmitterReport(const CValidErrItem& error) const;
-    string x_FormatGenericForSubmitterReport(const CValidErrItem& error) const;
+    string x_FormatGenericForSubmitterReport(const CValidErrItem& error, CScope& scope) const;
+
+    static string x_GetLocusTag(const CSeq_feat& sf, CScope& scope);
 
     CRef<CObjectManager>    m_ObjMgr;
 
