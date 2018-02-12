@@ -2108,7 +2108,7 @@ void CFeatureItem::x_AddQualTranslationTable(
         return;
     }
     int gcode = cdr.GetCode().GetId();
-    if ( gcode == 1 || gcode == 255 ) {
+    if ( gcode == 255 ) {
         return;
     }
     if ( ctx.Config().IsFormatGBSeq() || ctx.Config().IsFormatINSDSeq() || gcode > 1 ) {
