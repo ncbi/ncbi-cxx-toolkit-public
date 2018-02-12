@@ -189,6 +189,7 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
         }
 
         {{
+            CBioIdResolutionQueue cq;
             vector<unique_ptr<thread, function<void(thread*)>>> threads;
             threads.resize(NumThreads);
             size_t start_index = 0, next_index, i = 0;
@@ -198,12 +199,11 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
                 i++;
                 next_index = ((uint64_t)line_count * i) / NumThreads;
                 it = unique_ptr<thread, function<void(thread*)>>(new thread(
-                    [start_index, next_index, line_count, &src_data_ncbi, &rslt_data_ncbi, &rslt_data_ncbi_mux, this]() {
+                    [&cq, start_index, next_index, line_count, &src_data_ncbi, &rslt_data_ncbi, &rslt_data_ncbi_mux, this]() {
                         size_t max = next_index > line_count ? line_count : next_index;
 
                         {
                             {
-                                CBioIdResolutionQueue cq;
                                 vector<CBioId> srcvec;
                                 vector<CBlobId> l_rslt_data_ncbi;
 
