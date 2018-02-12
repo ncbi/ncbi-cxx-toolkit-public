@@ -1089,8 +1089,234 @@ int CThreadedApp::Run(void)
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
 
+#if 1
 int main(int argc, const char* argv[]) 
 {
     CThread::InitializeMainThreadId();
     return CThreadedApp().AppMain(argc, argv);
 }
+#else
+
+// the following is a simple speed test
+
+const int max_count = 100000;
+//const int max_count = 1;
+
+#if 1 //-------------------------------------
+
+typedef double PERF_COUNTER;
+#define START_PERF_COUNTER(b)    b = sw.Restart()
+#define STOP_PERF_COUNTER(e)  e = sw.Elapsed()
+
+void PrintTime(PERF_COUNTER t, const string& str)
+{
+    cout << str << t * 1000000 / max_count << " usec" << endl;
+}
+
+#else //-------------------------------------
+
+#ifdef NCBI_COMPILER_MSVC
+inline Uint8 QUERY_PERF_COUNTER(void) {
+    LARGE_INTEGER p;
+    return QueryPerformanceCounter(&p) ? p.QuadPart : 0;
+}
+#elif defined(NCBI_OS_DARWIN)
+#include <mach/mach_time.h>
+inline Uint8 QUERY_PERF_COUNTER(void) {
+    return mach_absolute_time();
+}
+#else
+inline Uint8 QUERY_PERF_COUNTER(void) {
+    timespec p;
+    clock_gettime(CLOCK_REALTIME, &p);
+    return p.tv_sec * 1000 * 1000 + p.tv_nsec / 1000;
+}
+#endif
+
+typedef Uint8 PERF_COUNTER;
+#define START_PERF_COUNTER(b)    b = QUERY_PERF_COUNTER()
+#define STOP_PERF_COUNTER(e)  e = (QUERY_PERF_COUNTER() - b)
+
+void PrintTime(PERF_COUNTER t, const string& str)
+{
+    cout << str << t << endl;
+}
+
+#endif //-------------------------------------
+
+
+int main(int argc, const char* argv[])
+{
+    {
+        CRWLock rw;
+        bool locked = rw.TryReadLock(CTimeout(0, 3000));
+        if (locked) {
+            rw.Unlock();
+        }
+//        return 0;
+    }
+
+    CStopWatch sw(CStopWatch::eStart);
+    PERF_COUNTER t, b;
+
+    cout << "NCBI C++ Toolkit:" << endl;
+    CFastMutex fm;
+    START_PERF_COUNTER(b);
+    for (int i = 0; i < max_count; ++i) {
+        fm.Lock(); fm.Unlock();
+    }
+    STOP_PERF_COUNTER(t);
+    PrintTime(t, "CFastMutex: ");
+
+    CMutex m;
+    START_PERF_COUNTER(b);
+    for (int i = 0; i < max_count; ++i) {
+        m.Lock(); m.Unlock();
+    }
+    STOP_PERF_COUNTER(t);
+    PrintTime(t, "CMutex: ");
+
+    CAtomicCounter ac; ac.Set(0);
+    START_PERF_COUNTER(b);
+    for (int i = 0; i < max_count; ++i) {
+        ac.Add(1); ac.Add(-1);
+    }
+    STOP_PERF_COUNTER(t);
+    PrintTime(t, "CAtomicCounter: ");
+
+    CSemaphore sema(0, 1);
+    START_PERF_COUNTER(b);
+    for (int i = 0; i < max_count; ++i) {
+        sema.Post(); sema.Wait();
+    }
+    STOP_PERF_COUNTER(t);
+    PrintTime(t, "CSemaphore: ");
+
+    CRWLock rw;
+    START_PERF_COUNTER(b);
+    for (int i = 0; i < max_count; ++i) {
+        rw.ReadLock(); rw.Unlock();
+    }
+    STOP_PERF_COUNTER(t);
+    PrintTime(t, "CRWLock::ReadLock(): ");
+
+    START_PERF_COUNTER(b);
+    for (int i = 0; i < max_count; ++i) {
+        rw.WriteLock(); rw.Unlock();
+    }
+    STOP_PERF_COUNTER(t);
+    PrintTime(t, "CRWLock::WriteLock(): ");
+
+    CRWLock rwf(CRWLock::fFavorWriters);
+    START_PERF_COUNTER(b);
+    for (int i = 0; i < max_count; ++i) {
+        rwf.ReadLock(); rwf.Unlock();
+    }
+    STOP_PERF_COUNTER(t);
+    PrintTime(t, "CRWLock(fFavorWriters)::ReadLock(): ");
+
+    START_PERF_COUNTER(b);
+    for (int i = 0; i < max_count; ++i) {
+        rwf.WriteLock(); rwf.Unlock();
+    }
+    STOP_PERF_COUNTER(t);
+    PrintTime(t, "CRWLock(fFavorWriters)::WriteLock(): ");
+
+    CFastRWLock frw;
+    START_PERF_COUNTER(b);
+    for (int i = 0; i < max_count; ++i) {
+        frw.ReadLock(); frw.ReadUnlock();
+    }
+    STOP_PERF_COUNTER(t);
+    PrintTime(t, "CFastRWLock::ReadLock(): ");
+
+    START_PERF_COUNTER(b);
+    for (int i = 0; i < max_count; ++i) {
+        frw.WriteLock(); frw.WriteUnlock();
+    }
+    STOP_PERF_COUNTER(t);
+    PrintTime(t, "CFastRWLock::WriteLock(): ");
+
+#ifdef NCBI_COMPILER_MSVC
+    cout << endl << "System objects:" << endl;
+    CRITICAL_SECTION cs;
+    InitializeCriticalSection(&cs);
+    START_PERF_COUNTER(b);
+    for (int i = 0; i < max_count; ++i) {
+        EnterCriticalSection(&cs); LeaveCriticalSection(&cs);
+    }
+    STOP_PERF_COUNTER(t);
+    DeleteCriticalSection(&cs);
+    PrintTime(t, "CRITICAL_SECTION: ");
+
+    HANDLE mh = CreateMutex(NULL, FALSE, NULL);
+    START_PERF_COUNTER(b);
+    for (int i = 0; i < max_count; ++i) {
+        WaitForSingleObject(mh, INFINITE); ReleaseMutex(mh);
+    }
+    STOP_PERF_COUNTER(t);
+    CloseHandle(mh);
+    PrintTime(t, "Mutex: ");
+
+    SRWLOCK swr;
+    InitializeSRWLock(&swr);
+    START_PERF_COUNTER(b);
+    for (int i = 0; i < max_count; ++i) {
+        AcquireSRWLockShared(&swr); ReleaseSRWLockShared(&swr);
+    }
+    STOP_PERF_COUNTER(t);
+    PrintTime(t, "SRWLOCK Shared: ");
+
+    START_PERF_COUNTER(b);
+    for (int i = 0; i < max_count; ++i) {
+        AcquireSRWLockExclusive(&swr); ReleaseSRWLockExclusive(&swr);
+    }
+    STOP_PERF_COUNTER(t);
+    PrintTime(t, "SRWLOCK Exclusive: ");
+
+    cout << "WaitForMultipleObjects():" << endl;
+    for (int mmh_count = 2; mmh_count < 5; ++mmh_count) {
+        HANDLE* mmh = new HANDLE[mmh_count];
+        for (int mi = 0; mi < mmh_count; ++mi) {
+            mmh[mi] = CreateMutex(NULL, FALSE, NULL);
+        }
+        START_PERF_COUNTER(b);
+        for (int i = 0; i < max_count; ++i) {
+            WaitForMultipleObjects(mmh_count, mmh, TRUE, INFINITE);
+            for (int mi = 0; mi < mmh_count; ++mi) {
+                ReleaseMutex(mmh[mi]);
+            }
+        }
+        STOP_PERF_COUNTER(t);
+        for (int mi = 0; mi < mmh_count; ++mi) {
+            CloseHandle(mmh[mi]);
+        }
+        delete[] mmh;
+        PrintTime(t, "Mutex x " + NStr::NumericToString(mmh_count) + ": ");
+    }
+#endif
+
+#if 0
+    cout << endl << "STL:" << endl;
+    shared_mutex shm;
+    sw.Restart();
+    int c = 0;
+    for (int i = 0; i < max_count; ++i) {
+        shared_lock<shared_mutex> lock(shm);
+        c++;
+    }
+    t = sw.Elapsed();
+    PrintTime(t, "shared_lock: ");
+
+    sw.Restart();
+    for (int i = 0; i < max_count; ++i) {
+        unique_lock<shared_mutex> lock(shm);
+        c--;
+    }
+    t = sw.Elapsed();
+    PrintTime(t, "unique_lock: ");
+#endif
+
+    return 0;
+}
+#endif
