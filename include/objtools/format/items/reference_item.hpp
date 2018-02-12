@@ -136,6 +136,7 @@ public:
 
     int               GetPMID      (void) const { return m_PMID;               }
     int               GetMUID      (void) const { return m_MUID;               }
+    const string&     GetDOI       (void) const { return m_DOI;                }
     const string&     GetPII       (void) const { return m_ELocationPII;       }
     const string&     GetOldPII    (void) const { return m_OldPII;             }
 
@@ -214,6 +215,7 @@ private:
     CConstRef<CDate>      m_Date;
     int                   m_PMID;
     int                   m_MUID;
+    string                m_DOI;
     string                m_ELocationPII;
     string                m_OldPII;
     int                   m_Serial;

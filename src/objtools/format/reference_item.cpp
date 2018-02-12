@@ -1020,6 +1020,14 @@ void CReferenceItem::x_Init(const CCit_art& art, CBioseqContext& ctx)
                     m_MUID = (*it)->GetMedline();
                 }
                 break;
+            case CArticleId::e_Doi:
+                {
+                    const string& doi = (*it)->GetDoi();
+                    if (! doi.empty()) {
+                        m_DOI = doi;
+                    }
+                }
+                break;
             case CArticleId::e_Pii:
                 {
                     if (not_in_press && is_epublish) {
@@ -1624,42 +1632,44 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
                     }
                 }
 
-                if( (*it)->GetArticle().CanGetIds() ) {
-                    const CCit_art_Base::TIds & ids = (*it)->GetArticle().GetIds();
-                    if( ids.CanGet() ) {
+                if ( ! ctx.Config().IsFormatGBSeq() && ! ctx.Config().IsFormatINSDSeq() ) {
+                    if( (*it)->GetArticle().CanGetIds() ) {
+                        const CCit_art_Base::TIds & ids = (*it)->GetArticle().GetIds();
+                        if( ids.CanGet() ) {
 
-                        // no DOIs pritned if there's a pmid or muid
-                        bool hasPmidOrMuid = false;
-                        ITERATE( CArticleIdSet_Base::Tdata, it, ids.Get() ) {
-                            if( (*it)->IsPubmed() && (*it)->GetPubmed().Get() != 0 ) {
-                                hasPmidOrMuid = true;
-                                break;
-                            } else if(  (*it)->IsMedline() && (*it)->GetMedline().Get() != 0 ) {
-                                hasPmidOrMuid = true;
-                                break;
-                            }
-                        }
-
-                        if( ! hasPmidOrMuid ) {
+                            // no DOIs pritned if there's a pmid or muid
+                            bool hasPmidOrMuid = false;
                             ITERATE( CArticleIdSet_Base::Tdata, it, ids.Get() ) {
-                                if( (*it)->Which() == CArticleId_Base::e_Doi) {
-                                    const string & doi = (*it)->GetDoi().Get();
-                                    if( NStr::StartsWith( doi, "10." ) ) {
-                                        if( ctx.Config().DoHTML() && ! CommentHasSuspiciousHtml(doi) ) {
-                                            CNcbiOstrstream result;
-                                            result << "DOI: <a href=\""
-                                                   << kDoiLink << doi << "\">"
-                                                   << doi << "</a>";
-                                            l.push_back( CNcbiOstrstreamToString(result) );
-                                        } else {
-                                            l.push_back( "DOI: " + doi );
+                                if( (*it)->IsPubmed() && (*it)->GetPubmed().Get() != 0 ) {
+                                    hasPmidOrMuid = true;
+                                    break;
+                                } else if(  (*it)->IsMedline() && (*it)->GetMedline().Get() != 0 ) {
+                                    hasPmidOrMuid = true;
+                                    break;
+                                }
+                            }
+
+                            if( ! hasPmidOrMuid ) {
+                                ITERATE( CArticleIdSet_Base::Tdata, it, ids.Get() ) {
+                                    if( (*it)->Which() == CArticleId_Base::e_Doi) {
+                                        const string & doi = (*it)->GetDoi().Get();
+                                        if( NStr::StartsWith( doi, "10." ) ) {
+                                            if( ctx.Config().DoHTML() && ! CommentHasSuspiciousHtml(doi) ) {
+                                                CNcbiOstrstream result;
+                                                result << "DOI: <a href=\""
+                                                       << kDoiLink << doi << "\">"
+                                                       << doi << "</a>";
+                                                l.push_back( CNcbiOstrstreamToString(result) );
+                                            } else {
+                                                l.push_back( "DOI: " + doi );
+                                            }
+                                            break;
                                         }
-                                        break;
                                     }
                                 }
                             }
-                        }
 
+                        }
                     }
                 }
             } else if ( (*it)->IsSub() ) {
@@ -1672,7 +1682,7 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
     }
 
     if (!l.empty()) {
-        if (ctx.Config().IsFormatGBSeq() || ctx.Config().IsFormatINSDSeq()) {
+        if ( ctx.Config().IsFormatGBSeq() || ctx.Config().IsFormatINSDSeq() ) {
             m_Remark = NStr::Join(l, "; ");
         } else {
             m_Remark = NStr::Join(l, "\n");

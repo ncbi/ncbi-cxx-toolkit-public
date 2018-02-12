@@ -775,6 +775,15 @@ void CGBSeqFormatter::FormatReference
     if ( !journal.empty() ) {
         tmp << s_CombineStrings("        ", "GBReference_journal", journal);
     }
+    string doi = ref.GetDOI();
+    if ( ! doi.empty() ) {
+        tmp << s_OpenTag("        ", "GBReference_xref");
+        tmp << s_OpenTag("          ", "GBXref");
+        tmp << s_CombineStrings("            ", "GBXref_dbname", "doi");
+        tmp << s_CombineStrings("            ", "GBXref_id", doi);
+        tmp << s_CloseTag("          ", "GBXref");
+        tmp << s_CloseTag("        ", "GBReference_xref");
+    }
     if ( ref.GetPMID() != 0 ) {
         tmp << s_CombineStrings("        ", "GBReference_pubmed", ref.GetPMID());
     }
