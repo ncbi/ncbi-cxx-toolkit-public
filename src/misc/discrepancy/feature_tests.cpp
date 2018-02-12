@@ -1325,9 +1325,9 @@ DISCREPANCY_SUMMARIZE(JOINED_FEATURES)
 }
 
 
-// JOINED_FEATURES_NO_EXCEPTION
+// BACTERIAL_JOINED_FEATURES_NO_EXCEPTION
 
-DISCREPANCY_CASE(JOINED_FEATURES_NO_EXCEPTION, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Joined Features on prokaryote without exception")
+DISCREPANCY_CASE(BACTERIAL_JOINED_FEATURES_NO_EXCEPTION, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Joined Features on prokaryote without exception")
 {
     if (context.IsEukaryotic() || context.IsOrganelle() || !obj.IsSetLocation() || !obj.CanGetData() || !obj.GetData().IsCdregion()) {
         return;
@@ -1369,7 +1369,7 @@ DISCREPANCY_CASE(JOINED_FEATURES_NO_EXCEPTION, CSeq_feat_BY_BIOSEQ, eDisc | eSub
 }
 
 
-DISCREPANCY_SUMMARIZE(JOINED_FEATURES_NO_EXCEPTION)
+DISCREPANCY_SUMMARIZE(BACTERIAL_JOINED_FEATURES_NO_EXCEPTION)
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
@@ -1377,7 +1377,7 @@ DISCREPANCY_SUMMARIZE(JOINED_FEATURES_NO_EXCEPTION)
 
 // RIBOSOMAL_SLIPPAGE
 
-DISCREPANCY_CASE(RIBOSOMAL_SLIPPAGE, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, " Only a select number of proteins undergo programmed frameshifts due to ribosomal slippage")
+DISCREPANCY_CASE(RIBOSOMAL_SLIPPAGE, CSeq_feat_BY_BIOSEQ, eDisc | eSmart, " Only a select number of proteins undergo programmed frameshifts due to ribosomal slippage")
 {
     if (context.IsEukaryotic() || context.IsOrganelle() || !obj.IsSetLocation() || !obj.CanGetData() || !obj.GetData().IsCdregion() || !obj.IsSetExcept_text()) {
         return;

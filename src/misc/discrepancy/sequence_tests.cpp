@@ -63,11 +63,12 @@ USING_SCOPE(objects);
 DISCREPANCY_MODULE(sequence_tests);
 
 
+#if 0
 // MISSING_GENOMEASSEMBLY_COMMENTS
 
 const string kMissingGenomeAssemblyComments = "[n] bioseq[s] [is] missing GenomeAssembly structured comments";
 
-DISCREPANCY_CASE(MISSING_GENOMEASSEMBLY_COMMENTS, CSeq_inst, eDisc | eSmart | eBig, "Bioseqs should have GenomeAssembly structured comments")
+DISCREPANCY_CASE(MISSING_GENOMEASSEMBLY_COMMENTS, CSeq_inst, 0, "Bioseqs should have GenomeAssembly structured comments")
 {
     if (obj.IsAa()) {
         return;
@@ -98,7 +99,7 @@ DISCREPANCY_SUMMARIZE(MISSING_GENOMEASSEMBLY_COMMENTS)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
-
+#endif
 
 // DUP_DEFLINE
 
@@ -446,7 +447,7 @@ DISCREPANCY_SUMMARIZE(N_RUNS_14)
 
 const string kExternalRef = "[n] sequence[s] [has] external references";
 
-DISCREPANCY_CASE(EXTERNAL_REFERENCE, CSeq_inst, eDisc | eOncaller | eSubmitter | eSmart, "Sequence has external reference")
+DISCREPANCY_CASE(EXTERNAL_REFERENCE, CSeq_inst, eDisc | eOncaller, "Sequence has external reference")
 {
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
     if (!seq || seq->IsAa()) {
