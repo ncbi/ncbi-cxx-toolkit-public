@@ -65,7 +65,7 @@
 namespace wgsparse
 {
 
-static size_t CheckPubs(const CSeq_entry& entry, const string& file, list<CPubDescriptionInfo>& common_pubs)
+static size_t CheckPubs(const CSeq_entry& entry, const string& file, list<CPubDescriptionInfo>& common_pubs, bool& reject)
 {
     const CSeq_descr* descrs = nullptr;
     if (!GetDescr(entry, descrs)) {
@@ -73,13 +73,6 @@ static size_t CheckPubs(const CSeq_entry& entry, const string& file, list<CPubDe
     }
 
     size_t num_of_pubs = 0;
-
-    if (!common_pubs.empty()) {
-        // TODO
-
-        return num_of_pubs;
-    }
-
     list<CRef<CPubdesc>> pubs;
 
     if (descrs && descrs->IsSet()) {
@@ -114,12 +107,66 @@ static size_t CheckPubs(const CSeq_entry& entry, const string& file, list<CPubDe
             if (!IsPubdescContainsSub(*pub)) {
                 pubdescr_info.m_pmid = SinglePubLookup(pubdescr_info.m_pubdescr_lookup);
             }
-        }
 
-        // TODO
+            // TODO wpp
+        }
     }
     else {
-        // TODO
+
+        for (auto& common_pub = common_pubs.begin(); common_pub != common_pubs.end();) {
+
+            bool found = false;
+            for (auto& pub = pubs.begin(); pub != pubs.end(); ++pub) {
+                auto synonym = find_if(common_pub->m_pubdescr_synonyms.begin(), common_pub->m_pubdescr_synonyms.end(),
+                                       [&pub](const CRef<CPubdesc>& synonym) { return (*pub)->Equals(*synonym); });
+
+                if (synonym != common_pub->m_pubdescr_synonyms.end()) {
+                    pubs.erase(pub);
+                    found = true;
+                    break;
+                }
+
+                if (IsPubdescContainsSub(**pub)) {
+                    continue;
+                }
+
+                // TODO wpp
+
+                bool same = (*pub)->Equals(*common_pub->m_pubdescr_lookup);
+                if (!same) {
+                    int pmid = SinglePubLookup(*pub);
+
+                    if (pmid > 0 && common_pub->m_pmid == pmid) { // Same PMID in different pubs
+
+                        if (GetParams().IsDblinkOverride()) {
+                            same = true;
+                        }
+                        else {
+                            ERR_POST_EX(0, 0, Error << "Varying results returned from PubMed for article with PMID " << pmid << ".");
+                            reject = true;
+                        }
+                    }
+                }
+
+                if (same) {
+                    common_pub->m_pubdescr_synonyms.push_back(*pub);
+                    pubs.erase(pub);
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found) {
+                ++common_pub;
+            }
+            else {
+                common_pub = common_pubs.erase(common_pub);
+
+                string entry_label;
+                entry.GetLabel(&entry_label, CSeq_entry::eBoth);
+                ERR_POST_EX(0, 0, Warning << "Inconsistent pubs other than Cit-sub found amongst the input data. First occurence is in record " << entry_label << " from file \"" << file << "\".");
+            }
+        }
     }
 
     return num_of_pubs;
@@ -406,12 +453,12 @@ static bool DBLinkProblemReport(const CMasterInfo& info)
     if (info.m_dblink.NotEmpty() && info.m_dblink_state != eDblinkNoProblem) {
         if (info.m_dblink_state & eDblinkDifferentDblink) {
             ERR_POST_EX(0, 0, Critical << "The files being processed contain DBLink User-objects that are not identical in content. The first difference was encountered at sequence \"" <<
-                        info.m_dblink_diff_info.first << "\" of input file \"" << info.m_dblink_diff_info.second << "\".");
+                        info.m_dblink_diff_info.second << "\" of input file \"" << info.m_dblink_diff_info.first << "\".");
             reject = true;
         }
         if (info.m_dblink_state & eDblinkNoDblink) {
             string err_msg = "The files being processed contain some records that lack DBLink User-objects. The first record that lacks a DBLink was encountered at sequence \"" +
-                info.m_dblink_empty_info.first + "\" of input file \"" + info.m_dblink_empty_info.second + "\". ";
+                info.m_dblink_empty_info.second + "\" of input file \"" + info.m_dblink_empty_info.first + "\". ";
 
             if (GetParams().IsDblinkOverride()) {
                 ERR_POST_EX(0, 0, Warning << err_msg << "Continue anyway.");
@@ -429,9 +476,15 @@ static void ReplaceFieldInDBLink(const TIdContainer& values, const string& tag, 
 {
     if (!values.empty()) {
 
-        user_obj.RemoveNamedField(tag);
         vector<string> value_list(values.begin(), values.end());
-        user_obj.AddField(tag, value_list);
+
+        CConstRef<CUser_field> field = user_obj.GetFieldRef(tag);
+        if (field.NotEmpty()) {
+            user_obj.SetField(tag).SetData().SetStrs().swap(value_list);
+        }
+        else {
+            user_obj.AddField(tag, value_list);
+        }
     }
 }
 
@@ -1012,7 +1065,7 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
         }
     }
 
-    // TODO
+    // TODO citarts
 
     for (auto& pubdescr : info.m_common_pubs) {
         CreatePub(*bioseq, *pubdescr.m_pubdescr_lookup);
@@ -1260,7 +1313,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 
                         if (!GetParams().IsKeepRefs()) {
 
-                            master_info.m_num_of_pubs = max(CheckPubs(*entry, file, master_info.m_common_pubs), master_info.m_num_of_pubs);
+                            master_info.m_num_of_pubs = max(CheckPubs(*entry, file, master_info.m_common_pubs, master_info.m_reject), master_info.m_num_of_pubs);
                             CheckComments(*entry, ProcessComment, master_info.m_common_comments_not_set, master_info.m_common_comments);
                         }
 
@@ -1362,6 +1415,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
     // TODO ...
 
     if (GetParams().IsUpdateScaffoldsMode()) {
+        // TODO
     }
     else {
         master_info.m_master_bioseq = CreateMasterBioseq(master_info, master_cit_sub, master_contact_info);

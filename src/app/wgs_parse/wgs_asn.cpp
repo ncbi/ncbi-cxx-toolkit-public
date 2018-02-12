@@ -231,7 +231,7 @@ static bool DescrProcUnexpected(const CSeqdesc& descr, bool first)
 
     if (first) {
         const string& str = UNEXPECTED_CHOICE_STR[descr.Which()];
-        ERR_POST_EX(0, 0, "Unexpected descriptor of type \"" << str << "\" found on top of GenBank set. Descriptor dropped.");
+        ERR_POST_EX(0, 0, Warning << "Unexpected descriptor of type \"" << str << "\" found on top of GenBank set. Descriptor dropped.");
     }
 
     return false;
@@ -246,7 +246,7 @@ static bool DescrProcUnexpectedWarning(const CSeqdesc& descr, bool first)
 
     if (first) {
         const string& str = UNEXPECTED_CHOICE_STR.at(descr.Which());
-        LOG_POST_EX(0, 0, "Unexpected descriptor of type \"" << str << "\" found on top of GenBank set. Descriptor dropped.");
+        LOG_POST_EX(0, 0, Warning << "Unexpected descriptor of type \"" << str << "\" found on top of GenBank set. Descriptor dropped.");
     }
 
     return true;
@@ -1055,7 +1055,7 @@ bool CheckSeqEntry(const CSeq_entry& entry, const string& file, CSeqEntryInfo& i
             report = false;
 
         if (report) {
-            ERR_POST_EX(0, 0, (severity_reject ? Critical : Warning) << "Input Seq-entry with Seq-id \"" << file << "\" has missing or incorrect Molinfo.biomol.");
+            ERR_POST_EX(0, 0, (severity_reject ? Critical : Warning) << "Input Seq-entry with Seq-id \"" << info.m_cur_seqid << "\" has missing or incorrect Molinfo.biomol.");
             if (severity_reject)
                 ret = false;
         }
