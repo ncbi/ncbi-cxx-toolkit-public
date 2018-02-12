@@ -81,6 +81,7 @@
 #include <objects/seqalign/Score_set.hpp>
 #include <objtools/writers/gff3_writer.hpp>
 
+#include <array>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
