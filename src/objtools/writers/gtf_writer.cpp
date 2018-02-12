@@ -322,9 +322,9 @@ bool CGtfWriter::x_SplitCdsLocation(
     pLocCode.Reset( new CSeq_loc( CSeq_loc::e_Mix ) ); 
     pLocStopCodon.Reset( new CSeq_loc( CSeq_loc::e_Mix ) ); 
 
-    pLocCode->Add( cdsLocation );
+    pLocCode->Add(cdsLocation);
     CRef< CSeq_loc > pLocCode2( new CSeq_loc( CSeq_loc::e_Mix ) );
-    pLocCode2->Add( cdsLocation );
+    pLocCode2->Add(cdsLocation);
 
     CSeq_loc interval;
     interval.SetInt().SetId( cdsLocId );
@@ -338,7 +338,7 @@ bool CGtfWriter::x_SplitCdsLocation(
         pLocStartCodon = pLocStartCodon->Add( 
             interval, CSeq_loc::fSortAndMerge_All, 0 );
         pLocCode2 = pLocCode2->Subtract( 
-            interval, CSeq_loc::fSortAndMerge_All, 0, 0 );    
+            interval, CSeq_loc::fMerge_Contained, 0, 0 );    
 
         TSeqPos uHighest = pLocCode->GetTotalRange().GetTo();
         interval.SetInt().SetFrom( uHighest );
@@ -346,7 +346,7 @@ bool CGtfWriter::x_SplitCdsLocation(
         pLocStopCodon = pLocStopCodon->Add( 
             interval, CSeq_loc::fSortAndMerge_All, 0 );
         pLocCode = pLocCode->Subtract( 
-            interval, CSeq_loc::fSortAndMerge_All, 0, 0 );    
+            interval, CSeq_loc::fMerge_Contained, 0, 0 );    
     }
 
     if ( cdsLocation.GetStrand() == eNa_strand_minus ) {
