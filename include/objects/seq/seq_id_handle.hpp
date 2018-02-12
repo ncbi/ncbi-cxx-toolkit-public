@@ -67,6 +67,7 @@ class CSeq_id_Info : public CObject
 {
 public:
     typedef TIntId TPacked;
+    typedef Uint8 TVariant;
 
     NCBI_SEQ_EXPORT CSeq_id_Info(CSeq_id::E_Choice type,
                                  CSeq_id_Mapper* mapper);
@@ -78,7 +79,7 @@ public:
         {
             return m_Seq_id;
         }
-    NCBI_SEQ_EXPORT virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed) const;
+    NCBI_SEQ_EXPORT virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const;
 
     // locking
     void AddLock(void) const
@@ -153,19 +154,20 @@ class CSeq_id_Handle
 {
 public:
     typedef CSeq_id_Info::TPacked TPacked;
+    typedef CSeq_id_Info::TVariant TVariant;
 
     // 'ctors
     CSeq_id_Handle(void)
-        : m_Info(null), m_Packed(0)
+        : m_Info(null), m_Packed(0), m_Variant(0)
         {
         }
-    explicit CSeq_id_Handle(const CSeq_id_Info* info, TPacked packed = 0)
-        : m_Info(info), m_Packed(packed)
+    explicit CSeq_id_Handle(const CSeq_id_Info* info, TPacked packed = 0, TVariant variant = 0)
+        : m_Info(info), m_Packed(packed), m_Variant(variant)
         {
-            _ASSERT(info || !packed);
+            _ASSERT(info || (!packed && !variant));
         }
     CSeq_id_Handle(ENull /*null*/)
-        : m_Info(null), m_Packed(0)
+        : m_Info(null), m_Packed(0), m_Variant(0)
         {
         }
 
@@ -222,6 +224,7 @@ public:
         {
             m_Info.Reset();
             m_Packed = 0;
+            m_Variant = 0;
         }
 
     //
@@ -261,6 +264,14 @@ public:
         {
             return m_Packed;
         }
+    bool IsSetVariant(void) const
+        {
+            return m_Variant != 0;
+        }
+    TVariant GetVariant(void) const
+        {
+            return m_Variant;
+        }
     bool IsGi(void) const
         {
             return m_Packed && m_Info->GetType() == CSeq_id::e_Gi;
@@ -279,8 +290,8 @@ public:
     CConstRef<CSeq_id> GetSeqId(void) const
         {
             CConstRef<CSeq_id> ret;
-            if ( m_Packed ) {
-                ret = m_Info->GetPackedSeqId(m_Packed);
+            if ( m_Packed || m_Variant ) {
+                ret = m_Info->GetPackedSeqId(m_Packed, m_Variant);
             }
             else {
                 ret = m_Info->GetSeqId();
@@ -289,16 +300,10 @@ public:
         }
     CConstRef<CSeq_id> GetSeqIdOrNull(void) const
         {
-            CConstRef<CSeq_id> ret;
-            if ( m_Info ) {
-                if ( m_Packed ) {
-                    ret = m_Info->GetPackedSeqId(m_Packed);
-                }
-                else {
-                    ret = m_Info->GetSeqId();
-                }
+            if ( !m_Info ) {
+                return null;
             }
-            return ret;
+            return GetSeqId();
         }
 
     CSeq_id_Mapper& GetMapper(void) const
@@ -310,6 +315,7 @@ public:
         {
             m_Info.Swap(idh.m_Info);
             swap(m_Packed, idh.m_Packed);
+            swap(m_Variant, idh.m_Variant);
         }
 
 public:
@@ -324,6 +330,7 @@ private:
     // Seq-id info
     CConstRef<CSeq_id_Info, CSeq_id_InfoLocker> m_Info;
     TPacked m_Packed;
+    TVariant m_Variant;
 };
 
 /// Get CConstRef<CSeq_id> from a seq-id handle (for container

@@ -276,12 +276,9 @@ protected:
 class CSeq_id_Gi_Info : public CSeq_id_Info
 {
 public:
-    CSeq_id_Gi_Info(CSeq_id_Mapper* mapper)
-        : CSeq_id_Info(CSeq_id::e_Gi, mapper)
-        {
-        }
+    CSeq_id_Gi_Info(CSeq_id_Mapper* mapper);
     
-    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed) const;
+    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant /*variant*/) const;
 };
 
 
@@ -319,6 +316,18 @@ protected:
 ////////////////////////////////////////////////////////////////////
 // Base class for e_Genbank, e_Embl, e_Pir, e_Swissprot, e_Other,
 // e_Ddbj, e_Prf, e_Tpg, e_Tpe, e_Tpd trees
+
+
+class CSeq_id_Textseq_PlainInfo : public CSeq_id_Info
+{
+public:
+    CSeq_id_Textseq_PlainInfo(const CConstRef<CSeq_id>& seq_id, CSeq_id_Mapper* mapper);
+    
+    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const;
+    
+    TVariant ParseCaseVariant(const string& acc) const;
+    TVariant ParseCaseVariant(const CTextseq_id& id) const;
+};
 
 
 class CSeq_id_Textseq_Info : public CSeq_id_Info {
@@ -381,6 +390,7 @@ public:
         int GetAccDigits(void) const {
             return (m_Hash & 0xff) >> 1;
         }
+        TVariant ParseCaseVariant(const string& acc) const;
     };
     CSeq_id_Textseq_Info(CSeq_id::E_Choice type,
                          CSeq_id_Mapper* mapper,
@@ -405,22 +415,24 @@ public:
     const TVersion& GetVersion(void) const {
         return m_Key.GetVersion();
     }
-    void RestoreAccession(string& acc, TPacked param) const;
-    void Restore(CTextseq_id& id, TPacked param) const;
+    void RestoreAccession(string& acc, TPacked param, TVariant variant) const;
+    void Restore(CTextseq_id& id, TPacked param, TVariant variant) const;
 
     static TKey ParseAcc(const string& acc, const TVersion* ver);
-    static TKey ParseAcc(const string& acc, const CTextseq_id* tid) {
-        TVersion ver, *ver_ptr = 0;
-        if ( tid && tid->IsSetVersion() ) {
-            ver = tid->GetVersion();
+    static TKey ParseAcc(const string& acc, const CTextseq_id& tid) {
+        TVersion ver;
+        const TVersion *ver_ptr = 0;
+        if ( tid.IsSetVersion() ) {
+            ver = tid.GetVersion();
             ver_ptr = &ver;
         }
         return ParseAcc(acc, ver_ptr);
     }
     static TPacked Pack(const TKey& key, const string& acc);
     static TPacked Pack(const TKey& key, const CTextseq_id& id);
+    static TVariant ParseCaseVariant(const CSeq_id_Info* info, const string& acc);
     
-    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed) const;
+    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const;
     
 private:
     TKey m_Key;
@@ -468,12 +480,12 @@ protected:
         _ASSERT(text_id);
         return *text_id;
     }
-    CSeq_id_Info* x_FindStrInfo(CSeq_id::E_Choice type,
-                                const CTextseq_id& tid) const;
+    CSeq_id_Textseq_PlainInfo* x_FindStrInfo(CSeq_id::E_Choice type,
+                                             const CTextseq_id& tid) const;
     bool x_GetVersion(TVersion& version, const CSeq_id_Handle& id) const;
 
 private:
-    typedef multimap<string, CSeq_id_Info*, PNocase> TStringMap;
+    typedef multimap<string, CSeq_id_Textseq_PlainInfo*, PNocase> TStringMap;
     typedef TStringMap::value_type TStringMapValue;
     typedef TStringMap::const_iterator TStringMapCI;
     typedef pair<TStringMapCI, TStringMapCI> TVersions;
@@ -488,10 +500,10 @@ private:
                         const string& key,
                         const CSeq_id_Info* info);
 
-    CSeq_id_Info* x_FindStrInfo(const TStringMap& str_map,
-                                const string& str,
-                                CSeq_id::E_Choice type,
-                                const CTextseq_id& tid) const;
+    CSeq_id_Textseq_PlainInfo* x_FindStrInfo(const TStringMap& str_map,
+                                             const string& str,
+                                             CSeq_id::E_Choice type,
+                                             const CTextseq_id& tid) const;
 
     void x_FindMatchByAcc(TSeq_id_MatchList& id_list,
                           const string& acc,
@@ -671,6 +683,11 @@ public:
         return m_MatchingId;
     }
     
+    TVariant ParseCaseVariant(const string& str) const;
+    TVariant ParseCaseVariant(const CObject_id& oid) const;
+    
+    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const;
+    
 private:
     bool m_IsId;
     bool m_HasMatchingId;
@@ -704,9 +721,9 @@ public:
 
 private:
     virtual void x_Unindex(const CSeq_id_Info* info);
-    CSeq_id_Info* x_FindInfo(const CObject_id& oid) const;
-    CSeq_id_Info* x_FindStrInfo(const string& str) const;
-    CSeq_id_Info* x_FindIdInfo(CObject_id::TId id) const;
+    CSeq_id_Local_Info* x_FindInfo(const CObject_id& oid) const;
+    CSeq_id_Local_Info* x_FindStrInfo(const string& str) const;
+    CSeq_id_Local_Info* x_FindIdInfo(CObject_id::TId id) const;
     
     typedef unordered_map<string, CSeq_id_Local_Info*, PHashNocase, PEqualNocase> TByStr;
     typedef map<CObject_id::TId, CSeq_id_Local_Info*>         TById;
@@ -734,11 +751,11 @@ public:
     const string& GetDbtag(void) const {
         return m_Key;
     }
-    void Restore(CDbtag& id, TPacked param) const;
+    void Restore(CDbtag& id, TPacked param, TVariant variant) const;
 
     static TPacked Pack(const TKey& key, const CDbtag& id);
     
-    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed) const;
+    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const;
     
 private:
     TKey m_Key;
@@ -764,6 +781,7 @@ public:
         size_t GetStrDigits(void) const {
             return m_Key & 0xff;
         }
+        TVariant ParseCaseVariant(const CDbtag& dbtag) const;
     };
     struct PKeyLess {
         bool operator()(const TKey& a, const TKey& b) const {
@@ -799,15 +817,25 @@ public:
     size_t GetStrDigits(void) const {
         return m_Key.GetStrDigits();
     }
-    void Restore(CDbtag& id, TPacked param) const;
+    void Restore(CDbtag& id, TPacked param, TVariant variant) const;
 
     static TKey Parse(const CDbtag& id);
     static TPacked Pack(const TKey& key, const CDbtag& id);
     
-    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed) const;
+    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const;
     
 private:
     TKey m_Key;
+};
+
+
+class CSeq_id_General_PlainInfo : public CSeq_id_Info {
+public:
+    CSeq_id_General_PlainInfo(const CDbtag& dbid, CSeq_id_Mapper* mapper);
+    
+    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const;
+    
+    TVariant ParseCaseVariant(const CDbtag& dbtag) const;
 };
 
 
@@ -835,12 +863,12 @@ public:
 
 private:
     virtual void x_Unindex(const CSeq_id_Info* info);
-    CSeq_id_Info* x_FindInfo(const CDbtag& dbid) const;
+    CSeq_id_General_PlainInfo* x_FindInfo(const CDbtag& dbid) const;
 
     struct STagMap {
     public:
-        typedef unordered_map<string, CSeq_id_Info*, PHashNocase, PEqualNocase> TByStr;
-        typedef map<TPacked, CSeq_id_Info*>         TById;
+        typedef unordered_map<string, CSeq_id_General_PlainInfo*, PHashNocase, PEqualNocase> TByStr;
+        typedef map<TPacked, CSeq_id_General_PlainInfo*>         TById;
         TByStr m_ByStr;
         TById  m_ById;
     };

@@ -123,6 +123,26 @@ void CSeq_id_Which_Tree::FindReverseMatch(const CSeq_id_Handle& id,
 }
 
 
+static inline void s_AssignObject_id(CObject_id& new_id,
+                                     const CObject_id& old_id)
+{
+    if ( old_id.IsStr() ) {
+        new_id.SetStr(old_id.GetStr());
+    }
+    else {
+        new_id.SetId(old_id.GetId());
+    }
+}
+
+
+static inline void s_AssignDbtag(CDbtag& new_id,
+                                 const CDbtag& old_id)
+{
+    new_id.SetDb(old_id.GetDb());
+    s_AssignObject_id(new_id.SetTag(), old_id.GetTag());
+}
+
+
 static inline void s_AssignTextseq_id(CTextseq_id& new_tid,
                                       const CTextseq_id& old_tid)
 {
@@ -141,52 +161,57 @@ static inline void s_AssignTextseq_id(CTextseq_id& new_tid,
 }
 
 
-CSeq_id_Info* CSeq_id_Which_Tree::CreateInfo(const CSeq_id& id)
+static inline void s_AssignSeq_id(CSeq_id& new_id,
+                                  const CSeq_id& old_id)
 {
-    CRef<CSeq_id> id_ref(new CSeq_id);
-    switch (id.Which()) {
+    switch (old_id.Which()) {
     case CSeq_id::e_Gi:
-        id_ref->SetGi(id.GetGi());
+        new_id.SetGi(old_id.GetGi());
         break;
 
     case CSeq_id::e_Local:
-        if ( id.GetLocal().IsStr() ) {
-            id_ref->SetLocal().SetStr(id.GetLocal().GetStr());
-        }
-        else {
-            id_ref->SetLocal().SetId(id.GetLocal().GetId());
-        }
+        s_AssignObject_id(new_id.SetLocal(), old_id.GetLocal());
+        break;
+
+    case CSeq_id::e_General:
+        s_AssignDbtag(new_id.SetGeneral(), old_id.GetGeneral());
         break;
 
     case CSeq_id::e_Other:
-        s_AssignTextseq_id(id_ref->SetOther(), id.GetOther());
+        s_AssignTextseq_id(new_id.SetOther(), old_id.GetOther());
         break;
 
     case CSeq_id::e_Genbank:
-        s_AssignTextseq_id(id_ref->SetGenbank(), id.GetGenbank());
+        s_AssignTextseq_id(new_id.SetGenbank(), old_id.GetGenbank());
         break;
 
     case CSeq_id::e_Embl:
-        s_AssignTextseq_id(id_ref->SetEmbl(), id.GetEmbl());
+        s_AssignTextseq_id(new_id.SetEmbl(), old_id.GetEmbl());
         break;
 
     case CSeq_id::e_Ddbj:
-        s_AssignTextseq_id(id_ref->SetDdbj(), id.GetDdbj());
+        s_AssignTextseq_id(new_id.SetDdbj(), old_id.GetDdbj());
         break;
 
     case CSeq_id::e_Gpipe:
-        s_AssignTextseq_id(id_ref->SetGpipe(), id.GetGpipe());
+        s_AssignTextseq_id(new_id.SetGpipe(), old_id.GetGpipe());
         break;
 
     case CSeq_id::e_Named_annot_track:
-        s_AssignTextseq_id(id_ref->SetNamed_annot_track(),
-                           id.GetNamed_annot_track());
+        s_AssignTextseq_id(new_id.SetNamed_annot_track(), old_id.GetNamed_annot_track());
         break;
 
     default:
-        id_ref->Assign(id);
+        new_id.Assign(old_id);
         break;
     }
+}
+
+
+CSeq_id_Info* CSeq_id_Which_Tree::CreateInfo(const CSeq_id& id)
+{
+    CRef<CSeq_id> id_ref(new CSeq_id);
+    s_AssignSeq_id(*id_ref, id);
     return new CSeq_id_Info(id_ref, m_Mapper);
 }
 
@@ -504,7 +529,13 @@ CSeq_id_Gibbmt_Tree::TPacked CSeq_id_Gibbmt_Tree::x_Get(const CSeq_id& id) const
 /////////////////////////////////////////////////////////////////////////////
 
 
-CConstRef<CSeq_id> CSeq_id_Gi_Info::GetPackedSeqId(TPacked gi) const
+CSeq_id_Gi_Info::CSeq_id_Gi_Info(CSeq_id_Mapper* mapper)
+    : CSeq_id_Info(CSeq_id::e_Gi, mapper)
+{
+}
+
+
+CConstRef<CSeq_id> CSeq_id_Gi_Info::GetPackedSeqId(TPacked gi, TVariant /*variant*/) const
 {
     CConstRef<CSeq_id> ret;
     typedef CSeq_id_Gi_Info TThis;
@@ -694,6 +725,81 @@ TIntId s_ParseNumber(const string& str, size_t pos, size_t len)
 }
 
 
+static inline
+CSeq_id_Handle::TVariant s_RestoreCaseVariant(string& str, size_t len,
+                                              CSeq_id_Handle::TVariant variant)
+{
+    for ( size_t i = 0; variant && i != len; ++i ) {
+        int c = Uint1(str[i]);
+        if ( isalpha(c) ) {
+            if ( variant & 1 ) {
+                // flip case
+                if ( islower(c) ) {
+                    c = toupper(c);
+                }
+                else {
+                    c = tolower(c);
+                }
+                str[i] = c;
+            }
+            variant >>= 1;
+        }
+    }
+    return variant;
+}
+
+
+static inline
+CSeq_id_Handle::TVariant s_RestoreCaseVariant(string& str, CSeq_id_Handle::TVariant variant)
+{
+    return s_RestoreCaseVariant(str, str.size(), variant);
+}
+
+
+static inline
+pair<CSeq_id_Handle::TVariant, CSeq_id_Handle::TVariant>
+s_ParseCaseVariant(const string& ref, const char* str,
+                   CSeq_id_Handle::TVariant bit)
+{
+    CSeq_id_Handle::TVariant variant = 0;
+    for ( size_t i = 0; bit && i != ref.size(); ++i ) {
+        int cr = Uint1(ref[i]);
+        if ( !isalpha(cr) ) {
+            continue;
+        }
+        int cs = Uint1(str[i]);
+        if ( cs != cr ) {
+            _ASSERT((isupper(cs) && tolower(cs) == cr) ||
+                    (islower(cs) && toupper(cs) == cr));
+            variant |= bit;
+        }
+        bit <<= 1;
+    }
+    return make_pair(variant, bit);
+}
+
+
+static inline
+pair<CSeq_id_Handle::TVariant, CSeq_id_Handle::TVariant>
+s_ParseCaseVariant(const string& ref, const string& str,
+                   CSeq_id_Handle::TVariant bit = 1)
+{
+    _ASSERT(ref.size() <= str.size());
+    return s_ParseCaseVariant(ref, str.data(), bit);
+}
+
+
+static inline
+void s_RestoreNumberAndCaseVariant(string& str, size_t pos, size_t len, TIntId number,
+                                   CSeq_id_Handle::TVariant variant)
+{
+    s_RestoreNumber(str, pos, len, number);
+    if ( variant ) {
+        s_RestoreCaseVariant(str, pos, variant);
+    }
+}
+
+
 CSeq_id_Textseq_Info::CSeq_id_Textseq_Info(CSeq_id::E_Choice type,
                                            CSeq_id_Mapper* mapper,
                                            const TKey& key)
@@ -763,15 +869,15 @@ CSeq_id_Textseq_Info::ParseAcc(const string& acc,
 }
 
 
-void CSeq_id_Textseq_Info::RestoreAccession(string& acc, TPacked param) const
+void CSeq_id_Textseq_Info::RestoreAccession(string& acc, TPacked param, TVariant variant) const
 {
     acc = GetAccPrefix();
     acc.resize(acc.size() + GetAccDigits(), '0');
-    s_RestoreNumber(acc, GetAccPrefix().size(), GetAccDigits(), param);
+    s_RestoreNumberAndCaseVariant(acc, GetAccPrefix().size(), GetAccDigits(), param, variant);
 }
 
 
-void CSeq_id_Textseq_Info::Restore(CTextseq_id& id, TPacked param) const
+void CSeq_id_Textseq_Info::Restore(CTextseq_id& id, TPacked param, TVariant variant) const
 {
     if ( !id.IsSetAccession() ) {
         id.SetAccession(GetAccPrefix());
@@ -781,8 +887,8 @@ void CSeq_id_Textseq_Info::Restore(CTextseq_id& id, TPacked param) const
             id.SetVersion(GetVersion());
         }
     }
-    s_RestoreNumber(id.SetAccession(),
-                    GetAccPrefix().size(), GetAccDigits(), param);
+    s_RestoreNumberAndCaseVariant(id.SetAccession(),
+                                  GetAccPrefix().size(), GetAccDigits(), param, variant);
 }
 
 
@@ -802,28 +908,88 @@ CSeq_id_Textseq_Info::Pack(const TKey& key, const CTextseq_id& tid)
 }
 
 
-CConstRef<CSeq_id> CSeq_id_Textseq_Info::GetPackedSeqId(TPacked param) const
+inline
+CSeq_id_Info::TVariant
+CSeq_id_Textseq_Info::ParseCaseVariant(const CSeq_id_Info* info, const string& acc)
+{
+    return s_ParseCaseVariant(info->GetSeqId()->GetTextseq_Id()->GetAccession(), acc).first;
+}
+
+
+inline
+CSeq_id_Info::TVariant
+CSeq_id_Textseq_Info::TKey::ParseCaseVariant(const string& acc) const
+{
+    return s_ParseCaseVariant(m_Prefix, acc).first;
+}
+
+
+CConstRef<CSeq_id> CSeq_id_Textseq_Info::GetPackedSeqId(TPacked param, TVariant variant) const
 {
     CConstRef<CSeq_id> ret;
     typedef CSeq_id_Textseq_Info TThis;
+    if ( variant ) {
+        // all non-initial case variants need fresh Seq-id to start with
+        ret = new CSeq_id;
+    }
+    else {
+        // otherwise try to use shared Seq-id if it's not referenced anywhere else
 #if defined NCBI_SLOW_ATOMIC_SWAP
-    CFastMutexGuard guard(sx_GetSeqIdMutex);
-    ret = m_Seq_id;
-    const_cast<TThis*>(this)->m_Seq_id.Reset();
-    if ( !ret || !ret->ReferencedOnlyOnce() ) {
-        ret.Reset(new CSeq_id);
-    }
-    const_cast<TThis*>(this)->m_Seq_id = ret;
+        CFastMutexGuard guard(sx_GetSeqIdMutex);
+        ret = m_Seq_id;
+        const_cast<TThis*>(this)->m_Seq_id.Reset();
+        if ( !ret || !ret->ReferencedOnlyOnce() ) {
+            ret.Reset(new CSeq_id);
+        }
+        const_cast<TThis*>(this)->m_Seq_id = ret;
 #else
-    const_cast<TThis*>(this)->m_Seq_id.AtomicReleaseTo(ret);
-    if ( !ret || !ret->ReferencedOnlyOnce() ) {
-        ret.Reset(new CSeq_id);
-    }
-    const_cast<TThis*>(this)->m_Seq_id.AtomicResetFrom(ret);
+        const_cast<TThis*>(this)->m_Seq_id.AtomicReleaseTo(ret);
+        if ( !ret || !ret->ReferencedOnlyOnce() ) {
+            ret.Reset(new CSeq_id);
+        }
+        const_cast<TThis*>(this)->m_Seq_id.AtomicResetFrom(ret);
 #endif
+    }
     // split accession number and version
     const_cast<CSeq_id&>(*ret).Select(GetType(), eDoNotResetVariant);
-    Restore(*const_cast<CTextseq_id*>(ret->GetTextseq_Id()), param);
+    Restore(*const_cast<CTextseq_id*>(ret->GetTextseq_Id()), param, variant);
+    return ret;
+}
+
+
+CSeq_id_Textseq_PlainInfo::CSeq_id_Textseq_PlainInfo(const CConstRef<CSeq_id>& seq_id,
+                                                     CSeq_id_Mapper* mapper)
+    : CSeq_id_Info(seq_id, mapper)
+{
+}
+
+
+inline
+CSeq_id_Info::TVariant
+CSeq_id_Textseq_PlainInfo::ParseCaseVariant(const string& acc) const
+{
+    return s_ParseCaseVariant(m_Seq_id->GetTextseq_Id()->GetAccession(), acc).first;
+}
+
+
+inline
+CSeq_id_Info::TVariant
+CSeq_id_Textseq_PlainInfo::ParseCaseVariant(const CTextseq_id& id) const
+{
+    if ( !id.IsSetAccession() ) {
+        return 0;
+    }
+    return s_ParseCaseVariant(m_Seq_id->GetTextseq_Id()->GetAccession(), id.GetAccession()).first;
+}
+
+
+CConstRef<CSeq_id> CSeq_id_Textseq_PlainInfo::GetPackedSeqId(TPacked packed, TVariant variant) const
+{
+    _ASSERT(!packed);
+    _ASSERT(variant);
+    CRef<CSeq_id> ret(new CSeq_id);
+    s_AssignSeq_id(*ret, *m_Seq_id);
+    s_RestoreCaseVariant(const_cast<CTextseq_id*>(ret->GetTextseq_Id())->SetAccession(), variant);
     return ret;
 }
 
@@ -894,10 +1060,11 @@ bool CSeq_id_Textseq_Tree::x_Equals(const CTextseq_id& id1,
 }
 
 
-CSeq_id_Info* CSeq_id_Textseq_Tree::x_FindStrInfo(const TStringMap& str_map,
-                                                  const string& str,
-                                                  CSeq_id::E_Choice type,
-                                                  const CTextseq_id& tid) const
+CSeq_id_Textseq_PlainInfo*
+CSeq_id_Textseq_Tree::x_FindStrInfo(const TStringMap& str_map,
+                                    const string& str,
+                                    CSeq_id::E_Choice type,
+                                    const CTextseq_id& tid) const
 {
     for ( TStringMapCI vit = str_map.find(str);
           vit != str_map.end() && NStr::EqualNocase(vit->first, str);
@@ -912,8 +1079,9 @@ CSeq_id_Info* CSeq_id_Textseq_Tree::x_FindStrInfo(const TStringMap& str_map,
 
 
 inline
-CSeq_id_Info* CSeq_id_Textseq_Tree::x_FindStrInfo(CSeq_id::E_Choice type,
-                                                  const CTextseq_id& tid) const
+CSeq_id_Textseq_PlainInfo*
+CSeq_id_Textseq_Tree::x_FindStrInfo(CSeq_id::E_Choice type,
+                                    const CTextseq_id& tid) const
 {
     if ( tid.IsSetAccession() ) {
         return x_FindStrInfo(m_ByAcc, tid.GetAccession(), type, tid);
@@ -936,8 +1104,8 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindInfo(const CSeq_id& id) const
     // Can not compare if no accession given
     if ( s_PackTextidEnabled() &&
          tid.IsSetAccession() && !tid.IsSetName() && !tid.IsSetRelease() ) {
-        TPackedKey key =
-            CSeq_id_Textseq_Info::ParseAcc(tid.GetAccession(), &tid);
+        const string& acc = tid.GetAccession();
+        TPackedKey key = CSeq_id_Textseq_Info::ParseAcc(acc, tid);
         if ( key ) {
             TPacked packed = CSeq_id_Textseq_Info::Pack(key, tid);
             TReadLockGuard guard(m_TreeLock);
@@ -945,11 +1113,13 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindInfo(const CSeq_id& id) const
             if ( it == m_PackedMap.end() ) {
                 return null;
             }
-            return CSeq_id_Handle(it->second, packed);
+            return CSeq_id_Handle(it->second, packed, it->first.ParseCaseVariant(acc));
         }
     }
     TReadLockGuard guard(m_TreeLock);
-    return CSeq_id_Handle(x_FindStrInfo(id.Which(), tid));
+    CSeq_id_Textseq_PlainInfo* info = x_FindStrInfo(id.Which(), tid);
+    CSeq_id_Handle::TVariant variant = info? info->ParseCaseVariant(tid): 0;
+    return CSeq_id_Handle(info, 0, variant);
 }
 
 CSeq_id_Handle CSeq_id_Textseq_Tree::FindOrCreate(const CSeq_id& id)
@@ -958,10 +1128,11 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindOrCreate(const CSeq_id& id)
     const CTextseq_id& tid = x_Get(id);
     if ( s_PackTextidEnabled() &&
          tid.IsSetAccession() && !tid.IsSetName() && !tid.IsSetRelease() ) {
-        TPackedKey key =
-            CSeq_id_Textseq_Info::ParseAcc(tid.GetAccession(), &tid);
+        const string& acc = tid.GetAccession();
+        TPackedKey key = CSeq_id_Textseq_Info::ParseAcc(acc, tid);
         if ( key ) {
             TPacked packed = CSeq_id_Textseq_Info::Pack(key, tid);
+            CSeq_id_Handle::TVariant variant = 0;
             TWriteLockGuard guard(m_TreeLock);
             TPackedMap_I it = m_PackedMap.lower_bound(key);
             if ( it == m_PackedMap.end() ||
@@ -970,13 +1141,19 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindOrCreate(const CSeq_id& id)
                     (new CSeq_id_Textseq_Info(id.Which(), m_Mapper, key));
                 it = m_PackedMap.insert(it, TPackedMapValue(key, info));
             }
-            return CSeq_id_Handle(it->second, packed);
+            else {
+                variant = it->first.ParseCaseVariant(acc);
+            }
+            return CSeq_id_Handle(it->second, packed, variant);
         }
     }
     TWriteLockGuard guard(m_TreeLock);
-    CSeq_id_Info* info = x_FindStrInfo(id.Which(), tid);
+    CSeq_id_Textseq_PlainInfo* info = x_FindStrInfo(id.Which(), tid);
+    CSeq_id_Handle::TVariant variant = 0;
     if ( !info ) {
-        info = CreateInfo(id);
+        CRef<CSeq_id> ref_id(new CSeq_id);
+        s_AssignSeq_id(*ref_id, id);
+        info = new CSeq_id_Textseq_PlainInfo(ref_id, m_Mapper);
         if ( tid.IsSetAccession() ) {
             m_ByAcc.insert(TStringMapValue(tid.GetAccession(), info));
         }
@@ -984,7 +1161,10 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindOrCreate(const CSeq_id& id)
             m_ByName.insert(TStringMapValue(tid.GetName(), info));
         }
     }
-    return CSeq_id_Handle(info);
+    else {
+        variant = info->ParseCaseVariant(tid);
+    }
+    return CSeq_id_Handle(info, 0, variant);
 }
 
 
@@ -1227,7 +1407,7 @@ void CSeq_id_Textseq_Tree::FindMatch(const CSeq_id_Handle& id,
             if ( it != m_ByAcc.end() && info->GoodPrefix(it->first) ) {
                 // have similar accessions
                 CTextseq_id tid;
-                info->Restore(tid, id.GetPacked());
+                info->Restore(tid, id.GetPacked(), id.GetVariant());
                 x_FindMatchByAcc(id_list, tid.GetAccession(), &tid);
                 // x_FindMatchByAcc will search packed accessions too
                 return;
@@ -1237,7 +1417,7 @@ void CSeq_id_Textseq_Tree::FindMatch(const CSeq_id_Handle& id,
         if ( !mine ) { // weak matching
             TPackedMap_CI iter = m_PackedMap.find(info->GetKey());
             if ( iter != m_PackedMap.end() ) {
-                id_list.insert(CSeq_id_Handle(iter->second, id.GetPacked()));
+                id_list.insert(CSeq_id_Handle(iter->second, id.GetPacked(), id.GetVariant()));
             }
         }
         if ( !info->IsSetVersion() ) {
@@ -1247,7 +1427,7 @@ void CSeq_id_Textseq_Tree::FindMatch(const CSeq_id_Handle& id,
                   it != m_PackedMap.end() && it->first.SameHashNoVer(key);
                   ++it ) {
                 if ( it->first.EqualAcc(key) ) {
-                    id_list.insert(CSeq_id_Handle(it->second, id.GetPacked()));
+                    id_list.insert(CSeq_id_Handle(it->second, id.GetPacked(), id.GetVariant()));
                 }
             }
         }
@@ -1349,7 +1529,7 @@ void CSeq_id_Textseq_Tree::FindReverseMatch(const CSeq_id_Handle& id,
         if ( !mine ) { // weak matching
             TPackedMap_CI iter = m_PackedMap.find(info->GetKey());
             if ( iter != m_PackedMap.end() ) {
-                id_list.insert(CSeq_id_Handle(iter->second, id.GetPacked()));
+                id_list.insert(CSeq_id_Handle(iter->second, id.GetPacked(), id.GetVariant()));
             }
         }
         if ( info->IsSetVersion() ) {
@@ -1357,13 +1537,13 @@ void CSeq_id_Textseq_Tree::FindReverseMatch(const CSeq_id_Handle& id,
             key.ResetVersion();
             TPackedMap_CI it = m_PackedMap.find(key);
             if ( it != m_PackedMap.end() ) {
-                id_list.insert(CSeq_id_Handle(it->second, id.GetPacked()));
+                id_list.insert(CSeq_id_Handle(it->second, id.GetPacked(), id.GetVariant()));
             }
         }
         if ( !m_ByAcc.empty() ) {
             // look for non-packed variants that may have set name or revision
             string acc;
-            info->RestoreAccession(acc, id.GetPacked());
+            info->RestoreAccession(acc, id.GetPacked(), id.GetVariant());
             x_FindRevMatchByAccNonPacked
                 (id_list, acc, info->IsSetVersion()? &info->GetVersion(): 0);
         }
@@ -1663,7 +1843,44 @@ CSeq_id_Local_Info::~CSeq_id_Local_Info()
 }
 
 
-CSeq_id_Info* CSeq_id_Local_Tree::x_FindStrInfo(const string& str) const
+inline CSeq_id_Handle::TVariant
+CSeq_id_Local_Info::ParseCaseVariant(const string& str) const
+{
+    return s_ParseCaseVariant(m_Seq_id->GetLocal().GetStr(), str).first;
+}
+
+
+inline CSeq_id_Handle::TVariant
+CSeq_id_Local_Info::ParseCaseVariant(const CObject_id& oid) const
+{
+    if ( !oid.IsStr() ) {
+        return 0;
+    }
+    return ParseCaseVariant(oid.GetStr());
+}
+
+
+CConstRef<CSeq_id> CSeq_id_Local_Info::GetPackedSeqId(TPacked packed, TVariant variant) const
+{
+    if ( !variant ) {
+        return m_Seq_id;
+    }
+    CRef<CSeq_id> ret(new CSeq_id);
+    const CObject_id& src = m_Seq_id->GetLocal();
+    CObject_id& oid = ret->SetLocal();
+    if ( IsId() ) {
+        oid.SetId(src.GetId());
+    }
+    else {
+        string& str = oid.SetStr();
+        str = src.GetStr();
+        s_RestoreCaseVariant(str, variant);
+    }
+    return ret;
+}
+
+
+CSeq_id_Local_Info* CSeq_id_Local_Tree::x_FindStrInfo(const string& str) const
 {
     TByStr::const_iterator it = m_ByStr.find(str);
     if ( it != m_ByStr.end() ) {
@@ -1674,7 +1891,7 @@ CSeq_id_Info* CSeq_id_Local_Tree::x_FindStrInfo(const string& str) const
 }
 
 
-CSeq_id_Info* CSeq_id_Local_Tree::x_FindIdInfo(CObject_id::TId id) const
+CSeq_id_Local_Info* CSeq_id_Local_Tree::x_FindIdInfo(CObject_id::TId id) const
 {
     TById::const_iterator it = m_ById.find(id);
     if ( it != m_ById.end() ) {
@@ -1685,7 +1902,7 @@ CSeq_id_Info* CSeq_id_Local_Tree::x_FindIdInfo(CObject_id::TId id) const
 }
 
 
-CSeq_id_Info* CSeq_id_Local_Tree::x_FindInfo(const CObject_id& oid) const
+CSeq_id_Local_Info* CSeq_id_Local_Tree::x_FindInfo(const CObject_id& oid) const
 {
     if ( oid.IsStr() ) {
         return x_FindStrInfo(oid.GetStr());
@@ -1701,7 +1918,9 @@ CSeq_id_Handle CSeq_id_Local_Tree::FindInfo(const CSeq_id& id) const
     _ASSERT( id.IsLocal() );
     const CObject_id& oid = id.GetLocal();
     TReadLockGuard guard(m_TreeLock);
-    return CSeq_id_Handle(x_FindInfo(oid));
+    CSeq_id_Local_Info* info = x_FindInfo(oid);
+    CSeq_id_Handle::TVariant variant = info? info->ParseCaseVariant(oid): 0;
+    return CSeq_id_Handle(info, 0, variant);
 }
 
 
@@ -1710,10 +1929,14 @@ CSeq_id_Handle CSeq_id_Local_Tree::FindOrCreate(const CSeq_id& id)
     const CObject_id& oid = id.GetLocal();
     TWriteLockGuard guard(m_TreeLock);
     CSeq_id_Local_Info*& info = oid.IsStr()? m_ByStr[oid.GetStr()]: m_ById[oid.GetId()];
+    CSeq_id_Handle::TVariant variant = 0;
     if ( !info ) {
         info = new CSeq_id_Local_Info(oid, m_Mapper);
     }
-    return CSeq_id_Handle(info);
+    else {
+        variant = info->ParseCaseVariant(oid);
+    }
+    return CSeq_id_Handle(info, 0, variant);
 }
 
 
@@ -1857,7 +2080,6 @@ CSeq_id_General_Id_Info::CSeq_id_General_Id_Info(CSeq_id_Mapper* mapper,
     : CSeq_id_Info(CSeq_id::e_General, mapper),
       m_Key(key)
 {
-    //LOG_POST("CSeq_id_General_Id_Info("<<key<<")");
 }
 
 
@@ -1878,7 +2100,7 @@ CSeq_id_General_Id_Info::Pack(const TKey& /*key*/, const CDbtag& dbtag)
 }
 
 
-void CSeq_id_General_Id_Info::Restore(CDbtag& dbtag, TPacked param) const
+void CSeq_id_General_Id_Info::Restore(CDbtag& dbtag, TPacked param, TVariant variant) const
 {
     if ( !dbtag.IsSetDb() ) {
         dbtag.SetDb(GetDbtag());
@@ -1887,29 +2109,37 @@ void CSeq_id_General_Id_Info::Restore(CDbtag& dbtag, TPacked param) const
         ++param;
     }
     dbtag.SetTag().SetId(CObject_id::TId(param));
+    s_RestoreCaseVariant(dbtag.SetDb(), variant);
 }
 
 
-CConstRef<CSeq_id> CSeq_id_General_Id_Info::GetPackedSeqId(TPacked param) const
+CConstRef<CSeq_id> CSeq_id_General_Id_Info::GetPackedSeqId(TPacked param, TVariant variant) const
 {
     CConstRef<CSeq_id> ret;
-    typedef CSeq_id_General_Id_Info TThis;
+    if ( variant ) {
+        // all non-initial case variants need fresh Seq-id to start with
+        ret = new CSeq_id;
+    }
+    else {
+        // otherwise try to use shared Seq-id if it's not referenced anywhere else
+        typedef CSeq_id_General_Id_Info TThis;
 #if defined NCBI_SLOW_ATOMIC_SWAP
-    CFastMutexGuard guard(sx_GetSeqIdMutex);
-    ret = m_Seq_id;
-    const_cast<TThis*>(this)->m_Seq_id.Reset();
-    if ( !ret || !ret->ReferencedOnlyOnce() ) {
-        ret.Reset(new CSeq_id);
-    }
-    const_cast<TThis*>(this)->m_Seq_id = ret;
+        CFastMutexGuard guard(sx_GetSeqIdMutex);
+        ret = m_Seq_id;
+        const_cast<TThis*>(this)->m_Seq_id.Reset();
+        if ( !ret || !ret->ReferencedOnlyOnce() ) {
+            ret.Reset(new CSeq_id);
+        }
+        const_cast<TThis*>(this)->m_Seq_id = ret;
 #else
-    const_cast<TThis*>(this)->m_Seq_id.AtomicReleaseTo(ret);
-    if ( !ret || !ret->ReferencedOnlyOnce() ) {
-        ret.Reset(new CSeq_id);
-    }
-    const_cast<TThis*>(this)->m_Seq_id.AtomicResetFrom(ret);
+        const_cast<TThis*>(this)->m_Seq_id.AtomicReleaseTo(ret);
+        if ( !ret || !ret->ReferencedOnlyOnce() ) {
+            ret.Reset(new CSeq_id);
+        }
+        const_cast<TThis*>(this)->m_Seq_id.AtomicResetFrom(ret);
 #endif
-    Restore(const_cast<CSeq_id&>(*ret).SetGeneral(), param);
+    }
+    Restore(const_cast<CSeq_id&>(*ret).SetGeneral(), param, variant);
     return ret;
 }
 
@@ -1924,13 +2154,22 @@ CSeq_id_General_Str_Info::CSeq_id_General_Str_Info(CSeq_id_Mapper* mapper,
     : CSeq_id_Info(CSeq_id::e_General, mapper),
       m_Key(key)
 {
-    //LOG_POST("CSeq_id_General_Str_Info("<<key.m_Db<<","<<key.m_StrPrefix
-    //         <<","<<hex<<key.m_Key<<dec<<","<<key.m_StrSuffix<<")");
 }
 
 
 CSeq_id_General_Str_Info::~CSeq_id_General_Str_Info(void)
 {
+}
+
+
+inline
+CSeq_id_Handle::TVariant CSeq_id_General_Str_Info::TKey::ParseCaseVariant(const CDbtag& dbtag) const
+{
+    auto t1 = s_ParseCaseVariant(m_Db, dbtag.GetDb());
+    const char* str = dbtag.GetTag().GetStr().data();
+    auto t2 = s_ParseCaseVariant(m_StrPrefix, str, t1.second);
+    auto t3 = s_ParseCaseVariant(m_StrSuffix, str+m_StrPrefix.size()+GetStrDigits(), t2.second);
+    return t1.first | t2.first | t3.first;
 }
 
 
@@ -1998,7 +2237,7 @@ CSeq_id_General_Str_Info::Pack(const TKey& key,
 }
 
 
-void CSeq_id_General_Str_Info::Restore(CDbtag& dbtag, TPacked param) const
+void CSeq_id_General_Str_Info::Restore(CDbtag& dbtag, TPacked param, TVariant variant) const
 {
     if ( !dbtag.IsSetDb() ) {
         dbtag.SetDb(GetDbtag());
@@ -2015,35 +2254,90 @@ void CSeq_id_General_Str_Info::Restore(CDbtag& dbtag, TPacked param) const
     if ( param < 0 ) {
         ++param;
     }
-    s_RestoreNumber(obj_id.SetStr(),
-                    GetStrPrefix().size(), GetStrDigits(), param);
+    s_RestoreNumber(obj_id.SetStr(), GetStrPrefix().size(), GetStrDigits(), param);
+    variant = s_RestoreCaseVariant(dbtag.SetDb(), variant);
+    s_RestoreCaseVariant(obj_id.SetStr(), variant);
 }
 
 
-CConstRef<CSeq_id> CSeq_id_General_Str_Info::GetPackedSeqId(TPacked param) const
+CConstRef<CSeq_id> CSeq_id_General_Str_Info::GetPackedSeqId(TPacked param, TVariant variant) const
 {
     CConstRef<CSeq_id> ret;
-    typedef CSeq_id_General_Str_Info TThis;
+    if ( variant ) {
+        // all non-initial case variants need fresh Seq-id to start with
+        ret = new CSeq_id;
+    }
+    else {
+        // otherwise try to use shared Seq-id if it's not referenced anywhere else
+        typedef CSeq_id_General_Str_Info TThis;
 #if defined NCBI_SLOW_ATOMIC_SWAP
-    CFastMutexGuard guard(sx_GetSeqIdMutex);
-    ret = m_Seq_id;
-    const_cast<TThis*>(this)->m_Seq_id.Reset();
-    if ( !ret || !ret->ReferencedOnlyOnce() ) {
-        ret.Reset(new CSeq_id);
-    }
-    const_cast<TThis*>(this)->m_Seq_id = ret;
+        CFastMutexGuard guard(sx_GetSeqIdMutex);
+        ret = m_Seq_id;
+        const_cast<TThis*>(this)->m_Seq_id.Reset();
+        if ( !ret || !ret->ReferencedOnlyOnce() ) {
+            ret.Reset(new CSeq_id);
+        }
+        const_cast<TThis*>(this)->m_Seq_id = ret;
 #else
-    const_cast<TThis*>(this)->m_Seq_id.AtomicReleaseTo(ret);
-    if ( !ret || !ret->ReferencedOnlyOnce() ) {
-        ret.Reset(new CSeq_id);
-    }
-    const_cast<TThis*>(this)->m_Seq_id.AtomicResetFrom(ret);
+        const_cast<TThis*>(this)->m_Seq_id.AtomicReleaseTo(ret);
+        if ( !ret || !ret->ReferencedOnlyOnce() ) {
+            ret.Reset(new CSeq_id);
+        }
+        const_cast<TThis*>(this)->m_Seq_id.AtomicResetFrom(ret);
 #endif
-    Restore(const_cast<CSeq_id&>(*ret).SetGeneral(), param);
+    }
+    Restore(const_cast<CSeq_id&>(*ret).SetGeneral(), param, variant);
     return ret;
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_id_General_PlainInfo
+/////////////////////////////////////////////////////////////////////////////
+
+
+CSeq_id_General_PlainInfo::CSeq_id_General_PlainInfo(const CDbtag& dbid, CSeq_id_Mapper* mapper)
+    : CSeq_id_Info(CSeq_id::e_General, mapper)
+{
+    CRef<CSeq_id> seq_id(new CSeq_id);
+    s_AssignDbtag(seq_id->SetGeneral(), dbid);
+    m_Seq_id = move(seq_id);
+}
+
+
+inline
+CSeq_id_Handle::TVariant CSeq_id_General_PlainInfo::ParseCaseVariant(const CDbtag& dbtag) const
+{
+    const CDbtag& src = m_Seq_id->GetGeneral();
+    if ( dbtag.GetTag().IsId() ) {
+        return s_ParseCaseVariant(src.GetDb(), dbtag.GetDb()).first;
+    }
+    else {
+        auto t1 = s_ParseCaseVariant(src.GetDb(), dbtag.GetDb());
+        auto t2 = s_ParseCaseVariant(src.GetTag().GetStr(), dbtag.GetTag().GetStr(), t1.second);
+        return t1.first | t2.first;
+    }
+}
+
+
+CConstRef<CSeq_id> CSeq_id_General_PlainInfo::GetPackedSeqId(TPacked packed, TVariant variant) const
+{
+    if ( !variant ) {
+        return m_Seq_id;
+    }
+    CRef<CSeq_id> id(new CSeq_id);
+    CDbtag& dbtag = id->SetGeneral();
+    s_AssignDbtag(dbtag, m_Seq_id->GetGeneral());
+    if ( dbtag.GetTag().IsId() ) {
+        s_RestoreCaseVariant(dbtag.SetDb(), variant);
+    }
+    else {
+        variant = s_RestoreCaseVariant(dbtag.SetDb(), variant);
+        s_RestoreCaseVariant(dbtag.SetTag().SetStr(), variant);
+    }
+    return id;
+}
+    
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_id_General_Tree
 /////////////////////////////////////////////////////////////////////////////
@@ -2066,7 +2360,7 @@ bool CSeq_id_General_Tree::Empty(void) const
 }
 
 
-CSeq_id_Info* CSeq_id_General_Tree::x_FindInfo(const CDbtag& dbid) const
+CSeq_id_General_PlainInfo* CSeq_id_General_Tree::x_FindInfo(const CDbtag& dbid) const
 {
     TDbMap::const_iterator db = m_DbMap.find(dbid.GetDb());
     if (db == m_DbMap.end())
@@ -2109,7 +2403,7 @@ CSeq_id_Handle CSeq_id_General_Tree::FindInfo(const CSeq_id& id) const
             TReadLockGuard guard(m_TreeLock);
             TPackedStrMap::const_iterator it = m_PackedStrMap.find(key);
             if ( it != m_PackedStrMap.end() ) {
-                return CSeq_id_Handle(it->second, packed);
+                return CSeq_id_Handle(it->second, packed, it->first.ParseCaseVariant(dbid));
             }
             return null;
         }
@@ -2120,7 +2414,7 @@ CSeq_id_Handle CSeq_id_General_Tree::FindInfo(const CSeq_id& id) const
             TReadLockGuard guard(m_TreeLock);
             TPackedIdMap::const_iterator it = m_PackedIdMap.find(key);
             if ( it != m_PackedIdMap.end() ) {
-                return CSeq_id_Handle(it->second, packed);
+                return CSeq_id_Handle(it->second, packed, s_ParseCaseVariant(it->first, dbid.GetDb()).first);
             }
             return null;
         }
@@ -2129,7 +2423,9 @@ CSeq_id_Handle CSeq_id_General_Tree::FindInfo(const CSeq_id& id) const
         }
     }
     TReadLockGuard guard(m_TreeLock);
-    return CSeq_id_Handle(x_FindInfo(dbid));
+    CSeq_id_General_PlainInfo* info = x_FindInfo(dbid);
+    CSeq_id_Handle::TVariant variant = info? info->ParseCaseVariant(dbid): 0;
+    return CSeq_id_Handle(info, 0, variant);
 }
 
 
@@ -2148,6 +2444,7 @@ CSeq_id_Handle CSeq_id_General_Tree::FindOrCreate(const CSeq_id& id)
             TPacked packed = CSeq_id_General_Str_Info::Pack(key, dbid);
             TWriteLockGuard guard(m_TreeLock);
             TPackedStrMap::iterator it = m_PackedStrMap.lower_bound(key);
+            CSeq_id_Handle::TVariant variant = 0;
             if ( it == m_PackedStrMap.end() ||
                  m_PackedStrMap.key_comp()(key, it->first) ) {
                 CConstRef<CSeq_id_General_Str_Info> info
@@ -2155,7 +2452,10 @@ CSeq_id_Handle CSeq_id_General_Tree::FindOrCreate(const CSeq_id& id)
                 it = m_PackedStrMap.insert
                     (it, TPackedStrMap::value_type(key, info));
             }
-            return CSeq_id_Handle(it->second, packed);
+            else {
+                variant = it->first.ParseCaseVariant(dbid);
+            }
+            return CSeq_id_Handle(it->second, packed, variant);
         }
         case CObject_id::e_Id:
         {
@@ -2163,6 +2463,7 @@ CSeq_id_Handle CSeq_id_General_Tree::FindOrCreate(const CSeq_id& id)
             TPacked packed = CSeq_id_General_Id_Info::Pack(key, dbid);
             TWriteLockGuard guard(m_TreeLock);
             TPackedIdMap::iterator it = m_PackedIdMap.lower_bound(key);
+            CSeq_id_Handle::TVariant variant = 0;
             if ( it == m_PackedIdMap.end() ||
                  !NStr::EqualNocase(it->first, key) ) {
                 CConstRef<CSeq_id_General_Id_Info> info
@@ -2170,16 +2471,20 @@ CSeq_id_Handle CSeq_id_General_Tree::FindOrCreate(const CSeq_id& id)
                 it = m_PackedIdMap.insert
                     (it, TPackedIdMap::value_type(key, info));
             }
-            return CSeq_id_Handle(it->second, packed);
+            else {
+                variant = s_ParseCaseVariant(it->first, dbid.GetDb()).first;
+            }
+            return CSeq_id_Handle(it->second, packed, variant);
         }
         default:
             break;
         }
     }
     TWriteLockGuard guard(m_TreeLock);
-    CSeq_id_Info* info = x_FindInfo(dbid);
+    CSeq_id_General_PlainInfo* info = x_FindInfo(dbid);
+    CSeq_id_Handle::TVariant variant = 0;
     if ( !info ) {
-        info = CreateInfo(id);
+        info = new CSeq_id_General_PlainInfo(dbid, m_Mapper);
         STagMap& tm = m_DbMap[dbid.GetDb()];
         const CObject_id& oid = dbid.GetTag();
         if ( oid.IsStr() ) {
@@ -2197,7 +2502,10 @@ CSeq_id_Handle CSeq_id_General_Tree::FindOrCreate(const CSeq_id& id)
                        "Can not create index for an empty db-tag");
         }
     }
-    return CSeq_id_Handle(info);
+    else {
+        variant = info->ParseCaseVariant(dbid);
+    }
+    return CSeq_id_Handle(info, 0, variant);
 }
 
 

@@ -1942,3 +1942,135 @@ BOOST_AUTO_TEST_CASE(MatchStrId)
         }
     }
 }
+
+
+BOOST_AUTO_TEST_CASE(TestCase)
+{
+    LOG_POST("Testing case preservation");
+    {{
+        CRef<CSeq_id> sid1(new CSeq_id(CSeq_id::e_Other, "abcdef"));
+        CRef<CSeq_id> sid2(new CSeq_id(CSeq_id::e_Other, "ABCDeF"));
+        CSeq_id_Handle id1 = CSeq_id_Handle::GetHandle(*sid1);
+        CSeq_id_Handle id2 = CSeq_id_Handle::GetHandle(*sid2);
+        BOOST_CHECK_EQUAL(id1, id2);
+        BOOST_CHECK_EQUAL(id1.AsString(), "ref|abcdef|");
+        BOOST_CHECK_EQUAL(id2.AsString(), "ref|ABCDeF|");
+        BOOST_CHECK_EQUAL(id1.GetSeqId()->GetTextseq_Id()->GetAccession(), "abcdef");
+        BOOST_CHECK_EQUAL(id2.GetSeqId()->GetTextseq_Id()->GetAccession(), "ABCDeF");
+    }}
+    {{
+        CSeq_id_Handle id1 = CSeq_id_Handle::GetHandle("NC_000001");
+        CSeq_id_Handle id2 = CSeq_id_Handle::GetHandle("nc_000001");
+        BOOST_CHECK_EQUAL(id1, id2);
+        BOOST_CHECK_EQUAL(id1.GetSeqId()->GetTextseq_Id()->GetAccession(), "NC_000001");
+        BOOST_CHECK_EQUAL(id2.GetSeqId()->GetTextseq_Id()->GetAccession(), "nc_000001");
+        BOOST_CHECK_EQUAL(id1.AsString(), "ref|NC_000001|");
+        BOOST_CHECK_EQUAL(id2.AsString(), "ref|nc_000001|");
+
+        CSeq_id_Handle id3 = CSeq_id_Handle::GetHandle("nC_000001.1");
+        CSeq_id_Handle id4 = CSeq_id_Handle::GetHandle("Nc_000001.1");
+        BOOST_CHECK_EQUAL(id3, id4);
+        BOOST_CHECK_EQUAL(id3.GetSeqId()->GetTextseq_Id()->GetAccession(), "nC_000001");
+        BOOST_CHECK_EQUAL(id4.GetSeqId()->GetTextseq_Id()->GetAccession(), "Nc_000001");
+        BOOST_CHECK_EQUAL(id3.AsString(), "ref|nC_000001.1|");
+        BOOST_CHECK_EQUAL(id4.AsString(), "ref|Nc_000001.1|");
+
+        BOOST_CHECK(id3 != id1);
+        BOOST_CHECK_EQUAL(id1.GetSeqId()->GetTextseq_Id()->GetAccession(), "NC_000001");
+        BOOST_CHECK_EQUAL(id2.GetSeqId()->GetTextseq_Id()->GetAccession(), "nc_000001");
+        BOOST_CHECK_EQUAL(id1.AsString(), "ref|NC_000001|");
+        BOOST_CHECK_EQUAL(id2.AsString(), "ref|nc_000001|");
+    }}
+    {{
+        CSeq_id_Handle id1 = CSeq_id_Handle::GetHandle("lcl|Test");
+        CSeq_id_Handle id2 = CSeq_id_Handle::GetHandle("lcl|test");
+        BOOST_CHECK_EQUAL(id1, id2);
+        BOOST_CHECK_EQUAL(id1.GetSeqId()->GetLocal().GetStr(), "Test");
+        BOOST_CHECK_EQUAL(id2.GetSeqId()->GetLocal().GetStr(), "test");
+        BOOST_CHECK_EQUAL(id1.AsString(), "lcl|Test");
+        BOOST_CHECK_EQUAL(id2.AsString(), "lcl|test");
+
+        CSeq_id_Handle id3 = CSeq_id_Handle::GetHandle("lcl|TEST");
+        CSeq_id_Handle id4 = CSeq_id_Handle::GetHandle("lcl|tEsT");
+        BOOST_CHECK_EQUAL(id3, id4);
+        BOOST_CHECK_EQUAL(id3.GetSeqId()->GetLocal().GetStr(), "TEST");
+        BOOST_CHECK_EQUAL(id4.GetSeqId()->GetLocal().GetStr(), "tEsT");
+        BOOST_CHECK_EQUAL(id3.AsString(), "lcl|TEST");
+        BOOST_CHECK_EQUAL(id4.AsString(), "lcl|tEsT");
+
+        BOOST_CHECK_EQUAL(id3, id1);
+        BOOST_CHECK_EQUAL(id1.GetSeqId()->GetLocal().GetStr(), "Test");
+        BOOST_CHECK_EQUAL(id2.GetSeqId()->GetLocal().GetStr(), "test");
+        BOOST_CHECK_EQUAL(id1.AsString(), "lcl|Test");
+        BOOST_CHECK_EQUAL(id2.AsString(), "lcl|test");
+    }}
+    {{
+        CSeq_id_Handle id1 = CSeq_id_Handle::GetHandle("gnl|SRA|SRR");
+        CSeq_id_Handle id2 = CSeq_id_Handle::GetHandle("gnl|SRA|srr");
+        BOOST_CHECK_EQUAL(id1, id2);
+        BOOST_CHECK_EQUAL(id1.GetSeqId()->AsFastaString(), "gnl|SRA|SRR");
+        BOOST_CHECK_EQUAL(id2.GetSeqId()->AsFastaString(), "gnl|SRA|srr");
+        BOOST_CHECK_EQUAL(id1.AsString(), "gnl|SRA|SRR");
+        BOOST_CHECK_EQUAL(id2.AsString(), "gnl|SRA|srr");
+
+        CSeq_id_Handle id3 = CSeq_id_Handle::GetHandle("gnl|sra|SRR");
+        CSeq_id_Handle id4 = CSeq_id_Handle::GetHandle("gnl|Sra|Srr");
+        BOOST_CHECK_EQUAL(id3, id4);
+        BOOST_CHECK_EQUAL(id3.GetSeqId()->AsFastaString(), "gnl|sra|SRR");
+        BOOST_CHECK_EQUAL(id4.GetSeqId()->AsFastaString(), "gnl|Sra|Srr");
+        BOOST_CHECK_EQUAL(id3.AsString(), "gnl|sra|SRR");
+        BOOST_CHECK_EQUAL(id4.AsString(), "gnl|Sra|Srr");
+
+        BOOST_CHECK_EQUAL(id3, id1);
+        BOOST_CHECK_EQUAL(id1.GetSeqId()->AsFastaString(), "gnl|SRA|SRR");
+        BOOST_CHECK_EQUAL(id2.GetSeqId()->AsFastaString(), "gnl|SRA|srr");
+        BOOST_CHECK_EQUAL(id1.AsString(), "gnl|SRA|SRR");
+        BOOST_CHECK_EQUAL(id2.AsString(), "gnl|SRA|srr");
+    }}
+    {{
+        CSeq_id_Handle id1 = CSeq_id_Handle::GetHandle("gnl|SRA|SRR000010.2");
+        CSeq_id_Handle id2 = CSeq_id_Handle::GetHandle("gnl|SRA|srr000010.2");
+        BOOST_CHECK_EQUAL(id1, id2);
+        BOOST_CHECK_EQUAL(id1.GetSeqId()->AsFastaString(), "gnl|SRA|SRR000010.2");
+        BOOST_CHECK_EQUAL(id2.GetSeqId()->AsFastaString(), "gnl|SRA|srr000010.2");
+        BOOST_CHECK_EQUAL(id1.AsString(), "gnl|SRA|SRR000010.2");
+        BOOST_CHECK_EQUAL(id2.AsString(), "gnl|SRA|srr000010.2");
+
+        CSeq_id_Handle id3 = CSeq_id_Handle::GetHandle("gnl|sra|SRR000011.s");
+        CSeq_id_Handle id4 = CSeq_id_Handle::GetHandle("gnl|Sra|Srr000011.S");
+        BOOST_CHECK_EQUAL(id3, id4);
+        BOOST_CHECK_EQUAL(id3.GetSeqId()->AsFastaString(), "gnl|sra|SRR000011.s");
+        BOOST_CHECK_EQUAL(id4.GetSeqId()->AsFastaString(), "gnl|Sra|Srr000011.S");
+        BOOST_CHECK_EQUAL(id3.AsString(), "gnl|sra|SRR000011.s");
+        BOOST_CHECK_EQUAL(id4.AsString(), "gnl|Sra|Srr000011.S");
+
+        BOOST_CHECK(id3 != id1);
+        BOOST_CHECK_EQUAL(id1.GetSeqId()->AsFastaString(), "gnl|SRA|SRR000010.2");
+        BOOST_CHECK_EQUAL(id2.GetSeqId()->AsFastaString(), "gnl|SRA|srr000010.2");
+        BOOST_CHECK_EQUAL(id1.AsString(), "gnl|SRA|SRR000010.2");
+        BOOST_CHECK_EQUAL(id2.AsString(), "gnl|SRA|srr000010.2");
+    }}
+    {{
+        CSeq_id_Handle id1 = CSeq_id_Handle::GetHandle("gnl|SRA|1");
+        CSeq_id_Handle id2 = CSeq_id_Handle::GetHandle("gnl|Sra|1");
+        BOOST_CHECK_EQUAL(id1, id2);
+        BOOST_CHECK_EQUAL(id1.GetSeqId()->AsFastaString(), "gnl|SRA|1");
+        BOOST_CHECK_EQUAL(id2.GetSeqId()->AsFastaString(), "gnl|Sra|1");
+        BOOST_CHECK_EQUAL(id1.AsString(), "gnl|SRA|1");
+        BOOST_CHECK_EQUAL(id2.AsString(), "gnl|Sra|1");
+
+        CSeq_id_Handle id3 = CSeq_id_Handle::GetHandle("gnl|sra|2");
+        CSeq_id_Handle id4 = CSeq_id_Handle::GetHandle("gnl|Sra|2");
+        BOOST_CHECK_EQUAL(id3, id4);
+        BOOST_CHECK_EQUAL(id3.GetSeqId()->AsFastaString(), "gnl|sra|2");
+        BOOST_CHECK_EQUAL(id4.GetSeqId()->AsFastaString(), "gnl|Sra|2");
+        BOOST_CHECK_EQUAL(id3.AsString(), "gnl|sra|2");
+        BOOST_CHECK_EQUAL(id4.AsString(), "gnl|Sra|2");
+
+        BOOST_CHECK(id3 != id1);
+        BOOST_CHECK_EQUAL(id1.GetSeqId()->AsFastaString(), "gnl|SRA|1");
+        BOOST_CHECK_EQUAL(id2.GetSeqId()->AsFastaString(), "gnl|Sra|1");
+        BOOST_CHECK_EQUAL(id1.AsString(), "gnl|SRA|1");
+        BOOST_CHECK_EQUAL(id2.AsString(), "gnl|Sra|1");
+    }}
+}

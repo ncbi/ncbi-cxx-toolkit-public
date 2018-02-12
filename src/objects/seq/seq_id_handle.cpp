@@ -79,7 +79,7 @@ CSeq_id_Which_Tree& CSeq_id_Info::GetTree(void) const
 }
 
 
-CConstRef<CSeq_id> CSeq_id_Info::GetPackedSeqId(TPacked /*packed*/) const
+CConstRef<CSeq_id> CSeq_id_Info::GetPackedSeqId(TPacked /*packed*/, TVariant /*variant*/) const
 {
     NCBI_THROW(CSeq_id_MapperException, eTypeError,
                "CSeq_id_Handle is not packed");
