@@ -70,6 +70,16 @@
 # pragma intrinsic(_ReadWriteBarrier)
 #endif
 
+#if defined(NCBI_WIN32_THREADS)
+#define NCBI_SRWLOCK_USE_NEW   1
+#endif
+
+#if NCBI_SRWLOCK_USE_NEW
+# include <atomic>
+# include <mutex>
+# include <condition_variable>
+#endif
+
 
 /** @addtogroup Threads
  *
@@ -1003,19 +1013,35 @@ public:
     void Unlock(void);
 
 private:
+#if NCBI_SRWLOCK_USE_NEW
+    mutex                       m_Mtx;
+    condition_variable          m_Cv;
+    volatile TThreadSystemID    m_Owner;   ///< Writer ID
+    atomic<long>                m_Count;   ///< Number of readers (if >0) or writers (if <0)
+    long                        m_WaitingWriters; ///< Number of writers waiting; zero if not keeping track
+    vector<TThreadSystemID>     m_Readers; ///< List of all readers to detect recursion
+    bool                        m_TrackReaders;
+    bool                        m_FavorWriters;
+
+    bool x_HasReader(TThreadSystemID self_id);
+    vector<TThreadSystemID>::const_iterator x_FindReader(TThreadSystemID self_id);
+    bool x_MayAcquireForReading(TThreadSystemID self_id);
+    bool x_TryReadLock();
+    bool x_TryWriteLock();
+#else
     enum EInternalFlags {
         /// Keep track of which threads have read locks
         fTrackReaders = 0x40000000
     };
-
     TFlags                      m_Flags;   ///< Configuration flags
     unique_ptr<CInternalRWLock> m_RW;      ///< Platform-dependent RW-lock data
     volatile TThreadSystemID    m_Owner;   ///< Writer ID, one of the readers ID
     volatile long               m_Count;   ///< Number of readers (if >0) or writers (if <0)
     volatile unsigned int       m_WaitingWriters; ///< Number of writers waiting; zero if not keeping track
-    vector<TThreadSystemID>     m_Readers; ///< List of all readers or writers for debugging
+    vector<TThreadSystemID>     m_Readers; ///< List of all readers or writers
 
     bool x_MayAcquireForReading(TThreadSystemID self_id);
+#endif
 
     /// Private copy constructor to disallow initialization.
     CRWLock(const CRWLock&);

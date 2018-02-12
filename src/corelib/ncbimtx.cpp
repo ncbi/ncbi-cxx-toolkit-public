@@ -40,6 +40,7 @@
 #include "ncbidbg_p.hpp"
 #include <stdio.h>
 #include <algorithm>
+#include <chrono>
 
 //#define LOG_MUTEX_EVENTS
 
@@ -626,6 +627,21 @@ CInternalRWLock::CInternalRWLock(void)
 //  CRWLock::
 //
 
+#if NCBI_SRWLOCK_USE_NEW
+CRWLock::CRWLock(TFlags flags)
+    : m_Owner(0), m_Count(0), m_WaitingWriters(0), m_TrackReaders(false)
+{
+#if defined(_DEBUG)
+    m_TrackReaders = true;
+    m_FavorWriters = false;
+#else
+    m_TrackReaders = m_FavorWriters = (flags & fFavorWriters) != 0;
+#endif
+    if (m_TrackReaders) {
+        m_Readers.reserve(16);
+    }
+}
+#else
 CRWLock::CRWLock(TFlags flags)
     : m_Flags(flags),
       m_RW(new CInternalRWLock),
@@ -643,13 +659,55 @@ CRWLock::CRWLock(TFlags flags)
         m_Readers.reserve(16);
     }
 }
+#endif
 
 
 CRWLock::~CRWLock(void)
 {
+    _ASSERT(m_Count == 0);
 }
 
 
+#if NCBI_SRWLOCK_USE_NEW
+inline
+vector<TThreadSystemID>::const_iterator
+CRWLock::x_FindReader(TThreadSystemID self_id)
+{
+    return find(m_Readers.begin(), m_Readers.end(), self_id);
+}
+
+inline
+bool 
+CRWLock::x_HasReader(TThreadSystemID self_id)
+{
+    return m_Readers.empty() ? false : x_FindReader(self_id) != m_Readers.end();
+}
+
+inline
+bool CRWLock::x_MayAcquireForReading(TThreadSystemID self_id)
+{
+    return (m_WaitingWriters == 0 && m_Count >= 0) || (m_TrackReaders && x_HasReader(self_id));
+}
+
+inline 
+bool CRWLock::x_TryWriteLock()
+{
+    long expected = 0;
+    return m_Count.compare_exchange_strong(expected, expected-1);
+}
+
+inline 
+bool CRWLock::x_TryReadLock()
+{
+    long expected = 0;
+    do {
+        if (m_Count.compare_exchange_weak(expected, expected+1)) {
+            return true;
+        }
+    } while (expected >= 0);
+    return false;
+}
+#else
 inline bool CRWLock::x_MayAcquireForReading(TThreadSystemID self_id)
 {
     _ASSERT(self_id == GetCurrentThreadSystemID());
@@ -665,6 +723,7 @@ inline bool CRWLock::x_MayAcquireForReading(TThreadSystemID self_id)
         return !m_WaitingWriters;
     }
 }
+#endif
 
 
 #if defined(NCBI_USE_CRITICAL_SECTION)
@@ -794,6 +853,28 @@ void CRWLock::ReadLock(void)
     return;
 #else
 
+#if NCBI_SRWLOCK_USE_NEW
+    TThreadSystemID self_id = GetCurrentThreadSystemID();
+    if (m_Owner == self_id) {
+        --m_Count;
+    } else {
+        if (!m_TrackReaders && x_TryReadLock()) {
+            return;
+        }
+        unique_lock<mutex> lck( m_Mtx);
+        do {
+            if ( !x_MayAcquireForReading(self_id) ) {
+                while (m_WaitingWriters > 0 || m_Count < 0) {
+                    m_Cv.wait(lck);
+                }
+            }
+        } while (!x_TryReadLock());
+        if (m_TrackReaders) {
+            m_Readers.push_back(self_id);
+        }
+    }
+#else
+
 #if defined(NCBI_WIN32_THREADS)
     if ((m_Flags & fTrackReaders) == 0) {
         // Try short way if there are other readers.
@@ -875,12 +956,35 @@ void CRWLock::ReadLock(void)
         m_Readers.push_back(self_id);
     }
 #endif
+#endif
 }
 
 
 bool CRWLock::TryReadLock(void)
 {
 #if defined(NCBI_NO_THREADS)
+    return true;
+#else
+
+#if NCBI_SRWLOCK_USE_NEW
+    TThreadSystemID self_id = GetCurrentThreadSystemID();
+    if (m_Owner == self_id) {
+        --m_Count;
+    } else {
+        if (!m_TrackReaders && x_TryReadLock()) {
+            return true;
+        }
+        unique_lock<mutex> lck( m_Mtx);
+        if (!x_MayAcquireForReading(self_id)) {
+            return false;
+        }
+        if (!x_TryReadLock()) {
+            return false;
+        }
+        if (m_TrackReaders) {
+            m_Readers.push_back(self_id);
+        }
+    }
     return true;
 #else
 
@@ -926,6 +1030,7 @@ bool CRWLock::TryReadLock(void)
     }
     return true;
 #endif
+#endif
 }
 
 
@@ -942,6 +1047,41 @@ bool CRWLock::TryReadLock(const CTimeout& timeout)
     if ( timeout.IsZero() ) {
         return TryReadLock();
     }
+
+#if NCBI_SRWLOCK_USE_NEW
+    TThreadSystemID self_id = GetCurrentThreadSystemID();
+    if (m_Owner == self_id) {
+        --m_Count;
+    } else {
+        if (!m_TrackReaders && x_TryReadLock()) {
+            return true;
+        }
+        unsigned int sec=0, nanosec=0;
+        timeout.GetNano(&sec, &nanosec);
+        chrono::time_point<chrono::steady_clock> to = chrono::steady_clock::now() + chrono::seconds(sec) + chrono::nanoseconds(nanosec);
+        cv_status res = cv_status::no_timeout;
+        bool ok = true;
+
+        unique_lock<mutex> lck( m_Mtx);
+        do {
+            if (res == cv_status::timeout) {
+                return false;
+            }
+            if (!x_MayAcquireForReading(self_id)) {
+                while (!(ok = m_WaitingWriters == 0 && m_Count >= 0) && res == cv_status::no_timeout) {
+                    res = m_Cv.wait_until(lck, to);
+                }
+            }
+            if (!ok) {
+                return false;
+            }
+        } while (!x_TryReadLock());
+        if (m_TrackReaders) {
+            m_Readers.push_back(self_id);
+        }
+    }
+    return true;
+#else
 
 #if defined(NCBI_WIN32_THREADS)
     if ((m_Flags & fTrackReaders) == 0) {
@@ -1039,8 +1179,9 @@ bool CRWLock::TryReadLock(const CTimeout& timeout)
     if ((m_Flags & fTrackReaders) != 0  &&  m_Count > 0) {
         m_Readers.push_back(self_id);
     }
-#endif
     return true;
+#endif
+#endif
 }
 
 
@@ -1048,6 +1189,32 @@ void CRWLock::WriteLock(void)
 {
 #if defined(NCBI_NO_THREADS)
     return;
+#else
+
+#if NCBI_SRWLOCK_USE_NEW
+    TThreadSystemID self_id = GetCurrentThreadSystemID();
+    if (m_Owner == self_id) {
+        --m_Count;
+    } else {
+        if (x_TryWriteLock()) {
+            m_Owner = self_id;
+            return;
+        }
+        unique_lock<mutex> lck( m_Mtx);
+        _ASSERT(!m_TrackReaders || !x_HasReader(self_id));
+        if (m_FavorWriters) {
+            ++m_WaitingWriters;
+        }
+        do {
+            while (m_Count != 0) {
+                m_Cv.wait(lck);
+            }
+        } while (!x_TryWriteLock());
+        m_Owner = self_id;
+        if (m_FavorWriters) {
+            --m_WaitingWriters;
+        }
+    }
 #else
 
     TThreadSystemID self_id = GetCurrentThreadSystemID();
@@ -1135,12 +1302,26 @@ void CRWLock::WriteLock(void)
     // No readers allowed
     _ASSERT(m_Readers.empty());
 #endif
+#endif
 }
 
 
 bool CRWLock::TryWriteLock(void)
 {
 #if defined(NCBI_NO_THREADS)
+    return true;
+#else
+
+#if NCBI_SRWLOCK_USE_NEW
+    TThreadSystemID self_id = GetCurrentThreadSystemID();
+    if (m_Owner == self_id) {
+        --m_Count;
+    } else {
+        if (!x_TryWriteLock()) {
+            return false;
+        }
+        m_Owner = self_id;
+    }
     return true;
 #else
 
@@ -1187,6 +1368,7 @@ bool CRWLock::TryWriteLock(void)
 
     return true;
 #endif
+#endif
 }
 
 
@@ -1204,6 +1386,43 @@ bool CRWLock::TryWriteLock(const CTimeout& timeout)
         return TryWriteLock();
     }
 
+#if NCBI_SRWLOCK_USE_NEW
+    TThreadSystemID self_id = GetCurrentThreadSystemID();
+    if (m_Owner == self_id) {
+        --m_Count;
+    } else {
+        if (x_TryWriteLock()) {
+            m_Owner = self_id;
+            return true;
+        }
+        unsigned int sec=0, nanosec=0;
+        timeout.GetNano(&sec, &nanosec);
+        chrono::time_point<chrono::steady_clock> to = chrono::steady_clock::now() + chrono::seconds(sec) + chrono::nanoseconds(nanosec);
+        cv_status res = cv_status::no_timeout;
+        bool ok = true;
+
+        unique_lock<mutex> lck( m_Mtx);
+        do {
+            if (res == cv_status::timeout) {
+                return false;
+            }
+            if (m_FavorWriters) {
+                ++m_WaitingWriters;
+            }
+            while (!(ok = m_Count == 0) && res == cv_status::no_timeout) {
+                res = m_Cv.wait_until(lck, to);
+            }
+            if (m_FavorWriters) {
+                --m_WaitingWriters;
+            }
+            if (!ok) {
+                return false;
+            }
+        } while (!x_TryWriteLock());
+        m_Owner = self_id;
+    }
+    return true;
+#else
     TThreadSystemID self_id = GetCurrentThreadSystemID();
 
 #if defined(NCBI_USE_CRITICAL_SECTION)
@@ -1319,8 +1538,9 @@ bool CRWLock::TryWriteLock(const CTimeout& timeout)
 
     // No readers allowed
     _ASSERT(m_Readers.empty());
-#endif
     return true;
+#endif
+#endif
 }
 
 
@@ -1328,6 +1548,23 @@ void CRWLock::Unlock(void)
 {
 #if defined(NCBI_NO_THREADS)
     return;
+#else
+
+#if NCBI_SRWLOCK_USE_NEW
+    TThreadSystemID self_id = GetCurrentThreadSystemID();
+    if (m_Owner == self_id) {
+        if (m_Count == -1) {
+            m_Owner = 0;
+        }
+        ++m_Count;
+    } else {
+        --m_Count;
+        if (m_TrackReaders) {
+            unique_lock<mutex> lck( m_Mtx);
+            m_Readers.erase( x_FindReader(self_id) );
+        }
+    }
+    m_Cv.notify_all();
 #else
 
 #if defined(NCBI_WIN32_THREADS)
@@ -1400,6 +1637,7 @@ void CRWLock::Unlock(void)
             }
         }
     }
+#endif
 #endif
 }
 
