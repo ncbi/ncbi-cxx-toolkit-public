@@ -71,6 +71,8 @@ const unsigned int      kTimeoutMsMin = 0;
 const unsigned int      kTimeoutMsMax = UINT_MAX;
 const unsigned int      kTimeoutDefault = 30000;
 
+static const string     kNodaemonArgName = "nodaemon";
+
 
 class CPubseqGatewayApp: public CNcbiApplication
 {
@@ -83,12 +85,22 @@ public:
         m_ListenerBacklog(kListenerBacklogDefault),
         m_TcpMaxConn(kTcpMaxConnDefault),
         m_CassConnectionFactory(CCassConnectionFactory::s_Create()),
-        m_TimeoutMs(kTimeoutDefault)
+        m_TimeoutMs(kTimeoutDefault),
+        m_CountFile(NULL)
     {}
 
-    virtual void Init()
+    ~CPubseqGatewayApp()
+    {
+        if (m_CountFile != NULL)
+            fclose(m_CountFile);
+    }
+
+    virtual void Init(void)
     {
         unique_ptr<CArgDescriptions>    argdesc(new CArgDescriptions());
+
+        argdesc->AddFlag(kNodaemonArgName,
+                         "Turn off daemonization of NetSchedule at the start.");
 
         m_CassConnectionFactory->AppInit(argdesc.get());
         argdesc->SetUsageContext(
@@ -97,7 +109,7 @@ public:
         SetupArgDescriptions(argdesc.release());
     }
 
-    void ParseArgs()
+    void ParseArgs(void)
     {
         const CArgs &           args = GetArgs();
         const CNcbiRegistry &   registry = GetConfig();
@@ -117,6 +129,7 @@ public:
                                        kTcpMaxConnDefault);
         m_TimeoutMs = registry.GetInt("SERVER", "optimeout",
                                       kTimeoutDefault);
+        m_CountFileName = registry.GetString("SERVER", "countfile", "");
 
         m_LogLevel = registry.GetInt("COMMON", "loglevel", 0);
         m_LogLevelFile = registry.GetInt("COMMON", "loglevelfile", 1);
@@ -156,7 +169,7 @@ public:
         m_CassConnection->Connect();
     }
 
-    void CloseCass()
+    void CloseCass(void)
     {
         m_CassConnection = nullptr;
         m_CassConnectionFactory = nullptr;
@@ -229,38 +242,69 @@ public:
     {
         srand(time(NULL));
         ParseArgs();
+
+        if (!GetArgs()[kNodaemonArgName]) {
+            bool    is_good = CProcess::Daemonize(kEmptyCStr,
+                                                  CProcess::fDontChroot);
+            if (!is_good)
+                EAccVerException::raise("Error during daemonization");
+        }
+
         OpenDb(false, true);
         OpenCass();
 
-        vector<HST::CHttpHandler<CPendingOperation>>    h;
+        if (!m_CountFileName.empty()) {
+            m_CountFile = fopen(m_CountFileName.c_str(), "a");
+            if (m_CountFile == NULL)
+                LOG1(("Error opening the file to store counters "
+                      "specified in [SERVER]/countfile"));
+        }
+
+        vector<HST::CHttpHandler<CPendingOperation>>    http_handler;
         HST::CHttpGetParser                             get_parser;
 
-        h.emplace_back("/ID/accver.resolver",
-                       [this](HST::CHttpRequest &  req,
-                              HST::CHttpReply<CPendingOperation> &resp)->int
-                       {
-                            return OnAccVerResolver(req, resp);
-                       }, &get_parser, nullptr);
-        h.emplace_back("/ID/getblob",
-                       [this](HST::CHttpRequest &  req,
-                              HST::CHttpReply<CPendingOperation> &resp)->int
-                       {
-                            return OnGetBlob(req, resp);
-                       }, &get_parser, nullptr);
+        http_handler.emplace_back(
+                "/ID/accver.resolver",
+                [this](HST::CHttpRequest &  req,
+                       HST::CHttpReply<CPendingOperation> &  resp)->int
+                {
+                    return OnAccVerResolver(req, resp);
+                }, &get_parser, nullptr);
+        http_handler.emplace_back(
+                "/ID/getblob",
+                [this](HST::CHttpRequest &  req,
+                       HST::CHttpReply<CPendingOperation> &  resp)->int
+                {
+                    return OnGetBlob(req, resp);
+                }, &get_parser, nullptr);
 
-        unique_ptr<HST::CHttpDaemon<CPendingOperation>>     d(
-                new HST::CHttpDaemon<CPendingOperation>(h, "0.0.0.0",
+
+        unique_ptr<HST::CHttpDaemon<CPendingOperation>>     daemon(
+                new HST::CHttpDaemon<CPendingOperation>(http_handler, "0.0.0.0",
                                                         m_HttpPort,
                                                         m_HttpWorkers,
                                                         m_ListenerBacklog,
                                                         m_TcpMaxConn));
-        d->Run([this](TSL::CTcpDaemon<HST::CHttpProto<CPendingOperation>,
-                      HST::CHttpConnection<CPendingOperation>,
-                      HST::CHttpDaemon<CPendingOperation>>& tcp_daemon)
+        daemon->Run([this](TSL::CTcpDaemon<HST::CHttpProto<CPendingOperation>,
+                           HST::CHttpConnection<CPendingOperation>,
+                           HST::CHttpDaemon<CPendingOperation>> &  tcp_daemon)
                 {
-                    printf("%ld %d %ld\n", tcp_daemon.NumOfRequests(),
-                                           tcp_daemon.NumOfConnections(),
-                                           m_CassConnection->GetActiveStatements());
+                    static bool     is_daemon = !GetArgs()[kNodaemonArgName];
+                    uint64_t        num_of_requests = tcp_daemon.NumOfRequests();
+                    uint16_t        num_of_conn = tcp_daemon.NumOfConnections();
+                    int64_t         num_of_active_stmt = m_CassConnection->GetActiveStatements();
+
+                    if (m_CountFile != NULL) {
+                        fprintf(m_CountFile, "%ld %d %ld\n",
+                                num_of_requests, num_of_conn,
+                                num_of_active_stmt);
+                        fflush(m_CountFile);
+                    } else if (!is_daemon) {
+                        printf("%ld %d %ld\n",
+                               tcp_daemon.NumOfRequests(),
+                               tcp_daemon.NumOfConnections(),
+                               m_CassConnection->GetActiveStatements());
+                    }
                 });
         CloseCass();
         return 0;
@@ -346,6 +390,9 @@ private:
     shared_ptr<CCassConnection>         m_CassConnection;
     shared_ptr<CCassConnectionFactory>  m_CassConnectionFactory;
     unsigned int                        m_TimeoutMs;
+
+    string                              m_CountFileName;
+    FILE *                              m_CountFile;
 };
 
 

@@ -81,7 +81,7 @@ static string KeySpaceDot(const string& keyspace)
 
 bool CCassBlobWaiter::CheckMaxActive()
 {
-    return (m_conn->GetActiveStatements() < MAX_ACTIVE_STATEMENTS);
+    return (m_Conn->GetActiveStatements() < MAX_ACTIVE_STATEMENTS);
 }
 
 
@@ -95,51 +95,58 @@ bool CCassBlobWaiter::CheckMaxActive()
 
 void CCassBlobLoader::RequestChunk(shared_ptr<CCassQuery> qry, int local_id)
 {
-    CassConsistency     c = (m_restart_counter > 0 &&
-                             m_conn->GetFallBackRdConsistency()) ? CASS_CONSISTENCY_LOCAL_QUORUM : CASS_CONSISTENCY_LOCAL_ONE;
-    string              sql = "SELECT data FROM " + KeySpaceDot(m_keyspace) +
+    CassConsistency     c = (m_RestartCounter > 0 &&
+                             m_Conn->GetFallBackRdConsistency()) ?
+                                CASS_CONSISTENCY_LOCAL_QUORUM :
+                                CASS_CONSISTENCY_LOCAL_ONE;
+    string              sql = "SELECT data FROM " + KeySpaceDot(m_Keyspace) +
                               "largeentity WHERE ent = ? AND local_id = ?";
 
     LOG5(("reading LARGE blob part, key=%s.%d, local_id=%d, qry: %p",
-          m_keyspace.c_str(), m_key, local_id, LOG_SPTR(qry)));
+          m_Keyspace.c_str(), m_Key, local_id, LOG_SPTR(qry)));
     qry->SetSQL(sql, 2);
-    qry->BindInt32(0, m_key);
+    qry->BindInt32(0, m_Key);
     qry->BindInt32(1, local_id);
-    if (m_data_ready_cb)
-        qry->SetOnData2(m_data_ready_cb, m_data_ready_data);
+    if (m_DataReadyCb)
+        qry->SetOnData2(m_DataReadyCb, m_DataReadyData);
     UpdateLastActivity();
     qry->Query(c, true);
 }
 
 
-void CCassBlobLoader::RequestFlags(shared_ptr<CCassQuery>  qry, bool  with_data)
+void CCassBlobLoader::RequestFlags(shared_ptr<CCassQuery>  qry,
+                                   bool  with_data)
 {
-    CassConsistency     c = (m_restart_counter > 0 &&
-                             m_conn->GetFallBackRdConsistency()) ? CASS_CONSISTENCY_LOCAL_QUORUM : CASS_CONSISTENCY_LOCAL_ONE;
+    CassConsistency     c = (m_RestartCounter > 0 &&
+                             m_Conn->GetFallBackRdConsistency()) ?
+                                CASS_CONSISTENCY_LOCAL_QUORUM :
+                                CASS_CONSISTENCY_LOCAL_ONE;
     string              sql;
+
     if (with_data)
         sql = "SELECT modified, flags, size, large_parts, data FROM " +
-              KeySpaceDot(m_keyspace) + "entity WHERE ent = ?";
+              KeySpaceDot(m_Keyspace) + "entity WHERE ent = ?";
     else
         sql = "SELECT modified, flags, size, large_parts       FROM " +
-              KeySpaceDot(m_keyspace) + "entity WHERE ent = ?";
+              KeySpaceDot(m_Keyspace) + "entity WHERE ent = ?";
 
     qry->SetSQL(sql, 1);
-    qry->BindInt32(0, m_key);
-    if (m_data_ready_cb)
-        qry->SetOnData2(m_data_ready_cb, m_data_ready_data);
+    qry->BindInt32(0, m_Key);
+    if (m_DataReadyCb)
+        qry->SetOnData2(m_DataReadyCb, m_DataReadyData);
     UpdateLastActivity();
-    qry->Query(c, m_async);
+    qry->Query(c, m_Async);
 }
+
 
 void CCassBlobLoader::RequestChunksAhead(void)
 {
     int32_t         local_id;
     int             cnt = MAX_CHUNKS_AHEAD;
 
-    for (local_id = m_current_idx;
-         local_id < m_large_parts && cnt > 0; ++local_id, --cnt) {
-        auto    qry = m_query_arr[local_id];
+    for (local_id = m_CurrentIdx;
+         local_id < m_LargeParts && cnt > 0; ++local_id, --cnt) {
+        auto    qry = m_QueryArr[local_id];
         if (!qry->IsActive()) {
             if (!CheckMaxActive())
                 break;
@@ -155,32 +162,32 @@ void CCassBlobLoader::Wait1(void)
     char        msg[1024];
     msg[0] = '\0';
 
-    if (m_cancelled) {
+    if (m_Cancelled) {
         CloseAll();
         return;
     }
 
     do {
         b_need_repeat = false;
-        switch (m_state) {
+        switch (m_State) {
             case stError:
             case stDone:
                 return;
 
             case stInit: {
                 CloseAll();
-                if (m_query_arr.size() == 0)
-                    m_query_arr.emplace_back(m_conn->NewQuery());
-                auto qry = m_query_arr[0];
+                if (m_QueryArr.size() == 0)
+                    m_QueryArr.emplace_back(m_Conn->NewQuery());
+                auto qry = m_QueryArr[0];
                 if (!CheckMaxActive())
                     break;
                 RequestFlags(qry, true);
-                m_state = stReadingEntity;
+                m_State = stReadingEntity;
                 break;
             }
 
             case stReadingEntity: {
-                auto qry = m_query_arr[0];
+                auto qry = m_QueryArr[0];
                 if (!qry->IsActive()) {
                     LOG2(("re-starting initial query"));
                     if (!CheckMaxActive())
@@ -191,14 +198,14 @@ void CCassBlobLoader::Wait1(void)
                 if (!CheckReady(qry, stInit, &b_need_repeat)) {
                     if (b_need_repeat)
                         LOG3(("Restart stReadingEntity key=%s.%d",
-                              m_keyspace.c_str(), m_key));
+                              m_Keyspace.c_str(), m_Key));
                     break;
                 }
 
                 if (qry->IsEOF()) {
                     UpdateLastActivity();
                     CloseAll();
-                    m_state = stDone; // no data
+                    m_State = stDone; // no data
                 } else {
                     async_rslt_t wr = qry->NextRow();
                     if (wr == ar_wait) // paging
@@ -206,61 +213,74 @@ void CCassBlobLoader::Wait1(void)
                     else if (wr == ar_dataready) {
                         UpdateLastActivity();
                         const unsigned char *   rawdata = nullptr;
-                        m_blob_stat.modified = qry->FieldGetInt64Value(0);
-                        m_blob_stat.flags = qry->FieldGetInt64Value(1);
-                        m_expected_size = m_remaining_size = qry->FieldGetInt64Value(2);
-                        m_large_parts = qry->FieldGetInt32Value(3, 0);
+                        m_BlobStat.modified = qry->FieldGetInt64Value(0);
+                        m_BlobStat.flags = qry->FieldGetInt64Value(1);
+                        m_ExpectedSize = m_RemainingSize = qry->FieldGetInt64Value(2);
+                        m_LargeParts = qry->FieldGetInt32Value(3, 0);
                         int64_t len = qry->FieldGetBlobRaw(4, &rawdata);
-                        m_remaining_size -= len;
-                        m_stat_loaded = true;
-                        if ((m_blob_stat.flags & (bfCheckFailed | bfComplete)) != bfComplete) {
-                            snprintf(msg, sizeof(msg), "Blob failed check or it's incomplete (key=%s.%d, flags=0x%lx)", m_keyspace.c_str(), m_key, m_blob_stat.flags);
+                        m_RemainingSize -= len;
+                        m_StatLoaded = true;
+                        if ((m_BlobStat.flags & (bfCheckFailed | bfComplete)) != bfComplete) {
+                            snprintf(msg, sizeof(msg),
+                                    "Blob failed check or it's "
+                                    "incomplete (key=%s.%d, flags=0x%lx)",
+                                    m_Keyspace.c_str(), m_Key,
+                                    m_BlobStat.flags);
                             Error(msg);
                             break;
                         }
 
-                        LOG5(("BD blob fetching, key=%s.%d, sz: %ld, EOF: %d, large_parts: %d", m_keyspace.c_str(), m_key, len, qry->IsEOF(), m_large_parts));
+                        LOG5(("BD blob fetching, key=%s.%d, sz: %ld, "
+                              "EOF: %d, large_parts: %d",
+                              m_Keyspace.c_str(), m_Key, len, qry->IsEOF(),
+                              m_LargeParts));
 
-                        if (m_large_parts == 0) {
-                            if (m_remaining_size != 0) {
-                                snprintf(msg, sizeof(msg), "Size mismatch for (key=%s.%d), expected: %ld, actual: %ld (singlechunk)", m_keyspace.c_str(), m_key, m_expected_size, len);
+                        if (m_LargeParts == 0) {
+                            if (m_RemainingSize != 0) {
+                                snprintf(msg, sizeof(msg),
+                                         "Size mismatch for (key=%s.%d), "
+                                         "expected: %ld, "
+                                         "actual: %ld (singlechunk)",
+                                         m_Keyspace.c_str(), m_Key,
+                                         m_ExpectedSize, len);
                                 Error(msg);
                             }
                             else {
-                                m_state = stDone;
-                                m_data_cb(rawdata, len, 0, true);
+                                m_State = stDone;
+                                m_DataCb(rawdata, len, 0, true);
                             }
                             break;
                         }
                         else { // multi-chunk
-                            m_query_arr.reserve(m_large_parts + 1);
+                            m_QueryArr.reserve(m_LargeParts + 1);
                             CloseAll();
-                            while ((int)m_query_arr.size() < m_large_parts)
-                                m_query_arr.emplace_back(m_conn->NewQuery());
-                            m_current_idx = 0;
+                            while ((int)m_QueryArr.size() < m_LargeParts)
+                                m_QueryArr.emplace_back(m_Conn->NewQuery());
+                            m_CurrentIdx = 0;
                             RequestChunksAhead();
-                            m_state = stReadingChunks;
+                            m_State = stReadingChunks;
                         }
                     }
                     else {
                         UpdateLastActivity();
-                        m_state = stDone; // no data
+                        m_State = stDone; // no data
                     }
                 }
                 break;
             }
 
             case stReadingChunks: {
-                int32_t local_id;
-                if (m_current_idx >= 0 && m_current_idx < m_large_parts) {
+                int32_t         local_id;
 
-                    local_id = m_current_idx;
-                    while (local_id < m_large_parts) {
+                if (m_CurrentIdx >= 0 && m_CurrentIdx < m_LargeParts) {
+                    local_id = m_CurrentIdx;
+                    while (local_id < m_LargeParts) {
                         RequestChunksAhead();
-                        auto qry = m_query_arr[m_current_idx];
+                        auto qry = m_QueryArr[m_CurrentIdx];
                         if (!qry->IsActive()) {
-                            if (m_async)
-                                return; // wasn't activated b'ze too many active statements
+                            if (m_Async)
+                                return; // wasn't activated b'ze
+                                        // too many active statements
                             else {
                                 usleep(1000);
                                 continue;
@@ -269,7 +289,9 @@ void CCassBlobLoader::Wait1(void)
 
                         if (!CheckReady(qry, stReadingChunks, &b_need_repeat)) {
                             if (b_need_repeat) {
-                                LOG3(("Restart stReadingChunks key=%s.%d, chunk=%d", m_keyspace.c_str(), m_key, local_id));
+                                LOG3(("Restart stReadingChunks key=%s.%d, "
+                                      "chunk=%d",
+                                      m_Keyspace.c_str(), m_Key, local_id));
                                 continue;
                             }
                             else
@@ -281,61 +303,75 @@ void CCassBlobLoader::Wait1(void)
                             wr = qry->NextRow();
                             if (wr == ar_wait) // paging
                                 return;
-                            else if (wr == ar_dataready) {
+                            if (wr == ar_dataready) {
                                 UpdateLastActivity();
-                                const unsigned char* rawdata = nullptr;
-                                int64_t len = qry->FieldGetBlobRaw(0, &rawdata);
-                                m_remaining_size -= len;
-                                if (m_remaining_size < 0) {
-                                    snprintf(msg, sizeof(msg), "Failed to fetch blob chunk (key=%s.%d, chunk=%d) size %ld is too large", m_keyspace.c_str(), m_key, local_id, len);
+                                const unsigned char *   rawdata = nullptr;
+                                int64_t                 len = qry->FieldGetBlobRaw(0, &rawdata);
+                                m_RemainingSize -= len;
+                                if (m_RemainingSize < 0) {
+                                    snprintf(msg, sizeof(msg),
+                                             "Failed to fetch blob chunk "
+                                             "(key=%s.%d, chunk=%d) size %ld "
+                                             "is too large",
+                                             m_Keyspace.c_str(), m_Key,
+                                             local_id, len);
                                     Error(msg);
                                     return;
                                 }
-                                m_current_idx++;
+                                m_CurrentIdx++;
                                 local_id++;
-                                m_data_cb(rawdata, len, local_id, false);
+                                m_DataCb(rawdata, len, local_id, false);
                                 RequestChunksAhead();
-                                continue; // continue with next m_current_idx
+                                continue; // continue with next m_CurrentIdx
                             }
                         }
 
                         assert(qry->IsEOF() || wr == ar_done);
                         if (CanRestart()) {
-                            LOG3(("Restarting key=%s.%d, chunk=%d p2", m_keyspace.c_str(), m_key, local_id));
+                            LOG3(("Restarting key=%s.%d, chunk=%d p2",
+                                  m_Keyspace.c_str(), m_Key, local_id));
                             qry->Close();
                             continue;
                         }
                         else {
-                            snprintf(msg, sizeof(msg), "Failed to fetch blob chunk (key=%s.%d, chunk=%d) wr=%d", m_keyspace.c_str(), m_key, local_id, static_cast<int>(wr));
+                            snprintf(msg, sizeof(msg),
+                                     "Failed to fetch blob chunk "
+                                     "(key=%s.%d, chunk=%d) wr=%d",
+                                     m_Keyspace.c_str(), m_Key, local_id,
+                                     static_cast<int>(wr));
                             Error(msg);
                             return;
                         }
                     }
                 }
 
-                if (m_current_idx >= m_large_parts && m_state != stError && m_state != stDone) {
-                    if (m_remaining_size > 0) {
-                        snprintf(msg, sizeof(msg), "Failed to fetch blob (key=%s.%d) result is imcomplete remaining %ldbytes", m_keyspace.c_str(), m_key, m_remaining_size);
+                if (m_CurrentIdx >= m_LargeParts &&
+                    m_State != stError && m_State != stDone) {
+                    if (m_RemainingSize > 0) {
+                        snprintf(msg, sizeof(msg),
+                                 "Failed to fetch blob (key=%s.%d) result is "
+                                 "imcomplete remaining %ldbytes",
+                                 m_Keyspace.c_str(), m_Key, m_RemainingSize);
                         Error(msg);
                         break;
                     }
 
-                    while (m_query_arr.size() < (size_t)m_large_parts + 1)
-                        m_query_arr.emplace_back(m_conn->NewQuery());
-                    auto qry = m_query_arr[m_large_parts];
+                    while (m_QueryArr.size() < (size_t)m_LargeParts + 1)
+                        m_QueryArr.emplace_back(m_Conn->NewQuery());
+
+                    auto    qry = m_QueryArr[m_LargeParts];
 
                     if (!CheckMaxActive())
                         break;
                     RequestFlags(qry, false);
-                    m_state = stCheckingFlags;
+                    m_State = stCheckingFlags;
                 }
                 break;
             }
 
             case stCheckingFlags: {
-                bool has_error = false;
-
-                auto qry = m_query_arr[m_large_parts];
+                bool        has_error = false;
+                auto        qry = m_QueryArr[m_LargeParts];
 
                 if (!qry->IsActive()) {
                     LOG3(("running checkflag query"));
@@ -346,7 +382,8 @@ void CCassBlobLoader::Wait1(void)
 
                 if (!CheckReady(qry, stCheckingFlags, &b_need_repeat)) {
                     if (b_need_repeat)
-                        LOG3(("Restart stCheckingFlags key=%s.%d", m_keyspace.c_str(), m_key));
+                        LOG3(("Restart stCheckingFlags key=%s.%d",
+                              m_Keyspace.c_str(), m_Key));
                     break;
                 }
 
@@ -355,45 +392,68 @@ void CCassBlobLoader::Wait1(void)
                     wr = qry->NextRow(); 
                     if (wr == ar_dataready) {
                         UpdateLastActivity();
-                        if (m_blob_stat.modified != qry->FieldGetInt64Value(0)) {
-                            snprintf(msg, sizeof(msg), "Failed to re-confirm blob flags (key=%s.%d) modified column changed from %ld to %ld", m_keyspace.c_str(), m_key, m_blob_stat.modified, qry->FieldGetInt64Value(0));
+                        if (m_BlobStat.modified != qry->FieldGetInt64Value(0)) {
+                            snprintf(msg, sizeof(msg),
+                                     "Failed to re-confirm blob flags "
+                                     "(key=%s.%d) modified column changed "
+                                     "from %ld to %ld",
+                                     m_Keyspace.c_str(), m_Key,
+                                     m_BlobStat.modified,
+                                     qry->FieldGetInt64Value(0));
                             has_error = true;
-                        }
-                        else if (m_blob_stat.flags != qry->FieldGetInt64Value(1)) {
-                            snprintf(msg, sizeof(msg), "Failed to re-confirm blob flags (key=%s.%d) flags column changed from 0x%lx to 0x%lx", m_keyspace.c_str(), m_key, m_blob_stat.flags, qry->FieldGetInt64Value(1));
+                        } else if (m_BlobStat.flags != qry->FieldGetInt64Value(1)) {
+                            snprintf(msg, sizeof(msg),
+                                     "Failed to re-confirm blob flags "
+                                     "(key=%s.%d) flags column changed "
+                                     "from 0x%lx to 0x%lx",
+                                     m_Keyspace.c_str(), m_Key,
+                                     m_BlobStat.flags,
+                                     qry->FieldGetInt64Value(1));
                             has_error = true;
-                        }
-                        else if (m_expected_size != qry->FieldGetInt64Value(2)) {
-                            snprintf(msg, sizeof(msg), "Failed to re-confirm blob flags (key=%s.%d) size column changed from %ld to %ld", m_keyspace.c_str(), m_key, m_expected_size, qry->FieldGetInt64Value(2));
+                        } else if (m_ExpectedSize != qry->FieldGetInt64Value(2)) {
+                            snprintf(msg, sizeof(msg),
+                                     "Failed to re-confirm blob flags "
+                                     "(key=%s.%d) size column changed "
+                                     "from %ld to %ld",
+                                     m_Keyspace.c_str(), m_Key,
+                                     m_ExpectedSize,
+                                     qry->FieldGetInt64Value(2));
                             has_error = true;
-                        }
-                        else if (m_large_parts != qry->FieldGetInt32Value(3, 0)) {
-                            snprintf(msg, sizeof(msg), "Failed to re-confirm blob flags (key=%s.%d) large_parts column changed from %d to %d", m_keyspace.c_str(), m_key, m_large_parts, qry->FieldGetInt32Value(3, 0));
+                        } else if (m_LargeParts != qry->FieldGetInt32Value(3, 0)) {
+                            snprintf(msg, sizeof(msg),
+                                     "Failed to re-confirm blob flags "
+                                     "(key=%s.%d) large_parts column changed "
+                                     "from %d to %d",
+                                     m_Keyspace.c_str(), m_Key, m_LargeParts,
+                                     qry->FieldGetInt32Value(3, 0));
                             has_error = true;
                         }
 
                         if (has_error) {
                             Error(msg);
+                        } else {
+                            m_State = stDone;
+                            m_DataCb(nullptr, 0, -1, true);
                         }
-                        else {
-                            m_state = stDone;
-                            m_data_cb(nullptr, 0, -1, true);
-                        }
-                    }
-                    else if (wr == ar_wait) {
+                    } else if (wr == ar_wait) {
                         break;
                     }
                 }
                 if (qry->IsEOF() || wr == ar_done) {
                     UpdateLastActivity();
-                    snprintf(msg, sizeof(msg), "Failed to re-confirm blob flags (key=%s.%d) query returned no data", m_keyspace.c_str(), m_key);
+                    snprintf(msg, sizeof(msg),
+                             "Failed to re-confirm blob flags (key=%s.%d) "
+                             "query returned no data",
+                             m_Keyspace.c_str(), m_Key);
                     Error(msg);
                     break;
                 }
                 break;
             }
             default: {
-                snprintf(msg, sizeof(msg), "Failed to get blob (key=%s.%d) unexpected state (%d)", m_keyspace.c_str(), m_key, static_cast<int>(m_state));
+                snprintf(msg, sizeof(msg),
+                         "Failed to get blob (key=%s.%d) unexpected state (%d)",
+                         m_Keyspace.c_str(), m_Key, static_cast<int>(m_State));
                 Error(msg);
             }
         }
@@ -412,47 +472,59 @@ void CCassBlobLoader::Wait1(void)
 void CCassBlobInserter::Wait1()
 {
     bool    b_need_repeat;
+
     do {
         b_need_repeat = false;
-        switch (m_state) {
+        switch (m_State) {
             case stError:
             case stDone:
                 return;
 
             case stInit: {
                 CloseAll();
-                if (m_query_arr.size() == 0)
-                    m_query_arr.emplace_back(m_conn->NewQuery());
-                int64_t sz = m_blob->blob.Size();
-                bool is_large = sz >= m_large_treshold;
-                m_large_parts = is_large ? ((sz + m_large_chunk_sz - 1) / m_large_chunk_sz) : 0;
+                if (m_QueryArr.size() == 0)
+                    m_QueryArr.emplace_back(m_Conn->NewQuery());
+
+                int64_t     sz = m_blob->blob.Size();
+                bool        is_large = sz >= m_large_treshold;
+
+                m_LargeParts = is_large ?
+                        ((sz + m_large_chunk_sz - 1) / m_large_chunk_sz) : 0;
                 if (m_is_new != tt_true) {
-                    LOG4(("CCassBlobInserter: reading stat for key=%s.%d, rslt=%p", m_keyspace.c_str(), m_key, LOG_CPTR(m_blob)));
-                    auto qry = m_query_arr[0];
-                    CassConsistency c = (m_restart_counter > 0 && m_conn->GetFallBackRdConsistency()) ? CASS_CONSISTENCY_LOCAL_QUORUM : CASS_CONSISTENCY_ONE;
-                    // We have to check whether blob exists in largeentity and remove it if new blob has smaller number of parts
-                    string sql = "SELECT flags, large_parts FROM " + KeySpaceDot(m_keyspace) + "entity WHERE ent = ?";
+                    LOG4(("CCassBlobInserter: reading stat for "
+                          "key=%s.%d, rslt=%p",
+                          m_Keyspace.c_str(), m_Key, LOG_CPTR(m_blob)));
+                    auto                qry = m_QueryArr[0];
+                    CassConsistency     c = (m_RestartCounter > 0 &&
+                                             m_Conn->GetFallBackRdConsistency()) ?
+                                    CASS_CONSISTENCY_LOCAL_QUORUM :
+                                    CASS_CONSISTENCY_ONE;
+
+                    // We have to check whether blob exists in largeentity
+                    // and remove it if new blob has smaller number of parts
+                    string  sql = "SELECT flags, large_parts FROM " +
+                                  KeySpaceDot(m_Keyspace) +
+                                  "entity WHERE ent = ?";
                     qry->SetSQL(sql, 1);
-                    qry->BindInt32(0, m_key);
+                    qry->BindInt32(0, m_Key);
                     UpdateLastActivity();
-                    qry->Query(c, m_async, true);
-                    m_state = stFetchOldLargeParts;
-                }
-                else {
+                    qry->Query(c, m_Async, true);
+                    m_State = stFetchOldLargeParts;
+                } else {
                     CloseAll();
-                    m_state = stInsert;
+                    m_State = stInsert;
                     b_need_repeat = true;
                 }
                 break;
             }
 
             case stFetchOldLargeParts: {
-                auto qry = m_query_arr[0];
-
+                auto        qry = m_QueryArr[0];
 
                 if (!CheckReady(qry, stInit, &b_need_repeat)) {
                     if (b_need_repeat)
-                        LOG3(("Restart stFetchOldLargeParts key=%s.%d", m_keyspace.c_str(), m_key));
+                        LOG3(("Restart stFetchOldLargeParts key=%s.%d",
+                              m_Keyspace.c_str(), m_Key));
                     break;
                 }
 
@@ -463,9 +535,11 @@ void CCassBlobInserter::Wait1()
                         m_old_flags = qry->FieldGetInt64Value(0);
                         m_old_large_parts = qry->FieldGetInt32Value(1);
                         qry->Close();
-                        LOG5(("CCassBlobInserter: old_large_parts=%d, old_flags=%ld, key=%s.%d", m_old_large_parts, m_old_flags, m_keyspace.c_str(), m_key));
-                    }
-                    else if (wr == ar_wait)
+                        LOG5(("CCassBlobInserter: old_large_parts=%d, "
+                              "old_flags=%ld, key=%s.%d",
+                              m_old_large_parts, m_old_flags,
+                              m_Keyspace.c_str(), m_Key));
+                    } else if (wr == ar_wait)
                         break;
                 }
                 if (qry->IsEOF() || wr == ar_done) {
@@ -474,120 +548,139 @@ void CCassBlobInserter::Wait1()
                 }
 
                 CloseAll();
-                if (m_old_large_parts > m_large_parts)
-                    m_state = stDeleteOldLargeParts;
+                if (m_old_large_parts > m_LargeParts)
+                    m_State = stDeleteOldLargeParts;
                 else
-                    m_state = stInsert;
+                    m_State = stInsert;
                 b_need_repeat = true;
                 break;
             }
 
             case stDeleteOldLargeParts: {
                 // we have to delete old records in largeentity
-                int i;
-                string sql;
-                auto qry = m_query_arr[0];
+                string          sql;
+                auto            qry = m_QueryArr[0];
+
                 qry->Close();
                 qry->NewBatch();
 
-                sql = "UPDATE " + KeySpaceDot(m_keyspace) + "entity SET flags = ? WHERE ent = ?";
-                LOG5(("CCassBlobInserter: drop  flags to invalidate key=%s.%d", m_keyspace.c_str(), m_key));
+                sql = "UPDATE " + KeySpaceDot(m_Keyspace) +
+                      "entity SET flags = ? WHERE ent = ?";
+                LOG5(("CCassBlobInserter: drop  flags to invalidate key=%s.%d",
+                      m_Keyspace.c_str(), m_Key));
                 qry->SetSQL(sql, 2);
                 qry->BindInt64(0, m_old_flags & ~(bfComplete | bfCheckFailed));
-                qry->BindInt32(1, m_key);
+                qry->BindInt32(1, m_Key);
                 UpdateLastActivity();
-                qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_async);
+                qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
-                for (i = m_large_parts; i < m_old_large_parts; i++) {
-                    sql = "DELETE FROM " + KeySpaceDot(m_keyspace) + "largeentity WHERE ent = ? AND local_id = ?";
-                    LOG5(("CCassBlobInserter: delete %d old_large_part %d, key=%s.%d", i, i, m_keyspace.c_str(), m_key));
+                for (int  i = m_LargeParts; i < m_old_large_parts; ++i) {
+                    sql = "DELETE FROM " + KeySpaceDot(m_Keyspace) +
+                          "largeentity WHERE ent = ? AND local_id = ?";
+                    LOG5(("CCassBlobInserter: delete %d old_large_part %d, "
+                          "key=%s.%d", i, i, m_Keyspace.c_str(), m_Key));
                     qry->SetSQL(sql, 2);
-                    qry->BindInt32(0, m_key);
+                    qry->BindInt32(0, m_Key);
                     qry->BindInt32(1, i);
                     UpdateLastActivity();
-                    qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_async);
+                    qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
                 }
                 qry->RunBatch();
 
-                m_state = stWaitDeleteOldLargeParts;
+                m_State = stWaitDeleteOldLargeParts;
                 break;
             }
 
             case stWaitDeleteOldLargeParts: {
-                auto qry = m_query_arr[0];
+                auto            qry = m_QueryArr[0];
+
                 if (!CheckReady(qry, stDeleteOldLargeParts, &b_need_repeat)) {
                     if (b_need_repeat)
-                        LOG3(("Restart stDeleteOldLargeParts key=%s.%d", m_keyspace.c_str(), m_key));
+                        LOG3(("Restart stDeleteOldLargeParts key=%s.%d",
+                              m_Keyspace.c_str(), m_Key));
                     break;
                 }
                 UpdateLastActivity();
                 CloseAll();
-                m_state = stInsert;
+                m_State = stInsert;
                 b_need_repeat = true;
                 break;
             }
 
             case stInsert: {
-                string sql;
-                m_query_arr.reserve(m_large_parts + 1);
-                auto qry = m_query_arr[0];
+                string          sql;
+
+                m_QueryArr.reserve(m_LargeParts + 1);
+                auto            qry = m_QueryArr[0];
+
                 if (!qry->IsActive()) {
-                    string sql = "INSERT INTO " + KeySpaceDot(m_keyspace) + "entity (ent, modified, size, flags, large_parts, data) VALUES(?, ?, ?, ?, ?, ?)";
+                    string sql = "INSERT INTO " + KeySpaceDot(m_Keyspace) +
+                                 "entity (ent, modified, size, flags, "
+                                 "large_parts, data) VALUES(?, ?, ?, ?, ?, ?)";
                     qry->SetSQL(sql, 6);
-                    qry->BindInt32(0, m_key);
+                    qry->BindInt32(0, m_Key);
                     qry->BindInt64(1, m_blob->stat.modified);
                     qry->BindInt64(2, m_blob->blob.Size());
-                    int64_t flags = m_blob->stat.flags & ~bfComplete;
-                    if (m_large_parts == 0)
+
+                    int64_t         flags = m_blob->stat.flags & ~bfComplete;
+                    if (m_LargeParts == 0)
                         flags = m_blob->stat.flags | bfComplete;
                     qry->BindInt64(3, flags);
-                    qry->BindInt32(4, m_large_parts);
-                    qry->BindBytes(5, m_blob->blob.Data(), m_large_parts == 0 ? m_blob->blob.Size() : 0);
-                    LOG5(("CCassBlobInserter: inserting blob, key=%s.%d, mod=%ld", m_keyspace.c_str(), m_key, m_blob->stat.modified));
+                    qry->BindInt32(4, m_LargeParts);
+                    qry->BindBytes(5, m_blob->blob.Data(),
+                                   m_LargeParts == 0 ? m_blob->blob.Size() : 0);
+                    LOG5(("CCassBlobInserter: inserting blob, key=%s.%d, mod=%ld",
+                          m_Keyspace.c_str(), m_Key, m_blob->stat.modified));
 
                     UpdateLastActivity();
-                    qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_async);
+                    qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
                 }
-                if (m_large_parts != 0) {
-                    int32_t i;
-                    int64_t ofs = 0;
-                    int64_t sz;
-                    int64_t rem_sz = m_blob->blob.Size();
-                    for (i = 0; i < m_large_parts; i++) {
-                        while ((size_t)i + 1 >= m_query_arr.size())
-                            m_query_arr.emplace_back(m_conn->NewQuery());
-                        qry = m_query_arr[i + 1];
+                if (m_LargeParts != 0) {
+                    int64_t         ofs = 0;
+                    int64_t         sz;
+                    int64_t         rem_sz = m_blob->blob.Size();
+
+                    for (int32_t  i = 0; i < m_LargeParts; ++i) {
+                        while ((size_t)i + 1 >= m_QueryArr.size())
+                            m_QueryArr.emplace_back(m_Conn->NewQuery());
+                        qry = m_QueryArr[i + 1];
                         if (!qry->IsActive()) {
                             sz = rem_sz;
                             if (sz > m_large_chunk_sz)
                                 sz = m_large_chunk_sz;
 
-                            sql = "INSERT INTO " + KeySpaceDot(m_keyspace) + "largeentity (ent, local_id, data) VALUES(?, ?, ?)";
+                            sql = "INSERT INTO " + KeySpaceDot(m_Keyspace) +
+                                  "largeentity (ent, local_id, data) VALUES(?, ?, ?)";
                             qry->SetSQL(sql, 3);
-                            qry->BindInt32(0, m_key);
+                            qry->BindInt32(0, m_Key);
                             qry->BindInt32(1, i);
                             qry->BindBytes(2, m_blob->blob.Data() + ofs, sz);
                             ofs += sz;
                             rem_sz -= sz;
-                            LOG5(("CCassBlobInserter: inserting blob, key=%s.%d, mod=%ld, size: %ld", m_keyspace.c_str(), m_key, m_blob->stat.modified, sz));
+                            LOG5(("CCassBlobInserter: inserting blob, "
+                                  "key=%s.%d, mod=%ld, size: %ld",
+                                  m_Keyspace.c_str(), m_Key,
+                                  m_blob->stat.modified, sz));
                             UpdateLastActivity();
-                            qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_async);
+                            qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
                         }
                     }
                 }
-                m_state = stWaitingInserted;
+                m_State = stWaitingInserted;
                 break;
             }
 
             case stWaitingInserted: {
-                bool anyrunning = false;
-                int i = -1;
-                for (auto qry : m_query_arr) {
+                bool        anyrunning = false;
+                int         i = -1;
+
+                for (auto qry: m_QueryArr) {
                     if (qry->IsActive()) {
                         if (!CheckReady(qry, stInsert, &b_need_repeat)) {
                             if (b_need_repeat)
-                                LOG3(("Restart stInsert key=%s.%d, chunk: %d", m_keyspace.c_str(), m_key, i));
+                                LOG3(("Restart stInsert key=%s.%d, chunk: %d",
+                                      m_Keyspace.c_str(), m_Key, i));
                             anyrunning = true;
                             break;
                         }
@@ -597,47 +690,54 @@ void CCassBlobInserter::Wait1()
                 if (!anyrunning) {
                     UpdateLastActivity();
                     CloseAll();
-                    m_state = stUpdatingFlags;
+                    m_State = stUpdatingFlags;
                 }
                 break;
             }
 
             case stUpdatingFlags: {
-                if (m_large_parts > 0) {
-                    int64_t flags;
-                    flags = m_blob->stat.flags | bfComplete;
-                    auto qry = m_query_arr[0];
-                    string sql = "UPDATE " + KeySpaceDot(m_keyspace) + "entity set flags = ? where ent = ?";
+                if (m_LargeParts > 0) {
+                    int64_t     flags = m_blob->stat.flags | bfComplete;
+                    auto        qry = m_QueryArr[0];
+                    string      sql = "UPDATE " + KeySpaceDot(m_Keyspace) +
+                                      "entity set flags = ? where ent = ?";
+
                     qry->SetSQL(sql, 2);
                     qry->BindInt64(0, flags);
-                    qry->BindInt32(1, m_key);
-                    LOG5(("CCassBlobInserter: updating flags for key=%s.%d", m_keyspace.c_str(), m_key));
+                    qry->BindInt32(1, m_Key);
+                    LOG5(("CCassBlobInserter: updating flags for key=%s.%d",
+                          m_Keyspace.c_str(), m_Key));
                     UpdateLastActivity();
-                    qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_async);
-                    m_state = stWaitingUpdateFlags;
-                }
-                else {
+                    qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
+                    m_State = stWaitingUpdateFlags;
+                } else {
                     CloseAll();
-                    m_state = stDone;
+                    m_State = stDone;
                 }
                 break;
             }
 
             case stWaitingUpdateFlags: {
-                auto qry = m_query_arr[0];
+                auto        qry = m_QueryArr[0];
+
                 if (!CheckReady(qry, stUpdatingFlags, &b_need_repeat)) {
                     if (b_need_repeat)
-                        LOG3(("Restart stUpdatingFlags key=%s.%d", m_keyspace.c_str(), m_key));
+                        LOG3(("Restart stUpdatingFlags key=%s.%d",
+                              m_Keyspace.c_str(), m_Key));
                     break;
                 }
                 CloseAll();
-                m_state = stDone;
+                m_State = stDone;
                 break;
             }
 
             default: {
-                char msg[1024];
-                snprintf(msg, sizeof(msg), "Failed to insert blob (key=%s.%d) unexpected state (%d)", m_keyspace.c_str(), m_key, static_cast<int>(m_state));
+                char    msg[1024];
+
+                snprintf(msg, sizeof(msg),
+                         "Failed to insert blob (key=%s.%d) "
+                         "unexpected state (%d)",
+                         m_Keyspace.c_str(), m_Key, static_cast<int>(m_State));
                 Error(msg);
             }
         }
@@ -658,125 +758,150 @@ void CCassBlobDeleter::Wait1(void)
     bool    b_need_repeat;
     do {
         b_need_repeat = false;
-        switch (m_state) {
+        switch (m_State) {
             case stError:
             case stDone:
                 return;
 
             case stInit: {
                 CloseAll();
-                if (m_query_arr.size() < 1)
-                    m_query_arr.emplace_back(m_conn->NewQuery());
-                auto qry = m_query_arr[0];
-                string sql = "SELECT large_parts FROM " + KeySpaceDot(m_keyspace) + "entity WHERE ent = ?";
+                if (m_QueryArr.size() < 1)
+                    m_QueryArr.emplace_back(m_Conn->NewQuery());
+
+                auto        qry = m_QueryArr[0];
+                string  sql = "SELECT large_parts FROM " +
+                              KeySpaceDot(m_Keyspace) + "entity WHERE ent = ?";
+
                 qry->SetSQL(sql, 1);
-                qry->BindInt32(0, m_key);
-                LOG5(("DELETE: stReadingEntity blob, key=%s.%d", m_keyspace.c_str(), m_key));
+                qry->BindInt32(0, m_Key);
+                LOG5(("DELETE: stReadingEntity blob, key=%s.%d",
+                      m_Keyspace.c_str(), m_Key));
                 UpdateLastActivity();
-                qry->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_async);
-                m_state = stReadingEntity;
+                qry->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
+                m_State = stReadingEntity;
                 break;
             }
 
             case stReadingEntity: {
-                string sql;
-                auto qry = m_query_arr[0];
+                string      sql;
+                auto        qry = m_QueryArr[0];
+
                 if (!CheckReady(qry, stInit, &b_need_repeat)) {
                     if (b_need_repeat)
-                        LOG3(("Restart stReadingEntity key=%s.%d", m_keyspace.c_str(), m_key));
+                        LOG3(("Restart stReadingEntity key=%s.%d",
+                              m_Keyspace.c_str(), m_Key));
                     break;
                 }
                 async_rslt_t wr = (async_rslt_t)-1;
                 if (!qry->IsEOF()) {
                     if ((wr = qry->NextRow()) == ar_dataready) {
                         UpdateLastActivity();
-                        m_large_parts = qry->FieldGetInt32Value(0, 0);
-                        LOG5(("blob, key=%s.%d, large_parts: %d", m_keyspace.c_str(), m_key, m_large_parts));
+                        m_LargeParts = qry->FieldGetInt32Value(0, 0);
+                        LOG5(("blob, key=%s.%d, large_parts: %d",
+                              m_Keyspace.c_str(), m_Key, m_LargeParts));
                     }
                     else if (wr == ar_wait)
                         break;
                 }
                 if (qry->IsEOF() || wr == ar_done) {
-                    m_large_parts = 0;
+                    m_LargeParts = 0;
                 }
                 CloseAll();
-                if (m_large_parts > 0) {
-                    LOG5(("DELETE: =>stDeleteLargeEnt blob, key=%s.%d, large_parts: %d", m_keyspace.c_str(), m_key, m_large_parts));
-                    m_state = stDeleteLargeEnt;
+                if (m_LargeParts > 0) {
+                    LOG5(("DELETE: =>stDeleteLargeEnt blob, key=%s.%d, large_parts: %d",
+                          m_Keyspace.c_str(), m_Key, m_LargeParts));
+                    m_State = stDeleteLargeEnt;
                 }
                 else {
-                    LOG5(("DELETE: =>stDeleteEnt blob, key=%s.%d, large_parts: 0", m_keyspace.c_str(), m_key));
-                    m_state = stDeleteEnt;
+                    LOG5(("DELETE: =>stDeleteEnt blob, key=%s.%d, large_parts: 0",
+                          m_Keyspace.c_str(), m_Key));
+                    m_State = stDeleteEnt;
                 }
                 b_need_repeat = true;
                 break;
             }
 
             case stDeleteLargeEnt: {
-                auto qry = m_query_arr[0];
+                auto        qry = m_QueryArr[0];
                 qry->NewBatch();
-                string sql = "UPDATE " + KeySpaceDot(m_keyspace) + "entity SET flags = 0 WHERE ent = ?";
+                string      sql = "UPDATE " + KeySpaceDot(m_Keyspace) +
+                                  "entity SET flags = 0 WHERE ent = ?";
+
                 qry->SetSQL(sql, 1);
-                qry->BindInt32(0, m_key);
+                qry->BindInt32(0, m_Key);
                 UpdateLastActivity();
-                qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_async);
-                int local_id;
-                for (local_id = m_large_parts - 1; local_id >= 0; local_id--) {
-                    sql = "DELETE FROM " + KeySpaceDot(m_keyspace) + "largeentity WHERE ent = ? AND local_id = ?";
+                qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
+
+                for (int local_id = m_LargeParts - 1; local_id >= 0; local_id--) {
+                    sql = "DELETE FROM " + KeySpaceDot(m_Keyspace) +
+                          "largeentity WHERE ent = ? AND local_id = ?";
                     qry->SetSQL(sql, 2);
-                    qry->BindInt32(0, m_key);
+                    qry->BindInt32(0, m_Key);
                     qry->BindInt32(1, local_id);
-                    LOG5(("deleting LARGE blob part, key=%s.%d, local_id=%d", m_keyspace.c_str(), m_key, local_id));
+                    LOG5(("deleting LARGE blob part, key=%s.%d, local_id=%d",
+                          m_Keyspace.c_str(), m_Key, local_id));
                     UpdateLastActivity();
-                    qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_async);
+                    qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
                 }
                 qry->RunBatch();
-                LOG5(("DELETE: =>stWaitLargeEnt blob, key=%s.%d", m_keyspace.c_str(), m_key));
-                m_state = stWaitLargeEnt;
+                LOG5(("DELETE: =>stWaitLargeEnt blob, key=%s.%d",
+                      m_Keyspace.c_str(), m_Key));
+                m_State = stWaitLargeEnt;
                 break;
             }
 
             case stWaitLargeEnt: {
-                auto qry = m_query_arr[0];
+                auto        qry = m_QueryArr[0];
+
                 if (!CheckReady(qry, stDeleteLargeEnt, &b_need_repeat)) {
                     if (b_need_repeat)
-                        LOG3(("Restart stDeleteLargeEnt key=%s.%d", m_keyspace.c_str(), m_key));
+                        LOG3(("Restart stDeleteLargeEnt key=%s.%d",
+                              m_Keyspace.c_str(), m_Key));
                     break;
                 }
                 CloseAll();
-                LOG5(("DELETE: =>stDeleteEnt blob, key=%s.%d", m_keyspace.c_str(), m_key));
-                m_state = stDeleteEnt;
+                LOG5(("DELETE: =>stDeleteEnt blob, key=%s.%d",
+                      m_Keyspace.c_str(), m_Key));
+                m_State = stDeleteEnt;
                 b_need_repeat = true;
                 break;
             }
 
             case stDeleteEnt: {
-                auto qry = m_query_arr[0];
-                string sql = "DELETE FROM " + KeySpaceDot(m_keyspace) + "entity WHERE ent = ?";
+                auto        qry = m_QueryArr[0];
+                string      sql = "DELETE FROM " + KeySpaceDot(m_Keyspace) +
+                                  "entity WHERE ent = ?";
+
                 qry->SetSQL(sql, 1);
-                qry->BindInt32(0, m_key);
-                LOG5(("deleting blob, key=%s.%d, large_parts: %d", m_keyspace.c_str(), m_key, m_large_parts));
+                qry->BindInt32(0, m_Key);
+                LOG5(("deleting blob, key=%s.%d, large_parts: %d",
+                      m_Keyspace.c_str(), m_Key, m_LargeParts));
                 UpdateLastActivity();
-                qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_async);
-                LOG5(("DELETE: =>stWaitingDone blob, key=%s.%d", m_keyspace.c_str(), m_key));
-                m_state = stWaitingDone;
+                qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
+                LOG5(("DELETE: =>stWaitingDone blob, key=%s.%d",
+                      m_Keyspace.c_str(), m_Key));
+                m_State = stWaitingDone;
                 break;
             }
 
             case stWaitingDone: {
-                auto qry = m_query_arr[0];
+                auto qry = m_QueryArr[0];
                 if (!CheckReady(qry, stDeleteEnt, &b_need_repeat)) {
                     if (b_need_repeat)
-                        LOG3(("Restart stDeleteEnt key=%s.%d", m_keyspace.c_str(), m_key));
+                        LOG3(("Restart stDeleteEnt key=%s.%d",
+                              m_Keyspace.c_str(), m_Key));
                     break;
                 }
-                LOG5(("DELETE: =>stDone blob, key=%s.%d", m_keyspace.c_str(), m_key));
-                m_state = stDone;
+                LOG5(("DELETE: =>stDone blob, key=%s.%d",
+                      m_Keyspace.c_str(), m_Key));
+                m_State = stDone;
                 break;
             }
             default: {
                 char msg[1024];
-                snprintf(msg, sizeof(msg), "Failed to delete blob (key=%s.%d) unexpected state (%d)", m_keyspace.c_str(), m_key, static_cast<int>(m_state));
+                snprintf(msg, sizeof(msg),
+                         "Failed to delete blob (key=%s.%d) unexpected state (%d)",
+                         m_Keyspace.c_str(), m_Key, static_cast<int>(m_State));
                 Error(msg);
             }
         }
@@ -787,26 +912,30 @@ void CCassBlobDeleter::Wait1(void)
 /* CCassBlobOp */
 
 void CCassBlobOp::CassExecuteScript(const string &  scriptstr,
-                                    CassConsistency c)
+                                    CassConsistency  c)
 {
     if (scriptstr.empty())
         return;
 
-    const char* hd = scriptstr.c_str();
-    const char* tl;
+    const char *        hd = scriptstr.c_str();
+    const char *        tl;
+
     while (*hd != 0) {
-        while (*hd != 0 && (*hd == ' ' || *hd == '\t' || *hd == '\n' || *hd == '\r' )) hd++;
+        while (*hd != 0 && (*hd == ' ' || *hd == '\t' || *hd == '\n' || *hd == '\r' ))
+            hd++;
 
         tl = hd;
-        while (*hd != 0 && *hd != ';') hd++;
-        int sz = hd - tl;
+        while (*hd != 0 && *hd != ';')
+            hd++;
+
+        int         sz = hd - tl;
         if (sz > 0) {
             string qry;
             qry.assign(tl, sz);
 #if 0
             NcbiCout << NcbiEndl << "SCRIPTSQL(" << sz << "):" << NcbiEndl << qry << NcbiEndl;
 #endif
-            shared_ptr<CCassQuery> query(m_conn->NewQuery());
+            shared_ptr<CCassQuery> query(m_Conn->NewQuery());
             query->SetSQL(qry, 0);
             query->Execute(c, false, false);
         }
@@ -814,25 +943,33 @@ void CCassBlobOp::CassExecuteScript(const string &  scriptstr,
     }
 }
 
+
 void CCassBlobOp::CreateScheme(const string &  filename,
                                const string &  keyspace)
 {
     LOG1(("Checking/Creating Cassandra Scheme id_blob_sync_cass.sql %s",
-          m_keyspace.c_str()));
-    string scheme;
+          m_Keyspace.c_str()));
+
+    string      scheme;
     StringFromFile(filename, scheme);
+
     if (scheme.empty())
-        RAISE_ERROR(eGeneric, string("cassandra scheme not found or file is empty"));
+        RAISE_ERROR(eGeneric,
+                    string("cassandra scheme not found or file is empty"));
     if (keyspace.empty())
-        RAISE_ERROR(eGeneric, string("cassandra namespace is not specified"));
+        RAISE_ERROR(eGeneric,
+                    string("cassandra namespace is not specified"));
+
     StringReplace(scheme, "%KeySpace%", keyspace);
-    CAppOp op;
+    CAppOp      op;
     CAppPerf::StartOp(&op);
     CassExecuteScript(scheme, CASS_CONSISTENCY_ALL);
-    m_conn->SetKeyspace(keyspace);
+    m_Conn->SetKeyspace(keyspace);
     LOG1(("Updating default settings"));
-    UpdateSetting(op, 0, SETTING_LARGE_TRESHOLD, NStr::NumericToString(DFLT_LARGE_TRESHOLD));
-    UpdateSetting(op, 0, SETTING_LARGE_CHUNK_SZ, NStr::NumericToString(DFLT_LARGE_CHUNK_SZ));
+    UpdateSetting(op, 0, SETTING_LARGE_TRESHOLD,
+                  NStr::NumericToString(DFLT_LARGE_TRESHOLD));
+    UpdateSetting(op, 0, SETTING_LARGE_CHUNK_SZ,
+                  NStr::NumericToString(DFLT_LARGE_CHUNK_SZ));
     CAppPerf::StopOp(&op);
     LOG1(("Cassandra Scheme is ok"));
 }
@@ -845,13 +982,19 @@ void CCassBlobOp::GetBlobChunkTresholds(unsigned int  op_timeout_ms,
     string      s;
     CAppOp      op;
 
-    if (!GetSetting(op, op_timeout_ms, SETTING_LARGE_TRESHOLD, s) || !NStr::StringToNumeric(s, LargeTreshold) || *LargeTreshold < ABS_MIN_LARGE_TRESHOLD) {
+    if (!GetSetting(op, op_timeout_ms, SETTING_LARGE_TRESHOLD, s) ||
+        !NStr::StringToNumeric(s, LargeTreshold) ||
+        *LargeTreshold < ABS_MIN_LARGE_TRESHOLD) {
         *LargeTreshold = DFLT_LARGE_TRESHOLD;
-        UpdateSetting(op, op_timeout_ms, SETTING_LARGE_TRESHOLD, NStr::NumericToString(*LargeTreshold));
+        UpdateSetting(op, op_timeout_ms, SETTING_LARGE_TRESHOLD,
+                      NStr::NumericToString(*LargeTreshold));
     }
-    if (!GetSetting(op, op_timeout_ms, SETTING_LARGE_CHUNK_SZ, s) || !NStr::StringToNumeric(s, LargeChunkSize) || *LargeChunkSize < ABS_MIN_LARGE_CHUNK_SZ) {
+    if (!GetSetting(op, op_timeout_ms, SETTING_LARGE_CHUNK_SZ, s) ||
+        !NStr::StringToNumeric(s, LargeChunkSize) ||
+        *LargeChunkSize < ABS_MIN_LARGE_CHUNK_SZ) {
         *LargeChunkSize = DFLT_LARGE_CHUNK_SZ;
-        UpdateSetting(op, op_timeout_ms, SETTING_LARGE_CHUNK_SZ, NStr::NumericToString(*LargeChunkSize));
+        UpdateSetting(op, op_timeout_ms, SETTING_LARGE_CHUNK_SZ,
+                      NStr::NumericToString(*LargeChunkSize));
     }
 }
 
@@ -865,7 +1008,7 @@ void CCassBlobOp::GetBlob(CAppOp &  op, unsigned int  op_timeout_ms,
     bool                is_error = false;
 
     CCassBlobLoader     loader(
-        &op, op_timeout_ms, m_conn, m_keyspace, key, false, true, data_chunk_cb,
+        &op, op_timeout_ms, m_Conn, m_Keyspace, key, false, true, data_chunk_cb,
         [&is_error, &errmsg](const char *  Text, CCassBlobWaiter *  Waiter) {
             is_error = 1;
             errmsg = Text;
@@ -893,7 +1036,7 @@ void CCassBlobOp::GetBlobAsync(CAppOp &  op, unsigned int  op_timeout_ms,
                                const DataChunkCB_t &  data_chunk_cb,
                                unique_ptr<CCassBlobWaiter> &  Waiter)
 {
-    Waiter.reset(new CCassBlobLoader(&op, op_timeout_ms, m_conn, m_keyspace,
+    Waiter.reset(new CCassBlobLoader(&op, op_timeout_ms, m_Conn, m_Keyspace,
                                      key, true, max_retries, data_chunk_cb,
                                      nullptr));
 }
@@ -905,7 +1048,7 @@ void CCassBlobOp::InsertBlobAsync(CAppOp &  op, unsigned int  op_timeout_ms,
                                   int64_t  LargeTreshold, int64_t  LargeChunkSz,
                                   unique_ptr<CCassBlobWaiter> &  Waiter)
 {
-    Waiter.reset(new CCassBlobInserter(&op, op_timeout_ms, m_conn, m_keyspace,
+    Waiter.reset(new CCassBlobInserter(&op, op_timeout_ms, m_Conn, m_Keyspace,
                                        key, blob_rslt, is_new, LargeTreshold,
                                        LargeChunkSz, true, max_retries,
                                        nullptr));
@@ -916,34 +1059,33 @@ void CCassBlobOp::DeleteBlobAsync(CAppOp &  op, unsigned int  op_timeout_ms,
                                   int32_t  key, unsigned int  max_retries,
                                   unique_ptr<CCassBlobWaiter> &  Waiter)
 {
-    Waiter.reset(new CCassBlobDeleter(&op, op_timeout_ms, m_conn, m_keyspace,
+    Waiter.reset(new CCassBlobDeleter(&op, op_timeout_ms, m_Conn, m_Keyspace,
                                       key, true, max_retries, nullptr));
 }
 
 
 struct SLoadKeysContext
 {
-    atomic_ulong m_max_running;
-    atomic_ulong m_running_count;
-    atomic_ulong m_fetched;
-    vector<pair<int64_t, int64_t>> const &m_ranges;
-    string m_sql;
-    CBlobFullStatMap* m_keys;
-    CFutex m_wakeup;
-    function<void()> m_tick;
+    atomic_ulong                                m_max_running;
+    atomic_ulong                                m_running_count;
+    atomic_ulong                                m_fetched;
+    vector<pair<int64_t, int64_t>> const &      m_ranges;
+    string                                      m_sql;
+    CBlobFullStatMap *                          m_keys;
+    CFutex                                      m_wakeup;
+    function<void()>                            m_tick;
 
     SLoadKeysContext() = delete;
     SLoadKeysContext(SLoadKeysContext&&) = delete;
     SLoadKeysContext(const SLoadKeysContext&) = delete;
-    SLoadKeysContext(
-        unsigned long max_running,
-        unsigned long running_count,
-        unsigned long fetched,
-        vector< pair<int64_t, int64_t> > const &ranges,
-        string const & sql,
-        CBlobFullStatMap* keys,
-        function<void()> tick
-    ) :
+
+    SLoadKeysContext(unsigned long  max_running,
+                     unsigned long  running_count,
+                     unsigned long  fetched,
+                     vector< pair<int64_t, int64_t> > const &  ranges,
+                     string const &  sql,
+                     CBlobFullStatMap *  keys,
+                     function<void()>  tick) :
         m_max_running(max_running),
         m_running_count(running_count),
         m_fetched(fetched),
@@ -953,33 +1095,40 @@ struct SLoadKeysContext
         m_tick(tick)
     {}
 
-    int64_t getStep(size_t range_id) const {
-        int64_t lower_bound = m_ranges[range_id].first;
-        int64_t upper_bound = m_ranges[range_id].second;
+    int64_t getStep(size_t  range_id) const
+    {
+        int64_t     lower_bound = m_ranges[range_id].first;
+        int64_t     upper_bound = m_ranges[range_id].second;
+
         if (upper_bound - lower_bound < KEYLOAD_SPLIT_COUNT) {
             return upper_bound - lower_bound;
         }
-        else {
-            return (upper_bound - lower_bound) / KEYLOAD_SPLIT_COUNT;
-        }
+
+        return (upper_bound - lower_bound) / KEYLOAD_SPLIT_COUNT;
     }
 };
 
-struct SLoadKeysOnDataContext {
-    SLoadKeysContext& common;
-    CAppOp op;
-    int64_t lower_bound;
-    int64_t upper_bound;
-    size_t range_offset;
-    unsigned int run_id;
-    unsigned int restart_count;
-    atomic_bool data_triggered;
-    vector<pair<int32_t, SBlobFullStat>> keys;
+
+
+struct SLoadKeysOnDataContext
+{
+    SLoadKeysContext &                      common;
+    CAppOp                                  op;
+    int64_t                                 lower_bound;
+    int64_t                                 upper_bound;
+    size_t                                  range_offset;
+    unsigned int                            run_id;
+    unsigned int                            restart_count;
+    atomic_bool                             data_triggered;
+    vector<pair<int32_t, SBlobFullStat>>    keys;
 
     SLoadKeysOnDataContext() = delete;
     SLoadKeysOnDataContext(SLoadKeysOnDataContext&&) = delete;
     SLoadKeysOnDataContext(const SLoadKeysOnDataContext&) = delete;
-    SLoadKeysOnDataContext(SLoadKeysContext & v_common, CAppOp* parent, int64_t v_lower_bound, int64_t v_upper_bound, size_t v_range_offset, unsigned int v_run_id) : 
+
+    SLoadKeysOnDataContext(SLoadKeysContext &  v_common, CAppOp *  parent,
+                           int64_t  v_lower_bound, int64_t  v_upper_bound,
+                           size_t  v_range_offset, unsigned int  v_run_id) :
         common(v_common),
         op(parent),
         lower_bound(v_lower_bound),
@@ -991,68 +1140,81 @@ struct SLoadKeysOnDataContext {
     {}
 };
 
-static void InternalLoadKeys_ondata(CCassQuery& query, void* data) {
-    SLoadKeysOnDataContext* context = static_cast<SLoadKeysOnDataContext*>(data);
+
+
+static void InternalLoadKeys_ondata(CCassQuery &  query, void *  data)
+{
+    SLoadKeysOnDataContext *    context = static_cast<SLoadKeysOnDataContext*>(data);
+
     LOG5(("Query[%d] wake: %p", context->run_id, &query));
     context->data_triggered = true;
     context->common.m_wakeup.Inc();
 }
 
-void CCassBlobOp::LoadKeysScheduleNext(CCassQuery& query, void* data) {
-    SLoadKeysOnDataContext* context = static_cast<SLoadKeysOnDataContext*>(data);
-    bool restart_request = false;
-    int32_t ent_current = 0;
-    bool is_eof = false;
+
+void CCassBlobOp::LoadKeysScheduleNext(CCassQuery &  query, void *  data)
+{
+    SLoadKeysOnDataContext *    context = static_cast<SLoadKeysOnDataContext*>(data);
+    bool                        restart_request = false;
+    int32_t                     ent_current = 0;
+    bool                        is_eof = false;
+
     try {
 //      query.ProcessFutureResult(false);
-        unsigned int counter = 0;
+        unsigned int    counter = 0;
         CAppPerf::BeginRow(&context->op);
         while (true) {
-            async_rslt_t wr;
+            async_rslt_t    wr;
+
             if ((wr = query.NextRow()) == ar_dataready) {
                 pair<int32_t, SBlobFullStat> row;
                 row.first = query.FieldGetInt32Value(0);
                 ent_current = row.first;
-                row.second.modified = query.FieldIsNull(1) ? 0 : query.FieldGetInt64Value(1);
-                row.second.size = query.FieldIsNull(2) ? 0 : query.FieldGetInt64Value(2);
-                row.second.flags = query.FieldIsNull(3) ? (bfCheckFailed | bfComplete) : query.FieldGetInt64Value(3);
+                row.second.modified = query.FieldIsNull(1) ?
+                                        0 : query.FieldGetInt64Value(1);
+                row.second.size = query.FieldIsNull(2) ?
+                                        0 : query.FieldGetInt64Value(2);
+                row.second.flags = query.FieldIsNull(3) ?
+                                        (bfCheckFailed | bfComplete) :
+                                        query.FieldGetInt64Value(3);
                 row.second.seen = false;
-                LOG4(("CASS got key=%s:%-9d mod=%ld sz=%-5ld flags=%lx", query.GetConnection()->Keyspace().c_str(), row.first, row.second.modified, row.second.size, row.second.flags));
+                LOG4(("CASS got key=%s:%-9d mod=%ld sz=%-5ld flags=%lx",
+                      query.GetConnection()->Keyspace().c_str(), row.first,
+                      row.second.modified, row.second.size, row.second.flags));
                 context->keys.push_back(std::move(row));
 
                 ++(context->common.m_fetched);
                 ++counter;
                 //LOG1(("Fetched blob with key: %i", key));
-            }
-            else if (wr == ar_wait) {
+            } else if (wr == ar_wait) {
                 LOG5(("Query[%d] ar_wait: %p", context->run_id, &query));
-                break; // expecting next data event triggered on this same query rowset
-            }
-            else if (wr == ar_done) {
+                break; // expecting next data event triggered on
+                       // this same query rowset
+            } else if (wr == ar_done) {
                 is_eof = true;
                 break; // EOF
-            }
-            else {
+            } else {
                 RAISE_ERROR(eGeneric, "CASS unexpected condition");
             }
         }
         context->restart_count = 0;
-        CAppPerf::EndRow(&context->op, context->common.m_fetched.load(), counter, -1, true);
+        CAppPerf::EndRow(&context->op, context->common.m_fetched.load(),
+                         counter, -1, true);
 
         LOG5(("Fetched records by one query: %u", counter));
         if (!is_eof)
             return;
-    }
-    catch (const EDatabase& e) {
-        if ((e.GetErrCode() == EDatabase::eQueryTimeout || e.GetErrCode() == EDatabase::eQueryFailedRestartable) && context->restart_count < 5) {
+    } catch (const EDatabase& e) {
+        if ((e.GetErrCode() == EDatabase::eQueryTimeout ||
+             e.GetErrCode() == EDatabase::eQueryFailedRestartable) &&
+                context->restart_count < 5) {
             restart_request = true;
-        }
-        else {
-            LOG3(("LoadKeys ... exception for entity: %d, %s", ent_current, e.what()));
+        } else {
+            LOG3(("LoadKeys ... exception for entity: %d, %s",
+                  ent_current, e.what()));
             throw;
         }
-    }
-    catch(...) {
+    } catch(...) {
         LOG3(("LoadKeys ... exception for entity: %d", ent_current));
         throw;
     }
@@ -1061,29 +1223,32 @@ void CCassBlobOp::LoadKeysScheduleNext(CCassQuery& query, void* data) {
 
     if (restart_request) {
         CAppPerf::Relax(&context->op);
-        LOG3(("QUERY TIMEOUT! Offset %lu - %lu. Error count %u", context->lower_bound, context->upper_bound , context->restart_count));
+        LOG3(("QUERY TIMEOUT! Offset %lu - %lu. Error count %u",
+              context->lower_bound, context->upper_bound ,
+              context->restart_count));
         query.SetSQL(context->common.m_sql, 2);
         query.BindInt64(0, context->lower_bound);
         query.BindInt64(1, context->upper_bound);
         query.Query(KEYLOAD_CONSISTENCY, true, true, KEYLOAD_PAGESIZE);
         ++(context->restart_count);
-    }
-    else {
-        int64_t upper_bound = context->common.m_ranges[context->range_offset].second;
-        int64_t step = context->common.getStep(context->range_offset);
+    } else {
+        int64_t     upper_bound = context->common.m_ranges[context->range_offset].second;
+        int64_t     step = context->common.getStep(context->range_offset);
 
         query.SetSQL(context->common.m_sql, 2);
         if (context->upper_bound < upper_bound) {
-            int64_t new_upper_bound = (upper_bound - context->upper_bound > step) ? context->upper_bound + step : upper_bound;
+            int64_t     new_upper_bound = (upper_bound - context->upper_bound > step) ?
+                                     context->upper_bound + step : upper_bound;
+
             context->lower_bound = context->upper_bound;
             context->upper_bound = new_upper_bound;
             query.BindInt64(0, context->lower_bound);
             query.BindInt64(1, context->upper_bound);
             query.Query(KEYLOAD_CONSISTENCY, true, true, KEYLOAD_PAGESIZE);
-            //LOG3(("QUERY DATA %lu %li - %li", context->range_offset, context->lower_bound, context->upper_bound));
-        }
-        else {
-            bool need_run = false;
+            // LOG3(("QUERY DATA %lu %li - %li", context->range_offset,
+            //       context->lower_bound, context->upper_bound));
+        } else {
+            bool    need_run = false;
             {
                 if( (context->common.m_max_running + 1) < context->common.m_ranges.size()) {
                     context->range_offset = ++(context->common.m_max_running);
@@ -1092,14 +1257,16 @@ void CCassBlobOp::LoadKeysScheduleNext(CCassQuery& query, void* data) {
             }
 
             if (need_run) {
-                int64_t lower_bound = context->common.m_ranges[context->range_offset].first;
-                int64_t step = context->common.getStep(context->range_offset);
+                int64_t     lower_bound = context->common.m_ranges[context->range_offset].first;
+                int64_t     step = context->common.getStep(context->range_offset);
+
                 context->lower_bound = lower_bound;
                 context->upper_bound = lower_bound + step;
                 query.BindInt64(0, context->lower_bound);
                 query.BindInt64(1, context->upper_bound);
                 query.Query(KEYLOAD_CONSISTENCY, true, true, KEYLOAD_PAGESIZE);
-                //LOG3(("QUERY DATA %lu %li - %li", context->range_offset, context->lower_bound, context->upper_bound));
+                // LOG3(("QUERY DATA %lu %li - %li", context->range_offset,
+                //       context->lower_bound, context->upper_bound));
             }
             else {
                 query.SetOnData(nullptr, nullptr);
@@ -1109,52 +1276,64 @@ void CCassBlobOp::LoadKeysScheduleNext(CCassQuery& query, void* data) {
     }
 }
 
-void CCassBlobOp::LoadKeys(CAppOp& op, CBlobFullStatMap* keys, function<void()> tick) {
-    unsigned int run_id;
-    vector< pair<int64_t, int64_t> > ranges;
-    m_conn->getTokenRanges(ranges);
-    unsigned int concurrent = min<unsigned int>(KEYLOAD_CONCURRENCY, static_cast<unsigned int>(ranges.size()));
 
-    string common = "SELECT ent, modified, size, flags FROM " + KeySpaceDot(m_keyspace) + "entity WHERE";
-    string fsql = common + " TOKEN(ent) >= ? and TOKEN(ent) <= ?";
-    string sql = common + " TOKEN(ent) > ? and TOKEN(ent) <= ?";
-    string error;
+void CCassBlobOp::LoadKeys(CAppOp &  op, CBlobFullStatMap *  keys,
+                           function<void()>  tick)
+{
+    unsigned int                        run_id;
+    vector< pair<int64_t, int64_t> >    ranges;
+    m_Conn->getTokenRanges(ranges);
 
-    SLoadKeysContext loadkeys_context(0, concurrent, 0, ranges, sql, keys, tick);
-    int val = loadkeys_context.m_wakeup.Value();
-    vector<shared_ptr<CCassQuery>> queries;
-    list<SLoadKeysOnDataContext> contexts;
+    unsigned int    concurrent = min<unsigned int>(KEYLOAD_CONCURRENCY,
+                                                   static_cast<unsigned int>(ranges.size()));
+
+    string  common = "SELECT ent, modified, size, flags FROM " +
+                     KeySpaceDot(m_Keyspace) + "entity WHERE";
+    string  fsql = common + " TOKEN(ent) >= ? and TOKEN(ent) <= ?";
+    string  sql = common + " TOKEN(ent) > ? and TOKEN(ent) <= ?";
+    string  error;
+
+    SLoadKeysContext                loadkeys_context(0, concurrent, 0, ranges,
+                                                     sql, keys, tick);
+    int                             val = loadkeys_context.m_wakeup.Value();
+    vector<shared_ptr<CCassQuery>>  queries;
+    list<SLoadKeysOnDataContext>    contexts;
     queries.resize(concurrent);
 
     try {
         for (run_id = 0; run_id < concurrent; ++run_id) {
-            int64_t lower_bound = ranges[run_id].first;
-            int64_t step = loadkeys_context.getStep(run_id);
-            int64_t upper_bound = lower_bound + step;
+            int64_t     lower_bound = ranges[run_id].first;
+            int64_t     step = loadkeys_context.getStep(run_id);
+            int64_t     upper_bound = lower_bound + step;
+
             loadkeys_context.m_max_running = run_id;
 
-            shared_ptr<CCassQuery> query(m_conn->NewQuery());
+            shared_ptr<CCassQuery>      query(m_Conn->NewQuery());
             queries[run_id].swap(query);
             if (run_id == 0) {
                 queries[run_id]->SetSQL(fsql, 2);
-            }
-            else {
+            } else {
                 queries[run_id]->SetSQL(sql, 2);
             }
-            contexts.emplace_back(loadkeys_context, &op, lower_bound, upper_bound, run_id, run_id);
-            SLoadKeysOnDataContext* context = &contexts.back();
+            contexts.emplace_back(loadkeys_context, &op, lower_bound,
+                                  upper_bound, run_id, run_id);
+
+            SLoadKeysOnDataContext *    context = &contexts.back();
             queries[run_id]->BindInt64(0, lower_bound);
             queries[run_id]->BindInt64(1, upper_bound);
             queries[run_id]->SetOnData(InternalLoadKeys_ondata, context);
-            queries[run_id]->Query(KEYLOAD_CONSISTENCY, true, true, KEYLOAD_PAGESIZE);
-            //LOG1(("QUERY DATA %u %li - %li", run_id, ranges[run_id].first, running[run_id].first));
+            queries[run_id]->Query(KEYLOAD_CONSISTENCY, true, true,
+                                   KEYLOAD_PAGESIZE);
+            // LOG1(("QUERY DATA %u %li - %li", run_id, ranges[run_id].first,
+            //       running[run_id].first));
         }
 
-        string error;
-        while (!SSignalHandler::s_CtrlCPressed() && loadkeys_context.m_running_count.load() > 0) {
+        string  error;
+        while (!SSignalHandler::s_CtrlCPressed() &&
+               loadkeys_context.m_running_count.load() > 0) {
             loadkeys_context.m_wakeup.WaitWhile(val);
             val = loadkeys_context.m_wakeup.Value();
-            for (auto& it : contexts) {
+            for (auto &  it: contexts) {
                 run_id = it.run_id;
                 if (!SSignalHandler::s_CtrlCPressed() && it.data_triggered) {
                     it.data_triggered = false;
@@ -1164,37 +1343,39 @@ void CCassBlobOp::LoadKeys(CAppOp& op, CBlobFullStatMap* keys, function<void()> 
         }
         if (SSignalHandler::s_CtrlCPressed())
             RAISE_ERROR(eFatal, "SIGINT delivered");
-    }
-    catch (const exception& e) { // don't re-throw, we have to wait until all data events are triggered
+    } catch (const exception &  e) {    // don't re-throw, we have to wait until
+                                        // all data events are triggered
         if (error.empty())
             error = e.what();
     }
 
     if (!error.empty()) {
-        for (auto& it : queries) {
+        for (auto &  it: queries) {
             it->Close();
         }
         RAISE_ERROR(eGeneric, error);
     }
 
     LOG5(("LoadKeys: reloading keys from vectors to map"));
-    for (auto& it : contexts) {
-        CBlobFullStatMap* all_keys = it.common.m_keys;
+    for (auto &  it: contexts) {
+        CBlobFullStatMap *      all_keys = it.common.m_keys;
         if (!it.keys.empty()) {
-            for (auto const& row : it.keys) {
-                auto it = all_keys->find(row.first);
+            for (auto const &  row: it.keys) {
+                auto    it = all_keys->find(row.first);
                 if (it != all_keys->end()) {
-                    ERRLOG1(("key=%d already exists, mod: %ld, fetched: %ld", row.first, it->second.modified, row.second.modified));
+                    ERRLOG1(("key=%d already exists, mod: %ld, fetched: %ld",
+                             row.first, it->second.modified,
+                             row.second.modified));
                 } else {
                     all_keys->insert(row);
-                    //LOG5(("fetched key=%d - %ld, idx: %ld", row.first, it->second.modified, row.second.modified));
+                    // LOG5(("fetched key=%d - %ld, idx: %ld", row.first,
+                    //       it->second.modified, row.second.modified));
                 }
             }
             it.keys.clear();
             it.keys.resize(0);
         }
     }
-
 
     LOG3(("LoadKeys: finished"));
 }
@@ -1205,35 +1386,39 @@ void CCassBlobOp::LoadKeys(CAppOp& op, CBlobFullStatMap* keys, function<void()> 
 
 *****************************************************/
 
-struct SAsyncData_rec_t {
-    bool m_run_async;
-    CassConsistency m_cons;
-    vector<shared_ptr<CCassQuery> > m_queryarr;
-    int m_activequeryidx;
-    shared_ptr<CCassConnection> m_conn;
-    SAsyncData_rec_t(CassConsistency cons = CASS_CONSISTENCY_LOCAL_QUORUM, bool run_async = false, shared_ptr<CCassConnection> conn = nullptr) :
+struct SAsyncData_rec_t
+{
+    SAsyncData_rec_t(CassConsistency  cons = CASS_CONSISTENCY_LOCAL_QUORUM,
+                     bool  run_async = false,
+                     shared_ptr<CCassConnection>  conn = nullptr) :
         m_run_async(run_async),
         m_cons(cons),
         m_activequeryidx(-1),
-        m_conn(conn)
-        {}
-    shared_ptr<CCassQuery> ActiveQuery() {
+        m_Conn(conn)
+    {}
+
+    shared_ptr<CCassQuery> ActiveQuery(void)
+    {
         if (m_activequeryidx >= 0) {
             if (m_activequeryidx >= (int)m_queryarr.size()) {
-                RAISE_ERROR(eGeneric, "SAsyncData_rec_t::ActiveQuery: index out of range");
+                RAISE_ERROR(eGeneric,
+                            "SAsyncData_rec_t::ActiveQuery: index out of range");
             }
             return m_queryarr[m_activequeryidx];
         }
-        else
-            return nullptr;
-    };
-    void AddQuery(shared_ptr<CCassQuery> qry) {
+        return nullptr;
+    }
+
+    void AddQuery(shared_ptr<CCassQuery>  qry)
+    {
         m_queryarr.push_back(qry);
         if (m_activequeryidx < 0)
             m_activequeryidx = 0;
     }
-    virtual async_rslt_t WaitAsync(unsigned int timeoutmks) {
-        shared_ptr<CCassQuery> aq = ActiveQuery();
+
+    virtual async_rslt_t WaitAsync(unsigned int  timeoutmks)
+    {
+        shared_ptr<CCassQuery>      aq = ActiveQuery();
         if (aq) {
             LOG5(("WA qry=%p >>", LOG_SPTR(aq)));
             async_rslt_t rv = aq->WaitAsync(timeoutmks);
@@ -1241,32 +1426,47 @@ struct SAsyncData_rec_t {
             shared_ptr<CCassQuery> newaq = ActiveQuery();
             if (rv != ar_wait && newaq != nullptr && aq != newaq) {
                 rv = ar_wait;
-                LOG5(("WA qry=%p OVERRIDE rv=%d, new qry=%p", LOG_SPTR(aq), rv, LOG_SPTR(newaq)));
+                LOG5(("WA qry=%p OVERRIDE rv=%d, new qry=%p",
+                      LOG_SPTR(aq), rv, LOG_SPTR(newaq)));
             }
             return rv;
         }
-        else
-            return ar_done;
+        return ar_done;
     }
-    virtual bool IsAsync() {
+
+    virtual bool IsAsync(void) const
+    {
         return m_run_async;
     }
-    virtual bool IsEOF() {
-        for(auto q : m_queryarr)
+
+    virtual bool IsEOF(void) const
+    {
+        for(auto  q: m_queryarr)
             if (!q->IsEOF())
                 return false;
         return true;
     }
-    virtual void Close() {
+
+    virtual void Close(void)
+    {
         for(auto q : m_queryarr)
             q->Close();
         m_queryarr.clear();
         m_activequeryidx = -1;
     }
-    virtual string ToString() {
-        shared_ptr<CCassQuery> aq = ActiveQuery();
+
+    virtual string ToString(void)
+    {
+        shared_ptr<CCassQuery>  aq = ActiveQuery();
         return aq ? aq->ToString() : "<nullptr>";
     }
+
+public:
+    bool                                m_run_async;
+    CassConsistency                     m_cons;
+    vector<shared_ptr<CCassQuery> >     m_queryarr;
+    int                                 m_activequeryidx;
+    shared_ptr<CCassConnection>         m_Conn;
 };
 
 
@@ -1276,16 +1476,21 @@ struct SAsyncData_rec_t {
 
 *****************************************************/
 
-void CCassBlobOp::UpdateBlobFlags(CAppOp& op, unsigned int op_timeout_ms, int32_t key, uint64_t flags, flagop_t flag_op) {
+void CCassBlobOp::UpdateBlobFlags(CAppOp &  op, unsigned int  op_timeout_ms,
+                                  int32_t  key, uint64_t  flags,
+                                  flagop_t  flag_op)
+{
     CCassConnection::Perform(op, op_timeout_ms, nullptr, nullptr,
         [this, flags, flag_op, key](bool is_repeated) {
-            int64_t new_flags = 0;
-            string sql;
-            shared_ptr<CCassQuery> qry = m_conn->NewQuery();
+            int64_t                 new_flags = 0;
+            string                  sql;
+            shared_ptr<CCassQuery>  qry = m_Conn->NewQuery();
+
             switch (flag_op) {
                 case FLAG_OP_OR:
                 case FLAG_OP_AND: {
-                    sql = "SELECT flags FROM " + KeySpaceDot(m_keyspace) + "entity WHERE ent = ?";
+                    sql = "SELECT flags FROM " + KeySpaceDot(m_Keyspace) +
+                          "entity WHERE ent = ?";
                     qry->SetSQL(sql, 1);
                     qry->BindInt32(0, key);
                     qry->Query(CASS_CONSISTENCY_LOCAL_QUORUM);
@@ -1310,7 +1515,8 @@ void CCassBlobOp::UpdateBlobFlags(CAppOp& op, unsigned int op_timeout_ms, int32_
                 default:
                     RAISE_ERROR(eFatal, "Unexpected flag operation");
             }
-            sql = "UPDATE " + KeySpaceDot(m_keyspace) + "entity SET flags = ? WHERE ent = ?";
+            sql = "UPDATE " + KeySpaceDot(m_Keyspace) +
+                  "entity SET flags = ? WHERE ent = ?";
             qry->SetSQL(sql, 2);
             qry->BindInt64(0, new_flags);
             qry->BindInt32(1, key);
@@ -1326,14 +1532,19 @@ void CCassBlobOp::UpdateBlobFlags(CAppOp& op, unsigned int op_timeout_ms, int32_
 
 *****************************************************/
 
-void CCassBlobOp::UpdateSetting(CAppOp& op, unsigned int op_timeout_ms, const string& name, const string& value) {
+void CCassBlobOp::UpdateSetting(CAppOp &  op, unsigned int  op_timeout_ms,
+                                const string &  name, const string &  value)
+{
     CCassConnection::Perform(op, op_timeout_ms, nullptr, nullptr,
         [this, name, value](bool is_repeated) {
-            string sql;
-            sql = "INSERT INTO " + KeySpaceDot(m_keyspace) + "settings (name, value) VALUES(?, ?)";
-            shared_ptr<CCassQuery>qry(m_conn->NewQuery());
+            string      sql;
+
+            sql = "INSERT INTO " + KeySpaceDot(m_Keyspace) +
+                  "settings (name, value) VALUES(?, ?)";
+            shared_ptr<CCassQuery>qry(m_Conn->NewQuery());
             qry->SetSQL(sql, 2);
-            LOG5(("InternalUpdateSetting: %s=>%s, %s", name.c_str(), value.c_str(), sql.c_str()));
+            LOG5(("InternalUpdateSetting: %s=>%s, %s",
+                  name.c_str(), value.c_str(), sql.c_str()));
             qry->BindStr(0, name);
             qry->BindStr(1, value);
             qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, false, false);
@@ -1342,17 +1553,27 @@ void CCassBlobOp::UpdateSetting(CAppOp& op, unsigned int op_timeout_ms, const st
     );
 }
 
-bool CCassBlobOp::GetSetting(CAppOp& op, unsigned int op_timeout_ms, const string& name, string& value) {
-    bool rslt = false;
+
+bool CCassBlobOp::GetSetting(CAppOp &  op, unsigned int  op_timeout_ms,
+                             const string &  name, string &  value)
+{
+    bool        rslt = false;
+
     CCassConnection::Perform(op, op_timeout_ms, nullptr, nullptr,
         [this, name, &value, &rslt](bool is_repeated) {
-            string sql;
-            sql = "SELECT value FROM " + KeySpaceDot(m_keyspace) + "settings WHERE name=?";
-            shared_ptr<CCassQuery>qry(m_conn->NewQuery());
+            string      sql;
+
+            sql = "SELECT value FROM " + KeySpaceDot(m_Keyspace) +
+                  "settings WHERE name=?";
+            shared_ptr<CCassQuery>qry(m_Conn->NewQuery());
             LOG5(("InternalGetSetting: %s: %s", name.c_str(), sql.c_str()));
             qry->SetSQL(sql, 1);
             qry->BindStr(0, name);
-            CassConsistency cons = is_repeated && m_conn->GetFallBackRdConsistency() ? CASS_CONSISTENCY_LOCAL_ONE : CASS_CONSISTENCY_LOCAL_QUORUM;
+
+            CassConsistency     cons = is_repeated &&
+                                       m_Conn->GetFallBackRdConsistency() ?
+                                            CASS_CONSISTENCY_LOCAL_ONE :
+                                            CASS_CONSISTENCY_LOCAL_QUORUM;
             qry->Query(cons, false, false);
             async_rslt_t rv = qry->NextRow();
             if (rv == ar_dataready) {
@@ -1362,9 +1583,9 @@ bool CCassBlobOp::GetSetting(CAppOp& op, unsigned int op_timeout_ms, const strin
             return true;
         }
     );
+
     return rslt;
 }
-
 
 
 END_IDBLOB_SCOPE
