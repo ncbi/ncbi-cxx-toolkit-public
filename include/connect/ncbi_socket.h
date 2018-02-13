@@ -2010,7 +2010,7 @@ extern NCBI_XCONNECT_EXPORT int SOCK_gethostname
  *  (or local host, if hostname is passed as NULL), which could have been
  *  specified as either domain name or an IP address in the dotted notation
  *  (e.g. "123.45.67.89\0").  Return 0 on error.
- *  @note  "0.0.0.0" and "255.255.255.255" are both considered invalid.
+ * @note "0.0.0.0" and "255.255.255.255" are both considered invalid.
  * @sa
  *  SOCK_gethostbyname, SOCK_gethostname
  */
@@ -2029,19 +2029,19 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_gethostbyname
  );
 
 
-/** Take INET host address (in network byte order) and fill out the
- * the provided buffer with the name, which the address corresponds to
+/** Take INET host address (in network byte order) or 0 for current host, and
+ * fill out the provided buffer with the name, which the address corresponds to
  * (in case of multiple names the primary name is used).
  * @param addr
- *  [in]  host address in network byte order
+ *  [in]  host address (0 means current host) in network byte order
  * @param name
- *  [out] buffer to put the name to
+ *  [out] buffer to store the name to
  * @param namelen
  *  [in]  size (bytes) of the buffer above
  * @param log
  *  [in]  whether to log failures
  * @return
- *  Value 0 means error; success is denoted by the 'name' argument returned.
+ *  Value 0 means error;  success is denoted by the 'name' argument returned.
  *  Note that on error the name returned emptied (name[0] == '\0').
  * @sa
  *  SOCK_gethostbyaddr
@@ -2086,7 +2086,7 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLocalHostAddress
 
 
 /** Read (skipping leading blanks) "[host][:port]" from a string stopping
- * at EOL or a blank character.
+ * at either EOL or a blank character.
  * @param str
  *  must not be NULL
  * @param host
@@ -2096,10 +2096,11 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLocalHostAddress
  * @return
  *  On success, return the advanced pointer past the host/port read.
  *  If no host/port detected, return 'str'.  On format error, return 0.
- *  If host and/or port fragments are missing, then the corresponding 'host'/
+ *  If either host or port fragment is missing, then the corresponding 'host'/
  *  'port' parameters get a value of 0.
  * @note  'host' gets returned in network byte order, unlike 'port', which
  *        always comes out in host (native) byte order.
+ * @note  ":0" is accepted to denote no-host:zero-port.  
  */
 extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort
 (const char*     str,
@@ -2108,9 +2109,11 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort
  );
 
 
-/** Print host:port into provided buffer string, not to exceed 'bufsize' bytes
- * (including the teminating '\0' character).
- * Suppress printing host if parameter 'host' is zero.
+/** Print numeric string "host:port" into a buffer provided, not to exceed
+ * 'bufsize' bytes (including the teminating '\0' character).  Suppress
+ * printing the "host" if the 'host' parameter is zero.  Suppress printing the
+ * ":port" part if 'port' passed as zero.  If both the 'host' and the 'port'
+ * parameters are zero, output is the literal ":0".
  * @param host
  *  in network byte order
  * @param port
@@ -2120,7 +2123,7 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort
  * @param bufsize
  *  must be large enough
  * @return
- *  Number of bytes printed, or 0 on error (e.g. buffer too small).
+ *  Number of bytes printed, or 0 on error (e.g. buffer is too small).
  */
 extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToString
 (unsigned int   host,
