@@ -75,7 +75,7 @@ CWriteDB_Impl::CWriteDB_Impl(const string & dbname,
       m_Hash             (0),
       m_SeqLength        (0),
       m_HaveSequence     (false),
-      m_LongSeqId        (long_ids),      
+      m_LongSeqId        (long_ids),
       m_LmdbOid          (0)
 {
     CTime now(CTime::eCurrent);
@@ -325,7 +325,7 @@ void CWriteDB_Impl::Close()
     m_Sequence.erase();
     m_Ambig.erase();
 
-    if (! m_Volume.Empty()) {        
+    if (! m_Volume.Empty()) {
         m_Volume->Close();
 
         if (m_UseGiMask) {
@@ -375,7 +375,7 @@ void CWriteDB_Impl::Close()
         }
 
         m_Volume.Reset();
-    }    
+    }
 }
 
 string CWriteDB_Impl::x_MakeAliasName()
@@ -1041,14 +1041,14 @@ void CWriteDB_Impl::x_Publish()
         return;
     }
 
-    
+
     if(m_DbVersion == eBDB_Version5 && m_Lmdbdb.Empty()) {
         const string lmdb_fname_w_path = BuildLMDBFileName(m_Dbname, m_Protein);
         m_Lmdbdb.Reset(new CWriteDB_LMDB(lmdb_fname_w_path));
         m_Taxdb.Reset(new CWriteDB_TaxID(
         		          GetFileNameFromExistingLMDBFile(lmdb_fname_w_path, ELMDBFileType::eTaxId2Offsets)));
     }
-    
+
     x_CookData();
 
     bool done = false;
@@ -1062,22 +1062,22 @@ void CWriteDB_Impl::x_Publish()
                                        m_Hash,
                                        m_Blobs,
                                        m_MaskDataColumn);
-        if (done  &&  (m_DbVersion == eBDB_Version5)  &&  m_Lmdbdb) {            
+        if (done  &&  (m_DbVersion == eBDB_Version5)  &&  m_Lmdbdb) {
             m_Lmdbdb->InsertEntries(m_Ids,m_LmdbOid);
             m_Taxdb->InsertEntries(m_TaxIds, m_LmdbOid);
             m_LmdbOid++;
         }
     }
-    
+
     if (! done) {
         int index = (int) m_VolumeList.size();
 
-        if (m_Volume.NotEmpty()) {                        
+        if (m_Volume.NotEmpty()) {
             m_Volume->Close();
         }
 
         {
-            
+
             m_Volume.Reset(new CWriteDB_Volume(m_Dbname,
                                                m_Protein,
                                                m_Title,
@@ -1087,7 +1087,7 @@ void CWriteDB_Impl::x_Publish()
                                                m_MaxVolumeLetters,
                                                m_Indices,
                                                m_DbVersion));
-                                          
+
             m_VolumeList.push_back(m_Volume);
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
@@ -1597,6 +1597,73 @@ void CWriteDB_Impl::x_ComputeHash(const CBioseq & sequence)
 
 #define TAB_REPLACEMENT "   "
 
+static bool s_IsValidPdb(const string& s)
+{
+    size_t len = s.size();
+    // If bare ID, only valid lengths are 4 (no chain ID),
+    // 6 (chain ID is in [A-Z0-9]), or 7 (chain ID is double [A-Z]).
+    // Char before chain ID is '_'.
+    // If long ID, it's prefixed with 'pdb|' and chain ID is preceded by '|'.
+    bool long_seqid = false;
+    if (len == 4  ||  len == 6  ||  len == 7) {
+        if (s.find('|') != NPOS) {
+            return false;
+        }
+    } else if (len == 8  ||  len == 10  ||  len == 11) {
+        if (s.find_first_of('pdb|') == NPOS
+                &&  s.find_first_of('PDB|') == NPOS) {
+            return false;
+        }
+        long_seqid = true;
+    } else {
+        return false;
+    }
+    char sep = long_seqid ? '|' : '_';
+    auto it = s.begin();
+    if (long_seqid) {
+        it += 4;    // skip "pdb|"
+    }
+    // Is first character a digit, excluding '0'?
+    if (!isdigit(*it)  ||  *it == '0') {
+        return false;
+    }
+    ++it;
+    // Is each of the next 3 characters either upper-case alpha or digit?
+    for (int i = 0; i < 3; ++i) {
+        if (!isupper(*it)  &&  !isdigit(*it)) {
+            return false;
+        }
+        ++it;
+    }
+    // We're done if length was 4 characters.
+    // Otherwise...
+    if (len > 4) {
+        // Is next character the correct separator?
+        if (*it != sep) {
+            return false;
+        }
+        ++it;
+        if (len == 6) {
+            // Is single-character chain ID either upper-case alpha or digit?
+            if (!isupper(*it)  &&  !isdigit(*it)) {
+                return false;
+            }
+        } else /* len == 7 */ {
+            // Is first character of 2-character chain ID upper-case alpha?
+            if (!isupper(*it)) {
+                return false;
+            }
+            // If so, is second character the same?
+            // (Double upper-case alpha represents a single lower-case alpha.)
+            auto c = *it++;
+            if (c != *it) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 void CWriteDB_Impl::
 x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
                          CConstRef<CBlast_def_line_set> & deflines,
@@ -1728,32 +1795,30 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
             string remaining(fasta, pos_next, fasta.size() - pos_next);
             fasta.swap(remaining);
 
-            // Parse '|' seperated ids.
+            // Parse ids.  They may or may not be bar-separated.
             list< CRef<CSeq_id> > seqids;
-            if ( (ids.find('|') == NPOS && long_seqids)
-                 || !isalpha((unsigned char)(ids[0]))) {
-
-                 seqids.push_back(CRef<CSeq_id> (new CSeq_id(CSeq_id::e_Local, ids)));
+            if ((ids.find('|') == NPOS  &&  long_seqids)
+                    ||  (!isalpha(ids[0])  &&  !s_IsValidPdb(ids))) {
+                seqids.push_back(CRef<CSeq_id> (new CSeq_id(CSeq_id::e_Local, ids)));
             } else {
-                 CSeq_id::ParseFastaIds(seqids, ids);
+                CSeq_id::ParseFastaIds(seqids, ids);
 
-                 if (!long_seqids) {
+                if (!long_seqids) {
+                    // If accession's molecule type is different than
+                    // expected, change sequence id to local. CFastaReader
+                    // cannot distingush between bare pir protein ids genbank
+                    // nucleotide ids.
+                    for (auto& it: seqids) {
+                        CSeq_id::EAccessionInfo info = it->IdentifyAccession();
+                        if (!it->IsLocal() && !it->IsGi() &&
+                                (info & (CSeq_id::fAcc_prot | CSeq_id::fAcc_nuc)) &&
+                                bioseq.IsAa() == !!(info & CSeq_id::fAcc_nuc)) {
 
-                     // If accession's molecule type is different than
-                     // expected, change sequence id to local. CFastaReader
-                     // cannot distingush between bare pir protein ids genbank
-                     // nucleotide ids.
-                     for (auto& it: seqids) {
-                         CSeq_id::EAccessionInfo info = it->IdentifyAccession();
-                         if (!it->IsLocal() && !it->IsGi() &&
-                             (info & (CSeq_id::fAcc_prot | CSeq_id::fAcc_nuc)) &&
-                             bioseq.IsAa() == !!(info & CSeq_id::fAcc_nuc)) {
-
-                             string label = it->GetSeqIdString(true);
-                             it.Reset(new CSeq_id(CSeq_id::e_Local, label));
-                         }
-                     }
-                 }
+                            string label = it->GetSeqIdString(true);
+                            it.Reset(new CSeq_id(CSeq_id::e_Local, label));
+                        }
+                    }
+                }
             }
 
             // Build the actual defline.

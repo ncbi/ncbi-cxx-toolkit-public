@@ -1592,14 +1592,17 @@ BOOST_AUTO_TEST_CASE(FastaReaderBioseq)
         CRef<CBlast_def_line_set> bdls =
             rd.GetHdr(0);
 
-        BOOST_REQUIRE(bdls->Get().size() == 2);
-        BOOST_REQUIRE(bdls->Get().front()->GetTitle() == T1);
-        BOOST_REQUIRE(bdls->Get().front()->GetSeqid().size() == 1);
-        BOOST_REQUIRE(bdls->Get().front()->GetSeqid().front()->AsFastaString() == I1);
+        // Prefer BOOST_REQUIRE_EQUAL(a, b) over BOOST_REQUIRE(a == b).
+        // The former will print the non-equal values for you, the latter
+        // does not.
+        BOOST_REQUIRE_EQUAL(bdls->Get().size(), 2);
+        BOOST_REQUIRE_EQUAL(bdls->Get().front()->GetTitle(), T1);
+        BOOST_REQUIRE_EQUAL(bdls->Get().front()->GetSeqid().size(), 1);
+        BOOST_REQUIRE_EQUAL(bdls->Get().front()->GetSeqid().front()->AsFastaString(), I1);
 
-        BOOST_REQUIRE(bdls->Get().back()->GetTitle() == T2);
-        BOOST_REQUIRE(bdls->Get().back()->GetSeqid().size() == 1);
-        BOOST_REQUIRE(bdls->Get().back()->GetSeqid().front()->AsFastaString() == I2);
+        BOOST_REQUIRE_EQUAL(bdls->Get().back()->GetTitle(), T2);
+        BOOST_REQUIRE_EQUAL(bdls->Get().back()->GetSeqid().size(), 1);
+        BOOST_REQUIRE_EQUAL(bdls->Get().back()->GetSeqid().front()->AsFastaString(), I2);
     }
 
     s_WrapUpFiles(files);
