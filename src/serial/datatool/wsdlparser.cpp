@@ -785,7 +785,7 @@ void WSDLParser::CollectDataObjects(DTDElement& agent, DTDElement& node)
     const list<string> refs = node.GetContent();
     for (list<string>::const_iterator i= refs.begin(); i != refs.end(); ++i) {
         DTDElement& refNode = m_MapElement[*i];
-        if (refNode.GetType() < DTDElement::eWsdlService) {
+        if (refNode.GetType() < DTDElement::eWsdlService || refNode.GetType() > DTDElement::eWsdlMessage) {
             if (&agent != &node &&
 //                !refNode.IsEmbedded() &&
 //                node.GetType() != DTDElement::eWsdlOperation &&
