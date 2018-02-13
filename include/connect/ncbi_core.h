@@ -434,7 +434,7 @@ extern NCBI_XCONNECT_EXPORT LOG LOG_AddRef(LOG lg);
 extern NCBI_XCONNECT_EXPORT LOG LOG_Delete(LOG lg);
 
 
-/** Upon having filled SLOG_Handler data from parameters, write a message
+/** Upon having filled SLOG_Message data from parameters, write a message
  * (perhaps with raw data attached) to the log by calling LOG_WriteInternal().
  * @par <b>NOTE:</b>
  *  Do not call this function directly, if possible.
