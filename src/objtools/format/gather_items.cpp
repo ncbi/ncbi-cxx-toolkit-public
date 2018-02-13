@@ -2263,11 +2263,14 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
             sel.ExcludeNamedAnnots("CDD")
                .ExcludeNamedAnnots("SNP");
         }
+        if ( cfg.HideCDDFeatures() ) {
+            sel.ExcludeNamedAnnots("CDD");
+        }
         if ( cfg.HideSNPFeatures() ) {
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_variation);
+            sel.ExcludeNamedAnnots("SNP");
         }
         if ( cfg.HideExonFeatures() ) {
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_exon);
+            sel.ExcludeNamedAnnots("Exon");
         }
         if ( cfg.HideIntronFeatures() ) {
             sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_intron);
@@ -2732,14 +2735,18 @@ static CMappedFeat s_GetTrimmedMappedFeat(const CSeq_feat& feat,
 
 static bool s_IsCDD(const CSeq_feat_Handle& feat)
 {
-    ITERATE(CSeq_feat::TDbxref, it, feat.GetDbxref()) {
-        if ( (*it)->GetType() == CDbtag::eDbtagType_CDD ) {
-            return true;
-        }
-    }
-    return false;
+    return (feat.GetAnnot().IsNamed() && feat.GetAnnot().GetName() == "Annot:CDD");
 }
 
+static bool s_IsSNP(const CSeq_feat_Handle& feat)
+{
+    return (feat.GetAnnot().IsNamed() && feat.GetAnnot().GetName() == "Annot:SNP");
+}
+
+static bool s_IsExon(const CSeq_feat_Handle& feat)
+{
+    return (feat.GetAnnot().IsNamed() && feat.GetAnnot().GetName() == "Annot:Exon");
+}
 
 void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
 (const CSeq_loc& loc,
@@ -3037,14 +3044,6 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocation
             ///
 
             s_CleanCDDFeature(original_feat);
-
-            const CFlatFileConfig& cfg = ctx.Config();
-            CSeqFeatData::ESubtype subtype = feat.GetFeatSubtype();
-            if (cfg.HideCDDFeatures()  &&
-                (subtype == CSeqFeatData::eSubtype_region || subtype == CSeqFeatData::eSubtype_site)  &&
-                s_IsCDD(feat)) {
-                continue;
-            }
 
             ///
             /// HACK HACK HACK
