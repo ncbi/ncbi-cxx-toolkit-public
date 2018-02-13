@@ -289,8 +289,8 @@ string CValidErrorFormat::x_FormatGenericForSubmitterReport(const CValidErrItem&
         }
         if (error.IsSetLocus_tag()) {
             obj_desc += "\t" + error.GetLocus_tag();
-        } else if (error.IsSetObject()) {
-            const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(&(error.GetObject()));
+        } else if (error.IsSetObject() && error.GetObject().GetThisTypeInfo() == CSeq_feat:: GetTypeInfo()) {
+            const CSeq_feat* sf = static_cast<const CSeq_feat*>(&(error.GetObject()));
             if (sf) {
                 obj_desc += "\t" + x_GetLocusTag(*sf, scope);
             }
@@ -323,7 +323,10 @@ string CValidErrorFormat::x_FormatECNumberForSubmitterReport(const CValidErrItem
 
     // want: accession number for sequence, ec numbers, locus tag, protein name
 
-    const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(&(error.GetObject()));
+    if (error.GetObject().GetThisTypeInfo() != CSeq_feat::GetTypeInfo()) {
+        return rval;
+    }
+    const CSeq_feat* feat = static_cast<const CSeq_feat*>(&(error.GetObject()));
     if (!feat) {
         return rval;
     }
@@ -402,13 +405,17 @@ string CValidErrorFormat::x_FormatBadSpecificHostForSubmitterReport(const CValid
 {
     string rval = "";
     string spec_host = "";
-    const CSeqdesc* desc = dynamic_cast<const CSeqdesc *>(&(error.GetObject()));
-    if (desc && desc->IsSource()) {
-        spec_host = s_GetSpecificHostFromBioSource(desc->GetSource());
+    if (error.GetObject().GetThisTypeInfo() == CSeqdesc::GetTypeInfo()) {
+        const CSeqdesc* desc = static_cast<const CSeqdesc *>(&(error.GetObject()));
+        if (desc && desc->IsSource()) {
+            spec_host = s_GetSpecificHostFromBioSource(desc->GetSource());
+        }
     }
-    const CSeq_feat* feat = dynamic_cast<const CSeq_feat *>(&(error.GetObject()));
-    if (feat && feat->IsSetData() && feat->GetData().IsBiosrc()) {
-        spec_host = s_GetSpecificHostFromBioSource(feat->GetData().GetBiosrc());
+    else if (error.GetObject().GetThisTypeInfo() == CSeq_feat::GetTypeInfo()) {
+        const CSeq_feat* feat = static_cast<const CSeq_feat *>(&(error.GetObject()));
+        if (feat && feat->IsSetData() && feat->GetData().IsBiosrc()) {
+            spec_host = s_GetSpecificHostFromBioSource(feat->GetData().GetBiosrc());
+        }
     }
 
     if (!NStr::IsBlank(spec_host)) {
@@ -455,13 +462,17 @@ string CValidErrorFormat::x_FormatBadInstCodeForSubmitterReport(const CValidErrI
     string rval = "";
 
     string codes = "";
-    const CSeqdesc* desc = dynamic_cast<const CSeqdesc *>(&(error.GetObject()));
-    if (desc && desc->IsSource()) {
-        codes = s_GetInstCodeFromBioSource(desc->GetSource());
+    if (error.GetObject().GetThisTypeInfo() == CSeqdesc::GetTypeInfo()) {
+        const CSeqdesc* desc = static_cast<const CSeqdesc *>(&(error.GetObject()));
+        if (desc && desc->IsSource()) {
+            codes = s_GetInstCodeFromBioSource(desc->GetSource());
+        }
     }
-    const CSeq_feat* feat = dynamic_cast<const CSeq_feat *>(&(error.GetObject()));
-    if (feat && feat->IsSetData() && feat->GetData().IsBiosrc()) {
-        codes = s_GetInstCodeFromBioSource(feat->GetData().GetBiosrc());
+    else if (error.GetObject().GetThisTypeInfo() == CSeq_feat::GetTypeInfo()) {
+        const CSeq_feat* feat = static_cast<const CSeq_feat *>(&(error.GetObject()));
+        if (feat && feat->IsSetData() && feat->GetData().IsBiosrc()) {
+            codes = s_GetInstCodeFromBioSource(feat->GetData().GetBiosrc());
+        }
     }
 
     if (!NStr::IsBlank(codes)) {
@@ -1241,8 +1252,9 @@ void CValidErrorFormat::AddLocusTags(CValidError& errors, CScope& scope)
         }
         if (it->IsSetObjectType() &&
             it->GetObjectType() == CValidErrItem::eObjectType_seqfeat &&
-            it->IsSetObject()) {
-            const CSeq_feat* sf = dynamic_cast<const CSeq_feat *>(&(it->GetObject()));
+            it->IsSetObject() &&
+            it->GetObject().GetThisTypeInfo() == CSeq_feat::GetTypeInfo()) {
+            const CSeq_feat* sf = static_cast<const CSeq_feat *>(&(it->GetObject()));
             if (sf && sf->IsSetData()) {
                 it->SetLocus_tag(x_GetLocusTag(*sf, scope));
             }
@@ -1251,26 +1263,26 @@ void CValidErrorFormat::AddLocusTags(CValidError& errors, CScope& scope)
 }
 
 
-string CValidErrorFormat::x_GetLocusTag(const CSeq_feat& sf, CScope& scope)
+const string& CValidErrorFormat::x_GetLocusTag(const CSeq_feat& sf, CScope& scope)
 {
-    string rval = kEmptyStr;
+    const string* rval = &kEmptyStr;
 
     if (sf.GetData().IsGene()) {
         if (sf.GetData().GetGene().IsSetLocus_tag()) {
-            rval = sf.GetData().GetGene().GetLocus_tag();
+            rval = &sf.GetData().GetGene().GetLocus_tag();
         }
     } else {
         const CGene_ref* g = sf.GetGeneXref();
         if (g && g->IsSetLocus_tag()) {
-            rval = g->GetLocus_tag();
+            rval = &g->GetLocus_tag();
         } else {
             CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(sf, scope);
             if (gene && gene->GetData().GetGene().IsSetLocus_tag()) {
-                rval = gene->GetData().GetGene().GetLocus_tag();
+                rval = &gene->GetData().GetGene().GetLocus_tag();
             }
         }
     }
-    return rval;
+    return *rval;
 }
 
 

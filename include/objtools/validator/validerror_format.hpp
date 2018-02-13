@@ -129,7 +129,7 @@ private:
     string x_FormatLatLonCountryForSubmitterReport(const CValidErrItem& error) const;
     string x_FormatGenericForSubmitterReport(const CValidErrItem& error, CScope& scope) const;
 
-    static string x_GetLocusTag(const CSeq_feat& sf, CScope& scope);
+    static const string& x_GetLocusTag(const CSeq_feat& sf, CScope& scope);
 
     CRef<CObjectManager>    m_ObjMgr;
 
