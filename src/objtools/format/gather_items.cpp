@@ -1297,6 +1297,21 @@ void CFlatGatherer::x_GBBSourceComment(CBioseqContext& ctx) const
 
 void CFlatGatherer::x_DescComments(CBioseqContext& ctx) const
 {
+    ITERATE (CBioseq_Handle::TId, it, ctx.GetHandle().GetId()) {
+        switch (it->Which()) {
+            case CSeq_id::e_Pdb:
+                for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_Pdb); it; ++it) {
+                    const CPDB_block& pbk = it->GetPdb();
+                    FOR_EACH_COMPOUND_ON_PDBBLOCK (cp_itr, pbk) {
+                        x_AddComment(new CCommentItem(*cp_itr, ctx));
+                        return;
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    }
     for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_Comment); it; ++it) {
         x_AddComment(new CCommentItem(*it, ctx));
     }
@@ -3028,7 +3043,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocation
             if (cfg.HideCDDFeatures()  &&
                 (subtype == CSeqFeatData::eSubtype_region || subtype == CSeqFeatData::eSubtype_site)  &&
                 s_IsCDD(feat)) {
-            	continue;
+                continue;
             }
 
             ///
@@ -3491,7 +3506,7 @@ void CFlatGatherer::x_GatherFeaturesOnRange
             if (cfg.HideCDDFeatures()  &&
                 (subtype == CSeqFeatData::eSubtype_region || subtype == CSeqFeatData::eSubtype_site)  &&
                 s_IsCDD(feat)) {
-            	continue;
+                continue;
             }
 
             ///
