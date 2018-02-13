@@ -1228,7 +1228,14 @@ END_LOCAL_NAMESPACE;
 
 bool CWGSDb_Impl::IsTSA(void) const
 {
-    return m_IdPrefix[0] == 'G';
+    switch ( m_IdPrefix[0] ) {
+    case 'G':
+    case 'H':
+    case 'I':
+        return true;
+    default:
+        return false;
+    }
 }
 
 

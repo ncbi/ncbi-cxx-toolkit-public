@@ -678,6 +678,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq1)
     }
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Molinfo), 1);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 0);
+    BOOST_CHECK_EQUAL(bh.GetSequenceType(), CSeq_inst::eMol_dna);
     BOOST_CHECK(sx_EqualToGB(bh));
 }
 
@@ -699,6 +700,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq2)
     }
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Molinfo), 1);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 0);
+    BOOST_CHECK_EQUAL(bh.GetSequenceType(), CSeq_inst::eMol_dna);
     BOOST_CHECK(sx_EqualToGB(bh));
 }
 
@@ -720,6 +722,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq3)
     }
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Molinfo), 1);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 0);
+    BOOST_CHECK_EQUAL(bh.GetSequenceType(), CSeq_inst::eMol_dna);
 }
 
 BOOST_AUTO_TEST_CASE(FetchSeq4)
@@ -784,6 +787,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq7)
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Molinfo), 1);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 2);
     BOOST_CHECK(sx_EqualToGB(bh));
+    BOOST_CHECK_EQUAL(bh.GetSequenceType(), CSeq_inst::eMol_dna);
 }
 
 
@@ -805,6 +809,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq8)
     }
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Title), 0);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 1);
+    BOOST_CHECK_EQUAL(bh.GetSequenceType(), CSeq_inst::eMol_dna);
 }
 
 BOOST_AUTO_TEST_CASE(FetchSeq8_2)
@@ -826,6 +831,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq8_2)
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_not_set), 10);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Title), 0);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 3);
+    BOOST_CHECK_EQUAL(bh.GetSequenceType(), CSeq_inst::eMol_dna);
 }
 
 BOOST_AUTO_TEST_CASE(FetchSeq9)
@@ -846,6 +852,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq9)
     }
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Title), 0);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 1);
+    BOOST_CHECK_EQUAL(bh.GetSequenceType(), CSeq_inst::eMol_dna);
     //BOOST_CHECK(sx_EqualToGB(bh)); no in GB
 }
 
@@ -868,6 +875,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq9_2)
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_not_set), 10);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Title), 0);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 3);
+    BOOST_CHECK_EQUAL(bh.GetSequenceType(), CSeq_inst::eMol_dna);
     //BOOST_CHECK(sx_EqualToGB(bh)); no in GB
 }
 
@@ -904,6 +912,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq11)
     }
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Title), 1);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 0);
+    BOOST_CHECK_EQUAL(bh.GetSequenceType(), CSeq_inst::eMol_dna);
     BOOST_CHECK(sx_EqualToGB(bh));
 }
 
@@ -926,6 +935,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq12)
     }
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Title), 1);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 2);
+    BOOST_CHECK_EQUAL(bh.GetSequenceType(), CSeq_inst::eMol_dna);
     BOOST_CHECK(sx_EqualToGB(bh));
 }
 
@@ -948,6 +958,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq13)
     }
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Title), 1);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 2);
+    BOOST_CHECK_EQUAL(bh.GetSequenceType(), CSeq_inst::eMol_dna);
 }
 
 
@@ -978,6 +989,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq15)
     CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
     sx_ReportState(bsh, idh);
     BOOST_REQUIRE(bsh);
+    BOOST_CHECK_EQUAL(bsh.GetSequenceType(), CSeq_inst::eMol_dna);
     BOOST_CHECK(sx_EqualToGB(bsh));
 }
 
@@ -993,6 +1005,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq16)
     CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
     sx_ReportState(bsh, idh);
     BOOST_REQUIRE(bsh);
+    BOOST_CHECK_EQUAL(bsh.GetSequenceType(), CSeq_inst::eMol_dna);
     BOOST_CHECK(sx_EqualToGB(bsh));
 }
 
@@ -1015,6 +1028,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq17)
     BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Update_date), 1);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Pub), 2);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_User), 2);
+    BOOST_CHECK_EQUAL(bsh.GetSequenceType(), CSeq_inst::eMol_dna);
 }
 
 
@@ -1043,6 +1057,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq19)
     CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
     sx_ReportState(bsh, idh);
     BOOST_REQUIRE(bsh);
+    BOOST_CHECK_EQUAL(bsh.GetSequenceType(), CSeq_inst::eMol_dna);
     BOOST_CHECK(sx_EqualToGB(bsh));
 }
 
@@ -1058,6 +1073,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq20)
     CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
     sx_ReportState(bsh, idh);
     BOOST_REQUIRE(bsh);
+    BOOST_CHECK_EQUAL(bsh.GetSequenceType(), CSeq_inst::eMol_rna);
     BOOST_CHECK(sx_EqualToGB(bsh));
 }
 
@@ -1073,6 +1089,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq21)
     CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
     sx_ReportState(bsh, idh);
     BOOST_REQUIRE(bsh);
+    BOOST_CHECK_EQUAL(bsh.GetSequenceType(), CSeq_inst::eMol_dna);
     BOOST_CHECK(sx_EqualToGB(bsh));
 }
 
@@ -1088,6 +1105,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq22)
     CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
     sx_ReportState(bsh, idh);
     BOOST_REQUIRE(bsh);
+    BOOST_CHECK_EQUAL(bsh.GetSequenceType(), CSeq_inst::eMol_dna);
     BOOST_CHECK(sx_EqualToGB(bsh));
 }
 
@@ -1107,8 +1125,26 @@ BOOST_AUTO_TEST_CASE(FetchSeq23)
     BOOST_CHECK_EQUAL(bh.GetState(), 0);
     BOOST_CHECK(sx_GetDescCount(bh, CSeqdesc::e_Molinfo) >= 1);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 2);
+    BOOST_CHECK_EQUAL(bh.GetSequenceType(), CSeq_inst::eMol_dna);
     BOOST_CHECK(sx_EqualToGB(bh));
 }
+
+
+BOOST_AUTO_TEST_CASE(FetchSeq24)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("HAAA01000001");
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(bsh);
+    BOOST_CHECK_EQUAL(bsh.GetSequenceType(), CSeq_inst::eMol_rna);
+    BOOST_CHECK(sx_EqualToGB(bsh));
+}
+
 
 BOOST_AUTO_TEST_CASE(FetchSeqGnl1)
 {
@@ -1129,6 +1165,7 @@ BOOST_AUTO_TEST_CASE(FetchSeqGnl1)
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 0);
     BOOST_CHECK(sx_EqualToGB(bh));
     BOOST_CHECK_EQUAL(sx_GetGeneralIdStr(bh.GetId()), "gnl|WGS:JAAA01|CONTIG1");
+    BOOST_CHECK_EQUAL(bh.GetSequenceType(), CSeq_inst::eMol_dna);
 }
 
 BOOST_AUTO_TEST_CASE(FetchSeqGnl2)
@@ -1150,6 +1187,7 @@ BOOST_AUTO_TEST_CASE(FetchSeqGnl2)
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 0);
     BOOST_CHECK(sx_EqualToGB(bh));
     BOOST_CHECK_EQUAL(sx_GetGeneralIdStr(bh.GetId()), "gnl|WGS:JAAO01|CONTIGID02");
+    BOOST_CHECK_EQUAL(bh.GetSequenceType(), CSeq_inst::eMol_dna);
 }
 
 BOOST_AUTO_TEST_CASE(FetchSeqGnl3)
@@ -1171,6 +1209,7 @@ BOOST_AUTO_TEST_CASE(FetchSeqGnl3)
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 4);
     BOOST_CHECK(sx_EqualToGB(bh));
     BOOST_CHECK_EQUAL(sx_GetGeneralIdStr(bh.GetId()), "gnl|WGS:AAAK|CTG655");
+    BOOST_CHECK_EQUAL(bh.GetSequenceType(), CSeq_inst::eMol_dna);
 }
 
 BOOST_AUTO_TEST_CASE(FetchSeqGnl4)
@@ -1192,6 +1231,7 @@ BOOST_AUTO_TEST_CASE(FetchSeqGnl4)
     BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 1);
     BOOST_CHECK(sx_EqualToGB(bh));
     BOOST_CHECK_EQUAL(sx_GetGeneralIdStr(bh.GetId()), "");
+    BOOST_CHECK_EQUAL(bh.GetSequenceType(), CSeq_inst::eMol_dna);
 }
 
 #if 0
@@ -1499,7 +1539,7 @@ BOOST_AUTO_TEST_CASE(FetchProt17)
     BOOST_REQUIRE(prot_bh);
     {
         CFeat_CI feat_it(prot_bh, SAnnotSelector().SetByProduct());
-        BOOST_CHECK_EQUAL(feat_it.GetSize(), 1u);
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
         BOOST_CHECK_EQUAL(scope->GetBioseqHandle(feat_it->GetLocation()), bsh);
     }
 }
@@ -1531,7 +1571,7 @@ BOOST_AUTO_TEST_CASE(FetchProt17a)
     BOOST_REQUIRE(prot_bh);
     {
         CFeat_CI feat_it(prot_bh, SAnnotSelector().SetByProduct());
-        BOOST_CHECK_EQUAL(feat_it.GetSize(), 1u);
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
         BOOST_CHECK_EQUAL(scope->GetBioseqHandle(feat_it->GetLocation()), bsh);
     }
 }
@@ -1564,7 +1604,7 @@ BOOST_AUTO_TEST_CASE(FetchProt18)
     BOOST_REQUIRE(prot_bh);
     {
         CFeat_CI feat_it(prot_bh, SAnnotSelector().SetByProduct());
-        BOOST_CHECK_EQUAL(feat_it.GetSize(), 1u);
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
         BOOST_CHECK_EQUAL(scope->GetBioseqHandle(feat_it->GetLocation()), bsh);
     }
 }
@@ -1596,7 +1636,7 @@ BOOST_AUTO_TEST_CASE(FetchProt18a)
     BOOST_REQUIRE(prot_bh);
     {
         CFeat_CI feat_it(prot_bh, SAnnotSelector().SetByProduct());
-        BOOST_CHECK_EQUAL(feat_it.GetSize(), 1u);
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
         BOOST_CHECK_EQUAL(scope->GetBioseqHandle(feat_it->GetLocation()), bsh);
     }
 }
