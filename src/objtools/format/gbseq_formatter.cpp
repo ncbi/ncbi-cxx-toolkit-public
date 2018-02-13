@@ -58,6 +58,7 @@
 #include <objtools/format/items/defline_item.hpp>
 #include <objtools/format/items/accession_item.hpp>
 #include <objtools/format/items/version_item.hpp>
+#include <objtools/format/items/dbsource_item.hpp>
 #include <objtools/format/items/keywords_item.hpp>
 #include <objtools/format/items/source_item.hpp>
 #include <objtools/format/items/reference_item.hpp>
@@ -113,10 +114,12 @@ CGBSeqFormatter::CGBSeqFormatter(bool isInsd)
     m_NeedKeysEnd = false;
     m_NeedRefsEnd = false;
     m_NeedComment = false;
+    m_NeedDbsource = false;
     m_NeedXrefs = false;
     m_OtherSeqIDs.clear();
     m_SecondaryAccns.clear();
     m_Comments.clear();
+    m_Dbsource.clear();
     m_Xrefs.clear();
 }
 
@@ -170,7 +173,8 @@ void CGBSeqFormatter::Start(IFlatTextOStream& text_os)
 
     CNcbiOstrstream tmp;
 
-    tmp << s_OpenTag("  ", "GBSeq");
+    // tmp << s_OpenTag("  ", "GBSeq");
+    tmp << "  <GBSeq>";
 
     string str = (string)CNcbiOstrstreamToString(tmp);
 
@@ -245,7 +249,7 @@ void CGBSeqFormatter::EndSection(const CEndSectionItem&, IFlatTextOStream& text_
         NStr::ReplaceInPlace(str,"</GB", "</INSD");
     }
 
-    text_os.AddLine(str);
+    text_os.AddLine(str, NULL, IFlatTextOStream::eAddNewline_No);
 
     text_os.Flush();
 
@@ -260,7 +264,8 @@ void CGBSeqFormatter::End(IFlatTextOStream& text_os)
 
     CNcbiOstrstream tmp;
 
-    tmp << s_CloseTag("  ", "GBSeq");
+    // tmp << s_CloseTag("  ", "GBSeq");
+    tmp << "  </GBSeq>";
 
     string str = (string)CNcbiOstrstreamToString(tmp);
 
@@ -435,7 +440,7 @@ void CGBSeqFormatter::FormatLocus
         NStr::ReplaceInPlace(str,"</GB", "</INSD");
     }
 
-    text_os.AddLine(str, locus.GetObject());
+    text_os.AddLine(str, locus.GetObject(), IFlatTextOStream::eAddNewline_No);
 
     text_os.Flush();
 }
@@ -465,7 +470,7 @@ void CGBSeqFormatter::FormatDefline
         NStr::ReplaceInPlace(str,"</GB", "</INSD");
     }
 
-    text_os.AddLine(str, defline.GetObject());
+    text_os.AddLine(str, defline.GetObject(), IFlatTextOStream::eAddNewline_No);
 
     text_os.Flush();
 }
@@ -492,7 +497,7 @@ void CGBSeqFormatter::FormatAccession
         NStr::ReplaceInPlace(str,"</GB", "</INSD");
     }
 
-    text_os.AddLine(str, acc.GetObject());
+    text_os.AddLine(str, acc.GetObject(), IFlatTextOStream::eAddNewline_No);
 
     text_os.Flush();
 
@@ -550,7 +555,7 @@ void CGBSeqFormatter::FormatVersion
         NStr::ReplaceInPlace(str,"</GB", "</INSD");
     }
 
-    text_os.AddLine(str, version.GetObject());
+    text_os.AddLine(str, version.GetObject(), IFlatTextOStream::eAddNewline_No);
 
     text_os.Flush();
 }
@@ -596,7 +601,7 @@ void CGBSeqFormatter::FormatGenomeProject
         NStr::ReplaceInPlace(str,"</GB", "</INSD");
     }
 
-    text_os.AddLine(str, gp.GetObject());
+    text_os.AddLine(str, gp.GetObject(), IFlatTextOStream::eAddNewline_No);
 
     text_os.Flush();
 }
@@ -621,7 +626,7 @@ void CGBSeqFormatter::FormatSegment
         NStr::ReplaceInPlace(str,"</GB", "</INSD");
     }
 
-    text_os.AddLine(str, seg.GetObject());
+    text_os.AddLine(str, seg.GetObject(), IFlatTextOStream::eAddNewline_No);
 
     text_os.Flush();
 }
@@ -661,7 +666,7 @@ void CGBSeqFormatter::FormatSource
         NStr::ReplaceInPlace(str,"</GB", "</INSD");
     }
 
-    text_os.AddLine(str, source.GetObject());
+    text_os.AddLine(str, source.GetObject(), IFlatTextOStream::eAddNewline_No);
 
     text_os.Flush();
 }
@@ -696,7 +701,7 @@ void CGBSeqFormatter::FormatKeywords
         NStr::ReplaceInPlace(str,"</GB", "</INSD");
     }
 
-    text_os.AddLine(str, keys.GetObject());
+    text_os.AddLine(str, keys.GetObject(), IFlatTextOStream::eAddNewline_No);
 
     text_os.Flush();
 }
@@ -800,7 +805,7 @@ void CGBSeqFormatter::FormatReference
         NStr::ReplaceInPlace(str,"</GB", "</INSD");
     }
 
-    text_os.AddLine(str, ref.GetObject());
+    text_os.AddLine(str, ref.GetObject(), IFlatTextOStream::eAddNewline_No);
 
     text_os.Flush();
 }
@@ -817,10 +822,29 @@ void CGBSeqFormatter::FormatComment
     string comm = NStr::Join( comment.GetCommentList(), "\n" );
     s_GBSeqStringCleanup(comm);
 
+    // NStr::ReplaceInPlace(comm, "~", "~~");
+
     m_Comments.push_back(comm);
     m_NeedComment = true;
 }
 
+///////////////////////////////////////////////////////////////////////////
+//
+// DBSOURCE
+
+
+void CGBSeqFormatter::FormatDBSource
+(const CDBSourceItem& dbs,
+ IFlatTextOStream& text_os)
+{
+    if (! dbs.GetDBSource().empty()) {
+        ITERATE (list<string>, it, dbs.GetDBSource()) {
+            string db_src = *it;
+            m_Dbsource.push_back(db_src);
+            m_NeedDbsource = true;
+        }
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////
 //
@@ -842,6 +866,13 @@ void CGBSeqFormatter::FormatFeature
 
         string comm = NStr::Join( m_Comments, "; " );
         tmp << s_CombineStrings("    ", "GBSeq_comment", comm);
+    }
+
+    if (m_NeedDbsource) {
+        m_NeedDbsource = false;
+
+        string dbsrc = NStr::Join( m_Dbsource, "; " );
+        tmp << s_CombineStrings("    ", "GBSeq_source-db", dbsrc);
     }
 
     if (! m_DidFeatStart) {
@@ -943,7 +974,7 @@ void CGBSeqFormatter::FormatFeature
         NStr::ReplaceInPlace(str,"</GB", "</INSD");
     }
 
-    text_os.AddLine(str, f.GetObject());
+    text_os.AddLine(str, f.GetObject(), IFlatTextOStream::eAddNewline_No);
 
     text_os.Flush();
 }
@@ -991,7 +1022,7 @@ void CGBSeqFormatter::FormatSequence
         NStr::ReplaceInPlace(str,"</GB", "</INSD");
     }
 
-    text_os.AddLine(str, seq.GetObject());
+    text_os.AddLine(str, seq.GetObject(), IFlatTextOStream::eAddNewline_No);
 
     text_os.Flush();
 }
@@ -1037,7 +1068,7 @@ void CGBSeqFormatter::FormatContig
         NStr::ReplaceInPlace(str,"</GB", "</INSD");
     }
 
-    text_os.AddLine(str, contig.GetObject());
+    text_os.AddLine(str, contig.GetObject(), IFlatTextOStream::eAddNewline_No);
 
     text_os.Flush();
 }

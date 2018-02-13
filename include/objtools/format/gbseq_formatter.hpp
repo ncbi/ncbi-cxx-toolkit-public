@@ -50,6 +50,7 @@ class CKeywordsItem;
 class CSourceItem;
 class CReferenceItem;
 class CCommentItem;
+class CDBSourceItem;
 class CFeatureItemBase;
 class CSequenceItem;
 class CSegmentItem;
@@ -76,6 +77,7 @@ public:
     virtual void FormatSource(const CSourceItem& source, IFlatTextOStream& text_os);
     virtual void FormatReference(const CReferenceItem& keys, IFlatTextOStream& text_os);
     virtual void FormatComment(const CCommentItem& keys, IFlatTextOStream& text_os);
+    virtual void FormatDBSource(const CDBSourceItem& dbs, IFlatTextOStream& text_os);
     virtual void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os);
     virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os);
     virtual void FormatSegment(const CSegmentItem& seg, IFlatTextOStream& text_os);
@@ -100,10 +102,12 @@ private:
     bool m_NeedKeysEnd;
     bool m_NeedRefsEnd;
     bool m_NeedComment;
+    bool m_NeedDbsource;
     bool m_NeedXrefs;
     string m_OtherSeqIDs;
     string m_SecondaryAccns;
     list<string> m_Comments;
+    list<string> m_Dbsource;
     list<string> m_Xrefs;
 };
 
