@@ -2105,10 +2105,13 @@ static list<string> s_GetLinkoutUrl(int linkout,
         url_link = CAlignFormatUtil::GetURLFromRegistry("UNIGEN");        
         lnk_displ = textLink ? "UniGene" : kUnigeneImg;
         
-            lnkTitleInfo = "UniGene cluster"; 
-            string uid = !linkoutInfo.is_na ? "Protein Accession" : "Nucleotide Accession";
-            url_link = CAlignFormatUtil::MapTemplate(url_link,"uid",uid);
-            url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,labelList,lnk_displ,lnkTitleInfo);
+        string termParam = NStr::Find(labelList,",") == NPOS ? kGeneTerm : ""; //kGeneTerm if only one seqid
+        url_link = CAlignFormatUtil::MapTemplate(url_link,"termParam",termParam);
+
+        lnkTitleInfo = "UniGene cluster"; 
+        string uid = !linkoutInfo.is_na ? "[Protein Accession]" : "[Nucleotide Accession]";
+        url_link = CAlignFormatUtil::MapTemplate(url_link,"uid",uid);
+        url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,labelList,lnk_displ,lnkTitleInfo);
         
         if(textLink) {
             url_link = CAlignFormatUtil::MapTemplate(kUnigeneDispl,"lnk",url_link);
@@ -2171,11 +2174,12 @@ static list<string> s_GetLinkoutUrl(int linkout,
       else {
         lnk_displ = kGeneImg;
       }
-      
-      string uid = !linkoutInfo.is_na ? "Protein Accession" : "Nucleotide Accession";
-      url_link = CAlignFormatUtil::MapTemplate(url_link,"uid",uid);
-      //gilist contains comma separated gis, change it to the following
-      giList = NStr::Replace(giList,",","[" + uid + "] OR ");
+      string termParam = NStr::Find(labelList,",") == NPOS ? kGeneTerm : ""; //kGeneTerm if only one seqid
+      url_link = CAlignFormatUtil::MapTemplate(url_link,"termParam",termParam);
+          
+      string uid = !linkoutInfo.is_na ? "[Protein Accession]" : "[Nucleotide Accession]";
+      url_link = CAlignFormatUtil::MapTemplate(url_link,"uid",uid);      
+            
       url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,labelList,lnk_displ,lnkTitleInfo);
        
       if(textLink) {
@@ -2568,8 +2572,7 @@ static list<string> s_GetFullLinkoutUrl(CBioseq::TId& cur_id,
 
 
             CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);            
-            string label = CAlignFormatUtil::GetLabel(wid,seqVersion);            
-            if(!labelList.empty() && (linkout & eGene)) break;
+            string label = CAlignFormatUtil::GetLabel(wid,seqVersion);                        
             if(!labelList.empty()) labelList += ",";
             labelList += label;
 
