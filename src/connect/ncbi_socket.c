@@ -281,7 +281,7 @@ static const char* s_StrError(SOCK sock, int error)
     if (!error)
         return 0;
 
-    if (sock) {
+    if (sock  &&  error < 0) {
         FSSLError sslerror = sock->session  &&  s_SSL ? s_SSL->Error : 0;
         if (sslerror) {
             char errbuf[256];
@@ -1009,7 +1009,7 @@ extern ESOCK_IOWaitSysAPI SOCK_SetIOWaitSysAPI(ESOCK_IOWaitSysAPI api)
 
 
 /******************************************************************************
- *  gethost...() WRAPPERS
+ *  gethost[by]...() WRAPPERS
  */
 
 
@@ -1098,8 +1098,10 @@ static unsigned int s_gethostbyname_(const char* hostname,
                 const char* strerr;
                 if (error == EAI_SYSTEM)
                     error  = SOCK_ERRNO;
-                else
+                else if (error)
                     error += EAI_BASE;
+                else
+                    error  = EFAULT;
                 strerr = SOCK_STRERROR(error);
                 CORE_LOGF_ERRNO_EXX(105, eLOG_Warning,
                                     error, strerr ? strerr : "",
