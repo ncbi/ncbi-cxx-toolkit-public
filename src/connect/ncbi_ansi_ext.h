@@ -53,8 +53,8 @@ extern "C" {
 #  define  strnlen     NCBI_strnlen
 
 /** Return the number of characters in the string pointed to by "str" (not
- * including the '\0' character but no more than "maxlen" (if the '\0'
- * character hasn't been found within the first "maxlen" characters).
+ *  including the '\0' character but no more than "maxlen" (if the '\0'
+ *  character hasn't been found within the first "maxlen" characters).
  */
 NCBI_XCONNECT_EXPORT
 size_t     strnlen(const char* str, size_t maxlen);
@@ -69,9 +69,9 @@ size_t     strnlen(const char* str, size_t maxlen);
 #  endif
 #  define  strdup       NCBI_strdup
 
-/** Create a copy of string "str".
- *  Return an identical malloc'ed string, which must be explicitly freed by
- *  free() when no longer needed.
+/** Create a copy of string "str".  Return an identical malloc'ed string, which
+ *  must be explicitly freed by free() when no longer needed.  Return NULL if
+ *  the memory allocation failed (including when "str" was passed as NULL).
  */
 NCBI_XCONNECT_EXPORT
 char*      strdup(const char* str);
@@ -88,9 +88,10 @@ char*      strdup(const char* str);
 #  endif
 #  define  strndup      NCBI_strndup
 
-/** Create a copy of up to "n" first characters of string "str".
- *  Return a malloc'ed and '\0'-terminated string, which must be explicitly
- *  freed by free() when no longer needed.
+/** Create a copy of up to "n" first characters of string "str".  Return a
+ *  malloc()'ed and '\0'-terminated string, which must be explicitly freed by
+ *  free() when no longer needed.  Return NULL if the memory allocation failed
+ *  (including when "str" was passed as NULL).
  */
 NCBI_XCONNECT_EXPORT
 char*      strndup(const char* str, size_t n);
@@ -107,16 +108,17 @@ char*      strndup(const char* str, size_t n);
 #  define  strcasecmp   NCBI_strcasecmp
 #  define  strncasecmp  NCBI_strncasecmp
 
-/** Compare "s1" and "s2", ignoring case.
- *  Return less than, equal to or greater than zero if
- *  "s1" is lexicographically less than, equal to or greater than "s2".
+/** Compare "s1" and "s2", ignoring case.  Return less than, equal to or
+ *  greater than zero if "s1" is lexicographically less than, equal to or
+ *  greater than "s2", respectively.
  */
 NCBI_XCONNECT_EXPORT
 int        strcasecmp(const char* s1, const char* s2);
 
-/** Compare not more than "n" characters of "s1" and "s2", ignoring case.
- *  Return less than, equal to or greater than zero if
- *  "s1" is lexicographically less than, equal to or greater than "s2".
+/** Compare no more than "n" characters of "s1" and "s2", ignoring case.
+ *  Return less than, equal to or greater than zero if the initial fragment of
+ *  "s1" is lexicographically less than, equal to or greater than the same
+ *  fragment of "s2", respectively.
  */
 NCBI_XCONNECT_EXPORT
 int        strncasecmp(const char* s1, const char* s2, size_t n);
@@ -131,27 +133,27 @@ int        strncasecmp(const char* s1, const char* s2, size_t n);
 #define  strupr         NCBI_strupr
 #define  strlwr         NCBI_strlwr
 
-/** Convert a string to uppercase, then return pointer to
- *  the altered string. Because the conversion is made in place, the
- *  returned pointer is the same as the passed one.
+/** Convert a string to all uppercase, then return pointer to the altered
+ *  string.  Because the conversion is made in place, the returned pointer is
+ *  the same as the passed one.
  */
 char*    strupr(char* s);
 
-/** Convert a string to lowercase, then return pointer to
- *  the altered string. Because the conversion is made in place, the
- *  returned pointer is the same as the passed one.
+/** Convert a string to all lowercase, then return pointer to the altered
+ *  string.  Because the conversion is made in place, the returned pointer is
+ *  the same as the passed one.
  */
 char*    strlwr(char* s);
 
 
-/** Copy not more than "n" characters from string "s2" into "s1"
- *  and return the result, which is always null-terminated.
- *  NOTE:  The difference of this function from standard strncpy() is in
- *  that the result is always null-terminated and that the function does not
- *  pad "s1" with null bytes should "s2" be shorter than "n" characters.
+/** Copy not more than "n" characters from string "s2" into "s1", and return
+ *  the result, which is always null-terminated.
+ *  NOTE:  The difference of this function from standard strncpy() is in that
+ *  the result is always null-terminated and that the function does not pad
+ *  "s1" with null bytes should "s2" be shorter than "n" characters.
  */
 NCBI_XCONNECT_EXPORT
-char* strncpy0(char* s1, const char* s2, size_t n);
+char*    strncpy0(char* s1, const char* s2, size_t n);
 
 
 #ifndef HAVE_MEMCCHR
@@ -194,7 +196,7 @@ void*    memrchr(const void* s, int c, size_t n);
  *  Return the pointer past the output string (points to the terminating '\0').
  */
 NCBI_XCONNECT_EXPORT
-char*  NCBI_simple_ftoa(char* s, double f, int p);
+char*    NCBI_simple_ftoa(char* s, double f, int p);
 
 
 /** Locale-independent ASCII-to-double conversion of string "s".  Does not work
@@ -207,7 +209,7 @@ char*  NCBI_simple_ftoa(char* s, double f, int p);
  *  @note e == s upon return if no valid input was found and consumed.
  */
 NCBI_XCONNECT_EXPORT
-double NCBI_simple_atof(const char* s, char** e);
+double   NCBI_simple_atof(const char* s, char** e);
 
 
 #ifdef __cplusplus
