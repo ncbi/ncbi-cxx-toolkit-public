@@ -483,6 +483,109 @@ CBlastDBCmdApp::x_PrintBlastDatabaseInformation()
     }
 }
 
+class CPrintTaxFields
+{
+private:
+	enum {
+		eTaxID,
+		eSciName,
+		eCommonName,
+		eSuperKingdom,
+		eBlastName,
+		eMaxFields
+	};
+	CNcbiOstream & m_Out;
+	vector<int> m_Fields;
+	vector<string> m_Seperators;
+public:
+	CPrintTaxFields(CNcbiOstream & out, const string & fmt): m_Out(out) {
+		vector<string> fields;
+        string sp = kEmptyStr;
+		if(fmt == "%f") {
+			m_Seperators.push_back(sp);
+			for(unsigned int i=eTaxID; i < eMaxFields; i++){
+				m_Fields.push_back(i);
+				m_Seperators.push_back("\t");
+			}
+			return;
+		}
+
+	    for (unsigned int i = 0; i < fmt.size(); i++) {
+	    	if (fmt[i] == '%') {
+		        if (fmt[i+1] == '%') {
+		            sp += fmt[i];
+		            continue;
+		        }
+		        i++;
+		        switch (fmt[i]) {
+		        case 'T' :
+       				m_Fields.push_back(eTaxID);
+       			break;
+		        case 'S' :
+		        	m_Fields.push_back(eSciName);
+                break;
+		        case 'L' :
+		        	m_Fields.push_back(eCommonName);
+		        break;
+		        case 'K' :
+		        	m_Fields.push_back(eSuperKingdom);
+                break;
+		        case 'B' :
+		        	m_Fields.push_back(eBlastName);
+		        break;
+		        default:
+	                sp += fmt[i-1];
+	                sp += fmt[i];
+	                continue;
+	            break;
+		        }
+	            m_Seperators.push_back(sp);
+	            sp = kEmptyStr;
+	    	}
+	    	else {
+		        sp += fmt[i];
+	    	}
+	    }
+		m_Seperators.push_back(sp);
+
+		if(m_Fields.empty()) {
+			NCBI_THROW(CInputException, eInvalidInput,
+				       "Invalid format options for tax_info.");
+		}
+	}
+
+	void PrintEntry(const SSeqDBTaxInfo & t){
+		for(unsigned int i=0; i < m_Fields.size(); i++) {
+			m_Out << m_Seperators[i];
+			switch (m_Fields[i]){
+				case eTaxID:
+					m_Out << t.taxid;
+				break;
+				case eSciName:
+					m_Out << t.scientific_name;
+				break;
+				case eCommonName:
+					m_Out << t.common_name;
+				break;
+				case eSuperKingdom:
+					m_Out << t.s_kingdom;
+				break;
+				case eBlastName:
+					m_Out << t.blast_name;
+				break;
+				default:
+					NCBI_THROW(CInputException, eInvalidInput,
+					           "Invalid format options for tax_info.");
+				break;
+			}
+		}
+		m_Out << m_Seperators.back();
+		m_Out << "\n";
+	}
+
+};
+
+
 void
 CBlastDBCmdApp::x_PrintBlastDatabaseTaxInformation()
 {
@@ -490,7 +593,8 @@ CBlastDBCmdApp::x_PrintBlastDatabaseTaxInformation()
     const CArgs& args = GetArgs();
 
     CNcbiOstream& out = args[kArgOutput].AsOutputFile();
-
+    const string& kFmt = args["outfmt"].AsString();
+    CPrintTaxFields tf(out, kFmt);
     set<Int4> tax_ids;
     m_BlastDb->GetDBTaxIds(tax_ids);
     // Print basic database information
@@ -499,7 +603,7 @@ CBlastDBCmdApp::x_PrintBlastDatabaseTaxInformation()
     ITERATE(set<Int4>, itr, tax_ids) {
     	SSeqDBTaxInfo info;
    		CSeqDBTaxInfo::GetTaxNames(*itr, info);
-   		out << info << endl;
+   		tf.PrintEntry(info);
     }
 }
 
@@ -733,7 +837,15 @@ void CBlastDBCmdApp::Init()
                                 string(exclusions[i]));
     }
 
-    arg_desc->AddFlag("tax_info", "BLAST database taxonomy list", true);
+    arg_desc->AddFlag("tax_info",
+    		          "Print taxonomic information contained in this BLAST database.\n"
+    		          "Use -outfmt to customoize output. Format specifiers supported are:\n"
+    		          "\t\t%T means taxid\n"
+    		          "\t\t%L means common taxonomic name\n"
+    		          "\t\t%S means scientific name\n"
+    		          "\t\t%K means taxonomic super kingdom\n"
+    		          "\t\t%B means BLAST name\n"
+    		          "By default it prints: '%T %S %L %K %B'\n", true);
     // All other options to this program should be here
     const char* tax_info_exclusions[]  = { "info", "entry", "entry_batch", "strand",
         "target_only", "ctrl_a", "get_dups", "pig", "range",
