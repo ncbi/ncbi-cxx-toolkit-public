@@ -92,8 +92,8 @@ using the Entrez Genomes MapViewer</td></tr></table><p>";
 
 ///unigene
 // .ncbirc alias: UNIGEN
-static const char kUnigeneUrl[] = "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/unigene/?term=<@label@>[<@uid@>]&RID=<@rid@>&log$=unigene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
-
+static const char kUnigeneUrl[] = "<a class=\"gene\" term=\"<@uid@>\" href=\"<@protocol@>//www.ncbi.nlm.nih.gov/unigene/?<@termParam@>RID=<@rid@>&log$=unigene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>\
+<input type=\"hidden\" value=\"<@label@>\" />";
 
 //substitues <@lnk_displ@>
 static const char kUnigeneImg[] = "<img border=0 height=16 width=16 src=\"images/U.gif\" alt=\"UniGene info linked to <@label@>\">";
@@ -127,8 +127,10 @@ static const string kGeoDispl =  "<div><@lnk@>-<span class=\"rlLink\">microarray
 
 ///Gene
 // .ncbirc alias: GENE
-static const char kGeneUrl[] = "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/gene?term=<@label@>[<@uid@>]&RID=<@rid@>&log$=gene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
-
+//static const char kGeneUrl[] = "<a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/gene?term=<@label@>[<@uid@>]&RID=<@rid@>&log$=gene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a><input type=\"hidden\" value=";
+static const char kGeneUrl[] = "<a class=\"gene\" term=\"<@uid@>\" href=\"<@protocol@>//www.ncbi.nlm.nih.gov/gene?<@termParam@>RID=<@rid@>&log$=gene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>\
+<input type=\"hidden\" value=\"<@label@>\" />";
+static const char kGeneTerm[] = "term=<@label@><@uid@>&";
 //substitues <@lnk_displ@>
 static const char kGeneImg[] = "<img border=0 height=16 width=16 src=\"images/G.gif\" alt=\"Gene info linked to <@label@>\">";
 //For text link <@lnk@> is substituted by formatted url
