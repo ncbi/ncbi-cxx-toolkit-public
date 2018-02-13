@@ -248,8 +248,8 @@ static EIO_Status x_ErrorToStatus(int* error, gnutls_session_t session,
     else
         status = eIO_Unknown;
 
-    CORE_LOGF(eLOG_Trace, ("GNUTLS error %d -> CONNECT GNUTLS status %s",
-                           *error, IO_StatusStr(status)));
+    CORE_TRACEF(("GNUTLS error %d -> CONNECT GNUTLS status %s",
+                 *error, IO_StatusStr(status)));
 
     return status;
 }
@@ -288,12 +288,11 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
     }
 
     {{
-        const char* x_what = error ? "error" : "errno";
-        int        x_error = error ?  error  :  errno;
-        CORE_LOGF(eLOG_Trace, ("CONNECT GNUTLS status %s -> %s %d",
-                               IO_StatusStr(status), x_what, x_error));
+        int x_err = error ? error : errno;
+        CORE_TRACEF(("CONNECT GNUTLS status %s -> %s %d",
+                     IO_StatusStr(status), error ? "error" : "errno", x_err));
         if (!error)
-            errno = x_error; /* restore errno that may be clobbered by log */
+            errno = x_err; /* restore errno that may be clobbered by log */
     }}
 
     return error;

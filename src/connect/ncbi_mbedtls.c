@@ -247,8 +247,8 @@ static EIO_Status x_ErrorToStatus(int error, mbedtls_ssl_context* session,
         break;
     }
 
-    CORE_LOGF(eLOG_Trace, ("MBEDTLS error %d -> CONNECT MBEDTLS status %s",
-                           error, IO_StatusStr(status)));
+    CORE_TRACEF(("MBEDTLS error %d -> CONNECT MBEDTLS status %s",
+                 error, IO_StatusStr(status)));
 
     return status;
 }
@@ -287,12 +287,11 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
     }
 
     {{
-        const char* x_what = error ? "error" : "errno";
-        int        x_error = error ?  error  :  errno;
-        CORE_LOGF(eLOG_Trace, ("CONNECT MBEDTLS status %s -> %s %d",
-                               IO_StatusStr(status), x_what, x_error));
+        int x_err = error ? error : errno;
+        CORE_TRACEF(("CONNECT MBEDTLS status %s -> %s %d",
+                     IO_StatusStr(status), error ? "error" : "errno", x_err));
         if (!error)
-            errno = x_error; /* restore errno that may be clobbered by log */
+            errno = x_err; /* restore errno that may be clobbered by log */
     }}
 
     if (error)
