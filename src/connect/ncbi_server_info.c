@@ -174,8 +174,7 @@ extern char* SERV_WriteInfo(const SSERV_Info* info)
         s += attr->len;
         *s++ = ' ';
         if (info->host == SOCK_HostToNetLong(-1L)) {
-            int/*bool*/ ipv6 = !NcbiIsIPv4(&info->addr)
-                ||  NcbiIPv6ToIPv4(&info->addr, 0) == SOCK_HostToNetLong(-1L);
+            int/*bool*/ ipv6 = !NcbiIsIPv4(&info->addr);
             if (ipv6)
                 *s++ = '[';
             s = NcbiAddrToString(s, reserve, &info->addr);
