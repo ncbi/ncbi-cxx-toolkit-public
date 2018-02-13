@@ -234,16 +234,18 @@ static const char* s_StrErrorInternal(int error)
                                 "Memory allocation failure"},
 #  endif /*EAI_MEMORY*/
 #  ifdef EAI_NODATA
+#    if EAI_NODATA != EAI_NONAME
         {EAI_NODATA + EAI_BASE,
                                 "No address associated with nodename"},
+#    endif /*EAI_NODATA!=EAI_NONAME*/
 #  endif /*EAI_NODATA*/
 #  ifdef EAI_NONAME
         {EAI_NONAME + EAI_BASE,
-                                "Host/service name not known"},
+                                "Host and/or service name unknown"},
 #  endif /*EAI_NONAME*/
 #  ifdef EAI_OVERFLOW
         {EAI_OVERFLOW + EAI_BASE,
-                                "Buffer overflow"},
+                                "Argument buffer overflow"},
 #  endif /*EAI_OVERFLOW*/
 #  ifdef EAI_SERVICE
         {EAI_SERVICE + EAI_BASE,
@@ -274,6 +276,10 @@ static const char* s_StrErrorInternal(int error)
         {EAI_NOTCANCELED + EAI_BASE,
                                 "Request not canceled"},
 #  endif /*EAI_NOTCANCELED*/
+#  ifdef EAI_IDN_ENCODE
+        {EAI_IDN_ENCODE + EAI_BASE,
+                                "IDN encoding failed"},
+#  endif /*EAI_IDN_ENCODE*/
 #  ifdef NCBI_OS_MSWIN
 #    define DNS_BASE  0
 #  else
@@ -300,7 +306,7 @@ static const char* s_StrErrorInternal(int error)
                                 "No DNS data of requested type"},
 #  endif /*NO_DATA*/
 
-        /* Last dummy entry - must present */
+        /* Last dummy entry - must be present */
         {0, 0}
     };
 #if defined(NCBI_OS_LINUX)  ||  defined(NCBI_OS_CYGWIN)
@@ -326,9 +332,10 @@ static const char* s_StrErrorInternal(int error)
 
 #if defined(NCBI_OS_LINUX)  ||  defined(NCBI_OS_CYGWIN)
     for (i = 0;  i < sizeof(errsup) / sizeof(errsup[0]) - 1/*dummy*/;  ++i) {
-        if (errsup[i].erroff < error) {
+        if (errsup[i].erroff - 10000 < error
+            &&  error < errsup[i].erroff + 10000) {
             const char* errstr = errsup[i].errfun(error - errsup[i].erroff);
-            if (errstr  &&  *errstr)
+            if (errstr  &&  *errstr  &&  strncasecmp(errstr, "Unknown ", 8)!=0)
                 return ERR_STRDUP(errstr);
         }
     }
