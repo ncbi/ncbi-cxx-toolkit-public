@@ -49,42 +49,52 @@ static const struct SIPDNSsfx kIPv6DNS = { ".ip6.arpa",      9 };
 static const struct SIPDNSsfx kIPv4DNS = { ".in-addr.arpa", 13 };
 
 
-static int/*bool*/ x_NcbiIsIPv4(const TNCBI_IPv6Addr* addr, int/*bool*/ mapped)
+static int/*bool*/ x_NcbiIsIPv4(const TNCBI_IPv6Addr* addr, int/*bool*/ compat)
 {
     /* RFC 4291 2.1, 3
        NB: 2.5.5.1 and 2.5.5.2 - both obsoleted by RFC 6052 2.1 */
     unsigned short word;
     size_t i;
     for (i = 0;  i < 5;  ++i) {
-        memcpy(&word, addr->octet + (i << 1), sizeof(word));
+        memcpy(&word, addr->octet + i * sizeof(word), sizeof(word));
         if (word)
             return 0/*false*/;
     }
-    memcpy(&word, addr->octet + (5 << 1), sizeof(word));
-    if    (word == 0x0000  &&  mapped >= 0) {
+    memcpy(&word, addr->octet + i * sizeof(word), sizeof(word));
+    if    (word == 0x0000) {
         /* IPv4-compatible IPv6 */
-        unsigned int temp;
-        memcpy(&temp, addr->octet + sizeof(addr->octet) - sizeof(temp),
-               sizeof(temp));
-        return SOCK_NetToHostLong(temp) & 0xFF000000 ? 1/*T*/ : 0/*F*/;
+        if (compat) {
+            unsigned int temp;
+            memcpy(&temp, addr->octet + sizeof(addr->octet) - sizeof(temp),
+                   sizeof(temp));
+            if (SOCK_NetToHostLong(temp) & 0xFF000000)
+                return 1/*true*/;
+        }
+        return 0/*false*/;
     }
-    /* IPv6 mapped IPv4 */
-    return word == 0xFFFF  &&  mapped ? 1/*true*/ : 0/*false*/;
+    /* mapped IPv4 */
+    return word == 0xFFFF ? 1/*true*/ : 0/*false*/;
 }
 
 
 extern int/*bool*/ NcbiIsEmptyIPv6(const TNCBI_IPv6Addr* addr)
 {
     return !addr
-        ||  !memcchr(addr->octet, '\0', sizeof(addr->octet))
-        ||  (x_NcbiIsIPv4(addr, 1/*mapped*/)  &&  !NcbiIPv6ToIPv4(addr, 96))
+        ||  !memcchr(addr->octet, 0, sizeof(addr->octet))
+        ||  (x_NcbiIsIPv4(addr, 0/*mapped*/)  &&  !NcbiIPv6ToIPv4(addr, 0))
         ? 1/*true*/ : 0/*false*/;
 }
 
 
 extern int/*bool*/ NcbiIsIPv4(const TNCBI_IPv6Addr* addr)
 {
-    return addr  &&  x_NcbiIsIPv4(addr, 1/*mapped*/) ? 1/*true*/ : 0/*false*/;
+    return addr  &&  x_NcbiIsIPv4(addr, 0/*mapped*/) ? 1/*true*/ : 0/*false*/;
+}
+
+
+extern int/*bool*/ NcbiIsIPv4Ex(const TNCBI_IPv6Addr* addr, int/*bool*/ compat)
+{
+    return addr  &&  x_NcbiIsIPv4(addr, compat) ? 1/*true*/ : 0/*false*/;
 }
 
 
@@ -95,7 +105,7 @@ extern unsigned int NcbiIPv6ToIPv4(const TNCBI_IPv6Addr* addr, size_t pfxlen)
     if (!addr)
         return 0;
     if (pfxlen == 0) {
-        if (!x_NcbiIsIPv4(addr, 1/*mapped*/))
+        if (!x_NcbiIsIPv4(addr, 1/*compat*/))
             return 0;
         pfxlen  = 96;
     }
@@ -123,7 +133,7 @@ extern unsigned int NcbiIPv6ToIPv4(const TNCBI_IPv6Addr* addr, size_t pfxlen)
         break;
     default:
         assert(0);
-        return (unsigned int)(-1L)/*failure*/;
+        return (unsigned int)(-1)/*failure*/;
     }
     return ipv4;
 }
@@ -383,7 +393,7 @@ static char* x_IPv6ToString(char* buf, size_t bufsize,
     size_t i, n, z, zlen;
     char* ptr = ipv6;
 
-    if (x_NcbiIsIPv4(addr, 1/*mapped*/)) {
+    if (x_NcbiIsIPv4(addr, 1/*compat*/)) {
         unsigned int ip;
         n = sizeof(addr->octet) - sizeof(ip);
         memcpy(&ip, addr->octet + n, sizeof(ip));
@@ -490,7 +500,7 @@ extern char* NcbiAddrToString(char* buf, size_t bufsize,
     if (!addr)
         return 0;
 
-    if (x_NcbiIsIPv4(addr, -1/*mapped only*/)) {
+    if (x_NcbiIsIPv4(addr, 0/*mapped*/)) {
         unsigned int ipv4 = NcbiIPv6ToIPv4(addr, 0);
         return x_IPv4ToString(buf, bufsize, &ipv4);
     }
@@ -514,7 +524,7 @@ extern const char* NcbiAddrToDNS(char* buf, size_t bufsize,
 
     len = 0;
     src = addr->octet + sizeof(addr->octet) - 1;
-    if (x_NcbiIsIPv4(addr, -1/*mapped only*/)) {
+    if (x_NcbiIsIPv4(addr, 0/*mapped*/)) {
         sfx = &kIPv4DNS;
         for (n = 0;  n < sizeof(unsigned int);  ++n) {
             size_t off = (size_t)sprintf(dst, "%d.",    *src--);
