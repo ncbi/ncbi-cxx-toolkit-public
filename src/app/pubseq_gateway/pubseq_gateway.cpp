@@ -44,11 +44,11 @@
 #include <objtools/pubseq_gateway/impl/cassandra/CassFactory.hpp>
 
 #include <objtools/pubseq_gateway/impl/rpc/UtilException.hpp>
-#include <objtools/pubseq_gateway/impl/rpc/HttpServerTransport.hpp>
 #include <objtools/pubseq_gateway/impl/rpc/DdRpcDataPacker.hpp>
 
 #include "AccVerCacheDB.hpp"
 #include "pending_operation.hpp"
+#include "HttpServerTransport.hpp"
 
 
 USING_NCBI_SCOPE;

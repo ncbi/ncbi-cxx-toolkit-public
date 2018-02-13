@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include <objtools/pubseq_gateway/impl/rpc/HttpServerTransport.hpp>
+#include "HttpServerTransport.hpp"
 
 using namespace std;
 
