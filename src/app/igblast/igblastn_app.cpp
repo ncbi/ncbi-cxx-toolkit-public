@@ -313,7 +313,7 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
         l_ig_opts->m_AirrField.push_back("chain_type");
         l_ig_opts->m_AirrField.push_back("stop_codon");
         l_ig_opts->m_AirrField.push_back("v_j_in_frame");
-        l_ig_opts->m_AirrField.push_back("functional");
+        l_ig_opts->m_AirrField.push_back("productive");
         l_ig_opts->m_AirrField.push_back("rev_comp");
         l_ig_opts->m_AirrField.push_back("v_call");
         l_ig_opts->m_AirrField.push_back("d_call");

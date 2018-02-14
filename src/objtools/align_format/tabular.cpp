@@ -1632,9 +1632,9 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         m_AirrData["rearrangement_id"] = query_id;
         m_AirrData["sequence"] = m_Query;
         if (m_OtherInfo[4] == "Yes") {
-            m_AirrData["functional"] = "T"; 
+            m_AirrData["productive"] = "T"; 
         } else if (m_OtherInfo[4] == "No") {
-            m_AirrData["functional"] = "F"; 
+            m_AirrData["productive"] = "F"; 
         } 
         m_AirrData["chain_type"] = m_MasterChainTypeToShow;
         if (m_FrameInfo == "IF") {
