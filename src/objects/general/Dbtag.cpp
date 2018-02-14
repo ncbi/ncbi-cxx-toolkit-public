@@ -594,7 +594,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_CollecTF, "https://collectf.umbc.edu/" },
     { CDbtag::eDbtagType_ECOCYC, "http://biocyc.org/ECOLI/new-image?type=GENE&object=" }, // https does not result in security cert warning, but “page can’t be displayed”, tested 7/13/2016  
     { CDbtag::eDbtagType_ENSEMBL, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  “Error 404 Page not found” tested 7/13/2016  
-    { CDbtag::eDbtagType_EcoGene, "https://www.ecogene.org/gene/" },
+    { CDbtag::eDbtagType_EcoGene, "http://www.ecogene.org/gene/" }, // ID-4590 : https not available 02/14/2018
     { CDbtag::eDbtagType_FANTOM_DB, "https://fantom.gsc.riken.jp/db/annotate/main.cgi?masterid=" },
     { CDbtag::eDbtagType_FBOL, "http://www.fungalbarcoding.org/BioloMICS.aspx?Table=Fungal%20barcodes&Fields=All&Rec=" }, // https not available tested 7/13/2016                               
     { CDbtag::eDbtagType_FLYBASE, "http://flybase.org/reports/" }, // https not available, http site “experiencing problems” tested 7/13/2016
@@ -649,7 +649,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_RATMAP, "https://ratmap.gen.gu.se/ShowSingleLocus.htm?accno=" },
     { CDbtag::eDbtagType_RBGE_garden, "https://data.rbge.org.uk/living/" },
     { CDbtag::eDbtagType_RBGE_herbarium, "https://data.rbge.org.uk/herb/" },
-    { CDbtag::eDbtagType_REBASE, "https://rebase.neb.com/rebase/enz/" },
+    { CDbtag::eDbtagType_REBASE, "http://rebase.neb.com/rebase/enz/" }, // ID-4590 : https not available 02/14/2018
     { CDbtag::eDbtagType_RFAM, "http://rfam.xfam.org/family/" }, // https not available tested 7/13/2016                                                                                            
     { CDbtag::eDbtagType_RGD, "https://rgd.mcw.edu/rgdweb/search/search.html?term=" },
     { CDbtag::eDbtagType_RiceGenes, "http://ars-genome.cornell.edu/cgi-bin/WebAce/webace?db=ricegenes&class=Marker&object=" }, // http “page can’t be displayed” tested 7/13/2016  
