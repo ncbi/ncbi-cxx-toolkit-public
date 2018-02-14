@@ -1205,11 +1205,9 @@ void CRWLock::WriteLock(void)
         if (m_FavorWriters) {
             ++m_WaitingWriters;
         }
-        do {
-            while (m_Count != 0) {
-                m_Cv.wait(lck);
-            }
-        } while (!x_TryWriteLock());
+        while (!x_TryWriteLock()) {
+            m_Cv.wait(lck);
+        }
         m_Owner = self_id;
         if (m_FavorWriters) {
             --m_WaitingWriters;
@@ -1552,15 +1550,17 @@ void CRWLock::Unlock(void)
 
 #if NCBI_SRWLOCK_USE_NEW
     TThreadSystemID self_id = GetCurrentThreadSystemID();
+    if (m_Owner == self_id && m_Count < -1) {
+        ++m_Count;
+        return;
+    }
+    unique_lock<mutex> lck( m_Mtx);
     if (m_Owner == self_id) {
-        if (m_Count == -1) {
-            m_Owner = 0;
-        }
+        m_Owner = 0;
         ++m_Count;
     } else {
         --m_Count;
         if (m_TrackReaders) {
-            unique_lock<mutex> lck( m_Mtx);
             m_Readers.erase( x_FindReader(self_id) );
         }
     }
@@ -1668,6 +1668,14 @@ struct SSemaphore
 };
 
 
+#if NCBI_SEMAPHORE_USE_NEW
+CSemaphore::CSemaphore(unsigned int init_count, unsigned int max_count)
+    : m_Max(max_count), m_Count(init_count)
+{
+    _ASSERT(max_count != 0);
+    _ASSERT(init_count <= max_count);
+}
+#else
 CSemaphore::CSemaphore(unsigned int init_count, unsigned int max_count)
 {
 #if defined(NCBI_WIN32_THREADS)
@@ -1727,10 +1735,13 @@ CSemaphore::CSemaphore(unsigned int init_count, unsigned int max_count)
 
     auto_sem.release();
 }
+#endif
 
 
 CSemaphore::~CSemaphore(void)
 {
+#if NCBI_SEMAPHORE_USE_NEW
+#else
 #if defined(NCBI_POSIX_THREADS)
     _ASSERT(m_Sem->wait_count == 0);
     xncbi_VerifyAndErrorReport(pthread_mutex_destroy(&m_Sem->mutex) == 0);
@@ -1741,11 +1752,33 @@ CSemaphore::~CSemaphore(void)
 #endif
 
     delete m_Sem;
+#endif
 }
 
+#if NCBI_SEMAPHORE_USE_NEW
+inline
+bool CSemaphore::x_TryAcquire(void)
+{
+    unsigned int expected = 1;
+    do {
+        if (m_Count.compare_exchange_weak(expected, expected-1)) {
+            return true;
+        }
+    } while (expected > 0);
+    return false;
+}
+#endif
 
 void CSemaphore::Wait(void)
 {
+#if NCBI_SEMAPHORE_USE_NEW
+    if (!x_TryAcquire()) {
+        unique_lock<mutex> lck( m_Mtx);
+        while (!x_TryAcquire()) {
+            m_Cv.wait(lck);
+        }
+    }
+#else
 #if defined(NCBI_POSIX_THREADS)
     xncbi_ValidatePthread(
         pthread_mutex_lock(&m_Sem->mutex), 0,
@@ -1786,6 +1819,7 @@ void CSemaphore::Wait(void)
                    "wait with zero count in one-thread mode(?!)");
     m_Sem->count--;
 #endif
+#endif
 }
 
 #if defined(NCBI_NO_THREADS)
@@ -1797,6 +1831,28 @@ void CSemaphore::Wait(void)
 bool CSemaphore::TryWait(unsigned int NCBI_THREADS_ARG(timeout_sec),
                          unsigned int NCBI_THREADS_ARG(timeout_nsec))
 {
+#if NCBI_SEMAPHORE_USE_NEW
+#if defined(NCBI_NO_THREADS)
+    return x_TryAcquire();
+#else
+    if (x_TryAcquire()) {
+        return true;
+    }
+    if (timeout_sec == 0 && timeout_nsec == 0) {
+        return x_TryAcquire();
+    }
+    chrono::time_point<chrono::steady_clock> to = chrono::steady_clock::now() + chrono::seconds(timeout_sec) + chrono::nanoseconds(timeout_nsec);
+    cv_status res = cv_status::no_timeout;
+    unique_lock<mutex> lck( m_Mtx);
+    while (!x_TryAcquire()) {
+        res = m_Cv.wait_until(lck, to);
+        if (res == cv_status::timeout) {
+            return false;
+        }
+    }
+    return true;
+#endif
+#else
 #if defined(NCBI_POSIX_THREADS)
     xncbi_ValidatePthread(
         pthread_mutex_lock(&m_Sem->mutex), 0,
@@ -1882,6 +1938,7 @@ bool CSemaphore::TryWait(unsigned int NCBI_THREADS_ARG(timeout_sec),
     m_Sem->count--;
     return true;
 #endif
+#endif
 }
 
 
@@ -1903,6 +1960,14 @@ void CSemaphore::Post(unsigned int count)
     if (count == 0)
         return;
 
+#if NCBI_SEMAPHORE_USE_NEW
+    unsigned int cnt_now = m_Count;
+    xncbi_Validate(cnt_now <= kMax_UInt - count && cnt_now + count <= m_Max,
+                   "CSemaphore::Post() - attempt to exceed max_count");
+    m_Count += count;
+    unique_lock<mutex> lck( m_Mtx);
+    m_Cv.notify_all();
+#else
 #if defined (NCBI_POSIX_THREADS)
     xncbi_ValidatePthread(
         pthread_mutex_lock(&m_Sem->mutex), 0,
@@ -1961,6 +2026,7 @@ void CSemaphore::Post(unsigned int count)
     xncbi_Validate(m_Sem->count + count <= m_Sem->max_count,
                    "CSemaphore::Post() - attempt to exceed max_count");
     m_Sem->count += count;
+#endif
 #endif
 }
 

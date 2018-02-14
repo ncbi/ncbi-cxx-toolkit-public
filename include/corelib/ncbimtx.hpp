@@ -71,7 +71,8 @@
 #endif
 
 #if defined(NCBI_WIN32_THREADS)
-#define NCBI_SRWLOCK_USE_NEW   1
+#define NCBI_SRWLOCK_USE_NEW     1
+#define NCBI_SEMAPHORE_USE_NEW   1
 #endif
 
 #if NCBI_SRWLOCK_USE_NEW
@@ -1016,7 +1017,7 @@ private:
 #if NCBI_SRWLOCK_USE_NEW
     mutex                       m_Mtx;
     condition_variable          m_Cv;
-    volatile TThreadSystemID    m_Owner;   ///< Writer ID
+    TThreadSystemID             m_Owner;   ///< Writer ID
     atomic<long>                m_Count;   ///< Number of readers (if >0) or writers (if <0)
     long                        m_WaitingWriters; ///< Number of writers waiting; zero if not keeping track
     vector<TThreadSystemID>     m_Readers; ///< List of all readers to detect recursion
@@ -1397,7 +1398,15 @@ public:
     void Post(unsigned int count = 1);
 
 private:
+#if NCBI_SEMAPHORE_USE_NEW
+    mutex                 m_Mtx;
+    condition_variable    m_Cv;
+    const unsigned int    m_Max;
+    atomic<unsigned int>  m_Count;
+    bool x_TryAcquire(void);
+#else
     struct SSemaphore* m_Sem;  ///< System-specific semaphore data.
+#endif
 
     /// Private copy constructor to disallow initialization.
     CSemaphore(const CSemaphore&);
