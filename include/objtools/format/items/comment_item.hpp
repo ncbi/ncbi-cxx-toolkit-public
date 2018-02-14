@@ -159,13 +159,14 @@ protected:
     CCommentItem(CBioseqContext& ctx, bool need_period = true);
 
     void x_GatherInfo(CBioseqContext& ctx);
-    void x_GatherDescInfo(const CSeqdesc& desc);
+    void x_GatherDescInfo(const CSeqdesc& desc, CBioseqContext& ctx);
     void x_GatherFeatInfo(const CSeq_feat& feat, CBioseqContext& ctx);
     void x_GatherUserObjInfo(const CUser_object& userObject );
 
     void x_SetComment(const string& comment);
+    void x_SetComment(const string& comment, CBioseqContext& ctx);
     void x_SetCommentWithURLlinks(const string& prefix, const string& str,
-        const string& suffix, EPeriod can_add_period = ePeriod_Add );
+        const string& suffix, CBioseqContext& ctx, EPeriod can_add_period = ePeriod_Add );
     list<string>& x_GetComment(void) { return m_Comment; }
     void x_SetSkip(void);
 

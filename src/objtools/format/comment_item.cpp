@@ -100,7 +100,9 @@ CCommentItem::CCommentItem
     m_NeedPeriod(true)
 {
     m_Comment.push_back( comment );
-    ExpandTildes(m_Comment.back(), eTilde_comment);
+    if (! ctx.Config().IsFormatGBSeq() && ! ctx.Config().IsFormatINSDSeq()) {
+        ExpandTildes(m_Comment.back(), eTilde_comment);
+    }
     swap(m_First, sm_FirstComment);
     if ( obj != 0 ) {
         x_SetObject(*obj);
@@ -1533,7 +1535,7 @@ void CCommentItem::x_GatherInfo(CBioseqContext& ctx)
     }
     const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(obj);
     if (desc != NULL) {
-        x_GatherDescInfo(*desc);
+        x_GatherDescInfo(*desc, ctx);
     } else {
         const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(obj);
         if (feat != NULL) {
@@ -1691,7 +1693,7 @@ void s_GetStrForStructuredComment(
     out_lines.back().append( "\n" );
 }
 
-void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
+void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc, CBioseqContext& ctx)
 {
     // true for most desc infos
     EPeriod can_add_period = ePeriod_Add;
@@ -1769,7 +1771,7 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
     if (str.empty()  ||  str == ".") {
         return;
     }
-    x_SetCommentWithURLlinks(prefix, str, suffix, can_add_period);
+    x_SetCommentWithURLlinks(prefix, str, suffix, ctx, can_add_period);
     
 }
 
@@ -1782,7 +1784,7 @@ void CCommentItem::x_GatherFeatInfo(const CSeq_feat& feat, CBioseqContext& ctx)
         return;
     }
 
-    x_SetCommentWithURLlinks(kEmptyStr, feat.GetComment(), kEmptyStr, ePeriod_Add);
+    x_SetCommentWithURLlinks(kEmptyStr, feat.GetComment(), kEmptyStr, ctx, ePeriod_Add);
 }
 
 void CCommentItem::x_GatherUserObjInfo(const CUser_object& userObject )
@@ -1808,7 +1810,17 @@ void CCommentItem::x_SetComment(const string& comment)
 {
     m_Comment.clear();
     m_Comment.push_back( comment );
-    ExpandTildes(m_Comment.back(), eTilde_comment);;
+    ExpandTildes(m_Comment.back(), eTilde_comment);
+}
+
+
+void CCommentItem::x_SetComment(const string& comment, CBioseqContext& ctx)
+{
+    m_Comment.clear();
+    m_Comment.push_back( comment );
+    if (! ctx.Config().IsFormatGBSeq() && ! ctx.Config().IsFormatINSDSeq()) {
+        ExpandTildes(m_Comment.back(), eTilde_comment);
+    }
 }
 
 
@@ -1816,6 +1828,7 @@ void CCommentItem::x_SetCommentWithURLlinks
 (const string& prefix,
  const string& str,
  const string& suffix,
+ CBioseqContext& ctx,
  EPeriod can_add_period)
 {
     // !!! test for html - find links within the comment string
@@ -1823,7 +1836,9 @@ void CCommentItem::x_SetCommentWithURLlinks
     comment += str;
     comment += suffix;
 
-    ExpandTildes(comment, eTilde_comment);
+    if (! ctx.Config().IsFormatGBSeq() && ! ctx.Config().IsFormatINSDSeq()) {
+        ExpandTildes(comment, eTilde_comment);
+    }
     if (NStr::IsBlank(comment)) {
         return;
     }
@@ -2002,7 +2017,7 @@ void CGenomeAnnotComment::x_GatherInfo(CBioseqContext& ctx)
     }
 
     string s = (string)(CNcbiOstrstreamToString(text));
-    x_SetComment(s);
+    x_SetComment(s, ctx);
 }
 
 
