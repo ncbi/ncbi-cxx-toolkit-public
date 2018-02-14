@@ -819,10 +819,8 @@ void CGBSeqFormatter::FormatComment
 (const CCommentItem& comment,
  IFlatTextOStream& text_os)
 {
-    string comm = NStr::Join( comment.GetCommentList(), "\n" );
+    string comm = NStr::Join( comment.GetCommentList(), "; " );
     s_GBSeqStringCleanup(comm);
-
-    // NStr::ReplaceInPlace(comm, "~", "~~");
 
     m_Comments.push_back(comm);
     m_NeedComment = true;
