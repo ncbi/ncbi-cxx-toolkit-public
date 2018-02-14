@@ -1481,7 +1481,8 @@ void CFlatGatherer::x_HTGSComments(CBioseqContext& ctx) const
 
 void CFlatGatherer::x_AnnotComments(CBioseqContext& ctx) const
 {
-    CAnnot_CI annot_ci(ctx.GetHandle());
+    // SQD-4444 : Pass annot selector from the context structure
+    CAnnot_CI annot_ci(ctx.GetHandle(), ctx.SetAnnotSelector());
     for( ; annot_ci; ++annot_ci ) {
         if( ! annot_ci->Seq_annot_IsSetDesc() ) {
             continue;

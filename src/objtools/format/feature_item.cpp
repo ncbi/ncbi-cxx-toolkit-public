@@ -1598,7 +1598,9 @@ void CFeatureItem::x_AddQuals(
         x_AddFTableQuals( ctx );
         return;
     }
-    m_Feat_Tree->AddGenesForFeat(m_Feat);
+
+    // SQD-4444 : pass annot selector from the context structure
+    m_Feat_Tree->AddGenesForFeat(m_Feat, ctx.GetAnnotSelector());
 
     //
     //  Collect/Compute data that will be shared between several qualifier
