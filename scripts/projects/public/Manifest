@@ -21,8 +21,8 @@ TAG_PRE_COMMIT: tagprecommit/use_embedded_ptb.py
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
 
-Win64_13       : MSVC13-64-dll : dll    64 ReleaseDLL
-Win64_13       : MSVC13-64 : static 64 ReleaseDLL
+Win64_15       : MSVC13-64-dll : dll    64 ReleaseDLL
+Win64_15       : MSVC13-64 : static 64 ReleaseDLL
 
 Cygwin64       : GCC       : GCC.sh --without-debug --with-mt --with-flat-makefile --without-ncbi-c
 

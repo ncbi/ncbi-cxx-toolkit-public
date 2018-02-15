@@ -41,8 +41,8 @@ Linux32-Ubuntu    : plain-GCC      : GCC.sh           --without-debug --with-mt 
 
 Cygwin64          : GCC            : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 
-Win64_13          : 13-debug-64    : static 64 DebugDLL
-Win64_13          : 13-static-64   : static 64 ReleaseDLL
+Win64_15          : 13-debug-64    : static 64 DebugDLL
+Win64_15          : 13-static-64   : static 64 ReleaseDLL
 
 IntelMAC          : clang          : Clang.sh         --without-debug --with-mt    --without-runpath --with-flat-makefile --with-3psw=system:netopt --without-ncbi-public
 IntelMAC          : plain          : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile --with-3psw=system:netopt --without-ncbi-public

@@ -22,7 +22,7 @@ APP: test_ccpp_read
 
 #Linux32-Centos  : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile
 
-Win64_13    : plain : static  64  ReleaseDLL
+Win64_15    : plain : static  64  ReleaseDLL
 
 Linux64-Centos        : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile --without-downloaded-vdb
 IntelMAC              : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile --without-downloaded-vdb
