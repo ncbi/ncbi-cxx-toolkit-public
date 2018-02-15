@@ -167,3 +167,7 @@ Added class member bitset to reference members not using their names.
 December 22, 2017
 version 2.18.0, CXX-9818
 Fixed problem in RPC client generator.
+
+February 15, 2018
+version 2.18.1, CXX-9904
+Fixed SOAP code generation
