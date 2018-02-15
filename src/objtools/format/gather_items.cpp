@@ -2736,7 +2736,11 @@ static CMappedFeat s_GetTrimmedMappedFeat(const CSeq_feat& feat,
 
 static bool s_IsCDD(const CSeq_feat_Handle& feat)
 {
-    return (feat.GetAnnot().IsNamed() && feat.GetAnnot().GetName() == "Annot:CDD");
+    if (feat.GetAnnot().IsNamed()) {
+        const string& name = feat.GetAnnot().GetName();
+        return (name == "Annot:CDD" || name == "CDDSearch");
+    }
+    return false;
 }
 
 static bool s_IsSNP(const CSeq_feat_Handle& feat)
@@ -2820,6 +2824,14 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
             ///
 
             s_CleanCDDFeature(original_feat);
+
+            const CFlatFileConfig& cfg = ctx.Config();
+            CSeqFeatData::ESubtype subtype = feat.GetFeatSubtype();
+            if (cfg.HideCDDFeatures()  &&
+                (subtype == CSeqFeatData::eSubtype_region || subtype == CSeqFeatData::eSubtype_site)  &&
+                s_IsCDD(feat)) {
+                return;
+            }
 
             ///
             /// HACK HACK HACK
@@ -3045,6 +3057,14 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocation
             ///
 
             s_CleanCDDFeature(original_feat);
+
+            const CFlatFileConfig& cfg = ctx.Config();
+            CSeqFeatData::ESubtype subtype = feat.GetFeatSubtype();
+            if (cfg.HideCDDFeatures()  &&
+                (subtype == CSeqFeatData::eSubtype_region || subtype == CSeqFeatData::eSubtype_site)  &&
+                s_IsCDD(feat)) {
+                continue;
+            }
 
             ///
             /// HACK HACK HACK
@@ -3335,6 +3355,14 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
             /// we need to cleanse CDD features
 
             s_CleanCDDFeature(original_feat);
+
+            const CFlatFileConfig& cfg = ctx.Config();
+            CSeqFeatData::ESubtype subtype = feat.GetFeatSubtype();
+            if (cfg.HideCDDFeatures()  &&
+                (subtype == CSeqFeatData::eSubtype_region || subtype == CSeqFeatData::eSubtype_site)  &&
+                s_IsCDD(feat)) {
+                return;
+            }
 
             ///
             /// HACK HACK HACK
