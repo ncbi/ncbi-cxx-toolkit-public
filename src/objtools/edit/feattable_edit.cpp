@@ -349,8 +349,6 @@ void CFeatTableEdit::EliminateBadQualifiers()
 void CFeatTableEdit::GenerateProteinAndTranscriptIds()
 //  ----------------------------------------------------------------------------
 {
-
-
     SAnnotSelector sel1;
     sel1.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
     sel1.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
@@ -555,43 +553,6 @@ void CFeatTableEdit::xFeatureAddProteinIdCds(
     }
 
     auto pid = mf.GetNamedQual("protein_id");
-
-    if (NStr::StartsWith(pid, "gb|")) {
-        return;
-    }
-
-    auto tid = mf.GetNamedQual("transcript_id");
-    if (!NStr::IsBlank(tid)) {
-        const string& intial_pid = pid;
-        CMappedFeat parent = feature::GetBestMrnaForCds(mf, &mTree);
-        auto mRnaTid = parent.GetNamedQual("transcript_id");
-        
-
-      //  if (tid == mRnaTid) {
-            if (NStr::IsBlank(pid)) {
-                pid = tid;
-            }
-
-            if (pid == tid) {
-                if (NStr::StartsWith(pid, "gnl|")) {
-                    auto bar_pos = pid.find_first_of("|",4);
-                    if (bar_pos < pid.size()) {
-                        pid.insert(bar_pos, "cds.");
-                    }
-                }
-                else {
-                    pid = "gnl|" + 
-                           xGetCurrentLocusTagPrefix(mf) + 
-                           "|cds."
-                           + pid;
-                }
-                xFeatureSetQualifier(mf, "protein_id", pid);
-                return;
-            }
-       // }
-    }
-
-/*
     if (NStr::StartsWith(pid, "gb|")  ||  NStr::StartsWith(pid, "gnl|")) {
         // already what we want
         return;
@@ -602,7 +563,6 @@ void CFeatTableEdit::xFeatureAddProteinIdCds(
         xFeatureSetQualifier(mf, "protein_id", pid);
         return;
     }
-*/
 
     auto id = mf.GetNamedQual("ID");
     if (!id.empty()) {
@@ -610,7 +570,7 @@ void CFeatTableEdit::xFeatureAddProteinIdCds(
         xFeatureSetQualifier(mf, "protein_id", pid);
         return;
     }
-/*
+
     auto tid = mf.GetNamedQual("transcript_id");
     if (!tid.empty()) {
         CMappedFeat parent = feature::GetBestMrnaForCds(mf, &mTree);
@@ -622,7 +582,6 @@ void CFeatTableEdit::xFeatureAddProteinIdCds(
         xFeatureSetQualifier(mf, "protein_id", pid);
         return;
     }
-*/
 
     pid = xNextProteinId(mf);
     if (!pid.empty()) {
