@@ -733,6 +733,10 @@ void CAsnSubCacheCreateApplication::Init(void)
     arg_desc->AddFlag("remove-annotation",
                       "Remove all annotation from caches entries");
 
+    arg_desc->AddFlag("no-wgs-master-descs",
+                      "When fetching missing WGS sequences from ID, don't add "
+                      "the descriptiors from the master WGS record");
+
     arg_desc->SetDependency("skip-retrieval-failures",
                             CArgDescriptions::eRequires, "fetch-missing");
     arg_desc->SetDependency("max-retrieval-failures",
@@ -742,6 +746,11 @@ void CAsnSubCacheCreateApplication::Init(void)
                             CArgDescriptions::eRequires, "fetch-missing");
     arg_desc->SetDependency("max-withdrawn",
                             CArgDescriptions::eRequires, "skip-withdrawn");
+
+    arg_desc->SetDependency("no-wgs-master-descs",
+                            CArgDescriptions::eRequires, "fetch-missing");
+    arg_desc->SetDependency("no-wgs-master-descs",
+                            CArgDescriptions::eExcludes, "nogenbank");
 
     arg_desc->AddOptionalKey("oseqids","oseqids","Seqids that actually made it to the cache", 
         CArgDescriptions::eOutputFile, CArgDescriptions::fPreOpen);
@@ -860,6 +869,12 @@ int CAsnSubCacheCreateApplication::Run(void)
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
     CDataLoadersUtil::SetupObjectManager(args, *om);
+
+    if (args["no-wgs-master-descs"]) {
+        static_cast<CGBDataLoader*>(CObjectManager::GetInstance()
+                                   ->FindDataLoader("GBLOADER"))
+                                   ->SetAddWGSMasterDescr(false);
+    }
 
     CStopWatch  sw;
     sw.Start();
