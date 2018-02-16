@@ -46,7 +46,6 @@
 #include <connect/ncbi_server_info.h>
 
 #include <ctype.h>
-#include <math.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -642,9 +641,9 @@ static TNCBI_Time s_ParseExpires(time_t tt_now, const char* expires)
             td_sign = "";
             td_diff = tdiff;
         }
-        td_hour  = floor(td_diff / 3600.0);
+        td_hour  = td_diff / 3600.0;
         td_diff -= td_hour * 3600.0;
-        td_min   = floor(td_diff / 60.0);
+        td_min   = td_diff / 60.0;
         td_sec   = td_diff - td_min * 60.0;
         sprintf(now_str, "%d-%02d-%02dT%02d:%02d:%02dZ",
                 now_year, now_mon, now_mday, now_hour, now_min, now_sec);
