@@ -671,6 +671,51 @@ DISCREPANCY_SUMMARIZE(MAG_SHOULD_NOT_HAVE_STRAIN)
 }
 
 
+// MAG_MISSING_ISOLATE
+
+DISCREPANCY_CASE(MAG_MISSING_ISOLATE, CBioSource, eDisc | eSmart, "Organism assembled from metagenome reads should have isolate")
+{
+    bool is_metagenomic = false;
+    bool is_env_sample = false;
+    bool has_isolate = false;
+
+    if (obj.IsSetSubtype()) {
+        for (auto s : obj.GetSubtype()) {
+            if (s->IsSetSubtype()) {
+                if (s->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
+                    is_env_sample = true;
+                }
+                if (s->GetSubtype() == CSubSource::eSubtype_metagenomic) {
+                    is_metagenomic = true;
+                }
+            }
+        }
+    }
+    if (!is_metagenomic || !is_env_sample) {
+        return;
+    }
+
+    if (obj.IsSetOrg() && obj.GetOrg().IsSetOrgname() && obj.GetOrg().GetOrgname().IsSetMod()) {
+        for (auto m : obj.GetOrg().GetOrgname().GetMod()) {
+            if (m->IsSetSubtype() && m->GetSubtype() == COrgMod::eSubtype_isolate) {
+                has_isolate = true;
+                break;
+            }
+        }
+    }
+    if (!has_isolate) {
+        m_Objs["[n] organism[s] assembled from metagenome [is] missing isolate"].Add(*context.NewFeatOrDescObj());
+
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(MAG_MISSING_ISOLATE)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 // MULTISRC
 
 DISCREPANCY_CASE(MULTISRC, CBioSource, eDisc | eOncaller, "Comma or semicolon appears in strain or isolate")
