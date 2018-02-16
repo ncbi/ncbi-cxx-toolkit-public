@@ -1605,7 +1605,7 @@ void CDeflineGenerator::x_SetTitleFromPDB (void)
     if (isprint ((unsigned char) m_PDBChain)) {
         string chain(1, (char) m_PDBChain);
         CTextJoiner<4, CTempString> joiner;
-        if (m_Comment.empty()) {
+        if (m_Comment.empty() || m_IsNA) {
             joiner.Add("Chain ").Add(chain).Add(", ").Add(m_PDBCompound);
         } else {
             joiner.Add("Chain ").Add(chain).Add(", ").Add(m_Comment);
