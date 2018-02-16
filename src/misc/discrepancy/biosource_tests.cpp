@@ -568,51 +568,54 @@ DISCREPANCY_SUMMARIZE(BACTERIA_MISSING_STRAIN)
 
 
 // BACTERIA_SHOULD_NOT_HAVE_ISOLATE
+
 const string kAmplifiedWithSpeciesSpecificPrimers = "amplified with species-specific primers";
-bool HasAmplifiedWithSpeciesSpecificPrimerNote(const CBioSource& src)
+
+DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE, CBioSource, eDisc | eOncaller | eSmart, "Bacterial sources should not have isolate")
 {
-    if (src.IsSetSubtype()) {
-        ITERATE (CBioSource::TSubtype, s, src.GetSubtype()) {
-            if ((*s)->IsSetSubtype() && (*s)->GetSubtype() == CSubSource::eSubtype_other &&
-                (*s)->IsSetName() && NStr::Equal((*s)->GetName(), kAmplifiedWithSpeciesSpecificPrimers)) {
-                return true;
-            }
-        }
-    }
-
-    if (src.IsSetOrg() && src.GetOrg().IsSetOrgname() && src.GetOrg().GetOrgname().IsSetMod()) {
-        ITERATE (COrgName::TMod, m, src.GetOrg().GetOrgname().GetMod()) {
-            if ((*m)->IsSetSubtype() && (*m)->GetSubtype() == CSubSource::eSubtype_other &&
-                (*m)->IsSetSubname() && NStr::Equal((*m)->GetSubname(), kAmplifiedWithSpeciesSpecificPrimers)) {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-
-DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE, CBioSource, eOncaller, "Bacterial sources should not have isolate")
-{
-    // only looking for bacteria
-    if (!CDiscrepancyContext::HasLineage(obj, context.GetLineage(), "Bacteria")) {
-        return;
-    }
-    if (HasAmplifiedWithSpeciesSpecificPrimerNote(obj)) {
+    // only looking for bacteria and archaea
+    if (!CDiscrepancyContext::HasLineage(obj, context.GetLineage(), "Bacteria") && !CDiscrepancyContext::HasLineage(obj, context.GetLineage(), "Archaea")) {
         return;
     }
 
     bool has_bad_isolate = false;
+    bool is_metagenomic = false;
+    bool is_env_sample = false;
+
+    if (obj.IsSetSubtype()) {
+        for (auto s: obj.GetSubtype()) {
+            if (s->IsSetSubtype()) {
+                if (s->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
+                    is_env_sample = true;
+                    if (is_metagenomic && is_env_sample) {
+                        return;
+                    }
+                }
+                if (s->GetSubtype() == CSubSource::eSubtype_metagenomic) {
+                    is_metagenomic = true;
+                    if (is_metagenomic && is_env_sample) {
+                        return;
+                    }
+                }
+                if (s->GetSubtype() == CSubSource::eSubtype_other && s->IsSetName() && NStr::Equal(s->GetName(), kAmplifiedWithSpeciesSpecificPrimers)) {
+                    return;
+                }
+            }
+        }
+    }
+
     if (obj.IsSetOrg() && obj.GetOrg().IsSetOrgname() && obj.GetOrg().GetOrgname().IsSetMod()) {
-        ITERATE (COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
-            if ((*m)->IsSetSubtype() && (*m)->GetSubtype() == COrgMod::eSubtype_isolate &&
-                (*m)->IsSetSubname() && 
-                !NStr::StartsWith((*m)->GetSubname(), "DGGE gel band") &&
-                !NStr::StartsWith((*m)->GetSubname(), "TGGE gel band") &&
-                !NStr::StartsWith((*m)->GetSubname(), "SSCP gel band")) {
-                has_bad_isolate = true;
-                break;
+        for (auto m: obj.GetOrg().GetOrgname().GetMod()) {
+            if (m->IsSetSubtype()) {
+                if (m->GetSubtype() == CSubSource::eSubtype_other && m->IsSetSubname() && NStr::Equal(m->GetSubname(), kAmplifiedWithSpeciesSpecificPrimers)) {
+                    return;
+                }
+                if (m->GetSubtype() == COrgMod::eSubtype_isolate && m->IsSetSubname() && 
+                        !NStr::StartsWith(m->GetSubname(), "DGGE gel band") &&
+                        !NStr::StartsWith(m->GetSubname(), "TGGE gel band") &&
+                        !NStr::StartsWith(m->GetSubname(), "SSCP gel band")) {
+                    has_bad_isolate = true;
+                }
             }
         }
     }
@@ -871,6 +874,30 @@ DISCREPANCY_SUMMARIZE(FIND_STRAND_TRNAS)
 
 
 // REQUIRED_CLONE
+
+bool HasAmplifiedWithSpeciesSpecificPrimerNote(const CBioSource& src)
+{
+    if (src.IsSetSubtype()) {
+        ITERATE(CBioSource::TSubtype, s, src.GetSubtype()) {
+            if ((*s)->IsSetSubtype() && (*s)->GetSubtype() == CSubSource::eSubtype_other &&
+                (*s)->IsSetName() && NStr::Equal((*s)->GetName(), kAmplifiedWithSpeciesSpecificPrimers)) {
+                return true;
+            }
+        }
+    }
+
+    if (src.IsSetOrg() && src.GetOrg().IsSetOrgname() && src.GetOrg().GetOrgname().IsSetMod()) {
+        ITERATE(COrgName::TMod, m, src.GetOrg().GetOrgname().GetMod()) {
+            if ((*m)->IsSetSubtype() && (*m)->GetSubtype() == CSubSource::eSubtype_other &&
+                (*m)->IsSetSubname() && NStr::Equal((*m)->GetSubname(), kAmplifiedWithSpeciesSpecificPrimers)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 
 static bool IsMissingRequiredClone(const CBioSource& biosource)
 {
