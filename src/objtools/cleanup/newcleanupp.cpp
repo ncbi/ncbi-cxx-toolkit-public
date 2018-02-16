@@ -7223,6 +7223,7 @@ void CNewCleanup_imp::Except_textBC (
 {
     if (NStr::Find (except_text, "ribosome slippage") == NPOS &&
         NStr::Find (except_text, "trans splicing") == NPOS &&
+        NStr::Find (except_text, "trans_splicing") == NPOS &&
         NStr::Find (except_text, "alternate processing") == NPOS &&
         NStr::Find (except_text, "adjusted for low quality genome") == NPOS &&
         NStr::Find (except_text, "non-consensus splice site") == NPOS) {
@@ -7243,7 +7244,7 @@ void CNewCleanup_imp::Except_textBC (
             if (text == "ribosome slippage") {
                 text = "ribosomal slippage";
                 ChangeMade (CCleanupChange::eChangeException);
-            } else if (text == "trans splicing") {
+            } else if (text == "trans splicing" || text == "trans_splicing") {
                 text = "trans-splicing";
                 ChangeMade (CCleanupChange::eChangeException);
             } else if (text == "alternate processing") {

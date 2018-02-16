@@ -1433,3 +1433,32 @@ BOOST_AUTO_TEST_CASE(Test_CleanDBLink)
     BOOST_CHECK_EQUAL(desc->GetUser().GetData().front()->GetData().GetStrs().front(), "A value");
 }
 
+
+void TestExceptionTextFix(const string& before, const string& after)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> m = AddMiscFeature(entry);
+    m->SetExcept(true);
+    m->SetExcept_text("trans_splicing");
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*entry);
+
+    CFeat_CI f(seh);
+    BOOST_CHECK_EQUAL(f->GetExcept_text(), "trans-splicing");
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_4464)
+{
+    TestExceptionTextFix("trans_splicing", "trans-splicing");
+    TestExceptionTextFix("trans splicing", "trans-splicing");
+}
