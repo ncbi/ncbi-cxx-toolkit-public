@@ -3448,7 +3448,7 @@ LBN	s	Lembaga Biologi Nasional
 LBRP	s	Laboratorio de Biodiversidade de Recursos Pesqueiros		
 LBUCH	s	Laboratorio de Biologia		
 LBV	s	CENAREST		
-LC	h	Lewis & Clark College		
+LC	s	Lewis & Clark College		
 LCC<CAN>	c	Labatt Culture Collection, Technology Development		
 LCC<POL>	c	University of Warmia and Mazury in Olsztyn		
 LCDI	s	Luther College, Biology Department		

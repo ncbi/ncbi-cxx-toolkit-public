@@ -3481,7 +3481,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "LBRP\ts\tLaboratorio de Biodiversidade de Recursos Pesqueiros\t\t",
 "LBUCH\ts\tLaboratorio de Biologia\t\t",
 "LBV\ts\tCENAREST\t\t",
-"LC\th\tLewis & Clark College\t\t",
+"LC\ts\tLewis & Clark College\t\t",
 "LCC<CAN>\tc\tLabatt Culture Collection, Technology Development\t\t",
 "LCC<POL>\tc\tUniversity of Warmia and Mazury in Olsztyn\t\t",
 "LCDI\ts\tLuther College, Biology Department\t\t",
