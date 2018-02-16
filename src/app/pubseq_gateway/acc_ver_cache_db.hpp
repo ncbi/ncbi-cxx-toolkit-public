@@ -38,11 +38,12 @@
 
 #include <util/lmdbxx/lmdb++.h>
 
-#include <objtools/pubseq_gateway/impl/rpc/UtilException.hpp>
 #include <objtools/pubseq_gateway/impl/rpc/DdRpcDataPacker.hpp>
 
-#include "AccVerCacheStorage.hpp"
+#include "acc_ver_cache_storage.hpp"
+#include "pubseq_gateway_exception.hpp"
 
+USING_NCBI_SCOPE;
 using namespace std;
 
 
@@ -65,7 +66,7 @@ public:
     CAccVerCacheStorage &  Storage(void)
     {
         if (!m_Storage)
-            EAccVerException::raise("DB is not open");
+            NCBI_THROW(CPubseqGatewayException, eDbNotOpened, "DB is not open");
         return *m_Storage.get();
     }
 

@@ -37,7 +37,9 @@ using namespace std;
 
 #include <util/lmdbxx/lmdb++.h>
 
-#include <objtools/pubseq_gateway/impl/rpc/UtilException.hpp>
+#include "pubseq_gateway_exception.hpp"
+
+USING_NCBI_SCOPE;
 
 
 class CAccVerCacheStorage
@@ -89,17 +91,20 @@ public:
         iterator& operator++()
         {
             if (!m_Txn.handle())
-                EAccVerException::raise("Sentinel iterator can't move forward");
+                NCBI_THROW(CPubseqGatewayException, eIterCannotForward,
+                           "Sentinel iterator can't move forward");
             m_BOF = false;
             if (m_EOF)
-                EAccVerException::raise("EOF already reached");
+                NCBI_THROW(CPubseqGatewayException, eIterAlreadyReachedEnd,
+                           "EOF already reached");
             if (!m_Cursor.get(m_Current.first, m_Current.second, MDB_NEXT))
                 m_EOF = true;
             return *this;
         }
         iterator operator++(int)
         {
-            EAccVerException::raise("Post-increment is banned");
+            NCBI_THROW(CPubseqGatewayException, eIterNoPostIncrement,
+                       "Post-increment is banned");
         }
         bool operator==(const iterator& rhs) const
         {

@@ -41,7 +41,10 @@
 #include <uv.h>
 #include <h2o.h>
 
-#include "TcpDaemon.hpp"
+#include "pubseq_gateway_exception.hpp"
+#include "tcp_daemon.hpp"
+
+USING_NCBI_SCOPE;
 
 namespace HST {
 
@@ -51,15 +54,16 @@ namespace HST {
 })
 
 
-#define MAX_QUERY_PARAMS 64
-#define QUERY_PARAMS_RAW_BUF_SIZE 2048
+#define MAX_QUERY_PARAMS            64
+#define QUERY_PARAMS_RAW_BUF_SIZE   2048
+
 
 struct CQueryParam
 {
-    const char *    name;
-    const char *    val;
-    size_t          name_len;
-    size_t          val_len;
+    const char *    m_Name;
+    const char *    m_Val;
+    size_t          m_NameLen;
+    size_t          m_ValLen;
 };
 
 template<typename P>
@@ -75,23 +79,23 @@ template<typename P>
 class CHttpReply
 {
 public:
-    enum State {
-        stInitialized,
-        stStarted,
-        stFinished
+    enum EReplyState {
+        eReplyInitialized,
+        eReplyStarted,
+        eReplyFinished
     };
 
     CHttpReply(h2o_req_t *  req, CHttpProto<P> *  proto,
                CHttpConnection<P> *  http_conn) :
-        m_req(req),
-        m_resp_generator({0}),
-        m_output_is_ready(true),
-        m_output_finished(false),
-        m_postponed(false),
-        m_cancelled(false),
-        m_state(stInitialized),
-        m_http_proto(proto),
-        m_http_conn(http_conn)
+        m_Req(req),
+        m_RespGenerator({0}),
+        m_OutputIsReady(true),
+        m_OutputFinished(false),
+        m_Postponed(false),
+        m_Cancelled(false),
+        m_State(eReplyInitialized),
+        m_HttpProto(proto),
+        m_HttpConn(http_conn)
     {}
 
     CHttpReply(const CHttpReply&) = default;
@@ -103,68 +107,67 @@ public:
     {
         LOG3(("~CHttpReply"));
         Clear();
-        m_http_proto = nullptr;
-        m_http_conn = nullptr;
+        m_HttpProto = nullptr;
+        m_HttpConn = nullptr;
     }
 
     void Reset(CHttpReply<P> &  from)
     {
-        if (from.m_state != stInitialized)
-            EException::raise(
-                "CHttpReply::Reset: "
-                "original request has alrady started"); // req holds address of generator
-        if (from.m_cancelled)
-            EException::raise(
-                "CHttpReply::Reset: "
-                "original request is cancelled");
-        if (from.m_resp_generator.stop != nullptr ||
-            from.m_resp_generator.proceed != nullptr)
-            EException::raise(
-                "CHttpReply::Reset: "
-                "original request generator is already assigned");
+        if (from.m_State != eReplyInitialized)
+            NCBI_THROW(CPubseqGatewayException, eRequestAlreadyStarted,
+                       "Original request has alrady started");
+        if (from.m_Cancelled)
+            NCBI_THROW(CPubseqGatewayException, eRequestCancelled,
+                       "Original request is cancelled");
+        if (from.m_RespGenerator.stop != nullptr ||
+            from.m_RespGenerator.proceed != nullptr)
+            NCBI_THROW(CPubseqGatewayException,
+                       eRequestGeneratorAlreadyAssigned,
+                       "Original request generator is already assigned");
         *this = from;
     }
 
     void Clear(void)
     {
-        if (m_pending_rec)
-            m_pending_rec->Clear();
+        if (m_PendingRec)
+            m_PendingRec->Clear();
 
-        m_pending_rec = nullptr;
-        m_req = nullptr;
-        m_resp_generator = {0};
-        m_output_is_ready = false;
-        m_output_finished = false;
-        m_postponed = false;
-        m_cancelled = false;
-        m_state = stInitialized;
-        m_http_proto = nullptr;
-        m_http_conn = nullptr;
+        m_PendingRec = nullptr;
+        m_Req = nullptr;
+        m_RespGenerator = {0};
+        m_OutputIsReady = false;
+        m_OutputFinished = false;
+        m_Postponed = false;
+        m_Cancelled = false;
+        m_State = eReplyInitialized;
+        m_HttpProto = nullptr;
+        m_HttpConn = nullptr;
     }
 
     void AssignPendingRec(P &&  pending_rec)
     {
-        m_pending_rec = std::make_shared<P>(std::move(pending_rec));
+        m_PendingRec = std::make_shared<P>(std::move(pending_rec));
     }
 
     void SetContentLength(uint64_t  content_length)
     {
-        if (m_state == stInitialized) {
-            m_req->res.content_length = content_length;
+        if (m_State == eReplyInitialized) {
+            m_Req->res.content_length = content_length;
         } else {
-            EException::raise("Reply has already started");
+            NCBI_THROW(CPubseqGatewayException, eReplyAlreadyStarted,
+                       "Reply has already started");
         }
     }
 
     void Send(const char *  payload, size_t  payload_len,
               bool  is_persist, bool  is_last)
     {
-        h2o_iovec_t body;
+        h2o_iovec_t     body;
         if (payload_len == 0 || (is_persist && !is_last)) {
             body.base = (char*)payload;
             body.len = payload_len;
         } else {
-            body = h2o_strdup(&m_req->pool, payload, payload_len);
+            body = h2o_strdup(&m_Req->pool, payload, payload_len);
         }
         DoSend(&body, payload_len > 0 ? 1 : 0, is_last);
     }
@@ -182,84 +185,93 @@ public:
 
     void Send404(const char *  head, const char *  payload)
     {
-        if (!m_output_is_ready)
-            EException::raise("Output is not in ready state");
+        if (!m_OutputIsReady)
+            NCBI_THROW(CPubseqGatewayException, eOutputNotInReadyState,
+                       "Output is not in ready state");
 
-        if (m_state != stFinished) {
-            if (m_http_conn->IsClosed())
-                m_output_finished = true;
-            if (!m_output_finished) {
-                if (m_state == stInitialized) {
-                    h2o_send_error_404(m_req, head ?
+        if (m_State != eReplyFinished) {
+            if (m_HttpConn->IsClosed())
+                m_OutputFinished = true;
+            if (!m_OutputFinished) {
+                if (m_State == eReplyInitialized) {
+                    h2o_send_error_404(m_Req, head ?
                         head : "notfound", payload, 0);
                 } else {
-                    h2o_send(m_req, nullptr, 0, H2O_SEND_STATE_ERROR);
+                    h2o_send(m_Req, nullptr, 0, H2O_SEND_STATE_ERROR);
                 }
-                m_output_finished = true;
+                m_OutputFinished = true;
             }
-            m_state = stFinished;
+            m_State = eReplyFinished;
         }
     }
 
     void Send503(const char *  head, const char *  payload)
     {
-        if (!m_output_is_ready)
-            EException::raise("Output is not in ready state");
+        if (!m_OutputIsReady)
+            NCBI_THROW(CPubseqGatewayException, eOutputNotInReadyState,
+                       "Output is not in ready state");
 
-        if (m_state != stFinished) {
-            if (m_http_conn->IsClosed())
-                m_output_finished = true;
-            if (!m_output_finished) {
-                if (m_state == stInitialized) {
-                    h2o_send_error_503(m_req, head ?
+        if (m_State != eReplyFinished) {
+            if (m_HttpConn->IsClosed())
+                m_OutputFinished = true;
+            if (!m_OutputFinished) {
+                if (m_State == eReplyInitialized) {
+                    h2o_send_error_503(m_Req, head ?
                         head : "invalid", payload, 0);
                 } else {
-                    h2o_send(m_req, nullptr, 0, H2O_SEND_STATE_ERROR);
+                    h2o_send(m_Req, nullptr, 0, H2O_SEND_STATE_ERROR);
                 }
-                m_output_finished = true;
+                m_OutputFinished = true;
             }
-            m_state = stFinished;
+            m_State = eReplyFinished;
         }
     }
 
-    void Postpone(P&& pending_rec)
+    void Postpone(P &&  pending_rec)
     {
-        switch (m_state) {
-            case stInitialized:
-                if (m_postponed)
-                    EException::raise("Request has already been postponed");
+        switch (m_State) {
+            case eReplyInitialized:
+                if (m_Postponed)
+                    NCBI_THROW(CPubseqGatewayException,
+                               eRequestAlreadyPostponed,
+                               "Request has already been postponed");
                 break;
-            case stStarted:
+            case eReplyStarted:
                 // req holds address of generator
-                EException::raise(
-                    "Request that has already started can't be postponed");
+                NCBI_THROW(CPubseqGatewayException, eRequestCannotBePostponed,
+                           "Request that has already started "
+                           "can't be postponed");
                 break;
             default:
-                EException::raise("Request has already been finished");
+                NCBI_THROW(CPubseqGatewayException, eRequestAlreadyFinished,
+                           "Request has already been finished");
                 break;
         }
 
-        if (!m_http_conn)
-            EException::raise("Connection is not assigned");
+        if (!m_HttpConn)
+            NCBI_THROW(CPubseqGatewayException, eConnectionNotAssigned,
+                       "Connection is not assigned");
 
-        m_postponed = true;
-        m_http_conn->RegisterPending(std::move(pending_rec), *this);
+        m_Postponed = true;
+        m_HttpConn->RegisterPending(std::move(pending_rec), *this);
     }
 
     void PostponedStart(void)
     {
-        if (!m_postponed)
-            EException::raise("Request has not been postponed");
-        m_pending_rec->Start(*this);
+        if (!m_Postponed)
+            NCBI_THROW(CPubseqGatewayException, eRequestNotPostponed,
+                       "Request has not been postponed");
+        m_PendingRec->Start(*this);
     }
 
     void PeekPending(void)
     {
         try {
-            if (!m_postponed)
-                EException::raise("Request has not been postponed");
-            m_pending_rec->Peek(*this);
-        } catch (const std::exception& e) {
+            if (!m_Postponed)
+                NCBI_THROW(CPubseqGatewayException, eRequestNotPostponed,
+                           "Request has not been postponed");
+            m_PendingRec->Peek(*this);
+        } catch (const std::exception &  e) {
             Error(e.what());
         } catch (...) {
             Error("unexpected failure");
@@ -268,75 +280,78 @@ public:
 
     void CancelPending(void)
     {
-        if (!m_postponed)
-            EException::raise("Request has not been postponed");
+        if (!m_Postponed)
+            NCBI_THROW(CPubseqGatewayException, eRequestNotPostponed,
+                       "Request has not been postponed");
         DoCancel();
     }
 
-    State GetState(void) const
+    EReplyState GetState(void) const
     {
-        return m_state;
+        return m_State;
     }
 
     bool IsFinished(void) const
     {
-        return m_state >= stFinished;
+        return m_State >= eReplyFinished;
     }
 
     bool IsOutputReady(void) const
     {
-        return m_output_is_ready;
+        return m_OutputIsReady;
     }
 
     bool IsPostponed(void) const
     {
-        return m_postponed;
+        return m_Postponed;
     }
 
     P& GetPendingRec(void)
     {
-        if (!m_pending_rec)
-            EException::raise("PendingRec is not assigned");
-        return m_pending_rec.get();
+        if (!m_PendingRec)
+            NCBI_THROW(CPubseqGatewayException, ePendingRecNotAssigned,
+                       "PendingRec is not assigned");
+        return m_PendingRec.get();
     }
 
     h2o_req_t *  GetHandle(void) const
     {
-        return m_req;
+        return m_Req;
     }
 
     static void s_DataReady(void *  data)
     {
         CHttpReply<P> *     repl = static_cast<CHttpReply<P>*>(data);
 
-        if (repl && repl->m_http_proto) {
-            if (repl->m_data_ready.Trigger()) {
-                repl->m_http_proto->WakeWorker();
+        if (repl && repl->m_HttpProto) {
+            if (repl->m_DataReady.Trigger()) {
+                repl->m_HttpProto->WakeWorker();
             }
         }
     }
 
     h2o_iovec_t PrepadeChunk(const unsigned char *  data, unsigned int  size)
     {
-        if (m_req)
-            return h2o_strdup(&m_req->pool,
+        if (m_Req)
+            return h2o_strdup(&m_Req->pool,
                               reinterpret_cast<const char*>(data), size);
 
-        EException::raise("Request pool is not available");
+        NCBI_THROW(CPubseqGatewayException, eRequestPoolNotAvailable,
+                   "Request pool is not available");
     }
 
     bool CheckResetDataTriggered(void)
     {
-        return m_data_ready.CheckResetTriggered();
+        return m_DataReady.CheckResetTriggered();
     }
 
     void Error(const char *  what)
     {
-        switch (m_state) {
-            case stInitialized:
+        switch (m_State) {
+            case eReplyInitialized:
                 Send503("mulfunction", what);
                 break;
-            case stStarted:
+            case eReplyStarted:
                 Send(nullptr, 0, true, true); // break
                 break;
             default:;
@@ -349,60 +364,48 @@ private:
     {
     public:
         CDataTrigger(const CDataTrigger &  from) :
-            m_triggered(false)
+            m_Triggered(false)
         {
-            assert(!from.m_triggered.load());
+            assert(!from.m_Triggered.load());
         }
 
-        CDataTrigger& operator=(const CDataTrigger& from)
+        CDataTrigger &  operator=(const CDataTrigger &  from)
         {
-            assert(!from.m_triggered.load());
-            m_triggered = false;
+            assert(!from.m_Triggered.load());
+            m_Triggered = false;
             return *this;
         }
 
         CDataTrigger() :
-            m_triggered(false)
+            m_Triggered(false)
         {}
 
         bool Trigger(void)
         {
-            bool b = false;
-            return m_triggered.compare_exchange_weak(b, true);
+            bool        b = false;
+            return m_Triggered.compare_exchange_weak(b, true);
         }
 
         bool CheckResetTriggered(void)
         {
-            bool b = true;
-            return m_triggered.compare_exchange_weak(b, false);
+            bool        b = true;
+            return m_Triggered.compare_exchange_weak(b, false);
         }
 
-        std::atomic<bool>       m_triggered;
+        std::atomic<bool>       m_Triggered;
     };
-
-    h2o_req_t *             m_req;
-    h2o_generator_t         m_resp_generator;
-    bool                    m_output_is_ready;
-    bool                    m_output_finished;
-    bool                    m_postponed;
-    bool                    m_cancelled;
-    State                   m_state;
-    CHttpProto<P> *         m_http_proto;
-    CHttpConnection<P> *    m_http_conn;
-    std::shared_ptr<P>      m_pending_rec;
-    CDataTrigger            m_data_ready;
 
     void AssignGenerator(void)
     {
-        m_resp_generator.stop = s_StopCB;
-        m_resp_generator.proceed = s_ProceedCB;
+        m_RespGenerator.stop = s_StopCB;
+        m_RespGenerator.proceed = s_ProceedCB;
     }
 
     void NeedOutput(void)
     {
-        if (m_state == stFinished) {
+        if (m_State == eReplyFinished) {
             LOG3(("NeedOutput -> finished -> wake"));
-            m_http_proto->WakeWorker();
+            m_HttpProto->WakeWorker();
         } else {
             PeekPending();
         }
@@ -413,16 +416,16 @@ private:
     void StopCB(void)
     {
         LOG3(("CHttpReply::Stop"));
-        m_output_is_ready = true;
-        m_output_finished = true;
-        if (m_state != stFinished) {
+        m_OutputIsReady = true;
+        m_OutputFinished = true;
+        if (m_State != eReplyFinished) {
             LOG3(("CHttpReply::Stop: need cancel"));
             DoCancel();
             NeedOutput();
         }
 
-        m_resp_generator = {0};
-        m_req = nullptr;
+        m_RespGenerator = {0};
+        m_Req = nullptr;
     }
 
     // Called by HTTP daemon after data has already been sent and 
@@ -430,97 +433,113 @@ private:
     void ProceedCB(void)
     {
         LOG3(("CHttpReply::Proceed"));
-        m_output_is_ready = true;
+        m_OutputIsReady = true;
         NeedOutput();
     }
 
     static void s_StopCB(h2o_generator_t *  _generator, h2o_req_t *  req)
     {
         CHttpReply<P> *     repl = CONTAINER_OF(_generator, CHttpReply<P>,
-                                                m_resp_generator);
+                                                m_RespGenerator);
         repl->StopCB();
     }
 
     static void s_ProceedCB(h2o_generator_t *  _generator, h2o_req_t *  req)
     {
         CHttpReply<P> *     repl = CONTAINER_OF(_generator, CHttpReply<P>,
-                                                m_resp_generator);
+                                                m_RespGenerator);
         repl->ProceedCB();
     }
 
     void DoSend(h2o_iovec_t *  vec, size_t  count, bool  is_last)
     {
-        if (!m_http_conn)
-            EException::raise("Connection is not assigned");
+        if (!m_HttpConn)
+            NCBI_THROW(CPubseqGatewayException, eConnectionNotAssigned,
+                       "Connection is not assigned");
 
-        if (m_http_conn->IsClosed()) {
-            m_output_finished = true;
+        if (m_HttpConn->IsClosed()) {
+            m_OutputFinished = true;
             if (count > 0)
                 ERRLOG0(("attempt to send %lu chunks (islast=%d) "
                          "to a closed connection", count, (int)is_last));
             if (is_last) {
-                m_state = stFinished;
+                m_State = eReplyFinished;
             } else {
                 DoCancel();
             }
             return;
         }
 
-        if (!m_output_is_ready)
-            EException::raise("Output is not in ready state");
+        if (!m_OutputIsReady)
+            NCBI_THROW(CPubseqGatewayException, eOutputNotInReadyState,
+                       "Output is not in ready state");
 
         LOG5(("DoSend: %lu chunks, is_last: %d, state: %d",
-              count, (int)is_last, m_state));
-        switch (m_state) {
-            case stInitialized:
-                if (!m_cancelled) {
-                    m_state = stStarted;
-                    m_req->res.status = 200;
-                    m_req->res.reason = "OK";
+              count, (int)is_last, m_State));
+
+        switch (m_State) {
+            case eReplyInitialized:
+                if (!m_Cancelled) {
+                    m_State = eReplyStarted;
+                    m_Req->res.status = 200;
+                    m_Req->res.reason = "OK";
                     AssignGenerator();
-                    m_output_is_ready = false;
-                    h2o_start_response(m_req, &m_resp_generator);
+                    m_OutputIsReady = false;
+                    h2o_start_response(m_Req, &m_RespGenerator);
                 }
                 break;
-            case stStarted:
+            case eReplyStarted:
                 break;
-            case stFinished:
-                EException::raise("Request has already been finished");
+            case eReplyFinished:
+                NCBI_THROW(CPubseqGatewayException, eRequestAlreadyFinished,
+                           "Request has already been finished");
                 break;
         }
 
-        if (m_cancelled) {
-            if (!m_output_finished && m_output_is_ready)
+        if (m_Cancelled) {
+            if (!m_OutputFinished && m_OutputIsReady)
                 SendCancelled();
         } else {
-            m_output_is_ready = false;
-            h2o_send(m_req, vec, count,
+            m_OutputIsReady = false;
+            h2o_send(m_Req, vec, count,
                      is_last ? H2O_SEND_STATE_FINAL : H2O_SEND_STATE_IN_PROGRESS);
         }
 
         if (is_last) {
-            m_state = stFinished;
-            m_output_finished = true;
+            m_State = eReplyFinished;
+            m_OutputFinished = true;
         }
     }
 
     void SendCancelled(void)
     {
-        if (m_cancelled && m_output_is_ready && !m_output_finished)
+        if (m_Cancelled && m_OutputIsReady && !m_OutputFinished)
             Send503("cancelled", "request has been cancelled");
     }
 
     void DoCancel(void)
     {
-        m_cancelled = true;
-        if (m_http_conn->IsClosed())
-            m_output_finished = true;
+        m_Cancelled = true;
+        if (m_HttpConn->IsClosed())
+            m_OutputFinished = true;
 
-        if (!m_output_finished && m_output_is_ready)
+        if (!m_OutputFinished && m_OutputIsReady)
             SendCancelled();
-        if (m_pending_rec)
-            m_pending_rec->Cancel();
+        if (m_PendingRec)
+            m_PendingRec->Cancel();
     }
+
+    h2o_req_t *             m_Req;
+    h2o_generator_t         m_RespGenerator;
+    bool                    m_OutputIsReady;
+    bool                    m_OutputFinished;
+    bool                    m_Postponed;
+    bool                    m_Cancelled;
+    EReplyState             m_State;
+    CHttpProto<P> *         m_HttpProto;
+    CHttpConnection<P> *    m_HttpConn;
+    std::shared_ptr<P>      m_PendingRec;
+    CDataTrigger            m_DataReady;
 };
 
 
@@ -530,35 +549,35 @@ class CHttpConnection
 {
 public:
     CHttpConnection() :
-        m_http_max_backlog(1024),
-        m_http_max_pending(16),
-        m_is_closed(false)
+        m_HttpMaxBacklog(1024),
+        m_HttpMaxPending(16),
+        m_IsClosed(false)
     {}
 
     bool IsClosed(void) const
     {
-        return m_is_closed;
+        return m_IsClosed;
     }
 
     void Reset(void)
     {
-        if (!m_backlog.empty())
-            m_finished.splice(m_finished.cend(), m_backlog);
-        if (!m_pending.empty())
-            m_finished.splice(m_finished.cend(), m_pending);
-        m_is_closed = false;
+        if (!m_Backlog.empty())
+            m_Finished.splice(m_Finished.cend(), m_Backlog);
+        if (!m_Pending.empty())
+            m_Finished.splice(m_Finished.cend(), m_Pending);
+        m_IsClosed = false;
     }
 
     void OnClosedConnection(void)
     {
-        m_is_closed = true;
+        m_IsClosed = true;
         CancelAll();
     }
 
     void OnBeforeClosedConnection(void)
     {
         LOG3(("OnBeforeClosedConnection:"));
-        m_is_closed = true;
+        m_IsClosed = true;
         CancelAll();
     }
 
@@ -570,7 +589,7 @@ public:
 
     void PeekAsync(bool  chk_data_ready)
     {
-        for (auto& it : m_pending) {
+        for (auto &  it: m_Pending) {
             if (!chk_data_ready || it.CheckResetDataTriggered()) {
                 it.PeekPending();
             }
@@ -581,12 +600,12 @@ public:
 
     void RegisterPending(P &&  pending_rec, CHttpReply<P> &  hresp)
     {
-        if (m_pending.size() < m_http_max_pending) {
-            CHttpReply<P>& req = RegisterPending(hresp, m_pending);
+        if (m_Pending.size() < m_HttpMaxPending) {
+            CHttpReply<P>& req = RegisterPending(hresp, m_Pending);
             req.AssignPendingRec(std::move(pending_rec));
             req.PostponedStart();
-        } else if (m_backlog.size() < m_http_max_backlog) {
-            CHttpReply<P>& req = RegisterPending(hresp, m_backlog);
+        } else if (m_Backlog.size() < m_HttpMaxBacklog) {
+            CHttpReply<P>& req = RegisterPending(hresp, m_Backlog);
             req.AssignPendingRec(std::move(pending_rec));
         } else {
             hresp.Send503("mulfunction", "too many pending requests");
@@ -595,7 +614,7 @@ public:
 
     CHttpReply<P> * FindPendingRequest(h2o_req_t *  req)
     {
-        for (auto &  it: m_pending) {
+        for (auto &  it: m_Pending) {
             if (it.GetHandle() == req)
                 return &it;
         }
@@ -610,20 +629,20 @@ public:
     }
 
 private:
-    unsigned short              m_http_max_backlog;
-    unsigned short              m_http_max_pending;
-    bool                        m_is_closed;
+    unsigned short              m_HttpMaxBacklog;
+    unsigned short              m_HttpMaxPending;
+    bool                        m_IsClosed;
 
-    std::list<CHttpReply<P>>    m_backlog;
-    std::list<CHttpReply<P>>    m_pending;
-    std::list<CHttpReply<P>>    m_finished;
+    std::list<CHttpReply<P>>    m_Backlog;
+    std::list<CHttpReply<P>>    m_Pending;
+    std::list<CHttpReply<P>>    m_Finished;
 
     void CancelAll(void)
     {
-        while (!m_pending.empty()) {
+        while (!m_Pending.empty()) {
             MaintainFinished();
-            for (auto &  it: m_pending) {
-                if (it.GetState() < CHttpReply<P>::stFinished) {
+            for (auto &  it: m_Pending) {
+                if (it.GetState() < CHttpReply<P>::eReplyFinished) {
                     it.CancelPending();
                     it.PeekPending();
                 }
@@ -636,14 +655,14 @@ private:
     void UnregisterPending(typename std::list<CHttpReply<P>>::iterator &  it)
     {
         it->Clear();
-        m_finished.splice(m_finished.cend(), m_pending, it);
+        m_Finished.splice(m_Finished.cend(), m_Pending, it);
     }
 
     CHttpReply<P> &  RegisterPending(CHttpReply<P> &  hresp,
                                      std::list<CHttpReply<P>> &  list)
     {
-        if (m_finished.size() > 0) {
-            list.splice(list.cend(), m_finished, m_finished.begin());
+        if (m_Finished.size() > 0) {
+            list.splice(list.cend(), m_Finished, m_Finished.begin());
             list.back().Reset(hresp);
         } else {
             list.emplace_back(hresp);
@@ -653,9 +672,9 @@ private:
 
     void MaintainFinished(void)
     {
-        auto    it = m_pending.begin();
-        while (it != m_pending.end()) {
-            if (it->GetState() >= CHttpReply<P>::stFinished) {
+        auto    it = m_Pending.begin();
+        while (it != m_Pending.end()) {
+            if (it->GetState() >= CHttpReply<P>::eReplyFinished) {
                 auto    next = it;
                 ++next;
                 UnregisterPending(it);
@@ -668,9 +687,9 @@ private:
 
     void MaintainBacklog(void)
     {
-        while (m_pending.size() < m_http_max_pending && !m_backlog.empty()) {
-            auto    it = m_backlog.begin();
-            m_pending.splice(m_pending.cend(), m_backlog, it);
+        while (m_Pending.size() < m_HttpMaxPending && !m_Backlog.empty()) {
+            auto    it = m_Backlog.begin();
+            m_Pending.splice(m_Pending.cend(), m_Backlog, it);
             it->PostponedStart();
         }
     }
@@ -682,57 +701,49 @@ class CHttpRequest;
 class CHttpRequestParser
 {
 public:
-    virtual void Parse(CHttpRequest &  Req,
-                       char *  Data, size_t  Length) const = 0;
+    virtual void Parse(CHttpRequest &  req,
+                       char *  data, size_t  length) const = 0;
 };
 
 
 class CHttpGetParser: public CHttpRequestParser
 {
-    void Parse(CHttpRequest &  Req,
-               char *  Data, size_t  Length) const override;
+    void Parse(CHttpRequest &  req,
+               char *  data, size_t  length) const override;
 };
 
 
 class CHttpPostParser: public CHttpRequestParser
 {
 public:
-    virtual bool Supports(const char *  ContentType,
-                          size_t  ContentTypeLen) const = 0;
+    virtual bool Supports(const char *  content_type,
+                          size_t  content_type_len) const = 0;
 };
 
 
 class CHttpRequest
 {
 private:
-    h2o_req_t *                 m_req;
-    CQueryParam                 m_params[MAX_QUERY_PARAMS];
-    char                        m_raw_buf[QUERY_PARAMS_RAW_BUF_SIZE];
-    size_t                      m_param_count;
-    CHttpPostParser*            m_post_parser;
-    CHttpRequestParser *        m_get_parser;
-    bool                        m_param_parsed;
-
     void ParseParams(void);
     bool ContentTypeIsDdRpc(void);
 
 public:
     CHttpRequest(h2o_req_t *  req) :
-        m_req(req),
-        m_param_count(0),
-        m_post_parser(nullptr),
-        m_get_parser(nullptr),
-        m_param_parsed(false)
+        m_Req(req),
+        m_ParamCount(0),
+        m_PostParser(nullptr),
+        m_GetParser(nullptr),
+        m_ParamParsed(false)
     {}
 
-    void SetPostParser(CHttpPostParser *  Prs)
+    void SetPostParser(CHttpPostParser *  parser)
     {
-        m_post_parser = Prs;
+        m_PostParser = parser;
     }
 
-    void SetGetParser(CHttpRequestParser *  Prs)
+    void SetGetParser(CHttpRequestParser *  parser)
     {
-        m_get_parser = Prs;
+        m_GetParser = parser;
     }
 
     bool GetParam(const char *  name, size_t  len, bool  required,
@@ -740,27 +751,36 @@ public:
 
     size_t ParamCount(void) const
     {
-        return m_param_count;
+        return m_ParamCount;
     }
 
     CQueryParam *  AddParam(void)
     {
-        if (m_param_count < MAX_QUERY_PARAMS)
-            return &m_params[m_param_count++];
+        if (m_ParamCount < MAX_QUERY_PARAMS)
+            return &m_Params[m_ParamCount++];
         return nullptr;
     }
 
     void RevokeParam(void)
     {
-        if (m_param_count > 0)
-            m_param_count--;
+        if (m_ParamCount > 0)
+            m_ParamCount--;
     }
 
-    void GetRawBuffer(char **  Buf, ssize_t *  Len)
+    void GetRawBuffer(char **  buf, ssize_t *  len)
     {
-        *Buf = m_raw_buf;
-        *Len = sizeof(m_raw_buf);
+        *buf = m_RawBuf;
+        *len = sizeof(m_RawBuf);
     }
+
+private:
+    h2o_req_t *                 m_Req;
+    CQueryParam                 m_Params[MAX_QUERY_PARAMS];
+    char                        m_RawBuf[QUERY_PARAMS_RAW_BUF_SIZE];
+    size_t                      m_ParamCount;
+    CHttpPostParser *           m_PostParser;
+    CHttpRequestParser *        m_GetParser;
+    bool                        m_ParamParsed;
 };
 
 
@@ -771,28 +791,29 @@ using HttpHandlerFunction_t = std::function<void(CHttpRequest &  req,
 template<typename P>
 struct CHttpGateHandler
 {
-    struct st_h2o_handler_t             h2o_handler; // must be first
-    HttpHandlerFunction_t<P> *          m_handler;
-    TSL::CTcpDaemon<CHttpProto<P>,
-                    CHttpConnection<P>,
-                    CHttpDaemon<P>> *   m_tcpd;
-    CHttpDaemon<P> *                    m_httpd;
-    CHttpRequestParser *                m_get_parser;
-    CHttpPostParser *                   m_post_parser;
-
     void Init(HttpHandlerFunction_t<P> *  handler,
               TSL::CTcpDaemon<CHttpProto<P>, CHttpConnection<P>,
               CHttpDaemon<P>> *  tcpd, CHttpDaemon<P> *  httpd,
               CHttpRequestParser *  get_parser,
               CHttpPostParser *  post_parser)
     {
-        m_handler = handler;
-        m_tcpd = tcpd;
-        m_httpd = httpd;
-        m_get_parser = get_parser;
-        m_post_parser = post_parser;
+        m_Handler = handler;
+        m_Tcpd = tcpd;
+        m_Httpd = httpd;
+        m_GetParser = get_parser;
+        m_PostParser = post_parser;
     }
+
+    struct st_h2o_handler_t             m_H2oHandler; // must be first
+    HttpHandlerFunction_t<P> *          m_Handler;
+    TSL::CTcpDaemon<CHttpProto<P>,
+                    CHttpConnection<P>,
+                    CHttpDaemon<P>> *   m_Tcpd;
+    CHttpDaemon<P> *                    m_Httpd;
+    CHttpRequestParser *                m_GetParser;
+    CHttpPostParser *                   m_PostParser;
 };
+
 
 
 template<typename P>
@@ -803,11 +824,11 @@ public:
                                      CHttpConnection<P>, CHttpDaemon<P>>;
 
     CHttpProto(CHttpDaemon<P> & daemon) :
-        m_worker(nullptr),
-        m_daemon(daemon),
-        m_http_ctx({0}),
-        m_h2o_ctx_initialized(false),
-        m_http_accept_ctx({0})
+        m_Worker(nullptr),
+        m_Daemon(daemon),
+        m_HttpCtx({0}),
+        m_H2oCtxInitialized(false),
+        m_HttpAcceptCtx({0})
     {
         LOG3(("CHttpProto::CHttpProto"));
     }
@@ -822,36 +843,36 @@ public:
 
     void ThreadStart(uv_loop_t *  loop, worker_t *  worker)
     {
-        m_http_accept_ctx.ctx = &m_http_ctx;
-        m_http_accept_ctx.hosts = m_daemon.HttpCfg()->hosts;
-        h2o_context_init(&m_http_ctx, loop, m_daemon.HttpCfg());
-        m_worker = worker;
-        m_h2o_ctx_initialized = true;
+        m_HttpAcceptCtx.ctx = &m_HttpCtx;
+        m_HttpAcceptCtx.hosts = m_Daemon.HttpCfg()->hosts;
+        h2o_context_init(&m_HttpCtx, loop, m_Daemon.HttpCfg());
+        m_Worker = worker;
+        m_H2oCtxInitialized = true;
     }
 
     void ThreadStop(void)
     {
-        m_worker = nullptr;
-        if (m_h2o_ctx_initialized) {
-            h2o_context_dispose(&m_http_ctx);
-            m_h2o_ctx_initialized = false;
+        m_Worker = nullptr;
+        if (m_H2oCtxInitialized) {
+            h2o_context_dispose(&m_HttpCtx);
+            m_H2oCtxInitialized = false;
         }
         // h2o_mem_dispose_recycled_allocators();
     }
 
     void OnNewConnection(uv_stream_t *  conn, CHttpConnection<P> *  http_conn,
-                         uv_close_cb  CloseCB)
+                         uv_close_cb  close_cb)
     {
         int                 fd;
-        h2o_socket_t *      sock = h2o_uv_socket_create(conn, CloseCB);
+        h2o_socket_t *      sock = h2o_uv_socket_create(conn, close_cb);
 
         if (!sock) {
             ERRLOG0(("h2o layer failed to create socket"));
-            uv_close((uv_handle_t*)conn, CloseCB);
+            uv_close((uv_handle_t*)conn, close_cb);
             return;
         }
 
-        h2o_accept(&m_http_accept_ctx, sock);
+        h2o_accept(&m_HttpAcceptCtx, sock);
         if (uv_fileno(reinterpret_cast<uv_handle_t*>(conn), &fd) == 0) {
             int                 no = -1;
             struct linger       linger = {0, 0};
@@ -876,20 +897,20 @@ public:
 
     void WakeWorker(void)
     {
-        if (m_worker)
-            m_worker->WakeWorker();
+        if (m_Worker)
+            m_Worker->WakeWorker();
     }
 
     void OnTimer(void)
     {
-        auto &      lst = m_worker->GetConnList();
+        auto &      lst = m_Worker->GetConnList();
         for (auto &  it: lst)
             std::get<1>(it).OnTimer();
     }
 
     void OnAsyncWork(bool  cancel)
     {
-        auto &      lst = m_worker->GetConnList();
+        auto &      lst = m_Worker->GetConnList();
         for (auto &  it: lst)
             std::get<1>(it).PeekAsync(true);
     }
@@ -909,19 +930,21 @@ public:
         CHttpReply<P>           hresp(req, this, http_conn);
 
         try {
-            if (rh->m_get_parser)
-                hreq.SetGetParser(rh->m_get_parser);
-            if (rh->m_post_parser)
-                hreq.SetPostParser(rh->m_post_parser);
-            (*rh->m_handler)(hreq, hresp);
+            if (rh->m_GetParser)
+                hreq.SetGetParser(rh->m_GetParser);
+            if (rh->m_PostParser)
+                hreq.SetPostParser(rh->m_PostParser);
+            (*rh->m_Handler)(hreq, hresp);
             switch (hresp.GetState()) {
-                case CHttpReply<P>::stFinished:
+                case CHttpReply<P>::eReplyFinished:
                     return 0;
-                case CHttpReply<P>::stStarted:
-                case CHttpReply<P>::stInitialized:
+                case CHttpReply<P>::eReplyStarted:
+                case CHttpReply<P>::eReplyInitialized:
                     if (!hresp.IsPostponed())
-                        EException::raise("Unfinished request hasn't "
-                                          "been scheduled (postponed)");
+                        NCBI_THROW(CPubseqGatewayException,
+                                   eUnfinishedRequestNotScheduled,
+                                   "Unfinished request hasn't "
+                                   "been scheduled (postponed)");
                     return 0;
                 default:
                     assert(false);
@@ -932,7 +955,7 @@ public:
 
             if (repl == nullptr)
                 repl = &hresp;
-            if (repl->GetState() == CHttpReply<P>::stInitialized) {
+            if (repl->GetState() == CHttpReply<P>::eReplyInitialized) {
                 repl->Send503("mulfunction", e.what());
                 return 0;
             }
@@ -942,7 +965,7 @@ public:
 
             if (repl == nullptr)
                 repl = &hresp;
-            if (repl->GetState() == CHttpReply<P>::stInitialized) {
+            if (repl->GetState() == CHttpReply<P>::eReplyInitialized) {
                 repl->Send503("mulfunction", "unexpected failure");
                 return 0;
             }
@@ -951,31 +974,31 @@ public:
     }
 
 private:
-    worker_t *              m_worker;
-    CHttpDaemon<P> &        m_daemon;
-    h2o_context_t           m_http_ctx;
-    bool                    m_h2o_ctx_initialized;
-    h2o_accept_ctx_t        m_http_accept_ctx;
+    worker_t *              m_Worker;
+    CHttpDaemon<P> &        m_Daemon;
+    h2o_context_t           m_HttpCtx;
+    bool                    m_H2oCtxInitialized;
+    h2o_accept_ctx_t        m_HttpAcceptCtx;
 };
 
 
 template<typename P>
 struct CHttpHandler
 {
-    std::string                 path;
-    HttpHandlerFunction_t<P>    handler;
-    CHttpRequestParser *        get_parser;
-    CHttpPostParser *           post_parser;
-
     CHttpHandler(const std::string &  path,
                  HttpHandlerFunction_t<P> &&  handler,
                  CHttpRequestParser *  get_parser,
                  CHttpPostParser *  post_parser) :
-        path(path),
-        handler(std::move(handler)),
-        get_parser(get_parser),
-        post_parser(post_parser)
+        m_Path(path),
+        m_Handler(std::move(handler)),
+        m_GetParser(get_parser),
+        m_PostParser(post_parser)
     {}
+
+    std::string                 m_Path;
+    HttpHandlerFunction_t<P>    m_Handler;
+    CHttpRequestParser *        m_GetParser;
+    CHttpPostParser *           m_PostParser;
 };
 
 
@@ -983,78 +1006,79 @@ template<typename P>
 class CHttpDaemon
 {
 public:
-    const unsigned short    ANY_PORT = 65535;
+    const unsigned short    kAnyPort = 65535;
 
-    CHttpDaemon(const std::vector<CHttpHandler<P>> &  Handlers,
-                const std::string &  TcpAddress, unsigned short  TcpPort,
-                unsigned short  TcpWorkers, unsigned short  TcpBackLog,
-                unsigned short  TcpMaxConnections) :
-        m_http_cfg({0}),
-        m_http_cfg_initialized(false),
-        m_handlers(Handlers)
+    CHttpDaemon(const std::vector<CHttpHandler<P>> &  handlers,
+                const std::string &  tcp_address, unsigned short  tcp_port,
+                unsigned short  tcp_workers, unsigned short  tcp_backlog,
+                unsigned short  tcp_max_connections) :
+        m_HttpCfg({0}),
+        m_HttpCfgInitialized(false),
+        m_Handlers(handlers)
     {
-        m_tcp_daemon.reset(
+        m_TcpDaemon.reset(
             new TSL::CTcpDaemon<CHttpProto<P>, CHttpConnection<P>,
-                                CHttpDaemon<P>>(TcpAddress, TcpPort, TcpWorkers,
-                                                TcpBackLog, TcpMaxConnections));
+                                CHttpDaemon<P>>(tcp_address, tcp_port,
+                                                tcp_workers, tcp_backlog,
+                                                tcp_max_connections));
 
     /*
         SSL_load_error_strings();
         SSL_library_init();
         OpenSSL_add_all_algorithms();
 
-        m_http_accept_ctx.ssl_ctx = SSL_CTX_new(SSLv23_server_method());
-        SSL_CTX_set_options(m_http_accept_ctx.ssl_ctx, SSL_OP_NO_SSLv2);
+        m_HttpAcceptCtx.ssl_ctx = SSL_CTX_new(SSLv23_server_method());
+        SSL_CTX_set_options(m_HttpAcceptCtx.ssl_ctx, SSL_OP_NO_SSLv2);
     */
-        h2o_config_init(&m_http_cfg);
-        m_http_cfg_initialized = true;
+        h2o_config_init(&m_HttpCfg);
+        m_HttpCfgInitialized = true;
     }
 
     ~CHttpDaemon()
     {
-        if (m_http_cfg_initialized) {
-            m_http_cfg_initialized = false;
-            h2o_config_dispose(&m_http_cfg);
+        if (m_HttpCfgInitialized) {
+            m_HttpCfgInitialized = false;
+            h2o_config_dispose(&m_HttpCfg);
         }
-//        h2o_mem_dispose_recycled_allocators();
+        // h2o_mem_dispose_recycled_allocators();
     }
 
     void Run(std::function<void(TSL::CTcpDaemon<CHttpProto<P>,
                                                 CHttpConnection<P>,
-                                                CHttpDaemon<P>>&)> OnWatchDog = nullptr)
+                                                CHttpDaemon<P>>&)> on_watch_dog = nullptr)
     {
         h2o_hostconf_t *    hostconf = h2o_config_register_host(
-                &m_http_cfg, h2o_iovec_init(H2O_STRLIT("default")), ANY_PORT);
+                &m_HttpCfg, h2o_iovec_init(H2O_STRLIT("default")), kAnyPort);
 
-        for (auto &  it: m_handlers) {
+        for (auto &  it: m_Handlers) {
             h2o_pathconf_t *        pathconf = h2o_config_register_path(
-                                                hostconf, it.path.c_str(), 0);
+                                                hostconf, it.m_Path.c_str(), 0);
             h2o_chunked_register(pathconf);
 
             h2o_handler_t *         handler = h2o_create_handler(
                                         pathconf, sizeof(CHttpGateHandler<P>));
             CHttpGateHandler<P> *   rh = reinterpret_cast<CHttpGateHandler<P>*>(handler);
 
-            rh->Init(&it.handler, m_tcp_daemon.get(), this, it.get_parser,
-                     it.post_parser);
+            rh->Init(&it.m_Handler, m_TcpDaemon.get(), this, it.m_GetParser,
+                     it.m_PostParser);
             handler->on_req = s_OnHttpRequest;
         }
 
-        m_tcp_daemon->Run(*this, OnWatchDog);
+        m_TcpDaemon->Run(*this, on_watch_dog);
     }
 
     h2o_globalconf_t *  HttpCfg(void)
     {
-        return &m_http_cfg;
+        return &m_HttpCfg;
     }
 
 private:
     std::unique_ptr<TSL::CTcpDaemon<CHttpProto<P>,
                                     CHttpConnection<P>,
-                                    CHttpDaemon<P>>>    m_tcp_daemon;
-    h2o_globalconf_t                                    m_http_cfg;
-    bool                                                m_http_cfg_initialized;
-    std::vector<CHttpHandler<P>>                        m_handlers;
+                                    CHttpDaemon<P>>>    m_TcpDaemon;
+    h2o_globalconf_t                                    m_HttpCfg;
+    bool                                                m_HttpCfgInitialized;
+    std::vector<CHttpHandler<P>>                        m_Handlers;
 
     static int s_OnHttpRequest(h2o_handler_t *  self, h2o_req_t *  req)
     {
@@ -1062,7 +1086,7 @@ private:
             CHttpGateHandler<P> *rh = reinterpret_cast<CHttpGateHandler<P>*>(self);
             CHttpProto<P> *proto = nullptr;
 
-            if (rh->m_tcpd->OnRequest(&proto)) {
+            if (rh->m_Tcpd->OnRequest(&proto)) {
                 return proto->OnHttpRequest(rh, req);
             }
         } catch (const std::exception &  e) {

@@ -44,7 +44,9 @@
 
 #include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
 #include <objtools/pubseq_gateway/impl/rpc/UvHelper.hpp>
-#include <objtools/pubseq_gateway/impl/rpc/UtilException.hpp>
+
+#include "pubseq_gateway_exception.hpp"
+USING_NCBI_SCOPE;
 
 namespace TSL {
 
@@ -114,7 +116,8 @@ public:
             err_code = uv_thread_create(&worker->m_thread, s_WorkerExecute,
                                         static_cast<void*>(worker));
             if (err_code != 0)
-                EUvException::raise("uv_thread_create failed", err_code);
+                NCBI_THROW2(CPubseqGatewayUVException, eUvThreadCreateFailure,
+                            "uv_thread_create failed", err_code);
         }
         m_on_watch_dog = OnWatchDog;
         m_daemon->m_workers = this;
@@ -249,7 +252,8 @@ struct CTcpWorker
     {
         try {
             if (m_internal)
-                EException::raise("Worker has already been started");
+                NCBI_THROW(CPubseqGatewayException, eWorkerAlreadyStarted,
+                           "Worker has already been started");
 
             m_internal.reset(new CTcpWorkerInternal_t);
 
@@ -262,31 +266,36 @@ struct CTcpWorker
                                  m_exp);
             // LOG1(("worker %d uv_import: %d", worker->m_id, err_code));
             if (err_code != 0)
-                EUvException::raise("uv_import failed", err_code);
+                NCBI_THROW2(CPubseqGatewayUVException, eUvImportFailure,
+                            "uv_import failed", err_code);
 
             m_internal->m_listener.data = this;
             err_code = uv_listen(reinterpret_cast<uv_stream_t*>(&m_internal->m_listener),
                                  m_daemon->m_backlog, s_OnTcpConnection);
             if (err_code != 0)
-                EUvException::raise("uv_listen failed", err_code);
+                NCBI_THROW2(CPubseqGatewayUVException, eUvListenFailure,
+                            "uv_listen failed", err_code);
             m_internal->m_listener.data = this;
 
             err_code = uv_async_init(m_internal->m_loop.Handle(),
                                      &m_internal->m_async_stop, s_OnAsyncStop);
             if (err_code != 0)
-                EUvException::raise("uv_async_init failed", err_code);
+                NCBI_THROW2(CPubseqGatewayUVException, eUvAsyncInitFailure,
+                            "uv_async_init failed", err_code);
             m_internal->m_async_stop.data = this;
 
             err_code = uv_async_init(m_internal->m_loop.Handle(),
                                      &m_internal->m_async_work, s_OnAsyncWork);
             if (err_code != 0)
-                EUvException::raise("uv_async_init failed", err_code);
+                NCBI_THROW2(CPubseqGatewayUVException, eUvAsyncInitFailure,
+                            "uv_async_init failed", err_code);
             m_internal->m_async_work.data = this;
 
             err_code = uv_timer_init(m_internal->m_loop.Handle(),
                                      &m_internal->m_timer);
             if (err_code != 0)
-                EUvException::raise("uv_timer_init failed", err_code);
+                NCBI_THROW2(CPubseqGatewayUVException, eUvTimerInitFailure,
+                            "uv_timer_init failed", err_code);
             m_internal->m_timer.data = this;
 
             uv_timer_start(&m_internal->m_timer, s_OnTimer, 1000, 1000);
@@ -297,9 +306,12 @@ struct CTcpWorker
 
             err_code = uv_run(m_internal->m_loop.Handle(), UV_RUN_DEFAULT);
             LOG2(("uv_run (1) worker %d returned %d", m_id, err_code));
-        } catch (const EException &  exc) {
-            m_error = exc.code();
-            m_last_error = exc.what();
+        } catch (const CPubseqGatewayUVException &  exc) {
+            m_error = exc.GetUVLibraryErrorCode();
+            m_last_error = exc.GetMsg();
+        } catch (const CException &  exc) {
+            m_error = exc.GetErrCode();
+            m_last_error = exc.GetMsg();
         }
 
         m_shuttingdown = true;
@@ -572,15 +584,18 @@ public:
         int         rc;
 
         if (m_address.empty())
-            EException::raise("Failed to start daemon: address is empty");
+            NCBI_THROW(CPubseqGatewayException, eAddressEmpty,
+                       "Failed to start daemon: address is empty");
         if (m_port == 0)
-            EException::raise("Failed to start daemon: port is not specified");
+            NCBI_THROW(CPubseqGatewayException, ePortNotSpecified,
+                       "Failed to start daemon: port is not specified");
 
         signal(SIGPIPE, SIG_IGN);
         if (CTcpWorkersList<P, U, D>::s_thread_worker_key == 0) {
             rc = uv_key_create(&CTcpWorkersList<P, U, D>::s_thread_worker_key);
             if (rc != 0)
-                EUvException::raise("uv_key_create failed", rc);
+                NCBI_THROW2(CPubseqGatewayUVException, eUvKeyCreateFailure,
+                            "uv_key_create failed", rc);
         }
 
         CTcpWorkersList<P, U, D>    workers(this);
@@ -600,13 +615,15 @@ public:
                                  reinterpret_cast<uv_stream_t*>(listener.Handle()),
                                  IPC_PIPE_NAME, m_num_workers, &exp);
             if (rc)
-                EUvException::raise("uv_export_start failed", rc);
+                NCBI_THROW2(CPubseqGatewayUVException, eUvExportStartFailure,
+                            "uv_export_start failed", rc);
 
             workers.Start(exp, m_num_workers, d, OnWatchDog);
 
             rc = uv_export_finish(exp);
             if (rc)
-                EUvException::raise("uv_export_wait failed", rc);
+                NCBI_THROW2(CPubseqGatewayUVException, eUvExportWaitFailure,
+                            "uv_export_wait failed", rc);
 
             listener.Close(nullptr);
 

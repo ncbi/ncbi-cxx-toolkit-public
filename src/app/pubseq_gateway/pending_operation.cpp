@@ -31,6 +31,7 @@
 #include <ncbi_pch.hpp>
 
 #include "pending_operation.hpp"
+#include "pubseq_gateway_exception.hpp"
 
 
 CPendingOperation::CPendingOperation(string &&  sat_name, int  sat_key,
@@ -94,7 +95,7 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
                 ERRLOG1(("Unexpected data received while the output has finished, ignoring"));
                 return;
             }
-            if (resp.GetState() == HST::CHttpReply<CPendingOperation>::stInitialized) {
+            if (resp.GetState() == HST::CHttpReply<CPendingOperation>::eReplyInitialized) {
                 resp.SetContentLength(m_Loader->GetBlobSize());
             }
             if (Data && Size > 0)
@@ -147,13 +148,15 @@ void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp)
                 m_len -= sz;
                 if (!is_final) {
                     if (!m_wake)
-                        EAccVerException::raise("WakeCB is not assigned");
+                        NCBI_THROW(CPubseqGatewayException, eNoWakeCallback,
+                                   "WakeCB is not assigned");
                     m_wake();
                 }
             }
             else {
                 if (!m_wake)
-                    EAccVerException::raise("WakeCB is not assigned");
+                    NCBI_THROW(CPubseqGatewayException, eNoWakeCallback,
+                               "WakeCB is not assigned");
                 resp.SetOnReady(m_wake);
             }
 */

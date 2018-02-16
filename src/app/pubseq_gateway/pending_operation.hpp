@@ -40,7 +40,7 @@ using namespace std;
 #include <objtools/pubseq_gateway/impl/cassandra/CassFactory.hpp>
 USING_IDBLOB_SCOPE;
 
-#include "HttpServerTransport.hpp"
+#include "http_server_transport.hpp"
 
 #include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
 #include <objtools/pubseq_gateway/impl/diag/AppPerf.hpp>

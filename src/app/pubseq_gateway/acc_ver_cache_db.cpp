@@ -33,9 +33,11 @@
 #include <sys/stat.h>
 #include <sstream>
 
-#include "AccVerCacheDB.hpp"
-#include <objtools/pubseq_gateway/impl/rpc/UtilException.hpp>
+#include "acc_ver_cache_db.hpp"
+#include "pubseq_gateway_exception.hpp"
 
+
+USING_NCBI_SCOPE;
 using namespace std;
 
 #define DBI_COUNT       6
@@ -70,9 +72,11 @@ void CAccVerCacheDB::Open(const string &  db_path,
 {
     m_DbPath = db_path;
     if (m_DbPath.empty())
-        EAccVerException::raise("DB path is not specified");
+        NCBI_THROW(CPubseqGatewayException, eNoDbPath,
+                   "DB path is not specified");
     if (initialize && readonly)
-        EAccVerException::raise("DB create & readonly flags are mutually exclusive");
+        NCBI_THROW(CPubseqGatewayException, eDbFlagsError,
+                   "DB create & readonly flags are mutually exclusive");
 
     int             stat_rv;
     bool            need_sync = !initialize;
@@ -83,7 +87,8 @@ void CAccVerCacheDB::Open(const string &  db_path,
         /* file does not exist */
         need_sync = false;
         if (readonly || !initialize)
-            EAccVerException::raise("DB file is not initialized. Run full update first");
+            NCBI_THROW(CPubseqGatewayException, eDbNotInitialized,
+                       "DB file is not initialized. Run full update first");
     }
 
     m_Env.set_max_dbs(DBI_COUNT);
@@ -136,7 +141,8 @@ DDRPC::DataColumns CAccVerCacheDB::Columns()
 
     rtxn.commit();
     if (!found)
-        EAccVerException::raise("DB file is not updated. Run full update first");
+        NCBI_THROW(CPubseqGatewayException, eDbNotUpdated,
+                   "DB file is not updated. Run full update first");
 
     stringstream        ss(data);
     DDRPC::DataColumns  rv(ss);

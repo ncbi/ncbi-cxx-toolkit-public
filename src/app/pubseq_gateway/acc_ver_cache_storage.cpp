@@ -32,9 +32,12 @@
 
 #include <string>
 
-#include "AccVerCacheStorage.hpp"
-#include "AccVerCacheDB.hpp"
+#include "acc_ver_cache_storage.hpp"
+#include "acc_ver_cache_db.hpp"
+#include "pubseq_gateway_exception.hpp"
 
+
+USING_NCBI_SCOPE;
 
 /** CAccVerCacheStorage */
 
@@ -71,7 +74,9 @@ bool CAccVerCacheStorage::Update(const string &  key,
                                  const string &  data, bool  check_if_exists)
 {
     if (m_IsReadOnly)
-        EAccVerException::raise("Can not update: DB open in readonly mode");
+        NCBI_THROW(CPubseqGatewayException, eCannotUpdateDb,
+                   "Can not update: DB open in readonly mode");
+
     if (check_if_exists) {
         auto        rtxn = lmdb::txn::begin(m_Env, nullptr, MDB_RDONLY);
         string      ex_data;

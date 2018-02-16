@@ -43,12 +43,12 @@
 #include <objtools/pubseq_gateway/impl/cassandra/CassBlobOp.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/CassFactory.hpp>
 
-#include <objtools/pubseq_gateway/impl/rpc/UtilException.hpp>
 #include <objtools/pubseq_gateway/impl/rpc/DdRpcDataPacker.hpp>
 
-#include "AccVerCacheDB.hpp"
+#include "acc_ver_cache_db.hpp"
 #include "pending_operation.hpp"
-#include "HttpServerTransport.hpp"
+#include "http_server_transport.hpp"
+#include "pubseq_gateway_exception.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -115,9 +115,10 @@ public:
         const CNcbiRegistry &   registry = GetConfig();
 
         if (!registry.HasEntry("SERVER", "port"))
-            EAccVerException::raise(
-                "[SERVER]/port value is not fond in the configuration file. "
-                "The port must be provided to run the server. Exiting.");
+            NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+                       "[SERVER]/port value is not fond in the configuration "
+                       "file. The port must be provided to run the server. "
+                       "Exiting.");
 
         m_DbPath = registry.GetString("LMDB_CACHE", "dbfile", "");
         m_HttpPort = registry.GetInt("SERVER", "port", 0);
@@ -247,7 +248,8 @@ public:
             bool    is_good = CProcess::Daemonize(kEmptyCStr,
                                                   CProcess::fDontChroot);
             if (!is_good)
-                EAccVerException::raise("Error during daemonization");
+                NCBI_THROW(CPubseqGatewayException, eDaemonizationFailed,
+                           "Error during daemonization");
         }
 
         OpenDb(false, true);
@@ -314,18 +316,19 @@ private:
     void x_ValidateArgs(void)
     {
         if (m_SatNames.size() == 0)
-            EAccVerException::raise("[satnames] section in ini file is empty");
+            NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+                       "[satnames] section in ini file is empty");
 
         if (m_DbPath.empty())
-            EAccVerException::raise("[LMDB_CACHE]/dbfile "
-                                    "is not found in the ini file");
+            NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+                       "[LMDB_CACHE]/dbfile is not found in the ini file");
 
         if (m_HttpPort < kHttpPortMin || m_HttpPort > kHttpPortMax) {
-            EAccVerException::raise(
-                "[SERVER]/port value is out of range. Allowed range: " +
-                NStr::NumericToString(kHttpPortMin) + "..." +
-                NStr::NumericToString(kHttpPortMax) + ". Received: " +
-                NStr::NumericToString(m_HttpPort));
+            NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+                       "[SERVER]/port value is out of range. Allowed range: " +
+                       NStr::NumericToString(kHttpPortMin) + "..." +
+                       NStr::NumericToString(kHttpPortMax) + ". Received: " +
+                       NStr::NumericToString(m_HttpPort));
         }
 
         if (m_HttpWorkers < kWorkersMin || m_HttpWorkers > kWorkersMax) {
