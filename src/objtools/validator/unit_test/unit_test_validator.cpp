@@ -15053,38 +15053,57 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSwithMultipleMRNAs)
     CLEAR_ERRORS
 }
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultipleEquivBioSources)
+
+void TestMultipleEquivBioSources(const string& lineage, TSeqPos first_end, TSeqPos second_start, bool expected)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     CRef<CSeq_feat> src1 = unit_test_util::AddMiscFeature (entry);
     src1->SetData().SetBiosrc().SetOrg().SetTaxname("Homo sapiens");
-    src1->SetData().SetBiosrc().SetOrg().SetOrgname().SetLineage("some lineage");
+    src1->SetData().SetBiosrc().SetOrg().SetOrgname().SetLineage(lineage);
+    src1->SetLocation().SetInt().SetTo(first_end);
     CRef<CSeq_feat> src2 = unit_test_util::AddMiscFeature (entry);
     src2->SetData().SetBiosrc().SetOrg().SetTaxname("Homo sapiens");
-    src2->SetData().SetBiosrc().SetOrg().SetOrgname().SetLineage("some lineage");
-    src2->SetLocation().SetInt().SetFrom(30);
-    src2->SetLocation().SetInt().SetTo(40);
+    src2->SetData().SetBiosrc().SetOrg().SetOrgname().SetLineage(lineage);
+    src2->SetLocation().SetInt().SetFrom(second_start);
+    src2->SetLocation().SetInt().SetTo(second_start + 9);
     unit_test_util::SetTransgenic(entry, true);
 
     STANDARD_SETUP
-    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "MultipleEquivBioSources",
-                               "Multiple equivalent source features should be combined into one multi-interval feature"));
+
+    if (expected) {
+        expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "MultipleEquivBioSources",
+            "Multiple equivalent source features should be combined into one multi-interval feature"));
+    }
 
     options |= CValidator::eVal_seqsubmit_parent;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
-    src1->SetData().SetBiosrc().SetOrg().SetOrgname().SetLineage("Viruses");
-    src2->SetData().SetBiosrc().SetOrg().SetOrgname().SetLineage("Viruses");
+}
 
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultipleEquivBioSources)
+{
+    // not expected, because not overlapping or abutting
+    TestMultipleEquivBioSources("some lineage", 10, 15, false);
+    // abutting, expected
+    TestMultipleEquivBioSources("some lineage", 10, 11, true);
+    // overlap, expected
+    TestMultipleEquivBioSources("some lineage", 10, 8, true);
+
+    // not expected for viruses
+    TestMultipleEquivBioSources("Viruses", 10, 15, false);
+    TestMultipleEquivBioSources("Viruses", 10, 11, false);
+    TestMultipleEquivBioSources("Viruses", 10, 8, false);
+
 }
 
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultipleEquivPublications)
 {
+
+
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     CRef<CSeq_feat> feat1 = unit_test_util::AddMiscFeature (entry);
     CRef<CPub> pub1(new CPub());

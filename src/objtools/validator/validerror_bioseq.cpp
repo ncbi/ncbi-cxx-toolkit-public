@@ -1674,6 +1674,24 @@ static bool s_SuppressMultipleEquivBioSources (const CBioSource& src)
 }
 
 
+bool s_OverlapOrAbut(const CSeq_loc& loc1, const CSeq_loc& loc2, CScope* scope)
+{
+    TSeqPos start1 = loc1.GetStart(eExtreme_Positional);
+    TSeqPos stop1 = loc1.GetStop(eExtreme_Positional);
+    TSeqPos start2 = loc2.GetStart(eExtreme_Positional);
+    TSeqPos stop2 = loc2.GetStop(eExtreme_Positional);
+
+    if (start1 == stop2 + 1 || start2 == stop1 + 1) {
+        // abut
+        return true;
+    } else if (TestForOverlapEx(loc1, loc2, eOverlap_Simple, scope) >= 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 void CValidError_bioseq::x_ValidateSourceFeatures(
     const CBioseq_Handle& bsh)
 {
@@ -1701,6 +1719,12 @@ void CValidError_bioseq::x_ValidateSourceFeatures(
                     PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadFullLengthFeature,
                              "Multiple full-length source features, should only be one if descriptor is transgenic",
                              feat->GetOriginalFeature());
+                }
+
+                if (!s_OverlapOrAbut(feat_prev->GetLocation(),
+                    feat->GetLocation(), m_Scope)) {
+                    // not close enough
+                    continue;
                 }
 
                 // compare to see if feature sources are identical
