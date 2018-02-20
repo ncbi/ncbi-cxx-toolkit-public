@@ -98,8 +98,8 @@ static size_t CheckPubs(const CSeq_entry& entry, const string& file, list<CPubDe
     if (common_pubs.empty()) {
 
         for (auto& pub : pubs) {
-            common_pubs.push_front(CPubDescriptionInfo());
-            CPubDescriptionInfo& pubdescr_info = common_pubs.front();
+            common_pubs.push_back(CPubDescriptionInfo());
+            CPubDescriptionInfo& pubdescr_info = common_pubs.back();
 
             pubdescr_info.m_pubdescr_synonyms.push_back(pub);
             pubdescr_info.m_pubdescr_lookup = pub;
@@ -235,9 +235,55 @@ static void CheckComments(const CSeq_entry& entry, StringProcessFunc process, bo
 
             CollectDataFromDescr(entry, common_comments, process, checker);
 
-            comments.swap(common_comments);
+            if (common_comments.size() < comments.size()) {
+                comments.swap(common_comments);
+            }
         }
     }
+}
+
+static bool IsBiosourcesSame(CBioSource& bio_src_master, const CBioSource& bio_src)
+{
+    if (bio_src_master.IsSetGenome() != bio_src.IsSetGenome() ||
+        bio_src_master.IsSetGenome() && bio_src_master.GetGenome() != bio_src.GetGenome()) {
+        return false;
+    }
+
+    if (bio_src_master.IsSetOrigin() != bio_src.IsSetOrigin() ||
+        bio_src_master.IsSetOrigin() && bio_src_master.GetOrigin() != bio_src.GetOrigin()) {
+        return false;
+    }
+
+    if (bio_src_master.IsSetIs_focus() != bio_src.IsSetIs_focus()) {
+        return false;
+    }
+
+    bool ret = true;
+    if (bio_src_master.IsSetSubtype() != bio_src.IsSetSubtype()) {
+        ret = false;
+    }
+
+    if (ret && bio_src_master.IsSetSubtype()) {
+        
+        for (auto subtype_it = bio_src_master.SetSubtype().begin(); subtype_it != bio_src_master.SetSubtype().end();) {
+
+            auto subtype_found = find_if(bio_src.GetSubtype().begin(), bio_src.GetSubtype().end(), [&subtype_it](const CRef<CSubSource>& a){ return a->Equals(**subtype_it); });
+
+            if (subtype_found == bio_src.GetSubtype().end()) {
+                subtype_it = bio_src_master.SetSubtype().erase(subtype_it);
+                ret = false;
+            }
+            else {
+                ++subtype_it;
+            }
+        }
+
+        if (bio_src_master.GetSubtype().empty()) {
+            bio_src_master.ResetSubtype();
+        }
+    }
+
+    return ret;
 }
 
 static bool CheckBioSource(const CSeq_entry& entry, CMasterInfo& info, const string& file)
@@ -267,7 +313,10 @@ static bool CheckBioSource(const CSeq_entry& entry, CMasterInfo& info, const str
                     info.m_biosource->Assign((*biosource_it)->GetSource());
                 }
                 else {
-                    // TODO
+                    
+                    if (!IsBiosourcesSame(*info.m_biosource, (*biosource_it)->GetSource())) {
+                        info.m_same_biosource = false;
+                    }
                 }
             }
         }
@@ -634,17 +683,13 @@ static void CheckMasterDblink(CMasterInfo& info)
     CheckSetOfIds(info.m_dblink, "BioSample", GetParams().GetBioSampleIds(), "BioSample ids", "-C", info.m_reject);
     CheckSetOfIds(info.m_dblink, "Sequence Read Archive", GetParams().GetSRAIds(), "SRA accessions", "-C", info.m_reject);
 
-    CUser_object* id_dblink_user_obj = GetDBLinkFromIdMasterBioseq(info.m_id_master_bioseq);
-    if (info.m_dblink.Empty() && id_dblink_user_obj == nullptr) {
-        return;
-    }
-
     FixDBLink(info.m_dblink);
 
     if (info.m_dblink_state == eDblinkNoDblink) {
         info.m_dblink_state = eDblinkNoProblem;
     }
 
+    CUser_object* id_dblink_user_obj = GetDBLinkFromIdMasterBioseq(info.m_id_master_bioseq);
     if (GetParams().IsDblinkOverride() && id_dblink_user_obj && info.m_dblink->GetFieldRef("BioSample").Empty()) {
 
         auto& biosample_field = id_dblink_user_obj->GetFieldRef("BioSample");
@@ -1177,6 +1222,8 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
     CRef<CContact_info> master_contact_info;
     CRef<CCit_sub> master_cit_sub;
     CSeqEntryCommonInfo common_info;
+
+    master_info.m_same_biosource = true;
 
     for (auto& file : files) {
 

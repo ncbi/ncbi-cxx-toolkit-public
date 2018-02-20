@@ -234,6 +234,7 @@ struct CMasterInfo
     bool m_has_gmi_keyword;
     bool m_has_genome_project_id;
     bool m_same_org;
+    bool m_same_biosource;
     bool m_reject;
     bool m_has_gb_block;
     bool m_gpid;
@@ -282,6 +283,7 @@ struct CMasterInfo
         m_has_gmi_keyword(false),
         m_has_genome_project_id(false),
         m_same_org(false),
+        m_same_biosource(false),
         m_reject(false),
         m_has_gb_block(false),
         m_gpid(false),

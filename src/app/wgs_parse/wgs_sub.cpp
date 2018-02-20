@@ -1381,7 +1381,7 @@ bool ParseSubmissions(CMasterInfo& master_info)
 
                 // TODO
                 
-                bool remove_bio_sources = GetParams().IsVDBMode() && master_info.m_biosource.NotEmpty() && master_info.m_same_org;
+                bool remove_bio_sources = GetParams().IsVDBMode() && master_info.m_biosource.NotEmpty() && master_info.m_same_org && master_info.m_same_biosource;
                 PerformCleanup(seq_submit->SetData().SetEntrys(), remove_bio_sources);
 
                 if (bioseq_set.Empty()) {

@@ -257,10 +257,10 @@ static bool DescrProcUnexpectedSpecial(const CSeqdesc& , bool first)
     if (first) {
         static const string ERR_MSG = "Unexpected descriptor of type \"title\" found on top of GenBank set. Descriptor dropped.";
         if (GetParams().GetSource() == eNCBI && GetParams().IsTls()) {
-            LOG_POST_EX(0, 0, ERR_MSG);
+            LOG_POST_EX(0, 0, Info << ERR_MSG);
         }
         else {
-            ERR_POST_EX(0, 0, ERR_MSG);
+            ERR_POST_EX(0, 0, Warning << ERR_MSG);
         }
     }
     return false;
