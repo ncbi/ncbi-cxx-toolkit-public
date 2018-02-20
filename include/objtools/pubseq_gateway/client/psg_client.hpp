@@ -174,16 +174,8 @@ using TBlobIds = vector<CBlobId>;
 class CBioIdResolutionQueue
 {
 public:
-    CBioIdResolutionQueue();
+    CBioIdResolutionQueue(const string& service);
     ~CBioIdResolutionQueue();
-
-    /// Internal initialization.
-    /// Must be called before first use
-    static void Init(const string& service);
-
-    /// Internal finalization
-    /// Must be called after last use
-    static void Finalize();
 
     /// Schedule more bio-ids for resolution
     /// @note
@@ -203,7 +195,7 @@ public:
     /// @note
     /// This method is works synchronously static and does not require
     /// CBioIdResolutionQueue instance
-    static CBlobId Resolve(CBioId bio_id, const CDeadline& deadline = CTimeout::eInfinite);
+    static CBlobId Resolve(const string& service, CBioId bio_id, const CDeadline& deadline = CTimeout::eInfinite);
 
     /// Retrieve results of the id resolution that are currently ready.
     /// @note
@@ -241,6 +233,7 @@ private:
     struct CBioIdResolutionQueueItem;
     vector<unique_ptr<CBioIdResolutionQueueItem>> m_Items;
     shared_ptr<void> m_Future;
+    string m_Service;
 };
 
 

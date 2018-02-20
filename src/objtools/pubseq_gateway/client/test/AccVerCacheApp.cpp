@@ -128,7 +128,6 @@ public:
         int rv = 0;
         try {
             ParseArgs();
-            CBioIdResolutionQueue::Init(m_HostPort);
             if (!m_LookupRemote.empty()) {
                 RemoteLookup(m_LookupRemote);
             }
@@ -148,14 +147,13 @@ public:
             cerr << "Abnormally terminated" << endl;
             rv = 3;
         }
-        CBioIdResolutionQueue::Finalize();
         return rv;
     }
 };
 
 void CAccVerCacheApp::RemoteLookup(const string& AccVer)
 {
-    auto blob_id = CBioIdResolutionQueue::Resolve(AccVer);
+    auto blob_id = CBioIdResolutionQueue::Resolve(m_HostPort, AccVer);
     PrintBlobId(blob_id);
 }
 
@@ -189,7 +187,7 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
         }
 
         {{
-            CBioIdResolutionQueue cq;
+            CBioIdResolutionQueue cq(m_HostPort);
             vector<unique_ptr<thread, function<void(thread*)>>> threads;
             threads.resize(NumThreads);
             size_t start_index = 0, next_index, i = 0;

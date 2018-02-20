@@ -38,87 +38,9 @@
 #include <corelib/ncbitime.hpp>
 
 #include <objtools/pubseq_gateway/impl/rpc/DdRpcCommon.hpp>
-#include <objtools/pubseq_gateway/impl/rpc/DdRpcClient.hpp>
 #include <objtools/pubseq_gateway/impl/rpc/DdRpcDataPacker.hpp>
 #include <objtools/pubseq_gateway/impl/rpc/HttpClientTransportP.hpp>
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
-
-namespace HCT {
-
-using namespace std;
-
-/** HttpClientTransport */
-
-class HttpClientTransport
-{
-public:
-    static std::shared_ptr<io_coordinator> s_ioc;
-
-    static void Init();
-    static void Finalize();
-};
-
-shared_ptr<io_coordinator> HttpClientTransport::s_ioc;
-
-void HttpClientTransport::Init()
-{
-    if (!s_ioc) {
-        s_ioc = make_shared<io_coordinator>();
-    }
-}
-
-void HttpClientTransport::Finalize()
-{
-    s_ioc = nullptr;
-}
-
-}
-
-
-namespace DDRPC {
-
-using namespace std;
-
-/** DdRpcClient */
-
-class DdRpcClient final
-{
-private:
-    static std::unique_ptr<ServiceResolver> m_Resolver;
-    static bool m_Initialized;
-public:
-    static void Init(std::unique_ptr<ServiceResolver> Resolver);
-    static void Finalize();
-    static std::shared_ptr<HCT::http2_end_point> SericeIdToEndPoint(const std::string& ServiceId)
-    {
-        if (!m_Resolver)
-            EDdRpcException::raise("Resolver is not assigned");
-        return m_Resolver->SericeIdToEndPoint(ServiceId);
-    }
-};
-
-bool DdRpcClient::m_Initialized(false);
-unique_ptr<ServiceResolver> DdRpcClient::m_Resolver;
-
-void DdRpcClient::Init(unique_ptr<ServiceResolver> Resolver)
-{
-    if (m_Initialized)
-        EDdRpcException::raise("DDRPC has already been initialized");
-    m_Initialized = true;
-    m_Resolver.swap(Resolver);
-    HCT::HttpClientTransport::Init();
-}
-
-void DdRpcClient::Finalize()
-{
-    if (!m_Initialized)
-        EDdRpcException::raise("DDRPC has not been initialized");
-    m_Initialized = false;
-    HCT::HttpClientTransport::Finalize();
-}
-
-}
-
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -153,12 +75,61 @@ void AccVerResolverUnpackData(DDRPC::DataRow& row, const string& data)
 
 }
 
+
+struct SHCT
+{
+    using TIoc = HCT::io_coordinator;
+    using TEndPoint = shared_ptr<HCT::http2_end_point>;
+
+    static TIoc& GetIoc()
+    {
+        return *m_Ioc.second;
+    }
+
+    static TEndPoint GetEndPoint(const string& service)
+    {
+        auto result = m_LocalEndPoints.find(service);
+        return result != m_LocalEndPoints.end() ? result->second : x_GetEndPoint(service);
+    }
+
+private:
+    using TEndPoints = unordered_map<string, TEndPoint>;
+
+    static TEndPoint x_GetEndPoint(const string& service);
+
+    static pair<once_flag, shared_ptr<TIoc>> m_Ioc;
+    static thread_local TEndPoints m_LocalEndPoints;
+    static pair<mutex, TEndPoints> m_EndPoints;
+};
+
+pair<once_flag, shared_ptr<SHCT::TIoc>> SHCT::m_Ioc;
+thread_local SHCT::TEndPoints SHCT::m_LocalEndPoints;
+pair<mutex, SHCT::TEndPoints> SHCT::m_EndPoints;
+
+SHCT::TEndPoint SHCT::x_GetEndPoint(const string& service)
+{
+    call_once(m_Ioc.first, [&]() { m_Ioc.second = make_shared<TIoc>(); });
+
+    lock_guard<mutex> lock(m_EndPoints.first);
+    auto result = m_EndPoints.second.emplace(service, nullptr);
+    auto& pair = *result.first;
+
+    // If actually added, initialize
+    if (result.second) {
+        pair.second.reset(new HCT::http2_end_point{"http", service, "/ID/accver.resolver"});
+    }
+
+    m_LocalEndPoints.insert(pair);
+    return pair.second;
+}
+
+
 /** CBioIdResolutionQueue::CBioIdResolutionQueueItem */
 
 struct CBioIdResolutionQueue::CBioIdResolutionQueueItem
 {
-    CBioIdResolutionQueueItem(shared_ptr<HCT::io_future> afuture, CBioId bio_id);
-    bool AddRequest(long wait_ms) { return HCT::HttpClientTransport::s_ioc->add_request(m_Request, wait_ms); }
+    CBioIdResolutionQueueItem(const string& service, shared_ptr<HCT::io_future> afuture, CBioId bio_id);
+    bool AddRequest(long wait_ms) { return SHCT::GetIoc().add_request(m_Request, wait_ms); }
     void SyncResolve(CBlobId& blob_id, const CDeadline& deadline);
     void WaitFor(long timeout_ms);
     void Wait();
@@ -169,20 +140,18 @@ struct CBioIdResolutionQueue::CBioIdResolutionQueueItem
     CBioId m_BioId;
 };
 
-CBioIdResolutionQueue::CBioIdResolutionQueueItem::CBioIdResolutionQueueItem(shared_ptr<HCT::io_future> afuture, CBioId bio_id)
+CBioIdResolutionQueue::CBioIdResolutionQueueItem::CBioIdResolutionQueueItem(const string& service, shared_ptr<HCT::io_future> afuture, CBioId bio_id)
     :   m_Request(make_shared<HCT::http2_request>()),
         m_BioId(move(bio_id))
 {
-    if (!HCT::HttpClientTransport::s_ioc)
-        DDRPC::EDdRpcException::raise("DDRPC is not initialized, call DdRpcClient::Init() first");
-    m_Request->init_request(DDRPC::DdRpcClient::SericeIdToEndPoint(ACCVER_RESOLVER_SERVICE_ID), afuture, "accver=" + m_BioId.GetId());
+    m_Request->init_request(SHCT::GetEndPoint(service), afuture, "accver=" + m_BioId.GetId());
 }
 
 void CBioIdResolutionQueue::CBioIdResolutionQueueItem::SyncResolve(CBlobId& blob_id, const CDeadline& deadline)
 {
     bool has_timeout = !deadline.IsInfinite();
     long wait_ms = has_timeout ? RemainingTimeMs(deadline) : DDRPC::INDEFINITE;
-    bool rv = HCT::HttpClientTransport::s_ioc->add_request(m_Request, wait_ms);
+    bool rv = AddRequest(wait_ms);
     if (!rv) {
         blob_id.m_Status = CBlobId::eFailed;
         blob_id.m_StatusEx = CBlobId::eError;
@@ -277,25 +246,14 @@ void CBioIdResolutionQueue::CBioIdResolutionQueueItem::PopulateData(CBlobId& blo
 
 /** CBioIdResolutionQueue */
 
-CBioIdResolutionQueue::CBioIdResolutionQueue()
-    :   m_Future(make_shared<HCT::io_future>())
+CBioIdResolutionQueue::CBioIdResolutionQueue(const string& service) :
+    m_Future(make_shared<HCT::io_future>()),
+    m_Service(service)
 {
 }
 
 CBioIdResolutionQueue::~CBioIdResolutionQueue()
 {
-}
-
-void CBioIdResolutionQueue::Init(const string& service)
-{
-    vector<pair<string, HCT::http2_end_point>> StaticMap;
-    StaticMap.emplace_back(make_pair<string, HCT::http2_end_point>(ACCVER_RESOLVER_SERVICE_ID, {.schema = "http", .authority = service, .path = "/ID/accver.resolver"}));
-    DDRPC::DdRpcClient::Init(unique_ptr<DDRPC::ServiceResolver>(new DDRPC::ServiceResolver(&StaticMap)));
-}
-
-void CBioIdResolutionQueue::Finalize()
-{
-    DDRPC::DdRpcClient::Finalize();
 }
 
 void CBioIdResolutionQueue::Resolve(TBioIds* bio_ids, const CDeadline& deadline)
@@ -309,7 +267,7 @@ void CBioIdResolutionQueue::Resolve(TBioIds* bio_ids, const CDeadline& deadline)
     while (rev_it != bio_ids->rend()) {
 
         auto future = static_pointer_cast<HCT::io_future>(m_Future);
-        unique_ptr<CBioIdResolutionQueueItem> qi(new CBioIdResolutionQueueItem(future, *rev_it));
+        unique_ptr<CBioIdResolutionQueueItem> qi(new CBioIdResolutionQueueItem(m_Service, future, *rev_it));
 
         while (true) {
             bool rv = qi->AddRequest(wait_ms);
@@ -335,10 +293,10 @@ void CBioIdResolutionQueue::Resolve(TBioIds* bio_ids, const CDeadline& deadline)
     }
 }
 
-CBlobId CBioIdResolutionQueue::Resolve(CBioId bio_id, const CDeadline& deadline)
+CBlobId CBioIdResolutionQueue::Resolve(const string& service, CBioId bio_id, const CDeadline& deadline)
 {
     CBlobId rv(bio_id);
-    unique_ptr<CBioIdResolutionQueueItem> qi(new CBioIdResolutionQueueItem(HCT::io_coordinator::get_tls_future(), move(bio_id)));
+    unique_ptr<CBioIdResolutionQueueItem> qi(new CBioIdResolutionQueueItem(service, HCT::io_coordinator::get_tls_future(), move(bio_id)));
     qi->SyncResolve(rv, deadline);
     return rv;
 }
