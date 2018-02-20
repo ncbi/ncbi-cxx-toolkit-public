@@ -63,44 +63,6 @@ USING_SCOPE(objects);
 DISCREPANCY_MODULE(sequence_tests);
 
 
-#if 0
-// MISSING_GENOMEASSEMBLY_COMMENTS
-
-const string kMissingGenomeAssemblyComments = "[n] bioseq[s] [is] missing GenomeAssembly structured comments";
-
-DISCREPANCY_CASE(MISSING_GENOMEASSEMBLY_COMMENTS, CSeq_inst, 0, "Bioseqs should have GenomeAssembly structured comments")
-{
-    if (obj.IsAa()) {
-        return;
-    }
-    CConstRef<CBioseq> seq = context.GetCurrentBioseq();
-    if (!seq) {
-        return;
-    }
-    CBioseq_Handle b = context.GetScope().GetBioseqHandle(*seq);
-
-    CSeqdesc_CI d(b, CSeqdesc::e_User);
-    bool found = false;
-    while (d && !found) {
-        if (d->GetUser().GetObjectType() == CUser_object::eObjectType_StructuredComment &&
-            NStr::Equal(CComment_rule::GetStructuredCommentPrefix(d->GetUser()), "Genome-Assembly-Data")) {
-            found = true;
-        }
-        ++d;
-    }
-
-    if (!found) {
-        m_Objs[kMissingGenomeAssemblyComments].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary()), false).Fatal();
-    }
-}
-
-
-DISCREPANCY_SUMMARIZE(MISSING_GENOMEASSEMBLY_COMMENTS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-#endif
-
 // DUP_DEFLINE
 
 const string kUniqueDeflines = "[n] definition line[s] [is] unique";
