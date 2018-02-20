@@ -166,8 +166,9 @@ void CCSRATestApp::Init(void)
                              "Start short read id",
                              CArgDescriptions::eInteger);
     arg_desc->AddFlag("fasta", "Print reads in fasta format");
-    arg_desc->AddFlag("count_primary_ids", "Count primary ids");
-    arg_desc->AddFlag("count_secondary_ids", "Count secondary ids");
+    arg_desc->AddFlag("count_ids", "Count alignments ids");
+    arg_desc->AddFlag("primary", "Only primary alignments");
+    arg_desc->AddFlag("secondary", "Only secondary alignments");
 
     arg_desc->AddFlag("get-cache", "Get cache root");
     arg_desc->AddOptionalKey("set-cache", "SetCache",
@@ -779,25 +780,21 @@ int CCSRATestApp::Run(void)
             vector<TSeqPos> vv_exp;
             if ( verify ) {
                 for ( TSeqPos i = 0; i*step < ref_len; ++i ) {
-                    vv_exp.push_back((i+1)*step);
+                    vv_exp.push_back(i*step);
                 }
                 for ( CCSraAlignIterator it(csra_db, query_idh, 0, ref_len, CCSraAlignIterator::eSearchByStart); it; ++it ) {
                     TSeqPos aln_beg = it.GetRefSeqPos();
                     TSeqPos aln_len = it.GetRefSeqLen();
                     _ASSERT(aln_beg+aln_len <= ref_len);
                     TSeqPos slot_beg = aln_beg/step;
-                    TSeqPos slot_end = (aln_beg+aln_len)/step;
+                    TSeqPos slot_end = (aln_beg+aln_len-1)/step;
                     for ( TSeqPos i = slot_beg; i <= slot_end; ++i ) {
-                        vv_exp[i] = min(vv_exp[i], aln_beg);
+                        vv_exp[i] = min(vv_exp[i], aln_beg/*-aln_beg%step*/);
                     }
                 }
             }
             for ( size_t i = 0; i < vv.size(); ++i ) {
                 if ( verify ) {
-                    if ( vv[i] >= i*step )
-                        vv[i] = (i+1)*step;
-                    if ( vv_exp[i] >= i*step )
-                        vv_exp[i] = (i+1)*step;
                     if ( vv[i] != vv_exp[i] ) {
                         out << "Overlap pos["<<i<<" / "<<(i*step)<<"]"
                             << " = "<<vv[i] <<" "<<int(vv[i]-i*step)
@@ -816,17 +813,19 @@ int CCSRATestApp::Run(void)
             sw.Restart();
         }
         
-        if ( query_idh &&
-             (args["count_primary_ids"] || args["count_secondary_ids"]) ) {
+        CCSraRefSeqIterator::TAlignType align_type;
+        if ( args["primary"] ) {
+            align_type = CCSraRefSeqIterator::fPrimaryAlign;
+        }
+        else if ( args["secondary"] ) {
+            align_type = CCSraRefSeqIterator::fSecondaryAlign;
+        }
+        else {
+            align_type = CCSraRefSeqIterator::fAnyAlign;
+        }
+        if ( query_idh && args["count_ids"] ) {
             CCSraRefSeqIterator ref_it(csra_db, query_idh);
             sw.Restart();
-            CCSraRefSeqIterator::TAlignType align_type = 0;
-            if ( args["count_primary_ids"] ) {
-                align_type |= CCSraRefSeqIterator::fPrimaryAlign;
-            }
-            if ( args["count_secondary_ids"] ) {
-                align_type |= CCSraRefSeqIterator::fSecondaryAlign;
-            }
             TSeqPos step = csra_db.GetRowSize();
             uint64_t count = 0;
             TSeqPos end = min(query_range.GetToOpen(), ref_it.GetSeqLength());
@@ -901,7 +900,8 @@ int CCSRATestApp::Run(void)
                 size_t limit_count = args["limit_count"].AsInteger();
                 for ( CCSraAlignIterator it(csra_db, query_idh,
                                             query_range.GetFrom(),
-                                            query_range.GetLength());
+                                            query_range.GetLength(),
+                                            align_type);
                       it; ++it ) {
                     if ( it.GetMapQuality() < min_quality ) {
                         ++skipped;
@@ -1029,7 +1029,8 @@ int CCSRATestApp::Run(void)
                     CCSraRefSeqIterator(csra_db, query_idh).GetRefSeq_id();
                 for ( CCSraAlignIterator it(csra_db, query_idh,
                                             query_range.GetFrom(),
-                                            query_range.GetLength());
+                                            query_range.GetLength(),
+                                            align_type);
                       it; ++it ) {
                     if ( it.GetMapQuality() < min_quality ) {
                         ++skipped;
@@ -1191,7 +1192,8 @@ int CCSRATestApp::Run(void)
             TShortId2Pos id2pos;
             for ( CCSraAlignIterator it(csra_db, query_idh,
                                         query_range.GetFrom(),
-                                        query_range.GetLength());
+                                        query_range.GetLength(),
+                                        align_type);
                   it; ++it ) {
                 CTempString ref_seq_id = it.GetRefSeqId();
                 TSeqPos ref_pos = it.GetRefSeqPos();

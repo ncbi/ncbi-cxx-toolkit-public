@@ -844,10 +844,10 @@ const vector<TSeqPos>& CCSraRefSeqIterator::GetAlnOverStarts(void) const
                 // collect overlaps
                 for ( TVDBRowId row = info.m_RowFirst; row <= info.m_RowLast; ++row ) {
                     CVDBValueFor<INSDC_coord_zero> vv = ref->OVERLAP_REF_POS(row);
-                    TSeqPos pos = TSeqPos((row+1-info.m_RowFirst)*segment_len);
+                    TSeqPos pos = TSeqPos((row-info.m_RowFirst)*segment_len);
                     for ( size_t i = 0; i < 2 && i < vv.size(); ++i ) {
                         TSeqPos p = vv[i];
-                        if ( (p || row == info.m_RowFirst) && p < pos ) {
+                        if ( p && p < pos ) {
                             pos = p;
                         }
                     }
@@ -936,6 +936,7 @@ void CCSraAlignIterator::Reset(void)
     m_RefRowNext = m_RefRowLast = 0;
     m_AlnRowIsSecondary = false;
     m_SearchMode = eSearchByOverlap;
+    m_AlignType = fAnyAlign;
     m_AlnRowCur = m_AlnRowEnd = 0;
 }
 
@@ -962,6 +963,7 @@ CCSraAlignIterator& CCSraAlignIterator::operator=(const CCSraAlignIterator& iter
         m_RefRowLast = iter.m_RefRowLast;
         m_AlnRowIsSecondary = iter.m_AlnRowIsSecondary;
         m_SearchMode = iter.m_SearchMode;
+        m_AlignType = iter.m_AlignType;
         m_AlnRowCur = iter.m_AlnRowCur;
         m_AlnRowEnd = iter.m_AlnRowEnd;
     }
@@ -979,14 +981,15 @@ CCSraAlignIterator::CCSraAlignIterator(const CCSraDb& csra_db,
                                        const string& ref_id,
                                        TSeqPos ref_pos,
                                        TSeqPos window,
-                                       ESearchMode search_mode)
+                                       ESearchMode search_mode,
+                                       TAlignType align_type)
     : m_RefIter(csra_db, CSeq_id_Handle::GetHandle(ref_id)),
       m_Ref(m_RefIter.GetDb().Ref()),
       m_Error(RC_NO_MORE_ALIGNMENTS),
       m_ArgRefPos(0),
       m_ArgRefLast(0) 
 {
-    Select(ref_pos, window, search_mode);
+    Select(ref_pos, window, search_mode, align_type);
 }
 
 
@@ -994,14 +997,30 @@ CCSraAlignIterator::CCSraAlignIterator(const CCSraDb& csra_db,
                                        const CSeq_id_Handle& ref_id,
                                        TSeqPos ref_pos,
                                        TSeqPos window,
-                                       ESearchMode search_mode)
+                                       ESearchMode search_mode,
+                                       TAlignType align_type)
     : m_RefIter(csra_db, ref_id),
       m_Ref(m_RefIter.GetDb().Ref()),
       m_Error(RC_NO_MORE_ALIGNMENTS),
       m_ArgRefPos(0),
       m_ArgRefLast(0) 
 {
-    Select(ref_pos, window, search_mode);
+    Select(ref_pos, window, search_mode, align_type);
+}
+
+
+CCSraAlignIterator::CCSraAlignIterator(const CCSraDb& csra_db,
+                                       const CSeq_id_Handle& ref_id,
+                                       TSeqPos ref_pos,
+                                       TSeqPos window,
+                                       TAlignType align_type)
+    : m_RefIter(csra_db, ref_id),
+      m_Ref(m_RefIter.GetDb().Ref()),
+      m_Error(RC_NO_MORE_ALIGNMENTS),
+      m_ArgRefPos(0),
+      m_ArgRefLast(0) 
+{
+    Select(ref_pos, window, eSearchByOverlap, align_type);
 }
 
 
@@ -1013,11 +1032,13 @@ CCSraAlignIterator::~CCSraAlignIterator(void)
 
 void CCSraAlignIterator::Select(TSeqPos ref_pos,
                                 TSeqPos window,
-                                ESearchMode search_mode)
+                                ESearchMode search_mode,
+                                TAlignType align_type)
 {
     m_Error = RC_NO_MORE_ALIGNMENTS;
     m_ArgRefPos = m_ArgRefLast = 0;
     m_SearchMode = search_mode;
+    m_AlignType = align_type;
 
     m_RefRowNext = m_RefRowLast = 0;
     m_AlnRowIsSecondary = true;
@@ -1066,17 +1087,27 @@ void CCSraAlignIterator::x_Settle(void)
             
             if ( m_AlnRowIsSecondary ) {
                 m_AlnRowIsSecondary = false;
-                CVDBValueFor<TVDBRowId> ids =
-                    m_Ref->PRIMARY_ALIGNMENT_IDS(m_RefRowNext);
-                m_AlnRowCur = ids.data();
-                m_AlnRowEnd = m_AlnRowCur + ids.size();
+                if ( !(m_AlignType & fPrimaryAlign) ) {
+                    m_AlnRowCur = m_AlnRowEnd = 0;
+                }
+                else {
+                    CVDBValueFor<TVDBRowId> ids =
+                        m_Ref->PRIMARY_ALIGNMENT_IDS(m_RefRowNext);
+                    m_AlnRowCur = ids.data();
+                    m_AlnRowEnd = m_AlnRowCur + ids.size();
+                }
             }
             else if ( m_Ref->m_SECONDARY_ALIGNMENT_IDS ) {
                 m_AlnRowIsSecondary = true;
-                CVDBValueFor<TVDBRowId> ids =
-                    m_Ref->SECONDARY_ALIGNMENT_IDS(m_RefRowNext);
-                m_AlnRowCur = ids.data();
-                m_AlnRowEnd = m_AlnRowCur + ids.size();
+                if ( !(m_AlignType & fSecondaryAlign) ) {
+                    m_AlnRowCur = m_AlnRowEnd = 0;
+                }
+                else {
+                    CVDBValueFor<TVDBRowId> ids =
+                        m_Ref->SECONDARY_ALIGNMENT_IDS(m_RefRowNext);
+                    m_AlnRowCur = ids.data();
+                    m_AlnRowEnd = m_AlnRowCur + ids.size();
+                }
                 ++m_RefRowNext;
             }
             else {

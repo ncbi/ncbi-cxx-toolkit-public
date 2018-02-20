@@ -74,6 +74,12 @@ struct SCSraDb_Defs
         ePathInId_yes,
         ePathInId_no
     };
+    enum EAlignType {
+        fPrimaryAlign   = 1<<0,
+        fSecondaryAlign = 1<<1,
+        fAnyAlign       = fPrimaryAlign | fSecondaryAlign
+    };
+    typedef EAlignType TAlignType;
 };
 
 
@@ -253,7 +259,7 @@ public:
 };
 
 
-class NCBI_SRAREAD_EXPORT CCSraRefSeqIterator
+class NCBI_SRAREAD_EXPORT CCSraRefSeqIterator : public SCSraDb_Defs
 {
 public:
     CCSraRefSeqIterator(void)
@@ -315,12 +321,6 @@ public:
     NCBI_DEPRECATED
     size_t GetRowAlignCount(TVDBRowId row) const;
 
-    enum EAlignType {
-        fPrimaryAlign   = 1<<0,
-        fSecondaryAlign = 1<<1,
-        fAnyAlign       = fPrimaryAlign | fSecondaryAlign
-    };
-    typedef int TAlignType;
     size_t GetAlignCountAtPos(TSeqPos pos, TAlignType type = fAnyAlign) const;
 
     CRef<CSeq_graph> GetCoverageGraph(void) const;
@@ -368,7 +368,7 @@ private:
 };
 
 
-class NCBI_SRAREAD_EXPORT CCSraAlignIterator
+class NCBI_SRAREAD_EXPORT CCSraAlignIterator : public SCSraDb_Defs
 {
 public:
     CCSraAlignIterator(void);
@@ -383,12 +383,19 @@ public:
                        const string& ref_id,
                        TSeqPos ref_pos,
                        TSeqPos window = 0,
-                       ESearchMode search_mode = eSearchByOverlap);
+                       ESearchMode search_mode = eSearchByOverlap,
+                       TAlignType align_type = fAnyAlign);
+    CCSraAlignIterator(const CCSraDb& csra_db,
+                       const CSeq_id_Handle& ref_id,
+                       TSeqPos ref_pos,
+                       TSeqPos window,
+                       ESearchMode search_mode,
+                       TAlignType align_type = fAnyAlign);
     CCSraAlignIterator(const CCSraDb& csra_db,
                        const CSeq_id_Handle& ref_id,
                        TSeqPos ref_pos,
                        TSeqPos window = 0,
-                       ESearchMode search_mode = eSearchByOverlap);
+                       TAlignType align_type = fAnyAlign);
     ~CCSraAlignIterator(void);
 
     void Reset(void);
@@ -397,7 +404,8 @@ public:
 
     void Select(TSeqPos ref_pos,
                 TSeqPos window = 0,
-                ESearchMode search_mode = eSearchByOverlap);
+                ESearchMode search_mode = eSearchByOverlap,
+                TAlignType align_type = fAnyAlign);
     
     operator const void*(void) const {
         return m_Error? 0: this;
@@ -522,6 +530,7 @@ private:
     TVDBRowId m_RefRowLast;
     bool m_AlnRowIsSecondary;
     ESearchMode m_SearchMode;
+    TAlignType m_AlignType;
     const TVDBRowId* m_AlnRowCur; // current refseq row alignments ids
     const TVDBRowId* m_AlnRowEnd;
 
