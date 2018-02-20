@@ -158,6 +158,7 @@ void AccVerResolverUnpackData(DDRPC::DataRow& row, const string& data)
 struct CBioIdResolutionQueue::CBioIdResolutionQueueItem
 {
     CBioIdResolutionQueueItem(shared_ptr<HCT::io_future> afuture, CBioId bio_id);
+    bool AddRequest(long wait_ms) { return HCT::HttpClientTransport::s_ioc->add_request(m_Request, wait_ms); }
     void SyncResolve(CBlobId& blob_id, const CDeadline& deadline);
     void WaitFor(long timeout_ms);
     void Wait();
@@ -311,7 +312,7 @@ void CBioIdResolutionQueue::Resolve(TBioIds* bio_ids, const CDeadline& deadline)
         unique_ptr<CBioIdResolutionQueueItem> qi(new CBioIdResolutionQueueItem(future, *rev_it));
 
         while (true) {
-            bool rv = HCT::HttpClientTransport::s_ioc->add_request(qi->m_Request, wait_ms);
+            bool rv = qi->AddRequest(wait_ms);
 
             if (!rv) { // internal queue is full
                 if (has_timeout) {
