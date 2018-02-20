@@ -94,7 +94,7 @@ protected:
 
 protected:
     virtual bool x_WriteBioseqHandle(
-        CBioseq_Handle );
+        CBioseq_Handle ) override;
 	virtual bool x_WriteSeqAnnotHandle(
         CSeq_annot_Handle );
 
