@@ -1065,6 +1065,9 @@ void CFlatSeqIdQVal::Format(TFlatQuals& q, const CTempString& name,
     if (name == "protein_id") {
        ctx.Config().GetHTMLFormatter().FormatProteinId(id_str, *m_Value, string(id_str));
     }
+    if (name == "transcript_id") {
+       ctx.Config().GetHTMLFormatter().FormatTranscriptId(id_str, *m_Value, string(id_str));
+    }
 #else
     if (bHtml && name == "protein_id") {
         string raw_id_str = id_str;

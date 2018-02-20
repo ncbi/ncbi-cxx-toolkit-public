@@ -73,6 +73,7 @@ public:
     virtual ~CHTMLFormatterEx();
 
     void FormatProteinId(string &, const CSeq_id& seq_id, const string& prot_id) const;
+    void FormatTranscriptId(string &, const CSeq_id& seq_id, const string& nuc_id) const;
     void FormatNucSearch(CNcbiOstream& os, const string& id) const;
     void FormatNucId(string& str, const CSeq_id& seq_id, TIntId gi, const string& acc_id) const;
     void FormatTaxid(string& str, const int taxid, const string& taxname) const;
@@ -112,6 +113,26 @@ void CHTMLFormatterEx::FormatProteinId(string& str, const CSeq_id& seq_id, const
     str += index;
     str += "\">";
     str += prot_id;
+    str += "</a>";
+}
+
+void CHTMLFormatterEx::FormatTranscriptId(string& str, const CSeq_id& seq_id, const string& nuc_id) const
+{
+    string index = nuc_id;
+    CBioseq_Handle bsh = m_scope->GetBioseqHandle(seq_id);
+    vector< CSeq_id_Handle > ids = bsh.GetId();
+    ITERATE(vector< CSeq_id_Handle >, it, ids) {
+        CSeq_id_Handle hid = *it;
+        if (hid.IsGi()) {
+            index = NStr::NumericToString(hid.GetGi());
+            break;
+        }
+    }
+    str = "<a href=\"";
+    str += strLinkBaseNuc;
+    str += index;
+    str += "\">";
+    str += nuc_id;
     str += "</a>";
 }
 

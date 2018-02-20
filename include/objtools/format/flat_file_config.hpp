@@ -85,6 +85,7 @@ public:
     virtual ~IHTMLFormatter() {};
     
     virtual void FormatProteinId(string& str, const CSeq_id& seq_id, const string& prot_id) const = 0;
+    virtual void FormatTranscriptId(string& str, const CSeq_id& seq_id, const string& nuc_id) const = 0;
     virtual void FormatNucSearch(CNcbiOstream& os, const string& id) const = 0;
     virtual void FormatNucId(string& str, const CSeq_id& seq_id, TIntId gi, const string& acc_id) const = 0;
     virtual void FormatTaxid(string& str, const int taxid, const string& taxname) const = 0;
@@ -101,6 +102,7 @@ public:
     virtual ~CHTMLEmptyFormatter() {};
 
     void FormatProteinId(string& str, const CSeq_id& seq_id, const string& prot_id) const;
+    void FormatTranscriptId(string& str, const CSeq_id& seq_id, const string& nuc_id) const;
     void FormatNucSearch(CNcbiOstream& os, const string& id) const;
     void FormatNucId(string& str, const CSeq_id& seq_id, TIntId gi, const string& acc_id) const;
     void FormatTaxid(string& str, const int taxid, const string& taxname) const;

@@ -882,6 +882,11 @@ void CHTMLEmptyFormatter::FormatProteinId(string& str, const CSeq_id& seq_id, co
     str = prot_id;
 }
 
+void CHTMLEmptyFormatter::FormatTranscriptId(string& str, const CSeq_id& seq_id, const string& nuc_id) const
+{
+    str = nuc_id;
+}
+
 void CHTMLEmptyFormatter::FormatNucId(string& str, const CSeq_id& seq_id, TIntId gi, const string& acc_id) const
 {
     str = acc_id;
