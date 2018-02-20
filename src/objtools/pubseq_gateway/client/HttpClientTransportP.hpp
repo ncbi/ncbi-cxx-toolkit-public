@@ -52,7 +52,7 @@
 #include <uv.h>
 
 #include "mpmc_nw.hpp"
-#include "UvHelper.hpp"
+#include <objtools/pubseq_gateway/impl/rpc/UvHelper.hpp>
 
 
 #include "HttpClientTransport.hpp"

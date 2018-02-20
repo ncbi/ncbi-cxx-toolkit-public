@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = HttpClientTransport DdRpcDataPacker uv_extra
+SRC = DdRpcDataPacker uv_extra
 LIB = psg_rpc
 
 LIBS = $(PSG_RPC_LIBS)

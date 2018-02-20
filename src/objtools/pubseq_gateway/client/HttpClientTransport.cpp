@@ -43,7 +43,6 @@
 #include <utility>
 #include <functional>
 
-#include <objtools/pubseq_gateway/impl/rpc/mpmc_nw.hpp>
 #include <uv.h>
 
 #define __STDC_FORMAT_MACROS
@@ -53,8 +52,8 @@
 #include <objtools/pubseq_gateway/impl/rpc/UvHelper.hpp>
 
 #include <objtools/pubseq_gateway/impl/rpc/DdRpcCommon.hpp>
-#include <objtools/pubseq_gateway/impl/rpc/HttpClientTransport.hpp>
-#include <objtools/pubseq_gateway/impl/rpc/HttpClientTransportP.hpp>
+#include "HttpClientTransport.hpp"
+#include "HttpClientTransportP.hpp"
 
 
 using namespace std;

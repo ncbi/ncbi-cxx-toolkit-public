@@ -43,7 +43,7 @@
 #include <nghttp2/nghttp2.h>
 #include <uv.h>
 
-#include "DdRpcCommon.hpp"
+#include <objtools/pubseq_gateway/impl/rpc/DdRpcCommon.hpp>
 
 namespace HCT {
 

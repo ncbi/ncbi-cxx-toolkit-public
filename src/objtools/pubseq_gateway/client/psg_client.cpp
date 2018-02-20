@@ -39,7 +39,7 @@
 
 #include <objtools/pubseq_gateway/impl/rpc/DdRpcCommon.hpp>
 #include <objtools/pubseq_gateway/impl/rpc/DdRpcDataPacker.hpp>
-#include <objtools/pubseq_gateway/impl/rpc/HttpClientTransportP.hpp>
+#include "HttpClientTransportP.hpp"
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
 
 BEGIN_NCBI_SCOPE
