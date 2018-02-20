@@ -157,27 +157,4 @@ shared_ptr<HCT::http2_end_point> ServiceResolver::SericeIdToEndPoint(const strin
 }
 
 
-/** DdRpcClient */
-
-bool DdRpcClient::m_Initialized(false);
-unique_ptr<ServiceResolver> DdRpcClient::m_Resolver;
-
-void DdRpcClient::Init(unique_ptr<ServiceResolver> Resolver)
-{
-    if (m_Initialized)
-        EDdRpcException::raise("DDRPC has already been initialized");
-    m_Initialized = true;
-    m_Resolver.swap(Resolver);
-    HCT::HttpClientTransport::Init();
-}
-
-void DdRpcClient::Finalize()
-{
-    if (!m_Initialized)
-        EDdRpcException::raise("DDRPC has not been initialized");
-    m_Initialized = false;
-    HCT::HttpClientTransport::Finalize();
-}
-
-
 };

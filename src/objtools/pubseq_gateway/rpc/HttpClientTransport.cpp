@@ -1392,21 +1392,4 @@ bool io_coordinator::add_request(shared_ptr<http2_request> req, long timeout_ms)
 }
 
 
-/** HttpClientTransport */
-
-shared_ptr<io_coordinator> HttpClientTransport::s_ioc;
-
-void HttpClientTransport::Init()
-{
-    if (!s_ioc) {
-        s_ioc = make_shared<io_coordinator>();
-    }
-}
-
-void HttpClientTransport::Finalize()
-{
-    s_ioc = nullptr;
-}
-
-
 };

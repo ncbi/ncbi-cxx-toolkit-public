@@ -175,17 +175,6 @@ struct http2_end_point
     }
 };
 
-class io_coordinator;
-
-class HttpClientTransport
-{
-public:
-    static std::shared_ptr<io_coordinator> s_ioc;
-
-    static void Init();
-    static void Finalize();
-};
-
 
 };
 

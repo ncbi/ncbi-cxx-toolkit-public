@@ -43,6 +43,82 @@
 #include <objtools/pubseq_gateway/impl/rpc/HttpClientTransportP.hpp>
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
 
+namespace HCT {
+
+using namespace std;
+
+/** HttpClientTransport */
+
+class HttpClientTransport
+{
+public:
+    static std::shared_ptr<io_coordinator> s_ioc;
+
+    static void Init();
+    static void Finalize();
+};
+
+shared_ptr<io_coordinator> HttpClientTransport::s_ioc;
+
+void HttpClientTransport::Init()
+{
+    if (!s_ioc) {
+        s_ioc = make_shared<io_coordinator>();
+    }
+}
+
+void HttpClientTransport::Finalize()
+{
+    s_ioc = nullptr;
+}
+
+}
+
+
+namespace DDRPC {
+
+using namespace std;
+
+/** DdRpcClient */
+
+class DdRpcClient final
+{
+private:
+    static std::unique_ptr<ServiceResolver> m_Resolver;
+    static bool m_Initialized;
+public:
+    static void Init(std::unique_ptr<ServiceResolver> Resolver);
+    static void Finalize();
+    static std::shared_ptr<HCT::http2_end_point> SericeIdToEndPoint(const std::string& ServiceId)
+    {
+        if (!m_Resolver)
+            EDdRpcException::raise("Resolver is not assigned");
+        return m_Resolver->SericeIdToEndPoint(ServiceId);
+    }
+};
+
+bool DdRpcClient::m_Initialized(false);
+unique_ptr<ServiceResolver> DdRpcClient::m_Resolver;
+
+void DdRpcClient::Init(unique_ptr<ServiceResolver> Resolver)
+{
+    if (m_Initialized)
+        EDdRpcException::raise("DDRPC has already been initialized");
+    m_Initialized = true;
+    m_Resolver.swap(Resolver);
+    HCT::HttpClientTransport::Init();
+}
+
+void DdRpcClient::Finalize()
+{
+    if (!m_Initialized)
+        EDdRpcException::raise("DDRPC has not been initialized");
+    m_Initialized = false;
+    HCT::HttpClientTransport::Finalize();
+}
+
+}
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE

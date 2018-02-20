@@ -89,22 +89,6 @@ public:
 };
 
 
-class DdRpcClient final
-{
-private:
-    static std::unique_ptr<ServiceResolver> m_Resolver;
-    static bool m_Initialized;
-public:
-    static void Init(std::unique_ptr<ServiceResolver> Resolver);
-    static void Finalize();
-    static std::shared_ptr<HCT::http2_end_point> SericeIdToEndPoint(const std::string& ServiceId)
-    {
-        if (!m_Resolver)
-            EDdRpcException::raise("Resolver is not assigned");
-        return m_Resolver->SericeIdToEndPoint(ServiceId);
-    }
-};
-
 };
 
 #endif
