@@ -224,7 +224,7 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey
         ("n", "String", "Organism Name", CArgDescriptions::eString);       // done
     arg_desc->AddOptionalKey
-        ("j", "String", "Source Qualifiers.\n\These qualifier values override any conflicting values read from a file (See -src-file)", 
+        ("j", "String", "Source Qualifiers.\nThese qualifier values override any conflicting values read from a file (See -src-file)", 
          CArgDescriptions::eString);   // done
     arg_desc->AddOptionalKey("src-file", "InFile", "Single source qualifiers file. The qualifiers in this file override any conflicting qualifiers automically read from a .src file, which, in turn, take precedence over source qualifiers specified in a fasta defline", CArgDescriptions::eInputFile); //done
     arg_desc->AddOptionalKey
