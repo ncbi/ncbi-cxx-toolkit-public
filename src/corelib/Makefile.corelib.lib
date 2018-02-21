@@ -15,9 +15,9 @@ UNIX_SRC = ncbi_os_unix
 
 LIB = xncbi
 
-LIBS = $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(LIBDW_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-CPPFLAGS = $(LIBUNWIND_INCLUDE) $(ORIG_CPPFLAGS)
+CPPFLAGS = $(BACKWARD_CPP_INCLUDE) $(LIBUNWIND_INCLUDE) $(ORIG_CPPFLAGS)
 
 # Special build rules for WorkShop
 ncbicntr_workshop.o: $(srcdir)/ncbicntr_workshop.il $(srcdir)/ncbicntr_workshop.cpp

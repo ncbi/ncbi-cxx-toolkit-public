@@ -5,8 +5,11 @@ if (UNIX)
     set(os_src ncbi_os_unix)
 elseif (WIN32)
     set(os_src ncbi_os_mswin)
-
 endif(UNIX)
+
+if (LIBBACKWARD_INCLUDE_DIR)
+    include_directories(${LIBBACKWARD_INCLUDE_DIR})
+endif()
 
 
 add_library(xncbi
@@ -27,10 +30,16 @@ target_link_libraries(xncbi
     ${DL_LIBS} ${LIBS}
 )
 
-if (${HAVE_LIBUNWIND})
+if (HAVE_LIBUNWIND)
     include_directories(SYSTEM ${LIBUNWIND_INCLUDE})
     target_link_libraries(xncbi
         ${LIBUNWIND_LIBS}
+    )
+endif ()
+
+if (HAVE_LIBDW)
+    target_link_libraries(xncbi
+        ${LIBDW_LIBRARIES}
     )
 endif ()
 

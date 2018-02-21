@@ -782,6 +782,23 @@ find_external_library(samtools
     LIBS bam
     HINTS "${NCBI_TOOLS_ROOT}/samtools")
 
+# libbackward
+find_path(LIBBACKWARD_INCLUDE_DIR
+    backward.hpp
+    HINTS $ENV{NCBI}/backward-cpp-1.3/include)
+if (LIBBACKWARD_INCLUDE_DIR)
+    message(STATUS "Found libbackward: ${LIBBACKWARD_INCLUDE_DIR}")
+    set(HAVE_LIBBACKWARD_CPP 1)
+endif()
+
+# libdw
+find_library(LIBDW_LIBRARIES NAMES libdw.so HINTS /usr/lib64)
+if (LIBDW_LIBRARIES)
+    set(HAVE_LIBDW 1)
+    message(STATUS "Found libdw: ${LIBDW_LIBRARIES}")
+endif()
+
+
 #LAPACK
 check_include_file(lapacke.h HAVE_LAPACKE_H)
 check_include_file(lapacke/lapacke.h HAVE_LAPACKE_LAPACKE_H)
