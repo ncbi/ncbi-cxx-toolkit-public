@@ -2594,9 +2594,10 @@ static list<string> s_GetFullLinkoutUrl(CBioseq::TId& cur_id,
                                                           labelList,                                  
                                                           first_gi,
                                                           linkoutInfo);                                 
-
-            list<string>::iterator iter = one_linkout.begin();        
-            linkout_list.push_back(*iter);
+            if(one_linkout.size() > 0) {
+                list<string>::iterator iter = one_linkout.begin();        
+                linkout_list.push_back(*iter);
+            }
         }
  }
  if(getIdentProteins) {
