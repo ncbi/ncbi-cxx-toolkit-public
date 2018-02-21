@@ -325,6 +325,11 @@ public:
     // Historically private, but useful for CQuery's inner classes too.
     const CDB_Exception::SContext& x_GetContext(void) const;
 
+    unsigned int GetMinRowCount(void) const
+    { return m_MinRowCount; }
+    unsigned int GetMaxRowCount(void) const
+    { return m_MaxRowCount; }
+
 private:
     void x_CheckCanWork(bool need_rs = false) const;
     void x_SetOutParameter(const string& name, const CVariant& value);

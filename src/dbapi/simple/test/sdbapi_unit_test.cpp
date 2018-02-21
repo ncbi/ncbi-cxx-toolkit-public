@@ -646,7 +646,71 @@ BOOST_AUTO_TEST_CASE(Test_FieldCopying)
         BOOST_CHECK_EQUAL(rows[2]["vc1000_field"].AsString(), "three");
     } catch (const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
-    } 
+    }
+}
+
+BOOST_AUTO_TEST_CASE(Test_GetTheOnlyRow)
+{
+    try {
+        {{
+            // Exactly one record => all is OK
+            unique_ptr<CQuery> query(new CQuery(GetDatabase().NewQuery()));
+
+            query->SetSql("select 1");
+            query->Execute();
+            query->RequireRowCount(1);
+
+            CQuery::CRow    row = query->GetTheOnlyRow();
+            BOOST_CHECK(row[1].AsInt4() == 1);
+        }}
+
+
+        {{
+            // No records => exception
+            unique_ptr<CQuery> query(new CQuery(GetDatabase().NewQuery()));
+
+            query->SetSql("select 1 where 1=2");
+            query->Execute();
+            query->RequireRowCount(1);
+
+            BOOST_CHECK_THROW(query->GetTheOnlyRow(), CSDB_Exception);
+        }}
+
+        {{
+            // More than one record => exception
+            unique_ptr<CQuery> query(new CQuery(GetDatabase().NewQuery()));
+
+            query->SetSql("select 1 as 'value' union select 2");
+            query->Execute();
+            query->RequireRowCount(1);
+
+            BOOST_CHECK_THROW(query->GetTheOnlyRow(), CSDB_Exception);
+        }}
+
+        {{
+            // RequireRowCount() sets more than 1 required
+            unique_ptr<CQuery> query(new CQuery(GetDatabase().NewQuery()));
+
+            query->SetSql("select 1");
+            query->Execute();
+            query->RequireRowCount(10);
+
+            BOOST_CHECK_THROW(query->GetTheOnlyRow(), CSDB_Exception);
+        }}
+
+        {{
+            // No RequireRowCount() call at all
+            unique_ptr<CQuery> query(new CQuery(GetDatabase().NewQuery()));
+
+            query->SetSql("select 1");
+            query->Execute();
+
+            CQuery::CRow    row = query->GetTheOnlyRow();
+            BOOST_CHECK(row[1].AsInt4() == 1);
+        }}
+    } catch (const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

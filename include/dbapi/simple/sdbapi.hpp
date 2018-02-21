@@ -597,13 +597,13 @@ public:
     /// All result sets left from previous statement or stored procedure
     /// execution are purged.  The query reverts to SingleSet mode, with
     /// no row count requirements.
-    void Execute(const CTimeout& timeout = CTimeout(CTimeout::eDefault));
+    CQuery& Execute(const CTimeout& timeout = CTimeout(CTimeout::eDefault));
     /// Execute stored procedure with given name.
     /// All result sets left from previous statement or stored procedure
     /// execution are purged.  The query reverts to SingleSet mode, with
     /// no row count requirements.
-    void ExecuteSP(CTempString sp,
-                   const CTimeout& timeout = CTimeout(CTimeout::eDefault));
+    CQuery& ExecuteSP(CTempString sp,
+                      const CTimeout& timeout = CTimeout(CTimeout::eDefault));
 
     /// Cancel the current statement or procedure call.  May be called
     /// asynchronously to force a "timeout" within one second.
@@ -716,6 +716,14 @@ public:
     /// call to SingleSet() or MultiSet() even if it was made after call to
     /// this method.
     CRowIterator end(void) const;
+
+    /// Provides the only row for the executed query.
+    /// It makes sure that there is exactly one row available and that the
+    /// required row count range includes 1.
+    /// VerifyDone() is called in the method so the user does not need to call
+    /// it.
+    /// In case of any problems a CSDB_Exception exception is generated.
+    CRow GetTheOnlyRow(void);
 
 private:
     friend class CDatabase;

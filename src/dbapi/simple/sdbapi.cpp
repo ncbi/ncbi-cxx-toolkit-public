@@ -3862,16 +3862,18 @@ CQuery::SetSql(CTempString sql)
     m_Impl->SetSql(sql);
 }
 
-void
+CQuery&
 CQuery::Execute(const CTimeout& timeout)
 {
     m_Impl->Execute(timeout);
+    return *this;
 }
 
-void
+CQuery&
 CQuery::ExecuteSP(CTempString sp, const CTimeout& timeout)
 {
     m_Impl->ExecuteSP(sp, timeout);
+    return *this;
 }
 
 void
@@ -3892,6 +3894,37 @@ CQuery::MultiSet(void)
 {
     m_Impl->SetIgnoreBounds(false);
     return *this;
+}
+
+CQuery::CRow
+CQuery::GetTheOnlyRow(void)
+{
+    // Check prerequisite that the requested number of rows includes 1
+    if (m_Impl->GetMinRowCount() > 1)
+        NCBI_THROW(CSDB_Exception, eInconsistent | Retriable(eRetriable_No),
+                   "Exactly one row requested while RequireRowCount() set "
+                   "the minimum to " +
+                   NStr::NumericToString(m_Impl->GetMinRowCount()));
+    if (m_Impl->GetMaxRowCount() < 1)
+        NCBI_THROW(CSDB_Exception, eInconsistent | Retriable(eRetriable_No),
+                   "Exactly one row requested while RequireRowCount() set "
+                   "the maximum to " +
+                   NStr::NumericToString(m_Impl->GetMaxRowCount()));
+
+    CQuery::iterator        q_it = begin();
+    if (q_it == end())
+        NCBI_THROW(CSDB_Exception, eInconsistent | Retriable(eRetriable_No),
+                   "Expected exactly one row, none are available");
+
+    CQuery::CRow            row(*q_it);
+
+    ++q_it;
+    if (q_it != end())
+        NCBI_THROW(CSDB_Exception, eInconsistent | Retriable(eRetriable_No),
+                   "Expected exactly one row, more than one are available");
+
+    VerifyDone();
+    return row;
 }
 
 unsigned int
