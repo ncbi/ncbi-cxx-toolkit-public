@@ -4622,7 +4622,7 @@ CRef<CSeq_align_set> CAlignFormatUtil::FilterSeqalignBySeqList(CSeq_align_set& s
 {
     CConstRef<CSeq_id> previous_id, subid; 
     list<string> use_this_seq;
-    bool match;
+    bool match = false;
 
     CRef<CSeq_align_set> new_aln(new CSeq_align_set);
     ITERATE(CSeq_align_set::Tdata, iter, source_aln.Get()){ 
