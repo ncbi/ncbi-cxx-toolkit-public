@@ -153,6 +153,11 @@ protected:
     std::string xGetCurrentLocusTagPrefix(
         CMappedFeat);
 
+
+    bool xGatherProteinAndTranscriptIds();
+    void xFeatureAddTranscriptAndProteinIdsCds(CMappedFeat& cds);
+    void xFeatureAddTranscriptAndProteinIdsMrna(CMappedFeat& cds);
+
     CSeq_annot& mAnnot;
     CRef<CScope> mpScope;
     CSeq_annot_Handle mHandle;
@@ -164,6 +169,12 @@ protected:
 	string mLocusTagPrefix;
 
 	map<string, int> mMapProtIdCounts;
+
+    using TFeatQualMap = map<CMappedFeat,string>;
+    TFeatQualMap mMapMrnaTranscriptId;
+    TFeatQualMap mMapMrnaProteinId;
+    TFeatQualMap mMapCdsTranscriptId;
+    TFeatQualMap mMapCdsProteinId;
 };
 
 END_SCOPE(edit)
