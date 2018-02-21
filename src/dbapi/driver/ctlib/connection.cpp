@@ -1211,8 +1211,9 @@ CTL_Connection::x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& descr_in)
     q += " = NULL where ";
 #endif
     q += '(' + descr_in.SearchConditions() + ')';
-    q += " and (" + tpsql + " is null";
-    q += " or RIGHT(" + tpsql + ", 8) = 0x0000000000000000)\n";
+    // q += " and (" + tpsql + " is null";
+    // q += " or RIGHT(" + tpsql + ", 8) = 0x0000000000000000)";
+    q += '\n';
     q += "select top 1 ";
     q += descr_in.ColumnName();
     q += ", " + tpsql;
@@ -1221,12 +1222,13 @@ CTL_Connection::x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& descr_in)
     q += " where ";
     q += descr_in.SearchConditions();
 
-    lcmd.reset(LangCmd(q));
+    lcmd.reset(LangCmd("-- " + q));
     rc = !lcmd->Send();
     CHECK_DRIVER_ERROR( rc, "Cannot send the language command." + GetDbgInfo(), 110035 );
 
     CDB_Result* res;
     I_BlobDescriptor* descr = NULL;
+    bool retried = false;
 
     while(lcmd->HasMoreResults()) {
         res = lcmd->Result();
@@ -1255,6 +1257,19 @@ CTL_Connection::x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& descr_in)
                                                           (size_t) CS_TP_SIZE);
                             memcpy(iod.textptr, textptr.Data(),
                                    iod.textptrlen);
+                            if (iod.textptrlen == CS_TP_SIZE) {
+                                for (int i = 8;  i < CS_TP_SIZE;  ++i) {
+                                    if (iod.textptr[i] != '\0') {
+                                        all_zero = false;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (all_zero  &&  !retried) {
+                            retried = true;
+                            lcmd->DumpResults();
+                            lcmd.reset(LangCmd(q));
                         }
                     }
                     break;
