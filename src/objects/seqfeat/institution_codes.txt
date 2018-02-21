@@ -295,7 +295,7 @@ ATH	s	Goulandris Natural History Museum
 ATHU	s	National and Kapodistrian University of Athens, Biology Department		
 ATHUM	c	ATHUM Culture Collection of Fungi		
 ATSC<AUS>	b	Australian Tree Seed Centre		
-ATU	c	Dept.of Biotechnology University of Tokyo		
+ATU	c	Department of of Biotechnology University of Tokyo		
 AU	s	Xiamen University, Biology Department		
 AUA	s	Auburn University, Biological Sciences Department		
 AUB	s	Andrews University		
@@ -3268,7 +3268,7 @@ KIUJ	s	Kyusu University
 KIZ	s	Kunming Institute of Zoology, Chinese Academy of Sciences		
 KKFC<THA>	s	Kasetsart  University Kamphaengsaen campus Fungus Collection		
 KKM	s	Kirkleatham Museum		
-KKU	s	Herbarium, Department of Biology, Khon Kaen University		
+KKU	s	 Khon Kaen University Herbarium, Department of Biology		
 KKUA	s	Khon Kaen University		
 KKUK	s	Kon-Kuk University		
 KL	s	Landesmuseum fuer Kaernten		
@@ -3632,7 +3632,7 @@ LSAM	s	Louisiana State Arthropod Museum
 LSC	s	Lyndon State College, Natural Sciences Department		
 LSCR	s	Organization for Tropical Studies, La Selva Biological Station		
 LSDC	s	Liangshan Institute for Drug Control		
-LSHB	c	Biochemistry Department		
+LSHB	c	London School of Hygiene and Tropical Medicine, Biochemistry Department	LSH
 LSHI	s	Universite Nationale du Zaire		
 LSN	s	Lord Wandsworth College Natural History Museum		
 LSP	s	Lake Superior Provincial Park		
@@ -5100,7 +5100,7 @@ OULU	s	University of Oulu, Biology Department
 OUM	s	Oxford University Museum of Natural History	OUMNH
 OUPR	s	Universidade Federal de Ouro Preto, Campus Universitario		
 OUSM	s	Oklahoma University Stovall Museum		
-OUT	c	Department of Biotechnology		
+OUT	c	Department of Biotechnology, Osaka University		
 OUVC	s	Ohio University Vertebrate Collection		
 OVMB	s	Okresni vlastivedne muzeum		
 OWU	s	Ohio Wesleyan University, Botany-Microbiology Department		
