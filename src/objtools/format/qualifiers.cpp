@@ -979,14 +979,24 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const CTempString& name,
             if( (*ref_iter)->Matches( **pub_iter ) ) {
                 // We have a match, so create the qual
                 string value;
+                string pub_id_str;
+                int serial = (*ref_iter)->GetSerial();
+                int pmid = (*ref_iter)->GetPMID();
+                if (serial) {
+                    pub_id_str = NStr::IntToString(serial);
+                } else if (pmid) {
+                    pub_id_str = NStr::IntToString(pmid);
+                }
+                /*
                 string pub_id_str =
                     ((*ref_iter)->GetPMID() ? NStr::IntToString((*ref_iter)->GetPMID()) :
                      NStr::IntToString((*ref_iter)->GetSerial()));
+                */
 
-                if(bHtml ) {
+                if(bHtml && pmid) {
                     // create a link
                     value  = "[<a href=\"";
-                    value += strLinkBasePubmed + pub_id_str + "\">" + pub_id_str + "</a>]";
+                    value += strLinkBasePubmed + NStr::IntToString(pmid) + "\">" + pub_id_str + "</a>]";
                 } else {
                     value = '[' + pub_id_str + ']';
                 }
