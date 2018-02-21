@@ -40,7 +40,7 @@
 #include <cassert>
 
 #include "uv.h"
-#include <objtools/pubseq_gateway/impl/rpc/uv_extra.h>
+#include "uv_extra.h"
 
 #include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
 #include <objtools/pubseq_gateway/impl/rpc/UvHelper.hpp>

@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = DdRpcDataPacker uv_extra
+SRC = DdRpcDataPacker
 LIB = psg_rpc
 
 LIBS = $(PSG_RPC_LIBS)
