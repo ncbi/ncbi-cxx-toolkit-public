@@ -203,7 +203,10 @@ echo "==========================================================================
 if test "$USE_GUI_CFG" = "yes"; then
   eval java -jar $PTBGUI $PTB_EXE -i $PTB_FLAGS $PTB_EXTRA $PTB_SAVED_CFG -logfile ${SLN_PATH}_configuration_log.txt -conffile $PTB_INI $TREE_ROOT $PTB_PROJECT $SLN_PATH
 else
-  eval $PTB_EXE $PTB_FLAGS $PTB_EXTRA $PTB_SAVED_CFG -logfile ${SLN_PATH}_configuration_log.txt -conffile $PTB_INI $TREE_ROOT $PTB_PROJECT $SLN_PATH
+  eval CHECK_TIMEOUT=900 $TREE_ROOT/scripts/common/check/check_exec.sh \
+    $PTB_EXE $PTB_FLAGS $PTB_EXTRA $PTB_SAVED_CFG \
+    -logfile ${SLN_PATH}_configuration_log.txt -conffile $PTB_INI $TREE_ROOT \
+    $PTB_PROJECT $SLN_PATH
 fi
 if test "$?" -ne 0; then
   PTB_RESULT=1
