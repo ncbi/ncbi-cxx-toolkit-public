@@ -9,6 +9,7 @@ $(ORIG_LIBS) needs3party
 Assembly2Fscreen needs fscr1
 Assembly2Fscreen needs idload_utils
 BlastCgiUtils needs $(CONNEXT)
+BlastCgiUtils needs connect
 BlastCgiUtils needs xhtml
 BlastOptsTools needs $(BLAST_LIBS)
 BlastOptsTools needs xcgi
@@ -123,7 +124,6 @@ bacterial_pipeline_proc needs gpipe_alnutil
 bag_access needs gpipe_common
 bamread needs $(COMPRESS_LIBS)
 bamread needs seqset
-bamread needs3party $(VDB_LIBS)
 basic_sample_lib needs xncbi
 bdb needs xutil
 bdb needs3party $(BERKELEYDB_LIBS)
@@ -553,6 +553,7 @@ grpc++ needs3party gpr
 grpc_integration needs xutil
 grpc_integration needs3party $(GRPC_LIBS)
 grpc_integration needs3party $(KRB5_LIBS)
+grpc_integration needs3party $(NETWORK_LIBS)
 gsoapssl++ needs $(Z_LIB)
 gsoapssl++ needs3party $(KRB5_LIBS)
 gsoapssl++ needs3party $(NETWORK_LIBS)
@@ -597,10 +598,12 @@ gui_opengl needs3party $(GLEW_LIBS)
 gui_opengl needs3party $(OPENGL_LIBS)
 gui_print needs gui_opengl
 gui_utils needs $(COMPRESS_LIBS)
+gui_utils needs tables
 gui_utils needs xconnect
 gui_utils needs xutil
 guide_tree needs phytree_format
 guide_tree needs xconnserv
+gumbelparams needs tables
 gumbelparams needs xutil
 hgvs needs $(OBJMGR_LIBS)
 hgvs needs $(OBJREAD_LIBS)
@@ -787,9 +790,11 @@ ncbi_xcache_netcache needs xconnserv
 ncbi_xcache_sqlite3 needs xutil
 ncbi_xcache_sqlite3 needs3party $(SQLITE3_LIBS)
 ncbi_xdbapi_ctlib needs dbapi_driver
+ncbi_xdbapi_ctlib needs3party $(NETWORK_LIBS)
 ncbi_xdbapi_ctlib needs3party $(SYBASE_DLLS)
 ncbi_xdbapi_ctlib needs3party $(SYBASE_LIBS)
 ncbi_xdbapi_dblib needs dbapi_driver
+ncbi_xdbapi_dblib needs3party $(NETWORK_LIBS)
 ncbi_xdbapi_dblib needs3party $(SYBASE_DBLIBS)
 ncbi_xdbapi_dblib needs3party $(SYBASE_DLLS)
 ncbi_xdbapi_dblib needs3party $(SYBASE_LIBS)
@@ -806,6 +811,7 @@ ncbi_xdbapi_ftds95 needs dbapi_driver
 ncbi_xdbapi_ftds95 needs3party $(FTDS_LIBS)
 ncbi_xdbapi_mysql needs dbapi_driver
 ncbi_xdbapi_mysql needs3party $(MYSQL_LIBS)
+ncbi_xdbapi_mysql needs3party $(NETWORK_LIBS)
 ncbi_xloader_aligndb needs aligndb_reader
 ncbi_xloader_asn_cache needs $(SOBJMGR_LIBS)
 ncbi_xloader_asn_cache needs asn_cache
@@ -916,7 +922,6 @@ ncbitxc2cxx needs3party objtax1
 ncbiwww needs3party ncbiacc
 ncbiwww needs3party ncbimsc1
 ncqhst needs xconnserv
-ncqhst needs3party $(LIBXML_LIBS)
 netblast needs3party ncbitool
 netblast needs3party netcli
 netcli needs3party $(NCBI_C_ncbi)
@@ -986,6 +991,7 @@ pstub needs3party $(ORIG_LIBS)
 pub needs medline
 pubmed needs medline
 python2.7 needs3party $(ORIG_LIBS)
+python_ncbi_dbapi needs connect
 python_ncbi_dbapi needs dbapi
 python_ncbi_dbapi needs3party $(PYTHON_LIBS)
 rcobaltasn_g needs xser
@@ -1069,7 +1075,6 @@ sqlite3 needs3party $(ORIG_LIBS)
 sqlitewrapp needs xncbi
 sqlitewrapp needs3party $(SQLITE3_LIBS)
 sraread needs $(SOBJMGR_LIBS)
-sraread needs3party $(VDB_LIBS)
 ssl needs $(Z_LIB)
 ssl needs3party $(KRB5_LIBS)
 ssl needs3party $(NETWORK_LIBS)
@@ -1193,7 +1198,6 @@ txserv14 needs txxmldoc
 txserv14 needs xconnect
 txxmldoc needs $(COMPRESS_LIBS)
 txxmldoc needs xutil
-txxmldoc needs3party $(LIBXML_LIBS)
 txxmldoc needs3party $(LIBXSLT_LIBS)
 u2tl needs $(Z_LIB)
 u2tl needs3party $(NETWORK_LIBS)
@@ -1233,7 +1237,6 @@ variation_utils needs xobjutil
 varrep needs xser
 vdb2blast needs $(BLAST_LIBS)
 vdb2blast needs3party $(BLAST_THIRD_PARTY_LIBS)
-vdb2blast needs3party $(VDB_LIBS)
 vibgif needs3party $(NCBI_C_ncbi)
 vibnet needs3party ncbiacc
 vibnet needs3party ncbidesk
@@ -1368,6 +1371,7 @@ xalan-c needs3party $(ORIG_LIBS)
 xalan-c needs3party $(XERCES_LIBS)
 xalanMsg needs3party $(ORIG_LIBS)
 xalgoalignnw needs $(SOBJMGR_LIBS)
+xalgoalignnw needs tables
 xalgoalignsplign needs xalgoalignnw
 xalgoalignsplign needs xalgoalignutil
 xalgoalignutil needs $(BLAST_LIBS)
@@ -1401,12 +1405,14 @@ xalgovmerge needs xncbi
 xalgowinmask needs seqmasks_io
 xaligndb needs dbapi
 xaligndb needs xalgoalignsplign
+xalnmgr needs tables
 xalnmgr needs xobjutil
 xalntool needs align_format
 xannot_builder needs gpipe_asn_proc
 xasmcompare needs $(SEQ_LIBS)
 xasmcompare needs pub
 xasn needs xhtml
+xasn needs3party $(NCBI_C_ncbi)
 xassembly_svc needs xgencollstats
 xbiosample_util needs $(OBJEDIT_LIBS)
 xbiosample_util needs mlacli
@@ -1451,7 +1457,9 @@ xconnext includes $(CONNEXT)
 xconnext needs xconnect
 xconnserv needs xthrserv
 xcser needs xser
+xcser needs3party $(NCBI_C_ncbi)
 xctools needs xncbi
+xctools needs3party $(NCBI_C_ncbi)
 xdb needs xncbi
 xdiff needs xncbi
 xdiscrepancy needs $(OBJEDIT_LIBS)
@@ -1509,7 +1517,6 @@ xid_utils needs xmlwrapp
 xid_utils_noncorelib needs txclient
 xid_utils_noncorelib needs xid_utils
 xid_wgs needs xncbi
-xid_wgs needs3party $(VDB_LIBS)
 xid_wgsdb needs xid_utils
 ximage needs xncbi
 ximage needs3party $(IMAGE_LIBS)
@@ -1521,18 +1528,15 @@ xmergetree needs $(SOBJMGR_LIBS)
 xml2 needs3party $(ORIG_LIBS)
 xmlreaders needs xmlwrapp
 xmlwrapp needs xconnect
-xmlwrapp needs3party $(LIBXML_LIBS)
 xmlwrapp needs3party $(LIBXSLT_LIBS)
 xmvdatacache needs mapview
 xmyncbi needs txclient
 xmyncbi needs txxmldoc
 xmyncbi_captcha needs $(CONNEXT)
+xmyncbi_captcha needs connect
 xmyncbi_captcha needs xncbi
-xncbi needs $(BZ2_LIB)
-xncbi needs $(Z_LIB)
-xncbi needs3party $(BZ2_LIBS)
-xncbi needs3party $(Z_LIBS)
-xncbi needs3party ncbimsc1
+xncbi needs3party $(ORIG_LIBS)
+xncbi needs3party $(VDB_LIBS)
 xnetblast needs scoremat
 xnetblastcli needs xconnect
 xnetblastcli needs xnetblast
@@ -1569,6 +1573,7 @@ xomssa needs xconnect
 xomssa needs xregexp
 xpbacktest needs xncbi
 xportal_auth needs $(CONNEXT)
+xportal_auth needs connect
 xportal_auth needs txxmldoc
 xportal_auth needs xcgi
 xprimer needs $(OBJMGR_LIBS)
@@ -1639,4 +1644,5 @@ xvalidate needs valerr
 xvalidate needs xalnmgr
 xxconnect includes connssl
 xxconnect needs xncbi
+xxconnect needs3party $(NCBI_C_ncbi)
 z needs3party $(ORIG_LIBS)
