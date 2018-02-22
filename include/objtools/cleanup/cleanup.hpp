@@ -548,6 +548,13 @@ public:
     /// occurs (starts with 1)
     static void SetCodeBreakLocation(CCode_break& cb, size_t pos, const CSeq_feat& cds);
 
+    static bool IsMethionine(const CCode_break& cb);
+
+    /// utility function for finding the code break for a given amino acid position
+    /// pos is the position of the amino acid where the translation exception 
+    /// occurs (starts with 1)
+    static CConstRef<CCode_break> GetCodeBreakForLocation(size_t pos, const CSeq_feat& cds);
+
 
 private:
     // Prohibit copy constructor & assignment operator

@@ -1494,6 +1494,19 @@ void x_CheckCodeBreakFrame(const CSeq_feat& cds, TSeqPos start, TSeqPos stop)
                        is_minus ? start - 3 : start + 3,
                        is_minus ? stop - 3 : stop + 3,
                        is_minus);
+
+    CCleanup::SetCodeBreakLocation(*cb, 3, cds);
+    x_CheckIntervalLoc(cb->GetLoc(), 
+        is_minus ? start - 6 : start + 6,
+        is_minus ? stop - 6 : stop + 6,
+        is_minus);
+
+    CCleanup::SetCodeBreakLocation(*cb, 4, cds);
+    x_CheckIntervalLoc(cb->GetLoc(), 
+        is_minus ? 0 : start + 9,
+        is_minus ? stop - 9 : 11,
+        is_minus);
+
 }
 
 
@@ -1594,6 +1607,38 @@ BOOST_AUTO_TEST_CASE(Test_SetCodeBreakLocation)
     CCleanup::SetCodeBreakLocation(*cb, 2, *cds);
     x_CheckIntervalLoc(cb->GetLoc(), 7, 9, true);
 
+}
+
+
+void TestGetCodeBreakForLocationByFrame(CCdregion::EFrame frame)
+{
+    CRef<CSeq_feat> cds(new CSeq_feat());
+    cds->SetLocation().SetInt().SetId().SetLocal().SetStr("nuc1");
+    cds->SetLocation().SetInt().SetFrom(0);
+    cds->SetLocation().SetInt().SetTo(11);
+    cds->SetData().SetCdregion().SetFrame(frame);
+
+    for (int i = 1; i < 5; i++) {
+        CRef<CCode_break> cb(new CCode_break());
+        cb->SetAa().SetNcbieaa('A' + i);
+        CCleanup::SetCodeBreakLocation(*cb, i, *cds);
+        cds->SetData().SetCdregion().SetCode_break().push_back(cb);
+        BOOST_CHECK_EQUAL(CCleanup::GetCodeBreakForLocation(i, *cds).GetPointer(), cb.GetPointer());
+    }
+    BOOST_CHECK_EQUAL(CCleanup::GetCodeBreakForLocation(1, *cds).GetPointer(),
+        cds->GetData().GetCdregion().GetCode_break().front().GetPointer());
+    BOOST_CHECK_EQUAL(CCleanup::GetCodeBreakForLocation(4, *cds).GetPointer(),
+        cds->GetData().GetCdregion().GetCode_break().back().GetPointer());
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_GetCodeBreakForLocation)
+{
+    TestGetCodeBreakForLocationByFrame(CCdregion::eFrame_not_set);
+    TestGetCodeBreakForLocationByFrame(CCdregion::eFrame_one);
+    TestGetCodeBreakForLocationByFrame(CCdregion::eFrame_two);
+    TestGetCodeBreakForLocationByFrame(CCdregion::eFrame_three);
 }
 
 
