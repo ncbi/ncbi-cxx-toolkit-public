@@ -88,7 +88,8 @@ TMgr-DisplayTrackRequest ::= SEQUENCE {
         include-stats BOOLEAN DEFAULT FALSE,
         include-default-tracks BOOLEAN DEFAULT FALSE,
         include-track-items BOOLEAN DEFAULT FALSE,
-        expanded-rid-details BOOLEAN DEFAULT FALSE
+        expanded-rid-details BOOLEAN DEFAULT FALSE,
+        include-track-hubs BOOLEAN DEFAULT FALSE
     } OPTIONAL
 }
 
@@ -100,6 +101,7 @@ TMgr-DisplayTrackReply ::= SEQUENCE {
 }
 
 TMgr-DTrackId ::= Dbtag
+TMgr-DHubId ::= Dbtag
 
 TMgr-SeqTrackIdRequest ::= SEQUENCE {
     seq-accession VisibleString
@@ -198,12 +200,17 @@ TMgr-Attribute ::= SEQUENCE {
     value UTF8String
 }
 
+---
+--- Meta data for TMS, TMSUser, TMSRemote (tracks and hubs)
+---
 TMgr-DisplayTrack ::= SEQUENCE {
+    -- hub-ids, tms-ids, user-ids, remote-ids and must be distinguishable
     dtrack-id TMgr-DTrackId,
     name UTF8String,
     attrs SET OF TMgr-Attribute OPTIONAL,
     seqs SET OF TMgr-DatasetItemSeq OPTIONAL,
-    items SET OF TMgr-DatasetItem OPTIONAL
+    items SET OF TMgr-DatasetItem OPTIONAL,
+    hub-id TMgr-DHubId OPTIONAL -- used to show a track belongs to a hub
 }
 
 TMgr-DatasetItem ::= SEQUENCE {
@@ -306,19 +313,62 @@ TMgr-CreateUserTrackReply ::= SEQUENCE {
     display-tracks SET OF TMgr-DisplayTrack OPTIONAL
 }
 
+---
+--- Used to remove user tracks, remote tracks and hubs
+---
 TMgr-RemoveUserTrackRequest ::= SEQUENCE {
     identity TMgr-Identity,
     dtrack-ids SET OF TMgr-DTrackId
 }
 
-TMgr-CreateRemoteTrackRequest ::= SEQUENCE {
-    identity TMgr-Identity,
-    track-name VisibleString OPTIONAL,
-    assembly-acc VisibleString,
-    file-type VisibleString,
-    url VisibleString
+TMgr-TypeTrackType ::= INTEGER {
+    hub (0),
+    bigWig (2),
+    bigBed (3),
+    bigGenePred (4),
+    bigChain (5),
+    bigNarrowPeak (6),
+    bigBarChart (7),
+    bigPsl (8),
+    bigMaf (9),
+    bigWig (10),
+    bam (11),
+    cram (12),
+    hal (13),
+    vcf (14)
 }
 
+---
+--- Used to create remote tracks, hubs and tracks in hubs
+---
+TMgr-CreateRemoteTrackRequest ::= SEQUENCE {
+    -- common to hubs and tracks
+    identity TMgr-Identity, -- identity of user
+    assembly-acc VisibleString, --  NCBI assembly accession
+    url VisibleString, -- url to track data or hub.txt
+    type TMgr-TypeTrackType,
+
+    -- track specific, i.e., when type != hub
+    track-name VisibleString OPTIONAL,
+    index-url VisibleString OPTIONAL, -- for tracks only, not hubs
+    hub-id TMgr-DHubId OPTIONAL,--- used to associate a track with a hub
+
+    -- hub specific, required if type = hub
+    trackhub SEQUENCE {
+        hub VisibleString, -- hub entry from hub.txt file
+        short-label VisibleString, -- shortLabel entry from hub.txt file
+        long-label VisibleString,  -- longLabel entry from hub.txt file
+        assembly-db-name VisibleString, --- genome entry in genomes.txt file that equates to assembly-acc
+        trackdb-url VisibleString  --- trackDb entry in genomes.txt file associated with assembly_acc
+    } OPTIONAL,
+
+    -- future use
+    attrs SET OF TMgr-Attribute OPTIONAL
+}
+
+---
+--- Used to return created hubs, remote tracks, and tracks in hubs
+---
 TMgr-CreateRemoteTrackReply ::= SEQUENCE {
     messages SEQUENCE OF TMgr-Message OPTIONAL,
     display-tracks SET OF TMgr-DisplayTrack OPTIONAL
@@ -329,6 +379,9 @@ TMgr-Status ::= INTEGER {
     failure (1)
 }
 
+---
+--- Response to removing user tracks, remote tracks, hubs and tracks in hubs
+---
 TMgr-RemoveUserTrackReply ::= SEQUENCE {
     messages SEQUENCE OF TMgr-Message OPTIONAL
 }
