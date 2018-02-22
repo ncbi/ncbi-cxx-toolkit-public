@@ -10029,14 +10029,15 @@ void CValidError_bioseq::ValidateCompleteGenome(const CBioseq& seq)
     }
 }
 
+
 void CValidError_bioseq::ValidateIDSetAgainstDb(const CBioseq& seq)
 {
     const CSeq_id*  gb_id = 0;
     CRef<CSeq_id> db_gb_id;
     TGi             gi = ZERO_GI,
                     db_gi = ZERO_GI;
-    const CDbtag*   general_id = 0,
-                *   db_general_id = 0;
+    CRef<CSeq_id>   db_general_id(NULL);
+    const CDbtag*   general_id = 0;
 
     FOR_EACH_SEQID_ON_BIOSEQ (id, seq) {
         switch ( (*id)->Which() ) {
@@ -10079,7 +10080,8 @@ void CValidError_bioseq::ValidateIDSetAgainstDb(const CBioseq& seq)
                 break;
                 
             case CSeq_id::e_General:
-                db_general_id = &((*id).GetSeqId()->GetGeneral());
+                db_general_id.Reset(new CSeq_id());
+                db_general_id->Assign(*((*id).GetSeqId()));
                 break;
                 
             default:
@@ -10114,8 +10116,8 @@ void CValidError_bioseq::ValidateIDSetAgainstDb(const CBioseq& seq)
 
         string new_gen_label, old_gen_label;
         if ( general_id  != 0  &&  db_general_id != 0 ) {
-            if ( !general_id->Match(*db_general_id) ) {
-                db_general_id->GetLabel(&old_gen_label);
+            if ( !general_id->Match(db_general_id->GetGeneral()) ) {
+                db_general_id->GetGeneral().GetLabel(&old_gen_label);
                 general_id->GetLabel(&new_gen_label);
                 PostErr(eDiag_Warning, eErr_SEQ_INST_UnexpectedIdentifierChange,
                     "New general ID (" + new_gen_label + 
@@ -10128,7 +10130,7 @@ void CValidError_bioseq::ValidateIDSetAgainstDb(const CBioseq& seq)
                 "Gain of general ID (" + new_gen_label + ") on gi (" + 
                 gi_str + ") compared to the NCBI sequence repository", seq);
         } else if ( db_general_id != 0 ) {
-            db_general_id->GetLabel(&old_gen_label);
+            db_general_id->GetGeneral().GetLabel(&old_gen_label);
             PostErr(eDiag_Warning, eErr_SEQ_INST_UnexpectedIdentifierChange,
                 "Loss of general ID (" + old_gen_label + ") on gi (" +
                 gi_str + ") compared to the NCBI sequence repository", seq);
