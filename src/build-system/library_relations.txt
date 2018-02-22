@@ -124,6 +124,7 @@ bacterial_pipeline_proc needs gpipe_alnutil
 bag_access needs gpipe_common
 bamread needs $(COMPRESS_LIBS)
 bamread needs seqset
+bamread needs3party $(VDB_LIBS)
 basic_sample_lib needs xncbi
 bdb needs xutil
 bdb needs3party $(BERKELEYDB_LIBS)
@@ -532,8 +533,10 @@ gpipe_val needs $(SEQ_LIBS)
 gpipe_val needs pub
 gpipe_val needs valerr
 gpipe_val needs xmlwrapp
+gpipe_xlsx needs $(Z_LIB)
 gpipe_xlsx needs xncbi
 gpipe_xlsx needs3party $(LIBXLSXWRITER_LIBS)
+gpipe_xlsx needs3party $(Z_LIBS)
 gpipe_xml needs gpipe_attr
 gpipe_xml needs gpipe_dateutil
 gpipe_xmlutil needs xmlwrapp
@@ -550,10 +553,12 @@ grpc++ needs $(Z_LIB)
 grpc++ needs3party $(ORIG_LIBS)
 grpc++ needs3party $(Z_LIBS)
 grpc++ needs3party gpr
+grpc_integration needs $(Z_LIB)
 grpc_integration needs xutil
 grpc_integration needs3party $(GRPC_LIBS)
 grpc_integration needs3party $(KRB5_LIBS)
 grpc_integration needs3party $(NETWORK_LIBS)
+grpc_integration needs3party $(Z_LIBS)
 gsoapssl++ needs $(Z_LIB)
 gsoapssl++ needs3party $(KRB5_LIBS)
 gsoapssl++ needs3party $(NETWORK_LIBS)
@@ -922,6 +927,7 @@ ncbitxc2cxx needs3party objtax1
 ncbiwww needs3party ncbiacc
 ncbiwww needs3party ncbimsc1
 ncqhst needs xconnserv
+ncqhst needs3party $(LIBXML_LIBS)
 netblast needs3party ncbitool
 netblast needs3party netcli
 netcli needs3party $(NCBI_C_ncbi)
@@ -1075,6 +1081,7 @@ sqlite3 needs3party $(ORIG_LIBS)
 sqlitewrapp needs xncbi
 sqlitewrapp needs3party $(SQLITE3_LIBS)
 sraread needs $(SOBJMGR_LIBS)
+sraread needs3party $(VDB_LIBS)
 ssl needs $(Z_LIB)
 ssl needs3party $(KRB5_LIBS)
 ssl needs3party $(NETWORK_LIBS)
@@ -1198,6 +1205,7 @@ txserv14 needs txxmldoc
 txserv14 needs xconnect
 txxmldoc needs $(COMPRESS_LIBS)
 txxmldoc needs xutil
+txxmldoc needs3party $(LIBXML_LIBS)
 txxmldoc needs3party $(LIBXSLT_LIBS)
 u2tl needs $(Z_LIB)
 u2tl needs3party $(NETWORK_LIBS)
@@ -1237,6 +1245,7 @@ variation_utils needs xobjutil
 varrep needs xser
 vdb2blast needs $(BLAST_LIBS)
 vdb2blast needs3party $(BLAST_THIRD_PARTY_LIBS)
+vdb2blast needs3party $(VDB_LIBS)
 vibgif needs3party $(NCBI_C_ncbi)
 vibnet needs3party ncbiacc
 vibnet needs3party ncbidesk
@@ -1517,6 +1526,7 @@ xid_utils needs xmlwrapp
 xid_utils_noncorelib needs txclient
 xid_utils_noncorelib needs xid_utils
 xid_wgs needs xncbi
+xid_wgs needs3party $(VDB_LIBS)
 xid_wgsdb needs xid_utils
 ximage needs xncbi
 ximage needs3party $(IMAGE_LIBS)
@@ -1528,6 +1538,7 @@ xmergetree needs $(SOBJMGR_LIBS)
 xml2 needs3party $(ORIG_LIBS)
 xmlreaders needs xmlwrapp
 xmlwrapp needs xconnect
+xmlwrapp needs3party $(LIBXML_LIBS)
 xmlwrapp needs3party $(LIBXSLT_LIBS)
 xmvdatacache needs mapview
 xmyncbi needs txclient
@@ -1536,7 +1547,6 @@ xmyncbi_captcha needs $(CONNEXT)
 xmyncbi_captcha needs connect
 xmyncbi_captcha needs xncbi
 xncbi needs3party $(ORIG_LIBS)
-xncbi needs3party $(VDB_LIBS)
 xnetblast needs scoremat
 xnetblastcli needs xconnect
 xnetblastcli needs xnetblast
