@@ -2461,6 +2461,16 @@ public:
     virtual void Reopen(TReopenFlags /*flags*/) {}
 };
 
+
+struct NCBI_XNCBI_EXPORT SDiagHandlerInitializer
+{
+    SDiagHandlerInitializer(void);
+    ~SDiagHandlerInitializer(void);
+};
+
+static SDiagHandlerInitializer s_DiagHandlerInitializer;
+
+
 /// Diagnostic handler function type.
 typedef void (*FDiagHandler)(const SDiagMessage& mess);
 
