@@ -4588,7 +4588,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NCKU\ts\tNational Cheng-Kung University, Biology Department\t\t",
 "NCLN\ts\tNew College\t\t",
 "NCMA\ts\tRaleigh, North Carolina Department of Environmental Health and Natural Resources\t\t",
-"NCMH\tc\tThe North Carolina Memorial Hostital\t\t",
+"NCMH\tc\tThe North Carolina Memorial Hospital\t\t",
 "NCMK\ts\tNorwich Castle Museum\t\t",
 "NCP\th\tNational  Collection of Passiflora\t\t",
 "NCPF\tc\tNational Collection of Pathogenic Fungi\t\t",

@@ -4555,7 +4555,7 @@ NCIP	s	Pusat Penelitian dan Pengembangan Oseanologi
 NCKU	s	National Cheng-Kung University, Biology Department		
 NCLN	s	New College		
 NCMA	s	Raleigh, North Carolina Department of Environmental Health and Natural Resources		
-NCMH	c	The North Carolina Memorial Hostital		
+NCMH	c	The North Carolina Memorial Hospital		
 NCMK	s	Norwich Castle Museum		
 NCP	h	National  Collection of Passiflora		
 NCPF	c	National Collection of Pathogenic Fungi		
