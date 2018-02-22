@@ -871,9 +871,28 @@ int CAsnSubCacheCreateApplication::Run(void)
     CDataLoadersUtil::SetupObjectManager(args, *om);
 
     if (args["no-wgs-master-descs"]) {
-        static_cast<CGBDataLoader*>(CObjectManager::GetInstance()
-                                   ->FindDataLoader("GBLOADER"))
-                                   ->SetAddWGSMasterDescr(false);
+        CObjectManager::TRegisteredNames registered_names;
+        om->GetRegisteredNames(registered_names);
+        for (const string& loader_name: registered_names) {
+            CDataLoader* loader = om->FindDataLoader(loader_name);
+            _ASSERT(loader);
+            {{
+                CGBDataLoader* gb_loader = dynamic_cast<CGBDataLoader*>(loader);
+                if (gb_loader) {
+                    gb_loader->SetAddWGSMasterDescr(false);
+                    continue;
+                }
+            }}
+#ifdef HAVE_NCBI_VDB
+            {{
+                CWGSDataLoader* wgs_loader = dynamic_cast<CWGSDataLoader*>(loader);
+                if (wgs_loader) {
+                    wgs_loader->SetAddWGSMasterDescr(false);
+                    continue;
+                }
+            }}
+#endif
+        }
     }
 
     CStopWatch  sw;
