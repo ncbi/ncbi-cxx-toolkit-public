@@ -3914,14 +3914,14 @@ CQuery::GetTheOnlyRow(void)
     CQuery::iterator        q_it = begin();
     if (q_it == end())
         NCBI_THROW(CSDB_Exception, eInconsistent | Retriable(eRetriable_No),
-                   "Expected exactly one row, none are available");
+                   "Expected exactly one row, but none are available");
 
     CQuery::CRow            row(*q_it);
 
     ++q_it;
     if (q_it != end())
         NCBI_THROW(CSDB_Exception, eInconsistent | Retriable(eRetriable_No),
-                   "Expected exactly one row, more than one are available");
+                   "Expected exactly one row, but more than one are available");
 
     VerifyDone();
     return row;
