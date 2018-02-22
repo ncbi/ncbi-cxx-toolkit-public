@@ -1462,3 +1462,189 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4464)
     TestExceptionTextFix("trans_splicing", "trans-splicing");
     TestExceptionTextFix("trans splicing", "trans-splicing");
 }
+
+
+void x_CheckIntervalLoc(const CSeq_interval& lint, TSeqPos start, TSeqPos stop, bool is_minus = false)
+{
+    BOOST_CHECK_EQUAL(lint.GetId().GetLocal().GetStr(), "nuc1");
+    BOOST_CHECK_EQUAL(lint.GetFrom(), start);
+    BOOST_CHECK_EQUAL(lint.GetTo(), stop);
+    if (is_minus) {
+        BOOST_CHECK_EQUAL(lint.GetStrand(), eNa_strand_minus);
+    } else {
+        BOOST_CHECK_EQUAL(lint.IsSetStrand(), false);
+    }
+}
+
+
+void x_CheckIntervalLoc(const CSeq_loc& loc, TSeqPos start, TSeqPos stop, bool is_minus = false)
+{
+    x_CheckIntervalLoc(loc.GetInt(), start, stop, is_minus);
+}
+
+
+void x_CheckCodeBreakFrame(const CSeq_feat& cds, TSeqPos start, TSeqPos stop)
+{
+    CRef<CCode_break> cb(new CCode_break());
+    bool is_minus = (cds.GetLocation().IsSetStrand() && (cds.GetLocation().GetStrand() == eNa_strand_minus));
+    CCleanup::SetCodeBreakLocation(*cb, 1, cds);
+    x_CheckIntervalLoc(cb->GetLoc(), start, stop, is_minus);
+    CCleanup::SetCodeBreakLocation(*cb, 2, cds);
+    x_CheckIntervalLoc(cb->GetLoc(), 
+                       is_minus ? start - 3 : start + 3,
+                       is_minus ? stop - 3 : stop + 3,
+                       is_minus);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SetCodeBreakLocation)
+{
+    CRef<CSeq_feat> cds(new CSeq_feat());
+    cds->SetLocation().SetInt().SetId().SetLocal().SetStr("nuc1");
+    cds->SetLocation().SetInt().SetFrom(0);
+    cds->SetLocation().SetInt().SetTo(11);
+
+    x_CheckCodeBreakFrame(*cds, 0, 2);
+
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_not_set);
+    x_CheckCodeBreakFrame(*cds, 0, 2);
+
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
+    x_CheckCodeBreakFrame(*cds, 0, 2);
+
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_two);
+    x_CheckCodeBreakFrame(*cds, 1, 3);
+
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_three);
+    x_CheckCodeBreakFrame(*cds, 2, 4);
+
+    cds->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+    cds->SetData().SetCdregion().ResetFrame();
+    x_CheckCodeBreakFrame(*cds, 9, 11);
+
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_not_set);
+    x_CheckCodeBreakFrame(*cds, 9, 11);
+
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
+    x_CheckCodeBreakFrame(*cds, 9, 11);
+
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_two);
+    x_CheckCodeBreakFrame(*cds, 8, 10);
+
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_three);
+    x_CheckCodeBreakFrame(*cds, 7, 9);
+
+    cds->SetData().SetCdregion().ResetFrame();
+    CRef<CSeq_loc> l1(new CSeq_loc());
+    CRef<CSeq_loc> l2(new CSeq_loc());
+    CRef<CSeq_loc> l3(new CSeq_loc());
+    l1->SetInt().SetId().SetLocal().SetStr("nuc1");
+    l1->SetInt().SetFrom(0);
+    l1->SetInt().SetTo(1);
+    
+    l2->SetInt().SetId().SetLocal().SetStr("nuc1");
+    l2->SetInt().SetFrom(5);
+    l2->SetInt().SetTo(13);
+
+    l3->SetPnt().SetId().SetLocal().SetStr("nuc1");
+    l3->SetPnt().SetPoint(16);
+
+    cds->SetLocation().SetMix().Set().push_back(l1);
+    cds->SetLocation().SetMix().Set().push_back(l2);
+    cds->SetLocation().SetMix().Set().push_back(l3);
+
+    CRef<CCode_break> cb(new CCode_break());
+    CCleanup::SetCodeBreakLocation(*cb, 1, *cds);
+    x_CheckIntervalLoc(*cb->GetLoc().GetPacked_int().Get().front(), 0, 1);
+    x_CheckIntervalLoc(*cb->GetLoc().GetPacked_int().Get().back(), 5, 5);
+    CCleanup::SetCodeBreakLocation(*cb, 2, *cds);
+    x_CheckIntervalLoc(cb->GetLoc(), 6, 8);
+
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_two);
+    CCleanup::SetCodeBreakLocation(*cb, 1, *cds);
+    x_CheckIntervalLoc(*cb->GetLoc().GetPacked_int().Get().front(), 1, 1);
+    x_CheckIntervalLoc(*cb->GetLoc().GetPacked_int().Get().back(), 5, 6);
+    CCleanup::SetCodeBreakLocation(*cb, 2, *cds);
+    x_CheckIntervalLoc(cb->GetLoc(), 7, 9);
+
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_three);
+    CCleanup::SetCodeBreakLocation(*cb, 1, *cds);
+    x_CheckIntervalLoc(cb->GetLoc(), 5, 7);
+    CCleanup::SetCodeBreakLocation(*cb, 2, *cds);
+    x_CheckIntervalLoc(cb->GetLoc(), 8, 10);
+
+    l1->SetInt().SetStrand(eNa_strand_minus);
+    l2->SetInt().SetStrand(eNa_strand_minus);
+    l3->SetPnt().SetStrand(eNa_strand_minus);
+    cds->ResetLocation();
+    cds->SetLocation().SetMix().Set().push_back(l3);
+    cds->SetLocation().SetMix().Set().push_back(l2);
+    cds->SetLocation().SetMix().Set().push_back(l1);
+    cds->SetData().SetCdregion().ResetFrame();
+
+    CCleanup::SetCodeBreakLocation(*cb, 1, *cds);
+    x_CheckIntervalLoc(*cb->GetLoc().GetPacked_int().Get().front(), 16, 16, true);
+    x_CheckIntervalLoc(*cb->GetLoc().GetPacked_int().Get().back(), 12, 13, true);
+    CCleanup::SetCodeBreakLocation(*cb, 2, *cds);
+    x_CheckIntervalLoc(cb->GetLoc(), 9, 11, true);
+
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_three);
+    CCleanup::SetCodeBreakLocation(*cb, 1, *cds);
+    x_CheckIntervalLoc(cb->GetLoc(), 10, 12, true);
+    CCleanup::SetCodeBreakLocation(*cb, 2, *cds);
+    x_CheckIntervalLoc(cb->GetLoc(), 7, 9, true);
+
+}
+
+
+void x_VerifyFixedRNAEditingCodingRegion(const CSeq_feat& cds, const string& except_text, size_t num_code_break)
+{
+    BOOST_CHECK_EQUAL(cds.IsSetExcept(), true);
+    BOOST_CHECK_EQUAL(cds.GetExcept_text(), except_text);
+    BOOST_CHECK_EQUAL(cds.GetData().GetCdregion().GetCode_break().size(), num_code_break);
+    CConstRef<CCode_break> cb = cds.GetData().GetCdregion().GetCode_break().front();
+    x_CheckIntervalLoc(cb->GetLoc(), 0, 2);
+    BOOST_CHECK_EQUAL(cb->GetAa().GetNcbieaa(), 'M');
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FixRNAEditingCodingRegion)
+{
+    CRef<CSeq_feat> cds(new CSeq_feat());
+    // false because data not set
+    BOOST_CHECK_EQUAL(CCleanup::FixRNAEditingCodingRegion(*cds), false);
+    cds->SetData().SetCdregion();
+
+    cds->SetLocation().SetInt().SetId().SetLocal().SetStr("nuc1");
+    cds->SetLocation().SetInt().SetFrom(0);
+    cds->SetLocation().SetInt().SetTo(10);
+    cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    // false because 5' partial
+    BOOST_CHECK_EQUAL(CCleanup::FixRNAEditingCodingRegion(*cds), false);
+
+    cds->SetLocation().SetPartialStart(false, eExtreme_Biological);
+    BOOST_CHECK_EQUAL(CCleanup::FixRNAEditingCodingRegion(*cds), true);
+    x_VerifyFixedRNAEditingCodingRegion(*cds, "RNA editing", 1);
+
+    // no change because already set
+    BOOST_CHECK_EQUAL(CCleanup::FixRNAEditingCodingRegion(*cds), false);
+    x_VerifyFixedRNAEditingCodingRegion(*cds, "RNA editing", 1);
+
+    cds->SetData().SetCdregion().ResetCode_break();
+    BOOST_CHECK_EQUAL(CCleanup::FixRNAEditingCodingRegion(*cds), true);
+    x_VerifyFixedRNAEditingCodingRegion(*cds, "RNA editing", 1);
+
+    // append to exception text
+    cds->SetExcept_text("foo");
+    BOOST_CHECK_EQUAL(CCleanup::FixRNAEditingCodingRegion(*cds), true);
+    x_VerifyFixedRNAEditingCodingRegion(*cds, "foo; RNA editing", 1);
+
+    // prepend translation exception
+    cds->SetData().SetCdregion().ResetCode_break();
+    CRef<CCode_break> cb(new CCode_break());
+    CCleanup::SetCodeBreakLocation(*cb, 2, *cds);
+    cds->SetData().SetCdregion().SetCode_break().push_back(cb);
+    BOOST_CHECK_EQUAL(CCleanup::FixRNAEditingCodingRegion(*cds), true);
+    x_VerifyFixedRNAEditingCodingRegion(*cds, "foo; RNA editing", 2);
+
+}

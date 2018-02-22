@@ -4630,5 +4630,177 @@ bool CCleanup::MakeIRDFeatsFromSourceXrefs(CSeq_entry_Handle entry)
 }
 
 
+bool s_IsMethionine(const CCode_break& cb)
+{
+    if (!cb.IsSetAa()) {
+        return false;
+    }
+    bool rval = false;
+    switch (cb.GetAa().Which()) {
+        case CCode_break::TAa::e_Ncbi8aa:
+            if (cb.GetAa().GetNcbi8aa() == 13) {
+                rval = true;
+            }
+            break;
+        case CCode_break::TAa::e_Ncbieaa:
+            if (cb.GetAa().GetNcbieaa() == 'M') {
+                rval = true;
+            } 
+            break;
+        case CCode_break::TAa::e_Ncbistdaa:
+            if (cb.GetAa().GetNcbistdaa() == 13) {
+                rval = true;
+            }
+            break;
+        default:
+            break;
+    }
+    return rval;
+}
+
+
+CConstRef<CCode_break> s_GetStartTranslationException(const CSeq_feat& cds)
+{
+    if (!cds.IsSetData() || !cds.GetData().IsCdregion() ||
+        !cds.IsSetLocation() ||
+        !cds.GetData().GetCdregion().IsSetCode_break()) {
+        return CConstRef<CCode_break>(NULL);
+    }
+    TSeqPos cds_start = cds.GetLocation().GetStart(eExtreme_Biological);
+    for (auto it : cds.GetData().GetCdregion().GetCode_break()) {
+        if (s_IsMethionine(*it) &&
+            it->IsSetLoc() &&
+            it->GetLoc().GetStart(eExtreme_Biological) == cds_start) {
+            return it;
+        }
+    }
+    return CConstRef<CCode_break>(NULL);
+}
+
+
+void CCleanup::SetCodeBreakLocation(CCode_break& cb, size_t pos, const CSeq_feat& cds)
+{
+    int start = pos;
+    start -= 1;
+    start *= 3;
+    int frame = 0;
+    if (cds.IsSetData() && cds.GetData().IsCdregion() && cds.GetData().GetCdregion().IsSetFrame())
+    {
+        switch(cds.GetData().GetCdregion().GetFrame())
+        {
+        case CCdregion::eFrame_not_set :
+        case CCdregion::eFrame_one : frame = 0; break;
+        case CCdregion::eFrame_two : frame = 1; break;
+        case  CCdregion::eFrame_three : frame = 2; break;
+        default : frame = 0; break;
+        }
+    }
+    int frame_shift = (start - frame) % 3;
+    if (frame_shift < 0) {
+        frame_shift += 3;
+    }
+    if (frame_shift == 1)
+    start += 2;
+    else if (frame_shift == 2)
+    start += 1;
+
+    int offset = 0;
+    CRef<CSeq_loc> cb_loc (new CSeq_loc());
+    for (CSeq_loc_CI loc_iter(cds.GetLocation());  loc_iter;  ++loc_iter) {
+        int len = loc_iter.GetRange().GetLength();
+        if (offset <= start && offset + len > start) {
+            cb_loc->SetInt().SetId().Assign(loc_iter.GetSeq_id());
+            if (loc_iter.IsSetStrand() && loc_iter.GetStrand() == eNa_strand_minus) {                    
+                cb_loc->SetInt().SetStrand(eNa_strand_minus);
+                cb_loc->SetInt().SetTo(loc_iter.GetRange().GetTo() - (start - offset) );
+            } else {
+                cb_loc->SetInt().SetFrom(loc_iter.GetRange().GetFrom() + start - offset);
+            }
+            if (offset <= start + 2 && offset + len > start + 2) {
+                if (loc_iter.IsSetStrand() && loc_iter.GetStrand() == eNa_strand_minus) {                    
+                    cb_loc->SetInt().SetFrom(loc_iter.GetRange().GetTo() - (start - offset + 2) );
+                } else {
+                    cb_loc->SetInt().SetTo(loc_iter.GetRange().GetFrom() + start - offset + 2);
+                }
+            } else {
+                if (loc_iter.IsSetStrand() && loc_iter.GetStrand() == eNa_strand_minus) {                    
+                    cb_loc->SetInt().SetFrom(loc_iter.GetRange().GetFrom());
+                } else {
+                    cb_loc->SetInt().SetTo(loc_iter.GetRange().GetTo());
+                }
+            }
+        } else if (offset > start && offset <= start + 2) {
+            if (cb_loc->IsInt()) {
+                CRef<CSeq_interval> tmp(new CSeq_interval());
+                tmp->Assign (cb_loc->GetInt());
+                cb_loc->SetPacked_int().Set().push_back(tmp);
+            }
+            // add new interval
+            CRef<CSeq_interval> tmp (new CSeq_interval());
+            tmp->SetId().Assign(loc_iter.GetSeq_id());
+            if (loc_iter.IsSetStrand() && loc_iter.GetStrand() == eNa_strand_minus) {                    
+                tmp->SetStrand(eNa_strand_minus);
+                tmp->SetTo(loc_iter.GetRange().GetTo());
+                if (offset + len >= start + 2) {
+                    tmp->SetFrom(loc_iter.GetRange().GetTo() - (start - offset + 2) );
+                } else {
+                    tmp->SetFrom(loc_iter.GetRange().GetFrom());
+                }
+            } else {
+                tmp->SetFrom(loc_iter.GetRange().GetFrom());
+                if (offset + len >= start + 2) {
+                    tmp->SetTo(loc_iter.GetRange().GetFrom() + start - offset + 2);
+                } else {
+                    tmp->SetTo(loc_iter.GetRange().GetTo());
+                }
+            }
+
+            cb_loc->SetPacked_int().Set().push_back(tmp);         
+        } 
+        offset += len;
+    }
+    cb.SetLoc(*cb_loc);
+}
+
+
+
+bool CCleanup::FixRNAEditingCodingRegion(CSeq_feat& cds)
+{
+    if (!cds.IsSetData() || !cds.GetData().IsCdregion()) {
+        return false;
+    }
+    if (!cds.IsSetLocation() ||
+        cds.GetLocation().IsPartialStart(eExtreme_Biological)) {
+        return false;
+    }
+    CConstRef<CCode_break> cbstart = s_GetStartTranslationException(cds);
+    if (cbstart && !s_IsMethionine(*cbstart)) {
+        // already have a start translation exception
+        return false;
+    }
+
+    bool any_change = false;
+    if (!cds.IsSetExcept_text() || NStr::IsBlank(cds.GetExcept_text())) {
+        cds.SetExcept_text("RNA editing");
+        any_change = true;
+    } else if (NStr::Find(cds.GetExcept_text(), "RNA editing") == string::npos) {
+        cds.SetExcept_text(cds.GetExcept_text() + "; RNA editing");
+        any_change = true;
+    }
+    if (!cds.IsSetExcept() || !cds.GetExcept()) {
+        cds.SetExcept(true);
+        any_change = true;
+    }
+    if (!cbstart) {
+        CRef<CCode_break> newstart(new CCode_break());
+        newstart->SetAa().SetNcbieaa('M');
+        SetCodeBreakLocation(*newstart, 1, cds);
+        cds.SetData().SetCdregion().SetCode_break().push_front(newstart);
+        any_change = true;
+    }
+    return any_change;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

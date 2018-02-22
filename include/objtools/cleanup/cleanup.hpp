@@ -516,6 +516,39 @@ public:
 /// @return bool indicates changes were made
     static bool MakeIRDFeatsFromSourceXrefs(CSeq_entry_Handle entry);
 
+/// From GB-7563
+/// An action has been requested that will do the following:
+///    1. This action should be limited to protein sequences where the product
+///       is an exact match to a specified text (the usual string constraint 
+///       is not needed).
+///    2. Protein sequences for which the coding region is 5' partial should 
+///       not be affected.
+///    3. When the protein name matches, the following actions should be taken
+///       if and only if the first amino acid of the protein sequence is not
+///       M (methionine):
+///     a. The first amino acid of the protein sequence should be changed to 
+///       methionine.
+///     b. The coding region should have the text "RNA editing" added to 
+///       Seq-feat.except_text (separated from any existing text by a semicolon).
+///       If Seq-feat.except is not already true, it should be set to true.
+///     c. A code-break should be added to Cdregion.code-break where the 
+///       Code-break.loc is the location of the first codon of the coding region
+///       and Code-break.aa is ncbieaa 'M' (Indexers will refer to "code-breaks"
+///       as "translation exceptions" because these appear in the flatfile as a
+///       /transl_except qualifier.
+///
+/// It will be the responsibility of the caller to only invoke this function
+/// for coding regions where the product name is a match, and the protein sequence
+/// does not already start with an M.
+
+    static bool FixRNAEditingCodingRegion(CSeq_feat& cds);
+
+    /// utility function for setting code break location given offset
+    /// pos is the position of the amino acid where the translation exception 
+    /// occurs (starts with 1)
+    static void SetCodeBreakLocation(CCode_break& cb, size_t pos, const CSeq_feat& cds);
+
+
 private:
     // Prohibit copy constructor & assignment operator
     CCleanup(const CCleanup&);
