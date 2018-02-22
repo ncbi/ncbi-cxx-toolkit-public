@@ -1267,9 +1267,17 @@ CTL_Connection::x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& descr_in)
                             }
                         }
                         if (all_zero  &&  !retried) {
+                            delete descr;
+                            descr = NULL;
                             retried = true;
                             lcmd->DumpResults();
                             lcmd.reset(LangCmd(q));
+                            rc = !lcmd->Send();
+                            CHECK_DRIVER_ERROR(
+                                rc,
+                                "Cannot send the language command."
+                                + GetDbgInfo(),
+                                110035);
                         }
                     }
                     break;
