@@ -430,7 +430,6 @@ void CFeatTableEdit::GenerateProteinAndTranscriptIds()
 void CFeatTableEdit::xFeatureAddTranscriptAndProteinIdsCds(CMappedFeat& cds)
 // ---------------------------------------------------------------------------
 {
-
     string protein_id;
     if (mMapCdsProteinId.find(cds) != mMapCdsProteinId.end()) {
         protein_id = mMapCdsProteinId[cds];
@@ -459,7 +458,7 @@ void CFeatTableEdit::xFeatureAddTranscriptAndProteinIdsCds(CMappedFeat& cds)
         }
         // else Scenario 1
     }
-    else if (NStr::IsBlank(transcript_id)) {
+    else if (!NStr::IsBlank(protein_id)) {
         CMappedFeat mrna = feature::GetBestMrnaForCds(cds, &mTree);
         if (mrna) {
             transcript_id = mMapMrnaTranscriptId[mrna]; // Scenario 5
@@ -511,17 +510,17 @@ void CFeatTableEdit::xFeatureAddTranscriptAndProteinIdsCds(CMappedFeat& cds)
         if (!ids_found) {
             protein_id = xNextProteinId(cds);
             transcript_id = xNextTranscriptId(cds);
-    
             xFeatureSetQualifier(cds, "protein_id", protein_id);
             xFeatureSetQualifier(cds, "transcript_id", transcript_id);
+            // generate ids from locus_tag - if possible, should place ids on both features
+            if (mrna) {
+                xFeatureSetQualifier(mrna, "protein_id", protein_id);
+                xFeatureSetQualifier(mrna, "transcript_id", transcript_id);
 
-            xFeatureSetQualifier(mrna, "protein_id", protein_id);
-            xFeatureSetQualifier(mrna, "transcript_id", transcript_id);
-
-            mMapMrnaProteinId[mrna] = protein_id;
-            mMapMrnaTranscriptId[mrna] = transcript_id;
+                mMapMrnaProteinId[mrna] = protein_id;
+                mMapMrnaTranscriptId[mrna] = transcript_id;
+            }
             return;
-            // generate ids from locus_tag - should place ids on both features
         }
     }
 
@@ -558,6 +557,7 @@ void CFeatTableEdit::xFeatureAddTranscriptAndProteinIdsMrna(CMappedFeat& mrna)
         return;
     } 
 
+
     // Need to consider the case where the transcript_id is type general 
     // and the protein_id is not specified, and vice-versa.
     
@@ -569,7 +569,7 @@ void CFeatTableEdit::xFeatureAddTranscriptAndProteinIdsMrna(CMappedFeat& mrna)
         }
         // else Scenario 1
     }
-    else if (NStr::IsBlank(transcript_id)) {
+    else if (!NStr::IsBlank(protein_id)) {
         CMappedFeat cds = feature::GetBestCdsForMrna(mrna, &mTree);
         if (cds) {
             transcript_id = mMapCdsTranscriptId[cds]; // Scenario 5
@@ -601,7 +601,6 @@ void CFeatTableEdit::xFeatureAddTranscriptAndProteinIdsMrna(CMappedFeat& mrna)
         if (cds) {
             protein_id = mMapCdsProteinId[cds];          // Scenario 7 (if protein_id and transcript_id
             transcript_id = mMapCdsTranscriptId[cds];    // are not blank)
-            
             if (NStr::IsBlank(transcript_id)) {
                 if (!NStr::IsBlank(protein_id)) {          // Scenario 10
                     transcript_id = "mrna." + protein_id;
@@ -620,17 +619,20 @@ void CFeatTableEdit::xFeatureAddTranscriptAndProteinIdsMrna(CMappedFeat& mrna)
         if (!ids_found) {
             protein_id = xNextProteinId(mrna);
             transcript_id = xNextTranscriptId(mrna);
-    
-            xFeatureSetQualifier(cds, "protein_id", protein_id);
-            xFeatureSetQualifier(cds, "transcript_id", transcript_id);
 
-            xFeatureSetQualifier(mrna, "protein_id", protein_id);
-            xFeatureSetQualifier(mrna, "transcript_id", transcript_id);
-
-            mMapCdsProteinId[cds] = protein_id;
-            mMapCdsTranscriptId[cds] = transcript_id;
+            if (!NStr::IsBlank(protein_id) &&
+                !NStr::IsBlank(transcript_id)) {
+                if (cds) {
+                    xFeatureSetQualifier(cds, "protein_id", protein_id);
+                    xFeatureSetQualifier(cds, "transcript_id", transcript_id);
+                    mMapCdsProteinId[cds] = protein_id;
+                    mMapCdsTranscriptId[cds] = transcript_id;
+                }
+                xFeatureSetQualifier(mrna, "protein_id", protein_id);
+                xFeatureSetQualifier(mrna, "transcript_id", transcript_id);
+            }
             return;
-            // generate ids from locus_tag - should place ids on both features
+            // generate ids from locus_tag - if possible, should place ids on both features
         }
     }
 
