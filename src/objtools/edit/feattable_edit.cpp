@@ -524,10 +524,14 @@ void CFeatTableEdit::xFeatureAddTranscriptAndProteinIdsCds(CMappedFeat& cds)
         }
     }
 
-    if (!NStr::IsBlank(protein_id)) {
+    if (!NStr::IsBlank(protein_id) &&
+        !NStr::StartsWith(protein_id, "gb|") &&
+        !NStr::StartsWith(protein_id, "gnl|")) {
         protein_id = "gnl|" + xGetCurrentLocusTagPrefix(cds) + "|" + protein_id;
     }
-    if (!NStr::IsBlank(transcript_id)) {
+    if (!NStr::IsBlank(transcript_id) &&
+        !NStr::StartsWith(transcript_id, "gb|") &&
+        !NStr::StartsWith(transcript_id, "gnl|")) {
         transcript_id = "gnl|" + xGetCurrentLocusTagPrefix(cds) + "|" + transcript_id;
     }
 
@@ -636,13 +640,24 @@ void CFeatTableEdit::xFeatureAddTranscriptAndProteinIdsMrna(CMappedFeat& mrna)
         }
     }
 
+    if (!NStr::IsBlank(protein_id) &&
+        !NStr::StartsWith(protein_id, "gb|") &&
+        !NStr::StartsWith(protein_id, "gnl|")) {
+        protein_id = "gnl|" + xGetCurrentLocusTagPrefix(mrna) + "|" + protein_id;
+    }
+    if (!NStr::IsBlank(transcript_id) &&
+        !NStr::StartsWith(transcript_id, "gb|") &&
+        !NStr::StartsWith(transcript_id, "gnl|")) {
+        transcript_id = "gnl|" + xGetCurrentLocusTagPrefix(mrna) + "|" + transcript_id;
+    }
+/*
     if (!NStr::IsBlank(protein_id)) {
         protein_id = "gnl|" + xGetCurrentLocusTagPrefix(mrna) + "|" + protein_id;
     }
     if (!NStr::IsBlank(transcript_id)) {
         transcript_id = "gnl|" + xGetCurrentLocusTagPrefix(mrna) + "|" + transcript_id;
     }
-
+*/
     xFeatureSetQualifier(mrna, "protein_id", protein_id);
     xFeatureSetQualifier(mrna, "transcript_id", transcript_id);
 }
