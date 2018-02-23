@@ -38,8 +38,8 @@
 #include <corelib/ncbireg.hpp>
 
 #include <objtools/pubseq_gateway/impl/diag/AppPerf.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/CassFactory.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/LbsmResolver.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/lbsm_resolver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
 BEGIN_IDBLOB_SCOPE

@@ -35,7 +35,7 @@
  */
 
 #include <objtools/pubseq_gateway/impl/diag/IdLogUtl.hpp>
-#include "CassDriver.hpp"
+#include "cass_driver.hpp"
 #include "Key.hpp"
 #include "IdCassScope.hpp"
 
@@ -44,11 +44,11 @@ USING_NCBI_SCOPE;
 
 class CCassBlobWaiter;
 
-typedef enum {
-    tt_unknown,
-    tt_true,
-    tt_false
-} triple_t;
+enum ECassTristate {
+    eUnknown,
+    eTrue,
+    eFalse
+};
 
 typedef function<void(const unsigned char *  Data,
                       unsigned int  Size, int  ChunkNo,
@@ -77,7 +77,7 @@ public:
         m_Conn(conn),
         m_Keyspace(keyspace),
         m_Key(key),
-        m_State(stInit),
+        m_State(eInit),
         m_OpTimeoutMs(op_timeout_ms),
         m_LastActivityMs(IdLogUtil::gettime() / 1000L),
         m_RestartCounter(0),
@@ -98,18 +98,18 @@ public:
 
     bool Wait(void)
     {
-        while (m_State != stDone && m_State != stError && !m_Cancelled) {
+        while (m_State != eDone && m_State != eError && !m_Cancelled) {
             Wait1();
             if (m_Async)
                 break;
         }
-        return (m_State == stDone || m_State == stError);
+        return (m_State == eDone || m_State == eError);
     }
 
     virtual bool Restart(unsigned int  max_retries = 0)
     {
         CloseAll();
-        m_State = stInit;
+        m_State = eInit;
         if (CanRestart()) {
             ++m_RestartCounter;
             UpdateLastActivity();
@@ -121,12 +121,12 @@ public:
 
     bool HasError(void) const
     {
-        return !m_last_error.empty();
+        return !m_LastError.empty();
     }
 
     string LastError(void) const
     {
-        return m_last_error;
+        return m_LastError;
     }
 
     string GetKeySpace(void) const
@@ -153,10 +153,10 @@ public:
     }
 
 protected:
-    enum State {
-        stInit = 0,
-        stDone = 10000,
-        stError = -1
+    enum EBlobWaiterState {
+        eInit = 0,
+        eDone = 10000,
+        eError = -1
     };
 
     void CloseAll(void)
@@ -168,8 +168,8 @@ protected:
 
     void Error(const char *  msg)
     {
-        m_State = stError;
-        m_last_error = msg;
+        m_State = eError;
+        m_LastError = msg;
         if (m_ErrorCb)
             m_ErrorCb(msg, this);
         else
@@ -208,9 +208,9 @@ protected:
                     return false;
             }
             return true;
-        } catch (const EDatabase& e) {
-            if ((e.GetErrCode() == EDatabase::eQueryTimeout ||
-                 e.GetErrCode() == EDatabase::eQueryFailedRestartable) && CanRestart()) {
+        } catch (const CCassandraException& e) {
+            if ((e.GetErrCode() == CCassandraException::eQueryTimeout ||
+                 e.GetErrCode() == CCassandraException::eQueryFailedRestartable) && CanRestart()) {
                 LOG2(("In-place restart"));
                 ++m_RestartCounter;
                 qry->Close();
@@ -242,7 +242,7 @@ protected:
     int32_t                         m_State;
     unsigned int                    m_OpTimeoutMs;
     int64_t                         m_LastActivityMs;
-    string                          m_last_error;
+    string                          m_LastError;
     unsigned int                    m_RestartCounter;
     unsigned int                    m_MaxRetries;
     bool                            m_Async;
@@ -285,7 +285,7 @@ public:
 
     void SetDataReadyCB(DataReadyCB_t  datareadycb, void *  data)
     {
-        if (datareadycb && m_State != stInit)
+        if (datareadycb && m_State != eInit)
             RAISE_ERROR(eSeqFailed,
                         "CCassBlobLoader: DataReadyCB can't be assigned "
                         "after the loading process has started");
@@ -309,12 +309,12 @@ public:
 
     void Cancel(void)
     {
-        if (m_State == stDone)
+        if (m_State == eDone)
             return;
 
         m_Cancelled = true;
         CloseAll();
-        m_State = stError;
+        m_State = eError;
     }
 
     virtual bool Restart(unsigned int  max_retries = 0) override
@@ -332,13 +332,13 @@ protected:
     virtual void Wait1(void) override;
 
 private:
-    enum State {
-        stInit = CCassBlobWaiter::stInit,
-        stReadingEntity,
-        stReadingChunks,
-        stCheckingFlags,
-        stDone = CCassBlobWaiter::stDone,
-        stError = CCassBlobWaiter::stError
+    enum EBlobLoaderState {
+        eInit = CCassBlobWaiter::eInit,
+        eReadingEntity,
+        eReadingChunks,
+        eCheckingFlags,
+        eDone = CCassBlobWaiter::eDone,
+        eError = CCassBlobWaiter::eError
     };
 
     bool                m_StatLoaded;
@@ -362,45 +362,45 @@ public:
     CCassBlobInserter(IdLogUtil::CAppOp *  op, unsigned int  op_timeout_ms,
                       shared_ptr<CCassConnection>  conn,
                       const string &  keyspace, int32_t  key, CBlob *  blob,
-                      triple_t  is_new, int64_t  large_treshold,
+                      ECassTristate  is_new, int64_t  large_treshold,
                       int64_t  large_chunk_sz, bool  async,
                       unsigned int  max_retries,
                       const DataErrorCB_t &  data_error_cb) :
         CCassBlobWaiter(op, op_timeout_ms, conn, keyspace, key, async,
                         max_retries, data_error_cb),
-        m_large_treshold(large_treshold),
-        m_large_chunk_sz(large_chunk_sz),
+        m_LargeTreshold(large_treshold),
+        m_LargeChunkSize(large_chunk_sz),
         m_LargeParts(0),
-        m_blob(blob),
-        m_is_new(is_new),
-        m_old_large_parts(0),
-        m_old_flags(0)
+        m_Blob(blob),
+        m_IsNew(is_new),
+        m_OldLargeParts(0),
+        m_OldFlags(0)
     {}
 
 protected:
     virtual void Wait1(void) override;
 
 private:
-    enum State {
-        stInit = 0,
-        stFetchOldLargeParts,
-        stDeleteOldLargeParts,
-        stWaitDeleteOldLargeParts,
-        stInsert,
-        stWaitingInserted,
-        stUpdatingFlags,
-        stWaitingUpdateFlags,
-        stDone = CCassBlobWaiter::stDone,
-        stError = CCassBlobWaiter::stError
+    enum EBlobInserterState {
+        eInit = 0,
+        eFetchOldLargeParts,
+        eDeleteOldLargeParts,
+        eWaitDeleteOldLargeParts,
+        eInsert,
+        eWaitingInserted,
+        eUpdatingFlags,
+        eWaitingUpdateFlags,
+        eDone = CCassBlobWaiter::eDone,
+        eError = CCassBlobWaiter::eError
     };
 
-    int64_t         m_large_treshold;
-    int64_t         m_large_chunk_sz;
+    int64_t         m_LargeTreshold;
+    int64_t         m_LargeChunkSize;
     int32_t         m_LargeParts;
-    CBlob *         m_blob;
-    triple_t        m_is_new;
-    int32_t         m_old_large_parts;
-    int64_t         m_old_flags;
+    CBlob *         m_Blob;
+    ECassTristate   m_IsNew;
+    int32_t         m_OldLargeParts;
+    int64_t         m_OldFlags;
 };
 
 
@@ -421,15 +421,15 @@ protected:
     virtual void Wait1(void) override;
 
 private:
-    enum State {
-        stInit = 0,
-        stReadingEntity,
-        stDeleteLargeEnt,
-        stWaitLargeEnt,
-        stDeleteEnt,
-        stWaitingDone,
-        stDone = CCassBlobWaiter::stDone,
-        stError = CCassBlobWaiter::stError
+    enum EBlobDeleterState {
+        eInit = 0,
+        eReadingEntity,
+        eDeleteLargeEnt,
+        eWaitLargeEnt,
+        eDeleteEnt,
+        eWaitingDone,
+        eDone = CCassBlobWaiter::eDone,
+        eError = CCassBlobWaiter::eError
     };
 
     int32_t     m_LargeParts;
@@ -439,10 +439,10 @@ private:
 class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
 {
 public:
-    enum flagop_t {
-        FLAG_OP_OR,
-        FLAG_OP_AND,
-        FLAG_OP_SET
+    enum EBlopOpFlag {
+        eFlagOpOr,
+        eFlagOpAnd,
+        eFlagOpSet
     };
 
 public:
@@ -491,7 +491,7 @@ public:
                       unique_ptr<CCassBlobWaiter> &  waiter);
     void InsertBlobAsync(IdLogUtil::CAppOp &  op, unsigned int  op_timeout_ms,
                          int32_t  key, unsigned int  max_retries,
-                         CBlob *  blob_rslt, triple_t  is_new,
+                         CBlob *  blob_rslt, ECassTristate  is_new,
                          int64_t  LargeTreshold, int64_t  LargeChunkSz,
                          unique_ptr<CCassBlobWaiter> &  waiter);
     void DeleteBlobAsync(IdLogUtil::CAppOp &  op, unsigned int  op_timeout_ms,
@@ -499,7 +499,7 @@ public:
                          unique_ptr<CCassBlobWaiter> &  waiter);
 
     void UpdateBlobFlags(IdLogUtil::CAppOp &  op, unsigned int  op_timeout_ms,
-                         int32_t  key, uint64_t  flags, flagop_t  flag_op);
+                         int32_t  key, uint64_t  flags, EBlopOpFlag  flag_op);
 
     bool GetSetting(IdLogUtil::CAppOp &  op, unsigned int  op_timeout_ms,
                     const string &  name, string &  value);
@@ -514,11 +514,12 @@ public:
                         "with DB connection");
         return m_Conn;
     }
+
 private:
     shared_ptr<CCassConnection>     m_Conn;
     string                          m_Keyspace;
 
-    void LoadKeysScheduleNext(CCassQuery &  query, void *  data);
+    void x_LoadKeysScheduleNext(CCassQuery &  query, void *  data);
 };
 
 END_IDBLOB_SCOPE

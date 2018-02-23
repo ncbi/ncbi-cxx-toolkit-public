@@ -39,7 +39,7 @@
 #include <algorithm>
 
 #include <connect/ncbi_connutil.h>
-#include <objtools/pubseq_gateway/impl/cassandra/LbsmResolver.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/lbsm_resolver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
 BEGIN_NCBI_SCOPE;

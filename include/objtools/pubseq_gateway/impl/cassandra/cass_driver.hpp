@@ -48,6 +48,7 @@
 
 #include <objtools/pubseq_gateway/impl/diag/AppPerf.hpp>
 #include "IdCassScope.hpp"
+#include "cass_exception.hpp"
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -62,52 +63,6 @@ USING_NCBI_SCOPE;
 // to avoid overflow we have to adjust to mks
 #define CASS_MAX_TIMEOUT_MS (0x7fffffff / 1000)
 
-#define RAISE_CASS_ERROR(errc, dberr, comm)                                 \
-    do {                                                                    \
-        string __msg;                                                       \
-        __msg.assign(comm);                                                 \
-        __msg.append(string(": ") +                                         \
-                     NStr::NumericToString(static_cast<int>(errc), 0, 16)); \
-        __msg.append(string(": ") + cass_error_desc(errc));                 \
-        ERRLOG1(("!Raising: %s", __msg.c_str()));                           \
-        NCBI_THROW(EDatabase, dberr, __msg.c_str());                        \
-    } while (0)
-
-#define RAISE_CASS_FUT_ERROR(future, errc, comm)                            \
-    do {                                                                    \
-        const char *__message;                                              \
-        size_t __msglen;                                                    \
-        cass_future_error_message(future, &__message, &__msglen);           \
-        CassError rc = cass_future_error_code(future);                      \
-        string __msg;                                                       \
-        __msg.assign(__message);                                            \
-        __msg.append(string(": ") +                                         \
-                     NStr::NumericToString(static_cast<int>(rc), 0, 16));   \
-        ERRLOG1(("!Raising: %s %s %s", #errc, __msg.c_str(), comm.c_str()));\
-        if (comm.empty())                                                   \
-            NCBI_THROW(EDatabase, errc, __msg);                             \
-        else                                                                \
-            NCBI_THROW(EDatabase, errc, __msg + ": " + comm);               \
-    } while (0)
-
-#define RAISE_CASS_QRY_ERROR(future, comm)                                  \
-    do {                                                                    \
-        CassError rc = cass_future_error_code(future);                      \
-        if (rc == CASS_ERROR_SERVER_UNAVAILABLE ||                          \
-            rc == CASS_ERROR_LIB_REQUEST_QUEUE_FULL ||                      \
-            rc == CASS_ERROR_LIB_NO_HOSTS_AVAILABLE)                        \
-            RAISE_CASS_FUT_ERROR(future, eQueryFailedRestartable, comm);    \
-        else if (rc == CASS_ERROR_LIB_REQUEST_TIMED_OUT ||                  \
-                rc == CASS_ERROR_SERVER_WRITE_TIMEOUT ||                    \
-                rc == CASS_ERROR_SERVER_READ_TIMEOUT)                       \
-            RAISE_CASS_FUT_ERROR(future, eQueryTimeout, comm);              \
-        else                                                                \
-            RAISE_CASS_FUT_ERROR(future, eQueryFailed, comm);               \
-    } while (0)
-
-#define RAISE_CASS_CONN_ERROR(future, comm)                                 \
-    RAISE_CASS_FUT_ERROR(future, eFailedToConn, comm)
-
 #define ASYNC_RESULT_MAP(XX) \
     XX(ar_wait, "Wait") \
     XX(ar_done, "Done") \
@@ -119,105 +74,6 @@ typedef enum {
     #undef XX
     ASYNC_RSLT_LAST_ENTRY
 } async_rslt_t;
-
-
-class EDatabase: public CException {
-protected:
-    int64_t     m_optimems;
-
-    virtual void x_Init(const CDiagCompileInfo &  info,
-                        const string &  message,
-                        const CException *  prev_exception,
-                        EDiagSev  severity)
-    {
-        m_optimems = 0;
-        LOG3(("EDatabase: %s", SON(message.c_str())));
-        CException::x_Init(info, message, prev_exception, severity);
-    }
-
-    virtual void x_Assign(const CException &  src)
-    {
-        const EDatabase* _src = dynamic_cast<const EDatabase*>(&src);
-        if (_src) {
-            m_optimems = _src->m_optimems;
-        }
-        CException::x_Assign(src);
-    }
-
-public:
-    enum EErrCode {
-        eUnknown = 0x11000,
-        eRsrcFailed,
-        eFailedToConn,
-        eConnTimeout,
-        eQueryFailedRestartable,
-        eQueryFailed,
-        eBindFailed,
-        eQueryTimeout,
-        eFetchFailed,
-        eExtraFetch,
-        eMissData,
-    };
-
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-            case eUnknown:                return "eUnknown";
-            case eRsrcFailed:             return "eRsrcFailed";
-            case eFailedToConn:           return "eFailedToConn";
-            case eConnTimeout:            return "eConnTimeout";
-            case eQueryFailedRestartable: return "eQueryFailedRestartable";
-            case eQueryFailed:            return "eQueryFailed";
-            case eBindFailed:             return "eBindFailed";
-            case eQueryTimeout:           return "eQueryTimeout";
-            case eFetchFailed:            return "eFetchFailed";
-            case eExtraFetch:             return "eExtraFetch";
-            case eMissData:               return "eMissData";
-            default:                      return CException::GetErrCodeString();
-        }
-    }
-
-    void SetOpTime(int64_t optimeMS)
-    {
-        m_optimems = optimeMS;
-    }
-
-    int64_t GetOpTime(void) const
-    {
-        return m_optimems;
-    }
-
-    string TimeoutMsg(void) const
-    {
-        string msg = string("Failed to perform query in ") +
-                     NStr::NumericToString(m_optimems) + "ms, timed out";
-        return msg;
-    }
-
-    NCBI_EXCEPTION_DEFAULT(EDatabase, CException);
-};
-
-
-#define RAISE_DB_ERROR(errc, comm)                          \
-    do {                                                    \
-        string ___msg = comm;                               \
-        ERRLOG1(("!Raising: %s %s", #errc, ___msg.c_str()));\
-        NCBI_THROW(EDatabase, errc, comm);                  \
-    } while(0)
-
-#define RAISE_DB_QRY_TIMEOUT(tspent, tmargin, msg)                          \
-    do {                                                                    \
-        string ___msg = msg;                                                \
-        if ((tmargin) != 0)                                                 \
-            ___msg.append(string(", timeout ") +                            \
-                          NStr::NumericToString(tmargin) +                  \
-                          "ms (spent: " + NStr::NumericToString(tspent) +   \
-                          "ms)");                                           \
-        NCBI_EXCEPTION_VAR(db_exception, EDatabase, eQueryTimeout, ___msg); \
-        db_exception.SetOpTime( (tspent) );                                 \
-        ERRLOG1(("!Raising: %s", ___msg.c_str()));                          \
-        NCBI_EXCEPTION_THROW(db_exception);                                 \
-    } while(0)
 
 
 typedef enum {
@@ -411,7 +267,7 @@ public:
     static string NewTimeUUID();
     static void Perform(IdLogUtil::CAppOp &  op, unsigned int  optimeoutms,
                         const std::function<bool()>&  PreLoopCB,
-                        const std::function<void(const EDatabase&)>&  DbExceptCB,
+                        const std::function<void(const CCassandraException&)>&  DbExceptCB,
                         const std::function<bool(bool)>&  OpCB);
 
 private:

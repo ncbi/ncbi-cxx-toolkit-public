@@ -46,11 +46,11 @@ class LbsmLookup
 public:
     static bool s_Resolve(const string &  service,
                           vector<pair<string, int> > &  result,
-                          TSERV_Type  ServType = fSERV_Any);
+                          TSERV_Type  serv_type = fSERV_Any);
 
     // Returns a dilimited list of host:port items
     static string s_Resolve(const string &  service, char  delimiter,
-                            TSERV_Type  ServType = fSERV_Any);
+                            TSERV_Type  serv_type = fSERV_Any);
 };
 
 END_NCBI_SCOPE;
