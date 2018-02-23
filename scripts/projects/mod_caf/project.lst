@@ -9,4 +9,5 @@ connect/daemons/mod$
 util$
 util/bitset$
 util/cache$
+util/xregexp
 
