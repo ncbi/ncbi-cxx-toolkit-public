@@ -323,7 +323,6 @@ TMgr-RemoveUserTrackRequest ::= SEQUENCE {
 
 TMgr-TypeTrackType ::= INTEGER {
     hub (0),
-    bigWig (2),
     bigBed (3),
     bigGenePred (4),
     bigChain (5),
