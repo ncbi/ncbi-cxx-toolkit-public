@@ -1116,6 +1116,7 @@ void CGBSeqFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os)
     }
 
     str.append( s_CloseTag("        ", "GBFeature_quals"));
+    str.append( s_CloseTag("      ", "GBFeature"));
 
     if ( m_IsInsd ) {
         NStr::ReplaceInPlace(str, "<GB", "<INSD");
