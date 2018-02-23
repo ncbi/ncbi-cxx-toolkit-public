@@ -173,6 +173,10 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
         LOG_POST(Error << "Command line argument error: " << e.GetMsg());   \
         exit_code = BLAST_INPUT_ERROR;                                      \
     }                                                                       \
+    catch (const CObjReaderParseException& e) {                             \
+        LOG_POST(Error << "BLAST query error: " << e.GetMsg());             \
+        exit_code = BLAST_INPUT_ERROR;                                      \
+    }                                                                       \
     catch (const CSeqDBException& e) {                                      \
         LOG_POST(Error << "BLAST Database error: " << e.GetMsg());          \
         exit_code = BLAST_DATABASE_ERROR;                                   \
