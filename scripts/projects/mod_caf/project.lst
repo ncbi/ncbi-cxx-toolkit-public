@@ -8,4 +8,5 @@ connect/daemons$
 connect/daemons/mod$
 util$
 util/bitset$
+util/cache$
 
