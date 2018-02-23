@@ -35,6 +35,7 @@
 #define APP__BLAST_APP_UTIL__HPP
 
 #include <objmgr/object_manager.hpp>
+#include <objtools/readers/reader_exception.hpp>        
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <algo/blast/blastinput/blast_args.hpp>
 
