@@ -68,6 +68,7 @@
 #include <objtools/format/items/segment_item.hpp>
 #include <objtools/format/items/contig_item.hpp>
 #include <objtools/format/items/genome_project_item.hpp>
+#include <objtools/format/items/gap_item.hpp>
 #include <objmgr/util/objutil.hpp>
 
 
@@ -87,15 +88,6 @@ static void s_GBSeqStringCleanup(string& str, bool location = false)
     }
     NStr::TruncateSpacesInPlace(str);
 }
-
-
-static void s_GBSeqQualCleanup(string& val)
-{
-    
-    val = NStr::Replace(val, "\"", " ");
-    s_GBSeqStringCleanup(val);
-}
-
 
 /////////////////////////////////////////////////////////////////////////////
 // Public
@@ -162,16 +154,6 @@ void CGBSeqFormatter::Start(IFlatTextOStream& text_os)
     // x_WriteFileHeader(text_os);
         
     // x_StartWriteGBSet(text_os);
-
-    string str = "  <GBSeq>";
-
-    if ( m_IsInsd ) {
-        NStr::ReplaceInPlace(str, "<GB", "<INSD");
-        NStr::ReplaceInPlace(str,"</GB", "</INSD");
-    }
-
-    text_os.AddLine(str);
-
     text_os.Flush();
 }
 
@@ -180,6 +162,15 @@ void CGBSeqFormatter::StartSection(const CStartSectionItem&, IFlatTextOStream& t
 {
     m_GBSeq.Reset(new CGBSeq);
     // _ASSERT(m_GBSeq);
+    string str;
+    str.append( s_OpenTag("  ", "GBSeq"));
+
+    if ( m_IsInsd ) {
+        NStr::ReplaceInPlace(str, "<GB", "<INSD");
+        NStr::ReplaceInPlace(str,"</GB", "</INSD");
+    }
+
+    text_os.AddLine(str);
 }
 
 
@@ -192,6 +183,7 @@ void CGBSeqFormatter::EndSection(const CEndSectionItem&, IFlatTextOStream& text_
     if (m_NeedRefsEnd) {
         str.append( s_CloseTag("    ", "GBSeq_references"));
         m_NeedRefsEnd = false;
+        m_DidRefsStart = false;
     }
 
     if (m_NeedComment) {
@@ -204,6 +196,7 @@ void CGBSeqFormatter::EndSection(const CEndSectionItem&, IFlatTextOStream& text_
     if (m_NeedFeatEnd) {
         str.append( s_CloseTag("    ", "GBSeq_feature-table"));
         m_NeedFeatEnd = false;
+        m_DidFeatStart = false;
     }
 
     if (m_NeedXrefs) {
@@ -229,6 +222,8 @@ void CGBSeqFormatter::EndSection(const CEndSectionItem&, IFlatTextOStream& text_
 
     }
 
+    str.append( s_CloseTag("  ", "GBSeq"));
+
     if ( m_IsInsd ) {
         NStr::ReplaceInPlace(str, "<GB", "<INSD");
         NStr::ReplaceInPlace(str,"</GB", "</INSD");
@@ -246,16 +241,6 @@ void CGBSeqFormatter::EndSection(const CEndSectionItem&, IFlatTextOStream& text_
 void CGBSeqFormatter::End(IFlatTextOStream& text_os)
 {
     // x_EndWriteGBSet(text_os);
-
-    string str = "  </GBSeq>";
-
-    if ( m_IsInsd ) {
-        NStr::ReplaceInPlace(str, "<GB", "<INSD");
-        NStr::ReplaceInPlace(str,"</GB", "</INSD");
-    }
-
-    text_os.AddLine(str);
-
     text_os.Flush();
 }
 
@@ -815,6 +800,7 @@ void CGBSeqFormatter::FormatFeature
     if (m_NeedRefsEnd) {
         str.append( s_CloseTag("    ", "GBSeq_references"));
         m_NeedRefsEnd = false;
+        m_DidRefsStart = false;
     }
 
     if (m_NeedComment) {
@@ -947,6 +933,7 @@ void CGBSeqFormatter::FormatSequence
     if (m_NeedRefsEnd) {
         str.append( s_CloseTag("    ", "GBSeq_references"));
         m_NeedRefsEnd = false;
+        m_DidRefsStart = false;
     }
 
     if (m_NeedComment) {
@@ -959,6 +946,7 @@ void CGBSeqFormatter::FormatSequence
     if (m_NeedFeatEnd) {
         str.append( s_CloseTag("    ", "GBSeq_feature-table"));
         m_NeedFeatEnd = false;
+        m_DidFeatStart = false;
     }
 
     string data;
@@ -993,6 +981,7 @@ void CGBSeqFormatter::FormatContig
     if (m_NeedRefsEnd) {
         str.append( s_CloseTag("    ", "GBSeq_references"));
         m_NeedRefsEnd = false;
+        m_DidRefsStart = false;
     }
 
     if (m_NeedComment) {
@@ -1005,6 +994,7 @@ void CGBSeqFormatter::FormatContig
     if (m_NeedFeatEnd) {
         str.append( s_CloseTag("    ", "GBSeq_feature-table"));
         m_NeedFeatEnd = false;
+        m_DidFeatStart = false;
     }
 
     string assembly = CFlatSeqLoc(contig.GetLoc(), *contig.GetContext(), 
@@ -1021,6 +1011,121 @@ void CGBSeqFormatter::FormatContig
     text_os.AddLine(str, contig.GetObject(), IFlatTextOStream::eAddNewline_No);
 
     text_os.Flush();
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+//
+// GAPS
+
+void CGBSeqFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os)
+{
+    string str;
+
+    // Close the preceding sections and open the feature section,
+    // if not yet done.
+
+    if (m_NeedRefsEnd) {
+        str.append( s_CloseTag("    ", "GBSeq_references"));
+        m_NeedRefsEnd = false;
+        m_DidRefsStart = false;
+    }
+
+    if (m_NeedComment) {
+        m_NeedComment = false;
+
+        string comm = NStr::Join( m_Comments, "; " );
+        str.append( s_CombineStrings("    ", "GBSeq_comment", comm));
+    }
+
+    if (m_NeedDbsource) {
+        m_NeedDbsource = false;
+
+        string dbsrc = NStr::Join( m_Dbsource, "; " );
+        str.append( s_CombineStrings("    ", "GBSeq_source-db", dbsrc));
+    }
+
+    if (! m_DidFeatStart) {
+        str.append( s_OpenTag("    ", "GBSeq_feature-table"));
+        m_DidFeatStart = true;
+        m_NeedFeatEnd = true;
+    }
+
+    str.append( s_OpenTag("      ", "GBFeature"));
+
+    str.append( s_CombineStrings("        ", "GBFeature_key", gap.GetFeatureName()));
+
+
+    list<string> l;
+
+    TSeqPos gapStart = gap.GetFrom();
+    TSeqPos gapEnd   = gap.GetTo();
+
+    const bool isGapOfLengthZero = ( gapStart > gapEnd );
+
+    // size zero gaps require an adjustment to print right
+    if( isGapOfLengthZero ) {
+        gapStart--;
+        gapEnd++;
+    }
+
+        // format location
+    string loc = NStr::UIntToString(gapStart);
+    loc += "..";
+    loc += NStr::UIntToString(gapEnd);
+    str.append( s_CombineStrings("        ", "GBFeature_location", loc));
+
+    str.append( s_OpenTag("        ", "GBFeature_quals"));
+    // size zero gaps indicate non-consecutive residues
+    if( isGapOfLengthZero ) {
+        str.append( s_OpenTag("          ", "GBQualifier"));
+        str.append ( s_CombineStrings("            ", "GBQualifier_name", "note"));
+        str.append ( s_CombineStrings("            ", "GBQualifier_value",
+                                      "Non-consecutive residues"));
+        str.append( s_CloseTag("          ", "GBQualifier"));
+    }
+
+    // format mandatory /estimated_length qualifier
+    string estimated_length;
+    if (gap.HasEstimatedLength()) {
+        estimated_length = NStr::UIntToString(gap.GetEstimatedLength());
+    } else {
+        estimated_length = "unknown";
+    }
+    str.append( s_OpenTag("          ", "GBQualifier"));
+    str.append ( s_CombineStrings("            ", "GBQualifier_name", "estimated_length"));
+    str.append ( s_CombineStrings("            ", "GBQualifier_value", estimated_length));
+    str.append( s_CloseTag("          ", "GBQualifier"));
+
+    // format /gap_type
+    if( gap.HasType() ) {
+        str.append( s_OpenTag("          ", "GBQualifier"));
+        str.append ( s_CombineStrings("            ", "GBQualifier_name", "gap_type"));
+        str.append ( s_CombineStrings("            ", "GBQualifier_value", gap.GetType()));
+        str.append( s_CloseTag("          ", "GBQualifier"));
+    }
+
+    // format /linkage_evidence
+    if( gap.HasEvidence() ) {
+        ITERATE( CGapItem::TEvidence, evidence_iter, gap.GetEvidence() ) {
+            str.append( s_OpenTag("          ", "GBQualifier"));
+            str.append ( s_CombineStrings("            ", "GBQualifier_name", "linkage_evidence"));
+            str.append ( s_CombineStrings("            ", "GBQualifier_value", *evidence_iter));
+            str.append( s_CloseTag("          ", "GBQualifier"));
+        }
+    }
+
+    str.append( s_CloseTag("        ", "GBFeature_quals"));
+
+    if ( m_IsInsd ) {
+        NStr::ReplaceInPlace(str, "<GB", "<INSD");
+        NStr::ReplaceInPlace(str,"</GB", "</INSD");
+    }
+
+    text_os.AddLine(str, gap.GetObject(), IFlatTextOStream::eAddNewline_No);
+
+    text_os.Flush();
+
 }
 
 

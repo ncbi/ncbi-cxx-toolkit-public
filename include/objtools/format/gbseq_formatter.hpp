@@ -83,6 +83,7 @@ public:
     virtual void FormatSegment(const CSegmentItem& seg, IFlatTextOStream& text_os);
     virtual void FormatContig(const CContigItem& contig, IFlatTextOStream& text_os);
     virtual void FormatGenomeProject(const CGenomeProjectItem&, IFlatTextOStream&);
+    virtual void FormatGap(const CGapItem& gap, IFlatTextOStream& text_os);
 
 private:
     void x_WriteFileHeader(IFlatTextOStream& text_os);
