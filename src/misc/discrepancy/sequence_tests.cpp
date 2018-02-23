@@ -819,8 +819,9 @@ const string& kPreviouslySeenObjects = "Previously Seen Objects";
 
 void AddUserObjectFieldItems
 (CConstRef<CSeqdesc> d,
- CConstRef<CBioseq> seq,
- const CSeqSummary* info,
+ //CConstRef<CBioseq> seq,
+ //const CSeqSummary* info,
+ CReportObj& rep_seq,
  CReportNode& collector,
  CReportNode& previously_seen,
  CDiscrepancyContext& context,
@@ -832,7 +833,9 @@ void AddUserObjectFieldItems
         NON_CONST_ITERATE (CReportNode::TNodeMap, obj, previously_seen[kPreviouslySeenFields].GetMap()) {
             ITERATE (CReportNode::TNodeMap, z, obj->second->GetMap()) {
                 collector[field_prefix + z->first][" [n] " + object_name + "[s] [is] missing field " + field_prefix + z->first]
-                    .Add(*context.NewBioseqObj(seq, info, eKeepRef), false);
+                    //.Add(*context.NewBioseqObj(seq, info, eKeepRef), false);
+                    //.Add(*context.NewBioseqObj(seq, info));
+                    .Add(rep_seq);
             }
         }
         return;
@@ -844,10 +847,13 @@ void AddUserObjectFieldItems
             string field_name = field_prefix + (*f)->GetLabel().GetStr();
             // add missing field to all previous objects that do not have this field
             if (already_seen && !collector.Exist(field_name)) {
-                ITERATE (TReportObjectList, ro, previously_seen[kPreviouslySeenObjects][object_name].GetObjects()) {
+                //ITERATE(TReportObjectList, ro, previously_seen[kPreviouslySeenObjects][object_name].GetObjects()) {
+                for (auto ro: previously_seen[kPreviouslySeenObjects][object_name].GetObjects()) {
                     string missing_label = "[n] " + object_name + "[s] [is] missing field " + field_name;
-                    CRef<CDiscrepancyObject> seq_disc_obj(dynamic_cast<CDiscrepancyObject*>(ro->GetNCPointer()));
-                    collector[field_name][missing_label].Add(*seq_disc_obj, false);
+                    //CRef<CDiscrepancyObject> seq_disc_obj(dynamic_cast<CDiscrepancyObject*>(ro->GetNCPointer()));
+                    //collector[field_name][missing_label].Add(*seq_disc_obj, false);
+                    //collector[field_name][missing_label].Add(*seq_disc_obj);
+                    collector[field_name][missing_label].Add(*ro);
                 }
             }
             collector[field_name]["[n] " + object_name + "[s] [has] field " + field_name + " value '" + GetFieldValueAsString(**f) + "'"].Add(*context.NewSeqdescObj(d, context.GetCurrentBioseqLabel()), false);
@@ -860,13 +866,16 @@ void AddUserObjectFieldItems
     ITERATE (CReportNode::TNodeMap, z, previously_seen[kPreviouslySeenFields][object_name].GetMap()) {
         if (!previously_seen[kPreviouslySeenFieldsThis].Exist(z->first)) {
             collector[field_prefix + z->first][" [n] " + object_name + "[s] [is] missing field " + field_prefix + z->first]
-                .Add(*context.NewSeqdescObj(d, context.GetCurrentBioseqLabel()), false);
+                //.Add(*context.NewSeqdescObj(d, context.GetCurrentBioseqLabel()), false);
+                .Add(*context.NewSeqdescObj(d, context.GetCurrentBioseqLabel()));
         }
     }
 
     // maintain object list for missing fields
-    CRef<CDiscrepancyObject> this_disc_obj(context.NewSeqdescObj(d, context.GetCurrentBioseqLabel(), eKeepRef));
-    previously_seen[kPreviouslySeenObjects][object_name].Add(*this_disc_obj, false);
+    //CRef<CDiscrepancyObject> this_disc_obj(context.NewSeqdescObj(d, context.GetCurrentBioseqLabel(), eKeepRef));
+    CRef<CDiscrepancyObject> this_disc_obj(context.NewSeqdescObj(d, context.GetCurrentBioseqLabel()));
+    //previously_seen[kPreviouslySeenObjects][object_name].Add(*this_disc_obj, false);
+    previously_seen[kPreviouslySeenObjects][object_name].Add(*this_disc_obj);
     previously_seen[kPreviouslySeenFieldsThis].clear();
 }
 
@@ -882,10 +891,13 @@ DISCREPANCY_CASE(INCONSISTENT_DBLINK, CSeq_inst, eDisc | eSubmitter | eSmart | e
     while (d && d->GetUser().GetObjectType() != CUser_object::eObjectType_DBLink) {
         ++d;
     }
+    CRef<CDiscrepancyObject> rep_seq = context.NewBioseqObj(seq, &context.GetSeqSummary());
     if (!d) {
-        m_Objs[kMissingDBLink].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary(), eKeepRef), false);
+        //m_Objs[kMissingDBLink].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary(), eKeepRef), false);
+        m_Objs[kMissingDBLink].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary()));
         // add missing for all previously seen fields
-        AddUserObjectFieldItems(CConstRef<CSeqdesc>(NULL), seq, &context.GetSeqSummary(), m_Objs[kDBLinkCollect], m_Objs[kDBLinkObjectList], context, "DBLink object");
+        //AddUserObjectFieldItems(CConstRef<CSeqdesc>(NULL), seq, &context.GetSeqSummary(), m_Objs[kDBLinkCollect], m_Objs[kDBLinkObjectList], context, "DBLink object");
+        AddUserObjectFieldItems(CConstRef<CSeqdesc>(NULL), *rep_seq, m_Objs[kDBLinkCollect], m_Objs[kDBLinkObjectList], context, "DBLink object");
     }
     while (d) {
         if (d->GetUser().GetObjectType() != CUser_object::eObjectType_DBLink) {
@@ -893,7 +905,7 @@ DISCREPANCY_CASE(INCONSISTENT_DBLINK, CSeq_inst, eDisc | eSubmitter | eSmart | e
             continue;
         }
         CConstRef<CSeqdesc> dr(&(*d));
-        AddUserObjectFieldItems(dr, seq, &context.GetSeqSummary(), m_Objs[kDBLinkCollect], m_Objs[kDBLinkObjectList], context, "DBLink object");
+        AddUserObjectFieldItems(dr, *rep_seq, m_Objs[kDBLinkCollect], m_Objs[kDBLinkObjectList], context, "DBLink object");
         ++d;
     }
 }
@@ -1075,6 +1087,7 @@ DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, CSeq_inst, eDisc | eSubmitter
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
     CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*seq);
     CSeqdesc_CI d(bsh, CSeqdesc::e_User);
+    CRef<CDiscrepancyObject> rep_seq = context.NewBioseqObj(seq, &context.GetSeqSummary());
     while (d) {
         if (d->GetUser().GetObjectType() != CUser_object::eObjectType_StructuredComment) {
             ++d;
@@ -1085,8 +1098,9 @@ DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, CSeq_inst, eDisc | eSubmitter
         if (NStr::IsBlank(prefix)) {
             prefix = "unnamed";
         }
-        m_Objs[kStructuredCommentObservedPrefixesThis][prefix].Add(*context.NewSeqdescObj(dr, context.GetCurrentBioseqLabel(), eKeepRef), false);
-        AddUserObjectFieldItems(dr, seq, &context.GetSeqSummary(), m_Objs[kStructuredCommentReport], m_Objs[kStructuredCommentPrevious], context, prefix + " structured comment", kStructuredCommentFieldPrefix);
+        //m_Objs[kStructuredCommentObservedPrefixesThis][prefix].Add(*context.NewSeqdescObj(dr, context.GetCurrentBioseqLabel(), eKeepRef), false);
+        m_Objs[kStructuredCommentObservedPrefixesThis][prefix].Add(*context.NewSeqdescObj(dr, context.GetCurrentBioseqLabel()));
+        AddUserObjectFieldItems(dr, *rep_seq, m_Objs[kStructuredCommentReport], m_Objs[kStructuredCommentPrevious], context, prefix + " structured comment", kStructuredCommentFieldPrefix);
         ++d;
     }
 
@@ -1094,8 +1108,9 @@ DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, CSeq_inst, eDisc | eSubmitter
     ITERATE (CReportNode::TNodeMap, it, m_Objs[kStructuredCommentObservedPrefixes].GetMap()) {
         if (!m_Objs[kStructuredCommentObservedPrefixesThis].Exist(it->first)) {
             m_Objs["[n] Bioseq[s] [is] missing " + it->first + " structured comment"]
-                .Add(*context.NewBioseqObj(seq, &context.GetSeqSummary(), eKeepRef), false);
-            AddUserObjectFieldItems(CConstRef<CSeqdesc>(NULL), seq, &context.GetSeqSummary(), m_Objs[kStructuredCommentReport],
+                //.Add(*context.NewBioseqObj(seq, &context.GetSeqSummary(), eKeepRef), false);
+                .Add(*rep_seq);
+            AddUserObjectFieldItems(CConstRef<CSeqdesc>(NULL), *rep_seq, m_Objs[kStructuredCommentReport],
                 m_Objs[kStructuredCommentPrevious], context,
                 it->first + " structured comment", kStructuredCommentFieldPrefix);
         }
@@ -1104,22 +1119,27 @@ DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, CSeq_inst, eDisc | eSubmitter
     // report prefixes found on this sequence but not on previous sequences
     ITERATE (CReportNode::TNodeMap, it, m_Objs[kStructuredCommentObservedPrefixesThis].GetMap()) {
         if (!m_Objs[kStructuredCommentObservedPrefixes].Exist(it->first)) {
-            ITERATE (TReportObjectList, ro, m_Objs[kStructuredCommentsSeqs].GetObjects()) {
-                const CBioseq* this_seq = dynamic_cast<const CBioseq*>((*ro)->GetObject().GetPointer());       
-                CConstRef<CBioseq> this_seq_r(this_seq);
+            //ITERATE(TReportObjectList, ro, m_Objs[kStructuredCommentsSeqs].GetObjects()) {
+            for (auto ro: m_Objs[kStructuredCommentsSeqs].GetObjects()) {
+                //const CBioseq* this_seq = dynamic_cast<const CBioseq*>((*ro)->GetObject().GetPointer());
+                //CConstRef<CBioseq> this_seq_r(this_seq);
                 m_Objs["[n] Bioseq[s] [is] missing " + it->first + " structured comment"]
-                    .Add(*context.NewBioseqObj(this_seq_r, 0, eKeepRef), false);
-                AddUserObjectFieldItems(CConstRef<CSeqdesc>(NULL), this_seq_r, 0, m_Objs[kStructuredCommentReport],
+                    //.Add(*context.NewBioseqObj(this_seq_r, 0, eKeepRef), false);
+                    //.Add(*context.NewBioseqObj(this_seq_r, 0));
+                    .Add(*ro);
+                AddUserObjectFieldItems(CConstRef<CSeqdesc>(NULL), *ro, m_Objs[kStructuredCommentReport],
                     m_Objs[kStructuredCommentPrevious], context,
                     it->first + " structured comment", kStructuredCommentFieldPrefix);
             }
         }
         // add to list of previously observed prefixes, for next time
-        m_Objs[kStructuredCommentObservedPrefixes][it->first].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary(), eKeepRef), false);
+        //m_Objs[kStructuredCommentObservedPrefixes][it->first].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary(), eKeepRef), false);
+        m_Objs[kStructuredCommentObservedPrefixes][it->first].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary()));
     }
 
     m_Objs[kStructuredCommentObservedPrefixesThis].clear();
-    m_Objs[kStructuredCommentsSeqs].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary(), eKeepRef), false);
+    //m_Objs[kStructuredCommentsSeqs].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary(), eKeepRef), false);
+    m_Objs[kStructuredCommentsSeqs].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary()));
 }
 
 
