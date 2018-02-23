@@ -6,3 +6,5 @@ connect/mbedtls
 connect/ext$
 connect/daemons$
 connect/daemons/mod$
+util$
+
