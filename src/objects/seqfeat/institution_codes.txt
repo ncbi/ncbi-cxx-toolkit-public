@@ -1586,6 +1586,13 @@ DNAP	h	Department of Primary Industry and Fisheries
 DNATAX	b	DNA-TAX		
 DNHM<CHN>	s	Dalian Museum of Natural History		
 DNHM<USA-UT>	s	Dinosaur Natural History Museum		
+DNMNH	s	Ditsong National Museum of Natural History	TM<ZAF>,TMSA<ZAF>
+DNMNH:AC	s	Ditsong National Museum of Natural History, Archaeozoology Collection
+DNMNH:BC	s	Ditsong National Museum of Natural History, Bird Collection
+DNMNH:EC	s	Ditsong National Museum of Natural History, Entomology Collection
+DNMNH:HC	s	Ditsong National Museum of Natural History, Herpetology Collection
+DNMNH:IC	s	Ditsong National Museum of Natural History, Invertebrate Collection
+DNMNH:MC	s	Ditsong National Museum of Natural History, Mammal Collection
 DNPM	s	Setor de Paleontologia do Departamento Nacional de Producao Mineral		
 DNS	s	Dundee Naturalists' Society		
 DNZ	h	Donetsk Botanical Garden of the National Academy of Sciences of Ukraine		
@@ -4208,7 +4215,6 @@ MOVC	s	Cornell College, Biology Department
 MOVI	s	Museu Oceanografico do Vale do Itajai		
 MP<CZE>	s	Vychodoceske muzeum Pardubice		
 MP<USA-NY>	s	Mohonk Preserve, Inc.		
-MP<ZAF>	s	Transvaal Museum		
 MPA	s	Ecole National Superieure Agronomique, Biologie et Pathologie Vegetales		
 MPC	s	Monterey Peninsula College, Life Science Museum		
 MPCA	s	Museo Provincial "Carlos Ameghino"		
@@ -6390,7 +6396,7 @@ TLS	s	Tunbridge Wells Museum and Art Gallery
 TLXM	s	Universidad Autonoma de Tlaxcala		
 TM<DEU>	s	Teylers Museum, Paleontologische		
 TM<SVK>	s	Slovak National Museum		
-TM<ZAF>	s	Transvaal Museum	TRM
+TM<ZAF>	s	Transvaal Museum	TMSA,TRM
 TMAG	s	Tasmanian Museum & Art Gallery		
 TMAL	s	Tameside Metropolitan Borough Museum		
 TMBS	s	Tatsuo Tanaka Memorial Biological Laboratory		
@@ -6406,10 +6412,9 @@ TMM	s	Texas Memorial Museum
 TMMC	s	Texas Memorial Museum		
 TMNH	s	Tianjin Museum of Natural History		
 TMP<FIN>	s	Tampere Museums		
-TMP<ZAF>	s	Transvaal Museum		
 TMRC	h	Shahid Beheshti University of Medical Sciences		
 TMS	s	Toleco Museum of Health and Natural History		
-TMSA	s	Transvaal Museum		
+TMSA	s	Transvaal Museum	TM<ZAF>
 TMTC	s	Taiwan Provincial Museum		
 TNAU	s	Tamil Nadu Agricultural University		
 TNFC	s	Tynside Naturalists' Field Club		
