@@ -7,4 +7,5 @@ connect/ext$
 connect/daemons$
 connect/daemons/mod$
 util$
+util/bitset$
 
