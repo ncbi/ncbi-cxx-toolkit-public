@@ -2,5 +2,6 @@
 corelib$
 common$
 connect$
+connect/ext$
 connect/daemons$
 connect/daemons/mod$
