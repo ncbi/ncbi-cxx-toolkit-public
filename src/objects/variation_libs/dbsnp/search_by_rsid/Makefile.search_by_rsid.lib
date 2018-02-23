@@ -1,0 +1,12 @@
+ASN = search_by_rsid
+
+SRC = $(ASN:%=%__) $(ASN:%=%___)
+
+LIB = searchbyrsid
+
+LIB_OR_DLL = lib
+
+WATCHERS = ivanchen
+
+CXXFLAGS += $(ORIG_CXXFLAGS)
+LDFLAGS += $(ORIG_LDFLAGS)
