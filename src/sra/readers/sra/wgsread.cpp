@@ -366,6 +366,7 @@ struct CWGSDb_Impl::SSeqTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS_STRING(ACCESSION);
     DECLARE_VDB_COLUMN_AS(uint32_t, ACC_VERSION);
     DECLARE_VDB_COLUMN_AS_STRING(SEQID_GNL_PREFIX);
+    DECLARE_VDB_COLUMN_AS(Uint1, MOL);
     DECLARE_VDB_COLUMN_AS_STRING(CONTIG_NAME);
     DECLARE_VDB_COLUMN_AS_STRING(NAME);
     DECLARE_VDB_COLUMN_AS_STRING(TITLE);
@@ -422,6 +423,7 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
       INIT_VDB_COLUMN(ACCESSION),
       INIT_VDB_COLUMN(ACC_VERSION),
       INIT_OPTIONAL_VDB_COLUMN(SEQID_GNL_PREFIX),
+      INIT_OPTIONAL_VDB_COLUMN(MOL),
       INIT_VDB_COLUMN(CONTIG_NAME),
       INIT_VDB_COLUMN(NAME),
       INIT_VDB_COLUMN(TITLE),
@@ -797,6 +799,23 @@ void CWGSDb_Impl::x_InitIdParams(void)
     m_IdPrefixWithVersion = acc.substr(0, prefix_len+2);
     m_IdPrefix = acc.substr(0, prefix_len);
     m_IdVersion = NStr::StringToNumeric<int>(acc.substr(prefix_len, 2));
+    if ( seq->m_MOL ) {
+        // explicit contig type
+        m_ContigMolType = CSeq_inst::TMol(*seq->MOL(1));
+    }
+    else {
+        // deduce contig type from accession prefix
+        switch ( acc[0] ) {
+        case 'G':
+        case 'H':
+        case 'I':
+            m_ContigMolType = CSeq_inst::eMol_rna;
+            break;
+        default:
+            m_ContigMolType = CSeq_inst::eMol_dna;
+            break;
+        }
+    }
     m_IdPrefixDbWithVersion = (IsTSA()? "TSA:": "WGS:")+m_IdPrefixWithVersion;
     m_IdPrefixDb = (IsTSA()? "TSA:": "WGS:")+m_IdPrefix;
     m_HasNoDefaultGnlId = seq->m_SEQID_GNL_PREFIX && seq->SEQID_GNL_PREFIX(1).empty();
@@ -1228,14 +1247,7 @@ END_LOCAL_NAMESPACE;
 
 bool CWGSDb_Impl::IsTSA(void) const
 {
-    switch ( m_IdPrefix[0] ) {
-    case 'G':
-    case 'H':
-    case 'I':
-        return true;
-    default:
-        return false;
-    }
+    return GetContigMolType() == CSeq_inst::eMol_rna;
 }
 
 
@@ -1456,7 +1468,7 @@ CRef<CSeq_id> CWGSDb_Impl::GetProteinSeq_id(TVDBRowId row_id) const
 
 CSeq_inst::TMol CWGSDb_Impl::GetContigMolType(void) const
 {
-    return IsTSA()? CSeq_inst::eMol_rna: CSeq_inst::eMol_dna;
+    return m_ContigMolType;
 }
 
 

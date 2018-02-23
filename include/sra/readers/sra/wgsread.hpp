@@ -541,6 +541,7 @@ private:
     CVDBTableIndex m_ProteinNameIndex;
     CVDBTableIndex m_ProductNameIndex;
 
+    CSeq_inst::TMol m_ContigMolType;
     bool m_IsSetMasterDescr;
     bool m_HasNoDefaultGnlId;
     CRef<CSeq_entry> m_MasterEntry;
