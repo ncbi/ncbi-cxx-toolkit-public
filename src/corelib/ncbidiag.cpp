@@ -3581,21 +3581,20 @@ const char*    CDiagBuffer::sm_SeverityName[eDiag_Trace+1] = {
     "Info", "Warning", "Error", "Critical", "Fatal", "Trace" };
 
 
-static CAtomicCounter s_DiagHandlerInitializer_Counter;
-
-SDiagHandlerInitializer::SDiagHandlerInitializer(void)
+void* InitDiagHandler(void)
 {
-    if (s_DiagHandlerInitializer_Counter.Add(1) == 1) {
+    static bool s_DiagInitialized = false;
+    if (!s_DiagInitialized) {
         CDiagContext::SetupDiag(eDS_Default, 0, eDCM_Init);
+        s_DiagInitialized = true;
     }
+    return 0;
 }
 
-SDiagHandlerInitializer::~SDiagHandlerInitializer(void)
-{
-    if (s_DiagHandlerInitializer_Counter.Add(-1) == 0) {
-        SetDiagHandler(0);
-    }
-}
+
+// For initialization only
+void* s_DiagHandlerInitializer = InitDiagHandler();
+
 
 // MT-safe initialization of the default handler
 static CDiagHandler* s_CreateDefaultDiagHandler(void);
