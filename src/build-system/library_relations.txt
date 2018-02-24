@@ -1031,7 +1031,6 @@ sdbapi needs xutil
 sdncbiauth needs generic_db_core
 sdncbiauth needs muxex_g
 sdncbiauth needs xmyncbi
-searchbyrsid needs trackmgr
 seq needs pub
 seq needs seqcode
 seq needs sequtil
