@@ -3,31 +3,19 @@
 /*
 Copyright(c) 2002-2017 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
-Permission is hereby granted, free of charge, to any person
-obtaining a copy of this software and associated documentation
-files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of the Software,
-and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Software.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
-
-You have to explicitly mention BitMagic project in any derivative product,
-its WEB Site, published materials, articles or any other work derived from this
-project or based on our code or know-how.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 For more information please visit:  http://bitmagic.io
-
 */
 
 
@@ -41,13 +29,15 @@ For more information please visit:  http://bitmagic.io
 
 #include "bmdef.h"
 #include "bmsse_util.h"
+#include "bmutil.h"
 
 namespace bm
 {
 
-/** @defgroup SSE4 SSE4.2 funcions
+/** @defgroup SSE4 SSE4.2 funcions (internal)
     Processor specific optimizations for SSE4.2 instructions (internals)
- *  @ingroup bvector
+    @internal
+    @ingroup bvector
  */
 
 
@@ -149,47 +139,54 @@ bm::id_t sse4_bit_count_op(const __m128i* BMRESTRICT block,
     return count;
 }
 
-/*
-template<class Func>
-bm::id_t sse4_bit_count_op2(const __m128i* BMRESTRICT block, 
-                            const __m128i* BMRESTRICT block_end,
-                            const __m128i* BMRESTRICT mask_block,
-                           Func op_func)
-{
-    bm::id_t count = 0;
-#ifdef BM64_SSE4    
-    do
-    {
-        unsigned *r1 = (unsigned*) block;
-        unsigned *r2 = (unsigned*) mask_block;
-
-        count += _mm_popcnt_u32(op_func(r1[0], r2[0]));
-        count += _mm_popcnt_u32(op_func(r1[1], r2[1]));
-        count += _mm_popcnt_u32(op_func(r1[2], r2[2]));
-        count += _mm_popcnt_u32(op_func(r1[3], r2[3]));
-
-        ++mask_block;
-
-    } while (++block < block_end);
-#else
-    do
-    {
-        unsigned *r1 = (unsigned*) block;
-        unsigned *r2 = (unsigned*) mask_block;
-
-        count += _mm_popcnt_u32(op_func(r1[0], r2[0]));
-        count += _mm_popcnt_u32(op_func(r1[1], r2[1]));
-        count += _mm_popcnt_u32(op_func(r1[2], r2[2]));
-        count += _mm_popcnt_u32(op_func(r1[3], r2[3]));
-
-        ++mask_block;
-
-    } while (++block < block_end);
-#endif    
-    return count;
-
-}
+/*!
+    @brief check if block is all zero bits
+    @ingroup SSE4
 */
+inline
+bool sse4_is_all_zero(const __m128i* BMRESTRICT block,
+                      const __m128i* BMRESTRICT block_end)
+{
+    __m128i maskz = _mm_setzero_si128();
+
+    do
+    {
+        __m128i w0 = _mm_load_si128(block+0);
+        __m128i w1 = _mm_load_si128(block+1);
+        
+        __m128i w = _mm_or_si128(w0, w1);
+        if (!_mm_test_all_ones(_mm_cmpeq_epi8(w, maskz))) // (w0 | w1) != maskz
+        {
+            return false;
+        }
+
+        block += 2;
+    
+    } while (block < block_end);
+    return true;
+}
+
+
+/*!
+    @brief check if block is all zero bits
+    @ingroup SSE4
+*/
+inline
+bool sse4_is_all_one(const __m128i* BMRESTRICT block,
+                     const __m128i* BMRESTRICT block_end)
+{
+    do
+    {
+        __m128i w0 = _mm_load_si128(block);
+        if (!_mm_test_all_ones(w0))
+        {
+            return false;
+        }
+        ++block;
+    } while (block < block_end);
+    return true;
+}
+
 
 
 #define VECT_XOR_ARR_2_MASK(dst, src, src_end, mask)\
@@ -234,7 +231,11 @@ bm::id_t sse4_bit_count_op2(const __m128i* BMRESTRICT block,
 #define VECT_SET_BLOCK(dst, dst_end, value) \
     sse2_set_block((__m128i*) dst, (__m128i*) (dst_end), (value))
 
+#define VECT_IS_ZERO_BLOCK(dst, dst_end) \
+    sse4_is_all_zero((__m128i*) dst, (__m128i*) (dst_end))
 
+#define VECT_IS_ONE_BLOCK(dst, dst_end) \
+    sse4_is_all_one((__m128i*) dst, (__m128i*) (dst_end))
 
 
 
@@ -242,8 +243,6 @@ bm::id_t sse4_bit_count_op2(const __m128i* BMRESTRICT block,
     SSE4.2 optimized bitcounting and number of GAPs
     @ingroup SSE4
 */
-
-
 inline
 bm::id_t sse4_bit_block_calc_count_change(const __m128i* BMRESTRICT block,
                                           const __m128i* BMRESTRICT block_end,
@@ -337,6 +336,76 @@ bm::id_t sse4_bit_block_calc_count_change(const __m128i* BMRESTRICT block,
 
    return count;
 }
+
+
+
+#ifdef __GNUG__
+// necessary measure to silence false warning from GCC about negative pointer arithmetics
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
+
+/*!
+     SSE4.2 check for one to two (variable len) 128 bit SSE lines for gap search results (8 elements)
+     \internal
+*/
+inline
+unsigned sse4_gap_find(const bm::gap_word_t* BMRESTRICT pbuf, const bm::gap_word_t pos, const unsigned size)
+{
+    BM_ASSERT(size <= 16);
+    BM_ASSERT(size);
+
+    const unsigned unroll_factor = 8;
+    if (size < 4) // for very short vector use conventional scan
+    {
+        unsigned j;
+        for (j = 0; j < size; ++j)
+        {
+            if (pbuf[j] >= pos)
+                break;
+        }
+        return j;
+    }
+
+    __m128i m1, mz, maskF, maskFL;
+
+    mz = _mm_setzero_si128();
+    m1 = _mm_loadu_si128((__m128i*)(pbuf)); // load first 8 elements
+
+    maskF = _mm_cmpeq_epi64(mz, mz); // set all FF
+    maskFL = _mm_slli_si128(maskF, 4 * 2); // byle shift to make [0000 FFFF] 
+    int shiftL= (64 - (unroll_factor - size) * 16);
+    maskFL = _mm_slli_epi64(maskFL, shiftL); // additional bit shift to  [0000 00FF]
+
+    m1 = _mm_andnot_si128(maskFL, m1); // m1 = (~mask) & m1
+    m1 = _mm_or_si128(m1, maskFL);
+
+    __m128i mp = _mm_set1_epi16(pos);  // broadcast pos into all elements of a SIMD vector
+    __m128i  mge_mask = _mm_cmpeq_epi16(_mm_subs_epu16(mp, m1), mz); // unsigned m1 >= mp
+    __m128i  c_mask = _mm_slli_epi16(mge_mask, 15); // clear not needed flag bits by shift
+    int mi = _mm_movemask_epi8(c_mask);  // collect flag bits
+    if (mi)
+    {
+        // alternative: int bsr_i= bm::bit_scan_fwd(mi) >> 1;
+        unsigned bc = _mm_popcnt_u32(mi); // gives us number of elements >= pos
+        return unroll_factor - bc;   // address of first one element (target)
+    }
+    // inspect the next lane with possible step back (to avoid over-read the block boundaries)
+    //   GCC gives a false warning for "- unroll_factor" here
+    const bm::gap_word_t* BMRESTRICT pbuf2 = pbuf + size - unroll_factor;
+    BM_ASSERT(pbuf2 > pbuf || size == 8); // assert in place to make sure GCC warning is indeed false
+
+    m1 = _mm_loadu_si128((__m128i*)(pbuf2)); // load next elements (with possible overlap)
+    mge_mask = _mm_cmpeq_epi16(_mm_subs_epu16(mp, m1), mz); // m1 >= mp        
+    mi = _mm_movemask_epi8(_mm_slli_epi16(mge_mask, 15));
+    unsigned bc = _mm_popcnt_u32(mi); 
+
+    return size - bc;
+}
+#ifdef __GNUG__
+#pragma GCC diagnostic pop
+#endif
+
 
 
 

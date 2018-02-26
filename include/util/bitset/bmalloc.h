@@ -3,31 +3,19 @@
 /*
 Copyright(c) 2002-2017 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
-Permission is hereby granted, free of charge, to any person
-obtaining a copy of this software and associated documentation
-files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of the Software,
-and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Software.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
-
-You have to explicitly mention BitMagic project in any derivative product,
-its WEB Site, published materials, articles or any other work derived from this
-project or based on our code or know-how.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 For more information please visit:  http://bitmagic.io
-
 */
 
 #include <stdlib.h>
@@ -35,6 +23,13 @@ For more information please visit:  http://bitmagic.io
 
 namespace bm
 {
+
+#if defined(BMSSE2OPT) || defined(BMSSE42OPT)
+#define BM_ALLOC_ALIGN 16
+#endif
+#if defined(BMAVX2OPT)
+#define BM_ALLOC_ALIGN 32
+#endif
 
 
 /*! 
@@ -63,16 +58,17 @@ public:
     static bm::word_t* allocate(size_t n, const void *)
     {
         bm::word_t* ptr;
-#if defined(BMSSE2OPT) || defined(BMSSE42OPT)
-# ifdef _MSC_VER
-        ptr = (bm::word_t*) ::_aligned_malloc(n * sizeof(bm::word_t), 16);
-#else
-        ptr = (bm::word_t*) ::_mm_malloc(n * sizeof(bm::word_t), 16);
-# endif
 
-#else  
-        ptr = (bm::word_t*) ::malloc(n * sizeof(bm::word_t));
+#if defined(BM_ALLOC_ALIGN)
+    #ifdef _MSC_VER
+        ptr = (bm::word_t*) ::_aligned_malloc(n * sizeof(bm::word_t), BM_ALLOC_ALIGN);
+    #else
+        ptr = (bm::word_t*) ::_mm_malloc(n * sizeof(bm::word_t), BM_ALLOC_ALIGN);
+    #endif
+#else
+            ptr = (bm::word_t*) ::malloc(n * sizeof(bm::word_t));
 #endif
+
         if (!ptr)
         {
             throw std::bad_alloc();
@@ -86,14 +82,13 @@ public:
     */
     static void deallocate(bm::word_t* p, size_t)
     {
-#if defined(BMSSE2OPT) || defined(BMSSE42OPT)
-# ifdef _MSC_VER
-        ::_aligned_free(p);
+#ifdef BM_ALLOC_ALIGN
+    # ifdef _MSC_VER
+            ::_aligned_free(p);
+    #else
+            ::_mm_free(p);
+    # endif
 #else
-        ::_mm_free(p);
-# endif
-
-#else  
         ::free(p);
 #endif
     }
@@ -242,6 +237,7 @@ typedef mem_alloc<block_allocator, ptr_allocator> standard_allocator;
 
 /** @} */
 
+#undef BM_ALLOC_ALIGN
 
 } // namespace bm
 

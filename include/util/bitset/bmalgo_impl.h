@@ -1,34 +1,21 @@
 #ifndef BMALGO_IMPL__H__INCLUDED__
 #define BMALGO_IMPL__H__INCLUDED__
-
 /*
 Copyright(c) 2002-2017 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
-Permission is hereby granted, free of charge, to any person
-obtaining a copy of this software and associated documentation
-files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of the Software,
-and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Software.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
-
-You have to explicitly mention BitMagic project in any derivative product,
-its WEB Site, published materials, articles or any other work derived from this
-project or based on our code or know-how.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 For more information please visit:  http://bitmagic.io
-
 */
 
 #ifdef _MSC_VER
@@ -43,9 +30,9 @@ namespace bm
 {
 
 /*! 
-   @defgroup setalgo Bitset algorithms
+   @defgroup setalgo bvector<> algorithms 
  
-   Set algebra algorithms
+   Set algebra algorithms using bit-vectors, arrays. Binary metrics and distances. Random sub-sets.
    @ingroup bvector
  */
 
@@ -161,10 +148,10 @@ void combine_count_operation_with_block(const bm::word_t*           blk,
                      dmd.result += gap_count_xor(g1, g2);
                     break;
                  case bm::COUNT_A:
-                    dmd.result += gap_bit_count(g1);
+                    dmd.result += gap_bit_count_unr(g1);
                     break;
                  case bm::COUNT_B:
-                    dmd.result += gap_bit_count(g2);
+                    dmd.result += gap_bit_count_unr(g2);
                     break;
                  } // switch
                                      
@@ -187,13 +174,13 @@ void combine_count_operation_with_block(const bm::word_t*           blk,
                      break;
                  case bm::COUNT_OR:
                      if (!arg_blk)
-                        dmd.result += gap_bit_count(g1);
+                        dmd.result += gap_bit_count_unr(g1);
                      else
                         dmd.result += gap_bitset_or_count(arg_blk, g1); 
                      break;
                  case bm::COUNT_SUB_AB:
                      {
-                     bm::word_t  BM_ALIGN16 temp_bit_blk[bm::set_block_size] BM_ALIGN16ATTR;
+                     bm::word_t  BM_VECT_ALIGN temp_bit_blk[bm::set_block_size] BM_VECT_ALIGN_ATTR;
 
                      gap_convert_to_bitset((bm::word_t*) temp_bit_blk, g1);
                      dmd.result += 
@@ -211,13 +198,13 @@ void combine_count_operation_with_block(const bm::word_t*           blk,
                      break;
                  case bm::COUNT_XOR:
                      if (!arg_blk)
-                        dmd.result += gap_bit_count(g1);
+                        dmd.result += gap_bit_count_unr(g1);
                      else
                         dmd.result += gap_bitset_xor_count(arg_blk, g1);
                      break;
                  case bm::COUNT_A:
                     if (g1)
-                        dmd.result += gap_bit_count(g1);
+                        dmd.result += gap_bit_count_unr(g1);
                     break;
                  case bm::COUNT_B:
                     if (arg_blk)
@@ -251,7 +238,7 @@ void combine_count_operation_with_block(const bm::word_t*           blk,
                      break;
                  case bm::COUNT_OR:
                      if (!blk)
-                        dmd.result += gap_bit_count(g2);
+                        dmd.result += gap_bit_count_unr(g2);
                      else
                         dmd.result += gap_bitset_or_count(blk, g2);
                      break;
@@ -270,7 +257,7 @@ void combine_count_operation_with_block(const bm::word_t*           blk,
                      break;
                  case bm::COUNT_XOR:
                      if (!blk)
-                        dmd.result += gap_bit_count(g2);
+                        dmd.result += gap_bit_count_unr(g2);
                      else
                         dmd.result += gap_bitset_xor_count(blk, g2); 
                     break;
@@ -284,7 +271,7 @@ void combine_count_operation_with_block(const bm::word_t*           blk,
                     break;
                  case bm::COUNT_B:
                     if (g2)
-                        dmd.result += gap_bit_count(g2);
+                        dmd.result += gap_bit_count_unr(g2);
                     break;
                  } // switch
                                      
@@ -463,7 +450,7 @@ void combine_any_operation_with_block(const bm::word_t* blk,
                      break;
                  case bm::COUNT_SUB_AB:
                      {
-                     bm::word_t  BM_ALIGN16 temp_blk[bm::set_block_size] BM_ALIGN16ATTR;
+                     bm::word_t  BM_VECT_ALIGN temp_blk[bm::set_block_size] BM_VECT_ALIGN_ATTR;
                      gap_convert_to_bitset((bm::word_t*) temp_blk, g1);
                      dmd.result += 
                        bit_operation_sub_any((bm::word_t*)temp_blk, 
@@ -1217,7 +1204,7 @@ void combine_or(BV& bv, It  first, It last)
                 unsigned nbit   = unsigned(*first & bm::set_block_mask); 
                 unsigned nword  = unsigned(nbit >> bm::set_word_shift); 
                 nbit &= bm::set_word_mask;
-                blk[nword] |= (bm::word_t)1 << nbit;
+                blk[nword] |= (1u << nbit);
             } // for
         }
     } // while
@@ -1282,7 +1269,7 @@ void combine_xor(BV& bv, It  first, It last)
                 unsigned is_set;
                 unsigned nbit   = (*first) & bm::set_block_mask; 
                 
-                is_set = gap_test(gap_blk, nbit);
+                is_set = bm::gap_test_unr(gap_blk, nbit);
                 BM_ASSERT(is_set <= 1);
                 is_set ^= 1; 
                 
@@ -1370,7 +1357,7 @@ void combine_sub(BV& bv, It  first, It last)
                 unsigned is_set;
                 unsigned nbit   = (*first) & bm::set_block_mask; 
                 
-                is_set = gap_test(gap_blk, nbit);
+                is_set = bm::gap_test_unr(gap_blk, nbit);
                 if (!is_set)
                     continue;
                 
@@ -1661,6 +1648,73 @@ void export_array(BV& bv, It first, It last)
     } // switch
 
 }
+
+
+/*!
+   \brief for-each visitor, calls a special visitor functor for each 1 bit group
+ 
+   \param block - bit block buffer pointer
+   \param offset - global block offset (number of bits)
+   \param bit_functor - functor must support .add_bits(offset, bits_ptr, size)
+ 
+   @ingroup bitfunc
+   @internal
+*/
+template<class Func>
+void for_each_bit_blk(const bm::word_t* block, bm::id_t offset,
+                      Func&  bit_functor)
+{
+    unsigned char bits[bm::set_bitscan_wave_size*32];
+
+    unsigned offs = offset;
+    unsigned cnt;
+    
+    const word_t* block_end = block + bm::set_block_size;
+    for ( ;block < block_end; )
+    {
+        cnt = bm::bitscan_wave(block, bits);
+        
+        bit_functor.add_bits(offs, bits, cnt);
+        
+        offs += bm::set_bitscan_wave_size * 32;
+        block += bm::set_bitscan_wave_size;
+    } // for
+}
+
+
+/*!
+   \brief for-each visitor, calls a special visitor functor for each 1 bit range
+ 
+   \param block - bit block buffer pointer
+   \param offset - global block offset (number of bits)
+   \param bit_functor - functor must support .add_range(offset, bits_ptr, size)
+ 
+   @ingroup gapfunc
+   @internal
+*/
+template<typename T, typename Func>
+void for_each_gap_blk(const T* buf, bm::id_t offset,
+                      Func&  bit_functor)
+{
+    const T* pcurr = buf + 1;
+    const T* pend = buf + (*buf >> 3);
+
+    if (*buf & 1)
+    {
+        bit_functor.add_range(offset, *pcurr + 1);
+        ++pcurr;
+    }
+    for (++pcurr; pcurr <= pend; pcurr += 2)
+    {
+        T prev = *(pcurr-1);
+        bit_functor.add_range(offset + prev + 1, *pcurr - prev);
+    }
+}
+
+
+
+
+
 
 } // namespace bm
 

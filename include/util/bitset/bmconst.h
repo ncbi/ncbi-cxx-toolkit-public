@@ -3,31 +3,19 @@
 /*
 Copyright(c) 2002-2017 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
-Permission is hereby granted, free of charge, to any person
-obtaining a copy of this software and associated documentation
-files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of the Software,
-and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Software.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
-
-You have to explicitly mention BitMagic project in any derivative product,
-its WEB Site, published materials, articles or any other work derived from this
-project or based on our code or know-how.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 For more information please visit:  http://bitmagic.io
-
 */
 
 namespace bm
@@ -104,7 +92,7 @@ const unsigned set_block_size_op  = bm::set_block_size;
 
 #endif
 
-# define BM_DECLARE_TEMP_BLOCK(x)  unsigned BM_ALIGN16 x[bm::set_block_size] BM_ALIGN16ATTR;
+# define BM_DECLARE_TEMP_BLOCK(x)  unsigned BM_VECT_ALIGN x[bm::set_block_size] BM_VECT_ALIGN_ATTR;
 
 
 /*!
@@ -140,7 +128,7 @@ template<bool T> struct _copyright
 };
 
 template<bool T> const char _copyright<T>::_p[] = 
-    "BitMagic C++ Library. v.3.9.0 (c) 2002-2017 Anatoliy Kuznetsov.";
+    "BitMagic C++ Library. v.3.10.1 (c) 2002-2017 Anatoliy Kuznetsov.";
 template<bool T> const unsigned _copyright<T>::_v[3] = {3, 9, 0};
 
 
@@ -280,6 +268,18 @@ template<bool T> struct gap_len_table_nl
 template<bool T>
 const gap_word_t gap_len_table_nl<T>::_len[bm::gap_levels] =
                 { 32, 128, 512, bm::gap_max_buff_len };
+
+/*!
+    @brief codes for supported SIMD optimizations
+    @internal
+*/
+enum simd_codes
+{
+    simd_none  = 0,   ///!< No SIMD or any other optimization
+    simd_sse2  = 1,   ///!< Intel SSE2
+    simd_sse42 = 2,   ///!< Intel SSE4.2
+    simd_avx2  = 5    ///!< Intel AVX2
+};
 
 
 

@@ -3,31 +3,19 @@
 /*
 Copyright(c) 2002-2017 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
-Permission is hereby granted, free of charge, to any person
-obtaining a copy of this software and associated documentation
-files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of the Software,
-and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Software.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
-
-You have to explicitly mention BitMagic project in any derivative product,
-its WEB Site, published materials, articles or any other work derived from this
-project or based on our code or know-how.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 For more information please visit:  http://bitmagic.io
-
 */
 
 
@@ -37,6 +25,7 @@ namespace bm
 
 /** @defgroup SSE2 SSE2 functions
     Processor specific optimizations for SSE2 instructions (internals)
+    @internal
     @ingroup bvector
  */
 
@@ -415,6 +404,38 @@ __m128i sse2_sub(__m128i a, __m128i b)
     return _mm_andnot_si128(b, a);
 }
 
+
+/*!
+    @brief Gap block population count (array sum) utility
+    @param pbuf - unrolled, aligned to 1-start GAP buffer
+    @param sse_vect_waves - number of SSE vector lines to process
+    @param sum - result acumulator
+    @return tail pointer
+
+    @internal
+*/
+inline
+const bm::gap_word_t* sse2_gap_sum_arr(
+    const bm::gap_word_t* BMRESTRICT pbuf,
+    unsigned sse_vect_waves,
+    unsigned* sum)
+{
+    __m128i xcnt = _mm_setzero_si128();
+
+    for (unsigned i = 0; i < sse_vect_waves; ++i)
+    {
+        __m128i mm0 = _mm_loadu_si128((__m128i*)(pbuf - 1));
+        __m128i mm1 = _mm_loadu_si128((__m128i*)(pbuf + 8 - 1));
+        __m128i mm_s2 = _mm_add_epi16(mm1, mm0);
+        xcnt = _mm_add_epi16(xcnt, mm_s2);
+        pbuf += 16;
+    }
+    xcnt = _mm_sub_epi16(_mm_srli_epi32(xcnt, 16), xcnt);
+
+    unsigned short* cnt8 = (unsigned short*)&xcnt;
+    *sum += (cnt8[0]) + (cnt8[2]) + (cnt8[4]) + (cnt8[6]);
+    return pbuf;
+}
 
 
 } // namespace

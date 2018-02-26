@@ -3,31 +3,19 @@
 /*
 Copyright(c) 2002-2017 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
-Permission is hereby granted, free of charge, to any person
-obtaining a copy of this software and associated documentation
-files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of the Software,
-and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Software.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
-
-You have to explicitly mention BitMagic project in any derivative product,
-its WEB Site, published materials, articles or any other work derived from this
-project or based on our code or know-how.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 For more information please visit:  http://bitmagic.io
-
 */
 
 #include "bmdef.h"
@@ -137,7 +125,41 @@ void dynamic_range_clip_low(SV& svect, unsigned low_bit)
     bv_low_plain->bit_or(bv_acc1);
 }
 
-
+/*!
+    \brief Compute bit-vector of non-zero elements
+ 
+    \param  svect - input sparse vector to compute non-zero elements
+    \param  bvect - output bit-bector of non-zero elements
+ 
+    Output vector is computed as a logical OR (join) of all plains
+ 
+    \ingroup svalgo
+*/
+template<class SV>
+void compute_nonzero_bvector(const SV& svect, typename SV::bvector_type& bvect)
+{
+    bool first = true;
+    for (unsigned i = 0; i < svect.plains(); ++i)
+    {
+        const typename SV::bvector_type* bv_plain = svect.plain(i);
+        if (bv_plain)
+        {
+            if (first) // first found plain - use simple assignment
+            {
+                bvect = *bv_plain;
+                first = false;
+            }
+            else // for everything else - use OR
+            {
+                bvect |= *bv_plain;
+            }
+        }
+    } // for i
+    if (first) // no plains were found, just clear the result
+    {
+        bvect.clear(true);
+    }
+}
     
 } // namespace bm
 

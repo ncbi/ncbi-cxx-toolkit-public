@@ -1,8 +1,20 @@
-// Copyright(c) 2002-2009 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
-//
-// BM library internal header
-//
-// Set all required preprocessor defines
+/*
+Copyright(c) 2002-2017 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+For more information please visit:  http://bitmagic.io
+*/
 
 #include <climits>
 
@@ -91,6 +103,7 @@
 #    define BM_NOASSERT
 #  endif
 #endif
+
 
 #ifndef BM_ASSERT
 
@@ -184,15 +197,18 @@
 # undef BMSSE2OPT
 #endif
 
-
-#if !(defined(BMSSE2OPT) || defined(BMSSE42OPT)) 
-
 # ifndef BM_SET_MMX_GUARD
 #  define BM_SET_MMX_GUARD
 # endif
 
+
+#if !(defined(BMSSE2OPT) || defined(BMSSE42OPT) || defined(BMAVX2OPT))
+
+
 #define BM_ALIGN16 
 #define BM_ALIGN16ATTR
+#define BM_ALIGN32
+#define BM_ALIGN32ATTR
 
 #else  
 
@@ -207,6 +223,12 @@
 #  define BM_ALIGN16ATTR
 #endif
 
+#ifndef BM_ALIGN32
+#  define BM_ALIGN32 __declspec(align(32))
+#  define BM_ALIGN32ATTR
+#endif
+
+
 # else // GCC
 
 #ifndef BM_ALIGN16
@@ -214,9 +236,31 @@
 #  define BM_ALIGN16ATTR __attribute__((aligned(16)))
 #endif
 
+#ifndef BM_ALIGN32
+#  define BM_ALIGN32
+#  define BM_ALIGN32ATTR __attribute__((aligned(32)))
+#endif
+
+
 #endif
 
 #endif
+
+#if (defined(BMSSE2OPT) || defined(BMSSE42OPT))
+#   define BM_VECT_ALIGN BM_ALIGN16
+#   define BM_VECT_ALIGN_ATTR BM_ALIGN16ATTR
+#else
+#   if defined(BMAVX2OPT)
+#       define BM_VECT_ALIGN BM_ALIGN32
+#       define BM_VECT_ALIGN_ATTR BM_ALIGN32ATTR
+#   else
+#       define BM_VECT_ALIGN
+#       define BM_VECT_ALIGN_ATTR
+#   endif
+#endif
+
+
+
 
 /*! 
     Define calculates number of 1 bits in 32-bit word.
@@ -224,7 +268,7 @@
 */
 #ifndef BM_INCWORD_BITCOUNT
 
-#ifdef BMSSE42OPT
+#if (defined(BMSSE42OPT) || defined(BMAVX2OPT))
 
 # define BM_INCWORD_BITCOUNT(cnt, w) cnt += _mm_popcnt_u32(w);
 
@@ -236,6 +280,13 @@
      bm::bit_count_table<true>::_count[(unsigned char)((w) >> 16)] + \
      bm::bit_count_table<true>::_count[(unsigned char)((w) >> 24)];
 
+
+#endif
+
+// throw redefinintion for compatibility with language wrappers
+//
+#ifndef BM_ASSERT_THROW
+#define BM_ASSERT_THROW(x, xerrcode)
 #endif
 
 #endif

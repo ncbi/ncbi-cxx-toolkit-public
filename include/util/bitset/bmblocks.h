@@ -3,31 +3,19 @@
 /*
 Copyright(c) 2002-2017 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
-Permission is hereby granted, free of charge, to any person
-obtaining a copy of this software and associated documentation
-files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of the Software,
-and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Software.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
-
-You have to explicitly mention BitMagic project in any derivative product,
-its WEB Site, published materials, articles or any other work derived from this
-project or based on our code or know-how.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 For more information please visit:  http://bitmagic.io
-
 */
 
 
@@ -183,12 +171,12 @@ public:
                     cnt = gap_length(gap_block) - 1;
                     if (idx)
                     {
-                        first_bit = gap_test(gap_block, 0);
+                        first_bit = bm::gap_test_unr(gap_block, 0);
                         cnt -= !(prev_block_border_bit_ ^ first_bit);
                     }
                         
                     prev_block_border_bit_ = 
-                        gap_test(gap_block, gap_max_bits-1);
+                        bm::gap_test_unr(gap_block, gap_max_bits-1);
                 }
                 else // bitset
                 {
@@ -232,8 +220,6 @@ public:
 
         bool operator()(const bm::word_t* block, unsigned /*idx*/)
         {
-            if (IS_FULL_BLOCK(block)) return true;
-
             if (BM_IS_GAP(block)) // gap block
             {
                 if (!gap_is_all_zero(BMGAP_PTR(block), bm::gap_max_bits))
@@ -243,6 +229,8 @@ public:
             }
             else  // bitset
             {
+                if (IS_FULL_BLOCK(block)) return true;
+                
                 bm::wordop_t* blk1 = (wordop_t*)block;
                 bm::wordop_t* blk2 = 
                     (wordop_t*)(block + bm::set_block_size);
@@ -415,7 +403,7 @@ public:
                     else
                     if (opt_mode_ == 2) // check if it is all 1 block
                     {
-                        b = is_bits_one(blk1, blk2);
+                        b = bm::is_bits_one(blk1, blk2);
                         if (b) 
                         {
                             bman.get_allocator().free_bit_block(block);
@@ -798,6 +786,21 @@ public:
     }
 
     /**
+    \brief Finds const block in 2-level blocks array (returns unsanitized address!)
+    \param nb - Index of block (logical linear number)
+    \return block adress or NULL if not yet allocated or FULL_BLOCK_FAKE_ADDR
+    */
+    BMFORCEINLINE
+    bm::word_t* get_block_ptr(unsigned nb) const
+    {
+        unsigned block_idx = nb >> bm::set_array_shift;
+        if (!top_blocks_ || (block_idx >= top_block_size_))
+            return 0;
+        bm::word_t** blk_blk = top_blocks_[block_idx];
+        return blk_blk ? blk_blk[nb & bm::set_array_mask] : 0;
+    }
+
+    /**
         \brief Finds block in 2-level blocks array  
         Specilized version of get_block(unsigned), returns an additional
         condition when there are no more blocks
@@ -1041,7 +1044,7 @@ public:
                                      int*     actual_block_type,
                                      bool     allow_null_ret=true)
     {
-        bm::word_t* block = this->get_block(nb);
+        bm::word_t* block = this->get_block_ptr(nb);
 
         if (!IS_VALID_ADDR(block)) // NULL block or ALLSET
         {
@@ -1365,7 +1368,7 @@ public:
 
         if (BM_IS_GAP(block))
         {
-            count = gap_bit_count(BMGAP_PTR(block));
+            count = gap_bit_count_unr(BMGAP_PTR(block));
         }
         else // bitset
         {
@@ -1487,10 +1490,9 @@ public:
         if (BM_IS_GAP(blk))
         {
             gap_word_t* b = BMGAP_PTR(blk);
-            return gap_is_all_one(b, bm::gap_max_bits);
+            return bm::gap_is_all_one(b, bm::gap_max_bits);
         }
 
-        // BIT block
         if (IS_FULL_BLOCK(blk))
         {
             return true;
@@ -1498,8 +1500,8 @@ public:
         if (!deep_scan) 
             return false; // block exists - presume it has 0 bits
 
-        return is_bits_one((wordop_t*)blk, 
-                           (wordop_t*)(blk + bm::set_block_size));
+        return bm::is_bits_one((wordop_t*)blk,
+                               (wordop_t*)(blk + bm::set_block_size));
     }
 
     /*! Returns temporary block, allocates if needed. */

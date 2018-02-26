@@ -3,31 +3,19 @@
 /*
 Copyright(c) 2002-2017 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
-Permission is hereby granted, free of charge, to any person
-obtaining a copy of this software and associated documentation
-files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of the Software,
-and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Software.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
-
-You have to explicitly mention BitMagic project in any derivative product,
-its WEB Site, published materials, articles or any other work derived from this
-project or based on our code or know-how.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 For more information please visit:  http://bitmagic.io
-
 */
 
 
@@ -58,6 +46,7 @@ For more information please visit:  http://bitmagic.io
 #include "bmtrans.h"
 #include "bmalgo_impl.h"
 #include "bmutil.h"
+#include "bmbuffer.h"
 
 //#include "bmgamma.h"
 
@@ -154,8 +143,12 @@ template<class BV>
 class serializer
 {
 public:
-    typedef typename BV::allocator_type      allocator_type;
-    typedef typename BV::blocks_manager_type blocks_manager_type;
+    typedef BV                                                bvector_type;
+    typedef typename bvector_type::allocator_type             allocator_type;
+    typedef typename bvector_type::blocks_manager_type        blocks_manager_type;
+    typedef typename bvector_type::statistics                 statistics_type;
+
+    typedef byte_buffer<allocator_type> buffer;
 public:
     /**
         Construct serializer
@@ -163,15 +156,21 @@ public:
         \param alloc - memory allocator
         \param temp_block - temporary block for various operations
                (if NULL it will be allocated and managed by serializer class)
+        Temp block is used as a scratch memory during serialization,
+        use of external temp block allows to avoid unnecessary re-allocations.
+     
+        Temp block attached is not owned by the class and NOT deallocated on
+        destruction.
     */
     serializer(const allocator_type&   alloc  = allocator_type(),
               bm::word_t*  temp_block = 0);
-              
+    
+    serializer(bm::word_t*  temp_block);
+
     ~serializer();
 
     /**
         Set compression level. Higher compression takes more time to process.
-
         @param clevel - compression level (0-4)
     */
     void set_compression_level(unsigned clevel);
@@ -197,6 +196,16 @@ public:
     */
     unsigned serialize(const BV& bv, 
                        unsigned char* buf, size_t buf_size);
+    
+    /**
+        Bitvector serilization into buffer object (it gets resized automatically)
+     
+        @param bv       - input bitvector
+        @param buf      - output buffer object
+        @param bv_stat  - input (optional) bit-vector statistics object
+                          if NULL, serizlize will compute statistics
+    */
+    void serialize(const BV& bv, typename serializer<BV>::buffer& buf, const statistics_type* bv_stat);
 
     
     /**
@@ -291,7 +300,7 @@ protected:
 };
 
 /**
-    Class deserializer
+    Deserializer for bit-vector
     \ingroup bvserial 
 */
 template<class BV, class DEC>
@@ -300,7 +309,6 @@ class deserializer : protected deseriaizer_base<DEC>
 public:
     typedef BV bvector_type;
     typedef typename deseriaizer_base<DEC>::decoder_type decoder_type;
-//    typedef DEC decoder_type;
 public:
     deserializer() : temp_block_(0) {}
     
@@ -513,7 +521,7 @@ protected:
 };
 
 /**
-    Class deserializer, can perform logical operation on bit-vector and
+    Deserializer, performs logical operations between bit-vector and
     serialized bit-vector. This utility class potentially provides faster
     and/or more memory efficient operation than more conventional deserialization
     into memory bvector and then logical operation
@@ -595,8 +603,27 @@ serializer<BV>::serializer(const allocator_type&   alloc,
         temp_block_ = temp_block;
         own_temp_block_ = false;
     }
-        
 }
+
+template<class BV>
+serializer<BV>::serializer(bm::word_t*    temp_block)
+: alloc_(allocator_type()),
+  gap_serial_(false),
+  byte_order_serial_(true),
+  compression_level_(4)
+{
+    if (temp_block == 0)
+    {
+        temp_block_ = alloc_.alloc_bit_block();
+        own_temp_block_ = true;
+    }
+    else
+    {
+        temp_block_ = temp_block;
+        own_temp_block_ = false;
+    }
+}
+
 
 template<class BV>
 void serializer<BV>::set_compression_level(unsigned clevel)
@@ -761,7 +788,7 @@ void serializer<BV>::encode_gap_block(bm::gap_word_t* gap_block, bm::encoder& en
         gap_word_t*  gap_temp_block = (gap_word_t*) temp_block_;    
         gap_word_t arr_len;
 
-        unsigned bc = gap_bit_count(gap_block);
+        unsigned bc = gap_bit_count_unr(gap_block);
         if (bc == 1)
         {
             arr_len = gap_convert_to_arr(gap_temp_block,
@@ -855,6 +882,27 @@ void serializer<BV>::encode_bit_interval(const bm::word_t* blk,
             i = j - 1;
         }
     }
+}
+
+template<class BV>
+void serializer<BV>::serialize(const BV& bv,
+                               typename serializer<BV>::buffer& buf,
+                               const statistics_type* bv_stat)
+{
+    statistics_type stat;
+    if (!bv_stat)
+    {
+        bv.calc_stat(&stat);
+        bv_stat = &stat;
+    }
+    
+    buf.resize(bv_stat->max_serialize_mem);
+    
+    unsigned slen = this->serialize(bv, buf.data(), buf.size());
+    BM_ASSERT(slen <= buf.size()); // or we have a BIG problem with prediction
+    BM_ASSERT(slen);
+    
+    buf.resize(slen);
 }
 
 
@@ -986,6 +1034,7 @@ unsigned serializer<BV>::serialize(const BV& bv,
         unsigned gap_block_size = unsigned(sizeof(gap_word_t) + ((bit_gaps+1) * sizeof(gap_word_t)));
         unsigned interval_block_size;
         interval_block_size = bit_count_nonzero_size(blk, bm::set_block_size);
+        
         bool inverted = false;
 
         if (arr_block_size_inv < arr_block_size &&
@@ -1037,8 +1086,16 @@ unsigned serializer<BV>::serialize(const BV& bv,
         }
         
         // if interval block is a winner
+        // it needs to have a compelling advantage of 25% over bit block
+        //
+        unsigned threashold_block_size =
+            bm::set_block_size * sizeof(bm::word_t);
+        threashold_block_size -= threashold_block_size / 4;
+            
         if (interval_block_size < arr_block_size &&
-            interval_block_size < gap_block_size)
+            interval_block_size < gap_block_size &&
+            interval_block_size < (bm::set_block_size * sizeof(bm::word_t))
+            )
         {
             encode_bit_interval(blk, enc, interval_block_size);
             continue;
@@ -1064,7 +1121,6 @@ unsigned serializer<BV>::serialize(const BV& bv,
         {
             goto bit_as_array;
         }
-        
         // full bit-block
         enc.put_prefixed_array_32(set_block_bit, blk, bm::set_block_size);
         continue;            
@@ -2027,16 +2083,34 @@ serial_stream_iterator<DEC>::get_bit_block_OR(bm::word_t*  dst_block,
     {
     case set_block_bit:
         {
-        bitblock_get_adapter ga(dst_block);
-        bit_OR<bm::word_t> func;
-        bitblock_store_adapter sa(dst_block);
-
-        bit_recomb(ga,
-                   decoder_,
-                   func,
-                   sa
-                  );
+#ifdef BMAVX2OPT
+        for (unsigned i = 0; i < bm::set_block_size; i+=8)
+        {
+            unsigned i0 = decoder_.get_32();
+            unsigned i1 = decoder_.get_32();
+            unsigned i2 = decoder_.get_32();
+            unsigned i3 = decoder_.get_32();
+            unsigned i4 = decoder_.get_32();
+            unsigned i5 = decoder_.get_32();
+            unsigned i6 = decoder_.get_32();
+            unsigned i7 = decoder_.get_32();
+            
+            __m256i ymm0 = _mm256_setr_epi32(i0, i1, i2, i3, i4, i5, i6, i7);
+            __m256i ymm1 = _mm256_load_si256((__m256i*)(dst_block+i));
+            ymm0 = _mm256_or_si256(ymm0, ymm1);
+            _mm256_store_si256((__m256i*)(dst_block+i), ymm0);
         }
+#else
+        for (unsigned i = 0; i < bm::set_block_size; i+=4)
+        {
+            dst_block[i+0] |= decoder_.get_32();
+            dst_block[i+1] |= decoder_.get_32();
+            dst_block[i+2] |= decoder_.get_32();
+            dst_block[i+3] |= decoder_.get_32();
+        }
+#endif
+        }
+
         break;
     case set_block_bit_interval:
         {
@@ -2080,30 +2154,50 @@ serial_stream_iterator<DEC>::get_bit_block_OR(bm::word_t*  dst_block,
 
 template<class DEC>
 unsigned 
-serial_stream_iterator<DEC>::get_bit_block_AND(bm::word_t*  dst_block,
-                                               bm::word_t*  tmp_block)
+serial_stream_iterator<DEC>::get_bit_block_AND(bm::word_t* BMRESTRICT dst_block,
+                                               bm::word_t* BMRESTRICT tmp_block)
 {
     BM_ASSERT(this->state_ == e_bit_block);
     BM_ASSERT(dst_block != tmp_block);
-
     unsigned count = 0;
     switch (block_type_)
     {
     case set_block_bit:
+
+#ifdef BMAVX2OPT
+        for (unsigned i = 0; i < bm::set_block_size; i+=8)
+        {
+            unsigned i0 = decoder_.get_32();
+            unsigned i1 = decoder_.get_32();
+            unsigned i2 = decoder_.get_32();
+            unsigned i3 = decoder_.get_32();
+            unsigned i4 = decoder_.get_32();
+            unsigned i5 = decoder_.get_32();
+            unsigned i6 = decoder_.get_32();
+            unsigned i7 = decoder_.get_32();
+            
+            __m256i ymm0 = _mm256_setr_epi32(i0, i1, i2, i3, i4, i5, i6, i7);
+            __m256i ymm1 = _mm256_load_si256((__m256i*)(dst_block+i));
+            ymm0 = _mm256_and_si256(ymm0, ymm1);
+            _mm256_store_si256((__m256i*)(dst_block+i), ymm0);
+        }
+#else
         for (unsigned i = 0; i < bm::set_block_size; i+=4)
 		{
-            dst_block[i]   &= decoder_.get_32();
+            dst_block[i+0] &= decoder_.get_32();
             dst_block[i+1] &= decoder_.get_32();
             dst_block[i+2] &= decoder_.get_32();
             dst_block[i+3] &= decoder_.get_32();
 		}
+#endif
         break;
-    case set_block_bit_0runs: 
+    case set_block_bit_0runs:
         {
         unsigned char run_type = decoder_.get_8();
         for (unsigned j = 0; j < bm::set_block_size;run_type = !run_type)
         {
             unsigned run_length = decoder_.get_16();
+
             unsigned run_end = j + run_length;
             if (run_type)
             {
@@ -3349,7 +3443,6 @@ void iterator_deserializer<BV, SerialIterator>::deserialize(
                 }
                 else  // mask block exists
                 {
-
                     bm::operation bop = bm::setop2op(op);
                     bman_target.copy_block(bv_block_idx, bman_mask);
                     bv_target.combine_operation_with_block(

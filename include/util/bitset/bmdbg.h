@@ -3,31 +3,19 @@
 /*
 Copyright(c) 2002-2017 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
-Permission is hereby granted, free of charge, to any person
-obtaining a copy of this software and associated documentation
-files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of the Software,
-and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Software.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
-
-You have to explicitly mention BitMagic project in any derivative product,
-its WEB Site, published materials, articles or any other work derived from this
-project or based on our code or know-how.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 For more information please visit:  http://bitmagic.io
-
 */
 
 /// BitMagic debugging functions (internal header)
@@ -389,6 +377,20 @@ void print_bc(unsigned i, unsigned count)
     }
 }
 
+template<class BV>
+void print_bvector_stat(const BV& bvect)
+{
+    typename BV::statistics st;
+    bvect.calc_stat(&st);
+    
+    std::cout << " - Blocks: [ "
+              << "B:"     << st.bit_blocks
+              << ", G:"   << st.gap_blocks << "] "
+              << ", mem = " << st.memory_used << " " << (st.memory_used / (1024 * 1024)) << "MB "
+              << ", max smem:" << st.max_serialize_mem << " " << (st.max_serialize_mem / (1024 * 1024)) << "MB "
+              << std::endl;
+}
+
 
 template<class BV>
 void print_stat(const BV& bv, unsigned blocks = 0)
@@ -529,16 +531,15 @@ unsigned compute_serialization_size(const BV& bv)
 
 
 template<class SV>
-void print_svector_stat(const SV& svect)
+void print_svector_stat(const SV& svect, bool print_sim = false)
 {
     /// Functor to compute jaccard similarity
     /// \internal
     struct Jaccard_Func
     {
         unsigned operator () (distance_metric_descriptor* dmit,
-                              distance_metric_descriptor* dmit_end)
+                              distance_metric_descriptor* /*dmit_end*/)
         {
-            BM_ASSERT(dmit_end - dmit == 2);
             double d;
             BM_ASSERT(dmit->metric == COUNT_AND);
             unsigned cnt_and = dmit->result;
@@ -571,33 +572,37 @@ void print_svector_stat(const SV& svect)
     sbatch.sort();
     
     typename similarity_batch_type::vector_type& sim_vec = sbatch.descr_vect_;
-    for (size_t k = 0; k < sim_vec.size(); ++k)
+    if (print_sim)
     {
-        unsigned sim = sim_vec[k].similarity();
-        if (sim > 10)
+        for (size_t k = 0; k < sim_vec.size(); ++k)
         {
-            const typename SV::bvector_type* bv1 = sim_vec[k].get_first();
-            const typename SV::bvector_type* bv2 = sim_vec[k].get_second();
+            unsigned sim = sim_vec[k].similarity();
+            if (sim > 10)
+            {
+                const typename SV::bvector_type* bv1 = sim_vec[k].get_first();
+                const typename SV::bvector_type* bv2 = sim_vec[k].get_second();
 
-            unsigned bv_size2 = compute_serialization_size(*bv2);
-            
-            typename SV::bvector_type bvx(*bv2);
-            bvx ^= *bv1;
-            
-            unsigned bv_size_x = compute_serialization_size(bvx);
-            int diff = bv_size2 - bv_size_x;
-            
-            std:: cout << "["  << sim_vec[k].get_first_idx()
-                       << ", " << sim_vec[k].get_second_idx()
-                       << "] = "  << sim
-                       << " size(" << sim_vec[k].get_second_idx() << ")="
-                       << bv_size2
-                       << " size(x)=" << bv_size_x
-                       << " diff=" << diff
-                       << std:: endl;
-        }
-    } // for k
-    
+                unsigned bv_size2 = compute_serialization_size(*bv2);
+                
+                typename SV::bvector_type bvx(*bv2);
+                bvx ^= *bv1;
+                
+                unsigned bv_size_x = compute_serialization_size(bvx);
+                int diff = bv_size2 - bv_size_x;
+                if (diff > 0) // only positive diff (saving) counts
+                {
+                    std:: cout << "["  << sim_vec[k].get_first_idx()
+                               << ", " << sim_vec[k].get_second_idx()
+                               << "] = "  << sim
+                               << " size(" << sim_vec[k].get_second_idx() << ")="
+                               << bv_size2
+                               << " size(x)=" << bv_size_x
+                               << " diff=" << diff
+                               << std:: endl;
+                }
+            }
+        } // for k
+    }
     
 
     typename SV::statistics st;
@@ -611,18 +616,26 @@ void print_svector_stat(const SV& svect)
     std::cout << "Memory used:      " << st.memory_used << " "
               << (st.memory_used / (1024 * 1024))       << "MB" << std::endl;
     
-    std::cout << "Projected mem usage for vector<int>:" << sizeof(int) * svect.size() << std::endl;
-    std::cout << "Projected mem usage for vector<long long>:" << sizeof(long long) * svect.size() << std::endl;
+    std::cout << "Projected mem usage for vector<int>:"
+              << sizeof(int) * svect.size() << " "
+              << (sizeof(int) * svect.size()) / (1024 * 1024) << "MB"
+              << std::endl;
+    if (sizeof(typename SV::value_type) > 4)
+    {
+        std::cout << "Projected mem usage for vector<long long>:"
+                  << sizeof(long long) * svect.size() << std::endl;
+    }
     
-    std::cout << "Plains:" << std::endl;
-    
+    std::cout << "\nPlains:" << std::endl;
+
+    typename SV::bvector_type bv_join; // global OR of all plains
     for (unsigned i = 0; i < svect.plains(); ++i)
     {
         const typename SV::bvector_type* bv_plain = svect.plain(i);
         std::cout << i << ":";
             if (bv_plain == 0)
             {
-                std::cout << "NULL";
+                std::cout << "NULL\n";
                 bool any_else = false;
                 for (unsigned j = i+1; j < svect.plains(); ++j) // look ahead
                 {
@@ -639,11 +652,54 @@ void print_svector_stat(const SV& svect)
             }
             else
             {
-                std::cout << bv_plain->count();
+                bv_join |= *bv_plain;
+                
+                print_bvector_stat(*bv_plain);
             }
-            std::cout << std::endl;
-        
     } // for i
+    if (svect.size())
+    {
+        bm::id64_t bv_join_cnt = bv_join.count();
+        double fr = double(bv_join_cnt) / double (svect.size());
+        std::cout << "Non-zero elements: " << bv_join_cnt << " "
+                  << "ratio=" << fr
+                  << std::endl;
+        size_t non_zero_mem = bv_join_cnt * sizeof(typename SV::value_type);
+        std::cout << "Projected mem usage for non-zero elements: " << non_zero_mem << " "
+                  << non_zero_mem / (1024*1024) << " MB"
+                  << std::endl;
+    }
+}
+
+// save compressed collection to disk
+//
+template<class CBC>
+int file_save_compressed_collection(const CBC& cbc, const std::string& fname, size_t* blob_size = 0)
+{
+    bm::compressed_collection_serializer<CBC > cbcs;
+    typename CBC::buffer_type sbuf;
+
+    cbcs.serialize(cbc, sbuf);
+
+    std::ofstream fout(fname.c_str(), std::ios::binary);
+    if (!fout.good())
+    {
+        return -1;
+    }
+    const char* buf = (char*)sbuf.buf();
+    fout.write(buf, sbuf.size());
+    if (!fout.good())
+    {
+        return -1;
+    }
+
+    fout.close();
+
+    if (blob_size)
+    {
+        *blob_size = sbuf.size();
+    }
+    return 0;
 }
 
 // save sparse_vector dump to disk
@@ -656,11 +712,7 @@ int file_save_svector(const SV& sv, const std::string& fname, size_t* sv_blob_si
     bm::sparse_vector_serial_layout<SV> sv_lay;
     
     BM_DECLARE_TEMP_BLOCK(tb)
-    auto res = bm::sparse_vector_serialize(sv, sv_lay, tb);
-    if (res != 0)
-    {
-        return res;
-    }
+    bm::sparse_vector_serialize(sv, sv_lay, tb);
 
     std::ofstream fout(fname.c_str(), std::ios::binary);
     if (!fout.good())
@@ -682,6 +734,33 @@ int file_save_svector(const SV& sv, const std::string& fname, size_t* sv_blob_si
     }
     return 0;
 }
+
+template<class SV>
+int file_load_svector(SV& sv, const std::string& fname)
+{
+    std::vector<unsigned char> buffer;
+
+    // read the input buffer, validate errors
+    auto ret = bm::read_dump_file(fname, buffer);
+    if (ret != 0)
+    {
+        return -2;
+    }
+    if (buffer.size() == 0)
+    {
+        return -3;
+    }
+    
+    const unsigned char* buf = &buffer[0];
+    BM_DECLARE_TEMP_BLOCK(tb)
+    auto res = bm::sparse_vector_deserialize(sv, buf, tb);
+    if (res != 0)
+    {
+        return -4;
+    }
+    return 0;
+}
+
 
 // comapre-check if sparse vector is excatly coresponds to vector 
 //
