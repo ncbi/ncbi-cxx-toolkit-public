@@ -339,8 +339,9 @@ const bool CFlatFileConfig::sm_ModeFlags[4][32] = {
         false, false
     },
     // Entrez
+    // ID-4625 : do not drop illegal qualifiers
     {
-        false, true, true, true, true, false, true, true, true, true,
+        false, true, true, true, true, false, true, true, false, true,
         true, true, true, true, true, true, true, false, true, true,
         true, true, true, true, false, true, true, true, false, true, 
         false, false
