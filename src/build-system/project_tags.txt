@@ -5,5 +5,6 @@ structure_cdtree
 gbench
 perf
 mod_loadinfo
+mod_caf
 fwdaemon
 grid
