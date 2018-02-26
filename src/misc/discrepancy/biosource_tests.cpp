@@ -1535,12 +1535,10 @@ DISCREPANCY_CASE(INCONSISTENT_BIOSOURCE, CBioSource, eDisc, "Inconsistent BioSou
     }
     CSeqdesc* seqdesc = const_cast<CSeqdesc*>(context.GetCurrentSeqdesc().GetPointer());
     context.NewSeqdescObj(CConstRef<CSeqdesc>(seqdesc), context.GetCurrentBioseqLabel());    // this will cache the seqdesc name and allow using CConstRef<CBioseq>(0) in context.NewSeqdescObj()
-    //m_Objs[kBioSource].Add(*context.NewBioseqObj(bioseq, &context.GetSeqSummary(), eKeepRef, false, seqdesc), true);
     m_Objs[kBioSource].Add(*context.NewBioseqObj(bioseq, &context.GetSeqSummary(), eNoRef, false, seqdesc), true);
 }
 
 
-//typedef pair<const CBioseq*, const CSeqdesc*> TBioseqSeqdesc;
 typedef pair<CRef<CReportObj>, const CSeqdesc*> TBioseqSeqdesc;
 typedef list<pair<const CBioSource*, list<TBioseqSeqdesc>>> TItemsByBioSource;
 
@@ -1549,7 +1547,6 @@ static void GetItemsByBiosource(TReportObjectList& objs, TItemsByBioSource& item
     for (auto obj: objs) {
         CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>(&*obj);
         if (dobj) {
-            //const CBioseq* cur_bioseq = dobj->GetBioseq();
             const CSeqdesc* cur_seqdesc = dynamic_cast<const CSeqdesc*>(dobj->GetMoreInfo().GetPointer());
             const CBioSource& cur_biosrc = cur_seqdesc->GetSource();
 
@@ -1557,7 +1554,6 @@ static void GetItemsByBiosource(TReportObjectList& objs, TItemsByBioSource& item
             for (auto& item: items) {
                 if (item.first->Equals(cur_biosrc)) {
                     found = true;
-                    //item->second.push_back(make_pair(cur_bioseq, cur_seqdesc));
                     item.second.push_back(make_pair(CRef<CReportObj>(dobj), cur_seqdesc));
                     break;
                 }
@@ -1565,7 +1561,6 @@ static void GetItemsByBiosource(TReportObjectList& objs, TItemsByBioSource& item
 
             if (!found) {
                 items.push_back(make_pair(&cur_biosrc, list<TBioseqSeqdesc>()));
-                //items.back().second.push_back(make_pair(cur_bioseq, cur_seqdesc));
                 items.back().second.push_back(make_pair(CRef<CReportObj>(dobj), cur_seqdesc));
             }
         }
@@ -1608,7 +1603,6 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_BIOSOURCE)
             ++subcat_index;
             for (auto bioseq_desc: item.second) {
                 m_Objs[subtype][subcat].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(bioseq_desc.second), kEmptyStr), false).Ext();
-                //m_Objs[subtype][subcat].Add(*context.NewBioseqObj(CConstRef<CBioseq>(bioseq_desc->first), 0), false).Ext();
                 m_Objs[subtype][subcat].Add(*bioseq_desc.first, false).Ext();
             }
         }

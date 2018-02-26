@@ -1098,7 +1098,6 @@ DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, CSeq_inst, eDisc | eSubmitter
         if (NStr::IsBlank(prefix)) {
             prefix = "unnamed";
         }
-        //m_Objs[kStructuredCommentObservedPrefixesThis][prefix].Add(*context.NewSeqdescObj(dr, context.GetCurrentBioseqLabel(), eKeepRef), false);
         m_Objs[kStructuredCommentObservedPrefixesThis][prefix].Add(*context.NewSeqdescObj(dr, context.GetCurrentBioseqLabel()));
         AddUserObjectFieldItems(dr, *rep_seq, m_Objs[kStructuredCommentReport], m_Objs[kStructuredCommentPrevious], context, prefix + " structured comment", kStructuredCommentFieldPrefix);
         ++d;
@@ -1107,9 +1106,7 @@ DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, CSeq_inst, eDisc | eSubmitter
     //report prefixes seen previously, not found on this sequence
     ITERATE (CReportNode::TNodeMap, it, m_Objs[kStructuredCommentObservedPrefixes].GetMap()) {
         if (!m_Objs[kStructuredCommentObservedPrefixesThis].Exist(it->first)) {
-            m_Objs["[n] Bioseq[s] [is] missing " + it->first + " structured comment"]
-                //.Add(*context.NewBioseqObj(seq, &context.GetSeqSummary(), eKeepRef), false);
-                .Add(*rep_seq);
+            m_Objs["[n] Bioseq[s] [is] missing " + it->first + " structured comment"].Add(*rep_seq);
             AddUserObjectFieldItems(CConstRef<CSeqdesc>(NULL), *rep_seq, m_Objs[kStructuredCommentReport],
                 m_Objs[kStructuredCommentPrevious], context,
                 it->first + " structured comment", kStructuredCommentFieldPrefix);
@@ -1119,26 +1116,17 @@ DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, CSeq_inst, eDisc | eSubmitter
     // report prefixes found on this sequence but not on previous sequences
     ITERATE (CReportNode::TNodeMap, it, m_Objs[kStructuredCommentObservedPrefixesThis].GetMap()) {
         if (!m_Objs[kStructuredCommentObservedPrefixes].Exist(it->first)) {
-            //ITERATE(TReportObjectList, ro, m_Objs[kStructuredCommentsSeqs].GetObjects()) {
             for (auto ro: m_Objs[kStructuredCommentsSeqs].GetObjects()) {
-                //const CBioseq* this_seq = dynamic_cast<const CBioseq*>((*ro)->GetObject().GetPointer());
-                //CConstRef<CBioseq> this_seq_r(this_seq);
-                m_Objs["[n] Bioseq[s] [is] missing " + it->first + " structured comment"]
-                    //.Add(*context.NewBioseqObj(this_seq_r, 0, eKeepRef), false);
-                    //.Add(*context.NewBioseqObj(this_seq_r, 0));
-                    .Add(*ro);
+                m_Objs["[n] Bioseq[s] [is] missing " + it->first + " structured comment"].Add(*ro);
                 AddUserObjectFieldItems(CConstRef<CSeqdesc>(NULL), *ro, m_Objs[kStructuredCommentReport],
                     m_Objs[kStructuredCommentPrevious], context,
                     it->first + " structured comment", kStructuredCommentFieldPrefix);
             }
         }
-        // add to list of previously observed prefixes, for next time
-        //m_Objs[kStructuredCommentObservedPrefixes][it->first].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary(), eKeepRef), false);
         m_Objs[kStructuredCommentObservedPrefixes][it->first].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary()));
     }
 
     m_Objs[kStructuredCommentObservedPrefixesThis].clear();
-    //m_Objs[kStructuredCommentsSeqs].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary(), eKeepRef), false);
     m_Objs[kStructuredCommentsSeqs].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary()));
 }
 
@@ -1442,20 +1430,16 @@ DISCREPANCY_SUMMARIZE(TAXNAME_NOT_IN_DEFLINE)
 
 // HAS_PROJECT_ID
 
-const string kProjId = "ProjectID";
-
 static string GetProjectID(const CUser_object& user)
 {
     string res;
     if (user.IsSetData()) {
-        ITERATE (CUser_object::TData, field, user.GetData()) {
-            if ((*field)->IsSetData() && (*field)->GetData().IsInt() && (*field)->IsSetLabel() && (*field)->GetLabel().IsStr() && (*field)->GetLabel().GetStr() == "ProjectID") {
-                res = NStr::IntToString((*field)->GetData().GetInt());
-                break;
+        for (auto field: user.GetData()) {
+            if (field->IsSetData() && field->GetData().IsInt() && field->IsSetLabel() && field->GetLabel().IsStr() && field->GetLabel().GetStr() == "ProjectID") {
+                return NStr::IntToString(field->GetData().GetInt());
             }
         }
     }
-
     return res;
 }
 
@@ -1471,44 +1455,7 @@ DISCREPANCY_CASE(HAS_PROJECT_ID, CSeq_inst, eOncaller | eSmart, "Sequences with 
         if (user->GetUser().IsSetType() && user->GetUser().GetType().IsStr() && user->GetUser().GetType().GetStr() == "GenomeProjectsDB") {
             string proj_id = GetProjectID(user->GetUser());
             if (!proj_id.empty()) {
-                m_Objs[kProjId][proj_id].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary(), eKeepRef), false);
-            }
-        }
-    }
-}
-
-typedef map<string, list<CConstRef<CBioseq> > > TBioseqMapByID;
-
-static void CollectSequencesByProjectID(CReportNode& bioseqs, TBioseqMapByID& prots, TBioseqMapByID& nucs)
-{
-    NON_CONST_ITERATE (CReportNode::TNodeMap, node, bioseqs.GetMap()) {
-        ITERATE (TReportObjectList, bioseq, node->second->GetObjects()) {
-            const CDiscrepancyObject* dobj = dynamic_cast<const CDiscrepancyObject*>(bioseq->GetPointer());
-            if (dobj) {
-                const CBioseq* cur_bioseq = dobj->GetBioseq();
-                if (cur_bioseq) {
-                    if (cur_bioseq->IsNa()) {
-                        nucs[node->first].push_back(ConstRef<CBioseq>(cur_bioseq));
-                    }
-                    else {
-                        prots[node->first].push_back(ConstRef<CBioseq>(cur_bioseq));
-                    }
-                }
-            }
-        }
-    }
-}
-
-static string kAllHasProjID = "[n] sequence[s] [has] project IDs ";
-static string kProtHasProjID = "[n] protein sequence[s] [has] project IDs ";
-static string kNucHasProjID = "[n] nucleotide sequence[s] [has] project IDs ";
-
-static void FillReport(const TBioseqMapByID& projs, CReportNode& report, CDiscrepancyContext& context, const string& what)
-{
-    if (!projs.empty()) {
-        ITERATE (TBioseqMapByID, proj, projs) {
-            ITERATE (list<CConstRef<CBioseq> >, bioseq, proj->second) {
-                report[what].Add(*context.NewBioseqObj(*bioseq, 0), false);
+                m_Objs[proj_id][seq->IsNa() ? "N" : "A"].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary()));
             }
         }
     }
@@ -1517,23 +1464,41 @@ static void FillReport(const TBioseqMapByID& projs, CReportNode& report, CDiscre
 
 DISCREPANCY_SUMMARIZE(HAS_PROJECT_ID)
 {
-    TBioseqMapByID prots,
-                   nucs;
-
-    CollectSequencesByProjectID(m_Objs[kProjId], prots, nucs);
-
-    CReportNode res;
-    CReportNode* report = &res;
-    if (!prots.empty() && !nucs.empty()) {
-        string all = kAllHasProjID + (m_Objs[kProjId].GetMap().size() > 1 ? "(some different)" : "(all same)");
-        report = &res[all];
+    if (m_Objs.empty()) {
+        return;
     }
-
-    string sub_group = kProtHasProjID + (prots.size() > 1 ? "(some different)" : "(all same)");
-    FillReport(prots, *report, context, sub_group);
-
-    sub_group = kNucHasProjID + (prots.size() > 1 ? "(some different)" : "(all same)");
-    FillReport(nucs, *report, context, sub_group);
+    CReportNode res;
+    string all = "[n] sequence[s] [has] project IDs ";
+    string prots = "[n] protein sequence[s] [has] project IDs ";
+    string nucs = "[n] nucleotide sequence[s] [has] project IDs ";
+    auto& projects = m_Objs.GetMap();
+    all += projects.size() > 1 ? "(some different)" : "(all same)";
+    size_t count_prots = 0;
+    size_t count_nucs = 0;
+    for (auto it: projects) {
+        auto& M = it.second->GetMap();
+        if (M.find("A") != M.end()) {
+            count_prots++;
+        }
+        if (M.find("N") != M.end()) {
+            count_nucs++;
+        }
+    }
+    prots += count_prots > 1 ? "(some different)" : "(all same)";
+    nucs += count_nucs > 1 ? "(some different)" : "(all same)";
+    for (auto it : projects) {
+        auto& M = it.second->GetMap();
+        if (M.find("A") != M.end()) {
+            for (auto obj : M["A"]->GetObjects()) {
+                res[all][prots].Add(*obj);
+            }
+        }
+        if (M.find("N") != M.end()) {
+            for (auto obj : M["N"]->GetObjects()) {
+                res[all][nucs].Add(*obj);
+            }
+        }
+    }
 
     m_ReportItems = res.Export(*this)->GetSubitems();
 }
