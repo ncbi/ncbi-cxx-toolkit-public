@@ -2077,7 +2077,7 @@ void CGenbankFormatter::FormatWGS
 
     switch ( wgs.GetType() ) {
     case CWGSItem::eWGS_Projects:
-        tag += "WGS";
+        tag = "WGS";
         break;
 
     case CWGSItem::eWGS_ScaffoldList:
