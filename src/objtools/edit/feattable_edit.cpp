@@ -526,7 +526,9 @@ void CFeatTableEdit::xFeatureAddTranscriptAndProteinIdsCds(CMappedFeat& cds)
 
     if (!NStr::IsBlank(protein_id) &&
         !NStr::StartsWith(protein_id, "gb|") &&
-        !NStr::StartsWith(protein_id, "gnl|")) {
+        !NStr::StartsWith(protein_id, "gnl|") &&
+        !NStr::StartsWith(protein_id, "cds.gb|") &&
+        !NStr::StartsWith(protein_id, "cds.gnl|")) {
         protein_id = "gnl|" + xGetCurrentLocusTagPrefix(cds) + "|" + protein_id;
     }
     if (!NStr::IsBlank(transcript_id) &&
@@ -642,7 +644,9 @@ void CFeatTableEdit::xFeatureAddTranscriptAndProteinIdsMrna(CMappedFeat& mrna)
 
     if (!NStr::IsBlank(protein_id) &&
         !NStr::StartsWith(protein_id, "gb|") &&
-        !NStr::StartsWith(protein_id, "gnl|")) {
+        !NStr::StartsWith(protein_id, "gnl|") &&
+        !NStr::StartsWith(protein_id, "cds.gb|") &&
+        !NStr::StartsWith(protein_id, "cds.gnl|")) {
         protein_id = "gnl|" + xGetCurrentLocusTagPrefix(mrna) + "|" + protein_id;
     }
     if (!NStr::IsBlank(transcript_id) &&
