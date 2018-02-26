@@ -250,7 +250,7 @@ void CFastaDeflineReader::x_PostIDLengthError(const size_t id_length,
 
 {
     const string& err_message =
-        "CFastaReader: Near line " + NStr::NumericToString(line_number) +
+        "Near line " + NStr::NumericToString(line_number) +
         + ", the " + type_string + " is too long.  Its length is " + NStr::NumericToString(id_length)
         + " but the maximum allowed " + type_string + " length is "+  NStr::NumericToString(max_length)
         + ".  Please find and correct all " + type_string + "s that are too long.";
@@ -351,7 +351,7 @@ void CFastaDeflineReader::x_ProcessIDs(
         id_string.find('|') == NPOS) {
             
         const string err_message = 
-            "CFastaReader: Near line " + NStr::NumericToString(info.lineNumber)
+            "Near line " + NStr::NumericToString(info.lineNumber)
             + ", the sequence id string contains 'comma' symbol, which has been replaced with 'underscore' "
             + "symbol. Please correct the sequence id string.";
 
@@ -425,7 +425,7 @@ bool CFastaDeflineReader::ParseIDs(
             num_ids = CSeq_id::ParseIDs(ids, temp, flags);
 
             const string errMessage = 
-                "CFastaReader: Near line " + NStr::NumericToString(info.lineNumber) 
+                "Near line " + NStr::NumericToString(info.lineNumber) 
                 + ", the sequence contains 'comma' symbol and replaced with 'underscore' "
                 + "symbol. Please find and correct the sequence id.";
 
@@ -461,7 +461,7 @@ bool CFastaDeflineReader::ParseIDs(
         }
         if ( x_ExceedsMaxLength(s, info.maxIdLength) ) {
             const string errMessage =
-                "CFastaReader: Near line " + NStr::NumericToString(info.lineNumber)
+                "Near line " + NStr::NumericToString(info.lineNumber)
                 + ", the sequence ID is too long.  Its length is " + NStr::NumericToString(s.length())
                 + " but the max length allowed is "+  NStr::NumericToString(info.maxIdLength)
                 + ".  Please find and correct all sequence IDs that are too long.";
