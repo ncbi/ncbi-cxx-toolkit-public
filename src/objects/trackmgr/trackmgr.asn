@@ -357,8 +357,8 @@ TMgr-CreateRemoteTrackRequest ::= SEQUENCE {
         hub VisibleString, -- hub entry from hub.txt file
         short-label VisibleString, -- shortLabel entry from hub.txt file
         long-label VisibleString,  -- longLabel entry from hub.txt file
-        assembly-db-name VisibleString, --- genome entry in genomes.txt file that equates to assembly-acc
-        trackdb-url VisibleString  --- trackDb entry in genomes.txt file associated with assembly_acc
+        assembly-db-name SET OF VisibleString, --- genome entries in genomes.txt file
+        trackdb-url VisibleString OPTIONAL --- trackDb entry in genomes.txt file associated with assembly_acc
     } OPTIONAL,
 
     -- future use
