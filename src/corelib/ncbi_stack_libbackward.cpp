@@ -43,6 +43,10 @@
 #include <stdio.h>
 
 
+namespace backward {
+    backward::SignalHandling sh;
+}
+
 BEGIN_NCBI_SCOPE
 
 
