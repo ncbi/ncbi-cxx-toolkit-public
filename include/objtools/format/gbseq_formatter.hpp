@@ -105,6 +105,7 @@ private:
     bool m_DidKeysStart;
     bool m_DidRefsStart;
     bool m_DidWgsStart;
+    bool m_DidSequenceStart;
     bool m_NeedFeatEnd;
     bool m_NeedJourEnd;
     bool m_NeedKeysEnd;

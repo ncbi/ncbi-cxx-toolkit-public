@@ -104,6 +104,7 @@ CGBSeqFormatter::CGBSeqFormatter(bool isInsd)
     m_DidKeysStart = false;
     m_DidRefsStart = false;
     m_DidWgsStart  = false;
+    m_DidSequenceStart = false;
     m_NeedFeatEnd = false;
     m_NeedJourEnd = false;
     m_NeedKeysEnd = false;
@@ -152,13 +153,18 @@ static string s_OpenTag (const string& spaces, const string& tag)
     return spaces + "<" + tag + ">" + "\n";
 }
 
+static string s_OpenTagNoNewline (const string& spaces, const string& tag)
+
+{
+    return spaces + "<" + tag + ">";
+}
+
 
 static string s_CloseTag (const string& spaces, const string& tag)
 
 {
     return spaces + "</" + tag + ">" + "\n";
 }
-
 
 void CGBSeqFormatter::Start(IFlatTextOStream& text_os)
 {
@@ -238,6 +244,16 @@ void CGBSeqFormatter::EndSection(const CEndSectionItem&, IFlatTextOStream& text_
         str.append( s_CloseTag("    ", "GBSeq_xrefs"));
 
     }
+
+    // ID-4629 : Sequence is always the last element in the section, so only 1
+    // boolean variable is sufficient to control when to close the tag.
+    // Also sequence closing tag is placed without a newline, hence no spaces are
+    // needed.
+    if (m_DidSequenceStart) {
+        str.append( s_CloseTag("", "GBSeq_sequence"));
+        m_DidSequenceStart = false;
+    }
+    
 
     str.append( s_CloseTag("  ", "GBSeq"));
 
@@ -970,11 +986,23 @@ void CGBSeqFormatter::FormatSequence
 
     string data;
 
-    CSeqVector_CI vec_ci(seq.GetSequence(), 0, 
-        CSeqVector_CI::eCaseConversion_lower);
-    vec_ci.GetSeqData(data, seq.GetSequence().size() );
+    const CSeqVector& vec = seq.GetSequence();
+    TSeqPos from = seq.GetFrom();
+    TSeqPos to = seq.GetTo();
+    TSeqPos base_count = from;
 
-    str.append( s_CombineStrings("    ", "GBSeq_sequence", data));
+    TSeqPos vec_pos = from-1;
+    TSeqPos total = from <= to? to - from + 1 : 0;
+    CSeqVector_CI vec_ci(seq.GetSequence(), vec_pos,
+                         CSeqVector_CI::eCaseConversion_lower);
+    vec_ci.GetSeqData(data, total);
+
+    if (seq.IsFirst()) {
+        str.append( s_OpenTagNoNewline("    ", "GBSeq_sequence"));
+        m_DidSequenceStart = true;
+    }
+
+    str.append(data);
 
     if ( m_IsInsd ) {
         NStr::ReplaceInPlace(str, "<GB", "<INSD");
