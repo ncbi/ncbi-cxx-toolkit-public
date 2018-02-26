@@ -3,8 +3,5 @@
 #
 
 # Include projects from this directory
+include(CMakeLists.stress_test_bm.app.txt)
 
-# Recurse subdirectories
-add_subdirectory(test )
-add_subdirectory(stress_test )
-add_subdirectory(demo )
