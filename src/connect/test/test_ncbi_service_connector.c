@@ -76,23 +76,24 @@ int main(int argc, const char* argv[])
         CORE_LOG(eLOG_Fatal, "Failed to create connection");
 
     if (argc > 2) {
-        strncpy0(obuf, argv[2], sizeof(obuf) - 2);
-        obuf[n = strlen(obuf)] = '\n';
-        obuf[++n]              = '\0';
-        if (CONN_Write(conn, obuf, strlen(obuf), &n, eIO_WritePersist)
-            != eIO_Success) {
-            CONN_Close(conn);
-            CORE_LOG(eLOG_Fatal, "Cannot write to connection");
+        if (strcmp(argv[2], "") != 0) {
+            strncpy0(obuf, argv[2], sizeof(obuf) - 2);
+            obuf[n = strlen(obuf)] = '\n';
+            obuf[++n]              = '\0';
+            if (CONN_Write(conn, obuf, strlen(obuf), &n, eIO_WritePersist)
+                != eIO_Success) {
+                CONN_Close(conn);
+                CORE_LOG(eLOG_Fatal, "Cannot write to connection");
+            }
+            assert(n == strlen(obuf));
         }
-        assert(n == strlen(obuf));
     } else {
-        for (n = 0; n < 10; n++) {
+        for (n = 0;  n < 10;  ++n) {
             size_t m;
-            for (m = 0; m < sizeof(obuf) - 2; m++)
+            for (m = 0;  m < sizeof(obuf) - 2;  ++m)
                 obuf[m] = "0123456789\n"[rand() % 11];
             obuf[m++] = '\n';
             obuf[m]   = '\0';
-
             if (CONN_Write(conn, obuf, strlen(obuf), &m, eIO_WritePersist)
                 != eIO_Success) {
                 if (!n) {
