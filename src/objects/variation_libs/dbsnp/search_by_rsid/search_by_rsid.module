@@ -1,2 +1,2 @@
-MODULE_PATH=internal/objects/search_by_rsid
+MODULE_PATH=objects/variation_libs/dbsnp/search_by_rsid
 MODULE_IMPORT = objects/trackmgr/trackmgr objects/general/general
