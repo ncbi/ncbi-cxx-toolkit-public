@@ -10,3 +10,5 @@ util$
 util/bitset$
 util/cache$
 util/xregexp
+internal$ update-only
+internal/webenv2$ update-only
