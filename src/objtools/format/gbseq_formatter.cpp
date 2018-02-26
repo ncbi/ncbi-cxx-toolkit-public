@@ -69,6 +69,8 @@
 #include <objtools/format/items/contig_item.hpp>
 #include <objtools/format/items/genome_project_item.hpp>
 #include <objtools/format/items/gap_item.hpp>
+#include <objtools/format/items/wgs_item.hpp>
+#include <objtools/format/items/tsa_item.hpp>
 #include <objmgr/util/objutil.hpp>
 
 
@@ -101,10 +103,12 @@ CGBSeqFormatter::CGBSeqFormatter(bool isInsd)
     m_DidJourStart = false;
     m_DidKeysStart = false;
     m_DidRefsStart = false;
+    m_DidWgsStart  = false;
     m_NeedFeatEnd = false;
     m_NeedJourEnd = false;
     m_NeedKeysEnd = false;
     m_NeedRefsEnd = false;
+    m_NeedWgsEnd  = false;
     m_NeedComment = false;
     m_NeedDbsource = false;
     m_NeedXrefs = false;
@@ -132,6 +136,13 @@ static string s_CombineStrings (const string& spaces, const string& tag, int val
 
 {
     return spaces + "<" + tag + ">" + NStr::NumericToString(value) + "</" + tag + ">" + "\n";
+}
+
+static string s_AddAttribute (const string& spaces, const string& tag, const string& attribute,
+                              const string& value)
+
+{
+    return spaces + "<" + tag + " " + attribute + "=\"" + value + "\"/>" + "\n";
 }
 
 
@@ -197,6 +208,12 @@ void CGBSeqFormatter::EndSection(const CEndSectionItem&, IFlatTextOStream& text_
         str.append( s_CloseTag("    ", "GBSeq_feature-table"));
         m_NeedFeatEnd = false;
         m_DidFeatStart = false;
+    }
+
+    if (m_NeedWgsEnd) {
+        str.append( s_CloseTag("    ", "GBSeq_alt-seq"));
+        m_NeedWgsEnd = false;
+        m_DidWgsStart = false;
     }
 
     if (m_NeedXrefs) {
@@ -857,6 +874,8 @@ void CGBSeqFormatter::FormatFeature
             }
             str.append( s_CombineStrings("            ", "GBInterval_from", from));
             str.append( s_CombineStrings("            ", "GBInterval_to", to));
+            if ( it.GetStrand() == eNa_strand_minus )
+                str.append( s_AddAttribute("            ", "GBInterval_iscomp", "value", "true"));
         }
 
         CConstRef<CSeq_id> best(&it.GetSeq_id());
@@ -1075,6 +1094,18 @@ void CGBSeqFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os)
     loc += NStr::UIntToString(gapEnd);
     str.append( s_CombineStrings("        ", "GBFeature_location", loc));
 
+    str.append( s_OpenTag("        ", "GBFeature_intervals"));
+    str.append( s_OpenTag("          ", "GBInterval"));
+    str.append( s_CombineStrings("            ", "GBInterval_from", gapStart));
+    str.append( s_CombineStrings("            ", "GBInterval_to", gapEnd));
+    if (gap.GetContext() && !gap.GetContext()->GetAccession().empty()) {
+        str.append( s_CombineStrings("            ", "GBInterval_accession",
+                                     gap.GetContext()->GetAccession()));
+    }
+    str.append( s_CloseTag("          ", "GBInterval"));
+
+    str.append( s_CloseTag("        ", "GBFeature_intervals"));
+
     str.append( s_OpenTag("        ", "GBFeature_quals"));
     // size zero gaps indicate non-consecutive residues
     if( isGapOfLengthZero ) {
@@ -1129,6 +1160,106 @@ void CGBSeqFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os)
 
 }
 
+void CGBSeqFormatter::FormatWGS(const CWGSItem& wgs, IFlatTextOStream& text_os)
+{
+    string name;
+
+    switch ( wgs.GetType() ) {
+    case CWGSItem::eWGS_Projects:
+        name = "WGS"; break;
+    case CWGSItem::eWGS_ScaffoldList:
+        name = "WGS_SCAFLD"; break;
+    case CWGSItem::eWGS_ContigList:
+        name = "WGS_CONTIG"; break;
+    default: return;
+    }
+
+    x_FormatAltSeq(wgs, name, text_os);
+}
+
+void CGBSeqFormatter::FormatTSA(const CTSAItem& tsa, IFlatTextOStream& text_os)
+{
+    string name;
+
+    switch ( tsa.GetType() ) {
+    case CTSAItem::eTSA_Projects:
+        name = "TSA"; break;
+    case CTSAItem::eTLS_Projects:
+        name = "TLS"; break;
+    default: return;
+    }
+ 
+    x_FormatAltSeq(tsa, name, text_os);
+}
+
+template <typename T> void 
+CGBSeqFormatter::x_FormatAltSeq(const T& item, const string& name,
+                                IFlatTextOStream& text_os)
+{
+    string str;
+
+    // Close the preceding sections and open the feature section,
+    // if not yet done.
+
+    if (m_NeedRefsEnd) {
+        str.append( s_CloseTag("    ", "GBSeq_references"));
+        m_NeedRefsEnd = false;
+        m_DidRefsStart = false;
+    }
+
+    if (m_NeedComment) {
+        m_NeedComment = false;
+
+        string comm = NStr::Join( m_Comments, "; " );
+        str.append( s_CombineStrings("    ", "GBSeq_comment", comm));
+    }
+
+    if (m_NeedDbsource) {
+        m_NeedDbsource = false;
+
+        string dbsrc = NStr::Join( m_Dbsource, "; " );
+        str.append( s_CombineStrings("    ", "GBSeq_source-db", dbsrc));
+    }
+
+    if (m_NeedFeatEnd) {
+        str.append( s_CloseTag("    ", "GBSeq_feature-table"));
+        m_NeedFeatEnd = false;
+        m_DidFeatStart = false;
+    }
+
+    if (!m_DidWgsStart) {
+        str.append( s_OpenTag("    ", "GBSeq_alt-seq"));
+        m_DidWgsStart = true;
+        m_NeedWgsEnd = true;
+    }
+
+    str.append( s_OpenTag("      ", "GBAltSeqData"));
+    str.append( s_CombineStrings("        ", "GBAltSeqData_name", name));
+    str.append( s_OpenTag("        ", "GBAltSeqData_items"));
+    str.append( s_OpenTag("          ", "GBAltSeqItem"));
+
+    // Get first and last id (sanitized for html, if necessary)
+    list<string> l;
+    string first_id = item.GetFirstID();
+    string last_id = item.GetLastID();
+
+    str.append( s_CombineStrings("          ", "GBAltSeqItem_first-accn", first_id));
+    if (first_id != last_id)
+        str.append( s_CombineStrings("          ", "GBAltSeqItem_last-accn", last_id));
+
+    str.append( s_CloseTag("          ", "GBAltSeqItem"));
+    str.append( s_CloseTag("        ", "GBAltSeqData_items"));
+    str.append( s_CloseTag("      ", "GBAltSeqData"));
+
+    if ( m_IsInsd ) {
+        NStr::ReplaceInPlace(str, "<GB", "<INSD");
+        NStr::ReplaceInPlace(str,"</GB", "</INSD");
+    }
+
+    text_os.AddLine(str, item.GetObject(), IFlatTextOStream::eAddNewline_No);
+
+    text_os.Flush();
+}
 
 //=========================================================================//
 //                                Private                                  //

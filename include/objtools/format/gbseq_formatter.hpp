@@ -84,11 +84,17 @@ public:
     virtual void FormatContig(const CContigItem& contig, IFlatTextOStream& text_os);
     virtual void FormatGenomeProject(const CGenomeProjectItem&, IFlatTextOStream&);
     virtual void FormatGap(const CGapItem& gap, IFlatTextOStream& text_os);
+    virtual void FormatWGS(const CWGSItem& wgs, IFlatTextOStream& text_os);
+    virtual void FormatTSA(const CTSAItem& tsa, IFlatTextOStream& text_os);
 
 private:
     void x_WriteFileHeader(IFlatTextOStream& text_os);
     void x_WriteGBSeq(IFlatTextOStream& text_os);
     void x_StrOStreamToTextOStream(IFlatTextOStream& text_os);
+
+    // ID-4631 : common code for formatting accession ranges for WGS/TSA/TLS masters
+    template <typename T> void
+    x_FormatAltSeq(const T& item, const string& name, IFlatTextOStream& text_os);
 
     CRef<CGBSeq> m_GBSeq;
     auto_ptr<CObjectOStream> m_Out;
@@ -98,10 +104,12 @@ private:
     bool m_DidJourStart;
     bool m_DidKeysStart;
     bool m_DidRefsStart;
+    bool m_DidWgsStart;
     bool m_NeedFeatEnd;
     bool m_NeedJourEnd;
     bool m_NeedKeysEnd;
     bool m_NeedRefsEnd;
+    bool m_NeedWgsEnd;
     bool m_NeedComment;
     bool m_NeedDbsource;
     bool m_NeedXrefs;
