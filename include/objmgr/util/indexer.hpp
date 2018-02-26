@@ -66,7 +66,7 @@ class CFeatureIndex;
 // fetch policy and feature collection flags, as well as an optional feature exploration
 // depth parameter (for the default adaptive fetch policy):
 //
-//   CSeqEntryIndex idx(*m_entry, CSeqEntryIndex::fAdaptive);
+//   CSeqEntryIndex idx(*m_entry, CSeqEntryIndex::eAdaptive);
 //
 // A Seq-entry wrapper is created if the top-level object is a Bioseq or Bioseq-set.
 // Bioseqs within the Seq-entry are then indexed and added to a vector of CBioseqIndex.
@@ -89,10 +89,10 @@ public:
 
     enum EPolicy {
         // far feature fetch policy
-        fAdaptive = 0,
-        fInternal = 1,
-        fExternal = 2,
-        fExhaustive = 3
+        eAdaptive = 0,
+        eInternal = 1,
+        eExternal = 2,
+        eExhaustive = 3
     };
 
     enum EFlags {
@@ -110,20 +110,20 @@ public:
     // Constructors take the top-level sequence object
 
     // The primary constructor uses an existing CScope created by the application
-    CSeqEntryIndex (CSeq_entry_Handle& topseh, EPolicy policy = fAdaptive, TFlags flags = fDefault, int depth = -1);
+    CSeqEntryIndex (CSeq_entry_Handle& topseh, EPolicy policy = eAdaptive, TFlags flags = fDefault, int depth = -1);
 
     // Alternative constructors take an object and create a new local default CScope
-    CSeqEntryIndex (CSeq_entry& topsep, EPolicy policy = fAdaptive, TFlags flags = fDefault, int depth = -1);
-    CSeqEntryIndex (CBioseq_set& seqset, EPolicy policy = fAdaptive, TFlags flags = fDefault, int depth = -1);
-    CSeqEntryIndex (CBioseq& bioseq, EPolicy policy = fAdaptive, TFlags flags = fDefault, int depth = -1);
-    CSeqEntryIndex (CSeq_submit& submit, EPolicy policy = fAdaptive, TFlags flags = fDefault, int depth = -1);
+    CSeqEntryIndex (CSeq_entry& topsep, EPolicy policy = eAdaptive, TFlags flags = fDefault, int depth = -1);
+    CSeqEntryIndex (CBioseq_set& seqset, EPolicy policy = eAdaptive, TFlags flags = fDefault, int depth = -1);
+    CSeqEntryIndex (CBioseq& bioseq, EPolicy policy = eAdaptive, TFlags flags = fDefault, int depth = -1);
+    CSeqEntryIndex (CSeq_submit& submit, EPolicy policy = eAdaptive, TFlags flags = fDefault, int depth = -1);
 
     // Specialized constructors are for streaming through release files, one component at a time
 
     // Submit-block obtained from top of Seq-submit release file
-    CSeqEntryIndex (CSeq_entry& topsep, CSubmit_block &sblock, EPolicy policy = fAdaptive, TFlags flags = fDefault, int depth = -1);
+    CSeqEntryIndex (CSeq_entry& topsep, CSubmit_block &sblock, EPolicy policy = eAdaptive, TFlags flags = fDefault, int depth = -1);
     // Seq-descr chain obtained from top of Bioseq-set release file
-    CSeqEntryIndex (CSeq_entry& topsep, CSeq_descr &descr, EPolicy policy = fAdaptive, TFlags flags = fDefault, int depth = -1);
+    CSeqEntryIndex (CSeq_entry& topsep, CSeq_descr &descr, EPolicy policy = eAdaptive, TFlags flags = fDefault, int depth = -1);
 
 private:
     // Prohibit copy constructor & assignment operator

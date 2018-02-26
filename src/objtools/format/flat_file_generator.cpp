@@ -256,7 +256,7 @@ void CFlatFileGenerator::Generate
     if ( m_Ctx->GetConfig().UseSeqEntryIndexer() ) {
         // CSeq_entry& top = const_cast<CSeq_entry&> (*topent);
         CSeq_entry_Handle topseh = entry.GetTopLevelEntry();
-        CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, CSeqEntryIndex::fAdaptive ));
+        CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, CSeqEntryIndex::eAdaptive ));
         m_Ctx->SetSeqEntryIndex(idx);
     }
 

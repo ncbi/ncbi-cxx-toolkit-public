@@ -1556,27 +1556,27 @@ void CBioseqIndex::x_InitFeats (void)
 
         SAnnotSelector sel;
 
-        if (m_Policy != CSeqEntryIndex::fExternal) {
+        if (m_Policy != CSeqEntryIndex::eExternal) {
             // unless explicitly desired, exclude external annots
             sel.ExcludeNamedAnnots("CDD")
                .ExcludeNamedAnnots("SNP")
                .ExcludeNamedAnnots("STS");
         }
 
-        if (m_Policy == CSeqEntryIndex::fExhaustive) {
+        if (m_Policy == CSeqEntryIndex::eExhaustive) {
 
             sel.SetResolveAll();
              // experimental flag forces collection of features from all levels
             sel.SetResolveDepth(kMax_Int);
             // also ignores RefSeq/INSD barrier, far fetch policy user object
 
-        } else if (m_Policy == CSeqEntryIndex::fExternal) {
+        } else if (m_Policy == CSeqEntryIndex::eExternal) {
 
-            // same as fAdaptive, except also allows external annots
+            // same as eAdaptive, except also allows external annots
             sel.SetResolveAll();
             sel.SetAdaptiveDepth(true);
 
-        } else if (m_Policy == CSeqEntryIndex::fInternal || m_ForceOnlyNearFeats) {
+        } else if (m_Policy == CSeqEntryIndex::eInternal || m_ForceOnlyNearFeats) {
 
             // do not fetch features from underlying sequence component records
             if (m_Surrogate) {
@@ -1596,7 +1596,7 @@ void CBioseqIndex::x_InitFeats (void)
             // explicit depth setting overrides adaptive depth (probably only needed for debugging)
             sel.SetResolveDepth(m_Depth);
 
-        } else if (m_Policy == CSeqEntryIndex::fAdaptive) {
+        } else if (m_Policy == CSeqEntryIndex::eAdaptive) {
 
             sel.SetResolveAll();
             // normal situation uses adaptive depth for feature collection,
@@ -1710,8 +1710,8 @@ void CBioseqIndex::x_InitFeats (void)
             }
 
             if (type == CSeqFeatData::e_Cdregion && IsNA()) {
-            } else if (type == CSeqFeatData::e_Rna && IsAA()) {
-            } else if (type == CSeqFeatData::e_Prot && IsNA()) {
+            } else if (type == CSeqFeatData::e_Rna && IsNA()) {
+            } else if (type == CSeqFeatData::e_Prot && IsAA()) {
             } else {
                 continue;
             }
