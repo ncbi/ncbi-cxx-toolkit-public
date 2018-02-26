@@ -378,6 +378,7 @@ static string s_OfficialPrefixList[] = {
     "MIMS:4.0-Data",
     "RefSeq-Attributes",
     "SIVDataBaseData",
+    "SymbiotaSpecimenReference",
     "Taxonomic-Update-Statistics"
 };
 
