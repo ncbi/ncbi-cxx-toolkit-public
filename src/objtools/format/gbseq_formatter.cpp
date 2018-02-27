@@ -62,6 +62,7 @@
 #include <objtools/format/items/keywords_item.hpp>
 #include <objtools/format/items/source_item.hpp>
 #include <objtools/format/items/reference_item.hpp>
+#include <objtools/format/items/primary_item.hpp>
 #include <objtools/format/items/comment_item.hpp>
 #include <objtools/format/items/feature_item.hpp>
 #include <objtools/format/items/sequence_item.hpp>
@@ -111,11 +112,13 @@ CGBSeqFormatter::CGBSeqFormatter(bool isInsd)
     m_NeedRefsEnd = false;
     m_NeedWgsEnd  = false;
     m_NeedComment = false;
+    m_NeedPrimary = false;
     m_NeedDbsource = false;
     m_NeedXrefs = false;
     m_OtherSeqIDs.clear();
     m_SecondaryAccns.clear();
     m_Comments.clear();
+    m_Primary.clear();
     m_Dbsource.clear();
     m_Xrefs.clear();
 }
@@ -208,6 +211,11 @@ void CGBSeqFormatter::EndSection(const CEndSectionItem&, IFlatTextOStream& text_
 
         string comm = NStr::Join( m_Comments, "; " );
         str.append( s_CombineStrings("    ", "GBSeq_comment", comm));
+    }
+
+    if (m_NeedPrimary) {
+        m_NeedPrimary = false;
+        str.append( s_CombineStrings("    ", "GBSeq_primary", m_Primary));
     }
 
     if (m_NeedFeatEnd) {
@@ -804,6 +812,20 @@ void CGBSeqFormatter::FormatComment
 
 ///////////////////////////////////////////////////////////////////////////
 //
+// PRIMARY
+
+
+void CGBSeqFormatter::FormatPrimary
+(const CPrimaryItem& primary,
+ IFlatTextOStream& text_os)
+{
+    m_Primary = primary.GetString();
+    // s_GBSeqStringCleanup(m_Primary);
+    m_NeedPrimary = true;
+}
+
+///////////////////////////////////////////////////////////////////////////
+//
 // DBSOURCE
 
 
@@ -841,6 +863,11 @@ void CGBSeqFormatter::FormatFeature
 
         string comm = NStr::Join( m_Comments, "; " );
         str.append( s_CombineStrings("    ", "GBSeq_comment", comm));
+    }
+
+    if (m_NeedPrimary) {
+        m_NeedPrimary = false;
+        str.append( s_CombineStrings("    ", "GBSeq_primary", m_Primary));
     }
 
     if (m_NeedDbsource) {
@@ -978,6 +1005,11 @@ void CGBSeqFormatter::FormatSequence
         str.append( s_CombineStrings("    ", "GBSeq_comment", comm));
     }
 
+    if (m_NeedPrimary) {
+        m_NeedPrimary = false;
+        str.append( s_CombineStrings("    ", "GBSeq_primary", m_Primary));
+    }
+
     if (m_NeedFeatEnd) {
         str.append( s_CloseTag("    ", "GBSeq_feature-table"));
         m_NeedFeatEnd = false;
@@ -1038,6 +1070,11 @@ void CGBSeqFormatter::FormatContig
         str.append( s_CombineStrings("    ", "GBSeq_comment", comm));
     }
 
+    if (m_NeedPrimary) {
+        m_NeedPrimary = false;
+        str.append( s_CombineStrings("    ", "GBSeq_primary", m_Primary));
+    }
+
     if (m_NeedFeatEnd) {
         str.append( s_CloseTag("    ", "GBSeq_feature-table"));
         m_NeedFeatEnd = false;
@@ -1083,6 +1120,11 @@ void CGBSeqFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os)
 
         string comm = NStr::Join( m_Comments, "; " );
         str.append( s_CombineStrings("    ", "GBSeq_comment", comm));
+    }
+
+    if (m_NeedPrimary) {
+        m_NeedPrimary = false;
+        str.append( s_CombineStrings("    ", "GBSeq_primary", m_Primary));
     }
 
     if (m_NeedDbsource) {
@@ -1240,6 +1282,11 @@ CGBSeqFormatter::x_FormatAltSeq(const T& item, const string& name,
 
         string comm = NStr::Join( m_Comments, "; " );
         str.append( s_CombineStrings("    ", "GBSeq_comment", comm));
+    }
+
+    if (m_NeedPrimary) {
+        m_NeedPrimary = false;
+        str.append( s_CombineStrings("    ", "GBSeq_primary", m_Primary));
     }
 
     if (m_NeedDbsource) {
