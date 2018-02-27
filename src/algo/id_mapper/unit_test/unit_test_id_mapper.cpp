@@ -843,4 +843,62 @@ BOOST_AUTO_TEST_CASE(TestCase_GINumberString)
     BOOST_CHECK(Result.NotNull());
     BOOST_CHECK_EQUAL(Result->GetInt().GetId().GetSeqIdString(true), "NC_018264.1"); 
 }
+
+BOOST_AUTO_TEST_CASE(TestCaseUcscToRefSeqMapping_ForSlowCat)
+{
+    // Fetch Gencoll
+    CGenomicCollectionsService GCService;
+    CConstRef<CGC_Assembly> GenColl(
+        GCService.GetAssembly("GCF_000181335.2", "SequenceNames")
+    );
+    // Make a Spec
+    CGencollIdMapper::SIdSpec NameMapSpec;
+    NameMapSpec.TypedChoice = CGC_TypedSeqId::e_Refseq;
+    NameMapSpec.Alias = CGC_SeqIdAlias::e_Public;
+    // Do a Map
+    CGencollIdMapper Mapper(GenColl);
+    CRef<CSeq_loc> OrigLoc(new CSeq_loc());
+    OrigLoc->SetInt().SetId().SetLocal().SetStr("chrA1");
+    OrigLoc->SetInt().SetFrom(60268361);
+    OrigLoc->SetInt().SetTo(60268361);
+    CRef<CSeq_loc> Result = Mapper.Map(*OrigLoc, NameMapSpec);
+
+    // Check that Map results meet expectations
+    BOOST_CHECK_EQUAL(Result->GetId()->GetSeqIdString(true), "NC_018723.2");
+}
+
+
+BOOST_AUTO_TEST_CASE(TestCaseUcscToRefSeqMapping_ForSlowCat_Down)
+{
+    // Fetch Gencoll
+    CGenomicCollectionsService GCService;
+    CConstRef<CGC_Assembly> GenColl(
+        GCService.GetAssembly("GCF_000181335.2", "SequenceNames")
+    );
+ 
+    CGencollIdMapper::SIdSpec DownMapSpec;
+    DownMapSpec.TypedChoice = CGC_TypedSeqId::e_Genbank;
+    DownMapSpec.Alias = CGC_SeqIdAlias::e_Public;
+    DownMapSpec.Role = eGC_SequenceRole_scaffold;
+    
+    CGencollIdMapper Mapper(GenColl);
+    CRef<CSeq_loc> OrigLoc(new CSeq_loc());
+    OrigLoc->SetInt().SetId().SetLocal().SetStr("chrA1");
+    OrigLoc->SetInt().SetFrom(60268361);
+    OrigLoc->SetInt().SetTo(60268361);
+ 
+    // Do a DownMap
+    CRef<CSeq_loc> Result = Mapper.Map(*OrigLoc, DownMapSpec);
+ //cerr << MSerial_AsnText << *Result << endl;
+    // Expected component level result
+    CSeq_loc Expected;
+    Expected.SetPnt().SetId().Set("KN300524.1");
+    Expected.SetPnt().SetPoint(698862);
+    Expected.SetPnt().SetStrand(eNa_strand_plus);
+
+    // Check that Map results meet expectations
+    BOOST_CHECK(Result->Equals(Expected));
+}
+
+
 BOOST_AUTO_TEST_SUITE_END();

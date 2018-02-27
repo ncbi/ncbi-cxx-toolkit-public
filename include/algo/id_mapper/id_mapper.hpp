@@ -137,6 +137,8 @@ public:
 protected:
     void x_Init(void);
 
+    void x_Init_SeqLocMappers(void) const;
+
     bool x_NCBI34_Guess(const objects::CSeq_id& Id, SIdSpec& Spec) const;
     CConstRef<objects::CSeq_id>
     x_NCBI34_Map_IdFix(CConstRef<objects::CSeq_id> SourceId) const;

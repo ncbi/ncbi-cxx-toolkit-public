@@ -384,7 +384,16 @@ CGencollIdMapper::x_Init(void)
         }
     }
     sort(m_Chromosomes.begin(), m_Chromosomes.end(), s_RevStrLenSort);
-   
+
+    // x_Init_SeqLocMappers was changed to only run on demand
+    
+    m_Assembly->PostRead();
+}
+
+
+void 
+CGencollIdMapper::x_Init_SeqLocMappers() const 
+{
     /* SetResolveCount(0) limits downmapping to just its immediate record,
      *   so it never down-maps more than one step at a time.
      * But zero breaks up-mapping. It only returns null.
@@ -407,9 +416,8 @@ CGencollIdMapper::x_Init(void)
         Sel.SetResolveCount(numeric_limits<size_t>::max());
         m_DownMapper_Deep.Reset(new CSeq_loc_Mapper(*m_Assembly, CSeq_loc_Mapper::eSeqMap_Down, Sel));
     }}
-
-    m_Assembly->PostRead();
 }
+
 
 bool
 CGencollIdMapper::x_NCBI34_Guess(const CSeq_id& Id, SIdSpec& Spec) const
@@ -1478,6 +1486,10 @@ CGencollIdMapper::x_Map_Up(const CSeq_loc& SourceLoc,
                            const SIdSpec& Spec
                           ) const
 {
+    if(m_UpMapper.IsNull()) {
+        x_Init_SeqLocMappers();
+    }
+
     CRef<CSeq_loc> Result;
     Result = m_UpMapper->Map(SourceLoc); 
     if(!Result.IsNull() && !Result->IsNull()) {
@@ -1494,6 +1506,10 @@ CGencollIdMapper::x_Map_Down(const CSeq_loc& SourceLoc,
                              const SIdSpec& Spec
                             ) const
 {
+    if(m_DownMapper_Shallow.IsNull() || m_DownMapper_Deep.IsNull()) {
+        x_Init_SeqLocMappers();
+    }
+    
     CRef<CSeq_loc> Result;
     Result = m_DownMapper_Shallow->Map(SourceLoc); 
     if(Result.IsNull() || Result->IsNull()) {
