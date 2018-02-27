@@ -318,7 +318,7 @@ TBlobIds CBioIdResolutionQueue::GetBlobIds(const CDeadline& deadline, size_t max
             const auto& req = *rev_it;
             if (req->IsDone()) {
                 auto fw_it = next(rev_it).base();
-                rv.emplace_back(move((*fw_it)->m_BioId));
+                rv.push_back(move((*fw_it)->m_BioId));
                 req->PopulateData(rv.back());
                 m_Items.erase(fw_it);
             }
@@ -530,7 +530,7 @@ TBlobs CBlobRetrievalQueue::GetBlobs(const CDeadline& deadline, size_t max_resul
             const auto& req = *rev_it;
             if (req->IsDone()) {
                 auto fw_it = next(rev_it).base();
-                rv.emplace_back(move((*fw_it)->m_BlobId));
+                rv.push_back(move((*fw_it)->m_BlobId));
                 req->PopulateData(rv.back());
                 m_Items.erase(fw_it);
             }

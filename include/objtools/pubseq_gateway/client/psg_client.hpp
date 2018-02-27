@@ -80,9 +80,6 @@ class CBioIdResolutionQueue;
 class CBlobId
 {
 public:
-    explicit CBlobId(const CBioId& bio_id)
-        : m_BioId(bio_id), m_Status(eResNone), m_StatusEx(eNone) {}
-
     /// Storage blob id (as accepted by the CBlobRetrieveQueue)
     struct SID2BlobId
     {
@@ -119,7 +116,6 @@ public:
     /// Resolution result
     /// @sa GetStatus
     enum EStatus {
-        eResNone,    ///< Resolution is not performed
         eResolved,   ///< Successfully resolved
         eFailed      ///< Resolution has failed
     };
@@ -148,10 +144,12 @@ public:
     const CBioId& GetBioId() const { return m_BioId; }
 
 private:
+    CBlobId(CBioId bio_id) : m_BioId(move(bio_id)) {}
+
     CBioId     m_BioId;
     SBlobInfo  m_BlobInfo;
-    EStatus    m_Status;
-    EStatusEx  m_StatusEx;
+    EStatus    m_Status = eFailed;
+    EStatusEx  m_StatusEx = eError;
     string     m_Message;
 
     friend class CBioIdResolutionQueue;
@@ -248,15 +246,12 @@ class CBlobRetrievalQueue;
 class CBlob
 {
 public:
-    explicit CBlob(CBlobId blob_id) : m_BlobId(move(blob_id)) {}
-
     /// Get retrieved data
     unique_ptr<istream> GetStream() { return move(m_Stream); }
 
     /// Retrieval result
     /// @sa GetStatus
     enum EStatus {
-        eRetrNone,  ///< Retrieval is not performed
         eRetrieved, ///< Successfully retrieved
         eFailed     ///< Retrieval has failed
     };
@@ -285,10 +280,12 @@ public:
     const CBlobId& GetBlobId() const  { return m_BlobId; };
 
 private:
+    CBlob(CBlobId blob_id) : m_BlobId(move(blob_id)) {}
+
     CBlobId             m_BlobId;
     unique_ptr<istream> m_Stream;
-    EStatus             m_Status;
-    EStatusEx           m_StatusEx;
+    EStatus             m_Status = eFailed;
+    EStatusEx           m_StatusEx = eError;
     string              m_Message;
 
     friend class CBlobRetrievalQueue;
