@@ -1602,6 +1602,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "DMNS\ts\tDenver Museum of Nature and Science\tDMNH<USA-CO>,DNHC",
 "DMNS:Bird\ts\tDenver Museum of Nature and Science, Ornithology Collections",
 "DMNS:Mamm\ts\tDenver Museum of Nature and Science, Mammology Collection",
+"DMNS:Para\ts\tDenver Museum of Nature and Science, Parasite collection",
 "DMPMC\tc\tDepartment of Microbiology, University of Western Australia\t\t",
 "DMSA\ts\tDurban Museum\t\t",
 "DMSC\ts\tMedicinal Plants Research Institute, Department of Medical Sciences\t\t",
