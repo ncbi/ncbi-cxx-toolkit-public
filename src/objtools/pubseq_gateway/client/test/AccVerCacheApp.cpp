@@ -76,7 +76,7 @@ private:
 
     void RemoteLookup(const string& AccVer);
     void RemoteLookupFile(const string& FileName, unsigned int NumThreads);
-    void PrintBlobId(const CPSG_BlobId& it);
+    void PrintBlobId(const CPSG_BlobId& blob_id);
     void SaveBlob(CPSG_Blob& blob);
 public:
     CAccVerCacheApp() :
@@ -172,7 +172,7 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
 {
 
     ifstream infile(FileName);
-    TPSG_BioIds src_data_ncbi;
+    TPSG_BioIds all_bio_ids;
 
 
     if (m_HostPort.empty())
@@ -190,13 +190,13 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
             if (line == "")
                 continue;
             {
-                src_data_ncbi.emplace_back(line);
+                all_bio_ids.emplace_back(line);
             }
             ++line_count;
         }
 
         {{
-            CPSG_BioIdResolutionQueue cq(m_HostPort);
+            CPSG_BioIdResolutionQueue res_queue(m_HostPort);
             vector<unique_ptr<thread, function<void(thread*)>>> threads;
             threads.resize(NumThreads);
             size_t start_index = 0, next_index, i = 0;
@@ -206,29 +206,28 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
                 i++;
                 next_index = ((uint64_t)line_count * i) / NumThreads;
                 it = unique_ptr<thread, function<void(thread*)>>(new thread(
-                    [&cq, start_index, next_index, line_count, &src_data_ncbi, this]() {
+                    [&res_queue, start_index, next_index, line_count, &all_bio_ids, this]() {
                         size_t max = next_index > line_count ? line_count : next_index;
 
                         {
                             {
-                                TPSG_BioIds srcvec;
+                                TPSG_BioIds bio_ids;
 
                                 const unsigned int MAX_SRC_AT_ONCE = 1024;
                                 const unsigned int PUSH_TIMEOUT_MS = 15000;
                                 const unsigned int POP_TIMEOUT_MS = 15000;
-                                size_t pushed = 0, popped = 0;
-                                const string Prefix = "accver=";
-                                auto push = [&cq, &srcvec, &pushed](const CDeadline& deadline) {
-                                    size_t cnt = srcvec.size();
-                                    cq.Resolve(&srcvec, deadline);
-                                    pushed += cnt - srcvec.size();
+                                size_t res_pushed = 0, res_popped = 0;
+                                auto res_push = [&res_queue, &bio_ids, &res_pushed](const CDeadline& deadline) {
+                                    size_t cnt = bio_ids.size();
+                                    res_queue.Resolve(&bio_ids, deadline);
+                                    res_pushed += cnt - bio_ids.size();
                                 };
-                                auto pop = [&cq, &popped, this](const CDeadline& deadline = CDeadline(0)) {
+                                auto res_pop = [&res_queue, &res_popped, this](const CDeadline& deadline = CDeadline(0)) {
                                     try {
-                                        TPSG_BlobIds rsltvec = cq.GetBlobIds(deadline);
-                                        popped += rsltvec.size();
+                                        TPSG_BlobIds blob_ids = res_queue.GetBlobIds(deadline);
+                                        res_popped += blob_ids.size();
 
-                                        for (auto& blob_id : rsltvec) {
+                                        for (auto& blob_id : blob_ids) {
                                             PrintBlobId(blob_id);
                                         }
                                     }
@@ -238,28 +237,28 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
                                 };
                                 for (size_t i = start_index; i < max; ++i) {
                                     try {
-                                        auto & it_data = src_data_ncbi[i];
+                                        auto & it_data = all_bio_ids[i];
                                         LOG3(("Adding [%lu](%s)", i, it_data.GetId().c_str()));
 
-                                        srcvec.emplace_back(std::move(it_data));
+                                        bio_ids.emplace_back(std::move(it_data));
 
-                                        if (srcvec.size() >= MAX_SRC_AT_ONCE) {
-                                            push(PUSH_TIMEOUT_MS);
-                                            pop(0);
+                                        if (bio_ids.size() >= MAX_SRC_AT_ONCE) {
+                                            res_push(PUSH_TIMEOUT_MS);
+                                            res_pop(0);
                                         }
                                     }
                                     catch (const std::runtime_error& e) {
                                         ERRLOG0((e.what()));
                                     }
                                 }
-                                while (srcvec.size() > 0) {
-                                    push(PUSH_TIMEOUT_MS);
-                                    pop(0);
+                                while (bio_ids.size() > 0) {
+                                    res_push(PUSH_TIMEOUT_MS);
+                                    res_pop(0);
                                 }
-                                while (!cq.IsEmpty())
-                                    pop(POP_TIMEOUT_MS);
-                                assert(cq.IsEmpty());
-                                LOG3(("thread finished: start: %lu, max: %lu, count: %lu, pushed: %lu, popped: %lu", start_index, max, max - start_index, pushed, popped));
+                                while (!res_queue.IsEmpty())
+                                    res_pop(POP_TIMEOUT_MS);
+                                assert(res_queue.IsEmpty());
+                                LOG3(("thread finished: start: %lu, max: %lu, count: %lu, res_pushed: %lu, res_popped: %lu", start_index, max, max - start_index, res_pushed, res_popped));
                             }
                         }
                     }),
@@ -273,24 +272,24 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
     }
 }
 
-void CAccVerCacheApp::PrintBlobId(const CPSG_BlobId& it)
+void CAccVerCacheApp::PrintBlobId(const CPSG_BlobId& blob_id)
 {
-            if (it.GetStatus() == CPSG_BlobId::eSuccess) {
+            if (blob_id.GetStatus() == CPSG_BlobId::eSuccess) {
                 lock_guard<mutex> lock(m_CoutMutex);
                 cout
-                    << it.GetBioId().GetId() << "||"
-                    << it.GetBlobInfo().gi << "|"
-                    << it.GetBlobInfo().seq_length << "|"
-                    << it.GetBlobInfo().sat << "|"
-                    << it.GetBlobInfo().sat_key << "|"
-                    << it.GetBlobInfo().tax_id << "|"
-                    << (it.GetBlobInfo().date_queued ? CTime(it.GetBlobInfo().date_queued).AsString() : "") << "|"
-                    << it.GetBlobInfo().state << "|"
+                    << blob_id.GetBioId().GetId() << "||"
+                    << blob_id.GetBlobInfo().gi << "|"
+                    << blob_id.GetBlobInfo().seq_length << "|"
+                    << blob_id.GetBlobInfo().sat << "|"
+                    << blob_id.GetBlobInfo().sat_key << "|"
+                    << blob_id.GetBlobInfo().tax_id << "|"
+                    << (blob_id.GetBlobInfo().date_queued ? CTime(blob_id.GetBlobInfo().date_queued).AsString() : "") << "|"
+                    << blob_id.GetBlobInfo().state << "|"
                 << std::endl;
             }
             else {
                 lock_guard<mutex> lock(m_CerrMutex);
-                cerr << it.GetBioId().GetId() << ": failed to resolve:" << it.GetMessage() << std::endl;
+                cerr << blob_id.GetBioId().GetId() << ": failed to resolve:" << blob_id.GetMessage() << std::endl;
             }
 }
 
