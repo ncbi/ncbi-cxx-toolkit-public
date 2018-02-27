@@ -1,5 +1,7 @@
 # $Id$
 
+ASN_DEP = id2
+
 SRC = psg_client HttpClientTransport
 
 LIB = psg_client
