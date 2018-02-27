@@ -160,8 +160,7 @@ void CPSGBioIdResolutionQueue::SItem::SyncResolve(CPSGBlobId& blob_id, const CDe
     long wait_ms = has_timeout ? RemainingTimeMs(deadline) : DDRPC::INDEFINITE;
     bool rv = AddRequest(wait_ms);
     if (!rv) {
-        blob_id.m_Status = CPSGBlobId::eFailed;
-        blob_id.m_StatusEx = CPSGBlobId::eError;
+        blob_id.m_Status = CPSGBlobId::eError;
         blob_id.m_Message = "Resolver queue is full";
         return;
     }
@@ -172,8 +171,7 @@ void CPSGBioIdResolutionQueue::SItem::SyncResolve(CPSGBlobId& blob_id, const CDe
         }
         if (has_timeout) wait_ms = RemainingTimeMs(deadline);
         if (wait_ms <= 0) {
-            blob_id.m_Status = CPSGBlobId::eFailed;
-            blob_id.m_StatusEx = CPSGBlobId::eError;
+            blob_id.m_Status = CPSGBlobId::eError;
             blob_id.m_Message = "Timeout expired";
             return;
         }
@@ -204,13 +202,11 @@ void CPSGBioIdResolutionQueue::SItem::Cancel()
 void CPSGBioIdResolutionQueue::SItem::PopulateData(CPSGBlobId& blob_id) const
 {
     if (m_Request->get_result_data().get_cancelled()) {
-        blob_id.m_Status = CPSGBlobId::eFailed;
-        blob_id.m_StatusEx = CPSGBlobId::eCanceled;
+        blob_id.m_Status = CPSGBlobId::eCanceled;
         blob_id.m_Message = "Request for resolution was canceled";
     }
     else if (m_Request->has_error()) {
-        blob_id.m_Status = CPSGBlobId::eFailed;
-        blob_id.m_StatusEx = CPSGBlobId::eError;
+        blob_id.m_Status = CPSGBlobId::eError;
         blob_id.m_Message = m_Request->get_error_description();
     }
     else switch (m_Request->get_result_data().get_http_status()) {
@@ -219,8 +215,7 @@ void CPSGBioIdResolutionQueue::SItem::PopulateData(CPSGBlobId& blob_id) const
             DDRPC::DataRow rec;
             try {
                 AccVerResolverUnpackData(rec, data);
-                blob_id.m_Status = CPSGBlobId::eResolved;
-                blob_id.m_StatusEx = CPSGBlobId::eNone;
+                blob_id.m_Status = CPSGBlobId::eSuccess;
                 blob_id.m_BlobInfo.gi          = rec[0].AsUint8;
                 blob_id.m_BlobInfo.seq_length  = rec[1].AsUint4;
                 blob_id.m_BlobInfo.id2.sat     = rec[2].AsUint1;
@@ -230,21 +225,18 @@ void CPSGBioIdResolutionQueue::SItem::PopulateData(CPSGBlobId& blob_id) const
                 blob_id.m_BlobInfo.state       = rec[6].AsUint1;
             }
             catch (const DDRPC::EDdRpcException& e) {
-                blob_id.m_Status = CPSGBlobId::eFailed;
-                blob_id.m_StatusEx = CPSGBlobId::eError;
+                blob_id.m_Status = CPSGBlobId::eError;
                 blob_id.m_Message = e.what();
             }
             break;
         }
         case 404: {
-            blob_id.m_Status = CPSGBlobId::eFailed;
-            blob_id.m_StatusEx = CPSGBlobId::eNotFound;
+            blob_id.m_Status = CPSGBlobId::eNotFound;
             blob_id.m_Message = "Bio id is not found";
             break;
         }
         default: {
-            blob_id.m_Status = CPSGBlobId::eFailed;
-            blob_id.m_StatusEx = CPSGBlobId::eError;
+            blob_id.m_Status = CPSGBlobId::eError;
             blob_id.m_Message = "Unexpected result";
         }
     }
@@ -388,8 +380,7 @@ void CPSGBlobRetrievalQueue::SItem::SyncRetrieve(CPSGBlob& blob, const CDeadline
     long wait_ms = has_timeout ? RemainingTimeMs(deadline) : DDRPC::INDEFINITE;
     bool rv = AddRequest(wait_ms);
     if (!rv) {
-        blob.m_Status = CPSGBlob::eFailed;
-        blob.m_StatusEx = CPSGBlob::eError;
+        blob.m_Status = CPSGBlob::eError;
         blob.m_Message = "Retriever queue is full";
         return;
     }
@@ -400,8 +391,7 @@ void CPSGBlobRetrievalQueue::SItem::SyncRetrieve(CPSGBlob& blob, const CDeadline
         }
         if (has_timeout) wait_ms = RemainingTimeMs(deadline);
         if (wait_ms <= 0) {
-            blob.m_Status = CPSGBlob::eFailed;
-            blob.m_StatusEx = CPSGBlob::eError;
+            blob.m_Status = CPSGBlob::eError;
             blob.m_Message = "Timeout expired";
             return;
         }
@@ -432,31 +422,26 @@ void CPSGBlobRetrievalQueue::SItem::Cancel()
 void CPSGBlobRetrievalQueue::SItem::PopulateData(CPSGBlob& blob) const
 {
     if (m_Request->get_result_data().get_cancelled()) {
-        blob.m_Status = CPSGBlob::eFailed;
-        blob.m_StatusEx = CPSGBlob::eCanceled;
+        blob.m_Status = CPSGBlob::eCanceled;
         blob.m_Message = "Request for retrieval was canceled";
     }
     else if (m_Request->has_error()) {
-        blob.m_Status = CPSGBlob::eFailed;
-        blob.m_StatusEx = CPSGBlob::eError;
+        blob.m_Status = CPSGBlob::eError;
         blob.m_Message = m_Request->get_error_description();
     }
     else switch (m_Request->get_result_data().get_http_status()) {
         case 200: {
             blob.m_Stream.reset(new stringstream(m_Request->get_reply_data_move()));
-            blob.m_Status = CPSGBlob::eRetrieved;
-            blob.m_StatusEx = CPSGBlob::eNone;
+            blob.m_Status = CPSGBlob::eSuccess;
             break;
         }
         case 404: {
-            blob.m_Status = CPSGBlob::eFailed;
-            blob.m_StatusEx = CPSGBlob::eNotFound;
+            blob.m_Status = CPSGBlob::eNotFound;
             blob.m_Message = "Blob is not found";
             break;
         }
         default: {
-            blob.m_Status = CPSGBlob::eFailed;
-            blob.m_StatusEx = CPSGBlob::eError;
+            blob.m_Status = CPSGBlob::eError;
             blob.m_Message = "Unexpected result";
         }
     }

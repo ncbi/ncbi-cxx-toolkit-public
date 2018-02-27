@@ -274,7 +274,7 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
 
 void CAccVerCacheApp::PrintBlobId(const CPSGBlobId& it)
 {
-            if (it.GetStatus() == CPSGBlobId::eResolved) {
+            if (it.GetStatus() == CPSGBlobId::eSuccess) {
                 cout
                     << it.GetBioId().GetId() << "||"
                     << it.GetBlobInfo().gi << "|"

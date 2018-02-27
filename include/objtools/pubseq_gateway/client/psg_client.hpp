@@ -106,17 +106,7 @@ public:
     /// Resolution result
     /// @sa GetStatus
     enum EStatus {
-        eResolved,   ///< Successfully resolved
-        eFailed      ///< Resolution has failed
-    };
-
-    /// Get result of this id resolution
-    EStatus GetStatus() const { return m_Status; }
-
-    /// Resolution's fine-grain actionable details
-    /// @sa GetStatusEx
-    enum EStatusEx {
-        eNone,       ///< No additional info available
+        eSuccess,    ///< Successfully resolved
         eForbidden,  ///< Access denied
         eNotFound,   ///< Not found
         eInvalid,    ///< Invalid id
@@ -125,7 +115,7 @@ public:
     };
 
     /// Get result of this id resolution
-    EStatusEx GetStatusEx() const { return m_StatusEx; }
+    EStatus GetStatus() const { return m_Status; }
 
     /// Unstructured text containing auxiliary info about the result
     const string& GetMessage() const { return m_Message; };
@@ -138,8 +128,7 @@ private:
 
     CPSGBioId  m_BioId;
     SBlobInfo  m_BlobInfo;
-    EStatus    m_Status = eFailed;
-    EStatusEx  m_StatusEx = eError;
+    EStatus    m_Status = eError;
     string     m_Message;
 
     friend class CPSGBioIdResolutionQueue;
@@ -239,17 +228,7 @@ public:
     /// Retrieval result
     /// @sa GetStatus
     enum EStatus {
-        eRetrieved, ///< Successfully retrieved
-        eFailed     ///< Retrieval has failed
-    };
-
-    /// Get result of this blob retrieval
-    EStatus GetStatus() const { return m_Status; }
-
-    /// Retrieval's fine-grain actionable details
-    /// @sa GetStatusEx
-    enum EStatusEx {
-        eNone,       ///< No additional info available
+        eSuccess,    ///< Successfully retrieved
         eForbidden,  ///< Access denied
         eNotFound,   ///< Not found
         eInvalid,    ///< Invalid id
@@ -258,7 +237,7 @@ public:
     };
 
     /// Get result of this blob retrieval
-    EStatusEx GetStatusEx() const { return m_StatusEx; }
+    EStatus GetStatus() const { return m_Status; }
 
     /// Unstructured text containing auxiliary info about the result
     const string& GetMessage() const { return m_Message; };
@@ -271,8 +250,7 @@ private:
 
     CPSGBlobId          m_BlobId;
     unique_ptr<istream> m_Stream;
-    EStatus             m_Status = eFailed;
-    EStatusEx           m_StatusEx = eError;
+    EStatus             m_Status = eError;
     string              m_Message;
 
     friend class CPSGBlobRetrievalQueue;
