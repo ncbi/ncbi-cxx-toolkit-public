@@ -71,6 +71,8 @@ private:
     string m_LookupFileRemote;
     char m_Delimiter;
     bool m_SaveBlobs = false;
+    mutex m_CoutMutex;
+    mutex m_CerrMutex;
 
     void RemoteLookup(const string& AccVer);
     void RemoteLookupFile(const string& FileName, unsigned int NumThreads);
@@ -171,8 +173,6 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
 
     ifstream infile(FileName);
     TPSG_BioIds src_data_ncbi;
-    TPSG_BlobIds rslt_data_ncbi;
-    mutex rslt_data_ncbi_mux;
 
 
     if (m_HostPort.empty())
@@ -206,13 +206,12 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
                 i++;
                 next_index = ((uint64_t)line_count * i) / NumThreads;
                 it = unique_ptr<thread, function<void(thread*)>>(new thread(
-                    [&cq, start_index, next_index, line_count, &src_data_ncbi, &rslt_data_ncbi, &rslt_data_ncbi_mux, this]() {
+                    [&cq, start_index, next_index, line_count, &src_data_ncbi, this]() {
                         size_t max = next_index > line_count ? line_count : next_index;
 
                         {
                             {
                                 TPSG_BioIds srcvec;
-                                TPSG_BlobIds l_rslt_data_ncbi;
 
                                 const unsigned int MAX_SRC_AT_ONCE = 1024;
                                 const unsigned int PUSH_TIMEOUT_MS = 15000;
@@ -224,11 +223,14 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
                                     cq.Resolve(&srcvec, deadline);
                                     pushed += cnt - srcvec.size();
                                 };
-                                auto pop = [&cq, &l_rslt_data_ncbi, &popped](const CDeadline& deadline = CDeadline(0)) {
+                                auto pop = [&cq, &popped, this](const CDeadline& deadline = CDeadline(0)) {
                                     try {
                                         TPSG_BlobIds rsltvec = cq.GetBlobIds(deadline);
                                         popped += rsltvec.size();
-                                        std::move(rsltvec.begin(), rsltvec.end(), std::back_inserter(l_rslt_data_ncbi));
+
+                                        for (auto& blob_id : rsltvec) {
+                                            PrintBlobId(blob_id);
+                                        }
                                     }
                                     catch (const std::runtime_error& e) {
                                         ERRLOG0((e.what()));
@@ -257,11 +259,6 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
                                 while (!cq.IsEmpty())
                                     pop(POP_TIMEOUT_MS);
                                 assert(cq.IsEmpty());
-
-                                {{
-                                    unique_lock<mutex> _(rslt_data_ncbi_mux);
-                                    std::move(l_rslt_data_ncbi.begin(), l_rslt_data_ncbi.end(), std::back_inserter(rslt_data_ncbi));
-                                }}
                                 LOG3(("thread finished: start: %lu, max: %lu, count: %lu, pushed: %lu, popped: %lu", start_index, max, max - start_index, pushed, popped));
                             }
                         }
@@ -274,16 +271,12 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
             }
         }}
     }
-    {
-        for (const auto& it : rslt_data_ncbi) {
-            PrintBlobId(it);
-        }
-    }
 }
 
 void CAccVerCacheApp::PrintBlobId(const CPSG_BlobId& it)
 {
             if (it.GetStatus() == CPSG_BlobId::eSuccess) {
+                lock_guard<mutex> lock(m_CoutMutex);
                 cout
                     << it.GetBioId().GetId() << "||"
                     << it.GetBlobInfo().gi << "|"
@@ -296,6 +289,7 @@ void CAccVerCacheApp::PrintBlobId(const CPSG_BlobId& it)
                 << std::endl;
             }
             else {
+                lock_guard<mutex> lock(m_CerrMutex);
                 cerr << it.GetBioId().GetId() << ": failed to resolve:" << it.GetMessage() << std::endl;
             }
 }
@@ -305,11 +299,13 @@ void CAccVerCacheApp::SaveBlob(CPSG_Blob& blob)
     const auto name = blob.GetBlobId().GetBioId().GetId();
 
     if (blob.GetStatus() != CPSG_Blob::eSuccess) {
+        lock_guard<mutex> lock(m_CerrMutex);
         cerr << "Blob '" << name << "' failed to retrieve: " << blob.GetMessage() << std::endl;
         return;
     }
 
     if (!m_SaveBlobs) {
+        lock_guard<mutex> lock(m_CoutMutex);
         cout << "Blob '" << name << "' was successfully retrieved" << std::endl;
         return;
     }
@@ -318,6 +314,7 @@ void CAccVerCacheApp::SaveBlob(CPSG_Blob& blob)
     auto& is = blob.GetStream();
     ofstream os(filename, ios::binary|ios::out);
     os << is.rdbuf();
+    lock_guard<mutex> lock(m_CoutMutex);
     cout << "Blob '" << name << "' saved to '" << filename << "'" << std::endl;
 }
 
