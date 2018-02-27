@@ -116,7 +116,7 @@ SHCT::TEndPoint SHCT::x_GetEndPoint(const string& service)
 
     // If actually added, initialize
     if (result.second) {
-        pair.second.reset(new HCT::http2_end_point{"http", service, "/ID/accver.resolver"});
+        pair.second.reset(new HCT::http2_end_point{"http", service});
     }
 
     m_LocalEndPoints.insert(pair);
@@ -144,7 +144,7 @@ CBioIdResolutionQueue::CBioIdResolutionQueueItem::CBioIdResolutionQueueItem(cons
     :   m_Request(make_shared<HCT::http2_request>()),
         m_BioId(move(bio_id))
 {
-    m_Request->init_request(SHCT::GetEndPoint(service), afuture, "accver=" + m_BioId.GetId());
+    m_Request->init_request(SHCT::GetEndPoint(service), afuture, "/ID/accver.resolver", "accver=" + m_BioId.GetId());
 }
 
 void CBioIdResolutionQueue::CBioIdResolutionQueueItem::SyncResolve(CBlobId& blob_id, const CDeadline& deadline)

@@ -167,7 +167,6 @@ struct http2_end_point
 {
     std::string schema;
     std::string authority;
-    std::string path;
     generic_error error;
     ~http2_end_point()
     {
