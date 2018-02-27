@@ -820,7 +820,7 @@ void CGBSeqFormatter::FormatPrimary
  IFlatTextOStream& text_os)
 {
     m_Primary = primary.GetString();
-    // s_GBSeqStringCleanup(m_Primary);
+    NStr::ReplaceInPlace(m_Primary, "\n", "~");
     m_NeedPrimary = true;
 }
 
