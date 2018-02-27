@@ -70,9 +70,12 @@ private:
     string m_LookupRemote;
     string m_LookupFileRemote;
     char m_Delimiter;
+    bool m_SaveBlobs = false;
+
     void RemoteLookup(const string& AccVer);
     void RemoteLookupFile(const string& FileName, unsigned int NumThreads);
     void PrintBlobId(const CPSGBlobId& it);
+    void SaveBlob(CPSGBlob& blob);
 public:
     CAccVerCacheApp() :
         m_NumThreads(1),
@@ -90,6 +93,7 @@ public:
         argdesc->AddOptionalKey( "fa",  "falookup", "Lookup accession.version from a file",  CArgDescriptions::eString);
         argdesc->AddOptionalKey( "t",   "threads",  "Number of threads",                    CArgDescriptions::eInteger);
         argdesc->SetConstraint(  "t",   new CArgAllow_Integers(1, 256));
+        argdesc->AddFlag(        "s",               "Save retrieved blobs into files");
         SetupArgDescriptions(argdesc.release());
     }
     void ParseArgs()
@@ -121,6 +125,8 @@ public:
             m_LookupFileRemote = args["fa"].AsString();
         if (args["t"])
             m_NumThreads = args["t"].AsInteger();
+
+        m_SaveBlobs = args["s"];
     }
 
     virtual int Run(void)
@@ -155,6 +161,9 @@ void CAccVerCacheApp::RemoteLookup(const string& AccVer)
 {
     auto blob_id = CPSGBioIdResolutionQueue::Resolve(m_HostPort, AccVer);
     PrintBlobId(blob_id);
+
+    auto blob = CPSGBlobRetrievalQueue::Retrieve(m_HostPort, blob_id);
+    SaveBlob(blob);
 }
 
 void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumThreads)
@@ -289,6 +298,27 @@ void CAccVerCacheApp::PrintBlobId(const CPSGBlobId& it)
             else {
                 cerr << it.GetBioId().GetId() << ": failed to resolve:" << it.GetMessage() << std::endl;
             }
+}
+
+void CAccVerCacheApp::SaveBlob(CPSGBlob& blob)
+{
+    const auto name = blob.GetBlobId().GetBioId().GetId();
+
+    if (blob.GetStatus() != CPSGBlob::eSuccess) {
+        cerr << "Blob '" << name << "' failed to retrieve: " << blob.GetMessage() << std::endl;
+        return;
+    }
+
+    if (!m_SaveBlobs) {
+        cout << "Blob '" << name << "' was successfully retrieved" << std::endl;
+        return;
+    }
+
+    const auto filename = name + ".psg";
+    auto& is = blob.GetStream();
+    ofstream os(filename, ios::binary|ios::out);
+    os << is.rdbuf();
+    cout << "Blob '" << name << "' saved to '" << filename << "'" << std::endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////
