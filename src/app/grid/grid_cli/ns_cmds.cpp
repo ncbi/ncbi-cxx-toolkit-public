@@ -725,46 +725,78 @@ int CGridCommandLineInterfaceApp::Cmd_WatchJob()
     return 0;
 }
 
-int CGridCommandLineInterfaceApp::DumpJobInputOutput(
-    const string& data_or_blob_id)
+static bool s_DumpStdStream(CNcbiIstream& std_stream, FILE* output_stream)
 {
     char buffer[IO_BUFFER_SIZE];
     size_t bytes_read;
 
-    if (IsOptionSet(eRemoteAppStdOut) || IsOptionSet(eRemoteAppStdErr)) {
-        auto_ptr<IReader> reader(new CStringOrBlobStorageReader(data_or_blob_id,
-                m_NetCacheAPI));
+    std_stream.exceptions((ios::iostate) 0);
 
-        auto_ptr<CNcbiIstream> input_stream(new CRStream(reader.release(), 0,
-                0, CRWStreambuf::fOwnReader | CRWStreambuf::fLeakExceptions));
+    while (!std_stream.eof()) {
+        std_stream.read(buffer, sizeof(buffer));
+        if (std_stream.fail() && !std_stream.eof())
+            return false;
+        bytes_read = (size_t) std_stream.gcount();
+
+        // bytes_read could be zero due to EoF reported after read
+        if (bytes_read &&
+                fwrite(buffer, bytes_read, 1, output_stream) != 1)
+            return false;
+    }
+
+    return true;
+}
+
+int CGridCommandLineInterfaceApp::DumpJobInputOutput(
+    const string& data_or_blob_id)
+{
+    auto_ptr<IReader> reader(new CStringOrBlobStorageReader(data_or_blob_id,
+            m_NetCacheAPI));
+
+    if (IsOptionSet(eRemoteAppStdIn)) {
+        CRemoteAppRequest request(m_NetCacheAPI);
+
+        try {
+            auto_ptr<CNcbiIstream> input_stream(new CRStream(reader.release(),
+                    0, 0, CRWStreambuf::fOwnReader |
+                            CRWStreambuf::fLeakExceptions));
+
+            request.Deserialize(*input_stream);
+        }
+        catch (exception&) {
+            fprintf(stderr, GRID_APP_NAME
+                    ": Cannot deserialize remote_app job input.\n");
+            return 3;
+        }
+
+        if (!s_DumpStdStream(request.GetStdInForRead(), m_Opts.output_stream))
+            goto Error;
+
+        return 0;
+    }
+
+    if (IsOptionSet(eRemoteAppStdOut) || IsOptionSet(eRemoteAppStdErr)) {
+        auto_ptr<CNcbiIstream> input_stream(new CRStream(reader.release(),
+                0, 0, CRWStreambuf::fOwnReader |
+                        CRWStreambuf::fLeakExceptions));
 
         CRemoteAppResult remote_app_result(m_NetCacheAPI);
         remote_app_result.Receive(*input_stream);
 
-        CNcbiIstream& std_stream(IsOptionSet(eRemoteAppStdOut) ?
-                remote_app_result.GetStdOut() : remote_app_result.GetStdErr());
+        CNcbiIstream& std_stream = IsOptionSet(eRemoteAppStdOut) ?
+                remote_app_result.GetStdOut() : remote_app_result.GetStdErr();
 
-        std_stream.exceptions((ios::iostate) 0);
-
-        while (!std_stream.eof()) {
-            std_stream.read(buffer, sizeof(buffer));
-            if (std_stream.fail() && !std_stream.eof())
-                goto Error;
-            bytes_read = (size_t) std_stream.gcount();
-
-            // bytes_read could be zero due to EoF reported after read
-            if (bytes_read &&
-                    fwrite(buffer, bytes_read, 1, m_Opts.output_stream) != 1)
-                goto Error;
-        }
+        if (!s_DumpStdStream(std_stream, m_Opts.output_stream))
+            goto Error;
 
         return 0;
     }
 
     try {
-        CStringOrBlobStorageReader reader(data_or_blob_id, m_NetCacheAPI);
+        char buffer[IO_BUFFER_SIZE];
+        size_t bytes_read;
 
-        while (reader.Read(buffer, sizeof(buffer), &bytes_read) != eRW_Eof)
+        while (reader->Read(buffer, sizeof(buffer), &bytes_read) != eRW_Eof)
             if (fwrite(buffer, bytes_read, 1, m_Opts.output_stream) != 1)
                 goto Error;
     }

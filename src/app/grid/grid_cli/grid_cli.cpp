@@ -116,6 +116,11 @@ struct SOptionDefinition {
         REMOTE_APP_ARGS_OPTION, "Submit a remote_app job and "
             "specify its arguments.", {-1}},
 
+    {OPT_DEF(eSwitch, eRemoteAppStdIn),
+        "remote-app-stdin", "Treat the job as a 'remote_app' job "
+            "and extract the standard input stream of the "
+            "remote application.", {-1}},
+
     {OPT_DEF(eSwitch, eRemoteAppStdOut),
         "remote-app-stdout", "Treat the job as a 'remote_app' job "
             "and extract the standard output stream of the "
@@ -823,7 +828,8 @@ struct SCommandDefinition {
         "getjobinput", "Read job input.",
         "Retrieve and print job input to the standard output stream or "
         "save it to a file.",
-        {eID, eNetSchedule, eQueue, eOutputFile, eLoginToken, eAuth,
+        {eID, eNetSchedule, eQueue, eRemoteAppStdIn,
+            eOutputFile, eLoginToken, eAuth,
             eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 

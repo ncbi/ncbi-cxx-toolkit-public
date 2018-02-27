@@ -161,6 +161,7 @@ enum EOption {
     eInput,
     eInputFile,
     eRemoteAppArgs,
+    eRemoteAppStdIn,
     eRemoteAppStdOut,
     eRemoteAppStdErr,
     eOutputFile,
