@@ -245,10 +245,10 @@ class CBlobRetrievalQueue;
 class CBlob
 {
 public:
-    CBlob(CBlobId blob_id);
+    explicit CBlob(CBlobId blob_id) : m_BlobId(move(blob_id)) {}
 
     /// Get retrieved data
-    unique_ptr<istream> GetStream();
+    unique_ptr<istream> GetStream() { return move(m_Stream); }
 
     /// Retrieval result
     /// @sa GetStatus

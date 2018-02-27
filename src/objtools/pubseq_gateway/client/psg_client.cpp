@@ -350,7 +350,216 @@ bool CBioIdResolutionQueue::IsEmpty() const
 }
 
 
+/* CBlobRetrievalQueue::CBlobRetrievalQueueItem */
+
+struct CBlobRetrievalQueue::CBlobRetrievalQueueItem
+{
+    CBlobRetrievalQueueItem(const string& service, shared_ptr<HCT::io_future> afuture, CBlobId blob_id);
+    bool AddRequest(long wait_ms) { return SHCT::GetIoc().add_request(m_Request, wait_ms); }
+    void SyncRetrieve(CBlob& blob, const CDeadline& deadline);
+    void WaitFor(long timeout_ms);
+    void Wait();
+    bool IsDone() const;
+    void Cancel();
+    void PopulateData(CBlob& blob) const;
+    shared_ptr<HCT::http2_request> m_Request;
+    CBlobId m_BlobId;
+};
+
+CBlobRetrievalQueue::CBlobRetrievalQueueItem::CBlobRetrievalQueueItem(const string& service, shared_ptr<HCT::io_future> afuture, CBlobId blob_id)
+    :   m_Request(make_shared<HCT::http2_request>()),
+        m_BlobId(move(blob_id))
+{
+    const auto& id2_blob_id = blob_id.GetID2BlobId();
+    string query("sat=" + to_string(id2_blob_id.sat) + "&sat_key=" + to_string(id2_blob_id.sat_key));
+    m_Request->init_request(SHCT::GetEndPoint(service), afuture, "/ID/getblob", move(query));
+}
+
+void CBlobRetrievalQueue::CBlobRetrievalQueueItem::SyncRetrieve(CBlob& blob, const CDeadline& deadline)
+{
+    bool has_timeout = !deadline.IsInfinite();
+    long wait_ms = has_timeout ? RemainingTimeMs(deadline) : DDRPC::INDEFINITE;
+    bool rv = AddRequest(wait_ms);
+    if (!rv) {
+        blob.m_Status = CBlob::eFailed;
+        blob.m_StatusEx = CBlob::eError;
+        blob.m_Message = "Retriever queue is full";
+        return;
+    }
+    while (true) {
+        if (IsDone()) {
+            PopulateData(blob);
+            return;
+        }
+        if (has_timeout) wait_ms = RemainingTimeMs(deadline);
+        if (wait_ms <= 0) {
+            blob.m_Status = CBlob::eFailed;
+            blob.m_StatusEx = CBlob::eError;
+            blob.m_Message = "Timeout expired";
+            return;
+        }
+        WaitFor(wait_ms);
+    }
+}
+
+void CBlobRetrievalQueue::CBlobRetrievalQueueItem::WaitFor(long timeout_ms)
+{
+    m_Request->get_result_data().wait_for(timeout_ms);
+}
+
+void CBlobRetrievalQueue::CBlobRetrievalQueueItem::Wait()
+{
+    m_Request->get_result_data().wait();
+}
+
+bool CBlobRetrievalQueue::CBlobRetrievalQueueItem::IsDone() const
+{
+    return m_Request->get_result_data().get_finished();
+}
+
+void CBlobRetrievalQueue::CBlobRetrievalQueueItem::Cancel()
+{
+    m_Request->send_cancel();
+}
+
+void CBlobRetrievalQueue::CBlobRetrievalQueueItem::PopulateData(CBlob& blob) const
+{
+    if (m_Request->get_result_data().get_cancelled()) {
+        blob.m_Status = CBlob::eFailed;
+        blob.m_StatusEx = CBlob::eCanceled;
+        blob.m_Message = "Request for retrieval was canceled";
+    }
+    else if (m_Request->has_error()) {
+        blob.m_Status = CBlob::eFailed;
+        blob.m_StatusEx = CBlob::eError;
+        blob.m_Message = m_Request->get_error_description();
+    }
+    else switch (m_Request->get_result_data().get_http_status()) {
+        case 200: {
+            blob.m_Stream.reset(new stringstream(m_Request->get_reply_data_move()));
+            blob.m_Status = CBlob::eRetrieved;
+            blob.m_StatusEx = CBlob::eNone;
+            break;
+        }
+        case 404: {
+            blob.m_Status = CBlob::eFailed;
+            blob.m_StatusEx = CBlob::eNotFound;
+            blob.m_Message = "Blob is not found";
+            break;
+        }
+        default: {
+            blob.m_Status = CBlob::eFailed;
+            blob.m_StatusEx = CBlob::eError;
+            blob.m_Message = "Unexpected result";
+        }
+    }
+
+}
+
 /** CBlobRetrievalQueue */
+
+CBlobRetrievalQueue::CBlobRetrievalQueue(const string& service) :
+    m_Future(make_shared<HCT::io_future>()),
+    m_Service(service)
+{
+}
+
+CBlobRetrievalQueue::~CBlobRetrievalQueue()
+{
+}
+
+void CBlobRetrievalQueue::Retrieve(TBlobIds* blob_ids, const CDeadline& deadline)
+{
+    if (!blob_ids)
+        return;
+    bool has_timeout = !deadline.IsInfinite();
+    unique_lock<mutex> lock(m_ItemsMtx);
+    long wait_ms = 0;
+    auto rev_it = blob_ids->rbegin();
+    while (rev_it != blob_ids->rend()) {
+
+        auto future = static_pointer_cast<HCT::io_future>(m_Future);
+        unique_ptr<CBlobRetrievalQueueItem> qi(new CBlobRetrievalQueueItem(m_Service, future, *rev_it));
+
+        while (true) {
+            bool rv = qi->AddRequest(wait_ms);
+
+            if (!rv) { // internal queue is full
+                if (has_timeout) {
+                    wait_ms = RemainingTimeMs(deadline);
+                    if (wait_ms < 0)
+                        break;
+                }
+                else
+                    wait_ms = DDRPC::INDEFINITE;
+            }
+            else {
+                m_Items.emplace_back(move(qi));
+                blob_ids->erase(next(rev_it.base()));
+                ++rev_it;
+                break;
+            }
+        }
+        if (wait_ms < 0)
+            break;
+    }
+}
+
+CBlob CBlobRetrievalQueue::Retrieve(const string& service, CBlobId blob_id, const CDeadline& deadline)
+{
+    CBlob rv(blob_id);
+    unique_ptr<CBlobRetrievalQueueItem> qi(new CBlobRetrievalQueueItem(service, HCT::io_coordinator::get_tls_future(), move(blob_id)));
+    qi->SyncRetrieve(rv, deadline);
+    return rv;
+}
+
+TBlobs CBlobRetrievalQueue::GetBlobs(const CDeadline& deadline, size_t max_results)
+{
+    TBlobs rv;
+    bool has_limit = max_results != 0;
+    unique_lock<mutex> lock(m_ItemsMtx);
+    if (m_Items.size() > 0) {
+        bool has_timeout = !deadline.IsInfinite();
+        if (has_timeout) {
+            long wait_ms = RemainingTimeMs(deadline);
+            auto& last = m_Items.front();
+            last->WaitFor(wait_ms);
+        }
+        for (auto rev_it = m_Items.rbegin(); rev_it != m_Items.rend(); ++rev_it) {
+            if (has_limit && max_results-- == 0)
+                break;
+            const auto& req = *rev_it;
+            if (req->IsDone()) {
+                auto fw_it = next(rev_it).base();
+                rv.emplace_back(move((*fw_it)->m_BlobId));
+                req->PopulateData(rv.back());
+                m_Items.erase(fw_it);
+            }
+        }
+    }
+    return rv;
+}
+
+void CBlobRetrievalQueue::Clear(TBlobIds* blob_ids)
+{
+    unique_lock<mutex> lock(m_ItemsMtx);
+    if (blob_ids) {
+        blob_ids->clear();
+        blob_ids->reserve(m_Items.size());
+    }
+    for (auto& it : m_Items) {
+        it->Cancel();
+        if (blob_ids)
+            blob_ids->emplace_back(move(it->m_BlobId));
+    }
+    m_Items.clear();
+}
+
+bool CBlobRetrievalQueue::IsEmpty() const
+{
+    unique_lock<mutex> lock(m_ItemsMtx);
+    return m_Items.size() == 0;
+}
 
 
 END_objects_SCOPE
