@@ -72,7 +72,7 @@ private:
     char m_Delimiter;
     void RemoteLookup(const string& AccVer);
     void RemoteLookupFile(const string& FileName, unsigned int NumThreads);
-    void PrintBlobId(const CBlobId& it);
+    void PrintBlobId(const CPSGBlobId& it);
 public:
     CAccVerCacheApp() :
         m_NumThreads(1),
@@ -153,7 +153,7 @@ public:
 
 void CAccVerCacheApp::RemoteLookup(const string& AccVer)
 {
-    auto blob_id = CBioIdResolutionQueue::Resolve(m_HostPort, AccVer);
+    auto blob_id = CPSGBioIdResolutionQueue::Resolve(m_HostPort, AccVer);
     PrintBlobId(blob_id);
 }
 
@@ -161,8 +161,8 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
 {
 
     ifstream infile(FileName);
-    vector<CBioId> src_data_ncbi;
-    vector<CBlobId> rslt_data_ncbi;
+    vector<CPSGBioId> src_data_ncbi;
+    vector<CPSGBlobId> rslt_data_ncbi;
     mutex rslt_data_ncbi_mux;
 
 
@@ -187,7 +187,7 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
         }
 
         {{
-            CBioIdResolutionQueue cq(m_HostPort);
+            CPSGBioIdResolutionQueue cq(m_HostPort);
             vector<unique_ptr<thread, function<void(thread*)>>> threads;
             threads.resize(NumThreads);
             size_t start_index = 0, next_index, i = 0;
@@ -202,8 +202,8 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
 
                         {
                             {
-                                vector<CBioId> srcvec;
-                                vector<CBlobId> l_rslt_data_ncbi;
+                                vector<CPSGBioId> srcvec;
+                                vector<CPSGBlobId> l_rslt_data_ncbi;
 
                                 const unsigned int MAX_SRC_AT_ONCE = 1024;
                                 const unsigned int PUSH_TIMEOUT_MS = 15000;
@@ -217,7 +217,7 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
                                 };
                                 auto pop = [&cq, &l_rslt_data_ncbi, &popped](const CDeadline& deadline = CDeadline(0)) {
                                     try {
-                                        vector<CBlobId> rsltvec = cq.GetBlobIds(deadline);
+                                        vector<CPSGBlobId> rsltvec = cq.GetBlobIds(deadline);
                                         popped += rsltvec.size();
                                         std::move(rsltvec.begin(), rsltvec.end(), std::back_inserter(l_rslt_data_ncbi));
                                     }
@@ -272,9 +272,9 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
     }
 }
 
-void CAccVerCacheApp::PrintBlobId(const CBlobId& it)
+void CAccVerCacheApp::PrintBlobId(const CPSGBlobId& it)
 {
-            if (it.GetStatus() == CBlobId::eResolved) {
+            if (it.GetStatus() == CPSGBlobId::eResolved) {
                 cout
                     << it.GetBioId().GetId() << "||"
                     << it.GetBlobInfo().gi << "|"

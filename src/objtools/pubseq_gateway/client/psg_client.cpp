@@ -48,8 +48,8 @@ BEGIN_NCBI_SCOPE
 constexpr const char ACCVER_RESOLVER_COLUMNS[] = "ACCVER CVARCHAR NOTNULL KEY, GI INT8, LEN UINT4, SAT UINT1, SAT_KEY UINT4, TAXID UINT4, DATE DATETIME, SUPPRESS BIT NOTNULL";
 constexpr const char ACCVER_RESOLVER_SERVICE_ID[] = "ID.RESOLVER.ACCVER.1";
 
-static_assert(is_nothrow_move_constructible<CBioId>::value, "CBioId move constructor must be noexcept");
-static_assert(is_nothrow_move_constructible<CBlobId>::value, "CBlobId move constructor must be noexcept");
+static_assert(is_nothrow_move_constructible<CPSGBioId>::value, "CPSGBioId move constructor must be noexcept");
+static_assert(is_nothrow_move_constructible<CPSGBlobId>::value, "CPSGBlobId move constructor must be noexcept");
 
 namespace {
 
@@ -123,37 +123,37 @@ SHCT::TEndPoint SHCT::x_GetEndPoint(const string& service)
 }
 
 
-/** CBioIdResolutionQueue::CBioIdResolutionQueueItem */
+/** CPSGBioIdResolutionQueue::SItem */
 
-struct CBioIdResolutionQueue::CBioIdResolutionQueueItem
+struct CPSGBioIdResolutionQueue::SItem
 {
-    CBioIdResolutionQueueItem(const string& service, shared_ptr<HCT::io_future> afuture, CBioId bio_id);
+    SItem(const string& service, shared_ptr<HCT::io_future> afuture, CPSGBioId bio_id);
     bool AddRequest(long wait_ms) { return SHCT::GetIoc().add_request(m_Request, wait_ms); }
-    void SyncResolve(CBlobId& blob_id, const CDeadline& deadline);
+    void SyncResolve(CPSGBlobId& blob_id, const CDeadline& deadline);
     void WaitFor(long timeout_ms);
     void Wait();
     bool IsDone() const;
     void Cancel();
-    void PopulateData(CBlobId& blob_id) const;
+    void PopulateData(CPSGBlobId& blob_id) const;
     shared_ptr<HCT::http2_request> m_Request;
-    CBioId m_BioId;
+    CPSGBioId m_BioId;
 };
 
-CBioIdResolutionQueue::CBioIdResolutionQueueItem::CBioIdResolutionQueueItem(const string& service, shared_ptr<HCT::io_future> afuture, CBioId bio_id)
+CPSGBioIdResolutionQueue::SItem::SItem(const string& service, shared_ptr<HCT::io_future> afuture, CPSGBioId bio_id)
     :   m_Request(make_shared<HCT::http2_request>()),
         m_BioId(move(bio_id))
 {
     m_Request->init_request(SHCT::GetEndPoint(service), afuture, "/ID/accver.resolver", "accver=" + m_BioId.GetId());
 }
 
-void CBioIdResolutionQueue::CBioIdResolutionQueueItem::SyncResolve(CBlobId& blob_id, const CDeadline& deadline)
+void CPSGBioIdResolutionQueue::SItem::SyncResolve(CPSGBlobId& blob_id, const CDeadline& deadline)
 {
     bool has_timeout = !deadline.IsInfinite();
     long wait_ms = has_timeout ? RemainingTimeMs(deadline) : DDRPC::INDEFINITE;
     bool rv = AddRequest(wait_ms);
     if (!rv) {
-        blob_id.m_Status = CBlobId::eFailed;
-        blob_id.m_StatusEx = CBlobId::eError;
+        blob_id.m_Status = CPSGBlobId::eFailed;
+        blob_id.m_StatusEx = CPSGBlobId::eError;
         blob_id.m_Message = "Resolver queue is full";
         return;
     }
@@ -164,8 +164,8 @@ void CBioIdResolutionQueue::CBioIdResolutionQueueItem::SyncResolve(CBlobId& blob
         }
         if (has_timeout) wait_ms = RemainingTimeMs(deadline);
         if (wait_ms <= 0) {
-            blob_id.m_Status = CBlobId::eFailed;
-            blob_id.m_StatusEx = CBlobId::eError;
+            blob_id.m_Status = CPSGBlobId::eFailed;
+            blob_id.m_StatusEx = CPSGBlobId::eError;
             blob_id.m_Message = "Timeout expired";
             return;
         }
@@ -173,36 +173,36 @@ void CBioIdResolutionQueue::CBioIdResolutionQueueItem::SyncResolve(CBlobId& blob
     }
 }
 
-void CBioIdResolutionQueue::CBioIdResolutionQueueItem::WaitFor(long timeout_ms)
+void CPSGBioIdResolutionQueue::SItem::WaitFor(long timeout_ms)
 {
     m_Request->get_result_data().wait_for(timeout_ms);
 }
 
-void CBioIdResolutionQueue::CBioIdResolutionQueueItem::Wait()
+void CPSGBioIdResolutionQueue::SItem::Wait()
 {
     m_Request->get_result_data().wait();
 }
 
-bool CBioIdResolutionQueue::CBioIdResolutionQueueItem::IsDone() const
+bool CPSGBioIdResolutionQueue::SItem::IsDone() const
 {
     return m_Request->get_result_data().get_finished();
 }
 
-void CBioIdResolutionQueue::CBioIdResolutionQueueItem::Cancel()
+void CPSGBioIdResolutionQueue::SItem::Cancel()
 {
     m_Request->send_cancel();
 }
 
-void CBioIdResolutionQueue::CBioIdResolutionQueueItem::PopulateData(CBlobId& blob_id) const
+void CPSGBioIdResolutionQueue::SItem::PopulateData(CPSGBlobId& blob_id) const
 {
     if (m_Request->get_result_data().get_cancelled()) {
-        blob_id.m_Status = CBlobId::eFailed;
-        blob_id.m_StatusEx = CBlobId::eCanceled;
+        blob_id.m_Status = CPSGBlobId::eFailed;
+        blob_id.m_StatusEx = CPSGBlobId::eCanceled;
         blob_id.m_Message = "Request for resolution was canceled";
     }
     else if (m_Request->has_error()) {
-        blob_id.m_Status = CBlobId::eFailed;
-        blob_id.m_StatusEx = CBlobId::eError;
+        blob_id.m_Status = CPSGBlobId::eFailed;
+        blob_id.m_StatusEx = CPSGBlobId::eError;
         blob_id.m_Message = m_Request->get_error_description();
     }
     else switch (m_Request->get_result_data().get_http_status()) {
@@ -211,8 +211,8 @@ void CBioIdResolutionQueue::CBioIdResolutionQueueItem::PopulateData(CBlobId& blo
             DDRPC::DataRow rec;
             try {
                 AccVerResolverUnpackData(rec, data);
-                blob_id.m_Status = CBlobId::eResolved;
-                blob_id.m_StatusEx = CBlobId::eNone;
+                blob_id.m_Status = CPSGBlobId::eResolved;
+                blob_id.m_StatusEx = CPSGBlobId::eNone;
                 blob_id.m_BlobInfo.gi          = rec[0].AsUint8;
                 blob_id.m_BlobInfo.seq_length  = rec[1].AsUint4;
                 blob_id.m_BlobInfo.id2.sat     = rec[2].AsUint1;
@@ -222,40 +222,40 @@ void CBioIdResolutionQueue::CBioIdResolutionQueueItem::PopulateData(CBlobId& blo
                 blob_id.m_BlobInfo.state       = rec[6].AsUint1;
             }
             catch (const DDRPC::EDdRpcException& e) {
-                blob_id.m_Status = CBlobId::eFailed;
-                blob_id.m_StatusEx = CBlobId::eError;
+                blob_id.m_Status = CPSGBlobId::eFailed;
+                blob_id.m_StatusEx = CPSGBlobId::eError;
                 blob_id.m_Message = e.what();
             }
             break;
         }
         case 404: {
-            blob_id.m_Status = CBlobId::eFailed;
-            blob_id.m_StatusEx = CBlobId::eNotFound;
+            blob_id.m_Status = CPSGBlobId::eFailed;
+            blob_id.m_StatusEx = CPSGBlobId::eNotFound;
             blob_id.m_Message = "Bio id is not found";
             break;
         }
         default: {
-            blob_id.m_Status = CBlobId::eFailed;
-            blob_id.m_StatusEx = CBlobId::eError;
+            blob_id.m_Status = CPSGBlobId::eFailed;
+            blob_id.m_StatusEx = CPSGBlobId::eError;
             blob_id.m_Message = "Unexpected result";
         }
     }
 
 }
 
-/** CBioIdResolutionQueue */
+/** CPSGBioIdResolutionQueue */
 
-CBioIdResolutionQueue::CBioIdResolutionQueue(const string& service) :
+CPSGBioIdResolutionQueue::CPSGBioIdResolutionQueue(const string& service) :
     m_Future(make_shared<HCT::io_future>()),
     m_Service(service)
 {
 }
 
-CBioIdResolutionQueue::~CBioIdResolutionQueue()
+CPSGBioIdResolutionQueue::~CPSGBioIdResolutionQueue()
 {
 }
 
-void CBioIdResolutionQueue::Resolve(CBioId::TSet* bio_ids, const CDeadline& deadline)
+void CPSGBioIdResolutionQueue::Resolve(CPSGBioId::TSet* bio_ids, const CDeadline& deadline)
 {
     if (!bio_ids)
         return;
@@ -266,7 +266,7 @@ void CBioIdResolutionQueue::Resolve(CBioId::TSet* bio_ids, const CDeadline& dead
     while (rev_it != bio_ids->rend()) {
 
         auto future = static_pointer_cast<HCT::io_future>(m_Future);
-        unique_ptr<CBioIdResolutionQueueItem> qi(new CBioIdResolutionQueueItem(m_Service, future, *rev_it));
+        unique_ptr<SItem> qi(new SItem(m_Service, future, *rev_it));
 
         while (true) {
             bool rv = qi->AddRequest(wait_ms);
@@ -292,17 +292,17 @@ void CBioIdResolutionQueue::Resolve(CBioId::TSet* bio_ids, const CDeadline& dead
     }
 }
 
-CBlobId CBioIdResolutionQueue::Resolve(const string& service, CBioId bio_id, const CDeadline& deadline)
+CPSGBlobId CPSGBioIdResolutionQueue::Resolve(const string& service, CPSGBioId bio_id, const CDeadline& deadline)
 {
-    CBlobId rv(bio_id);
-    unique_ptr<CBioIdResolutionQueueItem> qi(new CBioIdResolutionQueueItem(service, HCT::io_coordinator::get_tls_future(), move(bio_id)));
+    CPSGBlobId rv(bio_id);
+    unique_ptr<SItem> qi(new SItem(service, HCT::io_coordinator::get_tls_future(), move(bio_id)));
     qi->SyncResolve(rv, deadline);
     return rv;
 }
 
-CBlobId::TSet CBioIdResolutionQueue::GetBlobIds(const CDeadline& deadline, size_t max_results)
+CPSGBlobId::TSet CPSGBioIdResolutionQueue::GetBlobIds(const CDeadline& deadline, size_t max_results)
 {
-    CBlobId::TSet rv;
+    CPSGBlobId::TSet rv;
     bool has_limit = max_results != 0;
     unique_lock<mutex> lock(m_ItemsMtx);
     if (m_Items.size() > 0) {
@@ -327,7 +327,7 @@ CBlobId::TSet CBioIdResolutionQueue::GetBlobIds(const CDeadline& deadline, size_
     return rv;
 }
 
-void CBioIdResolutionQueue::Clear(CBioId::TSet* bio_ids)
+void CPSGBioIdResolutionQueue::Clear(CPSGBioId::TSet* bio_ids)
 {
     unique_lock<mutex> lock(m_ItemsMtx);
     if (bio_ids) {
@@ -342,30 +342,30 @@ void CBioIdResolutionQueue::Clear(CBioId::TSet* bio_ids)
     m_Items.clear();
 }
 
-bool CBioIdResolutionQueue::IsEmpty() const
+bool CPSGBioIdResolutionQueue::IsEmpty() const
 {
     unique_lock<mutex> lock(m_ItemsMtx);
     return m_Items.size() == 0;
 }
 
 
-/* CBlobRetrievalQueue::CBlobRetrievalQueueItem */
+/* CPSGBlobRetrievalQueue::SItem */
 
-struct CBlobRetrievalQueue::CBlobRetrievalQueueItem
+struct CPSGBlobRetrievalQueue::SItem
 {
-    CBlobRetrievalQueueItem(const string& service, shared_ptr<HCT::io_future> afuture, CBlobId blob_id);
+    SItem(const string& service, shared_ptr<HCT::io_future> afuture, CPSGBlobId blob_id);
     bool AddRequest(long wait_ms) { return SHCT::GetIoc().add_request(m_Request, wait_ms); }
-    void SyncRetrieve(CBlob& blob, const CDeadline& deadline);
+    void SyncRetrieve(CPSGBlob& blob, const CDeadline& deadline);
     void WaitFor(long timeout_ms);
     void Wait();
     bool IsDone() const;
     void Cancel();
-    void PopulateData(CBlob& blob) const;
+    void PopulateData(CPSGBlob& blob) const;
     shared_ptr<HCT::http2_request> m_Request;
-    CBlobId m_BlobId;
+    CPSGBlobId m_BlobId;
 };
 
-CBlobRetrievalQueue::CBlobRetrievalQueueItem::CBlobRetrievalQueueItem(const string& service, shared_ptr<HCT::io_future> afuture, CBlobId blob_id)
+CPSGBlobRetrievalQueue::SItem::SItem(const string& service, shared_ptr<HCT::io_future> afuture, CPSGBlobId blob_id)
     :   m_Request(make_shared<HCT::http2_request>()),
         m_BlobId(move(blob_id))
 {
@@ -374,14 +374,14 @@ CBlobRetrievalQueue::CBlobRetrievalQueueItem::CBlobRetrievalQueueItem(const stri
     m_Request->init_request(SHCT::GetEndPoint(service), afuture, "/ID/getblob", move(query));
 }
 
-void CBlobRetrievalQueue::CBlobRetrievalQueueItem::SyncRetrieve(CBlob& blob, const CDeadline& deadline)
+void CPSGBlobRetrievalQueue::SItem::SyncRetrieve(CPSGBlob& blob, const CDeadline& deadline)
 {
     bool has_timeout = !deadline.IsInfinite();
     long wait_ms = has_timeout ? RemainingTimeMs(deadline) : DDRPC::INDEFINITE;
     bool rv = AddRequest(wait_ms);
     if (!rv) {
-        blob.m_Status = CBlob::eFailed;
-        blob.m_StatusEx = CBlob::eError;
+        blob.m_Status = CPSGBlob::eFailed;
+        blob.m_StatusEx = CPSGBlob::eError;
         blob.m_Message = "Retriever queue is full";
         return;
     }
@@ -392,8 +392,8 @@ void CBlobRetrievalQueue::CBlobRetrievalQueueItem::SyncRetrieve(CBlob& blob, con
         }
         if (has_timeout) wait_ms = RemainingTimeMs(deadline);
         if (wait_ms <= 0) {
-            blob.m_Status = CBlob::eFailed;
-            blob.m_StatusEx = CBlob::eError;
+            blob.m_Status = CPSGBlob::eFailed;
+            blob.m_StatusEx = CPSGBlob::eError;
             blob.m_Message = "Timeout expired";
             return;
         }
@@ -401,73 +401,73 @@ void CBlobRetrievalQueue::CBlobRetrievalQueueItem::SyncRetrieve(CBlob& blob, con
     }
 }
 
-void CBlobRetrievalQueue::CBlobRetrievalQueueItem::WaitFor(long timeout_ms)
+void CPSGBlobRetrievalQueue::SItem::WaitFor(long timeout_ms)
 {
     m_Request->get_result_data().wait_for(timeout_ms);
 }
 
-void CBlobRetrievalQueue::CBlobRetrievalQueueItem::Wait()
+void CPSGBlobRetrievalQueue::SItem::Wait()
 {
     m_Request->get_result_data().wait();
 }
 
-bool CBlobRetrievalQueue::CBlobRetrievalQueueItem::IsDone() const
+bool CPSGBlobRetrievalQueue::SItem::IsDone() const
 {
     return m_Request->get_result_data().get_finished();
 }
 
-void CBlobRetrievalQueue::CBlobRetrievalQueueItem::Cancel()
+void CPSGBlobRetrievalQueue::SItem::Cancel()
 {
     m_Request->send_cancel();
 }
 
-void CBlobRetrievalQueue::CBlobRetrievalQueueItem::PopulateData(CBlob& blob) const
+void CPSGBlobRetrievalQueue::SItem::PopulateData(CPSGBlob& blob) const
 {
     if (m_Request->get_result_data().get_cancelled()) {
-        blob.m_Status = CBlob::eFailed;
-        blob.m_StatusEx = CBlob::eCanceled;
+        blob.m_Status = CPSGBlob::eFailed;
+        blob.m_StatusEx = CPSGBlob::eCanceled;
         blob.m_Message = "Request for retrieval was canceled";
     }
     else if (m_Request->has_error()) {
-        blob.m_Status = CBlob::eFailed;
-        blob.m_StatusEx = CBlob::eError;
+        blob.m_Status = CPSGBlob::eFailed;
+        blob.m_StatusEx = CPSGBlob::eError;
         blob.m_Message = m_Request->get_error_description();
     }
     else switch (m_Request->get_result_data().get_http_status()) {
         case 200: {
             blob.m_Stream.reset(new stringstream(m_Request->get_reply_data_move()));
-            blob.m_Status = CBlob::eRetrieved;
-            blob.m_StatusEx = CBlob::eNone;
+            blob.m_Status = CPSGBlob::eRetrieved;
+            blob.m_StatusEx = CPSGBlob::eNone;
             break;
         }
         case 404: {
-            blob.m_Status = CBlob::eFailed;
-            blob.m_StatusEx = CBlob::eNotFound;
+            blob.m_Status = CPSGBlob::eFailed;
+            blob.m_StatusEx = CPSGBlob::eNotFound;
             blob.m_Message = "Blob is not found";
             break;
         }
         default: {
-            blob.m_Status = CBlob::eFailed;
-            blob.m_StatusEx = CBlob::eError;
+            blob.m_Status = CPSGBlob::eFailed;
+            blob.m_StatusEx = CPSGBlob::eError;
             blob.m_Message = "Unexpected result";
         }
     }
 
 }
 
-/** CBlobRetrievalQueue */
+/** CPSGBlobRetrievalQueue */
 
-CBlobRetrievalQueue::CBlobRetrievalQueue(const string& service) :
+CPSGBlobRetrievalQueue::CPSGBlobRetrievalQueue(const string& service) :
     m_Future(make_shared<HCT::io_future>()),
     m_Service(service)
 {
 }
 
-CBlobRetrievalQueue::~CBlobRetrievalQueue()
+CPSGBlobRetrievalQueue::~CPSGBlobRetrievalQueue()
 {
 }
 
-void CBlobRetrievalQueue::Retrieve(CBlobId::TSet* blob_ids, const CDeadline& deadline)
+void CPSGBlobRetrievalQueue::Retrieve(CPSGBlobId::TSet* blob_ids, const CDeadline& deadline)
 {
     if (!blob_ids)
         return;
@@ -478,7 +478,7 @@ void CBlobRetrievalQueue::Retrieve(CBlobId::TSet* blob_ids, const CDeadline& dea
     while (rev_it != blob_ids->rend()) {
 
         auto future = static_pointer_cast<HCT::io_future>(m_Future);
-        unique_ptr<CBlobRetrievalQueueItem> qi(new CBlobRetrievalQueueItem(m_Service, future, *rev_it));
+        unique_ptr<SItem> qi(new SItem(m_Service, future, *rev_it));
 
         while (true) {
             bool rv = qi->AddRequest(wait_ms);
@@ -504,17 +504,17 @@ void CBlobRetrievalQueue::Retrieve(CBlobId::TSet* blob_ids, const CDeadline& dea
     }
 }
 
-CBlob CBlobRetrievalQueue::Retrieve(const string& service, CBlobId blob_id, const CDeadline& deadline)
+CPSGBlob CPSGBlobRetrievalQueue::Retrieve(const string& service, CPSGBlobId blob_id, const CDeadline& deadline)
 {
-    CBlob rv(blob_id);
-    unique_ptr<CBlobRetrievalQueueItem> qi(new CBlobRetrievalQueueItem(service, HCT::io_coordinator::get_tls_future(), move(blob_id)));
+    CPSGBlob rv(blob_id);
+    unique_ptr<SItem> qi(new SItem(service, HCT::io_coordinator::get_tls_future(), move(blob_id)));
     qi->SyncRetrieve(rv, deadline);
     return rv;
 }
 
-CBlob::TSet CBlobRetrievalQueue::GetBlobs(const CDeadline& deadline, size_t max_results)
+CPSGBlob::TSet CPSGBlobRetrievalQueue::GetBlobs(const CDeadline& deadline, size_t max_results)
 {
-    CBlob::TSet rv;
+    CPSGBlob::TSet rv;
     bool has_limit = max_results != 0;
     unique_lock<mutex> lock(m_ItemsMtx);
     if (m_Items.size() > 0) {
@@ -539,7 +539,7 @@ CBlob::TSet CBlobRetrievalQueue::GetBlobs(const CDeadline& deadline, size_t max_
     return rv;
 }
 
-void CBlobRetrievalQueue::Clear(CBlobId::TSet* blob_ids)
+void CPSGBlobRetrievalQueue::Clear(CPSGBlobId::TSet* blob_ids)
 {
     unique_lock<mutex> lock(m_ItemsMtx);
     if (blob_ids) {
@@ -554,7 +554,7 @@ void CBlobRetrievalQueue::Clear(CBlobId::TSet* blob_ids)
     m_Items.clear();
 }
 
-bool CBlobRetrievalQueue::IsEmpty() const
+bool CPSGBlobRetrievalQueue::IsEmpty() const
 {
     unique_lock<mutex> lock(m_ItemsMtx);
     return m_Items.size() == 0;
