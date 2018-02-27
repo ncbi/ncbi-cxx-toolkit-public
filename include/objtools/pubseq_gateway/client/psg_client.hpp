@@ -42,7 +42,6 @@
 
 
 BEGIN_NCBI_SCOPE
-BEGIN_objects_SCOPE
 
 
 /// Base class for the user-defined context
@@ -87,6 +86,8 @@ public:
     /// Storage blob id (as accepted by the CBlobRetrieveQueue)
     struct SID2BlobId
     {
+        using CID2_Blob_Id = objects::CID2_Blob_Id;
+
         CID2_Blob_Id::TSat     sat = 0;
         CID2_Blob_Id::TSat_key sat_key = 0;
         CID2_Blob_Id::TVersion version = 0;
@@ -100,6 +101,8 @@ public:
     /// Blob storage location and other attributes
     struct SBlobInfo
     {
+        using CID2_Reply_Get_Blob_Id = objects::CID2_Reply_Get_Blob_Id;
+
         SID2BlobId                           id2_blob_id;
         CID2_Reply_Get_Blob_Id::TBlob_state  state = 0;
         TGi                                  gi = 0;          // informational only
@@ -376,7 +379,6 @@ private:
 };
 
 
-END_objects_SCOPE
 END_NCBI_SCOPE
 
 

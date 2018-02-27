@@ -43,7 +43,6 @@
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_objects_SCOPE
 
 
 constexpr const char ACCVER_RESOLVER_COLUMNS[] = "ACCVER CVARCHAR NOTNULL KEY, GI INT8, LEN UINT4, SAT UINT1, SAT_KEY UINT4, TAXID UINT4, DATE DATETIME, SUPPRESS BIT NOTNULL";
@@ -562,5 +561,4 @@ bool CBlobRetrievalQueue::IsEmpty() const
 }
 
 
-END_objects_SCOPE
 END_NCBI_SCOPE
