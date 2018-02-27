@@ -74,8 +74,8 @@ private:
 
     void RemoteLookup(const string& AccVer);
     void RemoteLookupFile(const string& FileName, unsigned int NumThreads);
-    void PrintBlobId(const CPSGBlobId& it);
-    void SaveBlob(CPSGBlob& blob);
+    void PrintBlobId(const CPSG_BlobId& it);
+    void SaveBlob(CPSG_Blob& blob);
 public:
     CAccVerCacheApp() :
         m_NumThreads(1),
@@ -159,10 +159,10 @@ public:
 
 void CAccVerCacheApp::RemoteLookup(const string& AccVer)
 {
-    auto blob_id = CPSGBioIdResolutionQueue::Resolve(m_HostPort, AccVer);
+    auto blob_id = CPSG_BioIdResolutionQueue::Resolve(m_HostPort, AccVer);
     PrintBlobId(blob_id);
 
-    auto blob = CPSGBlobRetrievalQueue::Retrieve(m_HostPort, blob_id);
+    auto blob = CPSG_BlobRetrievalQueue::Retrieve(m_HostPort, blob_id);
     SaveBlob(blob);
 }
 
@@ -170,8 +170,8 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
 {
 
     ifstream infile(FileName);
-    vector<CPSGBioId> src_data_ncbi;
-    vector<CPSGBlobId> rslt_data_ncbi;
+    TPSG_BioIds src_data_ncbi;
+    TPSG_BlobIds rslt_data_ncbi;
     mutex rslt_data_ncbi_mux;
 
 
@@ -196,7 +196,7 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
         }
 
         {{
-            CPSGBioIdResolutionQueue cq(m_HostPort);
+            CPSG_BioIdResolutionQueue cq(m_HostPort);
             vector<unique_ptr<thread, function<void(thread*)>>> threads;
             threads.resize(NumThreads);
             size_t start_index = 0, next_index, i = 0;
@@ -211,8 +211,8 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
 
                         {
                             {
-                                vector<CPSGBioId> srcvec;
-                                vector<CPSGBlobId> l_rslt_data_ncbi;
+                                TPSG_BioIds srcvec;
+                                TPSG_BlobIds l_rslt_data_ncbi;
 
                                 const unsigned int MAX_SRC_AT_ONCE = 1024;
                                 const unsigned int PUSH_TIMEOUT_MS = 15000;
@@ -226,7 +226,7 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
                                 };
                                 auto pop = [&cq, &l_rslt_data_ncbi, &popped](const CDeadline& deadline = CDeadline(0)) {
                                     try {
-                                        vector<CPSGBlobId> rsltvec = cq.GetBlobIds(deadline);
+                                        TPSG_BlobIds rsltvec = cq.GetBlobIds(deadline);
                                         popped += rsltvec.size();
                                         std::move(rsltvec.begin(), rsltvec.end(), std::back_inserter(l_rslt_data_ncbi));
                                     }
@@ -281,15 +281,15 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
     }
 }
 
-void CAccVerCacheApp::PrintBlobId(const CPSGBlobId& it)
+void CAccVerCacheApp::PrintBlobId(const CPSG_BlobId& it)
 {
-            if (it.GetStatus() == CPSGBlobId::eSuccess) {
+            if (it.GetStatus() == CPSG_BlobId::eSuccess) {
                 cout
                     << it.GetBioId().GetId() << "||"
                     << it.GetBlobInfo().gi << "|"
                     << it.GetBlobInfo().seq_length << "|"
-                    << it.GetBlobInfo().id2.sat << "|"
-                    << it.GetBlobInfo().id2.sat_key << "|"
+                    << it.GetBlobInfo().sat << "|"
+                    << it.GetBlobInfo().sat_key << "|"
                     << it.GetBlobInfo().tax_id << "|"
                     << (it.GetBlobInfo().date_queued ? CTime(it.GetBlobInfo().date_queued).AsString() : "") << "|"
                     << it.GetBlobInfo().state << "|"
@@ -300,11 +300,11 @@ void CAccVerCacheApp::PrintBlobId(const CPSGBlobId& it)
             }
 }
 
-void CAccVerCacheApp::SaveBlob(CPSGBlob& blob)
+void CAccVerCacheApp::SaveBlob(CPSG_Blob& blob)
 {
     const auto name = blob.GetBlobId().GetBioId().GetId();
 
-    if (blob.GetStatus() != CPSGBlob::eSuccess) {
+    if (blob.GetStatus() != CPSG_Blob::eSuccess) {
         cerr << "Blob '" << name << "' failed to retrieve: " << blob.GetMessage() << std::endl;
         return;
     }
