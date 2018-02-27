@@ -4244,17 +4244,18 @@ bool CCleanup::ParseCodeBreak(const CSeq_feat& feat, CCdregion& cds, const strin
     }
 
     break_loc = ReadLocFromText(pos, feat_loc_seq_id, &scope);
-    if (FIELD_IS_SET(feat.GetLocation(), Strand) && GET_FIELD(feat.GetLocation(), Strand) == eNa_strand_minus) {
-        break_loc->SetStrand(GET_FIELD(feat.GetLocation(), Strand));
-    } else {
-        RESET_FIELD(*break_loc, Strand);
-    }
 
     if (break_loc == NULL
         || (break_loc->IsInt()
         && sequence::Compare(*break_loc, feat.GetLocation(), &scope, sequence::fCompareOverlapping) != sequence::eContained)
         || (break_loc->IsInt() && sequence::GetLength(*break_loc, &scope) > 3)) {
         return false;
+    }
+
+    if (FIELD_IS_SET(feat.GetLocation(), Strand) && GET_FIELD(feat.GetLocation(), Strand) == eNa_strand_minus) {
+        break_loc->SetStrand(GET_FIELD(feat.GetLocation(), Strand));
+    } else {
+        RESET_FIELD(*break_loc, Strand);
     }
 
     // need to build code break object and add it to coding region
