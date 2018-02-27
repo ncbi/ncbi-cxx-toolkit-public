@@ -213,13 +213,13 @@ void CBioIdResolutionQueue::CBioIdResolutionQueueItem::PopulateData(CBlobId& blo
                 AccVerResolverUnpackData(rec, data);
                 blob_id.m_Status = CBlobId::eResolved;
                 blob_id.m_StatusEx = CBlobId::eNone;
-                blob_id.m_BlobInfo.gi              = rec[0].AsUint8;
-                blob_id.m_BlobInfo.seq_length      = rec[1].AsUint4;
-                blob_id.m_BlobInfo.id2_blob_id.sat     = rec[2].AsUint1;
-                blob_id.m_BlobInfo.id2_blob_id.sat_key = rec[3].AsUint4;
-                blob_id.m_BlobInfo.tax_id          = rec[4].AsUint4;
-                blob_id.m_BlobInfo.date_queued     = rec[5].AsDateTime;
-                blob_id.m_BlobInfo.state           = rec[6].AsUint1;
+                blob_id.m_BlobInfo.gi          = rec[0].AsUint8;
+                blob_id.m_BlobInfo.seq_length  = rec[1].AsUint4;
+                blob_id.m_BlobInfo.id2.sat     = rec[2].AsUint1;
+                blob_id.m_BlobInfo.id2.sat_key = rec[3].AsUint4;
+                blob_id.m_BlobInfo.tax_id      = rec[4].AsUint4;
+                blob_id.m_BlobInfo.date_queued = rec[5].AsDateTime;
+                blob_id.m_BlobInfo.state       = rec[6].AsUint1;
             }
             catch (const DDRPC::EDdRpcException& e) {
                 blob_id.m_Status = CBlobId::eFailed;
@@ -255,7 +255,7 @@ CBioIdResolutionQueue::~CBioIdResolutionQueue()
 {
 }
 
-void CBioIdResolutionQueue::Resolve(TBioIds* bio_ids, const CDeadline& deadline)
+void CBioIdResolutionQueue::Resolve(CBioId::TSet* bio_ids, const CDeadline& deadline)
 {
     if (!bio_ids)
         return;
@@ -300,9 +300,9 @@ CBlobId CBioIdResolutionQueue::Resolve(const string& service, CBioId bio_id, con
     return rv;
 }
 
-TBlobIds CBioIdResolutionQueue::GetBlobIds(const CDeadline& deadline, size_t max_results)
+CBlobId::TSet CBioIdResolutionQueue::GetBlobIds(const CDeadline& deadline, size_t max_results)
 {
-    TBlobIds rv;
+    CBlobId::TSet rv;
     bool has_limit = max_results != 0;
     unique_lock<mutex> lock(m_ItemsMtx);
     if (m_Items.size() > 0) {
@@ -327,7 +327,7 @@ TBlobIds CBioIdResolutionQueue::GetBlobIds(const CDeadline& deadline, size_t max
     return rv;
 }
 
-void CBioIdResolutionQueue::Clear(TBioIds* bio_ids)
+void CBioIdResolutionQueue::Clear(CBioId::TSet* bio_ids)
 {
     unique_lock<mutex> lock(m_ItemsMtx);
     if (bio_ids) {
@@ -369,8 +369,8 @@ CBlobRetrievalQueue::CBlobRetrievalQueueItem::CBlobRetrievalQueueItem(const stri
     :   m_Request(make_shared<HCT::http2_request>()),
         m_BlobId(move(blob_id))
 {
-    const auto& id2_blob_id = blob_id.GetID2BlobId();
-    string query("sat=" + to_string(id2_blob_id.sat) + "&sat_key=" + to_string(id2_blob_id.sat_key));
+    const auto& id2 = blob_id.GetBlobInfo().id2;
+    string query("sat=" + to_string(id2.sat) + "&sat_key=" + to_string(id2.sat_key));
     m_Request->init_request(SHCT::GetEndPoint(service), afuture, "/ID/getblob", move(query));
 }
 
@@ -467,7 +467,7 @@ CBlobRetrievalQueue::~CBlobRetrievalQueue()
 {
 }
 
-void CBlobRetrievalQueue::Retrieve(TBlobIds* blob_ids, const CDeadline& deadline)
+void CBlobRetrievalQueue::Retrieve(CBlobId::TSet* blob_ids, const CDeadline& deadline)
 {
     if (!blob_ids)
         return;
@@ -512,9 +512,9 @@ CBlob CBlobRetrievalQueue::Retrieve(const string& service, CBlobId blob_id, cons
     return rv;
 }
 
-TBlobs CBlobRetrievalQueue::GetBlobs(const CDeadline& deadline, size_t max_results)
+CBlob::TSet CBlobRetrievalQueue::GetBlobs(const CDeadline& deadline, size_t max_results)
 {
-    TBlobs rv;
+    CBlob::TSet rv;
     bool has_limit = max_results != 0;
     unique_lock<mutex> lock(m_ItemsMtx);
     if (m_Items.size() > 0) {
@@ -539,7 +539,7 @@ TBlobs CBlobRetrievalQueue::GetBlobs(const CDeadline& deadline, size_t max_resul
     return rv;
 }
 
-void CBlobRetrievalQueue::Clear(TBlobIds* blob_ids)
+void CBlobRetrievalQueue::Clear(CBlobId::TSet* blob_ids)
 {
     unique_lock<mutex> lock(m_ItemsMtx);
     if (blob_ids) {

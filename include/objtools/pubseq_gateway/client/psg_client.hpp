@@ -44,13 +44,8 @@
 BEGIN_NCBI_SCOPE
 
 
-/// Base class for the user-defined context
-///
-class IBioIdContext
-{
-public:
-    virtual ~IBioIdContext() {}
-};
+class CBioIdResolutionQueue;
+class CBlobRetrievalQueue;
 
 
 /// Bio-id + context
@@ -58,21 +53,23 @@ public:
 class CBioId
 {
 public:
-    CBioId(string id, IBioIdContext* ctx = nullptr)
+    using TSet = vector<CBioId>;
+
+    struct IContext
+    {
+        virtual ~IContext() {}
+    };
+
+    CBioId(string id, IContext* ctx = nullptr)
         : m_Id(move(id)), m_Context(ctx) {}
 
     const string& GetId() const { return m_Id; }
-    const IBioIdContext* GetContext() const  { return m_Context; }
+    const IContext* GetContext() const  { return m_Context; }
 
 private:
-    string         m_Id;
-    IBioIdContext* m_Context;
+    string    m_Id;
+    IContext* m_Context;
 };
-
-using TBioIds = vector<CBioId>;
-
-
-class CBioIdResolutionQueue;
 
 
 /// The generic part of the results of id resolution.
@@ -80,27 +77,20 @@ class CBioIdResolutionQueue;
 class CBlobId
 {
 public:
-    /// Storage blob id (as accepted by the CBlobRetrieveQueue)
-    struct SID2BlobId
-    {
-        using CID2_Blob_Id = objects::CID2_Blob_Id;
-
-        CID2_Blob_Id::TSat     sat = 0;
-        CID2_Blob_Id::TSat_key sat_key = 0;
-        CID2_Blob_Id::TVersion version = 0;
-    };
-
-    /// Get storage blob id (as accepted by the CBlobRetrieveQueue)
-    /// @throw
-    ///  If not in "eResolved" state
-    const SID2BlobId& GetID2BlobId() const { return m_BlobInfo.id2_blob_id; }
+    using TSet = vector<CBlobId>;
 
     /// Blob storage location and other attributes
     struct SBlobInfo
     {
+        using CID2_Blob_Id = objects::CID2_Blob_Id;
         using CID2_Reply_Get_Blob_Id = objects::CID2_Reply_Get_Blob_Id;
 
-        SID2BlobId                           id2_blob_id;
+        struct
+        {
+            CID2_Blob_Id::TSat     sat = 0;
+            CID2_Blob_Id::TSat_key sat_key = 0;
+        } id2;
+
         CID2_Reply_Get_Blob_Id::TBlob_state  state = 0;
         TGi                                  gi = 0;          // informational only
         time_t                               date_queued = 0; // informational only
@@ -155,8 +145,6 @@ private:
     friend class CBioIdResolutionQueue;
 };
 
-using TBlobIds = vector<CBlobId>;
-
 
 /// A queue to resolve "biological" blob ids (such as accessions) into the
 /// storage specific blob ids.
@@ -190,7 +178,7 @@ public:
     ///  into the queue will be removed from the "bio_ids" container.
     /// @param deadline
     ///  For how long to try to push the bio-ids into the queue.
-    void Resolve(TBioIds* bio_ids, const CDeadline& deadline = 0);
+    void Resolve(CBioId::TSet* bio_ids, const CDeadline& deadline = 0);
 
     /// Perform signle bio-ids resolution
     /// @note
@@ -213,7 +201,7 @@ public:
     ///  List of id resolution results
     /// @throw
     ///  If unrecoverable retrieval error has been detected.
-    TBlobIds GetBlobIds(const CDeadline& deadline = 0, size_t max_results = 0);
+    CBlobId::TSet GetBlobIds(const CDeadline& deadline = 0, size_t max_results = 0);
 
     /// Cancel all ongoing retrievals and return all not yet resolved bio-ids.
     /// You can continue working with the queue after that in a usual manner.
@@ -222,7 +210,7 @@ public:
     /// @param bio_ids
     ///  The not yet resolved bio-ids will be added to "bio_ids". If "bio_ids"
     ///  is NULL, then they be discarded.
-    void Clear(TBioIds* bio_ids);
+    void Clear(CBioId::TSet* bio_ids);
 
     /// Returns true if Queue has finished all resolutions
     /// and all items have been fetched or nothing was added for resolution at all
@@ -238,14 +226,13 @@ private:
 };
 
 
-class CBlobRetrievalQueue;
-
-
 /// Blob that is ready to get its data retrieved
 ///
 class CBlob
 {
 public:
+    using TSet = vector<CBlob>;
+
     /// Get retrieved data
     unique_ptr<istream> GetStream() { return move(m_Stream); }
 
@@ -291,8 +278,6 @@ private:
     friend class CBlobRetrievalQueue;
 };
 
-using TBlobs = vector<CBlob>;
-
 
 /// A queue to retrieve blob data from the storage.
 ///
@@ -326,7 +311,7 @@ public:
     ///  into the queue will be removed from the "blob_ids" container.
     /// @param deadline
     ///  For how long to try to push the blob-ids into the queue.
-    void Retrieve(TBlobIds* blob_ids, const CDeadline& deadline = 0);
+    void Retrieve(CBlobId::TSet* blob_ids, const CDeadline& deadline = 0);
 
     /// Perform single blob retrieval
     /// @note
@@ -350,7 +335,7 @@ public:
     ///  List of blobs available for retrieval
     /// @throw
     ///  If unrecoverable retrieval error has been detected.
-    TBlobs GetBlobs(const CDeadline& deadline = 0, size_t max_results = 0);
+    CBlob::TSet GetBlobs(const CDeadline& deadline = 0, size_t max_results = 0);
 
     /// Cancel all ongoing retrievals and return all blob-ids
     /// for which there is no ready-to-retrieve blob obtained yet.
@@ -360,7 +345,7 @@ public:
     /// @param blob_ids
     ///  The blob-ids for which no retrievable blobs have yet been obtained will
     ///  be added to "blob_ids". If "blob_ids" is NULL, then they be discarded.
-    void Clear(TBlobIds* blob_ids);
+    void Clear(CBlobId::TSet* blob_ids);
 
     /// Returns true if Queue has finished all retrieval work
     /// and all items have been fetched or nothing was added for retrieval at all
