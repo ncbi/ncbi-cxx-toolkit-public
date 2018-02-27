@@ -40,8 +40,8 @@
 
 #include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
 #include <objtools/pubseq_gateway/impl/diag/AppPerf.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/CassBlobOp.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/CassFactory.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 
 #include <objtools/pubseq_gateway/impl/rpc/DdRpcDataPacker.hpp>
 

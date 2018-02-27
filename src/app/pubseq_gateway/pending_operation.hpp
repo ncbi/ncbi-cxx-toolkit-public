@@ -36,8 +36,8 @@
 #include <memory>
 using namespace std;
 
-#include <objtools/pubseq_gateway/impl/cassandra/CassBlobOp.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/CassFactory.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 USING_IDBLOB_SCOPE;
 
 #include "http_server_transport.hpp"
