@@ -1,0 +1,243 @@
+Seq-annot ::= {
+  id {
+    local str "Contig001"
+  },
+  data ftable {
+    {
+      id local id 1,
+      data region "",
+      location int {
+        from 7,
+        to 1066,
+        strand minus,
+        id local str "Contig001"
+      }
+    },
+    {
+      id local id 2,
+      data imp {
+        key "C_region"
+      },
+      location int {
+        from 9,
+        to 1066,
+        strand minus,
+        id local str "Contig001"
+      }
+    },
+    {
+      id local id 3,
+      data region "",
+      location int {
+        from 10,
+        to 1066,
+        strand minus,
+        id local str "Contig001"
+      }
+    },
+    {
+      id local id 4,
+      data imp {
+        key "source"
+      },
+      location int {
+        from 0,
+        to 1066,
+        strand minus,
+        id local str "Contig001"
+      }
+    },
+    {
+      id local id 5,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 62,
+        to 1066,
+        strand minus,
+        id local str "Contig001"
+      },
+      qual {
+        {
+          qual "protein_id",
+          val "gnl|LT|2701068364"
+        },
+        {
+          qual "transcript_id",
+          val "gnl|LT|mrna.2701068364"
+        }
+      },
+      xref {
+        {
+          id local str "auto000001"
+        },
+        {
+          data prot {
+            name {
+              "hypothetical protein"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 6,
+      data region "",
+      location int {
+        from 22679,
+        to 22750,
+        strand minus,
+        id local str "Contig001"
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Gly"
+        }
+      }
+    },
+    {
+      id local id 7,
+      data region "",
+      location int {
+        from 90962,
+        to 91050,
+        strand minus,
+        id local str "Contig001"
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Ser"
+        }
+      }
+    },
+    {
+      id local id 8,
+      data rna {
+        type tmRNA,
+        ext gen {
+          product "transfer-messenger RNA"
+        }
+      },
+      location int {
+        from 154678,
+        to 154962,
+        strand minus,
+        id local str "Contig001"
+      },
+      xref {
+        {
+          id local str "auto000002"
+        }
+      }
+    },
+    {
+      id local id 9,
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 77
+        }
+      },
+      location int {
+        from 176533,
+        to 176606,
+        strand plus,
+        id local str "Contig001"
+      },
+      xref {
+        {
+          id local str "auto000003"
+        }
+      }
+    },
+    {
+      id local id 10,
+      data rna {
+        type rRNA,
+        ext name "16S ribosomal RNA"
+      },
+      location int {
+        from 176656,
+        to 177018,
+        strand plus,
+        id local str "Contig001"
+      },
+      xref {
+        {
+          id local str "auto000004"
+        }
+      }
+    },
+    {
+      id local str "auto000001",
+      data gene {
+        locus-tag "LT_000001"
+      },
+      location int {
+        from 62,
+        to 1066,
+        strand minus,
+        id local str "Contig001"
+      },
+      xref {
+        {
+          id local id 5
+        }
+      }
+    },
+    {
+      id local str "auto000002",
+      data gene {
+        locus-tag "LT_000002"
+      },
+      location int {
+        from 154678,
+        to 154962,
+        strand minus,
+        id local str "Contig001"
+      },
+      xref {
+        {
+          id local id 8
+        }
+      }
+    },
+    {
+      id local str "auto000003",
+      data gene {
+        locus-tag "LT_000003"
+      },
+      location int {
+        from 176533,
+        to 176606,
+        strand plus,
+        id local str "Contig001"
+      },
+      xref {
+        {
+          id local id 9
+        }
+      }
+    },
+    {
+      id local str "auto000004",
+      data gene {
+        locus-tag "LT_000004"
+      },
+      location int {
+        from 176656,
+        to 177018,
+        strand plus,
+        id local str "Contig001"
+      },
+      xref {
+        {
+          id local id 10
+        }
+      }
+    }
+  }
+}
