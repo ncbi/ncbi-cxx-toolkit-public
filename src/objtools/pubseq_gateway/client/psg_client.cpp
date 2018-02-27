@@ -45,11 +45,9 @@
 BEGIN_NCBI_SCOPE
 
 
-constexpr const char ACCVER_RESOLVER_COLUMNS[] = "ACCVER CVARCHAR NOTNULL KEY, GI INT8, LEN UINT4, SAT UINT1, SAT_KEY UINT4, TAXID UINT4, DATE DATETIME, SUPPRESS BIT NOTNULL";
-constexpr const char ACCVER_RESOLVER_SERVICE_ID[] = "ID.RESOLVER.ACCVER.1";
-
 static_assert(is_nothrow_move_constructible<CPSGBioId>::value, "CPSGBioId move constructor must be noexcept");
 static_assert(is_nothrow_move_constructible<CPSGBlobId>::value, "CPSGBlobId move constructor must be noexcept");
+static_assert(is_nothrow_move_constructible<CPSGBlob>::value, "CPSGBlob move constructor must be noexcept");
 
 namespace {
 
@@ -64,9 +62,19 @@ static thread_local unique_ptr<DDRPC::DataColumns> s_accver_resolver_data_column
 
 void AccVerResolverUnpackData(DDRPC::DataRow& row, const string& data)
 {
+    constexpr const char kACCVER_RESOLVER_COLUMNS[] =
+        "ACCVER "   "CVARCHAR NOTNULL KEY, "
+        "GI "       "INT8, "
+        "LEN "      "UINT4, "
+        "SAT "      "UINT1, "
+        "SAT_KEY "  "UINT4, "
+        "TAXID "    "UINT4, "
+        "DATE "     "DATETIME, "
+        "SUPPRESS " "BIT NOTNULL";
+
     if (!s_accver_resolver_data_columns) {
         DDRPC::DataColumns clm;
-        clm.AssignAsText(ACCVER_RESOLVER_COLUMNS);
+        clm.AssignAsText(kACCVER_RESOLVER_COLUMNS);
         s_accver_resolver_data_columns.reset(new DDRPC::DataColumns(clm.ExtractDataColumns()));
     }
     row.Unpack(data, false, *s_accver_resolver_data_columns);

@@ -234,7 +234,7 @@ public:
     using TSet = vector<CPSGBlob>;
 
     /// Get retrieved data
-    unique_ptr<istream> GetStream() { return move(m_Stream); }
+    istream& GetStream() { return *m_Stream; }
 
     /// Retrieval result
     /// @sa GetStatus
