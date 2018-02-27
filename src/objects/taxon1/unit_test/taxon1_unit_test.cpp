@@ -631,6 +631,12 @@ BOOST_AUTO_TEST_CASE(test_tax1e_needUpdate)
     BOOST_REQUIRE( b == true );
     BOOST_REQUIRE( (status&CTaxon1::eStatus_WrongOrgname) != 0 );
 
+    status = 0;
+    CConstRef< CTaxon2_data > orpb = tax1.LookupMerge( *orp, 0, &status );
+    cout << status << endl;
+    BOOST_REQUIRE( orpb.GetPointer() != NULL );
+    BOOST_REQUIRE( (status&CTaxon1::eStatus_WrongOrgname) != 0 );
+
     orp = s_String2OrgRef( NStr::Replace( orgref, "human", "dog" ) );
     b = tax1.CheckOrgRef( *orp, status );
     cout << status << endl;

@@ -109,6 +109,7 @@ public:
     ///
     bool GetScientificName(TTaxId tax_id, string& name_out);
 
+    typedef unsigned TOrgRefStatus;
     //----------------------------------------------
     // Get organism data by OrgRef
     // Returns: pointer to Taxon2Data if organism exists
@@ -123,7 +124,7 @@ public:
     //    nodes found by name then resulting node is chosen by tax_id).
     // 2. LookupMerge function modifies given OrgRef to correspond to the
     //    found one and returns constant pointer to the Taxon2Data structure
-    //    stored internally.
+    //    stored internally. It also fills the org-ref status output parameter when provided.
     // 3. If non-null pointer psLog specified, then lookup log string is returned.
     //    The latter has following format: each operation record begins with <
     //    and ends with >, fields inside record are delimited with |, first field
@@ -133,7 +134,7 @@ public:
     //    fifth field is comment text.
     ///
     CRef< CTaxon2_data > Lookup(const COrg_ref& inp_orgRef, string* psLog = 0);
-    CConstRef< CTaxon2_data > LookupMerge(COrg_ref& inp_orgRef, string* psLog = 0);
+    CConstRef< CTaxon2_data > LookupMerge(COrg_ref& inp_orgRef, string* psLog = 0, TOrgRefStatus* pStatusOut = 0);
 
     //-----------------------------------------------
     // Get tax_id by OrgRef
@@ -169,7 +170,6 @@ public:
 	eStatus_WrongModOldname      = COrg_ref::eOrgref_on_mod_oldname,
 	eStatus_WrongModTypeMaterial = COrg_ref::eOrgref_on_mod_tm
     };
-    typedef unsigned TOrgRefStatus;
     //-----------------------------------------------
     // Checks whether OrgRef is current
     // Returns: false on any error, stat_out filled with status flags

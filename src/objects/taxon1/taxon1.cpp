@@ -426,7 +426,7 @@ CTaxon1::Lookup(const COrg_ref& inp_orgRef, string* psLog)
 }
 
 CConstRef< CTaxon2_data >
-CTaxon1::LookupMerge(COrg_ref& inp_orgRef, string* psLog)
+CTaxon1::LookupMerge(COrg_ref& inp_orgRef, string* psLog, TOrgRefStatus* pStatusOut)
 {
     //CTaxon2_data* pData = 0;
 
@@ -458,7 +458,10 @@ CTaxon1::LookupMerge(COrg_ref& inp_orgRef, string* psLog)
 	    pData.Reset( new CTaxon2_data() );
 	    
             SerialAssign< COrg_ref >( pData->SetOrg(), resp.GetLookup().GetOrg() );
-	    x_ConvertOrgrefProps( *pData );
+	    TOrgRefStatus stat_out = x_ConvertOrgrefProps( *pData );
+	    if( pStatusOut ) {
+		*pStatusOut = stat_out;
+	    }
             if( psLog ) {
                 pData->GetProperty( "log", *psLog );
             }
