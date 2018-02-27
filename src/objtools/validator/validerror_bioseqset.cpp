@@ -661,6 +661,9 @@ void CValidError_bioseqset::SetShouldNotHaveMolInfo(const CBioseq_set& seqset)
         case CBioseq_set::eClass_small_genome_set:
             class_name = "Small genome set";
             break;
+        case CBioseq_set::eClass_nuc_prot:
+            class_name = "Nuc-prot set";
+            break;
         default:
             return;
             break;

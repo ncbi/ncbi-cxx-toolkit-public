@@ -10642,7 +10642,30 @@ BOOST_AUTO_TEST_CASE(Test_PKG_OrphanedProtein)
 
 BOOST_AUTO_TEST_CASE(Test_PKG_MisplacedMolInfo)
 {
-    
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeqdesc> molinfo(new CSeqdesc());
+    molinfo->SetMolinfo().SetTech(CMolInfo::eTech_wgs);
+    entry->SetSet().SetDescr().Set().push_back(molinfo);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "MisplacedMolInfo",
+            "Nuc-prot set has MolInfo on set"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "ConflictingBiomolTech",
+        "HTGS/STS/GSS/WGS sequence should be genomic"));
+    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Error, "InvalidForType",
+        "Protein with nucleic acid sequence method"));
+    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Error, "ConflictingBiomolTech",
+        "HTGS/STS/GSS/WGS sequence should be genomic"));
+    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Error, "InconsistentMolInfo",
+        "Inconsistent Molinfo-completeness [1] and [0]"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "InvalidForType",
+        "Molinfo-biomol unknown used"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 }
 
 
