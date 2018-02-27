@@ -74,8 +74,8 @@ private:
     mutex m_CoutMutex;
     mutex m_CerrMutex;
 
-    void RemoteLookup(const string& AccVer);
-    void RemoteLookupFile(const string& FileName, unsigned int NumThreads);
+    void RemoteLookup();
+    void RemoteLookupFile();
     void PrintBlobId(const CPSG_BlobId& blob_id);
     void SaveBlob(CPSG_Blob& blob);
 public:
@@ -137,10 +137,10 @@ public:
         try {
             ParseArgs();
             if (!m_LookupRemote.empty()) {
-                RemoteLookup(m_LookupRemote);
+                RemoteLookup();
             }
             else if (!m_LookupFileRemote.empty()) {
-                RemoteLookupFile(m_LookupFileRemote, m_NumThreads);
+                RemoteLookupFile();
             }
         }
         catch(const CException& e) {
@@ -159,25 +159,25 @@ public:
     }
 };
 
-void CAccVerCacheApp::RemoteLookup(const string& AccVer)
+void CAccVerCacheApp::RemoteLookup()
 {
-    auto blob_id = CPSG_BioIdResolutionQueue::Resolve(m_HostPort, AccVer);
+    auto blob_id = CPSG_BioIdResolutionQueue::Resolve(m_HostPort, m_LookupRemote);
     PrintBlobId(blob_id);
 
     auto blob = CPSG_BlobRetrievalQueue::Retrieve(m_HostPort, blob_id);
     SaveBlob(blob);
 }
 
-void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumThreads)
+void CAccVerCacheApp::RemoteLookupFile()
 {
 
-    ifstream infile(FileName);
+    ifstream infile(m_LookupFileRemote);
     TPSG_BioIds all_bio_ids;
 
 
     if (m_HostPort.empty())
         EAccVerException::raise("Host is not specified, use -H command line argument");
-    if (NumThreads == 0 || NumThreads > 1000)
+    if (m_NumThreads == 0 || m_NumThreads > 1000)
         EAccVerException::raise("Invalid number of threads");
 
     if (infile) {
@@ -198,13 +198,13 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
         {{
             CPSG_BioIdResolutionQueue res_queue(m_HostPort);
             vector<unique_ptr<thread, function<void(thread*)>>> threads;
-            threads.resize(NumThreads);
+            threads.resize(m_NumThreads);
             size_t start_index = 0, next_index, i = 0;
 
 
             for (auto & it : threads) {
                 i++;
-                next_index = ((uint64_t)line_count * i) / NumThreads;
+                next_index = ((uint64_t)line_count * i) / m_NumThreads;
                 it = unique_ptr<thread, function<void(thread*)>>(new thread(
                     [&res_queue, start_index, next_index, line_count, &all_bio_ids, this]() {
                         size_t max = next_index > line_count ? line_count : next_index;
@@ -274,23 +274,27 @@ void CAccVerCacheApp::RemoteLookupFile(const string& FileName, unsigned int NumT
 
 void CAccVerCacheApp::PrintBlobId(const CPSG_BlobId& blob_id)
 {
-            if (blob_id.GetStatus() == CPSG_BlobId::eSuccess) {
-                lock_guard<mutex> lock(m_CoutMutex);
-                cout
-                    << blob_id.GetBioId().GetId() << "||"
-                    << blob_id.GetBlobInfo().gi << "|"
-                    << blob_id.GetBlobInfo().seq_length << "|"
-                    << blob_id.GetBlobInfo().sat << "|"
-                    << blob_id.GetBlobInfo().sat_key << "|"
-                    << blob_id.GetBlobInfo().tax_id << "|"
-                    << (blob_id.GetBlobInfo().date_queued ? CTime(blob_id.GetBlobInfo().date_queued).AsString() : "") << "|"
-                    << blob_id.GetBlobInfo().state << "|"
-                << std::endl;
-            }
-            else {
-                lock_guard<mutex> lock(m_CerrMutex);
-                cerr << blob_id.GetBioId().GetId() << ": failed to resolve:" << blob_id.GetMessage() << std::endl;
-            }
+    const auto name = blob_id.GetBioId().GetId();
+
+    if (blob_id.GetStatus() != CPSG_BlobId::eSuccess) {
+        lock_guard<mutex> lock(m_CerrMutex);
+        cerr << "Blob '" << name << "' failed to resolve:" << blob_id.GetMessage() << std::endl;
+        return;
+    }
+
+    const auto& blob_info = blob_id.GetBlobInfo();
+    const string blob_info_date_queued = blob_info.date_queued ? CTime(blob_info.date_queued).AsString() : "";
+    lock_guard<mutex> lock(m_CoutMutex);
+    cout
+        << name << "||"
+        << blob_info.gi << "|"
+        << blob_info.seq_length << "|"
+        << blob_info.sat << "|"
+        << blob_info.sat_key << "|"
+        << blob_info.tax_id << "|"
+        << blob_info_date_queued << "|"
+        << blob_info.state << "|"
+        << std::endl;
 }
 
 void CAccVerCacheApp::SaveBlob(CPSG_Blob& blob)
