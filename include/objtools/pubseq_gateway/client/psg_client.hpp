@@ -1,5 +1,5 @@
-#ifndef OBJTOOLS_PUBSEQ_GATEWAY_PSG_CLIENT_HPP
-#define OBJTOOLS_PUBSEQ_GATEWAY_PSG_CLIENT_HPP
+#ifndef OBJTOOLS__PUBSEQ_GATEWAY__PSG_CLIENT_HPP
+#define OBJTOOLS__PUBSEQ_GATEWAY__PSG_CLIENT_HPP
 
 /*  $Id$
  * ===========================================================================
@@ -26,15 +26,9 @@
  *
  * ===========================================================================
  *
- * Author: Denis Vakatov
+ * Authors: Denis Vakatov, Rafael Sadyrov
  *
  */
-
-#include <string>
-#include <utility>
-#include <mutex>
-#include <memory>
-#include <vector>
 
 #include <objects/id2/ID2_Blob_Id.hpp>
 #include <objects/id2/ID2_Reply_Get_Blob_Id.hpp>
@@ -44,26 +38,25 @@
 BEGIN_NCBI_SCOPE
 
 
-class CPSGBioIdResolutionQueue;
-class CPSGBlobRetrievalQueue;
-
-
-/// Bio-id + context
+/// Bio-id (such as accession), plus optional user-provided context data
 ///
-class CPSGBioId
+class CPSG_BioId
 {
 public:
-    using TSet = vector<CPSGBioId>;
-
+    /// Base class for user-provided context data (optional)
     struct IContext
     {
-        virtual ~IContext() {}
+        virtual ~IContext()  {}
     };
 
-    CPSGBioId(string id, IContext* ctx = nullptr)
-        : m_Id(move(id)), m_Context(ctx) {}
+    /// @param id
+    ///  Bio ID (like accession)
+    /// @param ctx
+    ///  User-provided context (owned by the caller)
+    CPSG_BioId(string id, IContext* ctx = nullptr)
+        : m_Id(move(id)), m_Context(ctx)  {}
 
-    const string& GetId() const { return m_Id; }
+    const string&   GetId()      const  { return m_Id;      }
     const IContext* GetContext() const  { return m_Context; }
 
 private:
@@ -72,36 +65,31 @@ private:
 };
 
 
-/// The generic part of the results of id resolution.
+typedef vector<CPSG_BioId> TPSG_BioIds;
+
+
+
+/// The generic part of the results of id resolution
 ///
-class CPSGBlobId
+class CPSG_BlobId
 {
 public:
-    using TSet = vector<CPSGBlobId>;
-
     /// Blob storage location and other attributes
     struct SBlobInfo
     {
-        using CID2_Blob_Id = objects::CID2_Blob_Id;
-        using CID2_Reply_Get_Blob_Id = objects::CID2_Reply_Get_Blob_Id;
-
-        struct
-        {
-            CID2_Blob_Id::TSat     sat = 0;
-            CID2_Blob_Id::TSat_key sat_key = 0;
-        } id2;
-
-        CID2_Reply_Get_Blob_Id::TBlob_state  state = 0;
-        TGi                                  gi = 0;          // informational only
-        time_t                               date_queued = 0; // informational only
-        TTaxId                               tax_id = 0;
-        Uint8                                seq_length = 0;
+        objects::CID2_Blob_Id::TSat                   sat         = 0;
+        objects::CID2_Blob_Id::TSat_key               sat_key     = 0;
+        objects::CID2_Reply_Get_Blob_Id::TBlob_state  state       = 0;
+        TGi                                           gi          = 0;
+        time_t                                        date_queued = 0;
+        TTaxId                                        tax_id      = 0;
+        Uint8                                         seq_length  = 0;
     };
 
     /// Get info about the blob (obtained as a result of its id resolving)
     /// @throw
     ///  If not in "eResolved" state
-    const SBlobInfo& GetBlobInfo() const { return m_BlobInfo; }
+    const SBlobInfo& GetBlobInfo() const  { return m_BlobInfo; }
 
     /// Resolution result
     /// @sa GetStatus
@@ -115,24 +103,28 @@ public:
     };
 
     /// Get result of this id resolution
-    EStatus GetStatus() const { return m_Status; }
+    EStatus GetStatus() const  { return m_Status; }
 
     /// Unstructured text containing auxiliary info about the result
-    const string& GetMessage() const { return m_Message; };
+    const string& GetMessage() const  { return m_Message; };
 
     /// Get the bio-blob id (such as an accession) which this result is for
-    const CPSGBioId& GetBioId() const { return m_BioId; }
+    const CPSG_BioId& GetBioId() const  { return m_BioId; }
 
 private:
-    CPSGBlobId(CPSGBioId bio_id) : m_BioId(move(bio_id)) {}
+    CPSG_BlobId(CPSG_BioId bio_id) : m_BioId(move(bio_id))  {}
 
-    CPSGBioId  m_BioId;
-    SBlobInfo  m_BlobInfo;
-    EStatus    m_Status = eError;
-    string     m_Message;
+    CPSG_BioId  m_BioId;
+    SBlobInfo   m_BlobInfo;
+    EStatus     m_Status = eError;
+    string      m_Message;
 
-    friend class CPSGBioIdResolutionQueue;
+    friend class CPSG_BioIdResolutionQueue;
 };
+
+
+typedef vector<CPSG_BlobId> TPSG_BlobIds;
+
 
 
 /// A queue to resolve "biological" blob ids (such as accessions) into the
@@ -149,11 +141,14 @@ private:
 /// the queue will be available for retrieval using this (and only this) queue
 /// instance regardless of which threads were used to add the ids to the queue.
 ///
-class CPSGBioIdResolutionQueue
+class CPSG_BioIdResolutionQueue
 {
 public:
-    CPSGBioIdResolutionQueue(const string& service);
-    ~CPSGBioIdResolutionQueue();
+    /// @param service
+    ///  Either a name of service (which can be resolved into a set of PSG servers)
+    ///  or a single fixed PSG server (in format "host:port")
+    CPSG_BioIdResolutionQueue(const string& service);
+    ~CPSG_BioIdResolutionQueue();
 
     /// Schedule more bio-ids for resolution
     /// @note
@@ -167,13 +162,13 @@ public:
     ///  into the queue will be removed from the "bio_ids" container.
     /// @param deadline
     ///  For how long to try to push the bio-ids into the queue.
-    void Resolve(CPSGBioId::TSet* bio_ids, const CDeadline& deadline = 0);
+    void Resolve(TPSG_BioIds*     bio_ids,
+                 const CDeadline& deadline = 0);
 
-    /// Perform signle bio-ids resolution
-    /// @note
-    /// This method is works synchronously static and does not require
-    /// CPSGBioIdResolutionQueue instance
-    static CPSGBlobId Resolve(const string& service, CPSGBioId bio_id, const CDeadline& deadline = CTimeout::eInfinite);
+    /// Perform a single bio-id resolution, synchronously
+    static CPSG_BlobId Resolve(const string&    service,
+                               CPSG_BioId       bio_id,
+                               const CDeadline& deadline = CTimeout::eInfinite);
 
     /// Retrieve results of the id resolution that are currently ready.
     /// @note
@@ -190,7 +185,8 @@ public:
     ///  List of id resolution results
     /// @throw
     ///  If unrecoverable retrieval error has been detected.
-    CPSGBlobId::TSet GetBlobIds(const CDeadline& deadline = 0, size_t max_results = 0);
+    TPSG_BlobIds GetBlobIds(const CDeadline& deadline = 0,
+                            size_t           max_results = 0);
 
     /// Cancel all ongoing retrievals and return all not yet resolved bio-ids.
     /// You can continue working with the queue after that in a usual manner.
@@ -199,31 +195,28 @@ public:
     /// @param bio_ids
     ///  The not yet resolved bio-ids will be added to "bio_ids". If "bio_ids"
     ///  is NULL, then they be discarded.
-    void Clear(CPSGBioId::TSet* bio_ids);
+    void Clear(TPSG_BioIds* bio_ids);
 
-    /// Returns true if Queue has finished all resolutions
-    /// and all items have been fetched or nothing was added for resolution at all
+    /// TRUE if there is nothing left in the queue (whether resolved or not)
     bool IsEmpty() const;
 
 private:
-    mutable mutex m_ItemsMtx;
-
     struct SItem;
     vector<unique_ptr<SItem>> m_Items;
-    shared_ptr<void> m_Future;
-    string m_Service;
+    mutable mutex             m_ItemsMtx;
+    shared_ptr<void>          m_Future;
+    string                    m_Service;
 };
+
 
 
 /// Blob that is ready to get its data retrieved
 ///
-class CPSGBlob
+class CPSG_Blob
 {
 public:
-    using TSet = vector<CPSGBlob>;
-
     /// Get retrieved data
-    istream& GetStream() { return *m_Stream; }
+    istream& GetStream()  { return *m_Stream; }
 
     /// Retrieval result
     /// @sa GetStatus
@@ -237,24 +230,28 @@ public:
     };
 
     /// Get result of this blob retrieval
-    EStatus GetStatus() const { return m_Status; }
+    EStatus GetStatus() const  { return m_Status; }
 
     /// Unstructured text containing auxiliary info about the result
-    const string& GetMessage() const { return m_Message; };
+    const string& GetMessage() const  { return m_Message; };
 
     /// Get the blob id which this blob is for
-    const CPSGBlobId& GetBlobId() const  { return m_BlobId; };
+    const CPSG_BlobId& GetBlobId() const  { return m_BlobId; };
 
 private:
-    CPSGBlob(CPSGBlobId blob_id) : m_BlobId(move(blob_id)) {}
+    CPSG_Blob(CPSG_BlobId blob_id) : m_BlobId(move(blob_id))  {}
 
-    CPSGBlobId          m_BlobId;
+    CPSG_BlobId         m_BlobId;
     unique_ptr<istream> m_Stream;
     EStatus             m_Status = eError;
     string              m_Message;
 
-    friend class CPSGBlobRetrievalQueue;
+    friend class CPSG_BlobRetrievalQueue;
 };
+
+
+typedef vector<CPSG_Blob> TPSG_Blobs;
+
 
 
 /// A queue to retrieve blob data from the storage.
@@ -270,11 +267,14 @@ private:
 /// the queue will be available for retrieval using this (and only this) queue
 /// instance regardless of which threads were used to add the ids to the queue.
 ///
-class CPSGBlobRetrievalQueue
+class CPSG_BlobRetrievalQueue
 {
 public:
-    CPSGBlobRetrievalQueue(const string& service);
-    ~CPSGBlobRetrievalQueue();
+    /// @param service
+    ///  Either a name of service (which can be resolved into a set of PSG servers)
+    ///  or a single fixed PSG server (in format "host:port")
+    CPSG_BlobRetrievalQueue(const string& service);
+    ~CPSG_BlobRetrievalQueue();
 
     /// Schedule more blob-ids for the blob retrieval
     /// @note
@@ -289,13 +289,13 @@ public:
     ///  into the queue will be removed from the "blob_ids" container.
     /// @param deadline
     ///  For how long to try to push the blob-ids into the queue.
-    void Retrieve(CPSGBlobId::TSet* blob_ids, const CDeadline& deadline = 0);
+    void Retrieve(TPSG_BlobIds*    blob_ids,
+                  const CDeadline& deadline = 0);
 
-    /// Perform single blob retrieval
-    /// @note
-    /// This method works synchronously static and does not require
-    /// CPSGBlobRetrievalQueue instance
-    static CPSGBlob Retrieve(const string& service, CPSGBlobId blob_id, const CDeadline& deadline = CTimeout::eInfinite);
+    /// Perform single blob retrieval, synchronously
+    static CPSG_Blob Retrieve(const string&    service,
+                              CPSG_BlobId      blob_id,
+                              const CDeadline& deadline = CTimeout::eInfinite);
 
     /// Get blobs that are ready for the immediate retrieval (and/or those that
     /// cannot be retrieved for whatever reason).
@@ -313,7 +313,8 @@ public:
     ///  List of blobs available for retrieval
     /// @throw
     ///  If unrecoverable retrieval error has been detected.
-    CPSGBlob::TSet GetBlobs(const CDeadline& deadline = 0, size_t max_results = 0);
+    TPSG_Blobs GetBlobs(const CDeadline& deadline = 0,
+                        size_t           max_results = 0);
 
     /// Cancel all ongoing retrievals and return all blob-ids
     /// for which there is no ready-to-retrieve blob obtained yet.
@@ -323,23 +324,21 @@ public:
     /// @param blob_ids
     ///  The blob-ids for which no retrievable blobs have yet been obtained will
     ///  be added to "blob_ids". If "blob_ids" is NULL, then they be discarded.
-    void Clear(CPSGBlobId::TSet* blob_ids);
+    void Clear(TPSG_BlobIds* blob_ids);
 
-    /// Returns true if Queue has finished all retrieval work
-    /// and all items have been fetched or nothing was added for retrieval at all
+    /// TRUE if there is nothing left in the queue (whether retrieved or not)
     bool IsEmpty() const;
 
 private:
-    mutable mutex m_ItemsMtx;
-
     struct SItem;
     vector<unique_ptr<SItem>> m_Items;
-    shared_ptr<void> m_Future;
-    string m_Service;
+    mutable mutex             m_ItemsMtx;
+    shared_ptr<void>          m_Future;
+    string                    m_Service;
 };
 
 
 END_NCBI_SCOPE
 
 
-#endif
+#endif  /* OBJTOOLS__PUBSEQ_GATEWAY__PSG_CLIENT_HPP */
