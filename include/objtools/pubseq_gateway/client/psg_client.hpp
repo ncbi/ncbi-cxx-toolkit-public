@@ -237,26 +237,66 @@ private:
 };
 
 
+class CBlobRetrievalQueue;
+
+
 /// Blob that is ready to get its data retrieved
 ///
 class CBlob
 {
 public:
-    /// Blob ID and other non-data ID resolution and retrieval attributes
+    CBlob(CBlobId blob_id);
+
+    /// Get retrieved data
+    unique_ptr<istream> GetStream();
+
+    /// Retrieval result
+    /// @sa GetStatus
+    enum EStatus {
+        eRetrNone,  ///< Retrieval is not performed
+        eRetrieved, ///< Successfully retrieved
+        eFailed     ///< Retrieval has failed
+    };
+
+    /// Get result of this blob retrieval
+    EStatus GetStatus() const { return m_Status; }
+
+    /// Retrieval's fine-grain actionable details
+    /// @sa GetStatusEx
+    enum EStatusEx {
+        eNone,       ///< No additional info available
+        eForbidden,  ///< Access denied
+        eNotFound,   ///< Not found
+        eInvalid,    ///< Invalid id
+        eCanceled,   ///< Request canceled
+        eError       ///< Unknown error
+    };
+
+    /// Get result of this blob retrieval
+    EStatusEx GetStatusEx() const { return m_StatusEx; }
+
+    /// Unstructured text containing auxiliary info about the result
+    const string& GetMessage() const { return m_Message; };
+
+    /// Get the blob id which this blob is for
     const CBlobId& GetBlobId() const  { return m_BlobId; };
 
-    /// Blob data retrieval API
-    // ........
-
 private:
-    CBlobId m_BlobId;
-    // ........
+    CBlobId             m_BlobId;
+    unique_ptr<istream> m_Stream;
+    EStatus             m_Status;
+    EStatusEx           m_StatusEx;
+    string              m_Message;
+
+    friend class CBlobRetrievalQueue;
 };
 
+using TBlobs = vector<CBlob>;
 
-/// A queue to retrieve bio-blob data from the storage.
+
+/// A queue to retrieve blob data from the storage.
 ///
-/// Call Retrieve() to schedule more bio-ids (or blob-ids) for retrieval, then
+/// Call Retrieve() to schedule more blob-ids for retrieval, then
 /// call GetBlobs() to get the blobs that are ready for immediate retrieval.
 ///
 /// All methods are MT-safe.
@@ -270,26 +310,29 @@ private:
 class CBlobRetrievalQueue
 {
 public:
-    /// Schedule more bio-ids or blob-ids for the blob retrieval
+    CBlobRetrievalQueue(const string& service);
+    ~CBlobRetrievalQueue();
+
+    /// Schedule more blob-ids for the blob retrieval
     /// @note
-    ///  If more than one thread is blocked on adding new set of bio-ids (or
-    ///  blob-ids) to the queue, then (when the queue gets free slots) one of
-    ///  the threads gets to add all or part of its bio-ids  (or blob-ids) to
+    ///  If more than one thread is blocked on adding new set of blob-ids
+    ///  to the queue, then (when the queue gets free slots) one of
+    ///  the threads gets to add all or part of its blob-ids to
     ///  the queue. Other threads will continue waiting (unless there is more
     ///  free space left).
-    /// @param bio_ids
-    ///  List of bio-blob ids (such as accessions).
-    ///  Those bio-blob ids from the "bio_ids" container that make it
-    ///  into the queue will be removed from the "bio_ids" container.
-    /// @param deadline
-    ///  For how long to try to push the bio-ids into the queue.
-    void Retrieve(TBioIds* bio_ids, const CDeadline& deadline = 0);
-
     /// @param blob_ids
     ///  List of blob ids.
     ///  Those blob ids from the "blob_ids" container that make it
     ///  into the queue will be removed from the "blob_ids" container.
+    /// @param deadline
+    ///  For how long to try to push the blob-ids into the queue.
     void Retrieve(TBlobIds* blob_ids, const CDeadline& deadline = 0);
+
+    /// Perform single blob retrieval
+    /// @note
+    /// This method works synchronously static and does not require
+    /// CBlobRetrievalQueue instance
+    static CBlob Retrieve(const string& service, CBlobId blob_id, const CDeadline& deadline = CTimeout::eInfinite);
 
     /// Get blobs that are ready for the immediate retrieval (and/or those that
     /// cannot be retrieved for whatever reason).
@@ -306,25 +349,30 @@ public:
     /// @return
     ///  List of blobs available for retrieval
     /// @throw
-    ///  If unrecoverable resolution or retrieval error has been detected.
-    vector<CBlob> GetBlobs(const CDeadline& deadline = 0, size_t max_results = 0);
+    ///  If unrecoverable retrieval error has been detected.
+    TBlobs GetBlobs(const CDeadline& deadline = 0, size_t max_results = 0);
 
-    /// Cancel all ongoing retrievals and return all bio- and blob-ids
+    /// Cancel all ongoing retrievals and return all blob-ids
     /// for which there is no ready-to-retrieve blob obtained yet.
     /// You can continue working with the queue after that in a usual manner.
     /// If there are ready-to-be-retrieved blobs available in the queue
     /// they can be subsequently retrieved by calling GetBlobs() method.
-    /// @param bio_ids
-    ///  The not yet resolved bio-ids will be added to "bio_ids". If "bio_ids"
-    ///  is NULL, then they be discarded.
     /// @param blob_ids
-    ///  The bio-ids for which no retrievable blobs have yet been obtained will
+    ///  The blob-ids for which no retrievable blobs have yet been obtained will
     ///  be added to "blob_ids". If "blob_ids" is NULL, then they be discarded.
-    void Clear(TBioIds* bio_ids, TBlobIds* blob_ids);
+    void Clear(TBlobIds* blob_ids);
 
     /// Returns true if Queue has finished all retrieval work
     /// and all items have been fetched or nothing was added for retrieval at all
     bool IsEmpty() const;
+
+private:
+    mutable mutex m_ItemsMtx;
+
+    struct CBlobRetrievalQueueItem;
+    vector<unique_ptr<CBlobRetrievalQueueItem>> m_Items;
+    shared_ptr<void> m_Future;
+    string m_Service;
 };
 
 
