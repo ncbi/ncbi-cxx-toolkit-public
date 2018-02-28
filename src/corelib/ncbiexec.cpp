@@ -551,7 +551,11 @@ CExec::SpawnL(EMode mode, const char *cmdname, const char *argv, ...)
 
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = NcbiSys_spawnv(s_GetRealMode(mode), _T_XCSTRING(cmdname), a_args);
+    int realmode = s_GetRealMode(mode);
+    if (realmode == P_OVERLAY) {
+        GetDiagContext().PrintStop();
+    }
+    status = NcbiSys_spawnv(realmode, _T_XCSTRING(cmdname), a_args);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eV, mode, cmdname, a_args);
 #endif
@@ -568,7 +572,11 @@ CExec::SpawnLE(EMode mode, const char *cmdname,  const char *argv, ...)
 
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = NcbiSys_spawnve(s_GetRealMode(mode), _T_XCSTRING(cmdname), a_args, a_envs);
+    int realmode = s_GetRealMode(mode);
+    if (realmode == P_OVERLAY) {
+        GetDiagContext().PrintStop();
+    }
+    status = NcbiSys_spawnve(realmode, _T_XCSTRING(cmdname), a_args, a_envs);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVE, mode, cmdname, a_args, a_envs);
 #endif
@@ -584,7 +592,11 @@ CExec::SpawnLP(EMode mode, const char *cmdname, const char *argv, ...)
 
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = NcbiSys_spawnvp(s_GetRealMode(mode), _T_XCSTRING(cmdname), a_args);
+    int realmode = s_GetRealMode(mode);
+    if (realmode == P_OVERLAY) {
+        GetDiagContext().PrintStop();
+    }
+    status = NcbiSys_spawnvp(realmode, _T_XCSTRING(cmdname), a_args);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVP, mode, cmdname, a_args);
 #endif
@@ -601,7 +613,11 @@ CExec::SpawnLPE(EMode mode, const char *cmdname, const char *argv, ...)
 
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = NcbiSys_spawnvpe(s_GetRealMode(mode), _T_XCSTRING(cmdname), a_args, a_envs);
+    int realmode = s_GetRealMode(mode);
+    if (realmode == P_OVERLAY) {
+        GetDiagContext().PrintStop();
+    }
+    status = NcbiSys_spawnvpe(realmode, _T_XCSTRING(cmdname), a_args, a_envs);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVPE, mode, cmdname, a_args, a_envs);
 #endif
@@ -617,7 +633,11 @@ CExec::SpawnV(EMode mode, const char *cmdname, const char *const *argv)
 
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = NcbiSys_spawnv(s_GetRealMode(mode), _T_XCSTRING(cmdname), a_args);
+    int realmode = s_GetRealMode(mode);
+    if (realmode == P_OVERLAY) {
+        GetDiagContext().PrintStop();
+    }
+    status = NcbiSys_spawnv(realmode, _T_XCSTRING(cmdname), a_args);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eV, mode, cmdname, a_args);
 #endif
@@ -635,7 +655,11 @@ CExec::SpawnVE(EMode mode, const char *cmdname,
 
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = NcbiSys_spawnve(s_GetRealMode(mode), _T_XCSTRING(cmdname), a_args, a_envs);
+    int realmode = s_GetRealMode(mode);
+    if (realmode == P_OVERLAY) {
+        GetDiagContext().PrintStop();
+    }
+    status = NcbiSys_spawnve(realmode, _T_XCSTRING(cmdname), a_args, a_envs);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVE, mode, cmdname, a_args, a_envs);
 #endif
@@ -651,7 +675,11 @@ CExec::SpawnVP(EMode mode, const char *cmdname, const char *const *argv)
 
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = NcbiSys_spawnvp(s_GetRealMode(mode), _T_XCSTRING(cmdname), a_args);
+    int realmode = s_GetRealMode(mode);
+    if (realmode == P_OVERLAY) {
+        GetDiagContext().PrintStop();
+    }
+    status = NcbiSys_spawnvp(realmode, _T_XCSTRING(cmdname), a_args);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVP, mode, cmdname, a_args);
 #endif
@@ -669,7 +697,11 @@ CExec::SpawnVPE(EMode mode, const char *cmdname,
 
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = NcbiSys_spawnvpe(s_GetRealMode(mode), _T_XCSTRING(cmdname), a_args, a_envs);
+    int realmode = s_GetRealMode(mode);
+    if (realmode == P_OVERLAY) {
+        GetDiagContext().PrintStop();
+    }
+    status = NcbiSys_spawnvpe(realmode, _T_XCSTRING(cmdname), a_args, a_envs);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVPE, mode, cmdname, a_args, a_envs);
 #endif
@@ -789,7 +821,7 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
                       dwCreateFlags, NULL, NULL, &StartupInfo, &ProcessInfo))
     {
         if (mode == eOverlay) {
-            // destroy ourselves
+            GetDiagContext().PrintStop();
             _exit(0);
         }
         else if (mode == eWait) {
