@@ -216,7 +216,7 @@ void CPSG_BioIdResolutionQueue::SItem::PopulateData(CPSG_BlobId& blob_id) const
             try {
                 AccVerResolverUnpackData(rec, data);
                 blob_id.m_Status = CPSG_BlobId::eSuccess;
-                blob_id.m_BlobInfo.gi          = rec[0].AsUint8;
+                blob_id.m_BlobInfo.gi          = rec[0].AsInt8;
                 blob_id.m_BlobInfo.seq_length  = rec[1].AsUint4;
                 blob_id.m_BlobInfo.sat         = rec[2].AsUint1;
                 blob_id.m_BlobInfo.sat_key     = rec[3].AsUint4;

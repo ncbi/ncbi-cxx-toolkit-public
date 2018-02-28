@@ -77,13 +77,13 @@ public:
     /// Blob storage location and other attributes
     struct SBlobInfo
     {
-        objects::CID2_Blob_Id::TSat                   sat         = 0;
-        objects::CID2_Blob_Id::TSat_key               sat_key     = 0;
-        objects::CID2_Reply_Get_Blob_Id::TBlob_state  state       = 0;
-        TGi                                           gi          = 0;
-        time_t                                        date_queued = 0;
-        TTaxId                                        tax_id      = 0;
-        Uint8                                         seq_length  = 0;
+        objects::CID2_Blob_Id::TSat                   sat         = {};
+        objects::CID2_Blob_Id::TSat_key               sat_key     = {};
+        objects::CID2_Reply_Get_Blob_Id::TBlob_state  state       = {};
+        TGi                                           gi          = {};
+        time_t                                        date_queued = {};
+        TTaxId                                        tax_id      = {};
+        Uint8                                         seq_length  = {};
     };
 
     /// Get info about the blob (obtained as a result of its id resolving)
