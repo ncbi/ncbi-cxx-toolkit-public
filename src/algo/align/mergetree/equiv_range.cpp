@@ -48,6 +48,50 @@ USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(ncbi)
+
+
+///
+template<typename T>
+T s_CalcMean(const list<T>& List) {
+    typedef list<T> TypeList;
+    size_t Count = List.size();
+    T Mean = 0;
+
+    ITERATE(typename TypeList, Iter, List) {
+        Mean += *Iter/Count;
+    }
+
+    return Mean;
+}
+
+template<typename T>
+double s_CalcStdDev(const list<T>& List, T Mean) {
+    typedef list<T> TypeList;
+    size_t Count = List.size();
+
+    double RunningTotal = 0;
+    ITERATE(typename TypeList, Iter, List) {
+        RunningTotal += ((*Iter - Mean) * (*Iter - Mean))/double(Count);
+    }
+
+    return sqrt(RunningTotal);
+}
+
+template<typename T>
+void s_CalcDevs(const list<T>& Values, T Mean, double StdDev, list<double>& Devs) {
+    typedef list<T> TypeList;
+
+    ITERATE(typename TypeList, Iter, Values) {
+        double Dist = fabs( double(*Iter) - double(Mean));
+        double Dev = (Dist/StdDev);
+        Devs.push_back(Dev);
+    }
+}
+
+
+///
+
+
 CNcbiOstream& operator<<(CNcbiOstream& out, const CEquivRange& range)
 {
 	return out << range.Query 
@@ -829,7 +873,62 @@ void CEquivRangeBuilder::CalcMatches(objects::CBioseq_Handle QueryHandle,
                 CurrEquiv.MisMatchSubjtPoints.push_back(CurrEquiv.Subjt.GetFrom()+Loop);
             }
 	    }        
-        
+       
+       // Windowing experiment
+        /*
+        const int WIN_LEN = 100;
+        list<size_t> CutPoints;
+        list<double> PctIdents;
+        for(size_t LenLoop = 0; LenLoop < CurrEquiv.Subjt.GetLength(); LenLoop++) {
+            if(LenLoop + WIN_LEN >= CurrEquiv.Subjt.GetLength())
+                break;
+
+            size_t SLenPoint = CurrEquiv.Subjt.GetFrom()+LenLoop;
+           
+            size_t CountMM = 0;
+            for(size_t WinLoop = 0; WinLoop < WIN_LEN; WinLoop++) {
+                if( find(CurrEquiv.MisMatchSubjtPoints.begin(), 
+                         CurrEquiv.MisMatchSubjtPoints.end(), 
+                         SLenPoint+WinLoop) != CurrEquiv.MisMatchSubjtPoints.end() ) {
+                    CountMM++;
+                }
+            }
+            PctIdents.push_back( float(WIN_LEN-CountMM)/float(WIN_LEN) );
+        }
+        double Mean = s_CalcMean(PctIdents);
+        double StdDev = s_CalcStdDev(PctIdents, Mean);
+        list<double> Devs;
+        s_CalcDevs(PctIdents, Mean, StdDev, Devs);
+        cout << "Mean: " << Mean << "  StdDev: " << StdDev << endl;
+        list<double>::iterator DevsIter = Devs.begin();
+        double Prev = *DevsIter;
+        CutPoints.push_back(CurrEquiv.Subjt.GetFrom());
+        for(size_t LenLoop = 0; LenLoop < CurrEquiv.Subjt.GetLength(); LenLoop++) {
+            if(LenLoop + WIN_LEN >= CurrEquiv.Subjt.GetLength())
+                break;
+
+            size_t SLenPoint = CurrEquiv.Subjt.GetFrom()+LenLoop;
+            cout << "WINDOW THINGY: " << SLenPoint << "\t" << *DevsIter;
+            if( (Prev >= 1.0 && *DevsIter <= 1.0) ||
+                (Prev <= 1.0 && *DevsIter >= 1.0) ) {
+                if(Prev > *DevsIter) {
+                    cout << "\t" << "TRANSITION_HL";
+                    CutPoints.push_back(SLenPoint);
+                } else { 
+                    cout << "\t" << "TRANSITION_LH";
+                    CutPoints.push_back(SLenPoint+WIN_LEN-1);
+                }
+            }
+            cout << endl; 
+            Prev = *DevsIter;
+            ++DevsIter;
+        }
+        CutPoints.push_back(CurrEquiv.Subjt.GetTo()+1);
+        ITERATE(list<size_t>, CutIter, CutPoints) {
+            cout << *CutIter << endl;
+        }*/
+
+
         //cerr << "MM: " << CurrEquiv.Matches << "\t" << CurrEquiv.MisMatches << endl;
         //if(Counter % 1000 == 0) 
         //    cerr << "CalcMatches: " << Counter << endl;

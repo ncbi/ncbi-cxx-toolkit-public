@@ -1178,6 +1178,11 @@ void CMergeTree::x_CheckInterruptCallback()
 }
 
 
+struct SEventualChildFrame : public CObject {
+    TMergeNode Parent;
+    //TMergeNode ToFind;
+};
+
 bool CMergeTree::x_IsEventualChildOf(TMergeNode Parent, TMergeNode ToFind, TBitVec& Explored) 
 {
     if(Parent == ToFind)
@@ -1190,13 +1195,45 @@ bool CMergeTree::x_IsEventualChildOf(TMergeNode Parent, TMergeNode ToFind, TBitV
     }
     Explored.set(Parent->Id, true);
 
-    ITERATE(set<TMergeNode>, ChildIter, Parent->Children) {
-        if( (*ChildIter) == ToFind) 
+    vector< CRef<SEventualChildFrame> > FrameStack;
+
+    CRef<SEventualChildFrame> FirstFrame(new SEventualChildFrame);
+    FirstFrame->Parent = Parent; 
+    FrameStack.push_back(FirstFrame);
+
+    while(!FrameStack.empty()) {
+        CRef<SEventualChildFrame> Frame = FrameStack.back();
+        FrameStack.pop_back();
+
+        if(Frame->Parent == ToFind)
+            return true;
+        if(Frame->Parent->Equiv == ToFind->Equiv)
             return true;
         
-        bool Found = x_IsEventualChildOf(*ChildIter, ToFind, Explored);
-        if(Found)
-            return true;
+        if(Explored.get(Frame->Parent->Id)) {
+            continue;
+        }
+        Explored.set(Frame->Parent->Id, true);
+
+        REVERSE_ITERATE(set<TMergeNode>, ChildIter, Frame->Parent->Children) {
+            if( (*ChildIter) == ToFind) 
+                return true;
+            if( (*ChildIter)->Equiv == ToFind->Equiv) 
+                return true;
+       
+            if(Explored.get((*ChildIter)->Id)) {
+                continue;
+            }
+
+            //bool Found = x_IsEventualChildOf(*ChildIter, ToFind, Explored);
+            //if(Found)
+            //    return true;
+
+            CRef<SEventualChildFrame> NewFrame(new SEventualChildFrame);
+            NewFrame->Parent = *ChildIter;
+            FrameStack.push_back(NewFrame);
+        }
+
     }
 
     return false;
