@@ -423,6 +423,8 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 }
                 assert(len);
                 vhost = str - len;
+                if (len == 2  &&  strncmp(vhost, "''", 2) == 0)
+                    vhost = 0;
                 break;
             case 'L':
                 if (locl)
@@ -548,6 +550,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
         if (!vh  &&  !(secu  ||  (info->type & fSERV_Http)))
             vhost = 0;
         if (vhost) {
+            assert(len);
             if (len > 255)
                 len = 255;
             strncpy0((char*) &info->u + attr->ops.SizeOf(&info->u),
