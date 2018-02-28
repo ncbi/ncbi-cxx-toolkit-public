@@ -334,8 +334,49 @@ TMgr-TypeTrackType ::= INTEGER {
     bam (11),
     cram (12),
     hal (13),
-    vcf (14)
+    vcf (14),
+    altGraphX (15),
+    bed (16),
+    bed5FloatScore (17),
+    bedGraph (18),
+    bedRnaElements (19),
+    broadPeak (20),
+    chain (21),
+    clonePos (22),
+    coloredExon (23),
+    ctgPos (24),
+    downloadsOnly (25),
+    encodeFiveC (26),
+    expRatio (27),
+    factorSource (28),
+    genePred (29),
+    gvf (30),
+    ld2 (31),
+    narrowPeak (32),
+    netAlign (33),
+    peptideMapping (34),
+    psl (35),
+    rmsk (36),
+    snake (37),
+    vcfTabix (38),
+    wig (39),
+    wigMaf (40)
 }
+
+TMgr-Hub ::= SEQUENCE {
+    hub VisibleString, -- hub entry from hub.txt file
+    short-label VisibleString, -- shortLabel entry from hub.txt file
+    long-label VisibleString,  -- longLabel entry from hub.txt file
+    assembly-db-name SET OF VisibleString, --- genome entries in genomes.txt file
+    trackdb-url VisibleString OPTIONAL --- trackDb entry in genomes.txt file associated with assembly_acc
+}
+
+TMgr-HubTrack ::= SEQUENCE {
+    short-label VisibleString, -- shortLabel entry from trackDB.txt file
+    long-label VisibleString,  -- longLabel entry from trackDB.txt file
+    hub-id TMgr-DHubId--- used to associate a track with a hub   
+}
+
 
 ---
 --- Used to create remote tracks, hubs and tracks in hubs
@@ -350,15 +391,11 @@ TMgr-CreateRemoteTrackRequest ::= SEQUENCE {
     -- track specific, i.e., when type != hub
     track-name VisibleString OPTIONAL,
     index-url VisibleString OPTIONAL, -- for tracks only, not hubs
-    hub-id TMgr-DHubId OPTIONAL,--- used to associate a track with a hub
-
-    -- hub specific, required if type = hub
-    trackhub SEQUENCE {
-        hub VisibleString, -- hub entry from hub.txt file
-        short-label VisibleString, -- shortLabel entry from hub.txt file
-        long-label VisibleString,  -- longLabel entry from hub.txt file
-        assembly-db-name SET OF VisibleString, --- genome entries in genomes.txt file
-        trackdb-url VisibleString OPTIONAL --- trackDb entry in genomes.txt file associated with assembly_acc
+    
+    -- Hub Track Database specific fields
+    track-db CHOICE {
+        hub TMgr-Hub,
+        track TMgr-HubTrack
     } OPTIONAL,
 
     -- future use
