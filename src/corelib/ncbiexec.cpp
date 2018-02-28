@@ -141,6 +141,7 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode full_mode,
 
     // Replace the current process image with a new process image.
     if (mode == CExec::eOverlay) {
+        GetDiagContext().PrintStop();
         switch (func) {
         case eV:
             return execv(cmdname, const_cast<char**>(argv));
