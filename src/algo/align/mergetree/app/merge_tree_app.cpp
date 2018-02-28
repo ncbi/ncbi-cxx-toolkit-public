@@ -205,7 +205,7 @@ CMergeyApp::Run()
         CRef<CSeq_align> Align(new CSeq_align);
         try {
             In >> MSerial_AsnText >> *Align;
-        } catch(...) { cerr << __LINE__ << endl; break; }
+        } catch(...) {  break; }
         OrigAligns.push_back(Align);        
     }
     if(OrigAligns.empty()) {
@@ -216,7 +216,7 @@ CMergeyApp::Run()
             CRef<CSeq_align> Align(new CSeq_align);
             try {
                 In >> MSerial_AsnBinary >> *Align;
-            } catch(...) { cerr << __LINE__ << endl; break; }
+            } catch(...) { break; }
             OrigAligns.push_back(Align);        
         }
     }
@@ -228,7 +228,7 @@ CMergeyApp::Run()
             CRef<CSeq_align_set> AlignSet(new CSeq_align_set);
             try {
                 In >> MSerial_AsnBinary >> *AlignSet;
-            } catch(...) { cerr << __LINE__ << endl; break; }
+            } catch(...) { break; }
             OrigAligns.insert(OrigAligns.end(), AlignSet->Get().begin(), AlignSet->Get().end());       
         }
     }
