@@ -90,7 +90,7 @@ void CAnnotGetter::x_AddAnnotations(const SAnnotSelector& sel,
         return;
     }
 
-    CAnnot_CI annot_it(bsh, sel);
+    CAnnot_CI annot_it(CFeat_CI(bsh, sel));
     
     for (; annot_it; ++annot_it) {
         CRef<CSeq_annot> new_annot = x_GetCompleteSeqAnnot(*annot_it);
