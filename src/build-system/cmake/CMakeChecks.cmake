@@ -593,8 +593,8 @@ find_external_library(xalan
 find_external_library(SGE
     INCLUDES drmaa.h
     LIBS drmaa
-    INCLUDE_HINTS "/netmnt/uge/include"
-    LIBS_HINTS "/netmnt/uge/lib/lx-amd64/")
+    INCLUDE_HINTS "/netmnt/gridengine/current/include"
+    LIBS_HINTS "/netmnt/gridengine/current/lib/lx-amd64/")
 
 # muParser
 find_external_library(muparser
