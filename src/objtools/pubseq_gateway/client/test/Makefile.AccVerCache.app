@@ -1,6 +1,6 @@
 # $Id$
 
-APP = AccVerCache
+APP = AccVerCacheApp
 SRC = AccVerCacheApp
 LIB = psg_client psg_rpc psg_diag xncbi
 

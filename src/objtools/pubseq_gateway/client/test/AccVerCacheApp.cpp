@@ -183,9 +183,9 @@ void CAccVerCacheApp::RemoteLookupFile()
             getline(infile, line);
             if (line == "")
                 continue;
-            {
-                all_bio_ids.emplace_back(line);
-            }
+
+            auto delim = line.find('|');
+            all_bio_ids.emplace_back(string(line, 0, delim));
             ++line_count;
         }
 
