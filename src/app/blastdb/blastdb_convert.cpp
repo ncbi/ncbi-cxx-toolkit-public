@@ -416,6 +416,8 @@ int CBlastdbConvertApp::Run(void)
 
         lmdbdb->InsertVolumesInfo(vol_names, vol_num_oids);
 
+        taxdb.reset();
+        lmdbdb.reset();
         if(alias_files.size() == 1) {
         	const string kOutputFile = kOutput + "." + (kIsProt ? 'p' : 'n') + "al";
         	s_UpdateVolumesInAliasFile(alias_files[0],kOutputFile, vol_names);

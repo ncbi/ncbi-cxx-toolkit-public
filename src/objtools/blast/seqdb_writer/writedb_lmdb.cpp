@@ -36,10 +36,16 @@
 #include <objtools/blast/seqdb_reader/impl/seqdb_lmdb.hpp>
 #include <objtools/blast/seqdb_writer/writedb_lmdb.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
+#include <math.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 BEGIN_NCBI_SCOPE
 
 #define DEFAULT_MAX_ENTRY_PER_TXN 40000
+#define DEFAULT_MIN_SPLIT_SORT_SIZE 500000000
+#define DEFAULT_MIN_SPLIT_CHUNK_SIZE 25000000
 
 
 CWriteDB_LMDB::CWriteDB_LMDB(const string& dbname,  Uint8 map_size, Uint8 capacity): m_Db(dbname),
@@ -179,14 +185,54 @@ void CWriteDB_LMDB::x_InsertEntry(const CRef<CSeq_id> &seqid, const blastdb::TOi
     return;
 }
 
+void CWriteDB_LMDB::x_Split(vector<SKeyValuePair>::iterator  b, vector<SKeyValuePair>::iterator e, const unsigned int min_chunk_size)
+{
+	unsigned int chunk =(e -b);
+	if(chunk < min_chunk_size) {
+		sort (b, e, SKeyValuePair::cmp_key);
+		return;
+	}
+
+	chunk = chunk /2;
+	std::nth_element(b, b+chunk, e, SKeyValuePair::cmp_key);
+#pragma omp task
+	x_Split(b, (b+chunk), min_chunk_size);
+#pragma omp task
+	x_Split((b+chunk),e, min_chunk_size);
+}
+
 void CWriteDB_LMDB::x_CommitTransaction()
 {
 	if(m_list.size() == 0) {
 		return;
 	}
-	//CStopWatch sw(CStopWatch::eStart);
-    sort (m_list.begin(), m_list.end(), SKeyValuePair::cmp_key);
-    //cerr << sw.Elapsed() <<endl;
+	unsigned int min_split_size = DEFAULT_MIN_SPLIT_SORT_SIZE;
+	unsigned int chunk_size = DEFAULT_MIN_SPLIT_CHUNK_SIZE;
+	char* min_split_str = getenv("LMDB_MIN_SPLIT_SIZE");
+	char* chunk_str = getenv("LMDB_SPLIT_CHUNK_SIZE");
+	if (chunk_str) {
+		chunk_size = NStr::StringToUInt(chunk_str);
+	    _TRACE("DEBUG: LMDB_SPLIT_CHUNK_SIZE " << chunk_str);
+	}
+	if (min_split_str) {
+		min_split_size = NStr::StringToUInt(min_split_str);
+		_TRACE("DEBUG: LMDB LMDB_MIN_SPLIT_SIZE " << min_split_str);
+	}
+	if((m_list.size() < min_split_size) || (m_list.size() < 2*chunk_size)) {
+		std::sort (m_list.begin(), m_list.end(), SKeyValuePair::cmp_key);
+	}
+	else {
+		unsigned int num_threads = GetCpuCount();
+		unsigned int num_chunks = pow(2, ceil((log(m_list.size())- log(chunk_size))/log(2)));
+		if (num_chunks < num_threads) {
+			num_threads = num_chunks;
+		}
+		omp_set_num_threads(num_threads);
+		#pragma omp parallel
+		#pragma omp single nowait
+		x_Split(m_list.begin(), m_list.end(), chunk_size);
+
+	}
 
     unsigned int j=0;
     while (j < m_list.size()){
@@ -289,6 +335,7 @@ void CWriteDB_LMDB::x_CreateOidToSeqidsLookupFile()
 	}
 
 	os.flush();
+	os.close();
 }
 
 void CWriteDB_LMDB::x_Resize()
@@ -423,6 +470,7 @@ void CWriteDB_TaxID::x_CreateOidToTaxIdsLookupFile()
 	}
 
 	os.flush();
+	os.close();
 }
 
 Uint4 s_WirteOids(CNcbiOfstream & os, vector<blastdb::TOid> & oids)
@@ -459,6 +507,7 @@ void CWriteDB_TaxID::x_CreateTaxIdToOidsLookupFile()
 	m_TaxId2OffsetsList.push_back(kv);
 
 	os.flush();
+	os.close();
 }
 
 
