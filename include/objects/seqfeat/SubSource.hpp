@@ -215,6 +215,10 @@ public:
 
     static string CheckCellLine(const string& cell_line, const string& organism);
 
+    static bool IsRepliconSubSource(TSubtype subtype);
+    bool IsRepliconSubSource() const;
+    static bool IsRepliconSubSourceValid(const string& val, const string& taxname, bool is_viral = false);
+
 private:
     // Prohibit copy constructor and assignment operator
     CSubSource(const CSubSource& value);
@@ -280,6 +284,7 @@ public:
     static string GetCorrectedCountryCapitalization(const string& country);
     static string NewFixCountry (const string& input);
     static string CountryFixupItem(const string &input, bool capitalize_after_colon);
+
 private:
     static const string sm_Countries[];
     static const string sm_Former_Countries[];

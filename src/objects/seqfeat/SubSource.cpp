@@ -44,6 +44,7 @@
 #include <math.h>
 #include <objects/misc/sequence_util_macros.hpp>
 #include <corelib/ncbitime.hpp>
+#include <util/xregexp/regexp.hpp>
 
 // generated classes
 
@@ -4263,6 +4264,63 @@ void CSubSource::RemoveCultureNotes (bool is_species_level)
             ResetName();
         }
     }
+}
+
+
+bool CSubSource::IsRepliconSubSource() const
+{
+    if (IsSetSubtype() && IsRepliconSubSource(GetSubtype())) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+
+bool CSubSource::IsRepliconSubSource(CSubSource::TSubtype subtype)
+{
+    bool rval = false;
+    switch (subtype) {
+    case CSubSource::eSubtype_chromosome:
+    case CSubSource::eSubtype_linkage_group:
+    case CSubSource::eSubtype_plasmid_name:
+    case CSubSource::eSubtype_plastid_name:
+    case CSubSource::eSubtype_transposon_name:
+    case CSubSource::eSubtype_insertion_seq_name:
+    case CSubSource::eSubtype_segment:
+    case CSubSource::eSubtype_endogenous_virus_name:
+        rval = true;
+    default:
+        break;
+    }
+    return rval;
+}
+
+
+bool CSubSource::IsRepliconSubSourceValid(const string& val, const string& taxname, bool is_viral)
+{
+    if (NStr::IsBlank(val)) {
+        return true;
+    }
+    if (val.length() > 33 ||
+        (!taxname.empty() && NStr::FindNoCase(val, taxname) != NPOS)) {
+        return false;
+    }
+    const string alnum_start = "^[A-Za-z0-9]{1}";
+    const string common_chars_re = "[A-Za-z0-9_#\\-\\.\\:\\*\\/]*";
+
+    string match;
+    if (is_viral) {
+        match = alnum_start + common_chars_re + " ?" + common_chars_re + "$";
+    }
+    else {
+        match = alnum_start + common_chars_re + "$";
+    }
+
+    CRegexp r(match);
+
+    return r.IsMatch(val);
 }
 
 

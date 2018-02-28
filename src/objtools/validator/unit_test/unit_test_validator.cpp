@@ -7943,7 +7943,8 @@ static bool SubSourceHasOtherRules (CSubSource::TSubtype subtype)
         || subtype == CSubSource::eSubtype_fwd_primer_seq
         || subtype == CSubSource::eSubtype_rev_primer_name
         || subtype == CSubSource::eSubtype_rev_primer_seq
-        || subtype == CSubSource::eSubtype_country) {
+        || subtype == CSubSource::eSubtype_country
+        || CSubSource::IsRepliconSubSource(subtype)) {
         return true;
     } else {
         return false;
@@ -21526,16 +21527,20 @@ BOOST_AUTO_TEST_CASE(Test_VR_733)
 
 
 
-void TestOnePlasmid(const string& plasmid_name, bool expect_error)
+void TestOnePlasmid(const string& plasmid_name, bool expect_plasmid_error, bool expect_replicon_error)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     unit_test_util::SetGenome(entry, CBioSource::eGenome_plasmid);
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plasmid_name, plasmid_name);
     STANDARD_SETUP
 
-    if (expect_error) {
+    if (expect_plasmid_error) {
         expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BioSourceInconsistency",
                     "Problematic plasmid/chromosome/linkage group name '" + plasmid_name + "'"));
+    }
+    if (expect_replicon_error) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BioSourceInconsistency",
+            "plasmid-name value should start with letter or number"));
     }
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -21545,16 +21550,16 @@ void TestOnePlasmid(const string& plasmid_name, bool expect_error)
 
 BOOST_AUTO_TEST_CASE(Test_VR_742)
 {
-    TestOnePlasmid("plasmid", true);
-    TestOnePlasmid("Sebaea microphylla", true);
+    TestOnePlasmid("plasmid", true, false);
+    TestOnePlasmid("Sebaea microphylla", true, true);
 
     // these values are ok
-    TestOnePlasmid("megaplasmid", false);
-    TestOnePlasmid("2micron", false);
-    TestOnePlasmid("psomething", false);
-    TestOnePlasmid("unnamed", false);
-    TestOnePlasmid("unnamed2", false);
-    TestOnePlasmid("unnamed234", false);
+    TestOnePlasmid("megaplasmid", false, false);
+    TestOnePlasmid("2micron", false, false);
+    TestOnePlasmid("psomething", false, false);
+    TestOnePlasmid("unnamed", false, false);
+    TestOnePlasmid("unnamed2", false, false);
+    TestOnePlasmid("unnamed234", false, false);
 }
 
 
