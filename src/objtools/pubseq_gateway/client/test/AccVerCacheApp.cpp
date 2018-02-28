@@ -70,14 +70,12 @@ private:
     string m_LookupRemote;
     string m_LookupFileRemote;
     char m_Delimiter;
-    bool m_SaveBlobs = false;
     mutex m_CoutMutex;
     mutex m_CerrMutex;
 
     void RemoteLookup();
     void RemoteLookupFile();
-    void PrintBlobId(const CPSG_BlobId& blob_id);
-    void SaveBlob(CPSG_Blob& blob);
+    void PrintBlob(CPSG_Blob& blob);
 public:
     CAccVerCacheApp() :
         m_NumThreads(1),
@@ -127,8 +125,6 @@ public:
             m_LookupFileRemote = args["fa"].AsString();
         if (args["t"])
             m_NumThreads = args["t"].AsInteger();
-
-        m_SaveBlobs = args["s"];
     }
 
     virtual int Run(void)
@@ -162,10 +158,8 @@ public:
 void CAccVerCacheApp::RemoteLookup()
 {
     auto blob_id = CPSG_BioIdResolutionQueue::Resolve(m_HostPort, m_LookupRemote);
-    PrintBlobId(blob_id);
-
     auto blob = CPSG_BlobRetrievalQueue::Retrieve(m_HostPort, blob_id);
-    SaveBlob(blob);
+    PrintBlob(blob);
 }
 
 void CAccVerCacheApp::RemoteLookupFile()
@@ -231,11 +225,6 @@ void CAccVerCacheApp::RemoteLookupFile()
                                     try {
                                         TPSG_BlobIds result = res_queue.GetBlobIds(deadline);
                                         res_popped += result.size();
-
-                                        for (auto& blob_id : result) {
-                                            PrintBlobId(blob_id);
-                                        }
-
                                         blob_ids.insert(blob_ids.end(), result.begin(), result.end());
                                     }
                                     catch (const std::runtime_error& e) {
@@ -260,7 +249,7 @@ void CAccVerCacheApp::RemoteLookupFile()
                                         ret_popped += result.size();
 
                                         for (auto& blob : result) {
-                                            SaveBlob(blob);
+                                            PrintBlob(blob);
                                         }
                                     }
                                     catch (const std::runtime_error& e) {
@@ -323,19 +312,20 @@ void CAccVerCacheApp::RemoteLookupFile()
     }
 }
 
-void CAccVerCacheApp::PrintBlobId(const CPSG_BlobId& blob_id)
+void CAccVerCacheApp::PrintBlob(CPSG_Blob& blob)
 {
-    const auto name = blob_id.GetBioId().GetId();
+    const auto& blob_id = blob.GetBlobId();
+    const auto& name = blob_id.GetBioId().GetId();
+    lock_guard<mutex> lock(m_CoutMutex);
 
     if (blob_id.GetStatus() != CPSG_BlobId::eSuccess) {
-        lock_guard<mutex> lock(m_CerrMutex);
-        cerr << "Blob '" << name << "' failed to resolve:" << blob_id.GetMessage() << std::endl;
+        cout << name << "||Failed to resolve: " << blob_id.GetMessage() << std::endl;
         return;
     }
 
     const auto& blob_info = blob_id.GetBlobInfo();
     const string blob_info_date_queued = blob_info.date_queued ? CTime(blob_info.date_queued).AsString() : "";
-    lock_guard<mutex> lock(m_CoutMutex);
+
     cout
         << name << "||"
         << blob_info.gi << "|"
@@ -344,32 +334,18 @@ void CAccVerCacheApp::PrintBlobId(const CPSG_BlobId& blob_id)
         << blob_info.sat_key << "|"
         << blob_info.tax_id << "|"
         << blob_info_date_queued << "|"
-        << blob_info.state << "|"
-        << std::endl;
-}
-
-void CAccVerCacheApp::SaveBlob(CPSG_Blob& blob)
-{
-    const auto name = blob.GetBlobId().GetBioId().GetId();
+        << blob_info.state << "|";
 
     if (blob.GetStatus() != CPSG_Blob::eSuccess) {
-        lock_guard<mutex> lock(m_CerrMutex);
-        cerr << "Blob '" << name << "' failed to retrieve: " << blob.GetMessage() << std::endl;
+        cout << "Failed to retrieve: " << blob.GetMessage() << std::endl;
         return;
     }
 
-    if (!m_SaveBlobs) {
-        lock_guard<mutex> lock(m_CoutMutex);
-        cout << "Blob '" << name << "' was successfully retrieved" << std::endl;
-        return;
-    }
-
-    const auto filename = name + ".psg";
     auto& is = blob.GetStream();
-    ofstream os(filename, ios::binary|ios::out);
+    ostringstream os;
     os << is.rdbuf();
-    lock_guard<mutex> lock(m_CoutMutex);
-    cout << "Blob '" << name << "' saved to '" << filename << "'" << std::endl;
+    hash<string> blob_hash;
+    cout << os.str().size() << "|" <<blob_hash(os.str()) << endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////
