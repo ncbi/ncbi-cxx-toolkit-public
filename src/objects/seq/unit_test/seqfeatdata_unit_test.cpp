@@ -2128,21 +2128,3 @@ BOOST_AUTO_TEST_CASE(Test_Unverified)
     BOOST_CHECK_EQUAL(obj->IsUnverifiedOrganism(), false);
 
 }
-
-
-BOOST_AUTO_TEST_CASE(Test_VR_793)
-{
-    BOOST_CHECK_EQUAL(CSubSource::IsRepliconSubSource(CSubSource::eSubtype_altitude), false);
-    BOOST_CHECK_EQUAL(CSubSource::IsRepliconSubSource(CSubSource::eSubtype_chromosome), true);
-    CRef<CSubSource> ss(new CSubSource(CSubSource::eSubtype_plasmid_name, "abc"));
-    BOOST_CHECK_EQUAL(ss->IsRepliconSubSource(), true);
-
-    BOOST_CHECK_EQUAL(CSubSource::IsRepliconSubSourceValid("abc", "X"), true);
-    BOOST_CHECK_EQUAL(CSubSource::IsRepliconSubSourceValid(".abc", "X"), false);
-    BOOST_CHECK_EQUAL(CSubSource::IsRepliconSubSourceValid("abc def", "X"), false);
-    // allow space if viral
-    BOOST_CHECK_EQUAL(CSubSource::IsRepliconSubSourceValid("abc def", "X", true), true);
-
-    // don't allow taxname in value
-    BOOST_CHECK_EQUAL(CSubSource::IsRepliconSubSourceValid("hamster", "hamster"), false);
-}
