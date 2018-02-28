@@ -209,8 +209,7 @@ TMgr-DisplayTrack ::= SEQUENCE {
     name UTF8String,
     attrs SET OF TMgr-Attribute OPTIONAL,
     seqs SET OF TMgr-DatasetItemSeq OPTIONAL,
-    items SET OF TMgr-DatasetItem OPTIONAL,
-    hub-id TMgr-DHubId OPTIONAL -- used to show a track belongs to a hub
+    items SET OF TMgr-DatasetItem OPTIONAL
 }
 
 TMgr-DatasetItem ::= SEQUENCE {
@@ -318,7 +317,8 @@ TMgr-CreateUserTrackReply ::= SEQUENCE {
 ---
 TMgr-RemoveUserTrackRequest ::= SEQUENCE {
     identity TMgr-Identity,
-    dtrack-ids SET OF TMgr-DTrackId
+    dtrack-ids SET OF TMgr-DTrackId,
+    hub-id TMgr-DHubId OPTIONAL
 }
 
 TMgr-TypeTrackType ::= INTEGER {
