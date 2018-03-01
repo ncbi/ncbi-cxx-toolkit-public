@@ -1804,6 +1804,9 @@ public:
     /// Initialize deadline by adding relative timeout to the current time.
     CDeadline(const CTimeout& timeout);
 
+    /// Initialize deadline by adding timeout of specified type.
+    CDeadline(CTimeout::EType type) : CDeadline(CTimeout(type)) {}
+
     /// Check if the deadline is infinite.
     bool IsInfinite(void) const { return m_Infinite; }
 
