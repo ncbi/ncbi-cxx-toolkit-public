@@ -780,6 +780,78 @@ string& operator<<(string& s, const CConstRef<T>& obj)
 }
 
 
+// Proxy class for converting string literals to serial objects.
+struct SNcbi_AsnTextProxy
+{
+public:
+    SNcbi_AsnTextProxy(const char* s, size_t len)
+        : m_Data(s), m_Size(len)
+    {}
+
+    SNcbi_AsnTextProxy(const char* s)
+        : m_Data(s), m_Size(strlen(s))
+    {}
+
+    template<typename T> operator CConstRef<T>() const
+    {
+        return this->operator CRef<T>();
+    }
+
+    template<typename T> operator CRef<T>() const
+    {
+        CRef<T> x(new T);
+        this->operator >> (*x);
+        return x;
+    }
+
+    template<typename T> operator T () const
+    {
+        T x;
+        this->operator >> (x);
+        return std::move(x);
+    }
+
+    void operator >> (CRef<CSerialObject> dest) const
+    {
+        this->operator >> (*dest);
+    }
+
+    void operator >> (CSerialObject* dest) const
+    {
+        _ASSERT(dest != nullptr);
+        this->operator >> (*dest);
+    }
+
+    void operator >> (CSerialObject& dest) const
+    {
+        CNcbiIstrstream istr(m_Data, m_Size);
+        istr >> MSerial_AsnText >> dest;
+    }
+
+private:
+    friend SNcbi_AsnTextProxy operator "" _asn(const char* s, size_t len);
+
+    const char* const m_Data;
+    const size_t      m_Size;
+
+    SNcbi_AsnTextProxy(SNcbi_AsnTextProxy&&) = default;
+    SNcbi_AsnTextProxy(const SNcbi_AsnTextProxy&) = delete;
+    SNcbi_AsnTextProxy& operator=(const SNcbi_AsnTextProxy&) = delete;
+    SNcbi_AsnTextProxy& operator=(SNcbi_AsnTextProxy&&) = delete;
+};
+
+
+inline
+SNcbi_AsnTextProxy operator "" _asn(const char* s, size_t len)
+{
+    return SNcbi_AsnTextProxy(s, len);
+}
+
+
+#define ASN_STRING(s) SNcbi_AsnTextProxy(s)
+#define ASN(...) ASN_STRING(#__VA_ARGS__)
+
+
 END_NCBI_SCOPE
 
 // these methods must be defined in root namespace so they have prefix NCBISER
