@@ -31,6 +31,8 @@
 
 
 #include <ncbi_pch.hpp> 
+#include <algo/align/mergetree/equiv_range.hpp>
+#include <cmath>
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -41,7 +43,6 @@
 #include <objmgr/scope.hpp>
 
 
-#include <algo/align/mergetree/equiv_range.hpp>
 
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);
