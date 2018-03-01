@@ -323,11 +323,12 @@ private:
     void do_complete();
     http2_reply_data m_reply_data;
 public:
-    http2_request() :
+    http2_request(std::ostream* stream = nullptr) :
         m_id(55),
         m_session_data(nullptr),
         m_state(http2_request_state::rs_initial),
-        m_stream_id(-1)
+        m_stream_id(-1),
+        m_reply_data(stream)
     {
     }
     ~http2_request()

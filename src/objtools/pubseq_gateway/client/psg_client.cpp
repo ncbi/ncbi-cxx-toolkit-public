@@ -360,13 +360,15 @@ struct CPSG_BlobRetrievalQueue::SItem
     void Wait();
     bool IsDone() const;
     void Cancel();
-    void PopulateData(CPSG_Blob& blob) const;
+    void PopulateData(CPSG_Blob& blob);
+    unique_ptr<iostream> m_Stream;
     shared_ptr<HCT::http2_request> m_Request;
     CPSG_BlobId m_BlobId;
 };
 
 CPSG_BlobRetrievalQueue::SItem::SItem(const string& service, shared_ptr<HCT::io_future> afuture, CPSG_BlobId blob_id)
-    :   m_Request(make_shared<HCT::http2_request>()),
+    :   m_Stream(new stringstream),
+        m_Request(make_shared<HCT::http2_request>(m_Stream.get())),
         m_BlobId(move(blob_id))
 {
     const auto& info = blob_id.GetBlobInfo();
@@ -419,7 +421,7 @@ void CPSG_BlobRetrievalQueue::SItem::Cancel()
     m_Request->send_cancel();
 }
 
-void CPSG_BlobRetrievalQueue::SItem::PopulateData(CPSG_Blob& blob) const
+void CPSG_BlobRetrievalQueue::SItem::PopulateData(CPSG_Blob& blob)
 {
     if (m_Request->get_result_data().get_cancelled()) {
         blob.m_Status = CPSG_Blob::eCanceled;
@@ -431,7 +433,7 @@ void CPSG_BlobRetrievalQueue::SItem::PopulateData(CPSG_Blob& blob) const
     }
     else switch (m_Request->get_result_data().get_http_status()) {
         case 200: {
-            blob.m_Stream.reset(new stringstream(m_Request->get_reply_data_move()));
+            blob.m_Stream = move(m_Stream);
             blob.m_Status = CPSG_Blob::eSuccess;
             break;
         }
