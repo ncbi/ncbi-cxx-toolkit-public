@@ -324,7 +324,7 @@ void CAccVerCacheApp::PrintBlob(CPSG_Blob& blob)
     }
 
     const auto& blob_info = blob_id.GetBlobInfo();
-    const string blob_info_date_queued = blob_info.date_queued ? CTime(blob_info.date_queued).AsString() : "";
+    const string blob_info_date_queued = blob_info.version ? CTime(blob_info.version).AsString() : "";
 
     cout
         << name << "||"

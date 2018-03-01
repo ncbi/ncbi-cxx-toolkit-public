@@ -81,7 +81,7 @@ public:
         objects::CID2_Blob_Id::TSat_key               sat_key     = {};
         objects::CID2_Reply_Get_Blob_Id::TBlob_state  state       = {};
         TGi                                           gi          = {};
-        time_t                                        date_queued = {};
+        time_t                                        version     = {};
         TTaxId                                        tax_id      = {};
         Uint8                                         seq_length  = {};
     };
