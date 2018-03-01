@@ -182,7 +182,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_PROTEIN_ID)
 
 
 // SHORT_SEQUENCES
-DISCREPANCY_CASE(SHORT_SEQUENCES, CSeq_inst, eDisc | eSubmitter | eSmart | eBig, "Find Short Sequences")
+DISCREPANCY_CASE(SHORT_SEQUENCES, CSeq_inst, eDisc | eSmart | eBig, "Find Short Sequences")
 {
     if (obj.IsAa()) {
         return;
