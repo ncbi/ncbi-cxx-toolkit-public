@@ -582,6 +582,10 @@ DISCREPANCY_SUMMARIZE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE)
 
 DISCREPANCY_CASE(MAG_SHOULD_NOT_HAVE_STRAIN, CBioSource, eDisc | eSmart, "Organism assembled from metagenome reads should not have strain")
 {
+    if (!CDiscrepancyContext::HasLineage(obj, context.GetLineage(), "Bacteria") && !CDiscrepancyContext::HasLineage(obj, context.GetLineage(), "Archaea")) {
+        return;
+    }
+
     bool is_metagenomic = false;
     bool is_env_sample = false;
 
@@ -622,6 +626,10 @@ DISCREPANCY_SUMMARIZE(MAG_SHOULD_NOT_HAVE_STRAIN)
 
 DISCREPANCY_CASE(MAG_MISSING_ISOLATE, CBioSource, eDisc | eSmart, "Organism assembled from metagenome reads should have isolate")
 {
+    if (!CDiscrepancyContext::HasLineage(obj, context.GetLineage(), "Bacteria") && !CDiscrepancyContext::HasLineage(obj, context.GetLineage(), "Archaea")) {
+        return;
+    }
+
     bool is_metagenomic = false;
     bool is_env_sample = false;
     bool has_isolate = false;
@@ -652,7 +660,6 @@ DISCREPANCY_CASE(MAG_MISSING_ISOLATE, CBioSource, eDisc | eSmart, "Organism asse
     }
     if (!has_isolate) {
         m_Objs["[n] organism[s] assembled from metagenome [is] missing isolate"].Add(*context.NewFeatOrDescObj());
-
     }
 }
 
