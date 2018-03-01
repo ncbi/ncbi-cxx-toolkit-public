@@ -75,7 +75,7 @@ double s_CalcStdDev(const list<T>& List, T Mean) {
         RunningTotal += ((*Iter - Mean) * (*Iter - Mean))/double(Count);
     }
 
-    return std::sqrt(RunningTotal);
+    return sqrt(RunningTotal);
 }
 
 template<typename T>
@@ -83,7 +83,7 @@ void s_CalcDevs(const list<T>& Values, T Mean, double StdDev, list<double>& Devs
     typedef list<T> TypeList;
 
     ITERATE(typename TypeList, Iter, Values) {
-        double Dist = std::fabs( double(*Iter) - double(Mean));
+        double Dist = fabs( double(*Iter) - double(Mean));
         double Dev = (Dist/StdDev);
         Devs.push_back(Dev);
     }
