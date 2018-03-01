@@ -2856,7 +2856,10 @@ void CFeatureItem::x_AddQualsSite(
     CSeqFeatData::TSite site = data.GetSite();
     const string& site_name = s_GetSiteName( site );
 
-    if ( ctx.Config().IsFormatGenbank()  &&  ctx.IsProt() ) {
+    // ID-4627 : site_type qualifier is needed for GBSeq/INSDSeq XMl too
+    if ( (ctx.Config().IsFormatGenbank() ||
+          ctx.Config().IsFormatGBSeq() ||
+          ctx.Config().IsFormatINSDSeq()) &&  ctx.IsProt() ) {
         x_AddQual(eFQ_site_type, new CFlatSiteQVal( site_name ) );
     } else {
         if ( !m_Feat.IsSetComment() ||  
