@@ -827,7 +827,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     		 	 	 	 x_IsFieldRequested(eSubjectAccession) ||
     		 	 	 	 x_IsFieldRequested(eSubjAccessionVersion));
 
-    if(setSubjectIds || setSubjectTaxInfo || setSubjectTitle ||
+    if(setSubjectIds || setSubjectTaxInfo || setSubjectTaxInfoAll || setSubjectTitle ||
        x_IsFieldRequested(eSubjectStrand) || setSubjectId)
     {
         try {
