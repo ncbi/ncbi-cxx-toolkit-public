@@ -993,6 +993,12 @@ protobufd needs $(Z_LIB)
 protobufd needs3party $(ORIG_LIBS)
 protobufd needs3party $(Z_LIBS)
 proxsort needs taxoscli
+psg_cassandra needs connect
+psg_cassandra needs psg_diag
+psg_client needs psg_diag
+psg_client needs psg_rpc
+psg_diag needs xncbi
+psg_rpc needs3party $(ORIG_LIBS)
 pstub needs3party $(ORIG_LIBS)
 pub needs medline
 pubmed needs medline
@@ -1239,7 +1245,6 @@ variation_lib needs objannotation
 variation_lib needs refseq_aln_source
 variation_lib needs variation_utils
 variation_lib needs xconnserv
-variation_lib needs3party $(BOOST_SYSTEM_LIBS)
 variation_utils needs variation
 variation_utils needs xobjutil
 varrep needs xser
