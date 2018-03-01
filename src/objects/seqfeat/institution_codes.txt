@@ -2269,6 +2269,7 @@ GZAC	s	Guizhou Agricultural College, College of Life Science
 GZM	s	Giessener Zoologisches Museum		
 GZTM	s	Guizhou Institute of Traditional Chinese Medicine		
 GZU	s	Karl-Franzens-Universitaet Graz		
+GZUH	s	Guizhou University Herbarium		
 H	s	University of Helsinki		
 H-GSP	s	Howard University-Geological Survey of Pakistan Project		
 HA	s	Universidad del Azuay, Escuela de Biologia del Medio Ambiente		
