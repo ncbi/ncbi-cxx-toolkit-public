@@ -181,8 +181,8 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_PROTEIN_ID)
 }
 
 
-// SHORT_SEQUENCES
-DISCREPANCY_CASE(SHORT_SEQUENCES, CSeq_inst, eDisc | eSmart | eBig, "Find Short Sequences")
+// SEQ_SHORTER_THAN_50bp
+DISCREPANCY_CASE(SEQ_SHORTER_THAN_50bp, CSeq_inst, eDisc | eSubmitter | eSmart | eBig, "Find Short Sequences")
 {
     if (obj.IsAa()) {
         return;
@@ -193,7 +193,7 @@ DISCREPANCY_CASE(SHORT_SEQUENCES, CSeq_inst, eDisc | eSmart | eBig, "Find Short 
 }
 
 
-DISCREPANCY_SUMMARIZE(SHORT_SEQUENCES)
+DISCREPANCY_SUMMARIZE(SEQ_SHORTER_THAN_50bp)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }

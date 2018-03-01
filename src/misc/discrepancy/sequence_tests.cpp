@@ -1802,7 +1802,7 @@ DISCREPANCY_AUTOFIX(MITOCHONDRION_REQUIRED)
 }
 
 
-// SHORT_CONTIG
+// SEQ_SHORTER_THAN_200bp
 
 const string kShortContig = "[n] contig[s] [is] shorter than 200 nt";
 
@@ -1840,7 +1840,7 @@ static bool IsmRNASequenceInGenProdSet(CDiscrepancyContext& context, const CBios
 }
 
 
-DISCREPANCY_CASE(SHORT_CONTIG, CSeq_inst, eDisc | eSubmitter | eSmart | eBig, "Short Contig")
+DISCREPANCY_CASE(SEQ_SHORTER_THAN_200bp, CSeq_inst, eDisc | eSubmitter | eSmart | eBig, "Short Contig")
 {
     static TSeqPos MIN_CONTIG_LEN = 200;
     if (obj.IsNa() && obj.IsSetLength() && obj.GetLength() < MIN_CONTIG_LEN) {
@@ -1852,7 +1852,7 @@ DISCREPANCY_CASE(SHORT_CONTIG, CSeq_inst, eDisc | eSubmitter | eSmart | eBig, "S
 }
 
 
-DISCREPANCY_SUMMARIZE(SHORT_CONTIG)
+DISCREPANCY_SUMMARIZE(SEQ_SHORTER_THAN_200bp)
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
@@ -1875,7 +1875,7 @@ static bool RemoveBioseq(const CBioseq& bioseq, CScope& scope)
 }
 
 
-DISCREPANCY_AUTOFIX(SHORT_CONTIG)
+DISCREPANCY_AUTOFIX(SEQ_SHORTER_THAN_200bp)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
@@ -1888,7 +1888,7 @@ DISCREPANCY_AUTOFIX(SHORT_CONTIG)
             }
         }
     }
-    return CRef<CAutofixReport>(n ? new CAutofixReport("SHORT_CONTIG: [n] short bioseq[s] [is] removed", n) : 0);
+    return CRef<CAutofixReport>(n ? new CAutofixReport("SEQ_SHORTER_THAN_200bp: [n] short bioseq[s] [is] removed", n) : 0);
 }
 
 
@@ -2379,14 +2379,14 @@ DISCREPANCY_ALIAS(FLATFILE_FIND, FLATFILE_FIND_ONCALLER_UNFIXABLE);
 DISCREPANCY_ALIAS(FLATFILE_FIND, FLATFILE_FIND_ONCALLER_FIXABLE);
 
 
-// SEQUENCES_ARE_SHORT
+// ALL_SEQS_SHORTER_THAN_20kb
 
 static const string kAllShort = "No sequences longer than 20,000 nt found";
 static const string kLongerFound = "LongSeq";
 static const size_t MIN_SEQUENCE_LEN = 20000;
 
 
-DISCREPANCY_CASE(SEQUENCES_ARE_SHORT, CSeq_inst, eDisc | eSmart, "Short sequences test")
+DISCREPANCY_CASE(ALL_SEQS_SHORTER_THAN_20kb, CSeq_inst, eDisc | eSmart | eBig, "Short sequences test")
 {
     if (obj.GetLength() > MIN_SEQUENCE_LEN) {
         m_Objs[kLongerFound].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()), false);
@@ -2394,7 +2394,7 @@ DISCREPANCY_CASE(SEQUENCES_ARE_SHORT, CSeq_inst, eDisc | eSmart, "Short sequence
 }
 
 
-DISCREPANCY_SUMMARIZE(SEQUENCES_ARE_SHORT)
+DISCREPANCY_SUMMARIZE(ALL_SEQS_SHORTER_THAN_20kb)
 {
     if (m_Objs.GetMap().find(kLongerFound) == m_Objs.GetMap().end()) {
         // no sequences longer than 20000 nt
