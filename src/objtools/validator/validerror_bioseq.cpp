@@ -5896,7 +5896,9 @@ void CValidError_bioseq::x_ValidateCodingRegionParentPartialness(const CSeq_feat
 void CValidError_bioseq::x_ReportStartStopPartialProblem(int partial_type, const CSeq_feat& feat)
 {
     EDiagSev sev = eDiag_Warning;
-    if (m_Imp.IsGenomeSubmission() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA) {
+    if (m_Imp.IsGenomeSubmission() && 
+        (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA ||
+         feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA)) {
         sev = eDiag_Error;
     }
 
