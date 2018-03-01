@@ -185,44 +185,50 @@ CGff2Reader::ReadSeqAnnot(
                 &&  !NStr::StartsWith(line, "##sequence-region") ) {
             continue;
         }
-        if (xIsTrackLine(line)) {
-            if (!mCurrentFeatureCount) {
-                xParseTrackLine(line, pEC);
-                continue;
-            }
-            m_PendingLine = line;
-            break;
-        }
-        if (xIsTrackTerminator(line)) {
-            if (!mCurrentFeatureCount) {
-                xParseTrackLine("track", pEC);
-                continue;
-            }
-            break;
-        }
 
-        if (xNeedsNewSeqAnnot(line)) {
-            break;
-        }
+        try {
+            if (xIsTrackLine(line)) {
+                if (!mCurrentFeatureCount) {
+                    xParseTrackLine(line, pEC);
+                    continue;
+                }
+                m_PendingLine = line;
+                break;
+            }
+            if (xIsTrackTerminator(line)) {
+                if (!mCurrentFeatureCount) {
+                    xParseTrackLine("track", pEC);
+                    continue;
+                }
+                break;
+            }
+
+            if (xNeedsNewSeqAnnot(line)) {
+                break;
+            }
            
-        if (xParseBrowserLine(line, pAnnot, pEC)) {
-            continue;
-        }
+            if (xParseBrowserLine(line, pAnnot, pEC)) {
+                continue;
+            }
 
-        if (!xIsCurrentDataType(line)) {
-            xUngetLine(lr);
-            break;
-        }
+            if (!xIsCurrentDataType(line)) {
+                xUngetLine(lr);
+                break;
+            }
 
-        if ( CGff2Reader::IsAlignmentData(line)) {
-            if ((m_iFlags && fGenbankMode)  ||  
-                    x_ParseAlignmentGff(line, id_list, alignments)) {
+            if ( CGff2Reader::IsAlignmentData(line)) {
+                if ((m_iFlags && fGenbankMode)  ||  
+                        x_ParseAlignmentGff(line, id_list, alignments)) {
+                    continue;
+                }
+            }
+
+            if (xParseFeature(line, pAnnot, pEC)) {
                 continue;
             }
         }
-
-        if (xParseFeature(line, pAnnot, pEC)) {
-            continue;
+        catch (CObjReaderLineException& err) {
+            ProcessError(err, pEC);
         }
     }
 

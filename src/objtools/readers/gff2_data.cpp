@@ -1241,6 +1241,13 @@ bool CGff2Record::xInitFeatureData(
     }
     if (!CSoMap::SoTypeToFeature(recognizedType, *pFeature)) {
         return false;
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+                eDiag_Error,
+                0,
+                string("Bad data line: Invalid feature type \"") + recognizedType + "\"",
+                ILineError::eProblem_UnrecognizedFeatureName) );
+        pErr->Throw();
     }
 
     CSeqFeatData::ESubtype subtype = pFeature->GetData().GetSubtype();

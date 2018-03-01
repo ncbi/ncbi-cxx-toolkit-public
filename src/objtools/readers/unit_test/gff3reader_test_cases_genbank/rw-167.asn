@@ -66,33 +66,6 @@ Seq-annot ::= {
     },
     {
       id local id 3,
-      data region "",
-      location int {
-        from 310,
-        to 319,
-        strand plus,
-        id genbank {
-          accession "U00096",
-          version 3
-        }
-      },
-      qual {
-        {
-          qual "SO_type",
-          val "CAAT-signal"
-        },
-        {
-          qual "Parent",
-          val "gene0"
-        },
-        {
-          qual "ID",
-          val "id2"
-        }
-      }
-    },
-    {
-      id local id 4,
       data imp {
         key "regulatory"
       },
@@ -121,7 +94,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 5,
+      id local id 4,
       data imp {
         key "regulatory"
       },
@@ -150,7 +123,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 6,
+      id local id 5,
       data imp {
         key "regulatory"
       },
@@ -179,7 +152,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 6,
       data imp {
         key "regulatory"
       },
@@ -208,7 +181,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 8,
+      id local id 7,
       data imp {
         key "regulatory"
       },
@@ -237,7 +210,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 9,
+      id local id 8,
       data imp {
         key "regulatory"
       },
@@ -266,7 +239,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 9,
       data imp {
         key "regulatory"
       },
@@ -295,7 +268,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 11,
+      id local id 10,
       data imp {
         key "regulatory"
       },
@@ -324,7 +297,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 12,
+      id local id 11,
       data imp {
         key "regulatory"
       },
@@ -353,7 +326,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 12,
       data imp {
         key "regulatory"
       },
@@ -382,7 +355,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 14,
+      id local id 13,
       data imp {
         key "regulatory"
       },
@@ -411,7 +384,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 15,
+      id local id 14,
       data imp {
         key "regulatory"
       },
@@ -440,7 +413,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 15,
       data imp {
         key "regulatory"
       },
@@ -469,7 +442,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 17,
+      id local id 16,
       data imp {
         key "regulatory"
       },
@@ -498,7 +471,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 18,
+      id local id 17,
       data imp {
         key "regulatory"
       },
