@@ -38,7 +38,8 @@
 #  include <sys/ucontext.h> // for additional test below
 #endif
 
-#if defined(HAVE_LIBBACKWARD_CPP) && defined(HAVE_LIBDW)
+#if defined(HAVE_LIBBACKWARD_CPP) \
+    &&  (defined(HAVE_LIBDW) || defined(NCBI_OS_DARWIN))
 #  include "ncbi_stack_libbackward.cpp"
 #elif defined HAVE_LIBUNWIND
 #  include "ncbi_stack_libunwind.cpp"
