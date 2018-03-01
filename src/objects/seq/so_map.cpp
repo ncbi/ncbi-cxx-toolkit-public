@@ -382,7 +382,7 @@ bool CSoMap::SoTypeToFeature(
     if (it != mMapFeatFunc.end()) {
         return (it->second)(resolved_so_type, feature);
     }
-    return xFeatureMakeRegion(so_type, feature);
+    return false;
 }
 
 //  ----------------------------------------------------------------------------
