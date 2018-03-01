@@ -273,7 +273,9 @@ private:
         const CBioseq_Handle& bsh);
 
     void CheckForPubOnBioseq(const CBioseq& seq);
-    void CheckSoureDescriptor(const CBioseq_Handle& bsh);
+    void CheckSourceDescriptor(const CBioseq_Handle& bsh);
+    static bool x_ParentAndComponentLocationsDiffer(CBioseq_Handle bsh, CBioSource::TGenome parent_location);
+    static bool x_BadMetazoanMitochondrialLength(const CBioSource& src, const CSeq_inst& inst);
     void CheckForMolinfoOnBioseq(const CBioseq& seq);
     void CheckTpaHistory(const CBioseq& seq);
 

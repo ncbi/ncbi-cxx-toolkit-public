@@ -146,6 +146,7 @@ enum EErrType {
     eErr_SEQ_INST_AllNs,
     eErr_SEQ_INST_FarLocationExcludesFeatures,
     eErr_SEQ_INST_ProteinShouldNotHaveGaps,
+    eErr_SEQ_INST_MitoMetazoanTooLong,
     ERR_CODE_END(SEQ_INST),
 
     ERR_CODE_BEGIN(SEQ_DESCR) = 1000,

@@ -321,6 +321,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_INST_ProteinShouldNotHaveGaps,
     { "ProteinShouldNotHaveGaps",
       "Protein sequences should not have gaps" } },
+    { eErr_SEQ_INST_MitoMetazoanTooLong,
+    { "MitoMetazoanTooLong",
+      "Mitochondrial Metozoan sequences should be less than 20000 bp" } },
 
     /* SEQ_DESCR */
 

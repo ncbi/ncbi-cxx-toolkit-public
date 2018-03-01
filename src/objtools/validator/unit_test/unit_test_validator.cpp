@@ -22368,3 +22368,23 @@ BOOST_AUTO_TEST_CASE(Test_BADRRNAcomponentOverlapTRNA)
     TestOverlappingRNAFeatures(*loc1, *loc2, false);
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_796)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetLineage(entry, "Metazoan");
+    SetGenome(entry, CBioSource::eGenome_mitochondrion);
+    entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
+    entry->SetSeq().SetInst().SetLength(21000);
+    SetCompleteness(entry, CMolInfo::eCompleteness_complete);
+    STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "MitoMetazoanTooLong",
+        "Mitochondrial Metozoan sequences should be less than 20000 bp"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical,
+        "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [21000]"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}

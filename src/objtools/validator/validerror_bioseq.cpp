@@ -1358,7 +1358,7 @@ void CValidError_bioseq::ValidateBioseqContext(
         }
         // make sure that there is a source on this bioseq
         if ( !m_Imp.IsNoBioSource() ) {
-            CheckSoureDescriptor(bsh);
+            CheckSourceDescriptor(bsh);
             //CheckForBiosourceOnBioseq(seq);
         }
 
@@ -3050,7 +3050,7 @@ static int CountNs(const CSeq_data& seq_data, TSeqPos len)
         case CSeq_data::e_Iupacna:
             {
                 const string& s = seq_data.GetIupacna().Get();
-                for (size_t n = 0; n < len; n++) {
+                for (size_t n = 0; n < len && n < s.length(); n++) {
                     if (s[n] == 'N') {
                         total++;
                     }
@@ -4596,7 +4596,61 @@ bool CValidError_bioseq::ValidateRepr
 }
 
 
-void CValidError_bioseq::CheckSoureDescriptor(
+bool CValidError_bioseq::x_ParentAndComponentLocationsDiffer(CBioseq_Handle bsh, CBioSource::TGenome parent_location)
+{
+    bool rval = false;
+
+    // not a delta sequence, so no components to check
+    if (!bsh.IsSetInst()
+        || !bsh.GetInst().IsSetRepr()
+        || bsh.GetInst().GetRepr() != CSeq_inst::eRepr_delta
+        || !bsh.GetInst().IsSetExt()
+        || !bsh.GetInst().GetExt().IsDelta()
+        || !bsh.GetInst().GetExt().GetDelta().IsSet()) {
+        return rval;
+    }
+
+    for (auto it : bsh.GetInst().GetExt().GetDelta().Get()) {
+        if (! it->IsLoc()) continue;
+        CBioseq_Handle hdl = bsh.GetScope().GetBioseqHandle(it->GetLoc());
+        if (! hdl) continue;
+        CSeqdesc_CI ci(hdl, CSeqdesc::e_Source);
+        if (! ci) continue;
+        const CBioSource& crc = ci->GetSource();
+        CBioSource::TGenome cgenome = CBioSource::eGenome_unknown;
+        if (crc.IsSetGenome()) {
+            cgenome = crc.GetGenome();
+        }
+        if (parent_location == cgenome) break;
+        if (parent_location == CBioSource::eGenome_unknown || parent_location == CBioSource::eGenome_genomic) break;
+        if (cgenome == CBioSource::eGenome_unknown || cgenome == CBioSource::eGenome_genomic) break;
+        rval = true;
+        break;
+    }
+    return rval;
+}
+
+
+// From VR-796:
+// If the lineage contains Metazoa, the topology is circular, and the 
+// location is mitochondrion, the sequence length should not be
+// greater than 20000bp.
+// This is erring on the side of caution as most Metazoan genomes are less than 17000 bp.
+bool CValidError_bioseq::x_BadMetazoanMitochondrialLength(const CBioSource& src, const CSeq_inst& inst)
+{
+    if (src.IsSetGenome() && src.GetGenome() == CBioSource::eGenome_mitochondrion &&
+        inst.IsSetTopology() && inst.GetTopology() == CSeq_inst::eTopology_circular &&
+        src.IsSetOrg() && src.GetOrg().IsSetLineage() &&
+        NStr::Find(src.GetOrg().GetLineage(), "Metazoa") != NPOS &&
+        inst.IsSetLength() && inst.GetLength() > 20000) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+void CValidError_bioseq::CheckSourceDescriptor(
     const CBioseq_Handle& bsh)
 {
     CSeqdesc_CI di(bsh, CSeqdesc::e_Source);
@@ -4607,7 +4661,9 @@ void CValidError_bioseq::CheckSoureDescriptor(
     }
     _ASSERT(di);
 
-    if (m_Imp.IsTransgenic(di->GetSource())  &&
+    const CBioSource& src = di->GetSource();
+
+    if (m_Imp.IsTransgenic(src)  &&
         CSeq_inst::IsNa(bsh.GetInst_Mol())) {
         // "if" means "if no biosrcs on bsh"
         if( GetCache().GetFeatFromCache(
@@ -4620,37 +4676,16 @@ void CValidError_bioseq::CheckSoureDescriptor(
         }
     }
 
-    if (!bsh.IsSetInst()
-        || !bsh.GetInst().IsSetRepr()
-        || bsh.GetInst().GetRepr() != CSeq_inst::eRepr_delta
-        || !bsh.GetInst().IsSetExt()
-        || !bsh.GetInst().GetExt().IsDelta()
-        || !bsh.GetInst().GetExt().GetDelta().IsSet()) {
-        return;
+    if (src.IsSetGenome() && x_ParentAndComponentLocationsDiffer(bsh, src.GetGenome())) {
+        PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentBioSources_ConLocation,
+            "Genome difference between parent and component",
+            *(bsh.GetBioseqCore()));
     }
 
-    const CBioSource& src = di->GetSource();
-    if (! src.IsSetGenome()) return;
-    CBioSource::TGenome genome = src.GetGenome();
-
-    ITERATE (CDelta_ext::Tdata, it, bsh.GetInst().GetExt().GetDelta().Get()) {
-        if (! (*it)->IsLoc()) continue;
-        CBioseq_Handle hdl = m_Scope->GetBioseqHandle((*it)->GetLoc());
-        if (! hdl) continue;
-        CSeqdesc_CI ci(hdl, CSeqdesc::e_Source);
-        if (! ci) continue;
-        const CBioSource& crc = ci->GetSource();
-        // cout << MSerial_AsnText << crc << endl;
-        if (! crc.CanGetGenome()) continue;
-        // if (! crc.IsSetGenome()) continue;
-        CBioSource::TGenome cgenome = crc.GetGenome();
-        if (genome == cgenome) break;
-        if (genome == CBioSource::eGenome_unknown || genome == CBioSource::eGenome_genomic) break;
-        if (cgenome == CBioSource::eGenome_unknown || cgenome == CBioSource::eGenome_genomic) break;
-        PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentBioSources_ConLocation,
-                "Genome difference between parent and component",
-                *(bsh.GetBioseqCore()));
-        break;
+    if (x_BadMetazoanMitochondrialLength(src, bsh.GetInst())) {
+        PostErr(eDiag_Error, eErr_SEQ_INST_MitoMetazoanTooLong,
+            "Mitochondrial Metozoan sequences should be less than 20000 bp",
+            *(bsh.GetBioseqCore()));
     }
 }
 
