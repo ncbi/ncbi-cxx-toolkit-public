@@ -39,6 +39,10 @@
 #include <set>
 #include <unistd.h>
 
+#if __cplusplus >= 201103L
+    #include <mutex>
+#endif
+
 #include "corelib/ncbitime.hpp"
 #include "corelib/ncbistr.hpp"
 
@@ -59,21 +63,29 @@ using namespace IdLogUtil;
 static atomic_int       g_in_logging;
 const unsigned int      CCassQuery::DEFAULT_PAGE_SIZE = 4096;
 
+#if __cplusplus >= 201103L
+static std::mutex       s_CassLoggingLock;
+#endif
+
 static void LogCallback(const CassLogMessage *  message, void *  data)
 {
     g_in_logging++;
     try {
         if (data) {
-            ofstream* of = (ofstream*)data;
-            stringstream s;
+            #if __cplusplus >= 201103L
+            std::lock_guard<std::mutex>     lock(s_CassLoggingLock);
+            #endif
+
+            ofstream *      of = (ofstream*)data;
+            stringstream    s;
+
             s << "[" << message->time_ms << "] "
               << message->severity << ": " << message->message << NcbiEndl;
             (*of) << s.str();
             of->flush();
         }
         g_in_logging--;
-    }
-    catch(...) {
+    } catch(...) {
         g_in_logging--;
         throw;
     }
