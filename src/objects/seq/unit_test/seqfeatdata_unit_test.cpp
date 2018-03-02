@@ -173,6 +173,21 @@ BOOST_AUTO_TEST_CASE(Test_CapitalizationFix)
 
 BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
 {
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("114 degrees 51 degrees 56' 51 ''", true), "51.9475 N 114 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("114 14' 51", true), "51 N 114.23 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("114 degrees, 51 degrees 56' 51 ''", true), "51.9475 N 114 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("114 degrees 14' 42'' 51 degrees 56' 51 ''", true), "51.9475 N 114.2450 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("114 degrees 14' 51 degrees 56' 51 ''", true), "51.9475 N 114.23 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("114 degrees 14' 42'', 51 degrees 56' 51 ''", true), "51.9475 N 114.2450 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("114 degrees 14', 51 degrees 56' 51 ''", true), "51.9475 N 114.23 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("114 14' 42'' 51 56' 51''", true), "51.9475 N 114.2450 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("114 14' 42'' 51 56'", true), "51.93 N 114.2450 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("114 14' 42'' 51", true), "51 N 114.2450 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("114 51", true), "51 N 114 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("114 14' 51 56'", true), "51.93 N 114.23 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("114 14' 42'' 51 56'", true), "51.93 N 114.2450 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("114 42'' 51 56'", true), "51.93 N 114.0117 E");
+
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("+60.500280-145.866244", true), "60.500280 N 145.866244 W");
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("-60.500280+145.866244", true), "60.500280 S 145.866244 E");
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("-60.500280-145.866244", true), "60.500280 S 145.866244 W");

@@ -1587,6 +1587,136 @@ static void s_RemoveExtraText (string& token, string& extra_text)
 }
 
 
+void s_FindLatLonSeparator(const string& val, size_t& sep_pos, size_t& sep_len)
+{
+    vector<string> tokens;
+    vector<string> separators;
+    size_t second1 = NPOS;
+    size_t second2 = NPOS;
+    size_t minute1 = NPOS;
+    size_t minute2 = NPOS;
+    size_t comma = NPOS;
+    size_t minus_plus1 = NPOS;
+    size_t minus_plus2 = NPOS;
+    sep_pos = NPOS;
+    sep_len = 0;
+
+    bool in_separator = true;
+    size_t offset = 0;
+    for (auto it : val) {
+        if (isdigit(it) || it == '.' || it == '+' || it == '-') {
+            if (in_separator) {
+                // check for last separator being second or minute
+                if (!separators.empty() > 0) {
+                    if (separators.back()[0] == '\'') {
+                        if (separators.back()[1] == '\'') {
+                            if (second1 == NPOS) {
+                                second1 = offset - 1;
+                            } else if (second2 == NPOS) {
+                                second2 = offset - 1;
+                            } else {
+                                return;
+                            }
+                        } else if (minute1 == NPOS) {
+                            minute1 = offset - 1;
+                        } else if (minute2 == NPOS) {
+                            minute2 = offset - 1;
+                        } else {
+                            return;
+                        }
+                    }
+                }
+                string new_val = kEmptyStr;
+                new_val += it;
+                tokens.push_back(new_val);
+                in_separator = false;
+            } else {
+                tokens.back() += it;
+            }
+            if (it == '+' || it == '-') {
+                if (minus_plus1 == NPOS) {
+                    minus_plus1 = offset;
+                }
+                else if (minus_plus2 == NPOS) {
+                    minus_plus2 = offset;
+                }
+                else {
+                    return;
+                }
+            }
+        } else {
+            if (in_separator) {
+                if (separators.empty()) {
+                    string new_sep = kEmptyStr;
+                    separators.push_back(new_sep);
+                }
+                separators.back().push_back(it);
+            } else {
+                string new_sep = kEmptyStr;
+                if (it != ' ') {
+                    new_sep += it;
+                }
+                separators.push_back(new_sep);
+                in_separator = true;
+            }
+            if (it == ',') {
+                if (comma == NPOS) {
+                    comma = offset;
+                } else {
+                    return;
+                }
+            }
+        }
+        offset++;
+    }
+    if (in_separator) {
+        // check for last separator being second or minute
+        if (!separators.empty() > 0) {
+            if (separators.back()[0] == '\'') {
+                if (separators.back()[1] == '\'') {
+                    if (second1 == NPOS) {
+                        second1 = offset - 1;
+                    }
+                    else if (second2 == NPOS) {
+                        second2 = offset - 1;
+                    }
+                    else {
+                        return;
+                    }
+                }
+                else if (minute1 == NPOS) {
+                    minute1 = offset - 1;
+                }
+                else if (minute2 == NPOS) {
+                    minute2 = offset - 1;
+                }
+                else {
+                    return;
+                }
+            }
+        }
+    }
+    if (comma != NPOS) {
+        sep_pos = comma;
+        sep_len = 1;
+    } else if (tokens.size() == 2 && separators.size() == 1) {
+        sep_pos = tokens[0].length();
+    } else if (minus_plus1 == 0 && minus_plus2 != NPOS) {
+        sep_pos = minus_plus2;
+    } else if (minus_plus1 != NPOS && minus_plus2 == NPOS && minus_plus1 != 0) {
+        sep_pos = minus_plus1;
+    } else if (second1 != NPOS && (second2 != NPOS || second1 < val.length() - 2)) {
+        sep_pos = second1 + 1; // use middle second if there are two or if not at the end
+    } else if (minute1 != NPOS && minute2 != NPOS) { // use middle minute if there are two and not using seconds
+        sep_pos = minute1;
+    } else if (minute1 != NPOS && minute2 == NPOS && second1 == NPOS && minute1 < val.length() - 1) {
+        sep_pos = minute1;
+    } else if (!separators.empty() && separators[0].empty() && tokens.size() > 1) {
+        sep_pos = tokens[0].length();
+    }
+}
+
+
 string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
 {
     string cpy;
@@ -1658,7 +1788,7 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
     // get rid of colons, semicolons, and commas
     NStr::ReplaceInPlace (cpy, ":", " ");
     NStr::ReplaceInPlace (cpy, ";", " ");
-    NStr::ReplaceInPlace (cpy, ",", " ");
+//    NStr::ReplaceInPlace (cpy, ",", " ");
 
     // get rid of periods after letters not before numbers
     pos = NStr::Find (cpy, ".");
@@ -1755,48 +1885,33 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
     if (lat_pos == NPOS) {
         if (ns_pos == NPOS) {
             if (guess) {
-                // do we have just two numbers, separated by either a comma or just a space?
                 s_TrimInternalSpaces(cpy);
-                size_t sep_pos = NStr::Find (cpy, ",");
-                // if +/- are separators, need to keep them as part of the token, otherwise not
-                int sep_len = 1; 
+                size_t sep_pos = 0; // dividing point
+                size_t sep_len = 0; // number of characters in divider (to be removed)
+                s_FindLatLonSeparator(cpy, sep_pos, sep_len);
                 if (sep_pos == NPOS) {
-                    sep_pos = NStr::Find (cpy, " ");
-                    if (sep_pos == NPOS) {
-                        // perhaps we can use +/- as separators                        
-                        size_t start = 0;
-                        if (cpy.c_str()[0] == '+' || cpy.c_str()[0] == '-') {
-                            start = 1;
-                        }
-                        sep_pos = NStr::Find(cpy, "+", start);
-                        if (sep_pos != NPOS) {
-                            if (NStr::Find(cpy, "+", sep_pos + 1) != NPOS || NStr::Find(cpy, "-", sep_pos + 1) != NPOS) {
-                                return kEmptyStr;
-                            } else {
-                                sep_len = 0;
-                            }
-                        } else {
-                            sep_pos = NStr::Find(cpy, "-", start);
-                            if (sep_pos != NPOS) {
-                                if (NStr::Find(cpy, "+", sep_pos + 1) != NPOS || NStr::Find(cpy, "-", sep_pos + 1) != NPOS) {
-                                    return kEmptyStr;
-                                } else {
-                                    sep_len = 0;
-                                }
-                            } else {
-                                return kEmptyStr;
-                            }
-                        }
-                    } else if (NStr::Find(cpy, " ", sep_pos + 1) != NPOS) {
-                        return kEmptyStr;
-                    }
-                } else if (NStr::Find (cpy, ",", sep_pos + 1) != NPOS) {
                     return kEmptyStr;
                 }
                 la_token = cpy.substr(0, sep_pos);
-                lo_token = cpy.substr(sep_pos + sep_len);                 
+                lo_token = cpy.substr(sep_pos + sep_len); 
                 NStr::TruncateSpacesInPlace (la_token);
                 NStr::TruncateSpacesInPlace (lo_token);
+
+                if (!NStr::StartsWith(la_token, "+") && !NStr::StartsWith(la_token, "-")) {
+                    string tmp_la = s_GetNumFromLatLonToken(la_token, "N");
+                    string tmp_lo = s_GetNumFromLatLonToken(lo_token, "E");
+                    if (NStr::IsBlank(tmp_la) || NStr::IsBlank(tmp_lo)) {
+                        return kEmptyStr;
+                    }
+                    bool la_in_la_range = s_IsNumberStringInRange(tmp_la, 90.0);
+                    bool lo_in_la_range = s_IsNumberStringInRange(tmp_lo, 90.0);
+                    if (!la_in_la_range && lo_in_la_range) {
+                        tmp_la = la_token;
+                        la_token = lo_token;
+                        lo_token = tmp_la;
+                    }
+                }
+
                 if (NStr::StartsWith (la_token, "-")) {
                   la_token = "S " + la_token.substr(1);
                 } else {
