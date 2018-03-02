@@ -5867,7 +5867,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetTaxname(entry, "Human immunodeficiency virus");
     unit_test_util::SetTaxon(entry, 0);
     unit_test_util::SetTaxon(entry, 12721);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentVirusMoltype",
                               "HIV with moltype DNA should be proviral"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -5915,7 +5915,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
                               "Germline and rearranged should not both be present"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
                               "Transgenic and environmental sample should not both be present"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "EnvironSampleMissingQualifier",
                               "Environmental sample should also have isolation source or specific host annotated"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -5929,14 +5929,14 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_sex, "a");
     unit_test_util::SetLineage(entry, "Bacteria; foo");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InvalidSexQualifier",
                               "Unexpected use of /sex qualifier"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InvalidSexQualifier",
                               "Unexpected use of /sex qualifier"));
     unit_test_util::SetLineage(entry, "Archaea; foo");
     eval = validator.Validate(seh, options);
@@ -5985,7 +5985,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     // mating-type error for animal
     unit_test_util::SetLineage(entry, "Eukaryota; Metazoa; foo");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_mating_type, "a");
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InvalidMatingType",
                               "Unexpected use of /mating_type qualifier"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -6024,7 +6024,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     // plasmid
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_mating_type, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plasmid_name, "pfoo");
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MissingPlasmidLocation",
                               "Plasmid subsource but not plasmid location"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -6037,7 +6037,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
 
     // if plasmid genome, better have plasmid name
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plasmid_name, "");
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MissingPlasmidName",
                               "Plasmid location set but plasmid name missing. Add a plasmid source modifier with the plasmid name. Use unnamed if the name is not known."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -6055,7 +6055,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     plastid_vals.push_back("proplastid");
 
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plasmid_name, "");
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadPlastidName",
                               "Plastid name subsource chloroplast but not chloroplast location"));
     for (vector<string>::iterator it = plastid_vals.begin();
          it != plastid_vals.end();
@@ -6077,6 +6077,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     //frequency
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_frequency, "1");
     expected_errors[0]->SetSeverity(eDiag_Info);
+    expected_errors[0]->SetErrCode("BadBioSourceFrequencyValue");
     expected_errors[0]->SetErrMsg("bad frequency qualifier value 1");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -6092,11 +6093,13 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetLineage(entry, "Viruses; foo");
     unit_test_util::SetGenome(entry, CBioSource::eGenome_unknown);
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_sex, ok_sex_vals[0]);
+    expected_errors[0]->SetErrCode("InvalidSexQualifier");
     expected_errors[0]->SetErrMsg("Virus has unexpected Sex qualifier");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_sex, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_cell_line, "foo");
+    expected_errors[0]->SetErrCode("BioSourceInconsistency");
     expected_errors[0]->SetErrMsg("Virus has unexpected Cell-line qualifier");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -6154,6 +6157,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_isolation_source, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_metagenomic, "true");
+    expected_errors[0]->SetErrCode("MissingEnvironmentalSample");
     expected_errors[0]->SetErrMsg("Metagenomic should also have environmental sample annotated");
     expected_errors[0]->SetSeverity(eDiag_Critical);
     eval = validator.Validate(seh, options);
@@ -6163,6 +6167,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetLineage(entry, "Eukaryota; foo");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_sex, "monecious");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_mating_type, "A");
+    expected_errors[0]->SetErrCode("BioSourceInconsistency");
     expected_errors[0]->SetErrMsg("Sex and mating type should not both be present");
     expected_errors[0]->SetSeverity(eDiag_Warning);
     eval = validator.Validate(seh, options);
@@ -6171,6 +6176,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_sex, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_mating_type, "");
     unit_test_util::SetLineage(entry, "Eukaryota; metagenomes");
+    expected_errors[0]->SetErrCode("MissingMetagenomicQualifier");
     expected_errors[0]->SetErrMsg("If metagenomes appears in lineage, BioSource should have metagenomic qualifier");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -6180,6 +6186,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetLineage (entry, "Bacteria; foo");
     unit_test_util::SetTaxon(entry, 0);
     unit_test_util::SetTaxon(entry, 77133);
+    expected_errors[0]->SetErrCode("UnculturedNeedsEnvSample");
     expected_errors[0]->SetErrMsg("Uncultured should also have /environmental_sample");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -6200,6 +6207,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     entry = unit_test_util::BuildGoodSeq();
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "true");
     seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetErrCode("EnvironSampleMissingQualifier");
     expected_errors[0]->SetErrMsg("Environmental sample should also have isolation source or specific host annotated");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -6207,6 +6215,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "");
     unit_test_util::SetDiv(entry, "BCT");
     unit_test_util::SetGenome(entry, CBioSource::eGenome_apicoplast);
+    expected_errors[0]->SetErrCode("BadOrganelleLocation");
     expected_errors[0]->SetErrMsg("Bacterial or viral source should not have organelle location");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -6216,6 +6225,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
 
     unit_test_util::SetDiv(entry, "ENV");
     unit_test_util::SetGenome(entry, CBioSource::eGenome_unknown);
+    expected_errors[0]->SetErrCode("MissingEnvironmentalSample");
     expected_errors[0]->SetErrMsg("BioSource with ENV division is missing environmental sample subsource");
     expected_errors[0]->SetSeverity(eDiag_Error);
     eval = validator.Validate(seh, options);
@@ -6225,6 +6235,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "true");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_isolation_source, "foo");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "bar");
+    expected_errors[0]->SetErrCode("StrainWithEnvironSample");
     expected_errors[0]->SetErrMsg("Strain should not be present in an environmental sample");
     expected_errors[0]->SetSeverity(eDiag_Error);
     eval = validator.Validate(seh, options);
@@ -6234,6 +6245,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_isolation_source, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_metagenome_source, "foo");
+    expected_errors[0]->SetErrCode("MissingMetagenomicQualifier");
     expected_errors[0]->SetErrMsg("Metagenome source should also have metagenomic qualifier");
     expected_errors[0]->SetSeverity(eDiag_Error);
     eval = validator.Validate(seh, options);
@@ -6242,6 +6254,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_metagenome_source, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_synonym, "synonym value");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_gb_synonym, "synonym value");
+    expected_errors[0]->SetErrCode("OrgModValueInvalid");
     expected_errors[0]->SetErrMsg("OrgMod synonym is identical to OrgMod gb_synonym");
     expected_errors[0]->SetSeverity(eDiag_Warning);
     eval = validator.Validate(seh, options);
@@ -6250,6 +6263,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_synonym, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_gb_synonym, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_other, "cRNA");
+    expected_errors[0]->SetErrCode("InconsistentVirusMoltype");
     expected_errors[0]->SetErrMsg("cRNA note conflicts with molecule type");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -6282,7 +6296,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
 
     CLEAR_ERRORS
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentVirusMoltype",
                               "Negative-strand virus with plus strand CDS should be mRNA or cRNA"));
     scope.RemoveTopLevelSeqEntry(seh);
     entry = unit_test_util::BuildGoodNucProtSet();
@@ -6350,7 +6364,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "CDSonMinusStrandMRNA",
                                                 "CDS should not be on minus strand of mRNA molecule"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "InconsistentVirusMoltype",
                                                 "Negative-strand virus with minus strand CDS should be genomic")); 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -6363,7 +6377,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     CRef<CSeq_feat> misc_feat = unit_test_util::AddMiscFeature (entry);
     misc_feat->SetComment("nonfunctional");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentVirusMoltype",
                                                 "Negative-strand virus with nonfunctional plus strand misc_feature should be mRNA or cRNA"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -6402,7 +6416,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     // error if not genomic
     unit_test_util::SetBiomol (entry, CMolInfo::eBiomol_mRNA);
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentVirusMoltype",
                                                 "Negative-strand virus with nonfunctional minus strand misc_feature should be genomic")); 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -6418,7 +6432,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     f->SetData().SetStr("PRJNA12345");
     biosample->SetUser().SetData().push_back(f);
     entry->SetSeq().SetDescr().Set().push_back(biosample);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BacteriaMissingSourceQualifier",
                               "Bacteria should have strain or isolate or environmental sample"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "DBLinkProblem",
                               "Bad BioSample format - PRJNA12345"));
@@ -6447,7 +6461,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_isolate, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "true");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "EnvironSampleMissingQualifier",
                               "Environmental sample should also have isolation source or specific host annotated"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -6461,7 +6475,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_tissue_type, "X");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "Y");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidTissueType",
         "Tissue-type is inappropriate for bacteria"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -6479,7 +6493,7 @@ BOOST_AUTO_TEST_CASE(Test_SingleStrandViruses)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "InconsistentVirusMoltype",
         "Plus-strand virus with plus strand CDS should be genomic RNA or mRNA"));
     
     eval = validator.Validate(seh, options);
@@ -8638,7 +8652,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MolInfoConflictsWithBioSource)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentVirusMoltype",
                               "Genomic DNA viral lineage indicates no DNA stage"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MolInfoConflictsWithBioSource",
                               "Taxonomy indicates single-stranded RNA, sequence does not agree."));
@@ -20384,7 +20398,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_616)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency", "Orgmod.strain should not be 'yes'"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OrgModValueInvalid", "Orgmod.strain should not be 'yes'"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
@@ -21534,7 +21548,7 @@ void TestOnePlasmid(const string& plasmid_name, bool expect_error)
     STANDARD_SETUP
 
     if (expect_error) {
-        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BioSourceInconsistency",
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BadPlasmidChromosomeLinkageName",
                     "Problematic plasmid/chromosome/linkage group name '" + plasmid_name + "'"));
     }
     eval = validator.Validate(seh, options);
