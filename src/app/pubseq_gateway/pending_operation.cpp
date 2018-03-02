@@ -78,13 +78,17 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
 
     m_Loader->SetDataReadyCB(HST::CHttpReply<CPendingOperation>::s_DataReady, &resp);
     m_Loader->SetErrorCB(
-        [&resp](const char* Text, CCassBlobWaiter* Waiter) {
-            ERRLOG1(("%s", Text));
+        [&resp](ECassError  err_type,
+                const char *  text, CCassBlobWaiter *  waiter) {
+            ERRLOG1(("%s", text));
+            if (err_type == eNotFound)
+                resp.Send404("not found", text);
         }
     );
     m_Loader->SetDataChunkCB(
-        [this, &resp](const unsigned char* Data, unsigned int Size, int ChunkNo, bool IsLast) {
-            LOG3(("Chunk: [%d]: %u", ChunkNo, Size));
+        [this, &resp](const unsigned char *  data, unsigned int  size,
+                      int  chunk_no, bool  is_last) {
+            LOG3(("Chunk: [%d]: %u", chunk_no, size));
             assert(!m_FinishedRead);
             if (m_Cancelled) {
                 m_Loader->Cancel();
@@ -98,9 +102,9 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
             if (resp.GetState() == HST::CHttpReply<CPendingOperation>::eReplyInitialized) {
                 resp.SetContentLength(m_Loader->GetBlobSize());
             }
-            if (Data && Size > 0)
-                m_Chunks.push_back(resp.PrepadeChunk(Data, Size));
-            if (IsLast)
+            if (data && size > 0)
+                m_Chunks.push_back(resp.PrepadeChunk(data, size));
+            if (is_last)
                 m_FinishedRead = true;
             if (resp.IsOutputReady())
                 Peek(resp);

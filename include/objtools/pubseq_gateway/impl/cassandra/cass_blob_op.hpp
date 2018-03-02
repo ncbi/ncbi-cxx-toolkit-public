@@ -50,10 +50,19 @@ enum ECassTristate {
     eFalse
 };
 
-typedef function<void(const unsigned char *  Data,
-                      unsigned int  Size, int  ChunkNo,
-                      bool  IsLast)> DataChunkCB_t;
-typedef function<void(const char *  Text,
+
+// Error types for the error callback
+enum ECassError {
+    eNotFound,      // Blob not found
+    eUnknownErr     // Generic error reported
+};
+
+
+typedef function<void(const unsigned char *  data,
+                      unsigned int  size, int  chunk_no,
+                      bool  is_last)>               DataChunkCB_t;
+typedef function<void(ECassError  err_type,
+                      const char *  text,
                       CCassBlobWaiter *  waiter)> DataErrorCB_t;
 typedef void(*DataReadyCB_t)(void*);
 
@@ -166,14 +175,12 @@ protected:
         }
     }
 
-    void Error(const char *  msg)
+    void Error(ECassError  err_type, const char *  msg)
     {
+        assert(m_ErrorCb != nullptr);
         m_State = eError;
         m_LastError = msg;
-        if (m_ErrorCb)
-            m_ErrorCb(msg, this);
-        else
-            RAISE_DB_ERROR(eQueryFailedRestartable, msg);
+        m_ErrorCb(err_type, msg, this);
     }
 
     bool IsTimedOut(void) const
@@ -217,7 +224,7 @@ protected:
                 *restarted = true;
                 m_State = restart_to_state;
             } else {
-                Error(e.what());
+                Error(eUnknownErr, e.what());
             }
         }
         return false;

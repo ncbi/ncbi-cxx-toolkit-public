@@ -226,7 +226,7 @@ void CCassBlobLoader::Wait1(void)
                                     "incomplete (key=%s.%d, flags=0x%lx)",
                                     m_Keyspace.c_str(), m_Key,
                                     m_BlobStat.flags);
-                            Error(msg);
+                            Error(eUnknownErr, msg);
                             break;
                         }
 
@@ -243,15 +243,13 @@ void CCassBlobLoader::Wait1(void)
                                          "actual: %ld (singlechunk)",
                                          m_Keyspace.c_str(), m_Key,
                                          m_ExpectedSize, len);
-                                Error(msg);
-                            }
-                            else {
+                                Error(eUnknownErr, msg);
+                            } else {
                                 m_State = eDone;
                                 m_DataCb(rawdata, len, 0, true);
                             }
                             break;
-                        }
-                        else { // multi-chunk
+                        } else { // multi-chunk
                             m_QueryArr.reserve(m_LargeParts + 1);
                             CloseAll();
                             while ((int)m_QueryArr.size() < m_LargeParts)
@@ -260,8 +258,20 @@ void CCassBlobLoader::Wait1(void)
                             RequestChunksAhead();
                             m_State = eReadingChunks;
                         }
-                    }
-                    else {
+                    } else {
+                        if (!m_StatLoaded) {
+                            // No data at all, i.e. there is no such a blob
+                            // in the DB
+                            string  msg = "Blob not found, key: " + m_Keyspace +
+                                          NStr::NumericToString(m_Key);
+
+                            // Call a CB which tells that a 404 reply should be
+                            // sent
+                            Error(eNotFound, msg.c_str());
+
+                            CloseAll();
+                        }
+
                         UpdateLastActivity();
                         m_State = eDone; // no data
                     }
@@ -315,7 +325,7 @@ void CCassBlobLoader::Wait1(void)
                                              "is too large",
                                              m_Keyspace.c_str(), m_Key,
                                              local_id, len);
-                                    Error(msg);
+                                    Error(eUnknownErr, msg);
                                     return;
                                 }
                                 m_CurrentIdx++;
@@ -339,7 +349,7 @@ void CCassBlobLoader::Wait1(void)
                                      "(key=%s.%d, chunk=%d) wr=%d",
                                      m_Keyspace.c_str(), m_Key, local_id,
                                      static_cast<int>(wr));
-                            Error(msg);
+                            Error(eUnknownErr, msg);
                             return;
                         }
                     }
@@ -352,7 +362,7 @@ void CCassBlobLoader::Wait1(void)
                                  "Failed to fetch blob (key=%s.%d) result is "
                                  "imcomplete remaining %ldbytes",
                                  m_Keyspace.c_str(), m_Key, m_RemainingSize);
-                        Error(msg);
+                        Error(eUnknownErr, msg);
                         break;
                     }
 
@@ -389,7 +399,7 @@ void CCassBlobLoader::Wait1(void)
 
                 async_rslt_t wr = ar_done;
                 if (!qry->IsEOF()) {
-                    wr = qry->NextRow(); 
+                    wr = qry->NextRow();
                     if (wr == ar_dataready) {
                         UpdateLastActivity();
                         if (m_BlobStat.modified != qry->FieldGetInt64Value(0)) {
@@ -430,7 +440,7 @@ void CCassBlobLoader::Wait1(void)
                         }
 
                         if (has_error) {
-                            Error(msg);
+                            Error(eUnknownErr, msg);
                         } else {
                             m_State = eDone;
                             m_DataCb(nullptr, 0, -1, true);
@@ -445,7 +455,7 @@ void CCassBlobLoader::Wait1(void)
                              "Failed to re-confirm blob flags (key=%s.%d) "
                              "query returned no data",
                              m_Keyspace.c_str(), m_Key);
-                    Error(msg);
+                    Error(eUnknownErr, msg);
                     break;
                 }
                 break;
@@ -454,7 +464,7 @@ void CCassBlobLoader::Wait1(void)
                 snprintf(msg, sizeof(msg),
                          "Failed to get blob (key=%s.%d) unexpected state (%d)",
                          m_Keyspace.c_str(), m_Key, static_cast<int>(m_State));
-                Error(msg);
+                Error(eUnknownErr, msg);
             }
         }
     } while (b_need_repeat);
@@ -738,7 +748,7 @@ void CCassBlobInserter::Wait1()
                          "Failed to insert blob (key=%s.%d) "
                          "unexpected state (%d)",
                          m_Keyspace.c_str(), m_Key, static_cast<int>(m_State));
-                Error(msg);
+                Error(eUnknownErr, msg);
             }
         }
     } while (b_need_repeat);
@@ -902,7 +912,7 @@ void CCassBlobDeleter::Wait1(void)
                 snprintf(msg, sizeof(msg),
                          "Failed to delete blob (key=%s.%d) unexpected state (%d)",
                          m_Keyspace.c_str(), m_Key, static_cast<int>(m_State));
-                Error(msg);
+                Error(eUnknownErr, msg);
             }
         }
     } while (b_need_repeat);
@@ -1009,14 +1019,17 @@ void CCassBlobOp::GetBlob(CAppOp &  op, unsigned int  op_timeout_ms,
 
     CCassBlobLoader     loader(
         &op, op_timeout_ms, m_Conn, m_Keyspace, key, false, true, data_chunk_cb,
-        [&is_error, &errmsg](const char *  Text, CCassBlobWaiter *  Waiter) {
+        [&is_error, &errmsg](ECassError  err_type,
+                             const char *  text, CCassBlobWaiter *  waiter)
+        {
             is_error = 1;
-            errmsg = Text;
+            errmsg = text;
         }
     );
 
     CCassConnection::Perform(op, op_timeout_ms, nullptr, nullptr,
-        [&loader](bool is_repeated) {
+        [&loader](bool is_repeated)
+        {
             if (is_repeated)
                 loader.Restart();
             bool b = loader.Wait();
