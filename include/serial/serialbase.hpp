@@ -708,6 +708,7 @@ NCBI_XSERIAL_EXPORT CNcbiOstream& WriteObject(CNcbiOstream& str, TConstObjectPtr
 NCBI_XSERIAL_EXPORT CNcbiIstream& ReadObject( CNcbiIstream& str, TObjectPtr      ptr, TTypeInfo info);
 
 
+/// Read data from a stream to a CRef<CSerialObject>. The CRef is reset before reading.
 template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
 istream& operator>>(istream& in, CRef<T>& obj)
 {
@@ -715,6 +716,7 @@ istream& operator>>(istream& in, CRef<T>& obj)
     return in >> *obj;
 }
 
+/// Read text ASN.1 from a c-string to a serial object. Return the unread part of the string.
 inline
 const char* operator>>(const char* s, CSerialObject& obj)
 {
@@ -723,6 +725,7 @@ const char* operator>>(const char* s, CSerialObject& obj)
     return s + in.tellg();
 }
 
+/// Read text ASN.1 from an std::string to a serial object. Return the unread part of the string.
 inline
 string operator>>(const string& s, CSerialObject& obj)
 {
@@ -731,6 +734,8 @@ string operator>>(const string& s, CSerialObject& obj)
     return s.substr(in.tellg());
 }
 
+/// Read data from a c-string to a CRef<CSerialObject>. The CRef is reset before reading.
+/// Return the unread part of the string.
 template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
 const char* operator>>(const char* s, CRef<T>& obj)
 {
@@ -738,6 +743,8 @@ const char* operator>>(const char* s, CRef<T>& obj)
     return s >> *obj;
 }
 
+/// Read data from an std::string to a CRef<CSerialObject>. The CRef is reset before reading.
+/// Return the unread part of the string.
 template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
 string operator>>(const string& s, CRef<T>& obj)
 {
@@ -746,18 +753,21 @@ string operator>>(const string& s, CRef<T>& obj)
 }
 
 
+/// Write a CRef<CSerialObject> to a stream.
 template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
 ostream& operator<<(ostream& out, const CRef<T>& obj)
 {
     return out << *obj;
 }
 
+/// Write a CConstRef<CSerialObject> to a stream.
 template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
 ostream& operator<<(ostream& out, const CConstRef<T>& obj)
 {
     return out << *obj;
 }
 
+/// Write a serial object> to an std::string.
 inline
 string& operator<<(string& s, const CSerialObject& obj)
 {
@@ -767,12 +777,14 @@ string& operator<<(string& s, const CSerialObject& obj)
     return s;
 }
 
+/// Write a CRef<CSerialObject> to an std::string.
 template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
 string& operator<<(string& s, const CRef<T>& obj)
 {
     return s << *obj;
 }
 
+/// Write a CConstRef<CSerialObject> to an std::string.
 template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
 string& operator<<(string& s, const CConstRef<T>& obj)
 {
@@ -841,13 +853,23 @@ private:
 };
 
 
+/// User literal allowing to initialize CRef<> with an ASN.1 string.
+/// Examples:
+///   CRef<CSeq_id> id = "Seq-id ::= gi 12345"_asn;
+///   CRef<CSeq_id> id = R"~~(Seq-id ::= local str "foobar")~~"_asn;
 inline
 SNcbi_AsnTextProxy operator "" _asn(const char* s, size_t len)
 {
     return SNcbi_AsnTextProxy(s, len);
 }
 
-
+/// Macro simplifying usage of ASN.1 strings - no quoting or escaping is required.
+/// Examples:
+///   CRef<CSeq_id> id = ASN(Seq-id ::= local str "foobar");
+///   ASN(
+///     Seq-id ::= local
+///       str "foobar"
+///   ) >> *id;
 #define ASN_STRING(s) SNcbi_AsnTextProxy(s)
 #define ASN(...) ASN_STRING(#__VA_ARGS__)
 
