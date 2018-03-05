@@ -216,13 +216,13 @@ void CPSG_BioIdResolutionQueue::SItem::PopulateData(CPSG_BlobId& blob_id) const
             try {
                 AccVerResolverUnpackData(rec, data);
                 blob_id.m_Status = CPSG_BlobId::eSuccess;
-                blob_id.m_BlobInfo.gi          = rec[0].AsInt8;
-                blob_id.m_BlobInfo.seq_length  = rec[1].AsUint4;
-                blob_id.m_BlobInfo.sat         = rec[2].AsUint1;
-                blob_id.m_BlobInfo.sat_key     = rec[3].AsUint4;
-                blob_id.m_BlobInfo.tax_id      = rec[4].AsUint4;
-                blob_id.m_BlobInfo.version     = rec[5].AsDateTime;
-                blob_id.m_BlobInfo.state       = rec[6].AsUint1;
+                blob_id.m_BlobInfo.gi               = rec[0].AsInt8;
+                blob_id.m_BlobInfo.seq_length       = rec[1].AsUint4;
+                blob_id.m_BlobInfo.sat              = rec[2].AsUint1;
+                blob_id.m_BlobInfo.sat_key          = rec[3].AsUint4;
+                blob_id.m_BlobInfo.tax_id           = rec[4].AsUint4;
+                blob_id.m_BlobInfo.last_modified    = rec[5].AsDateTime;
+                blob_id.m_BlobInfo.state            = rec[6].AsUint1;
             }
             catch (const DDRPC::EDdRpcException& e) {
                 blob_id.m_Status = CPSG_BlobId::eError;
