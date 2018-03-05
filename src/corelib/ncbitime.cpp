@@ -3761,6 +3761,15 @@ CDeadline::CDeadline(const CTimeout& timeout)
         timeout.Get(&sec, &usec);
         x_Add(sec, usec * (unsigned int)(kNanoSecondsPerSecond / kMicroSecondsPerSecond));
     }
+    else if (timeout.IsDefault()) {
+        NCBI_THROW(CTimeException, eArgument, "Cannot convert from default CTimeout");
+    }
+}
+
+
+CDeadline::CDeadline(EType)
+    : m_Seconds(0), m_Nanoseconds(0), m_Infinite(true)
+{
 }
 
 

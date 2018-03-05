@@ -1452,7 +1452,7 @@ public:
     ///   SignalSome, SignalAll, CConditionVariableException
     bool WaitForSignal
     (CMutex&           mutex,
-     const CDeadline&  deadline = CDeadline(CTimeout::eInfinite));
+     const CDeadline&  deadline = CDeadline::eInfinite);
 
     /// Release mutex and lock the calling thread until the condition
     /// variable is signalled.
@@ -1470,7 +1470,7 @@ public:
     ///   SignalSome, SignalAll, CConditionVariableException
     bool WaitForSignal
     (CFastMutex&       mutex,
-     const CDeadline&  deadline = CDeadline(CTimeout::eInfinite));
+     const CDeadline&  deadline = CDeadline::eInfinite);
 
     /// Wake at least one of the threads that are currently waiting on this
     /// condition variable (if any threads are waiting on it).

@@ -168,7 +168,7 @@ public:
     /// Perform a single bio-id resolution, synchronously
     static CPSG_BlobId Resolve(const string&    service,
                                CPSG_BioId       bio_id,
-                               const CDeadline& deadline = CTimeout::eInfinite);
+                               const CDeadline& deadline = CDeadline::eInfinite);
 
     /// Retrieve results of the id resolution that are currently ready.
     /// @note
@@ -295,7 +295,7 @@ public:
     /// Perform single blob retrieval, synchronously
     static CPSG_Blob Retrieve(const string&    service,
                               CPSG_BlobId      blob_id,
-                              const CDeadline& deadline = CTimeout::eInfinite);
+                              const CDeadline& deadline = CDeadline::eInfinite);
 
     /// Get blobs that are ready for the immediate retrieval (and/or those that
     /// cannot be retrieved for whatever reason).

@@ -1804,8 +1804,13 @@ public:
     /// Initialize deadline by adding relative timeout to the current time.
     CDeadline(const CTimeout& timeout);
 
-    /// Initialize deadline by adding timeout of specified type.
-    CDeadline(CTimeout::EType type) : CDeadline(CTimeout(type)) {}
+    /// Type of special deadlines.
+    enum EType {
+        eInfinite, ///< Infinite deadline.
+    };
+
+    /// Initialize deadline of specified type.
+    CDeadline(EType);
 
     /// Check if the deadline is infinite.
     bool IsInfinite(void) const { return m_Infinite; }
@@ -1825,6 +1830,8 @@ public:
     bool operator < (const CDeadline& right_hand_operand) const;
 
 private:
+    CDeadline(CTimeout::EType);
+
     void x_Now(void);
     void x_Add(unsigned int seconds, unsigned int nanoseconds);
 
