@@ -1,4 +1,27 @@
 Seq-annot ::= {
+  desc {
+    user {
+      type str "Conversion Info",
+      data {
+        {
+          label str "critical errors",
+          data int 0
+        },
+        {
+          label str "errors",
+          data int 1
+        },
+        {
+          label str "warnings",
+          data int 0
+        },
+        {
+          label str "notes",
+          data int 0
+        }
+      }
+    }
+  },
   data ftable {
     {
       id local id 1,
@@ -38,39 +61,11 @@ Seq-annot ::= {
         },
         {
           id local id 7
-        },
-        {
-          id local id 8
         }
       }
     },
     {
       id local id 2,
-      data region "",
-      location int {
-        from 999,
-        to 1011,
-        strand plus,
-        id local str "ctg123"
-      },
-      qual {
-        {
-          qual "SO_type",
-          val "TF_binding_site"
-        },
-        {
-          qual "Parent",
-          val "gene00001"
-        }
-      },
-      xref {
-        {
-          id local id 1
-        }
-      }
-    },
-    {
-      id local id 3,
       data rna {
         type mRNA
       },
@@ -112,7 +107,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 6
+          id local id 5
         },
         {
           id local id 1
@@ -120,7 +115,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 3,
       data rna {
         type mRNA
       },
@@ -156,7 +151,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 7
+          id local id 6
         },
         {
           id local id 1
@@ -164,7 +159,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 5,
+      id local id 4,
       data rna {
         type mRNA
       },
@@ -206,7 +201,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 8
+          id local id 7
         },
         {
           id local id 1
@@ -214,7 +209,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 6,
+      id local id 5,
       data cdregion {
         frame one
       },
@@ -256,7 +251,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 3
+          id local id 2
         },
         {
           id local id 1
@@ -264,7 +259,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 6,
       data cdregion {
         frame one
       },
@@ -300,7 +295,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 4
+          id local id 3
         },
         {
           id local id 1
@@ -308,7 +303,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 8,
+      id local id 7,
       data cdregion {
         frame one
       },
@@ -344,7 +339,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 5
+          id local id 4
         },
         {
           id local id 1

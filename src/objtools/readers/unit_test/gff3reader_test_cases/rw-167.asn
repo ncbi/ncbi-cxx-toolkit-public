@@ -1,30 +1,30 @@
 Seq-annot ::= {
+  desc {
+    user {
+      type str "Conversion Info",
+      data {
+        {
+          label str "critical errors",
+          data int 0
+        },
+        {
+          label str "errors",
+          data int 2
+        },
+        {
+          label str "warnings",
+          data int 0
+        },
+        {
+          label str "notes",
+          data int 0
+        }
+      }
+    }
+  },
   data ftable {
     {
       id local id 1,
-      data region "",
-      location int {
-        from 0,
-        to 4641651,
-        strand plus,
-        id genbank {
-          accession "U00096",
-          version 3
-        }
-      },
-      qual {
-        {
-          qual "SO_type",
-          val "chromosome"
-        },
-        {
-          qual "Is_circular",
-          val "true"
-        }
-      }
-    },
-    {
-      id local id 2,
       data gene {
         locus "thrL",
         syn {
@@ -49,6 +49,9 @@ Seq-annot ::= {
         }
       },
       xref {
+        {
+          id local id 2
+        },
         {
           id local id 3
         },
@@ -93,12 +96,6 @@ Seq-annot ::= {
         },
         {
           id local id 17
-        },
-        {
-          id local id 18
-        },
-        {
-          id local id 19
         }
       },
       dbxref {
@@ -109,7 +106,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 3,
+      id local id 2,
       data imp {
         key "regulatory"
       },
@@ -138,44 +135,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local id 1
         }
       }
     },
     {
-      id local id 4,
-      data region "",
-      location int {
-        from 310,
-        to 319,
-        strand plus,
-        id genbank {
-          accession "U00096",
-          version 3
-        }
-      },
-      qual {
-        {
-          qual "SO_type",
-          val "CAAT-signal"
-        },
-        {
-          qual "Parent",
-          val "gene0"
-        },
-        {
-          qual "ID",
-          val "id2"
-        }
-      },
-      xref {
-        {
-          id local id 2
-        }
-      }
-    },
-    {
-      id local id 5,
+      id local id 3,
       data imp {
         key "regulatory"
       },
@@ -204,12 +169,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local id 1
         }
       }
     },
     {
-      id local id 6,
+      id local id 4,
       data imp {
         key "regulatory"
       },
@@ -238,12 +203,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local id 1
         }
       }
     },
     {
-      id local id 7,
+      id local id 5,
       data imp {
         key "regulatory"
       },
@@ -272,12 +237,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local id 1
         }
       }
     },
     {
-      id local id 8,
+      id local id 6,
       data imp {
         key "regulatory"
       },
@@ -306,12 +271,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local id 1
         }
       }
     },
     {
-      id local id 9,
+      id local id 7,
       data imp {
         key "regulatory"
       },
@@ -340,12 +305,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local id 1
         }
       }
     },
     {
-      id local id 10,
+      id local id 8,
       data imp {
         key "regulatory"
       },
@@ -374,12 +339,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local id 1
         }
       }
     },
     {
-      id local id 11,
+      id local id 9,
       data imp {
         key "regulatory"
       },
@@ -408,12 +373,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local id 1
         }
       }
     },
     {
-      id local id 12,
+      id local id 10,
       data imp {
         key "regulatory"
       },
@@ -442,12 +407,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local id 1
         }
       }
     },
     {
-      id local id 13,
+      id local id 11,
       data imp {
         key "regulatory"
       },
@@ -476,12 +441,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local id 1
         }
       }
     },
     {
-      id local id 14,
+      id local id 12,
       data imp {
         key "regulatory"
       },
@@ -510,12 +475,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local id 1
         }
       }
     },
     {
-      id local id 15,
+      id local id 13,
       data imp {
         key "regulatory"
       },
@@ -544,12 +509,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local id 1
         }
       }
     },
     {
-      id local id 16,
+      id local id 14,
       data imp {
         key "regulatory"
       },
@@ -578,12 +543,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local id 1
         }
       }
     },
     {
-      id local id 17,
+      id local id 15,
       data imp {
         key "regulatory"
       },
@@ -612,12 +577,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local id 1
         }
       }
     },
     {
-      id local id 18,
+      id local id 16,
       data imp {
         key "regulatory"
       },
@@ -646,12 +611,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local id 1
         }
       }
     },
     {
-      id local id 19,
+      id local id 17,
       data imp {
         key "regulatory"
       },
@@ -680,7 +645,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local id 1
         }
       }
     }
