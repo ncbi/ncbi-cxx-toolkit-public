@@ -1645,7 +1645,7 @@ NCBI_XOBJEDIT_EXPORT const char* strLinkBaseGeneOntologyRef =
 NCBI_XOBJEDIT_EXPORT const char* strLinkBaseUSPTO =
     "http://patft.uspto.gov/netacgi/nph-Parser?patentnumber=";
 NCBI_XOBJEDIT_EXPORT const char* strLinkBaseUniProt =
-    "http://http://www.uniprot.org/uniprot/";
+    "https://www.uniprot.org/uniprot/";
 
 NCBI_XOBJEDIT_EXPORT const char* strDocLink =
     "https://www.ncbi.nlm.nih.gov/genome/annotation_euk/process/";
