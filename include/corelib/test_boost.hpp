@@ -45,6 +45,7 @@
 #include <corelib/expr.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/request_ctx.hpp>
 
 
 // Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
@@ -215,6 +216,11 @@ struct test_name : public F { void test_method(); };                    \
                                                                         \
 static void BOOST_AUTO_TC_INVOKER( test_name )()                        \
 {                                                                       \
+    NCBI_NS_NCBI::CDiagContext& dctx = NCBI_NS_NCBI::GetDiagContext();  \
+    NCBI_NS_NCBI::CRequestContext& rctx = dctx.GetRequestContext();     \
+    rctx.SetRequestID();                                                \
+    NCBI_NS_NCBI::CRequestContextGuard_Base rg(&rctx);                  \
+    dctx.PrintRequestStart().Print("test_name", #test_name);            \
     BOOST_TEST_CHECKPOINT('"' << #test_name << "\" fixture entry.");    \
     test_name t;                                                        \
     BOOST_TEST_CHECKPOINT('"' << #test_name << "\" entry.");            \
@@ -252,6 +258,11 @@ struct test_name : public F { void test_method(); };                    \
                                                                         \
 static void BOOST_AUTO_TC_INVOKER( test_name )()                        \
 {                                                                       \
+    NCBI_NS_NCBI::CDiagContext& dctx = NCBI_NS_NCBI::GetDiagContext();  \
+    NCBI_NS_NCBI::CRequestContext& rctx = dctx.GetRequestContext();     \
+    rctx.SetRequestID();                                                \
+    NCBI_NS_NCBI::CRequestContextGuard_Base rg(&rctx);                  \
+    dctx.PrintRequestStart().Print("test_name", #test_name);            \
     test_name t;                                                        \
     try {                                                               \
         t.test_method();                                                \
