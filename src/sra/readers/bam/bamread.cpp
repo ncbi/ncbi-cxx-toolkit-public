@@ -360,16 +360,19 @@ static bool s_OmitAmbiguousMatchCigar(void)
 
 
 NCBI_PARAM_DECL(bool, BAM, USE_RAW_INDEX);
-NCBI_PARAM_DEF_EX(bool, BAM, USE_RAW_INDEX, false,
+NCBI_PARAM_DEF_EX(bool, BAM, USE_RAW_INDEX, true,
                   eParam_NoThread, BAM_USE_RAW_INDEX);
 
 
 bool CBamDb::UseRawIndex(EUseAPI use_api)
 {
-    if ( use_api == eUseDefaultAPI )
-        return NCBI_PARAM_TYPE(BAM, USE_RAW_INDEX)::GetDefault();
-    else
+    if ( use_api == eUseDefaultAPI ) {
+        static bool value = NCBI_PARAM_TYPE(BAM, USE_RAW_INDEX)::GetDefault();
+        return value;
+    }
+    else {
         return use_api == eUseRawIndex;
+    }
 }
 
 
