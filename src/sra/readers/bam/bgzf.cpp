@@ -201,7 +201,7 @@ void CPagedFile::x_ReadPage(CPagedFilePage& page, TFilePos file_pos)
             Uint8 bytes = size-rem;
             double seconds = sw.Elapsed();
             x_AddReadStatistics(bytes, seconds);
-            if ( s_GetDebug() >= 5 ) {
+            if ( s_GetDebug() >= 3 ) {
                 LOG_POST(Info<<"BGZF: Read page "<<file_pos/kSegmentSize<<
                          " @ "<<file_pos<<" in "<<seconds<<" sec"
                          " speed: "<<bytes/(seconds*(1<<20))<<" MB/s");
