@@ -882,12 +882,6 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
         else {
             int count = args["count"].AsInteger();
             for ( int i = 0; i < count; ++i ) {
-#if 1 // TESTING ID-4557
-        CNcbiOfstream ostr1("test.ID-4557.asn.bsh.asn2flat");
-        ostr1 << MSerial_AsnText << bsh.GetCompleteBioseq();
-        CNcbiOfstream ostr2("test.ID-4557.asn.seh.asn2flat");
-        ostr2 << MSerial_AsnText << bsh.GetTopLevelEntry().GetCompleteSeq_entry();
-#endif
                 m_FFGenerator->Generate( bsh, *flatfile_os);
             }
 
