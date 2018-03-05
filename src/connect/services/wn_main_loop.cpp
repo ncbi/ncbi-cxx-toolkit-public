@@ -724,7 +724,7 @@ bool CMainLoopThread::x_GetNextJob(CNetScheduleJob& job)
     if (!m_WorkerNode->WaitForExclusiveJobToFinish())
         return false;
 
-    if (m_Timeline.GetJob(CTimeout::eInfinite, job, NULL) != CNetScheduleGetJob::eJob) {
+    if (m_Timeline.GetJob(CDeadline::eInfinite, job, NULL) != CNetScheduleGetJob::eJob) {
         return false;
     }
 
