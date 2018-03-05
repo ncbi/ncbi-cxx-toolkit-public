@@ -1736,6 +1736,23 @@ string SBamAlignInfo::get_cigar() const
 }
 
 
+bool SBamAlignInfo::has_ambiguous_match() const
+{
+    const char* ptr = get_cigar_ptr();
+    for ( uint16_t count = get_cigar_ops_count(); count--; ) {
+        uint32_t op = SBamUtil::MakeUint4(ptr);
+        ptr += 4;
+        switch ( op & 0xf ) {
+        case kCIGAR_M:
+            return true;
+        default:
+            break;
+        }
+    }
+    return false;
+}
+
+
 static inline char* s_format(char* dst, uint32_t v)
 {
     if ( v < 10 ) {

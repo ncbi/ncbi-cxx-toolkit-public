@@ -712,6 +712,7 @@ private:
     void x_GetString(CBamString& buf, uint64_t& pos,
                      const char* msg, TGetString2 func) const;
     void x_GetCIGAR(void) const;
+    bool x_HasAmbiguousMatch() const;
     void x_GetStrand(void) const;
 
     void x_MapId(CSeq_id& id) const;
@@ -737,6 +738,7 @@ private:
         TSeqPos GetRefSeqPos() const;
         
         void x_InvalidateBuffers();
+        bool x_HasAmbiguousMatch() const;
     };
     struct SRawImpl : public CObject {
         CRef< CObjectFor<CBamRawDb> > m_RawDB;

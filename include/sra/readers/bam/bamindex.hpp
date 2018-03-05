@@ -759,6 +759,7 @@ struct NCBI_BAMREAD_EXPORT SBamAlignInfo
     uint32_t get_cigar_read_size() const;
     pair< COpenRange<uint32_t>, COpenRange<uint32_t> > get_cigar_alignment(void) const;
     string get_cigar() const;
+    bool has_ambiguous_match() const;
 
     const char* get_aux_data(char c1, char c2) const;
     CTempString get_aux_data_string(char c1, char c2) const;
@@ -950,6 +951,10 @@ public:
     pair< COpenRange<TSeqPos>, COpenRange<TSeqPos> > GetCIGARAlignment(void) const
         {
             return make_pair(m_AlignRefRange, m_AlignReadRange);
+        }
+    bool HasAmbiguousMatch() const
+        {
+            return m_AlignInfo.has_ambiguous_match();
         }
     
     string GetCIGAR() const

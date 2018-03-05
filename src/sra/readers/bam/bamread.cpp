@@ -348,6 +348,17 @@ static bool s_GetCigarInAlignExt(void)
 }
 
 
+NCBI_PARAM_DECL(bool, BAM, OMIT_AMBIGUOUS_MATCH_CIGAR);
+NCBI_PARAM_DEF(bool, BAM, OMIT_AMBIGUOUS_MATCH_CIGAR, false);
+
+
+static bool s_OmitAmbiguousMatchCigar(void)
+{
+    static bool value = NCBI_PARAM_TYPE(BAM, OMIT_AMBIGUOUS_MATCH_CIGAR)::GetDefault();
+    return value;
+}
+
+
 NCBI_PARAM_DECL(bool, BAM, USE_RAW_INDEX);
 NCBI_PARAM_DEF_EX(bool, BAM, USE_RAW_INDEX, false,
                   eParam_NoThread, BAM_USE_RAW_INDEX);
@@ -1364,6 +1375,17 @@ void CBamAlignIterator::SAADBImpl::x_InvalidateBuffers()
 }
 
 
+bool CBamAlignIterator::SAADBImpl::x_HasAmbiguousMatch() const
+{
+    for ( size_t i = 0; i < m_CIGAR.size(); ++i ) {
+        if ( m_CIGAR[i] == 'M' ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 TSeqPos CBamAlignIterator::SAADBImpl::GetRefSeqPos() const
 {
     uint64_t pos = 0;
@@ -1687,6 +1709,18 @@ inline void CBamAlignIterator::x_GetCIGAR(void) const
 {
     x_GetString(m_AADBImpl->m_CIGAR, m_AADBImpl->m_CIGARPos, "CIGAR",
                 AlignAccessAlignmentEnumeratorGetCIGAR);
+}
+
+
+bool CBamAlignIterator::x_HasAmbiguousMatch() const
+{
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.HasAmbiguousMatch();
+    }
+    else {
+        x_GetCIGAR();
+        return m_AADBImpl->x_HasAmbiguousMatch();
+    }
 }
 
 
@@ -2303,7 +2337,11 @@ CRef<CSeq_align> CBamAlignIterator::GetMatchAlign(void) const
 
     denseg.SetNumseg(segcount);
 
-    if ( s_GetCigarInAlignExt() ) {
+    bool add_cigar = s_GetCigarInAlignExt();
+    if ( add_cigar && s_OmitAmbiguousMatchCigar() && x_HasAmbiguousMatch() ) {
+        add_cigar = false;
+    }
+    if ( add_cigar ) {
         CRef<CUser_object> obj(new CUser_object);
         CRef<CObject_id> id;
         id = new CObject_id();
