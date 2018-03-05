@@ -759,9 +759,11 @@ BOOST_AUTO_TEST_CASE(MemoryTest)
 #else
     const TSeqPos kRangeStep = 1000000;
 #endif
+    const TSeqPos kRangeStart = kRangeStep;
     const TSeqPos kRangeCount = 10;
+    Uint8 first_used_memory = 0;
     for ( TSeqPos i = 0; i < kRangeCount; ++i ) {
-        TSeqPos from = i*kRangeStep;
+        TSeqPos from = kRangeStart+i*kRangeStep;
         TSeqPos to = from+kRangeStep;
         CRef<CSeq_loc> loc(new CSeq_loc);
         loc->SetInt().SetId(*seqid);
@@ -796,7 +798,12 @@ BOOST_AUTO_TEST_CASE(MemoryTest)
         }
         
         if ( tseh ) {
-            cout << "BAM TSE memory: " << tseh.GetUsedMemory() << endl;
+            Uint8 used_memory = tseh.GetUsedMemory();
+            if ( !first_used_memory ) {
+                first_used_memory = used_memory;
+            }
+            cout << "BAM TSE memory: " << used_memory << endl;
+            BOOST_CHECK(used_memory <= 1.5*first_used_memory);
             scope.RemoveFromHistory(tseh);
             BOOST_CHECK(tseh);
             if (i % 2) {
