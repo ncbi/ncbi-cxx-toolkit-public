@@ -14,7 +14,7 @@ LIBS = $(SDBAPI_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included
 
-CHECK_REQUIRES = in-house-resources
+CHECK_REQUIRES = connext in-house-resources
 
 CHECK_COPY = sdbapi_unit_test.ini
 
