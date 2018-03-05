@@ -1565,24 +1565,20 @@ static const string kOgRefs = "OrgRef";
 
 DISCREPANCY_CASE(TAX_LOOKUP_MISMATCH, CBioSource, eDisc, "Find Tax Lookup Mismatches")
 {
-    if (!obj.IsSetOrg()) {
-        return;
+    if (obj.IsSetOrg()) {
+        m_Objs[kOgRefs].Add(*context.NewFeatOrDescObj(eNoRef, false, const_cast<COrg_ref*>(&obj.GetOrg())));
     }
-    m_Objs[kOgRefs].Add(*context.NewFeatOrDescObj(eKeepRef, false, const_cast<CBioSource*>(&obj)));
 }
 
 static void GetOrgRefs(TReportObjectList& objs, vector<CRef<COrg_ref>>& org_refs)
 
 {
-    NON_CONST_ITERATE (TReportObjectList, obj, objs) {
-
-        CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>(obj->GetPointer());
+    for (auto obj: objs) {
+        CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>(obj.GetPointer());
         if (dobj) {
-
-            const CBioSource* biosrc = dynamic_cast<const CBioSource*>(dobj->GetMoreInfo().GetPointer());
-            const COrg_ref& org_ref = biosrc->GetOrg();
+            const COrg_ref* org_ref = dynamic_cast<const COrg_ref*>(dobj->GetMoreInfo().GetPointer());
             CRef<COrg_ref> new_org_ref(new COrg_ref);
-            new_org_ref->Assign(org_ref);
+            new_org_ref->Assign(*org_ref);
             org_refs.push_back(new_org_ref);
         }
     }
@@ -1648,26 +1644,18 @@ static void GetMismatchOrMissingOrgRefReport(CDiscrepancyContext& context, CRepo
             TReportObjectList& objs = objs_node[kOgRefs].GetObjects();
             TReportObjectList::iterator obj_it = objs.begin();
 
-            ITERATE (CTaxon3_reply::TReply, item, reply->GetReply()) {
+            for (auto item: reply->GetReply()) {
 
                 bool report = false;
                 if (is_mismatch) {
-                    report = (*item)->IsData() && IsOrgDiffers(**org_ref, (*item)->GetData().GetOrg());
+                    report = item->IsData() && IsOrgDiffers(**org_ref, item->GetData().GetOrg());
                 }
                 else {
-                    report = !(*item)->IsData() || (*item)->IsError();
+                    report = !item->IsData() || item->IsError();
                 }
 
                 if (report) {
-                    CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>(obj_it->GetPointer());
-                    CConstRef<CSeqdesc> desc(dynamic_cast<const CSeqdesc*>(dobj->GetObject().GetPointer()));
-                    CConstRef<CSeq_feat> feat(dynamic_cast<const CSeq_feat*>(dobj->GetObject().GetPointer()));
-                    if (desc.Empty()) {
-                        objs_node[subitem].Add(*context.NewDiscObj(feat));
-                    }
-                    else {
-                        objs_node[subitem].Add(*context.NewSeqdescObj(desc, kEmptyStr));
-                    }
+                    objs_node[subitem].Add(**obj_it);
                 }
                 ++org_ref;
                 ++obj_it;
@@ -1693,10 +1681,9 @@ static const string kTaxlookupMissing = "[n] tax name[s] [is] missing in taxonom
 
 DISCREPANCY_CASE(TAX_LOOKUP_MISSING, CBioSource, eDisc, "Find Missing Tax Lookup")
 {
-    if (!obj.IsSetOrg()) {
-        return;
+    if (obj.IsSetOrg()) {
+        m_Objs[kOgRefs].Add(*context.NewFeatOrDescObj(eNoRef, false, const_cast<COrg_ref*>(&obj.GetOrg())));
     }
-    m_Objs[kOgRefs].Add(*context.NewFeatOrDescObj(eKeepRef, false, const_cast<CBioSource*>(&obj)));
 }
 
 
