@@ -591,11 +591,12 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
                 return kEmptyStr;
             }
             string s, sep, comma, ht;
+            bool is_uniprot = false;
             switch (choice) {
             case CSeq_id::e_Embl:       s = "embl ";        comma = ",";  break;
             case CSeq_id::e_Other:      s = "REFSEQ: ";                   break;
-            case CSeq_id::e_Swissprot:  s = "UniProtKB: ";  comma = ",";  break;
-            case CSeq_id::e_Pir:        s = "UniProtKB: ";                break;
+            case CSeq_id::e_Swissprot:  s = "UniProtKB: "; is_uniprot = true; comma = ",";  break;
+            case CSeq_id::e_Pir:        s = "UniProtKB: "; is_uniprot = true;               break;
             case CSeq_id::e_Prf:        s = "prf: ";                      break;
             default:                    break;
             }
@@ -612,7 +613,16 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
                     acc += '.' + NStr::IntToString(tsid->GetVersion());
                 }
 #ifdef NEW_HTML_FMT
+#if 0
                 GetContext()->Config().GetHTMLFormatter().FormatNucId(ht, *idh.GetSeqId(), GetContext()->GetScope().GetGi(idh), acc);
+#else
+                if (is_uniprot) {
+                    GetContext()->Config().GetHTMLFormatter().FormatUniProtId(ht, acc);
+                } else {
+                    GetContext()->Config().GetHTMLFormatter().FormatNucId(ht, *idh.GetSeqId(),
+                        GetContext()->GetScope().GetGi(idh), acc);
+                }
+#endif
                 s += comma + sep + "accession " + ht;
 #else
                 if (is_html) {

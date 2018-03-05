@@ -94,6 +94,7 @@ public:
     virtual void FormatTranscript(string& str, const string& name) const = 0;
     virtual void FormatGeneralId(CNcbiOstream& os, const string& id) const = 0;
     virtual void FormatGapLink(CNcbiOstream& os, TSeqPos gap_size, const string& id, bool is_prot) const = 0;
+    virtual void FormatUniProtId(string& str, const string& prot_id) const = 0;
 };
 
 class NCBI_FORMAT_EXPORT CHTMLEmptyFormatter : public IHTMLFormatter
@@ -111,6 +112,7 @@ public:
     void FormatTranscript(string& str, const string& name) const;
     void FormatGeneralId(CNcbiOstream& os, const string& id) const;
     void FormatGapLink(CNcbiOstream& os, TSeqPos gap_size, const string& id, bool is_prot) const;
+    void FormatUniProtId(string& str, const string& prot_id) const;
 };
 
 class NCBI_FORMAT_EXPORT CFlatFileConfig

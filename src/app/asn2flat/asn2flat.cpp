@@ -82,6 +82,7 @@ public:
     void FormatTranscript(string& str, const string& name) const;
     void FormatGeneralId(CNcbiOstream& os, const string& id) const;
     void FormatGapLink(CNcbiOstream& os, TSeqPos gap_size, const string& id, bool is_prot) const;
+    void FormatUniProtId(string& str, const string& prot_id) const;
 
 private:
     mutable CRef<CScope> m_scope;
@@ -274,6 +275,15 @@ void CHTMLFormatterEx::FormatGapLink(CNcbiOstream& os, TSeqPos gap_size,
         "    <a href=\"" << link_base << id << "?expand-gaps=on\">Expand Ns</a>";
 }
 
+void CHTMLFormatterEx::FormatUniProtId(string& str, const string& prot_id) const
+{
+    str = "<a href=\"";
+    str += strLinkBaseUniProt;
+    str += prot_id;
+    str += "\">";
+    str += prot_id;
+    str += "</a>";
+}
 
 class CAsn2FlatApp : public CNcbiApplication, public CGBReleaseFile::ISeqEntryHandler
 {
@@ -872,6 +882,12 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
         else {
             int count = args["count"].AsInteger();
             for ( int i = 0; i < count; ++i ) {
+#if 1 // TESTING ID-4557
+        CNcbiOfstream ostr1("test.ID-4557.asn.bsh.asn2flat");
+        ostr1 << MSerial_AsnText << bsh.GetCompleteBioseq();
+        CNcbiOfstream ostr2("test.ID-4557.asn.seh.asn2flat");
+        ostr2 << MSerial_AsnText << bsh.GetTopLevelEntry().GetCompleteSeq_entry();
+#endif
                 m_FFGenerator->Generate( bsh, *flatfile_os);
             }
 

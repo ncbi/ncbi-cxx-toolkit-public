@@ -192,6 +192,7 @@ extern NCBI_XOBJEDIT_EXPORT const char* strLinkBaseLatLon;
 extern NCBI_XOBJEDIT_EXPORT const char* strLinkBaseGeneOntology;
 extern NCBI_XOBJEDIT_EXPORT const char* strLinkBaseGeneOntologyRef;
 extern NCBI_XOBJEDIT_EXPORT const char* strLinkBaseUSPTO;
+extern NCBI_XOBJEDIT_EXPORT const char* strLinkBaseUniProt;
 
 extern NCBI_XOBJEDIT_EXPORT const char* strDocLink;
 
