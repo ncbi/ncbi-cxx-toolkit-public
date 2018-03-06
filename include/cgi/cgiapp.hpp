@@ -220,6 +220,7 @@ protected:
     ///  It is a no-op for the regular CGI.
     void FASTCGI_ScheduleExit(void) { m_ShouldExit = true; }
 
+    friend void s_ScheduleFastCGIExit(void);
 
     /// Factory method for the Context object construction
     virtual CCgiContext*   CreateContext(CNcbiArguments*   args = 0,

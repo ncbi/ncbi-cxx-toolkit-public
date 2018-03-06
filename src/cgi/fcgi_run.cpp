@@ -34,6 +34,7 @@
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgi_exception.hpp>
 #include <corelib/request_ctx.hpp>
+#include <signal.h>
 
 
 #if !defined(HAVE_LIBFASTCGI)
@@ -300,6 +301,20 @@ bool s_CheckMemoryLimit(Uint8 total_memory_limit)
 }
 
 
+void s_ScheduleFastCGIExit(void)
+{
+    CCgiApplication* cgiapp = dynamic_cast<CCgiApplication*>(CNcbiApplication::Instance());
+    if (!cgiapp) return;
+    cgiapp->FASTCGI_ScheduleExit();
+}
+
+
+extern "C" void SignalHandler(int)
+{
+    s_ScheduleFastCGIExit();
+}
+
+
 bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 {
     // Reset the result (which is in fact an error counter here)
@@ -363,6 +378,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
     // Max. number of the Fast-CGI loop iterations
     unsigned int max_iterations;
+    bool handle_sigterm = false;
     {{
         int x_iterations =
             reg.GetInt("FastCGI", "Iterations", (int) def_iter, 0,
@@ -380,6 +396,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
         _TRACE("CCgiApplication::Run: FastCGI limited to "
                << max_iterations << " iterations");
+
+        handle_sigterm = reg.GetBool("FastCGI", "Complete_Request_On_Sigterm", false);
     }}
 
     // Watcher file -- to allow for stopping the Fast-CGI loop "prematurely"
@@ -443,7 +461,6 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
     // Diag.prefix related preparations
     const string prefix_pid(NStr::NumericToString(CProcess::GetCurrentPid()) + "-");
-
 
     // Main Fast-CGI loop
     CTime mtime = s_GetModTime(GetArguments().GetProgramName());
@@ -542,6 +559,12 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         if (accept_errcode != 0) {
             _TRACE("CCgiApplication::x_RunFastCGI: no more requests");
             break;
+        }
+
+        // Optionally turn on SIGTERM handler while processing request to allow
+        // the request to be completed before termination.
+        if (handle_sigterm) {
+            signal(SIGTERM, SignalHandler);
         }
 
         // Process the request
@@ -766,6 +789,11 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             }}
         }
         GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
+
+        // Reset SIGTERM handler to allow termination between requests.
+        if (handle_sigterm) {
+            signal(SIGTERM, SIG_DFL);
+        }
 
         // Close current request
         _TRACE("CCgiApplication::x_RunFastCGI: FINISHING");
