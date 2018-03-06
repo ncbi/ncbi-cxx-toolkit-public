@@ -139,7 +139,6 @@ struct CPSG_BioIdResolutionQueue::SItem
     bool AddRequest(long wait_ms) { return SHCT::GetIoc().add_request(m_Request, wait_ms); }
     void SyncResolve(CPSG_BlobId& blob_id, const CDeadline& deadline);
     void WaitFor(long timeout_ms);
-    void Wait();
     bool IsDone() const;
     void Cancel();
     void PopulateData(CPSG_BlobId& blob_id) const;
@@ -183,11 +182,6 @@ void CPSG_BioIdResolutionQueue::SItem::SyncResolve(CPSG_BlobId& blob_id, const C
 void CPSG_BioIdResolutionQueue::SItem::WaitFor(long timeout_ms)
 {
     m_Request->get_result_data().wait_for(timeout_ms);
-}
-
-void CPSG_BioIdResolutionQueue::SItem::Wait()
-{
-    m_Request->get_result_data().wait();
 }
 
 bool CPSG_BioIdResolutionQueue::SItem::IsDone() const
@@ -358,7 +352,6 @@ struct CPSG_BlobRetrievalQueue::SItem
     bool AddRequest(long wait_ms) { return SHCT::GetIoc().add_request(m_Request, wait_ms); }
     void SyncRetrieve(CPSG_Blob& blob, const CDeadline& deadline);
     void WaitFor(long timeout_ms);
-    void Wait();
     bool IsDone() const;
     void Cancel();
     void PopulateData(CPSG_Blob& blob);
@@ -406,11 +399,6 @@ void CPSG_BlobRetrievalQueue::SItem::SyncRetrieve(CPSG_Blob& blob, const CDeadli
 void CPSG_BlobRetrievalQueue::SItem::WaitFor(long timeout_ms)
 {
     m_Request->get_result_data().wait_for(timeout_ms);
-}
-
-void CPSG_BlobRetrievalQueue::SItem::Wait()
-{
-    m_Request->get_result_data().wait();
 }
 
 bool CPSG_BlobRetrievalQueue::SItem::IsDone() const

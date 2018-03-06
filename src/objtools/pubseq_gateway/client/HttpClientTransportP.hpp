@@ -258,13 +258,6 @@ public:
     {
         return m_future.get();
     }
-    void wait() const
-    {
-        if (!m_future)
-            DDRPC::EDdRpcException::raise("Future is not assigned");
-        while (!m_finished)
-            m_future->wait();
-    }
     bool wait_for(long timeout_ms) const;
     bool has_error() const
     {
