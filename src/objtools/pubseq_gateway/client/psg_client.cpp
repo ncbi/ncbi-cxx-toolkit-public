@@ -289,8 +289,9 @@ void CPSG_BioIdResolutionQueue::Resolve(TPSG_BioIds* bio_ids, const CDeadline& d
 
 CPSG_BlobId CPSG_BioIdResolutionQueue::Resolve(const string& service, CPSG_BioId bio_id, const CDeadline& deadline)
 {
+    auto future = make_shared<HCT::io_future>();
     CPSG_BlobId rv(bio_id);
-    unique_ptr<SItem> qi(new SItem(service, HCT::io_coordinator::get_tls_future(), move(bio_id)));
+    unique_ptr<SItem> qi(new SItem(service, future, move(bio_id)));
     qi->SyncResolve(rv, deadline);
     return rv;
 }
@@ -491,8 +492,9 @@ void CPSG_BlobRetrievalQueue::Retrieve(TPSG_BlobIds* blob_ids, const CDeadline& 
 
 CPSG_Blob CPSG_BlobRetrievalQueue::Retrieve(const string& service, CPSG_BlobId blob_id, const CDeadline& deadline)
 {
+    auto future = make_shared<HCT::io_future>();
     CPSG_Blob rv(blob_id);
-    unique_ptr<SItem> qi(new SItem(service, HCT::io_coordinator::get_tls_future(), move(blob_id)));
+    unique_ptr<SItem> qi(new SItem(service, future, move(blob_id)));
     qi->SyncRetrieve(rv, deadline);
     return rv;
 }

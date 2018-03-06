@@ -47,6 +47,9 @@
 #include <queue>
 #include <set>
 #include <thread>
+#include <utility>
+#include <condition_variable>
+#include <mutex>
 
 #include <nghttp2/nghttp2.h>
 #include <uv.h>
@@ -71,74 +74,7 @@ namespace HCT {
 class io_thread;
 class http2_session;
 
-
-class io_future
-{
-private:
-    uv_loop_t m_loop;
-    uv_async_t m_async;
-    uv_timer_t m_timer;
-    bool m_timer_started;
-    std::atomic<size_t> m_thread_id;
-    static void s_on_timer(uv_timer_t* handle)
-    {
-        io_future* fut = static_cast<io_future*>(handle->data);
-        if (fut->m_timer_started) {
-            fut->m_timer_started = false;
-            uv_stop(handle->loop);
-        }
-    }
-    static void s_on_async(uv_async_t* handle)
-    {
-        io_future* fut = static_cast<io_future*>(handle->data);
-        if (fut->m_timer_started) {
-            fut->m_timer_started = false;
-            uv_timer_stop(&fut->m_timer);
-        }
-        uv_stop(handle->loop);
-    }
-public:
-    io_future() : m_timer_started(false), m_thread_id({0})
-    {
-        uv_loop_init(&m_loop);
-        uv_async_init(&m_loop, &m_async, s_on_async);
-        m_async.data = this;
-        uv_timer_init(&m_loop, &m_timer);
-        m_timer.data = this;
-    }
-    virtual ~io_future()
-    {
-        uv_close(reinterpret_cast<uv_handle_t*>(&m_async), nullptr);
-        uv_close(reinterpret_cast<uv_handle_t*>(&m_timer), nullptr);
-        uv_run(&m_loop, UV_RUN_DEFAULT);
-        uv_loop_close(&m_loop);
-    }
-    void wait()
-    {
-        size_t zero = 0;
-        if (!m_thread_id.compare_exchange_weak(zero, std::hash<std::thread::id>()(std::this_thread::get_id()),  std::memory_order_release, std::memory_order_relaxed))
-            assert(m_thread_id == std::hash<std::thread::id>()(std::this_thread::get_id()));
-        uv_run(&m_loop, UV_RUN_DEFAULT);
-    }
-    void wait_for(long timeout_ms)
-    {
-        if (timeout_ms <= 0)
-            return;
-        if (timeout_ms < DDRPC::INDEFINITE) {
-            assert(!m_timer_started);
-            m_timer_started = true;
-            uv_timer_start(&m_timer, s_on_timer, timeout_ms, 0);
-        }
-        std::size_t zero = 0;
-        if (!m_thread_id.compare_exchange_weak(zero, std::hash<std::thread::id>()(std::this_thread::get_id()),  std::memory_order_release, std::memory_order_relaxed))
-            assert(m_thread_id == std::hash<std::thread::id>()(std::this_thread::get_id()));
-        uv_run(&m_loop, UV_RUN_DEFAULT);
-    }
-    void signal()
-    {
-        uv_async_send(&m_async);
-    }
-};
+typedef std::pair<std::condition_variable, std::mutex> io_future;
 
 class http2_reply_data final
 {
@@ -687,11 +623,9 @@ class io_coordinator
 private:
     std::vector<std::unique_ptr<io_thread>> m_io;
     std::atomic<std::size_t> m_cur_idx;
-    static thread_local std::shared_ptr<io_future> s_future;
 public:
     io_coordinator();
     void create_io();
-    static std::shared_ptr<io_future> get_tls_future();
     bool add_request(std::shared_ptr<http2_request> req, long timeout_ms = DDRPC::INDEFINITE);
 };
 

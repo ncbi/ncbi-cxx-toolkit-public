@@ -9,6 +9,7 @@ DIR=$(dirname $0)
 BINARY=$(basename $0 .bash)
 EXPECTED=$BINARY.txt
 SERVER=$1
+THREADS=8
 
 if [ ! -x $DIR/$BINARY ]; then
     echo "Binary '$BINARY' is missing"
@@ -20,4 +21,4 @@ if [ ! -f $DIR/$EXPECTED ]; then
     exit 2;
 fi
 
-diff -su $DIR/$EXPECTED <($DIR/$BINARY -fa $DIR/$EXPECTED -H $SERVER |sort)
+diff -su $DIR/$EXPECTED <($DIR/$BINARY -fa $DIR/$EXPECTED -H $SERVER -t $THREADS |sort)

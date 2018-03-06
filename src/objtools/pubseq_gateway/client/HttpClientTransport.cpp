@@ -62,8 +62,6 @@ namespace HCT {
 
 #define HTTP_STATUS_HEADER ":status"
 
-thread_local shared_ptr<io_future> io_coordinator::s_future;
-
 
 /** http2_request */
 
@@ -143,13 +141,14 @@ bool http2_reply_data::wait_for(long timeout_ms) const
             auto timeout = target_time - chrono::system_clock::now();
             if (timeout.count() < 0)
                 return false;
-            long to = chrono::duration_cast<chrono::milliseconds>(timeout).count();
-            m_future->wait_for(to);
+            auto to = chrono::duration_cast<chrono::milliseconds>(timeout);
+            std::unique_lock<std::mutex> lock(m_future->second);
+            m_future->first.wait_for(lock, to);
         }
     }
     else {
-        while (!m_finished)
-            m_future->wait();
+        std::unique_lock<std::mutex> lock(m_future->second);
+        m_future->first.wait(lock, [&]{ return m_finished.load();});
     }
     return true;
 }
@@ -171,8 +170,10 @@ void http2_reply_data::on_complete()
     m_finished = true;
     if (m_session_data)
         m_session_data->add_to_completion(m_future);
-    else
-        m_future->signal();
+    else {
+        std::lock_guard<std::mutex> lock(m_future->second);
+        m_future->first.notify_one();
+    }
 }
 
 
@@ -916,7 +917,8 @@ bool http2_session::check_connection()
 void http2_session::process_completion_list()
 {
     for (auto& it : m_completion_list) {
-        it->signal();
+        std::lock_guard<std::mutex> lock(it->second);
+        it->first.notify_one();
     }
     m_completion_list.clear();
 }
@@ -938,8 +940,10 @@ void http2_session::add_to_completion(shared_ptr<io_future>& future)
         assert(future.use_count() > 1);
         m_completion_list.insert(future);
     }
-    else
-        future->signal();
+    else {
+        std::lock_guard<std::mutex> lock(future->second);
+        future->first.notify_one();
+    }
 }
 
 bool http2_session::add_request_move(shared_ptr<http2_request>& req)
@@ -1348,13 +1352,6 @@ void io_coordinator::create_io()
     auto & it = m_io.back();
     if (it->get_state() != io_thread_state_t::started)
         EException::raise("Failed to run IO thread");
-}
-
-shared_ptr<io_future> io_coordinator::get_tls_future()
-{
-    if (!s_future)
-        s_future = make_shared<io_future>();
-    return s_future;
 }
 
 bool io_coordinator::add_request(shared_ptr<http2_request> req, long timeout_ms)
