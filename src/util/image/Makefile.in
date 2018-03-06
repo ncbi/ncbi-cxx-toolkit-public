@@ -7,5 +7,7 @@
 LIB_PROJ = image
 SUB_PROJ = test demo
 
+REQUIRES = JPEG GIF TIFF
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
