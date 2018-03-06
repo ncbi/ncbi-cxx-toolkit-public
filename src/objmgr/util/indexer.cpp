@@ -201,7 +201,8 @@ void CSeqMasterIndex::x_Initialize (CSeq_entry_Handle& topseh, CSeqEntryIndex::E
         x_InitSeqs( *m_Tsep, noparent );
     }
     catch (CException& e) {
-        LOG_POST(Error << "Error in CSeqMasterIndex::x_Init: " << e.what());
+        NCBI_RETHROW(e, CObjmgrUtilException, eNotImplemented,
+                     "Error in CSeqMasterIndex::x_Init.");
     }
 }
 
@@ -435,7 +436,8 @@ void CSeqMasterIndex::x_Init (void)
         x_InitSeqs( *m_Tsep, noparent );
     }
     catch (CException& e) {
-        LOG_POST(Error << "Error in CSeqMasterIndex::x_Init: " << e.what());
+        NCBI_RETHROW(e, CObjmgrUtilException, eNotImplemented,
+                     "Error in CSeqMasterIndex::x_Init.");
     }
 }
 
@@ -484,7 +486,8 @@ CRef<CBioseqIndex> CSeqMasterIndex::x_DeltaIndex(const CSeq_loc& loc)
         }
     }
     catch (CException& e) {
-        LOG_POST(Error << "Error in CSeqMasterIndex::x_DeltaIndex: " << e.what());
+        NCBI_RETHROW(e, CObjmgrUtilException, eNotImplemented,
+                     "Error in CSeqMasterIndex::x_DeltaIndex.");
     }
     return CRef<CBioseqIndex> ();
 }
@@ -989,7 +992,8 @@ void CBioseqIndex::x_InitGaps (void)
         }
     }
     catch (CException& e) {
-        LOG_POST(Error << "Error in CBioseqIndex::x_InitGaps: " << e.what());
+        NCBI_RETHROW(e, CObjmgrUtilException, eNotImplemented,
+                     "Error in CBioseqIndex::x_InitGaps.");
     }
 }
 
@@ -1331,7 +1335,8 @@ void CBioseqIndex::x_InitSource (void)
         m_Organelle = x_OrganelleName (m_Genome, has_plasmid, virus_or_phage, wgs_suffix);
     }
     catch (CException& e) {
-        LOG_POST(Error << "Error in CBioseqIndex::x_InitSource: " << e.what());
+        NCBI_RETHROW(e, CObjmgrUtilException, eNotImplemented,
+                     "Error in CBioseqIndex::x_InitSource.");
     }
 }
 
@@ -1534,7 +1539,8 @@ void CBioseqIndex::x_InitDescs (void)
         }
     }
     catch (CException& e) {
-        LOG_POST(Error << "Error in CBioseqIndex::x_InitDescs: " << e.what());
+        NCBI_RETHROW(e, CObjmgrUtilException, eNotImplemented,
+                     "Error in CBioseqIndex::x_InitDescs.");
     }
 }
 
@@ -1735,7 +1741,8 @@ void CBioseqIndex::x_InitFeats (void)
     }
     catch (CException& e) {
         m_FetchFailure = true;
-        LOG_POST(Error << "Error in CBioseqIndex::x_InitFeats: " << e.what());
+        NCBI_RETHROW(e, CObjmgrUtilException, eNotImplemented,
+                     "Error in CBioseqIndex::x_InitFeats.");
     }
 }
 
@@ -2339,7 +2346,8 @@ void CBioseqIndex::GetSequence (int from, int to, string& buffer)
         }
     }
     catch (CException& e) {
-        LOG_POST(Error << "Error in CBioseqIndex::GetSequence: " << e.what());
+        NCBI_RETHROW(e, CObjmgrUtilException, eNotImplemented,
+                     "Error in CBioseqIndex::GetSequence.");
     }
 }
 
@@ -2551,7 +2559,8 @@ void CFeatureIndex::GetSequence (int from, int to, string& buffer)
     }
     catch (CException& e) {
         SetFetchFailure(true);
-        LOG_POST(Error << "Error in CFeatureIndex::GetSequence: " << e.what());
+        NCBI_RETHROW(e, CObjmgrUtilException, eNotImplemented,
+                     "Error in CFeatureIndex::GetSequence.");
     }
 }
 

@@ -341,6 +341,8 @@ private:
     CRef<CFlatFileGenerator>    m_FFGenerator;  // Flat-file generator
     auto_ptr<ICanceled>         m_pCanceledCallback;
     bool                        m_do_cleanup;
+    bool                        m_Exception;
+    bool                        m_FetchFail;
 };
 
 
@@ -469,6 +471,9 @@ CNcbiOstream* CAsn2FlatApp::OpenFlatfileOstream(const string& name)
 
 int CAsn2FlatApp::Run(void)
 {
+    m_Exception = false;
+    m_FetchFail = false;
+
     // initialize conn library
     CONNECT_Init(&GetConfig());
 
@@ -542,6 +547,7 @@ int CAsn2FlatApp::Run(void)
 
     if ( args[ "sub" ] ) {
         HandleSeqSubmit( *is );
+        if (m_Exception) return -1;
         return 0;
     }
 
@@ -550,6 +556,7 @@ int CAsn2FlatApp::Run(void)
         CGBReleaseFile in( *is.release(), propagate );
         in.RegisterHandler( this );
         in.Read();  // HandleSeqEntry will be called from this function
+        if (m_Exception) return -1;
         return 0;
     }
 
@@ -570,11 +577,13 @@ int CAsn2FlatApp::Run(void)
                 ERR_POST(Error << e);
             }
         }
+        if (m_Exception) return -1;
         return 0;
     }
 
     if ( args[ "id" ] ) {
         HandleSeqId( args[ "id" ].AsString() );
+        if (m_Exception) return -1;
         return 0;
     }
 
@@ -653,6 +662,7 @@ int CAsn2FlatApp::Run(void)
                         *is >> *sub;
                         if (sub->IsSetSub()  &&  sub->IsSetData()) {
                             HandleSeqSubmit(*sub);
+                            if (m_Exception) return -1;
                             return 0;
                         } else {
                             NCBI_THROW(
@@ -668,6 +678,7 @@ int CAsn2FlatApp::Run(void)
         }
     }
 
+    if (m_Exception) return -1;
     return 0;
 }
 
@@ -698,9 +709,21 @@ void CAsn2FlatApp::HandleSeqSubmit(CSeq_submit& sub)
         m_FFGenerator->SetSubmit(sub.GetSub());
         CSeq_loc loc;
         x_GetLocation(seh, args, loc);
-        m_FFGenerator->Generate(loc, seh.GetScope(), *m_Os);
+        try {
+            m_FFGenerator->Generate(loc, seh.GetScope(), *m_Os);
+        }
+        catch (CException& e) {
+            ERR_POST(Error << e);
+            m_Exception = true;
+        }
     } else {
-        m_FFGenerator->Generate(sub, *scope, *m_Os);
+        try {
+            m_FFGenerator->Generate(sub, *scope, *m_Os);
+        }
+        catch (CException& e) {
+            ERR_POST(Error << e);
+            m_Exception = true;
+        }
     }
 }
 
@@ -874,7 +897,13 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
         if ( args["from"]  ||  args["to"]  ||  args["strand"] ) {
             CSeq_loc loc;
             x_GetLocation( seh, args, loc );
-            m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os);
+            try {
+                m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os);
+            }
+            catch (CException& e) {
+                ERR_POST(Error << e);
+                m_Exception = true;
+            }
             // emulate the C Toolkit: only produce flatfile for first sequence
             // when range is specified
             return true;
@@ -882,7 +911,13 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
         else {
             int count = args["count"].AsInteger();
             for ( int i = 0; i < count; ++i ) {
-                m_FFGenerator->Generate( bsh, *flatfile_os);
+                try {
+                    m_FFGenerator->Generate( bsh, *flatfile_os);
+                }
+                catch (CException& e) {
+                    ERR_POST(Error << e);
+                    m_Exception = true;
+                }
             }
 
         }
