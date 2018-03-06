@@ -94,12 +94,11 @@ public:
     /// Resolution result
     /// @sa GetStatus
     enum EStatus {
-        eSuccess,    ///< Successfully resolved
-        eForbidden,  ///< Access denied
-        eNotFound,   ///< Not found
-        eInvalid,    ///< Invalid id
-        eCanceled,   ///< Request canceled
-        eError       ///< Unknown error
+        eSuccess,       ///< Successfully resolved
+        eNotFound,      ///< Not found
+        eCanceled,      ///< Request canceled
+        eTimeout,       ///< Timeout
+        eUnknownError   ///< Unknown error
     };
 
     /// Get result of this id resolution
@@ -116,7 +115,7 @@ private:
 
     CPSG_BioId  m_BioId;
     SBlobInfo   m_BlobInfo;
-    EStatus     m_Status = eError;
+    EStatus     m_Status = eUnknownError;
     string      m_Message;
 
     friend class CPSG_BioIdResolutionQueue;
@@ -221,12 +220,11 @@ public:
     /// Retrieval result
     /// @sa GetStatus
     enum EStatus {
-        eSuccess,    ///< Successfully retrieved
-        eForbidden,  ///< Access denied
-        eNotFound,   ///< Not found
-        eInvalid,    ///< Invalid id
-        eCanceled,   ///< Request canceled
-        eError       ///< Unknown error
+        eSuccess,       ///< Successfully retrieved
+        eNotFound,      ///< Not found
+        eCanceled,      ///< Request canceled
+        eTimeout,       ///< Timeout
+        eUnknownError   ///< Unknown error
     };
 
     /// Get result of this blob retrieval
@@ -243,7 +241,7 @@ private:
 
     CPSG_BlobId         m_BlobId;
     unique_ptr<istream> m_Stream;
-    EStatus             m_Status = eError;
+    EStatus             m_Status = eUnknownError;
     string              m_Message;
 
     friend class CPSG_BlobRetrievalQueue;
