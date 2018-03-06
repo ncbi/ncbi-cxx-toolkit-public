@@ -1466,6 +1466,7 @@ string CCommentItem::GetStringForBaseMod(CBioseqContext& ctx)
             FOR_EACH_STRING_IN_VECTOR (itr, sBasemodURLs) {
                 string url = *itr;
                 if ( ! url.empty() ) {
+                    NStr::ReplaceInPlace( url, "\"", "" );
                     str << "<a href=\"" << url << "\">" << "base modification file" << "</a>";
                 }
             }
@@ -1484,6 +1485,7 @@ string CCommentItem::GetStringForBaseMod(CBioseqContext& ctx)
             FOR_EACH_STRING_IN_VECTOR (itr, sBasemodURLs) {
                 string url = *itr;
                 if ( ! url.empty() ) {
+                    NStr::ReplaceInPlace( url, "\"", "" );
                     j++;
                     str << pfx << "<a href=\"" << url << "\">" << j << "</a>";
                     if ( numBases == 2 ) {
