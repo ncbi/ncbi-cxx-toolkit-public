@@ -261,7 +261,7 @@ void CPSG_BioIdResolutionQueue::Resolve(TPSG_BioIds* bio_ids, const CDeadline& d
     if (!bio_ids)
         return;
     bool has_timeout = !deadline.IsInfinite();
-    unique_lock<mutex> lock(m_ItemsMtx);
+    unique_lock<mutex> lock(m_Items.second);
     long wait_ms = 0;
     auto rev_it = bio_ids->rbegin();
     while (rev_it != bio_ids->rend()) {
@@ -282,7 +282,7 @@ void CPSG_BioIdResolutionQueue::Resolve(TPSG_BioIds* bio_ids, const CDeadline& d
                     wait_ms = DDRPC::INDEFINITE;
             }
             else {
-                m_Items.emplace_back(move(qi));
+                m_Items.first.emplace_back(move(qi));
                 bio_ids->erase(next(rev_it.base()));
                 ++rev_it;
                 break;
@@ -305,15 +305,15 @@ TPSG_BlobIds CPSG_BioIdResolutionQueue::GetBlobIds(const CDeadline& deadline, si
 {
     TPSG_BlobIds rv;
     bool has_limit = max_results != 0;
-    unique_lock<mutex> lock(m_ItemsMtx);
-    if (m_Items.size() > 0) {
+    unique_lock<mutex> lock(m_Items.second);
+    if (m_Items.first.size() > 0) {
         bool has_timeout = !deadline.IsInfinite();
         if (has_timeout) {
             long wait_ms = RemainingTimeMs(deadline);
-            auto& last = m_Items.front();
+            auto& last = m_Items.first.front();
             last->WaitFor(wait_ms);
         }
-        for (auto rev_it = m_Items.rbegin(); rev_it != m_Items.rend(); ++rev_it) {
+        for (auto rev_it = m_Items.first.rbegin(); rev_it != m_Items.first.rend(); ++rev_it) {
             if (has_limit && max_results-- == 0)
                 break;
             const auto& req = *rev_it;
@@ -321,7 +321,7 @@ TPSG_BlobIds CPSG_BioIdResolutionQueue::GetBlobIds(const CDeadline& deadline, si
                 auto fw_it = next(rev_it).base();
                 rv.push_back(move((*fw_it)->m_BioId));
                 req->PopulateData(rv.back());
-                m_Items.erase(fw_it);
+                m_Items.first.erase(fw_it);
             }
         }
     }
@@ -330,23 +330,23 @@ TPSG_BlobIds CPSG_BioIdResolutionQueue::GetBlobIds(const CDeadline& deadline, si
 
 void CPSG_BioIdResolutionQueue::Clear(TPSG_BioIds* bio_ids)
 {
-    unique_lock<mutex> lock(m_ItemsMtx);
+    unique_lock<mutex> lock(m_Items.second);
     if (bio_ids) {
         bio_ids->clear();
-        bio_ids->reserve(m_Items.size());
+        bio_ids->reserve(m_Items.first.size());
     }
-    for (auto& it : m_Items) {
+    for (auto& it : m_Items.first) {
         it->Cancel();
         if (bio_ids)
             bio_ids->emplace_back(move(it->m_BioId));
     }
-    m_Items.clear();
+    m_Items.first.clear();
 }
 
 bool CPSG_BioIdResolutionQueue::IsEmpty() const
 {
-    unique_lock<mutex> lock(m_ItemsMtx);
-    return m_Items.size() == 0;
+    unique_lock<mutex> lock(m_Items.second);
+    return m_Items.first.size() == 0;
 }
 
 
@@ -469,7 +469,7 @@ void CPSG_BlobRetrievalQueue::Retrieve(TPSG_BlobIds* blob_ids, const CDeadline& 
     if (!blob_ids)
         return;
     bool has_timeout = !deadline.IsInfinite();
-    unique_lock<mutex> lock(m_ItemsMtx);
+    unique_lock<mutex> lock(m_Items.second);
     long wait_ms = 0;
     auto rev_it = blob_ids->rbegin();
     while (rev_it != blob_ids->rend()) {
@@ -490,7 +490,7 @@ void CPSG_BlobRetrievalQueue::Retrieve(TPSG_BlobIds* blob_ids, const CDeadline& 
                     wait_ms = DDRPC::INDEFINITE;
             }
             else {
-                m_Items.emplace_back(move(qi));
+                m_Items.first.emplace_back(move(qi));
                 blob_ids->erase(next(rev_it.base()));
                 ++rev_it;
                 break;
@@ -513,15 +513,15 @@ TPSG_Blobs CPSG_BlobRetrievalQueue::GetBlobs(const CDeadline& deadline, size_t m
 {
     TPSG_Blobs rv;
     bool has_limit = max_results != 0;
-    unique_lock<mutex> lock(m_ItemsMtx);
-    if (m_Items.size() > 0) {
+    unique_lock<mutex> lock(m_Items.second);
+    if (m_Items.first.size() > 0) {
         bool has_timeout = !deadline.IsInfinite();
         if (has_timeout) {
             long wait_ms = RemainingTimeMs(deadline);
-            auto& last = m_Items.front();
+            auto& last = m_Items.first.front();
             last->WaitFor(wait_ms);
         }
-        for (auto rev_it = m_Items.rbegin(); rev_it != m_Items.rend(); ++rev_it) {
+        for (auto rev_it = m_Items.first.rbegin(); rev_it != m_Items.first.rend(); ++rev_it) {
             if (has_limit && max_results-- == 0)
                 break;
             const auto& req = *rev_it;
@@ -529,7 +529,7 @@ TPSG_Blobs CPSG_BlobRetrievalQueue::GetBlobs(const CDeadline& deadline, size_t m
                 auto fw_it = next(rev_it).base();
                 rv.push_back(move((*fw_it)->m_BlobId));
                 req->PopulateData(rv.back());
-                m_Items.erase(fw_it);
+                m_Items.first.erase(fw_it);
             }
         }
     }
@@ -538,23 +538,23 @@ TPSG_Blobs CPSG_BlobRetrievalQueue::GetBlobs(const CDeadline& deadline, size_t m
 
 void CPSG_BlobRetrievalQueue::Clear(TPSG_BlobIds* blob_ids)
 {
-    unique_lock<mutex> lock(m_ItemsMtx);
+    unique_lock<mutex> lock(m_Items.second);
     if (blob_ids) {
         blob_ids->clear();
-        blob_ids->reserve(m_Items.size());
+        blob_ids->reserve(m_Items.first.size());
     }
-    for (auto& it : m_Items) {
+    for (auto& it : m_Items.first) {
         it->Cancel();
         if (blob_ids)
             blob_ids->emplace_back(move(it->m_BlobId));
     }
-    m_Items.clear();
+    m_Items.first.clear();
 }
 
 bool CPSG_BlobRetrievalQueue::IsEmpty() const
 {
-    unique_lock<mutex> lock(m_ItemsMtx);
-    return m_Items.size() == 0;
+    unique_lock<mutex> lock(m_Items.second);
+    return m_Items.first.size() == 0;
 }
 
 

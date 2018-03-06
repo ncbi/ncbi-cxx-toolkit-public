@@ -201,8 +201,7 @@ public:
 
 private:
     struct SItem;
-    vector<unique_ptr<SItem>> m_Items;
-    mutable mutex             m_ItemsMtx;
+    mutable pair<vector<unique_ptr<SItem>>, mutex> m_Items;
     shared_ptr<void>          m_Future;
     string                    m_Service;
 };
@@ -329,8 +328,7 @@ public:
 
 private:
     struct SItem;
-    vector<unique_ptr<SItem>> m_Items;
-    mutable mutex             m_ItemsMtx;
+    mutable pair<vector<unique_ptr<SItem>>, mutex> m_Items;
     shared_ptr<void>          m_Future;
     string                    m_Service;
 };
