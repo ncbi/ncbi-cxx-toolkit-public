@@ -171,6 +171,7 @@ void CPSG_BioIdResolutionQueue::SItem::SyncResolve(CPSG_BlobId& blob_id, const C
         }
         if (has_timeout) wait_ms = RemainingTimeMs(deadline);
         if (wait_ms <= 0) {
+            Cancel();
             blob_id.m_Status = CPSG_BlobId::eTimeout;
             blob_id.m_Message = "Timeout on waiting result";
             return;
@@ -393,6 +394,7 @@ void CPSG_BlobRetrievalQueue::SItem::SyncRetrieve(CPSG_Blob& blob, const CDeadli
         }
         if (has_timeout) wait_ms = RemainingTimeMs(deadline);
         if (wait_ms <= 0) {
+            Cancel();
             blob.m_Status = CPSG_Blob::eTimeout;
             blob.m_Message = "Timeout on waiting result";
             return;
