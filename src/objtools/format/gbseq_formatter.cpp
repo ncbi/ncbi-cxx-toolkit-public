@@ -230,6 +230,16 @@ void CGBSeqFormatter::EndSection(const CEndSectionItem&, IFlatTextOStream& text_
         m_DidWgsStart = false;
     }
 
+    // ID-4629 : Sequence is always the last element in the section, except for
+    // possibly sequence xrefs, so only 1 boolean variable is sufficient to
+    // control when to close the tag.
+    // Also sequence closing tag is placed without a newline, hence no spaces are
+    // needed.
+    if (m_DidSequenceStart) {
+        str.append( s_CloseTag("", "GBSeq_sequence"));
+        m_DidSequenceStart = false;
+    }
+
     if (m_NeedXrefs) {
         m_NeedXrefs = false;
 
@@ -252,16 +262,6 @@ void CGBSeqFormatter::EndSection(const CEndSectionItem&, IFlatTextOStream& text_
         str.append( s_CloseTag("    ", "GBSeq_xrefs"));
 
     }
-
-    // ID-4629 : Sequence is always the last element in the section, so only 1
-    // boolean variable is sufficient to control when to close the tag.
-    // Also sequence closing tag is placed without a newline, hence no spaces are
-    // needed.
-    if (m_DidSequenceStart) {
-        str.append( s_CloseTag("", "GBSeq_sequence"));
-        m_DidSequenceStart = false;
-    }
-    
 
     str.append( s_CloseTag("  ", "GBSeq"));
 
