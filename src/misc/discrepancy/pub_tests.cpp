@@ -220,8 +220,7 @@ DISCREPANCY_CASE(TITLE_AUTHOR_CONFLICT, CSeqdesc, eDisc | eOncaller | eSmart, "P
     if (NStr::IsBlank(title)) {
         return;
     }
-    // We ask to keep the reference because we do need the actual object to stick around so we can deal with them later.
-    m_Objs["titles"][title][authors].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel(), eKeepRef));
+    m_Objs[kEmptyStr][title][authors].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel()));
 }
 
 
@@ -232,24 +231,18 @@ DISCREPANCY_SUMMARIZE(TITLE_AUTHOR_CONFLICT)
     if (m_Objs.empty()) {
         return;
     }
-    CReportNode::TNodeMap::iterator it = m_Objs["titles"].GetMap().begin();
-    while (it != m_Objs["titles"].GetMap().end()) {
-        // do all pubs have the same authors?
-        if (m_Objs["titles"][it->first].GetMap().size() > 1) {
-            string top = "[n] articles have title '" + it->first + "' but do not have the same author list";
-            CReportNode::TNodeMap::iterator it2 = m_Objs["titles"][it->first].GetMap().begin();
-            while (it2 != m_Objs["titles"][it->first].GetMap().end()) {
-                NON_CONST_ITERATE (TReportObjectList, robj, m_Objs["titles"][it->first][it2->first].GetObjects()) {
-                    const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
-                    CConstRef<CSeqdesc> pub_desc(dynamic_cast<const CSeqdesc*>(other_disc_obj->GetObject().GetPointer()));
-                    m_Objs[kTitleAuthorConflict][top]["[n] article[s] [has] title '" + it->first + "' and author list '" + it2->first + "'"].Add(*context.NewSeqdescObj(pub_desc, kEmptyStr), false).Fatal();
+    for (auto it: m_Objs[kEmptyStr].GetMap()) {
+        if (it.second->GetMap().size() > 1) {
+            string top = "[n] articles have title '" + it.first + "' but do not have the same author list";
+            for (auto aa: it.second->GetMap()) {
+                string label = "[n] article[s] [has] title '" + it.first + "' and author list '" + aa.first + "'";
+                for (auto obj: aa.second->GetObjects()) {
+                    m_Objs[kTitleAuthorConflict][top][label].Add(*obj).Fatal();
                 }
-                ++it2;
             }
         }
-        ++it;
     }
-    m_Objs.GetMap().erase("titles");
+    m_Objs.GetMap().erase(kEmptyStr);
     if (m_Objs.Exist(kTitleAuthorConflict) && m_Objs[kTitleAuthorConflict].GetMap().size() == 1) {
         m_ReportItems = m_Objs.GetMap().begin()->second->Export(*this)->GetSubitems();
     }
@@ -752,23 +745,6 @@ DISCREPANCY_SUMMARIZE(CHECK_AUTH_NAME)
 
 // CITSUB_AFFIL_DUP_TEXT
 
-static void AddParentObject(CReportNode& objs, CDiscrepancyContext& context, const string& category, EKeepRef keepref, bool autofix, CObject* more)
-{
-    CConstRef<CSeq_feat> feat = context.GetCurrentSeq_feat();
-    CConstRef<CSeqdesc> desc = context.GetCurrentSeqdesc();
-    if (feat) {
-        objs[category].Add(*context.NewDiscObj(feat, keepref, autofix, more));
-    }
-    else if (desc) {
-        objs[category].Add(*context.NewSeqdescObj(desc, context.GetCurrentBioseqLabel(), keepref, autofix, more));
-    }
-    else {  // C Toolkit does not test submit blocks; C++ Toolkit - does!
-        objs[category].Add(*context.NewSubmitBlockObj(keepref, autofix, more));
-    }
-}
-
-const string kCitPubDupText = "[n] Cit-sub pubs have duplicate affil text";
-
 static const CCit_sub* GetCitSubFromPub(const CPub& pub)
 {
     const CCit_sub* ret = nullptr;
@@ -788,6 +764,7 @@ static const CCit_sub* GetCitSubFromPub(const CPub& pub)
     return ret;
 }
 
+
 static bool AffilStreetEndsWith(const string& street, const string& tail)
 {
     bool ret = false;
@@ -803,6 +780,7 @@ static bool AffilStreetEndsWith(const string& street, const string& tail)
     }
     return ret;
 }
+
 
 static bool AffilStreetContainsDup(const CAffil& affil)
 {
@@ -851,7 +829,7 @@ DISCREPANCY_CASE(CITSUB_AFFIL_DUP_TEXT, CPubdesc, eOncaller, "Cit-sub affiliatio
 
         const CAffil& affil = cit_sub->GetAuthors().GetAffil();
         if (AffilStreetContainsDup(affil)) {
-            AddParentObject(m_Objs, context, kCitPubDupText, eKeepRef, true, const_cast<CCit_sub*>(cit_sub));
+            m_Objs["[n] Cit-sub pubs have duplicate affil text"].Add(*context.NewFeatOrDescOrSubmitBlockObj(eNoRef, true, const_cast<CCit_sub*>(cit_sub)));
         }
     }
 }
@@ -1045,7 +1023,6 @@ static bool IsValidStateAbbreviation(const string& state)
     return false;
 }
 
-static const string kMissingState = "[n] cit-sub[s] [is] missing state abbreviations";
 
 DISCREPANCY_CASE(USA_STATE, CPubdesc, eDisc | eOncaller | eSmart, "For country USA, state should be present and abbreviated")
 {
@@ -1072,7 +1049,7 @@ DISCREPANCY_CASE(USA_STATE, CPubdesc, eDisc | eOncaller | eSmart, "For country U
                     report = !IsValidStateAbbreviation(state);
                 }
                 if (report) {
-                    AddParentObject(m_Objs, context, kMissingState, eNoRef, true, const_cast<CAffil*>(&affil));
+                    m_Objs["[n] cit-sub[s] [is] missing state abbreviations"].Add(*context.NewFeatOrDescOrSubmitBlockObj(eNoRef, true, const_cast<CAffil*>(&affil)));
                 }
             }
         }
