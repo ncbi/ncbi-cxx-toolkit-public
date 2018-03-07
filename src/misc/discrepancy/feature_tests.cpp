@@ -135,11 +135,7 @@ DISCREPANCY_SUMMARIZE(SHORT_RRNA)
 
 // DISC_RBS_WITHOUT_GENE
 
-const string kRBSWithoutGene = "[n] RBS feature[s] [does] not have overlapping gene[s]";
-const string kRBS = "RBS";
-
-
-bool IsRBS(const CSeq_feat& f)
+static bool IsRBS(const CSeq_feat& f)
 {
     if (f.GetData().GetSubtype() == CSeqFeatData::eSubtype_RBS) {
         return true;
@@ -150,9 +146,9 @@ bool IsRBS(const CSeq_feat& f)
     if (!f.IsSetQual()) {
         return false;
     }
-    ITERATE (CSeq_feat::TQual, it, f.GetQual()) {
-        if ((*it)->IsSetQual() && NStr::Equal((*it)->GetQual(), "regulatory_class") &&
-            CSeqFeatData::GetRegulatoryClass((*it)->GetVal()) == CSeqFeatData::eSubtype_RBS) {
+    for (auto it: f.GetQual()) {
+        if (it->IsSetQual() && NStr::Equal(it->GetQual(), "regulatory_class") &&
+            CSeqFeatData::GetRegulatoryClass(it->GetVal()) == CSeqFeatData::eSubtype_RBS) {
             return true;
         }
     }
@@ -160,48 +156,24 @@ bool IsRBS(const CSeq_feat& f)
 }
 
 
-void AddRBS(CReportNode& objs, CDiscrepancyContext& context) 
+DISCREPANCY_CASE(RBS_WITHOUT_GENE, COverlappingFeatures, eOncaller, "RBS features should have an overlapping gene")
 {
-    if (!objs["genes"].empty()) {
-        NON_CONST_ITERATE (TReportObjectList, robj, objs[kRBS].GetObjects()) {
-            const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
-            CConstRef<CSeq_feat> rbs(dynamic_cast<const CSeq_feat*>(other_disc_obj->GetObject().GetPointer()));
-            objs[kRBSWithoutGene].Add(*context.NewDiscObj(rbs), false).Fatal();
+    const vector<CConstRef<CSeq_feat>>& genes = context.FeatGenes();
+    if (!genes.empty()) {
+        for (auto feat: context.FeatAll()) {
+            if (IsRBS(*feat) && !context.GetGeneForFeature(*feat)) {
+                m_Objs["[n] RBS feature[s] [does] not have overlapping gene[s]"].Add(*context.NewDiscObj(feat)).Fatal();
+            }
         }
-    }
-}
-
-
-DISCREPANCY_CASE(RBS_WITHOUT_GENE, CSeq_feat_BY_BIOSEQ, eOncaller, "RBS features should have an overlapping gene")
-{
-    // See if we have moved to the "next" Bioseq
-    if (m_Count != context.GetCountBioseq()) {
-        AddRBS(m_Objs, context);
-        m_Count = context.GetCountBioseq();
-        m_Objs["genes"].clear();
-        m_Objs["RBS"].clear();
-    }
-    // We ask to keep the reference because we do need the actual object to stick around so we can deal with them later.
-    CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef));
-    if (obj.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene) {
-        m_Objs["genes"].Add(*this_disc_obj);
-    }
-    else if (IsRBS(obj) && !context.GetGeneForFeature(obj)) {
-        m_Objs["RBS"].Add(*this_disc_obj);
     }
 }
 
 
 DISCREPANCY_SUMMARIZE(RBS_WITHOUT_GENE)
 {
-    AddRBS(m_Objs, context);
-    m_Objs.GetMap().erase("genes");
-    m_Objs.GetMap().erase("RBS");
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
+
 
 // MISSING_GENES
 
