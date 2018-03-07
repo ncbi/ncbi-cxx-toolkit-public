@@ -102,9 +102,12 @@ public:
     static string GetSeqFeatText(const CMappedFeat& feat, CScope& scope,
         const CFlatFileConfig& cfg);
 
+    bool Failed() { return m_Failed; }
+
     //void Reset(void);
 protected:
     CRef<CFlatFileContext>    m_Ctx;
+    bool                      m_Failed;
 
     /// Use this class to wrap CFlatItemOStream instances so that they
     /// check if canceled for every item added

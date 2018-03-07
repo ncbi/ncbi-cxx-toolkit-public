@@ -71,6 +71,7 @@ USING_SCOPE(sequence);
 CFlatFileGenerator::CFlatFileGenerator(const CFlatFileConfig& cfg) :
     m_Ctx(new CFlatFileContext(cfg))
 {
+    m_Failed = false;
      if ( !m_Ctx ) {
          NCBI_THROW(CFlatException, eInternal, "Unable to initialize context");
      }
@@ -86,6 +87,7 @@ CFlatFileGenerator::CFlatFileGenerator
  CFlatFileConfig::TCustom custom) :
     m_Ctx(new CFlatFileContext(CFlatFileConfig(format, mode, style, flags, view)))
 {
+    m_Failed = false;
     if ( !m_Ctx ) {
        NCBI_THROW(CFlatException, eInternal, "Unable to initialize context");
     }
@@ -256,8 +258,13 @@ void CFlatFileGenerator::Generate
     if ( m_Ctx->GetConfig().UseSeqEntryIndexer() ) {
         // CSeq_entry& top = const_cast<CSeq_entry&> (*topent);
         CSeq_entry_Handle topseh = entry.GetTopLevelEntry();
-        CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, CSeqEntryIndex::eAdaptive ));
-        m_Ctx->SetSeqEntryIndex(idx);
+        try {
+            CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, CSeqEntryIndex::eAdaptive ));
+            m_Ctx->SetSeqEntryIndex(idx);
+        } catch(CException &) {
+            m_Failed = true;
+            return;
+        }
     }
 
 
