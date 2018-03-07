@@ -474,8 +474,7 @@ DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS, CSeq_feat_BY_BIOSEQ, 
     bool add_this = IsNonExtendable(obj.GetLocation(), *seq, &(context.GetScope()));
 
     if (add_this) {
-        m_Objs[kNonExtendable].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef, true),
-            false).Fatal();
+        m_Objs[kNonExtendable].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eNoRef, true)).Fatal();
     }
 }
 
@@ -589,8 +588,7 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSub
     }
 
     if (add_this) {
-        m_Objs[kPartialProblems].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef, true),
-            false).Fatal();
+        m_Objs[kPartialProblems].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eNoRef, true)).Fatal();
     }
 }
 
@@ -1426,9 +1424,9 @@ DISCREPANCY_CASE(SHORT_INTRON, CSeq_feat, eDisc | eOncaller | eSubmitter | eSmar
 
     if (found_short) {
         if (obj.IsSetExcept() && obj.GetExcept()) {
-            m_Objs[kShortIntronTop][kShortIntronExcept].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef, true), false);
+            m_Objs[kShortIntronTop][kShortIntronExcept].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eNoRef, true));
         } else {
-            m_Objs[kShortIntronTop].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef, true), false);
+            m_Objs[kShortIntronTop].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eNoRef, true));
         }
     }
 }
@@ -2235,64 +2233,26 @@ DISCREPANCY_AUTOFIX(CDS_WITHOUT_MRNA)
 
 // PROTEIN_NAMES
 
-static const string kProteinNames = "All proteins have same name ";
-static const string kProteins = "Proteins";
-
 DISCREPANCY_CASE(PROTEIN_NAMES, CSeq_feat, eDisc | eSubmitter | eSmart, "Frequently appearing proteins")
 {
     if (obj.IsSetData() && obj.GetData().IsProt()) {
-
         const CProt_ref& prot = obj.GetData().GetProt();
         if (prot.IsSetName() && !prot.GetName().empty()) {
-            m_Objs[kProteins].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef), false);
+            string name = obj.GetData().GetProt().GetName().front();
+            m_Objs[name].Incr();
         }
     }
 }
 
-typedef list<CConstRef<CSeq_feat>> TSeqFeatList;
-typedef map<string, TSeqFeatList> TProteinMap;
 
-static void CollectProteins(TReportObjectList& prot_feats, TProteinMap& proteins)
-{
-    NON_CONST_ITERATE(TReportObjectList, prots, prot_feats) {
-
-        CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>(prots->GetNCPointer());
-        const CSeq_feat* cur_feat = dynamic_cast<const CSeq_feat*>(dobj->GetObject().GetPointer());
-
-        if (cur_feat) {
-
-            string first_name = cur_feat->GetData().GetProt().GetName().front();
-            proteins[first_name].push_back(CConstRef<CSeq_feat>(cur_feat));
-        }
-    }
-}
-
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(PROTEIN_NAMES)
-//  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
-
-    TProteinMap proteins;
-    CollectProteins(m_Objs[kProteins].GetObjects(), proteins);
-
     static const size_t MIN_REPORTABLE_AMOUNT = 100;
-
-    if (proteins.size() == 1) {
-
-        const TSeqFeatList& feats = proteins.begin()->second;
-        const string& name = proteins.begin()->first;
-
-        if (feats.size() >= MIN_REPORTABLE_AMOUNT) {
-
-            CReportNode report;
-            string subcat = kProteinNames + '\"' + name + '\"';
-            report[subcat];
-
-            m_ReportItems = report.Export(*this)->GetSubitems();
-        }
+    auto& M = m_Objs.GetMap();
+    if (M.size() == 1 && M.begin()->second->GetCount() >= MIN_REPORTABLE_AMOUNT) {
+        CReportNode rep;
+        rep["All proteins have same name \"" + M.begin()->first + "\""];
+        m_ReportItems = rep.Export(*this)->GetSubitems();
     }
 }
 

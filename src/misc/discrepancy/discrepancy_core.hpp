@@ -256,6 +256,7 @@ public:
 
     TReportObjectList& GetObjects() { return m_Objs; }
     TNodeMap& GetMap() { return m_Map; }
+    size_t GetCount() { return m_Count ? m_Count : m_Objs.size(); }
     CRef<CReportItem> Export(CDiscrepancyCase& test, bool unique = true);
     void Copy(CRef<CReportNode> other);
     bool Promote();
