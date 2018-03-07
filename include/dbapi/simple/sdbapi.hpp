@@ -478,93 +478,93 @@ public:
     /// Assign string value to the parameter.
     /// If data type requested is not string then attempt to do conversion
     /// will be made. If conversion is impossible exception will be thrown.
-    void SetParameter(CTempString   name,
-                      const string& value,
-                      ESDB_Type     type = eSDB_String,
-                      ESP_ParamType param_type = eSP_In);
+    CQuery& SetParameter(CTempString   name,
+                         const string& value,
+                         ESDB_Type     type = eSDB_String,
+                         ESP_ParamType param_type = eSP_In);
     /// Assign string value to the parameter.
     /// If data type requested is not string then attempt to do conversion
     /// will be made. If conversion is impossible exception will be thrown.
-    void SetParameter(CTempString   name,
-                      const char*   value,
-                      ESDB_Type     type = eSDB_String,
-                      ESP_ParamType param_type = eSP_In);
+    CQuery& SetParameter(CTempString   name,
+                         const char*   value,
+                         ESDB_Type     type = eSDB_String,
+                         ESP_ParamType param_type = eSP_In);
     /// Assign 8-byte integer value to the parameter.
     /// If data type requested is not 8-byte integer then attempt to do
     /// conversion will be made. If conversion is impossible exception
     /// will be thrown.
-    void SetParameter(CTempString   name,
-                      Int8          value,
-                      ESDB_Type     type = eSDB_Int8,
-                      ESP_ParamType param_type = eSP_In);
+    CQuery& SetParameter(CTempString   name,
+                         Int8          value,
+                         ESDB_Type     type = eSDB_Int8,
+                         ESP_ParamType param_type = eSP_In);
     /// Assign 4-byte integer value to the parameter.
     /// If data type requested is not 4-byte integer then attempt to do
     /// conversion will be made. If conversion is impossible exception
     /// will be thrown.
-    void SetParameter(CTempString   name,
-                      Int4          value,
-                      ESDB_Type     type = eSDB_Int4,
-                      ESP_ParamType param_type = eSP_In);
+    CQuery& SetParameter(CTempString   name,
+                         Int4          value,
+                         ESDB_Type     type = eSDB_Int4,
+                         ESP_ParamType param_type = eSP_In);
 #if !NCBI_INT8_IS_LONG
-    void SetParameter(CTempString   name,
-                      long          value,
-                      ESDB_Type     type = eSDB_Int4,
-                      ESP_ParamType param_type = eSP_In);
+    CQuery& SetParameter(CTempString   name,
+                         long          value,
+                         ESDB_Type     type = eSDB_Int4,
+                         ESP_ParamType param_type = eSP_In);
 #endif
     /// Assign short integer value to the parameter.
     /// If data type requested is not short integer then attempt to do
     /// conversion will be made. If conversion is impossible exception
     /// will be thrown.
-    void SetParameter(CTempString   name,
-                      short         value,
-                      ESDB_Type     type = eSDB_Short,
-                      ESP_ParamType param_type = eSP_In);
+    CQuery& SetParameter(CTempString   name,
+                         short         value,
+                         ESDB_Type     type = eSDB_Short,
+                         ESP_ParamType param_type = eSP_In);
     /// Assign byte value to the parameter.
     /// If data type requested is not byte then attempt to do
     /// conversion will be made. If conversion is impossible exception
     /// will be thrown.
-    void SetParameter(CTempString   name,
-                      unsigned char value,
-                      ESDB_Type     type = eSDB_Byte,
-                      ESP_ParamType param_type = eSP_In);
+    CQuery& SetParameter(CTempString   name,
+                         unsigned char value,
+                         ESDB_Type     type = eSDB_Byte,
+                         ESP_ParamType param_type = eSP_In);
     /// Assign float value to the parameter.
     /// If data type requested is not float then attempt to do
     /// conversion will be made. If conversion is impossible exception
     /// will be thrown.
-    void SetParameter(CTempString   name,
-                      float         value,
-                      ESDB_Type     type = eSDB_Float,
-                      ESP_ParamType param_type = eSP_In);
+    CQuery& SetParameter(CTempString   name,
+                         float         value,
+                         ESDB_Type     type = eSDB_Float,
+                         ESP_ParamType param_type = eSP_In);
     /// Assign double value to the parameter.
     /// If data type requested is not double then attempt to do
     /// conversion will be made. If conversion is impossible exception
     /// will be thrown.
-    void SetParameter(CTempString   name,
-                      double        value,
-                      ESDB_Type     type = eSDB_Double,
-                      ESP_ParamType param_type = eSP_In);
+    CQuery& SetParameter(CTempString   name,
+                         double        value,
+                         ESDB_Type     type = eSDB_Double,
+                         ESP_ParamType param_type = eSP_In);
     /// Assign CTime value to the parameter.
     /// If data type requested is not datetime then attempt to do
     /// conversion will be made. If conversion is impossible exception
     /// will be thrown.
-    void SetParameter(CTempString   name,
-                      const CTime&  value,
-                      ESDB_Type     type = eSDB_DateTime,
-                      ESP_ParamType param_type = eSP_In);
+    CQuery& SetParameter(CTempString   name,
+                         const CTime&  value,
+                         ESDB_Type     type = eSDB_DateTime,
+                         ESP_ParamType param_type = eSP_In);
     /// Assign bool value to the parameter.
     /// If data type requested is not byte then attempt to do
     /// conversion will be made. If conversion is impossible exception
     /// will be thrown.
-    void SetParameter(CTempString   name,
-                      bool          value,
-                      ESDB_Type     type = eSDB_Bit,
-                      ESP_ParamType param_type = eSP_In);
+    CQuery& SetParameter(CTempString   name,
+                         bool          value,
+                         ESDB_Type     type = eSDB_Bit,
+                         ESP_ParamType param_type = eSP_In);
     /// Assign null value to the parameter.
     /// Data type should be given explicitly to show which type of data should
     /// be sent to server.
-    void SetNullParameter(CTempString   name,
-                          ESDB_Type     type,
-                          ESP_ParamType param_type = eSP_In);
+    CQuery& SetNullParameter(CTempString   name,
+                             ESDB_Type     type,
+                             ESP_ParamType param_type = eSP_In);
     /// Declare an output-only parameter.
     /// Equivalent for now to calling SetNullParameter with a
     /// param_type value of eSP_InOut because MSSQL and Sybase (and
@@ -572,7 +572,7 @@ public:
     /// However, if SDBAPI ever gains support for database engines
     /// with this feature, this method will arrange to make use of it
     /// as appropriate.
-    void SetOutputParameter(CTempString name, ESDB_Type type);
+    CQuery& SetOutputParameter(CTempString name, ESDB_Type type);
 
     /// Get value of the parameter.
     /// For eSP_In parameter value set to it will always be returned. For
@@ -585,14 +585,14 @@ public:
     const CField& GetParameter(CTempString name);
 
     /// Remove parameter with given name from parameter list.
-    void ClearParameter(CTempString name);
+    CQuery& ClearParameter(CTempString name);
     /// Remove all parameters from parameter list.
-    void ClearParameters(void);
+    CQuery& ClearParameters(void);
 
     /// Set current sql statement.
     /// Method does not clear parameter list and doesn't purge result sets
     /// left from previous query execution.
-    void SetSql(CTempString sql);
+    CQuery& SetSql(CTempString sql);
     /// Explicitly execute sql statement.
     /// All result sets left from previous statement or stored procedure
     /// execution are purged.  The query reverts to SingleSet mode, with
@@ -1351,17 +1351,18 @@ const string& CSDB_Exception::GetExtraMsg(void) const
 
 #if !NCBI_INT8_IS_LONG
 inline
-void CQuery::SetParameter(CTempString name, long value, ESDB_Type type,
+CQuery& CQuery::SetParameter(CTempString name, long value, ESDB_Type type,
                           ESP_ParamType param_type)
 {
-    SetParameter(name, static_cast<int>(value), type, param_type);
+    return SetParameter(name, static_cast<int>(value), type, param_type);
 }
 #endif
 
 inline
-void CQuery::SetOutputParameter(CTempString name, ESDB_Type type)
+CQuery& CQuery::SetOutputParameter(CTempString name, ESDB_Type type)
 {
     SetNullParameter(name, type, eSP_InOut);
+    return *this;
 }
 
 

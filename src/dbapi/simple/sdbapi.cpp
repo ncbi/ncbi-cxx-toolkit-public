@@ -3740,102 +3740,113 @@ CQuery::operator= (const CQuery& q)
     return *this;
 }
 
-void
+CQuery&
 CQuery::SetParameter(CTempString   name,
                      const string& value,
                      ESDB_Type     type /* = eSDB_String */,
                      ESP_ParamType param_type /* = eSP_In */)
 {
     m_Impl->SetParameter(name, value, type, param_type);
+    return *this;
 }
 
-void
+CQuery&
 CQuery::SetParameter(CTempString   name,
                      const char*   value,
                      ESDB_Type     type /* = eSDB_String */,
                      ESP_ParamType param_type /* = eSP_In */)
 {
     m_Impl->SetParameter(name, value, type, param_type);
+    return *this;
 }
 
-void
+CQuery&
 CQuery::SetParameter(CTempString   name,
                      Int8          value,
                      ESDB_Type     type /* = eSDB_Int8 */,
                      ESP_ParamType param_type /* = eSP_In */)
 {
     m_Impl->SetParameter(name, value, type, param_type);
+    return *this;
 }
 
-void
+CQuery&
 CQuery::SetParameter(CTempString   name,
                      Int4          value,
                      ESDB_Type     type /* = eSDB_Int4 */,
                      ESP_ParamType param_type /* = eSP_In */)
 {
     m_Impl->SetParameter(name, value, type, param_type);
+    return *this;
 }
 
-void
+CQuery&
 CQuery::SetParameter(CTempString   name,
                      short         value,
                      ESDB_Type     type /* = eSDB_Short */,
                      ESP_ParamType param_type /* = eSP_In */)
 {
     m_Impl->SetParameter(name, value, type, param_type);
+    return *this;
 }
 
-void
+CQuery&
 CQuery::SetParameter(CTempString   name,
                      unsigned char value,
                      ESDB_Type     type /* = eSDB_Byte */,
                      ESP_ParamType param_type /* = eSP_In */)
 {
     m_Impl->SetParameter(name, value, type, param_type);
+    return *this;
 }
 
-void
+CQuery&
 CQuery::SetParameter(CTempString   name,
                      float         value,
                      ESDB_Type     type /* = eSDB_Float */,
                      ESP_ParamType param_type /* = eSP_In */)
 {
     m_Impl->SetParameter(name, value, type, param_type);
+    return *this;
 }
 
-void
+CQuery&
 CQuery::SetParameter(CTempString   name,
                      double        value,
                      ESDB_Type     type /* = eSDB_Double */,
                      ESP_ParamType param_type /* = eSP_In */)
 {
     m_Impl->SetParameter(name, value, type, param_type);
+    return *this;
 }
 
-void
+CQuery&
 CQuery::SetParameter(CTempString   name,
                      const CTime&  value,
                      ESDB_Type     type /* = eSDB_DateTime */,
                      ESP_ParamType param_type /*= eSP_In */)
 {
     m_Impl->SetParameter(name, value, type, param_type);
+    return *this;
 }
 
-void
+CQuery&
 CQuery::SetParameter(CTempString   name,
                      bool          value,
                      ESDB_Type     type /* = eSDB_Bit */,
                      ESP_ParamType param_type /* = eSP_In */)
 {
     m_Impl->SetParameter(name, value, type, param_type);
+    return *this;
 }
 
-void
+CQuery&
 CQuery::SetNullParameter(CTempString   name,
                          ESDB_Type     type,
                          ESP_ParamType param_type /* = eSP_In */)
 {
     m_Impl->SetNullParameter(name, type, param_type);
+    return *this;
 }
 
 const CQuery::CField&
@@ -3844,22 +3855,25 @@ CQuery::GetParameter(CTempString name)
     return m_Impl->GetParameter(name);
 }
 
-void
+CQuery&
 CQuery::ClearParameter(CTempString name)
 {
     m_Impl->ClearParameter(name);
+    return *this;
 }
 
-void
+CQuery&
 CQuery::ClearParameters(void)
 {
     m_Impl->ClearParameters();
+    return *this;
 }
 
-void
+CQuery&
 CQuery::SetSql(CTempString sql)
 {
     m_Impl->SetSql(sql);
+    return *this;
 }
 
 CQuery&
