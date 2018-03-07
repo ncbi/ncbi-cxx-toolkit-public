@@ -355,13 +355,16 @@ void CBAMDataLoader_Impl::OpenBAMFiles()
     }
     ITERATE ( TSeqInfos, it, m_SeqInfos ) {
         const SDirSeqInfo& info = *it;
-        
-        CRef<CBamFileInfo>& bam_info = m_BamFiles[info.m_BamFileName.m_BamName];
-        if ( !bam_info ) {
+
+        CRef<CBamFileInfo> bam_info;
+        auto iter = m_BamFiles.find(info.m_BamFileName.m_BamName);
+        if ( iter == m_BamFiles.end() ) {
             bam_info = new CBamFileInfo(*this, info.m_BamFileName,
                                         info.m_BamSeqLabel, info.m_SeqId);
+            m_BamFiles[info.m_BamFileName.m_BamName] = bam_info;
         }
         else {
+            bam_info = iter->second;
             bam_info->AddRefSeq(info.m_BamSeqLabel, info.m_SeqId);
         }
         CBamRefSeqInfo* seq_info = bam_info->GetRefSeqInfo(info.m_SeqId);
