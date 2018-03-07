@@ -144,8 +144,8 @@ class CPSG_BioIdResolutionQueue
 {
 public:
     /// @param service
-    ///  Either a name of service (which can be resolved into a set of PSG servers)
-    ///  or a single fixed PSG server (in format "host:port")
+    ///  Either a name of service (which can be resolved into a set of PSG
+    ///  servers) or a single fixed PSG server (in format "host:port")
     CPSG_BioIdResolutionQueue(const string& service);
     ~CPSG_BioIdResolutionQueue();
 
@@ -253,8 +253,9 @@ typedef vector<CPSG_Blob> TPSG_Blobs;
 
 /// A queue to retrieve blob data from the storage.
 ///
-/// Call Retrieve() to schedule more blob-ids for retrieval, then
-/// call GetBlobs() to get the blobs that are ready for immediate retrieval.
+/// Call Retrieve() to schedule more blobs to retrieve (by their bio-ids or
+/// blob-ids). Then, call GetBlobs() to get the blobs that are ready for
+/// immediate retrieval.
 ///
 /// All methods are MT-safe.
 ///
@@ -268,28 +269,54 @@ class CPSG_BlobRetrievalQueue
 {
 public:
     /// @param service
-    ///  Either a name of service (which can be resolved into a set of PSG servers)
-    ///  or a single fixed PSG server (in format "host:port")
+    ///  Either a name of service (which can be resolved into a set of PSG
+    ///  servers) or a single fixed PSG server (in format "host:port")
     CPSG_BlobRetrievalQueue(const string& service);
     ~CPSG_BlobRetrievalQueue();
 
-    /// Schedule more blob-ids for the blob retrieval
+    /// Try to schedule more bio-ids for the blob retrieval.
+    /// @note
+    ///  If more than one thread is blocked on adding new set of bio-ids
+    ///  (or blob-ids) to the queue, then (when the queue gets free slots) one
+    ///  of the threads gets to add all or part of its bio-ids (or blob-ids) to
+    ///  the queue. Other threads will continue waiting (unless there is even 
+    ///  more free space left in the queue).
+    /// @param bio_ids
+    ///  List of bio ids.
+    ///  Those bio-ids from the "bio_ids" container that make it
+    ///  into the queue will be removed from the "bio_ids" container.
+    /// @param deadline
+    ///  For how long to try to push the bio-ids into the queue. The function
+    ///  returns if either it succeeds to push ALL of the bio-ids into the
+    ///  queue; or if it hits the deadline.
+    /* TODO: void Retrieve(TPSG_BioIds*     bio_ids,
+                           const CDeadline& deadline = 0);*/
+
+
+    /// Perform single blob retrieval (by its bio-id), synchronously
+    /* TODO: static CPSG_Blob Retrieve(const string&    service,
+                                       CPSG_BioId       bio_id,
+                                       const CDeadline& deadline = CDeadline::eInfinite);*/
+
+    /// Try to schedule more blob-ids for the blob retrieval.
     /// @note
     ///  If more than one thread is blocked on adding new set of blob-ids
-    ///  to the queue, then (when the queue gets free slots) one of
-    ///  the threads gets to add all or part of its blob-ids to
-    ///  the queue. Other threads will continue waiting (unless there is more
-    ///  free space left).
+    ///  (or bio-ids) to the queue, then (when the queue gets free slots) one
+    ///  of the threads gets to add all or part of its blob-ids (or bio-ids) to
+    ///  the queue. Other threads will continue waiting (unless there is even 
+    ///  more free space left in the queue).
     /// @param blob_ids
     ///  List of blob ids.
     ///  Those blob ids from the "blob_ids" container that make it
     ///  into the queue will be removed from the "blob_ids" container.
     /// @param deadline
-    ///  For how long to try to push the blob-ids into the queue.
+    ///  For how long to try to push the blob-ids into the queue. The function
+    ///  returns if either it succeeds to push ALL of the blob-ids into the
+    ///  queue; or if it hits the deadline.
     void Retrieve(TPSG_BlobIds*    blob_ids,
                   const CDeadline& deadline = 0);
 
-    /// Perform single blob retrieval, synchronously
+    /// Perform single blob retrieval (by its blob-id), synchronously
     static CPSG_Blob Retrieve(const string&    service,
                               CPSG_BlobId      blob_id,
                               const CDeadline& deadline = CDeadline::eInfinite);
@@ -313,15 +340,18 @@ public:
     TPSG_Blobs GetBlobs(const CDeadline& deadline = 0,
                         size_t           max_results = 0);
 
-    /// Cancel all ongoing retrievals and return all blob-ids
+    /// Cancel all ongoing retrievals and return all blob-ids and bio-ids
     /// for which there is no ready-to-retrieve blob obtained yet.
     /// You can continue working with the queue after that in a usual manner.
     /// If there are ready-to-be-retrieved blobs available in the queue
     /// they can be subsequently retrieved by calling GetBlobs() method.
+    /// @param bio_ids
+    ///  The bio-ids for which no retrievable blobs have yet been obtained 'll
+    ///  be added to "bio_ids". If "bio_ids" is NULL, then they be discarded.
     /// @param blob_ids
-    ///  The blob-ids for which no retrievable blobs have yet been obtained will
+    ///  The blob-ids for which no retrievable blobs have yet been obtained 'll
     ///  be added to "blob_ids". If "blob_ids" is NULL, then they be discarded.
-    void Clear(TPSG_BlobIds* blob_ids);
+    void Clear(/* TODO: TPSG_BioIds* bio_ids,*/ TPSG_BlobIds* blob_ids);
 
     /// TRUE if there is nothing left in the queue (whether retrieved or not)
     bool IsEmpty() const;
