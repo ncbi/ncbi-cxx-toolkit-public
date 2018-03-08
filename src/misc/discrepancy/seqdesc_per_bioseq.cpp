@@ -314,43 +314,24 @@ DISCREPANCY_AUTOFIX(SWITCH_STRUCTURED_COMMENT_PREFIX)
 
 // MISMATCHED_COMMENTS
 
-static const string kComments = "Comments";
-static const string kMismatchedComments = "Mismatched comments were found";
-
-
 DISCREPANCY_CASE(MISMATCHED_COMMENTS, CSeqdesc, eDisc, "Mismatched Comments")
 {
     if (obj.IsComment() && !obj.GetComment().empty()) {
-        m_Objs[kComments].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel(), eKeepRef));
+        m_Objs[obj.GetComment()].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel(), eNoRef, true));
     }
 }
 
 
 DISCREPANCY_SUMMARIZE(MISMATCHED_COMMENTS)
 {
-    TReportObjectList report;
-    const string* cur_comment = nullptr;
-    bool need_report = false;
-    NON_CONST_ITERATE(TReportObjectList, obj, m_Objs[kComments].GetObjects()) {
-        const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*obj).GetNCPointer())->GetObject().GetPointer());
-        if (desc) {
-            if (cur_comment == nullptr) {
-                cur_comment = &desc->GetComment();
-            } else if (desc->GetComment() != *cur_comment) {
-                need_report = true;
-                break;
-            }
+    CReportNode rep;
+    for (auto it: m_Objs.GetMap()) {
+        string subitem = "[n] comment[s] contain[S] " + it.first;
+        for (auto obj: it.second->GetObjects()) {
+            rep["Mismatched comments were found"][subitem].Ext().Add(*obj);
         }
     }
-    NON_CONST_ITERATE(TReportObjectList, obj, m_Objs[kComments].GetObjects()) {
-        const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*obj).GetNCPointer())->GetObject().GetPointer());
-        if (desc) {
-            string subitem = "[n] comment[s] contain[S] " + desc->GetComment();
-            m_Objs[kMismatchedComments][subitem].Ext().Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(desc), context.GetCurrentBioseqLabel(), eNoRef, true));
-        }
-    }
-    m_Objs.GetMap().erase(kComments);
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    m_ReportItems = rep.Export(*this)->GetSubitems();
 }
 
 
@@ -359,9 +340,9 @@ DISCREPANCY_AUTOFIX(MISMATCHED_COMMENTS)
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
     string comment;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
-        if ((*it)->CanAutofix()) {
-            const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+    for (auto it: list) {
+        if (it->CanAutofix()) {
+            const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer())->GetObject().GetPointer());
             if (desc) {
                 if (comment.empty()) {
                     comment = desc->GetComment();
@@ -370,7 +351,7 @@ DISCREPANCY_AUTOFIX(MISMATCHED_COMMENTS)
                     CSeqdesc* desc_handle = const_cast<CSeqdesc*>(desc); // Is there a way to do this without const_cast???
                     desc_handle->SetComment(comment);
                     n++;
-                    dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                    dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer())->SetFixed();
                 }
             }
         }
