@@ -1073,7 +1073,7 @@ DISCREPANCY_SUMMARIZE(STRAIN_TAXNAME_MISMATCH)
 DISCREPANCY_CASE(SPECVOUCHER_TAXNAME_MISMATCH, CBioSource, eOncaller | eSmart, "BioSources with the same specimen voucher should have the same taxname")
 {
     if (obj.IsSetOrg() && obj.GetOrg().IsSetOrgname() && obj.GetOrg().GetOrgname().IsSetMod()) {
-        for (auto om : obj.GetOrg().GetOrgname().GetMod()) {
+        for (auto om: obj.GetOrg().GetOrgname().GetMod()) {
             if (om->IsSetSubtype() && om->GetSubtype() == COrgMod::eSubtype_specimen_voucher && om->IsSetSubname()) {
                 const string strain = om->GetSubname();
                 if (!strain.empty()) {
@@ -1088,12 +1088,13 @@ DISCREPANCY_CASE(SPECVOUCHER_TAXNAME_MISMATCH, CBioSource, eOncaller | eSmart, "
 DISCREPANCY_SUMMARIZE(SPECVOUCHER_TAXNAME_MISMATCH)
 {
     CReportNode rep, rep1;
-    for (auto it : m_Objs.GetMap()) {
+    for (auto it: m_Objs.GetMap()) {
         if (it.second->GetMap().size() > 1) {
-            for (auto mm : it.second->GetMap()) {
-                for (auto obj : mm.second->GetObjects()) {
-                    rep["[n] biosources have specimen voucher/taxname conflicts"].Add(*obj);
-                    rep1["[n] biosources have specimen voucher " + it.first + " but do not have the same taxnames"].Add(*obj);
+            for (auto mm: it.second->GetMap()) {
+                for (auto obj: mm.second->GetObjects()) {
+                    string label = "[n] biosources have specimen voucher " + it.first + " but do not have the same taxnames";
+                    rep["[n] biosources have specimen voucher/taxname conflicts"][label].Ext().Add(*obj);
+                    rep1[label].Add(*obj);
                 }
             }
         }
