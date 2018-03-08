@@ -53,8 +53,8 @@ extern "C" {
 #  define  strnlen     NCBI_strnlen
 
 /** Return the number of characters in the string pointed to by "str" (not
- *  including the '\0' character but no more than "maxlen" (if the '\0'
- *  character hasn't been found within the first "maxlen" characters).
+ *  including the terminating '\0' character but no more than "maxlen" (if the
+ *  '\0' character hasn't been found within the first "maxlen" characters).
  */
 NCBI_XCONNECT_EXPORT
 size_t     strnlen(const char* str, size_t maxlen);
@@ -69,9 +69,9 @@ size_t     strnlen(const char* str, size_t maxlen);
 #  endif
 #  define  strdup       NCBI_strdup
 
-/** Create a copy of string "str".  Return an identical malloc'ed string, which
- *  must be explicitly freed by free() when no longer needed.  Return NULL if
- *  the memory allocation failed (including when "str" was passed as NULL).
+/** Create a copy of string "str".  Return an identical malloc()'ed string,
+ *  which must be explicitly deallocated by free() when no longer needed.
+ *  Return NULL if the memory allocation failed.
  */
 NCBI_XCONNECT_EXPORT
 char*      strdup(const char* str);
@@ -89,9 +89,11 @@ char*      strdup(const char* str);
 #  define  strndup      NCBI_strndup
 
 /** Create a copy of up to "n" first characters of string "str".  Return a
- *  malloc()'ed and '\0'-terminated string, which must be explicitly freed by
- *  free() when no longer needed.  Return NULL if the memory allocation failed
- *  (including when "str" was passed as NULL).
+ *  malloc()'ed and '\0'-terminated string, which must be explicitly
+ *  deallocated by free() when no longer needed.  Return NULL if the memory
+ *  allocation failed.
+ *  @note "str" is ignored (and, thus, may be NULL) when "n" is passed as 0,
+ *  which results in creating an empty string ("") upon return.
  */
 NCBI_XCONNECT_EXPORT
 char*      strndup(const char* str, size_t n);
@@ -147,9 +149,9 @@ char*    strlwr(char* s);
 
 
 /** Copy not more than "n" characters from string "s2" into "s1", and return
- *  the result, which is always null-terminated.
+ *  the result, which is always '\0'-terminated.
  *  NOTE:  The difference of this function from standard strncpy() is in that
- *  the result is always null-terminated and that the function does not pad
+ *  the result is _always_ '\0'-terminated and that the function does _not_ pad
  *  "s1" with null bytes should "s2" be shorter than "n" characters.
  */
 NCBI_XCONNECT_EXPORT
