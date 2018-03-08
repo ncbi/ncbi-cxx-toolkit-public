@@ -173,37 +173,23 @@ DISCREPANCY_SUMMARIZE(SHORT_PROT_SEQUENCES)
 DISCREPANCY_CASE(COMMENT_PRESENT, CSeqdesc, eOncaller, "Comment descriptor present")
 {
     if (obj.IsComment()) {
-        //CRef<CDiscrepancyObject> this_disc_obj(context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseq(), eKeepRef));
-        m_Objs["comment"][obj.GetComment()].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel(), eKeepRef), false);
+        m_Objs[obj.GetComment()].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel()));
     }
 }
 
 
 DISCREPANCY_SUMMARIZE(COMMENT_PRESENT)
 {
-    if (m_Objs.empty()) {
-        return;
-    }
-
-    bool all_same = false;
-    if (m_Objs["comment"].GetMap().size() == 1) {
-        all_same = true;
-    }
-    string label = all_same ? "[n] comment descriptor[s] were found (all same)" : "[n] comment descriptor[s] were found (some different)";
-
-    CReportNode::TNodeMap::iterator it = m_Objs["comment"].GetMap().begin();
-    while (it != m_Objs["comment"].GetMap().end()) {
-        NON_CONST_ITERATE (TReportObjectList, robj, m_Objs["comment"][it->first].GetObjects())
-        {
-            const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
-            CConstRef<CSeqdesc> comment_desc(dynamic_cast<const CSeqdesc*>(other_disc_obj->GetObject().GetPointer()));
-            m_Objs[label].Add(*context.NewSeqdescObj(comment_desc, kEmptyStr), false);
+    if (!m_Objs.empty()) {
+        CReportNode rep;
+        string label = m_Objs.GetMap().size() == 1 ? "[n] comment descriptor[s] were found (all same)" : "[n] comment descriptor[s] were found (some different)";
+        for (auto it: m_Objs.GetMap()) {
+            for (auto obj: it.second->GetObjects()) {
+                rep[label].Add(*obj);
+            }
         }
-        ++it;
+        m_ReportItems = rep.Export(*this)->GetSubitems();
     }
-    m_Objs.GetMap().erase("comment");
-
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
