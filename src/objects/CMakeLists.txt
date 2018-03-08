@@ -58,6 +58,7 @@ add_subdirectory(trackmgr)
 add_subdirectory(valerr)
 add_subdirectory(valid)
 add_subdirectory(variation)
+add_subdirectory(variation_libs)
 add_subdirectory(varrep)
 
 #
@@ -99,6 +100,7 @@ add_dependencies(taxon1 seq)
 add_dependencies(taxon3 seq)
 add_dependencies(trackmgr seq)
 add_dependencies(variation seq)
+add_dependencies(search_by_rsid general-lib trackmgr)
 add_dependencies(xnetblast seqset scoremat seq)
 
 
