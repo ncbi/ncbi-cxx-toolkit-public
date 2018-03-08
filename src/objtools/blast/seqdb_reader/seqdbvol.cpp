@@ -116,7 +116,8 @@ CSeqDBVol::OpenSeqFile(CSeqDBLockHold & locked) const{
 
 void
 CSeqDBVol::x_OpenSeqFile(void) const {
-    //m_Atlas.Lock(locked);
+    static CFastMutex mtx;
+    CFastMutexGuard mtx_gurad(mtx);
     if (!m_SeqFileOpened && m_Idx->GetNumOIDs() != 0) {
         m_Seq.Reset(new CSeqDBSeqFile(m_Atlas, m_VolName, (m_IsAA?'p':'n')));
     }
@@ -125,7 +126,8 @@ CSeqDBVol::x_OpenSeqFile(void) const {
 
 void
 CSeqDBVol::x_OpenHdrFile(void) const {
-    //m_Atlas.Lock(locked);
+    static CFastMutex mtx;
+    CFastMutexGuard mtx_gurad(mtx);
     if (!m_HdrFileOpened && m_Idx->GetNumOIDs() != 0) {
         m_Hdr.Reset(new CSeqDBHdrFile(m_Atlas, m_VolName, (m_IsAA?'p':'n')));
     }
@@ -134,7 +136,8 @@ CSeqDBVol::x_OpenHdrFile(void) const {
 
 void
 CSeqDBVol::x_OpenPigFile(void) const{
-    //m_Atlas.Lock(locked);
+    static CFastMutex mtx;
+    CFastMutexGuard mtx_gurad(mtx);
     if (!m_PigFileOpened &&
          CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 'p') &&
          m_Idx->GetNumOIDs() != 0) {
@@ -150,7 +153,8 @@ CSeqDBVol::x_OpenPigFile(void) const{
 
 void
 CSeqDBVol::x_OpenGiFile(void) const{
-    //m_Atlas.Lock(locked);
+    static CFastMutex mtx;
+    CFastMutexGuard mtx_gurad(mtx);
     if (!m_GiFileOpened &&
          CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 'n') &&
          m_Idx->GetNumOIDs() != 0) {
@@ -166,7 +170,8 @@ CSeqDBVol::x_OpenGiFile(void) const{
 
 void
 CSeqDBVol::x_OpenStrFile(void) const{
-    //m_Atlas.Lock(locked);
+    static CFastMutex mtx;
+    CFastMutexGuard mtx_gurad(mtx);
     if (!m_StrFileOpened &&
          CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 's') &&
          m_Idx->GetNumOIDs() != 0) {
@@ -182,7 +187,8 @@ CSeqDBVol::x_OpenStrFile(void) const{
 
 void
 CSeqDBVol::x_OpenTiFile(void) const{
-    //m_Atlas.Lock(locked);
+    static CFastMutex mtx;
+    CFastMutexGuard mtx_gurad(mtx);
     if (!m_TiFileOpened &&
          CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 't') &&
          m_Idx->GetNumOIDs() != 0) {
@@ -198,7 +204,8 @@ CSeqDBVol::x_OpenTiFile(void) const{
 
 void
 CSeqDBVol::x_OpenHashFile(void) const{
-    //m_Atlas.Lock(locked);
+    static CFastMutex mtx;
+    CFastMutexGuard mtx_gurad(mtx);
     if (!m_HashFileOpened &&
          CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 'h') &&
          m_Idx->GetNumOIDs() != 0) {
@@ -214,7 +221,8 @@ CSeqDBVol::x_OpenHashFile(void) const{
 
 void
 CSeqDBVol::x_OpenOidFile(void) const{
-    //m_Atlas.Lock(locked);
+    static CFastMutex mtx;
+    CFastMutexGuard mtx_gurad(mtx);
     if (!m_OidFileOpened &&
          CSeqDBGiIndex::IndexExists(m_VolName, (m_IsAA?'p':'n')) &&
          m_Idx->GetNumOIDs() != 0) {
