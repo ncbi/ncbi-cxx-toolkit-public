@@ -179,6 +179,7 @@ public:
 
 std::string DateTimeToStr(time_t t);
 
+void AccVerResolverUnpackData(DataRow& row, const std::string& data);
 
 }
 

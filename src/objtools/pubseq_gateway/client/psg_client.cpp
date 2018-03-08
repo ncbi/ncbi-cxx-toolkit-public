@@ -58,28 +58,6 @@ long RemainingTimeMs(const CDeadline& deadline)
     return nanosec / 1000000L + sec * 1000L;
 }
 
-static thread_local unique_ptr<DDRPC::DataColumns> s_accver_resolver_data_columns;
-
-void AccVerResolverUnpackData(DDRPC::DataRow& row, const string& data)
-{
-    constexpr const char kACCVER_RESOLVER_COLUMNS[] =
-        "ACCVER "   "CVARCHAR NOTNULL KEY, "
-        "GI "       "INT8, "
-        "LEN "      "UINT4, "
-        "SAT "      "UINT1, "
-        "SAT_KEY "  "UINT4, "
-        "TAXID "    "UINT4, "
-        "DATE "     "DATETIME, "
-        "SUPPRESS " "BIT NOTNULL";
-
-    if (!s_accver_resolver_data_columns) {
-        DDRPC::DataColumns clm;
-        clm.AssignAsText(kACCVER_RESOLVER_COLUMNS);
-        s_accver_resolver_data_columns.reset(new DDRPC::DataColumns(clm.ExtractDataColumns()));
-    }
-    row.Unpack(data, false, *s_accver_resolver_data_columns);
-}
-
 }
 
 
@@ -209,7 +187,7 @@ void CPSG_BioIdResolutionQueue::SItem::PopulateData(CPSG_BlobId& blob_id) const
             string data = m_Request->get_reply_data_move();
             DDRPC::DataRow rec;
             try {
-                AccVerResolverUnpackData(rec, data);
+                DDRPC::AccVerResolverUnpackData(rec, data);
                 blob_id.m_Status = CPSG_BlobId::eSuccess;
                 blob_id.m_BlobInfo.gi               = rec[0].AsInt8;
                 blob_id.m_BlobInfo.seq_length       = rec[1].AsUint4;

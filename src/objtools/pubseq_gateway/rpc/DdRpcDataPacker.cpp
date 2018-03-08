@@ -1102,4 +1102,27 @@ void DataRow::GetAsTsv(std::ostream& os, char Delimiter) const {
     }
 }
 
+
+static thread_local unique_ptr<DataColumns> s_accver_resolver_data_columns;
+
+void AccVerResolverUnpackData(DataRow& row, const std::string& data)
+{
+    constexpr const char kACCVER_RESOLVER_COLUMNS[] =
+        "ACCVER "   "CVARCHAR NOTNULL KEY, "
+        "GI "       "INT8, "
+        "LEN "      "UINT4, "
+        "SAT "      "UINT1, "
+        "SAT_KEY "  "UINT4, "
+        "TAXID "    "UINT4, "
+        "DATE "     "DATETIME, "
+        "SUPPRESS " "BIT NOTNULL";
+
+    if (!s_accver_resolver_data_columns) {
+        DataColumns clm;
+        clm.AssignAsText(kACCVER_RESOLVER_COLUMNS);
+        s_accver_resolver_data_columns.reset(new DataColumns(clm.ExtractDataColumns()));
+    }
+    row.Unpack(data, false, *s_accver_resolver_data_columns);
+}
+
 };
