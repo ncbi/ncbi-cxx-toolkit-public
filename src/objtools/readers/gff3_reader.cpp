@@ -356,9 +356,6 @@ bool CGff3Reader::xUpdateAnnotCds(
         return false;
     }
 
-    if (record.SeqStart() == 133055619) {
-        cerr << "";
-    }
     list<string> parents;
     record.GetAttribute("Parent", parents);
     map<string, string> impliedCdsFeats;

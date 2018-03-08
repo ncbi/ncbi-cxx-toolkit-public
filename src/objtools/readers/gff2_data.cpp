@@ -1240,7 +1240,6 @@ bool CGff2Record::xInitFeatureData(
         recognizedType = "cds";
     }
     if (!CSoMap::SoTypeToFeature(recognizedType, *pFeature)) {
-        return false;
         AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
                 eDiag_Error,
