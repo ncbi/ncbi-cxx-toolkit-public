@@ -306,6 +306,7 @@ void s_ScheduleFastCGIExit(void)
     CCgiApplication* cgiapp = dynamic_cast<CCgiApplication*>(CNcbiApplication::Instance());
     if (!cgiapp) return;
     cgiapp->FASTCGI_ScheduleExit();
+    ERR_POST(Message << "Caught SIGTERM and was scheduled for graceful shutdown.");
 }
 
 
