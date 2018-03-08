@@ -1974,6 +1974,7 @@ void CNewCleanup_imp::OrgrefBC (COrg_ref& org)
         vector< CRef< CDbtag > > new_dbtags;
         EDIT_EACH_DBXREF_ON_ORGREF (it, org) {
             CDbtag& dbt = **it;
+            DbtagBC(dbt);
             x_SplitDbtag(dbt, new_dbtags );
         }
         if( ! new_dbtags.empty() ) {
@@ -2277,6 +2278,12 @@ void CNewCleanup_imp::DbtagBC (
         ChangeMade(CCleanupChange::eChangeDbxrefs);
     } else if (NStr::Equal(db, "HMPID")) {
         db = "HMP";
+        ChangeMade(CCleanupChange::eChangeDbxrefs);
+    } else if (NStr::Equal(db, "ATCC (inhost)")) {
+        db = "ATCC(in host)";
+        ChangeMade(CCleanupChange::eChangeDbxrefs);
+    } else if (NStr::Equal(db, "ATCC (dna)")) {
+        db = "ATCC(dna)";
         ChangeMade(CCleanupChange::eChangeDbxrefs);
     }
 
