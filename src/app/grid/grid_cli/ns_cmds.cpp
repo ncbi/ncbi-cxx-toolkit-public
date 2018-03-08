@@ -750,8 +750,29 @@ static bool s_DumpStdStream(CNcbiIstream& std_stream, FILE* output_stream)
 int CGridCommandLineInterfaceApp::DumpJobInputOutput(
     const string& data_or_blob_id)
 {
-    auto_ptr<IReader> reader(new CStringOrBlobStorageReader(data_or_blob_id,
+    unique_ptr<IReader> reader;
+
+    try {
+        reader.reset(new CStringOrBlobStorageReader(data_or_blob_id,
             m_NetCacheAPI));
+    }
+    catch (CStringOrBlobStorageRWException& e) {
+        // Allow the special case of jobs submitted bypassing the Grid API.
+
+        if (e.GetErrCode() != CStringOrBlobStorageRWException::eInvalidFlag)
+            throw;
+
+        if (IsOptionSet(eRemoteAppStdIn) ||
+                IsOptionSet(eRemoteAppStdOut) ||
+                IsOptionSet(eRemoteAppStdErr))
+            throw;
+
+        if (fwrite(data_or_blob_id.data(), data_or_blob_id.length(), 1,
+                m_Opts.output_stream) != 1)
+            goto Error;
+
+        return 0;
+    }
 
     if (IsOptionSet(eRemoteAppStdIn)) {
         CRemoteAppRequest request(m_NetCacheAPI);
@@ -792,21 +813,12 @@ int CGridCommandLineInterfaceApp::DumpJobInputOutput(
         return 0;
     }
 
-    try {
-        char buffer[IO_BUFFER_SIZE];
-        size_t bytes_read;
+    char buffer[IO_BUFFER_SIZE];
+    size_t bytes_read;
 
-        while (reader->Read(buffer, sizeof(buffer), &bytes_read) != eRW_Eof)
-            if (fwrite(buffer, bytes_read, 1, m_Opts.output_stream) != 1)
-                goto Error;
-    }
-    catch (CStringOrBlobStorageRWException& e) {
-        if (e.GetErrCode() != CStringOrBlobStorageRWException::eInvalidFlag)
-            throw;
-        if (fwrite(data_or_blob_id.data(), data_or_blob_id.length(), 1,
-                m_Opts.output_stream) != 1)
+    while (reader->Read(buffer, sizeof(buffer), &bytes_read) != eRW_Eof)
+        if (fwrite(buffer, bytes_read, 1, m_Opts.output_stream) != 1)
             goto Error;
-    }
 
     return 0;
 
