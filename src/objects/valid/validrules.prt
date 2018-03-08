@@ -1106,25 +1106,25 @@ AR\|APR\|MAY\|JUN\|JUL\|AUG\|SEP\|OCT\|NOV\|DEC\)-\(19\|20\)\(0\|1\|2\|3\|4\|5
       {
         field-name "Source Record URL" ,
         match-expression "^\(HTTP://\|HTTPS://\|http://\|https://)",
-        required TRUE },
+        required FALSE },
       {
         field-name "Occurrence ID (GUID)" ,
-        required TRUE },
+        required FALSE },
       {
         field-name "Record ID" ,
-        required TRUE },
+        required FALSE },
       {
         field-name "Institution Code" ,
-        required TRUE },
+        required FALSE },
       {
         field-name "Collection Code" ,
-        required TRUE },
+        required FALSE },
       {
         field-name "Catalog Number" ,
-        required TRUE },
+        required FALSE },
       {
         field-name "Other Catalog Numbers" ,
-        required TRUE }
+        required FALSE }
     }
   }
 }
