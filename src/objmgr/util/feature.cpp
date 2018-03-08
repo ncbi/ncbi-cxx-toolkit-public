@@ -1103,6 +1103,10 @@ STypeLink::STypeLink(CSeqFeatData::ESubtype subtype,
     case CSeqFeatData::eSubtype_protein_bind:
     case CSeqFeatData::eSubtype_repeat_region:
     case CSeqFeatData::eSubtype_misc_recomb:
+    case CSeqFeatData::eSubtype_mobile_element:
+    case CSeqFeatData::eSubtype_rep_origin:
+    case CSeqFeatData::eSubtype_misc_structure:
+    case CSeqFeatData::eSubtype_stem_loop:
         m_ParentType = CSeqFeatData::eSubtype_region;
         break;
     default:
@@ -2566,6 +2570,25 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
 }
 
 
+static bool s_AllowedParentByOverlap(CSeqFeatData::ESubtype child,
+                                     CSeqFeatData::ESubtype parent)
+{
+    if (parent == CSeqFeatData::eSubtype_region &&
+        (child == CSeqFeatData::eSubtype_misc_feature ||
+            child == CSeqFeatData::eSubtype_regulatory ||
+            child == CSeqFeatData::eSubtype_protein_bind ||
+            child == CSeqFeatData::eSubtype_repeat_region ||
+            child == CSeqFeatData::eSubtype_misc_recomb ||
+            child == CSeqFeatData::eSubtype_mobile_element ||
+            child == CSeqFeatData::eSubtype_rep_origin ||
+            child == CSeqFeatData::eSubtype_misc_structure ||
+            child == CSeqFeatData::eSubtype_stem_loop)) {
+        return false;
+    }
+    return true;
+}
+
+
 void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
                                          const STypeLink& link)
 {
@@ -2639,7 +2662,7 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
         CFeatInfo& info = *features[i];
         if ( !info.IsSetParent() ) {
             CFeatInfo* best = bests[i].m_Info;
-            if ( best ) {
+            if (best  &&  s_AllowedParentByOverlap(info.GetSubtype(), best->GetSubtype())) {
                 // assign best parent
                 x_SetParent(info, *best);
             }
