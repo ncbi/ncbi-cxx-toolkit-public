@@ -633,7 +633,7 @@ CRWLock::CRWLock(TFlags flags)
 {
 #if defined(_DEBUG)
     m_TrackReaders = true;
-    m_FavorWriters = false;
+    m_FavorWriters = (flags & fFavorWriters) != 0;
 #else
     m_TrackReaders = m_FavorWriters = (flags & fFavorWriters) != 0;
 #endif
