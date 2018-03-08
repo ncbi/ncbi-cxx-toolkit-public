@@ -765,14 +765,14 @@ void CDataSource::UpdateAnnotIndex(void)
 
 void CDataSource::UpdateAnnotIndex(const CSeq_entry_Info& entry_info)
 {
-    TMainLock::TWriteLockGuard guard(m_DSMainLock);
+    TMainLock::TReadLockGuard guard(m_DSMainLock);
     entry_info.UpdateAnnotIndex();
 }
 
 
 void CDataSource::UpdateAnnotIndex(const CSeq_annot_Info& annot_info)
 {
-    TMainLock::TWriteLockGuard guard(m_DSMainLock);
+    TMainLock::TReadLockGuard guard(m_DSMainLock);
     annot_info.UpdateAnnotIndex();
 }
 
