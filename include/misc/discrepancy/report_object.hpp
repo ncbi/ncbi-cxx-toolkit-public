@@ -48,11 +48,11 @@ struct CReportObjPtr;
 class NCBI_DISCREPANCY_EXPORT CReportObject : public CReportObj
 {
 public:
-    CReportObject(CConstRef<CBioseq> obj, CScope& scope) : m_Type(eType_sequence), m_Bioseq(obj), m_Scope(scope) {}
-    CReportObject(CConstRef<CSeq_feat> obj, CScope& scope) : m_Type(eType_feature), m_Seq_feat(obj), m_Scope(scope) {}
-    CReportObject(CConstRef<CSeqdesc> obj, CScope& scope) : m_Type(eType_descriptor), m_Seqdesc(obj), m_Scope(scope) {}
-    CReportObject(CConstRef<CSubmit_block> obj, CScope& scope, const string& text) : m_Type(eType_submit_block), m_Text(text), m_Submit_block(obj), m_Scope(scope) {}
-    CReportObject(CConstRef<CBioseq_set> obj, CScope& scope) : m_Type(eType_seq_set), m_Bioseq_set(obj), m_Scope(scope) {}
+    CReportObject(CConstRef<CBioseq> obj, CScope& scope) : m_Type(eType_sequence), m_Obj(obj), m_Scope(scope) {}
+    CReportObject(CConstRef<CSeq_feat> obj, CScope& scope) : m_Type(eType_feature), m_Obj(obj), m_Scope(scope) {}
+    CReportObject(CConstRef<CSeqdesc> obj, CScope& scope) : m_Type(eType_descriptor), m_Obj(obj), m_Scope(scope) {}
+    CReportObject(CConstRef<CSubmit_block> obj, CScope& scope, const string& text) : m_Type(eType_submit_block), m_Text(text), m_Obj(obj), m_Scope(scope) {}
+    CReportObject(CConstRef<CBioseq_set> obj, CScope& scope) : m_Type(eType_seq_set), m_Obj(obj), m_Scope(scope) {}
     CReportObject(const string& str, CScope& scope) : m_Type(eType_string), m_Text(str), m_Scope(scope) {}
     CReportObject(const CReportObject& other) :
         m_Type(other.m_Type),
@@ -62,12 +62,8 @@ public:
         m_Location(other.m_Location),
         m_LocusTag(other.m_LocusTag),
         m_ShortName(other.m_ShortName),
-        m_Bioseq(other.m_Bioseq),
-        m_Seq_feat(other.m_Seq_feat),
-        m_Seqdesc(other.m_Seqdesc),
-        m_Submit_block(other.m_Submit_block),
-        m_Bioseq_set(other.m_Bioseq_set),
-        m_Filename(other.m_Filename),
+        m_Obj(other.m_Obj),
+        m_FileID(other.m_FileID),
         m_Scope(other.m_Scope) {}
     ~CReportObject() {}
 
@@ -87,14 +83,14 @@ public:
     void SetLocusTag(const string& str) { m_LocusTag = str; }
     void SetShort(const string& str) { m_ShortName = str; }
 
-    CConstRef<CBioseq> GetBioseq() const { return m_Bioseq; }
-    void SetBioseq(CConstRef<CBioseq> obj) { m_Bioseq = obj; }
+    CConstRef<CBioseq> GetBioseq() const { return CConstRef<CBioseq>(dynamic_cast<const CBioseq*>(&*m_Obj)); }
+    void SetBioseq(CConstRef<CBioseq> obj) { m_Obj = obj; }
 
     // if we have read in Seq-entries from multiple files, the 
     // report should include the filename that the object was
     // originally found in
-    const string& GetFilename() const { return m_Filename; }
-    void SetFilename(const string& filename) { m_Filename = filename; }
+    const size_t GetFileID() const { return m_FileID; }
+    void SetFileID(const size_t fileID) { m_FileID = fileID; }
 
     // the DropReferences methods save text representations of the objects
     // and reset references to underlying objects.
@@ -102,7 +98,6 @@ public:
     // used to create the text representations) to go out of scope and not be
     // stored in memory
     void DropReference();
-    void DropReference(CScope& scope);
 
     static string GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope);
     static string GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, const string& product);  
@@ -113,25 +108,7 @@ public:
     static void GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &type, string &location, string &locus_tag);
 
     CScope& GetScope(void) const { return m_Scope; }
-    CConstRef<CSerialObject> GetObject(void) const
-    {
-        if (m_Bioseq) {
-            return CConstRef<CSerialObject>(&*m_Bioseq);
-        }
-        if (m_Seq_feat) {
-            return CConstRef<CSerialObject>(&*m_Seq_feat);
-        }
-        if (m_Seqdesc) {
-            return CConstRef<CSerialObject>(&*m_Seqdesc);
-        }
-        if (m_Submit_block) {
-            return CConstRef<CSerialObject>(&*m_Submit_block);
-        }
-        if( m_Bioseq_set ) {
-            return CConstRef<CSerialObject>(&*m_Bioseq_set);
-        }
-        return CConstRef<CSerialObject>();
-    }
+    CConstRef<CSerialObject> GetObject(void) const { return m_Obj; }
 
 protected:
     EType                  m_Type;
@@ -141,12 +118,9 @@ protected:
     string                 m_Location;
     string                 m_LocusTag;
     string                 m_ShortName;
-    CConstRef<CBioseq>     m_Bioseq;
-    CConstRef<CSeq_feat>   m_Seq_feat;
-    CConstRef<CSeqdesc>    m_Seqdesc;
-    CConstRef<CSubmit_block> m_Submit_block;
-    CConstRef<CBioseq_set> m_Bioseq_set;
-    string                 m_Filename;
+    CConstRef<CSerialObject> m_Obj;
+    //string                 m_Filename;
+    size_t                 m_FileID;
     CScope&                m_Scope;
 friend struct CReportObjPtr;
 };

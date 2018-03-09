@@ -56,7 +56,7 @@ public:
     virtual const string& GetLocation(void) const = 0;
     virtual const string& GetLocusTag() const = 0;
     virtual const string& GetShort(void) const = 0;
-    virtual const string& GetFilename(void) const = 0;
+    virtual const size_t GetFileID(void) const = 0;
     virtual EType GetType(void) const = 0;
     virtual CConstRef<CSerialObject> GetObject(void) const = 0;
     virtual objects::CScope& GetScope(void) const = 0;
@@ -149,12 +149,12 @@ public:
     virtual void OutputXML(CNcbiOstream& out, bool ext = false) = 0;
 
     bool IsGui(void) const { return m_Gui;}
-    const string& GetFile(void) const { return m_File;}
+    const string& GetFile(void) const { return m_Files[m_File];}
     const string& GetLineage(void) const { return m_Lineage; }
     float GetSesameStreetCutoff(void) const { return m_SesameStreetCutoff; }
     bool GetKeepRef(void) const { return m_KeepRef; }
     void* GetUserData(void) const { return m_UserData; }
-    void SetFile(const string& s){ m_File = s; }
+    void SetFile(const string& s){ m_Files.push_back(s); m_File = m_Files.size() - 1; }
     void SetLineage(const string& s){ m_Lineage = s; }
     void SetEucariote(bool b){ m_Eucariote = b; }
     void SetSesameStreetCutoff(float f){ m_SesameStreetCutoff = f; }
@@ -167,7 +167,8 @@ public:
     static const char** GetTestSuiteKClark();
 
 protected:
-    string m_File;
+    size_t m_File;
+    vector<string> m_Files;
     string m_Lineage;
     float m_SesameStreetCutoff;
     bool m_Eucariote;

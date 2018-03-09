@@ -94,22 +94,26 @@ CConstRef<CSeq_id> GetBestId(const CBioseq& bioseq);
 
 void CReportObject::SetText(CScope& scope, const string& label)
 {
-    if (m_Bioseq) {
-        m_Text = GetTextObjectDescription(*m_Bioseq, scope);
-        GetBestId(*m_Bioseq)->GetLabel(&m_ShortName, CSeq_id::eContent);
+    const CBioseq* Bioseq = dynamic_cast<const CBioseq*>(&*m_Obj);
+    const CSeq_feat* Seq_feat = dynamic_cast<const CSeq_feat*>(&*m_Obj);
+    const CSeqdesc* Seqdesc = dynamic_cast<const CSeqdesc*>(&*m_Obj);
+    const CBioseq_set* Bioseq_set = dynamic_cast<const CBioseq_set*>(&*m_Obj);
+    if (Bioseq) {
+        m_Text = GetTextObjectDescription(*Bioseq, scope);
+        GetBestId(*Bioseq)->GetLabel(&m_ShortName, CSeq_id::eContent);
     }
-    else if (m_Seq_feat) {
-        GetTextObjectDescription(*m_Seq_feat, scope, m_FeatureType, m_Product, m_Location, m_LocusTag);
+    else if (Seq_feat) {
+        GetTextObjectDescription(*Seq_feat, scope, m_FeatureType, m_Product, m_Location, m_LocusTag);
         m_Text = m_FeatureType + "\t" + m_Product + "\t" + m_Location + "\t" + m_LocusTag;
     }
-    else if (m_Seqdesc) {
-        m_Text = GetTextObjectDescription(*m_Seqdesc);
+    else if (Seqdesc) {
+        m_Text = GetTextObjectDescription(*Seqdesc);
         if (!label.empty()) {
             m_Text = label + ":" + m_Text;
         }
     }
-    else if (m_Bioseq_set) {
-        CBioseq_set_Handle bssh = scope.GetBioseq_setHandle(*m_Bioseq_set);
+    else if (Bioseq_set) {
+        CBioseq_set_Handle bssh = scope.GetBioseq_setHandle(*Bioseq_set);
         m_Text = GetTextObjectDescription(bssh);
     }
 }
@@ -574,22 +578,7 @@ string CReportObject::GetTextObjectDescription(CBioseq_set_Handle bssh)
 
 void CReportObject::DropReference()
 {
-    m_Bioseq.Reset();
-    m_Seq_feat.Reset();
-    m_Seqdesc.Reset();
-    m_Submit_block.Reset();
-    m_Bioseq_set.Reset();
-}
-
-
-void CReportObject::DropReference(CScope& scope) 
-{
-    if (!m_Bioseq && !m_Seq_feat && !m_Seqdesc && !m_Bioseq_set) {
-        return;
-    }
-    if (NStr::IsBlank(m_Text)) {
-        SetText(scope);
-    }
+    m_Obj.Reset();
 }
 
 
@@ -600,20 +589,11 @@ bool CReportObjPtr::operator<(const CReportObjPtr& other) const
     }
     const CReportObject& A = (const CReportObject&)*P;
     const CReportObject& B = (const CReportObject&)*other.P;
-    if (A.m_Bioseq || B.m_Bioseq) {
-        return A.m_Bioseq < B.m_Bioseq;
+    if (A.m_Obj || B.m_Obj) {
+        return A.m_Obj < B.m_Obj;
     }
-    if (A.m_Seq_feat || B.m_Seq_feat) {
-        return A.m_Seq_feat < B.m_Seq_feat;
-    }
-    if (A.m_Seqdesc || B.m_Seqdesc) {
-        return A.m_Seqdesc < B.m_Seqdesc;
-    }
-    if (A.m_Bioseq_set || B.m_Bioseq_set) {
-        return A.m_Bioseq_set < B.m_Bioseq_set;
-    }
-    if (A.m_Filename != B.m_Filename) {
-        return A.m_Filename < B.m_Filename;
+    if (A.m_FileID != B.m_FileID) {
+        return A.m_FileID < B.m_FileID;
     }
     if (A.m_Text != B.m_Text) {
         return A.m_Text < B.m_Text;

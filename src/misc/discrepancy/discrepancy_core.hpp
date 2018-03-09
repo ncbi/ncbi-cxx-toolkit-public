@@ -114,29 +114,29 @@ class CDiscrepancyContext;
 class CDiscrepancyObject : public CReportObject
 {
 protected:
-    CDiscrepancyObject(CConstRef<CBioseq> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_Fixed(false), m_More(more)
+    CDiscrepancyObject(CConstRef<CBioseq> obj, CScope& scope, size_t fileID, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_Fixed(false), m_More(more)
     {
-        SetFilename(filename);
+        SetFileID(fileID);
     }
-    CDiscrepancyObject(CConstRef<CSeqdesc> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_Fixed(false), m_More(more)
+    CDiscrepancyObject(CConstRef<CSeqdesc> obj, CScope& scope, size_t fileID, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_Fixed(false), m_More(more)
     {
-        SetFilename(filename);
+        SetFileID(fileID);
     }
-    CDiscrepancyObject(CConstRef<CSeq_feat> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_Fixed(false), m_More(more)
+    CDiscrepancyObject(CConstRef<CSeq_feat> obj, CScope& scope, size_t fileID, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_Fixed(false), m_More(more)
     {
-        SetFilename(filename);
+        SetFileID(fileID);
     }
-    CDiscrepancyObject(CConstRef<CSubmit_block> obj, CScope& scope, const string& text, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope, text), m_Autofix(autofix), m_Fixed(false), m_More(more)
+    CDiscrepancyObject(CConstRef<CSubmit_block> obj, CScope& scope, const string& text, size_t fileID, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope, text), m_Autofix(autofix), m_Fixed(false), m_More(more)
     {
-        SetFilename(filename);
+        SetFileID(fileID);
     }
-    CDiscrepancyObject(CConstRef<CBioseq_set> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_Fixed(false), m_More(more)
+    CDiscrepancyObject(CConstRef<CBioseq_set> obj, CScope& scope, size_t fileID, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_Fixed(false), m_More(more)
     {
-        SetFilename(filename);
+        SetFileID(fileID);
     }
-    CDiscrepancyObject(const string& str, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(str, scope), m_Autofix(autofix), m_Fixed(false), m_More(more)
+    CDiscrepancyObject(const string& str, CScope& scope, size_t fileID, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(str, scope), m_Autofix(autofix), m_Fixed(false), m_More(more)
     {
-        SetFilename(filename);
+        SetFileID(fileID);
     }
     CDiscrepancyObject(const CDiscrepancyObject& other) : CReportObject(other), m_Autofix(other.m_Autofix), m_Case(other.m_Case), m_More(other.m_More) {}
 
@@ -166,7 +166,7 @@ template<typename T> struct CSimpleTypeObject : public CObject
 class CSubmitBlockDiscObject : public CDiscrepancyObject
 {
 protected:
-    CSubmitBlockDiscObject(CConstRef<CSubmit_block> obj, CRef<CSimpleTypeObject<string> > label, CScope& scope, const string& text, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CDiscrepancyObject(obj, scope, text, filename, keep_ref, autofix, more) { m_Label.Reset(label); }
+    CSubmitBlockDiscObject(CConstRef<CSubmit_block> obj, CRef<CSimpleTypeObject<string> > label, CScope& scope, const string& text, size_t fileID, bool keep_ref, bool autofix = false, CObject* more = 0) : CDiscrepancyObject(obj, scope, text, fileID, keep_ref, autofix, more) { m_Label.Reset(label); }
     CConstRef<CSimpleTypeObject<string> > m_Label;
 public:
     virtual const string& GetText() const { return m_Label->Value.empty() ? m_Text : m_Label->Value; }

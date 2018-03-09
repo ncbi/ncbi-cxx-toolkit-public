@@ -44,8 +44,8 @@ static bool ShowFatal(const CReportItem& item)
         return false;
     }
     TReportItemList subs = item.GetSubitems();
-    ITERATE (TReportItemList, it, subs) {
-        if ((*it)->IsSummary() && (*it)->IsFatal()) {
+    for (auto it: subs) {
+        if (it->IsSummary() && it->IsFatal()) {
             return false;
         }
     }
@@ -58,27 +58,27 @@ static inline string deunderscore(const string s)
     return s[0] == '_' ? s.substr(1) : s;
 }
 
-static void RecursiveText(ostream& out, const TReportItemList& list, bool fatal, bool ext)
+static void RecursiveText(ostream& out, const TReportItemList& list, const vector<string>& fnames, bool fatal, bool ext)
 {
-    ITERATE (TReportItemList, it, list) {
-        if ((*it)->IsExtended() && !ext) {
+    for (auto it: list) {
+        if (it->IsExtended() && !ext) {
             continue;
         }
-        if (fatal && ShowFatal(**it)) {
+        if (fatal && ShowFatal(*it)) {
             out << "FATAL: ";
         }
-        out << deunderscore((*it)->GetTitle()) << ": " << (*it)->GetMsg() << "\n";
-        TReportItemList subs = (*it)->GetSubitems();
+        out << deunderscore(it->GetTitle()) << ": " << it->GetMsg() << "\n";
+        TReportItemList subs = it->GetSubitems();
         if (!subs.empty() && (ext || !subs[0]->IsExtended() && !subs[0]->IsSummary())) {
-            RecursiveText(out, subs, fatal, ext);
+            RecursiveText(out, subs, fnames, fatal, ext);
         }
         else {
-            TReportObjectList det = (*it)->GetDetails();
-            ITERATE (TReportObjectList, obj, det) {
-                if (!(*obj)->GetFilename().empty()) {
-                    out << (*obj)->GetFilename() << ":";
+            TReportObjectList det = it->GetDetails();
+            for (auto obj: det) {
+                if (!fnames.empty()) {
+                    out << fnames[obj->GetFileID()] << ":";
                 }
-                out << (*obj)->GetText() << "\n";
+                out << obj->GetText() << "\n";
             }
             out << "\n";
         }
@@ -88,26 +88,26 @@ static void RecursiveText(ostream& out, const TReportItemList& list, bool fatal,
 
 static void RecursiveSummary(ostream& out, const TReportItemList& list, bool fatal, size_t level = 0)
 {
-    ITERATE (TReportItemList, it, list) {
+    for (auto it: list) {
         if (!level) {
-            if (fatal && ShowFatal(**it)) {
+            if (fatal && ShowFatal(*it)) {
                 out << "FATAL: ";
             }
-            out << deunderscore((*it)->GetTitle()) << ": " << (*it)->GetMsg() << "\n";
+            out << deunderscore(it->GetTitle()) << ": " << it->GetMsg() << "\n";
         }
-        else if ((*it)->IsSummary()) {
+        else if (it->IsSummary()) {
             for (size_t i = 0; i < level; i++) {
                 out << "\t" ;
             }
-            if (fatal && ShowFatal(**it)) {
+            if (fatal && ShowFatal(*it)) {
                 out << "FATAL: ";
             }
-            out << (*it)->GetMsg() << "\n";
+            out << it->GetMsg() << "\n";
         }
         else {
             continue;
         }
-        TReportItemList subs = (*it)->GetSubitems();
+        TReportItemList subs = it->GetSubitems();
         RecursiveSummary(out, subs, fatal, level + 1);
     }
 }
@@ -119,16 +119,16 @@ void CDiscrepancyContext::OutputText(ostream& out, bool fatal, bool summary, boo
     out << (big ? "Discrepancy Report Results (due to the large size of the file some checks may not have run)\n\n" : "Discrepancy Report Results\n\n");
 
     out << "Summary\n";
-    ITERATE(TDiscrepancyCaseMap, tst, tests) {
-        TReportItemList rep = tst->second->GetReport();
+    for (auto tst: tests) {
+        TReportItemList rep = tst.second->GetReport();
         RecursiveSummary(out, rep, fatal);
     }
     if (summary) return;
-
+    
     out << "\nDetailed Report\n\n";
-    ITERATE(TDiscrepancyCaseMap, tst, tests) {
-        TReportItemList rep = tst->second->GetReport();
-        RecursiveText(out, rep, fatal, ext);
+    for (auto tst: tests) {
+        TReportItemList rep = tst.second->GetReport();
+        RecursiveText(out, rep, m_Files, fatal, ext);
     }
 }
 
@@ -145,36 +145,35 @@ static void Indent(ostream& out, size_t indent)
 
 static string SevLevel[] = {"INFO", "WARNING", "FATAL"};
 
-static void RecursiveXML(ostream& out, const TReportItemList& list, size_t indent, bool ext)
+static void RecursiveXML(ostream& out, const TReportItemList& list, const vector<string>& fnames, size_t indent, bool ext)
 {
-    ITERATE(TReportItemList, it, list) {
-        if ((*it)->IsExtended() && !ext) {
+    for (auto it: list) {
+        if (it->IsExtended() && !ext) {
             continue;
         }
         Indent(out, indent);
-        out << "<details message=\"" << NStr::XmlEncode((*it)->GetXml()) << "\"" << " severity=\"" << SevLevel[(*it)->GetSeverity()] << "\"";
-        if ((*it)->GetCount()) {
-            out << " cardinality=\"" << NStr::Int8ToString((*it)->GetCount()) << "\"";
+        out << "<details message=\"" << NStr::XmlEncode(it->GetXml()) << "\"" << " severity=\"" << SevLevel[it->GetSeverity()] << "\"";
+        if (it->GetCount()) {
+            out << " cardinality=\"" << NStr::Int8ToString(it->GetCount()) << "\"";
         }
-        if (!(*it)->GetUnit().empty()) {
-            out << " unit=\"" << NStr::XmlEncode((*it)->GetUnit()) << "\"";
+        if (!it->GetUnit().empty()) {
+            out << " unit=\"" << NStr::XmlEncode(it->GetUnit()) << "\"";
         }
-        if ((*it)->CanAutofix()) {
+        if (it->CanAutofix()) {
             out << " autofix=\"true\"";
         }
         out << ">\n";
 
         indent += XML_INDENT;
-        TReportItemList subs = (*it)->GetSubitems();
+        TReportItemList subs = it->GetSubitems();
         if (!subs.empty() && (ext || !subs[0]->IsExtended())) {
-            RecursiveXML(out, subs, indent, ext);
+            RecursiveXML(out, subs, fnames, indent, ext);
         }
         else {
-            TReportObjectList det = (*it)->GetDetails();
-            ITERATE(TReportObjectList, obj, det) {
+            for (auto obj: it->GetDetails()) {
                 Indent(out, indent);
                 out << "<object type=";
-                switch ((*obj)->GetType()) {
+                switch (obj->GetType()) {
                     case CReportObj::eType_feature:
                         out << "\"feature\"";
                         break;
@@ -194,22 +193,22 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, size_t inden
                         out << "\"string\"";
                         break;
                 }
-                if (!(*obj)->GetFilename().empty()) {
-                    out << " file=\"" << NStr::XmlEncode((*obj)->GetFilename()) << "\"";
+                if (!fnames.empty()) {
+                    out << " file=\"" << NStr::XmlEncode(fnames[obj->GetFileID()]) << "\"";
                 }
-                if (!(*obj)->GetFeatureType().empty()) {
-                    out << " feature_type=\"" << NStr::XmlEncode((*obj)->GetFeatureType()) << "\"";
+                if (!obj->GetFeatureType().empty()) {
+                    out << " feature_type=\"" << NStr::XmlEncode(obj->GetFeatureType()) << "\"";
                 }
-                if (!(*obj)->GetProductName().empty()) {
-                    out << " product=\"" << NStr::XmlEncode((*obj)->GetProductName()) << "\"";
+                if (!obj->GetProductName().empty()) {
+                    out << " product=\"" << NStr::XmlEncode(obj->GetProductName()) << "\"";
                 }
-                if (!(*obj)->GetLocation().empty()) {
-                    out << " location=\"" << NStr::XmlEncode((*obj)->GetLocation()) << "\"";
+                if (!obj->GetLocation().empty()) {
+                    out << " location=\"" << NStr::XmlEncode(obj->GetLocation()) << "\"";
                 }
-                if (!(*obj)->GetLocusTag().empty()) {
-                    out << " locus_tag=\"" << NStr::XmlEncode((*obj)->GetLocusTag()) << "\"";
+                if (!obj->GetLocusTag().empty()) {
+                    out << " locus_tag=\"" << NStr::XmlEncode(obj->GetLocusTag()) << "\"";
                 }
-                string text = NStr::Replace((*obj)->GetText(), "\t", " ");
+                string text = NStr::Replace(obj->GetText(), "\t", " ");
                 out << " label=\"" << NStr::XmlEncode(text) << "\"/>\n";
             }
         }
@@ -226,22 +225,22 @@ void CDiscrepancyContext::OutputXML(ostream& out, bool ext)
     out << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     out << "<discrepancy_report>\n";
 
-    ITERATE(TDiscrepancyCaseMap, tst, tests) {
-        TReportItemList rep = tst->second->GetReport();
+    for (auto tst: tests) {
+        TReportItemList rep = tst.second->GetReport();
         if (rep.empty()) {
             continue;
         }
         CReportItem::ESeverity sev = CReportItem::eSeverity_info;
-        ITERATE(TReportItemList, it, rep) {
-            CReportItem::ESeverity s = (*it)->GetSeverity();
+        for (auto it: rep) {
+            CReportItem::ESeverity s = it->GetSeverity();
             if (s > sev) {
                 sev = s;
             }
         }
-        TReportObjectList objs = tst->second->GetObjects();
+        TReportObjectList objs = tst.second->GetObjects();
         Indent(out, XML_INDENT);
-        out << "<test name=\"" << deunderscore(tst->first) << "\" description=\"" << NStr::XmlEncode(GetDiscrepancyDescr(tst->first)) << "\" severity=\"" << SevLevel[sev] << "\" cardinality=\"" << objs.size() << "\">\n";
-        RecursiveXML(out, rep, XML_INDENT * 2, ext);
+        out << "<test name=\"" << deunderscore(tst.first) << "\" description=\"" << NStr::XmlEncode(GetDiscrepancyDescr(tst.first)) << "\" severity=\"" << SevLevel[sev] << "\" cardinality=\"" << objs.size() << "\">\n";
+        RecursiveXML(out, rep, m_Files, XML_INDENT * 2, ext);
         Indent(out, XML_INDENT);
         out << "</test>\n";
     }
