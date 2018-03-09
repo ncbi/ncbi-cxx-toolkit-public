@@ -282,6 +282,8 @@ enum EErrType {
     eErr_SEQ_DESCR_OrgModValueInvalid,
     eErr_SEQ_DESCR_StrainWithEnvironSample,
     eErr_SEQ_DESCR_UnculturedNeedsEnvSample,
+    eErr_SEQ_DESCR_BadTextInSourceQualifier,
+    eErr_SEQ_DESCR_OrgModMissingValue,
 
     ERR_CODE_END(SEQ_DESCR),
 

@@ -4979,7 +4979,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadOrgMod)
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadOrgMod",
                               "Orgmod variety should only be in plants, fungi, or cyanobacteria"));
     */
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OrgModMissingValue",
                               "Variety value specified is not found in taxname"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadOrgMod",
                               "Specific host is identical to taxname"));
@@ -5817,7 +5817,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OrgModMissingValue",
                               "Variety value specified is not found in taxname"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OrganismNotFound",
         "Organism not found in taxonomy database (suggested:Arabidopsis thaliana var. foo)"));
@@ -5844,7 +5844,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_sub_species, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_forma_specialis, "foo");
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, 
-                              "BioSourceInconsistency",
+                              "OrgModMissingValue",
                               "Forma specialis value specified is not found in taxname"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -5901,15 +5901,15 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::AddFeat (feat, entry);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadTextInSourceQualifier",
                               "Germline qualifier should not have descriptive text"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadTextInSourceQualifier",
                               "Rearranged qualifier should not have descriptive text"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadTextInSourceQualifier",
                               "Transgenic qualifier should not have descriptive text"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadTextInSourceQualifier",
                               "Environmental_sample qualifier should not have descriptive text"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadTextInSourceQualifier",
                               "Metagenomic qualifier should not have descriptive text"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
                               "Germline and rearranged should not both be present"));
@@ -6480,7 +6480,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
-
+    CLEAR_ERRORS
 }
 
 
@@ -21331,10 +21331,10 @@ BOOST_FIXTURE_TEST_CASE(Test_VR_708, CGenBankFixture)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
-        "BioSourceInconsistency",
+        "BadTextInSourceQualifier",
         "chromosome value should start with letter or number"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
-        "BioSourceInconsistency",
+        "BadTextInSourceQualifier",
         "linkage-group value should start with letter or number"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);

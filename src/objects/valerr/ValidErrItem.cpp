@@ -764,6 +764,12 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_UnculturedNeedsEnvSample,
     { "UnculturedNeedsEnvSample",
         "Uncultured should also have /environmental_sample"} },
+    { eErr_SEQ_DESCR_BadTextInSourceQualifier,
+    { "BadTextInSourceQualifier",
+      "Qualifier value incorrectly formatted"} },
+    { eErr_SEQ_DESCR_OrgModMissingValue,
+    { "OrgModMissingValue",
+      "Qualifier value is missing"} },
 
     /* SEQ_GENERIC */
 

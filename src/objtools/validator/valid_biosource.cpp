@@ -1195,7 +1195,7 @@ const CSeq_entry *ctx)
                     subname[0] = toupper(subname[0]);
                 }
                 NStr::ReplaceInPlace(subname, "-", "_");
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadTextInSourceQualifier,
                     subname + " qualifier should not have descriptive text",
                     obj, ctx);
             }
@@ -1214,7 +1214,7 @@ const CSeq_entry *ctx)
         }
         if (x_IsRepliconSubSource(subsrc.GetSubtype()) &&
             !x_IsRepliconSubSourceValid(subsrc.GetName())) {
-            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BadTextInSourceQualifier,
                 CSubSource::GetSubtypeName(subsrc.GetSubtype()) + " value should start with letter or number",
                 obj, ctx);
         }
@@ -1381,20 +1381,20 @@ const CSeq_entry *ctx)
         NStr::ReplaceInPlace(orgmod_name, "-", " ");
         if (subtype == COrgMod::eSubtype_sub_species) {
             if (!orgref.IsSubspeciesValid(subname)) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_OrgModMissingValue,
                     "Subspecies value specified is not found in taxname",
                     obj, ctx);
             }
         } else if (subtype == COrgMod::eSubtype_variety) {
             if (!orgref.IsVarietyValid(subname)) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_OrgModMissingValue,
                     orgmod_name + " value specified is not found in taxname",
                     obj, ctx);
             }
         } else if (subtype == COrgMod::eSubtype_forma
             || subtype == COrgMod::eSubtype_forma_specialis) {
             if (!s_FindWholeName(taxname_search, subname)) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_OrgModMissingValue,
                     orgmod_name + " value specified is not found in taxname",
                     obj, ctx);
             }
