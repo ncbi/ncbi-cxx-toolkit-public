@@ -107,8 +107,8 @@ static void RecursiveSummary(ostream& out, const TReportItemList& list, bool fat
         else {
             continue;
         }
-        TReportItemList subs = it->GetSubitems();
-        RecursiveSummary(out, subs, fatal, level + 1);
+        //TReportItemList subs = it->GetSubitems();
+        RecursiveSummary(out, it->GetSubitems(), fatal, level + 1);
     }
 }
 
@@ -120,15 +120,15 @@ void CDiscrepancyContext::OutputText(ostream& out, bool fatal, bool summary, boo
 
     out << "Summary\n";
     for (auto tst: tests) {
-        TReportItemList rep = tst.second->GetReport();
-        RecursiveSummary(out, rep, fatal);
+        //TReportItemList rep = tst.second->GetReport();
+        RecursiveSummary(out, tst.second->GetReport(), fatal);
     }
     if (summary) return;
     
     out << "\nDetailed Report\n\n";
     for (auto tst: tests) {
-        TReportItemList rep = tst.second->GetReport();
-        RecursiveText(out, rep, m_Files, fatal, ext);
+        //TReportItemList rep = tst.second->GetReport();
+        RecursiveText(out, tst.second->GetReport(), m_Files, fatal, ext);
     }
 }
 

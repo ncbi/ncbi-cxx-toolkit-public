@@ -2238,8 +2238,8 @@ DISCREPANCY_CASE(PROTEIN_NAMES, CSeq_feat, eDisc | eSubmitter | eSmart, "Frequen
     if (obj.IsSetData() && obj.GetData().IsProt()) {
         const CProt_ref& prot = obj.GetData().GetProt();
         if (prot.IsSetName() && !prot.GetName().empty()) {
-            string name = obj.GetData().GetProt().GetName().front();
-            m_Objs[name].Incr();
+            //string name = obj.GetData().GetProt().GetName().front();
+            m_Objs[obj.GetData().GetProt().GetName().front()].Incr();
         }
     }
 }
