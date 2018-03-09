@@ -1554,15 +1554,15 @@ void CRWLock::Unlock(void)
         ++m_Count;
         return;
     }
-    unique_lock<mutex> lck( m_Mtx, defer_lock);
+    unique_lock<mutex> lck( m_Mtx/*, defer_lock*/);
     if (m_Owner == self_id) {
         m_Owner = 0;
         ++m_Count;
-        lck.lock();
+//        lck.lock();
     } else {
         long cnt = --m_Count;
         if (m_TrackReaders) {
-            lck.lock();
+//            lck.lock();
             m_Readers.erase( x_FindReader(self_id) );
         } else if (cnt != 0) {
             return;
