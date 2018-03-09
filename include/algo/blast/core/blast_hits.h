@@ -931,6 +931,7 @@ PhiBlastGetEffectiveNumberOfPatterns(const BlastQueryInfo *query_info);
 
 /** Apply Cross_match like masklevel to HSP list.  -RMH-
  */
+NCBI_XBLAST_EXPORT
 Int2 Blast_HSPResultsApplyMasklevel(BlastHSPResults *results,
                                     const BlastQueryInfo *query_info,
                                     Int4 masklevel, Int4 query_length);
