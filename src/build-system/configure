@@ -48702,7 +48702,8 @@ if test -n "$MONGODB3_LIBS"; then
    MONGODB3_LIBS=$MONGODB3_FULL_LIBS
    if test -f $MONGODB3_LIBDIR/libmongocxx-static.a; then
       MONGODB3_STATIC_LIBS=`echo "$MONGODB3_LIBS" | \
-        sed -e 's/-lmongo[^ ]*/&-static/g; s/-lbson[^ ]*/&-static/g'`
+        sed -e 's/-lmongo[^ ]*/&-static/g; s/-lbson[^ ]*/&-static/g' \
+             -e 's/\(-l[^ ]*-static[^ ]*\)-static/\1/g'`
    else
       MONGODB3_STATIC_LIBS=$MONGODB3_LIBS
    fi
