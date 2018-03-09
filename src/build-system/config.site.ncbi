@@ -224,7 +224,7 @@ esac
 
 : ${MONGODB_PATH=$NCBI/mongodb-1.1.2}
 
-: ${MONGODB3_PATH=$NCBI/mongodb-3.1.1}
+: ${MONGODB3_PATH=$NCBI/mongodb-3.2.0}
 
 : ${MSGSL_PATH=$NCBI/msgsl-0.0.20171114-1c95f94}
 
