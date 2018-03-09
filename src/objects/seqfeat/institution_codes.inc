@@ -2269,7 +2269,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "GTNP\ts\tGrand Teton National Park\t\t",
 "GTV\ts\tGregorio T. Velasquez Phycological Herbarium\t\t",
 "GU\ts\tGotland University, Department of Biology\t\t",
-"GU-IITG\ts\tfor Gauhati University- Indian Institute of Technology Guwahati\t\t",
+"GU-IITG\ts\tGauhati University- Indian Institute of Technology Guwahati\t\t",
 "GUA\ts\tDIVEA, DEP, FEEMA, FEEMA\t\t",
 "GUAD\ts\tInstitut National de la Recherche Agronomique and Parc National de Guadeloupe\t\t",
 "GUADA\ts\tUniversidad Autonoma de Guadalajara\t\t",
