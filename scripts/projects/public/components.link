@@ -1,13 +1,13 @@
 [components]
-algo            18.0
-app             18.0
-core            18.0
-dbase           18.0
-infrastructure  18.0
-misc            18.0
-objects         18.0
-objtools        18.0
-sample          18.0
-sra             18.0
-web             18.0
+algo            21.0
+app             21.0
+core            21.0
+dbase           21.0
+infrastructure  21.0
+misc            21.0
+objects         21.0
+objtools        21.0
+sample          21.0
+sra             21.0
+web             21.0
 
