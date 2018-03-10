@@ -6844,6 +6844,7 @@ UNAM:CNHE	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Helmi
 UNAM:CNIN	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Insectos
 UNAM:CNMA	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Mamiferos
 UNAM:CNMO	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Moluscos
+UNAM:CNNE	 	Universidad Nacional Autonoma de Mexico, 
 UNAM:CNPE	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Peces
 UNAM:CNPGG	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional del Phylum Porifera Gerardo Green
 UNAN	s	Universidad Nacional Autonoma de Nicaragua		
