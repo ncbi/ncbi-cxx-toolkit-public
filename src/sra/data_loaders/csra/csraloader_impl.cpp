@@ -135,7 +135,7 @@ CCSRABlobId::CCSRABlobId(EBlobType blob_type,
       m_FirstSpotId(0),
       m_FileLock(ref.second)
 {
-    _ASSERT(blob_type != eBlobType_reads);
+    _ASSERT(blob_type < eBlobType_reads);
 }
 
 
@@ -326,6 +326,7 @@ bool CCSRABlobId::GetGeneralSRAAccReadId(const CSeq_id_Handle& idh,
 static const char kBlobPrefixAnnot[] = "annot|";
 static const char kBlobPrefixRefSeq[] = "refseq|";
 static const char kBlobPrefixReads[] = "reads|";
+static const char kBlobPrefixReadsAlign[] = "align|";
 static const char kRefIdPrefixGeneral[] = "gnl|";
 static const char kRefIdPrefixId[] = "id|";
 static const char kFileEnd[] = "|||";
@@ -333,14 +334,27 @@ static const char kFileEnd[] = "|||";
 string CCSRABlobId::ToString(void) const
 {
     CNcbiOstrstream out;
-    out << (m_BlobType == eBlobType_annot? kBlobPrefixAnnot:
-            (m_BlobType == eBlobType_refseq?
-             kBlobPrefixRefSeq: kBlobPrefixReads));
+    switch ( m_BlobType ) {
+    case eBlobType_annot:
+        out << kBlobPrefixAnnot;
+        break;
+    case eBlobType_refseq:
+        out << kBlobPrefixRefSeq;
+        break;
+    case eBlobType_reads:
+        out << kBlobPrefixReads;
+        break;
+    case eBlobType_reads_align:
+        out << kBlobPrefixReadsAlign;
+        break;
+    default:
+        return "";
+    }
     out << (m_RefIdType == CCSraDb::eRefId_gnl_NAME?
             kRefIdPrefixGeneral: kRefIdPrefixId);
     out << m_File;
     out << kFileEnd;
-    if ( m_BlobType != eBlobType_reads ) {
+    if ( m_BlobType < eBlobType_reads ) {
         out << m_SeqId;
     }
     else {
@@ -365,6 +379,10 @@ void CCSRABlobId::FromString(CTempString str0)
         str = str.substr(strlen(kBlobPrefixReads));
         m_BlobType = eBlobType_reads;
     }
+    else if ( NStr::StartsWith(kBlobPrefixReadsAlign, str) ) {
+        str = str.substr(strlen(kBlobPrefixReadsAlign));
+        m_BlobType = eBlobType_reads_align;
+    }
     else {
         NCBI_THROW_FMT(CSraException, eOtherError,
                        "Bad CCSRABlobId: "<<str0);
@@ -388,7 +406,7 @@ void CCSRABlobId::FromString(CTempString str0)
     }
     m_File = str.substr(0, div);
     str = str.substr(div+strlen(kFileEnd));
-    if ( m_BlobType != eBlobType_reads ) {
+    if ( m_BlobType < eBlobType_reads ) {
         m_SeqId = CSeq_id_Handle::GetHandle(str);
         m_FirstSpotId = 0;
     }
@@ -444,6 +462,7 @@ CCSRADataLoader_Impl::CCSRADataLoader_Impl(
     m_MinMapQuality = params.GetEffectiveMinMapQuality();
     m_PileupGraphs = params.GetEffectivePileupGraphs();
     m_QualityGraphs = params.GetEffectiveQualityGraphs();
+    m_SpotReadAlign = params.GetEffectiveSpotReadAlign();
     m_PathInId = params.m_PathInId;
     m_SpotGroups = params.GetEffectiveSpotGroups();
     
@@ -706,16 +725,27 @@ CCSRADataLoader_Impl::GetRecords(CDataSource* data_source,
     CRef<CCSRARefSeqInfo> ref_info;
     TSeqPos ref_pos;
     TFileLock file;
-    if ( need_align ) {
+    if ( need_align && !GetSpotReadAlign() ) {
+        // look for read alignments on reference sequence
         file = GetReadsFileInfo(idh, &spot_id, 0, &ref_info, &ref_pos);
     }
     else {
+        // no reference sequence lookup
         file = GetReadsFileInfo(idh, &spot_id);
     }
     if ( file.first ) {
         // short read: we have sequence blob and alignment on refseq
-        if ( need_seq || need_graph ) {
+        if ( need_seq || need_graph || (need_align && !ref_info) ) {
             if ( CRef<CCSRABlobId> blob_id = GetReadsBlobId(file, spot_id) ) {
+                // we need short read blob
+                _ASSERT(blob_id->m_BlobType == CCSRABlobId::eBlobType_reads);
+                if ( need_align && !ref_info ) {
+                    // aligns are needed too
+                    // add separate align blob
+                    CRef<CCSRABlobId> align_blob_id(new CCSRABlobId(*blob_id));
+                    align_blob_id->m_BlobType = CCSRABlobId::eBlobType_reads_align;
+                    locks.insert(GetBlobById(data_source, *align_blob_id));
+                }
                 locks.insert(GetBlobById(data_source, *blob_id));
             }
         }
@@ -746,7 +776,7 @@ void CCSRADataLoader_Impl::LoadBlob(const CCSRABlobId& blob_id,
     case CCSRABlobId::eBlobType_refseq:
         file_info.first->GetRefSeqInfo(blob_id)->LoadRefSeqBlob(load_lock);
         break;
-    case CCSRABlobId::eBlobType_reads:
+    default:
         file_info.first->LoadReadsBlob(blob_id, load_lock);
         break;
     }
@@ -765,8 +795,7 @@ void CCSRADataLoader_Impl::LoadChunk(const CCSRABlobId& blob_id,
     case CCSRABlobId::eBlobType_refseq:
         file_info.first->GetRefSeqInfo(blob_id)->LoadRefSeqChunk(chunk_info);
         break;
-    case CCSRABlobId::eBlobType_reads:
-        file_info.first->LoadReadsChunk(blob_id, chunk_info);
+    default:
         break;
     }
 }
@@ -938,6 +967,7 @@ void CCSRAFileInfo::x_Initialize(CCSRADataLoader_Impl& impl,
     m_MinMapQuality = impl.GetMinMapQuality();
     m_PileupGraphs = impl.GetPileupGraphs();
     m_QualityGraphs = impl.GetQualityGraphs();
+    m_SpotReadAlign = impl.GetSpotReadAlign();
     CCSraDb::EPathInIdType path_in_id_type;
     switch ( impl.GetPathInId() ) {
     case CCSRADataLoader::SLoaderParams::kPathInId_config:
@@ -1100,21 +1130,8 @@ CRef<CCSRABlobId> CCSRADataLoader_Impl::GetReadsBlobId(const TFileLock& lock,
 void CCSRAFileInfo::LoadReadsBlob(const CCSRABlobId& blob_id,
                                   CTSE_LoadLock& load_lock)
 {
-    LoadReadsMainEntry(blob_id, load_lock);
-}
-
-
-void CCSRAFileInfo::LoadReadsChunk(const CCSRABlobId& /*blob_id*/,
-                                   CTSE_Chunk_Info& /*chunk_info*/)
-{
-    _ASSERT(!"invalid call");
-}
-
-
-void CCSRAFileInfo::LoadReadsMainEntry(const CCSRABlobId& blob_id,
-                                       CTSE_LoadLock& load_lock)
-{
     CRef<CSeq_entry> entry(new CSeq_entry);
+    entry->SetSet().SetSeq_set();
     TVDBRowId first_spot_id = blob_id.m_FirstSpotId;
     TVDBRowId last_spot_id = first_spot_id + kReadsPerBlob - 1;
     if ( GetDebugLevel() >= 5 ) {
@@ -1122,16 +1139,35 @@ void CCSRAFileInfo::LoadReadsMainEntry(const CCSRABlobId& blob_id,
                    "CCSRADataLoader:LoadReads("<<blob_id.ToString()<<", "<<
                    first_spot_id<<"-"<<last_spot_id);
     }
-    CCSraShortReadIterator::TBioseqFlags flags = CCSraShortReadIterator::fDefaultBioseqFlags;
-    if ( m_QualityGraphs ) {
-        flags |= CCSraShortReadIterator::fQualityGraph;
+    if ( blob_id.m_BlobType == CCSRABlobId::eBlobType_reads ) {
+        // add reads
+        CCSraShortReadIterator::TBioseqFlags flags = CCSraShortReadIterator::fDefaultBioseqFlags;
+        if ( m_QualityGraphs ) {
+            flags |= CCSraShortReadIterator::fQualityGraph;
+        }
+        CCSraShortReadIterator it(*this, first_spot_id);
+        it.SetLastSpotId(last_spot_id);
+        for ( ; it; ++it ) {
+            CRef<CSeq_entry> e(new CSeq_entry);
+            e->SetSeq(*it.GetShortBioseq(flags));
+            entry->SetSet().SetSeq_set().push_back(e);
+        }
     }
-    CCSraShortReadIterator it(*this, first_spot_id);
-    it.SetLastSpotId(last_spot_id);
-    for ( ; it; ++it ) {
-        CRef<CSeq_entry> e(new CSeq_entry);
-        e->SetSeq(*it.GetShortBioseq(flags));
-        entry->SetSet().SetSeq_set().push_back(e);
+    if ( blob_id.m_BlobType == CCSRABlobId::eBlobType_reads_align ) {
+        // add primary alignments
+        CRef<CSeq_annot> annot;
+        CCSraShortReadIterator it(*this, first_spot_id);
+        it.SetLastSpotId(last_spot_id);
+        for ( ; it; ++it ) {
+            if ( CCSraAlignIterator ait = it.GetAlignIter() ) {
+                if ( !annot ) {
+                    annot = new CSeq_annot;
+                    annot->SetNameDesc(GetAlignAnnotName());
+                    entry->SetSet().SetAnnot().push_back(annot);
+                }
+                annot->SetData().SetAlign().push_back(ait.GetMatchAlign());
+            }
+        }
     }
 
     load_lock->SetSeq_entry(*entry);

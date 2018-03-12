@@ -59,6 +59,7 @@ public:
             kPileupGraphs_config = -1,
             kQualityGraphs_config = -1,
             kSpotGroups_config = -1,
+            kSpotReadAlign_config = -1,
             kPathInId_config = -1
         };
 
@@ -67,6 +68,7 @@ public:
               m_PileupGraphs(kPileupGraphs_config),
               m_QualityGraphs(kQualityGraphs_config),
               m_SpotGroups(kSpotGroups_config),
+              m_SpotReadAlign(kSpotReadAlign_config),
               m_PathInId(kPathInId_config)
             {
             }
@@ -79,6 +81,7 @@ public:
         int             m_PileupGraphs; // bool value or kPileupGraphs_config
         int             m_QualityGraphs; // bool value or kQualityGraphs_config
         int             m_SpotGroups;
+        int             m_SpotReadAlign; // bool value or kSpotReadAlign_config
         int             m_PathInId; // bool value or kPathInId_config
 
         string GetLoaderName(void) const;
@@ -87,6 +90,7 @@ public:
         bool GetEffectivePileupGraphs(void) const;
         bool GetEffectiveQualityGraphs(void) const;
         int GetEffectiveSpotGroups(void) const;
+        bool GetEffectiveSpotReadAlign(void) const;
     };
 
 
@@ -151,6 +155,8 @@ public:
     static void SetQualityGraphsParamDefault(bool param);
     static int GetMinMapQualityParamDefault(void);
     static void SetMinMapQualityParamDefault(int param);
+    static bool GetSpotReadAlignParamDefault(void);
+    static void SetSpotReadAlignParamDefault(bool param);
     static int GetSpotGroupsParamDefault(void);
     static void SetSpotGroupsParamDefault(int param);
 

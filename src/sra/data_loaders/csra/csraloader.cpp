@@ -148,6 +148,21 @@ void CCSRADataLoader::SetSpotGroupsParamDefault(int param)
 }
 
 
+NCBI_PARAM_DECL(bool, CSRA_LOADER, SPOT_READ_ALIGN);
+NCBI_PARAM_DEF(bool, CSRA_LOADER, SPOT_READ_ALIGN, false);
+
+bool CCSRADataLoader::GetSpotReadAlignParamDefault(void)
+{
+    return NCBI_PARAM_TYPE(CSRA_LOADER, SPOT_READ_ALIGN)::GetDefault();
+}
+
+
+void CCSRADataLoader::SetSpotReadAlignParamDefault(bool param)
+{
+    return NCBI_PARAM_TYPE(CSRA_LOADER, SPOT_READ_ALIGN)::SetDefault(param);
+}
+
+
 int CCSRADataLoader::SLoaderParams::GetEffectiveMinMapQuality(void) const
 {
     return m_MinMapQuality != kMinMapQuality_config?
@@ -166,6 +181,13 @@ bool CCSRADataLoader::SLoaderParams::GetEffectiveQualityGraphs(void) const
 {
     return m_QualityGraphs != kQualityGraphs_config?
         m_QualityGraphs != 0: CCSRADataLoader::GetQualityGraphsParamDefault();
+}
+
+
+bool CCSRADataLoader::SLoaderParams::GetEffectiveSpotReadAlign(void) const
+{
+    return m_SpotReadAlign != kSpotReadAlign_config?
+        m_SpotReadAlign != 0: CCSRADataLoader::GetSpotReadAlignParamDefault();
 }
 
 

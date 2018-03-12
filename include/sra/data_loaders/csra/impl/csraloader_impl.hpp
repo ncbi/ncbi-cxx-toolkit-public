@@ -229,9 +229,10 @@ class CCSRABlobId : public CBlobId
 {
 public:
     enum EBlobType {
-        eBlobType_annot,
-        eBlobType_refseq,
-        eBlobType_reads
+        eBlobType_annot, // refseq coverage/pileup graphs and alignments
+        eBlobType_refseq, // refseq itself
+        eBlobType_reads, // short reads
+        eBlobType_reads_align // short reads primary alignments
     };
     typedef CCacheWithLock<string, CRef<CCSRAFileInfo> > TSRRFiles;
     typedef pair<CRef<CCSRAFileInfo>, TSRRFiles::CLock> TFileLock;
@@ -410,6 +411,10 @@ public:
         {
             return m_QualityGraphs;
         }
+    bool GetSpotReadAlign(void) const
+        {
+            return m_SpotReadAlign;
+        }
 
     bool IsValidReadId(TVDBRowId spot_id, Uint4 read_id,
                        CRef<CCSRARefSeqInfo>* ref_ptr = 0,
@@ -447,11 +452,6 @@ public:
     
     void LoadReadsBlob(const CCSRABlobId& blob_id,
                        CTSE_LoadLock& load_lock);
-    void LoadReadsChunk(const CCSRABlobId& blob_id,
-                        CTSE_Chunk_Info& chunk_info);
-
-    void LoadReadsMainEntry(const CCSRABlobId& blob_id,
-                            CTSE_LoadLock& load_lock);
 
 protected:
     friend class CCSRADataLoader_Impl;
@@ -468,6 +468,7 @@ protected:
     int m_MinMapQuality;
     bool m_PileupGraphs;
     bool m_QualityGraphs;
+    bool m_SpotReadAlign;
     CCSraDb m_CSRADb;
     vector<string> m_SeparateSpotGroups;
     TRefSeqs m_RefSeqs;
@@ -500,6 +501,10 @@ public:
     bool GetQualityGraphs(void) const
         {
             return m_QualityGraphs;
+        }
+    bool GetSpotReadAlign(void) const
+        {
+            return m_SpotReadAlign;
         }
     int GetPathInId(void) const
         {
@@ -568,6 +573,7 @@ private:
     int m_MinMapQuality;
     bool m_PileupGraphs;
     bool m_QualityGraphs;
+    bool m_SpotReadAlign;
     int m_PathInId;
     int m_SpotGroups;
     TFixedFiles m_FixedFiles;
