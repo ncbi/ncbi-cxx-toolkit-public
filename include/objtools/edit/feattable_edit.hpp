@@ -156,7 +156,10 @@ protected:
 
     bool xGatherProteinAndTranscriptIds();
     void xFeatureAddTranscriptAndProteinIdsCds(CMappedFeat& cds);
-    void xFeatureAddTranscriptAndProteinIdsMrna(CMappedFeat& cds);
+    void xFeatureAddTranscriptAndProteinIdsMrna(CMappedFeat& mrna);
+    void xFeatureAddTranscriptAndProteinIdsCds(const string& mrna_transcript_id,
+                                               const string& mrna_protein_id,
+                                               CMappedFeat& cds);
 
     CSeq_annot& mAnnot;
     CRef<CScope> mpScope;
@@ -175,6 +178,7 @@ protected:
     TFeatQualMap mMapMrnaProteinId;
     TFeatQualMap mMapCdsTranscriptId;
     TFeatQualMap mMapCdsProteinId;
+    set<CMappedFeat> mProcessedFeats;
 };
 
 END_SCOPE(edit)
