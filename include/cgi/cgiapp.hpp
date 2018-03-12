@@ -413,6 +413,7 @@ private:
 
     /// @sa FASTCGI_ScheduleExit()
     bool m_ShouldExit;
+    bool m_CaughtSigterm;
 
     /// Remember if request-start was printed, don't print request-stop
     /// without request-start.

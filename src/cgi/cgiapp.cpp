@@ -935,6 +935,7 @@ CCgiApplication::CCgiApplication(void)
    m_OutputBroken(false),
    m_IsResultReady(true),
    m_ShouldExit(false),
+   m_CaughtSigterm(false),
    m_RequestStartPrinted(false),
    m_ErrorStatus(false)
 {

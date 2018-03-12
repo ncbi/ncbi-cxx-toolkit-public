@@ -306,7 +306,7 @@ void s_ScheduleFastCGIExit(void)
     CCgiApplication* cgiapp = dynamic_cast<CCgiApplication*>(CNcbiApplication::Instance());
     if (!cgiapp) return;
     cgiapp->FASTCGI_ScheduleExit();
-    ERR_POST(Message << "Caught SIGTERM and was scheduled for graceful shutdown.");
+    cgiapp->m_CaughtSigterm = true;
 }
 
 
@@ -794,6 +794,9 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         // Reset SIGTERM handler to allow termination between requests.
         if (handle_sigterm) {
             signal(SIGTERM, SIG_DFL);
+            if (m_ShouldExit  &&  m_CaughtSigterm) {
+                ERR_POST(Message << "Caught SIGTERM and performed graceful shutdown.");
+            }
         }
 
         // Close current request
