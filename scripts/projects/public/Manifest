@@ -34,13 +34,13 @@ Linux64-Centos : ICC150    : ICC.sh 15.0  --without-debug --with-mt --with-dll -
 Linux64-Centos : ICC150d   : ICC.sh 15.0  --with-debug --with-mt --with-3psw=system --with-runpath --without-ncbi-c
 Linux64-Centos7 : Clang    : Clang.sh 3.8.0 --with-debug --with-mt --with-flat-makefile --without-ncbi-c
 
-Linux64-Ubuntu : plain-GCC : GCC.sh --without-debug --with-mt --with-flat-makefile --without-ncbi-c
-Linux32-Ubuntu : plain-GCC : GCC.sh --without-debug --with-mt --with-flat-makefile --without-ncbi-c
+Linux64-Ubuntu  : plain-GCC : GCC.sh --without-debug --with-mt --with-flat-makefile --without-ncbi-c
+Linux32-Ubuntu  : plain-GCC : GCC.sh --without-debug --with-mt --with-flat-makefile --without-ncbi-c
 
-FreeBSD64      : plain     : Clang.sh --without-debug --with-mt --with-flat-makefile --with-runpath --without-ncbi-c --with-gnutls=/usr/local
+FreeBSD64       : plain     : Clang.sh --without-debug --with-mt --with-flat-makefile --with-runpath --without-ncbi-c --with-gnutls=/usr/local
 
-IntelMAC       : Debug     : GCC.sh      --with-debug    --with-dll --with-mt --with-flat-makefile --without-gcrypt --without-mysql --without-pcre --without-ncbi-c
-IntelMAC       : Release   : GCC.sh      --without-debug --with-dll --with-mt --with-flat-makefile --without-gcrypt --without-mysql --without-pcre --without-ncbi-c
+IntelMAC        : Debug     : Clang.sh --with-debug    --with-dll --with-mt --with-flat-makefile --without-gcrypt --without-mysql --without-pcre --without-ncbi-c
+IntelMAC        : Release   : Clang.sh --without-debug --with-dll --with-mt --with-flat-makefile --without-gcrypt --without-mysql --without-pcre --without-ncbi-c
 
-XCode          : plain     : Xcode.sh 30 --without-debug --with-64 --without-ncbi-c
+XCode           : plain     : Xcode.sh 30 --without-debug --with-64 --without-ncbi-c
 
