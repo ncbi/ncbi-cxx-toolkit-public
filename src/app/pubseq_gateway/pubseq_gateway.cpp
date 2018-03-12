@@ -185,24 +185,19 @@ public:
         return false;
     }
 
+
     template<typename P>
     int OnAccVerResolver(HST::CHttpRequest &  req, HST::CHttpReply<P> &  resp)
     {
-        const char *    value;
-        size_t          value_len;
+        const char *    accession;
+        size_t          accession_len;
 
-        if (req.GetParam("accver", sizeof("accver") - 1,
-                         true, &value, &value_len)) {
-            string      AccVer(value, value_len);
-            string      Data;
-
-            if (m_Db->Storage().Get(AccVer, Data)) {
-                resp.SendOk(Data.c_str(), Data.length(), false);
-            } else {
-                stringstream    ss;
-                ss << "Entry (" << AccVer << ") not found";
-                resp.Send404("notfound", ss.str().c_str());
-            }
+        if (req.GetParam("accession", sizeof("accession") - 1,
+                         true, &accession, &accession_len)) {
+            string          resolution_data;
+            if (x_Resolve(resp, accession, accession_len, resolution_data))
+                resp.SendOk(resolution_data.c_str(), resolution_data.length(),
+                            false);
         } else {
             resp.Send503("invalid", "invalid request");
         }
@@ -214,8 +209,10 @@ public:
     {
         const char *    ssat;
         const char *    ssat_key;
+        const char *    accession;
         size_t          sat_len;
         size_t          sat_key_len;
+        size_t          accession_len;
 
         if (req.GetParam("sat", sizeof("sat") - 1, true, &ssat, &sat_len) &&
             req.GetParam("sat_key", sizeof("sat_key") - 1, true,
@@ -227,6 +224,27 @@ public:
             if (SatToSatName(sat, sat_name)) {
                 int         sat_key = atoi(ssat_key);
                 resp.Postpone(CPendingOperation(std::move(sat_name), sat_key,
+                                                m_CassConnection, m_TimeoutMs));
+                return 0;
+            }
+
+            resp.Send404("not found",
+                         "invalid/unsupported satellite number");
+        } else if (req.GetParam("accession", sizeof("accession") - 1,
+                   true, &accession, &accession_len)) {
+            string          resolution_data;
+            if (!x_Resolve(resp, accession, accession_len, resolution_data))
+                return 0;   // resolution failed
+
+            int             sat;
+            int             sat_key;
+            if (!x_UnpackAccessionData(resp, resolution_data, sat, sat_key))
+                return 0;   // unpacking failed
+
+            string      sat_name;
+            if (SatToSatName(sat, sat_name)) {
+                resp.Postpone(CPendingOperation(resolution_data,
+                                                std::move(sat_name), sat_key,
                                                 m_CassConnection, m_TimeoutMs));
                 return 0;
             }
@@ -266,7 +284,7 @@ public:
         HST::CHttpGetParser                             get_parser;
 
         http_handler.emplace_back(
-                "/ID/accver.resolver",
+                "/ID/resolve",
                 [this](HST::CHttpRequest &  req,
                        HST::CHttpReply<CPendingOperation> &  resp)->int
                 {
@@ -311,6 +329,63 @@ public:
         CloseCass();
         return 0;
     }
+
+private:
+    // Resolves an accession. If failed then sends a message to the client.
+    // Returns true if succeeded (acc_bin_data is populated as well)
+    //         false if failed (404 response is sent)
+    template<typename P>
+    bool  x_Resolve(HST::CHttpReply<P> &  resp,
+                    const char *  accession, size_t  accession_length,
+                    string &  acc_bin_data)
+    {
+        string      acc_str(accession, accession_length);
+        if (m_Db->Storage().Get(acc_str, acc_bin_data))
+            return true;
+
+        string      msg = "Entry (" + acc_str + ") not found";
+        resp.Send404("notfound", msg.c_str());
+        return false;
+    }
+
+
+    // Unpacks the accession binary data and picks sat and sat_key.
+    // Returns true on success.
+    //         false if there was a problem in unpacking the data
+    template<typename P>
+    bool  x_UnpackAccessionData(HST::CHttpReply<P> &  resp,
+                                const string &  resolution_data,
+                                int &  sat,
+                                int &  sat_key)
+    {
+        DDRPC::DataRow      rec;
+        try {
+            DDRPC::AccVerResolverUnpackData(rec, resolution_data);
+            sat = rec[2].AsUint1;
+            sat_key = rec[3].AsUint4;
+        } catch (const DDRPC::EDdRpcException &  e) {
+            resp.Send503("invalid", "accession data unpacking error");
+
+            string  msg = string("accession data unpacking error: ") +
+                          e.what();
+            ERRLOG1((msg.c_str()));
+            return false;
+        } catch (const exception &  e) {
+            resp.Send503("invalid", "accession data unpacking error");
+
+            string  msg = string("accession data unpacking error: ") +
+                          e.what();
+            ERRLOG1((msg.c_str()));
+            return false;
+        } catch (...) {
+            resp.Send503("invalid", "unknown accession data unpacking error");
+
+            ERRLOG1(("Unknown accession data unpacking error"));
+            return false;
+        }
+        return true;
+    }
+
 
 private:
     void x_ValidateArgs(void)

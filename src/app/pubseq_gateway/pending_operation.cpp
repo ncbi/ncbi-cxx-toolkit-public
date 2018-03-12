@@ -48,6 +48,22 @@ CPendingOperation::CPendingOperation(string &&  sat_name, int  sat_key,
 }
 
 
+CPendingOperation::CPendingOperation(const string &  accession_data,
+                                     string &&  sat_name, int  sat_key,
+                                     shared_ptr<CCassConnection>  conn,
+                                     unsigned int  timeout) :
+    m_AccessionData(accession_data),
+    m_Reply(nullptr),
+    m_Cancelled(false),
+    m_FinishedRead(false),
+    m_SatKey(sat_key)
+{
+    m_Loader.reset(new CCassBlobLoader(&m_Op, timeout, conn,
+                                       std::move(sat_name), sat_key,
+                                       true, true, nullptr,  nullptr));
+}
+
+
 CPendingOperation::~CPendingOperation()
 {
     LOG5(("CPendingOperation::CPendingOperation: this: %p, m_Loader: %p",
@@ -100,8 +116,17 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
                 return;
             }
             if (resp.GetState() == HST::CHttpReply<CPendingOperation>::eReplyInitialized) {
-                resp.SetContentLength(m_Loader->GetBlobSize());
+                size_t      content_length;
+                if (m_AccessionData.empty())
+                    // Format #1: blob only
+                    content_length = m_Loader->GetBlobSize();
+                else
+                    // Format #2: accession + blob
+                    content_length = 4 + m_AccessionData.size() + m_Loader->GetBlobSize();
+                resp.SetContentLength(content_length);
             }
+            if (!m_AccessionData.empty())
+                x_PrepareAccessionDataChunk(resp);
             if (data && size > 0)
                 m_Chunks.push_back(resp.PrepadeChunk(data, size));
             if (is_last)
@@ -165,4 +190,23 @@ void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp)
             }
 */
 
+}
+
+
+// Pushes the size + accession data chunk into the chunks vector.
+// Also clears the accession data to guarantee not to send them multiple time.
+void CPendingOperation::x_PrepareAccessionDataChunk(
+                                    HST::CHttpReply<CPendingOperation>& resp)
+{
+    if (m_AccessionData.empty())
+        return;
+
+    uint32_t    data_size_network = htonl(m_AccessionData.size());
+    string      chunk((const char *)(&data_size_network), 4);
+
+    chunk += m_AccessionData;
+    m_Chunks.push_back(resp.PrepadeChunk(
+                (const unsigned char *)(chunk.c_str()), chunk.size()));
+
+    m_AccessionData.clear();
 }

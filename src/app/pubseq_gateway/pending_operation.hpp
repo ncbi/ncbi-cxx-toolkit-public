@@ -53,6 +53,10 @@ public:
     CPendingOperation(string &&  sat_name, int  sat_key,
                       shared_ptr<CCassConnection>  conn,
                       unsigned int  timeout);
+    CPendingOperation(const string &  accession_data,
+                      string &&  sat_name, int  sat_key,
+                      shared_ptr<CCassConnection>  conn,
+                      unsigned int  timeout);
     ~CPendingOperation();
     void Clear();
     void Start(HST::CHttpReply<CPendingOperation>& resp);
@@ -70,6 +74,10 @@ public:
     CPendingOperation& operator=(CPendingOperation&&) = default;
 
 private:
+    void x_PrepareAccessionDataChunk(HST::CHttpReply<CPendingOperation>& resp);
+
+private:
+    string                                  m_AccessionData;    // binary
     HST::CHttpReply<CPendingOperation>*     m_Reply;
     bool                                    m_Cancelled;
     bool                                    m_FinishedRead;
