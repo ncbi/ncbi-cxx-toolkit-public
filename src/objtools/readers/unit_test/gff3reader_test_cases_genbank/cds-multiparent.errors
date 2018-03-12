@@ -1,3 +1,7 @@
+Line No    : 16
+Severity   : Error
+Message    : Bad data line: Invalid feature type "TF_binding_site"
+
 Line No    : 20
 Severity   : Error
 Message    : Unsupported: CDS record with multiple parents.
