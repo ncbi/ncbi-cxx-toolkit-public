@@ -128,7 +128,7 @@ CPSG_BioIdResolutionQueue::SItem::SItem(const string& service, shared_ptr<HCT::i
     :   m_Request(make_shared<HCT::http2_request>()),
         m_BioId(move(bio_id))
 {
-    m_Request->init_request(SHCT::GetEndPoint(service), afuture, "/ID/accver.resolver", "accver=" + m_BioId.GetId());
+    m_Request->init_request(SHCT::GetEndPoint(service), afuture, "/ID/resolve", "accession=" + m_BioId.GetId());
 }
 
 void CPSG_BioIdResolutionQueue::SItem::SyncResolve(CPSG_BlobId& blob_id, const CDeadline& deadline)
@@ -344,7 +344,7 @@ CPSG_BlobRetrievalQueue::SItem::SItem(const string& service, shared_ptr<HCT::io_
         m_Request(make_shared<HCT::http2_request>(m_Stream.get())),
         m_BlobId(move(blob_id))
 {
-    const auto& info = blob_id.GetBlobInfo();
+    const auto& info = m_BlobId.GetBlobInfo();
     string query("sat=" + to_string(info.sat) + "&sat_key=" + to_string(info.sat_key));
     m_Request->init_request(SHCT::GetEndPoint(service), afuture, "/ID/getblob", move(query));
 }
