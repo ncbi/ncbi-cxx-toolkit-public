@@ -905,17 +905,22 @@ bool CGff2Record::x_MigrateAttributes(
 
     it = attrs_left.find("inference");
     if (it != attrs_left.end()) {
+        auto inferenceVal = it->second;
         const string strInferenceDefault(
             "non-experimental evidence, no additional details recorded" );
-       string value = xNormalizedAttributeValue(it->second);
+       auto value = xNormalizedAttributeValue(inferenceVal);
         if (value == strInferenceDefault) {
             pFeature->SetExp_ev(CSeq_feat::eExp_ev_not_experimental);
         }
         else {
-            CRef<CGb_qual> pQual(new CGb_qual);
-            pQual->SetQual("inference");
-            pQual->SetVal(value);
-            pFeature->SetQual().push_back(pQual);
+            vector<string> inferenceVals;
+            NStr::Split(inferenceVal, ",", inferenceVals);
+            for (auto val: inferenceVals) {
+                CRef<CGb_qual> pQual(new CGb_qual);
+                pQual->SetQual("inference");
+                pQual->SetVal(xNormalizedAttributeValue(val));
+                pFeature->SetQual().push_back(pQual);
+            }
         }
         attrs_left.erase(it);
     }
