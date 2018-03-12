@@ -486,10 +486,16 @@ public:
     static CRef<CAnnotdesc> MakeMatchAnnotIndicator(void);
 
 protected:
+    friend class CCSraShortReadIterator;
+    
     CCSraDb_Impl& GetDb(void) const {
         return m_RefIter.GetDb();
     }
 
+    CCSraAlignIterator(const CCSraDb& csra_db,
+                       TAlignType align_type,
+                       TVDBRowId align_row);
+    
     void x_Settle(void); // skip all non-matching elements
     void x_Next(void) {
         ++m_AlnRowCur;
@@ -555,7 +561,7 @@ private:
 };
 
 
-class NCBI_SRAREAD_EXPORT CCSraShortReadIterator
+class NCBI_SRAREAD_EXPORT CCSraShortReadIterator : public SCSraDb_Defs
 {
 public:
     enum EClipType {
@@ -688,7 +694,8 @@ public:
     CRef<CBioseq> GetShortBioseq(TBioseqFlags flags = fDefaultBioseqFlags) const;
 
     CCSraRefSeqIterator GetRefSeqIter(TSeqPos* ref_pos_ptr = NULL) const;
-
+    CCSraAlignIterator GetAlignIter() const;
+    
 protected:
     CCSraDb_Impl& GetDb(void) const {
         return m_Db.GetNCObject();

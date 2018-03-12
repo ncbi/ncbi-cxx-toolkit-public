@@ -132,6 +132,10 @@ void CCSRATestApp::Init(void)
     arg_desc->AddOptionalKey("refend", "RefSeqEnd",
                             "RefSeq end position",
                             CArgDescriptions::eInteger);
+    arg_desc->AddFlag("by-start", "Search range by start position");
+    arg_desc->AddFlag("primary", "Only primary alignments");
+    arg_desc->AddFlag("secondary", "Only secondary alignments");
+    arg_desc->AddFlag("count-unique", "Count number of unique reads");
     
     arg_desc->AddFlag("over-start", "Dump overlap start positions");
     arg_desc->AddFlag("over-start-verify", "Verify overlap start positions");
@@ -167,8 +171,6 @@ void CCSRATestApp::Init(void)
                              CArgDescriptions::eInteger);
     arg_desc->AddFlag("fasta", "Print reads in fasta format");
     arg_desc->AddFlag("count_ids", "Count alignments ids");
-    arg_desc->AddFlag("primary", "Only primary alignments");
-    arg_desc->AddFlag("secondary", "Only secondary alignments");
 
     arg_desc->AddFlag("get-cache", "Get cache root");
     arg_desc->AddOptionalKey("set-cache", "SetCache",
@@ -658,6 +660,10 @@ int CCSRATestApp::Run(void)
     if ( !query_id.empty() ) {
         query_idh = CSeq_id_Handle::GetHandle(query_id);
     }
+    CCSraAlignIterator::ESearchMode mode = CCSraAlignIterator::eSearchByOverlap;
+    if ( args["by-start"] ) {
+        mode = CCSraAlignIterator::eSearchByStart;
+    }
     int min_quality = args["min_quality"].AsInteger();
     bool make_ref_seq = args["ref_seq"];
     bool make_short_seq = args["short_seq"];
@@ -667,8 +673,11 @@ int CCSRATestApp::Run(void)
     bool make_quality_graph = args["quality_graph"];
     bool make_stat_graph = args["stat_graph"];
     bool print_objects = args["print_objects"];
+    bool count_unique = args["count-unique"];
 
     CNcbiOstream& out = cout;
+
+    map<string, Uint8> unique_counts;
 
     const bool kUseVDB = false;
     if ( kUseVDB ) {
@@ -812,7 +821,7 @@ int CCSRATestApp::Run(void)
             }
             sw.Restart();
         }
-        
+
         CCSraRefSeqIterator::TAlignType align_type;
         if ( args["primary"] ) {
             align_type = CCSraRefSeqIterator::fPrimaryAlign;
@@ -901,7 +910,7 @@ int CCSRATestApp::Run(void)
                 for ( CCSraAlignIterator it(csra_db, query_idh,
                                             query_range.GetFrom(),
                                             query_range.GetLength(),
-                                            align_type);
+                                            mode, align_type);
                       it; ++it ) {
                     if ( it.GetMapQuality() < min_quality ) {
                         ++skipped;
@@ -986,6 +995,10 @@ int CCSRATestApp::Run(void)
                         }
                         out << NcbiEndl;
                     }
+                    if ( count_unique ) {
+                        string key = NStr::NumericToString(it.GetRefSeqPos())+'/'+it.GetCIGARLong()+'/'+it.GetMismatchRaw();
+                        unique_counts[key] += 1;
+                    }
                     if ( make_seq_annot ) {
                         CRef<CSeq_annot> obj = it.GetMatchAnnot();
                         if ( print_objects )
@@ -1030,7 +1043,7 @@ int CCSRATestApp::Run(void)
                 for ( CCSraAlignIterator it(csra_db, query_idh,
                                             query_range.GetFrom(),
                                             query_range.GetLength(),
-                                            align_type);
+                                            mode, align_type);
                       it; ++it ) {
                     if ( it.GetMapQuality() < min_quality ) {
                         ++skipped;
@@ -1186,6 +1199,12 @@ int CCSRATestApp::Run(void)
             sw.Restart();
         }
 
+        if ( count_unique ) {
+            for ( auto& v : unique_counts ) {
+                out << "unique " << v.second << " * " << v.first <<'\n';
+            }
+        }
+        
         if ( 0 ) {
             typedef uint64_t TShortId;
             typedef map<TShortId, TSeqPos> TShortId2Pos;
@@ -1193,7 +1212,7 @@ int CCSRATestApp::Run(void)
             for ( CCSraAlignIterator it(csra_db, query_idh,
                                         query_range.GetFrom(),
                                         query_range.GetLength(),
-                                        align_type);
+                                        mode, align_type);
                   it; ++it ) {
                 CTempString ref_seq_id = it.GetRefSeqId();
                 TSeqPos ref_pos = it.GetRefSeqPos();

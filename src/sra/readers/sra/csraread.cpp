@@ -964,8 +964,14 @@ CCSraAlignIterator& CCSraAlignIterator::operator=(const CCSraAlignIterator& iter
         m_AlnRowIsSecondary = iter.m_AlnRowIsSecondary;
         m_SearchMode = iter.m_SearchMode;
         m_AlignType = iter.m_AlignType;
-        m_AlnRowCur = iter.m_AlnRowCur;
-        m_AlnRowEnd = iter.m_AlnRowEnd;
+        if ( iter.m_AlnRowCur == &iter.m_RefRowNext ) {
+            m_AlnRowCur = &m_RefRowNext;
+            m_AlnRowEnd = m_AlnRowCur+1;
+        }
+        else {
+            m_AlnRowCur = iter.m_AlnRowCur;
+            m_AlnRowEnd = iter.m_AlnRowEnd;
+        }
     }
     return *this;
 }
@@ -1021,6 +1027,38 @@ CCSraAlignIterator::CCSraAlignIterator(const CCSraDb& csra_db,
       m_ArgRefLast(0) 
 {
     Select(ref_pos, window, eSearchByOverlap, align_type);
+}
+
+
+CCSraAlignIterator::CCSraAlignIterator(const CCSraDb& csra_db,
+                                       TAlignType align_type,
+                                       TVDBRowId align_row)
+{
+    switch ( align_type ) {
+    case fPrimaryAlign:
+        m_AlnRowIsSecondary = false;
+        break;
+    case fSecondaryAlign:
+        m_AlnRowIsSecondary = true;
+        break;
+    default:
+        NCBI_THROW(CSraException, eInvalidArg,
+                   "unspecified alignment type");
+    }
+    m_SearchMode = eSearchByStart;
+    
+    m_Aln = csra_db.GetNCObject().Aln(m_AlnRowIsSecondary);
+    m_RefIter = CCSraRefSeqIterator(csra_db, *m_Aln->REF_NAME(align_row), CCSraRefSeqIterator::eByName);
+
+    m_ArgRefPos = m_ArgRefLast = 0;
+    m_CurRefPos = *m_Aln->REF_POS(align_row);
+    m_CurRefLen = *m_Aln->REF_LEN(align_row);
+
+    m_RefRowNext = m_RefRowLast = align_row;
+    m_AlnRowCur = &m_RefRowNext;
+    m_AlnRowEnd = m_AlnRowCur+1;
+    
+    m_Error = 0;
 }
 
 
@@ -2248,6 +2286,18 @@ CCSraRefSeqIterator CCSraShortReadIterator::GetRefSeqIter(TSeqPos* ref_pos_ptr) 
         }
     }
     return ret;
+}
+
+
+CCSraAlignIterator CCSraShortReadIterator::GetAlignIter() const
+{
+    if ( m_Seq->m_PRIMARY_ALIGNMENT_ID ) {
+        CVDBValueFor<TVDBRowId> align_ids = m_Seq->PRIMARY_ALIGNMENT_ID(m_SpotId);
+        if ( TVDBRowId align_row_id = align_ids[m_ReadId-1] ) {
+            return CCSraAlignIterator(m_Db, fPrimaryAlign, align_row_id);
+        }
+    }
+    return CCSraAlignIterator();
 }
 
 
