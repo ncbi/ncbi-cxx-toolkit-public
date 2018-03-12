@@ -89,7 +89,7 @@ public:
     // if we have read in Seq-entries from multiple files, the 
     // report should include the filename that the object was
     // originally found in
-    const size_t GetFileID() const { return m_FileID; }
+    size_t GetFileID() const { return m_FileID; }
     void SetFileID(const size_t fileID) { m_FileID = fileID; }
 
     // the DropReferences methods save text representations of the objects

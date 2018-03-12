@@ -56,7 +56,7 @@ public:
     virtual const string& GetLocation(void) const = 0;
     virtual const string& GetLocusTag() const = 0;
     virtual const string& GetShort(void) const = 0;
-    virtual const size_t GetFileID(void) const = 0;
+    virtual size_t GetFileID(void) const = 0;
     virtual EType GetType(void) const = 0;
     virtual CConstRef<CSerialObject> GetObject(void) const = 0;
     virtual objects::CScope& GetScope(void) const = 0;
