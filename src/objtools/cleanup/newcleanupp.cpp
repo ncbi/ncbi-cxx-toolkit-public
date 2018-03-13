@@ -12256,6 +12256,9 @@ void CNewCleanup_imp::x_MoveNPTitle(CBioseq_set& set)
 
 void CNewCleanup_imp::x_BioseqSetNucProtEC(CBioseq_set & bioseq_set)
 {
+    // clean up nested Nuc-Prot sets
+    x_RemoveNestedNucProtSet(bioseq_set);
+
     x_MoveNpSrc(bioseq_set);
     x_MoveNpPub(bioseq_set);
     x_MoveNpDBlinks(bioseq_set);
@@ -12270,6 +12273,20 @@ void CNewCleanup_imp::x_RemoveNestedGenBankSet(CBioseq_set & bioseq_set)
         bioseq_set.GetSeq_set().front()->GetSet().IsSetClass() &&
         bioseq_set.GetSeq_set().front()->GetSet().GetClass() == CBioseq_set::eClass_genbank) {
         if (bioseq_set.GetParentSet() != NULL || !m_KeepTopNestedSet) 
+        x_CollapseSet(bioseq_set);
+    }
+    
+}
+
+
+void CNewCleanup_imp::x_RemoveNestedNucProtSet(CBioseq_set & bioseq_set)
+{
+    if (bioseq_set.IsSetClass() &&
+        bioseq_set.GetClass() == CBioseq_set::eClass_nuc_prot &&
+        bioseq_set.IsSetSeq_set() && bioseq_set.GetSeq_set().size() == 1 &&
+        bioseq_set.GetSeq_set().front()->IsSet() &&
+        bioseq_set.GetSeq_set().front()->GetSet().IsSetClass() &&
+        bioseq_set.GetSeq_set().front()->GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
         x_CollapseSet(bioseq_set);
     }
     

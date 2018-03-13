@@ -606,6 +606,7 @@ private:
     void x_BioseqSetNucProtEC( CBioseq_set & bioseq_set );
     void x_BioseqSetGenBankEC(CBioseq_set & bioseq_set);
     void x_RemoveNestedGenBankSet(CBioseq_set & bioseq_set);
+    void x_RemoveNestedNucProtSet(CBioseq_set & bioseq_set);
     void x_MoveNpDBlinks(CBioseq_set& bioseq_set);
     void x_MoveNpSrc(CBioseq_set& bioseq_set);
     void x_MoveNpSrc(CRef<CSeqdesc>& srcdesc, CSeq_descr& descr);

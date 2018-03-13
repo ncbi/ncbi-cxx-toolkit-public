@@ -1672,3 +1672,27 @@ BOOST_AUTO_TEST_CASE(Test_RW_525)
     TestWithNCodingRegions(2, false);
     TestWithNCodingRegions(2, true);
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_GB_7597)
+{
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    cleanup.SetScope(scope);
+
+    CRef<CSeq_entry> sub1 = BuildGoodNucProtSet();
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetSeq_set().push_back(sub1);
+    entry->SetSet().SetClass(CBioseq_set::eClass_nuc_prot);
+    entry->Parentize();
+
+    changes = cleanup.ExtendedCleanup(*entry, CCleanup::eClean_NoNcbiUserObjects);
+    BOOST_CHECK_EQUAL(changes->IsChanged(CCleanupChange::eCollapseSet), true);
+
+    BOOST_CHECK_EQUAL(entry->GetSet().GetClass(), CBioseq_set::eClass_nuc_prot);
+    BOOST_CHECK_EQUAL(entry->GetSet().GetSeq_set().size(), 2);
+    BOOST_CHECK_EQUAL(entry->GetSet().GetSeq_set().front()->IsSeq(), true);
+    BOOST_CHECK_EQUAL(entry->GetSet().GetSeq_set().back()->IsSeq(), true);
+}
