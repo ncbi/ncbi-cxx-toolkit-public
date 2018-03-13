@@ -1475,7 +1475,7 @@ static void GetBiosourceDifferences(const CBioSource& first_biosrc, const CBioSo
 static const string kBioSource = "BioSource";
 
 
-DISCREPANCY_CASE(INCONSISTENT_BIOSOURCE, CBioSource, eDisc, "Inconsistent BioSource")
+DISCREPANCY_CASE(INCONSISTENT_BIOSOURCE, CBioSource, eDisc | eSmart, "Inconsistent BioSource")
 {
     CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
     if (!bioseq->IsNa() || context.GetCurrentSeqdesc().Empty()) {
