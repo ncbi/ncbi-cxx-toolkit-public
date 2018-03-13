@@ -986,7 +986,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CEPIM\tc\tCentro per gli Enterobatteri Patogeni per l'Italia Meridionale\t\t",
 "CEPM\tc\tCEPM- Centre d'Etudes sur le Polymorphisme des Micro-organismes\t\t",
 "CERL/BIC\ts\tUnited States Army, Biological Inventory Collection\t\t",
-"CERN\ts\tUniversity\t\t",
 "CES\ts\tThe Centre for Ecological Sciences,  Indian Institute of Science\t\t",
 "CESJ\ts\tUniversidade Federal de Juiz de Fora, Departamento de Botanica\t\t",
 "CESK\ts\tMuzeum Teainska\t\t",

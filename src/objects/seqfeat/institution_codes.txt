@@ -953,7 +953,6 @@ CEPH	b	Foundation Jean Dausset (CEPH)
 CEPIM	c	Centro per gli Enterobatteri Patogeni per l'Italia Meridionale		
 CEPM	c	CEPM- Centre d'Etudes sur le Polymorphisme des Micro-organismes		
 CERL/BIC	s	United States Army, Biological Inventory Collection		
-CERN	s	University		
 CES	s	The Centre for Ecological Sciences,  Indian Institute of Science		
 CESJ	s	Universidade Federal de Juiz de Fora, Departamento de Botanica		
 CESK	s	Muzeum Teainska		
