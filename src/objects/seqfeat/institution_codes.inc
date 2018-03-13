@@ -6876,7 +6876,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UNAM:CNIN\ts\tUniversidad Nacional Autonoma de Mexico, Coleccion Nacional de Insectos",
 "UNAM:CNMA\ts\tUniversidad Nacional Autonoma de Mexico, Coleccion Nacional de Mamiferos",
 "UNAM:CNMO\ts\tUniversidad Nacional Autonoma de Mexico, Coleccion Nacional de Moluscos",
-"UNAM:CNNE\t \tUniversidad Nacional Autonoma de Mexico, ",
+"UNAM:CNNE\ts\tUniversidad Nacional Autonoma de Mexico, ",
 "UNAM:CNPE\ts\tUniversidad Nacional Autonoma de Mexico, Coleccion Nacional de Peces",
 "UNAM:CNPGG\ts\tUniversidad Nacional Autonoma de Mexico, Coleccion Nacional del Phylum Porifera Gerardo Green",
 "UNAN\ts\tUniversidad Nacional Autonoma de Nicaragua\t\t",
