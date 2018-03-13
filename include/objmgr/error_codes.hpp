@@ -57,6 +57,7 @@ NCBI_DEFINE_ERRCODE_X(ObjMgr_BlobSplit,    1212,  0);
 NCBI_DEFINE_ERRCODE_X(ObjMgr_SeqTable,     1213,  0);
 NCBI_DEFINE_ERRCODE_X(ObjMgr_ObjSplitInfo, 1214,  0);
 NCBI_DEFINE_ERRCODE_X(ObjMgr_Rd_Split,     1215,  0);
+NCBI_DEFINE_ERRCODE_X(ObjMgr_Indexer,      1216,  0);
 
 END_NCBI_SCOPE
 
