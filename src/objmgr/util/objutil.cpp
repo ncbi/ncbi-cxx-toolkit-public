@@ -1631,7 +1631,7 @@ NCBI_XOBJEDIT_EXPORT const char* strLinkBaseTransTable =
 NCBI_XOBJEDIT_EXPORT const char* strLinkBasePubmed =
     "https://www.ncbi.nlm.nih.gov/pubmed/";
 NCBI_XOBJEDIT_EXPORT const char* strLinkBaseExpasy =
-    "http://www.expasy.org/enzyme/"; // not government site
+    "https://enzyme.expasy.org/EC/"; // not government site
 NCBI_XOBJEDIT_EXPORT const char* strLinkBaseNucSearch =
     "https://www.ncbi.nlm.nih.gov/sites/entrez?db=Nucleotide&amp;cmd=Search&amp;term=";
 NCBI_XOBJEDIT_EXPORT const char* strLinkBaseGenomePrj =
