@@ -38,11 +38,15 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_map_ci.hpp>
+#include <objmgr/error_codes.hpp>
 
 #include <objmgr/util/indexer.hpp>
 #include <objmgr/util/sequence.hpp>
 
+#define NCBI_USE_ERRCODE_X  ObjMgr_Indexer
+
 BEGIN_NCBI_SCOPE
+NCBI_DEFINE_ERR_SUBCODE_X(11);
 BEGIN_SCOPE(objects)
 
 
@@ -201,7 +205,7 @@ void CSeqMasterIndex::x_Initialize (CSeq_entry_Handle& topseh, CSeqEntryIndex::E
         x_InitSeqs( *m_Tsep, noparent );
     }
     catch (CException& e) {
-        LOG_POST(Error << "Error in CSeqMasterIndex::x_Init: " << e.what());
+        LOG_POST_X(1, Error << "Error in CSeqMasterIndex::x_Init: " << e.what());
     }
 }
 
@@ -435,7 +439,7 @@ void CSeqMasterIndex::x_Init (void)
         x_InitSeqs( *m_Tsep, noparent );
     }
     catch (CException& e) {
-        LOG_POST(Error << "Error in CSeqMasterIndex::x_Init: " << e.what());
+        LOG_POST_X(1, Error << "Error in CSeqMasterIndex::x_Init: " << e.what());
     }
 }
 
@@ -484,7 +488,7 @@ CRef<CBioseqIndex> CSeqMasterIndex::x_DeltaIndex(const CSeq_loc& loc)
         }
     }
     catch (CException& e) {
-        LOG_POST(Error << "Error in CSeqMasterIndex::x_DeltaIndex: " << e.what());
+        LOG_POST_X(2, Error << "Error in CSeqMasterIndex::x_DeltaIndex: " << e.what());
     }
     return CRef<CBioseqIndex> ();
 }
@@ -989,7 +993,7 @@ void CBioseqIndex::x_InitGaps (void)
         }
     }
     catch (CException& e) {
-        LOG_POST(Error << "Error in CBioseqIndex::x_InitGaps: " << e.what());
+        LOG_POST_X(3, Error << "Error in CBioseqIndex::x_InitGaps: " << e.what());
     }
 }
 
@@ -1331,7 +1335,7 @@ void CBioseqIndex::x_InitSource (void)
         m_Organelle = x_OrganelleName (m_Genome, has_plasmid, virus_or_phage, wgs_suffix);
     }
     catch (CException& e) {
-        LOG_POST(Error << "Error in CBioseqIndex::x_InitSource: " << e.what());
+        LOG_POST_X(4, Error << "Error in CBioseqIndex::x_InitSource: " << e.what());
     }
 }
 
@@ -1534,7 +1538,7 @@ void CBioseqIndex::x_InitDescs (void)
         }
     }
     catch (CException& e) {
-        LOG_POST(Error << "Error in CBioseqIndex::x_InitDescs: " << e.what());
+        LOG_POST_X(5, Error << "Error in CBioseqIndex::x_InitDescs: " << e.what());
     }
 }
 
@@ -1735,7 +1739,7 @@ void CBioseqIndex::x_InitFeats (void)
     }
     catch (CException& e) {
         m_FetchFailure = true;
-        LOG_POST(Error << "Error in CBioseqIndex::x_InitFeats: " << e.what());
+        LOG_POST_X(6, Error << "Error in CBioseqIndex::x_InitFeats: " << e.what());
     }
 }
 
@@ -2339,7 +2343,7 @@ void CBioseqIndex::GetSequence (int from, int to, string& buffer)
         }
     }
     catch (CException& e) {
-        LOG_POST(Error << "Error in CBioseqIndex::GetSequence: " << e.what());
+        LOG_POST_X(7, Error << "Error in CBioseqIndex::GetSequence: " << e.what());
     }
 }
 
@@ -2472,7 +2476,7 @@ CRef<CFeatureIndex> CFeatureIndex::GetBestGene (void)
             }
         }
     } catch (CException& e) {
-        LOG_POST(Error << "Error in CFeatureIndex::GetBestGene: " << e.what());
+        LOG_POST_X(8, Error << "Error in CFeatureIndex::GetBestGene: " << e.what());
     }
     return CRef<CFeatureIndex> ();
 }
@@ -2500,14 +2504,14 @@ CRef<CFeatureIndex> CFeatureIndex::GetOverlappingSource (void)
             try {
                 best = ft.GetParent(m_Mf, CSeqFeatData::eSubtype_biosrc);
             } catch (CException& e) {
-                LOG_POST(Error << "Error in CFeatureIndex::GetOverlappingSource: " << e.what());
+                LOG_POST_X(9, Error << "Error in CFeatureIndex::GetOverlappingSource: " << e.what());
             }
             if (best) {
                 return bsxl->GetFeatIndex(best);
             }
         }
     } catch (CException& e) {
-        LOG_POST(Error << "Error in CFeatureIndex::GetOverlappingSource: " << e.what());
+        LOG_POST_X(10, Error << "Error in CFeatureIndex::GetOverlappingSource: " << e.what());
     }
     return CRef<CFeatureIndex> ();
 }
@@ -2551,7 +2555,7 @@ void CFeatureIndex::GetSequence (int from, int to, string& buffer)
     }
     catch (CException& e) {
         SetFetchFailure(true);
-        LOG_POST(Error << "Error in CFeatureIndex::GetSequence: " << e.what());
+        LOG_POST_X(11, Error << "Error in CFeatureIndex::GetSequence: " << e.what());
     }
 }
 
