@@ -1255,22 +1255,14 @@ void RetranslateCdsForNucProtSet (CRef<objects::CSeq_entry> entry, objects::CSco
 }
 
 
-void SetNucProtSetPartials (CRef<objects::CSeq_entry> entry, bool partial5, bool partial3)
+void SetProteinPartial(CRef<CSeq_entry> pentry, bool partial5, bool partial3)
 {
-    // partials for CDS
-    CRef<objects::CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
-    cds->SetPartial(partial5 || partial3);
-    cds->SetLocation().SetPartialStart(partial5, objects::eExtreme_Biological);
-    cds->SetLocation().SetPartialStop(partial3, objects::eExtreme_Biological);
-
-    // partials for protein feature
-    CRef<objects::CSeq_feat> prot = GetProtFeatFromGoodNucProtSet (entry);
+    CRef<CSeq_feat> prot = pentry->SetAnnot().front()->SetData().SetFtable().front();
     prot->SetPartial(partial5 || partial3);
     prot->SetLocation().SetPartialStart(partial5, objects::eExtreme_Biological);
     prot->SetLocation().SetPartialStop(partial3, objects::eExtreme_Biological);
 
     // molinfo completeness
-    CRef<objects::CSeq_entry> pentry = GetProteinSequenceFromGoodNucProtSet(entry);
     if (partial5 && partial3) {
         SetCompleteness (pentry, objects::CMolInfo::eCompleteness_no_ends);
     } else if (partial5) {
@@ -1280,6 +1272,19 @@ void SetNucProtSetPartials (CRef<objects::CSeq_entry> entry, bool partial5, bool
     } else {
         SetCompleteness (pentry, objects::CMolInfo::eCompleteness_complete);
     }
+}
+
+
+void SetNucProtSetPartials (CRef<objects::CSeq_entry> entry, bool partial5, bool partial3)
+{
+    // partials for CDS
+    CRef<objects::CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    cds->SetPartial(partial5 || partial3);
+    cds->SetLocation().SetPartialStart(partial5, objects::eExtreme_Biological);
+    cds->SetLocation().SetPartialStop(partial3, objects::eExtreme_Biological);
+
+    CRef<objects::CSeq_entry> pentry = GetProteinSequenceFromGoodNucProtSet(entry);
+    SetProteinPartial(pentry, partial5, partial3);
 }
 
 

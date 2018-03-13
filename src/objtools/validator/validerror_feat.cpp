@@ -4178,34 +4178,6 @@ void CValidError_feat::ValidateCommonCDSProduct
     }
 
     CBioseq_Handle nuc = x_GetCachedBsh(feat.GetLocation());
-    if (!product_is_misplaced) {
-        if (nuc) {
-            bool is_nt = s_BioseqHasRefSeqThatStartsWithPrefix(nuc, "NT_");
-            if (!is_nt) {
-                CSeq_entry_Handle wgs = nuc.GetExactComplexityLevel(CBioseq_set::eClass_gen_prod_set);
-                if (!wgs) {
-                    CSeq_entry_Handle prod_nps =
-                        prod.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
-                    CSeq_entry_Handle nuc_nps =
-                        nuc.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
-                    if (!nuc_nps) {
-                        for (CSeq_loc_CI loc_i(feat.GetLocation()); loc_i && !nuc_nps; ++loc_i) {
-                            nuc = m_Scope->GetBioseqHandle(loc_i.GetSeq_id());
-                            nuc_nps =
-                                nuc.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
-                        }
-                    }
-
-                    if (!prod_nps || !nuc_nps || prod_nps != nuc_nps) {
-                        product_is_misplaced = true;
-                    }
-                }
-            }
-        }
-    }
-    if (product_is_misplaced) {
-        x_ReportMisplacedCodingRegionProduct(feat);
-    }
 
     const CSeq_feat* sfp = GetCDSForProduct(prod);
     if ( sfp == 0 ) {
@@ -4242,16 +4214,33 @@ bool CValidError_feat::DoesCDSHaveShortIntrons(const CSeq_feat& feat)
 
     TSeqPos last_start = li.GetRange().GetFrom();
     TSeqPos last_stop = li.GetRange().GetTo();
+    CRef<CSeq_id> last_id(new CSeq_id());
+    last_id->Assign(li.GetSeq_id());
 
     ++li;
     while (li && !found_short) {
         TSeqPos this_start = li.GetRange().GetFrom();
         TSeqPos this_stop = li.GetRange().GetTo();
         if (abs ((int)this_start - (int)last_stop) < 11 || abs ((int)this_stop - (int)last_start) < 11) {
-            found_short = true;
+            if (li.GetSeq_id().Equals(*last_id)) {
+                // definitely same bioseq, definitely report
+                found_short = true;
+            } else if (m_Scope) {
+                // only report if definitely on same bioseq                
+                CBioseq_Handle last_bsh = m_Scope->GetBioseqHandle(*last_id);
+                if (last_bsh) {
+                    for (auto id_it : last_bsh.GetId()) {
+                        if (id_it.GetSeqId()->Equals(li.GetSeq_id())) {
+                            found_short = true;
+                            break;
+                        }
+                    }
+                }
+            }
         }
         last_start = this_start;
         last_stop = this_stop;
+        last_id->Assign(li.GetSeq_id());
         ++li;
     }
 
@@ -7016,6 +7005,16 @@ void CCdregionValidator::Validate()
     x_ValidateBadMRNAOverlap();
     x_ValidateFarProducts();
     x_ValidateCDSPartial();
+
+    if (x_IsProductMisplaced()) {
+        if (m_Imp.IsSmallGenomeSet()) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSproductPackagingProblem,
+                "Protein product not packaged in nuc-prot set with nucleotide in small genome set");
+        } else {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSproductPackagingProblem,
+                "Protein product not packaged in nuc-prot set with nucleotide");
+        }
+    }
 }
 
 
@@ -7496,6 +7495,54 @@ bool CCdregionValidator::x_CDS5primePartialTest() const
         }
     }
     return false;
+}
+
+
+bool CCdregionValidator::x_IsProductMisplaced() const
+{
+    // don't calculate if feature is pseudo
+    if (s_IsPseudo(m_Feat) || m_GeneIsPseudo) {
+        return false;
+    }
+    // don't calculate if no product or if ORF flag is set
+    if (!m_Feat.IsSetProduct() ||
+        m_Feat.GetData().GetCdregion().IsSetOrf()) {
+        return false;
+    }
+    if (!m_ProductBioseq) {
+        return false;
+    }
+    
+    bool product_is_misplaced = false;
+    bool found_match = false;
+
+    CSeq_entry_Handle prod_nps =
+        m_ProductBioseq.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
+    if (!prod_nps) {
+        return true;
+    }
+
+    for (CSeq_loc_CI loc_i(m_Feat.GetLocation()); loc_i; ++loc_i) {
+        CBioseq_Handle nuc = m_Scope.GetBioseqHandle(loc_i.GetSeq_id());
+        if (s_BioseqHasRefSeqThatStartsWithPrefix(nuc, "NT_")) {
+            // we don't report this for NT records
+            return false;
+        }
+        CSeq_entry_Handle wgs = nuc.GetExactComplexityLevel(CBioseq_set::eClass_gen_prod_set);
+        if (wgs) {
+            // we don't report this for gen-prod-sets
+            return false;
+        }
+
+        CSeq_entry_Handle nuc_nps =
+            nuc.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
+
+        if (prod_nps == nuc_nps) {
+            found_match = true;
+            break;
+        }
+    }
+    return !found_match;
 }
 
 

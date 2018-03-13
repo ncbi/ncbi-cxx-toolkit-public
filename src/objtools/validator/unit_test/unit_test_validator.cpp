@@ -22402,3 +22402,128 @@ BOOST_AUTO_TEST_CASE(Test_VR_796)
 
     CLEAR_ERRORS
 }
+
+
+
+CRef<CSeq_id> MakeSmallGenomeSetNucId(size_t num)
+{
+    CRef<CSeq_id> n1(new CSeq_id());
+    n1->SetLocal().SetStr("nuc_" + NStr::NumericToString(num + 1));
+    return n1;
+}
+
+
+void AddGeneticCode(CSeq_feat& cds, CGenetic_code::C_E::TId code_id)
+{
+    CRef< CGenetic_code::C_E > ce(new CGenetic_code::C_E);
+    ce->SetId(code_id);
+    CRef<CGenetic_code> code(new CGenetic_code());
+    code->Set().push_back(ce);
+    cds.SetData().SetCdregion().SetCode(*code);
+}
+
+
+CRef<CSeq_entry> BuildSmallGenomeSet(size_t num_np)
+{
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetClass(CBioseq_set::eClass_small_genome_set);
+
+    for (size_t i = 0; i < num_np; i++) {
+        CRef<CSeq_entry> np1 = BuildGoodNucProtSet();
+        CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(np1);
+        AddGeneticCode(*cds, 11);
+        unit_test_util::SetGenome(np1, CBioSource::eGenome_chloroplast);
+        CRef<CSeq_id> n1 = MakeSmallGenomeSetNucId(i);
+        unit_test_util::ChangeNucProtSetNucId(np1, n1);
+        CRef<CSeq_id> p1(new CSeq_id());
+        p1->SetLocal().SetStr("prot_" + NStr::NumericToString(i + 1));
+        ChangeNucProtSetProteinId(np1, p1);
+        entry->SetSet().SetSeq_set().push_back(np1);
+    }
+    return entry;
+}
+
+
+void AddCdregionToSmallGenomeSet(CRef<CSeq_entry> entry, size_t cdr1_num, size_t cdr2_num, size_t cdr_pos, size_t p_pos)
+{
+    CRef<CSeq_feat> cdregion(new CSeq_feat());
+    AddGeneticCode(*cdregion, 11);
+    CRef<CSeq_loc> loc1(new CSeq_loc());
+    loc1->SetInt().SetFrom(0);
+    loc1->SetInt().SetTo(10);
+    CRef<CSeq_id> n1 = MakeSmallGenomeSetNucId(cdr1_num);
+    loc1->SetInt().SetId().Assign(*n1);
+    CRef<CSeq_loc> loc2(new CSeq_loc());
+    loc2->SetInt().SetFrom(11);
+    loc2->SetInt().SetTo(26);
+    CRef<CSeq_id> n2 = MakeSmallGenomeSetNucId(cdr2_num);
+    loc2->SetInt().SetId().Assign(*n2);
+
+    cdregion->SetLocation().SetMix().Set().push_back(loc1);
+    cdregion->SetLocation().SetMix().Set().push_back(loc2);
+
+    CRef<CSeq_entry> prot = unit_test_util::MakeProteinForGoodNucProtSet("special_prot");
+    cdregion->SetProduct().SetWhole().Assign(*(prot->GetSeq().GetId().front()));
+
+    auto it = entry->SetSet().SetSeq_set().begin();
+    size_t offset = 1;
+    while (it != entry->SetSet().SetSeq_set().end()) {
+        if (offset == cdr_pos) {
+            (*it)->SetSet().SetAnnot().front()->SetData().SetFtable().push_back(cdregion);
+        }
+        if (offset == p_pos) {
+            (*it)->SetSet().SetSeq_set().push_back(prot);
+        }
+        it++;
+        offset++;
+    }
+}
+
+
+// If we have a small genome set, then a feature could legitimately
+// have a location with intervals on multiple sequences.
+// This should not trigger the CDSproductPackagingProblem error as long
+// as the protein sequence is packaged in the same nuc-prot set as one 
+// of the nucleotide sequences that the coding region is located on
+BOOST_AUTO_TEST_CASE(Test_GB_7601)
+{
+    CRef<CSeq_entry> entry = BuildSmallGenomeSet(3);
+
+    STANDARD_SETUP
+
+    // no errors with no trans-spliced coding region
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // first combination should not generate errors
+    scope.RemoveTopLevelSeqEntry(seh);
+    AddCdregionToSmallGenomeSet(entry, 0, 1, 1, 1);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // second combination should not generate errors
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildSmallGenomeSet(3);
+    AddCdregionToSmallGenomeSet(entry, 0, 1, 2, 2);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // third combination should produce an error because
+    // protein on wrong sequence
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildSmallGenomeSet(3);
+    AddCdregionToSmallGenomeSet(entry, 0, 1, 2, 3);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("", eDiag_Warning,
+        "CDSproductPackagingProblem",
+        "Protein product not packaged in nuc-prot set with nucleotide in small genome set"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+
+    CLEAR_ERRORS
+}

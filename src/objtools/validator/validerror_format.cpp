@@ -823,7 +823,16 @@ string CValidErrorFormat::GetFeatureBioseqLabel(const CSeq_feat& ft, CRef<CScope
     if (!suppress_context && scope) {
         bool find_failed = false;
         try {
-            CBioseq_Handle hnd = scope->GetBioseqHandle(ft.GetLocation());
+            CBioseq_Handle hnd;
+            try {
+                hnd = scope->GetBioseqHandle(ft.GetLocation());
+            } catch (CException&) {
+                CSeq_loc_CI li(ft.GetLocation());
+                while (li && !hnd) {
+                    hnd = scope->GetBioseqHandle(li.GetSeq_id());
+                    ++li;
+                }
+            }
             if (hnd) {
                 desc += CValidErrorFormat::GetBioseqLabel(hnd);
             }

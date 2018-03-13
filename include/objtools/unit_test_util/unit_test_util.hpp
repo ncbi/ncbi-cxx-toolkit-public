@@ -162,6 +162,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> GetProteinSequenceFromGoodN
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> GetProtFeatFromGoodNucProtSet (CRef<objects::CSeq_entry> entry);
 NCBI_UNIT_TEST_UTIL_EXPORT void RetranslateCdsForNucProtSet (CRef<objects::CSeq_entry> entry, objects::CScope &scope);
 NCBI_UNIT_TEST_UTIL_EXPORT void SetNucProtSetPartials (CRef<objects::CSeq_entry> entry, bool partial5, bool partial3);
+NCBI_UNIT_TEST_UTIL_EXPORT void SetProteinPartial(CRef<objects::CSeq_entry> pentry, bool partial5, bool partial3);
 NCBI_UNIT_TEST_UTIL_EXPORT void ChangeNucProtSetProteinId (CRef<objects::CSeq_entry> entry, CRef<objects::CSeq_id> id);
 NCBI_UNIT_TEST_UTIL_EXPORT void ChangeNucProtSetNucId (CRef<objects::CSeq_entry> entry, CRef<objects::CSeq_id> id);
 NCBI_UNIT_TEST_UTIL_EXPORT void MakeNucProtSet3Partial (CRef<objects::CSeq_entry> entry);

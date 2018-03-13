@@ -5782,7 +5782,12 @@ bool CValidError_bioseq::x_PartialAdjacentToIntron(const CSeq_loc& loc)
     TSeqPos stop = loc.GetStop(eExtreme_Positional);
     ENa_strand feat_strand = loc.GetStrand();
 
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(loc);
+    CBioseq_Handle bsh;
+    try {
+        bsh = m_Scope->GetBioseqHandle(loc);
+    } catch (CException& ex) {
+        return false;
+    }
     if (!bsh) {
         return false;
     }

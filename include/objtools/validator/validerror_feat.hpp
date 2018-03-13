@@ -342,6 +342,8 @@ protected:
     bool x_CDS3primePartialTest() const;
     bool x_CDS5primePartialTest() const;
 
+    bool x_IsProductMisplaced() const;
+
     CConstRef<CSeq_feat> m_Gene;
     bool m_GeneIsPseudo;
 };
