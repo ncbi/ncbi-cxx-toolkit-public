@@ -154,11 +154,18 @@ DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
         CRef<CCode_break> code_break(new CCode_break);
         CRef<CSeq_loc> br_loc(new CSeq_loc);
         br_loc->Assign(new_cds->GetLocation());
+        CSeq_loc::TRange rr = br_loc->GetTotalRange();
+        CRef<CSeq_id> seq_id(new CSeq_id);
+        seq_id->Assign(*br_loc->GetId());
         if (br_loc->GetStrand() == eNa_strand_minus) {
-            br_loc->SetInt().SetTo(br_loc->GetInt().GetFrom() + (2 - ovlp_len));
+            br_loc->SetInt().SetId(*seq_id);
+            br_loc->SetInt().SetFrom(rr.GetFrom());
+            br_loc->SetInt().SetTo(rr.GetFrom() + 2 - ovlp_len);
         }
         else {
-            br_loc->SetInt().SetFrom(br_loc->GetInt().GetTo() - (2 - ovlp_len));
+            br_loc->SetInt().SetId(*seq_id);
+            br_loc->SetInt().SetFrom(rr.GetTo() - 2 - ovlp_len);
+            br_loc->SetInt().SetTo(rr.GetTo());
         }
         code_break->SetLoc().Assign(*br_loc);
         code_break->SetAa().SetNcbieaa('*');
