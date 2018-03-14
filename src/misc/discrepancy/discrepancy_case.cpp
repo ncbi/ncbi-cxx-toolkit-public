@@ -491,7 +491,7 @@ DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
 }
 
 
-DISCREPANCY_CASE(PARTIAL_CDS_COMPLETE_SEQUENCE, CSeq_feat, eDisc | eSubmitter | eSmart, "Partial CDSs in Complete Sequences")
+DISCREPANCY_CASE(PARTIAL_CDS_COMPLETE_SEQUENCE, CSeq_feat, eDisc | eOncaller | eSubmitter | eSmart, "Partial CDSs in Complete Sequences")
 {
     if (obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_cdregion) {
         return;
