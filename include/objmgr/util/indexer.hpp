@@ -676,6 +676,10 @@ private:
     // Comment fields
     bool m_IsPseudogene;
 
+    // Feature fields
+    bool m_HasOperon;
+    bool m_HasMultiIntervalGenes;
+
     // Map fields
     string m_rEnzyme;
 

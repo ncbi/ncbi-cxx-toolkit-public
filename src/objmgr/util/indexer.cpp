@@ -781,8 +781,12 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_Substrain.clear();
 
     m_IsUnverified = false;
-    m_IsPseudogene = false;
     m_TargetedLocus.clear();
+
+    m_IsPseudogene = false;
+
+    m_HasOperon = false;
+    m_HasMultiIntervalGenes = false;
 
     m_rEnzyme.clear();
 
@@ -1685,6 +1689,29 @@ void CBioseqIndex::x_InitFeats (void)
                     const CBioSource& biosrc = sfdata.GetBiosrc();
                     m_BioSource.Reset (&biosrc);
                 }
+                continue;
+            }
+
+            if (type == CSeqFeatData::e_Gene) {
+                if (m_HasMultiIntervalGenes) {
+                    continue;
+                }
+                const CSeq_loc& loc = mf.GetLocation ();
+                switch (loc.Which()) {
+                    case CSeq_loc::e_Packed_int:
+                    case CSeq_loc::e_Packed_pnt:
+                    case CSeq_loc::e_Mix:
+                    case CSeq_loc::e_Equiv:
+                        m_HasMultiIntervalGenes = true;
+                        break;
+                    default:
+                        break;
+                }
+                continue;
+            }
+
+            if (type == CSeqFeatData::eSubtype_operon) {
+                m_HasOperon = true;
                 continue;
             }
 
