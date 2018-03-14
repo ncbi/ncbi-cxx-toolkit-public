@@ -248,7 +248,7 @@ public:
 
     void Write(const CBioseq& bioseq);
 private:
-    void x_WriteHeader(const CBioseq& bioseq);
+    bool x_WriteHeader(const CBioseq& bioseq);
 
     bool x_GetMaxMin(const vector<char>& values, int& max, int& min);
 

@@ -1214,16 +1214,15 @@ void CQualScoreWriter::Write(const CBioseq& bioseq)
     if (bioseq.GetLength()) {
         length = bioseq.GetLength();
     }
-    bool has_graph = false;
-    x_WriteHeader(bioseq);
+    if (!x_WriteHeader(bioseq)) { // No byte graph
+        return;
+    }
 
     if (bioseq.IsSetAnnot()) {
         for (CRef<CSeq_annot> pAnnot : bioseq.GetAnnot()) {
             if (!pAnnot->IsGraph()) {
                 continue;
             }
-
-            has_graph = true;
 
             for (CRef<CSeq_graph> pGraph : pAnnot->GetData().GetGraph()) {
                 if (!pGraph->GetGraph().IsByte()) {
@@ -1251,12 +1250,10 @@ void CQualScoreWriter::Write(const CBioseq& bioseq)
         }
     }
     
-    if (has_graph) {
-        while (current_pos < length) {
-            m_Ostr << " -1";
-            x_Advance(column, num_columns);
-            ++current_pos;
-        }
+    while (current_pos < length) {
+        m_Ostr << " -1";
+        x_Advance(column, num_columns);
+        ++current_pos;
     }
 
     if (column > 1) {
@@ -1316,10 +1313,10 @@ bool CQualScoreWriter::x_GetMaxMin(const vector<char>& values, int& max, int& mi
 }
 
 
-void CQualScoreWriter::x_WriteHeader(const CBioseq& bioseq)
+bool CQualScoreWriter::x_WriteHeader(const CBioseq& bioseq)
 {
     if (!bioseq.IsSetAnnot()) {
-        return;
+        return false;
     }
 
     int min=256;
@@ -1362,13 +1359,14 @@ void CQualScoreWriter::x_WriteHeader(const CBioseq& bioseq)
     }
 
     if (!has_byte_graph) { // Nothing to do
-        return;
+        return false;
     }
 
     const TSeqPos length = bioseq.IsSetLength() ? bioseq.GetLength() : 0;
     const string ending = x_ComposeHeaderEnding(graph_title, length, max, min);
 
     m_FastaOstr->WriteTitle(bioseq, 0, false, ending);
+    return true;
 }
 
 void CQualScoreWriter::x_Advance(int& column, const int num_columns)
