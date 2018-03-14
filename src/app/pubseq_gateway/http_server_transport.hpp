@@ -183,6 +183,28 @@ public:
         Send(payload, payload_len, is_persist, true);
     }
 
+    void Send400(const char *  head, const char *  payload)
+    {
+        if (!m_OutputIsReady)
+            NCBI_THROW(CPubseqGatewayException, eOutputNotInReadyState,
+                       "Output is not in ready state");
+
+        if (m_State != eReplyFinished) {
+            if (m_HttpConn->IsClosed())
+                m_OutputFinished = true;
+            if (!m_OutputFinished) {
+                if (m_State == eReplyInitialized) {
+                    h2o_send_error_400(m_Req, head ?
+                        head : "Bad Request", payload, 0);
+                } else {
+                    h2o_send(m_Req, nullptr, 0, H2O_SEND_STATE_ERROR);
+                }
+                m_OutputFinished = true;
+            }
+            m_State = eReplyFinished;
+        }
+    }
+
     void Send404(const char *  head, const char *  payload)
     {
         if (!m_OutputIsReady)
@@ -195,7 +217,29 @@ public:
             if (!m_OutputFinished) {
                 if (m_State == eReplyInitialized) {
                     h2o_send_error_404(m_Req, head ?
-                        head : "notfound", payload, 0);
+                        head : "Not Found", payload, 0);
+                } else {
+                    h2o_send(m_Req, nullptr, 0, H2O_SEND_STATE_ERROR);
+                }
+                m_OutputFinished = true;
+            }
+            m_State = eReplyFinished;
+        }
+    }
+
+    void Send502(const char *  head, const char *  payload)
+    {
+        if (!m_OutputIsReady)
+            NCBI_THROW(CPubseqGatewayException, eOutputNotInReadyState,
+                       "Output is not in ready state");
+
+        if (m_State != eReplyFinished) {
+            if (m_HttpConn->IsClosed())
+                m_OutputFinished = true;
+            if (!m_OutputFinished) {
+                if (m_State == eReplyInitialized) {
+                    h2o_send_error_502(m_Req, head ?
+                        head : "Bad Gateway", payload, 0);
                 } else {
                     h2o_send(m_Req, nullptr, 0, H2O_SEND_STATE_ERROR);
                 }
@@ -217,7 +261,7 @@ public:
             if (!m_OutputFinished) {
                 if (m_State == eReplyInitialized) {
                     h2o_send_error_503(m_Req, head ?
-                        head : "invalid", payload, 0);
+                        head : "Service Unavailable", payload, 0);
                 } else {
                     h2o_send(m_Req, nullptr, 0, H2O_SEND_STATE_ERROR);
                 }
@@ -349,7 +393,7 @@ public:
     {
         switch (m_State) {
             case eReplyInitialized:
-                Send503("mulfunction", what);
+                Send503("Malfunction", what);
                 break;
             case eReplyStarted:
                 Send(nullptr, 0, true, true); // break
@@ -514,7 +558,7 @@ private:
     void SendCancelled(void)
     {
         if (m_Cancelled && m_OutputIsReady && !m_OutputFinished)
-            Send503("cancelled", "request has been cancelled");
+            Send503("Cancelled", "request has been cancelled");
     }
 
     void DoCancel(void)
@@ -608,7 +652,7 @@ public:
             CHttpReply<P>& req = RegisterPending(hresp, m_Backlog);
             req.AssignPendingRec(std::move(pending_rec));
         } else {
-            hresp.Send503("mulfunction", "too many pending requests");
+            hresp.Send503("Malfunction", "Too many pending requests");
         }
     }
 
@@ -956,7 +1000,7 @@ public:
             if (repl == nullptr)
                 repl = &hresp;
             if (repl->GetState() == CHttpReply<P>::eReplyInitialized) {
-                repl->Send503("mulfunction", e.what());
+                repl->Send503("Malfunction", e.what());
                 return 0;
             }
             return -1;
@@ -966,7 +1010,7 @@ public:
             if (repl == nullptr)
                 repl = &hresp;
             if (repl->GetState() == CHttpReply<P>::eReplyInitialized) {
-                repl->Send503("mulfunction", "unexpected failure");
+                repl->Send503("Malfunction", "unexpected failure");
                 return 0;
             }
             return -1;
@@ -1090,10 +1134,10 @@ private:
                 return proto->OnHttpRequest(rh, req);
             }
         } catch (const std::exception &  e) {
-            h2o_send_error_503(req, "mulfunction", e.what(), 0);
+            h2o_send_error_503(req, "Malfunction", e.what(), 0);
             return 0;
         } catch (...) {
-            h2o_send_error_503(req, "mulfunction", "unexpected failure", 0);
+            h2o_send_error_503(req, "Malfunction", "unexpected failure", 0);
             return 0;
         }
         return -1;

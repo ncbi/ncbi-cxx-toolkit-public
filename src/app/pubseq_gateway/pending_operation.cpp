@@ -98,7 +98,7 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
                 const char *  text, CCassBlobWaiter *  waiter) {
             ERRLOG1(("%s", text));
             if (err_type == eNotFound)
-                resp.Send404("not found", text);
+                resp.Send404("Blob Not Found", text);
         }
     );
     m_Loader->SetDataChunkCB(

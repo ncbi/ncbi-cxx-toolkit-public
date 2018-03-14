@@ -187,7 +187,14 @@ public:
 
 
     template<typename P>
-    int OnAccVerResolver(HST::CHttpRequest &  req, HST::CHttpReply<P> &  resp)
+    int OnBadURL(HST::CHttpRequest &  req, HST::CHttpReply<P> &  resp)
+    {
+        resp.Send400("Unknown Request", "The provided URL is not recognized");
+        return 0;
+    }
+
+    template<typename P>
+    int OnResolve(HST::CHttpRequest &  req, HST::CHttpReply<P> &  resp)
     {
         const char *    accession;
         size_t          accession_len;
@@ -199,7 +206,8 @@ public:
                 resp.SendOk(resolution_data.c_str(), resolution_data.length(),
                             false);
         } else {
-            resp.Send503("invalid", "invalid request");
+            resp.Send400("Missing Request Parameter",
+                         "Expected to have the 'accession' parameter");
         }
         return 0;
     }
@@ -214,9 +222,25 @@ public:
         size_t          sat_key_len;
         size_t          accession_len;
 
-        if (req.GetParam("sat", sizeof("sat") - 1, true, &ssat, &sat_len) &&
-            req.GetParam("sat_key", sizeof("sat_key") - 1, true,
-                         &ssat_key, &sat_key_len))
+        // Validate parameters first
+        bool    sat_found = req.GetParam(
+                    "sat", sizeof("sat") - 1, true,
+                    &ssat, &sat_len);
+        bool    sat_key_found = req.GetParam(
+                    "sat_key", sizeof("sat_key") - 1, true,
+                    &ssat_key, &sat_key_len);
+        bool    accession_found = req.GetParam(
+                    "accession", sizeof("accession") - 1, true,
+                    &accession, &accession_len);
+
+        if (sat_found && sat_key_found && accession_found) {
+            resp.Send400("Conflicting Request Parameters",
+                         "Expected to find 'sat' and 'sat_key' prameters "
+                         "or 'accession' parameter. Found all three.");
+            return 0;
+        }
+
+        if (sat_found && sat_key_found)
         {
             int         sat = atoi(ssat);
             string      sat_name;
@@ -228,10 +252,10 @@ public:
                 return 0;
             }
 
-            resp.Send404("not found",
-                         "invalid/unsupported satellite number");
-        } else if (req.GetParam("accession", sizeof("accession") - 1,
-                   true, &accession, &accession_len)) {
+            string      msg = string("Unknown satellite number ") +
+                              NStr::NumericToString(sat);
+            resp.Send404("Not Found", msg.c_str());
+        } else if (accession_found) {
             string          resolution_data;
             if (!x_Resolve(resp, accession, accession_len, resolution_data))
                 return 0;   // resolution failed
@@ -249,10 +273,12 @@ public:
                 return 0;
             }
 
-            resp.Send404("not found",
-                         "invalid/unsupported satellite number");
+            string      msg = string("Unknown satellite number ") +
+                              NStr::NumericToString(sat) + " after unpacking "
+                              "accession data";
+            resp.Send404("Not Found", msg.c_str());
         } else {
-            resp.Send503("invalid", "invalid request");
+            resp.Send400("Missing Request Parameters", "invalid request");
         }
         return 0;
     }
@@ -288,7 +314,7 @@ public:
                 [this](HST::CHttpRequest &  req,
                        HST::CHttpReply<CPendingOperation> &  resp)->int
                 {
-                    return OnAccVerResolver(req, resp);
+                    return OnResolve(req, resp);
                 }, &get_parser, nullptr);
         http_handler.emplace_back(
                 "/ID/getblob",
@@ -296,6 +322,14 @@ public:
                        HST::CHttpReply<CPendingOperation> &  resp)->int
                 {
                     return OnGetBlob(req, resp);
+                }, &get_parser, nullptr);
+
+        http_handler.emplace_back(
+                "",
+                [this](HST::CHttpRequest &  req,
+                       HST::CHttpReply<CPendingOperation> &  resp)->int
+                {
+                    return OnBadURL(req, resp);
                 }, &get_parser, nullptr);
 
 
@@ -344,7 +378,7 @@ private:
             return true;
 
         string      msg = "Entry (" + acc_str + ") not found";
-        resp.Send404("notfound", msg.c_str());
+        resp.Send404("Not Found", msg.c_str());
         return false;
     }
 
@@ -364,23 +398,24 @@ private:
             sat = rec[2].AsUint1;
             sat_key = rec[3].AsUint4;
         } catch (const DDRPC::EDdRpcException &  e) {
-            resp.Send503("invalid", "accession data unpacking error");
-
-            string  msg = string("accession data unpacking error: ") +
+            string  msg = string("Accession data unpacking error: ") +
                           e.what();
+
+            resp.Send502("Accession Data Unpacking Failure", msg.c_str());
             ERRLOG1((msg.c_str()));
             return false;
         } catch (const exception &  e) {
-            resp.Send503("invalid", "accession data unpacking error");
-
-            string  msg = string("accession data unpacking error: ") +
+            string  msg = string("Accession data unpacking error: ") +
                           e.what();
+
+            resp.Send502("Accession Data Unpacking Failure", msg.c_str());
             ERRLOG1((msg.c_str()));
             return false;
         } catch (...) {
-            resp.Send503("invalid", "unknown accession data unpacking error");
+            string  msg = "Unknown accession data unpacking error";
 
-            ERRLOG1(("Unknown accession data unpacking error"));
+            resp.Send502("Accession Data Unpacking Failure", msg.c_str());
+            ERRLOG1((msg.c_str()));
             return false;
         }
         return true;
