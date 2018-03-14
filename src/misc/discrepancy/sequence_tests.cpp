@@ -1554,11 +1554,11 @@ DISCREPANCY_CASE(MRNA_SEQUENCE_MINUS_STRAND_FEATURES, COverlappingFeatures, eOnc
     }
     if (count_minus) {
         if (!count_plus) {
-            CRef<CReportObj> disc_obj(context.NewBioseqObj(CConstRef<CBioseq>(&obj), &context.GetSeqSummary(), eNoRef, true));
             CRef<CMinusStrandData> data(new CMinusStrandData);
             for (auto feat: cds) {
                 data->m_feats.push_back(feat);
             }
+            CRef<CReportObj> disc_obj(context.NewBioseqObj(CConstRef<CBioseq>(&obj), &context.GetSeqSummary(), eNoRef, true, &*data));
             m_Objs[kMrnaSequenceMinusStrandFeatures].Add(*disc_obj);
         }
         else {
