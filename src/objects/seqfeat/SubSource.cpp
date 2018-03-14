@@ -1623,7 +1623,6 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
     NStr::ReplaceInPlace(old_str, "\'\'", "\""); 
     NStr::ReplaceInPlace(old_str, ". ", "."); 
     NStr::ReplaceInPlace(old_str, " .", ".");    
-    NStr::ReplaceInPlace(old_str, ":", " "); 
     string new_str = s_InsertSpacesBetweenTokens(old_str);
     NStr::Sanitize(new_str);
     vector<double> numbers;
