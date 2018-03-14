@@ -517,6 +517,9 @@ public:
 
     bool IsPseudogene (void);
 
+    bool HasOperon (void);
+    bool HasMultiIntervalGenes (void);
+
     string GetrEnzyme (void);
 
 private:

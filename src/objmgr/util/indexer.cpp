@@ -2316,6 +2316,26 @@ bool CBioseqIndex::IsPseudogene (void)
     return m_IsPseudogene;
 }
 
+bool CBioseqIndex::HasOperon (void)
+
+{
+    if (! m_FeatsInitialized) {
+        x_InitFeats();
+    }
+
+    return m_HasOperon;
+}
+
+bool CBioseqIndex::HasMultiIntervalGenes (void)
+
+{
+    if (! m_FeatsInitialized) {
+        x_InitFeats();
+    }
+
+    return m_HasMultiIntervalGenes;
+}
+
 string CBioseqIndex::GetrEnzyme (void)
 
 {
