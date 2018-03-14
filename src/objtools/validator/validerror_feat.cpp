@@ -7490,13 +7490,20 @@ bool CCdregionValidator::x_IsProductMisplaced() const
         m_Feat.GetData().GetCdregion().IsSetOrf()) {
         return false;
     }
-    if (!m_ProductBioseq) {
-        return false;
-    }
     // don't calculate if feature is pseudo
     if (s_IsPseudo(m_Feat) || m_GeneIsPseudo) {
         return false;
     }
+    if (!m_ProductBioseq) {
+        return false;
+    } else if (m_ProductIsFar) {
+        if (m_Imp.RequireLocalProduct(m_Feat.GetProduct().GetId())) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     
     bool product_is_misplaced = false;
     bool found_match = false;
