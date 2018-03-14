@@ -561,16 +561,14 @@ CConstRef<CSeq_id> CSeq_id_Gi_Info::GetPackedSeqId(TPacked gi, TVariant /*varian
 
 CSeq_id_Gi_Tree::CSeq_id_Gi_Tree(CSeq_id_Mapper* mapper)
     : CSeq_id_Which_Tree(mapper),
-      m_SharedInfo(new CSeq_id_Gi_Info(m_Mapper))
+      m_ZeroInfo(0),
+      m_SharedInfo(0)
 {
 }
 
 
 CSeq_id_Gi_Tree::~CSeq_id_Gi_Tree(void)
 {
-    m_ZeroInfo.Reset();
-    _ASSERT(m_SharedInfo);
-    m_SharedInfo.Reset();
 }
 
 
@@ -594,29 +592,32 @@ TGi CSeq_id_Gi_Tree::x_Get(const CSeq_id& id) const
 }
 
 
-void CSeq_id_Gi_Tree::DropInfo(const CSeq_id_Info* /*info*/)
+void CSeq_id_Gi_Tree::x_Unindex(const CSeq_id_Info* info)
 {
-}
-
-
-void CSeq_id_Gi_Tree::x_Unindex(const CSeq_id_Info* /*info*/)
-{
+    if ( info == m_SharedInfo ) {
+        m_SharedInfo = 0;
+    }
+    else if ( info == m_ZeroInfo ) {
+        m_ZeroInfo = 0;
+    }
 }
 
 
 CSeq_id_Handle CSeq_id_Gi_Tree::GetGiHandle(TGi gi)
 {
-    if ( gi != ZERO_GI ) {
+    if ( gi ) {
+        TWriteLockGuard guard(m_TreeLock);
+        if ( !m_SharedInfo ) {
+            m_SharedInfo = new CSeq_id_Gi_Info(m_Mapper);
+        }
         return CSeq_id_Handle(m_SharedInfo, gi);
     }
     else {
+        TWriteLockGuard guard(m_TreeLock);
         if ( !m_ZeroInfo ) {
-            TWriteLockGuard guard(m_TreeLock);
-            if ( !m_ZeroInfo ) {
-                CRef<CSeq_id> zero_id(new CSeq_id);
-                zero_id->SetGi(ZERO_GI);
-                m_ZeroInfo.Reset(CreateInfo(*zero_id));
-            }
+            CRef<CSeq_id> zero_id(new CSeq_id);
+            zero_id->SetGi(ZERO_GI);
+            m_ZeroInfo = CreateInfo(*zero_id);
         }
         return CSeq_id_Handle(m_ZeroInfo);
     }
@@ -628,8 +629,11 @@ CSeq_id_Handle CSeq_id_Gi_Tree::FindInfo(const CSeq_id& id) const
     CSeq_id_Handle ret;
     _ASSERT(x_Check(id));
     TPacked gi = x_Get(id);
-    if (gi) {
-        ret = CSeq_id_Handle(m_SharedInfo, gi);
+    TReadLockGuard guard(m_TreeLock);
+    if ( gi ) {
+        if ( m_SharedInfo ) {
+            ret = CSeq_id_Handle(m_SharedInfo, gi);
+        }
     }
     else if ( m_ZeroInfo ) {
         ret = CSeq_id_Handle(m_ZeroInfo);
@@ -1937,12 +1941,6 @@ CSeq_id_Handle CSeq_id_Local_Tree::FindOrCreate(const CSeq_id& id)
         variant = info->ParseCaseVariant(oid);
     }
     return CSeq_id_Handle(info, 0, variant);
-}
-
-
-void CSeq_id_Local_Tree::DropInfo(const CSeq_id_Info* info)
-{
-    CSeq_id_Which_Tree::DropInfo(info);
 }
 
 

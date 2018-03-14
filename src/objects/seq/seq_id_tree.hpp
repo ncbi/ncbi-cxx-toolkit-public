@@ -294,8 +294,6 @@ public:
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
     virtual CSeq_id_Handle GetGiHandle(TGi gi);
 
-    virtual void DropInfo(const CSeq_id_Info* info);
-
     virtual void FindMatchStr(const string& sid,
                               TSeq_id_MatchList& id_list) const;
 
@@ -308,8 +306,8 @@ protected:
     bool x_Check(const CSeq_id& id) const;
     TGi x_Get(const CSeq_id& id) const;
 
-    CConstRef<CSeq_id_Info> m_ZeroInfo;
-    CConstRef<CSeq_id_Info> m_SharedInfo;
+    CSeq_id_Info* m_ZeroInfo;
+    CSeq_id_Info* m_SharedInfo;
 };
 
 
@@ -706,8 +704,6 @@ public:
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
-    virtual void DropInfo(const CSeq_id_Info* info);
-    
     // Get the list of matching seq-id (int id = str id).
     virtual bool HaveMatch(const CSeq_id_Handle& id) const;
     virtual void FindMatch(const CSeq_id_Handle& id,
