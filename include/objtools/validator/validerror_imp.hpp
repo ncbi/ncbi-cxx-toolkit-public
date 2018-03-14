@@ -369,7 +369,7 @@ public:
     // set flag for farfetchfailure
     inline void SetFarFetchFailure (void) { m_FarFetchFailure = true; }
 
-    const CSeq_entry& GetTSE(void) { return *m_TSE; }
+    const CSeq_entry& GetTSE(void) const { return *m_TSE; };
     const CSeq_entry_Handle & GetTSEH(void) { return m_TSEH; }
     const CTSE_Handle & GetTSE_Handle(void) { return
             (m_TSEH ? m_TSEH.GetTSE_Handle() : CCacheImpl::kEmptyTSEHandle); }
@@ -395,6 +395,8 @@ public:
     bool IsSequenceAvaliable(const CSeqVector& vec);
 
     bool IsTransgenic(const CBioSource& bsrc);
+
+    bool RequireLocalProduct(const CSeq_id* sid) const;
 
 private:
 

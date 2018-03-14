@@ -4155,25 +4155,10 @@ void CValidError_feat::ValidateCommonCDSProduct
         try {
             sid = &(GetId(feat.GetProduct(), m_Scope));
         } catch (const CObjmgrUtilException&) {}
-
-        // okay to have far RefSeq product, but only if genomic product set
-        if ( sid != 0  &&  sid->IsOther() ) {
-            if ( m_Imp.IsGPS() ) {
-                return;
-            }
+        if (m_Imp.RequireLocalProduct(sid)) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingCDSproduct,
+                "Unable to find product Bioseq from CDS feature", feat);
         }
-        // or just a bioseq
-        if ( m_Imp.GetTSE().IsSeq() ) {
-            return;
-        }
-
-        // or in a standalone Seq-annot
-        if ( m_Imp.IsStandaloneAnnot() ) {
-            return;
-        }
-
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingCDSproduct,
-            "Unable to find product Bioseq from CDS feature", feat);
         return;
     }
 
@@ -7500,16 +7485,16 @@ bool CCdregionValidator::x_CDS5primePartialTest() const
 
 bool CCdregionValidator::x_IsProductMisplaced() const
 {
-    // don't calculate if feature is pseudo
-    if (s_IsPseudo(m_Feat) || m_GeneIsPseudo) {
-        return false;
-    }
     // don't calculate if no product or if ORF flag is set
     if (!m_Feat.IsSetProduct() ||
         m_Feat.GetData().GetCdregion().IsSetOrf()) {
         return false;
     }
     if (!m_ProductBioseq) {
+        return false;
+    }
+    // don't calculate if feature is pseudo
+    if (s_IsPseudo(m_Feat) || m_GeneIsPseudo) {
         return false;
     }
     

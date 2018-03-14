@@ -2544,6 +2544,27 @@ bool CValidError_imp::IsSequenceAvaliable(const CSeqVector& vec)
 }
 
 
+bool CValidError_imp::RequireLocalProduct(const CSeq_id* sid) const
+{
+        // okay to have far RefSeq product, but only if genomic product set
+    if ( sid != 0  &&  sid->IsOther() ) {
+        if ( IsGPS() ) {
+            return false;
+        }
+    }
+    // or just a bioseq
+    if ( GetTSE().IsSeq() ) {
+        return false;
+    }
+
+    // or in a standalone Seq-annot
+    if (IsStandaloneAnnot() ) {
+        return false;
+    }
+    return true;
+}
+
+
 static void s_CollectPubDescriptorLabels (const CSeq_entry& se,
                                           vector<int>& pmids, vector<int>& muids, vector<int>& serials,
                                           vector<string>& published_labels, vector<string>& unpublished_labels)
