@@ -1432,7 +1432,7 @@ static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers,
 	    return kEmptyStr;
 	}
     }
-    //cout << "After: " << NStr::Join(pattern, " ") << endl;
+    //cout << "Pattern: " << NStr::Join(pattern, " ") << endl;
     return NStr::Join(pattern, " ");
 }
 
@@ -1633,6 +1633,7 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
 	return kEmptyStr;
   
     string res = MakeLatLon(numbers[0], numbers[1], precision[0], precision[1]);
+    //cout << "After: " << res << endl;
     return res;
 }
 

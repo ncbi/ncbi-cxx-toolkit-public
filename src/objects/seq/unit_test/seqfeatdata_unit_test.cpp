@@ -268,6 +268,24 @@ BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
     fixed = CSubSource::FixLatLonFormat(to_fix, true);
     BOOST_CHECK_EQUAL(fixed, "8.47 N 77.68 E");
 
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("0 08 36.0S 63 49 00.0W", true), "0.14333 S 63.81667 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("0 08 36.1S 63 49 00.1W", true), "0.14336 S 63.81669 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("0 12 45.5N 50 58 21.7W", true), "0.21264 N 50.97269 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("0 17 28.4N 50 54 07.2W", true), "0.29122 N 50.90200 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("0 4 60.0S 63 07 60.0W", true), "");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("0 46 56.6S 60 03 37.7W", true), "0.78239 S 60.06047 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("0 50 08.0N 51 12 31.4W", true), "0.83556 N 51.20872 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("0 53 38.85N 52 0 40.37W", true), "0.894125 N 52.011214 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("1 00 07.2S 57 07 35.6W", true), "1.00200 S 57.12656 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("1 30 59.1N 50 55 01.7W", true), "1.51642 N 50.91714 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("1 46 56.6S 60 03 37.7W", true), "1.78239 S 60.06047 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("10 0 30.21S 67 50 46.22W", true), "10.008392 S 67.846172 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("10 14 14.05S 67 48 42.93W", true), "10.237236 S 67.811925 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("2 46 56.6S 60 03 37.7W", true), "2.78239 S 60.06047 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("3 53 07.9S 59 04 41.7W", true), "3.88553 S 59.07825 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("7 39 52.3S 65 04 11.1W", true), "7.66453 S 65.06975 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("8 43 5.46S 63 51 24.49W", true), "8.718183 S 63.856803 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("9 30 3.81S 68 53 46.38W", true), "9.501058 S 68.896217 W");
 }
 
 
