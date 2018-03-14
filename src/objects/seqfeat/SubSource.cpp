@@ -1247,778 +1247,397 @@ string CSubSource::FixLatLonPrecision(const string& orig)
     return kEmptyStr;
 }
 
+/*
+1. String should be converted to UTF8 string, this will get rid of \xC0 and similar substrings 
+2. Every codepoint (note that this is not regular ascii "char") that is not a digit or a decimal point or a letter should be prepended with a space.
+   Transitions from alpha to digit/point and from digit/point to alpha should also be prepended with a space.
+3. NStr::Split is called with space as a separator and Tokenize flag - need to check if Split works with UTF8 strings properly. 
+4. After this we should have a vector of tokens, some of which are numbers and others are "modifiers" such as ', '', degrees, N, S, E, W, etc. 
+5. A pattern string is created where each number is replaced with "1" and modifiers are normalized to "lat", or "N"; the actual numerical values are kept in a separate vector
+5. Based on the pattern the vector of numbers is parsed into degrees, minutes, or seconds, 
+6. NSEW and "lattitude/longitude" are applied to degrees in the order of appearance, if none are present other heuristic to determine which is latitude and which is longitude
+*/
 
-static void s_TrimInternalSpaces (string& token)
+static string s_InsertSpacesBetweenTokens(const string &old_str)
 {
-    size_t pos;
-
-    while ((pos = NStr::Find (token, "  ")) != NPOS) {
-        string before = token.substr(0, pos);
-        string after = token.substr(pos + 1);
-        token = before + after;
+    string new_str;
+    for (string::const_iterator i = old_str.begin(); i != old_str.end(); ++i) 
+    {
+	TUnicodeSymbol sym = CUtf8::Decode(i);
+	if (sym < 0x80)
+	{
+	    char c = static_cast<char>(sym);
+	    if (!isalpha(c) && !isdigit(c) && c != '.')
+	    {
+		new_str += ' ';
+	    }
+	    else if (!new_str.empty() && 
+		     ((isalpha(new_str.back()) && !isalpha(c)) || 
+		      (!isalpha(new_str.back()) && isalpha(c))))
+	    {
+		new_str += ' ';
+	    }
+	    new_str += c;
+	    if (!isalpha(c) && !isdigit(c) && c != '.' && c != '-' && c != '+')
+	    {
+		new_str += ' ';
+	    }
+	}
+	else
+	{
+	    new_str += ' ';
+	}		
     }
-    while ((pos = NStr::Find (token, " '")) != NPOS) {
-        string before = token.substr(0, pos);
-        string after = token.substr(pos + 1);
-        token = before + after;
+    return new_str;
+}
+
+static bool s_IsNumber(const string &token)
+{
+    bool success = true;
+    double num = 0;
+    try
+    {
+	num = NStr::StringToDouble(token);
+    }
+    catch(const CException&)
+    {
+	success = false;
+    }
+    return success;
+}
+
+static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers, vector<int> &precision, vector<string> &lat_long,  vector<string> &nsew)
+{
+    vector<string> pattern;
+    for (size_t i = 0; i < tokens.size(); i++)
+    {
+	string &token = tokens[i];
+	
+	bool success = true;
+	double num = 0;
+	try
+	{
+	    num = NStr::StringToDouble(token);
+	}
+	catch(const CException&)
+	{
+	    success = false;
+	}
+	if (success)
+	{
+	    numbers.push_back(num);
+	    pattern.push_back("1");
+	    precision.push_back(0);
+	    if (NStr::Find(token, ".") != NPOS && !NStr::EndsWith(token, "."))
+	    {
+		precision.back() = token.length() - NStr::Find(token, ".") - 1;
+	    }
+	    continue;
+	}
+
+	{
+	    vector<string> tmp;
+	    NStr::Split(token, ".", tmp);
+	    if (tmp.size() == 3 && s_IsNumber(tmp[0]) && s_IsNumber(tmp[1]) && s_IsNumber(tmp[2]))
+	    {
+		numbers.push_back(NStr::StringToDouble(tmp[0]));
+		pattern.push_back("1");
+		precision.push_back(0);
+		numbers.push_back(NStr::StringToDouble(tmp[1]));
+		pattern.push_back("1");
+		precision.push_back(0);
+		numbers.push_back(NStr::StringToDouble(tmp[2]));
+		pattern.push_back("1");
+		precision.push_back(0);
+		continue;
+	    }
+	}
+
+	if (token == "\'" && i >= 3 && s_IsNumber(tokens[i - 1]) && tokens[i - 2] == "\'" && s_IsNumber(tokens[i - 3]))
+	{
+	    token = "\"";
+	}
+
+	if (NStr::EqualNocase(token, "degrees") || NStr::EqualNocase(token, "deg"))
+	{
+	    token = "degrees";
+	    pattern.push_back("degrees");
+	}	   
+	else if ( token == "\'"  || NStr::EqualNocase(token, "min") || NStr::EqualNocase(token, "minute") || NStr::EqualNocase(token, "minutes"))
+	{
+	    token  = "\'";
+	    pattern.push_back("\'");
+	}
+	else if (token == "\""   || NStr::EqualNocase(token, "sec") || NStr::EqualNocase(token, "second") || NStr::EqualNocase(token, "seconds"))
+	{
+	    token = "\"";
+	    pattern.push_back("\"");
+	}
+	else if (token == "," || token == ":" || token == "_" || token == "&" || token == "." || token == ";" || NStr::EqualNocase(token, "and"))
+	{
+	}
+	else if (NStr::EqualNocase(token, "lattitude") || NStr::EqualNocase(token, "lat"))
+	{
+	    pattern.push_back("lat");
+	    lat_long.push_back("lat");
+	}
+	else if (NStr::EqualNocase(token, "longitude") || NStr::EqualNocase(token, "lo") || NStr::EqualNocase(token, "lon") || NStr::EqualNocase(token, "long"))
+	{
+	    pattern.push_back("lat");
+	    lat_long.push_back("long");
+	}
+	else if (token == "N"  || NStr::EqualNocase(token, "north"))
+	{
+	    pattern.push_back("N");
+	    nsew.push_back("N");
+	}
+	else if (token == "S"  || NStr::EqualNocase(token, "south"))
+	{
+	    pattern.push_back("N");
+	    nsew.push_back("S");
+	}
+	else if (token == "E"  || NStr::EqualNocase(token, "east"))
+	{
+	    pattern.push_back("N");
+	    nsew.push_back("E");
+	}
+	else if (token == "W"  || NStr::EqualNocase(token, "west"))
+	{
+	    pattern.push_back("N");
+	    nsew.push_back("W");
+	}
+	else if (token == "NW")
+	{
+	    nsew.push_back("N");
+	    nsew.push_back("W");
+	}
+	else if (token == "NE")
+	{
+	    nsew.push_back("N");
+	    nsew.push_back("E");
+	}
+	else if (token == "SW")
+	{
+	    nsew.push_back("S");
+	    nsew.push_back("W");
+	}
+	else if (token == "SE")
+	{
+	    nsew.push_back("S");
+	    nsew.push_back("E");
+	}
+	else
+	{
+	    numbers.clear();
+	    return kEmptyStr;
+	}
+    }
+    //cout << "After: " << NStr::Join(pattern, " ") << endl;
+    return NStr::Join(pattern, " ");
+}
+
+static void s_ReorderNorthSouthEastWest(vector<double> &numbers, vector<int> &precision, const vector<string> &lat_long, const vector<string> &nsew)
+{
+    if (numbers.size() != 2)
+    {
+	numbers.clear();
+	return;
+    }
+    if (lat_long.size() == 2)
+    {
+	if (lat_long.front() == "long")
+	{
+	    swap(numbers[0], numbers[1]);
+	    swap(precision[0], precision[1]);
+	}
+    }
+    else if (!lat_long.empty())
+    {
+	numbers.clear();
+	return;
+    }
+    if (nsew.size() == 2)
+    {
+	if (nsew[0] == "N")
+	    numbers[0] = fabs(numbers[0]);
+	else if (nsew[0] == "S")
+	    numbers[0] = -fabs(numbers[0]);
+	else
+	{
+	    numbers.clear();
+	    return;
+	}
+	if (nsew[1] == "E")
+	    numbers[1] = fabs(numbers[1]);
+	else if (nsew[1] == "W")
+	    numbers[1] = -fabs(numbers[1]);
+	else
+	{
+	    numbers.clear();
+	    return;
+	}
+
+    }
+    else if (!nsew.empty())
+    {
+	numbers.clear();
+	return;
+    }
+    if (lat_long.empty() && nsew.empty() && fabs(numbers[0]) > 90 && fabs(numbers[1]) < 90)
+    {
+	swap(numbers[0], numbers[1]);
+	swap(precision[0], precision[1]);
+    }
+    if (fabs(numbers[0]) > 90 || fabs(numbers[1]) > 180)
+    {
+	numbers.clear();
+	return;
     }
 }
 
-
-string s_GetDefaultDir(bool is_negative, const string& default_dir)
-{
-    string dir;
-    if (is_negative) {
-        if (NStr::Equal("N", default_dir)) {
-            dir = "S";
-        } else if (NStr::Equal("E", default_dir)) {
-            dir = "W";
-        }
-    } else {
-        dir = default_dir;
-    }
-    return dir;
-}
-
-
-static void s_RemoveLeadingZeros(string& token)
-{
-    size_t index = 0;
-    while (index < token.size() &&
-        token[index] == '0' &&
-        (index + 1 < token.size() && isdigit(token[index + 1]))) {
-        ++index;
-    }
-    if (index != 0) {
-        token = token.substr(index);
-    }
-}
-
-
-bool s_AddTokenToVal(double& val, const string& num_str, size_t num_sep, size_t& prec)
-{
-    double this_val = NStr::StringToDouble(num_str, NStr::fConvErr_NoThrow);
-    if (errno != 0) {
-        return false;
-    }
-    
-    if (num_sep == 0) {
-        val += this_val;
-    } else if (num_sep == 1) {
-        if (this_val >= 60.0) {
-            // too big to be minutes
-            return false;
-        }
-        val += (this_val) / (60.0);
-        prec += 2;
-    } else if (num_sep == 2) {
-        if (this_val >= 60.0) {
-            // too big to be seconds
-            return false;
-        }
-        val += (this_val) / (3600.0);
-        prec += 2;
-    } else {
-        // too many separators
-        return false;
-    }
-    size_t p_pos = NStr::Find(num_str, ".");
-    if (p_pos != NPOS) {
-        prec += num_str.substr(p_pos + 1).length();
-    }
-
-    return true;
-}
-
-
-string s_StringFromValAndPrec(double val, size_t prec)
-{
-    if (prec > 0) {
-        double mult = pow((double)10.0, int(prec));
-        bool round_down = true;
-        double remainder = (val * mult) - floor(val * mult);
-        if (remainder > 0.5) {
-            round_down = false;
-        }
-        double tmp;
-        if (round_down) {
-            tmp = floor(val * mult);
-        } else {
-            tmp = ceil(val * mult);
-        }
-        val = tmp / mult;
-    }
-    string val_str = NStr::NumericToString(val, NStr::fDoubleFixed);
-    size_t pos = NStr::Find(val_str, ".");
-    if (pos != NPOS  &&  prec > 0) {
-        while (val_str.substr(pos + 1).length() < prec) {
-            val_str += "0";
-        }
-        if (val_str.substr(pos + 1).length() > prec) {
-            val_str = val_str.substr(0, pos + prec + 1);
-        }
-    }
-    return val_str;
-}
-
-static string s_GetNumFromLatLonToken (string token, const string& default_dir)
-{
-    NStr::TruncateSpacesInPlace(token);
-    string dir;
-    char ch = token[0];
-    if (ch == 'N' || ch == 'S' || ch == 'E' || ch == 'W') {
-        dir = ch;
-        token = token.substr(1);
-    } else {
-        dir = token.substr(token.length() - 1, 1);
-        if (isalpha((unsigned char)dir[0])) {
-            token = token.substr(0, token.length() - 1);
-        } else {
-            dir.clear();
-        }
-    }
-    NStr::TruncateSpacesInPlace(token);
-    // clean up double spaces, spaces between numbers and '
-    s_TrimInternalSpaces(token);
-
-    // find leading negative sign
-    bool is_negative = false;
-    if (token[0] == '-') {
-        is_negative = true;
-        token = token.substr(1);
-    }
-
-    if (NStr::IsBlank(dir)) {
-        dir = s_GetDefaultDir(is_negative, default_dir);
-    } else if (is_negative) {
-        // ignore the dash
-        is_negative = false;
-    }
-
-    size_t pos = 0;
-    double val = 0;
-    size_t num_sep = 0, prev_start = 0;
-    size_t prec = 0;
-    size_t num_period = 0;
-    bool last_is_sep = false;
-
-    while (pos < token.length()) {
-        ch = token[pos];
-        if (ch == ' ' || ch == ':' || ch == '-') {
-            if (pos == prev_start) {
-                // too many separators
-                return kEmptyStr;
-            }
-            string num_str = token.substr(prev_start, pos - prev_start);
-            if (!s_AddTokenToVal(val, num_str, num_sep, prec)) {
-                // too many separators
-                return kEmptyStr;
-            }
-            num_sep++;
-            pos++;
-            prev_start = pos;
-            last_is_sep = true;
-        } else if (ch == '\'') {
-            if (num_period > 1) {
-                return kEmptyStr;
-            }
-            string num_str = token.substr(prev_start, pos - prev_start);
-            double this_val = NStr::StringToDouble(num_str, NStr::fConvErr_NoThrow);
-            if (errno != 0) {
-                return kEmptyStr;
-            }
-            if (token[pos + 1] == '\'') {
-                if (num_sep > 2) {
-                    // already found seconds
-                    return kEmptyStr;
-                }
-                // seconds
-                val += (this_val) / (3600.0);
-                prec += 2;
-                if (NStr::Find (token, "'") == pos) {
-                    // seconds specified without minutes
-                    prec += 2;
-                }
-                pos++;
-                num_sep ++;
-            } else {
-                if (num_sep == 1) {
-                    val += (this_val) / (60.0);
-                    prec += 2;
-                }
-                else if (num_sep == 2) {
-                    val += (this_val) / (3600.0);
-                    prec += 2;
-                }
-                else {
-                    // too many separators
-                    return kEmptyStr;
-                }
-                num_sep ++;
-            }
-            size_t p_pos = NStr::Find (num_str, ".");
-            if (p_pos != NPOS) {
-                prec += num_str.substr(p_pos + 1).length();
-            }
-            pos++;
-            while (pos < token.size() && isspace((unsigned char)token[pos])) {
-                pos++;
-            }
-            prev_start = pos;
-            last_is_sep = true;
-        } else if (isdigit(ch)) {
-            pos++;
-            last_is_sep = false;
-        } else if (ch == '.') {
-            if (num_period > 0 && num_sep > 0) {
-                return kEmptyStr;
-            }
-            num_period++;
-            pos++;
-            last_is_sep = false;
-        } else {
-            return kEmptyStr;
-        }
-    }
-    if (num_sep == 0 && num_period > 1) {
-        list<CTempString> pieces;
-        NStr::Split(token, ".", pieces, 0);
-        num_sep = 0;
-        ITERATE(list<CTempString>, it, pieces) {
-            if (!s_AddTokenToVal(val, *it, num_sep, prec)) {
-                // too many separators
-                return kEmptyStr;
-            }
-            num_sep++;
-        }
-        string val_str = s_StringFromValAndPrec(val, prec);
-
-        if (!NStr::IsBlank(dir)) {
-            val_str = val_str + " " + dir;
-        }
-        return val_str;
-    } else if (num_period > 1) {
-        return kEmptyStr;
-    }
-    if (num_sep > 0 && !last_is_sep) {
-        // if there have been separators, but the last value is not a separator,
-        if (num_sep == 2 && num_period == 0) {
-            // if we have seen minutes but not seconds we'll treat this last value as seconds
-        } else if (num_sep == 1) {
-            // we'll treat this last value as minutes
-        } else {
-            // otherwise this is a bad format
-            return kEmptyStr;
-        }
-    }
-
-    if (prev_start == 0) {
-        if (!NStr::IsBlank(dir)) {
-            token = token + " " + dir;
-        }
-        s_RemoveLeadingZeros(token);
-        return token;
-    } else {
-        if (prev_start < pos) {
-            string num_str = token.substr(prev_start, pos - prev_start);
-            if (!s_AddTokenToVal(val, num_str, num_sep, prec)) {
-                // too many separators
-                return kEmptyStr;
-            }
-        }
-        string val_str = s_StringFromValAndPrec(val, prec);
-
-        if (!NStr::IsBlank(dir)) {
-            val_str = val_str + " " + dir;
-        }
-
-        return val_str;
-    }            
-}
-
-
-static bool s_IsNumberStringInRange(const string& val_str, double max)
-{
-    double val;
-    char dir;
-    int processed;
-
-    if (sscanf(val_str.c_str(), "%lf %c%n", &val, &dir, &processed) != 2
-        || size_t(processed) != val_str.length()
-        || val < 0.0 || val > max) {
-        return false;
-    } else {
-        return true;
-    }
-}
-
-
-static void s_RemoveLeadingCommaOrSemicolon(string& token)
-{
-    NStr::TruncateSpacesInPlace(token);
-    if (NStr::StartsWith (token, ",") || NStr::StartsWith (token, ";")) {
-        token = token.substr(1);
-        NStr::TruncateSpacesInPlace(token);
-    }
-}
-
-
-static void s_RemoveExtraText (string& token, string& extra_text)
-{
-    size_t comma_pos = NStr::Find (token, ",");
-    size_t semicolon_pos = NStr::Find (token, ";");
-    size_t sep_pos = NPOS;
-
-    if (comma_pos == NPOS) {
-        sep_pos = semicolon_pos;
-    } else if (semicolon_pos != NPOS) {
-        if (semicolon_pos < comma_pos) {
-            sep_pos = semicolon_pos;
-        } else {
-            sep_pos = comma_pos;
-        }
-    }
-    if (sep_pos != NPOS) {
-        extra_text = token.substr(sep_pos + 1);
-        NStr::TruncateSpacesInPlace(extra_text);
-        token = token.substr(0, sep_pos - 1);
-        NStr::TruncateSpacesInPlace(token);
-    }        
-}
-
-
-void s_FindLatLonSeparator(const string& val, size_t& sep_pos, size_t& sep_len)
+static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<int> &precision)
 {
     vector<string> tokens;
-    vector<string> separators;
-    size_t second1 = NPOS;
-    size_t second2 = NPOS;
-    size_t minute1 = NPOS;
-    size_t minute2 = NPOS;
-    size_t comma = NPOS;
-    size_t minus_plus1 = NPOS;
-    size_t minus_plus2 = NPOS;
-    sep_pos = NPOS;
-    sep_len = 0;
-
-    bool in_separator = true;
-    size_t offset = 0;
-    for (auto it : val) {
-        if (isdigit(it) || it == '.' || it == '+' || it == '-') {
-            if (in_separator) {
-                // check for last separator being second or minute
-                if (!separators.empty() > 0) {
-                    if (separators.back()[0] == '\'') {
-                        if (separators.back()[1] == '\'') {
-                            if (second1 == NPOS) {
-                                second1 = offset - 1;
-                            } else if (second2 == NPOS) {
-                                second2 = offset - 1;
-                            } else {
-                                return;
-                            }
-                        } else if (minute1 == NPOS) {
-                            minute1 = offset - 1;
-                        } else if (minute2 == NPOS) {
-                            minute2 = offset - 1;
-                        } else {
-                            return;
-                        }
-                    }
-                }
-                string new_val = kEmptyStr;
-                new_val += it;
-                tokens.push_back(new_val);
-                in_separator = false;
-            } else {
-                tokens.back() += it;
-            }
-            if (it == '+' || it == '-') {
-                if (minus_plus1 == NPOS) {
-                    minus_plus1 = offset;
-                }
-                else if (minus_plus2 == NPOS) {
-                    minus_plus2 = offset;
-                }
-                else {
-                    return;
-                }
-            }
-        } else {
-            if (in_separator) {
-                if (separators.empty()) {
-                    string new_sep = kEmptyStr;
-                    separators.push_back(new_sep);
-                }
-                separators.back().push_back(it);
-            } else {
-                string new_sep = kEmptyStr;
-                if (it != ' ') {
-                    new_sep += it;
-                }
-                separators.push_back(new_sep);
-                in_separator = true;
-            }
-            if (it == ',') {
-                if (comma == NPOS) {
-                    comma = offset;
-                } else {
-                    return;
-                }
-            }
-        }
-        offset++;
+    NStr::Split(new_str, " ", tokens, NStr::fSplit_Tokenize);
+    vector<string> lat_long;
+    vector<string> nsew;
+    string pattern = s_NormalizeTokens(tokens, numbers, precision, lat_long, nsew);
+    if (pattern.empty())
+    {
+	numbers.clear();
+	return;
     }
-    if (in_separator) {
-        // check for last separator being second or minute
-        if (!separators.empty() > 0) {
-            if (separators.back()[0] == '\'') {
-                if (separators.back()[1] == '\'') {
-                    if (second1 == NPOS) {
-                        second1 = offset - 1;
-                    }
-                    else if (second2 == NPOS) {
-                        second2 = offset - 1;
-                    }
-                    else {
-                        return;
-                    }
-                }
-                else if (minute1 == NPOS) {
-                    minute1 = offset - 1;
-                }
-                else if (minute2 == NPOS) {
-                    minute2 = offset - 1;
-                }
-                else {
-                    return;
-                }
-            }
-        }
+    vector<double> degrees(2, 0);
+    vector<int> prec(2, 0);
+    if ( pattern == "1 1" ||
+	 pattern == "1 N 1 N" ||
+	 pattern == "lat 1 lat 1")
+    {
+	degrees[0] = numbers[0];
+	degrees[1] = numbers[1];
+	prec[0] = precision[0];
+	prec[1] = precision[1];
     }
-    if (comma != NPOS) {
-        sep_pos = comma;
-        sep_len = 1;
-    } else if (tokens.size() == 2 && separators.size() == 1) {
-        sep_pos = tokens[0].length();
-    } else if (minus_plus1 == 0 && minus_plus2 != NPOS) {
-        sep_pos = minus_plus2;
-    } else if (minus_plus1 != NPOS && minus_plus2 == NPOS && minus_plus1 != 0) {
-        sep_pos = minus_plus1;
-    } else if (second1 != NPOS && (second2 != NPOS || second1 < val.length() - 2)) {
-        sep_pos = second1 + 1; // use middle second if there are two or if not at the end
-    } else if (minute1 != NPOS && minute2 != NPOS) { // use middle minute if there are two and not using seconds
-        sep_pos = minute1;
-    } else if (minute1 != NPOS && minute2 == NPOS && second1 == NPOS && minute1 < val.length() - 1) {
-        sep_pos = minute1;
-    } else if (!separators.empty() && separators[0].empty() && tokens.size() > 1) {
-        sep_pos = tokens[0].length();
+    else if (pattern == "1 1 \" 1 1 '" 
+	     && numbers[1] < 60 && numbers[3] < 60)
+    {
+	degrees[0] = numbers[0] + numbers[1] / 3600;
+	degrees[1] = numbers[2] + numbers[3] / 60;
+	prec[0] = max(precision[0], precision[1] + 4);
+	prec[1] = max(precision[2], precision[3] + 2);
     }
+    else if (pattern == "1 1 ' 1" 
+	     && numbers[1] < 60)
+    {
+	degrees[0] = numbers[0] + numbers[1] / 60;
+	degrees[1] = numbers[2];
+	prec[0] = max(precision[0], precision[1] + 2);
+	prec[1] = precision[2];
+    }
+    else if (pattern == "1 1 ' 1 \" 1" 
+	     && numbers[1] < 60 && numbers[2] < 60)
+    {
+	degrees[0] = numbers[0] + numbers[1] / 60 + numbers[2] / 3600;
+	degrees[1] = numbers[3];
+	prec[0] = max(max(precision[0], precision[1] + 2), precision[2] + 4);
+	prec[1] = precision[3];
+    }
+    else if (pattern == "1 1 ' 1 \" 1 1 '"
+	     && numbers[1] < 60 && numbers[2] < 60 && numbers[4] < 60)
+    {
+	degrees[0] = numbers[0] + numbers[1] / 60 + numbers[2] / 3600;
+	degrees[1] = numbers[3] + numbers[4] / 60;
+	prec[0] = max(max(precision[0], precision[1] + 2), precision[2] + 4);
+	prec[1] = max(precision[3], precision[4] + 2);
+    }
+    else if (( pattern == "1 1 ' 1 \" 1 1 ' 1 \"" ||
+	       pattern == "1 1 ' 1 \" N 1 1 ' 1 \" N" || 
+	       pattern == "1 degrees 1 ' 1 \" 1 degrees 1 ' 1 \"" || 
+	       pattern == "1 degrees 1 ' 1 \" N 1 degrees 1 ' 1 \" N" ||
+	       pattern == "1 degrees 1 ' 1 N 1 degrees 1 ' 1 N" ||
+	       pattern == "1 degrees 1 1 N 1 degrees 1 1 N" ||
+	       pattern == "1 1 1 N 1 1 1 N")
+	      && numbers[1] < 60 && numbers[2] < 60 && numbers[4] < 60 && numbers[5] < 60)
+    {
+	degrees[0] = numbers[0] + numbers[1] / 60 + numbers[2] / 3600;
+	degrees[1] = numbers[3] + numbers[4] / 60 + numbers[5] / 3600;
+	prec[0] = max(max(precision[0], precision[1] + 2), precision[2] + 4);
+	prec[1] = max(max(precision[3], precision[4] + 2), precision[5] + 4);
+    }
+    else if (( pattern == "1 1 ' 1 1 '" ||
+	       pattern == "1 1 N 1 1 N" ||
+	       pattern == "1 degrees 1 ' N 1 degrees 1 ' N" ||
+	       pattern == "1 degrees 1 N 1 degrees 1 N")
+	     && numbers[1] < 60  && numbers[3] < 60)
+    {
+	degrees[0] = numbers[0] + numbers[1] / 60;
+	degrees[1] = numbers[2] + numbers[3] / 60;
+	prec[0] = max(precision[0], precision[1] + 2);
+	prec[1] = max(precision[2], precision[3] + 2);
+    }
+    else if (pattern == "1 N 1 1 N"
+	     &&  numbers[2] < 60)
+    {
+	degrees[0] = numbers[0];
+	degrees[1] = numbers[1] + numbers[2] / 60;
+	prec[0] = precision[0];
+	prec[1] = max(precision[1], precision[2] + 2);
+    }
+    else if (pattern == "1 degrees 1 ' 1 degrees 1 ' 1 \""
+	     && numbers[1] < 60 && numbers[3] < 60 && numbers[4] < 60)
+    {
+	degrees[0] = numbers[0] + numbers[1] / 60;
+	degrees[1] = numbers[2] + numbers[3] / 60 + numbers[4] / 3600;
+	prec[0] = max(precision[0], precision[1] + 2);
+	prec[1] = max(max(precision[2], precision[3] + 2), precision[4] + 4);
+    }
+    else if (pattern == "1 degrees 1 degrees 1 ' 1 \""
+	     && numbers[2] < 60 && numbers[3] < 60)
+    {
+	degrees[0] = numbers[0];
+	degrees[1] = numbers[1] + numbers[2] / 60 + numbers[3] / 3600;
+	prec[0] = precision[0];
+	prec[1] = max(max(precision[1], precision[2] + 2), precision[3] + 4);
+    }    
+    else
+    {
+	degrees.clear();
+	prec.clear();
+    }
+    swap(degrees, numbers);
+    swap(prec, precision);
+    s_ReorderNorthSouthEastWest(numbers, precision, lat_long, nsew);
 }
 
 
 string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
 {
-    string cpy;
-    size_t pos;
-
-    if (NStr::IsBlank (orig_lat_lon)) {
-        return kEmptyStr;
+    //cout << "Before: " << orig_lat_lon << endl;
+    NStr::ParseEscapes(orig_lat_lon);
+    CStringUTF8 old_str = CUtf8::AsUTF8(orig_lat_lon, CUtf8::GuessEncoding(orig_lat_lon));
+    if (NStr::StartsWith(old_str, "\""))
+    {
+	NStr::TrimPrefixInPlace(old_str, "\"");
+	NStr::TrimSuffixInPlace(old_str, "\"");
     }
-
-    cpy = orig_lat_lon;
-
-    // remove containing quotes
-    if (NStr::StartsWith(cpy, "\"") && NStr::EndsWith(cpy, "\"")) {
-        cpy = cpy.substr(1, cpy.length() - 2);
-    }
-    
-    // replace all 'O' (capital o) following non-alpha characters with '0' (zero)
-    pos = NStr::Find (cpy, "O");
-    while (pos != NPOS) {
-        if (pos > 0  &&  !isalpha((unsigned char)cpy[pos - 1])) {
-            string before = cpy.substr(0, pos);
-            string after = cpy.substr(pos + 1);
-            cpy = before + "0" + after;
-        }
-        pos = NStr::Find (cpy, "O", pos + 1);
-    }
-    // replace all 'o' with non-alpha characters before and after with space
-    pos = NStr::Find (cpy, "o");
-    while (pos != NPOS) {
-        if ((pos == 0 || !isalpha((unsigned char)cpy[pos - 1]))
-            && !isalpha ((unsigned char)cpy[pos + 1])) {
-            string before = cpy.substr(0, pos);
-            string after = cpy.substr(pos + 1);
-            cpy = before + " " + after;
-        }
-        pos = NStr::Find (cpy, "o", pos + 1);
-    }
-
-    // replace all '°' with space
-    NStr::ReplaceInPlace(cpy, "\xC2\xB0", " ");
-    NStr::ReplaceInPlace(cpy, "\xB0",     " ");
-
-    // replace all '#' with ' '
-    NStr::ReplaceInPlace (cpy, "#", " ");
-    NStr::ReplaceInPlace(cpy, "\"", "''");
-
-    // now make all letters uppercase (note, do not do this before converting 'o' and 'O'(
-    cpy = NStr::ToUpper (cpy);
-
-    // replace commas that should be periods
-    pos = NStr::Find (cpy, ",");
-    while (pos != NPOS) {
-        if (pos > 0  &&  isdigit((unsigned char)cpy[pos + 1])  
-                     &&  isdigit((unsigned char)cpy[pos - 1])) {
-            // follow digits all the way back, make sure character before digits is not '.'
-            size_t dpos = pos - 2;
-            while (dpos > 0 && isdigit((unsigned char)cpy[dpos])) {
-                dpos--;
-            }
-            if (cpy[dpos] != '.') {
-                string before = cpy.substr(0, pos);
-                string after = cpy.substr(pos + 1);
-                cpy = before + " " + after;
-            }
-        }
-        pos = NStr::Find (cpy, "o", pos + 1);
-    }
-
-    // get rid of colons, semicolons, and commas
-    NStr::ReplaceInPlace (cpy, ":", " ");
-    NStr::ReplaceInPlace (cpy, ";", " ");
-//    NStr::ReplaceInPlace (cpy, ",", " ");
-
-    // get rid of periods after letters not before numbers
-    pos = NStr::Find (cpy, ".");
-    while (pos != NPOS) {
-        if (pos > 0 && isalpha((unsigned char)cpy[pos - 1])) {
-            string before = cpy.substr(0, pos);
-            string after = cpy.substr(pos + 1);
-            cpy = before + " " + after;
-        }
-        pos = NStr::Find (cpy, ".", pos + 1);
-    }
-
-    NStr::ReplaceInPlace (cpy, "LONGITUDE", "LONG");
-    NStr::ReplaceInPlace (cpy, "LON.",      "LONG");
-    NStr::ReplaceInPlace (cpy, "LONG",      "LO");
-    NStr::ReplaceInPlace (cpy, "LO:",       "LO");
-    NStr::ReplaceInPlace (cpy, "LATITUDE",  "LAT");
-    NStr::ReplaceInPlace (cpy, "LATTITUDE",  "LAT");
-    NStr::ReplaceInPlace (cpy, "LAT.",      "LAT");
-    NStr::ReplaceInPlace (cpy, "LAT:",      "LAT");
-    NStr::ReplaceInPlace (cpy, "DEGREES",   " " );
-    NStr::ReplaceInPlace (cpy, "DEGREE",    " ");
-    NStr::ReplaceInPlace (cpy, "DEG.",      " ");
-    NStr::ReplaceInPlace (cpy, "DEG",       " " );
-    NStr::ReplaceInPlace (cpy, "MASCULINE", " "); // masculine ordinal indicator U+00BA often confused with degree sign U+00B0
-    NStr::ReplaceInPlace (cpy, "MIN.",      "'");
-    NStr::ReplaceInPlace (cpy, "MINUTES",   "'");
-    NStr::ReplaceInPlace (cpy, "MINUTE",    "'");
-    NStr::ReplaceInPlace (cpy, "MIN",       "'");
-    NStr::ReplaceInPlace (cpy, "SEC.",      "''");
-    NStr::ReplaceInPlace (cpy, "SEC",       "''");
-    NStr::ReplaceInPlace (cpy, "NORTH",     "N");
-    NStr::ReplaceInPlace (cpy, "SOUTH",     "S");
-    NStr::ReplaceInPlace (cpy, "EAST",      "E");
-    NStr::ReplaceInPlace (cpy, "WEST",      "W");
-    NStr::ReplaceInPlace (cpy, " AND ",     " "); // treat AND like a space delimiter
-    NStr::ReplaceInPlace (cpy, "_", " ");
-    NStr::ReplaceInPlace (cpy, "&", " ");
-    NStr::ReplaceInPlace (cpy, "  ", " "); // double-spaces become single spaces
-    NStr::ReplaceInPlace (cpy, " . ", "."); // space before and after period is eliminated
-
-    size_t lat_pos = NStr::Find (cpy, "LAT");
-    size_t lon_pos = NStr::Find (cpy, "LO");
-    if ((lat_pos == NPOS  &&  lon_pos != NPOS)
-        || (lat_pos != NPOS  &&  lon_pos == NPOS)) {
-        // must specify both lat and lon or neither
-        return kEmptyStr;
-    }
-    if (lat_pos != NPOS  &&  NStr::Find (cpy, "LAT", lat_pos + 1) != NPOS) {
-        // better not find two
-        return kEmptyStr;
-    }
-    if (lon_pos != NPOS  &&  NStr::Find (cpy, "LO", lon_pos + 1) != NPOS) {
-        // better not find two
-        return kEmptyStr;
-    }
-
-    size_t ns_pos = NStr::Find (cpy, "N");
-    if (ns_pos == NPOS) {
-        ns_pos = NStr::Find (cpy, "S");
-        if (ns_pos != NPOS  &&  NStr::Find(cpy, "S", ns_pos + 1) != NPOS) {
-            // better not find two
-            return kEmptyStr;
-        }
-    } else if (NStr::Find (cpy, "S") != NPOS  ||  NStr::Find (cpy, "N", ns_pos + 1) != NPOS) {
-        // better not find two
-        return kEmptyStr;
-    }
-
-    size_t ew_pos = NStr::Find (cpy, "E");
-    if (ew_pos == NPOS) {
-        ew_pos = NStr::Find (cpy, "W");
-        if (ew_pos != NPOS  &&  NStr::Find(cpy, "W", ew_pos + 1) != NPOS) {
-            // better not find two
-            return kEmptyStr;
-        }
-    } else if (NStr::Find (cpy, "W") != NPOS  ||  NStr::Find (cpy, "E", ew_pos + 1) != NPOS) {
-        // better not find two
-        return kEmptyStr;
-    }
-
-    // todo - figure out how to use degrees as ew_pos markers
-
-    // need to have both or neither
-    if ((ns_pos == NPOS  &&  ew_pos != NPOS) || (ns_pos != NPOS  &&  ew_pos == NPOS)) {
-        return kEmptyStr;
-    }
-
-    string extra_text;
-    string la_token;
-    string lo_token;
-    bool la_first = true;
-
-    if (lat_pos == NPOS) {
-        if (ns_pos == NPOS) {
-            if (guess) {
-                s_TrimInternalSpaces(cpy);
-                size_t sep_pos = 0; // dividing point
-                size_t sep_len = 0; // number of characters in divider (to be removed)
-                s_FindLatLonSeparator(cpy, sep_pos, sep_len);
-                if (sep_pos == NPOS) {
-                    return kEmptyStr;
-                }
-                la_token = cpy.substr(0, sep_pos);
-                lo_token = cpy.substr(sep_pos + sep_len); 
-                NStr::TruncateSpacesInPlace (la_token);
-                NStr::TruncateSpacesInPlace (lo_token);
-
-                if (!NStr::StartsWith(la_token, "+") && !NStr::StartsWith(la_token, "-")) {
-                    string tmp_la = s_GetNumFromLatLonToken(la_token, "N");
-                    string tmp_lo = s_GetNumFromLatLonToken(lo_token, "E");
-                    if (NStr::IsBlank(tmp_la) || NStr::IsBlank(tmp_lo)) {
-                        return kEmptyStr;
-                    }
-                    bool la_in_la_range = s_IsNumberStringInRange(tmp_la, 90.0);
-                    bool lo_in_la_range = s_IsNumberStringInRange(tmp_lo, 90.0);
-                    if (!la_in_la_range && lo_in_la_range) {
-                        tmp_la = la_token;
-                        la_token = lo_token;
-                        lo_token = tmp_la;
-                    }
-                }
-
-                if (NStr::StartsWith (la_token, "-")) {
-                  la_token = "S " + la_token.substr(1);
-                } else {
-                  la_token = "N " + la_token;
-                }
-                if (NStr::StartsWith (lo_token, "-")) {
-                  lo_token = "W " + lo_token.substr(1);
-                } else {
-                  lo_token = "E " + lo_token;
-                }
-                NStr::ReplaceInPlace(la_token, "+", "");
-                NStr::ReplaceInPlace(lo_token, "+", "");
-            } else {
-                return kEmptyStr;
-            }
-        } else if (ns_pos < ew_pos) {
-            // as it should be
-            if (ns_pos == 0) {
-                // letter is first, token ends with ew_pos
-                la_token = cpy.substr(0, ew_pos);
-                lo_token = cpy.substr(ew_pos);
-            } else {
-                // letter is last, token ends here
-                la_token = cpy.substr(0, ns_pos + 1);
-                lo_token = cpy.substr(ns_pos + 1);
-            }
-        } else {
-            // positions reversed
-            la_first = false;
-            if (ew_pos == 0) {
-                // letter is first, token ends with ns_pos
-                lo_token = cpy.substr(0, ns_pos);
-                la_token = cpy.substr(ns_pos);
-            } else {
-                // letter is last, token ends here
-                lo_token = cpy.substr(0, ew_pos + 1);
-                la_token = cpy.substr(ew_pos + 1);
-            }
-        }            
-    } else {
-        if (lat_pos < lon_pos) {
-            // as it should be
-            if (lat_pos == 0) {
-                // letter is first, token ends with lon_pos
-                la_token = cpy.substr(3, lon_pos - 3);
-                lo_token = cpy.substr(lon_pos + 2);
-            } else {
-                // letter is last, token ends here
-                la_token = cpy.substr(0, lat_pos);
-                lo_token = cpy.substr(lat_pos + 3);
-            }
-        } else {
-            // positions reversed
-            la_first = false;
-            if (lon_pos == 0) {
-                // letter is first, token ends with lat_pos
-                lo_token = cpy.substr(2, lat_pos);
-                la_token = cpy.substr(lat_pos + 3);
-            } else {
-                // letter is last, token ends here
-                lo_token = cpy.substr(0, lon_pos);
-                la_token = cpy.substr(lon_pos + 2);
-            }
-        }
-        NStr::ReplaceInPlace (la_token, "LAT", kEmptyStr);
-        NStr::ReplaceInPlace (lo_token, "LO",  kEmptyStr);
-        if (NStr::Find (la_token, "E") != NPOS || NStr::Find (la_token, "W") != NPOS) {
-            return kEmptyStr;
-        } else if (NStr::Find (lo_token, "N") != NPOS || NStr::Find (lo_token, "S") != NPOS) {
-            return kEmptyStr;
-        }
-    }
-    if (la_first) {
-        NStr::ReplaceInPlace (la_token, ",", kEmptyStr);
-        NStr::ReplaceInPlace (la_token, ";", kEmptyStr);
-        s_RemoveLeadingCommaOrSemicolon (lo_token);
-        s_RemoveExtraText (lo_token, extra_text);
-    } else {
-        NStr::ReplaceInPlace (lo_token, ",", kEmptyStr);
-        NStr::ReplaceInPlace (lo_token, ";", kEmptyStr);
-        s_RemoveLeadingCommaOrSemicolon (la_token);
-        s_RemoveExtraText (lo_token, extra_text);
-    }
-
-    la_token = s_GetNumFromLatLonToken (la_token, "N");
-    if (NStr::IsBlank (la_token)
-        || !s_IsNumberStringInRange(la_token, 90.0)) {
-        return kEmptyStr;
-    }
-
-    lo_token = s_GetNumFromLatLonToken (lo_token, "E");
-
-    if (NStr::IsBlank (lo_token)
-        || !s_IsNumberStringInRange(lo_token, 180.0)) {
-        return kEmptyStr;
-    }
-
-    string fix = la_token + " " + lo_token;
-    if (!NStr::IsBlank (extra_text)) {
-        fix += ",";
-        fix += " " + extra_text;
-    }
-    return fix;
+    NStr::ReplaceInPlace(old_str, "\'\'", "\""); 
+    NStr::ReplaceInPlace(old_str, ". ", "."); 
+    NStr::ReplaceInPlace(old_str, " .", ".");    
+    NStr::ReplaceInPlace(old_str, ":", " "); 
+    string new_str = s_InsertSpacesBetweenTokens(old_str);
+    NStr::Sanitize(new_str);
+    vector<double> numbers;
+    vector<int> precision;
+    s_GetLatLong(new_str, numbers, precision);
+    if (numbers.empty())
+	return kEmptyStr;
+  
+    string res = MakeLatLon(numbers[0], numbers[1], precision[0], precision[1]);
+    return res;
 }
 
 
-string CSubSource::MakeLatLon(double lat_value, double lon_value)
+string CSubSource::MakeLatLon(double lat_value, double lon_value, int lat_precision, int lon_precision )
 {
     char ns = 'N';
     if (lat_value < 0) {
@@ -2030,12 +1649,13 @@ string CSubSource::MakeLatLon(double lat_value, double lon_value)
         ew = 'W';
         lon_value = -lon_value;
     }
-
-    char reformatted[1000];
-    sprintf (reformatted, "%.*lf %c %.*lf %c", 2, lat_value, ns, 2, lon_value, ew);
-
-    string latlon = reformatted;
-    return latlon;
+    string lat = NStr::DoubleToString(lat_value, lat_precision);
+    string lon = NStr::DoubleToString(lon_value, lon_precision);
+  
+    NStr::TrimSuffixInPlace(lat, ".");
+    NStr::TrimSuffixInPlace(lon, ".");
+    string res = lat + " " + ns + " " + lon + " " + ew;
+    return res;
 }
 
 
