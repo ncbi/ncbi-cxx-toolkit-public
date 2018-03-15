@@ -567,7 +567,7 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
         &&  (params.GetUserName().empty()
              ||  params.GetPassword().empty()))
     {
-        string err_msg("Insufficient info/credentials to connect.");
+        string err_msg("Insufficient credentials to connect.");
 
         if (params.GetUserName().empty()) {
             err_msg += " User name has not been set.";
