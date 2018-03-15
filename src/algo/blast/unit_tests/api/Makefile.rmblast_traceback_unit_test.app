@@ -10,6 +10,6 @@ LIBS = $(BLAST_THIRD_PARTY_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG
 
 CHECK_REQUIRES = MT in-house-resources
 CHECK_CMD = rmblast_traceback_unit_test
-CHECK_COPY = rmblast_traceback_unit_test.ini data
+CHECK_COPY = data
 
 WATCHERS = boratyng madden camacho fongah2
