@@ -722,16 +722,7 @@ public:
     }
 
     /// Sort list if not already sorted.
-    void InsureOrder()
-    {
-        if (m_LastSortSize != (m_Gis.size() + m_Tis.size() +m_Sis.size())) {
-            std::sort(m_Gis.begin(), m_Gis.end());
-            std::sort(m_Tis.begin(), m_Tis.end());
-            std::sort(m_Sis.begin(), m_Sis.end());
-
-            m_LastSortSize = m_Gis.size() + m_Tis.size() + m_Sis.size();
-        }
-    }
+    void InsureOrder();
 
     /// Add a new GI to the list.
     void AddGi(TGi gi)

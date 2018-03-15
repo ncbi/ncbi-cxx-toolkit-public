@@ -607,7 +607,8 @@ void CSeqDBGiList::InsureOrder(ESortOrder order)
 {
     // Code depends on OID order after translation, because various
     // methods of SeqDB use this class for filtering purposes.
-
+	static CFastMutex mtx;
+	CFastMutexGuard mtx_gurad(mtx);
     if ((order < m_CurrentOrder) || (order == eNone)) {
         NCBI_THROW(CSeqDBException,
                    eFileErr,
@@ -1524,6 +1525,19 @@ void CSeqDBNegativeList::PreprocessIdsForISAMSiLookup()
 	}
 }
 
+void CSeqDBNegativeList::InsureOrder()
+{
+   	static CFastMutex mtx;
+   	CFastMutexGuard mtx_gurad(mtx);
+    if (m_LastSortSize != (m_Gis.size() + m_Tis.size() +m_Sis.size())) {
+    	cerr << "Insure order" << endl;
+        std::sort(m_Gis.begin(), m_Gis.end());
+        std::sort(m_Tis.begin(), m_Tis.end());
+        std::sort(m_Sis.begin(), m_Sis.end());
+
+        m_LastSortSize = m_Gis.size() + m_Tis.size() + m_Sis.size();
+    }
+}
 
 bool CSeqDBGiList::FindId(const CSeq_id & id)
 {
