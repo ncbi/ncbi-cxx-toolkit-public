@@ -201,7 +201,7 @@ static void s_ProcessInstitutionCollectionCodeLine(const CTempString& line)
 {
     vector<string> tokens;
     NStr::Split(line, "\t", tokens);
-    if (tokens.size() < 2) {
+    if (tokens.size() < 3) {
 //        ERR_POST_X(1, Warning << "Bad format in institution_codes.txt entry " << line
 //                   << "; disregarding");
     } else {
