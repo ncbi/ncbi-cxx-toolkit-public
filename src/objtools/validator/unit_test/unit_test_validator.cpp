@@ -6194,21 +6194,12 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
-    unit_test_util::MakeSeqLong(entry->SetSeq());
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "true");
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_isolation_source, "foo");
-    seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BioSourceInconsistency",
-                              "Uncultured bacterium sequence length is suspiciously high"));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    scope.RemoveTopLevelSeqEntry(seh);
     entry = unit_test_util::BuildGoodSeq();
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "true");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetErrCode("EnvironSampleMissingQualifier");
-    expected_errors[0]->SetErrMsg("Environmental sample should also have isolation source or specific host annotated");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, 
+        "EnvironSampleMissingQualifier",
+        "Environmental sample should also have isolation source or specific host annotated"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
