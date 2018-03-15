@@ -161,15 +161,15 @@ void CSeqDBLMDBEntry::NegativeSeqIdsToOids(const vector<string>& ids, vector<bla
 	x_AdjustOidsOffset(rv);
 }
 
-void CSeqDBLMDBEntry::TaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv) const
+void CSeqDBLMDBEntry::TaxIdsToOids(const set<Int4>& tax_ids, vector<blastdb::TOid>& rv, vector<Int4> & tax_ids_found) const
 {
-	m_LMDB->GetOidsForTaxIds(tax_ids, rv);
+	m_LMDB->GetOidsForTaxIds(tax_ids, rv, tax_ids_found);
 	x_AdjustOidsOffset_TaxList(rv);
 }
 
-void CSeqDBLMDBEntry::NegativeTaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv) const
+void CSeqDBLMDBEntry::NegativeTaxIdsToOids(const set<Int4>& tax_ids, vector<blastdb::TOid>& rv, vector<Int4> & tax_ids_found) const
 {
-	m_LMDB->NegativeTaxIdsToOids(tax_ids, rv);
+	m_LMDB->NegativeTaxIdsToOids(tax_ids, rv, tax_ids_found);
 	x_AdjustOidsOffset_TaxList(rv);
 }
 
@@ -292,29 +292,43 @@ void CSeqDBLMDBSet::NegativeSeqIdsToOids(const vector<string>& ids, vector<blast
 
 void CSeqDBLMDBSet::TaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv) const
 {
-	m_LMDBEntrySet[0]->TaxIdsToOids(tax_ids, rv);
+	vector<Int4> tax_ids_found;
+	set<Int4> rv_tax_ids;
+	m_LMDBEntrySet[0]->TaxIdsToOids(tax_ids, rv, tax_ids_found);
+	rv_tax_ids.insert(tax_ids_found.begin(), tax_ids_found.end());
 	for(unsigned int i=1; i < m_LMDBEntrySet.size(); i++) {
 		vector <TOid> tmp;
-		m_LMDBEntrySet[i]->TaxIdsToOids(tax_ids, tmp);
+		m_LMDBEntrySet[i]->TaxIdsToOids(tax_ids, tmp, tax_ids_found);
 		rv.insert(rv.end(), tmp.begin(), tmp.end());
+		if(rv_tax_ids.size() < tax_ids.size()) {
+			rv_tax_ids.insert(tax_ids_found.begin(), tax_ids_found.end());
+		}
 	}
-
 	if(rv.size() == 0) {
 		NCBI_THROW(CSeqDBException, eArgErr, "Taxonomy ID(s) not found.");
 	}
+	tax_ids.swap(rv_tax_ids);
 }
 
 void CSeqDBLMDBSet::NegativeTaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv) const
 {
-	m_LMDBEntrySet[0]->NegativeTaxIdsToOids(tax_ids, rv);
+	vector<Int4> tax_ids_found;
+	set<Int4> rv_tax_ids;
+	m_LMDBEntrySet[0]->NegativeTaxIdsToOids(tax_ids, rv, tax_ids_found);
+	rv_tax_ids.insert(tax_ids_found.begin(), tax_ids_found.end());
 	for(unsigned int i=1; i < m_LMDBEntrySet.size(); i++) {
 		vector <TOid> tmp;
-		m_LMDBEntrySet[i]->NegativeTaxIdsToOids(tax_ids, tmp);
+		m_LMDBEntrySet[i]->NegativeTaxIdsToOids(tax_ids, tmp, tax_ids_found);
 		rv.insert(rv.end(), tmp.begin(), tmp.end());
+		if(rv_tax_ids.size() < tax_ids.size()) {
+			rv_tax_ids.insert(tax_ids_found.begin(), tax_ids_found.end());
+		}
 	}
 	if(rv.size() == 0) {
 		NCBI_THROW(CSeqDBException, eArgErr, "Taxonomy ID(s) not found.");
 	}
+
+	tax_ids.swap(rv_tax_ids);
 }
 
 void CSeqDBLMDBSet::GetDBTaxIds(set<Int4> & tax_ids) const

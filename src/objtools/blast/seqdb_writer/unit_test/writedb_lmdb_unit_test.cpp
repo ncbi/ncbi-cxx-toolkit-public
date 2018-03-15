@@ -124,19 +124,20 @@ BOOST_AUTO_TEST_CASE(CreateLMDBFile)
 		vector<blastdb::TOid> tax_oids;
 		set<Int4> tax_ids;
 		tax_ids.insert(10239);
-		test_db.GetOidsForTaxIds(tax_ids, tax_oids);
+		vector<Int4> rv_tax_ids;
+		test_db.GetOidsForTaxIds(tax_ids, tax_oids, rv_tax_ids);
 		for(unsigned int i=0; i < tax_ids.size(); i++) {
 			BOOST_REQUIRE_EQUAL(tax_oids[i] % 5, 4);
 		}
 
-		test_db.NegativeTaxIdsToOids(tax_ids, tax_oids);
+		test_db.NegativeTaxIdsToOids(tax_ids, tax_oids, rv_tax_ids);
 		BOOST_REQUIRE_EQUAL(tax_oids.size(), 0);
 
 		tax_ids.clear();
 		tax_ids.insert(9606);
 		tax_ids.insert(562);
-		test_db.NegativeTaxIdsToOids(tax_ids, tax_oids);
-		for(unsigned int i=0; i < tax_ids.size(); i++) {
+		test_db.NegativeTaxIdsToOids(tax_ids, tax_oids, rv_tax_ids);
+		for(unsigned int i=0; i < rv_tax_ids.size(); i++) {
 			BOOST_REQUIRE((tax_oids[i] % 5 < 2));
 		}
 

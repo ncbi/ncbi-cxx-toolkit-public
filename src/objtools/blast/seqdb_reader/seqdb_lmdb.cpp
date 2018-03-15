@@ -450,13 +450,13 @@ void CSeqDBLMDB::GetDBTaxIds(vector<Int4> & tax_ids) const
     }
 }
 
-void CSeqDBLMDB::GetOidsForTaxIds(set<Int4> & tax_ids, vector<blastdb::TOid>& oids) const
+void CSeqDBLMDB::GetOidsForTaxIds(const set<Int4> & tax_ids, vector<blastdb::TOid>& oids, vector<Int4> & tax_ids_found) const
 {
 
     try {
     oids.clear();
+    tax_ids_found.clear();
     vector<Uint8> offsets;
-    vector<int>  tax_ids_found;
 	lmdb::env & env = CBlastLMDBManager::GetInstance().GetReadEnv(m_TaxId2OffsetsFile);
 	{
     auto txn = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
@@ -505,11 +505,6 @@ void CSeqDBLMDB::GetOidsForTaxIds(set<Int4> & tax_ids, vector<blastdb::TOid>& oi
 
     blastdb::SortAndUnique <blastdb::TOid> (oids);
 
-    if((oids.size() > 0) && (tax_ids_found.size() < tax_ids.size())) {
-    	tax_ids.clear();
-    	tax_ids.insert(tax_ids_found.begin(), tax_ids_found.end());
-    }
-
     } catch (lmdb::error & e) {
    		string dbname;
        	CSeqDB_Path(m_TaxId2OffsetsFile).FindBaseName().GetString(dbname);
@@ -556,11 +551,11 @@ void CLookupTaxIds::GetTaxIdListForOid(blastdb::TOid oid, vector<Int4> & taxid_l
 }
 
 void
-CSeqDBLMDB::NegativeTaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv) const
+CSeqDBLMDB::NegativeTaxIdsToOids(const set<Int4>& tax_ids, vector<blastdb::TOid>& rv, vector<Int4> & tax_ids_found) const
 {
 	rv.clear();
 	vector<blastdb::TOid> oids;
-	GetOidsForTaxIds(tax_ids, oids);
+	GetOidsForTaxIds(tax_ids, oids, tax_ids_found);
 
 	CMemoryFile oid_file(m_Oid2TaxIdsFile);
 	set<Int4> tax_id_list(tax_ids.begin(), tax_ids.end());

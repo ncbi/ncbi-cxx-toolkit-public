@@ -100,9 +100,9 @@ public:
 
     void NegativeSeqIdsToOids(const vector<string>& ids, vector<blastdb::TOid>& rv) const;
 
-    void TaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv) const;
+    void TaxIdsToOids(const set<Int4>& tax_ids, vector<blastdb::TOid>& rv, vector<Int4> & tax_ids_found) const;
 
-    void NegativeTaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv) const;
+    void NegativeTaxIdsToOids(const set<Int4>& tax_ids, vector<blastdb::TOid>& rv, vector<Int4> & tax_ids_found) const;
 
     void GetDBTaxIds(vector<Int4> & tax_ids) const;
 

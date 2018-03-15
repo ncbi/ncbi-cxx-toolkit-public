@@ -80,11 +80,11 @@ public:
     void NegativeSeqIdsToOids(const vector<string>& ids, vector<blastdb::TOid>& rv) const;
 
     /// Get Oids for Tax Ids list,denitcal Oids are merged.
-    void GetOidsForTaxIds(set<Int4> & tax_ids, vector<blastdb::TOid>& oids) const;
+    void GetOidsForTaxIds(const set<Int4> & tax_ids, vector<blastdb::TOid>& oids, vector<Int4> & tax_ids_found) const;
 
     /// Get Oids to exclude for Tax ids
     /// @parm ids Tax ids list needs to be sorted
-    void NegativeTaxIdsToOids(set<Int4>& ids, vector<blastdb::TOid>& rv) const;
+    void NegativeTaxIdsToOids(const set<Int4>& ids, vector<blastdb::TOid>& rv, vector<Int4> & tax_ids_found) const;
 
     /// Get All Unique Tax Ids for db
     /// @parma tax_ids  Return all unique tax ids found in db
