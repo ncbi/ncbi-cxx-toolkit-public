@@ -268,42 +268,41 @@ static size_t GetSortOrderId(const string& subitem, CReportNode& node)
 
 DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
 {
-    CReportNode report,
-                final_report;
+    CReportNode report, final_report;
     CReportNode::TNodeMap& the_map = m_Objs.GetMap();
     TReportObjectList& all = m_Objs["all"].GetObjects();
     size_t total = all.size();
     TReportObjPtrMap all_missing;
-    ITERATE (TReportObjectList, it, all) {
-        all_missing[it->GetPointer()] = *it;
+    for (auto it: all) {
+        all_missing[it] = it;
     }
 
-    NON_CONST_ITERATE (CReportNode::TNodeMap, it, the_map) {
-        if (it->first == "all") {
+    for (auto it: the_map) {
+        if (it.first == "all") {
             continue;
         }
-        string qual = it->first;
+        string qual = it.first;
         size_t bins = 0;
         size_t uniq = 0;
         size_t num = 0;
         size_t pres = m_Objs["all"][qual].GetObjects().size();
         size_t mul = m_Objs["all"][qual]["*"].GetObjects().size();
         TReportObjPtrMap missing = all_missing;
-        CReportNode::TNodeMap& sub = it->second->GetMap();
+        CReportNode::TNodeMap& sub = it.second->GetMap();
         TStringStringObjVectorMap capital;
-        NON_CONST_ITERATE (CReportNode::TNodeMap, jj, sub) {
-            TReportObjectList& obj = jj->second->GetObjects();
+        for (auto jj: sub) {
+            TReportObjectList& obj = jj.second->GetObjects();
             bins++;
             num += obj.size();
             uniq += obj.size() == 1 ? 1 : 0;
-            string upper = jj->first;
+            string upper = jj.first;
             upper = NStr::ToUpper(upper);
-            ITERATE (TReportObjectList, o, obj) {
-                missing.erase(o->GetPointer());
-                capital[upper][jj->first].push_back(*o);
+            for (auto o: obj) {
+                missing.erase(o);
+                capital[upper][jj.first].push_back(o);
             }
         }
-        string diagnosis = OrderQual(it->first);
+        string diagnosis = OrderQual(it.first);
         diagnosis += " (";
         diagnosis += pres == total ? "all present" : "some missing";
         diagnosis += ", ";
@@ -311,84 +310,87 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
         diagnosis += mul ? ", some multi)" : ")";
         report[diagnosis];
 
-        if ((num != total || bins != 1) && (it->first == "collection-date" || it->first == "country" || it->first == "isolation-source" || it->first == "strain" || it->first == "isolate")) {
+        if ((num != total || bins != 1) && (it.first == "collection-date" || it.first == "country" || it.first == "isolation-source" || it.first == "strain" || it.first == "isolate")) {
             final_report[diagnosis].Fatal();
         }
 
         if ((bins > capital.size() || (num < total && capital.size() == 1))
-            && (it->first == "country" || it->first == "collection-date" || it->first == "isolation-source")) { // autofixable
+            && (it.first == "country" || it.first == "collection-date" || it.first == "isolation-source")) { // autofixable
             CRef<CSourseQualsAutofixData> fix;
             if (bins > capital.size()) { // capitalization
-                ITERATE (TStringStringObjVectorMap, cap, capital) {
-                    const TStringObjVectorMap& objs = cap->second;
+                for (auto cap: capital) {
+                    const TStringObjVectorMap& objs = cap.second;
                     if (objs.size() < 2) {
-
-                        AddObjsToReport(diagnosis, objs, it->first, report);
+                        AddObjsToReport(diagnosis, objs, it.first, report);
                         continue;
                     }
                     size_t best_count = 0;
                     fix.Reset(new CSourseQualsAutofixData);
-                    fix->m_Qualifier = it->first;
+                    fix->m_Qualifier = it.first;
                     fix->m_User = context.GetUserData();
-                    ITERATE(TStringObjVectorMap, x, objs) {
-                        fix->m_Choice.push_back(x->first);
-                        if (best_count < x->second.size()) {
-                            best_count = x->second.size();
-                            fix->m_Value = x->first;
+                    for (auto x: objs) {
+                        fix->m_Choice.push_back(x.first);
+                        if (best_count < x.second.size()) {
+                            best_count = x.second.size();
+                            fix->m_Value = x.first;
                         }
                     }
-                    ITERATE(TStringObjVectorMap, x, objs) {
-                        const vector<CRef<CReportObj> >& v = x->second;
-                        ITERATE (vector<CRef<CReportObj> >, o, v) {
-                            report[diagnosis]["[n] source[s] [has] inconsistent capitalization: " + it->first + " (" + x->first + ")"].Add(*((const CDiscrepancyObject&)**o).Clone(true, CRef<CObject>(fix.GetNCPointer())));
+                    for (auto x: objs) {
+                        for (auto o: x.second) {
+                            report[diagnosis]["[n] source[s] [has] inconsistent capitalization: " + it.first + " (" + x.first + ")"].Add(*((const CDiscrepancyObject&)*o).Clone(true, CRef<CObject>(fix.GetNCPointer())));
                         }
                     }
                 }
             }
             else {
-                AddObjsToReport(diagnosis, sub, it->first, report);
+                AddObjsToReport(diagnosis, sub, it.first, report);
             }
 
             if (num < total) { // some missing
                 if (capital.size() == 1 && num / (float)total >= context.GetSesameStreetCutoff()) { // all same and autofixable
                     if (fix.IsNull()) {
                         fix.Reset(new CSourseQualsAutofixData);
-                        fix->m_Qualifier = it->first;
+                        fix->m_Qualifier = it.first;
                         fix->m_Value = sub.begin()->first;
                         fix->m_User = context.GetUserData();
                     }
-                    ITERATE (TReportObjPtrMap, o, missing) {
-                        report[diagnosis]["[n] source[s] [has] missing " + it->first + " (" + sub.begin()->first + ")"].Add(*((const CDiscrepancyObject&)*o->second).Clone(true, CRef<CObject>(fix.GetNCPointer())));
+                    for (auto o: missing) {
+                        report[diagnosis]["[n] source[s] [has] missing " + it.first + " (" + sub.begin()->first + ")"].Add(*((const CDiscrepancyObject&)*o.second).Clone(true, CRef<CObject>(fix.GetNCPointer())));
                     }
                 }
                 else {
-                    ITERATE(TReportObjPtrMap, o, missing) {
-                        CRef<CReportObj> r = o->second;
-                        report[diagnosis]["[n] source[s] [has] missing " + it->first].Add(*r);
+                    for (auto o: missing) {
+                        CRef<CReportObj> r = o.second;
+                        report[diagnosis]["[n] source[s] [has] missing " + it.first].Add(*r);
                     }
                 }
             }
         }
         else { // not autofixable
-            AddObjsToReport(diagnosis, sub, it->first, report);
-
-            ITERATE(TReportObjPtrMap, o, missing) {
-                CRef<CReportObj> r = o->second;
-                report[diagnosis]["[n] source[s] [has] missing " + it->first].Add(*r);
+            AddObjsToReport(diagnosis, sub, it.first, report);
+            for (auto o: missing) {
+                CRef<CReportObj> r = o.second;
+                report[diagnosis]["[n] source[s] [has] missing " + it.first].Add(*r);
             }
         }
 
         static const size_t MAX_NUM_STR_LEN = 20;
-
-        NON_CONST_ITERATE(CReportNode::TNodeMap, item, report[diagnosis].GetMap()) {
-
+        for (auto item: report[diagnosis].GetMap()) {
             // It builds a key for map to be looked like "[*00000000000000000123*]<old_key>" to keep a required sort order
-            size_t sort_order_id = GetSortOrderId(item->first, *item->second);
+            size_t sort_order_id = GetSortOrderId(item.first, *item.second);
             string sort_order_str = NStr::SizetToString(sort_order_id);
             string leading_zeros(MAX_NUM_STR_LEN - sort_order_str.size(), '0');
-            string subitem = "[*" + leading_zeros + sort_order_str + "*]" + item->first;
+            string subitem = "[*" + leading_zeros + sort_order_str + "*]" + item.first;
 
-            final_report[diagnosis][subitem].Copy(item->second);
+            if (pres == total && (uniq == num || bins == 1)) {
+                final_report[diagnosis];
+                if (item.second->GetCount()) {
+                    final_report[diagnosis][subitem].SetCount(item.second->GetCount());
+                }
+            }
+            else {
+                final_report[diagnosis][subitem].Copy(item.second);
+            }
         }
     }
     m_ReportItems = final_report.Export(*this)->GetSubitems();
