@@ -563,16 +563,12 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
     }
 
     // Precondition check.
-    if (params.GetServerName().empty() ||
-        (!TDbapi_CanUseKerberos::GetDefault()
-         &&  (params.GetUserName().empty()
-              ||  params.GetPassword().empty())))
+    if (!TDbapi_CanUseKerberos::GetDefault()
+        &&  (params.GetUserName().empty()
+             ||  params.GetPassword().empty()))
     {
         string err_msg("Insufficient info/credentials to connect.");
 
-        if (params.GetServerName().empty()) {
-            err_msg += " Server name has not been set.";
-        }
         if (params.GetUserName().empty()) {
             err_msg += " User name has not been set.";
         }
