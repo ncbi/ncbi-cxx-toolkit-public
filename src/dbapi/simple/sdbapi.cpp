@@ -3044,7 +3044,10 @@ CQueryImpl::HasMoreResultSets(void)
     _TRACE(m_CurRowNo << " row(s) from query.");
 
     if (m_CallStmt) {
-        m_Status = m_CallStmt->GetReturnStatus();
+        try {
+            m_Status = m_CallStmt->GetReturnStatus();
+        } catch (CDB_ClientEx&) {
+        }
     }
     if (m_RowCount == 0) {
         if (m_CurRowNo != 0) {
