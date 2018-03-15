@@ -1291,19 +1291,16 @@ static string s_InsertSpacesBetweenTokens(const string &old_str)
     return new_str;
 }
 
-static bool s_IsNumber(const string &token)
+static bool s_IsNumber(const string &token, double *result = NULL)
 {
-    bool success = true;
-    double num = 0;
-    try
+    double num = NStr::StringToDouble(token, NStr::fConvErr_NoThrow);
+    if (!num && errno) 
     {
-	num = NStr::StringToDouble(token);
+        return false;
     }
-    catch(const CException&)
-    {
-	success = false;
-    }
-    return success;
+    if (result)
+	*result = num;
+    return true;
 }
 
 static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers, vector<int> &precision, vector<string> &lat_long,  vector<string> &nsew)
@@ -1313,17 +1310,8 @@ static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers,
     {
 	string &token = tokens[i];
 	
-	bool success = true;
-	double num = 0;
-	try
-	{
-	    num = NStr::StringToDouble(token);
-	}
-	catch(const CException&)
-	{
-	    success = false;
-	}
-	if (success)
+	double num;
+	if (s_IsNumber(token, &num))
 	{
 	    numbers.push_back(num);
 	    pattern.push_back("1");
@@ -1338,15 +1326,16 @@ static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers,
 	{
 	    vector<string> tmp;
 	    NStr::Split(token, ".", tmp);
-	    if (tmp.size() == 3 && s_IsNumber(tmp[0]) && s_IsNumber(tmp[1]) && s_IsNumber(tmp[2]))
+	    double num0, num1, num2;
+	    if (tmp.size() == 3 && s_IsNumber(tmp[0], &num0) && s_IsNumber(tmp[1], &num1) && s_IsNumber(tmp[2], &num2))
 	    {
-		numbers.push_back(NStr::StringToDouble(tmp[0]));
+		numbers.push_back(num0);
 		pattern.push_back("1");
 		precision.push_back(0);
-		numbers.push_back(NStr::StringToDouble(tmp[1]));
+		numbers.push_back(num1);
 		pattern.push_back("1");
 		precision.push_back(0);
-		numbers.push_back(NStr::StringToDouble(tmp[2]));
+		numbers.push_back(num2);
 		pattern.push_back("1");
 		precision.push_back(0);
 		continue;
