@@ -7,14 +7,11 @@ set(MODULE_IMPORT )
 set(MODULE_PATH objects/variation_libs/dbsnp/search_by_rsid)
 
 set(MODULE_EXT "asn")
-add_library(search_by_rsid ${MODULE}__ ${MODULE}___)
+add_library(searchbyrsid ${MODULE}__ ${MODULE}___)
 
 RunDatatool("${MODULE}" "${MODULE_IMPORT}")
 
-target_link_libraries(${MODULE}
+target_link_libraries(searchbyrsid
     general-lib trackmgr
 )
 
-#target_link_libraries(searchbyrsid
-#    seq
-#)

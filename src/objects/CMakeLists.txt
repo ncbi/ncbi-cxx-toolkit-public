@@ -100,7 +100,7 @@ add_dependencies(taxon1 seq)
 add_dependencies(taxon3 seq)
 add_dependencies(trackmgr seq)
 add_dependencies(variation seq)
-add_dependencies(search_by_rsid general-lib trackmgr)
+add_dependencies(searchbyrsid general-lib trackmgr)
 add_dependencies(xnetblast seqset scoremat seq)
 
 
