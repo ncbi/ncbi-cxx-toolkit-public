@@ -1494,14 +1494,18 @@ bool CSeqDBNegativeList::FindId(const CSeq_id & id, bool & match_type)
         }
     } else {
         match_type = (GetNumSis() > 0) ? true : false;
-        
+
+        if(match_type) {
+        	if(FindSi(GetBlastSeqIdString(id, true))) return true;
+        	if(FindSi(GetBlastSeqIdString(id, false))) return true;
+
+        	// For isam lookup
             Int8 num_id;
             string str_id;
             bool simpler;
             
             SeqDB_SimplifySeqid(*(const_cast<CSeq_id *>(&id)), 0, num_id, str_id, simpler);
             
-        if(match_type) {
             if (FindSi(str_id)) {
                 return true;
             }
