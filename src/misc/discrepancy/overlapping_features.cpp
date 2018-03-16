@@ -154,11 +154,11 @@ DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
         CRef<CCode_break> code_break(new CCode_break);
         CRef<CSeq_loc> br_loc(new CSeq_loc);
         br_loc->Assign(new_cds->GetLocation());
-        CSeq_loc::TRange rr = br_loc->GetTotalRange();
-        CRef<CSeq_id> seq_id(new CSeq_id);
-        if (!seq_id) {
+        if (!br_loc->GetId()) {
             return CRef<CAutofixReport>(new CAutofixReport("CDS_TRNA_OVERLAP: cannot trim [n] CDS", 1));
         }
+        CSeq_loc::TRange rr = br_loc->GetTotalRange();
+        CRef<CSeq_id> seq_id(new CSeq_id);
         seq_id->Assign(*br_loc->GetId());
         if (br_loc->GetStrand() == eNa_strand_minus) {
             br_loc->SetInt().SetId(*seq_id);
