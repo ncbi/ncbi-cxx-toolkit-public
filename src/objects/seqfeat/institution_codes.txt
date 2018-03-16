@@ -6833,19 +6833,19 @@ UNAC	s	Universidad Nacional Agraria
 UNAD	s	Universidad Nacional Agraria		
 UNAF	s	University of North Alabama, Department of Biology		
 UNAH	s	Universidad Nacional Autonoma de Honduras		
-UNAM	s	Universidad Nacional Autonoma de Mexico	IBUNAM
-UNAM:CNAC	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Acaros
-UNAM:CNAN	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Aracnidos
-UNAM:CNAR	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Anfibios
-UNAM:CNAV	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Aves
-UNAM:CNCR	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Crustaceos
-UNAM:CNHE	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Helmintos
-UNAM:CNIN	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Insectos
-UNAM:CNMA	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Mamiferos
-UNAM:CNMO	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Moluscos
-UNAM:CNNE	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Nematodos
-UNAM:CNPE	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Peces
-UNAM:CNPGG	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional del Phylum Porifera Gerardo Green
+UNAM	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia	IBUNAM
+UNAM:CNAC	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Acaros
+UNAM:CNAN	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Aracnidos
+UNAM:CNAR	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Anfibios
+UNAM:CNAV	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Aves
+UNAM:CNCR	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Crustaceos
+UNAM:CNHE	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Helmintos
+UNAM:CNIN	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Insectos
+UNAM:CNMA	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Mamiferos
+UNAM:CNMO	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Moluscos
+UNAM:CNNE	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Nematodos
+UNAM:CNPE	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Peces
+UNAM:CNPGG	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional del Phylum Porifera Gerardo Green
 UNAN	s	Universidad Nacional Autonoma de Nicaragua		
 UNB	s	Connell Memorial Herbarium		
 UNB<BRA>	s	Universidade de Brasilia, Departamento de Zoologia		
