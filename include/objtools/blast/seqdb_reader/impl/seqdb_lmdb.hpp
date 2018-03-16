@@ -79,11 +79,14 @@ public:
     /// @param rv  Oids that are excluded
     void NegativeSeqIdsToOids(const vector<string>& ids, vector<blastdb::TOid>& rv) const;
 
-    /// Get Oids for Tax Ids list,denitcal Oids are merged.
+    /// Get Oids for Tax Ids list, idenitcal Oids are merged.
+    /// @param tax_ids  Input tax ids /Output tax ids found
+    /// @param oids  Oids found for input tax ids
     void GetOidsForTaxIds(const set<Int4> & tax_ids, vector<blastdb::TOid>& oids, vector<Int4> & tax_ids_found) const;
 
     /// Get Oids to exclude for Tax ids
-    /// @parm ids Tax ids list needs to be sorted
+    /// @parm ids Input tax ids to exclude /Output tax ids found
+    /// @param rv Oids to exclude based on input tax id list
     void NegativeTaxIdsToOids(const set<Int4>& ids, vector<blastdb::TOid>& rv, vector<Int4> & tax_ids_found) const;
 
     /// Get All Unique Tax Ids for db
@@ -103,7 +106,7 @@ private:
 /// @return a file name
 /// @throws std::invalid_argument in case of empty basename argument
 NCBI_XOBJREAD_EXPORT
-string BuildLMDBFileName(const string& basename, bool is_protein);
+string BuildLMDBFileName(const string& basename, bool is_protein, bool use_index=false, unsigned int index=0);
 
 enum ELMDBFileType
 {

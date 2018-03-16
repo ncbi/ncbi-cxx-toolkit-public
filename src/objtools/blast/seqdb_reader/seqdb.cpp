@@ -1446,6 +1446,17 @@ bool DeleteBlastDb(const string& dbpath, CSeqDB::ESeqType seq_type)
         	LOG_POST(Info << "Deleted " << fname);
             num_files_removed++;
         }
+        else {
+        	unsigned int index = 0;
+        	string vfname = dbpath + "." + NStr::IntToString(index/10) +
+        			        NStr::IntToString(index%10) + "." + *lmdb;
+        	while (CFile(vfname).Remove()) {
+        		index++;
+        		vfname = dbpath + "." + NStr::IntToString(index/10) +
+        	    	     NStr::IntToString(index%10) + "." + *lmdb;
+
+        	}
+        }
     }
 
     try { CSeqDB::FindVolumePaths(dbpath, seq_type, db_files, &alias_files); }

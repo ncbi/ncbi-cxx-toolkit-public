@@ -580,12 +580,18 @@ CSeqDBLMDB::NegativeTaxIdsToOids(const set<Int4>& tax_ids, vector<blastdb::TOid>
 	}
 }
 
-string BuildLMDBFileName(const string& basename, bool is_protein)
+string BuildLMDBFileName(const string& basename, bool is_protein, bool use_index, unsigned int index)
 {
     if (basename.empty()) {
         throw invalid_argument("Basename is empty");
     }
-    return basename + (is_protein ? ".pdb" : ".ndb");
+
+    string vol_str=kEmptyStr;
+    if(use_index) {
+    	vol_str = (index > 9) ?".": ".0";
+    	vol_str += NStr::UIntToString(index);
+    }
+    return basename + vol_str + (is_protein ? ".pdb" : ".ndb");
 }
 
 string GetFileNameFromExistingLMDBFile(const string& lmdb_filename, ELMDBFileType file_type)
