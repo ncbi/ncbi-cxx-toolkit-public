@@ -100,6 +100,55 @@ GetTDSServerType(CS_CONNECTION* conn)
 
 #endif
 
+class CAbortBlocker
+{
+public:
+    CAbortBlocker(impl::CConnection& conn);
+    ~CAbortBlocker();
+
+private:
+    impl::CConnection& m_Conn;
+    bool               m_Active;
+};
+
+CAbortBlocker::CAbortBlocker(impl::CConnection& conn)
+    : m_Conn(conn), m_Active(false)
+{
+    unique_ptr<CDB_LangCmd> lcmd
+        (conn.LangCmd("SELECT (@@OPTIONS & 16384) * @@TRANCOUNT"));
+    if ( !lcmd->Send() ) {
+        return;
+    }
+    while (lcmd->HasMoreResults()) {
+        unique_ptr<CDB_Result> res(lcmd->Result());
+        if (res != nullptr   &&  res->ResultType() == eDB_RowResult) {
+            while (res->Fetch()) {
+                CDB_Int i;
+                res->GetItem(&i);
+                if (i.Value() != 0) {
+                    m_Active = true;
+                }
+            }
+        }
+    }
+    if (m_Active) {
+        lcmd.reset(conn.LangCmd("SET XACT_ABORT OFF"));
+        if (lcmd->Send()) {
+            lcmd->DumpResults();
+        }
+    }
+}
+
+CAbortBlocker::~CAbortBlocker()
+{
+    if (m_Active) {
+        unique_ptr<CDB_LangCmd> lcmd(m_Conn.LangCmd("SET XACT_ABORT ON"));
+        if (lcmd->Send()) {
+            lcmd->DumpResults();
+        }
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////
 CTL_Connection::CTL_Connection(CTLibContext& cntx,
                                const CDBConnParams& params)
@@ -1203,6 +1252,7 @@ CTL_Connection::x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& descr_in)
     string q, tpsql = "TEXTPTR(" + descr_in.ColumnName() + ')';
     unique_ptr<CDB_LangCmd> lcmd;
     bool rc = false;
+    CAbortBlocker abort_blocker(*this);
 
     q  = "update " + descr_in.TableName() + " set " + descr_in.ColumnName();
 #ifdef FTDS_IN_USE
