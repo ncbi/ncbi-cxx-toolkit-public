@@ -251,7 +251,7 @@ public:
     void ThrowIfCanceled(void) const;
 
     /// Empty string if unavailable
-    const string & GetTaxname(void) const { return m_Taxname; }
+    const string & GetTaxname(void) const;
 
     /// Empty if no Filetrack URL.
     const string & GetFiletrackURL(void) const { return m_FiletrackURL; }
@@ -279,10 +279,10 @@ private:
     bool x_IsInNucProt(void) const;
     void x_SetLocation(const CSeq_loc* user_loc = 0);
     void x_SetMapper(const CSeq_loc& loc);
-    void x_SetHasMultiIntervalGenes(void);
+    void x_SetHasMultiIntervalGenes(void) const;
     void x_SetDataFromUserObjects(void);
     void x_CheckForShowComments() const;
-    void x_SetTaxname(void);
+    void x_SetTaxname(void) const;
     void x_SetFiletrackURL(const CUser_object& uo);
     void x_SetAuthorizedAccess(const CUser_object& uo);
     void x_SetOpticalMapPoints(void);
@@ -306,7 +306,7 @@ private:
     string                m_TLSMasterAccn;
     string                m_TLSMasterName;
     string                m_FinishingStatus;
-    string                m_Taxname;
+    mutable string        m_Taxname;
     string                m_FiletrackURL;
     vector< string >      m_BasemodURLs;
     string                m_AuthorizedAccess;
@@ -357,10 +357,10 @@ private:
     TGi  m_Gi;
     bool m_ShowGBBSource;
     int  m_PatSeqid;
-    bool m_HasOperon;
-    bool m_HasMultiIntervalGenes;
+    mutable bool m_HasOperon;
+    mutable bool m_HasMultiIntervalGenes;
     bool m_IsGenomeAssembly;
-    bool m_IsCrossKingdom;
+    mutable bool m_IsCrossKingdom;
     TUnverified m_fUnverified;
     mutable bool m_ShowAnnotCommentAsCOMMENT;
     mutable bool m_ShowAnnotCommentAsCOMMENT_checked;
@@ -731,18 +731,6 @@ bool CBioseqContext::IsGenbankFormat(void) const
             Config().IsFormatDDBJ());
 }
 
-
-inline
-bool CBioseqContext::HasOperon(void) const
-{
-    return m_HasOperon;
-}
-
-inline 
-bool CBioseqContext::HasMultiIntervalGenes(void) const
-{
-    return m_HasMultiIntervalGenes;
-}
 
 inline
 void CBioseqContext::ThrowIfCanceled(void) const
