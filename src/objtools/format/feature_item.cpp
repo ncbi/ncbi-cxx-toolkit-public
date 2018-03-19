@@ -1512,12 +1512,17 @@ void CFeatureItem::x_AddQualGeneXref(
 
 //  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddQualOldLocusTag(
+    CBioseqContext& ctx,
     CConstRef<CSeq_feat> gene_feat )
 //
 //  For non-gene features, add /old_locus_tag, if one exists somewhere.
 //  ----------------------------------------------------------------------------
 {
     if ( ! gene_feat ) {
+        return;
+    }
+
+    if ( ctx.IsProt() ) {
         return;
     }
 
@@ -1744,11 +1749,11 @@ void CFeatureItem::x_AddQuals(
     x_AddQualCitation();
     x_AddQualExceptions( ctx );
     x_AddQualNote( gene_feat );
-    x_AddQualOldLocusTag( gene_feat );
+    x_AddQualOldLocusTag( ctx, gene_feat );
     x_AddQualDb( gene_ref );
     x_AddQualGeneXref( gene_ref, gene_feat );
     x_AddQualOperon( ctx, subtype );
-    x_AddQualsGene( gene_ref, gene_feat, gene_ref ? false : gene_feat.NotEmpty() );
+    x_AddQualsGene( ctx, gene_ref, gene_feat, gene_ref ? false : gene_feat.NotEmpty() );
 
     x_AddQualPseudo( ctx, type, subtype, pseudo );
     x_AddQualsGb( ctx );
@@ -2983,6 +2988,7 @@ void CFeatureItem::x_AddGoQuals(
 
 //  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddQualsGene(
+    CBioseqContext& ctx,
     const CGene_ref* gene_ref,
     CConstRef<CSeq_feat>& gene_feat,
     bool from_overlap )
@@ -3068,7 +3074,9 @@ void CFeatureItem::x_AddQualsGene(
 
     //  gene syn:
     if ( gene_ref  ||  okay_to_propage ) {
-        if (locus != NULL) {
+        if ( ctx.IsProt() ) {
+            // skip if GenPept format
+        } else if (locus != NULL) {
             if (syn != NULL) {
                 x_AddQual(eFQ_gene_syn, new CFlatGeneSynonymsQVal(*syn));
             }

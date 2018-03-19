@@ -194,7 +194,7 @@ protected:
         CSeqFeatData::ESubtype, bool );
     void x_AddQualExceptions( CBioseqContext& );
     void x_AddQualNote( CConstRef<CSeq_feat> );
-    void x_AddQualOldLocusTag( CConstRef<CSeq_feat> );
+    void x_AddQualOldLocusTag( CBioseqContext& ctx, CConstRef<CSeq_feat> );
     void x_AddQualDb( const CGene_ref* );
     void x_AddQualSeqfeatNote( CBioseqContext & );
     void x_AddQualTranslation( CBioseq_Handle&, CBioseqContext&, bool );
@@ -232,7 +232,7 @@ protected:
     void x_AddQuals( CBioseqContext& ctx ) { x_AddQuals( ctx, CConstRef<CFeatureItem>() ); }
     void x_AddQuals(const CProt_ref& prot);
     void x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier slot);
-    void x_AddQualsGene(const CGene_ref*, CConstRef<CSeq_feat>&,
+    void x_AddQualsGene(CBioseqContext& ctx, const CGene_ref*, CConstRef<CSeq_feat>&,
         bool from_overlap);
     void x_AddGoQuals(const CUser_object& uo);
     void x_ImportQuals(CBioseqContext& ctx);
