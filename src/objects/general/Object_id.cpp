@@ -88,18 +88,17 @@ bool CObject_id::SetMatching(const CObject_id& oid2)
         return true;
     case e_Str:
     {
+        // try to treat the string as a valid integer the same way as SetStrOrId() does
         const string& str = oid2.GetStr();
-        if ( str.find_first_not_of("0123456789") != NPOS ) {
-            return false;
+        TId id = NStr::StringToNonNegativeInt(str);
+        // leading zeros and + aren't allowed
+        if ( id > 0 && str[0] != '0' && str[0] != '+' ) {
+            // valid positive integer
+            SetId(id);
+            return true;
         }
-        try {
-            SetId(NStr::StringToNumeric<TId>(str));
-        }
-        catch (CStringException&) {
-            // String id can not be converted to integer.
-            return false;
-        }
-        return true;
+        // string can not be converted to a positive integer.
+        return false;
     }
     default:
         return false;
@@ -114,14 +113,18 @@ CObject_id::E_Choice CObject_id::GetIdType(TId8& value) const
         value = Tparent::GetId();
         return e_Id;
     case e_Str:
-        value = NStr::StringToInt8(GetStr(), NStr::fConvErr_NoThrow);
+    {
+        // try to treat the string as a valid integer the same way as SetStrOrId() does
+        // but also allowing any Int8 values
+        const string& str = GetStr();
+        value = NStr::StringToInt8(str, NStr::fConvErr_NoThrow);
         if ( !value ) {
             if ( errno ) {
                 // not convertible to integer
                 return CObject_id::e_Str;
             }
             // converted to 0
-            if ( GetStr().size() != 1 ) {
+            if ( str.size() != 1 ) {
                 // leading zeroes are not allowed
                 return CObject_id::e_Str;
             }
@@ -130,7 +133,7 @@ CObject_id::E_Choice CObject_id::GetIdType(TId8& value) const
         }
         if ( value > 0 ) {
             // non-zero positive value
-            if ( GetStr()[0] == '0' || GetStr()[0] == '+' ) {
+            if ( str[0] == '0' || str[0] == '+' ) {
                 // redundant '+' or leading zeroes are not allowed
                 value = 0;
                 return CObject_id::e_Str;
@@ -138,7 +141,7 @@ CObject_id::E_Choice CObject_id::GetIdType(TId8& value) const
         }
         else {
             // non-zero negative value
-            if ( GetStr()[1] == '0' ) {
+            if ( str[1] == '0' ) {
                 // leading zeroes are not allowed
                 value = 0;
                 return CObject_id::e_Str;
@@ -146,6 +149,7 @@ CObject_id::E_Choice CObject_id::GetIdType(TId8& value) const
         }
         // valid non-zero value as a string
         return CObject_id::e_Id;
+    }
     default:
         value = 0;
         return CObject_id::e_not_set;
@@ -201,6 +205,7 @@ void CObject_id::SetStrOrId(CTempString str)
     if ( !str.empty()  &&  str[0] >= '1'  &&  str[0] <= '9' ) {
         int id = NStr::StringToNonNegativeInt(str);
         if ( id > 0 ) {
+            // converted to a positive integer
             SetId(id);
             return;
         }
