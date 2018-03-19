@@ -163,6 +163,7 @@ done
 
 # detect datatool program path
 datatool=
+wrapper=
 
 if test "$PREBUILT_DATATOOL_EXE" = bootstrap; then
     : # Don't otherwise look for prebuilt installations
@@ -189,6 +190,9 @@ if test -z "$datatool"; then # keep looking
     if test -x "$bindir/datatool"; then
         datatool=$bindir/datatool
         COMMON_AddRunpath "$libdir"
+        if test -n "$DYLD_LIBRARY_PATH"; then
+            wrapper="DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH"
+        fi
     else
         echo "Unable to find datatool." >&2
         exit 2
@@ -218,10 +222,10 @@ case "$MAKE" in
              "MODULE_ASN=$spec" "MODULE_IMPORT='$imports'" \
              "IMPDEPS='$impdeps'" "IMPFILES='$impfiles'" "top_srcdir=$p" \
              "builddir=$build_root/build" "DATATOOL=$datatool" \
-             "MODULE_SEARCH=$search" "$@"
+             "DATATOOL_WRAPPER='$wrapper'" "MODULE_SEARCH=$search" "$@"
         ;;
 esac
 $MAKE -f "$makemodule" "MODULE=$module" "MODULE_PATH=$mp" "MODULE_ASN=$spec" \
       "MODULE_IMPORT=$imports" "IMPDEPS=$impdeps" "IMPFILES=$impfiles" \
       "top_srcdir=$p" "builddir=$build_root/build" "DATATOOL=$datatool" \
-      "MODULE_SEARCH=$search" "$@"
+      "DATATOOL_WRAPPER=$wrapper" "MODULE_SEARCH=$search" "$@"

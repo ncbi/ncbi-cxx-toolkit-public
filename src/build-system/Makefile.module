@@ -39,7 +39,11 @@ purge_all_files:
 
 .NO_PARALLEL:
 $(FILES): $(SPEC) $(DATATOOL) $(MODULE).def $(MODULE).module $(IMPDEPS)
-	$(DATATOOL) -oR $(top_srcdir) -opm $(MODULE_SEARCH) -m $(SPEC) -M "$(IMPFILES)" -oA -oc $(MODULE) -or $(MODULE_PATH) -odi -od $(MODULE).def -oex '' -ocvs -pch 'ncbi_pch.hpp' -fd $(MODULE).dump $(EXTRA_DATATOOL_FLAGS)
+	$(DATATOOL_WRAPPER) $(DATATOOL) -oR $(top_srcdir) \
+	    -opm $(MODULE_SEARCH) -m $(SPEC) -M "$(IMPFILES)" -oA \
+	    -oc $(MODULE) -or $(MODULE_PATH) -odi -od $(MODULE).def -oex '' \
+	    -ocvs -pch 'ncbi_pch.hpp' -fd $(MODULE).dump \
+	    $(EXTRA_DATATOOL_FLAGS)
 	@[ -f .gitignore ] || $(LN_S) .cvsignore .gitignore
 	@cd $(INCLUDEDIR); [ -f .gitignore ] || $(LN_S) .cvsignore .gitignore
 
