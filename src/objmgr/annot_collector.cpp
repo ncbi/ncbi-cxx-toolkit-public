@@ -435,7 +435,7 @@ private:
 CIdRangeMap::CIdRangeMap(const CAnnotObject_Ref& annot_ref,
                          const SAnnotSelector& sel)
 {
-    if ( !annot_ref.HasAnnotObject_Info() ) {
+    if (!annot_ref.IsPlainFeat()) {
         return;
     }
     const CAnnotObject_Info& info = annot_ref.GetAnnotObject_Info();
@@ -1321,8 +1321,8 @@ struct CAnnotObject_Less
 
         if (x.GetMappingInfo().GetMappedObjectType() == CAnnotMapping_Info::eMappedObjType_IdRangeMap  &&
             y.GetMappingInfo().GetMappedObjectType() == CAnnotMapping_Info::eMappedObjType_IdRangeMap  &&
-            !x.GetMappingInfo().GetIdRangeMap().CanSort()  &&
-            !y.GetMappingInfo().GetIdRangeMap().CanSort()) {
+            x.GetMappingInfo().GetIdRangeMap().CanSort()  &&
+            y.GetMappingInfo().GetIdRangeMap().CanSort()) {
             // Perform full location comparison instead of using total range shortcut.
             const CIdRangeMap::TIdRangeMap& x_idmap = x.GetMappingInfo().GetIdRangeMap().GetMap();
             const CIdRangeMap::TIdRangeMap& y_idmap = y.GetMappingInfo().GetIdRangeMap().GetMap();
@@ -1392,8 +1392,8 @@ struct CAnnotObject_LessReverse
 
         if (x.GetMappingInfo().GetMappedObjectType() == CAnnotMapping_Info::eMappedObjType_IdRangeMap  &&
             y.GetMappingInfo().GetMappedObjectType() == CAnnotMapping_Info::eMappedObjType_IdRangeMap &&
-            !x.GetMappingInfo().GetIdRangeMap().CanSort() &&
-            !y.GetMappingInfo().GetIdRangeMap().CanSort()) {
+            x.GetMappingInfo().GetIdRangeMap().CanSort() &&
+            y.GetMappingInfo().GetIdRangeMap().CanSort()) {
             // Perform full location comparison instead of using total range shortcut.
             const CIdRangeMap::TIdRangeMap& x_idmap = x.GetMappingInfo().GetIdRangeMap().GetMap();
             const CIdRangeMap::TIdRangeMap& y_idmap = y.GetMappingInfo().GetIdRangeMap().GetMap();
