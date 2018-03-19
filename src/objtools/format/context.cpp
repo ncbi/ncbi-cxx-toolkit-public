@@ -352,7 +352,14 @@ void CBioseqContext::x_SetHasMultiIntervalGenes(void) const
 
 bool CBioseqContext::HasMultiIntervalGenes(void) const
 {
-// check for indexed version first
+    if (UsingSeqEntryIndex()) {
+        CRef<CSeqEntryIndex> idx = GetSeqEntryIndex();
+        if (! idx) return false;
+        CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (m_Handle);
+        if (! bsx) return false;
+        return bsx->HasMultiIntervalGenes();
+    }
+
     x_SetHasMultiIntervalGenes();
     return m_HasMultiIntervalGenes;
 }
@@ -435,6 +442,17 @@ void CBioseqContext::x_SetTaxname(void) const
 const string& CBioseqContext::GetTaxname(void) const
 {
 // check for indexed version first
+    if (UsingSeqEntryIndex()) {
+        CRef<CSeqEntryIndex> idx = GetSeqEntryIndex();
+        if (idx) {
+            CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (m_Handle);
+            if (bsx) {
+                m_Taxname = bsx->GetTaxname();
+            }
+        }
+        return m_Taxname;
+    }
+
     x_SetTaxname();
     return m_Taxname;
 }
@@ -689,6 +707,14 @@ bool CBioseqContext::x_HasOperon(void) const
 bool CBioseqContext::HasOperon(void) const
 {
 // check for indexed version first
+    if (UsingSeqEntryIndex()) {
+        CRef<CSeqEntryIndex> idx = GetSeqEntryIndex();
+        if (! idx) return false;
+        CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (m_Handle);
+        if (! bsx) return false;
+        return bsx->HasOperon();
+    }
+
     m_HasOperon = x_HasOperon();
     return m_HasOperon;
 }
