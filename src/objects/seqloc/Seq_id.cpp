@@ -1930,17 +1930,7 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
             if ((flags & fParse_ValidLocal) != 0
                 &&  ((flags & fParse_AnyLocal) == fParse_AnyLocal
                      ||  IsValidLocalID(the_id))) {
-#if 0
-                // Reject internal vertical bars when otherwise permissive?
-                if (type == e_Gi  ||  (flags & fParse_AnyRaw) == 0) {
-                    return Set(e_Local, the_id);
-                } else {
-                    SetLocal().SetStr(the_id);
-                    return *this;
-                }
-#else
                 return Set(e_Local, the_id);
-#endif
             } else {
                 NCBI_THROW(CSeqIdException, eFormat,
                            "Malformatted ID " + string(the_id));
@@ -2297,17 +2287,8 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
         break;
 
     case e_Local:
-        {
-            if ( !acc.empty()  &&  acc[0] >= '1'  &&  acc[0] <= '9'
-                &&  (the_id = NStr::StringToNonNegativeInt(acc)) > 0) {
-                SetLocal().SetId(the_id);
-            } else { // to cover case where embedded vertical bar in
-                // string, could add code here, to concat a
-                // '|' and name string, if not null/empty
-                SetLocal().SetStr(acc);
-            }
-            break;
-        }
+        SetLocal().SetStrOrId(acc);
+        break;
 
         // numeric IDs
     case e_Gibbsq:
@@ -2379,13 +2360,7 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
                                                            NStr::eTrunc_Both);
             CDbtag&     dbt  = SetGeneral();
             dbt.SetDb(acc);
-            CObject_id& oid = dbt.SetTag();
-            if ( !name.empty()  &&  name[0] >= '1'  &&  name[0] <= '9'
-                 &&  (the_id = NStr::StringToNonNegativeInt(name)) > 0) {
-                oid.SetId(the_id);
-            } else {
-                oid.SetStr(name);
-            }
+            dbt.SetTag().SetStrOrId(name);
             break;
         }
 
@@ -2692,34 +2667,21 @@ void CSeq_id::GetMatchingIds(TSeqIdHandles& matches) const
     case CSeq_id::e_General:   // CDbtag
         if ( GetGeneral().IsSetTag() ) {
             CSeq_id match;
-            match.Assign(*this);
-            CObject_id& tag = match.SetGeneral().SetTag();
-            switch ( tag.Which() ) {
-            case CObject_id::e_Id:
-                tag.SetStr(NStr::NumericToString(tag.GetId()));
-                break;
-            case CObject_id::e_Str:
-            {
-                const string& str = tag.GetStr();
-                if (str.find_first_not_of("0123456789") != NPOS) return;
-                try {
-                    tag.SetId(NStr::StringToNumeric<CObject_id::TId>(str));
-                }
-                catch (CStringException) {
-                    // String id can not be converted to integer.
-                    return;
-                }
-                break;
+            if ( match.SetGeneral().SetMatching(GetGeneral()) ) {
+                matches.insert(CSeq_id_Handle::GetHandle(match));
             }
-            default:
-                return;
-            }
+        }
+        break;
+    case CSeq_id::e_Local:     // CObject_id
+    {
+        CSeq_id match;
+        if ( match.SetLocal().SetMatching(GetLocal()) ) {
             matches.insert(CSeq_id_Handle::GetHandle(match));
         }
         break;
+    }
     // Other types have no matching versions.
     case CSeq_id::e_not_set:
-    case CSeq_id::e_Local:     // CObject_id
     case CSeq_id::e_Gibbsq:    // int
     case CSeq_id::e_Gibbmt:    // int
     case CSeq_id::e_Giim:      // CGiimport_id

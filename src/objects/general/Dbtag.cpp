@@ -314,6 +314,16 @@ bool CDbtag::Match(const CDbtag& dbt2) const
 }
 
 
+bool CDbtag::SetMatching(const CDbtag& dbt2)
+{
+    if ( !SetTag().SetMatching(dbt2.GetTag()) ) {
+        return false;
+    }
+    SetDb(dbt2.GetDb());
+    return true;
+}
+
+
 int CDbtag::Compare(const CDbtag& dbt2) const
 {
     int ret = PNocase().Compare(GetDb(), dbt2.GetDb());

@@ -773,6 +773,11 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromInt)
 static const char* kTestFastaStrings[] = {
     "lcl|123",
     "lcl|asdf",
+    "lcl|0123",
+    "lcl|0",
+    "lcl|+1",
+    "lcl|-1",
+    "lcl|2147483648",
     "bbs|123",
     "bbm|123",
     "gim|123",
@@ -813,6 +818,14 @@ static void s_TestFastaRoundTrip(const char* s)
     BOOST_TEST_MESSAGE(string("Testing round trip for ") << s);
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(s)));
     BOOST_CHECK_EQUAL(id->AsFastaString(), s);
+    if ( 1 ) {
+        cout << s << endl;
+        CBioseq::TId ids;
+        CSeq_id::ParseFastaIds(ids, s);
+        BOOST_REQUIRE_EQUAL(ids.size(), 1u);
+        BOOST_CHECK_EQUAL(ids.front()->AsFastaString(), s);
+        BOOST_CHECK(ids.front()->Equals(*id));
+    }
     for (SIZE_TYPE pos = strlen(s) - 1;
          pos != NPOS  &&  (s[pos] == '|'  ||  s[pos] == ' ');
          --pos) {

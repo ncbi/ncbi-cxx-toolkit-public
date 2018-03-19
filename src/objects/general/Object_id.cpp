@@ -80,6 +80,33 @@ bool CObject_id::Match(const CObject_id& oid2) const
 }
 
 
+bool CObject_id::SetMatching(const CObject_id& oid2)
+{
+    switch ( oid2.Which() ) {
+    case e_Id:
+        SetStr(NStr::NumericToString(oid2.GetId()));
+        return true;
+    case e_Str:
+    {
+        const string& str = oid2.GetStr();
+        if ( str.find_first_not_of("0123456789") != NPOS ) {
+            return false;
+        }
+        try {
+            SetId(NStr::StringToNumeric<TId>(str));
+        }
+        catch (CStringException&) {
+            // String id can not be converted to integer.
+            return false;
+        }
+        return true;
+    }
+    default:
+        return false;
+    }
+}
+
+
 CObject_id::E_Choice CObject_id::GetIdType(TId8& value) const
 {
     switch ( Tparent::Which() ) {
@@ -166,6 +193,19 @@ void CObject_id::SetId8(TId8 value)
     else {
         NStr::NumericToString(SetStr(), value);
     }
+}
+
+
+void CObject_id::SetStrOrId(CTempString str)
+{
+    if ( !str.empty()  &&  str[0] >= '1'  &&  str[0] <= '9' ) {
+        int id = NStr::StringToNonNegativeInt(str);
+        if ( id > 0 ) {
+            SetId(id);
+            return;
+        }
+    }
+    SetStr(str);
 }
 
 

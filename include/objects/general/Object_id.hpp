@@ -66,8 +66,13 @@ public:
     TId GetId(void) const;
 #endif
 
-    // identical ids?
+    // matching id? (int-string)
     bool Match(const CObject_id& oid2) const;
+    // Set this id to me matching to the argument
+    // return false if there is no matching id
+    bool SetMatching(const CObject_id& oid2);
+    
+    // identical ids?
     int Compare(const CObject_id& oid2) const;
     bool operator<(const CObject_id& id2) const;
 
@@ -90,6 +95,10 @@ public:
     TIntId GetGi(void) const;
     NCBI_WARN_UNUSED_RESULT bool GetGi(TIntId& value) const;
     void SetGi(TIntId value);
+
+    // Set integer id part if the argument is a positive integer without leading zeros
+    // otherwise set str part.
+    void SetStrOrId(CTempString str);
 
     // format contents into a stream
     ostream& AsString(ostream &s) const;
