@@ -60,23 +60,7 @@ CObject_id::~CObject_id(void)
 // match for identity
 bool CObject_id::Match(const CObject_id& oid2) const
 {
-#if 0
-    E_Choice type = Which();
-
-    if ( type != oid2.Which() )
-        return false;
-
-    switch ( type ) {
-    case e_Id:
-        return GetId() == oid2.GetId();
-    case e_Str:
-        return PNocase().Equals(GetStr(), oid2.GetStr());
-    default:
-        return this == &oid2;
-    }
-#else
     return Compare(oid2) == 0;
-#endif
 }
 
 
