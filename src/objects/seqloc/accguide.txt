@@ -116,6 +116,9 @@ version  1 # of file format
 4+8   T???  ddbj_targeted_nuc
 4+9   T???  ddbj_targeted_nuc
 4+10  T???  ddbj_targeted_nuc
+4+8   U???  embl_wgs_nuc
+4+9   U???  embl_wgs_nuc
+4+10  U???  embl_wgs_nuc
 
 # Mass sequence Genome for Annotation
 5+7   A???? ddbj_other_nuc
