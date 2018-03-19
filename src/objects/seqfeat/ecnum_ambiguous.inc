@@ -747,6 +747,8 @@ static const char* const kECNum_ambiguous[] = {
     "6.1.1.n\tLigases forming aminoacyl-tRNA and related compounds",
     "6.1.2.-\tAcid--alcohol ligases (ester synthases)",
     "6.1.2.n\tAcid--alcohol ligases (ester synthases)",
+    "6.1.3.-\tCyclo-ligases",
+    "6.1.3.n\tCyclo-ligases",
     "6.2.-.-\tForming carbon-sulfur bonds",
     "6.2.n.n\tForming carbon-sulfur bonds",
     "6.2.1.-\tAcid--thiol ligases",

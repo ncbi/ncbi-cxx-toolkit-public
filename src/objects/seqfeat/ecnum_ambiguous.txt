@@ -714,6 +714,8 @@
 6.1.1.n	Ligases forming aminoacyl-tRNA and related compounds
 6.1.2.-	Acid--alcohol ligases (ester synthases)
 6.1.2.n	Acid--alcohol ligases (ester synthases)
+6.1.3.-	Cyclo-ligases
+6.1.3.n	Cyclo-ligases
 6.2.-.-	Forming carbon-sulfur bonds
 6.2.n.n	Forming carbon-sulfur bonds
 6.2.1.-	Acid--thiol ligases
