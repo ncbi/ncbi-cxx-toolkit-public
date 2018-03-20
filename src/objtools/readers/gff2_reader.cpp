@@ -217,7 +217,7 @@ CGff2Reader::ReadSeqAnnot(
             }
 
             if ( CGff2Reader::IsAlignmentData(line)) {
-                if ((m_iFlags && fGenbankMode)  ||  
+                if ((m_iFlags & fGenbankMode)  ||  
                         x_ParseAlignmentGff(line, id_list, alignments)) {
                     continue;
                 }
@@ -387,7 +387,7 @@ void CGff2Reader::xPostProcessAnnot(
 //  ----------------------------------------------------------------------------
 {
     xAssignAnnotId(pAnnot);
-    if (!(m_iFlags && fGenbankMode)) {
+    if (!(m_iFlags & fGenbankMode)) {
         //xAssignTrackData(pAnnot);
         xAddConversionInfo(pAnnot, pEC);
         xGenerateParentChildXrefs(pAnnot);

@@ -59,11 +59,10 @@ class NCBI_XOBJREAD_EXPORT CGff2Reader
     : public CReaderBase
 {
 public:
-    typedef enum {
+    typedef enum {  // Must be consistent with flags in CReaderBase
         fNormal =       0,
-//        fNewCode =      0x1000, // for now don't clobber CGFFReader flags
-        fGenbankMode =  0x2000,
-        fRetainLocusIds = 0x4000,
+        fGenbankMode =  1 << 4,
+        fRetainLocusIds = 1 << 5,
     } TFlags;
 
     typedef map<string, CRef<CSeq_feat> > IdToFeatureMap;
