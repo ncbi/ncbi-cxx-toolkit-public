@@ -43,8 +43,9 @@ using namespace std;
 #define DBI_COUNT       6
 #define THREAD_COUNT    1024
 
-#define MAP_SIZE_INIT   (256L * 1024 * 1024 * 1024)
-#define MAP_SIZE_DELTA  (16L * 1024 * 1024 * 1024)
+#define MAP_SIZE_INIT               (256L * 1024 * 1024 * 1024)
+#define MAP_SIZE_DELTA              (16L * 1024 * 1024 * 1024)
+#define VALGRIND_MAP_SIZE_DELTA     (256L * 1024 * 1024)
 
 constexpr const char* const CAccVerCacheDB::META_DB;
 
@@ -94,9 +95,15 @@ void CAccVerCacheDB::Open(const string &  db_path,
     m_Env.set_max_dbs(DBI_COUNT);
     m_Env.set_max_readers(THREAD_COUNT);
 
-    int64_t     mapsize = MAP_SIZE_INIT;
-    if (stat_rv == 0 && st.st_size + MAP_SIZE_DELTA >  mapsize)
-        mapsize = st.st_size + MAP_SIZE_DELTA;
+    int64_t     mapsize;
+    if (getenv("NCBI_RUN_UNDER_VALGRIND") == NULL) {
+        // Not under valgrind, so consume a lot
+        mapsize = MAP_SIZE_INIT;
+        if (stat_rv == 0 && st.st_size + MAP_SIZE_DELTA >  mapsize)
+            mapsize = st.st_size + MAP_SIZE_DELTA;
+    } else {
+        mapsize = st.st_size + VALGRIND_MAP_SIZE_DELTA;
+    }
 
     m_Env.set_mapsize(mapsize);
     m_Env.open(db_path.c_str(),
