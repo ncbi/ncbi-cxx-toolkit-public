@@ -50,6 +50,8 @@
 #include <stack>
 #include <atomic>
 #include <thread>
+#include <unordered_set>
+
 
 #if defined(NCBI_OS_MSWIN)
 #  include <io.h>
@@ -2284,6 +2286,168 @@ bool CDiagContext_Extra::x_CanPrint(void)
 }
 
 
+static const char* kNcbiApplogKeywordStrings[] = {
+    // ncbi_phid, self_url and http_referrer are reported by corelib and cgi
+    // and should not be renamed.
+    /*
+    "ncbi_phid",
+    "self_url",
+    "http_referrer",
+    */
+    "app",
+    "host",
+    "ip",
+    "ip_addr",
+    "session_id",
+    "date",
+    "datetime",
+    "time",
+    "guid",
+    "acc_time_secs",
+    "bytes_in_bit",
+    "bytes_out_bit",
+    "day",
+    "day_of_week",
+    "day_of_year",
+    "exec_time_msec_bit",
+    "start_time_msec",
+    "second",
+    "minute",
+    "hour",
+    "iter",
+    "month",
+    "pid",
+    "status",
+    "tid",
+    "year",
+    "geo_metro_code",
+    "geo_latitude_hundredths",
+    "geo_longitude_hundredths",
+    "session_pageviews",
+    "ping_count",
+    "session_duration",
+    "visit_duration",
+    "time_on_page",
+    "time_to_last_ping",
+    "bytes_in",
+    "bytes_out",
+    "exec_time_msec",
+    "self_url_path",
+    "self_url_host",
+    "self_url_file",
+    "self_url_file_ext",
+    "self_url_top_level_dir",
+    "self_url_directory",
+    "referrer",
+    "ref_url",
+    "ref_host",
+    "http_referer",
+    "referer",
+    "prev_phid",
+    "interactive_hit",
+    "statusuidlookup",
+    "usageuidlookup",
+    "all",
+    "has_app_data",
+    "has_critical",
+    "has_duplicate_nexus",
+    "has_duplicate_phid",
+    "has_error",
+    "has_fatal",
+    "has_info",
+    "has_multiple_phid",
+    "has_ping",
+    "has_start",
+    "has_stop",
+    "has_warning",
+    "is_app_hit",
+    "is_perf",
+    "multiple_session_hit",
+    "multiple_session_ip",
+    "ncbi_phid_first_render",
+    "phid_from_other_request",
+    "phid_stack_ambiguous_relationship",
+    "phid_stack_has_fake_child",
+    "phid_stack_has_fake_parent",
+    "phid_stack_missing_child",
+    "phid_stack_missing_parent",
+    "phid_stack_multivalued",
+    "session_bot",
+    "session_bot_by_ip",
+    "session_bot_by_rate",
+    "session_bot_by_user_agent",
+    "session_bot_ip",
+    "session_has_ping",
+    "browser_name",
+    "browser_version",
+    "browser_major_version",
+    "browser_platform",
+    "browser_engine",
+    "is_mobile",
+    "is_tablet",
+    "is_phone",
+    "is_browser_bot",
+    "applog_db_path",
+    "applog_db_size",
+    "applog_db_size_hit_fraction",
+    "applog_db_machine",
+    "applog_db_vol_id",
+    "applog_db_type",
+    "applog_db_date_tag",
+    "applog_db_date_range",
+    "applog_db_stream",
+    "applog_db_create_time",
+    "applog_db_modify_time",
+    "applog_db_state",
+    "applog_db_uid",
+    "applog_db_agent_host",
+    "applog_db_agent_pid",
+    "applog_db_agent_tid",
+    "applog_db_volume_served_time",
+    "phid_stack_missing_parent",
+    "phid_stack_missing_child",
+    "phid_stack_has_fake_child",
+    "phid_stack_has_fake_parent",
+    "phid_stack_ambiguous_relationship",
+    "phid_stack_multivalued",
+    "ncbi_phid_first_render",
+    "multiple_session_hit",
+    "has_ping",
+    "session_has_ping",
+    "has_duplicate_nexus",
+    "has_app_data",
+    "has_multiple_phid",
+    "multi_hit_phid",
+    "session_bot_by_rate",
+    "session_bot_by_user_agent",
+    "session_bot",
+    "session_bot_by_ip",
+    "session_bot_ip",
+    "multiple_session_ip",
+    "collapsed_jsevent"
+};
+
+
+struct SNcbiApplogKeywordsInit
+{
+    typedef unordered_set<string> TKeywords;
+    
+    TKeywords* Create(void)
+    {
+        TKeywords* kw = new TKeywords;
+        int sz = sizeof(kNcbiApplogKeywordStrings) / sizeof(kNcbiApplogKeywordStrings[0]);
+        for (int i = 0; i < sz; ++i) {
+            kw->insert(kNcbiApplogKeywordStrings[i]);
+        }
+        return kw;
+    }
+
+    void Cleanup(TKeywords& /*keywords*/) {}
+};
+
+
+static CSafeStatic<SNcbiApplogKeywordsInit::TKeywords, SNcbiApplogKeywordsInit> s_NcbiApplogKeywords;
+
 CDiagContext_Extra&
 CDiagContext_Extra::Print(const string& name, const string& value)
 {
@@ -2294,10 +2458,23 @@ CDiagContext_Extra::Print(const string& name, const string& value)
     if ( !m_Args ) {
         m_Args = new TExtraArgs;
     }
+
     // Optimize inserting new pair into the args list, it is the same as:
     //     m_Args->push_back(TExtraArg(name, value));
     m_Args->push_back(TExtraArg(kEmptyStr, kEmptyStr));
-    m_Args->rbegin()->first.assign(name);
+
+    // If arg name is a reserved applog keywork, rename it and log warning.
+    SNcbiApplogKeywordsInit::TKeywords& kw = s_NcbiApplogKeywords.Get();
+    if (kw.find(name) == kw.end()) {
+        m_Args->rbegin()->first.assign(name);
+    }
+    else {
+        string renamed = "auto_renamed_applog_keyword__";
+        m_Args->rbegin()->first.assign(renamed + name);
+        ERR_POST("'" << name
+            << "' is a reserved NCBI AppLog keyword, so it has been renamed to "
+            << renamed);
+    }
     m_Args->rbegin()->second.assign(value);
     return *this;
 }
