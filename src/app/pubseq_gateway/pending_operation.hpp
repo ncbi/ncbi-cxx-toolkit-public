@@ -60,7 +60,7 @@ public:
     ~CPendingOperation();
     void Clear();
     void Start(HST::CHttpReply<CPendingOperation>& resp);
-    void Peek(HST::CHttpReply<CPendingOperation>& resp);
+    void Peek(HST::CHttpReply<CPendingOperation>& resp, bool  need_wait);
 
     void Cancel(void)
     {

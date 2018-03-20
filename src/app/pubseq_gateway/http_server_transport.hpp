@@ -314,7 +314,7 @@ public:
             if (!m_Postponed)
                 NCBI_THROW(CPubseqGatewayException, eRequestNotPostponed,
                            "Request has not been postponed");
-            m_PendingRec->Peek(*this);
+            m_PendingRec->Peek(*this, true);
         } catch (const std::exception &  e) {
             Error(e.what());
         } catch (...) {

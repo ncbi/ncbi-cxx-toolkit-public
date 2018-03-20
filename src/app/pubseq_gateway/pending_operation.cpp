@@ -132,7 +132,7 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
             if (is_last)
                 m_FinishedRead = true;
             if (resp.IsOutputReady())
-                Peek(resp);
+                Peek(resp, false);
         }
     );
 
@@ -140,7 +140,8 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
 }
 
 
-void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp)
+void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp,
+                             bool  need_wait)
 {
     if (m_Cancelled) {
         if (resp.IsOutputReady() && !resp.IsFinished()) {
@@ -152,7 +153,9 @@ void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp)
     // 2 -> check if we have ready-to-send buffers
     // 3 -> call resp->  to send what we have if it is ready
     if (m_Loader) {
-        m_Loader->Wait();
+        if (need_wait) {
+            m_Loader->Wait();
+        }
         if (m_Loader->HasError() && resp.IsOutputReady() && !resp.IsFinished()) {
             resp.Send503("error", m_Loader->LastError().c_str());
             return;
