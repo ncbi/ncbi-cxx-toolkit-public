@@ -368,6 +368,13 @@ void CRequestContext::SetHitID(const string& hit)
 }
 
 
+// Use old output format if the flag is set
+NCBI_PARAM_DECL(int, Log, Issued_SubHit_Limit);
+NCBI_PARAM_DEF_EX(int, Log, Issued_SubHit_Limit, 200, eParam_NoThread,
+    LOG_ISSUED_SUBHIT_LIMIT);
+typedef NCBI_PARAM_TYPE(Log, Issued_SubHit_Limit) TIssuedSubHitLimitParam;
+
+
 void CRequestContext::x_UpdateSubHitID(bool increment, CTempString prefix)
 {
     _ASSERT(IsSetHitID());
@@ -382,7 +389,7 @@ void CRequestContext::x_UpdateSubHitID(bool increment, CTempString prefix)
     // Cache the string so that C code can use it.
     string subhit = prefix + NStr::NumericToString(sub_hit_id);
     m_SubHitIDCache += "." + subhit;
-    if ( increment ) {
+    if (increment  &&  sub_hit_id <= TIssuedSubHitLimitParam::GetDefault()) {
         GetDiagContext().Extra().Print("issued_subhit", subhit);
     }
 }
