@@ -1146,6 +1146,21 @@ BOOST_AUTO_TEST_CASE(FetchSeq24)
 }
 
 
+BOOST_AUTO_TEST_CASE(FetchSeq25)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("HAHQ01000001");
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(bsh);
+    BOOST_CHECK_EQUAL(bsh.GetSequenceType(), CSeq_inst::eMol_rna);
+}
+
+
 BOOST_AUTO_TEST_CASE(FetchSeqGnl1)
 {
     // have standard gnl id
