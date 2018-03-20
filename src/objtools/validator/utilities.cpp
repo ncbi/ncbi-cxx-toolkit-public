@@ -2008,8 +2008,10 @@ string SpecificHostValueToCheck(const string& val)
 {
     if (NStr::IsBlank(val)) {
         return val;
+#if 0
     } else if (! isupper (val.c_str()[0])) {
         return kEmptyStr;
+#endif
     }
 
     string host = val;

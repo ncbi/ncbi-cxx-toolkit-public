@@ -7211,6 +7211,14 @@ BOOST_AUTO_TEST_CASE(Test_Validity_SpecificHost)
 {
 	string host, error_msg;
 
+    host = "home sapiens";
+	BOOST_CHECK_EQUAL(false, IsSpecificHostValid(host, error_msg));
+	BOOST_CHECK_EQUAL(error_msg, "Specific host value is misspelled: home sapiens");
+
+    host = "Svalbard rock ptarmigan";
+	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
+	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
+
     host = "Racoon";
 	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
 	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
@@ -7278,6 +7286,10 @@ BOOST_AUTO_TEST_CASE(Test_Validity_SpecificHost)
 BOOST_AUTO_TEST_CASE(Test_FixSpecificHost)
 {
 	string hostfix, host;
+
+    host = "home sapiens";
+    hostfix = FixSpecificHost(host);
+    BOOST_CHECK_EQUAL(hostfix, "Homo sapiens");
 
     host = "homo sapiens";
     hostfix = FixSpecificHost(host);
@@ -20848,7 +20860,8 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
     CTaxValidationAndCleanup tval;
     tval.Init(*entry);
     vector<CRef<COrg_ref> > org_rq_list = tval.GetSpecificHostLookupRequest(true);
-    BOOST_CHECK_EQUAL(org_rq_list.size(), test_values.size() - 3); // three homo sapiens are combined
+    // three homo sapiens are combined, but two Atlantic white-sided dolphin values are used
+    BOOST_CHECK_EQUAL(org_rq_list.size(), test_values.size() - 1);
 
     objects::CTaxon3 taxon3;
     taxon3.Init();
@@ -21033,7 +21046,8 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFixIncremental)
     CTaxValidationAndCleanup tval;
     tval.Init(*entry);
     vector<CRef<COrg_ref> > spec_host_rq = tval.GetSpecificHostLookupRequest(true);
-    BOOST_CHECK_EQUAL(spec_host_rq.size(), test_values.size() - 3); // two homo sapiens are combined
+    // three homo sapiens are combined, but two Atlantic white-sided dolphin values are used
+    BOOST_CHECK_EQUAL(spec_host_rq.size(), test_values.size() - 1);
 
     objects::CTaxon3 taxon3;
     taxon3.Init();
