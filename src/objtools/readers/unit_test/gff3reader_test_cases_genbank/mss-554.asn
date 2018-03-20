@@ -1,7 +1,4 @@
 Seq-annot ::= {
-  id {
-    local str "scaffold01"
-  },
   data ftable {
     {
       id local id 1,

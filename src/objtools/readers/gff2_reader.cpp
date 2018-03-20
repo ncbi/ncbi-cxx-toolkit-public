@@ -405,27 +405,10 @@ void CGff2Reader::xAssignAnnotId(
     }
 
     string annotId(givenId);
-    if (annotId.empty()) {
-        if (m_iFlags & CGff2Reader::fGenbankMode) {
-            if (!pAnnot->GetData().IsFtable()) {
-                return;
-            }
-            if (pAnnot->GetData().GetFtable().empty()) {
-                return;
-            }
-            annotId = pAnnot->GetData().GetFtable().front()->GetLocation().GetId()->
-                GetSeqIdString(true);
-        }
-        else {
-            if (annotId.empty()) {
-                if (m_pTrackDefaults) {
-                    annotId = m_pTrackDefaults->Name();
-                }
-            }
-            if (annotId.empty()) {
-                return;
-            }
-        }
+    if (annotId.empty() && 
+        (!(m_iFlags & fGenbankMode)) &&
+        m_pTrackDefaults) {
+        annotId = m_pTrackDefaults->Name();
     }
     if (annotId.empty()) {
         return;
