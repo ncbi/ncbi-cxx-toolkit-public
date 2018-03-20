@@ -65,7 +65,7 @@ public:
     // return false if there is no matching id
     // @sa SetStrOrId()
     // @sa GetIdType()
-    bool SetMatching(const CObject_id& oid2);
+    bool SetAsMatchingTo(const CObject_id& oid2);
     
     // identical ids?
     int Compare(const CObject_id& oid2) const;
@@ -79,7 +79,7 @@ public:
     // If the result is e_Id the integer id will be returned by Int8 value,
     // otherwise the value will be set to 0.
     // @sa SetStrOrId()
-    // @sa SetMatching()
+    // @sa SetAsMatchingTo()
     typedef Int8 TId8;
     E_Choice GetIdType(TId8& value) const;
 
@@ -95,7 +95,7 @@ public:
 
     // Set integer id part if the argument is a positive integer without leading zeros
     // otherwise set str part.
-    // @sa SetMatching()
+    // @sa SetAsMatchingTo()
     // @sa GetIdType()
     void SetStrOrId(CTempString str);
 

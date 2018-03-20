@@ -2667,7 +2667,7 @@ void CSeq_id::GetMatchingIds(TSeqIdHandles& matches) const
     case CSeq_id::e_General:   // CDbtag
         if ( GetGeneral().IsSetTag() ) {
             CSeq_id match;
-            if ( match.SetGeneral().SetMatching(GetGeneral()) ) {
+            if ( match.SetGeneral().SetAsMatchingTo(GetGeneral()) ) {
                 matches.insert(CSeq_id_Handle::GetHandle(match));
             }
         }
@@ -2675,7 +2675,7 @@ void CSeq_id::GetMatchingIds(TSeqIdHandles& matches) const
     case CSeq_id::e_Local:     // CObject_id
     {
         CSeq_id match;
-        if ( match.SetLocal().SetMatching(GetLocal()) ) {
+        if ( match.SetLocal().SetAsMatchingTo(GetLocal()) ) {
             matches.insert(CSeq_id_Handle::GetHandle(match));
         }
         break;

@@ -243,7 +243,7 @@ public:
     bool Match(const CDbtag& dbt2) const;
     // Set this id to me matching to the argument
     // return false if there is no matching id
-    bool SetMatching(const CDbtag& dbt2);
+    bool SetAsMatchingTo(const CDbtag& dbt2);
     
     // Appends a label to "label" based on content of CDbtag
     void GetLabel(string* label) const;

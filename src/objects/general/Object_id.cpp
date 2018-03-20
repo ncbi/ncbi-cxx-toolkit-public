@@ -64,7 +64,7 @@ bool CObject_id::Match(const CObject_id& oid2) const
 }
 
 
-bool CObject_id::SetMatching(const CObject_id& oid2)
+bool CObject_id::SetAsMatchingTo(const CObject_id& oid2)
 {
     switch ( oid2.Which() ) {
     case e_Id:

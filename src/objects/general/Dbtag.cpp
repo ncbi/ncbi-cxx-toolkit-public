@@ -314,9 +314,9 @@ bool CDbtag::Match(const CDbtag& dbt2) const
 }
 
 
-bool CDbtag::SetMatching(const CDbtag& dbt2)
+bool CDbtag::SetAsMatchingTo(const CDbtag& dbt2)
 {
-    if ( !SetTag().SetMatching(dbt2.GetTag()) ) {
+    if ( !SetTag().SetAsMatchingTo(dbt2.GetTag()) ) {
         return false;
     }
     SetDb(dbt2.GetDb());
