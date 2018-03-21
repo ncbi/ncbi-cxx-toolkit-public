@@ -2293,6 +2293,7 @@ static const char* kNcbiApplogKeywordStrings[] = {
     "ncbi_phid",
     "self_url",
     "http_referrer",
+    "prev_phid",
     */
     "app",
     "host",
@@ -2343,7 +2344,6 @@ static const char* kNcbiApplogKeywordStrings[] = {
     "ref_host",
     "http_referer",
     "referer",
-    "prev_phid",
     "interactive_hit",
     "statusuidlookup",
     "usageuidlookup",
