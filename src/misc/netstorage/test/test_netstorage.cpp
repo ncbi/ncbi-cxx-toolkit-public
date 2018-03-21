@@ -33,6 +33,11 @@
 
 #include <ncbi_pch.hpp>
 
+// Older Boost versions don't yet trust Clang to support variadic macros
+#ifdef __clang__
+#  define BOOST_PP_VARIADICS 1
+#endif
+
 #include <misc/netstorage/netstorage.hpp>
 
 #include <corelib/request_ctx.hpp>
