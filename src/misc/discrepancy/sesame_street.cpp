@@ -386,6 +386,7 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
                 final_report[diagnosis];
                 if (item.second->GetCount()) {
                     final_report[diagnosis][subitem].SetCount(item.second->GetCount());
+                    final_report[diagnosis].Incr();
                 }
             }
             else {

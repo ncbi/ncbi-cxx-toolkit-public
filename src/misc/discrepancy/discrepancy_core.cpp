@@ -629,16 +629,16 @@ void CDiscrepancyContext::TestString(const string& str)
 TReportItemList CDiscrepancyGroup::Collect(TDiscrepancyCaseMap& tests, bool all) const
 {
     TReportItemList out;
-    ITERATE (vector<CRef<CDiscrepancyGroup> >, it, m_List) {
-        TReportItemList tmp = (*it)->Collect(tests, false);
-        ITERATE(TReportItemList, tt, tmp) {
-            out.push_back(*tt);
+    for (auto it: m_List) {
+        TReportItemList tmp = it->Collect(tests, false);
+        for (auto tt: tmp) {
+            out.push_back(tt);
         }
     }
     if (!m_Test.empty() && tests.find(m_Test) != tests.end()) {
         TReportItemList tmp = tests[m_Test]->GetReport();
-        ITERATE(TReportItemList, tt, tmp) {
-            out.push_back(*tt);
+        for (auto tt: tmp) {
+            out.push_back(tt);
         }
         tests.erase(m_Test);
     }
@@ -647,32 +647,36 @@ TReportItemList CDiscrepancyGroup::Collect(TDiscrepancyCaseMap& tests, bool all)
         TReportObjectSet hash;
         CRef<CDiscrepancyItem> di(new CDiscrepancyItem(m_Name));
         di->m_Subs = out;
-        ITERATE (TReportItemList, tt, out) {
-            TReportObjectList details = (*tt)->GetDetails();
-            NON_CONST_ITERATE(TReportObjectList, ob, details) {
-                CReportNode::Add(objs, hash, **ob);
+        bool empty = true;
+        for (auto tt: out) {
+            TReportObjectList details = tt->GetDetails();
+            if (!details.empty() || tt->GetCount()) {
+                empty = false;
             }
-            if ((*tt)->CanAutofix()) {
+            for (auto ob: details) {
+                CReportNode::Add(objs, hash, *ob);
+            }
+            if (tt->CanAutofix()) {
                 di->m_Autofix = true;
             }
-            if ((*tt)->IsInfo()) {
+            if (tt->IsInfo()) {
                 di->m_Severity = CDiscrepancyItem::eSeverity_info;
             }
-            else if ((*tt)->IsFatal()) {
+            else if (tt->IsFatal()) {
                 di->m_Severity = CDiscrepancyItem::eSeverity_error;
             }
         }
         di->m_Objs = objs;
         out.clear();
-        if (di->m_Objs.size()) {
+        if (!empty) {
             out.push_back(CRef<CReportItem>(di));
         }
     }
     if (all) {
-        ITERATE(TDiscrepancyCaseMap, it, tests) {
-            TReportItemList list = it->second->GetReport();
-            ITERATE(TReportItemList, it, list) {
-                out.push_back(*it);
+        for (auto it: tests) {
+            TReportItemList list = it.second->GetReport();
+            for (auto it: list) {
+                out.push_back(it);
             }
         }
     }
