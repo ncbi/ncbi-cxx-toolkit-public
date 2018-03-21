@@ -87,6 +87,16 @@ private:
     static pair<mutex, TEndPoints> m_EndPoints;
 };
 
+template <class TItem>
+struct SPSG_Queue
+{
+    using TInput = typename TItem::TInput;
+    using TOutput = typename TItem::TOutput;
+
+    static void ExecuteImpl(TOutput& output, TItem& item, const CDeadline& deadline);
+};
+
+
 pair<once_flag, shared_ptr<SHCT::TIoc>> SHCT::m_Ioc;
 thread_local SHCT::TEndPoints SHCT::m_LocalEndPoints;
 pair<mutex, SHCT::TEndPoints> SHCT::m_EndPoints;
@@ -109,17 +119,48 @@ SHCT::TEndPoint SHCT::x_GetEndPoint(const string& service)
 }
 
 
+template <class TItem>
+void SPSG_Queue<TItem>::ExecuteImpl(TOutput& output, TItem& item, const CDeadline& deadline)
+{
+    bool has_timeout = !deadline.IsInfinite();
+    long wait_ms = has_timeout ? RemainingTimeMs(deadline) : DDRPC::INDEFINITE;
+    bool rv = item.AddRequest(wait_ms);
+    if (!rv) {
+        TItem::SetStatus(output, TOutput::eTimeout, "Timeout on adding request");
+        return;
+    }
+    while (true) {
+        if (item.IsDone()) {
+            item.PopulateData(output);
+            return;
+        }
+        if (has_timeout) wait_ms = RemainingTimeMs(deadline);
+        if (wait_ms <= 0) {
+            item.Cancel();
+            TItem::SetStatus(output, TOutput::eTimeout, "Timeout on waiting result");
+            return;
+        }
+        item.WaitFor(wait_ms);
+    }
+}
+
+
 /** CPSG_BioIdResolutionQueue::SItem */
 
 struct CPSG_BioIdResolutionQueue::SItem
 {
+    using TInput = CPSG_BioId;
+    using TOutput = CPSG_BlobId;
+
     SItem(const string& service, shared_ptr<HCT::io_future> afuture, CPSG_BioId bio_id);
     bool AddRequest(long wait_ms) { return SHCT::GetIoc().add_request(m_Request, wait_ms); }
-    void SyncResolve(CPSG_BlobId& blob_id, const CDeadline& deadline);
     void WaitFor(long timeout_ms);
     bool IsDone() const;
     void Cancel();
     void PopulateData(CPSG_BlobId& blob_id) const;
+
+    static void SetStatus(TOutput& output, TOutput::EStatus status, string message);
+
     shared_ptr<HCT::http2_request> m_Request;
     CPSG_BioId m_BioId;
 };
@@ -129,32 +170,6 @@ CPSG_BioIdResolutionQueue::SItem::SItem(const string& service, shared_ptr<HCT::i
         m_BioId(move(bio_id))
 {
     m_Request->init_request(SHCT::GetEndPoint(service), afuture, "/ID/resolve", "accession=" + m_BioId.GetId());
-}
-
-void CPSG_BioIdResolutionQueue::SItem::SyncResolve(CPSG_BlobId& blob_id, const CDeadline& deadline)
-{
-    bool has_timeout = !deadline.IsInfinite();
-    long wait_ms = has_timeout ? RemainingTimeMs(deadline) : DDRPC::INDEFINITE;
-    bool rv = AddRequest(wait_ms);
-    if (!rv) {
-        blob_id.m_Status = CPSG_BlobId::eTimeout;
-        blob_id.m_Message = "Timeout on adding request";
-        return;
-    }
-    while (true) {
-        if (IsDone()) {
-            PopulateData(blob_id);
-            return;
-        }
-        if (has_timeout) wait_ms = RemainingTimeMs(deadline);
-        if (wait_ms <= 0) {
-            Cancel();
-            blob_id.m_Status = CPSG_BlobId::eTimeout;
-            blob_id.m_Message = "Timeout on waiting result";
-            return;
-        }
-        WaitFor(wait_ms);
-    }
 }
 
 void CPSG_BioIdResolutionQueue::SItem::WaitFor(long timeout_ms)
@@ -216,6 +231,13 @@ void CPSG_BioIdResolutionQueue::SItem::PopulateData(CPSG_BlobId& blob_id) const
 
 }
 
+void CPSG_BioIdResolutionQueue::SItem::SetStatus(TOutput& output, TOutput::EStatus status, string message)
+{
+    output.m_Status = status;
+    output.m_Message = move(message);
+}
+
+
 /** CPSG_BioIdResolutionQueue */
 
 CPSG_BioIdResolutionQueue::CPSG_BioIdResolutionQueue(const string& service) :
@@ -270,7 +292,7 @@ CPSG_BlobId CPSG_BioIdResolutionQueue::Resolve(const string& service, CPSG_BioId
     auto future = make_shared<HCT::io_future>();
     CPSG_BlobId rv(bio_id);
     unique_ptr<SItem> qi(new SItem(service, future, move(bio_id)));
-    qi->SyncResolve(rv, deadline);
+    SPSG_Queue<SItem>::ExecuteImpl(rv, *qi, deadline);
     return rv;
 }
 
@@ -327,13 +349,18 @@ bool CPSG_BioIdResolutionQueue::IsEmpty() const
 
 struct CPSG_BlobRetrievalQueue::SItem
 {
+    using TInput = CPSG_BlobId;
+    using TOutput = CPSG_Blob;
+
     SItem(const string& service, shared_ptr<HCT::io_future> afuture, CPSG_BlobId blob_id);
     bool AddRequest(long wait_ms) { return SHCT::GetIoc().add_request(m_Request, wait_ms); }
-    void SyncRetrieve(CPSG_Blob& blob, const CDeadline& deadline);
     void WaitFor(long timeout_ms);
     bool IsDone() const;
     void Cancel();
     void PopulateData(CPSG_Blob& blob);
+
+    static void SetStatus(TOutput& output, TOutput::EStatus status, string message);
+
     unique_ptr<iostream> m_Stream;
     shared_ptr<HCT::http2_request> m_Request;
     CPSG_BlobId m_BlobId;
@@ -347,32 +374,6 @@ CPSG_BlobRetrievalQueue::SItem::SItem(const string& service, shared_ptr<HCT::io_
     const auto& info = m_BlobId.GetBlobInfo();
     string query("sat=" + to_string(info.sat) + "&sat_key=" + to_string(info.sat_key));
     m_Request->init_request(SHCT::GetEndPoint(service), afuture, "/ID/getblob", move(query));
-}
-
-void CPSG_BlobRetrievalQueue::SItem::SyncRetrieve(CPSG_Blob& blob, const CDeadline& deadline)
-{
-    bool has_timeout = !deadline.IsInfinite();
-    long wait_ms = has_timeout ? RemainingTimeMs(deadline) : DDRPC::INDEFINITE;
-    bool rv = AddRequest(wait_ms);
-    if (!rv) {
-        blob.m_Status = CPSG_Blob::eTimeout;
-        blob.m_Message = "Timeout on adding request";
-        return;
-    }
-    while (true) {
-        if (IsDone()) {
-            PopulateData(blob);
-            return;
-        }
-        if (has_timeout) wait_ms = RemainingTimeMs(deadline);
-        if (wait_ms <= 0) {
-            Cancel();
-            blob.m_Status = CPSG_Blob::eTimeout;
-            blob.m_Message = "Timeout on waiting result";
-            return;
-        }
-        WaitFor(wait_ms);
-    }
 }
 
 void CPSG_BlobRetrievalQueue::SItem::WaitFor(long timeout_ms)
@@ -418,6 +419,13 @@ void CPSG_BlobRetrievalQueue::SItem::PopulateData(CPSG_Blob& blob)
     }
 
 }
+
+void CPSG_BlobRetrievalQueue::SItem::SetStatus(TOutput& output, TOutput::EStatus status, string message)
+{
+    output.m_Status = status;
+    output.m_Message = move(message);
+}
+
 
 /** CPSG_BlobRetrievalQueue */
 
@@ -473,7 +481,7 @@ CPSG_Blob CPSG_BlobRetrievalQueue::Retrieve(const string& service, CPSG_BlobId b
     auto future = make_shared<HCT::io_future>();
     CPSG_Blob rv(blob_id);
     unique_ptr<SItem> qi(new SItem(service, future, move(blob_id)));
-    qi->SyncRetrieve(rv, deadline);
+    SPSG_Queue<SItem>::ExecuteImpl(rv, *qi, deadline);
     return rv;
 }
 
