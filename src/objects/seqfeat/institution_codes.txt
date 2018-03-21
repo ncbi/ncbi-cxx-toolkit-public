@@ -1018,7 +1018,7 @@ CHPU	s	Chelyabinsk State Pedagogical University, Botany Department
 CHR	s	Allan Herbarium	LCR:CHR
 CHRB	s	Rutgers University - Cook College		
 CHRG	s	Grosvenor Museum		
-CHSC	s	California State University, Biological Sciences Department		
+CHSC	s	California State University, Chico		
 CHT	s	Cheltenham College		
 CHUG	s	Garyounis University, Botany Department		
 CHULA	c	Microbiology Department Faculty of Science		
@@ -1114,7 +1114,7 @@ CMBGCAS	c	Collection of Marine Biological Germplasm
 CMBK	s	The City Museum and Art Gallery, Department of Natural History		
 CMBY	s	Camberley Museum		
 CMC<MEX>	s	Coleccion Mastozoologica del Centro de Investigacion en Biodiversidad y Conservacion,Universidad Autonoma del Estado de Morelos		
-CMC<NZ>	s	Canterbury Museum		
+CMC<NZ>	s	Canterbury Museum	CMNZ
 CMC<USA-MI>	s	Central Michigan University, Department of Biology		
 CMCC	c	National Center for Medical Culture Collections		
 CMCNA	s	Museo de Ciencias Naturales y Antropologicas "Prof. A. Serrano"		
@@ -1135,7 +1135,7 @@ CMMEX	s	Universidad Autonoma de Baja California
 CMMF	h	Jardin botanique de Montreal		
 CMMI	s	Chinese Academy of Traditional Medicine		
 CMML	s	Center for Environmental Management of Military Lands (CEMML)		
-CMN	s	Canadian Museum of Nature		
+CMN	s	Canadian Museum of Nature	NMC<CAN>
 CMN:Annelid	s	Canadian Museum of Nature, Annelid Collection
 CMN:Bird	s	Canadian Museum of Nature, Bird Collection
 CMN:Crustacean	s	Canadian Museum of Nature, Crustacean Collection
@@ -1166,7 +1166,7 @@ CMW	c	Forestry and Agricultural Biotechnology Institute, University of Pretoria,
 CMY	s	R. G. Kar Medical College, Botany Department		
 CN<FR>	s	Universite de Caen		
 CN<UK>	c	Wellcome Collection of Bacteria, Burroughs Wellcome Research Laboratories		
-CNC	s	Canadian National Collection of Insects, Arachnids, and Nematodes		
+CNC	s	Canadian National Collection of Insects, Arachnids, and Nematodes	CNCI
 CNC:Arachnida	s	Canadian National Collection of Insects, Arachnids, and Nematodes, Arachnida (Mites, Ticks, Spiders)
 CNC:Coleoptera	s	Canadian National Collection of Insects, Arachnids, and Nematodes, Coleoptera (Beetles)
 CNC:Diptera	s	Canadian National Collection of Insects, Arachnids, and Nematodes, Diptera (Flies)
@@ -1175,7 +1175,7 @@ CNC:Hymenoptera	s	Canadian National Collection of Insects, Arachnids, and Nemato
 CNC:Lepidoptera	s	Canadian National Collection of Insects, Arachnids, and Nematodes, Lepidoptera (Butterflies, Moths)
 CNC:Miscellaneous	s	Canadian National Collection of Insects, Arachnids, and Nematodes, Miscellaneous Insect Orders
 CNC:Nematoda	s	Canadian National Collection of Insects, Arachnids, and Nematodes, Nematoda (Roundworms)
-CNCI	s	Canadian National Collection Insects		
+CNCI	s	Canadian National Collection Insects	CNC
 CNCM	c	Collection Nationale de Cultures de Microorganismes		
 CNCTC	c	Czech National Collection of Type Cultures		
 CNE	s	Victoria Jubilee Museum		
@@ -1326,7 +1326,7 @@ CSIR	c	Council for Scientific and Industrial Research
 CSIRO	s	Commonwealth Science & Industrial Research Organization		
 CSIRO:Ichthyology	s	Commonwealth Science & Industrial Research Organization, Australian National Fish Collection
 CSJ	s	Colegio de San Jose, Museo de Historia Natural, Medellin		
-CSLA	s	California State University, Department of Biological Sciences		
+CSLA	s	California State University,Los Angeles		
 CSLB	s	California State University at Long Beach		
 CSMA	c	Centro di Studio dei Microorganismi Autotrofi - CNR		
 CSPM	s	Colegio Lasalle Palma de Mallorca		
@@ -2000,7 +2000,7 @@ FRSKU	s	Kyoto University, Fisheries Research Station
 FRU	s	National Academy of Science, Kyrgyzstan, Laboratory of Flora		
 FSAG	s	Faculte des Sciences Agronomiques de Gembloux		
 FSC<CAN>	c	Fredericton Stock Culture Collection		
-FSC<USA-CA>	s	California State University, Biology Department		
+FSC<USA-CA>	s	California State University, Fresno		
 FSCA	s	Florida State Collection of Arthropods, Florida Department of  Agriculture and Consumer Services, Division of Plant Industry		
 FSCL	s	Florida Southern College, Biology Department		
 FSFRL	s	Far Seas Fisheries Research Laboratory		
@@ -2305,7 +2305,6 @@ HAVI	s	Eastern Mennonite University, Biology Department
 HAVO	s	Hawaii Volcanoes National Park		
 HAW	s	University of Hawaii, Botany Department		
 HAX	s	Belle Vue Museum		
-HAY	s	California State University, Biological Sciences Department		
 HB	s	Herbarium Bradeanum		
 HBA	h	National Botanic Garden of Latvia		
 HBARC	h	Bhabha Atomic Research Centre		
@@ -5889,7 +5888,7 @@ SHOR	s	Shorter College, Biology Department
 SHSND	s	North Dakota Heritage Center		
 SHST	s	Sam Houston State University, Department of Biological Sciences		
 SHSU	s	Sam Houston State University, Vertebrate Natural History Collection		
-SHTC	s	California State University, Biology Department		
+SHTC	s	California State University, Stanislaus		
 SHTU	s	Shanghai Teachers University, Biology Department		
 SHY	s	Rowley's House Museum		
 SHYAN	s	Shropshire Archaeological and Natural History Society		
