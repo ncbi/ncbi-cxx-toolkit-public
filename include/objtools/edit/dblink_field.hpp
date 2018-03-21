@@ -75,9 +75,9 @@ public:
     virtual void SetConstraint(const string& field_name, CConstRef<CStringConstraint> string_constraint) override;
     virtual bool AllowMultipleValues() override { return true; };
     virtual bool SetVal(CObject& object, const string & newValue, EExistingText existing_text = eExistingText_replace_old) override;
-    bool SetVal(CUser_field& field, const string & newValue, EExistingText existing_text);
     bool SetVal(CSeqdesc& object, const string & newValue, EExistingText existing_text);
     bool SetVal(CUser_object& object, const string & newValue, EExistingText existing_text);
+    bool SetVal(CUser_field& field, const string & newValue, EExistingText existing_text);
     virtual string GetLabel() const;
     static EDBLinkFieldType GetTypeForLabel(string label);
     static string GetLabelForType(EDBLinkFieldType field_type);
@@ -87,6 +87,7 @@ public:
     static CRef<CUser_object> MakeUserObject();
 
 protected:
+    void _ParseAndAppend(CUser_field::C_Data::TStrs& strs, const string & newValue, EExistingText existing_text);
     EDBLinkFieldType m_FieldType;
     EDBLinkFieldType m_ConstraintFieldType;
     CRef<CStringConstraint> m_StringConstraint;

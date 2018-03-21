@@ -75,8 +75,6 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/seqport_util.hpp>
 
-#include <objects/seq/seq_id_mapper.hpp>
-
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_set.hpp>
 

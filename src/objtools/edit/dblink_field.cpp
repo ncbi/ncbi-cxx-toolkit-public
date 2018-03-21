@@ -117,18 +117,45 @@ bool CDBLinkField::SetVal(CUser_object& user, const string & newValue, EExisting
 }
 
 
+void CDBLinkField::_ParseAndAppend(CUser_field::C_Data::TStrs& strs, const string & newValue, EExistingText existing_text)
+{
+    vector<CTempStringEx> l;
+    NStr::Split(newValue, ",", l);
+    if (existing_text == eExistingText_replace_old || strs.empty())
+    {
+        strs.clear();
+        for (auto v : l)
+        {
+            strs.push_back(v);
+        }
+    }
+    else
+    {
+        for (auto v : l)
+        {
+            for (auto s : strs)
+            {
+                if (m_ConstraintFieldType != m_FieldType || !m_StringConstraint  || m_StringConstraint->DoesTextMatch(s))
+                   AddValueToString(s, v, existing_text);
+            }
+        }
+    }
+}
+
 bool CDBLinkField::SetVal(CUser_field& field, const string & newValue, EExistingText existing_text)
 {
     bool rval = false;
     
     if (field.IsSetData()) {
+#if 0
         if (field.GetData().IsStr()) {
             string curr_val = field.GetData().GetStr();
             if (m_ConstraintFieldType != m_FieldType || !m_StringConstraint
                 || m_StringConstraint->DoesTextMatch(curr_val)) {
+                CUser_field::C_Data::TStrs& strs = field.SetData().SetStrs();
                 if (existing_text == eExistingText_add_qual) {
-                    field.SetData().SetStrs().push_back(curr_val);
-                    field.SetData().SetStrs().push_back(newValue);
+                    _ParseAndAppend(strs, curr_val);
+                    _ParseAndAppend(strs, newValue);
                     rval = true;
                 } else if (AddValueToString(curr_val, newValue, existing_text)) {
                     field.SetData().SetStrs().push_back(curr_val);
@@ -154,14 +181,24 @@ bool CDBLinkField::SetVal(CUser_field& field, const string & newValue, EExisting
                 rval = true;
             }
         }
+#else
+        // first convert older format into newer
+        if (field.GetData().IsStr()) {
+            string curr_val = field.GetData().GetStr();
+            CUser_field::C_Data::TStrs& strs = field.SetData().SetStrs();
+            _ParseAndAppend(strs, curr_val, eExistingText_replace_old);
+        }
+        CUser_field::C_Data::TStrs& strs = field.SetData().SetStrs();
+        _ParseAndAppend(strs, newValue, existing_text);
+#endif
     } else if (m_ConstraintFieldType != m_FieldType || !m_StringConstraint) {
-        field.SetData().SetStrs().push_back(newValue);
+        _ParseAndAppend(field.SetData().SetStrs(), newValue, eExistingText_replace_old);
         rval = true;
     }
    
-    if (rval && field.IsSetData() && field.GetData().IsStrs())
+    if (field.IsSetData() && field.GetData().IsStrs())
     {
-        field.SetNum(field.GetData().GetStrs().size());
+        field.SetNum(CUser_field::TNum(field.GetData().GetStrs().size()));
     }
     return rval;
 }
