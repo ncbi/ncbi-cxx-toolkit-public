@@ -45,6 +45,7 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <util/strsearch.hpp>
+#include <objects/seq/seq_id_mapper.hpp>
 #include <util/range_coll.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
@@ -874,7 +875,6 @@ private:
     CConstRef<CSeq_loc> m_HardMask;
     TSeqPos             m_Width;
     EGapMode            m_GapMode;
-    typedef set<CSeq_id_Handle> TSeq_id_HandleSet;
     TSeq_id_HandleSet   m_PreviousWholeIds;
     // avoid recomputing for every sequence
     typedef AutoPtr<char, ArrayDeleter<char> > TCharBuf;
