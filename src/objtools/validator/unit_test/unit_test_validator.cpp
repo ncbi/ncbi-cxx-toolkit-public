@@ -7446,7 +7446,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("IZAC");
     ambig.push_back("CCG");
     ambig.push_back("PIN");
-    ambig.push_back("ARC");
     ambig.push_back("HSU");
     ambig.push_back("CAUP");
     ambig.push_back("ISU");
@@ -7612,7 +7611,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("ZMUA");
     ambig.push_back("MZUC");
     ambig.push_back("UCR");
-    ambig.push_back("CS");
     ambig.push_back("BR");
     ambig.push_back("UG");
     ambig.push_back("MDH");
@@ -7749,7 +7747,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("CDA");
     ambig.push_back("IAL");
     ambig.push_back("VI");
-    ambig.push_back("CS");
     ambig.push_back("PCU");
     ambig.push_back("CVCC");
     ambig.push_back("BR");
