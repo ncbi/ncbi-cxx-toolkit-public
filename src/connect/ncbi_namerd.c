@@ -439,7 +439,7 @@ static unsigned short s_GetProxyPort()
     char reg_def_port[24];
     unsigned short port;
 
-    sprintf(reg_def_port, "%hu", REG_NAMERD_PROXY_PORT_DEF);
+    sprintf(reg_def_port, "%d", REG_NAMERD_PROXY_PORT_DEF);
     if ( ! ConnNetInfo_GetValue(REG_NAMERD_SECTION,
         REG_NAMERD_PROXY_PORT_KEY, val, sizeof(val)-1,
         reg_def_port))
@@ -462,7 +462,7 @@ static void s_RemoveCand(struct SNAMERD_Data* data, size_t n, int free_info)
     CORE_TRACEF(("s_RemoveCand() Removing info " FMT_SIZE_T ": %p",
                  n, data->cand[n].info));
 
-    assert(n >= 0  &&  n < data->n_cand);
+    assert(n < data->n_cand);
     if (free_info)
         free((void*) data->cand[n].info);
     if (n < --data->n_cand) {
@@ -477,7 +477,8 @@ static void s_RemoveCand(struct SNAMERD_Data* data, size_t n, int free_info)
 static void s_RemoveStandby(struct SNAMERD_Data* data)
 {
     double  max_rate = 0.0;
-    int     all_standby = 1, i;
+    int     all_standby = 1;
+    size_t  i;
 
     /*  basic logic:
         if any endpoints have rate >= LBSM_STANDBY_THRESHOLD
@@ -486,7 +487,7 @@ static void s_RemoveStandby(struct SNAMERD_Data* data)
             discard all endpoints with rate < highest rate
     */
 
-    for (i = 0;  i < (int)data->n_cand;  ++i) {
+    for (i = 0;  i < data->n_cand;  ++i) {
 
         if (max_rate < data->cand[i].info->rate)
             max_rate = data->cand[i].info->rate;
@@ -495,10 +496,13 @@ static void s_RemoveStandby(struct SNAMERD_Data* data)
             all_standby = 0;
     }
 
-    for (i = (int)data->n_cand - 1;  i >= 0;  --i) {
+    /* Loop from highest index to lowest to ensure well-defined behavior when
+        candidates are removed and to avoid memmove in s_RemoveCand(). */
+    for (i = data->n_cand;  i > 0;  ) {
+        --i; /* decrement here to avoid unsigned underflow */
         if (data->cand[i].info->rate <
                 (all_standby ? max_rate : LBSM_STANDBY_THRESHOLD))
-            s_RemoveCand(data, (size_t)i, 1);
+            s_RemoveCand(data, i, 1);
     }
 }
 
@@ -678,7 +682,7 @@ static EIO_Status s_ReadFullResponse(CONN conn, char** bufp,
     int             max_steps = sizeof(buf_len_steps)/sizeof(buf_len_steps[0]);
     size_t          waste_threshold = 50100;
     size_t          total_got = 0;
-    size_t          buf_len, step_max, step_got;
+    size_t          buf_len = 0, step_max = 0, step_got = 0;
     char*           new_buf;
     int             num_steps;
     EIO_Status      status = eIO_Unknown;
@@ -1316,9 +1320,13 @@ static int/*bool*/ s_IsUpdateNeeded(TNCBI_Time now, struct SNAMERD_Data *data)
             *   there are no candidates; or
             *   any candidates are expired.
         */
-    int any_expired = 0, i;
+    int     any_expired = 0;
+    size_t  i;
 
-    for (i = (int)data->n_cand - 1;  i >= 0;  --i) {
+    /* Loop from highest index to lowest to ensure well-defined behavior when
+        candidates are removed and to avoid memmove in s_RemoveCand(). */
+    for (i = data->n_cand;  i > 0;  ) {
+        --i; /* decrement here to avoid unsigned underflow */
         const SSERV_Info* info = data->cand[i].info;
         if (info->time < now) {
 #if defined(_DEBUG)  &&  ! defined(NDEBUG)
@@ -1332,7 +1340,7 @@ static int/*bool*/ s_IsUpdateNeeded(TNCBI_Time now, struct SNAMERD_Data *data)
                 now - info->time, tnow - now));
 #endif
             any_expired = 1;
-            s_RemoveCand(data, (size_t)i, 1);
+            s_RemoveCand(data, i, 1);
         }
     }
 
