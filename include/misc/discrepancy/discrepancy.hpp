@@ -73,11 +73,14 @@ class NCBI_DISCREPANCY_EXPORT CAutofixReport : public CObject
 {
 public:
     CAutofixReport(const string&s, unsigned int n = 0) : S(s), N(n) {}
+    void AddSubitems(const vector<CRef<CAutofixReport>>& v) { copy(v.begin(), v.end(), back_inserter(V)); }
     string GetS(void) { return S; }
     unsigned int GetN(void) { return N; }
+    const vector<CRef<CAutofixReport>>& GetSubitems() { return V; }
 protected:
     string S;
     unsigned int N;
+    vector<CRef<CAutofixReport>> V;
 };
 typedef string(*TAutofixHook)(void*);
 

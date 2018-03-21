@@ -285,13 +285,12 @@ const void GetProtAndRnaForCDS(const CSeq_feat& cds, CScope& scope, const CSeq_f
 }
 
 
-static unsigned int AutofixProductNames(const CDiscrepancyItem* item, CScope& scope) // Same autofix used in 2 tests
+static void AutofixProductNames(const CDiscrepancyItem* item, CScope& scope, vector<CRef<CAutofixReport>>& report) // Same autofix used in 2 tests
 {
     TReportObjectList list = item->GetDetails();
-    unsigned int n = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
-        if ((*it)->CanAutofix()) {
-            CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
+    for (auto it: list) {
+        if (it->CanAutofix()) {
+            CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer());
             const CSuspect_rule* rule = dynamic_cast<const CSuspect_rule*>(obj.GetMoreInfo().GetPointer());
             const CSeq_feat* cds = dynamic_cast<const CSeq_feat*>(obj.GetObject().GetPointer());
             if (!cds || !rule || !rule->CanGetReplace()) {
@@ -346,19 +345,26 @@ static unsigned int AutofixProductNames(const CDiscrepancyItem* item, CScope& sc
                     CSeq_feat_EditHandle cds_eh(scope.GetSeq_featHandle(*cds));
                     cds_eh.Replace(*new_cds);
                 }
-                n++;
-                dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                string s = "Changed \'" + prot_name + "\' to \'" + newtext + "\' at " + obj.GetLocation();
+                CRef<CAutofixReport> rep(new CAutofixReport(s));
+                report.push_back(rep);
+                dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer())->SetFixed();
             }
         }
     }
-    return n;
 }
 
 
 DISCREPANCY_AUTOFIX(SUSPECT_PRODUCT_NAMES)
 {
-    unsigned int n = AutofixProductNames(item, scope);
-    return CRef<CAutofixReport>(n ? new CAutofixReport("SUSPECT_PRODUCT_NAMES: [n] product name[s] fixed", n) : 0);
+    CRef<CAutofixReport> ret;
+    vector<CRef<CAutofixReport>> report;
+    AutofixProductNames(item, scope, report);
+    if (report.size()) {
+        ret.Reset(new CAutofixReport("SUSPECT_PRODUCT_NAMES"));
+        ret->AddSubitems(report);
+    }
+    return ret;
 }
 
 ///////////////////////////////////// ORGANELLE_PRODUCTS
@@ -409,8 +415,14 @@ DISCREPANCY_SUMMARIZE(ORGANELLE_PRODUCTS)
 
 DISCREPANCY_AUTOFIX(ORGANELLE_PRODUCTS)
 {
-    unsigned int n = AutofixProductNames(item, scope);
-    return CRef<CAutofixReport>(n ? new CAutofixReport("ORGANELLE_PRODUCTS: [n] organelle product name[s] fixed", n) : 0);
+    CRef<CAutofixReport> ret;
+    vector<CRef<CAutofixReport>> report;
+    AutofixProductNames(item, scope, report);
+    if (report.size()) {
+        ret.Reset(new CAutofixReport("ORGANELLE_PRODUCTS"));
+        ret->AddSubitems(report);
+    }
+    return ret;
 }
 
 
