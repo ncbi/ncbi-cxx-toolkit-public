@@ -103,29 +103,34 @@ struct CPSG_BioIdResolutionQueue::SImpl
         using TInput = CPSG_BioId;
         using TOutput = CPSG_BlobId;
 
-        SItem(const string& service, shared_ptr<HCT::io_future> afuture, CPSG_BioId bio_id);
+        SItem(const string& service, shared_ptr<HCT::io_future> afuture, TInput input);
+
         bool AddRequest(long wait_ms) { return SHCT::GetIoc().add_request(m_Request, wait_ms); }
         void WaitFor(long timeout_ms);
         bool IsDone() const;
         void Cancel();
-        void PopulateData(CPSG_BlobId& blob_id) const;
+        void Process(TOutput& output);
 
         static void SetStatus(TOutput& output, TOutput::EStatus status, string message);
 
         shared_ptr<HCT::http2_request> m_Request;
-        CPSG_BioId m_BioId;
+        TInput m_Input;
     };
 
     struct TQueue
     {
         using TItem = SItem;
+        using TInput = CPSG_BioId;
+        using TOutput = CPSG_BlobId;
+        using TInputSet = vector<TInput>;
+        using TOutputSet = vector<TOutput>;
 
         TQueue(const string& service);
 
-        void Resolve(TPSG_BioIds* bio_ids, const CDeadline& deadline);
-        static CPSG_BlobId Resolve(const string& service, CPSG_BioId bio_id, const CDeadline& deadline);
-        TPSG_BlobIds GetBlobIds(const CDeadline& deadline, size_t max_results);
-        void Clear(TPSG_BioIds* bio_ids);
+        void Push(TInputSet* input_set, const CDeadline& deadline);
+        static TOutput Execute(const string& service, TInput input, const CDeadline& deadline);
+        TOutputSet Pop(const CDeadline& deadline, size_t max_results);
+        void Clear(TInputSet* input_set);
         bool IsEmpty() const;
 
     private:
@@ -141,35 +146,40 @@ struct CPSG_BioIdResolutionQueue::SImpl
 
 struct CPSG_BlobRetrievalQueue::SImpl
 {
-    struct SItem
+    struct SSatItem
     {
         using TInput = CPSG_BlobId;
         using TOutput = CPSG_Blob;
 
-        SItem(const string& service, shared_ptr<HCT::io_future> afuture, CPSG_BlobId blob_id);
+        SSatItem(const string& service, shared_ptr<HCT::io_future> afuture, TInput input);
+
         bool AddRequest(long wait_ms) { return SHCT::GetIoc().add_request(m_Request, wait_ms); }
         void WaitFor(long timeout_ms);
         bool IsDone() const;
         void Cancel();
-        void PopulateData(CPSG_Blob& blob);
+        void Process(TOutput& output);
 
         static void SetStatus(TOutput& output, TOutput::EStatus status, string message);
 
         unique_ptr<iostream> m_Stream;
         shared_ptr<HCT::http2_request> m_Request;
-        CPSG_BlobId m_BlobId;
+        TInput m_Input;
     };
 
     struct TSatQueue
     {
-        using TItem = SItem;
+        using TItem = SSatItem;
+        using TInput = CPSG_BlobId;
+        using TOutput = CPSG_Blob;
+        using TInputSet = vector<TInput>;
+        using TOutputSet = vector<TOutput>;
 
         TSatQueue(const string& service);
 
-        void Retrieve(TPSG_BlobIds* blob_ids, const CDeadline& deadline);
-        static CPSG_Blob Retrieve(const string& service, CPSG_BlobId blob_id, const CDeadline& deadline);
-        TPSG_Blobs GetBlobs(const CDeadline& deadline, size_t max_results);
-        void Clear(TPSG_BlobIds* blob_ids);
+        void Push(TInputSet* input_set, const CDeadline& deadline);
+        static TOutput Execute(const string& service, TInput input, const CDeadline& deadline);
+        TOutputSet Pop(const CDeadline& deadline, size_t max_results);
+        void Clear(TInputSet* input_set);
         bool IsEmpty() const;
 
     private:
@@ -218,7 +228,7 @@ void SPSG_Queue<TItem>::ExecuteImpl(TOutput& output, TItem& item, const CDeadlin
     }
     while (true) {
         if (item.IsDone()) {
-            item.PopulateData(output);
+            item.Process(output);
             return;
         }
         if (has_timeout) wait_ms = RemainingTimeMs(deadline);
@@ -232,11 +242,11 @@ void SPSG_Queue<TItem>::ExecuteImpl(TOutput& output, TItem& item, const CDeadlin
 }
 
 
-CPSG_BioIdResolutionQueue::SImpl::SItem::SItem(const string& service, shared_ptr<HCT::io_future> afuture, CPSG_BioId bio_id)
+CPSG_BioIdResolutionQueue::SImpl::SItem::SItem(const string& service, shared_ptr<HCT::io_future> afuture, TInput input)
     :   m_Request(make_shared<HCT::http2_request>()),
-        m_BioId(move(bio_id))
+        m_Input(move(input))
 {
-    m_Request->init_request(SHCT::GetEndPoint(service), afuture, "/ID/resolve", "accession=" + m_BioId.GetId());
+    m_Request->init_request(SHCT::GetEndPoint(service), afuture, "/ID/resolve", "accession=" + m_Input.GetId());
 }
 
 void CPSG_BioIdResolutionQueue::SImpl::SItem::WaitFor(long timeout_ms)
@@ -254,15 +264,15 @@ void CPSG_BioIdResolutionQueue::SImpl::SItem::Cancel()
     m_Request->send_cancel();
 }
 
-void CPSG_BioIdResolutionQueue::SImpl::SItem::PopulateData(CPSG_BlobId& blob_id) const
+void CPSG_BioIdResolutionQueue::SImpl::SItem::Process(TOutput& output)
 {
     if (m_Request->get_result_data().get_cancelled()) {
-        blob_id.m_Status = CPSG_BlobId::eCanceled;
-        blob_id.m_Message = "Request for resolution was canceled";
+        output.m_Status = TOutput::eCanceled;
+        output.m_Message = "Request for resolution was canceled";
     }
     else if (m_Request->has_error()) {
-        blob_id.m_Status = CPSG_BlobId::eUnknownError;
-        blob_id.m_Message = m_Request->get_error_description();
+        output.m_Status = TOutput::eUnknownError;
+        output.m_Message = m_Request->get_error_description();
     }
     else switch (m_Request->get_result_data().get_http_status()) {
         case 200: {
@@ -270,29 +280,29 @@ void CPSG_BioIdResolutionQueue::SImpl::SItem::PopulateData(CPSG_BlobId& blob_id)
             DDRPC::DataRow rec;
             try {
                 DDRPC::AccVerResolverUnpackData(rec, data);
-                blob_id.m_Status = CPSG_BlobId::eSuccess;
-                blob_id.m_BlobInfo.gi               = rec[0].AsInt8;
-                blob_id.m_BlobInfo.seq_length       = rec[1].AsUint4;
-                blob_id.m_BlobInfo.sat              = rec[2].AsUint1;
-                blob_id.m_BlobInfo.sat_key          = rec[3].AsUint4;
-                blob_id.m_BlobInfo.tax_id           = rec[4].AsUint4;
-                blob_id.m_BlobInfo.last_modified    = rec[5].AsDateTime;
-                blob_id.m_BlobInfo.state            = rec[6].AsUint1;
+                output.m_Status = TOutput::eSuccess;
+                output.m_BlobInfo.gi               = rec[0].AsInt8;
+                output.m_BlobInfo.seq_length       = rec[1].AsUint4;
+                output.m_BlobInfo.sat              = rec[2].AsUint1;
+                output.m_BlobInfo.sat_key          = rec[3].AsUint4;
+                output.m_BlobInfo.tax_id           = rec[4].AsUint4;
+                output.m_BlobInfo.last_modified    = rec[5].AsDateTime;
+                output.m_BlobInfo.state            = rec[6].AsUint1;
             }
             catch (const DDRPC::EDdRpcException& e) {
-                blob_id.m_Status = CPSG_BlobId::eUnknownError;
-                blob_id.m_Message = e.what();
+                output.m_Status = TOutput::eUnknownError;
+                output.m_Message = e.what();
             }
             break;
         }
         case 404: {
-            blob_id.m_Status = CPSG_BlobId::eNotFound;
-            blob_id.m_Message = "Bio id is not found";
+            output.m_Status = TOutput::eNotFound;
+            output.m_Message = "Bio id is not found";
             break;
         }
         default: {
-            blob_id.m_Status = CPSG_BlobId::eUnknownError;
-            blob_id.m_Message = "Unexpected result";
+            output.m_Status = TOutput::eUnknownError;
+            output.m_Message = "Unexpected result";
         }
     }
 
@@ -311,18 +321,18 @@ CPSG_BioIdResolutionQueue::SImpl::TQueue::TQueue(const string& service) :
 {
 }
 
-void CPSG_BioIdResolutionQueue::SImpl::TQueue::Resolve(TPSG_BioIds* bio_ids, const CDeadline& deadline)
+void CPSG_BioIdResolutionQueue::SImpl::TQueue::Push(TInputSet* input_set, const CDeadline& deadline)
 {
-    if (!bio_ids)
+    if (!input_set)
         return;
     bool has_timeout = !deadline.IsInfinite();
     unique_lock<mutex> lock(m_Items.second);
     long wait_ms = 0;
-    auto rev_it = bio_ids->rbegin();
-    while (rev_it != bio_ids->rend()) {
+    auto rev_it = input_set->rbegin();
+    while (rev_it != input_set->rend()) {
 
         auto future = static_pointer_cast<HCT::io_future>(m_Future);
-        unique_ptr<SItem> qi(new SItem(m_Service, future, *rev_it));
+        unique_ptr<TItem> qi(new TItem(m_Service, future, *rev_it));
 
         while (true) {
             bool rv = qi->AddRequest(wait_ms);
@@ -338,7 +348,7 @@ void CPSG_BioIdResolutionQueue::SImpl::TQueue::Resolve(TPSG_BioIds* bio_ids, con
             }
             else {
                 m_Items.first.emplace_back(move(qi));
-                bio_ids->erase(next(rev_it.base()));
+                input_set->erase(next(rev_it.base()));
                 ++rev_it;
                 break;
             }
@@ -348,18 +358,18 @@ void CPSG_BioIdResolutionQueue::SImpl::TQueue::Resolve(TPSG_BioIds* bio_ids, con
     }
 }
 
-CPSG_BlobId CPSG_BioIdResolutionQueue::SImpl::TQueue::Resolve(const string& service, CPSG_BioId bio_id, const CDeadline& deadline)
+CPSG_BlobId CPSG_BioIdResolutionQueue::SImpl::TQueue::Execute(const string& service, TInput input, const CDeadline& deadline)
 {
     auto future = make_shared<HCT::io_future>();
-    CPSG_BlobId rv(bio_id);
-    unique_ptr<SItem> qi(new SItem(service, future, move(bio_id)));
-    SPSG_Queue<SItem>::ExecuteImpl(rv, *qi, deadline);
+    TOutput rv(input);
+    unique_ptr<TItem> qi(new TItem(service, future, move(input)));
+    SPSG_Queue<TItem>::ExecuteImpl(rv, *qi, deadline);
     return rv;
 }
 
-TPSG_BlobIds CPSG_BioIdResolutionQueue::SImpl::TQueue::GetBlobIds(const CDeadline& deadline, size_t max_results)
+TPSG_BlobIds CPSG_BioIdResolutionQueue::SImpl::TQueue::Pop(const CDeadline& deadline, size_t max_results)
 {
-    TPSG_BlobIds rv;
+    TOutputSet rv;
     bool has_limit = max_results != 0;
     unique_lock<mutex> lock(m_Items.second);
     if (m_Items.first.size() > 0) {
@@ -375,8 +385,8 @@ TPSG_BlobIds CPSG_BioIdResolutionQueue::SImpl::TQueue::GetBlobIds(const CDeadlin
             const auto& req = *rev_it;
             if (req->IsDone()) {
                 auto fw_it = next(rev_it).base();
-                rv.push_back(move((*fw_it)->m_BioId));
-                req->PopulateData(rv.back());
+                rv.push_back(move((*fw_it)->m_Input));
+                req->Process(rv.back());
                 m_Items.first.erase(fw_it);
             }
         }
@@ -384,17 +394,17 @@ TPSG_BlobIds CPSG_BioIdResolutionQueue::SImpl::TQueue::GetBlobIds(const CDeadlin
     return rv;
 }
 
-void CPSG_BioIdResolutionQueue::SImpl::TQueue::Clear(TPSG_BioIds* bio_ids)
+void CPSG_BioIdResolutionQueue::SImpl::TQueue::Clear(TInputSet* input_set)
 {
     unique_lock<mutex> lock(m_Items.second);
-    if (bio_ids) {
-        bio_ids->clear();
-        bio_ids->reserve(m_Items.first.size());
+    if (input_set) {
+        input_set->clear();
+        input_set->reserve(m_Items.first.size());
     }
     for (auto& it : m_Items.first) {
         it->Cancel();
-        if (bio_ids)
-            bio_ids->emplace_back(move(it->m_BioId));
+        if (input_set)
+            input_set->emplace_back(move(it->m_Input));
     }
     m_Items.first.clear();
 }
@@ -417,17 +427,17 @@ CPSG_BioIdResolutionQueue::~CPSG_BioIdResolutionQueue()
 
 void CPSG_BioIdResolutionQueue::Resolve(TPSG_BioIds* bio_ids, const CDeadline& deadline)
 {
-    m_Impl->q.Resolve(bio_ids, deadline);
+    m_Impl->q.Push(bio_ids, deadline);
 }
 
 CPSG_BlobId CPSG_BioIdResolutionQueue::Resolve(const string& service, CPSG_BioId bio_id, const CDeadline& deadline)
 {
-    return SImpl::TQueue::Resolve(service, bio_id, deadline);
+    return SImpl::TQueue::Execute(service, bio_id, deadline);
 }
 
 TPSG_BlobIds CPSG_BioIdResolutionQueue::GetBlobIds(const CDeadline& deadline, size_t max_results)
 {
-    return m_Impl->q.GetBlobIds(deadline, max_results);
+    return m_Impl->q.Pop(deadline, max_results);
 }
 
 void CPSG_BioIdResolutionQueue::Clear(TPSG_BioIds* bio_ids)
@@ -441,61 +451,61 @@ bool CPSG_BioIdResolutionQueue::IsEmpty() const
 }
 
 
-CPSG_BlobRetrievalQueue::SImpl::SItem::SItem(const string& service, shared_ptr<HCT::io_future> afuture, CPSG_BlobId blob_id)
+CPSG_BlobRetrievalQueue::SImpl::SSatItem::SSatItem(const string& service, shared_ptr<HCT::io_future> afuture, TInput input)
     :   m_Stream(new stringstream),
         m_Request(make_shared<HCT::http2_request>(m_Stream.get())),
-        m_BlobId(move(blob_id))
+        m_Input(move(input))
 {
-    const auto& info = m_BlobId.GetBlobInfo();
+    const auto& info = input.GetBlobInfo();
     string query("sat=" + to_string(info.sat) + "&sat_key=" + to_string(info.sat_key));
     m_Request->init_request(SHCT::GetEndPoint(service), afuture, "/ID/getblob", move(query));
 }
 
-void CPSG_BlobRetrievalQueue::SImpl::SItem::WaitFor(long timeout_ms)
+void CPSG_BlobRetrievalQueue::SImpl::SSatItem::WaitFor(long timeout_ms)
 {
     m_Request->get_result_data().wait_for(timeout_ms);
 }
 
-bool CPSG_BlobRetrievalQueue::SImpl::SItem::IsDone() const
+bool CPSG_BlobRetrievalQueue::SImpl::SSatItem::IsDone() const
 {
     return m_Request->get_result_data().get_finished();
 }
 
-void CPSG_BlobRetrievalQueue::SImpl::SItem::Cancel()
+void CPSG_BlobRetrievalQueue::SImpl::SSatItem::Cancel()
 {
     m_Request->send_cancel();
 }
 
-void CPSG_BlobRetrievalQueue::SImpl::SItem::PopulateData(CPSG_Blob& blob)
+void CPSG_BlobRetrievalQueue::SImpl::SSatItem::Process(TOutput& output)
 {
     if (m_Request->get_result_data().get_cancelled()) {
-        blob.m_Status = CPSG_Blob::eCanceled;
-        blob.m_Message = "Request for retrieval was canceled";
+        output.m_Status = TOutput::eCanceled;
+        output.m_Message = "Request for retrieval was canceled";
     }
     else if (m_Request->has_error()) {
-        blob.m_Status = CPSG_Blob::eUnknownError;
-        blob.m_Message = m_Request->get_error_description();
+        output.m_Status = TOutput::eUnknownError;
+        output.m_Message = m_Request->get_error_description();
     }
     else switch (m_Request->get_result_data().get_http_status()) {
         case 200: {
-            blob.m_Stream = move(m_Stream);
-            blob.m_Status = CPSG_Blob::eSuccess;
+            output.m_Stream = move(m_Stream);
+            output.m_Status = TOutput::eSuccess;
             break;
         }
         case 404: {
-            blob.m_Status = CPSG_Blob::eNotFound;
-            blob.m_Message = "Blob is not found";
+            output.m_Status = TOutput::eNotFound;
+            output.m_Message = "Blob is not found";
             break;
         }
         default: {
-            blob.m_Status = CPSG_Blob::eUnknownError;
-            blob.m_Message = "Unexpected result";
+            output.m_Status = TOutput::eUnknownError;
+            output.m_Message = "Unexpected result";
         }
     }
 
 }
 
-void CPSG_BlobRetrievalQueue::SImpl::SItem::SetStatus(TOutput& output, TOutput::EStatus status, string message)
+void CPSG_BlobRetrievalQueue::SImpl::SSatItem::SetStatus(TOutput& output, TOutput::EStatus status, string message)
 {
     output.m_Status = status;
     output.m_Message = move(message);
@@ -512,18 +522,18 @@ CPSG_BlobRetrievalQueue::~CPSG_BlobRetrievalQueue()
 {
 }
 
-void CPSG_BlobRetrievalQueue::SImpl::TSatQueue::Retrieve(TPSG_BlobIds* blob_ids, const CDeadline& deadline)
+void CPSG_BlobRetrievalQueue::SImpl::TSatQueue::Push(TInputSet* input_set, const CDeadline& deadline)
 {
-    if (!blob_ids)
+    if (!input_set)
         return;
     bool has_timeout = !deadline.IsInfinite();
     unique_lock<mutex> lock(m_Items.second);
     long wait_ms = 0;
-    auto rev_it = blob_ids->rbegin();
-    while (rev_it != blob_ids->rend()) {
+    auto rev_it = input_set->rbegin();
+    while (rev_it != input_set->rend()) {
 
         auto future = static_pointer_cast<HCT::io_future>(m_Future);
-        unique_ptr<SItem> qi(new SItem(m_Service, future, *rev_it));
+        unique_ptr<TItem> qi(new TItem(m_Service, future, *rev_it));
 
         while (true) {
             bool rv = qi->AddRequest(wait_ms);
@@ -539,7 +549,7 @@ void CPSG_BlobRetrievalQueue::SImpl::TSatQueue::Retrieve(TPSG_BlobIds* blob_ids,
             }
             else {
                 m_Items.first.emplace_back(move(qi));
-                blob_ids->erase(next(rev_it.base()));
+                input_set->erase(next(rev_it.base()));
                 ++rev_it;
                 break;
             }
@@ -549,18 +559,18 @@ void CPSG_BlobRetrievalQueue::SImpl::TSatQueue::Retrieve(TPSG_BlobIds* blob_ids,
     }
 }
 
-CPSG_Blob CPSG_BlobRetrievalQueue::SImpl::TSatQueue::Retrieve(const string& service, CPSG_BlobId blob_id, const CDeadline& deadline)
+CPSG_Blob CPSG_BlobRetrievalQueue::SImpl::TSatQueue::Execute(const string& service, TInput input, const CDeadline& deadline)
 {
     auto future = make_shared<HCT::io_future>();
-    CPSG_Blob rv(blob_id);
-    unique_ptr<SItem> qi(new SItem(service, future, move(blob_id)));
-    SPSG_Queue<SItem>::ExecuteImpl(rv, *qi, deadline);
+    TOutput rv(input);
+    unique_ptr<TItem> qi(new TItem(service, future, move(input)));
+    SPSG_Queue<TItem>::ExecuteImpl(rv, *qi, deadline);
     return rv;
 }
 
-TPSG_Blobs CPSG_BlobRetrievalQueue::SImpl::TSatQueue::GetBlobs(const CDeadline& deadline, size_t max_results)
+TPSG_Blobs CPSG_BlobRetrievalQueue::SImpl::TSatQueue::Pop(const CDeadline& deadline, size_t max_results)
 {
-    TPSG_Blobs rv;
+    TOutputSet rv;
     bool has_limit = max_results != 0;
     unique_lock<mutex> lock(m_Items.second);
     if (m_Items.first.size() > 0) {
@@ -576,8 +586,8 @@ TPSG_Blobs CPSG_BlobRetrievalQueue::SImpl::TSatQueue::GetBlobs(const CDeadline& 
             const auto& req = *rev_it;
             if (req->IsDone()) {
                 auto fw_it = next(rev_it).base();
-                rv.push_back(move((*fw_it)->m_BlobId));
-                req->PopulateData(rv.back());
+                rv.push_back(move((*fw_it)->m_Input));
+                req->Process(rv.back());
                 m_Items.first.erase(fw_it);
             }
         }
@@ -585,17 +595,17 @@ TPSG_Blobs CPSG_BlobRetrievalQueue::SImpl::TSatQueue::GetBlobs(const CDeadline& 
     return rv;
 }
 
-void CPSG_BlobRetrievalQueue::SImpl::TSatQueue::Clear(TPSG_BlobIds* blob_ids)
+void CPSG_BlobRetrievalQueue::SImpl::TSatQueue::Clear(TInputSet* input_set)
 {
     unique_lock<mutex> lock(m_Items.second);
-    if (blob_ids) {
-        blob_ids->clear();
-        blob_ids->reserve(m_Items.first.size());
+    if (input_set) {
+        input_set->clear();
+        input_set->reserve(m_Items.first.size());
     }
     for (auto& it : m_Items.first) {
         it->Cancel();
-        if (blob_ids)
-            blob_ids->emplace_back(move(it->m_BlobId));
+        if (input_set)
+            input_set->emplace_back(move(it->m_Input));
     }
     m_Items.first.clear();
 }
@@ -614,17 +624,17 @@ CPSG_BlobRetrievalQueue::CPSG_BlobRetrievalQueue(const string& service) :
 
 void CPSG_BlobRetrievalQueue::Retrieve(TPSG_BlobIds* blob_ids, const CDeadline& deadline)
 {
-    m_Impl->sat_q.Retrieve(blob_ids, deadline);
+    m_Impl->sat_q.Push(blob_ids, deadline);
 }
 
 CPSG_Blob CPSG_BlobRetrievalQueue::Retrieve(const string& service, CPSG_BlobId blob_id, const CDeadline& deadline)
 {
-    return SImpl::TSatQueue::Retrieve(service, blob_id, deadline);
+    return SImpl::TSatQueue::Execute(service, blob_id, deadline);
 }
 
 TPSG_Blobs CPSG_BlobRetrievalQueue::GetBlobs(const CDeadline& deadline, size_t max_results)
 {
-    return m_Impl->sat_q.GetBlobs(deadline, max_results);
+    return m_Impl->sat_q.Pop(deadline, max_results);
 }
 
 void CPSG_BlobRetrievalQueue::Clear(TPSG_BlobIds* blob_ids)
