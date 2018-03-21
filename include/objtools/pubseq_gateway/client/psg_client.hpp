@@ -200,10 +200,8 @@ public:
     bool IsEmpty() const;
 
 private:
-    struct SItem;
-    mutable pair<vector<unique_ptr<SItem>>, mutex> m_Items;
-    shared_ptr<void>          m_Future;
-    string                    m_Service;
+    struct SImpl;
+    unique_ptr<SImpl> m_Impl;
 };
 
 
@@ -357,10 +355,8 @@ public:
     bool IsEmpty() const;
 
 private:
-    struct SItem;
-    mutable pair<vector<unique_ptr<SItem>>, mutex> m_Items;
-    shared_ptr<void>          m_Future;
-    string                    m_Service;
+    struct SImpl;
+    unique_ptr<SImpl> m_Impl;
 };
 
 
