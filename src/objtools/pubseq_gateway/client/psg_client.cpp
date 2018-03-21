@@ -96,6 +96,43 @@ struct SPSG_Queue
     static void ExecuteImpl(TOutput& output, TItem& item, const CDeadline& deadline);
 };
 
+struct CPSG_BioIdResolutionQueue::SItem
+{
+    using TInput = CPSG_BioId;
+    using TOutput = CPSG_BlobId;
+
+    SItem(const string& service, shared_ptr<HCT::io_future> afuture, CPSG_BioId bio_id);
+    bool AddRequest(long wait_ms) { return SHCT::GetIoc().add_request(m_Request, wait_ms); }
+    void WaitFor(long timeout_ms);
+    bool IsDone() const;
+    void Cancel();
+    void PopulateData(CPSG_BlobId& blob_id) const;
+
+    static void SetStatus(TOutput& output, TOutput::EStatus status, string message);
+
+    shared_ptr<HCT::http2_request> m_Request;
+    CPSG_BioId m_BioId;
+};
+
+struct CPSG_BlobRetrievalQueue::SItem
+{
+    using TInput = CPSG_BlobId;
+    using TOutput = CPSG_Blob;
+
+    SItem(const string& service, shared_ptr<HCT::io_future> afuture, CPSG_BlobId blob_id);
+    bool AddRequest(long wait_ms) { return SHCT::GetIoc().add_request(m_Request, wait_ms); }
+    void WaitFor(long timeout_ms);
+    bool IsDone() const;
+    void Cancel();
+    void PopulateData(CPSG_Blob& blob);
+
+    static void SetStatus(TOutput& output, TOutput::EStatus status, string message);
+
+    unique_ptr<iostream> m_Stream;
+    shared_ptr<HCT::http2_request> m_Request;
+    CPSG_BlobId m_BlobId;
+};
+
 
 pair<once_flag, shared_ptr<SHCT::TIoc>> SHCT::m_Ioc;
 thread_local SHCT::TEndPoints SHCT::m_LocalEndPoints;
@@ -144,26 +181,6 @@ void SPSG_Queue<TItem>::ExecuteImpl(TOutput& output, TItem& item, const CDeadlin
     }
 }
 
-
-/** CPSG_BioIdResolutionQueue::SItem */
-
-struct CPSG_BioIdResolutionQueue::SItem
-{
-    using TInput = CPSG_BioId;
-    using TOutput = CPSG_BlobId;
-
-    SItem(const string& service, shared_ptr<HCT::io_future> afuture, CPSG_BioId bio_id);
-    bool AddRequest(long wait_ms) { return SHCT::GetIoc().add_request(m_Request, wait_ms); }
-    void WaitFor(long timeout_ms);
-    bool IsDone() const;
-    void Cancel();
-    void PopulateData(CPSG_BlobId& blob_id) const;
-
-    static void SetStatus(TOutput& output, TOutput::EStatus status, string message);
-
-    shared_ptr<HCT::http2_request> m_Request;
-    CPSG_BioId m_BioId;
-};
 
 CPSG_BioIdResolutionQueue::SItem::SItem(const string& service, shared_ptr<HCT::io_future> afuture, CPSG_BioId bio_id)
     :   m_Request(make_shared<HCT::http2_request>()),
@@ -237,8 +254,6 @@ void CPSG_BioIdResolutionQueue::SItem::SetStatus(TOutput& output, TOutput::EStat
     output.m_Message = move(message);
 }
 
-
-/** CPSG_BioIdResolutionQueue */
 
 CPSG_BioIdResolutionQueue::CPSG_BioIdResolutionQueue(const string& service) :
     m_Future(make_shared<HCT::io_future>()),
@@ -345,27 +360,6 @@ bool CPSG_BioIdResolutionQueue::IsEmpty() const
 }
 
 
-/* CPSG_BlobRetrievalQueue::SItem */
-
-struct CPSG_BlobRetrievalQueue::SItem
-{
-    using TInput = CPSG_BlobId;
-    using TOutput = CPSG_Blob;
-
-    SItem(const string& service, shared_ptr<HCT::io_future> afuture, CPSG_BlobId blob_id);
-    bool AddRequest(long wait_ms) { return SHCT::GetIoc().add_request(m_Request, wait_ms); }
-    void WaitFor(long timeout_ms);
-    bool IsDone() const;
-    void Cancel();
-    void PopulateData(CPSG_Blob& blob);
-
-    static void SetStatus(TOutput& output, TOutput::EStatus status, string message);
-
-    unique_ptr<iostream> m_Stream;
-    shared_ptr<HCT::http2_request> m_Request;
-    CPSG_BlobId m_BlobId;
-};
-
 CPSG_BlobRetrievalQueue::SItem::SItem(const string& service, shared_ptr<HCT::io_future> afuture, CPSG_BlobId blob_id)
     :   m_Stream(new stringstream),
         m_Request(make_shared<HCT::http2_request>(m_Stream.get())),
@@ -426,8 +420,6 @@ void CPSG_BlobRetrievalQueue::SItem::SetStatus(TOutput& output, TOutput::EStatus
     output.m_Message = move(message);
 }
 
-
-/** CPSG_BlobRetrievalQueue */
 
 CPSG_BlobRetrievalQueue::CPSG_BlobRetrievalQueue(const string& service) :
     m_Future(make_shared<HCT::io_future>()),
