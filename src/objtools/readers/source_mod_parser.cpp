@@ -88,12 +88,16 @@ namespace
 #  error "STATIC_SMOD already defined"
 #endif
 
-// The macro makes sure that the var's name matches its key.
-// Due to kKeyCanonicalizationTable, it's okay to use '_' for '-'
-// because it will match both.
+    // The macro makes sure that the var's name matches its key.
+    // Due to kKeyCanonicalizationTable, it's okay to use '_' for '-'
+    // because it will match both.
+
+
 #define STATIC_SMOD(key_str) \
-    CSafeStatic<CSourceModParser::SMod> s_Mod_##key_str([]() { \
-        return new CSourceModParser::SMod(#key_str); }, nullptr);
+    const char   s_Mod_s_##key_str[] = #key_str; \
+    const size_t s_Mod_n_##key_str = sizeof(#key_str)-1; \
+    const CTempString s_Mod_##key_str(s_Mod_s_##key_str, s_Mod_n_##key_str)
+
 
     // For CBioseq
     STATIC_SMOD(topology);
@@ -161,6 +165,8 @@ namespace
     // For TPA Mods (CUser_object)
     STATIC_SMOD(primary);
     STATIC_SMOD(primary_accessions);
+    // For SRA (Sequence Read Archive) CUser_object
+    STATIC_SMOD(SRA);
 
     // For Genome Project DB Mods (CUser_object)
     STATIC_SMOD(project);
@@ -371,6 +377,57 @@ protected:
     void _getfromdesc();
     mutable CRef<CBioseq> m_bioseq;
     mutable CRef<CBioseq_set> m_bioset;
+};
+
+class CAutoAddDBLink
+{
+public:
+    CAutoAddDBLink(CBioseq& seq, const CTempString& id)
+      :m_bioseq(seq), m_id(id)
+    {
+    }
+    bool IsInitialised() const
+    {
+        return !m_dblink.Empty();
+    }
+
+    CUser_field& Get()
+    {
+        if (m_dblink)
+            return *m_dblink;
+
+        for (auto& d : m_bioseq.SetDescr().Set())
+        {
+            if (d->IsUser() && d->GetUser().IsDBLink())
+            {
+                for (auto& u : d->SetUser().SetData())
+                {
+                    if (u->IsSetLabel() && u->GetLabel().IsStr() &&
+                        NStr::EqualCase(u->GetLabel().GetStr(), m_id))
+                    {
+                        m_dblink = u;
+                        return *m_dblink;
+                    }
+                }
+            }
+        }
+        if (m_dblink.Empty())
+        {
+            m_user_obj.Reset(new CSeqdesc);
+            m_user_obj->SetUser().SetType().SetStr() = "DBLink";
+            m_dblink.Reset(new CUser_field);
+            m_dblink->SetLabel().SetStr() = m_id;
+            m_user_obj->SetUser().SetData().push_back(m_dblink);
+            m_bioseq.SetDescr().Set().push_back(m_user_obj);
+        }
+
+        return *m_dblink;
+    }
+protected:
+    CBioseq& m_bioseq;
+    CTempString m_id;
+    CRef<CUser_field> m_dblink;
+    CRef<CSeqdesc> m_user_obj;
 };
 
 CSafeStaticRef<CSeq_descr> fake_descr;
@@ -622,6 +679,11 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism, CConstRe
     }}
 
     {{
+        CAutoAddDBLink sra(seq, "Sequence Read Archive");
+        x_ApplySRAMods(sra);
+    }}
+
+    {{
         CAutoInitRef<CUser_object> gpdb;
         x_ApplyGenomeProjectsDBMods(gpdb);
         if (gpdb.IsInitialized()) {
@@ -684,7 +746,7 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
     const SMod* mod = NULL;
 
     // top[ology]
-    if ((mod = FindMod(s_Mod_topology.Get(), s_Mod_top.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_topology, s_Mod_top)) != NULL) {
         if (NStr::EqualNocase(mod->value, "linear")) {
             seq.SetInst().SetTopology(CSeq_inst::eTopology_linear);
         } else if (NStr::EqualNocase(mod->value, "circular")) {
@@ -701,7 +763,7 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
         bool bMolSetViaMolMod = false;
 
         // mol[ecule]
-        if ((mod = FindMod(s_Mod_molecule.Get(), s_Mod_mol.Get())) != NULL) {
+        if ((mod = FindMod(s_Mod_molecule, s_Mod_mol)) != NULL) {
             if (NStr::EqualNocase(mod->value, "dna")) {
                 seq.SetInst().SetMol( CSeq_inst::eMol_dna );
                 bMolSetViaMolMod = true;
@@ -717,7 +779,7 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
 
         // mol[-]type
         if( ! bMolSetViaMolMod ) {
-            if ((mod = FindMod(s_Mod_moltype.Get(), s_Mod_mol_type.Get())) != NULL) {
+            if ((mod = FindMod(s_Mod_moltype, s_Mod_mol_type)) != NULL) {
                 TBiomolMap::const_iterator it = sc_BiomolMap.find(mod->value.c_str());
                 if (it == sc_BiomolMap.end()) {
                     x_HandleBadModValue(*mod);
@@ -730,7 +792,7 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
     }
 
     // strand
-    if ((mod = FindMod(s_Mod_strand.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_strand)) != NULL) {
         if (NStr::EqualNocase(mod->value, "single")) {
             seq.SetInst().SetStrand( CSeq_inst::eStrand_ss );
         } else if (NStr::EqualNocase(mod->value, "double")) {
@@ -743,7 +805,7 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
     }
 
     // comment
-    if ((mod = FindMod(s_Mod_comment.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_comment)) != NULL) {
         CRef<CSeqdesc> desc(new CSeqdesc);
         desc->SetComment( mod->value );
         seq.SetDescr().Set().push_back(desc);
@@ -759,11 +821,11 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
     // org[anism]
     if (organism.empty())
     {
-        if ((mod = FindMod(s_Mod_organism.Get(), s_Mod_org.Get())) != NULL) {
+        if ((mod = FindMod(s_Mod_organism, s_Mod_org)) != NULL) {
             organism = mod->value;
         }
         else
-        if ((mod = FindMod(s_Mod_taxname.Get())) != NULL) {
+        if ((mod = FindMod(s_Mod_taxname)) != NULL) {
             organism = mod->value;
         }
     }
@@ -783,7 +845,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
     }
 
     // location
-    if ((mod = FindMod(s_Mod_location.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_location)) != NULL) {
         if (NStr::EqualNocase(mod->value, "mitochondrial")) {
             bsrc->SetGenome(CBioSource::eGenome_mitochondrion);
         } else if (NStr::EqualNocase(mod->value, "provirus")) {
@@ -803,7 +865,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
     }
 
     // origin
-    if ((mod = FindMod(s_Mod_origin.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_origin)) != NULL) {
         try {
             // also check for special cases that don't match the enum name
             if( NStr::EqualNocase(mod->value, "natural mutant") ) {
@@ -823,7 +885,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
     for(const auto & smod_orgsubtype : kSModOrgSubtypeMap.Get()) {
         const SMod & smod = smod_orgsubtype.first;
         const COrgMod::ESubtype e_subtype = smod_orgsubtype.second;
-        if ((mod = FindMod(smod)) != NULL) {
+        if ((mod = FindMod(smod.key)) != NULL) {
             CRef<COrgMod> org_mod(new COrgMod);
             org_mod->SetSubtype(e_subtype);
             org_mod->SetSubname(mod->value);
@@ -836,7 +898,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
     for( const auto & smod_subsrcsubtype : kSModSubSrcSubtypeMap.Get() ) {
         const SMod & smod = smod_subsrcsubtype.first;
         const CSubSource::ESubtype e_subtype = smod_subsrcsubtype.second;
-        if ((mod = FindMod(smod)) != NULL) {
+        if ((mod = FindMod(smod.key)) != NULL) {
             auto& subtype = bsrc->SetSubtype();
             CRef<CSubSource> subsource(new CSubSource);
             subsource->SetSubtype(e_subtype);
@@ -873,20 +935,20 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
         bool used_fwd = false;
         bool used_rev = false;
 
-        if ((mod = FindMod(s_Mod_fwd_primer_name.Get())) != NULL) {
+        if ((mod = FindMod(s_Mod_fwd_primer_name)) != NULL) {
             fwd_primer->SetName().Set( mod->value );
             used_fwd = true;
         }
-        if ((mod = FindMod(s_Mod_fwd_primer_seq.Get())) != NULL) {
+        if ((mod = FindMod(s_Mod_fwd_primer_seq)) != NULL) {
             fwd_primer->SetSeq().Set( mod->value );
             NStr::ToLower( fwd_primer->SetSeq().Set() );
             used_fwd = true;
         }
-        if ((mod = FindMod(s_Mod_rev_primer_name.Get())) != NULL) {
+        if ((mod = FindMod(s_Mod_rev_primer_name)) != NULL) {
             rev_primer->SetName().Set( mod->value );
             used_rev = true;
         }
-        if ((mod = FindMod(s_Mod_rev_primer_seq.Get())) != NULL) {
+        if ((mod = FindMod(s_Mod_rev_primer_seq)) != NULL) {
             rev_primer->SetSeq().Set( mod->value );
             NStr::ToLower( rev_primer->SetSeq().Set() );
             used_rev = true;
@@ -907,7 +969,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
     }}
 
     // db_xref
-    TModsRange db_xref_mods_range = FindAllMods( s_Mod_db_xref.Get(), s_Mod_dbxref.Get() );
+    TModsRange db_xref_mods_range = FindAllMods( s_Mod_db_xref, s_Mod_dbxref );
     for( TModsCI db_xref_iter = db_xref_mods_range.first; 
             db_xref_iter != db_xref_mods_range.second; 
             ++db_xref_iter ) {
@@ -933,34 +995,34 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
     }
 
     // div[ision]
-    if ((mod = FindMod(s_Mod_division.Get(), s_Mod_div.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_division, s_Mod_div)) != NULL) {
         bsrc->SetOrg().SetOrgname().SetDiv( mod->value );
     }
     
     // lineage
-    if ((mod = FindMod(s_Mod_lineage.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_lineage)) != NULL) {
         bsrc->SetOrg().SetOrgname().SetLineage( mod->value );
     }
     
     // gcode
-    if ((mod = FindMod(s_Mod_gcode.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_gcode)) != NULL) {
         bsrc->SetOrg().SetOrgname().SetGcode( NStr::StringToInt(mod->value, NStr::fConvErr_NoThrow) );
     }
 
     // mgcode
-    if ((mod = FindMod(s_Mod_mgcode.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_mgcode)) != NULL) {
         bsrc->SetOrg().SetOrgname().SetMgcode( NStr::StringToInt(mod->value, NStr::fConvErr_NoThrow) );
     }
 
     // pgcode
-    if ((mod = FindMod(s_Mod_pgcode.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_pgcode)) != NULL) {
         bsrc->SetOrg().SetOrgname().SetPgcode( NStr::StringToInt(mod->value, NStr::fConvErr_NoThrow) );
     }
 
     // note[s]
     TModsRange mods[2];
-    mods[0] = FindAllMods(s_Mod_note.Get());
-    mods[1] = FindAllMods(s_Mod_notes.Get());
+    mods[0] = FindAllMods(s_Mod_note);
+    mods[1] = FindAllMods(s_Mod_notes);
     for (size_t i = 0; i < 2; i++)
     {
         for (TModsCI it = mods[i].first; it != mods[i].second; it++)
@@ -973,14 +1035,14 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
     }
 
     // focus
-    if ((mod = FindMod(s_Mod_focus.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_focus)) != NULL) {
         if( NStr::EqualNocase( mod->value, "TRUE" ) ) {
             bsrc->SetIs_focus();
         }
     }
 
 
-    if ((mod = FindMod(s_Mod_taxid.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_taxid)) != NULL) {
         bsrc->SetOrg().SetTaxId( NStr::StringToInt(mod->value, NStr::fConvErr_NoThrow) );
     }
     else 
@@ -1040,7 +1102,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CMolInfo>& mi)
     const SMod* mod = NULL;
 
     // mol[-]type
-    if ((mod = FindMod(s_Mod_moltype.Get(), s_Mod_mol_type.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_moltype, s_Mod_mol_type)) != NULL) {
         TBiomolMap::const_iterator it = sc_BiomolMap.find(mod->value.c_str());
         if (it == sc_BiomolMap.end()) {
             // construct the possible bad values by hand
@@ -1052,7 +1114,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CMolInfo>& mi)
     }
 
     // tech
-    if ((mod = FindMod(s_Mod_tech.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_tech)) != NULL) {
         TTechMap::const_iterator it = sc_TechMap.find(mod->value.c_str());
         if (it == sc_TechMap.end()) {
             x_HandleBadModValue(*mod);
@@ -1062,7 +1124,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CMolInfo>& mi)
     }
 
     // complete[d]ness
-    if ((mod = FindMod(s_Mod_completeness.Get(), s_Mod_completedness.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_completeness, s_Mod_completedness)) != NULL) {
         TTechMap::const_iterator it = sc_CompletenessMap.find(mod->value.c_str());
         if (it == sc_CompletenessMap.end()) {
             x_HandleBadModValue(*mod);
@@ -1077,22 +1139,22 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CGene_ref>& gene)
     const SMod* mod = NULL;
 
     // gene
-    if ((mod = FindMod(s_Mod_gene.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_gene)) != NULL) {
         gene->SetLocus(mod->value);
     }
 
     // allele
-    if ((mod = FindMod(s_Mod_allele.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_allele)) != NULL) {
         gene->SetAllele( mod->value );
     }
 
     // gene_syn[onym]
-    if ((mod = FindMod(s_Mod_gene_syn.Get(), s_Mod_gene_synonym.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_gene_syn, s_Mod_gene_synonym)) != NULL) {
         gene->SetSyn().push_back( mod->value );
     }
     
     // locus_tag
-    if ((mod = FindMod(s_Mod_locus_tag.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_locus_tag)) != NULL) {
         gene->SetLocus_tag( mod->value );
     }
 }
@@ -1103,22 +1165,22 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CProt_ref>& prot)
     const SMod* mod = NULL;
 
     // prot[ein]
-    if ((mod = FindMod(s_Mod_protein.Get(), s_Mod_prot.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_protein, s_Mod_prot)) != NULL) {
         prot->SetName().push_back(mod->value);
     }
 
     // prot[ein]_desc
-    if ((mod = FindMod(s_Mod_prot_desc.Get(), s_Mod_protein_desc.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_prot_desc, s_Mod_protein_desc)) != NULL) {
         prot->SetDesc( mod->value );
     }
     
     // EC_number 
-    if ((mod = FindMod(s_Mod_EC_number.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_EC_number)) != NULL) {
         prot->SetEc().push_back( mod->value );
     }
 
     // activity/function
-    if ((mod = FindMod(s_Mod_activity.Get(), s_Mod_function.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_activity, s_Mod_function)) != NULL) {
         prot->SetActivity().push_back( mod->value );
     }
 }
@@ -1129,8 +1191,8 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CGB_block>& gbb)
     const SMod* mod = NULL;
 
     // secondary-accession[s]
-    if ((mod = FindMod(s_Mod_secondary_accession.Get(),
-                       s_Mod_secondary_accessions.Get())) != NULL)
+    if ((mod = FindMod(s_Mod_secondary_accession,
+                       s_Mod_secondary_accessions)) != NULL)
     {
         list<CTempString> ranges;
         NStr::Split(mod->value, ",", ranges, NStr::fSplit_MergeDelimiters);
@@ -1148,7 +1210,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CGB_block>& gbb)
     }
 
     // keyword[s]
-    if ((mod = FindMod(s_Mod_keyword.Get(), s_Mod_keywords.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_keyword, s_Mod_keywords)) != NULL) {
         list<string> keywordList;
         NStr::Split(mod->value, ",;", keywordList, NStr::fSplit_MergeDelimiters);
         // trim every string and push it into the real keyword list
@@ -1165,8 +1227,8 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CSeq_hist>& hist)
     const SMod* mod = NULL;
 
     // secondary-accession[s]
-    if ((mod = FindMod(s_Mod_secondary_accession.Get(),
-                       s_Mod_secondary_accessions.Get())) != NULL)
+    if ((mod = FindMod(s_Mod_secondary_accession,
+                       s_Mod_secondary_accessions)) != NULL)
     {
         list<CTempString> ranges;
         NStr::Split(mod->value, ",", ranges, NStr::fSplit_MergeDelimiters);
@@ -1244,7 +1306,7 @@ void CSourceModParser::x_ApplyTPAMods(CAutoInitRef<CUser_object>& tpa)
     const SMod* mod = NULL;
 
     // primary[-accessions]
-    if ((mod = FindMod(s_Mod_primary.Get(), s_Mod_primary_accessions.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_primary, s_Mod_primary_accessions)) != NULL) {
         CUser_object::TData data;
         list<CTempString> accns;
         NStr::Split(mod->value, ",", accns, NStr::fSplit_MergeDelimiters);
@@ -1263,6 +1325,31 @@ void CSourceModParser::x_ApplyTPAMods(CAutoInitRef<CUser_object>& tpa)
     }
 }
 
+void CSourceModParser::x_ApplySRAMods(CAutoAddDBLink& sra_obj)
+{
+    auto range = FindAllMods(s_Mod_SRA);
+    for (auto it = range.first; it != range.second ; it++)
+    {
+        const SMod& mod = *it;
+
+        list<CTempString> sras;
+        NStr::Split(mod.value, ",", sras, NStr::fSplit_MergeDelimiters);
+
+        if (!sras.empty())
+        {
+            for (auto& sra : sras)
+            {
+                sra = NStr::TruncateSpaces_Unsafe(sra);
+                if (!sra.empty())
+                  sra_obj.Get().SetData().SetStrs().push_back(sra);
+            }
+        }
+    }
+    if (sra_obj.IsInitialised())
+        sra_obj.Get().SetNum(int(sra_obj.Get().GetData().GetStrs().size()));
+}
+
+
 
 void
 CSourceModParser::x_ApplyGenomeProjectsDBMods(CAutoInitRef<CUser_object>& gpdb)
@@ -1270,7 +1357,7 @@ CSourceModParser::x_ApplyGenomeProjectsDBMods(CAutoInitRef<CUser_object>& gpdb)
     const SMod* mod = NULL;
 
     // project[s]
-    if ((mod = FindMod(s_Mod_project.Get(), s_Mod_projects.Get())) != NULL) {
+    if ((mod = FindMod(s_Mod_project, s_Mod_projects)) != NULL) {
         CUser_object::TData data;
         list<CTempString> ids;
         NStr::Split(mod->value, ",;", ids, NStr::fSplit_MergeDelimiters);
@@ -1316,8 +1403,8 @@ void s_ApplyPubMods(CBioseq& bioseq, const CSourceModParser::TModsRange& range)
 void CSourceModParser::ApplyPubMods(CBioseq& seq)
 {
     // find PubMed IDs
-    s_ApplyPubMods(seq, FindAllMods(s_Mod_PubMed.Get()));
-    s_ApplyPubMods(seq, FindAllMods(s_Mod_PMID.Get()));
+    s_ApplyPubMods(seq, FindAllMods(s_Mod_PubMed));
+    s_ApplyPubMods(seq, FindAllMods(s_Mod_PMID));
 }
 
 CSourceModParser::CBadModError::CBadModError( 
@@ -1361,23 +1448,27 @@ CSourceModParser::TMods CSourceModParser::GetMods(TWhichMods which) const
 }
 
 const CSourceModParser::SMod* CSourceModParser::FindMod(
-    const SMod & smod, const SMod & alt_smod)
+    //const SMod & smod, const SMod & alt_smod)
+    const CTempString& key, const CTempString& alt_key)
 {
     // check against m_pModFilter, if any
     if( m_pModFilter ) {
-        if( ! (*m_pModFilter)(smod.key) || ! (*m_pModFilter)(alt_smod.key) ) {
+        if( ! (*m_pModFilter)(key) || ! (*m_pModFilter)(alt_key) ) {
             return NULL;
         }
     }
 
+    SMod mod;
+
     for (int tries = 0;  tries < 2;  ++tries) {
-        const SMod & mod = ( tries == 0 ? smod : alt_smod );
-        if( mod.key.empty() ) {
+        const CTempString & modkey = ( tries == 0 ? key : alt_key );
+        if( modkey.empty() ) {
             continue;
         }
+        mod.key = modkey;
 
         TModsCI it = m_Mods.lower_bound(mod);
-        if (it != m_Mods.end()  &&  EqualKeys(it->key, mod.key)) {
+        if (it != m_Mods.end()  &&  EqualKeys(it->key, modkey)) {
             // set iterators are const since changing an object could affect
             // its order in the set.  However, in this case we know that
             // changing the `used` field won't affect the order so we know
@@ -1396,6 +1487,14 @@ CSourceModParser::FindAllMods(const CTempString& key)
 {
     SMod smod(key);
     return FindAllMods(smod);
+}
+
+CSourceModParser::TModsRange
+CSourceModParser::FindAllMods(const CTempString& key, const CTempString& alt_key)
+{
+    SMod smod(key);
+    SMod alt_smod(alt_key);
+    return FindAllMods(smod, alt_smod);
 }
 
 CSourceModParser::TModsRange

@@ -78,6 +78,7 @@ class CBioseq;
 
 template<class _T>
 class CAutoInitDesc;
+class CAutoAddDBLink;
 
 class NCBI_XOBJREAD_EXPORT CSourceModParser
 {
@@ -188,11 +189,12 @@ public:
 
     /// If a modifier with either key is present, mark it as used and
     /// return it; otherwise, return NULL.
-    const SMod* FindMod(const SMod & smod,
-                        const SMod & alt_smod = kEmptyMod.Get());
+
+    const SMod* FindMod(const CTempString& key, const CTempString& alt_key = CTempString());
 
     /// Return all modifiers with the given key (e.g., db_xref), marking them
     /// as used along the way.
+    TModsRange FindAllMods(const CTempString& key, const CTempString& alt_key);
     TModsRange FindAllMods(const CTempString& key);
 
     /// Return all modifiers with the given key (e.g., db_xref), marking them
@@ -249,6 +251,7 @@ private:
     void x_ApplyMods(CAutoInitRef<CSeq_hist>& hist);
     // void x_ApplyMods(CAutoInitRef<CSubmit_block>& sb);
     void x_ApplyTPAMods(CAutoInitRef<CUser_object>& tpa);
+    void x_ApplySRAMods(CAutoAddDBLink& sra);
     void x_ApplyGenomeProjectsDBMods(CAutoInitRef<CUser_object>& gpdb);
 
 

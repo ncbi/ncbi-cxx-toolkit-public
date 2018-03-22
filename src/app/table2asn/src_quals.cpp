@@ -122,19 +122,21 @@ bool CSourceQualifiersReader::x_ApplyAllQualifiers(objects::CSourceModParser& mo
     mod.ApplyAllMods(bioseq);
 
     CSourceModParser::TMods unused_mods = mod.GetMods(CSourceModParser::fUnusedMods);
+    static const string s_dblink = "DBLink";
     for (auto mod: unused_mods)
     {
         if (NStr::CompareNocase(mod.key, "bioproject") == 0)
         {
+            const string& v = mod.value;
             edit::CDBLink::SetBioProject(
-                CTable2AsnContext::SetUserObject(CTable2AsnContext::SetBioseqOrParentDescr(bioseq),
-                    "DBLink"), mod.value);
+                CTable2AsnContext::SetUserObject(CTable2AsnContext::SetBioseqOrParentDescr(bioseq), s_dblink), 
+                mod.value);
         }
         else
         if (NStr::CompareNocase(mod.key, "biosample") == 0)
             edit::CDBLink::SetBioSample(
-                CTable2AsnContext::SetUserObject(CTable2AsnContext::SetBioseqOrParentDescr(bioseq),
-                "DBLink"), mod.value);
+                CTable2AsnContext::SetUserObject(CTable2AsnContext::SetBioseqOrParentDescr(bioseq), s_dblink), 
+                mod.value);
         else
         if (!x_ParseAndAddTracks(bioseq, mod.key, mod.value))
         {
