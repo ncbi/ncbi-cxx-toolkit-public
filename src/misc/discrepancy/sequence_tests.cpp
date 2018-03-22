@@ -545,20 +545,18 @@ DISCREPANCY_AUTOFIX(EXON_ON_MRNA)
 
 // INCONSISTENT_MOLINFO_TECH
 
-static const string kMissingTech = "missing";
+//static const string kMissingTech = "missing";
 
 DISCREPANCY_CASE(INCONSISTENT_MOLINFO_TECH, CSeq_inst, eDisc | eSmart, "Inconsistent Molinfo Techniques")
 {
     if (obj.IsAa()) {
         return;
     }
-
     CBioseq_Handle bioseq = context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq());
-    
     for (CSeqdesc_CI molinfo_desc_it(bioseq, CSeqdesc::E_Choice::e_Molinfo); molinfo_desc_it; ++molinfo_desc_it) {
         const CMolInfo& mol_info = molinfo_desc_it->GetMolinfo();
         if (!mol_info.IsSetTech()) {
-            m_Objs[kMissingTech].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()));
+            m_Objs[kEmptyStr].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()));
         }
         else {
             string tech = NStr::IntToString(mol_info.GetTech());
@@ -587,40 +585,34 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_MOLINFO_TECH)
     size_t num_of_missing = 0,
            num_of_bioseqs = 0;
 
-    CReportNode::TNodeMap::iterator missing_it = the_map.end();
-    NON_CONST_ITERATE (CReportNode::TNodeMap, it, the_map) {
-
-        num_of_bioseqs += it->second->GetObjects().size();
-
-        if (it->first == kMissingTech) {
-            missing_it = it;
-            num_of_missing += it->second->GetObjects().size();
+    for (auto it: the_map) {
+        num_of_bioseqs += it.second->GetObjects().size();
+        if (it.first.empty()) {
+            num_of_missing += it.second->GetObjects().size();
             continue;
         }
-
         if (tech.empty()) {
-            tech = it->first;
+            tech = it.first;
         }
-        else if (tech != it->first) {
+        else if (tech != it.first) {
             same = false;
         }
     }
-
     string summary = kInconsistentMolinfoTechSummary + " (";
-    summary += num_of_missing ? "some missing, " : "all present, ";
-    summary += same ? "all same)" : "some different)";
-
+    if (num_of_missing == num_of_bioseqs) {
+        summary += "all missing)";
+    }
+    else {
+        summary += num_of_missing ? "some missing, " : "all present, ";
+        summary += same ? "all same)" : "some different)";
+    }
     if (num_of_missing) {
         if (num_of_missing == num_of_bioseqs) {
-            report[summary]["technique (all missing)"];
+            report[summary];
         }
         else {
-            report[summary]["technique (some missing)"];
+            report[summary][kInconsistentMolinfoTech].Add(the_map[kEmptyStr]->GetObjects());
         }
-    }
-
-    if (missing_it != the_map.end()) {
-        report[summary][kInconsistentMolinfoTech].Add(missing_it->second->GetObjects());
     }
 
     m_ReportItems = report.Export(*this)->GetSubitems();
