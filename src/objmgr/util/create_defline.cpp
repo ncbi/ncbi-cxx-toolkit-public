@@ -850,14 +850,25 @@ void CDeflineGenerator::x_SetFlags (
             if (FIELD_IS_SET_AND_IS(user_obj, Type, Str)) {
                 if (user_obj.IsUnverified()) {
                     m_IsUnverified = true;
+                    int unverified_count = 0;
                     needed_desc_choices &= ~fUser;
                     if (user_obj.IsUnverifiedOrganism()) {
                         m_UnverifiedPrefix = "UNVERIFIED_ORG: ";
-                    } else if (user_obj.IsUnverifiedMisassembled()) {
+                        unverified_count++;
+                    }
+                    if (user_obj.IsUnverifiedMisassembled()) {
                         m_UnverifiedPrefix = "UNVERIFIED_ASMBLY: ";
-                    } else if (user_obj.IsUnverifiedContaminant()) {
+                        unverified_count++;
+                    }
+                    if (user_obj.IsUnverifiedContaminant()) {
                         m_UnverifiedPrefix = "UNVERIFIED_CONTAM: ";
-                    } else if (user_obj.IsUnverifiedFeature()) {
+                        unverified_count++;
+                    }
+                    if (user_obj.IsUnverifiedFeature()) {
+                        m_UnverifiedPrefix = "UNVERIFIED: ";
+                        unverified_count++;
+                    }
+                    if (unverified_count > 1) {
                         m_UnverifiedPrefix = "UNVERIFIED: ";
                     }
                 } else if (user_obj.GetType().GetStr() == "AutodefOptions" ) {
