@@ -184,7 +184,7 @@ struct SPSG_Queue
     static TOutput Execute(const string& service, TInput input, const CDeadline& deadline);
 
 private:
-    mutable pair<vector<unique_ptr<TItem>>, mutex> m_Items;
+    mutable pair<vector<TItem>, mutex> m_Items;
     shared_ptr<void> m_Future;
     string m_Service;
 };
@@ -306,26 +306,26 @@ typename TItem::TOutput SPSG_Queue<TItem>::Execute(const string& service, TInput
 {
     TOutput output(TItem::Output(input));
     auto future = make_shared<TPSG_FutureValue>();
-    unique_ptr<TItem> item(new TItem(service, future, move(input)));
+    TItem item(service, future, move(input));
     bool has_timeout = !deadline.IsInfinite();
     long wait_ms = has_timeout ? RemainingTimeMs(deadline) : DDRPC::INDEFINITE;
-    bool rv = item->AddRequest(wait_ms);
+    bool rv = item.AddRequest(wait_ms);
     if (!rv) {
         output.SetTimeout("Timeout on adding request");
         return output;
     }
     while (true) {
-        if (item->IsDone()) {
-            item->Process(output);
+        if (item.IsDone()) {
+            item.Process(output);
             return output;
         }
         if (has_timeout) wait_ms = RemainingTimeMs(deadline);
         if (wait_ms <= 0) {
-            item->Cancel();
+            item.Cancel();
             output.SetTimeout("Timeout on waiting result");
             return output;
         }
-        item->WaitFor(wait_ms);
+        item.WaitFor(wait_ms);
     }
 }
 
@@ -394,10 +394,10 @@ void SPSG_Queue<TItem>::Push(TInputSet* input_set, const CDeadline& deadline)
     while (rev_it != input_set->rend()) {
 
         auto future = static_pointer_cast<TPSG_FutureValue>(m_Future);
-        unique_ptr<TItem> qi(new TItem(m_Service, future, *rev_it));
+        TItem item(m_Service, future, *rev_it);
 
         while (true) {
-            bool rv = qi->AddRequest(wait_ms);
+            bool rv = item.AddRequest(wait_ms);
 
             if (!rv) { // internal queue is full
                 if (has_timeout) {
@@ -409,7 +409,7 @@ void SPSG_Queue<TItem>::Push(TInputSet* input_set, const CDeadline& deadline)
                     wait_ms = DDRPC::INDEFINITE;
             }
             else {
-                m_Items.first.emplace_back(move(qi));
+                m_Items.first.emplace_back(move(item));
                 input_set->erase(next(rev_it.base()));
                 ++rev_it;
                 break;
@@ -431,16 +431,15 @@ typename TItem::TOutputSet SPSG_Queue<TItem>::Pop(const CDeadline& deadline, siz
         if (has_timeout) {
             long wait_ms = RemainingTimeMs(deadline);
             auto& last = m_Items.first.front();
-            last->WaitFor(wait_ms);
+            last.WaitFor(wait_ms);
         }
         for (auto rev_it = m_Items.first.rbegin(); rev_it != m_Items.first.rend(); ++rev_it) {
             if (has_limit && max_results-- == 0)
                 break;
-            const auto& req = *rev_it;
-            if (req->IsDone()) {
+            if (rev_it->IsDone()) {
                 auto fw_it = next(rev_it).base();
-                auto output = TItem::Output(move((*fw_it)->m_Input));
-                req->Process(output);
+                auto output = TItem::Output(move(fw_it->m_Input));
+                rev_it->Process(output);
                 rv.push_back(move(output));
                 m_Items.first.erase(fw_it);
             }
@@ -458,9 +457,9 @@ void SPSG_Queue<TItem>::Clear(TInputSet* input_set)
         input_set->reserve(m_Items.first.size());
     }
     for (auto& it : m_Items.first) {
-        it->Cancel();
+        it.Cancel();
         if (input_set)
-            input_set->emplace_back(move(it->m_Input));
+            input_set->emplace_back(move(it.m_Input));
     }
     m_Items.first.clear();
 }
