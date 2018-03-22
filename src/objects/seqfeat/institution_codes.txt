@@ -235,6 +235,7 @@ APP	s	Parco Nazionale del Gran Sasso e Monti della Laga - Universita di Camerino
 APSC	s	Austin Peay State University, Biology Department		
 AQC	s	Aquinas College, Biology Department		
 AQP	s	Estudios Fitogeograficos del Peru		
+AQUAMEB	c	Culture Collection of Microalgae and Cyanobacteria		
 AQUI	s	Universita degli Studi di L'Aquila, Dipartimento di Scienze Ambientali		
 AR	s	Pomor State University		
 ARAGO	s	Universite Pierre et Marie Curie		
