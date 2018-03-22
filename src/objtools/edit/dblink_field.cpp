@@ -190,6 +190,7 @@ bool CDBLinkField::SetVal(CUser_field& field, const string & newValue, EExisting
         }
         CUser_field::C_Data::TStrs& strs = field.SetData().SetStrs();
         _ParseAndAppend(strs, newValue, existing_text);
+        rval = true;
 #endif
     } else if (m_ConstraintFieldType != m_FieldType || !m_StringConstraint) {
         _ParseAndAppend(field.SetData().SetStrs(), newValue, eExistingText_replace_old);
@@ -480,9 +481,7 @@ vector<CConstRef<CObject> > CDBLinkField::GetRelatedObjects(const CApplyObject& 
 
 bool CDBLinkField::IsDBLink (const CUser_object& user)
 {
-    if (user.IsSetType()
-        && user.GetType().IsStr()
-        && NStr::EqualNocase(user.GetType().GetStr(),kDBLink)) {
+    if (user.GetObjectType() == CUser_object::eObjectType_DBLink) {
         return true;
     } else {
         return false;
@@ -517,7 +516,7 @@ vector<string> CDBLinkField::GetFieldNames()
 CRef<CUser_object> CDBLinkField::MakeUserObject()
 {
     CRef<CUser_object> obj(new CUser_object());
-    obj->SetType().SetStr(kDBLink);
+    obj->SetObjectType(CUser_object::eObjectType_DBLink);
     return obj;
 }
 
