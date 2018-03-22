@@ -81,7 +81,7 @@ CInstInfoMap::GetInstitutionVoucherInfo(
     static const string  s_pycc_base("http://pycc.bio-aware.com/BioloMICS.aspx?Table=PYCC%20strains&Name=PYCC%20");
     static const string  s_sag_base("http://sagdb.uni-goettingen.de/detailedList.php?str_number=");
     static const string  s_tgrc_base("http://tgrc.ucdavis.edu/Data/Acc/AccDetail.aspx?AccessionNum=");
-    static const string  s_uam_base("http://arctos.database.museum/guid/");
+    static const string  s_uam_base("https://arctos.database.museum/guid/");
     static const string  s_uamh_base("https://secure.devonian.ualberta.ca/uamh/details.php?id=");
     static const string  s_usnm_base("http://collections.mnh.si.edu/services/resolver/resolver.php?");
     static const string  s_ypm_base("http://collections.peabody.yale.edu/search/Record/");
@@ -123,6 +123,7 @@ CInstInfoMap::GetInstitutionVoucherInfo(
         { "CFMR",             TVoucherInfoRef(new SVoucherInfo(&s_cfmr_base,  false, 0, NULL,   NULL,          NULL,        "Center for Forest Mycology Research") ) },
         { "CHR",              TVoucherInfoRef(new SVoucherInfo(&s_lcr_base,   true,  0, NULL,   &s_uscr_pfx,   NULL,        "Allan Herbarium, Landcare Research New Zealand Limited") ) },
         { "CRCM:Bird",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  0, NULL,   &s_colon_pfx,  NULL,        "Washington State University, Charles R. Conner Museum, bird collection") ) },
+        { "CUMV:Fish",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  0, NULL,   &s_colon_pfx,  NULL,        "Cornell University Museum of Vertebrates, Fish Collection") ) },
         { "Coriell",          TVoucherInfoRef(new SVoucherInfo(&s_cori_base,  false, 0, NULL,   NULL,          NULL,        "Coriell Institute for Medical Research") ) },
         { "DGR:Bird",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  0, NULL,   &s_colon_pfx,  NULL,        "Division of Genomic Resources, University of New Mexico, bird tissue collection") ) },
         { "DGR:Ento",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  0, NULL,   &s_colon_pfx,  NULL,        "Division of Genomic Resources, University of New Mexico, entomology tissue collection") ) },
@@ -131,6 +132,7 @@ CInstInfoMap::GetInstitutionVoucherInfo(
         { "DGR:Mamm",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  0, NULL,   &s_colon_pfx,  NULL,        "Division of Genomic Resources, University of New Mexico, mammal tissue collection") ) },
         { "DMNS:Bird",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  0, NULL,   &s_colon_pfx,  NULL,        "Denver Museum of Nature and Science, Ornithology Collections") ) },
         { "DMNS:Mamm",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  0, NULL,   &s_colon_pfx,  NULL,        "Denver Museum of Nature and Science, Mammology Collection") ) },
+        { "DMNS:Para",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  0, NULL,   &s_colon_pfx,  NULL,        "Denver Museum of Nature and Science, Parasite Collection") ) },
         { "DSM",              TVoucherInfoRef(new SVoucherInfo(&s_dsm_base,   false, 0, NULL,   NULL,          NULL,        "Deutsche Sammlung von Mikroorganismen und Zellkulturen GmbH") ) },
         { "DSMZ",             TVoucherInfoRef(new SVoucherInfo(&s_dsmz_base,  false, 0, NULL,   NULL,          NULL,        "Deutsche Sammlung von Mikroorganismen und Zellkulturen GmbH") ) },
         { "FRR",              TVoucherInfoRef(new SVoucherInfo(&s_frr_base,   false, 0, NULL,   NULL,          NULL,        "Food Science Australia, Ryde") ) },
