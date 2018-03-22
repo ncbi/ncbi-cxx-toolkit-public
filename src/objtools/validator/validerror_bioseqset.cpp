@@ -836,17 +836,14 @@ void CValidError_bioseqset::CheckForImproperlyNestedSets (const CBioseq_set& seq
 
 void CValidError_bioseqset::ShouldHaveNoDblink (const CBioseq_set& seqset)
 {
-    FOR_EACH_DESCRIPTOR_ON_SEQSET (it, seqset) {
-        const CSeqdesc& desc = **it;
-        if (! SEQDESC_CHOICE_IS (desc, NCBI_SEQDESC(User))) continue;
-        const CUser_object& usr = desc.GetUser();
-        if (! usr.IsSetType()) continue;
-        const CObject_id& oi = usr.GetType();
-        if (! oi.IsStr()) continue;
-        if (! NStr::EqualNocase(oi.GetStr(), "DBLink")) continue;
-        PostErr(eDiag_Error,
-                eErr_SEQ_DESCR_DBLinkProblem,
+    if (!seqset.IsSetDescr()) return;
+    for (auto it : seqset.GetDescr().Get()) {
+        const CSeqdesc& desc = *it;
+        if (desc.IsUser() && desc.GetUser().GetObjectType() == CUser_object::eObjectType_DBLink) {
+            PostErr(eDiag_Error,
+                eErr_SEQ_DESCR_DBLinkOnSet,
                 "DBLink user object should not be on this set", seqset);
+        }
     }
 }
 

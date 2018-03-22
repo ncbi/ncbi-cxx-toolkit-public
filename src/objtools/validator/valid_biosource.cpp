@@ -1282,7 +1282,7 @@ const CSeq_entry *ctx)
     if ((!orgref.IsSetTaxname() || orgref.GetTaxname().empty()) &&
         (!orgref.IsSetCommon() || orgref.GetCommon().empty())) {
         PostObjErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound,
-            "No organism name has been applied to this Bioseq.  Other qualifiers may exist.", obj, ctx);
+            "No organism name included in the source. Other qualifiers may exist.", obj, ctx);
     }
 
     string taxname = "";
@@ -1965,12 +1965,12 @@ const CBioseq_Handle& bsh)
         if (is_synthetic_construct) {
             if ((!mi->GetMolinfo().IsSetBiomol()
                 || mi->GetMolinfo().GetBiomol() != CMolInfo::eBiomol_other_genetic) && !bsh.IsAa()) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_SyntheticConstructWrongMolType,
                     "synthetic construct should have other-genetic",
                     obj, ctx);
             }
             if (!is_artificial) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_SyntheticConstructNeedsArtificial,
                     "synthetic construct should have artificial origin",
                     obj, ctx);
             }
@@ -2540,7 +2540,7 @@ void CValidError_imp::ValidateTentativeName(const CSeq_entry& se)
 
     CRef<CTaxon3_reply> reply = x_GetTaxonService()->SendOrgRefList(org_rq_list);
     if (!reply || !reply->IsSetReply()) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem,
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyServiceProblem,
             "Taxonomy service connection failure", se);
     }
 
@@ -2611,6 +2611,10 @@ void CValidError_imp::HandleTaxonomyError(const CT3Error& error,
         PostObjErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem,
             err_str,
             desc, entry);
+    } else if (NStr::Find(err_str, "ambiguous name") != NPOS) {
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_TaxonomyAmbiguousName,
+            "Taxonomy lookup failed with message '" + err_str + "'",
+            desc, entry);
     } else {
         PostObjErr(eDiag_Warning, type,
             "Taxonomy lookup failed with message '" + err_str + "'",
@@ -2626,6 +2630,10 @@ void CValidError_imp::HandleTaxonomyError(const CT3Error& error,
     if (NStr::Equal(err_str, kInvalidReplyMsg)) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem,
             err_str,
+            feat);
+    } else if (NStr::Find(err_str, "ambiguous name") != NPOS) {
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_TaxonomyAmbiguousName,
+            "Taxonomy lookup failed with message '" + err_str + "'",
             feat);
     } else {
         PostErr(eDiag_Warning, type,
@@ -2696,7 +2704,7 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
         CRef<CTaxon3_reply> reply = x_GetTaxonService()->SendOrgRefList(org_rq_list);
 
         if (!reply || !reply->IsSetReply()) {
-            PostErr(eDiag_Error, eErr_GENERIC_ServiceError,
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyServiceProblem,
                 "Taxonomy service connection failure", se);
         } else {
             tval.ReportTaxLookupErrors(*reply, *this, is_insd_patent);
@@ -2723,7 +2731,7 @@ void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
 
     CRef<CTaxon3_reply> reply = x_GetTaxonService()->SendOrgRefList(org_rq_list);
     if (!reply || !reply->IsSetReply()) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem,
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyServiceProblem,
             "Taxonomy service connection failure", org);
     } else {
         CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
@@ -2821,7 +2829,7 @@ void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
         reply = x_GetTaxonService()->SendOrgRefList(org_rq_list);
 
         if (!reply || !reply->IsSetReply()) {
-            PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem,
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyServiceProblem,
                 "Taxonomy service connection failure", org);
         } else {
             CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();

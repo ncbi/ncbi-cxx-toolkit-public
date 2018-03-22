@@ -1030,18 +1030,18 @@ void CValidError_bioseq::x_ValidateBarcode(const CBioseq& seq)
             }
         }
         if (has_barcode_keyword && !has_barcode_tech) {
-            PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadKeyword,
+            PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadKeywordNoTechnique,
                      "BARCODE keyword without Molinfo.tech barcode",
                      *ctx, *it);
         }
     }
     if (has_barcode_tech && !has_barcode_keyword && di) {
-        PostErr (eDiag_Info, eErr_SEQ_DESCR_BadKeyword,
+        PostErr (eDiag_Info, eErr_SEQ_DESCR_NoKeywordHasTechnique,
                  "Molinfo.tech barcode without BARCODE keyword",
                  *ctx, *di);
     }
     if (has_barcode_keyword && HasUnverified(bsh)) {
-        PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadKeyword,
+        PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadKeywordUnverified,
             "Sequence has both BARCODE and UNVERIFIED keywords",
             seq);
     }
@@ -1310,7 +1310,7 @@ void CValidError_bioseq::ValidateBioseqContext(
 
 
         if (m_dblink_count > 1) {
-            PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
+            PostErr(eDiag_Critical, eErr_SEQ_DESCR_MultipleDBLinkObjects,
                 NStr::IntToString(m_dblink_count) + " DBLink user objects apply to a Bioseq", seq);
         }
 
@@ -1325,7 +1325,7 @@ void CValidError_bioseq::ValidateBioseqContext(
         }
 
         if (m_as_count > 1) {
-            PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
+            PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkBadAssembly,
                 "Assembly entries appear in " + NStr::IntToString(m_as_count) + " DBLink user objects", seq);
         }
 
@@ -1345,10 +1345,10 @@ void CValidError_bioseq::ValidateBioseqContext(
         }
 
         if (m_unknown_count > 1) {
-            PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
+            PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkBadFormat,
                 "Unrecognized entries appear in " + NStr::IntToString(m_unknown_count) + " DBLink user objects", seq);
         } else if (m_unknown_count > 0) {
-            PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
+            PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkBadFormat,
                 "Unrecognized entries appear in " + NStr::IntToString(m_unknown_count) + " DBLink user object", seq);
         }
 
@@ -1995,8 +1995,8 @@ void CValidError_bioseq::x_ValidateMultiplePubs(
                 }
             }
             if ( collision ) {
-                PostErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications,
-                    "Multiple publications with same identifier", *ctx, *it);
+                PostErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPubMedID,
+                    "Multiple publications with identical PubMed ID", *ctx, *it);
             }
         }
     }
@@ -2877,15 +2877,15 @@ void CValidError_bioseq::ValidateWGSMaster(CBioseq_Handle bsh)
         ++d;
     }
     if (!has_biosample && !has_bioproject) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem, 
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_WGSMasterLacksBothBioSampleBioProject, 
                 "WGS master lacks both BioSample and BioProject", 
                 *(bsh.GetCompleteBioseq()));
     } else if (!has_biosample) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_WGSmasterLacksBioSample,
             "WGS master lacks BioSample",
             *(bsh.GetCompleteBioseq()));
     } else if (!has_bioproject) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_WGSmasterLacksBioProject,
             "WGS master lacks BioProject",
             *(bsh.GetCompleteBioseq()));
     }
@@ -6299,7 +6299,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                     case CSeqFeatData::e_Gene:
                         // report only if NOT standalone protein
                         if ( !s_StandaloneProt(m_CurrentHandle) ) {
-                            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
+                            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFeatureForProtein,
                                 "Invalid feature for a protein Bioseq.", feat);
                         }
                         break;
@@ -6336,7 +6336,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                     {{
                         const CRNA_ref& rref = feat.GetData().GetRna();
                         if ( rref.GetType() == CRNA_ref::eType_mRNA ) {
-                            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
+                            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFeatureForMRNA,
                                 "mRNA feature is invalid on an mRNA (cDNA) Bioseq.",
                                 feat);
                         }
@@ -6362,7 +6362,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                     {{
                         const CImp_feat& imp = feat.GetData().GetImp();
                         if ( imp.GetKey() == "CAAT_signal" ) {
-                            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
+                            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFeatureForPreRNA,
                                 "Invalid feature for an pre-RNA Bioseq.", feat);
                         }
                         break;
@@ -8492,7 +8492,7 @@ void CValidError_bioseq::CheckForMultipleStructuredComments(const CBioseq& seq)
             num_seen++;
         } else {
             if (num_seen > 1) {
-                PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleComments, 
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleStrucComms, 
                     "Multiple structured comments with prefix " + previous,
                         seq);
             }
@@ -8501,7 +8501,7 @@ void CValidError_bioseq::CheckForMultipleStructuredComments(const CBioseq& seq)
         }
     }
     if (num_seen > 1) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleComments, 
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleStrucComms, 
             "Multiple structured comments with prefix " + previous,
                 seq);
     } 
@@ -8981,7 +8981,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                     && !s_IsTPAAssemblyOkForBioseq(seq, m_Imp.IsRefSeqConventions())) {
                     string id_str;
                     seq.GetLabel(&id_str, CBioseq::eContent, false);
-                    PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+                    PostErr(eDiag_Error, eErr_SEQ_DESCR_TPAassemblyWithoutTPAKeyword,
                         "Non-TPA record " + id_str + " should not have TpaAssembly object", seq);
                 }
                 if (desc.GetUser().IsRefGeneTracking()
@@ -9003,18 +9003,10 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                             }
                         }
                         // is structured comment valid for this keyword?
-                        if (m_DescrValidator.ValidateStructuredComment(desc.GetUser(), desc, false)) {
-                            // needs to have keyword
-                            if (!found) {
-                                /*
-                                PostErr(eDiag_Info, eErr_SEQ_DESCR_MissingKeyword, 
-                                        "Structured Comment compliant, keyword should be added", ctx, desc);
-                                */
-                            }
-                        } else {
+                        if (!m_DescrValidator.ValidateStructuredComment(desc.GetUser(), desc, false)) {
                             // error if keyword is present
                             if (found) {
-                                PostErr(eDiag_Info, eErr_SEQ_DESCR_BadKeyword, 
+                                PostErr(eDiag_Info, eErr_SEQ_DESCR_BadKeywordForStrucComm, 
                                         "Structured Comment is non-compliant, keyword should be removed", ctx, desc);
                             }
                         }
@@ -9147,7 +9139,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 
         case CSeqdesc::e_Method:
             if (!seq.IsAa()) {
-                PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_ProteinTechniqueOnNucleotide,
                         "Nucleic acid with protein sequence method",
                         ctx, desc);
             }
@@ -9235,7 +9227,7 @@ void CValidError_bioseq::x_ValidateStructuredCommentContext(const CSeqdesc& desc
                         || NStr::Find(taxname, "bacterium ") != string::npos)
                     && !NStr::EndsWith(taxname, " " + bin)) {
                     const CSeq_entry& ctx = *seq.GetParentEntry();
-                    PostErr(eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue,
+                    PostErr(eDiag_Error, eErr_SEQ_DESCR_BINDoesNotMatch,
                         "Organism name should end with sp. plus Barcode Index Number (" + bin + ")",
                         ctx, desc);
                 }
@@ -9272,7 +9264,7 @@ bool CValidError_bioseq::GetTSAConflictingBiomolTechErrors(const CBioseq& seq)
 {
     bool rval = false;
     if (seq.GetInst().GetMol() == CSeq_inst::eMol_dna) {
-        PostErr(eDiag_Error, eErr_SEQ_INST_ConflictingBiomolTech,
+        PostErr(eDiag_Error, eErr_SEQ_INST_TSAshouldBNotBeDNA,
             "TSA sequence should not be DNA", seq);
         rval = true;
     }
@@ -9309,14 +9301,14 @@ void CValidError_bioseq::ValidateMolInfoContext
         switch ( biomol ) {
         case CMolInfo::eBiomol_peptide:
             if ( seq.IsNa() ) {
-                PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
-                    "Nucleic acid with Molinfo-biomol = peptide", ctx, desc);
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidMolInfo,
+                    "Nucleic acid with Molinfo = peptide", ctx, desc);
             }
             break;
 
         case CMolInfo::eBiomol_other_genetic:
             if ( !is_artificial ) {
-                PostErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
+                PostErr(eDiag_Warning, eErr_SEQ_DESCR_MoltypeOtherGenetic,
                     "Molinfo-biomol = other genetic", ctx, desc);
             }
             break;
@@ -9325,7 +9317,7 @@ void CValidError_bioseq::ValidateMolInfoContext
             if ( !m_Imp.IsXR() ) {
                 if ( !IsSynthetic(seq) ) {
                     if ( !x_IsMicroRNA(seq)) {
-                        PostErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
+                        PostErr(eDiag_Warning, eErr_SEQ_DESCR_MoltypeOther,
                             "Molinfo-biomol other used", ctx, desc);
                     }
                 }
@@ -9352,12 +9344,12 @@ void CValidError_bioseq::ValidateMolInfoContext
             && seq.IsSetInst() && seq.GetInst().IsSetStrand()
             && seq.GetInst().GetStrand() != CSeq_inst::eStrand_not_set
             && seq.GetInst().GetStrand() != CSeq_inst::eStrand_ss) {
-            PostErr(eDiag_Error, eErr_SEQ_INST_DSmRNA, 
-                    "mRNA not single stranded", ctx, desc);
+            PostErr(eDiag_Error, eErr_SEQ_INST_mRNAshouldBeSingleStranded, 
+                    "mRNA should be single stranded not double stranded", ctx, desc);
         }
     } else {
         if (is_synthetic_construct && !seq.IsAa()) {
-            PostErr (eDiag_Warning, eErr_SEQ_DESCR_InvalidForType, "synthetic construct should have other-genetic", ctx, desc);
+            PostErr (eDiag_Warning, eErr_SEQ_DESCR_SyntheticConstructWrongMolType, "synthetic construct should have other-genetic", ctx, desc);
         }
     }
 
@@ -9373,7 +9365,7 @@ void CValidError_bioseq::ValidateMolInfoContext
             case CMolInfo::eTech_seq_pept_overlap:
             case CMolInfo::eTech_seq_pept_homol:
             case CMolInfo::eTech_concept_trans_a:
-                PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_ProteinTechniqueOnNucleotide,
                     "Nucleic acid with protein sequence method", ctx, desc);
                 break;
             default:
@@ -9394,7 +9386,7 @@ void CValidError_bioseq::ValidateMolInfoContext
             case CMolInfo::eTech_wgs:
             case CMolInfo::eTech_barcode:
             case CMolInfo::eTech_composite_wgs_htgs:
-                PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_NucleotideTechniqueOnProtein,
                     "Protein with nucleic acid sequence method", ctx, desc);
                 break;
             default:
@@ -9420,11 +9412,11 @@ void CValidError_bioseq::ValidateMolInfoContext
                 // cDNAs, so do not report these
             } else if (!minfo.IsSetBiomol()  
                        || minfo.GetBiomol() != CMolInfo::eBiomol_genomic) {
-                PostErr(eDiag_Error, eErr_SEQ_INST_ConflictingBiomolTech,
+                PostErr(eDiag_Error, eErr_SEQ_INST_HTGS_STS_GSS_WGSshouldBeGenomic,
                     "HTGS/STS/GSS/WGS sequence should be genomic", seq);
             } else if (seq.GetInst().GetMol() != CSeq_inst::eMol_dna  &&
                 seq.GetInst().GetMol() != CSeq_inst::eMol_na) {
-                PostErr(eDiag_Error, eErr_SEQ_INST_ConflictingBiomolTech,
+                PostErr(eDiag_Error, eErr_SEQ_INST_HTGS_STS_GSS_WGSshouldNotBeRNA,
                     "HTGS/STS/GSS/WGS sequence should not be RNA", seq);
             } 
             break;
@@ -9432,7 +9424,7 @@ void CValidError_bioseq::ValidateMolInfoContext
             if (tech == CMolInfo::eTech_est  &&
                  ((! minfo.IsSetBiomol())  ||
                 minfo.GetBiomol() != CMolInfo::eBiomol_mRNA)) {
-                PostErr(eDiag_Warning, eErr_SEQ_INST_ConflictingBiomolTech,
+                PostErr(eDiag_Warning, eErr_SEQ_INST_ESTshouldBemRNA,
                     "EST sequence should be mRNA", seq);
             }
             break;
@@ -9572,7 +9564,7 @@ void CValidError_bioseq::ValidateModifDescriptors (const CBioseq& seq)
                 case eGIBB_mod_dna:
                 case eGIBB_mod_rna:
                     if (m_CurrentHandle && m_CurrentHandle.IsAa()) {
-                        PostErr (eDiag_Error, eErr_SEQ_DESCR_InvalidForType, 
+                        PostErr (eDiag_Error, eErr_SEQ_DESCR_InvalidForTypeGIBB, 
                                  "Nucleic acid GIBB-mod [" + NStr::IntToString (modval) + "] on protein",
                                  ctx, *desc_ci);
                     } else {
@@ -9628,20 +9620,20 @@ void CValidError_bioseq::ValidateMoltypeDescriptors (const CBioseq& seq)
         switch (modval) {
             case eGIBB_mol_peptide:
                 if (!seq.IsAa()) {
-                    PostErr (eDiag_Error, eErr_SEQ_DESCR_InvalidForType, 
+                    PostErr (eDiag_Error, eErr_SEQ_DESCR_InvalidForTypeGIBB, 
                              "Nucleic acid with GIBB-mol = peptide",
                              ctx, *desc_ci);
                 }
                 break;
             case eGIBB_mol_unknown:
             case eGIBB_mol_other:
-                PostErr (eDiag_Error, eErr_SEQ_DESCR_InvalidForType, 
+                PostErr (eDiag_Error, eErr_SEQ_DESCR_InvalidForTypeGIBB, 
                          "GIBB-mol unknown or other used",
                          ctx, *desc_ci);
                 break;
             default:                   // the rest are nucleic acid
                 if (seq.IsAa()) {
-                    PostErr (eDiag_Error, eErr_SEQ_DESCR_InvalidForType, 
+                    PostErr (eDiag_Error, eErr_SEQ_DESCR_InvalidForTypeGIBB, 
                              "GIBB-mol [" + NStr::IntToString (modval) + "] used on protein",
                              ctx, *desc_ci);
                 } else {

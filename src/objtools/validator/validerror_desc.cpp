@@ -155,7 +155,7 @@ void CValidError_desc::ValidateSeqDesc
             break;
         case CSeqdesc::e_Region:
 			if (NStr::IsBlank (desc.GetRegion())) {
-				PostErr (eDiag_Error, eErr_SEQ_DESCR_MissingText, 
+				PostErr (eDiag_Error, eErr_SEQ_DESCR_RegionMissingText, 
 						 "Region descriptor needs text", ctx, desc);
 			}
             break;
@@ -206,7 +206,7 @@ void CValidError_desc::ValidateComment
             "REMARK instead.", *m_Ctx, desc);
     }
     if (NStr::IsBlank (comment)) {
-        PostErr (eDiag_Error, eErr_SEQ_DESCR_MissingText, 
+        PostErr (eDiag_Error, eErr_SEQ_DESCR_CommentMissingText, 
                  "Comment descriptor needs text", *m_Ctx, desc);    
     } else {
         if (NStr::Find (comment, "::") != string::npos) {
@@ -220,7 +220,7 @@ void CValidError_desc::ValidateComment
 void CValidError_desc::ValidateTitle(const string& title, const CSeqdesc& desc, const CSeq_entry& ctx)
 {
     if (NStr::IsBlank(title)) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_MissingText,
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_TitleMissingText,
             "Title descriptor needs text", ctx, desc);
     } else {
         if (s_StringHasPMID(title)) {
@@ -430,7 +430,7 @@ bool CValidError_desc::ValidateStructuredComment
     }
     if (!usr.IsSetData() || usr.GetData().size() == 0) {
         if (report) {
-            PostErr (eDiag_Warning, eErr_SEQ_DESCR_UserObjectProblem, 
+            PostErr (eDiag_Warning, eErr_SEQ_DESCR_StrucCommMissingUserObject, 
                      "Structured Comment user object descriptor is empty", *m_Ctx, desc);
         }
         is_valid = false;
@@ -438,15 +438,15 @@ bool CValidError_desc::ValidateStructuredComment
     string prefix = CComment_rule::GetStructuredCommentPrefix(usr);
     if (NStr::IsBlank(prefix)) {
         if (report) {
-            PostErr (eDiag_Info, eErr_SEQ_DESCR_StructuredCommentPrefixOrSuffixMissing, 
-                    "Structured Comment lacks prefix", *m_Ctx, desc);
+            PostErr (eDiag_Info, eErr_SEQ_DESCR_StrucCommMissingPrefixOrSuffix, 
+                    "Structured Comment lacks prefix and/or suffix", *m_Ctx, desc);
             is_valid &= ValidateStructuredCommentGeneric(usr, desc, true);
         }
         return is_valid;
     }
     if (report && !s_IsAllowedPrefix(prefix)) {
         string report_prefix = CComment_rule::GetStructuredCommentPrefix(usr, false);
-        PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue, 
+        PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidPrefix, 
                  report_prefix + " is not a valid value for StructuredCommentPrefix", *m_Ctx, desc);
         is_valid = false;
     }
@@ -481,7 +481,7 @@ bool CValidError_desc::ValidateStructuredComment
             string sfx = report_sfx;
             CComment_rule::NormalizePrefix(sfx);
             if (report && ! s_IsAllowedPrefix (sfx)) {
-                PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue, 
+                PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidSuffix, 
                     report_sfx + " is not a valid value for StructuredCommentSuffix", *m_Ctx, desc);
             }
         } catch (CException ) {
@@ -491,20 +491,20 @@ bool CValidError_desc::ValidateStructuredComment
         // no prefix, in which case no rules
         // but it is still an error - should have prefix
         if (report) {
-            PostErr (eDiag_Warning, eErr_SEQ_DESCR_StructuredCommentPrefixOrSuffixMissing, 
-                    "Structured Comment lacks prefix", *m_Ctx, desc);
+            PostErr (eDiag_Warning, eErr_SEQ_DESCR_StrucCommMissingPrefixOrSuffix, 
+                    "Structured Comment lacks prefix and/or suffix", *m_Ctx, desc);
             ValidateStructuredCommentGeneric(usr, desc, true);
         }
         is_valid = false;
     }
     if (NStr::Equal(prefix, "Genome-Assembly-Data") && HasBadGenomeAssemblyName(usr)) {
         is_valid = false;
-        PostErr(eDiag_Info, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue,
-            "Assembly Name should not start with 'NCBI' or 'GenBank'", *m_Ctx, desc);
+        PostErr(eDiag_Info, eErr_SEQ_DESCR_BadAssemblyName,
+            "Assembly Name should not start with 'NCBI' or 'GenBank' in structured comment", *m_Ctx, desc);
     }
     if (report && !is_valid && !NStr::IsBlank(prefix)) {
         PostErr(eDiag_Info, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue,
-            "Structured Comment invalid", *m_Ctx, desc);
+            "Structured Comment invalid; the field value and/or name are incorrect", *m_Ctx, desc);
     }
     return is_valid;
 }
@@ -633,7 +633,7 @@ bool CValidError_desc::ValidateDblink
     }
     if (!usr.IsSetData() || usr.GetData().size() == 0) {
         if (report) {
-            PostErr (eDiag_Warning, eErr_SEQ_DESCR_UserObjectProblem, 
+            PostErr (eDiag_Warning, eErr_SEQ_DESCR_DBLinkMissingUserObject, 
                      "DBLink user object descriptor is empty", *m_Ctx, desc);
         }
         return false;
@@ -650,14 +650,14 @@ bool CValidError_desc::ValidateDblink
                         ITERATE(CUser_field::C_Data::TStrs, st_itr, strs) {
                             const string& str = *st_itr;
                             if (x_IsBadBioSampleFormat(str) && x_IsBadAltBioSampleFormat(str)) {
-                                PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+                                PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkBadBioSample,
                                     "Bad BioSample format - " + str, *m_Ctx, desc);
                             }
                         }
                     } else if (fld.GetData().IsStr() && 
                                x_IsBadBioSampleFormat(fld.GetData().GetStr()) &&
                                x_IsBadAltBioSampleFormat(fld.GetData().GetStr())) {
-                        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+                        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkBadBioSample,
                             "Bad BioSample format - " + fld.GetData().GetStr(), *m_Ctx, desc);
                     }
                 }
@@ -667,7 +667,7 @@ bool CValidError_desc::ValidateDblink
                     ITERATE(CUser_field::C_Data::TStrs, st_itr, strs) {
                         const string& str = *st_itr;
                         if (x_IsBadSRAFormat (str)) {
-                            PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+                            PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkBadSRAaccession,
                                 "Bad Sequence Read Archive format - " + str, *m_Ctx, desc);
                         }
                     }
@@ -678,7 +678,7 @@ bool CValidError_desc::ValidateDblink
                     ITERATE(CUser_field::C_Data::TStrs, st_itr, strs) {
                         const string& str = *st_itr;
                         if (x_IsBadBioProjectFormat (str)) {
-                            PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+                            PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkBadBioProject,
                                 "Bad BioProject format - " + str, *m_Ctx, desc);
                         }
                     }
@@ -687,7 +687,7 @@ bool CValidError_desc::ValidateDblink
 
             for ( size_t i = 0; i < sizeof(s_legalDblinkNames) / sizeof(string); ++i) {
                 if (NStr::EqualNocase (label_str, s_legalDblinkNames[i]) && ! NStr::EqualCase (label_str, s_legalDblinkNames[i])) {
-                    PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
+                    PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkBadCapitalization,
                          "Bad DBLink capitalization - " + label_str, *m_Ctx, desc);
                 }
             }
@@ -703,19 +703,19 @@ void CValidError_desc::ValidateUser
  const CSeqdesc& desc)
 {
     if ( !usr.CanGetType() ) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_UserObjectProblem,
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_UserObjectNoType,
                 "User object with no type", *m_Ctx, desc);
         return;
     }
     const CObject_id& oi = usr.GetType();
     if ( !oi.IsStr() && !oi.IsId() ) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_UserObjectProblem,
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_UserObjectNoType,
                 "User object with no type", *m_Ctx, desc);
         return;
     }
     if ( !usr.IsSetData() || usr.GetData().size() == 0) {
         if (! NStr::EqualNocase(oi.GetStr(), "NcbiAutofix") && ! NStr::EqualNocase(oi.GetStr(), "Unverified")) {
-            PostErr(eDiag_Error, eErr_SEQ_DESCR_UserObjectProblem,
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_UserObjectNoData,
                     "User object with no data", *m_Ctx, desc);
         }
     }
@@ -758,7 +758,7 @@ void CValidError_desc::ValidateMolInfo
  const CSeqdesc& desc)
 {
     if ( !minfo.IsSetBiomol() || minfo.GetBiomol() == CMolInfo::eBiomol_unknown) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_MoltypeUnknown,
             "Molinfo-biomol unknown used", *m_Ctx, desc);
     }
 
@@ -802,7 +802,7 @@ void CValidError_desc::ValidateMolInfo
             p = "";
 
         if(p != "")
-            PostErr(eDiag_Error, eErr_SEQ_DESCR_WrongBiomolForTechnique,
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_WrongBiomolForTSA,
                     "Biomol \"" + p + "\" is not appropriate for sequences that use the TSA technique.",
                     *m_Ctx, desc);
     }

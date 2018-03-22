@@ -224,7 +224,7 @@ void CValidError_feat::ValidateSeqFeatContext(const CSeq_feat& feat, const CBios
             case CSeqFeatData::e_Rna:
             case CSeqFeatData::e_Rsite:
             case CSeqFeatData::e_Txinit:
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFeatureForProtein,
                     "Invalid feature for a protein Bioseq.", feat);
                 break;
             default:
@@ -233,7 +233,7 @@ void CValidError_feat::ValidateSeqFeatContext(const CSeq_feat& feat, const CBios
     } else {
         // nucleotide
         if (ftype == CSeqFeatData::e_Prot || ftype == CSeqFeatData::e_Psec_str) {
-            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFeatureForNucleotide,
                     "Invalid feature for a nucleotide Bioseq.", feat);
         }
         if (feat.IsSetData() && feat.GetData().IsProt() && feat.GetData().GetProt().IsSetProcessed()) {
@@ -1846,19 +1846,10 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
 
     if ( rna_type != CRNA_ref::eType_tRNA ) {
         if ( rna.CanGetExt() && rna.GetExt().IsTRNA () ) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidForType,
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidTRNAdata,
                 "tRNA data structure on non-tRNA feature", feat);
         }
     }
-
-    /*
-    if ( rna_type == CRNA_ref::eType_miscRNA ) {
-        if ( rna.CanGetExt() && rna.GetExt().IsGen() ) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidForType,
-                "RNA-gen data structure on miscRNA feature", feat);
-        }
-    }
-    */
 
     bool feat_pseudo = s_IsPseudo(feat);
     bool gene_pseudo = IsOverlappingGenePseudo(feat, m_Scope);
@@ -2717,7 +2708,7 @@ void CValidError_feat::ValidateImp(
     case CSeqFeatData::eSubtype_misc_RNA:
     case CSeqFeatData::eSubtype_precursor_RNA:
     // !!! what about other RNA types (preRNA, otherRNA)?
-        PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidRNAFeature,
               "RNA feature should be converted to the appropriate RNA feature "
               "subtype, location should be converted manually", feat);
         break;
@@ -3989,8 +3980,8 @@ void CValidError_feat::ReportMRNATranslationProblems(size_t problems, const CSeq
             + " mismatches out of " + NStr::SizetToString(total) + " bases", feat);
     }
     if (problems & eMRNAProblem_ProductReplaced) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnqualifiedException,
-            "mRNA has unqualified transcribed product replaced exception", feat);
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_mRNAUnnecessaryException,
+            "mRNA has transcribed product replaced exception", feat);
     }
 }
 
@@ -4037,8 +4028,8 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
 
         CConstRef<CSeq_feat> mrna = m_Imp.GetmRNAGivenProduct (*(bsh.GetCompleteBioseq()));
         if (mrna && mrna.GetPointer() != &feat) {
-            PostErr(eDiag_Critical, eErr_SEQ_FEAT_MultipleMRNAproducts,
-                    "Same product Bioseq from multiple mRNA features", feat);
+            PostErr(eDiag_Critical, eErr_SEQ_FEAT_IdenticalMRNAtranscriptIDs,
+                    "Identical transcript IDs found on multiple mRNAs", feat);
         }
     }
 }
@@ -4913,8 +4904,8 @@ void CValidError_feat::x_ReportCDSTranslationProblems(const CSeq_feat& feat, con
     }
 
     if (problem_flags & CCDSTranslationProblems::eCDSTranslationProblem_UnqualifiedException) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnqualifiedException,
-            "CDS has unqualified translated product replaced exception", feat);
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryException,
+            "CDS has unnecessary translated product replaced exception", feat);
     }
 
 }

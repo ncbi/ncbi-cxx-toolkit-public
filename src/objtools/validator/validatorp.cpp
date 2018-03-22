@@ -438,7 +438,7 @@ static const EErrType sc_ValidGenomeRaise[] = {
     eErr_SEQ_DESCR_MultipleSourceQualifiers,
     eErr_SEQ_DESCR_MultipleSourceVouchers,
     eErr_SEQ_DESCR_WrongVoucherType,
-    eErr_SEQ_DESCR_UserObjectProblem,
+    eErr_SEQ_DESCR_DBLinkMissingUserObject,
     eErr_SEQ_DESCR_BadKeyword,
     eErr_SEQ_DESCR_BioSourceNeedsChromosome,
     eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
@@ -2370,8 +2370,8 @@ bool CValidError_imp::IsTSAIntermediate(const CSeq_entry& se)
 void CValidError_imp::ReportMissingBiosource(const CSeq_entry& se)
 {
     if(m_NoBioSource  &&  !m_IsPatent  &&  !m_IsPDB) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound,
-            "No organism name anywhere on this entire record.", se);
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_NoSourceDescriptor,
+            "No source information included on this record.", se);
         return;
     }
     
@@ -2379,7 +2379,7 @@ void CValidError_imp::ReportMissingBiosource(const CSeq_entry& se)
     
     for ( size_t i = 0; i < num_no_source; ++i ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound,
-                "No organism name has been applied to this Bioseq.  Other qualifiers may exist.",
+                "No organism name included in the source. Other qualifiers may exist.",
                 *(m_BioseqWithNoSource[i]));
     }
 }
