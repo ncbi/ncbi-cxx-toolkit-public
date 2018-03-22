@@ -130,7 +130,7 @@ struct SPSG_Queue
     using TInput = typename TItem::TInput;
     using TOutput = typename TItem::TOutput;
 
-    static void ExecuteImpl(TOutput& output, TItem& item, const CDeadline& deadline);
+    static TOutput Execute(const string& service, TInput input, const CDeadline& deadline);
 };
 
 struct CPSG_BioIdResolutionQueue::SImpl
@@ -155,11 +155,13 @@ struct CPSG_BioIdResolutionQueue::SImpl
         void Process(TOutput& output);
         void Complete(TOutput& output);
 
+        static TOutput Output(TInput input) { return TOutput(move(input)); }
+
         shared_ptr<HCT::http2_request> m_Request;
         TInput m_Input;
     };
 
-    struct TQueue
+    struct TQueue : SPSG_Queue<SItem>
     {
         using TItem = SItem;
         using TInput = CPSG_BioId;
@@ -170,7 +172,6 @@ struct CPSG_BioIdResolutionQueue::SImpl
         TQueue(const string& service);
 
         void Push(TInputSet* input_set, const CDeadline& deadline);
-        static CPSG_BlobId Execute(const string& service, TInput input, const CDeadline& deadline);
         TOutputSet Pop(const CDeadline& deadline, size_t max_results);
         void Clear(TInputSet* input_set);
         bool IsEmpty() const;
@@ -208,12 +209,14 @@ struct CPSG_BlobRetrievalQueue::SImpl
         void Process(TOutput& output);
         void Complete(TOutput& output);
 
+        static TOutput Output(TInput input) { return TOutput(move(input)); }
+
         unique_ptr<iostream> m_Stream;
         shared_ptr<HCT::http2_request> m_Request;
         TInput m_Input;
     };
 
-    struct TSatQueue
+    struct TSatQueue : SPSG_Queue<SSatItem>
     {
         using TItem = SSatItem;
         using TInput = CPSG_BlobId;
@@ -224,7 +227,6 @@ struct CPSG_BlobRetrievalQueue::SImpl
         TSatQueue(const string& service);
 
         void Push(TInputSet* input_set, const CDeadline& deadline);
-        static CPSG_Blob Execute(const string& service, TInput input, const CDeadline& deadline);
         TOutputSet Pop(const CDeadline& deadline, size_t max_results);
         void Clear(TInputSet* input_set);
         bool IsEmpty() const;
@@ -264,27 +266,30 @@ SHCT::TEndPoint SHCT::x_GetEndPoint(const string& service)
 
 
 template <class TItem>
-void SPSG_Queue<TItem>::ExecuteImpl(TOutput& output, TItem& item, const CDeadline& deadline)
+typename TItem::TOutput SPSG_Queue<TItem>::Execute(const string& service, TInput input, const CDeadline& deadline)
 {
+    TOutput output(TItem::Output(input));
+    auto future = make_shared<HCT::io_future>();
+    unique_ptr<TItem> item(new TItem(service, future, move(input)));
     bool has_timeout = !deadline.IsInfinite();
     long wait_ms = has_timeout ? RemainingTimeMs(deadline) : DDRPC::INDEFINITE;
-    bool rv = item.AddRequest(wait_ms);
+    bool rv = item->AddRequest(wait_ms);
     if (!rv) {
         output.SetTimeout("Timeout on adding request");
-        return;
+        return output;
     }
     while (true) {
-        if (item.IsDone()) {
-            item.Process(output);
-            return;
+        if (item->IsDone()) {
+            item->Process(output);
+            return output;
         }
         if (has_timeout) wait_ms = RemainingTimeMs(deadline);
         if (wait_ms <= 0) {
-            item.Cancel();
+            item->Cancel();
             output.SetTimeout("Timeout on waiting result");
-            return;
+            return output;
         }
-        item.WaitFor(wait_ms);
+        item->WaitFor(wait_ms);
     }
 }
 
@@ -382,15 +387,6 @@ void CPSG_BioIdResolutionQueue::SImpl::TQueue::Push(TInputSet* input_set, const 
         if (wait_ms < 0)
             break;
     }
-}
-
-CPSG_BlobId CPSG_BioIdResolutionQueue::SImpl::TQueue::Execute(const string& service, TInput input, const CDeadline& deadline)
-{
-    auto future = make_shared<HCT::io_future>();
-    TOutput rv(input);
-    unique_ptr<TItem> qi(new TItem(service, future, move(input)));
-    SPSG_Queue<TItem>::ExecuteImpl(rv, *qi, deadline);
-    return move(rv);
 }
 
 TPSG_BlobIds CPSG_BioIdResolutionQueue::SImpl::TQueue::Pop(const CDeadline& deadline, size_t max_results)
@@ -579,15 +575,6 @@ void CPSG_BlobRetrievalQueue::SImpl::TSatQueue::Push(TInputSet* input_set, const
         if (wait_ms < 0)
             break;
     }
-}
-
-CPSG_Blob CPSG_BlobRetrievalQueue::SImpl::TSatQueue::Execute(const string& service, TInput input, const CDeadline& deadline)
-{
-    auto future = make_shared<HCT::io_future>();
-    TOutput rv(input);
-    unique_ptr<TItem> qi(new TItem(service, future, move(input)));
-    SPSG_Queue<TItem>::ExecuteImpl(rv, *qi, deadline);
-    return move(rv);
 }
 
 TPSG_Blobs CPSG_BlobRetrievalQueue::SImpl::TSatQueue::Pop(const CDeadline& deadline, size_t max_results)
