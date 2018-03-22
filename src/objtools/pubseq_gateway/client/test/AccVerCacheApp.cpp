@@ -70,6 +70,7 @@ private:
     string m_LookupRemote;
     string m_LookupFileRemote;
     char m_Delimiter;
+    bool m_Direct;
     mutex m_CoutMutex;
     mutex m_CerrMutex;
 
@@ -93,7 +94,7 @@ public:
         argdesc->AddOptionalKey( "fa",  "falookup", "Lookup accession.version from a file",  CArgDescriptions::eString);
         argdesc->AddOptionalKey( "t",   "threads",  "Number of threads",                    CArgDescriptions::eInteger);
         argdesc->SetConstraint(  "t",   new CArgAllow_Integers(1, 256));
-        argdesc->AddFlag(        "s",               "Save retrieved blobs into files");
+        argdesc->AddFlag(        "d",               "Direct blob retrieval");
         SetupArgDescriptions(argdesc.release());
     }
     void ParseArgs()
@@ -125,6 +126,8 @@ public:
             m_LookupFileRemote = args["fa"].AsString();
         if (args["t"])
             m_NumThreads = args["t"].AsInteger();
+
+        m_Direct = args["d"];
     }
 
     virtual int Run(void)
@@ -157,9 +160,14 @@ public:
 
 void CAccVerCacheApp::RemoteLookup()
 {
-    auto blob_id = CPSG_BioIdResolutionQueue::Resolve(m_HostPort, m_LookupRemote);
-    auto blob = CPSG_BlobRetrievalQueue::Retrieve(m_HostPort, blob_id);
-    PrintBlob(blob);
+    if (m_Direct) {
+        auto blob = CPSG_BlobRetrievalQueue::Retrieve(m_HostPort, m_LookupRemote);
+        PrintBlob(blob);
+    } else {
+        auto blob_id = CPSG_BioIdResolutionQueue::Resolve(m_HostPort, m_LookupRemote);
+        auto blob = CPSG_BlobRetrievalQueue::Retrieve(m_HostPort, blob_id);
+        PrintBlob(blob);
+    }
 }
 
 void CAccVerCacheApp::RemoteLookupFile()
@@ -205,16 +213,62 @@ void CAccVerCacheApp::RemoteLookupFile()
                         size_t max = next_index > line_count ? line_count : next_index;
 
                         {
-                            {
-                                TPSG_BioIds bio_ids;
-                                TPSG_BlobIds blob_ids;
+                            TPSG_BioIds bio_ids;
+                            TPSG_BlobIds blob_ids;
 
-                                const unsigned int MAX_SRC_AT_ONCE = 1024;
-                                const unsigned int PUSH_TIMEOUT_MS = 15000;
-                                const unsigned int POP_TIMEOUT_MS = 15000;
-                                size_t res_pushed = 0, res_popped = 0;
-                                size_t ret_pushed = 0, ret_popped = 0;
+                            const unsigned int MAX_SRC_AT_ONCE = 1024;
+                            const unsigned int PUSH_TIMEOUT_MS = 15000;
+                            const unsigned int POP_TIMEOUT_MS = 15000;
+                            size_t res_pushed = 0, res_popped = 0;
+                            size_t ret_pushed = 0, ret_popped = 0;
 
+                            if (m_Direct) {
+                                auto push = [&](const CDeadline& deadline) {
+                                    size_t cnt = bio_ids.size();
+                                    ret_queue.Retrieve(&bio_ids, deadline);
+                                    ret_pushed += cnt - bio_ids.size();
+                                };
+
+                                auto pop = [&](const CDeadline& deadline = CDeadline(0)) {
+                                    try {
+                                        TPSG_Blobs result = ret_queue.GetBlobs(deadline);
+                                        ret_popped += result.size();
+
+                                        for (auto& blob : result) {
+                                            PrintBlob(blob);
+                                        }
+                                    }
+                                    catch (const std::runtime_error& e) {
+                                        ERRLOG0((e.what()));
+                                    }
+                                };
+
+                                for (size_t i = start_index; i < max; ++i) {
+                                    try {
+                                        auto & it_data = all_bio_ids[i];
+                                        LOG3(("Adding [%lu](%s)", i, it_data.GetId().c_str()));
+
+                                        bio_ids.emplace_back(std::move(it_data));
+
+                                        if (bio_ids.size() >= MAX_SRC_AT_ONCE) {
+                                            push(PUSH_TIMEOUT_MS);
+                                            pop(0);
+                                        }
+                                    }
+                                    catch (const std::runtime_error& e) {
+                                        ERRLOG0((e.what()));
+                                    }
+                                }
+
+                                while (bio_ids.size() > 0) {
+                                    push(PUSH_TIMEOUT_MS);
+                                    pop(0);
+                                }
+
+                                while (!ret_queue.IsEmpty()) {
+                                    pop(POP_TIMEOUT_MS);
+                                }
+                            } else {
                                 auto res_push = [&](const CDeadline& deadline) {
                                     size_t cnt = bio_ids.size();
                                     res_queue.Resolve(&bio_ids, deadline);
@@ -297,9 +351,9 @@ void CAccVerCacheApp::RemoteLookupFile()
                                 while (!ret_queue.IsEmpty()) {
                                     ret_pop(POP_TIMEOUT_MS);
                                 }
-
-                                LOG3(("thread finished: start: %lu, max: %lu, count: %lu, res_pushed: %lu, res_popped: %lu, ret_pushed: %lu, ret_popped: %lu", start_index, max, max - start_index, res_pushed, res_popped, ret_pushed, ret_popped));
                             }
+
+                            LOG3(("thread finished: start: %lu, max: %lu, count: %lu, res_pushed: %lu, res_popped: %lu, ret_pushed: %lu, ret_popped: %lu", start_index, max, max - start_index, res_pushed, res_popped, ret_pushed, ret_popped));
                         }
                     }),
                     [](thread* thrd){
@@ -318,8 +372,15 @@ void CAccVerCacheApp::PrintBlob(CPSG_Blob& blob)
     const auto& name = blob_id.GetBioId().GetId();
     lock_guard<mutex> lock(m_CoutMutex);
 
-    if (blob_id.GetStatus() != CPSG_BlobId::eSuccess) {
-        cout << name << "||Failed to resolve: " << blob_id.GetMessage() << std::endl;
+    const auto blob_id_status = blob_id.GetStatus();
+
+    if (blob_id_status != CPSG_BlobId::eSuccess) {
+        cout << name << "||Failed to resolve: " << blob_id_status;
+
+        const auto message = blob_id.GetMessage();
+        if (!message.empty()) cout << "/'" << message << "'";
+       
+        cout << std::endl;
         return;
     }
 
@@ -336,10 +397,18 @@ void CAccVerCacheApp::PrintBlob(CPSG_Blob& blob)
         << blob_info_date_queued << "|"
         << blob_info.state << "|";
 
-    if (blob.GetStatus() != CPSG_Blob::eSuccess) {
-        cout << "Failed to retrieve: " << blob.GetMessage() << std::endl;
+    const auto blob_status = blob.GetStatus();
+
+    if (blob_status != CPSG_Blob::eSuccess) {
+        cout << name << "||Failed to resolve: " << blob_status;
+
+        const auto message = blob.GetMessage();
+        if (!message.empty()) cout << "/'" << message << "'";
+       
+        cout << std::endl;
         return;
     }
+
 
     auto& is = blob.GetStream();
     ostringstream os;
