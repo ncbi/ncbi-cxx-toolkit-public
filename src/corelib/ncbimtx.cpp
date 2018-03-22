@@ -139,7 +139,9 @@ void SSystemFastMutex::InitializeHandle(void)
 
     // Create platform-dependent mutex handle
 #if defined(NCBI_WIN32_THREADS)
-#  if defined(NCBI_USE_CRITICAL_SECTION)
+#  if defined(NCBI_FASTMUTEX_USE_NEW)
+    InitializeSRWLock(&m_Handle);
+#  elif defined(NCBI_USE_CRITICAL_SECTION)
     InitializeCriticalSection(&m_Handle);
 #  else
     xncbi_ValidateAndErrnoReport(
@@ -169,7 +171,9 @@ void SSystemFastMutex::DestroyHandle(void)
 
     // Destroy system mutex handle
 #if defined(NCBI_WIN32_THREADS)
-#  if defined(NCBI_USE_CRITICAL_SECTION)
+#  if defined(NCBI_FASTMUTEX_USE_NEW)
+// noop
+#  elif defined(NCBI_USE_CRITICAL_SECTION)
     DeleteCriticalSection(&m_Handle);
 #  else
     xncbi_VerifyAndErrorReport(CloseHandle(m_Handle) != 0);
@@ -242,12 +246,6 @@ void SSystemFastMutex::ThrowTryLockFailed(void)
                "Mutex check (TryLock) failed");
 }
 
-void SSystemMutex::Destroy(void)
-{
-    xncbi_Validate(m_Count == 0, "Destruction of locked mutex");
-    m_Mutex.Destroy();
-}
-
 #if !defined(NCBI_NO_THREADS)
 void SSystemFastMutex::Lock(ELockSemantics lock /*= eNormal*/)
 {
@@ -261,7 +259,9 @@ void SSystemFastMutex::Lock(ELockSemantics lock /*= eNormal*/)
 
     // Acquire system mutex
 #  if defined(NCBI_WIN32_THREADS)
-#    if defined(NCBI_USE_CRITICAL_SECTION)
+#    if defined(NCBI_FASTMUTEX_USE_NEW)
+    AcquireSRWLockExclusive(&m_Handle);
+#    elif defined(NCBI_USE_CRITICAL_SECTION)
     EnterCriticalSection(&m_Handle);
 #    else
     if (WaitForSingleObject(m_Handle, INFINITE) != WAIT_OBJECT_0) {
@@ -285,7 +285,9 @@ bool SSystemFastMutex::TryLock(void)
     // Check if the system mutex is acquired.
     // If not, acquire for the current thread.
 #  if defined(NCBI_WIN32_THREADS)
-#    if defined(NCBI_USE_CRITICAL_SECTION)
+#    if defined(NCBI_FASTMUTEX_USE_NEW)
+    return TryAcquireSRWLockExclusive(&m_Handle) != 0;
+#    elif defined(NCBI_USE_CRITICAL_SECTION)
     return TryEnterCriticalSection(&m_Handle) != 0;
 #    else
     DWORD status = WaitForSingleObject(m_Handle, 0);
@@ -325,7 +327,9 @@ void SSystemFastMutex::Unlock(ELockSemantics lock /*= eNormal*/)
 
     // Release system mutex
 # if defined(NCBI_WIN32_THREADS)
-#    if defined(NCBI_USE_CRITICAL_SECTION)
+#    if defined(NCBI_FASTMUTEX_USE_NEW)
+    ReleaseSRWLockExclusive(&m_Handle);
+#    elif defined(NCBI_USE_CRITICAL_SECTION)
     LeaveCriticalSection(&m_Handle);
 #    else
     if ( !ReleaseMutex(m_Handle) ) { // error
@@ -337,6 +341,12 @@ void SSystemFastMutex::Unlock(ELockSemantics lock /*= eNormal*/)
         ThrowUnlockFailed();
     }
 # endif
+}
+
+void SSystemMutex::Destroy(void)
+{
+    xncbi_Validate(m_Count == 0, "Destruction of locked mutex");
+    m_Mutex.Destroy();
 }
 
 void SSystemMutex::Lock(SSystemFastMutex::ELockSemantics lock)
@@ -500,7 +510,7 @@ const char* CMutexException::GetErrCodeString(void) const
 //  CInternalRWLock::
 //
 
-#if defined(NCBI_WIN32_THREADS)
+#if defined(NCBI_WIN32_THREADS) && !NCBI_SRWLOCK_USE_NEW
 
 class CWindowsHandle
 {
@@ -590,6 +600,7 @@ protected:
 
 #endif
 
+#if !NCBI_SRWLOCK_USE_NEW
 class CInternalRWLock
 {
 public:
@@ -622,7 +633,7 @@ CInternalRWLock::CInternalRWLock(void)
     m_Mutex.Set(CreateMutex(NULL, FALSE, NULL));
 #endif
 }
-
+#endif
 /////////////////////////////////////////////////////////////////////////////
 //  CRWLock::
 //
@@ -726,7 +737,7 @@ inline bool CRWLock::x_MayAcquireForReading(TThreadSystemID self_id)
 #endif
 
 
-#if defined(NCBI_USE_CRITICAL_SECTION)
+#if defined(NCBI_USE_CRITICAL_SECTION) && !NCBI_SRWLOCK_USE_NEW
 
 // Need special guard for system handle since mutex uses critical section
 class CWin32MutexHandleGuard
@@ -752,7 +763,6 @@ CWin32MutexHandleGuard::~CWin32MutexHandleGuard(void)
 {
     ReleaseMutex(m_Handle);
 }
-
 #endif
 
 
@@ -2039,34 +2049,50 @@ void CSemaphore::Post(unsigned int count)
 void
 CFastRWLock::ReadLock(void)
 {
+#if defined(NCBI_WIN32_THREADS) && defined(NCBI_FASTRWLOCK_USE_NEW)
+    AcquireSRWLockShared(&m_Lock);
+#else
     while (m_LockCount.Add(1) > kWriteLockValue) {
         m_LockCount.Add(-1);
         m_WriteLock.Lock();
         m_WriteLock.Unlock();
     }
+#endif
 }
 
 void
 CFastRWLock::ReadUnlock(void)
 {
+#if defined(NCBI_WIN32_THREADS) && defined(NCBI_FASTRWLOCK_USE_NEW)
+    ReleaseSRWLockShared(&m_Lock);
+#else
     m_LockCount.Add(-1);
+#endif
 }
 
 void
 CFastRWLock::WriteLock(void)
 {
+#if defined(NCBI_WIN32_THREADS) && defined(NCBI_FASTRWLOCK_USE_NEW)
+    AcquireSRWLockExclusive(&m_Lock);
+#else
     m_WriteLock.Lock();
     m_LockCount.Add(kWriteLockValue);
     while (m_LockCount.Get() != kWriteLockValue) {
         NCBI_SCHED_YIELD();
     }
+#endif
 }
 
 void
 CFastRWLock::WriteUnlock(void)
 {
+#if defined(NCBI_WIN32_THREADS) && defined(NCBI_FASTRWLOCK_USE_NEW)
+    ReleaseSRWLockExclusive(&m_Lock);
+#else
     m_LockCount.Add(-kWriteLockValue);
     m_WriteLock.Unlock();
+#endif
 }
 
 
@@ -2474,7 +2500,11 @@ bool CConditionVariable::x_WaitForSignal
 #if defined(NCBI_OS_MSWIN)
     DWORD timeout_msec = deadline.IsInfinite() ?
         INFINITE : deadline.GetRemainingTime().GetAsMilliSeconds();
+#if defined(NCBI_FASTMUTEX_USE_NEW)
+    BOOL res = SleepConditionVariableSRW(&m_ConditionVar, &mutex.m_Handle, timeout_msec, 0);
+#else
     BOOL res = SleepConditionVariableCS(&m_ConditionVar, &mutex.m_Handle, timeout_msec);
+#endif
     s_ThrowIfDifferentMutexes(mutex_guard);
 
     if ( res )

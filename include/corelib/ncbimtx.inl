@@ -304,13 +304,19 @@ bool CSpinLock::IsLocked(void) const
 inline
 CFastRWLock::CFastRWLock(void)
 {
+#if defined(NCBI_WIN32_THREADS) && defined(NCBI_FASTRWLOCK_USE_NEW)
+    InitializeSRWLock(&m_Lock);
+#else
     m_LockCount.Set(0);
+#endif
 }
 
 inline
 CFastRWLock::~CFastRWLock(void)
 {
+#if !defined(NCBI_FASTRWLOCK_USE_NEW)
     _ASSERT(m_LockCount.Get() == 0);
+#endif
 }
 
 

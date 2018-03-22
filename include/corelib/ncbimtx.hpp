@@ -75,7 +75,7 @@
 #define NCBI_SEMAPHORE_USE_NEW   1
 #endif
 
-#if NCBI_SRWLOCK_USE_NEW
+#if NCBI_SRWLOCK_USE_NEW || NCBI_SEMAPHORE_USE_NEW
 # include <atomic>
 # include <mutex>
 # include <condition_variable>
@@ -122,9 +122,13 @@ typedef pthread_mutex_t TSystemMutex;
 #elif defined(NCBI_WIN32_THREADS)
 
 #  define NCBI_USE_CRITICAL_SECTION
+#  define NCBI_FASTMUTEX_USE_NEW
+#  define NCBI_FASTRWLOCK_USE_NEW
 
+#  if defined(NCBI_FASTMUTEX_USE_NEW)
+typedef SRWLOCK TSystemMutex;
 /// Define a platform independent system mutex.
-#  if defined(NCBI_USE_CRITICAL_SECTION)
+#  elif defined(NCBI_USE_CRITICAL_SECTION)
 typedef CRITICAL_SECTION TSystemMutex;
 #  else
 typedef HANDLE TSystemMutex;
@@ -886,7 +890,9 @@ private:
 
 
 // Forward declaration of internal (platform-dependent) RW-lock representation
+#if !NCBI_SRWLOCK_USE_NEW
 class CInternalRWLock;
+#endif
 class CRWLock;
 //class CReadLockGuard;
 //class CWriteLockGuard;
@@ -1153,11 +1159,15 @@ private:
         kWriteLockValue = 0x100000
     };
 
+#if defined(NCBI_WIN32_THREADS) && defined(NCBI_FASTRWLOCK_USE_NEW)
+    SRWLOCK m_Lock;
+#else
     /// Number of read locks acquired or value of kWriteLockValue if write
     /// lock was acquired
     CAtomicCounter  m_LockCount;
     /// Mutex implementing write lock
     CFastMutex      m_WriteLock;
+#endif
 };
 
 
@@ -1423,7 +1433,7 @@ private:
 ///
 ///   Condition variable.
 
-#if defined(NCBI_POSIX_THREADS) || (defined(NCBI_WIN32_THREADS) && defined(NCBI_USE_CRITICAL_SECTION))
+#if defined(NCBI_POSIX_THREADS) || (defined(NCBI_WIN32_THREADS) && (defined(NCBI_USE_CRITICAL_SECTION) || defined(NCBI_FASTMUTEX_USE_NEW)))
 #  define NCBI_HAVE_CONDITIONAL_VARIABLE
 #endif
 
