@@ -5193,7 +5193,8 @@ if test "$with_bdb" != "no" ; then
       [CPPFLAGS="$BERKELEYDB_INCLUDE $orig_CPPFLAGS"
        LIBS="$BERKELEYDB_LIBS $orig_LIBS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM(
-          [[#include <db.h>]],
+          [[#include <db.h>
+            #include <stdlib.h>]],
           [[ DB* dbp;  db_create(&dbp, NULL, 0);  dbp->app_private = 0; ]])],
           [ncbi_cv_lib_berkeley_db=yes], [ncbi_cv_lib_berkeley_db=no])])
    if test "$ncbi_cv_lib_berkeley_db" = "no"; then
