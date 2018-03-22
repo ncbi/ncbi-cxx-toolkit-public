@@ -130,7 +130,22 @@ struct SPSG_Queue
     using TInput = typename TItem::TInput;
     using TOutput = typename TItem::TOutput;
 
+    using TInputSet = vector<TInput>;
+    using TOutputSet = typename TItem::TOutputSet;
+
+    SPSG_Queue(const string& service);
+
+    void Push(TInputSet* input_set, const CDeadline& deadline);
+    TOutputSet Pop(const CDeadline& deadline, size_t max_results);
+    void Clear(TInputSet* input_set);
+    bool IsEmpty() const;
+
     static TOutput Execute(const string& service, TInput input, const CDeadline& deadline);
+
+private:
+    mutable pair<vector<unique_ptr<TItem>>, mutex> m_Items;
+    shared_ptr<void> m_Future;
+    string m_Service;
 };
 
 struct CPSG_BioIdResolutionQueue::SImpl
@@ -145,6 +160,7 @@ struct CPSG_BioIdResolutionQueue::SImpl
     {
         using TInput = CPSG_BioId;
         using TOutput = SOutput;
+        using TOutputSet = vector<CPSG_BlobId>;
 
         SItem(const string& service, shared_ptr<HCT::io_future> afuture, TInput input);
 
@@ -161,26 +177,7 @@ struct CPSG_BioIdResolutionQueue::SImpl
         TInput m_Input;
     };
 
-    struct TQueue : SPSG_Queue<SItem>
-    {
-        using TItem = SItem;
-        using TInput = CPSG_BioId;
-        using TOutput = SOutput;
-        using TInputSet = vector<TInput>;
-        using TOutputSet = vector<CPSG_BlobId>;
-
-        TQueue(const string& service);
-
-        void Push(TInputSet* input_set, const CDeadline& deadline);
-        TOutputSet Pop(const CDeadline& deadline, size_t max_results);
-        void Clear(TInputSet* input_set);
-        bool IsEmpty() const;
-
-    private:
-        mutable pair<vector<unique_ptr<TItem>>, mutex> m_Items;
-        shared_ptr<void> m_Future;
-        string m_Service;
-    };
+    using TQueue = SPSG_Queue<SItem>;
 
     TQueue q;
 
@@ -199,6 +196,7 @@ struct CPSG_BlobRetrievalQueue::SImpl
     {
         using TInput = CPSG_BlobId;
         using TOutput = SSatOutput;
+        using TOutputSet = vector<CPSG_Blob>;
 
         SSatItem(const string& service, shared_ptr<HCT::io_future> afuture, TInput input);
 
@@ -216,26 +214,7 @@ struct CPSG_BlobRetrievalQueue::SImpl
         TInput m_Input;
     };
 
-    struct TSatQueue : SPSG_Queue<SSatItem>
-    {
-        using TItem = SSatItem;
-        using TInput = CPSG_BlobId;
-        using TOutput = SSatOutput;
-        using TInputSet = vector<TInput>;
-        using TOutputSet = vector<CPSG_Blob>;
-
-        TSatQueue(const string& service);
-
-        void Push(TInputSet* input_set, const CDeadline& deadline);
-        TOutputSet Pop(const CDeadline& deadline, size_t max_results);
-        void Clear(TInputSet* input_set);
-        bool IsEmpty() const;
-
-    private:
-        mutable pair<vector<unique_ptr<TItem>>, mutex> m_Items;
-        shared_ptr<void> m_Future;
-        string m_Service;
-    };
+    using TSatQueue = SPSG_Queue<SSatItem>;
 
     TSatQueue sat_q;
 
@@ -346,13 +325,15 @@ void CPSG_BioIdResolutionQueue::SImpl::SItem::Complete(TOutput& output)
 }
 
 
-CPSG_BioIdResolutionQueue::SImpl::TQueue::TQueue(const string& service) :
+template <class TItem>
+SPSG_Queue<TItem>::SPSG_Queue(const string& service) :
     m_Future(make_shared<HCT::io_future>()),
     m_Service(service)
 {
 }
 
-void CPSG_BioIdResolutionQueue::SImpl::TQueue::Push(TInputSet* input_set, const CDeadline& deadline)
+template <class TItem>
+void SPSG_Queue<TItem>::Push(TInputSet* input_set, const CDeadline& deadline)
 {
     if (!input_set)
         return;
@@ -389,7 +370,8 @@ void CPSG_BioIdResolutionQueue::SImpl::TQueue::Push(TInputSet* input_set, const 
     }
 }
 
-TPSG_BlobIds CPSG_BioIdResolutionQueue::SImpl::TQueue::Pop(const CDeadline& deadline, size_t max_results)
+template <class TItem>
+typename TItem::TOutputSet SPSG_Queue<TItem>::Pop(const CDeadline& deadline, size_t max_results)
 {
     TOutputSet rv;
     bool has_limit = max_results != 0;
@@ -407,7 +389,7 @@ TPSG_BlobIds CPSG_BioIdResolutionQueue::SImpl::TQueue::Pop(const CDeadline& dead
             const auto& req = *rev_it;
             if (req->IsDone()) {
                 auto fw_it = next(rev_it).base();
-                TOutput output(move((*fw_it)->m_Input));
+                auto output = TItem::Output(move((*fw_it)->m_Input));
                 req->Process(output);
                 rv.push_back(move(output));
                 m_Items.first.erase(fw_it);
@@ -417,7 +399,8 @@ TPSG_BlobIds CPSG_BioIdResolutionQueue::SImpl::TQueue::Pop(const CDeadline& dead
     return rv;
 }
 
-void CPSG_BioIdResolutionQueue::SImpl::TQueue::Clear(TInputSet* input_set)
+template <class TItem>
+void SPSG_Queue<TItem>::Clear(TInputSet* input_set)
 {
     unique_lock<mutex> lock(m_Items.second);
     if (input_set) {
@@ -432,7 +415,8 @@ void CPSG_BioIdResolutionQueue::SImpl::TQueue::Clear(TInputSet* input_set)
     m_Items.first.clear();
 }
 
-bool CPSG_BioIdResolutionQueue::SImpl::TQueue::IsEmpty() const
+template <class TItem>
+bool SPSG_Queue<TItem>::IsEmpty() const
 {
     unique_lock<mutex> lock(m_Items.second);
     return m_Items.first.size() == 0;
@@ -530,100 +514,8 @@ void CPSG_BlobRetrievalQueue::SImpl::SSatItem::Complete(TOutput& output)
 }
 
 
-CPSG_BlobRetrievalQueue::SImpl::TSatQueue::TSatQueue(const string& service) :
-    m_Future(make_shared<HCT::io_future>()),
-    m_Service(service)
-{
-}
-
 CPSG_BlobRetrievalQueue::~CPSG_BlobRetrievalQueue()
 {
-}
-
-void CPSG_BlobRetrievalQueue::SImpl::TSatQueue::Push(TInputSet* input_set, const CDeadline& deadline)
-{
-    if (!input_set)
-        return;
-    bool has_timeout = !deadline.IsInfinite();
-    unique_lock<mutex> lock(m_Items.second);
-    long wait_ms = 0;
-    auto rev_it = input_set->rbegin();
-    while (rev_it != input_set->rend()) {
-
-        auto future = static_pointer_cast<HCT::io_future>(m_Future);
-        unique_ptr<TItem> qi(new TItem(m_Service, future, *rev_it));
-
-        while (true) {
-            bool rv = qi->AddRequest(wait_ms);
-
-            if (!rv) { // internal queue is full
-                if (has_timeout) {
-                    wait_ms = RemainingTimeMs(deadline);
-                    if (wait_ms < 0)
-                        break;
-                }
-                else
-                    wait_ms = DDRPC::INDEFINITE;
-            }
-            else {
-                m_Items.first.emplace_back(move(qi));
-                input_set->erase(next(rev_it.base()));
-                ++rev_it;
-                break;
-            }
-        }
-        if (wait_ms < 0)
-            break;
-    }
-}
-
-TPSG_Blobs CPSG_BlobRetrievalQueue::SImpl::TSatQueue::Pop(const CDeadline& deadline, size_t max_results)
-{
-    TOutputSet rv;
-    bool has_limit = max_results != 0;
-    unique_lock<mutex> lock(m_Items.second);
-    if (m_Items.first.size() > 0) {
-        bool has_timeout = !deadline.IsInfinite();
-        if (has_timeout) {
-            long wait_ms = RemainingTimeMs(deadline);
-            auto& last = m_Items.first.front();
-            last->WaitFor(wait_ms);
-        }
-        for (auto rev_it = m_Items.first.rbegin(); rev_it != m_Items.first.rend(); ++rev_it) {
-            if (has_limit && max_results-- == 0)
-                break;
-            const auto& req = *rev_it;
-            if (req->IsDone()) {
-                auto fw_it = next(rev_it).base();
-                TOutput output(move((*fw_it)->m_Input));
-                req->Process(output);
-                rv.push_back(move(output));
-                m_Items.first.erase(fw_it);
-            }
-        }
-    }
-    return rv;
-}
-
-void CPSG_BlobRetrievalQueue::SImpl::TSatQueue::Clear(TInputSet* input_set)
-{
-    unique_lock<mutex> lock(m_Items.second);
-    if (input_set) {
-        input_set->clear();
-        input_set->reserve(m_Items.first.size());
-    }
-    for (auto& it : m_Items.first) {
-        it->Cancel();
-        if (input_set)
-            input_set->emplace_back(move(it->m_Input));
-    }
-    m_Items.first.clear();
-}
-
-bool CPSG_BlobRetrievalQueue::SImpl::TSatQueue::IsEmpty() const
-{
-    unique_lock<mutex> lock(m_Items.second);
-    return m_Items.first.size() == 0;
 }
 
 
