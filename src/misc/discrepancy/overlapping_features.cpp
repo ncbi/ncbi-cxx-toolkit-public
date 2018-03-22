@@ -167,7 +167,7 @@ DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
         }
         else {
             br_loc->SetInt().SetId(*seq_id);
-            br_loc->SetInt().SetFrom(rr.GetTo() - 2 - ovlp_len);
+            br_loc->SetInt().SetFrom(rr.GetTo() - 2 + ovlp_len);
             br_loc->SetInt().SetTo(rr.GetTo());
         }
         code_break->SetLoc().Assign(*br_loc);
