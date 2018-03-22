@@ -608,7 +608,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_MOLINFO_TECH)
     }
     if (num_of_missing) {
         if (num_of_missing == num_of_bioseqs) {
-            report[summary];
+            report[summary].SetCount(num_of_missing);
         }
         else {
             report[summary][kInconsistentMolinfoTech].Add(the_map[kEmptyStr]->GetObjects());
