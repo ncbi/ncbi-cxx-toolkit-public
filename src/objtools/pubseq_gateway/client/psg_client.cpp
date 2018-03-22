@@ -81,30 +81,38 @@ void s_UnpackData(TOutput& output, CPSG_BlobId::SBlobInfo& blob_info, string dat
 }
 
 
+using TPSG_IocValue = HCT::io_coordinator;
+using TPSG_Ioc = shared_ptr<TPSG_IocValue>;
+
+using TPSG_EndPointValue = HCT::http2_end_point;
+using TPSG_EndPoint = shared_ptr<TPSG_EndPointValue>;
+using TPSG_EndPoints = unordered_map<string, TPSG_EndPoint>;
+
+using TPSG_RequestValue = HCT::http2_request;
+using TPSG_Request = shared_ptr<TPSG_RequestValue>;
+
+using TPSG_FutureValue = HCT::io_future;
+using TPSG_Future = shared_ptr<TPSG_FutureValue>;
+
 struct SHCT
 {
-    using TIoc = HCT::io_coordinator;
-    using TEndPoint = shared_ptr<HCT::http2_end_point>;
-
-    static TIoc& GetIoc()
+    static TPSG_IocValue& GetIoc()
     {
         return *m_Ioc.second;
     }
 
-    static TEndPoint GetEndPoint(const string& service)
+    static TPSG_EndPoint GetEndPoint(const string& service)
     {
         auto result = m_LocalEndPoints.find(service);
         return result != m_LocalEndPoints.end() ? result->second : x_GetEndPoint(service);
     }
 
 private:
-    using TEndPoints = unordered_map<string, TEndPoint>;
+    static TPSG_EndPoint x_GetEndPoint(const string& service);
 
-    static TEndPoint x_GetEndPoint(const string& service);
-
-    static pair<once_flag, shared_ptr<TIoc>> m_Ioc;
-    static thread_local TEndPoints m_LocalEndPoints;
-    static pair<mutex, TEndPoints> m_EndPoints;
+    static pair<once_flag, TPSG_Ioc> m_Ioc;
+    static thread_local TPSG_EndPoints m_LocalEndPoints;
+    static pair<mutex, TPSG_EndPoints> m_EndPoints;
 };
 
 template <class TOutput>
@@ -143,7 +151,7 @@ struct SPSG_Item : TBase
     using TOutput = typename TBase::TOutput;
     using TOutputSet = typename TBase::TOutputSet;
 
-    SPSG_Item(const string& service, shared_ptr<HCT::io_future> afuture, TInput input);
+    SPSG_Item(const string& service, TPSG_Future afuture, TInput input);
 
     bool AddRequest(long wait_ms) { return SHCT::GetIoc().add_request(m_Request, wait_ms); }
 
@@ -153,7 +161,7 @@ struct SPSG_Item : TBase
 
     void Process(TOutput& output);
 
-    shared_ptr<HCT::http2_request> m_Request;
+    TPSG_Request m_Request;
     TInput m_Input;
 };
 
@@ -195,8 +203,8 @@ struct CPSG_BioIdResolutionQueue::SImpl
         using TOutput = SOutput;
         using TOutputSet = vector<CPSG_BlobId>;
 
-        shared_ptr<HCT::http2_request> Request(const string& service, shared_ptr<HCT::io_future> afuture, TInput input);
-        void Complete(TOutput& output, shared_ptr<HCT::http2_request> request);
+        TPSG_Request Request(const string& service, TPSG_Future afuture, TInput input);
+        void Complete(TOutput& output, TPSG_Request request);
 
         static TOutput Output(TInput input) { return TOutput(move(input)); }
     };
@@ -234,7 +242,7 @@ struct CPSG_BlobRetrievalQueue::SImpl
     {
         using TOutputSet = vector<CPSG_Blob>;
 
-        shared_ptr<HCT::http2_request> Request(const string& service, shared_ptr<HCT::io_future> afuture, string query);
+        TPSG_Request Request(const string& service, TPSG_Future afuture, string query);
 
         unique_ptr<stringstream> m_Stream;
     };
@@ -244,8 +252,8 @@ struct CPSG_BlobRetrievalQueue::SImpl
         using TInput = CPSG_BioId;
         using TOutput = SAccOutput;
 
-        shared_ptr<HCT::http2_request> Request(const string& service, shared_ptr<HCT::io_future> afuture, TInput input);
-        void Complete(TOutput& output, shared_ptr<HCT::http2_request> request);
+        TPSG_Request Request(const string& service, TPSG_Future afuture, TInput input);
+        void Complete(TOutput& output, TPSG_Request request);
 
         static TOutput Output(TInput input) { return TOutput(CPSG_BlobId(move(input))); }
     };
@@ -255,8 +263,8 @@ struct CPSG_BlobRetrievalQueue::SImpl
         using TInput = CPSG_BlobId;
         using TOutput = SSatOutput;
 
-        shared_ptr<HCT::http2_request> Request(const string& service, shared_ptr<HCT::io_future> afuture, TInput input);
-        void Complete(TOutput& output, shared_ptr<HCT::http2_request> request);
+        TPSG_Request Request(const string& service, TPSG_Future afuture, TInput input);
+        void Complete(TOutput& output, TPSG_Request request);
 
         static TOutput Output(TInput input) { return TOutput(move(input)); }
     };
@@ -271,13 +279,13 @@ struct CPSG_BlobRetrievalQueue::SImpl
 };
 
 
-pair<once_flag, shared_ptr<SHCT::TIoc>> SHCT::m_Ioc;
-thread_local SHCT::TEndPoints SHCT::m_LocalEndPoints;
-pair<mutex, SHCT::TEndPoints> SHCT::m_EndPoints;
+pair<once_flag, TPSG_Ioc> SHCT::m_Ioc;
+thread_local TPSG_EndPoints SHCT::m_LocalEndPoints;
+pair<mutex, TPSG_EndPoints> SHCT::m_EndPoints;
 
-SHCT::TEndPoint SHCT::x_GetEndPoint(const string& service)
+TPSG_EndPoint SHCT::x_GetEndPoint(const string& service)
 {
-    call_once(m_Ioc.first, [&]() { m_Ioc.second = make_shared<TIoc>(); });
+    call_once(m_Ioc.first, [&]() { m_Ioc.second = make_shared<TPSG_IocValue>(); });
 
     lock_guard<mutex> lock(m_EndPoints.first);
     auto result = m_EndPoints.second.emplace(service, nullptr);
@@ -285,7 +293,7 @@ SHCT::TEndPoint SHCT::x_GetEndPoint(const string& service)
 
     // If actually added, initialize
     if (result.second) {
-        pair.second.reset(new HCT::http2_end_point{"http", service});
+        pair.second.reset(new TPSG_EndPointValue{"http", service});
     }
 
     m_LocalEndPoints.insert(pair);
@@ -297,7 +305,7 @@ template <class TItem>
 typename TItem::TOutput SPSG_Queue<TItem>::Execute(const string& service, TInput input, const CDeadline& deadline)
 {
     TOutput output(TItem::Output(input));
-    auto future = make_shared<HCT::io_future>();
+    auto future = make_shared<TPSG_FutureValue>();
     unique_ptr<TItem> item(new TItem(service, future, move(input)));
     bool has_timeout = !deadline.IsInfinite();
     long wait_ms = has_timeout ? RemainingTimeMs(deadline) : DDRPC::INDEFINITE;
@@ -322,15 +330,15 @@ typename TItem::TOutput SPSG_Queue<TItem>::Execute(const string& service, TInput
 }
 
 
-shared_ptr<HCT::http2_request> CPSG_BioIdResolutionQueue::SImpl::SItem::Request(const string& service, shared_ptr<HCT::io_future> afuture, TInput input)
+TPSG_Request CPSG_BioIdResolutionQueue::SImpl::SItem::Request(const string& service, TPSG_Future afuture, TInput input)
 {
-    auto rv = make_shared<HCT::http2_request>();
+    auto rv = make_shared<TPSG_RequestValue>();
     rv->init_request(SHCT::GetEndPoint(service), afuture, "/ID/resolve", "accession=" + input.GetId());
     return rv;
 }
 
 template <class TBase>
-SPSG_Item<TBase>::SPSG_Item(const string& service, shared_ptr<HCT::io_future> afuture, TInput input)
+SPSG_Item<TBase>::SPSG_Item(const string& service, TPSG_Future afuture, TInput input)
     :   m_Request(TBase::Request(service, afuture, input)),
         m_Input(move(input))
 {
@@ -361,7 +369,7 @@ void SPSG_Item<TBase>::Process(TOutput& output)
 
 }
 
-void CPSG_BioIdResolutionQueue::SImpl::SItem::Complete(TOutput& output, shared_ptr<HCT::http2_request> request)
+void CPSG_BioIdResolutionQueue::SImpl::SItem::Complete(TOutput& output, TPSG_Request request)
 {
     s_UnpackData(output, output.m_BlobInfo, request->get_reply_data_move());
 }
@@ -369,7 +377,7 @@ void CPSG_BioIdResolutionQueue::SImpl::SItem::Complete(TOutput& output, shared_p
 
 template <class TItem>
 SPSG_Queue<TItem>::SPSG_Queue(const string& service) :
-    m_Future(make_shared<HCT::io_future>()),
+    m_Future(make_shared<TPSG_FutureValue>()),
     m_Service(service)
 {
 }
@@ -385,7 +393,7 @@ void SPSG_Queue<TItem>::Push(TInputSet* input_set, const CDeadline& deadline)
     auto rev_it = input_set->rbegin();
     while (rev_it != input_set->rend()) {
 
-        auto future = static_pointer_cast<HCT::io_future>(m_Future);
+        auto future = static_pointer_cast<TPSG_FutureValue>(m_Future);
         unique_ptr<TItem> qi(new TItem(m_Service, future, *rev_it));
 
         while (true) {
@@ -500,22 +508,22 @@ bool CPSG_BioIdResolutionQueue::IsEmpty() const
 }
 
 
-shared_ptr<HCT::http2_request> CPSG_BlobRetrievalQueue::SImpl::SItem::Request(const string& service, shared_ptr<HCT::io_future> afuture, string query)
+TPSG_Request CPSG_BlobRetrievalQueue::SImpl::SItem::Request(const string& service, TPSG_Future afuture, string query)
 {
     m_Stream.reset(new stringstream);
-    auto rv = make_shared<HCT::http2_request>(m_Stream.get());
+    auto rv = make_shared<TPSG_RequestValue>(m_Stream.get());
     rv->init_request(SHCT::GetEndPoint(service), afuture, "/ID/getblob", move(query));
     return rv;
 }
 
 
-shared_ptr<HCT::http2_request> CPSG_BlobRetrievalQueue::SImpl::SAccItem::Request(const string& service, shared_ptr<HCT::io_future> afuture, TInput input)
+TPSG_Request CPSG_BlobRetrievalQueue::SImpl::SAccItem::Request(const string& service, TPSG_Future afuture, TInput input)
 {
     string query("accession=" + input.GetId());
     return SItem::Request(service , afuture, move(query));
 }
 
-void CPSG_BlobRetrievalQueue::SImpl::SAccItem::Complete(TOutput& output, shared_ptr<HCT::http2_request>)
+void CPSG_BlobRetrievalQueue::SImpl::SAccItem::Complete(TOutput& output, TPSG_Request)
 {
     uint32_t data_size = 0;
     m_Stream->read(reinterpret_cast<char*>(&data_size), sizeof(data_size));
@@ -535,14 +543,14 @@ void CPSG_BlobRetrievalQueue::SImpl::SAccItem::Complete(TOutput& output, shared_
 }
 
 
-shared_ptr<HCT::http2_request> CPSG_BlobRetrievalQueue::SImpl::SSatItem::Request(const string& service, shared_ptr<HCT::io_future> afuture, TInput input)
+TPSG_Request CPSG_BlobRetrievalQueue::SImpl::SSatItem::Request(const string& service, TPSG_Future afuture, TInput input)
 {
     const auto& info = input.GetBlobInfo();
     string query("sat=" + to_string(info.sat) + "&sat_key=" + to_string(info.sat_key));
     return SItem::Request(service , afuture, move(query));
 }
 
-void CPSG_BlobRetrievalQueue::SImpl::SSatItem::Complete(TOutput& output, shared_ptr<HCT::http2_request>)
+void CPSG_BlobRetrievalQueue::SImpl::SSatItem::Complete(TOutput& output, TPSG_Request)
 {
     output.m_Stream = move(m_Stream);
     output.SetSuccess();
