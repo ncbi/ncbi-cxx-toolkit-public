@@ -44,4 +44,9 @@ CHECK_CMD = dbapi_unit_test -dr ftds64     -S DBAPI_SYB160_TEST
 CHECK_CMD = dbapi_unit_test -dr ftds95     -S DBAPI_SYB160_TEST
 CHECK_CMD = dbapi_unit_test -dr ftds100    -S DBAPI_SYB160_TEST
 
+# Repeat some tests with NAMERD
+CHECK_CMD = dbapi_unit_test -dr ftds100    -S MsSql         -conffile namerd.ini
+CHECK_CMD = dbapi_unit_test -dr ctlib      -S Sybase        -conffile namerd.ini
+
+
 WATCHERS = ucko satskyse
