@@ -108,20 +108,32 @@ private:
 };
 
 template <class TOutput>
-struct SPSG_Output : TOutput
+struct SPSG_Result
 {
     using TStatus = typename TOutput::EStatus;
 
     TStatus& status;
     string& message;
 
-    SPSG_Output(TOutput base, TStatus& s, string& m) : TOutput(move(base)), status(s), message(m) {}
+    SPSG_Result(TStatus& s, string& m) : status(s), message(m) {}
 
     void SetSuccess()               { status = TStatus::eSuccess;       message.clear();   }
     void SetNotFound(string m)      { status = TStatus::eNotFound;      message = move(m); }
     void SetCanceled(string m)      { status = TStatus::eCanceled;      message = move(m); }
     void SetTimeout(string m)       { status = TStatus::eTimeout;       message = move(m); }
     void SetUnknownError(string m)  { status = TStatus::eUnknownError;  message = move(m); }
+};
+
+template <class TOutput>
+struct SPSG_Output : TOutput, SPSG_Result<TOutput>
+{
+    using TStatus = typename TOutput::EStatus;
+
+    SPSG_Output(TOutput base, TStatus& s, string& m) :
+        TOutput(move(base)),
+        SPSG_Result<TOutput>(s, m)
+    {
+    }
 };
 
 template <class TBase>
