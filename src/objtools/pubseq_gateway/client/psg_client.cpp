@@ -216,18 +216,24 @@ struct CPSG_BlobRetrievalQueue::SImpl
         SSatOutput(CPSG_Blob base) : TBase(move(base), TBase::m_Status, TBase::m_Message) {}
     };
 
-    struct SSatItem
+    struct SItem
+    {
+        using TOutputSet = vector<CPSG_Blob>;
+
+        shared_ptr<HCT::http2_request> Request(const string& service, shared_ptr<HCT::io_future> afuture, string query);
+
+        unique_ptr<iostream> m_Stream;
+    };
+
+    struct SSatItem : SItem
     {
         using TInput = CPSG_BlobId;
         using TOutput = SSatOutput;
-        using TOutputSet = vector<CPSG_Blob>;
 
         shared_ptr<HCT::http2_request> Request(const string& service, shared_ptr<HCT::io_future> afuture, TInput input);
         void Complete(TOutput& output, shared_ptr<HCT::http2_request> request);
 
         static TOutput Output(TInput input) { return TOutput(move(input)); }
-
-        unique_ptr<iostream> m_Stream;
     };
 
     using TSatQueue = SPSG_Queue<SPSG_Item<SSatItem>>;
@@ -467,14 +473,20 @@ bool CPSG_BioIdResolutionQueue::IsEmpty() const
 }
 
 
-shared_ptr<HCT::http2_request> CPSG_BlobRetrievalQueue::SImpl::SSatItem::Request(const string& service, shared_ptr<HCT::io_future> afuture, TInput input)
+shared_ptr<HCT::http2_request> CPSG_BlobRetrievalQueue::SImpl::SItem::Request(const string& service, shared_ptr<HCT::io_future> afuture, string query)
 {
-    const auto& info = input.GetBlobInfo();
-    string query("sat=" + to_string(info.sat) + "&sat_key=" + to_string(info.sat_key));
     m_Stream.reset(new stringstream);
     auto rv = make_shared<HCT::http2_request>(m_Stream.get());
     rv->init_request(SHCT::GetEndPoint(service), afuture, "/ID/getblob", move(query));
     return rv;
+}
+
+
+shared_ptr<HCT::http2_request> CPSG_BlobRetrievalQueue::SImpl::SSatItem::Request(const string& service, shared_ptr<HCT::io_future> afuture, TInput input)
+{
+    const auto& info = input.GetBlobInfo();
+    string query("sat=" + to_string(info.sat) + "&sat_key=" + to_string(info.sat_key));
+    return SItem::Request(service , afuture, move(query));
 }
 
 void CPSG_BlobRetrievalQueue::SImpl::SSatItem::Complete(TOutput& output, shared_ptr<HCT::http2_request>)
