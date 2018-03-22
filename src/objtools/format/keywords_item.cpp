@@ -288,14 +288,17 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
     }
 
     CBioseqContext::TUnverified unv = ctx.GetUnverifiedType();
+    if ((unv & CBioseqContext::fUnverified_SequenceOrAnnotation) != 0) {
+        x_AddKeyword("UNVERIFIED");
+    }
     if ((unv & CBioseqContext::fUnverified_Organism) != 0) {
         x_AddKeyword("UNVERIFIED_ORGANISM");
-    } else if ((unv & CBioseqContext::fUnverified_Misassembled) != 0) {
+    }
+    if ((unv & CBioseqContext::fUnverified_Misassembled) != 0) {
         x_AddKeyword("UNVERIFIED_MISASSEMBLY");
-    } else if ((unv & CBioseqContext::fUnverified_Contaminant) != 0) {
+    }
+    if ((unv & CBioseqContext::fUnverified_Contaminant) != 0) {
         x_AddKeyword("UNVERIFIED_CONTAMINANT");
-    } else if ((unv & CBioseqContext::fUnverified_SequenceOrAnnotation) != 0) {
-        x_AddKeyword("UNVERIFIED");
     }
 
     if (ctx.IsEncode()) {
