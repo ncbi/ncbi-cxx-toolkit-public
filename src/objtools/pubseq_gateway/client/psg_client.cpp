@@ -58,6 +58,26 @@ long RemainingTimeMs(const CDeadline& deadline)
     return nanosec / 1000000L + sec * 1000L;
 }
 
+template <class TOutput>
+void s_UnpackData(TOutput& output, CPSG_BlobId::SBlobInfo& blob_info, string data)
+{
+    try {
+        DDRPC::DataRow rec;
+        DDRPC::AccVerResolverUnpackData(rec, data);
+        blob_info.gi               = rec[0].AsInt8;
+        blob_info.seq_length       = rec[1].AsUint4;
+        blob_info.sat              = rec[2].AsUint1;
+        blob_info.sat_key          = rec[3].AsUint4;
+        blob_info.tax_id           = rec[4].AsUint4;
+        blob_info.last_modified    = rec[5].AsDateTime;
+        blob_info.state            = rec[6].AsUint1;
+        output.SetSuccess();
+    }
+    catch (const DDRPC::EDdRpcException& e) {
+        output.SetUnknownError(e.what());
+    }
+}
+
 }
 
 
@@ -133,6 +153,7 @@ struct CPSG_BioIdResolutionQueue::SImpl
         bool IsDone() const;
         void Cancel();
         void Process(TOutput& output);
+        void Complete(TOutput& output);
 
         shared_ptr<HCT::http2_request> m_Request;
         TInput m_Input;
@@ -185,6 +206,7 @@ struct CPSG_BlobRetrievalQueue::SImpl
         bool IsDone() const;
         void Cancel();
         void Process(TOutput& output);
+        void Complete(TOutput& output);
 
         unique_ptr<iostream> m_Stream;
         shared_ptr<HCT::http2_request> m_Request;
@@ -299,22 +321,7 @@ void CPSG_BioIdResolutionQueue::SImpl::SItem::Process(TOutput& output)
     }
     else switch (m_Request->get_result_data().get_http_status()) {
         case 200: {
-            string data = m_Request->get_reply_data_move();
-            DDRPC::DataRow rec;
-            try {
-                DDRPC::AccVerResolverUnpackData(rec, data);
-                output.SetSuccess();
-                output.m_BlobInfo.gi               = rec[0].AsInt8;
-                output.m_BlobInfo.seq_length       = rec[1].AsUint4;
-                output.m_BlobInfo.sat              = rec[2].AsUint1;
-                output.m_BlobInfo.sat_key          = rec[3].AsUint4;
-                output.m_BlobInfo.tax_id           = rec[4].AsUint4;
-                output.m_BlobInfo.last_modified    = rec[5].AsDateTime;
-                output.m_BlobInfo.state            = rec[6].AsUint1;
-            }
-            catch (const DDRPC::EDdRpcException& e) {
-                output.SetUnknownError(e.what());
-            }
+            Complete(output);
             break;
         }
         case 404: {
@@ -326,6 +333,11 @@ void CPSG_BioIdResolutionQueue::SImpl::SItem::Process(TOutput& output)
         }
     }
 
+}
+
+void CPSG_BioIdResolutionQueue::SImpl::SItem::Complete(TOutput& output)
+{
+    s_UnpackData(output, output.m_BlobInfo, m_Request->get_reply_data_move());
 }
 
 
@@ -501,8 +513,7 @@ void CPSG_BlobRetrievalQueue::SImpl::SSatItem::Process(TOutput& output)
     }
     else switch (m_Request->get_result_data().get_http_status()) {
         case 200: {
-            output.m_Stream = move(m_Stream);
-            output.SetSuccess();
+            Complete(output);
             break;
         }
         case 404: {
@@ -514,6 +525,12 @@ void CPSG_BlobRetrievalQueue::SImpl::SSatItem::Process(TOutput& output)
         }
     }
 
+}
+
+void CPSG_BlobRetrievalQueue::SImpl::SSatItem::Complete(TOutput& output)
+{
+    output.m_Stream = move(m_Stream);
+    output.SetSuccess();
 }
 
 
