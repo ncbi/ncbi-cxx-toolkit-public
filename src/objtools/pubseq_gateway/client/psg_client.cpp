@@ -124,6 +124,27 @@ struct SPSG_Output : TOutput
     void SetUnknownError(string m)  { status = TStatus::eUnknownError;  message = move(m); }
 };
 
+template <class TBase>
+struct SPSG_Item : TBase
+{
+    using TInput = typename TBase::TInput;
+    using TOutput = typename TBase::TOutput;
+    using TOutputSet = typename TBase::TOutputSet;
+
+    SPSG_Item(const string& service, shared_ptr<HCT::io_future> afuture, TInput input);
+
+    bool AddRequest(long wait_ms) { return SHCT::GetIoc().add_request(m_Request, wait_ms); }
+
+    void WaitFor(long timeout_ms) {        m_Request->get_result_data().wait_for(timeout_ms); }
+    bool IsDone() const           { return m_Request->get_result_data().get_finished(); }
+    void Cancel()                 {        m_Request->send_cancel(); }
+
+    void Process(TOutput& output);
+
+    shared_ptr<HCT::http2_request> m_Request;
+    TInput m_Input;
+};
+
 template <class TItem>
 struct SPSG_Queue
 {
@@ -162,22 +183,13 @@ struct CPSG_BioIdResolutionQueue::SImpl
         using TOutput = SOutput;
         using TOutputSet = vector<CPSG_BlobId>;
 
-        SItem(const string& service, shared_ptr<HCT::io_future> afuture, TInput input);
-
-        bool AddRequest(long wait_ms) { return SHCT::GetIoc().add_request(m_Request, wait_ms); }
-        void WaitFor(long timeout_ms);
-        bool IsDone() const;
-        void Cancel();
-        void Process(TOutput& output);
-        void Complete(TOutput& output);
+        shared_ptr<HCT::http2_request> Request(const string& service, shared_ptr<HCT::io_future> afuture, TInput input);
+        void Complete(TOutput& output, shared_ptr<HCT::http2_request> request);
 
         static TOutput Output(TInput input) { return TOutput(move(input)); }
-
-        shared_ptr<HCT::http2_request> m_Request;
-        TInput m_Input;
     };
 
-    using TQueue = SPSG_Queue<SItem>;
+    using TQueue = SPSG_Queue<SPSG_Item<SItem>>;
 
     TQueue q;
 
@@ -198,23 +210,15 @@ struct CPSG_BlobRetrievalQueue::SImpl
         using TOutput = SSatOutput;
         using TOutputSet = vector<CPSG_Blob>;
 
-        SSatItem(const string& service, shared_ptr<HCT::io_future> afuture, TInput input);
-
-        bool AddRequest(long wait_ms) { return SHCT::GetIoc().add_request(m_Request, wait_ms); }
-        void WaitFor(long timeout_ms);
-        bool IsDone() const;
-        void Cancel();
-        void Process(TOutput& output);
-        void Complete(TOutput& output);
+        shared_ptr<HCT::http2_request> Request(const string& service, shared_ptr<HCT::io_future> afuture, TInput input);
+        void Complete(TOutput& output, shared_ptr<HCT::http2_request> request);
 
         static TOutput Output(TInput input) { return TOutput(move(input)); }
 
         unique_ptr<iostream> m_Stream;
-        shared_ptr<HCT::http2_request> m_Request;
-        TInput m_Input;
     };
 
-    using TSatQueue = SPSG_Queue<SSatItem>;
+    using TSatQueue = SPSG_Queue<SPSG_Item<SSatItem>>;
 
     TSatQueue sat_q;
 
@@ -273,29 +277,22 @@ typename TItem::TOutput SPSG_Queue<TItem>::Execute(const string& service, TInput
 }
 
 
-CPSG_BioIdResolutionQueue::SImpl::SItem::SItem(const string& service, shared_ptr<HCT::io_future> afuture, TInput input)
-    :   m_Request(make_shared<HCT::http2_request>()),
+shared_ptr<HCT::http2_request> CPSG_BioIdResolutionQueue::SImpl::SItem::Request(const string& service, shared_ptr<HCT::io_future> afuture, TInput input)
+{
+    auto rv = make_shared<HCT::http2_request>();
+    rv->init_request(SHCT::GetEndPoint(service), afuture, "/ID/resolve", "accession=" + input.GetId());
+    return rv;
+}
+
+template <class TBase>
+SPSG_Item<TBase>::SPSG_Item(const string& service, shared_ptr<HCT::io_future> afuture, TInput input)
+    :   m_Request(TBase::Request(service, afuture, input)),
         m_Input(move(input))
 {
-    m_Request->init_request(SHCT::GetEndPoint(service), afuture, "/ID/resolve", "accession=" + m_Input.GetId());
 }
 
-void CPSG_BioIdResolutionQueue::SImpl::SItem::WaitFor(long timeout_ms)
-{
-    m_Request->get_result_data().wait_for(timeout_ms);
-}
-
-bool CPSG_BioIdResolutionQueue::SImpl::SItem::IsDone() const
-{
-    return m_Request->get_result_data().get_finished();
-}
-
-void CPSG_BioIdResolutionQueue::SImpl::SItem::Cancel()
-{
-    m_Request->send_cancel();
-}
-
-void CPSG_BioIdResolutionQueue::SImpl::SItem::Process(TOutput& output)
+template <class TBase>
+void SPSG_Item<TBase>::Process(TOutput& output)
 {
     if (m_Request->get_result_data().get_cancelled()) {
         output.SetCanceled("Request was canceled");
@@ -305,7 +302,7 @@ void CPSG_BioIdResolutionQueue::SImpl::SItem::Process(TOutput& output)
     }
     else switch (m_Request->get_result_data().get_http_status()) {
         case 200: {
-            Complete(output);
+            TBase::Complete(output, m_Request);
             break;
         }
         case 404: {
@@ -319,9 +316,9 @@ void CPSG_BioIdResolutionQueue::SImpl::SItem::Process(TOutput& output)
 
 }
 
-void CPSG_BioIdResolutionQueue::SImpl::SItem::Complete(TOutput& output)
+void CPSG_BioIdResolutionQueue::SImpl::SItem::Complete(TOutput& output, shared_ptr<HCT::http2_request> request)
 {
-    s_UnpackData(output, output.m_BlobInfo, m_Request->get_reply_data_move());
+    s_UnpackData(output, output.m_BlobInfo, request->get_reply_data_move());
 }
 
 
@@ -458,56 +455,17 @@ bool CPSG_BioIdResolutionQueue::IsEmpty() const
 }
 
 
-CPSG_BlobRetrievalQueue::SImpl::SSatItem::SSatItem(const string& service, shared_ptr<HCT::io_future> afuture, TInput input)
-    :   m_Stream(new stringstream),
-        m_Request(make_shared<HCT::http2_request>(m_Stream.get())),
-        m_Input(move(input))
+shared_ptr<HCT::http2_request> CPSG_BlobRetrievalQueue::SImpl::SSatItem::Request(const string& service, shared_ptr<HCT::io_future> afuture, TInput input)
 {
     const auto& info = input.GetBlobInfo();
     string query("sat=" + to_string(info.sat) + "&sat_key=" + to_string(info.sat_key));
-    m_Request->init_request(SHCT::GetEndPoint(service), afuture, "/ID/getblob", move(query));
+    m_Stream.reset(new stringstream);
+    auto rv = make_shared<HCT::http2_request>(m_Stream.get());
+    rv->init_request(SHCT::GetEndPoint(service), afuture, "/ID/getblob", move(query));
+    return rv;
 }
 
-void CPSG_BlobRetrievalQueue::SImpl::SSatItem::WaitFor(long timeout_ms)
-{
-    m_Request->get_result_data().wait_for(timeout_ms);
-}
-
-bool CPSG_BlobRetrievalQueue::SImpl::SSatItem::IsDone() const
-{
-    return m_Request->get_result_data().get_finished();
-}
-
-void CPSG_BlobRetrievalQueue::SImpl::SSatItem::Cancel()
-{
-    m_Request->send_cancel();
-}
-
-void CPSG_BlobRetrievalQueue::SImpl::SSatItem::Process(TOutput& output)
-{
-    if (m_Request->get_result_data().get_cancelled()) {
-        output.SetCanceled("Request was canceled");
-    }
-    else if (m_Request->has_error()) {
-        output.SetUnknownError(m_Request->get_error_description());
-    }
-    else switch (m_Request->get_result_data().get_http_status()) {
-        case 200: {
-            Complete(output);
-            break;
-        }
-        case 404: {
-            output.SetNotFound("Not found");
-            break;
-        }
-        default: {
-            output.SetUnknownError("Unexpected result");
-        }
-    }
-
-}
-
-void CPSG_BlobRetrievalQueue::SImpl::SSatItem::Complete(TOutput& output)
+void CPSG_BlobRetrievalQueue::SImpl::SSatItem::Complete(TOutput& output, shared_ptr<HCT::http2_request>)
 {
     output.m_Stream = move(m_Stream);
     output.SetSuccess();
