@@ -210,6 +210,20 @@ struct CPSG_BioIdResolutionQueue::SImpl
 
 struct CPSG_BlobRetrievalQueue::SImpl
 {
+    struct SAccOutput : SPSG_Output<CPSG_Blob>
+    {
+        using TBase = SPSG_Output<CPSG_Blob>;
+        using TBlobIdResult = SPSG_Result<CPSG_BlobId>;
+
+        TBlobIdResult blob_id_result;
+
+        SAccOutput(CPSG_Blob base) :
+            TBase(move(base), TBase::m_Status, TBase::m_Message),
+            blob_id_result(TBase::m_BlobId.m_Status, TBase::m_BlobId.m_Message)
+        {
+        }
+    };
+
     struct SSatOutput : SPSG_Output<CPSG_Blob>
     {
         using TBase = SPSG_Output<CPSG_Blob>;
@@ -222,7 +236,18 @@ struct CPSG_BlobRetrievalQueue::SImpl
 
         shared_ptr<HCT::http2_request> Request(const string& service, shared_ptr<HCT::io_future> afuture, string query);
 
-        unique_ptr<iostream> m_Stream;
+        unique_ptr<stringstream> m_Stream;
+    };
+
+    struct SAccItem : SItem
+    {
+        using TInput = CPSG_BioId;
+        using TOutput = SAccOutput;
+
+        shared_ptr<HCT::http2_request> Request(const string& service, shared_ptr<HCT::io_future> afuture, TInput input);
+        void Complete(TOutput& output, shared_ptr<HCT::http2_request> request);
+
+        static TOutput Output(TInput input) { return TOutput(CPSG_BlobId(move(input))); }
     };
 
     struct SSatItem : SItem
@@ -236,11 +261,13 @@ struct CPSG_BlobRetrievalQueue::SImpl
         static TOutput Output(TInput input) { return TOutput(move(input)); }
     };
 
+    using TAccQueue = SPSG_Queue<SPSG_Item<SAccItem>>;
     using TSatQueue = SPSG_Queue<SPSG_Item<SSatItem>>;
 
+    TAccQueue acc_q;
     TSatQueue sat_q;
 
-    SImpl(const string& service) : sat_q(service) {}
+    SImpl(const string& service) : acc_q(service), sat_q(service) {}
 };
 
 
@@ -482,6 +509,32 @@ shared_ptr<HCT::http2_request> CPSG_BlobRetrievalQueue::SImpl::SItem::Request(co
 }
 
 
+shared_ptr<HCT::http2_request> CPSG_BlobRetrievalQueue::SImpl::SAccItem::Request(const string& service, shared_ptr<HCT::io_future> afuture, TInput input)
+{
+    string query("accession=" + input.GetId());
+    return SItem::Request(service , afuture, move(query));
+}
+
+void CPSG_BlobRetrievalQueue::SImpl::SAccItem::Complete(TOutput& output, shared_ptr<HCT::http2_request>)
+{
+    uint32_t data_size = 0;
+    m_Stream->read(reinterpret_cast<char*>(&data_size), sizeof(data_size));
+    data_size = ntohl(data_size);
+    
+    string data(data_size, 0);
+    m_Stream->read(&data.front(), data.size());
+    s_UnpackData(output.blob_id_result, output.m_BlobId.m_BlobInfo, data);
+
+    auto blob_size = m_Stream->str().size() - data_size - sizeof(data_size);
+    string blob(blob_size, 0);
+    m_Stream->read(&blob.front(), blob.size());
+    m_Stream->str(blob);
+
+    output.m_Stream = move(m_Stream);
+    output.SetSuccess();
+}
+
+
 shared_ptr<HCT::http2_request> CPSG_BlobRetrievalQueue::SImpl::SSatItem::Request(const string& service, shared_ptr<HCT::io_future> afuture, TInput input)
 {
     const auto& info = input.GetBlobInfo();
@@ -506,6 +559,16 @@ CPSG_BlobRetrievalQueue::CPSG_BlobRetrievalQueue(const string& service) :
 {
 }
 
+void CPSG_BlobRetrievalQueue::Retrieve(TPSG_BioIds* bio_ids, const CDeadline& deadline)
+{
+    m_Impl->acc_q.Push(bio_ids, deadline);
+}
+
+CPSG_Blob CPSG_BlobRetrievalQueue::Retrieve(const string& service, CPSG_BioId bio_id, const CDeadline& deadline)
+{
+    return SImpl::TAccQueue::Execute(service, bio_id, deadline);
+}
+
 void CPSG_BlobRetrievalQueue::Retrieve(TPSG_BlobIds* blob_ids, const CDeadline& deadline)
 {
     m_Impl->sat_q.Push(blob_ids, deadline);
@@ -518,17 +581,21 @@ CPSG_Blob CPSG_BlobRetrievalQueue::Retrieve(const string& service, CPSG_BlobId b
 
 TPSG_Blobs CPSG_BlobRetrievalQueue::GetBlobs(const CDeadline& deadline, size_t max_results)
 {
-    return m_Impl->sat_q.Pop(deadline, max_results);
+    auto acc_rv = m_Impl->acc_q.Pop(deadline, max_results);
+    auto sat_rv = m_Impl->sat_q.Pop(deadline, max_results);
+    acc_rv.insert(acc_rv.end(), make_move_iterator(sat_rv.begin()), make_move_iterator(sat_rv.end()));
+    return acc_rv;
 }
 
-void CPSG_BlobRetrievalQueue::Clear(TPSG_BlobIds* blob_ids)
+void CPSG_BlobRetrievalQueue::Clear(TPSG_BioIds* bio_ids, TPSG_BlobIds* blob_ids)
 {
+    m_Impl->acc_q.Clear(bio_ids);
     m_Impl->sat_q.Clear(blob_ids);
 }
 
 bool CPSG_BlobRetrievalQueue::IsEmpty() const
 {
-    return m_Impl->sat_q.IsEmpty();
+    return m_Impl->acc_q.IsEmpty() && m_Impl->sat_q.IsEmpty();
 }
 
 

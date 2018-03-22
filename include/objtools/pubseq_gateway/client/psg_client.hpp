@@ -119,6 +119,7 @@ private:
     string      m_Message;
 
     friend class CPSG_BioIdResolutionQueue;
+    friend class CPSG_BlobRetrievalQueue;
 };
 
 
@@ -287,14 +288,14 @@ public:
     ///  For how long to try to push the bio-ids into the queue. The function
     ///  returns if either it succeeds to push ALL of the bio-ids into the
     ///  queue; or if it hits the deadline.
-    /* TODO: void Retrieve(TPSG_BioIds*     bio_ids,
-                           const CDeadline& deadline = 0);*/
+    void Retrieve(TPSG_BioIds*     bio_ids,
+                  const CDeadline& deadline = 0);
 
 
     /// Perform single blob retrieval (by its bio-id), synchronously
-    /* TODO: static CPSG_Blob Retrieve(const string&    service,
-                                       CPSG_BioId       bio_id,
-                                       const CDeadline& deadline = CDeadline::eInfinite);*/
+    static CPSG_Blob Retrieve(const string&    service,
+                              CPSG_BioId       bio_id,
+                              const CDeadline& deadline = CDeadline::eInfinite);
 
     /// Try to schedule more blob-ids for the blob retrieval.
     /// @note
@@ -349,7 +350,7 @@ public:
     /// @param blob_ids
     ///  The blob-ids for which no retrievable blobs have yet been obtained 'll
     ///  be added to "blob_ids". If "blob_ids" is NULL, then they be discarded.
-    void Clear(/* TODO: TPSG_BioIds* bio_ids,*/ TPSG_BlobIds* blob_ids);
+    void Clear(TPSG_BioIds* bio_ids, TPSG_BlobIds* blob_ids);
 
     /// TRUE if there is nothing left in the queue (whether retrieved or not)
     bool IsEmpty() const;
