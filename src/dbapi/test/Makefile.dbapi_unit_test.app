@@ -44,9 +44,9 @@ CHECK_CMD = dbapi_unit_test -dr ftds64     -S DBAPI_SYB160_TEST
 CHECK_CMD = dbapi_unit_test -dr ftds95     -S DBAPI_SYB160_TEST
 CHECK_CMD = dbapi_unit_test -dr ftds100    -S DBAPI_SYB160_TEST
 
-# Repeat some tests with NAMERD
-CHECK_CMD = dbapi_unit_test -dr ftds100    -S MsSql         -conffile namerd.ini
-CHECK_CMD = dbapi_unit_test -dr ctlib      -S Sybase        -conffile namerd.ini
-
+# Test for successful NAMERD service name resolution by using a service name
+# that should be resolved by NAMERD, but is not present
+# in the interfaces file or DNS.
+CHECK_CMD = dbapi_unit_test -dr ftds100    -S DBAPI_SYB155_TEST         -conffile namerd.ini
 
 WATCHERS = ucko satskyse
