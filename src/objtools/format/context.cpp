@@ -608,11 +608,14 @@ void CBioseqContext::x_SetDataFromUserObjects(void)
             } else if (utype == CUser_object::eObjectType_Unverified) {
                 if (uo.IsUnverifiedOrganism()) {
                     m_fUnverified |= fUnverified_Organism;
-                } else if (uo.IsUnverifiedFeature()) {
+                }
+                if (uo.IsUnverifiedFeature()) {
                     m_fUnverified |= fUnverified_SequenceOrAnnotation;
-                } else if (uo.IsUnverifiedMisassembled()) {
+                }
+                if (uo.IsUnverifiedMisassembled()) {
                     m_fUnverified |= fUnverified_Misassembled;
-                } else if (uo.IsUnverifiedContaminant()) {
+                }
+                if (uo.IsUnverifiedContaminant()) {
                     m_fUnverified |= fUnverified_Contaminant;
                 }
                 // default in the past was to use feature

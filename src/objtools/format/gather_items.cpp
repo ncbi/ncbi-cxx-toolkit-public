@@ -950,13 +950,11 @@ void CFlatGatherer::x_UnverifiedComment(CBioseqContext& ctx) const
     typedef SStaticPair<CBioseqContext::TUnverified, const char*> TUnverifiedElem;
     static const TUnverifiedElem sc_unverified_map[] = {
         { CBioseqContext::fUnverified_Organism,
-            "GenBank staff is unable to verify source organism provided by the submitter." },
+            "source organism" },
         { CBioseqContext::fUnverified_SequenceOrAnnotation,
-            "GenBank staff is unable to verify sequence and/or annotation provided by the submitter." },
+            "sequence and/or annotation" },
         { CBioseqContext::fUnverified_Misassembled,
-            "GenBank staff is unable to verify sequence assembly provided by the submitter." },
-        { CBioseqContext::fUnverified_Contaminant,
-            "GenBank staff has noted that the sequence(s) may be contaminated." }
+            "sequence assembly" }
     };
     typedef CStaticArrayMap<CBioseqContext::TUnverified, const char*> TUnverifiedMap;
     DEFINE_STATIC_ARRAY_MAP(TUnverifiedMap, sc_UnverifiedMap, sc_unverified_map);
@@ -967,17 +965,32 @@ void CFlatGatherer::x_UnverifiedComment(CBioseqContext& ctx) const
             arr_type_string.push_back(map_iter->second);
         }
     }
+    bool is_contaminated = (ctx.GetUnverifiedType() & CBioseqContext::fUnverified_Contaminant) != 0;
+
+    if (arr_type_string.size() < 1 && !is_contaminated) {
+        return;
+    }
 
     string type_string;
-    for( size_t ii = 0; ii < arr_type_string.size(); ++ii ) {
-        if( ii == 0 ) {
-            // do nothing; no prefix
-        } else if( ii == (arr_type_string.size() - 1) ) {
-            type_string += " and ";
-        } else {
-            type_string += ", ";
+    if (arr_type_string.size() > 0) {
+        type_string += "GenBank staff is unable to verify ";
+        for( size_t ii = 0; ii < arr_type_string.size(); ++ii ) {
+            if( ii == 0 ) {
+                // do nothing; no prefix
+            } else if( ii == (arr_type_string.size() - 1) ) {
+                type_string += " and ";
+            } else {
+                type_string += ", ";
+            }
+            type_string += arr_type_string[ii];
         }
-        type_string += arr_type_string[ii];
+        type_string += " provided by the submitter.";
+    }
+    if (is_contaminated) {
+        if (arr_type_string.size() > 0) {
+            type_string += " ";
+        }
+        type_string += "GenBank staff has noted that the sequence(s) may be contaminated.";
     }
 
     if( type_string.empty() ) {
