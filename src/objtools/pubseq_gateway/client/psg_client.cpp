@@ -330,13 +330,6 @@ typename TItem::TOutput SPSG_Queue<TItem>::Execute(const string& service, TInput
 }
 
 
-TPSG_Request CPSG_BioIdResolutionQueue::SImpl::SItem::Request(const string& service, TPSG_Future afuture, TInput input)
-{
-    auto rv = make_shared<TPSG_RequestValue>();
-    rv->init_request(SHCT::GetEndPoint(service), afuture, "/ID/resolve", "accession=" + input.GetId());
-    return rv;
-}
-
 template <class TBase>
 SPSG_Item<TBase>::SPSG_Item(const string& service, TPSG_Future afuture, TInput input)
     :   m_Request(TBase::Request(service, afuture, input)),
@@ -367,11 +360,6 @@ void SPSG_Item<TBase>::Process(TOutput& output)
         }
     }
 
-}
-
-void CPSG_BioIdResolutionQueue::SImpl::SItem::Complete(TOutput& output, TPSG_Request request)
-{
-    s_UnpackData(output, output.m_BlobInfo, request->get_reply_data_move());
 }
 
 
@@ -469,6 +457,19 @@ bool SPSG_Queue<TItem>::IsEmpty() const
 {
     unique_lock<mutex> lock(m_Items.second);
     return m_Items.first.size() == 0;
+}
+
+
+TPSG_Request CPSG_BioIdResolutionQueue::SImpl::SItem::Request(const string& service, TPSG_Future afuture, TInput input)
+{
+    auto rv = make_shared<TPSG_RequestValue>();
+    rv->init_request(SHCT::GetEndPoint(service), afuture, "/ID/resolve", "accession=" + input.GetId());
+    return rv;
+}
+
+void CPSG_BioIdResolutionQueue::SImpl::SItem::Complete(TOutput& output, TPSG_Request request)
+{
+    s_UnpackData(output, output.m_BlobInfo, request->get_reply_data_move());
 }
 
 
