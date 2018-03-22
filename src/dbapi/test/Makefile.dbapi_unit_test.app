@@ -21,7 +21,7 @@ REQUIRES = Boost.Test.Included
 
 CHECK_REQUIRES = connext in-house-resources
 
-CHECK_COPY = dbapi_unit_test.ini
+CHECK_COPY = dbapi_unit_test.ini namerd.ini
 
 CHECK_TIMEOUT = 600
 
