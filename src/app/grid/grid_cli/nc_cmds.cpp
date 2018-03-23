@@ -61,7 +61,10 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode,
             } else {
                 // If NetCache service is not provided, use server from blob ID
                 CNetCacheKey key(m_Opts.ncid.key, CCompoundIDPool());
-                m_Opts.nc_service = key.GetHost() + ':' + to_string(key.GetPort());
+
+                if (key.GetVersion() != 3) {
+                    m_Opts.nc_service = key.GetHost() + ':' + to_string(key.GetPort());
+                }
             }
         }
 
@@ -69,16 +72,20 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode,
                 m_Opts.auth, m_NetScheduleAPI);
 
         if (!m_Opts.ncid.key.empty() && IsOptionExplicitlySet(eNetCache)) {
-            string host, port;
+            CNetCacheKey key(m_Opts.ncid.key, CCompoundIDPool());
 
-            if (!NStr::SplitInTwo(m_Opts.nc_service, ":", host, port)) {
-                NCBI_THROW(CArgException, eInvalidArg,
-                    "When blob ID is given, '--" NETCACHE_OPTION "' "
-                    "must be a host:port server address.");
+            if (key.GetVersion() != 3) {
+                string host, port;
+
+                if (!NStr::SplitInTwo(m_Opts.nc_service, ":", host, port)) {
+                    NCBI_THROW(CArgException, eInvalidArg,
+                        "When blob ID is given, '--" NETCACHE_OPTION "' "
+                        "must be a host:port server address.");
+                }
+
+                m_NetCacheAPI.GetService().GetServerPool().StickToServer(host,
+                        (unsigned short) NStr::StringToInt(port));
             }
-
-            m_NetCacheAPI.GetService().GetServerPool().StickToServer(host,
-                    (unsigned short) NStr::StringToInt(port));
         }
 
         if (IsOptionSet(eNoServerCheck)) {
