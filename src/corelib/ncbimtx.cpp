@@ -246,6 +246,12 @@ void SSystemFastMutex::ThrowTryLockFailed(void)
                "Mutex check (TryLock) failed");
 }
 
+void SSystemMutex::Destroy(void)
+{
+    xncbi_Validate(m_Count == 0, "Destruction of locked mutex");
+    m_Mutex.Destroy();
+}
+
 #if !defined(NCBI_NO_THREADS)
 void SSystemFastMutex::Lock(ELockSemantics lock /*= eNormal*/)
 {
@@ -341,12 +347,6 @@ void SSystemFastMutex::Unlock(ELockSemantics lock /*= eNormal*/)
         ThrowUnlockFailed();
     }
 # endif
-}
-
-void SSystemMutex::Destroy(void)
-{
-    xncbi_Validate(m_Count == 0, "Destruction of locked mutex");
-    m_Mutex.Destroy();
 }
 
 void SSystemMutex::Lock(SSystemFastMutex::ELockSemantics lock)
