@@ -758,6 +758,7 @@ public:
         fShowGapsOfSizeZero = 1 << 12, ///< Use this to show gaps of size zero as a lone hyphen at the end of a line.
         fEnableGI           = 1 << 13, ///< Use this flag to enable GI output in the defline
         fHideGenBankPrefix  = 1 << 14, ///< Hide gb| prefix for genbank only seq_id's 
+        fHTMLEncode         = 1 << 15, ///< Encode the title string for HTML display
         // historically misnamed as eFlagName
         eAssembleParts   = fAssembleParts,
         eInstantiateGaps = fInstantiateGaps

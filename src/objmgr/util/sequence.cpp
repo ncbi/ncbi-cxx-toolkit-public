@@ -2844,6 +2844,10 @@ void CFastaOstream::x_WriteSeqTitle(const CBioseq_Handle & bioseq_handle,
         if (safe_title[0] != ' ') {
             m_Out << ' ';
         }
+
+        if ((m_Flags & fHTMLEncode) != 0) {
+            safe_title = NStr::HtmlEncode(safe_title);
+        }
         m_Out << safe_title;
     }
     m_Out << '\n';
