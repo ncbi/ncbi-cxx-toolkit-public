@@ -3,6 +3,7 @@ corelib/hash_impl$
 connect$
 connect/ext$
 connect/mbedtls
+connect/services$
 
 check
 dll
