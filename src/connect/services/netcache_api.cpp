@@ -398,6 +398,12 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
             }
         }
 
+        if (key_is_mirrored) {
+            // Original server either is down or has a different port (thus crc32 mismatch),
+            // will use any server from this service
+            return service->FindServerAndExec(cmd, multiline_output);
+        }
+
         NCBI_THROW_FMT(CNetSrvConnException, eServerNotInService,
                 key.GetKey() << ": unable to find a NetCache server "
                 "by the checksum from this key.");
