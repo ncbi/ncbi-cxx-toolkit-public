@@ -354,7 +354,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
         service = m_ServiceMap.GetServiceByName(key_service_name, m_Service);
     }
 
-    bool key_is_mirrored = key_has_service_name &&
+    bool mirroring_allowed =
             !key.GetFlag(CNetCacheKey::fNCKey_SingleServer) &&
             parameters->GetMirroringMode() != CNetCacheAPI::eMirroringDisabled;
 
@@ -381,7 +381,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
                 // TODO: cache the calculated checksums to resolve
                 // them into host:port immediately.
 
-                if (!key_is_mirrored)
+                if (!mirroring_allowed)
                     return server.ExecWithRetry(cmd, multiline_output);
 
                 CNetServer::SExecResult exec_result;
@@ -398,7 +398,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
             }
         }
 
-        if (key_is_mirrored) {
+        if (mirroring_allowed) {
             // Original server either is down or has a different port (thus crc32 mismatch),
             // will use any server from this service
             return service->FindServerAndExec(cmd, multiline_output);
@@ -417,7 +417,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
         server_check = key.GetFlag(CNetCacheKey::fNCKey_NoServerCheck) ?
                 eOff : eOn;
 
-    if (key_is_mirrored) {
+    if (key_has_service_name && mirroring_allowed) {
         CNetServer::SExecResult exec_result;
 
         SNetCacheMirrorTraversal mirror_traversal(service,
