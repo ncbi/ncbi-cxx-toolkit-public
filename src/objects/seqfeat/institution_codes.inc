@@ -268,7 +268,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "APSC\ts\tAustin Peay State University, Biology Department\t\t",
 "AQC\ts\tAquinas College, Biology Department\t\t",
 "AQP\ts\tEstudios Fitogeograficos del Peru\t\t",
-"AQUAMEB\tc\tCulture Collection of Microalgae and Cyanobacteria\t\t",
+"AQUAMEB\tc\tCulture Collection of Microalgae and Cyanobacteria, Bursa Technical University\t\t",
 "AQUI\ts\tUniversita degli Studi di L'Aquila, Dipartimento di Scienze Ambientali\t\t",
 "AR\ts\tPomor State University\t\t",
 "ARAGO\ts\tUniversite Pierre et Marie Curie\t\t",
