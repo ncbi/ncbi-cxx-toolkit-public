@@ -3024,6 +3024,13 @@ void CFeatureItem::x_AddQualsGene(
         (gene_ref->IsSetLocus_tag()  &&  !NStr::IsBlank(gene_ref->GetLocus_tag())) ?
         &gene_ref->GetLocus_tag() : 0;
 
+    if ( ctx.IsProt() ) {
+        // skip if GenPept format and not gene or CDS
+        if (subtype != CSeqFeatData::eSubtype_gene && subtype != CSeqFeatData::eSubtype_cdregion) {
+            return;
+        }
+    }
+
     //  gene:
     if ( !from_overlap  ||  okay_to_propage ) {
         if ( locus != 0 ) {
@@ -3074,9 +3081,7 @@ void CFeatureItem::x_AddQualsGene(
 
     //  gene syn:
     if ( gene_ref  ||  okay_to_propage ) {
-        if ( ctx.IsProt() ) {
-            // skip if GenPept format
-        } else if (locus != NULL) {
+        if (locus != NULL) {
             if (syn != NULL) {
                 x_AddQual(eFQ_gene_syn, new CFlatGeneSynonymsQVal(*syn));
             }
