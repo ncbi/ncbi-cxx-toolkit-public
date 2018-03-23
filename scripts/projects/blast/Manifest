@@ -24,6 +24,7 @@ APP: makeprofiledb blast_formatter
 
 COPY: $srcdir/src/app/blast/legacy_blast.pl $installdir/bin
 COPY: $srcdir/src/app/blast/update_blastdb.pl $installdir/bin
+COPY: $srcdir/src/app/blast/get_species_taxids.sh $installdir/bin
 
 POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $version $platform $installdir "$tarball"
 
