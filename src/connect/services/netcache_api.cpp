@@ -337,24 +337,24 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
     const CNetCacheAPIParameters* parameters,
     SNetServiceImpl::EServerErrorHandling error_handling)
 {
-    const string& service_name(key.GetServiceName());
+    const string& key_service_name = key.GetServiceName();
 
-    bool service_name_is_defined = !key.GetServiceName().empty();
+    bool key_has_service_name = !key_service_name.empty();
 
     CNetService service(m_Service);
 
-    if (service_name_is_defined && service_name != service.GetServiceName()) {
+    if (key_has_service_name && key_service_name != service.GetServiceName()) {
         // NB: Configured service is always allowed
 
-        if (!m_ServiceMap.IsAllowed(service_name)) {
+        if (!m_ServiceMap.IsAllowed(key_service_name)) {
             NCBI_THROW_FMT(CNetCacheException, eAccessDenied, "Service " <<
-                    service_name << " is not in the allowed services");
+                    key_service_name << " is not in the allowed services");
         }
 
-        service = m_ServiceMap.GetServiceByName(service_name, m_Service);
+        service = m_ServiceMap.GetServiceByName(key_service_name, m_Service);
     }
 
-    bool key_is_mirrored = service_name_is_defined &&
+    bool key_is_mirrored = key_has_service_name &&
             !key.GetFlag(CNetCacheKey::fNCKey_SingleServer) &&
             parameters->GetMirroringMode() != CNetCacheAPI::eMirroringDisabled;
 
@@ -433,7 +433,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
     if (server_check != eOff && !service->IsInService(primary_server)) {
 
         // Service name is known, no need to check other services
-        if (service_name_is_defined) {
+        if (key_has_service_name) {
             NCBI_THROW_FMT(CNetSrvConnException, eServerNotInService,
                     key.GetKey() << ": NetCache server " <<
                     primary_server.GetServerAddress() << " could not be "
