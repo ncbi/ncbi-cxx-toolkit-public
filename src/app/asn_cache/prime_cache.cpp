@@ -351,6 +351,11 @@ void CPrimeCacheApplication::Init(void)
     arg_desc->AddFlag("no-title",
                       "For FASTA input, don't put a title on the Bioseq");
 
+    arg_desc->AddOptionalKey("max-fasta-id", "MaxFastaIDLength",
+                             "For FASTA input, maximum ID size, overriding "
+                             "CSeq_id-defined limits",
+                             CArgDescriptions::eInteger);
+
     arg_desc->AddOptionalKey("id-prefix", "FASTAIdPrefix",
                       "For FASTA input with local ids, add this prefix to each id",
                       CArgDescriptions::eString);
@@ -430,6 +435,9 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
         break;
     }
     CFastaReader reader(istr, flags);
+    if (GetArgs()["max-fasta-id"]) {
+        reader.SetMaxIDLength(GetArgs()["max-fasta-id"].AsInteger());
+    }
     while ( !reader.AtEOF() ) {
 
         if (CSignal::IsSignaled()) {
