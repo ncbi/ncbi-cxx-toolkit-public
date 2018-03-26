@@ -499,7 +499,7 @@ bool CFastaDeflineReader::x_IsValidLocalID(const string& id_string,
                                     id_string.substr(0,1) :
                                     id_string;
 
-    return (CSeq_id::CheckLocalID(string_to_check)^CSeq_id::fInvalidChar);
+    return !(CSeq_id::CheckLocalID(string_to_check)&CSeq_id::fInvalidChar);
 }
 
 
