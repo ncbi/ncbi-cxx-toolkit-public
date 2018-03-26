@@ -47,16 +47,8 @@ def main(): #IGNORE:R0911
 
 
     if platform.startswith("Win"):
-        # copy ncbi-vdb-md.dll and GNUTLS libs
+        # copy ncbi-vdb-md.dll
         shutil.copy(libdir + "ncbi-vdb-md.dll", installdir + "bin")
-        shutil.copy(libdir + "libgcc_s_seh-1.dll", installdir + "bin")
-        shutil.copy(libdir + "libgmp-10.dll", installdir + "bin")
-        shutil.copy(libdir + "libgnutls-30.dll", installdir + "bin")
-        shutil.copy(libdir + "libhogweed-4-2.dll", installdir + "bin")
-        shutil.copy(libdir + "libnettle-6-2.dll", installdir + "bin")
-        shutil.copy(libdir + "libp11-kit-0.dll", installdir + "bin")
-        shutil.copy(libdir + "msvcp140.dll", installdir + "bin")
-#        shutil.copy(libdir + "msvcr120.dll", installdir + "bin")
         return launch_win_installer_build(installdir, blast_version)
     if platform.startswith("Linux64"):
         return launch_rpm_build(installdir, blast_version, srctarball)
