@@ -1512,7 +1512,7 @@ void CFeatureItem::x_AddQualGeneXref(
 
 //  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddQualOldLocusTag(
-    CBioseqContext& ctx,
+    const CBioseqContext& ctx,
     CConstRef<CSeq_feat> gene_feat )
 //
 //  For non-gene features, add /old_locus_tag, if one exists somewhere.
@@ -2988,7 +2988,7 @@ void CFeatureItem::x_AddGoQuals(
 
 //  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddQualsGene(
-    CBioseqContext& ctx,
+    const CBioseqContext& ctx,
     const CGene_ref* gene_ref,
     CConstRef<CSeq_feat>& gene_feat,
     bool from_overlap )

@@ -967,12 +967,12 @@ void CFlatGatherer::x_UnverifiedComment(CBioseqContext& ctx) const
     }
     bool is_contaminated = (ctx.GetUnverifiedType() & CBioseqContext::fUnverified_Contaminant) != 0;
 
-    if (arr_type_string.size() < 1 && !is_contaminated) {
+    if (arr_type_string.empty() && !is_contaminated) {
         return;
     }
 
     string type_string;
-    if (arr_type_string.size() > 0) {
+    if (!arr_type_string.empty()) {
         type_string += "GenBank staff is unable to verify ";
         for( size_t ii = 0; ii < arr_type_string.size(); ++ii ) {
             if( ii == 0 ) {
