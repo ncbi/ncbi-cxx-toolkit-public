@@ -47,8 +47,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode,
 {
     SetUp_NetCache();
 
-    m_Opts.ncid.Parse(icache_mode, require_version);
-
     if (!icache_mode) {
         m_APIClass = eNetCacheAPI;
 
@@ -58,6 +56,9 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode,
                     NCBI_THROW(CArgException, eNoValue, "'--" NETCACHE_OPTION "' "
                         "option is required when ID is not provided.");
                 }
+            } else if (!m_Opts.ncid.subkey.empty() || NStr::MatchesMask(m_Opts.ncid.key, "*,*,*")) {
+                NCBI_THROW(CArgException, eNoValue, "'--" NETCACHE_OPTION "' and '--" CACHE_OPTION "' "
+                    "options are required in icache mode.");
             } else {
                 // If NetCache service is not provided, use server from blob ID
                 CNetCacheKey key(m_Opts.ncid.key, CCompoundIDPool());
@@ -93,6 +94,8 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode,
         }
 
     } else {
+        m_Opts.ncid.Parse(icache_mode, require_version);
+
         m_APIClass = eNetICacheClient;
         m_NetICacheClient = CNetICacheClient(m_Opts.nc_service,
             m_Opts.cache_name, m_Opts.auth);
