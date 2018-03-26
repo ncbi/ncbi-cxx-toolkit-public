@@ -164,6 +164,11 @@ public:
                         CRef<CSeqDB> db,
                         objects::CSeq_align_set& filtered_aln);
 
+
+    CRef<CSeq_align_set>FilterBySeqDB(const objects::CSeq_align_set& seqalign, //CRef<CSeq_align_set> &seqalign
+                                      CRef<CSeqDB> &filteredDB,
+                                      vector<int>& oid_vec);
+
     //--- Auxiliary methods used for seqalign filtering ---//
 
     /// Load a SeqDB database with the given gi-list.
