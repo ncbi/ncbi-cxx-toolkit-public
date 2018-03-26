@@ -52,6 +52,10 @@ public:
     using TBaseFlags = CReaderBase::TReaderFlags;
     using TIgnoredProblems = vector<ILineError::EProblem>;
 
+    static size_t s_MaxLocalIDLength;
+    static size_t s_MaxGeneralTagLength;
+    static size_t s_MaxAccessionLength;
+
     struct SLineTextAndLoc {
         SLineTextAndLoc(
             const string& sLineText,

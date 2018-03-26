@@ -171,17 +171,17 @@ public:
     }
 
     /// If this is set, an exception will be thrown if a Sequence ID exceeds the
-    /// given length.
+    /// given length. Overrides the id lengths specified in class CSeq_id.
     /// @param max_len
     ///   The new maximum to set.  Of course, you can set it to kMax_UI4
     ///   to effectively have no limit.
-    NCBI_DEPRECATED void SetMaxIDLength(Uint4 max_len) { m_MaxIDLength = max_len; }
+    void SetMaxIDLength(Uint4 max_len);
 
     /// Get the maximum ID allowed, which will be kMax_UI4
     /// unless someone has manually lowered it.
     ///
     /// @returns currently set maximum ID length
-    NCBI_DEPRECATED Uint4 GetMaxIDLength(void) const { return m_MaxIDLength; }
+    Uint4 GetMaxIDLength(void) const { return m_MaxIDLength; }
 
     // Make case-sensitive and other kinds of insensitivity, too
     // (such as "spaces" and "underscores" becoming "hyphens"

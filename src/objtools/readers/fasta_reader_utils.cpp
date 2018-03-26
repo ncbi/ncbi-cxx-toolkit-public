@@ -45,6 +45,10 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+size_t CFastaDeflineReader::s_MaxLocalIDLength = CSeq_id::kMaxLocalIDLength;
+size_t CFastaDeflineReader::s_MaxGeneralTagLength = CSeq_id::kMaxGeneralTagLength;
+size_t CFastaDeflineReader::s_MaxAccessionLength = CSeq_id::kMaxAccessionLength;
+
 // For reasons of efficiency, this method does not use CRef<CSeq_interval> to access range 
 // information - RW-26
 void CFastaDeflineReader::ParseDefline(const string& defline,
@@ -271,10 +275,10 @@ void CFastaDeflineReader::x_CheckIDLength(
 
     if (seq_id.IsLocal()) {
         if (seq_id.GetLocal().IsStr() &&
-            seq_id.GetLocal().GetStr().length() > CSeq_id::kMaxLocalIDLength) {
+            seq_id.GetLocal().GetStr().length() > s_MaxLocalIDLength) {
             x_PostIDLengthError(seq_id.GetLocal().GetStr().length(),
                                 "local id",
-                                CSeq_id::kMaxLocalIDLength,
+                                s_MaxLocalIDLength,
                                 line_number,
                                 pMessageListener);
         }
@@ -286,10 +290,10 @@ void CFastaDeflineReader::x_CheckIDLength(
         if (seq_id.GetGeneral().IsSetTag() &&
             seq_id.GetGeneral().GetTag().IsStr()) {
             const auto length = seq_id.GetGeneral().GetTag().GetStr().length();
-            if (length > CSeq_id::kMaxGeneralTagLength) {
+            if (length > s_MaxGeneralTagLength) {
                 x_PostIDLengthError(length,
                                     "general id string",
-                                    CSeq_id::kMaxGeneralTagLength,
+                                    s_MaxGeneralTagLength,
                                     line_number,
                                     pMessageListener);
             }
@@ -302,10 +306,10 @@ void CFastaDeflineReader::x_CheckIDLength(
    if (pTextId &&
        pTextId->IsSetAccession()) {
         const auto length = pTextId->GetAccession().length();
-        if (length > CSeq_id::kMaxAccessionLength) {
+        if (length > s_MaxAccessionLength) {
             x_PostIDLengthError(length,
                                 "accession",
-                                CSeq_id::kMaxAccessionLength,
+                                s_MaxAccessionLength,
                                 line_number,
                                 pMessageListener);
         }

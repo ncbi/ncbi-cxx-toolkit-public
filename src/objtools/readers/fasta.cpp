@@ -508,6 +508,13 @@ void CFastaReader::SetIDGenerator(CSeqIdGenerator& gen)
     m_IDHandler->SetGenerator(gen);
 }
 
+void CFastaReader::SetMaxIDLength(Uint4 max_len)
+{
+    CFastaDeflineReader::s_MaxLocalIDLength =
+    CFastaDeflineReader::s_MaxGeneralTagLength =
+    CFastaDeflineReader::s_MaxAccessionLength = m_MaxIDLength = max_len;
+}
+
 // For reasons of efficiency, this method does not use 
 // CRef<CSeq_interval> to access range information - RW-26
 void CFastaReader::ParseDefLine(const TStr& defLine,
