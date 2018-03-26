@@ -159,6 +159,19 @@ public:
         }
     }
 
+    void SetContentType(const string &  content_type)
+    {
+        if (m_State == eReplyInitialized) {
+            h2o_add_header(&m_Req->pool,
+                           &m_Req->res.headers,
+                           H2O_TOKEN_CONTENT_TYPE, NULL,
+                           content_type.c_str(), content_type.size());
+        } else {
+            NCBI_THROW(CPubseqGatewayException, eReplyAlreadyStarted,
+                       "Reply has already started");
+        }
+    }
+
     void Send(const char *  payload, size_t  payload_len,
               bool  is_persist, bool  is_last)
     {

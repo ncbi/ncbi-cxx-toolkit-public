@@ -37,6 +37,9 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbithr.hpp>
+#include <corelib/ncbi_system.hpp>
+
+#include <connect/services/json_over_uttp.hpp>
 
 #include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
 #include <objtools/pubseq_gateway/impl/diag/AppPerf.hpp>
@@ -49,6 +52,7 @@
 #include "pending_operation.hpp"
 #include "http_server_transport.hpp"
 #include "pubseq_gateway_exception.hpp"
+#include "pubseq_gateway_version.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -86,7 +90,8 @@ public:
         m_TcpMaxConn(kTcpMaxConnDefault),
         m_CassConnectionFactory(CCassConnectionFactory::s_Create()),
         m_TimeoutMs(kTimeoutDefault),
-        m_CountFile(NULL)
+        m_CountFile(NULL),
+        m_StartTime(GetFastLocalTime())
     {}
 
     ~CPubseqGatewayApp()
@@ -283,6 +288,112 @@ public:
         return 0;
     }
 
+    template<typename P>
+    int OnConfig(HST::CHttpRequest &  req, HST::CHttpReply<P> &  resp)
+    {
+        CNcbiOstrstream             conf;
+        CNcbiOstrstreamToString     converter(conf);
+
+        CNcbiApplication::Instance()->GetConfig().Write(conf);
+
+        CJsonNode   reply(CJsonNode::NewObjectNode());
+        reply.SetString("ConfigurationFilePath",
+                        CNcbiApplication::Instance()->GetConfigPath());
+        reply.SetString("Configuration", string(converter));
+        string      content = reply.Repr();
+
+        resp.SetContentType("application/json");
+        resp.SetContentLength(content.length());
+        resp.SendOk(content.c_str(), content.length(), false);
+        return 0;
+    }
+
+    template<typename P>
+    int OnInfo(HST::CHttpRequest &  req, HST::CHttpReply<P> &  resp)
+    {
+        CJsonNode   reply(CJsonNode::NewObjectNode());
+
+        reply.SetInteger("PID", CDiagContext::GetPID());
+        reply.SetString("ExecutablePath",
+                        CNcbiApplication::Instance()->
+                                                GetProgramExecutablePath());
+        reply.SetString("CommandLineArguments", x_GetCmdLineArguments());
+
+
+        double      user_time;
+        double      system_time;
+        bool        process_time_result = GetCurrentProcessTimes(&user_time,
+                                                                 &system_time);
+        if (process_time_result) {
+            reply.SetDouble("UserTime", user_time);
+            reply.SetDouble("SystemTime", system_time);
+        } else {
+            reply.SetString("UserTime", "n/a");
+            reply.SetString("SystemTime", "n/a");
+        }
+
+        Uint8       physical_memory = GetPhysicalMemorySize();
+        if (physical_memory > 0)
+            reply.SetInteger("PhysicalMemory", physical_memory);
+        else
+            reply.SetString("PhysicalMemory", "n/a");
+
+        size_t      mem_used_total;
+        size_t      mem_used_resident;
+        size_t      mem_used_shared;
+        bool        mem_used_result = GetMemoryUsage(&mem_used_total,
+                                                     &mem_used_resident,
+                                                     &mem_used_shared);
+        if (mem_used_result) {
+            reply.SetInteger("MemoryUsedTotal", mem_used_total);
+            reply.SetInteger("MemoryUsedResident", mem_used_resident);
+            reply.SetInteger("MemoryUsedShared", mem_used_shared);
+        } else {
+            reply.SetString("MemoryUsedTotal", "n/a");
+            reply.SetString("MemoryUsedResident", "n/a");
+            reply.SetString("MemoryUsedShared", "n/a");
+        }
+
+        int         proc_fd_soft_limit;
+        int         proc_fd_hard_limit;
+        int         proc_fd_used = GetProcessFDCount(&proc_fd_soft_limit,
+                                                     &proc_fd_hard_limit);
+
+        if (proc_fd_soft_limit >= 0)
+            reply.SetInteger("ProcFDSoftLimit", proc_fd_soft_limit);
+        else
+            reply.SetString("ProcFDSoftLimit", "n/a");
+
+        if (proc_fd_hard_limit >= 0)
+            reply.SetInteger("ProcFDHardLimit", proc_fd_hard_limit);
+        else
+            reply.SetString("ProcFDHardLimit", "n/a");
+
+        if (proc_fd_used >= 0)
+            reply.SetInteger("ProcFDUsed", proc_fd_used);
+        else
+            reply.SetString("ProcFDUsed", "n/a");
+
+        int         proc_thread_count = GetProcessThreadCount();
+        reply.SetInteger("CPUCount", GetCpuCount());
+        if (proc_thread_count >= 1)
+            reply.SetInteger("ProcThreadCount", proc_thread_count);
+        else
+            reply.SetString("ProcThreadCount", "n/a");
+
+
+        reply.SetString("Version", PUBSEQ_GATEWAY_VERSION);
+        reply.SetString("BuildDate", PUBSEQ_GATEWAY_BUILD_DATE);
+        reply.SetString("StartedAt", m_StartTime.AsString());
+
+        string      content = reply.Repr();
+
+        resp.SetContentType("application/json");
+        resp.SetContentLength(content.length());
+        resp.SendOk(content.c_str(), content.length(), false);
+        return 0;
+    }
+
     virtual int Run(void)
     {
         srand(time(NULL));
@@ -323,7 +434,20 @@ public:
                 {
                     return OnGetBlob(req, resp);
                 }, &get_parser, nullptr);
-
+        http_handler.emplace_back(
+                "/ADMIN/config",
+                [this](HST::CHttpRequest &  req,
+                       HST::CHttpReply<CPendingOperation> &  resp)->int
+                {
+                    return OnConfig(req, resp);
+                }, &get_parser, nullptr);
+        http_handler.emplace_back(
+                "/ADMIN/info",
+                [this](HST::CHttpRequest &  req,
+                       HST::CHttpReply<CPendingOperation> &  resp)->int
+                {
+                    return OnInfo(req, resp);
+                }, &get_parser, nullptr);
         http_handler.emplace_back(
                 "",
                 [this](HST::CHttpRequest &  req,
@@ -487,6 +611,21 @@ private:
         }
     }
 
+    string  x_GetCmdLineArguments(void) const
+    {
+        const CNcbiArguments &  arguments = CNcbiApplication::Instance()->
+                                                                GetArguments();
+        size_t                  args_size = arguments.Size();
+        string                  cmdline_args;
+
+        for (size_t index = 0; index < args_size; ++index) {
+            if (index != 0)
+                cmdline_args += " ";
+            cmdline_args += arguments[index];
+        }
+        return cmdline_args;
+    }
+
 private:
     string                              m_DbPath;
     string                              m_LogFile;
@@ -506,6 +645,8 @@ private:
 
     string                              m_CountFileName;
     FILE *                              m_CountFile;
+
+    CTime                               m_StartTime;
 };
 
 
