@@ -1347,7 +1347,7 @@ static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers,
 	    token = "\"";
 	}
 
-	if (NStr::EqualNocase(token, "degrees") || NStr::EqualNocase(token, "deg"))
+	if (NStr::EqualNocase(token, "degrees") || NStr::EqualNocase(token, "deg")  || NStr::EqualNocase(token, "degree"))
 	{
 	    token = "degrees";
 	    pattern.push_back("degrees");
@@ -1417,6 +1417,7 @@ static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers,
 	}
 	else
 	{
+	    //cout << "Token: " << token << endl;
 	    numbers.clear();
 	    return kEmptyStr;
 	}
@@ -1500,6 +1501,7 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
     vector<int> prec(2, 0);
     if ( pattern == "1 1" ||
 	 pattern == "1 N 1 N" ||
+	 pattern == "1 degrees N 1 degrees N" ||
 	 pattern == "lat 1 lat 1")
     {
 	degrees[0] = numbers[0];
@@ -1617,10 +1619,9 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
     vector<double> numbers;
     vector<int> precision;
     s_GetLatLong(new_str, numbers, precision);
-    if (numbers.empty())
-	return kEmptyStr;
-  
-    string res = MakeLatLon(numbers[0], numbers[1], precision[0], precision[1]);
+    string res;
+    if (!numbers.empty())
+	res = MakeLatLon(numbers[0], numbers[1], precision[0], precision[1]);
     //cout << "After: " << res << endl;
     return res;
 }
