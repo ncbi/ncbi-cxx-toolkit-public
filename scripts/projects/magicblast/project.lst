@@ -47,6 +47,8 @@ util/bitset$
 util/math$
 util/cache$
 util/impl$
+util/lmdb$
+util/lmdbxx$
 objtools$
 objtools/alnmgr$
 objtools/readers$
