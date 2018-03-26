@@ -160,7 +160,9 @@ protected:
     void xFeatureAddTranscriptAndProteinIdsCds(const string& mrna_transcript_id,
                                                const string& mrna_protein_id,
                                                CMappedFeat& cds);
-
+    void xFeatureAddTranscriptAndProteinIdsMrna(const string& mrna_transcript_id,
+                                                const string& mrna_protein_id,
+                                                CMappedFeat& mrna);
     CSeq_annot& mAnnot;
     CRef<CScope> mpScope;
     CSeq_annot_Handle mHandle;
