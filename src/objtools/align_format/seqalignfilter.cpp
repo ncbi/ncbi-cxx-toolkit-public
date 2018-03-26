@@ -32,6 +32,8 @@
 ///
 #include <ncbi_pch.hpp>
 
+#include <objects/general/User_object.hpp>
+#include <objtools/align_format/align_format_util.hpp>
 #include <objtools/align_format/seqalignfilter.hpp>
 
 #include <serial/serial.hpp>
@@ -230,6 +232,9 @@ void CSeqAlignFilter::FilterBySeqDB(const CSeq_align_set& full_aln,
         }
     }    
 }
+
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -542,6 +547,120 @@ void CSeqAlignFilter::ReadGiVector(const string& fname, vector<TGi>& vec_gis, bo
     if (sorted)
         sort(vec_gis.begin(), vec_gis.end());
 }
+
+static CRef<CSeq_align> s_UpdateSubjectInSeqalign(CRef<CSeq_align> &in_align, CRef<CSeq_id> &newSeqID)
+                                                     
+{
+    // create a copy of the given alignment
+    CRef<CSeq_align> sa_copy(new CSeq_align);
+    sa_copy->Assign(*(in_align.GetNonNullPointer()));
+
+    const CSeq_id& subjid = in_align->GetSeq_id(1);
+    if(!subjid.Match(*newSeqID)) {
+        if (sa_copy->GetSegs().IsDenseg())
+        {
+            CSeq_align::C_Segs::TDenseg& denseg = sa_copy->SetSegs().SetDenseg();
+            if (denseg.IsSetIds() && denseg.GetIds().size() == 2)
+            {
+                denseg.SetIds()[1] = newSeqID;            
+            }
+        }
+    }    
+    return sa_copy;
+}
+
+
+CRef<CSeq_align> s_UpdateSeqAlnWithFilteredSeqIDs(CRef<CSeqDB> filteredDB,
+                                              int oid,
+                                              CRef<CSeq_align> &in_align)                                      
+{
+    CRef<CSeq_align> sa_copy;    
+    CRef<CSeq_id> newSubjectID;
+
+    const CSeq_id& subjid = in_align->GetSeq_id(1);
+        
+    vector< CRef<CSeq_id> > seqids;
+    list< CRef<CSeq_id> > seqid_list = filteredDB->GetSeqIDs(oid);
+    seqids.reserve(seqid_list.size());
+    
+    ITERATE(list< CRef<CSeq_id> >, id, seqid_list) {    
+        if(subjid.IsGi() && (**id).IsGi()) {        
+            seqids.push_back(*id);
+        }
+        else if(!subjid.IsGi() && !(**id).IsGi()) {
+            seqids.push_back(*id);
+        }
+    }
+
+   if(!seqids.empty()) {
+        //update main subject and and add use_this_seq                
+        newSubjectID = seqids[0];
+        sa_copy = s_UpdateSubjectInSeqalign(in_align,newSubjectID);
+        vector <string> useThisSeqs;
+        for(size_t i = 0; i < seqids.size(); i++) {
+            string textSeqID;
+            CAlignFormatUtil::GetTextSeqID(seqids[i], &textSeqID);
+            if(seqids[0]->IsGi()) {
+                useThisSeqs.push_back("gi:" + textSeqID);
+             }
+             else {
+                useThisSeqs.push_back("seqid:" + textSeqID);
+             }
+         }          
+         CRef<CUser_object> userObject(new CUser_object());
+	     userObject->SetType().SetStr("use_this_seqid");
+	     userObject->AddField("SEQIDS", useThisSeqs);
+         sa_copy->ResetExt();
+	     sa_copy->SetExt().push_back(userObject);      
+    }     
+    return sa_copy;
+}
+
+
+
+CRef<CSeq_align_set> CSeqAlignFilter::FilterBySeqDB(const CSeq_align_set& seqalign, //CRef<CSeq_align_set> &seqalign
+                                                    CRef<CSeqDB> &filteredDB,
+                                                    vector<int>& oid_vec)
+{
+    CConstRef<CSeq_id> previous_id, subjid;    
+    size_t i = 0;
+    bool success = false;
+    CRef<CSeq_id> newSubjectID;
+
+    CRef<CSeq_align_set> new_aln(new CSeq_align_set);
+
+    ITERATE(CSeq_align_set::Tdata, iter, seqalign.Get()){ 
+        CRef<CSeq_align> currAlign = *iter;
+        CRef<CSeq_align> filtered_aln;
+
+        subjid = &(currAlign->GetSeq_id(1));    
+        if(previous_id.Empty() || !subjid->Match(*previous_id))
+        {
+            success = false;
+            if (oid_vec[i] > 0) { 
+                // retrieve the filtered list of gi's corresponding to this oid
+                filtered_aln = s_UpdateSeqAlnWithFilteredSeqIDs(filteredDB, oid_vec[i], currAlign);
+                if(!filtered_aln.Empty()) { //found sequence with this oid oid_vec[i] in filtered seqdb
+                    newSubjectID.Reset(const_cast<CSeq_id*>(&filtered_aln->GetSeq_id(1)));                    
+                    success = true;
+                }                    
+            }
+            i++;
+        }
+        else {
+            if(success) {
+                filtered_aln = s_UpdateSubjectInSeqalign(currAlign,newSubjectID);
+            }
+        }
+        previous_id = subjid;
+
+        if(success && !filtered_aln.Empty()) {                
+            new_aln->Set().push_back(filtered_aln);
+        }            
+    }    
+    return new_aln;
+}
+
 
 END_SCOPE(align_format)
 END_NCBI_SCOPE
