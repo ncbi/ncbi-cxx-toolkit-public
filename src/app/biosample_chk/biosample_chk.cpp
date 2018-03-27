@@ -81,6 +81,8 @@
 #include <objects/seqtable/SeqTable_multi_data.hpp>
 #include <objects/seqtable/SeqTable_column_info.hpp>
 #include <util/line_reader.hpp>
+#include <util/compress/stream_util.hpp>
+#include <util/format_guess.hpp>
 
 #include <objects/seqset/Bioseq_set.hpp>
 
@@ -199,8 +201,9 @@ private:
 
     void Setup(const CArgs& args);
 
-    CObjectIStream* OpenFile(const CArgs& args);
-    CObjectIStream* OpenFile(string fname, const CArgs& args);
+    auto_ptr<CObjectIStream> OpenFile(const CArgs& args);
+    auto_ptr<CObjectIStream> OpenFile(const string &fname);
+    void SaveFile(const string &fname, bool useBinaryOutputFormat);
 
     void GetBioseqDiffs(CBioseq_Handle bh);
     void PushToRecord(CBioseq_Handle bh);
@@ -329,8 +332,8 @@ void CBiosampleChkApp::Init(void)
                             CArgDescriptions::eString,
                             "a");
 
-    arg_desc->AddFlag("b", "Input is in binary format");
-    arg_desc->AddFlag("c", "Batch File is Compressed");
+    arg_desc->AddFlag("b", "Output binary ASN.1");
+    //arg_desc->AddFlag("c", "Batch File is Compressed");
     arg_desc->AddFlag("M", "Process only first sequence in file (master)");
     arg_desc->AddOptionalKey("R", "BioSampleIDPrefix", "BioSample ID Prefix", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("HUP", "HUPDate", "Hold Until Publish Date", CArgDescriptions::eString);
@@ -497,13 +500,7 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
             path = path.substr(0, pos);
         }
         path = path + ".out";
-        ios::openmode mode = ios::out;
-        m_AsnOut = new CNcbiOfstream(path.c_str(), mode);
-        if (!m_AsnOut)
-        {
-            NCBI_THROW(CException, eUnknown, "Unable to open " + path);
-        }
-        *m_AsnOut << MSerial_AsnText;
+        SaveFile(path, args["b"]);
         need_to_close_asn = true;
     }
 
@@ -516,7 +513,7 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
             ProcessFileList (fname);
             break;
         case e_none:
-            m_In.reset(OpenFile(fname, args));
+            m_In = OpenFile(fname);
             if (!m_In->InGoodState()) {
                 NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
             }
@@ -600,9 +597,7 @@ vector<CRef<CSeqdesc> > CBiosampleChkApp::GetBiosampleDescriptorsFromSeqSubmit()
 
 vector<CRef<CSeqdesc> > CBiosampleChkApp::GetBiosampleDescriptors(string fname)
 {
-    const CArgs& args = GetArgs();
-
-    m_In.reset(OpenFile(fname, args));
+    m_In = OpenFile(fname);
 
     // Process file based on its content
     // Unless otherwise specifien we assume the file in hand is
@@ -692,13 +687,7 @@ int CBiosampleChkApp::Run(void)
                 m_Table->SetNum_rows(0);
             }
         } else {
-            ios::openmode mode = ios::out;
-            m_AsnOut = new CNcbiOfstream(args["o"].AsString().c_str(), mode);
-            if (!m_AsnOut)
-            {
-                NCBI_THROW(CException, eUnknown, "Unable to open " + args["o"].AsString());
-            }
-            *m_AsnOut << MSerial_AsnText;
+            SaveFile(args["o"].AsString(), args["b"]);
         }
     }
             
@@ -1131,7 +1120,7 @@ void CBiosampleChkApp::ProcessSeqSubmit(void)
 static bool s_IsEmptyBioSource(const CSeqdesc& src)
 {
     return !src.GetSource().IsSetSubtype() && !src.GetSource().IsSetGenome() && !src.GetSource().IsSetOrigin() &&
-        (!src.GetSource().IsSetOrg() || !src.GetSource().IsSetOrgname() && !src.GetSource().IsSetTaxname() && !src.GetSource().IsSetDivision());
+        (!src.GetSource().IsSetOrg() || (!src.GetSource().IsSetOrgname() && !src.GetSource().IsSetTaxname() && !src.GetSource().IsSetDivision()));
 }
 
 void CBiosampleChkApp::UpdateBioSource (CBioseq_Handle bh, const CBioSource& src)
@@ -1198,32 +1187,67 @@ void CBiosampleChkApp::Setup(const CArgs& args)
 }
 
 
-CObjectIStream* CBiosampleChkApp::OpenFile
-(const CArgs& args)
+auto_ptr<CObjectIStream> CBiosampleChkApp::OpenFile(const CArgs& args)
 {
-    // file name
     string fname = args["i"].AsString();
-
-    // file format 
-    ESerialDataFormat format = eSerial_AsnText;
-    if ( args["b"] ) {
-        format = eSerial_AsnBinary;
-    }
-
-    return CObjectIStream::Open(fname, format);
+    return CBiosampleChkApp::OpenFile(fname);
 }
 
-
-CObjectIStream* CBiosampleChkApp::OpenFile
-(string fname, const CArgs& args)
+auto_ptr<CObjectIStream> CBiosampleChkApp::OpenFile(const string &fname)
 {
-    // file format 
     ESerialDataFormat format = eSerial_AsnText;
-    if ( args["b"] ) {
-        format = eSerial_AsnBinary;
-    }
+    
+    auto_ptr<CNcbiIstream> hold_stream(new CNcbiIfstream (fname.c_str(), ios::binary));
+    CNcbiIstream* InputStream = hold_stream.get();
 
-    return CObjectIStream::Open(fname, format);
+    CFormatGuess::EFormat formatGuess = CFormatGuess::Format(*InputStream);
+
+    CCompressStream::EMethod method;
+    switch (formatGuess)
+    {
+        case CFormatGuess::eGZip:  method = CCompressStream::eGZipFile;  break;
+        case CFormatGuess::eBZip2: method = CCompressStream::eBZip2;     break;
+        case CFormatGuess::eLzo:   method = CCompressStream::eLZO;       break;
+        default:                   method = CCompressStream::eNone;      break;
+    }
+    if (method != CCompressStream::eNone)
+    {
+        CDecompressIStream* decompress(new CDecompressIStream(*InputStream, method, CCompressStream::fDefault, eTakeOwnership));
+        hold_stream.release();
+        hold_stream.reset(decompress);
+        InputStream = hold_stream.get();
+        formatGuess = CFormatGuess::Format(*InputStream);
+    }
+    
+    auto_ptr<CObjectIStream> objectStream;
+    switch (formatGuess)
+    {
+        case CFormatGuess::eBinaryASN:
+            format = eSerial_AsnBinary;
+        case CFormatGuess::eTextASN:
+            format = eSerial_AsnText;
+            objectStream.reset(CObjectIStream::Open(format, *InputStream, eTakeOwnership));
+            hold_stream.release();
+            break;
+        default:
+            break;
+    }
+    return objectStream;
+}
+
+void CBiosampleChkApp::SaveFile(const string &fname, bool useBinaryOutputFormat)
+{
+    ios::openmode mode = ios::out;
+    m_AsnOut = new CNcbiOfstream(fname.c_str(), mode);
+    if (!m_AsnOut)
+    {
+        NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
+    }
+    if ( useBinaryOutputFormat ) {
+        *m_AsnOut << MSerial_AsnBinary;
+    } else {
+        *m_AsnOut << MSerial_AsnText;
+    }
 }
 
 
