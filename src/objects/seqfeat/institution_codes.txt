@@ -396,7 +396,7 @@ BCCM/IHEM	c	The Belgian Co-ordinated Collections of Micro-organisms / IHEM Biome
 BCCM/ITM	c	The Belgian Co-ordinated Collections of Micro-organisms / ITM Mycobacteria Collection	ITM
 BCCM/LMBP	c	Belgian Coordinated Collections of Microorganisms / LMBP Plasmid Collection	LMBP
 BCCM/MUCL	c	The Belgian Co-ordinated Collections of Micro-organisms / MUCL (Agro)Industrial Fungi & Yeasts Collection	MUCL
-BCCM/ULC	c	The Belgian Co-ordinated Collections of Micro-organisms / ULC of cyanobacteria	UCL
+BCCM/ULC	c	The Belgian Co-ordinated Collections of Micro-organisms /Cyanobacteria Collection	UCL
 BCCN	c	Brucella Culture Collection		
 BCCUSP	c	Brazilian Cyanobacteria Collection - University of Sao Paulo		
 BCF	s	Universitat de Barcelona, Laboratori de Botanica		
@@ -1439,6 +1439,7 @@ DAV	s	University of California, Plant Biology
 DAVFP	s	Pacific Forestry Centre, Canadian Forest Service		
 DAVH	s	University of California, Environmental Horticulture Department		
 DAWES	h	The Dawes Arboretum		
+DB	c	Dominik Begerow culture collection		
 DBAI	s	Instituto de Ciencias Biologicas		
 DBAU	s	Universidade Santa Ursula		
 DBC	s	University College, Botany Department		
@@ -4322,7 +4323,8 @@ MSUH	s	University of Mosul, Biology Department
 MSUMC	s	Murray State University		
 MSUMZ	s	Memphis State University		
 MSUN	s	Westfaelische Wilhelms-Universitaet		
-MSUT	s	Museum of Natural History, Tirane		
+MSUT	s	Natural Medicinal Mushroom Museum, Mahasarakham University		
+MSUT<ALB>	s	Museum of Natural History, Tirane		
 MSUZ	s	Mississippi State University, Zoological Collections		
 MSV	s	Museum der Stadt Villach		
 MT<CAN>	s	Universite de Montreal		
@@ -6516,7 +6518,6 @@ TUSG	s	Tohoku University
 TUT	s	Daejeon University, Department of Biology		
 TUTC	s	Tunghai University		
 TUZ	s	Tartu University Zoological Department		
-TV	s	Centro de Estratigrafia e Paleobiologia da Universidade Nova de Lisboa		
 TVBG	s	Tver State University		
 TVY	s	Turvey Abbey		
 TWC	s	Texas Wesleyan College, Museum of Zoology		
