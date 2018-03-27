@@ -156,10 +156,7 @@ protected:
 
     bool xGatherProteinAndTranscriptIds();
     void xFeatureAddTranscriptAndProteinIdsCds(CMappedFeat& cds);
-    void xFeatureAddTranscriptAndProteinIdsMrna(CMappedFeat& mrna);
-    void xFeatureAddTranscriptAndProteinIdsCds(const string& mrna_transcript_id,
-                                               const string& mrna_protein_id,
-                                               CMappedFeat& cds);
+    void xFeatureAddTranscriptAndProteinIdsUnmatchedMrna(CMappedFeat& mrna);
     void xFeatureAddTranscriptAndProteinIdsMrna(const string& mrna_transcript_id,
                                                 const string& mrna_protein_id,
                                                 CMappedFeat& mrna);
