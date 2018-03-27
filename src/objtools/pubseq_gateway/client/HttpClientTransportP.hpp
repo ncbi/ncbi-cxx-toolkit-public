@@ -56,19 +56,37 @@
 
 #include "mpmc_nw.hpp"
 #include <objtools/pubseq_gateway/impl/rpc/UvHelper.hpp>
-
+#include <corelib/ncbi_param.hpp>
 
 #include "HttpClientTransport.hpp"
 
-namespace HCT {
 
-#define RD_BUF_SIZE                 (8 * 1024)
-#define WRITE_BUF_SIZE              (8 * 1024)
-#define WRITE_HIWATER               (8 * 1024)
-#define MAX_CONCURRENT_STREAMS      200
-#define NUM_IO                      16
-#define NUM_CONN_PER_IO             1
-#define DELAYED_COMPLETION          true
+BEGIN_NCBI_SCOPE
+
+NCBI_PARAM_DECL(unsigned, PSG, rd_buf_size);
+typedef NCBI_PARAM_TYPE(PSG, rd_buf_size) TPSG_RdBufSize;
+
+NCBI_PARAM_DECL(unsigned, PSG, write_buf_size);
+typedef NCBI_PARAM_TYPE(PSG, write_buf_size) TPSG_WriteBufSize;
+
+NCBI_PARAM_DECL(unsigned, PSG, write_hiwater);
+typedef NCBI_PARAM_TYPE(PSG, write_hiwater) TPSG_WriteHiwater;
+
+NCBI_PARAM_DECL(unsigned, PSG, max_concurrent_streams);
+typedef NCBI_PARAM_TYPE(PSG, max_concurrent_streams) TPSG_MaxConcurrentStreams;
+
+NCBI_PARAM_DECL(unsigned, PSG, num_io);
+typedef NCBI_PARAM_TYPE(PSG, num_io) TPSG_NumIo;
+
+NCBI_PARAM_DECL(unsigned, PSG, num_conn_per_io);
+typedef NCBI_PARAM_TYPE(PSG, num_conn_per_io) TPSG_NumConnPerIo;
+
+NCBI_PARAM_DECL(bool, PSG, delayed_completion);
+typedef NCBI_PARAM_TYPE(PSG, delayed_completion) TPSG_DelayedCompletion;
+
+END_NCBI_SCOPE
+
+namespace HCT {
 
 class io_thread;
 class http2_session;

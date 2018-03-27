@@ -55,8 +55,19 @@
 #include "HttpClientTransport.hpp"
 #include "HttpClientTransportP.hpp"
 
+BEGIN_NCBI_SCOPE
 
-using namespace std;
+NCBI_PARAM_DEF(unsigned, PSG, rd_buf_size,            8 * 1024);
+NCBI_PARAM_DEF(unsigned, PSG, write_buf_size,         8 * 1024);
+NCBI_PARAM_DEF(unsigned, PSG, write_hiwater,          8 * 1024);
+NCBI_PARAM_DEF(unsigned, PSG, max_concurrent_streams, 200);
+NCBI_PARAM_DEF(unsigned, PSG, num_io,                 16);
+NCBI_PARAM_DEF(unsigned, PSG, num_conn_per_io,        1);
+NCBI_PARAM_DEF(bool,     PSG, delayed_completion,     true);
+
+END_NCBI_SCOPE
+
+USING_NCBI_SCOPE;
 
 namespace HCT {
 
@@ -192,9 +203,9 @@ http2_session::http2_session(io_thread* aio) noexcept :
     m_session(nullptr),
     m_requests_at_once(0),
     m_num_requests(0),
-    m_max_streams(MAX_CONCURRENT_STREAMS),
+    m_max_streams(TPSG_MaxConcurrentStreams::GetDefault()),
     m_port(0),
-    m_read_buf(RD_BUF_SIZE, '\0'),
+    m_read_buf(TPSG_RdBufSize::GetDefault(), '\0'),
     m_cancel_requested(false)
 {
     LOG2(("%p: created", this));
@@ -202,7 +213,7 @@ http2_session::http2_session(io_thread* aio) noexcept :
     m_wr.wr_req.data = this;
     m_ai_req.data = this;
     m_conn_req.data = this;
-    m_wr.write_buf.reserve(WRITE_BUF_SIZE);
+    m_wr.write_buf.reserve(TPSG_WriteBufSize::GetDefault());
     m_session_state = session_state_t::ss_work;
 }
 
@@ -885,7 +896,7 @@ bool http2_session::initiate_connection()
 bool http2_session::send_client_connection_header()
 {
     nghttp2_settings_entry iv[1] = {
-        {NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, MAX_CONCURRENT_STREAMS}
+        {NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, TPSG_MaxConcurrentStreams::GetDefault()}
     };
     int rv;
 
@@ -893,8 +904,8 @@ bool http2_session::send_client_connection_header()
     rv = nghttp2_submit_settings(m_session, NGHTTP2_FLAG_NONE, iv, DDRPC::countof(iv));
     if (rv == 0) {
         m_max_streams = nghttp2_session_get_remote_settings(m_session, NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS);
-        if (m_max_streams > MAX_CONCURRENT_STREAMS)
-            m_max_streams = MAX_CONCURRENT_STREAMS;
+        if (m_max_streams > TPSG_MaxConcurrentStreams::GetDefault())
+            m_max_streams = TPSG_MaxConcurrentStreams::GetDefault();
     }
     if (rv != 0)
         error_nghttp2(rv);
@@ -937,7 +948,7 @@ void http2_session::request_complete(http2_request* req)
 }
 void http2_session::add_to_completion(shared_ptr<io_future>& future)
 {
-    if (DELAYED_COMPLETION) {
+    if (TPSG_DelayedCompletion::GetDefault()) {
         assert(future.use_count() > 1);
         m_completion_list.insert(future);
     }
@@ -1037,7 +1048,7 @@ void http2_session::process_requests()
     size_t unsent_count = 0;
 //    debug_print_counts();
 //requests_at_once = m_requests.size();
-    if (m_num_requests < m_max_streams && m_wr.write_buf.size() < WRITE_HIWATER) {
+    if (m_num_requests < m_max_streams && m_wr.write_buf.size() < TPSG_WriteHiwater::GetDefault()) {
         shared_ptr<http2_request> req;
         LOG5(("%p: process_requests: fetch loop>>", this));
         while (m_num_requests < m_max_streams + 16) {
@@ -1111,7 +1122,7 @@ void http2_session::process_requests()
                         break;
                     }
 
-                    if (m_wr.write_buf.size() >= WRITE_HIWATER) {
+                    if (m_wr.write_buf.size() >= TPSG_WriteHiwater::GetDefault()) {
                         LOG1(("reached hiwater %lu", m_wr.write_buf.size()));
                         break;
                     }
@@ -1286,7 +1297,7 @@ void io_thread::execute(uv_sem_t* sem)
     });
 
     try {
-        for (int j = 0; j < NUM_CONN_PER_IO; j++)
+        for (unsigned j = 0; j < TPSG_NumConnPerIo::GetDefault(); j++)
             attach(new http2_session(this));
     }
     catch(...) {
@@ -1335,7 +1346,7 @@ void io_thread::execute(uv_sem_t* sem)
 
 io_coordinator::io_coordinator() : m_cur_idx(0)
 {
-    for (int i = 0; i < NUM_IO; i++) {
+    for (unsigned i = 0; i < TPSG_NumIo::GetDefault(); i++) {
         create_io();
     }
 }
@@ -1367,7 +1378,7 @@ bool io_coordinator::add_request(shared_ptr<http2_request> req, long timeout_ms)
             return true;
 
         ERRLOG1(("io failed to queue %p, keep trying", req.get()));
-        if (++iteration > NUM_IO * NUM_CONN_PER_IO) {
+        if (++iteration > TPSG_NumIo::GetDefault() * TPSG_NumConnPerIo::GetDefault()) {
             if (timeout_ms < 0) {
                 ERRLOG1(("io failed to queue %p, timeout", req.get()));
                 return false;
