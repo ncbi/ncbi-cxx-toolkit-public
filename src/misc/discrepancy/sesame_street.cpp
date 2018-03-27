@@ -381,8 +381,7 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
             string sort_order_str = NStr::SizetToString(sort_order_id);
             string leading_zeros(MAX_NUM_STR_LEN - sort_order_str.size(), '0');
             string subitem = "[*" + leading_zeros + sort_order_str + "*]" + item.first;
-
-            if (pres == total && (uniq == num || bins == 1)) {
+            if (!context.IsGui()) {
                 final_report[diagnosis];
                 if (item.second->GetCount()) {
                     final_report[diagnosis][subitem].SetCount(item.second->GetCount());
