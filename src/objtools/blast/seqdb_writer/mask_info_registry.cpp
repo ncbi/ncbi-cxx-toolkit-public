@@ -38,18 +38,18 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
-int 
+int
 CMaskInfoRegistry::x_AssignId(int start, int end)
 {
     return x_FindNextValidIdWithinRange(start, end);
 }
 
-int 
+int
 CMaskInfoRegistry::x_AssignId(int start, int end, bool use_start)
 {
     if (use_start) {
         if (m_UsedIds.find(start) != m_UsedIds.end()) {
-            string msg("Masking algorithm with default arguments " 
+            string msg("Masking algorithm with default arguments "
                        "already provided");
             NCBI_THROW(CWriteDBException, eArgErr, msg);
         }
@@ -62,7 +62,7 @@ CMaskInfoRegistry::x_AssignId(int start, int end, bool use_start)
 int
 CMaskInfoRegistry::x_FindNextValidIdWithinRange(int start, int stop)
 {
-    for (int id = start; id < stop && 
+    for (int id = start; id < stop &&
                          id < (int)eBlast_filter_program_max; id++) {
         if (m_UsedIds.find(id) == m_UsedIds.end()) {
             return id;
@@ -73,10 +73,10 @@ CMaskInfoRegistry::x_FindNextValidIdWithinRange(int start, int stop)
     NCBI_THROW(CWriteDBException, eArgErr, msg);
 }
 
-int 
+int
 CMaskInfoRegistry::Add(const string& id)
 {
-    if (find(m_RegisteredAlgos.begin(), m_RegisteredAlgos.end(), id) 
+    if (find(m_RegisteredAlgos.begin(), m_RegisteredAlgos.end(), id)
             != m_RegisteredAlgos.end()) {
         NCBI_THROW(CWriteDBException, eArgErr, "Duplicate masking algorithm found.");
     }
@@ -89,14 +89,15 @@ CMaskInfoRegistry::Add(const string& id)
 }
 
 int
-CMaskInfoRegistry::Add(EBlast_filter_program program, 
-                       const string& options /* = string() */)
+CMaskInfoRegistry::Add(EBlast_filter_program program,
+                       const string& options, /* = string() */
+                       const string& progname /* = string() */)
 {
-   
-    int algo_id = (int)program;
-    string algo_descr = NStr::IntToString(algo_id) + options;
 
-    if (find(m_RegisteredAlgos.begin(), m_RegisteredAlgos.end(), algo_descr) 
+    int algo_id = (int)program;
+    string algo_descr = NStr::IntToString(algo_id) + progname + options;
+
+    if (find(m_RegisteredAlgos.begin(), m_RegisteredAlgos.end(), algo_descr)
             != m_RegisteredAlgos.end()) {
         NCBI_THROW(CWriteDBException, eArgErr, "Duplicate masking algorithm found.");
     }
@@ -105,20 +106,20 @@ CMaskInfoRegistry::Add(EBlast_filter_program program,
 
     switch (program) {
     case eBlast_filter_program_dust:
-        algo_id = x_AssignId(program, eBlast_filter_program_seg, 
+        algo_id = x_AssignId(program, eBlast_filter_program_seg,
                              options.empty());
         break;
 
     case eBlast_filter_program_seg:
-        algo_id = x_AssignId(program, eBlast_filter_program_windowmasker, 
+        algo_id = x_AssignId(program, eBlast_filter_program_windowmasker,
                              options.empty());
         break;
 
     case eBlast_filter_program_windowmasker:
-        algo_id = x_AssignId(program, eBlast_filter_program_repeat, 
+        algo_id = x_AssignId(program, eBlast_filter_program_repeat,
                              options.empty());
         break;
-    
+
     case eBlast_filter_program_repeat:
         algo_id = x_AssignId(program, eBlast_filter_program_other);
         break;

@@ -615,7 +615,9 @@ CRawSeqDBSource::CRawSeqDBSource(const string & name, bool protein, CBuildDataba
         objects::EBlast_filter_program algo;
         string algo_opts, algo_name;
         m_Source->GetMaskAlgorithmDetails(*algo_id, algo, algo_name, algo_opts);
-        algo_name += NStr::IntToString(*algo_id);
+        if (algo != EBlast_filter_program::eBlast_filter_program_other) {
+            algo_name += NStr::IntToString(*algo_id);
+        }
         m_MaskIdMap[*algo_id] = outdb->RegisterMaskingAlgorithm(algo, algo_opts, algo_name);
     }
     // Process columns

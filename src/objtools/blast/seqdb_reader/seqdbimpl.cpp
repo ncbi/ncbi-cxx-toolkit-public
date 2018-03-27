@@ -99,7 +99,7 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
 
     SetIterationRange(0, m_NumOIDs);
 
-    
+
     // If the alias files seem to provide correct data for the totals,
     // use it; otherwise scan the OID list and use approximate lengths
     // to compute the totals.  Presence of a user GI list implies that
@@ -204,7 +204,7 @@ CSeqDBImpl::~CSeqDBImpl()
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
 
-    
+
 
     m_VolSet.UnLease();
 
@@ -859,7 +859,7 @@ Uint8 CSeqDBImpl::GetExactTotalLength()
     	 CSeqDBLockHold locked(m_Atlas);
     	 x_ScanTotals(false, &m_NumSeqs, &m_ExactTotalLength,
     			 	  &m_MaxLength, &m_MinLength, locked);
-    	
+
     }
     else {
     	m_ExactTotalLength = m_TotalLength;
@@ -2347,8 +2347,8 @@ void s_GetDetails(const string          & desc,
         program_name.assign(enum_type_vals->FindName(pid, false));
         algo_opts.assign(s_RestoreColon(items[1]));
     } else if (items.size() == 4) {
-        program.assign(s_RestoreColon(items[2]));
-        program_name.assign(s_RestoreColon(items[3]));
+        program.assign(s_RestoreColon(items[0]));
+        program_name.assign(s_RestoreColon(items[2]));
         algo_opts.assign(s_RestoreColon(items[1]));
     } else {
         NCBI_THROW(CSeqDBException, eArgErr,

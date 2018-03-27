@@ -1828,7 +1828,10 @@ BOOST_AUTO_TEST_CASE(RegisterMaskingAlgorithms)
     algo_ids.push_back(registry.Add(eBlast_filter_program_dust));
     algo_ids.push_back(registry.Add(eBlast_filter_program_windowmasker));
     algo_ids.push_back(registry.Add(eBlast_filter_program_repeat, "9606"));
-    algo_ids.push_back(registry.Add(eBlast_filter_program_other, "dummy"));
+    algo_ids.push_back(registry.Add(eBlast_filter_program_other, "dummy1"));
+    algo_ids.push_back(registry.Add(eBlast_filter_program_other, "dummy2"));
+    algo_ids.push_back(registry.Add(eBlast_filter_program_other, "dummy2",
+            "funnyname"));
 
     ITERATE(vector<int>, id, algo_ids) {
         BOOST_REQUIRE_EQUAL(true, registry.IsRegistered(*id));

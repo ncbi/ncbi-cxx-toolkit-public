@@ -1330,11 +1330,17 @@ RegisterMaskAlgorithm(EBlast_filter_program   program,
                       const string          & options,
                       const string          & name)
 {
-    int algorithm_id = m_MaskAlgoRegistry.Add(program, options);
+    int algorithm_id = m_MaskAlgoRegistry.Add(program, options, name);
 
     string key = NStr::IntToString(algorithm_id);
-    string value = NStr::IntToString((int)program) + ":" +
-         s_EscapeColon(options);
+    string value;
+    if (program == EBlast_filter_program::eBlast_filter_program_other) {
+        value = NStr::IntToString((int)program) + ":" +
+                s_EscapeColon(options) + ":" +
+                s_EscapeColon(name) + ":";
+    } else {
+        value = NStr::IntToString((int)program) + ":" + s_EscapeColon(options);
+    }
 
     if (m_UseGiMask) {
         m_MaskAlgoMap[algorithm_id] = m_GiMasks.size();

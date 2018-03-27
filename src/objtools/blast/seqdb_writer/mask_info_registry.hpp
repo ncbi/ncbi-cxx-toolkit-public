@@ -47,13 +47,16 @@ USING_SCOPE(objects);
 class NCBI_XOBJWRITE_EXPORT CMaskInfoRegistry
 {
 public:
-    /// Attempt to register the information about a masking algorithm 
+    /// Attempt to register the information about a masking algorithm
     /// @param program Filtering program used [in]
+    /// @param progname Filtering program name [in]
     /// @param options options passed to this filtering program. Default value
     /// implies that default parameters were used with this filtering program
     /// [in]
     /// @throw CWriteDBException on error
-    int Add(EBlast_filter_program program, const string& options = string());
+    int Add(EBlast_filter_program program,
+            const string& options = string(),
+            const string& progname = string());
 
     int Add(const string& id);
 
