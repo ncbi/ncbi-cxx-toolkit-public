@@ -260,7 +260,11 @@ AC_ARG_WITH(libdw,
 AC_ARG_WITH(libdw,
    [ --without-libdw         do not use elfutils libdw])
 AC_ARG_WITH(backward-cpp,
-   [ --with-backward-cpp(=DIR) use backward-cpp installation (in DIR)])
+   [ --with-backward-cpp=DIR use backward-cpp installation in DIR])
+AC_ARG_WITH(backward-cpp,
+   [ --without-backward-cpp  do not use backward-cpp])
+AC_ARG_WITH(backward-cpp-sig,
+   [ --with-backward-cpp-sig  allow backward-cpp to also handle signals])
 AC_ARG_WITH(z,
    [ --with-z=DIR            use zlib installation in DIR])
 AC_ARG_WITH(z,
@@ -606,6 +610,7 @@ deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo vdb downloaded-vdb static-vdb libunwind libdw backward-cpp \
+backward-cpp-sig \
 z bz2 lzo pcre mbedtls gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
 sybase sybase-local sybase-new ftds mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx \
@@ -4361,7 +4366,6 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(libdw, LIBDW, dw,
 LIBS="$LIBDW_LIBS $LIBS"
 orig_LIBS="$LIBDW_LIBS $orig_LIBS"
 
-: ${with_backward_cpp:=no}
 NCBI_CHECK_THIRD_PARTY_LIB_EX(backward_cpp, BACKWARD_CPP, backward,
  [[AC_LANG_PROGRAM([#ifdef HAVE_LIBUNWIND
                     #  define BACKWARD_HAS_UNWIND 1
@@ -4374,6 +4378,12 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(backward_cpp, BACKWARD_CPP, backward,
                     #include <backward.hpp>],
       [[backward::StackTrace st; st.load_here(32);]])]],
  [], [], [$LIBUNWIND_INCLUDE $LIBDW_INCLUDE])
+
+
+if test "$with_backward_cpp_sig" = yes; then
+   AC_DEFINE(USE_LIBBACKWARD_SIG_HANDLING, 1,
+             [Define to allow backward-cpp to also handle signals.])
+fi
 
 NCBI_CHECK_THIRD_PARTY_LIB(z,
  [[AC_LANG_PROGRAM([#include <zlib.h>],

@@ -1670,6 +1670,7 @@ deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo vdb downloaded-vdb static-vdb libunwind libdw backward-cpp \
+backward-cpp-sig \
 z bz2 lzo pcre mbedtls gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
 sybase sybase-local sybase-new ftds mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx \
@@ -1952,7 +1953,9 @@ Optional Packages:
  --with-libunwind(=DIR)  use libunwind (in DIR)
  --with-libdw=DIR        use elfutils libdw installation in DIR
  --without-libdw         do not use elfutils libdw
- --with-backward-cpp(=DIR) use backward-cpp installation (in DIR)
+ --with-backward-cpp=DIR use backward-cpp installation in DIR
+ --without-backward-cpp  do not use backward-cpp
+ --with-backward-cpp-sig  allow backward-cpp to also handle signals
  --with-z=DIR            use zlib installation in DIR
  --without-z             use internal copy of zlib
  --with-bz2=DIR          use bzlib installation in DIR
@@ -3505,6 +3508,18 @@ fi
 # Check whether --with-backward-cpp was given.
 if test "${with_backward_cpp+set}" = set; then
   withval=$with_backward_cpp;
+fi
+
+
+# Check whether --with-backward-cpp was given.
+if test "${with_backward_cpp+set}" = set; then
+  withval=$with_backward_cpp;
+fi
+
+
+# Check whether --with-backward-cpp-sig was given.
+if test "${with_backward_cpp_sig+set}" = set; then
+  withval=$with_backward_cpp_sig;
 fi
 
 
@@ -29249,7 +29264,6 @@ _ACEOF
 LIBS="$LIBDW_LIBS $LIBS"
 orig_LIBS="$LIBDW_LIBS $orig_LIBS"
 
-: ${with_backward_cpp:=no}
 if test "$with_backward_cpp" != "no"; then
     case "$with_backward_cpp" in
        yes | "" ) ;;
@@ -29432,6 +29446,15 @@ _ACEOF
 
 
 
+
+
+if test "$with_backward_cpp_sig" = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define USE_LIBBACKWARD_SIG_HANDLING 1
+_ACEOF
+
+fi
 
 if test "$with_z" != "no"; then
     case "$with_z" in
