@@ -260,9 +260,7 @@ AC_ARG_WITH(libdw,
 AC_ARG_WITH(libdw,
    [ --without-libdw         do not use elfutils libdw])
 AC_ARG_WITH(backward-cpp,
-   [ --with-backward-cpp=DIR use backward-cpp installation in DIR])
-AC_ARG_WITH(backward-cpp,
-   [ --without-backward-cpp  do not use backward-cpp])
+   [ --with-backward-cpp(=DIR) use backward-cpp installation (in DIR)])
 AC_ARG_WITH(z,
    [ --with-z=DIR            use zlib installation in DIR])
 AC_ARG_WITH(z,
@@ -4363,6 +4361,7 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(libdw, LIBDW, dw,
 LIBS="$LIBDW_LIBS $LIBS"
 orig_LIBS="$LIBDW_LIBS $orig_LIBS"
 
+: ${with_backward_cpp:=no}
 NCBI_CHECK_THIRD_PARTY_LIB_EX(backward_cpp, BACKWARD_CPP, backward,
  [[AC_LANG_PROGRAM([#ifdef HAVE_LIBUNWIND
                     #  define BACKWARD_HAS_UNWIND 1
