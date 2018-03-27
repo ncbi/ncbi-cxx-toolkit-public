@@ -194,6 +194,7 @@ http2_session::http2_session(io_thread* aio) noexcept :
     m_num_requests(0),
     m_max_streams(MAX_CONCURRENT_STREAMS),
     m_port(0),
+    m_read_buf(RD_BUF_SIZE, '\0'),
     m_cancel_requested(false)
 {
     LOG2(("%p: created", this));
@@ -380,8 +381,8 @@ int http2_session::s_ng_error_cb(nghttp2_session *session, const char *msg, size
 void http2_session::s_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf)
 {
     http2_session *session_data = (http2_session*)handle->data;
-    buf->base = session_data->m_read_buf;
-    buf->len = sizeof(session_data->m_read_buf);
+    buf->base = session_data->m_read_buf.data();
+    buf->len = session_data->m_read_buf.size();
 }
 
 void http2_session::s_on_close_cb(uv_handle_t *handle)

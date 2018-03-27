@@ -431,7 +431,7 @@ private:
     unsigned short m_port;
     std::string m_host;
     std::queue<struct sockaddr> m_other_addr;
-    char m_read_buf[RD_BUF_SIZE];
+    std::vector<char> m_read_buf;
     http2_error m_error;
     std::atomic<bool> m_cancel_requested;
     std::set<std::shared_ptr<io_future>> m_completion_list;
