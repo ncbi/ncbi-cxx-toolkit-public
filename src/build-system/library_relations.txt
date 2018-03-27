@@ -1208,8 +1208,6 @@ txclient needs xconnect
 txcscu needs txclient
 txcscu needs xregexp
 txserv needs xmlwrapp
-txserv14 needs txxmldoc
-txserv14 needs xconnect
 txxmldoc needs $(COMPRESS_LIBS)
 txxmldoc needs xutil
 txxmldoc needs3party $(LIBXML_LIBS)
