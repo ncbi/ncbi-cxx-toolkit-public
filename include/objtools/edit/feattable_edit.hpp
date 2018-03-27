@@ -153,13 +153,15 @@ protected:
     std::string xGetCurrentLocusTagPrefix(
         CMappedFeat);
 
+    void xAddTranscriptAndProteinIdsToCdsAndParentMrna(CMappedFeat& cds);
+    void xAddTranscriptAndProteinIdsToUnmatchedMrna(CMappedFeat& mrna);
+    void xAddTranscriptAndProteinIdsToMrna(const string& fallback_transcript_id,
+                                           const string& fallback_protein_id,
+                                           CMappedFeat& mrna);
+    void xConvertToGeneralIds(const CMappedFeat& mf,
+                              string& transcript_id,
+                              string& protein_id);
 
-    bool xGatherProteinAndTranscriptIds();
-    void xFeatureAddTranscriptAndProteinIdsCds(CMappedFeat& cds);
-    void xFeatureAddTranscriptAndProteinIdsUnmatchedMrna(CMappedFeat& mrna);
-    void xFeatureAddTranscriptAndProteinIdsMrna(const string& mrna_transcript_id,
-                                                const string& mrna_protein_id,
-                                                CMappedFeat& mrna);
     CSeq_annot& mAnnot;
     CRef<CScope> mpScope;
     CSeq_annot_Handle mHandle;
@@ -173,10 +175,6 @@ protected:
 	map<string, int> mMapProtIdCounts;
 
     using TFeatQualMap = map<CMappedFeat,string>;
-    TFeatQualMap mMapMrnaTranscriptId;
-    TFeatQualMap mMapMrnaProteinId;
-    TFeatQualMap mMapCdsTranscriptId;
-    TFeatQualMap mMapCdsProteinId;
     set<CMappedFeat> mProcessedFeats;
 };
 
