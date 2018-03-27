@@ -42,7 +42,7 @@
 
 #define CPU_CACHE_LINE_SZ 64L
 
-template<typename T, size_t SZ>
+template<typename T, size_t SZ = 1024>
 class mpmc_bounded_queue {
 private:
     static constexpr const int CL_PAD_SZ = CPU_CACHE_LINE_SZ - sizeof(std::atomic<size_t>);

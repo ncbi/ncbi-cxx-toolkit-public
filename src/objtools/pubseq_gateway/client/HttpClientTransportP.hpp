@@ -68,7 +68,6 @@ namespace HCT {
 #define MAX_CONCURRENT_STREAMS      200
 #define NUM_IO                      16
 #define NUM_CONN_PER_IO             1
-#define QUEUE_LENGTH                1024
 #define DELAYED_COMPLETION          true
 
 class io_thread;
@@ -410,7 +409,7 @@ class http2_session
 private:
     int m_id;
     io_thread* m_io;
-    mpmc_bounded_queue<std::shared_ptr<http2_request>, QUEUE_LENGTH> m_req_queue;
+    mpmc_bounded_queue<std::shared_ptr<http2_request>> m_req_queue;
     CUvTcp m_tcp;
     connection_state_t m_connection_state;
     session_state_t m_session_state;
