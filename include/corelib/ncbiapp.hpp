@@ -634,6 +634,11 @@ private:
     int                        m_LogOptions; ///<  logging of env, reg, args, path
     CNcbiActionGuard           m_OnExitActions; ///< Actions executed on app destruction
 };
+// must include <common/ncbi_source_ver.h>
+#define NCBI_APP_SET_VERSION(major, minor, patch) \
+    SetVersion( CVersionInfo(major,minor,patch, NCBI_TEAMCITY_PROJECT_NAME_PROXY), \
+                SBuildInfo(__DATE__ " " __TIME__, NCBI_TEAMCITY_BUILDCONF_NAME_PROXY));
+#define NCBI_APP_SET_VERSION_AUTO(major, minor) NCBI_APP_SET_VERSION(major, minor, NCBI_TEAMCITY_BUILD_NUMBER_PROXY)
 
 
 /// Interface for application idler.
