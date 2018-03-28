@@ -42,10 +42,12 @@
 #endif
 #include <stdio.h>
 
-
+#if defined(USE_LIBBACKWARD_SIG_HANDLING)
 namespace backward {
     backward::SignalHandling sh;
 }
+#endif
+
 
 BEGIN_NCBI_SCOPE
 
