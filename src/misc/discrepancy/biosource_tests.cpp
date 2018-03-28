@@ -1058,8 +1058,9 @@ DISCREPANCY_SUMMARIZE(STRAIN_TAXNAME_MISMATCH)
         if (it.second->GetMap().size() > 1) {
             for (auto mm: it.second->GetMap()) {
                 for (auto obj : mm.second->GetObjects()) {
-                    rep["[n] biosources have strain/taxname conflicts"].Add(*obj);
-                    rep1["[n] biosources have strain " + it.first + " but do not have the same taxnames"].Add(*obj);
+                    string label = "[n] biosources have strain " + it.first + " but do not have the same taxnames";
+                    rep["[n] biosources have strain/taxname conflicts"][label].Ext().Add(*obj);
+                    rep1[label].Add(*obj);
                 }
             }
         }
@@ -1127,8 +1128,9 @@ DISCREPANCY_SUMMARIZE(CULTURE_TAXNAME_MISMATCH)
         if (it.second->GetMap().size() > 1) {
             for (auto mm : it.second->GetMap()) {
                 for (auto obj : mm.second->GetObjects()) {
-                    rep["[n] biosources have culture collection/taxname conflicts"].Add(*obj);
-                    rep1["[n] biosources have culture collection " + it.first + " but do not have the same taxnames"].Add(*obj);
+                    string label = "[n] biosources have culture collection " + it.first + " but do not have the same taxnames";
+                    rep["[n] biosources have culture collection/taxname conflicts"][label].Ext().Add(*obj);
+                    rep1[label].Add(*obj);
                 }
             }
         }
@@ -1162,8 +1164,9 @@ DISCREPANCY_SUMMARIZE(BIOMATERIAL_TAXNAME_MISMATCH)
             if (it.second->GetMap().size() > 1) {
                 for (auto mm : it.second->GetMap()) {
                     for (auto obj : mm.second->GetObjects()) {
-                        rep["[n] biosources have biomaterial/taxname conflicts"].Add(*obj);
-                        rep1["[n] biosources have biomaterial " + it.first + " but do not have the same taxnames"].Add(*obj);
+                        string label = "[n] biosources have biomaterial " + it.first + " but do not have the same taxnames";
+                        rep["[n] biosources have biomaterial/taxname conflicts"][label].Ext().Add(*obj);
+                        rep1[label].Add(*obj);
                     }
                 }
             }
