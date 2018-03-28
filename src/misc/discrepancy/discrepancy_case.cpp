@@ -1196,10 +1196,10 @@ DISCREPANCY_SUMMARIZE(QUALITY_SCORES)
 
     string some = NStr::NumericToString(all_na - quals);
     if (all_na == quals) {
-        m_Objs["Quality scores are present on all sequences"];
+        //m_Objs["Quality scores are present on all sequences"];
     }
     else if (quals == 0) {
-        m_Objs["Quality scores are missing on all sequences"];
+        //m_Objs["Quality scores are missing on all sequences"];
     }
     else {
         m_Objs["Quality scores are missing on some(" + some + ") sequences"];
