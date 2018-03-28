@@ -155,8 +155,8 @@ protected:
 
     void xAddTranscriptAndProteinIdsToCdsAndParentMrna(CMappedFeat& cds);
     void xAddTranscriptAndProteinIdsToUnmatchedMrna(CMappedFeat& mrna);
-    void xAddTranscriptAndProteinIdsToMrna(const string& fallback_transcript_id,
-                                           const string& fallback_protein_id,
+    void xAddTranscriptAndProteinIdsToMrna(const string& cds_transcript_id,
+                                           const string& cds_protein_id,
                                            CMappedFeat& mrna);
     void xConvertToGeneralIds(const CMappedFeat& mf,
                               string& transcript_id,
@@ -175,7 +175,7 @@ protected:
 	map<string, int> mMapProtIdCounts;
 
     using TFeatQualMap = map<CMappedFeat,string>;
-    set<CMappedFeat> mProcessedFeats;
+    set<CMappedFeat> mProcessedMrnas;
 };
 
 END_SCOPE(edit)
