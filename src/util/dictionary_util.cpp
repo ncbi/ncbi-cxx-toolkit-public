@@ -957,8 +957,8 @@ void CDictionaryUtil::Stem(const string& in_str, string* out_str)
     //s_ReplaceEnding(str, "u", "us");
 
     // step 3
-	typedef SStaticPair<const char*, const char*> TReplace;
-	static const TReplace rep_step3[] = {
+    typedef SStaticPair<const char*, const char*> TReplace;
+    static const TReplace rep_step3[] = {
         { "icate",  "ic" },
         { "ative",  ""   },
         { "alize", "al"  },

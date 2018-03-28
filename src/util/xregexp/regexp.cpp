@@ -219,7 +219,7 @@ string CRegexp::Escape(CTempString str)
     // Write remaining part of the string
     out.write(str.data() + prev, str.length() - prev);
     // Return encoded string
-	return CNcbiOstrstreamToString(out);
+    return CNcbiOstrstreamToString(out);
 }
 
 
@@ -255,7 +255,7 @@ string CRegexp::WildcardToRegexp(CTempString mask)
     // Write remaining part of the string
     out.write(mask.data() + prev, mask.length() - prev);
     // Return encoded string
-	return CNcbiOstrstreamToString(out);
+    return CNcbiOstrstreamToString(out);
 }
 
 

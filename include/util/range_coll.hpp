@@ -384,7 +384,7 @@ protected:
                        c_iterator = c.begin();
         while(my_iterator != end() && c_iterator != c.end())
         {
-	    TRange intersection = my_iterator->IntersectionWith(*c_iterator);
+        TRange intersection = my_iterator->IntersectionWith(*c_iterator);
             if(intersection.NotEmpty())
                 intersection_ranges.push_back(intersection);
             if(my_iterator->GetTo() < c_iterator->GetTo())

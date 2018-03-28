@@ -1782,7 +1782,7 @@ template <> template <>
 inline
 CValueConvert<SRunTimeCP, CTime>::operator bool(void) const
 {   
-		return !m_Value->IsEmpty();
+    return !m_Value->IsEmpty();
 }
 
 #endif

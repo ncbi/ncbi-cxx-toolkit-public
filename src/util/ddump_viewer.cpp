@@ -63,9 +63,9 @@ const void* CDebugDumpViewer::x_StrToPtr(const string& str)
 {
     void* addr = 0;
 #if SIZEOF_VOIDP == 8
-	addr = reinterpret_cast<void*>(NStr::StringToUInt8(str, 0, 16));
+    addr = reinterpret_cast<void*>(NStr::StringToUInt8(str, 0, 16));
 #else
-	addr = reinterpret_cast<void*>(NStr::StringToULong(str, 0, 16));
+    addr = reinterpret_cast<void*>(NStr::StringToULong(str, 0, 16));
 #endif
     return addr;
 }

@@ -261,8 +261,8 @@ private:
         
         // Retreive the transition state, give the transition character.
         int GetNextState(char letter) const {
-	    TMapCharInt::const_iterator it = m_Transitions.find(letter);
-	    return it != m_Transitions.end() ?  it->second : eFailState;
+        TMapCharInt::const_iterator it = m_Transitions.find(letter);
+        return it != m_Transitions.end() ?  it->second : eFailState;
         }
         
         
@@ -339,7 +339,7 @@ m_Primed(false), m_CaseSensitive(case_sensitive)
 }
 
 
-template <typename MatchType>	
+template <typename MatchType>    
 void CTextFsm<MatchType>::AddWord(const string& word, const MatchType& match) 
 {
     string temp = word;
@@ -440,7 +440,7 @@ void CTextFsm<MatchType>::QueueAdd(vector<int>& in_queue, int qbeg, int val)
 template <typename MatchType>
 void CTextFsm<MatchType>::ComputeFail(void) 
 {
-    int	qbeg, r, s, state;
+    int         qbeg, r, s, state;
     vector<int> state_queue(m_States.size());
     
     qbeg = 0;

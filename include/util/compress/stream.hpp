@@ -338,7 +338,7 @@ private:
                 CCompressionStreamProcessor* /*read_sp*/,
                 CCompressionStreamProcessor* /*write_sp*/,
                 TOwnership                   ownership = 0);
-		
+
     /// Disable operator<<(bool)
     void operator<<(bool) const;
 };
@@ -420,7 +420,7 @@ private:
                 CCompressionStreamProcessor* /*read_sp*/,
                 CCompressionStreamProcessor* /*write_sp*/,
                 TOwnership                   ownership = 0);
-		
+
     /// Disable operator>>(bool)
     void operator>>(bool) const;
 };

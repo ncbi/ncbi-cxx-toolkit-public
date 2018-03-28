@@ -608,6 +608,13 @@ void CTest::TestTransparentCopy(const char* src_buf, size_t src_len, size_t buf_
 
 int main(int argc, const char* argv[])
 {
+
+    CFormatGuess guess("p://test.zip");
+    bool is_gzip = guess.TestFormat(CFormatGuess::eGZip);
+    cout << is_gzip << endl;
+
+        return 0;
+
     // Execute main application function
     return CTest().AppMain(argc, argv);
 }

@@ -102,8 +102,8 @@ typedef struct SCommentLoc {
 
 typedef struct SBracketedCommentList 
 {
-	TLineInfoPtr                   comment_lines;
-	struct SBracketedCommentList * next;
+    TLineInfoPtr                   comment_lines;
+    struct SBracketedCommentList * next;
 } SBracketedCommentList, * TBracketedCommentListPtr;
 
 typedef struct SAlignRawSeq {
@@ -692,7 +692,7 @@ s_ReportSegmentedAlignmentError
     }
     msg_len = num_lines * (kMaxPrintedIntLen + 2);
     if (num_lines > 1) {
-    	msg_len += 4;
+        msg_len += 4;
     }
     
     line_text_list = (char*)malloc(msg_len);
@@ -706,15 +706,15 @@ s_ReportSegmentedAlignmentError
         }
         else if (num_lines == 2) 
         {
-        	sprintf (line_text_list_offset, "%d and ", t->ival);
+            sprintf (line_text_list_offset, "%d and ", t->ival);
         }
         else if (t->next->next == NULL)
         {
-        	sprintf (line_text_list_offset, "%d, and ", t->ival);
+            sprintf (line_text_list_offset, "%d, and ", t->ival);
         }
         else
         {
-        	sprintf (line_text_list_offset, "%d, ", t->ival);
+            sprintf (line_text_list_offset, "%d, ", t->ival);
         }
         line_text_list_offset += strlen (line_text_list_offset);
     }
@@ -1371,19 +1371,19 @@ static TBracketedCommentListPtr s_BracketedCommentListNew
  int    line_offset)
 {
     TBracketedCommentListPtr comment;
-    	
+        
     comment = (TBracketedCommentListPtr) malloc (sizeof (SBracketedCommentList));
     if (comment == NULL) {
-    	return NULL;
+        return NULL;
     }
     comment->comment_lines = s_LineInfoNew (string, line_num, line_offset);
     comment->next = NULL;
     
     if (list != NULL) {
-    	while (list->next != NULL) {
-    		list = list->next;
-    	}
-    	list->next = comment;
+        while (list->next != NULL) {
+            list = list->next;
+        }
+        list->next = comment;
     }
     
     return comment;
@@ -1393,7 +1393,7 @@ static TBracketedCommentListPtr s_BracketedCommentListNew
 static void s_BracketedCommentListFree (TBracketedCommentListPtr list)
 {
     if (list == NULL) {
-  	    return;
+          return;
     }
     s_BracketedCommentListFree (list->next);
     list->next = NULL;
@@ -1407,9 +1407,9 @@ static void s_BracketedCommentListAddLine
  int                      line_num,
  int                      line_offset)
 {
-	if (comment == NULL) {
-		return;
-	}
+    if (comment == NULL) {
+        return;
+    }
 
     comment->comment_lines = s_AddLineInfo(comment->comment_lines, string, line_num, line_offset);
 }
@@ -1421,47 +1421,47 @@ static int s_CountSequencesInBracketedComment(TBracketedCommentListPtr comment)
     int          num_segments = 0;
     EBool        skipped_line_since_last_defline = eTrue;
     
-	if (comment == NULL || comment->comment_lines == NULL) {
-		return 0;
-	}
-	
-	lip = comment->comment_lines;
-	/* First line must be left bracket on a line by itself */
-	if (lip->data[0] != '[' || strspn(lip->data + 1, " \t\r\n") != strlen (lip->data + 1))
-	{
-		return 0;
-	}
-	lip = lip->next;
-	while (lip != NULL && lip->next != NULL)
-	{
-		if (lip->data[0] == '>')
-		{
-			if (!skipped_line_since_last_defline) 
-			{
-				return 0;
-			}
-			else
-			{
-				++num_segments;
-				skipped_line_since_last_defline = eFalse;
-			}
-		}
-		else 
-		{
-			skipped_line_since_last_defline = eTrue;
-		}
-		lip = lip->next;
-	}
-	/* Last line must be right bracket on a line by itself */
-	/* First line must be left bracket on a line by itself */
-	if (lip != NULL &&
+    if (comment == NULL || comment->comment_lines == NULL) {
+        return 0;
+    }
+    
+    lip = comment->comment_lines;
+    /* First line must be left bracket on a line by itself */
+    if (lip->data[0] != '[' || strspn(lip->data + 1, " \t\r\n") != strlen (lip->data + 1))
+    {
+        return 0;
+    }
+    lip = lip->next;
+    while (lip != NULL && lip->next != NULL)
+    {
+        if (lip->data[0] == '>')
+        {
+            if (!skipped_line_since_last_defline) 
+            {
+                return 0;
+            }
+            else
+            {
+                ++num_segments;
+                skipped_line_since_last_defline = eFalse;
+            }
+        }
+        else 
+        {
+            skipped_line_since_last_defline = eTrue;
+        }
+        lip = lip->next;
+    }
+    /* Last line must be right bracket on a line by itself */
+    /* First line must be left bracket on a line by itself */
+    if (lip != NULL &&
         lip->data != NULL &&
         (lip->data[0] != ']' || strspn (lip->data + 1, " \t\r\n") != strlen (lip->data + 1)))
-	{
-		return 0;
-	}
-	
-	return num_segments;
+    {
+        return 0;
+    }
+    
+    return num_segments;
 }
 
 /* This function counts the number of sequences that appear in
@@ -1482,14 +1482,14 @@ static int s_GetNumSegmentsInAlignment
     int                      num_segments_expected;
     TSizeInfoPtr             best;
     
-	if (comment_list == NULL)
-	{
-		return num_segments;
-	}
-	
-	for (comment = comment_list; comment != NULL; comment = comment->next)
-	{
-	    num_segments_this_bracket = s_CountSequencesInBracketedComment(comment);
+    if (comment_list == NULL)
+    {
+        return num_segments;
+    }
+    
+    for (comment = comment_list; comment != NULL; comment = comment->next)
+    {
+        num_segments_this_bracket = s_CountSequencesInBracketedComment(comment);
         segcount_list = s_AddSizeInfoAppearances (segcount_list,
                                                   num_segments_this_bracket,
                                                   1);
@@ -1498,20 +1498,20 @@ static int s_GetNumSegmentsInAlignment
             best = s_GetMostPopularSizeInfo (segcount_list);
             num_segments_expected = best->size_value;
 
-        	if (num_segments_expected != num_segments_this_bracket)
-        	{
-        		s_ReportBadNumSegError (comment->comment_lines->line_num,
-        		                        num_segments_this_bracket, num_segments_expected,
-        		                        errfunc, errdata);
-        	}
+            if (num_segments_expected != num_segments_this_bracket)
+            {
+                s_ReportBadNumSegError (comment->comment_lines->line_num,
+                                        num_segments_this_bracket, num_segments_expected,
+                                        errfunc, errdata);
+            }
         }
-	}
-	if (segcount_list != NULL && segcount_list->next == NULL && segcount_list->size_value > 0)
-	{
-		num_segments = segcount_list->size_value;
-	}
-	s_SizeInfoFree (segcount_list);
-	return num_segments;
+    }
+    if (segcount_list != NULL && segcount_list->next == NULL && segcount_list->size_value > 0)
+    {
+        num_segments = segcount_list->size_value;
+    }
+    s_SizeInfoFree (segcount_list);
+    return num_segments;
 }
 
 /* This function gets a list of the offsets of the 
@@ -1519,28 +1519,28 @@ static int s_GetNumSegmentsInAlignment
  */
 static TIntLinkPtr GetSegmentOffsetList (TBracketedCommentListPtr comment_list)
 {
-	TIntLinkPtr              new_offset, offset_list = NULL;
-	TBracketedCommentListPtr comment;
-	TLineInfoPtr             lip;
+    TIntLinkPtr              new_offset, offset_list = NULL;
+    TBracketedCommentListPtr comment;
+    TLineInfoPtr             lip;
 
     if (comment_list == NULL) 
     {
-    	return NULL;
+        return NULL;
     }
     
     for (comment = comment_list; comment != NULL; comment = comment->next)
     {
-    	if (s_CountSequencesInBracketedComment(comment) == 0) 
-    	{
-    		continue;
-    	}
-    	for (lip = comment->comment_lines; lip != NULL; lip = lip->next)
-    	{
-    		if (lip->data != NULL && lip->data[0] == '>') 
-    		{
+        if (s_CountSequencesInBracketedComment(comment) == 0) 
+        {
+            continue;
+        }
+        for (lip = comment->comment_lines; lip != NULL; lip = lip->next)
+        {
+            if (lip->data != NULL && lip->data[0] == '>') 
+            {
                 new_offset = s_IntLinkNew (lip->line_num + 1, offset_list);
                 if (offset_list == NULL) offset_list = new_offset;
-    		}
+            }
         }
     }
     return offset_list;
@@ -2711,9 +2711,9 @@ static TCommentLocPtr s_FindOrganismComment (char * string)
     }
 
     next_clp = s_FindComment (clp->end);
-	while (next_clp != NULL &&
-		   !s_IsOrganismComment(next_clp))
-	{
+    while (next_clp != NULL &&
+           !s_IsOrganismComment(next_clp))
+    {
         clp->end = next_clp->end;
         next_clp = s_FindComment (clp->end);
     }
@@ -3479,8 +3479,8 @@ static void s_TrimSpace(char** ppline)
     ptmp = *ppline + len - 1;
     while (ptmp > *ppline  &&  (*ptmp == ' ' || *ptmp == '\t' || *ptmp == '\r' || *ptmp == '\n'))
     {
-  	    *ptmp = 0;
-  	    ptmp--;
+          *ptmp = 0;
+          ptmp--;
     }
     len = strspn (*ppline, " \t\r\n");
     if (len > 0) {
@@ -3704,8 +3704,8 @@ s_ReadAlignFileRaw
             len = strspn (linestring, " \t\r\n");
             if (last_comment != NULL) 
             {
-            	s_BracketedCommentListAddLine (last_comment, linestring + len,
-            	                               overall_line_count, len);
+                s_BracketedCommentListAddLine (last_comment, linestring + len,
+                                               overall_line_count, len);
             }
             if (strchr (linestring, ']') != NULL) {
                 in_bracketed_comment = eFalse;
@@ -3719,7 +3719,7 @@ s_ReadAlignFileRaw
                                                       overall_line_count, len);
             if (comment_list == NULL) 
             {
-            	comment_list = last_comment;
+                comment_list = last_comment;
             }
             linestring [0] = 0;
         }
@@ -3807,17 +3807,17 @@ s_ReadAlignFileRaw
     {
         if (afrp->offset_list != NULL)
         {
-        	s_ReportSegmentedAlignmentError (afrp->offset_list,
-        	                                 errfunc, errdata);
+            s_ReportSegmentedAlignmentError (afrp->offset_list,
+                                             errfunc, errdata);
             s_AlignFileRawFree (afrp);
             s_LengthListFree (pattern_list);
             s_BracketedCommentListFree (comment_list);
-            return NULL;        	
+            return NULL;            
         }
         else
         {
-    	    afrp->offset_list = GetSegmentOffsetList (comment_list);
-    	    afrp->marked_ids = eTrue;
+            afrp->offset_list = GetSegmentOffsetList (comment_list);
+            afrp->marked_ids = eTrue;
         }
     }
     if (! afrp->marked_ids) {
@@ -4161,10 +4161,10 @@ s_CreateSequencesBasedOnTokenPatterns
     }
     for (curr_seg = 0; curr_seg < afrp->num_segments; curr_seg ++)
     {
-    	if (anchorpattern [curr_seg] == NULL || anchorpattern [curr_seg]->lengthrepeats == NULL)
-    	{
-    		return;
-    	}
+        if (anchorpattern [curr_seg] == NULL || anchorpattern [curr_seg]->lengthrepeats == NULL)
+        {
+            return;
+        }
     }
 
     line_counter = 0;
@@ -4233,7 +4233,7 @@ s_CreateSequencesBasedOnTokenPatterns
         curr_seg ++;
         if (curr_seg >= afrp->num_segments)
         {
-        	curr_seg = 0;
+            curr_seg = 0;
         }
     }        
 }
@@ -4272,22 +4272,22 @@ s_CreateAnchorPatternForMarkedIDs
     list = (SLengthListPtr *) malloc (afrp->num_segments * sizeof (SLengthListPtr));
     if (list == NULL) 
     {
-    	return NULL;
+        return NULL;
     }
     for (curr_seg = 0; curr_seg < afrp->num_segments; curr_seg ++)
     {
-    	list[curr_seg] = NULL;
+        list[curr_seg] = NULL;
     }
     /* initialize best ptrs */
     /* list is one element longer, to hold null terminator */
     best = (SLengthListPtr *) malloc ((afrp->num_segments + 1) * sizeof (SLengthListPtr));
     if (best == NULL) 
     {
-    	return NULL;
+        return NULL;
     }
     for (curr_seg = 0; curr_seg < afrp->num_segments + 1; curr_seg ++)
     {
-    	best[curr_seg] = NULL;
+        best[curr_seg] = NULL;
     }
     
     /* initialize pattern */
@@ -4306,7 +4306,7 @@ s_CreateAnchorPatternForMarkedIDs
                 curr_seg ++;
                 if (curr_seg >= afrp->num_segments) 
                 {
-                	curr_seg = 0;
+                    curr_seg = 0;
                 }
             }
             this_pattern = s_LengthListNew (NULL);
@@ -4374,15 +4374,15 @@ s_CreateAnchorPatternForMarkedIDs
 
     for (curr_seg = 0; curr_seg < afrp->num_segments; curr_seg ++)
     {
-    	if (best[curr_seg] == NULL) 
-    	{
-    		for (curr_seg = 0; curr_seg < afrp->num_segments; curr_seg ++)
-    		{
-    			s_LengthListFree (best [curr_seg]);
-    		}
+        if (best[curr_seg] == NULL) 
+        {
+            for (curr_seg = 0; curr_seg < afrp->num_segments; curr_seg ++)
+            {
+                s_LengthListFree (best [curr_seg]);
+            }
             free (best);
-    		return NULL;
-    	}
+            return NULL;
+        }
     }
     
     return best;
@@ -5981,18 +5981,18 @@ s_ConvertDataToOutput
     /* we need to store length information about different segments separately */
     lengths = (TSizeInfoPtr *) malloc (sizeof (TSizeInfoPtr) * afrp->num_segments);
     if (lengths == NULL) {
-    	AlignmentFileFree (afp);
+        AlignmentFileFree (afp);
         return NULL;
     }
     best_length = (int *) malloc (sizeof (int) * afrp->num_segments);
     if (best_length == NULL) {
-    	free (lengths);
-    	AlignmentFileFree (afp);
-    	return NULL;
+        free (lengths);
+        AlignmentFileFree (afp);
+        return NULL;
     }
     for (curr_seg = 0; curr_seg < afrp->num_segments; curr_seg ++) {
-    	lengths [curr_seg] = NULL;
-    	best_length [curr_seg] = 0;
+        lengths [curr_seg] = NULL;
+        best_length [curr_seg] = 0;
     }
     
     /* copy in sequence data */
@@ -6009,7 +6009,7 @@ s_ConvertDataToOutput
         afp->ids [index] = strdup (arsp->id);
         curr_seg ++;
         if (curr_seg >= afrp->num_segments) {
-        	curr_seg = 0;
+            curr_seg = 0;
         }
     }
     for (curr_seg = 0; curr_seg < afrp->num_segments; curr_seg ++)
@@ -6034,7 +6034,7 @@ s_ConvertDataToOutput
         }
         curr_seg ++;
         if (curr_seg >= afrp->num_segments) {
-        	curr_seg = 0;
+            curr_seg = 0;
         }
     }
 

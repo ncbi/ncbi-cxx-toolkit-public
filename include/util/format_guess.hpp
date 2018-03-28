@@ -219,109 +219,62 @@ protected:
     bool EnsureTestBuffer();
     bool EnsureStats();
     bool EnsureSplitLines();
-	bool IsAllComment();
+    bool IsAllComment();
     bool IsAsciiText();
 
-    bool TestFormatRepeatMasker(
-        EMode );
-    bool TestFormatPhrapAce(
-        EMode );
-    bool TestFormatGtf(
-        EMode );
-    bool TestFormatGvf(
-		EMode );
-    bool TestFormatGff3(
-        EMode );
-    bool TestFormatGff2(
-        EMode );
-    bool TestFormatGlimmer3(
-        EMode );
-    bool TestFormatAgp(
-        EMode );
-    bool TestFormatNewick(
-        EMode );
-    bool TestFormatXml(
-        EMode );
-    bool TestFormatAlignment(
-        EMode );
+    bool TestFormatRepeatMasker(EMode);
+    bool TestFormatPhrapAce(EMode);
+    bool TestFormatGtf(EMode);
+    bool TestFormatGvf(EMode);
+    bool TestFormatGff3(EMode);
+    bool TestFormatGff2(EMode);
+    bool TestFormatGlimmer3(EMode);
+    bool TestFormatAgp(Emode);
+    bool TestFormatNewick(Emode);
+    bool TestFormatXml(Emode);
+    bool TestFormatAlignment(Emode);
     bool TestFormatCLUSTAL(void);
-    bool TestFormatBinaryAsn(
-        EMode );
-    bool TestFormatDistanceMatrix(
-        EMode );
-    bool TestFormatTaxplot(
-        EMode );
-    bool TestFormatFlatFileSequence(
-        EMode );
-    bool TestFormatFiveColFeatureTable(
-        EMode );
-    bool TestFormatTable(
-        EMode );
-    bool TestFormatFasta(
-        EMode );
-    bool TestFormatTextAsn(
-        EMode );
-    bool TestFormatSnpMarkers(
-        EMode );
-    bool TestFormatBed(
-        EMode );
-    bool TestFormatBed15(
-        EMode );
-    bool TestFormatWiggle(
-        EMode );
-    bool TestFormatHgvs(
-        EMode );
-    bool TestFormatZip(
-        EMode );
-    bool TestFormatGZip(
-        EMode );
-    bool TestFormatBZip2(
-        EMode );
-    bool TestFormatLzo(
-        EMode );
-    bool TestFormatSra(
-        EMode );
-    bool TestFormatBam(
-        EMode mode );
-    bool TestFormatVcf(
-        EMode mode );
-    bool TestFormatAugustus(
-        EMode mode );
-    bool TestFormatJson(
-        EMode mode );
+    bool TestFormatBinaryAsn(Emode);
+    bool TestFormatDistanceMatrix(Emode);
+    bool TestFormatTaxplot(Emode);
+    bool TestFormatFlatFileSequence(Emode);
+    bool TestFormatFiveColFeatureTable(Emode);
+    bool TestFormatTable(Emode);
+    bool TestFormatFasta(Emode);
+    bool TestFormatTextAsn(Emode);
+    bool TestFormatSnpMarkers(Emode);
+    bool TestFormatBed(Emode);
+    bool TestFormatBed15(Emode);
+    bool TestFormatWiggle(Emode);
+    bool TestFormatHgvs(Emode);
+    bool TestFormatZip(Emode);
+    bool TestFormatGZip(Emode);
+    bool TestFormatBZip2(Emode);
+    bool TestFormatLzo(Emode);
+    bool TestFormatSra(Emode);
+    bool TestFormatBam(EMode);
+    bool TestFormatVcf(EMode);
+    bool TestFormatAugustus(EMode);
+    bool TestFormatJson(EMode);
 
     bool IsInputRepeatMaskerWithoutHeader();
     bool IsInputRepeatMaskerWithHeader();
 
-    static bool IsLineFlatFileSequence(
-        const std::string& );
-    static bool IsSampleNewick(
-        const std::string& );
-    static bool IsLabelNewick(
-        const std::string& );
-    static bool IsLineAgp(
-        const std::string& );
-    static bool IsLineGlimmer3(
-        const std::string& );
-    static bool IsLineGtf(
-        const std::string& );
-    static bool IsLineGvf(
-		const std::string& );
-	static bool IsLineGff3(
-		const std::string& );
-	static bool IsLineGff2(
-		const std::string& );
-	static bool IsLineAugustus(
-		const std::string& );
-	static bool IsLinePhrapId(
-        const std::string& );
-    static bool IsLineRmo(
-        const std::string& );
-    static bool IsAsnComment(
-        const vector<string>& );
-	static bool IsLineHgvs(
-		const std::string& );
-	
+    static bool IsLineFlatFileSequence(const std::string&);
+    static bool IsSampleNewick(const std::string&);
+    static bool IsLabelNewick(const std::string&);
+    static bool IsLineAgp(const std::string&);
+    static bool IsLineGlimmer3(const std::string&);
+    static bool IsLineGtf(const std::string&);
+    static bool IsLineGvf(const std::string&);
+    static bool IsLineGff3(const std::string&);
+    static bool IsLineGff2(const std::string&);
+    static bool IsLineAugustus(const std::string&);
+    static bool IsLinePhrapId(const std::string&);
+    static bool IsLineRmo(const std::string&);
+    static bool IsAsnComment(const vector<string>&);
+    static bool IsLineHgvs(const std::string&);
+    
 private:
     static bool x_TestInput( CNcbiIstream& input, EOnError onerror );
 
@@ -368,10 +321,7 @@ private:
     // data:
     static const char* const sm_FormatNames[eFormat_max];
 
-
-    bool x_TryProcessCLUSTALSeqData(const string& line, 
-        string& id,
-        size_t& seg_length) const;
+    bool x_TryProcessCLUSTALSeqData(const string& line, string& id, size_t& seg_length) const;
 
     bool x_LooksLikeCLUSTALConservedInfo(const string& line) const;
 

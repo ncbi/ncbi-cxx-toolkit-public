@@ -808,7 +808,7 @@
         // The 'src_buf' is zero-terminated and have only printable characters.
         if (test_name == "bzip2") {
             os_str << MCompress_BZip2 << src_buf;
-        } else 
+        } else
 #if defined(HAVE_LIBLZO)
         if (test_name == "lzo") {
             os_str << MCompress_LZO << src_buf;

@@ -102,145 +102,145 @@ int main (void)
 
 
 
-	//////////////////////////////
-	// Old-fashioned way ...
-	//////////////////////////////
-	
+    //////////////////////////////
+    // Old-fashioned way ...
+    //////////////////////////////
+    
 
 
-	/////////////////////////////
-	// Numeric data types ...
-	tI8::ConsumeData(static_cast<Int8>(value_Uint8)); // Not safe ...
-	tU8::ConsumeData(value_Uint8); // Safe, not portable ...
-	
-	
-	////////////////////////////
-	// String data ...
-	
-	tI8::ConsumeData(NStr::StringToInt8(str_Uint8));
-	tU8::ConsumeData(NStr::StringToUInt8(str_Uint8));
+    /////////////////////////////
+    // Numeric data types ...
+    tI8::ConsumeData(static_cast<Int8>(value_Uint8)); // Not safe ...
+    tU8::ConsumeData(value_Uint8); // Safe, not portable ...
+    
+    
+    ////////////////////////////
+    // String data ...
+    
+    tI8::ConsumeData(NStr::StringToInt8(str_Uint8));
+    tU8::ConsumeData(NStr::StringToUInt8(str_Uint8));
 
-	tI8::ConsumeData(NStr::StringToInt8(str_Uint4));
-	tU8::ConsumeData(NStr::StringToUInt8(str_Uint4));
+    tI8::ConsumeData(NStr::StringToInt8(str_Uint4));
+    tU8::ConsumeData(NStr::StringToUInt8(str_Uint4));
 
-	// Not safe, not readable ...
-	// tI2::ConsumeData(static_cast<Int2>(NStr::StringToInt(str_Uint4))); // Will throw an exception.
-	// Invalid conversion.
-	tI2::ConsumeData(static_cast<Int2>(NStr::StringToUInt(str_Uint4)));
-	// Invalid conversion.
-	tI2::ConsumeData(static_cast<Int2>(NStr::StringToInt8(str_Uint4)));
-	
-	// It is also possible to check value range manually.
-	Int8 tmp_value = NStr::StringToInt8(str_Uint4);
-	if (tmp_value < numeric_limits<Int2>::min() || tmp_value > numeric_limits<Int2>::max()) 
-	{
-		// throw string("Invalid conversion");
-	}
-	tI2::ConsumeData(static_cast<Int2>(tmp_value));
-	
+    // Not safe, not readable ...
+    // tI2::ConsumeData(static_cast<Int2>(NStr::StringToInt(str_Uint4))); // Will throw an exception.
+    // Invalid conversion.
+    tI2::ConsumeData(static_cast<Int2>(NStr::StringToUInt(str_Uint4)));
+    // Invalid conversion.
+    tI2::ConsumeData(static_cast<Int2>(NStr::StringToInt8(str_Uint4)));
+    
+    // It is also possible to check value range manually.
+    Int8 tmp_value = NStr::StringToInt8(str_Uint4);
+    if (tmp_value < numeric_limits<Int2>::min() || tmp_value > numeric_limits<Int2>::max()) 
+    {
+        // throw string("Invalid conversion");
+    }
+    tI2::ConsumeData(static_cast<Int2>(tmp_value));
+    
 
-	
-	//////////////////////////////
-	// New way ...
-	//////////////////////////////
-	
-	
+    
+    //////////////////////////////
+    // New way ...
+    //////////////////////////////
+    
+    
 
-	//////////////////////////////
-	// Numeric data types ...
-	
-	// tI8::ConsumeData(ConvertSafe(value_Uint8));
-	// Conversion is is ambiguous. numeric_limits<Uint8>::max() > numeric_limits<Int8>::max()
-	
-	tU8::ConsumeData(ConvertSafe(value_Uint8));
+    //////////////////////////////
+    // Numeric data types ...
+    
+    // tI8::ConsumeData(ConvertSafe(value_Uint8));
+    // Conversion is is ambiguous. numeric_limits<Uint8>::max() > numeric_limits<Int8>::max()
+    
+    tU8::ConsumeData(ConvertSafe(value_Uint8));
 
-	tI8::ConsumeData(ConvertSafe(value_Uint4));
-	tU8::ConsumeData(ConvertSafe(value_Uint4));
+    tI8::ConsumeData(ConvertSafe(value_Uint4));
+    tU8::ConsumeData(ConvertSafe(value_Uint4));
 
-	// If you still need to convert a bigger data type to a smaller one,
-	// compile-time check can be replaced with run-time one.
-	try {
+    // If you still need to convert a bigger data type to a smaller one,
+    // compile-time check can be replaced with run-time one.
+    try {
             tI8::ConsumeData(Convert(value_Uint8));
             
             tU8::ConsumeData(Convert(value_Uint8));
             tU8::ConsumeData(Convert(value_Uint4));
-	} catch (const CException&) {
-		// Oops ...
-	}
+    } catch (const CException&) {
+        // Oops ...
+    }
 
-	// The same with variables.
-	//
-	Int8 result_Int8 = 0;
-	Int4 result_Int4 = 0;
+    // The same with variables.
+    //
+    Int8 result_Int8 = 0;
+    Int4 result_Int4 = 0;
 
-	// result_Int8 = ConvertSafe(value_Uint8); // ERROR.
-	result_Int8 = ConvertSafe(value_Uint4); 
+    // result_Int8 = ConvertSafe(value_Uint8); // ERROR.
+    result_Int8 = ConvertSafe(value_Uint4); 
         _ASSERT(result_Int8 == value_Uint4);
-	// result_Int4 = ConvertSafe(value_Uint8); // ERROR.
-	// result_Int4 = ConvertSafe(value_Uint4); // ERROR.
-	
-	try {
-		result_Int8 = Convert(value_Uint8);
+    // result_Int4 = ConvertSafe(value_Uint8); // ERROR.
+    // result_Int4 = ConvertSafe(value_Uint4); // ERROR.
+    
+    try {
+        result_Int8 = Convert(value_Uint8);
                 tI8::ConsumeData(result_Int8);
-		result_Int8 = Convert(value_Uint4); 
+        result_Int8 = Convert(value_Uint4); 
                 tI8::ConsumeData(result_Int8);
-		result_Int4 = Convert(value_Uint8);
+        result_Int4 = Convert(value_Uint8);
                 tI8::ConsumeData(result_Int4);
-		result_Int4 = Convert(value_Uint4);
+        result_Int4 = Convert(value_Uint4);
                 tI8::ConsumeData(result_Int4);
-	} catch (const CException&) {
-		// Oops ...
-	}
+    } catch (const CException&) {
+        // Oops ...
+    }
 
-	
-	////////////////////////////
-	// String data ...
-	
-	tI8::ConsumeData(ConvertSafe(str_Uint8));
-	tU8::ConsumeData(ConvertSafe(str_Uint8));
+    
+    ////////////////////////////
+    // String data ...
+    
+    tI8::ConsumeData(ConvertSafe(str_Uint8));
+    tU8::ConsumeData(ConvertSafe(str_Uint8));
 
-	tI8::ConsumeData(ConvertSafe(str_Uint4));
-	tU8::ConsumeData(ConvertSafe(str_Uint4));
+    tI8::ConsumeData(ConvertSafe(str_Uint4));
+    tU8::ConsumeData(ConvertSafe(str_Uint4));
 
-	// !!! ATTENTION !!!
-	// tI2::ConsumeData(ConvertSafe(str_Uint4)); // !!! Compilation error. !!!
-	// int StringToInt(const CTempString& str) returns "int".
-	// It is not safe to convert "int" to "Int2". Use run-time conversion
-	// function instead.
+    // !!! ATTENTION !!!
+    // tI2::ConsumeData(ConvertSafe(str_Uint4)); // !!! Compilation error. !!!
+    // int StringToInt(const CTempString& str) returns "int".
+    // It is not safe to convert "int" to "Int2". Use run-time conversion
+    // function instead.
 
-	try {
-		tI2::ConsumeData(Convert(str_Uint4)); 
-	} catch (const CException&) {
-		// Oops ...
-	}
+    try {
+        tI2::ConsumeData(Convert(str_Uint4)); 
+    } catch (const CException&) {
+        // Oops ...
+    }
 
-	// The same with variables.
-	//
-	result_Int8 = ConvertSafe(str_Uint8); // May throw an exception at run-time.
-	result_Int8 = ConvertSafe(str_Uint4); 
-	// result_Int4 = ConvertSafe(str_Uint8); // May throw an exception at run-time.
-	// result_Int4 = ConvertSafe(str_Uint4); // May throw an exception at run-time.
+    // The same with variables.
+    //
+    result_Int8 = ConvertSafe(str_Uint8); // May throw an exception at run-time.
+    result_Int8 = ConvertSafe(str_Uint4); 
+    // result_Int4 = ConvertSafe(str_Uint8); // May throw an exception at run-time.
+    // result_Int4 = ConvertSafe(str_Uint4); // May throw an exception at run-time.
 
-	try {
-		result_Int8 = Convert(str_Uint8);
+    try {
+        result_Int8 = Convert(str_Uint8);
                 tI8::ConsumeData(result_Int8);
-		result_Int8 = Convert(str_Uint4); 
+        result_Int8 = Convert(str_Uint4); 
                 tI8::ConsumeData(result_Int8);
-		result_Int4 = Convert(str_Uint8);
+        result_Int4 = Convert(str_Uint8);
                 tI8::ConsumeData(result_Int4);
-		result_Int4 = Convert(str_Uint4);
+        result_Int4 = Convert(str_Uint4);
                 tI8::ConsumeData(result_Int4);
                 _ASSERT(result_Int4 == static_cast<Int4>(value_Uint4));
-	} catch (const CException&) {
-		// Oops ...
-	}
+    } catch (const CException&) {
+        // Oops ...
+    }
 
-	////////////////////////////
-	// Overloaded functions ...
-	// 1) Use static_cast ...
-	tA8::ConsumeData(static_cast<Uint8>(ConvertSafe(str_Uint8)));
-	// 2) Explicitly call conversion operator ...
-	tA8::ConsumeData(ConvertSafe(str_Uint8).operator Int8());
-	
-	return 0;
+    ////////////////////////////
+    // Overloaded functions ...
+    // 1) Use static_cast ...
+    tA8::ConsumeData(static_cast<Uint8>(ConvertSafe(str_Uint8)));
+    // 2) Explicitly call conversion operator ...
+    tA8::ConsumeData(ConvertSafe(str_Uint8).operator Int8());
+    
+    return 0;
 }

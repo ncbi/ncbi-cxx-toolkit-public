@@ -26,7 +26,7 @@
  * Author: Aleksey Grichenko
  *
  * File Description:
- *	 CRetryContext implementation.
+ *     CRetryContext implementation.
  *
  * ===========================================================================
  */

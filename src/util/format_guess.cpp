@@ -467,8 +467,8 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
     case eGtf:
         return TestFormatGtf( mode );
     case eGvf:
-		return TestFormatGvf( mode );
-	case eGff3:
+        return TestFormatGvf( mode );
+    case eGff3:
         return TestFormatGff3( mode );
     case eGff2:
         return TestFormatGff2( mode );
@@ -772,9 +772,9 @@ CFormatGuess::TestFormatGvf(
             if (NStr::StartsWith(*it, "##gvf-version")) {
                 return true;
             }
-			continue;
-		}
-		if ( !uGvfLineCount && NStr::StartsWith( *it, "browser " ) ) {
+            continue;
+        }
+        if ( !uGvfLineCount && NStr::StartsWith( *it, "browser " ) ) {
             continue;
         }
         if ( !uGvfLineCount && NStr::StartsWith( *it, "track " ) ) {
@@ -1505,17 +1505,17 @@ CFormatGuess::TestFormatTable(
 //  -----------------------------------------------------------------------------
 void SkipCommentAndBlank(CTempString &text)
 {
-	const CTempString COMMENT_SYMBOLS(";#!");
-	const CTempString NEW_LINE_SYMBOLS("\r\n");
-	while (true) {
-		text = NStr::TruncateSpaces_Unsafe(text, NStr::eTrunc_Begin);
-		if ( COMMENT_SYMBOLS.find(text[0]) != CTempString::npos ) {
-			CTempString::size_type pos = text.find_first_of(NEW_LINE_SYMBOLS, 1);
-			text = text.substr(pos);
-		} else {
-			break;
-		}
-	}
+    const CTempString COMMENT_SYMBOLS(";#!");
+    const CTempString NEW_LINE_SYMBOLS("\r\n");
+    while (true) {
+        text = NStr::TruncateSpaces_Unsafe(text, NStr::eTrunc_Begin);
+        if ( COMMENT_SYMBOLS.find(text[0]) != CTempString::npos ) {
+            CTempString::size_type pos = text.find_first_of(NEW_LINE_SYMBOLS, 1);
+            text = text.substr(pos);
+        } else {
+            break;
+        }
+    }
 }
 
 bool
@@ -1526,9 +1526,9 @@ CFormatGuess::TestFormatFasta( EMode /* not used */ )
     }
 
     // reject obvious misfits:
-	CTempString header(m_pTestBuffer, m_iTestDataSize);
-	SkipCommentAndBlank(header);
-	if ( m_iTestDataSize == 0 || header.length() == 0 || header[0] != '>' ) {
+    CTempString header(m_pTestBuffer, m_iTestDataSize);
+    SkipCommentAndBlank(header);
+    if ( m_iTestDataSize == 0 || header.length() == 0 || header[0] != '>' ) {
         return false;
     }
     if ( m_iStatsCountData == 0 ) {
@@ -1634,19 +1634,19 @@ CFormatGuess::TestFormatBed(
     }
 
     bool bTrackLineFound( false );    
-	bool bHasStartAndStop ( false );
+    bool bHasStartAndStop ( false );
     size_t columncount = 0;
     ITERATE( list<string>, it, m_TestLines ) {
         string str = NStr::TruncateSpaces( *it );
         if ( str.empty() ) {
             continue;
         }
-		
-		// 'chr 8' fixup, the bedreader does this too
-		if (str.find("chr ") == 0 || 
-			str.find("Chr ") == 0 || 
-			str.find("CHR ") == 0)
-			str.erase(3, 1);
+        
+        // 'chr 8' fixup, the bedreader does this too
+        if (str.find("chr ") == 0 || 
+            str.find("Chr ") == 0 || 
+            str.find("CHR ") == 0)
+            str.erase(3, 1);
 
         //
         //  while occurrence of the following decorations _is_ a good sign, they could
@@ -1676,12 +1676,12 @@ CFormatGuess::TestFormatBed(
                 return false;
             }
         }
-		if(columns.size() >= 3) {
-			if (s_IsTokenPosInt(columns[1]) &&
+        if(columns.size() >= 3) {
+            if (s_IsTokenPosInt(columns[1]) &&
                 s_IsTokenPosInt(columns[2])) {
-				bHasStartAndStop = true;
-			}
-		}
+                bHasStartAndStop = true;
+            }
+        }
     }
 
     return (bHasStartAndStop || bTrackLineFound);
@@ -2734,45 +2734,45 @@ bool CFormatGuess::IsLineGvf(
     }
 
     //make sure that "type" is a GVF admissible value:
-	{{
+    {{
         bool typeOk = false;
-		list<string> terms;
-		terms.push_back("snv");
-		terms.push_back("cnv");
-		terms.push_back("copy_number_variation");
-		terms.push_back("gain");
-		terms.push_back("copy_number_gain");
-		terms.push_back("loss");
-		terms.push_back("copy_number_loss");
-		terms.push_back("loss_of_heterozygosity");
-		terms.push_back("complex");
-		terms.push_back("complex_substitution");
-		terms.push_back("complex_sequence_alteration");
-		terms.push_back("indel");
-		terms.push_back("insertion");
-		terms.push_back("inversion");
-		terms.push_back("substitution");
-		terms.push_back("deletion");
-		terms.push_back("duplication");
-		terms.push_back("translocation");
-		terms.push_back("upd");
-		terms.push_back("uniparental_disomy");
-		terms.push_back("maternal_uniparental_disomy");
-		terms.push_back("paternal_uniparental_disomy");
-		terms.push_back("tandom_duplication");
-		terms.push_back("structural_variation");
-		terms.push_back("sequence_alteration");
-		ITERATE(list<string>, termiter, terms) {
-			if(NStr::EqualNocase(*termiter, tokens[2])) {
-				typeOk = true;
+        list<string> terms;
+        terms.push_back("snv");
+        terms.push_back("cnv");
+        terms.push_back("copy_number_variation");
+        terms.push_back("gain");
+        terms.push_back("copy_number_gain");
+        terms.push_back("loss");
+        terms.push_back("copy_number_loss");
+        terms.push_back("loss_of_heterozygosity");
+        terms.push_back("complex");
+        terms.push_back("complex_substitution");
+        terms.push_back("complex_sequence_alteration");
+        terms.push_back("indel");
+        terms.push_back("insertion");
+        terms.push_back("inversion");
+        terms.push_back("substitution");
+        terms.push_back("deletion");
+        terms.push_back("duplication");
+        terms.push_back("translocation");
+        terms.push_back("upd");
+        terms.push_back("uniparental_disomy");
+        terms.push_back("maternal_uniparental_disomy");
+        terms.push_back("paternal_uniparental_disomy");
+        terms.push_back("tandom_duplication");
+        terms.push_back("structural_variation");
+        terms.push_back("sequence_alteration");
+        ITERATE(list<string>, termiter, terms) {
+            if(NStr::EqualNocase(*termiter, tokens[2])) {
+                typeOk = true;
                 break;
             }
-		}
+        }
         if (!typeOk) {
             return false;
         }
-	}}
-	if ( ! s_IsTokenDouble( tokens[5] ) ) {
+    }}
+    if ( ! s_IsTokenDouble( tokens[5] ) ) {
         return false;
     }
     if ( tokens[6].size() != 1 || NPOS == tokens[6].find_first_of( ".+-" ) ) {
@@ -3141,7 +3141,7 @@ CFormatGuess::IsAsciiText()
         }
     }
     if (count_print < (double)count * REQUIRED_ASCII_RATIO) {
-		return false;
+        return false;
     }
     return true;
 }
