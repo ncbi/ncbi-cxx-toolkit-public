@@ -396,6 +396,7 @@ static string s_GetTranscriptIdFromMrna(const CMappedFeat& mrna)
 }
 
 
+// ---------------------------------------------------------------------------
 void CFeatTableEdit::xAddTranscriptAndProteinIdsToCdsAndParentMrna(CMappedFeat& cds)
 // ---------------------------------------------------------------------------
 {
@@ -434,73 +435,64 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToCdsAndParentMrna(CMappedFeat& 
              !is_genbank_protein) { // Scenario 2
             protein_id = "cds." + protein_id;
         }
-        // else Scenario 1
     } 
     else {
-        if (!NStr::IsBlank(protein_id)) {
+        if (!NStr::IsBlank(protein_id)) { // CDS has protein_id but no transcript_id
             if (mrna) {
                 transcript_id = s_GetTranscriptIdFromMrna(mrna);
                 if ((transcript_id == protein_id) &&
                     !is_genbank_protein) {
-                    protein_id = "cds." + protein_id; // Note add cds. to protein_id to distinguish
+                    protein_id = "cds." + protein_id; 
                 }
             }
-            if (NStr::IsBlank(transcript_id)) {
-                if (is_genbank_protein) {
-                    transcript_id = xNextTranscriptId(cds);
-                }
-                else {
-                    transcript_id = "mrna." + protein_id; // Scenario 6
-                }
+            if (NStr::IsBlank(transcript_id) && 
+                              !is_genbank_protein) {
+                transcript_id = "mrna." + protein_id; // Scenario 6
             } 
         }
-        else if (!NStr::IsBlank(transcript_id)) {
-            if (mrna) {
+        else if (!NStr::IsBlank(transcript_id)) { // CDS  has transcript_id but no protein_id
+            if (mrna) { 
                 protein_id = mrna.GetNamedQual("protein_id");
                 if ((protein_id == transcript_id) &&
                     !is_genbank_protein) {
                     protein_id = "cds." + protein_id;
                 }
             }
-            if (NStr::IsBlank(protein_id)) {
-                if (is_genbank_transcript) {
-                    protein_id = xNextProteinId(cds);
-                }
-                else {
-                    protein_id = "cds." + transcript_id; // Scenario 4
-                }
+            if (NStr::IsBlank(protein_id) &&
+                              !is_genbank_transcript) {
+                protein_id = "cds." + transcript_id; // Scenario 4
             }
         }
-        else { // both transcript_id and protein_id are blank
-            if (mrna) {
-                protein_id = mrna.GetNamedQual("protein_id");
-                is_genbank_protein = NStr::StartsWith(protein_id, "gb|"); // are not blank
-                transcript_id = s_GetTranscriptIdFromMrna(mrna);
-                is_genbank_transcript = NStr::StartsWith(transcript_id, "gb|");
+        else // CDS has neither transcript_id nor protein_id 
+        if (mrna) {  
+            protein_id = mrna.GetNamedQual("protein_id");
+            is_genbank_protein = NStr::StartsWith(protein_id, "gb|"); 
+            transcript_id = s_GetTranscriptIdFromMrna(mrna);
+            is_genbank_transcript = NStr::StartsWith(transcript_id, "gb|");
 
-                if (NStr::IsBlank(transcript_id)) 
-                {
-                    if(!(is_genbank_protein ||
-                      NStr::IsBlank(protein_id))) {
-                        transcript_id = "mrna." + protein_id;
-                    }
+            if (NStr::IsBlank(transcript_id)) 
+            {
+                if(!(is_genbank_protein ||
+                    NStr::IsBlank(protein_id))) {
+                    transcript_id = "mrna." + protein_id;
                 }
-                else // transcript_id not blank
-                if ((NStr::IsBlank(protein_id)  ||
-                    protein_id == transcript_id) &&
-                    !is_genbank_transcript)
-                {  
+            }
+            else // transcript_id not blank
+            if ((NStr::IsBlank(protein_id)  ||
+                protein_id == transcript_id) &&
+                !is_genbank_transcript)
+            {  
                     protein_id = "cds." + transcript_id;
-                }
             }
-                      
-            if (NStr::IsBlank(protein_id)) {
-                protein_id = xNextProteinId(cds);
-            }
+        }
 
-            if (NStr::IsBlank(transcript_id)) {
-                transcript_id = xNextTranscriptId(cds);
-            }
+        // Generate new transcript_id and protein_id if necessary
+        if (NStr::IsBlank(protein_id)) {
+            protein_id = xNextProteinId(cds);
+        }
+
+        if (NStr::IsBlank(transcript_id)) {
+            transcript_id = xNextTranscriptId(cds);
         }
     }
 
