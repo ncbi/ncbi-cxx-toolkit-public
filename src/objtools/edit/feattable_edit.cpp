@@ -479,7 +479,7 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToCdsAndParentMrna(CMappedFeat& 
                 protein_id == transcript_id) &&
                 !is_genbank_transcript)
             {  
-                    protein_id = "cds." + transcript_id;
+                protein_id = "cds." + transcript_id;
             }
         }
 
@@ -519,10 +519,11 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToMrna(const string& cds_transcr
     
     string transcript_id = mrna.GetNamedQual("transcript_id");
     if (NStr::IsBlank(transcript_id)) {
-        transcript_id = mrna.GetNamedQual("ID");
-        if (NStr::IsBlank(transcript_id)) {
+       // Prefer CDS transcript_id qualifier to ID qualifier
+      //  transcript_id = mrna.GetNamedQual("ID");
+      //  if (NStr::IsBlank(transcript_id)) {
             transcript_id = cds_transcript_id;
-        }
+      //  }
     }
 
     string protein_id = mrna.GetNamedQual("protein_id");
