@@ -104,6 +104,11 @@ protected:
         CMappedFeat);
     void xPutErrorMissingProteinId(
         CMappedFeat);
+    void xPutWarningDifferingTranscriptIds(
+        const CMappedFeat& mrna);
+    void xPutWarningDifferingProteinIds(
+        const CMappedFeat& mrna);
+
 
     void xFeatureAddQualifier(
         CMappedFeat,

@@ -478,13 +478,14 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToCdsAndParentMrna(CMappedFeat& 
         }
     } 
 
+    xConvertToGeneralIds(cds, transcript_id, protein_id);    
+
     if (mrna) {
         xAddTranscriptAndProteinIdsToMrna(transcript_id,  
                                           protein_id,
                                           mrna);
     }
 
-    xConvertToGeneralIds(cds, transcript_id, protein_id);    
 
     xFeatureSetQualifier(cds, "transcript_id", transcript_id);
     xFeatureSetQualifier(cds, "protein_id", protein_id);
@@ -500,28 +501,41 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToMrna(const string& cds_transcr
     if (mProcessedMrnas.find(mrna) != mProcessedMrnas.end()) {
         return;
     }
-    
+   
+    bool use_local_ids = false; // Use local ids 
+
     string transcript_id = mrna.GetNamedQual("transcript_id");
     if (NStr::IsBlank(transcript_id)) {
-       // Prefer CDS transcript_id qualifier to ID qualifier
-      //  transcript_id = mrna.GetNamedQual("ID");
-      //  if (NStr::IsBlank(transcript_id)) {
-            transcript_id = cds_transcript_id;
-      //  }
+        transcript_id = cds_transcript_id;
+    }
+    else {
+        use_local_ids = true;
     }
 
     string protein_id = mrna.GetNamedQual("protein_id");
     if (NStr::IsBlank(protein_id)) {
         protein_id = cds_protein_id;
     }
-
-    if ((protein_id == transcript_id) &&
-        !NStr::StartsWith(protein_id, "gb|")) {
-        protein_id = "cds." + protein_id;
+    else {
+        if ((protein_id == transcript_id) &&
+             !NStr::StartsWith(protein_id, "gb|")) {
+            protein_id = "cds." + protein_id;
+        }
+        use_local_ids = true;
     }
 
-    
-    xConvertToGeneralIds(mrna, transcript_id, protein_id);
+    if (use_local_ids) { // protein id and/or transcript id specified on mRNA.
+                         // Process these ids and check that the processed quals match the qualifiers on the child CDS feature
+        xConvertToGeneralIds(mrna, transcript_id, protein_id);
+
+        if (transcript_id  d= cds_transcript_id) {
+            xPutWarningDifferingTranscriptIds(mrna);
+        }
+
+        if (protein_id != cds_protein_id) {
+            xPutWarningDifferingProteinIds(mrna);
+        }
+    }
 
     xFeatureSetQualifier(mrna, "transcript_id", transcript_id);
     xFeatureSetQualifier(mrna, "protein_id", protein_id);
@@ -1569,6 +1583,55 @@ CMappedFeat mf)
     pErr->SetLineNumber(0);
     mpMessageListener->PutError(*pErr);
 }
+
+
+//  ----------------------------------------------------------------------------
+void
+CFeatTableEdit::xPutWarningDifferingProteinIds(
+const CMappedFeat& mrna)
+//  ----------------------------------------------------------------------------
+{
+    if (!mpMessageListener) {
+        return;
+    }
+
+    if (mrna.GetFeatSubtype() != CSeqFeatData::eSubtype_mRNA) {
+        return;
+    }
+
+    unique_ptr<CObjReaderLineException> pErr(
+        CObjReaderLineException::Create(
+        eDiag_Warning,
+        0,
+        "Protein ID on mRNA feature differs from protein ID on child CDS.",
+        ILineError::eProblem_InconsistentQualifiers));
+    pErr->SetLineNumber(0);
+    mpMessageListener->PutError(*pErr);
+}
+
+void
+CFeatTableEdit::xPutWarningDifferingTranscriptIds(
+const CMappedFeat& mrna)
+//  ----------------------------------------------------------------------------
+{
+    if (!mpMessageListener) {
+        return;
+    }
+
+    if (mrna.GetFeatSubtype() != CSeqFeatData::eSubtype_mRNA) {
+        return;
+    }
+
+    unique_ptr<CObjReaderLineException> pErr(
+        CObjReaderLineException::Create(
+        eDiag_Warning,
+        0,
+        "Transcript ID on mRNA feature differs from transcript ID on child CDS.",
+        ILineError::eProblem_InconsistentQualifiers));
+    pErr->SetLineNumber(0);
+    mpMessageListener->PutError(*pErr);
+}
+
 
 //  ----------------------------------------------------------------------------
 string
