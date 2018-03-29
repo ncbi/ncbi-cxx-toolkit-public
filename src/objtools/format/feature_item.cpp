@@ -1523,7 +1523,12 @@ void CFeatureItem::x_AddQualOldLocusTag(
     }
 
     if ( ctx.IsProt() ) {
-        return;
+        // skip if GenPept format and not gene or CDS
+        const CSeqFeatData& data = m_Feat.GetData();
+        CSeqFeatData::ESubtype subtype = data.GetSubtype();
+        if (subtype != CSeqFeatData::eSubtype_gene && subtype != CSeqFeatData::eSubtype_cdregion) {
+            return;
+        }
     }
 
     const CSeq_feat::TQual& quals = gene_feat->GetQual();
