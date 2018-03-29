@@ -251,7 +251,7 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
     m_ShowAnnotCommentAsCOMMENT = false;
     m_ShowAnnotCommentAsCOMMENT_checked = false;
     
-    m_HasOperon = x_HasOperon();
+    // m_HasOperon = x_HasOperon();
 
     if (IsRefSeq()) {
         m_FFCtx.SetConfig().SetRefSeqConventions();
@@ -260,9 +260,9 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
     SAnnotSelector sel = SetAnnotSelector();
     sel.SetResolveAll();
 
-    x_SetHasMultiIntervalGenes();
+    // x_SetHasMultiIntervalGenes();
 
-    x_SetTaxname();
+    // x_SetTaxname();
 
     x_SetOpticalMapPoints();
 }
@@ -325,7 +325,7 @@ void CBioseqContext::x_SetMapper(const CSeq_loc& loc)
     }
 }
 
-void CBioseqContext::x_SetHasMultiIntervalGenes(void)
+void CBioseqContext::x_SetHasMultiIntervalGenes(void) const
 {
     m_HasMultiIntervalGenes = false;
 
@@ -350,7 +350,21 @@ void CBioseqContext::x_SetHasMultiIntervalGenes(void)
     }
 }
 
-void CBioseqContext::x_SetTaxname(void)
+bool CBioseqContext::HasMultiIntervalGenes(void) const
+{
+    if (UsingSeqEntryIndex()) {
+        CRef<CSeqEntryIndex> idx = GetSeqEntryIndex();
+        if (! idx) return false;
+        CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (m_Handle);
+        if (! bsx) return false;
+        return bsx->HasMultiIntervalGenes();
+    }
+
+    x_SetHasMultiIntervalGenes();
+    return m_HasMultiIntervalGenes;
+}
+
+void CBioseqContext::x_SetTaxname(void) const
 {
     // look for taxname in Seqdescs
     int num_super_kingdom = 0;
@@ -424,6 +438,44 @@ void CBioseqContext::x_SetTaxname(void)
         }
     }
 }
+
+const string& CBioseqContext::GetTaxname(void) const
+{
+    // check for indexed version first
+    if (UsingSeqEntryIndex()) {
+        CRef<CSeqEntryIndex> idx = GetSeqEntryIndex();
+        if (idx) {
+            CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (m_Handle);
+            if (bsx) {
+                m_Taxname = bsx->GetTaxname();
+            }
+        }
+        return m_Taxname;
+    }
+
+    x_SetTaxname();
+    return m_Taxname;
+}
+
+
+bool CBioseqContext::IsCrossKingdom(void) const
+{
+    // check for indexed version first
+    if (UsingSeqEntryIndex()) {
+        CRef<CSeqEntryIndex> idx = GetSeqEntryIndex();
+        if (idx) {
+            CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (m_Handle);
+            if (bsx) {
+                m_IsCrossKingdom = bsx->IsCrossKingdom();
+            }
+        }
+        return m_IsCrossKingdom;
+    }
+
+    x_SetTaxname();
+    return m_IsCrossKingdom;
+}
+
 
 void CBioseqContext::x_SetFiletrackURL(const CUser_object& uo)
 {
@@ -672,6 +724,21 @@ bool CBioseqContext::x_HasOperon(void) const
     return CFeat_CI(m_Handle.GetScope(),
                     *m_Location,
                     CSeqFeatData::eSubtype_operon);
+}
+
+bool CBioseqContext::HasOperon(void) const
+{
+    // check for indexed version first
+    if (UsingSeqEntryIndex()) {
+        CRef<CSeqEntryIndex> idx = GetSeqEntryIndex();
+        if (! idx) return false;
+        CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (m_Handle);
+        if (! bsx) return false;
+        return bsx->HasOperon();
+    }
+
+    m_HasOperon = x_HasOperon();
+    return m_HasOperon;
 }
 
 
