@@ -32,13 +32,13 @@
  *    Private aux. code for the "ncbi_*.[ch]"
  *
  *********************************
- * Tracing and logging
+ * Error handling and logging (including tracing):
  *    C error codes:   NCBI_C_DEFINE_ERRCODE_X, NCBI_C_ERRCODE_X
  *    private global:  g_CORE_Log
  *    macros:          CORE_TRACE[F], CORE_LOG[F][_[EX]X],
  *                     CORE_LOG[F]_ERRNO[_[EX]X](), CORE_DATA[F][_[EX]X]
- * Critical section (basic multi-thread synchronization)
- *    private global:  g_CORE_MT_Lock
+ * Multi-thread safety (critical section basic MT synchronization):
+ *    private globals: g_CORE_MT_Lock[_default]
  *    macros:          CORE_LOCK_WRITE, CORE_LOCK_READ, CORE_UNLOCK
  * Registry:
  *    private global:  g_CORE_Registry
@@ -250,12 +250,12 @@ extern NCBI_XCONNECT_EXPORT LOG g_CORE_Log;
 extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
 #ifdef __GNUC__
     __attribute__((format(printf,1,2)))
-#endif
+#endif /*__GNUC__*/
 ;
 
 
 /******************************************************************************
- *  Multi-Thread SAFETY
+ *  Multi-thread safety
  */
 
 extern struct MT_LOCK_tag g_CORE_MT_Lock_default;

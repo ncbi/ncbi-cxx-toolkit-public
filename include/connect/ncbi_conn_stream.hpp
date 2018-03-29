@@ -571,7 +571,7 @@ public:
     ~CConn_HttpStream();
 
     /// Flush the stream and fetch the response (w/o extracting any user data)
-    EIO_Status    Fetch(const STimeout* timeout = kDefaultTimeout);
+    EIO_Status        Fetch(const STimeout* timeout = kDefaultTimeout);
 
     /// Get the last seen HTTP status code
     int               GetStatusCode(void) const { return m_StatusData.code; }
@@ -645,7 +645,7 @@ public:
     ~CConn_ServiceStream();
 
     /// Flush the stream and fetch the response (w/o extracting any user data)
-    EIO_Status    Fetch(const STimeout* timeout = kDefaultTimeout);
+    EIO_Status        Fetch(const STimeout* timeout = kDefaultTimeout);
 
     /// Get the last seen HTTP status code, if available
     int               GetStatusCode(void) const { return m_CBD.status.code; }
@@ -657,7 +657,7 @@ public:
     const string&     GetHTTPHeader(void) const { return m_CBD.status.header; }
 
     /// Get underlying SOCK, if available after Fetch()
-    SOCK          GetSOCK(void);
+    SOCK              GetSOCK(void);
 
 public:
     /// Helper class
