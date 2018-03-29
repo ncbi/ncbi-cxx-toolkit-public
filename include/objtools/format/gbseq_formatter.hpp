@@ -110,7 +110,6 @@ private:
     bool m_DidSequenceStart;
     bool m_NeedFeatEnd;
     bool m_NeedJourEnd;
-    bool m_NeedKeysEnd;
     bool m_NeedRefsEnd;
     bool m_NeedWgsEnd;
     bool m_NeedComment;

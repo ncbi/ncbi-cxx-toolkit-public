@@ -108,7 +108,6 @@ CGBSeqFormatter::CGBSeqFormatter(bool isInsd)
     m_DidSequenceStart = false;
     m_NeedFeatEnd = false;
     m_NeedJourEnd = false;
-    m_NeedKeysEnd = false;
     m_NeedRefsEnd = false;
     m_NeedWgsEnd  = false;
     m_NeedComment = false;
@@ -679,12 +678,12 @@ void CGBSeqFormatter::FormatKeywords
         if (! m_DidKeysStart) {
             str.append( s_OpenTag("    ", "GBSeq_keywords"));
             m_DidKeysStart = true;
-            m_NeedKeysEnd = true;
         }
         str.append( s_CombineStrings("      ", "GBKeyword", CGBKeyword(*it)));
     }
-    if (m_NeedKeysEnd) {
+    if (m_DidKeysStart) {
         str.append( s_CloseTag("    ", "GBSeq_keywords"));
+        m_DidKeysStart = false;
     }
 
     if ( m_IsInsd ) {
