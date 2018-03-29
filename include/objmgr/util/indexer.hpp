@@ -475,11 +475,6 @@ public:
 
     bool IsUseBiosrc (void);
 
-    const string& GetCommon (void);
-    const string& GetLineage (void);
-    int GetTaxid (void);
-    bool IsUsingAnamorph (void);
-
     CTempString GetGenus (void);
     CTempString GetSpecies (void);
     bool IsMultispecies (void);
@@ -487,7 +482,7 @@ public:
     bool IsPlasmid (void);
     bool IsChromosome (void);
 
-    const string& GetOrganelle (void);
+    CTempString GetOrganelle (void);
 
     string GetFirstSuperKingdom (void);
     string GetSecondSuperKingdom (void);
@@ -636,11 +631,6 @@ private:
     CConstRef<CBioSource> m_BioSource;
     string m_Taxname;
 
-    string m_Common;
-    string m_Lineage;
-    int m_Taxid;
-    bool m_UsingAnamorph;
-
     CTempString m_Genus;
     CTempString m_Species;
     bool m_Multispecies;
@@ -648,7 +638,7 @@ private:
     bool m_IsPlasmid;
     bool m_IsChromosome;
 
-    string m_Organelle;
+    CTempString m_Organelle;
 
     string m_FirstSuperKingdom;
     string m_SecondSuperKingdom;

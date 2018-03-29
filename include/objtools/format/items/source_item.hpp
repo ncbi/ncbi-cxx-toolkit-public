@@ -77,7 +77,6 @@ public:
 
 private:
     void x_GatherInfo(CBioseqContext& ctx);
-    void x_GatherInfoIdx(CBioseqContext& ctx);
     void x_GatherInfo(CBioseqContext& ctx, const CBioSource& bsrc, const CSerialObject& obj);
 
     // Populate the object based on the source of the data

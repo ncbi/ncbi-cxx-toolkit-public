@@ -251,7 +251,7 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
     m_ShowAnnotCommentAsCOMMENT = false;
     m_ShowAnnotCommentAsCOMMENT_checked = false;
     
-    // m_HasOperon = x_HasOperon();
+    m_HasOperon = x_HasOperon();
 
     if (IsRefSeq()) {
         m_FFCtx.SetConfig().SetRefSeqConventions();
@@ -260,9 +260,9 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
     SAnnotSelector sel = SetAnnotSelector();
     sel.SetResolveAll();
 
-    // x_SetHasMultiIntervalGenes();
+    x_SetHasMultiIntervalGenes();
 
-    // x_SetTaxname();
+    x_SetTaxname();
 
     x_SetOpticalMapPoints();
 }
@@ -325,7 +325,7 @@ void CBioseqContext::x_SetMapper(const CSeq_loc& loc)
     }
 }
 
-void CBioseqContext::x_SetHasMultiIntervalGenes(void) const
+void CBioseqContext::x_SetHasMultiIntervalGenes(void)
 {
     m_HasMultiIntervalGenes = false;
 
@@ -350,21 +350,7 @@ void CBioseqContext::x_SetHasMultiIntervalGenes(void) const
     }
 }
 
-bool CBioseqContext::HasMultiIntervalGenes(void) const
-{
-    if (UsingSeqEntryIndex()) {
-        CRef<CSeqEntryIndex> idx = GetSeqEntryIndex();
-        if (! idx) return false;
-        CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (m_Handle);
-        if (! bsx) return false;
-        return bsx->HasMultiIntervalGenes();
-    }
-
-    x_SetHasMultiIntervalGenes();
-    return m_HasMultiIntervalGenes;
-}
-
-void CBioseqContext::x_SetTaxname(void) const
+void CBioseqContext::x_SetTaxname(void)
 {
     // look for taxname in Seqdescs
     int num_super_kingdom = 0;
@@ -438,25 +424,6 @@ void CBioseqContext::x_SetTaxname(void) const
         }
     }
 }
-
-const string& CBioseqContext::GetTaxname(void) const
-{
-// check for indexed version first
-    if (UsingSeqEntryIndex()) {
-        CRef<CSeqEntryIndex> idx = GetSeqEntryIndex();
-        if (idx) {
-            CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (m_Handle);
-            if (bsx) {
-                m_Taxname = bsx->GetTaxname();
-            }
-        }
-        return m_Taxname;
-    }
-
-    x_SetTaxname();
-    return m_Taxname;
-}
-
 
 void CBioseqContext::x_SetFiletrackURL(const CUser_object& uo)
 {
@@ -608,14 +575,11 @@ void CBioseqContext::x_SetDataFromUserObjects(void)
             } else if (utype == CUser_object::eObjectType_Unverified) {
                 if (uo.IsUnverifiedOrganism()) {
                     m_fUnverified |= fUnverified_Organism;
-                }
-                if (uo.IsUnverifiedFeature()) {
+                } else if (uo.IsUnverifiedFeature()) {
                     m_fUnverified |= fUnverified_SequenceOrAnnotation;
-                }
-                if (uo.IsUnverifiedMisassembled()) {
+                } else if (uo.IsUnverifiedMisassembled()) {
                     m_fUnverified |= fUnverified_Misassembled;
-                }
-                if (uo.IsUnverifiedContaminant()) {
+                } else if (uo.IsUnverifiedContaminant()) {
                     m_fUnverified |= fUnverified_Contaminant;
                 }
                 // default in the past was to use feature
@@ -705,21 +669,6 @@ bool CBioseqContext::x_HasOperon(void) const
     return CFeat_CI(m_Handle.GetScope(),
                     *m_Location,
                     CSeqFeatData::eSubtype_operon);
-}
-
-bool CBioseqContext::HasOperon(void) const
-{
-// check for indexed version first
-    if (UsingSeqEntryIndex()) {
-        CRef<CSeqEntryIndex> idx = GetSeqEntryIndex();
-        if (! idx) return false;
-        CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (m_Handle);
-        if (! bsx) return false;
-        return bsx->HasOperon();
-    }
-
-    m_HasOperon = x_HasOperon();
-    return m_HasOperon;
 }
 
 
