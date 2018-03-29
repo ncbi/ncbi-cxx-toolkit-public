@@ -401,16 +401,21 @@ static string s_GetTranscriptIdFromMrna(const CMappedFeat& mrna)
 void CFeatTableEdit::xAddTranscriptAndProteinIdsToCdsAndParentMrna(CMappedFeat& cds)
 // ---------------------------------------------------------------------------
 {
+    CMappedFeat mrna = feature::GetBestMrnaForCds(cds, &mTree);
     string protein_id = cds.GetNamedQual("protein_id");
     const bool no_protein_id_qual = NStr::IsBlank(protein_id);
     if (no_protein_id_qual) {
-        protein_id = cds.GetNamedQual("ID");
+        if (mrna) {
+            protein_id = mrna.GetNamedQual("protein_id");
+        }
+        if (NStr::IsBlank(protein_id)) {
+            protein_id = cds.GetNamedQual("ID");
+        }
     }
-
-    string transcript_id = cds.GetNamedQual("transcript_id");
-
-    bool is_genbank_transcript = NStr::StartsWith(transcript_id, "gb|");
     bool is_genbank_protein = NStr::StartsWith(protein_id, "gb|");
+    
+    string transcript_id = cds.GetNamedQual("transcript_id");
+    bool is_genbank_transcript = NStr::StartsWith(transcript_id, "gb|");
 
 
     if ((is_genbank_protein ||
@@ -420,10 +425,14 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToCdsAndParentMrna(CMappedFeat& 
         if (no_protein_id_qual) {
             xFeatureSetQualifier(cds, "protein_id", protein_id);
         }
+        if (mrna) {
+            xAddTranscriptAndProteinIdsToMrna(transcript_id,  
+                                              protein_id,
+                                              mrna);
+        }
         return;
-    } 
+    }
 
-    CMappedFeat mrna = feature::GetBestMrnaForCds(cds, &mTree);
 
     if (!NStr::IsBlank(protein_id) && 
         !NStr::IsBlank(transcript_id)) {
@@ -503,7 +512,6 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToCdsAndParentMrna(CMappedFeat& 
 
     xFeatureSetQualifier(cds, "transcript_id", transcript_id);
     xFeatureSetQualifier(cds, "protein_id", protein_id);
-
 }
 
 
