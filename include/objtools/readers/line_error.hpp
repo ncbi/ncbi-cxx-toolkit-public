@@ -88,6 +88,7 @@ public:
         eProblem_DiscouragedFeatureName,
         eProblem_DiscouragedQualifierName,
         eProblem_InvalidQualifier,
+        eProblem_InconsistentQualifiers, // qualifiers should match across features, but don't
 
         //vcf specific
         eProblem_BadInfoLine,

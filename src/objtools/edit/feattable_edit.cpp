@@ -528,7 +528,7 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToMrna(const string& cds_transcr
                          // Process these ids and check that the processed quals match the qualifiers on the child CDS feature
         xConvertToGeneralIds(mrna, transcript_id, protein_id);
 
-        if (transcript_id  d= cds_transcript_id) {
+        if (transcript_id  != cds_transcript_id) {
             xPutWarningDifferingTranscriptIds(mrna);
         }
 
