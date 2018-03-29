@@ -30,6 +30,7 @@
  */
 #include <ncbi_pch.hpp>
 
+#include "pubseq_gateway.hpp"
 #include "pending_operation.hpp"
 #include "pubseq_gateway_exception.hpp"
 
@@ -40,7 +41,8 @@ CPendingOperation::CPendingOperation(string &&  sat_name, int  sat_key,
     m_Reply(nullptr),
     m_Cancelled(false),
     m_FinishedRead(false),
-    m_SatKey(sat_key)
+    m_SatKey(sat_key),
+    m_BlobAndAccessionRequest(false)
 {
     m_Loader.reset(new CCassBlobLoader(&m_Op, timeout, conn,
                                        std::move(sat_name), sat_key,
@@ -56,7 +58,8 @@ CPendingOperation::CPendingOperation(const string &  accession_data,
     m_Reply(nullptr),
     m_Cancelled(false),
     m_FinishedRead(false),
-    m_SatKey(sat_key)
+    m_SatKey(sat_key),
+    m_BlobAndAccessionRequest(true)
 {
     m_Loader.reset(new CCassBlobLoader(&m_Op, timeout, conn,
                                        std::move(sat_name), sat_key,
@@ -95,10 +98,16 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
     m_Loader->SetDataReadyCB(HST::CHttpReply<CPendingOperation>::s_DataReady, &resp);
     m_Loader->SetErrorCB(
         [&resp](ECassError  err_type,
-                const char *  text, CCassBlobWaiter *  waiter) {
+                const char *  text, CCassBlobWaiter *  waiter)
+        {
+            CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
             ERRLOG1(("%s", text));
-            if (err_type == eNotFound)
+            if (err_type == eNotFound) {
+                app->GetErrorCounters().IncGetBlobNotFound();
                 resp.Send404("Blob Not Found", text);
+            } else {
+                app->GetErrorCounters().IncUnknownError();
+            }
         }
     );
     m_Loader->SetDataChunkCB(
@@ -112,25 +121,34 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
                 return;
             }
             if (resp.IsFinished()) {
+                CPubseqGatewayApp::GetInstance()->GetErrorCounters().
+                                                             IncUnknownError();
                 ERRLOG1(("Unexpected data received while the output has finished, ignoring"));
                 return;
             }
             if (resp.GetState() == HST::CHttpReply<CPendingOperation>::eReplyInitialized) {
                 size_t      content_length;
-                if (m_AccessionData.empty())
-                    // Format #1: blob only
-                    content_length = m_Loader->GetBlobSize();
-                else
-                    // Format #2: accession + blob
+                if (m_BlobAndAccessionRequest)
+                    // Format B: accession + blob
                     content_length = 4 + m_AccessionData.size() + m_Loader->GetBlobSize();
+                else
+                    // Format A: blob only
+                    content_length = m_Loader->GetBlobSize();
                 resp.SetContentLength(content_length);
             }
             if (!m_AccessionData.empty())
                 x_PrepareAccessionDataChunk(resp);
             if (data && size > 0)
-                m_Chunks.push_back(resp.PrepadeChunk(data, size));
-            if (is_last)
+                m_Chunks.push_back(resp.PrepareChunk(data, size));
+            if (is_last) {
                 m_FinishedRead = true;
+                if (m_BlobAndAccessionRequest)
+                    CPubseqGatewayApp::GetInstance()->GetRequestCounters().
+                                                      IncGetBlobByAccession();
+                else
+                    CPubseqGatewayApp::GetInstance()->GetRequestCounters().
+                                                      IncGetBlobBySatSatKey();
+            }
             if (resp.IsOutputReady())
                 Peek(resp, false);
         }
@@ -208,7 +226,7 @@ void CPendingOperation::x_PrepareAccessionDataChunk(
     string      chunk((const char *)(&data_size_network), 4);
 
     chunk += m_AccessionData;
-    m_Chunks.push_back(resp.PrepadeChunk(
+    m_Chunks.push_back(resp.PrepareChunk(
                 (const unsigned char *)(chunk.c_str()), chunk.size()));
 
     m_AccessionData.clear();

@@ -159,13 +159,13 @@ public:
         }
     }
 
-    void SetContentType(const string &  content_type)
+    void SetJsonContentType(void)
     {
         if (m_State == eReplyInitialized) {
             h2o_add_header(&m_Req->pool,
                            &m_Req->res.headers,
                            H2O_TOKEN_CONTENT_TYPE, NULL,
-                           content_type.c_str(), content_type.size());
+                           H2O_STRLIT("application/json"));
         } else {
             NCBI_THROW(CPubseqGatewayException, eReplyAlreadyStarted,
                        "Reply has already started");
@@ -387,7 +387,7 @@ public:
         }
     }
 
-    h2o_iovec_t PrepadeChunk(const unsigned char *  data, unsigned int  size)
+    h2o_iovec_t PrepareChunk(const unsigned char *  data, unsigned int  size)
     {
         if (m_Req)
             return h2o_strdup(&m_Req->pool,
@@ -1127,6 +1127,11 @@ public:
     h2o_globalconf_t *  HttpCfg(void)
     {
         return &m_HttpCfg;
+    }
+
+    uint16_t NumOfConnections(void) const
+    {
+        return m_TcpDaemon->NumOfConnections();
     }
 
 private:

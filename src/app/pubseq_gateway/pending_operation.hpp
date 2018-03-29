@@ -85,6 +85,7 @@ private:
     CAppOp                                  m_Op;
     unique_ptr<CCassBlobLoader>             m_Loader;
     vector<h2o_iovec_t>                     m_Chunks;
+    bool                                    m_BlobAndAccessionRequest;
 };
 
 
