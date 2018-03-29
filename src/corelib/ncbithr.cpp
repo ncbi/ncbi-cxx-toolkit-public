@@ -621,7 +621,7 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
 
 
 CThread::CThread(void)
-    : m_IsRun(false),
+    : m_Handle(0), m_IsRun(false),
       m_IsDetached(false),
       m_IsJoined(false),
       m_IsTerminated(false),
@@ -646,7 +646,7 @@ CThread::~CThread(void)
 {
 #if defined(NCBI_WIN32_THREADS)
     // close handle if it's not yet closed
-    CFastMutexGuard state_guard(s_ThreadMutex);
+//    CFastMutexGuard state_guard(s_ThreadMutex);
     if ( m_IsRun && m_Handle != NULL ) {
         CloseHandle(m_Handle);
         m_Handle = NULL;
