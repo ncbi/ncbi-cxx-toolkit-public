@@ -385,13 +385,21 @@ private:
     // Load environment values matching NCBI_CONTEXT_FIELDS.
     void x_LoadEnvContextProperties(void);
 
+    friend class CDiagBuffer;
+    bool x_LogHitIDOnError(void) const;
+
+    enum FLoggedHitIDFlag {
+        fLoggedOnRequest = 1, // Logged on creation or request start
+        fLoggedOnError = 2    // Logged on ERR_POST when applog messages are disabled
+    };
+
     TCount         m_RequestID;
     EDiagAppState  m_AppState;
     string         m_ClientIP;
     CEncodedString m_SessionID;
     CSharedHitId   m_HitID;
     string         m_Dtab;
-    mutable bool   m_LoggedHitID;
+    mutable int    m_HitIDLoggedFlag;
     int            m_ReqStatus;
     CStopWatch     m_ReqTimer;
     Int8           m_BytesRd;
@@ -661,7 +669,7 @@ void CRequestContext::UnsetHitID(void)
 {
     x_UnsetProp(eProp_HitID);
     m_HitID.SetHitId(kEmptyStr);
-    m_LoggedHitID = false;
+    m_HitIDLoggedFlag = 0;
     m_SubHitIDCache.clear();
 }
 
@@ -815,6 +823,17 @@ inline
 void CRequestContext::x_UnsetProp(EProperty prop)
 {
     m_PropSet &= ~prop;
+}
+
+
+inline
+bool CRequestContext::x_LogHitIDOnError(void) const
+{
+    if (m_HitIDLoggedFlag & fLoggedOnError || m_HitID.Empty()) {
+        return false;
+    }
+    m_HitIDLoggedFlag |= fLoggedOnError;
+    return true;
 }
 
 

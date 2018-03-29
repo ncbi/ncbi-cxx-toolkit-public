@@ -54,7 +54,7 @@ static const char* kPassThrough_Dtab = "ncbi_dtab";
 CRequestContext::CRequestContext(TContextFlags flags)
     : m_RequestID(0),
       m_AppState(eDiagAppState_NotSet),
-      m_LoggedHitID(false),
+      m_HitIDLoggedFlag(0),
       m_ReqStatus(0),
       m_ReqTimer(CStopWatch::eStop),
       m_BytesRd(0),
@@ -83,7 +83,7 @@ CRequestContext::TCount CRequestContext::GetNextRequestID(void)
 
 void CRequestContext::x_LogHitID(bool ignore_app_state) const
 {
-    if (m_LoggedHitID || m_HitID.Empty()) return;
+    if ((m_HitIDLoggedFlag & fLoggedOnRequest) || m_HitID.Empty()) return;
 
     // ignore_app_state can be set by CDiagContext in case if hit-id
     // was set for request context only (no default one), but request
@@ -97,7 +97,7 @@ void CRequestContext::x_LogHitID(bool ignore_app_state) const
         m_AppState != eDiagAppState_RequestEnd) return;
     GetDiagContext().Extra().Print(g_GetNcbiString(eNcbiStrings_PHID),
         m_HitID.GetHitId());
-    m_LoggedHitID = true;
+    m_HitIDLoggedFlag |= fLoggedOnRequest;
 }
 
 
@@ -226,7 +226,7 @@ void CRequestContext::StartRequest(void)
 
 void CRequestContext::StopRequest(void)
 {
-    if (!m_LoggedHitID) {
+    if ((m_HitIDLoggedFlag & fLoggedOnRequest) == 0) {
         // Hit id has not been set or logged yet. Try to log the default one.
         x_GetHitID(CDiagContext::eHitID_NoCreate);
     }
@@ -327,7 +327,7 @@ static bool IsValidHitID(const string& hit) {
 void CRequestContext::x_SetHitID(const CSharedHitId& hit_id)
 {
     const string& hit = hit_id.GetHitId();
-    if ( m_LoggedHitID ) {
+    if (m_HitIDLoggedFlag & fLoggedOnRequest) {
         // Show warning when changing hit id after is has been logged.
         ERR_POST_X(28, Warning << "Changing hit ID after one has been logged. "
             "New hit id is: " << hit);
@@ -357,7 +357,7 @@ void CRequestContext::x_SetHitID(const CSharedHitId& hit_id)
 
     m_SubHitIDCache.clear();
     m_HitID = hit_id;
-    m_LoggedHitID = false;
+    m_HitIDLoggedFlag = 0;
     x_LogHitID();
 }
 
@@ -522,7 +522,7 @@ CRef<CRequestContext> CRequestContext::Clone(void) const
     ret->m_SessionID.SetString(m_SessionID.GetOriginalString());
     m_HitID.SetShared();
     ret->m_HitID = m_HitID;
-    ret->m_LoggedHitID = m_LoggedHitID;
+    ret->m_HitIDLoggedFlag = m_HitIDLoggedFlag;
     ret->m_SubHitIDCache = m_SubHitIDCache;
     ret->m_Dtab = m_Dtab;
     ret->m_ReqStatus = m_ReqStatus;

@@ -420,6 +420,13 @@ NCBI_PARAM_DEF_EX(string, Log, LogRegistry, "",
 typedef NCBI_PARAM_TYPE(Log, LogRegistry) TLogRegistry;
 
 
+// Turn off all applog messages (start/stop, request start/stop, extra).
+NCBI_PARAM_DECL(bool, Diag, Disable_AppLog_Messages);
+NCBI_PARAM_DEF_EX(bool, Diag, Disable_AppLog_Messages, false, eParam_NoThread,
+    DIAG_DISABLE_APPLOG_MESSAGES);
+typedef NCBI_PARAM_TYPE(Diag, Disable_AppLog_Messages) TDisableAppLog;
+
+
 static bool s_FinishedSetupDiag = false;
 static bool s_MergeLinesSetBySetupDiag = false;
 
@@ -2207,22 +2214,24 @@ void CDiagContext_Extra::Flush(void)
         s = CNcbiOstrstreamToString(*ostr);
     }
 
-    SDiagMessage mess(eDiag_Info,
-                      s.data(), s.size(),
-                      0, 0, // file, line
-                      CNcbiDiag::ForceImportantFlags(kApplogDiagPostFlags),
-                      NULL,
-                      0, 0, // err code/subcode
-                      NULL,
-                      0, 0, 0); // module/class/function
-    mess.m_Event = m_EventType;
-    if (m_Args  &&  !m_Args->empty()) {
-        mess.m_ExtraArgs.splice(mess.m_ExtraArgs.end(), *m_Args);
-    }
-    mess.m_TypedExtra = m_Typed;
-    mess.m_AllowBadExtraNames = m_AllowBadNames;
+    if (!TDisableAppLog::GetDefault()) {
+        SDiagMessage mess(eDiag_Info,
+                          s.data(), s.size(),
+                          0, 0, // file, line
+                          CNcbiDiag::ForceImportantFlags(kApplogDiagPostFlags),
+                          NULL,
+                          0, 0, // err code/subcode
+                          NULL,
+                          0, 0, 0); // module/class/function
+        mess.m_Event = m_EventType;
+        if (m_Args  &&  !m_Args->empty()) {
+            mess.m_ExtraArgs.splice(mess.m_ExtraArgs.end(), *m_Args);
+        }
+        mess.m_TypedExtra = m_Typed;
+        mess.m_AllowBadExtraNames = m_AllowBadNames;
 
-    GetDiagBuffer().DiagHandler(mess);
+        GetDiagBuffer().DiagHandler(mess);
+    }
 
     if ( app_state_updated ) {
         if (m_EventType == SDiagMessage::eEvent_RequestStart) {
@@ -3157,17 +3166,20 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
         }
         ostr << message;
     }
-    string s = CNcbiOstrstreamToString(ostr);
-    SDiagMessage mess(eDiag_Info,
-                      s.data(), s.size(),
-                      0, 0, // file, line
-                      CNcbiDiag::ForceImportantFlags(kApplogDiagPostFlags),
-                      NULL,
-                      0, 0, // err code/subcode
-                      NULL,
-                      0, 0, 0); // module/class/function
-    mess.m_Event = event;
-    CDiagBuffer::DiagHandler(mess);
+
+    if (!TDisableAppLog::GetDefault()) {
+        string s = CNcbiOstrstreamToString(ostr);
+        SDiagMessage mess(eDiag_Info,
+            s.data(), s.size(),
+            0, 0, // file, line
+            CNcbiDiag::ForceImportantFlags(kApplogDiagPostFlags),
+            NULL,
+            0, 0, // err code/subcode
+            NULL,
+            0, 0, 0); // module/class/function
+        mess.m_Event = event;
+        CDiagBuffer::DiagHandler(mess);
+    }
 
     if (event == SDiagMessage::eEvent_RequestStop) {
         // Reset request context after stopping the request.
@@ -3853,6 +3865,7 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
             CDiagBuffer& diag_buf = GetDiagBuffer();
             bool show_warning = false;
             CDiagContext& ctx = GetDiagContext();
+            const CRequestContext& rctx = ctx.GetRequestContext();
             mess.m_Prefix = diag_buf.m_PostPrefix.empty() ?
                 0 : diag_buf.m_PostPrefix.c_str();
             if (is_console) {
@@ -3863,6 +3876,29 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
                 }
             }
             if ( ctx.ApproveMessage(mess, &show_warning) ) {
+                if (mess.m_Severity >= eDiag_Error &&
+                    mess.m_Severity != eDiag_Trace &&
+                    TDisableAppLog::GetDefault() &&
+                    rctx.x_LogHitIDOnError()) {
+                    const CNcbiDiag diag(DIAG_COMPILE_INFO);
+                    SDiagMessage phid_msg(eDiag_Error,
+                        0, 0,
+                        diag.GetFile(),
+                        diag.GetLine(),
+                        diag.GetPostFlags() | eDPF_AppLog,
+                        NULL,
+                        0, // Error code
+                        0,                                 // Err subcode
+                        NULL,
+                        diag.GetModule(),
+                        diag.GetClass(),
+                        diag.GetFunction());
+                    phid_msg.m_Event = SDiagMessage::eEvent_Extra;
+                    phid_msg.m_ExtraArgs.push_back(SDiagMessage::TExtraArg(
+                        g_GetNcbiString(eNcbiStrings_PHID),
+                        rctx.GetHitID()));
+                    CDiagBuffer::sm_Handler->Post(phid_msg);
+                }
                 CDiagBuffer::sm_Handler->Post(mess);
             }
             else if ( show_warning ) {
