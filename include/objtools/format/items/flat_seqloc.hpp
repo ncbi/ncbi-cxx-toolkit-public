@@ -78,8 +78,12 @@ public:
     };
     typedef EType     TType;
 
+    // ID-4736 : The add_join flag is needed for the GBSeq format
+    // (<GBSeq_contig> node), where the wrapping join(...) is
+    // required even when location consists of a single interval.
     CFlatSeqLoc(const CSeq_loc& loc, CBioseqContext& ctx, 
-        TType type = eType_location, bool show_all_accns = false);
+                TType type = eType_location, bool show_all_accns = false,
+                bool add_join = false);
 
     const string&     GetString(void)    const { return m_String;    }
     
@@ -102,7 +106,7 @@ private:
 
     bool x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
         CBioseqContext& ctx, TType type, bool show_comp,
-        bool show_all_accns = false);
+        bool show_all_accns = false, bool join_whole_loc = false);
     bool x_Add(const CSeq_interval& si, CNcbiOstrstream& oss,
         CBioseqContext& ctx, TType type, bool show_comp,
         bool show_all_accns = false);

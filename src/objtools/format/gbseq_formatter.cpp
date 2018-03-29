@@ -1085,8 +1085,11 @@ void CGBSeqFormatter::FormatContig
         m_DidFeatStart = false;
     }
 
-    string assembly = CFlatSeqLoc(contig.GetLoc(), *contig.GetContext(), 
-        CFlatSeqLoc::eType_assembly).GetString();
+    // ID-4736 : pass a flag (argument 4) to CFlatSeqLoc to prescribe adding a
+    // join(...) wrapper even to a whole location.
+    string assembly = 
+        CFlatSeqLoc(contig.GetLoc(), *contig.GetContext(), 
+                    CFlatSeqLoc::eType_assembly, false, true).GetString();
     s_GBSeqStringCleanup(assembly, true);
 
     str.append( s_CombineStrings("    ", "GBSeq_contig", assembly));

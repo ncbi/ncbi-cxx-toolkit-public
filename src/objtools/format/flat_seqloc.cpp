@@ -149,7 +149,8 @@ CFlatSeqLoc::CFlatSeqLoc
 (const CSeq_loc& loc,
  CBioseqContext& ctx,
  TType type,
- bool show_all_accns)
+ bool show_all_accns,
+ bool add_join)
 {
     // load the map that caches conversion to accession, because
     // it's *much* faster when done in bulk vs. one at a time.
@@ -207,9 +208,9 @@ CFlatSeqLoc::CFlatSeqLoc
     CNcbiOstrstream oss;
     if (s_NeedsFlattening (loc)) {
         CConstRef<CSeq_loc> flat = s_FlattenLoc (loc);
-        x_Add(*flat, oss, ctx, type, true, show_all_accns);
+        x_Add(*flat, oss, ctx, type, true, show_all_accns, add_join);
     } else {
-        x_Add(loc, oss, ctx, type, true, show_all_accns);
+        x_Add(loc, oss, ctx, type, true, show_all_accns, add_join);
     }
     ((string)CNcbiOstrstreamToString(oss)).swap( m_String );
 }
@@ -221,7 +222,8 @@ bool CFlatSeqLoc::x_Add
  CBioseqContext& ctx,
  TType type,
  bool show_comp,
- bool show_all_accns)
+ bool show_all_accns,
+ bool add_join)
 {
     CScope& scope = ctx.GetScope();
     const CBioseq_Handle& seq = ctx.GetHandle();
@@ -236,7 +238,7 @@ bool CFlatSeqLoc::x_Add
         if ( show_comp  &&  GetStrand(loc, &scope) == eNa_strand_minus ) {
             CRef<CSeq_loc> rev_loc(SeqLocRevCmpl(loc, &scope));
             oss << "complement(";
-            x_Add(*rev_loc, oss, ctx, type, false, show_all_accns);
+            x_Add(*rev_loc, oss, ctx, type, false, show_all_accns, add_join);
             oss << ')';
             return true;
         }
@@ -288,17 +290,26 @@ bool CFlatSeqLoc::x_Add
     }}
     case CSeq_loc::e_Whole:
     {{
+        if (add_join)
+            oss << prefix;
         x_AddID(loc.GetWhole(), oss, ctx, type, show_all_accns);
         TSeqPos len = sequence::GetLength(loc, &scope);
         oss << "1";
         if (len > 1) {
             oss << ".." << len;
         }
+        if (add_join)
+            oss << ')';
         break;
     }}
     case CSeq_loc::e_Int:
     {{
-        return x_Add(loc.GetInt(), oss, ctx, type, show_comp, show_all_accns);
+        if (add_join)
+            oss << prefix;
+        x_Add(loc.GetInt(), oss, ctx, type, show_comp, show_all_accns);
+        if (add_join)
+            oss << ')';
+        break;
     }}
     case CSeq_loc::e_Packed_int:
     {{
@@ -319,7 +330,12 @@ bool CFlatSeqLoc::x_Add
     }}
     case CSeq_loc::e_Pnt:
     {{
-        return x_Add(loc.GetPnt(), oss, ctx, type, show_comp, show_all_accns);
+        if (add_join)
+            oss << prefix;
+        x_Add(loc.GetPnt(), oss, ctx, type, show_comp, show_all_accns);
+        if (add_join)
+            oss << ')';
+        break;
     }}
     case CSeq_loc::e_Packed_pnt:
     {{
@@ -329,7 +345,7 @@ bool CFlatSeqLoc::x_Add
         if (strand == eNa_strand_minus  &&  show_comp) {
             oss << "complement(";
         }
-        oss << "join(";
+        oss << prefix;
         const char* delim = "";
         ITERATE (CPacked_seqpnt::TPoints, it, ppnt.GetPoints()) {
             oss << delim;
@@ -348,7 +364,8 @@ bool CFlatSeqLoc::x_Add
     case CSeq_loc::e_Mix:
     {{
          /// odd corner case:
-         /// a mix with one interval should not have a prefix
+         /// a mix with one interval should not have a prefix, except when
+         /// prefix is requested unconditionally.
         const bool print_virtual = ( type != eType_location );
          CSeq_loc_CI it(loc, CSeq_loc_CI::eEmpty_Allow);
          ++it;
@@ -356,7 +373,7 @@ bool CFlatSeqLoc::x_Add
          it.Rewind();
 
          const char* delim = "";
-         if ( !has_one ) {
+         if ( !has_one || add_join ) {
              oss << prefix;
          }
          bool join_inside_order = false; // true when we're inside a join() inside an order()
@@ -407,7 +424,7 @@ bool CFlatSeqLoc::x_Add
          if( join_inside_order ) {
              oss << ')';
          }
-         if ( !has_one ) {
+         if ( !has_one || add_join ) {
              oss << ')';
          }
         break;
@@ -433,6 +450,8 @@ bool CFlatSeqLoc::x_Add
         if ( !bond.CanGetA() ) {
             return false;
         }
+        if (add_join)
+            oss << prefix;
         oss << "bond(";
         x_Add(bond.GetA(), oss, ctx, type, show_comp, show_all_accns);
         if ( bond.CanGetB() ) {
@@ -440,6 +459,8 @@ bool CFlatSeqLoc::x_Add
             x_Add(bond.GetB(), oss, ctx, type, show_comp, show_all_accns);
         }
         oss << ")";
+        if (add_join)
+            oss << ")";
         break;
     }}
     case CSeq_loc::e_Feat:
