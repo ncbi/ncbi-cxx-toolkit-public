@@ -4371,6 +4371,7 @@ static EIO_Status s_Connect(SOCK            sock,
         } else
             info.host = host;
         info.port = port;
+        info.event = eIO_Open;
         info.status = status;
         s_ErrorCallback(&info);
     }
