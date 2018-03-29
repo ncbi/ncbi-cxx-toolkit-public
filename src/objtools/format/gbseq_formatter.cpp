@@ -347,33 +347,38 @@ CGBSeq::TStrandedness s_GBSeqStrandedness(
 
 CGBSeq::TMoltype s_GBSeqMoltype(CMolInfo::TBiomol biomol)
 {
+    // ID-4736 : there are 4 special cases of RNA molecules that are rendered
+    // with full Biomol string on the LOCUS line: mRNA, rRNA, tRNA and cRNA.
+    // All other RNA types are shown as just RNA, except for genomic_mRNA, which
+    // is shown as DNA. The remaining Biomol types are shown as DNA.
     switch ( biomol ) {
     case CMolInfo::eBiomol_unknown:
         return kEmptyStr;  // eMoltype_nucleic_acid
-    case CMolInfo::eBiomol_genomic:
-    case CMolInfo::eBiomol_other_genetic:
     case CMolInfo::eBiomol_genomic_mRNA:
         return "DNA";  // eMoltype_dna
-    case CMolInfo::eBiomol_pre_RNA:
-    case CMolInfo::eBiomol_cRNA:
-    case CMolInfo::eBiomol_transcribed_RNA:
-        return "RNA";  // eMoltype_rna
     case CMolInfo::eBiomol_mRNA:
         return "mRNA";  // eMoltype_mrna
     case CMolInfo::eBiomol_rRNA:
         return "rRNA";  // eMoltype_rrna
     case CMolInfo::eBiomol_tRNA:
         return "tRNA";  // eMoltype_trna
-    case CMolInfo::eBiomol_snRNA:
-        return "uRNA";  // eMoltype_urna
-    case CMolInfo::eBiomol_scRNA:
-        return "snRNA";  // eMoltype_snrna
+    case CMolInfo::eBiomol_cRNA:
+        return "cRNA";  // eMoltype_crna
     case CMolInfo::eBiomol_peptide:
         return "AA";  // eMoltype_peptide
-    case CMolInfo::eBiomol_snoRNA:
-        return "snoRNA";  // eMoltype_snorna
     default:
+    {
+        // For the remaining cases, if the biomol string contains "RNA",
+        // return "RNA", otherwise return "DNA".
+        string biomol_str =
+            CMolInfo::GetTypeInfo_enum_EBiomol()->FindName(biomol,true);
+        if (biomol_str.find("RNA") != NPOS)
+            return "RNA";
+        else
+            return "DNA";
         break;
+
+    }
     }
     return kEmptyStr;  // eMoltype_nucleic_acid
 }
