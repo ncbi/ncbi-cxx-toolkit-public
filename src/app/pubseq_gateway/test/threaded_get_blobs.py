@@ -13,7 +13,7 @@ def runResolve(accession, fake):
         print('\nERROR resolving ' + accession + ': ' + str(retCode))
 
 def runGetBlob(satKey, fake):
-    cmd = './nghttp -n "http://localhost:2180/ID/getblob?sat=4&sat_key' + \
+    cmd = './nghttp -n "http://localhost:2180/ID/getblob?sat=4&sat_key=' + \
           str(satKey) + '"'
     retCode  = os.system(cmd)
     if retCode != 0:
