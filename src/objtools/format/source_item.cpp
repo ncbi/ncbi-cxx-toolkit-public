@@ -139,12 +139,33 @@ static CConstRef<CSeq_feat> x_GetSourceFeatFromCDS  (
     return CConstRef<CSeq_feat> ();
 }
 
+void CSourceItem::x_GatherInfoIdx(CBioseqContext& ctx)
+{
+    CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
+    if (! idx) return;
+    const CBioseq_Handle& bsh = ctx.GetHandle();
+    CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (bsh);
+    if (! bsx) return;
+
+    m_Taxname = &bsx->GetTaxname();
+    m_Common = &bsx->GetCommon();
+    m_Organelle = &bsx->GetOrganelle();
+    m_Lineage = bsx->GetLineage();
+    m_Taxid = bsx->GetTaxid();
+    m_UsingAnamorph = bsx->IsUsingAnamorph();
+}
+
 void CSourceItem::x_GatherInfo(CBioseqContext& ctx)
 {
     CConstRef<CSeq_feat>   cds_feat;
     CConstRef<CSeq_loc>    cds_loc;
     CConstRef<CBioSource>  src_ref;
     CConstRef<CSeq_feat>   src_feat;
+
+    if (ctx.UsingSeqEntryIndex()) {
+        x_GatherInfoIdx(ctx);
+        return;
+    }
 
     if (ctx.IsProt()) {
         const CBioseq_Handle& bsh = ctx.GetHandle();
@@ -188,8 +209,12 @@ void CSourceItem::x_GatherInfo(CBioseqContext& ctx, const CBioSource& bsrc, cons
     CConstRef<CSeq_feat>   cds_feat;
     CConstRef<CSeq_loc>    cds_loc;
     CConstRef<CBioSource>  src_ref;
-
     CConstRef<CSeq_feat>   src_feat;
+
+    if (ctx.UsingSeqEntryIndex()) {
+        x_GatherInfoIdx(ctx);
+        return;
+    }
 
     if (ctx.IsProt()) {
         const CBioseq_Handle& bsh = ctx.GetHandle();
