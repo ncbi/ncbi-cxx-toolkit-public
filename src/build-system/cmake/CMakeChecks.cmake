@@ -116,6 +116,7 @@ if(WIN32)
         "${FTGL_ROOT}"
         "${WIN32_PACKAGE_ROOT}/sqlite3-3.8.10.1"
         "${WIN32_PACKAGE_ROOT}/db-4.6.21"
+		"${WIN32_PACKAGE_ROOT}/lmdb-0.9.18"
         )
 endif()
 
@@ -812,8 +813,18 @@ else ()
     find_library(LAPACK_LIBS lapack blas)
 endif ()
 
-#LMBD
-find_external_library(LMDB INCLUDES lmdb.h LIBS lmdb HINTS "${NCBI_TOOLS_ROOT}/lmdb-0.9.18" EXTRALIBS pthread)
+#LMDB
+if (WIN32)
+	find_external_library(LMDB
+		STATIC_ONLY
+		INCLUDES lmdb.h 
+		LIBS liblmdb 
+		INCLUDE_HINTS "${WIN32_PACKAGE_ROOT}\\lmdb-0.9.18\\include" 
+		LIB_HINTS "${WIN32_PACKAGE_ROOT}\\lmdb-0.9.18\\lib")
+else (WIN32)
+	find_external_library(LMDB INCLUDES lmdb.h LIBS lmdb HINTS "${NCBI_TOOLS_ROOT}/lmdb-0.9.18" EXTRALIBS pthread)
+endif (WIN32)
+
 if (LMDB_INCLUDE)
     set(HAVE_LIBLMDB 1)
 endif()
@@ -919,7 +930,8 @@ if (WIN32)
 		"${WIN32_PACKAGE_ROOT}/db-4.6.21/include"
         "${WIN32_PACKAGE_ROOT}/libxml2-2.7.8.win32/include"
         "${WIN32_PACKAGE_ROOT}/libxslt-1.1.26.win32/include"
-        "${WIN32_PACKAGE_ROOT}/iconv-1.9.2.win32/include" )
+        "${WIN32_PACKAGE_ROOT}/iconv-1.9.2.win32/include"
+		"${WIN32_PACKAGE_ROOT}/lmdb-0.9.18/include" )
 	include_directories(${win_include_directories})
 endif (WIN32)
 
