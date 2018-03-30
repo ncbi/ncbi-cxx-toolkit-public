@@ -754,6 +754,10 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
 
     m_BioSource.Reset();
     m_Taxname.clear();
+    m_Common.clear();
+    m_Lineage.clear();
+    m_Taxid = 0;
+    m_UsingAnamorph = false;
     m_Genus.clear();
     m_Species.clear();
     m_Multispecies = false;
@@ -1166,9 +1170,24 @@ void CBioseqIndex::x_InitSource (void)
         }
 
         if (m_BioSource.NotEmpty()) {
+            const string *common = 0;
+
             // get organism name
             if (m_BioSource->IsSetTaxname()) {
                 m_Taxname = m_BioSource->GetTaxname();
+            }
+            if (m_BioSource->IsSetCommon()) {
+                common = &m_BioSource->GetCommon();
+            }
+            if (m_BioSource->IsSetOrgname()) {
+                const COrgName& onp = m_BioSource->GetOrgname();
+                if (onp.CanGetLineage()) {
+                    m_Lineage = onp.GetLineage();
+                }
+            }
+            if (m_BioSource->CanGetOrg()) {
+                const COrg_ref& org = m_BioSource->GetOrg();
+                m_Taxid = org.GetTaxId();
             }
             if (m_BioSource->IsSetGenome()) {
                 m_Genome = m_BioSource->GetGenome();
@@ -1277,6 +1296,11 @@ void CBioseqIndex::x_InitSource (void)
             }
 
             // process OrgMod
+            const string *com = 0, *acr = 0, *syn = 0, *ana = 0,
+                *gbacr = 0, *gbana = 0, *gbsyn = 0, *met = 0;
+            int numcom = 0, numacr = 0, numsyn = 0, numana = 0,
+                numgbacr = 0, numgbana = 0, numgbsyn = 0, nummet = 0;
+
             FOR_EACH_ORGMOD_ON_BIOSOURCE (omd_itr, *m_BioSource) {
                 const COrgMod& omd = **omd_itr;
                 if (! omd.IsSetSubname()) continue;
@@ -1306,10 +1330,88 @@ void CBioseqIndex::x_InitSource (void)
                         if (m_Breed.empty()) {
                             m_Breed = str;
                         }
+                    case NCBI_ORGMOD(common):
+                        com = &str;
+                        numcom++;
+                        break;
+                    case NCBI_ORGMOD(acronym):
+                        acr = &str;
+                        numacr++;
+                        break;
+                    case NCBI_ORGMOD(synonym):
+                        syn = &str;
+                        numsyn++;
+                        break;
+                    case NCBI_ORGMOD(anamorph):
+                        ana = &str;
+                        numana++;
+                        break;
+                    case NCBI_ORGMOD(gb_acronym):
+                        gbacr = &str;
+                        numgbacr++;
+                        break;
+                    case NCBI_ORGMOD(gb_synonym):
+                        gbsyn = &str;
+                        numgbsyn++;
+                        break;
+                    case NCBI_ORGMOD(gb_anamorph):
+                        gbana = &str;
+                        numgbana++;
+                        break;
+                    case NCBI_ORGMOD(metagenome_source):
+                        met = &str;
+                        nummet++;
                         break;
                     default:
                         break;
                 }
+            }
+
+            if (numacr > 1) {
+               acr = NULL;
+            }
+            if (numana > 1) {
+               ana = NULL;
+            }
+            if (numcom > 1) {
+               com = NULL;
+            }
+            if (numsyn > 1) {
+               syn = NULL;
+            }
+            if (numgbacr > 1) {
+               gbacr = NULL;
+            }
+            if (numgbana > 1) {
+               gbana = NULL;
+            }
+            if (numgbsyn > 1) {
+               gbsyn = NULL;
+            }
+            if( nummet > 1 ) {
+                met = NULL;
+            }
+
+            if( met != 0 ) {
+                m_Common = *met;
+            } else if ( syn != 0 ) {
+                m_Common = *syn;
+            } else if ( acr != 0 ) {
+                m_Common = *acr;
+            } else if ( ana != 0 ) {
+                m_Common = *ana;
+                m_UsingAnamorph = true;
+            } else if ( com != 0 ) {
+                m_Common = *com;
+            } else if ( gbsyn != 0 ) {
+                m_Common = *gbsyn;
+            } else if ( gbacr != 0 ) {
+                m_Common = *gbacr;
+            } else if ( gbana != 0 ) {
+                m_Common = *gbana;
+                m_UsingAnamorph = true;
+            } else if ( common != 0 ) {
+                m_Common = *common;
             }
         }
 
@@ -1986,6 +2088,46 @@ const string& CBioseqIndex::GetDescTaxname (void)
     return m_DescTaxname;
 }
 
+const string& CBioseqIndex::GetCommon (void)
+
+{
+    if (! m_SourcesInitialized) {
+        x_InitSource();
+    }
+
+    return m_Common;
+}
+
+const string& CBioseqIndex::GetLineage (void)
+
+{
+    if (! m_SourcesInitialized) {
+        x_InitSource();
+    }
+
+    return m_Lineage;
+}
+
+int CBioseqIndex::GetTaxid (void)
+
+{
+    if (! m_SourcesInitialized) {
+        x_InitSource();
+    }
+
+    return m_Taxid;
+}
+
+bool CBioseqIndex::IsUsingAnamorph (void)
+
+{
+    if (! m_SourcesInitialized) {
+        x_InitSource();
+    }
+
+    return m_UsingAnamorph;
+}
+
 CTempString CBioseqIndex::GetGenus (void)
 
 {
@@ -2046,7 +2188,7 @@ bool CBioseqIndex::IsChromosome (void)
     return m_IsChromosome;
 }
 
-CTempString CBioseqIndex::GetOrganelle (void)
+const string& CBioseqIndex::GetOrganelle (void)
 
 {
     if (! m_SourcesInitialized) {
