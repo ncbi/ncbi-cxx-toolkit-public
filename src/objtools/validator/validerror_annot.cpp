@@ -87,7 +87,7 @@ void CValidError_annot::ValidateSeqAnnot(const CSeq_annot_Handle& annot)
         } // iterate
     } else if ( annot.IsIds() ) {
         PostErr(eDiag_Error, eErr_SEQ_ANNOT_AnnotIDs,
-                "Record contains Seq-annot.data.ids", *annot.GetCompleteSeq_annot());
+                "Record should not contain Seq-annot.data.ids", *annot.GetCompleteSeq_annot());
     } else if ( annot.IsLocs() ) {
         PostErr(eDiag_Error, eErr_SEQ_ANNOT_AnnotLOCs,
                 "Record contains Seq-annot.data.locs", *annot.GetCompleteSeq_annot());

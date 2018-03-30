@@ -1082,7 +1082,7 @@ void CValidError_bioseq::ValidateInst(
                 if ( inst.IsSetStrand()  &&
                      inst.GetStrand() != CSeq_inst::eStrand_ss &&
                      inst.GetStrand() != CSeq_inst::eStrand_not_set) {
-                    PostErr(eDiag_Error, eErr_SEQ_INST_DSProtein,
+                    PostErr(eDiag_Error, eErr_SEQ_INST_BadProteinMoltype,
                              "Protein not single stranded", seq);
                 }
                 break;
@@ -2462,80 +2462,6 @@ void CValidError_bioseq::ValidateSeqLen(const CBioseq& seq)
         }
     }
     
-    /*
-    if ( (len <= 350000)  ||  m_Imp.IsNC()  ||  m_Imp.IsNT() ) {
-        return;
-    }
-
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-    if ( !bsh ) {
-        return;
-    }
-    CSeqdesc_CI desc( bsh, CSeqdesc::e_Molinfo );
-    const CMolInfo* mi = desc ? &(desc->GetMolinfo()) : 0;
-
-    if ( inst.GetRepr() == CSeq_inst::eRepr_delta ) {
-        if ( mi  &&  m_Imp.IsGED() ) {
-            CMolInfo::TTech tech = mi->IsSetTech() ? 
-                mi->GetTech() : CMolInfo::eTech_unknown;
-
-            if (tech == CMolInfo::eTech_htgs_0  ||
-                tech == CMolInfo::eTech_htgs_1  ||
-                tech == CMolInfo::eTech_htgs_2)
-            {
-                PostErr(eDiag_Warning, eErr_SEQ_INST_LongHtgsSequence,
-                    "Phase 0, 1 or 2 HTGS sequence exceeds 350kbp limit",
-                    seq);
-            } else if (tech == CMolInfo::eTech_htgs_3) {
-                PostErr(eDiag_Warning, eErr_SEQ_INST_SequenceExceeds350kbp,
-                    "Phase 3 HTGS sequence exceeds 350kbp limit", seq);
-            } else if (tech == CMolInfo::eTech_wgs) {
-                PostErr(eDiag_Warning, eErr_SEQ_INST_SequenceExceeds350kbp,
-                    "WGS sequence exceeds 350kbp limit", seq);
-            } else {
-                len = 0;
-                bool litHasData = false;
-                CTypeConstIterator<CSeq_literal> lit(ConstBegin(seq));
-                for (; lit; ++lit) {
-                    if (lit->IsSetSeq_data()) {
-                        litHasData = true;
-                    }
-                    len += lit->GetLength();
-                }
-                if ( len > 500000  && litHasData ) {
-                    PostErr(eDiag_Error, eErr_SEQ_INST_LongLiteralSequence,
-                        "Length of sequence literals exceeds 500kbp limit",
-                        seq);
-                }
-            }
-        }
-    } else if ( inst.GetRepr() == CSeq_inst::eRepr_raw ) {
-        if ( mi ) {
-            CMolInfo::TTech tech = mi->IsSetTech() ? 
-                mi->GetTech() : CMolInfo::eTech_unknown;
-            if (tech == CMolInfo::eTech_htgs_0  ||
-                tech == CMolInfo::eTech_htgs_1  ||
-                tech == CMolInfo::eTech_htgs_2)
-            {
-                PostErr(eDiag_Warning, eErr_SEQ_INST_LongHtgsSequence,
-                    "Phase 0, 1 or 2 HTGS sequence exceeds 350kbp limit",
-                    seq);
-            } else if (tech == CMolInfo::eTech_htgs_3) {
-                PostErr(eDiag_Warning, eErr_SEQ_INST_SequenceExceeds350kbp,
-                    "Phase 3 HTGS sequence exceeds 350kbp limit", seq);
-            } else if (tech == CMolInfo::eTech_wgs) {
-                PostErr(eDiag_Warning, eErr_SEQ_INST_SequenceExceeds350kbp,
-                    "WGS sequence exceeds 350kbp limit", seq);
-            } else {
-                PostErr (eDiag_Warning, eErr_SEQ_INST_SequenceExceeds350kbp,
-                    "Length of sequence exceeds 350kbp limit", seq);
-            }
-        }  else {
-            PostErr (eDiag_Warning, eErr_SEQ_INST_SequenceExceeds350kbp,
-                "Length of sequence exceeds 350kbp limit", seq);
-        }
-    }
-    */
 }
 
 
@@ -2747,12 +2673,12 @@ void CValidError_bioseq::ReportBadAssemblyGap (const CBioseq& seq)
                     if (gap.IsSetType()) {
                         int gaptype = gap.GetType();
                         if (gaptype == CSeq_gap::eType_unknown) {
-                            PostErr(eDiag_Warning, eErr_SEQ_INST_SeqGapProblem, "TSA Seq_gap.unknown", seq);
+                            PostErr(eDiag_Warning, eErr_SEQ_INST_TSAseqGapProblem, "TSA Seq_gap.unknown", seq);
                         } else if (gaptype == CSeq_gap::eType_other) {
-                            PostErr(eDiag_Warning, eErr_SEQ_INST_SeqGapProblem, "TSA Seq_gap.other", seq);
+                            PostErr(eDiag_Warning, eErr_SEQ_INST_TSAseqGapProblem, "TSA Seq_gap.other", seq);
                         }
                     } else {
-                        PostErr(eDiag_Warning, eErr_SEQ_INST_SeqGapProblem, "TSA Seq_gap NULL", seq);
+                        PostErr(eDiag_Warning, eErr_SEQ_INST_TSAseqGapProblem, "TSA Seq_gap NULL", seq);
                     }
                 }
             }
@@ -2797,7 +2723,7 @@ bool CValidError_bioseq::HasBadWGSGap(const CBioseq& seq)
 void CValidError_bioseq::ReportBadWGSGap(const CBioseq& seq)
 {
     if (HasBadWGSGap(seq)) {
-        PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapProblem, 
+        PostErr(eDiag_Error, eErr_SEQ_INST_WGSseqGapProblem, 
             "WGS submission includes wrong gap type. Gaps for WGS genomes should be Assembly Gaps with linkage evidence.", seq);
     }
 }
@@ -2806,7 +2732,7 @@ void CValidError_bioseq::ReportBadWGSGap(const CBioseq& seq)
 void CValidError_bioseq::ReportBadTSAGap(const CBioseq& seq)
 {
     if (HasBadWGSGap(seq)) {
-        PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapProblem,
+        PostErr(eDiag_Error, eErr_SEQ_INST_TSAseqGapProblem,
             "TSA submission includes wrong gap type. Gaps for TSA should be Assembly Gaps with linkage evidence.", seq);
     }
 }
@@ -3907,7 +3833,7 @@ void CValidError_bioseq::ValidateDeltaLoc
                                 id_label + ", excluded portion contains features", seq);
                     }
                 } else {
-                    PostErr(eDiag_Error, eErr_GENERIC_ServiceError,
+                    PostErr(eDiag_Error, eErr_GENERIC_DeltaSeqError,
                         "Unable to find far delta sequence component", seq);
                 }
             } catch (CException ) {
@@ -4248,7 +4174,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                     }
                 } else if (lit.CanGetLength() && lit.GetLength() != 100) {
                     if (lit.IsSetFuzz()) {
-                        PostErr(eDiag_Warning, eErr_SEQ_INST_SeqLitGapFuzzNot100,
+                        PostErr(eDiag_Warning, eErr_SEQ_INST_UnknownLengthGapNot100,
                             "Gap of unknown length should have length 100", seq);
                     }
                 }
@@ -4268,11 +4194,11 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
 
     if (num_gap_unknown_unspec > 0 && num_gap_known_or_spec == 0) {
         if (num_gap_unknown_unspec > 1) {
-            PostErr(eDiag_Warning, eErr_SEQ_INST_SeqGapProblem,
+            PostErr(eDiag_Warning, eErr_SEQ_INST_SeqGapBadLinkage,
                 "All " + NStr::IntToString(num_gap_unknown_unspec) +
                 " Seq-gaps have unknown type and unspecified linkage", seq);
         } else {
-            PostErr(eDiag_Warning, eErr_SEQ_INST_SeqGapProblem,
+            PostErr(eDiag_Warning, eErr_SEQ_INST_SeqGapBadLinkage,
                 "Single Seq-gap has unknown type and unspecified linkage", seq);
         }
     }
@@ -4441,18 +4367,18 @@ void CValidError_bioseq::ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq)
             }
         }
         if (linkevarray[8] > 0 && linkcount > linkevarray[8]) {
-            PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapProblem,
+            PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapBadLinkage,
                 "Seq-gap type has unspecified and additional linkage evidence", seq);
         }
         for (int i = 0; i < 12; i++) {
             if (linkevarray[i] > 1) {
-                PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapProblem,
+                PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapBadLinkage,
                     "Linkage evidence '" + linkEvStrings[i] + "' appears " +
                     NStr::IntToString(linkevarray[i]) + " times", seq);
             }
         }
         if (!gap.IsSetLinkage() || gap.GetLinkage() != CSeq_gap::eLinkage_linked) {
-            PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
+            PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapBadLinkage,
                 "Seq-gap with linkage evidence must have linkage field set to linked", seq);
         }
         if (gap.IsSetType()) {
@@ -4464,7 +4390,7 @@ void CValidError_bioseq::ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq)
                 if (gaptype == CSeq_gap::eType_unknown && is_unspec) {
                     /* suppress for legacy records */
                 } else {
-                   PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
+                   PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapBadLinkage,
                        "Seq-gap of type " + NStr::IntToString(gaptype) +
                        " should not have linkage evidence", seq);
                 }
@@ -10944,7 +10870,7 @@ void CValidError_bioseq::ValidateCDSUTR(const CBioseq& seq)
             } else {
                 utr3_plus = f->GetSeq_feat();
                 if (!cds_plus && utr5_plus && x_ReportUTRPair(*utr5_plus, *utr3_plus)) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSnotBetweenUTRs,
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_NoCDSbetweenUTRs,
                             "CDS not between 5'UTR and 3'UTR on plus strand", *utr3_plus);
                 }
                 utr5_plus.Reset(NULL);
@@ -10955,7 +10881,7 @@ void CValidError_bioseq::ValidateCDSUTR(const CBioseq& seq)
             if (strand == eNa_strand_minus) {
                 utr5_minus = f->GetSeq_feat();
                 if (!cds_minus && utr3_minus && x_ReportUTRPair(*utr5_minus, *utr3_minus)) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSnotBetweenUTRs,
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_NoCDSbetweenUTRs,
                         "CDS not between 5'UTR and 3'UTR on minus strand", *utr5_minus);
                 }
                 utr5_minus.Reset(NULL);

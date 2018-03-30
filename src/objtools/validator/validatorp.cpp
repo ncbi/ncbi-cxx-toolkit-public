@@ -409,7 +409,7 @@ static const EErrType sc_ValidGenomeRaise[] = {
     eErr_SEQ_INST_FarFetchFailure,
     eErr_SEQ_INST_InternalGapsInSeqRaw,
     eErr_SEQ_INST_HighNContentStretch,
-    eErr_SEQ_INST_SeqLitGapFuzzNot100,
+    eErr_SEQ_INST_UnknownLengthGapNot100,
     eErr_SEQ_DESCR_BioSourceMissing,
     eErr_SEQ_DESCR_InvalidForType,
     eErr_SEQ_DESCR_InconsistentBioSources,
@@ -434,9 +434,9 @@ static const EErrType sc_ValidGenomeRaise[] = {
     eErr_SEQ_DESCR_LatLonValue,
     eErr_SEQ_DESCR_LatLonCountry,
     eErr_SEQ_DESCR_BadCollectionCode,
-    eErr_SEQ_DESCR_BadVoucherID,
+    eErr_SEQ_DESCR_IncorrectlyFormattedVoucherID,
     eErr_SEQ_DESCR_MultipleSourceQualifiers,
-    eErr_SEQ_DESCR_MultipleSourceVouchers,
+    eErr_SEQ_DESCR_IdenticalInstitutionCode,
     eErr_SEQ_DESCR_WrongVoucherType,
     eErr_SEQ_DESCR_BadKeyword,
     eErr_SEQ_DESCR_BioSourceNeedsChromosome,
@@ -555,7 +555,8 @@ DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<EErrType>, sc_GenomeRaiseArray, sc_Valid
 
 static const EErrType sc_ValidGenomeRaiseExceptEmblDdbj[] = {
     eErr_SEQ_INST_CompleteTitleProblem,
-    eErr_SEQ_FEAT_NeedsNote
+    eErr_SEQ_FEAT_MiscFeatureNeedsNote,
+    eErr_SEQ_FEAT_RepeatRegionNeedsNote
 };
 
 DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<EErrType>, sc_GenomeRaiseExceptEmblDdbjArray, sc_ValidGenomeRaiseExceptEmblDdbj);

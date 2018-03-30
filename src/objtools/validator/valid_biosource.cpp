@@ -1620,7 +1620,7 @@ const CSeq_entry *ctx)
         }
 
         string err = COrgMod::CheckMultipleVouchers(vouchers);
-        if (!err.empty()) PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceVouchers, err, obj, ctx);
+        if (!err.empty()) PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_IdenticalInstitutionCode, err, obj, ctx);
     }
 }
 
@@ -2095,26 +2095,35 @@ const CBioseq_Handle& bsh)
                 || NStr::Find(lineage, " ssRNA positive-strand viruses, no DNA stage; ") != string::npos
                 || NStr::Find(lineage, " unassigned ssRNA viruses; ") != string::npos)
                 && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_rna)) {
+
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
-                    "Taxonomy indicates single-stranded RNA, sequence does not agree.",
+                    "Taxonomy indicates single-stranded RNA, molecule type (" +
+                    CSeq_inst::GetMoleculeClass(bsh.IsSetInst_Mol() ? bsh.GetInst_Mol() : CSeq_inst::eMol_not_set)
+                    + ") is conflicting.",
                     obj, ctx);
             }
             if (NStr::Find(lineage, " dsRNA viruses; ") != string::npos
                 && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_rna)) {
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
-                    "Taxonomy indicates double-stranded RNA, sequence does not agree.",
+                    "Taxonomy indicates double-stranded RNA, molecule type (" +
+                    CSeq_inst::GetMoleculeClass(bsh.IsSetInst_Mol() ? bsh.GetInst_Mol() : CSeq_inst::eMol_not_set)
+                    + ") is conflicting.",
                     obj, ctx);
             }
             if (NStr::Find(lineage, " ssDNA viruses; ") != string::npos
                 && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_dna)) {
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
-                    "Taxonomy indicates single-stranded DNA, sequence does not agree.",
+                    "Taxonomy indicates single-stranded DNA, molecule type (" +
+                    CSeq_inst::GetMoleculeClass(bsh.IsSetInst_Mol() ? bsh.GetInst_Mol() : CSeq_inst::eMol_not_set)
+                    + ") is conflicting.",
                     obj, ctx);
             }
             if (NStr::Find(lineage, " dsDNA viruses; ") != string::npos
                 && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_dna)) {
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
-                    "Taxonomy indicates double-stranded DNA, sequence does not agree.",
+                    "Taxonomy indicates double-stranded DNA, molecule type (" +
+                    CSeq_inst::GetMoleculeClass(bsh.IsSetInst_Mol() ? bsh.GetInst_Mol() : CSeq_inst::eMol_not_set)
+                    + ") is conflicting.",
                     obj, ctx);
             }
         }
@@ -3232,7 +3241,7 @@ void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerial
         } else if (NStr::FindNoCase(*err, "missing institution code") != string::npos) {
             PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, *err, obj, ctx);
         } else if (NStr::FindNoCase(*err, "missing specific identifier") != string::npos) {
-            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadVoucherID, *err, obj, ctx);
+            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_IncorrectlyFormattedVoucherID, *err, obj, ctx);
         } else if (NStr::FindNoCase(*err, "should be") != string::npos) {
             EDiagSev level = eDiag_Info;
             if (NStr::StartsWith(*err, "DNA")) {

@@ -365,7 +365,6 @@ void CValidError_feat::ValidateSeqFeatData
         // Validate CGene_ref
         ValidateGene(data.GetGene (), feat);
         ValidateOperon(feat);
-        ValidateGeneCdsPair(feat);
 #endif
         break;
     case CSeqFeatData::e_Cdregion:
@@ -939,12 +938,6 @@ void CValidError_feat::ValidateCdregion (
     if (!pseudo) {
         ValidateCdsProductId(feat);
         ValidateCommonCDSProduct(feat);
-        if (nonsense_intron == false && !feat.IsSetExcept() &&
-            DoesCDSHaveShortIntrons(feat))
-        {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_ShortIntron,
-                "Introns should be at least 10 nt long", feat);
-        }
     }
 
 }
@@ -1086,22 +1079,6 @@ void CValidError_feat::ValidateIntron (
     }
 
     const CSeq_loc& loc = feat.GetLocation();
-
-    /*
-    int num_intervals = 0;
-    for (CSeq_loc_CI curr(loc); curr; ++curr) {
-        num_intervals++;
-    }
-    if ( num_intervals > 1 ) {
-        EDiagSev sev = eDiag_Error;
-        if (m_Imp.IsEmbl() || m_Imp.IsDdbj()) {
-            sev = eDiag_Warning;
-        }
-        PostErr (sev, eErr_SEQ_FEAT_MultiIntervalIntron,
-                 "An intron should not have multiple intervals",
-                  feat);
-    }
-    */
 
     bool partial5 = loc.IsPartialStart(eExtreme_Biological);
     bool partial3 = loc.IsPartialStop(eExtreme_Biological);
@@ -2624,7 +2601,7 @@ void CValidError_feat::ValidateImp(
         if ((!feat.IsSetComment() || NStr::IsBlank (feat.GetComment()))
             && (!feat.IsSetQual() || feat.GetQual().empty())
             && (!feat.IsSetDbxref() || feat.GetDbxref().empty())) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_NeedsNote,
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_MiscFeatureNeedsNote,
                     "A note or other qualifier is required for a misc_feature", feat);
         }
         if (feat.IsSetComment() && ! NStr::IsBlank (feat.GetComment())) {
@@ -2744,7 +2721,7 @@ void CValidError_feat::ValidateImp(
         if ((!feat.IsSetComment() || NStr::IsBlank (feat.GetComment()))
             && (!feat.IsSetQual() || feat.GetQual().empty())
             && (!feat.IsSetDbxref() || feat.GetDbxref().empty())) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_NeedsNote,
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_RepeatRegionNeedsNote,
                     "repeat_region has no qualifiers", feat);
         }
         break;
@@ -2812,7 +2789,7 @@ void CValidError_feat::ValidateImp(
                 }
             }
             if (! is_far_delta) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GapFeatureProblem,
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_AssemblyGapFeatureProblem,
                         "An assembly_gap feature should only be on a contig record", feat);
             }
             if (location.IsInt()) {
@@ -4766,7 +4743,7 @@ void CValidError_feat::x_ReportCDSTranslationProblems(const CSeq_feat& feat, con
         NStr::Find(feat.GetExcept_text(), "alternative start codon") != string::npos &&
         x_LocIsNmAccession(feat.GetLocation())) {
 
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_AltStartCodon,
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_AltStartCodonException,
                 "Unnecessary alternative start codon exception", feat);
     }
 
@@ -5457,43 +5434,6 @@ void CValidError_feat::ValidateOperon(const CSeq_feat& gene)
             }
         }
     }
-}
-
-void CValidError_feat::ValidateGeneCdsPair(const CSeq_feat& gene)
-{
-    const CSeq_loc& gene_loc = gene.GetLocation();
-
-    TFeatScores scores;
-    GetOverlappingFeatures(gene_loc,
-                           CSeqFeatData::e_Cdregion,
-                           CSeqFeatData::eSubtype_cdregion,
-                           eOverlap_Interval,
-                           scores, *m_Scope);
-
-    if (scores.empty()) { // There is no CDRegion
-
-        GetOverlappingFeatures(gene_loc,
-                               CSeqFeatData::e_not_set,
-                               CSeqFeatData::eSubtype_3UTR,
-                               eOverlap_Interval,
-                               scores, *m_Scope);
-
-        if (!scores.empty()) { // 3UTR is present, check for 5UTR
-
-            scores.clear();
-            GetOverlappingFeatures(gene_loc,
-                                   CSeqFeatData::e_not_set,
-                                   CSeqFeatData::eSubtype_5UTR,
-                                   eOverlap_Interval,
-                                   scores, *m_Scope);
-
-            if (!scores.empty()) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSnotBetweenUTRs,
-                        "Gene has both 5'UTR and 3'UTR but does not have a coding region", gene);
-            }
-        }
-    }
-
 }
 
 
@@ -6448,14 +6388,9 @@ void CSingleFeatValidator::x_ValidateSeqFeatLoc()
                         "Feature begins or ends in gap starting at " + NStr::NumericToString(gap_start + 1));
                 }
                 if (rval & eLocationGapContainedInGap &&
-                    (!(rval & eLocationGapFeatureMatchesGap) ||
-                    m_Feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_misc_feature)) {
+                    (!(rval & eLocationGapFeatureMatchesGap) || !x_AllowFeatureToMatchGapExactly())) {
                     PostErr(eDiag_Warning, eErr_SEQ_FEAT_FeatureInsideGap,
                         "Feature inside sequence gap");
-                }
-                if (rval & eLocationGapContainedInGapOfNs) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_FeatureInsideGap,
-                        "Feature inside gap of Ns");
                 }
                 if (m_Feat.GetData().IsCdregion() || m_Feat.GetData().IsRna()) {
                     if (rval & eLocationGapInternalIntervalEndpointInGap) {
@@ -6476,6 +6411,17 @@ void CSingleFeatValidator::x_ValidateSeqFeatLoc()
         }
     }
 
+}
+
+
+bool CSingleFeatValidator::x_AllowFeatureToMatchGapExactly()
+{
+    if (m_Feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature ||
+        m_Feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_assembly_gap) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 
@@ -6751,11 +6697,11 @@ void CSingleFeatValidator::x_ValidateExcept()
 {
     if (m_Feat.IsSetExcept_text() && !NStr::IsBlank(m_Feat.GetExcept_text()) &&
         (!m_Feat.IsSetExcept() || !m_Feat.GetExcept())) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_ExceptInconsistent,
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingExceptionFlag,
             "Exception text is present, but exception flag is not set");
     } else if (m_Feat.IsSetExcept() && m_Feat.GetExcept() && 
         (!m_Feat.IsSetExcept_text() || NStr::IsBlank(m_Feat.GetExcept_text()))) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_ExceptInconsistent,
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_ExceptionMissingText,
             "Exception flag is set, but exception text is empty");
     }
     if (m_Feat.IsSetExcept_text() && !m_Feat.GetExcept_text().empty()) {
@@ -6907,7 +6853,7 @@ void CCdregionValidator::x_ValidateFeatComment()
                 ++it;
             }
             if (!found_ambig) {
-                m_Imp.PostErr(eDiag_Error, eErr_SEQ_FEAT_BadComment,
+                m_Imp.PostErr(eDiag_Error, eErr_SEQ_FEAT_BadCDScomment,
                     "Feature comment indicates ambiguity in stop codon "
                     "but no ambiguities are present in stop codon.", m_Feat);
             }
@@ -6974,6 +6920,8 @@ void CCdregionValidator::Validate()
                     "A pseudo coding region should not have a product");
             }
         }
+    } else {
+        ReportShortIntrons();
     }
 
     x_ValidateBadMRNAOverlap();
@@ -7004,7 +6952,7 @@ void CCdregionValidator::x_ValidateQuals()
                 pseudo = true;
             } else if (NStr::EqualNocase(key, "exception")) {
                 if (!m_Feat.IsSetExcept()) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_ExceptInconsistent,
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingExceptionFlag,
                         "Exception flag should be set in coding region");
                 }
             } else if (NStr::EqualNocase(key, "codon")) {
@@ -7092,25 +7040,35 @@ void CCdregionValidator::x_ValidateSeqFeatLoc()
 
     // for coding regions, internal exons should not be 15 or less bp long
     int num_short_exons = 0;
+    string message = kEmptyStr;
     CSeq_loc_CI it(m_Feat.GetLocation());
     if (it) {
         // note - do not want to warn for first or last exon
         ++it;
         size_t prev_len = 16;
+        size_t prev_start = 0;
+        size_t prev_stop = 0;
         while (it) {
             if (prev_len <= 15) {
                 num_short_exons++;
+                if (!message.empty()) {
+                    message += ", ";
+                }
+                message += NStr::NumericToString(prev_start + 1) 
+                    + "-" + NStr::NumericToString(prev_stop + 1);
             }
             prev_len = it.GetRange().GetLength();
+            prev_start = it.GetRange().GetFrom();
+            prev_stop = it.GetRange().GetTo();
             ++it;
         }
     }
     if (num_short_exons > 1) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_ShortExon,
-            "Coding region has multiple internal exons that are too short");
-    } else if (num_short_exons > 0) {
+            "Coding region has multiple internal exons that are too short at positions " + message);
+    } else if (num_short_exons == 1) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_ShortExon,
-            "Internal coding region exon is too short");
+            "Internal coding region exon is too short at position " + message);
     }
 }
 
@@ -7524,6 +7482,100 @@ bool CCdregionValidator::x_IsProductMisplaced() const
         }
     }
     return !found_match;
+}
+
+
+void CCdregionValidator::x_AddToIntronList(vector<CCdregionValidator::TShortIntron>& shortlist, TSeqPos last_start, TSeqPos last_stop, TSeqPos this_start, TSeqPos this_stop)
+{
+    if (abs ((int)this_start - (int)last_stop) < 11) {
+        shortlist.push_back(TShortIntron(last_stop, this_start));
+    } else if (abs ((int)this_stop - (int)last_start) < 11) {
+        shortlist.push_back(TShortIntron(last_start, this_stop));
+    }
+}
+
+
+vector<CCdregionValidator::TShortIntron> CCdregionValidator::x_GetShortIntrons(const CSeq_loc& loc, CScope* scope)
+{
+    vector<CCdregionValidator::TShortIntron> shortlist;
+
+    CSeq_loc_CI li(loc);
+
+    TSeqPos last_start = li.GetRange().GetFrom();
+    TSeqPos last_stop = li.GetRange().GetTo();
+    CRef<CSeq_id> last_id(new CSeq_id());
+    last_id->Assign(li.GetSeq_id());
+
+    ++li;
+    while (li) {
+        TSeqPos this_start = li.GetRange().GetFrom();
+        TSeqPos this_stop = li.GetRange().GetTo();
+        if (abs ((int)this_start - (int)last_stop) < 11 || abs ((int)this_stop - (int)last_start) < 11) {
+            if (li.GetSeq_id().Equals(*last_id)) {
+                // definitely same bioseq, definitely report
+                x_AddToIntronList(shortlist, last_start, last_stop, this_start, this_stop);
+            } else if (scope) {
+                // only report if definitely on same bioseq                
+                CBioseq_Handle last_bsh = scope->GetBioseqHandle(*last_id);
+                if (last_bsh) {
+                    for (auto id_it : last_bsh.GetId()) {
+                        if (id_it.GetSeqId()->Equals(li.GetSeq_id())) {
+                             x_AddToIntronList(shortlist, last_start, last_stop, this_start, this_stop);
+                             break;
+                        }
+                    }
+                }
+            }
+        }
+        last_start = this_start;
+        last_stop = this_stop;
+        last_id->Assign(li.GetSeq_id());
+        ++li;
+    }
+    return shortlist;
+}
+
+
+string CCdregionValidator::x_FormatIntronInterval(const TShortIntron& interval)
+{
+    return NStr::NumericToString(interval.first + 1) + "-"
+        + NStr::NumericToString(interval.second + 1);
+}
+
+
+void CCdregionValidator::ReportShortIntrons()
+{
+    if (m_Feat.IsSetExcept()) {
+        return;
+    }
+
+    string message = kEmptyStr;
+
+    vector<TShortIntron> shortlist = x_GetShortIntrons(m_Feat.GetLocation(), &m_Scope);
+    if (shortlist.size() == 0) {
+        return;
+    }
+
+    // only report if no nonsense introns
+    vector<CRef<CSeq_loc> > nonsense_introns = CCDSTranslationProblems::GetNonsenseIntrons(m_Feat, m_Scope);
+    if (nonsense_introns.size() > 0) {
+        return;
+    }
+
+    if (shortlist.size() == 1) {
+        message = x_FormatIntronInterval(shortlist.front());
+    } else if (shortlist.size() == 2) {
+        message = x_FormatIntronInterval(shortlist.front())
+            + " and " +
+            x_FormatIntronInterval(shortlist.back());
+    } else {
+        for (size_t i = 0; i < shortlist.size() - 2; i++) {
+            message += x_FormatIntronInterval(shortlist[i]) + ", ";
+        }
+        message += " and " + x_FormatIntronInterval(shortlist.back());
+    }
+    PostErr(eDiag_Warning, eErr_SEQ_FEAT_ShortIntron,
+                "Introns at positions " + message + " should be at least 10 nt long");
 }
 
 

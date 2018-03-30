@@ -166,7 +166,6 @@ private:
     static bool x_FindProteinGeneXrefByKey(CBioseq_Handle bsh, const string& key);
     static bool x_FindGeneToMatchGeneXref(const CGene_ref& xref, CSeq_entry_Handle seh);
     void ValidateOperon(const CSeq_feat& feat);
-    void ValidateGeneCdsPair(const CSeq_feat& gene);
 
     void ValidateCdregion(const CCdregion& cdregion, const CSeq_feat& obj);
     void ValidateCdTrans(const CSeq_feat& feat, bool &nonsense_intron);
@@ -297,6 +296,7 @@ protected:
 
     void x_ValidateFeatPartialness();
     virtual void x_ValidateSeqFeatLoc();
+    bool x_AllowFeatureToMatchGapExactly();
 
     typedef enum {
         eLocationGapNoProblems = 0,
@@ -343,6 +343,13 @@ protected:
     bool x_CDS5primePartialTest() const;
 
     bool x_IsProductMisplaced() const;
+
+    typedef pair<TSeqPos, TSeqPos> TShortIntron;
+    static vector<TShortIntron> x_GetShortIntrons(const CSeq_loc& loc, CScope* scope);
+    static void x_AddToIntronList(vector<TShortIntron>& shortlist, TSeqPos last_start, TSeqPos last_stop, TSeqPos this_start, TSeqPos this_stop);
+    static string x_FormatIntronInterval(const TShortIntron& interval);
+    void ReportShortIntrons();
+
 
     CConstRef<CSeq_feat> m_Gene;
     bool m_GeneIsPseudo;

@@ -1126,7 +1126,8 @@ size_t GetMRNATranslationProblems
                 }
             }
         }
-    } catch (CException) {
+    } catch (CException& ex) {
+        rval |= eMRNAProblem_TransFail;
     } catch (std::exception) {
     }
 

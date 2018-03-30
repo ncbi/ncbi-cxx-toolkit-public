@@ -1099,13 +1099,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_CircularProtein)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_INST_DSProtein)
+BOOST_AUTO_TEST_CASE(Test_BadProteinMoltype)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodProtSeq();
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "DSProtein", "Protein not single stranded"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BadProteinMoltype", "Protein not single stranded"));
 
     entry->SetSeq().SetInst().SetStrand(CSeq_inst::eStrand_ds);
     eval = validator.Validate(seh, options);
@@ -1911,12 +1911,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
              if (i == CMolInfo::eTech_barcode) {
                  expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "NoKeywordHasTechnique", "Molinfo.tech barcode without BARCODE keyword"));
              } else if (i == CMolInfo::eTech_tsa) {
-                 expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "SeqGapProblem", "TSA Seq_gap NULL"));
+                 expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TSAseqGapProblem", "TSA Seq_gap NULL"));
                  expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "TSAshouldBNotBeDNA", "TSA sequence should not be DNA"));
                  expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "WrongBiomolForTSA", "Biomol \"genomic\" is not appropriate for sequences that use the TSA technique."));
-                 expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "SeqGapProblem", "TSA submission includes wrong gap type. Gaps for TSA should be Assembly Gaps with linkage evidence."));
+                 expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "TSAseqGapProblem", "TSA submission includes wrong gap type. Gaps for TSA should be Assembly Gaps with linkage evidence."));
              } else if (i == CMolInfo::eTech_wgs) {
-                 expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "SeqGapProblem", "WGS submission includes wrong gap type. Gaps for WGS genomes should be Assembly Gaps with linkage evidence."));
+                 expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "WGSseqGapProblem", "WGS submission includes wrong gap type. Gaps for WGS genomes should be Assembly Gaps with linkage evidence."));
              }
              CheckErrors (*eval, expected_errors);
              if (i == CMolInfo::eTech_barcode || i == CMolInfo::eTech_tsa || i == CMolInfo::eTech_wgs) {
@@ -1978,7 +1978,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadDeltaSeq", "First delta seq component is a gap"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BadDeltaSeq", "There is 1 adjacent gap in delta seq"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadDeltaSeq", "Last delta seq component is a gap"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "SeqGapProblem", "WGS submission includes wrong gap type. Gaps for WGS genomes should be Assembly Gaps with linkage evidence."));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "WGSseqGapProblem", "WGS submission includes wrong gap type. Gaps for WGS genomes should be Assembly Gaps with linkage evidence."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     delete expected_errors[3];
@@ -1986,6 +1986,151 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
     SetTech(entry, CMolInfo::eTech_htgs_0);
     expected_errors[0]->SetSeverity(eDiag_Error);
     expected_errors[2]->SetSeverity(eDiag_Error);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+void AdjustGap(CSeq_gap& gap, CSeq_gap::EType gap_type, bool is_linked, vector<CLinkage_evidence::EType> linkage_evidence)
+{
+    gap.Reset();
+    gap.SetType(gap_type);
+    if (is_linked) {
+        gap.SetLinkage(CSeq_gap::eLinkage_linked);
+    } else {
+        gap.ResetLinkage();
+    }
+    gap.ResetLinkage_evidence();
+    for (auto it : linkage_evidence) {
+        CRef<CLinkage_evidence> ev(new CLinkage_evidence());
+        ev->SetType(it);
+        gap.SetLinkage_evidence().push_back(ev);
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_INST_SeqGapBadLinkage)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodDeltaSeq();
+
+    vector<CLinkage_evidence::EType> evidence;
+    evidence.push_back(CLinkage_evidence::eType_align_genus);
+    for (auto it : entry->SetSeq().SetInst().SetExt().SetDelta().Set()) {
+        if (it->IsLiteral() && it->GetLiteral().IsSetSeq_data() &&
+            it->GetLiteral().GetSeq_data().IsGap()) {
+            AdjustGap(it->SetLiteral().SetSeq_data().SetGap(),
+                CSeq_gap::eType_short_arm, true, evidence);
+        }
+    }
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical,
+            "SeqGapBadLinkage", "Seq-gap of type 3 should not have linkage evidence"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    for (auto it : entry->SetSeq().SetInst().SetExt().SetDelta().Set()) {
+        if (it->IsLiteral() && it->GetLiteral().IsSetSeq_data() &&
+            it->GetLiteral().GetSeq_data().IsGap()) {
+            CSeq_gap& gap = it->SetLiteral().SetSeq_data().SetGap();
+            gap.ResetLinkage();
+            gap.ResetType();
+        }
+    }
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical,
+            "SeqGapBadLinkage", "Seq-gap with linkage evidence must have linkage field set to linked"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    evidence.push_back(CLinkage_evidence::eType_align_genus);
+    for (auto it : entry->SetSeq().SetInst().SetExt().SetDelta().Set()) {
+        if (it->IsLiteral() && it->GetLiteral().IsSetSeq_data() &&
+            it->GetLiteral().GetSeq_data().IsGap()) {
+            AdjustGap(it->SetLiteral().SetSeq_data().SetGap(),
+                CSeq_gap::eType_fragment, true, evidence);
+        }
+    }
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+            "SeqGapBadLinkage", "Linkage evidence 'align genus' appears 2 times"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    evidence.pop_back();
+    evidence.push_back(CLinkage_evidence::eType_unspecified);
+    scope.RemoveTopLevelSeqEntry(seh);
+    for (auto it : entry->SetSeq().SetInst().SetExt().SetDelta().Set()) {
+        if (it->IsLiteral() && it->GetLiteral().IsSetSeq_data() &&
+            it->GetLiteral().GetSeq_data().IsGap()) {
+            AdjustGap(it->SetLiteral().SetSeq_data().SetGap(),
+                CSeq_gap::eType_fragment, true, evidence);
+        }
+    }
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+            "SeqGapBadLinkage", "Seq-gap type has unspecified and additional linkage evidence"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    evidence.clear();
+    evidence.push_back(CLinkage_evidence::eType_unspecified);
+    for (auto it : entry->SetSeq().SetInst().SetExt().SetDelta().Set()) {
+        if (it->IsLiteral() && it->GetLiteral().IsSetSeq_data() &&
+            it->GetLiteral().GetSeq_data().IsGap()) {
+            AdjustGap(it->SetLiteral().SetSeq_data().SetGap(),
+                CSeq_gap::eType_unknown, true, evidence);
+        }
+    }
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+            "SeqGapBadLinkage", "Single Seq-gap has unknown type and unspecified linkage"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<objects::CDelta_seq> gap_seg(new objects::CDelta_seq());
+    gap_seg->SetLiteral().SetLength(10);
+    AdjustGap(gap_seg->SetLiteral().SetSeq_data().SetGap(),
+                CSeq_gap::eType_unknown, true, evidence);
+
+    // adjust delta to avoid errors about large number of Ns in first and last 50 bp
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLiteral().SetSeq_data().SetIupacna().Set("CCCATGATGATGTACCGTACGTTTTCCCATGATGATGTACCGTACGTTTT");
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLiteral().SetLength(50);
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(gap_seg);
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("CCCATGATGATGTACCGTACGTTTTCCCATGATGATGTACCGTACGTTTT", objects::CSeq_inst::eMol_dna);
+    entry->SetSeq().SetInst().SetLength(132);
+
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+            "SeqGapBadLinkage", "All 2 Seq-gaps have unknown type and unspecified linkage"));
+
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3106,7 +3251,7 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqLit)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InternalNsInSeqLit", "Run of 20 Ns in delta component 5 that starts at base 45"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "SeqGapProblem", "WGS submission includes wrong gap type. Gaps for WGS genomes should be Assembly Gaps with linkage evidence."));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "WGSseqGapProblem", "WGS submission includes wrong gap type. Gaps for WGS genomes should be Assembly Gaps with linkage evidence."));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
@@ -3709,7 +3854,7 @@ BOOST_AUTO_TEST_CASE(Test_DeltaComponentIsGi0)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "DeltaComponentIsGi0", "Delta component is gi|0"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "ServiceError", "Unable to find far delta sequence component"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "DeltaSeqError", "Unable to find far delta sequence component"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -3936,13 +4081,13 @@ static CRef<CSeq_entry> BuildGapFuzz100DeltaSeq(void)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SeqLitGapFuzzNot100)
+BOOST_AUTO_TEST_CASE(Test_UnknownLengthGapNot100)
 {
     CRef<CSeq_entry> entry = BuildGapFuzz100DeltaSeq();
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "SeqLitGapFuzzNot100", "Gap of unknown length should have length 100"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "UnknownLengthGapNot100", "Gap of unknown length should have length 100"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
@@ -7855,14 +8000,14 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadCollectionCode)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_Descr_BadVoucherID)
+BOOST_AUTO_TEST_CASE(Test_Descr_IncorrectlyFormattedVoucherID)
 {
     // prepare entry
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadVoucherID",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "IncorrectlyFormattedVoucherID",
                               "Voucher is missing specific identifier"));
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_bio_material, "ABRC:");
     eval = validator.Validate(seh, options);
@@ -8110,7 +8255,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_UnbalancedParentheses)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_Descr_MultipleSourceVouchers)
+BOOST_AUTO_TEST_CASE(Test_Descr_IdenticalInstitutionCode)
 {
     // prepare entry
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
@@ -8130,7 +8275,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MultipleSourceVouchers)
     CheckErrors (*eval, expected_errors);
 
     // errors if same institition:collection
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MultipleSourceVouchers",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "IdenticalInstitutionCode",
         "Multiple vouchers with same institution:collection"));
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_bio_material, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_bio_material, "USDA:CFRA:foo");
@@ -8656,7 +8801,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MolInfoConflictsWithBioSource)
 
     STANDARD_SETUP
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MolInfoConflictsWithBioSource",
-                              "Taxonomy indicates single-stranded RNA, sequence does not agree."));
+                              "Taxonomy indicates single-stranded RNA, molecule type (DNA) is conflicting."));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -8673,7 +8818,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MolInfoConflictsWithBioSource)
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InconsistentVirusMoltype",
                               "Genomic DNA viral lineage indicates no DNA stage"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MolInfoConflictsWithBioSource",
-                              "Taxonomy indicates single-stranded RNA, sequence does not agree."));
+                              "Taxonomy indicates single-stranded RNA, molecule type (DNA) is conflicting."));
 
     unit_test_util::SetLineage (entry, "Viruses; ssRNA positive-strand viruses, no DNA stage; foo");
     eval = validator.Validate(seh, options);
@@ -8693,7 +8838,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MolInfoConflictsWithBioSource)
     // error if not rna
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MolInfoConflictsWithBioSource",
-                              "Taxonomy indicates double-stranded RNA, sequence does not agree."));
+                              "Taxonomy indicates double-stranded RNA, molecule type (DNA) is conflicting."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -8706,14 +8851,14 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MolInfoConflictsWithBioSource)
     // error if not dna
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MolInfoConflictsWithBioSource",
-                              "Taxonomy indicates single-stranded DNA, sequence does not agree."));
+                              "Taxonomy indicates single-stranded DNA, molecule type (RNA) is conflicting."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     // test for double-stranded DNS viruses
     unit_test_util::SetLineage (entry, "Viruses; dsDNA viruses; foo");
     // error because not dna
-    expected_errors.front()->SetErrMsg("Taxonomy indicates double-stranded DNA, sequence does not agree.");
+    expected_errors.front()->SetErrMsg("Taxonomy indicates double-stranded DNA, molecule type (RNA) is conflicting.");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     //no error if dna
@@ -12265,21 +12410,29 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_ExceptInconsistent)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "ExceptInconsistent",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "MissingExceptionFlag",
                               "Exception flag should be set in coding region"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
     cds->ResetQual();
     cds->SetExcept_text(except_text);
-    expected_errors[0]->SetErrMsg("Exception text is present, but exception flag is not set");
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "MissingExceptionFlag",
+                              "Exception text is present, but exception flag is not set"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
     cds->ResetExcept_text();
     cds->SetExcept(true);
 
-    expected_errors[0]->SetErrMsg("Exception flag is set, but exception text is empty");
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "ExceptionMissingText",
+                              "Exception flag is set, but exception text is empty"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -14615,7 +14768,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_LocusTagProblem)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_AltStartCodon)
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_AltStartCodonException)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
     CRef<CSeq_entry> nseq = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
@@ -14634,7 +14787,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_AltStartCodon)
     nseq->SetSeq().SetId().front()->SetOther().SetAccession("NM_123456");
     cds->SetLocation().SetInt().SetId().SetOther().SetAccession("NM_123456");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("ref|NM_123456|", eDiag_Warning, "AltStartCodon",
+    expected_errors.push_back(new CExpectedError("ref|NM_123456|", eDiag_Warning, "AltStartCodonException",
                               "Unnecessary alternative start codon exception"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -16793,8 +16946,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureInsideGap)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
                                "Sequence contains 51 percent Ns"));
-    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "FeatureInsideGap",
-                               "Feature inside gap of Ns"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
@@ -18002,7 +18153,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortIntron)
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "ShortIntron",
                               "Introns should be at least 10 nt long"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "ShortIntron",
-                              "Introns should be at least 10 nt long"));
+                              "Introns at positions 16-20 should be at least 10 nt long"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NotSpliceConsensusDonor",
                               "Splice donor consensus (GT) not found at start of intron, position 17 of lcl|good"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NotSpliceConsensusAcceptor", 
@@ -18044,7 +18195,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortIntron)
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "MissingCDSproduct", 
                               "Expected CDS product absent"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "ShortIntron",
-                              "Introns should be at least 10 nt long"));
+                              "Introns at positions 16-20 should be at least 10 nt long"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NotSpliceConsensusDonor",
                               "Splice donor consensus (GT) not found at start of intron, position 17 of lcl|good"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NotSpliceConsensusAcceptor", 
@@ -18066,6 +18217,36 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortIntron)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     CLEAR_ERRORS
+
+    // clear all pseudos
+    gene->ResetPseudo();
+    // nonsense intron silences coding region shortintron message
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AATTGGCCAAAATTGGTAAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAA");
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "NoProtein", 
+        "No protein Bioseq given"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "NonsenseIntron", 
+        "Triplet intron encodes stop codon"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "StartCodon",
+                              "Illegal start codon used. Wrong genetic code [0] or protein should be partial"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "NoStop",
+                              "Missing stop codon"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "MissingCDSproduct", 
+                              "Expected CDS product absent"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "ShortIntron",
+                              "Introns should be at least 10 nt long"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NotSpliceConsensusDonor",
+                              "Splice donor consensus (GT) not found after exon ending at position 16 of lcl|good"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NotSpliceConsensusAcceptor",
+                              "Splice acceptor consensus (AG) not found before exon starting at position 20 of lcl|good"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NotSpliceConsensusDonor",
+                              "Splice donor consensus (GT) not found at start of intron, position 17 of lcl|good"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NotSpliceConsensusAcceptor", 
+                              "Splice acceptor consensus (AG) not found at end of intron, position 19 of lcl|good"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
 }
 
 
@@ -18077,7 +18258,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_NeedsNote)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NeedsNote",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MiscFeatureNeedsNote",
                               "A note or other qualifier is required for a misc_feature"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -19196,7 +19377,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortExon)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "ShortExon", 
-                              "Internal coding region exon is too short"));
+                              "Internal coding region exon is too short at position 38-52"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -19774,7 +19955,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_1309)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadComment)
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadCDScomment)
 {
     // prepare entry
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
@@ -19784,7 +19965,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadComment)
     CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
     cds->SetComment("ambiguity in stop codon");
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "BadComment",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "BadCDScomment",
                               "Feature comment indicates ambiguity in stop codon but no ambiguities are present in stop codon."));
 
     eval = validator.Validate(seh, options);
@@ -20250,11 +20431,11 @@ BOOST_AUTO_TEST_CASE(Test_VR_711)
 
     expected_errors.push_back(new CExpectedError("lcl|good",
         eDiag_Warning,
-        "NeedsNote",
+        "MiscFeatureNeedsNote",
         "A note or other qualifier is required for a misc_feature"));
     expected_errors.push_back(new CExpectedError("lcl|good",
         eDiag_Warning,
-        "NeedsNote",
+        "RepeatRegionNeedsNote",
         "repeat_region has no qualifiers"));
 
     eval = validator.Validate(seh, options);
@@ -21631,7 +21812,7 @@ BOOST_AUTO_TEST_CASE(Test_TripletEncodesStopCodon)
         "Triplet intron encodes stop codon"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Critical, "NonsenseIntron",
         "Triplet intron encodes stop codon"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "ShortExon", "Internal coding region exon is too short"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "ShortExon", "Internal coding region exon is too short at position 13-21"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "InternalStop", "2 internal stops. Genetic code [0]"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "NoStop", "Missing stop codon"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "TransLen", "Given protein length [8] does not match translation length [17]"));
@@ -22680,4 +22861,98 @@ BOOST_AUTO_TEST_CASE(Test_DBLinkOnSet)
     CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_AssemblyGapFeatureProblem)
+{
+    CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
+    CRef<CSeq_feat> assembly_gap = AddMiscFeature(entry);
+    assembly_gap->SetData().SetImp().SetKey("assembly_gap");
+    assembly_gap->SetLocation().SetInt().SetFrom(12);
+    assembly_gap->SetLocation().SetInt().SetTo(21);
+    assembly_gap->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("estimated_length", "10")));
+    assembly_gap->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("gap_type", "fragment")));
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "AssemblyGapFeatureProblem", "An assembly_gap feature should only be on a contig record"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+void MakeLeft(CSeq_loc& loc) 
+{
+    loc.SetInt().SetFrom(0);
+    loc.SetInt().SetTo(5);
+}
+
+void MakeRight(CSeq_loc& loc, TSeqPos stop)
+{
+    loc.SetInt().SetFrom(stop - 6);
+    loc.SetInt().SetTo(stop - 1);
+}
+
+void TestUTRPair(bool add_gene, bool is_minus)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    TSeqPos stop = entry->GetSeq().GetLength() - 1;
+    if (add_gene) {
+        CRef<CSeq_feat> gene = AddMiscFeature(entry);
+        gene->ResetComment();
+        gene->SetData().SetGene().SetLocus("x");
+        gene->SetLocation().SetInt().SetTo(stop);
+        if (is_minus) {
+            gene->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+        }
+    }
+
+    CRef<CSeq_feat> utr5 = AddMiscFeature(entry);
+    utr5->ResetComment();
+    utr5->SetData().SetImp().SetKey("5'UTR");
+    if (is_minus) {
+        MakeRight(utr5->SetLocation(), stop);
+        utr5->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+    } else {
+        MakeLeft(utr5->SetLocation());
+    }
+
+    CRef<CSeq_feat> utr3 = AddMiscFeature(entry);
+    utr3->ResetComment();
+    utr3->SetData().SetImp().SetKey("3'UTR");
+    if (is_minus) {
+        MakeLeft(utr3->SetLocation());
+        utr3->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+    } else {
+        MakeRight(utr3->SetLocation(), stop);
+    }
+
+    STANDARD_SETUP
+
+    if (add_gene) {
+        if (is_minus) {
+            expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+                    "NoCDSbetweenUTRs", "CDS not between 5'UTR and 3'UTR on minus strand"));
+        } else {
+            expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+                    "NoCDSbetweenUTRs", "CDS not between 5'UTR and 3'UTR on plus strand"));
+        }
+    }
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+BOOST_AUTO_TEST_CASE(Test_NoCDSbetweenUTRs)
+{
+    TestUTRPair(false, false);
+    TestUTRPair(false, true);
+    TestUTRPair(true, false);
+    TestUTRPair(true, true);
 }
