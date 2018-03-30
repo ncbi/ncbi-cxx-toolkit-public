@@ -9777,13 +9777,7 @@ void CValidError_bioseq::x_CompareStrings
             } else if (is_gene_locus 
                        && NStr::Equal (GetSequenceStringFromLoc(feat->GetLocation(), *m_Scope),
                                        GetSequenceStringFromLoc((*it->second).GetLocation(), *m_Scope))) {                
-                const CSeq_feat* nfeat = it->second;
-                if (m_Imp.IsGpipe() && s_HastRNAXref(*feat) && s_HastRNAXref(*nfeat)) {
-                    // suppress for GPIPE if both features have tRNA xrefs
-                } else {
-                    PostErr (eDiag_Info, eErr_SEQ_FEAT_ReplicatedGeneSequence,
-                             message + ", but underlying sequences are identical", *it->second);
-                }
+                // ignore this situation, used to produce SEQ_FEAT_ReplicatedGeneSequence (see VR-801)
             } else { 
                 const CSeq_feat* nfeat = it->second;
                 bool isSplit = (bool) (nfeat->IsSetExcept() &&

@@ -14008,11 +14008,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CollidingGeneNames)
     CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
+    // this situation used to produce an error, removed VR-801
     gene2->SetLocation().SetInt().SetFrom(10);
     gene2->SetLocation().SetInt().SetTo(17);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "ReplicatedGeneSequence", 
-          "Colliding names (with different capitalization) in gene features, but underlying sequences are identical"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -17911,13 +17910,11 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ReplicatedGeneSequence)
     gene2->SetLocation().SetInt().SetTo(30 + gene1->GetLocation().GetInt().GetTo());
 
     STANDARD_SETUP
-    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Info, "ReplicatedGeneSequence", 
-                              "Colliding names in gene features, but underlying sequences are identical"));
+    // error no longer expected, VR-801
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     gene2->SetData().SetGene().SetLocus("GENE1");
-    expected_errors[0]->SetErrMsg("Colliding names (with different capitalization) in gene features, but underlying sequences are identical");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 

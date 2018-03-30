@@ -578,7 +578,6 @@ enum EErrType {
     eErr_SEQ_FEAT_BadGeneOntologyFormat,
     eErr_SEQ_FEAT_InconsistentGeneOntologyTermAndId,
     eErr_SEQ_FEAT_MultiplyAnnotatedGenes,
-    eErr_SEQ_FEAT_ReplicatedGeneSequence,
     eErr_SEQ_FEAT_ShortIntron,
     eErr_SEQ_FEAT_GeneXrefStrandProblem,
     eErr_SEQ_FEAT_CDSmRNAXrefLocationProblem,
