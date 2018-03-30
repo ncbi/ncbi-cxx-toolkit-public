@@ -1527,7 +1527,7 @@ static void s_FillJunctionalInfo (int left_stop, int right_start, int& junction_
     
 }
 
-void s_GetCigarString(const CSeq_align& align, string& cigar, int query_len) {
+void s_GetCigarString(const CSeq_align& align, string& cigar, int query_len, CScope& scope) {
 
     cigar = NcbiEmptyString;
 
@@ -1536,7 +1536,10 @@ void s_GetCigarString(const CSeq_align& align, string& cigar, int query_len) {
         const CDense_seg::TStarts& starts = denseg.GetStarts();
         const CDense_seg::TLens& lens = denseg.GetLens();
         CRange<TSeqPos> qrange = align.GetSeqRange(0);
-
+        CRange<TSeqPos> srange = align.GetSeqRange(1);
+        const CBioseq_Handle& subject_handle = scope.GetBioseqHandle(align.GetSeq_id(1));
+        int subject_len = subject_handle.GetBioseqLength();
+        //query
         if (align.GetSeqStrand(0) == eNa_strand_plus) {
             if (qrange.GetFrom() > 0) {
                 cigar += NStr::IntToString(qrange.GetFrom());
@@ -1547,6 +1550,19 @@ void s_GetCigarString(const CSeq_align& align, string& cigar, int query_len) {
             if ((int)qrange.GetToOpen() < query_len) {
                 cigar += NStr::IntToString(query_len - qrange.GetToOpen());
                 cigar += "S";
+            }
+        }
+        //subject
+        if (align.GetSeqStrand(1) == eNa_strand_plus) {
+            if (srange.GetFrom() > 0) {
+                cigar += NStr::IntToString(srange.GetFrom());
+                cigar += "N";
+            }
+        }
+        else {
+            if ((int)srange.GetToOpen() < subject_len) {
+                cigar += NStr::IntToString(subject_len - srange.GetToOpen());
+                cigar += "N";
             }
         }
         for (size_t i=0;i < starts.size();i+=2) {
@@ -1578,9 +1594,48 @@ void s_GetCigarString(const CSeq_align& align, string& cigar, int query_len) {
                 cigar += "S";
             }
         }
+        //subject
+        if (align.GetSeqStrand(1) == eNa_strand_plus) {
+            if ((int)srange.GetToOpen() < subject_len) {
+                cigar += NStr::IntToString(subject_len - srange.GetToOpen());
+                cigar += "N";
+            }
+        }
+        else {
+            if (srange.GetFrom() > 0) {
+                cigar += NStr::IntToString(srange.GetFrom());
+                cigar += "N";
+            }
+        }
     }
 }
        
+
+void s_SetAirrAlignmentInfo(const CSeq_align& aln,
+                            CScope& scope,
+                            double& identity) {
+   
+    const CDense_seg& ds = (aln.GetSegs().GetDenseg());
+    
+    CAlnVec alnvec(ds, scope);
+    string query, subject;
+    alnvec.GetWholeAlnSeqString(0, query);
+    alnvec.GetWholeAlnSeqString(1, subject);
+
+    int num_ident = 0;
+    int length = min(query.size(), subject.size());
+
+    for (int i = 0; i < length; ++i) {
+        if (query[i] == subject[i]) {
+            ++num_ident;
+        }
+    }
+    
+    if (length > 0) {
+        identity = ((double)num_ident)/length;
+    }
+
+}
 
 void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
                                             const CRef<blast::CIgAnnotation> &annot,
@@ -1626,6 +1681,7 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
  
     if (align_result && !align_result.Empty() && align_result->IsSet() && align_result->CanGet()) {
         string query_id = NcbiEmptyString;
+        
         const list<CRef<CSeq_id> > query_seqid = GetQueryId();
         CRef<CSeq_id> wid = FindBestChoice(query_seqid, CSeq_id::WorstRank); 
         wid->GetLabel(&query_id, CSeq_id::eContent);        
@@ -1636,7 +1692,7 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         } else if (m_OtherInfo[4] == "No") {
             m_AirrData["productive"] = "F"; 
         } 
-        m_AirrData["chain_type"] = m_MasterChainTypeToShow;
+        m_AirrData["chain_type"] = annot->m_ChainTypeToShow;
         if (m_FrameInfo == "IF") {
             m_AirrData["v_j_in_frame"] = "T";
         } else if (m_FrameInfo == "OF") {
@@ -1691,7 +1747,7 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         if (m_TopAlign_V) {
             m_TopAlign_V->GetNamedScore(CSeq_align::eScore_BitScore, v_score);
             m_TopAlign_V->GetNamedScore(CSeq_align::eScore_EValue, v_evalue);
-            v_identity = CAlignFormatUtil::GetPercentIdentity(*m_TopAlign_V, scope, false);
+            s_SetAirrAlignmentInfo(*m_TopAlign_V, scope, v_identity);
             NStr::DoubleToString(v_score_str, v_score, 3);
             NStr::DoubleToString(v_evalue_str, v_evalue, 3, NStr::fDoubleScientific);
             NStr::DoubleToString(v_identity_str, v_identity*100, 3);
@@ -1700,7 +1756,7 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         if (m_TopAlign_D) {
             m_TopAlign_D->GetNamedScore(CSeq_align::eScore_BitScore, d_score);
             m_TopAlign_D->GetNamedScore(CSeq_align::eScore_EValue, d_evalue);
-            d_identity = CAlignFormatUtil::GetPercentIdentity(*m_TopAlign_D, scope, false);
+            s_SetAirrAlignmentInfo(*m_TopAlign_D, scope, d_identity);
             NStr::DoubleToString(d_score_str, d_score, 3);
             NStr::DoubleToString(d_evalue_str, d_evalue, 3, NStr::fDoubleScientific);
             NStr::DoubleToString(d_identity_str, d_identity*100, 3);
@@ -1708,7 +1764,7 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         if (m_TopAlign_J) {
             m_TopAlign_J->GetNamedScore(CSeq_align::eScore_BitScore, j_score);
             m_TopAlign_J->GetNamedScore(CSeq_align::eScore_EValue, j_evalue);
-            j_identity = CAlignFormatUtil::GetPercentIdentity(*m_TopAlign_J, scope, false);
+            s_SetAirrAlignmentInfo(*m_TopAlign_J, scope, j_identity);
             NStr::DoubleToString(j_score_str, j_score, 3);
             NStr::DoubleToString(j_evalue_str, j_evalue, 3, NStr::fDoubleScientific);
             NStr::DoubleToString(j_identity_str, j_identity*100, 3);
@@ -1726,7 +1782,7 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         
         string cigar = NcbiEmptyString;
         if (m_TopAlign_V) {
-            s_GetCigarString(*m_TopAlign_V, cigar, query_handle.GetBioseqLength());
+            s_GetCigarString(*m_TopAlign_V, cigar, query_handle.GetBioseqLength(), scope);
             m_AirrData["v_cigar"] = cigar;
             m_AirrData["v_start"] = NStr::IntToString(m_TopAlign_V->GetSeqStart(0) + 1);
             m_AirrData["v_end"] = NStr::IntToString(m_TopAlign_V->GetSeqStop(0) + 1);
@@ -1744,17 +1800,37 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         }
 
         if (m_TopAlign_D) {
-            s_GetCigarString(*m_TopAlign_D, cigar, query_handle.GetBioseqLength());
+            //D could be on negative strand but always show cigar as positive
+            
+            if (m_TopAlign_D->GetSeqStrand(0) == eNa_strand_plus) {
+                s_GetCigarString(*m_TopAlign_D, cigar, query_handle.GetBioseqLength(), scope);
+                m_AirrData["d_start"] = NStr::IntToString(m_TopAlign_D->GetSeqStart(0) + 1);
+                m_AirrData["d_end"] = NStr::IntToString(m_TopAlign_D->GetSeqStop(0) + 1);
+                m_AirrData["d_germ_start"] = NStr::IntToString(m_TopAlign_D->GetSeqStart(1) + 1);
+                m_AirrData["d_germ_end"] = NStr::IntToString(m_TopAlign_D->GetSeqStop(1) + 1);
+
+            } else {
+                CRef<CSeq_align> temp_align (new CSeq_align);
+                temp_align->Assign(*m_TopAlign_D);
+                temp_align->Reverse();
+                s_GetCigarString(*temp_align, cigar, query_handle.GetBioseqLength(), scope);
+                m_AirrData["d_start"] = NStr::IntToString(temp_align->GetSeqStart(0) + 1);
+                m_AirrData["d_end"] = NStr::IntToString(temp_align->GetSeqStop(0) + 1);
+                if (temp_align->GetSeqStrand(1) == eNa_strand_plus) {
+                    m_AirrData["d_germ_start"] = NStr::IntToString(temp_align->GetSeqStart(1) + 1);
+                    m_AirrData["d_germ_end"] = NStr::IntToString(temp_align->GetSeqStop(1) + 1);
+                } else {
+                    m_AirrData["d_germ_start"] = NStr::IntToString(temp_align->GetSeqStop(1) + 1);
+                    m_AirrData["d_germ_end"] = NStr::IntToString(temp_align->GetSeqStart(1) + 1);
+                }
+            }
             m_AirrData["d_cigar"] = cigar;
-            m_AirrData["d_start"] = NStr::IntToString(m_TopAlign_D->GetSeqStart(0) + 1);
-            m_AirrData["d_end"] = NStr::IntToString(m_TopAlign_D->GetSeqStop(0) + 1);
-            m_AirrData["d_germ_start"] = NStr::IntToString(m_TopAlign_D->GetSeqStart(1) + 1);
-            m_AirrData["d_germ_end"] = NStr::IntToString(m_TopAlign_D->GetSeqStop(1) + 1);
+
             
         }
         
         if (m_TopAlign_J) {
-            s_GetCigarString(*m_TopAlign_J, cigar, query_handle.GetBioseqLength());
+            s_GetCigarString(*m_TopAlign_J, cigar, query_handle.GetBioseqLength(), scope);
             m_AirrData["j_cigar"] = cigar;
             m_AirrData["j_start"] = NStr::IntToString(m_TopAlign_J->GetSeqStart(0) + 1);
             m_AirrData["j_end"] = NStr::IntToString(m_TopAlign_J->GetSeqStop(0) + 1);
@@ -1775,6 +1851,26 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
                 m_AirrData["np1_length"] = NStr::IntToString(np_len);
                 m_AirrData["np1_seq"] = np_seq;
             }
+        }
+
+        //query vdj part translation 
+        {
+            int query_trans_start = (m_TopAlign_V)?m_TopAlign_V->GetSeqStart(0):0;
+            
+            int query_v_stop = (m_TopAlign_V)?m_TopAlign_V->GetSeqStop(0):0;
+            int query_d_stop = (m_TopAlign_D)?max(m_TopAlign_D->GetSeqStart(0), m_TopAlign_D->GetSeqStop(0)):0;
+            int query_j_stop = (m_TopAlign_J)?m_TopAlign_J->GetSeqStop(0):0;
+
+            int query_trans_stop = max(max(query_v_stop, query_d_stop), query_j_stop); 
+            
+            string query_vdj = m_Query.substr(query_trans_start, query_trans_stop - query_trans_start + 1);
+            //+3 make sure non-negative start
+            int query_trans_offset = ((query_trans_start + 3) - annot->m_FrameInfo[0])%3;
+             
+            string query_translation_template = query_vdj.substr(query_trans_offset > 0?(3 - query_trans_offset):0); 
+            CSeqTranslator::Translate(query_translation_template, 
+                                      m_AirrData["sequence_aa"], 
+                                      CSeqTranslator::fIs5PrimePartial, NULL, NULL);
         }
        
 
@@ -1895,11 +1991,6 @@ int CIgBlastTabularInfo::SetMasterFields(const CSeq_align& align,
     bool hasQueryStart = x_IsFieldRequested(eQueryStart);
 
     x_ResetIgFields();
-    const CBioseq_Handle& query_bh = 
-                scope.GetBioseqHandle(align.GetSeq_id(0));
-    int length = query_bh.GetBioseqLength();
-    query_bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac)
-            .GetSeqData(0, length, m_Query);
 
     if (!hasSeq) x_AddFieldToShow(eQuerySeq);
     if (!hasQuerySeqId) x_AddFieldToShow(eQuerySeqId);
@@ -1924,8 +2015,15 @@ int CIgBlastTabularInfo::SetFields(const CSeq_align& align,
 };
 
 void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &annot,
-                                          const CConstRef<blast::CIgBlastOptions> &ig_opts)
+                                          const CConstRef<blast::CIgBlastOptions> &ig_opts,
+                                          const CSeq_align& align, 
+                                          CScope& scope)
 {
+    const CBioseq_Handle& query_bh = 
+                scope.GetBioseqHandle(align.GetSeq_id(0));
+    int length = query_bh.GetBioseqLength();
+    query_bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac).GetSeqData(0, length, m_Query);
+    SetQueryId(query_bh);
     bool is_protein = ig_opts->m_IsProtein;
     SetSeqType(!is_protein);
     SetMinusStrand(annot->m_MinusStrand);

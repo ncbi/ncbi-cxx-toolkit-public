@@ -659,7 +659,9 @@ public:
 
     /// One method to set all annotation information
     void SetIgAnnotation(const CRef<blast::CIgAnnotation> &annot, 
-                         const CConstRef<blast::CIgBlastOptions> &ig_opts);
+                         const CConstRef<blast::CIgBlastOptions> &ig_opts,
+                         const CSeq_align& align, 
+                         CScope& scope);
 
     ///Getter
     void GetIgInfo (string& v, 

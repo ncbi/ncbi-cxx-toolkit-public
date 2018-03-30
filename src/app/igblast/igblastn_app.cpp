@@ -309,6 +309,7 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
 
         l_ig_opts->m_AirrField.push_back("rearrangement_id");
         l_ig_opts->m_AirrField.push_back("sequence");
+        l_ig_opts->m_AirrField.push_back("sequence_aa");
         l_ig_opts->m_AirrField.push_back("sample_id");
         l_ig_opts->m_AirrField.push_back("chain_type");
         l_ig_opts->m_AirrField.push_back("stop_codon");
