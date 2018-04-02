@@ -3542,6 +3542,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "LGICT\ts\tLaboratoire de Geologie de l'Institut Catholique de Toulouse\t\t",
 "LGM\ts\tLeningrad School of Mines\t\t",
 "LGM-USP\tc\tDepartamento de Microbiologia Lab. de Genetica de Microrganismos\t\t",
+"LGMF\tc\tCulture Collection of Laboratory of Genetics of Microorganisms, Federal University of Parana\t\t",
 "LGO\ts\tColumbia University\t\t",
 "LGPUT\ts\tLaboratory of Geology and Palaeontology\t\t",
 "LGU\ts\tLeningrad State University\t\t",

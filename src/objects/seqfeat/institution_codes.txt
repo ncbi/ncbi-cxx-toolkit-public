@@ -3509,6 +3509,7 @@ LGHF	s	Universite de Liege
 LGICT	s	Laboratoire de Geologie de l'Institut Catholique de Toulouse		
 LGM	s	Leningrad School of Mines		
 LGM-USP	c	Departamento de Microbiologia Lab. de Genetica de Microrganismos		
+LGMF	c	Culture Collection of Laboratory of Genetics of Microorganisms, Federal University of Parana		
 LGO	s	Columbia University		
 LGPUT	s	Laboratory of Geology and Palaeontology		
 LGU	s	Leningrad State University		
