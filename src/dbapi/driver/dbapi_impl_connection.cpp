@@ -213,11 +213,16 @@ CConnection::CalculateServerType(CDBConnParams::EServerType server_type)
 
                         if (!version.IsNULL()) {
                             const string& verstr = version.AsString();
-                            if (NStr::StartsWith(verstr, "Adaptive Server")) {
+                            if (NStr::StartsWith(verstr, "Adaptive Server")
+                                ||  NStr::StartsWith(verstr, "SAP IQ")) {
                                 server_type = CDBConnParams::eSybaseSQLServer;
                             } else if (NStr::StartsWith
                                        (verstr, "Microsoft SQL Server")) {
                                 server_type = CDBConnParams::eMSSqlServer;
+                            } else if (NStr::StartsWith(verstr, "Open Server")
+                                       ||  NStr::StartsWith
+                                           (verstr, "PubSeqOS")) {
+                                server_type = CDBConnParams::eSybaseOpenServer;
                             }
                         }
                     }
