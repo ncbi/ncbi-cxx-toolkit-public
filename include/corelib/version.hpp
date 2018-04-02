@@ -50,6 +50,73 @@ BEGIN_NCBI_SCOPE
 // CVersionInfo
 
 
+/// This class allows to add build info (date and tag) to application version.
+///
+/// This can be done by providing explicitly created SBuildInfo instance
+/// (e.g. SBuildInfo(__DATE__ " " __TIME__, "RC1"))
+///
+/// If clients do not explicitly set their own build info,
+/// C++ Toolkit build info will be used in the reporting instead.
+
+struct NCBI_XNCBI_EXPORT SBuildInfo
+{
+    enum EExtra
+    {
+        eBuildDate,
+        eBuildTag,
+        eTeamCityProjectName,
+        eTeamCityBuildConf,
+        eTeamCityBuildNumber,
+        eSubversionRevision,
+        eStableComponentsVersion,
+        eDevelopmentVersion,
+        eProductionVersion
+    };
+    string date;
+    string tag;
+    vector< pair<EExtra,string> > m_extra;
+
+    SBuildInfo(const string& d, const string& t = kEmptyStr) : date(d), tag(t) {
+    }
+
+    SBuildInfo& Extra( EExtra key, const string& value);
+    SBuildInfo& Extra( EExtra key, int value);
+    string GetExtraValue( EExtra key) const;
+
+    static string ExtraName(EExtra key);
+    static string ExtraNameXml(EExtra key);
+    static string ExtraNameJson(EExtra key);
+
+    string Print(size_t offset = 0) const;
+    string PrintXml(void) const;
+    string PrintJson(void) const;
+};
+
+#ifdef NCBI_BUILD_TAG
+#  define NCBI_BUILD_TAG_PROXY  NCBI_AS_STRING(NCBI_BUILD_TAG)
+#else
+#  define NCBI_BUILD_TAG_PROXY  ""
+#endif
+
+#if defined(NCBI_TEAMCITY_BUILD_NUMBER_PROXY)
+#  define NCBI_SBUILDINFO_DEFAULT() \
+    SBuildInfo( __DATE__ " " __TIME__, NCBI_BUILD_TAG_PROXY) \
+        .Extra(SBuildInfo::eTeamCityProjectName,     NCBI_TEAMCITY_PROJECT_NAME_PROXY) \
+        .Extra(SBuildInfo::eTeamCityBuildConf,       NCBI_TEAMCITY_BUILDCONF_NAME_PROXY) \
+        .Extra(SBuildInfo::eTeamCityBuildNumber,     NCBI_TEAMCITY_BUILD_NUMBER_PROXY) \
+        .Extra(SBuildInfo::eSubversionRevision,      NCBI_SUBVERSION_REVISION_PROXY) \
+        .Extra(SBuildInfo::eStableComponentsVersion, NCBI_SC_VERSION_PROXY) \
+        .Extra(NCBI_SRCTREE_NAME_PROXY,     NCBI_SRCTREE_VER_PROXY)
+#else
+#  define NCBI_SBUILDINFO_DEFAULT() \
+    SBuildInfo( __DATE__ " " __TIME__, NCBI_BUILD_TAG_PROXY)
+#endif
+#define NCBI_APP_SBUILDINFO_DEFAULT() \
+    SBuildInfo(__DATE__ " " __TIME__, NCBI_BUILD_TAG_PROXY) \
+        .Extra(SBuildInfo::eTeamCityProjectName, NCBI_TEAMCITY_PROJECT_NAME_PROXY) \
+        .Extra(SBuildInfo::eTeamCityBuildConf,   NCBI_TEAMCITY_BUILDCONF_NAME_PROXY) \
+        .Extra(SBuildInfo::eSubversionRevision,  NCBI_SUBVERSION_REVISION_PROXY)
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CVersionInfo --
@@ -170,7 +237,8 @@ public:
                            int  ver_major,
                            int  ver_minor,
                            int  patch_level = 0,
-                           const string& ver_name = kEmptyStr);
+                           const string& ver_name = kEmptyStr,
+                           const SBuildInfo& build_info = NCBI_SBUILDINFO_DEFAULT());
 
     /// Constructor
     ///
@@ -182,7 +250,8 @@ public:
     ///    version name
     CComponentVersionInfo( const string& component_name,
                            const string& version,
-                           const string& ver_name = kEmptyStr);
+                           const string& ver_name = kEmptyStr,
+                           const SBuildInfo& build_info = NCBI_SBUILDINFO_DEFAULT());
 
     /// Get component name
     const string& GetComponentName(void) const
@@ -201,28 +270,7 @@ public:
 
 private:
     string m_ComponentName;
-};
-
-
-/// This class allows to add build info (date and tag) to application version.
-///
-/// This can be done by providing explicitly created SBuildInfo instance
-/// (e.g. SBuildInfo(__DATE__ " " __TIME__, "RC1"))
-/// instead of implicit SBuildInfo(), where SBuildInfo instance is accepted.
-///
-/// If clients do not explicitly set their own build info,
-/// C++ Toolkit build info will be used in the reporting instead.
-
-struct NCBI_XNCBI_EXPORT SBuildInfo
-{
-    string date;
-    string tag;
-
-    SBuildInfo();
-    SBuildInfo(const string& d, const string& t = kEmptyStr) : date(d), tag(t) {}
-
-    string PrintXml(void) const;
-    string PrintJson(void) const;
+    SBuildInfo m_BuildInfo;
 };
 
 
@@ -230,10 +278,10 @@ class NCBI_XNCBI_EXPORT CVersion : public CObject
 {
 public:
 
-    CVersion(const SBuildInfo& build_info = SBuildInfo());
+    CVersion(const SBuildInfo& build_info = NCBI_SBUILDINFO_DEFAULT());
     
     CVersion(const CVersionInfo& version,
-            const SBuildInfo& build_info = SBuildInfo());
+            const SBuildInfo& build_info = NCBI_SBUILDINFO_DEFAULT());
 
     CVersion(const CVersion& version);
 
@@ -261,7 +309,8 @@ public:
                               int           ver_major,
                               int           ver_minor,
                               int           patch_level = 0,
-                              const string& ver_name = kEmptyStr);
+                              const string& ver_name = kEmptyStr,
+                              const SBuildInfo& build_info = NCBI_SBUILDINFO_DEFAULT());
     /// Add component version information
     /// @note Takes the ownership over the passed VersionInfo object 
     void AddComponentVersion( CComponentVersionInfo* component);
@@ -280,7 +329,7 @@ public:
         fPackageFull    = 0x08,  ///< Print package info, if available
         fBuildInfo      = 0x10,  ///< Print build info (date and tag)
         fBuildSignature = 0x20,  ///< Print build signature, if available
-        fTCBuildNumber  = 0x40,  ///< Print TeamCity build number, if available
+        fTCBuildNumber  = 0x0,   ///< obsolete, has no effect
         fPrintAll       = 0xFF   ///< Print all version data
     };
     typedef int TPrintFlags;  ///< Binary OR of EPrintFlags

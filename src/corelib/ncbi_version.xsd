@@ -67,6 +67,16 @@
 
   <xs:element name="build_info">
     <xs:complexType>
+      <xs:sequence>
+        <xs:element name="teamcity_project_name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="teamcity_buildconf_name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="subversion_revision" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="stable_components_version" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:choice minOccurs="0" maxOccurs="1">
+          <xs:element name="production_version" type="xs:string"/>
+          <xs:element name="development_version" type="xs:string"/>
+        </xs:choice>
+      </xs:sequence>
       <xs:attribute name="date" type="xs:string" use="optional"/>
       <xs:attribute name="tag" type="xs:string" use="optional"/>
     </xs:complexType>

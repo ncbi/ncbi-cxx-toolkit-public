@@ -63,3 +63,14 @@
 #else
 #  define NCBI_SC_VERSION_PROXY 0
 #endif
+
+#if defined(NCBI_PRODUCTION_VER)
+#  define NCBI_SRCTREE_VER_PROXY  NCBI_PRODUCTION_VER
+#  define NCBI_SRCTREE_NAME_PROXY SBuildInfo::eProductionVersion
+#elif defined(NCBI_DEVELOPMENT_VER)
+#  define NCBI_SRCTREE_VER_PROXY  NCBI_DEVELOPMENT_VER
+#  define NCBI_SRCTREE_NAME_PROXY SBuildInfo::eDevelopmentVersion
+#else
+#  define NCBI_SRCTREE_VER_PROXY  0
+#  define NCBI_SRCTREE_NAME_PROXY SBuildInfo::eDevelopmentVersion
+#endif

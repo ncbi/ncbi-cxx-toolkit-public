@@ -32,6 +32,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <common/ncbi_source_ver.h>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
@@ -129,6 +130,9 @@ CNcbiApplication::CNcbiApplication(const SBuildInfo& build_info)
 
     // Create empty version info
     m_Version.Reset(new CVersion(build_info));
+#if NCBI_SC_VERSION_PROXY != 0
+    m_Version->AddComponentVersion("NCBI C++ Toolkit", NCBI_SC_VERSION_PROXY, 0);
+#endif
 
     // Create empty application arguments & name
     m_Arguments.reset(new CNcbiArguments(0,0));

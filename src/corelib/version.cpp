@@ -397,17 +397,17 @@ CComponentVersionInfo::CComponentVersionInfo( const string& component_name,
                                               int  ver_major,
                                               int  ver_minor,
                                               int  patch_level,
-                                              const string& name)
+                                              const string& name, const SBuildInfo& build_info)
     : CVersionInfo(ver_major, ver_minor, patch_level, name),
-      m_ComponentName( component_name )
+      m_ComponentName( component_name ), m_BuildInfo(build_info)
 {
 }
 
 CComponentVersionInfo::CComponentVersionInfo( const string& component_name,
                                               const string& version,
-                                              const string& name)
+                                              const string& name, const SBuildInfo& build_info)
     : CVersionInfo( version, name),
-      m_ComponentName( component_name )
+      m_ComponentName( component_name ), m_BuildInfo(build_info)
       
 {
 }
@@ -415,7 +415,7 @@ CComponentVersionInfo::CComponentVersionInfo( const string& component_name,
 string CComponentVersionInfo::Print(void) const
 {
     CNcbiOstrstream os;
-    os << GetComponentName() << ": " << CVersionInfo::Print();
+    os << GetComponentName() << ": " << CVersionInfo::Print() << endl << m_BuildInfo.Print(2);
     return CNcbiOstrstreamToString(os);
 }
 
@@ -423,8 +423,9 @@ string CComponentVersionInfo::PrintXml(void) const
 {
     CNcbiOstrstream os;
     os << "<component name=\"" << NStr::XmlEncode(GetComponentName()) << "\">\n" <<
-        CVersionInfo::PrintXml() <<
-        "</component>\n";
+        CVersionInfo::PrintXml() << endl <<
+        m_BuildInfo.PrintXml() <<
+        "</component>" << endl;
     return CNcbiOstrstreamToString(os);
 }
 
@@ -433,33 +434,113 @@ string CComponentVersionInfo::PrintJson(void) const
     CNcbiOstrstream os;
     os << "{ \"name\": \"" <<
         NStr::JsonEncode(GetComponentName()) <<
-        "\", \"version_info\": " << CVersionInfo::PrintJson() << "}";
+            "\", \"version_info\": " <<
+            CVersionInfo::PrintJson() << endl <<
+            m_BuildInfo.PrintJson() << "}" << endl;
     return CNcbiOstrstreamToString(os);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 //  SBuildInfo
 
-SBuildInfo::SBuildInfo()
-    : date(__DATE__ " " __TIME__)
-#ifdef NCBI_BUILD_TAG
-    , tag(NCBI_AS_STRING(NCBI_BUILD_TAG))
-#endif
+SBuildInfo& SBuildInfo::Extra( EExtra key, const string& value)
 {
+    if (!value.empty()) {
+        m_extra.push_back( make_pair(key, value));
+    }
+    return *this;
 }
 
+SBuildInfo& SBuildInfo::Extra( EExtra key, int value)
+{
+    if (value != 0) {
+        m_extra.push_back( make_pair(key, NStr::NumericToString(value)));
+    }
+    return *this;
+}
+
+string SBuildInfo::GetExtraValue( EExtra key) const
+{
+    if (key == eBuildDate) {
+        return date;
+    } else if (key == eBuildTag) {
+        return tag;
+    } else {
+        for( const auto& e : m_extra) {
+            if (e.first == key) {
+                return e.second;
+            }
+        }
+    }
+    return kEmptyStr;
+}
+
+string SBuildInfo::ExtraName(EExtra key)
+{
+    switch (key)
+    {
+    case eBuildDate:               return "Build-Date";
+    case eBuildTag:                return "Build-Tag";
+    case eTeamCityProjectName:     return "TeamCity-Project-Name";
+    case eTeamCityBuildConf:       return "TeamCity-BuildConf-Name";
+    case eTeamCityBuildNumber:     return "TeamCity-Build-Number";
+    case eSubversionRevision:      return "Subversion-Revision";
+    case eStableComponentsVersion: return "Stable-Components-Version";
+    case eDevelopmentVersion:      return "Development-Version";
+    case eProductionVersion:       return "Production-Version";
+    }
+    return "Unknown";
+}
+
+string SBuildInfo::ExtraNameXml(EExtra key)
+{
+    if (key == eBuildDate) {
+        return "date";
+    } else if (key == eBuildTag) {
+        return "tag";
+    }
+    string s(ExtraName(key));
+    return NStr::ReplaceInPlace(NStr::ToLower(s),"-", "_");
+}
+
+string SBuildInfo::ExtraNameJson(EExtra key)
+{
+    return ExtraNameXml(key);
+}
+
+
+string SBuildInfo::Print(size_t offset) const
+{
+    string prefix(offset+1, ' ');
+    CNcbiOstrstream os;
+    if (!date.empty()) {
+        os << prefix << ExtraName(eBuildDate) << ":  " << date << endl;
+    }
+
+    if (!tag.empty()) {
+        os << prefix << ExtraName(eBuildDate) << ":  " << tag << endl;
+    }
+    for( const auto& e : m_extra) {
+        os << prefix << ExtraName(e.first) << ":  " << e.second << endl;
+    }
+    return CNcbiOstrstreamToString(os);
+}
 
 string SBuildInfo::PrintXml(void) const
 {
     CNcbiOstrstream os;
     os << "<build_info";
     if ( !date.empty() ) {
-        os << " date=\"" << NStr::XmlEncode(date) << "\"";
+        os << ' ' << ExtraNameXml(eBuildDate) << "=\"" << NStr::XmlEncode(date) << '\"';
     }
     if ( !tag.empty() ) {
-        os << " tag=\"" << NStr::XmlEncode(tag) << "\"";
+        os << ' ' << ExtraNameXml(eBuildTag) << "=\"" << NStr::XmlEncode(tag) << '\"';
     }
-    os << "/>\n";
+    os << ">" << endl;
+    for( const auto& e : m_extra) {
+      os << '<' << ExtraNameXml(e.first) << '>' << NStr::XmlEncode(e.second) << "</" << ExtraNameXml(e.first) << '>' << endl;
+    }
+    os << "</build_info>" << endl;
     return CNcbiOstrstreamToString(os);
 }
 
@@ -468,16 +549,23 @@ string SBuildInfo::PrintJson(void) const
 {
     CNcbiOstrstream os;
     bool need_separator = false;
-    os << "{";
+    os << '{' << endl;
     if ( !date.empty() ) {
-        os << "\"date\": \"" << NStr::JsonEncode(date) << "\"";
+        os << "\"" << ExtraNameJson(eBuildDate) << "\": \"" << NStr::JsonEncode(date) << '\"';
         need_separator = true;
     }
     if ( !tag.empty() ) {
-        if ( need_separator ) os << ", ";
-        os << "\"tag\": \"" << NStr::JsonEncode(tag) << "\"";
+        if ( need_separator ) os << ',' << endl;
+        os << '\"' << ExtraNameJson(eBuildTag) << "\": \"" << NStr::JsonEncode(tag) << '\"';
+        need_separator = true;
     }
-    os << "}";
+    for( const auto& e : m_extra) {
+        if ( need_separator ) os << "," << endl;
+        os << '\"' << ExtraNameJson(e.first) << "\": \"" << NStr::JsonEncode(e.second) << '\"';
+        need_separator = true;
+    }
+    if ( need_separator ) os << endl;
+    os << '}';
     return CNcbiOstrstreamToString(os);
 }
 
@@ -488,7 +576,6 @@ string SBuildInfo::PrintJson(void) const
 CVersion::CVersion(const SBuildInfo& build_info)
     : m_VersionInfo(new CVersionInfo(0,0)),
       m_BuildInfo(build_info)
-
 {
 }
 
@@ -548,11 +635,11 @@ const CVersionInfo& CVersion::GetVersionInfo(void) const
 
 void CVersion::AddComponentVersion(
     const string& component_name, int  ver_major, int  ver_minor,
-    int  patch_level, const string& ver_name)
+    int  patch_level, const string& ver_name, const SBuildInfo& build_info)
 {
     m_Components.emplace_back(
         new CComponentVersionInfo(component_name, ver_major, ver_minor,
-                                  patch_level, ver_name));
+                                  patch_level, ver_name, build_info));
 }
 
 void CVersion::AddComponentVersion( CComponentVersionInfo* component)
@@ -591,17 +678,11 @@ string CVersion::Print(const string& appname, TPrintFlags flags) const
         os << appname << ": " << m_VersionInfo->Print() << endl;
     }
 
-    if (flags & fComponents) {
-        for (const auto& c : m_Components) {
-            os << ' ' <<  c->Print() << endl;
-        }
-    }
-
 #if NCBI_PACKAGE
     if (flags & ( fPackageShort | fPackageFull )) {
         os << " Package: " << GetPackageName() << ' '
            << GetPackageVersion().Print() << ", build "
-           << SBuildInfo().date
+           << NCBI_SBUILDINFO_DEFAULT().date
            << endl;
     }
     if (flags & fPackageFull) {
@@ -616,22 +697,14 @@ string CVersion::Print(const string& appname, TPrintFlags flags) const
 #endif
 
     if (flags & fBuildInfo) {
-        if (!m_BuildInfo.date.empty()) {
-            os << " Build-Date:  " << m_BuildInfo.date << endl;
-        }
-
-        if (!m_BuildInfo.tag.empty()) {
-            os << " Build-Tag:  " << m_BuildInfo.tag << endl;
-        }
+        os << m_BuildInfo.Print();
     }
 
-#ifdef NCBI_TEAMCITY_BUILD_NUMBER
-    if (flags & fTCBuildNumber) {
-            os << " TeamCity-Build-Number:  " << NCBI_TEAMCITY_BUILD_NUMBER
-               << endl;
+    if (flags & fComponents) {
+        for (const auto& c : m_Components) {
+            os << endl << ' ' <<  c->Print() << endl;
+        }
     }
-#endif /* NCBI_TEAMCITY_BUILD_NUMBER */
-
     return CNcbiOstrstreamToString(os);
 }
 
@@ -662,7 +735,7 @@ string CVersion::PrintXml(const string& appname, TPrintFlags flags) const
     if (flags & ( fPackageShort | fPackageFull )) {
         os << "<package name=\"" << NStr::XmlEncode(GetPackageName()) << "\">\n" <<
             GetPackageVersion().PrintXml() <<
-            SBuildInfo().PrintXml();
+            NCBI_SBUILDINFO_DEFAULT().PrintXml();
         if (flags & fPackageFull) {
             os << "<config>" << NStr::XmlEncode(GetPackageConfig()) << "</config>\n";
         }
@@ -679,13 +752,6 @@ string CVersion::PrintXml(const string& appname, TPrintFlags flags) const
     if (flags & fBuildInfo) {
         os << m_BuildInfo.PrintXml();
     }
-
-#ifdef NCBI_TEAMCITY_BUILD_NUMBER
-    if (flags & fTCBuildNumber) {
-        os << "<teamcity_build_number>" << NStr::XmlEncode(NStr::NumericToString(NCBI_TEAMCITY_BUILD_NUMBER)) <<
-            "</teamcity_build_number>\n";
-    }
-#endif /* NCBI_TEAMCITY_BUILD_NUMBER */
 
     os << "</ncbi_version>\n";
 
@@ -727,7 +793,7 @@ string CVersion::PrintJson(const string& appname, TPrintFlags flags) const
         os << "    \"package\": {\n" <<
             "      \"name\": \"" << NStr::JsonEncode(GetPackageName()) << "\",\n" <<
             "      \"version_info\": " << GetPackageVersion().PrintJson() << ",\n" <<
-            "      \"build_info\": " << SBuildInfo().PrintJson();
+            "      \"build_info\": " << NCBI_SBUILDINFO_DEFAULT().PrintJson();
         if (flags & fPackageFull) {
             os << ",\n      \"config\": \"" << NStr::JsonEncode(GetPackageConfig()) << "\"";
         }
@@ -749,14 +815,6 @@ string CVersion::PrintJson(const string& appname, TPrintFlags flags) const
         os << "    \"build_info\": " << m_BuildInfo.PrintJson();
         need_separator = true;
     }
-
-#ifdef NCBI_TEAMCITY_BUILD_NUMBER
-    if (flags & fTCBuildNumber) {
-        if ( need_separator ) os << ",\n";
-        os << "    \"teamcity_build_number\": \"" <<
-            NStr::JsonEncode(NStr::NumericToString(NCBI_TEAMCITY_BUILD_NUMBER)) << "\"";
-    }
-#endif /* NCBI_TEAMCITY_BUILD_NUMBER */
 
     os << "\n  }\n}\n";
     return CNcbiOstrstreamToString(os);

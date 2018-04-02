@@ -144,7 +144,7 @@ public:
     /// Register the application instance, and reset important
     /// application-specific settings to empty values that will
     /// be set later.
-    CNcbiApplication(const SBuildInfo& build_info = SBuildInfo());
+    CNcbiApplication(const SBuildInfo& build_info = NCBI_SBUILDINFO_DEFAULT());
 
     /// Destructor.
     ///
@@ -443,7 +443,7 @@ protected:
     ///   This function should be used from constructor of CNcbiApplication
     ///   derived class, otherwise command-like arguments "-version" and 
     ///   "-version-full" will not work as expected.
-    /// @sa GetVersion
+    /// @sa GetVersion, NCBI_APP_SET_VERSION, NCBI_APP_SET_VERSION_AUTO
     void SetVersion(const CVersionInfo& version);
     void SetVersion(const CVersionInfo& version, const SBuildInfo& build_info);
     void SetVersionByBuild(int major);
@@ -634,10 +634,18 @@ private:
     int                        m_LogOptions; ///<  logging of env, reg, args, path
     CNcbiActionGuard           m_OnExitActions; ///< Actions executed on app destruction
 };
-// must include <common/ncbi_source_ver.h>
+
+// Set the version number for the program in the form "major.minor.patch"
+// and also record all build information pertaining to building the app itself
+// (and not the C++ Toolkit against which it's built).
 #define NCBI_APP_SET_VERSION(major, minor, patch) \
-    SetVersion( CVersionInfo(major,minor,patch, NCBI_TEAMCITY_PROJECT_NAME_PROXY), \
-                SBuildInfo(__DATE__ " " __TIME__, NCBI_TEAMCITY_BUILDCONF_NAME_PROXY));
+    SetVersion( CVersionInfo(major,minor,patch, NCBI_TEAMCITY_PROJECT_NAME_PROXY), NCBI_APP_SBUILDINFO_DEFAULT())
+
+// Set the version number for the program in the form "major.minor.teamcity_build_number"
+// and also record all build information pertaining to building the app itself
+// (and not the C++ Toolkit against which it's built).
+// Uses zero patch level if NCBI_TEAMCITY_BUILD_NUMBER is unavailable.
+// header <common/ncbi_source_ver.h> is required
 #define NCBI_APP_SET_VERSION_AUTO(major, minor) NCBI_APP_SET_VERSION(major, minor, NCBI_TEAMCITY_BUILD_NUMBER_PROXY)
 
 

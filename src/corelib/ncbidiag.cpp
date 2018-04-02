@@ -2125,7 +2125,7 @@ CDiagContext_Extra& CDiagContext_Extra::PrintNcbiAppInfoOnStart(void)
             + "." +  NStr::NumericToString(ver.GetPackageVersion().GetMinor())
             + "." +  NStr::NumericToString(ver.GetPackageVersion().GetPatchLevel());
         Print("ncbi_app_package_version", pkv);
-        Print("ncbi_app_package_date", SBuildInfo().date);
+        Print("ncbi_app_package_date", NCBI_SBUILDINFO_DEFAULT().date);
 #endif
     }
 #if defined(NCBI_TEAMCITY_PROJECT_NAME)
