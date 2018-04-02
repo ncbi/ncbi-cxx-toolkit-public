@@ -212,19 +212,11 @@ CConnection::CalculateServerType(CDBConnParams::EServerType server_type)
                         res->GetItem(&version);
 
                         if (!version.IsNULL()) {
-                            if (NStr::Compare(
-                                        version.AsString(), 
-                                        0, 
-                                        15, 
-                                        "Adaptive Server"
-                                        ) == 0) {
+                            const string& verstr = version.AsString();
+                            if (NStr::StartsWith(verstr, "Adaptive Server")) {
                                 server_type = CDBConnParams::eSybaseSQLServer;
-                            } else if (NStr::Compare(
-                                        version.AsString(), 
-                                        0, 
-                                        20, 
-                                        "Microsoft SQL Server"
-                                        ) == 0) {
+                            } else if (NStr::StartsWith
+                                       (verstr, "Microsoft SQL Server")) {
                                 server_type = CDBConnParams::eMSSqlServer;
                             }
                         }
