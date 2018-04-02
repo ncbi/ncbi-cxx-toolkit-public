@@ -85,11 +85,11 @@ class NCBI_XCONNECT_EXPORT CGridWorkerApp : public CNcbiApplication
 {
 public:
     CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
-                   const SBuildInfo& build_info = SBuildInfo());
+                   const SBuildInfo& build_info = NCBI_SBUILDINFO_DEFAULT());
 
     CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
                    const CVersionInfo& version_info,
-                   const SBuildInfo& build_info = SBuildInfo());
+                   const SBuildInfo& build_info = NCBI_SBUILDINFO_DEFAULT());
 
     /// Register a listener of events of this class.
     ///
