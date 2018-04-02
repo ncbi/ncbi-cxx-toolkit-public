@@ -616,7 +616,11 @@ void CFeatTableEdit::xConvertToGeneralIds(const CMappedFeat& mf,
     if (update_protein_id || update_transcript_id) {
         locus_tag_prefix = xGetCurrentLocusTagPrefix(mf);
         if (NStr::IsBlank(locus_tag_prefix)) {
-            xPutErrorMissingLocustag(mf);
+            xPutError(
+                ILineError::eProblem_InvalidQualifier,
+                "Cannot generate transcript_/protein_id for feature " + xGetIdStr(mf) + 
+                " without a locus tag.");
+            return;
         }
     }
 
