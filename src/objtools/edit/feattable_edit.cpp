@@ -530,11 +530,11 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToMrna(const string& cds_transcr
         xConvertToGeneralIds(mrna, transcript_id, protein_id);
 
         if (transcript_id  != cds_transcript_id) {
-            xPutWarningDifferingTranscriptIds(mrna);
+            xPutErrorDifferingTranscriptIds(mrna);
         }
 
         if (protein_id != cds_protein_id) {
-            xPutWarningDifferingProteinIds(mrna);
+            xPutErrorDifferingProteinIds(mrna);
         }
     }
 
@@ -1592,7 +1592,7 @@ CMappedFeat mf)
 
 //  ----------------------------------------------------------------------------
 void
-CFeatTableEdit::xPutWarningDifferingProteinIds(
+CFeatTableEdit::xPutErrorDifferingProteinIds(
 const CMappedFeat& mrna)
 //  ----------------------------------------------------------------------------
 {
@@ -1606,7 +1606,7 @@ const CMappedFeat& mrna)
 
     unique_ptr<CObjReaderLineException> pErr(
         CObjReaderLineException::Create(
-        eDiag_Warning,
+        eDiag_Error,
         0,
         "Protein ID on mRNA feature differs from protein ID on child CDS.",
         ILineError::eProblem_InconsistentQualifiers));
@@ -1615,7 +1615,7 @@ const CMappedFeat& mrna)
 }
 
 void
-CFeatTableEdit::xPutWarningDifferingTranscriptIds(
+CFeatTableEdit::xPutErrorDifferingTranscriptIds(
 const CMappedFeat& mrna)
 //  ----------------------------------------------------------------------------
 {
@@ -1629,7 +1629,7 @@ const CMappedFeat& mrna)
 
     unique_ptr<CObjReaderLineException> pErr(
         CObjReaderLineException::Create(
-        eDiag_Warning,
+        eDiag_Error,
         0,
         "Transcript ID on mRNA feature differs from transcript ID on child CDS.",
         ILineError::eProblem_InconsistentQualifiers));
