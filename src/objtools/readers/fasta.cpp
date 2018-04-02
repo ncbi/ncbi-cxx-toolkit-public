@@ -488,11 +488,11 @@ CRef<CSeq_entry> CFastaReader::ReadSet(int max_seqs, ILineErrorListener * pMessa
         }
     }
 
-    entry->Parentize();
 
     if (entry->IsSet()  &&  entry->GetSet().GetSeq_set().size() == 1) {
         return entry->SetSet().SetSeq_set().front();
     } else {
+        entry->Parentize();
         return entry;
     }
 }
