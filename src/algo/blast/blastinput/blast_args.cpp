@@ -2110,26 +2110,29 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                 " except the specified SeqIDs",
                                 CArgDescriptions::eString);
 
-        // Tax ID list
-        arg_desc.AddOptionalKey(kArgTaxIdList, "taxids",
+        if (!m_IsMapper) {
+
+            // Tax ID list
+            arg_desc.AddOptionalKey(kArgTaxIdList, "taxids",
                                 "Restrict search of database to include only "
                                 "the specified taxonomy IDs "
                                 "(multiple IDs delimited by ',')",
                                 CArgDescriptions::eString);
-        arg_desc.AddOptionalKey(kArgNegativeTaxIdList, "taxids",
+            arg_desc.AddOptionalKey(kArgNegativeTaxIdList, "taxids",
                                 "Restrict search of database to everything "
                                 "except the specified taxonomy IDs "
                                 "(multiple IDs delimited by ',')",
                                 CArgDescriptions::eString);
-	    // Tax ID list file
-        arg_desc.AddOptionalKey(kArgTaxIdListFile, "filename",
+            // Tax ID list file
+            arg_desc.AddOptionalKey(kArgTaxIdListFile, "filename",
                                 "Restrict search of database to include only "
                                 "the specified taxonomy IDs",
                                 CArgDescriptions::eString);
-        arg_desc.AddOptionalKey(kArgNegativeTaxIdListFile, "filename",
+            arg_desc.AddOptionalKey(kArgNegativeTaxIdListFile, "filename",
                                 "Restrict search of database to everything "
                                 "except the specified taxonomy IDs",
                                 CArgDescriptions::eString);
+        }
 
         // N.B.: all restricting options are mutually exclusive
         const vector<string> kBlastDBFilteringOptions = {
