@@ -310,7 +310,7 @@ public:
         if (m_Deadline.IsExpired()) {
             ERR_POST(m_ProcessType << " run time exceeded "
                      << m_Deadline.PresetSeconds()
-                     <<" seconds, stopping the child: " << pid);
+                     <<" second(s), stopping the child: " << pid);
             return m_ProcessManager(pid);
         }
 
