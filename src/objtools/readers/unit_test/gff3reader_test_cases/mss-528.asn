@@ -1,30 +1,30 @@
 Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 1
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    }
-  },
   data ftable {
     {
       id local id 1,
+      data region "",
+      location int {
+        from 0,
+        to 4641651,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "SO_type",
+          val "chromosome"
+        },
+        {
+          qual "Is_circular",
+          val "true"
+        }
+      }
+    },
+    {
+      id local id 2,
       data gene {
         locus "thrL",
         syn {
@@ -50,10 +50,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local id 3
         },
         {
-          id local id 3
+          id local id 4
         }
       },
       dbxref {
@@ -64,7 +64,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 2,
+      id local id 3,
       data rna {
         type mRNA
       },
@@ -91,15 +91,15 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 3
+          id local id 4
         },
         {
-          id local id 1
+          id local id 2
         }
       }
     },
     {
-      id local id 3,
+      id local id 4,
       data cdregion {
         frame one
       },
@@ -140,10 +140,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local id 3
         },
         {
-          id local id 1
+          id local id 2
         }
       },
       dbxref {
@@ -158,7 +158,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 5,
       data gene {
         locus "thrA",
         syn {
@@ -188,10 +188,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 5
+          id local id 6
         },
         {
-          id local id 6
+          id local id 7
         }
       },
       dbxref {
@@ -202,7 +202,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 5,
+      id local id 6,
       data rna {
         type mRNA
       },
@@ -229,15 +229,15 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 6
+          id local id 7
         },
         {
-          id local id 4
+          id local id 5
         }
       }
     },
     {
-      id local id 6,
+      id local id 7,
       data cdregion {
         frame one
       },
@@ -304,10 +304,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 5
+          id local id 6
         },
         {
-          id local id 4
+          id local id 5
         }
       },
       dbxref {
@@ -322,7 +322,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 8,
       data imp {
         key "repeat_region"
       },
@@ -349,7 +349,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 8,
+      id local id 9,
       data imp {
         key "mobile_element"
       },
@@ -374,7 +374,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 9,
+      id local id 10,
       data gene {
         locus "sokC",
         syn {
@@ -401,7 +401,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 10
+          id local id 11
         }
       },
       dbxref {
@@ -412,7 +412,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 11,
       data rna {
         type ncRNA,
         ext gen {
@@ -455,7 +455,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 9
+          id local id 10
         }
       },
       dbxref {
@@ -466,7 +466,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 11,
+      id local id 12,
       data gene {
         locus "ssrA",
         syn {
@@ -493,7 +493,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 12
+          id local id 13
         }
       },
       dbxref {
@@ -504,7 +504,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 12,
+      id local id 13,
       data rna {
         type tmRNA
       },
@@ -559,7 +559,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 11
+          id local id 12
         }
       },
       dbxref {
@@ -570,7 +570,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 14,
       data imp {
         key "misc_feature"
       },
@@ -592,7 +592,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 14,
+      id local id 15,
       data gene {
         locus "ileY",
         syn {
@@ -618,7 +618,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 15
+          id local id 16
         }
       },
       dbxref {
@@ -629,7 +629,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 15,
+      id local id 16,
       data rna {
         type tRNA
       },
@@ -661,7 +661,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 14
+          id local id 15
         }
       },
       dbxref {
@@ -672,7 +672,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 17,
       data gene {
         locus "rrfF",
         syn {
@@ -700,7 +700,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 17
+          id local id 18
         }
       },
       dbxref {
@@ -711,7 +711,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 17,
+      id local id 18,
       data rna {
         type rRNA
       },
@@ -742,7 +742,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 16
+          id local id 17
         }
       },
       dbxref {
@@ -753,7 +753,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 18,
+      id local id 19,
       data imp {
         key "rep_origin"
       },

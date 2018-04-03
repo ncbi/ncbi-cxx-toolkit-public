@@ -1,27 +1,4 @@
 Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 10
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    }
-  },
   data ftable {
     {
       id local id 1,
@@ -153,6 +130,29 @@ Seq-annot ::= {
     },
     {
       id local id 6,
+      data region "",
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "SO_type",
+          val "3'clip"
+        },
+        {
+          qual "ID",
+          val "id4"
+        }
+      }
+    },
+    {
+      id local id 7,
       data imp {
         key "5'UTR"
       },
@@ -173,7 +173,30 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 8,
+      data region "",
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "SO_type",
+          val "5'clip"
+        },
+        {
+          qual "ID",
+          val "id6"
+        }
+      }
+    },
+    {
+      id local id 9,
       data imp {
         key "C_region"
       },
@@ -194,7 +217,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 8,
+      id local id 10,
       data imp {
         key "D-loop"
       },
@@ -215,7 +238,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 9,
+      id local id 11,
       data imp {
         key "D_segment"
       },
@@ -236,7 +259,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 12,
       data imp {
         key "J_segment"
       },
@@ -257,7 +280,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 11,
+      id local id 13,
       data imp {
         key "repeat_region"
       },
@@ -282,7 +305,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 12,
+      id local id 14,
       data imp {
         key "regulatory"
       },
@@ -307,7 +330,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 15,
       data imp {
         key "regulatory"
       },
@@ -332,7 +355,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 14,
+      id local id 16,
       data imp {
         key "V_segment"
       },
@@ -353,7 +376,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 15,
+      id local id 17,
       data imp {
         key "gap"
       },
@@ -374,7 +397,53 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 18,
+      data region "",
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "SO_type",
+          val "Comment"
+        },
+        {
+          qual "ID",
+          val "id17"
+        }
+      }
+    },
+    {
+      id local id 19,
+      data region "",
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "SO_type",
+          val "conflict"
+        },
+        {
+          qual "ID",
+          val "id18"
+        }
+      }
+    },
+    {
+      id local id 20,
       data imp {
         key "mat_peptide"
       },
@@ -395,7 +464,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 17,
+      id local id 21,
       data imp {
         key "mat_peptide"
       },
@@ -416,7 +485,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 18,
+      id local id 22,
       data imp {
         key "misc_binding"
       },
@@ -437,7 +506,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 23,
       data imp {
         key "misc_difference"
       },
@@ -458,7 +527,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 20,
+      id local id 24,
       data imp {
         key "misc_feature"
       },
@@ -479,7 +548,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 21,
+      id local id 25,
       data imp {
         key "misc_recomb"
       },
@@ -504,7 +573,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 26,
       data imp {
         key "regulatory"
       },
@@ -529,7 +598,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 23,
+      id local id 27,
       data imp {
         key "misc_structure"
       },
@@ -550,7 +619,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 24,
+      id local id 28,
       data imp {
         key "mobile_element"
       },
@@ -571,7 +640,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 29,
       data imp {
         key "modified_base"
       },
@@ -592,7 +661,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 26,
+      id local id 30,
       data imp {
         key "misc_RNA"
       },
@@ -613,7 +682,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 27,
+      id local id 31,
       data imp {
         key "regulatory"
       },
@@ -638,7 +707,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 32,
       data imp {
         key "prim_transcript"
       },
@@ -659,7 +728,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 29,
+      id local id 33,
       data imp {
         key "prim_transcript"
       },
@@ -680,7 +749,30 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 30,
+      id local id 34,
+      data region "",
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "SO_type",
+          val "proprotein"
+        },
+        {
+          qual "ID",
+          val "id33"
+        }
+      }
+    },
+    {
+      id local id 35,
       data imp {
         key "prim_transcript"
       },
@@ -701,7 +793,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 36,
       data imp {
         key "primer_bind"
       },
@@ -722,7 +814,30 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 32,
+      id local id 37,
+      data region "",
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "SO_type",
+          val "Protein"
+        },
+        {
+          qual "ID",
+          val "id36"
+        }
+      }
+    },
+    {
+      id local id 38,
       data imp {
         key "protein_bind"
       },
@@ -743,7 +858,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 33,
+      id local id 39,
       data imp {
         key "misc_structure"
       },
@@ -764,7 +879,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 40,
       data imp {
         key "rep_origin"
       },
@@ -785,7 +900,30 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 35,
+      id local id 41,
+      data region "",
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "SO_type",
+          val "Rsite"
+        },
+        {
+          qual "ID",
+          val "id40"
+        }
+      }
+    },
+    {
+      id local id 42,
       data imp {
         key "repeat_region"
       },
@@ -810,7 +948,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 36,
+      id local id 43,
       data imp {
         key "sig_peptide"
       },
@@ -831,7 +969,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 44,
       data imp {
         key "sig_peptide"
       },
@@ -852,7 +990,53 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 38,
+      id local id 45,
+      data region "",
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "SO_type",
+          val "Site"
+        },
+        {
+          qual "ID",
+          val "id44"
+        }
+      }
+    },
+    {
+      id local id 46,
+      data region "",
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "SO_type",
+          val "Site-ref"
+        },
+        {
+          qual "ID",
+          val "id45"
+        }
+      }
+    },
+    {
+      id local id 47,
       data imp {
         key "transit_peptide"
       },
@@ -873,7 +1057,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 39,
+      id local id 48,
       data imp {
         key "unsure"
       },
@@ -894,7 +1078,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 49,
       data imp {
         key "variation"
       },
@@ -915,7 +1099,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 41,
+      id local id 50,
       data imp {
         key "variation"
       },
@@ -932,6 +1116,29 @@ Seq-annot ::= {
         {
           qual "ID",
           val "id49"
+        }
+      }
+    },
+    {
+      id local id 51,
+      data region "",
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "SO_type",
+          val "virion"
+        },
+        {
+          qual "ID",
+          val "id50"
         }
       }
     }

@@ -1221,6 +1221,8 @@ bool CGff2Record::xInitFeatureData(
     CRef<CSeq_feat> pFeature ) const
 //  ----------------------------------------------------------------------------
 {
+    bool invalidFeaturesToRegion = !(flags & CGff2Reader::fGenbankMode);
+
     string gbkey;
     if (GetAttribute("gbkey", gbkey)) {
         if (gbkey == "Src") {
@@ -1235,7 +1237,8 @@ bool CGff2Record::xInitFeatureData(
             if (qual_type == "other") {
                 qual_type = "ncRNA";
             }
-            if (CSoMap::SoTypeToFeature(qual_type, *pFeature)) {
+            if (CSoMap::SoTypeToFeature(
+                    qual_type, *pFeature, invalidFeaturesToRegion)) {
                 return true;
             }
         }
@@ -1244,7 +1247,8 @@ bool CGff2Record::xInitFeatureData(
     if (recognizedType == "start_codon"  || recognizedType == "stop_codon") {
         recognizedType = "cds";
     }
-    if (!CSoMap::SoTypeToFeature(recognizedType, *pFeature)) {
+    if (!CSoMap::SoTypeToFeature(
+            recognizedType, *pFeature, invalidFeaturesToRegion)) {
         AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
                 eDiag_Error,

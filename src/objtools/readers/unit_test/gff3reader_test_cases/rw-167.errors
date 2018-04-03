@@ -1,8 +1,0 @@
-Line No    : 7
-Severity   : Error
-Message    : Bad data line: Invalid feature type "chromosome"
-
-Line No    : 10
-Severity   : Error
-Message    : Bad data line: Invalid feature type "CAAT-signal"
-
