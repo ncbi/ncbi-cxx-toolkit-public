@@ -2924,7 +2924,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "INHM\ts\tIraq Natural History Museum\t\t",
 "INHS\ts\tIllinois Natural History Survey\t\t",
 "INIA\ts\tInstituto Nacional de Investigaciones Forestales y Agropecurias\t\t",
-"INIA<CHL>\tb\tEl Instituto de Investigaciones Agropecuarias\t\t",
+"INIA<CHL>\tsb\tEl Instituto de Investigaciones Agropecuarias\t\t",
 "INIA<ESP>\tb\tInstituto Nacional de Investigacion y Tecnologia Agraria y Alimentaria\t\t",
 "INIBP\ts\tInstituto Nacional de Investigaciones Biologico Pesqueras\t\t",
 "INIDA\ts\tInstituto Nacional de Investigacao e Desenvolvimento Agrario - Cape Verde\t\t",
