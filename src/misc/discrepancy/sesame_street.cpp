@@ -310,7 +310,9 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
         diagnosis += mul ? ", some multi)" : ")";
         report[diagnosis];
 
-        if ((num != total || bins != 1) && (it.first == "collection-date" || it.first == "country" || it.first == "isolation-source" || it.first == "strain" || it.first == "isolate")) {
+        if ((num != total || bins != 1)
+                && (it.first == "collection-date" || it.first == "country" || it.first == "isolation-source" || it.first == "strain" || it.first == "isolate"
+                || it.first == "taxname" || it.first == "breed" || it.first == "cultivar" || it.first == "sex")) {
             final_report[diagnosis].Fatal();
         }
 
