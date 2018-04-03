@@ -331,25 +331,16 @@ public:
         : m_App(app), m_Args(args)
     {}
 
-    string Get(const string& v) const;
+    string Get(CTimedProcessWatcher::SParams& p, const string& v) const;
 
 private:
     const string m_App;
     const vector<string> m_Args;
 };
 
-string CRemoteAppVersion::Get(const string& v) const
+string CRemoteAppVersion::Get(CTimedProcessWatcher::SParams& p, const string& v) const
 {
-    struct WaitOneSecond : CPipe::IProcessWatcher
-    {
-        const CDeadline deadline;
-        WaitOneSecond() : deadline(1) {}
-        EAction Watch(TProcessHandle)
-        {
-            return deadline.IsExpired() ? eExit : eContinue;
-        }
-    } wait_one_second;
-
+    CTimedProcessWatcher  wait_one_second(p);
     istringstream in;
     ostringstream out;
     ostringstream err;
@@ -1124,7 +1115,8 @@ void CRemoteAppLauncher::FinishJob(bool finished_ok, int ret,
 
 string CRemoteAppLauncher::GetAppVersion(const string& v) const
 {
-    return m_Version->Get(v);
+    CTimedProcessWatcher::SParams params("Version", CTimeout(1.0), m_Reaper->GetManager());
+    return m_Version->Get(params, v);
 }
 
 void CRemoteAppLauncher::OnGridWorkerStart()
