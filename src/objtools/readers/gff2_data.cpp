@@ -396,13 +396,13 @@ CRef<CSeq_loc> CGff2Record::GetSeqLoc(
 {
     CRef<CSeq_loc> pLocation(new CSeq_loc);
     pLocation->SetInt().SetId(*GetSeqId(flags, seqidresolve));
-    pLocation->SetInt().SetFrom(SeqStart());
-    pLocation->SetInt().SetTo(SeqStop());
-        if (IsSetStrand()) {
+    pLocation->SetInt().SetFrom(static_cast<TSeqPos>(SeqStart()));
+    pLocation->SetInt().SetTo(static_cast<TSeqPos>(SeqStop()));
+    if (IsSetStrand()) {
         pLocation->SetInt().SetStrand(Strand());
-        }
-    return pLocation;
     }
+    return pLocation;
+}
 
 //  ----------------------------------------------------------------------------
 string CGff2Record::xNormalizedAttributeKey(
