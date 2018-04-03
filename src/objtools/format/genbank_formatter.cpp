@@ -288,6 +288,16 @@ static string s_get_anchor_html(const string & sAnchorName, TGi iGi )
     return (string)CNcbiOstrstreamToString(result);
 }
 
+static string s_get_anchor_html(const string & sAnchorName, CBioseqContext *ctx )
+{
+    CNcbiOstrstream result;
+
+    result << "<a name=\"" << sAnchorName << "_"
+        << ctx->GetAccession() << "\"></a>";
+
+    return (string)CNcbiOstrstreamToString(result);
+}
+
 void CGenbankFormatter::EndSection
 (const CEndSectionItem& end_item,
  IFlatTextOStream& orig_text_os)
@@ -310,7 +320,7 @@ void CGenbankFormatter::EndSection
 
     if( bHtml && cfg.IsModeEntrez() ) {
         text_os.AddLine( 
-            s_get_anchor_html("slash", end_item.GetContext()->GetGI()), 
+            s_get_anchor_html("slash", end_item.GetContext()),
             0, IFlatTextOStream::eAddNewline_No );
     }
 
@@ -605,7 +615,7 @@ void CGenbankFormatter::FormatHtmlAnchor(
     CRef<IFlatTextOStream> p_text_os;
     IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, html_anchor, orig_text_os);
 
-    text_os.AddLine( s_get_anchor_html(html_anchor.GetLabelCore(), html_anchor.GetGI()),
+    text_os.AddLine( s_get_anchor_html(html_anchor.GetLabelCore(), html_anchor.GetContext()),
         0, IFlatTextOStream::eAddNewline_No );
 }
 
@@ -1177,17 +1187,17 @@ CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
     }}
 
     // list of links that let us jump to sections
-    const TGi gi = ctx.GetGI();
+    const string& accn = ctx.GetAccession();
     result << "<div class=\"localnav\"><ul class=\"locals\">";
     if( has_comment ) {
-        result << "<li><a href=\"#comment_" << gi << "\" title=\"Jump to the comment section of this record\">Comment</a></li>";
+        result << "<li><a href=\"#comment_" << accn << "\" title=\"Jump to the comment section of this record\">Comment</a></li>";
     }
-    result << "<li><a href=\"#feature_" << gi << "\" title=\"Jump to the feature table of this record\">Features</a></li>";
+    result << "<li><a href=\"#feature_" << accn << "\" title=\"Jump to the feature table of this record\">Features</a></li>";
     if( has_contig ) {
-        result << "<li><a href=\"#contig_" << gi << "\" title=\"Jump to the contig section of this record\">Contig</a></li>";
+        result << "<li><a href=\"#contig_" << accn << "\" title=\"Jump to the contig section of this record\">Contig</a></li>";
     }
     if( has_sequence ) {
-        result << "<li><a href=\"#sequence_" << gi << "\" title=\"Jump to the sequence of this record\">Sequence</a></li>";
+        result << "<li><a href=\"#sequence_" << accn << "\" title=\"Jump to the sequence of this record\">Sequence</a></li>";
     }
     result << "</ul>";
 
@@ -1231,7 +1241,7 @@ CGenbankFormatter::x_GetFeatureSpanAndScriptStart(
 
     // The span
     CNcbiOstrstream pre_feature_html;
-    pre_feature_html << "<span id=\"feature_" << ctx.GetGI()
+    pre_feature_html << "<span id=\"feature_" << ctx.GetAccession()
         << "_" << strKey << "_" << feat_type_count << "\" class=\"feature\">";
 
     // The javascript
@@ -1830,7 +1840,7 @@ s_FormatRegularSequencePiece
  TSeqPos &base_count )
 {
     const bool bHtml = seq.GetContext()->Config().DoHTML() && seq.GetContext()->Config().ShowSeqSpans();
-    const TGi gi = seq.GetContext()->GetGI();
+    const string& accn = seq.GetContext()->GetAccession();
 
     // format of sequence position
     const size_t kSeqPosWidth = 9;
@@ -1844,8 +1854,8 @@ s_FormatRegularSequencePiece
     const static string kCloseSpan = "</span>";
     TSeqPos length_of_span_before_base_count = 0;
     if( bHtml ) {
-        string kSpan = " <span class=\"ff_line\" id=\"gi_";
-        kSpan += NStr::NumericToString(gi);
+        string kSpan = " <span class=\"ff_line\" id=\"";
+        kSpan += accn;
         kSpan += '_';
         copy( kSpan.begin(), kSpan.end(), line + kSeqPosWidth );
         length_of_span_before_base_count = kSpan.length();
