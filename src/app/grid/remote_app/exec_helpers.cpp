@@ -265,6 +265,64 @@ CRemoteAppReaper::CRemoteAppReaper(int sleep, int max_attempts,
 {
 }
 
+class CTimer
+{
+public:
+    CTimer(const CTimeout& timeout) :
+        m_Deadline(timeout),
+        m_Timeout(timeout)
+    {}
+
+    void Restart() { m_Deadline = m_Timeout; }
+    bool IsExpired() const { return m_Deadline.IsExpired(); }
+    unsigned PresetSeconds() const { return (unsigned)m_Timeout.GetAsDouble(); }
+
+private:
+    CDeadline m_Deadline;
+    CTimeout m_Timeout;
+};
+
+class CTimedProcessWatcher : public CPipe::IProcessWatcher
+{
+public:
+    struct SParams
+    {
+        string process_type;
+        const CTimeout& run_timeout;
+        CRemoteAppReaper::CManager& process_manager;
+
+        SParams(string pt, const CTimeout& rt, CRemoteAppReaper::CManager& pm) :
+            process_type(move(pt)),
+            run_timeout(rt),
+            process_manager(pm)
+        {}
+    };
+
+    CTimedProcessWatcher(SParams& p)
+        : m_ProcessManager(p.process_manager),
+          m_ProcessType(p.process_type),
+          m_Deadline(p.run_timeout)
+    {
+    }
+
+    virtual EAction Watch(TProcessHandle pid)
+    {
+        if (m_Deadline.IsExpired()) {
+            ERR_POST(m_ProcessType << " run time exceeded "
+                     << m_Deadline.PresetSeconds()
+                     <<" seconds, stopping the child: " << pid);
+            return m_ProcessManager(pid);
+        }
+
+        return eContinue;
+    }
+
+protected:
+    CRemoteAppReaper::CManager& m_ProcessManager;
+    const string m_ProcessType;
+    const CTimer m_Deadline;
+};
+
 // This class is responsible for reporting app/cgi version run by this app
 class CRemoteAppVersion
 {
@@ -463,23 +521,6 @@ CRanges* s_ReadRanges(const IRegistry& reg, const string& sec, string param)
     return nullptr;
 }
 
-class CTimer
-{
-public:
-    CTimer(const CTimeout& timeout) :
-        m_Deadline(timeout),
-        m_Timeout(timeout)
-    {}
-
-    void Restart() { m_Deadline = m_Timeout; }
-    bool IsExpired() const { return m_Deadline.IsExpired(); }
-    unsigned PresetSeconds() const { return (unsigned)m_Timeout.GetAsDouble(); }
-
-private:
-    CDeadline m_Deadline;
-    CTimeout m_Timeout;
-};
-
 CTimeout s_ToTimeout(unsigned sec)
 {
     // Zero counts as infinite timeout
@@ -674,48 +715,6 @@ struct STmpDirGuard
     }
     string m_Path;
     bool m_RemovePath;
-};
-//////////////////////////////////////////////////////////////////////////////
-///
-class CTimedProcessWatcher : public CPipe::IProcessWatcher
-{
-public:
-    struct SParams
-    {
-        string process_type;
-        const CTimeout& run_timeout;
-        CRemoteAppReaper::CManager& process_manager;
-
-        SParams(string pt, const CTimeout& rt, CRemoteAppReaper::CManager& pm) :
-            process_type(move(pt)),
-            run_timeout(rt),
-            process_manager(pm)
-        {}
-    };
-
-    CTimedProcessWatcher(SParams& p)
-        : m_ProcessManager(p.process_manager),
-          m_ProcessType(p.process_type),
-          m_Deadline(p.run_timeout)
-    {
-    }
-
-    virtual EAction Watch(TProcessHandle pid)
-    {
-        if (m_Deadline.IsExpired()) {
-            ERR_POST(m_ProcessType << " run time exceeded "
-                     << m_Deadline.PresetSeconds()
-                     <<" seconds, stopping the child: " << pid);
-            return m_ProcessManager(pid);
-        }
-
-        return eContinue;
-    }
-
-protected:
-    CRemoteAppReaper::CManager& m_ProcessManager;
-    const string m_ProcessType;
-    const CTimer m_Deadline;
 };
 
 //////////////////////////////////////////////////////////////////////////////
