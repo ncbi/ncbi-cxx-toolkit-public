@@ -1693,3 +1693,43 @@ BOOST_AUTO_TEST_CASE(Test_FixRNAEditingCodingRegion)
     x_VerifyFixedRNAEditingCodingRegion(*cds, "foo; RNA editing", 2);
 
 }
+
+
+void CheckTaxnameChange(const string& orig, const string& fixed)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetTaxon(entry, 0);
+    SetTaxname(entry, orig);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*entry);
+    bool found_taxname_change = false;
+    for (auto it : changes->GetAllChanges()) {
+        if (it == CCleanupChange::eChangeTaxname) {
+            found_taxname_change = true;
+        }
+    }
+    BOOST_CHECK_EQUAL(found_taxname_change, true);
+    
+    for (auto it : entry->GetSeq().GetDescr().Get()) {
+        if (it->IsSource()) {
+            BOOST_CHECK_EQUAL(it->GetSource().GetOrg().GetTaxname(), fixed);
+        }
+    }
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_GB_7569)
+{
+    CheckTaxnameChange("abc ssp. x", "abc subsp. x");
+    CheckTaxnameChange("Medicago sativa subspecies fake", "Medicago sativa subsp. fake");
+}
+

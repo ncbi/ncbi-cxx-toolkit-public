@@ -161,6 +161,7 @@ public:
         eTrimInternalSemicolons,
         eAddSeqFeatXref,
         eConvertUnstructuredOrgrefModifier,
+        eChangeTaxname,
 
         // set when any other change is made.
         eChangeOther,

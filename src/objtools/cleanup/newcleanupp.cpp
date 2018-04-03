@@ -1961,6 +1961,25 @@ void CNewCleanup_imp::OrgrefBC (COrg_ref& org)
     CLEAN_STRING_MEMBER (org, Common);
     CLEAN_STRING_LIST (org, Syn);
 
+    if (org.IsSetTaxname() && 
+        (NStr::Find(org.GetTaxname(), " ssp. ") != NPOS ||
+         NStr::Find(org.GetTaxname(), " subspecies ") != NPOS)) {
+        bool has_taxon = false;
+        if (org.IsSetDb()) {
+            for (auto it : org.GetDb()) {
+                if (it->IsSetDb() && NStr::Equal(it->GetDb(), "taxon")) {
+                    has_taxon = true;
+                    break;
+                }
+            }
+        }
+        if (!has_taxon) {
+            NStr::ReplaceInPlace(org.SetTaxname(), " ssp. ", " subsp. ");
+            NStr::ReplaceInPlace(org.SetTaxname(), " subspecies ", " subsp. ");
+            ChangeMade(CCleanupChange::eChangeTaxname);
+        }
+    }
+
     x_ConvertOrgref_modToOrgMod(org);
 
     if (FIELD_IS_SET (org, Orgname)) {
