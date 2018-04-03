@@ -374,13 +374,17 @@ string CSoMap::SoTypeToId(
 //  ----------------------------------------------------------------------------
 bool CSoMap::SoTypeToFeature(
     const string& so_type,
-    CSeq_feat& feature)
+    CSeq_feat& feature,
+    bool invalidToRegion)
 //  ----------------------------------------------------------------------------
 {
     string resolved_so_type = ResolveSoAlias(so_type);
     FEATFUNCENTRY it = mMapFeatFunc.find(resolved_so_type);
     if (it != mMapFeatFunc.end()) {
         return (it->second)(resolved_so_type, feature);
+    }
+    if (invalidToRegion) {
+        return xFeatureMakeRegion(so_type, feature);
     }
     return false;
 }

@@ -60,7 +60,9 @@ public:
 
     static bool SoTypeToFeature(
         const string&,
-        CSeq_feat&);
+        CSeq_feat&,
+        bool =false);
+
     static bool FeatureToSoType(
         const CSeq_feat&,
         string&);
