@@ -22953,3 +22953,23 @@ BOOST_AUTO_TEST_CASE(Test_NoCDSbetweenUTRs)
     TestUTRPair(true, false);
     TestUTRPair(true, true);
 }
+
+BOOST_AUTO_TEST_CASE(Test_FormatBadSpecificHostAlternateName)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetOrgMod(entry, COrgMod::eSubtype_nat_host, "Gromphadorina portentosa");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadSpecificHost",
+            "Specific host value is alternate name: Gromphadorina portentosa should be Gromphadorhina portentosa"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CValidErrorFormat format(*objmgr);
+    string val = format.FormatForSubmitterReport(*(eval->GetErrs().front()), scope);
+    BOOST_CHECK_EQUAL(val, "lcl|good\tGromphadorina portentosa should be Gromphadorhina portentosa");
+
+    CLEAR_ERRORS
+}

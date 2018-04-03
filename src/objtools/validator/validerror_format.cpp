@@ -405,13 +405,15 @@ string CValidErrorFormat::x_FormatBadSpecificHostForSubmitterReport(const CValid
 {
     string rval = "";
     string spec_host = "";
-    if (error.GetObject().GetThisTypeInfo() == CSeqdesc::GetTypeInfo()) {
+    const string kAlternateName = "Specific host value is alternate name: ";
+    if (NStr::StartsWith(error.GetMsg(), kAlternateName)) {
+        spec_host = error.GetMsg().substr(kAlternateName.length());
+    } else if (error.GetObject().GetThisTypeInfo() == CSeqdesc::GetTypeInfo()) {
         const CSeqdesc* desc = static_cast<const CSeqdesc *>(&(error.GetObject()));
         if (desc && desc->IsSource()) {
             spec_host = s_GetSpecificHostFromBioSource(desc->GetSource());
         }
-    }
-    else if (error.GetObject().GetThisTypeInfo() == CSeq_feat::GetTypeInfo()) {
+    } else if (error.GetObject().GetThisTypeInfo() == CSeq_feat::GetTypeInfo()) {
         const CSeq_feat* feat = static_cast<const CSeq_feat *>(&(error.GetObject()));
         if (feat && feat->IsSetData() && feat->GetData().IsBiosrc()) {
             spec_host = s_GetSpecificHostFromBioSource(feat->GetData().GetBiosrc());
