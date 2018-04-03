@@ -27,7 +27,7 @@
 #include <ncbiconf.h>
 
 /* #undef NCBI_PRODUCTION_VER */
-#define NCBI_DEVELOPMENT_VER 20180402
+#define NCBI_DEVELOPMENT_VER 20180403
 
 #ifdef HAVE_COMMON_NCBI_BUILD_VER_H
 #  include <common/ncbi_build_ver.h>
@@ -65,10 +65,10 @@
 #endif
 
 #if defined(NCBI_PRODUCTION_VER)
-#  define NCBI_SRCTREE_VER_PROXY  NCBI_PRODUCTION_VER
+/* #undef NCBI_PRODUCTION_VER */
 #  define NCBI_SRCTREE_NAME_PROXY SBuildInfo::eProductionVersion
 #elif defined(NCBI_DEVELOPMENT_VER)
-#  define NCBI_SRCTREE_VER_PROXY  NCBI_DEVELOPMENT_VER
+#define NCBI_DEVELOPMENT_VER 20180403
 #  define NCBI_SRCTREE_NAME_PROXY SBuildInfo::eDevelopmentVersion
 #else
 #  define NCBI_SRCTREE_VER_PROXY  0
