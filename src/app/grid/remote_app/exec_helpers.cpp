@@ -680,10 +680,20 @@ struct STmpDirGuard
 class CTimedProcessWatcher : public CPipe::IProcessWatcher
 {
 public:
-    CTimedProcessWatcher(const CTimeout& run_timeout,
-            CRemoteAppReaper::CManager &process_manager)
-        : m_ProcessManager(process_manager),
-          m_Deadline(run_timeout)
+    struct SParams
+    {
+        const CTimeout& run_timeout;
+        CRemoteAppReaper::CManager& process_manager;
+
+        SParams(const CTimeout& rt, CRemoteAppReaper::CManager& pm) :
+            run_timeout(rt),
+            process_manager(pm)
+        {}
+    };
+
+    CTimedProcessWatcher(SParams& p)
+        : m_ProcessManager(p.process_manager),
+          m_Deadline(p.run_timeout)
     {
     }
 
@@ -709,30 +719,26 @@ protected:
 class CJobContextProcessWatcher : public CTimedProcessWatcher
 {
 public:
-    // TODO: This can be replaced by tuple after we migrate to C++11
-    struct SParams
+    struct SParams : CTimedProcessWatcher::SParams
     {
         CWorkerNodeJobContext& job_context;
-        const CTimeout& run_timeout;
         const CTimeout& keep_alive_period;
         CRemoteAppTimeoutReporter& timeout_reporter;
-        CRemoteAppReaper::CManager& process_manager;
 
         SParams(CWorkerNodeJobContext& jc,
                 const CTimeout& rt,
                 const CTimeout& kap,
                 CRemoteAppTimeoutReporter& tr,
                 CRemoteAppReaper::CManager& pm)
-            : job_context(jc),
-                run_timeout(rt),
+            : CTimedProcessWatcher::SParams(rt, pm),
+                job_context(jc),
                 keep_alive_period(kap),
-                timeout_reporter(tr),
-                process_manager(pm)
+                timeout_reporter(tr)
         {}
     };
 
     CJobContextProcessWatcher(SParams& p)
-        : CTimedProcessWatcher(p.run_timeout, p.process_manager),
+        : CTimedProcessWatcher(p),
           m_JobContext(p.job_context), m_KeepAlive(p.keep_alive_period),
           m_TimeoutReporter(p.timeout_reporter)
     {
@@ -850,7 +856,8 @@ private:
         args.push_back("-jwdir");
         args.push_back(m_JobWDir);
 
-        CTimedProcessWatcher callback(m_RunTimeout, m_ProcessManager);
+        CTimedProcessWatcher::SParams params(m_RunTimeout, m_ProcessManager);
+        CTimedProcessWatcher callback(params);
         int exit_value = eInternalError;
         try {
             if (CPipe::eDone != CPipe::ExecWait(m_Path, args, in,
