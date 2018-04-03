@@ -2385,5 +2385,61 @@ DISCREPANCY_SUMMARIZE(ALL_SEQS_SHORTER_THAN_20kb)
 }
 
 
+
+DISCREPANCY_CASE(ALL_SEQS_CIRCULAR, CSeq_inst, eDisc | eSubmitter | eSmart, "All sequences circular")
+{
+    if (obj.IsNa()) {
+        if (m_Objs["N"].GetCount()) {
+            return;
+        }
+        if (obj.CanGetTopology() && obj.GetTopology() == CSeq_inst::eTopology_circular) {
+            m_Objs["C"].Incr();
+            if (!m_Objs["F"].GetCount()) {
+                auto seq = context.GetCurrentBioseq();
+                if (seq->IsSetId()) {
+                    for (auto id : seq->GetId()) {
+                        const CTextseq_id* txt = id->GetTextseq_Id();
+                        if (txt && txt->IsSetAccession()) {
+                            CSeq_id::EAccessionInfo info = CSeq_id::IdentifyAccession(txt->GetAccession());
+                            if ((info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_wgs) {
+                                m_Objs["F"].Incr();
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                if (seq->IsSetDescr()) {
+                    for (auto descr: seq->GetDescr().Get()) {
+                        if (descr->IsMolinfo() && descr->GetMolinfo().CanGetTech()) {
+                            if (descr->GetMolinfo().GetTech() == CMolInfo::eTech_wgs || descr->GetMolinfo().GetTech() == CMolInfo::eTech_tsa || descr->GetMolinfo().GetTech() == CMolInfo::eTech_targeted) {
+                                m_Objs["F"].Incr();
+                                return;
+                            }
+                        }
+                    }
+                }
+
+
+                //obj.
+            }
+        }
+        else {
+            m_Objs["N"].Incr();
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(ALL_SEQS_CIRCULAR)
+{
+    CReportNode rep;
+    if (m_Objs["C"].GetCount() && !m_Objs["N"].GetCount()) {
+        rep["All ([n]) sequences are circular"].Severity(m_Objs["F"].GetCount() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning).SetCount(m_Objs["C"].GetCount());
+        m_ReportItems = rep.Export(*this, false)->GetSubitems();
+    }
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
