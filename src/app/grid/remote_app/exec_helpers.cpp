@@ -682,10 +682,12 @@ class CTimedProcessWatcher : public CPipe::IProcessWatcher
 public:
     struct SParams
     {
+        string process_type;
         const CTimeout& run_timeout;
         CRemoteAppReaper::CManager& process_manager;
 
-        SParams(const CTimeout& rt, CRemoteAppReaper::CManager& pm) :
+        SParams(string pt, const CTimeout& rt, CRemoteAppReaper::CManager& pm) :
+            process_type(move(pt)),
             run_timeout(rt),
             process_manager(pm)
         {}
@@ -693,6 +695,7 @@ public:
 
     CTimedProcessWatcher(SParams& p)
         : m_ProcessManager(p.process_manager),
+          m_ProcessType(p.process_type),
           m_Deadline(p.run_timeout)
     {
     }
@@ -700,7 +703,7 @@ public:
     virtual EAction Watch(TProcessHandle pid)
     {
         if (m_Deadline.IsExpired()) {
-            ERR_POST("Job run time exceeded "
+            ERR_POST(m_ProcessType << " run time exceeded "
                      << m_Deadline.PresetSeconds()
                      <<" seconds, stopping the child: " << pid);
             return m_ProcessManager(pid);
@@ -711,6 +714,7 @@ public:
 
 protected:
     CRemoteAppReaper::CManager& m_ProcessManager;
+    const string m_ProcessType;
     const CTimer m_Deadline;
 };
 
@@ -726,11 +730,12 @@ public:
         CRemoteAppTimeoutReporter& timeout_reporter;
 
         SParams(CWorkerNodeJobContext& jc,
+                string pt,
                 const CTimeout& rt,
                 const CTimeout& kap,
                 CRemoteAppTimeoutReporter& tr,
                 CRemoteAppReaper::CManager& pm)
-            : CTimedProcessWatcher::SParams(rt, pm),
+            : CTimedProcessWatcher::SParams(move(pt), rt, pm),
                 job_context(jc),
                 keep_alive_period(kap),
                 timeout_reporter(tr)
@@ -856,7 +861,7 @@ private:
         args.push_back("-jwdir");
         args.push_back(m_JobWDir);
 
-        CTimedProcessWatcher::SParams params(m_RunTimeout, m_ProcessManager);
+        CTimedProcessWatcher::SParams params("Monitor", m_RunTimeout, m_ProcessManager);
         CTimedProcessWatcher callback(params);
         int exit_value = eInternalError;
         try {
@@ -1068,6 +1073,7 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
 #endif
 
         CJobContextProcessWatcher::SParams params(job_context,
+                "Job",
                 run_timeout,
                 m_KeepAlivePeriod,
                 *m_TimeoutReporter,
