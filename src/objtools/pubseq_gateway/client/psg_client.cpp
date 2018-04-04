@@ -36,6 +36,9 @@
 #include <type_traits>
 
 #include <corelib/ncbitime.hpp>
+#include <connect/ncbi_socket.hpp>
+#include <connect/ncbi_service.h>
+#include <connect/ncbi_connutil.h>
 
 #include <objtools/pubseq_gateway/impl/rpc/DdRpcCommon.hpp>
 #include <objtools/pubseq_gateway/impl/rpc/DdRpcDataPacker.hpp>
@@ -283,6 +286,28 @@ pair<once_flag, TPSG_Ioc> SHCT::m_Ioc;
 thread_local TPSG_EndPoints SHCT::m_LocalEndPoints;
 pair<mutex, TPSG_EndPoints> SHCT::m_EndPoints;
 
+string s_Resolve(const string& service)
+{
+    const auto s = service.c_str();
+    auto net_info = make_c_unique(ConnNetInfo_Create(s), ConnNetInfo_Destroy);
+    auto it = make_c_unique(SERV_Open(s, fSERV_All, SERV_LOCALHOST, net_info.get()), SERV_Close);
+
+    // The service was not found
+    if (!it) return service;
+
+    for (;;) {
+        // No need to free info after, it is done by SERV_Close
+        const auto info = SERV_GetNextInfo(it.get());
+
+        // No more servers
+        if (!info) return service;
+
+        if (info->time > 0 && info->time != NCBI_TIME_INFINITE && info->rate > 0) {
+            return CSocketAPI::ntoa(info->host) + ":" + to_string(info->port);
+        }
+    }
+}
+
 TPSG_EndPoint SHCT::x_GetEndPoint(const string& service)
 {
     call_once(m_Ioc.first, [&]() { m_Ioc.second = make_shared<TPSG_IocValue>(); });
@@ -293,7 +318,7 @@ TPSG_EndPoint SHCT::x_GetEndPoint(const string& service)
 
     // If actually added, initialize
     if (result.second) {
-        pair.second.reset(new TPSG_EndPointValue{"http", service});
+        pair.second.reset(new TPSG_EndPointValue{"http", s_Resolve(service)});
     }
 
     m_LocalEndPoints.insert(pair);

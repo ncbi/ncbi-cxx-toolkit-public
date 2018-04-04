@@ -1346,6 +1346,15 @@ private:
     TActions m_Actions;
 };
 
+template <class TType, typename TDeleter = void(*)(TType*)>
+using c_unique_ptr = unique_ptr<TType, TDeleter>;
+
+template <class TType, typename TDeleter = void(*)(TType*)>
+unique_ptr<TType, TDeleter> make_c_unique(TType* p, TDeleter d = [](TType* p) { free((void*)p); })
+{
+    return {p, d};
+}
+
 
 END_NCBI_NAMESPACE;
 
