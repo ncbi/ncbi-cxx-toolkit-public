@@ -123,7 +123,33 @@ string COrgMod::GetSubtypeName(COrgMod::TSubtype stype, EVocabulary vocabulary)
 
 bool COrgMod::IsMultipleValuesAllowed(TSubtype subtype)
 {
-    return subtype != eSubtype_strain;
+    switch( subtype ) { // per TM-863
+    case eSubtype_strain: // (2) ,
+    case eSubtype_substrain: // (3) ,
+    case eSubtype_variety: // (6) ,
+    case eSubtype_serotype: // (7) ,        
+    case eSubtype_serogroup: // (8) ,
+    case eSubtype_serovar: // (9) ,
+    case eSubtype_cultivar: // (10) ,
+    case eSubtype_pathovar: // (11) ,
+    case eSubtype_chemovar: // (12) ,
+    case eSubtype_biovar: // (13) ,
+    case eSubtype_biotype: // (14) ,
+    case eSubtype_nat_host: // (21) ,        -- natural host of this specimen
+    case eSubtype_sub_species: // (22) ,
+    case eSubtype_forma: // (25) ,
+    case eSubtype_forma_specialis: // (26) ,
+    case eSubtype_ecotype: // (27) ,
+    case eSubtype_breed: // (31) ,
+    case eSubtype_gb_acronym: // (32) ,       -- used by taxonomy database
+    case eSubtype_gb_anamorph: // (33) ,      -- used by taxonomy database
+    case eSubtype_gb_synonym: // (34) ,       -- used by taxonomy database
+    case eSubtype_metagenome_source: // (37) ,
+    case eSubtype_nomenclature: // (39) ,
+    case eSubtype_old_name: // (254) ,
+        return false;
+    default: return true;
+    }
 }
 
 
