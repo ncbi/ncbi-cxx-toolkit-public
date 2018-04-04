@@ -2086,6 +2086,7 @@ static HSPPath* HSPPathNew(void)
 
 
 #define NUM_SIGNALS 23
+#define NUM_SIGNALS_CONSENSUS 2
 
 /* Find a split for HSPs overlapping on the query by finding splice signals in
    the subject sequence. The first HSP must have smaller query offset than the
@@ -2098,7 +2099,8 @@ static HSPPath* HSPPathNew(void)
  */
 static Int4
 s_FindSpliceJunctionsForOverlaps(BlastHSP* first, BlastHSP* second,
-                                 Uint1* query, Int4 query_len)
+                                 Uint1* query, Int4 query_len,
+                                 Boolean consensus_only)
 {
     Int4 i, k;
     /* splice signal pairs from include/algo/sequence/consensus_splice.hpp */
@@ -2131,6 +2133,7 @@ s_FindSpliceJunctionsForOverlaps(BlastHSP* first, BlastHSP* second,
     Uint1* subject = NULL;
     Int4 overlap_len;
     const Uint1 kGap = 15;
+    Int4 num_signals = consensus_only ? NUM_SIGNALS_CONSENSUS : NUM_SIGNALS;
 
     /* HSPs must be sorted and must overlap only on the query */
     ASSERT(first->query.offset < second->query.offset);
@@ -2314,14 +2317,14 @@ s_FindSpliceJunctionsForOverlaps(BlastHSP* first, BlastHSP* second,
     subject[2 + overlap_len + 1] = first->map_info->right_edge & 3;
 
     /* search for matching splice signals in the subject sequence */
-    for (k = 0;k < NUM_SIGNALS;k++) {
+    for (k = 0;k < num_signals;k++) {
 
         for (i = 0;i <= overlap_len && !found;i++) {
 
             Uint1 seq = (subject[i] << 2) | subject[i + 1] |
                 (subject[i + 2] << 6) | (subject[i + 3] << 4);
 
-            /* if a splice signals are found, update HSPs */
+            /* if splice signals are found, update HSPs */
             if (seq == signals[k]) {
                 Int4 d = first->query.end - (second->query.offset + i);
                 first->query.end -= d;
@@ -2596,7 +2599,6 @@ static Int4 s_ExtendAlignment(BlastHSP* hsp, const Uint1* query,
     return 0;
 }
 
-#define NUM_SIGNALS_CONSENSUS 2
 
 /* Find splcie junctions and extend HSP alignment if there are unaligned query
    bases in the middle of a chain.
@@ -3032,8 +3034,13 @@ s_FindSpliceJunctions(HSPChain* chains,
             if (next->hsp->query.offset <= h->hsp->query.end &&
                 next->hsp->query.offset > h->hsp->query.offset) {
 
+                Boolean consensus_only = TRUE;
+                if (h->hsp->score > 50 && next->hsp->score > 50) {
+                    consensus_only = FALSE;
+                }
+
                 s_FindSpliceJunctionsForOverlaps(h->hsp, next->hsp, query,
-                                                 query_len);
+                                                 query_len, consensus_only);
                 searched = TRUE;
                 h = h->next;
             }
