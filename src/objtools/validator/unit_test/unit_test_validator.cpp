@@ -22979,3 +22979,22 @@ BOOST_AUTO_TEST_CASE(Test_FormatBadSpecificHostAlternateName)
 
     CLEAR_ERRORS
 }
+
+BOOST_FIXTURE_TEST_CASE(Test_VR_803, CGenBankFixture)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> rna = AddMiscFeature(entry);
+    rna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    rna->SetData().SetRna().SetExt().SetName("23S ribosomal RNA");
+    rna->SetProduct().SetWhole().SetGi(507148189);
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TranscriptLen",
+            "Transcript length [11] less than (far) product length [3132], and tail < 95% polyA"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TranscriptMismatches",
+        "There are 7 mismatches out of 11 bases between the transcript and (far) product sequence"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    CLEAR_ERRORS
+}

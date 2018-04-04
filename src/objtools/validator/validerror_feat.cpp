@@ -1833,9 +1833,12 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
     bool pseudo = feat_pseudo || gene_pseudo;
     bool mustbemethionine = false;
 
+    if (!pseudo && feat.IsSetProduct()) {
+        ValidateMrnaTrans(feat);      /* transcription check */
+    }
+
     if ( rna_type == CRNA_ref::eType_mRNA ) {        
         if ( !pseudo ) {
-            ValidateMrnaTrans(feat);      /* transcription check */
             ValidateSplice(feat);
         }
         ValidateCommonMRNAProduct(feat);
