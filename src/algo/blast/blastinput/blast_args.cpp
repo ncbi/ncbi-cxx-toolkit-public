@@ -1447,6 +1447,13 @@ CMappingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey(kArgLimitLookup, "TF", "Remove word seeds with "
                            "high frequency in the searched database",
                            CArgDescriptions::eBoolean, "true");
+    arg_desc.AddDefaultKey(kArgMaxDbWordCount, "num", "Words that appear more "
+                           "than this number of times in the database will be"
+                           " masked in the lookup table",
+                           CArgDescriptions::eInteger,
+                           NStr::IntToString(MAX_DB_WORD_COUNT_MAPPER));
+    arg_desc.SetDependency(kArgMaxDbWordCount, CArgDescriptions::eRequires,
+                           kArgLimitLookup);
     arg_desc.AddDefaultKey(kArgLookupStride, "num", "Number of words to skip "
 			    "after collecting one while creating a lookup table",
                  CArgDescriptions::eInteger, "0");
@@ -1522,6 +1529,10 @@ CMappingArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
     else {
         opt.SetLookupDbFilter(ref_type == "genome");
+    }
+
+    if (args.Exist(kArgMaxDbWordCount) && args[kArgMaxDbWordCount]) {
+        opt.SetMaxDbWordCount(args[kArgMaxDbWordCount].AsInteger());
     }
 
     if (args.Exist(kArgLookupStride) && args[kArgLookupStride]) {

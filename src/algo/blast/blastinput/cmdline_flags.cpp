@@ -254,6 +254,7 @@ const string kArgNoReadIdTrim("no_query_id_trim");
 const string kArgNoUnaligned("no_unaligned");
 const string kArgEnableSraCache("sra_cache");
 const string kArgMaxEditDist("max_edit_dist");
+const string kArgMaxDbWordCount("max_db_word_count");
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

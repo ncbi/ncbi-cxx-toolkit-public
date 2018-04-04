@@ -446,6 +446,9 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgNoUnaligned;
 NCBI_BLASTINPUT_EXPORT extern const string kArgEnableSraCache;
 /// Argument to specify a cutoff edit distance fot an alignment
 NCBI_BLASTINPUT_EXPORT extern const string kArgMaxEditDist;
+/// Argument to specify a maximum number of times a word can be repeated in a
+/// database
+NCBI_BLASTINPUT_EXPORT extern const string kArgMaxDbWordCount;
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
