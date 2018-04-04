@@ -1346,14 +1346,26 @@ private:
     TActions m_Actions;
 };
 
-template <class TType, typename TDeleter = void(*)(TType*)>
-using c_unique_ptr = unique_ptr<TType, TDeleter>;
+/// Template helpers for unique_ptr to work with resource allocating/deallocating C functions.
+/// @{
+/// Eliminates the necessity for specifying type of deallocating C function.
+template <class T>
+using c_unique_ptr = unique_ptr<T, void(*)(T*)>;
 
-template <class TType, typename TDeleter = void(*)(TType*)>
-unique_ptr<TType, TDeleter> make_c_unique(TType* p1, TDeleter d = [](TType* p2) { free((void*)p2); })
+/// Eliminates the necessity for specifying types of both allocated resource and deallocating C function.
+template <class T, typename TDeleter>
+unique_ptr<T, TDeleter> make_c_unique(T* p, TDeleter d)
 {
-    return {p1, d};
+    return {p, d};
 }
+
+/// Overload for the above for all types of allocated memory that are to be deallocated by free()
+template <class T>
+unique_ptr<T, void(*)(T*)> make_c_unique(T* p)
+{
+    return make_c_unique(p, &free);
+}
+/// @}
 
 
 END_NCBI_NAMESPACE;
