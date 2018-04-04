@@ -1180,9 +1180,13 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
 
                 int intron = (*next_exon)->GetGenomic_start() -
                     (*exon)->GetGenomic_end() - 1;
+                // Introns cannot be shorter than 30 bases. Change a short
+                // intron to a gap.
+                // FIXME: This is a hack. This should be done before Seq-aligns
+                // are generated. The alignment should be properly scored.
                 if (intron > 0) {
                     cigar += NStr::IntToString(intron);
-                    cigar += "N";
+                    cigar += ((intron >= 32) ? "N" : "D");
                 }
 
                 // get intron orientation
