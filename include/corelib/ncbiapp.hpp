@@ -638,6 +638,7 @@ private:
 // Set the version number for the program in the form "major.minor.patch"
 // and also record all build information pertaining to building the app itself
 // (and not the C++ Toolkit against which it's built).
+// header <common/ncbi_source_ver.h> is required
 #define NCBI_APP_SET_VERSION(major, minor, patch) \
     SetVersion( CVersionInfo(major,minor,patch, NCBI_TEAMCITY_PROJECT_NAME_PROXY), NCBI_APP_SBUILDINFO_DEFAULT())
 

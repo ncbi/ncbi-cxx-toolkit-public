@@ -492,6 +492,23 @@ string SBuildInfo::ExtraName(EExtra key)
     return "Unknown";
 }
 
+string SBuildInfo::ExtraNameAppLog(EExtra key)
+{
+    switch (key)
+    {
+    case eBuildDate:               return "ncbi_app_build_date";
+    case eBuildTag:                return "ncbi_app_build_tag";
+    case eTeamCityProjectName:     return "ncbi_app_tc_project";
+    case eTeamCityBuildConf:       return "ncbi_app_tc_conf";
+    case eTeamCityBuildNumber:     return "ncbi_app_tc_build";
+    case eSubversionRevision:      return "ncbi_app_vcs_revision";
+    case eStableComponentsVersion: return "ncbi_app_sc_version";
+    case eDevelopmentVersion:      return "ncbi_app_dev_version";
+    case eProductionVersion:       return "ncbi_app_prod_version";
+    }
+    return "ncbi_app_unk";
+}
+
 string SBuildInfo::ExtraNameXml(EExtra key)
 {
     if (key == eBuildDate) {
@@ -507,7 +524,6 @@ string SBuildInfo::ExtraNameJson(EExtra key)
 {
     return ExtraNameXml(key);
 }
-
 
 string SBuildInfo::Print(size_t offset) const
 {

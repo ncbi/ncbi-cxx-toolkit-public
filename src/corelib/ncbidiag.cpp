@@ -2127,6 +2127,16 @@ CDiagContext_Extra& CDiagContext_Extra::PrintNcbiAppInfoOnStart(void)
         Print("ncbi_app_package_version", pkv);
         Print("ncbi_app_package_date", NCBI_SBUILDINFO_DEFAULT().date);
 #endif
+        const SBuildInfo& bi = ver.GetBuildInfo();
+        initializer_list<SBuildInfo::EExtra> bi_num =
+            {   SBuildInfo::eTeamCityProjectName, SBuildInfo::eTeamCityBuildConf, SBuildInfo::eTeamCityBuildNumber};
+        for(SBuildInfo::EExtra key : bi_num) {
+            string value = bi.GetExtraValue(key);
+            if (!value.empty()) {
+                Print( SBuildInfo::ExtraNameAppLog(key), value);
+            }
+        }
+        return *this;
     }
 #if defined(NCBI_TEAMCITY_PROJECT_NAME)
     Print("ncbi_app_tc_project", NCBI_TEAMCITY_PROJECT_NAME);
@@ -2145,10 +2155,22 @@ CDiagContext_Extra& CDiagContext_Extra::PrintNcbiAppInfoOnRequest(void)
 {
     CNcbiApplication* ins = CNcbiApplication::Instance();
     if (ins) {
-        string ver = NStr::NumericToString(ins->GetVersion().GetMajor())
-            + "." +  NStr::NumericToString(ins->GetVersion().GetMinor())
-            + "." +  NStr::NumericToString(ins->GetVersion().GetPatchLevel());
-        Print("ncbi_app_version", ver);
+        const CVersion& ver = ins->GetFullVersion();
+        const CVersionInfo& vi = ver.GetVersionInfo();
+        initializer_list<int> vi_num = {vi.GetMajor(), vi.GetMinor(), vi.GetPatchLevel()};
+        Print("ncbi_app_version", NStr::JoinNumeric(vi_num.begin(), vi_num.end(), "."));
+
+        const SBuildInfo& bi = ver.GetBuildInfo();
+        initializer_list<SBuildInfo::EExtra> bi_num =
+            {   SBuildInfo::eProductionVersion,       SBuildInfo::eDevelopmentVersion,
+                SBuildInfo::eStableComponentsVersion, SBuildInfo::eSubversionRevision};
+        for(SBuildInfo::EExtra key : bi_num) {
+            string value = bi.GetExtraValue(key);
+            if (!value.empty()) {
+                Print( SBuildInfo::ExtraNameAppLog(key), value);
+            }
+        }
+        return *this;
     }
 #if defined(NCBI_PRODUCTION_VER)
     Print("ncbi_app_prod_version", NStr::NumericToString<Uint8>(NCBI_PRODUCTION_VER));

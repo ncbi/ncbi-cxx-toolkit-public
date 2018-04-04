@@ -86,6 +86,7 @@ struct NCBI_XNCBI_EXPORT SBuildInfo
     static string ExtraName(EExtra key);
     static string ExtraNameXml(EExtra key);
     static string ExtraNameJson(EExtra key);
+    static string ExtraNameAppLog(EExtra key);
 
     string Print(size_t offset = 0) const;
     string PrintXml(void) const;
