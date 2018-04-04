@@ -332,9 +332,9 @@ BLAST_GapAlignStructNew(const BlastScoringParameters* score_params,
    else {
        gap_align->jumper = JumperGapAlignNew(200);
        if (ext_params->gap_x_dropoff == 0) {
-           gap_align->gap_x_dropoff = MAX(-score_params->penalty,
-                                          score_params->gap_open +
-                                          score_params->gap_extend);
+           gap_align->gap_x_dropoff = 3 * MAX(-score_params->penalty,
+                                              score_params->gap_open +
+                                              score_params->gap_extend);
        }
    }
 
