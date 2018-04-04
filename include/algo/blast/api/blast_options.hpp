@@ -148,6 +148,13 @@ public:
     bool GetLookupDbFilter(void) const;
     void SetLookupDbFilter(bool val);
 
+    /// Get maximum word count for lookup table word masking by database
+    /// frequency
+    Uint1 GetMaxDbWordCount(void) const;
+    /// Set maximum word count for lookup table word masking by database
+    /// frequency
+    void SetMaxDbWordCount(Uint1 num);
+
     /// Megablast only lookup table options
     unsigned char GetMBTemplateLength() const;
     void SetMBTemplateLength(unsigned char len);

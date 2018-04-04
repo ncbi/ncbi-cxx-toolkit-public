@@ -924,8 +924,6 @@ static Int2 s_RemovePolyAWords(BlastMBLookupTable* mb_lt)
 }
 
 
-#define MAX_WORD_COUNT (10)
-
 /** Fills in the hashtable and next_pos fields of BlastMBLookupTable*
  * for the contiguous case.
  *
@@ -996,6 +994,7 @@ s_FillContigMBTable(BLAST_SequenceBlk* query,
       Uint1* pos;
       Uint1* seq;
       Uint1 val;
+      Uint1 max_word_count = lookup_options->max_db_word_count;
 //      int counter = 1; /* collect this many adjacent words */
       int shift = 0;
       int pos_shift = 0;
@@ -1037,12 +1036,12 @@ s_FillContigMBTable(BLAST_SequenceBlk* query,
             with too many counts */
          if (kDbFilter) {
              if (!(ecode & 1)) {
-                 if ((counts[ecode / 2] >> 4) >= MAX_WORD_COUNT) {
+                 if ((counts[ecode / 2] >> 4) >= max_word_count) {
                      continue;
                  }
              }
              else {
-                 if ((counts[ecode / 2] & 0xf) >= MAX_WORD_COUNT) {
+                 if ((counts[ecode / 2] & 0xf) >= max_word_count) {
                      continue;
                  }
              }
@@ -1110,7 +1109,8 @@ s_FillContigMBTable(BLAST_SequenceBlk* query,
 static Int2
 s_MBCountWordsInSubject_16_1(const BLAST_SequenceBlk* sequence,
                              BlastMBLookupTable* mb_lt,
-                             Uint1* counts)
+                             Uint1* counts,
+                             Uint1 max_word_count)
 {
     Uint1 *s;
     Int4 i;
@@ -1154,12 +1154,12 @@ s_MBCountWordsInSubject_16_1(const BLAST_SequenceBlk* sequence,
         /* update the counter */
         index = word / 2;
         if (word & 1) {
-            if ((counts[index] & 0xf) < MAX_WORD_COUNT) {
+            if ((counts[index] & 0xf) < max_word_count) {
                 counts[index]++;
             }
         }
         else {
-            if ((counts[index] >> 4) < MAX_WORD_COUNT) {
+            if ((counts[index] >> 4) < max_word_count) {
                 counts[index] += 1 << 4;
             }
         }
@@ -1178,7 +1178,8 @@ s_MBCountWordsInSubject_16_1(const BLAST_SequenceBlk* sequence,
 static Int2
 s_ScanSubjectForWordCounts(BlastSeqSrc* seq_src,
                            BlastMBLookupTable* mb_lt,
-                           Uint1* counts)
+                           Uint1* counts,
+                           Uint1 max_word_count)
 {
     BlastSeqSrcIterator* itr;
     BlastSeqSrcGetSeqArg seq_arg;
@@ -1198,7 +1199,8 @@ s_ScanSubjectForWordCounts(BlastSeqSrc* seq_src,
            != BLAST_SEQSRC_EOF) {
 
         BlastSeqSrcGetSequence(seq_src, &seq_arg);
-        s_MBCountWordsInSubject_16_1(seq_arg.seq, mb_lt, counts);
+        s_MBCountWordsInSubject_16_1(seq_arg.seq, mb_lt, counts,
+                                     max_word_count);
         BlastSeqSrcReleaseSequence(seq_src, &seq_arg);
     }
 
@@ -1306,7 +1308,8 @@ Int2 BlastMBLookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
 
    if (lookup_options->db_filter) {
        s_FillPV(query, location, mb_lt, lookup_options);
-       s_ScanSubjectForWordCounts(seqsrc, mb_lt, counts);
+       s_ScanSubjectForWordCounts(seqsrc, mb_lt, counts,
+                                  lookup_options->max_db_word_count);
    }
 
    if (lookup_options->mb_template_length > 0) {
@@ -1597,7 +1600,8 @@ BlastSparseUint1ArrayGetElement(BlastSparseUint1Array* array, Int8 index)
 static Int2
 s_NaHashLookupCountWordsInSubject_16_1(const BLAST_SequenceBlk* sequence,
                                        BlastNaHashLookupTable* lookup,
-                                       BlastSparseUint1Array* counts)
+                                       BlastSparseUint1Array* counts,
+                                       Uint1 max_word_count)
 {
     Uint1 *s;
     Int4 i;
@@ -1644,7 +1648,7 @@ s_NaHashLookupCountWordsInSubject_16_1(const BLAST_SequenceBlk* sequence,
 
         /* update the counter */
         pelem = BlastSparseUint1ArrayGetElement(counts, word);
-        if (*pelem < MAX_WORD_COUNT) {
+        if (*pelem < max_word_count) {
             (*pelem)++;
         }
     }
@@ -1822,7 +1826,8 @@ static NaHashLookupThreadData* NaHashLookupThreadDataNew(Int4 num_threads,
 static Int2
 s_NaHashLookupScanSubjectForWordCounts(BlastSeqSrc* seq_src,
                                        BlastNaHashLookupTable* lookup,
-                                       Uint4 in_num_threads)
+                                       Uint4 in_num_threads,
+                                       Uint1 max_word_count)
 {
     Uint4 i;
     Int4 k, b;
@@ -1854,7 +1859,8 @@ s_NaHashLookupScanSubjectForWordCounts(BlastSeqSrc* seq_src,
     /* scan subject sequences and update the counters for each */
 #pragma omp parallel for if (num_threads > 1) num_threads(num_threads) \
    default(none) shared(num_threads, th_data, lookup, \
-                        th_batch) private(i) schedule(dynamic, 1)
+                        th_batch, max_word_count) private(i) \
+    schedule(dynamic, 1)
 
     for (i = 0;i < num_threads;i++) {
         Int4 j;
@@ -1876,7 +1882,8 @@ s_NaHashLookupScanSubjectForWordCounts(BlastSeqSrc* seq_src,
 
                 s_NaHashLookupCountWordsInSubject_16_1(th_data->seq_arg[i].seq,
                                                        lookup,
-                                                       th_data->word_counts[i]);
+                                                       th_data->word_counts[i],
+                                                       max_word_count);
                 BlastSeqSrcReleaseSequence(th_data->seq_src[i],
                                            &th_data->seq_arg[i]);
             }
@@ -1890,7 +1897,8 @@ s_NaHashLookupScanSubjectForWordCounts(BlastSeqSrc* seq_src,
 
         BlastSeqSrcGetSequence(seq_src, &th_data->seq_arg[0]);
         s_NaHashLookupCountWordsInSubject_16_1(th_data->seq_arg[0].seq, lookup,
-                                               th_data->word_counts[0]);
+                                               th_data->word_counts[0],
+                                               max_word_count);
         BlastSeqSrcReleaseSequence(seq_src, &th_data->seq_arg[0]);
     }
 
@@ -1900,7 +1908,7 @@ s_NaHashLookupScanSubjectForWordCounts(BlastSeqSrc* seq_src,
             th_data->word_counts[0]->values[i] =
                 MIN(th_data->word_counts[0]->values[i] +
                     th_data->word_counts[k]->values[i],
-                    MAX_WORD_COUNT);
+                    max_word_count);
         }
     }
     
@@ -1923,7 +1931,7 @@ s_NaHashLookupScanSubjectForWordCounts(BlastSeqSrc* seq_src,
 
             /* clear bit if word count is too low or too large */
             if (th_data->word_counts[0]->values[k] == 0 ||
-                th_data->word_counts[0]->values[k] >= MAX_WORD_COUNT) {
+                th_data->word_counts[0]->values[k] >= max_word_count) {
 
                 th_data->word_counts[0]->bitfield[i] &= ~b;
             }
@@ -2250,7 +2258,8 @@ Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
 
     /* count words in the database */
     if (opt->db_filter) {
-        s_NaHashLookupScanSubjectForWordCounts(seqsrc, lookup, num_threads);
+        s_NaHashLookupScanSubjectForWordCounts(seqsrc, lookup, num_threads,
+                                               opt->max_db_word_count);
     }
 
     /* find number of unique query words */

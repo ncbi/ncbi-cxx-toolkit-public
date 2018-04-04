@@ -1083,6 +1083,7 @@ LookupTableOptionsNew(EBlastProgramType program_number, LookupTableOptions* *opt
    
    switch (program_number) {
    case eBlastTypeMapping:
+       (*options)->max_db_word_count = MAX_DB_WORD_COUNT_MAPPER;
    case eBlastTypeBlastn:
        /* Blastn default is megablast. */
        (*options)->word_size = BLAST_WORDSIZE_MEGABLAST;
@@ -1144,6 +1145,7 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
    } else if (program_number == eBlastTypeMapping) {
        options->lut_type = eNaHashLookupTable;
        options->word_size = BLAST_WORDSIZE_MAPPER;
+       options->max_db_word_count = MAX_DB_WORD_COUNT_MAPPER;
    } else {
       options->lut_type = eAaLookupTable;
    }

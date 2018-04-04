@@ -948,6 +948,23 @@ void CBlastOptions::SetLookupDbFilter(bool val)
     m_Local->SetLookupDbFilter(val);
 }
 
+Uint1 CBlastOptions::GetMaxDbWordCount() const
+{
+	if (!m_Local) {
+        x_Throwx("Error: GetMaxDbWordCount not available.");
+	}
+    return m_Local->GetMaxDbWordCount();
+}
+
+void CBlastOptions::SetMaxDbWordCount(Uint1 num)
+{
+	if (!m_Local) {
+        x_Throwx("Error: SetMaxDbWordCount not yet available.");
+	}
+    m_Local->SetMaxDbWordCount(num);
+}
+
+
 /// Megablast only lookup table options
 unsigned char 
 CBlastOptions::GetMBTemplateLength() const

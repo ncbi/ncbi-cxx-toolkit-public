@@ -142,6 +142,7 @@ CMagicBlastOptionsHandle::SetLookupTableDefaults()
     }
     SetWordSize(BLAST_WORDSIZE_MAPPER);
     m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTN);
+    SetMaxDbWordCount(MAX_DB_WORD_COUNT_MAPPER);
     SetLookupTableStride(0);
 }
 

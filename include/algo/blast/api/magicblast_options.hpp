@@ -86,6 +86,14 @@ public:
     /// from the lookup table
     void SetLookupDbFilter(bool b) { m_Opts->SetLookupDbFilter(b); }
 
+    /// Get maximum word count for lookup table word masking by database
+    /// frequency
+    Uint1 GetMaxDbWordCount(void) const { return m_Opts->GetMaxDbWordCount(); }
+
+    /// Set maximum word count for lookup table word masking by database
+    /// frequency
+    void SetMaxDbWordCount(Uint1 num) { m_Opts->SetMaxDbWordCount(num); }
+
     /// Return number of words skipped betweem collected ones when creating
     /// a lookup table
     int GetLookupTableStride() const { return m_Opts->GetLookupTableStride(); }

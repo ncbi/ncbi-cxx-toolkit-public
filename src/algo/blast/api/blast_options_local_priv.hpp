@@ -102,6 +102,9 @@ public:
     bool GetLookupDbFilter(void) const;
     void SetLookupDbFilter(bool val);
 
+    Uint1 GetMaxDbWordCount(void) const;
+    void SetMaxDbWordCount(Uint1 val);
+
     /******************* Query setup options ************************/
     char* GetFilterString() const;
     void SetFilterString(const char* f);
@@ -656,6 +659,19 @@ CBlastOptionsLocal::SetLookupDbFilter(bool val)
 {
     m_LutOpts->db_filter = val;
 }
+
+inline Uint1
+CBlastOptionsLocal::GetMaxDbWordCount(void) const
+{
+    return m_LutOpts->max_db_word_count;
+}
+
+inline void
+CBlastOptionsLocal::SetMaxDbWordCount(Uint1 val)
+{
+    m_LutOpts->max_db_word_count = val;
+}
+
 
 /******************* Query setup options ************************/
 

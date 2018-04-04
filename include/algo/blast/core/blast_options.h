@@ -165,6 +165,10 @@ extern "C" {
                                    groups of three nucleotide bases to protein
                                    letters */
 
+/** Default max frequency for a database word. Words with higher frequency
+    will be masked in the lookup table. */
+#define MAX_DB_WORD_COUNT_MAPPER 10
+
 /** Value used to indicate that no IMPALA-style scaling should be performed
  * when scaling a PSSM */
 extern const double kPSSM_NoImpalaScaling;
@@ -204,6 +208,9 @@ typedef struct LookupTableOptions {
                            in the database between 1 and 9 times
                            (currently implemented only for MB lookuptable
                            and lookup table word size 16) */
+   Uint1 max_db_word_count; /**< words with larger frequency in the database
+                               will be masked in the lookup table, if the
+                               db_filter optoion is on */
 } LookupTableOptions;
 
 /** Options for dust algorithm, applies only to nucl.-nucl. comparisons.
