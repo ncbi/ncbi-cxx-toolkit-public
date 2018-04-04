@@ -17403,7 +17403,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadRRNAcomponentOrder)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    CLEAR_ERRORS    
+    CLEAR_ERRORS
+
+    // no errors if organelle
+    SetGenome(entry, CBioSource::eGenome_chloroplast);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
 }
 
 

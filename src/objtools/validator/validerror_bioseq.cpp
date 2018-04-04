@@ -7815,6 +7815,8 @@ void CValidError_bioseq::x_ValidateAbuttingRNA(const CBioseq_Handle& seq)
             return;
         }
     }
+    // VR-802 do not report certain errors for organelle sequences
+    bool is_organelle = IsOrganelle(seq);
 
     SAnnotSelector sel (CSeqFeatData::e_Rna);
 
@@ -7899,19 +7901,20 @@ void CValidError_bioseq::x_ValidateAbuttingRNA(const CBioseq_Handle& seq)
                         }
                     }
     
-                } else {
+                } else if (!is_organelle) {
                     // features abut
                     if (strand1 == eNa_strand_minus) {
                         // on minus strand
-                        if (pos1 == pos2 
-                            && it->GetLocation().IsPartialStop (eExtreme_Positional)
-                            && it2->GetLocation().IsPartialStart (eExtreme_Positional)
+                        if (pos1 == pos2
+                            && it->GetLocation().IsPartialStop(eExtreme_Positional)
+                            && it2->GetLocation().IsPartialStart(eExtreme_Positional)
                             && seq.IsSetInst_Repr() && seq.GetInst_Repr() == CSeq_inst::eRepr_seg) {
-                          /* okay in segmented set */
-                        } else if (!s_AreAdjacent(pos2, pos1)) {
-                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOrder,
-                                     "Problem with order of abutting rRNA components",
-                                     it2->GetOriginalFeature());
+                            /* okay in segmented set */
+                        }
+                        else if (!s_AreAdjacent(pos2, pos1)) {
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOrder,
+                                "Problem with order of abutting rRNA components",
+                                it2->GetOriginalFeature());
                         }
                     } else {
                         // on plus strand
