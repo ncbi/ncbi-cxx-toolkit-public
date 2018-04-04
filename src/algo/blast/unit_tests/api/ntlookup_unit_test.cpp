@@ -583,7 +583,7 @@ BOOST_AUTO_TEST_CASE(testHashLookupTableWordSize16WithDbFilter) {
 	BOOST_REQUIRE_EQUAL(1, lookup->scan_step);
 	BOOST_REQUIRE_EQUAL(10, lookup->longest_chain);
     BOOST_REQUIRE_EQUAL(256, lookup->backbone_size);
-    BOOST_REQUIRE_EQUAL(12, lookup->offsets_size);
+    BOOST_REQUIRE_EQUAL(38, lookup->offsets_size);
     BOOST_REQUIRE_EQUAL(5, lookup->pv_array_bts);
     BOOST_REQUIRE(lookup->hash_callback);
 
