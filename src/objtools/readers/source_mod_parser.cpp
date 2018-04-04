@@ -696,6 +696,11 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism, CConstRe
     {{
         ApplyPubMods(seq);
     }}
+
+    TMods unusedMods = GetMods(fUnusedMods);
+    for (TMods::const_iterator unused = unusedMods.begin(); unused != unusedMods.end(); ++unused) {
+        x_HandleUnkModValue(*unused); 
+    }
 };
 
 struct SMolTypeInfo {
@@ -1428,6 +1433,23 @@ string CSourceModParser::CBadModError::x_CalculateErrorString(
     return str_strm.str();
 }
 
+CSourceModParser::CUnkModError::CUnkModError(
+    const SMod& unkMod )
+    : runtime_error(x_CalculateErrorString(unkMod)), m_UnkMod(unkMod)
+{
+}
+
+string CSourceModParser::CUnkModError::x_CalculateErrorString(
+    const SMod& unkMod)
+{
+    stringstream str_strm;
+    str_strm << "Bad modifier key at seqid '" 
+        << ( unkMod.seqid ? unkMod.seqid->AsFastaString() : "UNKNOWN")
+        << "'. '" << unkMod.key << "' is not a recognized modifier key";
+    return str_strm.str();
+}
+
+
 CSourceModParser::TMods CSourceModParser::GetMods(TWhichMods which) const
 {
     if (which == fAllMods) {
@@ -1654,6 +1676,25 @@ void CSourceModParser::x_HandleBadModValue(
         throw badModError;
     case eHandleBadMod_PrintToCerr:
         cerr << badModError.what() << endl;
+        break;
+    default:
+        _TROUBLE;
+    }
+}
+
+void CSourceModParser::x_HandleUnkModValue(
+    const SMod& mod)
+{
+    if (m_HandleUnkMod == eHandleUnkMod_Ignore) {
+        return;
+    }
+    CUnkModError unkModError(mod);
+
+    switch( m_HandleUnkMod ) {
+    case eHandleBadMod_Throw:
+        throw unkModError;
+    case eHandleBadMod_PrintToCerr:
+        cerr << unkModError.what() << endl;
         break;
     default:
         _TROUBLE;

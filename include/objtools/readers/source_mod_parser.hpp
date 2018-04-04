@@ -90,8 +90,15 @@ public:
         eHandleBadMod_Throw,
         eHandleBadMod_PrintToCerr
     };
-    CSourceModParser(EHandleBadMod handleBadMod = eHandleBadMod_Ignore) 
-        : m_HandleBadMod(handleBadMod) { }
+    enum EHandleUnkMod {
+        eHandleUnkMod_Ignore = 1,
+        eHandleUnkMod_Throw,
+        eHandleUnkMod_PrintToCerr
+    };
+    CSourceModParser(
+            EHandleBadMod handleBadMod = eHandleBadMod_Ignore,
+            EHandleUnkMod handleUnkMod = eHandleUnkMod_Ignore) 
+        : m_HandleBadMod(handleBadMod), m_HandleUnkMod(handleUnkMod) { }
 
     /// Extract and store bracketed modifiers from a title string, returning a
     /// stripped version (which may well be empty at that point!)
@@ -176,6 +183,20 @@ public:
             const string & sAllowedValues );
     };
 
+    class CUnkModError : public runtime_error {
+    public:
+        CUnkModError(
+            const SMod& unkMod);
+        ~CUnkModError() THROWS_NONE {};
+
+        const SMod& GetUnkMod() const { return m_UnkMod; };
+
+    private:
+        SMod m_UnkMod;
+        std::string x_CalculateErrorString(
+            const SMod& unkMod );
+    };
+
     /// Used for passing an empty mod to some funcs without having to
     /// constantly recreate an empty one.
     static CSafeStatic<CSourceModParser::SMod> kEmptyMod;
@@ -237,6 +258,7 @@ private:
     static const unsigned char kKeyCanonicalizationTable[257];
 
     EHandleBadMod m_HandleBadMod;
+    EHandleUnkMod m_HandleUnkMod;
 
     TMods m_Mods;
     TMods m_BadMods;
@@ -259,6 +281,8 @@ private:
     // allowed values.
     // TModMap is some kind of map whose keys are "const char *".
     void x_HandleBadModValue(
+        const SMod& mod );
+    void x_HandleUnkModValue(
         const SMod& mod );
 };
 

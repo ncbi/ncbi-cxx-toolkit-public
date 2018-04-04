@@ -2021,10 +2021,14 @@ void CFastaReader::x_ApplyAllMods(
     // this is called even if there the user did not request
     // mods to be added because we want to give a warning if there
     // are mods when not expected.
-
-    CSourceModParser smp( TestFlag(fBadModThrow) ?
+    CSourceModParser::EHandleBadMod handleBadMod = (TestFlag(fBadModThrow) ?
         CSourceModParser::eHandleBadMod_Throw : 
-    CSourceModParser::eHandleBadMod_Ignore );
+        CSourceModParser::eHandleBadMod_Ignore);
+    CSourceModParser::EHandleUnkMod handleUnkMod = (TestFlag(fBadModThrow) ?
+		CSourceModParser::eHandleUnkMod_Throw :
+        CSourceModParser::eHandleUnkMod_Ignore);
+
+    CSourceModParser smp(handleBadMod, handleUnkMod);
     smp.SetModFilter( m_pModFilter );
     CRef<CSeqdesc> title_desc;
 
@@ -2055,35 +2059,6 @@ void CFastaReader::x_ApplyAllMods(
         title = smp.ParseTitle(title, CConstRef<CSeq_id>(bioseq.GetFirstId()) );
 
         smp.ApplyAllMods(bioseq);
-        if( TestFlag(fUnknModThrow) ) {
-            CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
-            if( ! unused_mods.empty() ) 
-            {
-                // there are unused mods and user specified to throw if any
-                // unused 
-                CNcbiOstrstream err;
-                err << "CFastaReader: Inapplicable or unrecognized modifiers on ";
-
-                // get sequence ID
-                const CSeq_id* seq_id = bioseq.GetFirstId();
-                if( seq_id ) {
-                    err << seq_id->GetSeqIdString();
-                } else {
-                    // seq-id unknown
-                    err << "sequence";
-                }
-
-                err << ":";
-                ITERATE(CSourceModParser::TMods, mod_iter, unused_mods) {
-                    err << " [" << mod_iter->key << "=" << mod_iter->value << ']';
-                }
-                err << " around line " + NStr::NumericToString(iLineNum);
-                NCBI_THROW2(CObjReaderParseException, eUnusedMods,
-                    (string)CNcbiOstrstreamToString(err),
-                    iLineNum);
-            }
-        }
-
         smp.GetLabel(&title, CSourceModParser::fUnusedMods);
 
         copy( smp.GetBadMods().begin(), smp.GetBadMods().end(),
