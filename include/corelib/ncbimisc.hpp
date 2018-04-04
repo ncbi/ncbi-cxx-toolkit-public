@@ -1350,9 +1350,9 @@ template <class TType, typename TDeleter = void(*)(TType*)>
 using c_unique_ptr = unique_ptr<TType, TDeleter>;
 
 template <class TType, typename TDeleter = void(*)(TType*)>
-unique_ptr<TType, TDeleter> make_c_unique(TType* p, TDeleter d = [](TType* p) { free((void*)p); })
+unique_ptr<TType, TDeleter> make_c_unique(TType* p1, TDeleter d = [](TType* p2) { free((void*)p2); })
 {
-    return {p, d};
+    return {p1, d};
 }
 
 
