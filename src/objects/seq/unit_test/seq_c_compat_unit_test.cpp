@@ -123,7 +123,8 @@ enum EIDLabelType {
 
 static string s_IdLabel(const TAutoSeqId& c_id, EIDLabelType type)
 {
-    return string(SeqIdWholeLabel(c_id.get(), type));
+    return NStr::TruncateSpaces(string(SeqIdWholeLabel(c_id.get(), type)),
+                                NStr::eTrunc_End);
 }
 
 static string s_IdLabel(const CSeq_id& cxx_id, EIDLabelType type)
@@ -140,6 +141,7 @@ static string s_IdLabel(const CSeq_id& cxx_id, EIDLabelType type)
     default:            break;
     }
     cxx_id.GetLabel(&label, gl_type, flags);
+    NStr::TruncateSpacesInPlace(label, NStr::eTrunc_End);
     return label;
 }
 
