@@ -161,9 +161,16 @@ ESpecNumber SpecNumber(
         return ESpecNumber( NStr::StringToInt( specnumber ) );
     }
     catch( ... ) {
-        throw "Unexpected --- ##: bad number specifier!";
-        return ESpecNumber( 0 );
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+                eDiag_Warning,
+                0,
+                "CVcfReader::xProcessMetaLineInfo: Unrecognized SpecNumber type in FORAMT directive. "
+                "Recognized settings are \'A\', \'G\', \'.\', or numeric.",
+                ILineError::eProblem_GeneralParsingError) );
+        pErr->Throw();
     }    
+    return ESpecNumber( 0 );
 };
 
 //  ----------------------------------------------------------------------------
