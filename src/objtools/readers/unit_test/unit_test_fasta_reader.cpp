@@ -841,9 +841,6 @@ BOOST_AUTO_TEST_CASE(TestTitleRemovedIfEmpty)
 }
 
 
-
-
-
 BOOST_AUTO_TEST_CASE(TestProteinSeqGapChar)
 {
     static const string kFastaWithProtGap = 
@@ -882,10 +879,13 @@ BOOST_AUTO_TEST_CASE(TestGeneAndProtein)
 
         set<string> expected_unused_mods;
         expected_unused_mods.insert("protein");
+        TWarnVec expectedWarningsVec;
+        expectedWarningsVec.push_back(
+            ILineError::eProblem_GeneralParsingError);
 
         CRef<CBioseq> pBioseq = s_ParseFasta(
             kFastaNuc, CFastaReader::fAddMods,
-            kEmptyStr, TWarnVec(), 
+            kEmptyStr, expectedWarningsVec, 
             CRef<CSourceModParser::CModFilter>(),
             expected_unused_mods );
         BOOST_REQUIRE(pBioseq);
@@ -912,10 +912,13 @@ BOOST_AUTO_TEST_CASE(TestGeneAndProtein)
 
         set<string> expected_unused_mods;
         expected_unused_mods.insert("gene");
+        TWarnVec expectedWarningsVec;
+        expectedWarningsVec.push_back(
+            ILineError::eProblem_GeneralParsingError);
 
         CRef<CBioseq> pBioseq = s_ParseFasta(
             kFastaProt, CFastaReader::fAddMods,
-            kEmptyStr, TWarnVec(), 
+            kEmptyStr, expectedWarningsVec, 
             CRef<CSourceModParser::CModFilter>(),
             expected_unused_mods );
         BOOST_REQUIRE(pBioseq);
@@ -1477,6 +1480,128 @@ BOOST_AUTO_TEST_CASE(TestLetterGaps)
     }
 }
 
+BOOST_AUTO_TEST_CASE(TestHyphensIgnoreAndWarn)
+{
+    const string kFasta =
+        ">Seq1\n"
+        "ACGTACGTACGTACGTACGTACGTA---CGTACGTACGTACGTACGTACGTA-\n"
+        "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTA\n"
+        "ACGTACGTACGTACG----TACGTA---CGTACGTACGTACGTACGTACGTA-\n";
+
+    TWarnVec expectedWarnings;
+    ITERATE_0_IDX(dummy, 2) {
+        expectedWarnings.push_back( ILineError::eProblem_IgnoredResidue );
+    }
+
+    CRef<CBioseq> pBioseq =
+        s_ParseFasta(kFasta, 
+        CFastaReader::fHyphensIgnoreAndWarn,
+        kEmptyStr,
+        expectedWarnings );
+
+    // ignored, but shouldn't cause an error
+    BOOST_CHECK( pBioseq );
+
+    // make sure answer is the correct length
+    {{
+        // calculate num bases expected
+        string::size_type next_char_idx = 0;
+        // skip first line, which is a defline
+        next_char_idx = kFasta.find('\n');
+        BOOST_CHECK_NE( next_char_idx, string::npos );
+        ++next_char_idx;
+        BOOST_CHECK_LT( next_char_idx, kFasta.length() );
+
+        size_t uNumBasesExpected = 0;
+        for( ; next_char_idx < kFasta.length(); ++next_char_idx ) {
+            const char ch = kFasta[next_char_idx];
+            if( isalpha(ch) ) {
+                ++uNumBasesExpected;
+            }
+        }
+
+        BOOST_CHECK_EQUAL( uNumBasesExpected, pBioseq->GetLength() );
+    }}
+}
+
+BOOST_AUTO_TEST_CASE(TestIgnoringSpacesAfterGreaterThanInDefline)
+{
+    const string kLocalId = "Seq1";
+    const string kSeq = "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTA";
+
+    ITERATE_0_IDX(num_spaces, 3) {
+        const string sDefline = 
+            ">" + string(num_spaces, ' ') + kLocalId;
+
+        cout << "Trying with defline '" << sDefline << "'" << endl;
+
+        const string sFastaToParse =
+            sDefline + "\n" +
+            kSeq + "\n";
+
+        CRef<CBioseq> pBioseq =
+            s_ParseFasta(sFastaToParse, 
+            kDefaultFastaReaderFlags );
+
+        BOOST_CHECK( pBioseq );
+
+        NCBITEST_CHECK_EQUAL( 
+            pBioseq->GetFirstId()->GetLocal().GetStr(),
+            kLocalId );
+
+        CSeqVector seqvec( *pBioseq, NULL, CBioseq_Handle::eCoding_Iupac );
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            kSeq.begin(), kSeq.end(),
+            seqvec.begin(), seqvec.end() );
+    }
+}
+
+//BOOST_AUTO_TEST_CASE(TestModFilter)
+//{
+//    const string kData = ">Seq1 Seq2 [topology=circular] [org=ia io] [taxid=123]\n"
+//        "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTA\n";
+//
+//    // a filter that filters out org mods only.
+//    class COrgModFilter : public CSourceModParser::CModFilter
+//    {
+//    public:
+//        virtual bool operator()( const CTempString & mod_name ) {
+//            return ( mod_name != "org" && mod_name != "taxid" );
+//        }
+//    };
+//    CRef<CSourceModParser::CModFilter> pModFilter( new COrgModFilter );
+//
+//    ITERATE_BOTH_BOOL_VALUES( bUseFilter ) {
+//
+//        set<string> expected_unused_mods;
+//        if( bUseFilter ) {
+//            expected_unused_mods.insert( "org" );
+//            expected_unused_mods.insert( "taxid" );
+//        }
+//
+//        CRef<CBioseq> pBioseq = 
+//            s_ParseFasta( kData,
+//            CFastaReader::fAddMods,
+//            kEmptyStr,
+//            TWarnVec(),
+//            ( bUseFilter ? pModFilter : CRef<CSourceModParser::CModFilter>() ),
+//            expected_unused_mods );
+//        
+//        cout << MSerial_AsnText << *pBioseq << endl;
+//
+//        // check if pBioseq has an org
+//        bool has_org = false;
+//        FOR_EACH_SEQDESC_ON_BIOSEQ(desc_it, *pBioseq) {
+//            if( FIELD_IS_AND_IS_SET(**desc_it, Source, Org) ) {
+//                has_org = true;
+//                break;
+//            }
+//        }
+//
+//        BOOST_CHECK_EQUAL( has_org, ! bUseFilter );
+//    }
+//}
+
 // Not sure what to do about this since lone end-of-line hyphens
 // produce weird results
 
@@ -1564,127 +1689,4 @@ BOOST_AUTO_TEST_CASE(TestLetterGaps)
 //            FIELD_IS_AND_IS_SET( **delta_seq_it, Literal, Seq_data ) );
 //    }
 //}
-
-BOOST_AUTO_TEST_CASE(TestHyphensIgnoreAndWarn)
-{
-    const string kFasta =
-        ">Seq1\n"
-        "ACGTACGTACGTACGTACGTACGTA---CGTACGTACGTACGTACGTACGTA-\n"
-        "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTA\n"
-        "ACGTACGTACGTACG----TACGTA---CGTACGTACGTACGTACGTACGTA-\n";
-
-    TWarnVec expectedWarnings;
-    ITERATE_0_IDX(dummy, 2) {
-        expectedWarnings.push_back( ILineError::eProblem_IgnoredResidue );
-    }
-
-    CRef<CBioseq> pBioseq =
-        s_ParseFasta(kFasta, 
-        CFastaReader::fHyphensIgnoreAndWarn,
-        kEmptyStr,
-        expectedWarnings );
-
-    // ignored, but shouldn't cause an error
-    BOOST_CHECK( pBioseq );
-
-    // make sure answer is the correct length
-    {{
-        // calculate num bases expected
-        string::size_type next_char_idx = 0;
-        // skip first line, which is a defline
-        next_char_idx = kFasta.find('\n');
-        BOOST_CHECK_NE( next_char_idx, string::npos );
-        ++next_char_idx;
-        BOOST_CHECK_LT( next_char_idx, kFasta.length() );
-
-        size_t uNumBasesExpected = 0;
-        for( ; next_char_idx < kFasta.length(); ++next_char_idx ) {
-            const char ch = kFasta[next_char_idx];
-            if( isalpha(ch) ) {
-                ++uNumBasesExpected;
-            }
-        }
-
-        BOOST_CHECK_EQUAL( uNumBasesExpected, pBioseq->GetLength() );
-    }}
-}
-
-BOOST_AUTO_TEST_CASE(TestIgnoringSpacesAfterGreaterThanInDefline)
-{
-    const string kLocalId = "Seq1";
-    const string kSeq = "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTA";
-
-    ITERATE_0_IDX(num_spaces, 3) {
-        const string sDefline = 
-            ">" + string(num_spaces, ' ') + kLocalId;
-
-        cout << "Trying with defline '" << sDefline << "'" << endl;
-
-        const string sFastaToParse =
-            sDefline + "\n" +
-            kSeq + "\n";
-
-        CRef<CBioseq> pBioseq =
-            s_ParseFasta(sFastaToParse, 
-            kDefaultFastaReaderFlags );
-
-        BOOST_CHECK( pBioseq );
-
-        NCBITEST_CHECK_EQUAL( 
-            pBioseq->GetFirstId()->GetLocal().GetStr(),
-            kLocalId );
-
-        CSeqVector seqvec( *pBioseq, NULL, CBioseq_Handle::eCoding_Iupac );
-        BOOST_CHECK_EQUAL_COLLECTIONS(
-            kSeq.begin(), kSeq.end(),
-            seqvec.begin(), seqvec.end() );
-    }
-}
-
-BOOST_AUTO_TEST_CASE(TestModFilter)
-{
-    const string kData = ">Seq1 Seq2 [topology=circular] [org=ia io] [taxid=123]\n"
-        "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTA\n";
-
-    // a filter that filters out org mods only.
-    class COrgModFilter : public CSourceModParser::CModFilter
-    {
-    public:
-        virtual bool operator()( const CTempString & mod_name ) {
-            return ( mod_name != "org" && mod_name != "taxid" );
-        }
-    };
-    CRef<CSourceModParser::CModFilter> pModFilter( new COrgModFilter );
-
-    ITERATE_BOTH_BOOL_VALUES( bUseFilter ) {
-
-        set<string> expected_unused_mods;
-        if( bUseFilter ) {
-            expected_unused_mods.insert( "org" );
-            expected_unused_mods.insert( "taxid" );
-        }
-
-        CRef<CBioseq> pBioseq = 
-            s_ParseFasta( kData,
-            CFastaReader::fAddMods,
-            kEmptyStr,
-            TWarnVec(),
-            ( bUseFilter ? pModFilter : CRef<CSourceModParser::CModFilter>() ),
-            expected_unused_mods );
-        
-        cout << MSerial_AsnText << *pBioseq << endl;
-
-        // check if pBioseq has an org
-        bool has_org = false;
-        FOR_EACH_SEQDESC_ON_BIOSEQ(desc_it, *pBioseq) {
-            if( FIELD_IS_AND_IS_SET(**desc_it, Source, Org) ) {
-                has_org = true;
-                break;
-            }
-        }
-
-        BOOST_CHECK_EQUAL( has_org, ! bUseFilter );
-    }
-}
-
 
