@@ -1,3 +1,5 @@
+#ifndef COMMON___NCBI_BUILD_INFO__H
+#define COMMON___NCBI_BUILD_INFO__H
 /*  $Id$
  * ===========================================================================
  *
@@ -24,20 +26,39 @@
  * ===========================================================================
  */
 
-#include <ncbiconf.h>
-#include <common/ncbi_build_info.h>
-
-/* #undef NCBI_PRODUCTION_VER */
-#define NCBI_DEVELOPMENT_VER 20180405
-
-#if defined(NCBI_PRODUCTION_VER)
-#  define NCBI_SRCTREE_VER_PROXY  NCBI_PRODUCTION_VER
-#  define NCBI_SRCTREE_NAME_PROXY SBuildInfo::eProductionVersion
-#elif defined(NCBI_DEVELOPMENT_VER)
-#  define NCBI_SRCTREE_VER_PROXY  NCBI_DEVELOPMENT_VER
-#  define NCBI_SRCTREE_NAME_PROXY SBuildInfo::eDevelopmentVersion
-#else
-#  define NCBI_SRCTREE_VER_PROXY  0
-#  define NCBI_SRCTREE_NAME_PROXY SBuildInfo::eDevelopmentVersion
+#ifdef HAVE_COMMON_NCBI_BUILD_VER_H
+#  include <common/ncbi_build_ver.h>
 #endif
 
+
+#if defined(NCBI_TEAMCITY_BUILD_NUMBER)
+#  define NCBI_TEAMCITY_BUILD_NUMBER_PROXY NCBI_TEAMCITY_BUILD_NUMBER
+#else
+#  define NCBI_TEAMCITY_BUILD_NUMBER_PROXY 0
+#endif
+
+#if defined (NCBI_TEAMCITY_PROJECT_NAME)
+#  define NCBI_TEAMCITY_PROJECT_NAME_PROXY NCBI_TEAMCITY_PROJECT_NAME
+#else
+#  define NCBI_TEAMCITY_PROJECT_NAME_PROXY ""
+#endif
+
+#if defined (NCBI_TEAMCITY_BUILDCONF_NAME)
+#  define NCBI_TEAMCITY_BUILDCONF_NAME_PROXY NCBI_TEAMCITY_BUILDCONF_NAME
+#else
+#  define NCBI_TEAMCITY_BUILDCONF_NAME_PROXY ""
+#endif
+
+#if defined(NCBI_SUBVERSION_REVISION)
+#  define NCBI_SUBVERSION_REVISION_PROXY NCBI_SUBVERSION_REVISION
+#else
+#  define NCBI_SUBVERSION_REVISION_PROXY 0
+#endif
+
+#if defined(NCBI_SC_VERSION)
+#  define NCBI_SC_VERSION_PROXY NCBI_SC_VERSION
+#else
+#  define NCBI_SC_VERSION_PROXY 0
+#endif
+
+#endif COMMON___NCBI_BUILD_INFO__H

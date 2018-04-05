@@ -459,7 +459,7 @@ SBuildInfo& SBuildInfo::Extra( EExtra key, int value)
     return *this;
 }
 
-string SBuildInfo::GetExtraValue( EExtra key) const
+string SBuildInfo::GetExtraValue( EExtra key, const string& default_value) const
 {
     if (key == eBuildDate) {
         return date;
@@ -472,7 +472,7 @@ string SBuildInfo::GetExtraValue( EExtra key) const
             }
         }
     }
-    return kEmptyStr;
+    return default_value;
 }
 
 string SBuildInfo::ExtraName(EExtra key)
@@ -593,6 +593,8 @@ CVersion::CVersion(const SBuildInfo& build_info)
     : m_VersionInfo(new CVersionInfo(0,0)),
       m_BuildInfo(build_info)
 {
+    m_VersionInfo->SetVersion(m_VersionInfo->GetMajor(), m_VersionInfo->GetMinor(),
+        NStr::StringToInt(build_info.GetExtraValue(SBuildInfo::eTeamCityBuildNumber, "0")));
 }
 
 CVersion::CVersion(const CVersionInfo& version, const SBuildInfo& build_info)

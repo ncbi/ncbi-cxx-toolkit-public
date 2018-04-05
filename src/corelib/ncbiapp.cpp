@@ -41,9 +41,6 @@
 #include <corelib/error_codes.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/request_ctx.hpp>
-#ifdef HAVE_COMMON_NCBI_BUILD_VER_H
-#  include <common/ncbi_build_ver.h>
-#endif
 #include "ncbisys.hpp"
 
 #if defined(NCBI_OS_MSWIN)
@@ -885,20 +882,18 @@ void CNcbiApplication::SetEnvironment(const string& name, const string& value)
 
 void CNcbiApplication::SetVersionByBuild(int major)
 {
-    int minor =
-#if defined(NCBI_SC_VERSION)
-        NCBI_SC_VERSION;
-#else
-        0;
-#endif
-    int build_num =
-#if defined(NCBI_TEAMCITY_BUILD_NUMBER)
-        NCBI_TEAMCITY_BUILD_NUMBER;
-#else
-        0;
-#endif
+    SetVersion(major, NStr::StringToInt(m_Version->GetBuildInfo().GetExtraValue(SBuildInfo::eStableComponentsVersion, "0")));
+}
 
-    SetVersion(CVersionInfo(major, minor, build_num));
+void CNcbiApplication::SetVersion(int major, int minor)
+{
+    SetVersion(major, minor, NStr::StringToInt(m_Version->GetBuildInfo().GetExtraValue(SBuildInfo::eTeamCityBuildNumber, "0")));
+}
+
+void CNcbiApplication::SetVersion(int major, int minor, int patch)
+{
+    m_Version->SetVersionInfo(major, minor, patch,
+        m_Version->GetBuildInfo().GetExtraValue(SBuildInfo::eTeamCityProjectName));
 }
 
 

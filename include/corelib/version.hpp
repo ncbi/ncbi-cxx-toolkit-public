@@ -81,7 +81,7 @@ struct NCBI_XNCBI_EXPORT SBuildInfo
 
     SBuildInfo& Extra( EExtra key, const string& value);
     SBuildInfo& Extra( EExtra key, int value);
-    string GetExtraValue( EExtra key) const;
+    string GetExtraValue( EExtra key, const string& default_value = kEmptyStr) const;
 
     static string ExtraName(EExtra key);
     static string ExtraNameXml(EExtra key);
@@ -99,24 +99,24 @@ struct NCBI_XNCBI_EXPORT SBuildInfo
 #  define NCBI_BUILD_TAG_PROXY  ""
 #endif
 
-#if defined(NCBI_TEAMCITY_BUILD_NUMBER_PROXY)
-#  define NCBI_SBUILDINFO_DEFAULT() \
+#if defined(NCBI_SRCTREE_NAME_PROXY)
+#define NCBI_SBUILDINFO_DEFAULT() \
     SBuildInfo( __DATE__ " " __TIME__, NCBI_BUILD_TAG_PROXY) \
         .Extra(SBuildInfo::eTeamCityProjectName,     NCBI_TEAMCITY_PROJECT_NAME_PROXY) \
         .Extra(SBuildInfo::eTeamCityBuildConf,       NCBI_TEAMCITY_BUILDCONF_NAME_PROXY) \
         .Extra(SBuildInfo::eTeamCityBuildNumber,     NCBI_TEAMCITY_BUILD_NUMBER_PROXY) \
         .Extra(SBuildInfo::eSubversionRevision,      NCBI_SUBVERSION_REVISION_PROXY) \
         .Extra(SBuildInfo::eStableComponentsVersion, NCBI_SC_VERSION_PROXY) \
-        .Extra(NCBI_SRCTREE_NAME_PROXY,     NCBI_SRCTREE_VER_PROXY)
-#else
-#  define NCBI_SBUILDINFO_DEFAULT() \
-    SBuildInfo( __DATE__ " " __TIME__, NCBI_BUILD_TAG_PROXY)
-#endif
-#define NCBI_APP_SBUILDINFO_DEFAULT() \
-    SBuildInfo(__DATE__ " " __TIME__, NCBI_BUILD_TAG_PROXY) \
-        .Extra(SBuildInfo::eTeamCityProjectName, NCBI_TEAMCITY_PROJECT_NAME_PROXY) \
-        .Extra(SBuildInfo::eTeamCityBuildConf,   NCBI_TEAMCITY_BUILDCONF_NAME_PROXY) \
-        .Extra(SBuildInfo::eSubversionRevision,  NCBI_SUBVERSION_REVISION_PROXY)
+        .Extra(NCBI_SRCTREE_NAME_PROXY,              NCBI_SRCTREE_VER_PROXY)
+#else //NCBI_SRCTREE_NAME_PROXY
+#define NCBI_SBUILDINFO_DEFAULT() \
+    SBuildInfo( __DATE__ " " __TIME__, NCBI_BUILD_TAG_PROXY) \
+        .Extra(SBuildInfo::eTeamCityProjectName,     NCBI_TEAMCITY_PROJECT_NAME_PROXY) \
+        .Extra(SBuildInfo::eTeamCityBuildConf,       NCBI_TEAMCITY_BUILDCONF_NAME_PROXY) \
+        .Extra(SBuildInfo::eTeamCityBuildNumber,     NCBI_TEAMCITY_BUILD_NUMBER_PROXY) \
+        .Extra(SBuildInfo::eSubversionRevision,      NCBI_SUBVERSION_REVISION_PROXY) \
+        .Extra(SBuildInfo::eStableComponentsVersion, NCBI_SC_VERSION_PROXY)
+#endif //NCBI_SRCTREE_NAME_PROXY
 
 /////////////////////////////////////////////////////////////////////////////
 ///
