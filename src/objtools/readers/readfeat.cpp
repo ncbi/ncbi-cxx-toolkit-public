@@ -2528,7 +2528,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                         dbt->SetDb (db);
                         CRef<CObject_id> oid (new CObject_id);
                         static const char* digits = "0123456789";
-                        if (tag.find_first_not_of(digits) == string::npos)
+                        if (tag.find_first_not_of(digits) == string::npos && !NStr::IsBlank(tag))
                             oid->SetId(NStr::StringToLong(tag));
                         else
                             oid->SetStr(tag);
