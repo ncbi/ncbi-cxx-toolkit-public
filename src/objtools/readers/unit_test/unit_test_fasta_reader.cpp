@@ -1556,51 +1556,57 @@ BOOST_AUTO_TEST_CASE(TestIgnoringSpacesAfterGreaterThanInDefline)
     }
 }
 
-//BOOST_AUTO_TEST_CASE(TestModFilter)
-//{
-//    const string kData = ">Seq1 Seq2 [topology=circular] [org=ia io] [taxid=123]\n"
-//        "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTA\n";
-//
-//    // a filter that filters out org mods only.
-//    class COrgModFilter : public CSourceModParser::CModFilter
-//    {
-//    public:
-//        virtual bool operator()( const CTempString & mod_name ) {
-//            return ( mod_name != "org" && mod_name != "taxid" );
-//        }
-//    };
-//    CRef<CSourceModParser::CModFilter> pModFilter( new COrgModFilter );
-//
-//    ITERATE_BOTH_BOOL_VALUES( bUseFilter ) {
-//
-//        set<string> expected_unused_mods;
-//        if( bUseFilter ) {
-//            expected_unused_mods.insert( "org" );
-//            expected_unused_mods.insert( "taxid" );
-//        }
-//
-//        CRef<CBioseq> pBioseq = 
-//            s_ParseFasta( kData,
-//            CFastaReader::fAddMods,
-//            kEmptyStr,
-//            TWarnVec(),
-//            ( bUseFilter ? pModFilter : CRef<CSourceModParser::CModFilter>() ),
-//            expected_unused_mods );
-//        
-//        cout << MSerial_AsnText << *pBioseq << endl;
-//
-//        // check if pBioseq has an org
-//        bool has_org = false;
-//        FOR_EACH_SEQDESC_ON_BIOSEQ(desc_it, *pBioseq) {
-//            if( FIELD_IS_AND_IS_SET(**desc_it, Source, Org) ) {
-//                has_org = true;
-//                break;
-//            }
-//        }
-//
-//        BOOST_CHECK_EQUAL( has_org, ! bUseFilter );
-//    }
-//}
+BOOST_AUTO_TEST_CASE(TestModFilter)
+{
+    const string kData = ">Seq1 Seq2 [topology=circular] [org=ia io] [taxid=123]\n"
+        "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTA\n";
+
+    // a filter that filters out org mods only.
+    class COrgModFilter : public CSourceModParser::CModFilter
+    {
+    public:
+        virtual bool operator()( const CTempString & mod_name ) {
+            return ( mod_name != "org" && mod_name != "taxid" );
+        }
+    };
+    CRef<CSourceModParser::CModFilter> pModFilter( new COrgModFilter );
+    TWarnVec expectedWarningsVec;
+
+    ITERATE_BOTH_BOOL_VALUES( bUseFilter ) {
+
+        set<string> expected_unused_mods;
+        if( bUseFilter ) {
+            expected_unused_mods.insert( "org" );
+            expected_unused_mods.insert( "taxid" );
+
+            expectedWarningsVec.push_back(
+                ILineError::eProblem_GeneralParsingError);
+            expectedWarningsVec.push_back(
+                ILineError::eProblem_GeneralParsingError);
+        }
+
+        CRef<CBioseq> pBioseq = 
+            s_ParseFasta( kData,
+            CFastaReader::fAddMods,
+            kEmptyStr,
+            expectedWarningsVec,
+            ( bUseFilter ? pModFilter : CRef<CSourceModParser::CModFilter>() ),
+            expected_unused_mods );
+        
+        cout << MSerial_AsnText << *pBioseq << endl;
+
+        // check if pBioseq has an org
+        bool has_org = false;
+        FOR_EACH_SEQDESC_ON_BIOSEQ(desc_it, *pBioseq) {
+            if( FIELD_IS_AND_IS_SET(**desc_it, Source, Org) ) {
+                has_org = true;
+                break;
+            }
+        }
+
+        BOOST_CHECK_EQUAL( has_org, ! bUseFilter );
+    }
+}
 
 // Not sure what to do about this since lone end-of-line hyphens
 // produce weird results
