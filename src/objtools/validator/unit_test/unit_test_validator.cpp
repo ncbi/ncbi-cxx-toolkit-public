@@ -22986,7 +22986,7 @@ BOOST_FIXTURE_TEST_CASE(Test_VR_803, CGenBankFixture)
     CRef<CSeq_feat> rna = AddMiscFeature(entry);
     rna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
     rna->SetData().SetRna().SetExt().SetName("23S ribosomal RNA");
-    rna->SetProduct().SetWhole().SetGi(507148189);
+    rna->SetProduct().SetWhole().SetGi(GI_CONST(507148189));
     
     STANDARD_SETUP
 
