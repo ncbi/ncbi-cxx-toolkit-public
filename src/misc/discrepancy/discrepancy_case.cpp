@@ -993,40 +993,62 @@ DISCREPANCY_AUTOFIX(ORDERED_LOCATION)
 }
 
 
-const string kHasLocusTags = "has locus tags";
+// MISSING_LOCUS_TAGS
 
 DISCREPANCY_CASE(MISSING_LOCUS_TAGS, CSeq_feat, eDisc | eSubmitter | eSmart, "Missing locus tags")
 {
-    if (!obj.IsSetData() || !obj.GetData().IsGene()) {
-        return;
-    }
-
-    const CGene_ref& gene_ref = obj.GetData().GetGene();
-
-    // Skip pseudo-genes
-    if (gene_ref.CanGetPseudo() && gene_ref.GetPseudo() == true) {
-        return;
-    }
-
-    // Report missing or empty locus tags
-    if (!gene_ref.CanGetLocus_tag() || NStr::TruncateSpaces(gene_ref.GetLocus_tag()).empty()) {
-        m_Objs["[n] gene[s] [has] no locus tag[s]."].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
-    } else if (!m_Objs.Exist(kHasLocusTags)) {
-        m_Objs[kHasLocusTags].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
+    if (obj.IsSetData() && obj.GetData().IsGene()) {
+        const CGene_ref& gene_ref = obj.GetData().GetGene();
+        if (gene_ref.CanGetPseudo() && gene_ref.GetPseudo()) {
+            return;
+        }
+        if (!gene_ref.CanGetLocus_tag() || NStr::TruncateSpaces(gene_ref.GetLocus_tag()).empty()) {
+            m_Objs["[n] gene[s] [has] no locus tag[s]."].Fatal().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
+        }
+        else if (!m_Objs.Exist(kEmptyStr)) {
+            m_Objs[kEmptyStr].Incr();
+        }
     }
 }
 
 
 DISCREPANCY_SUMMARIZE(MISSING_LOCUS_TAGS)
 {
-    if (!m_Objs.Exist(kHasLocusTags)) {
-        m_Objs.clear();
-        return;
+    if (m_Objs.Exist(kEmptyStr)) {
+        m_Objs.GetMap().erase(kEmptyStr);
+        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
     }
-    m_Objs.GetMap().erase(kHasLocusTags);
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
+// NO_LOCUS_TAGS
+
+DISCREPANCY_CASE(NO_LOCUS_TAGS, CSeq_feat, eDisc | eSubmitter | eSmart, "No locus tags at all")
+{
+    if (obj.IsSetData() && obj.GetData().IsGene()) {
+        const CGene_ref& gene_ref = obj.GetData().GetGene();
+        if (gene_ref.CanGetPseudo() && gene_ref.GetPseudo()) {
+            return;
+        }
+        if (!gene_ref.CanGetLocus_tag() || NStr::TruncateSpaces(gene_ref.GetLocus_tag()).empty()) {
+            m_Objs["None of [n] gene[s] has locus tag."].Fatal().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
+        }
+        else if (!m_Objs.Exist(kEmptyStr)) {
+            m_Objs[kEmptyStr].Incr();
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(NO_LOCUS_TAGS)
+{
+    if (!m_Objs.Exist(kEmptyStr)) {
+        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    }
+}
+
+
+// INCONSISTENT_LOCUS_TAG_PREFIX
 
 DISCREPANCY_CASE(INCONSISTENT_LOCUS_TAG_PREFIX, CSeqFeatData, eDisc | eSubmitter | eSmart, "Inconsistent locus tag prefix")
 {
