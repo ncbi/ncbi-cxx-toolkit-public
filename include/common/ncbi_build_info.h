@@ -61,4 +61,4 @@
 #  define NCBI_SC_VERSION_PROXY 0
 #endif
 
-#endif COMMON___NCBI_BUILD_INFO__H
+#endif /*COMMON___NCBI_BUILD_INFO__H */
