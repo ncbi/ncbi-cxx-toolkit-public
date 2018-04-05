@@ -2409,7 +2409,7 @@ DISCREPANCY_CASE(ALL_SEQS_CIRCULAR, CSeq_inst, eDisc | eSubmitter | eSmart, "All
                     }
                 }
 
-                if (seq->IsSetDescr()) {
+                if (seq->IsSetDescr() && seq->GetDescr().IsSet()) {
                     for (auto descr: seq->GetDescr().Get()) {
                         if (descr->IsMolinfo() && descr->GetMolinfo().CanGetTech()) {
                             if (descr->GetMolinfo().GetTech() == CMolInfo::eTech_wgs || descr->GetMolinfo().GetTech() == CMolInfo::eTech_tsa || descr->GetMolinfo().GetTech() == CMolInfo::eTech_targeted) {

@@ -1002,7 +1002,7 @@ DISCREPANCY_CASE(MISSING_LOCUS_TAGS, CSeq_feat, eDisc | eSubmitter | eSmart, "Mi
         if (gene_ref.CanGetPseudo() && gene_ref.GetPseudo()) {
             return;
         }
-        if (!gene_ref.CanGetLocus_tag() || NStr::TruncateSpaces(gene_ref.GetLocus_tag()).empty()) {
+        if (!gene_ref.CanGetLocus_tag() || NStr::IsBlank(gene_ref.GetLocus_tag())) {
             m_Objs["[n] gene[s] [has] no locus tag[s]."].Fatal().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
         }
         else if (!m_Objs.Exist(kEmptyStr)) {
@@ -1030,7 +1030,7 @@ DISCREPANCY_CASE(NO_LOCUS_TAGS, CSeq_feat, eDisc | eSubmitter | eSmart, "No locu
         if (gene_ref.CanGetPseudo() && gene_ref.GetPseudo()) {
             return;
         }
-        if (!gene_ref.CanGetLocus_tag() || NStr::TruncateSpaces(gene_ref.GetLocus_tag()).empty()) {
+        if (!gene_ref.CanGetLocus_tag() || NStr::IsBlank(gene_ref.GetLocus_tag())) {
             m_Objs["None of [n] gene[s] has locus tag."].Fatal().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
         }
         else if (!m_Objs.Exist(kEmptyStr)) {
