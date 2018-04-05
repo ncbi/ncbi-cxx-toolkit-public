@@ -114,6 +114,10 @@ private:
 CAbortBlocker::CAbortBlocker(impl::CConnection& conn)
     : m_Conn(conn), m_Active(false)
 {
+    if (conn.GetServerType() == CDBConnParams::eSybaseOpenServer
+        ||  conn.GetServerType() == CDBConnParams::eSybaseSQLServer) {
+        return;
+    }
     unique_ptr<CDB_LangCmd> lcmd
         (conn.LangCmd("SELECT (@@OPTIONS & 16384) * @@TRANCOUNT"));
     if ( !lcmd->Send() ) {
