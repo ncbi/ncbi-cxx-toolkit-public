@@ -3887,10 +3887,12 @@ void CValidError_feat::ReportMRNATranslationProblems(size_t problems, const CSeq
 
     CBioseq_Handle nuc = x_GetCachedBsh(feat.GetLocation());
     bool is_refseq = m_Imp.IsRefSeqConventions();
-    FOR_EACH_SEQID_ON_BIOSEQ(it, *(nuc.GetCompleteBioseq())) {
-        if ((*it)->IsOther()) {
-            is_refseq = true;
-            break;
+    if (nuc) {
+        FOR_EACH_SEQID_ON_BIOSEQ(it, *(nuc.GetCompleteBioseq())) {
+            if ((*it)->IsOther()) {
+                is_refseq = true;
+                break;
+            }
         }
     }
 
