@@ -2013,6 +2013,21 @@ void ScanFastaFile(IFastaEntryScan* scanner,
     }
 }
 
+CSourceModParser* CFastaReader::xCreateSourceModeParser(
+    ILineErrorListener* pErrorListener)
+{
+    // first of all, honor any explicit fBadModThrow flag given to the reader:
+    if (TestFlag(fBadModThrow) || TestFlag(fUnknModThrow)) {
+        return new CSourceModParser(CSourceModParser::eHandleBadMod_Throw);
+    }
+    // otherwise, try to construct the parser around any given error listener:
+    if (pErrorListener != nullptr) {
+        return new CSourceModParser(pErrorListener, m_uLineNumber+1);
+    }
+    // ignore errors as a last resort:
+    return new CSourceModParser(CSourceModParser::eHandleBadMod_Ignore);
+}
+
 void CFastaReader::x_ApplyAllMods( 
     CBioseq & bioseq,
     TSeqPos iLineNum,
@@ -2021,17 +2036,10 @@ void CFastaReader::x_ApplyAllMods(
     // this is called even if there the user did not request
     // mods to be added because we want to give a warning if there
     // are mods when not expected.
-    CSourceModParser::EHandleBadMod handleBadMod = (TestFlag(fBadModThrow) ?
-        CSourceModParser::eHandleBadMod_Throw : 
-        CSourceModParser::eHandleBadMod_Ignore);
-    CSourceModParser::EHandleUnkMod handleUnkMod = (TestFlag(fBadModThrow) ?
-		CSourceModParser::eHandleUnkMod_Throw :
-        CSourceModParser::eHandleUnkMod_Ignore);
 
-    CSourceModParser smp(handleBadMod, handleUnkMod);
-    smp.SetModFilter( m_pModFilter );
+    auto_ptr<CSourceModParser> pSmp(xCreateSourceModeParser(pMessageListener));
+    pSmp->SetModFilter( m_pModFilter );
     CRef<CSeqdesc> title_desc;
-
 
     if( ! bioseq.IsSetDescr() && ! bioseq.GetDescr().IsSet() ) {
         return;
@@ -2056,26 +2064,26 @@ void CFastaReader::x_ApplyAllMods(
     string& title = title_desc->SetTitle();
 
     if( TestFlag(fAddMods) ) {
-        title = smp.ParseTitle(title, CConstRef<CSeq_id>(bioseq.GetFirstId()) );
+        title = pSmp->ParseTitle(title, CConstRef<CSeq_id>(bioseq.GetFirstId()) );
 
-        smp.ApplyAllMods(bioseq);
-        smp.GetLabel(&title, CSourceModParser::fUnusedMods);
+        pSmp->ApplyAllMods(bioseq);
+        pSmp->GetLabel(&title, CSourceModParser::fUnusedMods);
 
-        copy( smp.GetBadMods().begin(), smp.GetBadMods().end(),
+        copy( pSmp->GetBadMods().begin(), pSmp->GetBadMods().end(),
             inserter(m_BadMods, m_BadMods.begin()) );
         CSourceModParser::TMods unused_mods = 
-            smp.GetMods(CSourceModParser::fUnusedMods);
+            pSmp->GetMods(CSourceModParser::fUnusedMods);
         copy( unused_mods.begin(), unused_mods.end(),
             inserter(m_UnusedMods, m_UnusedMods.begin() ) );
     } else {
         // user did not request fAddMods, so we warn if we found
         // mods anyway
-        smp.ParseTitle(
+        pSmp->ParseTitle(
             title, 
             CConstRef<CSeq_id>(bioseq.GetFirstId()),
             1 // "1" since we only care whether or not there are mods, not how many
             );
-        CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
+        CSourceModParser::TMods unused_mods = pSmp->GetMods(CSourceModParser::fUnusedMods);
         if( ! unused_mods.empty() ) {
             FASTA_WARNING(iLineNum,
                 "FASTA-Reader: Ignoring FASTA modifier(s) found because "

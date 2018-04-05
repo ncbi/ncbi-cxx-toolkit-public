@@ -36,6 +36,7 @@
 #include <sstream>
 
 #include <objtools/readers/source_mod_parser.hpp>
+#include <objtools/readers/message_listener.hpp>
 
 #include <corelib/ncbiutil.hpp>
 #include <util/static_map.hpp>
@@ -1677,6 +1678,16 @@ void CSourceModParser::x_HandleBadModValue(
     case eHandleBadMod_PrintToCerr:
         cerr << badModError.what() << endl;
         break;
+    case eHandleBadMod_ErrorListener: {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+                eDiag_Warning,
+                m_LineNumber,
+                badModError.what(),
+                ILineError::eProblem_GeneralParsingError) );
+        x_ProcessError(*pErr);
+        break;
+    }
     default:
         _TROUBLE;
     }
@@ -1685,19 +1696,46 @@ void CSourceModParser::x_HandleBadModValue(
 void CSourceModParser::x_HandleUnkModValue(
     const SMod& mod)
 {
-    if (m_HandleUnkMod == eHandleUnkMod_Ignore) {
+    if (m_HandleBadMod == eHandleBadMod_Ignore) {
         return;
     }
     CUnkModError unkModError(mod);
 
-    switch( m_HandleUnkMod ) {
+    switch( m_HandleBadMod ) {
     case eHandleBadMod_Throw:
         throw unkModError;
     case eHandleBadMod_PrintToCerr:
         cerr << unkModError.what() << endl;
         break;
+    case eHandleBadMod_ErrorListener: {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+                eDiag_Warning,
+                m_LineNumber,
+                unkModError.what(),
+                ILineError::eProblem_GeneralParsingError) );
+        x_ProcessError(*pErr);
+        break;
+    }
     default:
         _TROUBLE;
+    }
+}
+
+void CSourceModParser::x_ProcessError(
+    CObjReaderLineException& err)
+{
+    if (!m_pErrorListener) {
+        err.Throw();
+    }
+    if (!m_pErrorListener->PutError(err)) {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+                eDiag_Critical,
+                0,
+                "Error allowance exceeded",
+                ILineError::eProblem_GeneralParsingError) );
+        pErr->Throw();
     }
 }
 

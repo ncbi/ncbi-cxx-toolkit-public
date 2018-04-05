@@ -48,6 +48,7 @@
 #include <objects/seqfeat/Prot_ref.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
+#include <objtools/readers/line_error.hpp>
 
 #include <set>
 #include <map>
@@ -62,6 +63,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CBioseq;
+class ILineErrorListener;
 // class CSubmit_block;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -88,17 +90,25 @@ public:
         // although it may be incomplete if you exit early (e.g. from throw)
         eHandleBadMod_Ignore = 1, // behavior of C toolkit is to ignore
         eHandleBadMod_Throw,
-        eHandleBadMod_PrintToCerr
+        eHandleBadMod_PrintToCerr,
+        eHandleBadMod_ErrorListener
     };
-    enum EHandleUnkMod {
-        eHandleUnkMod_Ignore = 1,
-        eHandleUnkMod_Throw,
-        eHandleUnkMod_PrintToCerr
-    };
+
+    /// Construct object providing old-style error handling directives
     CSourceModParser(
-            EHandleBadMod handleBadMod = eHandleBadMod_Ignore,
-            EHandleUnkMod handleUnkMod = eHandleUnkMod_Ignore) 
-        : m_HandleBadMod(handleBadMod), m_HandleUnkMod(handleUnkMod) { }
+        EHandleBadMod handleBadMod = eHandleBadMod_Ignore) : 
+        m_HandleBadMod(handleBadMod), 
+        m_pErrorListener(nullptr) 
+    {}
+
+    /// Construct object providing external error handler
+    CSourceModParser(
+            ILineErrorListener* pErrorListener,
+            size_t lineNumber =1) :
+        m_HandleBadMod(eHandleBadMod_ErrorListener), 
+        m_pErrorListener(pErrorListener),
+        m_LineNumber(lineNumber) 
+    {}
 
     /// Extract and store bracketed modifiers from a title string, returning a
     /// stripped version (which may well be empty at that point!)
@@ -258,7 +268,8 @@ private:
     static const unsigned char kKeyCanonicalizationTable[257];
 
     EHandleBadMod m_HandleBadMod;
-    EHandleUnkMod m_HandleUnkMod;
+    ILineErrorListener* m_pErrorListener;
+    size_t m_LineNumber;
 
     TMods m_Mods;
     TMods m_BadMods;
@@ -284,6 +295,8 @@ private:
         const SMod& mod );
     void x_HandleUnkModValue(
         const SMod& mod );
+    void x_ProcessError(
+        CObjReaderLineException& err);
 };
 
 

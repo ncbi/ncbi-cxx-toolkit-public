@@ -66,6 +66,7 @@ class CSeq_loc;
 //class CSeqIdGenerator;
 
 class ILineErrorListener;
+class CSourceModParser;
 
 /// Base class for reading FASTA sequences.
 ///
@@ -260,6 +261,7 @@ protected:
             ILineError::EProblem _eProblem, 
             CTempString _sFeature, CTempString _sQualName, CTempString _sQualValue) const;
 
+    CSourceModParser* xCreateSourceModeParser(ILineErrorListener* pErrorListener);
 
     typedef int                         TRowNum;
     typedef map<TRowNum, TSignedSeqPos> TSubMap;
