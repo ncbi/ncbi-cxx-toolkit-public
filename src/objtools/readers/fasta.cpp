@@ -324,6 +324,13 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(ILineErrorListener * pMessageListener)
         }
         if (c == '>' ) {
             CTempString next_line = *++GetLineReader();
+            string strmodified;
+            if( NStr::StartsWith(next_line, ">?_") ) {
+                CTempString tmp = next_line.substr(3);
+                strmodified = ">";
+                strmodified.append(tmp.data(), tmp.length());
+                next_line = strmodified;
+            }
             if( NStr::StartsWith(next_line, ">?") ) {
                 // This is actually a data line. an assembly gap, in particular, which
                 // we handle farther below
@@ -340,7 +347,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(ILineErrorListener * pMessageListener)
                 }
             }
         }
-   /*     
+        /*
         } else if (c == '[') {
             return x_ReadSegSet(pMessageListener);
         } else if (c == ']') {
@@ -350,7 +357,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(ILineErrorListener * pMessageListener)
                             CObjReaderParseException::eEOF );
             }
         }
-*/
+        */
         CTempString line = NStr::TruncateSpaces_Unsafe(*++GetLineReader());
 
         if (line.empty()) {
@@ -376,6 +383,13 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(ILineErrorListener * pMessageListener)
 
         if ( !TestFlag(fNoSeqData) ) {
             try {
+				string strmodified;
+				if( NStr::StartsWith(line, ">?_") ) {
+					CTempString tmp = line.substr(3);
+					strmodified = ">";
+					strmodified.append(tmp.data(), tmp.length());
+					line = strmodified;
+				}
                 ParseDataLine(line, pMessageListener);
             } catch(CBadResiduesException & e) {
                 // we have to catch this exception so we can build up
