@@ -40821,11 +40821,12 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include <wx/wx.h>
+#include <wx/combobox.h>
+	       class CMyComboBox : public wxComboBox {};
 int
 main ()
 {
- wxExit();
+CMyComboBox cb; cb.Clear();
   ;
   return 0;
 }

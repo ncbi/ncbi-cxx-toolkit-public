@@ -6348,8 +6348,9 @@ if test "$with_wxwidgets" != "no" ; then
           CPPFLAGS="$WXWIDGETS_INCLUDE $orig_CPPFLAGS"
           LIBS="$WXWIDGETS_LIBS $orig_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM(
-             [[#include <wx/wx.h>]],
-             [[ wxExit(); ]])],
+             [[#include <wx/combobox.h>
+	       class CMyComboBox : public wxComboBox {};]],
+             [[CMyComboBox cb; cb.Clear();]])],
              [ncbi_cv_lib_wxwidgets=yes], [ncbi_cv_lib_wxwidgets=no])
        else
           ncbi_cv_lib_wxwidgets=no
