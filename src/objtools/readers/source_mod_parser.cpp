@@ -1699,6 +1699,9 @@ void CSourceModParser::x_HandleUnkModValue(
     if (m_HandleBadMod == eHandleBadMod_Ignore) {
         return;
     }
+    if (m_pModFilter  &&  !m_pModFilter->operator()(mod.key)) {
+        return;
+    }
     CUnkModError unkModError(mod);
 
     switch( m_HandleBadMod ) {

@@ -1578,11 +1578,6 @@ BOOST_AUTO_TEST_CASE(TestModFilter)
         if( bUseFilter ) {
             expected_unused_mods.insert( "org" );
             expected_unused_mods.insert( "taxid" );
-
-            expectedWarningsVec.push_back(
-                ILineError::eProblem_GeneralParsingError);
-            expectedWarningsVec.push_back(
-                ILineError::eProblem_GeneralParsingError);
         }
 
         CRef<CBioseq> pBioseq = 
