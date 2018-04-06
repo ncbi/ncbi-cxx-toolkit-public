@@ -128,9 +128,10 @@ CNcbiApplication::CNcbiApplication(const SBuildInfo& build_info)
     // Create empty version info
     m_Version.Reset(new CVersion(build_info));
 #if NCBI_SC_VERSION_PROXY != 0
-    m_Version->AddComponentVersion("NCBI C++ Toolkit", NCBI_SC_VERSION_PROXY, 0);
+    m_Version->AddComponentVersion("NCBI C++ Toolkit",
+        NCBI_SC_VERSION_PROXY, 0, NCBI_SUBVERSION_REVISION_PROXY,
+        NCBI_TEAMCITY_PROJECT_NAME_PROXY, NCBI_APP_SBUILDINFO_DEFAULT());
 #endif
-
     // Create empty application arguments & name
     m_Arguments.reset(new CNcbiArguments(0,0));
 
@@ -880,6 +881,7 @@ void CNcbiApplication::SetEnvironment(const string& name, const string& value)
     SetEnvironment().Set(name, value);
 }
 
+#if 0
 void CNcbiApplication::SetVersionByBuild(int major)
 {
     SetVersion(major, NStr::StringToInt(m_Version->GetBuildInfo().GetExtraValue(SBuildInfo::eStableComponentsVersion, "0")));
@@ -895,6 +897,12 @@ void CNcbiApplication::SetVersion(int major, int minor, int patch)
     m_Version->SetVersionInfo(major, minor, patch,
         m_Version->GetBuildInfo().GetExtraValue(SBuildInfo::eTeamCityProjectName));
 }
+#else
+void CNcbiApplication::SetVersionByBuild(int major)
+{
+    m_Version->SetVersionInfo(major, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY);
+}
+#endif
 
 
 void CNcbiApplication::SetVersion(const CVersionInfo& version)

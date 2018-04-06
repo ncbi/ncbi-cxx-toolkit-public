@@ -443,6 +443,10 @@ string CComponentVersionInfo::PrintJson(void) const
 /////////////////////////////////////////////////////////////////////////////
 //  SBuildInfo
 
+SBuildInfo::SBuildInfo(void)
+    : date(__DATE__ " " __TIME__) {
+}
+
 SBuildInfo& SBuildInfo::Extra( EExtra key, const string& value)
 {
     if (!value.empty()) {

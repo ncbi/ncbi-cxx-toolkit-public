@@ -448,16 +448,6 @@ protected:
     void SetVersion(const CVersionInfo& version, const SBuildInfo& build_info);
     NCBI_DEPRECATED void SetVersionByBuild(int major);
 
-    /// Set the version number for the program in the form "major.minor.teamcity_build_number"
-    /// and also record all build information pertaining to building the app itself,
-    /// not the C++ Toolkit against which it's built.
-    /// Uses zero patch level if NCBI_TEAMCITY_BUILD_NUMBER is unavailable.
-    void SetVersion(int major, int minor);
-    /// Set the version number for the program in the form "major.minor.patch"
-    /// and also record all build information pertaining to building the app itself,
-    /// not the C++ Toolkit against which it's built.
-    void SetVersion(int major, int minor, int patch);
-
     /// Set version data for the program.
     ///
     /// @note
@@ -644,6 +634,18 @@ private:
     int                        m_LogOptions; ///<  logging of env, reg, args, path
     CNcbiActionGuard           m_OnExitActions; ///< Actions executed on app destruction
 };
+
+// Set the version number for the program in the form "major.minor.patch" 
+// and also record all build information pertaining to building the app itself 
+// (and not the C++ Toolkit against which it's built). 
+#define NCBI_APP_SET_VERSION(major, minor, patch) \
+    SetVersion( CVersionInfo(major,minor,patch, NCBI_TEAMCITY_PROJECT_NAME_PROXY), NCBI_APP_SBUILDINFO_DEFAULT())
+
+// Set the version number for the program in the form "major.minor.teamcity_build_number" 
+// and also record all build information pertaining to building the app itself 
+// (and not the C++ Toolkit against which it's built). 
+// Uses zero patch level if NCBI_TEAMCITY_BUILD_NUMBER is unavailable. 
+#define NCBI_APP_SET_VERSION_AUTO(major, minor) NCBI_APP_SET_VERSION(major, minor, NCBI_TEAMCITY_BUILD_NUMBER_PROXY) 
 
 /// Interface for application idler.
 class NCBI_XNCBI_EXPORT INcbiIdler {

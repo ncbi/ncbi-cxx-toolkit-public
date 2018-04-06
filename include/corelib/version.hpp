@@ -76,6 +76,7 @@ struct NCBI_XNCBI_EXPORT SBuildInfo
     string tag;
     vector< pair<EExtra,string> > m_extra;
 
+    SBuildInfo(void);
     SBuildInfo(const string& d, const string& t = kEmptyStr) : date(d), tag(t) {
     }
 
@@ -100,7 +101,7 @@ struct NCBI_XNCBI_EXPORT SBuildInfo
 #endif
 
 #if defined(NCBI_SRCTREE_NAME_PROXY)
-#define NCBI_SBUILDINFO_DEFAULT() \
+#define NCBI_SBUILDINFO_DEFAULT_IMPL() \
     SBuildInfo( __DATE__ " " __TIME__, NCBI_BUILD_TAG_PROXY) \
         .Extra(SBuildInfo::eTeamCityProjectName,     NCBI_TEAMCITY_PROJECT_NAME_PROXY) \
         .Extra(SBuildInfo::eTeamCityBuildConf,       NCBI_TEAMCITY_BUILDCONF_NAME_PROXY) \
@@ -109,7 +110,7 @@ struct NCBI_XNCBI_EXPORT SBuildInfo
         .Extra(SBuildInfo::eStableComponentsVersion, NCBI_SC_VERSION_PROXY) \
         .Extra(NCBI_SRCTREE_NAME_PROXY,              NCBI_SRCTREE_VER_PROXY)
 #else //NCBI_SRCTREE_NAME_PROXY
-#define NCBI_SBUILDINFO_DEFAULT() \
+#define NCBI_SBUILDINFO_DEFAULT_IMPL() \
     SBuildInfo( __DATE__ " " __TIME__, NCBI_BUILD_TAG_PROXY) \
         .Extra(SBuildInfo::eTeamCityProjectName,     NCBI_TEAMCITY_PROJECT_NAME_PROXY) \
         .Extra(SBuildInfo::eTeamCityBuildConf,       NCBI_TEAMCITY_BUILDCONF_NAME_PROXY) \
@@ -117,6 +118,13 @@ struct NCBI_XNCBI_EXPORT SBuildInfo
         .Extra(SBuildInfo::eSubversionRevision,      NCBI_SUBVERSION_REVISION_PROXY) \
         .Extra(SBuildInfo::eStableComponentsVersion, NCBI_SC_VERSION_PROXY)
 #endif //NCBI_SRCTREE_NAME_PROXY
+
+#if defined(NCBI_USE_PCH)
+#define NCBI_SBUILDINFO_DEFAULT() SBuildInfo()
+#else
+#define NCBI_SBUILDINFO_DEFAULT() NCBI_SBUILDINFO_DEFAULT_IMPL()
+#endif
+#define NCBI_APP_SBUILDINFO_DEFAULT() NCBI_SBUILDINFO_DEFAULT_IMPL()
 
 /////////////////////////////////////////////////////////////////////////////
 ///
