@@ -1413,17 +1413,6 @@ bool ParseSubmissions(CMasterInfo& master_info)
             ret = true;
         }
         else {
-            //+++++
-            // DEBUG pseudo cleanup step
-            for (CTypeIterator<CUser_object> x(*bioseq_set); x; ++x) {
-
-                if (x->IsSetType() && x->GetType().IsStr() && x->GetType().GetStr() == "NcbiCleanup") {
-                    x->SetField("method").SetString("SeriousSeqEntryCleanup");
-                    x->SetField("version").SetInt(8);
-                }
-            }
-            //+++++
-
             ret = OutputSubmission(*bioseq_set, file);
         }
 

@@ -564,6 +564,39 @@ static bool SaveAccessionsRange(int first, int last, size_t num_len)
     return true;
 }
 
+typedef bool(*SelectDescr)(const CSeqdesc&);
+static void GetDescriptors(const CSeq_descr& descrs, set<string>& selected_descrs, SelectDescr select)
+{
+    if (descrs.IsSet()) {
+        for (auto& descr : descrs.Get()) {
+            if (select(*descr)) {
+                const string& str = ToString(*descr);
+                selected_descrs.insert(str);
+            }
+        }
+    }
+}
+
+static bool IsDescriptorsSame(const CSeq_entry& a_entry, const CSeq_entry& b_entry, SelectDescr select)
+{
+    if (!a_entry.IsSeq() || !b_entry.IsSeq()) {
+        return true;
+    }
+
+    set<string> a_descrs,
+                b_descrs;
+
+    if (a_entry.GetSeq().IsSetDescr()) {
+        GetDescriptors(a_entry.GetSeq().GetDescr(), a_descrs, select);
+    }
+
+    if (b_entry.GetSeq().IsSetDescr()) {
+        GetDescriptors(b_entry.GetSeq().GetDescr(), b_descrs, select);
+    }
+
+    return a_descrs == b_descrs;
+}
+
 static const int ERROR_RET = 1;
 
 // CR Use ZZZZ prefix to mock completely new submission
@@ -657,10 +690,23 @@ int CWGSParseApp::Run(void)
 
         cleanup.ExtendedCleanup(*master_info.m_master_bioseq);
 
+        if (GetParams().GetUpdateMode() == eUpdateAssembly) {
+            if (!IsDescriptorsSame(*master_info.m_id_master_bioseq, *master_info.m_master_bioseq, [](const CSeqdesc& descr) { return descr.IsComment(); })) {
+                ERR_POST_EX(0, 0, Warning << "The new master record has altered comment.");
+            }
+
+            if (!IsDescriptorsSame(*master_info.m_id_master_bioseq, *master_info.m_master_bioseq, [](const CSeqdesc& descr) { return IsUserObjectOfType(descr, "StructuredComment"); })) {
+                ERR_POST_EX(0, 0, Warning << "The new master record has altered structured comment.");
+            }
+        }
+
         // TODO ...
 
         if (master_info.m_master_bioseq->GetSeq().IsNa()) {
             RemoveDupPubs(master_info.m_master_bioseq->SetDescr());
+        }
+        if (master_info.m_id_master_bioseq.NotEmpty() && master_info.m_id_master_bioseq->GetSeq().IsNa()) {
+            RemoveDupPubs(master_info.m_id_master_bioseq->SetDescr());
         }
 
         if (!ParseSubmissions(master_info)) {

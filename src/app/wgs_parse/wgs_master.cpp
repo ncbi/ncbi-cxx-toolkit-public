@@ -556,7 +556,7 @@ static void CheckSetOfIds(CRef<CUser_object>& user_obj, const string& tag, const
         if (!ids.empty() && ids != cur_ids) {
 
             CNcbiOstrstream msg;
-            msg << "Submission supplied " << tag << " values do not match the ones provided in command line : \"" << NStr::Join(cur_ids, ",") << "\" vs \"" << NStr::Join(ids, ",") << ends;
+            msg << "Submission supplied " << tag << " values do not match the ones provided in command line: \"" << NStr::Join(cur_ids, ",") << "\" vs \"" << NStr::Join(ids, ",") << ends;
             if (GetParams().IsDblinkOverride()) {
                 ERR_POST_EX(0, 0, Warning << msg.str() << "\". Using values from the command line.");
             }
