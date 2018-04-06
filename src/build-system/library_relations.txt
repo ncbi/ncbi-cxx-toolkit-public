@@ -997,6 +997,7 @@ psg_cassandra needs connect
 psg_cassandra needs psg_diag
 psg_client needs psg_diag
 psg_client needs psg_rpc
+psg_client needs xconnect
 psg_diag needs xncbi
 psg_rpc needs3party $(ORIG_LIBS)
 pstub needs3party $(ORIG_LIBS)
