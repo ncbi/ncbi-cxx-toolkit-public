@@ -604,28 +604,28 @@ DISCREPANCY_CASE(GENE_LOCUS_MISSING, COverlappingFeatures, eOncaller, "Gene locu
     const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
     const vector<CConstRef<CSeq_feat> >& cds = context.FeatCDS();
     const vector<CConstRef<CSeq_feat> >& mrnas = context.FeatMRNAs();
-    ITERATE (vector<CConstRef<CSeq_feat>>, gene, genes) {
-        const CGene_ref& gref = (*gene)->GetData().GetGene();
-        if (context.IsPseudo(**gene) || !gref.CanGetDesc() || gref.GetDesc().empty() || (gref.CanGetLocus() && !gref.GetLocus().empty())) {
+    for (auto gene: genes) {
+        const CGene_ref& gref = gene->GetData().GetGene();
+        if (context.IsPseudo(*gene) || !gref.CanGetDesc() || gref.GetDesc().empty() || (gref.CanGetLocus() && !gref.GetLocus().empty())) {
             continue;
         }
         bool found = false;
-        ITERATE (vector<CConstRef<CSeq_feat>>, feat, cds) {
-            if (context.GetGeneForFeature(**feat) == &**gene) {
+        for (auto feat: cds) {
+            if (context.GetGeneForFeature(*feat) == &*gene) {
                 found = true;
                 break;
             }
         }
         if (!found) {
-            ITERATE (vector<CConstRef<CSeq_feat>>, feat, mrnas) {
-                if (context.GetGeneForFeature(**feat) == &**gene) {
+            for (auto feat: mrnas) {
+                if (context.GetGeneForFeature(*feat) == &*gene) {
                     found = true;
                     break;
                 }
             }
         }
         if (found) {
-            m_Objs["[n] gene[s] missing locus"].Add(*context.NewDiscObj(*gene, eNoRef, true));
+            m_Objs["[n] gene[s] missing locus"].Add(*context.NewDiscObj(gene, eNoRef, true));
         }
     }
 }
@@ -639,19 +639,22 @@ DISCREPANCY_SUMMARIZE(GENE_LOCUS_MISSING)
 
 DISCREPANCY_AUTOFIX(GENE_LOCUS_MISSING)
 {
+    unsigned int n = 0;
     TReportObjectList list = item->GetDetails();
-    if (list[0]->CanAutofix()) {
-        const CSeq_feat& gene = dynamic_cast<const CSeq_feat&>(*list[0]->GetObject());
-        CRef<CSeq_feat> new_gene(new CSeq_feat());
-        new_gene->Assign(gene);
-        new_gene->SetData().SetGene().SetLocus(new_gene->GetData().GetGene().GetDesc());
-        new_gene->SetData().SetGene().ResetDesc();
-        CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(gene));
-        feh.Replace(*new_gene);
-        dynamic_cast<CDiscrepancyObject*>(list[0].GetNCPointer())->SetFixed();
-        return CRef<CAutofixReport>(new CAutofixReport("GENE_LOCUS_MISSING: [n] gene[s] fixed", 1));
+    for (auto it: list) {
+        if (it->CanAutofix()) {
+            const CSeq_feat& gene = dynamic_cast<const CSeq_feat&>(*it->GetObject());
+            CRef<CSeq_feat> new_gene(new CSeq_feat());
+            new_gene->Assign(gene);
+            new_gene->SetData().SetGene().SetLocus(new_gene->GetData().GetGene().GetDesc());
+            new_gene->SetData().SetGene().ResetDesc();
+            CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(gene));
+            feh.Replace(*new_gene);
+            dynamic_cast<CDiscrepancyObject*>(&*it)->SetFixed();
+            ++n;
+        }
     }
-    return CRef<CAutofixReport>();
+    return CRef<CAutofixReport>(n ? new CAutofixReport("GENE_LOCUS_MISSING: [n] gene[s] fixed", n) : 0);
 }
 
 
