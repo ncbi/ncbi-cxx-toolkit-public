@@ -121,9 +121,13 @@ namespace
     STATIC_SMOD(lat_long);
     STATIC_SMOD(latitude_longitude);
     STATIC_SMOD(fwd_primer_seq);
+    STATIC_SMOD(fwd_pcr_primer_seq);
     STATIC_SMOD(rev_primer_seq);
+    STATIC_SMOD(rev_pcr_primer_seq);
     STATIC_SMOD(fwd_primer_name);
+    STATIC_SMOD(fwd_pcr_primer_name);
     STATIC_SMOD(rev_primer_name);
+    STATIC_SMOD(rev_pcr_primer_name);
     STATIC_SMOD(dbxref);
     STATIC_SMOD(db_xref);
     STATIC_SMOD(division);
@@ -264,6 +268,8 @@ namespace
             // skip because handled specially elsewhere
             "fwd_primer_seq", "rev_primer_seq",
             "fwd_primer_name", "rev_primer_name",
+            "fwd_PCR_primer_seq", "rev_PCR_primer_seq",
+            "fwd_PCR_primer_name", "rev_PCR_primer_name",
             // skip because deprecated
             "transposon_name",
             "plastid_name",
@@ -939,22 +945,26 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
         CAutoInitRef<CPCRPrimer> rev_primer;
 
         bool used_fwd = false;
-        bool used_rev = false;
+        bool used_rev = false; 
 
-        if ((mod = FindMod(s_Mod_fwd_primer_name)) != NULL) {
+        if ((mod = FindMod(s_Mod_fwd_primer_name)) != NULL  ||
+                (mod = FindMod(s_Mod_fwd_pcr_primer_name)) != NULL) {
             fwd_primer->SetName().Set( mod->value );
             used_fwd = true;
         }
-        if ((mod = FindMod(s_Mod_fwd_primer_seq)) != NULL) {
+        if ((mod = FindMod(s_Mod_fwd_primer_seq)) != NULL  ||  
+                (mod = FindMod(s_Mod_fwd_pcr_primer_seq)) != NULL) {
             fwd_primer->SetSeq().Set( mod->value );
             NStr::ToLower( fwd_primer->SetSeq().Set() );
             used_fwd = true;
         }
-        if ((mod = FindMod(s_Mod_rev_primer_name)) != NULL) {
+        if ((mod = FindMod(s_Mod_rev_primer_name)) != NULL  ||  
+                (mod = FindMod(s_Mod_rev_pcr_primer_name)) != NULL) {
             rev_primer->SetName().Set( mod->value );
             used_rev = true;
         }
-        if ((mod = FindMod(s_Mod_rev_primer_seq)) != NULL) {
+        if ((mod = FindMod(s_Mod_rev_primer_seq)) != NULL  ||  
+                (mod = FindMod(s_Mod_rev_pcr_primer_seq)) != NULL) {
             rev_primer->SetSeq().Set( mod->value );
             NStr::ToLower( rev_primer->SetSeq().Set() );
             used_rev = true;
