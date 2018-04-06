@@ -331,6 +331,11 @@ enum EErrType {
     eErr_SEQ_DESCR_WGSmasterLacksBioSample,
     eErr_SEQ_DESCR_WGSMasterLacksBothBioSampleBioProject,
     eErr_SEQ_DESCR_WrongBiomolForTSA,
+    eErr_SEQ_DESCR_AmbiguousName,
+    eErr_SEQ_DESCR_ModifierTypeConflict,
+    eErr_SEQ_DESCR_AmbiguousModForward,
+    eErr_SEQ_DESCR_AmbiguousTypeMaterial,
+    eErr_SEQ_DESCR_EmptyOrgInput,
     ERR_CODE_END(SEQ_DESCR),
 
 

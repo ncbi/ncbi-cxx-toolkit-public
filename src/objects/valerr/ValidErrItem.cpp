@@ -911,6 +911,21 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_WrongBiomolForTSA,
     { "WrongBiomolForTSA" ,
       "TSA records are expected to make use of a very limited set of MolInfo.biomol values: transcribed-RNA, mRNA, rRNA, ncRNA." } },
+    { eErr_SEQ_DESCR_AmbiguousName,
+    { "AmbiguousName",
+      "More than one matching organism name" } },
+    { eErr_SEQ_DESCR_ModifierTypeConflict,
+    { "ModifierTypeConflict",
+      "Resulting org-ref has more than one value for singleton modifier type" } },
+    { eErr_SEQ_DESCR_AmbiguousModForward,
+    { "AmbiguousModForward",
+      "Multiple modifier forwarding reaches incompatible targets" } },
+    { eErr_SEQ_DESCR_AmbiguousTypeMaterial,
+    { "AmbiguousTypeMaterial",
+      "Specified type material information belongs to unrelated taxa" } },
+    { eErr_SEQ_DESCR_EmptyOrgInput,
+    { "EmptyOrgInput",
+      "Org-ref does not contain information to match" } },
 
     /* SEQ_GENERIC */
 
