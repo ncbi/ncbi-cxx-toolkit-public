@@ -17361,6 +17361,42 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PseudoRnaHasProduct)
 }
 
 
+// note - this test also covers PseudoRnaViaGeneHasProduct
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_VR_803)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_id> id(new CSeq_id("NC_000001.1"));
+    unit_test_util::ChangeId(entry, id);
+    CRef<CSeq_feat> rna = unit_test_util::AddMiscFeature(entry);
+    rna->ResetComment();
+    rna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    rna->SetPseudo(true);
+    rna->SetProduct().SetWhole().SetGenbank().SetAccession("AY123456");
+
+    STANDARD_SETUP
+
+    // no error expected because RefSeq
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // should get error if overlapping gene is pseudo (and not except text)
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature(rna);
+    gene->SetPseudo(true);
+    unit_test_util::AddFeat(gene, entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+
+    // now get PseudoRnaViaGeneHasProduct when rna is not pseudo itself
+    rna->ResetPseudo();
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadRRNAcomponentOrder)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();

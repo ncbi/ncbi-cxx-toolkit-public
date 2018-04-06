@@ -1957,8 +1957,9 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
     if ( feat.IsSetProduct() ) {
         ValidateRnaProductType(rna, feat);
 
-        if (!feat.IsSetExcept_text() 
-            || NStr::FindNoCase (feat.GetExcept_text(), "transcribed pseudogene") == string::npos) {
+        if ((!feat.IsSetExcept_text() 
+             || NStr::FindNoCase (feat.GetExcept_text(), "transcribed pseudogene") == string::npos)
+            && !m_Imp.IsRefSeq()) {
             if (feat_pseudo) {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_PseudoRnaHasProduct,
                          "A pseudo RNA should not have a product", feat);
