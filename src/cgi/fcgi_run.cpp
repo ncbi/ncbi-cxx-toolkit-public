@@ -564,8 +564,9 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
         // Optionally turn on SIGTERM handler while processing request to allow
         // the request to be completed before termination.
+        void (*old_sig_handler)(int) = SIG_DFL;
         if (handle_sigterm) {
-            signal(SIGTERM, SignalHandler);
+             old_sig_handler = signal(SIGTERM, SignalHandler);
         }
 
         // Process the request
@@ -793,7 +794,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
         // Reset SIGTERM handler to allow termination between requests.
         if (handle_sigterm) {
-            signal(SIGTERM, SIG_DFL);
+            signal(SIGTERM, old_sig_handler);
             if (m_ShouldExit  &&  m_CaughtSigterm) {
                 ERR_POST(Message << "Caught SIGTERM and performed graceful shutdown.");
             }
