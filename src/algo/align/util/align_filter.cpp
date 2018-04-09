@@ -198,6 +198,7 @@ void CAlignFilter::SetFilter(const string& filter)
 #endif
     DryRun(null_output);
 #ifndef NCBI_OS_UNIX
+    null_output.close();
     scratch_file.Remove();
 #endif
 }
