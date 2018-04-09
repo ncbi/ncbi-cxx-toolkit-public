@@ -359,7 +359,7 @@ CBlastDBCmdApp::x_ProcessBatchEntry_NoDup(CBlastDB_Formatter & fmt)
     		if(!errno) {
     			int gi_oid = -1;
     			m_BlastDb->GiToOidwFilterCheck(num_id, gi_oid);
-    			if(gi_oid > 0) {
+    			if(gi_oid >= 0) {
     				oids[i] = gi_oid;
     			}
     		}
