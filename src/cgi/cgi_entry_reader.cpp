@@ -181,9 +181,17 @@ CCgiEntryReaderContext::CCgiEntryReaderContext(CNcbiIstream& in,
                                                const string& content_type,
                                                size_t content_length,
                                                string* content_log)
-    : m_In(in), m_Out(out), m_ContentTypeDeclared(!content_type.empty()),
-      m_ContentLength(content_length), m_ContentLog(content_log),
-      m_Position(0), m_BytePos(0), m_CurrentEntry(NULL), m_CurrentReader(NULL)
+    : m_In(in),
+      m_Out(out),
+      m_OutIter(out.begin()),
+      m_OutIterated(true), // By default do not iterate existing entries
+      m_ContentTypeDeclared(!content_type.empty()),
+      m_ContentLength(content_length),
+      m_ContentLog(content_log),
+      m_Position(0),
+      m_BytePos(0),
+      m_CurrentEntry(NULL),
+      m_CurrentReader(NULL)
 {
     if (NStr::StartsWith(content_type, "multipart/form-data", NStr::eNocase)) {
         SIZE_TYPE pos = NStr::FindNoCase(content_type, kBoundaryTag);
@@ -224,6 +232,19 @@ CCgiEntryReaderContext::~CCgiEntryReaderContext()
 
 TCgiEntriesI CCgiEntryReaderContext::GetNextEntry(void)
 {
+    if ( !m_OutIterated ) {
+        _ASSERT(m_OutIter != m_Out.end());
+        auto it = m_OutIter;
+        m_CurrentEntry = &it->second;
+        if (++m_OutIter == m_Out.end()) {
+            m_OutIterated = true;
+        }
+        return it;
+    }
+
+    // Disable IncludePreparsedEntries() if started parsing input.
+    m_OutIter = m_Out.end();
+
     string name, value, filename, content_type;
 
     x_FlushCurrentEntry();
@@ -252,6 +273,14 @@ TCgiEntriesI CCgiEntryReaderContext::GetNextEntry(void)
         it->second.SetValue(m_CurrentReader = new CCgiEntryReader(*this));
     }
     return it;
+}
+
+
+void CCgiEntryReaderContext::IncludePreparsedEntries(void)
+{
+    // Include preparsed entries (if any) only once.
+    if (!m_OutIterated || m_OutIter == m_Out.end()) return;
+    m_OutIterated = false;
 }
 
 

@@ -93,6 +93,8 @@ public:
 
     TCgiEntriesI GetNextEntry(void);
 
+    void IncludePreparsedEntries(void);
+
 private:
     typedef CCgiEntryReader TReader;
     enum EContentType {
@@ -115,6 +117,8 @@ private:
 
     CNcbiIstream& m_In;
     TCgiEntries&  m_Out;
+    TCgiEntriesI  m_OutIter;
+    bool          m_OutIterated;
     EContentType  m_ContentType;
     bool          m_ContentTypeDeclared;
     size_t        m_ContentLength;

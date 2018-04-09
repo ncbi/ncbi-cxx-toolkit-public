@@ -723,7 +723,11 @@ public:
         fSemicolonIsNotArgDelimiter = (1 << 11),
         /// Do not set outgoing tracking cookie. This can also be
         /// done per-request using CCgiResponce::DisableTrackingCookie().
-        fDisableTrackingCookie      = (1 << 12)
+        fDisableTrackingCookie      = (1 << 12),
+        /// When parsing input on demand iterate all existing entries (e.g. those
+        /// read from QUERY_STRING) before parsing POST data.
+        /// @sa fParseInputOnDemand
+        fInlcudePreparsedEntries = (1 << 13)
     };
     CCgiRequest(const         CNcbiArguments*   args = 0,
                 const         CNcbiEnvironment* env  = 0,
