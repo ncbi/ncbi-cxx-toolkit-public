@@ -1357,7 +1357,7 @@ static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers,
 	    token  = "\'";
 	    pattern.push_back("\'");
 	}
-	else if (token == "\""   || NStr::EqualNocase(token, "sec") || NStr::EqualNocase(token, "second") || NStr::EqualNocase(token, "seconds"))
+	else if (token == "\""   || NStr::EqualNocase(token, "sec") || NStr::EqualNocase(token, "second") || NStr::EqualNocase(token, "seconds") || token == "#")
 	{
 	    token = "\"";
 	    pattern.push_back("\"");
@@ -1509,7 +1509,8 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
 	prec[0] = precision[0];
 	prec[1] = precision[1];
     }
-    else if (pattern == "1 1 \" 1 1 '" 
+    else if ((pattern == "1 1 \" 1 1 '" ||
+	      pattern == "1 degrees 1 \" N 1 degrees 1 ' N")
 	     && numbers[1] < 60 && numbers[3] < 60)
     {
 	degrees[0] = numbers[0] + numbers[1] / 3600;
@@ -1533,7 +1534,9 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
 	prec[0] = max(max(precision[0], precision[1] + 2), precision[2] + 4);
 	prec[1] = precision[3];
     }
-    else if (pattern == "1 1 ' 1 \" 1 1 '"
+    else if ((pattern == "1 1 ' 1 \" 1 1 '" ||
+	      pattern == "1 1 1 N 1 1 N" ||
+	      pattern == "1 degrees 1 ' 1 \" N 1 degrees 1 ' N")
 	     && numbers[1] < 60 && numbers[2] < 60 && numbers[4] < 60)
     {
 	degrees[0] = numbers[0] + numbers[1] / 60 + numbers[2] / 3600;
@@ -1558,7 +1561,8 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
     else if (( pattern == "1 1 ' 1 1 '" ||
 	       pattern == "1 1 N 1 1 N" ||
 	       pattern == "1 degrees 1 ' N 1 degrees 1 ' N" ||
-	       pattern == "1 degrees 1 N 1 degrees 1 N")
+	       pattern == "1 degrees 1 N 1 degrees 1 N" ||
+	       pattern == "1 degrees 1 N 1 degrees 1 ' N")
 	     && numbers[1] < 60  && numbers[3] < 60)
     {
 	degrees[0] = numbers[0] + numbers[1] / 60;
@@ -1574,7 +1578,7 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
 	prec[0] = precision[0];
 	prec[1] = max(precision[1], precision[2] + 2);
     }
-    else if (pattern == "1 degrees 1 ' 1 degrees 1 ' 1 \""
+    else if (pattern == "1 degrees 1 ' 1 degrees 1 ' 1 \"" 
 	     && numbers[1] < 60 && numbers[3] < 60 && numbers[4] < 60)
     {
 	degrees[0] = numbers[0] + numbers[1] / 60;
@@ -1589,7 +1593,15 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
 	degrees[1] = numbers[1] + numbers[2] / 60 + numbers[3] / 3600;
 	prec[0] = precision[0];
 	prec[1] = max(max(precision[1], precision[2] + 2), precision[3] + 4);
-    }    
+    }  
+    else if (pattern == "1 degrees 1 ' 1 \" N 1 degrees 1 \" N"  
+	     && numbers[1] < 60 && numbers[2] < 60 && numbers[4] < 60)
+    {
+	degrees[0] = numbers[0] + numbers[1] / 60 + numbers[2] / 3600;
+	degrees[1] = numbers[3] + numbers[4] / 3600;
+	prec[0] = max(max(precision[0], precision[1] + 2), precision[2] + 4);
+	prec[1] = max(precision[3], precision[4] + 4);
+    }   
     else
     {
 	degrees.clear();

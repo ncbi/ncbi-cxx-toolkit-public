@@ -287,6 +287,21 @@ BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("8 43 5.46S 63 51 24.49W", true), "8.718183 S 63.856803 W");
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("9 30 3.81S 68 53 46.38W", true), "9.501058 S 68.896217 W");
     BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("23.3600 degree N, 92.0000 degree E", true), "23.3600 N 92.0000 E");
+
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("42:43:13N 01:0015W", true), "42.7203 N 1.25 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("42:24:37.9 N 85:22:11.7 W", true), "42.41053 N 85.36992 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("41deg30'' S 145deg37' E", true), "41.0083 S 145.62 E");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("38 11 44.66 North 0 35 01.93 West", true), "38.195739 N 0.583869 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("37deg27N 121deg52'W", true), "37.45 N 121.87 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("01deg31'25''N 66''33'31''W", true), "");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("07deg33'30''N 69deg20'W", true), "7.5583 N 69.33 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("10.8439,-85.6138", true), "10.8439 N 85.6138 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("11.03,-85.527", true), "11.03 N 85.527 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("35deg48'50'' N; 82deg5658'' W", true), "");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("45deg34.18''N, 122deg12.00 'W", true), "45.009494 N 122.2000 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("37deg27N, 121deg52'W", true), "37.45 N 121.87 W");
+    BOOST_CHECK_EQUAL(CSubSource::FixLatLonFormat("02 deg 28' 29# S, 56 deg 6' 31# W", true), "2.4747 S 56.1086 W");
+
 }
 
 
