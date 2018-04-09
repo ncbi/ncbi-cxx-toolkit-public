@@ -2329,6 +2329,10 @@ void CNewCleanup_imp::DbtagBC (
         dbtag.SetTag().SetStr (str.substr (5));
         ChangeMade(CCleanupChange::eChangeDbxrefs);
     } else if (NStr::EqualNocase (db, "MGI") ) {
+        if (!NStr::Equal(db, "MGI")) {
+            dbtag.SetDb("MGI");
+            ChangeMade(CCleanupChange::eChangeDbxrefs);
+        }
         if(NStr::StartsWith (str, "MGI:")) {
             /*
             dbtag.SetTag().SetStr (dbtag.GetTag().GetStr().substr (4));
