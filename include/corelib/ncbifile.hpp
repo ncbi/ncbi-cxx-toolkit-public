@@ -3601,6 +3601,8 @@ public:
     /// Throw CFileErrnoException on error.
     CFileReader(const string& filename,
                 EShareMode share_mode = eShareRead);
+    CFileReader(const char* filename,
+                EShareMode share_mode = eShareRead);
 
     /// Construct CFileReader for reading from system handle 'handle'.
     /// Specified handle should have read access right.
@@ -3629,6 +3631,9 @@ public:
     /// Construct CFileWriter for writing to the file with name 'filename'.
     /// Throw CFileErrnoException on error.
     CFileWriter(const string& filename,
+                EOpenMode  open_mode  = eCreate,
+                EShareMode share_mode = eShareRead);
+    CFileWriter(const char* filename,
                 EOpenMode  open_mode  = eCreate,
                 EShareMode share_mode = eShareRead);
 
@@ -3662,6 +3667,9 @@ public:
     /// the file with name 'filename'. 
     /// Throw CFileErrnoException on error.
     CFileReaderWriter(const string& filename,
+                      EOpenMode  open_mode  = eOpen,
+                      EShareMode share_mode = eShareRead);
+    CFileReaderWriter(const char* filename,
                       EOpenMode  open_mode  = eOpen,
                       EShareMode share_mode = eShareRead);
 

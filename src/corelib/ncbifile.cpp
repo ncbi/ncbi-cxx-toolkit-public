@@ -6781,6 +6781,12 @@ CFileReader::CFileReader(const string& filename, EShareMode share_mode)
 }
 
 
+CFileReader::CFileReader(const char* filename, EShareMode share_mode)
+{
+    m_File.Open(filename, eOpen, eRead, share_mode);
+}
+
+
 CFileReader::CFileReader(TFileHandle handle)
 {
     m_File.SetFileHandle(handle);
@@ -6840,6 +6846,14 @@ ERW_Result CFileReader::PendingCount(size_t* /*count*/)
 //
 
 CFileWriter::CFileWriter(const string& filename,
+                         EOpenMode  open_mode,
+                         EShareMode share_mode)
+{
+    m_File.Open(filename, open_mode, eWrite, share_mode);
+}
+
+
+CFileWriter::CFileWriter(const char* filename,
                          EOpenMode  open_mode,
                          EShareMode share_mode)
 {
@@ -6917,6 +6931,14 @@ ERW_Result CFileWriter::Flush(void)
 //
 
 CFileReaderWriter::CFileReaderWriter(const string& filename,
+                                     EOpenMode  open_mode,
+                                     EShareMode share_mode)
+{
+    m_File.Open(filename, open_mode, eReadWrite, share_mode);
+}
+
+
+CFileReaderWriter::CFileReaderWriter(const char* filename,
                                      EOpenMode  open_mode,
                                      EShareMode share_mode)
 {
