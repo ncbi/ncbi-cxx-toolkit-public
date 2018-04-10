@@ -78,7 +78,7 @@ string s_GtfDbtag( const CDbtag& dbtag )
             strGffTag += dbtag.GetTag().GetStr();
         }
     }
-    return strGffTag;
+    return CWriteUtil::UrlEncode(strGffTag);
 }
         
 //  ----------------------------------------------------------------------------
@@ -684,7 +684,7 @@ string CGtfRecord::x_FeatureToDbxref(
         if ( dbxrefs.size() > 0 ) {
             string value = s_GtfDbtag( *dbxrefs[ 0 ] );
             for ( size_t i=1; i < dbxrefs.size(); ++i ) {
-                value += "%2C";
+                value += ",";
                 value += s_GtfDbtag( *dbxrefs[ i ] );
             }
             return value;
