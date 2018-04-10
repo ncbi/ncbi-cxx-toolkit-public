@@ -122,11 +122,14 @@ namespace variation
             }
 
             const CSeq_id_Handle idh = sequence::GetId(id, scope, id_type);
-            if(!idh) {
+
+            if(idh) {
+                id.Assign(*idh.GetSeqId());
+            } else if(id.IsGeneral() || id.IsLocal()) {
+                ; // e.g. ENST
+            } else {
                 NCBI_USER_THROW("Can't convert seq-id for " + it->AsFastaString());
             }
-
-            id.Assign(*idh.GetSeqId());
         }
     }
 
