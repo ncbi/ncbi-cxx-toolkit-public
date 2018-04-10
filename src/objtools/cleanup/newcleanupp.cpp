@@ -4614,7 +4614,11 @@ static CRef<CTrna_ext> s_ParseTRnaFromAnticodonString (const string &str, const 
                     trna.Reset(NULL);
                     return trna;
                 }
-                anticodon->SetStrand(eNa_strand_plus); // anticodon is always on plus strand
+                if (feat.GetLocation().IsSetStrand()) {
+                    anticodon->SetStrand(feat.GetLocation().GetStrand());
+                } else {
+                    anticodon->SetStrand(eNa_strand_plus); // anticodon is always on plus strand
+                }
             }
             if (anticodon == NULL) {
                 trna->ResetAa();

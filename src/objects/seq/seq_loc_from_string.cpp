@@ -37,6 +37,7 @@
 #include <objects/seq/seq_loc_from_string.hpp>
 
 #include <objects/seq/seq_loc_reverse_complementer.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>
 
@@ -260,6 +261,15 @@ namespace {
                         }
                         // note - subtract one from the int read, because display is 1-based
                         retval = new CSeq_loc (*id, token_list[0]->GetInt() - 1, token_list[2]->GetInt() - 1);
+                        // if "from" is bigger than "to", then minus strand is implied
+                        if (retval && retval->IsInt() && 
+                            retval->GetInt().GetFrom() > retval->GetInt().GetTo()) {
+                            retval->SetStrand(eNa_strand_minus);
+                            TSeqPos swap = retval->GetInt().GetFrom();
+                            retval->SetInt().SetFrom(retval->SetInt().SetTo());
+                            retval->SetInt().SetTo(swap);
+                        }
+
                         if (token_list.size() == 4) {
                             retval->SetPartialStop(true, eExtreme_Positional);
                         }

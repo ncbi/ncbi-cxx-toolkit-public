@@ -1733,3 +1733,30 @@ BOOST_AUTO_TEST_CASE(Test_GB_7569)
     CheckTaxnameChange("Medicago sativa subspecies fake", "Medicago sativa subsp. fake");
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_ReadLocFromText)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> trna = AddMiscFeature(entry);
+    trna->SetLocation().SetInt().SetTo(entry->GetSeq().GetLength() - 1);
+    trna->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+    trna->SetData().SetRna().SetType(CRNA_ref::eType_tRNA);
+    trna->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("anticodon", "(pos:5-3,aa:His)")));
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*entry);
+
+    BOOST_CHECK_EQUAL(trna->IsSetQual(), false);
+    BOOST_CHECK_EQUAL(trna->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), true);
+    const CSeq_loc& loc = trna->GetData().GetRna().GetExt().GetTRNA().GetAnticodon();
+    BOOST_CHECK_EQUAL(loc.GetStart(eExtreme_Biological), 4);
+    BOOST_CHECK_EQUAL(loc.GetStop(eExtreme_Biological), 2);
+    BOOST_CHECK_EQUAL(loc.GetStrand(), eNa_strand_minus);
+}
