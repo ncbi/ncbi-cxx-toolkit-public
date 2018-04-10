@@ -47,7 +47,7 @@
 #include <html/html.hpp>
 #include <html/page.hpp>
 
-#include <cxx-cgi-sample/application.hpp>
+#include <deployable_cgi/application.hpp>
 
 using namespace ncbi;
 
