@@ -200,7 +200,6 @@ enum EErrType {
     eErr_SEQ_DESCR_DuplicatePCRPrimerSequence,
     eErr_SEQ_DESCR_MultipleNames,
     eErr_SEQ_DESCR_MultipleComments,
-    eErr_SEQ_DESCR_LatLonProblem,
     eErr_SEQ_DESCR_LatLonFormat,
     eErr_SEQ_DESCR_LatLonRange,
     eErr_SEQ_DESCR_LatLonValue,

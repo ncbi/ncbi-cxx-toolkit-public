@@ -429,7 +429,6 @@ static const EErrType sc_ValidGenomeRaise[] = {
     eErr_SEQ_DESCR_BioSourceDbTagConflict,
     eErr_SEQ_DESCR_DuplicatePCRPrimerSequence,
     eErr_SEQ_DESCR_MultipleNames,
-    eErr_SEQ_DESCR_LatLonProblem,
     eErr_SEQ_DESCR_LatLonRange,
     eErr_SEQ_DESCR_LatLonValue,
     eErr_SEQ_DESCR_LatLonCountry,
