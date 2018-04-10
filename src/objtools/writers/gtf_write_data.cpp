@@ -151,8 +151,13 @@ string CGtfRecord::StrAttributes() const
         if ( strKey == "exon_number" ) {
             continue;
         }
-
-        strAttributes += x_AttributeToString( strKey, it->second.front() );
+        if (strKey == "db_xref") {
+            for (const auto& xref: it->second) {
+                strAttributes += x_AttributeToString(strKey, xref);
+            }
+            continue;
+        }
+        strAttributes += x_AttributeToString(strKey, it->second.front());
     }
     
     if ( ! m_bNoExonNumbers ) {
@@ -228,10 +233,11 @@ bool CGtfRecord::x_AssignAttributesFromAsnExtended(
 {
     const CSeq_feat& feature = mf.GetOriginalFeature();
 
-    string strDbxref = x_FeatureToDbxref(mf);
-    if ( ! strDbxref.empty() ) {
-        SetAttribute("db_xref", strDbxref);
-    }
+    if (mf.IsSetDbxref()) {
+        for (const auto& dbxref: mf.GetDbxref()) {
+            SetAttribute("db_xref", s_GtfDbtag(*dbxref));
+        }
+    } 
 
     string strNote = x_FeatureToNote(mf);
     if ( ! strNote.empty() ) {
