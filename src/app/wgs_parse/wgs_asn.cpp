@@ -984,7 +984,7 @@ bool CheckSeqEntry(const CSeq_entry& entry, const string& file, CSeqEntryInfo& i
     }
 
     if (!GetParams().IsTpa() && info.m_has_tpa_keyword) {
-        ERR_POST_EX(0, 0, Error << "One or more non-TRA WGS record from \"" << file << "\" has a special TPA keyword present, which is prohibited. Cannot proceed.");
+        ERR_POST_EX(0, 0, Error << "One or more non-TPA WGS record from \"" << file << "\" has a special TPA keyword present, which is prohibited. Cannot proceed.");
         ret = false;
     }
     else if (GetParams().IsTpa() && !info.m_has_tpa_keyword && GetParams().GetTpaKeyword().empty()) {

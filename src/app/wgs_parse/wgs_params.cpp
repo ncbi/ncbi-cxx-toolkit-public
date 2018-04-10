@@ -554,12 +554,12 @@ static bool IsValidBioProjectId(const string& id, char first_accession_char)
                                    return acc_first_letter.find_first_of(acc_first) != string::npos;
                                };
 
-    bool good_format = 
-        CheckAccFirstChar(ACCESSION_FIRST_LETTER_N, first_accession_char) && id[3] == 'N' ||
-        CheckAccFirstChar(ACCESSION_FIRST_LETTER_D, first_accession_char) && id[3] == 'D' ||
-        CheckAccFirstChar(ACCESSION_FIRST_LETTER_E, first_accession_char) && id[3] == 'E';
+    bad_format = 
+        CheckAccFirstChar(ACCESSION_FIRST_LETTER_N, first_accession_char) && id[3] != 'N' ||
+        CheckAccFirstChar(ACCESSION_FIRST_LETTER_D, first_accession_char) && id[3] != 'D' ||
+        CheckAccFirstChar(ACCESSION_FIRST_LETTER_E, first_accession_char) && id[3] != 'E';
 
-    if (!good_format) {
+    if (bad_format) {
         ERR_POST_EX(0, 0, "BioProject accession number provided in command line does not match the source of the record: \"" << id << "\".");
     }
 
