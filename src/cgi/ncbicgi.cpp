@@ -1356,7 +1356,7 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
             if ( (flags & fParseInputOnDemand) != 0) {
                 m_Input   =  0;
                 m_InputFD = -1;
-                if ( (flags & fInlcudePreparsedEntries) != 0 ) {
+                if ( (flags & fIncludePreparsedEntries) != 0 ) {
                     m_EntryReaderContext->IncludePreparsedEntries();
                 }
             } else if (content_type.empty()) {

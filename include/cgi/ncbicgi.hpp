@@ -727,7 +727,7 @@ public:
         /// When parsing input on demand iterate all existing entries (e.g. those
         /// read from QUERY_STRING) before parsing POST data.
         /// @sa fParseInputOnDemand
-        fInlcudePreparsedEntries = (1 << 13)
+        fIncludePreparsedEntries = (1 << 13)
     };
     CCgiRequest(const         CNcbiArguments*   args = 0,
                 const         CNcbiEnvironment* env  = 0,
