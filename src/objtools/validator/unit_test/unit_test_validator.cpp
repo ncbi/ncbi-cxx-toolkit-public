@@ -10985,21 +10985,22 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_InvalidForType)
     CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
-    cds->SetData().SetImp().SetKey("CAAT_signal");
+    cds->SetData().SetImp().SetKey("intron");
+    cds->SetLocation().SetInt().SetFrom(0);
+    cds->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength() - 1);
+    cds->SetLocation().SetInt().SetId().Assign(*(entry->GetSeq().GetId().front()));
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidForType",
                                                  "Invalid feature for an mRNA Bioseq."));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info,
+        "NotSpliceConsensusDonorTerminalIntron", 
+        "Splice donor consensus (GT) not found at start of terminal intron, position 1 of lcl|good"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info,
+        "NotSpliceConsensusAcceptorTerminalIntron",
+        "Splice acceptor consensus (AG) not found at end of terminal intron, position 60 of lcl|good, but at end of sequence"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     CLEAR_ERRORS
-
-    scope.RemoveTopLevelSeqEntry(seh);
-    unit_test_util::SetBiomol(entry, CMolInfo::eBiomol_pre_RNA);
-    seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidFeatureForPreRNA",
-                                                 "Invalid feature for an pre-RNA Bioseq."));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
 
     vector<string> peptide_feat;
     peptide_feat.push_back("mat_peptide");
@@ -11017,8 +11018,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_InvalidForType)
     unit_test_util::AddFeat(imp, entry->SetSet().SetSeq_set().back());
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors[0]->SetErrCode("PeptideFeatureLacksCDS");
-    expected_errors[0]->SetErrMsg("Peptide processing feature should be converted to the appropriate protein feature subtype");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "PeptideFeatureLacksCDS",
+        "Peptide processing feature should be converted to the appropriate protein feature subtype"));
     CRef<CSeq_id> local_id(new CSeq_id());
     local_id->SetLocal().SetStr("good");
     ITERATE(vector<string>, key, peptide_feat) {

@@ -6268,12 +6268,11 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                         }
                         
                         break;
-                    }}    
+                    }}
                     case CSeqFeatData::e_Imp:
                     {{
                         const CImp_feat& imp = feat.GetData().GetImp();
-                        if ( imp.GetKey() == "intron"  ||
-                            imp.GetKey() == "CAAT_signal" ) {
+                        if ( imp.GetKey() == "intron") {
                             PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
                                 "Invalid feature for an mRNA Bioseq.", feat);
                         }
@@ -6281,20 +6280,6 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                     }}
                     default:
                         break;
-                    }
-                } else if ( is_prerna ) { // preRNA
-                    switch ( ftype ) {
-                    case CSeqFeatData::e_Imp:
-                    {{
-                        const CImp_feat& imp = feat.GetData().GetImp();
-                        if ( imp.GetKey() == "CAAT_signal" ) {
-                            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFeatureForPreRNA,
-                                "Invalid feature for an pre-RNA Bioseq.", feat);
-                        }
-                        break;
-                    }}
-                default:
-                    break;
                     }
                 }    
 

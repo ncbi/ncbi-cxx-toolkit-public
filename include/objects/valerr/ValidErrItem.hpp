@@ -686,7 +686,6 @@ enum EErrType {
     eErr_SEQ_FEAT_IdenticalMRNAtranscriptIDs,
     eErr_SEQ_FEAT_InvalidFeatureForMRNA,
     eErr_SEQ_FEAT_InvalidFeatureForNucleotide,
-    eErr_SEQ_FEAT_InvalidFeatureForPreRNA,
     eErr_SEQ_FEAT_InvalidFeatureForProtein,
     eErr_SEQ_FEAT_InvalidRNAFeature,
     eErr_SEQ_FEAT_InvalidTRNAdata,
