@@ -7,7 +7,7 @@ This is C++ CGI Application sample which is buildable and deployable using expor
 See proper documentation on build process [here](https://confluence.ncbi.nlm.nih.gov/display/CT/Build+Framework).
 
 ## Build in TeamCity:
-See "[Build CGI Sample SVN]()" in TeamCity.
+See "[Build CGI Sample SVN](https://teamcity.ncbi.nlm.nih.gov/viewType.html?buildTypeId=CXX_CToolkitProductsCIDemo_ExportProject_BuildCgiSampleSvn)" in TeamCity.
 
 * Base build configuraiton on [CxxBuildTemplateSvn](https://teamcity.ncbi.nlm.nih.gov/admin/editBuild.html?id=template:CxxBuildTemplateSvn);
 * Add Toolkit dependency via another templatge: `CXX Dependency: Pre-Built-<Something>`. [Example Metastable](https://teamcity.ncbi.nlm.nih.gov/admin/editBuild.html?id=template:CxxDependencyPreBuiltMetastable);
