@@ -1,5 +1,4 @@
 #include <ncbi_pch.hpp>
-#include <sys/resource.h>
 
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
