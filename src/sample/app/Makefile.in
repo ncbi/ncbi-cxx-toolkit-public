@@ -4,7 +4,7 @@
 #################################
 
 SUB_PROJ = \
-   basic cgi dbapi objects objmgr alnmgr soap lds netschedule netcache blast \
+   basic cgi deployable_cgi dbapi objects objmgr alnmgr soap lds netschedule netcache blast \
    asn eutils unit_test serial sdbapi http_session multicmd
 
 REQUIRES = app

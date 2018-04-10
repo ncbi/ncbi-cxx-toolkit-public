@@ -1,0 +1,4 @@
+# ProcFile for an example cgi
+cgi: uwsgi --plugins-dir /local/srv/cgi/lib64/uwsgi --plugins=cgi --cgi=bin/sample.cgi --http-socket-modifier1=9 --buffer-size=32000 --http-socket=$BACKEND_IP:$BACKEND_PORT --master --processes=4
+
+
