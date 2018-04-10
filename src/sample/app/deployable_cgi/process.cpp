@@ -7,7 +7,7 @@
 #include <html/html.hpp>
 #include <html/page.hpp>
 
-#include <deployable_cgi/application.hpp>
+#include <sample/app/deployable_cgi/deployable_cgi.hpp>
 
 USING_NCBI_SCOPE;
 
