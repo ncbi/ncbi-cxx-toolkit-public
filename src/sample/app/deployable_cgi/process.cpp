@@ -1,5 +1,4 @@
 #include <ncbi_pch.hpp>
-#include <sys/time.h>
 #include <sys/resource.h>
 
 #include <cgi/cgiapp.hpp>
@@ -7,7 +6,7 @@
 #include <html/html.hpp>
 #include <html/page.hpp>
 
-#include <sample/app/deployable_cgi/deployable_cgi.hpp>
+#include "deployable_cgi.hpp"
 
 USING_NCBI_SCOPE;
 
