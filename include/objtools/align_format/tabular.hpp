@@ -713,6 +713,17 @@ private:
     vector<string> m_OtherInfo;
     int m_Cdr3Start;
     int m_Cdr3End;
+
+    string m_Fwr1Seq;
+    string m_Fwr1SeqTrans;
+    string m_Cdr1Seq;
+    string m_Cdr1SeqTrans;
+    string m_Fwr2Seq;
+    string m_Fwr2SeqTrans;
+    string m_Cdr2Seq;
+    string m_Cdr2SeqTrans;
+    string m_Fwr3Seq;
+    string m_Fwr3SeqTrans;
     string m_Cdr3Seq;
     string m_Cdr3SeqTrans;
     
@@ -720,7 +731,13 @@ private:
     string m_AirrCdr3SeqTrans;
     CRef<CSeq_align> m_TopAlign_V;
     CRef<CSeq_align> m_TopAlign_D;
-    CRef<CSeq_align> m_TopAlign_J;  
+
+    string m_QueryVAlign;
+    string m_VAlign;
+    int m_QueryVAlignStart;
+    int m_VAlignStart;
+    int m_QueryVAlignEnd;
+    CRef<CSeq_align> m_TopAlign_J; 
     map<string, string> m_AirrData;
 };
 

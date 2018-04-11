@@ -34,7 +34,7 @@
 #include <ncbi_pch.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
-
+#include<objtools/alnmgr/alnmix.hpp>
 #include <objtools/align_format/tabular.hpp>
 #include <objtools/align_format/showdefline.hpp>
 #include <objtools/align_format/align_format_util.hpp>
@@ -1611,29 +1611,234 @@ void s_GetCigarString(const CSeq_align& align, string& cigar, int query_len, CSc
 }
        
 
-void s_SetAirrAlignmentInfo(const CSeq_align& aln,
+void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
+                            const CRef<CSeq_align>& align_d,
+                            const CRef<CSeq_align>& align_j,
+                            const CRef<blast::CIgAnnotation> &annot,
                             CScope& scope,
-                            double& identity) {
-   
-    const CDense_seg& ds = (aln.GetSegs().GetDenseg());
+                            map<string, string>& airr_data){
+
+    string v_query_alignment = NcbiEmptyString;
+    string d_query_alignment = NcbiEmptyString;
+    string j_query_alignment = NcbiEmptyString;
+    string v_germline_alignment = NcbiEmptyString;
+    string d_germline_alignment = NcbiEmptyString;
+    string j_germline_alignment = NcbiEmptyString;
+    string v_identity_str = NcbiEmptyString;
+    string d_identity_str = NcbiEmptyString;
+    string j_identity_str = NcbiEmptyString;
     
-    CAlnVec alnvec(ds, scope);
-    string query, subject;
-    alnvec.GetWholeAlnSeqString(0, query);
-    alnvec.GetWholeAlnSeqString(1, subject);
+ 
+    
+    CAlnMix mix(scope);
 
-    int num_ident = 0;
-    int length = min(query.size(), subject.size());
+    if (align_v) {
+        mix.Add(align_v->GetSegs().GetDenseg(), CAlnMix::fPreserveRows);
+        double identity = 0;
+        string query = NcbiEmptyString;
+        string subject = NcbiEmptyString;
+        const CDense_seg& ds = (align_v->GetSegs().GetDenseg());
+        CAlnVec alnvec(ds, scope);
+        alnvec.SetGapChar('-');
+        alnvec.GetWholeAlnSeqString(0, query);
+        alnvec.GetWholeAlnSeqString(1, subject);
 
-    for (int i = 0; i < length; ++i) {
-        if (query[i] == subject[i]) {
-            ++num_ident;
+        int num_ident = 0;
+        int length = min(query.size(), subject.size());
+
+        for (int i = 0; i < length; ++i) {
+            if (query[i] == subject[i]) {
+                ++num_ident;
+            }
+        }
+        if (length > 0) {
+            identity = ((double)num_ident)/length;
+        }
+        NStr::DoubleToString(v_identity_str, identity*100, 3);
+        v_query_alignment = query;
+        v_germline_alignment = subject;
+       
+    }
+
+    if (align_d) {
+        
+        mix.Add(align_d->GetSegs().GetDenseg(), CAlnMix::fPreserveRows);
+        double identity = 0;
+        string query = NcbiEmptyString;
+        string subject = NcbiEmptyString;
+        const CDense_seg& ds = (align_d->GetSegs().GetDenseg());
+        CAlnVec alnvec(ds, scope);
+        alnvec.SetGapChar('-');
+        alnvec.GetWholeAlnSeqString(0, query);
+        alnvec.GetWholeAlnSeqString(1, subject);
+
+        int num_ident = 0;
+        int length = min(query.size(), subject.size());
+
+        for (int i = 0; i < length; ++i) {
+            if (query[i] == subject[i]) {
+                ++num_ident;
+            }
+        }
+        if (length > 0) {
+            identity = ((double)num_ident)/length;
+        }
+        NStr::DoubleToString(d_identity_str, identity*100, 3);
+        d_query_alignment = query;
+        d_germline_alignment = subject;
+       
+    }
+
+    if (align_j) {
+        mix.Add(align_j->GetSegs().GetDenseg(), CAlnMix::fPreserveRows);
+        double identity = 0;
+        string query = NcbiEmptyString;
+        string subject = NcbiEmptyString;
+        const CDense_seg& ds = (align_j->GetSegs().GetDenseg());
+        CAlnVec alnvec(ds, scope);
+        alnvec.SetGapChar('-');
+        alnvec.GetWholeAlnSeqString(0, query);
+        alnvec.GetWholeAlnSeqString(1, subject);
+        
+        int num_ident = 0;
+        int length = min(query.size(), subject.size());
+        
+        for (int i = 0; i < length; ++i) {
+            if (query[i] == subject[i]) {
+                ++num_ident;
+            }
+        }
+        if (length > 0) {
+            identity = ((double)num_ident)/length;
+        }
+        NStr::DoubleToString(j_identity_str, identity*100, 3);
+        j_query_alignment = query;
+        j_germline_alignment = subject;
+    }   
+        
+    
+    airr_data["v_identity"] = v_identity_str;
+    airr_data["d_identity"] = d_identity_str;
+    airr_data["j_identity"] = j_identity_str;
+
+    airr_data["v_sequence_alignment"] = v_query_alignment;
+    airr_data["d_sequence_alignment"] = d_query_alignment;
+    airr_data["j_sequence_alignment"] = j_query_alignment;
+    airr_data["v_germline_alignment"] = v_germline_alignment;
+    airr_data["d_germline_alignment"] = d_germline_alignment;
+    airr_data["j_germline_alignment"] = j_germline_alignment;
+
+  
+    //get whole alignment string
+    //account for overlapping junction
+    string whole_query_alignment = NcbiEmptyString;
+    string whole_v_germline_alignment = NcbiEmptyString;
+    string whole_d_germline_alignment = NcbiEmptyString;
+    string whole_j_germline_alignment = NcbiEmptyString;
+    
+
+    mix.Merge(CAlnMix::fMinGap | CAlnMix::fQuerySeqMergeOnly | 
+              CAlnMix::fRemoveLeadTrailGaps | CAlnMix::fFillUnalignedRegions); 
+    CAlnVec alnvec(mix.GetDenseg(), scope); 
+    alnvec.SetGapChar('-');
+    alnvec.GetWholeAlnSeqString(0, whole_query_alignment);
+    airr_data["sequence_alignment"] = whole_query_alignment;
+
+    alnvec.GetWholeAlnSeqString(1, whole_v_germline_alignment);
+    airr_data["germline_alignment"] += NStr::TruncateSpaces(whole_v_germline_alignment);
+
+    airr_data["v_alignment_start"] = NStr::IntToString(alnvec.GetSeqAlnStart(1));
+    airr_data["v_alignment_end"] = NStr::IntToString(alnvec.GetSeqAlnStop(1));
+
+    if (align_d) {
+        alnvec.GetWholeAlnSeqString(2, whole_d_germline_alignment);
+        if (alnvec.GetSeqAlnStart(2) > alnvec.GetSeqAlnStop(1)){
+            for (int i = alnvec.GetSeqAlnStop(1) + 1; i < alnvec.GetSeqAlnStart(2); i ++) {
+                airr_data["germline_alignment"] += "N";
+            }
+            airr_data["germline_alignment"] +=  NStr::TruncateSpaces(whole_d_germline_alignment);
+        } else {//v-d overlap
+            airr_data["germline_alignment"] += NStr::TruncateSpaces(whole_d_germline_alignment).
+                substr(alnvec.GetSeqAlnStop(1) - alnvec.GetSeqAlnStart(2) + 1);            
+        }
+        airr_data["d_alignment_start"] = NStr::IntToString(alnvec.GetSeqAlnStart(2));
+        airr_data["d_alignment_end"] = NStr::IntToString(alnvec.GetSeqAlnStop(2));
+
+        if (align_j) {
+            alnvec.GetWholeAlnSeqString(3, whole_j_germline_alignment);
+            if (alnvec.GetSeqAlnStart(3) > alnvec.GetSeqAlnStop(2)) {
+                for (int i = alnvec.GetSeqAlnStop(2) + 1; i < alnvec.GetSeqAlnStart(3); i ++) {
+                    airr_data["germline_alignment"] += "N";
+                }
+                airr_data["germline_alignment"] += NStr::TruncateSpaces(whole_j_germline_alignment);
+            } else {//d-j overlap
+                airr_data["germline_alignment"] += NStr::TruncateSpaces(whole_j_germline_alignment).
+                    substr(alnvec.GetSeqAlnStop(2) - alnvec.GetSeqAlnStart(3) + 1);
+            }
+            airr_data["j_alignment_start"] = NStr::IntToString(alnvec.GetSeqAlnStart(3));
+            airr_data["j_alignment_end"] = NStr::IntToString(alnvec.GetSeqAlnStop(3));
+
+        }
+    } else {
+        if (align_j) {//light chain
+            alnvec.GetWholeAlnSeqString(2, whole_j_germline_alignment);
+            if (alnvec.GetSeqAlnStart(2) > alnvec.GetSeqAlnStop(1)) {
+                for (int i = alnvec.GetSeqAlnStop(1) + 1; i < alnvec.GetSeqAlnStart(2); i ++) {
+                    airr_data["germline_alignment"] += "N";
+                }
+                airr_data["germline_alignment"] +=  NStr::TruncateSpaces(whole_j_germline_alignment);
+            } else { //v-j
+                airr_data["germline_alignment"] += NStr::TruncateSpaces(whole_j_germline_alignment).
+                    substr(alnvec.GetSeqAlnStop(1) - alnvec.GetSeqAlnStart(2) + 1);
+            }
+            airr_data["j_alignment_start"] = NStr::IntToString(alnvec.GetSeqAlnStart(2));
+            airr_data["j_alignment_end"] = NStr::IntToString(alnvec.GetSeqAlnStop(2));
+
         }
     }
+
     
-    if (length > 0) {
-        identity = ((double)num_ident)/length;
+    //query vdj part translation 
+    {
+        string aligned_vdj_query = NcbiEmptyString;
+        alnvec.GetSeqString(aligned_vdj_query, 0, alnvec.GetSeqStart(0), alnvec.GetSeqStop(0)); 
+        //+3 make sure non-negative start
+        int query_trans_offset = ((alnvec.GetSeqStart(0) + 3) - annot->m_FrameInfo[0])%3;
+             
+        string query_translation_template = aligned_vdj_query.substr(query_trans_offset > 0?
+                                                                         (3 - query_trans_offset):0); 
+        CSeqTranslator::Translate(query_translation_template, 
+                                  airr_data["sequence_alignment_aa"], 
+                                  CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+        
+        int query_trans_start =  query_trans_offset > 0?(3 - query_trans_offset):0;
+        CAlnVec::TResidue gap_char = alnvec.GetGapChar(0);
+        //make sure both query and germline are non-gaps.
+        for (int i = alnvec.GetSeqStart(0) + query_trans_start; i < (int)aligned_vdj_query.size(); i = i + 3) {
+            int query_aln_pos = alnvec.GetAlnPosFromSeqPos(0, i, CAlnMap::eRight);
+            
+            if (query_aln_pos < (int)airr_data["germline_alignment"].size() && 
+                query_aln_pos< (int)airr_data["sequence_alignment"].size() && 
+                airr_data["germline_alignment"][query_aln_pos] != gap_char &&
+                airr_data["sequence_alignment"][query_aln_pos] != gap_char){
+                int germline_trans_start = alnvec.GetSeqPosFromAlnPos(1, query_aln_pos) - alnvec.GetSeqStart(1);
+                string germline_translation_template = airr_data["germline_alignment"].substr(germline_trans_start);
+                vector<string> string_part;
+                char gap = gap_char;
+                string gap_str(&gap);
+                //remove internal gap
+                string final_germline_translation_template = NcbiEmptyString;
+                NStr::Replace(germline_translation_template, gap_str, NcbiEmptyString, final_germline_translation_template);
+
+                CSeqTranslator::Translate(final_germline_translation_template, 
+                                          airr_data["germline_alignment_aa"], 
+                                          CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+                break; 
+            }
+        }
+           
     }
+
 
 }
 
@@ -1662,7 +1867,14 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
                 found_v = true;
             }
             if (annot->m_ChainType[index] == "D" && !found_d) {
-                m_TopAlign_D = (*iter);
+                if ((*iter)->GetSeqStrand(0) == eNa_strand_minus){
+                    CRef<CSeq_align> temp_align (new CSeq_align);
+                    temp_align->Assign(**iter);
+                    temp_align->Reverse();  
+                    m_TopAlign_D = temp_align;
+                } else {
+                    m_TopAlign_D = (*iter);
+                }
                 found_d = true;
             }
             if (annot->m_ChainType[index] == "J" && !found_j) {
@@ -1685,20 +1897,20 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         const list<CRef<CSeq_id> > query_seqid = GetQueryId();
         CRef<CSeq_id> wid = FindBestChoice(query_seqid, CSeq_id::WorstRank); 
         wid->GetLabel(&query_id, CSeq_id::eContent);        
-        m_AirrData["rearrangement_id"] = query_id;
+        m_AirrData["sequence_id"] = query_id;
         m_AirrData["sequence"] = m_Query;
         if (m_OtherInfo[4] == "Yes") {
             m_AirrData["productive"] = "T"; 
         } else if (m_OtherInfo[4] == "No") {
             m_AirrData["productive"] = "F"; 
         } 
-        m_AirrData["chain_type"] = annot->m_ChainTypeToShow;
+        m_AirrData["locus"] = annot->m_ChainTypeToShow;
         if (m_FrameInfo == "IF") {
-            m_AirrData["v_j_in_frame"] = "T";
+            m_AirrData["vj_in_frame"] = "T";
         } else if (m_FrameInfo == "OF") {
-            m_AirrData["v_j_in_frame"] = "F";
+            m_AirrData["vj_in_frame"] = "F";
         } else if (m_FrameInfo == "IP") {
-            m_AirrData["v_j_in_frame"] = "T";
+            m_AirrData["vj_in_frame"] = "T";
         }
         
         if (m_OtherInfo[3] == "Yes") {
@@ -1718,12 +1930,25 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         
 
         if (m_AirrCdr3Seq != NcbiEmptyString) {
-            m_AirrData["junction_nt"] =  m_AirrCdr3Seq; //10th element  
-            m_AirrData["junction_nt_length"] = NStr::IntToString((int)m_AirrCdr3Seq.length());
+            m_AirrData["junction"] =  m_AirrCdr3Seq; //10th element  
+            m_AirrData["junction_length"] = NStr::IntToString((int)m_AirrCdr3Seq.length());
             m_AirrData["junction_aa"] =  m_AirrCdr3SeqTrans;
             m_AirrData["junction_aa_length"] =  NStr::IntToString((int)m_AirrCdr3SeqTrans.length());
             
         } 
+        m_AirrData["fwr1"] =  m_Fwr1Seq;
+        m_AirrData["fwr1_aa"] = m_Fwr1SeqTrans;
+        m_AirrData["cdr1"] =  m_Cdr1Seq;
+        m_AirrData["cdr1_aa"] = m_Cdr1SeqTrans;
+        m_AirrData["fwr2"] =  m_Fwr2Seq;
+        m_AirrData["fwr2_aa"] = m_Fwr2SeqTrans;
+        m_AirrData["cdr2"] =  m_Cdr2Seq;
+        m_AirrData["cdr2_aa"] = m_Cdr2SeqTrans;
+        m_AirrData["fwr3"] =  m_Fwr3Seq;
+        m_AirrData["fwr3_aa"] = m_Fwr3SeqTrans;
+
+        m_AirrData["cdr3"] =  m_Cdr3Seq;
+        m_AirrData["cdr3_aa"] = m_Cdr3SeqTrans;
         
         double v_score = 0;
         double d_score = 0;
@@ -1731,43 +1956,32 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         double v_evalue = 0;
         double d_evalue = 0;
         double j_evalue = 0;
-        double v_identity = 0;
-        double d_identity = 0;
-        double j_identity = 0;
         string v_score_str = NcbiEmptyString;
         string d_score_str = NcbiEmptyString;
         string j_score_str = NcbiEmptyString;
         string v_evalue_str = NcbiEmptyString;
         string d_evalue_str = NcbiEmptyString;
         string j_evalue_str = NcbiEmptyString;
-        string v_identity_str = NcbiEmptyString;
-        string d_identity_str = NcbiEmptyString;
-        string j_identity_str = NcbiEmptyString;
-        
+
+
         if (m_TopAlign_V) {
             m_TopAlign_V->GetNamedScore(CSeq_align::eScore_BitScore, v_score);
             m_TopAlign_V->GetNamedScore(CSeq_align::eScore_EValue, v_evalue);
-            s_SetAirrAlignmentInfo(*m_TopAlign_V, scope, v_identity);
             NStr::DoubleToString(v_score_str, v_score, 3);
             NStr::DoubleToString(v_evalue_str, v_evalue, 3, NStr::fDoubleScientific);
-            NStr::DoubleToString(v_identity_str, v_identity*100, 3);
 
         }
         if (m_TopAlign_D) {
             m_TopAlign_D->GetNamedScore(CSeq_align::eScore_BitScore, d_score);
             m_TopAlign_D->GetNamedScore(CSeq_align::eScore_EValue, d_evalue);
-            s_SetAirrAlignmentInfo(*m_TopAlign_D, scope, d_identity);
             NStr::DoubleToString(d_score_str, d_score, 3);
             NStr::DoubleToString(d_evalue_str, d_evalue, 3, NStr::fDoubleScientific);
-            NStr::DoubleToString(d_identity_str, d_identity*100, 3);
         }
         if (m_TopAlign_J) {
             m_TopAlign_J->GetNamedScore(CSeq_align::eScore_BitScore, j_score);
             m_TopAlign_J->GetNamedScore(CSeq_align::eScore_EValue, j_evalue);
-            s_SetAirrAlignmentInfo(*m_TopAlign_J, scope, j_identity);
             NStr::DoubleToString(j_score_str, j_score, 3);
             NStr::DoubleToString(j_evalue_str, j_evalue, 3, NStr::fDoubleScientific);
-            NStr::DoubleToString(j_identity_str, j_identity*100, 3);
         }
         m_AirrData["v_score"] = v_score_str;
         m_AirrData["d_score"] = d_score_str;
@@ -1776,140 +1990,107 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         m_AirrData["d_evalue"] = d_evalue_str;
         m_AirrData["j_evalue"] = j_evalue_str;
         m_AirrData["j_evalue"] = j_evalue_str;
-        m_AirrData["v_identity"] = v_identity_str;
-        m_AirrData["d_identity"] = d_identity_str;
-        m_AirrData["j_identity"] = j_identity_str;
+      
         
         string cigar = NcbiEmptyString;
         if (m_TopAlign_V) {
             s_GetCigarString(*m_TopAlign_V, cigar, query_handle.GetBioseqLength(), scope);
             m_AirrData["v_cigar"] = cigar;
-            m_AirrData["v_start"] = NStr::IntToString(m_TopAlign_V->GetSeqStart(0) + 1);
-            m_AirrData["v_end"] = NStr::IntToString(m_TopAlign_V->GetSeqStop(0) + 1);
-            m_AirrData["v_germ_start"] = NStr::IntToString(m_TopAlign_V->GetSeqStart(1) + 1);
-            m_AirrData["v_germ_end"] = NStr::IntToString(m_TopAlign_V->GetSeqStop(1) + 1);
+            m_AirrData["v_sequence_start"] = NStr::IntToString(m_TopAlign_V->GetSeqStart(0));
+            m_AirrData["v_sequence_end"] = NStr::IntToString(m_TopAlign_V->GetSeqStop(0));
+            m_AirrData["v_germline_start"] = NStr::IntToString(m_TopAlign_V->GetSeqStart(1));
+            m_AirrData["v_germline_end"] = NStr::IntToString(m_TopAlign_V->GetSeqStop(1));
             if (m_TopAlign_D) {
                 int np_len = 0;
                 string np_seq = NcbiEmptyString;
                 s_FillJunctionalInfo (m_TopAlign_V->GetSeqStop(0), m_TopAlign_D->GetSeqStart(0), 
                                       np_len, np_seq, m_Query);
                 m_AirrData["np1_length"] = NStr::IntToString(np_len);
-                m_AirrData["np1_seq"] = np_seq;
+                m_AirrData["np1"] = np_seq;
                  
             }
         }
 
         if (m_TopAlign_D) {
-            //D could be on negative strand but always show cigar as positive
-            
-            if (m_TopAlign_D->GetSeqStrand(0) == eNa_strand_plus) {
-                s_GetCigarString(*m_TopAlign_D, cigar, query_handle.GetBioseqLength(), scope);
-                m_AirrData["d_start"] = NStr::IntToString(m_TopAlign_D->GetSeqStart(0) + 1);
-                m_AirrData["d_end"] = NStr::IntToString(m_TopAlign_D->GetSeqStop(0) + 1);
-                m_AirrData["d_germ_start"] = NStr::IntToString(m_TopAlign_D->GetSeqStart(1) + 1);
-                m_AirrData["d_germ_end"] = NStr::IntToString(m_TopAlign_D->GetSeqStop(1) + 1);
-
+            s_GetCigarString(*m_TopAlign_D, cigar, query_handle.GetBioseqLength(), scope);
+            m_AirrData["d_sequence_start"] = NStr::IntToString(m_TopAlign_D->GetSeqStart(0));
+            m_AirrData["d_sequence_end"] = NStr::IntToString(m_TopAlign_D->GetSeqStop(0));
+              
+            if (m_TopAlign_D->GetSeqStrand(1) == eNa_strand_plus) {
+                m_AirrData["d_germline_start"] = NStr::IntToString(m_TopAlign_D->GetSeqStart(1));
+                m_AirrData["d_germline_end"] = NStr::IntToString(m_TopAlign_D->GetSeqStop(1));
             } else {
-                CRef<CSeq_align> temp_align (new CSeq_align);
-                temp_align->Assign(*m_TopAlign_D);
-                temp_align->Reverse();
-                s_GetCigarString(*temp_align, cigar, query_handle.GetBioseqLength(), scope);
-                m_AirrData["d_start"] = NStr::IntToString(temp_align->GetSeqStart(0) + 1);
-                m_AirrData["d_end"] = NStr::IntToString(temp_align->GetSeqStop(0) + 1);
-                if (temp_align->GetSeqStrand(1) == eNa_strand_plus) {
-                    m_AirrData["d_germ_start"] = NStr::IntToString(temp_align->GetSeqStart(1) + 1);
-                    m_AirrData["d_germ_end"] = NStr::IntToString(temp_align->GetSeqStop(1) + 1);
-                } else {
-                    m_AirrData["d_germ_start"] = NStr::IntToString(temp_align->GetSeqStop(1) + 1);
-                    m_AirrData["d_germ_end"] = NStr::IntToString(temp_align->GetSeqStart(1) + 1);
-                }
+                m_AirrData["d_germline_start"] = NStr::IntToString(m_TopAlign_D->GetSeqStop(1));
+                m_AirrData["d_germline_end"] = NStr::IntToString(m_TopAlign_D->GetSeqStart(1));
             }
-            m_AirrData["d_cigar"] = cigar;
 
+            m_AirrData["d_cigar"] = cigar;
             
         }
         
         if (m_TopAlign_J) {
             s_GetCigarString(*m_TopAlign_J, cigar, query_handle.GetBioseqLength(), scope);
             m_AirrData["j_cigar"] = cigar;
-            m_AirrData["j_start"] = NStr::IntToString(m_TopAlign_J->GetSeqStart(0) + 1);
-            m_AirrData["j_end"] = NStr::IntToString(m_TopAlign_J->GetSeqStop(0) + 1);
-            m_AirrData["j_germ_start"] = NStr::IntToString(m_TopAlign_J->GetSeqStart(1) + 1);
-            m_AirrData["j_germ_end"] = NStr::IntToString(m_TopAlign_J->GetSeqStop(1) + 1);
+            m_AirrData["j_sequence_start"] = NStr::IntToString(m_TopAlign_J->GetSeqStart(0));
+            m_AirrData["j_sequence_end"] = NStr::IntToString(m_TopAlign_J->GetSeqStop(0));
+            m_AirrData["j_germline_start"] = NStr::IntToString(m_TopAlign_J->GetSeqStart(1));
+            m_AirrData["j_germline_end"] = NStr::IntToString(m_TopAlign_J->GetSeqStop(1));
             if (m_TopAlign_D) {
                 int np_len = 0;
                 string np_seq = NcbiEmptyString;
                 s_FillJunctionalInfo (m_TopAlign_D->GetSeqStop(0), m_TopAlign_J->GetSeqStart(0), 
                                       np_len, np_seq, m_Query);
                 m_AirrData["np2_length"] = NStr::IntToString(np_len);
-                m_AirrData["np2_seq"] = np_seq;
+                m_AirrData["np2"] = np_seq;
             } else if (m_TopAlign_V){
                 int np_len = 0;
                 string np_seq = NcbiEmptyString;
                 s_FillJunctionalInfo (m_TopAlign_V->GetSeqStop(0), m_TopAlign_J->GetSeqStart(0), 
                                       np_len, np_seq, m_Query);
                 m_AirrData["np1_length"] = NStr::IntToString(np_len);
-                m_AirrData["np1_seq"] = np_seq;
+                m_AirrData["np1"] = np_seq;
             }
         }
 
-        //query vdj part translation 
-        {
-            int query_trans_start = (m_TopAlign_V)?m_TopAlign_V->GetSeqStart(0):0;
-            
-            int query_v_stop = (m_TopAlign_V)?m_TopAlign_V->GetSeqStop(0):0;
-            int query_d_stop = (m_TopAlign_D)?max(m_TopAlign_D->GetSeqStart(0), m_TopAlign_D->GetSeqStop(0)):0;
-            int query_j_stop = (m_TopAlign_J)?m_TopAlign_J->GetSeqStop(0):0;
-
-            int query_trans_stop = max(max(query_v_stop, query_d_stop), query_j_stop); 
-            
-            string query_vdj = m_Query.substr(query_trans_start, query_trans_stop - query_trans_start + 1);
-            //+3 make sure non-negative start
-            int query_trans_offset = ((query_trans_start + 3) - annot->m_FrameInfo[0])%3;
-             
-            string query_translation_template = query_vdj.substr(query_trans_offset > 0?(3 - query_trans_offset):0); 
-            CSeqTranslator::Translate(query_translation_template, 
-                                      m_AirrData["sequence_aa"], 
-                                      CSeqTranslator::fIs5PrimePartial, NULL, NULL);
-        }
-       
+        s_SetAirrAlignmentInfo(m_TopAlign_V, m_TopAlign_D, m_TopAlign_J, annot, scope, m_AirrData);
+                                    
 
         for (unsigned int i=0; i<m_IgDomains.size(); ++i) {
             if (m_IgDomains[i]->name.find("FR1") !=  string::npos) {
-                m_AirrData["fwr1_start"] =  NStr::IntToString(m_IgDomains[i]->start +1);
-                m_AirrData["fwr1_end"] =  NStr::IntToString(m_IgDomains[i]->end);
+                m_AirrData["fwr1_start"] =  NStr::IntToString(m_IgDomains[i]->start);
+                m_AirrData["fwr1_end"] =  NStr::IntToString(m_IgDomains[i]->end - 1);
                 if (m_IgDomains[i]->length > 0) {
                     m_AirrData["fwr1_identity"] = 
                         NStr::DoubleToString(m_IgDomains[i]->num_match*100.0/m_IgDomains[i]->length, 3);
                 }
             } 
             if (m_IgDomains[i]->name.find("CDR1") !=  string::npos) {
-                m_AirrData["cdr1_start"] =  NStr::IntToString(m_IgDomains[i]->start +1);
-                m_AirrData["cdr1_end"] =  NStr::IntToString(m_IgDomains[i]->end);
+                m_AirrData["cdr1_start"] =  NStr::IntToString(m_IgDomains[i]->start);
+                m_AirrData["cdr1_end"] =  NStr::IntToString(m_IgDomains[i]->end - 1);
                 if (m_IgDomains[i]->length > 0) {
                     m_AirrData["cdr1_identity"] = 
                         NStr::DoubleToString(m_IgDomains[i]->num_match*100.0/m_IgDomains[i]->length, 3);
                 }
             } 
             if (m_IgDomains[i]->name.find("FR2") !=  string::npos) {
-                m_AirrData["fwr2_start"] =  NStr::IntToString(m_IgDomains[i]->start +1);
-                m_AirrData["fwr2_end"] =  NStr::IntToString(m_IgDomains[i]->end);
+                m_AirrData["fwr2_start"] =  NStr::IntToString(m_IgDomains[i]->start);
+                m_AirrData["fwr2_end"] =  NStr::IntToString(m_IgDomains[i]->end - 1);
                 if (m_IgDomains[i]->length > 0) {
                     m_AirrData["fwr2_identity"] = 
                         NStr::DoubleToString(m_IgDomains[i]->num_match*100.0/m_IgDomains[i]->length, 3);
                 }
             } 
             if (m_IgDomains[i]->name.find("CDR2") !=  string::npos) {
-                m_AirrData["cdr2_start"] =  NStr::IntToString(m_IgDomains[i]->start +1);
-                m_AirrData["cdr2_end"] =  NStr::IntToString(m_IgDomains[i]->end);
+                m_AirrData["cdr2_start"] =  NStr::IntToString(m_IgDomains[i]->start);
+                m_AirrData["cdr2_end"] =  NStr::IntToString(m_IgDomains[i]->end - 1);
                 if (m_IgDomains[i]->length > 0) {
                     m_AirrData["cdr2_identity"] = 
                         NStr::DoubleToString(m_IgDomains[i]->num_match*100.0/m_IgDomains[i]->length, 3);
                 }
             } 
-            if (m_IgDomains[i]->name.find("FR3") !=  string::npos) {
-                m_AirrData["fwr3_start"] =  NStr::IntToString(m_IgDomains[i]->start +1);
-                m_AirrData["fwr3_end"] =  NStr::IntToString(m_IgDomains[i]->end);
+            if (m_IgDomains[i]->name.find("FR3") !=  string::npos && annot->m_DomainInfo[9] >=0) {
+                m_AirrData["fwr3_start"] =  NStr::IntToString(m_IgDomains[i]->start);
+                m_AirrData["fwr3_end"] =  NStr::IntToString(annot->m_DomainInfo[9]);
                 if (m_IgDomains[i]->length > 0) {
                     m_AirrData["fwr3_identity"] = 
                         NStr::DoubleToString(m_IgDomains[i]->num_match*100.0/m_IgDomains[i]->length, 3);
@@ -1918,9 +2099,9 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         }
 
         if (m_Cdr3Start > 0){
-            m_AirrData["cdr3_start"] = NStr::IntToString(m_Cdr3Start + 1); 
+            m_AirrData["cdr3_start"] = NStr::IntToString(m_Cdr3Start); 
             if (m_Cdr3End > 0) {
-                m_AirrData["cdr3_end"] = NStr::IntToString(m_Cdr3End + 1); 
+                m_AirrData["cdr3_end"] = NStr::IntToString(m_Cdr3End); 
             }     
         }
 
@@ -2123,7 +2304,18 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
         m_OtherInfo.push_back("N/A");
         m_OtherInfo.push_back("N/A");
     }
- 
+    
+    const CDense_seg& ds = align.GetSegs().GetDenseg();
+    CRef<CAlnVec> alnVec (new CAlnVec(ds, scope));
+    alnVec->SetGapChar('-');
+    m_QueryVAlign = NcbiEmptyString;
+    m_VAlign = NcbiEmptyString;
+    alnVec->GetWholeAlnSeqString(0, m_QueryVAlign);
+    alnVec->GetWholeAlnSeqString(1, m_VAlign);
+    m_QueryVAlignStart = alnVec->GetSeqStart(0) + 1;
+    m_VAlignStart = alnVec->GetSeqStart(1) + 1;
+    m_QueryVAlignEnd = alnVec->GetSeqStop(0) + 1;
+
     // Domain info coordinates are inclusive (and always on positive strand)
     AddIgDomain((ig_opts->m_DomainSystem == "kabat")?"FR1":"FR1-IMGT", 
                 annot->m_DomainInfo[0], annot->m_DomainInfo[1]+1,
@@ -2144,7 +2336,7 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
                 annot->m_DomainInfo[10], annot->m_DomainInfo[11]+1);
     m_Cdr3Start = annot->m_JDomain[0];
     m_Cdr3End = annot->m_JDomain[1];
-    
+
     m_Cdr3Seq = NcbiEmptyString;
     m_Cdr3SeqTrans = NcbiEmptyString;
     m_AirrCdr3Seq = NcbiEmptyString;
@@ -2162,8 +2354,9 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
                                   m_Cdr3SeqTrans, 
                                   CSeqTranslator::fIs5PrimePartial, NULL, NULL);
         int query_length = m_Query.length();
-        int allowed_length = min(m_Cdr3End - m_Cdr3Start + 7, query_length - m_Cdr3Start);
-        m_AirrCdr3Seq = m_Query.substr(max(m_Cdr3Start -3, 0), allowed_length);
+        int airrcdr3start = max(m_Cdr3Start -3, 0);
+        m_AirrCdr3Seq = m_Query.substr(airrcdr3start, min(m_Cdr3End - m_Cdr3Start + 7, 
+                                                          query_length - airrcdr3start));
         string airr_cdr3_seq_for_translatioin = m_AirrCdr3Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
 
         CSeqTranslator::Translate(airr_cdr3_seq_for_translatioin, 
@@ -2171,6 +2364,54 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
                                   CSeqTranslator::fIs5PrimePartial, NULL, NULL);
 
     }
+
+    m_Fwr1Seq = NcbiEmptyString;
+    m_Fwr1SeqTrans = NcbiEmptyString;
+    m_Cdr1Seq = NcbiEmptyString;
+    m_Cdr1SeqTrans = NcbiEmptyString;
+    m_Fwr2Seq = NcbiEmptyString;
+    m_Fwr2SeqTrans = NcbiEmptyString;
+    m_Cdr2Seq = NcbiEmptyString;
+    m_Cdr2SeqTrans = NcbiEmptyString;
+    m_Fwr3Seq = NcbiEmptyString;
+    m_Fwr3SeqTrans = NcbiEmptyString;
+    for (unsigned int i=0; i<m_IgDomains.size(); ++i) {
+        if (m_IgDomains[i]->name.find("FR1") !=  string::npos) {
+            m_Fwr1Seq = m_Query.substr(m_IgDomains[i]->start, m_IgDomains[i]->end - m_IgDomains[i]->start);
+            //+3 to avoid negative value but does not affect frame
+            int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3; 
+            string seq_for_translatioin = m_Fwr1Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
+            CSeqTranslator::Translate(seq_for_translatioin, m_Fwr1SeqTrans, CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+        }
+        if (m_IgDomains[i]->name.find("CDR1") !=  string::npos) {
+            m_Cdr1Seq = m_Query.substr(m_IgDomains[i]->start, m_IgDomains[i]->end - m_IgDomains[i]->start);
+            int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3; 
+            string seq_for_translatioin = m_Cdr1Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
+            CSeqTranslator::Translate(seq_for_translatioin, m_Cdr1SeqTrans, CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+        } 
+        if (m_IgDomains[i]->name.find("FR2") !=  string::npos) {
+            m_Fwr2Seq = m_Query.substr(m_IgDomains[i]->start, m_IgDomains[i]->end - m_IgDomains[i]->start);
+            int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3; 
+            string seq_for_translatioin = m_Fwr2Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
+            CSeqTranslator::Translate(seq_for_translatioin, m_Fwr2SeqTrans, CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+        } 
+        if (m_IgDomains[i]->name.find("CDR2") !=  string::npos) {
+            m_Cdr2Seq = m_Query.substr(m_IgDomains[i]->start, m_IgDomains[i]->end - m_IgDomains[i]->start);
+            int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3; 
+            string seq_for_translatioin = m_Cdr2Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
+            CSeqTranslator::Translate(seq_for_translatioin, m_Cdr2SeqTrans, CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+        } 
+        if (m_IgDomains[i]->name.find("FR3") !=  string::npos) {
+            if (annot->m_DomainInfo[9] >=0) {
+                //fwr3 is special since it may extends past end of v
+                m_Fwr3Seq = m_Query.substr(m_IgDomains[i]->start, annot->m_DomainInfo[9] - m_IgDomains[i]->start + 1);
+                int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3; 
+                string seq_for_translatioin = m_Fwr3Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
+                CSeqTranslator::Translate(seq_for_translatioin, m_Fwr3SeqTrans, CSeqTranslator::fIs5PrimePartial, NULL, NULL);   
+            }
+        }
+    }
+    
 };
 
 void CIgBlastTabularInfo::Print(void)
@@ -2337,6 +2578,17 @@ void CIgBlastTabularInfo::x_ResetIgFields()
     m_OtherInfo.clear();
     m_Cdr3Start = -1;
     m_Cdr3End =  -1;
+    m_Fwr1Seq = NcbiEmptyString;
+    m_Fwr1SeqTrans = NcbiEmptyString;
+    m_Cdr1Seq = NcbiEmptyString;
+    m_Cdr1SeqTrans = NcbiEmptyString;
+    m_Fwr2Seq = NcbiEmptyString;
+    m_Fwr2SeqTrans = NcbiEmptyString;
+    m_Cdr2Seq = NcbiEmptyString;
+    m_Cdr2SeqTrans = NcbiEmptyString;
+    m_Fwr3Seq = NcbiEmptyString;
+    m_Fwr3SeqTrans = NcbiEmptyString;
+    
     m_Cdr3Seq = NcbiEmptyString;
     m_Cdr3SeqTrans = NcbiEmptyString;
 };
@@ -2496,20 +2748,20 @@ void CIgBlastTabularInfo::x_ComputeIgDomain(SIgDomain &domain)
     int q_pos = 0, s_pos = 0;  // query and subject co-ordinate (translated)
     unsigned int i = 0;  // i is the alignment co-ordinate
     // m_QueryStart and m_SubjectStart are 1-based
-    if (domain.start < m_QueryStart-1) domain.start = m_QueryStart-1;
-    while ( (q_pos < domain.start - m_QueryStart +1 
-          || s_pos < domain.s_start - m_SubjectStart +1)
-          && i < m_QuerySeq.size()) {
-        if (m_QuerySeq[i] != '-') ++q_pos;
-        if (m_SubjectSeq[i] != '-') ++s_pos;
+    if (domain.start < m_QueryVAlignStart-1) domain.start = m_QueryVAlignStart-1;
+    while ( (q_pos < domain.start - m_QueryVAlignStart +1 
+          || s_pos < domain.s_start - m_VAlignStart +1)
+          && i < m_QueryVAlign.size()) {
+        if (m_QueryVAlign[i] != '-') ++q_pos;
+        if (m_VAlign[i] != '-') ++s_pos;
         ++i;
     }
-    while ( (q_pos < domain.end - m_QueryStart +1 
-          || s_pos < domain.s_end - m_SubjectStart +1)
-          && i < m_QuerySeq.size()) {
-        if (m_QuerySeq[i] != '-') {
+    while ( (q_pos < domain.end - m_QueryVAlignStart +1 
+          || s_pos < domain.s_end - m_VAlignStart +1)
+          && i < m_QueryVAlign.size()) {
+        if (m_QueryVAlign[i] != '-') {
             ++q_pos;
-            if (m_QuerySeq[i] == m_SubjectSeq[i]) {
+            if (m_QueryVAlign[i] == m_VAlign[i]) {
                 ++s_pos;
                 ++domain.num_match;
             } else if (m_SubjectSeq[i] != '-') {
@@ -2525,7 +2777,7 @@ void CIgBlastTabularInfo::x_ComputeIgDomain(SIgDomain &domain)
         ++domain.length;
         ++i;
     }
-    if (domain.end > m_QueryEnd) domain.end = m_QueryEnd;
+    if (domain.end > m_QueryVAlignEnd) domain.end = m_QueryVAlignEnd;
 };
 
 void CIgBlastTabularInfo::x_PrintIgDomain(const SIgDomain &domain) const

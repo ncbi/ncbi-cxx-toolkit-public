@@ -307,21 +307,49 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
     //
     //
 
-        l_ig_opts->m_AirrField.push_back("rearrangement_id");
+        l_ig_opts->m_AirrField.push_back("sequence_id");
         l_ig_opts->m_AirrField.push_back("sequence");
-        l_ig_opts->m_AirrField.push_back("sequence_aa");
-        l_ig_opts->m_AirrField.push_back("sample_id");
-        l_ig_opts->m_AirrField.push_back("chain_type");
+        l_ig_opts->m_AirrField.push_back("locus");
         l_ig_opts->m_AirrField.push_back("stop_codon");
-        l_ig_opts->m_AirrField.push_back("v_j_in_frame");
+        l_ig_opts->m_AirrField.push_back("vj_in_frame");
         l_ig_opts->m_AirrField.push_back("productive");
         l_ig_opts->m_AirrField.push_back("rev_comp");
         l_ig_opts->m_AirrField.push_back("v_call");
         l_ig_opts->m_AirrField.push_back("d_call");
         l_ig_opts->m_AirrField.push_back("j_call");
         l_ig_opts->m_AirrField.push_back("c_call");
-        l_ig_opts->m_AirrField.push_back("junction_nt");
-        l_ig_opts->m_AirrField.push_back("junction_nt_length");
+        l_ig_opts->m_AirrField.push_back("sequence_alignment");
+        l_ig_opts->m_AirrField.push_back("germline_alignment");
+        l_ig_opts->m_AirrField.push_back("sequence_alignment_aa");
+        l_ig_opts->m_AirrField.push_back("germline_alignment_aa");
+        l_ig_opts->m_AirrField.push_back("v_alignment_start");
+        l_ig_opts->m_AirrField.push_back("v_alignment_end");
+        l_ig_opts->m_AirrField.push_back("d_alignment_start");
+        l_ig_opts->m_AirrField.push_back("d_alignment_end");
+        l_ig_opts->m_AirrField.push_back("j_alignment_start");
+        l_ig_opts->m_AirrField.push_back("j_alignment_end");
+        l_ig_opts->m_AirrField.push_back("v_sequence_alignment");
+        l_ig_opts->m_AirrField.push_back("v_germline_alignment");
+        l_ig_opts->m_AirrField.push_back("d_sequence_alignment");
+        l_ig_opts->m_AirrField.push_back("d_germline_alignment");
+        l_ig_opts->m_AirrField.push_back("j_sequence_alignment");
+        l_ig_opts->m_AirrField.push_back("j_germline_alignment");
+
+        l_ig_opts->m_AirrField.push_back("fwr1");
+        l_ig_opts->m_AirrField.push_back("fwr1_aa");
+        l_ig_opts->m_AirrField.push_back("cdr1");
+        l_ig_opts->m_AirrField.push_back("cdr1_aa");
+        l_ig_opts->m_AirrField.push_back("fwr2");
+        l_ig_opts->m_AirrField.push_back("fwr2_aa");
+        l_ig_opts->m_AirrField.push_back("cdr2");
+        l_ig_opts->m_AirrField.push_back("cdr2_aa");
+        l_ig_opts->m_AirrField.push_back("fwr3");
+        l_ig_opts->m_AirrField.push_back("fwr3_aa");
+        l_ig_opts->m_AirrField.push_back("cdr3");
+        l_ig_opts->m_AirrField.push_back("cdr3_aa");
+
+        l_ig_opts->m_AirrField.push_back("junction");
+        l_ig_opts->m_AirrField.push_back("junction_length");
         l_ig_opts->m_AirrField.push_back("junction_aa");
         l_ig_opts->m_AirrField.push_back("junction_aa_length");
         l_ig_opts->m_AirrField.push_back("v_score");
@@ -338,41 +366,38 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
         l_ig_opts->m_AirrField.push_back("v_identity");
         l_ig_opts->m_AirrField.push_back("d_identity");
         l_ig_opts->m_AirrField.push_back("j_identity");
-        l_ig_opts->m_AirrField.push_back("v_start");
-        l_ig_opts->m_AirrField.push_back("v_end");
-        l_ig_opts->m_AirrField.push_back("v_germ_start");
-        l_ig_opts->m_AirrField.push_back("v_germ_end");
-        l_ig_opts->m_AirrField.push_back("d_start");
-        l_ig_opts->m_AirrField.push_back("d_end");
-        l_ig_opts->m_AirrField.push_back("d_germ_start");
-        l_ig_opts->m_AirrField.push_back("d_germ_end");
-        l_ig_opts->m_AirrField.push_back("j_start");
-        l_ig_opts->m_AirrField.push_back("j_end");
-        l_ig_opts->m_AirrField.push_back("j_germ_start");
-        l_ig_opts->m_AirrField.push_back("j_germ_end");
+        l_ig_opts->m_AirrField.push_back("v_sequence_start");
+        l_ig_opts->m_AirrField.push_back("v_sequence_end");
+        l_ig_opts->m_AirrField.push_back("v_germline_start");
+        l_ig_opts->m_AirrField.push_back("v_germline_end");
+        l_ig_opts->m_AirrField.push_back("d_sequence_start");
+        l_ig_opts->m_AirrField.push_back("d_sequence_end");
+        l_ig_opts->m_AirrField.push_back("d_germline_start");
+        l_ig_opts->m_AirrField.push_back("d_germline_end");
+        l_ig_opts->m_AirrField.push_back("j_sequence_start");
+        l_ig_opts->m_AirrField.push_back("j_sequence_end");
+        l_ig_opts->m_AirrField.push_back("j_germline_start");
+        l_ig_opts->m_AirrField.push_back("j_germline_end");
         l_ig_opts->m_AirrField.push_back("fwr1_start");
         l_ig_opts->m_AirrField.push_back("fwr1_end");
-        l_ig_opts->m_AirrField.push_back("fwr1_identity");
         l_ig_opts->m_AirrField.push_back("cdr1_start");
         l_ig_opts->m_AirrField.push_back("cdr1_end");
-        l_ig_opts->m_AirrField.push_back("cdr1_identity");
         l_ig_opts->m_AirrField.push_back("fwr2_start");
         l_ig_opts->m_AirrField.push_back("fwr2_end");
-        l_ig_opts->m_AirrField.push_back("fwr2_identity");
         l_ig_opts->m_AirrField.push_back("cdr2_start");
         l_ig_opts->m_AirrField.push_back("cdr2_end");
-        l_ig_opts->m_AirrField.push_back("cdr2_identity");
         l_ig_opts->m_AirrField.push_back("fwr3_start");
         l_ig_opts->m_AirrField.push_back("fwr3_end");
-        l_ig_opts->m_AirrField.push_back("fwr3_identity");
         l_ig_opts->m_AirrField.push_back("cdr3_start");
         l_ig_opts->m_AirrField.push_back("cdr3_end");
-        l_ig_opts->m_AirrField.push_back("np1_seq");
+        l_ig_opts->m_AirrField.push_back("np1");
         l_ig_opts->m_AirrField.push_back("np1_length");
-        l_ig_opts->m_AirrField.push_back("np2_seq");
+        l_ig_opts->m_AirrField.push_back("np2");
         l_ig_opts->m_AirrField.push_back("np2_length");
+      
 
-                
+
+
         int align_index = 0;
         
     while( true ){
