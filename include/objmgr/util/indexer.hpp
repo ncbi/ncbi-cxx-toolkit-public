@@ -562,7 +562,10 @@ private:
 
     bool m_SourcesInitialized;
 
+    bool m_FeatForProdInitialized;
     CRef<CFeatureIndex> m_FeatureForProduct;
+
+    bool m_BestProtFeatInitialized;
     CRef<CFeatureIndex> m_BestProteinFeature;
 
     // CFeatureIndex from CMappedFeat for use with GetBestGene

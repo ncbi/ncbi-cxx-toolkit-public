@@ -689,6 +689,8 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_DescsInitialized = false;
     m_FeatsInitialized = false;
     m_SourcesInitialized = false;
+    m_FeatForProdInitialized = false;
+    m_BestProtFeatInitialized = false;
 
     m_ForceOnlyNearFeats = false;
 
@@ -1828,12 +1830,14 @@ void CBioseqIndex::x_InitFeats (void)
                 const CSeq_loc& loc = mf.GetLocation ();
                 TSeqPos prot_length = sequence::GetLength(loc, m_Scope);
                 if (prot_length > longest) {
+                    m_BestProtFeatInitialized = true;
                     m_BestProteinFeature = sfx;
                     longest = prot_length;
                     bestprocessed = processed;
                 } else if (prot_length == longest) {
                     // unprocessed 0 > preprotein 1 > mat peptide 2
                     if (processed < bestprocessed) {
+                        m_BestProtFeatInitialized = true;
                         m_BestProteinFeature = sfx;
                         longest = prot_length;
                         bestprocessed = processed;
@@ -1859,6 +1863,7 @@ void CBioseqIndex::x_InitFeats (void)
                     if (idxl) {
                         CRef<CBioseqIndex> bsxp = idxl->GetBioseqIndex(pbsh);
                         if (bsxp) {
+                            m_FeatForProdInitialized = true;
                             bsxp->m_FeatureForProduct = sfx;
                         }
                     }
@@ -1876,7 +1881,7 @@ void CBioseqIndex::x_InitFeats (void)
 CRef<CFeatureIndex> CBioseqIndex::GetFeatureForProduct (void)
 
 {
-    if (! m_FeatureForProduct) {
+    if (! m_FeatForProdInitialized) {
         if (m_Bsh) {
             CFeat_CI fi(m_Bsh,
                         SAnnotSelector(CSeqFeatData::e_Cdregion)
@@ -1930,8 +1935,10 @@ CWeakRef<CBioseqIndex> CBioseqIndex::GetBioseqForProduct (void)
 CRef<CFeatureIndex> CBioseqIndex::GetBestProteinFeature (void)
 
 {
-    if (! m_FeatsInitialized) {
-        x_InitFeats();
+    if (! m_BestProtFeatInitialized) {
+        if (! m_FeatsInitialized) {
+            x_InitFeats();
+        }
     }
 
     return m_BestProteinFeature;
