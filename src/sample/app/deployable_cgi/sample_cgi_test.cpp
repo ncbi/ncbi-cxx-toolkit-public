@@ -6,6 +6,6 @@ USING_NCBI_SCOPE;
 
 BOOST_AUTO_TEST_CASE(Test_2)
 {
-    BOOST_TEST(true);
+    BOOST_CHECK(true);
 }
 

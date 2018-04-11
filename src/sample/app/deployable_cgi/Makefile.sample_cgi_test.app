@@ -10,3 +10,5 @@ REQUIRES=Boost.Test.Included
 
 CHECK_CMD=sample_cgi_test
 
+WATCHERS=fukanchi
+
