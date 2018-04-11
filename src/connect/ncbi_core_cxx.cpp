@@ -413,7 +413,7 @@ static void s_SetMonkeyHooks(EMonkeyHookSwitch hook_switch)
 #endif //NCBI_MONKEY
 
 
-static enum EConnectInit {
+static volatile enum EConnectInit {
     eConnectInit_Weak     = -1,  ///< CConn_Initer
     eConnectInit_Intact   =  0,  ///< Not yet visited
     eConnectInit_Strong   =  1,  ///< User init detected
