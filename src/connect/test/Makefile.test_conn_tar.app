@@ -12,4 +12,4 @@ LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 CHECK_CMD = test_conn_tar.sh
 CHECK_COPY = test_conn_tar.sh ../../util/test/test_tar.sh ../../check/ncbi_test_data
 
-WATCHERS = lavr elisovdn
+WATCHERS = lavr
