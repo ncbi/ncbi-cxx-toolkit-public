@@ -1824,12 +1824,11 @@ void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
                 int germline_trans_start = alnvec.GetSeqPosFromAlnPos(1, query_aln_pos) - alnvec.GetSeqStart(1);
                 string germline_translation_template = airr_data["germline_alignment"].substr(germline_trans_start);
                 vector<string> string_part;
-                char gap = gap_char;
-                string gap_str(&gap);
+                string gap_str = NcbiEmptyString;
+                gap_str.push_back(gap_char);
                 //remove internal gap
                 string final_germline_translation_template = NcbiEmptyString;
                 NStr::Replace(germline_translation_template, gap_str, NcbiEmptyString, final_germline_translation_template);
-
                 CSeqTranslator::Translate(final_germline_translation_template, 
                                           airr_data["germline_alignment_aa"], 
                                           CSeqTranslator::fIs5PrimePartial, NULL, NULL);
