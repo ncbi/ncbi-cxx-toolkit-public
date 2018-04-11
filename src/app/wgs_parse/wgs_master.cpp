@@ -1253,7 +1253,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 
             first = false;
 
-            if (!FixSeqSubmit(seq_submit, master_info.m_accession_ver, true)) {
+            if (!FixSeqSubmit(seq_submit, master_info.m_accession_ver, true, master_info.m_reject)) {
                 ERR_POST_EX(0, 0, "Wrapper GenBank set has non-empty annotation (Seq-annot), which is not allowed. Cannot process this submission \"" << file << "\".");
                 ret = false;
                 break;

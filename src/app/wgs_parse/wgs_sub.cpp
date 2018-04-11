@@ -1268,7 +1268,7 @@ bool ParseSubmissions(CMasterInfo& master_info)
             }
 
             first = false;
-            FixSeqSubmit(seq_submit, master_info.m_accession_ver, false);
+            FixSeqSubmit(seq_submit, master_info.m_accession_ver, false, master_info.m_reject);
 
             ESortOrder sort_order = GetParams().GetSortOrder();
             if (sort_order != eUnsorted) {

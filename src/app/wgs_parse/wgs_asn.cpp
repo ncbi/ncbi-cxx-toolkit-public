@@ -85,7 +85,7 @@ static bool ToBeRemoved(const CSeq_id& id)
 
 static void RemoveSomeIds(CBioseq::TId& ids)
 {
-    for (auto id = ids.begin(); id != ids.end(); ) {
+    for (auto id = ids.begin(); id != ids.end();) {
         if (ToBeRemoved(**id)) {
             id = ids.erase(id);
         }
@@ -112,12 +112,12 @@ static bool ContainsLocalsAndGenerals(const CBioseq::TId& ids)
     return locals & generals;
 }
 
-static void CheckGeneralLocalIds(CBioseq::TId& ids)
+static void CheckGeneralLocalIds(CBioseq::TId& ids, bool &reject)
 {
     string general_id,
            local_id;
 
-    for (auto id = ids.begin(); id != ids.end(); ) {
+    for (auto id = ids.begin(); id != ids.end();) {
 
         bool removed = false;
         if ((*id)->IsGeneral()) {
@@ -146,11 +146,11 @@ static void CheckGeneralLocalIds(CBioseq::TId& ids)
 
     if (general_id != local_id) {
         ERR_POST_EX(0, 0, Critical << "General and local ids within the same Bioseq are not identical: \"" << general_id << "\" vs \"" << local_id << "\".");
-        // TODO -> reject (see wgsasn.c, line 2188)
+        reject = true;
     }
 }
 
-static void FixIds(CRef<CSeq_entry>& entry)
+static void FixIds(CRef<CSeq_entry>& entry, bool &reject)
 {
     if (entry->IsSeq()) {
 
@@ -161,13 +161,13 @@ static void FixIds(CRef<CSeq_entry>& entry)
             RemoveSomeIds(ids);
 
             if (ContainsLocalsAndGenerals(ids)) {
-                CheckGeneralLocalIds(ids);
+                CheckGeneralLocalIds(ids, reject);
             }
         }
     }
     else if (entry->IsSet()) {
         if (entry->GetSet().IsSetSeq_set()) {
-            for_each(entry->SetSet().SetSeq_set().begin(), entry->SetSet().SetSeq_set().end(), FixIds);
+            for_each(entry->SetSet().SetSeq_set().begin(), entry->SetSet().SetSeq_set().end(), [&reject](CRef<CSeq_entry>& cur_entry){ FixIds(cur_entry, reject); });
         }
     }
 }
@@ -252,7 +252,7 @@ static bool DescrProcUnexpectedWarning(const CSeqdesc& descr, bool first)
     return true;
 }
 
-static bool DescrProcUnexpectedSpecial(const CSeqdesc& , bool first)
+static bool DescrProcUnexpectedSpecial(const CSeqdesc&, bool first)
 {
     if (first) {
         static const string ERR_MSG = "Unexpected descriptor of type \"title\" found on top of GenBank set. Descriptor dropped.";
@@ -464,14 +464,14 @@ static bool NeedToGetAccession()
     return GetParams().GetUpdateMode() == eUpdateAssembly && GetParams().IsAccessionAssigned();
 }
 
-bool FixSeqSubmit(CRef<CSeq_submit>& seq_submit, int& accession_ver, bool first)
+bool FixSeqSubmit(CRef<CSeq_submit>& seq_submit, int& accession_ver, bool first, bool &reject)
 {
     bool ret = true;
     if (seq_submit->IsSetData() && seq_submit->GetData().IsEntrys()) {
 
         CSeq_submit::C_Data::TEntrys& entries = seq_submit->SetData().SetEntrys();
         for (auto& entry : entries) {
-            FixIds(entry);
+            FixIds(entry, reject);
         }
 
         if (first && accession_ver < 0 && NeedToGetAccession()) {
@@ -662,7 +662,7 @@ static void CheckDBName(const string& db_name, bool is_nuc, CSeqEntryInfo& info,
             ERR_POST_EX(0, 0, Warning << "One or more nucleotide Bioseqs have non standard dbname \"" << db_name << "\", will replace with \"" << (GetParams().IsChromosomal() ? proj_acc_str : proj_acc_ver_str) << "\".");
             common_info.m_nuc_warn = true;
         }
-        
+
         if (!is_nuc && !common_info.m_prot_warn && db_name != proj_acc_str) {
             ERR_POST_EX(0, 0, Warning << "One or more protein Bioseqs have non standard dbname \"" << db_name << "\", will replace with \"" << proj_acc_str << "\".");
             common_info.m_prot_warn = true;
@@ -872,6 +872,38 @@ static void CheckSecondaries(const CBioseq& bioseq, CSeqEntryInfo& info)
     }
 }
 
+static bool IsAllowedSeqId(const CSeq_id& id)
+{
+    return id.IsDdbj() || id.IsEmbl() || id.IsGenbank() || id.IsTpd() || id.IsTpe() || id.IsTpg();
+}
+
+static void CheckSeqIdStatus(const CBioseq::TId& ids, CSeq_id::E_Choice& choice, ESeqIdStatus& state)
+{
+    _ASSERT(!ids.empty() && "ids should contain at least one item");
+
+    const CRef<CSeq_id>& first_id = ids.front();
+
+    if (ids.size() > 1) {
+        state = eSeqIdMultiple;
+    }
+    else if (choice == CSeq_id::e_not_set) {
+        choice = first_id->Which();
+    }
+    else if (!first_id->IsLocal() && !first_id->IsGeneral()) {
+
+        if (!GetParams().IsAccessionAssigned()) {
+            state = eSeqIdIncorrect;
+        }
+
+        if (!IsAllowedSeqId(*first_id) || choice != first_id->Which()) {
+            state = eSeqIdIncorrect;
+        }
+    }
+    else if (choice != first_id->Which()) {
+        state = eSeqIdDifferent;
+    }
+}
+
 static void CheckNucBioseqs(const CSeq_entry& entry, CSeqEntryInfo& info, CSeqEntryCommonInfo& common_info)
 {
     if (entry.IsSet()) {
@@ -938,7 +970,13 @@ static void CheckNucBioseqs(const CSeq_entry& entry, CSeqEntryInfo& info, CSeqEn
         if (bioseq.IsNa()) {
 
             if (GetParams().GetUpdateMode() == eUpdateScaffoldsNew && info.m_seqid_state == eSeqIdOK) {
-                // TODO
+
+                if (!bioseq.IsSetId() || bioseq.GetId().empty()) {
+                    info.m_id_problem = eIdNoDbTag;
+                }
+                else {
+                    CheckSeqIdStatus(bioseq.GetId(), info.m_seqid_type, info.m_seqid_state);
+                }
             }
 
             if (GetParams().IsAccessionAssigned()) {
