@@ -348,10 +348,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status HTTP_CreateTunnel
 
 typedef void (*FHTTP_NcbiMessageHook)(const char* message);
 
-/** Set message hook procedure for messages originating from NCBI via HTTP.
- * Any hook will be called not more than once.  Until no hook is installed,
- * and exactly one message is caught, a warning will be generated in
- * the standard log file upon acceptance of every message.
+/** Set a message hook procedure for messages originating from NCBI via HTTP.
+ *  Any hook will be called no more than once.  Until no hook is installed,
+ *  and exactly one message is caught, a critical error will be generated in
+ *  the standard log file upon acceptance of every message.  *Not MT-safe*.
  */
 extern NCBI_XCONNECT_EXPORT void HTTP_SetNcbiMessageHook
 (FHTTP_NcbiMessageHook  /**< New hook to be installed, NULL to reset */
