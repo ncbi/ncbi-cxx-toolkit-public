@@ -179,6 +179,8 @@ protected:
 
     void x_GetAssociatedProtInfo( CBioseqContext&, CBioseq_Handle&,
         const CProt_ref*&, CMappedFeat& protFeat, CConstRef<CSeq_id>& );
+    void x_GetAssociatedProtInfoIdx( CBioseqContext&, CBioseq_Handle&,
+        const CProt_ref*&, CMappedFeat& protFeat, CConstRef<CSeq_id>& );
     void x_AddQualPartial( CBioseqContext& );
     void x_AddQualDbXref(
         CBioseqContext& );
@@ -217,6 +219,8 @@ protected:
     // qualifier collection
     void x_AddQualsCdregion(const CMappedFeat& cds, CBioseqContext& ctx,
         bool pseudo);
+    void x_AddQualsCdregionIdx(const CMappedFeat& cds, CBioseqContext& ctx,
+        bool pseudo);
     virtual void x_AddQualsRna(const CMappedFeat& feat, CBioseqContext& ctx,
          bool pseudo);
     void x_AddQualsExt( const CSeq_feat::TExt& );
@@ -230,6 +234,9 @@ protected:
 
     void x_AddQuals( CBioseqContext& ctx, CConstRef<CFeatureItem> parentFeatureItem );
     void x_AddQuals( CBioseqContext& ctx ) { x_AddQuals( ctx, CConstRef<CFeatureItem>() ); }
+    void x_AddQualsIdx( CBioseqContext& ctx, CConstRef<CFeatureItem> parentFeatureItem );
+    void x_AddQualsIdx( CBioseqContext& ctx ) { x_AddQualsIdx( ctx, CConstRef<CFeatureItem>() ); }
+
     void x_AddQuals(const CProt_ref& prot);
     void x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier slot);
     void x_AddQualsGene(const CBioseqContext& ctx, const CGene_ref*, CConstRef<CSeq_feat>&,

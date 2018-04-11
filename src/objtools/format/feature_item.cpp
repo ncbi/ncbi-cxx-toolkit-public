@@ -1583,6 +1583,144 @@ bool CFeatureItem::x_GetPseudo(
     return pseudo;
 }
 
+void CFeatureItem::x_AddQualsIdx(
+    CBioseqContext& ctx,
+    CConstRef<CFeatureItem> parentFeatureItem )
+{
+    CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
+    if (! idx) return;
+    CBioseq_Handle hdl = ctx.GetHandle();
+    CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (hdl);
+    if (! bsx) return;
+
+    const CSeqFeatData& data  = m_Feat.GetData();
+    CSeqFeatData::E_Choice type = data.Which();
+    CSeqFeatData::ESubtype subtype = data.GetSubtype();
+
+    bool is_not_genbank = false;
+    {{
+        ITERATE( CBioseq::TId, id_iter, ctx.GetBioseqIds() ) {
+            const CSeq_id& id = **id_iter;
+
+            switch ( id.Which() ) {
+                case CSeq_id_Base::e_Embl:
+                case CSeq_id_Base::e_Ddbj:
+                case CSeq_id_Base::e_Tpe:
+                case CSeq_id_Base::e_Tpd:
+                    is_not_genbank = true;
+                    break;
+                default:
+                    // do nothing
+                    break;
+            }
+        }
+    }}
+    
+    const CGene_ref* gene_ref = 0;
+    CConstRef<CSeq_feat> gene_feat;
+    const CGene_ref* feat_gene_xref = m_Feat.GetGeneXref();
+    bool suppressed = false;
+
+    const bool gene_forbidden_if_genbank = 
+        ( subtype == CSeqFeatData::eSubtype_mobile_element ||
+          subtype == CSeqFeatData::eSubtype_centromere ||
+          subtype == CSeqFeatData::eSubtype_telomere );
+
+    if ( type == CSeqFeatData::e_Gene ) {
+    } else if (subtype != CSeqFeatData::eSubtype_operon &&
+               subtype != CSeqFeatData::eSubtype_gap &&
+               (is_not_genbank || ! gene_forbidden_if_genbank)) {
+        if (feat_gene_xref) {
+            if (feat_gene_xref->IsSuppressed()) {
+                suppressed = true;
+            }
+        }
+
+        if (! suppressed) {
+            CRef<CFeatureIndex> ft = bsx->GetFeatIndex (m_Feat);
+            if (ft) {
+                CRef<CFeatureIndex> fsx = ft->GetBestGene();
+                if (fsx) {
+                    const CMappedFeat mf = fsx->GetMappedFeat();
+                    gene_feat = &(mf.GetMappedFeature());
+                    gene_ref = &(mf.GetData().GetGene());
+                }
+            }
+        }
+    }
+
+    bool pseudo = x_GetPseudo(gene_ref, gene_feat );
+
+    //
+    //  Collect qualifiers that are specific to a single or just a few feature
+    //  types:
+    //
+    switch ( type ) {
+    case CSeqFeatData::e_Cdregion:
+        x_AddQualsCdregionIdx(m_Feat, ctx, pseudo);
+        break;
+    case CSeqFeatData::e_Rna:
+        x_AddQualsRna(m_Feat, ctx, pseudo);
+        break;
+    case CSeqFeatData::e_Prot:
+        x_AddQualsProt(ctx, pseudo);
+        break;
+    case CSeqFeatData::e_Region:
+        x_AddQualsRegion( ctx );
+        break;
+    case CSeqFeatData::e_Site:
+        x_AddQualsSite( ctx );
+        break;
+    case CSeqFeatData::e_Bond:
+        x_AddQualsBond( ctx );
+        break;    
+    case CSeqFeatData::e_Psec_str:
+        x_AddQualsPsecStr( ctx );
+        break;
+    case CSeqFeatData::e_Het:
+        x_AddQualsHet( ctx );
+        break;
+    case CSeqFeatData::e_Variation:
+        x_AddQualsVariation( ctx );
+        break;
+    default:
+        break;
+    }
+
+    //
+    //  Collect qualifiers that are common to most feature types:
+    //
+    x_AddQualPartial( ctx );
+    x_AddQualDbXref( ctx );
+    x_AddQualExt();
+    x_AddQualExpInv( ctx );
+    x_AddQualCitation();
+    x_AddQualExceptions( ctx );
+    x_AddQualNote( gene_feat );
+    x_AddQualOldLocusTag( ctx, gene_feat );
+    x_AddQualDb( gene_ref );
+    x_AddQualGeneXref( gene_ref, gene_feat );
+    if (bsx->HasOperon()) {
+        x_AddQualOperon( ctx, subtype );
+    }
+    x_AddQualsGene( ctx, gene_ref, gene_feat, gene_ref ? false : gene_feat.NotEmpty() );
+
+    x_AddQualPseudo( ctx, type, subtype, pseudo );
+    x_AddQualsGb( ctx );
+
+    // dynamic mapping of old features to regulatory with regulatory_class qualifier
+    if ( type == CSeqFeatData::e_Imp ) {
+       x_AddQualsRegulatoryClass ( ctx, subtype );
+    }
+
+    x_AddQualSeqfeatNote(ctx);
+
+    // cleanup (drop illegal quals, duplicate information etc.)
+    x_CleanQuals( gene_ref );
+
+
+}
+
 //  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddQuals(
     CBioseqContext& ctx,
@@ -1606,6 +1744,11 @@ void CFeatureItem::x_AddQuals(
 
     if ( ctx.Config().IsFormatFTable() ) {
         x_AddFTableQuals( ctx );
+        return;
+    }
+
+    if ( ctx.UsingSeqEntryIndex() ) {
+        x_AddQualsIdx(ctx, parentFeatureItem);
         return;
     }
 
@@ -2237,6 +2380,53 @@ void CFeatureItem::x_AddQualProtMethod(
 }
 
 //  ----------------------------------------------------------------------------
+void CFeatureItem::x_GetAssociatedProtInfoIdx(
+    CBioseqContext& ctx,
+    CBioseq_Handle& protHandle,
+    const CProt_ref*& protRef,
+    CMappedFeat& protFeat,
+    CConstRef<CSeq_id>& protId )
+//  ----------------------------------------------------------------------------
+{
+    const CFlatFileConfig& cfg = ctx.Config();
+    CScope& scope = ctx.GetScope();
+
+    protId.Reset( m_Feat.GetProduct().GetId() );
+    if ( protId ) {
+        if ( !cfg.AlwaysTranslateCDS() ) {
+            CScope::EGetBioseqFlag get_flag = CScope::eGetBioseq_Loaded;
+            if ( cfg.ShowFarTranslations() || ctx.IsGED() || ctx.IsRefSeq() ) {
+                get_flag = CScope::eGetBioseq_All;
+            }
+            protHandle =  scope.GetBioseqHandle(*protId, get_flag);
+        }
+    }
+
+    CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
+    if (! idx) return;
+    CBioseq_Handle hdl = ctx.GetHandle();
+    CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (hdl);
+    if (! bsx) return;
+
+
+    protRef = 0;
+    if ( protHandle ) {
+        CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
+        if (! idx) return;
+        CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (protHandle);
+        if (bsx) {
+            CRef<CFeatureIndex> pfx = bsx->GetBestProteinFeature();
+            if (pfx) {
+                protFeat = pfx->GetMappedFeat();
+                if ( protFeat ) {
+                    protRef = &( protFeat.GetData().GetProt() );
+                }
+            }
+        }
+    } 
+}
+
+//  ----------------------------------------------------------------------------
 void CFeatureItem::x_GetAssociatedProtInfo(
     CBioseqContext& ctx,
     CBioseq_Handle& protHandle,
@@ -2518,6 +2708,57 @@ void CFeatureItem::x_AddQualProtEcNumber(
             x_AddQual( eFQ_prot_EC_number, new CFlatStringQVal( *ec ) );
         }
     }
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddQualsCdregionIdx(
+    const CMappedFeat& cds,
+    CBioseqContext& ctx,
+    bool pseudo)
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
+    if (! idx) return;
+    CBioseq_Handle hdl = ctx.GetHandle();
+    CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (hdl);
+    if (! bsx) return;
+
+    const CCdregion& cdr = cds.GetData().GetCdregion();
+
+    const CProt_ref* protRef = 0;
+    CMappedFeat protFeat;
+    CConstRef<CSeq_id> prot_id;
+
+    x_AddQualTranslationTable( cdr, ctx );
+    x_AddQualCodonStart( cdr, ctx );
+    x_AddQualTranslationException( cdr, ctx );
+    x_AddQualProteinConflict( cdr, ctx );
+    x_AddQualCodedBy( ctx );
+    if ( ctx.IsProt()  &&  IsMappedFromCDNA() ) {
+        return;
+    }
+
+    // protein qualifiers
+    if (m_Feat.IsSetProduct()) {
+        CBioseq_Handle prot =
+            ctx.GetScope().GetBioseqHandle(m_Feat.GetProductId());
+        x_GetAssociatedProtInfoIdx( ctx, prot, protRef, protFeat, prot_id );
+        x_AddQualProtComment( prot );
+        x_AddQualProtMethod( prot );
+        x_AddQualProtNote( protRef, protFeat );
+        x_AddQualProteinId( ctx, prot, prot_id );
+        x_AddQualTranslation( prot, ctx, pseudo );
+    }
+
+    // add qualifiers where associated xref overrides the ref:
+    const CProt_ref* protXRef = m_Feat.GetProtXref();
+    if ( ! protXRef ) {
+        protXRef = protRef;
+    }
+    x_AddQualCdsProduct( ctx, protXRef );
+    x_AddQualProtDesc( protXRef );
+    x_AddQualProtActivity( protXRef );
+    x_AddQualProtEcNumber( ctx, protXRef );
 }
 
 //  ----------------------------------------------------------------------------
