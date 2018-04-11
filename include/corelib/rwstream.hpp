@@ -51,9 +51,9 @@ BEGIN_NCBI_SCOPE
 
 /// Note about the "buf_size" parameter for streams in this API.
 ///
-/// CRWStream implementation is targeted at minimizing in-memory data
-/// copy operations associated with I/O for intermediate buffering.
-/// For that, the following policies apply:
+/// CRWStream implementation is targeted at minimizing in-memory data copy
+/// operations associated with I/O for intermediate buffering.  For that, the
+/// following policies apply:
 ///
 /// 1.  No read operation from the input device shall request less than the
 ///     internal stream buffer size.  In cases when the user code requests more
@@ -65,15 +65,15 @@ BEGIN_NCBI_SCOPE
 /// 2.  Write operations to the output device are done in full buffers, unless:
 ///  a. An incoming user write request is larger than the internal buffer,
 ///     then the contents of the internal buffer gets flushed first (which may
-///     comprise of fewer than the intrernal buffer size bytes) followed by
-///     the direct write request of the user's block (larger than the internal
+///     comprise of fewer bytes than the size of the internal buffer) followed
+///     by a direct write request of the user's block (larger than the internal
 ///     stream buffer);
-///  b. Flushing of an internal buffer (including 2a above) resulted in a short
-///     write to the device (fewer bytes actually written), then the successive
-///     write attempt may contain fewer bytes than the size of the internal
-///     stream buffer (namely, the remainder of what has been left behind by
-///     the preceding write attempt).  This case also applies when the flushing
-///     has been done internally in a tied stream prior to reading.
+///  b. Flushing of the internal buffer (including 2a above) resulted in a
+///     short write to the device (fewer bytes actually written), then the
+///     successive write attempt may contain fewer bytes than the size of the
+///     internal stream buffer (namely, the remainder of what has been left
+///     behind by the preceding [short] write).  This case also applies when
+///     the flushing is done internally in a tied stream prior to reading.
 ///
 /// However, any portable implementation should *not* rely on how data chunks
 /// are being flushed or requested by the stream implementations.  If further

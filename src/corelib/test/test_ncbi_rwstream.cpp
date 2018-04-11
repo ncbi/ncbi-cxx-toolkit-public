@@ -104,9 +104,6 @@ public:
         : CMyReader(base, 0), CMyWriter(base, size)
     { }
 
-    virtual ERW_Result Read(void* buf, size_t count,
-                            size_t* bytes_read = 0);
-
     virtual ERW_Result Write(const void* buf, size_t count,
                              size_t*     bytes_written = 0);
 
@@ -152,6 +149,8 @@ ERW_Result CMyReader::Read(void* buf, size_t count,
     }
     if ( bytes_read )
         *bytes_read = n_read;
+    else if (n_read < count)
+        result = eRW_Error;
     ERR_POST(Info << "Read  @"
              << setw(8) << m_Pos << '/'
              << setw(7) << m_Size << ": "
@@ -208,6 +207,8 @@ ERW_Result CMyWriter::Write(const void* buf, size_t count,
     }
     if ( bytes_written )
         *bytes_written = n_written;
+    else if (n_written < count)
+        result = eRW_Error;
     ERR_POST(Info << "Write @"
              << setw(8) << m_Pos << '/'
              << setw(7) << m_Size << ": "
@@ -219,20 +220,10 @@ ERW_Result CMyWriter::Write(const void* buf, size_t count,
 }
 
 
-ERW_Result CMyReaderWriter::Read(void* buf, size_t count,
-                                 size_t* bytes_read)
-{
-    ERW_Result result = CMyReader::Read(buf, count, bytes_read);
-    if (result == eRW_Eof  &&  !m_Err)
-        result  = eRW_Error;
-    return result;
-}
-
-
 ERW_Result CMyReaderWriter::Write(const void* buf, size_t count,
                                   size_t* bytes_written)
 {
-    size_t x_written;
+    size_t x_written = 0;
     ERW_Result result = CMyWriter::Write(buf, count, &x_written);
     if (x_written) {
         CMyReader::m_Size = CMyWriter::m_Pos;
@@ -240,6 +231,8 @@ ERW_Result CMyReaderWriter::Write(const void* buf, size_t count,
     }
     if ( bytes_written )
         *bytes_written = x_written;
+    else if (x_written < count)
+        result = eRW_Error;
     return result;
 }
 
@@ -276,7 +269,7 @@ int main(int argc, char* argv[])
     } else {
         seed = (int(CProcess::GetCurrentPid()) ^
                 int(CTime(CTime::eCurrent).GetTimeT()));
-        ERR_POST(Info << "Using SEED "   << seed);
+        ERR_POST(Info << "Setting SEED " << seed);
     }
     srand(seed);
 
@@ -345,7 +338,7 @@ int main(int argc, char* argv[])
 
     ERR_POST(Info << "Comparing original with collected data");
 
-    for (size_t n = 0;  n < kHugeBufsize;  n++) {
+    for (size_t n = 0;  n < kHugeBufsize;  ++n) {
         if (hugedata[n] != hugedata[n + kHugeBufsize])
             ERR_FATAL("Mismatch @ " << n);
     }
@@ -403,7 +396,7 @@ int main(int argc, char* argv[])
 
     ERR_POST(Info << "Comparing original with collected data");
 
-    for (size_t n = 0;  n < kHugeBufsize;  n++) {
+    for (size_t n = 0;  n < kHugeBufsize;  ++n) {
         if (hugedata[n] != hugedata[n + kHugeBufsize]  ||
             hugedata[n] != hugedata[n + kHugeBufsize*2]) {
             ERR_FATAL("Mismatch @ " << n);

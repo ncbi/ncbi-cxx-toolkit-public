@@ -63,12 +63,13 @@ public:
     /// deleted on this object's destruction, whether to tie I/O,
     /// and how to process exceptions thrown at lower levels...
     enum EFlags {
-        fOwnReader      = 1 << 1,    ///< Own the underlying reader
-        fOwnWriter      = 1 << 2,    ///< Own the underlying writer
+        fOwnReader      = 1 << 0,    ///< Own the underlying reader
+        fOwnWriter      = 1 << 1,    ///< Own the underlying writer
         fOwnAll         = fOwnReader + fOwnWriter,
-        fUntie          = 1 << 5,    ///< Do not flush before reading
-        fLogExceptions  = 1 << 8,    ///< Exceptions logged only
-        fLeakExceptions = 1 << 9     ///< Exceptions leaked out
+        fUntie          = 1 << 2,    ///< Do not flush before reading
+        fNoStatusLog    = 1 << 3,    ///< Do not log I/O status
+        fLogExceptions  = 1 << 4,    ///< Exceptions logged only
+        fLeakExceptions = 1 << 5     ///< Exceptions leaked out
     };
     typedef int TFlags;              ///< Bitwise OR of EFlags
 

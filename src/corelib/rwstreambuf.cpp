@@ -42,54 +42,63 @@
 
 
 #define RWSTREAMBUF_HANDLE_EXCEPTIONS(call, subcode, message, action)   \
-  switch (m_Flags & (fLogExceptions | fLeakExceptions)) {               \
-  case fLeakExceptions:                                                 \
-      call;                                                             \
-      break;                                                            \
-  case 0: /* Invoke 'action' only if exception was (silently) caught */ \
-      try {                                                             \
-          call;                                                         \
-          break;                                                        \
-      }                                                                 \
-      catch (...) {                                                     \
-      }                                                                 \
-      action;                                                           \
-      break;                                                            \
-  default: /* Exception logging (and maybe re-throwing) */              \
-      try {                                                             \
-          call;                                                         \
-          break;                                                        \
-      }                                                                 \
-      catch (CException& e) {                                           \
-          try {                                                         \
-              NCBI_REPORT_EXCEPTION_X(subcode, message, e);             \
-          } catch (...) {                                               \
-          }                                                             \
-          if (m_Flags & fLeakExceptions)                                \
-              throw;                                                    \
-      }                                                                 \
-      catch (exception& e) {                                            \
-          try {                                                         \
-              ERR_POST_X(subcode, Error                                 \
-                         << "[" << message                              \
-                         << "] Exception: " << e.what());               \
-          } catch (...) {                                               \
-          }                                                             \
-          if (m_Flags & fLeakExceptions)                                \
-              throw;                                                    \
-      }                                                                 \
-      catch (...) {                                                     \
-          try {                                                         \
-              ERR_POST_X(subcode, Error                                 \
-                         << "[" << message << "] Unknown exception");   \
-          } catch (...) {                                               \
-          }                                                             \
-          if (m_Flags & fLeakExceptions)                                \
-              throw;                                                    \
-      }                                                                 \
-      action;                                                           \
-      break;                                                            \
-  }
+    /* Invoke 'action' only if an exception was [silently] caught */    \
+    switch (m_Flags & (fLogExceptions | fLeakExceptions)) {             \
+    case fLeakExceptions:                                               \
+        result = call;                                                  \
+        break;                                                          \
+    case 0:                                                             \
+        try {                                                           \
+            result = call;                                              \
+            break;                                                      \
+        }                                                               \
+        catch (...) {                                                   \
+        }                                                               \
+        action;                                                         \
+        break;                                                          \
+    default:                                                            \
+        /* Exception logging (and maybe re-throwing) */                 \
+        try {                                                           \
+            result = call;                                              \
+            break;                                                      \
+        }                                                               \
+        catch (CException& e) {                                         \
+            try {                                                       \
+                NCBI_REPORT_EXCEPTION_X(subcode, message, e);           \
+            } catch (...) {                                             \
+            }                                                           \
+            if (m_Flags & fLeakExceptions)                              \
+                throw;                                                  \
+        }                                                               \
+        catch (exception& e) {                                          \
+            try {                                                       \
+                ERR_POST_X(subcode, Error                               \
+                           << "[" << message                            \
+                           << "] Exception: " << e.what());             \
+            } catch (...) {                                             \
+            }                                                           \
+            if (m_Flags & fLeakExceptions)                              \
+                throw;                                                  \
+        }                                                               \
+        catch (...) {                                                   \
+            try {                                                       \
+                ERR_POST_X(subcode, Error                               \
+                           << "[" << message << "] Unknown exception"); \
+            } catch (...) {                                             \
+            }                                                           \
+            if (m_Flags & fLeakExceptions)                              \
+                throw;                                                  \
+        }                                                               \
+        action;                                                         \
+        break;                                                          \
+    }                                                                   \
+    if (result != eRW_Success  &&  !(m_Flags & fNoStatusLog)) {         \
+        bool trace = (result == eRW_Timeout  ||                         \
+                      result == eRW_Eof ? true : false);                \
+        ERR_POST_X(subcode,                                             \
+                   Message << (trace ? Trace : Info) << message         \
+                   << ": " << g_RW_ResultToString(result) + 4/*eRW_*/); \
+    }
 
 
 BEGIN_NCBI_SCOPE
@@ -261,12 +270,13 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
     size_t n_towrite = (size_t)(pptr() - pbase());
 
     ERW_Result result;
+
     if ( n_towrite ) {
-        // send buffer
+        // Send buffer
         do {
             n_written = 0;
             RWSTREAMBUF_HANDLE_EXCEPTIONS(
-                result = m_Writer->Write(pbase(), n_towrite, &n_written),
+                m_Writer->Write(pbase(), n_towrite, &n_written),
                 5, "CRWStreambuf::overflow(): IWriter::Write()",
                 (n_written = 0, result = eRW_Error));
             _ASSERT(n_written <= n_towrite);
@@ -274,12 +284,12 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
                 _ASSERT(result != eRW_Success);
                 break;
             }
-            // update buffer content (get rid of the data just sent)
+            // Update buffer content (get rid of the data just sent)
             memmove(pbase(), pbase() + n_written, n_towrite - n_written);
             x_PPos += (CT_OFF_TYPE) n_written;
             pbump(-int(n_written));
 
-            // store char
+            // Store a char
             if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
                 x_Err = false;
                 return sputc(CT_TO_CHAR_TYPE(c));
@@ -293,15 +303,16 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
             return CT_EOF;
         }
     } else if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
-        // send char
-        n_written = 0;
+        // Send a char
         CT_CHAR_TYPE b = CT_TO_CHAR_TYPE(c);
+        n_written = 0;
         RWSTREAMBUF_HANDLE_EXCEPTIONS(
             m_Writer->Write(&b, 1, &n_written),
             6, "CRWStreambuf::overflow(): IWriter::Write(1)",
-            n_written = 0);
+            (n_written = 0, result = eRW_Error));
         _ASSERT(n_written <= 1);
         if ( !n_written ) {
+            _ASSERT(result != eRW_Success);
             x_Err    = true;
             x_ErrPos = x_GetPPos();
             return CT_EOF;
@@ -313,7 +324,7 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
 
     _ASSERT(CT_EQ_INT_TYPE(c, CT_EOF));
     RWSTREAMBUF_HANDLE_EXCEPTIONS(
-        result = m_Writer->Flush(),
+        m_Writer->Flush(),
         7, "CRWStreambuf::overflow(): IWriter::Flush()",
         result = eRW_Error);
     switch (result) {
@@ -336,12 +347,12 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
         return 0;
 
     _ASSERT((Uint8) m < numeric_limits<size_t>::max());
-    ERW_Result result = eRW_Success;
     size_t n = (size_t) m;
     size_t n_written = 0;
     size_t x_written;
     x_Err = false;
 
+    ERW_Result result;
     do {
         if (pbase()) {
             if (n  &&  pbase() + n < epptr()) {
@@ -364,11 +375,12 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
             if ( x_towrite ) {
                 x_written = 0;
                 RWSTREAMBUF_HANDLE_EXCEPTIONS(
-                    result = m_Writer->Write(pbase(), x_towrite, &x_written),
+                    m_Writer->Write(pbase(), x_towrite, &x_written),
                     8, "CRWStreambuf::xsputn(): IWriter::Write()",
-                    x_written = 0);
+                    (x_written = 0, result = eRW_Error));
                 _ASSERT(x_written <= x_towrite);
                 if ( !x_written ) {
+                    _ASSERT(result != eRW_Success);
                     x_Err    = true;
                     x_ErrPos = x_GetPPos();
                     break;
@@ -381,13 +393,13 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
         }
 
         x_written = 0;
-        _ASSERT(result == eRW_Success);
         RWSTREAMBUF_HANDLE_EXCEPTIONS(
-            result = m_Writer->Write(buf, n, &x_written),
+            m_Writer->Write(buf, n, &x_written),
             9, "CRWStreambuf::xsputn(): IWriter::Write()",
-            x_written = 0);
+            (x_written = 0, result = eRW_Error));
         _ASSERT(x_written <= n);
         if (!x_written  &&  n) {
+            _ASSERT(result != eRW_Success);
             x_Err    = true;
             x_ErrPos = x_GetPPos();
             break;
@@ -422,7 +434,7 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
     if ( !m_Reader )
         return CT_EOF;
 
-    // flush output buffer, if tied up to it
+    // Flush output buffer, if tied up to it
     if (!(m_Flags & fUntie)  &&  x_Sync() != 0)
         return CT_EOF;
 
@@ -433,14 +445,17 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
 #endif /*NCBI_COMPILER_MIPSPRO*/
 
     // read from device
+    ERW_Result result;
     size_t n_read = 0;
     RWSTREAMBUF_HANDLE_EXCEPTIONS(
         m_Reader->Read(m_ReadBuf, m_BufSize, &n_read),
         10, "CRWStreambuf::underflow(): IReader::Read()",
-        n_read = 0);
+        (n_read = 0, result = eRW_Error));
     _ASSERT(n_read <= m_BufSize);
-    if ( !n_read )
+    if ( !n_read ) {
+        _ASSERT(result != eRW_Success);
         return CT_EOF;
+    }
 
     // update input buffer with the data just read
     x_GPos += (CT_OFF_TYPE) n_read;
@@ -454,7 +469,7 @@ streamsize CRWStreambuf::x_Read(CT_CHAR_TYPE* buf, streamsize m)
 {
     _ASSERT(m_Reader);
 
-    // flush output buffer, if tied up to it
+    // Flush output buffer, if tied up to it
     if (!(m_Flags & fUntie)  &&  x_Sync() != 0)
         return 0;
 
@@ -466,7 +481,7 @@ streamsize CRWStreambuf::x_Read(CT_CHAR_TYPE* buf, streamsize m)
     size_t n_read;
 
     if ( n ) {
-        // first, read from the memory buffer
+        // First, read from the memory buffer
         n_read = (size_t)(egptr() - gptr());
         if (n_read > n)
             n_read = n;
@@ -482,21 +497,23 @@ streamsize CRWStreambuf::x_Read(CT_CHAR_TYPE* buf, streamsize m)
         n_read = 0;
 
     do {
-        // next, read directly from the device
+        // Next, read directly from the device
         size_t     x_toread = !buf || (n  &&  n < m_BufSize) ? m_BufSize : n;
         CT_CHAR_TYPE* x_buf = !buf || (       n < m_BufSize) ? m_ReadBuf : buf;
-        ERW_Result   result = eRW_Success;
         size_t       x_read = 0;
+        ERW_Result   result;
 
         RWSTREAMBUF_HANDLE_EXCEPTIONS(
-            result = m_Reader->Read(x_buf, x_toread, &x_read),
+            m_Reader->Read(x_buf, x_toread, &x_read),
             11, "CRWStreambuf::xsgetn(): IReader::Read()",
-            x_read = 0);
+            (x_read = 0, result = eRW_Error));
         _ASSERT(x_read <= x_toread);
-        if ( !x_read )
+        if ( !x_read ) {
+            _ASSERT(result != eRW_Success);
             break;
+        }
         x_GPos += (CT_OFF_TYPE) x_read;
-        // satisfy "usual backup condition", see standard: 27.5.2.4.3.13
+        // Satisfy "usual backup condition", see standard: 27.5.2.4.3.13
         if (x_buf == m_ReadBuf) {
             size_t xx_read = x_read;
             if (x_read > n)
@@ -535,14 +552,14 @@ streamsize CRWStreambuf::showmanyc(void)
     if ( !m_Reader )
         return -1L;
 
-    // flush output buffer, if tied up to it
+    // Flush output buffer, if tied up to it
     if (!(m_Flags & fUntie))
         x_Sync();
 
     size_t count = 0;
     ERW_Result result;
     RWSTREAMBUF_HANDLE_EXCEPTIONS(
-        result = m_Reader->PendingCount(&count),
+        m_Reader->PendingCount(&count),
         12, "CRWStreambuf::showmanyc(): IReader::PendingCount()",
         result = eRW_Error);
     switch (result) {
