@@ -232,7 +232,7 @@ const char g_kNcbiSockNameAbbr[] = "SOCK";
 
 
 /* Flag to indicate whether the API has been [de]initialized */
-static int/*bool*/ s_Initialized = 0/*-1=deinited;0=uninited;1=inited*/;
+static volatile int/*bool*/ s_Initialized = 0/*-1=deinit;0=uninit;1=init*/;
 
 /* Which wait API to use, UNIX only */
 static ESOCK_IOWaitSysAPI s_IOWaitSysAPI = eSOCK_IOWaitSysAPIAuto;
@@ -261,12 +261,12 @@ static int/*bool*/ s_AllowSigPipe = 0/*false - mask SIGPIPE out*/;
 #endif /*NCBI_OS_UNIX*/
 
 /* SSL support */
-static SOCKSSL   s_SSL;
-static FSSLSetup s_SSLSetup;
+static SOCKSSL            s_SSL;
+static FSSLSetup volatile s_SSLSetup;
 
-/* Error reporting */
-static FSOCK_ErrHook s_ErrHook;
-static void*         s_ErrData;
+/* External error reporting */
+static FSOCK_ErrHook volatile s_ErrHook;
+static void*         volatile s_ErrData;
 
 
 
@@ -647,8 +647,8 @@ static struct timeval* s_to2tv(const STimeout* to,       struct timeval* tv)
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
 
 #  ifndef   SOCK_HAVE_SHOWDATALAYOUT
-#    define SOCK_HAVE_SHOWDATALAYOUT 1
-#  endif
+#    define SOCK_HAVE_SHOWDATALAYOUT  1
+#  endif /* SOCK_HAVE_SHOWDATALAYOUT */
 
 #endif /*__GNUC__ && _DEBUG && !NDEBUG*/
 
@@ -659,98 +659,74 @@ static struct timeval* s_to2tv(const STimeout* to,       struct timeval* tv)
 #  define   infof(T, F)     (unsigned int) offsetof(T, F), \
                             (unsigned int) extentof(T, F)
 
-static void s_ShowDataLayout(void)
+static void x_ShowDataLayout(void)
 {
-    static const char kLayoutFormat[] = {
-        "SOCK data layout:\n"
-        "    Sizeof(TRIGGER_struct) = %u\n"
-        "    Sizeof(LSOCK_struct) = %u\n"
-        "    Sizeof(SOCK_struct) = %u, offsets (sizes) follow\n"
-        "\tsock:      %3u (%u)\n"
-        "\tid:        %3u (%u)\n"
-        "\tisset:     %3u (%u)\n"
-        "\thost:      %3u (%u)\n"
-        "\tport:      %3u (%u)\n"
-        "\tmyport:    %3u (%u)\n"
-        "\tbitfield:      (4)\n"
-#  ifdef NCBI_OS_MSWIN
-        "\tevent:     %3u (%u)\n"
-#  endif /*NCBI_OS_MSWIN*/
-        "\tsession:   %3u (%u)\n"
-        "\tr_tv:      %3u (%u)\n"
-        "\tw_tv:      %3u (%u)\n"
-        "\tc_tv:      %3u (%u)\n"
-        "\tr_to:      %3u (%u)\n"
-        "\tw_to:      %3u (%u)\n"
-        "\tc_to:      %3u (%u)\n"
-        "\tr_buf:     %3u (%u)\n"
-        "\tw_buf:     %3u (%u)\n"
-        "\tr_len:     %3u (%u)\n"
-        "\tw_len:     %3u (%u)\n"
-        "\tn_read:    %3u (%u)\n"
-        "\tn_written: %3u (%u)\n"
-        "\tn_in:      %3u (%u)\n"
-        "\tn_out:     %3u (%u)"
-#  ifdef NCBI_OS_UNIX
-        "\n\tpath:      %3u (%u)"
-#  endif /*NCBI_OS_UNIX*/
-    };
-#  ifdef NCBI_OS_MSWIN
-#    define SOCK_SHOWDATALAYOUT_PARAMS              \
-        infof(SOCK_struct,    sock),                \
-        infof(SOCK_struct,    id),                  \
-        infof(TRIGGER_struct, isset),               \
-        infof(SOCK_struct,    host),                \
-        infof(SOCK_struct,    port),                \
-        infof(SOCK_struct,    myport),              \
-        infof(SOCK_struct,    event),               \
-        infof(SOCK_struct,    session),             \
-        infof(SOCK_struct,    r_tv),                \
-        infof(SOCK_struct,    w_tv),                \
-        infof(SOCK_struct,    c_tv),                \
-        infof(SOCK_struct,    r_to),                \
-        infof(SOCK_struct,    w_to),                \
-        infof(SOCK_struct,    c_to),                \
-        infof(SOCK_struct,    r_buf),               \
-        infof(SOCK_struct,    w_buf),               \
-        infof(SOCK_struct,    r_len),               \
-        infof(SOCK_struct,    w_len),               \
-        infof(SOCK_struct,    n_read),              \
-        infof(SOCK_struct,    n_written),           \
-        infof(SOCK_struct,    n_in),                \
-        infof(SOCK_struct,    n_out)
-#  else
-#    define SOCK_SHOWDATALAYOUT_PARAMS              \
-        infof(SOCK_struct,    sock),                \
-        infof(SOCK_struct,    id),                  \
-        infof(TRIGGER_struct, isset),               \
-        infof(SOCK_struct,    host),                \
-        infof(SOCK_struct,    port),                \
-        infof(SOCK_struct,    myport),              \
-        infof(SOCK_struct,    session),             \
-        infof(SOCK_struct,    r_tv),                \
-        infof(SOCK_struct,    w_tv),                \
-        infof(SOCK_struct,    c_tv),                \
-        infof(SOCK_struct,    r_to),                \
-        infof(SOCK_struct,    w_to),                \
-        infof(SOCK_struct,    c_to),                \
-        infof(SOCK_struct,    r_buf),               \
-        infof(SOCK_struct,    w_buf),               \
-        infof(SOCK_struct,    r_len),               \
-        infof(SOCK_struct,    w_len),               \
-        infof(SOCK_struct,    n_read),              \
-        infof(SOCK_struct,    n_written),           \
-        infof(SOCK_struct,    n_in),                \
-        infof(SOCK_struct,    n_out),               \
-        infof(SOCK_struct,    path)
-#  endif /*NCBI_OS_MSWIN*/
     CORE_LOGF_X(2, eLOG_Note,
-                (kLayoutFormat,
+                ("SOCK data layout:\n"
+                 "    Sizeof(TRIGGER_struct) = %u\n"
+                 "    Sizeof(LSOCK_struct) = %u\n"
+                 "    Sizeof(SOCK_struct) = %u, offsets (sizes) follow\n"
+                 "\tsock:      %3u (%u)\n"
+                 "\tid:        %3u (%u)\n"
+                 "\tisset:     %3u (%u)\n"
+                 "\thost:      %3u (%u)\n"
+                 "\tport:      %3u (%u)\n"
+                 "\tmyport:    %3u (%u)\n"
+                 "\tbitfield:      (4)\n"
+#  ifdef NCBI_OS_MSWIN
+                 "\tevent:     %3u (%u)\n"
+#  endif /*NCBI_OS_MSWIN*/
+                 "\tsession:   %3u (%u)\n"
+                 "\tr_tv:      %3u (%u)\n"
+                 "\tw_tv:      %3u (%u)\n"
+                 "\tc_tv:      %3u (%u)\n"
+                 "\tr_to:      %3u (%u)\n"
+                 "\tw_to:      %3u (%u)\n"
+                 "\tc_to:      %3u (%u)\n"
+                 "\tr_buf:     %3u (%u)\n"
+                 "\tw_buf:     %3u (%u)\n"
+                 "\tr_len:     %3u (%u)\n"
+                 "\tw_len:     %3u (%u)\n"
+                 "\tn_read:    %3u (%u)\n"
+                 "\tn_written: %3u (%u)\n"
+                 "\tn_in:      %3u (%u)\n"
+                 "\tn_out:     %3u (%u)"
+#  ifdef NCBI_OS_UNIX
+                 "\n\tpath:      %3u (%u)"
+#  endif /*NCBI_OS_UNIX*/
+                 "%s"/*dummy*/,
                  (unsigned int) sizeof(TRIGGER_struct),
                  (unsigned int) sizeof(LSOCK_struct),
                  (unsigned int) sizeof(SOCK_struct),
-                 SOCK_SHOWDATALAYOUT_PARAMS));
-#  undef SOCK_SHOWDATALAYOUT_PARAMS
+                 infof(SOCK_struct,    sock),
+                 infof(SOCK_struct,    id),
+                 infof(TRIGGER_struct, isset),
+                 infof(SOCK_struct,    host),
+                 infof(SOCK_struct,    port),
+                 infof(SOCK_struct,    myport),
+#  ifdef NCBI_OS_MSWIN
+                 infof(SOCK_struct,    event),
+#  endif /*NCBI_OS_MSWIN*/
+                 infof(SOCK_struct,    session),
+                 infof(SOCK_struct,    r_tv),
+                 infof(SOCK_struct,    w_tv),
+                 infof(SOCK_struct,    c_tv),
+                 infof(SOCK_struct,    r_to),
+                 infof(SOCK_struct,    w_to),
+                 infof(SOCK_struct,    c_to),
+                 infof(SOCK_struct,    r_buf),
+                 infof(SOCK_struct,    w_buf),
+                 infof(SOCK_struct,    r_len),
+                 infof(SOCK_struct,    w_len),
+                 infof(SOCK_struct,    n_read),
+                 infof(SOCK_struct,    n_written),
+                 infof(SOCK_struct,    n_in),
+                 infof(SOCK_struct,    n_out),
+#ifndef NCBI_OS_MSWIN
+                 infof(SOCK_struct,    path),
+#endif /*!NCBI_OS_MSWIN*/
+                 ""/*dummy*/)
+                );
 }
 
 #endif /*SOCK_HAVE_SHOWDATALAYOUT*/
@@ -770,7 +746,7 @@ static EIO_Status s_Init(void)
 
 #ifdef SOCK_HAVE_SHOWDATALAYOUT
     if (s_Log == eOn)
-        s_ShowDataLayout();
+        x_ShowDataLayout();
 #endif /*SOCK_HAVE_SHOWDATALAYOUT*/
 
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
@@ -872,9 +848,9 @@ static EIO_Status s_InitAPI_(int secure)
     } else {
         static void* /*bool*/ s_Once = 0/*false*/;
         if (CORE_Once(&s_Once)) {
-            CORE_LOG(eLOG_Critical, "Secure socket layer (SSL) has not"
+            CORE_LOG(eLOG_Critical, "Secure Socket Layer (SSL) has not"
                      " been properly initialized in the NCBI Toolkit. "
-                     " Have you forgotten to call SOCK_SetupSSL()?");
+                     " Have you forgotten to call SOCK_SetupSSL[Ex]()?");
         }
         status = eIO_NotSupported;
     }

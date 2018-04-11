@@ -842,6 +842,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CloseOSHandle
  * @note  It is allowed to use a non-NULL zeroed STimeout to poll
  *        on the socket for the immediately available event and
  *        return it (or eIO_Timeout, otherwise) without blocking.
+ * @sa
+ *  SOCK_Poll, POLLABLE_Poll
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Wait
 (SOCK            sock,
@@ -903,7 +905,7 @@ typedef struct {
  * @param n_ready
  *  [out] # of ready sockets  (may be NULL)
  * @sa
- *  POLLABLE_Poll
+ *  SOCK_Wait, POLLABLE_Poll
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Poll
 (size_t          n,
@@ -922,6 +924,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Poll
  *  [in]  one of:  eIO_[Read/Write/ReadWrite/Close]
  * @param timeout
  *  [in]  new timeout value to set
+ * @sa
+ *  SOCK_Read, SOCK_Write, SOCK_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_SetTimeout
 (SOCK            sock,
@@ -939,6 +943,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_SetTimeout
  *  [in]  socket handle
  * @param event
  *  [in]  one of:  eIO_[Read/Write/Close]
+ * @sa
+ *  SOCK_Read, SOCK_Write, SOCK_Close
  */
 extern NCBI_XCONNECT_EXPORT const STimeout* SOCK_GetTimeout
 (SOCK      sock,
@@ -1001,6 +1007,8 @@ extern NCBI_XCONNECT_EXPORT const STimeout* SOCK_GetTimeout
  *  [out] # of bytes read  (can be NULL)
  * @param how
  *  [in]  how to read the data
+ * @sa
+ *  SOCK_SetTimeout
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Read
 (SOCK           sock,
@@ -1033,6 +1041,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Read
  *  an error.  Note that *n_read must be analyzed prior to return code,
  *  because the buffer could have received some contents before
  *  the indicated error occurred (especially when connection closed).
+ * @sa
+ *  SOCK_SetTimeout
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_ReadLine
 (SOCK    sock,
@@ -1129,6 +1139,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Status
  * @note  If "size"==0, return value can be eIO_Success if no
  *        pending data left in the socket, or eIO_Timeout if there are still
  *        data pending.  In either case, "*n_written" is set to 0 on return.
+ * @sa
+ *  SOCK_SetTimeout
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Write
 (SOCK            sock,
@@ -1253,6 +1265,8 @@ extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetRemotePort
  *  [in]  what parts of address to include
  * @return
  *  On success, return its "buf" argument; return 0 on error.
+ * @sa
+ *  SOCK_HostPortToString
  */
 typedef enum {
     eSAF_Full = 0,  /**< address in full, native form                      */
@@ -1335,6 +1349,8 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReadOnWriteAPI
  *
  * @return
  *  Prior setting
+ * @sa
+ *  SOCK_Read
  */
 extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReadOnWrite
 (SOCK    sock,
@@ -1353,7 +1369,7 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReadOnWrite
  * @param on_off
  *  [in]  1 to set the cork; 0 to remove the cork
  * @sa
- *  SOCK_DisableOSSendDelay
+ *  SOCK_Write, SOCK_DisableOSSendDelay
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_SetCork
 (SOCK         sock,
@@ -1375,7 +1391,7 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetCork
  * @param on_off
  *  [in]  1 to disable the send delay; 0 to enable the send delay
  * @sa
- *  SOCK_SetCork
+ *  SOCK_Write, SOCK_SetCork
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_DisableOSSendDelay
 (SOCK         sock,
@@ -1507,7 +1523,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_WaitMsg
  * @param datalen
  *  [in]  size of additional data (bytes)
  * @sa
- *  SOCK_Write
+ *  SOCK_Write, SOCK_SetTimeout
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SendMsg
 (SOCK           sock,
@@ -1534,7 +1550,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SendMsg
  * @param sender_port
  *  [out] host byte order, may be NULL
  * @sa
- *  SOCK_Read
+ *  SOCK_Read, SOCK_SetTimeout
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_RecvMsg
 (SOCK            sock,
@@ -1854,6 +1870,8 @@ typedef struct {
  *  none were and the specified time interval had elapsed, other error code
  *  for some other error condition (in which case the "revent" fields in the
  *  array may not have been updated with valid values).
+ * @sa
+ *   SOCK_Wait, SOCK_Poll
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status POLLABLE_Poll
 (size_t          n,
@@ -2079,6 +2097,8 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLoopbackAddress(void);
  *  eOff     not to recache even if unknown, return whatever is available.
  * @return
  *  Local address (in network byte order).
+ * @sa
+ *  SOCK_gethostname
  */
 extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLocalHostAddress
 (ESwitch reget
@@ -2101,6 +2121,8 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLocalHostAddress
  * @note  'host' gets returned in network byte order, unlike 'port', which
  *        always comes out in host (native) byte order.
  * @note  ":0" is accepted to denote no-host:zero-port.  
+ * @sa
+ *   SOCK_HostPortToString, SOCK_isip, SOCK_gethostbyname
  */
 extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort
 (const char*     str,
@@ -2124,6 +2146,8 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort
  *  must be large enough
  * @return
  *  Number of bytes printed, or 0 on error (e.g. buffer is too small).
+ * @sa
+ *  SOCK_StringToHostPort, SOCK_ntoa, SOCK_gethostbyaddr
  */
 extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToString
 (unsigned int   host,
@@ -2155,26 +2179,26 @@ typedef SOCKSSL (*FSSLSetup)(void);
 
 /** Store SSL setup callback until actual initialization.
  * @param setup
- *  non-NULL SSL setup routine
+ *  non-NULL SSL setup routine, or NULL to shut the SSL down
  * @warning
  *  Do not use this function unless you know what you're doing.
  *  Use other means of initialization such as CONNECT_Init() or CConnIniter.
  * @sa
- *  CONNECT_Init, CConnIniter
+ *  SOCK_SetupSSLEx, CONNECT_Init, CConnIniter
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_SetupSSL(FSSLSetup setup);
 
 
-/** Take SSL setup callback and then init the entire API (SOCK + SSL).
+/** Take SSL setup callback, and then init the entire API (SOCK + SSL).
  * @param setup
- *  non-NULL SSL setup routine
+ *  non-NULL SSL setup routine, or NULL to shut the SSL down
  * @return
  *  eIO_Success if successful, other code on error.
  * @warning
  *  Do not use this function unless you know what you're doing.
  *  Use other means of initialization such as CONNECT_Init() or CConnIniter.
  * @sa
- *  CONNECT_Init, CConnIniter
+ *  SOCK_SetupSSL, CONNECT_Init, CConnIniter
  */ 
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_SetupSSLEx(FSSLSetup setup);
 
@@ -2184,6 +2208,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_SetupSSLEx(FSSLSetup setup);
  *  NULL if SSL has not been properly set up.
  * @note
  *  "NONE" is returned as a name if SSL has been explicitly disabled.
+ * @sa
+ *   SOCK_SetupSSL, SOCK_SetupSSLEx
  */
 extern NCBI_XCONNECT_EXPORT const char* SOCK_SSLName(void);
 
