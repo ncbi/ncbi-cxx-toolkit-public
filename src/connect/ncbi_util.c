@@ -356,10 +356,10 @@ extern char* LOG_ComposeMessage
 (const SLOG_Message* mess,
  TLOG_FormatFlags    flags)
 {
-    static const char kRawData_Begin[] =
+    static const char kRawData_Beg[] =
         "\n#################### [BEGIN] Raw Data (%lu byte%s):\n";
     static const char kRawData_End[] =
-        "\n#################### [END] Raw Data\n";
+        "\n#################### [_END_] Raw Data\n";
 
     const char *function, *level = 0;
     char *str, *s, datetime[32];
@@ -442,7 +442,7 @@ extern char* LOG_ComposeMessage
         message_len = strlen(mess->message);
 
     if (mess->raw_size) {
-        data_len = (sizeof(kRawData_Begin)
+        data_len = (sizeof(kRawData_Beg)
                     + 20 + UTIL_PrintableStringSize((const char*)
                                                     mess->raw_data,
                                                     mess->raw_size) +
@@ -494,7 +494,7 @@ extern char* LOG_ComposeMessage
         s += message_len;
     }
     if (data_len) {
-        s += sprintf(s, kRawData_Begin,
+        s += sprintf(s, kRawData_Beg,
                      (unsigned long) mess->raw_size,
                      &"s"[mess->raw_size == 1]);
 
