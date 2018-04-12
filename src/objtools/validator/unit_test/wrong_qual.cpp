@@ -4860,3 +4860,4 @@ BOOST_FIXTURE_TEST_CASE(Test_FEAT_WrongQualOnImpFeat, CGenBankFixture)
     }
 
 }    
+

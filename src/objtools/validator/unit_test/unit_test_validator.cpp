@@ -22983,3 +22983,51 @@ BOOST_AUTO_TEST_CASE(Test_ExceptionRequiresLocusTag)
     CheckErrors(*eval, expected_errors);
     CLEAR_ERRORS
 }
+
+
+CRef<CSeq_submit> MakeGeneious()
+{
+    CRef<CSeq_submit> ss(new CSeq_submit());
+    ss->SetSub().SetTool("Geneious");
+    CRef<CAuthor> author = unit_test_util::BuildGoodAuthor();
+    ss->SetSub().SetCit().SetAuthors().SetNames().SetStd().push_back(author);
+    ss->SetSub().SetCit().SetAuthors().SetAffil().SetStd().SetAffil("some affiliation");
+    ss->SetSub().SetCit().SetAuthors().SetAffil().SetStd().SetCountry("Russia");
+
+    ss->SetSub().SetCit().SetDate().SetStd().SetYear(2009);
+    ss->SetSub().SetCit().SetDate().SetStd().SetMonth(12);
+    ss->SetSub().SetCit().SetDate().SetStd().SetDay(31);
+
+    return ss;
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Geneious)
+{
+    CRef<CSeq_submit> ss = MakeGeneious();
+
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> gene = AddMiscFeature(entry);
+    CRef<CSeq_loc> gene_loc = unit_test_util::MakeMixLoc(entry->SetSeq().SetId().front());
+    gene_loc->SetMix().Set().front()->SetInt().SetFrom(0);
+    gene_loc->SetMix().Set().front()->SetInt().SetTo(0);
+    gene_loc->SetMix().Set().front()->SetInt().SetStrand(eNa_strand_minus);
+    gene_loc->SetMix().Set().back()->SetInt().SetFrom(9);
+    gene_loc->SetMix().Set().back()->SetInt().SetTo(10);
+    gene->SetLocation().Assign(*gene_loc);
+
+    ss->SetData().SetEntrys().push_back(entry);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MixedStrand",
+        "Location: Mixed strands in SeqLoc [(lcl|good:c1-1, 10-11)]"));
+
+    options |= CValidator::eVal_far_fetch_cds_products;
+    eval = validator.Validate(*ss, &scope, options);
+
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+}

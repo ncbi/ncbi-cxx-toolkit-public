@@ -1026,7 +1026,7 @@ void CValidError_feat::ValidateCdsProductId(const CSeq_feat& feat)
     }
     
     // non-pseudo CDS must have /product
-    PostErr(m_Imp.IsGeneious() ? eDiag_Warning : eDiag_Error, eErr_SEQ_FEAT_MissingCDSproduct,
+    PostErr(eDiag_Error, eErr_SEQ_FEAT_MissingCDSproduct,
         "Expected CDS product absent", feat);
 }
 
@@ -5002,7 +5002,7 @@ void CValidError_feat::x_ReportTranslationMismatches(const CCDSTranslationProble
         string gccode = NStr::IntToString(gc);
 
         msg += ".  Genetic code [" + gccode + "]";
-        PostErr(m_Imp.IsGeneious() ? eDiag_Warning : eDiag_Error, eErr_SEQ_FEAT_MisMatchAA, msg, feat);
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_MisMatchAA, msg, feat);
     } else {
         // report individual mismatches
         for (size_t i = 0; i < mismatches.size(); ++i) {
@@ -5029,7 +5029,7 @@ void CValidError_feat::x_ReportTranslationMismatches(const CCDSTranslationProble
                 if (!nuclocstr.empty()) {
                     msg += " at " + nuclocstr;
                 }
-                PostErr(m_Imp.IsGeneious() ? eDiag_Warning : sev, eErr_SEQ_FEAT_MisMatchAA, msg, feat);
+                PostErr(sev, eErr_SEQ_FEAT_MisMatchAA, msg, feat);
             }
         }
     }
