@@ -62,6 +62,8 @@
 #include <boost/test/auto_unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
 
+#include <common/test_assert.h>  /* This header must go last */
+
 
 using namespace ncbi;
 using namespace ncbi::blast;
