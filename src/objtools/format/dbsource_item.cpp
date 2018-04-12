@@ -446,7 +446,7 @@ void CDBSourceItem::x_AddSPBlock(CBioseqContext& ctx)
                 if (ctx.Config().DoHTML()) {
                     xrefs.push_back
                         ("MIM <a href=\""
-                         "https://www.ncbi.nlm.nih.gov/entrez/dispomim.cgi?id=" + id
+                         "https://omim.org/entry/" + id
                          + "\">" + id + "</a>");
                 } else {
                     xrefs.push_back("MIM:" + id);
