@@ -958,7 +958,7 @@ void CValidError_feat::x_ValidateCdregionCodebreak
         const CSeq_loc& cbr_loc = cbr.GetLoc();
         ECompare comp = Compare(cbr_loc, feat_loc, m_Scope, fCompareOverlapping);
         if ( ((comp != eContained) && (comp != eSame)) || cbr_loc.IsNull() || cbr_loc.IsEmpty()) {
-            PostErr (eDiag_Error, eErr_SEQ_FEAT_Range, 
+            PostErr (eDiag_Error, eErr_SEQ_FEAT_CDSrange, 
                 "Code-break location not in coding region", feat);
         } else if (feat.IsSetProduct()) {
             if (cbr_loc.GetStop(eExtreme_Biological) == feat_loc.GetStop(eExtreme_Biological)) {
@@ -966,13 +966,13 @@ void CValidError_feat::x_ValidateCdregionCodebreak
             } else {
                 if (SeqLocCheck(cbr_loc, m_Scope) == eSeqLocCheck_error) {
                     string lbl = GetValidatorLocationLabel(cbr_loc, *m_Scope);
-                    PostErr(eDiag_Critical, eErr_SEQ_FEAT_Range,
+                    PostErr(eDiag_Critical, eErr_SEQ_FEAT_CDSrange,
                         "Code-break: SeqLoc [" + lbl + "] out of range", feat);
                 } else {
                     int frame = 0;
                     CRef<CSeq_loc> p_loc = SourceToProduct(feat, cbr_loc, fS2P_AllowTer, m_Scope, &frame);
                     if (!p_loc || p_loc->IsNull() || frame != 1) {
-                        PostErr(eDiag_Error, eErr_SEQ_FEAT_Range,
+                        PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSrange,
                             "Code-break location not in coding region - may be frame problem", feat);
                     }
                 }
@@ -1655,7 +1655,7 @@ void CValidError_feat::x_ValidateProteinName(const string& prot_name, const CSeq
                     && (*id_it)->GetOther().IsSetAccession()
                     && !NStr::EqualNocase((*id_it)->GetOther().GetAccession(),
                     prot_name.substr(21))) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_HpotheticalProteinMismatch,
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_HypotheticalProteinMismatch,
                         "Hypothetical protein reference does not match accession",
                         feat);
                 }
@@ -1897,7 +1897,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
             const CSeq_loc& anticodon = trna.GetAnticodon();
             size_t anticodon_len = GetLength(anticodon, m_Scope);
             if ( anticodon_len != 3 ) {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_Range,
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_tRNArange,
                     "Anticodon is not 3 bases in length", feat);
             }
             ECompare comp = sequence::Compare(anticodon,
@@ -1905,7 +1905,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
                                               m_Scope,
                                               sequence::fCompareOverlapping);
             if ( comp != eContained  &&  comp != eSame ) {
-                PostErr (eDiag_Error, eErr_SEQ_FEAT_Range,
+                PostErr (eDiag_Error, eErr_SEQ_FEAT_tRNArange,
                     "Anticodon location not in tRNA", feat);
             }
             ValidateAnticodon(anticodon, feat);
@@ -2019,7 +2019,7 @@ void CValidError_feat::ValidateAnticodon(const CSeq_loc& anticodon, const CSeq_f
         if ( !chk ) {
             string lbl;
             curr.GetEmbeddingSeq_loc().GetLabel(&lbl);
-            PostErr(eDiag_Critical, eErr_SEQ_FEAT_Range,
+            PostErr(eDiag_Critical, eErr_SEQ_FEAT_tRNArange,
                 "Anticodon location [" + lbl + "] out of range", feat);
         }
 
@@ -2047,7 +2047,7 @@ void CValidError_feat::ValidateAnticodon(const CSeq_loc& anticodon, const CSeq_f
             ENa_strand curr_strand = curr.GetStrand();
             ENa_strand prev_strand = prev.GetStrand();
             if ( curr_range == prev_range  &&  curr_strand == prev_strand ) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_DuplicateInterval,
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_DuplicateAnticodonInterval,
                     "Duplicate anticodon exons in location", feat);
             }
             if ( curr_strand != prev_strand ) {
@@ -2070,11 +2070,11 @@ void CValidError_feat::ValidateAnticodon(const CSeq_loc& anticodon, const CSeq_f
     ENa_strand loc_strand = feat.GetLocation().GetStrand();
     ENa_strand ac_strand = anticodon.GetStrand();
     if (loc_strand == eNa_strand_minus && ac_strand != eNa_strand_minus) {
-        PostErr (eDiag_Error, eErr_SEQ_FEAT_BadAnticodonStrand, 
-                 "Anticodon should be on minus strand", feat);
+        PostErr (eDiag_Error, eErr_SEQ_FEAT_AnticodonStrandConflict, 
+                 "Anticodon strand and tRNA strand do not match.", feat);
     } else if (loc_strand != eNa_strand_minus && ac_strand == eNa_strand_minus) {
-        PostErr (eDiag_Error, eErr_SEQ_FEAT_BadAnticodonStrand, 
-                 "Anticodon should be on plus strand", feat);
+        PostErr (eDiag_Error, eErr_SEQ_FEAT_AnticodonStrandConflict, 
+                 "Anticodon strand and tRNA strand do not match.", feat);
     }
 
     // trans splicing exception turns off both mixed_strand and out_of_order messages
@@ -2088,11 +2088,11 @@ void CValidError_feat::ValidateAnticodon(const CSeq_loc& anticodon, const CSeq_f
         string loc_lbl = "";
         anticodon.GetLabel(&loc_lbl);
         if (mixed_strand) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_MixedStrand,
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_AnticodonMixedStrand,
                 "Mixed strands in Anticodon [" + loc_lbl + "]", feat);
         }
         if (unmarked_strand) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_MixedStrand,
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_AnticodonMixedStrand,
                 "Mixed plus and unknown strands in Anticodon [" + loc_lbl + "]", feat);
         }
         if (!ordered) {
@@ -4730,7 +4730,7 @@ void CValidError_feat::x_ReportCDSTranslationProblems(const CSeq_feat& feat, con
         if (m_Imp.IsEmbl() || m_Imp.IsDdbj()) {
             sev = eDiag_Error;
         }
-        PostErr(sev, eErr_SEQ_FEAT_NonsenseIntron, "Triplet intron encodes stop codon", feat);
+        PostErr(sev, eErr_SEQ_FEAT_IntronIsStopCodon, "Triplet intron encodes stop codon", feat);
     }
 
     if (problem_flags & CCDSTranslationProblems::eCDSTranslationProblem_TooManyX) {
@@ -7591,7 +7591,7 @@ void CGeneValidator::x_ValidateExceptText(const string& text)
 
     if (NStr::Find(text, "gene split at ") != string::npos &&
         (!m_Feat.GetData().GetGene().IsSetLocus_tag() || NStr::IsBlank(m_Feat.GetData().GetGene().GetLocus_tag()))) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_ExceptionProblem, "Gene has split exception but no locus_tag");
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_ExceptionRequiresLocusTag, "Gene has split exception but no locus_tag");
     }
 }
 

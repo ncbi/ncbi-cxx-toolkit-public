@@ -1069,7 +1069,7 @@ void CValidError_bioseq::ValidateInst(
 
             case CSeq_inst::eMol_na:
                 PostErr(eDiag_Error, eErr_SEQ_INST_MolNuclAcid,
-                         "Bioseq.mol is type na", seq);
+                         "Bioseq.mol is type nucleic acid", seq);
                 break;
 
             case CSeq_inst::eMol_aa:
@@ -1093,7 +1093,7 @@ void CValidError_bioseq::ValidateInst(
                 break;
 
             case CSeq_inst::eMol_other:
-                PostErr(eDiag_Error, eErr_SEQ_INST_MolOther,
+                PostErr(eDiag_Error, eErr_SEQ_INST_MolinfoOther,
                          "Bioseq.mol is type other", seq);
                 break;
 
@@ -2629,7 +2629,7 @@ void CValidError_bioseq::x_ValidateTitle(const CBioseq& seq)
 
     // warning if title contains complete genome but sequence contains gap features
     if (NStr::FindNoCase (title, "complete genome") != NPOS && x_HasGap(seq)) {
-        PostErr(eDiag_Warning, eErr_SEQ_INST_CompleteTitleProblem, 
+        PostErr(eDiag_Warning, eErr_SEQ_INST_CompleteGenomeHasGaps, 
                 "Title contains 'complete genome' but sequence has gaps", seq);
     }
 
@@ -2916,12 +2916,12 @@ bool CValidError_bioseq::GetTSANStretchErrors(const CBioseq& seq)
         rval = true;
     } else {
         if (n5) {
-            PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
+            PostErr (eDiag_Warning, eErr_SEQ_INST_HighNcontent5Prime, 
                         "Sequence has a stretch of at least 10 Ns within the first 20 bases", seq);
             rval = true;
         }
         if (n3) {
-            PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
+            PostErr (eDiag_Warning, eErr_SEQ_INST_HighNcontent3Prime, 
                         "Sequence has a stretch of at least 10 Ns within the last 20 bases", seq);
             rval = true;
         }
@@ -3109,12 +3109,12 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
         }
 
         if (begin_ambig) {
-            PostErr(eDiag_Warning, eErr_SEQ_INST_HighNContentPercent,
+            PostErr(eDiag_Warning, eErr_SEQ_INST_HighNpercent5Prime,
                 "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases",
                 seq);
         }
         if (end_ambig) {
-            PostErr(eDiag_Warning, eErr_SEQ_INST_HighNContentPercent,
+            PostErr(eDiag_Warning, eErr_SEQ_INST_HighNpercent3Prime,
                 "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases",
                 seq);
         }
@@ -3144,11 +3144,11 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
                             "Sequence has a stretch of " + NStr::IntToString(max_stretch) + " Ns", seq);
             } else {
                 if (n5) {
-                    PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
+                    PostErr (eDiag_Warning, eErr_SEQ_INST_HighNcontent5Prime, 
                                 "Sequence has a stretch of at least 10 Ns within the first 20 bases", seq);
                 }
                 if (n3) {
-                    PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
+                    PostErr (eDiag_Warning, eErr_SEQ_INST_HighNcontent3Prime, 
                                 "Sequence has a stretch of at least 10 Ns within the last 20 bases", seq);
                 }
             }
@@ -4187,7 +4187,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             break;
         }
         default:
-            PostErr(eDiag_Error, eErr_SEQ_INST_ExtNotAllowed,
+            PostErr(eDiag_Critical, eErr_SEQ_INST_ExtNotAllowed,
                 "CDelta_seq::Which() is e_not_set", seq);
         }
     }
@@ -9760,7 +9760,7 @@ void CValidError_bioseq::x_CompareStrings
                                                    (*it->second).GetLocation(),
                                                    m_Scope,
                                                    sequence::fCompareOverlapping) == eSame) {
-                PostErr (eDiag_Info, eErr_SEQ_FEAT_MultiplyAnnotatedGenes,
+                PostErr (eDiag_Info, eErr_SEQ_FEAT_DuplicateGeneConflictingLocusTag,
                          message + ", but feature locations are identical", *it->second);
             } else if (is_gene_locus 
                        && NStr::Equal (GetSequenceStringFromLoc(feat->GetLocation(), *m_Scope),

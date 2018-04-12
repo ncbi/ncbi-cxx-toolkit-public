@@ -91,7 +91,7 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { "MolNotSet",
     "It is not clear whether this sequence is nucleic acid or protein. Please set \
     the appropriate molecule type (Bioseq.mol)." } },
-    { eErr_SEQ_INST_MolOther,
+    { eErr_SEQ_INST_MolinfoOther,
     { "MolOther",
     "Most sequences are either nucleic acid or protein. However, the molecule \
     type (Bioseq.mol) is set to \"other\". It should probably be set to nucleic \
@@ -214,8 +214,8 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { "SeqLitGapLength0",
     "A SeqLit component of a delta Bioseq can specify a gap, but it should not be a gap \
     of 0 length." } },
-    { eErr_SEQ_INST_TpaAssmeblyProblem,
-    { "TpaAssmeblyProblem",
+    { eErr_SEQ_INST_TpaAssemblyProblem,
+    { "TpaAssemblyProblem",
     "Third party annotation records should have a TpaAssembly user object and a \
     Seq-hist.assembly alignment for the PRIMARY block." } },
     { eErr_SEQ_INST_SeqLocLength,
@@ -345,6 +345,21 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_INST_WGSseqGapProblem,
     { "WGSseqGapProblem",
       "Gaps for WGS genomes should be Assembly Gaps with linkage evidence." } } ,
+    { eErr_SEQ_INST_CompleteGenomeHasGaps,
+    { "CompleteGenomeHasGaps",
+      "Title contains 'complete genome' but sequence has gaps" } } ,
+    { eErr_SEQ_INST_HighNcontent5Prime,
+    { "HighNcontent5Prime",
+      "Sequence with a large number or percentage of Ns at the 5' end might need to be trimmed" } } ,
+    { eErr_SEQ_INST_HighNcontent3Prime,
+    { "HighNcontent3Prime",
+      "Sequence with a large number or percentage of Ns at the 3' end might need to be trimmed" } } ,
+    { eErr_SEQ_INST_HighNpercent5Prime,
+    { "HighNpercent5Prime",
+      "Sequence with a large number or percentage of Ns at the 5' end might need to be trimmed" } } ,
+    { eErr_SEQ_INST_HighNpercent3Prime,
+    { "HighNpercent3Prime",
+      "Sequence with a large number or percentage of Ns at the 3' end might need to be trimmed" } } ,
 
     /* SEQ_DESCR */
 
@@ -409,10 +424,10 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { "BioSourceNeedsFocus",
     "Focus must be set on a BioSource descriptor in records where there is a \
     BioSource feature with a different organism name." } },
-    { eErr_SEQ_DESCR_BadOrganelle,
-    { "BadOrganelle",
-    "Note that only Kinetoplastida have kinetoplasts, and that only Chlorarchniophyta \
-    and Cryptophyta have nucleomorphs." } },
+    { eErr_SEQ_DESCR_BadOrganelleLocation,
+    { "BadOrganelleLocation",
+    "Only Kinetoplastida have kinetoplasts. Only Chlorarchniophyta \
+    and Cryptophyta have nucleomorphs. Bacterial or viral source should not have organelle location." } },
     { eErr_SEQ_DESCR_MultipleChromosomes,
     { "MultipleChromosomes",
     "There are multiple chromosome qualifiers on this Bioseq.  With the exception of \
@@ -728,9 +743,6 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_BadBioSourceFrequencyValue,
     { "BadBioSourceFrequencyValue",
         "Frequency should be a number less than 1" }},
-    { eErr_SEQ_DESCR_BadOrganelleLocation,
-    { "BadOrganelleLocation",
-        "Bacterial or viral source should not have organelle location" }},
     { eErr_SEQ_DESCR_BadPlasmidChromosomeLinkageName,
     { "BadPlasmidChromosomeLinkageName",
         "Problematic plasmid/chromosome/linkage group name" }},
@@ -923,6 +935,19 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_EmptyOrgInput,
     { "EmptyOrgInput",
       "Org-ref does not contain information to match" } },
+    { eErr_SEQ_DESCR_HostIdenticalToOrganism,
+    { "HostIdenticalToOrganism",
+      "Specific host should not be identical to taxname" } } ,
+    { eErr_SEQ_DESCR_MultipleStrains,
+    { "MultipleStrains",
+      "A Biosource should only have one strain value" } } ,
+    { eErr_SEQ_DESCR_BadVariety,
+    { "BadVariety",
+      "Orgmod variety should only be in plants, fungi, or cyanobacteria" } } ,
+    { eErr_SEQ_DESCR_BadTypeMaterial,
+    { "BadTypeMaterial",
+      "Bad value for type_material" } } ,
+
 
     /* SEQ_GENERIC */
 
@@ -1168,6 +1193,12 @@ the Bioseq it points to." } },
 "Mixed strands (plus and minus) have been found in the same location. While \
 this is biologically possible, it is very unusual. Please check that this is \
 really what you mean." } },
+   { eErr_SEQ_FEAT_AnticodonMixedStrand,
+   { "AnticodonMixedStrand",
+     "Mixed strands in Anticodon location" } } ,
+   { eErr_SEQ_FEAT_GenomeSetMixedStrand,
+   { "GenomeSetMixedStrand",
+     "Mixed strands in feature location on small genome set - set trans-splicing exception if needed" } } ,
    { eErr_SEQ_FEAT_SeqLocOrder,
    { "SeqLocOrder",
 "This location has intervals that are out of order. While whis is biologically \
@@ -1211,8 +1242,8 @@ stop codon was not found on this sequence, although one was expected." } },
    { "TranslExcept",
 "An unparsed \transl_except qualifier was found. This indicates a parser \
 problem." } },
-   { eErr_SEQ_FEAT_NoProtRefFound,
-   { "NoProtRefFound",
+   { eErr_SEQ_FEAT_MissingProteinName,
+   { "MissingProteinName",
 "The name and description of the protein is missing from this entry. Every \
 protein Bioseq must have one full-length Prot-ref feature to provide this \
 information." } },
@@ -1338,8 +1369,11 @@ If the number is large, it may indicate incorrect intron/exon boundaries." } },
 "The nucleotide location and protein product of the CDS are not packaged together \
 in the same nuc-prot set.  This may be an error in the software used to create \
 the record." } },
-   { eErr_SEQ_FEAT_DuplicateInterval,
-   { "DuplicateInterval",
+   { eErr_SEQ_FEAT_DuplicateExonInterval,
+   { "DuplicateExonInterval",
+"The location has identical adjacent intervals, e.g., a duplicate exon reference." } },
+   { eErr_SEQ_FEAT_DuplicateAnticodonInterval,
+   { "DuplicateAnticodonInterval",
 "The location has identical adjacent intervals, e.g., a duplicate exon reference." } },
    { eErr_SEQ_FEAT_PolyAsiteNotPoint,
    { "PolyAsiteNotPoint",
@@ -1592,8 +1626,8 @@ a record." } },
 "The value of the inference qualifier is constrained by agreement of the international \
 nucleotide sequence database collaboration.  This value does not conform to those \
 constraints.  Please see the feature table documentation for more information." } },
-   { eErr_SEQ_FEAT_HpotheticalProteinMismatch,
-   { "HpotheticalProteinMismatch",
+   { eErr_SEQ_FEAT_HypotheticalProteinMismatch,
+   { "HypotheticalProteinMismatch",
 "There is a mismatch between the accession cited by the hypothetical protein claim \
 and the actual accession of the record." } },
    { eErr_SEQ_FEAT_FeatureRefersToAccession,
@@ -1714,8 +1748,8 @@ and wobble expansion of the anticodon sequence." } },
    { "BadAnticodonCodon",
 "The tRNA indicated codon recognized cannot be produced by any likely reverse complement \
 and wobble expansion of the anticodon sequence." } },
-   { eErr_SEQ_FEAT_BadAnticodonStrand,
-   { "BadAnticodonStrand",
+   { eErr_SEQ_FEAT_AnticodonStrandConflict,
+   { "AnticodonStrandConflict",
 "The tRNA feature location and anticodon location are not on the same strand." } },
    { eErr_SEQ_FEAT_UndesiredGeneSynonym,
    { "UndesiredGeneSynonym",
@@ -1795,8 +1829,8 @@ the prefered formal naming convention." } },
    { eErr_SEQ_FEAT_InconsistentGeneOntologyTermAndId,
    { "InconsistentGeneOntologyTermAndId",
 "The same GO term should apply to Gene Ontology (GO) term specifications with the same GO ID." } },
-   { eErr_SEQ_FEAT_MultiplyAnnotatedGenes,
-   { "MultiplyAnnotatedGenes",
+   { eErr_SEQ_FEAT_DuplicateGeneConflictingLocusTag,
+   { "DuplicateGeneConflictingLocusTag",
 "Two gene features with the same name are annotated at the same location." } },
    { eErr_SEQ_FEAT_ShortIntron,
    { "ShortIntron",
@@ -1895,8 +1929,8 @@ same id type" } },
    { eErr_SEQ_FEAT_BadCDScomment,
    { "BadCDScomment",
 "Comment is inconsistent with content of feature." } },
-   { eErr_SEQ_FEAT_NonsenseIntron,
-   { "NonsenseIntron",
+   { eErr_SEQ_FEAT_IntronIsStopCodon,
+   { "IntronIsStopCodon",
 "3 base intron actually contains a stop codon." } },
    { eErr_SEQ_FEAT_InconsistentPseudogeneValue,
    { "InconsistentPseudogeneValue",
@@ -2138,6 +2172,18 @@ same id type" } },
    { eErr_SEQ_FEAT_RepeatRegionNeedsNote,
    { "RepeatRegionNeedsNote",
      "A repeat_region feature should have qualifiers or a note" } },
+   { eErr_SEQ_FEAT_CDSrange,
+   { "CDSrange",
+     "A code-break location should fall inside the coding region feature location" } } ,
+   { eErr_SEQ_FEAT_tRNArange,
+   { "tRNArange",
+     "An anticodon location should fall inside the tRNA feature location" } } ,
+   { eErr_SEQ_FEAT_ExceptionRequiresLocusTag,
+   { "ExceptionRequiresLocusTag",
+     "Genes with an exception indicating that the gene was split must have a locus-tag value" } },
+   { eErr_SEQ_FEAT_BadTranssplicedInterval,
+   { "BadTranssplicedInterval",
+     "a trans-spliced feature should have multiple intervals" } },
 
 /* SEQ_ALIGN */
 

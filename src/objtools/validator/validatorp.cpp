@@ -400,7 +400,7 @@ static const EErrType sc_ValidGenomeRaise[] = {
     eErr_SEQ_INST_BadSeqIdFormat,
     eErr_SEQ_INST_TerminalNs,
     eErr_SEQ_INST_UnexpectedIdentifierChange,
-    eErr_SEQ_INST_TpaAssmeblyProblem,
+    eErr_SEQ_INST_TpaAssemblyProblem,
     eErr_SEQ_INST_SeqLocLength,
     eErr_SEQ_INST_CompleteTitleProblem,
     eErr_SEQ_INST_BadHTGSeq,
@@ -410,10 +410,11 @@ static const EErrType sc_ValidGenomeRaise[] = {
     eErr_SEQ_INST_InternalGapsInSeqRaw,
     eErr_SEQ_INST_HighNContentStretch,
     eErr_SEQ_INST_UnknownLengthGapNot100,
+    eErr_SEQ_INST_CompleteGenomeHasGaps,
     eErr_SEQ_DESCR_BioSourceMissing,
     eErr_SEQ_DESCR_InvalidForType,
     eErr_SEQ_DESCR_InconsistentBioSources,
-    eErr_SEQ_DESCR_BadOrganelle,
+    eErr_SEQ_DESCR_BadOrganelleLocation,
     eErr_SEQ_DESCR_MultipleChromosomes,
     eErr_SEQ_DESCR_BadOrgMod,
     eErr_SEQ_DESCR_Inconsistent,
@@ -482,7 +483,8 @@ static const EErrType sc_ValidGenomeRaise[] = {
     eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
     eErr_SEQ_FEAT_InvalidQualifierValue,
     eErr_SEQ_FEAT_CDSproductPackagingProblem,
-    eErr_SEQ_FEAT_DuplicateInterval,
+    eErr_SEQ_FEAT_DuplicateExonInterval,
+    eErr_SEQ_FEAT_DuplicateAnticodonInterval,
     eErr_SEQ_FEAT_AbuttingIntervals,
     eErr_SEQ_FEAT_MissingCDSproduct,
     eErr_SEQ_FEAT_OnlyGeneXrefs,
@@ -509,7 +511,7 @@ static const EErrType sc_ValidGenomeRaise[] = {
     eErr_SEQ_FEAT_MissingTrnaAA,
     eErr_SEQ_FEAT_OldLocusTagMismtach,
     eErr_SEQ_FEAT_InvalidInferenceValue,
-    eErr_SEQ_FEAT_HpotheticalProteinMismatch,
+    eErr_SEQ_FEAT_HypotheticalProteinMismatch,
     eErr_SEQ_FEAT_WholeLocation,
     eErr_SEQ_FEAT_BadEcNumberFormat,
     eErr_SEQ_FEAT_EcNumberProblem,
@@ -544,6 +546,7 @@ static const EErrType sc_ValidGenomeRaise[] = {
     eErr_SEQ_FEAT_LocusCollidesWithLocusTag,
     eErr_SEQ_FEAT_RptUnitRangeProblem,
     eErr_SEQ_FEAT_InconsistentRRNAstrands,
+    eErr_SEQ_FEAT_CDSrange,
     eErr_SEQ_GRAPH_GraphAbove,
     eErr_SEQ_GRAPH_GraphOutOfOrder,
     eErr_SEQ_GRAPH_GraphSeqLocLen,
@@ -554,6 +557,7 @@ DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<EErrType>, sc_GenomeRaiseArray, sc_Valid
 
 static const EErrType sc_ValidGenomeRaiseExceptEmblDdbj[] = {
     eErr_SEQ_INST_CompleteTitleProblem,
+    eErr_SEQ_INST_CompleteGenomeHasGaps,
     eErr_SEQ_FEAT_MiscFeatureNeedsNote,
     eErr_SEQ_FEAT_RepeatRegionNeedsNote
 };
@@ -1405,7 +1409,7 @@ bool CValidError_imp::Validate
     
     if ( m_NumTpaWithHistory > 0  &&
          m_NumTpaWithoutHistory > 0 ) {
-        PostErr(eDiag_Error, eErr_SEQ_INST_TpaAssmeblyProblem,
+        PostErr(eDiag_Error, eErr_SEQ_INST_TpaAssemblyProblem,
             "There are " +
             NStr::SizetToString(m_NumTpaWithHistory) +
             " TPAs with history and " + 
@@ -1413,7 +1417,7 @@ bool CValidError_imp::Validate
             " without history in this record.", *seq);
     }
     if ( m_NumTpaWithoutHistory > 0 && has_gi) {
-        PostErr (eDiag_Warning, eErr_SEQ_INST_TpaAssmeblyProblem,
+        PostErr (eDiag_Warning, eErr_SEQ_INST_TpaAssemblyProblem,
             "There are " +
             NStr::SizetToString(m_NumTpaWithoutHistory) +
             " TPAs without history in this record, but the record has a gi number assignment.", *m_TSE);
@@ -2094,7 +2098,7 @@ void CValidError_imp::ValidateSeqLoc
 
     if (m_Scope && CValidator::DoesSeqLocContainDuplicateIntervals(loc, *m_Scope)) {
         PostErr(eDiag_Error,
-            eErr_SEQ_FEAT_DuplicateInterval,
+            eErr_SEQ_FEAT_DuplicateExonInterval,
             "Duplicate exons in location", obj);
     }
 
@@ -2147,7 +2151,7 @@ void CValidError_imp::ValidateSeqLoc
         CSeq_loc_CI li(loc);
         ++li;
         if (!li) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadLocation, "Trans-spliced feature should have multiple intervals", obj);
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadTranssplicedInterval, "Trans-spliced feature should have multiple intervals", obj);
         }
         return;
     }
@@ -2177,7 +2181,7 @@ void CValidError_imp::ValidateSeqLoc
         }
         if (mixed_strand) {
             if (IsSmallGenomeSet()) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_MixedStrand,
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GenomeSetMixedStrand,
                     prefix + ": Mixed strands in SeqLoc ["
                     + loc_lbl + "] in small genome set - set trans-splicing exception if appropriate", obj);
             } else {
@@ -2247,8 +2251,8 @@ void CValidError_imp::AddBioseqWithNoBiosource(const CBioseq& seq)
 void CValidError_imp::AddProtWithoutFullRef(const CBioseq_Handle& seq)
 {
     if (!SeqIsPatent (seq)) {
-        PostErr (eDiag_Error, eErr_SEQ_FEAT_NoProtRefFound, 
-                 "No full length Prot-ref feature applied to this Bioseq", *(seq.GetCompleteBioseq()));
+        PostErr (eDiag_Error, eErr_SEQ_FEAT_MissingProteinName, 
+                 "The product name is missing from this protein.", *(seq.GetCompleteBioseq()));
     }
 }
 

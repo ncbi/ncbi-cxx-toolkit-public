@@ -520,7 +520,7 @@ const CSeq_entry *ctx)
                     val = (*ssit)->GetName();
                 }
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadAltitude,
-                    "bad altitude qualifier value " + val,
+                    "'" + val + "' is an invalid altitude value, altitude should be provided in meters",
                     obj, ctx);
             }
             break;
@@ -790,18 +790,18 @@ const CSeq_entry *ctx)
         const string& lineage = orgname.GetLineage();
         if (bsrc.GetGenome() == CBioSource::eGenome_kinetoplast) {
             if (lineage.find("Kinetoplastida") == string::npos) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelle,
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelleLocation,
                     "Only Kinetoplastida have kinetoplasts", obj, ctx);
             }
         } else if (bsrc.GetGenome() == CBioSource::eGenome_nucleomorph) {
             if (lineage.find("Chlorarachniophyceae") == string::npos  &&
                 lineage.find("Cryptophyta") == string::npos) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelle,
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelleLocation,
                     "Only Chlorarachniophyceae and Cryptophyta have nucleomorphs", obj, ctx);
             }
         } else if (bsrc.GetGenome() == CBioSource::eGenome_macronuclear) {
             if (lineage.find("Ciliophora") == string::npos) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelle,
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelleLocation,
                     "Only Ciliophora have macronuclear locations", obj, ctx);
             }
         }
@@ -1400,7 +1400,7 @@ const CSeq_entry *ctx)
             }
         } else if (subtype == COrgMod::eSubtype_nat_host) {
             if (NStr::EqualNocase(subname, taxname)) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod,
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_HostIdenticalToOrganism,
                     "Specific host is identical to taxname",
                     obj, ctx);
             }
@@ -1522,7 +1522,7 @@ const CSeq_entry *ctx)
                     }
                 }
                 if (has_strain) {
-                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod,
+                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleStrains,
                         "Multiple strain qualifiers on the same BioSource", obj, ctx);
                 }
                 has_strain = true;
@@ -1558,7 +1558,7 @@ const CSeq_entry *ctx)
                     && NStr::Find(orgname.GetLineage(), "Myxogastria") == string::npos
                     && NStr::Find(orgname.GetLineage(), "Oomycetes") == string::npos))) {
                     if (!has_taxon) {
-                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod,
+                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadVariety,
                             "Orgmod variety should only be in plants, fungi, or cyanobacteria",
                             obj, ctx);
                     }
@@ -1595,7 +1595,7 @@ const CSeq_entry *ctx)
             case COrgMod::eSubtype_type_material:
                 if (!(*omd_itr)->IsSetSubname() || 
                     !COrgMod::IsValidTypeMaterial((*omd_itr)->GetSubname()))  {
-                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod,
+                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadTypeMaterial,
                             "Bad value for type_material", obj, ctx);
                 }
                 break;

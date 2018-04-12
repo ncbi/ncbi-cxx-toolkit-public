@@ -1151,7 +1151,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_MolNotSet)
     CheckErrors (*eval, expected_errors);
 
     expected_errors[0]->SetErrCode("MolNuclAcid");
-    expected_errors[0]->SetErrMsg("Bioseq.mol is type na");
+    expected_errors[0]->SetErrMsg("Bioseq.mol is type nucleic acid");
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_na);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -2305,7 +2305,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_MolNuclAcid)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "MolNuclAcid", "Bioseq.mol is type na"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "MolNuclAcid", "Bioseq.mol is type nucleic acid"));
 
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_na);
     eval = validator.Validate(seh, options);
@@ -2494,7 +2494,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_TrailingX)
 
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "TerminalNs", "N at end of sequence"));
     expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Warning, "TrailingX", "Sequence ends in 2 trailing Xs"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
 
     eval = validator.Validate(seh, options);
@@ -3108,9 +3108,9 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TerminalNs", "N at beginning of sequence"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TerminalNs", "N at end of sequence"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -3252,9 +3252,9 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqLit)
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InternalNsInSeqLit", "Run of 20 Ns in delta component 5 that starts at base 45"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "WGSseqGapProblem", "WGS submission includes wrong gap type. Gaps for WGS genomes should be Assembly Gaps with linkage evidence."));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
 
     eval = validator.Validate(seh, options);
@@ -3266,9 +3266,9 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqLit)
     SetTech(entry, CMolInfo::eTech_htgs_1);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InternalNsInSeqLit",
         "Run of 81 Ns in delta component 7 that starts at base 79"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
 
     eval = validator.Validate(seh, options);
@@ -3364,7 +3364,7 @@ static void AddTpaAssemblyUserObject(CRef<CSeq_entry> entry)
 }
 
 
-BOOST_FIXTURE_TEST_CASE(Test_TpaAssmeblyProblem, CGenBankFixture)
+BOOST_FIXTURE_TEST_CASE(Test_TpaAssemblyProblem, CGenBankFixture)
 {
     CRef<CSeq_entry> entry(new CSeq_entry());
     entry->SetSet().SetClass(CBioseq_set::eClass_genbank);
@@ -3385,7 +3385,7 @@ BOOST_FIXTURE_TEST_CASE(Test_TpaAssmeblyProblem, CGenBankFixture)
 
     // now one has hist, other does not
     member1->SetSeq().SetInst().SetHist().SetAssembly().push_back(unit_test_util::BuildGoodAlign());
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "TpaAssmeblyProblem", "There are 1 TPAs with history and 1 without history in this record."));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "TpaAssemblyProblem", "There are 1 TPAs with history and 1 without history in this record."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3401,8 +3401,8 @@ BOOST_FIXTURE_TEST_CASE(Test_TpaAssmeblyProblem, CGenBankFixture)
     CLEAR_ERRORS
 
     expected_errors.push_back(new CExpectedError("tpg|AY123456.1|", eDiag_Warning, "UnexpectedIdentifierChange", "Loss of accession (gb|AY123456.1|) on gi (21914627) compared to the NCBI sequence repository"));
-    expected_errors.push_back(new CExpectedError("tpg|AY123456.1|", eDiag_Error, "TpaAssmeblyProblem", "There are 1 TPAs with history and 1 without history in this record."));
-    expected_errors.push_back(new CExpectedError("tpg|AY123456.1|", eDiag_Warning, "TpaAssmeblyProblem", "There are 1 TPAs without history in this record, but the record has a gi number assignment."));
+    expected_errors.push_back(new CExpectedError("tpg|AY123456.1|", eDiag_Error, "TpaAssemblyProblem", "There are 1 TPAs with history and 1 without history in this record."));
+    expected_errors.push_back(new CExpectedError("tpg|AY123456.1|", eDiag_Warning, "TpaAssemblyProblem", "There are 1 TPAs without history in this record, but the record has a gi number assignment."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3499,9 +3499,9 @@ BOOST_AUTO_TEST_CASE(Test_MissingGaps)
 BOOST_AUTO_TEST_CASE(Test_CompleteTitleProblem)
 {
     // prepare entry
-    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_entry> entry = BuildGoodSeq();
     entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
-    unit_test_util::SetLineage (entry, "Viruses; foo");
+    SetLineage (entry, "Viruses; foo");
     SetTitle(entry, "Foo complete genome");
 
     STANDARD_SETUP
@@ -3513,11 +3513,28 @@ BOOST_AUTO_TEST_CASE(Test_CompleteTitleProblem)
 
     CLEAR_ERRORS
 
-        // should be no error if complete
-    unit_test_util::SetCompleteness(entry, CMolInfo::eCompleteness_complete);
+    // should be no error if complete
+    SetCompleteness(entry, CMolInfo::eCompleteness_complete);
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    // different message and code if gaps
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = BuildGoodDeltaSeq();
+    entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
+    unit_test_util::SetLineage (entry, "Viruses; foo");
+    SetTitle(entry, "Foo complete genome");
+    SetCompleteness(entry, CMolInfo::eCompleteness_complete);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("gb|AY123456|", eDiag_Warning,
+        "CompleteGenomeHasGaps", "Title contains 'complete genome' but sequence has gaps"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 
 }
 
@@ -3670,9 +3687,9 @@ BOOST_AUTO_TEST_CASE(Test_TerminalGap)
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadDeltaSeq", "Last delta seq component is a gap"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TerminalGap", "Gap at beginning of sequence"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TerminalGap", "Gap at end of sequence"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
 
     eval = validator.Validate(seh, options);
@@ -3781,9 +3798,9 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqRaw)
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InternalNsInSeqRaw", "Run of 100 Ns in raw sequence starting at base 6"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent", "Sequence contains 90 percent Ns"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -3796,9 +3813,9 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqRaw)
     entry->SetSeq().SetInst().SetLength(30);
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent", "Sequence contains 66 percent Ns"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -3809,9 +3826,9 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqRaw)
     SetTech (entry, CMolInfo::eTech_wgs);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InternalNsInSeqRaw", "Run of 20 Ns in raw sequence starting at base 6"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent", "Sequence contains 66 percent Ns"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -3831,9 +3848,9 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsAdjacentToGap)
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InternalNsAdjacentToGap", "Ambiguous residue N is adjacent to a gap around position 13"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InternalNsAdjacentToGap", "Ambiguous residue N is adjacent to a gap around position 23"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
 
     eval = validator.Validate(seh, options);
@@ -3999,20 +4016,23 @@ BOOST_AUTO_TEST_CASE(Test_HighNContentPercent_and_HighNContentStretch)
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AANNNNNNNNNNGGGCCCCCAAAAATTTTTGGGGGCCCCCAAAAATTTTTGGGGGTTTTTGGGGGCCCCCAAAAATTTTTGGGGGCCNNNNNNNNNNAAA");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent", "Sequence contains 20 percent Ns"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentStretch", "Sequence has a stretch of at least 10 Ns within the first 20 bases"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentStretch", "Sequence has a stretch of at least 10 Ns within the last 20 bases"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent", 
+        "Sequence contains 20 percent Ns"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNcontent5Prime", 
+        "Sequence has a stretch of at least 10 Ns within the first 20 bases"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNcontent3Prime", 
+        "Sequence has a stretch of at least 10 Ns within the last 20 bases"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentStretch", "Sequence has a stretch of at least 10 Ns within the first 20 bases"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentStretch", "Sequence has a stretch of at least 10 Ns within the last 20 bases"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNcontent5Prime", "Sequence has a stretch of at least 10 Ns within the first 20 bases"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNcontent3Prime", "Sequence has a stretch of at least 10 Ns within the last 20 bases"));
     eval = validator.GetTSANStretchErrors(seh);
     CheckErrors (*eval, expected_errors);
     eval = validator.GetTSANStretchErrors(entry->GetSeq());
@@ -4030,14 +4050,15 @@ BOOST_AUTO_TEST_CASE(Test_HighNContentPercent_and_HighNContentStretch)
     entry->SetSeq().SetInst().SetLength(entry->GetSeq().GetInst().GetLength() + 20);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
 }
 
 
@@ -4088,9 +4109,9 @@ BOOST_AUTO_TEST_CASE(Test_UnknownLengthGapNot100)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "UnknownLengthGapNot100", "Gap of unknown length should have length 100"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -4986,7 +5007,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadOrganelle)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadOrganelle",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadOrganelleLocation",
                               "Only Kinetoplastida have kinetoplasts"));
 
     eval = validator.Validate(seh, options);
@@ -5001,7 +5022,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadOrganelle)
 
     CLEAR_ERRORS
     unit_test_util::SetGenome (entry, CBioSource::eGenome_macronuclear);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadOrganelle",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadOrganelleLocation",
                               "Only Ciliophora have macronuclear locations"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -5125,24 +5146,43 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadOrgMod)
                               "Unknown orgmod subtype 0"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "BadOrgMod",
                               "Unknown orgmod subtype 1"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadOrgMod",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MultipleStrains",
                               "Multiple strain qualifiers on the same BioSource"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadOrgMod",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadTypeMaterial",
                               "Bad value for type_material"));
                                
-    /*
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadOrgMod",
-                              "Orgmod variety should only be in plants, fungi, or cyanobacteria"));
-    */
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OrgModMissingValue",
                               "Variety value specified is not found in taxname"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadOrgMod",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HostIdenticalToOrganism",
                               "Specific host is identical to taxname"));
     /*
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadOrgMod",
                               "OrgMod common is identical to Org-ref common"));
     */
 
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_BadVariety)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    SetOrgMod(entry, COrgMod::eSubtype_variety, "x");
+    SetTaxname(entry, "Sebaea microphylla var. x");
+    SetTaxon(entry, 0);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, 
+        "BadVariety",
+        "Orgmod variety should only be in plants, fungi, or cyanobacteria"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "NoTaxonID", "BioSource is missing taxon ID"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, 
+        "OrganismNotFound", "Organism not found in taxonomy database"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -5892,7 +5932,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_TaxonomyLookupProblem)
 
     unit_test_util::SetTaxname(entry, "Homo sapiens");
     unit_test_util::SetGenome(entry, CBioSource::eGenome_nucleomorph);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadOrganelle",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadOrganelleLocation",
                               "Only Chlorarachniophyceae and Cryptophyta have nucleomorphs"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NoTaxonID",
         "BioSource is missing taxon ID"));
@@ -7257,7 +7297,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadAltitude)
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_altitude, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_altitude, "123");
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadAltitude",
-                              "bad altitude qualifier value 123"));
+                              "'123' is an invalid altitude value, altitude should be provided in meters"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -7273,7 +7313,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadAltitude)
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_altitude, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_altitude, "123 ft.");
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadAltitude",
-                              "bad altitude qualifier value 123 ft."));
+                              "'123 ft.' is an invalid altitude value, altitude should be provided in meters"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -10291,118 +10331,6 @@ BOOST_AUTO_TEST_CASE(Test_PKG_NucProtNotSegSet)
 }
 
 
-#if 0
-// we don't care about segsets any more
-BOOST_AUTO_TEST_CASE(Test_PKG_SegSetNotParts)
-{
-    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSegSet();
-    entry->SetSet().SetSeq_set().back()->SetSet().SetClass(CBioseq_set::eClass_eco_set);
-
-    STANDARD_SETUP
-
-    expected_errors.push_back(new CExpectedError("part1", eDiag_Critical, "SegSetNotParts",
-                                                 "Segmented set contains wrong Bioseq-set, its class is \"eco-set\"."));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_PKG_SegSetMixedBioseqs)
-{
-    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSegSet();
-    CRef<CSeq_entry> prot = unit_test_util::BuildGoodProtSeq();
-    unit_test_util::RemoveDescriptorType(prot, CSeqdesc::e_Pub);
-    entry->SetSet().SetSeq_set().push_back(prot);
-
-    STANDARD_SETUP
-
-    expected_errors.push_back(new CExpectedError("master", eDiag_Critical, "SegSetMixedBioseqs",
-                                                 "Segmented set contains mixture of nucleotides and proteins"));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_PKG_PartsSetMixedBioseqs)
-{
-    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSegSet();
-    CRef<CSeq_entry> parts_set = entry->SetSet().SetSeq_set().back();
-    CRef<CSeq_entry> last_part = parts_set->SetSet().SetSeq_set().back();
-    last_part->SetSeq().SetInst().SetMol(CSeq_inst::eMol_aa);
-    unit_test_util::SetBiomol (last_part, CMolInfo::eBiomol_peptide);
-    last_part->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("AATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAA");
-
-    STANDARD_SETUP
-
-    expected_errors.push_back(new CExpectedError("part3", eDiag_Error, "NoProtRefFound",
-                                                 "No full length Prot-ref feature applied to this Bioseq"));
-    expected_errors.push_back(new CExpectedError("part1", eDiag_Critical, "PartsSetMixedBioseqs",
-                                                 "Parts set contains mixture of nucleotides and proteins"));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_PKG_PartsSetHasSets)
-{
-    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSegSet();
-    CRef<CSeq_entry> parts_set = entry->SetSet().SetSeq_set().back();
-    CRef<CSeq_entry> np = unit_test_util::BuildGoodNucProtSet();
-    unit_test_util::RemoveDescriptorType(np, CSeqdesc::e_Pub);
-    parts_set->SetSet().SetSeq_set().push_back(np);
-
-    STANDARD_SETUP
-
-    expected_errors.push_back(new CExpectedError("master", eDiag_Error, "PartsOutOfOrder",
-                                                 "Parts set contains too many Bioseqs"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Critical, "PartsSetHasSets",
-                                                 "Parts set contains unwanted Bioseq-set, its class is \"nuc-prot\"."));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_PKG_FeaturePackagingProblem)
-{
-    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSegSet();
-    CRef<CSeq_entry> parts_set = entry->SetSet().SetSeq_set().back();
-    CRef<CSeq_feat> misc_feat = unit_test_util::AddMiscFeature(parts_set->SetSet().SetSeq_set().front());
-    misc_feat->SetLocation().SetInt().SetId().SetLocal().SetStr("part3");
-
-    STANDARD_SETUP
-
-    //expected_errors.push_back(new CExpectedError("master", eDiag_Critical, "FeaturePackagingProblem",
-    //                                             "There is 1 mispackaged feature in this record."));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-    expected_errors.push_back(new CExpectedError("master", eDiag_Error, "LocOnSegmentedBioseq",
-                                                 "Feature location on segmented bioseq, not on parts"));
-    //expected_errors.push_back(new CExpectedError("master", eDiag_Critical, "FeaturePackagingProblem",
-    //                                             "There are 2 mispackaged features in this record."));
-    expected_errors.push_back(new CExpectedError("master", eDiag_Critical, "FeaturePackagingProblem",
-                                                 "There is 1 mispackaged feature in this record."));
-    scope.RemoveTopLevelSeqEntry(seh);
-    misc_feat = unit_test_util::AddMiscFeature(parts_set);
-    misc_feat->SetLocation().SetInt().SetId().SetLocal().SetStr("master");
-    seh = scope.AddTopLevelSeqEntry(*entry);
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-}
-#endif
-
-
 BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodGenProdSet();
@@ -11734,11 +11662,11 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_Range)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "Range",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "tRNArange",
                                                  "Anticodon is not 3 bases in length"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "Range",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "tRNArange",
                                                  "Anticodon location not in tRNA"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "Range",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "tRNArange",
         "Anticodon location [lcl|good:15-14] out of range"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -11764,7 +11692,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_Range)
     cds->SetData().SetCdregion().SetCode_break().push_back(codebreak);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "Range",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "CDSrange",
                                                  "Code-break location not in coding region"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -11781,7 +11709,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_Range)
     scope.RemoveTopLevelSeqEntry(seh);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "Range",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "CDSrange",
                                                  "Code-break location not in coding region - may be frame problem"));
     SetDiagFilter(eDiagFilter_All, "!(1210.8)");
     eval = validator.Validate(seh, options);
@@ -11799,7 +11727,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_Range)
     misc->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetFrom(11);
     misc->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetTo(13);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "Range",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "tRNArange",
                                                  "Anticodon location not in tRNA"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -11818,6 +11746,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_Range)
     SetDiagFilter(eDiagFilter_All, "!(1204.1)");
     seh = scope.AddTopLevelSeqEntry(*entry);
     SetDiagFilter(eDiagFilter_All, "");
+    expected_errors[0]->SetErrCode("Range");
     expected_errors[0]->SetSeverity(eDiag_Critical);
     expected_errors[0]->SetErrMsg("Location: SeqLoc [lcl|good:12-11] out of range");
     eval = validator.Validate(seh, options);
@@ -11873,7 +11802,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_MixedStrand)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MixedStrand",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "AnticodonMixedStrand",
                                                  "Mixed strands in Anticodon [[lcl|good:c1-1, 10-11]]"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadAnticodonAA",
                                                  "Codons predicted from anticodon (UAA) cannot produce amino acid (N/Asn)"));
@@ -11893,6 +11822,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_MixedStrand)
     unit_test_util::AddFeat (trna, entry);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
+    expected_errors[0]->SetErrCode("AnticodonMixedStrand");
     expected_errors[0]->SetErrMsg("Mixed plus and unknown strands in Anticodon [[lcl|good:1-1, 10-11]]");
     expected_errors[1]->SetErrMsg("Codons predicted from anticodon (AAA) cannot produce amino acid (N/Asn)");
     eval = validator.Validate(seh, options);
@@ -12347,8 +12277,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_NoProtRefFound)
     STANDARD_SETUP
 
     // see this error if prot-ref present, but wrong size, or if absent completely
-    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Error, "NoProtRefFound",
-    "No full length Prot-ref feature applied to this Bioseq"));
+    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Error, "MissingProteinName",
+    "The product name is missing from this protein."));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -13153,7 +13083,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranslExceptPhase)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "Range",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "CDSrange",
                                                  "Code-break location not in coding region - may be frame problem"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "TranslExceptPhase", 
                               "transl_except qual out of frame."));
@@ -13163,10 +13093,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranslExceptPhase)
 
     CValidErrorFormat format(*objmgr);
     vector<string> expected;
-    expected.push_back("Range");
+    expected.push_back("TranslExceptPhase");
     expected.push_back("lcl|nuc:CDS\t fake protein name\tlcl|nuc:1-27\txyz");
     expected.push_back("");
-    expected.push_back("TranslExceptPhase");
+    expected.push_back("CDSrange");
     expected.push_back("lcl|nuc:CDS\t fake protein name\tlcl|nuc:1-27\txyz");
     expected.push_back("");
     vector<string> seen;
@@ -13195,10 +13125,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranslExceptPhase)
     }
 
 	expected.clear();
-	expected.push_back("Range");
+	expected.push_back("TranslExceptPhase");
 	expected.push_back("lcl|nuc:CDS\t fake protein name\tlcl|nuc:1-27\txyz");
 	expected.push_back("");
-	expected.push_back("TranslExceptPhase");
+	expected.push_back("CDSrange");
 	expected.push_back("lcl|nuc:CDS\t fake protein name\tlcl|nuc:1-27\txyz");
 	expected.push_back("");
 
@@ -13750,9 +13680,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_DuplicateInterval)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "Range",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "tRNArange",
                       "Anticodon is not 3 bases in length"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "DuplicateInterval",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "DuplicateAnticodonInterval",
                       "Duplicate anticodon exons in location"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -13769,7 +13699,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_DuplicateInterval)
     feat->SetLocation().Assign(*loc);
 
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "DuplicateInterval", 
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "DuplicateExonInterval", 
                       "Duplicate exons in location"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -14001,7 +13931,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CollidingGeneNames)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "DuplicateFeat",
            "Features have identical intervals, but labels differ"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "MultiplyAnnotatedGenes", 
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "DuplicateGeneConflictingLocusTag", 
           "Colliding names (with different capitalization) in gene features, but feature locations are identical"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -16033,7 +15963,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_InvalidInferenceValue)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_HpotheticalProteinMismatch) {
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_HypotheticalProteinMismatch) {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
 
     CRef<CSeq_id> protid(new CSeq_id());
@@ -16045,7 +15975,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_HpotheticalProteinMismatch) {
 
     STANDARD_SETUP
 
-    expected_errors.push_back (new CExpectedError("ref|XP_654321|", eDiag_Warning, "HpotheticalProteinMismatch",
+    expected_errors.push_back (new CExpectedError("ref|XP_654321|", eDiag_Warning, "HypotheticalProteinMismatch",
                                "Hypothetical protein reference does not match accession"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -16491,7 +16421,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDShasTooManyXs)
                                "Feature contains more than 50% Ns"));
     expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "CDShasTooManyXs",
                                "CDS translation consists of more than 50% X residues"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
 
     eval = validator.Validate(seh, options);
@@ -16946,9 +16876,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureInsideGap)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
                                "Sequence contains 51 percent Ns"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "FeatureIsMostlyNs",
         "Feature contains more than 50% Ns"));
@@ -17090,8 +17020,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadAnticodonStrand)
     unit_test_util::AddFeat(trna, entry);
 
     STANDARD_SETUP
-    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Error, "BadAnticodonStrand",
-                               "Anticodon should be on plus strand"));
+    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Error, "AnticodonStrandConflict",
+                               "Anticodon strand and tRNA strand do not match."));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -17101,7 +17031,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadAnticodonStrand)
     trna->SetLocation().SetInt().SetStrand(eNa_strand_minus);
     trna->SetData().SetRna().SetExt().SetTRNA().SetAa().SetIupacaa('F');
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetErrMsg("Anticodon should be on minus strand");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -17911,7 +17840,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_InconsistentGeneOntologyTermAndId)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultiplyAnnotatedGenes)
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_DuplicateGeneConflictingLocusTag)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     CRef<CSeq_feat> gene1 = unit_test_util::AddMiscFeature(entry);
@@ -17923,7 +17852,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultiplyAnnotatedGenes)
     STANDARD_SETUP
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "FeatContentDup", 
                                "Duplicate feature"));
-    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Info, "MultiplyAnnotatedGenes", 
+    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Info, "DuplicateGeneConflictingLocusTag", 
                               "Colliding names in gene features, but feature locations are identical"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -17933,7 +17862,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultiplyAnnotatedGenes)
     gene2->SetData().SetGene().SetLocus("GENE1");
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "DuplicateFeat",
         "Features have identical intervals, but labels differ"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "MultiplyAnnotatedGenes",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "DuplicateGeneConflictingLocusTag",
         "Colliding names (with different capitalization) in gene features, but feature locations are identical"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -18265,7 +18194,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortIntron)
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "NoProtein", 
         "No protein Bioseq given"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "NonsenseIntron", 
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "IntronIsStopCodon", 
         "Triplet intron encodes stop codon"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "StartCodon",
                               "Illegal start codon used. Wrong genetic code [0] or protein should be partial"));
@@ -19152,9 +19081,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphNScoreMany)
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "GraphNScoreMany", 
                               "6 N bases (25.00%) have positive score value - first one at position 24"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
         "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
 
     eval = validator.Validate(seh, options);
@@ -20907,7 +20836,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_630)
 
     eval = validator.Validate(seh, options);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
-        "BadLocation",
+        "BadTranssplicedInterval",
         "Trans-spliced feature should have multiple intervals"));
     CheckErrors(*eval, expected_errors);
 
@@ -21848,9 +21777,9 @@ BOOST_AUTO_TEST_CASE(Test_TripletEncodesStopCodon)
     BOOST_CHECK_EQUAL(nonsense.back()->GetInt().GetFrom(), 21);
     BOOST_CHECK_EQUAL(nonsense.back()->GetInt().GetTo(), 23);
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Critical, "NonsenseIntron",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Critical, "IntronIsStopCodon",
         "Triplet intron encodes stop codon"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Critical, "NonsenseIntron",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Critical, "IntronIsStopCodon",
         "Triplet intron encodes stop codon"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "ShortExon", "Internal coding region exon is too short at position 13-21"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "InternalStop", "2 internal stops. Genetic code [0]"));
@@ -23031,6 +22960,25 @@ BOOST_FIXTURE_TEST_CASE(Test_VR_803, CGenBankFixture)
             "Transcript length [11] less than (far) product length [3132], and tail < 95% polyA"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TranscriptMismatches",
         "There are 7 mismatches out of 11 bases between the transcript and (far) product sequence"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_ExceptionRequiresLocusTag)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> gene = AddMiscFeature(entry);
+    gene->SetData().SetGene().SetLocus("x");
+    gene->SetExcept(true);
+    gene->SetExcept_text("gene split at contig boundary");
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "ExceptionRequiresLocusTag",
+        "Gene has split exception but no locus_tag"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
     CLEAR_ERRORS
