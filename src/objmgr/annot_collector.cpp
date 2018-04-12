@@ -3569,13 +3569,32 @@ void CAnnot_Collector::x_SearchAll(const CSeq_annot_Info& annot_info)
     // Collect all annotations from the annot
     ITERATE ( CSeq_annot_Info::TAnnotObjectInfos, aoit,
               annot_info.GetAnnotObjectInfos() ) {
-        if ( aoit->IsRemoved() ) {
+        const CAnnotObject_Info& annot_info = *aoit;
+        if ( annot_info.IsRemoved() ) {
             continue;
         }
-        if ( !m_Selector->MatchType(*aoit) ) {
+        if ( !m_Selector->MatchType(annot_info) ) {
             continue;
         }
-        CAnnotObject_Ref annot_ref(*aoit, sah);
+        
+        if ( annot_info.GetAnnotIndex() == CSeq_annot_Info::kWholeAnnotIndex ) {
+            const CSeq_annot_Info& seq_annot = annot_info.GetSeq_annot_Info();
+            if ( seq_annot.IsSortedTable() ) {
+                // sorted Seq-table has only one CAnnotObject_Info
+                // but we need to add all individual features
+                auto whole = CRange<TSeqPos>::GetWhole();
+                for ( CSeq_annot_SortedIter it = seq_annot.StartSortedIterator(whole); it; ++it ) {
+                    CAnnotObject_Ref annot_ref(sah, it, 0);
+                    x_AddObject(annot_ref);
+                    if ( m_Selector->m_CollectSeq_annots || x_NoMoreObjects() ) {
+                        return;
+                    }
+                }
+            }
+            continue;
+        }
+
+        CAnnotObject_Ref annot_ref(annot_info, sah);
         x_AddObject(annot_ref);
         if ( m_Selector->m_CollectSeq_annots || x_NoMoreObjects() ) {
             return;
