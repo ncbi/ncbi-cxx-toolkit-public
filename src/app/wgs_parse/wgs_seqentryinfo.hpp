@@ -91,6 +91,7 @@ struct CSeqEntryInfo
     bool m_bad_biomol;
     bool m_bad_tech;
     bool m_bad_mol;
+    bool m_bad_accession;
     bool m_secondary_accessions;
     bool m_hist_secondary_differs;
     bool m_update_date_present;
@@ -128,6 +129,7 @@ struct CSeqEntryInfo
         m_bad_biomol(false),
         m_bad_tech(false),
         m_bad_mol(false),
+        m_bad_accession(false),
         m_secondary_accessions(false),
         m_hist_secondary_differs(false),
         m_update_date_present(false),

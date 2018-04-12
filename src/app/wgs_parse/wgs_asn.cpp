@@ -904,6 +904,61 @@ static void CheckSeqIdStatus(const CBioseq::TId& ids, CSeq_id::E_Choice& choice,
     }
 }
 
+static bool IsScaffoldPrefix(const string& accession, size_t prefix_len)
+{
+    static string scaffold_prefs[] = { "CH", "CM", "DS", "EM", "EN", "EP", "EQ", "FA", "GG", "GJ", "GK", "GL", "JH", "KB", "KD", "KE", "KI", "KK", "KL", "KN", "KQ", "KV", "KZ" };
+    static string* end_of_scaffold_prefs = scaffold_prefs + sizeof(scaffold_prefs) / sizeof(scaffold_prefs[0]);
+
+    string prefix = accession.substr(0, prefix_len);
+    return find(scaffold_prefs, end_of_scaffold_prefs, prefix) != end_of_scaffold_prefs;
+}
+
+static bool IsAccessionValid(const string& accession)
+{
+    const string& prefix = GetParams().GetUpdateMode() == eUpdateScaffoldsUpd ||
+        (GetParams().GetUpdateMode() == eUpdateScaffoldsNew && GetParams().IsAccessionAssigned()) ?
+        GetParams().GetScaffoldPrefix() : GetParams().GetIdPrefix();
+
+    size_t prefix_size = prefix.size();
+    if (prefix_size > accession.size()) {
+        return false;
+    }
+
+    if (GetParams().GetUpdateMode() == eUpdateScaffoldsUpd) {
+
+        static const size_t SCAFFOLD_ACCESSION_LEN = 8;
+        if (accession.size() != SCAFFOLD_ACCESSION_LEN ||
+            (GetParams().GetSource() != eDDBJ && GetParams().GetSource() != eEMBL && !IsScaffoldPrefix(accession, prefix_size))) {
+            return false;
+        }
+    }
+    else {
+
+        if (GetParams().GetUpdateMode() == eUpdateScaffoldsUpd ||
+            (GetParams().GetUpdateMode() == eUpdateScaffoldsNew && !GetParams().IsAccessionAssigned())) {
+
+            static const size_t MIN_ACCESSION_LEN = 12;
+            static const size_t MAX_ACCESSION_LEN = 17;
+
+            if (accession.size() < MIN_ACCESSION_LEN || accession.size() > MAX_ACCESSION_LEN) {
+                return false;
+            }
+        }
+
+        if (GetParams().GetSource() == eNCBI && prefix == GetParams().GetIdPrefix() &&
+            !NStr::StartsWith(accession, prefix) && !IsScaffoldPrefix(accession, prefix_size)) {
+            return false;
+        }
+    }
+
+    for (string::const_iterator cur_char = accession.begin() + prefix_size; cur_char != accession.end(); ++cur_char) {
+        if (!isdigit(*cur_char)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static void CheckNucBioseqs(const CSeq_entry& entry, CSeqEntryInfo& info, CSeqEntryCommonInfo& common_info)
 {
     if (entry.IsSet()) {
@@ -987,19 +1042,31 @@ static void CheckNucBioseqs(const CSeq_entry& entry, CSeqEntryInfo& info, CSeqEn
                         if (text_id != nullptr && text_id->IsSetAccession()) {
 
                             ++info.m_num_of_accsessions;
-                            if (info.m_seqid_type == CSeq_id::e_not_set) {
-                                info.m_seqid_type = id->Which();
-                            }
-                            else if (id->Which() != info.m_seqid_type) {
+
+                            if (id->Which() != GetParams().GetIdChoice()) {
                                 ERR_POST_EX(0, 0, Error << "One or more records have mismatching accession(s) and Seq-id type(s). First appearance: accession is \"" << text_id->GetAccession() <<
                                             "\", Seq-id type = " << id->Which() << ".");
 
                                 info.m_seqid_state = eSeqIdDifferent;
                                 // TODO rejection
+                            }
+
+                            if (info.m_seqid_state != eSeqIdOK) {
                                 break;
                             }
 
-                            // TODO validate acc
+                            if (info.m_seqid_type == CSeq_id::e_not_set) {
+                                info.m_seqid_type = id->Which();
+                            }
+                            else if (info.m_seqid_type != id->Which()) {
+                                info.m_seqid_state = eSeqIdDifferent;
+                            }
+
+                            if (!IsAccessionValid(text_id->GetAccession())) {
+                                info.m_bad_accession = true;
+                                break;
+                            }
+
                             // TODO aids
                         }
                     }
@@ -1180,13 +1247,10 @@ bool CheckSeqEntry(const CSeq_entry& entry, const string& file, CSeqEntryInfo& i
             ret = false;
         }
 
-        // TODO
-        /*if (wsecp->badacc != FALSE) {
-            ErrPostEx(SEV_FATAL, ERR_SUBMISSION_IncorrectAccession,
-                      "Seq-entry from submission \"%s\" has incorrect accession prefix+version.",
-                      filename);
-            ret = FALSE;
-        }*/
+        if (info.m_bad_accession) {
+            ERR_POST_EX(0, 0, Critical << "Seq-entry from submission \"" << file << "\" has incorrect accession prefix+version.");
+            ret = false;
+        }
     }
 
     return ret;
