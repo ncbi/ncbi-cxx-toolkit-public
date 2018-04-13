@@ -25,7 +25,7 @@ CHECK_CMD = all_readers.sh test_bulkinfo -type label -idlist wgs.ids -reference 
 CHECK_CMD = all_readers.sh test_bulkinfo -type taxid -idlist wgs.ids -reference ref/wgs.taxid.txt /CHECK_NAME=test_bulkinfo_wgs_taxid
 CHECK_CMD = all_readers.sh test_bulkinfo -type length -idlist wgs.ids -reference ref/wgs.length.txt /CHECK_NAME=test_bulkinfo_wgs_length
 CHECK_CMD = all_readers.sh test_bulkinfo -type type -idlist wgs.ids -reference ref/wgs.type.txt /CHECK_NAME=test_bulkinfo_wgs_type
-CHECK_CMD = all_readers.sh -xid2 test_bulkinfo -type state -idlist wgs.ids -reference ref/wgs.state.txt /CHECK_NAME=test_bulkinfo_wgs_state
+#CHECK_CMD = all_readers.sh -xid2 test_bulkinfo -type state -idlist wgs.ids -reference ref/wgs.state.txt /CHECK_NAME=test_bulkinfo_wgs_state
 CHECK_CMD = all_readers.sh -id2 test_bulkinfo -type state -idlist wgs.ids /CHECK_NAME=test_bulkinfo_wgs_state_id2
 CHECK_CMD = all_readers.sh test_bulkinfo -type hash -idlist wgs.ids -reference ref/wgs.hash.txt /CHECK_NAME=test_bulkinfo_wgs_hash
 
