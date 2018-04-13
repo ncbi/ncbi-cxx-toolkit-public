@@ -41,16 +41,15 @@
 #  include <connect/ncbi_conn_stream.hpp>
 #endif // TEST_CONN_TAR
 #include <errno.h>
-#ifdef NCBI_OS_MSWIN
+#if   defined(NCBI_OS_MSWIN)
 #  include <io.h>     // For _setmode()
 #  include <fcntl.h>  // For _O_BINARY
 #  include <conio.h>
 #  define  DEVNULL  "NUL"
-#endif // NCBI_OS_MSWIN
-#ifdef NCBI_OS_UNIX
+#elif defined(NCBI_OS_UNIX)
 #  include <signal.h>
 #  define  DEVNULL  "/dev/null"
-#endif // NCBI_OS_UNIX
+#endif // NCBI_OS
 
 #include <common/test_assert.h>  // This header must go last
 
