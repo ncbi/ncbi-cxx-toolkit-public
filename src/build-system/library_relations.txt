@@ -940,7 +940,9 @@ objannotation needs objspdi
 objcoords needs xser
 objmmail needs3party $(NCBI_C_ncbi)
 objprt needs xser
+objspdi needs $(Z_LIB)
 objspdi needs xser
+objspdi needs3party $(Z_LIBS)
 objtax1 needs3party ncbiobj
 odbc_ftds100 needs tds_ftds100
 odbc_ftds64 needs tds_ftds64
