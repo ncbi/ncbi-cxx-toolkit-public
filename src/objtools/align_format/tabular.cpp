@@ -1527,7 +1527,7 @@ static void s_FillJunctionalInfo (int left_stop, int right_start, int& junction_
     
 }
 
-void s_GetCigarString(const CSeq_align& align, string& cigar, int query_len, CScope& scope) {
+static void s_GetCigarString(const CSeq_align& align, string& cigar, int query_len, CScope& scope) {
 
     cigar = NcbiEmptyString;
 
@@ -1610,13 +1610,50 @@ void s_GetCigarString(const CSeq_align& align, string& cigar, int query_len, CSc
     }
 }
        
+static void s_GetGermlineTranslation(const CRef<blast::CIgAnnotation> &annot, CAlnVec& alnvec, 
+                                     const string& aligned_query_string, const string& aligned_germline_string,
+                                     string& query_translation_string,
+                                     string& germline_translation_string){
 
-void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
-                            const CRef<CSeq_align>& align_d,
-                            const CRef<CSeq_align>& align_j,
-                            const CRef<blast::CIgAnnotation> &annot,
-                            CScope& scope,
-                            map<string, string>& airr_data){
+    string aligned_vdj_query = NcbiEmptyString;
+    alnvec.GetSeqString(aligned_vdj_query, 0, alnvec.GetSeqStart(0), alnvec.GetSeqStop(0)); 
+    int query_trans_offset = ((alnvec.GetSeqStart(0) + 3) - annot->m_FrameInfo[0])%3;
+    int query_trans_start =  query_trans_offset > 0?(3 - query_trans_offset):0;
+    string query_translation_template = aligned_vdj_query.substr(min((int)aligned_vdj_query.size() -1, query_trans_start));
+ 
+    CSeqTranslator::Translate(query_translation_template, 
+                              query_translation_string, 
+                              CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+ 
+    CAlnVec::TResidue gap_char = alnvec.GetGapChar(0);
+    //make sure both query and germline are non-gaps.
+    for (int i = query_trans_start; i < (int)aligned_vdj_query.size(); i = i + 3) {
+        int query_aln_pos = alnvec.GetAlnPosFromSeqPos(0, alnvec.GetSeqStart(0) + i, CAlnMap::eRight);
+        
+        if (query_aln_pos < (int)aligned_germline_string.size() && 
+            query_aln_pos< (int)aligned_query_string.size() && 
+            aligned_germline_string[query_aln_pos] != gap_char &&
+            aligned_query_string[query_aln_pos] != gap_char){
+            string germline_translation_template = aligned_germline_string.substr(query_aln_pos);
+            string gap_str = NcbiEmptyString;
+            gap_str.push_back(gap_char);
+            //remove internal gap
+            string final_germline_translation_template = NcbiEmptyString;
+            NStr::Replace(germline_translation_template, gap_str, NcbiEmptyString, final_germline_translation_template);
+            CSeqTranslator::Translate(final_germline_translation_template, 
+                                      germline_translation_string, 
+                                      CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+            break; 
+        }
+    }
+}
+
+static void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
+                                   const CRef<CSeq_align>& align_d,
+                                   const CRef<CSeq_align>& align_j,
+                                   const CRef<blast::CIgAnnotation> &annot,
+                                   CScope& scope,
+                                   map<string, string>& airr_data){
 
     string v_query_alignment = NcbiEmptyString;
     string d_query_alignment = NcbiEmptyString;
@@ -1657,7 +1694,8 @@ void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
         NStr::DoubleToString(v_identity_str, identity*100, 3);
         v_query_alignment = query;
         v_germline_alignment = subject;
-       
+        s_GetGermlineTranslation(annot, alnvec, v_query_alignment, v_germline_alignment,
+                                 airr_data["v_sequence_alignment_aa"], airr_data["v_germline_alignment_aa"]);
     }
 
     if (align_d) {
@@ -1686,7 +1724,9 @@ void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
         NStr::DoubleToString(d_identity_str, identity*100, 3);
         d_query_alignment = query;
         d_germline_alignment = subject;
-       
+        s_GetGermlineTranslation(annot, alnvec, d_query_alignment, d_germline_alignment,
+                                 airr_data["d_sequence_alignment_aa"], airr_data["d_germline_alignment_aa"]);
+
     }
 
     if (align_j) {
@@ -1714,6 +1754,8 @@ void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
         NStr::DoubleToString(j_identity_str, identity*100, 3);
         j_query_alignment = query;
         j_germline_alignment = subject;
+        s_GetGermlineTranslation(annot, alnvec, j_query_alignment, j_germline_alignment,
+                                 airr_data["j_sequence_alignment_aa"], airr_data["j_germline_alignment_aa"]);
     }   
         
     
@@ -1758,8 +1800,10 @@ void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
             }
             airr_data["germline_alignment"] +=  NStr::TruncateSpaces(whole_d_germline_alignment);
         } else {//v-d overlap
-            airr_data["germline_alignment"] += NStr::TruncateSpaces(whole_d_germline_alignment).
-                substr(alnvec.GetSeqAlnStop(1) - alnvec.GetSeqAlnStart(2) + 1);            
+           
+            int start_pos = min(((int)whole_d_germline_alignment.size() - 1), (int)alnvec.GetSeqAlnStop(1) - (int)alnvec.GetSeqAlnStart(2) + 1);
+            string seq = NStr::TruncateSpaces(whole_d_germline_alignment);
+            airr_data["germline_alignment"] += seq.substr(start_pos);            
         }
         airr_data["d_alignment_start"] = NStr::IntToString(alnvec.GetSeqAlnStart(2));
         airr_data["d_alignment_end"] = NStr::IntToString(alnvec.GetSeqAlnStop(2));
@@ -1772,12 +1816,14 @@ void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
                 }
                 airr_data["germline_alignment"] += NStr::TruncateSpaces(whole_j_germline_alignment);
             } else {//d-j overlap
-                airr_data["germline_alignment"] += NStr::TruncateSpaces(whole_j_germline_alignment).
-                    substr(alnvec.GetSeqAlnStop(2) - alnvec.GetSeqAlnStart(3) + 1);
+                
+                int start_pos = min(((int)whole_j_germline_alignment.size() - 1), (int)alnvec.GetSeqAlnStop(2) - (int)alnvec.GetSeqAlnStart(3) + 1);
+                string seq = NStr::TruncateSpaces(whole_j_germline_alignment);
+                airr_data["germline_alignment"] += seq.substr(start_pos);
             }
             airr_data["j_alignment_start"] = NStr::IntToString(alnvec.GetSeqAlnStart(3));
             airr_data["j_alignment_end"] = NStr::IntToString(alnvec.GetSeqAlnStop(3));
-
+            
         }
     } else {
         if (align_j) {//light chain
@@ -1788,57 +1834,24 @@ void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
                 }
                 airr_data["germline_alignment"] +=  NStr::TruncateSpaces(whole_j_germline_alignment);
             } else { //v-j
-                airr_data["germline_alignment"] += NStr::TruncateSpaces(whole_j_germline_alignment).
-                    substr(alnvec.GetSeqAlnStop(1) - alnvec.GetSeqAlnStart(2) + 1);
+               
+                int start_pos = min(((int)whole_j_germline_alignment.size() - 1), (int)alnvec.GetSeqAlnStop(1) - (int)alnvec.GetSeqAlnStart(2) + 1);
+                string seq = NStr::TruncateSpaces(whole_j_germline_alignment);
+                airr_data["germline_alignment"] += seq .substr(start_pos);
             }
             airr_data["j_alignment_start"] = NStr::IntToString(alnvec.GetSeqAlnStart(2));
             airr_data["j_alignment_end"] = NStr::IntToString(alnvec.GetSeqAlnStop(2));
-
+            
         }
     }
 
     
     //query vdj part translation 
     {
-        string aligned_vdj_query = NcbiEmptyString;
-        alnvec.GetSeqString(aligned_vdj_query, 0, alnvec.GetSeqStart(0), alnvec.GetSeqStop(0)); 
-        //+3 make sure non-negative start
-        int query_trans_offset = ((alnvec.GetSeqStart(0) + 3) - annot->m_FrameInfo[0])%3;
-             
-        string query_translation_template = aligned_vdj_query.substr(query_trans_offset > 0?
-                                                                         (3 - query_trans_offset):0); 
-        CSeqTranslator::Translate(query_translation_template, 
-                                  airr_data["sequence_alignment_aa"], 
-                                  CSeqTranslator::fIs5PrimePartial, NULL, NULL);
-        
-        int query_trans_start =  query_trans_offset > 0?(3 - query_trans_offset):0;
-        CAlnVec::TResidue gap_char = alnvec.GetGapChar(0);
-        //make sure both query and germline are non-gaps.
-        for (int i = alnvec.GetSeqStart(0) + query_trans_start; i < (int)aligned_vdj_query.size(); i = i + 3) {
-            int query_aln_pos = alnvec.GetAlnPosFromSeqPos(0, i, CAlnMap::eRight);
-            
-            if (query_aln_pos < (int)airr_data["germline_alignment"].size() && 
-                query_aln_pos< (int)airr_data["sequence_alignment"].size() && 
-                airr_data["germline_alignment"][query_aln_pos] != gap_char &&
-                airr_data["sequence_alignment"][query_aln_pos] != gap_char){
-                int germline_trans_start = alnvec.GetSeqPosFromAlnPos(1, query_aln_pos) - alnvec.GetSeqStart(1);
-                string germline_translation_template = airr_data["germline_alignment"].substr(germline_trans_start);
-                vector<string> string_part;
-                string gap_str = NcbiEmptyString;
-                gap_str.push_back(gap_char);
-                //remove internal gap
-                string final_germline_translation_template = NcbiEmptyString;
-                NStr::Replace(germline_translation_template, gap_str, NcbiEmptyString, final_germline_translation_template);
-                CSeqTranslator::Translate(final_germline_translation_template, 
-                                          airr_data["germline_alignment_aa"], 
-                                          CSeqTranslator::fIs5PrimePartial, NULL, NULL);
-                break; 
-            }
-        }
-           
+       
+        s_GetGermlineTranslation(annot, alnvec, airr_data["sequence_alignment"], airr_data["germline_alignment"],
+                                 airr_data["sequence_alignment_aa"], airr_data["germline_alignment_aa"]);
     }
-
-
 }
 
 void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
@@ -2346,22 +2359,24 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
         m_Cdr3Seq = m_Query.substr(m_Cdr3Start, m_Cdr3End - m_Cdr3Start + 1);
         
         int coding_frame_offset = (m_Cdr3Start - annot->m_FrameInfo[0])%3; 
-        
-        string cdr3_seq_for_translatioin = m_Cdr3Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
-
-        CSeqTranslator::Translate(cdr3_seq_for_translatioin, 
-                                  m_Cdr3SeqTrans, 
-                                  CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+        if ((int)m_Cdr3Seq.size() >= 3) {
+            string cdr3_seq_for_translatioin = m_Cdr3Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
+            
+            CSeqTranslator::Translate(cdr3_seq_for_translatioin, 
+                                      m_Cdr3SeqTrans, 
+                                      CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+        }
         int query_length = m_Query.length();
         int airrcdr3start = max(m_Cdr3Start -3, 0);
         m_AirrCdr3Seq = m_Query.substr(airrcdr3start, min(m_Cdr3End - m_Cdr3Start + 7, 
                                                           query_length - airrcdr3start));
-        string airr_cdr3_seq_for_translatioin = m_AirrCdr3Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
-
-        CSeqTranslator::Translate(airr_cdr3_seq_for_translatioin, 
-                                  m_AirrCdr3SeqTrans, 
-                                  CSeqTranslator::fIs5PrimePartial, NULL, NULL);
-
+        if ((int)m_AirrCdr3Seq.size() >= 3) {
+            string airr_cdr3_seq_for_translatioin = m_AirrCdr3Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
+            
+            CSeqTranslator::Translate(airr_cdr3_seq_for_translatioin, 
+                                      m_AirrCdr3SeqTrans, 
+                                      CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+        }
     }
 
     m_Fwr1Seq = NcbiEmptyString;
@@ -2377,36 +2392,53 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
     for (unsigned int i=0; i<m_IgDomains.size(); ++i) {
         if (m_IgDomains[i]->name.find("FR1") !=  string::npos) {
             m_Fwr1Seq = m_Query.substr(m_IgDomains[i]->start, m_IgDomains[i]->end - m_IgDomains[i]->start);
+            
+            int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3;
             //+3 to avoid negative value but does not affect frame
-            int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3; 
-            string seq_for_translatioin = m_Fwr1Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
-            CSeqTranslator::Translate(seq_for_translatioin, m_Fwr1SeqTrans, CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+            int start_pos = coding_frame_offset>0?(3-coding_frame_offset):0;
+            if (start_pos < (int)m_Fwr1Seq.size()){ 
+                string seq_for_translatioin = m_Fwr1Seq.substr(start_pos);
+                CSeqTranslator::Translate(seq_for_translatioin, m_Fwr1SeqTrans, CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+            }
         }
         if (m_IgDomains[i]->name.find("CDR1") !=  string::npos) {
             m_Cdr1Seq = m_Query.substr(m_IgDomains[i]->start, m_IgDomains[i]->end - m_IgDomains[i]->start);
-            int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3; 
-            string seq_for_translatioin = m_Cdr1Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
-            CSeqTranslator::Translate(seq_for_translatioin, m_Cdr1SeqTrans, CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+            int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3;
+            int start_pos = coding_frame_offset>0?(3-coding_frame_offset):0;
+            if (start_pos < (int)m_Cdr1Seq.size()){ 
+                string seq_for_translatioin = m_Cdr1Seq.substr(start_pos);
+                CSeqTranslator::Translate(seq_for_translatioin, m_Cdr1SeqTrans, CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+            }
         } 
         if (m_IgDomains[i]->name.find("FR2") !=  string::npos) {
             m_Fwr2Seq = m_Query.substr(m_IgDomains[i]->start, m_IgDomains[i]->end - m_IgDomains[i]->start);
-            int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3; 
-            string seq_for_translatioin = m_Fwr2Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
-            CSeqTranslator::Translate(seq_for_translatioin, m_Fwr2SeqTrans, CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+            int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3;
+            int start_pos = coding_frame_offset>0?(3-coding_frame_offset):0;
+            if (start_pos < (int)m_Fwr2Seq.size()){ 
+                string seq_for_translatioin = m_Fwr2Seq.substr(start_pos);
+                CSeqTranslator::Translate(seq_for_translatioin, m_Fwr2SeqTrans, CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+            }
         } 
         if (m_IgDomains[i]->name.find("CDR2") !=  string::npos) {
             m_Cdr2Seq = m_Query.substr(m_IgDomains[i]->start, m_IgDomains[i]->end - m_IgDomains[i]->start);
-            int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3; 
-            string seq_for_translatioin = m_Cdr2Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
-            CSeqTranslator::Translate(seq_for_translatioin, m_Cdr2SeqTrans, CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+            int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3;
+            int start_pos = coding_frame_offset>0?(3-coding_frame_offset):0;
+            if (start_pos < (int)m_Cdr2Seq.size()){ 
+                string seq_for_translatioin = m_Cdr2Seq.substr(start_pos);
+                CSeqTranslator::Translate(seq_for_translatioin, m_Cdr2SeqTrans, CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+            }
         } 
         if (m_IgDomains[i]->name.find("FR3") !=  string::npos) {
             if (annot->m_DomainInfo[9] >=0) {
                 //fwr3 is special since it may extends past end of v
                 m_Fwr3Seq = m_Query.substr(m_IgDomains[i]->start, annot->m_DomainInfo[9] - m_IgDomains[i]->start + 1);
-                int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3; 
-                string seq_for_translatioin = m_Fwr3Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
-                CSeqTranslator::Translate(seq_for_translatioin, m_Fwr3SeqTrans, CSeqTranslator::fIs5PrimePartial, NULL, NULL);   
+                int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3;
+                int start_pos = coding_frame_offset>0?(3-coding_frame_offset):0;
+                if (start_pos < (int)m_Fwr3Seq.size()){ 
+                    string seq_for_translatioin = m_Fwr3Seq.substr(start_pos);
+                    CSeqTranslator::Translate(seq_for_translatioin, m_Fwr3SeqTrans, CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+                }
+               
             }
         }
     }

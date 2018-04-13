@@ -329,12 +329,17 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
         l_ig_opts->m_AirrField.push_back("j_alignment_start");
         l_ig_opts->m_AirrField.push_back("j_alignment_end");
         l_ig_opts->m_AirrField.push_back("v_sequence_alignment");
+        l_ig_opts->m_AirrField.push_back("v_sequence_alignment_aa");
         l_ig_opts->m_AirrField.push_back("v_germline_alignment");
+        l_ig_opts->m_AirrField.push_back("v_germline_alignment_aa");
         l_ig_opts->m_AirrField.push_back("d_sequence_alignment");
+        l_ig_opts->m_AirrField.push_back("d_sequence_alignment_aa");
         l_ig_opts->m_AirrField.push_back("d_germline_alignment");
+        l_ig_opts->m_AirrField.push_back("d_germline_alignment_aa");
         l_ig_opts->m_AirrField.push_back("j_sequence_alignment");
+        l_ig_opts->m_AirrField.push_back("j_sequence_alignment_aa");
         l_ig_opts->m_AirrField.push_back("j_germline_alignment");
-
+        l_ig_opts->m_AirrField.push_back("j_germline_alignment_aa");
         l_ig_opts->m_AirrField.push_back("fwr1");
         l_ig_opts->m_AirrField.push_back("fwr1_aa");
         l_ig_opts->m_AirrField.push_back("cdr1");
