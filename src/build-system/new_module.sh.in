@@ -208,7 +208,7 @@ if test -z "$MAKE" ; then
 fi
 
 # figure out what search path to specify
-if test "$top_srcdir" = "$p"  -o  "$need_main" = false; then
+if test "$top_srcdir" = "$p"; then # ...  -o  "$need_main" = false
     search="$p/src"
 else
     search="$p/src,$top_srcdir/src"
