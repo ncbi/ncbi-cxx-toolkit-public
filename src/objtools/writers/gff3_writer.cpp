@@ -1536,13 +1536,21 @@ bool CGff3Writer::xAssignFeatureType(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
+    //rw-569: if so_type qualifier exists, use that:
+    const auto& recorded_type = mf.GetNamedQual("SO_type");
+    if (!recorded_type.empty()) {
+        record.SetType(recorded_type);
+        return true;
+    }
+
     //rw-340: attempt to use so_map API:
-    const CSeq_feat& feature = mf.GetOriginalFeature();
+    const auto& feature = mf.GetOriginalFeature();
     string so_type;
     if (CSoMap::FeatureToSoType(feature, so_type)) {
         record.SetType(so_type);
         return true;
     }
+
     //fallback
     record.SetType("region");
     return true;
