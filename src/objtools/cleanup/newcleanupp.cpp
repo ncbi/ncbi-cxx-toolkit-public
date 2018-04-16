@@ -13471,6 +13471,10 @@ bool IsTransgenic(const CBioSource& src)
 void CNewCleanup_imp::x_ExtendedCleanupExtra(CSeq_entry_Handle seh)
 {
     // This is for global changes
+    if (CCleanup::NormalizeGeneQuals(seh)) {
+        ChangeMade(CCleanupChange::eChangeGeneRef);
+        ChangeMade(CCleanupChange::eRemoveQualifier);
+    }
     if (CCleanup::FixGeneXrefSkew(seh)) {
         ChangeMade(CCleanupChange::eChangeGeneRef);
     }

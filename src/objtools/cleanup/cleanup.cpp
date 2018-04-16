@@ -4826,5 +4826,168 @@ bool CCleanup::FixRNAEditingCodingRegion(CSeq_feat& cds)
 }
 
 
+bool IsMappablePair(const CSeq_feat& cds, const CSeq_feat& gene)
+{
+    if (!gene.GetData().IsGene() || gene.GetData().GetGene().IsSetLocus()
+        || !cds.IsSetXref()) {
+        return false;
+    }
+    string locus;
+    string locus_tag;
+    for (auto it : cds.GetXref()) {
+        if (it->IsSetData() && it->GetData().IsGene()) {
+            if (it->GetData().GetGene().IsSetLocus()) {
+                if (NStr::IsBlank(locus)) {
+                    locus = it->GetData().GetGene().GetLocus();
+                } else {
+                    // already found a locus value, quit
+                    return false;
+                }
+            }
+            if (it->GetData().GetGene().IsSetLocus_tag()) {
+                if (NStr::IsBlank(locus_tag)) {
+                    locus_tag = it->GetData().GetGene().GetLocus_tag();
+                } else {
+                    // already found a locus-tag value, quit
+                    return false;
+                }
+            }
+        }
+    }
+    if (NStr::IsBlank(locus)) {
+        // no locus that we can use
+        return false;
+    }
+
+    if (!NStr::IsBlank(locus_tag) && 
+        gene.GetData().GetGene().IsSetLocus_tag() &&
+        !NStr::Equal(locus_tag, gene.GetData().GetGene().GetLocus_tag())) {
+        return false;
+    }
+
+    return true;
+}
+
+
+bool CCleanup::NormalizeGeneQuals(CSeq_feat& cds, CSeq_feat& gene)
+{
+    if (!gene.GetData().IsGene() || gene.GetData().GetGene().IsSetLocus()
+        || !cds.IsSetXref()) {
+        return false;
+    }
+    string locus;
+    string locus_tag;
+    for (auto it = cds.SetXref().begin(); it != cds.SetXref().end(); it++) {
+        if ((*it)->IsSetData() && (*it)->GetData().IsGene()) {
+            if ((*it)->GetData().GetGene().IsSetLocus()) {
+                if (NStr::IsBlank(locus)) {
+                    locus = (*it)->GetData().GetGene().GetLocus();
+                } else {
+                    // already found a locus value, quit
+                    return false;
+                }
+            }
+            if ((*it)->GetData().GetGene().IsSetLocus_tag()) {
+                if (NStr::IsBlank(locus_tag)) {
+                    locus_tag = (*it)->GetData().GetGene().GetLocus_tag();
+                } else {
+                    // already found a locus-tag value, quit
+                    return false;
+                }
+            }
+        }
+    }
+    if (NStr::IsBlank(locus)) {
+        // no locus that we can use
+        return false;
+    }
+
+    if (!NStr::IsBlank(locus_tag) && 
+        gene.GetData().GetGene().IsSetLocus_tag() &&
+        !NStr::Equal(locus_tag, gene.GetData().GetGene().GetLocus_tag())) {
+        return false;
+    }
+
+    if (!NStr::IsBlank(locus)) {
+        gene.SetData().SetGene().SetLocus(locus);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool CCleanup::NormalizeGeneQuals(CBioseq_Handle bsh)
+{
+    // only for nucleotide sequences
+    if (bsh.IsAa()) {
+        return false;
+    }
+    // only for prokaryotes
+    CSeqdesc_CI src(bsh, CSeqdesc::e_Source);
+    if (!src || !src->IsSource() || !src->GetSource().IsSetLineage() ||
+        (NStr::Find(src->GetSource().GetLineage(), "Bacteria") == NPOS &&
+         NStr::Find(src->GetSource().GetLineage(), "Archaea") == NPOS)) {
+        return false;
+    }
+
+    typedef pair<CSeq_feat_Handle, bool> TFeatOkPair;
+    typedef map<const CSeq_feat*, TFeatOkPair > TGeneCDSMap;
+    TGeneCDSMap gene_cds;
+
+    CFeat_CI f(bsh);
+    CRef<feature::CFeatTree> tr(new feature::CFeatTree(f));
+    while (f) {
+        if (f->GetData().IsCdregion()) {
+            CMappedFeat gene = tr->GetBestGene(*f);
+            if (gene) {
+                TGeneCDSMap::iterator smit = gene_cds.find(gene.GetOriginalSeq_feat().GetPointer());
+                if (smit == gene_cds.end()) {
+                    // not found before                    
+                    bool ok_to_map = IsMappablePair(f->GetOriginalFeature(), gene.GetOriginalFeature());
+                    gene_cds[gene.GetOriginalSeq_feat().GetPointer()] =
+                        TFeatOkPair(f->GetSeq_feat_Handle(), ok_to_map);                           
+                } else {
+                    // same gene, two different coding regions
+                    gene_cds[gene.GetOriginalSeq_feat().GetPointer()].second = false;
+                }
+            }
+        }
+        ++f;
+    }
+
+    bool any_change = false;
+    for (auto copy_pair : gene_cds) {
+        if (copy_pair.second.second) {
+            CRef<CSeq_feat> new_gene(new CSeq_feat());
+            new_gene->Assign(*(copy_pair.first));
+            CRef<CSeq_feat> new_cds(new CSeq_feat());
+            new_cds->Assign(*(copy_pair.second.first.GetOriginalSeq_feat()));
+            if (NormalizeGeneQuals(*new_cds, *new_gene)) {
+                CSeq_feat_Handle gene_handle = bsh.GetScope().GetSeq_featHandle(*(copy_pair.first));
+                CSeq_feat_EditHandle gene_edit = CSeq_feat_EditHandle(gene_handle);
+                gene_edit.Replace(*new_gene);
+                CSeq_feat_Handle cds_handle = bsh.GetScope().GetSeq_featHandle(*(copy_pair.second.first.GetSeq_feat()));
+                CSeq_feat_EditHandle cds_edit = CSeq_feat_EditHandle(cds_handle);
+                cds_edit.Replace(*new_cds);
+                any_change = true;
+            }
+        }
+    }
+
+    return any_change;
+}
+
+bool CCleanup::NormalizeGeneQuals(CSeq_entry_Handle seh)
+{
+    bool any_change = false;
+    CBioseq_CI bi(seh, CSeq_inst::eMol_na);
+    while (bi) {
+        any_change |= NormalizeGeneQuals(*bi);
+        ++bi;
+    }
+    return any_change;
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

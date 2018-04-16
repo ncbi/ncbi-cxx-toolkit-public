@@ -554,6 +554,17 @@ public:
     /// pos is the position of the amino acid where the translation exception 
     /// occurs (starts with 1)
     static CConstRef<CCode_break> GetCodeBreakForLocation(size_t pos, const CSeq_feat& cds);
+    
+    // From the request in GB-7166, we want to be able to move /gene 
+    // qualifiers that have been added to the coding region but not the
+    // parent gene to the parent gene.
+    // If the coding region also has /locus_tag qualifier which is different 
+    // from the one on the parent gene features, do not move the qualifier.
+    // If there are two coding regions that are mapped to the same gene,
+    // do not move the qualifier.
+    static bool NormalizeGeneQuals(CSeq_feat& cds, CSeq_feat& gene);
+    static bool NormalizeGeneQuals(CBioseq_Handle bsh);
+    static bool NormalizeGeneQuals(CSeq_entry_Handle seh);
 
 
 private:
