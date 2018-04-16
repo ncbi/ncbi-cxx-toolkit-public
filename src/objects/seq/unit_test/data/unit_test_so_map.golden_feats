@@ -604,6 +604,46 @@ Seq-feat ::= {
 }
 
 --------------------------------------------------------------------------------
+enhancer_blocking_element:
+--------------------------------------------------------------------------------
+Seq-feat ::= {
+  data imp {
+    key "regulatory"
+  },
+  location int {
+    from 10,
+    to 20,
+    id gi 1000
+  },
+  qual {
+    {
+      qual "regulatory_class",
+      val "enhancer_blocking_element"
+    }
+  }
+}
+
+--------------------------------------------------------------------------------
+epigenetically_modified_region:
+--------------------------------------------------------------------------------
+Seq-feat ::= {
+  data imp {
+    key "regulatory"
+  },
+  location int {
+    from 10,
+    to 20,
+    id gi 1000
+  },
+  qual {
+    {
+      qual "regulatory_class",
+      val "epigenetically_modified_region"
+    }
+  }
+}
+
+--------------------------------------------------------------------------------
 exon:
 --------------------------------------------------------------------------------
 Seq-feat ::= {
@@ -709,6 +749,26 @@ Seq-feat ::= {
     from 10,
     to 20,
     id gi 1000
+  }
+}
+
+--------------------------------------------------------------------------------
+imprinting_control_region:
+--------------------------------------------------------------------------------
+Seq-feat ::= {
+  data imp {
+    key "regulatory"
+  },
+  location int {
+    from 10,
+    to 20,
+    id gi 1000
+  },
+  qual {
+    {
+      qual "regulatory_class",
+      val "imprinting_control_region"
+    }
   }
 }
 
@@ -1597,6 +1657,26 @@ Seq-feat ::= {
     {
       qual "feat_class",
       val "replication_start_site"
+    }
+  }
+}
+
+--------------------------------------------------------------------------------
+response_element:
+--------------------------------------------------------------------------------
+Seq-feat ::= {
+  data imp {
+    key "regulatory"
+  },
+  location int {
+    from 10,
+    to 20,
+    id gi 1000
+  },
+  qual {
+    {
+      qual "regulatory_class",
+      val "response_element"
     }
   }
 }
