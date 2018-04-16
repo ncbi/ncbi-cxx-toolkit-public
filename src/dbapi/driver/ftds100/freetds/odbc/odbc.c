@@ -1701,7 +1701,8 @@ _SQLAllocStmt(SQLHDBC hdbc, SQLHSTMT FAR * phstmt)
 	stmt->num_param_rows = 1;
 	pstr = NULL;
 	/* TODO test initial cursor ... */
-	if (asprintf(&pstr, "SQL_CUR%lx", (unsigned long) stmt) < 0 || !tds_dstr_set(&stmt->cursor_name, pstr)) {
+        if (asprintf(&pstr, "SQL_CUR%p", stmt) < 0
+            ||  !tds_dstr_set(&stmt->cursor_name, pstr)) {
 		free(stmt);
 		free(pstr);
 		odbc_errs_add(&dbc->errs, "HY001", NULL);
