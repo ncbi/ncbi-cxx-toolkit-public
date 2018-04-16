@@ -64,6 +64,7 @@ typedef struct tds_env             TDSENV;
 typedef struct tds_locale          TDSLOCALE;
 typedef struct tds_login           TDSLOGIN;
 typedef struct tds_packet          TDSPACKET;
+typedef struct tds_poll_wakeup     TDSPOLLWAKEUP;
 typedef struct tds_result_info     TDSCOMPUTEINFO;
 typedef struct tds_result_info     TDSRESULTINFO;
 typedef TDSRESULTINFO              TDSPARAMINFO;
@@ -1126,10 +1127,10 @@ struct tds_packet
 	unsigned char buf[1];
 } /* TDSPACKET */;
 
-typedef struct tds_poll_wakeup
+struct tds_poll_wakeup
 {
 	TDS_SYS_SOCKET s_signal, s_signaled;
-} TDSPOLLWAKEUP;
+} /* TDSPOLLWAKEUP */;
 
 /* field related to connection */
 struct tds_connection
