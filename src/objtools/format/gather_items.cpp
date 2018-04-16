@@ -2895,7 +2895,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
                 // may need to map sig_peptide on a different segment
                 if (feat.GetData().IsCdregion()) {
                     if (!ctx.Config().IsFormatFTable()) {
-                        x_GetFeatsOnCdsProduct(original_feat, ctx, slice_mapper);
+                        x_GetFeatsOnCdsProductIdx(mf, original_feat, ctx, slice_mapper);
                     }
                 }
                 return; // continue;
@@ -2967,7 +2967,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
                     {{  
                         // map features from protein
                         if (!ctx.Config().IsFormatFTable()) {
-                            x_GetFeatsOnCdsProduct(original_feat, ctx, 
+                            x_GetFeatsOnCdsProductIdx(mf, original_feat, ctx, 
                                 slice_mapper,
                                 CConstRef<CFeatureItem>(static_cast<const CFeatureItem*>(item.GetNonNullPointer())) );
                         }
@@ -3432,7 +3432,7 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
                 // may need to map sig_peptide on a different segment
                 if (feat.GetData().IsCdregion()) {
                     if (!ctx.Config().IsFormatFTable()) {
-                        x_GetFeatsOnCdsProduct(original_feat, ctx, slice_mapper);
+                        x_GetFeatsOnCdsProductIdx(mf, original_feat, ctx, slice_mapper);
                     }
                 }
                 return;
@@ -3465,7 +3465,7 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
                     {{  
                         // map features from protein
                         if (!ctx.Config().IsFormatFTable()) {
-                            x_GetFeatsOnCdsProduct(original_feat, ctx, 
+                            x_GetFeatsOnCdsProductIdx(mf, original_feat, ctx, 
                                 slice_mapper,
                                 CConstRef<CFeatureItem>(static_cast<const CFeatureItem*>(item.GetNonNullPointer())) );
                         }
@@ -3989,6 +3989,154 @@ void s_FixIntervalProtToCds(
     else {
         destInt.ResetFuzz_to();
     }
+}
+
+//  ============================================================================
+
+//  ============================================================================
+void CFlatGatherer::x_GetFeatsOnCdsProductIdx(
+    CMappedFeat mf,
+    const CSeq_feat& feat,
+    CBioseqContext& ctx,
+    CRef<CSeq_loc_Mapper> slice_mapper,
+    CConstRef<CFeatureItem> cdsFeatureItem ) const
+//  ============================================================================
+{
+    const CFlatFileConfig& cfg = ctx.Config();
+
+    if (!feat.GetData().IsCdregion()  ||  !feat.CanGetProduct()) {
+        return;
+    }
+
+    if (cfg.HideCDSProdFeatures()) {
+        return;
+    }
+
+    CScope& scope = ctx.GetScope();
+    CConstRef<CSeq_id> prot_id(feat.GetProduct().GetId());
+    if (!prot_id) {
+        return;
+    }
+
+    CBioseq_Handle  prot;
+
+    prot = scope.GetBioseqHandleFromTSE(*prot_id, ctx.GetHandle());
+    // !!! need a flag for fetching far proteins
+    if (!prot) {
+        return;
+    }
+
+    CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
+    if (! idx) {
+        return;
+    }
+    
+    CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (prot);
+    if (! bsx) return;
+
+    /*
+    CFeat_CI it(prot, s_GetCdsProductSel(ctx));
+    if (!it) {
+        return;
+    }
+    ctx.GetFeatTree().AddFeatures( it ); // !!!
+    */
+
+    // map from cds product to nucleotide
+    CSeq_loc_Mapper prot_to_cds(feat, CSeq_loc_Mapper::eProductToLocation, &scope);
+    prot_to_cds.SetFuzzOption( CSeq_loc_Mapper::fFuzzOption_CStyle );
+    
+    CSeq_feat_Handle prev;  // keep track of the previous feature
+    /*
+    for ( ; it; ++it )
+    */
+    bsx->IterateFeatures([this, &ctx, &scope, &prev, &cfg, &prot_to_cds, &slice_mapper, &cdsFeatureItem, bsx](CFeatureIndex& sfx) {
+
+        CMappedFeat mf = sfx.GetMappedFeat();
+        CSeq_feat_Handle curr = sfx.GetSeqFeatHandle(); // it->GetSeq_feat_Handle();
+        const CSeq_feat& original_feat = sfx.GetMappedFeat().GetOriginalFeature(); // it->GetOriginalFeature();
+
+        const CSeq_loc& curr_loc = curr.GetLocation();
+        CSeqFeatData::ESubtype subtype = curr.GetFeatSubtype();
+
+        if (subtype != CSeqFeatData::eSubtype_region &&
+            subtype != CSeqFeatData::eSubtype_site &&
+            subtype != CSeqFeatData::eSubtype_bond &&
+            subtype != CSeqFeatData::eSubtype_mat_peptide_aa &&
+            subtype != CSeqFeatData::eSubtype_sig_peptide_aa &&
+            subtype != CSeqFeatData::eSubtype_transit_peptide_aa &&
+            subtype != CSeqFeatData::eSubtype_preprotein &&
+            subtype != CSeqFeatData::eSubtype_propeptide_aa) {
+            return;
+        }
+
+        if ( cfg.HideCDDFeatures()  &&
+             (subtype == CSeqFeatData::eSubtype_region || subtype == CSeqFeatData::eSubtype_site)  &&
+             s_IsCDD(curr) ) {
+            // passing this test prevents mapping of COG CDD region features
+            return;
+        }
+
+        // suppress duplicate features (on protein)
+        if (prev  &&  s_IsDuplicateFeatures(curr, prev)) {
+            return;
+        }
+
+        ///
+        /// HACK HACK HACK
+        ///
+
+        s_CleanCDDFeature(original_feat);
+
+        ///
+        /// HACK HACK HACK
+        ///
+
+        // map prot location to nuc location
+        CRef<CSeq_loc> loc(prot_to_cds.Map(curr_loc));
+        if (loc) {
+            if (loc->IsMix()  ||  loc->IsPacked_int()) {
+                // merge might turn interval into point, so we give it 2 fuzzes to prevent that
+                x_GiveOneResidueIntervalsBogusFuzz(*loc);
+
+                loc = Seq_loc_Merge(*loc, CSeq_loc::fMerge_Abutting, &scope);
+                // remove the bogus fuzz we've added
+                x_RemoveBogusFuzzFromIntervals(*loc);
+            }
+        }
+        if (!loc  ||  loc->IsNull()) {
+            return;
+        }
+        if ( !s_SeqLocEndsOnBioseq(*loc, ctx, eEndsOnBioseqOpt_AnyPartOfSeqLoc, CSeqFeatData::e_Cdregion) ) {
+            return;
+        }
+
+        CConstRef<IFlatItem> item;
+        // for command-line args "-from" and "-to"
+        CMappedFeat mapped_feat = mf;
+        if( slice_mapper && loc ) {
+            CRange<TSeqPos> range = ctx.GetLocation().GetTotalRange();
+            CRef<CSeq_loc> mapped_loc = slice_mapper->Map(*CFeatTrim::Apply(*loc, range));
+            if( mapped_loc->IsNull() ) {
+                return;
+            }
+            CRef<CSeq_feat> feat(new CSeq_feat());
+            feat->Assign(mapped_feat.GetMappedFeature());
+            feat->ResetLocation();
+            feat->SetLocation(*loc);
+            mapped_feat = s_GetTrimmedMappedFeat(*feat, range, scope);
+            loc = mapped_loc;
+        }
+
+        item = ConstRef( x_NewFeatureItem(mapped_feat, ctx, 
+            s_NormalizeNullsBetween(loc), m_Feat_Tree,
+            CFeatureItem::eMapped_from_prot,
+            cdsFeatureItem ) );
+
+        *m_ItemOS << item;
+
+        prev = curr;
+    });  //  end of iterate loop
 }
 
 //  ============================================================================
