@@ -7,6 +7,9 @@
 # by the "external" users' projects
 
 
+set -e
+
+
 # Cmd.-line args  -- source and destination
 script="$0"
 builddir="$1"
@@ -14,23 +17,16 @@ target="$2"
 compiler="${3:-vs2015}"
 
 # Real number of argument is 2.
-# The 3th argument do not used here (32|64-bit architecture),
-# but is needed for master installation script.
+# The 4th argument do not used here (32|64-bit architecture),
+# but necessary for master installation script.
 if test -n "$4" ; then
   echo "USAGE:  `basename $script` [build_dir] [install_dir]"
 fi
 
 
-error()
-{
-  echo "[`basename $script`] ERROR:  $1"
-  exit 1
-}
-
-
 makedir()
 {
-  test -d "$1"  ||  mkdir $2 "$1"  ||  error "Cannot create \"$1\""
+  test -d "$1"  ||  mkdir $2 "$1"
 }
 
 
@@ -55,16 +51,14 @@ install()
     makedir "$2" -p
     tmp_cwd=`pwd`
     cd "$1"
-    find . -type f |
-    grep -v '/\.svn/' > "$tmpdir"/flist
+    find . -type f | grep -v '/\.svn/' > "$tmpdir"/flist
     tar cf - -T "$tmpdir"/flist | (cd "$2" ; tar xf - )
     cd "$tmp_cwd"
 }
 
 
 
-# Check
-test -d "$builddir"  ||  error "Absent build dir \"$builddir\""
+cd "$builddir"
 
 
 # Reset the public directory
@@ -107,7 +101,7 @@ for i in 'Debug' 'Release' ; do
         cd "$builddir"/compilers/$compiler/$b/lib/$i$j
         cp -p *.lib "$libdir/$b/$i$j"
       fi
-      if test "$b"=='dll' ; then
+      if test "$b" = 'dll' ; then
         if test -d "$builddir"/compilers/$compiler/$b/bin/$i$j ; then
           makedir "$libdir/$b/$i$j" -p
           cd "$builddir"/compilers/$compiler/$b/bin/$i$j
@@ -126,7 +120,7 @@ for i in 'DLL' '' ; do
   if test -d "$builddir"/compilers/$compiler/static/bin/Release$i ; then
     cd "$builddir"/compilers/$compiler/static/bin/Release$i
     if ls *.exe >/dev/null 2>&1 ; then
-      cp -p *.exe *.dll *.exp *.manifest "$bindir"
+      cp -p *.exe *.dll *.manifest "$bindir"
       break
     fi
   fi
@@ -167,13 +161,17 @@ done
 # Compiler dir (other common stuff)
 makedir "$cldir"/$compiler/static -p
 makedir "$cldir"/$compiler/dll -p
-cp -p  "$builddir"/compilers/$compiler/*          "$cldir"/$compiler
-cp -p  "$builddir"/compilers/$compiler/static/*   "$cldir"/$compiler/static
-cp -p  "$builddir"/compilers/$compiler/dll/*      "$cldir"/$compiler/dll
+
+find "$builddir"/compilers/$compiler        -maxdepth 1 -type f -exec cp -p {} "$cldir"/$compiler \;
+find "$builddir"/compilers/$compiler/static -maxdepth 1 -type f -exec cp -p {} "$cldir"/$compiler/static \;
+find "$builddir"/compilers/$compiler/dll    -maxdepth 1 -type f -exec cp -p {} "$cldir"/$compiler/dll \;
+
 for b in 'static' 'dll' ; do
   cp -pr "$builddir"/compilers/$compiler/$b/inc "$cldir"/$compiler/$b
   for c in 'DebugMT' 'ReleaseMT' 'DebugDLL' 'ReleaseDLL'; do
-    cp -pr "$builddir"/compilers/$compiler/$b/$c "$cldir"/$compiler/$b
+    if test -d "$builddir"/compilers/$compiler/$b/$c ; then
+      cp -pr "$builddir"/compilers/$compiler/$b/$c "$cldir"/$compiler/$b
+    fi
   done 
 done 
 
@@ -182,5 +180,6 @@ find "$builddir/src" -type f -name 'Makefile.*.mk' -exec cp -pr {} "$srcdir"/bui
 
 # Copy info files
 cp -p "$builddir"/*_info "$target"
+
 
 exit 0
