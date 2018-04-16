@@ -1,6 +1,8 @@
 /* Cfr https://www.gnu.org/savannah-checkouts/gnu/autoconf/manual/autoconf-2.69/html_node/Particular-Functions.html */
 #if HAVE_ALLOCA_H
 # include <alloca.h>
+#elif defined alloca
+/* already set */
 #elif defined __GNUC__
 # define alloca __builtin_alloca
 #elif defined _AIX
