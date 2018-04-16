@@ -48,6 +48,9 @@
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/general/Dbtag.hpp>
+
+#include <objmgr/bioseq_ci.hpp>
+
 #include <common/ncbi_export.h>
 
 #include <misc/biosample_util/biosample_util.hpp>
@@ -628,3 +631,32 @@ BOOST_AUTO_TEST_CASE(Test_GB_7214)
     CheckDiff(*diff_list[0], "isolate", "val1", "");
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_SAMN08922621)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+    CBioseq_CI bi(seh);
+    size_t num_processed = 0;
+    vector<string> unprocessed_ids;
+    // present in production
+    biosample_util::TBiosampleFieldDiffList diff_list =
+        biosample_util::GetBioseqDiffs(*bi, "SAMN08922621",
+            num_processed, unprocessed_ids, false);
+
+    BOOST_CHECK_EQUAL(diff_list.size(), 6);
+    BOOST_CHECK_EQUAL(diff_list[0]->GetFieldName(), "Organism Name");
+    BOOST_CHECK_EQUAL(diff_list[0]->GetSampleVal(), "Escherichia coli");
+    BOOST_CHECK_EQUAL(diff_list[0]->GetSrcVal(), "Sebaea microphylla");
+
+    // absent in development
+    diff_list = biosample_util::GetBioseqDiffs(*bi, "SAMN08922621",
+            num_processed, unprocessed_ids, true);
+
+    BOOST_CHECK_EQUAL(diff_list.size(), 0);
+
+}
