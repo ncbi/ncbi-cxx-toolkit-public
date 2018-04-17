@@ -142,6 +142,7 @@ NCBITEST_AUTO_FINI()
 BOOST_AUTO_TEST_CASE(so_supported_terms)
 {
     bool success = CSoMap::GetSupportedSoTerms(vec_so_supported_terms);
+    vec_so_supported_terms.push_back("unsupported_type");
     BOOST_CHECK(success);
 }
 
@@ -164,7 +165,7 @@ BOOST_AUTO_TEST_CASE(map_so_term_to_seqfeat)
         ostr << string(80, '-') << "\n";
         ostr << term << ":\n";
         ostr << string(80, '-') << "\n";
-        bool success = CSoMap::SoTypeToFeature(term, *pFeature);
+        bool success = CSoMap::SoTypeToFeature(term, *pFeature, true);
         BOOST_CHECK_MESSAGE(success, "CSoMap::SoTypeToFeature failure");
         if (!success) {
             ostr << "ERROR!\n\n";
