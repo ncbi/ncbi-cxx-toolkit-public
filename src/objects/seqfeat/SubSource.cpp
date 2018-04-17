@@ -2074,7 +2074,7 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
             string phrase = nosubphrase;
             bool show_claimed = false;
 
-            if (id->GetLandDistance() < 22) {
+            if (id->GetLandDistance() < 100) {
                 // for now, will not report
                 // this is a policy decision
                 suppress = true;
