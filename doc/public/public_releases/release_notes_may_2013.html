@@ -1,0 +1,2163 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Release Notes (Version 12, May 2013) - The NCBI C++ Toolkit Book [Internet] -
+        NCBI</title>
+    <meta name="description" content="A comprehensive manual on the NCBI C++ toolkit, including its design and development framework, a C++ library reference, software examples and demos, FAQs and release notes." />
+    <meta name="robots" content="index,nofollow,noarchive" />
+    <meta name="page_id" content="release_notes" />
+    <meta name="page_type" content="chapter" />
+    <meta name="ncbipopper" content="triggerPosition:'bottom left',destPosition:'top left',openEvent:'click',closeEvent:'click'" />
+
+    
+
+    <link type="text/css" rel="stylesheet" href="css/ptbooks.css" />
+    <link type="text/css" rel="stylesheet" href="css/toolkit.css" />
+</head>
+<body>
+    <div class="grid no_max_width">
+        <div class="col twelve_col nomargin shadow">
+            <div class="content">
+                <div class="col eight_col">
+                    <div class="nvgtn">
+                        <div class="pagination">
+                            <a class="pagelink active next" title="Next page" href="release_notes_v9_2012.html">
+                                Next &gt;</a></div>
+                        <div class="pdf-link">
+                            <a class="print-link" title="PDF version of this page" href="https://www.ncbi.nlm.nih.gov/toolkit/doc/book/pdf/release_notes.pdf">
+                                PDF</a></div>
+                    </div>
+                    <div class="meta_content">
+                        <h1>
+                            <span class="title">Release Notes (Version 12, May 2013)</span></h1>
+                        <p class="small">
+                            Created: June 18, 2013; Last Update: May 9, 2014.</p>
+                    </div>
+                    <div class="body-content jig-ncbiinpagenav" data-jigconfig="allHeadingLevels: ['h2'],smoothScroll: false">
+                        <ul>
+                            <li>
+                                <p>
+                                    <a href="#release_notes.Download">Download</a></p>
+                            </li>
+                            <li>
+                                <p>
+                                    <a href="#release_notes.Third_Party_Packages">Third Party Packages</a></p>
+                            </li>
+                            <li>
+                                <p>
+                                    <a href="#release_notes.Build">Build</a></p>
+                            </li>
+                            <li>
+                                <p>
+                                    <a href="#release_notes.New_Developments">New Developments</a></p>
+                                <ul>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.release_notes_HIGHLIGHTS">HIGHLIGHTS</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.CORELIB">CORELIB</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.SERIAL">DATA SERIALIZATION</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.DATATOOL">DATATOOL</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.CGI">CGI</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.UTILITES">UTILITIES</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.DBAPI">DBAPI</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.BIOOBJECTS">BIO-OBJECTS</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.BIOTOOLS">BIO-TOOLS</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.BIOOBJECT_MANAGER">BIO-OBJECT MANAGER</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.OBJECT_LIBRARIES">OBJECT LIBRARIES</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.GENBANK_DATA_LOADER">GENBANK DATA LOADER</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.BAM_DATA_LOADER">BAM DATA LOADER</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.SRA_DATA_LOADER">SRA DATA LOADER</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.cSRA_DATA_LOADER">cSRA DATA LOADER</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.WGS_DATA_LOADER">WGS DATA LOADER</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.VDB_DATA_LOADER">VDB DATA LOADER</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.BLAST">BLAST</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.APPLICATIONS">APPLICATIONS</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.BUILD_FRAMEWORK_UNIX">BUILD FRAMEWORK (Unix)</a></p>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>
+                                <p>
+                                    <a href="#release_notes.Documentation">Documentation</a></p>
+                                <ul>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.Location">Location</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.Content">Content</a></p>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>
+                                <p>
+                                    <a href="#release_notes.Platforms_OSs__compi">Supported Platforms (OS's and Compilers)</a></p>
+                                <ul>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.HYPERLINK__bookpartch_co_1">Unix</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.MS_Windows">MS Windows</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.Mac_OS_X">Mac OS X</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.Added_Platforms">Added Platforms</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <a href="#release_notes.Discontinued">Discontinued Platforms</a></p>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <div class="sec" id="release_notes.Download">
+                            <h2>
+                                <span class="title">Download</span></h2>
+                            <p>
+                                Download the source code archives at: <a href="ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/ARCHIVE/12_0_0/">
+                                    ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/ARCHIVE/12_0_0/</a>
+                            </p>
+                            <ul>
+                                <li>
+                                    <p>
+                                        <a href="ftp://ftp.ncbi.nlm.nih.gov/toolbox/ncbi_tools++/ARCHIVE/12_0_0/ncbi_cxx--12_0_0.tar.gz">
+                                            ncbi_cxx--12_0_0.tar.gz</a> — for Unix'es (see the list of Unix flavors below)
+                                        and MacOSX</p>
+                                </li>
+                                <li>
+                                    <p>
+                                        <a href="ftp://ftp.ncbi.nlm.nih.gov/toolbox/ncbi_tools++/ARCHIVE/12_0_0/ncbi_cxx--12_0_0.exe">
+                                            ncbi_cxx--12_0_0.exe</a> — for MS-Windows (32- and 64-bit) / MSVC++ 10.0 — self-extracting</p>
+                                </li>
+                                <li>
+                                    <p>
+                                        <a href="ftp://ftp.ncbi.nlm.nih.gov/toolbox/ncbi_tools++/ARCHIVE/12_0_0/ncbi_cxx--12_0_0.zip">
+                                            ncbi_cxx--12_0_0.zip</a> — for MS-Windows (32- and 64-bit) / MSVC++ 10.0</p>
+                                </li>
+                            </ul>
+                            <p>
+                                The sources correspond to the NCBI production tree <a href="https://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_getcode_svn#ch_getcode_svn.chkout_production_tree">
+                                    sources</a>, which are originally based on the development tree source snapshot
+                                from March 11, 2013 but also include many hundreds of important and safe code updates
+                                made since then and through May 17, 2013 (and then some).</p>
+                        </div>
+                        <div class="sec" id="release_notes.Third_Party_Packages">
+                            <h2>
+                                <span class="title">Third Party Packages</span></h2>
+                            <p>
+                                Some parts of the C++ Toolkit just cannot be built without 3<sup>rd</sup> party
+                                libraries, and other parts of the Toolkit will work more efficiently or provide
+                                more functionality if some 3rd-party packages (such as BerkeleyDB which is used
+                                for local data cache and for local data storage) are available.</p>
+                            <p>
+                                For more information, see the <a href="ftp://ftp.ncbi.nlm.nih.gov/toolbox/ncbi_tools++/ARCHIVE/12_0_0/ThirdParty/README">
+                                    FTP README</a>.</p>
+                            <div class="table" id="release_notes.T.currently_supportedteste">
+                                <div class="caption">
+                                    <p>
+                                        Table 1. Currently Supported/Tested Versions of Third Party Packages</p>
+                                </div>
+                                <div class="table-scroll">
+                                    <table>
+                                        <tbody>
+                                            <tr>
+                                                <th align="left" valign="top" rowspan="1" colspan="1">
+                                                    Package
+                                                </th>
+                                                <th align="left" valign="top" rowspan="1" colspan="1">
+                                                    Versions expected to work (obtained by build-environment inspection in some cases)
+                                                </th>
+                                                <th align="left" valign="top" rowspan="1" colspan="1">
+                                                    Versions known to work (used in-house on any platform)
+                                                </th>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="middle" rowspan="1" colspan="1">
+                                                    <a href="http://www.oracle.com/us/products/database/berkeley-db/index.html">BerkeleyDB</a>
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    4.3.0 or newer
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    4.5.20, 4.6.21.1, 4.7.25,
+                                                    <br />
+                                                    4.6.21.NC
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="middle" rowspan="1" colspan="1">
+                                                    <a href="http://www.boost.org">Boost Test</a>
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    1.35.0 or newer
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    1.40.0.1, 1.42.0, 1.45.0
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="middle" rowspan="1" colspan="1">
+                                                    <a href="http://www.fastcgi.com">FastCGI</a>
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    All versions
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    2.1, 2.4.0
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="middle" rowspan="1" colspan="1">
+                                                    <a href="http://www.bzip.org">libbzip2</a>
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    All versions
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    1.0.2, 1.0.5
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="middle" rowspan="1" colspan="1">
+                                                    <a href="http://freshmeat.net/projects/libjpeg">libjpeg</a>
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    All versions
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    6b, 8.0
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="middle" rowspan="1" colspan="1">
+                                                    <a href="http://www.libpng.org/pub/png/libpng.html">libpng</a>
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    All versions
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    1.2.26, 1.2.7, 1.5.13
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="middle" rowspan="1" colspan="1">
+                                                    <a href="http://www.libtiff.org">libtiff</a>
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    All versions
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    3.6.1, 3.9.2, 4.0.0
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="middle" rowspan="1" colspan="1">
+                                                    <a href="http://sourceforge.net/projects/giflib/files/libungif-4.x/libungif-4.1.4/">
+                                                        libungif</a>
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    All versions
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    4.1.3 (libungif),<br />
+                                                    4.1.6 (giflib)
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="middle" rowspan="1" colspan="1">
+                                                    <a href="http://xmlsoft.org/">libxml2</a>
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    All versions
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    2 2.7.3, 2.7.6, 2.7.8,
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="middle" rowspan="1" colspan="1">
+                                                    <a href="http://xmlsoft.org/">libxslt</a>
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    1.1.14
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    1.1.24, 1.1.26
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="middle" rowspan="1" colspan="1">
+                                                    <a href="http://www.oberhumer.com/opensource/lzo"><span class="small-caps">LZO</span></a>
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    2.x
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    2.05
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="middle" rowspan="1" colspan="1">
+                                                    <a href="http://www.pcre.org">PCRE</a>
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    All versions
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    7.8, 7.9, 8.32,
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="middle" rowspan="1" colspan="1">
+                                                    <a href="http://www.sqlite.org">SQLite3</a>
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    3.6.6 or newer
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    3.6.12, 3.6.14.2, 3.6.22, 3.7.13
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="middle" rowspan="1" colspan="1">
+                                                    <a href="http://www.sybase.com">Sybase</a>
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    All versions
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    12.5
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="middle" rowspan="1" colspan="1">
+                                                    <a href="http://www.zlib.org">zlib</a>
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    All versions
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    1.2.3, 1.2.3.3
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <p>
+                                For Mac OS X and Unix OS’s, the user is expected to download and build the 3<sup>rd</sup>
+                                party packages themselves. The release’s package list includes links to download
+                                sites. However, the user still needs a list of the 3<sup>rd</sup> party packages
+                                and which versions of them are compatible with the release.</p>
+                            <p>
+                                To facilitate the building of these 3rd-party libraries on Windows, there is an
+                                <a href="ftp://ftp.ncbi.nlm.nih.gov/toolbox/ncbi_tools++/ARCHIVE/12_0_0/ThirdParty/README">
+                                    archive</a> that bundles together source code of the 3rd-party packages, plus
+                                MSVC "solutions" to build all (or any combination) of them.
+                            </p>
+                            <div class="table" id="release_notes.T2">
+                                <div class="caption">
+                                    <p>
+                                        Table 2. Versions of Third Party Packages Included in the FTP Archive</p>
+                                </div>
+                                <div class="table-scroll">
+                                    <table>
+                                        <tbody>
+                                            <tr>
+                                                <th align="left" valign="top" rowspan="1" colspan="1">
+                                                    Package
+                                                </th>
+                                                <th align="left" valign="top" rowspan="1" colspan="1">
+                                                    Depends On
+                                                </th>
+                                                <th align="left" valign="top" rowspan="1" colspan="1">
+                                                    Included Version <sup>a</sup>
+                                                </th>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    BerkeleyDB
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    4.6.21.NC
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    Boost Test
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    1.42.0
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    libbzip2
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    1.0.2
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    libjpeg
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    6b
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    libpng
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    zlib 1.2.3
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    1.2.7
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    libtiff
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    libjpeg 6b, zlib 1.2.3
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    3.6.1
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    libungif
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    4.1.3
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    LZO
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    2.05
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    PCRE
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    7.9
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    SQLite3
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    3.6.14.2
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    zlib
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                </td>
+                                                <td align="left" valign="top" rowspan="1" colspan="1">
+                                                    1.2.3
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <p>
+                                <sup>a</sup> Applies to MSVC 9, MSVC 10</p>
+                        </div>
+                        <div class="sec" id="release_notes.Build">
+                            <h2>
+                                <span class="title">Build</span></h2>
+                            <p>
+                                For guidelines to configure, build and install the Toolkit see <a href="https://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_config">
+                                    here</a>.</p>
+                        </div>
+                        <div class="sec" id="release_notes.New_Developments">
+                            <h2>
+                                <span class="title">New Developments</span></h2>
+                            <div class="sec" id="release_notes.release_notes_HIGHLIGHTS">
+                                <h3>
+                                    <span class="title">HIGHLIGHTS</span></h3>
+                                <p>
+                                    Major advances, additions to the BAM, SRA, cSRA, WGS, VDB data loaders of the Bio-Sequence
+                                    Object Manager</p>
+                                <p>
+                                    FreeTDS driver -- Support Kerberos authentication.</p>
+                                <p>
+                                    Redesigned Unicode support (stage 1) - added new <span class="nctnt ncbi-class">CUtf8</span>
+                                    class which will handle UTF8 conversions and replace <span class="nctnt ncbi-class">
+                                        CStringUTF8</span>, prohibited implicit single byte character string conversions.<br />
+                                    Significant additions and improvements in the XML and JSON serialization APIs.</p>
+                                <p>
+                                    Cleaned up the code (again) from non-MT-safe static objects.</p>
+                            </div>
+                            <div class="sec" id="release_notes.CORELIB">
+                                <h3>
+                                    <span class="title">CORELIB</span></h3>
+                                <div class="sec" id="release_notes.New_functionality_1">
+                                    <h4>
+                                        <span class="title">New functionality:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Added possibility of having several argument description (<span class="nctnt ncbi-class">CArgDescription</span>)
+                                                objects in a program; proper description is chosen based on the value of the very
+                                                first command line argument - "command", the rest of the arguments is then parsed
+                                                according to the chosen description. Such command descriptions can be combined into
+                                                command groups.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added platform-independent error reporting mechanism, similar to errno or <span class="nctnt ncbi-class">
+                                                    SetLastError</span>, - <span class="nctnt ncbi-class">CNcbiError</span>. When
+                                                a Toolkit core API function fails, it reports aditional information there.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Redesigned Unicode support - added new CUtf8 class which will handle UTF8 conversions
+                                                and replace CStringUTF8, prohibited implicit single byte character string conversions.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added <span class="nctnt ncbi-class">CException</span> manipulators for severity
+                                                and console output.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">NStr::</span> -- improved errno handling, dropped
+                                                support for <span class="nctnt ncbi-monospace">fIgnoreErrno</span> flag.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">NStr:: </span>-- addednew methods <span class="nctnt ncbi-func">
+                                                    CommonPrefixSize()</span>, <span class="nctnt ncbi-func">CommonSuffixSize()</span>,
+                                                <span class="nctnt ncbi-func">CommonOverlapSize()</span>.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">NStr::</span><span class="nctnt ncbi-func">StringToNumeric()</span>
+                                                -- renamed to <span class="nctnt ncbi-func">StringToNonNegativeInt()</span>.
+                                            </p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">Nstr::</span><span class="nctnt ncbi-func">ParseEscapes()</span>
+                                                -- added options to parse out-of-range escape sequences.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">NStr::</span><span class="nctnt ncbi-func">CEncode()</span>
+                                                -- rewrite to produce use double-quoted strings by default, and added counterpart
+                                                method <span class="nctnt ncbi-func">CParse()</span> to decode a "C" strings.
+                                            </p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">CTime</span> -- added <span class="nctnt ncbi-func">GetCurrentTimeT()</span>
+                                                to get current GMT time with nanoseconds.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">CSignal</span> -- added method <span class="nctnt ncbi-func">
+                                                    ClearSignals()</span>.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">CDirEntry</span> -- add permission/mode &lt;-&gt;
+                                                string conversion methods.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">CDirEntry</span> -- added methods: <span class="nctnt ncbi-func">
+                                                    GetUmask()</span>, <span class="nctnt ncbi-func">SetUmask</span>, <span class="nctnt ncbi-func">
+                                                        ModeFromModeT()</span>.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-func">SetCpuTimeLimit()</span> -- added new declaration
+                                                and deprecated old one, re-enabled user print handler for SIGXCPU.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-func">SetMemoryLimit[Soft|Hard]()</span> -- new methods
+                                                to allow separately specify soft and hard memory limits for application.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added string literals as well as directory pathes to <span class="nctnt ncbi-class">
+                                                    CExprParser</span></p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">CNCBIRegistry</span> (and other registries) is able
+                                                to work with configuration data not belonging to any section, when created with
+                                                <span class="nctnt ncbi-monospace">fSectionlessEntries</span></p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">CExprParser</span> is able to accept logical literals
+                                                starting with a number in <span class="nctnt ncbi-monospace">fLogicalOnly</span>
+                                                mode</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="sec" id="release_notes.Improvements_1">
+                                    <h4>
+                                        <span class="title">Improvements:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                In-heap <span class="nctnt ncbi-class">CObject</span> detection via TLS variable.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Inline internal method <span class="nctnt ncbi-class">CObject::</span><span class="nctnt ncbi-func">InitCounter()</span>
+                                                for speed.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">CTempStringEx</span> -- Optionally own data.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">NStr</span> -- <span class="nctnt ncbi-func">Split</span>,
+                                                <span class="nctnt ncbi-func">Tokenize</span>, etc. now accept flags, controlling
+                                                not only delimiter merging but also whether to treat multi-character delimiters
+                                                as patterns (generalizing <span class="nctnt ncbi-func">TokenizePattern</span>)
+                                                and to treat any subset of \'" as special.</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="sec" id="release_notes.SERIAL">
+                                <h3>
+                                    <span class="title">DATA SERIALIZATION</span></h3>
+                                <div class="sec" id="release_notes.New_functionality_2">
+                                    <h4>
+                                        <span class="title">New functionality:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Added support for mandatory elements with default in XML serialization.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added possibility of using <span class="nctnt ncbi-monospace">NCBI_PARAM</span>
+                                                mechanism for data verification and</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                skipping unknown members settings.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added possibility of skipping unknown data in JSON input; added JSONP output mode.</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="sec" id="release_notes.Improvements_2">
+                                    <h4>
+                                        <span class="title">Improvements:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Optimization of deserialization methods (mostly binary ASN.1).</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="sec" id="release_notes.Bug_fixes_Ser">
+                                    <h4>
+                                        <span class="title">Bug fixes:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Avoid double closing tag when skipping enums in XML.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Store serialization format flags for correct delayed parsing.</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="sec" id="release_notes.XMLWrapp">
+                                    <h4>
+                                        <span class="title">XMLWrapp:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Safe dereferencing node iterators</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                xml::nodes_view is not supported anymore</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                A few memory leaks are fixed</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                exslt auto registration if available</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                XSLT extension functions support added</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                XSLT extension elements support added</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-func">run_xpath_expression(…)</span> to handle boolean,
+                                                number and string types as return values</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="sec" id="release_notes.DATATOOL">
+                                <h3>
+                                    <span class="title">DATATOOL</span></h3>
+                                <ul>
+                                    <li>
+                                        <p>
+                                            Enhanced SOAP client code generation to support WSDL specification which contains
+                                            several XML schemas - to handle elements with identical names in different namespaces.</p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            Added possibility of converting data to and from JSON format.</p>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="sec" id="release_notes.CGI">
+                                <h3>
+                                    <span class="title">CGI</span></h3>
+                                <ul>
+                                    <li>
+                                        <p>
+                                            <span class="nctnt ncbi-class">CCgiUserAgent</span> -- separate <span class="nctnt ncbi-class">
+                                                CCgiUserAgent</span> into <span class="nctnt ncbi-path">user_agent.[h|c]pp</span>.</p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <span class="nctnt ncbi-class">CCgiUserAgent</span> -- added methods: <span class="nctnt ncbi-func">
+                                                GetDeviceType()</span>, <span class="nctnt ncbi-func">IsPhoneDevice()</span>,
+                                            <span class="nctnt ncbi-func">IsTabletDevice()</span>.
+                                        </p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            Added flags to allow use external pattern lists on the parsing step to identify
+                                            bots, phones, tablets and mobile devices. Return iPad back to the list of mobile
+                                            devices. Interpret all Android based devices as mobile devices.</p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <span class="nctnt ncbi-class">CCgiUserAgent</span> -- update list of browsers and
+                                            mobile devices.</p>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="sec" id="release_notes.UTILITES">
+                                <h3>
+                                    <span class="title">UTILITES</span></h3>
+                                <ul>
+                                    <li>
+                                        <p>
+                                            Compression API -- allow concatenated files for eGZipFile mode by default.</p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            Compression API -- added support for "empty input data" compression via <span class="nctnt ncbi-monospace">
+                                                fAllowEmptyData</span> flag, It will allow to compress zero-length input data
+                                            and provide proper format header/footer in the output, if applicable. By default
+                                            the Compression API not provide any output for zero-length input data.</p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <span class="nctnt ncbi-class">CRegexp</span> -- changed <span class="nctnt ncbi-func">
+                                                GetSub()</span>/<span class="nctnt ncbi-func">GetMatch()</span> methods to return
+                                            <span class="nctnt ncbi-class">CTempString</span> instead of string.</p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <span class="nctnt ncbi-path">include/util/diff/dipp.hpp</span> -- new DIFF API
+                                            (<span class="nctnt ncbi-class">CDiff</span>, <span class="nctnt ncbi-class">CDiffT</span>ext).</p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            Added possibility to convert differently typed static array.</p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            Added limited_size_map&lt;&gt; for caching and garbage collection.</p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            Mask matching is rewritten with <span class="nctnt ncbi-class">CTempString</span>
+                                            for efficiency.</p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            ILineReader -- Clarify API, introducing ReadLine and GetCurrentLine as synonyms
+                                            of operator++ and operator* respectively.</p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <span class="nctnt ncbi-class">CTextJoiner</span> -- New template for collecting
+                                            and joining strings with a minimum of heap churn.</p>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="sec" id="release_notes.DBAPI">
+                                <h3>
+                                    <span class="title">DBAPI</span></h3>
+                                <ul>
+                                    <li>
+                                        <p>
+                                            Support Sybase ASE 15.5 servers.</p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            Python bindings -- Optionally release Python's global lock around blocking DBAPI
+                                            operations; rework exception translation to follow PEP 249 (*).</p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            Added support for Kerberos authentication (copied from FreeTDS 0.91).</p>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="sec" id="release_notes.BIOOBJECTS">
+                                <h3>
+                                    <span class="title">BIO-OBJECTS</span></h3>
+                                <div class="sec" id="release_notes.New_functionality_3">
+                                    <h4>
+                                        <span class="title">New functionality:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">CDeflineGenerator</span> -- Generally streamline;
+                                                make expensive operations (currently just consulting related sequences' annotations)
+                                                optional.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">CFastaOStream</span> -- Add a gap-mode parameter,
+                                                making it possible to represent gaps by runs of inline dashes or special &gt;?N
+                                                lines; optionally (but by default) check for duplicate sequence IDs; support processing
+                                                an entire raw Seq-entry without even a temporary scope.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">CFastaReader</span> -- Add two flags that can increase
+                                                performance: <span class="nctnt ncbi-monospace">fLeaveAsText</span> skips reencoding
+                                                in a (more compact) binary format, and <span class="nctnt ncbi-monospace">fQuickIDCheck</span>
+                                                directs local ID validation to consider just the first character.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">CSeq_id</span> -- Accept parse flags when parsing
+                                                a single ID from a string; recognize WGS scaffolds, additional prefixes (F???, G???,
+                                                HY, HZ, J??, JV-JZ, KA-KF, and WP_), 10-digit refseq_wgs_nuc accessions (notably
+                                                for spruce), and more TPE protein accessions (still interspersed with EMBL's own
+                                                accessions).</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added <span class="nctnt ncbi-class">CGeneFinder</span> class for finding the genes
+                                                of a feature using the flatfile generator's logic</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Seq_entry_CI can now optionally include the top seq-entry</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-func">objects::CGC_Replicon</span> now has accessors to
+                                                return molecule type (‘Chromosome’, ‘Plasmid’, etc.) and location (‘Nuclear’, ‘Mitochondrion’,
+                                                ‘Chloroplast’, etc.). You can also retrieve a label (<span class="nctnt ncbi-func">GetMoleculeLabel()</span>)
+                                                which summarizes molecule type and location in one string.</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="sec" id="release_notes.BIOTOOLS">
+                                <h3>
+                                    <span class="title">BIO-TOOLS</span></h3>
+                                <div class="sec" id="release_notes.New_Development">
+                                    <h4>
+                                        <span class="title">New Development:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Validator:</p>
+                                            <ul>
+                                                <li>
+                                                    <p>
+                                                        Added functions for validating and autocorrecting lat-lon, collection-date, and
+                                                        country BioSource SubSource modifiers. Synchronized validation with C Toolkit.</p>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Flat-file generator:</p>
+                                            <ul>
+                                                <li>
+                                                    <p>
+                                                        can now be set to show only certain blocks</p>
+                                                </li>
+                                                <li>
+                                                    <p>
+                                                        optionally set callback for each item or bisoeq that's written which allows changing
+                                                        the text and specifying to skip that item or even halt flatfile generation.</p>
+                                                </li>
+                                                <li>
+                                                    <p>
+                                                        support the /pseudogene qualifier</p>
+                                                </li>
+                                                <li>
+                                                    <p>
+                                                        allow complex locations in transl_excepts. (a.k.a. code-breaks )</p>
+                                                </li>
+                                                <li>
+                                                    <p>
+                                                        support "pcr" linkage-evidence</p>
+                                                </li>
+                                                <li>
+                                                    <p>
+                                                        support for /altitude qualifier</p>
+                                                </li>
+                                                <li>
+                                                    <p>
+                                                        Support "Assembly" in DBLINK</p>
+                                                </li>
+                                                <li>
+                                                    <p>
+                                                        API for conversion between source-qualifier and feature-qualifier enums and strings</p>
+                                                </li>
+                                                <li>
+                                                    <p>
+                                                        support assembly gap feature quals (e.g. /gap_type, /linkage_evidence, etc.)</p>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                ASN.1 Cleanup:</p>
+                                            <ul>
+                                                <li>
+                                                    <p>
+                                                        Set pseudo to true if pseudogene is set</p>
+                                                </li>
+                                                <li>
+                                                    <p>
+                                                        More places where it sorts and removes redundancies (example: sort and unique organism
+                                                        synonyms)</p>
+                                                </li>
+                                                <li>
+                                                    <p>
+                                                        Remove duplicate pcr-primers</p>
+                                                </li>
+                                                <li>
+                                                    <p>
+                                                        clean up altitude</p>
+                                                </li>
+                                                <li>
+                                                    <p>
+                                                        fixing some genbank quals into real quals (example: gene-synonym)</p>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">CFastaOstream</span>:</p>
+                                            <ul>
+                                                <li>
+                                                    <p>
+                                                        Can optionally show [key=val] style mods in deflines</p>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">CFeature_table_reader</span>:</p>
+                                            <ul>
+                                                <li>
+                                                    <p>
+                                                        now supports more quals (example: centromere)</p>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">CFastaReader</span>:</p>
+                                            <ul>
+                                                <li>
+                                                    <p>
+                                                        optionally accumulate warnings in a vector instead of printing them to allow more
+                                                        flexible handling and more info to caller.</p>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                AGP:</p>
+                                            <ul>
+                                                <li>
+                                                    <p>
+                                                        created <span class="nctnt ncbi-class">CAgpToSeqEntry</span> for converting an AGP
+                                                        file into a Seq-entry.</p>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="sec" id="release_notes.COBALT">
+                                    <h4>
+                                        <span class="title">COBALT</span></h4>
+                                    <div class="sec" id="release_notes.Bug_fixes_Cobalt">
+                                        <h5>
+                                            <span class="title">Bug fixes:</span></h5>
+                                        <ul>
+                                            <li>
+                                                <p>
+                                                    Incorrect alignments with sequence clustering</p>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="sec" id="release_notes.BIOOBJECT_MANAGER">
+                                <h3>
+                                    <span class="title">BIO-OBJECT MANAGER</span></h3>
+                                <div class="sec" id="release_notes.New_functionality_4">
+                                    <h4>
+                                        <span class="title">New functionality:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Added fast <span class="nctnt ncbi-class">CScope</span> methods for getting some
+                                                sequence information without loading the whole entry - length, type, taxonomy id,
+                                                GI, accession, label.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added processing of Seq-table column "disabled".</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added FeatId manipulation methods.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added <span class="nctnt ncbi-func">feature::ReassignFeatureIds()</span>.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added <span class="nctnt ncbi-class">CSeq_table_CI</span> with location mapping.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added <span class="nctnt ncbi-class">CSeqVector_CI::</span><span class="nctnt ncbi-func">GetGapSeq_literal()</span>.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added recursive mode and seq-entry type filtering to <span class="nctnt ncbi-class">
+                                                    CSeq_entry_CI</span>.</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="sec" id="release_notes.Improvements_3">
+                                    <h4>
+                                        <span class="title">Improvements:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Allow non-scope bioseq lookup in <span class="nctnt ncbi-class">CSeq_Map</span>
+                                                (for segset entries).</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Allow post-load modification of sequences.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Optimization of <span class="nctnt ncbi-func">ContainsBioseq()</span> for split
+                                                entries.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added <span class="nctnt ncbi-class">CTSE_Info::</span><span class="nctnt ncbi-func">GetDescription()</span>
+                                                for better diagnostics.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                More detailed error message in annots.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Allow iteration over non-set entries in <span class="nctnt ncbi-class">CSeq_entry_CI</span>
+                                                - treat them as empty sets.</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="sec" id="release_notes.Bug_fixes_3">
+                                    <h4>
+                                        <span class="title">Bug fixes:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Fixed generation of Seq-table features.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Fixed loading of various Seq-id info from multiple data loaders.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Made bulk and single requests to return the same results.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Fixed unexpected <span class="nctnt ncbi-class">CBlobStateException</span> for non-existent
+                                                sequences.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Avoid deadlock when updating split annot index.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Fixed recursive iteration in <span class="nctnt ncbi-class">CSeq_entry_CI</span>
+                                                if sub-entry</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                doesn't have matching entries.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Fixed mixup of feature ids and xrefs.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Fixed fetching by feat id/xref from split entries.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Fixed in-TSE sequence lookup via matching Seq-id.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Fixed matching Seq-id lookup with multiple candidates.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                <span class="nctnt ncbi-class">CSeqMap_CI::</span><span class="nctnt ncbi-func">GetRefData()</span>
+                                                should work for gaps too.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Exclude removed features from un-indexed search.</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="sec" id="release_notes.OBJECT_LIBRARIES">
+                                <h3>
+                                    <span class="title">OBJECT LIBRARIES</span></h3>
+                                <div class="sec" id="release_notes.New_functionality_5">
+                                    <h4>
+                                        <span class="title">New functionality:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Implemeted multi-id Seq-loc comparison.</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="sec" id="release_notes.GENBANK_DATA_LOADER">
+                                <h3>
+                                    <span class="title">GENBANK DATA LOADER</span></h3>
+                                <div class="sec" id="release_notes.Bug_fixes_5">
+                                    <h4>
+                                        <span class="title">Bug fixes:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Allow withdrawn/suppressed entries with non-default credentials.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Preserve blob state if Seq-entry skeleton is attached to split info.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Remember blob state from get-blob-ids reply too.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Detect non-existent Seq-id when loading blob-ids.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Release connection as soon as possible to avoid deadlock.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Lock split TSE only after receiving split info.</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="sec" id="release_notes.BAM_DATA_LOADER">
+                                <h3>
+                                    <span class="title">BAM DATA LOADER</span></h3>
+                                <div class="sec" id="release_notes.New_functionality_6">
+                                    <h4>
+                                        <span class="title">New functionality:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Implemented pileup graphs for BAM loader.</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="sec" id="release_notes.Improvements_6">
+                                    <h4>
+                                        <span class="title">Improvements:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Generate simple ID2 split info to postpone record loading.</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="sec" id="release_notes.SRA_DATA_LOADER">
+                                <h3>
+                                    <span class="title">SRA DATA LOADER</span></h3>
+                                <div class="sec" id="release_notes.New_functionality_7">
+                                    <h4>
+                                        <span class="title">New functionality:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Added option to clip SRA sequences.</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="sec" id="release_notes.cSRA_DATA_LOADER">
+                                <h3>
+                                    <span class="title">cSRA DATA LOADER</span></h3>
+                                <div class="sec" id="release_notes.New_functionality_8">
+                                    <h4>
+                                        <span class="title">New functionality:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Implemented <span class="nctnt ncbi-class">CCSraShortReadIterator</span>.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added short read info into Seq-align.ext.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added pileup graph param setter and getter.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added support for SECONDARY_ALIGNMENT.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Use gnl|SRA|&lt;acc&gt;.&lt;spot&gt;.&lt;read&gt; for short read ids.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added lookup for short reads by SPOT_ID and READ_ID.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Allow optional VDB columns.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added clippig by quality.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added option to exclude cSRA file path from short read ids.</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="sec" id="release_notes.Improvements_8">
+                                    <h4>
+                                        <span class="title">Improvements:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Allow cSRA reader to open old SRA tables.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Reduced number of TSE chunks.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Removed obsolete config parameters: INT_LOCAL_IDS, SEPARATE_LOCAL_IDS.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Removed empty VDB table, cursor, and column constructors.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Generate simple split info to postpone cSRA record loading.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Exclude technical reads.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Check VDB column data type to detect incompatible VDB files.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Place short reads in a separate blob.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added lookup from short read to refseq.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added mapping align on short read.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added secondary alignment indicator.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added centralized MT-safe VDB cursor cache.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Allow ERR accessions in cSRA loader.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Switched to new SRA SDK accession resolution scheme.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Use SRA SDK configuration mechanism.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added SRA file cache garbage collector.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Accept multiple ids in reference sequences.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Reduce number of reads per blob to 1 for speed.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Allow cSRA data to have no REFERENCE table.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Increased limit on allowed number of short reads per spot.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Increased flexibility on existing VDB columns.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Try to resolve remote VDB files too.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Use GC for loaded entries.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Indicate that cSRA loader can load data by blob id.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Set max value of quality graph properly.</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="sec" id="release_notes.Bug_fixes_7">
+                                    <h4>
+                                        <span class="title">Bug fixes:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Fixed MISMATCH generation for I segments.</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added missing <span class="nctnt ncbi-func">RegisterInObjectManager()</span>.</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="sec" id="release_notes.WGS_DATA_LOADER">
+                                <h3>
+                                    <span class="title">WGS DATA LOADER</span></h3>
+                                <div class="sec" id="release_notes.New_functionality_WGS">
+                                    <h4>
+                                        <span class="title">New functionality:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Implemented VDB WGS reader and data loader.</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="sec" id="release_notes.VDB_DATA_LOADER">
+                                <h3>
+                                    <span class="title">VDB DATA LOADER</span></h3>
+                                <div class="sec" id="release_notes.New_functionality_10">
+                                    <h4>
+                                        <span class="title">New functionality:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Implemented VDB graph reader and data loader.</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="sec" id="release_notes.BLAST">
+                                <h3>
+                                    <span class="title">BLAST</span></h3>
+                                <div class="sec" id="release_notes.New_functionality_Blast">
+                                    <h4>
+                                        <span class="title">New functionality:</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Added new API to return blast preliminary stage result as a list of <span class="nctnt ncbi-class">
+                                                    CStd_seg</span></p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added new tabular features for blast which includes taxonomy information, strand
+                                                sign and query coverage</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added new features for blastdbcmd batch sequence retrieval which allow user to specify
+                                                strand sign and sequence range</p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                Added new functionality in makeprofiledb to produce database that supports composition
+                                                based statistics
+                                            </p>
+                                        </li>
+                                        <li>
+                                            <p>
+                                                For more details, see BLAST+ 2.2.27 and 2.2.28 release notes (<a href="https://www.ncbi.nlm.nih.gov/books/NBK131777/">https://www.ncbi.nlm.nih.gov/books/NBK131777/</a>)</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="sec" id="release_notes.Bug_fix">
+                                    <h4>
+                                        <span class="title">Bug fix</span></h4>
+                                    <ul>
+                                        <li>
+                                            <p>
+                                                Fix ASN 1 input for makeblastdb</p>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="sec" id="release_notes.APPLICATIONS">
+                                <h3>
+                                    <span class="title">APPLICATIONS</span></h3>
+                                <ul>
+                                    <li>
+                                        <p>
+                                            <span class="nctnt ncbi-app">convert_seq</span> -- Allow for more efficient operation
+                                            in some cases, mostly by bypassing object manager overhead; implement a new "IDs"
+                                            input format; have non-zero inflags for ASN.1 or XML request sequence data repacking.</p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <span class="nctnt ncbi-app">multireader</span> -- Added AGP.</p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <span class="nctnt ncbi-app">blastn's</span> -- Changed default value - use_index
+                                            to false
+                                        </p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <span class="nctnt ncbi-app">vecscreen</span> -- Added command line application</p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <span class="nctnt ncbi-app">rmblastn</span> -- Added command line application</p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <span class="nctnt ncbi-app">asn2asn</span> -- added ability to read and write Seq-submits</p>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="sec" id="release_notes.BUILD_FRAMEWORK_UNIX">
+                                <h3>
+                                    <span class="title">BUILD FRAMEWORK (Unix)</span></h3>
+                                <ul>
+                                    <li>
+                                        <p>
+                                            configure and frontends (<span class="nctnt ncbi-path">compilers/unix/*.sh</span>)
+                                            -- Don't override explicitly specified optimization flags with default FAST settings
+                                            (but do still apply custom FAST settings if also specified).</p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <span class="nctnt ncbi-path">compilers/unix/Clang.sh, .../LLVM-GCC.sh</span> --
+                                            New frontends for configure to simplify compiler selection.</p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            <span class="nctnt ncbi-path">new_project.sh</span> -- Improve support for projects
+                                            involving libraries.</p>
+                                    </li>
+                                </ul>
+                                <div class="sec" id="release_notes.CHANGES_TO_COMPILER_SUPPOR">
+                                    <h4>
+                                        <span class="title">CHANGES TO COMPILER SUPPORT</span></h4>
+                                    <p>
+                                        Linux ICC support extends up to version 13.</p>
+                                    <p>
+                                        Mac OS X support extends to version 10.8.x, with Clang, FSF GCC, or LLVM GCC (also
+                                        via Xcode).</p>
+                                    <p>
+                                        Solaris support extends to version 11, with GCC or WorkShop (as with older OS versions).</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="sec" id="release_notes.Documentation">
+                            <h2>
+                                <span class="title">Documentation</span></h2>
+                            <div class="sec" id="release_notes.Location">
+                                <h3>
+                                    <span class="title">Location</span></h3>
+                                <p>
+                                    The documentation is available online as a searchable book "The NCBI C++ Toolkit":
+                                    <a href="https://www.ncbi.nlm.nih.gov/toolkit/doc/book/">https://www.ncbi.nlm.nih.gov/toolkit/doc/book/</a>.</p>
+                                <p>
+                                    The C++ Toolkit book also provides PDF version of the chapters. The PDF version
+                                    can be accessed by a link that appears on each page.</p>
+                            </div>
+                            <div class="sec" id="release_notes.Content">
+                                <h3>
+                                    <span class="title">Content</span></h3>
+                                <p>
+                                    Documentation has been grouped into chapters and sections that provide a more logical
+                                    coherence and flow. New sections and paragraphs continue to be added to update and
+                                    clarify the older documentation or provide new documentation. The chapter titled
+                                    "Introduction to the C++ Toolkit" gives an overview of the C++ Toolkit. This chapter
+                                    contains links to other chapters containing more details on a specific topic and
+                                    is a good starting point for the newcomer.</p>
+                                <p>
+                                    A C/C++ Symbol Search query appears on each page of the online Toolkit documentation.
+                                    You can use this to perform a symbol search on the up-to-date public or in-house
+                                    versions using source browsers <a href="https://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CTime&amp;d=">
+                                        LXR</a>, <a href="https://www.ncbi.nlm.nih.gov/toolkit/?term=ctime">Doxygen</a>
+                                    and <a href="https://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lib_search/libsearch.cgi?symbol=CTime">
+                                        Library</a> - or do an <a href="https://www.ncbi.nlm.nih.gov/toolkitall?term=CTime">overall</a>
+                                    search.</p>
+                                <p>
+                                    Public assess to our SVN trunk:
+                                </p>
+                                <ul>
+                                    <li>
+                                        <p>
+                                            For browsing: <a href="https://www.ncbi.nlm.nih.gov/viewvc/v1/trunk/c++">https://www.ncbi.nlm.nih.gov/viewvc/v1/trunk/c++</a></p>
+                                    </li>
+                                    <li>
+                                        <p>
+                                            For retrieval: <a href="https://anonsvn.ncbi.nlm.nih.gov/repos/v1/trunk/c++">https://anonsvn.ncbi.nlm.nih.gov/repos/v1/trunk/c++</a>
+                                            (<span class="nctnt highlight">NOTE:</span> Some WebDAV clients may require dav://
+                                            instead of http://)</p>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="sec" id="release_notes.Platforms_OSs__compi">
+                            <h2>
+                                <span class="title">Supported Platforms (OS's and Compilers)</span></h2>
+                            <ul>
+                                <li>
+                                    <p>
+                                        <a href="release_notes.html#release_notes.HYPERLINK__bookpartch_co_1">Unix</a></p>
+                                </li>
+                                <li>
+                                    <p>
+                                        <a href="release_notes.html#release_notes.MS_Windows">MS Windows</a></p>
+                                </li>
+                                <li>
+                                    <p>
+                                        <a href="release_notes.html#release_notes.Mac_OS_X">Mac OS X</a></p>
+                                </li>
+                                <li>
+                                    <p>
+                                        <a href="release_notes.html#release_notes.Added_Platforms">Added</a></p>
+                                </li>
+                                <li>
+                                    <p>
+                                        <a href="release_notes.html#release_notes.Discontinued">Discontinued</a></p>
+                                </li>
+                            </ul>
+                            <p>
+                                This release was successfully tested on at least the following platforms (but may
+                                also work on other platforms). Since the previous release, some platforms were dropped
+                                from this list and some were added. Also, it can happen that some projects would
+                                not work (or even compile) in the absence of 3rd-party packages, or with older or
+                                newer versions of such packages. In these cases, just skipping such projects (e.g.
+                                using flag "<span class="nctnt ncbi-monospace">-k</span>" for <span class="nctnt ncbi-app">
+                                    make</span> on Unix), can get you through.</p>
+                            <p>
+                                In cases where multiple versions of a compiler are supported, the mainstream version
+                                is shown in <b>bold</b>.</p>
+                            <div class="sec" id="release_notes.HYPERLINK__bookpartch_co_1">
+                                <h3>
+                                    <span class="title"><a href="https://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_config#ch_config.UNIX">Unix</a></span></h3>
+                                <div class="table" id="release_notes.T3">
+                                    <div class="caption">
+                                        <p>
+                                            Table 3. Unix OS's and Supported Compilers</p>
+                                    </div>
+                                    <div class="table-scroll">
+                                        <table>
+                                            <tbody>
+                                                <tr>
+                                                    <th align="left" valign="top" rowspan="1" colspan="1">
+                                                        Operating System
+                                                    </th>
+                                                    <th align="left" valign="top" rowspan="1" colspan="1">
+                                                        Architecture
+                                                    </th>
+                                                    <th align="left" valign="top" rowspan="1" colspan="1">
+                                                        Compilers
+                                                    </th>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        CentOS 5.x (LIBC 2.5)
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        x86-64
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        <b>GCC 4.4.2, </b>4.0.1<sup>a</sup>, 4.1.2<sup>a</sup>, 4.3.3<sup>a</sup>, 4.6.0<sup>a</sup>,
+                                                        4.6.3<sup>a</sup>
+                                                        <br />
+                                                        <sup>,</sup>GCC 4.7.2<sup> a</sup>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        CentOS 5.x (LIBC 2.5)
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        x86-32
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        <b>GCC </b>4.4.5<sup> a</sup><b>, 4.6.0</b>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        CentOS 6.x (LIBC 2.12)
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        x86-64
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        <b>GCC 4.4.2</b>, 4.6.3<sup> a</sup>, 4.7.2<sup> a</sup>, 4.8.0<sup> a</sup>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        Ubuntu 9.04 ("jaunty") (LIBC 2.9)
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        x86-32<br />
+                                                        x86-64
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        <b>GCC 4.3.3 </b>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        Solaris 10, 11<sup>a</sup>
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        SPARC
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        GCC 4.1.1<sup>b</sup>, 4.5.3<sup>b</sup><br />
+                                                        <b>Sun Studio 12 (C++ 5.9)</b>, Sun Studio 12 Update 1 (C++ 5.10)<sup>a</sup><br />
+                                                        Oracle Studio 12.2 (C++ 5.11)<sup>a</sup>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        Solaris 10, 11<sup>a</sup>
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        x86-32
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        GCC 4.2.3<br />
+                                                        <b>Sun Studio 12 (C++ 5.9)</b>, Sun Studio 12 Update 1 (C++ 5.10)<sup>a</sup><br />
+                                                        Oracle Studio 12.2 (C++ 5.11)<sup>a</sup>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        Solaris 10, 11<sup>a</sup>
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        x86-64
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        <b>Sun Studio 12 (C++ 5.9)</b>, Sun Studio 12 Update 1 (C++ 5.10)<sup>a</sup><br />
+                                                        Oracle Studio 12.2 (C++ 5.11)<sup>a</sup>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        FreeBSD-8.3
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        x86-32
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        GCC 4.2.2
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <p>
+                                    <sup>a</sup> some support</p>
+                                <p>
+                                    <sup>b</sup> 32-bit only
+                                </p>
+                            </div>
+                            <div class="sec" id="release_notes.MS_Windows">
+                                <h3>
+                                    <span class="title"><a href="https://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_config#ch_config.MS_Windows">MS Windows</a></span></h3>
+                                <div class="table" id="release_notes.T4">
+                                    <div class="caption">
+                                        <p>
+                                            Table 4. MS Windows and Supported Compilers</p>
+                                    </div>
+                                    <div class="table-scroll">
+                                        <table>
+                                            <tbody>
+                                                <tr>
+                                                    <th align="left" valign="top" rowspan="1" colspan="1">
+                                                        Operating System
+                                                    </th>
+                                                    <th align="left" valign="top" rowspan="1" colspan="1">
+                                                        Architecture
+                                                    </th>
+                                                    <th align="left" valign="top" rowspan="1" colspan="1">
+                                                        Compilers
+                                                    </th>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        MS Windows
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        x86-32
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        <a href="https://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_config#ch_config.MS_Visual_C_2008">MS Visual C++</a> 2010 (C++
+                                                        10.0)
+                                                        <br />
+                                                        NOTE: We also ship an easily buildable archive of <a href="ftp://ftp.ncbi.nlm.nih.gov/toolbox/ncbi_tools++/ARCHIVE/12_0_0/ThirdParty/README">
+                                                            3rd-party</a> packages for this platform.
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        MS Windows
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        x86-64
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        <a href="https://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_config#ch_config.MS_Visual_C_2008">MS Visual C++</a> 2010 (C++
+                                                        10.0)
+                                                        <br />
+                                                        NOTE: We also ship an easily buildable archive of <a href="ftp://ftp.ncbi.nlm.nih.gov/toolbox/ncbi_tools++/ARCHIVE/12_0_0/ThirdParty/README">
+                                                            3rd-party</a> packages for this platform
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        Cygwin 1.7.9
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        x86-32
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        <a href="https://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_config#ch_config.Cygwin_GCC">GCC 4.5.3</a>- nominal support only.
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="sec" id="release_notes.Mac_OS_X">
+                                <h3>
+                                    <span class="title"><a href="https://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_config#ch_config.Mac_OS_X">Mac OS X</a></span></h3>
+                                <div class="table" id="release_notes.T5">
+                                    <div class="caption">
+                                        <p>
+                                            Table 5. Mac OS and Supported Compilers</p>
+                                    </div>
+                                    <div class="table-scroll">
+                                        <table>
+                                            <tbody>
+                                                <tr>
+                                                    <th align="left" valign="top" rowspan="1" colspan="1">
+                                                        Operating System
+                                                    </th>
+                                                    <th align="left" valign="top" rowspan="1" colspan="1">
+                                                        Architecture
+                                                    </th>
+                                                    <th align="left" valign="top" rowspan="1" colspan="1">
+                                                        Compilers
+                                                    </th>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        Mac OS X 10.6<br />
+                                                        Mac OS X 10.8
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        Native (PowerPC <u>or</u> x86-32<u> or</u> x86-64 )
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        <a href="https://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_config#ch_config.Xcode_30__31">Xcode</a> 3.0 - 3.2.6
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        Darwin 10.x
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        Native (PowerPC <u>or</u> x86-32<u> or</u> x86-64),<br />
+                                                        Universal (PowerPC <u>and</u> x86-32)
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        <a href="https://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_config#ch_config.GCC">GCC 4.0.1</a>
+                                                        <br />
+                                                        <a href="https://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_config#ch_config.GCC">GCC 4.2.1</a> (only available under Darwin
+                                                        10.x)<br />
+                                                        LLVM Clang 3.0
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <p>
+                                    <span class="nctnt highlight">NOTE:</span> the correspondence between Darwin kernel
+                                    versions and Mac OS versions:</p>
+                                <p>
+                                    Darwin 10.x = Mac OS 10.6.x</p>
+                                <p>
+                                    Darwin 12.x = Mac OS 10.8.x</p>
+                            </div>
+                            <div class="sec" id="release_notes.Added_Platforms">
+                                <h3>
+                                    <span class="title">Added Platforms</span></h3>
+                                <div class="table" id="release_notes.T6">
+                                    <div class="caption">
+                                        <p>
+                                            Table 6. Added Platforms</p>
+                                    </div>
+                                    <div class="table-scroll">
+                                        <table>
+                                            <tbody>
+                                                <tr>
+                                                    <th align="left" valign="top" rowspan="1" colspan="1">
+                                                        Operating System
+                                                    </th>
+                                                    <th align="left" valign="top" rowspan="1" colspan="1">
+                                                        Architecture
+                                                    </th>
+                                                    <th align="left" valign="top" rowspan="1" colspan="1">
+                                                        Compilers
+                                                    </th>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        CentOS 5.x (LIBC 2.5)
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        x86-32
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        GCC 4.4.5<sup> a</sup><b>, </b>4.6.0
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        CentOS 5.x
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        x86-64
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        GCC 4.7.2<sup> a</sup>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        CentOS 6.x (LIBC 2.12)
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        x86-64
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        GCC 4.4.2 , 4.6.3<sup> a</sup>, 4.7.2<sup> a</sup>, 4.8.0<sup> a</sup>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        Mac OS X 10.5,
+                                                        <br />
+                                                        MacOS x 10.6,<br />
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        Native (PowerPC <u>or</u> x86-32<u> or</u> x86-64)
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        <a href="https://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_config#ch_config.Xcode_30__31">Xcode</a> 3.2.3 - 3.2.6<br />
+                                                        LLVM Clang 3.0
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <p>
+                                    <sup>a</sup> some support</p>
+                            </div>
+                            <div class="sec" id="release_notes.Discontinued">
+                                <h3>
+                                    <span class="title">Discontinued Platforms</span></h3>
+                                <div class="table" id="release_notes.T7">
+                                    <div class="caption">
+                                        <p>
+                                            Table 7. Discontinued Platforms</p>
+                                    </div>
+                                    <div class="table-scroll">
+                                        <table>
+                                            <tbody>
+                                                <tr>
+                                                    <th align="left" valign="top" rowspan="1" colspan="1">
+                                                        Operating System
+                                                    </th>
+                                                    <th align="left" valign="top" rowspan="1" colspan="1">
+                                                        Architecture
+                                                    </th>
+                                                    <th align="left" valign="top" rowspan="1" colspan="1">
+                                                        Compilers
+                                                    </th>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        MS Windows
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        x86-32, 64
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        <a href="https://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_config#ch_config.MS_Visual_C_2008">MS Visual C++</a> 2008 (C++
+                                                        9.0)<br />
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        Mac OS X 10.4.x(Darwin<br />
+                                                        8.x), Mac OS X 10.5.x(Darwin<br />
+                                                        9.x)
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        Native (PowerPC <u>or</u> x86-32<u> or</u> x86-64),<br />
+                                                        Universal (PowerPC <u>and</u> x86-32)
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        <a href="https://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_config#ch_config.GCC">GCC 4.0.1</a>, Clang 3.0
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        FreeBSD-6.1
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        x86-32
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        GCC 3.4.6
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        All
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        All
+                                                    </td>
+                                                    <td align="left" valign="top" rowspan="1" colspan="1">
+                                                        All GCC 4.0.1 and below
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="sec" id="release_notes.Last_Updated">
+                            <h2>
+                                <span class="title">Last Updated</span></h2>
+                            <p>
+                                This section last updated on May 9, 2014.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
