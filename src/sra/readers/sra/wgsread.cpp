@@ -1607,7 +1607,8 @@ CWGSDb::GetMasterDescrType(const CSeqdesc& desc)
             if ( name == "DBLink" ||
                  name == "GenomeProjectsDB" ||
                  name == "StructuredComment" ||
-                 name == "FeatureFetchPolicy" ) {
+                 name == "FeatureFetchPolicy" ||
+                 name == "Unverified") {
                 return eDescr_force;
             }
         }
