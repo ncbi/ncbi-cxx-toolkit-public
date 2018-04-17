@@ -752,6 +752,11 @@ bool CSoMap::FeatureToSoType(
     string& so_type)
 //  ----------------------------------------------------------------------------
 {
+    auto original_type = feature.GetNamedQual("SO_type");
+    if (!original_type.empty()) {
+        so_type = original_type;
+        return true;
+    }
     auto subtype = feature.GetData().GetSubtype();
     TYPEFUNCENTRY cit = mMapTypeFunc.find(subtype);
     if (cit == mMapTypeFunc.end()) {
