@@ -201,7 +201,7 @@ extern size_t UTIL_PrintableStringSize(const char* data, size_t size)
 
 
 extern char* UTIL_PrintableString(const char* data, size_t size,
-                                  char* buf, int/*bool*/ full_octal)
+                                  char* buf, int/*bool*/ flags)
 {
     const unsigned char* s;
     unsigned char* d;
@@ -212,7 +212,7 @@ extern char* UTIL_PrintableString(const char* data, size_t size,
         size = strlen(data);
 
     d = (unsigned char*) buf;
-    for (s = (const unsigned char*) data;  size;  size--, s++) {
+    for (s = (const unsigned char*) data;  size;  --size, ++s) {
         switch (*s) {
         case '\t':
             *d++ = '\\';
@@ -241,6 +241,8 @@ extern char* UTIL_PrintableString(const char* data, size_t size,
         case '\n':
             *d++ = '\\';
             *d++ = 'n';
+            if (flags & eUTIL_PrintableNoNewLine)
+                continue;
             /*FALLTHRU*/
         case '\\':
         case '\'':
@@ -251,11 +253,11 @@ extern char* UTIL_PrintableString(const char* data, size_t size,
             if (!isascii(*s)  ||  !isprint(*s)) {
                 int/*bool*/ reduce;
                 unsigned char v;
-                if (full_octal)
+                if (flags & eUTIL_PrintableFullOctal)
                     reduce = 0/*false*/;
                 else {
                     reduce = (size == 1  ||
-                              s[1] < '0' || s[1] > '7' ? 1/*t*/ : 0/*f*/);
+                              s[1] < '0' || s[1] > '7' ? 1/*T*/ : 0/*F*/);
                 }
                 *d++     = '\\';
                 v =  *s >> 6;
@@ -501,7 +503,8 @@ extern char* LOG_ComposeMessage
         s = UTIL_PrintableString((const char*)
                                  mess->raw_data,
                                  mess->raw_size,
-                                 s, flags & fLOG_FullOctal);
+                                 s, flags & fLOG_FullOctal
+                                 ? eUTIL_PrintableFullOctal : 0);
 
         memcpy(s, kRawData_End, sizeof(kRawData_End));
     } else

@@ -623,6 +623,13 @@ extern NCBI_XCONNECT_EXPORT size_t UTIL_PrintableStringSize
  );
 
 
+typedef enum {
+    eUTIL_PrintableFullOctal = 1,  /**< No contactions in octals \ooo        */
+    eUTIL_PrintableNoNewLine = 2   /**< Do not include graphical newlines    */
+} EUTIL_PrintableFlags;
+typedef int TUTIL_PrintableFlags;  /**< Bitwise "OR" of EUTIL_PrintableFlags */
+
+
 /** Create printable representation of the block of data of the specified size
  * (or, if size is 0, strlen(data), and return buffer pointer past the last
  * stored character (non '\0'-terminated).
@@ -639,17 +646,17 @@ extern NCBI_XCONNECT_EXPORT size_t UTIL_PrintableStringSize
  *  Size of block (0 causes strlen(data) to be used)
  * @param buf
  *  Buffer to store the result (NULL always causes NULL to return)
- * @param full
- *  Whether to print full octal representation of non-printable characters
+ * @param flags
+ *  How to print representations of certain non-printable characters
  * @return next position in the buffer past the last stored character.
  * @sa
- *  UTIL_PrintableStringSize
+ *  UTIL_PrintableStringSize, EUTIL_PrintableFlags
  */
 extern NCBI_XCONNECT_EXPORT char* UTIL_PrintableString
-(const char* data,
- size_t      size,
- char*       buf,
- int         full
+(const char*          data,
+ size_t               size,
+ char*                buf,
+ TUTIL_PrintableFlags flags
  );
 
 
