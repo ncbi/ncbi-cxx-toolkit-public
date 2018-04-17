@@ -1536,13 +1536,6 @@ bool CGff3Writer::xAssignFeatureType(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    //rw-569: if so_type qualifier exists, use that:
-    const auto& recorded_type = mf.GetNamedQual("SO_type");
-    if (!recorded_type.empty()) {
-        record.SetType(recorded_type);
-        return true;
-    }
-
     //rw-340: attempt to use so_map API:
     const auto& feature = mf.GetOriginalFeature();
     string so_type;
