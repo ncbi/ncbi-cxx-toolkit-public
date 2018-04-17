@@ -48,6 +48,7 @@
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/general/User_object.hpp>
 
 #include <objmgr/bioseq_ci.hpp>
 
@@ -632,9 +633,44 @@ BOOST_AUTO_TEST_CASE(Test_GB_7214)
 }
 
 
+void CheckReturnedFields(const biosample_util::TBiosampleFieldDiffList& diff_list, bool expect_response)
+{
+    if (expect_response) {
+        BOOST_CHECK_EQUAL(diff_list.size(), 6);
+        BOOST_CHECK_EQUAL(diff_list[0]->GetFieldName(), "Organism Name");
+        BOOST_CHECK_EQUAL(diff_list[0]->GetSampleVal(), "Escherichia coli");
+        BOOST_CHECK_EQUAL(diff_list[0]->GetSrcVal(), "Sebaea microphylla");
+        BOOST_CHECK_EQUAL(diff_list[1]->GetFieldName(), "Tax ID");
+        BOOST_CHECK_EQUAL(diff_list[1]->GetSampleVal(), "562");
+        BOOST_CHECK_EQUAL(diff_list[1]->GetSrcVal(), "592768");
+        BOOST_CHECK_EQUAL(diff_list[2]->GetFieldName(), "collection-date");
+        BOOST_CHECK_EQUAL(diff_list[2]->GetSampleVal(), "2016");
+        BOOST_CHECK_EQUAL(diff_list[2]->GetSrcVal(), "");
+        BOOST_CHECK_EQUAL(diff_list[3]->GetFieldName(), "country");
+        BOOST_CHECK_EQUAL(diff_list[3]->GetSampleVal(), "USA");
+        BOOST_CHECK_EQUAL(diff_list[3]->GetSrcVal(), "");
+        BOOST_CHECK_EQUAL(diff_list[4]->GetFieldName(), "nat-host");
+        BOOST_CHECK_EQUAL(diff_list[4]->GetSampleVal(), "Homo sapiens");
+        BOOST_CHECK_EQUAL(diff_list[4]->GetSrcVal(), "");
+        BOOST_CHECK_EQUAL(diff_list[5]->GetFieldName(), "strain");
+        BOOST_CHECK_EQUAL(diff_list[5]->GetSampleVal(), "aaa");
+        BOOST_CHECK_EQUAL(diff_list[5]->GetSrcVal(), "");
+    } else {
+        BOOST_CHECK_EQUAL(diff_list.size(), 0);
+    }
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_SAMN08922621)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeqdesc> dblink(new CSeqdesc());
+    dblink->SetUser().SetObjectType(CUser_object::eObjectType_DBLink);
+    CRef<CUser_field> sample_field(new CUser_field());
+    sample_field->SetLabel().SetStr("BioSample");
+    sample_field->SetData().SetStrs().push_back("SAMN08922621");
+    dblink->SetUser().SetData().push_back(sample_field);
+    entry->SetSeq().SetDescr().Set().push_back(dblink);
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CScope scope(*objmgr);
     scope.AddDefaults();
@@ -648,15 +684,26 @@ BOOST_AUTO_TEST_CASE(Test_SAMN08922621)
         biosample_util::GetBioseqDiffs(*bi, "SAMN08922621",
             num_processed, unprocessed_ids, false);
 
-    BOOST_CHECK_EQUAL(diff_list.size(), 6);
-    BOOST_CHECK_EQUAL(diff_list[0]->GetFieldName(), "Organism Name");
-    BOOST_CHECK_EQUAL(diff_list[0]->GetSampleVal(), "Escherichia coli");
-    BOOST_CHECK_EQUAL(diff_list[0]->GetSrcVal(), "Sebaea microphylla");
+    CheckReturnedFields(diff_list, true);
+
+    // production, not supplied
+    diff_list = biosample_util::GetBioseqDiffs(*bi, kEmptyStr,
+            num_processed, unprocessed_ids, false);
+
+    CheckReturnedFields(diff_list, true);
 
     // absent in development
     diff_list = biosample_util::GetBioseqDiffs(*bi, "SAMN08922621",
             num_processed, unprocessed_ids, true);
 
-    BOOST_CHECK_EQUAL(diff_list.size(), 0);
+    CheckReturnedFields(diff_list, false);
+
+    // development, not supplied
+    diff_list = biosample_util::GetBioseqDiffs(*bi, "SAMN08922621",
+            num_processed, unprocessed_ids, true);
+
+    CheckReturnedFields(diff_list, false);
+
+
 
 }
