@@ -901,7 +901,7 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results,
                                 annots->m_ChainType[0], 
                                 annots->m_ChainTypeToShow, 
                                 &m_ScoringMatrix);
-        tabinfo.SetIgAnnotation(annots, m_IgOptions, **itr, *m_Scope);
+        tabinfo.SetIgAnnotation(annots, m_IgOptions, aln_set, *m_Scope);
         if (fill_clone_info) {
             s_SetCloneInfo(tabinfo, bhandle, clone_info);
         }
@@ -962,9 +962,7 @@ void CBlastFormat::x_PrintAirrRearrangement(const blast::CIgBlastResults& result
     CRef<CIgAnnotation> annots(null);
     if (results.HasAlignments()) {
         annots = results.GetIgAnnotation();
-        CSeq_align_set::Tdata::const_iterator itr = aln_set->Get().begin();
-       
-        tabinfo.SetIgAnnotation(annots, m_IgOptions, **itr, *m_Scope);
+        tabinfo.SetIgAnnotation(annots, m_IgOptions, aln_set, *m_Scope);
         if (fill_clone_info) {
             s_SetCloneInfo(tabinfo, bhandle, clone_info);
         }
@@ -1396,7 +1394,7 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
                                 annots->m_ChainType[0], 
                                 annots->m_ChainTypeToShow, 
                                 &m_ScoringMatrix);
-        tabinfo.SetIgAnnotation(annots, m_IgOptions, **itr, *m_Scope);
+        tabinfo.SetIgAnnotation(annots, m_IgOptions, aln_set, *m_Scope);
         if (fill_clone_info) {
             s_SetCloneInfo(tabinfo, bhandle, clone_info);
         }

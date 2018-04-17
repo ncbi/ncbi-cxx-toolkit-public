@@ -2003,13 +2003,14 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         m_AirrData["j_evalue"] = j_evalue_str;
         m_AirrData["j_evalue"] = j_evalue_str;
       
-        
+       
         string cigar = NcbiEmptyString;
         if (m_TopAlign_V) {
             s_GetCigarString(*m_TopAlign_V, cigar, query_handle.GetBioseqLength(), scope);
             m_AirrData["v_cigar"] = cigar;
             m_AirrData["v_sequence_start"] = NStr::IntToString(m_TopAlign_V->GetSeqStart(0));
             m_AirrData["v_sequence_end"] = NStr::IntToString(m_TopAlign_V->GetSeqStop(0));
+            
             m_AirrData["v_germline_start"] = NStr::IntToString(m_TopAlign_V->GetSeqStart(1));
             m_AirrData["v_germline_end"] = NStr::IntToString(m_TopAlign_V->GetSeqStop(1));
             if (m_TopAlign_D) {
@@ -2027,7 +2028,7 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
             s_GetCigarString(*m_TopAlign_D, cigar, query_handle.GetBioseqLength(), scope);
             m_AirrData["d_sequence_start"] = NStr::IntToString(m_TopAlign_D->GetSeqStart(0));
             m_AirrData["d_sequence_end"] = NStr::IntToString(m_TopAlign_D->GetSeqStop(0));
-              
+            
             if (m_TopAlign_D->GetSeqStrand(1) == eNa_strand_plus) {
                 m_AirrData["d_germline_start"] = NStr::IntToString(m_TopAlign_D->GetSeqStart(1));
                 m_AirrData["d_germline_end"] = NStr::IntToString(m_TopAlign_D->GetSeqStop(1));
@@ -2045,6 +2046,7 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
             m_AirrData["j_cigar"] = cigar;
             m_AirrData["j_sequence_start"] = NStr::IntToString(m_TopAlign_J->GetSeqStart(0));
             m_AirrData["j_sequence_end"] = NStr::IntToString(m_TopAlign_J->GetSeqStop(0));
+            
             m_AirrData["j_germline_start"] = NStr::IntToString(m_TopAlign_J->GetSeqStart(1));
             m_AirrData["j_germline_end"] = NStr::IntToString(m_TopAlign_J->GetSeqStop(1));
             if (m_TopAlign_D) {
@@ -2102,7 +2104,8 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
             } 
             if (m_IgDomains[i]->name.find("FR3") !=  string::npos && annot->m_DomainInfo[9] >=0) {
                 m_AirrData["fwr3_start"] =  NStr::IntToString(m_IgDomains[i]->start);
-                m_AirrData["fwr3_end"] =  NStr::IntToString(annot->m_DomainInfo[9]);
+                
+                m_AirrData["fwr3_end"] =  NStr::IntToString(min(m_QueryAlignSeqEnd, annot->m_DomainInfo[9]));
                 if (m_IgDomains[i]->length > 0) {
                     m_AirrData["fwr3_identity"] = 
                         NStr::DoubleToString(m_IgDomains[i]->num_match*100.0/m_IgDomains[i]->length, 3);
@@ -2209,14 +2212,41 @@ int CIgBlastTabularInfo::SetFields(const CSeq_align& align,
 
 void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &annot,
                                           const CConstRef<blast::CIgBlastOptions> &ig_opts,
-                                          const CSeq_align& align, 
+                                          CConstRef<CSeq_align_set>& align_result,
                                           CScope& scope)
 {
-    const CBioseq_Handle& query_bh = 
-                scope.GetBioseqHandle(align.GetSeq_id(0));
-    int length = query_bh.GetBioseqLength();
-    query_bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac).GetSeqData(0, length, m_Query);
-    SetQueryId(query_bh);
+    
+    CRef<CSeq_align> align(0);
+    m_QueryAlignSeqEnd = 0;
+    m_QueryVAlign = NcbiEmptyString;
+    m_VAlign = NcbiEmptyString;
+    int index = 1; 
+    if (align_result && !align_result.Empty() && align_result->IsSet() && align_result->CanGet()) {
+        ITERATE (CSeq_align_set::Tdata, iter, align_result->Get()) {
+            if (!align) {
+                align = (*iter);
+                const CBioseq_Handle& query_bh = 
+                    scope.GetBioseqHandle(align->GetSeq_id(0));
+                int length = query_bh.GetBioseqLength();
+                query_bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac).GetSeqData(0, length, m_Query);
+                SetQueryId(query_bh);
+                const CDense_seg& ds = align->GetSegs().GetDenseg();
+                CRef<CAlnVec> alnVec (new CAlnVec(ds, scope));
+                alnVec->SetGapChar('-');
+                alnVec->GetWholeAlnSeqString(0, m_QueryVAlign);
+                alnVec->GetWholeAlnSeqString(1, m_VAlign);
+                m_QueryVAlignStart = alnVec->GetSeqStart(0) + 1;
+                m_VAlignStart = alnVec->GetSeqStart(1) + 1;
+                m_QueryVAlignEnd = alnVec->GetSeqStop(0) + 1;
+            }
+            if (annot->m_ChainType[index] == "V" || annot->m_ChainType[index] == "D" || annot->m_ChainType[index] == "J") {
+                m_QueryAlignSeqEnd = max(m_QueryAlignSeqEnd, (int)(*iter)->GetSeqStop(0));
+            }
+        }
+    }
+
+   
+
     bool is_protein = ig_opts->m_IsProtein;
     SetSeqType(!is_protein);
     SetMinusStrand(annot->m_MinusStrand);
@@ -2317,16 +2347,7 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
         m_OtherInfo.push_back("N/A");
     }
     
-    const CDense_seg& ds = align.GetSegs().GetDenseg();
-    CRef<CAlnVec> alnVec (new CAlnVec(ds, scope));
-    alnVec->SetGapChar('-');
-    m_QueryVAlign = NcbiEmptyString;
-    m_VAlign = NcbiEmptyString;
-    alnVec->GetWholeAlnSeqString(0, m_QueryVAlign);
-    alnVec->GetWholeAlnSeqString(1, m_VAlign);
-    m_QueryVAlignStart = alnVec->GetSeqStart(0) + 1;
-    m_VAlignStart = alnVec->GetSeqStart(1) + 1;
-    m_QueryVAlignEnd = alnVec->GetSeqStop(0) + 1;
+  
 
     // Domain info coordinates are inclusive (and always on positive strand)
     AddIgDomain((ig_opts->m_DomainSystem == "kabat")?"FR1":"FR1-IMGT", 
@@ -2431,7 +2452,7 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
         if (m_IgDomains[i]->name.find("FR3") !=  string::npos) {
             if (annot->m_DomainInfo[9] >=0) {
                 //fwr3 is special since it may extends past end of v
-                m_Fwr3Seq = m_Query.substr(m_IgDomains[i]->start, annot->m_DomainInfo[9] - m_IgDomains[i]->start + 1);
+                m_Fwr3Seq = m_Query.substr(m_IgDomains[i]->start, min(m_QueryAlignSeqEnd, annot->m_DomainInfo[9]) - m_IgDomains[i]->start + 1);
                 int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3;
                 int start_pos = coding_frame_offset>0?(3-coding_frame_offset):0;
                 if (start_pos < (int)m_Fwr3Seq.size()){ 
@@ -2619,7 +2640,7 @@ void CIgBlastTabularInfo::x_ResetIgFields()
     m_Cdr2SeqTrans = NcbiEmptyString;
     m_Fwr3Seq = NcbiEmptyString;
     m_Fwr3SeqTrans = NcbiEmptyString;
-    
+    m_QueryAlignSeqEnd = 0;
     m_Cdr3Seq = NcbiEmptyString;
     m_Cdr3SeqTrans = NcbiEmptyString;
 };

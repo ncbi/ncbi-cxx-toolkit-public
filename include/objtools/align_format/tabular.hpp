@@ -660,7 +660,7 @@ public:
     /// One method to set all annotation information
     void SetIgAnnotation(const CRef<blast::CIgAnnotation> &annot, 
                          const CConstRef<blast::CIgBlastOptions> &ig_opts,
-                         const CSeq_align& align, 
+                         CConstRef<CSeq_align_set>& align_result,
                          CScope& scope);
 
     ///Getter
@@ -739,6 +739,7 @@ private:
     int m_QueryVAlignEnd;
     CRef<CSeq_align> m_TopAlign_J; 
     map<string, string> m_AirrData;
+    int m_QueryAlignSeqEnd;
 };
 
 END_SCOPE(align_format)
