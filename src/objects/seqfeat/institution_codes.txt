@@ -573,7 +573,7 @@ BNP	s	Banff Park Museum
 BNPL	s	Brighton Public Library		
 BNRH	s	Buffelskloof Nature Reserve		
 BNU	s	Beijing Normal University, Biology Department		
-BO	s	Herbarium Bogoriense		
+BO	s	Herbarium Bogoriense (Research Centre for Biology)		
 BOC	s	Bingham Oceanographic Collection	YPM
 BOCH	s	Ruhr-Universitaet Bochum, Spezielle Botanik		
 BOD	s	University of Oxford		
@@ -694,7 +694,7 @@ BUAG	s	University of Agronomical Sciences and Veterinary Medicine, Botany and Pl
 BUC	s	Universitatea din Bucuresti		
 BUCA	s	Institute of Biology, Romanian Academy		
 BUCF	s	Forest Research and Management Institute		
-BUCM	s	Institute of Biology, Romanian Academy		
+BUCM	s	Institute of Biology Bucharest, Romanian Academy (Mycology Herbarium)		
 BUCSAV	c	Biologicky Ustav		
 BUE	s	University of Baghdad, Biology Department		
 BUEN	s	Proteccion de la Naturaleza		
@@ -1895,7 +1895,6 @@ FGGUB	s	Facultatea de Geologie si Geofisca
 FGIC	s	Francois Genier		
 FGSC	c	Fungal Genetics Stock Center		
 FH	s	The Farlow Herbarium, Harvard University Herbaria		
-FH<USA-KS>	s	Fort Hays		
 FHI	s	Forestry Research Institute of Nigeria		
 FHK	s	Divisional Forest Office		
 FHKS	s	Fort Hays State University		
@@ -2028,7 +2027,7 @@ FUS	s	Fudan University, Biology Department
 FUSC	c	Flinders University Smut Collection		
 FVCC	s	Flathead Valley Community College, Biology Department		
 FW	s	Texas Christian University, Biology Department		
-FWM	s	Fort Worth Museum of Science and History, Science Department		
+FWM	s	Fort Worth Museum of Science and History		
 FWMSH	s	Fort Worth Museum of Science & History		
 FWRI	s	Florida Fish and Wildlife Research Institute		
 FWRI:Ichthyology	s	Florida Fish and Wildlife Research Institute, Ichthyology Collection
@@ -2196,7 +2195,6 @@ GRM	s	Museum d'Histoire Naturelle de Grenoble
 GRMP	s	Central Geological Research Museum		
 GRO	s	State University of Groningen, Department of Plant Biology		
 GRPM	s	Public Museum of Grand Rapids		
-GRS	s	Gezira Research Station		
 GRSM	s	Great Smoky Mountains National Park		
 GRSU	s	Yanka Kupala Grodno State University, Department of Botany		
 GRSW	s	Desert Ecological Research Unit		
@@ -2213,8 +2211,8 @@ GSO	s	Glasgow Society of Field Naturalists'
 GSP	s	Geological Survey of Portugal		
 GSU	s	F. Scorina Gomel State University, Department of Botany and Plant Physiology		
 GSW	s	Georgia Southwestern State University, Biology Department		
-GTC	c	Gifu Type Culture Collection		
-GTC-GIFU	c	Gifu Type Culture Collection (GTC), Gifu University Culture Collection (GIFU)		
+GTC	c	Gifu Type Culture Collection	GTC-GIFU
+GTC-GIFU	c	Gifu Type Culture Collection (GTC), Gifu University Culture Collection (GIFU)	GTC
 GTM	s	Grantham Museum		
 GTNP	s	Grand Teton National Park		
 GTV	s	Gregorio T. Velasquez Phycological Herbarium		
@@ -2228,7 +2226,7 @@ GUAT	s	Herbario Ulises Roja
 GUAY	s	Universidad de Guayaquil		
 GUBH	h	Gauhati University		
 GUBIOTJT	c	Freshwater microalgae collection and culture laboratory		
-GUCM	h	Guangzhou University of Chinese Medicine		
+GUCM	s	Guangzhou University of Chinese Medicine		
 GUH	s	HNB Garhwal University, Botany Department		
 GUL	h	Suleyman Demirel University		
 GUM	s	Glasgow University Museum (Hunter Museum)		
@@ -2298,7 +2296,7 @@ HB	s	Herbarium Bradeanum
 HBA	h	National Botanic Garden of Latvia		
 HBARC	h	Bhabha Atomic Research Centre		
 HBAU	s	Hebei Agricultural University		
-HBAUD	s	Hebei Agricultural University, Handan Branch, Agriculture Department		
+HBAUD	s	Hebei Agricultural University, Handan Branch		
 HBBS	s	Museo Civico di Scienze Naturali		
 HBC	s	Henry Brockhouse Collection		
 HBDC	s	Hebei Institute for Drug Control		
@@ -2653,7 +2651,7 @@ IAVH	s	Instituto de Ivestigacion de los Recursos Biologicos Alexander von Humbol
 IB	s	Universitat Innsbruck		
 IBA<ESP>	s	Instituto Asturiano de Taxonomia y Ecologia Vegetal		
 IBA<POL>	c	Collection of Microorganisms Producing Antibiotics		
-IBAR	h	Ibaraki University		
+IBAR	s	Ibaraki University (Herbarium of Systematic Mycology)		
 IBAUNC	s	Universidad Nacional de Cuyo, Instituto de Biologia Animal		
 IBBS	s	Insitute of Biology and Soil Science, Russian Academy of Sciences		
 IBE	s	Institute for Botanical Exploration		
@@ -3248,7 +3246,7 @@ KHUS	s	Kyung Hee University, Biology Department
 KIEL	s	Christian-Albrechts-Universitaet Kiel		
 KIFB	s	Korean Institute of Freshwater Biology		
 KIOM	h	Korea Institute of Oriental Medicine		
-KIP	h	Institut National pour l'Etude et la Recherche Agronomique		
+KIP	s	Institut National pour l'Etude et la Recherche Agronomique		
 KIRI	s	University of Rhode Island, Department of Biological Sciences		
 KIS	h	Universite de Kisangani		
 KISA	h	Institut Congolais  pour la Conservation de la Nature		
@@ -3665,7 +3663,7 @@ LUG	s	Museo cantonale di storia naturale
 LUGO	s	Universidad de Satniago de Compostela, Departamento de Produccion Vegetal		
 LUH	s	University of Lagos, Department of Botany		
 LUH<NLD>	c	Leiden University Medical Center		
-LUKI	h	Institut National pour l'Etude et la Recherche Agronomiques		
+LUKI	s	Institut National pour l'Etude et la Recherche Agronomiques		
 LUNZ	s	Lincoln University Entomology Research Museum		
 LUQ	s	Laval University		
 LUS	s	Lushan Botanical Garden		
@@ -4054,11 +4052,11 @@ MJS	s	Xiaolongshan Forestry Experiment Bureau
 MJSD	s	Museum-Jardin des Sciences		
 MK	s	National Museum of Kenya		
 MKMEL	h	Herbarium Melovskiorum		
-MKNDC	h	Institute of Biology		
-MKNH	h	Institute of Biology		
+MKNDC	s	Institute of Biology		
+MKNH	s	Institute of Biology		
 ML	s	Musee de Lectoure		
 MLAV	s	Musees de Laval		
-MLGU	h	Institut National pour l'Etude et la Recherche  Agronomiques		
+MLGU	s	Institut National pour l'Etude et la Recherche  Agronomiques		
 MLLD	c	Microbiological Research Laboratory, Soil and Water Section, Department of Land Development		
 MLMJI	c	Department of Plant Protection, Faculty of Agricultural Production		
 MLP	s	Museo de La Plata	MLPA
@@ -4578,7 +4576,7 @@ NDSU	s	North Dakota State University
 NDTC	s	Ningde Teachers College, Biology Department		
 NE	s	University of New England		
 NEB	s	University of Nebraska State Museum		
-NEBC	s	Harvard University		
+NEBC	s	New England Botanical Club		
 NEBK	h	University of Nebraska at Kearney		
 NEFI	s	Northeastern Forestry University, Forestry Department		
 NEM	c	Faculte de Medecine Necker-Enfants Malades		
@@ -5831,7 +5829,6 @@ SFDK	s	Sarawak Forestry Department
 SFDL	s	Sheffield Literary and Philosophical Society		
 SFDN	s	Sheffield Naturalists' Club		
 SFI	b	Slovenian Forestry Institute		
-SFPA	s	Fundacao Estadual de Pesquisa Agropecuaria		
 SFRF	s	Forest Service, Region 5, USDA		
 SFRP	s	Southern Research Station		
 SFRS	s	Sea Fisheries Research Station		
@@ -5888,7 +5885,7 @@ SIAC<CHN>	s	Sichuan Institute of Agriculture
 SIAC<ITA>	s	Accademia dei Fisiocritici Onlus		
 SIB	s	Sibiu Natural History Museum		
 SIBAC	s	Southwest Institute of Biology		
-SIBS	h	Institute of Biology of the Southern Seas		
+SIBS	s	Institute of Marine Biological Research (IMBR)		
 SICH	s	Simpson College, Biology and Environmental Sciences Department		
 SIEMEA	s	Severtsov Insitute for Evolutionary Morphology and Animal Ecology		
 SIENA	s	Universita di Siena, Dipartimento di Scienze Ambientali "G. Sarfatti"		
@@ -6319,9 +6316,9 @@ TEU	s	Teikyo University, Education Department
 TEUI	h	U.S. Forest Service Southwest Region, Terrestrial Ecological Unit Inventory		
 TEX	s	University of Texas at Austin, Plant Resources Center		
 TEXA	s	Blackland Experiment Station		
-TF<JPN>	s	Forestry and Forest Products Research Institute		
+TF<JPN>	s	Forestry and Forest Products Research Institute	TFA
 TF<THA>	s	Department of Mineral Resources		
-TFA	s	Forestry and Forest Products Research Institute		
+TFA	s	Forestry and Forest Products Research Institute	TF
 TFAV	s	Servicio Autonomo para el Desarrollo Ambiental del Estado Amazonas		
 TFC	s	Universidad de La Laguna, Departamento de Biologia Vegetal (Botanica)		
 TFC<EST>	c	Tartu Fungal Culture Collection		
