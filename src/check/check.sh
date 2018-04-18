@@ -54,7 +54,6 @@ script_dir=`(cd "${script_dir}" ; pwd)`
 
 ####  MISC
 
-script_name=`basename $0`
 script_args="$*"
 
 summary_res="check.sh.log"
@@ -151,6 +150,10 @@ if test "$need_check" = "yes" ; then
     shift
     shift
 
+    # Use passed $builddir for build_info only, and detect real directory
+    # to run tests in case of fake root.
+    builddir=`(cd ..; pwd)`
+    
     test -d "$builddir"  &&  cd "$builddir"  ||  \
       Error "Cannot change directory to:  $builddir"
 
