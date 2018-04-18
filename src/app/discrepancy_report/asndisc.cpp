@@ -587,6 +587,7 @@ int CDiscRepApp::Run(void)
     if (args["o"]) {
         if (abs_input_path == CDirEntry::CreateAbsolutePath(args["o"].AsString())) {
             ERR_POST("Input and output files should be different");
+            return 1;
         }
         x_ProcessAll(args["o"].AsString());
     }

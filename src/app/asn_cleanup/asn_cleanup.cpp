@@ -617,6 +617,17 @@ int CCleanupApp::Run(void)
     // need to set output (-o) if specified, if not -o and not -r need to use standard output
     bool opened_output = false;
     if (args["o"]) {
+        string abs_output_path = CDirEntry::CreateAbsolutePath(args["o"].AsString());
+        if (args["i"]) {
+            string fname = args["i"].AsString();
+            if (args["p"]) {
+                fname = CDirEntry::MakePath(args["p"].AsString(), fname);
+            }
+            if (abs_output_path == CDirEntry::CreateAbsolutePath(fname)) {
+                ERR_POST("Input and output files should be different");
+                return 1;
+            }
+        }
         x_OpenOStream(args["o"].AsString(),
                       args["r"] ? args["r"].AsString() : kEmptyStr,
                       false);
@@ -630,12 +641,11 @@ int CCleanupApp::Run(void)
         string seqID = args["id"].AsString();
         HandleSeqID(seqID);
     } else if (args["i"]) {
+        string fname = args["i"].AsString();
         if (args["p"]) {
-            string fname = CDirEntry::MakePath(args["p"].AsString(), args["i"].AsString());
-            x_ProcessOneFile(fname);
-        } else {
-            x_ProcessOneFile(args["i"].AsString());
+            fname = CDirEntry::MakePath(args["p"].AsString(), fname);
         }
+        x_ProcessOneFile(fname);
     } else if (args["r"]) {
         x_ProcessOneDirectory(args["p"].AsString(), args["x"].AsString());
     } else {
