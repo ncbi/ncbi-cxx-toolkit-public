@@ -75,7 +75,14 @@ bool GetInputTypeFromFile(CNcbiIfstream& stream, EInputType& type);
 
 bool IsPubdescContainsSub(const CPubdesc& pub);
 
+string GetLocalOrGeneralIdStr(const CSeq_id& id);
+bool IsLocalOrGeneralId(const CSeq_id& id);
+bool HasTextAccession(const CSeq_id& id);
+
+string GetSeqIdKey(const CBioseq& bioseq);
 string GetSeqIdStr(const CBioseq& bioseq);
+string GetSeqIdAccession(const CBioseq& bioseq);
+string GetSeqIdLocalOrGeneral(const CBioseq& bioseq);
 
 bool GetDescr(const CSeq_entry& entry, const CSeq_descr* &descrs);
 bool GetNonConstDescr(CSeq_entry& entry, CSeq_descr* &descrs);

@@ -317,18 +317,24 @@ static bool OutputMaster(const CMasterInfo& info)
 
 static void PrintOrderList(const list<CIdInfo>& infos, CNcbiOfstream& out)
 {
-    set<string> written_files;
+    map<string, string, greater<string>> accession_to_file;
     for (auto info : infos) {
-        if (written_files.insert(info.m_file).second) { // new item
+        accession_to_file[info.m_accession] = info.m_file;
+    }
+    
+    set<string> written_files;
+    for (auto cur_file_info : accession_to_file) {
 
-            const char* fname = info.m_file.c_str();
-            if (!GetParams().IsPreserveInputPath()) {
-                size_t last_slash = GetLastSlashPos(info.m_file);
-                if (last_slash != string::npos) {
-                    fname += last_slash + 1;
-                }
+        const char* fname = cur_file_info.second.c_str();
+
+        if (!GetParams().IsPreserveInputPath()) {
+            size_t last_slash = GetLastSlashPos(cur_file_info.second);
+            if (last_slash != string::npos) {
+                fname += last_slash + 1;
             }
+        }
 
+        if (written_files.insert(fname).second) {
             out << fname << ".bss\n";
         }
     }

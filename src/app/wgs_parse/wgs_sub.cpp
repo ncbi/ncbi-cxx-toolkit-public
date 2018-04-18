@@ -73,185 +73,6 @@
 namespace wgsparse
 {
 
-template <typename R, typename T> R GetOrderValue(const CSeq_entry& entry)
-{
-    R ret;
-    if (entry.IsSeq()) {
-        ret = T::GetValue(entry.GetSeq());
-    }
-    else if (entry.IsSet()) {
-        if (entry.GetSet().IsSetSeq_set()) {
-
-            for (auto& cur_entry : entry.GetSet().GetSeq_set()) {
-                ret = GetOrderValue<R, T>(*cur_entry);
-                if (T::IsValuePresent(ret)) {
-                    break;
-                }
-            }
-        }
-    }
-
-    return ret;
-}
-
-static string GetLocalOrGeneralIdStr(const CSeq_id& id)
-{
-    return id.IsLocal() ? GetIdStr(id.GetLocal()) : GetIdStr(id.GetGeneral().GetTag());
-}
-
-static bool IsLocalOrGeneralId(const CSeq_id& id)
-{
-    return (id.IsGeneral() && id.GetGeneral().IsSetTag()) || id.IsLocal();
-}
-
-struct CSortByIdValue
-{
-    static string GetValue(const CBioseq& bioseq)
-    {
-        string ret;
-        if (bioseq.IsNa() && bioseq.IsSetId()) {
-
-            const CBioseq::TId& ids = bioseq.GetId();
-            CBioseq::TId::const_iterator id = find_if(ids.begin(), ids.end(), [](const CRef<CSeq_id>& id){ return IsLocalOrGeneralId(*id); });
-
-            if (id != ids.end()) {
-                ret = GetLocalOrGeneralIdStr(**id);
-            }
-        }
-
-        return ret;
-    }
-
-    static bool IsValuePresent(const string& val)
-    {
-        return !val.empty();
-    }
-};
-
-
-static bool HasTextAccession(const CSeq_id& id)
-{
-    if (!id.IsGenbank() && !id.IsEmbl() && !id.IsDdbj() && !id.IsOther() && !id.IsTpd() && !id.IsTpe() && !id.IsTpg()) {
-        return false;
-    }
-    return id.GetTextseq_Id() != nullptr && id.GetTextseq_Id()->IsSetAccession();
-}
-
-static string GetTextAccession(const CSeq_id& id)
-{
-    return id.GetTextseq_Id()->GetAccession();
-}
-
-struct CSortByAccessionValue
-{
-    static string GetValue(const CBioseq& bioseq)
-    {
-        string ret;
-        if (bioseq.IsNa() && bioseq.IsSetId()) {
-
-            const CBioseq::TId& ids = bioseq.GetId();
-            CBioseq::TId::const_iterator id = find_if(ids.begin(), ids.end(), [](const CRef<CSeq_id>& id){ return HasTextAccession(*id); });
-
-            if (id != ids.end()) {
-                ret = GetTextAccession(**id);
-            }
-        }
-
-        return ret;
-    }
-
-    static bool IsValuePresent(const string& val)
-    {
-        return !val.empty();
-    }
-};
-
-struct CSortByLength
-{
-    static size_t GetValue(const CBioseq& bioseq)
-    {
-        size_t ret = 0;
-        if (bioseq.IsNa() && bioseq.IsSetInst() && bioseq.GetInst().IsSetLength()) {
-
-            ret = bioseq.GetInst().GetLength();
-        }
-
-        return ret;
-    }
-
-    static bool IsValuePresent(size_t val)
-    {
-        return val != 0;
-    }
-};
-
-
-struct CSortedItem
-{
-    CRef<CSeq_entry> m_entry;
-    size_t m_len;
-    string m_accession;
-};
-
-static void GetOrderValueForEntry(CSortedItem& item, ESortOrder sort_order)
-{
-    switch (sort_order) {
-        case eByAccession:
-            item.m_accession = GetOrderValue<string, CSortByAccessionValue>(*item.m_entry);
-            if (item.m_accession.empty()) {
-                item.m_accession = "Unknown";
-            }
-            break;
-        case eById:
-            item.m_accession = GetOrderValue<string, CSortByIdValue>(*item.m_entry);
-            if (item.m_accession.empty()) {
-                item.m_accession = "Unknown";
-            }
-            break;
-        case eSeqLenDesc:
-        case eSeqLenAsc:
-            item.m_len = GetOrderValue<size_t, CSortByLength>(*item.m_entry);
-            break;
-    }
-}
-
-static void SortSeqEntries(vector<CSortedItem>& items, ESortOrder sort_order)
-{
-    switch (sort_order) {
-        case eByAccession:
-        case eById:
-            sort(items.begin(), items.end(), [](const CSortedItem& a, const CSortedItem& b){ return a.m_accession < b.m_accession; });
-            break;
-        case eSeqLenDesc:
-            sort(items.begin(), items.end(), [](const CSortedItem& a, const CSortedItem& b){ return a.m_len > b.m_len; });
-            break;
-        case eSeqLenAsc:
-            sort(items.begin(), items.end(), [](const CSortedItem& a, const CSortedItem& b){ return a.m_len < b.m_len; });
-            break;
-    }
-}
-
-static size_t ReversedSortSeqSubmit(list<CRef<CSeq_entry>>& entries, ESortOrder sort_order)
-{
-    size_t num_of_entries = entries.size(),
-           cur = 0;
-
-    vector<CSortedItem> items(num_of_entries);
-    for (auto& entry : entries) {
-        items[cur].m_entry = entry;
-        GetOrderValueForEntry(items[cur], sort_order);
-        ++cur;
-    }
-
-    SortSeqEntries(items, sort_order);
-    entries.clear();
-    for (auto& item : items) {
-        entries.push_back(item.m_entry);
-    }
-
-    return entries.size();
-}
-
 static void RemoveDatesFromDescrs(CSeq_descr::Tdata& descrs, bool remove_creation, bool remove_update)
 {
     for (auto descr = descrs.begin(); descr != descrs.end();) {
@@ -600,7 +421,7 @@ static void RemovePreviousAccession(const string& new_acc, CBioseq::TId& ids)
     }
 }
 
-static void AssignNucAccession(CSeq_entry& entry, const string& file, int& next_id, list<CIdInfo>& id_infos)
+static void AssignNucAccession(CSeq_entry& entry, const string& file, list<CIdInfo>& id_infos, map<string, int>& order_of_entries)
 {
     if (entry.IsSeq() && entry.GetSeq().IsNa()) {
 
@@ -612,10 +433,10 @@ static void AssignNucAccession(CSeq_entry& entry, const string& file, int& next_
             return;
         }
 
-        // TODO all processing linked with sort parameters
+        string entry_key = GetSeqIdKey(entry.GetSeq());
+        int next_id = order_of_entries[entry_key];
 
         CRef<CSeq_id> new_id = CreateNewAccession(next_id);
-
         if (new_id.NotEmpty()) {
 
             const string& new_acc = new_id->GetTextseq_Id()->GetAccession();
@@ -639,7 +460,7 @@ static void AssignNucAccession(CSeq_entry& entry, const string& file, int& next_
     if (entry.IsSet()) {
         if (entry.GetSet().IsSetSeq_set()) {
             for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
-                AssignNucAccession(*cur_entry, file, next_id, id_infos);
+                AssignNucAccession(*cur_entry, file, id_infos, order_of_entries);
             }
         }
     }
@@ -1234,12 +1055,46 @@ static void RemoveDblinkGPID(CSeq_entry& entry)
     }
 }
 
+static string GetAssignedAccessionFromIds(const CBioseq::TId& ids)
+{
+    for (auto& id : ids) {
+        if (id->Which() == GetParams().GetIdChoice() && id->GetTextseq_Id() && id->GetTextseq_Id()->IsSetAccession()) {
+            return id->GetTextseq_Id()->GetAccession();
+        }
+    }
+
+    return "";
+}
+
+static string GetAssignedAccession(const CSeq_entry& entry)
+{
+    string ret;
+
+    if (entry.IsSet()) {
+
+        if (entry.GetSet().IsSetSeq_set()) {
+            auto seq_set = entry.GetSet().GetSeq_set();
+            auto nuc_seq = find_if(seq_set.begin(), seq_set.end(), [](const CRef<CSeq_entry>& cur_entry) { return cur_entry->IsSeq() && cur_entry->GetSeq().IsSetId(); });
+
+            if (nuc_seq != seq_set.end()) {
+                ret = GetAssignedAccessionFromIds((*nuc_seq)->GetSeq().GetId());
+            }
+        }
+    }
+    else if (entry.IsSeq()) {
+        if (entry.GetSeq().IsNa() && entry.GetSeq().IsSetId()) {
+            ret = GetAssignedAccessionFromIds(entry.GetSeq().GetId());
+        }
+    }
+
+    return ret;
+}
+
 bool ParseSubmissions(CMasterInfo& master_info)
 {
     const list<string>& files = GetParams().GetInputFiles();
 
     bool ret = true;
-    int next_id = 0;
 
     for (auto& file : files) {
         CNcbiIfstream in(file);
@@ -1270,14 +1125,6 @@ bool ParseSubmissions(CMasterInfo& master_info)
             first = false;
             FixSeqSubmit(seq_submit, master_info.m_accession_ver, false, master_info.m_reject);
 
-            ESortOrder sort_order = GetParams().GetSortOrder();
-            if (sort_order != eUnsorted) {
-                if (GetParams().IsAccessionAssigned()) {
-                    sort_order = eByAccession;
-                }
-                ReversedSortSeqSubmit(seq_submit->SetData().SetEntrys(), sort_order);
-            }
-
             // TODO WGSReplaceSubmissionDate
 
             // TODO deal with cit_sub
@@ -1287,7 +1134,6 @@ bool ParseSubmissions(CMasterInfo& master_info)
                 map<string, string> ids;
                 for (auto& entry : seq_submit->SetData().SetEntrys()) {
 
-                    ++next_id; // TODO check correctness
                     if (master_info.m_creation_date_present || master_info.m_update_date_present) {
                         RemoveDates(*entry, master_info.m_creation_date_present, master_info.m_update_date_present);
                     }
@@ -1320,7 +1166,7 @@ bool ParseSubmissions(CMasterInfo& master_info)
                     }
 
                     if (!GetParams().IsVDBMode()) {
-                        AssignNucAccession(*entry, file, next_id, master_info.m_id_infos);
+                        AssignNucAccession(*entry, file, master_info.m_id_infos, master_info.m_order_of_entries);
                     }
 
                     if (GetParams().IsUpdateScaffoldsMode()) {
@@ -1405,8 +1251,17 @@ bool ParseSubmissions(CMasterInfo& master_info)
             }
         }
 
-        if (GetParams().GetSortOrder() == eUnsorted && !GetParams().IsVDBMode()) {
-            reverse(bioseq_set->SetSeq_set().begin(), bioseq_set->SetSeq_set().end());
+        if (!GetParams().IsVDBMode()) {
+
+            auto sort_by_accessions_func = [](const CRef<CSeq_entry>& a, const CRef<CSeq_entry>& b)
+                {
+                    //const string & sa = GetAssignedAccession(*a);
+                    //const string & sb = GetAssignedAccession(*b);
+
+                    return GetAssignedAccession(*a) > GetAssignedAccession(*b);
+                };
+
+            bioseq_set->SetSeq_set().sort(sort_by_accessions_func);
         }
 
         if (GetParams().IsTest()) {

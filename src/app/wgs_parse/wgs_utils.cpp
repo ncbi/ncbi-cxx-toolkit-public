@@ -39,6 +39,7 @@
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/general/User_object.hpp>
+#include <objects/general/Dbtag.hpp>
 
 #include "wgs_utils.hpp"
 
@@ -107,16 +108,6 @@ bool IsPubdescContainsSub(const CPubdesc& pub)
     }
 
     return false;
-}
-
-string GetSeqIdStr(const CBioseq& bioseq)
-{
-    string id;
-    if (bioseq.IsSetId() && !bioseq.GetId().empty()) {
-        id = bioseq.GetId().front()->AsFastaString();
-    }
-
-    return id;
 }
 
 bool GetDescr(const CSeq_entry& entry, const CSeq_descr* &descrs)
@@ -312,6 +303,81 @@ string GetIdStr(const CObject_id& obj_id)
     }
 
     return ret;
+}
+
+bool HasTextAccession(const CSeq_id& id)
+{
+    if (!id.IsGenbank() && !id.IsEmbl() && !id.IsDdbj() && !id.IsOther() && !id.IsTpd() && !id.IsTpe() && !id.IsTpg()) {
+        return false;
+    }
+    return id.GetTextseq_Id() != nullptr && id.GetTextseq_Id()->IsSetAccession();
+}
+
+string GetSeqIdAccession(const CBioseq& bioseq)
+{
+    string ret;
+    if (bioseq.IsSetId()) {
+
+        auto& cur_id = find_if(bioseq.GetId().begin(), bioseq.GetId().end(), [](const CRef<CSeq_id>& id) { return HasTextAccession(*id); });
+        if (cur_id != bioseq.GetId().end()) {
+            ret = (*cur_id)->GetTextseq_Id()->GetAccession();
+        }
+    }
+
+    return ret;
+}
+
+string GetLocalOrGeneralIdStr(const CSeq_id& id)
+{
+    return id.IsLocal() ? GetIdStr(id.GetLocal()) : GetIdStr(id.GetGeneral().GetTag());
+}
+
+bool IsLocalOrGeneralId(const CSeq_id& id)
+{
+    return (id.IsGeneral() && id.GetGeneral().IsSetTag()) || id.IsLocal();
+}
+
+string GetSeqIdLocalOrGeneral(const CBioseq& bioseq)
+{
+    string ret;
+    if (bioseq.IsSetId()) {
+
+        auto& cur_id = find_if(bioseq.GetId().begin(), bioseq.GetId().end(), [](const CRef<CSeq_id>& id) { return IsLocalOrGeneralId(*id); });
+        if (cur_id != bioseq.GetId().end()) {
+            ret = GetLocalOrGeneralIdStr(**cur_id);
+        }
+    }
+
+    return ret;
+}
+
+string GetSeqIdKey(const CBioseq& bioseq)
+{
+    string id_str;
+    if (bioseq.IsSetId() && !bioseq.GetId().empty()) {
+
+        auto& first_id = bioseq.GetId().front();
+        if (first_id->GetTextseq_Id() != nullptr) {
+            if (first_id->GetTextseq_Id()->IsSetAccession()) {
+                id_str = first_id->GetTextseq_Id()->GetAccession();
+            }
+        }
+        else {
+            id_str = GetSeqIdLocalOrGeneral(bioseq);
+        }
+    }
+
+    return id_str;
+}
+
+string GetSeqIdStr(const CBioseq& bioseq)
+{
+    string id;
+    if (bioseq.IsSetId() && !bioseq.GetId().empty()) {
+        id = bioseq.GetId().front()->AsFastaString();
+    }
+
+    return id;
 }
 
 bool IsUserObjectOfType(const CSeqdesc& descr, const string& type)

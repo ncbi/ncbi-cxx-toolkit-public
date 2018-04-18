@@ -265,6 +265,8 @@ struct CMasterInfo
     CRef<CSeq_entry> m_master_bioseq;
     CRef<CSeq_entry> m_id_master_bioseq;
 
+    map<string, int> m_order_of_entries; // string - current first Seq-id, int - order (to be used in accession assignment)
+
     int m_num_of_entries;
     int m_accession_ver;
 

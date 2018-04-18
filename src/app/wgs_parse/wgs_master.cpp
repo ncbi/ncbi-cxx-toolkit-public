@@ -1212,6 +1212,79 @@ static bool CheckCitSubsInBioseqSet(CMasterInfo& master_info)
     return true;
 }
 
+struct CEntryOrderInfo
+{
+    string m_first_id_str,
+           m_id_str,
+           m_accession;
+    size_t m_seq_len,
+           m_file_num;
+};
+
+static void AddOrderInfo(const CSeq_entry& entry, list<CEntryOrderInfo>& seq_order, size_t file_num)
+{
+    if (entry.IsSeq() && entry.GetSeq().IsNa() && entry.GetSeq().IsSetId() && !entry.GetSeq().GetId().empty() && entry.GetSeq().IsSetLength()) {
+
+        CEntryOrderInfo info;
+        info.m_seq_len = entry.GetSeq().GetLength();
+        info.m_accession = GetSeqIdAccession(entry.GetSeq());
+        info.m_id_str = GetSeqIdLocalOrGeneral(entry.GetSeq());
+        info.m_first_id_str = GetSeqIdKey(entry.GetSeq());
+        info.m_file_num = file_num;
+
+        seq_order.push_back(info);
+        return;
+    }
+
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.GetSet().GetSeq_set()) {
+            AddOrderInfo(*cur_entry, seq_order, file_num);
+        }
+    }
+}
+
+static void SortSequences(list<CEntryOrderInfo>& seq_order)
+{
+    ESortOrder sort_order = GetParams().GetSortOrder();
+    if (GetParams().IsAccessionAssigned()) {
+        sort_order = eByAccession;
+    }
+
+    if (sort_order != eUnsorted) {
+
+        typedef bool (*TSortPredicat)(const CEntryOrderInfo& , const CEntryOrderInfo& );
+
+        TSortPredicat sort_predicat = nullptr;
+        switch (sort_order) {
+            case eByAccession:
+                sort_predicat = [](const CEntryOrderInfo& a, const CEntryOrderInfo& b) { return a.m_accession < b.m_accession; };
+                break;
+            case eById:
+                sort_predicat = [](const CEntryOrderInfo& a, const CEntryOrderInfo& b){ return a.m_id_str < b.m_id_str; };
+                break;
+            case eSeqLenDesc:
+                sort_predicat = [](const CEntryOrderInfo& a, const CEntryOrderInfo& b){ return a.m_seq_len > b.m_seq_len; };
+                break;
+            case eSeqLenAsc:
+                sort_predicat = [](const CEntryOrderInfo& a, const CEntryOrderInfo& b){ return a.m_seq_len < b.m_seq_len; };
+                break;
+        }
+
+        _ASSERT(sort_predicat != nullptr && "sort_predicat should have a valid function pointer");
+
+        seq_order.sort([&sort_predicat](const CEntryOrderInfo& a, const CEntryOrderInfo& b){ return a.m_file_num == b.m_file_num ? sort_predicat(a, b) : a.m_file_num < b.m_file_num; });
+    }
+}
+
+static void BuildSortOrderMap(const list<CEntryOrderInfo>& seq_order, map<string, int>& order_of_entries)
+{
+    int cur_num = 1;
+    for (auto seq_info : seq_order) {
+        order_of_entries[seq_info.m_first_id_str] = cur_num++;
+    }
+}
+
 bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 {
     const list<string>& files = GetParams().GetInputFiles();
@@ -1224,7 +1297,9 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
     CSeqEntryCommonInfo common_info;
 
     master_info.m_same_biosource = true;
+    list<CEntryOrderInfo> seq_order;
 
+    size_t cur_file_num = 0;
     for (auto& file : files) {
 
         CNcbiIfstream in(file);
@@ -1400,9 +1475,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                         // TODO
                     }
 
-                    if (!GetParams().IsAccessionsSortedInFile()) {
-                        // TODO
-                    }
+                    AddOrderInfo(*entry, seq_order, cur_file_num);
 
                     if (GetParams().IsUpdateScaffoldsMode()) {
                         // TODO
@@ -1419,6 +1492,10 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 
         if (!ret) {
             break;
+        }
+
+        if (GetParams().IsAccessionsSortedInFile()) {
+            ++cur_file_num;
         }
     }
 
@@ -1447,7 +1524,8 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
         master_info.m_reject = true;
     }
 
-    // TODO lens ids
+    SortSequences(seq_order);
+    BuildSortOrderMap(seq_order, master_info.m_order_of_entries);
 
     // TODO some complicated error condition
 
