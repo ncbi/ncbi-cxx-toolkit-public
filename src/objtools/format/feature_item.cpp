@@ -1618,7 +1618,12 @@ void CFeatureItem::x_AddQualsIdx(
     
     const CGene_ref* gene_ref = 0;
     CConstRef<CSeq_feat> gene_feat;
-    const CGene_ref* feat_gene_xref = m_Feat.GetGeneXref();
+    const CGene_ref* feat_gene_xref = 0;
+    if (parentFeatureItem) {
+        feat_gene_xref = parentFeatureItem->GetFeat().GetGeneXref();
+    } else {
+        feat_gene_xref = m_Feat.GetGeneXref();
+    }
     bool suppressed = false;
 
     const bool gene_forbidden_if_genbank = 
@@ -1637,7 +1642,12 @@ void CFeatureItem::x_AddQualsIdx(
         }
 
         if (! suppressed) {
-            CRef<CFeatureIndex> ft = bsx->GetFeatIndex (m_Feat);
+            CRef<CFeatureIndex> ft;
+            if (parentFeatureItem) {
+                ft = bsx->GetFeatIndex (parentFeatureItem->GetFeat());
+            } else {
+                ft = bsx->GetFeatIndex (m_Feat);
+            }
             if (ft) {
                 CRef<CFeatureIndex> fsx = ft->GetBestGene();
                 if (fsx) {
