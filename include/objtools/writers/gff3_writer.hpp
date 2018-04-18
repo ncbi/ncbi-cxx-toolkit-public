@@ -46,39 +46,12 @@
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Spliced_exon.hpp>
 
+#include <objtools/writers/gff3_idgen.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 class CGffAlignmentRecord;
-
-//  =============================================================================
-class CGffIdGenerator
-    //  =============================================================================
-{
-public:
-    CGffIdGenerator() {};
-    ~CGffIdGenerator() {};
-
-    std::string GetId(
-        const CMappedFeat&);
-
-    void Reset();
-
-protected:
-    std::string xGetIdForGene(
-        const CMappedFeat&);
-
-    std::string xExtractLocalId(
-        const CMappedFeat&);
-    std::string xExtractTrackingId(
-        const CMappedFeat&);
-
-    std::string xDisambiguate(
-        const std::string&);
-
-protected:
-    std::set<string> m_existingIds;
-};
 
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGff3Writer
@@ -478,10 +451,9 @@ protected:
     bool xAssignFeatureAttributeRptFamily(
         CGffFeatureRecord&,
         const CMappedFeat&);
+
     string xNextGenericId(
         const CMappedFeat& mf);
-    string xNextGeneId(
-        const CMappedFeat&);
     string xNextCdsId(
         const CMappedFeat&);
     string xNextTrnaId(
