@@ -51,6 +51,35 @@ BEGIN_objects_SCOPE
 
 class CGffAlignmentRecord;
 
+//  =============================================================================
+class CGffIdGenerator
+    //  =============================================================================
+{
+public:
+    CGffIdGenerator() {};
+    ~CGffIdGenerator() {};
+
+    std::string GetId(
+        const CMappedFeat&);
+
+    void Reset();
+
+protected:
+    std::string xGetIdForGene(
+        const CMappedFeat&);
+
+    std::string xExtractLocalId(
+        const CMappedFeat&);
+    std::string xExtractTrackingId(
+        const CMappedFeat&);
+
+    std::string xDisambiguate(
+        const std::string&);
+
+protected:
+    std::set<string> m_existingIds;
+};
+
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGff3Writer
 //  ============================================================================
@@ -486,6 +515,7 @@ protected:
     unsigned int m_uPendingGenericId;
     unsigned int m_uPendingAlignId;
 
+    CGffIdGenerator m_idGenerator;
     CBioseq_Handle m_BioseqHandle;
 };
 
