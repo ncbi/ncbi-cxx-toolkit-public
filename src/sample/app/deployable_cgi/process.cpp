@@ -73,6 +73,8 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
 
         CHTMLPlainText* self_url = new CHTMLPlainText(ctx.GetSelfURL());
         page->AddTagMap("SELF_URL", self_url);
+
+        page->AddTagMap("TITLE", new CHTMLPlainText("C++ SVN CGI Sample"));
     }
     catch (const exception& e) {
         ERR_POST("Failed to populate Sample CGI HTML page: " << e.what());
