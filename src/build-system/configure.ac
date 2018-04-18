@@ -2250,7 +2250,7 @@ case "$compiler:$compiler_version:$with_bin_release" in
     if test "$with_bin_release" = "yes"; then
        LDFLAGS="$LDFLAGS -static-libstdc++"
     elif test "$with_dll" != "no"; then
-       LIBS="$LIBS -lstdc++"
+       LIBS="$LIBS -lstdc++ -lgcc_s"
     fi
     LINK="$LINK -Kc++"
     # Defining _GCC_NEXT_LIMITS_H ensures that <limits.h> chaining doesn't
@@ -4235,6 +4235,7 @@ AC_LANG_PUSH(C)
 NCBI_CHECK_LIBS(CRYPT, crypt crypt_i, setkey)
 AC_LANG_POP(C)
 case "$host_os:$compiler" in
+     linux*:ICC   ) ac_cv_search_dlopen="-ldl" ;;
      solaris*:GCC ) ac_cv_search_dlopen="-ldl" ;;
      darwin*      ) ac_cv_search_iconv="-liconv" ;;
 esac

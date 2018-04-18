@@ -10029,7 +10029,7 @@ echo "$as_me: WARNING: Unable to find static libstdc++ requested by --with-bin-r
     if test "$with_bin_release" = "yes"; then
        LDFLAGS="$LDFLAGS -static-libstdc++"
     elif test "$with_dll" != "no"; then
-       LIBS="$LIBS -lstdc++"
+       LIBS="$LIBS -lstdc++ -lgcc_s"
     fi
     LINK="$LINK -Kc++"
     # Defining _GCC_NEXT_LIMITS_H ensures that <limits.h> chaining doesn't
@@ -27733,6 +27733,7 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 case "$host_os:$compiler" in
+     linux*:ICC   ) ac_cv_search_dlopen="-ldl" ;;
      solaris*:GCC ) ac_cv_search_dlopen="-ldl" ;;
      darwin*      ) ac_cv_search_iconv="-liconv" ;;
 esac
