@@ -552,7 +552,12 @@ int CDiscRepApp::Run(void)
     }
 
     // input files
-    if (args["i"]) m_Files.push_back(args["i"].AsString());
+    string abs_input_path;
+    if (args["i"]) {
+        m_Files.push_back(args["i"].AsString());
+        abs_input_path = CDirEntry::CreateAbsolutePath(args["i"].AsString());
+    }
+
     if (args["indir"]) x_ParseDirectory(args["indir"].AsString(), args["u"].AsBoolean());
     if (m_Files.empty()) {
         ERR_POST("No input files");
@@ -580,6 +585,9 @@ int CDiscRepApp::Run(void)
 
     // run tests
     if (args["o"]) {
+        if (abs_input_path == CDirEntry::CreateAbsolutePath(args["o"].AsString())) {
+            ERR_POST("Input and output files should be different");
+        }
         x_ProcessAll(args["o"].AsString());
     }
     else {
