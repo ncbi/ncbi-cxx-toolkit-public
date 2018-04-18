@@ -198,6 +198,13 @@ public:
     static bool IsAltitudeValid (const string& value);
     static string FixAltitude (const string& value);
 
+    static bool IsPlasmidNameValid(const string& value, const string& taxname);
+    static bool IsChromosomeNameValid(const string& value, const string& taxname);
+    static bool IsLinkageGroupNameValid(const string& value, const string& taxname);
+    static bool IsSegmentValid(const string& value);
+    static bool IsEndogenousVirusNameValid(const string& value);
+
+
     static string FixDevStageCapitalization(const string& value);
     static string FixCellTypeCapitalization(const string& value);
     static string FixIsolationSourceCapitalization(const string& value);
@@ -228,6 +235,9 @@ private:
 
     static int x_GetPrecision(const string& num_str);
     static string x_FormatWithPrecision(double val, int precision);
+
+    static bool x_GenericRepliconNameValid(const string& value);
+    static bool x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(const string& value, const string& taxname);
 
     // validation data read from external files
     static auto_ptr<CLatLonCountryMap> m_LatLonCountryMap;

@@ -954,6 +954,21 @@ const CSeq_entry *ctx)
         return;
     }
 
+    // get taxname from object
+    string taxname = kEmptyStr;
+    const CSeqdesc* desc = dynamic_cast < const CSeqdesc* > (&obj);
+    const CSeq_feat* feat = dynamic_cast < const CSeq_feat* > (&obj);
+    if (desc && desc->IsSource() && desc->GetSource().IsSetTaxname()) {
+        taxname = desc->GetSource().GetOrg().GetTaxname();
+    } else if (feat && feat->IsSetData() && feat->GetData().IsBiosrc() &&
+        feat->GetData().GetBiosrc().IsSetTaxname()) {
+        taxname = feat->GetData().GetBiosrc().GetOrg().GetTaxname();
+    }
+    string sname = kEmptyStr;
+    if (subsrc.IsSetName()) {
+        sname = subsrc.GetName();
+    }
+
     int subtype = subsrc.GetSubtype();
     switch (subtype) {
 
@@ -1029,9 +1044,6 @@ const CSeq_entry *ctx)
                 }
             }
         }
-        break;
-
-    case CSubSource::eSubtype_chromosome:
         break;
 
     case CSubSource::eSubtype_fwd_primer_name:
@@ -1118,10 +1130,40 @@ const CSeq_entry *ctx)
     case CSubSource::eSubtype_mating_type:
         break;
 
-    case CSubSource::eSubtype_plasmid_name:
+    case CSubSource::eSubtype_chromosome:
+        if (!CSubSource::IsChromosomeNameValid(sname, taxname)) {
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BadPlasmidChromosomeLinkageName,
+                "Problematic plasmid/chromosome/linkage group name '" + sname + "'",
+                obj, ctx);        
+        }
         break;
-
-    case CSubSource::eSubtype_plastid_name:
+    case CSubSource::eSubtype_linkage_group:
+        if (!CSubSource::IsLinkageGroupNameValid(sname, taxname)) {
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BadPlasmidChromosomeLinkageName,
+                "Problematic plasmid/chromosome/linkage group name '" + sname + "'",
+                obj, ctx);        
+        }
+        break;
+    case CSubSource::eSubtype_plasmid_name:
+        if (!CSubSource::IsPlasmidNameValid(sname, taxname)) {
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BadPlasmidChromosomeLinkageName,
+                "Problematic plasmid/chromosome/linkage group name '" + sname + "'",
+                obj, ctx);        
+        }
+        break;
+    case CSubSource::eSubtype_segment:
+        if (!CSubSource::IsSegmentValid(sname)) {
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BadTextInSourceQualifier,
+                CSubSource::GetSubtypeName(subsrc.GetSubtype()) + " value should start with letter or number",
+                obj, ctx);
+        }
+        break;
+    case CSubSource::eSubtype_endogenous_virus_name:
+        if (!CSubSource::IsEndogenousVirusNameValid(sname)) {
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BadTextInSourceQualifier,
+                CSubSource::GetSubtypeName(subsrc.GetSubtype()) + " value should start with letter or number",
+                obj, ctx);
+        }
         break;
 
     case CSubSource::eSubtype_cell_line:
@@ -1212,44 +1254,6 @@ const CSeq_entry *ctx)
                     obj, ctx);
             }
         }
-        if (x_IsRepliconSubSource(subsrc.GetSubtype()) &&
-            !x_IsRepliconSubSourceValid(subsrc.GetName())) {
-            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BadTextInSourceQualifier,
-                CSubSource::GetSubtypeName(subsrc.GetSubtype()) + " value should start with letter or number",
-                obj, ctx);
-        }
-    }
-}
-
-
-bool CValidError_imp::x_IsRepliconSubSource(CSubSource::TSubtype subtype) const
-{
-    bool rval = false;
-    switch (subtype) {
-    case CSubSource::eSubtype_chromosome:
-    case CSubSource::eSubtype_linkage_group:
-    case CSubSource::eSubtype_plasmid_name:
-    case CSubSource::eSubtype_plastid_name:
-    case CSubSource::eSubtype_transposon_name:
-    case CSubSource::eSubtype_insertion_seq_name:
-    case CSubSource::eSubtype_segment:
-    case CSubSource::eSubtype_endogenous_virus_name:
-        rval = true;
-    default:
-        break;
-    }
-    return rval;
-}
-
-
-bool CValidError_imp::x_IsRepliconSubSourceValid(const string& val) const
-{
-    if (NStr::IsBlank(val)) {
-        return true;
-    } else if (isalnum(val.c_str()[0])) {
-        return true;
-    } else {
-        return false;
     }
 }
 
@@ -1700,29 +1704,6 @@ bool s_IsBioSample(const CBioseq_Handle& bsh)
 }
 
 
-static bool s_HasBadPlasmidChromLinkName(const string& name, const string& taxname)
-
-{
-    if (name.length() < 1) return false;
-    if (name.length() > 33) return true;
-
-    if (NStr::FindNoCase(name, "plasmid") != NPOS) return true;
-    if (NStr::FindNoCase(name, "chromosome") != NPOS) return true;
-    if (NStr::FindNoCase(name, "linkage group") != NPOS) return true;
-    if (NStr::FindNoCase(name, "chr") != NPOS) return true;
-
-    if (taxname.length() > 0 && NStr::FindNoCase(name, taxname) != NPOS) return true;
-
-    return false;
-}
-
-
-static bool s_HasBadChromLinkName(const string& name, const string& taxname)
-{
-    return s_HasBadPlasmidChromLinkName(name, taxname);
-}
-
-
 // allow "unnamed" plus digits for plasmid name
 static bool s_IsUnnamed(const string& name)
 {
@@ -1735,19 +1716,6 @@ static bool s_IsUnnamed(const string& name)
         }
     }
     return true;
-}
-
-
-static bool s_HadBadPlasmidName(const string& name, const string& taxname)
-{
-    // special plasmid name rules from VR-742
-    if (NStr::Equal(name, "2micron") || 
-        NStr::Equal(name, "megaplasmid") || 
-        s_IsUnnamed(name)) {
-        return false;
-    } else {
-        return s_HasBadPlasmidChromLinkName(name, taxname);
-    }
 }
 
 
@@ -2013,27 +1981,6 @@ const CBioseq_Handle& bsh)
                 } else {
                     PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
                         "cRNA note redundant with molecule type",
-                        obj, ctx);
-                }
-            }
-            break;
-        case CSubSource::eSubtype_plasmid_name:
-            if ((*it)->IsSetName() && source.IsSetOrg() && source.GetOrg().IsSetTaxname()) {
-                const string& name = (*it)->GetName();
-                if (s_HadBadPlasmidName(name, source.GetOrg().GetTaxname())) {
-                    PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BadPlasmidChromosomeLinkageName,
-                        "Problematic plasmid/chromosome/linkage group name '" + name + "'",
-                        obj, ctx);
-                }
-            }
-            break;
-        case CSubSource::eSubtype_chromosome:
-        case CSubSource::eSubtype_linkage_group:
-            if ((*it)->IsSetName() && source.IsSetOrg() && source.GetOrg().IsSetTaxname()) {
-                const string& name = (*it)->GetName();
-                if (s_HasBadChromLinkName (name, source.GetOrg().GetTaxname())) {
-                    PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BadPlasmidChromosomeLinkageName,
-                        "Problematic plasmid/chromosome/linkage group name '" + name + "'",
                         obj, ctx);
                 }
             }

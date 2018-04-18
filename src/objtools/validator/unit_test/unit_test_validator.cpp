@@ -7789,7 +7789,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("ZMK");
     ambig.push_back("LBM");
     ambig.push_back("NI");
-    ambig.push_back("TF");
     ambig.push_back("CB");
     ambig.push_back("AMP");
     ambig.push_back("OMNH");
@@ -21502,11 +21501,11 @@ BOOST_FIXTURE_TEST_CASE(Test_VR_708, CGenBankFixture)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
-        "BadTextInSourceQualifier",
-        "chromosome value should start with letter or number"));
+        "BadPlasmidChromosomeLinkageName",
+        "Problematic plasmid/chromosome/linkage group name '_abc'"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
-        "BadTextInSourceQualifier",
-        "linkage-group value should start with letter or number"));
+        "BadPlasmidChromosomeLinkageName",
+        "Problematic plasmid/chromosome/linkage group name '*123'"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
     CLEAR_ERRORS
@@ -23029,5 +23028,204 @@ BOOST_AUTO_TEST_CASE(Test_Geneious)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+
+}
+
+
+// From VR-793
+// A.	For segment, endogenous_virus_name:
+// 1. Must begin with a letter or number
+// 2. Spaces and other printable characters are permitted
+// 3. Must not be empty, must not be longer than 240 characters
+// B.	For chromosome, linkage_group and plasmid_name values:
+// 4.	Must begin with a letter or number
+// 5.	Must not be empty (not currently true), must not be longer than 32 characters
+// 6.	Must not contain <tab>
+// 7.	Spaces and other printable characters are permitted
+// 8.	Must not contain the word "plasmid" (ignoring case)
+// 9.	Must not contain the word "chromosome" (ignoring case)
+// 10.	Must not contain the phrase "linkage group" (ignoring case)
+// 11.	Must not contain the series of letters "chr" (ignoring case)
+// 12.	Must not contain the taxname (ignoring case)
+// 14.  Must not contain the genus (ignoring case)
+// 15. Must not contain the species (ignoring case)
+// 16. Must not contain the series of letters "chrm" (ignoring case)
+// 17. Must not contain the series of letters "chrom" (ignoring case)
+// 18. Must not contain the phrase "linkage-group" (ignoring case)
+// C.	For plasmid_name values:
+// 19. Exception- megaplasmid is legal
+// D.	plastid_name is obsolete so no value is legal.
+// 20. digits or numerals: Plastid name subsource contains unrecognized value
+// 21. organelle: Plastid name subsource chloroplast but not chloroplast location  
+
+void TestOneReplicon(CSubSource::ESubtype subtype, const string& val, const string& err_code, EDiagSev sev, const string& msg)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    for (auto it : entry->SetSeq().SetDescr().Set()) {
+        if (it->IsSource()) {
+            bool found = false;
+            for (auto sit : it->SetSource().SetSubtype()) {
+                if (sit->GetSubtype() == subtype) {
+                    sit->SetName(val);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                CRef<CSubSource> ss(new CSubSource(subtype, val));
+                it->SetSource().SetSubtype().push_back(ss);
+            }
+            if (subtype == CSubSource::eSubtype_plasmid_name) {
+                it->SetSource().SetGenome(CBioSource::eGenome_plasmid);
+            }
+        }
+    }
+
+    STANDARD_SETUP
+
+    if (!NStr::IsBlank(err_code)) {
+        expected_errors.push_back(new CExpectedError("lcl|good", sev, err_code, msg));
+    }
+
+    eval = validator.Validate(seh, options);
+
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+void TestAlwaysBadReplicon(const string& val)
+{
+    TestOneReplicon(CSubSource::eSubtype_chromosome, val, "BadPlasmidChromosomeLinkageName", 
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name '" + val + "'");
+    TestOneReplicon(CSubSource::eSubtype_linkage_group, val, "BadPlasmidChromosomeLinkageName", 
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name '" + val + "'");
+    TestOneReplicon(CSubSource::eSubtype_plasmid_name, val, "BadPlasmidChromosomeLinkageName", 
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name '" + val + "'");
+    TestOneReplicon(CSubSource::eSubtype_segment, val, "BadTextInSourceQualifier", eDiag_Error, "segment value should start with letter or number");
+    TestOneReplicon(CSubSource::eSubtype_endogenous_virus_name, val, "BadTextInSourceQualifier", eDiag_Error, "endogenous-virus-name value should start with letter or number");
+}
+
+
+void TestAlwaysGoodReplicon(const string& val)
+{
+    TestOneReplicon(CSubSource::eSubtype_chromosome, val, "", eDiag_Info, "");
+    TestOneReplicon(CSubSource::eSubtype_linkage_group, val, "", eDiag_Info, "");
+    TestOneReplicon(CSubSource::eSubtype_plasmid_name, val, "", eDiag_Info, "");
+    TestOneReplicon(CSubSource::eSubtype_segment, val, "", eDiag_Info, "");
+    TestOneReplicon(CSubSource::eSubtype_endogenous_virus_name, val, "", eDiag_Info, "");
+}
+
+
+void TestRepliconTaxname(CSubSource::ESubtype subtype, bool expect_errs)
+{
+    TestOneReplicon(subtype, "Sebaea microphylla", 
+        expect_errs ? "BadPlasmidChromosomeLinkageName" : "", 
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name 'Sebaea microphylla'");
+
+    TestOneReplicon(subtype, "Sebaea", 
+        expect_errs ? "BadPlasmidChromosomeLinkageName" : "", 
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name 'Sebaea'");
+
+    TestOneReplicon(subtype, "microphylla", 
+        expect_errs ? "BadPlasmidChromosomeLinkageName" : "", 
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name 'microphylla'");
+
+}
+
+void TestRepliconForbiddenWords(CSubSource::ESubtype subtype, bool expect_errs)
+{
+    TestOneReplicon(subtype, "some CHROMOSOME", 
+        expect_errs ? "BadPlasmidChromosomeLinkageName" : "", 
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name 'some CHROMOSOME'");
+
+    TestOneReplicon(subtype, "linkage group x", 
+        expect_errs ? "BadPlasmidChromosomeLinkageName" : "", 
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name 'linkage group x'");
+
+    TestOneReplicon(subtype, "linkage-group x", 
+        expect_errs ? "BadPlasmidChromosomeLinkageName" : "", 
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name 'linkage-group x'");
+
+    TestOneReplicon(subtype, "chry", 
+        expect_errs ? "BadPlasmidChromosomeLinkageName" : "", 
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name 'chry'");
+
+    TestOneReplicon(subtype, "chrm", 
+        expect_errs ? "BadPlasmidChromosomeLinkageName" : "", 
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name 'chrm'");
+
+    TestOneReplicon(subtype, "CHROM", 
+        expect_errs ? "BadPlasmidChromosomeLinkageName" : "", 
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name 'CHROM'");
+
+    TestOneReplicon(subtype, "PLASMID", 
+        expect_errs ? "BadPlasmidChromosomeLinkageName" : "", 
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name 'PLASMID'");
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_793)
+{
+    // blanks are always bad
+    TestAlwaysBadReplicon("");
+    TestOneReplicon(CSubSource::eSubtype_plastid_name, "", "BadPlastidName", eDiag_Warning, "Plastid name subsource contains unrecognized value");
+    TestOneReplicon(CSubSource::eSubtype_transposon_name, "", "ObsoleteSourceQual", eDiag_Warning, "Transposon name and insertion sequence name are no longer legal qualifiers");
+    TestOneReplicon(CSubSource::eSubtype_insertion_seq_name, "", "ObsoleteSourceQual", eDiag_Warning, "Transposon name and insertion sequence name are no longer legal qualifiers");
+
+    // must start with letter or number
+    TestAlwaysBadReplicon(".2");
+
+    // unprintable characters bad
+    TestAlwaysBadReplicon("a\tb");
+
+    // just letters ok
+    TestAlwaysGoodReplicon("x");
+
+    // spaces ok
+    TestAlwaysGoodReplicon("x y");
+
+    const string kMoreThan240 = "A B C D E F G H I J K L M N O P Q R S T U V W X Y Z A B C D E F G H I J K L M N O P Q R S T U V W X Y Z A B C D E F G H I J K L M N O P Q R S T U V W X Y Z A B C D E F G H I J K L M N O P Q R S T U V W X Y Z A B C D E F G H I J K L M N O P Q R S T U V W X Y Z";
+    const string kMoreThan32 = "A B C D E F G H I J K L M N O P Q R S T U V W X Y Z";
+
+    // segment
+    TestOneReplicon(CSubSource::eSubtype_segment, kMoreThan32, "", eDiag_Info, "");
+    TestOneReplicon(CSubSource::eSubtype_segment, kMoreThan240, "BadTextInSourceQualifier", eDiag_Error, "segment value should start with letter or number");
+    TestRepliconTaxname(CSubSource::eSubtype_segment, false);
+    TestRepliconForbiddenWords(CSubSource::eSubtype_segment, false);
+
+    // endogenous virus name
+    TestOneReplicon(CSubSource::eSubtype_endogenous_virus_name, kMoreThan32, "", eDiag_Info, "");
+    TestOneReplicon(CSubSource::eSubtype_endogenous_virus_name, kMoreThan240, "BadTextInSourceQualifier", eDiag_Error, "endogenous-virus-name value should start with letter or number");
+    TestRepliconTaxname(CSubSource::eSubtype_endogenous_virus_name, false);
+    TestRepliconForbiddenWords(CSubSource::eSubtype_endogenous_virus_name, false);
+
+    // chromosome
+    TestOneReplicon(CSubSource::eSubtype_chromosome, kMoreThan32, "BadPlasmidChromosomeLinkageName",
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name '" + kMoreThan32 + "'");
+    TestOneReplicon(CSubSource::eSubtype_chromosome, kMoreThan240, "BadPlasmidChromosomeLinkageName",
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name '" + kMoreThan240 + "'");
+    TestRepliconTaxname(CSubSource::eSubtype_chromosome, true);
+    TestRepliconForbiddenWords(CSubSource::eSubtype_chromosome, true);
+
+    // linkage-group
+    TestOneReplicon(CSubSource::eSubtype_linkage_group, kMoreThan32, "BadPlasmidChromosomeLinkageName",
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name '" + kMoreThan32 + "'");
+    TestOneReplicon(CSubSource::eSubtype_linkage_group, kMoreThan240, "BadPlasmidChromosomeLinkageName",
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name '" + kMoreThan240 + "'");
+    TestRepliconTaxname(CSubSource::eSubtype_linkage_group, true);
+    TestRepliconForbiddenWords(CSubSource::eSubtype_linkage_group, true);
+
+    // plasmid-name
+    TestOneReplicon(CSubSource::eSubtype_plasmid_name, "megaplasmid", "", eDiag_Info, "");
+    TestOneReplicon(CSubSource::eSubtype_plasmid_name, kMoreThan32, "BadPlasmidChromosomeLinkageName",
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name '" + kMoreThan32 + "'");
+    TestOneReplicon(CSubSource::eSubtype_plasmid_name, kMoreThan240, "BadPlasmidChromosomeLinkageName",
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name '" + kMoreThan240 + "'");
+    TestRepliconTaxname(CSubSource::eSubtype_plasmid_name, true);
+    TestRepliconForbiddenWords(CSubSource::eSubtype_plasmid_name, true);
+
 
 }

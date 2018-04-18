@@ -2431,6 +2431,132 @@ string CSubSource::FixAltitude (const string& value)
 }
 
 
+// From VR-793:
+// A.	For segment, endogenous_virus_name:
+//   1. Must begin with a letter or number
+//   2. Spaces and other printable characters are permitted
+//   3. Must not be empty, must not be longer than 240 characters
+
+bool CSubSource::x_GenericRepliconNameValid(const string& value)
+{
+    if (NStr::IsBlank(value)) {
+        return false;
+    } else if (!isalnum(value.c_str()[0])) {
+        return false;
+    } else if (value.length() > 240) {
+        return false;
+    }
+
+    for (auto it : value) {
+        if (!isprint(it)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+bool CSubSource::IsSegmentValid(const string& value)
+{
+    return x_GenericRepliconNameValid(value);
+}
+
+
+bool CSubSource::IsEndogenousVirusNameValid(const string& value)
+{
+    return x_GenericRepliconNameValid(value);
+}
+
+
+// From VR-793:
+// B.	For chromosome, linkage_group and plasmid_name values:
+//   4.	Must begin with a letter or number
+//   5.	Must not be empty, must not be longer than 32 characters
+//   6.	Must not contain <tab>
+//   7.	Spaces and other printable characters are permitted
+//   8.	Must not contain the word "plasmid" (ignoring case)
+//   9.	Must not contain the word "chromosome" (ignoring case)
+//   10.	Must not contain the phrase "linkage group" (ignoring case)
+//   11.	Must not contain the series of letters "chr" (ignoring case)
+//   12.	Must not contain the taxname (ignoring case)
+//   14.  Must not contain the genus (ignoring case)
+//   15. Must not contain the species (ignoring case)
+//   16. Must not contain the series of letters "chrm" (ignoring case)
+//   17. Must not contain the series of letters "chrom" (ignoring case)
+//   18. Must not contain the phrase "linkage-group" (ignoring case)
+
+bool CSubSource::x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(const string& value, const string& taxname)
+{
+    if (!x_GenericRepliconNameValid(value)) {
+        // checks for isalnum start, blankness and unprintable characters
+        // B.4, B.5, B.7
+        return false;
+    } else if (value.length() > 32) {
+        // B.5
+        return false;
+    }
+    if (!NStr::IsBlank(taxname)) {
+        if (NStr::FindNoCase(value, taxname) != NPOS) {
+            // B.12
+            return false;
+        }
+        size_t pos = NStr::Find(taxname, " ");
+        if (pos != NPOS) {
+            if (NStr::FindNoCase(value, taxname.substr(0, pos)) != NPOS) {
+                // B.14
+                return false;
+            }
+            if (NStr::FindNoCase(value, taxname.substr(pos + 1)) != NPOS) {
+                // B.15
+                return false;
+            }
+        }
+    }
+    static string s_ForbiddenPhrases[] = {
+        "\t",  // B.6.
+        "plasmid", // B.8
+        "chromosome", // B.9
+        "linkage group", // B.10
+        "chr", // B.11
+        "chrm", // B.16
+        "chrom", // B.17
+        "linkage-group" // B.18
+    };
+
+    for (auto it : s_ForbiddenPhrases) {
+        if (NStr::FindNoCase(value, it) != NPOS) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+bool CSubSource::IsChromosomeNameValid(const string& value, const string& taxname)
+{
+    return x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(value, taxname);
+}
+
+
+bool CSubSource::IsLinkageGroupNameValid(const string& value, const string& taxname)
+{
+    return x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(value, taxname);
+}
+
+
+// VR-793
+// C.	For plasmid_name values:
+//   19. Exception- megaplasmid is legal
+bool CSubSource::IsPlasmidNameValid(const string& value, const string& taxname)
+{
+    if (NStr::Equal(value, "megaplasmid")) {
+        return true;
+    }
+    return x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(value, taxname);
+}
+
+
 typedef pair<string, string> TContaminatingCellLine;
 typedef map<string, TContaminatingCellLine> TSpeciesContaminant;
 typedef map<string, TSpeciesContaminant> TCellLineContaminationMap;
