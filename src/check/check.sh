@@ -157,6 +157,17 @@ if test "$need_check" = "yes" ; then
     test -d "$builddir"  &&  cd "$builddir"  ||  \
       Error "Cannot change directory to:  $builddir"
 
+    # Check if we have not a library-only build
+    
+    appornull=`grep 'APP_OR_NULL' $builddir/Makefile.mk`
+    if [ -n "$appornull" ]; then
+        # No executables - no checks
+        grep 'APP_OR_NULL = null' $builddir/Makefile.mk   &&  exit 0
+    fi
+   
+    
+    # Process action
+
     case "$action" in
     all )
         # continue
