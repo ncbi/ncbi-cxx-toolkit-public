@@ -565,6 +565,8 @@ public:
     static bool NormalizeGeneQuals(CSeq_feat& cds, CSeq_feat& gene);
     static bool NormalizeGeneQuals(CBioseq_Handle bsh);
     static bool NormalizeGeneQuals(CSeq_entry_Handle seh);
+    typedef pair<CSeq_feat_Handle, CSeq_feat_Handle> TFeatGenePair; // by convention, cds first, gene second
+    static vector<TFeatGenePair> GetNormalizableGeneQualPairs(CBioseq_Handle bsh);
 
 
 private:

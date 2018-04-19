@@ -1696,3 +1696,89 @@ BOOST_AUTO_TEST_CASE(Test_GB_7597)
     BOOST_CHECK_EQUAL(entry->GetSet().GetSeq_set().front()->IsSeq(), true);
     BOOST_CHECK_EQUAL(entry->GetSet().GetSeq_set().back()->IsSeq(), true);
 }
+
+
+CRef<CSeq_entry> MakeGeneNormalizationExample()
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetLineage(entry, "Bacteria; ");
+    CRef<CSeq_feat> cds1 = AddMiscFeature(entry);
+    cds1->SetLocation().SetInt().SetFrom(0);
+    cds1->SetLocation().SetInt().SetTo(15);
+    cds1->SetData().SetCdregion();
+
+    CRef<CSeq_feat> cds2 = AddMiscFeature(entry);
+    cds2->SetLocation().SetInt().SetFrom(20);
+    cds2->SetLocation().SetInt().SetTo(35);
+    cds2->SetData().SetCdregion();
+    CRef<CSeqFeatXref> xref(new CSeqFeatXref());
+    xref->SetData().SetGene().SetLocus("B");
+    cds2->SetXref().push_back(xref);
+
+    CRef<CSeq_feat> gene1 = MakeGeneForFeature(cds1);
+    gene1->SetData().SetGene().SetLocus("A");
+    gene1->SetData().SetGene().SetLocus_tag("x_1");
+    AddFeat(gene1, entry);
+
+    CRef<CSeq_feat> gene2 = MakeGeneForFeature(cds2);
+    gene2->SetData().SetGene().ResetLocus();
+    gene2->SetData().SetGene().SetLocus_tag("x_2");
+    AddFeat(gene2, entry);
+
+    return entry;
+}
+
+
+void TestGeneNormalization(CRef<CSeq_entry> entry, bool expect_to_work)
+{
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    BOOST_CHECK_EQUAL(CCleanup::NormalizeGeneQuals(seh), expect_to_work);
+
+    CFeat_CI g(seh, CSeqFeatData::eSubtype_gene);
+    BOOST_CHECK_EQUAL(g->GetData().GetGene().GetLocus(), "A");
+    ++g;
+    if (expect_to_work) {
+        BOOST_CHECK_EQUAL(g->GetData().GetGene().GetLocus(), "B");
+    } else {
+        BOOST_CHECK_EQUAL(g->GetData().GetGene().IsSetLocus(), false);
+    }
+
+    CFeat_CI c(seh, CSeqFeatData::eSubtype_cdregion);
+    ++c;
+    if (expect_to_work) {
+        BOOST_CHECK_EQUAL(c->GetXref().front()->GetData().GetGene().GetLocus_tag(), "x_2");
+        BOOST_CHECK_EQUAL(c->GetXref().front()->GetData().GetGene().IsSetLocus(), false);
+    } else {
+        BOOST_CHECK_EQUAL(c->GetXref().front()->GetData().GetGene().IsSetLocus_tag(), false);
+        BOOST_CHECK_EQUAL(c->GetXref().front()->GetData().GetGene().GetLocus(), "B");
+    }
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_GB_7166)
+{
+    CRef<CSeq_entry> entry = MakeGeneNormalizationExample();
+    TestGeneNormalization(entry, true);
+
+    // should not work if there is a third gene with locus B
+    entry = MakeGeneNormalizationExample();
+    CRef<CSeq_feat> gene3 = AddMiscFeature(entry);
+    gene3->SetLocation().SetInt().SetFrom(36);
+    gene3->SetLocation().SetInt().SetTo(40);
+    gene3->SetData().SetGene().SetLocus("B");
+
+    TestGeneNormalization(entry, false);
+
+    // should not work if there is a second coding region under the gene
+    entry = MakeGeneNormalizationExample();
+    CRef<CSeq_feat> cds3 = AddMiscFeature(entry);
+    cds3->SetLocation().SetInt().SetFrom(25);
+    cds3->SetLocation().SetInt().SetTo(35);
+    cds3->SetData().SetCdregion();
+
+    TestGeneNormalization(entry, false);
+
+}
