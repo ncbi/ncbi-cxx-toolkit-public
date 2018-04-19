@@ -545,6 +545,19 @@ void CPrimeCacheApplication::x_Process_SRA(CNcbiIstream& istr,
             CRef<CBioseq> bs = iter.GetShortBioseq();
             CRef<CSeq_entry> entry(new CSeq_entry);
             entry->SetSeq(*bs);
+            entry->SetSeq().SetInst().SetMol(m_InstMol);
+
+            if (m_MolInfo) {
+                entry->SetSeq().SetDescr().Set().push_back(m_MolInfo);
+            }
+            if (m_Biosource) {
+                entry->SetSeq().SetDescr().Set().push_back(m_Biosource);
+            }
+            if (m_other_descs.size()>0) {
+                NON_CONST_ITERATE(list<CRef<CSeqdesc> >, desc, m_other_descs) {
+                    entry->SetSeq().SetDescr().Set().push_back(*desc); 
+                }
+            }
 
             if (CSignal::IsSignaled()) {
                 NCBI_THROW(CException, eUnknown,
@@ -880,10 +893,10 @@ int CPrimeCacheApplication::Run(void)
     string ifmt = args["ifmt"].AsString();
 
     if ((args["taxid"] || args["molinfo"] || args["biosource"]  || args["submit-block-template"])
-        && ifmt != "fasta")
+        && ifmt != "fasta" && ifmt != "csra")
     {
         NCBI_THROW(CException, eUnknown,
-                   "metadata parameters only allowed with fasta input");
+                   "metadata parameters only allowed with fasta or SRA input");
     }
 
     if (args["taxid"]) {
