@@ -1177,7 +1177,7 @@ static CTempString x_FirstWord(const CTempStringEx& forward)
     vector<CTempStringEx> words;
     NStr::Split(forward, ", \t", words,
         NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-    for (size_t i = 0; i < words.size(); ++i) {
+    for (size_t i = 0;  i < words.size();  ++i) {
         if (NStr::IsIPAddress(words[i])) {
             return words[i];
         }
@@ -1219,8 +1219,9 @@ void CCgiRequest::x_SetClientIpProperty(TFlags flags) const
         return;
     }
     // Set client IP for diagnostics
-    bool internal = !x_GetPropertyByName("HTTP_CAF_INTERNAL").empty();
-    bool external = !x_GetPropertyByName("HTTP_CAF_EXTERNAL").empty();
+    bool internal = ! x_GetPropertyByName("HTTP_CAF_INTERNAL").empty();
+    bool external = !(x_GetPropertyByName("HTTP_CAF_EXTERNAL").empty()  &&
+                      x_GetPropertyByName("HTTP_NCBI_EXTERNAL").empty());
     string client;
     if ( internal  ||  !external ) {
         client = x_GetPropertyByName("HTTP_CLIENT_HOST");

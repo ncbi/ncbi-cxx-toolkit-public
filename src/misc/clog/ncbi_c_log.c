@@ -797,19 +797,21 @@ static int/*bool*/ s_GetTimeStr
 
 
 /** This routine is called during start up and again in NcbiLog_ReqStart(). 
-    The received environment value wil be cached for whole process. 
+    The received environment value will be cached for whole process. 
  */
 static const char* s_GetClient_Env(void)
 {
     static const char* client = NULL;
-    const char* p = NULL;
+    int/*bool*/ internal, external;
+    const char* p;
     
     if ( client ) {
         return client;
     }
-    p = getenv("HTTP_CAF_EXTERNAL");
-    if ( !p  ||  !p[0] ) {
-        /* !HTTP_CAF_EXTERNAL */
+    internal =   (p = getenv("HTTP_CAF_INTERNAL"))  != NULL  &&  *p   ? 1 : 0;
+    external = (((p = getenv("HTTP_CAF_EXTERNAL"))  != NULL  &&  *p)  ||
+                ((p = getenv("HTTP_NCBI_EXTERNAL")) != NULL  &&  *p)) ? 1 : 0;
+    if ( internal  ||  !external ) {
         if ( (p = getenv("HTTP_CLIENT_HOST")) != NULL  &&  *p ) {
             client = s_StrDup(p);
             return client;
@@ -823,6 +825,10 @@ static const char* s_GetClient_Env(void)
         client = s_StrDup(p);
         return client;
     }
+    if ( (p = getenv("HTTP_X_REAL_IP")) != NULL  &&  *p ) {
+        client = s_StrDup(p);
+        return client;
+    }
     if ( (p = getenv("REMOTE_ADDR")) != NULL  &&  *p ) {
         client = s_StrDup(p);
         return client;
@@ -832,12 +838,12 @@ static const char* s_GetClient_Env(void)
 
 
 /** This routine is called during start up and again in NcbiLog_ReqStart(). 
-    The received environment value wil be cached for whole process. 
+    The received environment value will be cached for whole process. 
  */
 extern const char* NcbiLogP_GetSessionID_Env(void)
 {
     static const char* session = NULL;
-    const char* p = NULL;
+    const char* p;
 
     if ( session ) {
         return session;
@@ -860,7 +866,7 @@ extern const char* NcbiLogP_GetSessionID_Env(void)
 extern const char* NcbiLogP_GetHitID_Env(void)
 {
     static const char* phid = NULL;
-    const char* p = NULL;
+    const char* p;
 
     if ( phid ) {
         return phid;
