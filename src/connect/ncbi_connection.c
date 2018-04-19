@@ -138,7 +138,8 @@ typedef enum {
 } ECONN_State;
 
 
-/* Connection internal data:  meta *must* come first
+/* Connection internal data.
+ * NOTE:  meta *must* come first!
  */
 typedef struct SConnectionTag {
     SMetaConnector  meta;        /* VTable of operations and list            */
@@ -280,10 +281,9 @@ static EIO_Status x_ReInit(CONN conn, CONNECTOR connector, int/*bool*/ close)
         /* erase unread data */
         BUF_Erase(conn->buf);
 
-        if (!x_conn) {
-            /* re-init with same connector does not cause the callback */
+        if (!x_conn)
             status = x_Callback(conn, eCONN_OnClose, 0);
-        }
+        /* else: re-init with same connector does not cause the callback */
 
         if (conn->state & eCONN_Open) {
             /* call current connector's "CLOSE" method */
@@ -331,6 +331,7 @@ static EIO_Status x_ReInit(CONN conn, CONNECTOR connector, int/*bool*/ close)
             return status;
         assert(conn->meta.list);
         conn->state = eCONN_Closed;
+        assert(conn->meta.default_timeout != kDefaultTimeout);
     }
 
     assert(conn->state != eCONN_Open  &&  conn->state != eCONN_Bad);

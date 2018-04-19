@@ -96,6 +96,7 @@ extern EIO_Status METACONN_Insert
 
     connector->meta = meta;
     connector->setup(connector);
+    assert(meta->default_timeout != kDefaultTimeout);
     connector->next = meta->list;
     meta->list = connector;
 

@@ -52,7 +52,7 @@
  ***********************************************************************/
 
 /* All internal data necessary to perform the (re)connect and I/O.
- * NOTE:  sock must come first!
+ * NOTE:  sock *must* come first!
  */
 typedef struct {
     SOCK           sock;      /* socket;  NULL if not connected yet       */
