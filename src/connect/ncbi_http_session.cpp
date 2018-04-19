@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 //  CHttpHeaders::
 //
 
-static const char* s_HttpHeaderNames[] = {
+static const char* kHttpHeaderNames[] = {
     "Cache-Control",
     "Content-Length",
     "Content-Type",
@@ -75,8 +75,8 @@ static const char kHttpHeaderDelimiter = ':';
 
 const char* CHttpHeaders::GetHeaderName(EHeaderName name)
 {
-    _ASSERT(size_t(name) < sizeof(s_HttpHeaderNames)/sizeof(s_HttpHeaderNames[0]));
-    return s_HttpHeaderNames[name];
+    _ASSERT(size_t(name)<sizeof(kHttpHeaderNames)/sizeof(kHttpHeaderNames[0]));
+    return kHttpHeaderNames[name];
 }
 
 
@@ -862,9 +862,9 @@ EHTTP_HeaderParse CHttpRequest::sx_ParseHeader(const char* http_header,
 
 // CConn_HttpStream callback for handling retries and redirects.
 // user_data must contain CHttpRequest*.
-int CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
-                            void*         user_data,
-                            unsigned int  failure_count)
+int/*bool*/ CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
+                                    void*         user_data,
+                                    unsigned int  failure_count)
 {
     if ( !user_data ) return 1;
     // Reset and re-fill headers on redirects (failure_count == 0).
@@ -881,7 +881,7 @@ int CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
     case 405:
     case 406:
     case 410:
-        return 0;
+        return 0; // false
     default:
         break;
     }
