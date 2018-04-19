@@ -2088,6 +2088,27 @@ string InterpretSpecificHostResult(const string& host, const CT3Reply& reply, co
 }
 
 
+bool IsCommon(const COrg_ref& org, const string& val)
+{
+    bool is_common = false;
+    if (org.IsSetCommon() && NStr::EqualNocase(val, org.GetCommon())) {
+        // common name, not genus
+        is_common = true;
+    } else if (org.IsSetOrgMod()) {
+        for (auto it : org.GetOrgname().GetMod()) {
+            if (it->IsSetSubtype() &&
+                it->GetSubtype() == COrgMod::eSubtype_common &&
+                it->IsSetSubname() &&
+                NStr::EqualNocase(it->GetSubname(), val)) {
+                is_common = true;
+                break;
+            }
+        }
+    }
+    return is_common;
+}
+
+
 bool IsLikelyTaxname(const string& val)
 {
     if (!isalpha(val[0])) {
@@ -2097,13 +2118,22 @@ bool IsLikelyTaxname(const string& val)
     if (pos == NPOS) {
         return false;
     }
+
     CTaxon1 taxon1;
     taxon1.Init();
     int taxid = taxon1.GetTaxIdByName(val.substr(0, pos));
-    if (taxid > 0 || taxid < -1) {
-        return true;
-    } else {
+    if (taxid == 0 || taxid == -1) {
         return false;
+    }
+
+    bool is_species = false;
+    bool is_uncultured = false;
+    string blast_name;
+    CConstRef<COrg_ref> org = taxon1.GetOrgRef(taxid, is_species, is_uncultured, blast_name);
+    if (org && IsCommon(*org, val.substr(0, pos))) {
+        return false;
+    } else {
+        return true;
     }
 }
 

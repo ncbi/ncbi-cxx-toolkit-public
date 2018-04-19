@@ -7405,7 +7405,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadSpecificHost)
     TestSpecificHostNoError("SNAKE");
     TestSpecificHostNoError("Snake");
     TestSpecificHostNoError("Turtle");
-
+    TestSpecificHostNoError("mallard duck");
 
 }
 
@@ -21151,7 +21151,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_787)
     CRef<CTaxon3_reply> org_reply = taxon3.SendOrgRefList(org_rq);
     string error_message;
     BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithTaxLookupReply(*org_reply, edited_orgs, error_message), true);
-    BOOST_CHECK_EQUAL(cpy->GetTaxname(), "Dickeya sp. PA1");
+    BOOST_CHECK_EQUAL(cpy->GetTaxname(), "Dickeya fangzhongdai");
 
     org->Reset();
     org->SetTaxname("Alnus cordata");
