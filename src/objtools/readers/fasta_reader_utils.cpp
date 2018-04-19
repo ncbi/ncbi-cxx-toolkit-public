@@ -51,7 +51,7 @@ size_t CFastaDeflineReader::s_MaxAccessionLength = CSeq_id::kMaxAccessionLength;
 
 // For reasons of efficiency, this method does not use CRef<CSeq_interval> to access range 
 // information - RW-26
-void CFastaDeflineReader::ParseDefline(const string& defline,
+void CFastaDeflineReader::ParseDefline(const CTempString& defline,
     const SDeflineParseInfo& info,
     const TIgnoredProblems& ignoredErrors,
     list<CRef<CSeq_id>>& ids,
@@ -66,13 +66,13 @@ void CFastaDeflineReader::ParseDefline(const string& defline,
     const TSeqPos& lineNumber = info.lineNumber;
     hasRange = false;
 
-    const size_t len = defline.length(); 
+    const size_t len = defline.length();
     if (len <= 1 || 
         NStr::IsBlank(defline.substr(1))) {
         return;
     }
 
-    if (defline.front() != '>') {
+    if (defline[0] != '>') {
         NCBI_THROW2(CObjReaderParseException, eFormat, 
             "Invalid defline. First character is not '>'", 0);
     }
@@ -86,7 +86,6 @@ void CFastaDeflineReader::ParseDefline(const string& defline,
         }
     }
 
-    string id_string;
     size_t pos;
     size_t title_start = NPOS;
     if ((fFastaFlags & CFastaReader::fNoParseID)) {
@@ -139,7 +138,7 @@ void CFastaDeflineReader::ParseDefline(const string& defline,
                     }
                 }
 
-                if( defline[pos] == '=' ) {
+                if(defline[pos] == '=' ) {
                     // this seems to be a FASTA mod, so consider the left square bracket
                     // to be the end of the seqid
                     pos = left_bracket_pos;
@@ -162,7 +161,7 @@ void CFastaDeflineReader::ParseDefline(const string& defline,
         range_len = ParseRange(defline.substr(start, pos - start),
             rangeStart, rangeEnd, pMessageListener);
 
-        id_string = defline.substr(start, pos - start - range_len);
+        auto id_string = defline.substr(start, pos - start - range_len);
         if (NStr::IsBlank(id_string)) {
             NCBI_THROW2(CObjReaderParseException, eFormat, 
                 "Unable to locate sequence id in definition line", 0);
@@ -180,26 +179,26 @@ void CFastaDeflineReader::ParseDefline(const string& defline,
     
     // trim leading whitespace from title (is this appropriate?)
     while (title_start < len
-        &&  isspace((unsigned char) defline[title_start])) {
+        &&  isspace((unsigned char)defline[title_start])) {
         ++title_start;
     }
 
     if (title_start < len) { 
         for (pos = title_start + 1;  pos < len;  ++pos) {
-            if ((unsigned char) defline[pos] < ' ') {
+            if ((unsigned char)defline[pos] < ' ') {
             break;
             }
         }
         // Parse the title elsewhere - after the molecule has been deduced
         seqTitles.push_back(
             SLineTextAndLoc(
-            defline.substr(title_start, pos - title_start), lineNumber));
+                defline.substr(title_start, pos - title_start), lineNumber));
     }
 }
 
 
 TSeqPos CFastaDeflineReader::ParseRange(
-    const string& s, 
+    const CTempString& s, 
     TSeqPos& start, 
     TSeqPos& end, 
     ILineErrorListener * pMessageListener)
@@ -241,7 +240,7 @@ TSeqPos CFastaDeflineReader::ParseRange(
     }
     --start;
     --end;
-    return s.length() - pos;
+    return TSeqPos(s.length() - pos);
 }
 
 
@@ -319,13 +318,13 @@ void CFastaDeflineReader::x_CheckIDLength(
 
 
 void CFastaDeflineReader::x_ProcessIDs(
-    const string& id_string,
+    const CTempString& id_string,
     const SDeflineParseInfo& info,
     list<CRef<CSeq_id>>& ids,
     ILineErrorListener* pMessageListener)
 {
     x_CheckForExcessiveSeqDataInID(
-            id_string,
+        id_string,
             info,
             pMessageListener);
 
@@ -350,7 +349,8 @@ void CFastaDeflineReader::x_ProcessIDs(
         flags |= CSeq_id::fParse_RawText;
     }
 
-    string local_id_string = id_string;
+    string local_copy;
+    auto to_parse = id_string;
     if (id_string.find(',') != NPOS &&
         id_string.find('|') == NPOS) {
             
@@ -364,10 +364,15 @@ void CFastaDeflineReader::x_ProcessIDs(
             err_message,
             CObjReaderParseException::eFormat);
             
-        local_id_string = NStr::Replace(id_string, ",", "_");
+        local_copy = id_string;
+        for (auto& rit : local_copy)
+            if (rit == ',')
+                rit = '_';
+
+        to_parse = local_copy;
     }
 
-    CSeq_id::ParseIDs(ids, local_id_string, flags);
+    CSeq_id::ParseIDs(ids, to_parse, flags);
 
     ids.remove_if([](CRef<CSeq_id> id_ref){ return NStr::IsBlank(id_ref->GetSeqIdString()); });
     if (ids.empty()) {
@@ -392,7 +397,7 @@ void CFastaDeflineReader::x_ProcessIDs(
 
 
 bool CFastaDeflineReader::ParseIDs(
-    const string& s, 
+    const CTempString& s,
     const SDeflineParseInfo& info,
     const TIgnoredProblems& ignoredErrors,
     list<CRef<CSeq_id>>& ids, 
@@ -425,8 +430,11 @@ bool CFastaDeflineReader::ParseIDs(
     try {
         if (s.find(',') != NPOS && s.find('|') == NPOS)
         {
-            string temp = NStr::Replace(s, ",", "_");
-            num_ids = CSeq_id::ParseIDs(ids, temp, flags);
+            string local_copy = s;
+            for (auto& ch : local_copy)
+                if (ch == ',')
+                    ch = '_';
+            num_ids = CSeq_id::ParseIDs(ids, local_copy, flags);
 
             const string errMessage = 
                 "Near line " + NStr::NumericToString(info.lineNumber) 
@@ -490,16 +498,17 @@ bool CFastaDeflineReader::ParseIDs(
 
 bool CFastaDeflineReader::x_IsValidLocalID(const CSeq_id& id, TFastaFlags fasta_flags) 
 {
-    string id_label;
-    id.GetLabel(&id_label, 0, CSeq_id::eContent);
-    return x_IsValidLocalID(id_label, fasta_flags);
+    if (id.IsLocal() && id.GetLocal().IsStr())
+       return x_IsValidLocalID(id.GetLocal().GetStr(), fasta_flags);
+
+    return true;
 }
 
 
-bool CFastaDeflineReader::x_IsValidLocalID(const string& id_string,
+bool CFastaDeflineReader::x_IsValidLocalID(const CTempString& id_string,
     const TFastaFlags fasta_flags)
 {
-    const string& string_to_check = (fasta_flags & CFastaReader::fQuickIDCheck)  ?
+    auto string_to_check = (fasta_flags & CFastaReader::fQuickIDCheck)  ?
                                     id_string.substr(0,1) :
                                     id_string;
 
@@ -513,7 +522,7 @@ void CFastaDeflineReader::x_ConvertNumericToLocal(
     for (auto id : ids) {
         if (id->IsGi()) {
             const TGi gi = id->GetGi();
-            id->SetLocal().SetStr(NStr::NumericToString(gi));
+            id->SetLocal().SetStr() = NStr::NumericToString(gi);
         }
     }
 }
@@ -580,11 +589,11 @@ void CFastaDeflineReader::x_PostError(ILineErrorListener* pMessageListener,
 
 
 bool 
-CFastaDeflineReader::x_ExceedsMaxLength(const string& title,
+CFastaDeflineReader::x_ExceedsMaxLength(const CTempString& title,
     const TSeqPos max_length)
 {
     auto last = title.rfind('|');
-    string substring = (last == NPOS) ? title : title.substr(last+1);
+    auto substring = (last == NPOS) ? title : title.substr(last+1);
 
     return (substring.length() > max_length);
 }
@@ -609,7 +618,7 @@ static bool s_ASCII_IsUnAmbigNuc(unsigned char c)
 
 void 
 CFastaDeflineReader::x_CheckForExcessiveSeqDataInID(
-    const string& id_string,
+    const CTempString& id_string,
     const SDeflineParseInfo& info,
     ILineErrorListener* pMessageListener) 
 {
@@ -621,8 +630,10 @@ CFastaDeflineReader::x_CheckForExcessiveSeqDataInID(
 
     if (!assume_prot && id_string.length() > kWarnNumNucCharsAtEnd) {
         TSeqPos numNucChars = 0;
-        for (auto rit=id_string.crbegin(); rit!=id_string.crend(); ++rit) {
-            if (!s_ASCII_IsUnAmbigNuc(*rit) && (*rit != 'N')) {
+        for (size_t i = id_string.size(); i>0; i--) {
+            const auto ch = id_string[i - 1];
+            //for (auto rit=id_string.crbegin(); rit!=id_string.crend(); ++rit) {
+            if (!s_ASCII_IsUnAmbigNuc(ch) && (ch != 'N')) {
                 break;
             }
             ++numNucChars;
@@ -648,8 +659,8 @@ CFastaDeflineReader::x_CheckForExcessiveSeqDataInID(
     // Check for Aa sequence
     if (!assume_nuc && id_string.length() > kWarnNumAminoAcidCharsAtEnd) {
         TSeqPos numAaChars = 0;
-        for (auto rit=id_string.crbegin(); rit!=id_string.crend(); ++rit) {
-            const auto ch = *rit;
+        for (size_t i = id_string.size(); i>0; i--) {
+            const auto ch = id_string[i - 1];
             if ( !(ch >= 'A' && ch <= 'Z')  &&
                  !(ch >= 'a' && ch <= 'z') ) {
                 break;
@@ -675,7 +686,7 @@ CFastaDeflineReader::x_CheckForExcessiveSeqDataInID(
 
 
 bool 
-CFastaDeflineReader::x_ExcessiveSeqDataInTitle(const string& title, 
+CFastaDeflineReader::x_ExcessiveSeqDataInTitle(const CTempString& title, 
     TFastaFlags fasta_flags) 
 {
     if (fasta_flags & CFastaReader::fAssumeProt) {
@@ -689,8 +700,9 @@ CFastaDeflineReader::x_ExcessiveSeqDataInTitle(const string& title,
     // Check for nuc sequence
     if (title.length() > kWarnNumNucCharsAtEnd) {
         TSeqPos numNucChars = 0;
-        for (auto rit=title.crbegin(); rit!=title.crend(); ++rit) {
-            if (!s_ASCII_IsUnAmbigNuc(*rit) && (*rit != 'N')) {
+        for (size_t i = title.size(); i>0; i--) {
+            const auto ch = title[i-1];
+            if (!s_ASCII_IsUnAmbigNuc(ch) && (ch != 'N')) {
                 break;
             }
             ++numNucChars;
@@ -703,8 +715,8 @@ CFastaDeflineReader::x_ExcessiveSeqDataInTitle(const string& title,
     // Check for Aa sequence
     if (title.length() > kWarnNumAminoAcidCharsAtEnd) {
         TSeqPos numAaChars = 0;
-        for (auto rit=title.crbegin(); rit!=title.crend(); ++rit) {
-            const auto ch = *rit;
+        for (size_t i=title.size(); i>0; i--) {
+            const auto ch = title[i-1];
             if ( !(ch >= 'A' && ch <= 'Z')  &&
                  !(ch >= 'a' && ch <= 'z') ) {
                 break;
@@ -750,7 +762,10 @@ CRef<CSeq_id> CSeqIdGenerator::GenerateID(const bool advance)
 CRef<CSeq_id> CSeqIdGenerator::GenerateID(const string& defline, const bool advance)
 {
     CRef<CSeq_id> seq_id(new CSeq_id);
-    int n = advance ? m_Counter.Add(1) - 1 : m_Counter.Get();
+    auto n = m_Counter.load();
+    if (advance)
+        m_Counter++;
+
     if (m_Prefix.empty()  &&  m_Suffix.empty()) {
         seq_id->SetLocal().SetId(n);
     } else {

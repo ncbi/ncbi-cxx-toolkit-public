@@ -76,13 +76,13 @@ public:
     };
 
     static bool ParseIDs(
-        const string& id_string,
+        const CTempString& id_string,
         const SDeflineParseInfo& info,
         const TIgnoredProblems& ignoredErrors,
         list<CRef<CSeq_id>>& ids,
         ILineErrorListener* pMessageListener);
 
-    static void ParseDefline(const string& defline,
+    static void ParseDefline(const CTempString& defline,
         const SDeflineParseInfo& info,
         const TIgnoredProblems& ignoredErrors, 
         list<CRef<CSeq_id>>& ids,
@@ -92,14 +92,14 @@ public:
         TSeqTitles& seqTitles,
         ILineErrorListener* pMessageListener);
 
-    static TSeqPos ParseRange(const string& s,
+    static TSeqPos ParseRange(const CTempString& s,
         TSeqPos& start,
         TSeqPos& end,
         ILineErrorListener* pMessageListener);
 
 private:
     static void x_ProcessIDs(
-        const string& id_string,
+        const CTempString& id_string,
         const SDeflineParseInfo& info,
         list<CRef<CSeq_id>>& ids,
         ILineErrorListener* pMessageListener);
@@ -107,7 +107,7 @@ private:
     static bool x_IsValidLocalID(const CSeq_id& id, 
         TFastaFlags fasta_flags);
 
-    static bool x_IsValidLocalID(const string& id_string,
+    static bool x_IsValidLocalID(const CTempString& id_string,
         TFastaFlags fasta_flags);
 
     static void x_ConvertNumericToLocal(
@@ -129,15 +129,15 @@ private:
         const string& errMessage,
         const CObjReaderParseException::EErrCode errCode);
 
-    static bool x_ExcessiveSeqDataInTitle(const string& title, 
+    static bool x_ExcessiveSeqDataInTitle(const CTempString& title, 
         TFastaFlags fasta_flags);
 
     static void x_CheckForExcessiveSeqDataInID(
-        const string& id_string,
+        const CTempString& id_string,
         const SDeflineParseInfo& info,
         ILineErrorListener* pMessageListener);
 
-    static bool x_ExceedsMaxLength(const string& title, 
+    static bool x_ExceedsMaxLength(const CTempString& title, 
         TSeqPos max_length);
 
     static void x_CheckIDLength(
@@ -157,7 +157,7 @@ private:
 class NCBI_XOBJREAD_EXPORT CSeqIdGenerator : public CObject
 {
 public:
-    typedef CAtomicCounter::TValue TCount;
+    typedef int TCount;
     CSeqIdGenerator(TCount count = 1, 
                     const string& prefix = kEmptyStr,
                     const string& suffix = kEmptyStr) : 
@@ -173,17 +173,17 @@ public:
     CRef<CSeq_id> GenerateID(void) const;
     
     const string& GetPrefix (void) const    { return m_Prefix;        }
-    TCount  GetCounter(void) const          { return m_Counter.Get(); }
+    TCount GetCounter(void) const           { return m_Counter;       }
     const string& GetSuffix (void) const    { return m_Suffix;        }
 
     void SetPrefix (const string& prefix)   { m_Prefix  = prefix;    }
-    void SetCounter(TCount count)           { m_Counter.Set(count); }
+    void SetCounter(TCount count)           { m_Counter = count;     }
     void SetSuffix (const string& suffix)   { m_Suffix  = suffix;    }
 
 protected:
     string m_Prefix; 
     string m_Suffix;
-    CAtomicCounter_WithAutoInit m_Counter;
+    std::atomic<TCount> m_Counter;
 };
 
 

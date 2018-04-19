@@ -649,7 +649,7 @@ bool CReaderBase::xIsTrackTerminator(
     const CTempString& strLine)
 //  ----------------------------------------------------------------------------
 {
-    auto line = NStr::TruncateSpaces(strLine);
+    auto line = NStr::TruncateSpaces_Unsafe(strLine);
     if (NStr::StartsWith(line, "##sequence-region")) {
         return true;
     }
