@@ -815,7 +815,7 @@ private:
 // Must be in correspondence with variables checked in NcbiGetClientIP[Ex]()
 // (header: <connect/ext/ncbi_localnet.h>, source: connect/ext/ncbi_localnet.c,
 // library: [x]connext)
-static const char* s_TrackingVars[] = 
+static const char* kTrackingVars[] = 
 {
     "HTTP_CAF_PROXIED_HOST",
     "HTTP_X_FORWARDED_FOR",
@@ -837,12 +837,12 @@ CTrackingEnvHolder::CTrackingEnvHolder(const CNcbiEnvironment* env)
         return;
 
     try {
-        size_t size = sizeof(s_TrackingVars) / sizeof(s_TrackingVars[0]);
+        size_t size = sizeof(kTrackingVars) / sizeof(kTrackingVars[0]);
         m_TrackingEnv = new char*[size];
         memset(m_TrackingEnv, 0, sizeof(m_TrackingEnv[0]) * size);
 
         int i = 0;
-        for (const char* const* name = s_TrackingVars;  *name;  ++name) {
+        for (const char* const* name = kTrackingVars;  *name;  ++name) {
             const string& value = m_Env->Get(*name);
             if (value.empty())
                 continue;
@@ -1187,6 +1187,7 @@ static CTempString x_FirstWord(const CTempStringEx& forward)
 }
 
 
+#if 0 // unused
 static CTempString x_LastWord(const CTempStringEx& forward)
 {
     if ( forward.empty() ) {
@@ -1208,6 +1209,7 @@ static CTempString x_LastWord(const CTempStringEx& forward)
     }
     return i ? words[i - 1] : CTempStringEx();
 }
+#endif // unused
 
 
 void CCgiRequest::x_SetClientIpProperty(TFlags flags) const
