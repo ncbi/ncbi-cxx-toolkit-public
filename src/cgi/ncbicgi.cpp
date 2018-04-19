@@ -1224,9 +1224,6 @@ void CCgiRequest::x_SetClientIpProperty(TFlags flags) const
     string client;
     if ( internal  ||  !external ) {
         client = x_GetPropertyByName("HTTP_CLIENT_HOST");
-    } else if ( !internal ) {
-        // FIXME:  This is a special crutch, and must eventually be gone!
-        client = x_LastWord(x_GetPropertyByName("HTTP_X_FORWARDED_FOR_IPV6"));
     }
     if ( client.empty() ) {
         client = x_GetPropertyByName("HTTP_CAF_PROXIED_HOST");
