@@ -822,6 +822,7 @@ static const char* s_TrackingVars[] =
     "PROXIED_IP",
     "HTTP_X_FWD_IP_ADDR",
     "HTTP_CLIENT_HOST",
+    "HTTP_X_REAL_IP",
     "REMOTE_HOST",
     "REMOTE_ADDR",
     "NI_CLIENT_IPADDR",
