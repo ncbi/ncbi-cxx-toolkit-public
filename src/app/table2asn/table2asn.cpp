@@ -697,6 +697,11 @@ int CTbl2AsnApp::Run(void)
     if (args["Z"])
     {
         m_context.m_discrepancy_file = args["Z"].AsString();
+        if (m_context.m_discrepancy_file.find(CDirEntry::GetPathSeparator()) == string::npos)
+        {
+            if (!m_context.m_ResultsDirectory.empty())
+                m_context.m_discrepancy_file.insert(0, m_context.m_ResultsDirectory);
+        }
     }
 
     m_context.m_eukariote = args["euk"].AsBoolean();
@@ -1175,14 +1180,14 @@ void CTbl2AsnApp::Setup(const CArgs& args)
 }
 
 /*
-tbl    5-column Feature Table
-.src   tab-delimited table with source qualifiers
-.qvl   PHRAP/PHRED/consed quality scores
-.dsc  One or more descriptors in ASN.1 format
-.cmt  Tab-delimited file for structured comment
-.pep  Replacement proteins for coding regions on this sequence, use to mark conflicts
-.rna   Replacement mRNA sequences for RNA editing
-.prt    Proteins for suggest intervals
+.tblÂ Â Â 5-column Feature Table
+.srcÂ Â  tab-delimited table with source qualifiers
+.qvlÂ Â  PHRAP/PHRED/consed quality scores
+.dscÂ   One or more descriptors in ASN.1 format
+.cmtÂ   Tab-delimited file for structured comment
+.pepÂ   Replacement proteins for coding regions on this sequence, use to mark conflicts
+.rnaÂ Â  Replacement mRNA sequences for RNA editing
+.prtÂ Â Â Proteins for suggest intervals
 */
 void CTbl2AsnApp::ProcessSecretFiles1Phase(CSeq_entry& result)
 {
