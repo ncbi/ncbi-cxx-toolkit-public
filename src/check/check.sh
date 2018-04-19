@@ -275,25 +275,44 @@ case "\$method" in
 #----------------------------------------------------------
    concat )
       rm -f "\$res_concat"
-      for dir in \$dirs; do
-          \$builddir/\$dir/check.sh concat
-          ( 
-            cat \$builddir/\$dir/check.sh.out 
-            echo
-          ) >> \$res_concat
-      done
+      ( 
+         for dir in \$dirs; do
+             cat \$builddir/\$dir/check.sh.log
+         done
+         for dir in \$dirs; do
+             files=\`cat \$builddir/\$dir/check.sh.journal | sed -e 's/ /%gj_s4%/g'\`
+             for f in \$files; do
+                 f=\`echo "\$f" | sed -e 's/%gj_s4%/ /g'\`
+                 echo 
+                 echo 
+                 cat \$f
+             done
+         done
+      ) >> \$res_concat
       exit 0
       ;;
 #----------------------------------------------------------
    concat_err )
       rm -f "\$res_concat_err"
-      for dir in \$dirs; do
-          \$builddir/\$dir/check.sh concat_err
-          ( 
-            cat \$builddir/\$dir/check.sh.out_err 
-            echo
-          ) >> \$res_concat_err
-      done
+      ( 
+         for dir in \$dirs; do
+             cat \$builddir/\$dir/check.sh.log | egrep 'ERR \[|TO  -'
+         done
+         for dir in \$dirs; do
+             files=\`cat \$builddir/\$dir/check.sh.journal | sed -e 's/ /%gj_s4%/g'\`
+             for f in \$files; do
+                 f=\`echo "\$f" | sed -e 's/%gj_s4%/ /g'\`
+                 code=\`cat \$f | grep -c '@@@ EXIT CODE:'\`
+                 test \$code -ne 0 || continue
+                 code=\`cat \$f | grep -c '@@@ EXIT CODE: 0'\`
+                 if [ \$code -ne 1 ]; then
+                    echo 
+                    echo 
+                    cat \$f
+                 fi
+             done
+         done
+      ) >> \$res_concat_err
       exit 0
       ;;
 #----------------------------------------------------------
@@ -429,7 +448,7 @@ EOF
 
         # Set execute mode to script
         chmod a+x check.sh
- 
+
         $ Generate check script for every directory in the list
         for dir in $dirs; do
             cd $builddir/$dir ||  Error "Cannot change directory to:  $dir"
