@@ -139,6 +139,21 @@ static CConstRef<CSeq_feat> x_GetSourceFeatFromCDS  (
     return CConstRef<CSeq_feat> ();
 }
 
+static const char * legal_organelles[] = {
+    "chloroplast",
+    "chromoplast",
+    "kinetoplast",
+    "mitochondrion",
+    "plastid",
+    "cyanelle",
+    "nucleomorph",
+    "apicoplast",
+    "leucoplast",
+    "proplastid",
+    "hydrogenosome",
+    "chromatophore"
+};
+
 void CSourceItem::x_GatherInfoIdx(CBioseqContext& ctx)
 {
     CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
@@ -149,10 +164,18 @@ void CSourceItem::x_GatherInfoIdx(CBioseqContext& ctx)
 
     m_Taxname = &bsx->GetTaxname();
     m_Common = &bsx->GetCommon();
-    m_Organelle = &bsx->GetOrganelle();
     m_Lineage = bsx->GetLineage();
     m_Taxid = bsx->GetTaxid();
     m_UsingAnamorph = bsx->IsUsingAnamorph();
+
+    const string* orgnlle = &bsx->GetOrganelle();
+    for (int i = 0; i < sizeof (legal_organelles) / sizeof (const char*); i++) {
+        string str = legal_organelles [i];
+        if (NStr::CompareNocase (*orgnlle, str) == 0) {
+            m_Organelle = orgnlle;
+            return;
+        }
+    }
 }
 
 void CSourceItem::x_GatherInfo(CBioseqContext& ctx)
