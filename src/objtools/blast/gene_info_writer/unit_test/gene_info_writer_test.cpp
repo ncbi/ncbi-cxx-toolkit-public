@@ -72,13 +72,13 @@ static void
     mapIdToPMIDs[7] = 0;
 
     TIntToStringMap mapIdToOrgname;
-    mapIdToOrgname[1] = "root";
+    mapIdToOrgname[1] = "unknown";
     mapIdToOrgname[2] = "Gallus gallus";
     mapIdToOrgname[3] = "Homo sapiens";
     mapIdToOrgname[4] = "Homo sapiens";
     mapIdToOrgname[5] = "Gallus gallus";
     mapIdToOrgname[6] = "Homo sapiens";
-    mapIdToOrgname[7] = "root";
+    mapIdToOrgname[7] = "unknown";
 
     for (geneId = 1; geneId <= 7; geneId++)
     {
@@ -95,30 +95,30 @@ static void
 
     // Link Gis to Gene IDs
 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(1, 7)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(2, 2)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(2, 3)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(2, 5)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(3, 4)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(4, 4)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(4, 6)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(10, 1)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(11, 1)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(11, 7)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(20, 1)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(1, 7));
+    mapGiToIds.insert(TIntToIntMultimap::value_type(2, 2));
+    mapGiToIds.insert(TIntToIntMultimap::value_type(2, 3));
+    mapGiToIds.insert(TIntToIntMultimap::value_type(2, 5));
+    mapGiToIds.insert(TIntToIntMultimap::value_type(3, 4));
+    mapGiToIds.insert(TIntToIntMultimap::value_type(4, 4));
+    mapGiToIds.insert(TIntToIntMultimap::value_type(4, 6));
+    mapGiToIds.insert(TIntToIntMultimap::value_type(10, 1));
+    mapGiToIds.insert(TIntToIntMultimap::value_type(11, 1));
+    mapGiToIds.insert(TIntToIntMultimap::value_type(11, 7));
+    mapGiToIds.insert(TIntToIntMultimap::value_type(20, 1));
 //  (21, 1), (21, 7) excluded: "Genomic" Gi, multiple IDs
-    mapGiToIds.insert(TIntToIntMultimap::value_type(30, 2)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(31, 5)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(31, 4)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(32, 3)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(32, 6)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(40, 2)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(41, 2)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(42, 2)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(50, 5)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(30, 2));
+    mapGiToIds.insert(TIntToIntMultimap::value_type(31, 5));
+    mapGiToIds.insert(TIntToIntMultimap::value_type(31, 4));
+    mapGiToIds.insert(TIntToIntMultimap::value_type(32, 3));
+    mapGiToIds.insert(TIntToIntMultimap::value_type(32, 6));
+    mapGiToIds.insert(TIntToIntMultimap::value_type(40, 2));
+    mapGiToIds.insert(TIntToIntMultimap::value_type(41, 2));
+    mapGiToIds.insert(TIntToIntMultimap::value_type(42, 2));
+    mapGiToIds.insert(TIntToIntMultimap::value_type(50, 5));
 //  (60, 3), (60, 4) excluded: "Genomic" Gi, multiple IDs
-    mapGiToIds.insert(TIntToIntMultimap::value_type(61, 4)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(62, 6)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(61, 4));
+    mapGiToIds.insert(TIntToIntMultimap::value_type(62, 6));
 
     listGis.push_back(1);
     listGis.push_back(2);
@@ -285,7 +285,7 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
                                 GENE_GI2GENE_FILE_NAME;
         BOOST_REQUIRE(CGeneFileUtils::
                 OpenBinaryInputFile(strGi2Gene, inGi2Gene));
-        
+
         TIntToIntMultimap mapGiToIdsFromFile;
         CGeneFileUtils::STwoIntRecord recordGi2Gene;
         while (inGi2Gene)
@@ -298,7 +298,7 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
             s_CheckIntInList(recordGi2Gene.n2, listGeneIds);
 
             mapGiToIdsFromFile.insert(TIntToIntMultimap::value_type
-                                      (recordGi2Gene.n1, 
+                                      (recordGi2Gene.n1,
                                        recordGi2Gene.n2));
         }
 
@@ -325,7 +325,7 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
                                 GENE_GENE2GI_FILE_NAME;
         BOOST_REQUIRE(CGeneFileUtils::
                 OpenBinaryInputFile(strGene2Gi, inGene2Gi));
-        
+
         IGeneInfoInput::TGiList listGisFromFile;
         CGeneFileUtils::SMultiIntRecord<4> recordGene2Gi;
         while (inGene2Gi)
