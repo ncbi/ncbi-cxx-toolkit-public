@@ -317,7 +317,6 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
         l_ig_opts->m_AirrField.push_back("v_call");
         l_ig_opts->m_AirrField.push_back("d_call");
         l_ig_opts->m_AirrField.push_back("j_call");
-        l_ig_opts->m_AirrField.push_back("c_call");
         l_ig_opts->m_AirrField.push_back("sequence_alignment");
         l_ig_opts->m_AirrField.push_back("germline_alignment");
         l_ig_opts->m_AirrField.push_back("sequence_alignment_aa");
@@ -360,14 +359,12 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
         l_ig_opts->m_AirrField.push_back("v_score");
         l_ig_opts->m_AirrField.push_back("d_score");
         l_ig_opts->m_AirrField.push_back("j_score");
-        l_ig_opts->m_AirrField.push_back("c_score");
         l_ig_opts->m_AirrField.push_back("v_cigar");
         l_ig_opts->m_AirrField.push_back("d_cigar");
         l_ig_opts->m_AirrField.push_back("j_cigar");
-        l_ig_opts->m_AirrField.push_back("c_cigar");
-        l_ig_opts->m_AirrField.push_back("v_evalue");
-        l_ig_opts->m_AirrField.push_back("d_evalue");
-        l_ig_opts->m_AirrField.push_back("j_evalue");
+        l_ig_opts->m_AirrField.push_back("v_support");
+        l_ig_opts->m_AirrField.push_back("d_support");
+        l_ig_opts->m_AirrField.push_back("j_support");
         l_ig_opts->m_AirrField.push_back("v_identity");
         l_ig_opts->m_AirrField.push_back("d_identity");
         l_ig_opts->m_AirrField.push_back("j_identity");
