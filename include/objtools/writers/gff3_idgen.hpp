@@ -101,6 +101,9 @@ protected:
     std::string xGetGenericSuffix(
         const CMappedFeat&);
 
+    std::string xExtractGeneLocusTagOrLocus(
+        const CMappedFeat&);
+    
     std::string xExtractLocalId(
         const CMappedFeat&);
 

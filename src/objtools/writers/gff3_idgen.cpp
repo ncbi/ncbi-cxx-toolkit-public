@@ -304,7 +304,16 @@ string CGffIdGenerator::xGetGenericId(
     feature::CFeatTree* ) 
     //  -----------------------------------------------------------------------------
 {
+    //debug:
+    auto featType = mf.GetFeatSubtype();
+
     string id("id-");
+
+    auto parent = feature::GetParentFeature(mf);
+    auto stem = xExtractGeneLocusTagOrLocus(parent);
+    if (!stem.empty()) {
+        return id + stem;
+    }
 
     //only choice: generic suffix
     return id + xGetGenericSuffix(mf);
@@ -329,6 +338,24 @@ string CGffIdGenerator::xGetGenericSuffix(
 
     //3rd choice: best ID:start..stop
     return xExtractFeatureLocation(mf);
+}
+
+//  ----------------------------------------------------------------------------
+string CGffIdGenerator::xExtractGeneLocusTagOrLocus(
+    const CMappedFeat& mf)
+    //  ----------------------------------------------------------------------------
+{
+    if (!mf  ||  mf.GetFeatSubtype() != CSeqFeatData::eSubtype_gene) {
+        return "";
+    }
+    const auto& geneRef = mf.GetData().GetGene();
+    if (geneRef.IsSetLocus_tag()) {
+        return geneRef.GetLocus_tag();
+    }
+    if (geneRef.IsSetLocus()) {
+        return geneRef.GetLocus();
+    }
+    return "";
 }
 
 //  ----------------------------------------------------------------------------
