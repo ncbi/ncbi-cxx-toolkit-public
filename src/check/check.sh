@@ -162,7 +162,7 @@ if test "$need_check" = "yes" ; then
     appornull=`grep 'APP_OR_NULL' $builddir/Makefile.mk`
     if [ -n "$appornull" ]; then
         # No executables - no checks
-        grep 'APP_OR_NULL = null' $builddir/Makefile.mk   &&  exit 0
+        grep 'APP_OR_NULL = null' $builddir/Makefile.mk >/dev/null  &&  exit 0
     fi
    
     
