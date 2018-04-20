@@ -188,6 +188,14 @@ void GetPubTitleAndAuthors(const CPub& pub, string& title, string & authors)
                 }
             }
             break;
+        case CPub::e_Book:
+            if (pub.GetBook().IsSetTitle()) {
+                title = pub.GetBook().GetTitle().GetTitle();
+            }
+            if (pub.GetBook().IsSetAuthors()) {
+                authors = GetAuthorString(pub.GetBook().GetAuthors());
+            }
+            break;
         default:
             break;
     }
@@ -353,19 +361,17 @@ bool HasUnpubWithoutTitle(const CPubdesc& pubdesc)
     if (!pubdesc.IsSetPub()) {
         return false;
     }
-    bool rval = false;
-    ITERATE (CPubdesc::TPub::Tdata, it, pubdesc.GetPub().Get()) {
-        if (IsPubUnpublished(**it)) {
+    for (auto it: pubdesc.GetPub().Get()) {
+        if (IsPubUnpublished(*it)) {
             string title = kEmptyStr;
             string authors = kEmptyStr;
-            GetPubTitleAndAuthors(**it, title, authors);
+            GetPubTitleAndAuthors(*it, title, authors);
             if (NStr::IsBlank(title) || NStr::EqualNocase(title, "Direct Submission")) {
-                rval = true;
-                break;
+                return true;
             }
         }
     }
-    return rval;
+    return false;
 }
 
 
