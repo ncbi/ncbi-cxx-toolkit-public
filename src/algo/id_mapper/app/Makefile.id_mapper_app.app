@@ -9,7 +9,7 @@
 ###  DEFAULT COMPILATION FLAGS  -- DON'T EDIT OR MOVE THESE LINES !!!
 #BINCOPY = @:
 LOCAL_CPPFLAGS = -I. -I.. -I../Objects  -g
-LOCAL_LDFLAGS = -L. -L../Objects
+LOCAL_LDFLAGS = -L. -L../Objects  -L$(import_root)/../lib/
 #LOCAL_CPPFLAGS = -I. -I.. -I../Objects -g0  -O2  -pipe
 #LOCAL_LDFLAGS = -L. -O2 -s -L../Objects
 ORIG_LDFLAGS = $(CONF_LDFLAGS) $(LOCAL_LDFLAGS)

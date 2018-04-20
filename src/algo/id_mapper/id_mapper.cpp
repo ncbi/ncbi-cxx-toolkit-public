@@ -83,6 +83,10 @@ s_RevStrLenSort(const string& A, const string& B)
 
 CGencollIdMapper::CGencollIdMapper(CConstRef<CGC_Assembly> SourceAsm)
 {
+    //m_IdToSeqMap.reserve(300007);
+    //m_AccToVerMap.reserve(300007);
+    //m_ChildToParentMap.reserve(300007);
+
     if (SourceAsm.IsNull()) {
         return;
     }
@@ -566,7 +570,8 @@ CGencollIdMapper::x_RecursiveSeqFix(CGC_Sequence& Seq)
     }
 
     // Bad Random GIs
-    if (Seq.GetSeq_id().IsGi()) {
+    if (Seq.GetSeq_id().IsGi() && 
+        (Seq.HasRole(eGC_SequenceRole_pseudo_scaffold) || Seq.HasRole(eGC_SequenceRole_submitter_pseudo_scaffold)) ) {
         //CTypeConstIterator<CSeq_id> IdIter(Seq);
         bool IsRandom = false;
         if (Seq.CanGetSeq_id_synonyms()) {
@@ -1398,7 +1403,7 @@ CGencollIdMapper::x_IsParentSequence(const CSeq_id& Id,
 CConstRef<CGC_Sequence>
 CGencollIdMapper::x_FindChromosomeSequence(const CSeq_id& Id, const SIdSpec& Spec) const
 {
-    if (Id.IsGi() && Id.GetGi() > GI_CONST(50)) {
+    if (Id.IsGi() && Id.GetGi() > GI_CONST(1000)) {
         return CConstRef<CGC_Sequence>();
     }
     if (CSeq_id::IdentifyAccession(Id.GetSeqIdString(true)) >= CSeq_id::eAcc_type_mask) {
@@ -1408,6 +1413,9 @@ CGencollIdMapper::x_FindChromosomeSequence(const CSeq_id& Id, const SIdSpec& Spe
     const string IdStr = Id.GetSeqIdString(true);
     if(IdStr.find("random") != NPOS)
         return CConstRef<CGC_Sequence>();
+    if(IdStr.find("decoy") != NPOS)
+        return CConstRef<CGC_Sequence>();
+
 
     TIdToSeqMap::const_iterator Found = m_IdToSeqMap.end();
     ITERATE (vector<string>, ChromoIter, m_Chromosomes) {

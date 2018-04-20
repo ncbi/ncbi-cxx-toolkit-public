@@ -348,7 +348,7 @@ int CIdMapperTestApp::x_HandleFeatures(CGencollIdMapper& Mapper,
                 CRef<CSeq_annot> Annot(new CSeq_annot);
                 AnnotIn >> MSerial_AsnText >> *Annot;
                 Annots.push_back(Annot);
-            } catch(...) { break; }
+            } catch(CException& e) { cerr << e.ReportAll()<<endl;break; }
         }
     }}
 
@@ -372,7 +372,7 @@ int CIdMapperTestApp::x_HandleFeatures(CGencollIdMapper& Mapper,
 			CRef<CSeq_loc> Loc;
 			try {
 				Mapper.Guess(Feat->GetLocation(), GuessSpec);
-				cerr << "Guessed: " << GuessSpec.ToString() << endl;
+				//cerr << "Guessed: " << GuessSpec.ToString() << endl;
 				//cerr << "CanMeetSpec: " << (Mapper.CanMeetSpec(Feat->GetLocation(), DestSpec) ? "TRUE" : "FALSE" ) << endl;
 				//if(!GuessSpec.Pattern.empty() && DestSpec.Pattern.empty())
 				//    DestSpec.Pattern = GuessSpec.Pattern;
