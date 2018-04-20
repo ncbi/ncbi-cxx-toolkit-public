@@ -110,6 +110,9 @@ protected:
     std::string xExtractFarAccession(
         const CMappedFeat&);
 
+    std::string xExtractFeatureLocation(
+        const CMappedFeat&);
+
     std::string xDisambiguate(
         const std::string&);
 
