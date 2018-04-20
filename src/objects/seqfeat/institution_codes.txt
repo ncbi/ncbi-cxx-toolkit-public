@@ -1132,7 +1132,7 @@ CMM<BRA>	c	Culture Collection of Phytopathogenic Fungi  (Colecao de Culturas de 
 CMMC	c	China Marine Microbe Collection		
 CMMED<USA-HI>	c	Center for Marine Microbial Ecology & Diversity Collection		
 CMMEX	s	Universidad Autonoma de Baja California		
-CMMF	h	Jardin botanique de Montreal		
+CMMF	s	Jardin botanique de Montreal		
 CMMI	s	Chinese Academy of Traditional Medicine		
 CMML	s	Center for Environmental Management of Military Lands (CEMML)		
 CMN	s	Canadian Museum of Nature	NMC<CAN>
@@ -2445,7 +2445,7 @@ HMIM	h	Jardi Botanic Marimurtra
 HMJAU	sc	Herbarium of Mycology of Jilin Agricultural University		
 HMLN	s	District Museum		
 HMM	s	Horsham Museum		
-HMMNH	h	Macedonian Museum of Natural History		
+HMMNH	s	Macedonian Museum of Natural History		
 HMN	s	Humbolt Museum fur Naturkunde, East Berlin		
 HMNH	s	Hayashibara Museum of Natural History		
 HMNR	h	Mordovian State Nature Reserve		
@@ -2642,10 +2642,10 @@ IAN	s	Embrapa Amazonia Oriental
 IAPG	s	Institute of Animal Physiology and Genetics, Academy of Sciences of the Czech Republic		
 IARI	sb	Indian Agricultural Research Institute		
 IASI	s	Universitatea Agronomica, Disciplina de Botanica		
-IAUGH	h	Islamic Azad University Garmsar		
-IAUH	h	Islamic Azad University		
-IAUM	h	Islamic Azad University of Mashhad		
-IAUNT	h	Islamica Azad University, North Tehran Branch		
+IAUGH	s	Islamic Azad University Garmsar		
+IAUH	s	Islamic Azad University (Avicenna Herbarium)		
+IAUM	s	Islamic Azad University of Mashhad		
+IAUNT	s	Islamica Azad University, North Tehran Branch		
 IAV	sb	Institut Agronomique et Veterinaire Hassan II, Departement d'Ecologie Vegetale		
 IAVH	s	Instituto de Ivestigacion de los Recursos Biologicos Alexander von Humboldt		
 IB	s	Universitat Innsbruck		
@@ -2806,7 +2806,6 @@ IIBUV	s	Investigaciones Biologicas de la Universidad Veracruzana (Mexico)
 IICT	s	Centro de Zoologia do I.I.C.T.		
 IID	c	Laboratory Culture Collection		
 IIES	s	Instituto Investigaciones Entomologicas Salta		
-IIPB	s	Instituto de Ciencias del Mar		
 IITA	b	International Institute of Tropical Agriculture		
 IJ	s	Institute of Jamaica		
 IJFM	c	Instituto Jaime Ferran de Microbiologia Consejo Superior de Investigaciones Cientificas		
@@ -2904,7 +2903,7 @@ IO<BRA>	s	Instituto Oceanografico da Universidade de Sao Paulo
 IO<PRT>	s	Instituto de Oceanografia da Universidade de Lisboa		
 IOAN	s	Shirshov Institute of Oceanography		
 IOC	c	Colecao de Culturas de Fungos do Instituto Oswaldo Cruz		
-IOCAS	s	Institute of Oceanology, Chinese Academy of Scineces		
+IOCAS	s	Institute of Oceanology, Chinese Academy of Sciences		
 IOEB	c	Centre de ressources biologiques oenologiques	CRBO
 IOH	s	Academia de Ciencias		
 IOM	s	Institute of Oceanology, Academy of Sciences		
@@ -3013,8 +3012,8 @@ ITAL	c	Banco de Fermentos Lacticos
 ITALSL	c	Secao de Leite e Derivados		
 ITALSM	c	Secao de Microbiologia		
 ITBCC	c	Institute of Technology Bandung Culture Collection		
-ITBCZ	s	Institute of Tropical Biology Collection of Zoology		
-ITBZC	s	Institute of Tropical Biology, Zoology Collection		
+ITBCZ	s	Institute of Tropical Biology Collection of Zoology	ITBZC
+ITBZC	s	Institute of Tropical Biology, Zoology Collection	ITBCZ
 ITC	b	International Transit Centre		
 ITCC<IND>	c	Indian Type Culture Collection		
 ITCC<ITA>	s	Istituto Tecnico Stattale "Camillo Cavour"		
@@ -3079,7 +3078,7 @@ IZWU	s	Paleozology Department, Institute of Zoology, Worclaw University
 J	s	University of the Witwatersrand, Botany Department		
 JA	s	Consejeria de Medio Ambiente (Junta de Andalucia), Direccion General de Gestion del Medio Natural		
 JAC	s	University of Jodhpur, Botany Department		
-JACA	s	Instituto Pirenaico de Ecologia, CSIC		
+JACA	s	Instituto Pirenaico de Ecologia, C.S.I.C.		
 JAEN	s	Universidad de Jaen, Botanica		
 JAS	s	Jiangxi Academy of Sciences		
 JATH	s	University of Szeged		
@@ -3123,7 +3122,7 @@ JJU	s	Jeonju University
 JLFC	s	Forestry College of Beihua University, Forestry Department		
 JLMP	s	Jilin Academy of Traditional Chinese Medicine and Materia Medica		
 JM	s	Jura Museum, Eichstatt		
-JME	h	Jura-Museum Eichstatt		
+JME	s	Jura-Museum Eichstatt		
 JMM	s	Earlham College, Joseph Moore Museum		
 JMRC	c	Jena Microbial Resource Collection		
 JMRC:SF	c	Jena Microbial Resource Collection, Subcollection Fungi
@@ -3158,7 +3157,6 @@ JU	s	Jinan University
 JUA	s	Universidad Nacional de Jujuy, Facultad de Ciencias Agrarias		
 JUG	s	Jiwaji University, Botany Department		
 JUJ	s	Hebei Agricultural University		
-JVC	s	Jardin Botanico Canario Viera y Clavijo		
 JVR	s	Universidad Nacional		
 JXAU	s	Jiangxi Agricultural University, Forestry Department		
 JXCM	s	Jiangxi College of Traditional Chinese Medicine, Pharmacy Department		
@@ -3335,7 +3333,7 @@ KSP	s	Pittsburg State University, Biology Department
 KSPI	h	Kostanay State Pedagogical Institute		
 KSRV	s	Khosrov State Reserve		
 KSTC	s	Emporia State University		
-KSU	s	King Saud University, Botany and Microbiology Department		
+KSU	s	King Saud University, Botany and Microbiology Department	KSUP
 KSUC	s	Kansas State University	KSU
 KSUP	s	King Saud University		
 KTC	s	Pedagogical University, Botany Department		
@@ -3374,7 +3372,7 @@ KUO	s	Kuopio Natural History Museum
 KURS	s	Kursk State University, Department of Botany		
 KUS	s	Korea University, Biology Department		
 KUU	s	University of Science and Technology		
-KUW	h	Kakatiya University		
+KUW	s	Kakatiya University		
 KUZ<JPN>	s	Zoological Collection of the Kyoto University		
 KUZC	s	Kyushu University, Zoological Collection		
 KVCH	s	Kivach Nature Reserve		
@@ -3427,7 +3425,7 @@ LBC	s	University of the Philippines at Los Banos
 LBG<CHE>	c	Institute for Agricultural Bacteriology and Fermentation Biology		
 LBG<CHN>	s	Lushan Botanical Garden		
 LBIT	s	Laboratoire de Biologie des Insectes		
-LBL	s	M. Curie-Sklodowska University, Department of Biology and Earth Science		
+LBL	s	M. Curie-Sklodowska University, Department of Botany and Mycology Institute of Biology and Biochemistry		
 LBLC	s	M. Curie-Sklodowska University		
 LBM<BRA>	c	Laboratorio de Biologia Molecula Depto de Biologia Celular		
 LBM<JPN>	s	Lake Biwa Museum		
@@ -3560,10 +3558,9 @@ LMC	s	Instituto de Investigacao Cientifica de Mozambique
 LMCH	c	Laboratoire de Microbiologie		
 LMD	c	Laboratorium voor Microbiologie der Landbouwhogeschool		
 LMG	c	Belgian Coordinated Collections of Microorganisms/ LMG Bacteria Collection	BCCM/LMG
-LMJ<AUT>	s	Landesmuseum Joanneum Graz		
 LMJ<MOZ>	s	Centro de Investigacao Cientifica Algodoeira, Botanical Department		
 LMKG	s	Landesmuseum fur Karnten		
-LMND	s	Landessammlungen fuer Naturkunde		
+LMND	s	Landessammlungen fur Naturkunde	LNMD
 LMNH	s	Museum d'Histoire naturelle		
 LMO	h	Landesmuseum Natur und Mensch		
 LMRZ	s	Livingstone Museum		
@@ -3576,9 +3573,7 @@ LNAU	h	Luhansk National Agrarian University
 LNCM	s	Liaoning College of Traditional Chinese Medicine		
 LNCN	h	Lincoln Memorial University		
 LNHS	s	London Natural History Society		
-LNK	s	Landessammlungen fuer Naturkunde		
-LNKD	s	Landessammlung fuer Naturkunde		
-LNMD	s	Landessammlungen fuer Naturkunde		
+LNKD	s	Landessammlung fur Naturkunde	LNK
 LNMO	s	Oldenburg, Landesmuseum Natur und Mensch		
 LNNU	s	Liaoning Normal University, Biology Department		
 LNPV<FRA>	c	 Laboratoire National de la Protection des Vegetaux		
@@ -3593,7 +3588,7 @@ LON	s	Lembaga Oseanologie Nasional
 LOU	s	C.I.T.A.-Xunta de Galicia		
 LP<ARG>	s	Museo de La Plata, Herbario		
 LP<RUS>	s	Laboratory of Palaeontology		
-LPA	s	Jardin Botanico Canario Viera y Clavijo		
+LPA	s	Jardin Botanico Canario Viera y Clavijo, Unidad Asociada al CSIC		
 LPAG	s	Universidad Nacional de La Plata, Area de Botanica		
 LPB	s	Herbario Nacional de Bolivia		
 LPC	h	Museo de La Plata		
@@ -3628,9 +3623,9 @@ LSR	s	Leicestershire Museums Service
 LSRFC	s	Leicestershire Flora Committee		
 LSSC	s	Lake Superior State College		
 LSTM	c	Department of Parasitology		
-LSU	s	Louisiana State University, Biological Sciences Department		
+LSU	s	Louisiana State University, Biological Sciences Department	LSUM
 LSUHC	s	La Sierra University, Herpetological Collection		
-LSUM	s	Louisiana State University, Biological Sciences Department		
+LSUM	s	Louisiana State University, Biological Sciences Department	LSU
 LSUMZ	s	Louisiana State University, Musuem of Zoology	LSUMNS
 LSUMZ:FrozenTissue	s	Louisiana State University, Musuem of Zoology, Frozen Tissue Collection
 LSUMZ:Herpetology	s	Louisiana State University, Musuem of Zoology, Herpetology Collection
@@ -3709,16 +3704,13 @@ MA:Musci	s	Real Jardin Botanico, Bryophyte collection
 MAA	s	Escuela Tecnica Superior de Ingenieros Agronomos, Departamento de Produccion Vegetal		
 MAAS	s	Natuurhistorisch Museum Maastricht, Botany Department		
 MAC	s	Instituto do Meio Ambiente		
-MAC-APU	s	Ministerio de Agricultura y Cria		
-MAC-PAY	s	Ministerio de Agricultura y Cria		
 MACA	s	Parque da Reserva de Siac Pai van Coloane Island		
 MACB	s	Universidad Complutense, Departamento de Biologia Vegetal 1		
 MACF	s	California State University, Biological Science Department		
-MACLPI	s	Ministerio de Agricultura y Cria, Seccion de Pesca Interior y Piscicultura		
 MACN	s	Museo Argentino de Ciencias Naturales Bernardino Rivadavia		
 MACN-RN	s	Museo Argentino de Cicencis Naturales, Coleccion Rio Negro		
 MACNCH	s	Museo Argentino de Ciencias Naturales		
-MACO	s	Marlborough College, Biology Department		
+MACO	s	Marlborough College, Biology Department	MBH
 MAD<IND>	s	Madras Museum		
 MAD<USA-WI>	s	Forest Products Laboratory		
 MADJ	s	Jardim Botanico da Madeira		
@@ -3771,7 +3763,7 @@ MAO	c	Mircen Afrique Ouest
 MAPA	s	Museu Anchieta Porto Alegra		
 MAPR	s	University of Puerto Rico, Mayagueez Campus, Biology Department		
 MAR	c	Grasslands Rhizobium Collection		
-MARDI	h	Malaysian Agricultural Research and Development Institute		
+MARDI	s	Malaysian Agricultural Research and Development Institute	MDI
 MARE	s	Marmara University, Department of Pharmaceutical Botany		
 MARI	h	Mari State University		
 MARK	h	Cadi Ayyad University		
@@ -3798,7 +3790,6 @@ MBCG	s	Museo di Scienze Naturali "Enrico Caffi"
 MBCSC	s	Marine Biodiversity Collection of South China Sea, Chinese Academy of Sciences		
 MBCSC:Fish	s	Marine Biodiversity Collection of South China Sea, Chinese Academy of Sciences, Fish Collection
 Mbg	s	Fachberich Geowissenschaften		
-MBH	s	Marlborough College		
 MBIC	c	Marine Biotechnology Institute Culture Collection		
 MBK	s	Kochi Prefectural Makino Botanical Garden, Botany Department		
 MBL	s	Museu Nacional de Historia Natural		
@@ -3874,8 +3865,7 @@ MCSNC	s	Museo Civico di Storia Naturale, Carmagnola	MSNC
 MCSNIO	s	Museo Civico di Scienze Naturali di Induno Olona		
 MCST	s	Museo Civico di Storia Naturale, Trieste		
 MCT	s	Michigan Technological University, Biological Sciences Department		
-MCTC	s	Michigan Technological University, Biological Sciences Department		
-MCTF	s	Michigan Technological University		
+MCTC	s	Cryptogamic Herbarium, Michigan Technological University		
 MCTP	s	Museu de Ciencias		
 MCVE	s	Museo di Storia Naturale di Venezia		
 MCVM	s	Museo Civico, Villa Mirabello		
@@ -3898,7 +3888,7 @@ MDE	s	Musee des Dinosaures in Esperaza
 MDFW	s	Massachusetts Division of Fisheries and Wildlife		
 MDH<GBR>	s	Dorman Museum		
 MDH<USA-MI>	c	Michigan Department of Health		
-MDI	h	Malaysian Agricultural Research and Development Institute		
+MDI	s	Malaysian Agricultural Research and Development Institute	MARDI
 MDKY	s	Morehead State University, Biological and Environmental Sciences Department		
 MDLA	s	Museu do Dundo		
 MDM	s	Mifune Dinosaur Museum		
@@ -4044,7 +4034,7 @@ MIZT	s	Universita di Torino
 MJ	s	Muzeum Vysociny		
 MJCM	s	Museo de Ciencias Naturales y Antropologicas "Prof. Juan C.Moyano" (Argentina)		
 MJG<ARG>	s	Museo Jorge Gerhold		
-MJG<AUT>	s	Landesmuseum Joanneum		
+MJG<AUT>	s	Landesmuseum Joanneum	LMJ<AUT>
 MJG<DEU>	s	Johannes Gutenberg-Universitat		
 MJH	s	Muzeul Judetean Hunedoara		
 MJMO	s	Universidad Centro Occidental, Decanato de Agronomia		
@@ -4411,7 +4401,6 @@ MWG	s	Moscow State University, Department of Biogeography
 MWI	s	Western Illinois University, Biological Sciences Department		
 MWNH	s	Museum Wiesbaden, Department of Natural Science		
 MWSJ	s	Missouri Western State College, Biology Department		
-MWSU	s	Midwestern State University		
 MY	s	Universidad Central de Venezuela, Botanica		
 MYDC	s	Mianyang Institute for Drug Control		
 MYF	s	Universidad Central de Venezuela		
@@ -5405,8 +5394,7 @@ QDPI	s	Queensland Department of Primary Industries
 QEF	s	Universite Laval, Laboratoire d'ecologie forestiere		
 QF	s	Institute of Forestry		
 QFA	s	Universite Laval		
-QFB	s	Laurentian Forestry Centre, Canadian Forest Service		
-QFBE	s	Laurentian Forestry Centre, Canadian Forest Service		
+QFB	s	Laurentian Forestry Centre, Canadian Forest Service	QFBE
 QFMQ	s	Queenstown Museum		
 QFS	s	Universite Laval		
 QG	s	General Grassland Station of Qinghai		
@@ -7156,7 +7144,7 @@ VNC	s	Los Angeles Valley College, Life Sciences Department
 VNF	h	Vietnam Forestry Herbarium		
 VNGA	s	Vorarlberger Naturschau		
 VNIRO	s	Institute of Oceanography		
-VNM	h	Institute of Tropical Biology		
+VNM	s	Institute of Tropical Biology		
 VNMN	s	Vietnam National Museum of Nature		
 VOA	s	Ostrobothnian Museum		
 VOR	s	Voronezh State University, Biology and Plant Ecology Department		
