@@ -1002,6 +1002,11 @@ psg_client needs psg_rpc
 psg_client needs xconnect
 psg_diag needs xncbi
 psg_rpc needs3party $(ORIG_LIBS)
+psloader-internal needs $(Z_LIB)
+psloader-internal needs3party $(SYBASE_DLLS)
+psloader-internal needs3party $(SYBASE_LIBS)
+psloader-internal needs3party $(Z_LIBS)
+psloader-internal needs3party ncbiobj
 pstub needs3party $(ORIG_LIBS)
 pub needs medline
 pubmed needs medline
