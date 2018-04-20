@@ -35,7 +35,10 @@
 #define VALIDATOR___TAX_VALIDATION_AND_CLEANUP__HPP
 
 #include <corelib/ncbistd.hpp>
-
+#include <objects/seqfeat/OrgMod.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/taxon3/T3Reply.hpp>
+#include <objects/taxon3/Taxon3_reply.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -135,6 +138,7 @@ public:
     virtual void PostErrors(CValidError_imp& imp);
 
     const string& SuggestFix() const;
+    bool OkToAutoFix() const;
 
 private:
     string m_Host;
@@ -327,6 +331,8 @@ public:
 
     CConstRef<CSeqdesc> GetDesc(size_t num) const { return m_SrcDescs[num]; };
     CConstRef<CSeq_feat> GetFeat(size_t num) const { return m_SrcFeats[num]; };
+
+    bool DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with_host);
 
 protected:
     void x_GatherSources(const CSeq_entry& se);

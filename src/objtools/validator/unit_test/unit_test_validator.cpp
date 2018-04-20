@@ -23229,3 +23229,45 @@ BOOST_AUTO_TEST_CASE(Test_VR_793)
 
 
 }
+
+
+void CheckHost(const CBioseq& seq, const string& host)
+{
+    bool found_host = false;
+    BOOST_CHECK_EQUAL(seq.IsSetDescr(), true);
+    if (!seq.IsSetDescr()) {
+        return;
+    }
+    for (auto d : seq.GetDescr().Get()) {
+        if (d->IsSource() && d->GetSource().IsSetOrgMod()) {
+            for (auto om : d->GetSource().GetOrg().GetOrgname().GetMod()) {
+                if (om->IsSetSubtype() && om->GetSubtype() == COrgMod::eSubtype_nat_host) {
+                    BOOST_CHECK_EQUAL(host, om->IsSetSubname() ? om->GetSubname() : kEmptyStr);
+                    found_host = true;
+                }
+            }
+        }
+    }
+    BOOST_CHECK_EQUAL(found_host, true);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_812)
+{
+    CRef<CSeq_entry> entry = BuildGoodEcoSet();
+    SetOrgMod(entry->SetSet().SetSeq_set().front(), COrgMod::eSubtype_nat_host, "Canis familiaris");
+    SetOrgMod(entry->SetSet().SetSeq_set().back(), COrgMod::eSubtype_nat_host, "Canis familiaris; some other information");
+
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+    validator::CTaxValidationAndCleanup tval;
+
+    BOOST_CHECK_EQUAL(tval.DoTaxonomyUpdate(seh, true), true);
+    CheckHost(entry->SetSet().SetSeq_set().front()->GetSeq(), "Canis lupus familiaris");
+    CheckHost(entry->SetSet().SetSeq_set().back()->GetSeq(), "Canis familiaris; some other information");
+
+        
+}

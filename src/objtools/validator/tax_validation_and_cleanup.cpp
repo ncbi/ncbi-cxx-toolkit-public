@@ -225,7 +225,23 @@ void CSpecificHostRequest::PostErrors(CValidError_imp& imp)
 
 const string& CSpecificHostRequest::SuggestFix() const
 {
-    return m_ValuesToTry.empty() ? m_Host : m_SuggestedFix;
+    if (m_ValuesToTry.empty()) {
+        return m_Host;
+    } else {
+        return m_SuggestedFix;
+    }
+}
+
+
+bool CSpecificHostRequest::OkToAutoFix() const
+{
+    for (auto it : m_ValuesToTry) {
+        if (NStr::Find(it, ";") != NPOS) {
+            // evidence that the value was truncated
+            return false;
+        }
+    }
+    return true;
 }
 
 
@@ -538,10 +554,12 @@ bool CSpecificHostMapForFix::ApplyToOrg(COrg_ref& org_ref) const
             TQualifierRequests::const_iterator it = m_Map.find(host_val);
             if (it != m_Map.end()) {
                 const CSpecificHostRequest* rq = dynamic_cast<const CSpecificHostRequest *>(it->second.GetPointer());
-                string new_val = x_DefaultSpecificHostAdjustments(rq->SuggestFix());
-                if (!NStr::IsBlank(new_val) && !NStr::Equal(new_val, (*m)->GetSubname())) {
-                    (*m)->SetSubname(new_val);
-                    changed = true;
+                if (rq->OkToAutoFix()) {
+                    string new_val = x_DefaultSpecificHostAdjustments(rq->SuggestFix());
+                    if (!NStr::IsBlank(new_val) && !NStr::Equal(new_val, (*m)->GetSubname())) {
+                        (*m)->SetSubname(new_val);
+                        changed = true;
+                    }
                 }
             }
         }
@@ -1049,6 +1067,96 @@ bool CTaxValidationAndCleanup::IsStrainMapUpdateComplete() const
 void CTaxValidationAndCleanup::ReportStrainErrors(CValidError_imp& imp)
 {
     m_StrainMap.PostErrors(imp);
+}
+
+
+bool CTaxValidationAndCleanup::DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with_host)
+{
+    Init(*(seh.GetCompleteSeq_entry()));
+
+    vector<CRef<COrg_ref> > original_orgs = GetTaxonomyLookupRequest();
+    if (original_orgs.empty()) 
+    {
+        return false;
+    }
+    const size_t chunk_size = 1000;
+    vector< CRef<COrg_ref> > edited_orgs;
+
+    CTaxon3 taxon3;
+    taxon3.Init();
+    size_t i = 0;
+    while (i < original_orgs.size())
+    {
+        size_t len = min(chunk_size, original_orgs.size() - i);
+        vector< CRef<COrg_ref> >  tmp_original_orgs(original_orgs.begin() + i, original_orgs.begin() + i + len);
+        vector< CRef<COrg_ref> >  tmp_edited_orgs;
+        ITERATE(vector<CRef<COrg_ref> >, it, tmp_original_orgs)
+        {
+            CRef<COrg_ref> cpy(new COrg_ref());
+            cpy->Assign(**it);
+            tmp_edited_orgs.push_back(cpy);
+        }
+        CRef<CTaxon3_reply> tmp_lookup_reply = taxon3.SendOrgRefList(tmp_original_orgs);
+        string error_message;
+        AdjustOrgRefsWithTaxLookupReply(*tmp_lookup_reply, tmp_edited_orgs, error_message);
+        if (!NStr::IsBlank(error_message)) 
+        {
+            // post error message
+            LOG_POST(Error << error_message);
+            return false;
+        }      
+        edited_orgs.insert(edited_orgs.end(), tmp_edited_orgs.begin(), tmp_edited_orgs.end());
+        i += len;
+    }
+
+    if (with_host) {
+        vector< CRef<COrg_ref> > spec_host_rq = GetSpecificHostLookupRequest(true);
+        i = 0;
+        while (i < spec_host_rq.size())
+        {
+            size_t len = min(chunk_size, spec_host_rq.size() - i);
+            vector< CRef<COrg_ref> > tmp_spec_host_rq(spec_host_rq.begin() + i, spec_host_rq.begin() + i + len);
+            CRef<CTaxon3_reply> tmp_spec_host_reply = taxon3.SendOrgRefList(tmp_spec_host_rq);
+            string error_message = IncrementalSpecificHostMapUpdate(tmp_spec_host_rq, *tmp_spec_host_reply);
+            if (!NStr::IsBlank(error_message))
+            {
+                // post error message
+                LOG_POST(Error << error_message);
+                return false;
+            }
+            i += len;
+        }
+
+        AdjustOrgRefsForSpecificHosts(edited_orgs);
+    }
+
+    // update descriptors
+    size_t num_descs = NumDescs();
+    size_t num_updated_descs = 0;
+    for (size_t n = 0; n < num_descs; n++) {
+        if (!original_orgs[n]->Equals(*(edited_orgs[n]))) {
+            CSeqdesc* orig = const_cast<CSeqdesc *>(GetDesc(n).GetPointer());
+            orig->SetSource().SetOrg().Assign(*(edited_orgs[n]));
+            num_updated_descs++;
+        }
+    }
+
+    // now update features
+    size_t num_updated_feats = 0;
+    for (size_t n = 0; n < NumFeats(); n++) {
+        if (!original_orgs[n + num_descs]->Equals(*edited_orgs[n + num_descs])) {
+            CConstRef<CSeq_feat> feat = GetFeat(n);
+            CRef<CSeq_feat> new_feat(new CSeq_feat());
+            new_feat->Assign(*feat);
+            new_feat->SetData().SetBiosrc().SetOrg().Assign(*(edited_orgs[n + num_descs]));
+
+            CSeq_feat_Handle fh = seh.GetScope().GetSeq_featHandle(*feat);
+            CSeq_feat_EditHandle efh(fh);
+            efh.Replace(*new_feat);
+            num_updated_feats++;
+        }
+    }
+    return (num_updated_descs > 0 || num_updated_feats > 0);
 }
 
 
