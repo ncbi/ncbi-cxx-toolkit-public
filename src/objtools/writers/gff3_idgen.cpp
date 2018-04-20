@@ -109,7 +109,8 @@ string CGffIdGenerator::GetGffId(
             id = xGetIdForCds(mf, pFeatTree);
             break;
         case CSeqFeatData::eSubtype_exon:
-            return xGetIdForNativeExon(mf, pFeatTree); //implicitly disambiguates
+            id = xGetIdForNativeExon(mf, pFeatTree);
+            break;
         }
     }
     if (!id.empty()) {
@@ -289,16 +290,12 @@ string CGffIdGenerator::xGetIdForNativeExon(
         rawId = commonPrefix + xGetGenericSuffix(mf);
     }
 
-    //important: attach exon number before returning !!!
-    auto idIt = mLastUsedExonIds.find(rawId);
-    if (idIt == mLastUsedExonIds.end()) {
-        mLastUsedExonIds[rawId] = 1;
+    //important: attach exon number if available !!!
+    auto exonNumber = mf.GetNamedQual("number");
+    if (!exonNumber.empty()) {
+        rawId += string("-") + exonNumber;
     }
-    else {
-        mLastUsedExonIds[rawId]++;
-    }
-    auto exonNumber = string("-") + NStr::NumericToString(mLastUsedExonIds[rawId]);
-    return rawId + exonNumber;
+    return rawId;
 }
 
 //  -----------------------------------------------------------------------------
