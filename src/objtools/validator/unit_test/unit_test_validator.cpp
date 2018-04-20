@@ -22556,6 +22556,8 @@ BOOST_AUTO_TEST_CASE(Test_BADRRNAcomponentOverlapTRNA)
 
 BOOST_AUTO_TEST_CASE(Test_VR_796)
 {
+    const string cMitoMezoMsg = "Mitochondrial Metozoan sequences should be less than 20000 bp (50000 bp for Mollusca, Cnidaria, and Placozoa)";
+
     CRef<CSeq_entry> entry = BuildGoodSeq();
     SetLineage(entry, "Metazoan");
     SetGenome(entry, CBioSource::eGenome_mitochondrion);
@@ -22563,10 +22565,32 @@ BOOST_AUTO_TEST_CASE(Test_VR_796)
     entry->SetSeq().SetInst().SetLength(21000);
     SetCompleteness(entry, CMolInfo::eCompleteness_complete);
     STANDARD_SETUP
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "MitoMetazoanTooLong",
-        "Mitochondrial Metozoan sequences should be less than 20000 bp"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, 
+        "MitoMetazoanTooLong", cMitoMezoMsg));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical,
         "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [21000]"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    SetLineage(entry, "Metazoan; Mollusca");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical,
+        "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [21000]"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetInst().SetLength(51000);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "MitoMetazoanTooLong", cMitoMezoMsg));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical,
+        "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [51000]"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
