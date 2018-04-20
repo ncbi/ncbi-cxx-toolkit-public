@@ -226,11 +226,9 @@ DISCREPANCY_CASE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME, CSeqFeatData, eDisc | e
     if (!prot.CanGetName()) {
         return;
     }
-    ITERATE (list <string>, jt, prot.GetName()) {
-        if (NStr::FindNoCase(*jt, "hypothetical protein") != string::npos) {
-            m_Objs["[n] hypothetical coding region[s] [has] a gene name"].Fatal().Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true, (CObject*)&*gene));
-            break;
-        }
+    auto& names = prot.GetName();
+    if (!names.empty() && NStr::FindNoCase(names.front(), "hypothetical protein") != string::npos) {
+        m_Objs["[n] hypothetical coding region[s] [has] a gene name"].Fatal().Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true, (CObject*)&*gene));
     }
 }
 
