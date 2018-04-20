@@ -128,7 +128,7 @@ public:
 
         // assign object type contained in test input
         if (sObjType == "align"  ||  sObjType == "annot"  ||  
-                sObjType == "entry"  ||  sObjType == "bioseq") {
+                sObjType == "entry"  ||  sObjType == "bioseq"  ||  sObjType == "bioset") {
             test_info_to_load.mObjType = sObjType;
         }
         else {
@@ -228,6 +228,16 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
         CBioseq_Handle bsh = pScope->AddBioseq(*pBioseq);
         pWriter->WriteHeader();
         pWriter->WriteBioseqHandle(bsh);
+        pWriter->WriteFooter();
+    }
+    else if (test_type == "bioset") {
+        CRef<CBioseq_set> pBioseq_set(new CBioseq_set);
+        *pI >> *pBioseq_set;
+        CRef<CSeq_entry> pEntry(new CSeq_entry);
+        pEntry->SetSet(*pBioseq_set);
+        CSeq_entry_Handle seh = pScope->AddTopLevelSeqEntry(*pEntry);
+        pWriter->WriteHeader();
+        pWriter->WriteSeqEntryHandle(seh);
         pWriter->WriteFooter();
     }
     delete pWriter;
