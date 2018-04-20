@@ -331,17 +331,25 @@ string CGffIdGenerator::xGetGenericSuffix(
     }
 
     //3rd choice: best ID:start..stop
-    string suffix;
-    if (!CWriteUtil::GetBestId(mf, suffix)) {
-        suffix = "unknown";
+    return xExtractFeatureLocation(mf);
+}
+
+//  ----------------------------------------------------------------------------
+string CGffIdGenerator::xExtractFeatureLocation(
+    const CMappedFeat& mf)
+    //  ----------------------------------------------------------------------------
+{
+    string locationId;
+    if (!CWriteUtil::GetBestId(mf, locationId)) {
+        locationId = "unknown";
     } 
-    auto inPoint = NStr::NumericToString(mf.GetLocationTotalRange().GetFrom());
-    auto outPoint = NStr::NumericToString(mf.GetLocationTotalRange().GetTo());
-    suffix += ":";
-    suffix += inPoint;
-    suffix += "..";
-    suffix += outPoint;
-    return suffix;
+    auto inPoint = NStr::NumericToString(mf.GetLocationTotalRange().GetFrom() + 1);
+    auto outPoint = NStr::NumericToString(mf.GetLocationTotalRange().GetTo() + 1);
+    locationId += ":";
+    locationId += inPoint;
+    locationId += "..";
+    locationId += outPoint;
+    return locationId;
 }
 
 //  ----------------------------------------------------------------------------
