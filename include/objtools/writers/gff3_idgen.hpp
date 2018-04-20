@@ -49,35 +49,75 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
-class CGffAlignmentRecord;
-
 //  =============================================================================
 class NCBI_XOBJWRITE_EXPORT CGffIdGenerator
     //  =============================================================================
 {
 public:
-    CGffIdGenerator() {};
+    typedef enum {
+        fNormal = 0,
+    } TFlags;
+
+public:
+    CGffIdGenerator(
+        TFlags flags = fNormal): 
+        mLastTrulyGenericSuffix(0),
+        mFlags(flags) 
+    {};
     ~CGffIdGenerator() {};
 
-    std::string GetId(
-        const CMappedFeat&);
+    std::string GetGffId(
+        const CMappedFeat&,
+        feature::CFeatTree* =nullptr);
+
+    std::string GetGffId();
+
+    std::string GetNextGffExonId(
+        const std::string&);
 
     void Reset();
 
 protected:
     std::string xGetIdForGene(
+        const CMappedFeat&,
+        feature::CFeatTree*);
+
+    std::string xGetIdForMrna(
+        const CMappedFeat&,
+        feature::CFeatTree*);
+
+    std::string xGetIdForCds(
+        const CMappedFeat&,
+        feature::CFeatTree*);
+
+    std::string xGetIdForNativeExon(
+        const CMappedFeat&,
+        feature::CFeatTree*);
+
+    std::string xGetGenericId(
+        const CMappedFeat&,
+        feature::CFeatTree*);
+
+    std::string xGetGenericSuffix(
         const CMappedFeat&);
 
     std::string xExtractLocalId(
         const CMappedFeat&);
+
     std::string xExtractTrackingId(
+        const CMappedFeat&);
+
+    std::string xExtractFarAccession(
         const CMappedFeat&);
 
     std::string xDisambiguate(
         const std::string&);
 
 protected:
-    std::set<string> m_existingIds;
+    TFlags mFlags;
+    std::set<std::string> mExistingIds;
+    std::map<std::string, int> mLastUsedExonIds;
+    unsigned int mLastTrulyGenericSuffix;
 };
 
 

@@ -313,8 +313,6 @@ protected:
         CGffSourceRecord&,
         const CBioSource&);
 
-    string xNextGenericId(void);
-
     //begin mss-234//
     bool xAssignFeature(
         CGffFeatureRecord&,
@@ -452,12 +450,8 @@ protected:
         CGffFeatureRecord&,
         const CMappedFeat&);
 
-    string xNextGenericId(
-        const CMappedFeat& mf);
-    string xNextCdsId(
-        const CMappedFeat&);
-    string xNextTrnaId(
-        const CMappedFeat&);
+    //string xNextCdsId(
+    //    const CMappedFeat&);
     string xNextAlignId();
 
 protected:

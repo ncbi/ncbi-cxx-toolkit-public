@@ -400,6 +400,14 @@ string CGffBaseRecord::StrPhase() const
     return mPhase;
 }
 
+
+//  ----------------------------------------------------------------------------
+string CGffBaseRecord::ID() const
+//  ----------------------------------------------------------------------------
+{
+    return this->mRecordId;
+}
+
 //  ----------------------------------------------------------------------------
 bool lessAttrCit(
     const CGffBaseRecord::TAttrCit& lhs, const CGffBaseRecord::TAttrCit& rhs)

@@ -1413,7 +1413,8 @@ bool CGff3Writer::xWriteSource(
     if (!sdi) {
         return true; 
     }
-    CRef<CGffSourceRecord> pSource(new CGffSourceRecord(xNextGenericId()));
+    CRef<CGffSourceRecord> pSource(
+        new CGffSourceRecord(m_idGenerator.GetGffId()));
     if (!xAssignSource(*pSource, bsh)) {
         return false;
     }
@@ -1488,7 +1489,7 @@ bool CGff3Writer::xWriteFeatureTrna(
 //  ----------------------------------------------------------------------------
 {
 
-    const string rnaId = xNextTrnaId(mf);
+    const string rnaId = m_idGenerator.GetGffId(mf, &fc.FeatTree());
 
     CRef<CGffFeatureRecord> pRna( new CGffFeatureRecord(rnaId) );
     if (!xAssignFeature(*pRna, fc, mf)) {
@@ -1519,7 +1520,7 @@ bool CGff3Writer::xWriteFeatureTrna(
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGffFeatureRecord> pChild(new CGffFeatureRecord(*pRna));
-            pChild->SetRecordId(xNextGenericId(mf));
+            pChild->SetRecordId(m_idGenerator.GetNextGffExonId(rnaId));
             pChild->SetType("exon");
             pChild->SetLocation(subint);
             pChild->SetParent(rnaId);
@@ -3149,7 +3150,10 @@ bool CGff3Writer::xWriteFeatureGene(
 //  ----------------------------------------------------------------------------
 {
     CRef<CGffFeatureRecord> pRecord( 
-        new CGffFeatureRecord(m_idGenerator.GetId(mf)));
+        new CGffFeatureRecord(m_idGenerator.GetGffId(mf, &fc.FeatTree())));
+    if (pRecord->ID() == "gene-Dmel_CR32011") {
+        cerr << "";
+    }
     if (!xAssignFeature(*pRecord, fc, mf)) {
         return false;
     }
@@ -3163,7 +3167,8 @@ bool CGff3Writer::xWriteFeatureCds(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGffFeatureRecord> pCds(new CGffFeatureRecord());
+    CRef<CGffFeatureRecord> pCds(
+        new CGffFeatureRecord(m_idGenerator.GetGffId(mf, &fc.FeatTree())));
     if (!xAssignFeature(*pCds, fc, mf)) {
         return false;
     }
@@ -3191,7 +3196,7 @@ bool CGff3Writer::xWriteFeatureCds(
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         list< CRef< CSeq_interval > > sublocs( PackedInt.GetPacked_int().Get() );
         list< CRef< CSeq_interval > >::const_iterator it;
-        string cdsId = xNextCdsId(mf);
+        string cdsId = pCds->ID();
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGffFeatureRecord> pExon(
@@ -3223,8 +3228,8 @@ bool CGff3Writer::xWriteFeatureRna(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    string rnaId = xNextTrnaId(mf);
-    CRef<CGffFeatureRecord> pRna(new CGffFeatureRecord(rnaId));
+    CRef<CGffFeatureRecord> pRna(
+        new CGffFeatureRecord(m_idGenerator.GetGffId(mf, &fc.FeatTree())));
     if (!xAssignFeature(*pRna, fc, mf)) {
         return false;
     }
@@ -3243,17 +3248,18 @@ bool CGff3Writer::xWriteFeatureRna(
     const CSeq_loc& PackedInt = pRna->Location();
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
+        auto parentId = pRna->ID();
         list< CRef< CSeq_interval > >::const_iterator it;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGffFeatureRecord> pChild(
                 new CGffFeatureRecord(*pRna));
-            pChild->SetRecordId(xNextGenericId(mf));
+            pChild->SetRecordId(m_idGenerator.GetNextGffExonId(parentId));
             pChild->DropAttributes("Name"); //explicitely not inherited
             pChild->DropAttributes("start_range");
             pChild->DropAttributes("end_range");
             pChild->DropAttributes("model_evidence");
-            pChild->SetAttribute("Parent", rnaId);
+            pChild->SetAttribute("Parent", parentId);
             pChild->SetType("exon");
             pChild->SetLocation(subint);
             if (!xWriteRecord(*pChild)) {
@@ -3271,7 +3277,7 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    string id = xNextGenericId(mf);
+    string id = m_idGenerator.GetGffId(mf, &fc.FeatTree());
 
     CRef<CGffFeatureRecord> pSegment(new CGffFeatureRecord(id));
 
@@ -3305,7 +3311,7 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
             const CSeq_interval& subint = **it;
             CRef<CGffFeatureRecord> pChild(
                 new CGffFeatureRecord(*pSegment));
-            pChild->SetRecordId(xNextGenericId(mf));
+            pChild->SetRecordId(m_idGenerator.GetNextGffExonId(id));
             pChild->DropAttributes("Name");
             pChild->DropAttributes("start_range");
             pChild->DropAttributes("end_range");
@@ -3327,7 +3333,8 @@ bool CGff3Writer::xWriteFeatureGeneric(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGffFeatureRecord> pParent(new CGffFeatureRecord(xNextGenericId(mf)));
+    CRef<CGffFeatureRecord> pParent(
+        new CGffFeatureRecord(m_idGenerator.GetGffId(mf, &fc.FeatTree())));
     if (!xAssignFeature(*pParent, fc, mf)) {
         return false;
     }
@@ -3539,37 +3546,13 @@ bool CGff3Writer::xWriteRecord(
 }
 
 //  ----------------------------------------------------------------------------
-string CGff3Writer::xNextGenericId(
-    void)
-//  ----------------------------------------------------------------------------
-{
-    return string("id") + NStr::UIntToString(m_uPendingGenericId++);
-}
-
-
-//  ----------------------------------------------------------------------------
-string CGff3Writer::xNextGenericId(
-    const CMappedFeat& mf)
-//  ----------------------------------------------------------------------------
-{
-    if (mf) {
-        string retainedId = mf.GetNamedQual("ID");
-        if (!retainedId.empty()) {
-            return retainedId;
-        }
-    }
-    return xNextGenericId();
-}
-
-
-//  ----------------------------------------------------------------------------
 string CGff3Writer::xNextAlignId()
 //  ----------------------------------------------------------------------------
 {
     return string("aln") + NStr::UIntToString(m_uPendingAlignId++);
 }
 
-
+/*
 //  ----------------------------------------------------------------------------
 string CGff3Writer::xNextCdsId(
     const CMappedFeat& mf)
@@ -3581,21 +3564,6 @@ string CGff3Writer::xNextCdsId(
     }
     return (string("cds") + NStr::UIntToString(m_uPendingCdsId++));
 }
-
-
-//  ----------------------------------------------------------------------------
-string CGff3Writer::xNextTrnaId(
-    const CMappedFeat& mf)
-//  ----------------------------------------------------------------------------
-{
-
-    string retainedId = mf.GetNamedQual("ID");
-    if (!retainedId.empty()) {
-        return retainedId;
-    }
-    return (string("rna") + NStr::UIntToString(m_uPendingTrnaId++));
-}
-
-
+*/
 END_NCBI_SCOPE
 
