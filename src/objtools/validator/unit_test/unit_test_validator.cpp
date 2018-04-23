@@ -7701,7 +7701,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("CBU");
     ambig.push_back("MCCM");
     ambig.push_back("SBM");
-    ambig.push_back("MHNC");
     ambig.push_back("NMSU");
     ambig.push_back("OTM");
     ambig.push_back("LP");
