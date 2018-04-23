@@ -70,6 +70,13 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscToRefSeqMapping)
 
     // Check that Map results meet expectations
     BOOST_CHECK_EQUAL(Result->GetId()->GetSeqIdString(true), "NC_000001.10");
+
+    // Check for the unplaced UCSC naming convention
+    OrigLoc->SetWhole().SetLocal().SetStr("chr8_gl000196_random");
+    CGencollIdMapper::SIdSpec PrimarySpec;
+    PrimarySpec.Primary = true;
+    Result = Mapper.Map(*OrigLoc, PrimarySpec);
+    BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), GI_CONST(89028421));
 }
 
 
@@ -492,6 +499,10 @@ BOOST_AUTO_TEST_CASE(TestCasePatternMapping)
     OrigLoc->SetWhole().SetLocal().SetStr("WAKKAWAKKA1");
     Result = Mapper.Map(*OrigLoc, MapSpec);
     BOOST_CHECK_EQUAL(Result->GetId()->GetSeqIdString(true), "NC_000001.10");
+
+    OrigLoc->SetWhole().SetLocal().SetStr("chrUn_KN707606v1_decoy");
+    Result = Mapper.Map(*OrigLoc, MapSpec);
+    BOOST_CHECK_EQUAL(Result.IsNull(), true);
 }
 
 
