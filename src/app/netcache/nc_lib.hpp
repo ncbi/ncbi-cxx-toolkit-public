@@ -31,7 +31,11 @@
  */
 
 
-// Empty for now but could have something similar to task_srv_lib.hpp
+#include <string>
+#include<map>
+BEGIN_NCBI_SCOPE
 
+std::string g_GetClientIP( const std::map<std::string,std::string>& headers);
 
+END_NCBI_SCOPE
 #endif /* NETCACHE__NC_LIB__HPP */

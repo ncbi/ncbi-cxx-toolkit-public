@@ -2206,6 +2206,7 @@ CNCMessageHandler::x_AssignCmdParams(void)
         }
         // parse HTTP header
         CTempString cmd_line;
+        map<string,string> headers;
         while (ReadLine(&cmd_line)) {
             if (cmd_line.empty()) {
                 break;
@@ -2244,17 +2245,44 @@ CNCMessageHandler::x_AssignCmdParams(void)
                 m_Size = (m_Size >= m_StartPos) ? (m_Size - m_StartPos + 1) : 0;
             }
             else if (NStr::StartsWith(cmd_line, user_agent)) {
+                list<CTempString>   arr;
                 size_t pos = user_agent.size();
-                const char* begin = cmd_line.data() + pos;
-                while (*begin == ' ' && pos < max_pos) {
-                    ++pos; ++begin;
+                NStr::Split( CTempString(cmd_line.data()+pos, max_pos-pos), " ", arr, NStr::fSplit_Tokenize);
+                if (!arr.empty()) {
+                    m_ClientParams["client"] = NStr::URLEncode( arr.front());
                 }
-                const char* end = begin;
-                while (*end != ' ' && pos < max_pos) {
-                    ++pos; ++end;
-                }
-                m_ClientParams["client"] = NStr::URLEncode(CTempString(begin, end-begin));
             }
+            else {
+                string key, value;
+                NStr::SplitInTwo(cmd_line, ":", key, value);
+                key = NStr::ToUpper(NStr::TruncateSpaces(key));
+                value = NStr::TruncateSpaces(value);
+                headers[key] = value;
+            }
+        }
+        list<CTempString>   arr;
+        if (headers.find("NCBI-SID") != headers.end()) {
+            NStr::Split( headers.at("NCBI-SID"), ", \t", arr, NStr::fSplit_Tokenize);
+            if (!arr.empty()) {
+                m_ClientParams["sid"] = arr.back();
+            }
+        }
+        arr.clear();
+        if (headers.find("NCBI-PHID") != headers.end()) {
+            NStr::Split( headers.at("NCBI-PHID"), ", \t", arr, NStr::fSplit_Tokenize);
+            if (!arr.empty()) {
+                m_ClientParams["ncbi_phid"] = arr.back();
+            }
+        }
+        arr.clear();
+        string client_ip = g_GetClientIP( headers);
+        if (!client_ip.empty()) {
+            NStr::Split( client_ip, ", \t", arr, NStr::fSplit_Tokenize);
+        }
+        if (!arr.empty()) {
+            m_ClientParams["ip"] = arr.front();
+        } else {
+            m_ClientParams["ip"] = m_ClientParams["peer"];
         }
     }
 
@@ -2575,6 +2603,7 @@ CNCMessageHandler::x_ReadCommand(void)
                 }
             } else {
                 GetDiagCtx()->SetRequestStatus(eStatus_NoImpl);
+                SRV_LOG(Error, "Unrecognized command: " << cmd_line);
             }
         } else {
             SRV_LOG(Error, "Error parsing command: " << cmd_line);
@@ -3398,7 +3427,7 @@ CNCMessageHandler::x_WriteBlobData(void)
             want_read = Uint4(m_Size);
 
         Uint4 n_written = Uint4(Write(m_BlobAccess->GetReadMemPtr(), want_read));
-        x_LogCmdEvent("Write");
+//        x_LogCmdEvent("Write");
         if (n_written != 0) {
             if (m_Flags & fComesFromClient)
                 CNCStat::ClientDataRead(n_written);

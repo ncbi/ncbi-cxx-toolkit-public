@@ -78,4 +78,29 @@ unsigned g_NumberOfUnderscoresPlusOne(const string& str)
     return underscore_count; 
 } 
 
+// find client IP in HTTP headers
+// see CCgiRequest::x_SetClientIpProperty(TFlags flags) const
+string g_GetClientIP( const map<string,string>& headers)
+{
+    bool internal = headers.find("CAF-INTERNAL") != headers.end();
+    bool external = headers.find("CAF-EXTERNAL") != headers.end();
+    string client;
+    if ( internal  ||  !external ) {
+        if (headers.find("CLIENT-HOST") != headers.end()) {
+            client = headers.at("CLIENT-HOST");
+        }
+    }
+    if (client.empty()) {
+        for( const auto& h : {"CAF-PROXIED-HOST", "X-FORWARDED-FOR", "PROXIED-IP", "X-FWD-IP-ADDR", "X-REAL-IP"}) {
+            if (headers.find(h) != headers.end()) {
+                client = headers.at(h);
+                if (!client.empty()) {
+                    break;
+                }
+            }
+        }
+    }
+    return client;
+}
+
 END_NCBI_SCOPE
