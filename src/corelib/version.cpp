@@ -69,6 +69,11 @@ CVersionInfo::CVersionInfo(EVersionFlags flags)
     m_Major = m_Minor = m_PatchLevel = (flags == kAny) ? 0 : -1;
 }
 
+CVersion::CVersion(const CVersion& version)
+{
+    x_Copy(*this, version);
+}
+
 static
 void s_ConvertVersionInfo(CVersionInfo* vi, const char* str)
 {

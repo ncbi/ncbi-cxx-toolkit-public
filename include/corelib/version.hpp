@@ -292,7 +292,7 @@ public:
     CVersion(const CVersionInfo& version,
             const SBuildInfo& build_info = NCBI_SBUILDINFO_DEFAULT());
 
-    CVersion(const CVersion& version) { x_Copy(*this, version); }
+    CVersion(const CVersion& version);
     CVersion(CVersion&& version) = default;
 
     CVersion& operator=(const CVersion& version) { return x_Copy(*this, version); }
