@@ -69,11 +69,6 @@ CVersionInfo::CVersionInfo(EVersionFlags flags)
     m_Major = m_Minor = m_PatchLevel = (flags == kAny) ? 0 : -1;
 }
 
-CVersion::CVersion(const CVersion& version)
-{
-    x_Copy(*this, version);
-}
-
 static
 void s_ConvertVersionInfo(CVersionInfo* vi, const char* str)
 {
@@ -612,7 +607,7 @@ CVersion::CVersion(const CVersionInfo& version, const SBuildInfo& build_info)
 {
 }
 
-CVersion& CVersion::x_Copy(CVersion& to, const CVersion& from)
+void CVersion::x_Copy(CVersion& to, const CVersion& from)
 {
     to.m_VersionInfo.reset(new CVersionInfo(*from.m_VersionInfo));
     to.m_BuildInfo = from.m_BuildInfo;
@@ -620,8 +615,19 @@ CVersion& CVersion::x_Copy(CVersion& to, const CVersion& from)
     for (const auto& c : from.m_Components) {
         to.m_Components.emplace_back(new CComponentVersionInfo(*c));
     }
+}
 
-    return to;
+CVersion::CVersion(const CVersion& version)
+    : CObject(version)
+{
+    x_Copy(*this, version);
+}
+
+CVersion& CVersion::operator=(const CVersion& version)
+{
+    CObject::operator=(version);
+    x_Copy(*this, version);
+    return *this;
 }
 
 void CVersion::SetVersionInfo( int  ver_major, int  ver_minor,

@@ -295,7 +295,7 @@ public:
     CVersion(const CVersion& version);
     CVersion(CVersion&& version) = default;
 
-    CVersion& operator=(const CVersion& version) { return x_Copy(*this, version); }
+    CVersion& operator=(const CVersion& version);
     CVersion& operator=(CVersion&& version) = default;
 
     /// Set version information
@@ -353,7 +353,7 @@ public:
     string PrintJson(const string& appname, TPrintFlags flags = fPrintAll) const;
 
 private:
-    static CVersion& x_Copy(CVersion& to, const CVersion& from);
+    static void x_Copy(CVersion& to, const CVersion& from);
 
     unique_ptr<CVersionInfo> m_VersionInfo;
     vector<unique_ptr<CComponentVersionInfo>> m_Components;
