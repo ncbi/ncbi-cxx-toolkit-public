@@ -61,8 +61,8 @@ public:
 public:
     CGffIdGenerator(
         TFlags flags = fNormal): 
-        mLastTrulyGenericSuffix(0),
-        mFlags(flags) 
+        mFlags(flags),
+        mLastTrulyGenericSuffix(0)
     {};
     ~CGffIdGenerator() {};
 
