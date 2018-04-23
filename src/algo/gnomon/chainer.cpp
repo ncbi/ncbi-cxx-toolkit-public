@@ -6678,8 +6678,6 @@ CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& a
     if(align.ReadingFrame().NotEmpty() && acds.IsMappedToGenome())
         acds = acds.MapFromOrigToEdited(amap);
     amap.MoveOrigin(m_limits.GetFrom());
-    if(align.ReadingFrame().NotEmpty())
-        acds = acds.MapFromEditedToOrig(amap);
 
     //mismatches are dropped at this point
     TInDels aindels = align.GetInDels(false);
@@ -6726,6 +6724,9 @@ CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& a
                     left_codon = (align.Strand() == ePlus ? acds.Start() :  acds.Stop());
                 if(i == (int)aexons.size()-1)
                     right_codon = (align.Strand() == ePlus ? acds.Stop() :  acds.Start());
+
+                left_codon = amap.MapRangeEditedToOrig(left_codon, false);
+                right_codon = amap.MapRangeEditedToOrig(right_codon, false);            
             }
 
             TInDels::const_iterator ileft = upper_bound(m_editing_indels.begin(), m_editing_indels.end(), left, OverlappingIndel);  // skip all correction left of exon (doesn't skip touching deletion)
@@ -6878,7 +6879,6 @@ CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& a
     _ASSERT(align.GetEdgeReadingFrames()->empty());
 
     if(align.ReadingFrame().NotEmpty()) {
-        acds = acds.MapFromOrigToEdited(amap);
         double score = acds.Score();
         bool open = acds.OpenCds();
         acds.Clip(editedalign.TranscriptLimits());
