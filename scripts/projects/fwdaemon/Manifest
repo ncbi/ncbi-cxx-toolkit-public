@@ -18,5 +18,4 @@ COPY: $srcdir/src/connect/daemons/fwdaemon_purge_abusers.py      $installdir/
 
 DEFAULT_CONFIGURATIONS:  Linux32-Centos:GCC Linux64-Centos:GCC
 
-Linux64-Centos    : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-
+Linux64-Centos  : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-runpath --with-local-lbsm --without-gnutls --without-vdb --without-serial --with-flat-makefile

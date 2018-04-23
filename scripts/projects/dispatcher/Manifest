@@ -36,9 +36,9 @@ POSTBUILD: [ "$platform" != "Cygwin64" ] || { cp -vp /usr/{bin/cygcheck.exe,bin/
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
-Linux64-Centos  : ICC   : ICC.sh         --with-local-lbsm --without-gnutls --without-vdb --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-Linux64-Centos  : GCC   : GCC.sh         --with-local-lbsm --without-gnutls --without-vdb --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-Linux64-Centos7 : GCC   : GCC.sh         --with-local-lbsm --without-gnutls --without-vdb --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-FreeBSD64       : Clang : Clang.sh       --with-local-lbsm --without-gnutls --without-vdb --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-IntelMAC        : GCC   : GCC.sh         --with-local-lbsm --without-gnutls --without-vdb --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-Cygwin64        : GCC   : GCC.sh         --with-local-lbsm --without-gnutls --without-vdb --without-debug --without-mt --with-static --without-serial --without-runpath --without-flat-makefile
+Linux64-Centos  : ICC   : ICC.sh         --without-debug --without-mt --with-static --without-runpath --with-local-lbsm --without-gnutls --without-vdb --without-serial --with-flat-makefile
+Linux64-Centos  : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-runpath --with-local-lbsm --without-gnutls --without-vdb --without-serial --with-flat-makefile
+Linux64-Centos7 : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-runpath --with-local-lbsm --without-gnutls --without-vdb --without-serial --with-flat-makefile
+FreeBSD64       : Clang : Clang.sh       --without-debug --without-mt --with-static --without-runpath --with-local-lbsm --without-gnutls --without-vdb --without-serial --with-flat-makefile
+IntelMAC        : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-runpath --with-local-lbsm --without-gnutls --without-vdb --without-serial --with-flat-makefile
+Cygwin64        : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-runpath --with-local-lbsm --without-gnutls --without-vdb --without-serial --without-flat-makefile
