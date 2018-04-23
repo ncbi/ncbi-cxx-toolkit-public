@@ -463,11 +463,7 @@ void s_SleepMicroSec(unsigned long mc_sec)
 static char* s_StrDup(const char* str)
 {
     size_t size = strlen(str) + 1;
-    char* res = NULL;
-    if ( !size ) {
-        return NULL;
-    }
-    res = (char*) malloc(size);
+    char* res = (char*) malloc(size);
     if (res) {
         memcpy(res, str, size);
     }
