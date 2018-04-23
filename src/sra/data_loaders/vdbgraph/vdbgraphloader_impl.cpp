@@ -145,6 +145,17 @@ static bool GetEnabledMidZoom(void)
 }
 
 
+NCBI_PARAM_DECL(int, VDBGRAPH_LOADER, LOOKUP_TYPE);
+NCBI_PARAM_DEF_EX(int, VDBGRAPH_LOADER, LOOKUP_TYPE, CVDBGraphDb_Impl::eLookupDefault,
+                  eParam_NoThread, VDBGRAPH_LOADER_LOOKUP_TYPE);
+
+static CVDBGraphDb_Impl::ELookupType GetLookupType(void)
+{
+    static int lookup_type = NCBI_PARAM_TYPE(VDBGRAPH_LOADER, LOOKUP_TYPE)::GetDefault();
+    return CVDBGraphDb_Impl::ELookupType(lookup_type);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CVDBGraphBlobId
 /////////////////////////////////////////////////////////////////////////////
@@ -226,16 +237,8 @@ CVDBGraphDataLoader_Impl::CVDBGraphDataLoader_Impl(const TVDBFiles& vdb_files)
         CRef<SVDBFileInfo> info(new SVDBFileInfo);
         info->m_VDBFile = *it;
         info->m_BaseAnnotName = CDirEntry(*it).GetName();
-        info->m_VDB = CVDBGraphDb(m_Mgr, *it);
+        info->m_VDB = CVDBGraphDb(m_Mgr, *it, GetLookupType());
         m_FixedFileMap[*it] = info;
-        for ( CVDBGraphSeqIterator seq_it(info->m_VDB); seq_it; ++seq_it ) {
-            if ( GetDebugLevel() >= 3 ) {
-                LOG_POST_X(8, "CVDBGraphDataLoader: found id "<<
-                           seq_it.GetSeq_id_Handle());
-            }
-            m_SeqIdIndex.insert
-                (TSeqIdIndex::value_type(seq_it.GetSeq_id_Handle(), info));
-        }
     }
 }
 
@@ -325,16 +328,11 @@ CVDBGraphDataLoader_Impl::GetRecords(CDataSource* ds,
                                      const CSeq_id_Handle& id,
                                      CDataLoader::EChoice choice)
 {
-    TTSE_LockSet locks;
     if ( choice == CDataLoader::eOrphanAnnot ||
          choice == CDataLoader::eAll ) {
-        for ( TSeqIdIndex::iterator it = m_SeqIdIndex.lower_bound(id);
-              it != m_SeqIdIndex.end() && it->first == id; ++it ) {
-            TBlobId blob_id(new CVDBGraphBlobId(it->second->m_VDBFile, id));
-            locks.insert(GetBlobById(ds, blob_id));
-        }
+        return GetOrphanAnnotRecords(ds, id, 0);
     }
-    return locks;
+    return TTSE_LockSet();
 }
 
 
@@ -345,15 +343,16 @@ CVDBGraphDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
 {
     TTSE_LockSet locks;
     // explicitly specified files
-    for ( TSeqIdIndex::iterator it = m_SeqIdIndex.lower_bound(id);
-          it != m_SeqIdIndex.end() && it->first == id; ++it ) {
-        if ( !sel || sel->IsIncludedNamedAnnotAccession(it->second->m_BaseAnnotName) ) {
-            TBlobId blob_id(new CVDBGraphBlobId(it->second->m_VDBFile, id));
-            locks.insert(GetBlobById(ds, blob_id));
+    for ( auto& it : m_FixedFileMap ) {
+        if ( !sel || sel->IsIncludedNamedAnnotAccession(it.second->m_BaseAnnotName) ) {
+            if ( it.second->ContainsAnnotsFor(id) ) {
+                TBlobId blob_id(new CVDBGraphBlobId(it.second->m_VDBFile, id));
+                locks.insert(GetBlobById(ds, blob_id));
+            }
         }
     }
     // implicitly load NA accessions
-    if ( sel && sel->IsIncludedAnyNamedAnnotAccession() ) {
+    if ( m_FixedFileMap.empty() && sel && sel->IsIncludedAnyNamedAnnotAccession() ) {
         const SAnnotSelector::TNamedAnnotAccessions& accs =
             sel->GetNamedAnnotAccessions();
         if ( m_AutoFileMap.get_size_limit() < accs.size() ) {
@@ -591,7 +590,7 @@ CVDBGraphDataLoader_Impl::x_GetNAFileInfo(const string& na_acc)
         if ( GetDebugLevel() >= 2 ) {
             LOG_POST_X(2, "CVDBGraphDataLoader: auto-opening file "<<na_acc);
         }
-        info->m_VDB = CVDBGraphDb(m_Mgr, na_acc);
+        info->m_VDB = CVDBGraphDb(m_Mgr, na_acc, GetLookupType());
     }
     catch ( CSraException& exc ) {
         if ( exc.GetErrCode() != exc.eNotFoundDb ) {

@@ -51,15 +51,33 @@ class CUser_object;
 class CUser_field;
 class CVDBGraphSeqIterator;
 
-class NCBI_SRAREAD_EXPORT CVDBGraphDb_Impl : public CObject
+struct SVDBGraphDb_Base {
+    enum ELookupType {
+        eLookupDefault,
+        eLookupInMemory,
+        eLookupInVDB
+    };
+};
+
+class NCBI_SRAREAD_EXPORT CVDBGraphDb_Impl : public CObject, public SVDBGraphDb_Base
 {
 public:
-    CVDBGraphDb_Impl(CVDBMgr& mgr, CTempString path);
+    CVDBGraphDb_Impl(CVDBMgr& mgr, CTempString path, ELookupType lookup_type = eLookupDefault);
     virtual ~CVDBGraphDb_Impl(void);
 
     // check if there are graph track of intermediate zoom level
     bool HasMidZoomGraphs(void);
 
+    bool LookupIsInVDB() const
+    {
+        return m_LookupIndex;
+    }
+    bool LookupIsInMemory() const
+    {
+        return !m_LookupIndex;
+    }
+    static bool LookupIsInMemory(ELookupType lookup_type);
+    
 protected:
     friend class CVDBGraphSeqIterator;
 
@@ -96,22 +114,26 @@ protected:
 
     // SSeqInfo holds cached refseq information - ids, len, rows
     struct SSeqInfo {
+        SSeqInfo()
+            : m_SeqLength(0),
+              m_RowSize(0),
+              m_RowFirst(0),
+              m_RowLast(0)
+            {
+            }
+        
         string m_SeqId;
         CSeq_id_Handle m_Seq_id_Handle;
         TSeqPos m_SeqLength;
         TSeqPos m_RowSize;
         TVDBRowId m_RowFirst, m_RowLast;
-        int64_t m_StartBase;
     };
     typedef list<SSeqInfo> TSeqInfoList;
-    typedef map<string, TSeqInfoList::iterator, PNocase> TSeqInfoMapByName;
     typedef map<CSeq_id_Handle, TSeqInfoList::iterator> TSeqInfoMapBySeq_id;
+    typedef map<TVDBRowId, TSeqInfoList::iterator> TSeqInfoMapByFirstRow;
     
     const TSeqInfoList& GetSeqInfoList(void) const {
         return m_SeqList;
-    }
-    const TSeqInfoMapByName& GetSeqInfoMapByName(void) const {
-        return m_SeqMapByName;
     }
     const TSeqInfoMapBySeq_id& GetSeqInfoMapBySeq_id(void) const {
         return m_SeqMapBySeq_id;
@@ -128,20 +150,26 @@ protected:
         m_Graph.Put(curs);
     }
 
+    SSeqInfo GetSeqInfoAtRow(TVDBRowId row);
+    SSeqInfo GetSeqInfo(const CSeq_id_Handle& seq_id);
+
 private:
     CVDBMgr m_Mgr;
     string m_Path;
 
     CVDBTable m_GraphTable;
+    CVDBTableIndex m_LookupIndex;
+
     CVDBObjectCache<SGraphTableCursor> m_Graph;
 
+    CMutex m_SeqInfoMutex;
     TSeqInfoList m_SeqList; // list of cached refseqs' information
-    TSeqInfoMapByName m_SeqMapByName; // index for refseq info lookup
     TSeqInfoMapBySeq_id m_SeqMapBySeq_id; // index for refseq info lookup
+    TSeqInfoMapByFirstRow m_SeqMapByFirstRow; // index for refseq info lookup
 };
 
 
-class CVDBGraphDb : public CRef<CVDBGraphDb_Impl>
+class CVDBGraphDb : public CRef<CVDBGraphDb_Impl>, public SVDBGraphDb_Base
 {
 public:
     CVDBGraphDb(void)
@@ -151,8 +179,8 @@ public:
         : CRef<CVDBGraphDb_Impl>(impl)
         {
         }
-    CVDBGraphDb(CVDBMgr& mgr, CTempString path)
-        : CRef<CVDBGraphDb_Impl>(new CVDBGraphDb_Impl(mgr, path))
+    CVDBGraphDb(CVDBMgr& mgr, CTempString path, ELookupType lookup_type = eLookupDefault)
+        : CRef<CVDBGraphDb_Impl>(new CVDBGraphDb_Impl(mgr, path, lookup_type))
         {
         }
 };
@@ -168,17 +196,12 @@ public:
     CVDBGraphSeqIterator(void)
         {
         }
-    CVDBGraphSeqIterator(const CVDBGraphDb& db, TSeqInfoIter pos)
-        : m_Db(db),
-          m_Iter(pos)
-        {
-        }
     explicit CVDBGraphSeqIterator(const CVDBGraphDb& db);
     CVDBGraphSeqIterator(const CVDBGraphDb& db,
                          const CSeq_id_Handle& seq_id);
 
     bool operator!(void) const {
-        return !m_Db || m_Iter == m_Db->GetSeqInfoList().end();
+        return !m_Info.m_RowSize;
     }
     operator const void*(void) const {
         return !*this? 0: this;
@@ -192,10 +215,7 @@ public:
         return &GetInfo();
     }
 
-    CVDBGraphSeqIterator& operator++(void) {
-        ++m_Iter;
-        return *this;
-    }
+    CVDBGraphSeqIterator& operator++(void);
 
     const string& GetSeqId(void) const {
         return GetInfo().m_SeqId;
@@ -274,7 +294,7 @@ protected:
 
 private:
     CVDBGraphDb m_Db;
-    TSeqInfoIter m_Iter;
+    CVDBGraphDb_Impl::SSeqInfo m_Info;
 };
 
 

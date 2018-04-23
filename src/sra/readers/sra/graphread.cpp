@@ -56,6 +56,23 @@ NCBI_DEFINE_ERR_SUBCODE_X(1);
 BEGIN_NAMESPACE(objects);
 
 
+NCBI_PARAM_DECL(bool, VDBGRAPH, USE_VDB_INDEX);
+NCBI_PARAM_DEF_EX(bool, VDBGRAPH, USE_VDB_INDEX, false,
+                  eParam_NoThread, VDBGRAPH_USE_VDB_INDEX);
+
+
+bool CVDBGraphDb_Impl::LookupIsInMemory(ELookupType lookup_type)
+{
+    if ( lookup_type == eLookupDefault ) {
+        static bool use_vdb_index = NCBI_PARAM_TYPE(VDBGRAPH, USE_VDB_INDEX)::GetDefault();
+        return !use_vdb_index;
+    }
+    else {
+        return lookup_type == eLookupInMemory;
+    }
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CVDBGraphDb_Impl
 /////////////////////////////////////////////////////////////////////////////
@@ -83,7 +100,7 @@ CVDBGraphDb_Impl::SGraphTableCursor::SGraphTableCursor(const CVDBTable& table)
 }
 
 
-CVDBGraphDb_Impl::CVDBGraphDb_Impl(CVDBMgr& mgr, CTempString path)
+CVDBGraphDb_Impl::CVDBGraphDb_Impl(CVDBMgr& mgr, CTempString path, ELookupType lookup_type)
     : m_Mgr(mgr),
       m_Path(path)
 {
@@ -126,48 +143,56 @@ CVDBGraphDb_Impl::CVDBGraphDb_Impl(CVDBMgr& mgr, CTempString path)
         LOG_POST(Warning<<"CVDBGraphDb: sid index not found. Scanning sequentially.");
         for ( TVDBRowId row = 1; row <= last_row; ++row ) {
             // read range and names
-            TSeqPos len = *curs->LEN(row), row_size = *curs->LEN(row);
+            TSeqPos start = *curs->START(row);
+            TSeqPos len = *curs->LEN(row);
             CVDBStringValue seq_id = curs->SID(row);
             if ( *seq_id == info.m_SeqId ) {
-                info.m_SeqLength += len;
+                // continuation of graph
+                info.m_RowLast = row;
+                info.m_SeqLength = start + len;
                 continue;
             }
             if ( !info.m_SeqId.empty() ) {
-                info.m_RowLast = row-1;
                 m_SeqList.push_back(info);
             }
             info.m_SeqId = *seq_id;
             info.m_Seq_id_Handle = CSeq_id_Handle::GetHandle(info.m_SeqId);
-            info.m_SeqLength = len;
-            info.m_RowSize = row_size;
-            info.m_StartBase = *curs->START(row);
             info.m_RowFirst = row;
+            info.m_RowSize = len;
+            info.m_SeqLength = len;
         }
         if ( !info.m_SeqId.empty() ) {
             info.m_RowLast = last_row;
             m_SeqList.push_back(info);
         }
     }
-    else {
+    else if ( LookupIsInMemory(lookup_type) ) {
         for ( TVDBRowId row = 1; row <= last_row; ++row ) {
             CVDBStringValue seq_id = curs->SID(row);
             info.m_SeqId = *seq_id;
             info.m_Seq_id_Handle = CSeq_id_Handle::GetHandle(info.m_SeqId);
             info.m_RowSize = *curs->LEN(row);
-            info.m_StartBase = *curs->START(row);
-            info.m_RowFirst = row;
-            TVDBRowIdRange range = idx.Find(info.m_SeqId.c_str());
+            info.m_SeqLength = *curs->START(row) + info.m_RowSize;
+            info.m_RowLast = info.m_RowFirst = row;
+            TVDBRowIdRange range = idx.Find(info.m_SeqId);
             _ASSERT(row == range.first);
             _ASSERT(range.second);
-            info.m_RowLast = row += range.second-1;
-            info.m_SeqLength =
-                TSeqPos(*curs->START(row)+*curs->LEN(row)-info.m_StartBase);
+            if ( range.second > 1 ) {
+                row += range.second-1;
+                info.m_RowLast = row;
+                info.m_SeqLength = *curs->START(row)+*curs->LEN(row);
+            }
             m_SeqList.push_back(info);
         }
+    }
+    else {
+        m_LookupIndex = idx;
     }
     Put(curs);
     
     NON_CONST_ITERATE ( TSeqInfoList, it, m_SeqList ) {
+        m_SeqMapByFirstRow.insert
+            (TSeqInfoMapByFirstRow::value_type(it->m_RowFirst, it));
         m_SeqMapBySeq_id.insert
             (TSeqInfoMapBySeq_id::value_type(it->m_Seq_id_Handle, it));
     }
@@ -198,26 +223,124 @@ bool CVDBGraphDb_Impl::HasMidZoomGraphs(void)
 }
 
 
+CVDBGraphDb_Impl::SSeqInfo CVDBGraphDb_Impl::GetSeqInfoAtRow(TVDBRowId first_row)
+{
+    CMutexGuard guard(m_SeqInfoMutex);
+    auto iter = m_SeqMapByFirstRow.find(first_row);
+    if ( iter != m_SeqMapByFirstRow.end() ) {
+        return *iter->second;
+    }
+    if ( m_LookupIndex ) {
+        auto curs = Graph();
+        CVDBStringValue id = curs->SID(first_row, CVDBValue::eMissing_Allow);
+        if ( id.empty() ) {
+            Put(curs);
+            return SSeqInfo();
+        }
+        SSeqInfo info;
+        info.m_SeqId = *id;
+        info.m_Seq_id_Handle = CSeq_id_Handle::GetHandle(info.m_SeqId);
+        info.m_RowFirst = first_row;
+        TSeqPos first_len = *curs->LEN(first_row);
+        info.m_RowSize = first_len;
+        TVDBRowIdRange range = m_LookupIndex.Find(info.m_SeqId);
+        _ASSERT(first_row == range.first);
+        _ASSERT(range.second);
+        if ( range.second > 1 ) {
+            // multi page
+            TVDBRowId last_row = first_row + range.second - 1;
+            info.m_RowLast = last_row;
+            TSeqPos last_start = *curs->START(last_row);
+            TSeqPos last_len = *curs->LEN(last_row);
+            info.m_SeqLength = last_start + last_len;
+        }
+        else {
+            // single page
+            info.m_RowLast = first_row;
+            TSeqPos first_start = *curs->START(first_row);
+            info.m_SeqLength = first_start + first_len;
+        }
+        Put(curs);
+        return info;
+    }
+    return SSeqInfo();
+}
+
+
+CVDBGraphDb_Impl::SSeqInfo CVDBGraphDb_Impl::GetSeqInfo(const CSeq_id_Handle& idh)
+{
+    CMutexGuard guard(m_SeqInfoMutex);
+    auto iter = m_SeqMapBySeq_id.find(idh);
+    if ( iter != m_SeqMapBySeq_id.end() ) {
+        return *iter->second;
+    }
+    if ( m_LookupIndex ) {
+        auto seq_id = idh.GetSeqId();
+        const CTextseq_id* text_id = seq_id->GetTextseq_Id();
+        if ( !text_id ||
+             text_id->IsSetName() || text_id->IsSetRelease() ||
+             !text_id->IsSetAccession() || !text_id->IsSetVersion() ) {
+            return SSeqInfo();
+        }
+        string id = text_id->GetAccession()+'.'+NStr::NumericToString(text_id->GetVersion());
+        NStr::ToUpper(id);
+        auto curs = Graph();
+        auto range = m_LookupIndex.Find(id);
+        if ( !range.second ) {
+            Put(curs);
+            return SSeqInfo();
+        }
+        auto first_row = range.first;
+        SSeqInfo info;
+        info.m_SeqId = id;
+        info.m_Seq_id_Handle = idh;
+        info.m_RowFirst = first_row;
+        TSeqPos first_len = *curs->LEN(first_row);
+        info.m_RowSize = first_len;
+        if ( range.second > 1 ) {
+            // multi page
+            TVDBRowId last_row = first_row + range.second - 1;
+            info.m_RowLast = last_row;
+            TSeqPos last_start = *curs->START(last_row);
+            TSeqPos last_len = *curs->LEN(last_row);
+            info.m_SeqLength = last_start + last_len;
+        }
+        else {
+            // single page
+            info.m_RowLast = first_row;
+            TSeqPos first_start = *curs->START(first_row);
+            info.m_SeqLength = first_start + first_len;
+        }
+        Put(curs);
+        return info;
+    }
+    return SSeqInfo();
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CVDBGraphSeqIterator
 /////////////////////////////////////////////////////////////////////////////
 
 CVDBGraphSeqIterator::CVDBGraphSeqIterator(const CVDBGraphDb& db)
-    : m_Db(db),
-      m_Iter(db->GetSeqInfoList().begin())
+    : m_Db(db)
 {
+    m_Info = db.GetNCObject().GetSeqInfoAtRow(1);
 }
 
 
 CVDBGraphSeqIterator::CVDBGraphSeqIterator(const CVDBGraphDb& db,
                                            const CSeq_id_Handle& seq_id)
+    : m_Db(db)
 {
-    CVDBGraphDb_Impl::TSeqInfoMapBySeq_id::const_iterator iter =
-        db->m_SeqMapBySeq_id.find(seq_id);
-    if ( iter != db->m_SeqMapBySeq_id.end() ) {
-        m_Db = db;
-        m_Iter = iter->second;
-    }
+    m_Info = db.GetNCObject().GetSeqInfo(seq_id);
+}
+
+
+CVDBGraphSeqIterator& CVDBGraphSeqIterator::operator++(void)
+{
+    m_Info = m_Db->GetSeqInfoAtRow(GetInfo().m_RowLast+1);
+    return *this;
 }
 
 
@@ -227,7 +350,7 @@ const CVDBGraphDb_Impl::SSeqInfo& CVDBGraphSeqIterator::GetInfo(void) const
         NCBI_THROW(CSraException, eInvalidState,
                    "CVDBGraphSeqIterator is invalid");
     }
-    return *m_Iter;
+    return m_Info;
 }
 
 
@@ -462,7 +585,7 @@ CVDBGraphSeqIterator::x_MakeTable(const string& annot_name,
         arr_vv.push_back(int(cur_v));
     }
 
-    uint32_t scale = cursor.SCALE(info.m_RowFirst+row);
+    uint32_t scale = cursor.SCALE(info.m_RowFirst);
     if ( scale != 1 ) {
         CRef<CSeqTable_column> col_step(new CSeqTable_column);
         table->SetColumns().push_back(col_step);
