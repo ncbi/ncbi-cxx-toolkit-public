@@ -607,19 +607,16 @@ CVersion::CVersion(const CVersionInfo& version, const SBuildInfo& build_info)
 {
 }
 
-CVersion::CVersion(const CVersion& version)
-    : m_VersionInfo(new CVersionInfo(*version.m_VersionInfo)), 
-      m_BuildInfo(version.m_BuildInfo)
+CVersion& CVersion::x_Copy(CVersion& to, const CVersion& from)
 {
-    for (const auto& c : version.m_Components) {
-        m_Components.emplace_back(new CComponentVersionInfo(*c));
-    }
-}
+    to.m_VersionInfo.reset(new CVersionInfo(*from.m_VersionInfo));
+    to.m_BuildInfo = from.m_BuildInfo;
 
-CVersion& CVersion::operator=(CVersion version)
-{
-    swap(version, *this);
-    return *this;
+    for (const auto& c : from.m_Components) {
+        to.m_Components.emplace_back(new CComponentVersionInfo(*c));
+    }
+
+    return to;
 }
 
 void CVersion::SetVersionInfo( int  ver_major, int  ver_minor,

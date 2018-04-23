@@ -292,9 +292,11 @@ public:
     CVersion(const CVersionInfo& version,
             const SBuildInfo& build_info = NCBI_SBUILDINFO_DEFAULT());
 
-    CVersion(const CVersion& version);
+    CVersion(const CVersion& version) { x_Copy(*this, version); }
+    CVersion(CVersion&& version) = default;
 
-    CVersion& operator=(CVersion version);
+    CVersion& operator=(const CVersion& version) { return x_Copy(*this, version); }
+    CVersion& operator=(CVersion&& version) = default;
 
     /// Set version information
     void SetVersionInfo( int  ver_major,
@@ -351,6 +353,8 @@ public:
     string PrintJson(const string& appname, TPrintFlags flags = fPrintAll) const;
 
 private:
+    static CVersion& x_Copy(CVersion& to, const CVersion& from);
+
     unique_ptr<CVersionInfo> m_VersionInfo;
     vector<unique_ptr<CComponentVersionInfo>> m_Components;
     SBuildInfo m_BuildInfo;
