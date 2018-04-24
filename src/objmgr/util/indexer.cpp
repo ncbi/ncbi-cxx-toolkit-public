@@ -1197,44 +1197,6 @@ void CBioseqIndex::x_InitSource (void)
                 m_IsChromosome = (m_Genome == NCBI_GENOME(chromosome));
             }
 
-            if (m_IsWP) {
-                int num_super_kingdom = 0;
-                bool super_kingdoms_different = false;
-
-                if (m_BioSource->IsSetOrgname()) {
-                    const COrgName& onp = m_BioSource->GetOrgname();
-                    if (onp.IsSetName()) {
-                        const COrgName::TName& nam = onp.GetName();
-                        if (nam.IsPartial()) {
-                            const CPartialOrgName& pon = nam.GetPartial();
-                            if (pon.IsSet()) {
-                                const CPartialOrgName::Tdata& tx = pon.Get();
-                                ITERATE (CPartialOrgName::Tdata, itr, tx) {
-                                    const CTaxElement& te = **itr;
-                                    if (! te.IsSetFixed_level()) continue;
-                                    if (te.GetFixed_level() != 0) continue;
-                                    if (! te.IsSetLevel()) continue;
-                                    const string& lvl = te.GetLevel();
-                                    if (! NStr::EqualNocase (lvl, "superkingdom")) continue;
-                                    num_super_kingdom++;
-                                    if (m_FirstSuperKingdom.empty() && te.IsSetName()) {
-                                        m_FirstSuperKingdom = te.GetName();
-                                    } else if (te.IsSetName() && ! NStr::EqualNocase (m_FirstSuperKingdom, te.GetName())) {
-                                        if (m_SecondSuperKingdom.empty()) {
-                                            super_kingdoms_different = true;
-                                            m_SecondSuperKingdom = te.GetName();
-                                        }
-                                    }
-                                    if (num_super_kingdom > 1 && super_kingdoms_different) {
-                                        m_IsCrossKingdom = true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
             // process SubSource
             FOR_EACH_SUBSOURCE_ON_BIOSOURCE (sbs_itr, *m_BioSource) {
                 const CSubSource& sbs = **sbs_itr;
@@ -1460,6 +1422,9 @@ void CBioseqIndex::x_InitDescs (void)
 
         const list <string> *keywords = NULL;
 
+        int num_super_kingdom = 0;
+        bool super_kingdoms_different = false;
+
         // explore descriptors, pass original target BioseqHandle if using Bioseq sublocation
         for (CSeqdesc_CI desc_it(m_OrigBsh); desc_it; ++desc_it) {
             const CSeqdesc& sd = *desc_it;
@@ -1474,6 +1439,37 @@ void CBioseqIndex::x_InitDescs (void)
                         m_DescBioSource.Reset (&biosrc);
                         if (m_IsNA && ! m_BioSource) {
                             m_BioSource = m_DescBioSource;
+                        }
+                    }
+                    if (m_IsWP) {
+                        const CBioSource &bsrc = sd.GetSource();
+                        if (! bsrc.IsSetOrgname()) break;
+                        const COrgName& onp = bsrc.GetOrgname();
+                        if (! onp.IsSetName()) break;
+                        const COrgName::TName& nam = onp.GetName();
+                        if (! nam.IsPartial()) break;
+                        const CPartialOrgName& pon = nam.GetPartial();
+                        if (! pon.IsSet()) break;
+                        const CPartialOrgName::Tdata& tx = pon.Get();
+                        ITERATE (CPartialOrgName::Tdata, itr, tx) {
+                            const CTaxElement& te = **itr;
+                            if (! te.IsSetFixed_level()) continue;
+                            if (te.GetFixed_level() != 0) continue;
+                            if (! te.IsSetLevel()) continue;
+                            const string& lvl = te.GetLevel();
+                            if (! NStr::EqualNocase (lvl, "superkingdom")) continue;
+                            num_super_kingdom++;
+                            if (m_FirstSuperKingdom.empty() && te.IsSetName()) {
+                                m_FirstSuperKingdom = te.GetName();
+                            } else if (te.IsSetName() && ! NStr::EqualNocase (m_FirstSuperKingdom, te.GetName())) {
+                                if (m_SecondSuperKingdom.empty()) {
+                                    super_kingdoms_different = true;
+                                    m_SecondSuperKingdom = te.GetName();
+                                }
+                            }
+                            if (num_super_kingdom > 1 && super_kingdoms_different) {
+                                m_IsCrossKingdom = true;
+                            }
                         }
                     }
                     break;
