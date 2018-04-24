@@ -108,9 +108,6 @@ string CGffIdGenerator::GetGffId(
         case CSeqFeatData::eSubtype_cdregion:
             id = xGetIdForCds(mf, pFeatTree);
             break;
-        case CSeqFeatData::eSubtype_exon:
-            id = xGetIdForNativeExon(mf, pFeatTree);
-            break;
         }
     }
     if (!id.empty()) {
@@ -132,6 +129,8 @@ void CGffIdGenerator::Reset()
 //  -----------------------------------------------------------------------------
 {
     mExistingIds.clear();
+    mLastUsedExonIds.clear();
+    mLastTrulyGenericSuffix = 0;
 }
 
 //  -----------------------------------------------------------------------------
@@ -163,22 +162,16 @@ string CGffIdGenerator::xGetIdForGene(
     feature::CFeatTree* ) 
     //  -----------------------------------------------------------------------------
 {
-    string id("gene-");
+    const string commonPrefix("gene-");
 
-    //1st choice: locus_tag
-    const auto& geneRef = mf.GetData().GetGene();
-    if (geneRef.IsSetLocus_tag()) {
-        id += geneRef.GetLocus_tag();
-        return id;
+    //try locus_tag or locus
+    auto stem = xExtractGeneLocusTagOrLocus(mf);
+    if (!stem.empty()) {
+        return (commonPrefix + stem);
     }
 
-    //2nd choice: locus
-    if (geneRef.IsSetLocus()) {
-        id += geneRef.GetLocus();
-        return id;
-    }
-    //3rd choice: generic suffix
-    return id + xGetGenericSuffix(mf);
+    //fall back: generic stem
+    return (commonPrefix + xGetGenericSuffix(mf));
 }
 
 //  ----------------------------------------------------------------------------
@@ -187,39 +180,29 @@ string CGffIdGenerator::xGetIdForMrna(
     feature::CFeatTree* pFeatTree) 
 //  ----------------------------------------------------------------------------
 {
-    string id("rna-");
+    const string commonPrefix("rna-");
 
-    //1st choice: far accession
+    //try to use far accession
     auto farAccession = xExtractFarAccession(mf);
     if (!farAccession.empty()) {
-        id += farAccession;
-        return id;
+        return (commonPrefix + farAccession);
     }
 
-    //2nd choice: orig_transcript_id
+    //try to use orig_transcript_id
     auto origTranscriptId = mf.GetNamedQual("orig_transcript_id");
     if (!origTranscriptId.empty()) {
-        id += origTranscriptId;
-        return id;
+        return (commonPrefix + origTranscriptId);
     }
 
+    //try to inherit from gene
     auto gene = feature::GetBestGeneForMrna(mf, pFeatTree);
-    if (gene) {
-        const auto& geneRef = gene.GetData().GetGene();
-        //3rd choice: gene locustag
-        if (geneRef.IsSetLocus_tag()) {
-            id += geneRef.GetLocus_tag();
-            return id;
-        }
-    
-        //3rd choice: gene locus
-        if (geneRef.IsSetLocus()) {
-            id += geneRef.GetLocus();
-            return id;
-        }
+    auto stem = xExtractGeneLocusTagOrLocus(gene);
+    if (!stem.empty()) {
+        return (commonPrefix + stem);
     }
-    //last choice: generic suffix
-    return id + xGetGenericSuffix(mf);
+
+    //fall back: generic suffix
+    return (commonPrefix + xGetGenericSuffix(mf));
 }
 
 //  -----------------------------------------------------------------------------
@@ -228,74 +211,29 @@ string CGffIdGenerator::xGetIdForCds(
     feature::CFeatTree* pFeatTree) 
     //  -----------------------------------------------------------------------------
 {
-    string id("cds-");
+    const string commonPrefix("cds-");
 
-    //1st choice: far accession
+    //try far accession
     auto farAccession = xExtractFarAccession(mf);
     if (!farAccession.empty()) {
-        id += farAccession;
-        return id;
+        return (commonPrefix + farAccession);
     }
 
-    //2nd choice: orig_protein_id
+    //try orig_protein_id
     auto origTranscriptId = mf.GetNamedQual("orig_protein_id");
     if (!origTranscriptId.empty()) {
-        id += origTranscriptId;
-        return id;
+        return (commonPrefix + origTranscriptId);
     }
 
+    //try to inherit from gene
     auto gene = feature::GetBestGeneForCds(mf, pFeatTree);
-    if (gene) {
-        const auto& geneRef = gene.GetData().GetGene();
-        //3rd choice: gene locustag
-        if (geneRef.IsSetLocus_tag()) {
-            id += geneRef.GetLocus_tag();
-            return id;
-        }
-
-        //3rd choice: gene locus
-        if (geneRef.IsSetLocus()) {
-            id += geneRef.GetLocus();
-            return id;
-        }
-    }
-    //3rd choice: generic suffix
-    return id + xGetGenericSuffix(mf);
-}
-
-//  -----------------------------------------------------------------------------
-string CGffIdGenerator::xGetIdForNativeExon(
-    const CMappedFeat& mf,
-    feature::CFeatTree* pFeatTree) 
-    //  -----------------------------------------------------------------------------
-{
-    const string commonPrefix("id-");
-    string rawId;
-
-    auto gene = feature::GetBestGeneForFeat(mf, pFeatTree);
-    if (gene) {
-        const auto& geneRef = gene.GetData().GetGene();
-        //1st choice: gene locustag
-        if (geneRef.IsSetLocus_tag()) {
-            rawId = commonPrefix + geneRef.GetLocus_tag();
-        }
-
-        //2nd choice: gene locus
-        if (rawId.empty()  &&  geneRef.IsSetLocus()) {
-            rawId = commonPrefix + geneRef.GetLocus();
-        }
-    }
-    //3rd choice: generic suffix
-    if (rawId.empty()) {
-        rawId = commonPrefix + xGetGenericSuffix(mf);
+    auto stem = xExtractGeneLocusTagOrLocus(gene);
+    if (!stem.empty()) {
+        return (commonPrefix + stem);
     }
 
-    //important: attach exon number if available !!!
-    auto exonNumber = mf.GetNamedQual("number");
-    if (!exonNumber.empty()) {
-        rawId += string("-") + exonNumber;
-    }
-    return rawId;
+    //last resort: generic suffix
+    return (commonPrefix + xGetGenericSuffix(mf));
 }
 
 //  -----------------------------------------------------------------------------
@@ -304,19 +242,29 @@ string CGffIdGenerator::xGetGenericId(
     feature::CFeatTree* ) 
     //  -----------------------------------------------------------------------------
 {
-    //debug:
-    auto featType = mf.GetFeatSubtype();
+    const string commonPrefix("id-");
+    string rawId;
 
-    string id("id-");
-
+    //try to inherit from gene:
     auto parent = feature::GetParentFeature(mf);
     auto stem = xExtractGeneLocusTagOrLocus(parent);
     if (!stem.empty()) {
-        return id + stem;
+        rawId = commonPrefix + stem;
     }
 
-    //only choice: generic suffix
-    return id + xGetGenericSuffix(mf);
+    //fall back: generic suffix
+    if (rawId.empty()) {
+        rawId = commonPrefix + xGetGenericSuffix(mf);
+    }
+
+    //for native exons: attach exon number if available
+    if (mf.GetFeatSubtype() == CSeqFeatData::eSubtype_exon) {
+        auto exonNumber = mf.GetNamedQual("number");
+        if (!exonNumber.empty()) {
+            rawId += string("-") + exonNumber;
+        }
+    }
+    return rawId;
 }
 
 //  ----------------------------------------------------------------------------

@@ -90,10 +90,6 @@ protected:
         const CMappedFeat&,
         feature::CFeatTree*);
 
-    std::string xGetIdForNativeExon(
-        const CMappedFeat&,
-        feature::CFeatTree*);
-
     std::string xGetGenericId(
         const CMappedFeat&,
         feature::CFeatTree*);
