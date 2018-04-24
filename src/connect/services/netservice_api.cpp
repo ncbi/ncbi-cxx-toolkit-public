@@ -452,14 +452,14 @@ void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
         rr.flag = SOCK_HostToNetShort(1);
 
         const auto text_max = sizeof(buf) - 1 - offsetof(SFWDRequestReply, text);
-        const auto text_len = min(service_name.size(), text_max);
-        memcpy(rr.text, service_name.data(), text_len);
+        const auto text_len = min(service_name.size() + 1, text_max);
+        memcpy(rr.text, service_name.c_str(), text_len);
 
         size_t len = 0;
 
         CConn_ServiceStream svc(kXSiteFwd);
         if (svc.write((const char*) &rr.ticket/*0*/, sizeof(rr.ticket))  &&
-            svc.write(buf, offsetof(SFWDRequestReply, text) + text_len + 1)){
+            svc.write(buf, offsetof(SFWDRequestReply, text) + text_len)) {
             svc.read(buf, sizeof(buf) - 1);
             len = (size_t) svc.gcount();
             _ASSERT(len < sizeof(buf));
