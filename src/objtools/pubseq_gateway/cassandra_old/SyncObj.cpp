@@ -44,8 +44,8 @@
 #include <corelib/ncbithr.hpp>
 
 #include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/SyncObj.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra_old/SyncObj.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra_old/IdCassScope.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;

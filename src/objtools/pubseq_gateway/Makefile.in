@@ -1,6 +1,6 @@
 # $Id$
 
-SUB_PROJ = diag rpc cassandra client
+SUB_PROJ = diag rpc cassandra client cassandra_old
 
 REQUIRES = MT LIBUV NGHTTP2 CASSANDRA
 

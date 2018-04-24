@@ -1,6 +1,6 @@
 # $Id$
 
-LIB_PROJ = psg_cassandra
+LIB_PROJ = psg_cassandra_old
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
