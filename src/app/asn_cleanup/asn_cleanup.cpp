@@ -119,7 +119,7 @@ private:
     void x_KOptionsValid(const string& opt);
     void x_XOptionsValid(const string& opt);
     bool x_ProcessFeatureOptions(const string& opt, CSeq_entry_Handle seh);
-    bool x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh);
+    bool x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh, Uint4 options);
     bool x_GFF3Batch(CSeq_entry_Handle seh);
     enum EFixCDSOptions {
         eFixCDS_FrameFromLoc = 0x1,
@@ -804,11 +804,11 @@ bool CCleanupApp::x_ProcessFeatureOptions(const string& opt, CSeq_entry_Handle s
     return any_changes;
 }
 
-bool CCleanupApp::x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh)
+bool CCleanupApp::x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh, Uint4 options)
 {
     bool any_changes = false;
     if (NStr::Find(opt, "w") != string::npos) {
-        any_changes = CCleanup::WGSCleanup(seh);
+        any_changes = CCleanup::WGSCleanup(seh, true, options);
     }
     if (NStr::Find(opt, "r") != string::npos) {
         bool change_defline = CAutoDefWithTaxonomy::RegenerateDefLines(seh);
@@ -1099,7 +1099,7 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
         any_changes |= x_ProcessFeatureOptions(args["F"].AsString(), entry);
     }
     if (args["X"]) {
-        any_changes |= x_ProcessXOptions(args["X"].AsString(), entry);
+        any_changes |= x_ProcessXOptions(args["X"].AsString(), entry, options);
     }
     if (args["K"] && NStr::Find(args["K"].AsString(), "n") != string::npos && !do_extended) {
         any_changes |= CCleanup::NormalizeDescriptorOrder(entry);

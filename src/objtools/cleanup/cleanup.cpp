@@ -2541,7 +2541,7 @@ bool CCleanup::ExpandGeneToIncludeChildren(CSeq_feat& gene, CTSE_Handle& tse)
 }
 
 
-bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_proteins)
+bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_proteins, Uint4 options)
 {
     bool any_changes = false;
 
@@ -2676,7 +2676,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
     }
 
     CRef<CCleanupChange> changes(makeCleanupChange(0));
-    CNewCleanup_imp exclean(changes, 0);
+    CNewCleanup_imp exclean(changes, options);
     exclean.ExtendedCleanup(entry);
 
     return any_changes;
