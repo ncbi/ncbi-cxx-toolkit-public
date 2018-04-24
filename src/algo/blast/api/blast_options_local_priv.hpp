@@ -214,6 +214,9 @@ public:
     int GetCullingLimit() const;
     void SetCullingLimit(int s);
 
+    bool GetSubjectBestHit() const;
+    void SetSubjectBestHit();
+
     double GetBestHitOverhang() const;
     void SetBestHitOverhang(double s);
     void SetBestHitScoreEdge(double score_edge);
@@ -1381,6 +1384,34 @@ CBlastOptionsLocal::SetBestHitOverhang(double overhang)
         _ASSERT(best_hit_opts == NULL);
     }
 }
+
+inline void
+CBlastOptionsLocal::SetSubjectBestHit()
+{
+
+    if ( !m_HitSaveOpts->hsp_filt_opt ) {
+        m_HitSaveOpts->hsp_filt_opt = BlastHSPFilteringOptionsNew();
+    }
+    if (m_HitSaveOpts->hsp_filt_opt->subject_besthit_opts == NULL) {
+    	bool isProtein = !Blast_ProgramIsNucleotide(EProgramToEBlastProgramType(m_Program));
+        BlastHSPSubjectBestHitOptions* besthit = BlastHSPSubjectBestHitOptionsNew(isProtein);
+        BlastHSPFilteringOptions_AddSubjectBestHit(m_HitSaveOpts->hsp_filt_opt,
+                                                   &besthit);
+        _ASSERT(besthit == NULL);
+    }
+}
+
+inline bool
+CBlastOptionsLocal::GetSubjectBestHit() const
+{
+
+    if ((m_HitSaveOpts->hsp_filt_opt ) &&
+        (m_HitSaveOpts->hsp_filt_opt->subject_besthit_opts != NULL)) {
+    	return true;
+    }
+    return false;
+}
+
 
 inline double
 CBlastOptionsLocal::GetEvalueThreshold() const

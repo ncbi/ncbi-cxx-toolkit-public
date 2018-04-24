@@ -1931,3 +1931,54 @@ BlastHSPFilteringOptionsFree(BlastHSPFilteringOptions* opts)
     return opts;
 }
 
+BlastHSPSubjectBestHitOptions*
+BlastHSPSubjectBestHitOptionsNew(Boolean isProtein)
+{
+    BlastHSPSubjectBestHitOptions* retval =
+        (BlastHSPSubjectBestHitOptions*) calloc(1, sizeof(BlastHSPSubjectBestHitOptions));
+    if(isProtein){
+        retval->max_range_diff = DEFAULT_SUBJECT_BESTHIT_PROT_MAX_RANGE_DIFF;
+    }
+    else {
+        retval->max_range_diff = DEFAULT_SUBJECT_BESTHIT_NUCL_MAX_RANGE_DIFF;
+    }
+    return retval;
+}
+
+Int2
+BlastHSPSubjectBestHitOptionsValidate(const BlastHSPFilteringOptions* opts)
+{
+    Int2 retval = 0;
+    BlastHSPSubjectBestHitOptions* besthit_opts = opts->subject_besthit_opts;
+    if (!besthit_opts)
+       return retval;
+
+    return retval;
+}
+
+BlastHSPSubjectBestHitOptions*
+BlastHSPSubjectBestHitOptionsFree(BlastHSPSubjectBestHitOptions* subject_besthit_opts)
+{
+   if (!subject_besthit_opts)
+    return NULL;
+
+   sfree(subject_besthit_opts);
+   return NULL;
+}
+
+Int2
+BlastHSPFilteringOptions_AddSubjectBestHit(BlastHSPFilteringOptions* filt_opts,
+                                           BlastHSPSubjectBestHitOptions** subject_besthit)
+{
+    if ( filt_opts == NULL || subject_besthit == NULL || *subject_besthit == NULL) {
+        return 1;
+    }
+
+    filt_opts->subject_besthit_opts = *subject_besthit;
+    *subject_besthit = NULL;
+
+    return 0;
+}
+
+
+

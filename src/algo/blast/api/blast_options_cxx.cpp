@@ -1811,6 +1811,26 @@ CBlastOptions::SetCullingLimit(int s)
     }
 }
 
+bool
+CBlastOptions::GetSubjectBestHit() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetSubjectBestHit() not available.");
+    }
+    return m_Local->GetSubjectBestHit();
+}
+void
+CBlastOptions::SetSubjectBestHit()
+{
+    if (m_Local) {
+        m_Local->SetSubjectBestHit();
+    }
+    if (m_Remote) {
+        m_Remote->SetValue(eBlastOpt_SubjectBestHit, true);
+    }
+}
+
+
 double 
 CBlastOptions::GetBestHitOverhang() const
 {

@@ -352,6 +352,10 @@ typedef struct BlastHSPCullingOptions {
     int max_hits; /**< Maximum number of hits per area of query. */
 } BlastHSPCullingOptions;
 
+typedef struct BlastHSPSubjectBestHitOptions {
+    unsigned int max_range_diff;
+} BlastHSPSubjectBestHitOptions;
+
 /** Structure containing the HSP filtering/writing options */
 typedef struct BlastHSPFilteringOptions {
     /** Best Hit algorithm */
@@ -361,6 +365,9 @@ typedef struct BlastHSPFilteringOptions {
     /** culling algorithm */
     BlastHSPCullingOptions* culling_opts;
     EBlastStage culling_stage; /*<< when to apply the culling algorithm */
+
+    /** Subject Culling */
+    BlastHSPSubjectBestHitOptions * subject_besthit_opts;
 } BlastHSPFilteringOptions;
 
 /** Options used when evaluating and saving hits
@@ -1162,6 +1169,36 @@ NCBI_XBLAST_EXPORT
 Int2 BLAST_GetSuggestedWindowSize(EBlastProgramType program_number, 
                                  const char* matrixName, 
                                  Int4* window_size);
+
+/** Allocate a new object for subject besthit options.
+ * @params isProtein true if protein alignment [in]
+ */
+NCBI_XBLAST_EXPORT
+BlastHSPSubjectBestHitOptions* BlastHSPSubjectBestHitOptionsNew(Boolean isProtein);
+
+/** Validate subject besthit options.
+ * @param opts BlastHSPFilteringOptions structure
+ * @return 0 on success, else non-zero
+ */
+NCBI_XBLAST_EXPORT
+Int2
+BlastHSPSubjectBestHitOptionsValidate(const BlastHSPFilteringOptions* opts);
+
+/** Deallocates subject besthit structure.
+ * @param subject_besthit object to be deallocated. [in]
+ */
+NCBI_XBLAST_EXPORT
+BlastHSPSubjectBestHitOptions*
+BlastHSPSubjectBestHitOptionsFree(BlastHSPSubjectBestHitOptions* subject_besthit_opts);
+
+NCBI_XBLAST_EXPORT
+Int2
+BlastHSPFilteringOptions_AddSubjectBestHit(BlastHSPFilteringOptions* filt_opts,
+                                           BlastHSPSubjectBestHitOptions** subject_besthit);
+
+#define DEFAULT_SUBJECT_BESTHIT_PROT_MAX_RANGE_DIFF 3
+#define DEFAULT_SUBJECT_BESTHIT_NUCL_MAX_RANGE_DIFF 3
+
 #ifdef __cplusplus
 }
 #endif

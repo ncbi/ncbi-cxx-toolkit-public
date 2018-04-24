@@ -337,6 +337,14 @@ CSetupFactory::CreateHspWriter(const CBlastOptionsMemento* opts_memento,
                      opts_memento->m_ScoringOpts->gapped_calculation);
             writer_info = BlastHSPCullingInfoNew(params);
         }
+        else {
+        	BlastHSPCollectorParams * params =
+        			BlastHSPCollectorParamsNew(opts_memento->m_HitSaveOpts,
+                       opts_memento->m_ExtnOpts->compositionBasedStats,
+                       opts_memento->m_ScoringOpts->gapped_calculation);
+        	writer_info = BlastHSPCollectorInfoNew(params);
+
+        }
     } else {
         /* Use the collector filtering algorithm as the default */
         BlastHSPCollectorParams * params = 

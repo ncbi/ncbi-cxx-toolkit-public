@@ -850,6 +850,12 @@ s_FilterBlastResults(BlastHSPResults* results, const BlastHitSavingOptions* hit_
     	  	  if(hit_options->query_cov_hsp_perc) {
     	  		  Blast_HSPListReapByQueryCoverage(hsp_list, hit_options, query_info, program_number);
     	  	  }
+
+    	  	  if((hit_options->hsp_filt_opt != NULL) && (hit_options->hsp_filt_opt->subject_besthit_opts != NULL)) {
+    	  		  Blast_HSPListSubjectBestHit(program_number,
+    	  		  				           hit_options->hsp_filt_opt->subject_besthit_opts,
+    	  		  				           query_info, hsp_list);
+    	  	  }
       }
    }
 }
@@ -1734,7 +1740,8 @@ BLAST_ComputeTraceback_MT(EBlastProgramType program_number,
         Blast_HSPResultsSortByEvalue(results);
     }
 
-    if(hit_params->options->query_cov_hsp_perc > 0 || hit_params->options->max_hsps_per_subject > 0) {
+    if(hit_params->options->query_cov_hsp_perc > 0 || hit_params->options->max_hsps_per_subject > 0 ||
+       (hit_params->options->hsp_filt_opt != NULL && hit_params->options->hsp_filt_opt->subject_besthit_opts != NULL)) {
     	s_FilterBlastResults(results, hit_params->options, query_info, program_number);
     }
 

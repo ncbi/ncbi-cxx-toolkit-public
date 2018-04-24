@@ -124,6 +124,7 @@ enum EBlastOptIdx {
     eBlastOpt_DomainInclusionThreshold, // options for DELTA-BLAST
 
     eBlastOpt_Culling,
+    eBlastOpt_SubjectBestHit,
     eBlastOpt_EntrezQuery,
     eBlastOpt_FinalDbSeq,
     eBlastOpt_FirstDbSeq,

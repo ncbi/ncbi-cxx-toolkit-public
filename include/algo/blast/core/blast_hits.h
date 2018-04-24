@@ -631,6 +631,13 @@ Blast_HSPListPurgeHSPsWithCommonEndpoints(EBlastProgramType program,
                                           BlastHSPList* hsp_list,
                                           Boolean purge);
 
+NCBI_XBLAST_EXPORT
+Int4
+Blast_HSPListSubjectBestHit(EBlastProgramType program,
+		                    const BlastHSPSubjectBestHitOptions* subject_besthit_opts,
+		                    const BlastQueryInfo *query_info,
+                            BlastHSPList* hsp_list);
+
 /** Reevaluate all ungapped HSPs in an HSP list.  
  * This is only done for an ungapped search, or if traceback is 
  * already available.

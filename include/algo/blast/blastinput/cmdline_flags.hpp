@@ -192,6 +192,9 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgCullingLimit;
 /// Default argument to specify the culling limit
 NCBI_BLASTINPUT_EXPORT extern const int kDfltArgCullingLimit;
 
+/// Argument to specify the culling limit
+NCBI_BLASTINPUT_EXPORT extern const string kArgSubjectBestHit;
+
 /// Argument to specify the overhang parameter to the best hit algorithm
 NCBI_BLASTINPUT_EXPORT extern const string kArgBestHitOverhang;
 /// Default argument for the overhang parameter to the best hit algorithm

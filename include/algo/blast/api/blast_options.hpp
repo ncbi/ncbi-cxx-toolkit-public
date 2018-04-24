@@ -328,6 +328,9 @@ public:
     int GetCullingLimit() const;
     void SetCullingLimit(int s);
 
+    bool GetSubjectBestHit() const;
+    void SetSubjectBestHit();
+
     double GetBestHitOverhang() const;
     void SetBestHitOverhang(double overhang);
     double GetBestHitScoreEdge() const;

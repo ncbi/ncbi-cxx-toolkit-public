@@ -636,11 +636,11 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
                    coordinates */
                 s_TranslateHSPsToDNAPCoord(program_number, init_hitlist,
                        query_info, subject->frame, orig_length, backup.offset);
-            if (kTranslatedSubject) {
-                prot_length = subject->length;
-                subject->length = orig_length;
+                if (kTranslatedSubject) {
+                    prot_length = subject->length;
+                    subject->length = orig_length;
+                }
             }
-        }
         /** NB: If queries are concatenated, HSP offsets must be adjusted
           * inside the following function call, so coordinates are
           * relative to the individual contexts (i.e. queries, strands or
@@ -681,6 +681,7 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
 
         Blast_HSPListSortByScore(hsp_list);
 
+
         if (score_options->is_ooframe && kTranslatedSubject)
             subject->length = prot_length;
         } else {
@@ -708,6 +709,13 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
                      kHspNumMax, &(backup.offset), INT4_MIN,
                      overlap, score_options->gapped_calculation,
                      Blast_ProgramIsMapping(program_number));
+
+        if((hit_params->options->hsp_filt_opt != NULL) &&
+           (hit_params->options->hsp_filt_opt->subject_besthit_opts != NULL)) {
+           	Blast_HSPListSubjectBestHit(program_number,
+           								hit_params->options->hsp_filt_opt->subject_besthit_opts,
+           								query_info, combined_hsp_list);
+        }
 
         if (getenv("MAPPER_WRITE_SUBJECT_CHUNK")) {
             s_WriteHSPsForChunk(combined_hsp_list, &backup, hit_params,

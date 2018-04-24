@@ -128,6 +128,8 @@ const double kDfltArgBestHitOverhang = kBestHit_OverhangDflt;
 const string kArgBestHitScoreEdge("best_hit_score_edge");
 const double kDfltArgBestHitScoreEdge = kBestHit_ScoreEdgeDflt;
 
+const string kArgSubjectBestHit("subject_besthit");
+
 const string kArgFrameShiftPenalty("frame_shift_penalty");
 
 const string kArgGapTrigger("gap_trigger");

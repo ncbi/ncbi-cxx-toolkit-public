@@ -2885,6 +2885,7 @@ CHspFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetDependency(kArgBestHitScoreEdge,
                            CArgDescriptions::eExcludes,
                            kArgCullingLimit);
+    arg_desc.AddFlag(kArgSubjectBestHit, "Turn on best hit per subject sequence", true);
 
     arg_desc.SetCurrentGroup("");
 }
@@ -2902,7 +2903,9 @@ CHspFilteringArgs::ExtractAlgorithmOptions(const CArgs& args,
     if (args[kArgBestHitScoreEdge]) {
         opts.SetBestHitScoreEdge(args[kArgBestHitScoreEdge].AsDouble());
     }
-
+    if (args[kArgSubjectBestHit]) {
+    	opts.SetSubjectBestHit();
+    }
 }
 
 void
