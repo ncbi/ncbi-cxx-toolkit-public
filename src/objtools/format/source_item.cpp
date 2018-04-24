@@ -164,9 +164,15 @@ void CSourceItem::x_GatherInfoIdx(CBioseqContext& ctx)
 
     m_Taxname = &bsx->GetTaxname();
     m_Common = &bsx->GetCommon();
-    m_Lineage = bsx->GetLineage();
     m_Taxid = bsx->GetTaxid();
     m_UsingAnamorph = bsx->IsUsingAnamorph();
+
+    string lineage = bsx->GetLineage();
+    if (lineage.empty()) {
+        m_Lineage = scm_Unclassified;
+    } else {
+        m_Lineage = bsx->GetLineage();
+    }
 
     const string* orgnlle = &bsx->GetOrganelle();
     for (int i = 0; i < sizeof (legal_organelles) / sizeof (const char*); i++) {
