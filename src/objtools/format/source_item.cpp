@@ -191,10 +191,12 @@ void CSourceItem::x_GatherInfo(CBioseqContext& ctx)
     CConstRef<CBioSource>  src_ref;
     CConstRef<CSeq_feat>   src_feat;
 
+    /*
     if (ctx.UsingSeqEntryIndex()) {
         x_GatherInfoIdx(ctx);
         return;
     }
+    */
 
     if (ctx.IsProt()) {
         const CBioseq_Handle& bsh = ctx.GetHandle();
@@ -240,10 +242,12 @@ void CSourceItem::x_GatherInfo(CBioseqContext& ctx, const CBioSource& bsrc, cons
     CConstRef<CBioSource>  src_ref;
     CConstRef<CSeq_feat>   src_feat;
 
+    /*
     if (ctx.UsingSeqEntryIndex()) {
         x_GatherInfoIdx(ctx);
         return;
     }
+    */
 
     if (ctx.IsProt()) {
         const CBioseq_Handle& bsh = ctx.GetHandle();
