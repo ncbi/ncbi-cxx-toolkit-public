@@ -50,6 +50,7 @@
 #include "http_server_transport.hpp"
 #include "pubseq_gateway_version.hpp"
 #include "pubseq_gateway_stat.hpp"
+#include "pubseq_gateway_utils.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -72,7 +73,7 @@ public:
     int OnBadURL(HST::CHttpRequest &  req, HST::CHttpReply<P> &  resp);
 
     template<typename P>
-    int OnResolve(HST::CHttpRequest &  req, HST::CHttpReply<P> &  resp);
+    int OnGet(HST::CHttpRequest &  req, HST::CHttpReply<P> &  resp);
 
     template<typename P>
     int OnGetBlob(HST::CHttpRequest &  req, HST::CHttpReply<P> &  resp);
@@ -98,7 +99,7 @@ private:
     //         false if failed (404 response is sent)
     template<typename P>
     bool  x_Resolve(HST::CHttpReply<P> &  resp,
-                    const char *  accession, size_t  accession_length,
+                    const string &  accession,
                     string &  acc_bin_data);
 
     // Unpacks the accession binary data and picks sat and sat_key.
@@ -106,13 +107,44 @@ private:
     //         false if there was a problem in unpacking the data
     template<typename P>
     bool  x_UnpackAccessionData(HST::CHttpReply<P> &  resp,
+                                const string &  accession,
                                 const string &  resolution_data,
                                 int &  sat,
                                 int &  sat_key);
+    template<typename P>
+    void  x_SendResolution(HST::CHttpReply<P> &  resp,
+                           const string &  resolution_data,
+                           bool  need_completion);
+    template<typename P>
+    void x_SendUnknownSatelliteError(HST::CHttpReply<P> &  resp,
+                                     const SBlobId &  blob_id,
+                                     const string &  message, int  err_code);
+
+    template<typename P>
+    void x_SendUnpackingError(HST::CHttpReply<P> &  resp,
+                              const string &  accession,
+                              const string &  message, int  err_code);
 
 private:
     void x_ValidateArgs(void);
     string  x_GetCmdLineArguments(void) const;
+
+    struct SRequestParameter
+    {
+        bool        m_Found;
+        string      m_Value;
+
+        SRequestParameter() : m_Found(false)
+        {}
+    };
+    SRequestParameter  x_GetParam(HST::CHttpRequest &  req,
+                                  const string &  name) const;
+    bool x_IsBoolParamValid(const string &  param_name,
+                            const string &  param_value,
+                            string &  err_msg) const;
+    bool x_IsResolutionParamValid(const string &  param_name,
+                                  const string &  param_value,
+                                  string &  err_msg) const;
 
 private:
     string                              m_DbPath;
@@ -130,6 +162,7 @@ private:
     shared_ptr<CCassConnection>         m_CassConnection;
     shared_ptr<CCassConnectionFactory>  m_CassConnectionFactory;
     unsigned int                        m_TimeoutMs;
+    unsigned int                        m_MaxRetries;
 
     CTime                               m_StartTime;
 
@@ -157,24 +190,104 @@ int CPubseqGatewayApp::OnBadURL(HST::CHttpRequest &  req,
 
 
 template<typename P>
-int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
-                                 HST::CHttpReply<P> &  resp)
+int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
+                             HST::CHttpReply<P> &  resp)
 {
-    const char *    accession;
-    size_t          accession_len;
+    SRequestParameter   accession_param = x_GetParam(req, "accession");
+    SRequestParameter   resolution_param = x_GetParam(req, "resolution");
+    SRequestParameter   main_blob_param = x_GetParam(req, "main_blob");
+    SRequestParameter   prefer_non_split_param = x_GetParam(req, "prefer_non_split");
+    SRequestParameter   named_annots_param = x_GetParam(req, "named_annots");
+    SRequestParameter   external_annots_param = x_GetParam(req, "external_annots");
 
-    if (req.GetParam("accession", sizeof("accession") - 1,
-                     true, &accession, &accession_len)) {
-        string          resolution_data;
-        if (x_Resolve(resp, accession, accession_len, resolution_data)) {
-            resp.SendOk(resolution_data.c_str(), resolution_data.length(),
-                        false);
-            m_RequestCounters.IncResolve();
-        }
-    } else {
+    // Check the mandatory parameters presence
+    if (!accession_param.m_Found) {
         m_ErrorCounters.IncInsufficientArguments();
         resp.Send400("Missing Request Parameter",
                      "Expected to have the 'accession' parameter");
+        return 0;
+    }
+
+    if (!resolution_param.m_Found) {
+        m_ErrorCounters.IncInsufficientArguments();
+        resp.Send400("Missing Request Parameter",
+                     "Expected to have the 'resolution' parameter");
+        return 0;
+    }
+
+    if (!main_blob_param.m_Found) {
+        m_ErrorCounters.IncInsufficientArguments();
+        resp.Send400("Missing Request Parameter",
+                     "Expected to have the 'main_blob' parameter");
+        return 0;
+    }
+
+    // Check the valid parmameter values
+    string      err_msg;
+    if (!x_IsResolutionParamValid("resolution",
+                                  resolution_param.m_Value, err_msg)) {
+        m_ErrorCounters.IncMalformedArguments();
+        resp.Send400("Malformed Request Parameters", err_msg.c_str());
+        return 0;
+    }
+
+    if (!x_IsBoolParamValid("main_blob", main_blob_param.m_Value, err_msg)) {
+        m_ErrorCounters.IncMalformedArguments();
+        resp.Send400("Malformed Request Parameters", err_msg.c_str());
+        return 0;
+    }
+
+    if (prefer_non_split_param.m_Found) {
+        if (!x_IsBoolParamValid("prefer_non_split",
+                                prefer_non_split_param.m_Value, err_msg)) {
+            m_ErrorCounters.IncMalformedArguments();
+            resp.Send400("Malformed Request Parameters", err_msg.c_str());
+            return 0;
+        }
+    }
+
+    if (named_annots_param.m_Found) {
+        if (!x_IsBoolParamValid("named_annots",
+                                named_annots_param.m_Value, err_msg)) {
+            m_ErrorCounters.IncMalformedArguments();
+            resp.Send400("Malformed Request Parameters", err_msg.c_str());
+            return 0;
+        }
+    }
+
+    // Should depend on resolution but unconditional for now
+    bool            need_main_blob = main_blob_param.m_Value == "yes";
+    string          resolution_data;
+
+    if (!x_Resolve(resp, accession_param.m_Value, resolution_data))
+        return 0;   // Failure; 404 has been sent
+
+    // Send the resolution right away...
+    x_SendResolution(resp, resolution_data, !need_main_blob);
+
+    if (main_blob_param.m_Value == "yes") {
+        int     sat;
+        int     sat_key;
+        if (!x_UnpackAccessionData(resp, accession_param.m_Value,
+                                   resolution_data, sat, sat_key))
+            return 0;   // unpacking failed
+
+        string  sat_name;
+        if (SatToSatName(sat, sat_name)) {
+            resp.Postpone(CPendingOperation(eByAccession,
+                                            SBlobId(sat, sat_key),
+                                            std::move(sat_name),
+                                            m_CassConnection, m_TimeoutMs,
+                                            m_MaxRetries));
+            return 0;
+        }
+
+        m_ErrorCounters.IncGetBlobNotFound();
+        string      msg = string("Unknown satellite number ") +
+                          NStr::NumericToString(sat) + " after unpacking "
+                          "accession data";
+        x_SendUnknownSatelliteError(resp, SBlobId(sat, sat_key), msg,
+                                    eUnknownResolvedSatellite);
     }
     return 0;
 }
@@ -184,92 +297,39 @@ template<typename P>
 int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
                                  HST::CHttpReply<P> &  resp)
 {
-    const char *    ssat;
-    const char *    ssat_key;
-    const char *    accession;
-    size_t          sat_len;
-    size_t          sat_key_len;
-    size_t          accession_len;
+    SRequestParameter   blob_id_param = x_GetParam(req, "blob_id");
 
-    // Validate parameters first
-    bool    sat_found = req.GetParam(
-                "sat", sizeof("sat") - 1, true,
-                &ssat, &sat_len);
-    bool    sat_key_found = req.GetParam(
-                "sat_key", sizeof("sat_key") - 1, true,
-                &ssat_key, &sat_key_len);
-    bool    accession_found = req.GetParam(
-                "accession", sizeof("accession") - 1, true,
-                &accession, &accession_len);
-
-    if (sat_found && sat_key_found && accession_found) {
-        m_ErrorCounters.IncMalformedArguments();
-        resp.Send400("Conflicting Request Parameters",
-                     "Expected to find 'sat' and 'sat_key' prameters "
-                     "or 'accession' parameter. Found all three.");
-        return 0;
-    }
-
-    if (sat_found && sat_key_found)
+    if (blob_id_param.m_Found)
     {
-        int         sat;
-        try {
-            NStr::StringToNumeric(ssat, &sat);
-        } catch (...) {
+        SBlobId     blob_id(blob_id_param.m_Value);
+
+        if (!blob_id.IsValid()) {
             m_ErrorCounters.IncMalformedArguments();
             resp.Send400("Malformed Request Parameters",
-                         "Malformed 'sat' parameter. "
-                         "An integer is expected.");
+                         "Malformed 'blob_id' parameter. "
+                         "Expected format 'sat.sat_key' where both "
+                         "'sat' and 'sat_key' are integers.");
             return 0;
         }
 
         string      sat_name;
-        if (SatToSatName(sat, sat_name)) {
-            int         sat_key;
-            try {
-                NStr::StringToNumeric(ssat_key, &sat_key);
-            } catch (...) {
-                m_ErrorCounters.IncMalformedArguments();
-                resp.Send400("Malformed Request Parameters",
-                             "Malformed 'sat_key' parameter. "
-                             "An integer is expected.");
-                return 0;
-            }
-            resp.Postpone(CPendingOperation(std::move(sat_name), sat_key,
-                                            m_CassConnection, m_TimeoutMs));
+        if (SatToSatName(blob_id.sat, sat_name)) {
+            resp.Postpone(CPendingOperation(eBySatAndSatKey, blob_id,
+                                            std::move(sat_name),
+                                            m_CassConnection, m_TimeoutMs,
+                                            m_MaxRetries));
             return 0;
         }
 
         m_ErrorCounters.IncGetBlobNotFound();
         string      msg = string("Unknown satellite number ") +
-                          NStr::NumericToString(sat);
-        resp.Send404("Not Found", msg.c_str());
-    } else if (accession_found) {
-        string          resolution_data;
-        if (!x_Resolve(resp, accession, accession_len, resolution_data))
-            return 0;   // resolution failed
-
-        int             sat;
-        int             sat_key;
-        if (!x_UnpackAccessionData(resp, resolution_data, sat, sat_key))
-            return 0;   // unpacking failed
-
-        string      sat_name;
-        if (SatToSatName(sat, sat_name)) {
-            resp.Postpone(CPendingOperation(resolution_data,
-                                            std::move(sat_name), sat_key,
-                                            m_CassConnection, m_TimeoutMs));
-            return 0;
-        }
-
-        m_ErrorCounters.IncGetBlobNotFound();
-        string      msg = string("Unknown satellite number ") +
-                          NStr::NumericToString(sat) + " after unpacking "
-                          "accession data";
-        resp.Send404("Not Found", msg.c_str());
+                          NStr::NumericToString(blob_id.sat);
+        x_SendUnknownSatelliteError(resp, blob_id, msg,
+                                    eUnknownResolvedSatellite);
     } else {
         m_ErrorCounters.IncInsufficientArguments();
-        resp.Send400("Missing Request Parameters", "invalid request");
+        resp.Send400("Missing Request Parameters",
+                     "Mandatory parameter 'blob_id' is not found.");
     }
     return 0;
 }
@@ -458,23 +518,124 @@ int CPubseqGatewayApp::OnStatus(HST::CHttpRequest &  req,
 
 template<typename P>
 bool CPubseqGatewayApp::x_Resolve(HST::CHttpReply<P> &  resp,
-                                  const char *  accession,
-                                  size_t  accession_length,
+                                  const string &  accession,
                                   string &  acc_bin_data)
 {
-    string      acc_str(accession, accession_length);
-    if (m_Db->Storage().Get(acc_str, acc_bin_data))
+    if (m_Db->Storage().Get(accession, acc_bin_data))
         return true;
 
     m_ErrorCounters.IncResolveNotFound();
-    string      msg = "Entry (" + acc_str + ") not found";
-    resp.Send404("Not Found", msg.c_str());
+    string      msg = "Entry (" + accession + ") not found";
+
+    vector<h2o_iovec_t>     chunks;
+    string      header = GetResolutionErrorHeader(accession, msg.size(),
+                                                  CRequestStatus::e404_NotFound,
+                                                  eResolutionNotFound,
+                                                  eDiag_Error);
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(header.data()), header.size()));
+
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(msg.data()), msg.size()));
+
+    string  reply_completion = GetReplyCompletionHeader(2);
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(reply_completion.data()),
+                reply_completion.size()));
+
+    resp.Send(chunks, true);
     return false;
 }
 
 
 template<typename P>
+void CPubseqGatewayApp::x_SendResolution(HST::CHttpReply<P> &  resp,
+                                         const string &  resolution_data,
+                                         bool  need_completion)
+{
+    vector<h2o_iovec_t>     chunks;
+
+    // Add header
+    string      header = GetResolutionHeader(resolution_data.size());
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(header.data()),
+                header.size()));
+
+    // Add binary data
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(resolution_data.data()),
+                resolution_data.size()));
+
+    // Add completion if needed, i.e if it is the only data to send
+    if (need_completion) {
+        string  footer = GetReplyCompletionHeader(2);
+        chunks.push_back(resp.PrepareChunk(
+                    (const unsigned char *)(footer.data()),
+                    footer.size()));
+    }
+
+    resp.Send(chunks, true);
+    m_RequestCounters.IncResolve();
+}
+
+
+template<typename P>
+void CPubseqGatewayApp::x_SendUnpackingError(HST::CHttpReply<P> &  resp,
+                                             const string &  accession,
+                                             const string &  msg,
+                                             int  err_code)
+{
+    vector<h2o_iovec_t>     chunks;
+
+    string      header = GetResolutionErrorHeader(accession, msg.size(),
+                                                  CRequestStatus::e404_NotFound,
+                                                  err_code, eDiag_Error);
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(header.data()), header.size()));
+
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(msg.data()), msg.size()));
+
+    string  reply_completion = GetReplyCompletionHeader(2);
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(reply_completion.data()),
+                reply_completion.size()));
+
+    resp.Send(chunks, true);
+}
+
+
+template<typename P>
+void CPubseqGatewayApp::x_SendUnknownSatelliteError(
+        HST::CHttpReply<P> &  resp, const SBlobId &  blob_id,
+        const string &  message, int  err_code)
+{
+    vector<h2o_iovec_t>     chunks;
+
+    // Add header
+    string      header = GetBlobErrorHeader(blob_id, message.size(),
+                                            CRequestStatus::e404_NotFound,
+                                            err_code, eDiag_Error);
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(header.data()), header.size()));
+
+    // Add the error message
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(message.data()), message.size()));
+
+    // Add completion
+    string  reply_completion = GetReplyCompletionHeader(2);
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(reply_completion.data()),
+                reply_completion.size()));
+
+    resp.Send(chunks, true);
+}
+
+
+template<typename P>
 bool CPubseqGatewayApp::x_UnpackAccessionData(HST::CHttpReply<P> &  resp,
+                                              const string &  accession,
                                               const string &  resolution_data,
                                               int &  sat,
                                               int &  sat_key)
@@ -488,23 +649,20 @@ bool CPubseqGatewayApp::x_UnpackAccessionData(HST::CHttpReply<P> &  resp,
         m_ErrorCounters.IncResolveError();
         string  msg = string("Accession data unpacking error: ") +
                       e.what();
-
-        resp.Send502("Accession Data Unpacking Failure", msg.c_str());
+        x_SendUnpackingError(resp, accession, msg, eUnpackingError);
         ERRLOG1((msg.c_str()));
         return false;
     } catch (const exception &  e) {
         m_ErrorCounters.IncResolveError();
         string  msg = string("Accession data unpacking error: ") +
                       e.what();
-
-        resp.Send502("Accession Data Unpacking Failure", msg.c_str());
+        x_SendUnpackingError(resp, accession, msg, eUnpackingError);
         ERRLOG1((msg.c_str()));
         return false;
     } catch (...) {
         m_ErrorCounters.IncResolveError();
         string  msg = "Unknown accession data unpacking error";
-
-        resp.Send502("Accession Data Unpacking Failure", msg.c_str());
+        x_SendUnpackingError(resp, accession, msg, eUnpackingError);
         ERRLOG1((msg.c_str()));
         return false;
     }

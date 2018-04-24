@@ -53,6 +53,9 @@ const unsigned short    kTcpMaxConnDefault = 4096;
 const unsigned int      kTimeoutMsMin = 0;
 const unsigned int      kTimeoutMsMax = UINT_MAX;
 const unsigned int      kTimeoutDefault = 30000;
+const unsigned int      kMaxRetriesDefault = 1;
+const unsigned int      kMaxRetriesMin = 0;
+const unsigned int      kMaxRetriesMax = UINT_MAX;
 
 static const string     kNodaemonArgName = "nodaemon";
 
@@ -69,6 +72,7 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_TcpMaxConn(kTcpMaxConnDefault),
     m_CassConnectionFactory(CCassConnectionFactory::s_Create()),
     m_TimeoutMs(kTimeoutDefault),
+    m_MaxRetries(kMaxRetriesDefault),
     m_StartTime(GetFastLocalTime())
 {
     sm_PubseqApp = this;
@@ -115,6 +119,8 @@ void CPubseqGatewayApp::ParseArgs(void)
                                    kTcpMaxConnDefault);
     m_TimeoutMs = registry.GetInt("SERVER", "optimeout",
                                   kTimeoutDefault);
+    m_MaxRetries = registry.GetInt("SERVER", "maxretries",
+                                   kMaxRetriesDefault);
 
     m_LogLevel = registry.GetInt("COMMON", "loglevel", 0);
     m_LogLevelFile = registry.GetInt("COMMON", "loglevelfile", 1);
@@ -194,18 +200,18 @@ int CPubseqGatewayApp::Run(void)
     HST::CHttpGetParser                             get_parser;
 
     http_handler.emplace_back(
-            "/ID/resolve",
-            [this](HST::CHttpRequest &  req,
-                   HST::CHttpReply<CPendingOperation> &  resp)->int
-            {
-                return OnResolve(req, resp);
-            }, &get_parser, nullptr);
-    http_handler.emplace_back(
             "/ID/getblob",
             [this](HST::CHttpRequest &  req,
                    HST::CHttpReply<CPendingOperation> &  resp)->int
             {
                 return OnGetBlob(req, resp);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
+            "/ID/get",
+            [this](HST::CHttpRequest &  req,
+                   HST::CHttpReply<CPendingOperation> &  resp)->int
+            {
+                return OnGet(req, resp);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/ADMIN/config",
@@ -338,6 +344,17 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
         LOG1((err_msg.c_str()));
         m_TimeoutMs = kTimeoutDefault;
     }
+
+    if (m_MaxRetries < kMaxRetriesMin || m_MaxRetries > kMaxRetriesMax) {
+        string  err_msg =
+            "The max retries is out of range. Allowed "
+            "range: " + NStr::NumericToString(kMaxRetriesMin) + "..." +
+            NStr::NumericToString(kMaxRetriesMax) + ". Received: " +
+            NStr::NumericToString(m_MaxRetries) + ". Reset to "
+            "default: " + NStr::NumericToString(kMaxRetriesDefault);
+        LOG1((err_msg.c_str()));
+        m_MaxRetries = kMaxRetriesDefault;
+    }
 }
 
 
@@ -354,6 +371,54 @@ string CPubseqGatewayApp::x_GetCmdLineArguments(void) const
         cmdline_args += arguments[index];
     }
     return cmdline_args;
+}
+
+
+CPubseqGatewayApp::SRequestParameter
+CPubseqGatewayApp::x_GetParam(HST::CHttpRequest &  req,
+                              const string &  name) const
+{
+    const char *            value;
+    size_t                  value_size;
+    SRequestParameter       param;
+
+    param.m_Found = req.GetParam(name.data(), name.size(),
+                                 true, &value, &value_size);
+    if (param.m_Found)
+        param.m_Value = string(value, value_size);
+    return param;
+}
+
+
+bool CPubseqGatewayApp::x_IsBoolParamValid(const string &  param_name,
+                                           const string &  param_value,
+                                           string &  err_msg) const
+{
+    static string   yes = "yes";
+    static string   no = "no";
+
+    if (param_value != yes && param_value != no) {
+        err_msg = "Malformed '" + param_name + "' parameter. "
+                  "Acceptable values are '" + yes + "' and '" + no + "'.";
+        return false;
+    }
+    return true;
+}
+
+
+bool CPubseqGatewayApp::x_IsResolutionParamValid(const string &  param_name,
+                                                 const string &  param_value,
+                                                 string &  err_msg) const
+{
+    static string   fast = "fast";
+    static string   full = "full";
+
+    if (param_value != fast && param_value != full) {
+        err_msg = "Malformed '" + param_name + "' parameter. "
+                  "Acceptable values are '" + fast + "' and '" + full + "'.";
+        return false;
+    }
+    return true;
 }
 
 

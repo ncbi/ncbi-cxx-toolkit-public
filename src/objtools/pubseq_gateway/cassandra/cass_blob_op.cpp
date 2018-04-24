@@ -93,7 +93,7 @@ bool CCassBlobWaiter::CheckMaxActive()
 
 /* CCassBlobLoader */
 
-void CCassBlobLoader::RequestChunk(shared_ptr<CCassQuery> qry, int local_id)
+void CCassBlobLoader::x_RequestChunk(shared_ptr<CCassQuery> qry, int local_id)
 {
     CassConsistency     c = (m_RestartCounter > 0 &&
                              m_Conn->GetFallBackRdConsistency()) ?
@@ -114,7 +114,7 @@ void CCassBlobLoader::RequestChunk(shared_ptr<CCassQuery> qry, int local_id)
 }
 
 
-void CCassBlobLoader::RequestFlags(shared_ptr<CCassQuery>  qry,
+void CCassBlobLoader::x_RequestFlags(shared_ptr<CCassQuery>  qry,
                                    bool  with_data)
 {
     CassConsistency     c = (m_RestartCounter > 0 &&
@@ -139,20 +139,93 @@ void CCassBlobLoader::RequestFlags(shared_ptr<CCassQuery>  qry,
 }
 
 
-void CCassBlobLoader::RequestChunksAhead(void)
+void CCassBlobLoader::x_RequestChunksAhead(void)
 {
-    int32_t         local_id;
     int             cnt = MAX_CHUNKS_AHEAD;
 
-    for (local_id = m_CurrentIdx;
-         local_id < m_LargeParts && cnt > 0; ++local_id, --cnt) {
-        auto    qry = m_QueryArr[local_id];
-        if (!qry->IsActive()) {
-            if (!CheckMaxActive())
-                break;
-            RequestChunk(qry, local_id);
+    for (int32_t local_id = 0;
+         local_id < m_LargeParts && cnt > 0; ++local_id) {
+        if (!m_ProcessedChunks[local_id]) {
+            --cnt;
+
+            auto    qry = m_QueryArr[local_id];
+            if (!qry->IsActive()) {
+                if (!CheckMaxActive())
+                    break;
+                x_RequestChunk(qry, local_id);
+            }
         }
     }
+}
+
+
+void CCassBlobLoader::x_PrepareChunkRequests(void)
+{
+    // Two parts need to be prepared: the cassandra queries and the flags which
+    // indicate the chunks readiness
+
+    // +1 is for the finalizing request of the blob flags (to make sure the
+    // blob has not been changed while it was read)
+    m_QueryArr.reserve(m_LargeParts + 1);
+    CloseAll();
+
+    while ((int)m_QueryArr.size() < m_LargeParts)
+        m_QueryArr.emplace_back(m_Conn->NewQuery());
+
+    m_ProcessedChunks.clear();
+    m_ProcessedChunks.reserve(m_LargeParts);
+    while ((int)m_ProcessedChunks.size() < m_LargeParts)
+        m_ProcessedChunks.emplace_back(false);
+}
+
+
+// -1 => no ready chunks
+// >= 0 => chunk ready to be sent
+int CCassBlobLoader::x_GetReadyChunkNo(bool &  have_inactive,
+                                       bool &  need_repeat)
+{
+    have_inactive = false;
+    need_repeat = false;
+
+    for (int  index = 0; index < m_LargeParts; ++index) {
+        if (!m_QueryArr[index]->IsActive()) {
+            have_inactive = true;
+            continue;
+        }
+
+        if (!m_ProcessedChunks[index]) {
+            bool    local_need_repeat = false;
+            bool    ready = CheckReady(m_QueryArr[index], eReadingChunks,
+                                       &local_need_repeat);
+            if (ready)
+                return index;
+
+            if (local_need_repeat) {
+                need_repeat = true;
+                LOG3(("Restart stReadingChunks required for key=%s.%d, "
+                      "chunk=%d",
+                      m_Keyspace.c_str(), m_Key, index));
+            }
+        }
+    }
+
+    return -1;  // no ready chunks
+}
+
+
+bool CCassBlobLoader::x_AreAllChunksProcessed(void)
+{
+    for (const auto &  is_ready :  m_ProcessedChunks) {
+        if (!is_ready)
+            return false;
+    }
+    return true;
+}
+
+
+void CCassBlobLoader::x_MarkChunkProcessed(size_t  chunk_no)
+{
+    m_ProcessedChunks[chunk_no] = true;
 }
 
 
@@ -181,7 +254,7 @@ void CCassBlobLoader::Wait1(void)
                 auto qry = m_QueryArr[0];
                 if (!CheckMaxActive())
                     break;
-                RequestFlags(qry, true);
+                x_RequestFlags(qry, true);
                 m_State = eReadingEntity;
                 break;
             }
@@ -192,7 +265,7 @@ void CCassBlobLoader::Wait1(void)
                     LOG2(("re-starting initial query"));
                     if (!CheckMaxActive())
                         break;
-                    RequestFlags(qry, true);
+                    x_RequestFlags(qry, true);
                 }
 
                 if (!CheckReady(qry, eInit, &b_need_repeat)) {
@@ -226,7 +299,9 @@ void CCassBlobLoader::Wait1(void)
                                     "incomplete (key=%s.%d, flags=0x%lx)",
                                     m_Keyspace.c_str(), m_Key,
                                     m_BlobStat.flags);
-                            Error(eUnknownErr, msg);
+                            Error(CRequestStatus::e502_BadGateway,
+                                  CCassandraException::eInconsistentData,
+                                  eDiag_Error, msg);
                             break;
                         }
 
@@ -243,19 +318,18 @@ void CCassBlobLoader::Wait1(void)
                                          "actual: %ld (singlechunk)",
                                          m_Keyspace.c_str(), m_Key,
                                          m_ExpectedSize, len);
-                                Error(eUnknownErr, msg);
+                                Error(CRequestStatus::e502_BadGateway,
+                                      CCassandraException::eInconsistentData,
+                                      eDiag_Error, msg);
                             } else {
                                 m_State = eDone;
-                                m_DataCb(rawdata, len, 0, true);
+                                m_DataCb(m_Context, rawdata, len, 0);
+                                m_DataCb(m_Context, nullptr, 0, -1);
                             }
                             break;
                         } else { // multi-chunk
-                            m_QueryArr.reserve(m_LargeParts + 1);
-                            CloseAll();
-                            while ((int)m_QueryArr.size() < m_LargeParts)
-                                m_QueryArr.emplace_back(m_Conn->NewQuery());
-                            m_CurrentIdx = 0;
-                            RequestChunksAhead();
+                            x_PrepareChunkRequests();
+                            x_RequestChunksAhead();
                             m_State = eReadingChunks;
                         }
                     } else {
@@ -263,11 +337,13 @@ void CCassBlobLoader::Wait1(void)
                             // No data at all, i.e. there is no such a blob
                             // in the DB
                             string  msg = "Blob not found, key: " + m_Keyspace +
-                                          NStr::NumericToString(m_Key);
+                                          "." + NStr::NumericToString(m_Key);
 
                             // Call a CB which tells that a 404 reply should be
                             // sent
-                            Error(eNotFound, msg.c_str());
+                            Error(CRequestStatus::e404_NotFound,
+                                  CCassandraException::eNotFound,
+                                  eDiag_Error, msg.c_str());
 
                             CloseAll();
                         }
@@ -280,100 +356,106 @@ void CCassBlobLoader::Wait1(void)
             }
 
             case eReadingChunks: {
-                int32_t         local_id;
+                while (!x_AreAllChunksProcessed()) {
+                    x_RequestChunksAhead();
 
-                if (m_CurrentIdx >= 0 && m_CurrentIdx < m_LargeParts) {
-                    local_id = m_CurrentIdx;
-                    while (local_id < m_LargeParts) {
-                        RequestChunksAhead();
-                        auto qry = m_QueryArr[m_CurrentIdx];
-                        if (!qry->IsActive()) {
-                            if (m_Async)
-                                return; // wasn't activated b'ze
-                                        // too many active statements
-                            else {
-                                usleep(1000);
-                                continue;
-                            }
-                        }
+                    bool    have_inactive;
+                    bool    need_repeat;
+                    int     ready_chunk_no = x_GetReadyChunkNo(have_inactive,
+                                                               need_repeat);
 
-                        if (!CheckReady(qry, eReadingChunks, &b_need_repeat)) {
-                            if (b_need_repeat) {
-                                LOG3(("Restart stReadingChunks key=%s.%d, "
-                                      "chunk=%d",
-                                      m_Keyspace.c_str(), m_Key, local_id));
-                                continue;
-                            }
-                            else
-                                return;
-                        }
-
-                        async_rslt_t wr = ar_done;
-                        if (!qry->IsEOF()) {
-                            wr = qry->NextRow();
-                            if (wr == ar_wait) // paging
-                                return;
-                            if (wr == ar_dataready) {
-                                UpdateLastActivity();
-                                const unsigned char *   rawdata = nullptr;
-                                int64_t                 len = qry->FieldGetBlobRaw(0, &rawdata);
-                                m_RemainingSize -= len;
-                                if (m_RemainingSize < 0) {
-                                    snprintf(msg, sizeof(msg),
-                                             "Failed to fetch blob chunk "
-                                             "(key=%s.%d, chunk=%d) size %ld "
-                                             "is too large",
-                                             m_Keyspace.c_str(), m_Key,
-                                             local_id, len);
-                                    Error(eUnknownErr, msg);
-                                    return;
-                                }
-                                m_CurrentIdx++;
-                                local_id++;
-                                m_DataCb(rawdata, len, local_id, false);
-                                RequestChunksAhead();
-                                continue; // continue with next m_CurrentIdx
-                            }
-                        }
-
-                        assert(qry->IsEOF() || wr == ar_done);
-                        if (CanRestart()) {
-                            LOG3(("Restarting key=%s.%d, chunk=%d p2",
-                                  m_Keyspace.c_str(), m_Key, local_id));
-                            qry->Close();
+                    if (ready_chunk_no < 0) {
+                        // no ready chunks
+                        if (need_repeat) {
                             continue;
                         }
-                        else {
-                            snprintf(msg, sizeof(msg),
-                                     "Failed to fetch blob chunk "
-                                     "(key=%s.%d, chunk=%d) wr=%d",
-                                     m_Keyspace.c_str(), m_Key, local_id,
-                                     static_cast<int>(wr));
-                            Error(eUnknownErr, msg);
-                            return;
+
+                        if (have_inactive) {
+                            if (m_Async) {
+                                return; // wasn't activated b'ze
+                                        // too many active statements
+                            }
+                            usleep(1000);
+                            continue;
                         }
+
+                        return;
+                    }
+
+                    // here: there is a ready to transfer chunk
+                    async_rslt_t        wr = ar_done;
+                    auto                qry = m_QueryArr[ready_chunk_no];
+
+                    if (!qry->IsEOF()) {
+                        wr = qry->NextRow();
+                        if (wr == ar_wait) // paging
+                            return;
+
+                        if (wr == ar_dataready) {
+                            UpdateLastActivity();
+                            const unsigned char *   rawdata = nullptr;
+                            int64_t                 len = qry->FieldGetBlobRaw(0, &rawdata);
+                            m_RemainingSize -= len;
+                            if (m_RemainingSize < 0) {
+                                snprintf(msg, sizeof(msg),
+                                         "Failed to fetch blob chunk "
+                                         "(key=%s.%d, chunk=%d) size %ld "
+                                         "is too large",
+                                         m_Keyspace.c_str(), m_Key,
+                                         ready_chunk_no, len);
+                                Error(CRequestStatus::e502_BadGateway,
+                                      CCassandraException::eInconsistentData,
+                                      eDiag_Error, msg);
+                                return;
+                            }
+
+                            m_DataCb(m_Context, rawdata, len, ready_chunk_no);
+                            x_MarkChunkProcessed(ready_chunk_no);
+                            x_RequestChunksAhead();
+                            continue;
+                        }
+                    }
+
+                    assert(qry->IsEOF() || wr == ar_done);
+                    if (CanRestart()) {
+                        LOG3(("Restarting key=%s.%d, chunk=%d p2",
+                              m_Keyspace.c_str(), m_Key, ready_chunk_no));
+                        qry->Close();
+                        continue;
+                    } else {
+                        snprintf(msg, sizeof(msg),
+                                 "Failed to fetch blob chunk "
+                                 "(key=%s.%d, chunk=%d) wr=%d",
+                                 m_Keyspace.c_str(), m_Key, ready_chunk_no,
+                                 static_cast<int>(wr));
+                        Error(CRequestStatus::e502_BadGateway,
+                              CCassandraException::eFetchFailed,
+                              eDiag_Error, msg);
+                        return;
                     }
                 }
 
-                if (m_CurrentIdx >= m_LargeParts &&
+                if (x_AreAllChunksProcessed() &&
                     m_State != eError && m_State != eDone) {
                     if (m_RemainingSize > 0) {
                         snprintf(msg, sizeof(msg),
                                  "Failed to fetch blob (key=%s.%d) result is "
-                                 "imcomplete remaining %ldbytes",
+                                 "incomplete remaining %ld bytes",
                                  m_Keyspace.c_str(), m_Key, m_RemainingSize);
-                        Error(eUnknownErr, msg);
+                        Error(CRequestStatus::e502_BadGateway,
+                              CCassandraException::eInconsistentData,
+                              eDiag_Error, msg);
                         break;
                     }
 
                     while (m_QueryArr.size() < (size_t)m_LargeParts + 1)
                         m_QueryArr.emplace_back(m_Conn->NewQuery());
 
-                    auto    qry = m_QueryArr[m_LargeParts];
-
                     if (!CheckMaxActive())
                         break;
-                    RequestFlags(qry, false);
+
+                    auto    qry = m_QueryArr[m_LargeParts];
+                    x_RequestFlags(qry, false);
                     m_State = eCheckingFlags;
                 }
                 break;
@@ -387,7 +469,7 @@ void CCassBlobLoader::Wait1(void)
                     LOG3(("running checkflag query"));
                     if (!CheckMaxActive())
                         break;
-                    RequestFlags(qry, false);
+                    x_RequestFlags(qry, false);
                 }
 
                 if (!CheckReady(qry, eCheckingFlags, &b_need_repeat)) {
@@ -440,10 +522,12 @@ void CCassBlobLoader::Wait1(void)
                         }
 
                         if (has_error) {
-                            Error(eUnknownErr, msg);
+                            Error(CRequestStatus::e502_BadGateway,
+                                  CCassandraException::eInconsistentData,
+                                  eDiag_Error, msg);
                         } else {
                             m_State = eDone;
-                            m_DataCb(nullptr, 0, -1, true);
+                            m_DataCb(m_Context, nullptr, 0, -1);
                         }
                     } else if (wr == ar_wait) {
                         break;
@@ -455,7 +539,9 @@ void CCassBlobLoader::Wait1(void)
                              "Failed to re-confirm blob flags (key=%s.%d) "
                              "query returned no data",
                              m_Keyspace.c_str(), m_Key);
-                    Error(eUnknownErr, msg);
+                    Error(CRequestStatus::e502_BadGateway,
+                          CCassandraException::eInconsistentData,
+                          eDiag_Error, msg);
                     break;
                 }
                 break;
@@ -464,7 +550,9 @@ void CCassBlobLoader::Wait1(void)
                 snprintf(msg, sizeof(msg),
                          "Failed to get blob (key=%s.%d) unexpected state (%d)",
                          m_Keyspace.c_str(), m_Key, static_cast<int>(m_State));
-                Error(eUnknownErr, msg);
+                Error(CRequestStatus::e502_BadGateway,
+                      CCassandraException::eQueryFailed,
+                      eDiag_Error, msg);
             }
         }
     } while (b_need_repeat);
@@ -748,7 +836,9 @@ void CCassBlobInserter::Wait1()
                          "Failed to insert blob (key=%s.%d) "
                          "unexpected state (%d)",
                          m_Keyspace.c_str(), m_Key, static_cast<int>(m_State));
-                Error(eUnknownErr, msg);
+                Error(CRequestStatus::e502_BadGateway,
+                      CCassandraException::eQueryFailed,
+                      eDiag_Error, msg);
             }
         }
     } while (b_need_repeat);
@@ -912,7 +1002,9 @@ void CCassBlobDeleter::Wait1(void)
                 snprintf(msg, sizeof(msg),
                          "Failed to delete blob (key=%s.%d) unexpected state (%d)",
                          m_Keyspace.c_str(), m_Key, static_cast<int>(m_State));
-                Error(eUnknownErr, msg);
+                Error(CRequestStatus::e502_BadGateway,
+                      CCassandraException::eQueryFailed,
+                      eDiag_Error, msg);
             }
         }
     } while (b_need_repeat);
@@ -1018,12 +1110,15 @@ void CCassBlobOp::GetBlob(CAppOp &  op, unsigned int  op_timeout_ms,
     bool                is_error = false;
 
     CCassBlobLoader     loader(
-        &op, op_timeout_ms, m_Conn, m_Keyspace, key, false, true, data_chunk_cb,
-        [&is_error, &errmsg](ECassError  err_type,
-                             const char *  text, CCassBlobWaiter *  waiter)
+        &op, op_timeout_ms, m_Conn, m_Keyspace, key, false, max_retries,
+        nullptr, data_chunk_cb,
+        [&is_error, &errmsg](void *  context,
+                             CRequestStatus::ECode  status,
+                             int  code, EDiagSev  severity,
+                             const string &  message)
         {
             is_error = 1;
-            errmsg = text;
+            errmsg = message;
         }
     );
 
@@ -1050,8 +1145,8 @@ void CCassBlobOp::GetBlobAsync(CAppOp &  op, unsigned int  op_timeout_ms,
                                unique_ptr<CCassBlobWaiter> &  Waiter)
 {
     Waiter.reset(new CCassBlobLoader(&op, op_timeout_ms, m_Conn, m_Keyspace,
-                                     key, true, max_retries, data_chunk_cb,
-                                     nullptr));
+                                     key, true, max_retries, nullptr,
+                                     data_chunk_cb, nullptr));
 }
 
 
@@ -1064,7 +1159,7 @@ void CCassBlobOp::InsertBlobAsync(CAppOp &  op, unsigned int  op_timeout_ms,
     Waiter.reset(new CCassBlobInserter(&op, op_timeout_ms, m_Conn, m_Keyspace,
                                        key, blob_rslt, is_new, LargeTreshold,
                                        LargeChunkSz, true, max_retries,
-                                       nullptr));
+                                       nullptr, nullptr));
 }
 
 
@@ -1073,7 +1168,8 @@ void CCassBlobOp::DeleteBlobAsync(CAppOp &  op, unsigned int  op_timeout_ms,
                                   unique_ptr<CCassBlobWaiter> &  Waiter)
 {
     Waiter.reset(new CCassBlobDeleter(&op, op_timeout_ms, m_Conn, m_Keyspace,
-                                      key, true, max_retries, nullptr));
+                                      key, true, max_retries,
+                                      nullptr, nullptr));
 }
 
 

@@ -41,22 +41,44 @@ using namespace std;
 USING_IDBLOB_SCOPE;
 
 #include "http_server_transport.hpp"
+#include "pubseq_gateway_utils.hpp"
 
 #include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
 #include <objtools/pubseq_gateway/impl/diag/AppPerf.hpp>
 using namespace IdLogUtil;
 
 
+// The operation context passed to the cassandra wrapper.
+// For the time being it is just a blob identification but later it can be
+// extended without changing the interface between the server and the cassandra
+// wrappers.
+struct SOperationContext
+{
+    SOperationContext(const SBlobId &  blob_id) :
+        m_BlobId(blob_id)
+    {}
+
+    SBlobId     m_BlobId;
+};
+
+
+// The user may come with an accession or with a pair sat/sat key
+// The requests are counted separately so the enumeration distinguish them.
+enum EBlobIdentificationType {
+    eByAccession,
+    eBySatAndSatKey
+};
+
+
 class CPendingOperation
 {
 public:
-    CPendingOperation(string &&  sat_name, int  sat_key,
+    CPendingOperation(EBlobIdentificationType  blob_id_type,
+                      const SBlobId &  blob_id,
+                      string &&  sat_name,
                       shared_ptr<CCassConnection>  conn,
-                      unsigned int  timeout);
-    CPendingOperation(const string &  accession_data,
-                      string &&  sat_name, int  sat_key,
-                      shared_ptr<CCassConnection>  conn,
-                      unsigned int  timeout);
+                      unsigned int  timeout,
+                      unsigned int  max_retries);
     ~CPendingOperation();
     void Clear();
     void Start(HST::CHttpReply<CPendingOperation>& resp);
@@ -74,18 +96,18 @@ public:
     CPendingOperation& operator=(CPendingOperation&&) = default;
 
 private:
-    void x_PrepareAccessionDataChunk(HST::CHttpReply<CPendingOperation>& resp);
+    EBlobIdentificationType                 m_BlobIdType;
+    int32_t                                 m_TotalSentBlobChunks;
+    int32_t                                 m_TotalSentReplyChunks;
 
-private:
-    string                                  m_AccessionData;    // binary
     HST::CHttpReply<CPendingOperation>*     m_Reply;
     bool                                    m_Cancelled;
     bool                                    m_FinishedRead;
-    const int                               m_SatKey;
+    const SBlobId                           m_BlobId;
     CAppOp                                  m_Op;
     unique_ptr<CCassBlobLoader>             m_Loader;
     vector<h2o_iovec_t>                     m_Chunks;
-    bool                                    m_BlobAndAccessionRequest;
+    unique_ptr<SOperationContext>           m_Context;
 };
 
 

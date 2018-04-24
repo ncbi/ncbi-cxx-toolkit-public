@@ -50,7 +50,7 @@ class CCassandraException: public CException
 {
 public:
     enum EErrCode {
-        eUnknown = 0x11000,
+        eUnknown = 2000,
         eRsrcFailed,
         eFailedToConn,
         eConnTimeout,
@@ -61,6 +61,8 @@ public:
         eFetchFailed,
         eExtraFetch,
         eMissData,
+        eInconsistentData,
+        eNotFound
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -77,6 +79,8 @@ public:
             case eFetchFailed:            return "eFetchFailed";
             case eExtraFetch:             return "eExtraFetch";
             case eMissData:               return "eMissData";
+            case eInconsistentData:       return "eInconsistentData";
+            case eNotFound:               return "eNotFound";
             default:                      return CException::GetErrCodeString();
         }
     }
