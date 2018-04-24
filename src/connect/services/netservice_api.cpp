@@ -435,7 +435,7 @@ void SNetServiceXSiteAPI::InitXSite(CSynRegistry& registry, const SRegSynonyms& 
 
 void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
         SNetServerImpl::SConnectDeadline& deadline,
-        const SServerAddress& original)
+        const SServerAddress& original, const string& service_name)
 {
     SServerAddress actual(original);
     ticket_t ticket = 0;
@@ -450,15 +450,16 @@ void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
         rr.host =                     actual.host;
         rr.port = SOCK_HostToNetShort(actual.port);
         rr.flag = SOCK_HostToNetShort(1);
-        _ASSERT(offsetof(SFWDRequestReply, text) + sizeof(kXSiteFwd)
-                < sizeof(buf));
-        memcpy(rr.text, kXSiteFwd, sizeof(kXSiteFwd));
+
+        const auto text_max = sizeof(buf) - 1 - offsetof(SFWDRequestReply, text);
+        const auto text_len = min(service_name.size(), text_max);
+        memcpy(rr.text, service_name.data(), text_len);
 
         size_t len = 0;
 
         CConn_ServiceStream svc(kXSiteFwd);
         if (svc.write((const char*) &rr.ticket/*0*/, sizeof(rr.ticket))  &&
-            svc.write(buf, offsetof(SFWDRequestReply,text)+sizeof(kXSiteFwd))){
+            svc.write(buf, offsetof(SFWDRequestReply, text) + text_len + 1)){
             svc.read(buf, sizeof(buf) - 1);
             len = (size_t) svc.gcount();
             _ASSERT(len < sizeof(buf));
@@ -547,7 +548,7 @@ void SNetServiceXSiteAPI::InitXSite(CSynRegistry&, const SRegSynonyms&)
 
 void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
         SNetServerImpl::SConnectDeadline& deadline,
-        const SServerAddress& original)
+        const SServerAddress& original, const string&)
 {
     SNetServerImpl::ConnectImpl(socket, deadline, original, original);
 }

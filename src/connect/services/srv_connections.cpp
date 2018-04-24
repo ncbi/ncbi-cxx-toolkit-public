@@ -538,7 +538,7 @@ CNetServerConnection SNetServerInPool::Connect(SNetServerImpl* server, STimeout*
     SNetServerImpl::SConnectDeadline deadline(timeout ? *timeout : m_ServerPool->m_ConnTimeout);
     auto& socket = conn->m_Socket;
 
-    SNetServiceXSiteAPI::ConnectXSite(socket, deadline, m_Address);
+    SNetServiceXSiteAPI::ConnectXSite(socket, deadline, m_Address, server->m_Service->m_ServiceName);
 
     AdjustThrottlingParameters(eCOR_Success);
 

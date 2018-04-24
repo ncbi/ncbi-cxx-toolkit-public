@@ -275,7 +275,7 @@ struct SNetServiceXSiteAPI : public CObject
 {
     static void InitXSite(CSynRegistry& registry, const SRegSynonyms& sections);
     static void ConnectXSite(CSocket&, SNetServerImpl::SConnectDeadline&,
-            const SServerAddress&);
+            const SServerAddress&, const string&);
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     static bool IsUsingXSiteProxy();
