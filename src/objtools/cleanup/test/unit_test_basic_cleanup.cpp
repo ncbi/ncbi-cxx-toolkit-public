@@ -1760,3 +1760,212 @@ BOOST_AUTO_TEST_CASE(Test_ReadLocFromText)
     BOOST_CHECK_EQUAL(loc.GetStop(eExtreme_Biological), 2);
     BOOST_CHECK_EQUAL(loc.GetStrand(), eNa_strand_minus);
 }
+
+
+void CheckFields(const CUser_field& f1, const CUser_field& f2)
+{
+    BOOST_CHECK_EQUAL(f1.IsSetData(), f2.IsSetData());
+    BOOST_CHECK_EQUAL(f1.GetData().Which(), f2.GetData().Which());
+    if (f1.GetData().IsStrs()) {
+        auto it1 = f1.GetData().GetStrs().begin();
+        auto it2 = f2.GetData().GetStrs().begin();
+        while (it1 != f1.GetData().GetStrs().end() &&
+               it2 != f2.GetData().GetStrs().end()) {
+            BOOST_CHECK_EQUAL(*it1, *it2);
+            it1++;
+            it2++;
+        }    
+        BOOST_CHECK(it1 == f1.GetData().GetStrs().end());
+        BOOST_CHECK(it2 == f2.GetData().GetStrs().end());
+    } else {
+        BOOST_CHECK(f1.Equals(f2));
+    }
+}
+
+
+void CheckCleanupAndCleanupOfUserObject(const CUser_object& obj)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeqdesc> ud(new CSeqdesc());
+    ud->SetUser().Assign(obj);
+    entry->SetSeq().SetDescr().Set().push_back(ud);
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*entry);
+
+    CRef<CUser_object> direct_obj(new CUser_object());
+    direct_obj->Assign(obj);
+    CCleanup::CleanupUserObject(*direct_obj);
+
+    if (obj.IsSetType()) {
+        BOOST_CHECK_EQUAL(direct_obj->GetType().GetStr(), ud->GetUser().GetType().GetStr());
+    }
+
+    if (obj.IsSetData()) {
+        auto s1 = direct_obj->GetData().begin();
+        auto s2 = ud->GetUser().GetData().begin();
+        while (s1 != direct_obj->GetData().end() && s2 != ud->GetUser().GetData().end()) {
+            CheckFields(**s1, **s2);
+            s1++;
+            s2++;
+        }    
+        BOOST_CHECK(s1 == direct_obj->GetData().end());
+        BOOST_CHECK(s2 == ud->GetUser().GetData().end());
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_UserObject)
+{
+    CRef<CUser_object> obj(new CUser_object());
+
+    BOOST_CHECK_EQUAL(CCleanup::CleanupUserObject(*obj), false);
+
+    obj->SetType().SetStr(" ; abc -- ");
+
+    CheckCleanupAndCleanupOfUserObject(*obj);
+    BOOST_CHECK_EQUAL(CCleanup::CleanupUserObject(*obj), true);
+    BOOST_CHECK_EQUAL(obj->GetType().GetStr(), "abc --");
+
+    CRef<CUser_field> a(new CUser_field());
+    obj->SetData().push_back(a);
+    CheckCleanupAndCleanupOfUserObject(*obj);
+    BOOST_CHECK_EQUAL(CCleanup::CleanupUserObject(*obj), false);
+
+    a->SetLabel().SetStr(" ; a  b.");
+    a->SetData().SetStr(",, z  x ..");
+    CheckCleanupAndCleanupOfUserObject(*obj);
+    BOOST_CHECK_EQUAL(CCleanup::CleanupUserObject(*obj), true);
+    BOOST_CHECK_EQUAL(a->GetLabel().GetStr(), "a  b.");
+    BOOST_CHECK_EQUAL(a->GetData().GetStr(), "z x ..");
+
+}
+
+
+CRef<CUser_field> MakeGoField(const string& n1, const string& n2, const string& val)
+{
+    CRef<CUser_field> go1(new CUser_field());
+    go1->SetLabel().SetStr(n1);
+    CRef<CUser_field> t1(new CUser_field());
+    t1->SetLabel().SetStr(n2);
+    t1->SetData().SetStr(val);
+    CRef<CUser_field> if1(new CUser_field());
+    if1->SetData().SetFields().push_back(t1);
+    go1->SetData().SetFields().push_back(if1);
+    return go1;
+}
+
+void CheckGoFieldData(const CUser_field& f, const string& val)
+{
+    BOOST_CHECK_EQUAL(f.GetData().GetFields().front()->GetData().GetFields().front()->GetData().GetStr(),
+        val);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_GeneOntology)
+{
+    CRef<CUser_object> obj(new CUser_object());
+    obj->SetType().SetStr("GeneOntology");
+    obj->SetData().push_back(MakeGoField("Component", "go id", "GO:xxx"));
+    obj->SetData().push_back(MakeGoField("Process", "go ref", "GO_REF:zzz"));
+
+    CheckCleanupAndCleanupOfUserObject(*obj);
+    BOOST_CHECK_EQUAL(CCleanup::CleanupUserObject(*obj), true);
+    CheckGoFieldData(*(obj->GetData().front()), "xxx");
+    CheckGoFieldData(*(obj->GetData().back()), "zzz");
+
+}
+
+
+CRef<CUser_field> MakeStructuredCommentField(const string& n, const string& v)
+{
+    CRef<CUser_field> f(new CUser_field());
+    f->SetLabel().SetStr(n);
+    f->SetData().SetStr(v);
+    return f;
+}
+
+
+void CheckStructuredCommentField(const CUser_field& f, const string& n, const string& v)
+{
+    BOOST_CHECK_EQUAL(f.GetLabel().GetStr(), n);
+    BOOST_CHECK_EQUAL(f.GetData().GetStr(), v);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_StructuredComment)
+{
+    CRef<CUser_object> obj(new CUser_object());
+    obj->SetType().SetStr("StructuredComment");
+    obj->SetData().push_back(MakeStructuredCommentField("StructuredCommentPrefix", "Z"));
+    obj->SetData().push_back(MakeStructuredCommentField("Tentative Name", "  "));
+    obj->SetData().push_back(MakeStructuredCommentField("StructuredCommentSuffix", "Z"));
+    obj->SetData().push_back(MakeStructuredCommentField("Tentative Name", "  "));
+
+    CheckCleanupAndCleanupOfUserObject(*obj);
+    BOOST_CHECK_EQUAL(CCleanup::CleanupUserObject(*obj), true);
+    CheckStructuredCommentField(*(obj->GetData().front()), "StructuredCommentPrefix", "##Z-START##");
+    CheckStructuredCommentField(*(obj->GetData().back()), "StructuredCommentSuffix", "##Z-END##");
+    BOOST_CHECK_EQUAL(obj->GetData().size(), 2);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_ibol)
+{
+    CRef<CUser_object> obj(new CUser_object());
+    obj->SetType().SetStr("StructuredComment");
+    obj->SetData().push_back(MakeStructuredCommentField("StructuredCommentPrefix", "International Barcode of Life (iBOL)Data"));
+    obj->SetData().push_back(MakeStructuredCommentField("Tentative Name", " a "));
+    obj->SetData().push_back(MakeStructuredCommentField("Barcode Index Number", " b "));
+
+    CheckCleanupAndCleanupOfUserObject(*obj);
+    BOOST_CHECK_EQUAL(CCleanup::CleanupUserObject(*obj), true);
+    CheckStructuredCommentField(*(obj->GetData().front()), "StructuredCommentPrefix", "##International Barcode of Life (iBOL)Data-START##");
+    CheckStructuredCommentField(*(obj->GetData().back()), "Tentative Name", "a");
+    BOOST_CHECK_EQUAL(obj->GetData().size(), 3);
+
+}
+
+
+void TestGenomeAssemblyField(const string& n, const string& v, const string& v_e)
+{
+    CRef<CUser_object> obj(new CUser_object());
+    obj->SetType().SetStr("StructuredComment");
+    obj->SetData().push_back(MakeStructuredCommentField("StructuredCommentPrefix", "Genome-Assembly-Data"));
+    obj->SetData().push_back(MakeStructuredCommentField(n, v));
+
+    CheckCleanupAndCleanupOfUserObject(*obj);
+    BOOST_CHECK_EQUAL(CCleanup::CleanupUserObject(*obj), true);
+    CheckStructuredCommentField(*(obj->GetData().front()), "StructuredCommentPrefix", "##Genome-Assembly-Data-START##");
+    CheckStructuredCommentField(*(obj->GetData().back()), n, v_e);
+    BOOST_CHECK_EQUAL(obj->GetData().size(), 2);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_GenomeAssembly)
+{
+    TestGenomeAssemblyField("Finishing Goal", "Improved High Quality Draft", "Improved High-Quality Draft");
+    TestGenomeAssemblyField("Current Finishing Status", "Non-contiguous Finished", "Noncontiguous Finished");
+    TestGenomeAssemblyField("Assembly Date", "February 8, 2020", "08-FEB-2020");
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_DBLink)
+{
+    CRef<CUser_object> obj(new CUser_object());
+    obj->SetType().SetStr("DBLink");
+    obj->SetData().push_back(MakeStructuredCommentField("BioProject", "Z"));
+
+    CheckCleanupAndCleanupOfUserObject(*obj);
+    BOOST_CHECK_EQUAL(CCleanup::CleanupUserObject(*obj), true);
+    const CUser_field& f = *(obj->GetData().front());
+    BOOST_CHECK_EQUAL(f.GetData().Which(), CUser_field::TData::e_Strs);
+    BOOST_CHECK_EQUAL(f.GetData().GetStrs().front(), "Z");
+}
+

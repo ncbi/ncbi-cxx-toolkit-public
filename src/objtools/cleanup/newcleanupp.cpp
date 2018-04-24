@@ -9626,6 +9626,11 @@ void CNewCleanup_imp::x_GeneOntologyTermsBC( vector< CRef< CUser_field > > &go_t
 
 void CNewCleanup_imp::UserObjectBC( CUser_object &user_object )
 {    
+#if 1
+    if (CCleanup::CleanupUserObject(user_object)) {
+        ChangeMade(CCleanupChange::eCleanUserObjectOrField);
+    }
+#else
     static const char * const sc_bsecGoQualType[] = {
         "", "Component", "Function", "Process"
     };
@@ -9691,6 +9696,7 @@ void CNewCleanup_imp::UserObjectBC( CUser_object &user_object )
     if (x_CleanDBLink(user_object)) {
         ChangeMade(CCleanupChange::eCleanUserObjectOrField);
     }
+#endif
 }
 
 static int s_PcrPrimerCompare( 

@@ -568,6 +568,11 @@ public:
     typedef pair<CSeq_feat_Handle, CSeq_feat_Handle> TFeatGenePair; // by convention, cds first, gene second
     static vector<TFeatGenePair> GetNormalizableGeneQualPairs(CBioseq_Handle bsh);
 
+    // This function is used to do generic string cleanup on User-object string fields
+    // and apply specific cleanups to known types of User-object
+    static bool CleanupUserObject(CUser_object& object);
+
+    
 
 private:
     // Prohibit copy constructor & assignment operator
@@ -585,6 +590,13 @@ private:
 
     static bool s_IsProductOnFeat(const CSeq_feat& cds);
     static void s_SetProductOnFeat(CSeq_feat& feat, const string& protein_name, bool append);
+
+    static bool s_CleanupGeneOntology(CUser_object& obj);
+    static bool s_CleanupStructuredComment(CUser_object& obj);
+    static bool s_RemoveEmptyFields(CUser_object& obj);
+    static bool s_CleanupGenomeAssembly(CUser_object& obj);
+    static bool s_CleanupDBLink(CUser_object& obj);
+
 };
 
 
