@@ -1406,9 +1406,6 @@ This is an error in the genomic product set." } },
    { "AbuttingIntervals",
 "The start of one interval is next to the stop of another.  A single interval \
 may be desirable in this case." } },
-   { eErr_SEQ_FEAT_CollidingGeneNames,
-   { "CollidingGeneNames",
-"Two gene features should not have the same name." } },
    { eErr_SEQ_FEAT_MultiIntervalGene,
    { "MultiIntervalGene",
 "A gene feature on a single Bioseq should have a single interval spanning everything \

@@ -984,7 +984,6 @@ BOOST_AUTO_TEST_CASE(Test_CollidingLocusTags)
     vector< CExpectedError *> expected_errors;
     expected_errors.push_back(new CExpectedError("lcl|LocusCollidesWithLocusTag", eDiag_Warning, "TerminalNs", "N at end of sequence"));
     expected_errors.push_back(new CExpectedError("lcl|LocusCollidesWithLocusTag", eDiag_Warning, "GeneLocusCollidesWithLocusTag", "locus collides with locus_tag in another gene"));
-    expected_errors.push_back(new CExpectedError("lcl|LocusCollidesWithLocusTag", eDiag_Warning, "CollidingGeneNames", "Colliding names in gene features"));
     expected_errors.push_back(new CExpectedError("lcl|LocusCollidesWithLocusTag", eDiag_Error, "CollidingLocusTags", "Colliding locus_tags in gene features"));
     expected_errors.push_back(new CExpectedError("lcl|LocusCollidesWithLocusTag", eDiag_Error, "CollidingLocusTags", "Colliding locus_tags in gene features"));
     expected_errors.push_back(new CExpectedError("lcl|LocusCollidesWithLocusTag", eDiag_Error, "NoMolInfoFound", "No Mol-info applies to this Bioseq"));
@@ -13909,15 +13908,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CollidingGeneNames)
     gene2->SetData().SetGene().SetLocus("see_it_twice");
 
     STANDARD_SETUP
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CollidingGeneNames", 
-      "Colliding names in gene features"));
+    // used to produce an error, removed per VR-811
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     scope.RemoveTopLevelSeqEntry(seh);
     gene2->SetData().SetGene().SetLocus("See_It_Twice");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetErrMsg("Colliding names (with different capitalization) in gene features");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -17668,8 +17665,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_GeneXrefNeeded)
     unit_test_util::AddFeat(gene2, nuc);
 
     STANDARD_SETUP
-    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "CollidingGeneNames",
-                               "Colliding names in gene features"));
     expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "GeneXrefNeeded", 
                               "Feature overlapped by 2 identical-length equivalent genes but has no cross-reference"));
     eval = validator.Validate(seh, options);

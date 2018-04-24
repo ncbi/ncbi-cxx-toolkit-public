@@ -479,7 +479,6 @@ enum EErrType {
     eErr_SEQ_FEAT_ImpCDSnotPseudo,
     eErr_SEQ_FEAT_MissingMRNAproduct,
     eErr_SEQ_FEAT_AbuttingIntervals,
-    eErr_SEQ_FEAT_CollidingGeneNames,
     eErr_SEQ_FEAT_MultiIntervalGene,
     eErr_SEQ_FEAT_FeatContentDup,
     eErr_SEQ_FEAT_BadProductSeqId,

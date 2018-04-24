@@ -9719,9 +9719,7 @@ bool s_HastRNAXref(const CSeq_feat& feat)
 
 void CValidError_bioseq::x_CompareStrings
 (const TStrFeatMap& str_feat_map,
- const string& type,
- EErrType err,
- EDiagSev sev)
+ const string& type)
 {
     bool is_gene_locus = NStr::EqualNocase (type, "names");
 
@@ -9771,23 +9769,13 @@ void CValidError_bioseq::x_CompareStrings
                                                    sequence::fCompareOverlapping) == eSame) {
                 PostErr (eDiag_Info, eErr_SEQ_FEAT_DuplicateGeneConflictingLocusTag,
                          message + ", but feature locations are identical", *it->second);
-            } else if (is_gene_locus 
-                       && NStr::Equal (GetSequenceStringFromLoc(feat->GetLocation(), *m_Scope),
-                                       GetSequenceStringFromLoc((*it->second).GetLocation(), *m_Scope))) {                
-                // ignore this situation, used to produce SEQ_FEAT_ReplicatedGeneSequence (see VR-801)
-            } else { 
+            } else if (!is_gene_locus) {
                 const CSeq_feat* nfeat = it->second;
                 bool isSplit = (bool) (nfeat->IsSetExcept() &&
                                       nfeat->IsSetExcept_text() &&
                                       NStr::FindNoCase (nfeat->GetExcept_text(), "gene split at ") != string::npos);
 
-                if (err == eErr_SEQ_FEAT_CollidingGeneNames && m_Imp.IsGpipe()
-                    && s_HastRNAXref(*feat)
-                    && s_HastRNAXref(*nfeat)) {
-                    suppress_message = true;
-                }
-
-                if (!suppress_message && (is_gene_locus || (! isSplit) || (! lastIsSplit))) {                    
+                if (!suppress_message && ((! isSplit) || (! lastIsSplit))) {                    
                     if (!reported_first) {
                         // for now, don't report first colliding gene - C Toolkit doesn't
                         // PostErr(sev, err, message, *feat);
@@ -9795,7 +9783,7 @@ void CValidError_bioseq::x_CompareStrings
                     }
 
 
-                    PostErr(sev, err, message, *it->second);
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_CollidingLocusTags, message, *it->second);
                 }
             }
         }
@@ -9839,10 +9827,8 @@ void CValidError_bioseq::ValidateCollidingGenes(const CBioseq& seq)
                     syn_map.insert(TStrFeatMap::value_type((*syn_it), &feat));
                 }
             }
-            x_CompareStrings(label_map, "names", eErr_SEQ_FEAT_CollidingGeneNames,
-                eDiag_Warning);
-            x_CompareStrings(locus_tag_map, "locus_tags", eErr_SEQ_FEAT_CollidingLocusTags,
-                eDiag_Error);
+            x_CompareStrings(label_map, "names");
+            x_CompareStrings(locus_tag_map, "locus_tags");
             // look for synonyms on genes that match locus of different genes,
             // but not if gpipe
             if (!m_Imp.IsGpipe()) {
