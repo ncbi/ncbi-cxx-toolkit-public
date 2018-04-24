@@ -163,6 +163,18 @@ void CCSRADataLoader::SetSpotReadAlignParamDefault(bool param)
 }
 
 
+bool CCSRADataLoader::GetSpotReadAlign() const
+{
+    return m_Impl->GetSpotReadAlign();
+}
+
+
+void CCSRADataLoader::SetSpotReadAlign(bool value)
+{
+    m_Impl->SetSpotReadAlign(value);
+}
+
+
 int CCSRADataLoader::SLoaderParams::GetEffectiveMinMapQuality(void) const
 {
     return m_MinMapQuality != kMinMapQuality_config?

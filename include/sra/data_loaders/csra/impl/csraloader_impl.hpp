@@ -411,10 +411,6 @@ public:
         {
             return m_QualityGraphs;
         }
-    bool GetSpotReadAlign(void) const
-        {
-            return m_SpotReadAlign;
-        }
 
     bool IsValidReadId(TVDBRowId spot_id, Uint4 read_id,
                        CRef<CCSRARefSeqInfo>* ref_ptr = 0,
@@ -468,7 +464,6 @@ protected:
     int m_MinMapQuality;
     bool m_PileupGraphs;
     bool m_QualityGraphs;
-    bool m_SpotReadAlign;
     CCSraDb m_CSRADb;
     vector<string> m_SeparateSpotGroups;
     TRefSeqs m_RefSeqs;
@@ -506,6 +501,7 @@ public:
         {
             return m_SpotReadAlign;
         }
+    void SetSpotReadAlign(bool value);
     int GetPathInId(void) const
         {
             return m_PathInId;

@@ -2161,6 +2161,111 @@ BOOST_AUTO_TEST_CASE(ShortSeq1)
         }
         BOOST_CHECK_EQUAL(ait.GetSize(), 2u);
     }
+    if ( 1 ) {
+        scope.ResetHistory();
+        dynamic_cast<CCSRADataLoader*>(om->FindDataLoader(loader_name))->SetSpotReadAlign(true);
+        // only primary alignment is available with 'spot_read_align' parameter set
+        CAlign_CI ait(read);
+        for ( ; ait; ++ait ) {
+            //NcbiCout << MSerial_AsnText << *ait << NcbiEndl;
+        }
+        BOOST_CHECK_EQUAL(ait.GetSize(), 1u);
+    }
+    
+    CCSRADataLoader::SetSpotReadAlignParamDefault(save_param);
+}
+
+
+BOOST_AUTO_TEST_CASE(ShortSeq1_set)
+{
+    CRef<CObjectManager> om = sx_GetOM();
+
+    //putenv("CSRA_LOADER_QUALITY_GRAPHS=true");
+
+    bool save_param = CCSRADataLoader::GetSpotReadAlignParamDefault();
+    CCSRADataLoader::SetSpotReadAlignParamDefault(true);
+    
+    string loader_name =
+        CCSRADataLoader::RegisterInObjectManager(*om, CObjectManager::eDefault)
+        .GetLoader()->GetName();
+    sx_ReportCSraLoaderName(loader_name);
+    dynamic_cast<CCSRADataLoader*>(om->FindDataLoader(loader_name))->SetSpotReadAlign(false);
+
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    CRef<CSeq_id> ref_id(new CSeq_id("gnl|SRA|SRR505887/chr1"));
+    CRef<CSeq_id> read_id(new CSeq_id("gnl|SRA|SRR505887.144261.2"));
+    TSeqPos prim_pos = 965627;
+    TSeqPos sec_pos = 966293;
+
+    typedef CRange<TSeqPos> TRange;
+    CSeq_id_Handle ref_idh = CSeq_id_Handle::GetHandle(*ref_id);
+    CSeq_id_Handle read_idh = CSeq_id_Handle::GetHandle(*read_id);
+
+    CBioseq_Handle ref;
+    if ( 1 ) {
+        ref = scope.GetBioseqHandle(ref_idh);
+        BOOST_REQUIRE(ref);
+        if ( 1 ) {
+            // scan first 100 alignments
+            CAlign_CI ait(ref, SAnnotSelector().SetMaxSize(100));
+            BOOST_CHECK_EQUAL(ait.GetSize(), 100u);
+        }
+        if ( 0 ) {
+            // scan alignments around primary position
+            int found = 0;
+            for ( CAlign_CI ait(ref, TRange(prim_pos, prim_pos)); ait; ++ait ) {
+                const CSeq_align& align = *ait;
+                for ( CTypeConstIterator<CSeq_id> it(Begin(align)); it; ++it ) {
+                    if ( read_id->Equals(*it) ) {
+                        ++found;
+                    }
+                }
+            }
+            BOOST_CHECK_EQUAL(found, 1);
+        }
+        if ( 1 ) {
+            // scan alignments around secondary position
+            int found = 0;
+            for ( CAlign_CI ait(ref, TRange(sec_pos, sec_pos)); ait; ++ait ) {
+                const CSeq_align& align = *ait;
+                for ( CTypeConstIterator<CSeq_id> it(Begin(align)); it; ++it ) {
+                    if ( read_id->Equals(*it) ) {
+                        ++found;
+                    }
+                }
+            }
+            BOOST_CHECK_EQUAL(found, 1);
+        }
+    }
+
+    BOOST_CHECK(scope.GetIds(ref_idh).size() > 0);
+    CBioseq_Handle read = scope.GetBioseqHandle(read_idh);
+    BOOST_REQUIRE(read);
+    if ( 1 ) {
+        // quality graph
+        CGraph_CI git(read);
+        BOOST_CHECK_EQUAL(git.GetSize(), 0u);
+    }
+    if ( 1 ) {
+        // alignment (primary and secondary)
+        CAlign_CI ait(read);
+        for ( ; ait; ++ait ) {
+            //NcbiCout << MSerial_AsnText << *ait << NcbiEndl;
+        }
+        BOOST_CHECK_EQUAL(ait.GetSize(), 2u);
+    }
+    if ( 1 ) {
+        scope.ResetHistory();
+        dynamic_cast<CCSRADataLoader*>(om->FindDataLoader(loader_name))->SetSpotReadAlign(true);
+        // only primary alignment is available with 'spot_read_align' parameter set
+        CAlign_CI ait(read);
+        for ( ; ait; ++ait ) {
+            //NcbiCout << MSerial_AsnText << *ait << NcbiEndl;
+        }
+        BOOST_CHECK_EQUAL(ait.GetSize(), 1u);
+    }
     
     CCSRADataLoader::SetSpotReadAlignParamDefault(save_param);
 }
@@ -2174,7 +2279,7 @@ BOOST_AUTO_TEST_CASE(ShortSeq1spot)
 
     bool save_param = CCSRADataLoader::GetSpotReadAlignParamDefault();
     CCSRADataLoader::SetSpotReadAlignParamDefault(true);
-    
+
     string loader_name =
         CCSRADataLoader::RegisterInObjectManager(*om, CObjectManager::eDefault)
         .GetLoader()->GetName();
@@ -2244,6 +2349,113 @@ BOOST_AUTO_TEST_CASE(ShortSeq1spot)
             //NcbiCout << MSerial_AsnText << *ait << NcbiEndl;
         }
         BOOST_CHECK_EQUAL(ait.GetSize(), 1u);
+    }
+    if ( 1 ) {
+        scope.ResetHistory();
+        dynamic_cast<CCSRADataLoader*>(om->FindDataLoader(loader_name))->SetSpotReadAlign(false);
+        // both primary and secondary alignments should be visible
+        // after 'spot_read_align' parameter is reset
+        CAlign_CI ait(read);
+        for ( ; ait; ++ait ) {
+            //NcbiCout << MSerial_AsnText << *ait << NcbiEndl;
+        }
+        BOOST_CHECK_EQUAL(ait.GetSize(), 2u);
+    }
+    
+    CCSRADataLoader::SetSpotReadAlignParamDefault(save_param);
+}
+
+
+BOOST_AUTO_TEST_CASE(ShortSeq1spot_set)
+{
+    CRef<CObjectManager> om = sx_GetOM();
+
+    //putenv("CSRA_LOADER_QUALITY_GRAPHS=true");
+
+    bool save_param = CCSRADataLoader::GetSpotReadAlignParamDefault();
+    CCSRADataLoader::SetSpotReadAlignParamDefault(false);
+
+    string loader_name =
+        CCSRADataLoader::RegisterInObjectManager(*om, CObjectManager::eDefault)
+        .GetLoader()->GetName();
+    sx_ReportCSraLoaderName(loader_name);
+    dynamic_cast<CCSRADataLoader*>(om->FindDataLoader(loader_name))->SetSpotReadAlign(true);
+
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    CRef<CSeq_id> ref_id(new CSeq_id("gnl|SRA|SRR505887/chr1"));
+    CRef<CSeq_id> read_id(new CSeq_id("gnl|SRA|SRR505887.144261.2"));
+    TSeqPos prim_pos = 965627;
+    TSeqPos sec_pos = 966293;
+
+    typedef CRange<TSeqPos> TRange;
+    CSeq_id_Handle ref_idh = CSeq_id_Handle::GetHandle(*ref_id);
+    CSeq_id_Handle read_idh = CSeq_id_Handle::GetHandle(*read_id);
+
+    CBioseq_Handle ref;
+    if ( 1 ) {
+        ref = scope.GetBioseqHandle(ref_idh);
+        BOOST_REQUIRE(ref);
+        if ( 1 ) {
+            // scan first 100 alignments
+            CAlign_CI ait(ref, SAnnotSelector().SetMaxSize(100));
+            BOOST_CHECK_EQUAL(ait.GetSize(), 100u);
+        }
+        if ( 0 ) {
+            // scan alignments around primary position
+            int found = 0;
+            for ( CAlign_CI ait(ref, TRange(prim_pos, prim_pos)); ait; ++ait ) {
+                const CSeq_align& align = *ait;
+                for ( CTypeConstIterator<CSeq_id> it(Begin(align)); it; ++it ) {
+                    if ( read_id->Equals(*it) ) {
+                        ++found;
+                    }
+                }
+            }
+            BOOST_CHECK_EQUAL(found, 1);
+        }
+        if ( 1 ) {
+            // scan alignments around secondary position
+            int found = 0;
+            for ( CAlign_CI ait(ref, TRange(sec_pos, sec_pos)); ait; ++ait ) {
+                const CSeq_align& align = *ait;
+                for ( CTypeConstIterator<CSeq_id> it(Begin(align)); it; ++it ) {
+                    if ( read_id->Equals(*it) ) {
+                        ++found;
+                    }
+                }
+            }
+            BOOST_CHECK_EQUAL(found, 1);
+        }
+    }
+
+    BOOST_CHECK(scope.GetIds(ref_idh).size() > 0);
+    CBioseq_Handle read = scope.GetBioseqHandle(read_idh);
+    BOOST_REQUIRE(read);
+    if ( 1 ) {
+        // quality graph
+        CGraph_CI git(read);
+        BOOST_CHECK_EQUAL(git.GetSize(), 0u);
+    }
+    if ( 1 ) {
+        // only primary alignment is available with 'spot_read_align' parameter set
+        CAlign_CI ait(read);
+        for ( ; ait; ++ait ) {
+            //NcbiCout << MSerial_AsnText << *ait << NcbiEndl;
+        }
+        BOOST_CHECK_EQUAL(ait.GetSize(), 1u);
+    }
+    if ( 1 ) {
+        scope.ResetHistory();
+        dynamic_cast<CCSRADataLoader*>(om->FindDataLoader(loader_name))->SetSpotReadAlign(false);
+        // both primary and secondary alignments should be visible
+        // after 'spot_read_align' parameter is reset
+        CAlign_CI ait(read);
+        for ( ; ait; ++ait ) {
+            //NcbiCout << MSerial_AsnText << *ait << NcbiEndl;
+        }
+        BOOST_CHECK_EQUAL(ait.GetSize(), 2u);
     }
     
     CCSRADataLoader::SetSpotReadAlignParamDefault(save_param);

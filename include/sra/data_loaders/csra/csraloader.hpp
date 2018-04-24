@@ -157,6 +157,8 @@ public:
     static void SetMinMapQualityParamDefault(int param);
     static bool GetSpotReadAlignParamDefault(void);
     static void SetSpotReadAlignParamDefault(bool param);
+    bool GetSpotReadAlign() const;
+    void SetSpotReadAlign(bool value);
     static int GetSpotGroupsParamDefault(void);
     static void SetSpotGroupsParamDefault(int param);
 

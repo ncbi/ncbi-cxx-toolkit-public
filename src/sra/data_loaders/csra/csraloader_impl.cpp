@@ -648,6 +648,12 @@ CTSE_LoadLock CCSRADataLoader_Impl::GetBlobById(CDataSource* data_source,
 }
 
 
+void CCSRADataLoader_Impl::SetSpotReadAlign(bool value)
+{
+    m_SpotReadAlign = value;
+}
+
+
 CDataLoader::TTSE_LockSet
 CCSRADataLoader_Impl::GetRecords(CDataSource* data_source,
                                  const CSeq_id_Handle& idh,
@@ -967,7 +973,6 @@ void CCSRAFileInfo::x_Initialize(CCSRADataLoader_Impl& impl,
     m_MinMapQuality = impl.GetMinMapQuality();
     m_PileupGraphs = impl.GetPileupGraphs();
     m_QualityGraphs = impl.GetQualityGraphs();
-    m_SpotReadAlign = impl.GetSpotReadAlign();
     CCSraDb::EPathInIdType path_in_id_type;
     switch ( impl.GetPathInId() ) {
     case CCSRADataLoader::SLoaderParams::kPathInId_config:
