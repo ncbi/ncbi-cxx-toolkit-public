@@ -135,6 +135,7 @@ public:
     bool IsOverrideExisting() const;
     bool IsBinaryOutput() const;
 
+    TSeqPos GetGapSize() const;
     int GetFixTech() const;
 
     bool IsMasterInFile() const;

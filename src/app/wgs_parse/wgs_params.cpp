@@ -83,7 +83,7 @@ struct CParams_imp
     ESortOrder m_sort_order;
     EInputType m_input_type;
 
-    size_t m_gap_size;
+    TSeqPos m_gap_size;
     int m_fix_tech;
 
     mutable ESource m_source;
@@ -308,6 +308,11 @@ bool CParams::IsOverrideExisting() const
 bool CParams::IsBinaryOutput() const
 {
     return m_imp->m_binary_out;
+}
+
+TSeqPos CParams::GetGapSize() const
+{
+    return m_imp->m_gap_size;
 }
 
 int CParams::GetFixTech() const

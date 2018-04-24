@@ -55,12 +55,17 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/Genetic_code.hpp>
 
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/biblio/Cit_sub.hpp>
 
+#include <objects/seq/Seq_gap.hpp>
+
 #include <objtools/cleanup/cleanup.hpp>
+#include <objtools/edit/gaps_edit.hpp>
 
 #include "wgs_sub.hpp"
 #include "wgs_seqentryinfo.hpp"
@@ -552,15 +557,15 @@ static bool FixBioSources(CSeq_entry& entry, const CMasterInfo& master_info)
     CBioseq::TAnnot* annots = nullptr;
     if (GetNonConstAnnot(entry, annots) && annots) {
 
-        auto feat_table_it = find_if(annots->begin(), annots->end(), [](CRef<CSeq_annot>& annot) { return annot->IsFtable(); });
+        for (auto feat_table_it : *annots) {
 
-        if (feat_table_it != annots->end()) {
+            if (feat_table_it->IsFtable()) {
+                auto feat_table = feat_table_it->SetData().SetFtable();
+                auto feat_source_it = find_if(feat_table.begin(), feat_table.end(), [](CRef<CSeq_feat>& feat) { return feat->IsSetData() && feat->GetData().IsBiosrc(); });
 
-            auto feat_table = (*feat_table_it)->SetData().SetFtable();
-            auto feat_source_it = find_if(feat_table.begin(), feat_table.end(), [](CRef<CSeq_feat>& feat) { return feat->IsSetData() && feat->GetData().IsBiosrc(); });
-
-            if (feat_source_it != feat_table.end() && PerformTaxLookup((*feat_source_it)->SetData().SetBiosrc(), master_info.m_org_refs, GetParams().IsTaxonomyLookup())) {
-                return false;
+                if (feat_source_it != feat_table.end() && PerformTaxLookup((*feat_source_it)->SetData().SetBiosrc(), master_info.m_org_refs, GetParams().IsTaxonomyLookup())) {
+                    return false;
+                }
             }
         }
     }
@@ -1090,6 +1095,63 @@ static string GetAssignedAccession(const CSeq_entry& entry)
     return ret;
 }
 
+static void SeqToDelta(CSeq_entry& entry, TSeqPos gap_size)
+{
+    if (gap_size) {
+        CGapsEditor gaps_editor(CSeq_gap::eType_unknown, CGapsEditor::TEvidenceSet(), gap_size, 0);
+        gaps_editor.ConvertNs2Gaps(entry);
+    }
+}
+
+static void FixCDRegionGeneticCode(CCdregion& cdregion)
+{
+    static const CGenetic_code::C_E::TId DEFAULT_GENCODE = 1;
+
+    CGenetic_code::Tdata& genetic_codes = cdregion.SetCode().Set();
+
+    bool found = false;
+    for (auto gencode : genetic_codes) {
+        if (gencode->IsId()) {
+
+            gencode->SetId(DEFAULT_GENCODE);
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        CRef<CGenetic_code::C_E> gencode_id(new CGenetic_code::C_E);
+        gencode_id->SetId(DEFAULT_GENCODE);
+        genetic_codes.push_back(gencode_id);
+    }
+}
+
+static void FixGeneticCode(CSeq_entry& entry)
+{
+    CBioseq::TAnnot* annots = nullptr;
+    if (GetNonConstAnnot(entry, annots) && annots) {
+
+        for (auto feat_table_it: *annots) {
+
+            if (feat_table_it->IsFtable()) {
+                auto feat_table = feat_table_it->SetData().SetFtable();
+                for (auto feat : feat_table) {
+                    if (feat->IsSetData() && feat->GetData().IsCdregion()) {
+                        FixCDRegionGeneticCode(feat->SetData().SetCdregion());
+                    }
+                }
+            }
+        }
+    }
+
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
+            FixGeneticCode(*cur_entry);
+        }
+    }
+}
+
 bool ParseSubmissions(CMasterInfo& master_info)
 {
     const list<string>& files = GetParams().GetInputFiles();
@@ -1174,14 +1236,14 @@ bool ParseSubmissions(CMasterInfo& master_info)
                     }
 
                     if (GetParams().IsForcedGencode()) {
-                        // TODO
+                        FixGeneticCode(*entry);
                     }
 
                     if (GetParams().GetFixTech() && (GetParams().IsTsa() || (GetParams().GetFixTech() | eFixMolBiomol))) {
                         FixTech(*entry);
                     }
 
-                    // TODO gaps
+                    SeqToDelta(*entry, GetParams().GetGapSize());
 
                     if (master_info.m_reject) {
                         break;

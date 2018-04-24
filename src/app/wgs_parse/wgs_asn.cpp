@@ -1048,7 +1048,7 @@ static void CheckNucBioseqs(const CSeq_entry& entry, CSeqEntryInfo& info, CSeqEn
                                             "\", Seq-id type = " << id->Which() << ".");
 
                                 info.m_seqid_state = eSeqIdDifferent;
-                                // TODO rejection
+                                // TODO rejection (originally ERR_POST has 'Reject' message type)
                             }
 
                             if (info.m_seqid_state != eSeqIdOK) {

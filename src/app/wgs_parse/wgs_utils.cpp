@@ -154,12 +154,12 @@ bool GetAnnot(const CSeq_entry& entry, const CBioseq::TAnnot* &annot)
 {
     bool ret = true;
     if (entry.IsSeq()) {
-        if (entry.GetSeq().IsSetDescr()) {
+        if (entry.GetSeq().IsSetAnnot()) {
             annot = &entry.GetSeq().GetAnnot();
         }
     }
     else if (entry.IsSet()) {
-        if (entry.GetSet().IsSetDescr()) {
+        if (entry.GetSet().IsSetAnnot()) {
             annot = &entry.GetSet().GetAnnot();
         }
     }
@@ -174,12 +174,12 @@ bool GetNonConstAnnot(CSeq_entry& entry, CBioseq::TAnnot* &annot)
 {
     bool ret = true;
     if (entry.IsSeq()) {
-        if (entry.GetSeq().IsSetDescr()) {
+        if (entry.GetSeq().IsSetAnnot()) {
             annot = &entry.SetSeq().SetAnnot();
         }
     }
     else if (entry.IsSet()) {
-        if (entry.GetSet().IsSetDescr()) {
+        if (entry.GetSet().IsSetAnnot()) {
             annot = &entry.SetSet().SetAnnot();
         }
     }
