@@ -106,7 +106,12 @@ bool CFixSuspectProductName::FixSuspectProductNames(objects::CSeq_feat& feature)
     static const char hypotetic_protein_name[] = "hypothetical protein"; // sema: interesting optimization...
 
     bool modified = false;
-    if (feature.IsSetData() && feature.GetData().IsProt() && feature.GetData().GetProt().IsSetName()) {
+    if (feature.IsSetData() && feature.GetData().IsProt() && feature.GetData().GetProt().IsSetName())
+    {
+        if (feature.GetData().GetProt().IsSetProcessed() && feature.GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_not_set)
+            return false;
+
+
         for (auto& name : feature.SetData().SetProt().SetName()) {
             if (NStr::Compare(name, hypotetic_protein_name)) {
                 string orig = name;
