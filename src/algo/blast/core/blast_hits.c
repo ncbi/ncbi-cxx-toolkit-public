@@ -2498,6 +2498,10 @@ Blast_HSPListSubjectBestHit(EBlastProgramType program,
    BlastHSP** hsp_array;  /* hsp_array to purge. */
    const int range_diff = subject_besthit_opts->max_range_diff;
    Boolean isBlastn = (program == eBlastTypeBlastn);
+   unsigned int i, j;
+   int o, e;
+   int curr_context, target_context;
+   int qlen;
 
    /* If HSP list is empty, return immediately. */
    if (hsp_list == NULL || hsp_list->hspcnt == 0)
@@ -2509,13 +2513,13 @@ Blast_HSPListSubjectBestHit(EBlastProgramType program,
    hsp_array = hsp_list->hsp_array;
 
    // The hsp list is sorted by score
-   for(unsigned int i=0; i < hsp_list->hspcnt -1; i++) {
+   for(i=0; i < hsp_list->hspcnt -1; i++) {
 	  if(hsp_array[i] == NULL){
 		  continue;
 	  }
-      unsigned int j = 1;
-      int o = hsp_array[i]->query.offset - range_diff;
-      int e = hsp_array[i]->query.end + range_diff;
+      j = 1;
+      o = hsp_array[i]->query.offset - range_diff;
+      e = hsp_array[i]->query.end + range_diff;
       if (o < 0) o = 0;
       if (e < 0) e = hsp_array[i]->query.end;
       while (i+j < hsp_list->hspcnt) {
@@ -2531,17 +2535,17 @@ Blast_HSPListSubjectBestHit(EBlastProgramType program,
    Blast_HSPListPurgeNullHSPs(hsp_list);
 
    if(isBlastn) {
-	   for(unsigned int i=0; i < hsp_list->hspcnt -1; i++) {
+	   for(i=0; i < hsp_list->hspcnt -1; i++) {
 	   	  if(hsp_array[i] == NULL){
 	   		  continue;
 	   	  }
 	   	  // Flip query offsets of current hsp to target context frame
-	   	  unsigned int j = 1;
-	   	  int curr_context = hsp_array[i]->context;
-          int qlen = query_info->contexts[curr_context].query_length;
-	   	  int target_context = hsp_array[i]->query.frame ? curr_context +1 : curr_context -1;
-	   	  int e = qlen - (hsp_array[i]->query.offset - range_diff);
-	   	  int o = qlen - (hsp_array[i]->query.end + range_diff);
+	   	  j = 1;
+	   	  curr_context = hsp_array[i]->context;
+          qlen = query_info->contexts[curr_context].query_length;
+	   	  target_context = (hsp_array[i]->query.frame > 0) ? curr_context +1 : curr_context -1;
+	   	  e = qlen - (hsp_array[i]->query.offset - range_diff);
+	   	  o = qlen - (hsp_array[i]->query.end + range_diff);
 	   	  while (i+j < hsp_list->hspcnt) {
 	   		  if(hsp_array[i+j] && (hsp_array[i+j]->context == target_context) &&
 	   			 ((hsp_array[i+j]->query.offset >= o) &&
@@ -2550,7 +2554,6 @@ Blast_HSPListSubjectBestHit(EBlastProgramType program,
 	   		  }
 	   		  j++;
 	   	  }
-
        }
        Blast_HSPListPurgeNullHSPs(hsp_list);
    }
