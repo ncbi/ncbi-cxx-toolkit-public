@@ -686,7 +686,7 @@ void CTabularFormatter_MismatchPositions::Print(CNcbiOstream& ostr,
             } else {
                 if(m_Row == 0)
                     mm_pos.push_back(QuerySeg.GetFrom()+Loop);
-                else if(m_Row == 0)
+                else if(m_Row == 1)
                     mm_pos.push_back(SubjtSeg.GetFrom()+Loop);
             }
         }
