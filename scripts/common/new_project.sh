@@ -33,28 +33,30 @@ SYNOPSIS:
 ARGUMENTS:
    <name>      -- name of the project (will be subst. to the makefile name)
    <type>      -- one of the following:
-     lib[/basic]     to build a simple library
-     lib/asn         to build a library from an ASN.1 spec
-     lib/dtd         to build a library from an XML DTD
-     lib/xsd         to build a library from an XML Schema
-     app[/basic]     to build a simple application
-     app/multicmd    to build a simple command-based application
-     app/alnmgr      to build an application using the alignment manager
-     app/asn         to build a library from ASN.1 spec, and sample application
-     app/blast       to build an application using BLAST
-     app/cgi         to build a CGI or FastCGI application
-     app/dbapi       to build a DBAPI application
-     app/sdbapi      to build a Simple-DBAPI application
-     app/eutils      to build an eUtils client application
-     app/lds         to build an application using a local data storage
-     app/netcache    to build a client application of NetCache
-     app/netschedule to build a NCBI GRID client application using NetSchedule
-     app/objects     to build an application using ASN.1 objects
-     app/objmgr      to build an application using the object manager
-     app/serial      to build sample serialization applications
-     app/soap/client to build a SOAP client
-     app/soap/server to build a SOAP server
-     app/unit_test   to build a Boost-based unit test application
+     lib[/basic]        to build a simple library
+     lib/asn            to build a library from an ASN.1 spec
+     lib/dtd            to build a library from an XML DTD
+     lib/xsd            to build a library from an XML Schema
+     app[/basic]        to build a simple application
+     app/multicmd       to build a simple command-based application
+     app/alnmgr         to build an application using the alignment manager
+     app/asn            to build a library from ASN.1 spec, and sample application
+     app/blast          to build an application using BLAST
+     app/cgi            to build a CGI or FastCGI application
+     app/deployable_cgi to build a CD-deployable CGI application
+     app/dbapi          to build a DBAPI application
+     app/sdbapi         to build a Simple-DBAPI application
+     app/eutils         to build an eUtils client application
+     app/http_session   to build an application using CHttpSession
+     app/lds            to build an application using a local data storage
+     app/netcache       to build a client application of NetCache
+     app/netschedule    to build a NCBI GRID client application using NetSchedule
+     app/objects        to build an application using ASN.1 objects
+     app/objmgr         to build an application using the object manager
+     app/serial         to build sample serialization applications
+     app/soap/client    to build a SOAP client
+     app/soap/server    to build a SOAP server
+     app/unit_test      to build a Boost-based unit test application
    [builddir]  -- path to the pre-built NCBI C++ toolkit
                   (default = $def_builddir)
 
