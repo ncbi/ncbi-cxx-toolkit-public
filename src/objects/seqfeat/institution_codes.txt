@@ -4559,6 +4559,7 @@ NEB	s	University of Nebraska State Museum
 NEBC	s	New England Botanical Club		
 NEBK	h	University of Nebraska at Kearney		
 NEFI	s	Northeastern Forestry University, Forestry Department		
+NEHU	s	North Eastern Hills University		
 NEM	c	Faculte de Medecine Necker-Enfants Malades		
 NEMO	s	Truman State University		
 NEMSU	s	Truman State University		

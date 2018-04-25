@@ -4592,6 +4592,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NEBC\ts\tNew England Botanical Club\t\t",
 "NEBK\th\tUniversity of Nebraska at Kearney\t\t",
 "NEFI\ts\tNortheastern Forestry University, Forestry Department\t\t",
+"NEHU\ts\tNorth Eastern Hills University\t\t",
 "NEM\tc\tFaculte de Medecine Necker-Enfants Malades\t\t",
 "NEMO\ts\tTruman State University\t\t",
 "NEMSU\ts\tTruman State University\t\t",
