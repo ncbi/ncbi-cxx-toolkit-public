@@ -971,13 +971,14 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         //COpticalxml2asnOperator::UpdatePubDate(*result);
     }
 
-    // make asn.1 look nicier
-    edit::SortSeqDescr(*entry);
 
     if (m_context.m_cleanup.find('-') == string::npos)
     {
        m_validator->Cleanup(entry_edit_handle, m_context.m_cleanup);
     }
+
+    // make asn.1 look nicier
+    edit::SortSeqDescr(*entry);
 
     CFeatureTableReader ftr(m_context);
     ftr.ChangeDeltaProteinToRawProtein(*entry);

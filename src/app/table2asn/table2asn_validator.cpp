@@ -6,12 +6,13 @@
 // Object Manager includes
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/bioseq_ci.hpp>
 
 #include <objects/seq/MolInfo.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 #include <objects/submit/Seq_submit.hpp>
 
-#include <objmgr/feat_ci.hpp>
 
 #include "table2asn_validator.hpp"
 #include "table2asn_context.hpp"
@@ -88,6 +89,14 @@ void CTable2AsnValidator::Cleanup(CSeq_entry_Handle& h_entry, const string& flag
     if (flags.find('f') != string::npos)
     {        
         m_context->m_suspect_rules.FixSuspectProductNames((*(CSeq_entry*)h_entry.GetCompleteSeq_entry().GetPointer()));
+    }
+
+    // SQD-4386
+    {
+        for (CBioseq_CI it(h_entry); *it; ++it)
+        {
+            cleanup.AddProteinTitle(*it);
+        }
     }
 
     if (flags.find('s') != string::npos)

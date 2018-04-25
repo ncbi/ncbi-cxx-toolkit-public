@@ -800,24 +800,6 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
         protein_name = "hypothetical protein";
     }
 
-    string title = protein_name;
-    if (NStr::CompareNocase(protein_name, "hypothetical protein") == 0 && !locustag.empty())
-    {
-        // find locus
-        title += " ";
-        title += locustag;
-    }
-
-    if (org_name.length() > 0)
-    {
-        title += " [";
-        title += org_name;
-        title += "]";
-    }
-
-    CAutoAddDesc title_desc(protein->SetDescr(), CSeqdesc::e_Title);
-    title_desc.Set().SetTitle(title);
-
     if (!protein_name.empty())
     {
         if (!prot_ref.IsSetName() || prot_ref.GetName().empty())
