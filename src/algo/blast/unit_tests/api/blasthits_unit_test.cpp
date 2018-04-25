@@ -1487,4 +1487,52 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BlastQueryInfoFree(query_info);
     }
 
+    static void
+    s_SetupHSPListBlastn(BlastHSPList* * hsplist_ptr)
+    {
+        *hsplist_ptr = Blast_HSPListNew(4);
+        for(unsigned int i = 0; i < 4; i++ ){
+     	   unsigned int factor = i+1;
+     	   BlastHSP* hsp = Blast_HSPNew();
+
+        		hsp->query.offset = 0;
+        		hsp->query.end = 12/factor;
+        		hsp->subject.frame = i? -1 : 1;
+        		hsp->subject.offset = 0;
+        		hsp->subject.frame = 1;
+        		hsp->subject.end = 12/factor;
+        		hsp->score = 45/factor;
+        		(*hsplist_ptr)->hsp_array[i] = hsp;
+        		(*hsplist_ptr)->hspcnt ++;
+    		}
+    }
+
+    BOOST_AUTO_TEST_CASE(testSubjectBestHit)
+    {
+        BlastHSPList* hsp_list = NULL;
+        BLAST_SequenceBlk* query_blk = NULL;
+        BLAST_SequenceBlk* subject_blk = NULL;
+        BlastQueryInfo* query_info = NULL;
+        const Uint4 kDbLength = 100000000;
+
+        s_SetupSequencesForUngappedReevaluateTransl(&query_blk, &subject_blk);
+        s_SetupQueryInfoForReevaluateTest(eBlastTypeTblastn, query_blk, kDbLength, &query_info);
+
+        BlastHSPSubjectBestHitOptions* subject_besthit = BlastHSPSubjectBestHitOptionsNew(true);
+
+        s_SetupHSPListTransl(&hsp_list);
+        Blast_HSPListSubjectBestHit(eBlastTypeTblastn, subject_besthit,query_info,hsp_list);
+        BOOST_REQUIRE_EQUAL(1, (int) hsp_list->hspcnt);
+        Blast_HSPListFree(hsp_list);
+
+        s_SetupHSPListBlastn(&hsp_list);
+        Blast_HSPListSubjectBestHit(eBlastTypeBlastn, subject_besthit,query_info,hsp_list);
+        BOOST_REQUIRE_EQUAL(1, (int) hsp_list->hspcnt);
+        Blast_HSPListFree(hsp_list);
+
+        BlastSequenceBlkFree(query_blk);
+        BlastSequenceBlkFree(subject_blk);
+        BlastQueryInfoFree(query_info);
+    }
+
 BOOST_AUTO_TEST_SUITE_END()
