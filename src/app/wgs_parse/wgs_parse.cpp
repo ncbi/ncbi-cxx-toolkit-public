@@ -282,28 +282,28 @@ static bool OpenOutputFile(const string& fname, const string& description, CNcbi
     return true;
 }
 
-static bool OutputMaster(const CMasterInfo& info)
+static bool OutputMaster(const CRef<CSeq_entry>& entry, const string& fname, int num_of_entries)
 {
     // TODO FixMasterDates
 
-    string fname = GetParams().GetOutputDir() + '/';
-    if (info.m_master_file_name.empty()) {
-        fname += GetParams().GetIdPrefix() + ToStringLeadZeroes(GetParams().GetAssemblyVersion(), 2) + ToStringLeadZeroes(0, GetMaxAccessionLen(info.m_num_of_entries));
+    string path_name = GetParams().GetOutputDir() + '/';
+    if (fname.empty()) {
+        path_name += GetParams().GetIdPrefix() + ToStringLeadZeroes(GetParams().GetAssemblyVersion(), 2) + ToStringLeadZeroes(0, GetMaxAccessionLen(num_of_entries));
     }
     else {
-        fname += info.m_master_file_name;
+        path_name += fname;
     }
 
     CNcbiOfstream out;
-    if (!OpenOutputFile(fname, "processed submission", out)) {
+    if (!OpenOutputFile(path_name, "processed submission", out)) {
         return false;
     }
 
     try {
         if (GetParams().IsBinaryOutput())
-            out << MSerial_AsnBinary << info.m_master_bioseq;
+            out << MSerial_AsnBinary << entry;
         else
-            out << MSerial_AsnText << info.m_master_bioseq;
+            out << MSerial_AsnText << entry;
     }
     catch (CException& e) {
         ERR_POST_EX(0, 0, Error << "Failed to save processed submission to file: \"" << fname << "\" [" << e.GetMsg() << "]. Cannot proceed.");
@@ -603,6 +603,47 @@ static bool IsDescriptorsSame(const CSeq_entry& a_entry, const CSeq_entry& b_ent
     return a_descrs == b_descrs;
 }
 
+static CBioSource* GetBioSourceFromDescrs(CSeq_entry& entry)
+{
+    CBioSource* ret = nullptr;
+
+    if (entry.IsSeq() && entry.GetSeq().IsSetDescr() && entry.GetSeq().GetDescr().IsSet()) {
+        for (auto descr : entry.SetSeq().SetDescr().Set()) {
+            if (descr->IsSource()) {
+                ret = &descr->SetSource();
+                break;
+            }
+        }
+    }
+
+    return ret;
+}
+
+static void UpdateBioSource(CSeq_entry& master_bioseq, CSeq_entry& id_master_bioseq)
+{
+    CBioSource* new_bio_src = GetBioSourceFromDescrs(master_bioseq);
+    if (new_bio_src == nullptr) {
+        return;
+    }
+
+    CBioSource* old_bio_src = GetBioSourceFromDescrs(id_master_bioseq);
+    if (old_bio_src == nullptr) {
+
+        ERR_POST_EX(0, 0, (GetParams().GetSource() == eNCBI ? Error : Warning) << "Current master record in ID is lacking BioSource descriptor. Using the one from updated contigs.");
+
+        CRef<CSeqdesc> descr(new CSeqdesc);
+        descr->SetSource(*new_bio_src);
+        id_master_bioseq.SetSeq().SetDescr().Set().push_front(descr);
+        return;
+    }
+
+    if (!new_bio_src->Equals(*old_bio_src)) {
+        ERR_POST_EX(0, 0, (GetParams().GetSource() == eNCBI ? Error : Warning) <<
+                    "Current master record in ID has a BioSource descriptor which differs from the BioSource obtained from the updated contigs. Using the new BioSource from the contigs.");
+        old_bio_src->Assign(*new_bio_src);
+    }
+}
+
 static const int ERROR_RET = 1;
 
 // CR Use ZZZZ prefix to mock completely new submission
@@ -729,11 +770,18 @@ int CWGSParseApp::Run(void)
         else if (GetParams().GetUpdateMode() == eUpdateFull || GetParams().GetUpdateMode() == eUpdateExtraContigs ||
                  GetParams().GetUpdateMode() == eUpdateScaffoldsUpd) {
 
-            // TODO
+            if (GetParams().GetUpdateMode() == eUpdateFull) {
+                UpdateBioSource(*master_info.m_master_bioseq, *master_info.m_id_master_bioseq);
+            }
+
+            FixGbblockSource(*master_info.m_id_master_bioseq);
+            if (!OutputMaster(master_info.m_id_master_bioseq, master_info.m_master_file_name, master_info.m_num_of_entries)) {
+                ret = ERROR_RET;
+            }
         }
         else {
             FixGbblockSource(*master_info.m_master_bioseq);
-            if (!OutputMaster(master_info)) {
+            if (!OutputMaster(master_info.m_master_bioseq, master_info.m_master_file_name, master_info.m_num_of_entries)) {
                 ret = ERROR_RET;
             }
         }
