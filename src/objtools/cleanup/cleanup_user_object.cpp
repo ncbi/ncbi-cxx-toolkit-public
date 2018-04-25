@@ -78,9 +78,11 @@ bool CCleanup::CleanupUserObject( CUser_object &user_object )
                     }
                     break;
                 case CUser_field::TData::e_Strs:
-                    for (auto str : field->SetData().SetStrs()) {
-                        any_change |= Asn2gnbkCompressSpaces(str);
-                        any_change |= CleanVisString(str);
+                    // NOTE: for some reason, using the auto range 
+                    // does not work here
+                    for (auto str = field->SetData().SetStrs().begin(); str != field->SetData().SetStrs().end(); str++) {
+                        any_change |= Asn2gnbkCompressSpaces(*str);
+                        any_change |= CleanVisString(*str);
                     }
                     break;
                 default:
