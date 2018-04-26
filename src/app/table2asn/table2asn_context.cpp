@@ -180,7 +180,7 @@ CTable2AsnContext::CTable2AsnContext():
     m_RemoteTaxonomyLookup(false),
     m_RemotePubLookup(false),
     m_HandleAsSet(false),
-    m_ecoset(false),
+    m_ClassValue(CBioseq_set::eClass_genbank),
     m_GenomicProductSet(false),
     m_SetIDFromFile(false),
     m_NucProtSet(false),

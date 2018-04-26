@@ -12,6 +12,7 @@ namespace objects
 class CSeq_entry;
 class CSeq_submit;
 class CBioseq;
+class CBioseq_set;
 class CSeq_descr;
 class ILineErrorListener;
 class CUser_object;
@@ -80,7 +81,7 @@ public:
     bool   m_RemoteTaxonomyLookup;
     bool   m_RemotePubLookup;
     bool   m_HandleAsSet;
-    bool   m_ecoset;
+    objects::CBioseq_set::TClass m_ClassValue;
     bool   m_GenomicProductSet;
     bool   m_SetIDFromFile;
     bool   m_NucProtSet;

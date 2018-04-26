@@ -319,9 +319,9 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
             CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
             "File " + m_context.m_current_file + " contains multiple sequences")));
     }
-    if (m_context.m_ecoset && result->IsSet())
+    if (result->IsSet())
     {
-        result->SetSet().SetClass(CBioseq_set::eClass_eco_set);
+        result->SetSet().SetClass(m_context.m_ClassValue);
     }
 
 #endif
