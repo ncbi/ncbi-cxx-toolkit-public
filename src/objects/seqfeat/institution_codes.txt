@@ -1119,7 +1119,7 @@ CMCC	c	National Center for Medical Culture Collections
 CMCNA	s	Museo de Ciencias Naturales y Antropologicas "Prof. A. Serrano"		
 CMDM-PUJ	c	Coleccion de Microorganismos de la Pontificia Universidad Javeriana (Collection Microorganisms of the Pontificia Universidad Javeriana)	CMDM-PUJ
 CMEI	s	Clements' Museum of Exotic Insects		
-CMFRI	s	See FMRI		
+CMFRI	s	Central Marine Fisheries Research Institute	FMRI
 CMGP	s	Central Museum of Geological Prospecting		
 CMH	s	Canadian Museum of History		
 CMIZASDPRK	s	Custody Museum		
@@ -1944,7 +1944,6 @@ FMNH<FIN>	s	Finnish Museum of Natural History
 FMP	s	Fujian Academy of Traditional Chinese Medicine and Pharmacology		
 FMPC	s	Fairbanks Museum and Planetarium Collection		
 FMR	c	Facultad de Medicina		
-FMRI	s	Central Marine Fisheries Marine Research Institute		
 FMSS	s	Parque Zoological Nacional "Finca Modelo", Natural History Museum		
 FMUH	h	Francis Marion University		
 FNCC	c	Food and Nutrition Culture Collection		
@@ -3828,7 +3827,6 @@ MCITM	c	Bacterial Culture Collection
 MCIZ	s	Museo Cambria, Istituto di Zoologia dell'Universita		
 MCJ	s	Missouri Southern State College, Biology Department		
 MCLSBB	s	Museo Colegio La Salle Bonanova de Barcelona		
-MCM(CMFRI)	s	Reference Collection		
 MCM<CAN>	s	Hamilton College, McMaster University, Biology Department		
 MCM<FRA>	s	Institut de Paleontologie, Museum d'Histoire naturelle		
 MCM<IND>	c	MACS Collection of Microorganisms		
@@ -4036,7 +4034,7 @@ MJH	s	Muzeul Judetean Hunedoara
 MJMO	s	Universidad Centro Occidental, Decanato de Agronomia		
 MJS	s	Xiaolongshan Forestry Experiment Bureau		
 MJSD	s	Museum-Jardin des Sciences		
-MK	s	National Museum of Kenya		
+MK	s	National Museum of Kenya	NMKE
 MKMEL	h	Herbarium Melovskiorum		
 MKNDC	s	Institute of Biology		
 MKNH	s	Institute of Biology		
@@ -4584,13 +4582,13 @@ NFRI	c	Norwegian Forest Research Institute
 NFRN	s	Canadian Forest Service, NRCan		
 NGBB	h	Nezahat Gokyigit Botanik Bahcesi		
 NGCPR	h	Naoroji Godrej Centre for Plant Research		
-NGI	s	Nanjing Geographical Institute		
+NGI	s	Nanjing Geographical Institute	NIG
 NGM	s	Bromley House Library		
 NGMC	s	National Geological Museum of China		
 NGR	c	Plant Pathology		
 NH	s	South African National Biodiversity Institute		
 NHA	s	University of New Hampshire, Plant Biology Department		
-NHCP	h	National Bureau of Plant Genetic Resources		
+NHCP	s	National Bureau of Plant Genetic Resources (NBPGR)		
 NHES	s	Connecticut Agricultural Experiment Station, Entomology Department		
 NHG	s	Naturhistorische Gesellschaft e. V., Abteilung Botanik		
 NHI	h	Natural History Institute		
@@ -4648,7 +4646,7 @@ NICH	s	Hattori Botanical Laboratory
 NIES	c	Microbial Culture Collection		
 NIFI	s	National Inland Fisheries Institute		
 NIFRS	s	National Research Institute of Fisheries Science		
-NIG	s	Nanjing Geographical Institute		
+NIG	s	Nanjing Geographical Institute	NGI
 NIGL	s	Nanjing Institute of Geography and Limnology		
 NIGP	s	Naking Institute of Geology and Palaeontology		
 NIHHS	h	National Institute of Horticultural and Herbal Science, RDA		
@@ -4713,11 +4711,11 @@ NMEG	s	Naturkundesmuseum
 NMFC	s	Inner Mongolia Forestry College, Desert Control and Utilization Department		
 NMFSH	s	National Marine Fisheries Service		
 NMG	s	Naturhistoriska Riksmuseet		
-NMI	s	National Museum of Ireland		
+NMI	s	National Museum of Ireland	NMID
 NMI<POL>	c	Bacteria collection of National Institute of Public Health, National Medicines Institute, Poland		
-NMID	s	National Museum of Ireland		
+NMID	s	National Museum of Ireland	NMD
 NMK	s	National Museums of Kenya		
-NMKE	s	National Museum of Kenya		
+NMKE	s	National Museum of Kenya	MK
 NMKL	s	National Museum of Malaysia		
 NML	c	National Microbiology Laboratory, Public Health Agency of Canada	NML-HCCC
 NMLS	s	Natur-Museum Luzern		
@@ -4729,9 +4727,9 @@ NMML	s	National Marine Mammal Laboratory
 NMMNH	s	New Mexico Museum of Natural History and Science		
 NMMNH:Mamm	s	New Mexico Museum of Natural History and Science, Mammal collection
 NMN	s	Northamptonshire Natural History Society		
-NMND	s	National Museum of Natural History, New Delhi		
-NMNH<IND>	s	National Museum of Natural History, New Delhi		
-NMNHI	s	National Museum of Natural History, New Delhi		
+NMND	s	National Museum of Natural History, New Delhi	NMNH,NMNHI
+NMNH<IND>	s	National Museum of Natural History, New Delhi	NMND,NMNHI
+NMNHI	s	National Museum of Natural History, New Delhi	NMND,NMNH
 NMNK	s	National Museum of Nepal		
 NMNL	h	Natuurmuseum Nijmegen e.o.		
 NMNS	s	National Museum of Natural Science		
@@ -4750,13 +4748,12 @@ NMNZ:S	s	National Museum of New Zealand, Fossil Vertebrates
 NMNZ:TS	s	National Museum of New Zealand, Tissue Collection
 NMNZ:TSA	s	National Museum of New Zealand, Tissue Collection
 NMP<CZE>	s	National Museum (Prague)		
-NMP<ZAF>	s	Natal Museum		
+NMP<ZAF>	s	Natal Museum	NMSA
 NMPC	s	National Museum Prague	MNHP<CZE>
 NMPC:ENT	s	National Museum Prague, Entomology Collection
 NMPG<CHN>	s	Zhejiang Institute of Traditional Chinese Medicine		
 NMPG<DEU>	s	Museum der Natur-Gotha		
 NMPI	s	Division of Plant Industry		
-NMQR	s	National Museum, Bloemfontein		
 NMR	h	Semyung University		
 NMRC<USA-MD>	c	Naval Medical Research Center		
 NMRC<USA-MD>:RDD	c	Naval Medical Research Center, Rickettsial Diseases Division
