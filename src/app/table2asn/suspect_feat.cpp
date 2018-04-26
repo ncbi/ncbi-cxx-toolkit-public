@@ -108,7 +108,7 @@ bool CFixSuspectProductName::FixSuspectProductNames(objects::CSeq_feat& feature)
     bool modified = false;
     if (feature.IsSetData() && feature.GetData().IsProt() && feature.GetData().GetProt().IsSetName())
     {
-        if (feature.GetData().GetProt().IsSetProcessed() && feature.GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_not_set)
+        if (feature.GetData().GetProt().IsSetProcessed() && feature.GetData().GetProt().GetProcessed() != CProt_ref::eProcessed_not_set)
             return false;
 
 
