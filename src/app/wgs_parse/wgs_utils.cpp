@@ -190,6 +190,24 @@ bool GetNonConstAnnot(CSeq_entry& entry, CBioseq::TAnnot* &annot)
     return ret;
 }
 
+CRef<CSeqdesc> GetSeqdescr(CSeq_entry& entry, CSeqdesc::E_Choice type)
+{
+    CSeq_descr* descrs = nullptr;
+
+    CRef<CSeqdesc> ret;
+    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
+        for (auto descr : descrs->Set()) {
+            if (descr->IsCreate_date()) {
+                ret = descr;
+                break;
+            }
+        }
+
+    }
+
+    return ret;
+}
+
 TSetSeqIdFunc FindSetTextSeqIdFunc(CSeq_id::E_Choice choice)
 {
     // The map below links an id type with a text id setter

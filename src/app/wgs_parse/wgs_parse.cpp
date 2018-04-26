@@ -284,8 +284,6 @@ static bool OpenOutputFile(const string& fname, const string& description, CNcbi
 
 static bool OutputMaster(const CRef<CSeq_entry>& entry, const string& fname, int num_of_entries)
 {
-    // TODO FixMasterDates
-
     string path_name = GetParams().GetOutputDir() + '/';
     if (fname.empty()) {
         path_name += GetParams().GetIdPrefix() + ToStringLeadZeroes(GetParams().GetAssemblyVersion(), 2) + ToStringLeadZeroes(0, GetMaxAccessionLen(num_of_entries));
@@ -644,6 +642,58 @@ static void UpdateBioSource(CSeq_entry& master_bioseq, CSeq_entry& id_master_bio
     }
 }
 
+static void FixMasterDates(CMasterInfo& info, bool entry_from_id)
+{
+    if (info.m_master_bioseq.Empty() || info.m_id_master_bioseq.Empty() || GetParams().GetSource() == eNCBI) {
+        return;
+    }
+
+    CRef<CSeqdesc> creation_date = GetSeqdescr(*info.m_id_master_bioseq, CSeqdesc::e_Create_date);
+
+    if (creation_date.NotEmpty()) {
+        if (!entry_from_id) {
+
+            CRef<CSeqdesc> newer_creation_date = GetSeqdescr(*info.m_master_bioseq, CSeqdesc::e_Create_date);
+            if (newer_creation_date.NotEmpty()) {
+                newer_creation_date->Assign(*creation_date);
+            }
+            else {
+                info.m_master_bioseq->SetDescr().Set().push_back(creation_date);
+            }
+        }
+    }
+    else if (entry_from_id && info.m_creation_date_issues == eDateNoIssues && info.m_creation_date_present) {
+        creation_date.Reset(new CSeqdesc);
+        creation_date->SetCreate_date(info.m_creation_date);
+        info.m_id_master_bioseq->SetDescr().Set().push_back(creation_date);
+    }
+
+    if (!entry_from_id || !info.m_update_date_present || info.m_update_date_issues != eDateNoIssues) {
+        return;
+    }
+
+    CRef<CSeqdesc> update_date = GetSeqdescr(*info.m_id_master_bioseq, CSeqdesc::e_Update_date);
+
+    if (update_date.Empty()) {
+        update_date.Reset(new CSeqdesc);
+        update_date->SetUpdate_date(info.m_update_date);
+        info.m_id_master_bioseq->SetDescr().Set().push_back(update_date);
+    }
+    else {
+        bool fix_update_date = true;
+        if (entry_from_id && GetParams().GetUpdateMode() == eUpdateScaffoldsUpd) {
+            CCleanup cleanup;
+            cleanup.ExtendedCleanup(*info.m_id_master_bioseq);
+            fix_update_date = !info.m_id_master_bioseq->Equals(*info.m_master_bioseq);
+        }
+
+        if (fix_update_date) {
+            update_date->SetUpdate_date(info.m_update_date);
+        }
+    }
+
+}
+
 static const int ERROR_RET = 1;
 
 // CR Use ZZZZ prefix to mock completely new submission
@@ -775,12 +825,14 @@ int CWGSParseApp::Run(void)
             }
 
             FixGbblockSource(*master_info.m_id_master_bioseq);
+            FixMasterDates(master_info, true);
             if (!OutputMaster(master_info.m_id_master_bioseq, master_info.m_master_file_name, master_info.m_num_of_entries)) {
                 ret = ERROR_RET;
             }
         }
         else {
             FixGbblockSource(*master_info.m_master_bioseq);
+            FixMasterDates(master_info, false);
             if (!OutputMaster(master_info.m_master_bioseq, master_info.m_master_file_name, master_info.m_num_of_entries)) {
                 ret = ERROR_RET;
             }

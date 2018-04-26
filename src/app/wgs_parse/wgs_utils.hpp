@@ -89,6 +89,8 @@ bool GetNonConstDescr(CSeq_entry& entry, CSeq_descr* &descrs);
 bool GetAnnot(const CSeq_entry& entry, const CBioseq::TAnnot* &annot);
 bool GetNonConstAnnot(CSeq_entry& entry, CBioseq::TAnnot* &annot);
 
+CRef<CSeqdesc> GetSeqdescr(CSeq_entry& entry, CSeqdesc::E_Choice type);
+
 bool HasLineage(const string& lineage_str, const string& lineage);
 
 CRef<CSeq_submit> GetSeqSubmit(CNcbiIfstream& in, EInputType type);
