@@ -203,7 +203,7 @@ bool CCleanup::s_CleanupStructuredComment( CUser_object &obj )
     }
 
     if( genome_assembly_data ) {
-        s_CleanupGenomeAssembly(obj);
+        any_change |= s_CleanupGenomeAssembly(obj);
     }
 
     if( ibol_data ) {
