@@ -77,5 +77,10 @@ void COStreamTextOStream::AddLine(
     }
 }
 
+void COStreamTextOStream::Flush(void)
+{
+    m_Ostream.flush();
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
