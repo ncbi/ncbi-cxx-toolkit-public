@@ -112,6 +112,9 @@ int/*bool*/ LBSM_HINFO_Memusage(const HOST_INFO hinfo, double memusage[5]);
 int/*bool*/ LBSM_HINFO_MachineParams(const HOST_INFO hinfo, SHINFO_Params* p);
 
 
+int LBSM_HINFO_PortUsage(const HOST_INFO hinfo, SHINFO_PortUsage ports[4]);
+
+
 int/*bool*/ LBSM_HINFO_LoadAverage(const HOST_INFO hinfo, double lavg[2]);
 
 

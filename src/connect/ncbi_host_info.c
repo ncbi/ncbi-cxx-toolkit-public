@@ -118,25 +118,38 @@ extern int HINFO_TaskCount(const HOST_INFO host_info)
 }
  
 
-extern int HINFO_Memusage(const HOST_INFO host_info, double memusage[5])
+extern int/*bool*/ HINFO_Memusage(const HOST_INFO host_info,
+                                  double memusage[5])
 {
     memset(memusage, 0, 5 * sizeof(memusage[0]));
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
-        return 0;
+        return 0/*false*/;
     return LBSM_HINFO_Memusage(host_info, memusage);
 }
 
 
-extern int HINFO_MachineParams(const HOST_INFO host_info, SHINFO_Params* p)
+extern int/*bool*/ HINFO_MachineParams(const HOST_INFO host_info,
+                                       SHINFO_Params* params)
 {
-    memset(p, 0, sizeof(*p));
+    memset(params, 0, sizeof(*params));
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
-        return 0;
-    return LBSM_HINFO_MachineParams(host_info, p);
+        return 0/*false*/;
+    return LBSM_HINFO_MachineParams(host_info, params);
 }
 
 
-extern int/*bool*/ HINFO_LoadAverage(const HOST_INFO host_info, double lavg[2])
+extern int HINFO_PortUsage(const HOST_INFO host_info,
+                           SHINFO_PortUsage ports[4])
+{
+    memset(ports, 0, 4 * sizeof(ports[0]));
+    if (!host_info  ||  host_info->pad != HINFO_MAGIC)
+        return -1;
+    return LBSM_HINFO_PortUsage(host_info, ports);
+}
+
+
+extern int/*bool*/ HINFO_LoadAverage(const HOST_INFO host_info,
+                                     double lavg[2])
 {
     memset(lavg, 0, 2 * sizeof(lavg[0]));
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
@@ -145,7 +158,8 @@ extern int/*bool*/ HINFO_LoadAverage(const HOST_INFO host_info, double lavg[2])
 }
 
 
-extern int/*bool*/ HINFO_Status(const HOST_INFO host_info, double status[2])
+extern int/*bool*/ HINFO_Status(const HOST_INFO host_info,
+                                double status[2])
 {
     memset(status, 0, 2 * sizeof(status[0]));
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)

@@ -76,7 +76,7 @@ unsigned int HINFO_HostAddr(const HOST_INFO host_info);
  * @param host_info
  *  HOST_INFO as returned by the SERV API.
  * @return
- *  CPU count, or -1 if an error occurred.
+ *  CPU count (should be greater than 0), or -1 if an error occurred.
  * @sa
  *  SERV_GetInfoEx, SERV_GetNextInfoEx
  */
@@ -205,6 +205,27 @@ typedef struct {
  */
 extern NCBI_XCONNECT_EXPORT
 int/*bool*/ HINFO_MachineParams(const HOST_INFO host_info, SHINFO_Params* p);
+
+
+/** Port usage */
+typedef struct {
+    unsigned short port;  /**< Port number, host byte order       */
+    double         used;  /**< Port usage as percentage, [0..100] */
+} SHINFO_PortUsage;
+
+/** Obtain host port usage (for first 4 monitored ports).
+ * @param host_info
+ *  HOST_INFO as returned by the SERV API.
+ * @param ports
+ *  Usage information returned.
+ * @return
+ *  Return the number of port usage slots filled (may be zero if the host
+ *  reports no port usage), or -1 when an error occurred.
+ * @sa
+ *  SERV_GetInfoEx, SERV_GetNextInfoEx
+ */
+extern NCBI_XCONNECT_EXPORT
+int HINFO_PortUsage(const HOST_INFO host_info, SHINFO_PortUsage ports[4]);
 
 
 /** Obtain host load averages.
