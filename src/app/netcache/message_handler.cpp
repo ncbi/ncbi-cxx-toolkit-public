@@ -2255,7 +2255,8 @@ CNCMessageHandler::x_AssignCmdParams(void)
             else {
                 string key, value;
                 NStr::SplitInTwo(cmd_line, ":", key, value);
-                key = NStr::ToUpper(NStr::TruncateSpaces(key));
+                key = NStr::TruncateSpaces(key);
+                key = NStr::ToUpper(key);
                 value = NStr::TruncateSpaces(value);
                 headers[key] = value;
             }
