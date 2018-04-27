@@ -546,7 +546,7 @@ BMH	s	Bournemouth Natural Science Society Museum, herbarium
 BMHP	s	Bermuda Department of Agriculture and Fisheries		
 BMKB	s	Brunei Museum	BM<BRN>
 BMM	s	Buergermeister Mueller, Museum		
-BMNH	s	Natural History Museum, London		
+BMNH	s	Natural History Museum, London	NHMUK
 BMNH:ENT	s	Natural History Museum, London, Entomology collection
 BMNHC	s	Burpee Museum of Natural History	BURP
 BMPS	s	Bristol Museum and Philosophical Society		
@@ -1955,7 +1955,7 @@ FNP	s	Fundy National Park
 FNPS	s	South Florida Collections Management Center, Everglades National Park		
 FNU<CHN>	s	Fujian Normal University		
 FNU<JPN>	s	Nagasaki University - Fisheries		
-FOF	h	National University of Laos		
+FOF	s	National University of Laos		
 FOR	s	Forssa Museum of Natural History		
 FOSJ	s	Fisheries and Oceans Biological Station		
 FPDB	s	Universidad de Puerto Rico, Departamento de Ciencias Marinas		
@@ -2324,7 +2324,6 @@ HCIB	s	Centro de Investigaciones Biologicas del Noroeste, S. C.
 HCIO	s	Indian Agricultural Research Institute		
 HCMS	s	Hampshire County Council Museums Service		
 HCMZ	s	Hope College		
-HCNHSC	s	Ohio Historical Society, Natural History Synoptic Collection		
 HCOA	s	College of the Atlantic, Herbarium		
 HCOM	h	Centre d'Oceanologie de Marseille - University of Aix-Marseille II		
 HCT	s	Taiwan Forestry Research Institute		
@@ -3496,10 +3495,10 @@ LGPUT	s	Laboratory of Geology and Palaeontology
 LGU	s	Leningrad State University		
 LHMS<ZAF >	b	Leslie Hill Molecular Systematics Laboratory		
 LHT	s	Lahti City Museum		
-LI	s	Oberoesterreichischen Landesmuseums, Botanische Abteilung		
-LI:EVAR	s	Oberoesterreichischen Landesmuseums, Botanische Abteilung, Evertebrata Varia (Invertebrates other than Insects)
-LI:INS	s	Oberoesterreichischen Landesmuseums, Botanische Abteilung, Insect collection
-LI:VERT	s	Oberoesterreichischen Landesmuseums, Botanische Abteilung, Vertebrate collection
+LI	s	Biology Centre of the Upper Austrian State Museum		
+LI:EVAR	s	Biology Centre of the Upper Austrian State Museum, Evertebrata Varia (Invertebrates other than Insects)
+LI:INS	s	Biology Centre of the Upper Austrian State Museum, Insect collection
+LI:VERT	s	Biology Centre of the Upper Austrian State Museum, Vertebrate collection
 LIA	c	Cryobank of Microorganisms		
 LIAIP	s	Laboratory of Ichthyology		
 LIB	s	University of Liberia		
@@ -3531,7 +3530,7 @@ LISJC	s	Jardim-Museu Agricola Tropical
 LISM	s	Missao de Estudos Agronomicos do Ultramar		
 LISU	s	Museu Nacional de Historia Natural		
 LISVA	s	Ministerio da Educacao		
-LIT	s	Okresni vlastivedne muzeum		
+LIT	s	Oblastni muzeum v Litomericich		
 LIUSP<BRA>	s	Laboratorio de Ictiogenetica, Universidade de Sao Paulo		
 LIV	s	Liverpool Museum		
 LIVC	s	Liverpool Botanic Garden		
@@ -4482,7 +4481,6 @@ NBIMCC	c	National Bank for Industrial Microorganisms and Cell Cultures
 NBM	s	New Brunswick Museum		
 NBMB	s	St. John's, New Brunswick Museum		
 NBME	s	National Butterfly Museum (Saruman Museum)		
-NBNM	s	National Park Service		
 NBPC	s	National Birds of Prey Centre		
 NBPGR	b	National Bureau of Plant Genetic Resources		
 NBRC	c	NITE Biological Resource Center		
@@ -4533,7 +4531,7 @@ NCPV	c	National Collection of Pathogenic Viruses
 NCS	s	North Carolina State University		
 NCSC<THA>	c	National Center of Streptococcus Collection, Department of Microbiology, Faculty of Medical Science		
 NCSC<USA-NC>	s	North Carolina State University, Botany Department		
-NCSLG	h	North Carolina State University		
+NCSLG	s	North Carolina State University (Larry F. Grand Mycological Herbarium)		
 NCSM	s	North Carolina Museum of Natural Sciences	NCSMNS
 NCSU	s	North Carolina State University Collections		
 NCTC	c	National Collection of Type Cultures		
@@ -4597,12 +4595,12 @@ NHL	c	National Institute of Hygienic Sciences
 NHM<CHE>	s	Naturhistorisches Museum, Bern		
 NHM<GBR-Nottingham>	s	University of Nottingham, Botany Department		
 NHMA	s	Natural History Museum, Denmark		
-NHMB<CHE>	s	Naturhistorisches Museum, Basel		
+NHMB<CHE>	s	Naturhistorisches Museum, Basel	NMBA
 NHMB<HUN>	s	Natural History Museum Bucharest		
 NHMBe	s	Naturhistorisches Museum Bern		
 NHMC<GRC>	s	Natural History Museum of Crete, University of Crete, Department of Botany		
 NHMC<MMR>	s	Natural History Museum, Rangoon		
-NHME	s	Natuurhistorisch Museum		
+NHME	s	Natuurhistorisch Museum Maastricht		
 NHMF	h	Natural History Museum Fribourg		
 NHMG<CHN>	s	Natural History Museum of Guangxi		
 NHMG<SWE>	s	Goteborgs Naturhistoriska Museet		
@@ -4613,12 +4611,12 @@ NHMM-LS	s	Naturhistorisches Museum/Landessammlung fuer Naturkunde Rheinland-Pfal
 NHMN	s	Nottingham Natural History Museum (Wollaton Hall)		
 NHMR<HRV>	s	Natural History Museum Rijeka		
 NHMR<ISL>	s	Natural History Museum, Reykjavik		
-NHMR<NLD>	s	Natuurhistorisch Museum		
+NHMR<NLD>	s	Natuurhistorisch Museum Rotterdam		
 NHMS	h	Natural History Museum Split		
 NHMTU	s	Natural History Museum, Tribhuvan University		
 NHMUK	sb	Natural History Museum, London	BM,BM(NH),BMNH,NHM,NHM R,NMH
 NHMUK<PAK>	s	Natural History Museum, Karachi		
-NHMW	s	Naturhistorisches Museum, Wien		
+NHMW	s	Naturhistorisches Museum, Wien	NMW
 NHNC	s	La Chaux-de-Fons		
 NHNE	s	New England College, Biology Department		
 NHR	h	Institute of Scientific and Technological Research (IRST)		
@@ -4661,7 +4659,7 @@ NIT	s	Jardim Botanico de Niteroi
 NIVA	c	Norwegian Culture Collection of Algae	NIVA
 NIWA	s	National Institute of Water and Atmospheric Research		
 NJ	s	Njala University College		
-NJM<CZE>	s	Okresni vlastivedne muzeum		
+NJM<CZE>	s	Muzeum Novojieinska		
 NJM<JPN>	c	Nippon Veterinary and Animal Science University		
 NJNU	s	Nanjing Normal University, Biology Department		
 NJSM	s	New Jersey State Museum		
@@ -4687,7 +4685,7 @@ NMB<ZAF>	s	National Museum, Bloemfontein
 NMB<ZAF>:P	s	National Museum, Bloemfontein, The Protozoan collection of the National Museum
 NMBA<ARG>	s	National Museum, Buenos Aires		
 NMBA<AUT>	s	Naturhistorisches Museum der Benediktiner-Abtei		
-NMBA<CHE>	s	Naturhistorisches Museum, Basel		
+NMBA<CHE>	s	Naturhistorisches Museum, Basel	NHMB
 NMBE	s	Naturhistorisches Museum der Burgergemeinde Bern	NHM
 NMBO	s	National Museum, Bloemfontein		
 NMBT	h	Natuurmuseum Brabant		
@@ -4710,7 +4708,6 @@ NMED	s	New Mexico Environment Department
 NMEG	s	Naturkundesmuseum		
 NMFC	s	Inner Mongolia Forestry College, Desert Control and Utilization Department		
 NMFSH	s	National Marine Fisheries Service		
-NMG	s	Naturhistoriska Riksmuseet		
 NMI	s	National Museum of Ireland	NMID
 NMI<POL>	c	Bacteria collection of National Institute of Public Health, National Medicines Institute, Poland		
 NMID	s	National Museum of Ireland	NMD
@@ -4799,7 +4796,7 @@ NMV<AUS>:T	s	Museum Victoria, Entomlogy Type Collection
 NMV<AUS>:TRI	s	Museum Victoria, Trichoptera
 NMV<AUS>:Z	s	Museum Victoria, Tissue Collection
 NMV<JPN>	s	Nakagawa Museum at Nakagawa-cho		
-NMW<AUT>	s	Naturhistorisches Museum, Wien	NHMV
+NMW<AUT>	s	Naturhistorisches Museum, Wien	NHMV,NHMW
 NMW<GBR>	s	National Museums & Galleries of Wales, Department of Biodiversity and Systematic Biology		
 NMWC	s	National Museum of Wales		
 NMWZ	s	National Museum of Wales		
@@ -4861,10 +4858,10 @@ NSCNFB	c	Novi Sad Collection of Nitrogen Fixing Bacteria
 NSCPM	c	National State Collection of Pathogenic Microorganisms		
 NSDA	s	Nevada Division of Agriculture		
 NSK	s	Siberian Central Botanical Garden, Laboratory for Plant Systematics and Floristic Genesis		
-NSM<CAN>	s	Nova Scotia Museum of Natural History		
+NSM<CAN>	s	Nova Scotia Museum of Natural History	NSMC
 NSM<CHN>	s	Sun Yat-Sen Tomb and Memorial Park Commission		
 NSM<JPN>	s	NSM-PV, National Science Museum		
-NSMC<CAN>	s	Nova Scotia Museum		
+NSMC<CAN>	s	Nova Scotia Museum	NSM
 NSMC<USA-NV>	s	Nevada State Museum		
 NSMHS	s	Nevada State Museum and Historical Society		
 NSMK	s	National Science Museum		
@@ -4893,7 +4890,6 @@ NTNU-VM	s	Norwegian University of Science and Technology, Museum of Natural Hist
 NTOU	sc	Institute of Marine Biology, National Taiwan Ocean University		
 NTS	s	Nevada Operations Office, U.S. Department of Energy		
 NTSC	s	University of North Texas, Biological Sciences Department		
-NTUC	s	National Taiwan University		
 NTUF	s	National Taiwan University, Forestry Department		
 NTUM	s	National Taiwan University		
 NTUMA	s	National Taiwan University		
@@ -4989,8 +4985,8 @@ OLP	s	Univerzity Palackeho, Katedra biologie
 OLS	h	University of Warmia and Mazury		
 OLTC	s	Teachers Training College, Botany Department		
 OLV	s	Olivet College, Biology Department		
-OLYM	h	Olympic National Park		
-OM	s	Otago Museum		
+OLYM	s	Olympic National Park		
+OM	s	Otago Museum	OMNZ
 OMA	s	University of Nebraska Omaha, Biology Department		
 OMC<NZL>	s	Catalogues in Otago Museum		
 OMC<USA>	s	Mills College, Biology Department		
@@ -4999,9 +4995,8 @@ OMKH	s	Oblastni muzeum Kutna Hora
 OMNH<JPN>	s	Osaka Museum of Natural History		
 OMNH<USA-OK>	s	Oklahoma Museum of Natural History		
 OMNHN	s	The Sam Noble Oklahoma State Museum of Natural History		
-OMNHO	s	Osaka Museum of Natural History		
-OMNO	s	Oklahoma Museum of Natural History		
-OMNZ	s	Otago Museum		
+OMNHO	s	Osaka Museum of Natural History	OMNH
+OMNZ	s	Otago Museum	OM
 OMP	s	Polabske muzeum v Podebradech		
 OMPB	s	Osservatorio per le Malattie delle Piante per la Regione Emilia-Romagna		
 OMPG	s	Osservatorio per le Malattie delle Piante per le Province di Genova e La Spezia		
@@ -5011,8 +5006,7 @@ OMSKM	s	Omsk State Agrarian University, Department of Forestry and Plant Conserv
 OMUB	s	Ondokuz Mayis University, Biology Department		
 ON	s	Oman Natural History Museum		
 ONNC	s	Office de la Recherche Scientifique et Technique d'Outre-Mer		
-ONP	s	Olympic National Park		
-ONPC	s	Olympic National Park		
+ONPC	s	Olympic National Park	ONP
 OOM	s	Kameyama Botanical Garden		
 OP	s	Silesian Museum		
 OPANM	s	Otdel Paleontologii i Biostratigrafii Akademii Nauk Moldovkoi Republiki		
@@ -5032,7 +5026,7 @@ ORT	s	Instituto Canario de Investigaciones Agrarias (ICIA)
 ORTN	s	Orton Hall		
 ORU	s	Oral Roberts University, Biology Department		
 OS<USA-OH>	s	Ohio State University		
-OS<USA-OR>	s	Oregon State University		
+OS<USA-OR>	s	Oregon State University	OSUC,SU
 OSA	s	Osaka Museum of Natural History		
 OSAC	s	Oregon State Arthropod Collection		
 OSAL	s	Ohio State University Acarology Laboratory		
@@ -5049,7 +5043,7 @@ OSN	s	Museum am Schoelerberg, Natur und Umwelt
 OSTR	h	University of Ostrava		
 OSU<USA-OH>	s	Ohio State University		
 OSU<USA-OK>	s	Oklahoma State University, Collection of Vertebrates		
-OSUC	s	Oregon State University		
+OSUC	s	Oregon State University	OS,SU
 OSUF	s	Oregon State University, Department of Wood Science and Engineering		
 OSUFW	s	Oregon State University, Department of Fisheries and Wildlife Mammal Collection		
 OSUMZ	s	Ohio State University, Museum of Biological Diversity		
@@ -6122,7 +6116,7 @@ STU	s	Staatliches Museum fuer Naturkunde Stuttgart
 STUM	s	Santo Tomas University Museum		
 SU<CHN>	s	Suzhou University		
 SU<USA-CA>	s	Stanford University		
-SU<USA-OR>	s	Oregon State University		
+SU<USA-OR>	s	Oregon State University	OS,OSUC
 SUA	s	Sokoine University of Agriculture, Forest Biology Department		
 SUB	s	Universitat Bonn		
 SUCEA	s	The University at Albany		
@@ -7120,7 +7114,7 @@ VIZR	c	Collection for plant protection, All-Russian Institute of Plant Protectio
 VKM	c	All-Russian Collection of Microorganisms		
 VKPM	c	Russian National Collection of Industrial Microorganisms		
 VLA	s	Far Eastern Branch, Russian Academy of Sciences, Botany Department		
-VM	s	Okresni vlastivedne muzeum		
+VM	s	Okresni vlastivedne muzeum (Museum of the Moravian Wallachia region, state funded organisation)		
 VMI	h	Virginia Military Institute		
 VMIL	s	Virginia Military Institute, Biology Department		
 VMKSC	s	Kearney State University, Vertebrate Museum		
