@@ -69,7 +69,7 @@ static void RecursiveText(ostream& out, const TReportItemList& list, const vecto
         }
         out << deunderscore(it->GetTitle()) << ": " << it->GetMsg() << "\n";
         TReportItemList subs = it->GetSubitems();
-        if (!subs.empty() && (ext || !subs[0]->IsExtended() && !subs[0]->IsSummary())) {
+        if (!subs.empty() && (ext || !subs[0]->IsExtended())) {
             RecursiveText(out, subs, fnames, fatal, ext);
         }
         else {
