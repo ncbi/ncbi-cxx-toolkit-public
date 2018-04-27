@@ -91,7 +91,7 @@ class CConn_Streambuf;  // Forward declaration
 class CSocket;          // Forward declaration
 
 
-const size_t kConn_DefaultBufSize = 4096;
+const size_t kConn_DefaultBufSize = 4096;  ///< I/O buffer size per direction
 
 
 
@@ -116,14 +116,14 @@ class NCBI_XCONNECT_EXPORT CConn_IOStream : public            CNcbiIostream,
                                             virtual protected CConnIniter
 {
 public:
-    /// Must be compatible by values with TCONN_Flags.
+    /// The values must be compatible with TCONN_Flags.
     enum {
-        fConn_Untie         = 1,  ///< do not flush before reading
-        fConn_DelayOpen     = 2,  ///< do not force CONN opened in ctor
-        fConn_ReadBuffered  = 4,  ///< read buffer is to be allocated
-        fConn_WriteBuffered = 8   ///< write buffer is to be allocated
+        fConn_Untie         = fCONN_Untie, ///< do not flush before reading
+        fConn_DelayOpen     = 2,           ///< do not force CONN open in ctor
+        fConn_ReadBuffered  = 4,           ///< read buffer is to be allocated
+        fConn_WriteBuffered = 8            ///< write buffer is to be allocated
     } EConn_Flag;
-    typedef unsigned int TConn_Flags;  ///< bitwise OR of EConn_Flag
+    typedef unsigned int TConn_Flags;      ///< bitwise OR of EConn_Flag
 
     /// Create a stream based on a CONN, which is to be closed upon stream
     /// dtor only if "close" parameter is passed as "true".
@@ -662,13 +662,13 @@ public:
 public:
     /// Helper class
     struct SSERVICE_CBData {
-        SSERVICE_Extra   extra;
-        SHTTP_StatusData status;
+        SSERVICE_Extra       extra;
+        SHTTP_StatusData     status;
     };
 
 protected:
     // Chained callbacks
-    SSERVICE_CBData m_CBD;
+    SSERVICE_CBData          m_CBD;
 
 private:
     // Interceptors

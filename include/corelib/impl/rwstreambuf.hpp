@@ -99,14 +99,21 @@ protected:
 
     virtual int         sync(void);
 
-    /// Note: setbuf(0, 0) has no effect
+    /// Per the standard, setbuf(0, 0) makes I/O unbuffered.
+    /// buf_size == 1 makes the stream unbuffered ("buf", if provided,
+    /// may still be used internally as a one-char un-get location).
+    /// Special case: setbuf(non-NULL, 0) creates an internal buffer of some
+    /// predefined size, which will be automatically deallocated in dtor;  the
+    /// value of the first argument is ignored (can be any non-NULL pointer).
+    /// Otherwise, setbuf() sets I/O arena of size "buf_size" located at "buf",
+    /// and halved between the I/O directions, if both are used.
     virtual CNcbiStreambuf* setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
     /// Only seekoff(0, IOS_BASE::cur, *) to obtain current position, and input
     /// skip-forward are permitted:
     /// seekoff(off, IOS_BASE::cur or IOS_BASE::beg, IOS_BASE::in) when the
     /// requested stream position is past the current input position (so the
-    //  stream can read forward internally to reach that position).
+    /// stream can read forward internally to reach that position).
     virtual CT_POS_TYPE seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
                                 IOS_BASE::openmode which =
                                 IOS_BASE::in | IOS_BASE::out);

@@ -158,7 +158,8 @@ CRWStreambuf::CRWStreambuf(IReaderWriter*       rw,
       x_GPos((CT_OFF_TYPE) 0), x_PPos((CT_OFF_TYPE) 0),
       x_Err(false), x_ErrPos((CT_OFF_TYPE) 0)
 {
-    setbuf(n  &&  s ? s : 0, n ? n : kDefaultBufSize << 1);
+    setbuf(n  &&  s ? s : 0,
+           n        ? n : kDefaultBufSize << 1);
 }
 
 
@@ -200,20 +201,19 @@ ERW_Result CRWStreambuf::x_Pushback(void)
 CRWStreambuf::~CRWStreambuf()
 {
     try {
+        // Push any still unread data from the buffer back to the device
+        ERW_Result result = x_Pushback();
+        if (result != eRW_Success  &&  result != eRW_NotImplemented) {
+            ERR_POST_X(13, "CRWStreambuf::~CRWStreambuf():"
+                       " Read data pending");
+        }
+    } NCBI_CATCH_ALL_X(14, "Exception in ~CRWStreambuf() [IGNORED]");
+    try {
         // Flush only if data pending and no error
         if (!x_Err  ||  x_ErrPos != x_GetPPos())
             x_Sync();
         setp(0, 0);
     } NCBI_CATCH_ALL_X(2,  "Exception in ~CRWStreambuf() [IGNORED]");
-    try {
-        // Push any data still unred in the buffer back to the device
-        ERW_Result result = x_Pushback();
-        if (result != eRW_Success  &&  result != eRW_NotImplemented) {
-            ERR_POST_X(13,
-                       Critical << "CRWStreambuf::~CRWStreambuf():"
-                       " Read data pending");
-        }
-    } NCBI_CATCH_ALL_X(14, "Exception in ~CRWStreambuf() [IGNORED]");
 
     delete[] m_pBuf;
 }
@@ -221,9 +221,6 @@ CRWStreambuf::~CRWStreambuf()
 
 CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize m)
 {
-    if (!s  &&  !m)
-        return this;
-
     if (x_Pushback() != eRW_Success)
         ERR_POST_X(3,Critical << "CRWStreambuf::setbuf(): Read data pending");
     if (x_Sync() != 0)
@@ -235,9 +232,13 @@ CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize m)
 
     size_t n = (size_t) m;
     if ( !n ) {
-        s = 0/*setbuf(s, 0)?!*/;
-        _ASSERT(kDefaultBufSize > 1);
-        n = (size_t) kDefaultBufSize << (m_Reader  &&  m_Writer ? 1 : 0);
+        if ( s ) {
+            // setbuf(s, 0);
+            _ASSERT(kDefaultBufSize > 1);  // new[] to always follow, n > 1
+            n = (size_t) kDefaultBufSize << (m_Reader  &&  m_Writer ? 1 : 0);
+            s = 0/*ignore*/;
+        } else
+            n = 1;
     }
     if ( !s )
         s          = n == 1 ? &x_Buf : (m_pBuf = new CT_CHAR_TYPE[n]);
@@ -447,6 +448,7 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
     // read from device
     ERW_Result result;
     size_t n_read = 0;
+    _ASSERT(m_ReadBuf  &&  m_BufSize);
     RWSTREAMBUF_HANDLE_EXCEPTIONS(
         m_Reader->Read(m_ReadBuf, m_BufSize, &n_read),
         10, "CRWStreambuf::underflow(): IReader::Read()",

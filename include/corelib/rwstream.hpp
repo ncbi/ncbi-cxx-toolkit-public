@@ -98,7 +98,8 @@ BEGIN_NCBI_SCOPE
 ///     controls whether IReader is destroyed upon stream destruction,
 ///     whether exceptions get logged (or leaked, or caught silently), etc.
 ///
-/// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
+/// Special case of "buf_size" == 1 creates unbuffered stream ("buf", if
+/// provided, is still used internally as a one-char un-get location).
 ///
 /// @sa CRWStreambuf::TFlags, IWStream, IRWStream
 
@@ -135,7 +136,8 @@ private:
 ///     controls whether IWriter is destroyed upon stream destruction,
 ///     whether exceptions get logged (or leaked, or caught silently), etc.
 ///
-/// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
+/// Special case of "buf_size" == 1 creates unbuffered stream ("buf", if
+/// provided, is ignored).
 ///
 /// @sa CRWStreambuf::TFlags, IRStream, IRWStream
 
@@ -173,7 +175,8 @@ private:
 ///     controls whether IReaderWriter is destroyed upon stream destruction,
 ///     whether exceptions get logged (or leaked, or caught silently), etc.
 ///
-/// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
+/// Special case of "buf_size" == 1 creates unbuffered stream ("buf", if
+/// provided, may still be used internally as a one-char un-get location).
 ///
 /// @sa CRWStreambuf::TFlags, IRStream, IWStream
 
