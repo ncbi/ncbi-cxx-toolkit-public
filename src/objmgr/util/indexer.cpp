@@ -969,7 +969,7 @@ void CBioseqIndex::x_InitGaps (void)
         for (CSeqMap_CI gap_it(m_OrigBsh, sel); gap_it; ++gap_it) {
 
             TSeqPos start = gap_it.GetPosition();
-            TSeqPos end = gap_it.GetEndPosition() - 1;
+            TSeqPos end = gap_it.GetEndPosition();
             TSeqPos length = gap_it.GetLength();
 
             // attempt to find CSeq_gap info

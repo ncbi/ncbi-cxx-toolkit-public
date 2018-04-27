@@ -2930,25 +2930,6 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
                 }
             }
 
-            while (gap_it) {
-                const int gap_start = gap_it.GetPosition();
-                const int gap_end   = (gap_it.GetEndPosition() - 1);
-
-                // if feature after gap first output the gap 
-                if ( feat_start >= gap_start ) {
-                    // - Don't output gaps of size zero (except: see showGapsOfSizeZero's definition)
-                    // - Don't output if there's an explicit gap that overlaps this one
-                    const bool noGapSizeProblem = ( showGapsOfSizeZero || (gap_start <= gap_end) );
-                    if( noGapSizeProblem /* && ! s_CoincidingGapFeatures( it, gap_start, gap_end ) */ ) {
-                        item.Reset( s_NewGapItem(gap_it, ctx) );
-                        out << item;
-                    }
-                    ++gap_it;
-                } else {
-                    break;
-                }
-            }
-
             item.Reset( x_NewFeatureItem(mf, ctx, feat_loc, m_Feat_Tree) );
             out << item;
 
@@ -3022,14 +3003,6 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
         } else {
             has_gap = false;
         }
-    }
-    while (gap_it) {
-        // we don't output gaps of size zero (except: see showGapsOfSizeZero)
-        if( showGapsOfSizeZero || (gap_it.GetPosition() < gap_it.GetEndPosition()) ) {
-            item.Reset( s_NewGapItem(gap_it, ctx) );
-            out << item;
-        }
-        ++gap_it;
     }
 }
 
