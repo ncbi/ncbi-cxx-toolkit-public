@@ -80,9 +80,9 @@ public:
     bool SetVal(CUser_field& field, const string & newValue, EExistingText existing_text);
     virtual string GetLabel() const;
     static EDBLinkFieldType GetTypeForLabel(string label);
-    static string GetLabelForType(EDBLinkFieldType field_type);
+    static const string& GetLabelForType(EDBLinkFieldType field_type);
     static bool IsDBLink (const CUser_object& user);
-    static void NormalizeDBLinkFieldName(string& orig_label);
+    static CTempString GetNormalizedDBLinkFieldName(const CTempString& orig_label);
     static vector<string> GetFieldNames();
     static CRef<CUser_object> MakeUserObject();
 
@@ -107,6 +107,8 @@ public:
     static void SetProbeDB(CUser_object& obj, const string& val, EExistingText existing_text = eExistingText_replace_old);
     static void SetSRA(CUser_object& obj, const string& val, EExistingText existing_text = eExistingText_replace_old);
     static void SetAssembly(CUser_object& obj, const string& val, EExistingText existing_text = eExistingText_replace_old);
+
+    static void MergeDBLink(CUser_object& dest, const CUser_object& src);
 
     static vector<string> GetBioSample(const CUser_object& obj);
     static vector<string> GetBioProject(const CUser_object& obj);

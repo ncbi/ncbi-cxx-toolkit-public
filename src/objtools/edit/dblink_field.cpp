@@ -133,6 +133,11 @@ void CDBLinkField::_ParseAndAppend(CUser_field::C_Data::TStrs& strs, const strin
     {
         for (auto v : l)
         {
+            if (existing_text == eExistingText_add_qual)
+            {
+                strs.push_back(v);
+            }
+            else
             for (auto s : strs)
             {
                 if (m_ConstraintFieldType != m_FieldType || !m_StringConstraint  || m_StringConstraint->DoesTextMatch(s))
@@ -275,9 +280,9 @@ void CDBLinkField::SetConstraint(const string& field_name, CConstRef<CStringCons
 
 CDBLinkField::EDBLinkFieldType CDBLinkField::GetTypeForLabel(string label)
 {
-    NormalizeDBLinkFieldName(label);
+    CTempString normal = GetNormalizedDBLinkFieldName(label);
     for (int i = eDBLinkFieldType_Trace; i < eDBLinkFieldType_Unknown; i++) {
-        string match = GetLabelForType((EDBLinkFieldType)i);
+        const string& match = GetLabelForType((EDBLinkFieldType)i);
         if (NStr::EqualNocase(label, match)) {
             return (EDBLinkFieldType)i;
         }
@@ -286,32 +291,21 @@ CDBLinkField::EDBLinkFieldType CDBLinkField::GetTypeForLabel(string label)
 }
 
 
-string CDBLinkField::GetLabelForType(EDBLinkFieldType field_type)
+const string& CDBLinkField::GetLabelForType(EDBLinkFieldType field_type)
 {
-    string rval = "";
-    switch (field_type) {
-        case eDBLinkFieldType_Trace:
-            rval = "Trace Assembly Archive";
-            break;
-        case eDBLinkFieldType_BioSample:
-            rval = "BioSample";
-            break;
-        case eDBLinkFieldType_ProbeDB:
-            rval = "ProbeDB";
-            break;
-        case eDBLinkFieldType_SRA:
-            rval = "Sequence Read Archive";
-            break;
-        case eDBLinkFieldType_BioProject:
-            rval = "BioProject";
-            break;
-        case eDBLinkFieldType_Assembly:
-            rval = "Assembly";
-            break;
-        case eDBLinkFieldType_Unknown:
-            break;
-    }
-    return rval;
+    static const string g_types[] = {
+        "Trace Assembly Archive",
+        "BioSample",
+        "ProbeDB",
+        "Sequence Read Archive",
+        "BioProject",
+        "Assembly"
+    };
+
+    if (field_type < 0 || field_type >= eDBLinkFieldType_Unknown)
+        return kEmptyStr;
+    else
+        return g_types[field_type]; 
 }
 
 
@@ -488,13 +482,15 @@ bool CDBLinkField::IsDBLink (const CUser_object& user)
     }
 }
 
-
-void CDBLinkField::NormalizeDBLinkFieldName(string& orig_label)
+CTempString CDBLinkField::GetNormalizedDBLinkFieldName(const CTempString& orig_label)
 {
     if (NStr::StartsWith(orig_label, "DBLink ")) {
-        orig_label = orig_label.substr(7);
+        return orig_label.substr(7);
     }
+    else
+        return orig_label;
 }
+
 
 
 vector<string> CDBLinkField::GetFieldNames()
@@ -504,8 +500,7 @@ vector<string> CDBLinkField::GetFieldNames()
     for (int field_type = CDBLinkField::eDBLinkFieldType_Trace;
          field_type < CDBLinkField::eDBLinkFieldType_Unknown;
          field_type++) {       
-        string field_name = CDBLinkField::GetLabelForType((CDBLinkField::EDBLinkFieldType)field_type);
-        CDBLinkField::NormalizeDBLinkFieldName(field_name);
+        const string& field_name = CDBLinkField::GetLabelForType((CDBLinkField::EDBLinkFieldType)field_type);
         options.push_back(field_name);
     }
 
@@ -582,6 +577,28 @@ void CDBLink::SetAssembly(CUser_object& obj, const string& val, EExistingText ex
     field.SetVal(obj, val, existing_text);
 }
 
+void CDBLink::MergeDBLink(CUser_object& dest, const CUser_object& src)
+{
+    for (const auto& src_field : src.GetData())
+    {
+        if (src_field->IsSetLabel() && src_field->GetLabel().IsStr() && src_field->IsSetData())
+        {
+            CDBLinkField field(CDBLinkField::GetTypeForLabel(src_field->GetLabel().GetStr()));
+
+            if (src_field->GetData().IsStr())
+            {
+                field.SetVal(dest, src_field->GetData().GetStr());
+            } else if (src_field->GetData().IsStrs())
+            {
+                for (const auto& src_value : src_field->GetData().GetStrs())
+                {
+                    field.SetVal(dest, src_value, eExistingText_add_qual);
+                }
+            }
+        }
+
+    }
+}
 
 CDBLink& CDBLink::SetBioSample(const string& val, EExistingText existing_text)
 {

@@ -78,6 +78,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 
 #include <objmgr/scope.hpp>
+#include <objtools/edit/dblink_field.hpp>
 
 #include "table2asn_context.hpp"
 
@@ -237,7 +238,7 @@ CSeq_descr& CTable2AsnContext::SetBioseqOrParentDescr(CBioseq& bioseq)
     return bioseq.SetDescr();
 }
 
-CUser_object& CTable2AsnContext::SetUserObject(CSeq_descr& descr, const string& type)
+CUser_object& CTable2AsnContext::SetUserObject(CSeq_descr& descr, const CTempString& type)
 {
     CRef<CUser_object> user_obj;
     for (auto desc: descr.Set())
@@ -381,10 +382,10 @@ bool CTable2AsnContext::IsDBLink(const CSeqdesc& desc)
 
 void CTable2AsnContext::x_MergeSeqDescr(objects::CSeq_descr& dest, const objects::CSeq_descr& src, bool only_set) const
 {
-    ITERATE(CSeq_descr::Tdata, it, src.Get())
+    for (auto src_desc: src.Get())
     {
-        CRef<CSeqdesc> desc;
-        switch ((**it).Which())
+        CRef<CSeqdesc> new_desc;
+        switch (src_desc->Which())
         {
         case CSeqdesc::e_Molinfo:
         case CSeqdesc::e_Source:
@@ -392,7 +393,7 @@ void CTable2AsnContext::x_MergeSeqDescr(objects::CSeq_descr& dest, const objects
                continue;
             break;
         case CSeqdesc::e_User:
-            if (IsDBLink(**it))
+            if (IsDBLink(*src_desc))
             {
                if (only_set)
                     continue;
@@ -411,21 +412,30 @@ void CTable2AsnContext::x_MergeSeqDescr(objects::CSeq_descr& dest, const objects
             break;
         }
 
-        switch ((**it).Which())
+        switch (src_desc->Which())
         {
         case CSeqdesc::e_User:
+            if (IsDBLink(*src_desc))
+            {
+                auto& user_obj = SetUserObject(dest, "DBLink");
+
+                edit::CDBLink::MergeDBLink(user_obj, src_desc->GetUser());
+
+                continue;
+            }
+            break;
         case CSeqdesc::e_Pub:
             break;
         default:
-            desc = CAutoAddDesc::LocateDesc(dest, (**it).Which());
+            new_desc = CAutoAddDesc::LocateDesc(dest, src_desc->Which());
         }
 
-        if (desc.Empty())
+        if (new_desc.Empty())
         {
-            desc.Reset(new CSeqdesc);
-            dest.Set().push_back(desc);
+            new_desc.Reset(new CSeqdesc);
+            dest.Set().push_back(new_desc);
         }
-        desc->Assign(**it);
+        new_desc->Assign(*src_desc);
     }
 }
 

@@ -126,7 +126,7 @@ public:
     void SetOrganismData(objects::CSeq_descr& SD, int genome_code, const string& taxname, int taxid, const string& strain) const;
 
     static
-    objects::CUser_object& SetUserObject(objects::CSeq_descr& descr, const string& type);
+    objects::CUser_object& SetUserObject(objects::CSeq_descr& descr, const CTempString& type);
     static
     objects::CSeq_descr& SetBioseqOrParentDescr(objects::CBioseq& bioseq);
     bool ApplyCreateUpdateDates(objects::CSeq_entry& entry) const;
