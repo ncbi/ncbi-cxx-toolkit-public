@@ -171,7 +171,7 @@ static const char* x_GetValue(const char* svc, size_t svclen,
     }
     CORE_UNLOCK;
 
-    /* Last resort: Search for 'param' in default registry section */
+    /* Last resort: Search for 'param' in default registry section [CONN] */
     s += sizeof(DEF_CONN_REG_SECTION);
     CORE_REG_GET(DEF_CONN_REG_SECTION, s, value, value_size, def_value);
     return value;

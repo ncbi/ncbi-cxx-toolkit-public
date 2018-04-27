@@ -283,8 +283,12 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 #define REG_CONN_DISPD_DISABLE              "DISPD_DISABLE"
 
 /* Local service dispatcher */
-#define REG_CONN_LOCAL_SERVICES   "LOCAL_SERVICES"
-#define REG_CONN_LOCAL_SERVER     DEF_CONN_REG_SECTION "_" "LOCAL_SERVER"
+#define REG_CONN_LOCAL_SERVICES     "LOCAL_SERVICES"
+#define REG_CONN_LOCAL_SERVER       DEF_CONN_REG_SECTION "_" "LOCAL_SERVER"
+
+/* Local IP table */
+#define REG_CONN_LOCAL_IPS          "LOCAL_IPS"
+#define REG_CONN_LOCAL_IPS_DISABLE  "NONE"
 
 
 /* Lookup "param" in the registry / environment.
@@ -295,8 +299,8 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
  *    then "as-is");
  * 2. Registry key "param" in the section "[service]";
  * 3. Environment setting "param" (in all upper-case);
- * 4. Registry key "param" (with "CONN_", if there was any, stripped)
- *    in the section "[CONN]".
+ * 4. Registry key "param" (with leading "CONN_" stripped) in the default
+ *    section "[CONN]".
  * Steps 1 & 2 skipped for "service" passed as NULL or empty ("").
  * Steps 3 & 4 skipped for non-empty "service" and the "param" that already
  * begins with "CONN_".

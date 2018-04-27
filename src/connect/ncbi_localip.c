@@ -81,7 +81,7 @@
 #define   SizeOf(a)  (sizeof(a) / sizeof((a)[0]))
 
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
-/*#  define NCBI_LOCALIP_DEBUG 1*/
+#  define NCBI_LOCALIP_DEBUG 1
 #endif /*_DEBUG && !NDEBUG*/
 
 
@@ -233,21 +233,21 @@ static int/*bool*/ x_LoadLocalIPs(CONNECTOR c, const char* source)
 static void s_LoadLocalIPs(void)
 {
     static const char* kFile[] = {
-        "/etc/ncbi/local_ips_v2",
+        "/etc/ncbi/local_ips_v2",  /* obsolescent */
         "/etc/ncbi/local_ips"
     };
-    static const char kLocalIPs[] = "LOCAL_IPS";
-    char buf[PATH_MAX + 1];
-    const char* file = ConnNetInfo_GetValue(0, kLocalIPs,
-                                            buf, sizeof(buf) - 1, "");
     size_t n;
-
-    if (file  &&  strcasecmp(file, "--HARDCODED--") != 0) {
+    ELOG_Level level;
+    char buf[PATH_MAX + 1];
+    const char* file = ConnNetInfo_GetValue(0, REG_CONN_LOCAL_IPS,
+                                            buf, sizeof(buf) - 1, "");
+    if (file) {
         SConnNetInfo* net_info;
-        ELOG_Level level;
         for (n = 0;  n < SizeOf(kFile);  ++n) {
             if (n  ||  !*file)
                 file = kFile[n];
+            else if (strcasecmp(file, REG_CONN_LOCAL_IPS_DISABLE) == 0)
+                break;
             if (access(file, R_OK) == 0  &&
                 x_LoadLocalIPs(FILE_CreateConnector(file, 0), file)) {
                 return;
@@ -265,28 +265,35 @@ static void s_LoadLocalIPs(void)
             if (file == buf)
                 break;
         }
-        net_info = ConnNetInfo_Create(kLocalIPs);
+        net_info = ConnNetInfo_Create(REG_CONN_LOCAL_IPS);
+        if (net_info)
+            n = strcasecmp(net_info->svc, REG_CONN_LOCAL_IPS_DISABLE) ? 1 : 0;
+        else
+            n = 0;
         /* Build HTTP connector here to save on a dispatcher hit */
-        if (ConnNetInfo_SetupStandardArgs(net_info, kLocalIPs)  &&
+        if (n  &&  ConnNetInfo_SetupStandardArgs(net_info, net_info->svc)  &&
             x_LoadLocalIPs(HTTP_CreateConnector(net_info,
-                                                "User-Agent: ncbi_localnet",
+                                                "User-Agent: ncbi_localip",
                                                 fHTTP_NoAutoRetry |
                                                 fHTTP_SuppressMessages),
-                           kLocalIPs)) {
+                           net_info->svc)) {
             ConnNetInfo_Destroy(net_info);
             return;
         }
         ConnNetInfo_Destroy(net_info);
         if (net_info) {
 #  ifdef NCBI_OS_LINUX
-            level = eLOG_Trace;
+            level = n ? eLOG_Trace : eLOG_Note;
 #  else
             level = eLOG_Warning;
 #  endif /*NCBI_OS_LINUX*/
         } else
             level = eLOG_Error;
-        CORE_LOGF_X(1, level,
-                    ("Cannot load local IP specs from \"%s\"", kLocalIPs));
+    } else
+        level = eLOG_Critical;
+    if (level != eLOG_Note) {
+        CORE_LOG_X(1, level,
+                   "Cannot load local IP specs from " REG_CONN_LOCAL_IPS);
     }
 
     CORE_LOG(eLOG_Trace, "Using default local IPv4 specs");
