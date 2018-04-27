@@ -745,11 +745,11 @@ static void x_ShowDataLayout(void)
         infof(SOCK_struct,    path)
 #  endif /*NCBI_OS_MSWIN*/
     CORE_LOGF_X(2, eLOG_Note,
-        (kLayoutFormat,
-        (unsigned int) sizeof(TRIGGER_struct),
-            (unsigned int) sizeof(LSOCK_struct),
-            (unsigned int) sizeof(SOCK_struct),
-            SOCK_SHOWDATALAYOUT_PARAMS));
+                (kLayoutFormat,
+                 (unsigned int) sizeof(TRIGGER_struct),
+                 (unsigned int) sizeof(LSOCK_struct),
+                 (unsigned int) sizeof(SOCK_struct),
+                 SOCK_SHOWDATALAYOUT_PARAMS));
 #  undef SOCK_SHOWDATALAYOUT_PARAMS
 }
 

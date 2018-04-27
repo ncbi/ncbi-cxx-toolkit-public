@@ -649,6 +649,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  * @note
  *  SOCK_Close[Ex]() on the resultant socket will not close the OS handle
  *  if fSOCK_KeepOnClose is set in "flags".
+ * @warning
+ *  Any pending data (for writing, such as the initial data or pushback, or
+ *  reading, such as data read ahead internally) still left in SOCK but not
+ *  delivered to the OS or the user level, respectively, will be discarded!
  * @param handle
  *  [in]  OS-dependent "handle" or SOCK to be converted
  * @param handle_size
