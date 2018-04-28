@@ -99,14 +99,18 @@ protected:
 
     virtual int         sync(void);
 
-    /// Per the standard, setbuf(0, 0) makes I/O unbuffered.
-    /// buf_size == 1 makes the stream unbuffered ("buf", if provided,
-    /// may still be used internally as a one-char un-get location).
+    /// Per the standard, setbuf(0, 0) makes I/O unbuffered.  Other behavior is
+    /// implementation-dependent:
+    /// "buf_size" == 1 makes I/O unbuffered ("buf", if provided, may still be
+    /// used internally as a one-char un-get location).
     /// Special case: setbuf(non-NULL, 0) creates an internal buffer of some
     /// predefined size, which will be automatically deallocated in dtor;  the
     /// value of the first argument is ignored (can be any non-NULL pointer).
     /// Otherwise, setbuf() sets I/O arena of size "buf_size" located at "buf",
     /// and halved between the I/O directions, if both are used.
+    /// Before changing the buffer, this call first attempts to flush any
+    /// pending output (sync), and return any pending input sequence (internal
+    /// read buffer) to the device (pushback).
     virtual CNcbiStreambuf* setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
     /// Only seekoff(0, IOS_BASE::cur, *) to obtain current position, and input
