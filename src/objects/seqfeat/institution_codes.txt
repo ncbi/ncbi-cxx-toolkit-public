@@ -70,7 +70,7 @@ ADA	s	Herbarium, Department of Agriculture, South Australia
 ADMONT	s	Benediktinerstift Admont		
 ADO	s	Kirikkale University, Biology Department		
 ADR	s	Adrian College, Biology Department		
-ADRZ	s	Rudjer Boskovic Institute, CIM-Botany		
+ADRZ	s	Rudjer Boskovic Institute (Herbarium Adriaticum)		
 ADSH	s	Arachnology Division		
 ADT	s	Antarctic Division		
 ADU	s	University of Adelaide, Botany Department		
@@ -2510,7 +2510,7 @@ HREC	h	Hopland Research & Extension Center
 HRJ	s	Universidade do Estado do Rio de Janeiro, Departamento de Biologia Animal e Vegetal		
 HRP	s	Universidad Nacional de La Patagonia, Departamento Biologia General		
 HSB	s	Universidad Mayor Real y Pontificia de San Francisco Xavier de Chuquisaca		
-HSBU	h	Shahid Beheshti University		
+HSBU	s	Shahid Beheshti University		
 HSC	s	Humboldt State University, Biological Sciences Department		
 HSCC	c	Culture Collection of the Research and Development Department		
 HSI	s	University of Helsinki, Silviculture Department		
@@ -3135,7 +3135,7 @@ JOI	h	Universidade da Regiao de Joinville
 JOMU	h	John Muir National Historic Site		
 JONK	s	Jonkershoek Herbarium		
 JOTR	h	Joshua Tree National Park		
-JP	s	Phyletisches Museum Jena		
+JP	s	Phyletisches Museum Jena	PMIG,PMJ
 JPB	s	Universidade Federal da Paraiba, Cidade Universitaria, Departamento de Sistematica e Ecologia		
 JPMP	s	Janus Pannonius Museum		
 JPU	s	Janus Pannonius University, Botany Department		
@@ -3319,7 +3319,7 @@ KRMS	s	Sternwarte Kremsmuenster, Stift
 KRP	sb	Kebun Raya Purwodadi (Purwodadi Botanic Gardens, Indonesia)		
 KRSF	s	Koronivia Research Station		
 KRSU	s	Krasnoyarsk State University, Department of Biogeocoenology		
-KSAN	s	South African National Parks		
+KSAN	s	Kimberley South African National Parks Herbarium		
 KSBS	s	Lawrence, University of Kansas, State Biological Survey of Kansas		
 KSC	s	Kansas State University		
 KSEM	s	Kansas Snow Entomological Museum		
@@ -4185,7 +4185,7 @@ MPEF-PV	s	Muso Paleontologico Egidio Fergulio
 MPEG	s	Museu Paraense Emilio Goeldi		
 MPEP	s	Musee de Paleontologie et de l'evolution		
 MPGB	s	Museum of Portuguese Guinea		
-MPH	h	Shahid Behershti University		
+MPH	s	Shahid Behershti University		
 MPKV	c	Biological Nitrogen Fixation Project College of Agriculture		
 MPL	s	Musee de Port Louis		
 MPLN	s	Museo Provinciale di Storia Naturale		
@@ -5215,8 +5215,6 @@ PMG<GBR>	s	Paisley Museum of Geological Collection
 PMH	s	City Museum and Records Office		
 PMHPS	s	Portsmouth Philosophical Society		
 PMHU	s	Palaontologisches Museum		
-PMIG	s	Phyletisches Museum		
-PMJ	s	Phyletisches Museum		
 PMK<RUS>	s	Pugachev Regional Museum		
 PMK<SVK>	s	Podunajske muzeum		
 PMNH<PAK>	s	Pakistan Museum of Natural History		
@@ -5333,12 +5331,12 @@ PUC<ZAF>	s	North-West University
 PUCMNH	s	Pacific Union College, Museum of Natural History		
 PUCP	s	Punjab University		
 PUH	s	University of the Philippines, Institute of Biology		
-PUL	s	Purdue University, Department of Botany and Plant Pathology		
+PUL	s	Kriebel Hebarium Purdue University		
 PUM	s	Universita DI Pisa		
 PUN	s	Punjabi University, Botany Department		
 PUO	s	Portland University		
 PUP	s	University of Peshawar, Botany Department		
-PUR	s	Purdue University, Department of Botany and Plant Pathology		
+PUR	s	Arthur Herbarium Purdue University		
 PURC	s	Purdue University		
 PUS	s	Puslinch House		
 PUSC	s	University of Southern Colorado, Life Sciences Department		
@@ -5382,11 +5380,10 @@ QFS	s	Universite Laval
 QG	s	General Grassland Station of Qinghai		
 QIBX	s	Qinghai Institute of Biology		
 QIMR	s	Queensland Institute of Medical Research		
-QK	s	Queen's University, Biology Department		
-QM	s	Queensland Museum		
+QK	s	Fowler Herbarium Queen's University		
+QM	s	Queensland Museum	QMB
 QM<USA-MA>	s	U.S. Army Natick Research and Development Center		
-QM<ZWE>	s	Queen Victoria Museum		
-QMB	s	Queensland Museum, Brisbane		
+QMB	s	Queensland Museum, Brisbane	QM
 QMC	s	Queen Mary College		
 QMEX	s	Universidad Autonoma de Queretaro, Centro Universitario		
 QMOR	s	Collection Entomologique Ouellet-Robert		
@@ -5480,7 +5477,7 @@ RHMD	s	National Institute of Science Communication
 RHMU	c	Department of Pathology, Faculty of Medical Science, Ramathibordi Hospital		
 RHS	c	Plant Pathology, The Royal Horticultural Society		
 RHT	s	St. Joseph's College		
-RI	s	Rudjer Boskovic Institute		
+RI	s	Rudjer Boskovic Institute (Herbarium Flora Adriatica)		
 RIA	c	The Russia Research Institute for Antibiotics Culture Collection		
 RIB	c	National Research Institute of Brewing, Tax Administration Agency		
 RIBM	c	Research Institute for Brewing and Malting		
@@ -5571,8 +5568,8 @@ RPTN	s	Repton School, Biology Department
 RRCBI	s	Regional Research Centre (Ay.)		
 RRIASR	c	Fungal Pathogens of Hevea Rubber in Sri Lanka		
 RRJ	c	RRL , Jammu INDIA		
-RRLB	s	Regional Research Laboratory		
-RRLH	s	Regional Research Laboratory		
+RRLB	s	Regional Research Laboratory (Institute of Minerals and Materials Technology)		
+RRLH	s	Regional Research Laboratory (Indian Institute of Integrative Medicine)		
 RSA	s	Rancho Santa Ana Botanic Garden		
 RSCS	c	Medical Culture Collection		
 RSDR	s	Desert Institute, Turkmenistan Academy of Sciences		
@@ -5627,8 +5624,8 @@ SAFU	s	University of San Francisco
 SAG	c	Sammlung von Algenkulturen at Universitat Gottingen		
 SAG<CHL>	c	Coleccion de Micoligica Laboratorio Regional, Servicio Agricola y Ganadero		
 SAIAB	sb	South African Institute of Aquatic Biodiversity		
-SAIM	s	South African Institute for Medical Research		
-SAIMR	s	South African Institute for Medical Research		
+SAIM	s	South African Institute for Medical Research	SAIMR
+SAIMR	s	South African Institute for Medical Research	SAIM
 SAITP	c	School of Pharmacy and Medical Sciences, University of South Australia		
 SAK	s	Institute of Marine Geology and Geophysics, Far East Branch, Island Ecological Problems Department		
 SAKH	s	Sakhalin Botanical Garden		
@@ -5685,11 +5682,8 @@ SBDE	s	Sino-Belgian Dinosaur expedition
 SBG	s	Botanical Garden of Stavropol State University, Botany Department		
 SBH	s	S Blair Hedges Collection		
 SBKA	s	Stiftssammlungen des Benediktinerstiftskrems-Munster		
-SBM<MYS>	s	Sabah Museum		
 SBM<USA-CA>	s	Santa Barbara Museum of Natural History		
-SBMN	s	Santa Barbara Museum of Natural History		
-SBMNH	s	Santa Barbara Museum of Natural History		
-SBNHM	s	Santa Barbara Natural History Museum		
+SBMNH	s	Santa Barbara Museum of Natural History	SBMN,SBNHM
 SBP	s	Station Biologique de Paimpont		
 SBSC	s	Robert A. Vines Environmental Science Center		
 SBSFU	c	School of Biological Sciences		
@@ -5734,7 +5728,7 @@ SCUF	s	Universidade Federal de Santa Catarina
 SCUI	h	Suez Canal University		
 SCUM	s	Sichuan University Museum		
 SCV	b	State Collection of Viruses		
-SCZ	s	Smithsonian Tropical Research Institute		
+SCZ	s	Smithsonian Tropical Research Institute	STRI
 SD	s	Herbarium, San Diego Natural History Museum		
 SDAKS	s	South Dakota State University		
 SDAU	s	Shandong Agricultural University		
@@ -5846,7 +5840,7 @@ SHTU	s	Shanghai Teachers University, Biology Department
 SHY	s	Rowley's House Museum		
 SHYAN	s	Shropshire Archaeological and Natural History Society		
 SHYB	s	Shrewsbury School		
-SHYL	s	Shrewsbury School		
+SHYL	s	Herbarium and Library		
 SHYN	s	Shrewsbury Natural History Society		
 SHYP	s	Shrewsbury Public Library		
 SI	s	Instituto de Botanica Darwinion		
@@ -5918,7 +5912,6 @@ SLUM	s	Saint Louis University Museum Ichthylogy Collection
 SM<CHN>	s	Chongqing Municipal Academy of Chinese Materia Medica		
 SM<DEU-Frankfurt>	s	Senckenberg Museum		
 SM<DEU-Langenaltheim>	s	Schwegler Museum		
-SM<MYS>	s	Sarawak Museum		
 SM<USA-FL>	s	Sanford Museum Collections		
 SM<USA-TX>	s	Strecker Museum, Baylor University		
 SMAG	s	Southland Museum and Art Gallery		
@@ -5938,10 +5931,10 @@ SMF<PER>	s	Universidad Nacional Mayor de San Marcos
 SMH	s	Saint Meinrad College of Liberal Arts, Biology Department		
 SMI	s	Prince Rupert Forest Region, Research Section		
 SMIP	c	Secao de Maricultura		
-SMJM	s	Sabah Museum		
-SMK	s	Sarawak Museum	SM
+SMJM	s	Sabah Museum	SBM
+SMK	s	Sarawak Museum	SM,SMSM
 SMKM	s	Selangor Museum		
-SMM	s	Science Museum of Minnesota		
+SMM	s	Science Museum of Minnesota	SMPM
 SMMC	s	Second Military Medical College		
 SMN	s	Simao District National Medical and Pharmaceutical Institute		
 SMNG	s	Senckenberg Museum fuer Naturkunde Goerlitz		
@@ -5955,12 +5948,10 @@ SMNS	s	Staatliches Museum fuer Naturkund Stuttgart
 SMOC	s	Slezske Muzeum Opava		
 SMP<SUR>	s	Surinaams Museum		
 SMP<USA-PA>	s	The State Museum of Pennsylvania		
-SMPM	s	Science Museum of Minnesota		
 SMR	s	Samara State University, Department for Ecology, Botany, and Nature Protection		
 SMRG	c	Soil Microbiology Research Group, Division of Soil Science, Department of Agriculture		
 SMRS	s	Stavropol Museum of Regional Studies		
 SMS	s	Missouri State University, Department of Biology		
-SMSM	s	Sarawak Museum		
 SMTP	s	Swedish Malaise Trap Project		
 SMTWA	c	School of Medical Technology Western Australia		
 SMU	s	St. Mary's University		
@@ -6108,7 +6099,7 @@ STPE	s	Florida Marine Research Institute, Florida Department of Environmental Pr
 STPH	h	Direccao Geral do Ambiente, Cabinet of Environment, Ministry of Natural Resources and Environment		
 STPS	s	St. Paul's School		
 STR	s	Institut de Botanique		
-STRI	sc	Smithsonian Tropical Research Institute		
+STRI	sc	Smithsonian Tropical Research Institute	SCZ
 STRI:ICBG-Panama	c	Smithsonian Tropical Research Institute,  International Cooperative Biodiversity Groups
 STS	s	Stromness Museum		
 STT	s	St. Thomas's Hospital Medical School Library		
@@ -6357,7 +6348,7 @@ TMM	s	Texas Memorial Museum
 TMMC	s	Texas Memorial Museum		
 TMNH	s	Tianjin Museum of Natural History		
 TMP<FIN>	s	Tampere Museums		
-TMRC	h	Shahid Beheshti University of Medical Sciences		
+TMRC	s	Shahid Beheshti University of Medical Sciences		
 TMS	s	Toleco Museum of Health and Natural History		
 TMSA	s	Transvaal Museum	TM<ZAF>
 TMTC	s	Taiwan Provincial Museum		
