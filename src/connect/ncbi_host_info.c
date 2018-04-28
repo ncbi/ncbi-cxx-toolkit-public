@@ -139,12 +139,12 @@ extern int/*bool*/ HINFO_MachineParams(const HOST_INFO host_info,
 
 
 extern int HINFO_PortUsage(const HOST_INFO host_info,
-                           SHINFO_PortUsage ports[4])
+                           SHINFO_PortUsage ports[], size_t count)
 {
-    memset(ports, 0, 4 * sizeof(ports[0]));
+    memset(ports, 0, count * sizeof(ports[0]));
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
         return -1;
-    return LBSM_HINFO_PortUsage(host_info, ports);
+    return LBSM_HINFO_PortUsage(host_info, ports, count);
 }
 
 

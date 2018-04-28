@@ -138,7 +138,8 @@ int HINFO_TaskCount(const HOST_INFO host_info);
  *  SERV_GetInfoEx, SERV_GetNextInfoEx
  */
 extern NCBI_XCONNECT_EXPORT
-int/*bool*/ HINFO_Memusage(const HOST_INFO host_info, double memusage[5]);
+int/*bool*/ HINFO_Memusage(const HOST_INFO host_info,
+                           double memusage[5]);
 
 
 typedef enum {
@@ -204,7 +205,8 @@ typedef struct {
  *  SERV_GetInfoEx, SERV_GetNextInfoEx
  */
 extern NCBI_XCONNECT_EXPORT
-int/*bool*/ HINFO_MachineParams(const HOST_INFO host_info, SHINFO_Params* p);
+int/*bool*/ HINFO_MachineParams(const HOST_INFO host_info,
+                                SHINFO_Params* p);
 
 
 /** Port usage */
@@ -213,19 +215,28 @@ typedef struct {
     double         used;  /**< Port usage as percentage, [0..100] */
 } SHINFO_PortUsage;
 
-/** Obtain host port usage (for first 4 monitored ports).
+/** Obtain host port usage (currently only 4 first ports are published).
  * @param host_info
  *  HOST_INFO as returned by the SERV API.
  * @param ports
- *  Usage information returned.
+ *  Usage information to fill out
+ * @param count
+ *  Number of array elements in "ports"
  * @return
- *  Return the number of port usage slots filled (may be zero if the host
- *  reports no port usage), or -1 when an error occurred.
+ *  Return the number of port usage slots reported (may be zero if the host
+ *  reports no port usage, can be less than "count" -- remaining array elements
+ *  cleared; or more than "count" if the host requires a bigger array that the
+ *  one provided -- all "count" elements have been filled in), or -1 when an
+ *  error occurred.
+ * @note
+ *  You may call this function with "ports" and "count" passed as 0 to learn
+ *  how many array elements to expect.
  * @sa
  *  SERV_GetInfoEx, SERV_GetNextInfoEx
  */
 extern NCBI_XCONNECT_EXPORT
-int HINFO_PortUsage(const HOST_INFO host_info, SHINFO_PortUsage ports[4]);
+int HINFO_PortUsage(const HOST_INFO host_info,
+                    SHINFO_PortUsage ports[], size_t count);
 
 
 /** Obtain host load averages.
@@ -242,7 +253,8 @@ int HINFO_PortUsage(const HOST_INFO host_info, SHINFO_PortUsage ports[4]);
  *  HINFO_Status, SERV_GetInfoEx, SERV_GetNextInfoEx
  */
 extern NCBI_XCONNECT_EXPORT
-int/*bool*/ HINFO_LoadAverage(const HOST_INFO host_info, double lavg[2]);
+int/*bool*/ HINFO_LoadAverage(const HOST_INFO host_info,
+                              double lavg[2]);
 
 
 /** Obtain LB host availability status.
@@ -261,7 +273,8 @@ int/*bool*/ HINFO_LoadAverage(const HOST_INFO host_info, double lavg[2]);
  *  HINFO_LoadAverage, SERV_GetInfoEx, SERV_GetNextInfoEx
  */
 extern NCBI_XCONNECT_EXPORT
-int/*bool*/ HINFO_Status(const HOST_INFO host_info, double status[2]);
+int/*bool*/ HINFO_Status(const HOST_INFO host_info,
+                         double status[2]);
 
 
 /** Obtain and return LB host environment.

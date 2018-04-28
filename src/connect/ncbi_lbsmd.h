@@ -106,19 +106,24 @@ double LBSM_HINFO_CpuClock(const HOST_INFO hinfo);
 int LBSM_HINFO_TaskCount(const HOST_INFO hinfo);
 
 
-int/*bool*/ LBSM_HINFO_Memusage(const HOST_INFO hinfo, double memusage[5]);
+int/*bool*/ LBSM_HINFO_Memusage(const HOST_INFO hinfo,
+                                double memusage[5]);
 
 
-int/*bool*/ LBSM_HINFO_MachineParams(const HOST_INFO hinfo, SHINFO_Params* p);
+int/*bool*/ LBSM_HINFO_MachineParams(const HOST_INFO hinfo,
+                                     SHINFO_Params* p);
 
 
-int LBSM_HINFO_PortUsage(const HOST_INFO hinfo, SHINFO_PortUsage ports[4]);
+int LBSM_HINFO_PortUsage(const HOST_INFO hinfo,
+                         SHINFO_PortUsage ports[], size_t count);
 
 
-int/*bool*/ LBSM_HINFO_LoadAverage(const HOST_INFO hinfo, double lavg[2]);
+int/*bool*/ LBSM_HINFO_LoadAverage(const HOST_INFO hinfo,
+                                   double lavg[2]);
 
 
-int/*bool*/ LBSM_HINFO_Status(const HOST_INFO hinfo, double status[2]);
+int/*bool*/ LBSM_HINFO_Status(const HOST_INFO hinfo,
+                              double status[2]);
 
 
 #ifdef __cplusplus

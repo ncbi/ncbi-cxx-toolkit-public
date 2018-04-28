@@ -147,6 +147,15 @@ static double x_TimeDiff(const struct timeval* end,
 }
 
 
+static int x_ComparePortUsage(const void* p1, const void* p2)
+{
+    const SHINFO_PortUsage* u1 = (const SHINFO_PortUsage*) p1;
+    const SHINFO_PortUsage* u2 = (const SHINFO_PortUsage*) p2;
+    assert(u1->port != u2->port);
+    return u1->port < u2->port ? -1 : 1;
+}
+
+
 /* One can define env.var. 'service'_CONN_HOST to reroute dispatching
  * information to particular dispatching host (instead of default).
  */
@@ -156,6 +165,7 @@ int main(int argc, const char* argv[])
     const char* service = argc > 1 ? argv[1] : "bounce";
     SConnNetInfo* net_info;
     const SSERV_Info* info;
+    const char* arg, *val;
     struct timeval start;
     const char* value;
     int n_found = 0;
@@ -183,10 +193,20 @@ int main(int argc, const char* argv[])
             CORE_LOG(eLOG_Note, "Using live (faster) LBSM heap access");
 #endif /*NCBI_OS_MSWIN*/
         }
-        if (strcasecmp(argv[2],"lbsm") != 0  &&
-            strcasecmp(argv[2],"heap") != 0  &&
-            strcasecmp(argv[2],"all")  != 0)
+        if ((val = strchr(argv[2], '=')) != 0) {
+            arg = argv[2];
+            *((char*) val) = '\0';
+            if (strcmp(++val, "-") == 0)
+                val = 0;
+            CORE_LOGF(eLOG_Note, ("Using argument affinity %s=%s%s%s", arg,
+                                  val ? "\"" : "",
+                                  val ? val  : "NULL",
+                                  val ? "\"" : ""));
+        } else if (strcasecmp(argv[2],"lbsm") != 0  &&
+                   strcasecmp(argv[2],"heap") != 0  &&
+                   strcasecmp(argv[2],"all")  != 0) {
             CORE_LOGF(eLOG_Fatal, ("Unknown option `%s'", argv[2]));
+        }
     }
 
     value = LBSMD_GetHostParameter(SERV_LOCALHOST, kParameter);
@@ -206,10 +226,12 @@ int main(int argc, const char* argv[])
                       (strpbrk(service, "?*") ? fSERV_Promiscuous : 0),
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/);
+                      getenv("NCBI_EXTERNAL")  ||  getenv("HTTP_NCBI_EXTERNAL")
+                      ? 1 : 0, arg, val);
     ConnNetInfo_Destroy(net_info);
     if (iter) {
         HOST_INFO hinfo;
+        CORE_LOGF(eLOG_Note,("Using %s service mapper",SERV_MapperName(iter)));
         while ((info = SERV_GetNextInfoEx(iter, &hinfo)) != 0) {
             struct timeval stop;
             double elapsed;
@@ -223,6 +245,7 @@ int main(int argc, const char* argv[])
                                   info_str ? info_str : "?"));
             if (hinfo) {
                 static const char kTimeFormat[] = "%m/%d/%y %H:%M:%S";
+                int n;
                 time_t t;
                 char buf[80];
                 double array[5];
@@ -231,57 +254,80 @@ int main(int argc, const char* argv[])
                 const char* a = HINFO_AffinityArgument(hinfo);
                 const char* v = HINFO_AffinityArgvalue(hinfo);
                 CORE_LOG(eLOG_Note, "  Host info available:");
-                CORE_LOGF(eLOG_Note, ("    Number of CPUs:      %d",
-                                      HINFO_CpuCount(hinfo)));
-                CORE_LOGF(eLOG_Note, ("    Number of CPU units: %d @ %.0fMHz",
-                                      HINFO_CpuUnits(hinfo),
-                                      HINFO_CpuClock(hinfo)));
-                CORE_LOGF(eLOG_Note, ("    Number of tasks:     %d",
-                                      HINFO_TaskCount(hinfo)));
+                CORE_LOGF(eLOG_Note,     ("    CPUs:        %d",
+                                          HINFO_CpuCount(hinfo)));
+                CORE_LOGF(eLOG_Note,     ("    CPU units:   %d @ %.0fMHz",
+                                          HINFO_CpuUnits(hinfo),
+                                          HINFO_CpuClock(hinfo)));
+                CORE_LOGF(eLOG_Note,     ("    Tasks:       %d",
+                                          HINFO_TaskCount(hinfo)));
                 if (HINFO_MachineParams(hinfo, &params)) {
-                    CORE_LOGF(eLOG_Note, ("    Arch:       %d",
+                    CORE_LOGF(eLOG_Note, ("    Arch:        %d",
                                           params.arch));
-                    CORE_LOGF(eLOG_Note, ("    OSType:     %s",
+                    CORE_LOGF(eLOG_Note, ("    OSType:      %s",
                                           x_OS(params.ostype)));
                     t = (time_t) params.bootup;
                     strftime(buf, sizeof(buf), kTimeFormat, localtime(&t));
-                    CORE_LOGF(eLOG_Note, ("    Kernel:     %hu.%hu.%hu @ %s",
+                    CORE_LOGF(eLOG_Note, ("    Kernel:      %hu.%hu.%hu @ %s",
                                           params.kernel.major,
                                           params.kernel.minor,
                                           params.kernel.patch, buf));
-                    CORE_LOGF(eLOG_Note, ("    Bits:       %s",
+                    CORE_LOGF(eLOG_Note, ("    Bits:        %s",
                                           x_Bits(params.bits)));
-                    CORE_LOGF(eLOG_Note, ("    Page size:  %lu",
+                    CORE_LOGF(eLOG_Note, ("    Page size:   %lu",
                                           (unsigned long) params.pgsize));
                     t = (time_t) params.startup;
                     strftime(buf, sizeof(buf), kTimeFormat, localtime(&t));
-                    CORE_LOGF(eLOG_Note, ("    LBSMD:      %hu.%hu.%hu @ %s",
+                    CORE_LOGF(eLOG_Note, ("    LBSMD:       %hu.%hu.%hu @ %s",
                                           params.daemon.major,
                                           params.daemon.minor,
                                           params.daemon.patch, buf));
                 } else
-                    CORE_LOG (eLOG_Note,  "    Machine params: unavailable");
+                    CORE_LOG (eLOG_Note,  "    Mach. info:  unavailable");
                 if (HINFO_Memusage(hinfo, array)) {
-                    CORE_LOGF(eLOG_Note, ("    Total RAM:  %.2fMB", array[0]));
-                    CORE_LOGF(eLOG_Note, ("    Cache RAM:  %.2fMB", array[1]));
-                    CORE_LOGF(eLOG_Note, ("    Free  RAM:  %.2fMB", array[2]));
-                    CORE_LOGF(eLOG_Note, ("    Total Swap: %.2fMB", array[3]));
-                    CORE_LOGF(eLOG_Note, ("    Free  Swap: %.2fMB", array[4]));
+                    CORE_LOGF(eLOG_Note, ("    Total RAM:   %.2fMB",array[0]));
+                    CORE_LOGF(eLOG_Note, ("    Cache RAM:   %.2fMB",array[1]));
+                    CORE_LOGF(eLOG_Note, ("    Free  RAM:   %.2fMB",array[2]));
+                    CORE_LOGF(eLOG_Note, ("    Total Swap:  %.2fMB",array[3]));
+                    CORE_LOGF(eLOG_Note, ("    Free  Swap:  %.2fMB",array[4]));
                 } else
-                    CORE_LOG (eLOG_Note,  "    Memory usage: unavailable");
+                    CORE_LOG (eLOG_Note,  "    Mem. usage:  unavailable");
+                if ((n = HINFO_PortUsage(hinfo, 0, 0)) > 0) {
+                    SHINFO_PortUsage* ports, x_ports[16];
+                    size_t c = sizeof(x_ports) / sizeof(x_ports[0]);
+                    int i;
+                    if (n <= c  ||  !(ports = (SHINFO_PortUsage*)
+                                      malloc(n * sizeof(*ports)))) {
+                        ports = x_ports;
+                    } else
+                        c = n;
+                    verify(HINFO_PortUsage(hinfo, ports, c) == n);
+                    if (n > c)
+                        n = c;
+                    qsort(ports, n, sizeof(*ports), x_ComparePortUsage);
+                    for (i = 0;  i < n;  ++i) {
+                        CORE_LOGF(eLOG_Note,
+                                         ("    Port :%-5d  @ %.1f%%",
+                                          ports[i].port, ports[i].used));
+                    }
+                    if (ports != x_ports)
+                        free(ports);
+                }
                 if (HINFO_LoadAverage(hinfo, array)) {
-                    CORE_LOGF(eLOG_Note, ("    Load averages: %f, %f (BLAST)",
+                    CORE_LOGF(eLOG_Note, ("    Load avg:    %f, %f (BLAST)",
                                           array[0], array[1]));
                 } else
-                    CORE_LOG (eLOG_Note,  "    Load averages: unavailable");
+                    CORE_LOG (eLOG_Note,  "    Load avg:    unavailable");
                 if (a) {
                     assert(*a);
-                    CORE_LOGF(eLOG_Note, ("    Affinity argument: %s", a));
+                    CORE_LOGF(eLOG_Note, ("    Affinity:    %s", a));
                 }
-                if (a  &&  v)
-                    CORE_LOGF(eLOG_Note, ("    Affinity value:    %s%s%s",
+                if (v) {
+                    assert(a);
+                    CORE_LOGF(eLOG_Note, ("    Aff. value:  %s%s%s",
                                           *v ? "" : "\"", v, *v ? "" : "\""));
-                CORE_LOGF(eLOG_Note, ("    Host environment: %s%s%s",
+                }
+                CORE_LOGF(eLOG_Note,     ("    Environment: %s%s%s",
                                       e? "\"": "", e? e: "NULL", e? "\"": ""));
                 free(hinfo);
             }
@@ -290,17 +336,16 @@ int main(int argc, const char* argv[])
             if (x_gettimeofday(&start) != 0)
                 memcpy(&start, &stop, sizeof(start));
         }
-        CORE_LOGF(eLOG_Trace, ("Resetting the %s service mapper",
-                               SERV_MapperName(iter)));
+        CORE_LOG(eLOG_Trace, "Resetting service mapper");
         SERV_Reset(iter);
         CORE_LOG(eLOG_Trace, "Service mapper has been reset");
-        if (n_found && !(info = SERV_GetNextInfo(iter)))
+        if (n_found  &&  !(info = SERV_GetNextInfo(iter)))
             CORE_LOG(eLOG_Fatal, "Service not found after reset");
         CORE_LOG(eLOG_Trace, "Closing service mapper");
         SERV_Close(iter);
     }
 
-    if (n_found != 0)
+    if (n_found)
         CORE_LOGF(eLOG_Note, ("%d server(s) found", n_found));
     else
         CORE_LOG(eLOG_Fatal, "Requested service not found");
@@ -312,13 +357,12 @@ int main(int argc, const char* argv[])
         iter = SERV_Open(service, fSERV_Http, SERV_LOCALHOST, net_info);
         ConnNetInfo_Destroy(net_info);
     }}
-
-    if (iter != 0) {
-        while ((info = SERV_GetNextInfo(iter)) != 0) {
+    if (iter) {
+        for (n_found = 1;  (info = SERV_GetNextInfo(iter)) != 0;  ++n_found) {
             char* info_str = SERV_WriteInfo(info);
-            CORE_LOGF(eLOG_Note, ("Service `%s' = %s", service, info_str));
+            CORE_LOGF(eLOG_Note, ("HTTP server #%-2d `%s' = %s",
+                                  n_found, service, info_str));
             free(info_str);
-            n_found++;
         }
         SERV_Close(iter);
     }
