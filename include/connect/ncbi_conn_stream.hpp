@@ -235,6 +235,9 @@ public:
     /// initial read area ("ptr") that might have been specified in the ctor.
     /// Any status different from eIO_Success means that nothing from "data"
     /// has been pushed back to the connection.
+    /// @note
+    ///   Can be used to push just the pending internal input alone back into
+    ///   the CONN if used with a "size" of 0 ("data" is ignored then).
     /// @sa
     ///   CONN_Pushback
     EIO_Status         Pushback(const CT_CHAR_TYPE* data, streamsize size);

@@ -779,7 +779,7 @@ extern EIO_Status CONN_Write
 
 extern EIO_Status CONN_Pushback
 (CONN        conn,
- const void* buf,
+ const void* data,
  size_t      size)
 {
     CONN_NOT_NULL(19, Pushback);
@@ -793,7 +793,7 @@ extern EIO_Status CONN_Pushback
     if (!conn->meta.read)
         return eIO_NotSupported;
 
-    return BUF_Pushback(&conn->buf, buf, size) ? eIO_Success : eIO_Unknown;
+    return BUF_Pushback(&conn->buf, data, size) ? eIO_Success : eIO_Unknown;
 }
 
 
@@ -851,7 +851,7 @@ static EIO_Status s_CONN_Read
     else for (;;) {
         size_t x_read;
 
-        /* read data from the internal peek buffer, if any */
+        /* read data from the internal peek/pushback buffer, if any */
         if (size) {
             x_read = (peek
                       ? BUF_Peek(conn->buf, buf, size - *n_read)
