@@ -90,10 +90,12 @@
 
 #  ifdef NO_PUBSYNC
 #    define PUBSYNC     sync
+#    define PUBSETBUF   setbuf
 #    define PUBSEEKOFF  seekoff
 #    define PUBSEEKPOS  seekpos
 #  else
 #    define PUBSYNC     pubsync
+#    define PUBSETBUF   pubsetbuf
 #    define PUBSEEKOFF  pubseekoff
 #    define PUBSEEKPOS  pubseekpos
 #  endif
