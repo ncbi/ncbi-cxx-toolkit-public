@@ -99,12 +99,12 @@ const size_t kConn_DefaultBufSize = 4096;  ///< I/O buffer size per direction
 ///
 /// Base class, inherited from "std::iostream", does both input and output,
 /// using the specified CONNECTOR.
-/// "Buf_size" designates the size of internal I/O buffers, which reside in
-/// between the stream and an underlying connector (which in turn may do
-/// further buffering, if needed).
-/// Input operations can be tied to the output ones by setting "tie" to "true"
-/// (default), which means that any input attempt first flushes any pending
-/// output from the internal buffers.
+/// The "buf_size" parameter designates the size of internal I/O buffers, which
+/// reside in between the stream and an underlying connector (which in turn may
+/// do further buffering, if needed).
+/// By default, all input operations are tied to the output ones, which means
+/// that any input attempt first flushes any pending output from the internal
+/// buffers.  The fConn_Untie flag can be used to untie the I/O directions.
 ///
 /// @note CConn_IOStream implementation utilizes some connection callbacks
 ///       on the underlying CONN object.  Care must be taken when intercepting
@@ -136,10 +136,15 @@ public:
     /// @param timeout
     ///  Default I/O timeout
     /// @param buf_size
-    ///  Default size of underlying stream buffer's I/O arena
+    ///  Default size of underlying stream buffer's I/O arena (per direction)
     /// @param flags
     ///  Specifies whether to tie input and output (a tied stream flushes all
     ///  pending output prior to doing any input) and what to buffer
+    /// @param ptr
+    ///  Specifies data which will be read from the stream prior to extracting
+    ///  from the actual connection
+    /// @param size
+    ///  The size of the area pointed to by the "ptr" argument
     /// @sa
     ///  CONN, ncbi_connection.h
     ///
@@ -165,10 +170,15 @@ protected:
     /// @param timeout
     ///  Default I/O timeout
     /// @param buf_size
-    ///  Default size of underlying stream buffer's I/O arena
+    ///  Default size of underlying stream buffer's I/O arena (per direction)
     /// @param flags
     ///  Specifies whether to tie input and output (a tied stream flushes all
     ///  pending output prior to doing any input) and what to buffer
+    /// @param ptr
+    ///  Specifies data, which will be read from the stream prior to extracting
+    ///  from the actual connection
+    /// @param size
+    ///  The size of the area pointed to by the "ptr" argument
     /// @sa
     ///  CONNECTOR, ncbi_connector.h
     CConn_IOStream
@@ -186,13 +196,13 @@ public:
     ///   Verbal connection type (empty if unknown)
     /// @sa
     ///   CONN_GetType
-    string          GetType(void) const;
+    string             GetType(void) const;
 
     /// @return
     ///   Verbal connection description (empty if unknown)
     /// @sa
     ///   CONN_Description
-    string          GetDescription(void) const;
+    string             GetDescription(void) const;
 
     /// Set connection timeout for "direction"
     /// @param
@@ -200,14 +210,14 @@ public:
     ///   values: kInfiniteTimeout, kDefaultTimeout
     /// @sa
     ///   CONN_SetTimeout, SetReadTimeout, SetWriteTimeout
-    EIO_Status      SetTimeout(EIO_Event       direction,
-                               const STimeout* timeout) const;
+    EIO_Status         SetTimeout(EIO_Event       direction,
+                                 const STimeout* timeout) const;
 
     /// @return
     ///   Connection timeout for "direction"
     /// @sa
     ///   CONN_GetTimeout
-    const STimeout* GetTimeout(EIO_Event direction) const;
+    const STimeout*    GetTimeout(EIO_Event direction) const;
 
     /// @return
     ///   Status of the last I/O performed by the underlying CONN in the
@@ -216,7 +226,18 @@ public:
     ///   last CONN I/O performed by the stream.
     /// @sa
     ///   CONN_Status
-    EIO_Status      Status(EIO_Event direction = eIO_Close) const;
+    EIO_Status         Status(EIO_Event direction = eIO_Close) const;
+
+    /// Return the specified data "data" of size "size" into the underlying
+    /// connection CONN.
+    /// If there is any non-empty pending input sequence (internal read buffer)
+    /// it will first be attempted to return to CONN.  That excludes any
+    /// initial read area ("ptr") that might have been specified in the ctor.
+    /// Any status different from eIO_Success means that nothing from "data"
+    /// has been pushed back to the connection.
+    /// @sa
+    ///   CONN_Pushback
+    EIO_Status         Pushback(const CT_CHAR_TYPE* data, streamsize size);
 
     /// Close CONNection, free all internal buffers and underlying structures,
     /// and render the stream unusable for further I/O.
@@ -231,7 +252,7 @@ public:
     /// first superclass.
     /// @sa
     ///   ICanceled
-    EIO_Status      SetCanceledCallback(const ICanceled* canceled);
+    EIO_Status         SetCanceledCallback(const ICanceled* canceled);
 
     /// @return
     ///   Internal CONNection handle, which is still owned and used by the
@@ -240,7 +261,7 @@ public:
     ///   Connection can have additional flags set for I/O processing
     /// @sa
     ///   CONN, ncbi_connection.h, CONN_GetFlags
-    CONN            GetCONN(void) const;
+    CONN               GetCONN(void) const;
 
 protected:
     void x_Destroy(void);

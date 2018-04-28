@@ -74,8 +74,9 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR                   connector,
                                  CConn_IOStream::TConn_Flags flgs,
                                  CT_CHAR_TYPE*               ptr,
                                  size_t                      size)
-    : m_Conn(0), m_WriteBuf(0), m_ReadBuf(&x_Buf), m_BufSize(1),
-      m_Status(status), m_Tie(false), m_Close(true), m_CbValid(false),
+    : m_Conn(0),
+      m_WriteBuf(0), m_ReadBuf(&x_Buf), m_BufSize(1), m_Status(status),
+      m_Tie(false), m_Close(true), m_CbValid(false), m_Initial(false),
       x_Buf(), x_GPos((CT_OFF_TYPE)(ptr ? size : 0)), x_PPos((CT_OFF_TYPE)size)
 {
     if (!connector) {
@@ -110,8 +111,9 @@ CConn_Streambuf::CConn_Streambuf(CONN                        conn,
                                  CConn_IOStream::TConn_Flags flgs,
                                  CT_CHAR_TYPE*               ptr,
                                  size_t                      size)
-    : m_Conn(conn), m_WriteBuf(0), m_ReadBuf(&x_Buf), m_BufSize(1),
-      m_Status(eIO_Success), m_Tie(false), m_Close(close), m_CbValid(false),
+    : m_Conn(conn),
+      m_WriteBuf(0), m_ReadBuf(&x_Buf), m_BufSize(1), m_Status(eIO_Success),
+      m_Tie(false), m_Close(close), m_CbValid(false), m_Initial(false),
       x_Buf(), x_GPos((CT_OFF_TYPE)(ptr ? size : 0)), x_PPos((CT_OFF_TYPE)size)
 {
     if (!m_Conn) {
@@ -170,9 +172,10 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, size_t buf_size,
     if (buf_size)
         setp(m_WriteBuf, m_WriteBuf + buf_size);
     /* else setp(0, 0) */
-    if (ptr)
+    if (ptr) {
+        m_Initial = true;
         setg(ptr,        ptr,       ptr + size);   // Initial get area
-    else
+    } else
         setg(m_ReadBuf,  m_ReadBuf, m_ReadBuf);    // Empty get area
 
     SCONN_Callback cb;
@@ -183,26 +186,50 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, size_t buf_size,
 }
 
 
+EIO_Status CConn_Streambuf::x_Pushback(void)
+{
+    _ASSERT(m_Conn);
+
+    size_t count = (size_t)(egptr() - gptr());
+    if (!count)
+        return eIO_Success;
+
+    EIO_Status status = CONN_Pushback(m_Conn, gptr(), count);
+    if (status == eIO_Success)
+        gbump(int(count));
+    return status;
+}
+
+
 EIO_Status CConn_Streambuf::x_Close(bool close)
 {
     if (!m_Conn)
         return close ? eIO_Closed : eIO_Success;
  
-    EIO_Status status;
+    EIO_Status status = eIO_Success;
+
+    // push any still unread data from the buffer back to the device
+    if (!m_Close  &&  close  &&  !m_Initial) {
+        EIO_Status x_status = x_Pushback();
+        if (x_status != eIO_Success  &&  x_status != eIO_NotSupported) {
+            status = m_Status = x_status;
+            ERR_POST_X(13, x_Message("Close():  CONN_Pushback() failed"));
+        }
+    }
+    setg(0, 0, 0);
+
     // flush only if some data pending
     if (pbase() < pptr()) {
-        if ((status = CONN_Status(m_Conn, eIO_Write)) != eIO_Success) {
-            m_Status = status;
+        EIO_Status x_status = CONN_Status(m_Conn, eIO_Write);
+        if (x_status != eIO_Success) {
+            status = m_Status = x_status;
             if (CONN_Status(m_Conn, eIO_Open) == eIO_Success) {
                 _TRACE(x_Message("Close():  Cannot finalize implicitly"
                                  ", data loss may result"));
             }
         } else if (sync() != 0)
             status = m_Status != eIO_Success ? m_Status : eIO_Unknown;
-    } else
-        status = eIO_Success;
-
-    setg(0, 0, 0);
+    }
     setp(0, 0);
 
     CONN c = m_Conn;
@@ -239,6 +266,19 @@ EIO_Status CConn_Streambuf::x_OnClose(CONN           _DEBUG_ARG(conn),
     _ASSERT(type == eCONN_OnClose  &&  sb  &&  conn);
     _ASSERT(!sb->m_Conn  ||  sb->m_Conn == conn);
     return sb->x_Close(false);
+}
+
+
+EIO_Status CConn_Streambuf::Pushback(const CT_CHAR_TYPE* data, streamsize size)
+{
+    if (!m_Conn)
+        return eIO_Closed;
+
+    if ((!m_Initial  &&  (m_Status = x_Pushback()) != eIO_Success)
+        ||  (m_Status = CONN_Pushback(m_Conn, data, size)) != eIO_Success) {
+        ERR_POST_X(14, x_Message("Pushback():  CONN_Pushback() failed"));
+    }
+    return m_Status;
 }
 
 
@@ -396,6 +436,7 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
 
     // read from connection
     size_t n_read;
+    _ASSERT(m_ReadBuf  &&  m_BufSize);
     m_Status = CONN_Read(m_Conn, m_ReadBuf, m_BufSize,
                          &n_read, eIO_ReadPlain);
     _ASSERT(n_read <= m_BufSize);
@@ -407,6 +448,7 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
     }
 
     // update input buffer with the data just read
+    m_Initial = false;
     x_GPos += (CT_OFF_TYPE) n_read;
     setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + n_read);
 
@@ -460,6 +502,7 @@ streamsize CConn_Streambuf::x_Read(CT_CHAR_TYPE* buf, streamsize m)
                 ERR_POST_X(10, x_Message("xsgetn():  CONN_Read() failed"));
             break;
         }
+        m_Initial = false;
         x_GPos += (CT_OFF_TYPE) x_read;
         // satisfy "usual backup condition", see standard: 27.5.2.4.3.13
         if (x_buf == m_ReadBuf) {
@@ -550,6 +593,7 @@ streamsize CConn_Streambuf::showmanyc(void)
         return       0;  // no data available immediately
     }
 
+    m_Initial = false;
     m_ReadBuf[0] = x_Buf;
     _ASSERT(m_BufSize > 1);
     setg(m_ReadBuf + !backup, m_ReadBuf + 1, m_ReadBuf + 1 + x_read);
@@ -567,12 +611,30 @@ int CConn_Streambuf::sync(void)
 }
 
 
-CNcbiStreambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
-                                        streamsize    /*buf_size*/)
+CNcbiStreambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* buf, streamsize buf_size)
 {
-    NCBI_THROW(CConnException, eConn, "CConn_Streambuf::setbuf() not allowed");
-    /*NOTREACHED*/
-    return this; /*dummy for compiler*/ /* NCBI_FAKE_WARNING */
+    if (buf  ||  buf_size) {
+        NCBI_THROW(CConnException, eConn,
+                   "CConn_Streambuf::setbuf() only allowed with (0, 0)");
+    }
+
+    if (m_Conn) {
+        if (!m_Initial  &&  x_Pushback() != eIO_Success)
+            ERR_POST_X(11,Critical<<x_Message("setbuf(): Read data pending"));
+        if (x_Sync() != 0)
+            ERR_POST_X(12,Critical<<x_Message("setbuf(): Write data pending"));
+    }
+    setp(0, 0);
+
+    delete[] m_WriteBuf;
+    m_WriteBuf = 0;
+
+    m_ReadBuf  = &x_Buf;
+    m_BufSize  = 1;
+
+    if (!m_Conn  ||  !m_Initial)
+        setg(m_ReadBuf, m_ReadBuf, m_ReadBuf);
+    return this;
 }
 
 

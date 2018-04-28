@@ -59,10 +59,20 @@ public:
                     const STimeout* timeout, size_t buf_size,
                     CConn_IOStream::TConn_Flags flags,
                     CT_CHAR_TYPE* ptr, size_t size);
-    virtual   ~CConn_Streambuf()   { Close();  delete[] m_WriteBuf; }
-    CONN       GetCONN(void) const { return m_Conn;                 }
-    EIO_Status Close  (void)       { return x_Close(true);          }
-    EIO_Status Status (EIO_Event direction = eIO_Open) const;
+    virtual   ~CConn_Streambuf()    { Close();  delete[] m_WriteBuf; }
+
+    CONN       GetCONN (void) const { return m_Conn;                 }
+    EIO_Status Close   (void)       { return x_Close(true);          }
+    EIO_Status Status  (EIO_Event direction = eIO_Open) const;
+
+    /// Return the specified data "data" of size "size" into the underlying
+    /// connection CONN.
+    /// If there is any non-empty pending input sequence (internal read buffer)
+    /// it will first be attempted to return to CONN.  That excludes any
+    /// initial read area ("ptr") that might have been specified in the ctor.
+    /// Any status different from eIO_Success means that nothing from "data"
+    /// has been pushed back to the connection.
+    EIO_Status Pushback(const CT_CHAR_TYPE* data, streamsize size);
 
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
@@ -74,7 +84,8 @@ protected:
 
     virtual int         sync(void);
 
-    // this method is declared here to be disabled (exception) at run-time
+    /// Only setbuf(0, 0) is allowed to make I/O unbuffered, other parameters
+    /// will cause an exception thrown at run-time.
     virtual CNcbiStreambuf* setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
     /// Only seekoff(0, IOS_BASE::cur, *) to obtain current position, and input
@@ -110,6 +121,8 @@ protected:
 
     streamsize  x_Read(CT_CHAR_TYPE* buf, streamsize n);
 
+    EIO_Status  x_Pushback(void);
+
 private:
     CONN                m_Conn;      // underlying connection handle
 
@@ -122,6 +135,7 @@ private:
     bool                m_Tie;       // always flush before reading
     bool                m_Close;     // if to actually close CONN in dtor
     bool                m_CbValid;   // if m_Cb is in valid state
+    bool                m_Initial;   // if still reading the initial data block
     CT_CHAR_TYPE        x_Buf;       // default m_ReadBuf for unbuffered stream
 
     CT_POS_TYPE         x_GPos;      // get position [for istream.tellg()]

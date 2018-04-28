@@ -163,6 +163,11 @@ EIO_Status CConn_IOStream::Status(EIO_Event dir) const
 }
 
 
+EIO_Status CConn_IOStream::Pushback(const CT_CHAR_TYPE* data, streamsize size)
+{
+    return m_CSb ? m_CSb->Pushback(data, size) : eIO_NotSupported;
+}
+
 EIO_Status CConn_IOStream::Close(void)
 {
     return m_CSb ? m_CSb->Close() : eIO_Closed;
