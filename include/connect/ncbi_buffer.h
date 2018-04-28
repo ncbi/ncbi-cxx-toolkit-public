@@ -66,7 +66,7 @@ extern "C" {
 
 
 struct SNcbiBuf;
-typedef struct SNcbiBuf* BUF;  /* handle of a buffer */
+typedef struct SNcbiBuf* BUF;  /**< handle of a buffer */
 
 
 /*!
@@ -148,9 +148,10 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ BUF_Append
  * On error (failed memory allocation), return zero value;
  * otherwise return non-zero (i.e. including when "size" passed as 0).
  * NOTE:  if "*pBuf" == NULL then create it if necessary (e.g. if size != 0).
- * NOTE:  writing immediately past the end of the data into an unoccupied space
- * of a chunk that was previosuly appended with BUF_AppendEx() results in a
- * zero copy operation (just the pointers updated as necessary).
+ * NOTE:  BUF_Write() with "data" that reside immediately past the end of the
+ * data (in the unoccupied space) of a chunk that was previously appended with
+ * BUF_AppendEx() results in a zero copy operation (just the pointers updated
+ * as necessary).
  */
 extern NCBI_XCONNECT_EXPORT /*bool*/int BUF_Write
 (BUF*        pBuf,
@@ -161,7 +162,8 @@ extern NCBI_XCONNECT_EXPORT /*bool*/int BUF_Write
 
 /*!
  * Write the data to the very beginning of "*pBuf" (to be read first).
- * On error (failed memory allocation), return zero value.
+ * Return non-zero if successful ("size"==0 is always so);  otherwise
+ * return zero (failed memory allocation or NULL "src" of non-zero "size").
  * NOTE:  if "*pBuf" == NULL then create it.
  */
 extern NCBI_XCONNECT_EXPORT /*bool*/int BUF_Pushback
@@ -183,10 +185,12 @@ extern NCBI_XCONNECT_EXPORT size_t BUF_Peek
 
 /*!
  * Copy up to "size" bytes stored in "buf" (starting at position "pos")
- * to "data".
+ * to a destination area pointed to by "data".
  * Return the # of copied bytes (can be less than "size").
  * Return zero and do nothing if "buf" is NULL or "pos" >= BUF_Size(buf).
- * Do nothing and return min(BUF_Size(buf)-pos, size) if "data" is NULL.
+ * If "data" is NULL, return the number of bytes what would have been copied;
+ * in other words, the amount of data available in "buf" from position "pos",
+ * not exceeding "size" bytes (0 results when "pos" is past the end of "buf").
  */
 extern NCBI_XCONNECT_EXPORT size_t BUF_PeekAt
 (BUF         buf,
@@ -205,7 +209,10 @@ extern NCBI_XCONNECT_EXPORT size_t BUF_PeekAt
  * _not_ return a value greater than its "size" argument!).
  * Return the # of processed bytes (can be less than "size").
  * Return zero and do nothing if "buf" is NULL or "pos" >= BUF_Size(buf).
- * Do nothing and return min(BUF_Size(buf)-pos, size) if "callback" is NULL.
+ * If "callback" is NULL, return the number of bytes that would have been
+ * visited if a callback kept returning the size of data it was given to;
+ * in other words, the amount of data available in "buf" from position "pos",
+ * not exceeding "size" bytes (0 results when "pos" is past the end of "buf").
  */
 extern NCBI_XCONNECT_EXPORT size_t BUF_PeekAtCB
 (BUF         buf,
@@ -242,6 +249,7 @@ extern NCBI_XCONNECT_EXPORT void BUF_Erase(BUF buf);
  * "*dst", making the source buffer empty (as with BUF_Erase(src)).
  * Return non-zero if successful; 0 in case of an error.
  * NOTE: do nothing if "src" is either NULL or contains no data.
+ * NOTE: the call re-links internal structures without copying any actual data.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ BUF_Splice(BUF* dst, BUF src);
 

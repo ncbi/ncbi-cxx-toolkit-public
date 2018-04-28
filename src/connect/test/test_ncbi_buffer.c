@@ -181,18 +181,19 @@ extern int main(void)
             size_t size;
 
             /* Erratically copy "buf1" to "buf" */
-            for (pos = 0;  pos < buf1_size;  pos += size) {
+            for (pos = 0;  pos < 2 * buf1_size;  pos += size) {
                 char temp_buf[BUF_DEF_CHUNK_SIZE * 2];
                 size_t n_peeked;
 
                 size = s_Rand() % (BUF_DEF_CHUNK_SIZE * 2);
-                n_peeked = BUF_PeekAt(buf1, pos, temp_buf, size);
-                if (pos + size <= buf1_size) {
-                    assert(n_peeked == size);
-                } else {
-                    assert(n_peeked == buf1_size - pos);
-                }
-                assert(BUF_PeekAt(buf1, pos, temp_buf, size) == n_peeked);
+                if ((n_peeked = BUF_PeekAt(buf1, pos, temp_buf, size)) > 0) {
+                    if (pos + size <= buf1_size)
+                        assert(n_peeked == size);
+                    else
+                        assert(n_peeked == buf1_size - pos);
+                } else
+                    assert(pos >= buf1_size);
+                assert(n_peeked == BUF_PeekAt(buf1, pos, temp_buf, size));
                 assert(BUF_Write(&buf, temp_buf, n_peeked));
             }
 
@@ -203,16 +204,20 @@ extern int main(void)
                 char b1[1024];
                 assert(sizeof(bb) == sizeof(b1));
 
-                size = BUF_Read(buf, bb, sizeof(bb));
+                size = BUF_Read  (buf,       bb, sizeof(bb));
                 assert(BUF_PeekAt(buf1, pos, b1, size) == size);
 
                 assert(size <= sizeof(b1));
                 assert(memcmp(bb, b1, size) == 0);
             }
 
+            /* Verify reached the ends... */
             assert(pos == buf1_size);
             assert(BUF_Size(buf1) == buf1_size);
             assert(BUF_Size(buf)  == 0);
+            /* ...and no extractions are longer possible */
+            assert(!BUF_Read  (buf,       0, 1));
+            assert(!BUF_PeekAt(buf1, pos, 0, 1));
         }
     }}
 

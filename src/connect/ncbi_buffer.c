@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov
+ * Author:  Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
  *   Memory-resident FIFO storage area (to be used e.g. in I/O buffering)
@@ -109,7 +109,7 @@ extern size_t BUF_Size(BUF buf)
  * Allocate at least "unit_size" bytes, but no less than "data_size" bytes.
  * Special case: "data_size" == 0 results in no data storage allocation.
  */
-static SBufChunk* s_AllocChunk(size_t data_size, size_t unit_size)
+static SBufChunk* s_BUF_AllocChunk(size_t data_size, size_t unit_size)
 {
     size_t chunk_size, alloc_size;
     SBufChunk* chunk;
@@ -151,7 +151,7 @@ extern int/*bool*/ BUF_AppendEx(BUF* buf, void* base, size_t alloc_size,
     if (!*buf  &&  !BUF_SetChunkSize(buf, 0))
         return 0/*false*/;
 
-    if (!(chunk = s_AllocChunk(0, (*buf)->unit)))
+    if (!(chunk = s_BUF_AllocChunk(0, (*buf)->unit)))
         return 0/*false*/;
 
     assert(!chunk->data);
@@ -194,7 +194,7 @@ extern int/*bool*/ BUF_PrependEx(BUF* buf, void* base, size_t alloc_size,
     if (!*buf  &&  !BUF_SetChunkSize(buf, 0))
         return 0/*false*/;
 
-    if (!(chunk = s_AllocChunk(0, (*buf)->unit)))
+    if (!(chunk = s_BUF_AllocChunk(0, (*buf)->unit)))
         return 0/*false*/;
 
     assert(!chunk->data);
@@ -249,7 +249,7 @@ extern int/*bool*/ BUF_Write(BUF* buf, const void* src, size_t size)
     /* if necessary, allocate a new chunk and write to it */
     if (size) {
         SBufChunk* next;
-        if (!(next = s_AllocChunk(size, (*buf)->unit)))
+        if (!(next = s_BUF_AllocChunk(size, (*buf)->unit)))
             return 0/*false*/;
         assert(next->data);
         memcpy(next->data, (const char*) src + pending, size);
@@ -300,7 +300,7 @@ extern int/*bool*/ BUF_Pushback(BUF* buf, const void* src, size_t size)
         SBufChunk* next = head;
         size -= skip;
         assert(size);
-        if (!(head = s_AllocChunk(size, (*buf)->unit)))
+        if (!(head = s_BUF_AllocChunk(size, (*buf)->unit)))
             return 0/*false*/;
         assert(head->data);
         if (skip) {
@@ -340,14 +340,12 @@ extern size_t BUF_PeekAtCB(BUF      buf,
 
     assert(!buf  ||  !buf->size == !(buf->list  ||  buf->last));
 
-    if (!size  ||  !buf  ||  !buf->size)
+    if (!size  ||  !buf  ||  buf->size <= pos/*NB: includes !buf->size*/)
         return 0;
     assert(buf->list  &&  buf->last);
 
     /* special treatment for NULL callback */
     if (!callback) {
-        if (buf->size <= pos)
-            return 0;
         todo = buf->size - pos;
         return todo < size ? todo : size;
     }
@@ -387,7 +385,7 @@ extern size_t BUF_PeekAtCB(BUF      buf,
 }
 
 
-static size_t s_MemcpyCB(void* cbdata, const void* data, size_t size)
+static size_t x_BUF_MemcpyCB(void* cbdata, const void* data, size_t size)
 {
     char** dst = (char**) cbdata;
     memcpy(*dst, data, size);
@@ -398,8 +396,7 @@ static size_t s_MemcpyCB(void* cbdata, const void* data, size_t size)
 
 extern size_t BUF_PeekAt(BUF buf, size_t pos, void* dst, size_t size)
 {
-    void* cbdata = dst;
-    return BUF_PeekAtCB(buf, pos, dst ? s_MemcpyCB : 0, &cbdata, size);
+    return BUF_PeekAtCB(buf, pos, dst ? x_BUF_MemcpyCB : 0, &dst, size);
 }
 
 
