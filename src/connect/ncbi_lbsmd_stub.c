@@ -52,7 +52,7 @@ extern const char* LBSMD_GetConfig(void)
 /*ARGSUSED*/
 extern ESwitch LBSMD_FastHeapAccess(ESwitch sw)
 {
-    return eDefault/*not implemented*/
+    return eDefault/*not implemented*/;
 }
 
 
