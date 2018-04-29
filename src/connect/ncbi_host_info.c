@@ -89,7 +89,7 @@ extern unsigned int HINFO_HostAddr(const HOST_INFO host_info)
 extern int HINFO_CpuCount(const HOST_INFO host_info)
 {
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
-        return -1;
+        return -1/*failure*/;
     return LBSM_HINFO_CpuCount(host_info);
 }
 
@@ -97,7 +97,7 @@ extern int HINFO_CpuCount(const HOST_INFO host_info)
 extern int HINFO_CpuUnits(const HOST_INFO host_info)
 {
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
-        return -1;
+        return -1/*failure*/;
     return LBSM_HINFO_CpuUnits(host_info);
 }
 
@@ -105,7 +105,7 @@ extern int HINFO_CpuUnits(const HOST_INFO host_info)
 extern double HINFO_CpuClock(const HOST_INFO host_info)
 {
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
-        return -1.0;
+        return -1.0/*failure*/;
     return LBSM_HINFO_CpuClock(host_info);
 }
 
@@ -113,7 +113,7 @@ extern double HINFO_CpuClock(const HOST_INFO host_info)
 extern int HINFO_TaskCount(const HOST_INFO host_info)
 {
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
-        return -1;
+        return -1/*failure*/;
     return LBSM_HINFO_TaskCount(host_info);
 }
  
@@ -123,7 +123,7 @@ extern int/*bool*/ HINFO_Memusage(const HOST_INFO host_info,
 {
     memset(memusage, 0, 5 * sizeof(memusage[0]));
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
-        return 0/*false*/;
+        return 0/*failure*/;
     return LBSM_HINFO_Memusage(host_info, memusage);
 }
 
@@ -133,7 +133,7 @@ extern int/*bool*/ HINFO_MachineParams(const HOST_INFO host_info,
 {
     memset(params, 0, sizeof(*params));
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
-        return 0/*false*/;
+        return 0/*failure*/;
     return LBSM_HINFO_MachineParams(host_info, params);
 }
 
@@ -153,7 +153,7 @@ extern int/*bool*/ HINFO_LoadAverage(const HOST_INFO host_info,
 {
     memset(lavg, 0, 2 * sizeof(lavg[0]));
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
-        return 0/*false*/;
+        return 0/*failure*/;
     return LBSM_HINFO_LoadAverage(host_info, lavg);
 }
 
@@ -163,7 +163,7 @@ extern int/*bool*/ HINFO_Status(const HOST_INFO host_info,
 {
     memset(status, 0, 2 * sizeof(status[0]));
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
-        return 0/*false*/;
+        return 0/*failure*/;
     return LBSM_HINFO_Status(host_info, status);
 }
 
