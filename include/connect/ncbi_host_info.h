@@ -76,7 +76,7 @@ unsigned int HINFO_HostAddr(const HOST_INFO host_info);
  * @param host_info
  *  HOST_INFO as returned by the SERV API.
  * @return
- *  CPU count (should be greater than 0), or -1 if an error occurred.
+ *  CPU count, or 0 when failed to determine, or -1 if an error occurred.
  * @sa
  *  SERV_GetInfoEx, SERV_GetNextInfoEx
  */
@@ -101,7 +101,8 @@ int HINFO_CpuUnits(const HOST_INFO host_info);
  * @param host_info
  *  HOST_INFO as returned by the SERV API.
  * @return
- *  CPU clock rate (in MHz), or 0 if an error occurred.
+ *  CPU clock rate (in MHz), or 0.0 if failed to determine, or a negative value
+ *  if an error occurred.
  * @sa
  *  SERV_GetInfoEx, SERV_GetNextInfoEx
  */
@@ -113,7 +114,7 @@ double HINFO_CpuClock(const HOST_INFO host_info);
  * @param host_info
  *  HOST_INFO as returned by the SERV API.
  * @return
- *  Task count, or -1 if an error occurred.
+ *  Task count (incl. 0 when failed to determine), or -1 if an error occurred.
  * @sa
  *  SERV_GetInfoEx, SERV_GetNextInfoEx
  */
@@ -133,7 +134,7 @@ int HINFO_TaskCount(const HOST_INFO host_info);
  *  - [4] = free swap.
  * @return
  *  Non-zero on success and store memory usage (MB, in the provided array
- *  "memusage"), or 0 if an error occurred.
+ *  "memusage"), or 0 if an error occurred ("memusage" cleared).
  * @sa
  *  SERV_GetInfoEx, SERV_GetNextInfoEx
  */
@@ -197,16 +198,16 @@ typedef struct {
 /** Get host parameters.
  * @param host_info
  *  HOST_INFO as returned by the SERV API.
- * @param p
+ * @param params
  *  Host parameters to fill in upon return.
  * @return
- *  Non-zero on success, 0 on error.
+ *  Non-zero on success, 0 on error ("params" cleared).
  * @sa
  *  SERV_GetInfoEx, SERV_GetNextInfoEx
  */
 extern NCBI_XCONNECT_EXPORT
 int/*bool*/ HINFO_MachineParams(const HOST_INFO host_info,
-                                SHINFO_Params* p);
+                                SHINFO_Params* params);
 
 
 /** Port usage */
@@ -227,7 +228,7 @@ typedef struct {
  *  reports no port usage, can be less than "count" -- remaining array elements
  *  cleared; or more than "count" if the host requires a bigger array that the
  *  one provided -- all "count" elements have been filled in), or -1 when an
- *  error occurred.
+ *  error occurred ("ports" cleared).
  * @note
  *  You may call this function with "ports" and "count" passed as 0 to learn
  *  how many array elements to expect.
@@ -248,7 +249,7 @@ int HINFO_PortUsage(const HOST_INFO host_info,
  *  - [1] = Instant (a.k.a. Blast) load average (averaged over runnable count).
  * @return
  *  Non-zero on success and store load averages in the provided array "lavg",
- *  or 0 on error.
+ *  or 0 on error ("lavg" cleared).
  * @sa
  *  HINFO_Status, SERV_GetInfoEx, SERV_GetNextInfoEx
  */
@@ -266,7 +267,7 @@ int/*bool*/ HINFO_LoadAverage(const HOST_INFO host_info,
  *  - [1] = status based on the instant load average.
  * @return
  *  Non-zero on success and store host status values in the provided array
- *  "status", or 0 on error.
+ *  "status", or 0 on error ("status" cleared).
  * @note  Status may get returned as 0.0 if either the host does not provide
  *        such information, or if the host is overloaded (unavailable).
  * @sa
@@ -284,7 +285,7 @@ int/*bool*/ HINFO_Status(const HOST_INFO host_info,
  * @param host_info
  *  HOST_INFO as returned by the SERV API.
  * @return
- *  NULL if the host environment cannot be obtained (or does not exist);
+ *  NULL if the host environment either cannot be obtained or does not exist;
  *  otherwise, a non-NULL pointer to a '\0'-terminated string that contains
  *  the environment, which remains valid until the handle "host_info" gets
  *  free()'d by the application.
@@ -300,7 +301,7 @@ const char* HINFO_Environment(const HOST_INFO host_info);
  * @param host_info
  *  HOST_INFO as returned by the SERV API.
  * @return
- *  NULL if no affinity has been found/used (in this case
+ *  NULL if no affinity has been found/used (in the latter case
  *  HINFO_AffinityArgvalue() would also return NULL);  otherwise, a non-NULL
  *  pointer to a '\0'-terminated string that remains valid until the handle
  *  "host_info" gets free()'d by the application.

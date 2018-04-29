@@ -82,14 +82,14 @@ unsigned int LBSMD_GetLocalHostAddress(const void* v)
 /*ARGSUSED*/
 int LBSM_HINFO_CpuCount(const HOST_INFO hinfo)
 {
-    return -1;
+    return 0;
 }
 
 
 /*ARGSUSED*/
 int LBSM_HINFO_CpuUnits(const HOST_INFO hinfo)
 {
-    return -1;
+    return 0;
 }
 
 
@@ -103,21 +103,31 @@ double LBSM_HINFO_CpuClock(const HOST_INFO hinfo)
 /*ARGSUSED*/
 int LBSM_HINFO_TaskCount(const HOST_INFO hinfo)
 {
-    return -1;
+    return 0;
 }
 
 
 /*ARGSUSED*/
-int LBSM_HINFO_Memusage(const HOST_INFO hinfo, double memusage[5])
+int/*bool*/ LBSM_HINFO_Memusage(const HOST_INFO hinfo,
+                                double memusage[5])
 {
     return 0/*failure*/;
 }
 
 
 /*ARGSUSED*/
-int LBSM_HINFO_MachineParams(const HOST_INFO hinfo, SHINFO_Params* p)
+int/*bool*/ LBSM_HINFO_MachineParams(const HOST_INFO hinfo,
+                                     SHINFO_Params* p)
 {
     return 0/*failure*/;
+}
+
+
+/*ARGSUSED*/
+int LBSM_HINFO_PortUsage(const HOST_INFO hinfo,
+                         SHINFO_PortUsage ports[], size_t count)
+{
+    return 0/*no ports*/;
 }
 
 

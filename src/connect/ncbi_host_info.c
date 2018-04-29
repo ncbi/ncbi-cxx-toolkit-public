@@ -105,7 +105,7 @@ extern int HINFO_CpuUnits(const HOST_INFO host_info)
 extern double HINFO_CpuClock(const HOST_INFO host_info)
 {
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
-        return 0.0;
+        return -1.0;
     return LBSM_HINFO_CpuClock(host_info);
 }
 
@@ -143,7 +143,7 @@ extern int HINFO_PortUsage(const HOST_INFO host_info,
 {
     memset(ports, 0, count * sizeof(ports[0]));
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
-        return -1;
+        return -1/*failure*/;
     return LBSM_HINFO_PortUsage(host_info, ports, count);
 }
 
@@ -153,7 +153,7 @@ extern int/*bool*/ HINFO_LoadAverage(const HOST_INFO host_info,
 {
     memset(lavg, 0, 2 * sizeof(lavg[0]));
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
-        return 0;
+        return 0/*false*/;
     return LBSM_HINFO_LoadAverage(host_info, lavg);
 }
 
@@ -163,7 +163,7 @@ extern int/*bool*/ HINFO_Status(const HOST_INFO host_info,
 {
     memset(status, 0, 2 * sizeof(status[0]));
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
-        return 0;
+        return 0/*false*/;
     return LBSM_HINFO_Status(host_info, status);
 }
 
@@ -171,7 +171,7 @@ extern int/*bool*/ HINFO_Status(const HOST_INFO host_info,
 extern const char* HINFO_Environment(const HOST_INFO host_info)
 {
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
-        return 0;
+        return 0/*no info*/;
     return host_info->env;
 }
 
@@ -179,7 +179,7 @@ extern const char* HINFO_Environment(const HOST_INFO host_info)
 extern const char* HINFO_AffinityArgument(const HOST_INFO host_info)
 {
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
-        return 0;
+        return 0/*no info*/;
     return host_info->arg;
 }
 
@@ -187,6 +187,6 @@ extern const char* HINFO_AffinityArgument(const HOST_INFO host_info)
 extern const char* HINFO_AffinityArgvalue(const HOST_INFO host_info)
 {
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
-        return 0;
+        return 0/*no info*/;
     return host_info->val;
 }
