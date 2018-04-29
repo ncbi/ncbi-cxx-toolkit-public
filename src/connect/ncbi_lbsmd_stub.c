@@ -39,28 +39,27 @@ const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER    iter,
                                     HOST_INFO*   host_info,
                                     int/*bool*/  dispd_to_follow)
 {
-    return 0;
+    return 0/*failure*/;
 }
 
 
 extern const char* LBSMD_GetConfig(void)
 {
-    return 0;
+    return 0/*no info*/;
 }
 
 
 /*ARGSUSED*/
-extern ESwitch LBSMD_FastHeapAccess(ESwitch sw/*ignored*/)
+extern ESwitch LBSMD_FastHeapAccess(ESwitch sw)
 {
-    /* ignore any new settings, always return "not implemented" */
-    return eDefault;
+    return eDefault/*not implemented*/
 }
 
 
 /*ARGSUSED*/
-extern HEAP LBSMD_GetHeapCopy(TNCBI_Time time/*ignored*/)
+extern HEAP LBSMD_GetHeapCopy(TNCBI_Time time)
 {
-    return 0;
+    return 0/*no heap*/;
 }
 
 
@@ -68,7 +67,7 @@ extern HEAP LBSMD_GetHeapCopy(TNCBI_Time time/*ignored*/)
 extern const char* LBSMD_GetHostParameter(unsigned int host,
                                           const char*  name)
 {
-    return 0;
+    return 0/*no info*/;
 }
 
 
@@ -82,28 +81,28 @@ unsigned int LBSMD_GetLocalHostAddress(const void* v)
 /*ARGSUSED*/
 int LBSM_HINFO_CpuCount(const HOST_INFO hinfo)
 {
-    return 0;
+    return 0/*no info*/;
 }
 
 
 /*ARGSUSED*/
 int LBSM_HINFO_CpuUnits(const HOST_INFO hinfo)
 {
-    return 0;
+    return 0/*no info*/;
 }
 
 
 /*ARGSUSED*/
 double LBSM_HINFO_CpuClock(const HOST_INFO hinfo)
 {
-    return 0.0;
+    return 0.0/*no info*/;
 }
 
 
 /*ARGSUSED*/
 int LBSM_HINFO_TaskCount(const HOST_INFO hinfo)
 {
-    return 0;
+    return 0/*no info*/;
 }
 
 
@@ -111,7 +110,7 @@ int LBSM_HINFO_TaskCount(const HOST_INFO hinfo)
 int/*bool*/ LBSM_HINFO_Memusage(const HOST_INFO hinfo,
                                 double memusage[5])
 {
-    return 0/*failure*/;
+    return 0/*no info*/;
 }
 
 
@@ -119,7 +118,7 @@ int/*bool*/ LBSM_HINFO_Memusage(const HOST_INFO hinfo,
 int/*bool*/ LBSM_HINFO_MachineParams(const HOST_INFO hinfo,
                                      SHINFO_Params* p)
 {
-    return 0/*failure*/;
+    return 0/*no info*/;
 }
 
 
@@ -132,14 +131,16 @@ int LBSM_HINFO_PortUsage(const HOST_INFO hinfo,
 
 
 /*ARGSUSED*/
-int/*bool*/ LBSM_HINFO_LoadAverage(const HOST_INFO hinfo, double lavg[2])
+int/*bool*/ LBSM_HINFO_LoadAverage(const HOST_INFO hinfo,
+                                   double lavg[2])
 {
-    return 0/*failure*/;
+    return 0/*no info*/;
 }
 
 
 /*ARGSUSED*/
-int/*bool*/ LBSM_HINFO_Status(const HOST_INFO hinfo, double status[2])
+int/*bool*/ LBSM_HINFO_Status(const HOST_INFO hinfo,
+                              double status[2])
 {
-    return 0/*failure*/;
+    return 0/*no info*/;
 }
