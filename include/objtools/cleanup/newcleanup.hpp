@@ -262,15 +262,6 @@ private:
     // Date-related
     void x_DateStdBC( CDate_std& date );
 
-    // author-related
-    void x_AuthorBC  ( CAuthor& au, bool fix_initials );
-    void x_PersonIdBC( CPerson_id& pid, bool fix_initials );
-    void x_NameStdBC ( CName_std& name, bool fix_initials );
-    void x_ExtractSuffixFromInitials(CName_std& name);
-    void x_FixEtAl(CName_std& name);
-    void x_FixSuffix(CName_std& name);
-    void x_FixInitials(CName_std& name);
-
     void x_AddReplaceQual(CSeq_feat& feat, const string& str);
 
     void x_SeqIntervalBC( CSeq_interval & seq_interval );
