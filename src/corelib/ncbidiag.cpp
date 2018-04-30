@@ -2157,7 +2157,8 @@ CDiagContext_Extra& CDiagContext_Extra::PrintNcbiAppInfoOnRequest(void)
     if (ins) {
         const CVersion& ver = ins->GetFullVersion();
         const CVersionInfo& vi = ver.GetVersionInfo();
-#if defined (NCBI_SC_VERSION) && NCBI_SC_VERSION <= 21
+//#if defined (NCBI_SC_VERSION) && NCBI_SC_VERSION <= 21
+#if 1
         string str = NStr::NumericToString(vi.GetMajor()) + "." +
                      NStr::NumericToString(vi.GetMinor()) + "." +
                      NStr::NumericToString(vi.GetPatchLevel());
