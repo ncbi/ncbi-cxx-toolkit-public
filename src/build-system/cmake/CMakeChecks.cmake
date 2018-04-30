@@ -146,7 +146,7 @@ endif()
 
 set(NCBI_SC_VERSION 0)
 if (NOT "${CORELIB_WC_URL}" STREQUAL "")
-    string(REGEX REPLACE ".*/([0-9]+)\\.[0-9]+/.*" "\\1" "${CORELIB_WC_URL}" _SC_VER)
+    string(REGEX REPLACE ".*/production/components/core/([0-9]+)\\.[0-9]+/.*" "\\1" _SC_VER "${CORELIB_WC_URL}")
     string(LENGTH "${_SC_VER}" _SC_VER_LEN)
     if (${_SC_VER_LEN} LESS 10 AND NOT "${_SC_VER}" STREQUAL "")
         set(NCBI_SC_VERSION ${_SC_VER})
