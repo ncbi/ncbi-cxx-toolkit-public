@@ -395,6 +395,12 @@ int CTbl2AsnApp::Run(void)
     m_logger->m_enable_log = args["W"].AsBoolean();
     m_validator.Reset(new CTable2AsnValidator(m_context));
 
+    m_context.m_GenomicProductSet = args["g"].AsBoolean();
+    m_context.m_NucProtSet = args["u"].AsBoolean();
+    m_context.m_SetIDFromFile = args["q"].AsBoolean();
+    m_context.m_allow_accession = args["allow-acc"].AsBoolean();
+    m_context.m_delay_genprodset = args["J"].AsBoolean();
+
     if (args["c"])
     {
         if (args["c"].AsString().find_first_not_of("-befwsdD") != string::npos)
@@ -451,15 +457,9 @@ int CTbl2AsnApp::Run(void)
     }
     NStr::TruncateSpacesInPlace(m_context.m_Comment);
 
-    m_context.m_GenomicProductSet = args["g"].AsBoolean();
-    m_context.m_NucProtSet = args["u"].AsBoolean();
-    m_context.m_SetIDFromFile = args["q"].AsBoolean();
-    m_context.m_allow_accession = args["allow-acc"].AsBoolean();
-
     if (args["U"] && args["U"].AsBoolean())
       m_context.m_cleanup += 'U';
 
-    m_context.m_delay_genprodset = args["J"].AsBoolean();
     if (args["X"])
     {
         const string& extra = args["X"].AsString();
