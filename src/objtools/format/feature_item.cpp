@@ -6259,9 +6259,7 @@ CSourceFeatureItem::CSourceFeatureItem
     }
     x_SetObject(src);
 
-    /// THIS IS A HACK
-    /// We build a fake BioSource feature - even though BioSource features are
-    /// a thing of the past, and the source descriptor is more common
+    /// We build a fake BioSource feature - even for a source descriptor
     CRef<CSeq_feat> feat(new CSeq_feat);
     feat->SetData().SetBiosrc(const_cast<CBioSource&>(src));
     if ( range.IsWhole() ) {
@@ -6281,8 +6279,6 @@ CSourceFeatureItem::CSourceFeatureItem
     m_Feat = *(CFeat_CI(sah));
     m_Loc = &m_Feat.GetLocation();
     x_SetObject(m_Feat.GetOriginalFeature());
-
-    /// END HACK
 
     x_GatherInfo(ctx);
 }
