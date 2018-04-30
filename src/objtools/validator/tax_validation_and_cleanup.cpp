@@ -117,22 +117,24 @@ bool CQualifierRequest::MatchTryValue(const string& val) const
 }
 
 
-CSpecificHostRequest::CSpecificHostRequest(const string& host, const COrg_ref& org) :
+CSpecificHostRequest::CSpecificHostRequest(const string& host, const COrg_ref& org, bool for_fix) :
     CQualifierRequest(), 
     m_Host(host), 
     m_Response(eUnrecognized), 
     m_HostLineage(kEmptyStr), 
     m_OrgLineage(kEmptyStr)
 {
+    
     string host_check = SpecificHostValueToCheck(host);
     if (NStr::IsBlank(host_check)) {
         m_Response = eNormal;
         return;
     }
-    m_ValuesToTry.push_back(host_check);
-    if (!NStr::Equal(host, host_check)) {
-        m_ValuesToTry.push_back(host);
+    if (!for_fix && !NStr::Equal(host, host_check)) {
+        m_ValuesToTry.push_back(host_check);
     }
+    m_ValuesToTry.push_back(host);
+
     m_SuggestedFix.clear();
     if (org.IsSetLineage()) {
         m_OrgLineage = org.GetLineage();
@@ -230,18 +232,6 @@ const string& CSpecificHostRequest::SuggestFix() const
     } else {
         return m_SuggestedFix;
     }
-}
-
-
-bool CSpecificHostRequest::OkToAutoFix() const
-{
-    for (auto it : m_ValuesToTry) {
-        if (NStr::Find(it, ";") != NPOS) {
-            // evidence that the value was truncated
-            return false;
-        }
-    }
-    return true;
 }
 
 
@@ -523,7 +513,7 @@ CRef<CQualifierRequest> CSpecificHostMap::x_MakeNewRequest(const string& orig_va
 
 CRef<CQualifierRequest> CSpecificHostMapForFix::x_MakeNewRequest(const string& orig_val, const COrg_ref& org)
 {
-    CRef<CQualifierRequest> rq(new CSpecificHostRequest(orig_val, org));
+    CRef<CQualifierRequest> rq(new CSpecificHostRequest(orig_val, org, true));
     return rq;
 }
 
@@ -554,12 +544,10 @@ bool CSpecificHostMapForFix::ApplyToOrg(COrg_ref& org_ref) const
             TQualifierRequests::const_iterator it = m_Map.find(host_val);
             if (it != m_Map.end()) {
                 const CSpecificHostRequest* rq = dynamic_cast<const CSpecificHostRequest *>(it->second.GetPointer());
-                if (rq->OkToAutoFix()) {
-                    string new_val = x_DefaultSpecificHostAdjustments(rq->SuggestFix());
-                    if (!NStr::IsBlank(new_val) && !NStr::Equal(new_val, (*m)->GetSubname())) {
-                        (*m)->SetSubname(new_val);
-                        changed = true;
-                    }
+                string new_val = x_DefaultSpecificHostAdjustments(rq->SuggestFix());
+                if (!NStr::IsBlank(new_val) && !NStr::Equal(new_val, (*m)->GetSubname())) {
+                    (*m)->SetSubname(new_val);
+                    changed = true;
                 }
             }
         }

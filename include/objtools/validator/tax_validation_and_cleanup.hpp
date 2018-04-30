@@ -123,7 +123,7 @@ protected:
 class CSpecificHostRequest : public CQualifierRequest
 {
 public:
-    CSpecificHostRequest(const string& orig_val, const COrg_ref& org);
+    CSpecificHostRequest(const string& orig_val, const COrg_ref& org, bool for_fix = false);
     ~CSpecificHostRequest() {};
 
     enum EHostResponseFlags{
@@ -138,7 +138,6 @@ public:
     virtual void PostErrors(CValidError_imp& imp);
 
     const string& SuggestFix() const;
-    bool OkToAutoFix() const;
 
 private:
     string m_Host;

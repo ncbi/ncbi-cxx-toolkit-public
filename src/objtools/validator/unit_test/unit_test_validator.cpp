@@ -21019,8 +21019,9 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
     CTaxValidationAndCleanup tval;
     tval.Init(*entry);
     vector<CRef<COrg_ref> > org_rq_list = tval.GetSpecificHostLookupRequest(true);
-    // three homo sapiens are combined, but two Atlantic white-sided dolphin values are used
-    BOOST_CHECK_EQUAL(org_rq_list.size(), test_values.size() - 1);
+    // don't create update requests for single-word values
+    // Homo sapiens is ignored because "HUMAN" already corrects to it
+    BOOST_CHECK_EQUAL(org_rq_list.size(), test_values.size() - 6);
 
     objects::CTaxon3 taxon3;
     taxon3.Init();
@@ -21205,8 +21206,9 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFixIncremental)
     CTaxValidationAndCleanup tval;
     tval.Init(*entry);
     vector<CRef<COrg_ref> > spec_host_rq = tval.GetSpecificHostLookupRequest(true);
-    // three homo sapiens are combined, but two Atlantic white-sided dolphin values are used
-    BOOST_CHECK_EQUAL(spec_host_rq.size(), test_values.size() - 1);
+    // don't create update requests for single-word values
+    // Homo sapiens is ignored because "HUMAN" already corrects to it
+    BOOST_CHECK_EQUAL(spec_host_rq.size(), test_values.size() - 6);
 
     objects::CTaxon3 taxon3;
     taxon3.Init();
@@ -23270,12 +23272,10 @@ void CheckHost(const CBioseq& seq, const string& host)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_VR_812)
+void CheckOneSpecificHost(const string& orig, const string& newval)
 {
-    CRef<CSeq_entry> entry = BuildGoodEcoSet();
-    SetOrgMod(entry->SetSet().SetSeq_set().front(), COrgMod::eSubtype_nat_host, "Canis familiaris");
-    SetOrgMod(entry->SetSet().SetSeq_set().back(), COrgMod::eSubtype_nat_host, "Canis familiaris; some other information");
-
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetOrgMod(entry, COrgMod::eSubtype_nat_host, orig);
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CScope scope(*objmgr);
     scope.AddDefaults();
@@ -23284,8 +23284,14 @@ BOOST_AUTO_TEST_CASE(Test_VR_812)
     validator::CTaxValidationAndCleanup tval;
 
     BOOST_CHECK_EQUAL(tval.DoTaxonomyUpdate(seh, true), true);
-    CheckHost(entry->SetSet().SetSeq_set().front()->GetSeq(), "Canis lupus familiaris");
-    CheckHost(entry->SetSet().SetSeq_set().back()->GetSeq(), "Canis familiaris; some other information");
+    CheckHost(entry->GetSeq(), newval);
+}
 
+
+BOOST_AUTO_TEST_CASE(Test_VR_812)
+{
+    CheckOneSpecificHost("Canis familiaris", "Canis lupus familiaris");
+    CheckOneSpecificHost("Canis familiaris; some other information", "Canis familiaris; some other information");
+    CheckOneSpecificHost("Hordeum spontaneum cultivar test", "Hordeum spontaneum cultivar test");
         
 }

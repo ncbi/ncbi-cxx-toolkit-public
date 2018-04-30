@@ -2020,6 +2020,7 @@ string SpecificHostValueToCheck(const string& val)
     if (pos != string::npos) {
         host = host.substr(0, pos);
     }
+    NStr::TruncateSpacesInPlace(host);
     // must have at least two words to check
     pos = NStr::Find(host, " "); // combine with next line
     if (pos == string::npos) {
