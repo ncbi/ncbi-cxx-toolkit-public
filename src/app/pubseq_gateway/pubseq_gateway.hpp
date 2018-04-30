@@ -272,12 +272,10 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
                                    resolution_data, sat, sat_key))
             return 0;   // unpacking failed
 
-        string  sat_name;
-        if (SatToSatName(sat, sat_name)) {
-            resp.Postpone(CPendingOperation(eByAccession,
-                                            SBlobId(sat, sat_key),
-                                            std::move(sat_name),
-                                            m_CassConnection, m_TimeoutMs,
+        SBlobId     blob_id(sat, sat_key);
+        if (SatToSatName(sat, blob_id.m_SatName)) {
+            resp.Postpone(CPendingOperation(SBlobRequest(blob_id, eByAccession),
+                                            1, m_CassConnection, m_TimeoutMs,
                                             m_MaxRetries));
             return 0;
         }
@@ -286,7 +284,7 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
         string      msg = string("Unknown satellite number ") +
                           NStr::NumericToString(sat) + " after unpacking "
                           "accession data";
-        x_SendUnknownSatelliteError(resp, SBlobId(sat, sat_key), msg,
+        x_SendUnknownSatelliteError(resp, blob_id, msg,
                                     eUnknownResolvedSatellite);
     }
     return 0;
@@ -312,18 +310,18 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
             return 0;
         }
 
-        string      sat_name;
-        if (SatToSatName(blob_id.sat, sat_name)) {
-            resp.Postpone(CPendingOperation(eBySatAndSatKey, blob_id,
-                                            std::move(sat_name),
-                                            m_CassConnection, m_TimeoutMs,
+        if (SatToSatName(blob_id.m_Sat, blob_id.m_SatName)) {
+            resp.Postpone(CPendingOperation(SBlobRequest(blob_id,
+                                                         eBySatAndSatKey),
+                                            0, m_CassConnection, m_TimeoutMs,
                                             m_MaxRetries));
+
             return 0;
         }
 
         m_ErrorCounters.IncGetBlobNotFound();
         string      msg = string("Unknown satellite number ") +
-                          NStr::NumericToString(blob_id.sat);
+                          NStr::NumericToString(blob_id.m_Sat);
         x_SendUnknownSatelliteError(resp, blob_id, msg,
                                     eUnknownResolvedSatellite);
     } else {

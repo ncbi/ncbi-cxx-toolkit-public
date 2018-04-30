@@ -45,14 +45,23 @@ using namespace std;
 
 struct SBlobId
 {
-    int     sat;
-    int     sat_key;
+    int     m_Sat;
+    int     m_SatKey;
+
+    // Resolved sat; may be ommitted
+    string  m_SatName;
 
     SBlobId();
     SBlobId(const string &  blob_id);
     SBlobId(int  sat, int  sat_key);
 
+    void SetSatName(const string &  name)
+    {
+        m_SatName = name;
+    }
+
     bool IsValid(void) const;
+    bool operator < (const SBlobId &  other) const;
 };
 
 

@@ -70,12 +70,30 @@ enum EBlobIdentificationType {
 };
 
 
+// In case one many requested blobs a container of items is required.
+// Each item describes one requested blob. The structure is used for that.
+struct SBlobRequest
+{
+    SBlobRequest(const SBlobId &  blob_id,
+                 EBlobIdentificationType  id_type) :
+        m_BlobId(blob_id), m_IdType(id_type)
+    {}
+
+    SBlobId                     m_BlobId;
+    EBlobIdentificationType     m_IdType;
+};
+
+
 class CPendingOperation
 {
 public:
-    CPendingOperation(EBlobIdentificationType  blob_id_type,
-                      const SBlobId &  blob_id,
-                      string &&  sat_name,
+    CPendingOperation(const SBlobRequest &  blob_request,
+                      size_t  initial_reply_chunks,
+                      shared_ptr<CCassConnection>  conn,
+                      unsigned int  timeout,
+                      unsigned int  max_retries);
+    CPendingOperation(const vector<SBlobRequest> &  blob_requests,
+                      size_t  initial_reply_chunks,
                       shared_ptr<CCassConnection>  conn,
                       unsigned int  timeout,
                       unsigned int  max_retries);
@@ -96,18 +114,37 @@ public:
     CPendingOperation& operator=(CPendingOperation&&) = default;
 
 private:
-    EBlobIdentificationType                 m_BlobIdType;
-    int32_t                                 m_TotalSentBlobChunks;
-    int32_t                                 m_TotalSentReplyChunks;
+    // Internal structure to keep track of the blob retrieving
+    struct SBlobRequestDetails
+    {
+        SBlobRequestDetails(const SBlobRequest &  blob_request) :
+            m_BlobIdType(blob_request.m_IdType),
+            m_TotalSentBlobChunks(0), m_FinishedRead(false)
+        {}
 
-    HST::CHttpReply<CPendingOperation>*     m_Reply;
+        EBlobIdentificationType         m_BlobIdType;
+        int32_t                         m_TotalSentBlobChunks;
+        bool                            m_FinishedRead;
+
+        unique_ptr<SOperationContext>   m_Context;
+        unique_ptr<CCassBlobLoader>     m_Loader;
+
+        CAppOp                          m_Op;
+    };
+
+    bool x_AllFinishedRead(void) const;
+    void x_SendReplyCompletion(void);
+
+private:
+    HST::CHttpReply<CPendingOperation> *    m_Reply;
+
+    int32_t                                 m_TotalSentReplyChunks;
     bool                                    m_Cancelled;
-    bool                                    m_FinishedRead;
-    const SBlobId                           m_BlobId;
-    CAppOp                                  m_Op;
-    unique_ptr<CCassBlobLoader>             m_Loader;
     vector<h2o_iovec_t>                     m_Chunks;
-    unique_ptr<SOperationContext>           m_Context;
+
+    // Storage for all the blob requests
+    map<SBlobId,
+        unique_ptr<SBlobRequestDetails>>    m_Requests;
 };
 
 

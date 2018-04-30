@@ -167,6 +167,11 @@ public:
         m_DataReadyData = data;
     }
 
+    void * GetContext(void)
+    {
+        return m_Context;
+    }
+
 protected:
     enum EBlobWaiterState {
         eInit = 0,

@@ -38,41 +38,49 @@ USING_NCBI_SCOPE;
 
 
 SBlobId::SBlobId() :
-    sat(-1), sat_key(-1)
+    m_Sat(-1), m_SatKey(-1)
 {}
 
 
 SBlobId::SBlobId(const string &  blob_id) :
-    sat(-1), sat_key(-1)
+    m_Sat(-1), m_SatKey(-1)
 {
     list<string>    parts;
     NStr::Split(blob_id, ".", parts);
 
     if (parts.size() == 2) {
         try {
-            sat = NStr::StringToNumeric<int>(parts.front());
-            sat_key = NStr::StringToNumeric<int>(parts.back());
+            m_Sat = NStr::StringToNumeric<int>(parts.front());
+            m_SatKey = NStr::StringToNumeric<int>(parts.back());
         } catch (...) {
         }
     }
 }
 
 
-SBlobId::SBlobId(int  sat_, int  sat_key_) :
-    sat(sat_), sat_key(sat_key_)
+SBlobId::SBlobId(int  sat, int  sat_key) :
+    m_Sat(sat), m_SatKey(sat_key)
 {}
 
 
 bool SBlobId::IsValid(void) const
 {
-    return sat >= 0 && sat_key >= 0;
+    return m_Sat >= 0 && m_SatKey >= 0;
+}
+
+
+bool SBlobId::operator < (const SBlobId &  other) const
+{
+    if (m_Sat < other.m_Sat)
+        return true;
+    return m_SatKey < other.m_SatKey;
 }
 
 
 string  GetBlobId(const SBlobId &  blob_id)
 {
-    return NStr::NumericToString(blob_id.sat) + "." +
-           NStr::NumericToString(blob_id.sat_key);
+    return NStr::NumericToString(blob_id.m_Sat) + "." +
+           NStr::NumericToString(blob_id.m_SatKey);
 }
 
 
