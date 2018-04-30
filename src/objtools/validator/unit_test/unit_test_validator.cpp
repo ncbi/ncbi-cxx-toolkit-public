@@ -6305,11 +6305,13 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     CheckErrors (*eval, expected_errors);
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_cell_type, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_tissue_type, "foo");
+    expected_errors[0]->SetErrCode("InvalidTissueType");
     expected_errors[0]->SetErrMsg("Virus has unexpected Tissue-type qualifier");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_tissue_type, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_dev_stage, "foo");
+    expected_errors[0]->SetErrCode("BioSourceInconsistency");
     expected_errors[0]->SetErrMsg("Virus has unexpected Dev-stage qualifier");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -23294,4 +23296,24 @@ BOOST_AUTO_TEST_CASE(Test_VR_812)
     CheckOneSpecificHost("Canis familiaris; some other information", "Canis familiaris; some other information");
     CheckOneSpecificHost("Hordeum spontaneum cultivar test", "Hordeum spontaneum cultivar test");
         
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_814)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetLineage(entry, "Viroids;");
+    SetSubSource(entry, CSubSource::eSubtype_tissue_type, "X");
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidTissueType",
+        "Viroid has unexpected tissue-type qualifier"));
+
+    eval = validator.Validate(seh, options);
+
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
 }

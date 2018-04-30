@@ -450,7 +450,9 @@ const CSeq_entry *ctx)
             obj, ctx);
     }
 
-    bool isViral = false, isAnimal = false, isPlant = false, isBacteria = false, isArchaea = false, isFungal = false;
+    bool isViral = false, isAnimal = false, isPlant = false,
+        isBacteria = false, isArchaea = false, isFungal = false,
+        isViroid = false;
     if (bsrc.IsSetLineage()) {
         string lineage = bsrc.GetLineage();
         if (NStr::StartsWith(lineage, "Viruses; ", NStr::eNocase)) {
@@ -467,6 +469,8 @@ const CSeq_entry *ctx)
             isArchaea = true;
         } else if (NStr::StartsWith(lineage, "Eukaryota; Fungi; ", NStr::eNocase)) {
             isFungal = true;
+        } else if (NStr::StartsWith(lineage, "Viroids;", NStr::eNocase)) {
+            isViroid = true;
         }
     }
 
@@ -654,6 +658,9 @@ const CSeq_entry *ctx)
             if (isBacteria) {
                 PostObjErr(eDiag_Error, eErr_SEQ_DESCR_InvalidTissueType,
                     "Tissue-type is inappropriate for bacteria", obj, ctx);
+            } else if (isViroid) {
+                PostObjErr(eDiag_Error, eErr_SEQ_DESCR_InvalidTissueType,
+                    "Viroid has unexpected tissue-type qualifier", obj, ctx);
             }
             break;
         }
@@ -663,7 +670,8 @@ const CSeq_entry *ctx)
             if (subname.length() > 0) {
                 subname[0] = toupper(subname[0]);
             }
-            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+            PostObjErr(eDiag_Warning, 
+                subtype == CSubSource::eSubtype_tissue_type ? eErr_SEQ_DESCR_InvalidTissueType : eErr_SEQ_DESCR_BioSourceInconsistency,
                 "Virus has unexpected " + subname + " qualifier", obj, ctx);
         }
     }
