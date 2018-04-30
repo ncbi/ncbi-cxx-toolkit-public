@@ -47,7 +47,7 @@ struct CParams_imp
 {
     bool m_test;
     bool m_keep_refs;
-    bool m_cp_cit_arts;
+    bool m_copy_cit_art_from_master;
     bool m_accs_assigned;
     bool m_trust_version;
     bool m_allow_diff_citsubs;
@@ -102,7 +102,7 @@ struct CParams_imp
     CParams_imp() :
         m_test(false),
         m_keep_refs(false),
-        m_cp_cit_arts(false),
+        m_copy_cit_art_from_master(false),
         m_accs_assigned(false),
         m_trust_version(false),
         m_allow_diff_citsubs(false),
@@ -308,6 +308,11 @@ bool CParams::IsOverrideExisting() const
 bool CParams::IsBinaryOutput() const
 {
     return m_imp->m_binary_out;
+}
+
+bool CParams::IsCitArtFromMaster() const
+{
+    return m_imp->m_copy_cit_art_from_master;
 }
 
 TSeqPos CParams::GetGapSize() const
@@ -763,7 +768,7 @@ bool SetParams(const CArgs& args)
         return false;
     }
 
-    params_imp.m_cp_cit_arts = args["A"].AsBoolean();
+    params_imp.m_copy_cit_art_from_master = args["A"].AsBoolean();
 
     if (args["L"].HasValue()) {
         params_imp.m_id_acc_file = args["L"].AsString();

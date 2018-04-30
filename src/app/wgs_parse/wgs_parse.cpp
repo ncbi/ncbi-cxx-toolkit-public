@@ -539,6 +539,90 @@ static void GetUserObjAndFieldNames(vector<string>& user_obj_tags, string& first
     }
 }
 
+static const CPub* GetPubOfType(const CSeqdesc& descr, CPub::E_Choice type)
+{
+    _ASSERT(descr.IsPub() && "Should be a publication");
+
+    const CPub* ret = nullptr;
+    if (descr.GetPub().IsSetPub() && descr.GetPub().GetPub().IsSet()) {
+
+        const CPub_equiv::Tdata& pubs = descr.GetPub().GetPub().Get();
+        auto pub = find_if(pubs.begin(), pubs.end(), [&type](const CRef<CPub>& pub) { return pub->Which() == type; });
+        if (pub != pubs.end()) {
+            ret = *pub;
+        }
+    }
+
+    return ret;
+}
+
+// returns true if a.date > b.date (a.date is more recent)
+static bool IsDateRecent(const CCit_sub& cit_sub, const CDate& date)
+{
+    if (cit_sub.IsSetDate()) {
+        
+        return date.Which() != CDate::e_not_set ? cit_sub.GetDate().Compare(date) == CDate::eCompare_after : true;
+    }
+
+    return false;
+}
+
+static void GetCurrentMasterPubsInfo(const CSeq_entry& entry, CDate& cit_sub_date, CRef<CPub_equiv>& cit_sub, list<CRef<CPub_equiv>>& cit_arts)
+{
+    if (entry.IsSeq() && entry.GetSeq().IsNa()) {
+
+        if (entry.GetSeq().IsSetDescr() && entry.GetSeq().GetDescr().IsSet()) {
+
+            for (auto descr : entry.GetSeq().GetDescr().Get()) {
+
+                if (descr->IsPub()) {
+
+                    const CPub* cit = GetPubOfType(*descr, CPub::e_Sub);
+
+                    if (cit) {
+
+                        _ASSERT(cit->IsSub() && "Should contain a valid CCit_sub object");
+                        const CCit_sub& cur_cit_sub = cit->GetSub();
+
+                        if (cit_sub.Empty() || IsDateRecent(cur_cit_sub, cit_sub_date)) {
+                            cit_sub.Reset(new CPub_equiv);
+                            cit_sub->Assign(descr->GetPub().GetPub());
+
+                            cit_sub_date.Reset();
+                            if (cur_cit_sub.IsSetDate()) {
+                                cit_sub_date.Assign(cur_cit_sub.GetDate());
+                            }
+                        }
+                    }
+
+                    if (GetParams().IsCitArtFromMaster()) {
+
+                        cit = GetPubOfType(*descr, CPub::e_Article);
+
+                        if (cit) {
+
+                            _ASSERT(cit->IsArticle() && "Should contain a valid CCit_art object");
+
+                            CRef<CPub_equiv> cit_art(new CPub_equiv);
+                            cit_art->Assign(descr->GetPub().GetPub());
+                            cit_arts.push_back(cit_art);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (entry.IsSet()) {
+        if (entry.GetSet().IsSetSeq_set()) {
+
+            for (auto cur_entry : entry.GetSet().GetSeq_set()) {
+                GetCurrentMasterPubsInfo(*cur_entry, cit_sub_date, cit_sub, cit_arts);
+            }
+        }
+    }
+}
+
 static void GetCurrentMasterInfo(const CSeq_entry& entry, CCurrentMasterInfo& current_master)
 {
     GetAccessionInfo(entry, current_master.m_accession, current_master.m_version);
@@ -550,7 +634,7 @@ static void GetCurrentMasterInfo(const CSeq_entry& entry, CCurrentMasterInfo& cu
     GetUserObjAndFieldNames(user_obj_tags, first_contig, last_contig);
     GetDescriptorsInfo(entry, user_obj_tags, first_contig, last_contig, current_master.m_first_contig, current_master.m_last_contig, current_master.m_num_len);
 
-    //TODO working with pubs
+    GetCurrentMasterPubsInfo(entry, current_master.m_cit_sub_date, current_master.m_cit_sub, current_master.m_cit_arts);
 }
 
 static bool SaveAccessionsRange(int first, int last, size_t num_len)
@@ -729,10 +813,6 @@ int CWGSParseApp::Run(void)
 
             if (GetParams().IsUpdateScaffoldsMode() || GetParams().GetUpdateMode() == eUpdateAssembly || GetParams().GetUpdateMode() == eUpdateExtraContigs) {
 
-                if (GetParams().GetUpdateMode() == eUpdateScaffoldsUpd && GetParams().GetSource() != eNCBI) {
-                    // TODO
-                }
-
                 GetCurrentMasterInfo(*master_entry, current_master);
                 if (current_master.m_version <= 0) {
 
@@ -754,11 +834,7 @@ int CWGSParseApp::Run(void)
 
                 if (GetParams().GetUpdateMode() == eUpdateAssembly) {
                     ++current_master.m_version;
-
-                    // TODO pubs
                 }
-
-                // TODO other stuff
 
                 master_info.m_current_master = &current_master;
             }

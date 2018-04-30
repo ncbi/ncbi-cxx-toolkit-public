@@ -40,6 +40,9 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/biblio/Cit_sub.hpp>
+#include <objects/biblio/Cit_art.hpp>
+#include <objects/pub/Pub_equiv.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -217,6 +220,10 @@ struct CCurrentMasterInfo
         m_first_contig,
         m_last_contig;
     size_t m_num_len; // length of the numeric part of an accession
+
+    CRef<CPub_equiv> m_cit_sub;
+    CDate m_cit_sub_date;
+    list<CRef<CPub_equiv>> m_cit_arts;
 
     CCurrentMasterInfo() :
         m_version(0),

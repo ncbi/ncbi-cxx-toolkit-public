@@ -134,6 +134,7 @@ public:
     bool IsPreserveInputPath() const;
     bool IsOverrideExisting() const;
     bool IsBinaryOutput() const;
+    bool IsCitArtFromMaster() const;
 
     TSeqPos GetGapSize() const;
     int GetFixTech() const;

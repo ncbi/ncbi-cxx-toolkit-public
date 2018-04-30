@@ -50,7 +50,10 @@
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/biblio/Imprint.hpp>
+#include <objects/biblio/Cit_jour.hpp>
 #include <objects/biblio/Auth_list.hpp>
+#include <objects/biblio/ArticleIdSet.hpp>
+#include <objects/biblio/ArticleId.hpp>
 #include <objects/seqblock/GB_block.hpp>
 
 #include "wgs_params.hpp"
@@ -1054,6 +1057,83 @@ static void AddTpaKeyword(CBioseq& bioseq, CGB_block* gb_block)
     gb_block->SetKeywords().push_back(GetParams().GetTpaKeyword().empty() ? TPA_KEYWORD : GetParams().GetTpaKeyword());
 }
 
+static void AddPub(CBioseq& bioseq, const CPub_equiv& pub)
+{
+    CRef<CSeqdesc> descr(new CSeqdesc);
+    descr->SetPub().SetPub().Assign(pub);
+    bioseq.SetDescr().Set().push_back(descr);
+}
+
+static bool CheckCitArtPmidPrepub(const CPub_equiv& pub, bool inpress, bool check_pmid, string* iso_jta = nullptr)
+{
+    if (!pub.IsSet()) {
+        return false;
+    }
+
+    bool got_pmid = false,
+         got_inpress = false;
+
+    for (auto cur_pub : pub.Get()) {
+
+        if (cur_pub->IsPmid()) {
+            got_pmid = true;
+        }
+        else if (cur_pub->IsArticle()) {
+
+            const CCit_art& cit_art = cur_pub->GetArticle();
+            if (cit_art.IsSetFrom() && cit_art.GetFrom().IsJournal()) {
+
+                const CCit_jour& journal = cit_art.GetFrom().GetJournal();
+
+                if (inpress) {
+                    if (journal.IsSetImp() && journal.GetImp().IsSetPrepub() && journal.GetImp().GetPrepub() == CImprint::ePrepub_in_press) {
+                        got_inpress = true;
+                    }
+                }
+                else {
+                    if (!journal.IsSetImp() || !journal.GetImp().IsSetPrepub()) {
+                        got_inpress = true;
+                    }
+                }
+
+                if (iso_jta && journal.IsSetTitle() && journal.GetTitle().IsSet()) {
+
+                    auto& titles = journal.GetTitle().Get();
+                    auto iso_jta_it = find_if(titles.begin(), titles.end(), [](const CRef<CTitle::C_E>& title) { return title->IsIso_jta(); });
+                    if (iso_jta_it != titles.end()) {
+                        *iso_jta = (*iso_jta_it)->GetIso_jta();
+                    }
+                }
+            }
+
+            if (check_pmid && cit_art.IsSetIds() && cit_art.GetIds().IsSet()) {
+
+                auto& ids = cit_art.GetIds().Get();
+                auto pubmed_id = find_if(ids.begin(), ids.end(), [](const CRef<CArticleId>& id) { return id->IsPubmed(); });
+                if (pubmed_id != ids.end()) {
+                    got_pmid = true;
+                }
+            }
+        }
+    }
+
+    if (!check_pmid) {
+        return got_inpress;
+    }
+
+    return !got_pmid && got_inpress;
+}
+
+static size_t GetNumOfPubs(const CPub_equiv& pub, CPub::E_Choice type)
+{
+    size_t ret = 0;
+    if (pub.IsSet()) {
+        ret = count_if(pub.Get().begin(), pub.Get().end(), [&type](const CRef<CPub>& cur_pub) { return cur_pub->Which() == type; });
+    }
+
+    return ret;
+}
+
 static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& cit_sub, CRef<CContact_info>& contact_info)
 {
     CRef<CBioseq> bioseq(new CBioseq);
@@ -1103,20 +1183,67 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
     }
 
     // CitSub
+    if (GetParams().GetUpdateMode() == eUpdateAssembly && info.m_current_master && info.m_current_master->m_cit_sub.NotEmpty()) {
+        AddPub(*bioseq, *info.m_current_master->m_cit_sub);
+    }
+
     if (cit_sub.NotEmpty()) {
-        bioseq->SetDescr().Set().push_back(CreateCitSub(*cit_sub));
         if (contact_info.NotEmpty()) {
             AddContactInfo(*cit_sub, *contact_info);
         }
+        bioseq->SetDescr().Set().push_back(CreateCitSub(*cit_sub));
     }
 
-    // TODO citarts
+    // CitArts
+    CSeq_descr::Tdata::iterator pub_to_be_removed;
+    bool is_set_pub_to_be_removed = false,
+         more_than_one_cit_art = false;
+    
+    
+    if (info.m_current_master) {
 
+        more_than_one_cit_art = info.m_current_master->m_cit_arts.size() > 1;
+        for (auto cit_art : info.m_current_master->m_cit_arts) {
+
+            AddPub(*bioseq, *cit_art);
+
+            if (more_than_one_cit_art && CheckCitArtPmidPrepub(*cit_art, true, true)) {
+
+                pub_to_be_removed = bioseq->SetDescr().Set().end();
+                --pub_to_be_removed;
+                is_set_pub_to_be_removed = true;
+            }
+        }
+    }
+
+    size_t num_of_arts = 0,
+           num_of_subs = 0;
+
+    const CPub_equiv* pub_article = nullptr;
     for (auto& pubdescr : info.m_common_pubs) {
+
         CreatePub(*bioseq, *pubdescr.m_pubdescr_lookup);
+
+        size_t cur_num_of_arts = GetNumOfPubs(pubdescr.m_pubdescr_lookup->GetPub(), CPub::e_Article);
+
+        if (num_of_arts == 0 && cur_num_of_arts == 1) {
+            pub_article = &pubdescr.m_pubdescr_lookup->GetPub();
+        }
+
+        num_of_arts += cur_num_of_arts;
+        if (GetNumOfPubs(pubdescr.m_pubdescr_lookup->GetPub(), CPub::e_Sub)) {
+            ++num_of_subs;
+        }
     }
 
-    // TODO
+    if (is_set_pub_to_be_removed && GetParams().GetUpdateMode() == eUpdateAssembly && GetParams().GetSource() != eNCBI &&
+        num_of_arts == 1 && CheckCitArtPmidPrepub(*pub_article, false, true)) {
+        bioseq->SetDescr().Set().erase(pub_to_be_removed);
+    }
+    
+    if (num_of_subs == 0) {
+        info.m_num_of_pubs = 0;
+    }
 
     if (info.m_biosource.NotEmpty()) {
         if (!CreateBiosource(*bioseq, *info.m_biosource, info.m_org_refs)) {
