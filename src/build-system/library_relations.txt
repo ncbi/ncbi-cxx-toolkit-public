@@ -995,9 +995,8 @@ protobufd needs $(Z_LIB)
 protobufd needs3party $(ORIG_LIBS)
 protobufd needs3party $(Z_LIBS)
 proxsort needs taxoscli
-psg_cassandra includes psg_cassandra_old
-psg_cassandra_old needs connect
-psg_cassandra_old needs psg_diag
+psg_cassandra needs connect
+psg_cassandra needs psg_diag
 psg_client needs psg_diag
 psg_client needs psg_rpc
 psg_client needs xconnect
@@ -1244,7 +1243,6 @@ validation_details needs xobjwrite
 validation_results needs $(SEQ_LIBS)
 validation_results needs pub
 validation_results needs xmlwrapp
-var_unit_test_lib needs variation_lib
 variation needs $(SEQ_LIBS)
 variation needs pub
 variation_lib needs intvarutil
