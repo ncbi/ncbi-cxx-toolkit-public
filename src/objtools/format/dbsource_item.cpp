@@ -259,7 +259,7 @@ void CDBSourceItem::x_AddPIRBlock(CBioseqContext& ctx)
 
     x_SetObject(*dsc);
 
-    bool containsHostLine = false; // another hack to try to match C's whitespace
+    bool containsHostLine = false; // try to match C's whitespace
 
     const CPIR_block& pir = dsc->GetPir();
     if (pir.CanGetHost()) {
@@ -320,7 +320,7 @@ void CDBSourceItem::x_AddPIRBlock(CBioseqContext& ctx)
         if( &*it == &m_DBSource.front() ) {
             // first one has newline AFTER the semicolon
             *it += ";\n";
-            // another hack to match C toolkit
+            // match C toolkit
             /* if( (it + 1) != m_DBSource.end() && ! NStr::StartsWith(*(it + 1), "host")  ) {
                 *it += ";\n";
             } */
@@ -334,7 +334,7 @@ void CDBSourceItem::x_AddPIRBlock(CBioseqContext& ctx)
         // *it += (&*it == &m_DBSource.back() ? "." : "\n;");
     }
 
-    // hack to match C's whitespace
+    // match C's whitespace
     if( ! containsHostLine ) {
         m_DBSource.front() += "\n";
     }

@@ -101,7 +101,6 @@ void CCIGAR_Formatter::x_FormatAlignmentRows(const CSeq_align& sa,
                 }
             } STD_CATCH_ALL_X(1, "CCIGAR_Formatter::x_FormatAlignmentRows")
             if (sa2) {
-                // HACK HACK HACK WORKAROUND
                 // Conversion from Spliced to Disc inverts meaning of width!!!
                 x_FormatAlignmentRows(*sa2, true);
             }
@@ -196,7 +195,6 @@ void CCIGAR_Formatter::x_FormatLine(bool width_inverted)
 
     StartRow();
 
-    // HACK HACK HACK
     // Is the following correct???
     //
     // Expecting all coordinates to be normalized relative to
@@ -364,7 +362,7 @@ void CCIGAR_Formatter::x_FormatDensegRows(const CDense_seg& ds,
     // This is NOT the same frame as the frame in ASN.1!
     m_Frame = -1;
 
-    // HACK HACK HACK WORKAROUND
+    // WORKAROUND
     // I do believe there is lack of agreement on what
     // the "widths" of a dense-seg mean -- as multiplier, or as divisor.
     //
