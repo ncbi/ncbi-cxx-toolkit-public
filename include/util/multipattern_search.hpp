@@ -33,6 +33,7 @@
 /// @file multipattern_search.hpp
 /// Simultaneous search of multiple RegEx patterns in the input string
 
+#include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
 
