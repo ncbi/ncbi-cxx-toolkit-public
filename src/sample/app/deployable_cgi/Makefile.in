@@ -1,4 +1,4 @@
-APP_PROJ=cgi sample_cgi_test
+APP_PROJ=deployable_cgi sample_cgi_test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

@@ -11,16 +11,107 @@ USING_NCBI_SCOPE;
 
 #define NEED_SET_DEPLOYMENT_UID
 
+static const string CD_VERSION_ENV="APPLICATION_VERSION";
+static const string CD_VERSION_UNKNOWN="unknown";
+
+const string& CCgiSampleApplication::GetCdVersion() const
+{
+    bool found = false;
+    const string & version = GetEnvironment().Get(CD_VERSION_ENV, &found);
+    if(!found) {
+        return CD_VERSION_UNKNOWN;
+    }
+    return version;
+}
+
+int CCgiSampleApplication::ProcessPrintEnvironment(CCgiContext& ctx)
+{
+    const CCgiRequest& request  = ctx.GetRequest();
+    CCgiResponse&      response = ctx.GetResponse();
+
+#ifdef NEED_SET_DEPLOYMENT_UID
+    const auto deployment_uid = GetEnvironment().Get("DEPLOYMENT_UID");
+    CDiagContext &diag_ctx(GetDiagContext());
+    CDiagContext_Extra  extra(diag_ctx.Extra());
+    extra.Print("deployment_uid", deployment_uid);
+#endif /* NEED_SET_DEPLOYMENT_UID */
+
+    response.SetStatus(200);
+    response.WriteHeader();
+
+    auto_ptr<CHTMLPage> page;
+    try {
+        page.reset(new CHTMLPage("Sample CGI", "./share/env.html"));
+    } catch (const exception& e) {
+        ERR_POST("Failed to create Sample CGI HTML page: " << e.what());
+        return 2;
+    }
+
+    try {
+        list<string> names;
+        CRef<CHTML_table> env(new CHTML_table());
+        env->HeaderCell(0,0)->AppendPlainText("Name");
+        env->HeaderCell(0,1)->AppendPlainText("Value");
+
+        GetEnvironment().Enumerate(names);
+
+        int row=1;
+        for(auto name : names) {
+            env->Cell(row,0)->AppendPlainText(name);
+            env->Cell(row,1)->AppendPlainText(GetEnvironment().Get(name));
+            ++row;
+        }
+
+        page->AddTagMap("ENVIRONMENT", env);
+    }
+    catch (const exception& e) {
+        ERR_POST("Failed to populate Sample CGI HTML page: " << e.what());
+        return 3;
+    }
+
+    try {
+        if (request.GetRequestMethod() != CCgiRequest::eMethod_HEAD) {
+            page->Print(response.out(), CNCBINode::eHTML);
+        }
+    } catch (const CCgiHeadException& ex) {
+        ERR_POST("CCgiHeadException" << ex.what());
+        throw;
+    } catch (const exception& e) {
+        ERR_POST("exception: " << e.what());
+        ERR_POST("Failed to compose/send Sample CGI HTML page: " << e.what());
+        return 4;
+    }
+
+
+    return 0;
+}
+
 int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
 {
+
     // Parse, verify, and look at cmd-line and CGI parameters via "CArgs"
     // (optional)
     x_LookAtArgs();
+
 
     // Given "CGI context", get access to its "HTTP request" and
     // "HTTP response" sub-objects
     const CCgiRequest& request  = ctx.GetRequest();
     CCgiResponse&      response = ctx.GetResponse();
+
+    string path_info = request.GetProperty(eCgi_PathInfo);
+    NStr::TrimSuffixInPlace(path_info, "/");
+    NStr::TrimPrefixInPlace(path_info, "/");
+    if ( path_info == "environment") {
+        return ProcessPrintEnvironment(ctx);
+    } else if(path_info=="crash") {
+        int *p = (int*)0;
+        return *p;
+    }
+
+    const IRegistry&   config   = GetConfig();
+
+    const string&      secret = config.GetEncryptedString("Crypto", "secret", IRegistry::fPlaintextAllowed);
 
 #ifdef NEED_SET_DEPLOYMENT_UID
     const auto deployment_uid = GetEnvironment().Get("DEPLOYMENT_UID");
@@ -40,7 +131,7 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     if ( is_message ) {
         message = "'" + message + "'";
     } else {
-        message = "<NONE>";
+        message = "";
     }
 
     // NOTE:  While this sample uses the CHTML* classes for generating HTML,
@@ -67,20 +158,18 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     // Register substitution for the template parameters <@MESSAGE@> and
     // <@SELF_URL@>
     try {
-        CHTMLPlainText* text = new CHTMLPlainText(message);
-        _TRACE("Substituting a message");
-        page->AddTagMap("MESSAGE", text);
-
-        CHTMLPlainText* self_url = new CHTMLPlainText(ctx.GetSelfURL());
-        page->AddTagMap("SELF_URL", self_url);
-
+        _TRACE("Substituting templates");
+        page->AddTagMap("MESSAGE", new CHTMLPlainText(message));
+        page->AddTagMap("SELF_URL", new CHTMLPlainText(ctx.GetSelfURL()));
         page->AddTagMap("TITLE", new CHTMLPlainText("C++ SVN CGI Sample"));
+        page->AddTagMap("VERSION", new CHTMLPlainText(GetCdVersion()));
+        page->AddTagMap("SECRET", new CHTMLPlainText(secret));
     }
     catch (const exception& e) {
         ERR_POST("Failed to populate Sample CGI HTML page: " << e.what());
         return 3;
     }
-    ERR_POST("final html page  flushing");
+    ERR_POST("final html page flushing");
 
     // Compose and flush the resultant HTML page
     try {
@@ -102,7 +191,4 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     _TRACE("End of execution");
     return 0;
 }
-
-
-
 
