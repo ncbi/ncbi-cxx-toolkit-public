@@ -2830,10 +2830,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
             CSeq_feat_Handle feat = sfx.GetSeqFeatHandle(); // it->GetSeq_feat_Handle();
             const CSeq_feat& original_feat = sfx.GetMappedFeat().GetOriginalFeature(); // it->GetOriginalFeature();
 
-            ///
-            /// HACK HACK HACK
             /// we need to cleanse CDD features
-            ///
 
             s_CleanCDDFeature(original_feat);
 
@@ -2845,15 +2842,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
                 return;
             }
 
-            ///
-            /// HACK HACK HACK
-            ///
-
-            ///
-            /// HACK HACK HACK
             /// we may need to assert proper product resolution
-            ///
-
 
             if (original_feat.GetData().IsRna()  &&  original_feat.IsSetProduct()) {
                 vector<CMappedFeat> children =
@@ -2875,10 +2864,6 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
                                     rna_bsh, prot_bsh);
                 }
             }
-
-            ///
-            /// HACK HACK HACK
-            ///
 
             // supress dupliacte features
             if (prev_feat  &&  s_IsDuplicateFeatures(prev_feat, feat)) {
@@ -3036,10 +3021,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocation
             CSeq_feat_Handle feat = it->GetSeq_feat_Handle();
             const CSeq_feat& original_feat = it->GetOriginalFeature();
 
-            ///
-            /// HACK HACK HACK
             /// we need to cleanse CDD features
-            ///
 
             s_CleanCDDFeature(original_feat);
 
@@ -3051,15 +3033,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocation
                 continue;
             }
 
-            ///
-            /// HACK HACK HACK
-            ///
-
-            ///
-            /// HACK HACK HACK
             /// we may need to assert proper product resolution
-            ///
-
 
             if (it->GetData().IsRna()  &&  it->IsSetProduct()) {
                 vector<CMappedFeat> children =
@@ -3081,10 +3055,6 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocation
                                     rna_bsh, prot_bsh);
                 }
             }
-
-            ///
-            /// HACK HACK HACK
-            ///
 
             // supress dupliacte features
             if (prev_feat  &&  s_IsDuplicateFeatures(prev_feat, feat)) {
@@ -3349,14 +3319,7 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
                 return;
             }
 
-            ///
-            /// HACK HACK HACK
-            ///
-
-            ///
-            /// HACK HACK HACK
             /// we may need to assert proper product resolution
-            ///
 
             if( (feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gap) && ! feat.IsPlainFeat() ) {
                 // skip gaps when we take slices (i.e. "-from" and "-to" command-line args),
@@ -3385,10 +3348,6 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
                                     rna_bsh, prot_bsh);
                 }
             }
-
-            ///
-            /// HACK HACK HACK
-            ///
 
             // supress dupliacte features
             if (prev_feat  &&  s_IsDuplicateFeatures(prev_feat, feat)) {
@@ -3522,14 +3481,7 @@ void CFlatGatherer::x_GatherFeaturesOnRange
                 continue;
             }
 
-            ///
-            /// HACK HACK HACK
-            ///
-
-            ///
-            /// HACK HACK HACK
             /// we may need to assert proper product resolution
-            ///
 
             if( (feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gap) && ! feat.IsPlainFeat() ) {
                 // skip gaps when we take slices (i.e. "-from" and "-to" command-line args),
@@ -3558,10 +3510,6 @@ void CFlatGatherer::x_GatherFeaturesOnRange
                                     rna_bsh, prot_bsh);
                 }
             }
-
-            ///
-            /// HACK HACK HACK
-            ///
 
             // supress dupliacte features
             if (prev_feat  &&  s_IsDuplicateFeatures(prev_feat, feat)) {
@@ -4055,15 +4003,9 @@ void CFlatGatherer::x_GetFeatsOnCdsProductIdx(
             return;
         }
 
-        ///
-        /// HACK HACK HACK
-        ///
+        /// we need to cleanse CDD features
 
         s_CleanCDDFeature(original_feat);
-
-        ///
-        /// HACK HACK HACK
-        ///
 
         // map prot location to nuc location
         CRef<CSeq_loc> loc(prot_to_cds.Map(curr_loc));
@@ -4174,15 +4116,9 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
             continue;
         }
 
-        ///
-        /// HACK HACK HACK
-        ///
+        /// we need to cleanse CDD features
 
         s_CleanCDDFeature(it->GetOriginalFeature());
-
-        ///
-        /// HACK HACK HACK
-        ///
 
         // map prot location to nuc location
         CRef<CSeq_loc> loc(prot_to_cds.Map(curr_loc));
