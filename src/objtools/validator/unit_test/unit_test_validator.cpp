@@ -7637,7 +7637,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("CAIM");
     ambig.push_back("HER");
     ambig.push_back("DSC");
-    ambig.push_back("NMW");
     ambig.push_back("DNHM");
     ambig.push_back("BNHM");
     ambig.push_back("UI");
@@ -7661,7 +7660,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("PMS");
     ambig.push_back("LE");
     ambig.push_back("GCM");
-    ambig.push_back("SU");
     ambig.push_back("TMP");
     ambig.push_back("DMNH");
     ambig.push_back("ZMUH");
@@ -7701,7 +7699,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("BHM");
     ambig.push_back("CBU");
     ambig.push_back("MCCM");
-    ambig.push_back("SBM");
     ambig.push_back("NMSU");
     ambig.push_back("OTM");
     ambig.push_back("LP");
@@ -7750,7 +7747,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("MHNN");
     ambig.push_back("NCC");
     ambig.push_back("MSM");
-    ambig.push_back("NMBA");
     ambig.push_back("RM");
     ambig.push_back("MBM");
     ambig.push_back("UPM");
@@ -7766,7 +7762,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("BAS");
     ambig.push_back("GOE");
     ambig.push_back("PSS");
-    ambig.push_back("NHMB");
     ambig.push_back("CCB");
     ambig.push_back("SMNH");
     ambig.push_back("SUM");
@@ -7791,7 +7786,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("NI");
     ambig.push_back("CB");
     ambig.push_back("AMP");
-    ambig.push_back("OMNH");
     ambig.push_back("MM");
     ambig.push_back("PMU");
     ambig.push_back("DM");
@@ -7802,7 +7796,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("IMT");
     ambig.push_back("MZV");
     ambig.push_back("SZE");
-    ambig.push_back("NSMC");
     ambig.push_back("CUVC");
     ambig.push_back("LMJ");
     ambig.push_back("UC");
@@ -7849,7 +7842,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("MCSN");
     ambig.push_back("UU");
     ambig.push_back("PUC");
-    ambig.push_back("OS");
     ambig.push_back("SNM");
     ambig.push_back("AKU");
     ambig.push_back("MH");
@@ -7862,7 +7854,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("MW");
     ambig.push_back("PPCC");
     ambig.push_back("CNHM");
-    ambig.push_back("NSM");
     ambig.push_back("IAL");
     ambig.push_back("PCU");
     ambig.push_back("HM");
