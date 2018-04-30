@@ -649,6 +649,200 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2200)
 }
 
 
+void CheckStd(const CName_std& n1, const CName_std& n2)
+{
+#define CHECK_NAME_STD_FIELD(Fld) \
+    BOOST_CHECK_EQUAL(n1.IsSet##Fld(), n2.IsSet##Fld()); \
+    if (n1.IsSet##Fld()) { \
+        BOOST_CHECK_EQUAL(n1.Get##Fld(), n2.Get##Fld()); \
+    }
+
+    CHECK_NAME_STD_FIELD(Last)
+    CHECK_NAME_STD_FIELD(First)
+    CHECK_NAME_STD_FIELD(Initials)
+    CHECK_NAME_STD_FIELD(Suffix)
+    CHECK_NAME_STD_FIELD(Full)
+    CHECK_NAME_STD_FIELD(Title)
+    CHECK_NAME_STD_FIELD(Middle)
+}
+
+
+void CompareOldAndNew(const CAuthor& orig)
+{
+    CRef<CAuthor> new_result(new CAuthor());
+    new_result->Assign(orig);
+
+    CCleanup::CleanupAuthor(*new_result);
+
+    CRef<CPub> pub(new CPub());
+    pub->SetGen().SetCit("unpublished title");
+    CRef<CAuthor> auth(new CAuthor());
+    auth->Assign(orig);
+    switch (orig.GetName().Which()) {
+        case CAuthor::TName::e_Consortium:
+            pub->SetGen().SetAuthors().SetNames().SetStd().push_back(auth);
+            break;
+        case CAuthor::TName::e_Ml:
+            pub->SetGen().SetAuthors().SetNames().SetStd().push_back(auth);
+            break;
+        case CAuthor::TName::e_Str:
+            pub->SetGen().SetAuthors().SetNames().SetStd().push_back(auth);
+            break;
+        case CAuthor::TName::e_Name:
+            pub->SetGen().SetAuthors().SetNames().SetStd().push_back(auth);
+            break;
+        default:
+            break;
+    }
+    CRef<CSeqdesc> d(new CSeqdesc());
+    d->SetPub().SetPub().Set().push_back(pub);
+
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    entry->SetSeq().SetDescr().Set().push_back(d);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope (scope);
+    changes = cleanup.BasicCleanup (*entry);
+
+    const CPub& pub_c = *(entry->GetDescr().Get().back()->GetPub().GetPub().Get().back());
+    const CAuthor& old_result = *(pub_c.GetGen().GetAuthors().GetNames().GetStd().front());
+
+    if (new_result->IsSetName()) {
+        BOOST_CHECK_EQUAL(old_result.GetName().Which(), new_result->GetName().Which());
+        switch(new_result->GetName().Which()) {
+            case CAuthor::TName::e_Consortium:
+                BOOST_CHECK_EQUAL(old_result.GetName().GetConsortium(), new_result->GetName().GetConsortium());
+                break;
+            case CAuthor::TName::e_Ml:
+                BOOST_CHECK_EQUAL(old_result.GetName().GetMl(), new_result->GetName().GetMl());
+                break;
+            case CAuthor::TName::e_Str:
+                BOOST_CHECK_EQUAL(old_result.GetName().GetStr(), new_result->GetName().GetStr());
+                break;
+            case CAuthor::TName::e_Name:
+                BOOST_CHECK(old_result.GetName().GetName().Equals(new_result->GetName().GetName())); 
+                CheckStd(old_result.GetName().GetName(), new_result->GetName().GetName());
+                break;
+        }
+    } else {
+        BOOST_CHECK(!old_result.IsSetName());
+    }
+}
+
+
+void CheckPubAuth(const string& first_in, const string& init_in, const string& last_in,
+                  const string& first_out, const string& init_out, const string& last_out)
+{
+    CRef<CPub> pub(new CPub());
+    pub->SetGen().SetCit("unpublished title");
+    CRef<CAuthor> auth(new CAuthor());
+    auth->SetName().SetName().SetLast(last_in);
+    auth->SetName().SetName().SetFirst(first_in);
+    auth->SetName().SetName().SetInitials(init_in);
+    pub->SetGen().SetAuthors().SetNames().SetStd().push_back(auth);
+    CRef<CSeqdesc> d(new CSeqdesc());
+    d->SetPub().SetPub().Set().push_back(pub);
+
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    entry->SetSeq().SetDescr().Set().push_back(d);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope (scope);
+    changes = cleanup.BasicCleanup (*entry);
+
+    const CAuth_list& result = entry->GetDescr().Get().back()->GetPub().GetPub().Get().back()->GetGen().GetAuthors();
+
+    BOOST_CHECK_EQUAL(result.GetNames().IsStd(), true);
+    BOOST_CHECK_EQUAL(result.GetNames().GetStd().front()->GetName().GetName().GetLast(), last_out);
+    BOOST_CHECK_EQUAL(result.GetNames().GetStd().front()->GetName().GetName().GetFirst(), first_out);
+    BOOST_CHECK_EQUAL(result.GetNames().GetStd().front()->GetName().GetName().GetInitials(), init_out);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_4498)
+{
+    vector<string> interesting_strings = {
+        "x", "X", "X Y", "X.Y", ".XY.",
+        " X ", "; X ;", "et", "al", "et al",
+        ".JR.", "3rd", "A-B", "St. John"
+    };
+
+    CRef<CAuthor> auth(new CAuthor());
+    for (auto s : interesting_strings) {
+        auth->SetName().SetStr(s);
+        CompareOldAndNew(*auth);
+        auth->SetName().SetMl(s);
+        CompareOldAndNew(*auth);
+        auth->SetName().SetConsortium(s);
+        CompareOldAndNew(*auth);
+        auth->SetName().SetName().SetLast(s);
+        CompareOldAndNew(*auth);
+        auth->ResetName();
+        auth->SetName().SetName().SetLast("Safe");
+        auth->SetName().SetName().SetFirst(s);
+        CompareOldAndNew(*auth);
+        auth->ResetName();
+        auth->SetName().SetName().SetLast("Safe");
+        auth->SetName().SetName().SetInitials(s);
+        CompareOldAndNew(*auth);
+        auth->ResetName();
+        auth->SetName().SetName().SetLast("Safe");
+        auth->SetName().SetName().SetSuffix(s);
+        CompareOldAndNew(*auth);
+        auth->ResetName();
+        auth->SetName().SetName().SetLast("Safe");
+        auth->SetName().SetName().SetTitle(s);
+        CompareOldAndNew(*auth);
+        auth->ResetName();
+        auth->SetName().SetName().SetLast("Safe");
+        auth->SetName().SetName().SetMiddle(s);
+        CompareOldAndNew(*auth);
+        auth->ResetName();
+        auth->SetName().SetName().SetLast("Safe");
+        auth->SetName().SetName().SetFull(s);
+        CompareOldAndNew(*auth);
+        auth->ResetName();        
+    }
+
+    auth->SetName().SetName().SetLast("et");
+    auth->SetName().SetName().SetInitials("al");
+    CompareOldAndNew(*auth);
+
+    auth->ResetName();
+    auth->SetName().SetName().SetFirst("a");
+    auth->SetName().SetName().SetInitials("b");
+    auth->SetName().SetName().SetLast("c");
+    CompareOldAndNew(*auth);
+
+    auth->ResetName();
+    auth->SetName().SetName().SetFirst("a");
+    auth->SetName().SetName().SetMiddle("b");
+    auth->SetName().SetName().SetLast("c");
+    CompareOldAndNew(*auth);
+
+    auth->ResetName();
+    auth->SetName().SetName().SetFirst("a");
+    auth->SetName().SetName().SetLast("b");
+    auth->SetName().SetName().SetInitials("III");
+    CompareOldAndNew(*auth);
+
+    CheckPubAuth("E.K", "E.", "Radhakrishnan", "E.K", "E.", "Radhakrishnan");
+    CheckPubAuth("Radhakrishnan", "R.", "E.K", "Radhakrishnan", "R.", "E.K");
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_SQD_3617)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();

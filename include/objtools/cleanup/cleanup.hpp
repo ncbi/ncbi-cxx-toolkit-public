@@ -51,7 +51,8 @@ class CSeq_feat;
 class CSeq_submit;
 class COrgName;
 class CSubmit_block;
-
+class CAuthor;
+class CName_std;
 
 class CSeq_entry_Handle;
 class CBioseq_Handle;
@@ -572,7 +573,7 @@ public:
     // and apply specific cleanups to known types of User-object
     static bool CleanupUserObject(CUser_object& object);
 
-    
+    static bool CleanupAuthor(CAuthor& author, bool fix_initials = true);
 
 private:
     // Prohibit copy constructor & assignment operator
@@ -596,6 +597,10 @@ private:
     static bool s_RemoveEmptyFields(CUser_object& obj);
     static bool s_CleanupGenomeAssembly(CUser_object& obj);
     static bool s_CleanupDBLink(CUser_object& obj);
+
+    static bool s_CleanupNameStdBC(CName_std& name, bool fix_initials);
+    static void s_ExtractSuffixFromInitials(CName_std& name);
+    static void s_FixEtAl(CName_std& name);
 
 };
 

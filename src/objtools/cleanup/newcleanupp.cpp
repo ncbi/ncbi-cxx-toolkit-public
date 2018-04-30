@@ -2888,7 +2888,13 @@ void CNewCleanup_imp::AuthListBC( CAuth_list& al, bool fix_initials )
                 TNames& names = GET_MUTABLE(al, Names);
                 // call BasicCleanup for each CAuthor
                 EDIT_EACH_AUTHOR_ON_AUTHLIST( it, al ) {
+#if 1
                     x_AuthorBC(**it, fix_initials);
+#else
+                    if (CCleanup::CleanupAuthor(**it, fix_initials)) {
+                        ChangeMade(CCleanupChange::eChangePublication);
+                    }
+#endif
                     if( s_IsEmpty(**it) ) {
                         ERASE_AUTHOR_ON_AUTHLIST( it, al );
                         ChangeMade(CCleanupChange::eChangePublication);
