@@ -13,6 +13,8 @@ private:
     // arguments and HTTP entries
     void x_SetupArgs(void);
     void x_LookAtArgs(void);
+    const std::string& GetCdVersion() const;
+    int ProcessPrintEnvironment(ncbi::CCgiContext& ctx);
 };
 
 
