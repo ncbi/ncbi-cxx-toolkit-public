@@ -286,7 +286,7 @@ int main(int argc, char* argv[])
         hugedata[n + kHugeBufsize*2 + 1] = (unsigned char) 0xEF;
     }
 
-    ERR_POST(Info << "Pumping data with random I/O");
+    ERR_POST(Info << "Reading the data and storing it with random I/O");
 
     CMyReader* rd = new CMyReader(hugedata,                kHugeBufsize);
     CMyWriter* wr = new CMyWriter(hugedata + kHugeBufsize, kHugeBufsize); 
@@ -298,8 +298,12 @@ int main(int argc, char* argv[])
     size_t n_in = 0, n_out = 0;
     do {
         size_t x_in = rand() % kMaxIOSize + 1;
+        size_t x_inavail = is.rdbuf()->in_avail();
+        if (x_inavail < 0)
+            x_inavail = 0;
         ERR_POST(Info
-                 << "Read:  " << setw(8) << x_in);
+                 << "Read:  " << setw(8) << x_in
+                 << '(' << (size_t) x_inavail << ')');
         is.read(buf, x_in);
         if (!(x_in = (size_t) is.gcount()))
             break;
@@ -336,14 +340,14 @@ int main(int argc, char* argv[])
             kHugeBufsize == wr->GetSize()  &&
             kHugeBufsize == wr->GetPosition());
 
-    ERR_POST(Info << "Comparing original with collected data");
+    ERR_POST(Info << "Comparing the original with the collected data");
 
     for (size_t n = 0;  n < kHugeBufsize;  ++n) {
         if (hugedata[n] != hugedata[n + kHugeBufsize])
             ERR_FATAL("Mismatch @ " << n);
     }
 
-    ERR_POST(Info << "Checking tied I/O");
+    ERR_POST(Info << "Checking tied I/O by reading the data after writing it");
 
     buf = (char*) hugedata + kHugeBufsize;
     memset(buf, '\xFF', kHugeBufsize);
@@ -369,8 +373,12 @@ int main(int argc, char* argv[])
             size_t x_in = (rand() & 1
                            ? n_out - n_in
                            : rand() % (n_out - n_in) + 1);
+            streamsize x_inavail = is.rdbuf()->in_avail();
+            if (x_inavail < 0)
+                x_inavail = 0;
             ERR_POST(Info
-                     << "Read:  " << setw(8) << x_in);
+                     << "Read:  " << setw(8) << x_in
+                     << '(' << (size_t) x_inavail << ')');
             if (!io.read(buf + kHugeBufsize + n_in, x_in))
                 break;
             n_in += x_in;
@@ -394,7 +402,7 @@ int main(int argc, char* argv[])
             kHugeBufsize == rw->GetWSize()  &&
             kHugeBufsize == rw->GetWPosition());
 
-    ERR_POST(Info << "Comparing original with collected data");
+    ERR_POST(Info << "Comparing the original with the collected data");
 
     for (size_t n = 0;  n < kHugeBufsize;  ++n) {
         if (hugedata[n] != hugedata[n + kHugeBufsize]  ||
