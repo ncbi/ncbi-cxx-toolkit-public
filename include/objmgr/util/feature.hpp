@@ -180,9 +180,17 @@ public:
     /// Construct a tree with features from a Seq-annot
     explicit
     CFeatTree(const CSeq_annot_Handle& sah);
+    /// Construct a tree with features from a Seq-annot, restricted by an annot
+    /// selector.
+    explicit
+    CFeatTree(const CSeq_annot_Handle& sah, const SAnnotSelector& sel);
     /// Construct a tree with features from a Seq-entry
     explicit
     CFeatTree(const CSeq_entry_Handle& seh);
+    /// Construct a tree with features from a Seq-entry, restricted by an annot
+    /// selector.
+    explicit
+    CFeatTree(const CSeq_entry_Handle& seh, const SAnnotSelector& sel);
     /// Destructor.
     ~CFeatTree(void);
 

@@ -1877,11 +1877,25 @@ CFeatTree::CFeatTree(const CSeq_annot_Handle& sah)
     AddFeatures(it);
 }
 
+CFeatTree::CFeatTree(const CSeq_annot_Handle& sah, const SAnnotSelector& sel)
+{
+    x_Init();
+    CFeat_CI it(sah, sel);
+    AddFeatures(it);
+}
+
 
 CFeatTree::CFeatTree(const CSeq_entry_Handle& seh)
 {
     x_Init();
     CFeat_CI it(seh);
+    AddFeatures(it);
+}
+
+CFeatTree::CFeatTree(const CSeq_entry_Handle& seh, const SAnnotSelector& sel)
+{
+    x_Init();
+    CFeat_CI it(seh, sel);
     AddFeatures(it);
 }
 
