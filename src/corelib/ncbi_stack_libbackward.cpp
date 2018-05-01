@@ -62,8 +62,7 @@ public:
     void Expand(CStackTrace::TStack& stack);
 
 private:
-    typedef void*               TStackFrame;
-    typedef vector<TStackFrame> TStack;
+    typedef backward::StackTrace TStack;
 
     TStack m_Stack;
 };
@@ -71,7 +70,7 @@ private:
 
 CStackTraceImpl::CStackTraceImpl(void)
 {
-    m_Stack.resize(CStackTrace::s_GetStackTraceMaxDepth());
+    m_Stack.load_here();
 }
 
 
@@ -82,14 +81,12 @@ CStackTraceImpl::~CStackTraceImpl(void)
 
 void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
 {
-    backward::StackTrace st;
-	st.load_here();
-
     backward::TraceResolver resolver;
-    resolver.load_stacktrace(st);
-    for (size_t trace_idx = 0; trace_idx < st.size(); ++trace_idx) {
+    resolver.load_stacktrace(m_Stack);
+    for (size_t trace_idx = 0; trace_idx < m_Stack.size(); ++trace_idx) {
         CStackTrace::SStackFrameInfo info;
-        const backward::ResolvedTrace& trace = resolver.resolve(st[trace_idx]);
+        const backward::ResolvedTrace& trace
+            = resolver.resolve(m_Stack[trace_idx]);
         info.module = trace.object_filename;
         info.addr = trace.addr;
 
