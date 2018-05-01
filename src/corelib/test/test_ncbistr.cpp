@@ -3176,6 +3176,26 @@ static const SSplit s_SplitTest[] =
     { NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate,
             "one, two ", ", ",
             "0: one, 5: two" },
+
+    { NStr::fSplit_Truncate_Begin,
+            "---a----b-c---", "-",
+            "3: a, 5: , 6: , 7: , 8: b, 10: c, 12: , 13: , 14: " },
+    { NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate_Begin,
+            "---a----b-c---", "-",
+            "3: a, 8: b, 10: c, 12: " },
+    { NStr::fSplit_Truncate_End,
+            "---a----b-c---", "-",
+            "0: , 1: , 2: , 3: a, 5: , 6: , 7: , 8: b, 10: c" },
+    { NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate_End,
+            "---a----b-c---", "-",
+            "0: , 3: a, 8: b, 10: c" },
+    { NStr::fSplit_Truncate,
+            "---a----b-c---", "-",
+            "3: a, 5: , 6: , 7: , 8: b, 10: c" },
+    { NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate,
+            "---a----b-c---", "-",
+            "3: a, 8: b, 10: c" },
+
     { NStr::fSplit_CanEscape,       
             "asdf jkl\\", " ", "" }, // throws
     { NStr::fSplit_CanEscape | NStr::fSplit_ByPattern,
@@ -3237,7 +3257,7 @@ BOOST_AUTO_TEST_CASE(s_Split_Flags)
             NStr::Split(data.str, data.delim, v, data.flags, &token_pos, &storage);
             BOOST_REQUIRE_EQUAL(v.size(), token_pos.size());
             CNcbiOstrstream oss;
-            const char*     sep = "";
+            const char* sep = "";
             for (size_t j = 0;  j < v.size();  ++j) {
                 oss << sep << token_pos[j] << ": " << v[j];
                 sep = ", ";

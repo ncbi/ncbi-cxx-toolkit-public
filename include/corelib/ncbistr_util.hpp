@@ -153,7 +153,12 @@ public:
     ///   This method don't honor NStr::fSplit_Truncate_Begin flag, 
     ///   due it's stream nature, so you should process it in the calling code.
     ///   NStr::fSplit_Truncate_Begin is honored.
-    bool Advance(CTempStringList* part_collector, SIZE_TYPE* ptr_delim_pos = 0 /* out */);
+    bool Advance(CTempStringList* part_collector) {
+        return Advance(part_collector, NULL, NULL);
+    };
+    bool Advance(CTempStringList* part_collector, 
+                 SIZE_TYPE* ptr_part_start /* out */, 
+                 SIZE_TYPE* ptr_delim_pos  /* out */);
 
     /// Skip all delimiters starting from current position.
     void SkipDelims(void) { x_SkipDelims(true); }
@@ -260,7 +265,7 @@ public:
             TPosContainer&  token_pos,
             const TString&  empty_str = TString())
     {
-        const bool no_truncate_end = ((m_Flags & NStr::fSplit_Truncate_End) == 0);
+        auto target_initial_size = target.size();
 
         // Special cases
         if (m_Str.empty()) {
@@ -280,21 +285,38 @@ public:
         SIZE_TYPE delim_pos = NPOS;
         m_Pos = 0;
         do {
-            prev_pos = m_Pos;
-            bool have_text = Advance(&part_collector, &delim_pos);
-            if ( have_text || no_truncate_end ) {
-                target.push_back(empty_str);
-                part_collector.Join(&target.back());
-                part_collector.Clear();
-                token_pos.push_back(prev_pos);
-            }
+            Advance(&part_collector, &prev_pos, &delim_pos);
+            target.push_back(empty_str); // reserve space for value added next line
+            part_collector.Join(&target.back());
+            part_collector.Clear();
+            token_pos.push_back(prev_pos);
         } while ( !AtEnd() );
 
-        // account training delimiter
-        if ( delim_pos != NPOS  &&  no_truncate_end ) {
-            // add empty token after last delimiter
-            target.push_back(empty_str);
-            token_pos.push_back(delim_pos + 1);
+        if ( (m_Flags & NStr::fSplit_Truncate_End) == 0 ) {
+            // account training delimiter
+            if (delim_pos != NPOS) {
+                // add empty token after last delimiter
+                target.push_back(empty_str);
+                token_pos.push_back(delim_pos + 1);
+            }
+        }
+        else {
+            // truncate trailing delimiters
+
+            // number of newly added items
+            SIZE_TYPE num_new = target.size() - target_initial_size;
+            // number of empty trailing items to delete
+            SIZE_TYPE num_del = 0;
+            for (auto i = target.rbegin(); i != target.rend() && num_new--; ++i) {
+                if (!i->empty()) {
+                    break;
+                }
+                num_del++;
+            }
+            if (num_del) {
+                target.resize(target.size()-num_del);
+                token_pos.resize(token_pos.size()-num_del);
+            }
         }
     }
 };
@@ -310,7 +332,7 @@ struct CStringTokenCount
         size_t tokens = 0;
 
         do {
-            if (tokenizer.Advance(NULL)) {
+            if (tokenizer.Advance(NULL, NULL, NULL)) {
                 ++tokens;
             }
         } while ( !tokenizer.AtEnd() );
@@ -362,6 +384,14 @@ public:
     void reserve(string::size_type capacity)
     {
         if (m_TokenPos) m_TokenPos->reserve(capacity);
+    }
+    auto size()
+    {
+        return m_TokenPos ? m_TokenPos->size() : 0;
+    }
+    void resize(string::size_type newsize)
+    {
+        if (m_TokenPos) m_TokenPos->resize(newsize);
     }
 private:
     TPosContainer* m_TokenPos;

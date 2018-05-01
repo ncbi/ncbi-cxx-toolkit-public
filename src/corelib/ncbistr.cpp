@@ -3490,7 +3490,7 @@ bool NStr::SplitInTwo(const CTempString str, const CTempString delim,
     SIZE_TYPE       delim_pos = NPOS;
 
     // get first part
-    splitter.Advance(&part_collector, &delim_pos);
+    splitter.Advance(&part_collector, NULL, &delim_pos);
     part_collector.Join(&str1);
     part_collector.Clear();
 
@@ -6995,7 +6995,7 @@ char* CTempString_Storage::Allocate(CTempString::size_type len)
 }
 
 
-bool CStrTokenizeBase::Advance(CTempStringList* part_collector, SIZE_TYPE* ptr_delim_pos)
+bool CStrTokenizeBase::Advance(CTempStringList* part_collector, SIZE_TYPE* ptr_part_start, SIZE_TYPE* ptr_delim_pos)
 {
     SIZE_TYPE pos, part_start, delim_pos = 0, quote_pos = 0;
     bool      found_text = false, done;
@@ -7008,6 +7008,10 @@ bool CStrTokenizeBase::Advance(CTempStringList* part_collector, SIZE_TYPE* ptr_d
     }
     pos = part_start = m_Pos;
     done = (pos == NPOS);
+    // save part start position
+    if (ptr_part_start) {
+        *ptr_part_start = part_start;
+    }
 
     // Checks
     if (pos >= m_Str.size()) {
