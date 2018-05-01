@@ -337,7 +337,7 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddFlag("type-nuc", "Treat sequence as nucleotide");
     arg_desc->AddOptionalKey("taxid", "Integer", "Organism taxonomy ID", CArgDescriptions::eInteger);
     arg_desc->AddOptionalKey("taxname", "String", "Taxonomy name", CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("strain-name", "String", "Strain name", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("strain-name", "String", "Strain name for OpGen optical map sequences", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("ft-url", "String", "FileTrack URL for the XML file retrieval", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("ft-url-mod", "String", "FileTrack URL for the XML file base modifications", CArgDescriptions::eString);
 
