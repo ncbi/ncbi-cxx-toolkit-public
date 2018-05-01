@@ -802,6 +802,9 @@ void CAlnVec::RetrieveSegmentSequences(size_t segment, vector<string>& segs) con
                 seq_vec.GetSeqData(size - stop, size - start, s);
             }
         }
+        else {
+            segs[i].clear();
+        }
     }
 }
 
