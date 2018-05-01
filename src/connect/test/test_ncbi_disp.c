@@ -206,8 +206,10 @@ int main(int argc, const char* argv[])
                    strcasecmp(argv[2],"heap") != 0  &&
                    strcasecmp(argv[2],"all")  != 0) {
             CORE_LOGF(eLOG_Fatal, ("Unknown option `%s'", argv[2]));
-        }
-    }
+        } else
+			arg = 0;
+    } else
+		arg = val = 0;
 
     value = LBSMD_GetHostParameter(SERV_LOCALHOST, kParameter);
     CORE_LOGF(eLOG_Note, ("Querying host parameter `%s': %s%s%s", kParameter,
@@ -302,8 +304,8 @@ int main(int argc, const char* argv[])
                     } else
                         c = n;
                     verify(HINFO_PortUsage(hinfo, ports, c) == n);
-                    if (n > c)
-                        n = c;
+                    if (n > (int) c)
+                        n = (int) c;
                     qsort(ports, n, sizeof(*ports), x_ComparePortUsage);
                     for (i = 0;  i < n;  ++i) {
                         CORE_LOGF(eLOG_Note,
