@@ -28,6 +28,7 @@ connect$
 connect/mbedtls
 connect/services$
 connect/services/impl$
+-connect/services/test
 connect/ext$
 util$
 util/creaders$
@@ -44,6 +45,8 @@ util/math$
 util/cache$
 util/impl$
 util/qparse$
+util/lmdb$
+util/lmdbxx$
 objtools$
 objtools/alnmgr$
 objtools/readers$
