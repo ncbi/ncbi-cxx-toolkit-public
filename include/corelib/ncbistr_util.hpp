@@ -385,7 +385,7 @@ public:
     {
         if (m_TokenPos) m_TokenPos->reserve(capacity);
     }
-    auto size()
+    string::size_type size()
     {
         return m_TokenPos ? m_TokenPos->size() : 0;
     }
