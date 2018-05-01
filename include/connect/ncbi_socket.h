@@ -647,8 +647,12 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  * Any pending output will have been flushed, and any pending input still in
  * the original SOCK will migrate to the new socket object returned.  If the
  * latter is undesireable, one can use SOCK_GetOSHandleEx() on the original
- * socket, taking the ownersip of the underlying OS handle, and then create a
+ * socket, taking the ownership of the underlying OS handle, and then create a
  * SOCK on top of the bare "handle", specifying its (non-zero) "handle_size".
+ * @warning
+ *  It is not recommended to use this call on a not fully connected sockets
+ *  (both bare OS handle or SOCK) in native MS-Windows builds (e.g. Cygwin is
+ *  okay).
  * @note
  *  SOCK_Close[Ex]() on the resultant socket will not close the OS handle
  *  if fSOCK_KeepOnClose is set in "flags".
@@ -665,9 +669,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  * @param flags
  *  [in]  additional socket requirements
  * @return
- *  Return eIO_Success on success;  otherwise: eIO_Closed if the "handle"
- *  does not refer to an open socket [but e.g. to a normal file or a pipe];
- *  other error codes in case of other errors.
+ *  Return eIO_Success on success;  otherwise: eIO_Closed if the "handle" does
+ *  not refer to an open socket [but e.g. to a normal file or a pipe];  other
+ *  error codes in case of other errors.
  * @sa
  *  SOCK_GetOSHandleEx, SOCK_CreateOnTop, SOCK_Reconnect, SOCK_Close
  */
@@ -750,19 +754,20 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Shutdown
  );
 
 
-/** Close the SOCK handle, destroy relevant internal data.
+/** Close the SOCK handle, and destroy all relevant internal data.
  * The "sock" handle goes invalid after this function call, regardless of
  * whether the call was successful or not.  If eIO_Close timeout was specified
  * (or NULL) then it blocks until either all unsent data are sent, an error
- * flagged, or the timeout expires;  if there is any output pending, that
+ * flagged, or the timeout expires;  if there was any output pending, that
  * output will be flushed.
- * Connection may remain in the system if the socket was created with the
- * fSOCK_KeepOnClose flag set;  otherwise, it gets closed.
- * @note
- *  On MS-Win closing a socket whose OS handle has been used elsewhere (e.g.
- *  in SOCK_CreateOnTop()) may render the OS handle unresponsive, so always
- *  make sure to close the current socket first (assuming fSOCK_KeepOnClose),
- *  and only then use the extracted handle to build another socket.
+ * Connection may remain in the system if SOCK was created with the
+ * fSOCK_KeepOnClose flag set;  otherwise, it gets closed as well.
+ * @warning
+ *  On MS-Windows closing a SOCK whose OS handle has been used elsewhere
+ *  (e.g. in SOCK_CreateOnTop()) may render the OS handle unresponsive, so
+ *  always make sure to close the current SOCK first (assuming
+ *  fSOCK_KeepOnClose), and only then use the extracted handle to build
+ *  another socket.
  * @param sock
  *  [in]  socket handle to close(if not yet closed) and destroy(always)
  * @sa
@@ -777,26 +782,27 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Close(SOCK sock);
  * unsent data are sent, an error flagged, or the timeout expires;  if there is
  * any output pending, that output will be flushed.
  * Connection may remain in the system if the socket was created with the
- * fSOCK_KeepOnClose flag set;  otherwise, it gets closed.
+ * fSOCK_KeepOnClose flag set;  otherwise, it gets closed as well.
  * @note
- *  On MS-Win closing a socket whose OS handle has been used elsewhere (e.g.
- *  in SOCK_CreateOnTop()) may render the OS handle unresponsive, so always
- *  make sure to close the current socket first (assuming fSOCK_KeepOnClose),
- *  and only then use the extracted handle to build another socket.
+ *  On MS-Windows closing a SOCK whose OS handle has been used elsewhere
+ *  (e.g. in SOCK_CreateOnTop()) may render the OS handle unresponsive, so
+ *  always make sure to close the current SOCK first (assuming
+ *  fSOCK_KeepOnClose), and only then use the extracted handle to buil
+ *  another socket.
  * @param sock
  *  [in]  handle of the socket to close
  * @param destroy
  *  [in]  =1 to destroy the SOCK handle; =0 to keep the handle
  * @note
- *  A kept SOCK handle can be freed/destroyed by the SOCK_Close() call.
+ *  The kept SOCK handle can be freed/destroyed by SOCK_Destroy().
  * @note
- *  SOCK_CloseEx(sock, 1) is equivalent to SOCK_Close(sock).
+ *  SOCK_CloseEx(sock, 1) is equivalent to SOCK_Destroy(sock).
  * @sa
  *  SOCK_Close, SOCK_Create, SOCK_CreateOnTop, DSOCK_Create, SOCK_SetTimeout
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CloseEx
-(SOCK         sock,
- int/**bool*/ destroy
+(SOCK        sock,
+ int/*bool*/ destroy
  );
 
 
@@ -1376,8 +1382,8 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReadOnWrite
  *  SOCK_Write, SOCK_DisableOSSendDelay
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_SetCork
-(SOCK         sock,
- int/**bool*/ on_off
+(SOCK        sock,
+ int/*bool*/ on_off
  );
 
 
@@ -1398,8 +1404,8 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetCork
  *  SOCK_Write, SOCK_SetCork
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_DisableOSSendDelay
-(SOCK         sock,
- int/**bool*/ on_off
+(SOCK        sock,
+ int/*bool*/ on_off
  );
 
 
@@ -1586,8 +1592,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_WipeMsg
  *  [in]  set(1)/unset(0) broadcast capability
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SetBroadcast
-(SOCK         sock,
- int/**bool*/ broadcast
+(SOCK        sock,
+ int/*bool*/ broadcast
  );
 
 
@@ -1618,7 +1624,7 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount DSOCK_GetMessageCount
  *  Non-zero value if socket "sock" was created by DSOCK_Create[Ex]().
  *  Return zero otherwise.
  */
-extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsDatagram(SOCK sock);
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsDatagram(SOCK sock);
 
 
 /** Check whether a socket is client-side.
@@ -1628,7 +1634,7 @@ extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsDatagram(SOCK sock);
  *  Non-zero value if socket "sock" was created by SOCK_Create[Ex]().
  *  Return zero otherwise.
  */
-extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsClientSide(SOCK sock);
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsClientSide(SOCK sock);
 
 
 /** Check whether a socket is server-side.
@@ -1638,7 +1644,7 @@ extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsClientSide(SOCK sock);
  *  Non-zero value if socket "sock" was created by LSOCK_Accept().
  *  Return zero otherwise.
  */
-extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsServerSide(SOCK sock);
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsServerSide(SOCK sock);
 
 
 /** Check whether a socket is UNIX type.
@@ -1648,7 +1654,7 @@ extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsServerSide(SOCK sock);
  *  Non-zero value if socket "sock" is a UNIX family named socket
  *  Return zero otherwise.
  */
-extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsUNIX(SOCK sock);
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsUNIX(SOCK sock);
 
 
 /** Check whether a socket is using SSL (Secure Socket Layer).
@@ -1658,7 +1664,7 @@ extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsUNIX(SOCK sock);
  *  Non-zero value if socket "sock" is using Secure Socket Layer (SSL).
  *  Return zero otherwise.
  */
-extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsSecure(SOCK sock);
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsSecure(SOCK sock);
 
 
 /** Get current read or write position within a socket.
@@ -1772,8 +1778,8 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReuseAddressAPI
  *  SOCK_SetReuseAddressAPI, SOCK_Create, DSOCK_Create
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_SetReuseAddress
-(SOCK         sock,
- int/**bool*/ on_off
+(SOCK        sock,
+ int/*bool*/ on_off
  );
 
 

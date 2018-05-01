@@ -2723,7 +2723,7 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
 }
 
 
-static EIO_Status s_IsConnected(SOCK sock, const struct timeval* tv)
+static EIO_Status s_WaitConnected(SOCK sock, const struct timeval* tv)
 {
     const char* what;
     int         unused;
@@ -3333,7 +3333,7 @@ static EIO_Status s_Send(SOCK        sock,
                     }
                     if (wait_buf_ms == 0)
                         wait_buf_ms  = 10;
-                    else if (wait_buf_ms < 160)
+                    else if (wait_buf_ms < 500/*640*/)
                         wait_buf_ms <<= 1;
                     slice.tv_sec  = 0;
                     slice.tv_usec = wait_buf_ms * 1000;
@@ -4609,8 +4609,8 @@ static EIO_Status s_CreateOnTop(const void*   handle,
 
 #ifdef NCBI_OS_MSWIN
     if (x_orig  &&  (event = x_orig->event) != 0) {
-        WSAResetEvent(event);
         x_orig->event = 0;
+        WSAResetEvent(event);
     }
     if (!event  &&  !(event = WSACreateEvent())) {
         DWORD err = GetLastError();
@@ -4680,6 +4680,7 @@ static EIO_Status s_CreateOnTop(const void*   handle,
     x_sock->i_on_sig  = flags & fSOCK_InterruptOnSignal ? eOn  : eDefault;
 #ifdef NCBI_OS_MSWIN
     x_sock->event     = event;
+    x_sock->writable  = 1/*true*/;
 #endif /*NCBI_OS_MSWIN*/
     x_sock->pending   = 1/*have to check at the nearest I/O*/;
     x_sock->crossexec = flags & fSOCK_KeepOnExec  ? 1/*true*/  : 0/*false*/;
@@ -6525,7 +6526,7 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
             return eIO_Success/*always connected*/;
         if (sock->pending) {
             struct timeval tv;
-            return s_IsConnected(sock, s_to2tv(timeout, &tv));
+            return s_WaitConnected(sock, s_to2tv(timeout, &tv));
         }
         if (sock->r_status == eIO_Success  &&  sock->w_status == eIO_Success)
             return eIO_Success;
