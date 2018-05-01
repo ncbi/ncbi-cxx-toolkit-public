@@ -46,10 +46,7 @@ extern "C" {
 #define LINKERD_HOST            "linkerd"
 #else
 #define LINKERD_HOST            \
-    "linkerd-dev11.be-md.ncbi.nlm.nih.gov"
-    /* LINKERD_TODO - this is what was originally suggested, but its
-    performance is inconsistent:
-    "linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov" */
+    "pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov"
 #endif
 
 #define LINKERD_PORT            4140

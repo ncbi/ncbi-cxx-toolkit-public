@@ -93,7 +93,7 @@ typedef enum {
     fMatch_Port     = 0x02,
     fMatch_Hdr      = 0x04,
     fMatch_All      = -1,
-    fMatch_Default  = fMatch_All & ~fMatch_Hdr
+    fMatch_Default  = fMatch_All
 } EMatch;
 
 typedef struct
@@ -203,6 +203,8 @@ static int run_a_test(size_t test_idx, const char *svc, const char *sch,
         } else {
             SOCK_ntoa(info->host, s_end_got.host, LEN_HOST);
             s_end_got.port = info->port;
+            /* s_end_got.hdr is not currently set because it isn't strictly
+                needed for comparison (plus it would be very ugly code) */
 
             char    *info_str;
             info_str = SERV_WriteInfo(info);
@@ -242,7 +244,10 @@ static int run_a_test(size_t test_idx, const char *svc, const char *sch,
     }
 
     /* Check for match */
-    if (check_match(fMatch_Default)) {
+    /* Note that the host IP may change, and the header isn't parsed,
+        so currently only the port is checked - but that is a
+        reserved port, so it should be sufficient. */
+    if (check_match(fMatch_Port)) {
         CORE_LOG(eLOG_Note, "    Found server matched expected server.");
         if ( ! errors)
             success = 1;
