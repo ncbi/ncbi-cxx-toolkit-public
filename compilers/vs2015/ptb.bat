@@ -275,7 +275,7 @@ if not errorlevel 1 (
   echo ******************************************************************************
   echo ******************************************************************************
   echo ==============  Generating objects source code.                 ==============
-  echo ==============  DO NOT RELOAD THE SOLUTION NOW!                 ============== 
+  echo ==============  DO NOT RELOAD THE SOLUTION YET!                 ============== 
   echo ******************************************************************************
   echo %DEVENV% "%SLN_PATH%" /build "ReleaseDLL|%PTB_PLATFORM%" /project %ALLOBJ%
   %DEVENV% "%SLN_PATH%" /build "ReleaseDLL|%PTB_PLATFORM%" /project %ALLOBJ%
