@@ -838,7 +838,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4498)
     auth->SetName().SetName().SetInitials("III");
     CompareOldAndNew(*auth);
 
-    CheckPubAuth("E.K", "E.", "Radhakrishnan", "E.K", "E.", "Radhakrishnan");
+    CheckPubAuth("E.K", "E.", "Radhakrishnan", "EK", "E.", "Radhakrishnan");
     CheckPubAuth("Radhakrishnan", "R.", "E.K", "Radhakrishnan", "R.", "E.K");
 }
 

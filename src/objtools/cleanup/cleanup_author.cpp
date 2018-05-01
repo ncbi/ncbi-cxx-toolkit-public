@@ -279,6 +279,7 @@ bool CCleanup::s_CleanupNameStdBC ( CName_std& name, bool fix_initials )
 
     if(name.IsSetFirst()) {
         CleanVisString(name.SetFirst());
+        NStr::ReplaceInPlace(name.SetFirst(), sDot, "");
         if (NStr::IsBlank(name.GetFirst())) {
             name.ResetFirst();
         }
