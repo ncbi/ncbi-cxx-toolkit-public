@@ -56,9 +56,8 @@ CTable2AsnValidator::CTable2AsnValidator(CTable2AsnContext& ctx) : m_stats(CVali
 {
 }
 
-void CTable2AsnValidator::Cleanup(CSeq_entry_Handle& h_entry, const string& flags)
+void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_Handle& h_entry, const string& flags)
 {
-    CRef<CSeq_entry> entry((CSeq_entry*)(h_entry.GetEditHandle().GetCompleteSeq_entry().GetPointer()));
     bool need_recalculate_index = false;
 
     CCleanup cleanup;
@@ -70,15 +69,21 @@ void CTable2AsnValidator::Cleanup(CSeq_entry_Handle& h_entry, const string& flag
     else
     if (flags.find('e') != string::npos)
     {
-        CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup(*entry, CCleanup::eClean_SyncGenCodes);
+        CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup(h_entry, CCleanup::eClean_SyncGenCodes);
         need_recalculate_index = true;
     }
     else
     {
-        cleanup.BasicCleanup(*entry, CCleanup::eClean_SyncGenCodes);
+        if (submit)
+            cleanup.BasicCleanup(*submit, CCleanup::eClean_SyncGenCodes);
+        else
+            cleanup.BasicCleanup(h_entry, CCleanup::eClean_SyncGenCodes);
+
         if (flags.find('U') != string::npos)
             cleanup.RemoveUnnecessaryGeneXrefs(h_entry); //remove unnec gen xref included in extended cleanup
     }
+
+    CRef<CSeq_entry> entry((CSeq_entry*)(h_entry.GetEditHandle().GetCompleteSeq_entry().GetPointer()));
 
     if (need_recalculate_index) {
         CScope& scope = h_entry.GetScope();

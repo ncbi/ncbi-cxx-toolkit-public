@@ -950,6 +950,8 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     else
         result = m_context.CreateSubmitFromTemplate(entry, submit);
 
+    CSerialObject& submit_or_entry = submit.Empty() ? (CSerialObject&)*entry : (CSerialObject&)*submit;
+
     //m_context.MakeGenomeCenterId(*entry);
 
     CSeq_entry_EditHandle entry_edit_handle = m_context.m_scope->AddTopLevelSeqEntry(*entry).GetEditHandle();
@@ -967,7 +969,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     if (m_context.m_RemotePubLookup)
     {
-        m_context.m_remote_updater->UpdatePubReferences(*entry);
+        m_context.m_remote_updater->UpdatePubReferences(submit_or_entry);
     }
     if (m_context.m_postprocess_pubs)
     {
@@ -983,7 +985,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     if (m_context.m_cleanup.find('-') == string::npos)
     {
-       m_validator->Cleanup(entry_edit_handle, m_context.m_cleanup);
+       m_validator->Cleanup(submit, entry_edit_handle, m_context.m_cleanup);
     }
 
     // make asn.1 look nicier
@@ -1003,7 +1005,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
         if (!m_context.m_discrepancy_file.empty())
         {
-            m_validator->ReportDiscrepancies(submit.Empty() ? (CSerialObject&)*entry : (CSerialObject&)*submit, *m_context.m_scope, m_context.m_disc_eucariote, m_context.m_disc_lineage);
+            m_validator->ReportDiscrepancies(submit_or_entry, *m_context.m_scope, m_context.m_disc_eucariote, m_context.m_disc_lineage);
         }
 
         if (m_context.m_make_flatfile)
