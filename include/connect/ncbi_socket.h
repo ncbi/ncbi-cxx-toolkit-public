@@ -638,21 +638,20 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  * The call does *not* destroy either OS handle or SOCK passed in the
  * arguments, regardless of the return status code.
  * When a socket gets created on top of a "SOCK" handle, the original SOCK gets
- * always emptied (the underlying OS handle removed from it) upon the call
- * returns:  either the handle gets migrated to the new socket just created,
- * or it gets closed unconditionally by the fSOCK_KeepOnClose flag in the
- * original socket.  In either case, the original SOCK will still need
- * SOCK_Destroy() in the caller's code to free up the memory it occupies.
+ * always emptied (and the underlying OS handle removed from it) upon the call
+ * returns, and will still need SOCK_Destroy() in the caller's code to free up
+ * the memory it occupies.
  * Any secure session that may have existed in the original SOCK will have
  * been terminated (and new session may have been initiated in the new SOCK --
  * at this time the old session is not allowed to "migrate").
+ * Any pending output will have been flushed, and any pending input still in
+ * the original SOCK will migrate to the new socket object returned.  If the
+ * latter is undesireable, one can use SOCK_GetOSHandleEx() on the original
+ * socket, taking the ownersip of the underlying OS handle, and then create a
+ * SOCK on top of the bare "handle", specifying its (non-zero) "handle_size".
  * @note
  *  SOCK_Close[Ex]() on the resultant socket will not close the OS handle
  *  if fSOCK_KeepOnClose is set in "flags".
- * @warning
- *  Any pending data (for writing, such as the initial data or pushback, or
- *  reading, such as data read ahead internally) still left in SOCK but not
- *  delivered to the OS or the user level, respectively, will be discarded!
  * @param handle
  *  [in]  OS-dependent "handle" or SOCK to be converted
  * @param handle_size
@@ -805,10 +804,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CloseEx
  * The call retries repeatedly if interrupted by a singal (so no eIO_Interrupt
  * should be expected).  Return eIO_Success when the handle has been closed
  * successfully, eIO_Closed if the handle has been passed already closed,
- * eIO_InvalidArg if passed arguments are not valid, eIO_Unknow if the
- * handle cannot be closed (per an error returned by the system).
- * @note  Using this call on a handle that belongs to an active [LD]SOCK object
- *        is undefined.
+ * eIO_InvalidArg if passed arguments are not valid, eIO_Unknown if the
+ * handle cannot be closed (per an error returned by the system, see errno).
+ * @warning
+ *  Using this call on a handle that belongs to an active [LD]SOCK object is
+ *  undefined.
  * @sa
  *  SOCK_GetOSHandleEx
  */

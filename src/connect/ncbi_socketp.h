@@ -292,8 +292,8 @@ typedef struct SOCK_tag {
     /* aux I/O data */
     BUF              r_buf;     /* read  buffer                              */
     BUF              w_buf;     /* write buffer                              */
-    size_t           r_len;     /* DSOCK: size of last message received      */
-    size_t           w_len;     /* SOCK: how much data is pending for output */
+    size_t           r_len;     /* SOCK: unused; DSOCK: sz of last msg recv'd*/
+    size_t           w_len;     /* SOCK: w_buf;  DSOCK: sz of last msg sent  */
 
     /* statistics */
     TNCBI_BigCount   n_read;    /* DSOCK: total # of bytes read (in all msgs)
