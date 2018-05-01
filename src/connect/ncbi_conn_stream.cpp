@@ -1356,11 +1356,11 @@ const char* CIO_Exception::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
     case eTimeout:       return "eIO_Timeout";
-    case eClosed:        return "eIO_Closed";
     case eInterrupt:     return "eIO_Interrupt";
     case eInvalidArg:    return "eIO_InvalidArg";
     case eNotSupported:  return "eIO_NotSupported";
     case eUnknown:       return "eIO_Unknown";
+    case eClosed:        return "eIO_Closed";
     default:             break;
     }
     return CException::GetErrCodeString();
