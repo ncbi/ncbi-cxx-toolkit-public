@@ -7816,7 +7816,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("TU");
     ambig.push_back("PMNH");
     ambig.push_back("SAU");
-    ambig.push_back("UKMS");
     ambig.push_back("KM");
     ambig.push_back("GMNH");
     ambig.push_back("SSM");
