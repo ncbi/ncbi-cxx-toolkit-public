@@ -1489,7 +1489,7 @@ DENF	s	Grand Mesa-Uncompahgre-Gunnison Natonal Forests
 DENH	s	University of New Hampshire		
 DERM	s	Intermountain Experiment Station		
 DES	sb	Desert Botanical Garden, Research Department		
-DEV	h	St. Joseph's College		
+DEV	s	St. Joseph's College		
 DEVA	s	Death Valley National Park		
 DEWV	s	Davis and Elkins College, Biology and Environmental Science Department		
 DEZA	s	Dipartimento di Entomologia e Zoologia Agraria dell'Universita		
@@ -1820,7 +1820,7 @@ EUQ	s	Department of Entomology, Queensland University
 EUSL	c	Eastern University		
 EVA	c	European Virus Archive		
 EVCV	s	Erster Vorarlberger Coleopterische Verein		
-EVE	h	The Evergreen State College		
+EVE	s	The Evergreen State College		
 EVMU	s	Everhart Museum, Natural History Department		
 EWH	s	Ewha Womans University		
 EWM	h	Elizabeth Winston Mize Herbarium		
@@ -2108,7 +2108,7 @@ GI-SPS	s	Geological Institute, Section of Palaeontology and Stratigraphy
 GIFU<JPN>	s	Herbarium of Gifu Pharmaceutical University		
 GINCO	s	Glomeromycota in vivo and in vitro collection (Agriculture and Agri-Food Canada)		
 GIUV	s	Geological Institute, University of Vienna		
-GJO	s	Steiermaerkisches Landesmuseum Joanneum, Botany Department		
+GJO	s	Universalmuseum Joanneum		
 GKAR	s	Karoo National Botanical Garden		
 GL	s	University of Glasgow, Botany Department		
 GLA	h	George Landis Arboretum		
@@ -2326,7 +2326,7 @@ HCMS	s	Hampshire County Council Museums Service
 HCMZ	s	Hope College		
 HCOA	s	College of the Atlantic, Herbarium		
 HCOM	h	Centre d'Oceanologie de Marseille - University of Aix-Marseille II		
-HCT	s	Taiwan Forestry Research Institute		
+HCT	s	Taiwan Forestry Research Institute (Heng-Chun Branch Station)		
 HCTR	s	Hoogstraal Center for Tick Research		
 HDCF	h	Department of Forestry Science		
 HDD	s	Tolson Museum, Natural History Department		
@@ -3034,6 +3034,7 @@ IUK	s	Universite de Kinshasa, Departement de Biologie
 IUM	s	Iwate University, Biology Department		
 IUP	s	Indiana University of Pennsylvania, Biology Department		
 IUQ	s	Laboratorio de Ictiologia		
+IUVV	s	Institut Universiatire de la Vigne et du Vin		
 IVAU	s	Instituut Voor Aardwetenschappen		
 IVB	s	Institute of  Vertebrate Biology, Academy of Sciences of the Czech Republic		
 IVF	s	Chinese Academy of Agricultural Sciences		
@@ -3093,7 +3094,7 @@ JBSD	s	Jardin Botanico Nacional Dr. Rafael M. Moscoso
 JBVN	s	Jardin Botanique de la Ville de Nice, Service des Espaces Verts		
 JBVPF	sb	Jardin botanique de la Ville de Paris		
 JBWM	s	J.B. Wallis Museum of Entomology		
-JCB	s	St. Joseph's College		
+JCB	s	Indian Institute of Science (IISc)		
 JCE	s	Jiangxi College of Education, Biology Department		
 JCM	c	Japan Collection of Microorganisms		
 JCRB	c	Japanese Collection of Research Bioresources Cell Bank		
@@ -5793,7 +5794,7 @@ SFDL	s	Sheffield Literary and Philosophical Society
 SFDN	s	Sheffield Naturalists' Club		
 SFI	b	Slovenian Forestry Institute		
 SFRF	s	Forest Service, Region 5, USDA		
-SFRP	s	Southern Research Station		
+SFRP	s	Southern Research Station, USDA Forest Service		
 SFRS	s	Sea Fisheries Research Station		
 SFS	s	Universite de Sherbrooke, Departement de biologie		
 SFSU	s	San Francisco State University, Department of Biology		
@@ -5940,7 +5941,7 @@ SMN	s	Simao District National Medical and Pharmaceutical Institute
 SMNG	s	Senckenberg Museum fuer Naturkunde Goerlitz		
 SMNH<CAN>	s	Saskatchewan Museum of Natural History		
 SMNH<ISR>	s	Steinhardt Museum of Natural History		
-SMNH<SWE>	s	Swedish Museum of Natural History		
+SMNH<SWE>	s	Swedish Museum of Natural History	NRM
 SMNH<UKR>	s	State Museum of Natural History		
 SMNH<USA-KS>	s	Schmidt Museum of Natural History, Emporia State University		
 SMNK	s	Staatliches Museum fuer Naturkunde Karlsruhe (State Museum of Natural History)		
@@ -5966,7 +5967,7 @@ SN	s	South China Normal University, Biology Department
 SNC	s	Saint Norbert College		
 SNCBSH	s	State of North Carolina Biological Station		
 SNGM	s	Coleccion Paleontologica		
-SNHM	s	Sudan Natural History Museum		
+SNHM	s	Sudan Natural History Museum	UKMS
 SNHS	s	Guildford Museum		
 SNM<SVK>	s	Slovak National Museum	SNMB
 SNM<USA-NM>	s	Western New Mexico University, Department of Natural Sciences		
@@ -6201,7 +6202,7 @@ TAA	s	Estonian University of Life Sciences
 TAAM	s	Institute of Agricultural and Environmental Sciences of the Estonian University of Life Sciences	TAAM<EST>
 TAC	s	Tarleton State University, Biological Sciences Department		
 TAD	s	Botanical Institute of the Tajikistan Academy of Sciences, Department of Flora and Systematics of Higher Plants		
-TAES	s	Texas A&M University, Department of Rangeland Ecology and Management		
+TAES	s	Texas A&M University, Department of Rangeland Ecology and Management	TAMU 
 TAFIRI	s	Tanzania Fisheries Research Institute		
 TAI	s	National Taiwan University, Institute of Ecology and Evolutionary Biology		
 TAIC	s	Texas A&M University-Kingsville, Department of Biology		
@@ -6344,8 +6345,8 @@ TMFE	s	Elasmobranchii Collection of the Department of Fisheries, Tokai Universit
 TMH	s	Tasmanian Museum and Art Gallery		
 TMHN	s	Teyler Museum		
 TMI	s	Tottori Mycological Institute		
-TMM	s	Texas Memorial Museum		
-TMMC	s	Texas Memorial Museum		
+TMM	s	Texas Memorial Museum	TMMC
+TMMC	s	Texas Memorial Museum	TMM,TNHC
 TMNH	s	Tianjin Museum of Natural History		
 TMP<FIN>	s	Tampere Museums		
 TMRC	s	Shahid Beheshti University of Medical Sciences		
@@ -6355,7 +6356,7 @@ TMTC	s	Taiwan Provincial Museum
 TNAU	s	Tamil Nadu Agricultural University		
 TNFC	s	Tynside Naturalists' Field Club		
 TNFS	s	USDA Forest Service, Alaska Region		
-TNHC	s	Texas Memorial Museum, Texas Natural History Collection		
+TNHC	s	Texas Memorial Museum, Texas Natural History Collection	TMM,TMMC
 TNHM	s	University of Texas		
 TNM	s	National Museum of Natural Science, Botany Department		
 TNP	s	Museum of Tatra National Park		
@@ -6688,7 +6689,7 @@ UKMB	s	Universiti Kebangsaan Malaysia, Botany Department
 UKMHC	s	Universiti Kebangsaan Malaysia		
 UKMHC:HC	s	Universiti Kebangsaan Malaysia, Herpetological Collection
 UKMS<MYS>	s	Universiti Kebangsaan Malaysia, Kampus Sabah		
-UKMS<SDN>	s	Sudan Natural History Museum		
+UKMS<SDN>	s	Sudan Natural History Museum	SNHM
 UKS	s	University of Khartoum		
 UKSPI	s	Ust-Kamenogorsk State Pedagogical Institute, Botany Department		
 UL	s	University of Louisville		
