@@ -55,18 +55,19 @@
 
 extern const char* IO_StatusStr(EIO_Status status)
 {
-    static const char* kStatusStr[eIO_Unknown + 1] = {
+    static const char* kStatusStr[EIO_N_STATUS] = {
         "Success",
         "Timeout",
-        "Closed",
+        "",
         "Interrupt",
         "Invalid argument",
         "Not supported",
-        "Unknown"
+        "Unknown",
+        "Closed"
     };
 
-    assert(eIO_Success <= status  &&  status <= eIO_Unknown);
-    return eIO_Success <= status  &&  status <= eIO_Unknown
+    assert(eIO_Success <= status  &&  status <= eIO_Closed);
+    return eIO_Success <= status  &&  status <= eIO_Closed
         ? kStatusStr[status]
         : 0;
 }

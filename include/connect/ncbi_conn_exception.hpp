@@ -70,11 +70,11 @@ public:
     /// @sa EIO_Status
     enum EErrCode {
         eTimeout      = eIO_Timeout,
-        eClosed       = eIO_Closed,
         eInterrupt    = eIO_Interrupt,
         eInvalidArg   = eIO_InvalidArg,
         eNotSupported = eIO_NotSupported,
-        eUnknown      = eIO_Unknown
+        eUnknown      = eIO_Unknown,
+        eClosed       = eIO_Closed
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CIO_Exception, CConnException);

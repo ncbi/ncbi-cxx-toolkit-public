@@ -109,6 +109,9 @@ typedef enum {
  *  Internally, these constants are used as bit-values, and therefore must not
  *  be changed in this header.  On the other hand, user code should not rely
  *  on the values of these constants, either.
+ * @warning
+ *  Careful with an unfortunate naming similatiry of eIO_Close from this set
+ *  and eIO_Closed from EIO_Status -- do not mix the two!
  * @sa
  *  SOCK_Wait, SOCK_Poll, CONN_Wait, SOCK_SetTimeout, CONN_SetTimeout
  */
@@ -122,15 +125,20 @@ typedef enum {
 
 
 /** I/O status.
+ * @warning
+ *  Careful with an unfortunate naming similatiry of eIO_Closed from this set
+ *  and eIO_Close from EIO_Event -- do not mix the two!
  */
 typedef enum {
     eIO_Success = 0,    /**< everything is fine, no error occurred           */
     eIO_Timeout,        /**< timeout expired before any I/O succeeded        */
-    eIO_Closed,         /**< peer has closed the connection                  */
-    eIO_Interrupt,      /**< signal received while I/O was in progress       */
-    eIO_InvalidArg,     /**< bad argument value(s)                           */
-    eIO_NotSupported,   /**< the requested operation is not supported        */
-    eIO_Unknown         /**< unknown (most probably -- fatal) error          */
+    eIO_Reserved,       /**< reserved status code -- do not use!             */
+    eIO_Interrupt,      /**< signal arrival prevented any I/O to succeed     */
+    eIO_InvalidArg,     /**< bad argument / parameter value(s) supplied      */
+    eIO_NotSupported,   /**< operation is not supported or is not available  */
+    eIO_Unknown,        /**< unknown I/O error (likely fatal but can retry)  */
+    eIO_Closed          /**< connection is / has been closed, EOF condition  */
+#define EIO_N_STATUS  8
 } EIO_Status;
 
 
@@ -139,6 +147,10 @@ typedef enum {
  *  An enum value to get the text form for
  * @return 
  *  Verbal description of the I/O status
+ * @warning
+ *  Returns NULL on out-of-bound values
+ * @note
+ *  Reserved status code(s) returned as an empty string ("")
  * @sa
  *  EIO_Status
  */

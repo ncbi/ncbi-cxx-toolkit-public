@@ -65,28 +65,53 @@ extern "C" {
  *  TEST_CORE -- test "ncbi_core.c"
  */
 
+#define _STR(x)  #x
+#define  STR(x)  _STR(x)
+#define CHECK_IO_STATUS(x)                          \
+    {                                               \
+        const char* name = STR(x), *str, *ptr;      \
+        size_t len;                                 \
+        assert(memcmp(name, "eIO_", 4) == 0);       \
+        assert((str = IO_StatusStr(x)) != 0);       \
+        if (!(ptr = strchr(str, ' ')))              \
+            len = strlen(str);                      \
+        else                                        \
+            len = (size_t)(ptr - str);              \
+        assert(memcmp(str, name + 4, len) == 0);    \
+    }
 
 static void TEST_CORE_Io(void)
 {
     /* EIO_Status, IO_StatusStr() */
     int x_status;
-    for (x_status = 0;  x_status <= (int) eIO_Unknown;  x_status++) {
+    for (x_status = 0;  x_status < EIO_N_STATUS;  ++x_status) {
+        /* also checks uniqueness of values */
         switch ( (EIO_Status) x_status ) {
         case eIO_Success:
         case eIO_Timeout:
-        case eIO_Closed:
         case eIO_Interrupt:
         case eIO_InvalidArg:
         case eIO_NotSupported:
         case eIO_Unknown:
+        case eIO_Closed:
             assert(IO_StatusStr((EIO_Status) x_status));
             printf("IO_StatusStr(status = %d): \"%s\"\n",
                    x_status, IO_StatusStr((EIO_Status) x_status));
+            break;
+        case eIO_Reserved:
+            assert(!*IO_StatusStr((EIO_Status) x_status));
             break;
         default:
             assert(0);
         }
     }
+    CHECK_IO_STATUS(eIO_Success);
+    CHECK_IO_STATUS(eIO_Timeout); 
+    CHECK_IO_STATUS(eIO_Interrupt);
+    CHECK_IO_STATUS(eIO_InvalidArg);
+    CHECK_IO_STATUS(eIO_NotSupported);
+    CHECK_IO_STATUS(eIO_Unknown);
+    CHECK_IO_STATUS(eIO_Closed);
 }
 
 
