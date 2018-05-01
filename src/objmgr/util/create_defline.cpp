@@ -1619,7 +1619,12 @@ void CDeflineGenerator::x_SetTitleFromPDB (void)
         if (m_Comment.empty() || m_IsNA) {
             joiner.Add("Chain ").Add(chain).Add(", ").Add(m_PDBCompound);
         } else {
-            joiner.Add("Chain ").Add(chain).Add(", ").Add(m_Comment);
+            std::size_t found = m_Comment.find_first_not_of("0123456789 ");
+            if (found!=std::string::npos) {
+                joiner.Add("Chain ").Add(chain).Add(", ").Add(m_Comment.substr (found));
+            } else {
+                joiner.Add("Chain ").Add(chain).Add(", ").Add(m_Comment);
+            }
         }
         joiner.Join(&m_MainTitle);
     } else {
