@@ -321,7 +321,7 @@ void CTbl2AsnApp::Init(void)
       unknown\n\
       fragment\n\
       clone\n\
-      short_arm\n\
+      short-arm\n\
       heterochromatin\n\
       centromere\n\
       telomere\n\
