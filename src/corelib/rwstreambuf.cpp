@@ -129,7 +129,7 @@ static inline EOwnership x_IfToOwnReader(const IReader* r, const IWriter* w,
         if (f & CRWStreambuf::fOwnReader)
             return eTakeOwnership;
     } else {
-        if ((f & CRWStreambuf::fOwnAll) == CRWStreambuf::fOwnAll)
+        if (f & CRWStreambuf::fOwnAll)
             return eTakeOwnership;
     }
     return eNoOwnership;

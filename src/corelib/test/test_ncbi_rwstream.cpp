@@ -162,12 +162,16 @@ ERW_Result CMyReader::Read(void* buf, size_t count,
 }
 
 
+static bool s_IfPendingCount = false;
+
+
 ERW_Result CMyReader::PendingCount(size_t* count)
 {
     if (m_Eof) {
         *count = 0;
         return eRW_Error;
     } else {
+        s_IfPendingCount = true;
         *count = m_Size - m_Pos;
         return eRW_Success;
     }
@@ -297,13 +301,19 @@ int main(int argc, char* argv[])
 
     size_t n_in = 0, n_out = 0;
     do {
+        s_IfPendingCount = false;
         size_t x_in = rand() % kMaxIOSize + 1;
         size_t x_inavail = is.rdbuf()->in_avail();
         if (x_inavail < 0)
             x_inavail = 0;
-        ERR_POST(Info
-                 << "Read:  " << setw(8) << x_in
-                 << '(' << (size_t) x_inavail << ')');
+        if (s_IfPendingCount) {
+            ERR_POST(Info
+                     << "Read:  " << setw(8) << x_in);
+        } else {
+            ERR_POST(Info
+                     << "Read:  " << setw(8) << x_in
+                     << '[' << (size_t) x_inavail << ']');
+        }
         is.read(buf, x_in);
         if (!(x_in = (size_t) is.gcount()))
             break;
@@ -354,8 +364,8 @@ int main(int argc, char* argv[])
 
     CMyReaderWriter* rw = new CMyReaderWriter(hugedata + kHugeBufsize,
                                               kHugeBufsize);
-    CRWStream io(rw, 2*(kReadBufsize + kWriteBufsize),
-                 0, CRWStreambuf::fOwnReader);
+    CRWStream io(rw, 2 * (kReadBufsize + kWriteBufsize),
+                 0, CRWStreambuf::fOwnWriter/*for fun*/);
 
     n_out = n_in = 0;
     do {
@@ -363,22 +373,30 @@ int main(int argc, char* argv[])
             size_t x_out = rand() % kMaxIOSize + 1;
             if (x_out + n_out > kHugeBufsize)
                 x_out = kHugeBufsize - n_out;
-            ERR_POST(Info
-                     << "Write: " << setw(8) << x_out);
+            {
+                ERR_POST(Info
+                         << "Write: " << setw(8) << x_out);
+            }
             if (!io.write(buf - kHugeBufsize + n_out, x_out))
                 break;
             n_out += x_out;
         }
         if (rand() % 10 == 4  &&  n_out > n_in) {
+            s_IfPendingCount = false;
             size_t x_in = (rand() & 1
                            ? n_out - n_in
                            : rand() % (n_out - n_in) + 1);
             streamsize x_inavail = is.rdbuf()->in_avail();
             if (x_inavail < 0)
                 x_inavail = 0;
-            ERR_POST(Info
-                     << "Read:  " << setw(8) << x_in
-                     << '(' << (size_t) x_inavail << ')');
+            if (s_IfPendingCount) {
+                ERR_POST(Info
+                         << "Read:  " << setw(8) << x_in);
+            } else { 
+                ERR_POST(Info
+                         << "Read:  " << setw(8) << x_in
+                         << '[' << (size_t) x_inavail << ']');
+            }
             if (!io.read(buf + kHugeBufsize + n_in, x_in))
                 break;
             n_in += x_in;

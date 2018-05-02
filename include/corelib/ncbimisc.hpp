@@ -278,7 +278,7 @@ public:
 
     void Swap(pair_base_member<first_type, second_type>& p)
         {
-            if (static_cast<void*>(&first()) != static_cast<void*>(&second())) {
+            if (static_cast<void*>(&first()) != static_cast<void*>(&second())){
                 // work around an IBM compiler bug which causes it to perform
                 // a spurious 1-byte swap, yielding mixed-up values.
                 swap(first(), p.first());
