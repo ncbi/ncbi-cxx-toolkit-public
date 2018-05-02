@@ -2350,9 +2350,9 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
     k = m->second.m_Contents.find("USR_DEP");
     if (k != m->second.m_Contents.end()) {
         const list<string> deps = k->second;
-        list<CProjKey> depends_ids;
-        SMakeProjectT::ConvertLibDepends(deps, &depends_ids);
-        copy(depends_ids.begin(), depends_ids.end(), back_inserter(depends_ids));
+        list<CProjKey> ids;
+        SMakeProjectT::ConvertLibDepends(deps, &ids);
+        copy(ids.begin(), ids.end(), back_inserter(depends_ids));
     }
 
     //requires
