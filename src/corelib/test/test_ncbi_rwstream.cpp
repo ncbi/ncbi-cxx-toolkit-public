@@ -152,7 +152,7 @@ ERW_Result CMyReader::Read(void* buf, size_t count,
     else if (n_read < count)
         result = eRW_Error;
     ERR_POST(Info << "Read  @"
-             << setw(8) << m_Pos << '/'
+             << setw(8) << m_Pos << " / "
              << setw(7) << m_Size << ": "
              << setw(5) << n_read << "/%"[n_read != count] << left
              << setw(5) << count  << " byte" << " s"[n_read != 1]
@@ -214,7 +214,7 @@ ERW_Result CMyWriter::Write(const void* buf, size_t count,
     else if (n_written < count)
         result = eRW_Error;
     ERR_POST(Info << "Write @"
-             << setw(8) << m_Pos << '/'
+             << setw(8) << m_Pos << " / "
              << setw(7) << m_Size << ": "
              << setw(5) << n_written << "/%"[n_written != count] << left
              << setw(5) << count     << " byte" << " s"[n_written != 1]
@@ -244,7 +244,7 @@ ERW_Result CMyReaderWriter::Write(const void* buf, size_t count,
 ERW_Result CMyReaderWriter::Flush(void)
 {
     ERR_POST(Info << "Flush @"
-             << setw(8) << CMyReader::m_Pos << '/'
+             << setw(8) << CMyReader::m_Pos << " / "
              << setw(7) << CMyWriter::m_Pos);
     return CMyWriter::Flush();
 }
@@ -312,7 +312,7 @@ int main(int argc, char* argv[])
         } else {
             ERR_POST(Info
                      << "Read:  " << setw(8) << x_in
-                     << '[' << (size_t) x_inavail << ']');
+                     << " [ " << (size_t) x_inavail << " ]");
         }
         is.read(buf, x_in);
         if (!(x_in = (size_t) is.gcount()))
@@ -322,7 +322,7 @@ int main(int argc, char* argv[])
         while (x_out < x_in) {
             size_t xx_out = rand() % (x_in - x_out) + 1;
             ERR_POST(Info
-                     << "Write: " << setw(8) << xx_out << '/'
+                     << "Write: " << setw(8) << xx_out << " / "
                      << x_out << '+' << (x_in - x_out));
             if (!os.write(buf + x_out, xx_out))
                 break;
@@ -337,10 +337,10 @@ int main(int argc, char* argv[])
     delete[] buf;
 
     ERR_POST(Info
-             << "Read:  " << setw(8) << n_in  << '/' << kHugeBufsize
+             << "Read:  " << setw(8) << n_in  << " / " << kHugeBufsize
              << ";  position: " << rd->GetPosition() << '/' << rd->GetSize());
     ERR_POST(Info
-             << "Write: " << setw(8) << n_out << '/' << kHugeBufsize
+             << "Write: " << setw(8) << n_out << " / " << kHugeBufsize
              << ";  position: " << wr->GetPosition() << '/' << wr->GetSize());
 
     _ASSERT(kHugeBufsize == n_in           &&
@@ -395,7 +395,7 @@ int main(int argc, char* argv[])
             } else { 
                 ERR_POST(Info
                          << "Read:  " << setw(8) << x_in
-                         << '[' << (size_t) x_inavail << ']');
+                         << " [ " << (size_t) x_inavail << " ]");
             }
             if (!io.read(buf + kHugeBufsize + n_in, x_in))
                 break;
@@ -407,10 +407,10 @@ int main(int argc, char* argv[])
     // io.flush(); // not needed as everything should have been read out
 
     ERR_POST(Info
-             << "Read:  " << setw(8) << n_in  << '/' << kHugeBufsize << ";  "
+             << "Read:  " << setw(8) << n_in  << " / " << kHugeBufsize << ";  "
              << "position: " << rw->GetRPosition() << '/' << rw->GetRSize());
     ERR_POST(Info
-             << "Write: " << setw(8) << n_out << '/' << kHugeBufsize << ";  "
+             << "Write: " << setw(8) << n_out << " / " << kHugeBufsize << ";  "
              << "position: " << rw->GetWPosition() << '/' << rw->GetWSize());
 
     _ASSERT(kHugeBufsize == n_in            &&
