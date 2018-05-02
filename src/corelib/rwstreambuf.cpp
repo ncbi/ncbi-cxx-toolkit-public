@@ -73,7 +73,7 @@
         catch (exception& e) {                                          \
             try {                                                       \
                 ERR_POST_X(subcode, Error                               \
-                           << "[" << message                            \
+                           << '[' << message                            \
                            << "] Exception: " << e.what());             \
             } catch (...) {                                             \
             }                                                           \
@@ -83,7 +83,7 @@
         catch (...) {                                                   \
             try {                                                       \
                 ERR_POST_X(subcode, Error                               \
-                           << "[" << message << "] Unknown exception"); \
+                           << '[' << message << "] Unknown exception"); \
             } catch (...) {                                             \
             }                                                           \
             if (m_Flags & fLeakExceptions)                              \
