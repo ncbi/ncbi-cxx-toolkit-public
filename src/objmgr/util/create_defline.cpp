@@ -1613,7 +1613,7 @@ void CDeflineGenerator::x_SetTitleFromPatent (void)
 }
 
 // generate title for PDB
-bool UsePDBCompoundForDefline (bool isNA, TSeqPos seqlen, const string& compound, const string& comment)
+bool CDeflineGenerator::UsePDBCompoundForDefline (bool isNA, TSeqPos seqlen, const string& compound, const string& comment)
 
 {
     if (comment.empty()) {
