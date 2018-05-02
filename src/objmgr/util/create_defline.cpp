@@ -1610,13 +1610,46 @@ void CDeflineGenerator::x_SetTitleFromPatent (void)
 }
 
 // generate title for PDB
+bool UsePDBCompoundForDefline (bool isNA, TSeqPos seqlen, const string& compound, const string& comment)
+
+{
+    if (comment.empty()) {
+        return true;
+    }
+    if (isNA) {
+        if ( seqlen < 25 ) {
+            return true;
+        }
+        if (NStr::Find(comment, "COMPLETE GENOME") != NPOS ||
+            NStr::Find(comment, "CHROMOSOME XII") != NPOS) {
+            return true;
+        }
+        if (NStr::Find(comment, "Dna (5'") != NPOS) {
+            return true;
+        }
+    } else {
+        if (NStr::Find(comment, "hypothetical protein") != NPOS ||
+            NStr::Find(comment, "uncharacterized protein") != NPOS ||
+            NStr::Find(comment, "putative uncharacterized protein") != NPOS ||
+            NStr::Find(comment, "putative protein") != NPOS ||
+            NStr::Find(comment, "SEQRES") != NPOS) {
+            return true;
+        }
+    }
+
+    // otherwise use comment for defline
+    return false;
+}
+
 void CDeflineGenerator::x_SetTitleFromPDB (void)
 
 {
     if (isprint ((unsigned char) m_PDBChain)) {
         string chain(1, (char) m_PDBChain);
         CTextJoiner<4, CTempString> joiner;
-        if (m_Comment.empty() || m_IsNA) {
+        if (m_IsNA) {
+            joiner.Add("Chain ").Add(chain).Add(", ").Add(m_PDBCompound);
+        } else if (m_Comment.empty()) {
             joiner.Add("Chain ").Add(chain).Add(", ").Add(m_PDBCompound);
         } else {
             std::size_t found = m_Comment.find_first_not_of("0123456789 ");

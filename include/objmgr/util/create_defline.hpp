@@ -345,6 +345,8 @@ private:
     };
 
     static CSafeStatic<CLowQualityTextFsm> ms_p_Low_Quality_Fsa;
+
+    static bool UsePDBCompoundForDefline (bool isNA, TSeqPos seqlen, const string& compound, const string& comment);
 };
 
 
