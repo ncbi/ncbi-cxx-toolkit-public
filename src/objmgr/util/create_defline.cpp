@@ -442,6 +442,7 @@ void CDeflineGenerator::x_SetFlagsIdx (
     m_IsNA = bsx->IsNA();
     m_IsAA = bsx->IsAA();
     m_Topology = bsx->GetTopology();
+    m_Length = bsx->GetLength();
 
     m_IsDelta = bsx->IsDelta();
     m_IsVirtual = bsx->IsVirtual();
@@ -551,6 +552,7 @@ void CDeflineGenerator::x_SetFlags (
     m_IsNA = false;
     m_IsAA = false;
     m_Topology = NCBI_SEQTOPOLOGY(not_set);
+    m_Length = 0;
 
     m_IsSeg = false;
     m_IsDelta = false;
@@ -642,6 +644,7 @@ void CDeflineGenerator::x_SetFlags (
     m_IsNA = bsh.IsNa();
     m_IsAA = bsh.IsAa();
     m_Topology = bsh.GetInst_Topology();
+    m_Length = bsh.GetInst_Length();
 
     if (bsh.IsSetInst()) {
         if (bsh.IsSetInst_Repr()) {
