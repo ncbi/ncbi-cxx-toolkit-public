@@ -618,7 +618,7 @@ BRCH	s	Botanical Research Center
 BRE	s	Universite		
 BREE	s	Braintree and Bocking Natural History Club		
 BREG	s	Vorarlberger Naturschau		
-BREM	s	Uebersee-Museum		
+BREM	s	Ubersee-Museum Bremen		
 BRFL	s	City of Birmingham Reference Library		
 BRFM<FRA>	c	Banque de Ressources Fongiques de Marseille		
 BRG	s	University of Guyana, Biology Department		
@@ -3104,7 +3104,7 @@ JEF	s	Indiana University Southeast, Biology Department
 JEL	c	Joyce E. Longcore Chytrid Collection at the University of Maine		
 JEL<LVA>	s	Latvian Agricultural Academy, Plant Protection Department		
 JEPS	s	University of California, Jepson Herbarium		
-JES	h	Universidad Autonoma Chapingo		
+JES	s	Herbarium Jorge Espinoza Salas, Universidad Autonoma Chapingo		
 JESW	s	John Evelyn Society's Museum		
 JF	s	Jonkershoek Forestry Research Centre, Environment Affairs Department		
 JFBM	s	James Ford Bell Museum of Natural History		
@@ -3909,7 +3909,7 @@ MEPAN	s	Museum of Evolution, Polish Academy of Sciences
 MER	s	Universidad de Los Andes		
 MERC	s	Universidad de Los Andes, Centro Jardin Botanico		
 MERCA	h	Mercer Arboretum and Botanic Gardens		
-MERF	s	Universidad de Los Andes		
+MERF	s	Universidad de Los Andes, Facultad de Farmacia		
 MERL	s	Instituto Argentino de Investigaciones de las Zonas Aridas (CRICYTME)		
 MESA	s	Mesa State College, Biology Department		
 MEUC	s	Universidad de Chile		
@@ -4427,7 +4427,7 @@ MZUABCS	s	Museo de Zoologia de la Universidad Automica de Baja California Sur
 MZUB	s	Museo di Zoologia		
 MZUC<CHL>	s	Museo de Zoologia, Universidad de Concepcion		
 MZUC<ITA>	s	Universita di Cagliari		
-MZUCR	s	Universidad de Costa Rica, Museo de Zoologia		
+MZUCR	s	Universidad de Costa Rica, Museo de Zoologia	UCR
 MZUEL	s	Museu de Zoologia da Universidade Estadual de Londrina	MZUEL
 MZUESC<BRA>	s	Museu de Zoologia da Universidade Estadual de Santa Cruz		
 MZUF	s	Museo Zoologico La Specola, Universita di Firenze		
@@ -6239,7 +6239,7 @@ TBY	s	Tenby Museum
 TCB	s	National Chung Hsing University, Botany Department		
 TCC/USP	c	Trypanosomatid Culture Collection, University of Sao Paulo	TRYCC
 TCD	s	Trinity College		
-TCDL	s	Trinity College Library, Manuscript Department		
+TCDL	s	Trinity College Dublin		
 TCDU<IRL>	b	Trinity College, Dublin University, Department of Zoology DNA repository		
 TCDU<UGA>	s	Ministry of Animal Industry and Fisheries		
 TCF	s	National Chung Hsing University, Forestry Department		
@@ -6504,7 +6504,6 @@ UAM:Paleo	s	University of Alaska, Museum of the North, paleontology collection
 UAM<ESP>	c	Universidad Autonoma De Madrid culture collection of cyanobacteria		
 UAM<USA-AL>	s	University of Alabama, Malacology Collection		
 UAM<USA-AR>	s	University of Arkansas at Monticello		
-UAM<VEN>	s	Universidad de los Andes, Facultad de Ciencias		
 UAMH	scb	Centre for Global Microfungal Biodiversity		
 UAMI	s	Universidad Autonoma Metropolitana, Unidad Iztapalapa (Mexico)		
 UAMIZ	s	Universidad Autonoma Metropolitana, Iztapalapa, Departamento de Biologia		
@@ -6587,7 +6586,7 @@ UCOCV	s	University of Central Oklahoma, Collection of Vertebrates
 UCONN	s	University of Connecticut		
 UCP	s	Universidad del Cauca	MHNUC 
 UCPC	s	Universidad del Cauca		
-UCR<CRI>	s	Universidad de Costa Rica, Museo de Zoologia		
+UCR<CRI>	s	Universidad de Costa Rica, Museo de Zoologia	MZUCR
 UCR<USA-CA>	s	University of California, Riverside		
 UCR<USA-CA>:ENT	s	University of California, Riverside, Entomology Collection
 UCS<USA-CT>	s	University of Connecticut		
@@ -6602,7 +6601,6 @@ UDBC	s	Universidad Distrital
 UDCC	s	University of Delaware		
 UDEL	s	University of Delaware		
 UDM	s	Museo Friulano di Storia Naturale		
-UDO	s	Universidad de Oriente		
 UDONECI	s	Universidad de Oriente		
 UDSM	s	University of Dar es Salaam		
 UDU	s	Udmurt State University, Department of Biology and Chemistry		
@@ -6710,8 +6708,8 @@ UM<USA-TN>	s	University of Memphis, Mammal Collection
 UM<ZWE>	s	Umtali Museum		
 UMA	s	University of Massachusetts, Museum of Zoology		
 UMAN	s	University of Manitoba, Zoological Collection		
-UMB	s	Uebersee-Museums		
-UMBB	s	Uebersee-Museum, Bremen or Department of Zoology, University of Bremen		
+UMB	s	Ubersee-Museums	UMBB
+UMBB	s	Ubersee-Museum, University of Bremen	UMB
 UMBC	s	Univeristy of Malawi		
 UMBS	s	University of Michigan		
 UMD	s	University of Minnesota, Duluth		
@@ -7368,7 +7366,7 @@ XJUG	s	Xinjiang University, Geography Department
 XM	s	Xinjiang Medical College, Pharmacy Department		
 XMU	s	Xiamen University		
 XNC	s	Department of Biology, Xinxiang Normal College		
-XOLO	s	Universidad Autonoma Chapingo, Departamento de Fitotecnia		
+XOLO	s	Herbario de Plantas Utiles Efraim Hernandez X., Universidad Autonoma Chapingo		
 XTNM	s	Xinjiang Institute of Traditional Chinese and Minorities Medicine		
 XUM	s	Hope Department of Entomology		
 XYTC	s	Xinyang Teachers College, Biology Department		
