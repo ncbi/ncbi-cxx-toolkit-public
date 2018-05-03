@@ -423,6 +423,8 @@ int CTbl2AsnApp::Run(void)
     m_reader.reset(new CMultiReader(m_context));
     m_context.m_remote_updater.reset(new edit::CRemoteUpdater);
 
+    // excluded per RW-589
+#if 0
     if (args["fcs-file"])
     {
         m_fcs_reader.reset(new CForeignContaminationScreenReportReader(m_context));
@@ -434,6 +436,7 @@ int CTbl2AsnApp::Run(void)
         if (args["min-threshold"])
             m_context.m_minimal_sequence_length = args["min-threshold"].AsInteger();
     }
+#endif
 
     if (args["n"])
         m_context.m_OrganismName = args["n"].AsString();
