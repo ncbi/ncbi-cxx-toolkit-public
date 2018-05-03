@@ -457,7 +457,7 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
         CTypesConstIterator::TIteratorContext ctx = i.GetContextData();
         if (CType<CBioseq>::Match(i)) {
             m_Current_Bioseq_Handle = m_Scope->GetBioseqHandle(*CType<CBioseq>::Get(i));
-            m_Current_Bioseq.Reset(m_Current_Bioseq_Handle.GetCompleteBioseq());
+            m_Current_Bioseq.Reset(CConstRef<CBioseq>(CType<CBioseq>::Get(i)));
             m_Count_Bioseq++;
             Update_Bioseq_set_Stack(i);
             if (m_Current_Bioseq->GetInst().IsNa()) {
