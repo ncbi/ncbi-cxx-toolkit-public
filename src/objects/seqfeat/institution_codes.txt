@@ -904,7 +904,7 @@ CCT	c	Colecao de Culturas Tropical
 CCTCC	c	China Center for Type Culture Collection		
 CCTM	c	Centre de Collection de Type Microbien, Institut de Microbiologie, Universite de Lausanne		
 CCTR	c	Culture Collection Trutnov		
-CCTS	h	Universidade Federal de Sao Carlos		
+CCTS	s	Universidade Federal de Sao Carlos - campus Sorocaba		
 CCTU	c	Culture Collection of Tabriz University		
 CCUF	s	Universidade Federal de Alagoas, Centro de Ciencias Biologicas		
 CCUG	c	Culture Collection, University of Goteborg, Department of Clinical Bacteriology		
@@ -1190,7 +1190,7 @@ CNM-CM	c	Filamentous fungus collection of the Spanish National Center for Microb
 CNM<ESP>	s	Centro Nacional de Microbiologia		
 CNMC	s	Colorado National Monument		
 CNMS	s	Colombo National Museum		
-CNMT	h	Universidade Federal de Mato Grosso		
+CNMT	s	Herbario Centro-Norte-Mato-Grossense		
 CNPO	h	Embrapa Pecuaria Sul		
 CNPS	s	Centro Nacional de Pesquisas da Soja		
 CNPSo	c	Culture Collection of Diazotrophic and Plant Growth Promoting Bacteria of Embrapa Soja		
@@ -1232,7 +1232,7 @@ COP<VEN>	s	Coleccion Ornitologica Phelps
 COR	s	Universidade Federal de Mato Grosso do Sul, Departamento de Ciencias do Ambiente		
 CORB	s	Corchester School		
 CORBIDI	s	Centro de Ornitologia y Biodiversidad		
-CORD	s	Universidad Nacional de Cordoba		
+CORD	s	IMBIV-Museo Botanico		
 Coriell	cb	Coriell Institute for Medical Research		
 CORO	s	IUTAG, Departamento de Investigacion		
 CORT	s	State University of New York College at Cortland, Biological Sciences Department		
@@ -1524,7 +1524,7 @@ DHMB	s	Department of Harbours and Marine
 DHNS	s	Dunbartonshire Natural History Society		
 DI	s	Universite de Bourgogne, Laboratoire de Phytobiologie Cellulaire		
 DIA	s	Museu do Dundo		
-DIAM	h	Universidade Federal dos Vales do Jequitinhonha e Mucuri		
+DIAM	s	Universidade Federal dos Vales do Jequitinhonha e Mucuri		
 DIN	s	Museum National d'Histoire Naturelle, Laboratoire Maritime		
 DINH	s	Delta Institute of Natural History		
 DINO	s	Dinosaur National Monument		
@@ -2306,8 +2306,8 @@ HBI	s	Institute of Hydrobiology, Chinese Academy of Sciences, Phycology Departme
 HBIL	s	Institut d'Estudis Ilerdencs		
 HBNU	s	Hebei Normal University, Biology Department		
 HBOM	s	Harbor Branch Oceanographic Museum	HBOI
-HBR	s	Universidade Federal de Santa Catarina		
-HBRA	h	Universidade Federal do Para, Campus Braganca		
+HBR	s	Herbario Barbosa Rodrigues		
+HBRA	s	Universidade Federal do Para, Campus Braganca		
 HBUM	s	College of Life Sciences Hebei Univesity, Baoding		
 HC	s	Hangchow Christian College		
 HCAT	s	University of Tabriz, Landscape Department		
@@ -2330,7 +2330,7 @@ HCT	s	Taiwan Forestry Research Institute (Heng-Chun Branch Station)
 HCTR	s	Hoogstraal Center for Tick Research		
 HDCF	h	Department of Forestry Science		
 HDD	s	Tolson Museum, Natural History Department		
-HDJF	h	Universidade Federal dos Vales do Jequitinhonha e Mucuri		
+HDJF	s	Herbario Dendrologico Jeanine Felfili Universidade Federal dos Vales do Jequitinhonha e Mucuri		
 HDOA	s	Hawaii Department of Agriculture		
 HDSM	s	University of Massachusetts Dartmouth		
 HDTC	s	Huddersfield Technical College		
@@ -2356,7 +2356,7 @@ HERT	h	Fundacao Universidade Estadual do Ceara
 HERZ	s	Herzen State Pedagogical University of Russia, Department of Botany		
 HERZU	s	Universidad del Zulia		
 HEUS	h	Universidad de Sucre		
-HF	s	Universidade Federal do Para		
+HF	s	Herbario Profa. Normelia Vasconcelos, Universidade Federal do Para		
 HFB	s	Hainan Forestry Bureau		
 HFBG	s	Forestry Botanical Garden of Heilongjiang		
 HFCC	c	Flagellate Culture Collection, University of Cologne		
@@ -2397,7 +2397,7 @@ HIP	s	Universidad de Magallanes
 HIPC	s	Instituto Superior Pedagogico Jose Marti, Departamento de Biologia		
 HIRO	s	Hiroshima University, Biological Science Department		
 HIRU	s	Okayama University of Science		
-HISA	h	Universidade Estadual Paulista		
+HISA	s	Universidade Estadual Paulista		
 HITBC	s	Xishuangbanna Tropical Botanical Garden, Chinese Academy of Sciences		
 HIUW	s	Hygiene-Institut der Universitaet		
 HIWNT	s	Hampshire and Isle of Wight Naturalists' Trust Ltd.		
@@ -2521,7 +2521,7 @@ HSMC	h	Whyte Thorne Botanic Garden
 HSNU	s	East China Normal University, Biology Department		
 HSP	h	Instituto Cientifico Michael Owen Dillon		
 HSS	s	Development, Technological and Investigacion Service, Forest Production Department		
-HSTM	h	Universidade Federal do Oeste do Para		
+HSTM	s	Universidade Federal do Oeste do Para		
 HSU<USA-CA>	s	Humboldt State University		
 HSU<USA-TX>	s	Hardin-Simmons University, Biology Department		
 HSUCV	s	Hardin-Simmons University, Collection of Vertebrates		
@@ -2649,7 +2649,7 @@ IB	s	Universitat Innsbruck
 IBA<ESP>	s	Instituto Asturiano de Taxonomia y Ecologia Vegetal		
 IBA<POL>	c	Collection of Microorganisms Producing Antibiotics		
 IBAR	s	Ibaraki University (Herbarium of Systematic Mycology)		
-IBAUNC	s	Universidad Nacional de Cuyo, Instituto de Biologia Animal		
+IBAUNC	s	Universidad Nacional de Cuyo, Instituto de Biologia Animal	IBMUNC
 IBBS	s	Insitute of Biology and Soil Science, Russian Academy of Sciences		
 IBE	s	Institute for Botanical Exploration		
 IBE<ESP>	s	Institut de Biologia Evolutiva, (CSIC-UPF)		
@@ -2667,7 +2667,7 @@ IBL<POL>	s	Forest Research Institute, Poland
 IBL<PRT>	c	Botanical Institute, Lisbon Faculty of Sciences		
 IBL<USA-MD>	c	Insect Biocontrol Laboratory (USDA-ARS, Beltsville)		
 IBLP	s	Instytut Badawczy Lesnictwa		
-IBMUNC	s	Universidad Nacional de Cuyo, Instituto de Biologia Animal		
+IBMUNC	s	Universidad Nacional de Cuyo, Instituto de Biologia Animal	IBAUNC
 IBP	s	Instituto de Biologia do Parana		
 IBPPM	c	Institute of Biochemistry and Physiology of Plants and Microorganisms of the Russian Academy of Sciences		
 IBRC	sc	Iranian Biological Resource Center		
@@ -3979,7 +3979,7 @@ MHNG:Herp	s	Natural History Museum of Geneva, Herpetology collection
 MHNG:Invertebrate	s	Natural History Museum of Geneva, Invertebrate collection
 MHNH	s	Museo Nacional de Historia Natural de Cuba	MNHNCU
 MHNI	s	Museu Hist. Naturales Universidade Federal Minas Gerais		
-MHNJP	s	Universidad Nacional Mayor de San Marcos		
+MHNJP	s	Universidad Nacional Mayor de San Marcos	MNHNJP
 MHNL	s	Musee Guimet d'Histoire Naturelle de Lyon		
 MHNLR	s	Museum d'Histoire Naturelle	MHNR
 MHNLS	s	Coleccion de Mastozoologia, Museo de Historia Natural de La Salle		
@@ -4001,7 +4001,7 @@ MI	s	Universita degli Studi di Milano, Dipartimento di Biologia
 MIB	s	University of Milano - Bicocca, Department of Biotechnology and Biosciences		
 MIB:ZPL	s	University of Milano - Bicocca, Department of Biotechnology and Biosciences, ZooPlantLab
 MIC	s	Mar Ivanios College (Zoology museum)		
-MICG	h	Universidad de San Carlos de Guatemala		
+MICG	s	Universidad de San Carlos de Guatemala		
 MICH	s	University of Michigan		
 MICKKU	c	MICKKU Culture Collection		
 MID	s	Middlebury College, Biology Department		
@@ -4120,7 +4120,7 @@ MNHN<CUB>	s	Museo Nacional de Historia Natural, Departamento de Colecciones
 MNHN<URY>	s	Museo Nacional de Historia  Natural de Montevideo		
 MNHNCH	s	Museo Nacional de Historia Natural de Chile	MNHN ,MNHNC
 MNHNCU	s	Museo Nacional de Historia Natural, Havana	MNHC
-MNHNJP	s	Universidad Nacional Mayor de San Marcos		
+MNHNJP	s	Universidad Nacional Mayor de San Marcos	MHNJP
 MNHNLES	s	Museum National d'Histoire Naturelle Lesotho		
 MNHNM	s	Museo Nacional de Historia Natural, Mexico City		
 MNHNP	s	Museo Nacional de Historia Natural del Paraguay		
@@ -5072,7 +5072,7 @@ OXD	s	Wadham College
 OXF	s	University of Oxford, Department of Plant Sciences		
 OXM	s	Magdalen College Library		
 P	s	Herbier National de Paris	P<FRA>
-PA	h	Universidade Federal do Oeste do Para		
+PA	s	Universidade Federal do Oeste do Para		
 PAC	s	Pennsylvania State University, Biology Department		
 PACA	s	Instituto Anchietano de Pesquisas/UNISINOS		
 PACMA	s	Pennsylvania State University, Biology Department		
@@ -5445,7 +5445,7 @@ RCPF	sc	Russian Collection of Pathogenetic Fungi
 RCR	s	Rochester Public Museum		
 RCS	s	Royal College of Surgeon's Museum	RCSM
 RCSL	s	Royal College of Surgeons		
-RCVC	h	Universidad Nacional de Rio Cuarto		
+RCVC	s	Maria Esther Bocco Herbarium Universidad Nacional de Rio Cuarto		
 RDAF	s	Research Department South East Asian Fisheries Development Centre		
 RDG	s	Reading Museum and Archive Service		
 RDS	s	Royal Dublin Society		
@@ -6631,7 +6631,7 @@ UFJF	s	Universidade Federal de Juiz de Fora
 UFMA	s	Universidade Federal do Maranhao, Curso de Farmacia		
 UFMG<BRA>	s	Universidade Federal de Minas Gerais		
 UFMI	s	Universidade Federal de Mato Grosso, Instituto de Biociencias		
-UFMT	s	Universidade Federal de Mato Grosso		
+UFMT	s	Universidade Federal de Mato Grosso, Herbario Central		
 UFNH	s	Utah Field House Natural History [address unknown]		
 UFOP	s	 Universidade Federal de Ouro Preto		
 UFP	s	Universidade Federal de Pernambuco, Departamento de Botanica		
