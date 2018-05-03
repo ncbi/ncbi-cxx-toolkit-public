@@ -230,6 +230,12 @@ public:
     typedef CRef<CTSE_Chunk_Info>   TChunk;
     typedef vector<TChunk>          TChunkSet;
 
+    typedef set<string> TProcessedNAs;
+    static bool IsRequestedAnyNA(const SAnnotSelector* sel);
+    static bool IsRequestedNA(const string& na, const SAnnotSelector* sel);
+    static bool IsProcessedNA(const string& na, const TProcessedNAs* processed_nas);
+    static void SetProcessedNA(const string& na, TProcessedNAs* processed_nas);
+
     /// Request from a datasource using handles and ranges instead of seq-loc
     /// The TSEs loaded in this call will be added to the tse_set.
     /// The GetRecords() may throw CBlobStateException if the sequence
@@ -251,12 +257,24 @@ public:
     /// CDataLoader has reasonable default implementation.
     virtual TTSE_LockSet GetExternalRecords(const CBioseq_Info& bioseq);
 
+    /// old Get*AnnotRecords() methods
     virtual TTSE_LockSet GetOrphanAnnotRecords(const CSeq_id_Handle& idh,
                                                const SAnnotSelector* sel);
     virtual TTSE_LockSet GetExternalAnnotRecords(const CSeq_id_Handle& idh,
                                                  const SAnnotSelector* sel);
     virtual TTSE_LockSet GetExternalAnnotRecords(const CBioseq_Info& bioseq,
                                                  const SAnnotSelector* sel);
+
+    /// new Get*AnnotRecords() methods
+    virtual TTSE_LockSet GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
+                                                 const SAnnotSelector* sel,
+                                                 TProcessedNAs* processed_nas);
+    virtual TTSE_LockSet GetExternalAnnotRecordsNA(const CSeq_id_Handle& idh,
+                                                   const SAnnotSelector* sel,
+                                                   TProcessedNAs* processed_nas);
+    virtual TTSE_LockSet GetExternalAnnotRecordsNA(const CBioseq_Info& bioseq,
+                                                   const SAnnotSelector* sel,
+                                                   TProcessedNAs* processed_nas);
 
     typedef vector<CSeq_id_Handle> TIds;
     /// Request for a list of all Seq-ids of a sequence.
@@ -469,7 +487,7 @@ private:
 
 END_SCOPE(objects)
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 4, 4, 0);
+NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 5, 0, 0);
 
 template<>
 class CDllResolver_Getter<objects::CDataLoader>

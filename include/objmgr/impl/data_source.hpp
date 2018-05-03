@@ -194,21 +194,24 @@ public:
     // annotations for sequence that is not in this data source
     void GetTSESetWithOrphanAnnots(const TSeq_idSet& ids,
                                    TTSE_LockMatchSet& tse_set,
-                                   const SAnnotSelector* sel);
+                                   const SAnnotSelector* sel,
+                                   CDataLoader::TProcessedNAs* processed_nas = 0);
     // annotations for sequence that is provided by this data source
     // external_only = true means to exclude TSE with the sequence
     void GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
                                    const TTSE_Lock& tse,
                                    TTSE_LockMatchSet& tse_set,
                                    const SAnnotSelector* sel,
+                                   CDataLoader::TProcessedNAs* processed_nas = 0,
                                    bool external_only = false);
     // external annotations for sequence that is provided by this data source
     void GetTSESetWithExternalAnnots(const CBioseq_Info& bioseq,
                                      const TTSE_Lock& tse,
                                      TTSE_LockMatchSet& tse_set,
-                                     const SAnnotSelector* sel)
+                                     const SAnnotSelector* sel,
+                                     CDataLoader::TProcessedNAs* processed_nas = 0)
         {
-            GetTSESetWithBioseqAnnots(bioseq, tse, tse_set, sel, true);
+            GetTSESetWithBioseqAnnots(bioseq, tse, tse_set, sel, processed_nas, true);
         }
 
     // Fill the set with bioseq handles for all sequences from a given TSE.

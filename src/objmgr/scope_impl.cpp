@@ -2322,11 +2322,6 @@ void CScope_Impl::x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
                                         const SAnnotSelector* sel)
 {
     x_GetTSESetWithBioseqAnnots(lock, save_match, binfo, sel);
-#ifdef EXCLUDE_EDITED_BIOSEQ_ANNOT_SET
-    if ( binfo.x_GetTSE_ScopeInfo().CanBeEdited() ) {
-        x_GetTSESetWithBioseqAnnots(lock, binfo, sel);
-    }
-#endif
 }
 
 
@@ -2391,6 +2386,9 @@ void CScope_Impl::x_GetTSESetWithOrphanAnnots(TTSE_LockMatchSet& lock,
         excl_ds = &binfo->x_GetTSE_ScopeInfo().GetDSInfo();
     }
 
+    unique_ptr<SAnnotSelector> sel_copy;
+    CDataLoader::TProcessedNAs processed_nas;
+    
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         CPrefetchManager::IsActive();
         if ( &*it == excl_ds ) {
@@ -2404,10 +2402,20 @@ void CScope_Impl::x_GetTSESetWithOrphanAnnots(TTSE_LockMatchSet& lock,
             // add external annotations for edited sequences
             ds.GetTSESetWithExternalAnnots(bioseq->GetObjectInfo(),
                                            binfo->x_GetTSE_ScopeInfo().m_TSE_Lock,
-                                           ds_lock, sel);
+                                           ds_lock, sel, &processed_nas);
         }
         else {
-            ds.GetTSESetWithOrphanAnnots(ids, ds_lock, sel);
+            ds.GetTSESetWithOrphanAnnots(ids, ds_lock, sel, &processed_nas);
+        }
+        if ( sel && !processed_nas.empty() ) {
+            if ( !sel_copy ) {
+                sel_copy.reset(new SAnnotSelector(*sel));
+                sel = sel_copy.get();
+            }
+            for ( auto& na : processed_nas ) {
+                sel_copy->ExcludeNamedAnnotAccession(na);
+            }
+            processed_nas.clear();
         }
         x_AddTSESetWithAnnots(lock, save_match, ds_lock, *it);
     }
@@ -2419,37 +2427,71 @@ void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
                                               CBioseq_ScopeInfo& binfo,
                                               const SAnnotSelector* sel)
 {
+    TBioseq_Lock bioseq = binfo.GetLock(null);
+    CDataSource_ScopeInfo* ds_info = &binfo.x_GetTSE_ScopeInfo().GetDSInfo();
+
+    unique_ptr<SAnnotSelector> sel_copy;
+    CDataLoader::TProcessedNAs processed_nas;
+    
+    // orphan annotations on all synonyms of Bioseq
+    TSeq_idSet ids;
     if ( m_setDataSrc.HasSeveralNodes() ) {
-        // orphan annotations on all synonyms of Bioseq
-        TSeq_idSet ids;
         // collect ids
         CConstRef<CSynonymsSet> syns = x_GetSynonyms(binfo);
         ITERATE ( CSynonymsSet, syn_it, *syns ) {
             // CSynonymsSet already contains all matching ids
             ids.insert(syns->GetSeq_id_Handle(syn_it));
         }
-        // add orphan annots
-        x_GetTSESetWithOrphanAnnots(lock, save_match, ids, &binfo, sel);
     }
+    
+    // add all annots
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        CPrefetchManager::IsActive();
+            
+        CDataSource& ds = it->GetDataSource();
+        TTSE_LockMatchSet_DS ds_lock;
 
+        bool save_matches = true;
+        if ( &*it == ds_info ) {
 #ifdef EXCLUDE_EDITED_BIOSEQ_ANNOT_SET
-    if ( binfo.x_GetTSE_ScopeInfo().CanBeEdited() )
-        return;
+            if ( binfo.x_GetTSE_ScopeInfo().CanBeEdited() ) {
+                save_matches = false;
+            }
 #endif
-
-    CPrefetchManager::IsActive();
-
-    CDataSource_ScopeInfo& ds_info = binfo.x_GetTSE_ScopeInfo().GetDSInfo();
-
-    // datasource annotations on all ids of Bioseq
-    // add external annots
-    TBioseq_Lock bioseq = binfo.GetLock(null);
-    TTSE_LockMatchSet_DS ds_lock;
-    ds_info.GetDataSource()
-        .GetTSESetWithBioseqAnnots(bioseq->GetObjectInfo(),
-                                   bioseq->x_GetTSE_ScopeInfo().m_TSE_Lock,
-                                   ds_lock, sel);
-    x_AddTSESetWithAnnots(lock, save_match, ds_lock, ds_info);
+            // load from 
+            ds_info->GetDataSource()
+                .GetTSESetWithBioseqAnnots(bioseq->GetObjectInfo(),
+                                           bioseq->x_GetTSE_ScopeInfo().m_TSE_Lock,
+                                           ds_lock, sel, &processed_nas);
+        }
+        if ( it->m_EditDS == ds_info ) {
+            // edited sequence
+            if ( GetKeepExternalAnnotsForEdit() ) {
+                // add external annotations for edited sequences
+                ds.GetTSESetWithExternalAnnots(bioseq->GetObjectInfo(),
+                                               binfo.x_GetTSE_ScopeInfo().m_TSE_Lock,
+                                               ds_lock, sel, &processed_nas);
+            }
+            else {
+                // skip external annotations for edited sequences
+                continue;
+            }
+        }
+        else {
+            ds.GetTSESetWithOrphanAnnots(ids, ds_lock, sel, &processed_nas);
+        }
+        if ( sel && !processed_nas.empty() ) {
+            if ( !sel_copy ) {
+                sel_copy.reset(new SAnnotSelector(*sel));
+                sel = sel_copy.get();
+            }
+            for ( auto& na : processed_nas ) {
+                sel_copy->ExcludeNamedAnnotAccession(na);
+            }
+            processed_nas.clear();
+        }
+        x_AddTSESetWithAnnots(lock, save_matches? save_match: 0, ds_lock, *it);
+    }
     sort(lock.begin(), lock.end());
     lock.erase(unique(lock.begin(), lock.end()), lock.end());
 }

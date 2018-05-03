@@ -198,6 +198,65 @@ CDataLoader::GetExternalAnnotRecords(const CBioseq_Info& bioseq,
 }
 
 
+bool CDataLoader::IsRequestedAnyNA(const SAnnotSelector* sel)
+{
+    return sel && sel->IsIncludedAnyNamedAnnotAccession();
+}
+
+
+bool CDataLoader::IsRequestedNA(const string& na,
+                                const SAnnotSelector* sel)
+{
+    return sel && sel->IsIncludedNamedAnnotAccession(na);
+}
+
+
+bool CDataLoader::IsProcessedNA(const string& na,
+                                const TProcessedNAs* processed_nas)
+{
+    return processed_nas && processed_nas->find(na) == processed_nas->end();
+}
+
+
+void CDataLoader::SetProcessedNA(const string& na,
+                                 TProcessedNAs* processed_nas)
+{
+    if ( processed_nas ) {
+        processed_nas->insert(na);
+    }
+}
+
+
+CDataLoader::TTSE_LockSet
+CDataLoader::GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
+                                     const SAnnotSelector* sel,
+                                     TProcessedNAs* /*processed_nas*/)
+{
+    // as a backup call old method that cannot report processed NAs
+    return GetOrphanAnnotRecords(idh, sel);
+}
+
+
+CDataLoader::TTSE_LockSet
+CDataLoader::GetExternalAnnotRecordsNA(const CSeq_id_Handle& idh,
+                                       const SAnnotSelector* sel,
+                                       TProcessedNAs* /*processed_nas*/)
+{
+    // as a backup call old method that cannot report processed NAs
+    return GetExternalAnnotRecords(idh, sel);
+}
+
+
+CDataLoader::TTSE_LockSet
+CDataLoader::GetExternalAnnotRecordsNA(const CBioseq_Info& bioseq,
+                                       const SAnnotSelector* sel,
+                                       TProcessedNAs* /*processed_nas*/)
+{
+    // as a backup call old method that cannot report processed NAs
+    return GetExternalAnnotRecords(bioseq, sel);
+}
+
+
 bool CDataLoader::CanGetBlobById(void) const
 {
     return false;

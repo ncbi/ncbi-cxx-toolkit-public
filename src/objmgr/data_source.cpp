@@ -867,7 +867,8 @@ void CDataSource::x_AddTSEOrphanAnnots(TTSE_LockMatchSet& ret,
 
 void CDataSource::GetTSESetWithOrphanAnnots(const TSeq_idSet& ids,
                                             TTSE_LockMatchSet& ret,
-                                            const SAnnotSelector* sel)
+                                            const SAnnotSelector* sel,
+                                            CDataLoader::TProcessedNAs* processed_nas)
 {
     if ( m_Loader ) {
         // with loader installed we look only in TSEs reported by loader.
@@ -876,7 +877,7 @@ void CDataSource::GetTSESetWithOrphanAnnots(const TSeq_idSet& ids,
         CDataLoader::TTSE_LockSet tse_set;
         ITERATE ( TSeq_idSet, id_it, ids ) {
             CDataLoader::TTSE_LockSet tse_set2 =
-                m_Loader->GetOrphanAnnotRecords(*id_it, sel);
+                m_Loader->GetOrphanAnnotRecordsNA(*id_it, sel, processed_nas);
             if ( !tse_set2.empty() ) {
                 if ( tse_set.empty() ) {
                     tse_set.swap(tse_set2);
@@ -923,6 +924,7 @@ void CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
                                             const TTSE_Lock& tse,
                                             TTSE_LockMatchSet& ret,
                                             const SAnnotSelector* sel,
+                                            CDataLoader::TProcessedNAs* processed_nas,
                                             bool external_only)
 {
     if ( !external_only ) {
@@ -936,7 +938,7 @@ void CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
 
         // external annotations
         CDataLoader::TTSE_LockSet tse_set2 =
-            m_Loader->GetExternalAnnotRecords(bioseq, sel);
+            m_Loader->GetExternalAnnotRecordsNA(bioseq, sel, processed_nas);
         ITERATE ( CDataLoader::TTSE_LockSet, tse_it, tse_set2 ) {
             x_AddTSEBioseqAnnots(ret, bioseq, *tse_it);
         }
