@@ -65,6 +65,8 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
+// exclude from code coverage per RW-589
+//LCOV_EXCL_START
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -381,5 +383,7 @@ void CForeignContaminationScreenReportReader::PostProcess(CSeq_entry& entry)
         }
     }
 }
+
+//LCOV_EXCL_STOP
 
 END_NCBI_SCOPE

@@ -197,10 +197,6 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddDefaultKey
         ("a", "String", "File Type\n\
       a Any\n\
-      r20u Runs of 20+ Ns are gaps, 100 Ns are unknown length\n\
-      r20k Runs of 20+ Ns are gaps, 100 Ns are known length\n\
-      r10u Runs of 10+ Ns are gaps, 100 Ns are unknown length\n\
-      r10k Runs of 10+ Ns are gaps, 100 Ns are known length\n\
       s FASTA Set (s Batch, s1 Pop, s2 Phy, s3 Mut, s4 Eco,\n\
         s9 Small-genome)\n\
       d FASTA Delta, di FASTA Delta with Implicit Gaps\n\
@@ -294,7 +290,6 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey("z", "OutFile", "Cleanup Log File", CArgDescriptions::eOutputFile);
 
     arg_desc->AddOptionalKey("X", "String", "Extra Flags (combine any of the following letters)\n\
-      A Automatic definition line generator\n\
       C Apply comments in .cmt files to all sequences\n\
       E Treat like eukaryota in the Discrepancy Report", CArgDescriptions::eString);
 
@@ -344,9 +339,10 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey("gaps-min", "Integer", "minimum run of Ns recognised as a gap", CArgDescriptions::eInteger);
     arg_desc->AddOptionalKey("gaps-unknown", "Integer", "exact number of Ns recognised as a gap with unknown length", CArgDescriptions::eInteger);
 
-    arg_desc->AddOptionalKey("min-threshold", "Integer", "minimum length of sequence", CArgDescriptions::eInteger);
-    arg_desc->AddOptionalKey("fcs-file", "FileName", "FCS report file", CArgDescriptions::eInputFile);
-    arg_desc->AddFlag("fcs-trim", "Trim FCS regions instead of annotate");
+    // disabled per RW-589
+    //arg_desc->AddOptionalKey("min-threshold", "Integer", "minimum length of sequence", CArgDescriptions::eInteger);
+    //arg_desc->AddOptionalKey("fcs-file", "FileName", "FCS report file", CArgDescriptions::eInputFile);
+    //arg_desc->AddFlag("fcs-trim", "Trim FCS regions instead of annotate");
     arg_desc->AddFlag("avoid-submit", "Avoid submit block for optical map");
     arg_desc->AddFlag("map-use-loc", "Optical map: use locations instead of lengths of fragments");
     arg_desc->AddFlag("postprocess-pubs", "Postprocess pubs: convert authors to standard");
