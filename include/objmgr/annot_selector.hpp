@@ -658,6 +658,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     SAnnotSelector& ResetNamedAnnotAccessions(void);
     SAnnotSelector& IncludeNamedAnnotAccession(const string& acc,
                                                int zoom_level = 0);
+    SAnnotSelector& ExcludeNamedAnnotAccession(const string& acc);
     /// 
     const TNamedAnnotAccessions& GetNamedAnnotAccessions(void) const
         {

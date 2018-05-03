@@ -468,6 +468,19 @@ SAnnotSelector::IncludeNamedAnnotAccession(const string& acc,
 }
 
 
+SAnnotSelector&
+SAnnotSelector::ExcludeNamedAnnotAccession(const string& acc)
+{
+    if ( m_NamedAnnotAccessions ) {
+        m_NamedAnnotAccessions->erase(acc);
+        if ( m_NamedAnnotAccessions->empty() ) {
+            m_NamedAnnotAccessions.reset();
+        }
+    }
+    return *this;
+}
+
+
 bool SAnnotSelector::IsIncludedNamedAnnotAccession(const string& acc) const
 {
     // The argument acc may contain version like "accession.123".
