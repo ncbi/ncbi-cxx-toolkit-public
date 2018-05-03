@@ -401,7 +401,7 @@ void CDiscrepancyContext::Update_Bioseq_set_Stack(CTypesConstIterator& it)
     }
     if (CType<CBioseq_set>::Match(it)) {
         m_Bioseq_set_Stack.resize(n - 1);
-        m_Bioseq_set_Stack.push_back(m_Scope->GetBioseq_setHandle(*CType<CBioseq_set>::Get(it)).GetCompleteBioseq_set());
+        m_Bioseq_set_Stack.push_back(CConstRef<CBioseq_set>(CType<CBioseq_set>::Get(it)));
     }
     else {
         m_Bioseq_set_Stack.resize(n);
