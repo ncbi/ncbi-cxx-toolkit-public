@@ -222,12 +222,15 @@ public:
     virtual TTSE_LockSet GetDetailedRecords(const CSeq_id_Handle& idh,
                                             const SRequestDetails& details);
     virtual TTSE_LockSet GetExternalRecords(const CBioseq_Info& bioseq);
-    virtual TTSE_LockSet GetExternalAnnotRecords(const CSeq_id_Handle& idh,
-                                                 const SAnnotSelector* sel);
-    virtual TTSE_LockSet GetExternalAnnotRecords(const CBioseq_Info& bioseq,
-                                                 const SAnnotSelector* sel);
-    virtual TTSE_LockSet GetOrphanAnnotRecords(const CSeq_id_Handle& idh,
-                                               const SAnnotSelector* sel);
+    virtual TTSE_LockSet GetExternalAnnotRecordsNA(const CSeq_id_Handle& idh,
+                                                   const SAnnotSelector* sel,
+                                                   TProcessedNAs* processed_nas) override;
+    virtual TTSE_LockSet GetExternalAnnotRecordsNA(const CBioseq_Info& bioseq,
+                                                   const SAnnotSelector* sel,
+                                                   TProcessedNAs* processed_nas) override;
+    virtual TTSE_LockSet GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
+                                                 const SAnnotSelector* sel,
+                                                 TProcessedNAs* processed_nas) override;
 
     virtual void GetChunk(TChunk chunk);
     virtual void GetChunks(const TChunkSet& chunks);
@@ -419,7 +422,7 @@ public:
             return m_HasHUPIncluded;
         }
 
-    virtual CObjectManager::TPriority GetDefaultPriority(void) const;
+    virtual CObjectManager::TPriority GetDefaultPriority(void) const override;
     
 protected:
     friend class CGBReaderRequestResult;
@@ -429,7 +432,8 @@ protected:
 
     TTSE_LockSet x_GetRecords(const CSeq_id_Handle& idh,
                               TBlobContentsMask sr_mask,
-                              const SAnnotSelector* sel);
+                              const SAnnotSelector* sel,
+                              TProcessedNAs* processed_nas = 0);
 
 private:
     typedef CParamLoaderMaker<CGBDataLoader, const CGBLoaderParams&> TGBMaker;

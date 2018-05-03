@@ -1518,16 +1518,18 @@ CGBDataLoader::GetExternalRecords(const CBioseq_Info& bioseq)
 
 
 CDataLoader::TTSE_LockSet
-CGBDataLoader::GetExternalAnnotRecords(const CSeq_id_Handle& idh,
-                                       const SAnnotSelector* sel)
+CGBDataLoader::GetExternalAnnotRecordsNA(const CSeq_id_Handle& idh,
+                                         const SAnnotSelector* sel,
+                                         TProcessedNAs* processed_nas)
 {
-    return x_GetRecords(idh, fBlobHasExtAnnot|fBlobHasNamedAnnot, sel);
+    return x_GetRecords(idh, fBlobHasExtAnnot|fBlobHasNamedAnnot, sel, processed_nas);
 }
 
 
 CDataLoader::TTSE_LockSet
-CGBDataLoader::GetExternalAnnotRecords(const CBioseq_Info& bioseq,
-                                       const SAnnotSelector* sel)
+CGBDataLoader::GetExternalAnnotRecordsNA(const CBioseq_Info& bioseq,
+                                         const SAnnotSelector* sel,
+                                         TProcessedNAs* processed_nas)
 {
     TTSE_LockSet ret;
     TIds ids = bioseq.GetId();
@@ -1535,7 +1537,7 @@ CGBDataLoader::GetExternalAnnotRecords(const CBioseq_Info& bioseq,
     ITERATE ( TIds, it, ids ) {
         if ( GetBlobId(*it) ) {
             // correct id is found
-            TTSE_LockSet ret2 = GetExternalAnnotRecords(*it, sel);
+            TTSE_LockSet ret2 = GetExternalAnnotRecordsNA(*it, sel, processed_nas);
             ret.swap(ret2);
             break;
         }
@@ -1549,12 +1551,13 @@ CGBDataLoader::GetExternalAnnotRecords(const CBioseq_Info& bioseq,
 
 
 CDataLoader::TTSE_LockSet
-CGBDataLoader::GetOrphanAnnotRecords(const CSeq_id_Handle& idh,
-                                     const SAnnotSelector* sel)
+CGBDataLoader::GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
+                                       const SAnnotSelector* sel,
+                                       TProcessedNAs* processed_nas)
 {
     bool load_external = m_AlwaysLoadExternal;
-    bool load_namedacc = m_AlwaysLoadNamedAcc &&
-        sel && sel->IsIncludedAnyNamedAnnotAccession();
+    bool load_namedacc =
+        m_AlwaysLoadNamedAcc && IsRequestedAnyNA(sel);
     if ( load_external || load_namedacc ) {
         TBlobContentsMask mask = 0;
         if ( load_external ) {
@@ -1563,10 +1566,10 @@ CGBDataLoader::GetOrphanAnnotRecords(const CSeq_id_Handle& idh,
         if ( load_namedacc ) {
             mask |= fBlobHasNamedAnnot;
         }
-        return x_GetRecords(idh, mask, sel);
+        return x_GetRecords(idh, mask, sel, processed_nas);
     }
     else {
-        return CDataLoader::GetOrphanAnnotRecords(idh, sel);
+        return CDataLoader::GetOrphanAnnotRecordsNA(idh, sel, processed_nas);
     }
 }
 
@@ -1574,7 +1577,8 @@ CGBDataLoader::GetOrphanAnnotRecords(const CSeq_id_Handle& idh,
 CDataLoader::TTSE_LockSet
 CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
                             TBlobContentsMask mask,
-                            const SAnnotSelector* sel)
+                            const SAnnotSelector* sel,
+                            TProcessedNAs* processed_nas)
 {
     TTSE_LockSet locks;
 
