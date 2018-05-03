@@ -7804,7 +7804,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("CDA");
     ambig.push_back("ZMUA");
     ambig.push_back("MZUC");
-    ambig.push_back("UCR");
     ambig.push_back("BR");
     ambig.push_back("UG");
     ambig.push_back("MDH");
