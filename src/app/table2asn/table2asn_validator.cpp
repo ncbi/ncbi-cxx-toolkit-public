@@ -194,6 +194,7 @@ void CTable2AsnValidator::ReportDiscrepancies(CSerialObject& obj, CScope& scope,
     tests->AddTests(names);
     tests->SetFile(m_context->m_current_file);
     tests->SetLineage(lineage);
+    tests->SetEucariote(eucariote);
     tests->Parse(obj);
     tests->Summarize();
 
