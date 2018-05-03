@@ -102,6 +102,8 @@ public:
     static string GetLoaderNameFromArgs(const string& dir_path,
                                         const TVDBFiles& vdb_files);
 
+    virtual CObjectManager::TPriority GetDefaultPriority(void) const override;
+    
     typedef vector<CAnnotName> TAnnotNames;
     TAnnotNames GetPossibleAnnotNames(void) const;
 
@@ -112,8 +114,9 @@ public:
 
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     EChoice choice);
-    virtual TTSE_LockSet GetOrphanAnnotRecords(const CSeq_id_Handle& idh,
-                                               const SAnnotSelector* sel);
+    virtual TTSE_LockSet GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
+                                                 const SAnnotSelector* sel,
+                                                 TProcessedNAs* processed_nas) override;
     virtual void GetChunk(TChunk chunk);
     virtual void GetChunks(const TChunkSet& chunks);
 

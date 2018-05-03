@@ -288,10 +288,11 @@ CSNPDataLoader::GetRecords(const CSeq_id_Handle& idh,
 
 
 CDataLoader::TTSE_LockSet
-CSNPDataLoader::GetOrphanAnnotRecords(const CSeq_id_Handle& idh,
-                                      const SAnnotSelector* sel)
+CSNPDataLoader::GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
+                                        const SAnnotSelector* sel,
+                                        TProcessedNAs* processed_nas)
 {
-    return m_Impl->GetOrphanAnnotRecords(GetDataSource(), idh, sel);
+    return m_Impl->GetOrphanAnnotRecords(GetDataSource(), idh, sel, processed_nas);
 }
 
 
@@ -316,6 +317,12 @@ CSNPDataLoader::GetBlobById(const TBlobId& blob_id)
 {
     return m_Impl->GetBlobById(GetDataSource(),
                                dynamic_cast<const CSNPBlobId&>(*blob_id));
+}
+
+
+CObjectManager::TPriority CSNPDataLoader::GetDefaultPriority(void) const
+{
+    return m_Impl->GetDefaultPriority();
 }
 
 

@@ -270,7 +270,8 @@ public:
                                          CDataLoader::EChoice choice);
     CDataLoader::TTSE_LockSet GetOrphanAnnotRecords(CDataSource* ds,
                                                     const CSeq_id_Handle& idh,
-                                                    const SAnnotSelector* sel);
+                                                    const SAnnotSelector* sel,
+                                                    CDataLoader::TProcessedNAs* processed_nas);
 
     CTSE_LoadLock GetBlobById(CDataSource* data_source,
                               const CSNPBlobId& blob_id);
@@ -279,6 +280,8 @@ public:
     void LoadChunk(const CSNPBlobId& blob_id,
                    CTSE_Chunk_Info& chunk);
 
+    CObjectManager::TPriority GetDefaultPriority(void) const;
+    
     typedef CSNPDataLoader::TAnnotNames TAnnotNames;
     TAnnotNames GetPossibleAnnotNames(void) const;
 

@@ -645,7 +645,8 @@ CSNPDataLoader_Impl::GetRecords(CDataSource* data_source,
 CDataLoader::TTSE_LockSet
 CSNPDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
                                            const CSeq_id_Handle& id,
-                                           const SAnnotSelector* sel)
+                                           const SAnnotSelector* sel,
+                                           CDataLoader::TProcessedNAs* processed_nas)
 {
     CDataLoader::TTSE_LockSet locks;
     // implicitly load NA accessions
@@ -670,6 +671,7 @@ CSNPDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
                 continue;
             }
             if ( CRef<CSNPFileInfo> info = GetFileInfo(acc) ) {
+                CDataLoader::SetProcessedNA(it->first, processed_nas);
                 if ( CRef<CSNPSeqInfo> seq = info->GetSeqInfo(id, filter_index) ) {
                     locks.insert(GetBlobById(ds, *seq->GetBlobId()));
                 }
@@ -711,6 +713,17 @@ void CSNPDataLoader_Impl::LoadChunk(const CSNPBlobId& blob_id,
                    "LoadChunk("<<blob_id<<", "<<chunk_info.GetChunkId()<<")"
                    " loaded in "<<sw.Elapsed());
     }
+}
+
+
+CObjectManager::TPriority CSNPDataLoader_Impl::GetDefaultPriority(void) const
+{
+    CObjectManager::TPriority priority = CObjectManager::kPriority_Replace;
+    if ( m_FixedFiles.empty() ) {
+        // implicit loading data loader has lower priority by default
+        priority += 1;
+    }
+    return priority;
 }
 
 
