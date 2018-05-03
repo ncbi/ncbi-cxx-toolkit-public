@@ -38,6 +38,7 @@ namespace wgsparse
 
 struct CMasterInfo;
 bool CreateMasterBioseqWithChecks(CMasterInfo& master_info);
+bool CheckCitArtPmidPrepub(const CPub_equiv& pub, bool inpress, bool check_pmid, string* iso_jta = nullptr);
 
 }
 

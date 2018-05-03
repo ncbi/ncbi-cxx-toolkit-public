@@ -41,6 +41,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/Seq_descr.hpp>
+#include <objects/biblio/Cit_sub.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -102,6 +103,11 @@ string ToString(const CSerialObject& obj);
 
 string::size_type GetLastSlashPos(const string& str);
 bool NeedToProcessId(const CSeq_id& id);
+
+bool IsCitSub(const CPubdesc& pub);
+const CCit_sub& GetCitSub(const CPubdesc& pub);
+CCit_sub& GetNonConstCitSub(CPubdesc& pub);
+
 
 CScope& GetScope();
 

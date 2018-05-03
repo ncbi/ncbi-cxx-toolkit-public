@@ -47,8 +47,8 @@
 #include <objects/seq/Seq_inst.hpp>
 
 
-#include "wgs_asn.hpp"
 #include "wgs_utils.hpp"
+#include "wgs_asn.hpp"
 #include "wgs_params.hpp"
 
 

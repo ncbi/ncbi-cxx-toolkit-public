@@ -426,4 +426,26 @@ bool NeedToProcessId(const CSeq_id& id)
     return id.IsGenbank() || id.IsDdbj() || id.IsEmbl() || id.IsOther() || id.IsTpd() || id.IsTpe() || id.IsTpg();
 }
 
+bool IsCitSub(const CPubdesc& pub)
+{
+    if (pub.IsSetPub() && pub.GetPub().IsSet() && !pub.GetPub().Get().empty()) {
+
+        return pub.GetPub().Get().front()->IsSub();
+    }
+
+    return false;
+}
+
+const CCit_sub& GetCitSub(const CPubdesc& pub)
+{
+    _ASSERT(pub.IsSetPub() && pub.GetPub().IsSet() && !pub.GetPub().Get().empty() && pub.GetPub().Get().front()->IsSub());
+    return pub.GetPub().Get().front()->GetSub();
+}
+
+CCit_sub& GetNonConstCitSub(CPubdesc& pub)
+{
+    _ASSERT(pub.IsSetPub() && pub.GetPub().IsSet() && !pub.GetPub().Get().empty() && pub.GetPub().Get().front()->IsSub());
+    return pub.SetPub().Set().front()->SetSub();
+}
+
 }

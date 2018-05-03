@@ -1064,7 +1064,7 @@ static void AddPub(CBioseq& bioseq, const CPub_equiv& pub)
     bioseq.SetDescr().Set().push_back(descr);
 }
 
-static bool CheckCitArtPmidPrepub(const CPub_equiv& pub, bool inpress, bool check_pmid, string* iso_jta = nullptr)
+bool CheckCitArtPmidPrepub(const CPub_equiv& pub, bool inpress, bool check_pmid, string* iso_jta)
 {
     if (!pub.IsSet()) {
         return false;
@@ -1252,8 +1252,8 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
     }
 
     if (GetParams().GetSource() != eNCBI) {
-        info.m_update_date_present = CreateDateDescr(*bioseq, info.m_update_date, info.m_update_date_issues, true);
-        info.m_creation_date_present = CreateDateDescr(*bioseq, info.m_creation_date, info.m_creation_date_issues, false);
+        info.m_update_date_present = CreateDateDescr(*bioseq, *info.m_update_date, info.m_update_date_issues, true);
+        info.m_creation_date_present = CreateDateDescr(*bioseq, *info.m_creation_date, info.m_creation_date_issues, false);
     }
 
     if (info.m_num_of_entries) {
@@ -1333,10 +1333,144 @@ static bool IsDatePresent(const CSeq_entry& entry, CSeqdesc::E_Choice choice)
     return false;
 }
 
-static bool CheckCitSubsInBioseqSet(CMasterInfo& master_info)
+static void ReportMissingOrDiffCitSub(const CSeq_entry& entry, bool missing)
 {
-    // TODO
-    return true;
+    string label;
+    entry.GetLabel(&label, CSeq_entry::eBoth);
+
+    if (label.empty()) {
+        label = "Unknown";
+    }
+
+    if (missing) {
+        ERR_POST_EX(0, 0, Error << "Required Cit-sub is missing from the record with id \"" << label << "\".");
+    }
+    else {
+        ERR_POST_EX(0, 0, Error << "Different Cit-subs encountered amongst the data. First appearance is in record with id \"" << label << "\".");
+    }
+}
+
+static bool EqualNoDate(CCit_sub& a, CCit_sub& b)
+{
+    CRef<CDate> date_a,
+                date_b;
+
+    if (a.IsSetDate()) {
+        date_a.Reset(new CDate);
+        date_a->Assign(a.GetDate());
+        a.ResetDate();
+    }
+
+    if (b.IsSetDate()) {
+        date_b.Reset(new CDate);
+        date_b->Assign(b.GetDate());
+        b.ResetDate();
+    }
+
+    bool ret = a.Equals(b);
+
+    if (date_a.NotEmpty()) {
+        a.SetDate().Assign(*date_a);
+    }
+    if (date_b.NotEmpty()) {
+        b.SetDate().Assign(*date_b);
+    }
+
+    return ret;
+}
+
+static bool CheckCitSubsInBioseqSet(CCitSubInfo& cit_sub_info, CSeq_submit& submit)
+{
+    _ASSERT(submit.IsEntrys() && "Should be entries");
+
+    bool ret = true;
+
+    CCit_sub* first_cit_sub = nullptr;
+
+    for (auto entry : submit.GetData().GetEntrys()) {
+
+        CCit_sub* cit_sub = nullptr;
+
+        const CSeq_descr* descrs = nullptr;
+        if (GetDescr(*entry, descrs)) {
+
+            if (descrs && descrs->IsSet()) {
+
+                for (auto descr : descrs->Get()) {
+
+                    if (descr->IsPub() && IsCitSub(descr->GetPub())) {
+
+                        cit_sub = &GetNonConstCitSub(descr->SetPub());
+                        if (GetParams().IsSetSubmissionDate()) {
+                            cit_sub->SetDate().SetStd().Assign(GetParams().GetSubmissionDate());
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        else {
+            ret = false;
+            break;
+        }
+
+        if (cit_sub == nullptr) {
+
+            ReportMissingOrDiffCitSub(*entry, true);
+            ret = false;
+            break;
+        }
+
+        if (GetParams().GetSource() == eEMBL || GetParams().GetSource() == eDDBJ) {
+            
+            if (cit_sub_info.m_cit_sub.NotEmpty()) {
+
+                if (!EqualNoDate(*cit_sub_info.m_cit_sub, *cit_sub)) {
+                    ReportMissingOrDiffCitSub(*entry, false);
+                    ret = false;
+                    break;
+                }
+
+                if (cit_sub->IsSetDate()) {
+
+                    string date_str = ToString(cit_sub->GetDate());
+
+                    bool found = false;
+                    for (auto& date_info : cit_sub_info.m_dates) {
+                        if (date_info.first == date_str) {
+                            ++date_info.second.second;
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found) {
+                        cit_sub_info.AddDate(cit_sub->GetDate());
+                    }
+                }
+            }
+            else {
+                cit_sub_info.m_cit_sub.Reset(new CCit_sub);
+                cit_sub_info.m_cit_sub->Assign(*cit_sub);
+                cit_sub_info.AddDate(cit_sub->GetDate());
+            }
+        }
+        else {
+
+            if (first_cit_sub) {
+                if (!EqualNoDate(*first_cit_sub, *cit_sub)) {
+                    ReportMissingOrDiffCitSub(*entry, false);
+                    ret = false;
+                    break;
+                }
+            }
+            else {
+                first_cit_sub = cit_sub;
+            }
+        }
+    }
+
+    return ret;
 }
 
 struct CEntryOrderInfo
@@ -1412,6 +1546,11 @@ static void BuildSortOrderMap(const list<CEntryOrderInfo>& seq_order, map<string
     }
 }
 
+static bool IsSubmitBlockSet(const CSeq_submit& seq_submit)
+{
+    return seq_submit.IsSetSub() && seq_submit.GetSub().IsSetContact() && seq_submit.GetSub().GetContact().IsSetContact();
+}
+
 bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 {
     const list<string>& files = GetParams().GetInputFiles();
@@ -1465,12 +1604,12 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                 // TODO
             }
 
-            if (!seq_submit->IsSetSub()) {
+            if (!IsSubmitBlockSet(*seq_submit)) {
                 if (input_type == eSeqSubmit) {
                     ERR_POST_EX(0, 0, "Submission \"" << file << "\" is missing Submit-block.");
                 }
                 else if (same_submit) {
-                    same_submit = CheckCitSubsInBioseqSet(master_info);
+                    same_submit = CheckCitSubsInBioseqSet(master_info.m_cit_sub_info, *seq_submit);
                 }
             }
             else if (input_type != eSeqSubmit || GetParams().GetSource() == eNCBI) {
@@ -1511,105 +1650,105 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                         same_submit = SubmissionDiffers(file, same_submit);
                     }
                 }
+            }
 
-                if (!seq_submit->IsSetData()) {
-                    ERR_POST_EX(0, 0, "Failed to read Seq-entry from file \"" << file << "\". Cannot proceed.");
-                    break;
+            if (!seq_submit->IsSetData()) {
+                ERR_POST_EX(0, 0, "Failed to read Seq-entry from file \"" << file << "\". Cannot proceed.");
+                break;
+            }
+
+            for (auto entry : seq_submit->GetData().GetEntrys()) {
+
+                if (NeedToGetAccessionPrefix()) {
+                    // TODO: should eventually call SetScaffoldPrefix
                 }
 
-                for (auto entry : seq_submit->GetData().GetEntrys()) {
-
-                    if (NeedToGetAccessionPrefix()) {
-                        // TODO: should eventually call SetScaffoldPrefix
+                if (GetParams().GetSource() == eNCBI) {
+                    if (!master_info.m_update_date_present) {
+                        master_info.m_update_date_present = IsDatePresent(*entry, CSeqdesc::e_Update_date);
                     }
-
-                    if (GetParams().GetSource() == eNCBI) {
-                        if (!master_info.m_update_date_present) {
-                            master_info.m_update_date_present = IsDatePresent(*entry, CSeqdesc::e_Update_date);
-                        }
-                        if (!master_info.m_creation_date_present) {
-                            master_info.m_creation_date_present = IsDatePresent(*entry, CSeqdesc::e_Create_date);
-                        }
+                    if (!master_info.m_creation_date_present) {
+                        master_info.m_creation_date_present = IsDatePresent(*entry, CSeqdesc::e_Create_date);
                     }
-
-                    CSeqEntryInfo info(master_info.m_keywords_set, master_info.m_keywords);
-                    if (!CheckSeqEntry(*entry, file, info, common_info)) {
-                        master_info.m_reject = true;
-                    }
-                    else if (GetParams().IsTsa() && GetParams().GetFixTech() == eNoFix && info.m_biomol != CMolInfo::eBiomol_transcribed_RNA) {
-
-                        string rna;
-                        switch (info.m_biomol) {
-                            case CMolInfo::eBiomol_mRNA:
-                                rna = "mRNA";
-                                break;
-                            case CMolInfo::eBiomol_rRNA:
-                                rna = "rRNA";
-                                break;
-                            default:
-                                rna = "ncRNA";
-                        }
-
-                        ERR_POST_EX(0, 0, Warning << "Unusual biomol value \"" << rna << "\" has been used for this TSA project, instead of \"transcribed_RNA\".");
-                    }
-
-                    master_info.m_has_targeted_keyword = master_info.m_has_targeted_keyword || info.m_has_targeted_keyword;
-                    master_info.m_has_gmi_keyword = master_info.m_has_gmi_keyword || info.m_has_gmi_keyword;
-                    master_info.m_has_gb_block = master_info.m_has_gb_block || info.m_has_gb_block;
-                    master_info.m_num_of_prot_seq += info.m_num_of_prot_seq;
-
-                    if (!GetParams().IsUpdateScaffoldsMode()) {
-
-                        if (!GetParams().IsKeepRefs()) {
-
-                            master_info.m_num_of_pubs = max(CheckPubs(*entry, file, master_info.m_common_pubs, master_info.m_reject), master_info.m_num_of_pubs);
-                            CheckComments(*entry, ProcessComment, master_info.m_common_comments_not_set, master_info.m_common_comments);
-                        }
-
-                        CheckComments(*entry, ProcessStructuredComment, master_info.m_common_structured_comments_not_set, master_info.m_common_structured_comments);
-                    }
-
-                    if (!CheckBioSource(*entry, master_info, file)) {
-                        master_info.m_reject = true;
-                    }
-
-                    if (master_info.m_dblink_state != eDblinkAllProblems) {
-                        CheckDblink(*entry, master_info, file);
-                    }
-
-
-                    if (!master_info.m_has_genome_project_id) {
-                        master_info.m_has_genome_project_id = CheckGPID(*entry);
-                    }
-
-                    CollectOrgRefs(*entry, master_info.m_org_refs);
-
-                    if (GetParams().GetSource() != eNCBI) {
-                        if (master_info.m_update_date_issues == eDateNoIssues) {
-                            master_info.m_update_date_issues = CheckDates(*entry, CSeqdesc::e_Update_date, master_info.m_update_date);
-                            ReportDateProblem(master_info.m_update_date_issues, "Update", true);
-                        }
-
-                        if (master_info.m_creation_date_issues == eDateNoIssues) {
-                            master_info.m_creation_date_issues = CheckDates(*entry, CSeqdesc::e_Create_date, master_info.m_creation_date);
-                            ReportDateProblem(master_info.m_creation_date_issues, "Create", GetParams().GetSource() != eEMBL);
-                        }
-                    }
-
-                    ++master_info.m_num_of_entries;
-
-                    if (info.m_seqid_type == CSeq_id::e_Other) {
-                        // TODO
-                    }
-
-                    AddOrderInfo(*entry, seq_order, cur_file_num);
-
-                    if (GetParams().IsUpdateScaffoldsMode()) {
-                        // TODO
-                    }
-
-                    master_info.m_object_ids.splice(master_info.m_object_ids.end(), info.m_object_ids);
                 }
+
+                CSeqEntryInfo info(master_info.m_keywords_set, master_info.m_keywords);
+                if (!CheckSeqEntry(*entry, file, info, common_info)) {
+                    master_info.m_reject = true;
+                }
+                else if (GetParams().IsTsa() && GetParams().GetFixTech() == eNoFix && info.m_biomol != CMolInfo::eBiomol_transcribed_RNA) {
+
+                    string rna;
+                    switch (info.m_biomol) {
+                        case CMolInfo::eBiomol_mRNA:
+                            rna = "mRNA";
+                            break;
+                        case CMolInfo::eBiomol_rRNA:
+                            rna = "rRNA";
+                            break;
+                        default:
+                            rna = "ncRNA";
+                    }
+
+                    ERR_POST_EX(0, 0, Warning << "Unusual biomol value \"" << rna << "\" has been used for this TSA project, instead of \"transcribed_RNA\".");
+                }
+
+                master_info.m_has_targeted_keyword = master_info.m_has_targeted_keyword || info.m_has_targeted_keyword;
+                master_info.m_has_gmi_keyword = master_info.m_has_gmi_keyword || info.m_has_gmi_keyword;
+                master_info.m_has_gb_block = master_info.m_has_gb_block || info.m_has_gb_block;
+                master_info.m_num_of_prot_seq += info.m_num_of_prot_seq;
+
+                if (!GetParams().IsUpdateScaffoldsMode()) {
+
+                    if (!GetParams().IsKeepRefs()) {
+
+                        master_info.m_num_of_pubs = max(CheckPubs(*entry, file, master_info.m_common_pubs, master_info.m_reject), master_info.m_num_of_pubs);
+                        CheckComments(*entry, ProcessComment, master_info.m_common_comments_not_set, master_info.m_common_comments);
+                    }
+
+                    CheckComments(*entry, ProcessStructuredComment, master_info.m_common_structured_comments_not_set, master_info.m_common_structured_comments);
+                }
+
+                if (!CheckBioSource(*entry, master_info, file)) {
+                    master_info.m_reject = true;
+                }
+
+                if (master_info.m_dblink_state != eDblinkAllProblems) {
+                    CheckDblink(*entry, master_info, file);
+                }
+
+
+                if (!master_info.m_has_genome_project_id) {
+                    master_info.m_has_genome_project_id = CheckGPID(*entry);
+                }
+
+                CollectOrgRefs(*entry, master_info.m_org_refs);
+
+                if (GetParams().GetSource() != eNCBI) {
+                    if (master_info.m_update_date_issues == eDateNoIssues) {
+                        master_info.m_update_date_issues = CheckDates(*entry, CSeqdesc::e_Update_date, *master_info.m_update_date);
+                        ReportDateProblem(master_info.m_update_date_issues, "Update", true);
+                    }
+
+                    if (master_info.m_creation_date_issues == eDateNoIssues) {
+                        master_info.m_creation_date_issues = CheckDates(*entry, CSeqdesc::e_Create_date, *master_info.m_creation_date);
+                        ReportDateProblem(master_info.m_creation_date_issues, "Create", GetParams().GetSource() != eDDBJ);
+                    }
+                }
+
+                ++master_info.m_num_of_entries;
+
+                if (info.m_seqid_type == CSeq_id::e_Other) {
+                    // TODO
+                }
+
+                AddOrderInfo(*entry, seq_order, cur_file_num);
+
+                if (GetParams().IsUpdateScaffoldsMode()) {
+                    // TODO
+                }
+
+                master_info.m_object_ids.splice(master_info.m_object_ids.end(), info.m_object_ids);
             }
 
             if (!ret) {
@@ -1637,7 +1776,11 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 
     master_info.m_same_org = CheckSameOrgRefs(master_info.m_org_refs);
 
-    if (same_submit /*&&TODO*/) {
+    if (same_submit && !master_info.m_cit_sub_info.m_dates.empty()) {
+
+        if (master_info.m_cit_sub_info.m_dates.size() > 1) {
+            ERR_POST_EX(0, 0, Warning << "Encountered Cit-subs with date differences only. Using the most frequent/earliest one.");
+        }
         //TODO
     }
 

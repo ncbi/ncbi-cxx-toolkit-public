@@ -567,7 +567,7 @@ static bool IsDateRecent(const CCit_sub& cit_sub, const CDate& date)
     return false;
 }
 
-static void GetCurrentMasterPubsInfo(const CSeq_entry& entry, CDate& cit_sub_date, CRef<CPub_equiv>& cit_sub, list<CRef<CPub_equiv>>& cit_arts)
+static void GetCurrentMasterPubsInfo(const CSeq_entry& entry, CRef<CDate>& cit_sub_date, CRef<CPub_equiv>& cit_sub, list<CRef<CPub_equiv>>& cit_arts)
 {
     if (entry.IsSeq() && entry.GetSeq().IsNa()) {
 
@@ -584,13 +584,13 @@ static void GetCurrentMasterPubsInfo(const CSeq_entry& entry, CDate& cit_sub_dat
                         _ASSERT(cit->IsSub() && "Should contain a valid CCit_sub object");
                         const CCit_sub& cur_cit_sub = cit->GetSub();
 
-                        if (cit_sub.Empty() || IsDateRecent(cur_cit_sub, cit_sub_date)) {
+                        if (cit_sub.Empty() || IsDateRecent(cur_cit_sub, *cit_sub_date)) {
                             cit_sub.Reset(new CPub_equiv);
                             cit_sub->Assign(descr->GetPub().GetPub());
 
-                            cit_sub_date.Reset();
+                            cit_sub_date.Reset(new CDate);
                             if (cur_cit_sub.IsSetDate()) {
-                                cit_sub_date.Assign(cur_cit_sub.GetDate());
+                                cit_sub_date->Assign(cur_cit_sub.GetDate());
                             }
                         }
                     }
@@ -748,7 +748,7 @@ static void FixMasterDates(CMasterInfo& info, bool entry_from_id)
     }
     else if (entry_from_id && info.m_creation_date_issues == eDateNoIssues && info.m_creation_date_present) {
         creation_date.Reset(new CSeqdesc);
-        creation_date->SetCreate_date(info.m_creation_date);
+        creation_date->SetCreate_date(*info.m_creation_date);
         info.m_id_master_bioseq->SetDescr().Set().push_back(creation_date);
     }
 
@@ -760,7 +760,7 @@ static void FixMasterDates(CMasterInfo& info, bool entry_from_id)
 
     if (update_date.Empty()) {
         update_date.Reset(new CSeqdesc);
-        update_date->SetUpdate_date(info.m_update_date);
+        update_date->SetUpdate_date(*info.m_update_date);
         info.m_id_master_bioseq->SetDescr().Set().push_back(update_date);
     }
     else {
@@ -772,10 +772,88 @@ static void FixMasterDates(CMasterInfo& info, bool entry_from_id)
         }
 
         if (fix_update_date) {
-            update_date->SetUpdate_date(info.m_update_date);
+            update_date->SetUpdate_date(*info.m_update_date);
         }
     }
 
+}
+
+typedef bool(*TDescrPredicat)(const CSeqdesc&);
+
+static void RemoveDescriptors(CSeq_entry& entry, TDescrPredicat to_remove)
+{
+    CSeq_descr* descrs = nullptr;
+    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
+
+        auto& descr_cont = descrs->Set();
+        for (auto& descr = descr_cont.begin(); descr != descr_cont.end();) {
+            if (to_remove(**descr)) {
+                descr = descr_cont.erase(descr);
+            }
+            else {
+                ++descr;
+            }
+        }
+    }
+}
+
+static bool HasOneCitArt(const CPubdesc& pub)
+{
+    size_t num_of_articles = 0;
+    if (pub.IsSetPub() && pub.GetPub().IsSet()) {
+
+        auto& pubs = pub.GetPub().Get();
+        num_of_articles = count_if(pubs.begin(), pubs.end(), [](const CRef<CPub>& cur_pub){ return cur_pub->IsArticle(); });
+    }
+
+    return num_of_articles == 1;
+}
+
+static CSeqdesc* CheckCitArtToReplace(CSeq_entry& entry, string& iso_jta, bool inpress)
+{
+    CSeqdesc* ret = nullptr;
+
+    CSeq_descr* descrs = nullptr;
+    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
+
+        for (auto& descr : descrs->Set()) {
+            if (descr->IsPub()) {
+
+                if (HasOneCitArt(descr->GetPub())) {
+                    if (ret) {
+                        ret = nullptr;
+                        break;
+                    }
+
+                    ret = descr;
+                }
+            }
+        }
+
+        if (ret && !CheckCitArtPmidPrepub(ret->GetPub().GetPub(), inpress, inpress, &iso_jta)) {
+            ret = nullptr;
+        }
+    }
+    return ret;
+}
+
+static void UpdateCitArt(CSeq_entry& id_entry, CSeq_entry& master_entry)
+{
+    string old_iso_jta;
+    CSeqdesc* old_cit_art_descr = CheckCitArtToReplace(id_entry, old_iso_jta, true);
+    if (old_cit_art_descr == nullptr) {
+        return;
+    }
+
+    string new_iso_jta;
+    CSeqdesc* new_cit_art_descr = CheckCitArtToReplace(master_entry, new_iso_jta, false);
+    if (new_cit_art_descr == nullptr) {
+        return;
+    }
+
+    if (!old_iso_jta.empty() && old_iso_jta == new_iso_jta) {
+        old_cit_art_descr->SetPub().Assign(new_cit_art_descr->GetPub());
+    }
 }
 
 static const int ERROR_RET = 1;
@@ -857,6 +935,25 @@ int CWGSParseApp::Run(void)
             }
 
             return ERROR_RET;
+        }
+
+        if (master_info.m_id_master_bioseq.NotEmpty()) {
+
+            if (GetParams().GetUpdateMode() == eUpdateAssembly || GetParams().GetUpdateMode() == eUpdateFull) {
+                RemoveDescriptors(*master_info.m_id_master_bioseq, [](const CSeqdesc& descr) { return IsUserObjectOfType(descr, "StructuredComment"); });
+            }
+
+            if (GetParams().GetSource() != eNCBI &&
+                (GetParams().GetUpdateMode() == eUpdateAssembly || GetParams().GetUpdateMode() == eUpdateFull ||
+                 GetParams().GetUpdateMode() == eUpdateExtraContigs || GetParams().GetUpdateMode() == eUpdatePartial)) {
+                RemoveDescriptors(*master_info.m_id_master_bioseq, [](const CSeqdesc& descr) { return descr.IsComment(); });
+            }
+        }
+
+        if (GetParams().GetSource() != eNCBI &&
+            (GetParams().GetUpdateMode() == eUpdateExtraContigs || GetParams().GetUpdateMode() == eUpdateFull)) {
+
+            UpdateCitArt(*master_info.m_id_master_bioseq, *master_info.m_master_bioseq);
         }
 
         // TODO ...

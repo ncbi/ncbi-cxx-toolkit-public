@@ -222,15 +222,34 @@ struct CCurrentMasterInfo
     size_t m_num_len; // length of the numeric part of an accession
 
     CRef<CPub_equiv> m_cit_sub;
-    CDate m_cit_sub_date;
+    CRef<CDate> m_cit_sub_date;
     list<CRef<CPub_equiv>> m_cit_arts;
 
     CCurrentMasterInfo() :
         m_version(0),
         m_first_contig(0),
         m_last_contig(0),
-        m_num_len(0)
+        m_num_len(0),
+        m_cit_sub_date(new CDate)
     {}
+};
+
+
+struct CCitSubInfo
+{
+    CRef<CCit_sub> m_cit_sub;
+    map<string, pair<CRef<CDate>, size_t>> m_dates;
+
+    void AddDate(const CDate& date)
+    {
+        string key = ToString(date);
+        auto& info = m_dates[key];
+        if (info.first.Empty()) {
+            info.first.Reset(new CDate);
+            info.first->Assign(date);
+        }
+        ++info.second;
+    }
 };
 
 struct CMasterInfo
@@ -262,8 +281,8 @@ struct CMasterInfo
     CRef<CUser_object> m_dblink;
     int m_dblink_state;
 
-    CDate m_update_date;
-    CDate m_creation_date;
+    CRef<CDate> m_update_date;
+    CRef<CDate> m_creation_date;
     bool m_update_date_present;
     EDateIssues m_update_date_issues;
     bool m_creation_date_present;
@@ -286,6 +305,8 @@ struct CMasterInfo
 
     CCurrentMasterInfo* m_current_master;
 
+    CCitSubInfo m_cit_sub_info;
+
     CMasterInfo() :
         m_num_of_pubs(0),
         m_common_comments_not_set(true),
@@ -299,6 +320,8 @@ struct CMasterInfo
         m_has_gb_block(false),
         m_gpid(false),
         m_dblink_state(eDblinkNoProblem),
+        m_update_date(new CDate),
+        m_creation_date(new CDate),
         m_update_date_present(false),
         m_update_date_issues(eDateNoIssues),
         m_creation_date_present(false),

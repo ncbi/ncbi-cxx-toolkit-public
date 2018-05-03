@@ -67,10 +67,10 @@
 #include <objtools/cleanup/cleanup.hpp>
 #include <objtools/edit/gaps_edit.hpp>
 
+#include "wgs_utils.hpp"
 #include "wgs_sub.hpp"
 #include "wgs_seqentryinfo.hpp"
 #include "wgs_params.hpp"
-#include "wgs_utils.hpp"
 #include "wgs_asn.hpp"
 #include "wgs_tax.hpp"
 #include "wgs_med.hpp"
@@ -129,16 +129,6 @@ private:
     const CPubdesc& m_pubdesc;
 };
 
-static bool IsCitSub(const CPubdesc& pub)
-{
-    if (pub.IsSetPub() && pub.GetPub().IsSet() && !pub.GetPub().Get().empty()) {
-
-        return pub.GetPub().Get().front()->IsSub();
-    }
-
-    return false;
-}
-
 static void RemovePubs(CSeq_entry& entry, const list<CPubDescriptionInfo>& common_pubs, const CDate_std* date)
 {
     if (common_pubs.empty()) {
@@ -158,7 +148,7 @@ static void RemovePubs(CSeq_entry& entry, const list<CPubDescriptionInfo>& commo
                 if (date || GetParams().GetSource() != eNCBI) {
 
                     if (IsCitSub((*cur_descr)->GetPub())) {
-                        cit_sub = &(*cur_descr)->SetPub().SetPub().Set().front()->SetSub();
+                        cit_sub = &GetNonConstCitSub((*cur_descr)->SetPub());
                         if (cit_sub->IsSetDate()) {
                             orig_date.Assign(cit_sub->GetDate());
                         }
