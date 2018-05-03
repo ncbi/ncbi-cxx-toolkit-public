@@ -57,6 +57,8 @@ public:
     explicit CVDBGraphDataLoader_Impl(const TVDBFiles& vdb_files);
     ~CVDBGraphDataLoader_Impl(void);
 
+    CObjectManager::TPriority GetDefaultPriority(void) const;
+    
     typedef vector<CAnnotName> TAnnotNames;
     TAnnotNames GetPossibleAnnotNames(void) const;
 
@@ -68,7 +70,8 @@ public:
                             CDataLoader::EChoice choice);
     TTSE_LockSet GetOrphanAnnotRecords(CDataSource* ds,
                                        const CSeq_id_Handle& idh,
-                                       const SAnnotSelector* sel);
+                                       const SAnnotSelector* sel,
+                                       CDataLoader::TProcessedNAs* processed_nas);
     void GetChunk(CTSE_Chunk_Info& chunk);
 
     CRef<CSeq_entry> LoadFullEntry(const CVDBGraphBlobId& blob_id);

@@ -272,6 +272,17 @@ string CVDBGraphDataLoader_Impl::SVDBFileInfo::GetMidZoomAnnotName(void) const
 }
 
 
+CObjectManager::TPriority CVDBGraphDataLoader_Impl::GetDefaultPriority(void) const
+{
+    CObjectManager::TPriority priority = CObjectManager::kPriority_Replace;
+    if ( m_FixedFileMap.empty() ) {
+        // implicit loading data loader has lower priority by default
+        priority += 1;
+    }
+    return priority;
+}
+
+
 CVDBGraphDataLoader_Impl::TAnnotNames
 CVDBGraphDataLoader_Impl::GetPossibleAnnotNames(void) const
 {
@@ -330,7 +341,7 @@ CVDBGraphDataLoader_Impl::GetRecords(CDataSource* ds,
 {
     if ( choice == CDataLoader::eOrphanAnnot ||
          choice == CDataLoader::eAll ) {
-        return GetOrphanAnnotRecords(ds, id, 0);
+        return GetOrphanAnnotRecords(ds, id, 0, 0);
     }
     return TTSE_LockSet();
 }
@@ -339,12 +350,14 @@ CVDBGraphDataLoader_Impl::GetRecords(CDataSource* ds,
 CDataLoader::TTSE_LockSet
 CVDBGraphDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
                                                 const CSeq_id_Handle& id,
-                                                const SAnnotSelector* sel)
+                                                const SAnnotSelector* sel,
+                                                CDataLoader::TProcessedNAs* processed_nas)
 {
     TTSE_LockSet locks;
     // explicitly specified files
     for ( auto& it : m_FixedFileMap ) {
-        if ( !sel || sel->IsIncludedNamedAnnotAccession(it.second->m_BaseAnnotName) ) {
+        if ( !sel || CDataLoader::IsRequestedNA(it.second->m_BaseAnnotName, sel) ) {
+            CDataLoader::SetProcessedNA(it.second->m_BaseAnnotName, processed_nas);
             if ( it.second->ContainsAnnotsFor(id) ) {
                 TBlobId blob_id(new CVDBGraphBlobId(it.second->m_VDBFile, id));
                 locks.insert(GetBlobById(ds, blob_id));
@@ -352,7 +365,7 @@ CVDBGraphDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
         }
     }
     // implicitly load NA accessions
-    if ( m_FixedFileMap.empty() && sel && sel->IsIncludedAnyNamedAnnotAccession() ) {
+    if ( m_FixedFileMap.empty() && CDataLoader::IsRequestedAnyNA(sel) ) {
         const SAnnotSelector::TNamedAnnotAccessions& accs =
             sel->GetNamedAnnotAccessions();
         if ( m_AutoFileMap.get_size_limit() < accs.size() ) {
@@ -367,14 +380,18 @@ CVDBGraphDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
             if ( 1 ) {
                 TBlobId blob_id(new CVDBGraphBlobId(it->first, id));
                 if ( CTSE_LoadLock lock = ds->GetTSE_LoadLockIfLoaded(blob_id) ) {
+                    CDataLoader::SetProcessedNA(it->first, processed_nas);
                     locks.insert(GetBlobById(ds, blob_id));
                     continue;
                 }
             }
             SVDBFileInfo* file = x_GetNAFileInfo(it->first);
-            if ( file && file->ContainsAnnotsFor(id) ) {
-                TBlobId blob_id(new CVDBGraphBlobId(file->m_VDBFile, id));
-                locks.insert(GetBlobById(ds, blob_id));
+            if ( file ) {
+                CDataLoader::SetProcessedNA(it->first, processed_nas);
+                if ( file->ContainsAnnotsFor(id) ) {
+                    TBlobId blob_id(new CVDBGraphBlobId(file->m_VDBFile, id));
+                    locks.insert(GetBlobById(ds, blob_id));
+                }
             }
         }
     }

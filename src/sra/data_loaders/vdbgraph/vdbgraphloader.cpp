@@ -193,6 +193,12 @@ CVDBGraphDataLoader::~CVDBGraphDataLoader(void)
 }
 
 
+CObjectManager::TPriority CVDBGraphDataLoader::GetDefaultPriority(void) const
+{
+    return m_Impl->GetDefaultPriority();
+}
+
+
 CVDBGraphDataLoader::TAnnotNames
 CVDBGraphDataLoader::GetPossibleAnnotNames(void) const
 {
@@ -228,10 +234,11 @@ CVDBGraphDataLoader::GetRecords(const CSeq_id_Handle& idh,
 
 
 CDataLoader::TTSE_LockSet
-CVDBGraphDataLoader::GetOrphanAnnotRecords(const CSeq_id_Handle& idh,
-                                           const SAnnotSelector* sel)
+CVDBGraphDataLoader::GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
+                                             const SAnnotSelector* sel,
+                                             TProcessedNAs* processed_nas)
 {
-    return m_Impl->GetOrphanAnnotRecords(GetDataSource(), idh, sel);
+    return m_Impl->GetOrphanAnnotRecords(GetDataSource(), idh, sel, processed_nas);
 }
 
 
