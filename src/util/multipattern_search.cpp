@@ -470,10 +470,10 @@ unique_ptr<CRegEx::CRegX> CRegEx::x_ParseAtom()  // single character or an expre
 void CRegEx::x_ParseSquare(set<char>& t)
 {
     unsigned char range = 0; // 0: initial; 1: valid begining; 2: dash; 3: valid ending;
-    unsigned char curr;
-    unsigned char prev;
-    size_t pos;
-    size_t prev_pos;
+    unsigned char curr = 0;
+    unsigned char prev = 0;
+    size_t pos = 0;
+    size_t prev_pos = 0;
 
     // Commented out Perl syntax: closing square bracket is treated as regular character if in the first position
     //if (m_Cur < m_Str.length() && m_Str[m_Cur] == ']') {
@@ -944,45 +944,47 @@ void CRegEx::CRegXAssert::Render(CRegExFSA& fsa, size_t from, size_t to) const
 {
     size_t x;
     switch (m_Assert) {
-    case eAssertBegin:    // ^
-        x = fsa.AddState(eTypeStart);
-        fsa.Short(from, x);
-        fsa.Short(x, to);
-        return;
-    case eAssertEnd:      // $
-        x = fsa.AddState(eTypePass | eTypeToStop);
-        DummyTrans(fsa, x, eTypeStop);
-        fsa.Short(from, x);
-        fsa.Short(x, to);
-        return;
-    case eAssertWord:     // \b
-        x = fsa.AddState(eTypeStart | eTypeNoWord | eTypeToWord);
-        DummyTrans(fsa, x, eTypeStop);
-        fsa.Short(from, x);
-        fsa.Short(x, to);
-        x = fsa.AddState(eTypeWord | eTypeToNoWord | eTypeToStop);
-        DummyTrans(fsa, x, eTypeStop);
-        fsa.Short(from, x);
-        fsa.Short(x, to);
-        return;
-    case eAssertWordNeg:  // \B
-        x = fsa.AddState(eTypeStart | eTypeNoWord | eTypeToNoWord | eTypeToStop);
-        DummyTrans(fsa, x, eTypeStop);
-        fsa.Short(from, x);
-        fsa.Short(x, to);
-        x = fsa.AddState(eTypeWord | eTypeToWord);
-        DummyTrans(fsa, x, eTypeStop);
-        fsa.Short(from, x);
-        fsa.Short(x, to);
-        return;
-    case eAssertLookAhead:
-        throw string("(?=...) - lookahead is not supported");
-    case eAssertLookAheadNeg:
-        throw string("(?!...) - lookahead is not supported");
-    case eAssertLookBack:
-        throw string("(?<=...) - lookback is not supported");
-    case eAssertLookBackNeg:
-        throw string("(?<!...) - lookback is not supported");
+        case eAssertBegin:    // ^
+            x = fsa.AddState(eTypeStart);
+            fsa.Short(from, x);
+            fsa.Short(x, to);
+            return;
+        case eAssertEnd:      // $
+            x = fsa.AddState(eTypePass | eTypeToStop);
+            DummyTrans(fsa, x, eTypeStop);
+            fsa.Short(from, x);
+            fsa.Short(x, to);
+            return;
+        case eAssertWord:     // \b
+            x = fsa.AddState(eTypeStart | eTypeNoWord | eTypeToWord);
+            DummyTrans(fsa, x, eTypeStop);
+            fsa.Short(from, x);
+            fsa.Short(x, to);
+            x = fsa.AddState(eTypeWord | eTypeToNoWord | eTypeToStop);
+            DummyTrans(fsa, x, eTypeStop);
+            fsa.Short(from, x);
+            fsa.Short(x, to);
+            return;
+        case eAssertWordNeg:  // \B
+            x = fsa.AddState(eTypeStart | eTypeNoWord | eTypeToNoWord | eTypeToStop);
+            DummyTrans(fsa, x, eTypeStop);
+            fsa.Short(from, x);
+            fsa.Short(x, to);
+            x = fsa.AddState(eTypeWord | eTypeToWord);
+            DummyTrans(fsa, x, eTypeStop);
+            fsa.Short(from, x);
+            fsa.Short(x, to);
+            return;
+        case eAssertLookAhead:
+            throw string("(?=...) - lookahead is not supported");
+        case eAssertLookAheadNeg:
+            throw string("(?!...) - lookahead is not supported");
+        case eAssertLookBack:
+            throw string("(?<=...) - lookback is not supported");
+        case eAssertLookBackNeg:
+            throw string("(?<!...) - lookback is not supported");
+        default:
+            return;
     }
 }
 
@@ -1370,7 +1372,7 @@ void CRegExFSA::GenerateSourceCode(ostream& out) const
             arrows[m_States[n]->m_Trans[m]] += char(m);   // it's ok for an std::string to have a null character inside!
         }
         size_t max_len = 0;
-        size_t other;
+        size_t other = 0;
         for (auto A = arrows.begin(); A != arrows.end(); ++A) {
             if (A->second.length() > max_len) {
                 other = A->first;
