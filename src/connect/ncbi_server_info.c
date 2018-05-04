@@ -354,7 +354,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
     while (*str  &&  isspace((unsigned char)(*str)))
         ++str;
     while (*str) {
-        if (str[1] == '='  &&  !isspace((unsigned char) str[2])) {
+        if (str[1] == '='  &&  str[2]  &&  !isspace((unsigned char) str[2])) {
             char*          e;
             int            n;
             double         d;
