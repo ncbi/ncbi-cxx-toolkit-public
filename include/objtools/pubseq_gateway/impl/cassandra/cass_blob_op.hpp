@@ -523,14 +523,17 @@ public:
     void GetBlobAsync(IdLogUtil::CAppOp &  op, unsigned int  op_timeout_ms,
                       int32_t  key, unsigned int  max_retries,
                       const DataChunkCB_t &  data_chunk_cb,
+                      const DataErrorCB_t & error_cb,
                       unique_ptr<CCassBlobWaiter> &  waiter);
     void InsertBlobAsync(IdLogUtil::CAppOp &  op, unsigned int  op_timeout_ms,
                          int32_t  key, unsigned int  max_retries,
                          CBlob *  blob_rslt, ECassTristate  is_new,
                          int64_t  LargeTreshold, int64_t  LargeChunkSz,
+                         const DataErrorCB_t & error_cb,
                          unique_ptr<CCassBlobWaiter> &  waiter);
     void DeleteBlobAsync(IdLogUtil::CAppOp &  op, unsigned int  op_timeout_ms,
                          int32_t  key, unsigned int  max_retries,
+                         const DataErrorCB_t & error_cb,
                          unique_ptr<CCassBlobWaiter> &  waiter);
 
     void UpdateBlobFlags(IdLogUtil::CAppOp &  op, unsigned int  op_timeout_ms,

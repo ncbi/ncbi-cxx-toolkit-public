@@ -8,4 +8,4 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(CASSANDRA_INCLUDE)
 
 REQUIRES = CASSANDRA MT Linux
 
-WATCHERS = satskyse dmitrie1
+WATCHERS = satskyse dmitrie1 saprykin

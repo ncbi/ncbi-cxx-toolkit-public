@@ -1142,11 +1142,12 @@ void CCassBlobOp::GetBlob(CAppOp &  op, unsigned int  op_timeout_ms,
 void CCassBlobOp::GetBlobAsync(CAppOp &  op, unsigned int  op_timeout_ms,
                                int32_t  key, unsigned int  max_retries,
                                const DataChunkCB_t &  data_chunk_cb,
+                               const DataErrorCB_t & error_cb,
                                unique_ptr<CCassBlobWaiter> &  Waiter)
 {
     Waiter.reset(new CCassBlobLoader(&op, op_timeout_ms, m_Conn, m_Keyspace,
                                      key, true, max_retries, nullptr,
-                                     data_chunk_cb, nullptr));
+                                     data_chunk_cb, error_cb));
 }
 
 
@@ -1154,22 +1155,24 @@ void CCassBlobOp::InsertBlobAsync(CAppOp &  op, unsigned int  op_timeout_ms,
                                   int32_t  key, unsigned int max_retries,
                                   CBlob *  blob_rslt, ECassTristate  is_new,
                                   int64_t  LargeTreshold, int64_t  LargeChunkSz,
+                                  const DataErrorCB_t & error_cb,
                                   unique_ptr<CCassBlobWaiter> &  Waiter)
 {
     Waiter.reset(new CCassBlobInserter(&op, op_timeout_ms, m_Conn, m_Keyspace,
                                        key, blob_rslt, is_new, LargeTreshold,
                                        LargeChunkSz, true, max_retries,
-                                       nullptr, nullptr));
+                                       nullptr, error_cb));
 }
 
 
 void CCassBlobOp::DeleteBlobAsync(CAppOp &  op, unsigned int  op_timeout_ms,
                                   int32_t  key, unsigned int  max_retries,
+                                  const DataErrorCB_t & error_cb,
                                   unique_ptr<CCassBlobWaiter> &  Waiter)
 {
     Waiter.reset(new CCassBlobDeleter(&op, op_timeout_ms, m_Conn, m_Keyspace,
                                       key, true, max_retries,
-                                      nullptr, nullptr));
+                                      nullptr, error_cb));
 }
 
 
