@@ -86,7 +86,6 @@ protected:
 
 CDiscRepApp::CDiscRepApp(void) : m_SuspectProductNames(false), m_Ext(false), m_Fat(false), m_Big(false), m_AutoFix(false), m_Xml(false), m_Print(false)
 {
-    SetVersionByBuild(1);
 }
 
 

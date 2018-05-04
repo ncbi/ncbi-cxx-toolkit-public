@@ -190,7 +190,7 @@ bool CDiscrepancyContext::IsUnculturedNonOrganelleName(const string& taxname)
 
 bool CDiscrepancyContext::HasLineage(const CBioSource& biosrc, const string& def_lineage, const string& type)
 {
-    return NStr::FindNoCase(def_lineage, type) != string::npos || def_lineage.empty() && biosrc.IsSetLineage() && NStr::FindNoCase(biosrc.GetLineage(), type) != string::npos;
+    return NStr::FindNoCase(def_lineage, type) != string::npos || (def_lineage.empty() && biosrc.IsSetLineage() && NStr::FindNoCase(biosrc.GetLineage(), type) != string::npos);
 }
 
 
