@@ -90,17 +90,17 @@ void CWGSParseApp::Init(void)
     arg_desc->AddKey("a", "Accession", "Prefix+version for accessions (4+2 or 7+2). Like \"AAAA55\" or \"NZ_AAAA55\".", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("d", "OutputDir", "Top-level directory for output ASN.1 and master Bioseq. Will contain the same subdirectories structure as the input one.", CArgDescriptions::eString);
-    
+
     arg_desc->AddDefaultKey("t", "TaxLookup", "Perform taxonomy lookup.", CArgDescriptions::eBoolean, "T");
     arg_desc->AddDefaultKey("m", "MedlineLookup", "Perform medline lookup.", CArgDescriptions::eBoolean, "T");
 
     arg_desc->AddDefaultKey("w", "Override", "Override all existing output files.", CArgDescriptions::eBoolean, "F");
-    arg_desc->AddOptionalKey("s", "Date", "Submission date in format DD-MMM-YYYY (like 04-JUL-1994). Will replace supplied dates in Cit-subs.", CArgDescriptions::eString); 
+    arg_desc->AddOptionalKey("s", "Date", "Submission date in format DD-MMM-YYYY (like 04-JUL-1994). Will replace supplied dates in Cit-subs.", CArgDescriptions::eString);
 
     arg_desc->AddDefaultKey("y", "SubmissionType", "Type of input submissions. Possible values: \"Seq-submit\", \"Bioseq-set\" and \"Seq-entry\".", CArgDescriptions::eString, "Seq-submit");
     arg_desc->AddDefaultKey("c", "AccAssigned", "All accessions are already assigned.", CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("g", "NoGeneralIds", "Ignore general ids.", CArgDescriptions::eBoolean, "F");
-    
+
     arg_desc->AddDefaultKey("q", "GapThreshold", "Gap threshold for converting raw na sequences to deltas.", CArgDescriptions::eInteger, "0");
     arg_desc->AddDefaultKey("r", "DBNamesReplace", "Replace all dbnames with standard ones WGS:XXXX.", CArgDescriptions::eBoolean, "T");
 
@@ -118,11 +118,11 @@ void CWGSParseApp::Init(void)
 
     arg_desc->AddDefaultKey("j", "ScaffoldType", "Type of scaffolds to parse:\n        0 - regular genomic scaffolds;\n        1 - regular chromosomal scaffolds;\n        2 - GenCol genomic scaffolds;\n        3 - TPA genomic scaffolds;\n        4 - TPA chromosomal scaffolds.", CArgDescriptions::eInteger, "0");
 
-        //{ "OBSOLETE: Genome-Project identifier for this WGS project.\n      Multiple GPID must be separated by commas, no blanks allowed.\n   ",
-        //NULL, NULL, NULL, TRUE, 'G', ARG_STRING, 0.0, 0, NULL },
+    //{ "OBSOLETE: Genome-Project identifier for this WGS project.\n      Multiple GPID must be separated by commas, no blanks allowed.\n   ",
+    //NULL, NULL, NULL, TRUE, 'G', ARG_STRING, 0.0, 0, NULL },
 
-        //{ "OBSOLETE: Allow to have a mixture of far-pointer\n      accessions for scaffolds.\n   ",
-        //"F", NULL, NULL, TRUE, 'M', ARG_BOOLEAN, 0.0, 0, NULL },
+    //{ "OBSOLETE: Allow to have a mixture of far-pointer\n      accessions for scaffolds.\n   ",
+    //"F", NULL, NULL, TRUE, 'M', ARG_BOOLEAN, 0.0, 0, NULL },
 
     arg_desc->AddDefaultKey("P", "NonConsortiumRemove", "Remove the non-consortium author names from the Cit-art pubs, provided at least one consortium author is present.", CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("S", "SecAcc", "Allow secondary accessions.", CArgDescriptions::eBoolean, "F");
@@ -220,7 +220,7 @@ static void RemoveDupPubs(CSeq_descr& descrs)
                     }
                 }
             }
-            
+
             if (increment) {
                 ++descr;
             }
@@ -319,7 +319,7 @@ static void PrintOrderList(const list<CIdInfo>& infos, CNcbiOfstream& out)
     for (auto info : infos) {
         accession_to_file[info.m_accession] = info.m_file;
     }
-    
+
     set<string> written_files;
     for (auto cur_file_info : accession_to_file) {
 
@@ -560,7 +560,7 @@ static const CPub* GetPubOfType(const CSeqdesc& descr, CPub::E_Choice type)
 static bool IsDateRecent(const CCit_sub& cit_sub, const CDate& date)
 {
     if (cit_sub.IsSetDate()) {
-        
+
         return date.Which() != CDate::e_not_set ? cit_sub.GetDate().Compare(date) == CDate::eCompare_after : true;
     }
 
@@ -856,6 +856,209 @@ static void UpdateCitArt(CSeq_entry& id_entry, CSeq_entry& master_entry)
     }
 }
 
+static void GetUserObjTypesAndLastAccession(vector<string>& user_obj_tags, string& last_accession)
+{
+    if (GetParams().IsTls()) {
+        user_obj_tags.push_back("TLSProjects");
+        last_accession = "TLS_accession_last";
+    }
+    else if (GetParams().IsTsa()) {
+        user_obj_tags.push_back("TSA-RNA-List");
+        user_obj_tags.push_back("TSA-mRNA-List");
+        last_accession = "TSA_accession_last";
+    }
+    else {
+        user_obj_tags.push_back("WGSProjects");
+        last_accession = "WGS_accession_last";
+    }
+}
+
+static bool UpdateMasterForExtra(CSeq_entry& id_entry, CSeq_entry& master_entry)
+{
+    if (!id_entry.IsSeq() || !master_entry.IsSeq() || !id_entry.GetSeq().IsSetInst() || !master_entry.GetSeq().IsSetInst()) {
+        return true;
+    }
+
+    CBioseq& old_bioseq = id_entry.SetSeq();
+    CBioseq& new_bioseq = master_entry.SetSeq();
+
+    TSeqPos old_length = old_bioseq.GetInst().GetLength(),
+            new_length = new_bioseq.GetInst().GetLength();
+
+    if (GetParams().GetUpdateMode() == eUpdateExtraContigs) {
+        old_bioseq.SetInst().SetLength(old_length + new_length);
+    }
+    else if (new_length > old_length) {
+
+        if (GetParams().GetSource() == eNCBI && !GetParams().IsDblinkOverride()) {
+
+            ERR_POST_EX(0, 0, Critical << "Accession number range for the contigs within an assembly-version has increased from " << old_length << " to " << new_length << ".");
+            return false;
+        }
+
+        ERR_POST_EX(0, 0, Warning << "Accession number range for the contigs within an assembly-version has increased from " << old_length << " to " << new_length << ".");
+        old_bioseq.SetInst().SetLength(new_length);
+    }
+
+    vector<string> user_obj_types;
+    string last_accession;
+    GetUserObjTypesAndLastAccession(user_obj_types, last_accession);
+
+    string accession;
+    if (new_bioseq.IsSetDescr() && new_bioseq.GetDescr().IsSet()) {
+
+        for (auto& descr : new_bioseq.GetDescr().Get()) {
+
+            if (descr->IsUser()) {
+
+                bool found = false;
+                for (auto type : user_obj_types) {
+                    if (IsUserObjectOfType(*descr, type)) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found) {
+                    CConstRef<CUser_field> last_acc_field = descr->GetUser().GetFieldRef(last_accession);
+                    if (last_acc_field.NotEmpty() && last_acc_field->IsSetData() && last_acc_field->GetData().IsStr()) {
+                        accession = last_acc_field->GetData().GetStr();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if (accession.empty()) {
+        return true;
+    }
+
+    if (old_bioseq.IsSetDescr() && old_bioseq.GetDescr().IsSet()) {
+
+        for (auto& descr : old_bioseq.SetDescr().Set()) {
+
+            if (descr->IsUser()) {
+
+                bool found = false;
+                for (auto type : user_obj_types) {
+                    if (IsUserObjectOfType(*descr, type)) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found) {
+                    if (descr->GetUser().GetFieldRef(last_accession).NotEmpty()) {
+                        descr->SetUser().SetField(last_accession).SetString(accession);
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
+static void CheckOrganisms(const CSeq_entry& id_entry, const CSeq_entry& master_entry)
+{
+    if (!id_entry.IsSeq() || !master_entry.IsSeq()) {
+        ERR_POST_EX(0, 0, Error << "Missing organism info from master record.");
+        return;
+    }
+
+    const CBioseq& old_bioseq = id_entry.GetSeq();
+    const CBioseq& new_bioseq = master_entry.GetSeq();
+
+    bool found_same_bio_src = false;
+    string old_taxname("NULL"),
+           new_taxname("NULL");
+
+    if (old_bioseq.IsSetDescr() && new_bioseq.IsSetDescr() && old_bioseq.GetDescr().IsSet() && new_bioseq.GetDescr().IsSet()) {
+
+        for (auto& old_descr : old_bioseq.GetDescr().Get()) {
+            if (old_descr->IsSource() && old_descr->GetSource().IsSetOrg() && old_descr->GetSource().GetOrg().IsSetTaxname()) {
+
+                old_taxname = old_descr->GetSource().GetOrg().GetTaxname();
+
+                for (auto& new_descr : new_bioseq.GetDescr().Get()) {
+                    if (new_descr->IsSource() && new_descr->GetSource().IsSetOrg() && new_descr->GetSource().GetOrg().IsSetTaxname()) {
+                        new_taxname = new_descr->GetSource().GetOrg().GetTaxname();
+                        if (new_taxname == old_taxname) {
+                            found_same_bio_src = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (found_same_bio_src) {
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!found_same_bio_src) {
+        ERR_POST_EX(0, 0, (GetParams().GetSource() == eNCBI ? Error : Warning) <<
+                    "Taxname \"" << new_taxname << "\" in one or more records do not match the taxname in master record in ID \"" << old_taxname << "\".");
+    }
+}
+
+static void UpdateCommonComments(CRef<CSeq_entry>& id_entry, list<string>& comments)
+{
+    if (id_entry.Empty() || !id_entry->IsSeq()) {
+        comments.clear();
+        return;
+    }
+
+    list<string*> comments_to_add;
+
+    if (GetParams().GetUpdateMode() == eUpdateFull || GetParams().GetUpdateMode() == eUpdateExtraContigs) {
+        if (!comments.empty()) {
+
+            // selecting new master comments to be added
+            auto& descrs = id_entry->SetSeq().SetDescr().Set();
+            for (auto& comment : comments) {
+
+                auto same_comment = find_if(descrs.begin(), descrs.end(), [&comment](const CRef<CSeqdesc>& descr) { return descr->IsComment() && descr->GetComment() == comment; });
+                if (same_comment == descrs.end()) {
+                    comments_to_add.push_back(&comment);
+                }
+            }
+        }
+    }
+    else {
+        comments.clear();
+    }
+
+    // adding old master entry comments
+    if (id_entry->GetSeq().IsSetDescr() && id_entry->GetSeq().GetDescr().IsSet()) {
+
+        list<string> old_comments_to_add;
+        for (auto& descr : id_entry->GetSeq().GetDescr().Get()) {
+
+            if (descr->IsComment()) {
+                auto same_comment = find_if(comments.begin(), comments.end(), [&descr](const string& comment) { return descr->GetComment() == comment; });
+                if (same_comment == comments.end()) {
+                    old_comments_to_add.push_back(descr->GetComment());
+                }
+            }
+        }
+
+        comments.splice(comments.end(), old_comments_to_add);
+    }
+
+    if (!comments_to_add.empty()) {
+
+        // adding new master comments to the old master
+        auto& descrs = id_entry->SetSeq().SetDescr().Set();
+        for (auto comment : comments_to_add) {
+            CRef<CSeqdesc> descr(new CSeqdesc);
+            descr->SetComment(*comment);
+            descrs.push_back(descr);
+        }
+    }
+}
+
 static const int ERROR_RET = 1;
 
 // CR Use ZZZZ prefix to mock completely new submission
@@ -968,6 +1171,25 @@ int CWGSParseApp::Run(void)
             if (!IsDescriptorsSame(*master_info.m_id_master_bioseq, *master_info.m_master_bioseq, [](const CSeqdesc& descr) { return IsUserObjectOfType(descr, "StructuredComment"); })) {
                 ERR_POST_EX(0, 0, Warning << "The new master record has altered structured comment.");
             }
+        }
+
+        if (GetParams().GetUpdateMode() == eUpdatePartial || GetParams().GetUpdateMode() == eUpdateFull || GetParams().GetUpdateMode() == eUpdateExtraContigs) {
+
+            if (GetParams().GetUpdateMode() != eUpdatePartial && master_info.m_id_master_bioseq.NotEmpty()) {
+                
+                if (!UpdateMasterForExtra(*master_info.m_id_master_bioseq, *master_info.m_master_bioseq)) {
+                    master_info.m_reject = true;
+                    return ERROR_RET;
+                }
+            }
+
+            if (master_info.m_id_master_bioseq.NotEmpty()) {
+                CheckOrganisms(*master_info.m_id_master_bioseq, *master_info.m_master_bioseq);
+            }
+
+            UpdateCommonComments(master_info.m_id_master_bioseq, master_info.m_common_comments);
+
+            // TODO
         }
 
         // TODO ...
