@@ -50,6 +50,7 @@ affy needs3party $(ORIG_LIBS)
 affy needs3party $(XERCES_LIBS)
 agp_db needs agp_lookup
 agp_db needs dbapi_util_blobstore
+agp_lookup needs $(EUTILS_LIBS)
 agp_lookup needs $(GPIPE_COMMON_LIBS)
 agp_lookup needs gpipe_objutil
 agp_lookup needs xhtml
@@ -121,6 +122,7 @@ auxcommcpp_g needs muxex_g
 auxnet_g needs generic_db_utils
 bacterial_pipeline_proc needs gencoll_client
 bacterial_pipeline_proc needs gpipe_alnutil
+bacterial_pipeline_proc needs local_taxon
 bag_access needs gpipe_common
 bamread needs $(COMPRESS_LIBS)
 bamread needs seqset
@@ -479,6 +481,7 @@ gpipe_ftp_new needs gc_utils
 gpipe_ftp_new needs gcaccess_utils
 gpipe_ftp_new needs gpinit
 gpipe_ftp_new needs gpipe_alnutil
+gpipe_ftp_new needs seqgapscan
 gpipe_ftp_new needs xalgoalignutil
 gpipe_ftp_new needs xgencoll
 gpipe_ftp_new needs xobjwrite
@@ -681,6 +684,9 @@ linkoutdb needs $(SQLITE3_WRAPPER)
 linkoutdb needs seqdb
 linkoutdb needs3party $(SQLITE3_LIBS)
 lmdb needs3party $(ORIG_LIBS)
+local_taxon needs $(SQLITE3_WRAPPER)
+local_taxon needs taxon1
+local_taxon needs3party $(SQLITE3_LIBS)
 ls_cli needs $(NCBILS2_LIB)
 ls_cli needs dbloadb
 lsh needs xncbi
