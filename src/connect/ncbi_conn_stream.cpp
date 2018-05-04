@@ -1069,8 +1069,8 @@ s_FtpConnectorBuilder(const SConnNetInfo*  net_info,
  
 
 /* For data integrity and unambigous interpretation, FTP streams are not
- * buffered at the level of C++ STL streambuf because of the way they execute
- * read / write operations on the mix of FTP commands and data.
+ * buffered at the level of the C++ STL streambuf because of the way they
+ * execute read / write operations on the mix of FTP commands and data.
  * There should be a little impact on performance of byte-by-byte I/O (such as
  * formatted input, which is not expected very often for this kind of streams,
  * anyways), and almost none for block I/O (such as read / readsome / write).
@@ -1263,7 +1263,7 @@ public:
 };
 
 
-static bool s_IsIdentifier(const string& str)
+static bool x_IsIdentifier(const string& str)
 {
     const char* s = str.c_str();
     if (!isalpha((unsigned char)(*s)))
@@ -1285,7 +1285,7 @@ CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
         {
         } conn_initer;  /*NCBI_FAKE_WARNING*/
     }
-    bool svc = s_IsIdentifier(url);
+    bool svc = x_IsIdentifier(url);
 
     AutoPtr<SConnNetInfo> net_info
         (ConnNetInfo_Create(svc ? url.c_str() : 0));

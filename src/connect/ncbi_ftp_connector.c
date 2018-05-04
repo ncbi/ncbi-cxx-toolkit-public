@@ -36,13 +36,13 @@
  *   See <connect/ncbi_connector.h> for the detailed specification of
  *   the connector's methods and structures.
  *
- *   Note:  We do not implement transfers of files whose names include
- *          CR or LF characters:  for those to work, all FTP commands will
- *          have to be required to terminate with CRLF at the user level
- *          (currently, LF alone acts as the command terminator), and all
- *          solitary CRs to be recoded as 'CR\0' (per the RFC), yet all
- *          solitary LFs to be passed through.  Nonetheless, we escape all
- *          IACs for the sake of safety of the control connection.
+ *   Note:  We do not implement transfers of files whose names include CR or LF
+ *          character(s):  for those to work, all FTP commands will have to be
+ *          required to terminate with CRLF at the user level (currently, LF
+ *          alone acts as the command terminator), and all solitary CRs to be
+ *          recoded as 'CR\0' (per the RFC), yet all solitary LFs to be passed
+ *          through.  Nonetheless, we escape all IACs for the sake of safety of
+ *          the control connection.
  *
  */
 

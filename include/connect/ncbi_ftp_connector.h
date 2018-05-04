@@ -93,7 +93,7 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * bad and unusable.  There is no automatic recovery (other than a full restart
  * of the connection) provided by the implementation.
  *
- * USER COMMAND(write) ACTION(server)          OUTPUT(to read on success)
+ * USER COMMAND(write) ACTION(server)          OUTPUT(text to read on success)
  *
  * REN f1 f2           Rename file f1 to f2    250
  * CWD<SP>d            Change directory to d   250

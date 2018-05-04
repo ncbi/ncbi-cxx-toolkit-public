@@ -86,6 +86,8 @@ protected:
 
     /// Only setbuf(0, 0) is allowed to make I/O unbuffered, other parameters
     /// will cause an exception thrown at run-time.
+    /// Can be used safely anytime: if any I/O was pending, it will be flushed/
+    /// pushed back from the internal buffers before dropping them off.
     virtual CNcbiStreambuf* setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
     /// Only seekoff(0, IOS_BASE::cur, *) to obtain current position, and input

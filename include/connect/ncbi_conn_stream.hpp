@@ -320,7 +320,7 @@ inline CConn_IOStreamSetReadTimeout SetReadTimeout(const STimeout* timeout)
 inline CConn_IOStream& operator>> (CConn_IOStream& is,
                                    const CConn_IOStreamSetReadTimeout& s)
 {
-    if (is.good() && is.SetTimeout(eIO_Read, s.GetTimeout()) != eIO_Success)
+    if (is.good()  &&  is.SetTimeout(eIO_Read, s.GetTimeout()) != eIO_Success)
         is.clear(IOS_BASE::badbit);
     return is;
 }
@@ -349,7 +349,7 @@ inline CConn_IOStreamSetWriteTimeout SetWriteTimeout(const STimeout* timeout)
 inline CConn_IOStream& operator<< (CConn_IOStream& os,
                                    const CConn_IOStreamSetWriteTimeout& s)
 {
-    if (os.good() && os.SetTimeout(eIO_Write, s.GetTimeout()) != eIO_Success)
+    if (os.good()  &&  os.SetTimeout(eIO_Write, s.GetTimeout()) != eIO_Success)
         os.clear(IOS_BASE::badbit);
     return os;
 }
@@ -358,7 +358,7 @@ inline CConn_IOStream& operator<< (CConn_IOStream& os,
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// This stream exchanges data in a TCP channel, using socket interface.
+/// This stream exchanges data in a TCP channel, using the SOCK socket API.
 /// The endpoint is specified as a "host:port" pair.  The maximal number of
 /// connection attempts is given via "max_try".
 /// More details on that: <connect/ncbi_socket_connector.h>.
@@ -435,6 +435,7 @@ public:
     /// firewall                        -- if true then look at proxy_server
     /// proxy_server                    -- use as "host" if non-empty and FW
     /// debug_printout                  -- how to log socket data by default
+    /// http_push_auth                  -- whether to push credentials at once
     ///
     /// @param net_info
     ///  Connection point and proxy tunnel location
@@ -522,10 +523,9 @@ struct SHTTP_StatusData {
 ///
 /// More elaborate specification(s) of the server can be made via the
 /// SConnNetInfo structure, which otherwise will be created with the use of a
-/// standard registry section to obtain default values from
-/// (details: <connect/ncbi_connutil.h>).  To make sure the actual user header
-/// is empty, remember to delete it from "net_info" with
-/// ConnNetInfo_DeleteUserHeader(net_info).
+/// standard registry section to obtain default values from (details:
+/// <connect/ncbi_connutil.h>).  To make sure the actual user header is empty,
+/// remember to reset it with ConnNetInfo_SetUserHeader(net_info, 0).
 ///
 /// THTTP_Flags and other details: <connect/ncbi_http_connector.h>.
 ///
@@ -680,7 +680,7 @@ public:
     /// Get the last seen HTTP status text, if available
     const string&     GetHTTPHeader(void) const { return m_CBD.status.header; }
 
-    /// Get underlying SOCK, if available after Fetch()
+    /// Get underlying SOCK, if available (e.g. after Fetch())
     SOCK              GetSOCK(void);
 
 public:
@@ -945,7 +945,8 @@ protected:
 ///
 /// Given the URL, open the data source and make it available for reading.
 /// See <connect/ncbi_connutil.h> for supported schemes.
-/// @note Writing to the stream is undefined.
+///
+/// @warning Writing to the resultant stream is undefined.
 ///
 extern NCBI_XCONNECT_EXPORT
 CConn_IOStream* NcbiOpenURL(const string& url,

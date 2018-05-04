@@ -1368,12 +1368,11 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReadOnWrite
  );
 
 
-/** Control OS-defined send strategy by disabling/enabling TCP
- * layer to send incomplete network frames (packets).
- * With the "cork" set on, data gets always buffered until a complete
- * hardware packet is full (or connection is about to close), and only
- * then is sent out to the medium.
- * @note The setting cancels any effects of SOCK_DisableOSSendDelay().
+/** Control OS-defined send strategy by disabling/enabling the TCP layer to
+ * send incomplete network frames (packets).  With the "cork" set on, data gets
+ * always buffered until a complete hardware packet is full (or connection is
+ * about to close), and only then is sent out to the medium.
+ * @note The setting cancels the effects of SOCK_DisableOSSendDelay().
  * @param sock
  *  [in]  socket handle [stream socket only]
  * @param on_off
@@ -1387,15 +1386,18 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetCork
  );
 
 
-/** Control OS-defined send strategy by disabling/enabling TCP
- * Nagle algorithm that packs multiple requests into a single
- * packet and thus transferring data in fewer transactions,
- * miminizing the network traffic and bursting the throughput.
- * Some applications, however, may find it useful to disable this
- * default behavior for the sake of their performance increase
- * (like in case of short transactions otherwise held by the system
- * to be possibly coalesced into larger chunks).
- * @note The setting cancels any effects of SOCK_SetCork().
+/** Control OS-defined send strategy by disabling/enabling the TCP Nagle
+ * algorithm (which is on by default) that packs multiple requests into a
+ * single packet and thus transferring data in fewer transactions, miminizing
+ * the network traffic and generally bursting the throughput.  However, some
+ * applications may find it useful to disable this default behavior for the
+ * sake of their performance increase (like in case of short transactions
+ * otherwise held off by the system to be possibly coalesced into larger
+ * chunks -- a typical example is an interactive transmission of keystrokes).
+ * Disabling the Nagle algorithm causes all internally pending yet
+ * untransmitted data to flush down to the hardware.
+ * @note The setting is overridden by SOCK_SetCork() but it still performs the
+ * flush, if set to disable.
  * @param sock
  *  [in]  socket handle [stream socket only]
  * @param on_off

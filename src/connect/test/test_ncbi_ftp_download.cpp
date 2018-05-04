@@ -403,7 +403,7 @@ static bool s_IsATTY(void)
 #if   defined(NCBI_OS_UNIX)
              isatty(STDERR_FILENO)   ? 1 : 0
 #elif defined(NCBI_OS_MSWIN)
-            _isatty(_fileno(stdout)) ? 1 : 0
+            _isatty(_fileno(stderr)) ? 1 : 0
 #else
             0/*safe choice*/
 #endif // NCBI_OS

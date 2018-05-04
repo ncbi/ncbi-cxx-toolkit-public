@@ -91,7 +91,7 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR                   connector,
         m_Tie = true;
     }
     if ((m_Status = CONN_CreateEx(connector, fCONN_Supplement
-                                  | (m_Tie ? 0 : fCONN_Untie), &m_Conn))
+                                  | (m_Tie ? 0 : flgs & fCONN_Untie), &m_Conn))
         != eIO_Success) {
         ERR_POST_X(3, x_Message("CConn_Streambuf():  CONN_Create() failed"));
         _ASSERT(!m_Conn  &&  !connector->meta  &&  !connector->next);
