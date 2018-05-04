@@ -2163,3 +2163,14 @@ BOOST_AUTO_TEST_CASE(Test_DBLink)
     BOOST_CHECK_EQUAL(f.GetData().GetStrs().front(), "Z");
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_x_AddNumToUserField)
+{
+    CRef<CUser_object> obj(new CUser_object());
+    CRef<CUser_field> f(new CUser_field());
+    f->SetData().SetStrs().push_back("x");
+    obj->SetData().push_back(f);
+    BOOST_CHECK_EQUAL(f->IsSetNum(), false);
+    BOOST_CHECK_EQUAL(CCleanup::CleanupUserObject(*obj), true);
+    BOOST_CHECK_EQUAL(f->GetNum(), 1);
+}

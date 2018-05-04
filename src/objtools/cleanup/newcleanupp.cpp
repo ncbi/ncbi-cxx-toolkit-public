@@ -9521,20 +9521,28 @@ void CNewCleanup_imp::x_AddNumToUserField( CUser_field &field )
 {
     SWITCH_ON_USERFIELD_CHOICE( field ) {
     case NCBI_USERFIELD(Strs):
-        SET_FIELD( field, Num, field.GetData().GetStrs().size() );
-        ChangeMade(CCleanupChange::eCleanUserObjectOrField);
+        if (!field.IsSetNum() || field.GetNum() != field.GetData().GetStrs().size()) {
+            field.SetNum(field.GetData().GetStrs().size());
+            ChangeMade(CCleanupChange::eCleanUserObjectOrField);
+        }
         break;
     case NCBI_USERFIELD(Ints):
-        SET_FIELD( field, Num, field.GetData().GetInts().size() );
-        ChangeMade(CCleanupChange::eCleanUserObjectOrField);
+        if (!field.IsSetNum() || field.GetNum() != field.GetData().GetInts().size()) {
+            field.SetNum(field.GetData().GetInts().size());
+            ChangeMade(CCleanupChange::eCleanUserObjectOrField);
+        }
         break;
     case NCBI_USERFIELD(Reals):
-        SET_FIELD( field, Num, field.GetData().GetReals().size() );
-        ChangeMade(CCleanupChange::eCleanUserObjectOrField);
+        if (!field.IsSetNum() || field.GetNum() != field.GetData().GetReals().size()) {
+            field.SetNum(field.GetData().GetReals().size());
+            ChangeMade(CCleanupChange::eCleanUserObjectOrField);
+        }
         break;
     case NCBI_USERFIELD(Oss):
-        SET_FIELD( field, Num, field.GetData().GetOss().size() );
-        ChangeMade(CCleanupChange::eCleanUserObjectOrField);
+        if (!field.IsSetNum() || field.GetNum() != field.GetData().GetOss().size()) {
+            field.SetNum(field.GetData().GetOss().size());
+            ChangeMade(CCleanupChange::eCleanUserObjectOrField);
+        }
         break;
     default:
         break;

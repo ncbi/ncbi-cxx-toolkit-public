@@ -597,6 +597,7 @@ private:
     static bool s_RemoveEmptyFields(CUser_object& obj);
     static bool s_CleanupGenomeAssembly(CUser_object& obj);
     static bool s_CleanupDBLink(CUser_object& obj);
+    static bool s_AddNumToUserField(CUser_field &field);
 
     static bool s_CleanupNameStdBC(CName_std& name, bool fix_initials);
     static void s_ExtractSuffixFromInitials(CName_std& name);

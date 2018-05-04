@@ -64,6 +64,7 @@ bool CCleanup::CleanupUserObject( CUser_object &user_object )
             }
 
             if (field->IsSetData()) {
+                any_change |= s_AddNumToUserField(*field);
                 switch (field->GetData().Which()) {
                 case CUser_field::TData::e_Str:
                     any_change |= Asn2gnbkCompressSpaces(field->SetData().SetStr());
@@ -343,6 +344,47 @@ bool CCleanup::s_CleanupDBLink(CUser_object& obj)
     return changed;
 }
 
+
+bool CCleanup::s_AddNumToUserField(CUser_field &field)
+{
+    if (!field.IsSetData()) {
+        return false;
+    }
+    bool any_change = false;
+    switch (field.GetData().Which()) {
+        case CUser_field::TData::e_Strs:
+            if (!field.IsSetNum() || field.GetNum() != field.GetData().GetStrs().size()) {
+                field.SetNum(field.GetData().GetStrs().size());
+                any_change = true;
+            }
+            break;
+         case CUser_field::TData::e_Ints:
+            if (!field.IsSetNum() || field.GetNum() != field.GetData().GetInts().size()) {
+                field.SetNum(field.GetData().GetInts().size());
+                any_change = true;
+            }
+            break;
+        case CUser_field::TData::e_Reals:
+            if (!field.IsSetNum() || field.GetNum() != field.GetData().GetReals().size()) {
+                field.SetNum(field.GetData().GetReals().size());
+                any_change = true;
+            }
+            break;
+        case CUser_field::TData::e_Oss:
+            if (!field.IsSetNum() || field.GetNum() != field.GetData().GetOss().size()) {
+                field.SetNum(field.GetData().GetOss().size());
+                any_change = true;
+            }
+            break;
+        default:
+            if (field.IsSetNum()) {
+                field.ResetNum();
+                any_change = true;
+            }
+            break;
+    }
+    return any_change;
+}
 
 
 END_SCOPE(objects)
