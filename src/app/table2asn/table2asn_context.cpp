@@ -265,35 +265,6 @@ CUser_object& CTable2AsnContext::SetUserObject(CSeq_descr& descr, const CTempStr
     return *uo;
 }
 
-// create-date should go into each bioseq
-bool CTable2AsnContext::ApplyCreateDate(CSeq_entry& entry) const
-{
-    bool need_update = false;
-    switch(entry.Which())
-    {
-    case CSeq_entry::e_Seq:
-        need_update |= x_ApplyCreateDate(entry);
-        break;
-    case CSeq_entry::e_Set:
-        if (m_HandleAsSet)
-        {
-            NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
-            {
-                need_update |= x_ApplyCreateDate(**it);
-            }
-        }
-        else
-        {
-            need_update |= x_ApplyCreateDate(entry);
-        }
-        break;
-    default:
-        break;
-    }
-    return need_update;
-}
-
-
 void CTable2AsnContext::ApplyUpdateDate(objects::CSeq_entry& entry) const
 {
     CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));

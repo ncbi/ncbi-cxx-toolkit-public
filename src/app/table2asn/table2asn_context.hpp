@@ -130,7 +130,6 @@ public:
     static
     objects::CSeq_descr& SetBioseqOrParentDescr(objects::CBioseq& bioseq);
     bool ApplyCreateUpdateDates(objects::CSeq_entry& entry) const;
-    bool ApplyCreateDate(objects::CSeq_entry& entry) const;
     void ApplyUpdateDate(objects::CSeq_entry& entry) const;
     void ApplyAccession(objects::CSeq_entry& entry);
     void ApplyFileTracks(objects::CSeq_entry& entry) const;
