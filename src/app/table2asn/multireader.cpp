@@ -480,6 +480,7 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
 
     // do the right thing depending on the input type
     if( sType == CSeq_entry::GetTypeInfo()->GetName() ) {
+        context.m_entry_template.Reset( new CSeq_entry );
         pObjIstrm->Read(ObjectInfo(*context.m_entry_template), CObjectIStream::eNoFileHeader);
     } else if( sType == CBioseq::GetTypeInfo()->GetName() ) {
         CRef<CBioseq> pBioseq( new CBioseq );
