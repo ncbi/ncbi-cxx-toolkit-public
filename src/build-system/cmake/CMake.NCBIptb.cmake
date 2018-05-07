@@ -689,6 +689,7 @@ endif()
     set(NCBITMP_DEFINES  ${NCBITMP_DEFINES} "_LIB")
     add_library(${NCBI_PROJECT} STATIC ${NCBITMP_PROJECT_SOURCES} ${NCBITMP_PROJECT_HEADERS} ${NCBI_${NCBI_PROJECT}_DATASPEC})
     set(_suffix ${CMAKE_STATIC_LIBRARY_SUFFIX})
+    set(_project ${NCBI_PROJECT})
 
   elseif ("${NCBI_${NCBI_PROJECT}_TYPE}" STREQUAL "CONSOLEAPP")
 
@@ -702,9 +703,11 @@ message("NCBITMP_PROJECT_RESOURCES ${NCBITMP_PROJECT_RESOURCES}")
 endif()
 
       set(_suffix ${CMAKE_EXECUTABLE_SUFFIX})
+      set(_project ${NCBI_PROJECT})
     else()
       add_executable(${NCBI_PROJECT}-app ${NCBITMP_PROJECT_SOURCES})
       set_target_properties(${NCBI_PROJECT}-app PROPERTIES OUTPUT_NAME ${NCBI_PROJECT})
+      set(_project ${NCBI_PROJECT}-app)
     endif()
   else()
 
@@ -716,12 +719,12 @@ endif()
 
   endif()
 
-  target_include_directories(${NCBI_PROJECT} PRIVATE ${NCBI_${NCBI_PROJECT}_INCLUDES} ${NCBITMP_INCLUDES})
-  target_compile_definitions(${NCBI_PROJECT} PRIVATE ${NCBI_${NCBI_PROJECT}_DEFINES}  ${NCBITMP_DEFINES})
-  target_link_libraries(     ${NCBI_PROJECT}         ${NCBI_${NCBI_PROJECT}_NCBILIB}  ${NCBITMP_LIBS})
+  target_include_directories(${_project} PRIVATE ${NCBI_${NCBI_PROJECT}_INCLUDES} ${NCBITMP_INCLUDES})
+  target_compile_definitions(${_project} PRIVATE ${NCBI_${NCBI_PROJECT}_DEFINES}  ${NCBITMP_DEFINES})
+  target_link_libraries(     ${_project}         ${NCBI_${NCBI_PROJECT}_NCBILIB}  ${NCBITMP_LIBS})
 
   if (DEFINED _suffix)
-    set_target_properties( ${NCBI_PROJECT} PROPERTIES PROJECT_LABEL ${NCBI_PROJECT}${_suffix})
+    set_target_properties( ${_project} PROPERTIES PROJECT_LABEL ${NCBI_PROJECT}${_suffix})
   endif()
   NCBI_internal_define_precompiled_header_usage()
 
