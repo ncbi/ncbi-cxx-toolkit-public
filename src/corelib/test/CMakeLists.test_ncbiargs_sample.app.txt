@@ -1,6 +1,42 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+if (NCBI_EXPERIMENTAL_API)
+NCBI_begin_app(test_ncbiargs_sample)
+  NCBI_sources(test_ncbiargs_sample)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_project_watchers(vakatov)
+
+if (ON)
+
+  NCBI_add_test(test_ncbiargs_sample -k a -f1 -ko true foo - B False t f)
+  NCBI_add_test(test_ncbiargs_sample -ko false -k 100 bar)
+  NCBI_add_test(test_ncbiargs_sample -h)
+  NCBI_add_test(test_ncbiargs_sample -help)
+
+else()
+
+NCBI_begin_test(test_ncbiargs_sample1)
+  NCBI_set_test_command(test_ncbiargs_sample -k a -f1 -ko true foo - B False t f)
+NCBI_end_test()
+NCBI_begin_test(test_ncbiargs_sample2)
+  NCBI_set_test_arguments(-ko false -k 100 bar)
+NCBI_end_test()
+NCBI_begin_test(test_ncbiargs_sample3)
+  NCBI_set_test_arguments(-h)
+NCBI_end_test()
+NCBI_begin_test(test_ncbiargs_sample4)
+  NCBI_set_test_command(test_ncbiargs_sample -help)
+NCBI_end_test()
+
+endif()
+
+NCBI_end_app()
+
+
+else()
+
 add_executable(test_ncbiargs_sample-app
     test_ncbiargs_sample
 )
@@ -13,3 +49,4 @@ target_link_libraries(test_ncbiargs_sample-app
 
 add_test(NAME test_ncbiargs_sample-app
          COMMAND $<TARGET_FILE:test_ncbiargs_sample-app>)
+endif()

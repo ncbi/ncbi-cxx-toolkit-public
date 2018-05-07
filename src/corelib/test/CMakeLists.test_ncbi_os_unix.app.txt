@@ -1,6 +1,17 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+if (NCBI_EXPERIMENTAL_API)
+NCBI_begin_app(test_ncbi_os_unix)
+  NCBI_sources(test_ncbi_os_unix)
+  NCBI_requires(unix -Cygwin)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_project_watchers(lavr)
+NCBI_end_app()
+
+else()
+
 add_executable(test_ncbi_os_unix-app
     test_ncbi_os_unix
 )
@@ -13,3 +24,4 @@ target_link_libraries(test_ncbi_os_unix-app
 
 add_test(NAME test_ncbi_os_unix-app
          COMMAND $<TARGET_FILE:test_ncbi_os_unix-app>)
+endif()
