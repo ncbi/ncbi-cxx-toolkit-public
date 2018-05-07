@@ -579,7 +579,7 @@ BOD	s	University of Oxford
 BOG	s	Universidad de La Salle		
 BOGOS<DEU>	b	Botanical Garden of Osnabruck University		
 BOIS	s	Rocky Mountain Research Station		
-BOL	s	University of Cape Town, Botany Department		
+BOL	s	Bolus Herbarium, University of Cape Town		
 BOLO	s	Universita di Bologna		
 BOLV	s	Nacional Forestal Martin Cardenas		
 BON	s	Bolton Museum, Art Gallery and Aquarium		
@@ -2617,7 +2617,7 @@ HZM	s	Museum of Natural History (Hrvatski Zooloski Muzej)
 HZMZ	s	Hrvatski Narodni Zooloski Muzej		
 HZTC	s	Hanzhong Teachers College, Biology Department		
 HZU	s	Zhejiang University		
-I	s	Universitatea Al. I. Cuza Iasi		
+I	s	"Alexandru Ioan Cuza" University		
 IA	s	University of Iowa, Department of Biological Sciences		
 IAA	s	Instituto Antarctico Argentinao, Direccion Nacional del Antartico		
 IAAA	s	Instituto do Acucar e do Alcool		
@@ -2628,7 +2628,7 @@ IACC	s	Instituto Agronomico de Campinas
 IACM	s	Instituto Agronomico		
 IADIZA-CM	s	Instituto Argentino de Investigaciones de las Zonas Aridas		
 IAFB	c	Culture Collection of Industrial Microorganisms, Prof. Wac&#322;aw D&#261;browski Institute of Agricultural and Food Biotechnology		
-IAGB	s	Universitatea Al. I. Cuza Iasi		
+IAGB	s	Botanical Garden "Anastasie Fatu" of Iasi		
 IAL<BRA-Bahia>	s	Herbario, Centro Nacional de Pesquisa de Mandioca e Fruticultura, EMBRAPA		
 IAL<BRA-SaoPaulo>	c	Secao de Colecao de Culturas		
 IALCEL	c	Secao de Culturas Celulares		
@@ -6569,12 +6569,12 @@ UCLGMZ	s	Grant Museum of Zoology and Comparative Anatomy
 UCLZ	s	University College London		
 UCM<ESP>	s	Universidad Complutense Madrid		
 UCM<UKR>	c	Ukrainian Collection of Microorganisms, Zabolotny Institute of Microbiology and Virology		
-UCM<USA-CO>	s	University of Colorado Museum		
-UCM<USA-CO>:Bird	s	University of Colorado Museum, University of Colorado Museum Bird Collection
-UCM<USA-CO>:Fish	s	University of Colorado Museum, University of Colorado Museum Fish collection
-UCM<USA-CO>:Herp	s	University of Colorado Museum, University of Colorado Museum Amplibian and Reptile collection
-UCM<USA-CO>:Mamm	s	University of Colorado Museum, University of Colorado Museum Mammal Collection
-UCMC	s	University of Colorado Museum		
+UCM<USA-CO>	s	University of Colorado Museum of Natural History		
+UCM<USA-CO>:Bird	s	University of Colorado Museum of Natural History, University of Colorado Museum Bird Collection
+UCM<USA-CO>:Fish	s	University of Colorado Museum of Natural History, University of Colorado Museum Fish collection
+UCM<USA-CO>:Herp	s	University of Colorado Museum of Natural History, University of Colorado Museum Amplibian and Reptile collection
+UCM<USA-CO>:Mamm	s	University of Colorado Museum of Natural History, University of Colorado Museum Mammal Collection
+UCMC	s	University of Colorado Museum	UCM
 UCME	s	Faculdad de Biologia, Departamento de Zoologia		
 UCMM	s	Pontificia Universidad Catolica Madre y Maestra		
 UCMP	s	University of California Museum of Paleontology		
@@ -6930,7 +6930,7 @@ USM<MYS>	s	Universiti Sains Malaysia
 USM<MYS>:VCRU	s	Universiti Sains Malaysia, Vector Control Research Unit
 USM<PER>	s	Universidad Nacional Mayor de San Marcos, Museo de Historia Natural, Herbario		
 USMMC	s	Universiti Sains Malaysia Mollusc Collection		
-USMP	h	Universiti Sains Malaysia		
+USMP	s	Universiti Sains Malaysia		
 USMS	s	University of Southern Mississippi, Department of Biological Sciences		
 USNC	s	Smithsonian Institution, Paleobiology Department		
 USNM	sb	National Museum of Natural History, Smithsonian Institution	NMNH
@@ -7180,11 +7180,11 @@ WAT	s	University of Waterloo, Biology Department
 WAU	s	Wau Ecology Institute		
 WAUF	s	Warsaw Agricultural University, Department of Plant Pathology		
 WAVI	s	Colby College, Biology Department		
-WB<DEU>	s	Universitaet Wuerzburg		
+WB<DEU>	s	Universitat Wurzburg		
 WB<USA-WI>	c	Department of Bacteriology, University of Wisconsin		
 WBCH	s	Wisbech and Fenland Museum		
 WBG	s	Waimea Botanical Garden		
-WBM	s	Universitaet Wuerzburg		
+WBM	s	Universitat Wurzburg		
 WBR	s	Laboratoire de Paleontologie, Unversite de Montpellier		
 WBS	s	Landbouwuniversiteit		
 WCE	s	University of London, Westfield College, Biology Department		
