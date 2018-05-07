@@ -1447,6 +1447,13 @@ public:
 NCBI_XNCBI_EXPORT
 extern EDiagSev SetDiagPostLevel(EDiagSev post_sev = eDiag_Error);
 
+/// Get current threshold severity for posting the messages.
+/// @return
+///   Return current post-level.
+/// @sa SetDiagPostLevel()
+NCBI_XNCBI_EXPORT
+extern EDiagSev GetDiagPostLevel(void);
+
 /// Compare two severities.
 /// @return
 ///   The return value is negative if the first value is lower than

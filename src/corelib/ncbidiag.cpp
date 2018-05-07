@@ -5918,6 +5918,12 @@ extern EDiagSev SetDiagPostLevel(EDiagSev post_sev)
 }
 
 
+extern EDiagSev GetDiagPostLevel(void)
+{
+    return CDiagBuffer::sm_PostSeverity;
+}
+
+
 extern int CompareDiagPostLevel(EDiagSev sev1, EDiagSev sev2)
 {
     if (sev1 == sev2) return 0;
