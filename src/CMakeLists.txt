@@ -6,8 +6,36 @@
 cmake_minimum_required(VERSION 3.0)
 
 ###############################################################################
+# must be set to OFF on trunk
+set(NCBI_EXPERIMENTAL OFF)
+# may be set to OFF in case of problems
+set(NCBI_EXPERIMENTAL_API ON)
+
+if(NCBI_EXPERIMENTAL)
+  set(NCBI_EXPERIMENTAL_CFG              ON)
+  set(NCBI_EXPERIMENTAL_DISABLE_HUNTER   ON)
+  set(NCBI_EXPERIMENTAL_DISABLE_EXTLIB   OFF)
+  set(NCBI_EXPERIMENTAL_DLL              OFF)
+
+  set(NCBI_EXPERIMENTAL_VERBOSE          OFF)
+#  set(NCBI_EXPERIMENTAL_VERBOSE_ximage   ON)
+#  set(NCBI_EXPERIMENTAL_PROJECTS project_tree_builder datatool)
+  if (DEFINED NCBI_EXPERIMENTAL_PROJECTS)
+    set(NCBI_EXPERIMENTAL_ENABLE_COLLECTOR ON)
+  endif()
+else()
+  set(NCBI_EXPERIMENTAL_CFG              OFF)
+  set(NCBI_EXPERIMENTAL_DISABLE_HUNTER   OFF)
+  set(NCBI_EXPERIMENTAL_DISABLE_EXTLIB   OFF)
+  set(NCBI_EXPERIMENTAL_VERBOSE          OFF)
+  set(NCBI_EXPERIMENTAL_DLL              OFF)
+  set(NCBI_EXPERIMENTAL_ENABLE_COLLECTOR OFF)
+endif()
+
+###############################################################################
 ## Initialize Hunter
 ##
+if (NOT NCBI_EXPERIMENTAL_DISABLE_HUNTER)
 if (WIN32)
     if (NOT HUNTER_ROOT)
         set(HUNTER_ROOT ${CMAKE_SOURCE_DIR}/../HunterPackages)
@@ -18,11 +46,13 @@ if (WIN32)
         SHA1 "a6fbc056c3d9d7acdaa0a07c575c9352951c2f6c"
     )
 endif()
+endif()
 
 
 project(CPP)
 
 include(build-system/cmake/CMakeMacros.cmake)
+include(build-system/cmake/CMake.NCBIptb.cmake)
 include(build-system/cmake/CMakeChecks.cmake)
 
 #
@@ -94,6 +124,10 @@ endmacro(add_executable)
 
 
 # Recurse subdirectories
+if (NCBI_EXPERIMENTAL_CFG)
+#NCBI_add_root_subdirectory(corelib util serial build-system)
+NCBI_add_root_subdirectory(corelib)
+else()
 add_subdirectory(corelib)
 add_subdirectory(util)
 add_subdirectory(connect)
@@ -136,6 +170,7 @@ ncbi_install_includes(objtools)
 ncbi_install_includes(serial)
 ncbi_install_includes(sra)
 ncbi_install_includes(util)
+endif()
 
 
 ##############################################################################
