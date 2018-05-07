@@ -1,55 +1,25 @@
-##############################################################################
-# 
-#
+#############################################################################
+# $Id$
+#############################################################################
 
-# Include projects from this directory
-include(CMakeLists.test_dll.lib.txt)
-include(CMakeLists.pbacktest.lib.txt)
-include(CMakeLists.test_tls_object.app.txt)
-include(CMakeLists.test_ncbitime_mt.app.txt)
-include(CMakeLists.test_ncbitime.app.txt)
-include(CMakeLists.test_ncbithr.app.txt)
-include(CMakeLists.coretest.app.txt)
-include(CMakeLists.test_ncbiargs.app.txt)
-include(CMakeLists.test_ncbiargs_sample.app.txt)
-include(CMakeLists.test_ncbi_limits.app.txt)
-include(CMakeLists.test_ncbistr.app.txt)
-include(CMakeLists.test_ncbidiag_mt.app.txt)
-include(CMakeLists.test_ncbireg_mt.app.txt)
-include(CMakeLists.test_ncbi_system.app.txt)
-include(CMakeLists.test_ncbiutil.app.txt)
-include(CMakeLists.test_ncbifile.app.txt)
-include(CMakeLists.test_ncbidll.app.txt)
-include(CMakeLists.test_semaphore_mt.app.txt)
-include(CMakeLists.test_ncbiexec.app.txt)
-include(CMakeLists.test_ncbiexpt.app.txt)
-include(CMakeLists.test_ncbi_process.app.txt)
-include(CMakeLists.test_ncbi_os_unix.app.txt)
-include(CMakeLists.test_ncbi_tree.app.txt)
-include(CMakeLists.test_plugins.app.txt)
-include(CMakeLists.test_ncbidiag_p.app.txt)
-include(CMakeLists.test_ncbidiag_f_mt.app.txt)
-include(CMakeLists.test_objstore.app.txt)
-include(CMakeLists.test_param_mt.app.txt)
-include(CMakeLists.test_diag_parser.app.txt)
-include(CMakeLists.test_fstream_pushback.app.txt)
-include(CMakeLists.test_stacktrace.app.txt)
-include(CMakeLists.test_tempstr.app.txt)
-include(CMakeLists.test_ncbi_config.app.txt)
-include(CMakeLists.test_ncbicfg.app.txt)
-include(CMakeLists.test_weakref.app.txt)
-include(CMakeLists.test_request_control.app.txt)
-include(CMakeLists.test_expr.app.txt)
-include(CMakeLists.test_sub_reg.app.txt)
-include(CMakeLists.test_resource_info.app.txt)
-include(CMakeLists.test_interprocess_lock.app.txt)
-include(CMakeLists.test_ncbithr_native.app.txt)
-include(CMakeLists.test_ncbi_rwstream.app.txt)
-include(CMakeLists.test_condvar.app.txt)
-include(CMakeLists.test_base64.app.txt)
-include(CMakeLists.test_trial_check.app.txt)
-include(CMakeLists.test_message_mt.app.txt)
-include(CMakeLists.test_ncbicntr.app.txt)
-include(CMakeLists.test_trial.app.txt)
-include(CMakeLists.test_strdbl.app.txt)
-include(CMakeLists.test_ncbi_url.app.txt)
+NCBI_headers("")
+NCBI_disable_pch()
+NCBI_project_tags(test)
+
+NCBI_add_library(test_dll pbacktest)
+NCBI_add_app(
+           test_tls_object 
+           test_ncbitime_mt test_ncbitime test_ncbithr coretest 
+           test_ncbiargs test_ncbiargs_sample test_ncbi_limits test_ncbistr 
+           test_ncbidiag_mt test_ncbireg_mt test_ncbi_system test_ncbiutil 
+           test_ncbifile test_ncbidll test_semaphore_mt test_ncbiexec 
+           test_ncbiexpt test_ncbi_process test_ncbi_os_unix test_ncbi_tree 
+           test_plugins test_ncbidiag_p test_ncbidiag_f_mt test_objstore 
+           test_hash test_param_mt test_diag_parser test_fstream_pushback 
+           test_stacktrace test_tempstr test_ncbi_config test_ncbicfg 
+           test_weakref test_request_control test_expr test_sub_reg 
+           test_resource_info test_interprocess_lock test_ncbithr_native 
+           test_ncbi_rwstream test_condvar test_base64 test_trial_check 
+           test_message_mt test_ncbicntr test_ncbi_url test_trial 
+           test_uncaught_exception test_ncbi_fast
+)
