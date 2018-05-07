@@ -1,6 +1,18 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+if (NCBI_EXPERIMENTAL_API)
+NCBI_begin_app(test_request_control)
+  NCBI_sources(test_request_control)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_add_test()
+  NCBI_project_watchers(ivanov)
+NCBI_end_app()
+
+
+else()
+
 add_executable(test_request_control-app
     test_request_control
 )
@@ -13,3 +25,4 @@ target_link_libraries(test_request_control-app
 
 add_test(NAME test_request_control-app
          COMMAND $<TARGET_FILE:test_request_control-app>)
+endif()
