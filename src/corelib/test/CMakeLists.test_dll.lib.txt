@@ -1,6 +1,13 @@
-#
-#
-#
-add_library(test_dll
-    test_dll
-)
+#############################################################################
+# $Id$
+#############################################################################
+
+if (NCBI_EXPERIMENTAL_API)
+NCBI_begin_lib(test_dll)
+  NCBI_sources(test_dll)
+  NCBI_project_watchers(ivanov)
+NCBI_end_lib()
+
+else()
+add_library(test_dll    test_dll)
+endif()

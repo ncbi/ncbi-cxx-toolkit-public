@@ -1,10 +1,16 @@
-#
-#
-#
-add_library(xpbacktest
-    pbacktest
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-target_link_libraries(xpbacktest
-    xncbi
-)
+if (NCBI_EXPERIMENTAL_API)
+NCBI_begin_lib(xpbacktest)
+  NCBI_sources(pbacktest.cpp)
+  NCBI_headers(pbacktest.hpp)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_project_watchers(lavr)
+NCBI_end_lib()
+
+else()
+add_library(xpbacktest    pbacktest)
+target_link_libraries(xpbacktest    xncbi)
+endif()
