@@ -36,7 +36,6 @@
 #include <objmgr/scope.hpp>
 
 #include <objects/seq/Pubdesc.hpp>
-#include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -446,6 +445,45 @@ CCit_sub& GetNonConstCitSub(CPubdesc& pub)
 {
     _ASSERT(pub.IsSetPub() && pub.GetPub().IsSet() && !pub.GetPub().Get().empty() && pub.GetPub().Get().front()->IsSub());
     return pub.SetPub().Set().front()->SetSub();
+}
+
+bool HasPubOfChoice(const CPubdesc& pub, CPub::E_Choice choice)
+{
+    if (pub.IsSetPub() && pub.GetPub().IsSet() && !pub.GetPub().Get().empty()) {
+
+        for (auto& cur_pub : pub.GetPub().Get()) {
+            if (cur_pub->Which() == choice) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+CRef<CSeqdesc> CreateCitSub(const CCit_sub& cit_sub)
+{
+    CRef<CPub> pub(new CPub);
+    pub->SetSub().Assign(cit_sub);
+
+    CRef<CSeqdesc> descr(new CSeqdesc);
+
+    CPubdesc& pubdescr = descr->SetPub();
+    pubdescr.SetPub().Set().push_back(pub);
+
+    return descr;
+}
+
+CRef<CSeqdesc> BuildStructuredComment(const string& comment)
+{
+    CRef<CSeqdesc> descr(new CSeqdesc);
+
+    CNcbiIstrstream stream(comment.c_str());
+    CRef<CUser_object> user_obj(new CUser_object);
+    stream >> MSerial_AsnText >> *user_obj;
+    descr->SetUser(*user_obj);
+
+    return descr;
 }
 
 }

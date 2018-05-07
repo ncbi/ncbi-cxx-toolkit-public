@@ -266,6 +266,7 @@ struct CMasterInfo
     bool m_reject;
     bool m_has_gb_block;
     bool m_gpid;
+    bool m_got_cit_sub;
 
     list<CPubDescriptionInfo> m_common_pubs;
     list<string> m_common_comments;
@@ -319,6 +320,7 @@ struct CMasterInfo
         m_reject(false),
         m_has_gb_block(false),
         m_gpid(false),
+        m_got_cit_sub(false),
         m_dblink_state(eDblinkNoProblem),
         m_update_date(new CDate),
         m_creation_date(new CDate),

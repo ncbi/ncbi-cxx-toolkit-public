@@ -788,26 +788,6 @@ static void SetMolInfo(CBioseq& bioseq)
     bioseq.SetDescr().Set().push_back(descr);
 }
 
-static CRef<CSeqdesc> CreateCitSub(CCit_sub& cit_sub)
-{
-    CRef<CPub> pub(new CPub);
-    pub->SetSub().Assign(cit_sub);
-
-    CRef<CSeqdesc> descr(new CSeqdesc);
-
-    CPubdesc& pubdescr = descr->SetPub();
-    pubdescr.SetPub().Set().push_back(pub);
-
-    if (cit_sub.IsSetImp()) {
-        if (!cit_sub.IsSetDate() && cit_sub.GetImp().IsSetDate()) {
-            cit_sub.SetDate().Assign(cit_sub.GetImp().GetDate());
-        }
-        cit_sub.ResetImp();
-    }
-
-    return descr;
-}
-
 static void AddContactInfo(CCit_sub& cit_sub, const CContact_info& contact_info)
 {
     if (cit_sub.IsSetAuthors() && cit_sub.GetAuthors().IsSetAffil()) {
@@ -953,18 +933,6 @@ static void AddComment(CBioseq& bioseq, const string& comment)
 {
     CRef<CSeqdesc> descr(new CSeqdesc);
     descr->SetComment(comment);
-
-    bioseq.SetDescr().Set().push_back(descr);
-}
-
-static void AddStructuredComment(CBioseq& bioseq, const string& comment)
-{
-    CRef<CSeqdesc> descr(new CSeqdesc);
-
-    CNcbiIstrstream stream(comment.c_str());
-    CRef<CUser_object> user_obj(new CUser_object);
-    stream >> MSerial_AsnText >> *user_obj;
-    descr->SetUser(*user_obj);
 
     bioseq.SetDescr().Set().push_back(descr);
 }
@@ -1179,7 +1147,7 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
     }
 
     for (auto& structured_comment : info.m_common_structured_comments) {
-        AddStructuredComment(*bioseq, structured_comment);
+        bioseq->SetDescr().Set().push_back(BuildStructuredComment(structured_comment));
     }
 
     // CitSub
@@ -1191,6 +1159,14 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
         if (contact_info.NotEmpty()) {
             AddContactInfo(*cit_sub, *contact_info);
         }
+
+        if (cit_sub->IsSetImp()) {
+            if (!cit_sub->IsSetDate() && cit_sub->GetImp().IsSetDate()) {
+                cit_sub->SetDate().Assign(cit_sub->GetImp().GetDate());
+            }
+            cit_sub->ResetImp();
+        }
+
         bioseq->SetDescr().Set().push_back(CreateCitSub(*cit_sub));
     }
 
@@ -1808,6 +1784,14 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 
 
     // TODO ...
+
+    if (same_submit) {
+        master_info.m_got_cit_sub = true;
+    }
+    else {
+        master_contact_info.Reset();
+        master_cit_sub.Reset();
+    }
 
     if (GetParams().IsUpdateScaffoldsMode()) {
         // TODO

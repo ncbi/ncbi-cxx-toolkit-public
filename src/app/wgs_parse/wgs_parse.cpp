@@ -38,6 +38,7 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/pub/Pub_equiv.hpp>
+#include <objects/biblio/Cit_gen.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 
 #include "wgs_params.hpp"
@@ -1003,7 +1004,70 @@ static void CheckOrganisms(const CSeq_entry& id_entry, const CSeq_entry& master_
     }
 }
 
-static void UpdateCommonComments(CRef<CSeq_entry>& id_entry, list<string>& comments)
+class CDescriptorUpdater
+{
+public:
+    virtual bool NeedToProcess(const CSeqdesc& ) const = 0;
+    virtual bool IsSame(const CSeqdesc&, const string& ) const = 0;
+    virtual void AddDescriptor(CSeq_descr&, const string& ) const = 0;
+    virtual string DescrToString(const CSeqdesc& descr) const = 0;
+};
+
+class CCommentDescriptorUpdater : public CDescriptorUpdater
+{
+public:
+    virtual bool NeedToProcess(const CSeqdesc& descr) const
+    {
+        return descr.IsComment();
+    }
+
+    virtual bool IsSame(const CSeqdesc& descr, const string& comment) const
+    {
+        _ASSERT(descr.IsComment() && "Should be Comment");
+        return descr.GetComment() == comment;
+    }
+
+    virtual void AddDescriptor(CSeq_descr& descrs, const string& comment) const
+    {
+        CRef<CSeqdesc> descr(new CSeqdesc);
+        descr->SetComment(comment);
+        descrs.Set().push_back(descr);
+    }
+
+    virtual string DescrToString(const CSeqdesc& descr) const
+    {
+        _ASSERT(descr.IsComment() && "Should be Comment");
+        return descr.GetComment();
+    }
+};
+
+class CStructuredCommentDescriptorUpdater : public CDescriptorUpdater
+{
+public:
+    virtual bool NeedToProcess(const CSeqdesc& descr) const
+    {
+        return IsUserObjectOfType(descr, "StructuredComment");
+    }
+
+    virtual bool IsSame(const CSeqdesc& descr, const string& comment) const
+    {
+        _ASSERT(IsUserObjectOfType(descr, "StructuredComment") && "Should be StructuredComment");
+        return ToString(descr.GetUser()) == comment;
+    }
+
+    virtual void AddDescriptor(CSeq_descr& descrs, const string& comment) const
+    {
+        descrs.Set().push_back(BuildStructuredComment(comment));
+    }
+
+    virtual string DescrToString(const CSeqdesc& descr) const
+    {
+        _ASSERT(IsUserObjectOfType(descr, "StructuredComment") && "Should be StructuredComment");
+        return ToString(descr.GetUser());
+    }
+};
+
+static void UpdateCommonComments(CRef<CSeq_entry>& id_entry, list<string>& comments, const CDescriptorUpdater& updater)
 {
     if (id_entry.Empty() || !id_entry->IsSeq()) {
         comments.clear();
@@ -1019,7 +1083,7 @@ static void UpdateCommonComments(CRef<CSeq_entry>& id_entry, list<string>& comme
             auto& descrs = id_entry->SetSeq().SetDescr().Set();
             for (auto& comment : comments) {
 
-                auto same_comment = find_if(descrs.begin(), descrs.end(), [&comment](const CRef<CSeqdesc>& descr) { return descr->IsComment() && descr->GetComment() == comment; });
+                auto same_comment = find_if(descrs.begin(), descrs.end(), [&comment, &updater](const CRef<CSeqdesc>& descr) { return updater.NeedToProcess(*descr) && updater.IsSame(*descr, comment); });
                 if (same_comment == descrs.end()) {
                     comments_to_add.push_back(&comment);
                 }
@@ -1036,10 +1100,10 @@ static void UpdateCommonComments(CRef<CSeq_entry>& id_entry, list<string>& comme
         list<string> old_comments_to_add;
         for (auto& descr : id_entry->GetSeq().GetDescr().Get()) {
 
-            if (descr->IsComment()) {
-                auto same_comment = find_if(comments.begin(), comments.end(), [&descr](const string& comment) { return descr->GetComment() == comment; });
+            if (updater.NeedToProcess(*descr)) {
+                auto same_comment = find_if(comments.begin(), comments.end(), [&descr, &updater](const string& comment) { return updater.IsSame(*descr, comment); });
                 if (same_comment == comments.end()) {
-                    old_comments_to_add.push_back(descr->GetComment());
+                    old_comments_to_add.push_back(updater.DescrToString(*descr));
                 }
             }
         }
@@ -1050,13 +1114,244 @@ static void UpdateCommonComments(CRef<CSeq_entry>& id_entry, list<string>& comme
     if (!comments_to_add.empty()) {
 
         // adding new master comments to the old master
-        auto& descrs = id_entry->SetSeq().SetDescr().Set();
+        auto& descrs = id_entry->SetSeq().SetDescr();
         for (auto comment : comments_to_add) {
-            CRef<CSeqdesc> descr(new CSeqdesc);
-            descr->SetComment(*comment);
-            descrs.push_back(descr);
+            updater.AddDescriptor(descrs, *comment);
         }
     }
+}
+
+static void ReplaceSubmissionDate(CRef<CSeq_entry>& entry, const CDate_std& date)
+{
+    if (entry.NotEmpty()) {
+
+        CSeq_descr* descrs = nullptr;
+        if (GetNonConstDescr(*entry, descrs) && descrs && descrs->IsSet()) {
+            for (auto& descr : descrs->Set()) {
+                if (descr->IsPub() && IsCitSub(descr->GetPub())) {
+                    CCit_sub& cit_sub = GetNonConstCitSub(descr->SetPub());
+                    cit_sub.SetDate().SetStd().Assign(date);
+                }
+            }
+        }
+    }
+}
+
+static bool UpdateCommonPubs(const CRef<CSeq_entry>& id_entry, const CRef<CSeq_entry>& master_entry, list<CPubDescriptionInfo>& common_pubs)
+{
+    common_pubs.clear();
+
+    if (id_entry.Empty() || !id_entry->IsSeq()) {
+        return false;
+    }
+
+    const CPubdesc* pubdesc = nullptr;
+
+    if (master_entry->IsSeq() && master_entry->GetSeq().IsSetDescr() && master_entry->GetSeq().GetDescr().IsSet()) {
+        for (auto& descr : master_entry->GetSeq().GetDescr().Get()) {
+            if (descr->IsPub()) {
+                pubdesc = &descr->GetPub();
+                break;
+            }
+        }
+    }
+
+    bool ret = false;
+    if (id_entry->GetSeq().IsSetDescr() && id_entry->GetSeq().GetDescr().IsSet()) {
+
+        for (auto& descr : id_entry->GetSeq().GetDescr().Get()) {
+            
+            if (descr->IsPub()) {
+                if (pubdesc && pubdesc->Equals(descr->GetPub())) {
+                    ret = true;
+                    continue;
+                }
+
+                common_pubs.push_back(CPubDescriptionInfo());
+                CPubDescriptionInfo& pubdescr_info = common_pubs.back();
+
+                CRef<CPubdesc> pub(new CPubdesc);
+                pub->Assign(descr->GetPub());
+                pubdescr_info.m_pubdescr_synonyms.push_back(pub);
+                pubdescr_info.m_pubdescr_lookup = pub;
+            }
+        }
+    }
+
+    return ret;
+}
+
+static bool IsCitGenUnpublished(const CPubdesc& pubdesc)
+{
+    _ASSERT(pubdesc.IsSetPub());
+    for (auto& cur_pub : pubdesc.GetPub().Get()) {
+        if (cur_pub->IsGen()) {
+
+            const CCit_gen& cit_gen = cur_pub->GetGen();
+            if (cit_gen.IsSetCit() && cit_gen.GetCit() == "unpublished") {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+static void RemoveOldCitGen(CRef<CSeq_entry>& id_entry)
+{
+    _ASSERT(id_entry.NotEmpty() && id_entry->IsSeq() && id_entry->GetSeq().IsNa() && "Should be Bioseq of nucleotides");
+
+    if (id_entry->GetSeq().IsSetDescr() && id_entry->GetSeq().GetDescr().IsSet()) {
+        CSeq_descr::Tdata& descrs = id_entry->SetSeq().SetDescr().Set();
+        auto cit_gen = descrs.end();
+        for (auto& descr = descrs.begin(); descr != descrs.end(); ++descr) {
+
+            if ((*descr)->IsPub()) {
+
+                if (IsCitSub((*descr)->GetPub())) {
+                    continue;
+                }
+
+                if (HasPubOfChoice((*descr)->GetPub(), CPub::e_Gen) && IsCitGenUnpublished((*descr)->GetPub())) {
+                    
+                    if (cit_gen == descrs.end()) {
+                        cit_gen = descr;
+                    }
+                    else {
+                        cit_gen = descrs.end();
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (cit_gen != descrs.end()) {
+            descrs.erase(cit_gen);
+        }
+    }
+}
+
+static bool IsFirstCitSubDateEarlier(const CCit_sub& new_cit_sub, const CCit_sub& old_cit_sub)
+{
+    if (!old_cit_sub.IsSetDate()) {
+        return false;
+    }
+
+    if (!new_cit_sub.IsSetDate()) {
+        return true;
+    }
+
+    return old_cit_sub.GetDate().Compare(new_cit_sub.GetDate()) == CDate::eCompare_after;
+}
+
+static bool ReplaceOldCitSub(CRef<CSeq_entry>& id_entry, const CCit_sub& new_cit_sub)
+{
+    _ASSERT(id_entry.NotEmpty() && id_entry->IsSeq() && id_entry->GetSeq().IsNa() && "Should be Bioseq of nucleotides");
+
+    CCit_sub* old_cit_sub = nullptr;
+    CSeq_descr::Tdata& descrs = id_entry->SetSeq().SetDescr().Set();
+    auto before_cit_sub = descrs.begin();
+    bool first_pub_in_publist = false;
+
+    for (auto descr = descrs.begin(); descr != descrs.end(); ++descr) {
+
+        if (!first_pub_in_publist && ((*descr)->IsSource() || (*descr)->IsMolinfo())) {
+            before_cit_sub = descr;
+        }
+
+        if (!first_pub_in_publist && (*descr)->IsPub()) {
+            before_cit_sub = descr;
+            first_pub_in_publist = true;
+        }
+
+        if ((*descr)->IsPub() && IsCitSub((*descr)->GetPub())) {
+
+            CCit_sub& cur_cit_sub = GetNonConstCitSub((*descr)->SetPub());
+            if (IsFirstCitSubDateEarlier(new_cit_sub, cur_cit_sub)) {
+
+                bool is_critical = true;
+                if (GetParams().IsDblinkOverride() && (GetParams().GetSource() == eDDBJ || GetParams().GetSource() == eEMBL)) {
+                    is_critical = false;
+                }
+
+                ERR_POST_EX(0, 0, (is_critical ? Critical : Warning) << "Incorrect parsing mode set in command line: this is not a brand new project.");
+
+                if (is_critical) {
+                    return false;
+                }
+            }
+
+            if (old_cit_sub == nullptr ||
+                GetParams().GetUpdateMode() == eUpdateFull && !IsFirstCitSubDateEarlier(*old_cit_sub, cur_cit_sub) ||
+                GetParams().GetUpdateMode() != eUpdateFull && IsFirstCitSubDateEarlier(*old_cit_sub, cur_cit_sub)) {
+                old_cit_sub = &cur_cit_sub;
+            }
+        }
+    }
+
+
+    if (old_cit_sub) {
+        old_cit_sub->Assign(new_cit_sub);
+    }
+    else {
+        CRef<CSeqdesc> cit_sub_descr = CreateCitSub(new_cit_sub);
+        descrs.insert(before_cit_sub, cit_sub_descr);
+    }
+
+    return true;
+}
+
+static bool AddNewPubsToOldMaster(CRef<CSeq_entry>& id_entry, const CRef<CSeq_entry>& master_entry, size_t num_of_pubs, bool got_cit_sub)
+{
+    if (id_entry.Empty() || !id_entry->IsSeq() || !id_entry->GetSeq().IsNa() || !master_entry->IsSeq() || !master_entry->GetSeq().IsNa()) {
+        return true;
+    }
+
+    bool replace_cit_gen = GetParams().GetUpdateMode() != eUpdateFull || num_of_pubs != 1;
+
+    CSeq_descr::Tdata other_pubs;
+    const CCit_sub* new_cit_sub = nullptr;
+
+    if (master_entry->IsSeq() && master_entry->GetSeq().IsSetDescr() && master_entry->GetSeq().GetDescr().IsSet()) {
+        for (auto& descr : master_entry->GetSeq().GetDescr().Get()) {
+            if (descr->IsPub()) {
+
+                if (IsCitSub(descr->GetPub())) {
+                    new_cit_sub = &GetCitSub(descr->GetPub());
+                    continue;
+                }
+
+                if (replace_cit_gen) {
+                    replace_cit_gen = HasPubOfChoice(descr->GetPub(), CPub::e_Article);
+                }
+
+                other_pubs.push_back(descr);
+            }
+        }
+    }
+
+    if (replace_cit_gen) {
+        RemoveOldCitGen(id_entry);
+    }
+
+    if (new_cit_sub == nullptr) {
+        if (!other_pubs.empty()) {
+
+            auto& descrs = id_entry->SetSeq().SetDescr().Set();
+            descrs.splice(descrs.end(), other_pubs);
+        }
+        return true;
+    }
+
+    if (!ReplaceOldCitSub(id_entry, *new_cit_sub)) {
+        return false;
+    }
+
+    if (GetParams().GetUpdateMode() == eUpdateFull) {
+        auto& descrs = id_entry->SetSeq().SetDescr().Set();
+        descrs.splice(descrs.end(), other_pubs);
+    }
+
+    return true;
 }
 
 static const int ERROR_RET = 1;
@@ -1178,7 +1473,6 @@ int CWGSParseApp::Run(void)
             if (GetParams().GetUpdateMode() != eUpdatePartial && master_info.m_id_master_bioseq.NotEmpty()) {
                 
                 if (!UpdateMasterForExtra(*master_info.m_id_master_bioseq, *master_info.m_master_bioseq)) {
-                    master_info.m_reject = true;
                     return ERROR_RET;
                 }
             }
@@ -1187,18 +1481,42 @@ int CWGSParseApp::Run(void)
                 CheckOrganisms(*master_info.m_id_master_bioseq, *master_info.m_master_bioseq);
             }
 
-            UpdateCommonComments(master_info.m_id_master_bioseq, master_info.m_common_comments);
+            UpdateCommonComments(master_info.m_id_master_bioseq, master_info.m_common_comments, CCommentDescriptorUpdater());
+            UpdateCommonComments(master_info.m_id_master_bioseq, master_info.m_common_structured_comments, CStructuredCommentDescriptorUpdater());
 
-            // TODO
+            if (GetParams().GetUpdateMode() == eUpdatePartial) {
+                if (GetParams().IsSetSubmissionDate()) {
+                    ReplaceSubmissionDate(master_info.m_id_master_bioseq, GetParams().GetSubmissionDate());
+                }
+
+                if (master_info.m_got_cit_sub) {
+                    if (GetParams().IsSetSubmissionDate()) {
+                        ReplaceSubmissionDate(master_info.m_master_bioseq, GetParams().GetSubmissionDate());
+                    }
+
+                    master_info.m_got_cit_sub = UpdateCommonPubs(master_info.m_id_master_bioseq, master_info.m_master_bioseq, master_info.m_common_pubs);
+                }
+
+                if (!master_info.m_got_cit_sub) {
+                    ERR_POST_EX(0, 0, Error << "Cit-subs have been preserved on component sequences, because this WGS submission is a partial update.");
+                }
+            }
+            else {
+                if (!AddNewPubsToOldMaster(master_info.m_id_master_bioseq, master_info.m_master_bioseq, master_info.m_num_of_pubs, master_info.m_got_cit_sub)) {
+                    return ERROR_RET;
+                }
+            }
         }
-
-        // TODO ...
 
         if (master_info.m_master_bioseq->GetSeq().IsNa()) {
             RemoveDupPubs(master_info.m_master_bioseq->SetDescr());
         }
         if (master_info.m_id_master_bioseq.NotEmpty() && master_info.m_id_master_bioseq->GetSeq().IsNa()) {
             RemoveDupPubs(master_info.m_id_master_bioseq->SetDescr());
+        }
+
+        if (GetParams().GetSource() != eNCBI) {
+            // TODO WGSRemovePseudoDupCitSubs
         }
 
         if (!ParseSubmissions(master_info)) {
