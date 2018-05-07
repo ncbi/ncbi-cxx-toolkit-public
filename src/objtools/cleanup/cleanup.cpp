@@ -4815,13 +4815,6 @@ bool CCleanup::FixRNAEditingCodingRegion(CSeq_feat& cds)
         cds.SetExcept(true);
         any_change = true;
     }
-    if (!cbstart) {
-        CRef<CCode_break> newstart(new CCode_break());
-        newstart->SetAa().SetNcbieaa('M');
-        SetCodeBreakLocation(*newstart, 1, cds);
-        cds.SetData().SetCdregion().SetCode_break().push_front(newstart);
-        any_change = true;
-    }
     return any_change;
 }
 
