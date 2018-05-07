@@ -5,9 +5,11 @@
 # Anything related to the initial state should go early in this file!
 
 if (WIN32)
+if(NOT NCBI_EXPERIMENTAL_CFG)
     if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
         set(CMAKE_BUILD_TYPE Debug)
     endif()
+endif()
     if ("${BUILD_SHARED_LIBS}" STREQUAL "")
         set(BUILD_SHARED_LIBS OFF)
     endif()
@@ -20,6 +22,7 @@ cmake_policy(SET CMP0054 OLD)
 # Hunter packages for Windows
 #
 
+if (NOT NCBI_EXPERIMENTAL_DISABLE_HUNTER)
 if (WIN32)
     #set(HUNTER_STATUS_DEBUG TRUE)
     hunter_add_package(wxWidgets)
@@ -30,6 +33,7 @@ if (WIN32)
     hunter_add_package(PNG)
     hunter_add_package(TIFF)
     #hunter_add_package(freetype)
+endif()
 endif()
 
 ############################################################################
@@ -48,6 +52,7 @@ set(NCBI_CPP_TOOLKIT_VERSION
     ${NCBI_CPP_TOOLKIT_VERSION_MAJOR}.${NCBI_CPP_TOOLKIT_VERSION_MINOR}.${NCBI_CPP_TOOLKIT_VERSION_PATCH}${NCBI_CPP_TOOLKIT_VERSION_EXTRA})
 
 
+############################################################################
 # Basic variables
 #
 set(top_src_dir     ${CMAKE_CURRENT_SOURCE_DIR}/..)
@@ -63,6 +68,42 @@ set(includedir      ${includedir0})
 set(incdir          ${build_root}/inc)
 set(incinternal     ${includedir0}/internal)
 
+if (NCBI_EXPERIMENTAL_CFG)
+if (WIN32)
+  get_filename_component(incdir "${build_root}/../inc" REALPATH)
+  set(incdir          ${incdir}/\$\(Configuration\))
+endif()
+endif()
+if (NOT IS_DIRECTORY ${incinternal})
+  set(incinternal     "")
+endif()
+set(NCBI_SRC_ROOT  ${CMAKE_CURRENT_SOURCE_DIR})
+set(NCBI_INC_ROOT  ${includedir0})
+
+get_filename_component(top_src_dir "${top_src_dir}" REALPATH)
+get_filename_component(abs_top_src_dir "${abs_top_src_dir}" REALPATH)
+get_filename_component(build_root "${build_root}" REALPATH)
+get_filename_component(includedir "${includedir}" REALPATH)
+
+if (NCBI_EXPERIMENTAL_CFG)
+  get_filename_component(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${build_root}/../bin" REALPATH)
+  get_filename_component(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${build_root}/../bin" REALPATH)
+  get_filename_component(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${build_root}/../lib" REALPATH)
+else()
+  get_filename_component(EXECUTABLE_OUTPUT_PATH "${build_root}/../bin" REALPATH)
+  get_filename_component(LIBRARY_OUTPUT_PATH "${build_root}/../lib" REALPATH)
+endif()
+
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/" ${CMAKE_MODULE_PATH})
+
+if (NOT buildconf)
+  set(buildconf "${CMAKE_BUILD_TYPE}MT64")
+  set(buildconf0 ${CMAKE_BUILD_TYPE})
+endif (NOT buildconf)
+
+include_directories(${incdir} ${includedir0} ${incinternal})
+
+############################################################################
 # NOTE:
 # We conditionally set a package config path
 # The existence of files in this directory switches find_package()
@@ -164,21 +205,6 @@ message(STATUS "Build shared libraries: ${BUILD_SHARED_LIBS}")
 set(ENV{CCACHE_UMASK} 002)
 set(ENV{CCACHE_BASEDIR} ${top_src_dir})
 
-if (NOT buildconf)
-  set(buildconf "${CMAKE_BUILD_TYPE}MT64")
-  set(buildconf0 ${CMAKE_BUILD_TYPE})
-endif (NOT buildconf)
-
-get_filename_component(top_src_dir "${top_src_dir}" REALPATH)
-get_filename_component(abs_top_src_dir "${abs_top_src_dir}" REALPATH)
-get_filename_component(build_root "${build_root}" REALPATH)
-get_filename_component(includedir "${includedir}" REALPATH)
-
-get_filename_component(EXECUTABLE_OUTPUT_PATH "${build_root}/../bin" REALPATH)
-get_filename_component(LIBRARY_OUTPUT_PATH "${build_root}/../lib" REALPATH)
-
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/" ${CMAKE_MODULE_PATH})
-
 # Establishing compiler definitions
 include(${top_src_dir}/src/build-system/cmake/CMakeChecks.compiler.cmake)
 
@@ -192,7 +218,9 @@ SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 SET(CMAKE_INSTALL_RPATH "/$ORIGIN/../lib")
 
 #this add RUNPATH to binaries (RPATH is already there anyway), which makes it more like binaries built by C++ Toolkit
+if (NOT WIN32)
 SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags")
+endif()
 
 # add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
@@ -209,6 +237,32 @@ enable_testing()
 # Basic checks
 #
 include(${top_src_dir}/src/build-system/cmake/CMakeChecks.basic-checks.cmake)
+
+
+if (NCBI_EXPERIMENTAL_CFG)
+
+  include(${top_src_dir}/src/build-system/cmake/CMake.NCBIComponents.cmake)
+  foreach(_cfg ${CMAKE_CONFIGURATION_TYPES})
+
+    set(_file "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${_cfg}")
+    if (WIN32)
+      string(REGEX REPLACE "/" "\\\\\\\\" _file ${_file})
+    endif()
+    set(c_ncbi_runpath "${_file}")
+
+    set(FEATURES "Boost.Test.Included")
+    set(SYBASE_LCL_PATH "")
+    set(SYBASE_PATH "")
+
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/corelib/ncbicfg.c.in ${CMAKE_BINARY_DIR}/../inc/${_cfg}/common/config/ncbicfg.cfg.c)
+    if (WIN32)
+      configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/ncbiconf_msvc_site.h.in ${CMAKE_BINARY_DIR}/../inc/${_cfg}/common/config/ncbiconf_msvc_site.h)
+    endif()
+  endforeach()
+
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/corelib/ncbicfg.c "#include <common/config/ncbicfg.cfg.c>\n")
+  return()
+endif()
 
 #
 # Framework for dealing with external libraries
@@ -232,7 +286,6 @@ include(${top_src_dir}/src/build-system/cmake/CMakeChecks.compress.cmake)
 #
 # OS-specific settings
 include(${top_src_dir}/src/build-system/cmake/CMakeChecks.os.cmake)
-
 
 #################################
 # Some platform-specific system libs that can be linked eventually
@@ -920,7 +973,7 @@ set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH_ORIG})
 
 
 ENABLE_TESTING()
-include_directories(${incdir} ${includedir0} ${incinternal})
+#include_directories(${incdir} ${includedir0} ${incinternal})
 
 if (WIN32)
 	set(win_include_directories 

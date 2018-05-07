@@ -10,20 +10,20 @@
 #define HAVE_LIBEXSLT 1
 #define HAVE_LIBFASTCGI 1
 #define HAVE_LIBFTGL 1
-#define HAVE_LIBGIF 1
+#cmakedefine HAVE_LIBGIF 1
 #define HAVE_LIBGLEW 1
 #define HAVE_LIBGNUTLS 1
-#define HAVE_LIBJPEG 1
+#cmakedefine HAVE_LIBJPEG 1
 #define HAVE_LIBLMDB 1
 #define HAVE_LIBLZO 1
 #define HAVE_LIBMIMETIC 1
 /* #undef HAVE_LIBMONGODB */
 /* #undef HAVE_LIBMUPARSER */
 #define HAVE_LIBOPENSSL 1
-#define HAVE_LIBPNG 1
+#cmakedefine HAVE_LIBPNG 1
 #define HAVE_LIBSQLITE3 1
 #define HAVE_LIBSYBASE 1
-#define HAVE_LIBTIFF 1
+#cmakedefine HAVE_LIBTIFF 1
 #define HAVE_LIBXML 1
 #define HAVE_LIBXSLT 1
 /* #undef HAVE_LOCAL_LBSM */

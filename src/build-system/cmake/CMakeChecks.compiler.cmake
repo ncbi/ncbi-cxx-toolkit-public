@@ -2,6 +2,46 @@
 # This config is designed to capture all compiler and linker definitions and search parameters
 #
 
+if (NCBI_EXPERIMENTAL_CFG)
+if (WIN32)
+  set(CMAKE_CONFIGURATION_TYPES DebugDLL ReleaseDLL DebugMT ReleaseMT)
+  set(CMAKE_CONFIGURATION_TYPES "${CMAKE_CONFIGURATION_TYPES}" CACHE STRING "Reset the configurations" FORCE)
+
+  set(CMAKE_CXX_FLAGS_DEBUGDLL   "/MDd /Zi /Od /RTC1 /D_DEBUG")
+  set(CMAKE_CXX_FLAGS_DEBUGMT    "/MTd /Zi /Od /RTC1 /D_DEBUG")
+  set(CMAKE_CXX_FLAGS_RELEASEDLL "/MD  /Zi /O2 /Ob1 /DNDEBUG")
+  set(CMAKE_CXX_FLAGS_RELEASEMT  "/MT  /Zi /O2 /Ob1 /DNDEBUG")
+
+  set(CMAKE_C_FLAGS_DEBUGDLL   "/MDd /Zi /Od /RTC1 /D_DEBUG")
+  set(CMAKE_C_FLAGS_DEBUGMT    "/MTd /Zi /Od /RTC1 /D_DEBUG")
+  set(CMAKE_C_FLAGS_RELEASEDLL "/MD  /Zi /O2 /Ob1 /DNDEBUG")
+  set(CMAKE_C_FLAGS_RELEASEMT  "/MT  /Zi /O2 /Ob1 /DNDEBUG")
+
+  set(CMAKE_EXE_LINKER_FLAGS_DEBUGDLL   "/DEBUG /INCREMENTAL:NO")
+  set(CMAKE_EXE_LINKER_FLAGS_DEBUGMT    "/DEBUG /INCREMENTAL:NO")
+  set(CMAKE_EXE_LINKER_FLAGS_RELEASEDLL "/INCREMENTAL:NO")
+  set(CMAKE_EXE_LINKER_FLAGS_RELEASEMT  "/INCREMENTAL:NO")
+
+  set(CMAKE_SHARED_LINKER_FLAGS_DEBUGDLL   "/DEBUG /INCREMENTAL:NO")
+  set(CMAKE_SHARED_LINKER_FLAGS_DEBUGMT    "/DEBUG /INCREMENTAL:NO")
+  set(CMAKE_SHARED_LINKER_FLAGS_RELEASEDLL "/INCREMENTAL:NO")
+  set(CMAKE_SHARED_LINKER_FLAGS_RELEASEMT  "/INCREMENTAL:NO")
+
+  add_definitions(-D_CRT_SECURE_NO_WARNINGS=1)
+  if(NCBI_EXPERIMENTAL_DLL)
+    add_definitions(-DNCBI_DLL_BUILD)
+  endif()
+
+  set(ORIG_LIBS dbghelp.lib)
+
+  set(NCBI_DEFAULT_USEPCH ON)
+  set(NCBI_DEFAULT_PCH "ncbi_pch.hpp")
+  set(NCBI_DEFAULT_PCH_DEFINE "NCBI_USE_PCH")
+  set(NCBI_DEFAULT_RESOURCES "${NCBI_SRC_ROOT}//build-system/cmake/ncbi.rc")
+  return()
+endif()
+endif()
+
 #
 # See:
 # http://stackoverflow.com/questions/32752446/using-compiler-prefix-commands-with-cmake-distcc-ccache
