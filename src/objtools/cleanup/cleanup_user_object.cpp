@@ -377,8 +377,8 @@ bool CCleanup::s_AddNumToUserField(CUser_field &field)
             }
             break;
         default:
-            if (field.IsSetNum()) {
-                field.ResetNum();
+            if (field.IsSetNum() && field.GetNum() != 1) {
+                field.SetNum(1);
                 any_change = true;
             }
             break;
