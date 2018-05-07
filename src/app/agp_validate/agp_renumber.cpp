@@ -173,7 +173,7 @@ protected:
 
       // case CAgpErr::E_ObjRangeNeGap:
       // case CAgpErr::E_ObjRangeNeComp:
-      default: if( custom_err.bad_part_number  ||
+      default: if( custom_err->bad_part_number  ||
         m_error_code==CAgpErr::E_ObjRangeNeGap ||
         m_error_code==CAgpErr::E_ObjRangeNeComp ) {
 
@@ -211,9 +211,11 @@ public:
   int renum_objs, no_renum_objs, reordered_ln_ev;
   string m_adjusted;
 
-  CCustomErrorHandler custom_err;
-  CAgpRenumber(ostream& out) : CAgpReader(&custom_err, eAgpVersion_auto), m_out(out)
+  CRef<CCustomErrorHandler> custom_err;
+  CAgpRenumber(ostream& out) : CAgpReader(eAgpVersion_auto), m_out(out)
   {
+    custom_err.Reset(new CCustomErrorHandler);
+    SetErrorHandler(custom_err.GetPointer());
     had_empty_line = false;
     renum_objs=no_renum_objs=0;
     m_line_num_out = 0;
@@ -329,7 +331,7 @@ int ProcessStream(istream &in, ostream& out)
   if(had_space           ) cerr << "Spaces converted to tabs.\n";
   if(had_extra_tab       ) cerr << "Extra tabs removed.\n";
   if(renum.had_empty_line) cerr << "Empty line(s) removed.\n";
-  if(renum.custom_err.had_missing_tab) cerr << "Missing tabs added at the ends of gap lines.\n";
+  if(renum.custom_err->had_missing_tab) cerr << "Missing tabs added at the ends of gap lines.\n";
   //if(renum.custom_err.bad_part_number) cerr << "Invalid part numbers corrected.\n";
   if(no_eol_at_eof       ) cerr << "Line break added at the end of file.\n";
   if(bad_case_gap        ) cerr << "Gap type/linkage converted to lower case.\n";
