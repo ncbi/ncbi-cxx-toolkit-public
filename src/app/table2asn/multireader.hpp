@@ -52,7 +52,6 @@ private:
     bool xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in, const string& filename);
 
     auto_ptr<CObjectIStream> xCreateASNStream(CFormatGuess::EFormat format, CNcbiIstream& instream);
-    CRef<objects::CSeq_entry> CreateNewSeqFromTemplate(const CTable2AsnContext& context, objects::CBioseq& bioseq) const;
 
     CFormatGuess::EFormat xGetFormat(CNcbiIstream&) const;
 

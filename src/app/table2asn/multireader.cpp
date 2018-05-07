@@ -673,16 +673,6 @@ void CMultiReader::ApplyDescriptors(CSeq_entry& entry, const CSeq_descr& source)
     MergeDescriptors(entry.SetDescr(), source);
 }
 
-CRef<CSeq_entry> CMultiReader::CreateNewSeqFromTemplate(const CTable2AsnContext& context, CBioseq& bioseq) const
-{
-    CRef<CSeq_entry> result(new CSeq_entry);
-    if (context.m_entry_template.NotEmpty())
-       result->Assign(*context.m_entry_template);
-    result->SetSeq(bioseq);
-
-    return result;
-}
-
 namespace
 {
     void CopyDescr(CSeq_entry& dest, const CSeq_entry& src)
