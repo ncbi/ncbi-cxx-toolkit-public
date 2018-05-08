@@ -4,7 +4,7 @@
 rm -f deployable_cgi.stdout
 
 test -d share  ||  mkdir share  ||  exit 1
-mv -f deployable_cgi.html share/ ||  exit 2
+cp -f deployable_cgi.html share/ ||  exit 2
 
 export REQUEST_METHOD='GET'
 export QUERY_STRING='message=TestDeployableCgi'
