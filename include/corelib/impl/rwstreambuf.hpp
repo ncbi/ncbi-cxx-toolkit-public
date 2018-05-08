@@ -29,12 +29,12 @@
  * Authors:  Anton Lavrentiev
  *
  * File Description:
- *   Reader-writer based stream buffer
+ *   Reader-writer-based stream buffer
  *
  */
 
 /// @file rwstreambuf.hpp
-/// Reader-writer based stream buffer
+/// Reader-writer-based stream buffer.
 /// @sa IReader, IWriter, IReaderWriter, CRStream, CWStream, CRWStream
 
 #include <corelib/ncbistre.hpp>
@@ -54,20 +54,20 @@
 BEGIN_NCBI_SCOPE
 
 
-/// Reader-writer based stream buffer
+/// Reader-writer-based stream buffer.
 
 class NCBI_XNCBI_EXPORT CRWStreambuf : public CRWStreambufBase
 {
 public:
-    /// Which of the objects (passed in the constructor) should be
-    /// deleted on this object's destruction, whether to tie I/O,
-    /// and how to process exceptions thrown at lower levels...
+    /// Which of the objects (passed in the constructor) must be deleted on
+    /// this object's destruction, whether to tie I/O, and how to process
+    /// exceptions thrown at lower levels...
     enum EFlags {
         fOwnReader      = 1 << 0,    ///< Own the underlying reader
         fOwnWriter      = 1 << 1,    ///< Own the underlying writer
         fOwnAll         = fOwnReader + fOwnWriter,
         fUntie          = 1 << 2,    ///< Do not flush before reading
-        fNoStatusLog    = 1 << 3,    ///< Do not log I/O status
+        fNoStatusLog    = 1 << 3,    ///< Do not log unsuccessful I/O
         fLogExceptions  = 1 << 4,    ///< Exceptions logged only
         fLeakExceptions = 1 << 5     ///< Exceptions leaked out
     };

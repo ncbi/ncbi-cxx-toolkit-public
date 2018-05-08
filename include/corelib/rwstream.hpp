@@ -69,7 +69,7 @@ BEGIN_NCBI_SCOPE
 ///     by a direct write request of the user's block (larger than the internal
 ///     stream buffer);
 ///  b. Flushing of the internal buffer (including 2a above) resulted in a
-///     short write to the device (fewer bytes actually written), then the
+///     short write to the device (fewer bytes actually written).  Then, the
 ///     successive write attempt may contain fewer bytes than the size of the
 ///     internal stream buffer (namely, the remainder of what has been left
 ///     behind by the preceding [short] write).  This case also applies when
@@ -79,7 +79,7 @@ BEGIN_NCBI_SCOPE
 /// are being flushed or requested by the stream implementations.  If further
 /// factoring into blocks (e.g. specially-sized) is necessary for the I/O
 /// device to operate correctly, that should be implemented at the level of
-/// respective IReader/IWriter API explicitly.
+/// the respective IReader/IWriter API explicitly.
 
 
 /// Reader-based input stream.
@@ -89,12 +89,12 @@ BEGIN_NCBI_SCOPE
 ///     at least one byte from the input device.  If unable to read anything,
 ///     it must not return eRW_Success.  In order for applications to be able
 ///     to use istream::readsome() (or CStreamUtils::Readsome()) on CRstream,
-///     the underlying IReader must implement the PendingCount() method.
+///     the underlying IReader must fully implement the PendingCount() method.
 ///
 /// @param buf_size
 ///     specifies the number of bytes for internal I/O buffer, entirely used
-///     for reading by the underlying stream buffer CRWStreambuf;
-///     0 causes to create the buffer of some default size.
+///     for reading by the underlying stream buffer object CRWStreambuf;
+///     0 causes to create a buffer of some default size.
 ///
 /// @param buf
 ///     may specify the buffer location (if 0, an internal storage gets
@@ -104,7 +104,7 @@ BEGIN_NCBI_SCOPE
 ///     controls whether IReader is destroyed upon stream destruction,
 ///     whether exceptions get logged (or leaked, or caught silently), etc.
 ///
-/// Special case of "buf_size" == 1 creates unbuffered stream ("buf", if
+/// Special case of "buf_size" == 1 creates an unbuffered stream ("buf", if
 /// provided, is still used internally as a one-char un-get location).
 ///
 /// @sa CRWStreambuf::TFlags, IWStream, IRWStream, CStreamUtils
@@ -135,8 +135,8 @@ private:
 ///
 /// @param buf_size
 ///     specifies the number of bytes for internal I/O buffer, entirely used
-///     for writing by the underlying stream buffer CRWStreambuf;
-///     0 causes to create the buffer of some default size.
+///     for writing by the underlying stream buffer object CRWStreambuf;
+///     0 causes to create a buffer of some default size.
 ///
 /// @param buf
 ///     may specify the buffer location (if 0, an internal storage gets
@@ -146,7 +146,7 @@ private:
 ///     controls whether IWriter is destroyed upon stream destruction,
 ///     whether exceptions get logged (or leaked, or caught silently), etc.
 ///
-/// Special case of "buf_size" == 1 creates unbuffered stream ("buf", if
+/// Special case of "buf_size" == 1 creates an unbuffered stream ("buf", if
 /// provided, is ignored).
 ///
 /// @sa CRWStreambuf::TFlags, IRStream, IRWStream
@@ -172,10 +172,10 @@ private:
 /// @sa IReaderWriter, IReader, IWriter
 ///
 /// @param buf_size
-///     specifies the number of bytes for internal I/O buffer,
-///     with half used for reading and the other half for writing
-///     by underlying stream buffer CRWStreambuf;
-///     0 causes to create the buffer of some default size.
+///     specifies the number of bytes for internal I/O buffer, half of which is
+///     to be used for reading and the other half -- for writing, by the
+///     underlying stream buffer object CRWStreambuf;
+///     0 causes to create a buffer of some default size.
 ///
 /// @param buf
 ///     may specify the buffer location (if 0, an internal storage gets
@@ -185,7 +185,7 @@ private:
 ///     controls whether IReaderWriter is destroyed upon stream destruction,
 ///     whether exceptions get logged (or leaked, or caught silently), etc.
 ///
-/// Special case of "buf_size" == 1 creates unbuffered stream ("buf", if
+/// Special case of "buf_size" == 1 creates an unbuffered stream ("buf", if
 /// provided, may still be used internally as a one-char un-get location).
 ///
 /// @sa CRWStreambuf::TFlags, IRStream, IWStream
