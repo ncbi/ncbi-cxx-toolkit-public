@@ -271,7 +271,7 @@ case "\$method" in
       ;;
 #----------------------------------------------------------
    * )
-      Usage "Invalid method name."
+      Usage "Invalid method name \$method."
       ;;
 esac
 
