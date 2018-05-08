@@ -52,7 +52,7 @@ const size_t kMaxIOSize    = 7000;
 class CMyReader : public virtual IReader {
 public:
     CMyReader(const unsigned char* base, size_t size)
-        : m_Base(base), m_Size(size), m_Pos(0), m_Eof(false)
+        : m_Base(base), m_Size(size), m_Pos(0), m_Eof(!size)
     { }
 
     virtual ERW_Result Read(void* buf, size_t count,
@@ -294,7 +294,7 @@ int main(int argc, char* argv[])
 
     const size_t kIOSize = kHugeBufsize - rand() % kMaxIOSize;
 
-    ERR_POST(Info << "Random IO size for this test: " << kIOSize);
+    ERR_POST(Info << "Random I/O size for this test: " << kIOSize);
 
     ERR_POST(Info << "Reading the data and storing it with random I/O");
 
