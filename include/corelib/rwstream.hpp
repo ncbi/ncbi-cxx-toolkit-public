@@ -84,6 +84,12 @@ BEGIN_NCBI_SCOPE
 
 /// Reader-based input stream.
 /// @sa IReader
+/// @attention
+///     Underlying IReader is expected to block in Read() if unable to extract
+///     at least one byte from the input device.  If unable to read anything,
+///     it must not return eRW_Success.  In order for applications to be able
+///     to use istream::readsome() (or CStreamUtils::Readsome()) on CRstream,
+///     the underlying IReader must implement the PendingCount() method.
 ///
 /// @param buf_size
 ///     specifies the number of bytes for internal I/O buffer, entirely used
@@ -101,7 +107,7 @@ BEGIN_NCBI_SCOPE
 /// Special case of "buf_size" == 1 creates unbuffered stream ("buf", if
 /// provided, is still used internally as a one-char un-get location).
 ///
-/// @sa CRWStreambuf::TFlags, IWStream, IRWStream
+/// @sa CRWStreambuf::TFlags, IWStream, IRWStream, CStreamUtils
 
 class NCBI_XNCBI_EXPORT CRStream : public CNcbiIstream
 {
@@ -122,6 +128,10 @@ private:
 
 /// Writer-based output stream.
 /// @sa IWriter
+/// @attention
+///     Underlying IWriter is expected to block in Write() if unable to output
+///     at least one byte to the output device.  If unable to output anything,
+///     it must not return eRW_Success.
 ///
 /// @param buf_size
 ///     specifies the number of bytes for internal I/O buffer, entirely used

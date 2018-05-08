@@ -73,15 +73,21 @@ public:
     /// Read as many as "count" bytes into a buffer pointed to by the "buf"
     /// argument.  Always store the number of bytes actually read (0 if read
     /// none) via the pointer "bytes_read", if provided non-NULL.
-    /// Return non-eRW_Success code if EOF / error condition encountered during
-    /// the operation (some data may have been read, nevertheless).
-    /// Special case:  if "count" passed as 0, then the value of "buf" must be
-    /// ignored, and no change should be made to the state of the input device
-    /// (but may return non-eRW_Success to indicate that the input device has
-    /// already been in an error condition).
+    /// Return non-eRW_Success code if EOF / error condition has been
+    /// encountered during the operation (some data may have been read,
+    /// nevertheless).
+    /// Special case:  if "count" is passed as 0, then the value of "buf" must
+    /// be ignored, and no change should be made to the state of the input
+    /// device (but may return non-eRW_Success to indicate that the input
+    /// device has already been in an error condition).
     /// @note
     ///     Apparently, may not return eRW_Success if hasn't been able to read
     ///     "count" bytes as requested, and "bytes_read" was provided as NULL.
+    /// @note
+    ///     When returning "*bytes_read" as zero (with non-zero "count"
+    ///     requested), the return status should not indicate eRW_Success.
+    /// @warning
+    ///     "*bytes_read" may never be returned greater than "count".
     /// @attention
     ///     It is implementation-specific whether the call blocks until the
     ///     entire buffer is read or the call returns when at least some data
@@ -93,8 +99,8 @@ public:
                             size_t* bytes_read = 0) = 0;
 
     /// Via parameter "count" (which is guaranteed to be supplied non-NULL)
-    /// return the number of bytes that are ready to be read from input device
-    /// without blocking.
+    /// return the number of bytes that are ready to be read from the input
+    /// device without blocking.
     /// Return eRW_Success if the number of pending bytes has been stored at
     /// the location pointed to by "count".
     /// Return eRW_NotImplemented if the number cannot be determined.
@@ -139,6 +145,17 @@ public:
     /// @note
     ///     Apparently, may not return eRW_Success if hasn't been able to write
     ///     "count" bytes as requested, and "bytes_written" was passed as NULL.
+    /// @note
+    ///     When returning "*bytes_written" as zero (with non-zero "count"
+    ///     requested), the return status should not indicate eRW_Success.
+    /// @warning
+    ///     "*bytes_written" may never be returned greater than "count".
+    /// @attention
+    ///     It is implementation-specific whether the call blocks until the
+    ///     entire buffer or only some data has been written out.  In general,
+    ///     it is advised that this call is made within a loop that checks for
+    ///     errors and proceeds with the writing until the requested amount of
+    ///     data has been sent.
     virtual ERW_Result Write(const void* buf,
                              size_t      count,
                              size_t*     bytes_written = 0) = 0;

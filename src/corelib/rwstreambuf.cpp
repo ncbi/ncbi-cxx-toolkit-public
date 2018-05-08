@@ -92,19 +92,20 @@
         action;                                                         \
         break;                                                          \
     }                                                                   \
-    if (result != eRW_Success  &&  !(m_Flags & fNoStatusLog)) {         \
+    if (result != eRW_Success  &&  result != eRW_NotImplemented         \
+        &&  !(m_Flags & fNoStatusLog)) {                                \
         bool trace = (result == eRW_Timeout  ||                         \
                       result == eRW_Eof ? true : false);                \
         ERR_POST_X(subcode,                                             \
                    Message << (trace ? Trace : Info) << message         \
-                   << ": " << g_RW_ResultToString(result) + 4/*eRW_*/); \
+                   << ": " << &g_RW_ResultToString(result)[4/*eRW_*/]); \
     }
 
 
 BEGIN_NCBI_SCOPE
 
 
-const char* g_RW_ResultToString(ERW_Result result)
+extern const char* g_RW_ResultToString(ERW_Result result)
 {
     static const char* const kResultStr[eRW_Eof - eRW_NotImplemented + 1] = {
         "eRW_NotImplemented",
@@ -187,13 +188,20 @@ ERW_Result CRWStreambuf::x_Pushback(void)
     }
 
     ERW_Result result;
+    _ASSERT(egptr() >= gptr());
     const CT_CHAR_TYPE* ptr = gptr();
     size_t count = (size_t)(egptr() - ptr);
     setg(0, 0, 0);
     if ( !count )
         result = eRW_Success;
-    else if ((result = m_Reader->Pushback(ptr, count, m_pBuf)) == eRW_Success)
-        m_pBuf = 0;
+    else {
+        RWSTREAMBUF_HANDLE_EXCEPTIONS(
+            m_Reader->Pushback(ptr, count, m_pBuf),
+            14, "CRWStreambuf::Pushback(): IReader::Pushback()",
+            result = eRW_Error);
+        if (result == eRW_Success)
+            m_pBuf = 0;
+    }
     return result;
 }
 
@@ -207,13 +215,11 @@ CRWStreambuf::~CRWStreambuf()
             ERR_POST_X(13, "CRWStreambuf::~CRWStreambuf():"
                        " Read data pending");
         }
-    } NCBI_CATCH_ALL_X(14, "Exception in ~CRWStreambuf() [IGNORED]");
-    try {
         // Flush only if data pending and no error
         if (!x_Err  ||  x_ErrPos != x_GetPPos())
             x_Sync();
         setp(0, 0);
-    } NCBI_CATCH_ALL_X(2,  "Exception in ~CRWStreambuf() [IGNORED]");
+    } NCBI_CATCH_ALL_X(2, "Exception in ~CRWStreambuf() [IGNORED]");
 
     delete[] m_pBuf;
 }
@@ -264,6 +270,8 @@ CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize m)
 
 CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
 {
+    _ASSERT(pbase() <= pptr()  &&  pptr() <= epptr());
+
     if ( !m_Writer )
         return CT_EOF;
 
@@ -344,6 +352,8 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
 
 streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 {
+    _ASSERT(pbase() <= pptr()  &&  pptr() <= epptr());
+
     if (!m_Writer  ||  m < 0)
         return 0;
 
@@ -543,6 +553,8 @@ streamsize CRWStreambuf::x_Read(CT_CHAR_TYPE* buf, streamsize m)
 
 streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
+    _ASSERT(egptr() >= gptr());
+
     return m_Reader ? x_Read(buf, m) : 0;
 }
 
