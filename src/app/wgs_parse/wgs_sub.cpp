@@ -147,8 +147,8 @@ static void RemovePubs(CSeq_entry& entry, const list<CPubDescriptionInfo>& commo
                 CCit_sub* cit_sub = nullptr;
                 if (date || GetParams().GetSource() != eNCBI) {
 
-                    if (IsCitSub((*cur_descr)->GetPub())) {
-                        cit_sub = &GetNonConstCitSub((*cur_descr)->SetPub());
+                    cit_sub = GetNonConstCitSub((*cur_descr)->SetPub());
+                    if (cit_sub) {
                         if (cit_sub->IsSetDate()) {
                             orig_date.Assign(cit_sub->GetDate());
                         }

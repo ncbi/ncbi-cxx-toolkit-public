@@ -1128,9 +1128,11 @@ static void ReplaceSubmissionDate(CRef<CSeq_entry>& entry, const CDate_std& date
         CSeq_descr* descrs = nullptr;
         if (GetNonConstDescr(*entry, descrs) && descrs && descrs->IsSet()) {
             for (auto& descr : descrs->Set()) {
-                if (descr->IsPub() && IsCitSub(descr->GetPub())) {
-                    CCit_sub& cit_sub = GetNonConstCitSub(descr->SetPub());
-                    cit_sub.SetDate().SetStd().Assign(date);
+                if (descr->IsPub()) {
+                    CCit_sub* cit_sub = GetNonConstCitSub(descr->SetPub());
+                    if (cit_sub) {
+                        cit_sub->SetDate().SetStd().Assign(date);
+                    }
                 }
             }
         }
@@ -1207,7 +1209,7 @@ static void RemoveOldCitGen(CRef<CSeq_entry>& id_entry)
 
             if ((*descr)->IsPub()) {
 
-                if (IsCitSub((*descr)->GetPub())) {
+                if (HasPubOfChoice((*descr)->GetPub(), CPub::e_Sub)) {
                     continue;
                 }
 
@@ -1263,27 +1265,29 @@ static bool ReplaceOldCitSub(CRef<CSeq_entry>& id_entry, const CCit_sub& new_cit
             first_pub_in_publist = true;
         }
 
-        if ((*descr)->IsPub() && IsCitSub((*descr)->GetPub())) {
+        if ((*descr)->IsPub()) {
 
-            CCit_sub& cur_cit_sub = GetNonConstCitSub((*descr)->SetPub());
-            if (IsFirstCitSubDateEarlier(new_cit_sub, cur_cit_sub)) {
+            CCit_sub* cur_cit_sub = GetNonConstCitSub((*descr)->SetPub());
+            if (cur_cit_sub) {
+                if (IsFirstCitSubDateEarlier(new_cit_sub, *cur_cit_sub)) {
 
-                bool is_critical = true;
-                if (GetParams().IsDblinkOverride() && (GetParams().GetSource() == eDDBJ || GetParams().GetSource() == eEMBL)) {
-                    is_critical = false;
+                    bool is_critical = true;
+                    if (GetParams().IsDblinkOverride() && (GetParams().GetSource() == eDDBJ || GetParams().GetSource() == eEMBL)) {
+                        is_critical = false;
+                    }
+
+                    ERR_POST_EX(0, 0, (is_critical ? Critical : Warning) << "Incorrect parsing mode set in command line: this is not a brand new project.");
+
+                    if (is_critical) {
+                        return false;
+                    }
                 }
 
-                ERR_POST_EX(0, 0, (is_critical ? Critical : Warning) << "Incorrect parsing mode set in command line: this is not a brand new project.");
-
-                if (is_critical) {
-                    return false;
+                if (old_cit_sub == nullptr ||
+                    GetParams().GetUpdateMode() == eUpdateFull && !IsFirstCitSubDateEarlier(*old_cit_sub, *cur_cit_sub) ||
+                    GetParams().GetUpdateMode() != eUpdateFull && IsFirstCitSubDateEarlier(*old_cit_sub, *cur_cit_sub)) {
+                    old_cit_sub = cur_cit_sub;
                 }
-            }
-
-            if (old_cit_sub == nullptr ||
-                GetParams().GetUpdateMode() == eUpdateFull && !IsFirstCitSubDateEarlier(*old_cit_sub, cur_cit_sub) ||
-                GetParams().GetUpdateMode() != eUpdateFull && IsFirstCitSubDateEarlier(*old_cit_sub, cur_cit_sub)) {
-                old_cit_sub = &cur_cit_sub;
             }
         }
     }
@@ -1315,8 +1319,9 @@ static bool AddNewPubsToOldMaster(CRef<CSeq_entry>& id_entry, const CRef<CSeq_en
         for (auto& descr : master_entry->GetSeq().GetDescr().Get()) {
             if (descr->IsPub()) {
 
-                if (IsCitSub(descr->GetPub())) {
-                    new_cit_sub = &GetCitSub(descr->GetPub());
+                const CCit_sub* cur_cit_sub = GetCitSub(descr->GetPub());
+                if (cur_cit_sub) {
+                    new_cit_sub = cur_cit_sub;
                     continue;
                 }
 
@@ -1352,6 +1357,42 @@ static bool AddNewPubsToOldMaster(CRef<CSeq_entry>& id_entry, const CRef<CSeq_en
     }
 
     return true;
+}
+
+static void RemovePseudoDupCitSubs(CSeq_descr& descrs)
+{
+    if (descrs.IsSet()) {
+
+        for (auto descr = descrs.Set().begin(); descr != descrs.Set().end(); ++descr) {
+
+            if ((*descr)->IsPub()) {
+
+                const CCit_sub* cit_sub = GetCitSub((*descr)->GetPub());
+                if (cit_sub && cit_sub->IsSetDate()) {
+
+                    auto next_descr = descr;
+                    for (++next_descr; next_descr != descrs.Set().end();) {
+
+                        bool to_remove = false;
+                        if ((*next_descr)->IsPub()) {
+
+                            const CCit_sub* next_cit_sub = GetCitSub((*next_descr)->GetPub());
+                            if (next_cit_sub && next_cit_sub->IsSetDate() && cit_sub->GetDate().Compare(next_cit_sub->GetDate()) == CDate::eCompare_same) {
+                                to_remove = true;
+                            }
+                        }
+
+                        if (to_remove) {
+                            next_descr = descrs.Set().erase(next_descr);
+                        }
+                        else {
+                            ++next_descr;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 static const int ERROR_RET = 1;
@@ -1516,7 +1557,12 @@ int CWGSParseApp::Run(void)
         }
 
         if (GetParams().GetSource() != eNCBI) {
-            // TODO WGSRemovePseudoDupCitSubs
+            if (master_info.m_master_bioseq->GetSeq().IsNa()) {
+                RemovePseudoDupCitSubs(master_info.m_master_bioseq->SetDescr());
+            }
+            if (master_info.m_id_master_bioseq.NotEmpty() && master_info.m_id_master_bioseq->GetSeq().IsNa()) {
+                RemovePseudoDupCitSubs(master_info.m_id_master_bioseq->SetDescr());
+            }
         }
 
         if (!ParseSubmissions(master_info)) {

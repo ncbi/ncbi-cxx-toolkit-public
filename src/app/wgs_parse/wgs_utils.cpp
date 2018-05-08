@@ -425,37 +425,37 @@ bool NeedToProcessId(const CSeq_id& id)
     return id.IsGenbank() || id.IsDdbj() || id.IsEmbl() || id.IsOther() || id.IsTpd() || id.IsTpe() || id.IsTpg();
 }
 
-bool IsCitSub(const CPubdesc& pub)
+const CCit_sub* GetCitSub(const CPubdesc& pub)
 {
+    const CCit_sub* ret = nullptr;
+    if (pub.IsSetPub() && pub.GetPub().IsSet()) {
+
+        auto cit_sub = find_if(pub.GetPub().Get().begin(), pub.GetPub().Get().end(), [](const CRef<CPub>& cur_pub) { return cur_pub->IsSub(); });
+        if (cit_sub != pub.GetPub().Get().end()) {
+            ret = &(*cit_sub)->GetSub();
+        }
+    }
+    return ret;
+}
+
+CCit_sub* GetNonConstCitSub(CPubdesc& pub)
+{
+    CCit_sub* ret = nullptr;
     if (pub.IsSetPub() && pub.GetPub().IsSet() && !pub.GetPub().Get().empty()) {
 
-        return pub.GetPub().Get().front()->IsSub();
+        auto cit_sub = find_if(pub.SetPub().Set().begin(), pub.SetPub().Set().end(), [](const CRef<CPub>& cur_pub) { return cur_pub->IsSub(); });
+        if (cit_sub != pub.SetPub().Set().end()) {
+            ret = &(*cit_sub)->SetSub();
+        }
     }
-
-    return false;
-}
-
-const CCit_sub& GetCitSub(const CPubdesc& pub)
-{
-    _ASSERT(pub.IsSetPub() && pub.GetPub().IsSet() && !pub.GetPub().Get().empty() && pub.GetPub().Get().front()->IsSub());
-    return pub.GetPub().Get().front()->GetSub();
-}
-
-CCit_sub& GetNonConstCitSub(CPubdesc& pub)
-{
-    _ASSERT(pub.IsSetPub() && pub.GetPub().IsSet() && !pub.GetPub().Get().empty() && pub.GetPub().Get().front()->IsSub());
-    return pub.SetPub().Set().front()->SetSub();
+    return ret;
 }
 
 bool HasPubOfChoice(const CPubdesc& pub, CPub::E_Choice choice)
 {
-    if (pub.IsSetPub() && pub.GetPub().IsSet() && !pub.GetPub().Get().empty()) {
+    if (pub.IsSetPub() && pub.GetPub().IsSet()) {
 
-        for (auto& cur_pub : pub.GetPub().Get()) {
-            if (cur_pub->Which() == choice) {
-                return true;
-            }
-        }
+        return find_if(pub.GetPub().Get().begin(), pub.GetPub().Get().end(), [&choice](const CRef<CPub>& cur_pub) { return cur_pub->Which() == choice; }) != pub.GetPub().Get().end();
     }
 
     return false;

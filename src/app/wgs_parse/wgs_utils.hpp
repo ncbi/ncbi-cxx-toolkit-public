@@ -105,9 +105,8 @@ string ToString(const CSerialObject& obj);
 string::size_type GetLastSlashPos(const string& str);
 bool NeedToProcessId(const CSeq_id& id);
 
-bool IsCitSub(const CPubdesc& pub);
-const CCit_sub& GetCitSub(const CPubdesc& pub);
-CCit_sub& GetNonConstCitSub(CPubdesc& pub);
+const CCit_sub* GetCitSub(const CPubdesc& pub);
+CCit_sub* GetNonConstCitSub(CPubdesc& pub);
 bool HasPubOfChoice(const CPubdesc& pub, CPub::E_Choice choice);
 CRef<CSeqdesc> CreateCitSub(const CCit_sub& cit_sub);
 

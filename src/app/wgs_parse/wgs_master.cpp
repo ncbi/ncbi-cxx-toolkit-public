@@ -1374,13 +1374,15 @@ static bool CheckCitSubsInBioseqSet(CCitSubInfo& cit_sub_info, CSeq_submit& subm
 
                 for (auto descr : descrs->Get()) {
 
-                    if (descr->IsPub() && IsCitSub(descr->GetPub())) {
+                    if (descr->IsPub()) {
 
-                        cit_sub = &GetNonConstCitSub(descr->SetPub());
-                        if (GetParams().IsSetSubmissionDate()) {
-                            cit_sub->SetDate().SetStd().Assign(GetParams().GetSubmissionDate());
+                        cit_sub = GetNonConstCitSub(descr->SetPub());
+                        if (cit_sub) {
+                            if (GetParams().IsSetSubmissionDate()) {
+                                cit_sub->SetDate().SetStd().Assign(GetParams().GetSubmissionDate());
+                            }
+                            break;
                         }
-                        break;
                     }
                 }
             }
