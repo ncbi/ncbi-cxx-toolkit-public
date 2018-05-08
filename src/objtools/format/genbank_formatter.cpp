@@ -367,7 +367,7 @@ void CGenbankFormatter::FormatLocus
 (const CLocusItem& locus, 
  IFlatTextOStream& orig_text_os)
 {
-    static const string strands[]  = { "   ", "ss-", "ds-", "ms-" };
+    static const char* strands[]  = { "   ", "ss-", "ds-", "ms-" };
 
     CRef<IFlatTextOStream> p_text_os;
     IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, locus, orig_text_os);
@@ -377,7 +377,7 @@ void CGenbankFormatter::FormatLocus
     list<string> l;
     CNcbiOstrstream locus_line;
 
-    string units = "bp";
+    const char* units = "bp";
     if ( !ctx.IsProt() ) {
         if ( ( ctx.IsWGSMaster() && ! ctx.IsRSWGSNuc() ) || 
             ctx.IsTSAMaster() || ctx.IsTLSMaster() ) 
@@ -387,22 +387,17 @@ void CGenbankFormatter::FormatLocus
     } else {
         units = "aa";
     }
-    string topology = (locus.GetTopology() == CSeq_inst::eTopology_circular) ?
-                "circular" : "linear  ";
+    const char* topology = (locus.GetTopology() == CSeq_inst::eTopology_circular) ?  "circular" : "linear  ";
 
-    string mol = s_GenbankMol[locus.GetBiomol()];
+    const string& mol = s_GenbankMol[locus.GetBiomol()];
 
     const CFlatFileConfig& cfg = GetContext().GetConfig();
 
     locus_line.setf(IOS_BASE::left, IOS_BASE::adjustfield);
 
-    string locusname;
-    if (cfg.LongLocusNames()) {
-        locusname = locus.GetFullName();
-    } else {
-        locusname = locus.GetName();
-    }
-    int locuslength = locusname.length();
+    const string& locusname =  cfg.LongLocusNames() ? locus.GetFullName() : locus.GetName();    
+    size_t locuslength = locusname.length();
+
     locus_line << setw(16) << locusname;
     // long LOCUS names may impinge on the length (e.g. gi 1449456)
     // I would consider this behavior conceptually incorrect; we should either fix the data
@@ -1661,19 +1656,21 @@ void CGenbankFormatter::FormatFeature
         ++ m_uFeatureCount;
     }
 
-	const string& strKey = feat->GetKey();
-  string fkey = strKey;
-	if (NStr::EqualNocase (fkey, "propeptide")) {
-      if (f.GetContext()->IsProt()) {
-      } else if (f.GetContext()->IsRefSeq()) {
-      } else if (f.GetContext()->Config().IsModeEntrez() || f.GetContext()->Config().IsModeRelease()) {
-	      // fkey = "misc_feature";
-	  }
-	}
-	// write <span...> and <script...> in HTML mode
-	if (bHtml && f.GetContext()->Config().IsModeEntrez() && f.GetContext()->Config().ShowSeqSpans()) {
-		x_GetFeatureSpanAndScriptStart(*text_os, fkey, f.GetLoc(), *f.GetContext());
-	}
+    const string& strKey = feat->GetKey();
+    string fkey = strKey;
+    if (NStr::EqualNocase(fkey, "propeptide")) {
+        if (f.GetContext()->IsProt()) {
+        }
+        else if (f.GetContext()->IsRefSeq()) {
+        }
+        else if (f.GetContext()->Config().IsModeEntrez() || f.GetContext()->Config().IsModeRelease()) {
+            // fkey = "misc_feature";
+        }
+    }
+    // write <span...> and <script...> in HTML mode
+    if (bHtml && f.GetContext()->Config().IsModeEntrez() && f.GetContext()->Config().ShowSeqSpans()) {
+        x_GetFeatureSpanAndScriptStart(*text_os, fkey, f.GetLoc(), *f.GetContext());
+    }
 
 #if 1
 	list<string>        l;
