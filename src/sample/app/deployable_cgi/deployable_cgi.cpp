@@ -230,6 +230,9 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
         int *p = (int*) 0;
         return *p;
     }
+    char buf[10];
+    memset(buf, ' ', 10);
+    buf[10]=0;
 
 #ifdef NEED_SET_DEPLOYMENT_UID
     const auto deployment_uid = GetEnvironment().Get("DEPLOYMENT_UID");
@@ -249,7 +252,7 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     if ( is_message ) {
         message = "'" + message + "'";
     } else {
-        message = "";
+        message = ""+buf;
     }
 
     // NOTE:  While this sample uses the CHTML* classes for generating HTML,
