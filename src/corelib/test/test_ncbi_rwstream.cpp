@@ -52,7 +52,8 @@ const size_t kMaxIOSize    = 7000;
 class CMyReader : public virtual IReader {
 public:
     CMyReader(const unsigned char* base, size_t size)
-        : m_Base(base), m_Size(size), m_Pos(0), m_Eof(false) { }
+        : m_Base(base), m_Size(size), m_Pos(0), m_Eof(false)
+    { }
 
     virtual ERW_Result Read(void* buf, size_t count,
                             size_t* bytes_read = 0);
@@ -75,7 +76,8 @@ protected:
 class CMyWriter : public virtual IWriter {
 public:
     CMyWriter(unsigned char* base, size_t size)
-        : m_Base(base), m_Size(size), m_Pos(0), m_Err(false) { }
+        : m_Base(base), m_Size(size), m_Pos(0), m_Err(false)
+    { }
 
     virtual ERW_Result Write(const void* buf, size_t count,
                              size_t*     bytes_written = 0);
@@ -290,10 +292,14 @@ int main(int argc, char* argv[])
         hugedata[n + kHugeBufsize*2 + 1] = (unsigned char) 0xEF;
     }
 
+    const size_t kIOSize = kHugeBufsize - rand() % kMaxIOSize;
+
+    ERR_POST(Info << "Random IO size for this test: " << kIOSize);
+
     ERR_POST(Info << "Reading the data and storing it with random I/O");
 
-    CMyReader* rd = new CMyReader(hugedata,                kHugeBufsize);
-    CMyWriter* wr = new CMyWriter(hugedata + kHugeBufsize, kHugeBufsize); 
+    CMyReader* rd = new CMyReader(hugedata,                kIOSize);
+    CMyWriter* wr = new CMyWriter(hugedata + kHugeBufsize, kIOSize); 
     CRStream is(rd, kReadBufsize,  0, CRWStreambuf::fOwnReader);
     CWStream os(wr, kWriteBufsize, 0, CRWStreambuf::fOwnWriter);
 
@@ -337,22 +343,22 @@ int main(int argc, char* argv[])
     delete[] buf;
 
     ERR_POST(Info
-             << "Read:  " << setw(8) << n_in  << " / " << kHugeBufsize
+             << "Read:  " << setw(8) << n_in  << " / " << kIOSize
              << ";  position: " << rd->GetPosition() << '/' << rd->GetSize());
     ERR_POST(Info
-             << "Write: " << setw(8) << n_out << " / " << kHugeBufsize
+             << "Write: " << setw(8) << n_out << " / " << kIOSize
              << ";  position: " << wr->GetPosition() << '/' << wr->GetSize());
 
-    _ASSERT(kHugeBufsize == n_in           &&
-            kHugeBufsize == rd->GetSize()  &&
-            kHugeBufsize == rd->GetPosition());
-    _ASSERT(kHugeBufsize == n_out          &&
-            kHugeBufsize == wr->GetSize()  &&
-            kHugeBufsize == wr->GetPosition());
+    _ASSERT(kIOSize == n_in           &&
+            kIOSize == rd->GetSize()  &&
+            kIOSize == rd->GetPosition());
+    _ASSERT(kIOSize == n_out          &&
+            kIOSize == wr->GetSize()  &&
+            kIOSize == wr->GetPosition());
 
     ERR_POST(Info << "Comparing the original with the collected data");
 
-    for (size_t n = 0;  n < kHugeBufsize;  ++n) {
+    for (size_t n = 0;  n < kIOSize;  ++n) {
         if (hugedata[n] != hugedata[n + kHugeBufsize])
             ERR_FATAL("Mismatch @ " << n);
     }
@@ -362,17 +368,16 @@ int main(int argc, char* argv[])
     buf = (char*) hugedata + kHugeBufsize;
     memset(buf, '\xFF', kHugeBufsize);
 
-    CMyReaderWriter* rw = new CMyReaderWriter(hugedata + kHugeBufsize,
-                                              kHugeBufsize);
+    CMyReaderWriter* rw = new CMyReaderWriter(hugedata + kHugeBufsize,kIOSize);
     CRWStream io(rw, 2 * (kReadBufsize + kWriteBufsize),
                  0, CRWStreambuf::fOwnWriter/*for fun*/);
 
     n_out = n_in = 0;
     do {
-        if ((rand() % 10 == 2  ||  n_out == n_in)  &&  n_out < kHugeBufsize) {
+        if ((rand() % 10 == 2  ||  n_out == n_in)  &&  n_out < kIOSize) {
             size_t x_out = rand() % kMaxIOSize + 1;
-            if (x_out + n_out > kHugeBufsize)
-                x_out = kHugeBufsize - n_out;
+            if (x_out + n_out > kIOSize)
+                x_out = kIOSize - n_out;
             {
                 ERR_POST(Info
                          << "Write: " << setw(8) << x_out);
@@ -386,7 +391,7 @@ int main(int argc, char* argv[])
             size_t x_in = (rand() & 1
                            ? n_out - n_in
                            : rand() % (n_out - n_in) + 1);
-            streamsize x_inavail = is.rdbuf()->in_avail();
+            streamsize x_inavail = io.rdbuf()->in_avail();
             if (x_inavail < 0)
                 x_inavail = 0;
             if (s_IfPendingCount) {
@@ -401,28 +406,28 @@ int main(int argc, char* argv[])
                 break;
             n_in += x_in;
         }
-        if (n_out >= kHugeBufsize  &&  n_in >= kHugeBufsize)
+        if (n_out >= kIOSize  &&  n_in >= kIOSize)
             break;
     } while (io.good());
     // io.flush(); // not needed as everything should have been read out
 
     ERR_POST(Info
-             << "Read:  " << setw(8) << n_in  << " / " << kHugeBufsize << ";  "
+             << "Read:  " << setw(8) << n_in  << " / " << kIOSize << ";  "
              << "position: " << rw->GetRPosition() << '/' << rw->GetRSize());
     ERR_POST(Info
-             << "Write: " << setw(8) << n_out << " / " << kHugeBufsize << ";  "
+             << "Write: " << setw(8) << n_out << " / " << kIOSize << ";  "
              << "position: " << rw->GetWPosition() << '/' << rw->GetWSize());
 
-    _ASSERT(kHugeBufsize == n_in            &&
-            kHugeBufsize == rw->GetRSize()  &&
-            kHugeBufsize == rw->GetRPosition());
-    _ASSERT(kHugeBufsize == n_out           &&
-            kHugeBufsize == rw->GetWSize()  &&
-            kHugeBufsize == rw->GetWPosition());
+    _ASSERT(kIOSize == n_in            &&
+            kIOSize == rw->GetRSize()  &&
+            kIOSize == rw->GetRPosition());
+    _ASSERT(kIOSize == n_out           &&
+            kIOSize == rw->GetWSize()  &&
+            kIOSize == rw->GetWPosition());
 
     ERR_POST(Info << "Comparing the original with the collected data");
 
-    for (size_t n = 0;  n < kHugeBufsize;  ++n) {
+    for (size_t n = 0;  n < kIOSize;  ++n) {
         if (hugedata[n] != hugedata[n + kHugeBufsize]  ||
             hugedata[n] != hugedata[n + kHugeBufsize*2]) {
             ERR_FATAL("Mismatch @ " << n);
