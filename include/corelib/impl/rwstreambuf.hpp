@@ -107,10 +107,12 @@ protected:
     /// predefined size, which will be automatically deallocated in dtor;  the
     /// value of the first argument is ignored (can be any non-NULL pointer).
     /// Otherwise, setbuf() sets I/O arena of size "buf_size" located at "buf",
-    /// and halved between the I/O directions, if both are used.
-    /// Before changing the buffer, this call first attempts to flush any
-    /// pending output (sync), and return any pending input sequence (internal
-    /// read buffer) to the device (pushback).
+    /// and halved between the I/O directions, if both are used.  If "buf" is
+    /// provided as NULL, the buffer of the requested size gets allocated
+    /// internally, and gets automatically freed upon CRWStreambuf destruction.
+    /// Before replacing the buffer, this call first attempts to flush any
+    /// pending output (sync) to the output device, and return any pending
+    /// input sequence (internal read buffer) to the input device (pushback).
     virtual CNcbiStreambuf* setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
     /// Only seekoff(0, IOS_BASE::cur, *) to obtain current position, and input
