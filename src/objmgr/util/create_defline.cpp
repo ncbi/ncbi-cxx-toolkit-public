@@ -525,11 +525,37 @@ void CDeflineGenerator::x_SetFlagsIdx (
     m_Substrain = bsx->GetSubstrain();
 
     m_IsUnverified = bsx->IsUnverified();
-    m_Comment.clear();
+    m_Comment = bsx->GetComment();
     m_IsPseudogene = bsx->IsPseudogene();
     m_TargetedLocus = bsx->GetTargetedLocus();
 
     m_rEnzyme = bsx->GetrEnzyme();
+    
+    m_UsePDBCompoundForDefline = false;
+
+    if (m_IsPDB) {
+        if (m_Comment.empty()) {
+            m_UsePDBCompoundForDefline = true;
+        } else if (m_IsNA) {
+            if ( m_Length < 25 ) {
+                m_UsePDBCompoundForDefline = true;
+            } else if (NStr::Find(m_Comment, "COMPLETE GENOME") != NPOS ||
+                NStr::Find(m_Comment, "CHROMOSOME XII") != NPOS) {
+                m_UsePDBCompoundForDefline = true;
+            } else if (NStr::Find(m_Comment, "Dna (5'") != NPOS ||
+                NStr::Find(m_Comment, "SEQRES") != NPOS) {
+                m_UsePDBCompoundForDefline = true;
+            }
+        } else {
+            if (NStr::Find(m_Comment, "hypothetical protein") != NPOS ||
+                NStr::Find(m_Comment, "uncharacterized protein") != NPOS ||
+                NStr::Find(m_Comment, "putative uncharacterized protein") != NPOS ||
+                NStr::Find(m_Comment, "putative protein") != NPOS ||
+                NStr::Find(m_Comment, "SEQRES") != NPOS) {
+                m_UsePDBCompoundForDefline = true;
+            }
+        }
+    }
 }
 
 // set instance variables from Seq-inst, Seq-ids, MolInfo, etc., but not
@@ -639,6 +665,8 @@ void CDeflineGenerator::x_SetFlags (
     m_IsPseudogene = false;
 
     m_rEnzyme.clear();
+
+    m_UsePDBCompoundForDefline = false;
 
     // now start setting member variables
     m_IsNA = bsh.IsNa();
@@ -1051,6 +1079,30 @@ void CDeflineGenerator::x_SetFlags (
                         m_rEnzyme = rsite.GetStr();
                     }
                 }
+            }
+        }
+    }
+
+    if (m_IsPDB) {
+        if (m_Comment.empty()) {
+            m_UsePDBCompoundForDefline = true;
+        } else if (m_IsNA) {
+            if ( m_Length < 25 ) {
+                m_UsePDBCompoundForDefline = true;
+            } else if (NStr::Find(m_Comment, "COMPLETE GENOME") != NPOS ||
+                NStr::Find(m_Comment, "CHROMOSOME XII") != NPOS) {
+                m_UsePDBCompoundForDefline = true;
+            } else if (NStr::Find(m_Comment, "Dna (5'") != NPOS ||
+                NStr::Find(m_Comment, "SEQRES") != NPOS) {
+                m_UsePDBCompoundForDefline = true;
+            }
+        } else {
+            if (NStr::Find(m_Comment, "hypothetical protein") != NPOS ||
+                NStr::Find(m_Comment, "uncharacterized protein") != NPOS ||
+                NStr::Find(m_Comment, "putative uncharacterized protein") != NPOS ||
+                NStr::Find(m_Comment, "putative protein") != NPOS ||
+                NStr::Find(m_Comment, "SEQRES") != NPOS) {
+                m_UsePDBCompoundForDefline = true;
             }
         }
     }
@@ -1612,47 +1664,13 @@ void CDeflineGenerator::x_SetTitleFromPatent (void)
     joiner.Join(&m_MainTitle);
 }
 
-// generate title for PDB
-bool CDeflineGenerator::UsePDBCompoundForDefline (bool isNA, TSeqPos seqlen, const string& compound, const string& comment)
-
-{
-    if (comment.empty()) {
-        return true;
-    }
-    if (isNA) {
-        if ( seqlen < 25 ) {
-            return true;
-        }
-        if (NStr::Find(comment, "COMPLETE GENOME") != NPOS ||
-            NStr::Find(comment, "CHROMOSOME XII") != NPOS) {
-            return true;
-        }
-        if (NStr::Find(comment, "Dna (5'") != NPOS) {
-            return true;
-        }
-    } else {
-        if (NStr::Find(comment, "hypothetical protein") != NPOS ||
-            NStr::Find(comment, "uncharacterized protein") != NPOS ||
-            NStr::Find(comment, "putative uncharacterized protein") != NPOS ||
-            NStr::Find(comment, "putative protein") != NPOS ||
-            NStr::Find(comment, "SEQRES") != NPOS) {
-            return true;
-        }
-    }
-
-    // otherwise use comment for defline
-    return false;
-}
-
 void CDeflineGenerator::x_SetTitleFromPDB (void)
 
 {
     if (isprint ((unsigned char) m_PDBChain)) {
         string chain(1, (char) m_PDBChain);
         CTextJoiner<4, CTempString> joiner;
-        if (m_IsNA) {
-            joiner.Add("Chain ").Add(chain).Add(", ").Add(m_PDBCompound);
-        } else if (m_Comment.empty()) {
+        if (m_UsePDBCompoundForDefline) {
             joiner.Add("Chain ").Add(chain).Add(", ").Add(m_PDBCompound);
         } else {
             std::size_t found = m_Comment.find_first_not_of("0123456789 ");

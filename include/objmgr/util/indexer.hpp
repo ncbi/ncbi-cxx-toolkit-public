@@ -520,6 +520,7 @@ public:
     bool IsUnverified (void);
     CTempString GetTargetedLocus (void);
 
+    const string& GetComment (void);
     bool IsPseudogene (void);
 
     bool HasOperon (void);
@@ -690,6 +691,7 @@ private:
     CTempString m_TargetedLocus;
 
     // Comment fields
+    string m_Comment;
     bool m_IsPseudogene;
 
     // Feature fields

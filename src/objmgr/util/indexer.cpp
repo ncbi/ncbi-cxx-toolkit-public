@@ -789,6 +789,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_IsUnverified = false;
     m_TargetedLocus.clear();
 
+    m_Comment.clear();
     m_IsPseudogene = false;
 
     m_HasOperon = false;
@@ -1570,8 +1571,8 @@ void CBioseqIndex::x_InitDescs (void)
                 }
                 case CSeqdesc::e_Comment:
                 {
-                    const string& comment = sd.GetComment();
-                    if (NStr::Find (comment, "[CAUTION] Could be the product of a pseudogene") != string::npos) {
+                    m_Comment = sd.GetComment();
+                    if (NStr::Find (m_Comment, "[CAUTION] Could be the product of a pseudogene") != string::npos) {
                         m_IsPseudogene = true;
                     }
                     break;
@@ -2449,6 +2450,16 @@ CTempString CBioseqIndex::GetTargetedLocus (void)
     }
 
     return m_TargetedLocus;
+}
+
+const string& CBioseqIndex::GetComment (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_Comment;
 }
 
 bool CBioseqIndex::IsPseudogene (void)

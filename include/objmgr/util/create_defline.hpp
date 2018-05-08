@@ -217,6 +217,8 @@ private:
     );
 
     bool x_IsComplete() const;
+
+    bool UsePDBCompoundForDefline (void) const {  return m_UsePDBCompoundForDefline; }
 private:
     /// index with feature tree for each Bioseq
     CRef<CSeqEntryIndex> m_Idx;
@@ -337,6 +339,8 @@ private:
     /// map fields
     string m_rEnzyme;
 
+    bool m_UsePDBCompoundForDefline;
+
     /// exception fields
 
     /// (Careful: CTextFsm has no virtual destructor)
@@ -346,8 +350,6 @@ private:
     };
 
     static CSafeStatic<CLowQualityTextFsm> ms_p_Low_Quality_Fsa;
-
-    static bool UsePDBCompoundForDefline (bool isNA, TSeqPos seqlen, const string& compound, const string& comment);
 };
 
 
