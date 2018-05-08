@@ -252,7 +252,7 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     if ( is_message ) {
         message = "'" + message + "'";
     } else {
-        message = ""+buf;
+        message = buf;
     }
 
     // NOTE:  While this sample uses the CHTML* classes for generating HTML,
