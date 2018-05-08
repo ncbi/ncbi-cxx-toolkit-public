@@ -311,8 +311,7 @@ namespace
                 }
                 break;
             case '=':
-                if (nested_brackets < 0)
-                    return false;
+                if (nested_brackets >= 0)
                 if (eq_pos == CTempString::npos)
                     eq_pos = i;
                 break;
