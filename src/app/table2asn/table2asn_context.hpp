@@ -141,7 +141,6 @@ public:
         CreateSeqEntryFromTemplate(CRef<objects::CSeq_entry> object) const;
     void UpdateSubmitObject(CRef<objects::CSeq_submit>& submit) const;
 
-    static void UpdateOrgFromTaxon(CTable2AsnContext& context, objects::CSeqdesc& seqdesc);
     void MergeWithTemplate(objects::CSeq_entry& entry) const;
     void SetSeqId(objects::CSeq_entry& entry) const;
     void CopyFeatureIdsToComments(objects::CSeq_entry& entry) const;

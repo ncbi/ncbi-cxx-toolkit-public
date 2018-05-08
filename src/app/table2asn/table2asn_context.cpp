@@ -615,11 +615,6 @@ void CTable2AsnContext::RemoveProteinIdsQuals(CSeq_feat& feature)
         feature.ResetQual();
 }
 
-void CTable2AsnContext::UpdateOrgFromTaxon(CTable2AsnContext& context, objects::CSeqdesc& seqdesc)
-{
-    context.m_remote_updater->UpdateOrgFromTaxon(context.m_logger, seqdesc);
-}
-
 bool CTable2AsnContext::ApplyCreateUpdateDates(objects::CSeq_entry& entry) const
 {
     bool need_update = false;
