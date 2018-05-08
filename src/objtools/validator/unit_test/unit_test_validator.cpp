@@ -7834,7 +7834,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("URM");
     ambig.push_back("JNU");
     ambig.push_back("IZ");
-    ambig.push_back("UCM");
     ambig.push_back("UAIC");
     ambig.push_back("LEB");
     ambig.push_back("MCSN");
@@ -7904,7 +7903,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("INA");
     ambig.push_back("BTCC");
     ambig.push_back("YM");
-    ambig.push_back("UCM");
     ambig.push_back("IZ");
     ambig.push_back("ITCC");
     ambig.push_back("WB");
