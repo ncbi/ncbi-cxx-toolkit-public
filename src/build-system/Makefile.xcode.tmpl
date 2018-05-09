@@ -23,7 +23,7 @@ clean :
 check :
 	@cd .. || exit $$?; ./check.sh run; status=$$?; \
 	if test -n "${NCBI_AUTOMATED_BUILD}"; then \
-	    ./check.sh concat_err; ./check.sh load_to_db; \
+	    ./check.sh concat_err; \
 	fi; \
 	exit $$status
 
