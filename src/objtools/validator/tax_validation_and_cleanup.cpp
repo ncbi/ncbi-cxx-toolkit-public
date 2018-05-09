@@ -225,6 +225,33 @@ void CSpecificHostRequest::PostErrors(CValidError_imp& imp)
 }
 
 
+bool CSpecificHostRequest::HasErrors() const
+{
+    bool rval = false;
+    switch (m_Response) {
+        case eNormal:
+            break;
+        case eAmbiguous:
+            rval = true;
+            break;
+        case eUnrecognized:
+            rval = true;
+            break;        
+        case eAlternateName:
+            rval = true;
+            break;
+    }
+
+    if (!NStr::IsBlank(m_HostLineage) && !NStr::IsBlank(m_OrgLineage) &&
+        (NStr::Find(m_OrgLineage, "Streptophyta") != NPOS || NStr::Find(m_OrgLineage, "Metazoa") != NPOS) &&
+        (NStr::Find(m_HostLineage, "Fungi") != NPOS || NStr::Find(m_HostLineage, "Bacteria") != NPOS ||
+        NStr::Find(m_HostLineage, "Archaea") != NPOS || NStr::Find(m_HostLineage, "Viruses") != NPOS)) {
+        rval = true;
+    }
+    return rval;
+}
+
+
 const string& CSpecificHostRequest::SuggestFix() const
 {
     if (m_ValuesToTry.empty()) {
@@ -347,6 +374,12 @@ void CStrainRequest::PostErrors(CValidError_imp& imp)
 }
 
 
+bool CStrainRequest::HasErrors() const 
+{
+    return m_IsInvalid;
+}
+
+
 void CStrainRequest::AddReply(const CT3Reply& reply)
 {
     if (!m_IsInvalid) {
@@ -362,6 +395,13 @@ void CStrainRequest::AddReply(const CT3Reply& reply)
         }
     }
     m_RepliesProcessed++;
+}
+
+
+void CQualLookupMap::Clear()
+{
+    m_Populated = false;
+    m_Map.clear();
 }
 
 
@@ -424,6 +464,17 @@ void CQualLookupMap::AddFeat(CConstRef<CSeq_feat> feat)
                 find->second->AddParent(feat);
             }
         }
+    }
+}
+
+
+void CQualLookupMap::AddString(const string& val)
+{
+    m_Populated = true;
+    TQualifierRequests::iterator find = m_Map.find(val);
+    if (find == m_Map.end()) {
+        CRef<COrg_ref> org(new COrg_ref());
+        m_Map[val] = x_MakeNewRequest(val, *org);
     }
 }
 
@@ -501,6 +552,17 @@ void CQualLookupMap::PostErrors(CValidError_imp& imp)
         rq_it->second->PostErrors(imp);
         ++rq_it;
     }
+}
+
+
+bool CQualLookupMap::HasErrors() const
+{
+    for (auto rq_it : m_Map) {
+        if (rq_it.second->HasErrors()) {
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -1147,6 +1209,89 @@ bool CTaxValidationAndCleanup::DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with
     return (num_updated_descs > 0 || num_updated_feats > 0);
 }
 
+
+void CTaxValidationAndCleanup::FixOneSpecificHost(string& val)
+{
+    val = x_DefaultSpecificHostAdjustments(val);
+    if(IsOneSpecificHostValid(val)) {
+        return;
+    }
+    m_HostMapForFix.Clear();
+    m_HostMapForFix.AddString(val);
+
+    vector< CRef<COrg_ref> > spec_host_rq = m_HostMapForFix.GetRequestList();
+    if (spec_host_rq.empty()) {
+        m_HostMapForFix.Clear();
+        return;
+    }
+    vector< CRef<COrg_ref> > edited;
+    edited.push_back(CRef<COrg_ref>(new COrg_ref()));
+    edited.front()->SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_nat_host, val)));
+    
+    CTaxon3 taxon3;
+    taxon3.Init();
+    CRef<CTaxon3_reply> tmp_spec_host_reply = taxon3.SendOrgRefList(spec_host_rq);
+
+    if (!tmp_spec_host_reply->IsSetReply() || !tmp_spec_host_reply->GetReply().front()->IsData()) {
+        val = kEmptyStr;
+        m_HostMapForFix.Clear();
+        return;
+    }
+
+    string error_message = IncrementalSpecificHostMapUpdate(spec_host_rq, *tmp_spec_host_reply);
+    if (!NStr::IsBlank(error_message))
+    {
+        // post error message
+         LOG_POST(Error << error_message);
+    }
+
+
+    AdjustOrgRefsForSpecificHosts(edited);
+
+    val = edited.front()->GetOrgname().GetMod().front()->GetSubname();
+    m_HostMapForFix.Clear();
+}
+
+
+bool CTaxValidationAndCleanup::IsOneSpecificHostValid(const string& val)
+{
+    m_HostMap.Clear();
+
+    m_HostMap.AddString(val);
+
+    vector< CRef<COrg_ref> > spec_host_rq = m_HostMap.GetRequestList();
+    if (spec_host_rq.empty()) {
+        m_HostMap.Clear();
+        return true;
+    }
+
+    if (spec_host_rq.size() == 0) {
+        m_HostMap.Clear();
+        return true;
+    }
+
+    CTaxon3 taxon3;
+    taxon3.Init();
+    CRef<CTaxon3_reply> tmp_spec_host_reply = taxon3.SendOrgRefList(spec_host_rq);
+
+    string err_msg = kEmptyStr;
+    if (tmp_spec_host_reply) {
+        err_msg = IncrementalSpecificHostMapUpdate(spec_host_rq, *tmp_spec_host_reply);
+    } else {
+        err_msg = "Connection to taxonomy failed";
+    }
+    bool rval = true;
+
+    if (!NStr::IsBlank(err_msg)) {
+        LOG_POST(Error << err_msg);
+        m_HostMap.Clear();
+        rval = false;
+    } else if (m_HostMap.HasErrors()) {
+        rval = false;
+    }
+    m_HostMap.Clear();
+    return rval;
+}
 
 END_SCOPE(validator)
 END_SCOPE(objects)

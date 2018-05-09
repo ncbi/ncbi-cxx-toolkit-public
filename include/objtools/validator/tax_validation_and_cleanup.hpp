@@ -106,6 +106,7 @@ public:
 
     virtual void AddReply(const CT3Reply& reply) = 0;
     virtual void PostErrors(CValidError_imp& imp) = 0;
+    virtual bool HasErrors() const = 0;
 
 protected:
     void x_Init();
@@ -136,6 +137,7 @@ public:
 
     virtual void AddReply(const CT3Reply& reply);
     virtual void PostErrors(CValidError_imp& imp);
+    virtual bool HasErrors() const;
 
     const string& SuggestFix() const;
 
@@ -157,6 +159,7 @@ public:
 
     virtual void AddReply(const CT3Reply& reply);
     virtual void PostErrors(CValidError_imp& imp);
+    virtual bool HasErrors() const;
 
     static string MakeKey(const string& strain, const string& taxname);
     static bool RequireTaxname(const string& taxname);
@@ -183,6 +186,8 @@ public:
 
     bool IsPopulated() const { return m_Populated; };
 
+    void Clear();
+
     // GetKey gets a string key that is used to determine whether the lookup for two Org-refs
     // will be the same.
     // * For validating specific hosts, this would be the original value.
@@ -201,6 +206,9 @@ public:
     void AddDesc(CConstRef<CSeqdesc> desc, CConstRef<CSeq_entry> ctx);
     void AddFeat(CConstRef<CSeq_feat> feat);
 
+    // add an item to be looked up independently of a feature or descriptor
+    void AddString(const string& val);
+
     // GetRequestList returns a list of Org-refs to be sent to taxonomy.
     // Note that the number of requests may be greater than the number of
     // values being checked.
@@ -216,6 +224,7 @@ public:
 
     // Posts errors to the validator based on responses
     void PostErrors(CValidError_imp& imp);
+    bool HasErrors() const;
 
     // Applies the change to an Org-ref. Note that there might be multiple
     // qualifiers of the same subtype on the Org-ref, and we need to be sure
@@ -332,6 +341,9 @@ public:
     CConstRef<CSeq_feat> GetFeat(size_t num) const { return m_SrcFeats[num]; };
 
     bool DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with_host);
+
+    void FixOneSpecificHost(string& val);
+    bool IsOneSpecificHostValid(const string& val);
 
 protected:
     void x_GatherSources(const CSeq_entry& se);

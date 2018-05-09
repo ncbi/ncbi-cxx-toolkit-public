@@ -59,6 +59,7 @@
 #include <objtools/validator/utilities.hpp>
 #include <objtools/validator/splice_problems.hpp>
 #include <objtools/validator/translation_problems.hpp>
+#include <objtools/validator/tax_validation_and_cleanup.hpp>
 
 #include <vector>
 #include <algorithm>
@@ -2188,54 +2189,8 @@ bool IsSpecificHostValid(const string& val, string& error_msg)
 string FixSpecificHost(const string& val)
 {
     string hostfix = val;
-    if (NStr::IsBlank(val)) {
-        return hostfix;
-    }
-
-    NStr::TruncateSpacesInPlace(hostfix);
-
-    hostfix = COrgMod::FixHost(hostfix);
-
-    string errormsg;
-    if (IsSpecificHostValid(hostfix, errormsg)) {
-        return hostfix;
-    }
-    
-    string host = val;
-    
-    AdjustSpecificHostForTaxServer(host);
-    vector<CRef<COrg_ref> > org_req_list;
-    CRef<COrg_ref> req(new COrg_ref());
-    req->SetTaxname(host);
-    org_req_list.push_back(req);
-    
-    CTaxon3 taxon3;
-    taxon3.Init();
-    CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_req_list);
-    bool corrected = false;
-    if (reply && reply->GetReply().size() == 1) {
-        CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
-        if ((*reply_it)->IsError()) {
-            hostfix = kEmptyStr;
-        } else if ((*reply_it)->IsData()) {
-            if (HasMisSpellFlag((*reply_it)->GetData()) && (*reply_it)->GetData().IsSetOrg()) {
-                hostfix = (*reply_it)->GetData().GetOrg().GetTaxname();
-                corrected = true;
-            } else if ((*reply_it)->GetData().IsSetOrg()) {
-                if (! FindMatchInOrgRef(host, (*reply_it)->GetData().GetOrg())
-                    && ! IsCommonName((*reply_it)->GetData())) {
-                        hostfix = (*reply_it)->GetData().GetOrg().GetTaxname();
-                        corrected = true;
-                    }
-            } else  {
-                hostfix = kEmptyStr;
-            }
-        }
-    }
-    if ( !corrected && ! NStr::IsBlank(hostfix)) {
-        NStr::ReplaceInPlace(hostfix, "  ", " ");
-        NStr::TruncateSpacesInPlace(hostfix);
-    }	
+    validator::CTaxValidationAndCleanup tval;
+    tval.FixOneSpecificHost(hostfix);
     
     return hostfix;
 }
