@@ -288,6 +288,7 @@ struct CMasterInfo
     EDateIssues m_update_date_issues;
     bool m_creation_date_present;
     EDateIssues m_creation_date_issues;
+    bool m_need_to_remove_dates;
 
     CRef<CSeq_entry> m_master_bioseq;
     CRef<CSeq_entry> m_id_master_bioseq;
@@ -328,6 +329,7 @@ struct CMasterInfo
         m_update_date_issues(eDateNoIssues),
         m_creation_date_present(false),
         m_creation_date_issues(eDateNoIssues),
+        m_need_to_remove_dates(false),
         m_num_of_entries(0),
         m_accession_ver(-1),
         m_keywords_set(false),

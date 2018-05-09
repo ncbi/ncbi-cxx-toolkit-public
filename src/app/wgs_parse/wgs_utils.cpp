@@ -98,17 +98,6 @@ bool GetInputTypeFromFile(CNcbiIfstream& stream, EInputType& type)
 }
 
 
-bool IsPubdescContainsSub(const CPubdesc& pub)
-{
-    if (pub.IsSetPub() && pub.GetPub().IsSet()) {
-
-        const CPub_equiv::Tdata& pubs = pub.GetPub().Get();
-        return find_if(pubs.begin(), pubs.end(), [](const CRef<CPub>& pub) { return pub->IsSub(); }) != pubs.end();
-    }
-
-    return false;
-}
-
 bool GetDescr(const CSeq_entry& entry, const CSeq_descr* &descrs)
 {
     bool ret = true;
@@ -196,12 +185,11 @@ CRef<CSeqdesc> GetSeqdescr(CSeq_entry& entry, CSeqdesc::E_Choice type)
     CRef<CSeqdesc> ret;
     if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
         for (auto descr : descrs->Set()) {
-            if (descr->IsCreate_date()) {
+            if (descr->Which() == type) {
                 ret = descr;
                 break;
             }
         }
-
     }
 
     return ret;

@@ -109,9 +109,18 @@ static void RemoveDates(CSeq_entry& entry, bool remove_creation, bool remove_upd
 class CIsSamePub
 {
 public:
-    CIsSamePub(const CPubdesc& pubdesc) : m_pubdesc(pubdesc) {}
+
+    CIsSamePub(const CPubdesc& pubdesc, bool is_cit_sub = false) :
+        m_pubdesc(pubdesc), m_cit_sub(is_cit_sub) {}
 
     bool operator()(const CPubDescriptionInfo& pub_info) const
+    {
+        return (m_cit_sub && GetParams().GetSource() != eNCBI) ? IsCitSubEquals(pub_info) : IsPubEquals(pub_info);
+    }
+
+private:
+
+    bool IsPubEquals(const CPubDescriptionInfo& pub_info) const
     {
         if (pub_info.m_pubdescr_lookup->Equals(m_pubdesc)) {
             return true;
@@ -125,8 +134,34 @@ public:
         return false;
     }
 
-private:
+    bool IsCitSubEquals(const CPubDescriptionInfo& pub_info) const
+    {
+        bool ret = false;
+
+        const CCit_sub* cit_sub = GetCitSub(*pub_info.m_pubdescr_lookup);
+        if (cit_sub) {
+
+            CCit_sub* cit_sub_non_const = const_cast<CCit_sub*>(cit_sub);
+            CDate orig_date;
+            if (cit_sub->IsSetDate()) {
+                orig_date.Assign(cit_sub->GetDate());
+            }
+
+            cit_sub_non_const->ResetDate();
+            if (pub_info.m_pubdescr_lookup->Equals(m_pubdesc)) {
+                ret = true;
+            }
+
+            if (orig_date.Which() != CDate::e_not_set) {
+                cit_sub_non_const->SetDate().Assign(orig_date);
+            }
+        }
+
+        return ret;
+    }
+
     const CPubdesc& m_pubdesc;
+    bool m_cit_sub;
 };
 
 static void RemovePubs(CSeq_entry& entry, const list<CPubDescriptionInfo>& common_pubs, const CDate_std* date)
@@ -162,7 +197,7 @@ static void RemovePubs(CSeq_entry& entry, const list<CPubDescriptionInfo>& commo
                     }
                 }
 
-                if (find_if(common_pubs.begin(), common_pubs.end(), CIsSamePub((*cur_descr)->GetPub())) != common_pubs.end()) {
+                if (find_if(common_pubs.begin(), common_pubs.end(), CIsSamePub((*cur_descr)->GetPub(), cit_sub != nullptr)) != common_pubs.end()) {
                     cur_descr = descrs->Set().erase(cur_descr);
                     removed = true;
                 }
@@ -1186,7 +1221,7 @@ bool ParseSubmissions(CMasterInfo& master_info)
                 map<string, string> ids;
                 for (auto& entry : seq_submit->SetData().SetEntrys()) {
 
-                    if (master_info.m_creation_date_present || master_info.m_update_date_present) {
+                    if (master_info.m_need_to_remove_dates) {
                         RemoveDates(*entry, master_info.m_creation_date_present, master_info.m_update_date_present);
                     }
 
@@ -1207,7 +1242,6 @@ bool ParseSubmissions(CMasterInfo& master_info)
                         RemoveComments(*entry, master_info.m_common_structured_comments, GetStructuredCommentString);
 
                         if (!master_info.m_common_pubs.empty()) {
-                            
                             RemovePubs(*entry, master_info.m_common_pubs, nullptr);
                         }
                     }

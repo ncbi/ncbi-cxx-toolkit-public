@@ -358,6 +358,10 @@ static void PrintGenAccList(const list<CIdInfo>& infos, CNcbiOfstream& out)
 
 static void PrintGenAccOrderList(CMasterInfo& info)
 {
+    if (info.m_id_infos.empty()) {
+        return;
+    }
+
     const string& id_acc_file = GetParams().GetIdAccFile();
     const string& load_order_file = GetParams().GetLoadOrderFile();
 
@@ -757,12 +761,12 @@ static void FixMasterDates(CMasterInfo& info, bool entry_from_id)
         return;
     }
 
-    CRef<CSeqdesc> update_date = GetSeqdescr(*info.m_id_master_bioseq, CSeqdesc::e_Update_date);
+    CRef<CSeqdesc> update_date = GetSeqdescr(*info.m_master_bioseq, CSeqdesc::e_Update_date);
 
     if (update_date.Empty()) {
         update_date.Reset(new CSeqdesc);
         update_date->SetUpdate_date(*info.m_update_date);
-        info.m_id_master_bioseq->SetDescr().Set().push_back(update_date);
+        info.m_master_bioseq->SetDescr().Set().push_back(update_date);
     }
     else {
         bool fix_update_date = true;

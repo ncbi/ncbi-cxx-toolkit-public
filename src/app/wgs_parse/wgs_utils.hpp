@@ -75,8 +75,6 @@ size_t GetMaxAccessionLen(int accession_num);
 bool GetInputType(const std::string& str, EInputType& type);
 bool GetInputTypeFromFile(CNcbiIfstream& stream, EInputType& type);
 
-bool IsPubdescContainsSub(const CPubdesc& pub);
-
 string GetLocalOrGeneralIdStr(const CSeq_id& id);
 bool IsLocalOrGeneralId(const CSeq_id& id);
 bool HasTextAccession(const CSeq_id& id);

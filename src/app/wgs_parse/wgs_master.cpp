@@ -82,7 +82,7 @@ static size_t CheckPubs(const CSeq_entry& entry, const string& file, list<CPubDe
 
         for (auto& descr : descrs->Get()) {
             if (descr->IsPub()) {
-                if (!IsPubdescContainsSub(descr->GetPub())) {
+                if (!HasPubOfChoice(descr->GetPub(), CPub::e_Sub)) {
                     ++num_of_pubs;
                 }
 
@@ -107,7 +107,7 @@ static size_t CheckPubs(const CSeq_entry& entry, const string& file, list<CPubDe
             pubdescr_info.m_pubdescr_synonyms.push_back(pub);
             pubdescr_info.m_pubdescr_lookup = pub;
 
-            if (!IsPubdescContainsSub(*pub)) {
+            if (!HasPubOfChoice(*pub, CPub::e_Sub)) {
                 pubdescr_info.m_pmid = SinglePubLookup(pubdescr_info.m_pubdescr_lookup);
             }
 
@@ -129,7 +129,7 @@ static size_t CheckPubs(const CSeq_entry& entry, const string& file, list<CPubDe
                     break;
                 }
 
-                if (IsPubdescContainsSub(**pub)) {
+                if (HasPubOfChoice(**pub, CPub::e_Sub)) {
                     continue;
                 }
 
@@ -1648,6 +1648,8 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                     if (!master_info.m_creation_date_present) {
                         master_info.m_creation_date_present = IsDatePresent(*entry, CSeqdesc::e_Create_date);
                     }
+
+                    master_info.m_need_to_remove_dates = master_info.m_creation_date_present || master_info.m_update_date_present;
                 }
 
                 CSeqEntryInfo info(master_info.m_keywords_set, master_info.m_keywords);
