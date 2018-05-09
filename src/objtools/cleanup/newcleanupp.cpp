@@ -7588,6 +7588,13 @@ void CNewCleanup_imp::ProtNameBC (  std::string & str )
     const string::size_type old_length = str.length();
     CleanVisStringJunk (str, true);
     TrimInternalSemicolons (str);
+
+    // Remove tabs
+    if (NStr::Find(str, "\t") != NPOS) {
+        NStr::ReplaceInPlace(str, "\t", " ");
+        ChangeMade(CCleanupChange::eChangeProtNames);
+    }
+
     if (str.length() != old_length) {
         ChangeMade (CCleanupChange::eChangeProtNames);
     }
@@ -7621,7 +7628,9 @@ void CNewCleanup_imp::ProtrefBC (
         string desc = prot_ref.GetDesc();
         desc = desc.substr(1, desc.length() - 2);
         prot_ref.SetDesc(desc);
+        ChangeMade (CCleanupChange::eChangeQualifiers);
     }
+
     REMOVE_IF_EMPTY_NAME_ON_PROTREF(prot_ref);
 
     CLEAN_STRING_LIST (prot_ref, Ec);

@@ -2174,3 +2174,23 @@ BOOST_AUTO_TEST_CASE(Test_x_AddNumToUserField)
     BOOST_CHECK_EQUAL(CCleanup::CleanupUserObject(*obj), true);
     BOOST_CHECK_EQUAL(f->GetNum(), 1);
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_4508)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+    prot->SetData().SetProt().SetName().front() = "a\tb";
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*entry);
+
+    BOOST_CHECK_EQUAL(prot->GetData().GetProt().GetName().front(), "a b");
+
+}
