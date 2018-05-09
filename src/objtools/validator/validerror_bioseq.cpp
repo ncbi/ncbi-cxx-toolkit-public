@@ -5967,7 +5967,7 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                                     NStr::Find(comment_text, "coding region disrupted by sequencing gap") != string::npos)) {
                             // suppress
                         } else {
-                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemNotConsensus5Prime,
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemNotSpliceConsensus5Prime,
                                 "5' partial is not at beginning of sequence, gap, or consensus splice site",
                                 *(feat.GetSeq_feat())); 
                         }
@@ -5981,7 +5981,7 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                                     && NStr::Find(comment_text, "coding region disrupted by sequencing gap") != string::npos)) {
                             // suppress
                         } else {
-                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemNotConsensus3Prime,
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemNotSpliceConsensus3Prime,
                                 "3' partial is not at end of sequence, gap, or consensus splice site",
                                 *(feat.GetSeq_feat()));
                         }
