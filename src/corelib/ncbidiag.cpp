@@ -985,16 +985,21 @@ void CDiagContextThreadData::SetRequestContext(CRequestContext* ctx)
     }
 
     m_RequestCtx->m_Ctx = ctx;
-
-    if (ctx->m_OwnerTID == kOwnerTID_None) {
-        // Save current TID in the context.
-        ctx->m_OwnerTID = m_TID;
+    if (!ctx->GetReadOnly()) {
+        if (ctx->m_OwnerTID == kOwnerTID_None) {
+            // Save current TID in the context.
+            ctx->m_OwnerTID = m_TID;
+        }
+        else if (ctx->m_OwnerTID != m_TID) {
+            ERR_POST_X_ONCE(29,
+                "Using the same CRequestContext in multiple threads is unsafe!"
+                << CStackTrace());
+            _TROUBLE;
+        }
     }
-    else if (ctx->m_OwnerTID != m_TID) {
-        ERR_POST_X_ONCE(29,
-            "Using the same CRequestContext in multiple threads is unsafe!"
-            << CStackTrace());
-        _TROUBLE;
+    else {
+        // Read-only contexts should not remember owner thread.
+        ctx->m_OwnerTID = kOwnerTID_None;
     }
 }
 

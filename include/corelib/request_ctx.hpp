@@ -322,6 +322,21 @@ public:
     /// Add pass-through value if it matches a pattern from NCBI_CONTEXT_FIELDS.
     void AddPassThroughProperty(const string& name, const string& value);
 
+    /// Switch request context to read-only mode. A read-only context
+    /// can be attached to multiple threads. The mode must be disabled
+    /// before making any modifications (e.g. printing request-stop).
+    /// To avoid overhead CRequestContext does not check if there are
+    /// any threads currently using the same context in a different mode.
+    /// Any attempts to modify request context while in read-only mode
+    /// are ignored and reported as an error (once per process).
+    /// Note that some const methods may still need to modify the context
+    /// (e.g. GetHitID() generates a new hit id if it's not yet assigned).
+    /// To prevent the above error from being logged, the method should be
+    /// called at least once before switching to read-only mode.
+    void SetReadOnly(bool read_only) { m_IsReadOnly = read_only; }
+    /// Get current read-only flag.
+    bool GetReadOnly(void) const { return m_IsReadOnly; }
+
 private:
     // Prohibit copying
     CRequestContext(const CRequestContext&);
@@ -388,6 +403,8 @@ private:
     friend class CDiagBuffer;
     bool x_LogHitIDOnError(void) const;
 
+    bool x_CanModify(void) const;
+        
     enum FLoggedHitIDFlag {
         fLoggedOnRequest = 1, // Logged on creation or request start
         fLoggedOnError = 2    // Logged on ERR_POST when applog messages are disabled
@@ -415,6 +432,7 @@ private:
     friend class CDiagContextThreadData;
     // TID of the thread currently using this context or -1.
     Uint8          m_OwnerTID;
+    bool           m_IsReadOnly;
 
     // Name/value map for properties to be passed between requests.
     // @sa CRequestContext_PassThrough
@@ -562,6 +580,7 @@ CRequestContext::TCount CRequestContext::GetRequestID(void) const
 inline
 void CRequestContext::SetRequestID(TCount rid)
 {
+    if (!x_CanModify()) return;
     x_SetProp(eProp_RequestID);
     m_RequestID = rid;
 }
@@ -569,6 +588,7 @@ void CRequestContext::SetRequestID(TCount rid)
 inline
 CRequestContext::TCount CRequestContext::SetRequestID(void)
 {
+    if (!x_CanModify()) return m_RequestID;
     SetRequestID(GetNextRequestID());
     return m_RequestID;
 }
@@ -582,6 +602,7 @@ bool CRequestContext::IsSetRequestID(void) const
 inline
 void CRequestContext::UnsetRequestID(void)
 {
+    if (!x_CanModify()) return;
     x_UnsetProp(eProp_RequestID);
     m_RequestID = 0;
 }
@@ -602,6 +623,7 @@ bool CRequestContext::IsSetClientIP(void) const
 inline
 void CRequestContext::UnsetClientIP(void)
 {
+    if (!x_CanModify()) return;
     x_UnsetProp(eProp_ClientIP);
     m_ClientIP.clear();
 }
@@ -642,6 +664,7 @@ bool CRequestContext::IsSetExplicitSessionID(void) const
 inline
 void CRequestContext::UnsetSessionID(void)
 {
+    if (!x_CanModify()) return;
     x_UnsetProp(eProp_SessionID);
     m_SessionID.SetString(kEmptyStr);
 }
@@ -667,6 +690,7 @@ bool CRequestContext::IsSetHitID(EHitIDSource src) const
 inline
 void CRequestContext::UnsetHitID(void)
 {
+    if (!x_CanModify()) return;
     x_UnsetProp(eProp_HitID);
     m_HitID.SetHitId(kEmptyStr);
     m_HitIDLoggedFlag = 0;
@@ -677,6 +701,7 @@ void CRequestContext::UnsetHitID(void)
 inline
 const string& CRequestContext::GetNextSubHitID(CTempString prefix)
 {
+    if (!x_CanModify()) return m_SubHitIDCache;
     x_UpdateSubHitID(true, prefix);
     return m_SubHitIDCache;
 }
@@ -707,6 +732,7 @@ const string& CRequestContext::GetDtab(void) const
 inline
 void CRequestContext::SetDtab(const string& dtab)
 {
+    if (!x_CanModify()) return;
     x_SetProp(eProp_Dtab);
     m_Dtab = dtab;
 }
@@ -715,6 +741,7 @@ void CRequestContext::SetDtab(const string& dtab)
 inline
 void CRequestContext::UnsetDtab(void)
 {
+    if (!x_CanModify()) return;
     x_UnsetProp(eProp_Dtab);
 }
 
@@ -728,6 +755,7 @@ int CRequestContext::GetRequestStatus(void) const
 inline
 void CRequestContext::SetRequestStatus(int status)
 {
+    if (!x_CanModify()) return;
     x_SetProp(eProp_ReqStatus);
     m_ReqStatus = status;
 }
@@ -735,6 +763,7 @@ void CRequestContext::SetRequestStatus(int status)
 inline
 void CRequestContext::SetRequestStatus(CRequestStatus::ECode code)
 {
+    if (!x_CanModify()) return;
     SetRequestStatus((int)code);
 }
 
@@ -747,6 +776,7 @@ bool CRequestContext::IsSetRequestStatus(void) const
 inline
 void CRequestContext::UnsetRequestStatus(void)
 {
+    if (!x_CanModify()) return;
     x_UnsetProp(eProp_ReqStatus);
     m_ReqStatus = 0;
 }
@@ -761,6 +791,7 @@ Int8 CRequestContext::GetBytesRd(void) const
 inline
 void CRequestContext::SetBytesRd(Int8 bytes)
 {
+    if (!x_CanModify()) return;
     x_SetProp(eProp_BytesRd);
     m_BytesRd = bytes;
 }
@@ -774,6 +805,7 @@ bool CRequestContext::IsSetBytesRd(void) const
 inline
 void CRequestContext::UnsetBytesRd(void)
 {
+    if (!x_CanModify()) return;
     x_UnsetProp(eProp_BytesRd);
     m_BytesRd = 0;
 }
@@ -788,6 +820,7 @@ Int8 CRequestContext::GetBytesWr(void) const
 inline
 void CRequestContext::SetBytesWr(Int8 bytes)
 {
+    if (!x_CanModify()) return;
     x_SetProp(eProp_BytesWr);
     m_BytesWr = bytes;
 }
@@ -801,6 +834,7 @@ bool CRequestContext::IsSetBytesWr(void) const
 inline
 void CRequestContext::UnsetBytesWr(void)
 {
+    if (!x_CanModify()) return;
     x_UnsetProp(eProp_BytesWr);
     m_BytesWr = 0;
 }
@@ -833,6 +867,17 @@ bool CRequestContext::x_LogHitIDOnError(void) const
         return false;
     }
     m_HitIDLoggedFlag |= fLoggedOnError;
+    return true;
+}
+
+
+inline
+bool CRequestContext::x_CanModify(void) const
+{
+    if ( m_IsReadOnly ) {
+        ERR_POST_ONCE("Attempt to modify a read-only request context.");
+        return false;
+    }
     return true;
 }
 

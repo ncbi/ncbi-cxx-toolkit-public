@@ -63,7 +63,8 @@ CRequestContext::CRequestContext(TContextFlags flags)
       m_IsRunning(false),
       m_AutoIncOnPost(false),
       m_Flags(flags),
-      m_OwnerTID(-1)
+      m_OwnerTID(-1),
+      m_IsReadOnly(false)
 {
     x_LoadEnvContextProperties();
 }
@@ -103,7 +104,9 @@ void CRequestContext::x_LogHitID(bool ignore_app_state) const
 
 const string& CRequestContext::SetHitID(void)
 {
-    SetHitID(GetDiagContext().GetNextHitID());
+    if (x_CanModify()) {
+        SetHitID(GetDiagContext().GetNextHitID());
+    }
     return m_HitID.GetHitId();
 }
 
@@ -114,6 +117,7 @@ string CRequestContext::x_GetHitID(CDiagContext::EDefaultHitIDFlags flag) const
         x_LogHitID();
         return m_HitID.GetHitId();
     }
+    if (!x_CanModify()) return kEmptyStr;
     CSharedHitId phid = GetDiagContext().x_GetDefaultHitID(CDiagContext::eHitID_NoCreate);
     if (!phid.Empty()) {
         const_cast<CRequestContext*>(this)->x_SetHitID(phid);
@@ -147,12 +151,14 @@ EDiagAppState CRequestContext::GetAppState(void) const
 
 void CRequestContext::SetAppState(EDiagAppState state)
 {
+    if (!x_CanModify()) return;
     m_AppState = state;
 }
 
 
 void CRequestContext::Reset(void)
 {
+    if (!x_CanModify()) return;
     m_AppState = eDiagAppState_NotSet; // Use global AppState
     UnsetRequestID();
     UnsetClientIP();
@@ -169,6 +175,7 @@ void CRequestContext::Reset(void)
 
 void CRequestContext::SetProperty(const string& name, const string& value)
 {
+    if (!x_CanModify()) return;
     m_Properties[name] = value;
 }
 
@@ -188,6 +195,7 @@ bool CRequestContext::IsSetProperty(const string& name) const
 
 void CRequestContext::UnsetProperty(const string& name)
 {
+    if (!x_CanModify()) return;
     m_Properties.erase(name);
 }
 
@@ -197,6 +205,7 @@ static const char* kBadIP = "0.0.0.0";
 
 void CRequestContext::SetClientIP(const string& client)
 {
+    if (!x_CanModify()) return;
     x_SetProp(eProp_ClientIP);
 
     // Verify IP
@@ -212,6 +221,7 @@ void CRequestContext::SetClientIP(const string& client)
 
 void CRequestContext::StartRequest(void)
 {
+    if (!x_CanModify()) return;
     x_LoadEnvContextProperties();
     if (m_Flags & fResetOnStart) {
         UnsetRequestStatus();
@@ -226,6 +236,7 @@ void CRequestContext::StartRequest(void)
 
 void CRequestContext::StopRequest(void)
 {
+    if (!x_CanModify()) return;
     if ((m_HitIDLoggedFlag & fLoggedOnRequest) == 0) {
         // Hit id has not been set or logged yet. Try to log the default one.
         x_GetHitID(CDiagContext::eHitID_NoCreate);
@@ -326,6 +337,7 @@ static bool IsValidHitID(const string& hit) {
 
 void CRequestContext::x_SetHitID(const CSharedHitId& hit_id)
 {
+    if (!x_CanModify()) return;
     const string& hit = hit_id.GetHitId();
     if (m_HitIDLoggedFlag & fLoggedOnRequest) {
         // Show warning when changing hit id after is has been logged.
@@ -364,6 +376,7 @@ void CRequestContext::x_SetHitID(const CSharedHitId& hit_id)
 
 void CRequestContext::SetHitID(const string& hit)
 {
+    if (!x_CanModify()) return;
     x_SetHitID(CSharedHitId(hit));
 }
 
@@ -381,14 +394,15 @@ void CRequestContext::x_UpdateSubHitID(bool increment, CTempString prefix)
 
     // Use global sub-hit counter for default hit id to prevent
     // duplicate phids in different threads.
-    m_SubHitIDCache = GetHitID();
+    string hit_id = GetHitID();
 
     unsigned int sub_hit_id = increment ?
         m_HitID.GetNextSubHitId() : m_HitID.GetCurrentSubHitId();
 
     // Cache the string so that C code can use it.
     string subhit = prefix + NStr::NumericToString(sub_hit_id);
-    m_SubHitIDCache += "." + subhit;
+    hit_id += "." + subhit;
+    m_SubHitIDCache = hit_id;
     if (increment  &&  sub_hit_id <= TIssuedSubHitLimitParam::GetDefault()) {
         GetDiagContext().Extra().Print("issued_subhit", subhit);
     }
@@ -397,6 +411,7 @@ void CRequestContext::x_UpdateSubHitID(bool increment, CTempString prefix)
 
 void CRequestContext::SetSessionID(const string& session)
 {
+    if (!x_CanModify()) return;
     if ( !IsValidSessionID(session) ) {
         EOnBadSessionID action = GetBadSessionIDAction();
         switch ( action ) {
@@ -534,6 +549,7 @@ CRef<CRequestContext> CRequestContext::Clone(void) const
     ret->m_IsRunning = m_IsRunning;
     ret->m_AutoIncOnPost = m_AutoIncOnPost;
     ret->m_Flags = m_Flags;
+    ret->m_IsReadOnly = m_IsReadOnly;
     return ret;
 }
 
@@ -589,6 +605,7 @@ void CRequestContext::x_SetPassThroughProp(CTempString name,
                                            CTempString value,
                                            bool update) const
 {
+    if (!x_CanModify()) return;
     m_PassThroughProperties[name] = value;
     if ( update ) x_UpdateStdContextProp(name);
 }
@@ -596,6 +613,7 @@ void CRequestContext::x_SetPassThroughProp(CTempString name,
 
 void CRequestContext::x_ResetPassThroughProp(CTempString name, bool update) const
 {
+    if (!x_CanModify()) return;
     TPassThroughProperties::iterator found = m_PassThroughProperties.find(name);
     if (found != m_PassThroughProperties.end()) {
         m_PassThroughProperties.erase(found);
@@ -743,6 +761,7 @@ string CRequestContext::sx_NormalizeContextPropertyName(const string& name)
 
 void CRequestContext::x_LoadEnvContextProperties(void)
 {
+    if (!x_CanModify()) return;
     // Parse environment only once.
     if ( !sm_EnvContextProperties.get() ) {
         TPassThroughProperties props;
@@ -776,6 +795,7 @@ void CRequestContext::x_LoadEnvContextProperties(void)
 
 void CRequestContext::AddPassThroughProperty(const string& name, const string& value)
 {
+    if (!x_CanModify()) return;
     const CMask& mask = sx_GetContextFieldsMask();
     string norm_prop = sx_NormalizeContextPropertyName(name);
     if ( mask.Match(norm_prop, NStr::eNocase) ) {
