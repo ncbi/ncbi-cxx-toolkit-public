@@ -81,15 +81,6 @@ void CValidError_bioseqset::ValidateBioseqSet(
         if ( se.IsSet() ) {
             const CBioseq_set& set = se.GetSet();
 
-            // look for internal genbank sets
-            if ( set.IsSetClass() 
-                 && set.GetClass() == CBioseq_set::eClass_genbank ) {
-
-                PostErr(eDiag_Info, eErr_SEQ_PKG_InternalGenBankSet,
-                         "Bioseq-set contains internal GenBank Bioseq-set",
-                         seqset);
-            }
-
             // validate member set
             ValidateBioseqSet (set);
         } else if (se.IsSeq()) {

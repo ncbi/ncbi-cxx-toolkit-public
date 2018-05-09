@@ -10524,17 +10524,12 @@ BOOST_AUTO_TEST_CASE(Test_PKG_InternalGenBankSet)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Info, "InternalGenBankSet",
-                                                 "Bioseq-set contains internal GenBank Bioseq-set"));
-
     expected_errors.push_back(new CExpectedError("", eDiag_Warning, "ImproperlyNestedSets",
                                                  "Nested sets within Pop/Phy/Mut/Eco/Wgs set"));
 
     TESTPOPPHYMUTECO (seh, entry)
 
     CLEAR_ERRORS
-    expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Info, "InternalGenBankSet",
-                                                 "Bioseq-set contains internal GenBank Bioseq-set"));
     expected_errors.push_back(new CExpectedError("", eDiag_Warning, "ImproperlyNestedSets",
                                                  "Nested sets within Pop/Phy/Mut/Eco/Wgs set"));
     scope.RemoveTopLevelSeqEntry(seh);
