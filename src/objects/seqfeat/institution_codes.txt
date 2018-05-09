@@ -85,7 +85,7 @@ AESB	s	Agriculture Experiment Station
 AFAQ	s	Amateur Fisheries Association of Queensland		
 AFES	s	Maritimes Forest Research Centre		
 AFGMC	s	Alaska Department of Fish and Game		
-AFS	s	University of Michigan		
+AFS	s	American Fern Society Herbarium		
 AFSDU	s	Suleyman Demirel University, Agricultural Faculty		
 AFTC	s	Alaska Frozen Tissue Collection		
 AGRITEC	b	AGRITEC, Ltd.		
@@ -1486,7 +1486,6 @@ DELTA	s	Delta Waterfowl and Wetlands Research Station
 DEN	s	Denison University, Biology Department		
 DENA	s	Watt Institute		
 DENF	s	Grand Mesa-Uncompahgre-Gunnison Natonal Forests		
-DENH	s	University of New Hampshire		
 DERM	s	Intermountain Experiment Station		
 DES	sb	Desert Botanical Garden, Research Department		
 DEV	s	St. Joseph's College		
@@ -1802,7 +1801,7 @@ ESRC	s	Nova Scotia Department Natural Resources
 ESRN	s	Escola Superior de Agricultura		
 ESS	s	Universitaet Essen		
 ESSE	s	Anadolu University		
-ESUG	s	University of Guam		
+ESUG	s	University of Guam	UGG,UGM
 ESUW	s	University of Wyoming Insect Museum and Gallery		
 ET	s	East Texas State University		
 ETH<CHE>	c	Kultursammlungen der Eidgenosische Technische Hochschule		
@@ -4011,7 +4010,7 @@ MIL	s	Milwaukee Public Museum
 MIM	s	Minusinsk N. M. Martjanov Regional Museum		
 MIMB	s	Museum of the Institute of Marine Biology		
 MIMM	s	Mauritius Institute		
-MIN	s	University of Minnesota		
+MIN	s	University of Minnesota (J. F. Bell Museum of Natural History)		
 MINC	s	Universidad Politecnica		
 MINI	s	Muzeul de Istoria Naturala		
 MIPV	s	Universita degli Studi di Milano, Laboratorio di Micologia e Batteriologia Fitopathologica		
@@ -4552,7 +4551,7 @@ NDSR	s	National Drosophila Species Resource Center
 NDSU	s	North Dakota State University		
 NDTC	s	Ningde Teachers College, Biology Department		
 NE	s	University of New England		
-NEB	s	University of Nebraska State Museum		
+NEB	s	University of Nebraska State Museum (C. E. Bessey Herbarium)		
 NEBC	s	New England Botanical Club		
 NEBK	h	University of Nebraska at Kearney		
 NEFI	s	Northeastern Forestry University, Forestry Department		
@@ -6657,10 +6656,10 @@ UGAMNH	s	University of Georgia Museum of Natural History
 UGCA	s	University of Georgia		
 UGDA	s	Gdansk University, Department of Plant Taxonomy and Nature Conservation		
 UGDZ	s	University of Guelph, Department of Zoology		
-UGG	s	University of Guam		
+UGG	s	University of Guam	ESUG,UGM
 UGGE	s	Universidad de Guayaquil		
 UGGG	s	University of Guyana		
-UGM	s	University of Guam		
+UGM	s	University of Guam	ESUG,UGG
 UGMD	s	Zoology Museum of the University of Ghent		
 UH	s	University of Hawaii		
 UHCC	c	University of Helsinki Cyanobacteria Culture Collection		
@@ -6690,11 +6689,11 @@ UKMS<MYS>	s	Universiti Kebangsaan Malaysia, Kampus Sabah
 UKMS<SDN>	s	Sudan Natural History Museum	SNHM
 UKS	s	University of Khartoum		
 UKSPI	s	Ust-Kamenogorsk State Pedagogical Institute, Botany Department		
-UL	s	University of Louisville		
+UL	s	University of Louisville	ULKY
 ULABG	s	Universidad de los Andes, Laboratorio de Biogeografia		
 ULCI	s	Universidad de la Laguna		
 ULF	s	Universite Laval, Departement des Sciences forestieres		
-ULKY	s	University of Louisville		
+ULKY	s	University of Louisville	UK
 ULLZ	s	University of Louisiana at Layafette Zoological Collection	USLZ
 ULM	s	Universitaet Ulm, Abteilung Systematische Botanik und Oekologie		
 ULMG	s	University of Leipzig		
@@ -6714,7 +6713,7 @@ UMBC	s	Univeristy of Malawi
 UMBS	s	University of Michigan		
 UMD	s	University of Minnesota, Duluth		
 UMDC	s	University of Maryland		
-UMDE	s	University of Maine		
+UMDE	s	University of Maine	UMO
 UME	s	Umeaa University		
 UMEC	s	University of Massachusetts		
 UMED	s	University of Moi		
@@ -6739,7 +6738,7 @@ UMMZ:MC	s	University of Michigan, Museum of Zoology, Mollusk Collection
 UMNH	s	Utah Museum of Natural History		
 UMNH:Mamm	s	Utah Museum of Natural History, Mammal collection
 UMO<GBR>	s	University Museum of Natural History		
-UMO<USA-ME>	s	University of Maine		
+UMO<USA-ME>	s	University of Maine	UMDE
 UMO<USA-MO>	s	Dunn-Palmer Herbarium, University of Missouri, Museum Support Center		
 UMOC	s	University of Missouri, Museum of Zoology		
 UMR CNRS	s	Unites Mixtes de Recherche		
@@ -6791,7 +6790,7 @@ UNCW	s	University of North Carolina at Wilmington
 UND	s	University of North Dakota, Vertebrate Museum		
 UNDH	s	University of Natal Durban		
 UNEFM	s	Universidad Experimental Francisco de Miranda		
-UNEVR	s	University of Nevada, Museum of Biology		
+UNEVR	s	University of Nevada, Museum of Biology	UNR
 UNEX	s	Universidad de Extremadura, Departamento de Botanica		
 UNEX:FECRGA	c	Universidad de Extremadura, Departamento de Botanica, Fungal Endophytes Collection of the  Research Group of Agronomy
 UNH	s	University of New Hampshire		
