@@ -12423,13 +12423,15 @@ bool CNewCleanup_imp::x_FixParentPartials(const CSeq_feat& sf, CSeq_feat& parent
         return any_changes;
     }
     if (sf.GetLocation().IsPartialStart(eExtreme_Biological) &&
-        !parent.GetLocation().IsPartialStart(eExtreme_Biological)) {
+        !parent.GetLocation().IsPartialStart(eExtreme_Biological) &&
+        sf.GetLocation().GetStart(eExtreme_Biological) == parent.GetLocation().GetStart(eExtreme_Biological)) {
         parent.SetLocation().SetPartialStart(true, eExtreme_Biological);
         parent.SetPartial(true);
         any_changes = true;
     }
     if (sf.GetLocation().IsPartialStop(eExtreme_Biological) &&
-        !parent.GetLocation().IsPartialStop(eExtreme_Biological)) {
+        !parent.GetLocation().IsPartialStop(eExtreme_Biological) &&
+        sf.GetLocation().GetStop(eExtreme_Biological) == parent.GetLocation().GetStop(eExtreme_Biological)) {
         parent.SetLocation().SetPartialStop(true, eExtreme_Biological);
         parent.SetPartial(true);
         any_changes = true;

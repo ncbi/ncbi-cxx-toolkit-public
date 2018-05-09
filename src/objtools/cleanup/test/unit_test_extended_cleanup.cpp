@@ -1782,3 +1782,44 @@ BOOST_AUTO_TEST_CASE(Test_GB_7166)
     TestGeneNormalization(entry, false);
 
 }
+
+
+void TestParentPartial(bool cds_prime5, bool cds_prime3)
+{
+    CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
+
+    CRef<CSeq_feat> cds1 = AddMiscFeature(entry, 11);
+    cds1->SetData().SetCdregion();
+    cds1->SetLocation().SetInt().SetPartialStart(cds_prime5, eExtreme_Biological);
+    cds1->SetLocation().SetInt().SetPartialStop(true, eExtreme_Biological);
+
+    CRef<CSeq_feat> cds2 = AddMiscFeature(entry, entry->GetSeq().GetLength() - 1);
+    cds2->SetData().SetCdregion();
+    cds2->SetLocation().SetInt().SetFrom(22);
+    cds2->SetLocation().SetInt().SetPartialStart(true, eExtreme_Biological);
+    cds2->SetLocation().SetInt().SetPartialStop(cds_prime3, eExtreme_Biological);
+
+    CRef<CSeq_feat> gene = AddMiscFeature(entry, entry->GetSeq().GetLength() - 1);
+    gene->SetData().SetGene().SetLocus("X");
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup(seh);
+
+    CFeat_CI g(seh, CSeqFeatData::e_Gene);
+
+    BOOST_CHECK_EQUAL(g->GetLocation().IsPartialStart(eExtreme_Biological), cds_prime5);
+    BOOST_CHECK_EQUAL(g->GetLocation().IsPartialStop(eExtreme_Biological), cds_prime3);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_4507)
+{
+    TestParentPartial(false, false);
+    TestParentPartial(false, true);
+    TestParentPartial(true, false);
+    TestParentPartial(true, true);
+}
+
