@@ -3406,7 +3406,8 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccessi
                 NStr::EqualNocase (prefix, "UniProt") ||
                 NStr::EqualNocase (prefix, "UniProtKB") ||
                 NStr::EqualNocase (prefix, "SwissProt") ||
-                NStr::EqualNocase (prefix, "KEGG")) {
+                NStr::EqualNocase (prefix, "KEGG") ||
+                NStr::EqualNocase (prefix, "GeneDB")) {
                 // recognized database
             } else {
                 rsult = eInferenceValidCode_unrecognized_database;

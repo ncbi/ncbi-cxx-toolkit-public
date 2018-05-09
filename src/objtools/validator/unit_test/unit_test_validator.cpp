@@ -15944,6 +15944,11 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_InvalidInferenceValue)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    // GeneDB is ok for similar to
+    feat->SetQual().front()->SetVal("similar to RNA sequence:GeneDB:LmjF.01.0090");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
 }
 
 
