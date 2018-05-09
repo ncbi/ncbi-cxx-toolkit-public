@@ -607,8 +607,8 @@ public:
     string      GetStoragekey() const;
     
 private:
-    int         m_Type;         ///< Feature type, or e_not_set for default values.
-    int         m_Subtype;      ///< Feature subtype or eSubtype_any for default values.
+    int         m_Type = 0;         ///< Feature type, or e_not_set for default values.
+    int         m_Subtype = 0;      ///< Feature subtype or eSubtype_any for default values.
     string      m_Description;  ///< a string for display purposes.
     string      m_StorageKey;   ///< a short string to use as a key or part of a key
                                 ///< when storing a value by key/value string pairs.
