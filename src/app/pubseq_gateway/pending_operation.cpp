@@ -389,6 +389,7 @@ void CPendingOperation::x_PrintRequestStop(int  status)
 {
     if (m_RequestContext.NotNull()) {
         CDiagContext::SetRequestContext(m_RequestContext);
+        m_RequestContext->SetReadOnly(false);
         m_RequestContext->SetRequestStatus(status);
         GetDiagContext().PrintRequestStop();
         m_RequestContext.Reset();

@@ -386,6 +386,7 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
 
         // Just in case, avoid to have 0
         context->SetRequestStatus(CRequestStatus::e200_Ok);
+        context->SetReadOnly(true);
     }
     return context;
 }
@@ -396,6 +397,7 @@ void CPubseqGatewayApp::x_PrintRequestStop(CRef<CRequestContext>   context,
 {
     if (context.NotNull()) {
         CDiagContext::SetRequestContext(context);
+        context->SetReadOnly(false);
         context->SetRequestStatus(status);
         GetDiagContext().PrintRequestStop();
         context.Reset();
@@ -465,6 +467,5 @@ int main(int argc, const char* argv[])
     CRequestContext::SetDefaultAutoIncRequestIDOnPost(true);
     CDiagContext::GetRequestContext().SetAutoIncRequestIDOnPost(true);
 
-//    CAppLog::FormatTimeStamp(true);
     return CPubseqGatewayApp().AppMain(argc, argv, NULL, eDS_ToStdlog);
 }
