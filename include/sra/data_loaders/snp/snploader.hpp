@@ -107,18 +107,18 @@ public:
     typedef vector<CAnnotName> TAnnotNames;
     TAnnotNames GetPossibleAnnotNames(void) const;
 
-    virtual TBlobId GetBlobIdFromString(const string& str) const;
+    virtual TBlobId GetBlobIdFromString(const string& str) const override;
 
-    virtual bool CanGetBlobById(void) const;
-    virtual TTSE_Lock GetBlobById(const TBlobId& blob_id);
+    virtual bool CanGetBlobById(void) const override;
+    virtual TTSE_Lock GetBlobById(const TBlobId& blob_id) override;
 
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
-                                    EChoice choice);
+                                    EChoice choice) override;
     virtual TTSE_LockSet GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
                                                  const SAnnotSelector* sel,
                                                  TProcessedNAs* processed_nas) override;
-    virtual void GetChunk(TChunk chunk);
-    virtual void GetChunks(const TChunkSet& chunks);
+    virtual void GetChunk(TChunk chunk) override;
+    virtual void GetChunks(const TChunkSet& chunks) override;
 
 private:
     typedef CParamLoaderMaker<CSNPDataLoader, SLoaderParams> TMaker;
