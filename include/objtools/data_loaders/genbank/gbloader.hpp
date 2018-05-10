@@ -192,36 +192,36 @@ public:
 
     virtual ~CGBDataLoader(void);
 
-    virtual void DropTSE(CRef<CTSE_Info> tse_info);
+    virtual void DropTSE(CRef<CTSE_Info> tse_info) override;
 
-    virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids);
-    virtual SAccVerFound GetAccVerFound(const CSeq_id_Handle& idh);
-    virtual SGiFound GetGiFound(const CSeq_id_Handle& idh);
-    virtual string GetLabel(const CSeq_id_Handle& idh);
-    virtual int GetTaxId(const CSeq_id_Handle& idh);
-    virtual int GetSequenceState(const CSeq_id_Handle& idh);
-    virtual SHashFound GetSequenceHashFound(const CSeq_id_Handle& idh);
-    virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& sih);
-    virtual STypeFound GetSequenceTypeFound(const CSeq_id_Handle& sih);
+    virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids) override;
+    virtual SAccVerFound GetAccVerFound(const CSeq_id_Handle& idh) override;
+    virtual SGiFound GetGiFound(const CSeq_id_Handle& idh) override;
+    virtual string GetLabel(const CSeq_id_Handle& idh) override;
+    virtual int GetTaxId(const CSeq_id_Handle& idh) override;
+    virtual int GetSequenceState(const CSeq_id_Handle& idh) override;
+    virtual SHashFound GetSequenceHashFound(const CSeq_id_Handle& idh) override;
+    virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& sih) override;
+    virtual STypeFound GetSequenceTypeFound(const CSeq_id_Handle& sih) override;
 
-    virtual void GetAccVers(const TIds& ids, TLoaded& loader, TIds& ret);
-    virtual void GetGis(const TIds& ids, TLoaded& loader, TGis& ret);
-    virtual void GetLabels(const TIds& ids, TLoaded& loader, TLabels& ret);
-    virtual void GetTaxIds(const TIds& ids, TLoaded& loader, TTaxIds& ret);
+    virtual void GetAccVers(const TIds& ids, TLoaded& loader, TIds& ret) override;
+    virtual void GetGis(const TIds& ids, TLoaded& loader, TGis& ret) override;
+    virtual void GetLabels(const TIds& ids, TLoaded& loader, TLabels& ret) override;
+    virtual void GetTaxIds(const TIds& ids, TLoaded& loader, TTaxIds& ret) override;
     virtual void GetSequenceStates(const TIds& ids, TLoaded& loader,
-                                   TSequenceStates& ret);
+                                   TSequenceStates& ret) override;
     virtual void GetSequenceHashes(const TIds& ids, TLoaded& loader,
-                                   TSequenceHashes& ret, THashKnown& known);
+                                   TSequenceHashes& ret, THashKnown& known) override;
     virtual void GetSequenceLengths(const TIds& ids, TLoaded& loader,
-                                    TSequenceLengths& ret);
+                                    TSequenceLengths& ret) override;
     virtual void GetSequenceTypes(const TIds& ids, TLoaded& loader,
-                                  TSequenceTypes& ret);
+                                  TSequenceTypes& ret) override;
 
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
-                                    EChoice choice);
+                                    EChoice choice) override;
     virtual TTSE_LockSet GetDetailedRecords(const CSeq_id_Handle& idh,
-                                            const SRequestDetails& details);
-    virtual TTSE_LockSet GetExternalRecords(const CBioseq_Info& bioseq);
+                                            const SRequestDetails& details) override;
+    virtual TTSE_LockSet GetExternalRecords(const CBioseq_Info& bioseq) override;
     virtual TTSE_LockSet GetExternalAnnotRecordsNA(const CSeq_id_Handle& idh,
                                                    const SAnnotSelector* sel,
                                                    TProcessedNAs* processed_nas) override;
@@ -232,20 +232,20 @@ public:
                                                  const SAnnotSelector* sel,
                                                  TProcessedNAs* processed_nas) override;
 
-    virtual void GetChunk(TChunk chunk);
-    virtual void GetChunks(const TChunkSet& chunks);
+    virtual void GetChunk(TChunk chunk) override;
+    virtual void GetChunks(const TChunkSet& chunks) override;
 
-    virtual void GetBlobs(TTSE_LockSets& tse_sets);
+    virtual void GetBlobs(TTSE_LockSets& tse_sets) override;
 
-    virtual TBlobId GetBlobId(const CSeq_id_Handle& idh);
-    virtual TBlobId GetBlobIdFromString(const string& str) const;
+    virtual TBlobId GetBlobId(const CSeq_id_Handle& idh) override;
+    virtual TBlobId GetBlobIdFromString(const string& str) const override;
     TBlobId GetBlobIdFromSatSatKey(int sat,
                                    int sat_key,
                                    int sub_sat = 0) const;
 
-    virtual TBlobVersion GetBlobVersion(const TBlobId& id);
-    bool CanGetBlobById(void) const;
-    TTSE_Lock GetBlobById(const TBlobId& id);
+    virtual TBlobVersion GetBlobVersion(const TBlobId& id) override;
+    virtual bool CanGetBlobById(void) const override;
+    virtual TTSE_Lock GetBlobById(const TBlobId& id) override;
 
     // Create GB loader and register in the object manager if
     // no loader with the same name is registered yet.
@@ -323,9 +323,9 @@ public:
     //string BlobIdToString(const TBlobId& id) const;
 
     virtual TTSE_Lock ResolveConflict(const CSeq_id_Handle& handle,
-                                      const TTSE_LockSet& tse_set);
+                                      const TTSE_LockSet& tse_set) override;
 
-    virtual void GC(void);
+    virtual void GC(void) override;
 
     virtual TNamedAnnotNames GetNamedAnnotAccessions(const CSeq_id_Handle& idh);
     virtual TNamedAnnotNames GetNamedAnnotAccessions(const CSeq_id_Handle& idh,
