@@ -1434,31 +1434,41 @@ void CCassBlobOp::LoadKeys(CBlobFullStatMap *  keys,
     vector< pair<int64_t, int64_t> >    ranges;
     m_Conn->getTokenRanges(ranges);
 
-    unsigned int    concurrent = min<unsigned int>(KEYLOAD_CONCURRENCY,
+    unsigned int concurrent = min<unsigned int>(KEYLOAD_CONCURRENCY,
                                                    static_cast<unsigned int>(ranges.size()));
 
-    string  common = "SELECT ent, modified, size, flags FROM " +
-                     KeySpaceDot(m_Keyspace) + "entity WHERE";
-    string  fsql = common + " TOKEN(ent) >= ? and TOKEN(ent) <= ?";
-    string  sql = common + " TOKEN(ent) > ? and TOKEN(ent) <= ?";
-    string  error;
+    string common;
+    string fsql;
+    string sql;
+    string error;
+    if (m_ExtendedSchema) {
+        common = "SELECT sat_key, last_modified, size, flags FROM " + KeySpaceDot(m_Keyspace) + "bioseq_blob_prop WHERE";
+        fsql = common + " TOKEN(sat_key) >= ? and TOKEN(sat_key) <= ?";
+        sql = common + " TOKEN(sat_key) > ? and TOKEN(sat_key) <= ?";
+    }
+    else {
+        common = "SELECT ent, modified, size, flags FROM " + KeySpaceDot(m_Keyspace) + "entity WHERE";
+        fsql = common + " TOKEN(ent) >= ? and TOKEN(ent) <= ?";
+        sql = common + " TOKEN(ent) > ? and TOKEN(ent) <= ?";
+    }
 
-    SLoadKeysContext                loadkeys_context(0, concurrent, 0, ranges,
+
+    SLoadKeysContext loadkeys_context(0, concurrent, 0, ranges,
                                                      sql, keys, tick);
-    int                             val = loadkeys_context.m_wakeup.Value();
-    vector<shared_ptr<CCassQuery>>  queries;
-    list<SLoadKeysOnDataContext>    contexts;
+    int val = loadkeys_context.m_wakeup.Value();
+    vector<shared_ptr<CCassQuery>> queries;
+    list<SLoadKeysOnDataContext> contexts;
     queries.resize(concurrent);
 
     try {
         for (run_id = 0; run_id < concurrent; ++run_id) {
-            int64_t     lower_bound = ranges[run_id].first;
-            int64_t     step = loadkeys_context.getStep(run_id);
-            int64_t     upper_bound = lower_bound + step;
+            int64_t lower_bound = ranges[run_id].first;
+            int64_t step = loadkeys_context.getStep(run_id);
+            int64_t upper_bound = lower_bound + step;
 
             loadkeys_context.m_max_running = run_id;
 
-            shared_ptr<CCassQuery>      query(m_Conn->NewQuery());
+            shared_ptr<CCassQuery> query(m_Conn->NewQuery());
             queries[run_id].swap(query);
             if (run_id == 0) {
                 queries[run_id]->SetSQL(fsql, 2);

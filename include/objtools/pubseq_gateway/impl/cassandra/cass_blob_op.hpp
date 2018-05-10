@@ -491,8 +491,9 @@ public:
     CCassBlobOp(const CCassBlobOp&) = delete;
     CCassBlobOp& operator=(const CCassBlobOp&) = delete;
 
-    CCassBlobOp(shared_ptr<CCassConnection> conn) :
-        m_Conn(conn)
+    CCassBlobOp(shared_ptr<CCassConnection> conn)
+        : m_Conn(conn)
+        , m_ExtendedSchema(false)
     {
         m_Keyspace = m_Conn->Keyspace();
     }
@@ -512,6 +513,16 @@ public:
     void SetKeyspace(const string &  keyspace)
     {
         m_Keyspace = keyspace;
+    }
+
+    void SetExtendedSchema(bool value)
+    {
+        m_ExtendedSchema = value;
+    }
+
+    bool IsExtendedSchema() const
+    {
+        return m_ExtendedSchema;
     }
 
     string GetKeyspace(void) const
@@ -561,6 +572,7 @@ public:
 private:
     shared_ptr<CCassConnection>     m_Conn;
     string                          m_Keyspace;
+    bool                            m_ExtendedSchema;
 
     void x_LoadKeysScheduleNext(CCassQuery &  query, void *  data);
 };

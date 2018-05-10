@@ -32,8 +32,8 @@
  *
  */
 
-#ifndef _AUTOBUF_H_
-#define _AUTOBUF_H_
+#ifndef OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__AUTOBUF_HPP
+#define OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__AUTOBUF_HPP
 
 #include <string>
 #include <cstdlib>
@@ -42,9 +42,8 @@
 
 #include "cass_exception.hpp"
 
+BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
-USING_IDBLOB_SCOPE;
-
 
 class CAutoBuf
 {
@@ -78,7 +77,7 @@ public:
             if (!m_buf) {
                 NCBI_THROW(CCassandraException, eMemory,
                            "failed to allocate buffer (" +
-                           NStr::Int8ToString(m_limit) + ")");
+                           NStr::NumericToString(m_limit) + ")");
             }
             memcpy(m_buf, src.m_buf, src.m_len);
             m_len = src.m_len;
@@ -111,7 +110,7 @@ public:
         if (m_len > 0xffffffffffffffff - len) {
             NCBI_THROW(CCassandraException, eMemory,
                        "requested Reserve() is too large (" +
-                       NStr::Int8ToString(len) + ")");
+                       NStr::NumericToString(len) + ")");
         }
         if (m_limit - m_len < len) {
             uint64_t newlimit = m_limit;
@@ -127,7 +126,7 @@ public:
             if (!m_buf) {
                 NCBI_THROW(CCassandraException, eMemory,
                            "failed to allocate buffer (" +
-                           NStr::Int8ToString(newlimit) + ")");
+                           NStr::NumericToString(newlimit) + ")");
             }
             m_limit = newlimit;
         }
@@ -139,7 +138,7 @@ public:
         if (len > m_limit || m_len > m_limit - len) {
             NCBI_THROW(CCassandraException, eMemory,
                        "requested Consume() is too large (" +
-                       NStr::Int8ToString(len) + ")");
+                       NStr::NumericToString(len) + ")");
         }
         m_len += len;
     }
@@ -149,7 +148,7 @@ public:
         if (len > m_len) {
             NCBI_THROW(CCassandraException, eMemory,
                        "requested Unconsume() is too large (" +
-                       NStr::Int8ToString(len) + ")");
+                       NStr::NumericToString(len) + ")");
         }
         m_len -= len;
     }
@@ -182,5 +181,7 @@ public:
         return m_limit - m_len;
     }
 };
+
+END_IDBLOB_SCOPE
 
 #endif

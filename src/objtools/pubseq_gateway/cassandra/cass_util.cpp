@@ -32,15 +32,11 @@
  */
 
 #include <ncbi_pch.hpp>
-
+#include <objtools/pubseq_gateway/impl/cassandra/cass_util.hpp>
 #include <sys/time.h>
 
-#include <objtools/pubseq_gateway/impl/cassandra/cass_util.hpp>
+BEGIN_IDBLOB_SCOPE
 
-BEGIN_NCBI_SCOPE;
-
-
-// Copied from IdLogUtl.cpp to be able to remove the obsolete logging
 int64_t gettime(void)
 {
     int             cnt = 100;
@@ -50,5 +46,4 @@ int64_t gettime(void)
     return (int64_t)tv.tv_usec + ((int64_t)tv.tv_sec) * 1000000L;
 }
 
-
-END_NCBI_SCOPE;
+END_IDBLOB_SCOPE

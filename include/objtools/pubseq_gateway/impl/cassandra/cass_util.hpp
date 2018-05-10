@@ -35,11 +35,12 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include "IdCassScope.hpp"
 
-BEGIN_NCBI_SCOPE
+BEGIN_IDBLOB_SCOPE
 
 int64_t gettime(void);
 
-END_NCBI_SCOPE
+END_IDBLOB_SCOPE
 
 #endif
