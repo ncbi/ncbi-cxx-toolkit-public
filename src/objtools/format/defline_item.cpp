@@ -87,6 +87,9 @@ void CDeflineItem::x_GatherInfo(CBioseqContext& ctx)
     } else {
         m_Defline = Defliner.GenerateDefline( *bioseq, scope );
     }
+    if (! Defliner.UsePDBCompoundForDefline()) {
+        ctx.SetPDBCompoundForComment(true);
+    }
     // CompressSpaces( m_Defline );
     CleanAndCompress (m_Defline, m_Defline.c_str());
     ConvertQuotes(m_Defline);

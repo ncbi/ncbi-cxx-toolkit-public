@@ -213,6 +213,9 @@ public:
     bool IsGenomeAssembly(void) const;
     bool IsCrossKingdom(void) const;
 
+    bool UsePDBCompoundForComment(void) const;
+    void SetPDBCompoundForComment(bool value);
+
     NCBI_DEPRECATED bool IsUnverified(void) const;
     enum FUnverified {
         fUnverified_None = 0, // for convenience
@@ -361,6 +364,7 @@ private:
     mutable bool m_HasMultiIntervalGenes;
     bool m_IsGenomeAssembly;
     mutable bool m_IsCrossKingdom;
+    mutable bool m_UsePDBCompoundForComment;
     TUnverified m_fUnverified;
     mutable bool m_ShowAnnotCommentAsCOMMENT;
     mutable bool m_ShowAnnotCommentAsCOMMENT_checked;

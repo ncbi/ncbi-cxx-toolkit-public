@@ -1310,7 +1310,7 @@ void CFlatGatherer::x_GBBSourceComment(CBioseqContext& ctx) const
 
 void CFlatGatherer::x_DescComments(CBioseqContext& ctx) const
 {
-    if (ctx.IsProt()) {
+    if ( /* ctx.IsProt() &&  */ ctx.UsePDBCompoundForComment()) {
         for (auto id_handle : ctx.GetHandle().GetId()) {
             if (id_handle.Which() == CSeq_id::e_Pdb) {
                 for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_Pdb); it; ++it) {
@@ -1322,7 +1322,7 @@ void CFlatGatherer::x_DescComments(CBioseqContext& ctx) const
                 }    
             }    
         }    
-    }    
+    }
 
     for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_Comment); it; ++it) {
         x_AddComment(new CCommentItem(*it, ctx));

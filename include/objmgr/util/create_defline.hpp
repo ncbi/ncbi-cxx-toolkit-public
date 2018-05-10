@@ -137,6 +137,10 @@ public:
     );
 
     string x_GetModifiers(const CBioseq_Handle & handle);
+
+public:
+    bool UsePDBCompoundForDefline (void) const {  return m_UsePDBCompoundForDefline; }
+
 private:
     // Prohibit copy constructor & assignment operator
     CDeflineGenerator (const CDeflineGenerator&);
@@ -218,7 +222,6 @@ private:
 
     bool x_IsComplete() const;
 
-    bool UsePDBCompoundForDefline (void) const {  return m_UsePDBCompoundForDefline; }
 private:
     /// index with feature tree for each Bioseq
     CRef<CSeqEntryIndex> m_Idx;

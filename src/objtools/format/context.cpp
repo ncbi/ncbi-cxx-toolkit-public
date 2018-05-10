@@ -120,6 +120,7 @@ CBioseqContext::CBioseqContext
     m_HasMultiIntervalGenes(true), // true is the safe choice if we're not sure
     m_IsGenomeAssembly(false),
     m_IsCrossKingdom(false),
+    m_UsePDBCompoundForComment(false),
     m_fUnverified(fUnverified_None),
     m_ShowAnnotCommentAsCOMMENT(false),
     m_ShowAnnotCommentAsCOMMENT_checked(false),
@@ -181,6 +182,7 @@ CBioseqContext::CBioseqContext
     m_HasMultiIntervalGenes(true), // true is the safe choice if we're not sure
     m_IsGenomeAssembly(false),
     m_IsCrossKingdom(false),
+    m_UsePDBCompoundForComment(false),
     m_fUnverified(fUnverified_None),
     m_ShowAnnotCommentAsCOMMENT(false),
     m_ShowAnnotCommentAsCOMMENT_checked(false),
@@ -472,8 +474,19 @@ bool CBioseqContext::IsCrossKingdom(void) const
         return m_IsCrossKingdom;
     }
 
-    x_SetTaxname();
     return m_IsCrossKingdom;
+}
+
+
+bool CBioseqContext::UsePDBCompoundForComment(void) const
+{
+    return m_UsePDBCompoundForComment;
+}
+
+
+void CBioseqContext::SetPDBCompoundForComment(bool value)
+{
+    m_UsePDBCompoundForComment = value;
 }
 
 
