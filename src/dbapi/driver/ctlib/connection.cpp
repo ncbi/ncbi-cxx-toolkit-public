@@ -1055,6 +1055,14 @@ bool CTL_Connection::x_SendData(I_BlobDescriptor& descr_in, CDB_Stream& stream,
             " for which automatic workarounds are not always possible.",
             110030);
     }
+
+    if (m_ActiveCmd != NULL) {
+        m_ActiveCmd->m_IsActive = false;
+        m_ActiveCmd = NULL;
+    }
+#ifdef FTDS_IN_USE
+    m_TotalTimeout = 0;
+#endif
     x_CmdAlloc(&cmd);
 
     if (Check(ct_command(cmd, CS_SEND_DATA_CMD, 0, CS_UNUSED, CS_COLUMN_DATA))
