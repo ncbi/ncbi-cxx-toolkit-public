@@ -470,7 +470,7 @@ class Collector(object):
             # Fall back on readelf -d (or otool, on macOS)?
             return set()
         last_link_line = ''
-        with open(filename, 'r') as f:
+        with open(filename, 'r', errors='ignore') as f:
             for l in f:
                 if l.find(' -l') >= 0:
                     last_link_line = l
