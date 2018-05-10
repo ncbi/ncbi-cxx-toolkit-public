@@ -79,7 +79,6 @@ string s_GtfDbtag( const CDbtag& dbtag )
         }
     }
     return strGffTag;
-    return CWriteUtil::UrlEncode(strGffTag);
 }
         
 //  ----------------------------------------------------------------------------
