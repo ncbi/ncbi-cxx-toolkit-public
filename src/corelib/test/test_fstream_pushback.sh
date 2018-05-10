@@ -10,6 +10,9 @@ trap 'rm -f $log; echo "`date`."' 0 1 2 15
 
 i=0
 j=`expr $$ % 2 + 1`
+if [ -n "$CHECK_TIMEOUT" ]; then
+     CHECK_TIMEOUT=`expr $CHECK_TIMEOUT / $j - 1`
+fi
 while [ $i -lt $j ]; do
   echo "${i} of ${j}: `date`"
   $CHECK_EXEC test_fstream_pushback >$log 2>&1
