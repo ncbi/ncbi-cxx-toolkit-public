@@ -10901,6 +10901,7 @@ echo "${ECHO_T}$ncbi_cv_prog_distcc_vs_cxx" >&6; }
       { echo "$as_me:$LINENO: WARNING: distcc explicitly requested, but not found in PATH." >&5
 echo "$as_me: WARNING: distcc explicitly requested, but not found in PATH." >&2;}
    fi
+   $as_unset DISTCC_FALLBACK || test "${DISTCC_FALLBACK+set}" != set || { DISTCC_FALLBACK=; export DISTCC_FALLBACK; }
 fi
 
 if test -z "$with_ccache"  -a  -n "$DISTCC"  -a  -z "$CCACHE_DIR" ; then

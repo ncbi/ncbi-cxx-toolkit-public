@@ -2579,6 +2579,7 @@ EOF
    elif test "$with_distcc" = "yes" ; then
       AC_MSG_WARN([distcc explicitly requested, but not found in PATH.])
    fi
+   AS_UNSET(DISTCC_FALLBACK)
 fi
 
 if test -z "$with_ccache"  -a  -n "$DISTCC"  -a  -z "$CCACHE_DIR" ; then
