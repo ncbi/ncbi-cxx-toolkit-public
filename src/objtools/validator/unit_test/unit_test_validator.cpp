@@ -7663,7 +7663,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("TMP");
     ambig.push_back("DMNH");
     ambig.push_back("ZMUH");
-    ambig.push_back("UMO");
     ambig.push_back("SMF");
     ambig.push_back("ZSP");
     ambig.push_back("TAU");
@@ -7680,7 +7679,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("FM");
     ambig.push_back("HNU");
     ambig.push_back("PO");
-    ambig.push_back("UNR");
     ambig.push_back("GAM");
     ambig.push_back("MCM");
     ambig.push_back("LU");
