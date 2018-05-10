@@ -8970,8 +8970,9 @@ if test "$with_flat_makefile" != "no"; then
    if $real_srcdir/scripts/common/impl/create_flat_makefile.sh "$build_root" \
        -s "$real_srcdir" $cfm_flags  &&  test -f "$builddir/Makefile.flat"; then
       build_flat="Alternatively, cd $builddir && $MAKE -f Makefile.flat"
-   elif test -f "$builddir/Flat.configuration_log"; then
-      $EGREP 'Error:|already defined' "$builddir/Flat.configuration_log"
+   elif test -f "$builddir/Flat.configuration_log" \
+      -o "$with_flat_makefile" = yes; then
+      $EGREP_Q 'Error:|already defined' "$builddir/Flat.configuration_log"
       AC_MSG_ERROR([flat makefile generation failed.])
    fi
 fi
