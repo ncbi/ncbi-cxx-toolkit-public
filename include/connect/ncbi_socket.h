@@ -651,11 +651,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  * SOCK on top of the bare "handle", specifying its (non-zero) "handle_size".
  * @warning
  *  It is not recommended to use this call on a not fully connected sockets
- *  (both bare OS handle or SOCK) in native MS-Windows builds (e.g. Cygwin is
+ *  (either bare OS handle or SOCK) in native MS-Windows builds (e.g. Cygwin is
  *  okay).
  * @note
- *  SOCK_Close[Ex]() on the resultant socket will not close the OS handle
- *  if fSOCK_KeepOnClose is set in "flags".
+ *  SOCK_Close[Ex]() on the resultant socket will not close the underlying OS
+ *  handle if fSOCK_KeepOnClose is set in "flags".
  * @param handle
  *  [in]  OS-dependent "handle" or SOCK to be converted
  * @param handle_size
