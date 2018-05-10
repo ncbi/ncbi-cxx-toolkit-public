@@ -635,12 +635,12 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  * Returned socket is not reopenable to its default peer (SOCK_Reconnect() may
  * not specify zeros for the connection point).
  * All timeouts are set to default [infinite] values.
- * The call does *not* destroy either OS handle or SOCK passed in the
+ * The call does *not* destroy either the OS handle or the SOCK passed in the
  * arguments, regardless of the return status code.
- * When a socket gets created on top of a "SOCK" handle, the original SOCK gets
- * always emptied (and the underlying OS handle removed from it) upon the call
- * returns, and will still need SOCK_Destroy() in the caller's code to free up
- * the memory it occupies.
+ * When a socket gets successfully created on top of a "SOCK" handle, the
+ * original SOCK is emptied (and the underlying OS handle removed from it) upon
+ * the call returns, and will still need SOCK_Destroy() in the caller's code to
+ * free up the memory it occupies.
  * Any secure session that may have existed in the original SOCK will have
  * been terminated (and new session may have been initiated in the new SOCK --
  * at this time the old session is not allowed to "migrate").
