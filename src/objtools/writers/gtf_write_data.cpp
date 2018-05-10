@@ -78,6 +78,7 @@ string s_GtfDbtag( const CDbtag& dbtag )
             strGffTag += dbtag.GetTag().GetStr();
         }
     }
+    return strGffTag;
     return CWriteUtil::UrlEncode(strGffTag);
 }
         
