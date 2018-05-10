@@ -39,116 +39,148 @@
 #include <cstdlib>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbistr.hpp>
-#include "IdLogUtl.hpp"
 
-namespace IdLogUtil {
+#include "cass_exception.hpp"
 
 USING_NCBI_SCOPE;
+USING_IDBLOB_SCOPE;
 
 
-class CAutoBuf {
+class CAutoBuf
+{
 private:
-	unsigned char* m_buf;
-	uint64_t m_len;
-	uint64_t m_limit;
-	void Detach() {
-		m_buf = NULL;
-		m_len = m_limit = 0;
-	}
-public:
-	explicit CAutoBuf(unsigned int rsrv = 0) : m_buf(0), m_len(0), m_limit(0) {
-		if (rsrv > 0)
-			Reserve(rsrv);
-	}
-	CAutoBuf(const CAutoBuf& src) : m_buf(0), m_len(0), m_limit(0) {
-		*this = src; // call assignment operator
-	}
-	CAutoBuf& operator=(const CAutoBuf& src) {
-		Clear();
-		if (src.m_limit) {
-			m_limit = src.m_limit;
-			m_buf = (unsigned char*)malloc(m_limit);
-			if (!m_buf) {
-				string msg = string("failed to allocate buffer (") + NStr::Int8ToString(m_limit) + ")";
-				RAISE_ERROR(eMemory, msg);
-			}
-			memcpy(m_buf, src.m_buf, src.m_len);
-			m_len = src.m_len;
-		}
-		return *this;
-	}
-	CAutoBuf(CAutoBuf&& src) : m_buf(src.m_buf), m_len(src.m_len), m_limit(src.m_limit) {
-		src.Detach();
-	}
-	~CAutoBuf() {
-		Clear();
-	}
-	void Clear() {
-		if (m_buf) {
-			m_limit = 0;
-			free(m_buf);
-			m_buf = NULL;
-		}
-		m_len = 0;
-	}
-	unsigned char* Reserve(uint64_t len) {
-		if (m_len > 0xffffffffffffffff - len) {
-			string msg = string("requested Reserve() is too large (") + NStr::Int8ToString(len) + ")";
-	    	RAISE_ERROR(eMemory, msg);
-	    }
-		if (m_limit - m_len < len) {
-			uint64_t newlimit = m_limit;
-			if (m_limit < 1024 * 1024)
-				newlimit = m_limit * 3 / 2;
-			if (newlimit - m_len < len)
-				newlimit = (m_len + len);
-			if (newlimit > 32 * 1024)
-				newlimit = (newlimit + 0x7fff) & ~0x7fff;
-			else if (newlimit > 256)
-				newlimit = (newlimit + 0x1ff) & ~0x1ff;
-			m_buf = (unsigned char*)realloc(m_buf, newlimit);
-			if (!m_buf) {
-				string msg = string("failed to allocate buffer (") + NStr::Int8ToString(newlimit) + ")";
-				RAISE_ERROR(eMemory, msg);
-			}
-			m_limit = newlimit;
-		}
-		return &m_buf[m_len];
-	}
-	void Consume(uint64_t len) {
-		if (len > m_limit || m_len > m_limit - len) {
-			string msg = string("requested Consume() is too large (") + NStr::Int8ToString(len) + ")";
-			RAISE_ERROR(eMemory, msg);
-		}
-		m_len += len;
-	}
-	void Unconsume(uint64_t len) {
-		if (len > m_len) {
-			string msg = string("requested Unconsume() is too large (") + NStr::Int8ToString(len) + ")";
-			RAISE_ERROR(eMemory, msg);
-		}
-		m_len -= len;
-	}
-	void Reset(uint64_t MaxBlobSize = 1*1024*1024) {
-		m_len = 0;
-		if (m_limit > MaxBlobSize) {
-			Clear();
-		}
-	}
-	unsigned char* Data() const {
-		return m_buf;
-	}
-	uint64_t Size() const {
-		return m_len;
-	}
-	uint64_t Limit() const {
-		return m_limit;
-	}
-	uint64_t Reserved() const {
-		return m_limit - m_len;
-	}
-};
+    unsigned char* m_buf;
+    uint64_t m_len;
+    uint64_t m_limit;
+    void Detach()
+    {
+        m_buf = NULL;
+        m_len = m_limit = 0;
+    }
 
-}
+public:
+    explicit CAutoBuf(unsigned int rsrv = 0) : m_buf(0), m_len(0), m_limit(0)
+    {
+        if (rsrv > 0)
+            Reserve(rsrv);
+    }
+
+    CAutoBuf(const CAutoBuf& src) : m_buf(0), m_len(0), m_limit(0)
+    {
+        *this = src; // call assignment operator
+    }
+
+    CAutoBuf& operator=(const CAutoBuf& src) {
+        Clear();
+        if (src.m_limit) {
+            m_limit = src.m_limit;
+            m_buf = (unsigned char*)malloc(m_limit);
+            if (!m_buf) {
+                NCBI_THROW(CCassandraException, eMemory,
+                           "failed to allocate buffer (" +
+                           NStr::Int8ToString(m_limit) + ")");
+            }
+            memcpy(m_buf, src.m_buf, src.m_len);
+            m_len = src.m_len;
+        }
+        return *this;
+    }
+
+    CAutoBuf(CAutoBuf&& src) : m_buf(src.m_buf), m_len(src.m_len), m_limit(src.m_limit)
+    {
+        src.Detach();
+    }
+
+    ~CAutoBuf()
+    {
+        Clear();
+    }
+
+    void Clear()
+    {
+        if (m_buf) {
+            m_limit = 0;
+            free(m_buf);
+            m_buf = NULL;
+        }
+        m_len = 0;
+    }
+
+    unsigned char* Reserve(uint64_t len)
+    {
+        if (m_len > 0xffffffffffffffff - len) {
+            NCBI_THROW(CCassandraException, eMemory,
+                       "requested Reserve() is too large (" +
+                       NStr::Int8ToString(len) + ")");
+        }
+        if (m_limit - m_len < len) {
+            uint64_t newlimit = m_limit;
+            if (m_limit < 1024 * 1024)
+                newlimit = m_limit * 3 / 2;
+            if (newlimit - m_len < len)
+                newlimit = (m_len + len);
+            if (newlimit > 32 * 1024)
+                newlimit = (newlimit + 0x7fff) & ~0x7fff;
+            else if (newlimit > 256)
+                newlimit = (newlimit + 0x1ff) & ~0x1ff;
+            m_buf = (unsigned char*)realloc(m_buf, newlimit);
+            if (!m_buf) {
+                NCBI_THROW(CCassandraException, eMemory,
+                           "failed to allocate buffer (" +
+                           NStr::Int8ToString(newlimit) + ")");
+            }
+            m_limit = newlimit;
+        }
+        return &m_buf[m_len];
+    }
+
+    void Consume(uint64_t len)
+    {
+        if (len > m_limit || m_len > m_limit - len) {
+            NCBI_THROW(CCassandraException, eMemory,
+                       "requested Consume() is too large (" +
+                       NStr::Int8ToString(len) + ")");
+        }
+        m_len += len;
+    }
+
+    void Unconsume(uint64_t len)
+    {
+        if (len > m_len) {
+            NCBI_THROW(CCassandraException, eMemory,
+                       "requested Unconsume() is too large (" +
+                       NStr::Int8ToString(len) + ")");
+        }
+        m_len -= len;
+    }
+
+    void Reset(uint64_t MaxBlobSize = 1*1024*1024)
+    {
+        m_len = 0;
+        if (m_limit > MaxBlobSize) {
+            Clear();
+        }
+    }
+
+    unsigned char* Data() const
+    {
+        return m_buf;
+    }
+
+    uint64_t Size() const
+    {
+        return m_len;
+    }
+
+    uint64_t Limit() const
+    {
+        return m_limit;
+    }
+
+    uint64_t Reserved() const
+    {
+        return m_limit - m_len;
+    }
+};
 
 #endif

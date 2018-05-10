@@ -38,9 +38,9 @@
 #include <vector>
 #include <corelib/ncbistd.hpp>
 
-#include <objtools/pubseq_gateway/impl/diag/AutoBuf.hpp>
-#include <objtools/pubseq_gateway/impl/diag/IdLogUtl.hpp>
+#include "cass_exception.hpp"
 #include "IdCassScope.hpp"
+#include "AutoBuf.hpp"
 
 
 BEGIN_IDBLOB_SCOPE
@@ -94,12 +94,12 @@ struct CBlob
         }
     }
 
-    IdLogUtil::CAutoBuf     blob;
-    SBlobStat               stat;
-    int                     restart_from;
-    bool                    no_data;
-    bool                    error;
-    string                  error_str;
+    CAutoBuf        blob;
+    SBlobStat       stat;
+    int             restart_from;
+    bool            no_data;
+    bool            error;
+    string          error_str;
 };
 
 
@@ -164,8 +164,8 @@ void SaveKeysToFile(const M &  keymap, const string &  file_name)
         kfile.close();
     }
     else
-        RAISE_ERROR(eGeneric,
-                    string("failed to open key file: \"") + file_name + "\"");
+        NCBI_THROW(CCassandraException, eGeneric,
+                   "failed to open key file: \"" + file_name + "\"");
 }
 
 

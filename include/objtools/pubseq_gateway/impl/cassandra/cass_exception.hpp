@@ -39,7 +39,6 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbiexpt.hpp>
 
-#include <objtools/pubseq_gateway/impl/diag/AppPerf.hpp>
 #include "IdCassScope.hpp"
 
 BEGIN_IDBLOB_SCOPE
@@ -62,7 +61,13 @@ public:
         eExtraFetch,
         eMissData,
         eInconsistentData,
-        eNotFound
+        eNotFound,
+
+        // Came from class EError (IdLogUtl.hpp)
+        eSeqFailed,
+        eFatal,
+        eGeneric,
+        eMemory
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -81,6 +86,10 @@ public:
             case eMissData:               return "eMissData";
             case eInconsistentData:       return "eInconsistentData";
             case eNotFound:               return "eNotFound";
+            case eSeqFailed:              return "eSeqFailed";
+            case eFatal:                  return "eFatal";
+            case eGeneric:                return "eGeneric";
+            case eMemory:                 return "eMemory";
             default:                      return CException::GetErrCodeString();
         }
     }
@@ -112,7 +121,7 @@ protected:
                         EDiagSev  severity)
     {
         m_OpTimeMs = 0;
-        LOG3(("CCassandraException: %s", SON(message.c_str())));
+        ERR_POST(Info << "CCassandraException: " << message);
         CException::x_Init(info, message, prev_exception, severity);
     }
 
@@ -135,7 +144,7 @@ protected:
         __msg.append(string(": ") +                                         \
                      NStr::NumericToString(static_cast<int>(errc), 0, 16)); \
         __msg.append(string(": ") + cass_error_desc(errc));                 \
-        ERRLOG1(("!Raising: %s", __msg.c_str()));                           \
+        ERR_POST("!Raising: " << __msg);                                    \
         NCBI_THROW(CCassandraException, dberr, __msg.c_str());              \
     } while (0)
 
@@ -149,7 +158,7 @@ protected:
         __msg.assign(__message);                                            \
         __msg.append(string(": ") +                                         \
                      NStr::NumericToString(static_cast<int>(rc), 0, 16));   \
-        ERRLOG1(("!Raising: %s %s %s", #errc, __msg.c_str(), comm.c_str()));\
+        ERR_POST("!Raising: " << #errc << " " << __msg << " " << comm);     \
         if (comm.empty())                                                   \
             NCBI_THROW(CCassandraException, errc, __msg);                   \
         else                                                                \
@@ -177,8 +186,8 @@ protected:
 #define RAISE_DB_ERROR(errc, comm)                          \
     do {                                                    \
         string ___msg = comm;                               \
-        ERRLOG1(("!Raising: %s %s", #errc, ___msg.c_str()));\
-        NCBI_THROW(CCassandraException, errc, comm);                  \
+        ERR_POST("!Raising: " << #errc << " " << ___msg);   \
+        NCBI_THROW(CCassandraException, errc, comm);        \
     } while(0)
 
 #define RAISE_DB_QRY_TIMEOUT(tspent, tmargin, msg)                          \
@@ -191,7 +200,7 @@ protected:
                           "ms)");                                           \
         NCBI_EXCEPTION_VAR(db_exception, CCassandraException, eQueryTimeout, ___msg); \
         db_exception.SetOpTime( (tspent) );                                 \
-        ERRLOG1(("!Raising: %s", ___msg.c_str()));                          \
+        ERR_POST("!Raising: " << ___msg);                                   \
         NCBI_EXCEPTION_THROW(db_exception);                                 \
     } while(0)
 

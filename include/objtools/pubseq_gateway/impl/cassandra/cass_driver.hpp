@@ -45,8 +45,8 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbimtx.hpp>
 
-#include <objtools/pubseq_gateway/impl/diag/AppPerf.hpp>
 #include "IdCassScope.hpp"
 #include "cass_exception.hpp"
 
@@ -107,7 +107,9 @@ class CCassConnection;
 class CCassConnection: public std::enable_shared_from_this<CCassConnection>
 {
 private:
-    DISALLOW_COPY_AND_ASSIGN(CCassConnection);
+    CCassConnection(const CCassConnection&) = delete;
+    CCassConnection& operator=(const CCassConnection&) = delete;
+
     friend class CCassQuery;
     friend class CCassConnectionFactory;
 
@@ -179,7 +181,6 @@ public:
     void SetLoadBalancing(loadbalancing_policy_t policy);
     void SetTokenAware(bool value);
     void SetLatencyAware(bool value);
-    static void SetLogging(int loglevel);
 
     void SetTimeouts(unsigned int  ConnTimeoutMs,
                      unsigned int  QryTimeoutMs = CASS_DRV_TIMEOUT_MS)
@@ -215,24 +216,9 @@ public:
         return m_FallbackWriteConsistency;
     }
 
-    static void SetLogFile(const string &  name)
-    {
-        if (m_logfile.compare(name) != 0) {
-            if (!m_logfile.empty() && m_logstrm.is_open())
-                m_logstrm.close();
-            m_logfile = name;
-            if (!m_logfile.empty())
-                m_logstrm.open(m_logfile, ios::out | ios::trunc);
-        }
-        UpdateLogging();
-    }
-
-    static void UpdateLogging(bool  forcedisable = false)
-    {
-        if (!m_logstrm || !m_logstrm.is_open())
-            forcedisable = true;
-        SetLogging(forcedisable ? 0 : IdLogUtil::CAppLog::GetLogLevelFile());
-    }
+    static void SetLogging(EDiagSev  severity);
+    static void DisableLogging(void);
+    static void UpdateLogging(void);
 
     unsigned int QryTimeout(void) const
     {
@@ -265,7 +251,7 @@ public:
     shared_ptr<CCassQuery> NewQuery();
     void getTokenRanges(vector< pair<int64_t,int64_t> > &ranges);
     static string NewTimeUUID();
-    static void Perform(IdLogUtil::CAppOp &  op, unsigned int  optimeoutms,
+    static void Perform(unsigned int  optimeoutms,
                         const std::function<bool()>&  PreLoopCB,
                         const std::function<void(const CCassandraException&)>&  DbExceptCB,
                         const std::function<bool(bool)>&  OpCB);
@@ -290,12 +276,14 @@ private:
     unsigned int                    m_keepalive;
     bool                            m_fallback_readconsistency;
     unsigned int                    m_FallbackWriteConsistency;
-    static string                   m_logfile;
-    static ofstream                 m_logstrm;
     static atomic<CassUuidGen*>     m_CassUuidGen;
     CSpinLock                       m_prepared_mux;
     preparedlist_t                  m_prepared;
     atomic<int64_t>                 m_active_statements;
+
+    static bool                     m_LoggingInitialized;
+    static bool                     m_LoggingEnabled;
+    static EDiagSev                 m_LoggingLevel;
 };
 
 
@@ -574,12 +562,12 @@ public:
         m_data2(nullptr),
         m_query(query)
     {
-        LOG5(("CCassQueryCbRef::CCassQueryCbRef %p", LOG_CPTR(this)));
+        ERR_POST(Trace << "CCassQueryCbRef::CCassQueryCbRef " << this);
     }
 
     virtual ~CCassQueryCbRef()
     {
-        LOG5(("CCassQueryCbRef::~CCassQueryCbRef %p", LOG_CPTR(this)));
+        ERR_POST(Trace << "CCassQueryCbRef::~CCassQueryCbRef " << this);
     }
 
     void Attach(void (*ondata)(CCassQuery&, void*),
@@ -594,8 +582,8 @@ public:
 
     void Detach(bool remove_self_ref = false)
     {
-        LOG5(("CCassQueryCbRef::Detach %p, Query: %p",
-              LOG_CPTR(this), LOG_CPTR(m_query.lock().get())));
+        ERR_POST(Trace << "CCassQueryCbRef::Detach " << this << ", Query: " <<
+                 m_query.lock().get());
         m_query.reset();
         if (remove_self_ref)
             m_self = nullptr;
@@ -604,7 +592,7 @@ public:
     static void s_OnFutureCb(CassFuture* future, void* data)
     {
         try {
-            LOG5(("CCassQueryCbRef::s_OnFutureCb %p", data));
+            ERR_POST(Trace << "CCassQueryCbRef::s_OnFutureCb " << data);
             shared_ptr<CCassQueryCbRef>     self(
                     static_cast<CCassQueryCbRef*>(data)->shared_from_this());
 
@@ -613,8 +601,8 @@ public:
 
             auto    query = self->m_query.lock();
             if (query != nullptr) {
-                LOG5(("CCassQuery::OnDataReady this: %p, fut: %p",
-                      LOG_CPTR(query.get()), future));
+                ERR_POST(Trace << "CCassQuery::OnDataReady this: " <<
+                         query.get() << ", fut: " << future);
                 if (self->m_ondata)
                     self->m_ondata(*query.get(), self->m_data);
                 if (self->m_ondata2)
@@ -622,11 +610,11 @@ public:
             }
         }
         catch (const CException& e) {
-            ERRLOG0(("CException caught! Message: %s", e.GetMsg().c_str()));
+            ERR_POST("CException caught! Message: " << e.GetMsg());
             abort();
         }
         catch (const exception& e) {
-            ERRLOG0(("exception caught! Message: %s", e.what()));
+            ERR_POST("exception caught! Message: " << e.what());
             abort();
         }
     }
@@ -644,7 +632,9 @@ private:
 class CCassQuery: public std::enable_shared_from_this<CCassQuery>
 {
 private:
-    DISALLOW_COPY_AND_ASSIGN(CCassQuery);
+    CCassQuery(const CCassQuery&) = delete;
+    CCassQuery& operator=(const CCassQuery&) = delete;
+
     friend class CCassConnection;
     friend class CCassQueryCbRef;
 
@@ -693,11 +683,12 @@ private:
     CassIterator* GetTupleIterator(F ifld)
     {
         if (!m_row)
-            RAISE_ERROR(eSeqFailed, string("query row is not fetched"));
+            NCBI_THROW(CCassandraException, eSeqFailed,
+                       "query row is not fetched");
         CassIterator* it = cass_iterator_from_tuple(GetColumn(ifld));
         if (!it)
-            RAISE_ERROR(eSeqFailed,
-                        string("cannot resolve tuple iterator for column"));
+            NCBI_THROW(CCassandraException, eSeqFailed,
+                       "cannot resolve tuple iterator for column");
         return it;
     }
 
@@ -753,9 +744,10 @@ protected:
         m_onexecute(nullptr),
         m_onexecute_data(nullptr)
     {
-        LOG5(("CCassQuery::CCassQuery this=%p", LOG_CPTR(this)));
+        ERR_POST(Trace << "CCassQuery::CCassQuery this=" << this);
         if (!m_connection)
-            RAISE_ERROR(eFatal, "Cassandra connection is not established");
+            NCBI_THROW(CCassandraException, eFatal,
+                       "Cassandra connection is not established");
     }
 
 public:
@@ -1160,11 +1152,11 @@ public:
 
         if (m_future) {
             if (m_ondata)
-                RAISE_ERROR(eSeqFailed,
-                            string("Future callback has already been assigned"));
+                NCBI_THROW(CCassandraException, eSeqFailed,
+                           "Future callback has already been assigned");
             if (!Cb && m_future)
-                RAISE_ERROR(eSeqFailed,
-                            string("Future callback can not be reset"));
+                NCBI_THROW(CCassandraException, eSeqFailed,
+                           "Future callback can not be reset");
         }
         m_ondata = Cb;
         m_ondata_data = Data;
@@ -1180,11 +1172,11 @@ public:
 
         if (m_future) {
             if (m_ondata2)
-                RAISE_ERROR(eSeqFailed,
-                            string("Future callback has already been assigned"));
+                NCBI_THROW(CCassandraException, eSeqFailed,
+                           "Future callback has already been assigned");
             if (!Cb)
-                RAISE_ERROR(eSeqFailed,
-                            string("Future callback can not be reset"));
+                NCBI_THROW(CCassandraException, eSeqFailed,
+                           "Future callback can not be reset");
         }
         m_ondata2 = Cb;
         m_ondata2_data = Data;

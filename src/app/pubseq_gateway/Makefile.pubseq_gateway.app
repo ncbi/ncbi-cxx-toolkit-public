@@ -7,7 +7,7 @@ SRC = pubseq_gateway acc_ver_cache_db acc_ver_cache_storage \
 
 LIBS = $(CASSANDRA_STATIC_LIBS) $(LIBUV_STATIC_LIBS) $(H2O_STATIC_LIBS) $(LMDB_LIBS) $(NGHTTP2_STATIC_LIBS) $(ORIG_LIBS)
 CPPFLAGS = $(CASSANDRA_INCLUDE) $(H2O_INCLUDE) $(LMDB_INCLUDE) $(ORIG_CPPFLAGS)
-LIB = psg_diag psg_rpc psg_cassandra xconnserv xconnect xutil xncbi
+LIB = psg_rpc psg_cassandra xconnserv xconnect xutil xncbi
 
 REQUIRES = CASSANDRA MT Linux H2O LMDB LIBUV NGHTTP2
 

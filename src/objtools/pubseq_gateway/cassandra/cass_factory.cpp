@@ -37,14 +37,12 @@
 
 #include <corelib/ncbireg.hpp>
 
-#include <objtools/pubseq_gateway/impl/diag/AppPerf.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/lbsm_resolver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
-using namespace IdLogUtil;
 
 
 const string                    kCassConfigSection = "CASSANDRA_DB";
@@ -92,13 +90,15 @@ CCassConnectionFactory::CCassConnectionFactory() :
     m_NumThreadsIo(kNumThreadsIoDefault),
     m_NumConnPerHost(kNumConnPerHostDefault),
     m_MaxConnPerHost(kMaxConnPerHostDefault),
-    m_Keepalive(kKeepaliveDefault)
+    m_Keepalive(kKeepaliveDefault),
+    m_LogSeverity(eDiag_Error),
+    m_LogEnabled(false)
 {}
 
 
 CCassConnectionFactory::~CCassConnectionFactory()
 {
-    CCassConnection::UpdateLogging(true);
+    CCassConnection::UpdateLogging();
 }
 
 
@@ -115,11 +115,12 @@ void CCassConnectionFactory::AppParseArgs(const CArgs &  args)
 
 void CCassConnectionFactory::ProcessParams(void)
 {
-    LOG5(("CCassDataConnectionFactory::ProcessParams"));
+    ERR_POST(Trace << "CCassDataConnectionFactory::ProcessParams");
     if (!m_PassFile.empty()) {
         filebuf     fb;
         if (!fb.open(m_PassFile.c_str(), ios::in | ios::binary))
-            RAISE_ERROR(eGeneric, string(" Cannot open file: ") + m_PassFile);
+            NCBI_THROW(CCassandraException, eGeneric,
+                       " Cannot open file: " + m_PassFile);
 
         CNcbiIstream        is(&fb);
         CNcbiRegistry       registry(is, 0);
@@ -136,7 +137,7 @@ void CCassConnectionFactory::ProcessParams(void)
 void CCassConnectionFactory::LoadConfig(const string &  cfg_name,
                                         const string &  section)
 {
-    LOG5(("CCassDataConnectionFactory::LoadConfig"));
+    ERR_POST(Trace << "CCassDataConnectionFactory::LoadConfig");
     m_Section = section;
     m_CfgName = cfg_name;
     ReloadConfig();
@@ -146,7 +147,7 @@ void CCassConnectionFactory::LoadConfig(const string &  cfg_name,
 void CCassConnectionFactory::LoadConfig(const CNcbiRegistry &  registry,
                                         const string &  section)
 {
-    LOG5(("CCassDataConnectionFactory::LoadConfig"));
+    ERR_POST(Trace << "CCassDataConnectionFactory::LoadConfig");
     m_Section = section;
     m_CfgName = "";
     ReloadConfig(registry);
@@ -155,11 +156,12 @@ void CCassConnectionFactory::LoadConfig(const CNcbiRegistry &  registry,
 
 void CCassConnectionFactory::ReloadConfig(void)
 {
-    LOG5(("CCassDataConnectionFactory::ReloadConfig"));
+    ERR_POST(Trace << "CCassDataConnectionFactory::ReloadConfig");
     CFastMutexGuard _(m_RunTimeParams);
 
     if (m_CfgName.empty())
-        RAISE_ERROR(eGeneric, string("Configuration file is not specified"));
+        NCBI_THROW(CCassandraException, eGeneric,
+                   "Configuration file is not specified");
 
     filebuf fb;
     fb.open(m_CfgName.c_str(), ios::in | ios::binary);
@@ -198,10 +200,10 @@ void CCassConnectionFactory::ReloadConfig(const CNcbiRegistry &  registry)
                                            kMaxConnPerHostDefault);
         m_Keepalive = registry.GetInt(m_Section, "keepalive",
                                       kKeepaliveDefault);
-        m_CassDriverLogFile = registry.GetString(m_Section, "drvlog", "");
         m_PassFile = registry.GetString(m_Section, "password_file", "");
         m_PassSection = registry.GetString(m_Section, "password_section", "");
         m_CassHosts = registry.GetString(m_Section, "service", "");
+        m_LogEnabled = registry.GetBool(m_Section, "log", false);
 
         ProcessParams();
     }
@@ -219,8 +221,8 @@ void CCassConnectionFactory::GetHostPort(string &  cass_hosts,
     if (is_lbsm) {
         hosts = LbsmLookup::s_Resolve(m_CassHosts, ',');
         if (hosts.empty())
-            RAISE_ERROR(eGeneric,
-                        string("Failed to resolve: ") + m_CassHosts);
+            NCBI_THROW(CCassandraException, eGeneric,
+                       "Failed to resolve: " + m_CassHosts);
     }
 
     // Here: the 'hosts' variable has a list of host[:port] items came
@@ -241,10 +243,10 @@ void CCassConnectionFactory::GetHostPort(string &  cass_hosts,
                 cass_port = item_port_number;
             } else {
                 if (item_port_number != cass_port)
-                    RAISE_ERROR(eGeneric,
-                                "Unmatching port numbers found: " +
-                                NStr::NumericToString(cass_port) + " and " +
-                                NStr::NumericToString(item_port_number));
+                    NCBI_THROW(CCassandraException, eGeneric,
+                               "Unmatching port numbers found: " +
+                               NStr::NumericToString(cass_port) + " and " +
+                               NStr::NumericToString(item_port_number));
             }
         }
 
@@ -257,7 +259,6 @@ void CCassConnectionFactory::GetHostPort(string &  cass_hosts,
 
 shared_ptr<CCassConnection> CCassConnectionFactory::CreateInstance(void)
 {
-    CAppOp                          op;
     shared_ptr<CCassConnection>     rv(new CCassConnection());
 
     rv->SetLoadBalancing(m_LoadBalancing);
@@ -268,11 +269,15 @@ shared_ptr<CCassConnection> CCassConnectionFactory::CreateInstance(void)
 
     rv->SetTimeouts(m_CassConnTimeoutMs, m_CassQueryTimeoutMs);
     rv->SetFallBackRdConsistency(m_CassFallbackRdConsistency);
-    if (!m_CassDriverLogFile.empty())
-        rv->SetLogFile(m_CassDriverLogFile);
 
     if (m_CassFallbackWrConsistency != 0)
         rv->SetFallBackWrConsistency(m_CassFallbackWrConsistency);
+
+    if (m_LogEnabled) {
+        rv->SetLogging(m_LogSeverity);
+    } else {
+        rv->DisableLogging();
+    }
 
     string      host;
     short       port;
@@ -287,25 +292,21 @@ void CCassConnectionFactory::x_ValidateArgs(void)
 {
     if (m_CassConnTimeoutMs < kCassConnTimeoutMin ||
         m_CassConnTimeoutMs > kCassConnTimeoutMax) {
-        string  err_msg =
-            "The cassandra connection timeout is out of range. Allowed "
-            "range: " + NStr::NumericToString(kCassConnTimeoutMin) + "..." +
-            NStr::NumericToString(kCassConnTimeoutMax) + ". Received: " +
-            NStr::NumericToString(m_CassConnTimeoutMs) + ". Reset to "
-            "default: " + NStr::NumericToString(kCassConnTimeoutDefault);
-        LOG1((err_msg.c_str()));
+        ERR_POST("The cassandra connection timeout is out of range. Allowed "
+                 "range: " << kCassConnTimeoutMin << "..." <<
+                 kCassConnTimeoutMax << ". Received: " <<
+                 m_CassConnTimeoutMs << ". Reset to default: " <<
+                 kCassConnTimeoutDefault);
         m_CassConnTimeoutMs = kCassConnTimeoutDefault;
     }
 
     if (m_CassQueryTimeoutMs < kCassQueryTimeoutMin ||
         m_CassQueryTimeoutMs > kCassQueryTimeoutMax) {
-        string  err_msg =
-            "The cassandra query timeout is out of range. Allowed "
-            "range: " + NStr::NumericToString(kCassQueryTimeoutMin) + "..." +
-            NStr::NumericToString(kCassQueryTimeoutMax) + ". Received: " +
-            NStr::NumericToString(m_CassQueryTimeoutMs) + ". Reset to "
-            "default: " + NStr::NumericToString(kCassQueryTimeoutDefault);
-        LOG1((err_msg.c_str()));
+        ERR_POST("The cassandra query timeout is out of range. Allowed "
+                 "range: " << kCassQueryTimeoutMin << "..." <<
+                 kCassQueryTimeoutMax << ". Received: " <<
+                 m_CassQueryTimeoutMs << ". Reset to "
+                 "default: " << kCassQueryTimeoutDefault);
         m_CassQueryTimeoutMs = kCassQueryTimeoutDefault;
     }
 
@@ -325,70 +326,59 @@ void CCassConnectionFactory::x_ValidateArgs(void)
                     default_name = item.first;
             }
         }
-        string  err_msg =
-            "The load balancing value is not recognized. Allowed values: " +
-            allowed + ". Received: " + m_LoadBalancingStr + ". Reset to: " +
-            default_name;
+        ERR_POST("The load balancing value is not recognized. Allowed values: " <<
+                 allowed << ". Received: " << m_LoadBalancingStr << ". Reset to: " <<
+                 default_name);
         m_LoadBalancing = LB_DCAWARE;
     }
 
     if (m_NumThreadsIo < kNumThreadsIoMin ||
         m_NumThreadsIo > kNumThreadsIoMax) {
-        string  err_msg =
-            "The number of IO threads is out of range. Allowed "
-            "range: " + NStr::NumericToString(kNumThreadsIoMin) + "..." +
-            NStr::NumericToString(kNumThreadsIoMax) + ". Received: " +
-            NStr::NumericToString(m_NumThreadsIo) + ". Reset to "
-            "default: " + NStr::NumericToString(kNumThreadsIoDefault);
-        LOG1((err_msg.c_str()));
+        ERR_POST("The number of IO threads is out of range. Allowed "
+                 "range: " << kNumThreadsIoMin << "..." <<
+                 kNumThreadsIoMax << ". Received: " <<
+                 m_NumThreadsIo << ". Reset to "
+                 "default: " << kNumThreadsIoDefault);
         m_NumThreadsIo = kNumThreadsIoDefault;
     }
 
     if (m_NumConnPerHost < kNumConnPerHostMin ||
         m_NumConnPerHost > kNumConnPerHostMax) {
-        string  err_msg =
-            "The number of connections per host is out of range. Allowed "
-            "range: " + NStr::NumericToString(kNumConnPerHostMin) + "..." +
-            NStr::NumericToString(kNumConnPerHostMax) + ". Received: " +
-            NStr::NumericToString(m_NumConnPerHost) + ". Reset to "
-            "default: " + NStr::NumericToString(kNumConnPerHostDefault);
-        LOG1((err_msg.c_str()));
+        ERR_POST("The number of connections per host is out of range. Allowed "
+                 "range: " << kNumConnPerHostMin << "..." <<
+                 kNumConnPerHostMax << ". Received: " <<
+                 m_NumConnPerHost << ". Reset to "
+                 "default: " << kNumConnPerHostDefault);
         m_NumConnPerHost = kNumConnPerHostDefault;
     }
 
     if (m_MaxConnPerHost < kMaxConnPerHostMin ||
         m_MaxConnPerHost > kMaxConnPerHostMax) {
-        string  err_msg =
-            "The maximum count of connections per host is out of range. Allowed "
-            "range: " + NStr::NumericToString(kMaxConnPerHostMin) + "..." +
-            NStr::NumericToString(kMaxConnPerHostMax) + ". Received: " +
-            NStr::NumericToString(m_MaxConnPerHost) + ". Reset to "
-            "default: " + NStr::NumericToString(kMaxConnPerHostDefault);
-        LOG1((err_msg.c_str()));
+        ERR_POST("The maximum count of connections per host is out of range. Allowed "
+                 "range: " << kMaxConnPerHostMin << "..." <<
+                 kMaxConnPerHostMax << ". Received: " <<
+                 m_MaxConnPerHost << ". Reset to "
+                 "default: " << kMaxConnPerHostDefault);
         m_MaxConnPerHost = kMaxConnPerHostDefault;
     }
 
     if (m_Keepalive < kKeepaliveMin ||
         m_Keepalive > kKeepaliveMax) {
-        string  err_msg =
-            "The TCP keep-alive the initial delay is out of range. Allowed "
-            "range: " + NStr::NumericToString(kKeepaliveMin) + "..." +
-            NStr::NumericToString(kKeepaliveMax) + ". Received: " +
-            NStr::NumericToString(m_Keepalive) + ". Reset to "
-            "default: " + NStr::NumericToString(kKeepaliveDefault);
-        LOG1((err_msg.c_str()));
+        ERR_POST("The TCP keep-alive the initial delay is out of range. Allowed "
+                 "range: " << kKeepaliveMin << "..." <<
+                 kKeepaliveMax << ". Received: " <<
+                 m_Keepalive << ". Reset to "
+                 "default: " << kKeepaliveDefault);
         m_Keepalive = kKeepaliveDefault;
     }
 
     if (m_CassFallbackWrConsistency < kCassFallbackWrConsistencyMin ||
         m_CassFallbackWrConsistency > kCassFallbackWrConsistencyMax) {
-        string  err_msg =
-            "The cassandra write quorum is out of range. Allowed "
-            "range: " + NStr::NumericToString(kCassFallbackWrConsistencyMin) + "..." +
-            NStr::NumericToString(kCassFallbackWrConsistencyMax) + ". Received: " +
-            NStr::NumericToString(m_CassFallbackWrConsistency) + ". Reset to "
-            "default: " + NStr::NumericToString(kCassFallbackWrConsistencyDefault);
-        LOG1((err_msg.c_str()));
+        ERR_POST("The cassandra write quorum is out of range. Allowed "
+                 "range: " << kCassFallbackWrConsistencyMin << "..." <<
+                 kCassFallbackWrConsistencyMax << ". Received: " <<
+                 m_CassFallbackWrConsistency << ". Reset to "
+                 "default: " << kCassFallbackWrConsistencyDefault);
         m_CassFallbackWrConsistency = kKeepaliveDefault;
     }
 }

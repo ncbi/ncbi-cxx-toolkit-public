@@ -213,4 +213,17 @@ bool CHttpRequest::GetParam(const char *  name, size_t  len, bool  required,
     return !required;
 }
 
+
+CDiagContext_Extra &  CHttpRequest::PrintParams(CDiagContext_Extra &  extra)
+{
+    if (!m_ParamParsed)
+        ParseParams();
+
+    for (size_t i = 0; i < m_ParamCount; i++) {
+        extra.Print(string(m_Params[i].m_Name, m_Params[i].m_NameLen),
+                    string(m_Params[i].m_Val, m_Params[i].m_ValLen));
+    }
+    return extra;
+}
+
 };

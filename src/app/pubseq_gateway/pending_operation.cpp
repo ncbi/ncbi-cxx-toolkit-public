@@ -40,16 +40,18 @@ CPendingOperation::CPendingOperation(const SBlobRequest &  blob_request,
                                      size_t  initial_reply_chunks,
                                      shared_ptr<CCassConnection>  conn,
                                      unsigned int  timeout,
-                                     unsigned int  max_retries) :
+                                     unsigned int  max_retries,
+                                     CRef<CRequestContext>  request_context) :
     m_Reply(nullptr),
     m_TotalSentReplyChunks(initial_reply_chunks),
-    m_Cancelled(false)
+    m_Cancelled(false),
+    m_RequestContext(request_context)
 {
     unique_ptr<SBlobRequestDetails>     details(
                                     new SBlobRequestDetails(blob_request));
 
     details->m_Context.reset(new SOperationContext(blob_request.m_BlobId));
-    details->m_Loader.reset(new CCassBlobLoader(&details->m_Op, timeout, conn,
+    details->m_Loader.reset(new CCassBlobLoader(timeout, conn,
                                                blob_request.m_BlobId.m_SatName,
                                                blob_request.m_BlobId.m_SatKey,
                                                true, max_retries,
@@ -64,10 +66,12 @@ CPendingOperation::CPendingOperation(
         size_t  initial_reply_chunks,
         shared_ptr<CCassConnection>  conn,
         unsigned int  timeout,
-        unsigned int  max_retries) :
+        unsigned int  max_retries,
+        CRef<CRequestContext>  request_context) :
     m_Reply(nullptr),
     m_TotalSentReplyChunks(initial_reply_chunks),
-    m_Cancelled(false)
+    m_Cancelled(false),
+    m_RequestContext(request_context)
 {
     for (const auto &  blob_request: blob_requests) {
         unique_ptr<SBlobRequestDetails>     details(
@@ -75,7 +79,7 @@ CPendingOperation::CPendingOperation(
 
         details->m_Context.reset(new SOperationContext(blob_request.m_BlobId));
         details->m_Loader.reset(new CCassBlobLoader(
-                                            &details->m_Op, timeout, conn,
+                                            timeout, conn,
                                             blob_request.m_BlobId.m_SatName,
                                             blob_request.m_BlobId.m_SatKey,
                                             true, max_retries,
@@ -88,21 +92,33 @@ CPendingOperation::CPendingOperation(
 
 CPendingOperation::~CPendingOperation()
 {
+    CRequestContextResetter     context_resetter;
+    x_SetRequestContext();
+
     for (const auto &  request: m_Requests) {
-        LOG5(("CPendingOperation::CPendingOperation: "
-              "blob %d.%d, this: %p, m_Loader: %p",
-              request.first.m_Sat, request.first.m_SatKey,
-              this, request.second->m_Loader.get()));
+        ERR_POST(Trace << "CPendingOperation::CPendingOperation: blob " <<
+                 request.first.m_Sat << "." << request.first.m_SatKey <<
+                 ", this: " << this <<
+                 " m_Loader: " << request.second->m_Loader.get());
     }
+
+    // Just in case if a request ended without a normal request stop,
+    // finish it here as a last resort. (is it Cancel() case?)
+    // e410_Gone is chosen for easier identification in the logs
+    x_PrintRequestStop(CRequestStatus::e410_Gone);
 }
 
 
 void CPendingOperation::Clear()
 {
+    CRequestContextResetter     context_resetter;
+    x_SetRequestContext();
+
     for (const auto &  request: m_Requests) {
-        LOG5(("CPendingOperation::Clear: blob %d.%d, this: %p, m_Loader: %p",
-              request.first.m_Sat, request.first.m_SatKey,
-              this, request.second->m_Loader.get()));
+        ERR_POST(Trace << "CPendingOperation::Clear: blob " <<
+                 request.first.m_Sat << "." << request.first.m_SatKey <<
+                 " this: " << this <<
+                 " m_Loader: " << request.second->m_Loader.get());
         request.second->m_Loader->SetDataReadyCB(nullptr, nullptr);
         request.second->m_Loader->SetErrorCB(nullptr);
         request.second->m_Loader->SetDataChunkCB(nullptr);
@@ -132,15 +148,18 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
                       EDiagSev  severity,
                       const string &  message)
         {
-            SOperationContext *     op_context =
+            CRequestContextResetter     context_resetter;
+            x_SetRequestContext();
+
+            SOperationContext *         op_context =
                             reinterpret_cast<SOperationContext *>(context);
             auto    request_details = m_Requests.find(op_context->m_BlobId);
             if (request_details == m_Requests.end()) {
                 // Logic error, a blob which which was not ordered
-                ERRLOG1(("Logic error. An error callback is called "
-                         "for the blob which was not requested: %d.%d",
-                         op_context->m_BlobId.m_Sat,
-                         op_context->m_BlobId.m_SatKey));
+                ERR_POST("Logic error. An error callback is called "
+                         "for the blob which was not requested: " <<
+                         op_context->m_BlobId.m_Sat << "." <<
+                         op_context->m_BlobId.m_SatKey);
                 return;
             }
 
@@ -153,7 +172,7 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
             request_details->second->m_Loader->ClearError();
 
             CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
-            ERRLOG1(("%s", message.c_str()));
+            ERR_POST(message);
             if (status == CRequestStatus::e404_NotFound) {
                 app->GetErrorCounters().IncGetBlobNotFound();
             } else {
@@ -196,19 +215,22 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
                       unsigned int  size,
                       int  chunk_no)
         {
-            SOperationContext *     op_context =
+            CRequestContextResetter     context_resetter;
+            x_SetRequestContext();
+
+            SOperationContext *         op_context =
                             reinterpret_cast<SOperationContext *>(context);
             auto    request_details = m_Requests.find(op_context->m_BlobId);
             if (request_details == m_Requests.end()) {
                 // Logic error, a blob which which was not ordered
-                ERRLOG1(("Logic error. A data chunk callback is called "
-                         "for the blob which was not requested: %d.%d",
-                         op_context->m_BlobId.m_Sat,
-                         op_context->m_BlobId.m_SatKey));
+                ERR_POST("Logic error. A data chunk callback is called "
+                         "for the blob which was not requested: " <<
+                         op_context->m_BlobId.m_Sat << "." <<
+                         op_context->m_BlobId.m_SatKey);
                 return;
             }
 
-            LOG3(("Chunk: [%d]: %u", chunk_no, size));
+            ERR_POST(Info << "Chunk: [" << chunk_no << "]: " << size);
             assert(!request_details->second->m_FinishedRead);
             if (m_Cancelled) {
                 request_details->second->m_Loader->Cancel();
@@ -218,8 +240,8 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
             if (resp.IsFinished()) {
                 CPubseqGatewayApp::GetInstance()->GetErrorCounters().
                                                              IncUnknownError();
-                ERRLOG1(("Unexpected data received "
-                         "while the output has finished, ignoring"));
+                ERR_POST("Unexpected data received "
+                         "while the output has finished, ignoring");
                 return;
             }
 
@@ -349,5 +371,27 @@ void CPendingOperation::x_SendReplyCompletion(void)
         m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(reply_completion.data()),
                 reply_completion.size()));
+
+        // No need to set the context/engage context resetter: they set outside
+        x_PrintRequestStop(CRequestStatus::e200_Ok);
+    }
+}
+
+
+void CPendingOperation::x_SetRequestContext(void)
+{
+    if (m_RequestContext.NotNull())
+        CDiagContext::SetRequestContext(m_RequestContext);
+}
+
+
+void CPendingOperation::x_PrintRequestStop(int  status)
+{
+    if (m_RequestContext.NotNull()) {
+        CDiagContext::SetRequestContext(m_RequestContext);
+        m_RequestContext->SetRequestStatus(status);
+        GetDiagContext().PrintRequestStop();
+        m_RequestContext.Reset();
+        CDiagContext::SetRequestContext(NULL);
     }
 }

@@ -36,11 +36,10 @@
 
 #include <atomic>
 #include <thread>
+#include <signal.h>
 
 #include <corelib/ncbithr.hpp>
 
-#include <objtools/pubseq_gateway/impl/diag/IdLogUtl.hpp>
-#include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
 #include "IdCassScope.hpp"
 
 

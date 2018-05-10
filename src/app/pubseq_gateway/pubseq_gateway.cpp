@@ -31,6 +31,8 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbithr.hpp>
+#include <corelib/ncbidiag.hpp>
+#include <corelib/request_ctx.hpp>
 
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_exception.hpp"
@@ -56,6 +58,7 @@ const unsigned int      kTimeoutDefault = 30000;
 const unsigned int      kMaxRetriesDefault = 1;
 const unsigned int      kMaxRetriesMin = 0;
 const unsigned int      kMaxRetriesMax = UINT_MAX;
+const bool              kDefaultLog = true;
 
 static const string     kNodaemonArgName = "nodaemon";
 
@@ -64,8 +67,6 @@ CPubseqGatewayApp *     CPubseqGatewayApp::sm_PubseqApp = nullptr;
 
 
 CPubseqGatewayApp::CPubseqGatewayApp() :
-    m_LogLevel(0),
-    m_LogLevelFile(1),
     m_HttpPort(0),
     m_HttpWorkers(kWorkersDefault),
     m_ListenerBacklog(kListenerBacklogDefault),
@@ -73,7 +74,8 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_CassConnectionFactory(CCassConnectionFactory::s_Create()),
     m_TimeoutMs(kTimeoutDefault),
     m_MaxRetries(kMaxRetriesDefault),
-    m_StartTime(GetFastLocalTime())
+    m_StartTime(GetFastLocalTime()),
+    m_Log(kDefaultLog)
 {
     sm_PubseqApp = this;
 }
@@ -121,19 +123,12 @@ void CPubseqGatewayApp::ParseArgs(void)
                                   kTimeoutDefault);
     m_MaxRetries = registry.GetInt("SERVER", "maxretries",
                                    kMaxRetriesDefault);
-
-    m_LogLevel = registry.GetInt("COMMON", "loglevel", 0);
-    m_LogLevelFile = registry.GetInt("COMMON", "loglevelfile", 1);
-    m_LogFile = registry.GetString("COMMON", "logfile", "");
-
-
-    IdLogUtil::CAppLog::SetLogLevel(m_LogLevel);
-    IdLogUtil::CAppLog::SetLogLevelFile(m_LogLevelFile);
-    if (!m_LogFile.empty())
-        IdLogUtil::CAppLog::SetLogFile(m_LogFile);
+    m_Log = registry.GetBool("SERVER", "log",
+                             kDefaultLog);
 
     m_CassConnectionFactory->AppParseArgs(args);
     m_CassConnectionFactory->LoadConfig(registry, "");
+    m_CassConnectionFactory->SetLogging(GetDiagPostLevel());
 
     list<string>    entries;
     registry.EnumerateEntries("satnames", &entries);
@@ -307,7 +302,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             NStr::NumericToString(kWorkersMax) + ". Received: " +
             NStr::NumericToString(m_HttpWorkers) + ". Reset to "
             "default: " + NStr::NumericToString(kWorkersDefault);
-        LOG1((err_msg.c_str()));
+        ERR_POST(err_msg);
         m_HttpWorkers = kWorkersDefault;
     }
 
@@ -319,7 +314,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             NStr::NumericToString(kListenerBacklogMax) + ". Received: " +
             NStr::NumericToString(m_ListenerBacklog) + ". Reset to "
             "default: " + NStr::NumericToString(kListenerBacklogDefault);
-        LOG1((err_msg.c_str()));
+        ERR_POST(err_msg);
         m_ListenerBacklog = kListenerBacklogDefault;
     }
 
@@ -330,7 +325,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             NStr::NumericToString(kTcpMaxConnMax) + ". Received: " +
             NStr::NumericToString(m_TcpMaxConn) + ". Reset to "
             "default: " + NStr::NumericToString(kTcpMaxConnDefault);
-        LOG1((err_msg.c_str()));
+        ERR_POST(err_msg);
         m_TcpMaxConn = kTcpMaxConnDefault;
     }
 
@@ -341,7 +336,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             NStr::NumericToString(kTimeoutMsMax) + ". Received: " +
             NStr::NumericToString(m_TimeoutMs) + ". Reset to "
             "default: " + NStr::NumericToString(kTimeoutDefault);
-        LOG1((err_msg.c_str()));
+        ERR_POST(err_msg);
         m_TimeoutMs = kTimeoutDefault;
     }
 
@@ -352,7 +347,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             NStr::NumericToString(kMaxRetriesMax) + ". Received: " +
             NStr::NumericToString(m_MaxRetries) + ". Reset to "
             "default: " + NStr::NumericToString(kMaxRetriesDefault);
-        LOG1((err_msg.c_str()));
+        ERR_POST(err_msg);
         m_MaxRetries = kMaxRetriesDefault;
     }
 }
@@ -371,6 +366,41 @@ string CPubseqGatewayApp::x_GetCmdLineArguments(void) const
         cmdline_args += arguments[index];
     }
     return cmdline_args;
+}
+
+
+CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
+                                                HST::CHttpRequest &  req) const
+{
+    CRef<CRequestContext>   context;
+    if (IsLog()) {
+        context.Reset(new CRequestContext());
+        context->SetRequestID();
+
+        // Client IP? How to get it from h2o?
+        // URL? How to get it from h2o?
+
+        CDiagContext::SetRequestContext(context);
+        CDiagContext_Extra  extra = GetDiagContext().PrintRequestStart();
+        req.PrintParams(extra);
+
+        // Just in case, avoid to have 0
+        context->SetRequestStatus(CRequestStatus::e200_Ok);
+    }
+    return context;
+}
+
+
+void CPubseqGatewayApp::x_PrintRequestStop(CRef<CRequestContext>   context,
+                                           int  status)
+{
+    if (context.NotNull()) {
+        CDiagContext::SetRequestContext(context);
+        context->SetRequestStatus(status);
+        GetDiagContext().PrintRequestStop();
+        context.Reset();
+        CDiagContext::SetRequestContext(NULL);
+    }
 }
 
 
@@ -427,6 +457,14 @@ int main(int argc, const char* argv[])
 {
     srand(time(NULL));
     CThread::InitializeMainThreadId();
-    CAppLog::FormatTimeStamp(true);
-    return CPubseqGatewayApp().AppMain(argc, argv);
+
+
+    g_Diag_Use_RWLock();
+    CDiagContext::SetOldPostFormat(false);
+    CRequestContext::SetAllowedSessionIDFormat(CRequestContext::eSID_Other);
+    CRequestContext::SetDefaultAutoIncRequestIDOnPost(true);
+    CDiagContext::GetRequestContext().SetAutoIncRequestIDOnPost(true);
+
+//    CAppLog::FormatTimeStamp(true);
+    return CPubseqGatewayApp().AppMain(argc, argv, NULL, eDS_ToStdlog);
 }

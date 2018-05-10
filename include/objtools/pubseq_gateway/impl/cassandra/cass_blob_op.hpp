@@ -34,13 +34,15 @@
  *
  */
 
-#include <objtools/pubseq_gateway/impl/diag/IdLogUtl.hpp>
 #include <corelib/request_status.hpp>
 #include <corelib/ncbidiag.hpp>
 
 #include "cass_driver.hpp"
+#include "cass_exception.hpp"
 #include "Key.hpp"
 #include "IdCassScope.hpp"
+#include "cass_util.hpp"
+
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -74,12 +76,11 @@ public:
     CCassBlobWaiter(CCassBlobWaiter&&) = default;
     CCassBlobWaiter& operator=(CCassBlobWaiter&&) = default;
 
-    CCassBlobWaiter(IdLogUtil::CAppOp *  op, unsigned int  op_timeout_ms,
+    CCassBlobWaiter(unsigned int  op_timeout_ms,
                     shared_ptr<CCassConnection>  conn,
                     const string &  keyspace, int32_t  key, bool  async,
                     unsigned int  max_retries, void *  context,
                     DataErrorCB_t  error_cb) :
-        m_Op(op),
         m_ErrorCb(error_cb),
         m_DataReadyCb(nullptr),
         m_DataReadyData(nullptr),
@@ -88,7 +89,7 @@ public:
         m_Key(key),
         m_State(eInit),
         m_OpTimeoutMs(op_timeout_ms),
-        m_LastActivityMs(IdLogUtil::gettime() / 1000L),
+        m_LastActivityMs(gettime() / 1000L),
         m_RestartCounter(0),
         m_MaxRetries(max_retries), // 0 means no limit in auto-restart count,
                                    // any other positive value is the limit,
@@ -97,12 +98,12 @@ public:
         m_Cancelled(false),
         m_Context(context)
     {
-        LOG5(("CCassBlobWaiter::CCassBlobWaiter this=%p", this));
+        ERR_POST(Trace << "CCassBlobWaiter::CCassBlobWaiter this=" << this);
     }
 
     virtual ~CCassBlobWaiter()
     {
-        LOG5(("CCassBlobWaiter::~CCassBlobWaiter this=%p", this));
+        ERR_POST(Trace << "CCassBlobWaiter::~CCassBlobWaiter this=" << this);
         CloseAll();
     }
 
@@ -161,8 +162,8 @@ public:
 
     void SetDataReadyCB(DataReadyCB_t  datareadycb, void *  data)
     {
-        LOG5(("CCassBlobWaiter::SetDataReadyCB this=%p CB: %p, DATA: %p",
-              this, datareadycb, data));
+        ERR_POST(Trace << "CCassBlobWaiter::SetDataReadyCB this=" << this <<
+                 " CB: " << datareadycb << ", DATA: " << data);
         m_DataReadyCb = datareadycb;
         m_DataReadyData = data;
     }
@@ -200,7 +201,7 @@ protected:
     bool IsTimedOut(void) const
     {
         if (m_OpTimeoutMs > 0)
-            return ((IdLogUtil::gettime() / 1000L - m_LastActivityMs) >
+            return ((gettime() / 1000L - m_LastActivityMs) >
                     m_OpTimeoutMs);
         return false;
     }
@@ -211,9 +212,11 @@ protected:
         bool    is_out_of_retries = (m_MaxRetries > 0) &&
                                     (m_RestartCounter >= m_MaxRetries - 1);
 
-        LOG3(("CanRestart? t/o=%d, o/r=%d, last_active=%ld, time=%ld, timeout=%u",
-              is_timedout, is_out_of_retries, m_LastActivityMs,
-              IdLogUtil::gettime() / 1000L, m_OpTimeoutMs));
+        ERR_POST(Info << "CanRestart? t/o=" << is_timedout <<
+                 ", o/r=" << is_out_of_retries <<
+                 ", last_active=" << m_LastActivityMs <<
+                 ", time=" << gettime() / 1000L <<
+                 ", timeout=" << m_OpTimeoutMs);
         return !is_out_of_retries && !is_timedout && !m_Cancelled;
     }
 
@@ -232,7 +235,7 @@ protected:
         } catch (const CCassandraException& e) {
             if ((e.GetErrCode() == CCassandraException::eQueryTimeout ||
                  e.GetErrCode() == CCassandraException::eQueryFailedRestartable) && CanRestart()) {
-                LOG2(("In-place restart"));
+                ERR_POST(Info << "In-place restart");
                 ++m_RestartCounter;
                 qry->Close();
                 *restarted = true;
@@ -247,14 +250,13 @@ protected:
 
     void UpdateLastActivity(void)
     {
-        m_LastActivityMs = IdLogUtil::gettime() / 1000L;
+        m_LastActivityMs = gettime() / 1000L;
     }
 
     bool CheckMaxActive(void);
     virtual void Wait1(void) = 0;
 
 protected:
-    IdLogUtil::CAppOp *             m_Op;
     DataErrorCB_t                   m_ErrorCb;
     DataReadyCB_t                   m_DataReadyCb;
     void *                          m_DataReadyData;
@@ -284,13 +286,13 @@ public:
     CCassBlobLoader& operator=(const CCassBlobLoader&) = delete;
     CCassBlobLoader& operator=(CCassBlobLoader&&) = delete;
 
-    CCassBlobLoader(IdLogUtil::CAppOp *  op, unsigned int  op_timeout_ms,
+    CCassBlobLoader(unsigned int  op_timeout_ms,
                     shared_ptr<CCassConnection>  conn, const string &  keyspace,
                     int32_t  key, bool  async, unsigned int  max_retries,
                     void *  context,
                     const DataChunkCB_t &  data_chunk_cb,
                     const DataErrorCB_t &  DataErrorCB) :
-        CCassBlobWaiter(op, op_timeout_ms, conn, keyspace, key,
+        CCassBlobWaiter(op_timeout_ms, conn, keyspace, key,
                         async, max_retries, context, DataErrorCB),
         m_StatLoaded(false),
         m_DataCb(data_chunk_cb),
@@ -298,7 +300,8 @@ public:
         m_RemainingSize(0),
         m_LargeParts(0)
     {
-        LOG3(("CCassBlobLoader::CCassBlobLoader max_retries=%d", max_retries));
+        ERR_POST(Info << "CCassBlobLoader::CCassBlobLoader max_retries=" <<
+                 max_retries);
     }
 
     void SetDataChunkCB(DataChunkCB_t &&  datacb)
@@ -309,23 +312,25 @@ public:
     void SetDataReadyCB(DataReadyCB_t  datareadycb, void *  data)
     {
         if (datareadycb && m_State != eInit)
-            RAISE_ERROR(eSeqFailed,
-                        "CCassBlobLoader: DataReadyCB can't be assigned "
-                        "after the loading process has started");
+            NCBI_THROW(CCassandraException, eSeqFailed,
+                       "CCassBlobLoader: DataReadyCB can't be assigned "
+                       "after the loading process has started");
         CCassBlobWaiter::SetDataReadyCB(datareadycb, data);
     }
 
     SBlobStat GetBlobStat(void) const
     {
         if (!m_StatLoaded)
-            RAISE_ERROR(eSeqFailed, "CCassBlobLoader: Blob stat can't be read");
+            NCBI_THROW(CCassandraException, eSeqFailed,
+                       "CCassBlobLoader: Blob stat can't be read");
         return m_BlobStat;
     }
 
     uint64_t GetBlobSize(void) const
     {
         if (!m_StatLoaded)
-            RAISE_ERROR(eSeqFailed, "CCassBlobLoader: Blob stat can't be read");
+            NCBI_THROW(CCassandraException, eSeqFailed,
+                       "CCassBlobLoader: Blob stat can't be read");
         return m_ExpectedSize;
 
     }
@@ -393,14 +398,14 @@ private:
 class CCassBlobInserter: public CCassBlobWaiter
 {
 public:
-    CCassBlobInserter(IdLogUtil::CAppOp *  op, unsigned int  op_timeout_ms,
+    CCassBlobInserter(unsigned int  op_timeout_ms,
                       shared_ptr<CCassConnection>  conn,
                       const string &  keyspace, int32_t  key, CBlob *  blob,
                       ECassTristate  is_new, int64_t  large_treshold,
                       int64_t  large_chunk_sz, bool  async,
                       unsigned int  max_retries, void *  context,
                       const DataErrorCB_t &  data_error_cb) :
-        CCassBlobWaiter(op, op_timeout_ms, conn, keyspace, key, async,
+        CCassBlobWaiter(op_timeout_ms, conn, keyspace, key, async,
                         max_retries, context, data_error_cb),
         m_LargeTreshold(large_treshold),
         m_LargeChunkSize(large_chunk_sz),
@@ -442,12 +447,12 @@ private:
 class CCassBlobDeleter: public CCassBlobWaiter
 {
 public:
-    CCassBlobDeleter(IdLogUtil::CAppOp *  op, unsigned int  op_timeout_ms,
+    CCassBlobDeleter(unsigned int  op_timeout_ms,
                      shared_ptr<CCassConnection>  conn,
                      const string &  keyspace, int32_t  key, bool  async,
                      unsigned int  max_retries, void *  context,
                      DataErrorCB_t  error_cb) :
-        CCassBlobWaiter(op, op_timeout_ms, conn, keyspace, key,
+        CCassBlobWaiter(op_timeout_ms, conn, keyspace, key,
                         async, max_retries, context, error_cb),
         m_LargeParts(0)
     {}
@@ -514,42 +519,42 @@ public:
         return m_Keyspace;
     }
 
-    void LoadKeys(IdLogUtil::CAppOp &  op, CBlobFullStatMap *  keys,
+    void LoadKeys(CBlobFullStatMap *  keys,
                   function<void()> tick = nullptr);
 
-    void GetBlob(IdLogUtil::CAppOp &  op, unsigned int  op_timeout_ms,
+    void GetBlob(unsigned int  op_timeout_ms,
                  int32_t  key, unsigned int  max_retries,
                  SBlobStat *  blob_stat, const DataChunkCB_t &  data_chunk_cb);
-    void GetBlobAsync(IdLogUtil::CAppOp &  op, unsigned int  op_timeout_ms,
+    void GetBlobAsync(unsigned int  op_timeout_ms,
                       int32_t  key, unsigned int  max_retries,
                       const DataChunkCB_t &  data_chunk_cb,
                       const DataErrorCB_t & error_cb,
                       unique_ptr<CCassBlobWaiter> &  waiter);
-    void InsertBlobAsync(IdLogUtil::CAppOp &  op, unsigned int  op_timeout_ms,
+    void InsertBlobAsync(unsigned int  op_timeout_ms,
                          int32_t  key, unsigned int  max_retries,
                          CBlob *  blob_rslt, ECassTristate  is_new,
                          int64_t  LargeTreshold, int64_t  LargeChunkSz,
                          const DataErrorCB_t & error_cb,
                          unique_ptr<CCassBlobWaiter> &  waiter);
-    void DeleteBlobAsync(IdLogUtil::CAppOp &  op, unsigned int  op_timeout_ms,
+    void DeleteBlobAsync(unsigned int  op_timeout_ms,
                          int32_t  key, unsigned int  max_retries,
                          const DataErrorCB_t & error_cb,
                          unique_ptr<CCassBlobWaiter> &  waiter);
 
-    void UpdateBlobFlags(IdLogUtil::CAppOp &  op, unsigned int  op_timeout_ms,
+    void UpdateBlobFlags(unsigned int  op_timeout_ms,
                          int32_t  key, uint64_t  flags, EBlopOpFlag  flag_op);
 
-    bool GetSetting(IdLogUtil::CAppOp &  op, unsigned int  op_timeout_ms,
+    bool GetSetting(unsigned int  op_timeout_ms,
                     const string &  name, string &  value);
-    void UpdateSetting(IdLogUtil::CAppOp &  op, unsigned int  op_timeout_ms,
+    void UpdateSetting(unsigned int  op_timeout_ms,
                        const string &  name, const string &  value);
 
     shared_ptr<CCassConnection> GetConn(void)
     {
         if (!m_Conn)
-            RAISE_ERROR(eSeqFailed,
-                        "CCassBlobOp instance is not initialized "
-                        "with DB connection");
+            NCBI_THROW(CCassandraException, eSeqFailed,
+                       "CCassBlobOp instance is not initialized "
+                       "with DB connection");
         return m_Conn;
     }
 

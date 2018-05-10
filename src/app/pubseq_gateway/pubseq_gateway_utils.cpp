@@ -223,3 +223,13 @@ string  GetReplyCompletionHeader(size_t  chunk_count)
            "&" + s_ReplyNChunks + NStr::NumericToString(chunk_count) +
            "\n";
 }
+
+
+CRequestContextResetter::CRequestContextResetter()
+{}
+
+
+CRequestContextResetter::~CRequestContextResetter()
+{
+    CDiagContext::SetRequestContext(NULL);
+}

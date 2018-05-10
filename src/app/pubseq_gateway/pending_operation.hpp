@@ -36,16 +36,14 @@
 #include <memory>
 using namespace std;
 
+#include <corelib/request_ctx.hpp>
+
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 USING_IDBLOB_SCOPE;
 
 #include "http_server_transport.hpp"
 #include "pubseq_gateway_utils.hpp"
-
-#include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
-#include <objtools/pubseq_gateway/impl/diag/AppPerf.hpp>
-using namespace IdLogUtil;
 
 
 // The operation context passed to the cassandra wrapper.
@@ -91,12 +89,14 @@ public:
                       size_t  initial_reply_chunks,
                       shared_ptr<CCassConnection>  conn,
                       unsigned int  timeout,
-                      unsigned int  max_retries);
+                      unsigned int  max_retries,
+                      CRef<CRequestContext>  request_context);
     CPendingOperation(const vector<SBlobRequest> &  blob_requests,
                       size_t  initial_reply_chunks,
                       shared_ptr<CCassConnection>  conn,
                       unsigned int  timeout,
-                      unsigned int  max_retries);
+                      unsigned int  max_retries,
+                      CRef<CRequestContext>  request_context);
     ~CPendingOperation();
     void Clear();
     void Start(HST::CHttpReply<CPendingOperation>& resp);
@@ -128,12 +128,12 @@ private:
 
         unique_ptr<SOperationContext>   m_Context;
         unique_ptr<CCassBlobLoader>     m_Loader;
-
-        CAppOp                          m_Op;
     };
 
     bool x_AllFinishedRead(void) const;
     void x_SendReplyCompletion(void);
+    void x_SetRequestContext(void);
+    void x_PrintRequestStop(int  status);
 
 private:
     HST::CHttpReply<CPendingOperation> *    m_Reply;
@@ -141,6 +141,7 @@ private:
     int32_t                                 m_TotalSentReplyChunks;
     bool                                    m_Cancelled;
     vector<h2o_iovec_t>                     m_Chunks;
+    CRef<CRequestContext>                   m_RequestContext;
 
     // Storage for all the blob requests
     map<SBlobId,

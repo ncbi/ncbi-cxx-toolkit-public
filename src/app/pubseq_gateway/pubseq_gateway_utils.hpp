@@ -99,4 +99,13 @@ string  GetReplyErrorHeader(size_t  msg_size,
                             EDiagSev  severity);
 
 
+// Reset the request context if necessary
+class CRequestContextResetter
+{
+public:
+    CRequestContextResetter();
+    ~CRequestContextResetter();
+};
+
+
 #endif

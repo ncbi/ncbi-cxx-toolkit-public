@@ -36,8 +36,6 @@
 
 #include <corelib/ncbiargs.hpp>
 
-#include <objtools/pubseq_gateway/impl/diag/IdLogUtl.hpp>
-#include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
 #include "cass_driver.hpp"
 #include "IdCassScope.hpp"
 
@@ -69,10 +67,16 @@ public:
         return shared_ptr<CCassConnectionFactory>(new CCassConnectionFactory());
     }
 
+    void SetLogging(EDiagSev  severity)
+    {
+        m_LogSeverity = severity;
+    }
+
 private:
     void x_ValidateArgs(void);
 
-    DISALLOW_COPY_AND_ASSIGN(CCassConnectionFactory);
+    CCassConnectionFactory(const CCassConnectionFactory&) = delete;
+    CCassConnectionFactory& operator=(const CCassConnectionFactory&) = delete;
 
     CFastMutex              m_RunTimeParams;
     string                  m_CfgName;
@@ -81,7 +85,6 @@ private:
     string                  m_CassUserName;
     string                  m_CassPassword;
     string                  m_CassDataNamespace;
-    string                  m_CassDriverLogFile;
     string                  m_PassFile;
     string                  m_PassSection;
     string                  m_LoadBalancingStr;
@@ -96,6 +99,9 @@ private:
     unsigned int            m_NumConnPerHost;
     unsigned int            m_MaxConnPerHost;
     unsigned int            m_Keepalive;
+
+    EDiagSev                m_LogSeverity;
+    bool                    m_LogEnabled;
 };
 
 END_IDBLOB_SCOPE

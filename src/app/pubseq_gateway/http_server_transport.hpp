@@ -105,7 +105,7 @@ public:
 
     ~CHttpReply()
     {
-        LOG3(("~CHttpReply"));
+        ERR_POST(Info << "~CHttpReply");
         Clear();
         m_HttpProto = nullptr;
         m_HttpConn = nullptr;
@@ -461,7 +461,7 @@ private:
     void NeedOutput(void)
     {
         if (m_State == eReplyFinished) {
-            LOG3(("NeedOutput -> finished -> wake"));
+            ERR_POST(Info << "NeedOutput -> finished -> wake");
             m_HttpProto->WakeWorker();
         } else {
             PeekPending();
@@ -472,11 +472,11 @@ private:
     // using this connection
     void StopCB(void)
     {
-        LOG3(("CHttpReply::Stop"));
+        ERR_POST(Info << "CHttpReply::Stop");
         m_OutputIsReady = true;
         m_OutputFinished = true;
         if (m_State != eReplyFinished) {
-            LOG3(("CHttpReply::Stop: need cancel"));
+            ERR_POST(Info << "CHttpReply::Stop: need cancel");
             DoCancel();
             NeedOutput();
         }
@@ -489,7 +489,7 @@ private:
     // it is ready for the next portion
     void ProceedCB(void)
     {
-        LOG3(("CHttpReply::Proceed"));
+        ERR_POST(Info << "CHttpReply::Proceed");
         m_OutputIsReady = true;
         NeedOutput();
     }
@@ -517,8 +517,8 @@ private:
         if (m_HttpConn->IsClosed()) {
             m_OutputFinished = true;
             if (count > 0)
-                ERRLOG0(("attempt to send %lu chunks (islast=%d) "
-                         "to a closed connection", count, (int)is_last));
+                ERR_POST("attempt to send " << count << " chunks (islast=" <<
+                         is_last << ") to a closed connection");
             if (is_last) {
                 m_State = eReplyFinished;
             } else {
@@ -531,8 +531,8 @@ private:
             NCBI_THROW(CPubseqGatewayException, eOutputNotInReadyState,
                        "Output is not in ready state");
 
-        LOG5(("DoSend: %lu chunks, is_last: %d, state: %d",
-              count, (int)is_last, m_State));
+        ERR_POST(Trace << "DoSend: " << count << " chunks, "
+                 "is_last: " << is_last << ", state: " << m_State);
 
         switch (m_State) {
             case eReplyInitialized:
@@ -633,7 +633,7 @@ public:
 
     void OnBeforeClosedConnection(void)
     {
-        LOG3(("OnBeforeClosedConnection:"));
+        ERR_POST(Info << "OnBeforeClosedConnection:");
         m_IsClosed = true;
         CancelAll();
     }
@@ -830,6 +830,9 @@ public:
         *len = sizeof(m_RawBuf);
     }
 
+    // Used in PrintRequeststart() to have all the incoming parameters logged
+    CDiagContext_Extra &  PrintParams(CDiagContext_Extra &  extra);
+
 private:
     h2o_req_t *                 m_Req;
     CQueryParam                 m_Params[MAX_QUERY_PARAMS];
@@ -887,12 +890,12 @@ public:
         m_H2oCtxInitialized(false),
         m_HttpAcceptCtx({0})
     {
-        LOG3(("CHttpProto::CHttpProto"));
+        ERR_POST(Info << "CHttpProto::CHttpProto");
     }
 
     ~CHttpProto()
     {
-        LOG3(("~CHttpProto"));
+        ERR_POST(Info << "~CHttpProto");
     }
 
     void BeforeStart(void)
@@ -924,7 +927,7 @@ public:
         h2o_socket_t *      sock = h2o_uv_socket_create(conn, close_cb);
 
         if (!sock) {
-            ERRLOG0(("h2o layer failed to create socket"));
+            ERR_POST("h2o layer failed to create socket");
             uv_close((uv_handle_t*)conn, close_cb);
             return;
         }

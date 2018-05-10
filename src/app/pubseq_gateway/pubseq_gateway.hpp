@@ -38,8 +38,6 @@
 
 #include <connect/services/json_over_uttp.hpp>
 
-#include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
-#include <objtools/pubseq_gateway/impl/diag/AppPerf.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 
@@ -68,6 +66,11 @@ public:
     void OpenCass(void);
     void CloseCass(void);
     bool SatToSatName(size_t  sat, string &  sat_name);
+
+    bool IsLog(void) const
+    {
+        return m_Log;
+    }
 
     template<typename P>
     int OnBadURL(HST::CHttpRequest &  req, HST::CHttpReply<P> &  resp);
@@ -128,6 +131,8 @@ private:
 private:
     void x_ValidateArgs(void);
     string  x_GetCmdLineArguments(void) const;
+    CRef<CRequestContext>  x_CreateRequestContext(HST::CHttpRequest &  req) const;
+    void x_PrintRequestStop(CRef<CRequestContext>  context, int  status);
 
     struct SRequestParameter
     {
@@ -148,9 +153,6 @@ private:
 
 private:
     string                              m_DbPath;
-    string                              m_LogFile;
-    unsigned int                        m_LogLevel;
-    unsigned int                        m_LogLevelFile;
     vector<string>                      m_SatNames;
 
     unsigned short                      m_HttpPort;
@@ -165,6 +167,7 @@ private:
     unsigned int                        m_MaxRetries;
 
     CTime                               m_StartTime;
+    bool                                m_Log;
 
     unique_ptr<HST::CHttpDaemon<CPendingOperation>>
                                         m_TcpDaemon;
@@ -183,8 +186,12 @@ template<typename P>
 int CPubseqGatewayApp::OnBadURL(HST::CHttpRequest &  req,
                                 HST::CHttpReply<P> &  resp)
 {
+    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
     m_ErrorCounters.IncBadUrlPath();
     resp.Send400("Unknown Request", "The provided URL is not recognized");
+
+    x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
     return 0;
 }
 
@@ -193,6 +200,9 @@ template<typename P>
 int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
                              HST::CHttpReply<P> &  resp)
 {
+    CRequestContextResetter context_resetter;
+    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
     SRequestParameter   accession_param = x_GetParam(req, "accession");
     SRequestParameter   resolution_param = x_GetParam(req, "resolution");
     SRequestParameter   main_blob_param = x_GetParam(req, "main_blob");
@@ -205,6 +215,7 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
         m_ErrorCounters.IncInsufficientArguments();
         resp.Send400("Missing Request Parameter",
                      "Expected to have the 'accession' parameter");
+        x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         return 0;
     }
 
@@ -212,6 +223,7 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
         m_ErrorCounters.IncInsufficientArguments();
         resp.Send400("Missing Request Parameter",
                      "Expected to have the 'resolution' parameter");
+        x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         return 0;
     }
 
@@ -219,6 +231,7 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
         m_ErrorCounters.IncInsufficientArguments();
         resp.Send400("Missing Request Parameter",
                      "Expected to have the 'main_blob' parameter");
+        x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         return 0;
     }
 
@@ -228,12 +241,14 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
                                   resolution_param.m_Value, err_msg)) {
         m_ErrorCounters.IncMalformedArguments();
         resp.Send400("Malformed Request Parameters", err_msg.c_str());
+        x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         return 0;
     }
 
     if (!x_IsBoolParamValid("main_blob", main_blob_param.m_Value, err_msg)) {
         m_ErrorCounters.IncMalformedArguments();
         resp.Send400("Malformed Request Parameters", err_msg.c_str());
+        x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         return 0;
     }
 
@@ -242,6 +257,7 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
                                 prefer_non_split_param.m_Value, err_msg)) {
             m_ErrorCounters.IncMalformedArguments();
             resp.Send400("Malformed Request Parameters", err_msg.c_str());
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             return 0;
         }
     }
@@ -251,6 +267,7 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
                                 named_annots_param.m_Value, err_msg)) {
             m_ErrorCounters.IncMalformedArguments();
             resp.Send400("Malformed Request Parameters", err_msg.c_str());
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             return 0;
         }
     }
@@ -259,8 +276,10 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
     bool            need_main_blob = main_blob_param.m_Value == "yes";
     string          resolution_data;
 
-    if (!x_Resolve(resp, accession_param.m_Value, resolution_data))
+    if (!x_Resolve(resp, accession_param.m_Value, resolution_data)) {
+        x_PrintRequestStop(context, CRequestStatus::e404_NotFound);
         return 0;   // Failure; 404 has been sent
+    }
 
     // Send the resolution right away...
     x_SendResolution(resp, resolution_data, !need_main_blob);
@@ -276,7 +295,8 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
         if (SatToSatName(sat, blob_id.m_SatName)) {
             resp.Postpone(CPendingOperation(SBlobRequest(blob_id, eByAccession),
                                             1, m_CassConnection, m_TimeoutMs,
-                                            m_MaxRetries));
+                                            m_MaxRetries,
+                                            context));
             return 0;
         }
 
@@ -286,7 +306,11 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
                           "accession data";
         x_SendUnknownSatelliteError(resp, blob_id, msg,
                                     eUnknownResolvedSatellite);
+        x_PrintRequestStop(context, CRequestStatus::e404_NotFound);
+        return 0;
     }
+
+    x_PrintRequestStop(context, CRequestStatus::e200_Ok);
     return 0;
 }
 
@@ -295,6 +319,9 @@ template<typename P>
 int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
                                  HST::CHttpReply<P> &  resp)
 {
+    CRequestContextResetter context_resetter;
+    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
     SRequestParameter   blob_id_param = x_GetParam(req, "blob_id");
 
     if (blob_id_param.m_Found)
@@ -307,6 +334,7 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
                          "Malformed 'blob_id' parameter. "
                          "Expected format 'sat.sat_key' where both "
                          "'sat' and 'sat_key' are integers.");
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             return 0;
         }
 
@@ -314,7 +342,7 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
             resp.Postpone(CPendingOperation(SBlobRequest(blob_id,
                                                          eBySatAndSatKey),
                                             0, m_CassConnection, m_TimeoutMs,
-                                            m_MaxRetries));
+                                            m_MaxRetries, context));
 
             return 0;
         }
@@ -324,11 +352,14 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
                           NStr::NumericToString(blob_id.m_Sat);
         x_SendUnknownSatelliteError(resp, blob_id, msg,
                                     eUnknownResolvedSatellite);
-    } else {
-        m_ErrorCounters.IncInsufficientArguments();
-        resp.Send400("Missing Request Parameters",
-                     "Mandatory parameter 'blob_id' is not found.");
+        x_PrintRequestStop(context, CRequestStatus::e404_NotFound);
+        return 0;
     }
+
+    m_ErrorCounters.IncInsufficientArguments();
+    resp.Send400("Missing Request Parameters",
+                 "Mandatory parameter 'blob_id' is not found.");
+    x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
     return 0;
 }
 
@@ -337,6 +368,9 @@ template<typename P>
 int CPubseqGatewayApp::OnConfig(HST::CHttpRequest &  req,
                                 HST::CHttpReply<P> &  resp)
 {
+    CRequestContextResetter context_resetter;
+    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
     CNcbiOstrstream             conf;
     CNcbiOstrstreamToString     converter(conf);
 
@@ -352,6 +386,8 @@ int CPubseqGatewayApp::OnConfig(HST::CHttpRequest &  req,
     resp.SetContentLength(content.length());
     resp.SendOk(content.c_str(), content.length(), false);
     m_RequestCounters.IncAdmin();
+
+    x_PrintRequestStop(context, CRequestStatus::e200_Ok);
     return 0;
 }
 
@@ -360,6 +396,9 @@ template<typename P>
 int CPubseqGatewayApp::OnInfo(HST::CHttpRequest &  req,
                               HST::CHttpReply<P> &  resp)
 {
+    CRequestContextResetter context_resetter;
+    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
     CJsonNode   reply(CJsonNode::NewObjectNode());
 
     reply.SetInteger("PID", CDiagContext::GetPID());
@@ -441,6 +480,8 @@ int CPubseqGatewayApp::OnInfo(HST::CHttpRequest &  req,
     resp.SetContentLength(content.length());
     resp.SendOk(content.c_str(), content.length(), false);
     m_RequestCounters.IncAdmin();
+
+    x_PrintRequestStop(context, CRequestStatus::e200_Ok);
     return 0;
 }
 
@@ -449,6 +490,9 @@ template<typename P>
 int CPubseqGatewayApp::OnStatus(HST::CHttpRequest &  req,
                                 HST::CHttpReply<P> &  resp)
 {
+    CRequestContextResetter context_resetter;
+    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
     CJsonNode                       reply(CJsonNode::NewObjectNode());
 
     reply.SetInteger("CassandraActiveStatementsCount",
@@ -510,6 +554,8 @@ int CPubseqGatewayApp::OnStatus(HST::CHttpRequest &  req,
     resp.SendOk(content.c_str(), content.size(), false);
 
     m_RequestCounters.IncAdmin();
+
+    x_PrintRequestStop(context, CRequestStatus::e200_Ok);
     return 0;
 }
 
@@ -648,20 +694,20 @@ bool CPubseqGatewayApp::x_UnpackAccessionData(HST::CHttpReply<P> &  resp,
         string  msg = string("Accession data unpacking error: ") +
                       e.what();
         x_SendUnpackingError(resp, accession, msg, eUnpackingError);
-        ERRLOG1((msg.c_str()));
+        ERR_POST(msg);
         return false;
     } catch (const exception &  e) {
         m_ErrorCounters.IncResolveError();
         string  msg = string("Accession data unpacking error: ") +
                       e.what();
         x_SendUnpackingError(resp, accession, msg, eUnpackingError);
-        ERRLOG1((msg.c_str()));
+        ERR_POST(msg);
         return false;
     } catch (...) {
         m_ErrorCounters.IncResolveError();
         string  msg = "Unknown accession data unpacking error";
         x_SendUnpackingError(resp, accession, msg, eUnpackingError);
-        ERRLOG1((msg.c_str()));
+        ERR_POST(msg);
         return false;
     }
     return true;

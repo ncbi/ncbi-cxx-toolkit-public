@@ -37,15 +37,16 @@
 #include <thread>
 
 #ifdef __linux__
-#include <linux/unistd.h>
 #include <linux/futex.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 #endif
 
 #include <corelib/ncbithr.hpp>
 
-#include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/SyncObj.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/cass_exception.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -103,9 +104,9 @@ void CFutex::DoWake(int waiters)
 {
     int     rt = syscall(__NR_futex, &m_Value, FUTEX_WAKE, waiters, NULL);
     if (rt < 0)
-        RAISE_ERROR(eSeqFailed,
-                    string("CFutex::DoWake: failed, unexpected errno: ") +
-                    NStr::NumericToString(errno));
+        NCBI_THROW(CCassandraException, eSeqFailed,
+                   string("CFutex::DoWake: failed, unexpected errno: ") +
+                   NStr::NumericToString(errno));
 }
 
 
@@ -132,10 +133,10 @@ CFutex::EWaitResult CFutex::WaitWhile(int  value, int  timeout_mks)
             case ETIMEDOUT:
                 return eWaitResultTimeOut;
             default:
-                RAISE_ERROR(eSeqFailed,
-                            string("CFutex::WaitWhile: failed, "
-                                   "unexpected errno: ") +
-                            NStr::NumericToString(errno));
+                NCBI_THROW(CCassandraException, eSeqFailed,
+                           string("CFutex::WaitWhile: failed, "
+                                  "unexpected errno: ") +
+                           NStr::NumericToString(errno));
         }
     }
     return eWaitResultOk;
@@ -165,13 +166,13 @@ void SSignalHandler::s_WatchCtrlCPressed(bool              enable,
     sm_CtrlCPressedEvent.Set(0);
 #endif
     if (sm_WatchThread) {
-        LOG5(("Joining Ctrl+C watcher thread"));
+        ERR_POST(Trace << "Joining Ctrl+C watcher thread");
         sm_WatchThread = NULL;
     }
 
     if (enable) {
         if (!sm_WatchThread) {
-            LOG5(("Creating Ctrl+C watcher thread"));
+            ERR_POST(Trace << "Creating Ctrl+C watcher thread");
             sm_WatchThread = unique_ptr<thread,
                                         function<void(thread*)> >(new thread(
                 [](){
@@ -189,12 +190,12 @@ void SSignalHandler::s_WatchCtrlCPressed(bool              enable,
                                     SSignalHandler::sm_CtrlCPressedEvent.Inc(),
                                     100000) == CFutex::eWaitResultTimeOut && !sm_Quit);
 #endif
-                        LOG5(("Ctr+C watcher thread woke up"));
+                        ERR_POST(Trace << "Ctr+C watcher thread woke up");
                         if (sm_CtrlCPressed && SSignalHandler::sm_OnCtrlCPressed) {
-                            LOG5(("Ctr+C watcher thread: calling closure"));
+                            ERR_POST(Trace << "Ctr+C watcher thread: calling closure");
                             SSignalHandler::sm_OnCtrlCPressed();
                         }
-                        LOG5(("Ctr+C watcher thread finished"));
+                        ERR_POST(Trace << "Ctr+C watcher thread finished");
                     }
                 }),
                 [](thread* th){
