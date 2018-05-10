@@ -4518,8 +4518,11 @@ static EIO_Status s_CreateOnTop(const void*   handle,
         memcpy(&fd, handle, sizeof(fd));
 
     /* initialize internals */
-    if (s_InitAPI(flags & fSOCK_Secure) != eIO_Success)
+    if (s_InitAPI(flags & fSOCK_Secure) != eIO_Success) {
+        if (x_orig)
+            x_orig->sock = fd;
         return eIO_NotSupported;
+    }
 
     /* get peer's address */
     peerlen = (TSOCK_socklen_t) sizeof(peer);
@@ -4532,9 +4535,13 @@ static EIO_Status s_CreateOnTop(const void*   handle,
         CORE_LOGF_ERRNO_EXX(148, eLOG_Error,
                             error, strerr ? strerr : "",
                             ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
-                             " Invalid OS socket handle",
-                             x_id, (unsigned int) fd));
+                             " %s OS socket handle",
+                             x_id, (unsigned int) fd,
+                             error == SOCK_ENOTCONN
+                             ? "Unconnected" : "Invalid"));
         UTIL_ReleaseBuffer(strerr);
+        if (x_orig)
+            x_orig->sock = fd;
         return eIO_Closed;
     }
 #ifdef NCBI_OS_UNIX
@@ -4547,7 +4554,11 @@ static EIO_Status s_CreateOnTop(const void*   handle,
 #else
     if (peer.sa.sa_family != AF_INET)
 #endif /*NCBI_OS_UNIX*/
+    {
+        if (x_orig)
+            x_orig->sock = fd;
         return eIO_NotSupported;
+    }
 
 #ifdef NCBI_OS_UNIX
     if (
@@ -4557,26 +4568,37 @@ static EIO_Status s_CreateOnTop(const void*   handle,
         peer.sa.sa_family == AF_UNSPEC/*0*/  ||
 #  endif /*NCBI_OS*/
         peer.sa.sa_family == AF_UNIX) {
-        if (!peer.un.sun_path[0]) {
-            peerlen = (TSOCK_socklen_t) sizeof(peer);
-            memset(&peer, 0, sizeof(peer));
+        if (peerlen == sizeof(peer.sa.sa_family)  ||  !peer.un.sun_path[0]) {
+            if (peerlen > sizeof(peer.sa.sa_family)) {
+                /* named but can be abstract */
+                peerlen = (TSOCK_socklen_t) sizeof(peer);
+                memset(&peer, 0, sizeof(peer));
 #  ifdef HAVE_SIN_LEN
-            peer.sa.sa_len = peerlen;
+                peer.sa.sa_len = peerlen;
 #  endif /*HAVE_SIN_LEN*/
-            if (getsockname(fd, &peer.sa, &peerlen) != 0)
-                return eIO_Closed;
-            assert(peer.sa.sa_family == AF_UNIX);
-            if (!peer.un.sun_path[0]) {
+                if (getsockname(fd, &peer.sa, &peerlen) != 0) {
+                    if (x_orig)
+                        x_orig->sock = fd;
+                    return eIO_Closed;
+                }
+                assert(peer.sa.sa_family == AF_UNIX);
+            } /* else "unnamed" e.g. from socketpair() */
+            if (peerlen == sizeof(peer.sa.sa_family) || !peer.un.sun_path[0]) {
                 CORE_LOGF_X(48, eLOG_Error,
                             ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
-                             " Unbound UNIX socket",
-                             x_id, (unsigned int) fd));
+                             " %s UNIX socket",
+                             x_id, (unsigned int) fd,
+                             peerlen == sizeof(peer.sa.sa_family)
+                             ? "Unnamed" : "Abstract"));
                 assert(0);
+                if (x_orig)
+                    x_orig->sock = fd;
                 return eIO_InvalidArg;
             }
         }
         assert(!x_orig  ||   x_orig->path[0]);
-        socklen = strnlen(peer.un.sun_path, sizeof(peer.un.sun_path));
+        host = port = 0; /* silence a compiler's "uninited" warning */
+        verify((socklen = strnlen(peer.un.sun_path,sizeof(peer.un.sun_path))));
     } else
 #endif /*NCBI_OS_UNIX*/
     {
@@ -4603,6 +4625,8 @@ static EIO_Status s_CreateOnTop(const void*   handle,
                                " Cannot store initial data",
                                x_id, (unsigned int) fd));
             BUF_Destroy(w_buf);
+            if (x_orig)
+                x_orig->sock = fd;
             return eIO_Unknown;
         }
     }
@@ -4621,6 +4645,8 @@ static EIO_Status s_CreateOnTop(const void*   handle,
                              " Failed to create IO event",
                              x_id, (unsigned int) fd));
         UTIL_ReleaseBufferOnHeap(strerr);
+        if (x_orig)
+            x_orig->sock = fd;
         return eIO_Unknown;
     }
     /* NB: WSAEventSelect() sets non-blocking automatically */
@@ -4633,6 +4659,8 @@ static EIO_Status s_CreateOnTop(const void*   handle,
                              x_id, (unsigned int) fd));
         UTIL_ReleaseBuffer(strerr);
         WSACloseEvent(event);
+        if (x_orig)
+            x_orig->sock = fd;
         return eIO_Unknown;
     }
 #else
@@ -4645,6 +4673,8 @@ static EIO_Status s_CreateOnTop(const void*   handle,
                              " Cannot set socket to non-blocking mode",
                              x_id, (unsigned int) fd));
         UTIL_ReleaseBuffer(strerr);
+        if (x_orig)
+            x_orig->sock = fd;
         return eIO_Unknown;
     }
 #endif /*NCBI_OS_MSWIN*/
@@ -4656,12 +4686,14 @@ static EIO_Status s_CreateOnTop(const void*   handle,
 #ifdef NCBI_OS_MSWIN
         WSACloseEvent(event);
 #endif /*NCBI_OS_MSWIN*/
+        if (x_orig)
+            x_orig->sock = fd;
         return eIO_Unknown;
     }
     x_sock->sock      = fd;
     x_sock->id        = x_id;
 #ifdef NCBI_OS_UNIX
-    if (peer.sa.sa_family == AF_UNIX)
+    if (socklen)
         strncpy0(x_sock->path, peer.un.sun_path, socklen);
     else
 #endif /*NCBI_OS_UNIX*/
@@ -4712,6 +4744,8 @@ static EIO_Status s_CreateOnTop(const void*   handle,
             WSAEventSelect(fd, event, 0/*de-associate*/);
 #endif /*NCBI_OS_MSWIN*/
             SOCK_Destroy(x_sock);
+            if (x_orig)
+                x_orig->sock = fd;
             return eIO_NotSupported;
         }
         assert(session != SESSION_INVALID);
