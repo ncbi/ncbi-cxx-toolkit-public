@@ -177,6 +177,7 @@ int main(int argc, const char* argv[])
 
     SOCK_SetupSSL(NcbiSetupTls);
 
+    arg = 0;
     if (argc > 2) {
         if (strcasecmp(argv[2],"heap") == 0 || strcasecmp(argv[2],"all") == 0){
             HEAP_Options(eOff, eDefault);
@@ -206,10 +207,9 @@ int main(int argc, const char* argv[])
                    strcasecmp(argv[2],"heap") != 0  &&
                    strcasecmp(argv[2],"all")  != 0) {
             CORE_LOGF(eLOG_Fatal, ("Unknown option `%s'", argv[2]));
-        } else
-			arg = 0;
+        }
     } else
-		arg = val = 0;
+        val = 0;
 
     value = LBSMD_GetHostParameter(SERV_LOCALHOST, kParameter);
     CORE_LOGF(eLOG_Note, ("Querying host parameter `%s': %s%s%s", kParameter,

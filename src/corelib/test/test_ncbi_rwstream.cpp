@@ -308,11 +308,11 @@ int main(int argc, char* argv[])
     size_t n_in = 0, n_out = 0;
     do {
         s_IfPendingCount = false;
-        size_t x_in = rand() % kMaxIOSize + 1;
-        size_t x_inavail = is.rdbuf()->in_avail();
+        size_t     x_in = rand() % kMaxIOSize + 1;
+        streamsize x_inavail = is.rdbuf()->in_avail();
         if (x_inavail < 0)
             x_inavail = 0;
-        if (s_IfPendingCount) {
+        if (s_IfPendingCount  ||  !x_inavail) {
             ERR_POST(Info
                      << "Read:  " << setw(8) << x_in);
         } else {
@@ -388,13 +388,13 @@ int main(int argc, char* argv[])
         }
         if (rand() % 10 == 4  &&  n_out > n_in) {
             s_IfPendingCount = false;
-            size_t x_in = (rand() & 1
-                           ? n_out - n_in
-                           : rand() % (n_out - n_in) + 1);
+            size_t     x_in = (rand() & 1
+                               ? n_out - n_in
+                               : rand() % (n_out - n_in) + 1);
             streamsize x_inavail = io.rdbuf()->in_avail();
             if (x_inavail < 0)
                 x_inavail = 0;
-            if (s_IfPendingCount) {
+            if (s_IfPendingCount  ||  !x_inavail) {
                 ERR_POST(Info
                          << "Read:  " << setw(8) << x_in);
             } else { 
