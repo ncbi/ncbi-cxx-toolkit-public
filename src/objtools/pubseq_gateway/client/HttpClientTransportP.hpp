@@ -56,6 +56,7 @@
 
 #include "mpmc_nw.hpp"
 #include <objtools/pubseq_gateway/impl/rpc/UvHelper.hpp>
+#include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
 #include <corelib/ncbi_param.hpp>
 
 #include "HttpClientTransport.hpp"
