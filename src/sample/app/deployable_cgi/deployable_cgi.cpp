@@ -230,9 +230,6 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
         int *p = (int*) 0;
         return *p;
     }
-    char buf[10];
-    memset(buf, ' ', 10);
-    buf[10]=0;
 
 #ifdef NEED_SET_DEPLOYMENT_UID
     const auto deployment_uid = GetEnvironment().Get("DEPLOYMENT_UID");
@@ -249,12 +246,10 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     // NOTE:  the case sensitivity was turned off in Init().
     bool is_message = false;
     string message    = request.GetEntry("Message", &is_message);
-    int count;
     if ( is_message ) {
-        count++;
         message = "'" + message + "'";
     } else {
-        message = buf;
+        message = "";
     }
 
     // NOTE:  While this sample uses the CHTML* classes for generating HTML,
@@ -281,10 +276,8 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     // Register substitution for the template parameters <@MESSAGE@> and
     // <@SELF_URL@>
     try {
-        char cbuf[8192];
-        snprintf(cbuf, 8192, "%s: %d", message.c_str(), count);
         _TRACE("Substituting templates");
-        page->AddTagMap("MESSAGE", new CHTMLPlainText(cbuf));
+        page->AddTagMap("MESSAGE", new CHTMLPlainText(message));
         page->AddTagMap("SELF_URL", new CHTMLPlainText(ctx.GetSelfURL()));
         page->AddTagMap("TITLE", new CHTMLPlainText("C++ SVN CGI Sample"));
         page->AddTagMap("VERSION", new CHTMLPlainText(GetVersion().Print()));
