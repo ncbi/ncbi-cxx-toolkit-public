@@ -46,6 +46,7 @@
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
 
+#include <objects/submit/Submit_block.hpp>
 #include <objects/seqblock/GB_block.hpp>
 
 
@@ -1305,9 +1306,22 @@ bool ParseSubmissions(CMasterInfo& master_info)
             first = false;
             FixSeqSubmit(seq_submit, master_info.m_accession_ver, false, master_info.m_reject);
 
-            // TODO WGSReplaceSubmissionDate
+            CRef<CSeqdesc> cit_sub_descr;
+            if (seq_submit->IsSetSub() && seq_submit->GetSub().IsSetCit()) {
 
-            // TODO deal with cit_sub
+                if (GetParams().IsSetSubmissionDate()) {
+                    seq_submit->SetSub().SetCit().SetDate().SetStd().Assign(GetParams().GetSubmissionDate());
+                }
+
+                if (!master_info.m_got_cit_sub && (input_type != eSeqSubmit || GetParams().GetSource() == eNCBI)) {
+                    const CContact_info* contact = nullptr;
+                    if (seq_submit->GetSub().IsSetContact()) {
+                        contact = &seq_submit->GetSub().GetContact();
+                    }
+
+                    cit_sub_descr = CreateCitSub(seq_submit->GetSub().GetCit(), contact);
+                }
+            }
 
             if (seq_submit->IsSetData() && seq_submit->GetData().IsEntrys()) {
 
@@ -1337,6 +1351,10 @@ bool ParseSubmissions(CMasterInfo& master_info)
                         if (!master_info.m_common_pubs.empty()) {
                             RemovePubs(*entry, master_info.m_common_pubs, nullptr);
                         }
+                    }
+
+                    if (cit_sub_descr.NotEmpty()) {
+                        entry->SetDescr().Set().push_front(cit_sub_descr);
                     }
 
                     if (GetParams().IsReplaceDBName() || HasLocals(*entry)) {

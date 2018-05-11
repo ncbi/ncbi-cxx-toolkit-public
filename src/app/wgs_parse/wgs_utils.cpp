@@ -39,6 +39,9 @@
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/biblio/Auth_list.hpp>
+#include <objects/biblio/Author.hpp>
+#include <objects/biblio/Affil.hpp>
 
 #include "wgs_utils.hpp"
 
@@ -101,18 +104,13 @@ bool GetInputTypeFromFile(CNcbiIfstream& stream, EInputType& type)
 bool GetDescr(const CSeq_entry& entry, const CSeq_descr* &descrs)
 {
     bool ret = true;
-    if (entry.IsSeq()) {
-        if (entry.GetSeq().IsSetDescr()) {
-            descrs = &entry.GetSeq().GetDescr();
-        }
-    }
-    else if (entry.IsSet()) {
-        if (entry.GetSet().IsSetDescr()) {
-            descrs = &entry.GetSet().GetDescr();
-        }
+    if (!entry.IsSeq() && !entry.IsSet()) {
+        ret = false;
     }
     else {
-        ret = false;
+        if (entry.IsSetDescr()) {
+            descrs = &entry.GetDescr();
+        }
     }
 
     return ret;
@@ -449,7 +447,28 @@ bool HasPubOfChoice(const CPubdesc& pub, CPub::E_Choice choice)
     return false;
 }
 
-CRef<CSeqdesc> CreateCitSub(const CCit_sub& cit_sub)
+static void AddContactInfo(const CContact_info& contact, CCit_sub& cit_sub)
+{
+    if (cit_sub.IsSetAuthors() && cit_sub.GetAuthors().IsSetAffil()) {
+        return;
+    }
+
+    if (contact.IsSetContact() && contact.GetContact().IsSetAffil()) {
+        cit_sub.SetAuthors().SetAffil().Assign(contact.GetContact().GetAffil());
+        if (cit_sub.GetAuthors().GetAffil().IsStd()) {
+            cit_sub.SetAuthors().SetAffil().SetStd().ResetEmail();
+            cit_sub.SetAuthors().SetAffil().SetStd().ResetFax();
+            cit_sub.SetAuthors().SetAffil().SetStd().ResetPhone();
+        }
+    }
+    else if (contact.IsSetAddress()) {
+
+        string& std_affil = cit_sub.SetAuthors().SetAffil().SetStd().SetAffil();
+        std_affil = NStr::Join(contact.GetAddress(), ",");
+    }
+}
+
+CRef<CSeqdesc> CreateCitSub(const CCit_sub& cit_sub, const CContact_info* contact)
 {
     CRef<CPub> pub(new CPub);
     pub->SetSub().Assign(cit_sub);
@@ -458,6 +477,10 @@ CRef<CSeqdesc> CreateCitSub(const CCit_sub& cit_sub)
 
     CPubdesc& pubdescr = descr->SetPub();
     pubdescr.SetPub().Set().push_back(pub);
+
+    if (contact) {
+        AddContactInfo(*contact, pub->SetSub());
+    }
 
     return descr;
 }

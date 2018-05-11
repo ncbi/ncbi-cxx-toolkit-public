@@ -1301,7 +1301,7 @@ static bool ReplaceOldCitSub(CRef<CSeq_entry>& id_entry, const CCit_sub& new_cit
         old_cit_sub->Assign(new_cit_sub);
     }
     else {
-        CRef<CSeqdesc> cit_sub_descr = CreateCitSub(new_cit_sub);
+        CRef<CSeqdesc> cit_sub_descr = CreateCitSub(new_cit_sub, nullptr);
         descrs.insert(before_cit_sub, cit_sub_descr);
     }
 

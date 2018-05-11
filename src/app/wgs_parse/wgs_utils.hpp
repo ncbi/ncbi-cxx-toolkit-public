@@ -43,6 +43,7 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/biblio/Cit_sub.hpp>
 #include <objects/pub/Pub.hpp>
+#include <objects/submit/Contact_info.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -106,7 +107,7 @@ bool NeedToProcessId(const CSeq_id& id);
 const CCit_sub* GetCitSub(const CPubdesc& pub);
 CCit_sub* GetNonConstCitSub(CPubdesc& pub);
 bool HasPubOfChoice(const CPubdesc& pub, CPub::E_Choice choice);
-CRef<CSeqdesc> CreateCitSub(const CCit_sub& cit_sub);
+CRef<CSeqdesc> CreateCitSub(const CCit_sub& cit_sub, const CContact_info* contact);
 
 CRef<CSeqdesc> BuildStructuredComment(const string& comment);
 

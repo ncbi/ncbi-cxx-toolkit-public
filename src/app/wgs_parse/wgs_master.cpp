@@ -1175,7 +1175,7 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
             cit_sub->ResetImp();
         }
 
-        bioseq->SetDescr().Set().push_back(CreateCitSub(*cit_sub));
+        bioseq->SetDescr().Set().push_back(CreateCitSub(*cit_sub, nullptr));
     }
 
     // CitArts
