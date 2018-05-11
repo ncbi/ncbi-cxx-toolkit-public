@@ -245,27 +245,54 @@ bool CLocationEditPolicy::Is3AtEndOfSeq(const CSeq_loc& loc, CBioseq_Handle bsh)
 }
 
 
-bool s_Know5WithoutBsh(const CSeq_loc& loc)
+bool CLocationEditPolicy::Is5AtEndOfSeq(const CSeq_loc& loc, CScope& scope, bool& confident)
 {
-    ENa_strand strand = loc.GetStrand();
-
-    if (strand == eNa_strand_minus) {
-        return false;
+    bool rval = false;
+    confident = true;
+    CSeq_loc_CI first_l(loc);
+    if (!first_l.IsSetStrand() || first_l.GetStrand() != eNa_strand_minus) {
+        // positive strand, just need to know if it's at zero
+        rval = (first_l.GetRange().GetFrom() == 0);
     } else {
-        return true;
+        // negative strand
+        try {
+            CBioseq_Handle bsh = scope.GetBioseqHandle(first_l.GetSeq_id());
+            rval = (first_l.GetRange().GetTo() == bsh.GetBioseqLength() - 1);
+        } catch (CException& ex) {
+            confident = false;
+        }
     }
+    return rval;
 }
 
 
-bool s_Know3WithoutBsh(const CSeq_loc& loc)
+bool CLocationEditPolicy::Is3AtEndOfSeq(const CSeq_loc& loc, CScope& scope, bool& confident)
 {
-    ENa_strand strand = loc.GetStrand();
-
-    if (strand == eNa_strand_minus) {
-        return true;
-    } else {
-        return false;
+    bool rval = false;
+    confident = true;
+    CSeq_loc_CI last_l(loc);
+    CSeq_loc_CI l = last_l;
+    while (l) {
+        last_l = l;
+        ++l;
     }
+    if (!last_l.IsSetStrand() || last_l.GetStrand() != eNa_strand_minus) {
+        // positive strand
+        try {
+            CBioseq_Handle bsh = scope.GetBioseqHandle(last_l.GetSeq_id());
+            if (bsh) {
+                rval = (last_l.GetRange().GetTo() == bsh.GetBioseqLength() - 1);
+            } else {
+                confident = false;
+            }
+        } catch (CException& ex) {
+            confident = false;
+        }
+    } else {
+        // negative strand, just need to know if it's at zero
+        rval = (last_l.GetRange().GetFrom() == 0);
+    }
+    return rval;
 }
 
 
@@ -278,7 +305,7 @@ bool CLocationEditPolicy::Interpret5Policy
     do_set_5_partial = false;
     do_clear_5_partial = false;
     const CSeq_loc& loc = orig_feat.GetLocation();
-    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
+   
 
     switch (m_PartialPolicy5) {
         case ePartialPolicy_eNoChange:
@@ -287,31 +314,36 @@ bool CLocationEditPolicy::Interpret5Policy
         case ePartialPolicy_eSet:
             if (!orig_feat.GetLocation().IsPartialStart(eExtreme_Biological)) {
                 do_set_5_partial = true;
-            } else if (m_Extend5 && !Is5AtEndOfSeq(loc, bsh)
-                       && (bsh || s_Know5WithoutBsh(loc))) {
-                do_set_5_partial = true;
+            } else if (m_Extend5) {
+                bool confident = false;
+                bool at_5 = Is5AtEndOfSeq(loc, scope, confident);
+                if (confident && !at_5) {
+                    do_set_5_partial = true;
+                }
             }
             break;
         case ePartialPolicy_eSetAtEnd:
-            if (Is5AtEndOfSeq(loc, bsh) 
-                && !orig_feat.GetLocation().IsPartialStart(eExtreme_Biological)
-                && (bsh || s_Know5WithoutBsh(loc))) {
-                do_set_5_partial = true;
+            if (!orig_feat.GetLocation().IsPartialStart(eExtreme_Biological)) {
+                bool confident = false;
+                if (Is5AtEndOfSeq(loc, scope, confident) && confident) {
+                    do_set_5_partial = true;
+                }
             }
             break;
         case ePartialPolicy_eSetForBadEnd:
             if (!orig_feat.GetLocation().IsPartialStart(eExtreme_Biological)
-                && orig_feat.GetData().IsCdregion()
-                && bsh) {
+                && orig_feat.GetData().IsCdregion()) {
                 string transl_prot;
+                bool confident = true;
                 try {
                     CSeqTranslator::Translate(orig_feat, scope, transl_prot,
                                                 false,   // do not include stop codons
                                                 false);  // do not remove trailing X/B/Z
 
-                } catch ( const runtime_error& ) {
+                } catch ( const CException& ) {
+                    confident = false;
                 }
-                if (!NStr::StartsWith(transl_prot, "M", NStr::eNocase)) {
+                if (confident && !NStr::StartsWith(transl_prot, "M", NStr::eNocase)) {
                     do_set_5_partial = true;
                 }
             }
@@ -331,10 +363,11 @@ bool CLocationEditPolicy::Interpret5Policy
             }
             break;
         case ePartialPolicy_eClearNotAtEnd:
-            if (orig_feat.GetLocation().IsPartialStart(eExtreme_Biological)
-                && !Is5AtEndOfSeq(orig_feat.GetLocation(), bsh)
-                && (bsh || s_Know5WithoutBsh(loc))) {
-                do_clear_5_partial = true;
+            if (orig_feat.GetLocation().IsPartialStart(eExtreme_Biological)) {
+                bool confident = false;
+                if (!Is5AtEndOfSeq(loc, scope, confident) && confident) {
+                    do_clear_5_partial = true;
+                }
             }
             break;
         case ePartialPolicy_eClearForGoodEnd:
@@ -342,17 +375,18 @@ bool CLocationEditPolicy::Interpret5Policy
                 && orig_feat.GetData().IsCdregion()
                 && (!orig_feat.GetData().GetCdregion().IsSetFrame() ||
                     orig_feat.GetData().GetCdregion().GetFrame() == CCdregion::eFrame_not_set ||
-                    orig_feat.GetData().GetCdregion().GetFrame() == CCdregion::eFrame_one)
-                && bsh) {
+                    orig_feat.GetData().GetCdregion().GetFrame() == CCdregion::eFrame_one)) {
                 string transl_prot;
+                bool confident = true;
                 try {
                     CSeqTranslator::Translate(orig_feat, scope, transl_prot,
                                                 false,   // do not include stop codons
                                                 false);  // do not remove trailing X/B/Z
 
-                } catch ( const runtime_error& ) {
+                } catch ( const CException& ) {
+                    confident = false;
                 }
-                if (NStr::StartsWith(transl_prot, "M", NStr::eNocase)) {
+                if (confident && NStr::StartsWith(transl_prot, "M", NStr::eNocase)) {
                     do_clear_5_partial = true;
                 }
             }
@@ -372,39 +406,45 @@ bool CLocationEditPolicy::Interpret3Policy
     do_clear_3_partial = false;
     
     const CSeq_loc& loc = orig_feat.GetLocation();
-    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
 
     switch (m_PartialPolicy3) {
         case ePartialPolicy_eNoChange:
             // do nothing
             break;
         case ePartialPolicy_eSet:
-            if (!orig_feat.GetLocation().IsPartialStop(eExtreme_Biological)) {
+            if (!loc.IsPartialStop(eExtreme_Biological)) {
                 do_set_3_partial = true;
-            } else if (m_Extend3 && !Is3AtEndOfSeq(loc, bsh) && (bsh || s_Know3WithoutBsh(loc))) {
-                do_set_3_partial = true;
+            } else if (m_Extend3) {
+                bool confident = false;
+                bool at_3 = Is3AtEndOfSeq(loc, scope, confident);
+                if (confident && !at_3) {
+                    do_set_3_partial = true;
+                }
             }
             break;
         case ePartialPolicy_eSetAtEnd:
-            if (!orig_feat.GetLocation().IsPartialStop(eExtreme_Biological) 
-                && Is3AtEndOfSeq(orig_feat.GetLocation(), bsh)
-                && (bsh || s_Know3WithoutBsh(loc))) {
-                do_set_3_partial = true;
+            if (!loc.IsPartialStop(eExtreme_Biological)) {
+                bool confident = false;
+                bool at_3 = Is3AtEndOfSeq(loc, scope, confident);
+                if (at_3 && confident) {
+                    do_set_3_partial = true;
+                }
             }
             break;
         case ePartialPolicy_eSetForBadEnd:
-            if (!orig_feat.GetLocation().IsPartialStop(eExtreme_Biological)
-                && orig_feat.GetData().IsCdregion()
-                && bsh) {
+            if (!loc.IsPartialStop(eExtreme_Biological)
+                && orig_feat.GetData().IsCdregion()) {
                 string transl_prot;
+                bool confident = true;
                 try {
                     CSeqTranslator::Translate(orig_feat, scope, transl_prot,
                                                 true,   // include stop codons
                                                 false);  // do not remove trailing X/B/Z
 
-                } catch ( const runtime_error& ) {
+                } catch ( const CException& ) {
+                    confident = false;
                 }
-                if (!NStr::EndsWith(transl_prot, "*", NStr::eNocase)) {
+                if (confident && !NStr::EndsWith(transl_prot, "*", NStr::eNocase)) {
                     do_set_3_partial = true;
                 }
             }
@@ -413,30 +453,33 @@ bool CLocationEditPolicy::Interpret3Policy
             // not allowed for 3' end
             break;
         case ePartialPolicy_eClear:
-            if (orig_feat.GetLocation().IsPartialStop(eExtreme_Biological)) {
+            if (loc.IsPartialStop(eExtreme_Biological)) {
                 do_clear_3_partial = true;
             }
             break;
         case ePartialPolicy_eClearNotAtEnd:
-            if (orig_feat.GetLocation().IsPartialStop(eExtreme_Biological)
-                && !Is3AtEndOfSeq(orig_feat.GetLocation(), bsh)
-                && (bsh || s_Know3WithoutBsh(loc))) {
-                do_clear_3_partial = true;
+            if (loc.IsPartialStop(eExtreme_Biological)) {
+                bool confident = false;
+                bool at_3 = Is3AtEndOfSeq(loc, scope, confident);
+                if (!at_3 && confident) {
+                    do_clear_3_partial = true;
+                }
             }
             break;
         case ePartialPolicy_eClearForGoodEnd:
-            if (orig_feat.GetLocation().IsPartialStop(eExtreme_Biological)
-                && orig_feat.GetData().IsCdregion()
-                && bsh) {
+            if (loc.IsPartialStop(eExtreme_Biological)
+                && orig_feat.GetData().IsCdregion()) {
                 string transl_prot;
+                bool confident = true;
                 try {
                     CSeqTranslator::Translate(orig_feat, scope, transl_prot,
                                                 true,   // include stop codons
                                                 false);  // do not remove trailing X/B/Z
 
-                } catch ( const runtime_error& ) {
+                } catch ( const CException& ) {
+                    confident = false;
                 }
-                if (NStr::EndsWith(transl_prot, "*", NStr::eNocase)) {
+                if (confident && NStr::EndsWith(transl_prot, "*", NStr::eNocase)) {
                     do_clear_3_partial = true;
                 }
             }
@@ -444,6 +487,64 @@ bool CLocationEditPolicy::Interpret3Policy
     }
     return do_set_3_partial || do_clear_3_partial;
 }
+
+
+CRef<CSeq_loc> SeqLocExtend5(const CSeq_loc& loc, size_t pos, CScope* scope)
+{
+    CSeq_loc_CI first_l(loc);
+    CConstRef<CSeq_loc> first_loc = first_l.GetRangeAsSeq_loc();
+
+    size_t loc_start = first_loc->GetStart(eExtreme_Biological);
+    bool partial_start = first_loc->IsPartialStart(eExtreme_Biological);
+    ENa_strand strand = first_loc->IsSetStrand() ? first_loc->GetStrand() : eNa_strand_plus;
+    CRef<CSeq_loc> new_loc(NULL);
+
+    CRef<CSeq_id> id(new CSeq_id());
+    id->Assign(first_l.GetSeq_id());
+
+    if (pos < loc_start && strand != eNa_strand_minus) {
+        CRef<CSeq_loc> add(new CSeq_loc(*id, pos, loc_start - 1, strand));
+        add->SetPartialStart(partial_start, eExtreme_Positional);
+        new_loc = sequence::Seq_loc_Add(loc, *add, CSeq_loc::fSort | CSeq_loc::fMerge_AbuttingOnly, scope);
+    } else if (pos > loc_start && strand == eNa_strand_minus) {
+        CRef<CSeq_loc> add(new CSeq_loc(*id, loc_start + 1, pos, strand));
+        add->SetPartialStop(partial_start, eExtreme_Positional);
+        new_loc = sequence::Seq_loc_Add(loc, *add, CSeq_loc::fSort | CSeq_loc::fMerge_AbuttingOnly, scope);
+    }
+    return new_loc;
+}
+
+
+CRef<CSeq_loc> SeqLocExtend3(const CSeq_loc& loc, size_t pos, CScope* scope)
+{
+    CSeq_loc_CI last_l(loc);
+    CSeq_loc_CI l = last_l;
+    while (l) {
+        last_l = l;
+        ++l;
+    }
+    CConstRef<CSeq_loc> last_loc = last_l.GetRangeAsSeq_loc();
+
+    size_t loc_stop = last_loc->GetStop(eExtreme_Biological);
+    bool partial_stop = last_loc->IsPartialStop(eExtreme_Biological);
+    ENa_strand strand = last_loc->IsSetStrand() ? last_loc->GetStrand() : eNa_strand_plus;
+    CRef<CSeq_loc> new_loc(NULL);
+
+    CRef<CSeq_id> id(new CSeq_id());
+    id->Assign(last_l.GetSeq_id());
+
+    if (pos > loc_stop && strand != eNa_strand_minus) {
+        CRef<CSeq_loc> add(new CSeq_loc(*id, loc_stop + 1, pos, strand));
+        add->SetPartialStop(partial_stop, eExtreme_Positional);
+        new_loc = sequence::Seq_loc_Add(loc, *add, CSeq_loc::fSort | CSeq_loc::fMerge_AbuttingOnly, scope);
+    } else if (pos < loc_stop && strand == eNa_strand_minus) {
+        CRef<CSeq_loc> add(new CSeq_loc(*id, pos, loc_stop - 1, strand));
+        add->SetPartialStart(partial_stop, eExtreme_Positional);
+        new_loc = sequence::Seq_loc_Add(loc, *add, CSeq_loc::fSort | CSeq_loc::fMerge_AbuttingOnly, scope);
+    }
+    return new_loc;
+}
+
 
 
 CRef<CSeq_loc> SeqLocExtend(const CSeq_loc& loc, size_t pos, CScope* scope)
@@ -640,25 +741,24 @@ CRef<CSeq_loc> CLocationEditPolicy::ConvertToOrder(const CSeq_loc& orig_loc, boo
 bool CLocationEditPolicy::Extend5(CSeq_feat& feat, CScope& scope)
 {
     bool extend = false;
-    CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetLocation());
-    if (bsh || s_Know5WithoutBsh(feat.GetLocation())) {
-        ENa_strand strand = feat.GetLocation().GetStrand();
-        size_t start = feat.GetLocation().GetStart(eExtreme_Biological);
+
+    bool confident = false;
+    if (!Is5AtEndOfSeq(feat.GetLocation(), scope, confident) && confident) {
         int diff = 0;
-        if (strand == eNa_strand_minus) {                
-            if (start < bsh.GetInst_Length() - 1) {
-                diff = bsh.GetInst_Length() - feat.GetLocation().GetStart(eExtreme_Biological) - 1;
-                CRef<CSeq_loc> new_loc = SeqLocExtend(feat.GetLocation(), bsh.GetInst_Length() - 1, &scope);
-                if (new_loc) {
-                    feat.SetLocation().Assign(*new_loc);
-                    extend = true;
-                } else {
-                    diff = 0;
-                }
+        CSeq_loc_CI first_l(feat.GetLocation());
+        if (first_l.IsSetStrand() && first_l.GetStrand() == eNa_strand_minus) {
+            CBioseq_Handle bsh = scope.GetBioseqHandle(first_l.GetSeq_id());
+            diff = bsh.GetInst().GetLength() - first_l.GetRange().GetTo() - 1;
+            CRef<CSeq_loc> new_loc = SeqLocExtend5(feat.GetLocation(), bsh.GetInst_Length() - 1, &scope);
+            if (new_loc) {
+                feat.SetLocation().Assign(*new_loc);
+                extend = true;
+            } else {
+                diff = 0;
             }
-        } else  if (start > 0) {
-            diff = start;
-            CRef<CSeq_loc> new_loc = SeqLocExtend(feat.GetLocation(), 0, &scope);
+        } else {
+            diff = first_l.GetRange().GetFrom();
+            CRef<CSeq_loc> new_loc = SeqLocExtend5(feat.GetLocation(), 0, &scope);
             if (new_loc) {
                 feat.SetLocation().Assign(*new_loc);
                 extend = true;
@@ -666,6 +766,7 @@ bool CLocationEditPolicy::Extend5(CSeq_feat& feat, CScope& scope)
                 diff = 0;
             }
         }
+
         // adjust frame to maintain consistency
         if (diff % 3 > 0 && feat.GetData().IsCdregion()) {
             int orig_frame = 1;
@@ -697,20 +798,26 @@ bool CLocationEditPolicy::Extend5(CSeq_feat& feat, CScope& scope)
 bool CLocationEditPolicy::Extend3(CSeq_feat& feat, CScope& scope)
 {
     bool extend = false;
-    CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetLocation());
-    if (bsh || s_Know3WithoutBsh(feat.GetLocation())) {
-        ENa_strand strand = feat.GetLocation().GetStrand();
-        size_t stop = feat.GetLocation().GetStop(eExtreme_Biological);
+
+    bool confident = false;
+    if (!Is3AtEndOfSeq(feat.GetLocation(), scope, confident) && confident) {
+        CSeq_loc_CI last_l(feat.GetLocation());
+        CSeq_loc_CI l = last_l;
+        while (l) {
+            last_l = l;
+            ++l;
+        }
+
+        ENa_strand strand = last_l.GetStrand();
         if (strand == eNa_strand_minus) {                
-            if (stop > 0) {
-                CRef<CSeq_loc> new_loc = SeqLocExtend(feat.GetLocation(), 0, &scope);
-                if (new_loc) {
-                    feat.SetLocation().Assign(*new_loc);
-                    extend = true;
-                }
+            CRef<CSeq_loc> new_loc = SeqLocExtend3(feat.GetLocation(), 0, &scope);
+            if (new_loc) {
+                feat.SetLocation().Assign(*new_loc);
+                extend = true;
             }
-        } else  if (stop < bsh.GetInst_Length() - 1) {
-            CRef<CSeq_loc> new_loc = SeqLocExtend(feat.GetLocation(), bsh.GetInst_Length() - 1, &scope);
+        } else {
+            CBioseq_Handle bsh = scope.GetBioseqHandle(last_l.GetSeq_id());
+            CRef<CSeq_loc> new_loc = SeqLocExtend3(feat.GetLocation(), bsh.GetInst_Length() - 1, &scope);
             if (new_loc) {
                 feat.SetLocation().Assign(*new_loc);
                 extend = true;
@@ -746,12 +853,12 @@ bool ApplyPolicyToFeature(const CLocationEditPolicy& policy, const CSeq_feat& or
                 new_gene->Assign(*old_gene);
                 bool gene_change = false;
                 // adjust ends of gene to match ends of feature
-                CRef<CSeq_loc> new_loc = SeqLocExtend(new_gene->GetLocation(), feat_start, &scope);
+                CRef<CSeq_loc> new_loc = SeqLocExtend5(new_gene->GetLocation(), feat_start, &scope);
                 if (new_loc) {
                     new_gene->SetLocation().Assign(*new_loc);
                     gene_change = true;
                 }
-                new_loc = SeqLocExtend(new_gene->GetLocation(), feat_stop, &scope);
+                new_loc = SeqLocExtend3(new_gene->GetLocation(), feat_stop, &scope);
                 if (new_loc) {
                     new_gene->SetLocation().Assign(*new_loc);
                     gene_change = true;
@@ -771,7 +878,8 @@ bool ApplyPolicyToFeature(const CLocationEditPolicy& policy, const CSeq_feat& or
         // retranslate or resynch if coding region
         if (new_feat->IsSetProduct() && new_feat->GetData().IsCdregion()) {
             if (!retranslate_cds || !RetranslateCDS(*new_feat, scope)) {
-                AdjustForCDSPartials(*new_feat, scope.GetBioseqHandle(new_feat->GetLocation()).GetSeq_entry_Handle());
+                CSeq_loc_CI l(new_feat->GetLocation());
+                AdjustForCDSPartials(*new_feat, scope.GetBioseqHandle(l.GetSeq_id()).GetSeq_entry_Handle());
             }
         }
     }

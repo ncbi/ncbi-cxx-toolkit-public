@@ -1373,6 +1373,410 @@ BOOST_AUTO_TEST_CASE(Test_CorrectIntervalOrder)
 }
 
 
+void Check5Policy(CSeq_feat& imp, CScope& scope, 
+    edit::CLocationEditPolicy::EPartialPolicy policy_choice, 
+    bool expect_set5, bool expect_clear5,
+    bool extend = false)
+{
+    CRef<edit::CLocationEditPolicy> policy(new edit::CLocationEditPolicy());
+
+    bool do_set_5_partial = false;
+    bool do_clear_5_partial = false;
+
+    policy->SetPartial5Policy(policy_choice);
+    if (extend) {
+        policy->SetExtend5(true);
+    }
+    BOOST_CHECK_EQUAL((expect_set5 || expect_clear5),
+        policy->Interpret5Policy(imp, scope, do_set_5_partial, do_clear_5_partial));
+    BOOST_CHECK_EQUAL(do_set_5_partial, expect_set5);
+    BOOST_CHECK_EQUAL(do_clear_5_partial, expect_clear5);
+}
+
+
+void Check3Policy(CSeq_feat& imp, CScope& scope, 
+    edit::CLocationEditPolicy::EPartialPolicy policy_choice, 
+    bool expect_set3, bool expect_clear3, bool extend = false)
+{
+    CRef<edit::CLocationEditPolicy> policy(new edit::CLocationEditPolicy());
+
+    bool do_set_3_partial = false;
+    bool do_clear_3_partial = false;
+
+    policy->SetPartial3Policy(policy_choice);
+        if (extend) {
+        policy->SetExtend5(true);
+    }
+    BOOST_CHECK_EQUAL((expect_set3 || expect_clear3),
+        policy->Interpret3Policy(imp, scope, do_set_3_partial, do_clear_3_partial));
+    BOOST_CHECK_EQUAL(do_set_3_partial, expect_set3);
+    BOOST_CHECK_EQUAL(do_clear_3_partial, expect_clear3);
+}
+
+
+void SetSequenceStart(CBioseq& seq, bool good, bool is_minus)
+{
+    string s = seq.GetInst().GetSeq_data().GetIupacna().Get();
+    if (good) {
+        if (is_minus) {
+            s = s.substr(0, s.length() - 3) + "CAT";
+        } else {
+            s = "ATG" + s.substr(3);
+        }
+    } else {
+        if (is_minus) {
+            s = s.substr(0, s.length() - 3) + "AAA";
+        } else {
+            s = "AAA" + s.substr(3);
+        }
+    }
+    seq.SetInst().SetSeq_data().SetIupacna().Set(s);
+}
+
+
+void SetSequenceEnd(CBioseq& seq, bool good, bool is_minus)
+{
+    string s = seq.GetInst().GetSeq_data().GetIupacna().Get();
+    if (good) {
+        if (is_minus) {
+            s = "TTA" + s.substr(3);
+        } else {
+            s = s.substr(0, s.length() - 3) + "TAA";
+        }
+    } else {
+        if (is_minus) {
+            s = "AAA" + s.substr(3);
+        } else {
+            s = s.substr(0, s.length() - 3) + "AAA";
+        }
+    }
+    seq.SetInst().SetSeq_data().SetIupacna().Set(s);
+}
+
+
+CRef<CSeq_entry> MakeMultiSeqCDS(bool good_end, bool is_minus, bool already_partial)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
+    CBioseq& first_seq = entry->SetSet().SetSeq_set().front()->SetSeq();
+    CBioseq& last_seq = entry->SetSet().SetSeq_set().back()->SetSeq();
+
+    CRef<CSeq_loc> l1(new CSeq_loc());
+    l1->SetInt().SetFrom(0);
+    l1->SetInt().SetTo(first_seq.GetInst().GetLength() - 1);
+    l1->SetInt().SetId().Assign(*(first_seq.GetId().front()));
+
+    CRef<CSeq_loc> l2(new CSeq_loc());
+    l2->SetInt().SetFrom(0);
+    l2->SetInt().SetTo(last_seq.GetInst().GetLength() - 1);
+    l2->SetInt().SetId().Assign(*(last_seq.GetId().front()));
+    CRef<CSeq_feat> cds = unit_test_util::AddMiscFeature(entry);
+    cds->SetData().SetCdregion();
+
+    if (is_minus) {
+        SetSequenceStart(last_seq, good_end, true);
+        l2->SetInt().SetStrand(eNa_strand_minus);
+        l1->SetInt().SetStrand(eNa_strand_minus);
+        cds->SetLocation().SetMix().Set().push_back(l2);
+        cds->SetLocation().SetMix().Set().push_back(l1);
+    } else {
+        SetSequenceStart(first_seq, good_end, false);
+        cds->SetLocation().SetMix().Set().push_back(l1);
+        cds->SetLocation().SetMix().Set().push_back(l2);
+    }
+
+    if (already_partial) {
+        cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    }
+
+    return entry;
+}
+
+
+void TruncateTransSplicedCDSForExtension(CRef<CSeq_entry> entry, bool on_5, bool on_3)
+{
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CBioseq& first_seq = entry->SetSet().SetSeq_set().front()->SetSeq();
+    CBioseq& last_seq = entry->SetSet().SetSeq_set().back()->SetSeq();
+    CRef<CSeq_loc> l1 = cds->SetLocation().SetMix().Set().front();
+    CRef<CSeq_loc> l2 = cds->SetLocation().SetMix().Set().back();
+
+    if(l1->IsSetStrand() && l1->GetStrand() == eNa_strand_minus) {
+        if (on_5) {
+            l1->SetInt().SetTo(last_seq.GetInst().GetLength() - 2);
+            cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_three);
+        }
+        if (on_3) {
+            l2->SetInt().SetFrom(1);
+        }
+    } else {
+        if (on_5) {
+            l1->SetInt().SetFrom(1);
+            cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_three);
+        }
+        if (on_3) {
+            l2->SetInt().SetTo(last_seq.GetInst().GetLength() - 2);
+        }
+    }
+
+}
+
+
+void Check5Policy(bool good_end, bool is_minus, bool already_partial)
+{
+    CRef<CSeq_entry> entry = MakeMultiSeqCDS(good_end, is_minus, already_partial);
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+
+    STANDARD_SETUP
+
+    Check5Policy(*cds, scope, 
+        edit::CLocationEditPolicy::ePartialPolicy_eNoChange,
+        false, false);
+
+    Check5Policy(*cds, scope, 
+            edit::CLocationEditPolicy::ePartialPolicy_eSetAtEnd,
+            !already_partial, false);
+
+    Check5Policy(*cds, scope,
+        edit::CLocationEditPolicy::ePartialPolicy_eSetForFrame,
+        false, false);
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_two);
+    Check5Policy(*cds, scope,
+        edit::CLocationEditPolicy::ePartialPolicy_eSetForFrame,
+        !already_partial, false);
+    cds->SetData().SetCdregion().ResetFrame();
+
+    Check5Policy(*cds, scope,
+            edit::CLocationEditPolicy::ePartialPolicy_eSetForBadEnd,
+            !good_end && !already_partial, false);
+
+    Check5Policy(*cds, scope,
+            edit::CLocationEditPolicy::ePartialPolicy_eClear,
+            false, already_partial);
+
+    Check5Policy(*cds, scope,
+        edit::CLocationEditPolicy::ePartialPolicy_eClearForGoodEnd,
+        false, good_end & already_partial);
+
+
+    Check5Policy(*cds, scope, 
+        edit::CLocationEditPolicy::ePartialPolicy_eClearNotAtEnd,
+        false, false);
+
+    // check extending when no need to extend
+    if (already_partial) {
+        Check5Policy(*cds, scope, edit::CLocationEditPolicy::ePartialPolicy_eSet,
+            false, false, true);
+    }
+
+    TruncateTransSplicedCDSForExtension(entry, true, false);
+
+    Check5Policy(*cds, scope,
+        edit::CLocationEditPolicy::ePartialPolicy_eClearNotAtEnd,
+        false, already_partial);
+
+    // check extending when do need to extend
+    if (already_partial) {
+        Check5Policy(*cds, scope, edit::CLocationEditPolicy::ePartialPolicy_eSet,
+            true, false, true);
+    }
+
+}
+
+
+void Check5Extend(bool good_end, bool is_minus, bool already_partial)
+{
+    CRef<CSeq_entry> entry = MakeMultiSeqCDS(good_end, is_minus, already_partial);
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+
+    STANDARD_SETUP
+
+    CRef<edit::CLocationEditPolicy> policy(new edit::CLocationEditPolicy());
+    BOOST_CHECK_EQUAL(false, policy->Extend5(*cds, scope));
+
+    TruncateTransSplicedCDSForExtension(entry, true, false);
+    BOOST_CHECK_EQUAL(true, policy->Extend5(*cds, scope));
+    if (is_minus) {
+        BOOST_CHECK_EQUAL(cds->GetLocation().GetStart(eExtreme_Biological), entry->GetSet().GetSeq_set().back()->GetSeq().GetInst().GetLength() - 1);
+    } else {
+        BOOST_CHECK_EQUAL(cds->GetLocation().GetStart(eExtreme_Biological), 0);
+    }
+    BOOST_CHECK_EQUAL(cds->GetData().GetCdregion().GetFrame(), CCdregion::eFrame_not_set);
+}
+
+
+void Check3Extend(bool good_end, bool is_minus, bool already_partial)
+{
+    CRef<CSeq_entry> entry = MakeMultiSeqCDS(good_end, is_minus, already_partial);
+    CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+
+    STANDARD_SETUP
+
+    if (is_minus) {
+        BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 0);        
+    } else {
+        BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), entry->GetSet().GetSeq_set().back()->GetSeq().GetInst().GetLength() - 1);
+    }
+
+    CRef<edit::CLocationEditPolicy> policy(new edit::CLocationEditPolicy());
+    BOOST_CHECK_EQUAL(false, policy->Extend3(*cds, scope));
+    if (is_minus) {
+        BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 0);        
+    } else {
+        BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), entry->GetSet().GetSeq_set().back()->GetSeq().GetInst().GetLength() - 1);
+    }
+
+    TruncateTransSplicedCDSForExtension(entry, false, true);
+    if (is_minus) {
+        BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 1);        
+    } else {
+        BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), entry->GetSet().GetSeq_set().back()->GetSeq().GetInst().GetLength() - 2);
+    }
+
+    BOOST_CHECK_EQUAL(true, policy->Extend3(*cds, scope));
+    if (is_minus) {
+        BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 0);        
+    } else {
+        BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), entry->GetSet().GetSeq_set().back()->GetSeq().GetInst().GetLength() - 1);
+    }
+}
+
+
+void Check3Policy(bool good_end, bool is_minus, bool already_partial)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
+    CBioseq& first_seq = entry->SetSet().SetSeq_set().front()->SetSeq();
+    CBioseq& last_seq = entry->SetSet().SetSeq_set().back()->SetSeq();
+
+    CRef<CSeq_loc> l1(new CSeq_loc());
+    l1->SetInt().SetFrom(0);
+    l1->SetInt().SetTo(first_seq.GetInst().GetLength() - 1);
+    l1->SetInt().SetId().Assign(*(first_seq.GetId().front()));
+
+    CRef<CSeq_loc> l2(new CSeq_loc());
+    l2->SetInt().SetFrom(0);
+    l2->SetInt().SetTo(last_seq.GetInst().GetLength() - 1);
+    l2->SetInt().SetId().Assign(*(last_seq.GetId().front()));
+    CRef<CSeq_feat> cds = unit_test_util::AddMiscFeature(entry);
+    cds->SetData().SetCdregion();
+
+    if (is_minus) {
+        SetSequenceEnd(first_seq, good_end, true);
+        l2->SetInt().SetStrand(eNa_strand_minus);
+        l1->SetInt().SetStrand(eNa_strand_minus);
+        cds->SetLocation().SetMix().Set().push_back(l2);
+        cds->SetLocation().SetMix().Set().push_back(l1);
+    } else {
+        SetSequenceEnd(last_seq, good_end, false);
+        cds->SetLocation().SetMix().Set().push_back(l1);
+        cds->SetLocation().SetMix().Set().push_back(l2);
+    }
+
+    if (already_partial) {
+        cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    }
+
+    STANDARD_SETUP
+
+    Check3Policy(*cds, scope, 
+        edit::CLocationEditPolicy::ePartialPolicy_eNoChange,
+        false, false);
+
+    Check3Policy(*cds, scope, 
+            edit::CLocationEditPolicy::ePartialPolicy_eSetAtEnd,
+            !already_partial, false);
+
+    Check3Policy(*cds, scope,
+        edit::CLocationEditPolicy::ePartialPolicy_eSetForFrame,
+        false, false);
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_two);
+    Check3Policy(*cds, scope,
+        edit::CLocationEditPolicy::ePartialPolicy_eSetForFrame,
+        false, false);
+    cds->SetData().SetCdregion().ResetFrame();
+
+    Check3Policy(*cds, scope,
+            edit::CLocationEditPolicy::ePartialPolicy_eSetForBadEnd,
+            !good_end && !already_partial, false);
+
+    Check3Policy(*cds, scope,
+            edit::CLocationEditPolicy::ePartialPolicy_eClear,
+            false, already_partial);
+
+    Check3Policy(*cds, scope,
+        edit::CLocationEditPolicy::ePartialPolicy_eClearForGoodEnd,
+        false, good_end & already_partial);
+
+
+    Check3Policy(*cds, scope, 
+        edit::CLocationEditPolicy::ePartialPolicy_eClearNotAtEnd,
+        false, false);
+
+    // check extending when no need to extend
+    if (already_partial) {
+        Check3Policy(*cds, scope, edit::CLocationEditPolicy::ePartialPolicy_eSet,
+            false, false, true);
+    }
+
+
+    if (is_minus) {
+        l1->SetInt().SetFrom(1);
+    } else {
+        l2->SetInt().SetTo(last_seq.GetInst().GetLength() - 2);
+    }
+
+    Check3Policy(*cds, scope,
+        edit::CLocationEditPolicy::ePartialPolicy_eClearNotAtEnd,
+        false, already_partial);
+
+    // check extending when do need to extend
+    if (already_partial) {
+        Check3Policy(*cds, scope, edit::CLocationEditPolicy::ePartialPolicy_eSet,
+            true, false, true);
+    }
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_GB_7703)
+{
+    Check5Policy(false, false, false);
+    Check5Policy(false, false, true);
+    Check5Policy(false, true, false);
+    Check5Policy(false, true, true);
+    Check5Policy(true, false, false);
+    Check5Policy(true, false, true);
+    Check5Policy(true, true, false);
+    Check5Policy(true, true, true);
+
+    Check5Extend(false, false, false);
+    Check5Extend(false, false, true);
+    Check5Extend(false, true, false);
+    Check5Extend(false, true, true);
+    Check5Extend(true, false, false);
+    Check5Extend(true, false, true);
+    Check5Extend(true, true, false);
+    Check5Extend(true, true, true);
+
+    Check3Policy(false, false, false);
+    Check3Policy(false, false, true);
+    Check3Policy(false, true, false);
+    Check3Policy(false, true, true);
+    Check3Policy(true, false, false);
+    Check3Policy(true, false, true);
+    Check3Policy(true, true, false);
+    Check3Policy(true, true, true);
+
+    Check3Extend(false, false, false);
+    Check3Extend(false, false, true);
+    Check3Extend(false, true, false);
+    Check3Extend(false, true, true);
+    Check3Extend(true, false, false);
+    Check3Extend(true, false, true);
+    Check3Extend(true, true, false);
+    Check3Extend(true, true, true);
+
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

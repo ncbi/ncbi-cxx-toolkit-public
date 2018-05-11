@@ -105,6 +105,14 @@ public:
     static bool Is5AtEndOfSeq(const CSeq_loc& loc, CBioseq_Handle bsh);
     static bool Is3AtEndOfSeq(const CSeq_loc& loc, CBioseq_Handle bsh);
 
+    // Note that for these two functions, "confident" is set to true if either
+    // we can be sure that the location is at the specified end because the end
+    // point is zero, or because we were able to find the Bioseq for that end
+    // and the endpoint is at the end of the Bioseq. If fetching the Bioseq is
+    // required but the Bioseq is not present, "confident" will be set to false.
+    static bool Is5AtEndOfSeq(const CSeq_loc& loc, CScope& scope, bool& confident);
+    static bool Is3AtEndOfSeq(const CSeq_loc& loc, CScope& scope, bool& confident);
+
 private:
     EPartialPolicy m_PartialPolicy5;
     EPartialPolicy m_PartialPolicy3;
