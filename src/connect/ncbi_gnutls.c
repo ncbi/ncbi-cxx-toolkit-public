@@ -173,8 +173,8 @@ static const int kGnuTlsCompPrio[] = {
 static int                              s_GnuTlsLogLevel;
 static gnutls_anon_client_credentials_t s_GnuTlsCredAnon;
 static gnutls_certificate_credentials_t s_GnuTlsCredCert;
-static FSSLPull                         s_Pull;
-static FSSLPush                         s_Push;
+static volatile FSSLPull                s_Pull;
+static volatile FSSLPush                s_Push;
 
 
 static void x_GnuTlsLogger(int level, const char* message)
@@ -269,9 +269,6 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
     case eIO_Timeout:
         error = EAGAIN;
         break;
-    case eIO_Closed:
-        error = SOCK_ENOTCONN;
-        break;
     case eIO_Interrupt:
         error = SOCK_EINTR;
         break;
@@ -280,6 +277,9 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
         break;
     case eIO_Unknown:
         error = 0/*keep*/;
+        break;
+    case eIO_Closed:
+        error = SOCK_ENOTCONN;
         break;
     default:
         /*NB:eIO_InvalidArg*/

@@ -152,8 +152,8 @@ static int                      s_MbedTlsLogLevel;
 static mbedtls_entropy_context  s_MbedTlsEntropy;
 static mbedtls_ctr_drbg_context s_MbedTlsCtrDrbg;
 static mbedtls_ssl_config       s_MbedTlsConf;
-static FSSLPull                 s_Pull;
-static FSSLPush                 s_Push;
+static volatile FSSLPull        s_Pull;
+static volatile FSSLPush        s_Push;
 
 
 /*ARGSUSED*/
@@ -268,9 +268,6 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
     case eIO_Timeout:
         error = EAGAIN;
         break;
-    case eIO_Closed:
-        error = SOCK_ENOTCONN;
-        break;
     case eIO_Interrupt:
         error = SOCK_EINTR;
         break;
@@ -279,6 +276,9 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
         break;
     case eIO_Unknown:
         error = 0/*keep*/;
+        break;
+    case eIO_Closed:
+        error = SOCK_ENOTCONN;
         break;
     default:
         /*NB:eIO_InvalidArg*/
