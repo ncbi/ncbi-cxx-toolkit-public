@@ -1923,8 +1923,11 @@ void CheckTaxnameChange(const string& orig, const string& fixed)
 
 BOOST_AUTO_TEST_CASE(Test_GB_7569)
 {
+#if 0
+    // removed by request
     CheckTaxnameChange("abc ssp. x", "abc subsp. x");
     CheckTaxnameChange("Medicago sativa subspecies fake", "Medicago sativa subsp. fake");
+#endif
 }
 
 
