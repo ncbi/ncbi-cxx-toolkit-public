@@ -528,7 +528,7 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
                     ? (sock->type == eDatagram  ||  size  ||
                        (data  &&  !(strerr = s_StrError(sock, *((int*) data))))
                        ? "Read"
-                       : data ? strerr : "EOF Hit")
+                       : data ? strerr : "EOF hit")
                     : (sock->type == eDatagram  ||  size  ||
                        !(strerr = s_StrError(sock, *((int*) data)))
                        ? "Written"
@@ -2479,8 +2479,7 @@ static EIO_Status s_Select(size_t                n,
                             break;
                         }
                         bitset |= FD_READ/*at least SHUT_WR @ remote end*/;
-                        sock->readable = 1/*true*/;
-                        sock->closing  = 1/*true*/;
+                        sock->readable = sock->closing = 1/*true*/;
                     } else {
                         if (bitset & (FD_CONNECT | FD_WRITE)) {
                             assert(sock->type & eSocket);
@@ -2794,7 +2793,7 @@ static EIO_Status s_Recv(SOCK    sock,
                 ((sock->log == eOn || (sock->log == eDefault && s_Log == eOn))
                  &&  (!sock->session  ||  flag > 0))) {
                 s_DoLog(x_read < 0
-                        ? (sock->n_read & sock->n_written
+                        ? (sock->n_read  &&  sock->n_written
                            ? eLOG_Error : eLOG_Trace)
                         : eLOG_Note, sock, eIO_Read,
                         x_read < 0 ? (void*) &error :
@@ -3282,7 +3281,7 @@ static EIO_Status s_Send(SOCK        sock,
                 ((sock->log == eOn || (sock->log == eDefault && s_Log == eOn))
                  &&  (!sock->session  ||  flag > 0))) {
                 s_DoLog(x_written <= 0
-                        ? (sock->n_read & sock->n_written
+                        ? (sock->n_read  &&  sock->n_written
                            ? eLOG_Error : eLOG_Trace)
                         : eLOG_Note, sock, eIO_Write,
                         x_written <= 0 ? (void*) &error : data,
