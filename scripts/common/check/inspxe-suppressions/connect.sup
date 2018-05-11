@@ -62,12 +62,24 @@ suppression = {
 }
 
 suppression = {
-	name = "gethostbyname()"
+	name = "gethostbyname() - 1"
 	type = {invalid_memory_access_partial}
 	stacks = {
 		allocation={
 			...;
 			mod=WS2_32.dll,func=gethostbyname;
+		}
+	}
+}
+
+suppression = {
+	name = "gethostbyname() - 2"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=gethostname;
+			func=s_gethostname,src=ncbi_socket.c,func_line=6;
 		}
 	}
 }
