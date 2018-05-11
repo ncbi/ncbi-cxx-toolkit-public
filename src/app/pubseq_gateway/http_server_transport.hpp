@@ -833,6 +833,8 @@ public:
     // Used in PrintRequeststart() to have all the incoming parameters logged
     CDiagContext_Extra &  PrintParams(CDiagContext_Extra &  extra);
 
+    string GetPath(void);
+
 private:
     h2o_req_t *                 m_Req;
     CQueryParam                 m_Params[MAX_QUERY_PARAMS];

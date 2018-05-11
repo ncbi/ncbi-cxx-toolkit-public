@@ -226,4 +226,12 @@ CDiagContext_Extra &  CHttpRequest::PrintParams(CDiagContext_Extra &  extra)
     return extra;
 }
 
+
+string CHttpRequest::GetPath(void)
+{
+    return string(m_Req->path_normalized.base,
+                  m_Req->path_normalized.len);
+}
+
+
 };

@@ -378,11 +378,17 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
         context->SetRequestID();
 
         // Client IP? How to get it from h2o?
-        // URL? How to get it from h2o?
 
         CDiagContext::SetRequestContext(context);
         CDiagContext_Extra  extra = GetDiagContext().PrintRequestStart();
+
+        // This is the URL path
+        extra.Print("request_path", req.GetPath());
         req.PrintParams(extra);
+
+        // If extra is not flushed then it picks read-only even though it is
+        // done after...
+        extra.Flush();
 
         // Just in case, avoid to have 0
         context->SetRequestStatus(CRequestStatus::e200_Ok);
