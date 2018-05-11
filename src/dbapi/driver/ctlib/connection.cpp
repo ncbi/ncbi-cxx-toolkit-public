@@ -1061,6 +1061,7 @@ bool CTL_Connection::x_SendData(I_BlobDescriptor& descr_in, CDB_Stream& stream,
         m_ActiveCmd = NULL;
     }
 #ifdef FTDS_IN_USE
+    m_BaseTimeout = 0;
     m_TotalTimeout = 0;
 #endif
     x_CmdAlloc(&cmd);
