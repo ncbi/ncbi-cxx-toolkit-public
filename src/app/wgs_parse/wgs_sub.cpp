@@ -484,7 +484,7 @@ static void AssignNucAccession(CSeq_entry& entry, const string& file, list<CIdIn
             return;
         }
 
-        // TODO
+        // TODO HTGS stuff
     }
     
     if (entry.IsSet()) {
@@ -697,10 +697,103 @@ static void GetTaxNameInfo(const CSeq_entry& entry, TTaxNameInfo& info)
     }
 }
 
+static void RemoveOrganelleName(string& name)
+{
+    static const string valid_organelle[] = {
+        "apicoplast",
+        "chloroplast",
+        "chromatophore",
+        "chromoplast",
+        "cyanelle",
+        "hydrogenosome",
+        "kinetoplast",
+        "leucoplast",
+        "mitochondrion",
+        "nucleomorph",
+        "plastid",
+        "proplastid"
+    };
+
+    for (auto& cur_org_name : valid_organelle) {
+
+        if (NStr::StartsWith(name, cur_org_name, NStr::eNocase)) {
+
+            name = NStr::Sanitize(name.substr(cur_org_name.size()));
+            break;
+        }
+    }
+}
+
+static void RemoveOtherTaxnamesInBrackets(const list<string>& taxnames, string& source)
+{
+    static const string prefix_to_be_removed[] = {
+        "acronym:",
+        "synonym:",
+        "anamorph:",
+        "teleomorph:"
+    };
+
+    for (auto& taxname : taxnames) {
+
+        for (size_t open_bracket = source.find('('); open_bracket != string::npos; open_bracket = source.find('(', open_bracket + 1)) {
+
+            size_t close_bracket = source.find(')', open_bracket);
+            if (close_bracket == string::npos)
+                break;
+
+            CTempString in_brackets(source.c_str() + open_bracket + 1, close_bracket - open_bracket - 1);
+            for (auto& prefix : prefix_to_be_removed) {
+                if (NStr::StartsWith(in_brackets, prefix)) {
+
+                    size_t start = open_bracket + 1 + prefix.size();
+                    string cur_taxname = NStr::Sanitize(source.substr(start, close_bracket - start));
+                    if (taxname == cur_taxname) {
+                        source = NStr::Sanitize(source.substr(0, open_bracket - 1) + source.substr(close_bracket + 1));
+                        open_bracket = 0;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+}
+
 static void RemoveGbblockSource(CSeq_entry& entry, const TTaxNameInfo& info)
 {
     if (entry.IsSeq()) {
-        // TODO
+
+        if (entry.GetSeq().IsSetDescr() && entry.GetSeq().GetDescr().IsSet()) {
+            for (auto& descr : entry.SetSeq().SetDescr().Set()) {
+
+                if (descr->IsGenbank()) {
+                    CGB_block& gb_block = descr->SetGenbank();
+                    if (!gb_block.IsSetSource()) {
+                        break;
+                    }
+
+                    string source = gb_block.GetSource();
+                    bool ends_with_dot = source.back() == '.';
+                    if (ends_with_dot) {
+                        source.pop_back();
+                    }
+
+                    RemoveOrganelleName(source);
+                    RemoveOtherTaxnamesInBrackets(info.m_others, source);
+
+                    string source_with_dot;
+                    if (ends_with_dot) {
+                        source_with_dot == source + ".";
+                    }
+
+                    if (info.m_taxname && (source == *info.m_taxname || source_with_dot == *info.m_taxname) ||
+                        info.m_old_taxname && (source == *info.m_old_taxname || source_with_dot == *info.m_old_taxname)) {
+                        gb_block.ResetSource();
+                    }
+
+                    break;
+                }
+            }
+        }
     }
     else if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
 
