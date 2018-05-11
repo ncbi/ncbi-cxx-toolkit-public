@@ -1001,7 +1001,7 @@ protobufd needs3party $(ORIG_LIBS)
 protobufd needs3party $(Z_LIBS)
 proxsort needs taxoscli
 psg_cassandra needs connect
-psg_cassandra needs psg_diag
+psg_cassandra needs xncbi
 psg_client needs psg_diag
 psg_client needs psg_rpc
 psg_client needs xconnect
