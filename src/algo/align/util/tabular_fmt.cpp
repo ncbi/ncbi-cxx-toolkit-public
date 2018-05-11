@@ -38,6 +38,7 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Spliced_exon_chunk.hpp>
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Prot_pos.hpp>
 #include <objects/taxon1/taxon1.hpp>
@@ -573,18 +574,9 @@ void s_AlignToSeqRanges(const CSeq_align& align, int row, list<TSeqRange>& range
             }
         }}
         break;
-    case CSeq_align::TSegs::e_Spliced:
-        {{
-            ITERATE (CSpliced_seg::TExons, iter, align.GetSegs().GetSpliced().GetExons()) {
-                ranges.push_back((*iter)->GetRowSeq_range(row, true));
-                // should this be fixed?
-                //ranges -= (*iter)->GetRowSeq_insertions(row, align.GetSegs().GetSpliced());
-            }
-        }}
-        break;
      default:
         NCBI_THROW(CSeqalignException, eUnsupported,
-                   "CSeq_align::GetAlignedBases() currently does not handle "
+                   "smismatchpos and qmismatchpos currently do not handle "
                     "this type of alignment.");
     }
 }
@@ -612,8 +604,67 @@ void CTabularFormatter_MismatchPositions::PrintHeader(CNcbiOstream& ostr) const
 void CTabularFormatter_MismatchPositions::Print(CNcbiOstream& ostr,
                                             const CSeq_align& align)
 {
-    ENa_strand QStrand = align.GetSeqStrand(0);
-    ENa_strand SStrand = align.GetSeqStrand(1);
+  ENa_strand QStrand = align.GetSeqStrand(0);
+  ENa_strand SStrand = align.GetSeqStrand(1);
+  vector<TSeqPos> mm_pos;
+
+  if (align.GetSegs().IsSpliced()) {
+    /// Special handling for Spliced-seg, since mismatch location is already in
+    /// the alignment
+    if (align.GetSegs().GetSpliced().GetProduct_type() ==
+        CSpliced_seg::eProduct_type_protein)
+    {
+        NCBI_THROW(CException, eUnknown, "smismatchpos and qmismatchpos not "
+                                         "supported for protein alignments");
+    }
+
+    for (const CRef<CSpliced_exon> &exon : align.GetSegs().GetSpliced().GetExons()) {
+        if (!exon->IsSetParts()) {
+            continue;
+        }
+        ENa_strand exon_qstrand = exon->IsSetProduct_strand()
+                                ? exon->GetProduct_strand() : QStrand;
+        ENa_strand exon_sstrand = exon->IsSetGenomic_strand()
+                                ? exon->GetGenomic_strand() : SStrand;
+        ENa_strand strand = m_Row == 0 ? exon_qstrand : exon_sstrand;
+        TSeqPos qpos = exon_qstrand == eNa_strand_plus ? exon->GetProduct_start().GetNucpos()
+                                                       : exon->GetProduct_end().GetNucpos();
+        TSeqPos spos = exon_sstrand == eNa_strand_plus ? exon->GetGenomic_start()
+                                                       : exon->GetGenomic_end();
+        TSeqPos pos = m_Row == 0 ? qpos : spos;
+        int direction = strand == eNa_strand_plus ? 1 : -1;
+        for (const CRef<CSpliced_exon_chunk> &part : exon->GetParts()) {
+            switch (part->Which()) {
+            case CSpliced_exon_chunk::e_Match:
+                pos += direction * part->GetMatch();
+                break;
+
+            case CSpliced_exon_chunk::e_Mismatch:
+                for (unsigned i = 0; i < part->GetMismatch(); ++i) {
+                    mm_pos.push_back(pos);
+                    pos += direction;
+                }
+                break;
+
+            case CSpliced_exon_chunk::e_Product_ins:
+                 if (m_Row == 0) {
+                     pos += direction * part->GetProduct_ins();
+                 }
+                 break;
+
+            case CSpliced_exon_chunk::e_Genomic_ins:
+                 if (m_Row == 1) {
+                     pos += direction * part->GetGenomic_ins();
+                 }
+                 break;
+
+            default:
+                 NCBI_THROW(CException, eUnknown, "smismatchpos and qmismatchpos not "
+                                                  "supported for alignments with diag");
+            }
+        }
+    }
+  } else {
 
     TSeqRange QAlignRange, SAlignRange;
     QAlignRange = align.GetSeqRange(0);
@@ -650,7 +701,6 @@ void CTabularFormatter_MismatchPositions::Print(CNcbiOstream& ostr,
     
 
     // loop segments
-    vector<TSeqPos> mm_pos;
     list<TSeqRange>::const_iterator SSegIter = SSegRanges.begin();
     ITERATE(list<TSeqRange>, QSegIter, QSegRanges) {
         TSeqRange QuerySeg = *QSegIter;
@@ -685,14 +735,17 @@ void CTabularFormatter_MismatchPositions::Print(CNcbiOstream& ostr,
                 ; 
             } else {
                 if(m_Row == 0)
-                    mm_pos.push_back(QuerySeg.GetFrom()+Loop);
+                    mm_pos.push_back(QStrand == eNa_strand_plus
+                                 ? QuerySeg.GetFrom()+Loop : QuerySeg.GetTo()-Loop);
                 else if(m_Row == 1)
-                    mm_pos.push_back(SubjtSeg.GetFrom()+Loop);
+                    mm_pos.push_back(SStrand == eNa_strand_plus
+                                 ? SubjtSeg.GetFrom()+Loop : SubjtSeg.GetTo()-Loop);
             }
         }
 
         ++SSegIter;
     }
+  }
    
     sort(mm_pos.begin(), mm_pos.end());
     ITERATE(vector<TSeqPos>, it, mm_pos) {
