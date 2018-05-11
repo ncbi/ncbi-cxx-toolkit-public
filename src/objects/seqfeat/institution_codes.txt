@@ -1884,7 +1884,7 @@ FFB	s	Atlantic Forestry Centre, Canadian Forest Service
 FFBNM	h	Florissant Fossil Beds National Monument		
 FFCL	s	Nossa Senhora do Patrocinia		
 FFR	s	Forfar Museum and Art Gallery, Meffan Institute		
-FFS	s	University of Stellenbosch		
+FFS	s	University of Stellenbosch (Williams Herbarium)		
 FFSUC	s	Faculty of Forestry Sciences		
 FG	s	Palaontologische Hauptsammlung der Bergakadmie		
 FGC	s	Grassland Research Institute, Chinese Academy of Agricultural Sciences		
@@ -1898,14 +1898,13 @@ FHK	s	Divisional Forest Office
 FHKS	s	Fort Hays State University		
 FHKSC	s	Fort Hays State University		
 FHL	s	Friday Harbor Laboratories, University of Washington		
-FHO	s	University of Oxford, Department of Plant Sciences		
+FHO	s	University of Oxford, Daubeny Herbarium		
 FHSM	s	Fort Hays Sternberg Museum		
 FI	s	Museo di Storia Naturale dell'Universita		
 FIAF	s	Universita degli Studi di Firenze, Dipartimento di Biologia Vegetale		
 FICB	s	Forest Research Centre		
 FIDS	s	Great Lakes Forest Research Laboratory, Forest Insect and Disease Survey		
 FIEC	s	Freshwater Institute		
-FIJI	s	University of the South Pacific		
 FIOC	s	Fundacao Instituto Oswaldo Cruz		
 FIOC:ColTryp	c	Fundacao Instituto Oswaldo Cruz, Collection of Trypanosoma from Wild and Domestic Mammals and Vectors
 FIP	s	Florida Institute of Paleontology		
@@ -3418,7 +3417,7 @@ LAUN	s	Launceston College
 LAUS	s	Launceston Museum		
 LAV	s	Dauntsey's School		
 LAVO	s	Lassen Volcanic National Park		
-LBC	s	University of the Philippines at Los Banos		
+LBC	s	Forestry Herbarium University of the Philippines at Los Banos		
 LBG<CHE>	c	Institute for Agricultural Bacteriology and Fermentation Biology		
 LBG<CHN>	s	Lushan Botanical Garden		
 LBIT	s	Laboratoire de Biologie des Insectes		
@@ -4386,7 +4385,7 @@ MWC	s	Museum of Western Colorado
 MWCF	s	Mary Washington College, Department of Biology		
 MWFB	s	University of California, Davis, Museum of Wildlife and Fisheries Biology		
 MWG	s	Moscow State University, Department of Biogeography		
-MWI	s	Western Illinois University, Biological Sciences Department		
+MWI	s	R. M. Myers Herbarium Western Illinois University		
 MWNH	s	Museum Wiesbaden, Department of Natural Science		
 MWSJ	s	Missouri Western State College, Biology Department		
 MY	s	Universidad Central de Venezuela, Botanica		
@@ -4540,12 +4539,12 @@ NCUT	s	Nicolaus Copernicus University
 NCWRF	c	National Collection of Wood Rotting Fungi		
 NCY	s	Conservatoire et Jardins Botaniques de Nancy		
 NCYC	c	National Collection of Yeast Cultures		
-ND	s	University of Notre Dame, Department of Biological Sciences		
+ND	s	University of Notre Dame, Department of Biological Sciences	NDG
 NDA	s	North Dakota State University, Animal and Range Sciences Department		
 NDAA	s	Orange, New South Wales Department of Agriculture		
 NDAT	s	Department of Agriculture, Tunisia		
 NDFC	s	Newfoundland Department of Forestry		
-NDG	s	University of Notre Dame, Department of Biological Sciences		
+NDG	s	University of Notre Dame, Department of Biological Sciences	ND
 NDO	s	Division of Forest Research, Forest Department		
 NDSR	s	National Drosophila Species Resource Center		
 NDSU	s	North Dakota State University		
@@ -5068,7 +5067,7 @@ OUVC	s	Ohio University Vertebrate Collection
 OVMB	s	Okresni vlastivedne muzeum		
 OWU	s	Ohio Wesleyan University, Botany-Microbiology Department		
 OXD	s	Wadham College		
-OXF	s	University of Oxford, Department of Plant Sciences		
+OXF	s	University of Oxford (Fielding-Druce Herbarium)		
 OXM	s	Magdalen College Library		
 P	s	Herbier National de Paris	P<FRA>
 PA	s	Universidade Federal do Oeste do Para		
@@ -5292,7 +5291,6 @@ PRF	s	South African Forestry Research Institute, Environment Affairs Department
 PRG	s	Universidad Nacional Pedro Ruiz Gallo		
 PRH	s	Perthshire Society of Natural Science		
 PRI	s	College of Eastern Utah, Biology Department		
-PRICO	s	University of Puerto Rico		
 PRL	c	Prairie Regional Laboratory		
 PRM	s	National Museum, Mycological Department		
 PROIMI	c	Planta Piloto de Procesos Industriales Microbiologicos		
@@ -5528,7 +5526,7 @@ RMNH:POR	s	Naturalis Biodiversity Center, poriferan collection
 RMNHD	s	Naturalis Biodiversity Center	RMNH
 RMNP	s	Riding Mountain National Park		
 RMRC	b	Regional Medical Research Centre		
-RMS	s	University of Wyoming Herbarium		
+RMS	s	University of Wyoming		
 RMSC	s	Rocky Mountain Forest and Range Experiment Station		
 RMSCC	c	Roche Molecular Systems Culture Collection		
 RMTV	h	University of Rome Tor Vergata		
@@ -6183,7 +6181,7 @@ SYT	s	Stonyhurst College
 SZ	s	Sichuan University, Biological Department		
 SZB	s	Haus der Natur		
 SZCU	s	Department of Systematic Zoology		
-SZCZ	h	University of Szczecin		
+SZCZ	s	University of Szczecin		
 SZE<HUN>	s	Mora Ferenc Museum, Natural Science Department		
 SZE<TUR>	s	Zoology Department, Aegean University, Science Faculty		
 SZG	s	Shenzhen Fairy Lake Botanical Garden		
@@ -6194,7 +6192,6 @@ SZMN	s	Siberian Zoological Museum
 SZPT	s	Shenzhen Polytechnic		
 SZPT:ENT	s	Shenzhen Polytechnic, Entomology Collection
 SZU	s	University of Salzburg, Department of Organismic Biology		
-SZUB	h	University of Szczecin		
 T	s	Tavera, Department of Geology and Geophysics		
 TA	s	Timescale Adventures Research and Interpretive Center		
 TAA	s	Estonian University of Life Sciences		
@@ -6408,7 +6405,7 @@ TS	s	National University of Shandong, Biology Department
 TSB	s	Universita degli Studi di Trieste, Dipartimento di Biologia		
 TSC	s	Tarleton State University, Tarleton State Collection		
 TsGM	s	Central Geological Museum		
-TSH	h	University of Tsukuba		
+TSH	s	Mycological Herbarium University of Tsukuba		
 TSM	s	Erbario, Museo Civico di Storia Naturale, Trieste		
 TSMHN	s	Teylers Strichtina Museum		
 TsNIGRI	s	Tsentralny Nauchno-Issledovatelskii Geolgo-Razvedochni Muzei (Chernyshev's Central Museum of Geological Exploration)		
@@ -7144,7 +7141,7 @@ VTT	c	VTT Biotechnology, Culture Collection
 VU	s	Voronezh State University		
 VU<NLD>	s	Vrije Universiteit Amsterdam		
 VUT	c	School of Veterinary Medicine, Faculty of Agriculture		
-VUW	s	Victoria University		
+VUW	s	Victoria University	VUWE
 VUWE	s	Victoria University		
 VYH	c	Finnish Environment Institute (SYKE)		
 VYM	s	Muzeum Vyakovska		
@@ -7234,7 +7231,7 @@ WIB	s	Ministry of Environment and Parks, Resource Quality Section
 WIBF	s	West Indian Beetle Fauna Project Collection		
 WIBG	s	Windward Islands Banana Grower's Association		
 WICA	s	Wind Cave National Park		
-WICH	h	Wichita State University		
+WICH	s	Wichita State University		
 WIES	s	Museum Wiesbaden		
 WII	s	Wildlife Institute of India, Department of Habitat Ecology		
 WILLI	s	The College of William and Mary, Department of Biology		
@@ -7436,10 +7433,10 @@ YUTO	s	York University, Biology Department
 YXDC	s	Yuxi District Institute for Drug Control		
 YZU	s	Yuzhou University		
 Z	s	Universitaet Zuerich		
-ZA	s	University of Zagreb, Botany Department		
+ZA	s	University of Zagreb, Botany Department	ZAHO
 ZAD	s	Mount Makulu Research Station		
 ZAGR	s	University of Zagreb		
-ZAHO	s	University of Zagreb, Botany Department		
+ZAHO	s	University of Zagreb, Botany Department	ZA
 ZAR	s	Institut de Paleontologie du Museum National Historie Naturelle		
 ZAU	s	Zhejiang Agricultural University		
 ZAUC	s	Zhejian Agricultural University		
@@ -7494,7 +7491,7 @@ ZMA	s	Universiteit van Amsterdam, Zoologisch Museum
 ZMA:POR	s	Universiteit van Amsterdam, Zoologisch Museum, Porifera collection
 ZMAN	s	Instituut voor Taxonomische Zoologie, Zoologisch Museum		
 ZMAU	s	Zoological Museum Andhra University		
-ZMB	s	Zoologisches Museum der Humboldt-Universitaet zu Berlin		
+ZMB	s	Zoologisches Museum der Humboldt-Universitat zu Berlin	ZMHU
 ZMBJ	s	Banding Zoological Museum		
 ZMBN	s	Museum of Zoology at the University of Bergen, Invertebrate Collection	BMBN
 ZMC	s	Deptment of Biology, Zunyi Medical College		
@@ -7571,8 +7568,6 @@ ZSI-WRS	s	Zoological Survey of India
 ZSIC	s	Zoological Survey of India		
 ZSLC	s	Zoological Society of London		
 ZSM	sb	Zoologische Staatssammlung Munchen	ZSMH
-ZSM/CMK	s	Zoologische Museum Staatssammlung		
-ZSM/LIPI	s	Zoologische Museum Staatssammlung		
 ZSM:Lep	s	Zoologische Staatssammlung Munchen, Lepidoptera
 ZSM:Mol	s	Zoologische Staatssammlung Munchen, Mollusca
 ZSMC	s	Zoologische Staatssammlung		
