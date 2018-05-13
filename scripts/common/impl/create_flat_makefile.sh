@@ -139,7 +139,7 @@ if test $buildptb = "no"; then
     fi
   else
     ptb="$relptbpath$PLATFORM/$ptbreqver/$ptbname"
-    if test -x "$ptb"; then
+    if "$ptb" -version >/dev/null 2>&1; then
       echo "Using $ptbname at $ptb"
     else
       if test $remoteptbonly = "yes"; then
