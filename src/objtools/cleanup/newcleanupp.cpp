@@ -784,54 +784,62 @@ void CNewCleanup_imp::ProtSeqBC (CBioseq& bs)
         return;
     }
 
-    CSeq_entry_Handle seh = m_Scope->GetSeq_entryHandle(*(bs.GetParentEntry()));
-
     // Bail if no title or no partialness clues in title
-    CSeqdesc_CI title(seh, CSeqdesc::e_Title);
-    if (!title) {
+    if (!bs.IsSetDescr()) {
         return;
     }
     bool make_partial5 = false;
     bool make_partial3 = false;
-    if (NStr::Find(title->GetTitle(), "{C-terminal}") != string::npos) {
-        make_partial5 = true;
+    for (auto dit : bs.GetDescr().Get()) {
+        if (dit->IsTitle()) {
+            if (NStr::Find(dit->GetTitle(), "{C-terminal}") != string::npos) {
+                make_partial5 = true;
+            }
+            if (NStr::Find(dit->GetTitle(), "{N-terminal}") != string::npos) {
+                make_partial3 = true;
+            }
+            break;
+        }
     }
-    if (NStr::Find(title->GetTitle(), "{N-terminal}") != string::npos) {
-        make_partial3 = true;
-    }
+
     if (!make_partial5 && !make_partial3) {
         return;
     }
 
     // Bail if no protein feature with missing partials
-    SAnnotSelector sel(CSeqFeatData::e_Prot);
-    CFeat_CI fi(seh, sel);
+    if (!bs.IsSetAnnot()) {
+        return;
+    }
+    for (auto ait : bs.SetAnnot()) {
+        if (ait->IsSetData() && ait->GetData().IsFtable()) {
+            for (auto fi : ait->SetData().SetFtable()) {
+                if (fi->IsSetData() && 
+                    fi->GetData().GetSubtype() == CSeqFeatData::eSubtype_prot &&
+                    fi->IsSetPartial() && fi->GetPartial() && 
+                    fi->IsSetLocation() && 
+                    !fi->GetLocation().IsPartialStart(eExtreme_Biological) &&
+                    !fi->GetLocation().IsPartialStop(eExtreme_Biological)) {
+                    // note - we are only fixing partials if *both*
+                    // ends were left as complete. One end being
+                    // set as partial means that someone was doing this
+                    // deliberately.
+                    if (make_partial5) {
+                        fi->SetLocation().SetPartialStart(true, eExtreme_Biological);
+                    }
+                    if (make_partial3) {
+                        fi->SetLocation().SetPartialStop(true, eExtreme_Biological);
+                    }
+                    ChangeMade(CCleanupChange::eChangeSeqloc);
 
-    if (fi && fi->IsSetPartial() && fi->GetPartial()) {
-        const CSeq_feat& orig = *(fi->GetOriginalSeq_feat());
-        if (orig.IsSetLocation() &&
-            !orig.GetLocation().IsPartialStart(eExtreme_Biological) &&
-            !orig.GetLocation().IsPartialStop(eExtreme_Biological)) {
-            CSeq_feat_EditHandle edit_feature_handle(fi->GetSeq_feat_Handle());
-            CRef<CSeq_feat> replace(new CSeq_feat());
-            replace->Assign(orig);
-            if (make_partial5) {
-                replace->SetLocation().SetPartialStart(true, eExtreme_Biological);
-            }
-            if (make_partial3) {
-                replace->SetLocation().SetPartialStop(true, eExtreme_Biological);
-            }
-            edit_feature_handle.Replace(*replace);
-            ChangeMade(CCleanupChange::eChangeSeqloc);
-
-            if (bs.IsSetDescr() && (make_partial5 || make_partial3)) {
-                CMolInfo::TCompleteness wanted = GetCompletenessFromFlags(make_partial5, make_partial3, true);
-                NON_CONST_ITERATE(CBioseq::TDescr::Tdata, ds, bs.SetDescr().Set()) {
-                    if ((*ds)->IsMolinfo() &&
-                        (!(*ds)->GetMolinfo().IsSetCompleteness() ||
-                         (*ds)->GetMolinfo().GetCompleteness() != wanted)) {
-                        (*ds)->SetMolinfo().SetCompleteness(wanted);
-                        ChangeMade(CCleanupChange::eChangeMolInfo);
+                    CMolInfo::TCompleteness wanted = GetCompletenessFromFlags(make_partial5, make_partial3, true);
+                    for (auto ds : bs.SetDescr().Set()) {
+                        if (ds->IsMolinfo() &&
+                            (!ds->GetMolinfo().IsSetCompleteness() ||
+                                ds->GetMolinfo().GetCompleteness() != wanted)) {
+                            ds->SetMolinfo().SetCompleteness(wanted);
+                            ChangeMade(CCleanupChange::eChangeMolInfo);
+                            break;
+                        }
                     }
                 }
             }
