@@ -48,6 +48,7 @@
 
 #include <objects/submit/Submit_block.hpp>
 #include <objects/seqblock/GB_block.hpp>
+#include <objects/seqblock/EMBL_block.hpp>
 
 
 #include <util/sequtil/sequtil.hpp>
@@ -1271,6 +1272,156 @@ static void FixGeneticCode(CSeq_entry& entry)
     }
 }
 
+static bool NeedToAddExtraAccessions(const CSeq_entry& entry)
+{
+    return entry.IsSeq() && entry.GetSeq().IsNa() && entry.GetSeq().IsSetInst() && entry.GetSeq().GetInst().IsSetRepr() && entry.GetSeq().GetInst().GetRepr() == CSeq_inst::eRepr_delta;
+}
+
+// CR architectural solution???
+class CBlockContainer
+{
+public:
+    virtual bool IsRequired(const CRef<CSeqdesc>&) const = 0;
+    virtual void StoreBlock(CSeqdesc& descr) = 0;
+    virtual bool IsBlockStored() const = 0;
+    virtual CRef<CSeqdesc> CreateBlock() = 0;
+
+    virtual BOOL IsSetExtraAccessions() const = 0;
+    virtual const list<string>& GetExtraAccessions() const = 0;
+    virtual void AddExtraAccession(const string& accession) = 0;
+};
+
+class CGBBlockContainer : public CBlockContainer
+{
+public:
+
+    CGBBlockContainer() : m_genbank_block(nullptr) {}
+
+    virtual bool IsRequired(const CRef<CSeqdesc>& descr) const
+    {
+        return descr->IsGenbank();
+    }
+
+    virtual void StoreBlock(CSeqdesc& descr)
+    {
+        m_genbank_block = &descr.SetGenbank();
+    }
+
+    virtual bool IsBlockStored() const
+    {
+        return m_genbank_block != nullptr;
+    }
+
+    virtual CRef<CSeqdesc> CreateBlock()
+    {
+        CRef<CSeqdesc> descr(new CSeqdesc);
+        m_genbank_block = &descr->SetGenbank();
+        return descr;
+    }
+
+    virtual BOOL IsSetExtraAccessions() const
+    {
+        return m_genbank_block->IsSetExtra_accessions();
+    }
+
+    virtual const list<string>& GetExtraAccessions() const
+    {
+        return m_genbank_block->GetExtra_accessions();
+    }
+
+    virtual void AddExtraAccession(const string& accession)
+    {
+        m_genbank_block->SetExtra_accessions().push_back(accession);
+    }
+
+private:
+    CGB_block* m_genbank_block;
+};
+
+class CEMBLBlockContainer : public CBlockContainer
+{
+public:
+
+    CEMBLBlockContainer() : m_embl_block(nullptr) {}
+
+    virtual bool IsRequired(const CRef<CSeqdesc>& descr) const
+    {
+        return descr->IsEmbl();
+    }
+
+    virtual void StoreBlock(CSeqdesc& descr)
+    {
+        m_embl_block = &descr.SetEmbl();
+    }
+
+    virtual bool IsBlockStored() const
+    {
+        return m_embl_block != nullptr;
+    }
+
+    virtual CRef<CSeqdesc> CreateBlock()
+    {
+        CRef<CSeqdesc> descr(new CSeqdesc);
+        m_embl_block = &descr->SetEmbl();
+        return descr;
+    }
+
+    virtual BOOL IsSetExtraAccessions() const
+    {
+        return m_embl_block->IsSetExtra_acc();
+    }
+
+    virtual const list<string>& GetExtraAccessions() const
+    {
+        return m_embl_block->GetExtra_acc();
+    }
+
+    virtual void AddExtraAccession(const string& accession)
+    {
+        m_embl_block->SetExtra_acc().push_back(accession);
+    }
+
+private:
+    CEMBL_block* m_embl_block;
+};
+
+
+static void AddMasterToSecondary(CSeq_entry& entry, CBlockContainer& block)
+{
+    if (NeedToAddExtraAccessions(entry)) {
+
+        if (entry.IsSetDescr() && entry.GetDescr().IsSet()) {
+            auto genbank_it = find_if(entry.SetDescr().Set().begin(), entry.SetDescr().Set().end(), [&block](const CRef<CSeqdesc>& descr) { return block.IsRequired(descr); });
+            if (genbank_it != entry.SetDescr().Set().end()) {
+                block.StoreBlock(**genbank_it);
+            }
+        }
+
+        if (!block.IsBlockStored()) {
+            CRef<CSeqdesc> descr = block.CreateBlock();
+            entry.SetDescr().Set().push_back(descr);
+        }
+
+        const string& accession = GetParams().GetAccession();
+        if (block.IsSetExtraAccessions()) {
+            auto same = find_if(block.GetExtraAccessions().begin(), block.GetExtraAccessions().end(),
+                                [&accession](const string& cur_accession) { return accession == cur_accession; });
+            if (same != block.GetExtraAccessions().end()) {
+                return;
+            }
+        }
+
+        block.AddExtraAccession(accession);
+    }
+    
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
+            AddMasterToSecondary(*cur_entry, block);
+        }
+    }
+}
+
 bool ParseSubmissions(CMasterInfo& master_info)
 {
     const list<string>& files = GetParams().GetInputFiles();
@@ -1367,7 +1518,13 @@ bool ParseSubmissions(CMasterInfo& master_info)
                     }
 
                     if (GetParams().IsUpdateScaffoldsMode()) {
-                        // TODO
+
+                        if (GetParams().GetSource() == eEMBL) {
+                            AddMasterToSecondary(*entry, CEMBLBlockContainer());
+                        }
+                        else {
+                            AddMasterToSecondary(*entry, CGBBlockContainer());
+                        }
                     }
 
                     if (GetParams().IsForcedGencode()) {
@@ -1443,7 +1600,8 @@ bool ParseSubmissions(CMasterInfo& master_info)
 
                 if (!master_info.m_common_pubs.empty()) {
 
-                    // TODO RemovePubs(*cur_entry, master_info.m_common_pubs, nullptr); should be CDate instead of nullptr
+                    const CDate_std* submission_date = GetParams().IsSetSubmissionDate() ? &GetParams().GetSubmissionDate() : nullptr;
+                    RemovePubs(*cur_entry, master_info.m_common_pubs, submission_date);
                 }
             }
         }
