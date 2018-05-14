@@ -247,7 +247,7 @@ private:
     CNcbiOstream * m_LogFile;
     CNcbiIstream * m_InPssmList;
     string m_Title;
-    double m_WordScoreThreshold;
+    double m_WordDefaultScoreThreshold;
     string m_OutDbName;
     Uint8	m_MaxFileSize;
     string m_OutDbType;
@@ -277,7 +277,7 @@ private:
 
 CMakeProfileDBApp::CMakeProfileDBApp(void)
                 : m_LogFile(NULL), m_InPssmList(NULL), m_Title(kEmptyStr),
-                  m_WordScoreThreshold(0), m_OutDbName(kEmptyStr), m_MaxFileSize(0),
+                  m_WordDefaultScoreThreshold(0), m_OutDbName(kEmptyStr), m_MaxFileSize(0),
                   m_OutDbType(kEmptyStr), m_CreateIndexFile(false),m_GapOpenPenalty(0),
                   m_GapExtPenalty(0), m_PssmScaleFactor(0),m_Matrix(kEmptyStr),  m_op_mode(op_invalid),
                   m_binary_scoremat(false), m_Taxids(new CTaxIdSet()), m_Done(false),
@@ -459,7 +459,7 @@ void CMakeProfileDBApp::x_InitProgramParameters(void)
 		m_Title = args[kInPssmList].AsString();
 
 	//threshold
-	m_WordScoreThreshold = args[kArgWordScoreThreshold].AsDouble();
+	m_WordDefaultScoreThreshold = args[kArgWordScoreThreshold].AsDouble();
 
 	//Out
 	if(args[kOutDbName].HasValue())
@@ -832,6 +832,7 @@ void CMakeProfileDBApp::x_RPSUpdateStatistics(CPssmWithParameters & seq, Int4 se
      x_UpdateRPSDbInfo( pssm_w_parameters);
 
      x_FillInRPSDbParameters(pssm_w_parameters);
+     double wordScoreThreshold = m_WordDefaultScoreThreshold;
 
      if(!freq_only)
      {
@@ -839,17 +840,23 @@ void CMakeProfileDBApp::x_RPSUpdateStatistics(CPssmWithParameters & seq, Int4 se
     	 {
     		 m_RpsDbInfo.scale_factor = pssm_w_parameters.GetPssm().GetFinalData().GetScalingFactor();
     	 }
-	 else
-	 {
-                // asn1 default value is 1
-                m_RpsDbInfo.scale_factor = 1.0;
-	 }
+    	 else
+    	 {
+    	     // asn1 default value is 1
+    	     m_RpsDbInfo.scale_factor = 1.0;
+    	 }
+    	 if(pssm_w_parameters.GetPssm().GetFinalData().IsSetWordScoreThreshold())
+    	 {
+    	 	 wordScoreThreshold = pssm_w_parameters.GetPssm().GetFinalData().GetWordScoreThreshold();
+    	 }
      }
      else
+     {
     	 x_RPSUpdateStatistics(pssm_w_parameters, pssm_w_parameters.GetPssm().GetQueryLength());
+     }
 
      /* scale up the threshold value and convert to integer */
-     double threshold = m_RpsDbInfo.scale_factor * m_WordScoreThreshold;
+     double threshold = m_RpsDbInfo.scale_factor * wordScoreThreshold;
 
      /* create BLAST lookup table */
      if (LookupTableOptionsNew(eBlastTypeBlastp, &(m_RpsDbInfo.lookup_options)) != 0)
@@ -1323,20 +1330,30 @@ int CMakeProfileDBApp::x_Run(void)
 		else
 		{
 			 x_FillInRPSDbParameters(pssm_w_parameters);
-			if(sm_valid_freq_only == sm)
+			if(sm_valid_freq_only == sm){
 				x_RPSUpdateStatistics(pssm_w_parameters, seq_size);
+			}
 
 			if( pssm.GetFinalData().IsSetScalingFactor())
 			{
-				if( pssm.GetFinalData().GetScalingFactor() != m_RpsDbInfo.scale_factor)
+				if( pssm.GetFinalData().GetScalingFactor() != m_RpsDbInfo.scale_factor) {
 					NCBI_THROW(CBlastException, eCoreBlastError, "Scaling factors do not match");
+				}
 			}
-                        else
-                        {
-                               // If scaling factor not specified, the default is 1
-                               if( 1 != m_RpsDbInfo.scale_factor)
+            else
+            {
+                // If scaling factor not specified, the default is 1
+                if( 1 != m_RpsDbInfo.scale_factor) {
 					NCBI_THROW(CBlastException, eCoreBlastError, "Scaling factors do not match");
-                        }
+                }
+            }
+
+			if(pssm.GetFinalData().IsSetWordScoreThreshold()) {
+			 	m_RpsDbInfo.lookup->threshold = m_RpsDbInfo.scale_factor * pssm_w_parameters.GetPssm().GetFinalData().GetWordScoreThreshold();
+			}
+			else {
+				m_RpsDbInfo.lookup->threshold = m_RpsDbInfo.scale_factor * m_WordDefaultScoreThreshold;
+			}
 
 		}
 
@@ -1349,8 +1366,9 @@ int CMakeProfileDBApp::x_Run(void)
 		m_RpsDbInfo.curr_seq_offset +=(seq_size +1);
 		m_RpsDbInfo.pos_matrix.Delete();
 
-		if(op_cobalt == m_op_mode)
+		if(op_cobalt == m_op_mode) {
 			x_UpdateCobalt(pssm_w_parameters, seq_size);
+		}
 	}
 
 	m_OutputDb->Close();

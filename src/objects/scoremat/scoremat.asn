@@ -184,7 +184,10 @@ PssmFinalData ::= SEQUENCE {
 	kappaUngapped       REAL OPTIONAL,
 
     -- Karlin & Altschul parameter produced during the PSSM's calculation
-    hUngapped           REAL OPTIONAL
+    hUngapped           REAL OPTIONAL,
+
+    -- Word score threshold
+    wordScoreThreshold    REAL OPTIONAL
 }
 
 -- Contains the PSSM's intermediate data used to create the PSSM's scores 
