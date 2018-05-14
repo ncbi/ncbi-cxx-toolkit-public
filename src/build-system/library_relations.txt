@@ -649,6 +649,7 @@ ideocoord needs ideo_gridcli
 idgen needs dbassist
 idload needs3party ctutils
 idload_utils needs gpipe_objutil
+idload_utils needs gpipe_sqlite
 igblast needs $(BLAST_LIBS)
 igblast needs3party $(BLAST_THIRD_PARTY_LIBS)
 insdseq needs xser
