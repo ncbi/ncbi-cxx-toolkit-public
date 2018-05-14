@@ -1156,15 +1156,20 @@ static void CleanupProtGbblock(CSeq_entry& entry)
     }
 }
 
-static void RemoveDblinkGPID(CSeq_entry& entry)
+static void RemoveDblinkGPID(CSeq_entry& entry, size_t& dblink_order_num)
 {
     CSeq_descr* descrs = nullptr;
     if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
 
+        size_t order = 0;
         for (auto& descr = descrs->Set().begin(); descr != descrs->Set().end();) {
 
+            ++order;
             if (IsUserObjectOfType(**descr, "GenomeProjectsDB") || IsUserObjectOfType(**descr, "DBLink")) {
                 descr = descrs->Set().erase(descr);
+                if (dblink_order_num == 0) {
+                    dblink_order_num = order;
+                }
             }
             else {
                 ++descr;
@@ -1175,7 +1180,7 @@ static void RemoveDblinkGPID(CSeq_entry& entry)
     if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
 
         for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
-            RemoveDblinkGPID(*cur_entry);
+            RemoveDblinkGPID(*cur_entry, dblink_order_num);
         }
     }
 }
@@ -1422,6 +1427,43 @@ static void AddMasterToSecondary(CSeq_entry& entry, CBlockContainer& block)
     }
 }
 
+static bool NeedToAddDbLink(const CSeq_entry& entry)
+{
+    return entry.IsSeq() || entry.IsSet() && entry.GetSet().IsSetClass() && entry.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot;
+}
+
+static bool AddDblink(CSeq_entry& entry, const CUser_object& dblink, size_t dblink_order_num)
+{
+    if (NeedToAddDbLink(entry)) {
+
+        CRef<CSeqdesc> descr(new CSeqdesc);
+        descr->SetUser().Assign(dblink);
+
+        auto insertion_point = entry.SetDescr().Set().end();
+        if (dblink_order_num) {
+
+            insertion_point = entry.SetDescr().Set().begin();
+            while (--dblink_order_num) {
+                ++insertion_point;
+            }
+        }
+
+        entry.SetDescr().Set().insert(insertion_point, descr);
+        return true;
+    }
+
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
+            if (AddDblink(*cur_entry, dblink, dblink_order_num)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 bool ParseSubmissions(CMasterInfo& master_info)
 {
     const list<string>& files = GetParams().GetInputFiles();
@@ -1543,11 +1585,14 @@ bool ParseSubmissions(CMasterInfo& master_info)
 
                     bool lookup_succeed = FixBioSources(*entry, master_info);
 
+                    size_t dblink_order_num = 0;
                     if (master_info.m_gpid || master_info.m_dblink_state == eDblinkNoProblem) {
-                        RemoveDblinkGPID(*entry);
+                        RemoveDblinkGPID(*entry, dblink_order_num);
                     }
 
-                    // TODO adddblink ...
+                    if (GetParams().IsUpdateScaffoldsMode() && master_info.m_dblink_state == eDblinkNoProblem) {
+                        AddDblink(*entry, *master_info.m_dblink, dblink_order_num);
+                    }
 
                     if (!lookup_succeed) {
                         ERR_POST_EX(0, 0, Critical << "Taxonomy lookup failed on submission \"" << file << "\". Cannot proceed.");
