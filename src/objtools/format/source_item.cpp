@@ -167,7 +167,7 @@ void CSourceItem::x_GatherInfoIdx(CBioseqContext& ctx)
     m_Taxid = bsx->GetTaxid();
     m_UsingAnamorph = bsx->IsUsingAnamorph();
 
-    string lineage = bsx->GetLineage();
+    const string& lineage = bsx->GetLineage();
     if (lineage.empty()) {
         m_Lineage = scm_Unclassified;
     } else {
@@ -176,7 +176,7 @@ void CSourceItem::x_GatherInfoIdx(CBioseqContext& ctx)
 
     const string* orgnlle = &bsx->GetOrganelle();
     for (int i = 0; i < sizeof (legal_organelles) / sizeof (const char*); i++) {
-        string str = legal_organelles [i];
+        CTempString str = legal_organelles [i];
         if (NStr::CompareNocase (*orgnlle, str) == 0) {
             m_Organelle = orgnlle;
             return;
