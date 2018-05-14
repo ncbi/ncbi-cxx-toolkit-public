@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#include <connect/ext/ncbi_localnet.h>
+
 #include "http_server_transport.hpp"
 
 using namespace std;
@@ -231,6 +233,66 @@ string CHttpRequest::GetPath(void)
 {
     return string(m_Req->path_normalized.base,
                   m_Req->path_normalized.len);
+}
+
+
+string CHttpRequest::GetHeaderValue(const string &  name)
+{
+    string      value;
+    size_t      name_size = name.size();
+
+    for (size_t  index = 0; index < m_Req->headers.size; ++index) {
+        if (m_Req->headers.entries[index].name->len == name_size) {
+            if (strncasecmp(m_Req->headers.entries[index].name->base,
+                            name.data(), name_size) == 0) {
+                value.assign(m_Req->headers.entries[index].value.base,
+                             m_Req->headers.entries[index].value.len);
+                break;
+            }
+        }
+    }
+    return value;
+}
+
+
+// The method to extract the IP address needs an array of pointers to the
+// strings like <name>=<value>. The h2o headers are stored in a different
+// format so a conversion is required
+TNCBI_IPv6Addr CHttpRequest::GetClientIP(void)
+{
+    // "There are no headers larger than 50k", so
+    const size_t        buf_size = 50 * 1024;
+
+    const char *        tracking_env[m_Req->headers.size + 1];
+    unique_ptr<char>    buffer(new char[buf_size]);
+    char *              raw_buffer = buffer.get();
+
+    size_t              pos = 0;
+    for (size_t  index = 0; index < m_Req->headers.size; ++index) {
+        size_t      name_val_size = m_Req->headers.entries[index].name->len +
+                                    m_Req->headers.entries[index].value.len +
+                                    2;  // '=' and '\0'
+        if (pos + name_val_size > buf_size) {
+            ERR_POST(Warning << "The buffer for request headers is too small ("
+                             << buf_size << " bytes)");
+            return TNCBI_IPv6Addr{0};
+        }
+
+        tracking_env[index] = raw_buffer + pos;
+        memcpy(raw_buffer + pos, m_Req->headers.entries[index].name->base,
+               m_Req->headers.entries[index].name->len);
+        pos += m_Req->headers.entries[index].name->len;
+        raw_buffer[pos] = '=';
+        ++pos;
+        memcpy(raw_buffer + pos, m_Req->headers.entries[index].value.base,
+               m_Req->headers.entries[index].value.len);
+        pos += m_Req->headers.entries[index].value.len;
+        raw_buffer[pos] = '\0';
+        ++pos;
+    }
+    tracking_env[m_Req->headers.size] = nullptr;
+
+    return NcbiGetCgiClientIPv6(eCgiClientIP_TryMost, tracking_env);
 }
 
 

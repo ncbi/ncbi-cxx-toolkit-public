@@ -377,7 +377,28 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
         context.Reset(new CRequestContext());
         context->SetRequestID();
 
-        // Client IP? How to get it from h2o?
+        // NCBI SID may come from the header
+        string      sid = req.GetHeaderValue("HTTP_NCBI_SID");
+        if (!sid.empty())
+            context->SetSessionID(sid);
+        else
+            context->SetSessionID();
+
+        // NCBI PHID may come from the header
+        string      phid = req.GetHeaderValue("HTTP_NCBI_PHID");
+        if (!phid.empty())
+            context->SetHitID(phid);
+        else
+            context->SetHitID();
+
+        // Client IP may come from the headers
+        TNCBI_IPv6Addr  client_address = req.GetClientIP();
+        if (!NcbiIsEmptyIPv6(&client_address)) {
+            char        buf[256];
+            if (NcbiIPv6ToString(buf, sizeof(buf), &client_address) != 0) {
+                context->SetClientIP(buf);
+            }
+        }
 
         CDiagContext::SetRequestContext(context);
         CDiagContext_Extra  extra = GetDiagContext().PrintRequestStart();

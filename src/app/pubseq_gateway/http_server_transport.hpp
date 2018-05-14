@@ -41,6 +41,8 @@
 #include <uv.h>
 #include <h2o.h>
 
+#include <connect/ncbi_ipv6.h>
+
 #include "pubseq_gateway_exception.hpp"
 #include "tcp_daemon.hpp"
 
@@ -834,6 +836,8 @@ public:
     CDiagContext_Extra &  PrintParams(CDiagContext_Extra &  extra);
 
     string GetPath(void);
+    string GetHeaderValue(const string &  name);
+    TNCBI_IPv6Addr GetClientIP(void);
 
 private:
     h2o_req_t *                 m_Req;
