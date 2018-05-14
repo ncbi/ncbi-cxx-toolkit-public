@@ -1,6 +1,7 @@
-#
-# Basic checks
-#
+#############################################################################
+# $Id$
+#############################################################################
+# Basic check: headers, functions and types
 
 include(CheckIncludeFile)
 check_include_file(alloca.h HAVE_ALLOCA_H)
@@ -54,6 +55,9 @@ check_include_file(sys/vfs.h HAVE_SYS_VFS_H)
 check_include_file(sys/wait.h HAVE_SYS_WAIT_H)
 check_include_file(unistd.h HAVE_UNISTD_H)
 check_include_file(wchar.h HAVE_WCHAR_H)
+if (HAVE_WCHAR_H)
+    set(HAVE_WSTRING 1)
+endif (HAVE_WCHAR_H)
 check_include_file(windows.h HAVE_WINDOWS_H)
 check_include_file(sys/epoll.h HAVE_SYS_EPOLL_H)
 
@@ -145,14 +149,6 @@ if (${HAVE_CXXABI_H})
     check_cxx_symbol_exists(abi::__cxa_demangle cxxabi.h HAVE_CXA_DEMANGLE)
 endif ()
 
-include(CheckLibraryExists)
-check_library_exists(dl dlopen "" HAVE_LIBDL)
-
-check_library_exists(jpeg jpeg_start_decompress "" HAVE_LIBJPEG)
-check_library_exists(gif EGifCloseFile "" HAVE_LIBJPEG)
-check_library_exists(tiff TIFFClientOpen "" HAVE_LIBJPEG)
-check_library_exists(png png_create_read_struct "" HAVE_LIBPNG)
-
 include(CheckSymbolExists)
 check_symbol_exists(FIONBIO "sys/ioctl.h" BSD_COMP)
 
@@ -183,33 +179,4 @@ set(CMAKE_EXTRA_INCLUDE_FILES_BACKUP CMAKE_EXTRA_INCLUDE_FILES)
 set(CMAKE_EXTRA_INCLUDE_FILES sys/sem.h)
 check_type_size(semun_t SEMUN)
 set(CMAKE_EXTRA_INCLUDE_FILES ${CMAKE_EXTRA_INCLUDE_FILES_BACKUP})
-
-option(USE_LOCAL_BZLIB "Use a local copy of libbz2")
-option(USE_LOCAL_PCRE "Use a local copy of libpcre")
-
-if (HAVE_WCHAR_H)
-    set(HAVE_WSTRING 1)
-endif (HAVE_WCHAR_H)
-
-#
-# Threading libraries
-find_package(Threads REQUIRED)
-## message("CMAKE_THREAD_LIBS_INIT: ${CMAKE_THREAD_LIBS_INIT}")
-## message("CMAKE_USE_SPROC_INIT: ${CMAKE_USE_SPROC_INIT}")
-## message("CMAKE_USE_WIN32_THREADS_INIT: ${CMAKE_USE_WIN32_THREADS_INIT}")
-## message("CMAKE_USE_PTHREADS_INIT: ${CMAKE_USE_PTHREADS_INIT}")
-## message("CMAKE_HP_PTHREADS_INIT: ${CMAKE_HP_PTHREADS_INIT}")
-if (CMAKE_USE_PTHREADS_INIT)
-    add_definitions(-D_MT -D_REENTRANT -D_THREAD_SAFE)
-    set(NCBI_POSIX_THREADS 1)
-endif (CMAKE_USE_PTHREADS_INIT)
-
-
-if(HAVE_LIBDL)
-    set(DL_LIBS -ldl)
-else(HAVE_LIBDL)
-    if (UNIX)
-        message(FATAL_ERROR "dl library not found")
-    endif(UNIX)
-endif(HAVE_LIBDL)
 
