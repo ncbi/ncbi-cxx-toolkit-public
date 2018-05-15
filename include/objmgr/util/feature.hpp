@@ -574,6 +574,16 @@ NCBI_XOBJUTIL_EXPORT bool AdjustProteinMolInfoToMatchCDS(CMolInfo& molinfo, cons
 /// @return           Boolean to indicate whether the Seq-entry-handle was changed
 NCBI_XOBJUTIL_EXPORT bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh);
 
+/// AdjustForCDSPartials
+/// A function to make all of the necessary related changes to
+/// a Seq-entry after the partialness of a coding region has been
+/// changed.
+/// @param cds        The feature for which adjustments are to be made
+/// @param scope      The scope in which to find the protein sequence
+///
+/// @return           Boolean to indicate whether the Seq-entry-handle was changed
+NCBI_XOBJUTIL_EXPORT bool AdjustForCDSPartials(const CSeq_feat& cds, CScope& scope);
+
 /// RetranslateCDS
 /// A function to replace the protein Bioseq pointed to by cds.product
 /// with the current translation of the coding region cds.

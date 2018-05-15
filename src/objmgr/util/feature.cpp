@@ -3914,16 +3914,16 @@ bool AdjustProteinMolInfoToMatchCDS(CMolInfo& molinfo, const CSeq_feat& cds)
 // A function to make all of the necessary related changes to
 // a Seq-entry after the partialness of a coding region has been
 // changed.
-bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh)
+bool AdjustForCDSPartials(const CSeq_feat& cds, CScope& scope)
 {
     bool any_change = false;
 
-    if (!cds.IsSetProduct() || !seh) {
+    if (!cds.IsSetProduct()) {
         return any_change;
     }
 
     // find Bioseq for product
-    CBioseq_Handle product = seh.GetScope().GetBioseqHandle(cds.GetProduct());
+    CBioseq_Handle product = scope.GetBioseqHandle(cds.GetProduct());
     if (!product) {
         return any_change;
     }
@@ -3961,6 +3961,15 @@ bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh)
     }
 
     return any_change;
+}
+
+
+// A function to make all of the necessary related changes to
+// a Seq-entry after the partialness of a coding region has been
+// changed.
+bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh)
+{
+    return AdjustForCDSPartials(cds, seh.GetScope());
 }
 
 

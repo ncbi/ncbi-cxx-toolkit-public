@@ -271,11 +271,8 @@ bool CLocationEditPolicy::Is3AtEndOfSeq(const CSeq_loc& loc, CScope& scope, bool
     bool rval = false;
     confident = true;
     CSeq_loc_CI last_l(loc);
-    CSeq_loc_CI l = last_l;
-    while (l) {
-        last_l = l;
-        ++l;
-    }
+    size_t num_intervals = last_l.GetSize();
+    last_l.SetPos(num_intervals - 1);
     if (!last_l.IsSetStrand() || last_l.GetStrand() != eNa_strand_minus) {
         // positive strand
         try {
@@ -518,11 +515,8 @@ CRef<CSeq_loc> SeqLocExtend5(const CSeq_loc& loc, size_t pos, CScope* scope)
 CRef<CSeq_loc> SeqLocExtend3(const CSeq_loc& loc, size_t pos, CScope* scope)
 {
     CSeq_loc_CI last_l(loc);
-    CSeq_loc_CI l = last_l;
-    while (l) {
-        last_l = l;
-        ++l;
-    }
+    size_t num_intervals = last_l.GetSize();
+    last_l.SetPos(num_intervals - 1);
     CConstRef<CSeq_loc> last_loc = last_l.GetRangeAsSeq_loc();
 
     size_t loc_stop = last_loc->GetStop(eExtreme_Biological);
@@ -802,11 +796,8 @@ bool CLocationEditPolicy::Extend3(CSeq_feat& feat, CScope& scope)
     bool confident = false;
     if (!Is3AtEndOfSeq(feat.GetLocation(), scope, confident) && confident) {
         CSeq_loc_CI last_l(feat.GetLocation());
-        CSeq_loc_CI l = last_l;
-        while (l) {
-            last_l = l;
-            ++l;
-        }
+        size_t num_intervals = last_l.GetSize();
+        last_l.SetPos(num_intervals - 1);
 
         ENa_strand strand = last_l.GetStrand();
         if (strand == eNa_strand_minus) {                
@@ -879,7 +870,7 @@ bool ApplyPolicyToFeature(const CLocationEditPolicy& policy, const CSeq_feat& or
         if (new_feat->IsSetProduct() && new_feat->GetData().IsCdregion()) {
             if (!retranslate_cds || !RetranslateCDS(*new_feat, scope)) {
                 CSeq_loc_CI l(new_feat->GetLocation());
-                AdjustForCDSPartials(*new_feat, scope.GetBioseqHandle(l.GetSeq_id()).GetSeq_entry_Handle());
+                feature::AdjustForCDSPartials(*new_feat, scope);
             }
         }
     }
