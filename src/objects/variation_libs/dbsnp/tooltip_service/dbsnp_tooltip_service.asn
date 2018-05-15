@@ -1,0 +1,51 @@
+NCBI-dbsnp-tooltips DEFINITIONS ::=
+BEGIN
+
+EXPORTS DbsnpTooltipServiceReply;
+
+-- Payload of the tooltip service.
+TooltipData ::= SEQUENCE OF TooltipSection
+
+TooltipSectionValue ::= SEQUENCE {
+
+    -- Short description of the value.
+    key VisibleString,
+
+    -- The value as text.
+    value VisibleString,
+
+    -- Optional URL that points to additional information
+    -- about the value.
+    url VisibleString OPTIONAL
+}
+
+TooltipSection ::= SEQUENCE {
+
+    -- Section name.
+    section VisibleString OPTIONAL,
+
+    -- Id of RefSnp in string format. For example "rs268".
+    values SEQUENCE OF TooltipSectionValue
+}
+
+-- In case of an error, the service will return this object.
+Error ::= SEQUENCE {
+
+    -- Error description.
+    message VisibleString,
+
+    -- For client convenience, HTTP status code is duplicated here.
+    http-status-code INTEGER
+}
+
+-- Service reply format definition.
+DbsnpTooltipServiceReply ::= CHOICE {
+
+    -- On success, tooltip fields will be placed here.
+    tooltip-data TooltipData,
+
+    -- On failure, error details will be placed here.
+    error Error
+}
+
+END

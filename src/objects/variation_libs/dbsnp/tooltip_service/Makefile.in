@@ -1,0 +1,6 @@
+#################################
+
+ASN_PROJ = dbsnp_tooltip_service
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
