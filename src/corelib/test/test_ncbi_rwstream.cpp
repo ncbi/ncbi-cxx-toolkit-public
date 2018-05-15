@@ -321,6 +321,7 @@ int main(int argc, char* argv[])
                      << " [ " << (size_t) x_inavail << " ]");
         }
         is.read(buf, x_in);
+        _ASSERT(!is.bad());
         if (!(x_in = (size_t) is.gcount()))
             break;
         n_in += x_in;

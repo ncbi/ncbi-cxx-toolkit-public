@@ -51,14 +51,18 @@
 BEGIN_NCBI_SCOPE
 
 
-/// Result codes for I/O operations
-/// @sa IReader, IWriter, IReaderWriter
+/// Result codes for I/O operations.
+/// @note
+///     Exceptions (if any) thrown by IReader/IWriter interfaces should be
+///     treated as unrecoverable errors (eRW_Error).
+/// @sa
+///   IReader, IWriter, IReaderWriter
 enum ERW_Result {
-    eRW_NotImplemented = -1,
-    eRW_Success = 0,
-    eRW_Timeout,
-    eRW_Error,
-    eRW_Eof
+    eRW_NotImplemented = -1,  ///< Action / information is not available
+    eRW_Success = 0,          ///< Everything is okay, I/O completed
+    eRW_Timeout,              ///< Timeout expired, try again later
+    eRW_Error,                ///< Unrecoverable error, no retry possible
+    eRW_Eof                   ///< End of data, should be considered permanent
 };
 
 NCBI_XNCBI_EXPORT const char* g_RW_ResultToString(ERW_Result res);
@@ -75,7 +79,7 @@ public:
     /// none) via the pointer "bytes_read", if provided non-NULL.
     /// Return non-eRW_Success code if EOF / error condition has been
     /// encountered during the operation (some data may have been read,
-    /// nevertheless).
+    /// nevertheless, and reflected in "*bytes_read").
     /// Special case:  if "count" is passed as 0, then the value of "buf" must
     /// be ignored, and no change should be made to the state of the input
     /// device (but may return non-eRW_Success to indicate that the input
@@ -84,16 +88,16 @@ public:
     ///     Apparently, may not return eRW_Success if hasn't been able to read
     ///     "count" bytes as requested, and "bytes_read" was provided as NULL.
     /// @note
-    ///     When returning "*bytes_read" as zero (with non-zero "count"
-    ///     requested), the return status should not indicate eRW_Success.
+    ///     When returning "*bytes_read" as zero for a non-zero "count"
+    ///     requested, the return status should not indicate eRW_Success.
     /// @warning
     ///     "*bytes_read" may never be returned greater than "count".
     /// @attention
-    ///     It is implementation-specific whether the call blocks until the
+    ///     It is implementation-dependent whether the call blocks until the
     ///     entire buffer is read or the call returns when at least some data
     ///     are available.  In general, it is advised that this call is made
     ///     within a loop that checks for EOF condition and proceeds with the
-    ///     reading until the requested amount of data has been retrieved.
+    ///     reading until the required amount of data has been retrieved.
     virtual ERW_Result Read(void*   buf,
                             size_t  count,
                             size_t* bytes_read = 0) = 0;
@@ -141,20 +145,20 @@ public:
     /// ignored in this case), via the "bytes_written" pointer, if provided
     /// non-NULL.  Note that the method can return non-eRW_Success in case of
     /// an I/O error along with indicating (some) data delivered to the output
-    /// device.
+    /// device (and reflected in "*bytes_written").
     /// @note
     ///     Apparently, may not return eRW_Success if hasn't been able to write
     ///     "count" bytes as requested, and "bytes_written" was passed as NULL.
     /// @note
-    ///     When returning "*bytes_written" as zero (with non-zero "count"
-    ///     requested), the return status should not indicate eRW_Success.
+    ///     When returning "*bytes_written" as zero for a non-zero "count"
+    ///     requested, the return status should not indicate eRW_Success.
     /// @warning
     ///     "*bytes_written" may never be returned greater than "count".
     /// @attention
-    ///     It is implementation-specific whether the call blocks until the
+    ///     It is implementation-dependent whether the call blocks until the
     ///     entire buffer or only some data has been written out.  In general,
     ///     it is advised that this call is made within a loop that checks for
-    ///     errors and proceeds with the writing until the requested amount of
+    ///     errors and proceeds with the writing until the required amount of
     ///     data has been sent.
     virtual ERW_Result Write(const void* buf,
                              size_t      count,

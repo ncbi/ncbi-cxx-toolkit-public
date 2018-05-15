@@ -90,6 +90,13 @@ BEGIN_NCBI_SCOPE
 ///     it must not return eRW_Success.  In order for applications to be able
 ///     to use istream::readsome() (or CStreamUtils::Readsome()) on CRstream,
 ///     the underlying IReader must fully implement the PendingCount() method.
+/// @warning
+///     Underlying IReader's methods return code eRW_Error gets converted to an
+///     exception thrown.  That would make the stream to catch it, and set the
+///     ios_base::badbit (ios_base::bad() returns true), and perhaps re-throw
+///     the exception (if so allowed by the stream).  Note that accessing
+///     streambuf's methods directly won't shield from the thrown exceptions,
+///     so they will always be delivered to user's code.
 ///
 /// @param buf_size
 ///     specifies the number of bytes for internal I/O buffer, entirely used
@@ -132,6 +139,13 @@ private:
 ///     Underlying IWriter is expected to block in Write() if unable to output
 ///     at least one byte to the output device.  If unable to output anything,
 ///     it must not return eRW_Success.
+/// @warning
+///     Underlying IWriter's methods return code eRW_Error gets converted to an
+///     exception thrown.  That would make the stream to catch it, and set the
+///     ios_base::badbit (ios_base::bad() returns true), and perhaps re-throw
+///     the exception (if so allowed by the stream).  Note that accessing
+///     streambuf's methods directly won't shield from the thrown exceptions,
+///     so they will always be delivered to user's code.
 ///
 /// @param buf_size
 ///     specifies the number of bytes for internal I/O buffer, entirely used
