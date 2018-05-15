@@ -403,6 +403,7 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
     } while (m_Status == eIO_Success);
 
     _ASSERT(n  &&  m_Status != eIO_Success);
+
     if (pbase()) {
         x_written = (size_t)(epptr() - pptr());
         if (x_written) {
@@ -413,6 +414,7 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
             pbump(int(x_written));
         }
     }
+
     return (streamsize) n_written;
 }
 
