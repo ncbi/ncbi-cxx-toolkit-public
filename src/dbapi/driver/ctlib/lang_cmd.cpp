@@ -509,6 +509,39 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
                          );
         break;
     }
+    case eDB_BigDateTime: {
+        CDB_BigDateTime& par = dynamic_cast<CDB_BigDateTime&> (param);
+        const CTime&     t   = par.GetCTime();
+        CS_DATETIME      dt  = { 0, 0 };
+        param_fmt.datatype = CS_DATETIME_TYPE;
+        if ( !param.IsNULL() ) {
+            TDBTimeI dbt = t.GetTimeDBI();
+            if (CTime().SetTimeDBI(dbt) == t) {
+                dt.dtdays = dbt.days;
+                dt.dttime = dbt.time;
+            } else {
+                param_fmt.datatype = CS_CHAR_TYPE;
+            }
+        }
+        if (declare_only) {
+            break;
+        }
+
+        if (param_fmt.datatype == CS_CHAR_TYPE) {
+            CTime lt = t.GetLocalTime();
+            lt.SetNanoSecond(lt.NanoSecond() / 100 * 100);
+            string s = lt.AsString(CDB_BigDateTime::GetTimeFormat
+                                   (GetConnection().GetDateTimeSyntax(),
+                                    par.GetSQLType()));
+            ret_code = Check(ct_param(x_GetSybaseCmd(), &param_fmt,
+                                      (CS_VOID*) s.data(), (CS_INT) s.size(),
+                                      indicator));
+        } else {
+            ret_code = Check(ct_param(x_GetSybaseCmd(), &param_fmt,
+                                      (CS_VOID*) &dt, CS_UNUSED, indicator));
+        }
+        break;
+    }
 	case eDB_Text:
 	case eDB_Image:
     case eDB_VarCharMax:

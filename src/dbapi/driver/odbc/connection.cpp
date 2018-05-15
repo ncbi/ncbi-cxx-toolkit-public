@@ -1046,6 +1046,11 @@ CStatementBase::Type2String(const CDB_Object& param) const
     case eDB_DateTime:
         type_str = "datetime";
         break;
+    case eDB_BigDateTime:
+        type_str = ((CDB_BigDateTime&)param)
+            .GetSQLTypeName(CDB_BigDateTime::eSyntax_Microsoft
+                            /* GetConnection().GetDateTimeSyntax() */);
+        break;
     case eDB_Text:
         if (IsMultibyteClientEncoding()) {
             type_str = "ntext";
@@ -1093,6 +1098,13 @@ CStatementBase::x_BindParam_ODBC(const CDB_Object& param,
         break;
     }
 
+    SQLSMALLINT scale;
+    switch (data_type) {
+    case eDB_DateTime:     scale = 3;  break;
+    case eDB_BigDateTime:  scale = 7;  break;
+    default:               scale = 0;  break;
+    }
+
     indicator_base[pos] = x_GetIndicator(param);
 
     rc = SQLBindParameter(GetHandle(),
@@ -1101,7 +1113,7 @@ CStatementBase::x_BindParam_ODBC(const CDB_Object& param,
                           x_GetCType(param),
                           x_GetSQLType(param),
                           x_GetMaxDataSize(param),
-                          (data_type == eDB_DateTime ? 3 : 0),
+                          scale,
                           x_GetData(param, bind_guard),
                           x_GetCurDataSize(param),
                           indicator_base + pos);
@@ -1162,6 +1174,7 @@ CStatementBase::x_GetCType(const CDB_Object& param) const
         break;
     case eDB_SmallDateTime:
     case eDB_DateTime:
+    case eDB_BigDateTime:
         type = SQL_C_TYPE_TIMESTAMP;
         break;
     default:
@@ -1238,6 +1251,7 @@ CStatementBase::x_GetSQLType(const CDB_Object& param) const
         break;
     case eDB_SmallDateTime:
     case eDB_DateTime:
+    case eDB_BigDateTime:
         type = SQL_TYPE_TIMESTAMP;
         break;
     default:
@@ -1310,6 +1324,9 @@ CStatementBase::x_GetMaxDataSize(const CDB_Object& param) const
     case eDB_DateTime:
         size = 23;
         break;
+    case eDB_BigDateTime:
+        size = 27;
+        break;
     case eDB_VarCharMax:
 #if 0
         if (IsMultibyteClientEncoding()) {
@@ -1368,6 +1385,7 @@ CStatementBase::x_GetCurDataSize(const CDB_Object& param) const
         break;
     case eDB_SmallDateTime:
     case eDB_DateTime:
+    case eDB_BigDateTime:
         size = sizeof(SQL_TIMESTAMP_STRUCT);
         break;
     case eDB_VarCharMax:
@@ -1406,6 +1424,7 @@ CStatementBase::x_GetIndicator(const CDB_Object& param) const
         return dynamic_cast<const CDB_LongBinary&>(param).DataSize();
     case eDB_SmallDateTime:
     case eDB_DateTime:
+    case eDB_BigDateTime:
         return sizeof(SQL_TIMESTAMP_STRUCT);
         break;
     case eDB_VarCharMax:
@@ -1499,6 +1518,25 @@ CStatementBase::x_GetData(const CDB_Object& param,
             ts->second = t.Second();
             ts->fraction = t.NanoSecond()/1000000;
             ts->fraction *= 1000000; /* MSSQL has a bug - it cannot handle fraction of msecs */
+
+            data = ts;
+        }
+        break;
+    case eDB_BigDateTime:
+        if( !param.IsNULL() ) {
+            SQL_TIMESTAMP_STRUCT* ts = NULL;
+
+            ts = (SQL_TIMESTAMP_STRUCT*)bind_guard.Alloc
+                (sizeof(SQL_TIMESTAMP_STRUCT));
+            const CTime& t = ((const CDB_BigDateTime&)param).GetCTime();
+            ts->year = t.Year();
+            ts->month = t.Month();
+            ts->day = t.Day();
+            ts->hour = t.Hour();
+            ts->minute = t.Minute();
+
+            ts->second = t.Second();
+            ts->fraction = t.NanoSecond() / 100 * 100;
 
             data = ts;
         }

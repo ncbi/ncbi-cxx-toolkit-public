@@ -952,6 +952,17 @@ bool CTL_CursorCmdExpl::x_AssignParams()
             (int)(val.Value().NanoSecond()/1000000));
                 break;
             }
+            case eDB_BigDateTime: {
+                CDB_BigDateTime& val =
+                    dynamic_cast<CDB_BigDateTime&> (param);
+                CTime lt = val.GetCTime().GetLocalTime();
+                lt.SetNanoSecond(lt.NanoSecond() / 100 * 100);
+                string t = lt.AsString(CDB_BigDateTime::GetTimeFormat
+                                       (GetConnection().GetDateTimeSyntax(),
+                                        val.GetSQLType()));
+                sprintf(val_buffer, "'%s'", t.c_str());
+                break;
+            }
             default:
                 return false;
             }

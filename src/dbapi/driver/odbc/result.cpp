@@ -87,7 +87,13 @@ static EDB_Type s_GetDataType(SQLSMALLINT t, SQLSMALLINT dec_digits,
     case SQL_TINYINT:      return eDB_TinyInt;
     case SQL_VARBINARY:    return (prec < 256)? eDB_VarBinary : eDB_LongBinary;
     case SQL_TYPE_TIMESTAMP:
-        return (prec > 16 || dec_digits > 0)? eDB_DateTime : eDB_SmallDateTime;
+        if (prec <= 16  &&  dec_digits <= 0) {
+            return eDB_SmallDateTime;
+        } else if (prec <= 23  &&  dec_digits <= 3) {
+            return eDB_DateTime;
+        } else {
+            return eDB_BigDateTime;
+        }
     default:               return eDB_UnsupportedType;
     }
 }
@@ -537,7 +543,10 @@ CDB_Object* CODBC_RowResult::x_LoadItem(I_Result::EGetItem policy, CDB_Object* i
     case SQL_TYPE_TIMESTAMP: {
         SQL_TIMESTAMP_STRUCT v;
         switch ( item_buf->GetType() ) {
-        case eDB_SmallDateTime: {
+        case eDB_SmallDateTime:
+        case eDB_DateTime:
+        case eDB_BigDateTime:
+        {
             outlen = xGetData(SQL_C_TYPE_TIMESTAMP, &v, sizeof(SQL_TIMESTAMP_STRUCT));
             if (outlen <= 0) item_buf->AssignNULL();
             else {
@@ -545,19 +554,18 @@ CDB_Object* CODBC_RowResult::x_LoadItem(I_Result::EGetItem policy, CDB_Object* i
                         (int)v.hour, (int)v.minute, (int)v.second,
                         (long)v.fraction);
 
-                *((CDB_SmallDateTime*) item_buf)= t;
-            }
-            break;
-        }
-        case eDB_DateTime: {
-            outlen = xGetData(SQL_C_TYPE_TIMESTAMP, &v, sizeof(SQL_TIMESTAMP_STRUCT));
-            if (outlen <= 0) item_buf->AssignNULL();
-            else {
-                CTime t((int)v.year, (int)v.month, (int)v.day,
-                        (int)v.hour, (int)v.minute, (int)v.second,
-                        (long)v.fraction);
-
-                *((CDB_DateTime*) item_buf)= t;
+                switch (item_buf->GetType()) {
+                case eDB_SmallDateTime:
+                    *((CDB_SmallDateTime*) item_buf) = t;
+                    break;
+                case eDB_DateTime:
+                    *((CDB_DateTime*) item_buf) = t;
+                    break;
+                case eDB_BigDateTime:
+                    // TODO - try to distinguish specific types?
+                    *((CDB_BigDateTime*) item_buf) = t;
+                    break;
+                }
             }
             break;
         }
@@ -859,18 +867,20 @@ CDB_Object* CODBC_RowResult::x_MakeItem()
     case SQL_TYPE_TIMESTAMP: {
         SQL_TIMESTAMP_STRUCT v;
         outlen = xGetData(SQL_C_TYPE_TIMESTAMP, &v, sizeof(SQL_TIMESTAMP_STRUCT));
+        EDB_Type type = s_GetDataType(SQL_TYPE_TIMESTAMP,
+                                      m_ColFmt[m_CurrItem].DecimalDigits,
+                                      m_ColFmt[m_CurrItem].ColumnSize);
         if (outlen <= 0) {
-            return (m_ColFmt[m_CurrItem].ColumnSize > 16 ||
-                m_ColFmt[m_CurrItem].DecimalDigits > 0)? (CDB_Object*)(new CDB_DateTime()) :
-                (CDB_Object*)(new CDB_SmallDateTime());
-        }
-        else {
+            return CDB_Object::Create(type);
+        } else {
             CTime t((int)v.year, (int)v.month, (int)v.day,
                     (int)v.hour, (int)v.minute, (int)v.second,
                     (long)v.fraction);
-            return (m_ColFmt[m_CurrItem].ColumnSize > 16 ||
-                m_ColFmt[m_CurrItem].DecimalDigits > 0)? (CDB_Object*)(new CDB_DateTime(t)) :
-                (CDB_Object*)(new CDB_SmallDateTime(t));
+            switch (type) {
+            case eDB_SmallDateTime: return new CDB_SmallDateTime(t);
+            case eDB_DateTime:      return new CDB_DateTime(t);
+            case eDB_BigDateTime:   return new CDB_BigDateTime(t);
+            }
         }
     }
 

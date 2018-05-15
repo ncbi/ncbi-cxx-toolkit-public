@@ -32,6 +32,8 @@
 
 #include "sdbapi_unit_test_pch.hpp"
 
+#include <dbapi/driver/types.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -156,6 +158,154 @@ BOOST_AUTO_TEST_CASE(Test_DateTime)
                     BOOST_CHECK( it != query.end() );
                     BOOST_CHECK( it[2].IsNull());
                     BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
+                }
+            }
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(Test_BigDateTime)
+{
+    string sql;
+    CQuery query = GetDatabase().NewQuery();
+    CTime t;
+    CTime dt_value;
+
+    CTempString sql_type, sql_proc;
+
+    if (GetArgs().GetServerType() == eSqlSrvMsSql) {
+        sql_type = "DATETIME2";
+        sql_proc = "SYSDATETIME";
+    } else {
+        sql_type = "BIGDATETIME";
+        sql_proc = "CURRENT_BIGDATETIME";
+    }
+
+    try {
+        if (true) {
+            // Initialization ...
+            {
+                sql =
+                    "CREATE TABLE #test_bigdatetime (\n"
+                    "   id INT,\n"
+                    "   dt_field " + sql_type + " NULL\n"
+                    ")";
+
+                query.SetSql( sql );
+                query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
+            }
+
+            {
+                // Initialization ...
+                {
+                    sql = "INSERT INTO #test_bigdatetime(id, dt_field) "
+                          "VALUES(1, " + sql_proc + "() )";
+
+                    query.SetSql( sql );
+                    query.Execute();
+                    query.RequireRowCount(0);
+                    BOOST_CHECK_NO_THROW(
+                        query.VerifyDone(CQuery::eAllResultSets));
+                }
+
+                // Retrieve data ...
+                {
+                    sql = "SELECT * FROM #test_bigdatetime";
+
+                    query.SetSql( sql );
+                    query.Execute();
+                    query.RequireRowCount(1);
+                    BOOST_CHECK( query.HasMoreResultSets() );
+                    CQuery::iterator it = query.begin();
+                    BOOST_CHECK( it != query.end() );
+                    BOOST_CHECK( !it[2].IsNull());
+                    dt_value = it[2].AsDateTime();
+                    BOOST_CHECK( !dt_value.IsEmpty() );
+                    BOOST_CHECK_NO_THROW(
+                        query.VerifyDone(CQuery::eAllResultSets));
+                }
+
+                // Insert data using parameters ...
+                {
+                    query.SetSql("DELETE FROM #test_bigdatetime");
+                    query.Execute();
+                    query.RequireRowCount(0);
+                    BOOST_CHECK_NO_THROW(
+                        query.VerifyDone(CQuery::eAllResultSets));
+
+                    query.SetParameter("@dt_val", dt_value, eSDB_BigDateTime);
+
+                    sql = "INSERT INTO #test_bigdatetime(id, dt_field) "
+                          "VALUES(1, @dt_val)";
+
+                    query.SetSql( sql );
+                    query.Execute();
+                    query.RequireRowCount(0);
+                    BOOST_CHECK_NO_THROW(
+                        query.VerifyDone(CQuery::eAllResultSets));
+                }
+
+                // Retrieve data again ...
+                {
+                    sql = "SELECT * FROM #test_bigdatetime";
+
+                    // ClearParamList is necessary here ...
+                    query.ClearParameters();
+                    query.SetSql( sql );
+                    query.Execute();
+                    query.RequireRowCount(1);
+                    BOOST_CHECK( query.HasMoreResultSets() );
+                    CQuery::iterator it = query.begin();
+                    BOOST_CHECK( it != query.end() );
+                    BOOST_CHECK( !it[2].IsNull());
+                    CTime dt_value2 = it[2].AsDateTime();
+                    BOOST_CHECK_EQUAL(dt_value.AsString(),
+                                      dt_value2.AsString());
+                    BOOST_CHECK_NO_THROW
+                        (query.VerifyDone(CQuery::eAllResultSets));
+                }
+
+                // Insert NULL data using parameters ...
+                {
+                    query.SetSql( "DELETE FROM #test_bigdatetime" );
+                    query.Execute();
+                    query.RequireRowCount(0);
+                    BOOST_CHECK_NO_THROW
+                        (query.VerifyDone(CQuery::eAllResultSets));
+
+                    query.SetNullParameter("@dt_val", eSDB_BigDateTime);
+
+                    sql = "INSERT INTO #test_bigdatetime(id, dt_field) "
+                          "VALUES(1, @dt_val)";
+
+                    query.SetSql( sql );
+                    query.Execute();
+                    query.RequireRowCount(0);
+                    BOOST_CHECK_NO_THROW
+                        (query.VerifyDone(CQuery::eAllResultSets));
+                }
+
+
+                // Retrieve data again ...
+                {
+                    sql = "SELECT * FROM #test_bigdatetime";
+
+                    // ClearParamList is necessary here ...
+                    query.ClearParameters();
+                    query.SetSql( sql );
+                    query.Execute();
+                    query.RequireRowCount(1);
+                    BOOST_CHECK( query.HasMoreResultSets() );
+                    CQuery::iterator it = query.begin();
+                    BOOST_CHECK( it != query.end() );
+                    BOOST_CHECK( it[2].IsNull());
+                    BOOST_CHECK_NO_THROW
+                        (query.VerifyDone(CQuery::eAllResultSets));
                 }
             }
         }

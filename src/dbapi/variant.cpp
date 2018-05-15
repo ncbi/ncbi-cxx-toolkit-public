@@ -168,6 +168,22 @@ CVariant CVariant::DateTime(CTime *p)
     return CVariant(p ? new CDB_DateTime(*p) : new CDB_DateTime());
 }
 
+CVariant CVariant::BigDateTime(CTime *p, EDateTimeFormat fmt)
+{
+    CDB_BigDateTime::ESQLType sql_type;
+    switch (fmt) {
+    case eLonger:         sql_type = CDB_BigDateTime::eDateTime;        break;
+    case eDateOnly:       sql_type = CDB_BigDateTime::eDate;            break;
+    case eTimeOnly:       sql_type = CDB_BigDateTime::eTime;            break;
+    case eDateTimeOffset: sql_type = CDB_BigDateTime::eDateTimeOffset;  break;
+    default:
+        NCBI_THROW(CVariantException, eVariant | Retriable(eRetriable_No),
+                   FORMAT("Unsupported BigDateTime format " << fmt));
+    }
+    return CVariant(p ? new CDB_BigDateTime(*p, sql_type)
+                    : new CDB_BigDateTime(CTime::eEmpty, sql_type));
+}
+
 CVariant CVariant::Numeric(unsigned int precision,
                            unsigned int scale,
                            const char* p)
@@ -240,6 +256,9 @@ CVariant::CVariant(EDB_Type type, size_t size)
         return;
     case eDB_DateTime:
         m_data = new CDB_DateTime();
+        return;
+    case eDB_BigDateTime:
+        m_data = new CDB_BigDateTime();
         return;
     case eDB_SmallDateTime:
         m_data = new CDB_SmallDateTime();
@@ -328,6 +347,18 @@ CVariant::CVariant(const CTime& v, EDateTimeFormat fmt)
         break;
     case eLong:
         m_data = new CDB_DateTime(v);
+        break;
+    case eLonger:
+        m_data = new CDB_BigDateTime(v);
+        break;
+    case eDateOnly:
+        m_data = new CDB_BigDateTime(v, CDB_BigDateTime::eDate);
+        break;
+    case eTimeOnly:
+        m_data = new CDB_BigDateTime(v, CDB_BigDateTime::eTime);
+        break;
+    case eDateTimeOffset:
+        m_data = new CDB_BigDateTime(v, CDB_BigDateTime::eDateTimeOffset);
         break;
     default:
         NCBI_THROW(CVariantException, eVariant | Retriable(eRetriable_No),
@@ -446,6 +477,7 @@ string CVariant::GetString(void) const
                 s = ((CDB_Numeric*)GetData())->Value();
                 break;
             case eDB_DateTime:
+            case eDB_BigDateTime:
             case eDB_SmallDateTime:
                 s = GetCTime().AsString();
                 break;
@@ -607,6 +639,9 @@ const CTime& CVariant::GetCTime() const
     switch(GetType()) {
     case eDB_DateTime:
         ptr = const_cast<CTime*>(&((CDB_DateTime*)GetData())->Value());
+        break;
+    case eDB_BigDateTime:
+        ptr = const_cast<CTime*>(&((CDB_BigDateTime*)GetData())->GetCTime());
         break;
     case eDB_SmallDateTime:
         ptr = const_cast<CTime*>(&((CDB_SmallDateTime*)GetData())->Value());
@@ -829,6 +864,9 @@ CVariant& CVariant::operator=(const CTime& v)
     case eDB_DateTime:
         *((CDB_DateTime*)GetData()) = v;
         break;
+    case eDB_BigDateTime:
+        *((CDB_BigDateTime*)GetData()) = v;
+        break;
     case eDB_SmallDateTime:
         *((CDB_SmallDateTime*)GetData()) = v;
         break;
@@ -884,6 +922,7 @@ bool operator<(const CVariant& v1, const CVariant& v2)
             less = v1.GetDouble() < v2.GetDouble();
             break;
         case eDB_DateTime:
+        case eDB_BigDateTime:
         case eDB_SmallDateTime:
             less = v1.GetCTime() < v2.GetCTime();
             break;
@@ -941,6 +980,7 @@ bool operator==(const CVariant& v1, const CVariant& v2)
             less = v1.GetDouble() == v2.GetDouble();
             break;
         case eDB_DateTime:
+        case eDB_BigDateTime:
         case eDB_SmallDateTime:
             less = v1.GetCTime() == v2.GetCTime();
             break;

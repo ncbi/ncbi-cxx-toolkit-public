@@ -285,7 +285,7 @@ void _csclient_msg(CS_CONTEXT * ctx, const char *funcname, int layer,
 CS_RETCODE _cs_convert_ex(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt,
                           CS_VOID * srcdata, CS_DATAFMT * destfmt,
                           CS_VOID * destdata, CS_INT * resultlen,
-                          CS_VOID ** handle);
+                          TDS_SERVER_TYPE desttype, CS_VOID ** handle);
 
 #ifdef __cplusplus
 #if 0

@@ -56,6 +56,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object)
             CDB_Double value_Double;
             CDB_SmallDateTime value_SmallDateTime;
             CDB_DateTime value_DateTime;
+            CDB_BigDateTime value_BigDateTime;
             CDB_Numeric value_Numeric;
 
             BOOST_CHECK(value_Bit.IsNULL());
@@ -73,6 +74,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object)
             BOOST_CHECK(value_Double.IsNULL());
             BOOST_CHECK(value_SmallDateTime.IsNULL());
             BOOST_CHECK(value_DateTime.IsNULL());
+            BOOST_CHECK(value_BigDateTime.IsNULL());
             BOOST_CHECK(value_Numeric.IsNULL());
 
             // Value() ...
@@ -91,6 +93,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object)
             BOOST_CHECK_EQUAL(value_Double.Value(), 0.0);
             BOOST_CHECK_EQUAL(value_SmallDateTime.Value(), CTime());
             BOOST_CHECK_EQUAL(value_DateTime.Value(), CTime());
+            BOOST_CHECK_EQUAL(value_BigDateTime.GetCTime(), CTime());
             BOOST_CHECK_EQUAL(value_Numeric.Value(), string("0"));
         }
 
@@ -120,6 +123,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object)
             CDB_Double value_Double(1.0);
             CDB_SmallDateTime value_SmallDateTime(CTime("04/24/2007 11:17:01"));
             CDB_DateTime value_DateTime(CTime("04/24/2007 11:17:01"));
+            CDB_BigDateTime value_BigDateTime(CTime("04/24/2007 11:17:01"));
             CDB_Numeric value_Numeric(10, 2, "10");
 
             BOOST_CHECK(!value_Bit.IsNULL());
@@ -149,6 +153,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object)
             BOOST_CHECK(!value_Double.IsNULL());
             BOOST_CHECK(!value_SmallDateTime.IsNULL());
             BOOST_CHECK(!value_DateTime.IsNULL());
+            BOOST_CHECK(!value_BigDateTime.IsNULL());
             BOOST_CHECK(!value_Numeric.IsNULL());
 
             // Value() ...
@@ -179,6 +184,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object)
             BOOST_CHECK(value_Double.Value() != 0);
             BOOST_CHECK(value_SmallDateTime.Value() != CTime());
             BOOST_CHECK(value_DateTime.Value() != CTime());
+            BOOST_CHECK(value_BigDateTime.GetCTime() != CTime());
             BOOST_CHECK(value_Numeric.Value() != string("0"));
 
 
@@ -198,6 +204,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object)
             BOOST_CHECK_EQUAL(value_Double.Value(), 1.0);
             BOOST_CHECK_EQUAL(value_SmallDateTime.Value(), CTime("04/24/2007 11:17:01"));
             BOOST_CHECK_EQUAL(value_DateTime.Value(), CTime("04/24/2007 11:17:01"));
+            BOOST_CHECK_EQUAL(value_BigDateTime.GetCTime(), CTime("04/24/2007 11:17:01"));
             // value_Numeric(10, 2, "10");
         }
 
@@ -218,6 +225,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object)
             CDB_Double value_Double;
             CDB_SmallDateTime value_SmallDateTime;
             CDB_DateTime value_DateTime;
+            CDB_BigDateTime value_BigDateTime;
             CDB_Numeric value_Numeric;
 
             value_Bit = true;
@@ -235,6 +243,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object)
             value_Double = 1.0;
             value_SmallDateTime = CTime("04/24/2007 11:17:01");
             value_DateTime = CTime("04/24/2007 11:17:01");
+            value_BigDateTime = CTime("04/24/2007 11:17:01");
             value_Numeric = "10";
 
             BOOST_CHECK(!value_Bit.IsNULL());
@@ -252,6 +261,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object)
             BOOST_CHECK(!value_Double.IsNULL());
             BOOST_CHECK(!value_SmallDateTime.IsNULL());
             BOOST_CHECK(!value_DateTime.IsNULL());
+            BOOST_CHECK(!value_BigDateTime.IsNULL());
             BOOST_CHECK(!value_Numeric.IsNULL());
 
             // A copy constructor ...
@@ -270,6 +280,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object)
             CDB_Double value_Double2(value_Double);
             CDB_SmallDateTime value_SmallDateTime2(value_SmallDateTime);
             CDB_DateTime value_DateTime2(value_DateTime);
+            CDB_BigDateTime value_BigDateTime2(value_BigDateTime);
             CDB_Numeric value_Numeric2(value_Numeric);
 
             BOOST_CHECK(!value_Bit2.IsNULL());
@@ -287,6 +298,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object)
             BOOST_CHECK(!value_Double2.IsNULL());
             BOOST_CHECK(!value_SmallDateTime2.IsNULL());
             BOOST_CHECK(!value_DateTime2.IsNULL());
+            BOOST_CHECK(!value_BigDateTime2.IsNULL());
             BOOST_CHECK(!value_Numeric2.IsNULL());
 
         }
@@ -1036,6 +1048,12 @@ BOOST_AUTO_TEST_CASE(Test_Variant)
                 BOOST_CHECK( value_variant.IsNull() );
             }
             {
+                CVariant value_variant( eDB_BigDateTime );
+
+                BOOST_CHECK_EQUAL( eDB_BigDateTime, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            {
                 CVariant value_variant( eDB_SmallDateTime );
 
                 BOOST_CHECK_EQUAL( eDB_SmallDateTime, value_variant.GetType() );
@@ -1328,6 +1346,11 @@ BOOST_AUTO_TEST_CASE(Test_Variant)
             const CVariant variant_DateTime = CVariant::DateTime( const_cast<CTime*>(&value_CTime) );
             BOOST_CHECK( !variant_DateTime.IsNull() );
             BOOST_CHECK( variant_DateTime.GetCTime() == value_CTime );
+
+            const CVariant variant_BigDateTime
+                = CVariant::BigDateTime( const_cast<CTime*>(&value_CTime) );
+            BOOST_CHECK( !variant_BigDateTime.IsNull() );
+            BOOST_CHECK( variant_BigDateTime.GetCTime() == value_CTime );
 
     //        CVariant variant_Numeric = CVariant::Numeric  (unsigned int precision, unsigned int scale, const char* p);
         }
@@ -2276,6 +2299,296 @@ BOOST_AUTO_TEST_CASE(Test_DateTime)
                 // Retrieve data ...
                 {
                     sql = "SELECT * FROM #test_datetime";
+
+                    auto_stmt->SendSql( sql );
+                    BOOST_CHECK( auto_stmt->HasMoreResults() );
+                    BOOST_CHECK( auto_stmt->HasRows() );
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                    BOOST_CHECK( rs.get() != NULL );
+                    BOOST_CHECK( rs->Next() );
+
+                    const CVariant& value2 = rs->GetVariant(2);
+
+                    BOOST_CHECK( value2.IsNull() );
+                }
+            }
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(Test_BigDateTime)
+{
+    string sql;
+    unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+    CVariant value(eDB_BigDateTime);
+    CTime t;
+    CVariant null_date(t, eLong);
+    CTime dt_value;
+    CTempString sql_type, sql_proc;
+
+    if (GetArgs().GetServerType() == CDBConnParams::eMSSqlServer) {
+        sql_type = "DATETIME2";
+        sql_proc = "SYSDATETIME";
+    } else {
+        sql_type = "BIGDATETIME";
+        sql_proc = "CURRENT_BIGDATETIME";
+    }
+    
+    try {
+        if (true) {
+            // Initialization ...
+            {
+                sql =
+                    "CREATE TABLE #test_bigdatetime (\n"
+                    "   id INT,\n"
+                    "   dt_field " + sql_type + " NULL\n"
+                    ")\n";
+
+                auto_stmt->ExecuteUpdate( sql );
+            }
+
+            {
+                // Initialization ...
+                {
+                    sql = "INSERT INTO #test_bigdatetime(id, dt_field) "
+                          "VALUES(1, " + sql_proc + "() )";
+
+                    auto_stmt->ExecuteUpdate( sql );
+                }
+
+                // Retrieve data ...
+                {
+                    sql = "SELECT * FROM #test_bigdatetime";
+
+                    auto_stmt->SendSql( sql );
+                    BOOST_CHECK( auto_stmt->HasMoreResults() );
+                    BOOST_CHECK( auto_stmt->HasRows() );
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                    BOOST_CHECK( rs.get() != NULL );
+                    BOOST_CHECK( rs->Next() );
+
+                    value = rs->GetVariant(2);
+
+                    BOOST_CHECK( !value.IsNull() );
+
+                    dt_value = value.GetCTime();
+                    BOOST_CHECK( !dt_value.IsEmpty() );
+                }
+
+                // Insert data using parameters ...
+                {
+                    auto_stmt->ExecuteUpdate("DELETE FROM #test_bigdatetime");
+
+                    auto_stmt->SetParam( value, "@dt_val" );
+
+                    sql = "INSERT INTO #test_bigdatetime(id, dt_field) "
+                          "VALUES(1, @dt_val)";
+
+                    auto_stmt->ExecuteUpdate( sql );
+                }
+
+                // Retrieve data again ...
+                {
+                    sql = "SELECT * FROM #test_bigdatetime";
+
+                    // ClearParamList is necessary here ...
+                    auto_stmt->ClearParamList();
+
+                    auto_stmt->SendSql( sql );
+                    BOOST_CHECK( auto_stmt->HasMoreResults() );
+                    BOOST_CHECK( auto_stmt->HasRows() );
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                    BOOST_CHECK( rs.get() != NULL );
+                    BOOST_CHECK( rs->Next() );
+
+                    const CVariant& value2 = rs->GetVariant(2);
+
+                    BOOST_CHECK( !value2.IsNull() );
+
+                    CTime dt_value3 = value.GetCTime();
+                    if (value2.GetType() == eDB_BigDateTime
+                        ||  value2.GetType() == eDB_DateTime) {
+                        const CTime& dt_value2 = value2.GetCTime();
+                        BOOST_CHECK( !dt_value2.IsEmpty() );
+                        BOOST_CHECK_EQUAL(dt_value2.AsString(),
+                                          dt_value3.AsString());
+
+                        // Tracing ...
+                        if (dt_value2.AsString() != dt_value3.AsString()) {
+                            cout << "dt_value2 nanoseconds = "
+                                 << dt_value2.NanoSecond()
+                                 << " dt_value3 nanoseconds = "
+                                 << dt_value3.NanoSecond() << endl;
+                        }
+                    } else {
+                        // Not Sybase, which normally falls back on DATETIME
+                        BOOST_CHECK_EQUAL(GetArgs().GetServerType(),
+                                          CDBConnParams::eMSSqlServer);
+                        string observed = value2.GetString();
+                        string expected = dt_value3.AsString(
+                            CDB_BigDateTime::GetTimeFormat
+                            (CDB_BigDateTime::eSyntax_Microsoft));
+                        SIZE_TYPE pos = observed.find_last_not_of('0');
+                        if (pos != NPOS) {
+                            observed.resize(pos + 1);
+                        }
+                        pos = expected.find_last_not_of('0');
+                        if (pos != NPOS) {
+                            expected.resize(pos + 1);
+                        }
+                        BOOST_CHECK_EQUAL(observed, expected);
+                    }
+                }
+
+                // Insert NULL data using parameters ...
+                {
+                    auto_stmt->ExecuteUpdate("DELETE FROM #test_bigdatetime");
+
+                    auto_stmt->SetParam( null_date, "@dt_val" );
+
+                    sql = "INSERT INTO #test_bigdatetime(id, dt_field) "
+                          "VALUES(1, @dt_val)";
+
+                    auto_stmt->ExecuteUpdate( sql );
+                }
+
+
+                // Retrieve data again ...
+                {
+                    sql = "SELECT * FROM #test_bigdatetime";
+
+                    // ClearParamList is necessary here ...
+                    auto_stmt->ClearParamList();
+
+                    auto_stmt->SendSql( sql );
+                    BOOST_CHECK( auto_stmt->HasMoreResults() );
+                    BOOST_CHECK( auto_stmt->HasRows() );
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                    BOOST_CHECK( rs.get() != NULL );
+                    BOOST_CHECK( rs->Next() );
+
+                    const CVariant& value2 = rs->GetVariant(2);
+
+                    BOOST_CHECK( value2.IsNull() );
+                }
+            }
+
+            // Insert data using stored procedure ...
+            if (false) {
+                value = CTime(CTime::eCurrent);
+
+                // Set a database ...
+                {
+                    auto_stmt->ExecuteUpdate("use DBAPI_Sample");
+                }
+                // Create a stored procedure ...
+                {
+                    bool already_exist = false;
+
+                    auto_stmt->SendSql("SELECT * FROM sysobjects WHERE"
+                                       // " xtype = 'P' AND"
+                                       " name = 'sp_test_bigdatetime'" );
+                    while ( auto_stmt->HasMoreResults() ) {
+                        if ( auto_stmt->HasRows() ) {
+                            unique_ptr<IResultSet> rs
+                                (auto_stmt->GetResultSet());
+                            while ( rs->Next() ) {
+                                already_exist = true;
+                            }
+                        }
+                    }
+
+                    if ( !already_exist ) {
+                        sql =
+                            "CREATE PROC sp_test_bigdatetime"
+                            " (@dt_val " + sql_type + ")\n"
+                            "AS\n"
+                            "INSERT INTO #test_bigdatetime(id, dt_field)"
+                            " VALUES(1, @dt_val)\n";
+
+                        auto_stmt->ExecuteUpdate( sql );
+                    }
+
+                }
+
+                // Insert data using parameters ...
+                {
+                    auto_stmt->ExecuteUpdate("DELETE FROM #test_bigdatetime");
+
+                    unique_ptr<ICallableStatement> call_auto_stmt(
+                        GetConnection().GetCallableStatement
+                        ("sp_test_bigdatetime")
+                        );
+
+                    call_auto_stmt->SetParam( value, "@dt_val" );
+                    call_auto_stmt->Execute();
+                    DumpResults(call_auto_stmt.get());
+
+                    auto_stmt->ExecuteUpdate
+                        ("SELECT * FROM #test_bigdatetime");
+                    int nRows = auto_stmt->GetRowCount();
+                    BOOST_CHECK_EQUAL(nRows, 1);
+                }
+
+                // Retrieve data ...
+                {
+                    sql = "SELECT * FROM #test_bigdatetime";
+
+                    auto_stmt->SendSql( sql );
+                    BOOST_CHECK( auto_stmt->HasMoreResults() );
+                    BOOST_CHECK( auto_stmt->HasRows() );
+                    unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                    BOOST_CHECK( rs.get() != NULL );
+                    BOOST_CHECK( rs->Next() );
+
+                    const CVariant& value2 = rs->GetVariant(2);
+
+                    BOOST_CHECK( !value2.IsNull() );
+
+                    const CTime& dt_value2 = value2.GetCTime();
+                    BOOST_CHECK( !dt_value2.IsEmpty() );
+                    CTime dt_value3 = value.GetCTime();
+                    BOOST_CHECK_EQUAL(dt_value2.AsString(),
+                                      dt_value3.AsString());
+
+                    // Tracing ...
+                    if (dt_value2.AsString() != dt_value3.AsString()) {
+                        cout << "dt_value2 nanoseconds = "
+                             << dt_value2.NanoSecond()
+                             << " dt_value3 nanoseconds = "
+                             << dt_value3.NanoSecond() << endl;
+                    }
+
+                    // Failed for some reason ...
+                    // BOOST_CHECK(dt_value2 == dt_value);
+                }
+
+                // Insert NULL data using parameters ...
+                {
+                    auto_stmt->ExecuteUpdate("DELETE FROM #test_bigdatetime");
+
+                    unique_ptr<ICallableStatement> call_auto_stmt(
+                        GetConnection().GetCallableStatement
+                        ("sp_test_bigdatetime")
+                        );
+
+                    call_auto_stmt->SetParam( null_date, "@dt_val" );
+                    call_auto_stmt->Execute();
+                    DumpResults(call_auto_stmt.get());
+                }
+
+                // Retrieve data ...
+                {
+                    sql = "SELECT * FROM #test_bigdatetime";
 
                     auto_stmt->SendSql( sql );
                     BOOST_CHECK( auto_stmt->HasMoreResults() );

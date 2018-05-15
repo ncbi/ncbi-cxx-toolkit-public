@@ -235,7 +235,8 @@ public:
     virtual string GetDriverName(void) const;
 
     CDBConnParams::EServerType GetServerType(void);
-
+    CDB_BigDateTime::ESyntax GetDateTimeSyntax(void);
+    
     //
     CDBConnParams::EServerType CalculateServerType(CDBConnParams::EServerType server_type);
 

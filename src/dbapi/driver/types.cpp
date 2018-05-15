@@ -32,7 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbitime.hpp>
 
-#include <dbapi/driver/exception.hpp>
+#include <dbapi/driver/interfaces.hpp>
 #include <dbapi/driver/dbapi_object_convert.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 #include "memory_store.hpp"
@@ -567,6 +567,7 @@ CDB_Object* CDB_Object::Create(EDB_Type type, size_t size)
     case eDB_Float           : return new CDB_Float         ();
     case eDB_Double          : return new CDB_Double        ();
     case eDB_DateTime        : return new CDB_DateTime      ();
+    case eDB_BigDateTime     : return new CDB_BigDateTime   ();
     case eDB_SmallDateTime   : return new CDB_SmallDateTime ();
     case eDB_Text            : return new CDB_Text          ();
     case eDB_Image           : return new CDB_Image         ();
@@ -596,6 +597,7 @@ const char* CDB_Object::GetTypeName(EDB_Type db_type, bool throw_on_unknown)
     case eDB_Float           : return "DB_Float";
     case eDB_Double          : return "DB_Double";
     case eDB_DateTime        : return "DB_DateTime";
+    case eDB_BigDateTime     : return "DB_BigDateTime";
     case eDB_SmallDateTime   : return "DB_SmallDateTime";
     case eDB_Text            : return "DB_Text";
     case eDB_Image           : return "DB_Image";
@@ -2530,6 +2532,148 @@ void CDB_DateTime::AssignValue(const CDB_Object& v)
         string("wrong type of CDB_Object: ") + GetTypeName(v.GetType(), false),
         2 );
     *this= (const CDB_DateTime&)v;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CDB_BigDateTime::
+//
+
+
+CDB_BigDateTime::CDB_BigDateTime(CTime::EInitMode mode, ESQLType sql_type)
+    : m_Time(mode), m_SQLType(sql_type)
+{
+    SetNULL(mode == CTime::eEmpty);
+}
+
+
+CDB_BigDateTime::CDB_BigDateTime(const CTime& t, ESQLType sql_type)
+    : m_Time(t), m_SQLType(sql_type)
+{
+    SetNULL(t.IsEmpty());
+}
+
+
+CDB_BigDateTime& CDB_BigDateTime::Assign(const CTime& t, ESQLType sql_type)
+{
+    m_Time    = t;
+    m_SQLType = sql_type;
+    SetNULL(t.IsEmpty());
+    return *this;
+}
+
+const char * CDB_BigDateTime::GetSQLTypeName(ESyntax syntax)
+{
+    switch (syntax) {
+    case eSyntax_Unknown:
+        break;
+    case eSyntax_Microsoft:
+        switch (m_SQLType) {
+        case eDate:           return "DATE";
+        case eTime:           return "TIME";
+        case eDateTime:       return "DATETIME2";
+        case eDateTimeOffset: return "DATETIMEOFFSET";
+        }
+    case eSyntax_Sybase:
+        switch (m_SQLType) {
+        case eDate:           return "BIGDATE";
+        case eTime:           return "BIGTIME";
+        case eDateTime:       return "BIGDATETIME";
+        case eDateTimeOffset: break;
+        }
+    }
+    return kEmptyCStr;
+}
+
+EDB_Type CDB_BigDateTime::GetType() const
+{
+    return eDB_BigDateTime;
+}
+
+CDB_Object* CDB_BigDateTime::Clone() const
+{
+    return IsNULL() ? new CDB_BigDateTime : new CDB_BigDateTime(*this);
+}
+
+void CDB_BigDateTime::AssignValue(const CDB_Object& v)
+{
+    switch (v.GetType()) {
+    case eDB_BigDateTime: *this = (const CDB_BigDateTime&) v;        break;
+    case eDB_DateTime   : *this = ((const CDB_DateTime&)v).Value();  break;
+    case eDB_VarChar    :
+    {
+        const string& s = (const CDB_VarChar&) v;
+        pair<ESyntax, ESQLType> id = Identify(s);
+        Assign(CTime(s, GetTimeFormat(id.first, id.second)), id.second);
+        break;
+    }
+    default:
+        DATABASE_DRIVER_ERROR(string("wrong type of CDB_Object: ")
+                              + GetTypeName(v.GetType(), false), 2);
+    }
+}
+
+CTimeFormat CDB_BigDateTime::GetTimeFormat(ESyntax syntax, ESQLType sql_type)
+{
+    const char* s = kEmptyCStr;
+    switch (syntax) {
+    case eSyntax_Unknown: // go with ISO
+        switch (sql_type) {
+        case eDate:           s = "Y-M-D"       ;  break;
+        case eTime:           s =       "h:m:G" ;  break;
+        case eDateTime:       s = "Y-M-DTh:m:G" ;  break;
+        case eDateTimeOffset: s = "Y-M-DTh:m:Go";  break;
+        }
+        break;
+    case eSyntax_Microsoft:
+        switch (sql_type) {
+        case eDate:           s = "Y-M-D"       ;  break;
+        case eTime:           s =       "h:m:G" ;  break;
+        case eDateTime:       s = "Y-M-D h:m:G" ;  break;
+        case eDateTimeOffset: s = "Y-M-D h:m:Go";  break;
+        }
+        break;
+    case eSyntax_Sybase: // cap time precision to avoid syntax errors(!)
+        switch (sql_type) {
+        case eDate:           s = "b D Y"           ;  break;
+        case eTime:           s =        "H:m:s.rP" ;  break;
+        case eDateTime:       s = "b D Y  H:m:s.rP" ;  break;
+        case eDateTimeOffset: s = "b D Y  H:m:s.rPo";  break;
+        }
+        break;
+    }
+    return CTimeFormat(s);
+}
+
+pair<CDB_BigDateTime::ESyntax, CDB_BigDateTime::ESQLType>
+CDB_BigDateTime::Identify(const CTempString& s)
+{
+    ESyntax  syntax   = eSyntax_Unknown;
+    ESQLType sql_type = eDateTime;
+
+    if (s.size() >= 8) {
+        if (s[s.size() - 1] == 'M'  ||  isalpha((unsigned char) s[0])) {
+            syntax = eSyntax_Sybase;
+            if (s.find("  ") == NPOS) {
+                sql_type = (s[2] == ':') ? eTime : eDate;
+            }
+        } else {
+            SIZE_TYPE pos = s.find_first_of(" T");
+            if (pos == NPOS) {
+                sql_type = (s[2] == ':') ? eTime : eDate;
+            } else {
+                if (s[pos] == ' ') {
+                    syntax = eSyntax_Microsoft;
+                }
+                char c = s[s.size() - 6];
+                if (c == '+'  ||  c == '-') {
+                    sql_type = eDateTimeOffset;
+                }
+            }
+        }
+    }    
+    
+    return make_pair(syntax, sql_type);
 }
 
 /////////////////////////////////////////////////////////////////////////////

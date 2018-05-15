@@ -179,6 +179,23 @@ CTL_RowResult::ConvDataType_Ctlib2DBAPI(const CS_DATAFMT& fmt)
 
     case CS_DATETIME_TYPE:      return eDB_DateTime;
     case CS_DATETIME4_TYPE:     return eDB_SmallDateTime;
+#if defined(CS_DATE_TYPE)  ||  defined(CS_TIME_TYPE)  \
+    ||  defined(CS_BIGDATETIME_TYPE)  ||  defined(CS_BIGTIME_TYPE)
+#  ifdef CS_DATE_TYPE
+    case CS_DATE_TYPE:
+#  endif
+#  ifdef CS_TIME_TYPE
+    case CS_TIME_TYPE:
+#  endif
+#  ifdef CS_BIGDATETIME_TYPE
+    case CS_BIGDATETIME_TYPE:
+#  endif
+#  ifdef CS_BIGTIME_TYPE
+    case CS_BIGTIME_TYPE:
+#  endif
+           return eDB_BigDateTime;
+#endif
+
     case CS_TINYINT_TYPE:       return eDB_TinyInt;
 #ifdef CS_USMALLINT_TYPE
     case CS_USMALLINT_TYPE:
@@ -417,7 +434,20 @@ static bool s_CanStore(CS_INT src, EDB_Type dst)
     case CS_FLOAT_TYPE: return dst == eDB_Double;
 
     case CS_DATETIME4_TYPE: if (dst == eDB_SmallDateTime) { return true; }
-    case CS_DATETIME_TYPE:  return dst == eDB_DateTime;
+    case CS_DATETIME_TYPE:  if (dst == eDB_DateTime)      { return true; }
+#ifdef CS_DATE_TYPE
+    case CS_DATE_TYPE:
+#endif
+#ifdef CS_TIME_TYPE
+    case CS_TIME_TYPE:
+#endif
+#ifdef CS_BIGDATETIME_TYPE
+    case CS_BIGDATETIME_TYPE:
+#endif
+#ifdef CS_BIGTIME_TYPE
+    case CS_BIGTIME_TYPE:
+#endif
+           return dst == eDB_BigDateTime;
 
     case CS_NUMERIC_TYPE:
     case CS_DECIMAL_TYPE:
@@ -615,7 +645,20 @@ CDB_Object* CTL_RowResult::GetItemInternal(
         CS_DATETIME v;
         my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null);
         ENSURE_ITEM();
-        static_cast<CDB_DateTime*>(item_buf)->Assign(v.dtdays, v.dttime);
+        switch (b_type) {
+        case eDB_DateTime:
+            ((CDB_DateTime*)item_buf)->Assign(v.dtdays, v.dttime);
+            break;
+        case eDB_BigDateTime:
+        {
+            CTime t;
+            t.SetTimeDBI(TDBTimeI({v.dtdays, v.dttime}));
+            *((CDB_BigDateTime*)item_buf) = t;
+            break;
+        }
+        default:
+            _TROUBLE;
+        }
         break;
     }
 
@@ -633,11 +676,62 @@ CDB_Object* CTL_RowResult::GetItemInternal(
         case eDB_DateTime:
             ((CDB_DateTime*)item_buf)->Assign(v.days, v.minutes * 60 * 300);
             break;
+        case eDB_BigDateTime:
+        {
+            CTime t;
+            t.SetTimeDBU(TDBTimeU({v.days, v.minutes}));
+            *((CDB_BigDateTime*)item_buf) = t;
+            break;
+        }
         default:
             _TROUBLE;
         }
         break;
     }
+
+#if defined(CS_DATE_TYPE)  ||  defined(CS_TIME_TYPE)  \
+    ||  defined(CS_BIGDATETIME_TYPE)  ||  defined(CS_BIGTIME_TYPE)
+#  ifdef CS_DATE_TYPE
+    case CS_DATE_TYPE:
+#  endif
+#  ifdef CS_TIME_TYPE
+    case CS_TIME_TYPE:
+#  endif
+#  ifdef CS_BIGDATETIME_TYPE
+    case CS_BIGDATETIME_TYPE:
+#  endif
+#  ifdef CS_BIGTIME_TYPE
+    case CS_BIGTIME_TYPE:
+#  endif
+    {
+        CDB_BigDateTime* bdt = static_cast<CDB_BigDateTime*>(item_buf);
+        CTime t;
+        my_ct_get_data(cmd, item_no, buffer, (CS_INT) sizeof(buffer), &outlen,
+                       is_null);
+        if ( !is_null ) {
+            CS_DATEREC dr = { 0 };
+            CS_CONTEXT* ctx = m_Connect->GetCTLibContext().CTLIB_GetContext();
+            CHECK_DRIVER_ERROR(cs_dt_crack(ctx, datatype, buffer, &dr)
+                               != CS_SUCCEED,
+                               "Failed to unpack big date/time", 230023);
+            long ns;
+#if defined(FTDS_IN_USE)  &&  NCBI_FTDS_VERSION >= 100
+            if (dr.datesecprec > 0) {
+                ns = dr.datesecfrac * (kNanoSecondsPerSecond / dr.datesecprec);
+            } else
+#endif
+            {
+                ns = dr.datemsecond * 1000 * 1000;
+            }
+            t = CTime(dr.dateyear, dr.datemonth + 1, dr.datedmonth,
+                      dr.datehour, dr.dateminute, dr.datesecond, ns);
+            // TODO - honor dr.datetzone?  It's always 0 in practice, and
+            // there's no good way to pass it to CTime anyway.
+        }
+        *bdt = t;
+        break;
+    }
+#endif
 
     case CS_DECIMAL_TYPE:
     case CS_NUMERIC_TYPE:

@@ -178,6 +178,7 @@ enum ESDB_Type {
     eSDB_StringUCS2, ///< Like Transact-SQL NVARCHAR(N)
     eSDB_Binary,     ///< Like Transact-SQL VARBINARY(N)
     eSDB_DateTime,   ///< Like Transact-SQL DATETIME
+    eSDB_BigDateTime, ///< Like Transact-SQL DATETIME2 (MS) or BIGDATETIME (Syb)
     eSDB_Text,       ///< Like Transact-SQL TEXT
     eSDB_TextUCS2,   ///< Like Transact-SQL NTEXT
     eSDB_Image,      ///< Like Transact-SQL IMAGE

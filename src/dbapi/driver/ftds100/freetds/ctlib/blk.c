@@ -783,14 +783,18 @@ _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bindcol, int offset)
 	}
 
         if (!null_column  &&  !is_blob_type(bindcol->column_type)) {
-		CONV_RESULT convert_buffer;
+                TDS_SERVER_TYPE desttype = TDS_INVALID_TYPE;
 
 		srcfmt.datatype = srctype;
 		srcfmt.maxlength = srclen;
 
-		destfmt.datatype = _cs_convert_not_client(ctx, bindcol, &convert_buffer, &src);
-		if (destfmt.datatype == CS_ILLEGAL_TYPE)
-                        destfmt.datatype = _ct_get_client_type(ctx, bindcol);
+                destfmt.datatype = _cs_convert_not_client(NULL, bindcol,
+                                                          NULL, NULL);
+                if (destfmt.datatype == CS_ILLEGAL_TYPE) {
+			destfmt.datatype = _ct_get_client_type(ctx, bindcol);
+                } else {
+                        desttype = bindcol->column_type;
+                }
 		if (destfmt.datatype == CS_ILLEGAL_TYPE)
 			return CS_FAIL;
                 destfmt.maxlength = bindcol->on_server.column_size;
@@ -803,7 +807,7 @@ _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bindcol, int offset)
                 if ((result = _cs_convert_ex(ctx, &srcfmt, (CS_VOID *) src,
                                              &destfmt,
                                              (CS_VOID *) coldata->data,
-                                             &destlen,
+                                             &destlen, desttype,
                                              (CS_VOID **) &coldata->data))
                     != CS_SUCCEED) {
 			tdsdump_log(TDS_DBG_INFO1, "convert failed for %d \n", srcfmt.datatype);

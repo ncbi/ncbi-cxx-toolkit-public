@@ -27,7 +27,7 @@ CHECK_TIMEOUT = 600
 
 CHECK_CMD = dbapi_unit_test -dr ftds64     -S MsSql
 CHECK_CMD = dbapi_unit_test -dr ftds95     -S MsSql
-CHECK_CMD = dbapi_unit_test -dr ftds95     -S MsSql -V 73
+CHECK_CMD = dbapi_unit_test -dr ftds95     -S MsSql -V 72
 CHECK_CMD = dbapi_unit_test -dr ftds100    -S MsSql
 CHECK_CMD = dbapi_unit_test -dr ftds100    -S MsSql -V 74
 CHECK_CMD = dbapi_unit_test -dr odbc       -S MsSql --log_level=test_suite

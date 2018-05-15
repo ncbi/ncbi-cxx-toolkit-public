@@ -80,7 +80,11 @@ public:
 
 enum EDateTimeFormat {
     eShort,
-    eLong
+    eLong,
+    eLonger,
+    eDateOnly,
+    eTimeOnly,
+    eDateTimeOffset
 };
 
 
@@ -130,6 +134,7 @@ public:
     static CVariant Binary       (size_t size, const void *p, size_t len);
     static CVariant SmallDateTime(CTime *p);
     static CVariant DateTime     (CTime *p);
+    static CVariant BigDateTime  (CTime *p, EDateTimeFormat fmt = eLonger);
     static CVariant Numeric      (unsigned int precision,
                                   unsigned int scale,
                                   const char* p);

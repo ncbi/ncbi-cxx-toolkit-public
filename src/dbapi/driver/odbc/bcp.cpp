@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include <odbcss.h>
+// #include <sqlncli.h>
 
 #include "odbc_utils.hpp"
 
@@ -150,6 +151,11 @@ CODBC_BCPInCmd::x_GetBCPDataType(EDB_Type type)
     case eDB_DateTime:
         bcp_datatype = SQLDATETIME;
         break;
+#ifdef SQLDATETIME2
+    case eDB_BigDateTime:
+        bcp_datatype = SQLDATETIME2;
+        break;
+#endif
     case eDB_Text:
     case eDB_VarCharMax:
 //TODO: Make different type depending on type of underlying column
@@ -437,6 +443,26 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                 pb = (void*) (dt + 1);
             }
             break;
+#if defined(SQLDATETIME2)
+            case CDB_BigDateTime: {
+                CDB_BigDateTime& val = dynamic_cast<CDB_BigDateTime&> (param);
+                CTime            lt  = val.GetCTime().GetLocalTime();
+                DBTIMESTAMP*     dt  = (DBTIMESTAMP*) pb;
+                dt.year     = lt.Year();
+                dt.month    = lt.Month();
+                dt.day      = lt.Day();
+                dt.hour     = lt.Hour();
+                dt.minute   = lt.Minute();
+                dt.second   = lt.Second();
+                dt.fraction = lt.Nanosecond() / 100 * 100;
+                r = bcp_colptr(GetHandle(), (BYTE*) dt, i + 1)
+                    == SUCCEED &&
+                    bcp_collen(GetHandle(), sizeof(DBTIMESTAMP), i + 1)
+                    == SUCCEED ? SUCCEED : FAIL;
+                pb = (void*) (dt + 1);
+                break;
+            }
+#endif
             case eDB_Text:
             case eDB_VarCharMax: {
                 CDB_Stream& val = dynamic_cast<CDB_Stream&> (param);

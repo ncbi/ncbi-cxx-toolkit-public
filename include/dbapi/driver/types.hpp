@@ -61,6 +61,7 @@ enum EDB_Type {
     eDB_Float,
     eDB_Double,
     eDB_DateTime,
+    eDB_BigDateTime,
     eDB_SmallDateTime,
     eDB_Text,
     eDB_Image,
@@ -347,6 +348,7 @@ private:
 //  CDB_Text::
 //  CDB_SmallDateTime::
 //  CDB_DateTime::
+//  CDB_BigDateTime::
 //  CDB_Bit::
 //  CDB_Numeric::
 //
@@ -1068,6 +1070,52 @@ protected:
     mutable TDBTimeI     m_DBTime;
     // which of m_NCBITime(0x1), m_DBTime(0x2) is valid;  they both can be valid
     mutable unsigned int m_Status;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+class NCBI_DBAPIDRIVER_EXPORT CDB_BigDateTime : public CDB_Object
+{
+public:
+    enum ESQLType {
+        eDate           = 1, ///< DATE (MS, Sybase)
+        eTime           = 2, ///< TIME (MS), (BIG)TIME (Sybase)
+        eDateTime       = 3, ///< DATETIME2 (MS), BIGDATETIME (Sybase)
+        eDateTimeOffset = 7  ///< DATETIMEOFFSET (MS); no Sybase equivalent
+    };
+
+    enum ESyntax {
+        eSyntax_Unknown,
+        eSyntax_Microsoft,
+        eSyntax_Sybase
+    };
+
+    CDB_BigDateTime(CTime::EInitMode mode = CTime::eEmpty,
+                    ESQLType sql_type = eDateTime);
+    CDB_BigDateTime(const CTime& t, ESQLType sql_type = eDateTime);
+
+    CDB_BigDateTime& Assign(const CTime& t, ESQLType sql_type = eDateTime);
+    CDB_BigDateTime& operator= (const CTime& t)
+        { return Assign(t); }
+
+    const CTime& GetCTime(void) const
+        { return m_Time; }
+    ESQLType     GetSQLType(void) const
+        { return m_SQLType; }
+    const char*  GetSQLTypeName(ESyntax syntax);
+
+    virtual EDB_Type    GetType(void) const;
+    virtual CDB_Object* Clone(void)   const;
+    virtual void AssignValue(const CDB_Object& v);
+
+    static CTimeFormat GetTimeFormat(ESyntax syntax,
+                                     ESQLType sql_type = eDateTime);
+    static pair<ESyntax, ESQLType> Identify(const CTempString& s);
+
+protected:
+    CTime    m_Time;
+    ESQLType m_SQLType;
 };
 
 

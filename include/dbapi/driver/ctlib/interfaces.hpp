@@ -999,7 +999,7 @@ private:
         CTempVarChar varchar;
         CS_INT      datalen;
         CS_SMALLINT indicator;
-        char        buffer[sizeof(CS_NUMERIC)]; // 35 bytes ...
+        char        buffer[80];
     };
 
     typedef map<CDB_BCPInCmd::EBCP_Hints, string>  THintsMap;

@@ -396,8 +396,138 @@ bool CTL_BCPInCmd::x_AssignParams()
                 dt.dttime = par.Get300Secs();
             }
 
-            _ASSERT(sizeof(CS_NUMERIC) >= sizeof(CS_DATETIME));
+            _ASSERT(sizeof(SBcpBind::buffer) >= sizeof(CS_DATETIME));
             memcpy(bind.buffer, &dt, sizeof(CS_DATETIME));
+            ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
+                                      (CS_VOID*) bind.buffer,
+                                      &bind.datalen,
+                                      &bind.indicator));
+            break;
+        }
+        case eDB_BigDateTime: {
+            CDB_BigDateTime& par = dynamic_cast<CDB_BigDateTime&> (param);
+            auto syntax = GetConnection().GetDateTimeSyntax();
+            bool need_date = true, need_time = true;
+            if (syntax == CDB_BigDateTime::eSyntax_Sybase) {
+                // Sybase claims to use classic DATETIME when working
+                // with clients that don't advertise support for newer
+                // types, but expects BCP-ed data to use new formats
+                // when the corresponding columns do.
+                switch (par.GetSQLType()) {
+                case CDB_BigDateTime::eDate:
+                    need_time = false;
+#ifdef CS_DATE_TYPE
+                    param_fmt.datatype = CS_DATE_TYPE;
+                    bind.datalen       = sizeof(CS_DATE_TYPE);
+#else
+                    param_fmt.datatype = CS_DATETIME_TYPE;
+                    bind.datalen       = 4; // 8?  Might not work either way.
+#endif
+                    break;
+                case CDB_BigDateTime::eTime:
+                    need_date = false;
+#ifdef CS_BIGTIME_TYPE
+                    param_fmt.datatype = CS_BIGTIME_TYPE;
+                    bind.datalen       = sizeof(CS_BIGTIME_TYPE);
+#else
+                    param_fmt.datatype = CS_DATETIME_TYPE;
+                    bind.datalen       = 8;
+#endif
+                    break;
+                case CDB_BigDateTime::eDateTime:
+                case CDB_BigDateTime::eDateTimeOffset:
+#ifdef CS_BIGTIME_TYPE
+                    param_fmt.datatype = CS_BIGDATETIME_TYPE;
+                    bind.datalen       = sizeof(CS_BIGDATETIME_TYPE);
+#else
+                    param_fmt.datatype = CS_DATETIME_TYPE;
+                    bind.datalen       = 8;
+#endif
+                    break;
+                }
+
+#ifdef CS_DATE_TYPE
+                CS_DATE    days = 0;
+#else
+                CS_INT     days = 0;
+#endif
+#ifdef CS_BIGTIME_TYPE
+                CS_BIGTIME us   = 0;
+#else
+                Uint8      us   = 0;
+#endif
+                if (param.IsNULL()) {
+                    bind.datalen = 0;
+                } else {
+#  ifndef FTDS_IN_USE
+                    bind.datalen = CS_UNUSED;
+#  endif
+                    CTime t = par.GetCTime().GetLocalTime();
+                    if (need_date) {
+                        days = t.DiffWholeDays(CTime(1900, 1, 1));
+                    }
+                    if (need_time) {
+                        us = (((t.Hour() * 60 + t.Minute()) * 60 + t.Second())
+                              * NCBI_CONST_UINT8(1000000) + t.MicroSecond());
+                    }
+                }
+
+                if ( !need_time ) {
+                    memcpy(bind.buffer, &days, sizeof(days));
+                } else if ( !need_date ) {
+                    memcpy(bind.buffer, &us, sizeof(us));
+                } else {
+                    static const Uint8 kMicrosecPerDay
+                        = NCBI_CONST_UINT8(86400000000);
+#ifdef CS_BIGDATETIME_TYPE
+                    CS_BIGDATETIME dt
+#else
+                    Uint8 dt
+#endif
+                        = (days + 693961) * kMicrosecPerDay + us;
+                    memcpy(bind.buffer, &dt, sizeof(dt));
+                }
+            } else {
+                const CTime& t  = par.GetCTime();
+                CS_DATETIME  dt = { 0, 0 };
+                param_fmt.datatype = CS_DATETIME_TYPE;
+                if ( !param.IsNULL() ) {
+                    TDBTimeI dbt = t.GetTimeDBI();
+                    if (CTime().SetTimeDBI(dbt) == t) {
+                        dt.dtdays = dbt.days;
+                        dt.dttime = dbt.time;
+                    } else {
+                        param_fmt.datatype = CS_CHAR_TYPE;
+                    }
+                }
+
+                if (param_fmt.datatype == CS_CHAR_TYPE) {
+                    string s = (t.GetLocalTime()
+                                .AsString(CDB_BigDateTime::GetTimeFormat
+                                          (syntax, par.GetSQLType())));
+                    if (syntax == CDB_BigDateTime::eSyntax_Microsoft
+                        &&  GetConnection().m_TDSVersion > CS_TDS_50
+#ifdef CS_TDS_73
+                        &&  GetConnection().m_TDSVersion < CS_TDS_73
+#endif
+                        ) {
+                        param_fmt.maxlength
+                            = sizeof(TCharUCS2) * (s.size() + 1);
+                        _ASSERT(param_fmt.maxlength
+                                <= sizeof(SBcpBind::buffer));
+                        TStringUCS2 ws = CUtf8::AsBasicString<TCharUCS2>(s);
+                        memcpy(bind.buffer, ws.c_str(), param_fmt.maxlength);
+                        bind.datalen = sizeof(TCharUCS2) * s.size();
+                    } else {
+                        _ASSERT(s.size() < sizeof(SBcpBind::buffer));
+                        memcpy(bind.buffer, s.c_str(), s.size() + 1);
+                        bind.datalen = s.size();
+                        param_fmt.maxlength = s.size() + 1;
+                    }
+                } else {
+                    memcpy(bind.buffer, &dt, sizeof(CS_DATETIME));
+                }
+            }
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
                                       (CS_VOID*) bind.buffer,
                                       &bind.datalen,

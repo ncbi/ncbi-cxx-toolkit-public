@@ -149,6 +149,128 @@ BOOST_AUTO_TEST_CASE(Test_DateTimeBCP)
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(Test_BigDateTimeBCP)
+{
+    string table_name("#test_bcp_bigdatetime");
+    // string table_name("DBAPI_Sample..test_bcp_bigdatetime");
+    string sql;
+    CQuery query = GetDatabase().NewQuery();
+    CTime t;
+    CTime dt_value;
+
+    CTempString sql_type;
+
+    if (GetArgs().GetServerType() == eSqlSrvMsSql) {
+        sql_type = "DATETIME2";
+    } else {
+        sql_type = "BIGDATETIME";
+    }
+
+    try {
+        // Initialization ...
+        {
+            sql =
+                "CREATE TABLE " + table_name + " (\n"
+                "   id INT,\n"
+                "   dt_field " + sql_type + " NULL\n"
+                ")";
+
+            query.SetSql(sql);
+            query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
+        }
+
+        // Insert data using BCP ...
+        {
+            t = CTime(CTime::eCurrent);
+
+            // Insert data using parameters ...
+            {
+                query.SetSql("DELETE FROM " + table_name);
+                query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
+
+                CBulkInsert bi = GetDatabase().NewBulkInsert(table_name, 1);
+
+                bi.Bind(1, eSDB_Int4);
+                bi.Bind(2, eSDB_BigDateTime);
+
+                bi << 1 << t << EndRow;
+                bi.Complete();
+
+                query.SetSql("SELECT * FROM " + table_name);
+                query.Execute();
+                query.RequireRowCount(1);
+                query.PurgeResults();
+                int nRows = query.GetRowCount();
+                BOOST_CHECK_EQUAL(nRows, 1);
+            }
+
+            // Retrieve data ...
+            {
+                sql = "SELECT * FROM " + table_name;
+
+                query.SetSql(sql);
+                query.Execute();
+                query.RequireRowCount(1);
+                BOOST_CHECK( query.HasMoreResultSets() );
+                CQuery::iterator it = query.begin();
+                BOOST_CHECK( it != query.end() );
+
+                BOOST_CHECK( !it[2].IsNull() );
+
+                CTime dt_value2 = it[2].AsDateTime();
+                BOOST_CHECK( !dt_value2.IsEmpty() );
+                BOOST_CHECK_EQUAL( dt_value2.AsString(), t.AsString() );
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
+            }
+
+            // Insert NULL data using parameters ...
+            {
+                query.SetSql("DELETE FROM " + table_name);
+                query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
+
+                CBulkInsert bi = GetDatabase().NewBulkInsert(table_name, 1);
+
+                bi.Bind(1, eSDB_Int4);
+                bi.Bind(2, eSDB_BigDateTime);
+
+                bi << 1 << NullValue << EndRow;
+                bi.Complete();
+
+                query.SetSql("SELECT * FROM " + table_name);
+                query.Execute();
+                query.RequireRowCount(1);
+                query.PurgeResults();
+                int nRows = query.GetRowCount();
+                BOOST_CHECK_EQUAL(nRows, 1);
+            }
+
+            // Retrieve data ...
+            {
+                sql = "SELECT * FROM " + table_name;
+
+                query.SetSql(sql);
+                query.Execute();
+                query.RequireRowCount(1);
+                BOOST_CHECK( query.HasMoreResultSets() );
+                CQuery::iterator it = query.begin();
+                BOOST_CHECK( it != query.end() );
+                BOOST_CHECK( it[2].IsNull() );
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
+            }
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob)
 {

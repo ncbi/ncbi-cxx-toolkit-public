@@ -152,6 +152,8 @@ s_ConvertType(ESDB_Type type)
         return eDB_VarBinary;
     case eSDB_DateTime:
         return eDB_DateTime;
+    case eSDB_BigDateTime:
+        return eDB_BigDateTime;
     case eSDB_Text:
     case eSDB_TextUCS2:
         return eDB_Text;
@@ -196,6 +198,8 @@ s_ConvertType(EDB_Type type)
     case eDB_DateTime:
     case eDB_SmallDateTime:
         return eSDB_DateTime;
+    case eDB_BigDateTime:
+        return eSDB_BigDateTime;
     case eDB_Text:
         return eSDB_Text;
     case eDB_Image:
@@ -257,6 +261,7 @@ s_ConvertValue(const CTime& from_val, CVariant& to_var)
     switch (to_var.GetType()) {
     case eDB_DateTime:
     case eDB_SmallDateTime:
+    case eDB_BigDateTime:
         to_var = from_val;
         break;
     case eDB_VarChar:
@@ -529,6 +534,7 @@ s_ConvertValue(const string& from_val, CVariant& to_var)
         break;
     case eDB_DateTime:
     case eDB_SmallDateTime:
+    case eDB_BigDateTime:
         to_var = CTime(from_val);
         break;
     default:
@@ -575,6 +581,7 @@ s_ConvertValue(const TStringUCS2& from_val, CVariant& to_var)
     case eDB_Double:
     case eDB_DateTime:
     case eDB_SmallDateTime:
+    case eDB_BigDateTime:
         s_ConvertValue(CUtf8::AsUTF8(from_val), to_var);
         break;
     default:
@@ -590,6 +597,7 @@ s_ConvertValue(const CVariant& from_var, CTime& to_val)
     switch (from_var.GetType()) {
     case eDB_DateTime:
     case eDB_SmallDateTime:
+    case eDB_BigDateTime:
         to_val = from_var.GetCTime();
         break;
     case eDB_VarChar:
@@ -597,8 +605,17 @@ s_ConvertValue(const CVariant& from_var, CTime& to_val)
     case eDB_LongChar:
     case eDB_Text: 
     case eDB_VarCharMax:
-       to_val = CTime(from_var.GetString());
+    {
+        string s = from_var.GetString();
+        try {
+            to_val = CTime(s);
+        } catch (CTimeException&) {
+            auto id = CDB_BigDateTime::Identify(s);
+            to_val = CTime(s, CDB_BigDateTime::GetTimeFormat(id.first,
+                                                             id.second));
+        }
         break;
+    }
     default:
         s_ConvertionNotSupported("CTime", from_var.GetType());
     }
@@ -832,6 +849,7 @@ s_ConvertValue(const CVariant& from_var, string& to_val)
         break;
     case eDB_DateTime:
     case eDB_SmallDateTime:
+    case eDB_BigDateTime:
         to_val = from_var.GetCTime().AsString();
         break;
     case eDB_VarChar:

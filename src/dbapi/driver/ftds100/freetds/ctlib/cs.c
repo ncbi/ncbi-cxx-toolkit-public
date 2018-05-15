@@ -494,15 +494,15 @@ CS_RETCODE
 cs_convert(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt, CS_VOID * srcdata, CS_DATAFMT * destfmt, CS_VOID * destdata, CS_INT * resultlen)
 {
         return _cs_convert_ex(ctx, srcfmt, srcdata, destfmt, destdata,
-                              resultlen, NULL);
+                              resultlen, TDS_INVALID_TYPE, NULL);
 }
 
 CS_RETCODE
 _cs_convert_ex(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt, CS_VOID * srcdata,
                CS_DATAFMT * destfmt, CS_VOID * destdata, CS_INT * resultlen,
-               CS_VOID ** handle)
+               TDS_SERVER_TYPE desttype, CS_VOID ** handle)
 {
-	TDS_SERVER_TYPE src_type, desttype;
+        TDS_SERVER_TYPE src_type;
 	int src_len, destlen, len, i = 0;
 	CONV_RESULT cres;
 	unsigned char *dest;
@@ -552,9 +552,12 @@ _cs_convert_ex(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt, CS_VOID * srcdata,
 		src_len = vc->len;
 		srcdata = vc->str;
 	}
-	desttype = _ct_get_server_type(NULL, destfmt->datatype);
-	if (desttype == TDS_INVALID_TYPE)
-		return CS_FAIL;
+        if (desttype == TDS_INVALID_TYPE) {
+                desttype = _ct_get_server_type(NULL, destfmt->datatype);
+                if (desttype == TDS_INVALID_TYPE) {
+                        return CS_FAIL;
+                }
+        }
 	destlen = destfmt->maxlength;
         if (destfmt->datatype == CS_VARCHAR_TYPE ||
             destfmt->datatype == CS_NVARCHAR_TYPE ||
@@ -826,6 +829,14 @@ _cs_convert_ex(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt, CS_VOID * srcdata,
 		*resultlen = src_len;
 		ret = CS_SUCCEED;
 		break;
+        case SYBMSTIME:
+        case SYBMSDATE:
+        case SYBMSDATETIME2:
+        case SYBMSDATETIMEOFFSET:
+                *resultlen = sizeof(TDS_DATETIMEALL);
+                memcpy(dest, &(cres.dta), *resultlen);
+                ret = CS_SUCCEED;
+                break;
 	case SYBCHAR:
 	case SYBVARCHAR:
 	case SYBTEXT:
@@ -959,7 +970,7 @@ cs_dt_crack_v2(CS_CONTEXT * ctx, CS_INT datetype, CS_VOID * dateval, CS_DATEREC 
 	daterec->dateminute = dr.minute;
 	daterec->datesecond = dr.second;
 	daterec->datemsecond = dr.decimicrosecond / 10000u;
-	daterec->datetzone = 0;
+        daterec->datetzone = dr.timezone;
 	if (extended) {
 		daterec->datesecfrac = dr.decimicrosecond / 10u;
 		daterec->datesecprec = 1000000;

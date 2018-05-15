@@ -104,6 +104,24 @@ CheckType(const CDB_Object& value, EDB_Type type1, EDB_Type type2)
     }
 }
 
+inline
+void
+CheckType(const CDB_Object& value, EDB_Type type1, EDB_Type type2,
+          EDB_Type type3)
+{
+    EDB_Type cur_type = value.GetType();
+
+    if (!(cur_type == type1 || cur_type == type2 || cur_type == type3)) {
+        DATABASE_DRIVER_ERROR(string("Invalid type conversion: have ")
+                              + CDB_Object::GetTypeName(cur_type, false)
+                              + " but need either "
+                              + CDB_Object::GetTypeName(type1, false) + ", "
+                              + CDB_Object::GetTypeName(type2, false) + ", or "
+                              + CDB_Object::GetTypeName(type3, false),
+                              101100);
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 CValueConvert<SSafeCP, CDB_Object>::CValueConvert(obj_type& value)
 : m_Value(value)
@@ -322,6 +340,8 @@ CValueConvert<SSafeCP, CDB_Object>::operator string(void) const
             break;
         case eDB_DateTime: 
             return NCBI_CONVERT_TO(ConvertSafe(static_cast<const CDB_DateTime&>(m_Value).Value()), std::string);
+        case eDB_BigDateTime: 
+            return NCBI_CONVERT_TO(ConvertSafe(static_cast<const CDB_BigDateTime&>(m_Value).GetCTime()), std::string);
         case eDB_SmallDateTime: 
             return NCBI_CONVERT_TO(ConvertSafe(static_cast<const CDB_SmallDateTime&>(m_Value).Value()), std::string);
         default:
@@ -336,7 +356,7 @@ CValueConvert<SSafeCP, CDB_Object>::operator string(void) const
 CValueConvert<SSafeCP, CDB_Object>::operator const CTime&(void) const
 {
     CheckNULL(m_Value);
-    CheckType(m_Value, eDB_SmallDateTime, eDB_DateTime);
+    CheckType(m_Value, eDB_SmallDateTime, eDB_DateTime, eDB_BigDateTime);
 
     EDB_Type cur_type = m_Value.GetType();
     
@@ -344,6 +364,8 @@ CValueConvert<SSafeCP, CDB_Object>::operator const CTime&(void) const
         return static_cast<const CDB_SmallDateTime&>(m_Value).Value();
     } else if (cur_type == eDB_DateTime) {
         return static_cast<const CDB_DateTime&>(m_Value).Value();
+    } else if (cur_type == eDB_BigDateTime) {
+        return static_cast<const CDB_BigDateTime&>(m_Value).GetCTime();
     } else {
         ReportTypeConvError(cur_type, "CTime");
     }
@@ -587,6 +609,8 @@ CValueConvert<SSafeSqlCP, CDB_Object>::operator string(void) const
             break;
         case eDB_DateTime: 
             return NCBI_CONVERT_TO(ConvertSafe(static_cast<const CDB_DateTime&>(m_Value).Value()), std::string);
+        case eDB_BigDateTime: 
+            return NCBI_CONVERT_TO(ConvertSafe(static_cast<const CDB_BigDateTime&>(m_Value).GetCTime()), std::string);
         case eDB_SmallDateTime: 
             return NCBI_CONVERT_TO(ConvertSafe(static_cast<const CDB_SmallDateTime&>(m_Value).Value()), std::string);
         default:
@@ -606,7 +630,7 @@ CValueConvert<SSafeSqlCP, CDB_Object>::operator const CTime&(void) const
        return value.Get();
     }
 
-    CheckType(m_Value, eDB_SmallDateTime, eDB_DateTime);
+    CheckType(m_Value, eDB_SmallDateTime, eDB_DateTime, eDB_BigDateTime);
 
     EDB_Type cur_type = m_Value.GetType();
     
@@ -614,6 +638,8 @@ CValueConvert<SSafeSqlCP, CDB_Object>::operator const CTime&(void) const
         return static_cast<const CDB_SmallDateTime&>(m_Value).Value();
     } else if (cur_type == eDB_DateTime) {
         return static_cast<const CDB_DateTime&>(m_Value).Value();
+    } else if (cur_type == eDB_BigDateTime) {
+        return static_cast<const CDB_BigDateTime&>(m_Value).GetCTime();
     } else {
         ReportTypeConvError(cur_type, "CTime");
     }
@@ -701,6 +727,8 @@ TO Convert_CDB_Object_DT(const CDB_Object& value)
     switch (cur_type) {
         case eDB_DateTime:
             return NCBI_CONVERT_TO(Convert(static_cast<const CDB_DateTime&>(value).Value()), TO);
+        case eDB_BigDateTime:
+            return NCBI_CONVERT_TO(Convert(static_cast<const CDB_BigDateTime&>(value).GetCTime()), TO);
         case eDB_SmallDateTime:
             return NCBI_CONVERT_TO(Convert(static_cast<const CDB_SmallDateTime&>(value).Value()), TO);
         default:
@@ -720,7 +748,8 @@ CValueConvert<SRunTimeCP, CDB_Object>::operator bool(void) const
 {
     EDB_Type cur_type = m_Value.GetType();
     
-    if (cur_type == eDB_SmallDateTime || cur_type == eDB_DateTime) {
+    if (cur_type == eDB_SmallDateTime || cur_type == eDB_DateTime
+        || cur_type == eDB_BigDateTime) {
         return Convert_CDB_Object_DT<bool>(m_Value);
     }
 
@@ -761,7 +790,8 @@ CValueConvert<SRunTimeCP, CDB_Object>::operator string(void) const
 {
     EDB_Type cur_type = m_Value.GetType();
     
-    if (cur_type == eDB_SmallDateTime || cur_type == eDB_DateTime) {
+    if (cur_type == eDB_SmallDateTime || cur_type == eDB_DateTime
+        || cur_type == eDB_BigDateTime) {
         return Convert_CDB_Object_DT<string>(m_Value);
     }
 
@@ -771,7 +801,7 @@ CValueConvert<SRunTimeCP, CDB_Object>::operator string(void) const
 CValueConvert<SRunTimeCP, CDB_Object>::operator const CTime&(void) const
 {
     CheckNULL(m_Value);
-    CheckType(m_Value, eDB_SmallDateTime, eDB_DateTime);
+    CheckType(m_Value, eDB_SmallDateTime, eDB_DateTime, eDB_BigDateTime);
 
     EDB_Type cur_type = m_Value.GetType();
     
@@ -779,6 +809,8 @@ CValueConvert<SRunTimeCP, CDB_Object>::operator const CTime&(void) const
         return static_cast<const CDB_SmallDateTime&>(m_Value).Value();
     } else if (cur_type == eDB_DateTime) {
         return static_cast<const CDB_DateTime&>(m_Value).Value();
+    } else if (cur_type == eDB_BigDateTime) {
+        return static_cast<const CDB_BigDateTime&>(m_Value).GetCTime();
     } else {
         ReportTypeConvError(cur_type, "CTime");
     }
@@ -871,6 +903,8 @@ TO Convert_CDB_ObjectSql_DT(const CDB_Object& value)
     switch (cur_type) {
         case eDB_DateTime:
             return NCBI_CONVERT_TO(Convert(static_cast<const CDB_DateTime&>(value).Value()), TO);
+        case eDB_BigDateTime:
+            return NCBI_CONVERT_TO(Convert(static_cast<const CDB_BigDateTime&>(value).GetCTime()), TO);
         case eDB_SmallDateTime:
             return NCBI_CONVERT_TO(Convert(static_cast<const CDB_SmallDateTime&>(value).Value()), TO);
         default:
@@ -890,7 +924,8 @@ CValueConvert<SRunTimeSqlCP, CDB_Object>::operator bool(void) const
 {
     EDB_Type cur_type = m_Value.GetType();
     
-    if (cur_type == eDB_SmallDateTime || cur_type == eDB_DateTime) {
+    if (cur_type == eDB_SmallDateTime || cur_type == eDB_DateTime
+        ||  cur_type == eDB_BigDateTime) {
         return Convert_CDB_ObjectSql_DT<bool>(m_Value);
     }
 
@@ -931,7 +966,8 @@ CValueConvert<SRunTimeSqlCP, CDB_Object>::operator string(void) const
 {
     EDB_Type cur_type = m_Value.GetType();
     
-    if (cur_type == eDB_SmallDateTime || cur_type == eDB_DateTime) {
+    if (cur_type == eDB_SmallDateTime || cur_type == eDB_DateTime
+        || cur_type == eDB_BigDateTime) {
         return Convert_CDB_ObjectSql_DT<string>(m_Value);
     }
 
@@ -941,7 +977,7 @@ CValueConvert<SRunTimeSqlCP, CDB_Object>::operator string(void) const
 CValueConvert<SRunTimeSqlCP, CDB_Object>::operator const CTime&(void) const
 {
     CheckNULL(m_Value);
-    CheckType(m_Value, eDB_SmallDateTime, eDB_DateTime);
+    CheckType(m_Value, eDB_SmallDateTime, eDB_DateTime, eDB_BigDateTime);
 
     EDB_Type cur_type = m_Value.GetType();
     
@@ -949,6 +985,8 @@ CValueConvert<SRunTimeSqlCP, CDB_Object>::operator const CTime&(void) const
         return static_cast<const CDB_SmallDateTime&>(m_Value).Value();
     } else if (cur_type == eDB_DateTime) {
         return static_cast<const CDB_DateTime&>(m_Value).Value();
+    } else if (cur_type == eDB_BigDateTime) {
+        return static_cast<const CDB_BigDateTime&>(m_Value).GetCTime();
     } else {
         ReportTypeConvError(cur_type, "CTime");
     }

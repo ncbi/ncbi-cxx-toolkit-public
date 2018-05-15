@@ -167,6 +167,164 @@ BOOST_AUTO_TEST_CASE(Test_DateTimeBCP)
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(Test_BigDateTimeBCP)
+{
+    string table_name("#test_bcp_bigdatetime");
+    // string table_name("DBAPI_Sample..test_bcp_datetime");
+    string sql;
+    unique_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+    CVariant value(eDB_BigDateTime);
+    CTime t;
+    CVariant null_date(t, eLonger);
+    CTime dt_value;
+    CTempString sql_type;
+
+    if (GetArgs().GetServerType() == CDBConnParams::eMSSqlServer) {
+        sql_type = "DATETIME2";
+    } else {
+        sql_type = "BIGDATETIME";
+    }
+    
+    try {
+        // Initialization ...
+        {
+            sql =
+                "CREATE TABLE " + table_name + " ("
+                "   id INT,"
+                "   dt_field " + sql_type + " NULL"
+                ")";
+
+            auto_stmt->ExecuteUpdate( sql );
+        }
+
+        // Insert data using BCP ...
+        {
+            value = CTime(CTime::eCurrent);
+
+            // Insert data using parameters ...
+            {
+                CVariant col1(eDB_Int);
+                CVariant col2(eDB_BigDateTime);
+
+                auto_stmt->ExecuteUpdate( "DELETE FROM " + table_name);
+
+                unique_ptr<IBulkInsert> bi(
+                    GetConnection().GetBulkInsert(table_name)
+                    );
+
+                bi->Bind(1, &col1);
+                bi->Bind(2, &col2);
+
+                col1 = 1;
+                col2 = value;
+
+                bi->AddRow();
+                bi->Complete();
+
+                auto_stmt->ExecuteUpdate("SELECT * FROM " + table_name);
+                int nRows = auto_stmt->GetRowCount();
+                BOOST_CHECK_EQUAL(nRows, 1);
+            }
+
+            // Retrieve data ...
+            {
+                sql = "SELECT * FROM " + table_name;
+
+                auto_stmt->SendSql( sql );
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+                BOOST_CHECK( auto_stmt->HasRows() );
+                unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                BOOST_CHECK( rs.get() != NULL );
+                BOOST_CHECK( rs->Next() );
+
+                const CVariant& value2 = rs->GetVariant(2);
+
+                BOOST_CHECK( !value2.IsNull() );
+
+                CTime dt_value3 = value.GetCTime();
+                if (value2.GetType() == eDB_BigDateTime
+                    ||  value2.GetType() == eDB_DateTime) {
+                    const CTime& dt_value2 = value2.GetCTime();
+                    BOOST_CHECK( !dt_value2.IsEmpty() );
+                    BOOST_CHECK_EQUAL(dt_value2.AsString(),
+                                      dt_value3.AsString());
+
+                    // Tracing ...
+                    if (dt_value2.AsString() != dt_value3.AsString()) {
+                        cout << "dt_value2 nanoseconds = "
+                             << dt_value2.NanoSecond()
+                             << " dt_value3 nanoseconds = "
+                             << dt_value3.NanoSecond() << endl;
+                    }
+                } else {
+                    // Not Sybase, which normally falls back on DATETIME
+                    BOOST_CHECK_EQUAL(GetArgs().GetServerType(),
+                                      CDBConnParams::eMSSqlServer);
+                    string observed = value2.GetString();
+                    string expected = dt_value3.AsString(
+                        CDB_BigDateTime::GetTimeFormat
+                        (CDB_BigDateTime::eSyntax_Microsoft));
+                    SIZE_TYPE pos = observed.find_last_not_of('0');
+                    if (pos != NPOS) {
+                        observed.resize(pos + 1);
+                    }
+                    pos = expected.find_last_not_of('0');
+                    if (pos != NPOS) {
+                        expected.resize(pos + 1);
+                    }
+                    BOOST_CHECK_EQUAL(observed, expected);
+                }
+            }
+
+            // Insert NULL data using parameters ...
+            {
+                CVariant col1(eDB_Int);
+                CVariant col2(eDB_BigDateTime);
+
+                auto_stmt->ExecuteUpdate("DELETE FROM " + table_name);
+
+                unique_ptr<IBulkInsert> bi(
+                    GetConnection().GetBulkInsert(table_name)
+                    );
+
+                bi->Bind(1, &col1);
+                bi->Bind(2, &col2);
+
+                col1 = 1;
+
+                bi->AddRow();
+                bi->Complete();
+
+                auto_stmt->ExecuteUpdate("SELECT * FROM " + table_name);
+                int nRows = auto_stmt->GetRowCount();
+                BOOST_CHECK_EQUAL(nRows, 1);
+            }
+
+            // Retrieve data ...
+            {
+                sql = "SELECT * FROM " + table_name;
+
+                auto_stmt->SendSql( sql );
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+                BOOST_CHECK( auto_stmt->HasRows() );
+                unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                BOOST_CHECK( rs.get() != NULL );
+                BOOST_CHECK( rs->Next() );
+
+                const CVariant& value2 = rs->GetVariant(2);
+
+                BOOST_CHECK( value2.IsNull() );
+            }
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob)
 {

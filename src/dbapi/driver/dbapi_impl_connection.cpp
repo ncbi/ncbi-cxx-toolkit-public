@@ -248,6 +248,18 @@ CConnection::GetServerType(void)
     return m_ServerType;
 }
 
+CDB_BigDateTime::ESyntax CConnection::GetDateTimeSyntax(void)
+{
+    switch (GetServerType()) {
+    case CDBConnParams::eSybaseOpenServer:
+    case CDBConnParams::eSybaseSQLServer:
+        return CDB_BigDateTime::eSyntax_Sybase;
+    case CDBConnParams::eMSSqlServer:
+        return CDB_BigDateTime::eSyntax_Microsoft;
+    default:
+        return CDB_BigDateTime::eSyntax_Unknown;
+    }
+}
 
 void CConnection::PushMsgHandler(CDB_UserHandler* h,
                                     EOwnership ownership)
