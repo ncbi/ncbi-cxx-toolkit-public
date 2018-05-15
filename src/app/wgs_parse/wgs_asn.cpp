@@ -37,6 +37,7 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/general/Person_id.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/seqblock/GB_block.hpp>
@@ -46,6 +47,8 @@
 #include <objects/seq/Seq_hist_rec.hpp>
 #include <objects/seq/Seq_inst.hpp>
 
+#include <objects/biblio/Auth_list.hpp>
+#include <objects/biblio/Author.hpp>
 
 #include "wgs_utils.hpp"
 #include "wgs_asn.hpp"
@@ -1305,6 +1308,51 @@ EDateIssues CheckDates(const CSeq_entry& entry, CSeqdesc::E_Choice choice, CDate
     }
 
     return ret;
+}
+
+static void StripAuthorsFromArticle(CCit_art& article)
+{
+    if (article.IsSetAuthors() && article.GetAuthors().IsSetNames() && article.GetAuthors().GetNames().IsStd()) {
+
+        auto& std_names = article.SetAuthors().SetNames().SetStd();
+        for (auto name = std_names.begin(); name != std_names.end();) {
+            if ((*name)->IsSetName() && !(*name)->GetName().IsConsortium()) {
+                name = std_names.erase(name);
+            }
+            else {
+                ++name;
+            }
+        }
+    }
+}
+
+void StripAuthors(CSeq_entry& entry)
+{
+    if (entry.IsSeq() && !entry.GetSeq().IsNa()) {
+        return;
+    }
+
+    if (entry.IsSetDescr() && entry.GetDescr().IsSet()) {
+
+        for (auto& descr : entry.SetDescr().Set()) {
+            if (descr->IsPub() && descr->GetPub().IsSetPub() && descr->GetPub().GetPub().IsSet()) {
+
+                for (auto& pub : descr->SetPub().SetPub().Set()) {
+
+                    if (pub->IsArticle()) {
+                        StripAuthorsFromArticle(pub->SetArticle());
+                    }
+                }
+            }
+        }
+    }
+
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
+            StripAuthors(*cur_entry);
+        }
+    }
 }
 
 }

@@ -315,6 +315,11 @@ bool CParams::IsCitArtFromMaster() const
     return m_imp->m_copy_cit_art_from_master;
 }
 
+bool CParams::IsStripAuthors() const
+{
+    return m_imp->m_strip_authors;
+}
+
 TSeqPos CParams::GetGapSize() const
 {
     return m_imp->m_gap_size;
@@ -927,7 +932,7 @@ bool SetParams(const CArgs& args)
     }
 
     if (params->IsUpdateScaffoldsMode()) {
-        // TODO: should be implemented
+        // TODO HTGS functionality
         //wid.clup = WGSConnectHTGS();
         //if (wid.clup == NULL) {
         //    ErrPostEx(SEV_FATAL, ERR_HTGS_FailedToConnectToHtgs,

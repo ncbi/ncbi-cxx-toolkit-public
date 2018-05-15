@@ -135,6 +135,7 @@ public:
     bool IsOverrideExisting() const;
     bool IsBinaryOutput() const;
     bool IsCitArtFromMaster() const;
+    bool IsStripAuthors() const;
 
     TSeqPos GetGapSize() const;
     int GetFixTech() const;

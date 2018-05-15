@@ -1811,7 +1811,9 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
     else {
         master_info.m_master_bioseq = CreateMasterBioseq(master_info, master_cit_sub, master_contact_info);
 
-        // TODO strip authors
+        if (GetParams().IsStripAuthors() && GetParams().GetUpdateMode() != eUpdateScaffoldsNew) {
+            StripAuthors(*master_info.m_master_bioseq);
+        }
     }
 
     return ret;

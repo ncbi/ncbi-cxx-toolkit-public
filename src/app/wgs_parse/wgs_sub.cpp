@@ -1603,9 +1603,11 @@ bool ParseSubmissions(CMasterInfo& master_info)
                         break;
                     }
 
+                    if (GetParams().IsStripAuthors()) {
+                        StripAuthors(*entry);
+                    }
+
                     /*
-                    if(widp->strip_authors != FALSE)
-                    SeqEntryExplore(sep, NULL, WGSStripAuthors);
                     if(widp->new_titles != NULL)
                     {
                     wtp.title = widp->new_titles;
