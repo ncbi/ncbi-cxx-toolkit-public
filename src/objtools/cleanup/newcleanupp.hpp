@@ -304,6 +304,8 @@ private:
     void RnaFeatBC (CRNA_ref& rr, CSeq_feat& sf);
     void CdregionFeatBC (CCdregion& cds, CSeq_feat& seqfeat);
 
+    static bool x_IsCommentRedundantWithEC(const CSeq_feat& seqfeat, CScope& scope);
+
     void DeltaExtBC( CDelta_ext & delta_ext, CSeq_inst &seq_inst );
 
     void UserObjectBC( CUser_object &user_object );

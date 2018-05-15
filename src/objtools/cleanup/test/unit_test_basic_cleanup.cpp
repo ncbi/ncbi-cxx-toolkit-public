@@ -2197,3 +2197,73 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4508)
     BOOST_CHECK_EQUAL(prot->GetData().GetProt().GetName().front(), "a b");
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SeqFeatCDSGBQualBC)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    cds->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("prot_note", "xyz")));
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*entry);
+
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+    BOOST_CHECK_EQUAL(prot->GetComment(), "xyz");
+    BOOST_CHECK_EQUAL(cds->IsSetQual(), false);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_CommentRedundantWithEc)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    cds->SetComment("1.2.3.4");
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+    prot->SetData().SetProt().SetEc().push_back("1.2.3.4");
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*entry);
+
+    BOOST_CHECK_EQUAL(cds->IsSetComment(), false);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_MoveXrefToProt)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+    CRef<CSeqFeatXref> xr(new CSeqFeatXref());
+    xr->SetData().SetProt().Assign(prot->GetData().GetProt());
+    cds->SetXref().push_back(xr);
+
+    prot->SetData().SetProt().Reset();
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*entry);
+
+    BOOST_CHECK_EQUAL(cds->IsSetXref(), false);
+    BOOST_CHECK_EQUAL(prot->GetData().GetProt().GetName().front(), "fake protein name");
+}
+
+

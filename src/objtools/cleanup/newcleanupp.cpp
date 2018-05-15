@@ -4406,7 +4406,7 @@ CNewCleanup_imp::x_SeqFeatCDSGBQualBC(CSeq_feat& feat, CCdregion& cds, const CGb
         // get protein sequence for product
         CRef<CSeq_feat> prot_feat;
         CRef<CProt_ref> prot_ref;
-        CFeat_CI feat_ci;
+
         // try to get existing prot_feat
         CBioseq_Handle prot_handle;
         if ( FIELD_IS_SET(feat, Product) ) {
@@ -4415,16 +4415,22 @@ CNewCleanup_imp::x_SeqFeatCDSGBQualBC(CSeq_feat& feat, CCdregion& cds, const CGb
                 prot_handle = m_Scope->GetBioseqHandle(*prod_seq_id);
             }
         }
-        if( prot_handle ) {
+        if (prot_handle) {
             // find main protein feature
-            SAnnotSelector sel(CSeqFeatData::eSubtype_prot);
-            feat_ci = CFeat_CI(prot_handle, sel);
-            if( feat_ci ) {
-                prot_feat.Reset( new CSeq_feat );
-                prot_feat->Assign(feat_ci->GetOriginalFeature());
-                prot_ref.Reset( &prot_feat->SetData().SetProt() );
+            CConstRef<CBioseq> pseq = prot_handle.GetCompleteBioseq();
+            if (pseq && pseq->IsSetAnnot()) {
+                for (auto ait : pseq->GetAnnot()) {
+                    if (ait->IsFtable()) {
+                        for (auto fit : ait->GetData().GetFtable()) {
+                            if (fit->IsSetData() && fit->GetData().GetSubtype() == CSeqFeatData::eSubtype_prot) {
+                                prot_feat.Reset(const_cast<CSeq_feat*>(fit.GetPointer()));
+                            }
+                        }
+                    }
+                }
             }
         }
+
         bool push_back_xref_on_success = false;
         CRef<CSeqFeatXref> xref;
         if ( ! prot_ref ) {
@@ -4464,11 +4470,6 @@ CNewCleanup_imp::x_SeqFeatCDSGBQualBC(CSeq_feat& feat, CCdregion& cds, const CGb
             action = x_ProtGBQualBC( *prot_ref, gb_qual, eGBQualOpt_CDSMode );
         }
 
-        if( feat_ci && prot_feat ) {
-            CSeq_feat_EditHandle edit_feature_handle(feat_ci->GetSeq_feat_Handle());
-            edit_feature_handle.Replace(*prot_feat);
-            ChangeMade(CCleanupChange::eCleanSeqFeatXrefs);
-        }
         if( push_back_xref_on_success ) {
             feat.SetXref().push_back( xref );
             ChangeMade(CCleanupChange::eCleanSeqFeatXrefs);
@@ -8331,6 +8332,7 @@ void CNewCleanup_imp::x_MoveSeqfeatOrgToSourceOrg( CSeq_feat &seqfeat )
 }
 
 
+// Part of ExtendedCleanup
 void CNewCleanup_imp::x_MoveCDSFromNucAnnotToSetAnnot( CBioseq_set &set )
 {
     if (set.IsSetClass() && set.GetClass() == CBioseq_set::eClass_nuc_prot) {
@@ -9062,26 +9064,42 @@ void CNewCleanup_imp::CdregionFeatBC (CCdregion& cds, CSeq_feat& seqfeat)
     }
 
     // check if comment redund with e.c. on product prot
-    if( FIELD_IS_SET(seqfeat, Comment) && FIELD_IS_SET(seqfeat, Product) ) {
-        const string & comment = GET_FIELD(seqfeat, Comment);
-        const CSeq_id* product_seq_id = GET_FIELD(seqfeat, Product).GetId();
-        if( product_seq_id != NULL ) {
-            CBioseq_Handle product_bioseq = m_Scope->GetBioseqHandle(*product_seq_id);
-            if( product_bioseq ) {
-                SAnnotSelector sel( CSeqFeatData::e_Prot );
-                CFeat_CI feat_ci( product_bioseq, sel );
+    if (m_Scope && x_IsCommentRedundantWithEC(seqfeat, *m_Scope)) {
+        seqfeat.ResetComment();
+        ChangeMade(CCleanupChange::eChangeComment);
+    }
+}
 
-                for( ; feat_ci ; ++feat_ci ) {
-                    if( STRING_SET_MATCH(feat_ci->GetOriginalFeature().GetData().GetProt(), Ec, comment) ) {
-                        RESET_FIELD(seqfeat, Comment);
-                        ChangeMade(CCleanupChange::eChangeComment);
-                        break;
+
+bool CNewCleanup_imp::x_IsCommentRedundantWithEC(const CSeq_feat& seqfeat, CScope& scope)
+{
+    if (!seqfeat.IsSetComment() || !seqfeat.IsSetProduct()) {
+        return false;
+    }
+    CBioseq_Handle product_bioseq = scope.GetBioseqHandle(seqfeat.GetProduct());
+    if (product_bioseq) {
+        CConstRef<CBioseq> pseq = product_bioseq.GetCompleteBioseq();
+        if (pseq && pseq->IsSetAnnot()) {
+            for (auto ait : pseq->GetAnnot()) {
+                if (ait->IsFtable()) {
+                    for (auto fit : ait->GetData().GetFtable()) {
+                        if (fit->IsSetData() &&
+                            fit->GetData().GetSubtype() == CSeqFeatData::eSubtype_prot &&
+                            fit->GetData().GetProt().IsSetEc()) {
+                            for (auto ec : fit->GetData().GetProt().GetEc()) {
+                                if (NStr::EqualNocase(ec, seqfeat.GetComment())) {
+                                    return true;
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
     }
+    return false;
 }
+
 
 bool CNewCleanup_imp::x_InGpsGenomic( const CSeq_feat& seqfeat )
 {
@@ -9200,7 +9218,7 @@ void s_CopyProtXrefToProtFeat( CProt_ref &prot_ref, CProt_ref &cds_prot_ref )
 
 void CNewCleanup_imp::x_MoveCdregionXrefsToProt (CCdregion& cds, CSeq_feat& seqfeat)
 {
-    if( ! FIELD_IS_SET(seqfeat, Xref) || ! FIELD_IS_SET(seqfeat, Product) ) {
+    if( !seqfeat.IsSetXref() || ! seqfeat.IsSetProduct() ) {
         return;
     }
     if( x_InGpsGenomic(seqfeat) ) {
@@ -9210,41 +9228,35 @@ void CNewCleanup_imp::x_MoveCdregionXrefsToProt (CCdregion& cds, CSeq_feat& seqf
     // get the protein
 
     // get protein sequence for product
-    CSeq_feat_EditHandle feat_with_prot_ref_handle;
-    CRef<CSeq_feat> new_feat_with_prot_ref;
-    CRef<CProt_ref> prot_ref;
-    {
-        SAnnotSelector sel;
-        sel.SetFeatType( CSeqFeatData::e_Prot );
-        CFeat_CI feat_ci( *m_Scope, GET_FIELD(seqfeat, Product), sel );
-        if( ! feat_ci ) {
-            return;
-        }
-        const CSeq_annot_Handle sah = feat_ci->GetAnnot();
-        CSeq_entry_EditHandle eh = sah.GetParentEntry().GetEditHandle();
-        feat_with_prot_ref_handle = CSeq_feat_EditHandle( feat_ci->GetSeq_feat_Handle() );
-
-        new_feat_with_prot_ref.Reset( new CSeq_feat );
-        new_feat_with_prot_ref->Assign( feat_ci->GetOriginalFeature() );
-
-        prot_ref.Reset( &new_feat_with_prot_ref->SetData().SetProt() );
-        if( ! prot_ref ) {
-            return;
-        }
-    }
-
-    EDIT_EACH_XREF_ON_SEQFEAT( xref_iter, seqfeat ) {
-        CSeqFeatXref &xref = **xref_iter;
-        if( FIELD_IS_SET(xref, Data) && FIELD_IS( xref.GetData(), Prot) ) {
-            CProt_ref &cds_prot_ref = GET_MUTABLE( xref.SetData(), Prot);
-            s_CopyProtXrefToProtFeat( *prot_ref, cds_prot_ref );
-            ERASE_XREF_ON_SEQFEAT( xref_iter, seqfeat );
-            ChangeMade(CCleanupChange::eMoveToProtXref);
+    CBioseq_Handle product_bioseq = m_Scope->GetBioseqHandle(seqfeat.GetProduct());
+    if (product_bioseq) {
+        CConstRef<CBioseq> pseq = product_bioseq.GetCompleteBioseq();
+        if (pseq && pseq->IsSetAnnot()) {
+            for (auto ait : pseq->GetAnnot()) {
+                if (ait->IsFtable()) {
+                    for (auto fit : ait->GetData().GetFtable()) {
+                        if (fit->IsSetData() &&
+                            fit->GetData().GetSubtype() == CSeqFeatData::eSubtype_prot) {
+                            auto xref = seqfeat.SetXref().begin();
+                            while (xref != seqfeat.SetXref().end()) {
+                                if ((*xref)->IsSetData() && (*xref)->GetData().IsProt()) {
+                                    CRef<CSeq_feat> pfeat(const_cast<CSeq_feat *>(fit.GetPointer()));
+                                    s_CopyProtXrefToProtFeat(pfeat->SetData().SetProt(),
+                                        (*xref)->SetData().SetProt());
+                                    xref = seqfeat.SetXref().erase(xref);
+                                    ChangeMade(CCleanupChange::eMoveToProtXref);
+                                } else {
+                                    ++xref;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
-
-    feat_with_prot_ref_handle.Replace( *new_feat_with_prot_ref );
 }
+
 
 void CNewCleanup_imp::DeltaExtBC( CDelta_ext & delta_ext, CSeq_inst &seq_inst )
 {
@@ -11471,6 +11483,7 @@ CRef<CBioSource> BioSourceFromImpFeat(const CSeq_feat& sf)
 }
 
 
+// part of extended cleanup
 void CNewCleanup_imp::x_RemoveOldFeatures(CBioseq & bioseq)
 {
     CBioseq_Handle bh = m_Scope->GetBioseqHandle(bioseq);
@@ -11528,6 +11541,7 @@ void CNewCleanup_imp::x_RemoveOldFeatures(CBioseq & bioseq)
 
 
 //SQD-2043 change pop sets to phy sets if taxnames differ
+// part of Extended Cleanup
 void CNewCleanup_imp::x_ChangePopToPhy(CBioseq_set& bioseq_set)
 {
     if (!bioseq_set.IsSetClass() || bioseq_set.GetClass() != CBioseq_set::eClass_pop_set) {
@@ -12341,6 +12355,7 @@ void CNewCleanup_imp::MolInfoBC( CMolInfo &molinfo )
     }
 }
 
+// part of ExtendedCleanup
 void CNewCleanup_imp::CreateMissingMolInfo( CBioseq& seq )
 {
     if (seq.IsSetInst() && seq.GetInst().IsSetMol()) {
@@ -12592,6 +12607,7 @@ void CNewCleanup_imp::x_ExtendFeatureToCoverSequence(CSeq_feat_Handle fh, const 
 }
 
 
+// part of ExtendedCleanup
 void CNewCleanup_imp::x_ExtendProteinFeatureOnProteinSeq(CBioseq& seq)
 {
     // don't bother unless length greater than zero and protein
@@ -12624,6 +12640,7 @@ void CNewCleanup_imp::x_ExtendProteinFeatureOnProteinSeq(CBioseq& seq)
 }
 
 
+// part of ExtendedCleanup
 void CNewCleanup_imp::x_ExtendSingleGeneOnMrna(CBioseq& seq)
 {
     // don't bother unless length greater than zero and mRNA
@@ -12893,6 +12910,7 @@ void CNewCleanup_imp::x_SetPartialsForProtein(CBioseq& seq, bool partial5, bool 
 }
 
 
+// part of ExtendedCleanup
 void CNewCleanup_imp::ResynchPeptidePartials (
     CBioseq& seq
 )
@@ -12955,6 +12973,7 @@ void CNewCleanup_imp::RemoveBadProteinTitle(CBioseq& seq)
 }
 
 
+// part of ExtendedCleanup
 void CNewCleanup_imp::MoveCitationQuals(CBioseq& seq)
 {
     vector<CConstRef<CPub> > pub_list;
