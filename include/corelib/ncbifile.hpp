@@ -3375,7 +3375,7 @@ struct SCompareDirEntries
     bool operator()(const string& e1, const string& e2);
 
 private:
-    ESort m_Sort[3];
+    int m_Sort[3];
 };
 
 

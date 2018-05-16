@@ -211,7 +211,7 @@ void s_check_equal(const V1* buf, size_t buf_size, const V2* dst)
         V2 v = V2(buf[i]);
         if ( sizeof(V1) == 1 && sizeof(V2) == 4 ) {
             // unsigned char to int
-            v &= 0xff;
+            v &= (V2)0xff;
         }
         _ASSERT(dst[i] == v);
     }
@@ -221,7 +221,7 @@ inline void s_payload(V* buf, size_t buf_size)
 {
     return;
     for (size_t j = 0; j < buf_size; j += 64/sizeof(V)) {
-        buf[j] += 1;
+        buf[j]++;
     }
 }
 
@@ -472,7 +472,7 @@ BOOST_AUTO_TEST_CASE(TestConvertCharInt)
     int*  dst = (int* )malloc(buf_size * sizeof(int));
     Uint8 start, finish;
     for (size_t i = 0; i < buf_size; ++i) {
-        buf[i] = i & 0xFF;
+        buf[i] = (char)(i & 0xFF);
     }
 
     bool aligned = buf_size%16 == 0 && uintptr_t(buf)%16 == 0 && uintptr_t(dst)%16 == 0;

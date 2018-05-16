@@ -891,8 +891,7 @@ CNcbiTestsTreeBuilder::test_suite_start(but::test_suite const& suite)
 void
 CNcbiTestsTreeBuilder::test_suite_finish(but::test_suite const& suite)
 {
-    _ASSERT(m_CurElem->GetTestUnit()
-                            == &static_cast<const but::test_unit&>(suite));
+    _ASSERT(m_CurElem->GetTestUnit() == &static_cast<const but::test_unit&>(suite));
     m_CurElem = m_CurElem->GetParent();
 }
 
@@ -2283,12 +2282,11 @@ main(int argc, char* argv[])
                 ncbi_args.push_back(argv[i]);
             }
         }
-        s_NcbiArgc = ncbi_args.size();
+        s_NcbiArgc = (int)ncbi_args.size();
         s_NcbiArgv = ncbi_args.data();
-        framework::init
-            (&init_unit_test_suite, boost_args.size(), boost_args.data());
+        framework::init(&init_unit_test_suite, (int)boost_args.size(), boost_args.data());
 #else
-        framework::init( &init_unit_test_suite, argc, argv );
+        framework::init(&init_unit_test_suite, argc, argv);
 #endif
 
         ncbi::s_GetTestApp().InitTestsBeforeRun();

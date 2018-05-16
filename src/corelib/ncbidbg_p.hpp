@@ -76,19 +76,17 @@ BEGIN_NCBI_SCOPE
 #if defined(NCBI_POSIX_THREADS)
     # define xncbi_ValidatePthread(expression, expected_value, message) \
         do { \
-            auto    retval = expression; \
-            if (retval != expected_value) { \
+            auto xvp_retval = expression; \
+            if (xvp_retval != expected_value) { \
                 string  msg(message); \
-                msg += "(pthread error=" + NStr::NumericToString(retval) + \
+                msg += "(pthread error=" + NStr::NumericToString(xvp_retval) + \
                        ": " + \
-                       string(NCBI_ERRNO_STR_WRAPPER(retval)); \
-                if ( retval == -1 ) { \
+                       string(NCBI_ERRNO_STR_WRAPPER(xvp_retval)); \
+                if ( xvp_retval == -1 ) { \
                     msg += " errno=" + NStr::NumericToString(errno); \
                 } \
                 msg += ")"; \
-                NCBI_NS_NCBI::CNcbiDiag::DiagValidate(DIAG_COMPILE_INFO, \
-                                                      #expression, \
-                                                      msg.c_str()); \
+                NCBI_NS_NCBI::CNcbiDiag::DiagValidate(DIAG_COMPILE_INFO, #expression, msg.c_str()); \
             } \
         } while ( 0 )
 #endif

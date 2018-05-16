@@ -311,7 +311,7 @@ protected:
     inline
     static void x_no_sse_ConvertBuffer(char* dest, const int*  src, size_t count) {
         for (size_t e = 0; e < count; ++e) {
-            *(dest + e) = *(src + e);
+            *(dest + e) = (char)*(src + e);
         } 
     }
 

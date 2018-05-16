@@ -689,7 +689,7 @@ int CDecimal::Increment(size_t i, int c)
     while ( i-- ) {
         if ( ++m_Mantissa[i] <= '9' )
             return 0;
-        m_Mantissa[i] -= 10;
+        m_Mantissa[i] = char(m_Mantissa[i] - 10);
     }
     return 1;
 }
@@ -701,7 +701,7 @@ int CDecimal::Decrement(size_t i, int c)
     while ( i-- ) {
         if ( --m_Mantissa[i] >= '0' )
             return 0;
-        m_Mantissa[i] += 10;
+        m_Mantissa[i] = char(m_Mantissa[i] + 10);
     }
     return 1;
 }
@@ -1402,7 +1402,7 @@ void CTestApp::RunD2SPrecisionBenchmark(void)
     if (errors != 0) {
         NcbiCout << "ERRORS (need immediate attention!): " << errors << NcbiEndl;
     }
-    NcbiCout << "Different result: " << diff << "  (" << (100.*diff)/COUNT << "%)" << NcbiEndl;
+    NcbiCout << "Different result: " << diff << "  (" << (100.*(long double)diff)/COUNT << "%)" << NcbiEndl;
     for (map<size_t,Int8>::const_iterator t = diffmap.begin(); t != diffmap.end(); ++t) {
         NcbiCout << "Differ in " << t->first << " decimal digit: " << t->second << endl;
     }

@@ -6179,7 +6179,7 @@ void FindFiles(const string& pattern,  std::list<string>& result, TFindFiles fla
 }
 
 
-#define UNDEFINED_SORT_MODE (ESort)kMax_Int
+#define UNDEFINED_SORT_MODE kMax_Int
 
 SCompareDirEntries::SCompareDirEntries(ESort s1)
 {

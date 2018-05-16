@@ -1934,62 +1934,64 @@ BOOST_AUTO_TEST_CASE(s_CommonSize)
 
 BOOST_AUTO_TEST_CASE(s_Replace)
 {
-    string src("aaabbbaaccczzcccXX");
-    string dst;
+    {{
+        string src("aaabbbaaccczzcccXX");
+        string dst;
 
-    // Replace()
+        // Replace()
 
-    string search("ccc");
-    string replace("RrR");
-    NStr::Replace(src, search, replace, dst);
-    BOOST_CHECK_EQUAL(dst, string("aaabbbaaRrRzzRrRXX"));
+        string search("ccc");
+        string replace("RrR");
+        NStr::Replace(src, search, replace, dst);
+        BOOST_CHECK_EQUAL(dst, string("aaabbbaaRrRzzRrRXX"));
 
-    search  = "a";
-    replace = "W";
-    NStr::Replace(src, search, replace, dst, 6, 1);
-    BOOST_CHECK_EQUAL(dst, string("aaabbbWaccczzcccXX"));
+        search  = "a";
+        replace = "W";
+        NStr::Replace(src, search, replace, dst, 6, 1);
+        BOOST_CHECK_EQUAL(dst, string("aaabbbWaccczzcccXX"));
 
-    search  = "bbb";
-    replace = "BBB";
-    NStr::Replace(src, search, replace, dst, 50);
-    BOOST_CHECK_EQUAL(dst, string("aaabbbaaccczzcccXX"));
+        search  = "bbb";
+        replace = "BBB";
+        NStr::Replace(src, search, replace, dst, 50);
+        BOOST_CHECK_EQUAL(dst, string("aaabbbaaccczzcccXX"));
 
-    search  = "ggg";
-    replace = "no";
-    dst = NStr::Replace(src, search, replace);
-    BOOST_CHECK_EQUAL(dst, string("aaabbbaaccczzcccXX"));
+        search  = "ggg";
+        replace = "no";
+        dst = NStr::Replace(src, search, replace);
+        BOOST_CHECK_EQUAL(dst, string("aaabbbaaccczzcccXX"));
 
-    search  = "a";
-    replace = "A";
-    dst = NStr::Replace(src, search, replace);
-    BOOST_CHECK_EQUAL(dst, string("AAAbbbAAccczzcccXX"));
+        search  = "a";
+        replace = "A";
+        dst = NStr::Replace(src, search, replace);
+        BOOST_CHECK_EQUAL(dst, string("AAAbbbAAccczzcccXX"));
 
-    search  = "X";
-    replace = "x";
-    dst = NStr::Replace(src, search, replace, src.size() - 1);
-    BOOST_CHECK_EQUAL(dst, string("aaabbbaaccczzcccXx"));
+        search  = "X";
+        replace = "x";
+        dst = NStr::Replace(src, search, replace, src.size() - 1);
+        BOOST_CHECK_EQUAL(dst, string("aaabbbaaccczzcccXx"));
 
-    // ReplaceInPlace()
+        // ReplaceInPlace()
 
-    search  = "a";
-    replace = "W";
-    NStr::ReplaceInPlace(src, search, replace);
-    BOOST_CHECK_EQUAL(src, string("WWWbbbWWccczzcccXX"));
+        search  = "a";
+        replace = "W";
+        NStr::ReplaceInPlace(src, search, replace);
+        BOOST_CHECK_EQUAL(src, string("WWWbbbWWccczzcccXX"));
 
-    search = "W";
-    replace = "a";
-    NStr::ReplaceInPlace(src, search, replace, 2, 2);
-    BOOST_CHECK_EQUAL(src, string("WWabbbaWccczzcccXX"));
+        search = "W";
+        replace = "a";
+        NStr::ReplaceInPlace(src, search, replace, 2, 2);
+        BOOST_CHECK_EQUAL(src, string("WWabbbaWccczzcccXX"));
 
-    search = "a";
-    replace = "bb";
-    NStr::ReplaceInPlace(src, search, replace);
-    BOOST_CHECK_EQUAL(src, string("WWbbbbbbbWccczzcccXX"));
+        search = "a";
+        replace = "bb";
+        NStr::ReplaceInPlace(src, search, replace);
+        BOOST_CHECK_EQUAL(src, string("WWbbbbbbbWccczzcccXX"));
 
-    search = "bb";
-    replace = "c";
-    NStr::ReplaceInPlace(src, search, replace);
-    BOOST_CHECK_EQUAL(src, string("WWcccbWccczzcccXX"));
+        search = "bb";
+        replace = "c";
+        NStr::ReplaceInPlace(src, search, replace);
+        BOOST_CHECK_EQUAL(src, string("WWcccbWccczzcccXX"));
+    }}
 
     // "number of replacements occurred" test
     {{
@@ -4849,8 +4851,8 @@ BOOST_AUTO_TEST_CASE(s_StringJoin)
 {
     string result("one,two,three"), resultN("1,2,3");
     stringstream iss("one two three");
-    istream_iterator<string> i(iss);
-    BOOST_CHECK_EQUAL(result, NStr::Join(i, istream_iterator<string>(), ","));
+    istream_iterator<string> it(iss);
+    BOOST_CHECK_EQUAL(result, NStr::Join(it, istream_iterator<string>(), ","));
 
     stringstream iss1("1 2 3");
     BOOST_CHECK_EQUAL(resultN, NStr::JoinNumeric(istream_iterator<int>(iss1), istream_iterator<int>(), ","));
@@ -4885,10 +4887,11 @@ BOOST_AUTO_TEST_CASE(s_StringJoin)
     string jjj = NStr::JoinNumeric( begin(m), end(m), ",");
 #endif
 
-    BOOST_CHECK_EQUAL( "one:uno,two:dos", NStr::TransformJoin( m.begin(), m.end(), ",", [](const map<string, string>::value_type& i){ return NStr::Join( {i.first, i.second}, ":");}));
+    BOOST_CHECK_EQUAL("one:uno,two:dos", NStr::TransformJoin( m.begin(), m.end(), ",", 
+                      [](const map<string, string>::value_type& i){ return NStr::Join( {i.first, i.second}, ":");}));
 // using auto in lambdas, requires C++14?
 // that is, this might fail to compile, otherwise, it is correct
-//    BOOST_CHECK_EQUAL( "one:uno,two:dos", NStr::TransformJoin( m.begin(), m.end(), ",", [](const auto& i){ return NStr::Join( {i.first, i.second}, ":");}));
+//    BOOST_CHECK_EQUAL("one:uno,two:dos", NStr::TransformJoin( m.begin(), m.end(), ",", [](const auto& i){ return NStr::Join( {i.first, i.second}, ":");}));
 
     list<int> mi = {1,2,3};
 //    BOOST_CHECK_EQUAL(resultN, NStr::TransformJoin( mi.begin(), mi.end(), ",", [](const auto& i){ return NStr::NumericToString(i);}));
@@ -4923,6 +4926,7 @@ BOOST_AUTO_TEST_CASE(s_StringJoin)
     j = NStr::Join(arr, ",");
     j = NStr::Join(begin(arr), end(arr), ",");
 }
+
 
 NCBITEST_INIT_TREE()
 {

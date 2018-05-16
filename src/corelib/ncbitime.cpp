@@ -2392,7 +2392,7 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
     if ( shift_time ) {
         // Cancel temporary time shift
         tn.x_AddHour(-kShiftHours * sign, eAdjustDaylight, false);
-        tn.m_Data.adjTimeDiff = (Int4)diff;
+        tn.m_Data.adjTimeDiff = (Int4)diff;  /* NCBI_FAKE_WARNING */
     }
     *this = tn;
     return *this;
