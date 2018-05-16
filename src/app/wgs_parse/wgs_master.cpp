@@ -776,7 +776,7 @@ static CRef<CSeq_id> CreateAccession(int last_accession_num, size_t accession_le
     return ret;
 }
 
-static void SetMolInfo(CBioseq& bioseq)
+static void SetMolInfo(CBioseq& bioseq, CMolInfo::TBiomol biomol)
 {
     CRef<CSeqdesc> descr(new CSeqdesc);
     CMolInfo& mol_info = descr->SetMolinfo();
@@ -784,7 +784,25 @@ static void SetMolInfo(CBioseq& bioseq)
     if (GetParams().IsTsa()) {
 
         bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
-        // TODO
+        mol_info.SetTech(CMolInfo::eTech_tsa);
+
+        int fix_tech = GetParams().GetFixTech();
+        CMolInfo::TBiomol cur_biomol = biomol;
+        if (fix_tech | eFixMolBiomol) {
+            cur_biomol = CMolInfo::eBiomol_transcribed_RNA;
+        }
+
+        if (fix_tech | eFixBiomolMRNA) {
+            cur_biomol = CMolInfo::eBiomol_mRNA;
+        }
+        else if (fix_tech | eFixBiomolRRNA) {
+            cur_biomol = CMolInfo::eBiomol_rRNA;
+        }
+        else if (fix_tech | eFixBiomolNCRNA) {
+            cur_biomol = CMolInfo::eBiomol_ncRNA;
+        }
+
+        mol_info.SetBiomol(cur_biomol);
     }
     else {
 
@@ -1112,7 +1130,7 @@ static size_t GetNumOfPubs(const CPub_equiv& pub, CPub::E_Choice type)
     return ret;
 }
 
-static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& cit_sub, CRef<CContact_info>& contact_info)
+static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& cit_sub, CRef<CContact_info>& contact_info, CMolInfo::TBiomol biomol)
 {
     CRef<CBioseq> bioseq(new CBioseq);
     CRef<CSeq_entry> ret;
@@ -1132,7 +1150,7 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
     bioseq->SetInst().SetRepr(CSeq_inst::eRepr_virtual);
     bioseq->SetInst().SetLength(info.m_num_of_entries);
 
-    SetMolInfo(*bioseq);
+    SetMolInfo(*bioseq, biomol);
 
     // Keywords
     bool is_tpa_keyword_present = false;
@@ -1557,6 +1575,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
     CRef<CContact_info> master_contact_info;
     CRef<CCit_sub> master_cit_sub;
     CSeqEntryCommonInfo common_info;
+    CMolInfo::TBiomol biomol = CMolInfo::eBiomol_unknown;
 
     master_info.m_same_biosource = true;
     list<CEntryOrderInfo> seq_order;
@@ -1671,6 +1690,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                 }
 
                 CSeqEntryInfo info(master_info.m_keywords_set, master_info.m_keywords);
+                info.m_biomol = biomol;
                 if (!CheckSeqEntry(*entry, file, info, common_info)) {
                     master_info.m_reject = true;
                 }
@@ -1689,6 +1709,10 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                     }
 
                     ERR_POST_EX(0, 0, Warning << "Unusual biomol value \"" << rna << "\" has been used for this TSA project, instead of \"transcribed_RNA\".");
+                }
+
+                if (info.m_biomol_state == eBiomolSet) {
+                    biomol = info.m_biomol;
                 }
 
                 master_info.m_has_targeted_keyword = master_info.m_has_targeted_keyword || info.m_has_targeted_keyword;
@@ -1819,7 +1843,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
         // TODO
     }
     else {
-        master_info.m_master_bioseq = CreateMasterBioseq(master_info, master_cit_sub, master_contact_info);
+        master_info.m_master_bioseq = CreateMasterBioseq(master_info, master_cit_sub, master_contact_info, biomol);
 
         if (GetParams().IsStripAuthors() && GetParams().GetUpdateMode() != eUpdateScaffoldsNew) {
             StripAuthors(*master_info.m_master_bioseq);
