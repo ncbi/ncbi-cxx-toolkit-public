@@ -65,8 +65,6 @@ enum ELINKERD_Subcodes {
     other part of the connect library, returned endpoints, or client code.
     Therefore, they are independent of other connect library macros.
  */
-#define REG_LINKERD_SECTION         "_LINKERD"
-
 #define REG_LINKERD_SCHEME_KEY      "LINKERD_SCHEME"
 #define REG_LINKERD_SCHEME_DEF      ""
 
@@ -140,8 +138,7 @@ typedef enum {
     eEndStat_Success,
     eEndStat_Error,
     eEndStat_NoData,
-    eEndStat_NoScheme,
-    eEndStat_BadData
+    eEndStat_NoScheme
 } EEndpointStatus;
 
 
@@ -174,7 +171,6 @@ static const char* x_Scheme(EBURLScheme scheme)
     case eURL_Ftp:
         return "FTP";
     case eURL_Unspec:
-    default:
         return NULL;
     }
 }
@@ -270,10 +266,6 @@ static EEndpointStatus s_EndpointFromNetInfo(SEndpoint *end,
         CORE_LOG_X(eLSub_BadData, eLOG_Error,
             "Failed to check net_info for endpoint override.");
         break;
-    default:
-        CORE_LOGF_X(eLSub_BadData, eLOG_Fatal,
-            ("Unhandled endpoint status %d.", (int)end_stat));
-        break;
     }
 
     return end_stat;
@@ -355,10 +347,6 @@ static EEndpointStatus s_EndpointFromRegistry(SEndpoint *end)
         CORE_LOG_X(eLSub_BadData, eLOG_Error,
             "Failed to check registry for endpoint override.");
         break;
-    default:
-        CORE_LOGF_X(eLSub_BadData, eLOG_Fatal,
-            ("Unhandled endpoint status %d.", (int)end_stat));
-        break;
     }
 
     return end_stat;
@@ -407,7 +395,7 @@ static EEndpointStatus s_EndpointFromNamerd(SEndpoint* end, SERV_ITER iter)
 
     /* Fetch the service info from namerd. */
     nd_srv_info = op->GetNextInfo(nd_iter, NULL);
-    if ( ! nd_srv_info  ||  nd_srv_info == (SSERV_Info*)(-1L)) {
+    if ( ! nd_srv_info) {
         CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
                    "Couldn't get service info from namerd.");
         retval = eEndStat_Error;
@@ -415,6 +403,7 @@ static EEndpointStatus s_EndpointFromNamerd(SEndpoint* end, SERV_ITER iter)
     }
 
     /* Sanity checks */
+    assert(nd_srv_info != (SSERV_Info*)(-1L));
     assert(strlen(SERV_HTTP_PATH(&nd_srv_info->u.http)) < ENDPOINT_PATH_LEN);
     assert(strlen(SERV_HTTP_ARGS(&nd_srv_info->u.http)) < ENDPOINT_ARGS_LEN);
 
@@ -644,7 +633,7 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
     }}
 
     /* Check for sufficient endpoint info in incoming net_info */
-    SEndpoint endpoint = {eURL_Unspec, "", "", ""};
+    SEndpoint endpoint = {eURL_Unspec, "", "", "", ""};
     if (s_EndpointFromNetInfo(&endpoint, net_info) == eEndStat_Error) {
         CORE_LOG_X(eLSub_BadData, eLOG_Error,
             "Failed to check incoming net_info for endpoint.");
