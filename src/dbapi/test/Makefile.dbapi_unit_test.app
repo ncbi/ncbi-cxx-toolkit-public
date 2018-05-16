@@ -31,10 +31,12 @@ CHECK_CMD = dbapi_unit_test -dr ftds95     -S MsSql -V 72
 CHECK_CMD = dbapi_unit_test -dr ftds100    -S MsSql
 CHECK_CMD = dbapi_unit_test -dr ftds100    -S MsSql -V 74
 CHECK_CMD = dbapi_unit_test -dr odbc       -S MsSql --log_level=test_suite
-# CHECK_CMD = dbapi_unit_test -dr ftds64     -S DBAPI_MS2008_TEST
-# CHECK_CMD = dbapi_unit_test -dr ftds95     -S DBAPI_MS2008_TEST
-# CHECK_CMD = dbapi_unit_test -dr ftds95     -S DBAPI_MS2008_TEST -V 73
-# CHECK_CMD = dbapi_unit_test -dr odbc       -S DBAPI_MS2008_TEST --log_level=test_suite
+CHECK_CMD = dbapi_unit_test -dr ftds64     -S DBAPI_MS2017_TEST_LB
+CHECK_CMD = dbapi_unit_test -dr ftds95     -S DBAPI_MS2017_TEST_LB
+CHECK_CMD = dbapi_unit_test -dr ftds95     -S DBAPI_MS2017_TEST_LB -V 72
+CHECK_CMD = dbapi_unit_test -dr ftds100    -S DBAPI_MS2017_TEST_LB
+CHECK_CMD = dbapi_unit_test -dr ftds100    -S DBAPI_MS2017_TEST_LB -V 74
+CHECK_CMD = dbapi_unit_test -dr odbc       -S DBAPI_MS2017_TEST_LB --log_level=test_suite
 CHECK_CMD = dbapi_unit_test -dr ctlib      -S Sybase
 CHECK_CMD = dbapi_unit_test -dr ftds64     -S Sybase
 CHECK_CMD = dbapi_unit_test -dr ftds95     -S Sybase

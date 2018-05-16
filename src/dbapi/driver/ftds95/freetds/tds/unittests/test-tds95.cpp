@@ -44,6 +44,7 @@ BEGIN_NCBI_SCOPE
 
 static const char* kServers[] = {
     "MSDEV1",
+    "DBAPI_MS2017_TEST",
     "DBAPI_DEV3",
     "DBAPI_DEV16",
     NULL
@@ -157,7 +158,7 @@ int CRunTestApplication::Run(void)
     CNcbiOstrstream failures;
 
     for (const char* const* s = kServers;  *s != NULL;  ++s) {
-        if (NStr::StartsWith(*s, "MS")) {
+        if (strstr(*s, "MS") != NULL) {
             env.Set("TDSVER", args["-ms-ver"].AsString());
         } else if (args["-syb-ver"]) {
             env.Set("TDSVER", args["-syb-ver"].AsString());

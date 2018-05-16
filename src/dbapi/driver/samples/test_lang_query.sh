@@ -14,14 +14,14 @@ if echo $FEATURES | grep "\-connext" > /dev/null ; then
     server_list="MSDEV1 DBAPI_DEV3 DBAPI_DEV16"
     server_mssql="MSDEV1"
 
-    # server_mssql2008="MS2008DEV1"
+    server_mssql2017="DBAPI_MS2017_TEST"
 else
     # server_list="MS_DEV2"
     server_list="DBAPI_MS2014_TEST DBAPI_SYB155_TEST DBAPI_SYB160_TEST"
     # server_mssql="MS_DEV2"
     server_mssql="DBAPI_MS2014_TEST"
 
-    # server_mssql2008="DBAPI_MS2008_TEST"
+    server_mssql2017="DBAPI_MS2017_TEST_LB"
 fi
 
 if echo $FEATURES | grep "DLL" > /dev/null ; then
@@ -199,21 +199,21 @@ EOF
         for server in $server_list ; do
             case "$v_flag" in
               -v\ 7?)
-                if test $server != $server_mssql ; then
-                # -a $server != $server_mssql2008
+                if test $server != $server_mssql \
+                        -a $server != $server_mssql2017; then
                     continue
                 fi
                 ;;
             esac
 
             if test $driver = "ctlib" -a \( $server = $server_mssql \
+                       -o $server = $server_mssql2017 \
                        -o \( $static_config = 1 -a $win_config = 1 \) \) ; then
-                # ... -o $server = $server_mssql2008 ...
                 continue
             fi
 
-            if test $driver = "odbc" -a  $server != $server_mssql ; then
-                # -a $server != $server_mssql2008
+            if test $driver = "odbc" -a  $server != $server_mssql \
+                    -a $server != $server_mssql2017; then
                 continue
             fi
              
@@ -259,8 +259,8 @@ EOF
             if test $driver = "ctlib" -a \( $SYSTEM_NAME = "SunOS" -a $PROCESSOR_TYPE = "i" \) ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped because of invalid Sybase client installation)"
             elif test \( $driver = "ftds64" -o $driver = "ftds95" -o $driver = "ftds100" \) \
-                      -a $server != $server_mssql ; then
-                # -a $server != $server_mssql2008
+                      -a $server != $server_mssql \
+                      -a $server != $server_mssql2017; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped)"
             else
                 RunSimpleTest "dbapi_cursor"
