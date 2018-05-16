@@ -36,6 +36,7 @@
 #include <sstream>
 
 #include <corelib/ncbireg.hpp>
+#include <corelib/ncbiargs.hpp>
 
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/lbsm_resolver.hpp>
@@ -99,6 +100,11 @@ CCassConnectionFactory::CCassConnectionFactory() :
 CCassConnectionFactory::~CCassConnectionFactory()
 {
     CCassConnection::UpdateLogging();
+}
+
+void CCassConnectionFactory::AppParseArgs(const CArgs &  args)
+{
+    ProcessParams();
 }
 
 void CCassConnectionFactory::ProcessParams(void)

@@ -50,6 +50,7 @@ protected:
 
 public:
     ~CCassConnectionFactory();
+    void AppParseArgs(const CArgs &  args);
     void LoadConfig(const string &  cfg_name, const string &  section);
     void LoadConfig(const CNcbiRegistry &  registry, const string &  section);
     void ReloadConfig(void);
