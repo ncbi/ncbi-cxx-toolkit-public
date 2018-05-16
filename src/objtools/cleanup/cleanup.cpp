@@ -2554,6 +2554,8 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
         if (sequence::IsPseudo(*(cds_it->GetSeq_feat()), entry.GetScope())) {
             change_this_cds = RemovePseudoProduct(*new_cds, entry.GetScope());
         } else {
+            string current_name = GetProteinName(*new_cds, entry.GetScope());
+
             change_this_cds |= SetBestFrame(*new_cds, entry.GetScope());
 
             change_this_cds |= SetCDSPartialsByFrameAndTranslation(*new_cds, entry.GetScope());
@@ -2592,7 +2594,6 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
                 }
             }
 
-            string current_name = GetProteinName(*new_cds, entry.GetScope());
             if (NStr::IsBlank(current_name)) {
                 SetProteinName(*new_cds, "hypothetical protein", false, entry.GetScope());
                 current_name = "hypothetical protein";
