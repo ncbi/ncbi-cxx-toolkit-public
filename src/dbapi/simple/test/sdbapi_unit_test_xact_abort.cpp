@@ -47,8 +47,8 @@ BOOST_AUTO_TEST_CASE(Test_xact_abort)
             CQuery query = GetDatabase().NewQuery();
             query.SetSql("SELECT @@version");
             query.Execute();
-            ITERATE(CQuery, it, query.SingleSet()) {
-                if (NStr::Find(it[1].AsString(),
+            for (const auto&  row: query.SingleSet()) {
+                if (NStr::Find(row[1].AsString(),
                                "Microsoft", NStr::eNocase) != NPOS)
                     is_ms_sql = true;
             }
@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE(Test_xact_abort)
             query.SetSql("SELECT * FROM " + table_name_2);
             query.Execute();
 
-            ITERATE(CQuery, it, query.SingleSet()) {
+            for (const auto& row: query.SingleSet()) {
                 ++num;
             }
             query.PurgeResults();
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(Test_xact_abort)
             query.SetSql("SELECT * FROM " + table_name_2);
             query.Execute();
 
-            ITERATE(CQuery, it, query.SingleSet()) {
+            for (const auto& row: query.SingleSet()) {
                 ++num;
             }
             query.PurgeResults();

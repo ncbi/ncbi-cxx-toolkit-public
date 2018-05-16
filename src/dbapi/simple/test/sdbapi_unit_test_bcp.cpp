@@ -726,9 +726,9 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
                 query.SetSql(sql);
                 query.Execute();
                 query.RequireRowCount(num_of_tests);
-                ITERATE(CQuery, it, query.SingleSet()) {
-                    Int4 i = it[1].AsInt4();
-                    string col1 = it[2].AsString();
+                for (const auto& row: query.SingleSet()) {
+                    Int4 i = row[1].AsInt4();
+                    string col1 = row[2].AsString();
 
                     switch (i) {
                     case 1:
@@ -968,8 +968,8 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing4)
         query.SetSql("SELECT transcript FROM " + table_name);
         query.Execute();
         query.RequireRowCount(test_num);
-        ITERATE (CQuery, it, query.SingleSet()) {
-            BOOST_CHECK_EQUAL(it[1].AsString(), test_data);
+        for (const auto& row: query.SingleSet()) {
+            BOOST_CHECK_EQUAL(row[1].AsString(), test_data);
         }
         BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
     }
@@ -1104,27 +1104,27 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing7)
             query.Execute();
             query.RequireRowCount(test_num);
             int j = 0;
-            ITERATE(CQuery, it, query) {
-                BOOST_CHECK_EQUAL(it["i1"].AsInt4(), i1);
-                BOOST_CHECK_EQUAL(it["str1"].AsString(), str1);
-                BOOST_CHECK_EQUAL(it["b1"].AsBool(), b_vals[j][0]);
-                BOOST_CHECK_EQUAL(it["b2"].AsBool(), b_vals[j][1]);
-                BOOST_CHECK_EQUAL(it["i2"].AsInt4(), i2);
-                BOOST_CHECK_EQUAL(it["b3"].AsBool(), b_vals[j][2]);
-                BOOST_CHECK_EQUAL(it["s1"].AsShort(), s1);
-                BOOST_CHECK_EQUAL(it["b4"].AsBool(), b_vals[j][3]);
-                BOOST_CHECK_EQUAL(it["b5"].AsBool(), b_vals[j][4]);
-                BOOST_CHECK_EQUAL(it["i3"].AsInt4(), i3);
-                BOOST_CHECK_EQUAL(it["b6"].AsBool(), b_vals[j][5]);
-                BOOST_CHECK_EQUAL(it["str2"].AsString(), str2);
-                BOOST_CHECK_EQUAL(it["b7"].AsBool(), b_vals[j][6]);
-                BOOST_CHECK_EQUAL(it["s2"].AsShort(), s2);
-                BOOST_CHECK_EQUAL(it["b8"].AsBool(), b_vals[j][7]);
-                BOOST_CHECK_EQUAL(it["b9"].AsBool(), b_vals[j][8]);
-                BOOST_CHECK_EQUAL(it["t1"].AsByte(), t1);
-                BOOST_CHECK_EQUAL(it["b10"].AsBool(), b_vals[j][9]);
-                BOOST_CHECK_EQUAL(it["str3"].AsString(), str3);
-                BOOST_CHECK_EQUAL(it["b11"].AsBool(), b_vals[j][10]);
+            for (const auto& row: query) {
+                BOOST_CHECK_EQUAL(row["i1"].AsInt4(), i1);
+                BOOST_CHECK_EQUAL(row["str1"].AsString(), str1);
+                BOOST_CHECK_EQUAL(row["b1"].AsBool(), b_vals[j][0]);
+                BOOST_CHECK_EQUAL(row["b2"].AsBool(), b_vals[j][1]);
+                BOOST_CHECK_EQUAL(row["i2"].AsInt4(), i2);
+                BOOST_CHECK_EQUAL(row["b3"].AsBool(), b_vals[j][2]);
+                BOOST_CHECK_EQUAL(row["s1"].AsShort(), s1);
+                BOOST_CHECK_EQUAL(row["b4"].AsBool(), b_vals[j][3]);
+                BOOST_CHECK_EQUAL(row["b5"].AsBool(), b_vals[j][4]);
+                BOOST_CHECK_EQUAL(row["i3"].AsInt4(), i3);
+                BOOST_CHECK_EQUAL(row["b6"].AsBool(), b_vals[j][5]);
+                BOOST_CHECK_EQUAL(row["str2"].AsString(), str2);
+                BOOST_CHECK_EQUAL(row["b7"].AsBool(), b_vals[j][6]);
+                BOOST_CHECK_EQUAL(row["s2"].AsShort(), s2);
+                BOOST_CHECK_EQUAL(row["b8"].AsBool(), b_vals[j][7]);
+                BOOST_CHECK_EQUAL(row["b9"].AsBool(), b_vals[j][8]);
+                BOOST_CHECK_EQUAL(row["t1"].AsByte(), t1);
+                BOOST_CHECK_EQUAL(row["b10"].AsBool(), b_vals[j][9]);
+                BOOST_CHECK_EQUAL(row["str3"].AsString(), str3);
+                BOOST_CHECK_EQUAL(row["b11"].AsBool(), b_vals[j][10]);
                 ++j;
             }
             BOOST_CHECK_EQUAL(j, test_num);

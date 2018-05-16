@@ -93,10 +93,10 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
             query.SetSql(sql);
             query.Execute();
             query.RequireRowCount(1);
-            ITERATE(CQuery, it, query.SingleSet()) {
-                BOOST_CHECK(!it[1].IsNull());
+            for (const auto& row: query.SingleSet()) {
+                BOOST_CHECK(!row[1].IsNull());
 
-                const string str_value = it[1].AsString();
+                const string str_value = row[1].AsString();
                 size_t blob_size = str_value.size();
 
                 BOOST_CHECK_EQUAL(clob_value.size(), blob_size);
@@ -237,8 +237,8 @@ BOOST_AUTO_TEST_CASE(Test_LOB_NewConn)
             query.Execute();
             query.RequireRowCount(1);
 
-            ITERATE(CQuery, it, query.SingleSet()) {
-                ostream& out = it[1].GetOStream(clob_value.size(), kBOSFlags);
+            for (const auto& row: query.SingleSet()) {
+                ostream& out = row[1].GetOStream(clob_value.size(), kBOSFlags);
                 out.write(clob_value.data(), clob_value.size());
                 out.flush();
             }
@@ -252,10 +252,10 @@ BOOST_AUTO_TEST_CASE(Test_LOB_NewConn)
             query.SetSql(sql);
             query.Execute();
             query.RequireRowCount(1);
-            ITERATE(CQuery, it, query.SingleSet()) {
-                BOOST_CHECK(!it[1].IsNull());
+            for (const auto& row: query.SingleSet()) {
+                BOOST_CHECK(!row[1].IsNull());
 
-                const string str_value = it[1].AsString();
+                const string str_value = row[1].AsString();
                 size_t blob_size = str_value.size();
 
                 BOOST_CHECK_EQUAL(clob_value.size(), blob_size);
@@ -306,9 +306,9 @@ BOOST_AUTO_TEST_CASE(Test_LOB_NewConn)
                         query.Execute();
                         query.RequireRowCount(1);
 
-                        ITERATE(CQuery, it, query.SingleSet()) {
-                            ostream& out = it[1].GetOStream(clob_value.size(),
-                                                            kBOSFlags);
+                        for (const auto& row: query.SingleSet()) {
+                            ostream& out = row[1].GetOStream(clob_value.size(),
+                                                             kBOSFlags);
                             out.write(clob_value.data(), clob_value.size());
                             out.flush();
                         }
@@ -414,10 +414,10 @@ BOOST_AUTO_TEST_CASE(Test_LOB2)
             query.SetSql(sql);
             query.Execute();
             query.RequireRowCount(num_of_records);
-            ITERATE(CQuery, it, query.SingleSet()) {
-                BOOST_CHECK( !it[1].IsNull() );
+            for (const auto& row: query.SingleSet()) {
+                BOOST_CHECK( !row[1].IsNull() );
 
-                size_t blob_size = it[1].AsString().size();
+                size_t blob_size = row[1].AsString().size();
                 BOOST_CHECK_EQUAL(sizeof(clob_value) - 1, blob_size);
             }
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
@@ -488,9 +488,9 @@ BOOST_AUTO_TEST_CASE(Test_LOB2_NewConn)
                 query.Execute();
                 query.RequireRowCount(num_of_records);
 
-                ITERATE(CQuery, it, query.SingleSet()) {
-                    ostream& out = it[1].GetOStream(sizeof(clob_value) - 1,
-                                                    kBOSFlags);
+                for (const auto& row: query.SingleSet()) {
+                    ostream& out = row[1].GetOStream(sizeof(clob_value) - 1,
+                                                     kBOSFlags);
                     out.write(clob_value, sizeof(clob_value) - 1);
                     out.flush();
                 }
@@ -505,10 +505,10 @@ BOOST_AUTO_TEST_CASE(Test_LOB2_NewConn)
             query.SetSql(sql);
             query.Execute();
             query.RequireRowCount(num_of_records);
-            ITERATE(CQuery, it, query.SingleSet()) {
-                BOOST_CHECK( !it[1].IsNull() );
+            for (const auto& row: query.SingleSet()) {
+                BOOST_CHECK( !row[1].IsNull() );
 
-                size_t blob_size = it[1].AsString().size();
+                size_t blob_size = row[1].AsString().size();
                 BOOST_CHECK_EQUAL(sizeof(clob_value) - 1, blob_size);
             }
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
@@ -576,15 +576,15 @@ BOOST_AUTO_TEST_CASE(Test_LOB3)
             query.SetSql(sql);
             query.Execute();
             query.RequireRowCount(num_of_records);
-            ITERATE(CQuery, it, query.SingleSet()) {
-                BOOST_CHECK( !it[1].IsNull() );
-                string text_str = it[1].AsString();
+            for (const auto& row: query.SingleSet()) {
+                BOOST_CHECK( !row[1].IsNull() );
+                string text_str = row[1].AsString();
                 size_t text_blob_size = text_str.size();
                 BOOST_CHECK_EQUAL(clob_value.size(), text_blob_size);
                 BOOST_CHECK(NStr::Compare(clob_value, text_str) == 0);
 
-                BOOST_CHECK( !it[2].IsNull() );
-                string image_str = it[2].AsString();
+                BOOST_CHECK( !row[2].IsNull() );
+                string image_str = row[2].AsString();
                 size_t image_blob_size = image_str.size();
                 BOOST_CHECK_EQUAL(clob_value.size(), image_blob_size);
                 BOOST_CHECK(NStr::Compare(clob_value, image_str) == 0);
@@ -647,9 +647,9 @@ BOOST_AUTO_TEST_CASE(Test_LOB4)
             query.SetSql(sql);
             query.Execute();
             query.RequireRowCount(1);
-            ITERATE(CQuery, it, query.SingleSet()) {
-                BOOST_CHECK( !it[1].IsNull() );
-                BOOST_CHECK_EQUAL(it[1].AsString(), clob_value);
+            for (const auto& row: query.SingleSet()) {
+                BOOST_CHECK( !row[1].IsNull() );
+                BOOST_CHECK_EQUAL(row[1].AsString(), clob_value);
             }
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
@@ -733,10 +733,10 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
             query.SetSql(sql);
             query.Execute();
             query.RequireRowCount(1);
-            ITERATE(CQuery, it, query.SingleSet()) {
+            for (const auto& row: query.SingleSet()) {
                 for (unsigned int pos = 1; pos <= 4; ++pos) {
-                    BOOST_CHECK( !it[pos].IsNull() );
-                    string value = it[pos].AsString();
+                    BOOST_CHECK( !row[pos].IsNull() );
+                    string value = row[pos].AsString();
                     size_t blob_size = value.size();
                     BOOST_CHECK_EQUAL(clob_value.size(), blob_size);
                     BOOST_CHECK_EQUAL(value, clob_value);
@@ -810,10 +810,10 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_NewConn)
                 query.Execute();
                 query.RequireRowCount(1);
 
-                ITERATE(CQuery, it, query.SingleSet()) {
+                for (const auto& row: query.SingleSet()) {
                     for (unsigned int pos = 1; pos <= 4; ++pos) {
-                        ostream& out = it[pos].GetOStream(clob_value.size(),
-                                                          kBOSFlags);
+                        ostream& out = row[pos].GetOStream(clob_value.size(),
+                                                           kBOSFlags);
                         out.write(clob_value.data(), clob_value.size());
                         out.flush();
                         BOOST_CHECK(out.good());
@@ -831,10 +831,10 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_NewConn)
             query.SetSql(sql);
             query.Execute();
             query.RequireRowCount(1);
-            ITERATE(CQuery, it, query.SingleSet()) {
+            for (const auto& row: query.SingleSet()) {
                 for (unsigned int pos = 1; pos <= 4; ++pos) {
-                    BOOST_CHECK( !it[pos].IsNull() );
-                    string value = it[pos].AsString();
+                    BOOST_CHECK( !row[pos].IsNull() );
+                    string value = row[pos].AsString();
                     size_t blob_size = value.size();
                     BOOST_CHECK_EQUAL(clob_value.size(), blob_size);
                     BOOST_CHECK_EQUAL(value, clob_value);
@@ -908,8 +908,8 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
             query.Execute();
             query.RequireRowCount(1);
 
-            ITERATE(CQuery, it, query.SingleSet()) {
-                write_data_len = it[1].AsInt4();
+            for (const auto& row: query.SingleSet()) {
+                write_data_len = row[1].AsInt4();
                 BOOST_CHECK_EQUAL( data_len, write_data_len );
             }
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
@@ -927,8 +927,8 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
             query.SetSql(sql);
             query.Execute();
             query.RequireRowCount(1);
-            ITERATE(CQuery, it, query.SingleSet()) {
-                istream& strm = it[3].AsIStream();
+            for (const auto& row: query.SingleSet()) {
+                istream& strm = row[3].AsIStream();
                 int j = 0;
                 for (int i = 0; i < test_size; ++i) {
                     strm >> j;
@@ -1009,8 +1009,8 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream_NewConn)
             query.Execute();
             query.RequireRowCount(1);
 
-            ITERATE(CQuery, it, query.SingleSet()) {
-                ostream& ostrm = it[1].GetOStream(data_len, kBOSFlags);
+            for (const auto& row: query.SingleSet()) {
+                ostream& ostrm = row[1].GetOStream(data_len, kBOSFlags);
 
                 ostrm.write(out.str(), data_len);
                 out.freeze(false);
@@ -1028,8 +1028,8 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream_NewConn)
             query.Execute();
             query.RequireRowCount(1);
 
-            ITERATE(CQuery, it, query.SingleSet()) {
-                write_data_len = it[1].AsInt4();
+            for (const auto& row: query.SingleSet()) {
+                write_data_len = row[1].AsInt4();
                 BOOST_CHECK_EQUAL( data_len, write_data_len );
             }
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
@@ -1047,8 +1047,8 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream_NewConn)
             query.SetSql(sql);
             query.Execute();
             query.RequireRowCount(1);
-            ITERATE(CQuery, it, query.SingleSet()) {
-                istream& strm = it[3].AsIStream();
+            for (const auto& row: query.SingleSet()) {
+                istream& strm = row[3].AsIStream();
                 int j = 0;
                 for (int i = 0; i < test_size; ++i) {
                     strm >> j;

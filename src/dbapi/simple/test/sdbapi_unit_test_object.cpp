@@ -480,8 +480,8 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
                 query.SetSql( sql );
                 query.Execute();
                 query.RequireRowCount(1);
-                ITERATE(CQuery, it, query.SingleSet()) {
-                    const string value = it[1].AsString();
+                for (const auto& row: query.SingleSet()) {
+                    const string value = row[1].AsString();
                     BOOST_CHECK_EQUAL(value.size(), msg.size());
                     BOOST_CHECK_EQUAL(value, msg);
                 }
@@ -522,8 +522,8 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
                 query.SetSql( sql );
                 query.Execute();
                 query.RequireRowCount(1);
-                ITERATE(CQuery, it, query.SingleSet()) {
-                    const string value = it[1].AsString();
+                for (const auto& row: query.SingleSet()) {
+                    const string value = row[1].AsString();
                     BOOST_CHECK_EQUAL(value.size(), msg.size());
                     // BOOST_CHECK_EQUAL(value, msg);
                 }
@@ -552,8 +552,8 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
                 query.SetSql( sql );
                 query.Execute();
                 query.RequireRowCount(1);
-                ITERATE(CQuery, it, query.SingleSet()) {
-                    const string value = it[1].AsString();
+                for (const auto& row: query.SingleSet()) {
+                    const string value = row[1].AsString();
                     BOOST_CHECK_EQUAL(value.size(), long_msg.size());
                     // BOOST_CHECK_EQUAL(value, msg);
                 }
@@ -625,8 +625,8 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX_BCP)
                 query.SetSql( sql );
                 query.Execute();
                 query.RequireRowCount(1);
-                ITERATE(CQuery, it, query.SingleSet()) {
-                    const string value = it[1].AsString();
+                for (const auto& row: query.SingleSet()) {
+                    const string value = row[1].AsString();
                     BOOST_CHECK_EQUAL(value.size(), msg.size());
                     BOOST_CHECK_EQUAL(value, msg);
                 }
@@ -702,8 +702,8 @@ BOOST_AUTO_TEST_CASE(Test_CHAR)
                 query.SetSql( sql );
                 query.Execute();
                 query.RequireRowCount(1);
-                ITERATE(CQuery, it, query.SingleSet()) {
-                    const string value = it[1].AsString();
+                for (const auto& row: query.SingleSet()) {
+                    const string value = row[1].AsString();
                     BOOST_CHECK_EQUAL(value.size(), 1U);
                     BOOST_CHECK_EQUAL(value, string(" "));
                 }
@@ -765,8 +765,8 @@ BOOST_AUTO_TEST_CASE(Test_NTEXT)
         query.SetSql( sql );
         query.Execute();
         query.RequireRowCount(4);
-        ITERATE(CQuery, it, query.SingleSet()) {
-            string var = it["txt_fld"].AsString();
+        for (const auto& row: query.SingleSet()) {
+            string var = row["txt_fld"].AsString();
             BOOST_CHECK_EQUAL(var, kInsValue);
         }
         BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
@@ -818,8 +818,8 @@ BOOST_AUTO_TEST_CASE(Test_NVARCHAR)
         query.SetSql(sql);
         query.Execute();
         query.RequireRowCount(4);
-        ITERATE (CQuery, it, query.SingleSet()) {
-            string var = it[2].AsString();
+        for (const auto& row: query.SingleSet()) {
+            string var = row[2].AsString();
             BOOST_CHECK_EQUAL(var, kText);
         }
         BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));

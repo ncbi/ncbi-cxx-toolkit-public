@@ -95,10 +95,10 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt)
             query.Execute();
             query.RequireRowCount(1);
 
-            ITERATE(CQuery, it, query.MultiSet()) {
-                BOOST_CHECK(it[1].AsInt4() > 0);
-                BOOST_CHECK(it[2].AsString().size() > 0);
-                BOOST_CHECK(it[3].AsString().size() > 0);
+            for (const auto& row: query.MultiSet()) {
+                BOOST_CHECK(row[1].AsInt4() > 0);
+                BOOST_CHECK(row[2].AsString().size() > 0);
+                BOOST_CHECK(row[3].AsString().size() > 0);
                 ++num;
             }
 

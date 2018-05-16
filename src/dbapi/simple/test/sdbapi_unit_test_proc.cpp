@@ -47,14 +47,14 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
             // Execute it first time ...
             query.SetSql("exec sp_databases");
             query.Execute();
-            ITERATE(CQuery, it, query.SingleSet()) {
+            for (const auto& row: query.SingleSet()) {
             }
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             // Execute it second time ...
             query.SetSql("exec sp_databases");
             query.Execute();
-            ITERATE(CQuery, it, query.SingleSet()) {
+            for (const auto& row: query.SingleSet()) {
             }
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
@@ -70,14 +70,14 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
             // Execute it first time ...
             CQuery query = GetDatabase().NewQuery();
             query.ExecuteSP("sp_databases");
-            ITERATE(CQuery, it, query.SingleSet()) {
+            for (const auto& row: query.SingleSet()) {
             }
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             BOOST_CHECK_EQUAL(query.GetStatus(), 0);
 
             // Execute it second time ...
             query.ExecuteSP("sp_databases");
-            ITERATE(CQuery, it, query.SingleSet()) {
+            for (const auto& row: query.SingleSet()) {
             }
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             BOOST_CHECK_EQUAL(query.GetStatus(), 0);
@@ -100,10 +100,10 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
 
             BOOST_CHECK(query.HasMoreResultSets());
 
-            ITERATE(CQuery, it, query.MultiSet()) {
-                BOOST_CHECK(it[1].AsInt4() > 0);
-                BOOST_CHECK(it[2].AsString().size() > 0);
-                BOOST_CHECK(it[3].AsString().size() > 0);
+            for (const auto& row: query.MultiSet()) {
+                BOOST_CHECK(row[1].AsInt4() > 0);
+                BOOST_CHECK(row[2].AsString().size() > 0);
+                BOOST_CHECK(row[3].AsString().size() > 0);
                 ++num;
             }
 
@@ -155,8 +155,8 @@ BOOST_AUTO_TEST_CASE(Test_Procedure2)
             query.ExecuteSP("sp_server_info");
             query.RequireRowCount(s_ServerInfoRows());
 
-            ITERATE(CQuery, it, query.SingleSet()) {
-                BOOST_CHECK(it[1].AsInt4() != 0);
+            for (const auto& row: query.SingleSet()) {
+                BOOST_CHECK(row[1].AsInt4() != 0);
             }
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             BOOST_CHECK_EQUAL(query.GetStatus(), 0);
@@ -244,8 +244,8 @@ BOOST_AUTO_TEST_CASE(Test_Procedure3)
 
             string unallocSpace;
 
-            ITERATE(CQuery, it, query) {
-                unallocSpace = it["unallocated space"].AsString();
+            for (const auto& row: query) {
+                unallocSpace = row["unallocated space"].AsString();
             }
 
             BOOST_CHECK(query.HasMoreResultSets());

@@ -243,8 +243,8 @@ GetNumOfRecords(CQuery& query, const string& table_name)
     query.SetSql("select count(*) FROM " + table_name);
     query.Execute();
     query.RequireRowCount(1);
-    ITERATE(CQuery, it, query.SingleSet()) {
-        cur_rec_num = it[1].AsInt4();
+    for (const auto& row: query.SingleSet()) {
+        cur_rec_num = row[1].AsInt4();
     }
     BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
     return cur_rec_num;
@@ -496,8 +496,8 @@ BOOST_AUTO_TEST_CASE(Test_UNIQUE)
             query.SetSql(sql);
             query.Execute();
             query.RequireRowCount(1);
-            ITERATE(CQuery, it, query.SingleSet()) {
-                value = it[2].AsString();
+            for (const auto& row: query.SingleSet()) {
+                value = row[2].AsString();
             }
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
@@ -521,8 +521,8 @@ BOOST_AUTO_TEST_CASE(Test_UNIQUE)
             query.SetSql(sql);
             query.Execute();
             query.RequireRowCount(2);
-            ITERATE(CQuery, it, query.SingleSet()) {
-                BOOST_CHECK( !it[2].IsNull() );
+            for (const auto& row: query.SingleSet()) {
+                BOOST_CHECK( !row[2].IsNull() );
             }
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
