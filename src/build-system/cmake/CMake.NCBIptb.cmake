@@ -171,7 +171,12 @@ endfunction()
 macro(NCBI_begin_lib _name)
   set(NCBI_PROJECT ${_name})
   set(NCBI_${NCBI_PROJECT}_OUTPUT ${_name})
-  set(NCBI_${NCBI_PROJECT}_TYPE STATIC)
+#CMake global flag
+  if(BUILD_SHARED_LIBS)
+    set(NCBI_${NCBI_PROJECT}_TYPE SHARED)
+  else()
+    set(NCBI_${NCBI_PROJECT}_TYPE STATIC)
+  endif()
 endmacro()
 
 #############################################################################
@@ -703,6 +708,11 @@ endif()
     set(NCBITMP_DEFINES  ${NCBITMP_DEFINES} "_LIB")
     add_library(${NCBI_PROJECT} STATIC ${NCBITMP_PROJECT_SOURCES} ${NCBITMP_PROJECT_HEADERS} ${NCBI_${NCBI_PROJECT}_DATASPEC})
     set(_suffix ${CMAKE_STATIC_LIBRARY_SUFFIX})
+
+  elseif ("${NCBI_${NCBI_PROJECT}_TYPE}" STREQUAL "SHARED")
+
+    add_library(${NCBI_PROJECT} SHARED ${NCBITMP_PROJECT_SOURCES} ${NCBITMP_PROJECT_HEADERS} ${NCBI_${NCBI_PROJECT}_DATASPEC})
+    set(_suffix ${CMAKE_SHARED_LIBRARY_SUFFIX})
 
   elseif ("${NCBI_${NCBI_PROJECT}_TYPE}" STREQUAL "CONSOLEAPP")
 
