@@ -252,7 +252,7 @@ void CSdbapiSimpleApp::DemoStoredProc(void)
     // NOTE: For database APIs, array-like indexes are 1-based, not 0-based!
     //
     NcbiCout << "int_val    fl_val" << NcbiEndl;
-    ITERATE(CQuery, row, query.SingleSet()) {
+    for (const auto& row: query.SingleSet()) {
         NcbiCout
             << row[1].AsInt4() << "    "
             << row[2].AsFloat() << NcbiEndl;
@@ -295,7 +295,7 @@ void CSdbapiSimpleApp::DemoStaticSql(void)
     // NOTE: For database APIs, array-like indexes are 1-based, not 0-based!
     //
     NcbiCout << "title" << NcbiEndl;
-    ITERATE(CQuery, row, query.SingleSet()) {
+    for (const auto& row: query.SingleSet()) {
         NcbiCout << row[1].AsString() << NcbiEndl;
     }
     query.VerifyDone();
@@ -345,7 +345,7 @@ void CSdbapiSimpleApp::DemoParamerizedSql(void)
     // NOTE: For database APIs, array-like indexes are 1-based, not 0-based!
     //
     NcbiCout << "id    last    first    salary    hiredate" << NcbiEndl;
-    ITERATE(CQuery, row, query.SingleSet()) {
+    for (const auto& row: query.SingleSet()) {
         NcbiCout
             << row[1].AsInt4() << "    "
             << row[2].AsString() << "    "
@@ -408,7 +408,7 @@ void CSdbapiSimpleApp::DemoDynamicSql(void)
     // NOTE: For database APIs, array-like indexes are 1-based, not 0-based!
     //
     NcbiCout << "id    last    first    salary    hiredate" << NcbiEndl;
-    ITERATE(CQuery, row, query.SingleSet()) {
+    for (const auto& row: query.SingleSet()) {
         NcbiCout
             << row[1].AsInt4() << "    "
             << row[2].AsString() << "    "

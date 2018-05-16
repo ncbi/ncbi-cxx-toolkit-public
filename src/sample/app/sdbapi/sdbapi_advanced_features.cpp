@@ -130,7 +130,7 @@ int CSdbapiTest::Run()
             query.RequireRowCount(5);
 
             bool show_names = true;
-            ITERATE(CQuery, row, query) {
+            for (const auto& row: query) {
                 if (show_names) {
                     for(int i = 1; i <= row.GetTotalColumns(); ++i) {
                         NcbiCout << row.GetColumnName(i) << "  ";
@@ -262,7 +262,7 @@ end";
         query.ExecuteSP("SampleProc");
         query.RequireRowCount(1, kMax_Auto);
 
-        ITERATE(CQuery, row, query.SingleSet()) {
+        for (const auto& row: query.SingleSet()) {
             if(row[1].AsInt4() == 2121) {
                 NcbiCout << row[2].AsString() << " "
                          << row[3].AsString() << " "
@@ -338,7 +338,7 @@ end";
         query.Execute();
         query.RequireRowCount(1);
 
-        ITERATE(CQuery, row, query.SingleSet()) {
+        for (const auto& row: query.SingleSet()) {
             NcbiCout << row[1].AsString() << ": "
                      << row[2].AsInt4() << endl;
         }
