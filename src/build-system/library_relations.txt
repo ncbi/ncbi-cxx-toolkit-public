@@ -271,6 +271,7 @@ dbldasn_g needs splitdbasn_g
 dbloadb needs asnmuxdblb
 dbloadb needs tea_crypt
 dbloadb_asn needs asngendefs
+dbsnp_tooltip_service needs xser
 ddvlib needs3party ncbidesk
 distance needs xalgophytree
 docsum needs xser
