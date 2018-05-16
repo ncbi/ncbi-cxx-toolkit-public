@@ -14,6 +14,14 @@
 ##  HAVE_LIBXXX
 
 
+# NOTE:
+#  for the time being, macros are defined at the end of the file
+# ---------------------------------------------------------------------------
+
+set(NCBI_ALL_COMPONENTS "")
+#############################################################################
+
+
 include(CheckLibraryExists)
 
 check_library_exists(dl dlopen "" HAVE_LIBDL)
@@ -770,3 +778,129 @@ if (WIN32)
 		"${WIN32_PACKAGE_ROOT}/lmdb-0.9.18/include" )
 	include_directories(${win_include_directories})
 endif (WIN32)
+
+#############################################################################
+#############################################################################
+#############################################################################
+##
+##          NCBI CMake wrapper adapter
+##
+#############################################################################
+#############################################################################
+
+#############################################################################
+# Boost.Test.Included
+if(BOOST_FOUND)
+  set(NCBI_COMPONENT_Boost.Test.Included_FOUND YES)
+  set(NCBI_COMPONENT_Boost.Test.Included_INCLUDE ${Boost_INCLUDE_DIRS})
+else()
+  set(NCBI_COMPONENT_Boost.Test.Included_FOUND NO)
+endif()
+
+#############################################################################
+#LocalPCRE
+set(NCBI_COMPONENT_LocalPCRE_FOUND YES)
+set(NCBI_COMPONENT_LocalPCRE_INCLUDE ${includedir}/util/regexp)
+set(NCBI_COMPONENT_LocalPCRE_LIBS regexp)
+set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} LocalPCRE")
+
+#############################################################################
+# PCRE
+if(PCRE_FOUND)
+  set(NCBI_COMPONENT_PCRE_FOUND YES)
+  set(NCBI_COMPONENT_PCRE_INCLUDE ${PCRE_INCLUDE_DIR})
+  set(NCBI_COMPONENT_PCRE_LIBS ${PCRE_LIBRARIES})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} PCRE")
+else()
+  set(NCBI_COMPONENT_PCRE_FOUND YES)
+  set(NCBI_COMPONENT_PCRE_INCLUDE ${NCBI_COMPONENT_LocalPCRE_INCLUDE})
+  set(NCBI_COMPONENT_PCRE_LIBS ${NCBI_COMPONENT_LocalPCRE_LIBS})
+endif()
+
+#############################################################################
+#LocalZ
+set(NCBI_COMPONENT_LocalZ_FOUND YES)
+set(NCBI_COMPONENT_LocalZ_INCLUDE ${includedir}/util/compress/zlib)
+set(NCBI_COMPONENT_LocalZ_LIBS z)
+set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} LocalZ")
+
+#############################################################################
+# Z
+if(ZLIB_FOUND)
+  set(NCBI_COMPONENT_Z_FOUND YES)
+  set(NCBI_COMPONENT_Z_INCLUDE ${ZLIB_INCLUDE_DIR})
+  set(NCBI_COMPONENT_Z_LIBS ${ZLIB_LIBRARIES})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} Z")
+else()
+  set(NCBI_COMPONENT_Z_FOUND YES)
+  set(NCBI_COMPONENT_Z_INCLUDE ${NCBI_COMPONENT_LocalZ_INCLUDE})
+  set(NCBI_COMPONENT_Z_LIBS ${NCBI_COMPONENT_LocalZ_LIBS})
+endif()
+
+#############################################################################
+#LocalBZ2
+set(NCBI_COMPONENT_LocalBZ2_FOUND YES)
+set(NCBI_COMPONENT_LocalBZ2_INCLUDE ${includedir}/util/compress/bzip2)
+set(NCBI_COMPONENT_LocalBZ2_LIBS bz2)
+set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} LocalBZ2")
+
+#############################################################################
+# BZ2
+if(BZIP2_FOUND)
+  set(NCBI_COMPONENT_BZ2_FOUND YES)
+  set(NCBI_COMPONENT_BZ2_INCLUDE ${BZIP2_INCLUDE_DIR})
+  set(NCBI_COMPONENT_BZ2_LIBS ${BZIP2_LIBRARIES})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} BZ2")
+else()
+  set(NCBI_COMPONENT_BZ2_FOUND YES)
+  set(NCBI_COMPONENT_BZ2_INCLUDE ${NCBI_COMPONENT_LocalBZ2_INCLUDE})
+  set(NCBI_COMPONENT_BZ2_LIBS ${NCBI_COMPONENT_LocalBZ2_LIBS})
+endif()
+
+#############################################################################
+#LZO
+if (LZO_FOUND)
+  set(NCBI_COMPONENT_LZO_FOUND YES)
+  set(NCBI_COMPONENT_LZO_INCLUDE ${LZO_INCLUDE_DIR})
+  set(NCBI_COMPONENT_BZ2_LIBS ${LZO_LIBRARIES})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} LZO")
+else()
+  set(NCBI_COMPONENT_LZO_FOUND YES)
+endif()
+
+#############################################################################
+# JPEG
+if(HAVE_LIBJPEG)
+  set(NCBI_COMPONENT_JPEG_FOUND YES)
+  set(NCBI_COMPONENT_JPEG_LIBS -ljpeg)
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} JPEG")
+else()
+  set(NCBI_COMPONENT_JPEG_FOUND NO)
+endif()
+
+#############################################################################
+# PNG
+if(HAVE_LIBPNG)
+  set(NCBI_COMPONENT_PNG_FOUND YES)
+  set(NCBI_COMPONENT_PNG_LIBS -lpng)
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} PNG")
+else()
+  set(NCBI_COMPONENT_PNG_FOUND NO)
+endif()
+
+#############################################################################
+# GIF
+set(NCBI_COMPONENT_GIF_FOUND YES)
+set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} GIF")
+
+#############################################################################
+# TIFF
+if(HAVE_LIBTIFF)
+  set(NCBI_COMPONENT_TIFF_FOUND YES)
+  set(NCBI_COMPONENT_TIFF_LIBS -ltiff)
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} TIFF")
+else()
+  set(NCBI_COMPONENT_TIFF_FOUND NO)
+endif()
+
+
