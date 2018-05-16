@@ -260,7 +260,7 @@ char CObjectIStreamJson::ReadEncodedChar(EStringType type, bool& encoded)
     if (enc_out == eEncoding_UTF8 &&
         !m_Utf8Buf.empty() && m_Utf8Pos != m_Utf8Buf.end()) {
         if (++m_Utf8Pos != m_Utf8Buf.end()) {
-            return *m_Utf8Pos & 0xFF;
+            return char(*m_Utf8Pos & 0xFF);
         } else {
             m_Utf8Buf.clear();
         }
@@ -272,7 +272,7 @@ char CObjectIStreamJson::ReadEncodedChar(EStringType type, bool& encoded)
             if (enc_out == eEncoding_UTF8) {
                 m_Utf8Buf = CUtf8::AsUTF8( &chU, 1);
                 m_Utf8Pos = m_Utf8Buf.begin();
-                return *m_Utf8Pos & 0xFF;
+                return char(*m_Utf8Pos & 0xFF);
             } else {
                 return CUtf8::SymbolToChar( chU, enc_out);
             }
@@ -282,15 +282,15 @@ char CObjectIStreamJson::ReadEncodedChar(EStringType type, bool& encoded)
                 TUnicodeSymbol chU = enc_in == eEncoding_UTF8 ?
                     ReadUtf8Char((char)c) : CUtf8::CharToSymbol((char)c, enc_in);
                 Uint1 ch = CUtf8::SymbolToChar( chU, enc_out);
-                return ch & 0xFF;
+                return char(ch & 0xFF);
             }
             if ((c & 0x80) == 0) {
-                return c;
+                return (char)c;
             }
             char ch = (char)c;
             m_Utf8Buf = CUtf8::AsUTF8( CTempString(&ch,1), enc_in);
             m_Utf8Pos = m_Utf8Buf.begin();
-            return *m_Utf8Pos & 0xFF;
+            return char(*m_Utf8Pos & 0xFF);
         }
     }
     return (char)c;

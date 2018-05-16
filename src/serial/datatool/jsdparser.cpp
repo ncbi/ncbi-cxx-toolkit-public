@@ -368,8 +368,8 @@ void JSDParser::ParseDependencies(DTDElement& node)
                             node_id = NStr::Join(m_URI,"/");
                             m_URI.pop_back();
                             node.RemoveContent(node_id);
-                            DTDElement::EOccurrence occ = node.GetOccurrence(node_id);
-                            seq.SetOccurrence(node_id, occ);
+                            DTDElement::EOccurrence x_occ = node.GetOccurrence(node_id);
+                            seq.SetOccurrence(node_id, x_occ);
                             AddElementContent(seq, node_id);
                         }
                     }
