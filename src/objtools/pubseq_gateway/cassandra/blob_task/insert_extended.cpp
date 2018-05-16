@@ -147,11 +147,7 @@ void CCassBlobTaskInsertExtended::Wait1()
                 qry->SetSQL(sql, 13);
                 qry->BindInt32(0, m_Blob->GetKey());
                 qry->BindInt64(1, m_Blob->GetModified());
-
-                if (m_Blob->GetClass() == 0)
-                    qry->BindNull(2);
-                else
-                    qry->BindInt16(2, m_Blob->GetClass());
+                qry->BindInt16(2, m_Blob->GetClass());
 
                 if (m_Blob->GetDateAsn1() == 0)
                     qry->BindNull(3);
