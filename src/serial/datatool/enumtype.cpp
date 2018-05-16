@@ -138,14 +138,14 @@ void CEnumDataType::PrintJSONSchema(CNcbiOstream& out, int indent, list<string>&
     }
 #else
     if (IsInteger()) {
-        copy( m_Values.begin(), m_Values.end(), Dt_ostream_iterator<TValue>(cout, ", ",
-            [](ostream& out, const TValue& e) {
-                out << e.GetValue();
+        copy( m_Values.begin(), m_Values.end(), Dt_ostream_iterator<TValue>(out, ", ",
+            [](ostream& ostm, const TValue& e) {
+                ostm << e.GetValue();
             }));
     } else {
-        copy( m_Values.begin(), m_Values.end(), Dt_ostream_iterator<TValue>(cout, ", ",
-            [](ostream& out, const TValue& e) {
-                out << "\"" << e.GetName() << "\"";
+        copy( m_Values.begin(), m_Values.end(), Dt_ostream_iterator<TValue>(out, ", ",
+            [](ostream& ostm, const TValue& e) {
+                ostm << "\"" << e.GetName() << "\"";
             }));
     }
 #endif
