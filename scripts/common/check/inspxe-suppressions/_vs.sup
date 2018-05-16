@@ -370,3 +370,13 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "ucrtbase.dll -- get_initial_wide_environment() -- invalid memory access"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.DLL,func=get_initial_wide_environment;
+		}
+	}
+}
