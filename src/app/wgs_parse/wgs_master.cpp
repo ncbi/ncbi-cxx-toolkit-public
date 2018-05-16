@@ -703,7 +703,17 @@ static void CheckMasterDblink(CMasterInfo& info)
     }
 
     if (id_dblink_user_obj == nullptr) {
-        // TODO
+        
+        if (info.m_id_master_bioseq.NotEmpty()) {
+            if (info.m_dblink->IsSetData()) {
+
+                for (auto& user_field : info.m_dblink->GetData()) {
+                    if (user_field->IsSetLabel() && user_field->GetLabel().IsStr()) {
+                        ERR_POST_EX(0, 0, Warning << "The DBLink User - object content from the files being processed contains new type of link \"" << user_field->GetLabel().GetStr() << "\", not present in the current WGS-Master for this WGS project.");
+                    }
+                }
+            }
+        }
 
         return;
     }
