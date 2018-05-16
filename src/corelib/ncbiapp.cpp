@@ -1426,6 +1426,8 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
             return;
     }
 
+    CStackTrace::s_HonorSignalHandlingConfiguration();
+    
     // [NCBI.MEMORY_FILL]
     CObject::SetAllocFillMode(reg->Get("NCBI", "MEMORY_FILL"));
 

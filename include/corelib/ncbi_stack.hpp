@@ -107,6 +107,7 @@ public:
     void Write(CNcbiOstream& os) const;
 
     static unsigned int s_GetStackTraceMaxDepth(void);
+    static void s_HonorSignalHandlingConfiguration(void);
 
 private:
     // Convert internal stack trace data (collected addresses)

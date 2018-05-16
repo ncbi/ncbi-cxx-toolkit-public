@@ -167,4 +167,12 @@ unsigned int CStackTrace::s_GetStackTraceMaxDepth(void)
 }
 
 
+void CStackTrace::s_HonorSignalHandlingConfiguration(void)
+{
+#ifdef CAN_HONOR_SIGNAL_HANDLING_CONFIGURATION
+    CStackTraceImpl::s_HonorSignalHandlingConfiguration();
+#endif
+}
+
+
 END_NCBI_SCOPE

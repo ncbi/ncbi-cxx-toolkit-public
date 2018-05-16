@@ -42,14 +42,22 @@
 #endif
 #include <stdio.h>
 
+BEGIN_NCBI_SCOPE
+
+#define CAN_HONOR_SIGNAL_HANDLING_CONFIGURATION 1
+
 #if defined(USE_LIBBACKWARD_SIG_HANDLING)
-namespace backward {
-    backward::SignalHandling sh;
-}
+#  define TRACE_SIGNALS_BY_DEFAULT true
+#else
+#  define TRACE_SIGNALS_BY_DEFAULT false
 #endif
 
+NCBI_PARAM_DECL(bool, Debug, Trace_Fatal_Signals);
+NCBI_PARAM_DEF_EX(bool, Debug, Trace_Fatal_Signals, TRACE_SIGNALS_BY_DEFAULT,
+                  0, DEBUG_TRACE_FATAL_SIGNALS);
+typedef NCBI_PARAM_TYPE(Debug, Trace_Fatal_Signals) TTraceFatalSignals;
 
-BEGIN_NCBI_SCOPE
+unique_ptr<backward::SignalHandling> s_SignalHandler;
 
 
 // Call this function to get a backtrace.
@@ -60,6 +68,7 @@ public:
     ~CStackTraceImpl(void);
 
     void Expand(CStackTrace::TStack& stack);
+    static void s_HonorSignalHandlingConfiguration(void);
 
 private:
     typedef backward::StackTrace TStack;
@@ -117,6 +126,13 @@ void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
             info.addr = trace.addr;
 		}
         stack.push_back(move(info));
+    }
+}
+
+void CStackTraceImpl::s_HonorSignalHandlingConfiguration(void)
+{
+    if (TTraceFatalSignals::GetDefault()) {
+        s_SignalHandler.reset(new backward::SignalHandling);
     }
 }
 
