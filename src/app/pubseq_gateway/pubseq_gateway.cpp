@@ -92,7 +92,6 @@ void CPubseqGatewayApp::Init(void)
     argdesc->AddFlag(kNodaemonArgName,
                      "Turn off daemonization of Pubseq Gateway at the start.");
 
-    m_CassConnectionFactory->AppInit(argdesc.get());
     argdesc->SetUsageContext(
         GetArguments().GetProgramBasename(),
         "Daemon to service Accession.Version Cache requests");
