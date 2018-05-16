@@ -308,6 +308,7 @@ protected:
     bool            m_assigned;
 
     union simpleval_t {
+        int16_t i16;
         int32_t i32;
         int64_t i64;
         simpleval_t() {
@@ -341,6 +342,13 @@ public:
         m_assigned = false;
         m_collection = nullptr;
         m_bytes.clear();
+    }
+
+    void Assign(int16_t  v)
+    {
+        m_type = CASS_VALUE_TYPE_SMALL_INT;
+        m_simpleval.i16 = v;
+        m_assigned = true;
     }
 
     void Assign(int32_t  v)
@@ -803,6 +811,7 @@ public:
     }
 
     void BindNull(int iprm);
+    void BindInt16(int iprm, int16_t value);
     void BindInt32(int iprm, int32_t value);
     void BindInt64(int iprm, int64_t value);
     void BindStr(int iprm, const string& value);

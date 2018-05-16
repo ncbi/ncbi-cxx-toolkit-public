@@ -34,15 +34,11 @@
  *
  */
 
-#include <corelib/ncbiargs.hpp>
-
 #include "cass_driver.hpp"
 #include "IdCassScope.hpp"
 
-
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
-
 
 class CCassConnectionFactory:
     public enable_shared_from_this<CCassConnectionFactory>
@@ -54,8 +50,6 @@ protected:
 
 public:
     ~CCassConnectionFactory();
-    void AppInit(CArgDescriptions *  argdesc);
-    void AppParseArgs(const CArgs &  args);
     void LoadConfig(const string &  cfg_name, const string &  section);
     void LoadConfig(const CNcbiRegistry &  registry, const string &  section);
     void ReloadConfig(void);

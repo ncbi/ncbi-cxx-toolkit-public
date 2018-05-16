@@ -42,6 +42,7 @@
 #include "Key.hpp"
 #include "IdCassScope.hpp"
 #include "cass_util.hpp"
+#include "blob_record.hpp"
 
 
 BEGIN_IDBLOB_SCOPE
@@ -400,7 +401,7 @@ class CCassBlobInserter: public CCassBlobWaiter
 public:
     CCassBlobInserter(unsigned int  op_timeout_ms,
                       shared_ptr<CCassConnection>  conn,
-                      const string &  keyspace, int32_t  key, CBlob *  blob,
+                      const string &  keyspace, int32_t  key, CBlobRecord * blob,
                       ECassTristate  is_new, int64_t  large_treshold,
                       int64_t  large_chunk_sz, bool  async,
                       unsigned int  max_retries, void *  context,
@@ -436,13 +437,11 @@ private:
     int64_t         m_LargeTreshold;
     int64_t         m_LargeChunkSize;
     int32_t         m_LargeParts;
-    CBlob *         m_Blob;
+    CBlobRecord *   m_Blob;
     ECassTristate   m_IsNew;
     int32_t         m_OldLargeParts;
     int64_t         m_OldFlags;
 };
-
-
 
 class CCassBlobDeleter: public CCassBlobWaiter
 {
@@ -543,7 +542,7 @@ public:
                       unique_ptr<CCassBlobWaiter> &  waiter);
     void InsertBlobAsync(unsigned int  op_timeout_ms,
                          int32_t  key, unsigned int  max_retries,
-                         CBlob *  blob_rslt, ECassTristate  is_new,
+                         CBlobRecord *  blob_rslt, ECassTristate  is_new,
                          int64_t  LargeTreshold, int64_t  LargeChunkSz,
                          const DataErrorCB_t & error_cb,
                          unique_ptr<CCassBlobWaiter> &  waiter);

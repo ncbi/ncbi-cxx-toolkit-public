@@ -1,6 +1,7 @@
 # $Id$
 
-SRC = cass_util cass_blob_op Key cass_driver cass_factory lbsm_resolver SyncObj
+SRC = cass_util cass_blob_op Key cass_driver cass_factory lbsm_resolver SyncObj blob_record \
+    blob_task/insert_extended
 LIB = psg_cassandra
 
 LIBS = $(CASSANDRA_LIBS)

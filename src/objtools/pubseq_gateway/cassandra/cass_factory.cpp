@@ -101,18 +101,6 @@ CCassConnectionFactory::~CCassConnectionFactory()
     CCassConnection::UpdateLogging();
 }
 
-
-void CCassConnectionFactory::AppInit(CArgDescriptions *  argdesc)
-{
-}
-
-
-void CCassConnectionFactory::AppParseArgs(const CArgs &  args)
-{
-    ProcessParams();
-}
-
-
 void CCassConnectionFactory::ProcessParams(void)
 {
     ERR_POST(Trace << "CCassDataConnectionFactory::ProcessParams");

@@ -573,6 +573,10 @@ void CCassPrm::Bind(CassStatement *  statement, unsigned int  idx)
                            NStr::NumericToString(idx) + " is not assigned");
             rc = cass_statement_bind_null(statement, idx);
             break;
+        case CASS_VALUE_TYPE_SMALL_INT:
+            rc = cass_statement_bind_int16(statement, idx,
+                                          (cass_int16_t) m_simpleval.i16);
+            break;
         case CASS_VALUE_TYPE_INT:
             rc = cass_statement_bind_int32(statement, idx,
                                            (cass_int32_t) m_simpleval.i32);
@@ -716,15 +720,23 @@ void CCassQuery::Bind()
 }
 
 
-void CCassQuery::BindNull(int  iprm)
+void CCassQuery::BindNull(int iprm)
 {
     if (iprm < 0 || (unsigned int)iprm >= m_params.size())
         RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
     m_params[iprm].AssignNull();
 }
 
+void CCassQuery::BindInt16(int iprm, int16_t value)
+{
+    if (iprm < 0 || static_cast<size_t>(iprm) >= m_params.size()) {
+        RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
+    }
+    m_params[iprm].Assign(value);
+}
 
-void CCassQuery::BindInt32(int  iprm, int32_t  value)
+
+void CCassQuery::BindInt32(int iprm, int32_t value)
 {
     if (iprm < 0 || (unsigned int)iprm >= m_params.size())
         RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
