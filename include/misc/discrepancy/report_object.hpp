@@ -60,7 +60,7 @@ protected:
     size_t                 m_FileID;
     CScope&                m_Scope;
 
-    CReportObjectData(const CSerialObject* obj, CScope& scope);
+    CReportObjectData(const CSerialObject* obj, CScope& scope, bool keep);
     CReportObjectData(const string& str, CScope& scope) : m_Type(CReportObj::eType_string), m_Text(str), m_Scope(scope) {}
 
 friend class CReportObject;

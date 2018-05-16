@@ -906,12 +906,9 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::BioseqObj(bool autofix, CObject* m
 {
     const CSerialObject* bioseq = &*GetCurrentBioseq();
     if (m_DataMap.find(bioseq) == m_DataMap.end()) {
-        CRef<CReportObjectData> data(new CReportObjectData(bioseq, *m_Scope));
+        CRef<CReportObjectData> data(new CReportObjectData(bioseq, *m_Scope, m_KeepRef));
         data->m_FileID = m_File;
         data->m_Text += GetSeqSummary().GetStr();
-        if (!m_KeepRef) {
-            data->m_Obj.Reset();
-        }
         m_DataMap[bioseq] = data;
     }
     return CRef<CDiscrepancyObject>(new CDiscrepancyObject(*m_DataMap[bioseq], autofix, more));
@@ -921,11 +918,8 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::BioseqObj(bool autofix, CObject* m
 CRef<CDiscrepancyObject> CDiscrepancyContext::DiscrObj(const CSerialObject& obj, bool autofix, CObject* more)
 {
     if (m_DataMap.find(&obj) == m_DataMap.end()) {
-        CRef<CReportObjectData> data(new CReportObjectData(&obj, *m_Scope));
+        CRef<CReportObjectData> data(new CReportObjectData(&obj, *m_Scope, m_KeepRef));
         data->m_FileID = m_File;
-        if (!m_KeepRef) {
-            data->m_Obj.Reset();
-        }
         m_DataMap[&obj] = data;
     }
     return CRef<CDiscrepancyObject>(new CDiscrepancyObject(*m_DataMap[&obj], autofix, more));
@@ -936,13 +930,10 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::SeqdescObj(const CSerialObject& ob
 {
     if (m_DataMap.find(&obj) == m_DataMap.end()) {
         string label = GetCurrentBioseqLabel();
-        CRef<CReportObjectData> data(new CReportObjectData(&obj, *m_Scope));
+        CRef<CReportObjectData> data(new CReportObjectData(&obj, *m_Scope, m_KeepRef));
         data->m_FileID = m_File;
         if (!label.empty()) {
             data->m_Text = label + ":" + data->m_Text;
-        }
-        if (!m_KeepRef) {
-            data->m_Obj.Reset();
         }
         m_DataMap[&obj] = data;
     }
@@ -954,11 +945,8 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::SubmitBlockObj(bool autofix, CObje
 {
     const CSerialObject& obj = *m_Current_Submit_block;
     if (m_DataMap.find(&obj) == m_DataMap.end()) {
-        CRef<CReportObjectData> data(new CReportObjectData(&obj, *m_Scope));
+        CRef<CReportObjectData> data(new CReportObjectData(&obj, *m_Scope, true));
         data->m_FileID = m_File;
-        //if (!m_KeepRef) {
-        //    data->m_Obj.Reset();
-        //}
         m_DataMap[&obj] = data;
     }
     return CRef<CDiscrepancyObject>(new CSubmitBlockDiscObject(*m_DataMap[&obj], m_Current_Submit_block_StringObj, autofix, more));
@@ -969,11 +957,8 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::CitSubObj(bool autofix, CObject* m
 {
     const CSerialObject& obj = *m_Current_Submit_block;
     if (m_DataMap.find(&obj) == m_DataMap.end()) {
-        CRef<CReportObjectData> data(new CReportObjectData(&obj, *m_Scope));
+        CRef<CReportObjectData> data(new CReportObjectData(&obj, *m_Scope, m_KeepRef));
         data->m_FileID = m_File;
-        if (!m_KeepRef) {
-            data->m_Obj.Reset();
-        }
         m_DataMap[&obj] = data;
     }
     return CRef<CDiscrepancyObject>(new CSubmitBlockDiscObject(*m_DataMap[&obj], m_Current_Cit_sub_StringObj, autofix, more));

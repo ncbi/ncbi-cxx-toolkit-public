@@ -67,7 +67,7 @@ USING_SCOPE(objects);
 
 
 // These four functions are not used in Discrepancy Report, but are called from somewhere in GBench.
-// It would make sebse to move them to some other place.
+// It would make sense to move them to some other place.
 
 string CReportObj::GetTextObjectDescription(const CSeq_feat& sf, CScope& scope)
 {
@@ -96,7 +96,7 @@ string CReportObj::GetTextObjectDescription(const CBioseq_set& bs, CScope& scope
 
 CConstRef<CSeq_id> GetBestId(const CBioseq& bioseq);
 
-CReportObjectData::CReportObjectData(const CSerialObject* obj, CScope& scope) : m_Obj(obj), m_Scope(scope)
+CReportObjectData::CReportObjectData(const CSerialObject* obj, CScope& scope, bool keep) : m_Obj(keep ? obj : 0), m_Scope(scope)
 {
     const CBioseq* bioseq = dynamic_cast<const CBioseq*>(obj);
     const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(obj);
