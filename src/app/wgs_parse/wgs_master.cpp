@@ -816,15 +816,6 @@ static void SetMolInfo(CBioseq& bioseq, CMolInfo::TBiomol biomol)
     bioseq.SetDescr().Set().push_back(descr);
 }
 
-static void AddContactInfo(CCit_sub& cit_sub, const CContact_info& contact_info)
-{
-    if (cit_sub.IsSetAuthors() && cit_sub.GetAuthors().IsSetAffil()) {
-        return;
-    }
-
-    // TODO
-}
-
 static void CreatePub(CBioseq& bioseq, const CPubdesc& pubdescr)
 {
     CRef<CSeqdesc> descr(new CSeqdesc);
@@ -1192,9 +1183,6 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
     }
 
     if (cit_sub.NotEmpty()) {
-        if (contact_info.NotEmpty()) {
-            AddContactInfo(*cit_sub, *contact_info);
-        }
 
         if (cit_sub->IsSetImp()) {
             if (!cit_sub->IsSetDate() && cit_sub->GetImp().IsSetDate()) {
@@ -1203,7 +1191,7 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
             cit_sub->ResetImp();
         }
 
-        bioseq->SetDescr().Set().push_back(CreateCitSub(*cit_sub, nullptr));
+        bioseq->SetDescr().Set().push_back(CreateCitSub(*cit_sub, contact_info));
     }
 
     // CitArts
