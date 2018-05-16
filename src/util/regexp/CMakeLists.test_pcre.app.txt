@@ -1,3 +1,18 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(test_pcre)
+  NCBI_sources(pcretest)
+  NCBI_requires(LocalPCRE)
+  NCBI_add_include_directories(${NCBI_CURRENT_SOURCE_DIR}/..)
+  NCBI_add_definitions(HAVE_CONFIG_H)
+  NCBI_project_tags(test)
+  NCBI_project_watchers(ivanov)
+NCBI_end_app()
+
+
+if(OFF)
 #
 #
 #
@@ -10,4 +25,4 @@ set_target_properties(test_pcre-app PROPERTIES OUTPUT_NAME test_pcre)
 target_link_libraries(test_pcre-app
     ${PCRE_LIBS}
 )
-
+endif()

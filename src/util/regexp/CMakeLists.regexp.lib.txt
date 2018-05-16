@@ -1,6 +1,24 @@
+#############################################################################
+# $Id$
+#############################################################################
 #
 #
 #
+if (ON)
+NCBI_begin_lib(regexp)
+NCBI_sources(
+    pcre_chartables pcre_compile pcre_config pcre_dfa_exec pcre_exec
+    pcre_fullinfo pcre_get pcre_globals pcre_info pcre_maketables
+    pcre_newline pcre_ord2utf8 pcre_refcount pcre_study pcre_tables
+    pcre_try_flipped pcre_ucd pcre_valid_utf8 pcre_version pcre_xclass
+    pcreposix
+)
+NCBI_add_include_directories(${includedir}/util/regexp)
+NCBI_add_definitions(HAVE_CONFIG_H)
+NCBI_project_watchers(ivanov)
+NCBI_end_lib()
+
+else()
 add_library(regexp
     pcre_chartables pcre_compile pcre_config pcre_dfa_exec pcre_exec
     pcre_fullinfo pcre_get pcre_globals pcre_info pcre_maketables
@@ -11,4 +29,5 @@ add_library(regexp
 
 include_directories(SYSTEM ${includedir}/util/regexp)
 add_definitions(-DHAVE_CONFIG_H)
+endif()
 
