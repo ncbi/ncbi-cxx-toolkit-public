@@ -264,7 +264,7 @@ TNCBI_IPv6Addr CHttpRequest::GetClientIP(void)
     const size_t        buf_size = 50 * 1024;
 
     const char *        tracking_env[m_Req->headers.size + 1];
-    unique_ptr<char>    buffer(new char[buf_size]);
+    unique_ptr<char[]>  buffer(new char[buf_size]);
     char *              raw_buffer = buffer.get();
 
     size_t              pos = 0;
