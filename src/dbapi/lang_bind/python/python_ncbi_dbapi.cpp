@@ -2096,6 +2096,7 @@ s_FillDescription(pythonpp::CList& descr, const IResultSetMetaData* data)
             break;
         case eDB_DateTime:
         case eDB_SmallDateTime:
+        case eDB_BigDateTime:
             col_list.Append((PyObject*) &python::CDateTimeType::GetType());
             break;
         default:
@@ -2429,6 +2430,7 @@ ConvertCVariant2PCObject(const CVariant& value)
 #if PY_VERSION_HEX >= 0x02040000
     case eDB_DateTime :
     case eDB_SmallDateTime :
+    case eDB_BigDateTime :
         {
         const CTime& cur_time = value.GetCTime();
         return pythonpp::CDateTime(
