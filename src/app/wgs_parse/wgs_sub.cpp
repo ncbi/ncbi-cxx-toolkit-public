@@ -1464,6 +1464,143 @@ static bool AddDblink(CSeq_entry& entry, const CUser_object& dblink, size_t dbli
     return false;
 }
 
+static bool NeedToProcessTitles(const CSeq_entry& entry)
+{
+    return entry.IsSet() ||
+        (entry.IsSeq() && entry.GetSeq().IsNa() && (!entry.GetSeq().IsSetInst() || !entry.GetSeq().GetInst().IsSetRepr() || entry.GetSeq().GetInst().GetRepr() != CSeq_inst::eRepr_seg));
+}
+
+static void GetSourceInfo(const CBioSource& source, string& organism, string& chromosome, bool get_organism, bool get_chromosome)
+{
+    if (get_organism && source.IsSetOrg() && source.GetOrg().IsSetTaxname()) {
+        organism = source.GetOrg().GetTaxname();
+    }
+
+    if (get_chromosome && source.IsSetSubtype()) {
+
+        for (auto& subtype : source.GetSubtype()) {
+            if (subtype->IsSetSubtype() && subtype->GetSubtype() == CSubSource::eSubtype_chromosome && subtype->IsSetName()) {
+                chromosome = subtype->GetName();
+                break;
+            }
+        }
+    }
+}
+
+
+struct CTitleInfo
+{
+    string m_chromosome,
+           m_organism;
+};
+
+static void ReplaceInTitle(string& title, const string& what, string& change)
+{
+    bool space_added = false;
+    if (!change.empty()) {
+        change += ' ';
+        space_added = true;
+    }
+    NStr::ReplaceInPlace(title, what, change);
+
+    if (change.empty()) {
+        ERR_POST_EX(0, 0, Error << "Could not get " << what << "to include to the title.");
+    }
+}
+
+static void ReplaceSeqId(const CBioseq& bioseq, string& title)
+{
+    if (bioseq.IsSetId()) {
+        
+        auto ids = bioseq.GetId();
+        auto& general_id = find_if(ids.begin(), ids.end(), [](const CRef<CSeq_id>& id) { return id->IsGeneral(); });
+        if (general_id != ids.end()) {
+            string seq_id = GetLocalOrGeneralIdStr(**general_id);
+            ReplaceInTitle(title, "[Seq-id] ", seq_id);
+        }
+    }
+}
+
+static void RepTitles(CSeq_entry& entry, CTitleInfo& title_info)
+{
+    if (NeedToProcessTitles(entry)) {
+
+        const string& title = GetParams().GetNewNucTitle();
+        bool has_organism = title.find("[Organism]") != string::npos,
+             has_chromosome = title.find("[Chromosome]") != string::npos;
+
+        if (entry.IsSetDescr() && entry.GetDescr().IsSet()) {
+            auto descrs = entry.SetDescr().Set();
+            for (auto descr = descrs.begin(); descr != descrs.end();) {
+                if ((*descr)->IsTitle()) {
+                    descr = descrs.erase(descr);
+                }
+                else {
+                    if ((*descr)->IsSource() && entry.IsSet()) {
+                        GetSourceInfo((*descr)->GetSource(), title_info.m_organism, title_info.m_chromosome, has_organism, has_chromosome);
+                    }
+                }
+            }
+        }
+
+        if (entry.IsSeq() && !title.empty()) {
+
+            CRef<CSeqdesc> title_descr(new CSeqdesc);
+            title_descr->SetTitle(title);
+
+            string& new_title = title_descr->SetTitle();
+            if (title.find("[Seq-id]") != string::npos) {
+                ReplaceSeqId(entry.GetSeq(), new_title);
+            }
+
+            if (!has_organism && !has_chromosome) {
+                return;
+            }
+
+            string organism,
+                   chromosome;
+            if (entry.IsSetDescr() && entry.GetDescr().IsSet()) {
+                auto descrs = entry.GetDescr().Get();
+                auto source = find_if(descrs.begin(), descrs.end(), [](CRef<CSeqdesc>& descr) { return descr->IsSource(); });
+                if (source != descrs.end()) {
+                    GetSourceInfo((*source)->GetSource(), organism, chromosome, has_organism, has_chromosome);
+                }
+            }
+
+            if (has_organism) {
+                if (title_info.m_organism.empty()) {
+                    title_info.m_organism = organism;
+                }
+
+                if (organism.empty()) {
+                    organism = title_info.m_organism;
+                }
+
+                ReplaceInTitle(new_title, "[Organism] ", organism);
+            }
+
+            if (has_chromosome) {
+                if (title_info.m_chromosome.empty()) {
+                    title_info.m_chromosome = chromosome;
+                }
+
+                if (chromosome.empty()) {
+                    chromosome = title_info.m_chromosome;
+                }
+
+                ReplaceInTitle(new_title, "[Chromosome] ", chromosome);
+            }
+        }
+    }
+
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
+            RepTitles(*cur_entry, title_info);
+        }
+    }
+}
+
 bool ParseSubmissions(CMasterInfo& master_info)
 {
     const list<string>& files = GetParams().GetInputFiles();
@@ -1607,19 +1744,9 @@ bool ParseSubmissions(CMasterInfo& master_info)
                         StripAuthors(*entry);
                     }
 
-                    /*
-                    if(widp->new_titles != NULL)
-                    {
-                    wtp.title = widp->new_titles;
-                    if(wtp.organism != NULL)
-                    MemFree(wtp.organism);
-                    wtp.organism = NULL;
-                    if(wtp.chro != NULL)
-                    MemFree(wtp.chro);
-                    wtp.chro = NULL;
-                    SeqEntryExplore(sep, &wtp, WGSRepTitles);
+                    if (!GetParams().GetNewNucTitle().empty()) {
+                        RepTitles(*entry, CTitleInfo());
                     }
-                    */
 
                     FixGbblockSource(*entry);
                     PackEntry(*entry);

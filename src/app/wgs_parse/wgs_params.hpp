@@ -137,6 +137,8 @@ public:
     bool IsCitArtFromMaster() const;
     bool IsStripAuthors() const;
 
+    const string& GetNewNucTitle() const;
+
     TSeqPos GetGapSize() const;
     int GetFixTech() const;
 

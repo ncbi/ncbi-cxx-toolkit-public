@@ -320,6 +320,11 @@ bool CParams::IsStripAuthors() const
     return m_imp->m_strip_authors;
 }
 
+const string& CParams::GetNewNucTitle() const
+{
+    return m_imp->m_new_nuc_title;
+}
+
 TSeqPos CParams::GetGapSize() const
 {
     return m_imp->m_gap_size;
