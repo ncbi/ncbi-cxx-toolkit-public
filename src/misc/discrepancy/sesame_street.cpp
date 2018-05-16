@@ -111,7 +111,7 @@ DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eDisc | eOncaller | eSubmitter | eSma
     if (desc.IsNull()) {
         return;
     }
-    CRef<CDiscrepancyObject> disc_obj(context.NewSeqdescObj(desc, context.GetCurrentBioseqLabel()));
+    CRef<CDiscrepancyObject> disc_obj(context.SeqdescObj(*desc));
     m_Objs["all"].Add(*disc_obj);
     if (obj.CanGetGenome() && obj.GetGenome() != CBioSource::eGenome_unknown) {
 

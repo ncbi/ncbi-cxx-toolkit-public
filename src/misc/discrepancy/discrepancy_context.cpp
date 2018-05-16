@@ -902,161 +902,135 @@ sequence::ECompare CDiscrepancyContext::Compare(const CSeq_loc& loc1, const CSeq
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CRef<CDiscrepancyObject> CDiscrepancyContext::NewBioseqObj(CConstRef<CBioseq> obj, const CSeqSummary* info, EKeepRef keep_ref, bool autofix, CObject* more)
+CRef<CDiscrepancyObject> CDiscrepancyContext::BioseqObj(bool autofix, CObject* more)
 {
-    bool keep = keep_ref || m_KeepRef;
-    CRef<CDiscrepancyObject> D(new CDiscrepancyObject(obj, *m_Scope, m_File, keep, autofix, more));
-    const CSerialObject* ser = &*obj;
-    if (m_TextMap.find(ser) == m_TextMap.end()) {
-        D->SetText(*m_Scope);
-        string s = D->GetText();
-        if (info) {
-            s += info->GetStr();
+    const CSerialObject* bioseq = &*GetCurrentBioseq();
+    if (m_DataMap.find(bioseq) == m_DataMap.end()) {
+        CRef<CReportObjectData> data(new CReportObjectData(bioseq, *m_Scope));
+        data->m_FileID = m_File;
+        data->m_Text += GetSeqSummary().GetStr();
+        if (!m_KeepRef) {
+            data->m_Obj.Reset();
         }
-        D->SetText(s);
-        m_TextMap[ser] = s;
-        m_TextMapShort[ser] = D->GetShort();
+        m_DataMap[bioseq] = data;
     }
-    else {
-        D->SetText(m_TextMap[ser]);
-        D->SetShort(m_TextMapShort[ser]);
-    }
-    if (!keep) {
-        D->DropReference();
-    }
-    return D;
+    return CRef<CDiscrepancyObject>(new CDiscrepancyObject(*m_DataMap[bioseq], autofix, more));
 }
 
 
-CRef<CDiscrepancyObject> CDiscrepancyContext::NewSeqdescObj(CConstRef<CSeqdesc> obj, const string& bslabel, EKeepRef keep_ref, bool autofix, CObject* more)
+CRef<CDiscrepancyObject> CDiscrepancyContext::DiscrObj(const CSerialObject& obj, bool autofix, CObject* more)
 {
-    bool keep = keep_ref || m_KeepRef;
-    CRef<CDiscrepancyObject> D(new CDiscrepancyObject(obj, *m_Scope, m_File, keep, autofix, more));
-    const CSerialObject* ser = &*obj;
-    if (m_TextMap.find(ser) == m_TextMap.end()) {
-        D->SetText(*m_Scope, bslabel);
-        m_TextMap[ser] = D->GetText();
+    if (m_DataMap.find(&obj) == m_DataMap.end()) {
+        CRef<CReportObjectData> data(new CReportObjectData(&obj, *m_Scope));
+        data->m_FileID = m_File;
+        if (!m_KeepRef) {
+            data->m_Obj.Reset();
+        }
+        m_DataMap[&obj] = data;
     }
-    else {
-        D->SetText(m_TextMap[ser]);
-    }
-    if (!keep) {
-        D->DropReference();
-    }
-    return D;
+    return CRef<CDiscrepancyObject>(new CDiscrepancyObject(*m_DataMap[&obj], autofix, more));
 }
 
 
-CRef<CDiscrepancyObject> CDiscrepancyContext::NewStringObj(const string& str, EKeepRef keep_ref, bool autofix, CObject* more)
+CRef<CDiscrepancyObject> CDiscrepancyContext::SeqdescObj(const CSerialObject& obj, bool autofix, CObject* more)
 {
-    bool keep = keep_ref || m_KeepRef;
-    CRef<CDiscrepancyObject> D(new CDiscrepancyObject(str, *m_Scope, m_File, keep, autofix, more));
-    return D;
+    if (m_DataMap.find(&obj) == m_DataMap.end()) {
+        string label = GetCurrentBioseqLabel();
+        CRef<CReportObjectData> data(new CReportObjectData(&obj, *m_Scope));
+        data->m_FileID = m_File;
+        if (!label.empty()) {
+            data->m_Text = label + ":" + data->m_Text;
+        }
+        if (!m_KeepRef) {
+            data->m_Obj.Reset();
+        }
+        m_DataMap[&obj] = data;
+    }
+    return CRef<CDiscrepancyObject>(new CDiscrepancyObject(*m_DataMap[&obj], autofix, more));
 }
 
 
-CRef<CDiscrepancyObject> CDiscrepancyContext::NewDiscObj(CConstRef<CSeq_feat> obj, EKeepRef keep_ref, bool autofix, CObject* more)
+CRef<CDiscrepancyObject> CDiscrepancyContext::SubmitBlockObj(bool autofix, CObject* more)
 {
-    bool keep = keep_ref || m_KeepRef;
-    CRef<CDiscrepancyObject> D(new CDiscrepancyObject(obj, *m_Scope, m_File, keep, autofix, more));
-    const CSerialObject* ser = &*obj;
-    if (m_TextMap.find(ser) == m_TextMap.end()) {
-        D->SetText(*m_Scope);
-        m_TextMap[ser] = D->GetText();
-        m_FeatureTypeMap[ser] = D->GetFeatureType();
-        m_ProductMap[ser] = D->GetProductName();
-        m_LocationMap[ser] = D->GetLocation();
-        m_LocusTagMap[ser] = D->GetLocusTag();
+    const CSerialObject& obj = *m_Current_Submit_block;
+    if (m_DataMap.find(&obj) == m_DataMap.end()) {
+        CRef<CReportObjectData> data(new CReportObjectData(&obj, *m_Scope));
+        data->m_FileID = m_File;
+        //if (!m_KeepRef) {
+        //    data->m_Obj.Reset();
+        //}
+        m_DataMap[&obj] = data;
     }
-    else {
-        D->SetText(m_TextMap[ser]);
-        D->SetFeatureType(m_FeatureTypeMap[ser]);
-        D->SetProductName(m_ProductMap[ser]);
-        D->SetLocation(m_LocationMap[ser]);
-        D->SetLocusTag(m_LocusTagMap[ser]);
-    }
-    if (!keep) {
-        D->DropReference();
-    }
-    return D;
+    return CRef<CDiscrepancyObject>(new CSubmitBlockDiscObject(*m_DataMap[&obj], m_Current_Submit_block_StringObj, autofix, more));
 }
 
 
-CRef<CDiscrepancyObject> CDiscrepancyContext::NewDiscObj(CConstRef<CBioseq_set> obj, EKeepRef keep_ref, bool autofix, CObject* more)
+CRef<CDiscrepancyObject> CDiscrepancyContext::CitSubObj(bool autofix, CObject* more)
 {
-    bool keep = keep_ref || m_KeepRef;
-    CRef<CDiscrepancyObject> D(new CDiscrepancyObject(obj, *m_Scope, m_File, keep, autofix, more));
-    const CSerialObject* ser = &*obj;
-    if (m_TextMap.find(ser) == m_TextMap.end()) {
-        D->SetText(*m_Scope);
-        m_TextMap[ser] = D->GetText();
+    const CSerialObject& obj = *m_Current_Submit_block;
+    if (m_DataMap.find(&obj) == m_DataMap.end()) {
+        CRef<CReportObjectData> data(new CReportObjectData(&obj, *m_Scope));
+        data->m_FileID = m_File;
+        if (!m_KeepRef) {
+            data->m_Obj.Reset();
+        }
+        m_DataMap[&obj] = data;
     }
-    else {
-        D->SetText(m_TextMap[ser]);
-    }
-    if (!keep) {
-        D->DropReference();
-    }
-    return D;
+    return CRef<CDiscrepancyObject>(new CSubmitBlockDiscObject(*m_DataMap[&obj], m_Current_Cit_sub_StringObj, autofix, more));
 }
 
 
-CRef<CDiscrepancyObject> CDiscrepancyContext::NewSubmitBlockObj(EKeepRef keep_ref, bool autofix, CObject* more)
+CRef<CDiscrepancyObject> CDiscrepancyContext::StringObj(const string& str, bool autofix, CObject* more)
 {
-    return CRef<CDiscrepancyObject>(new CSubmitBlockDiscObject(m_Current_Submit_block, m_Current_Submit_block_StringObj, *m_Scope, "Submit Block", m_File, keep_ref || m_KeepRef, autofix, more));
+    CRef<CReportObjectData> data(new CReportObjectData(str, *m_Scope));
+    return CRef<CDiscrepancyObject>(new CDiscrepancyObject(*data, autofix, more));
 }
 
 
-CRef<CDiscrepancyObject> CDiscrepancyContext::NewCitSubObj(EKeepRef keep_ref, bool autofix, CObject* more)
-{
-    return CRef<CDiscrepancyObject>(new CSubmitBlockDiscObject(m_Current_Submit_block, m_Current_Cit_sub_StringObj, *m_Scope, "Cit-sub", m_File, keep_ref || m_KeepRef, autofix, more));
-}
-
-
-CRef<CDiscrepancyObject> CDiscrepancyContext::NewFeatOrDescObj(EKeepRef keep_ref, bool autofix, CObject* more)
+CRef<CDiscrepancyObject> CDiscrepancyContext::FeatOrDescObj(bool autofix, CObject* more)
 {
     CConstRef<CSeq_feat> feat = GetCurrentSeq_feat();
     CConstRef<CSeqdesc> desc = GetCurrentSeqdesc();
     _ASSERT(!feat != !desc);
     if (feat) {
-        return NewDiscObj(feat, keep_ref, autofix, more);
+        return DiscrObj(*feat, autofix, more);
     }
     else {
-        return NewSeqdescObj(desc, GetCurrentBioseqLabel(), keep_ref, autofix, more);
+        return SeqdescObj(*desc, autofix, more);
     }
 }
 
 
-CRef<CDiscrepancyObject> CDiscrepancyContext::NewFeatOrDescOrSubmitBlockObj(EKeepRef keep_ref, bool autofix, CObject* more)
+CRef<CDiscrepancyObject> CDiscrepancyContext::FeatOrDescOrSubmitBlockObj(bool autofix, CObject* more)
 {
     CConstRef<CSeq_feat> feat = GetCurrentSeq_feat();
     CConstRef<CSeqdesc> desc = GetCurrentSeqdesc();
     _ASSERT(!feat || !desc);
     if (feat) {
-        return NewDiscObj(feat, keep_ref, autofix, more);
+        return DiscrObj(*feat, autofix, more);
     }
     else if (desc) {
-        return NewSeqdescObj(desc, GetCurrentBioseqLabel(), keep_ref, autofix, more);
+        return SeqdescObj(*desc, autofix, more);
     }
     else {
-        return NewSubmitBlockObj(keep_ref, autofix, more);
+        return SubmitBlockObj(autofix, more);
     }
 }
 
 
-CRef<CDiscrepancyObject> CDiscrepancyContext::NewFeatOrDescOrCitSubObj(EKeepRef keep_ref, bool autofix, CObject* more)
+CRef<CDiscrepancyObject> CDiscrepancyContext::FeatOrDescOrCitSubObj(bool autofix, CObject* more)
 {
     CConstRef<CSeq_feat> feat = GetCurrentSeq_feat();
     CConstRef<CSeqdesc> desc = GetCurrentSeqdesc();
     _ASSERT(!feat || !desc);
     if (feat) {
-        return NewDiscObj(feat, keep_ref, autofix, more);
+        return DiscrObj(*feat, autofix, more);
     }
     else if (desc) {
-        return NewSeqdescObj(desc, GetCurrentBioseqLabel(), keep_ref, autofix, more);
+        return SeqdescObj(*desc, autofix, more);
     }
     else {
-        return NewCitSubObj(keep_ref, autofix, more);
+        return CitSubObj(autofix, more);
     }
 }
 

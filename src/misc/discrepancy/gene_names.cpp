@@ -72,7 +72,7 @@ DISCREPANCY_CASE(BAD_GENE_NAME, CSeqFeatData, eDisc | eSubmitter | eSmart, "Bad 
     string locus = obj.GetGene().GetLocus();
     string word;
     if (locus.size() > 10 || Has4Numbers(locus) || HasBadWord(locus, word)) {
-        m_Objs[word.empty() ? "[n] gene[s] contain[S] suspect phrase or characters" : "[n] gene[s] contain[S] " + word].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true));
+        m_Objs[word.empty() ? "[n] gene[s] contain[S] suspect phrase or characters" : "[n] gene[s] contain[S] " + word].Add(*context.DiscrObj(*context.GetCurrentSeq_feat(), true));
     }
 }
 
@@ -128,7 +128,7 @@ DISCREPANCY_CASE(BAD_BACTERIAL_GENE_NAME, CSeqFeatData, eDisc | eOncaller | eSub
     }
     string locus = obj.GetGene().GetLocus();
     if (!isalpha(locus[0]) || !islower(locus[0])) {
-        m_Objs["[n] bacterial gene[s] [does] not start with lowercase letter"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true)); // maybe false
+        m_Objs["[n] bacterial gene[s] [does] not start with lowercase letter"].Add(*context.DiscrObj(*context.GetCurrentSeq_feat(), true)); // maybe false
     }
 }
 
@@ -170,7 +170,7 @@ DISCREPANCY_CASE(EC_NUMBER_ON_UNKNOWN_PROTEIN, CSeqFeatData, eDisc | eSubmitter 
     NStr::ToLower(str);
     //if (NStr::FindNoCase(*names.begin(), "hypothetical protein") != string::npos || NStr::FindNoCase(*names.begin(), "unknown protein") != string::npos) {
     if (str == "hypothetical protein" || str == "unknown protein") {
-        m_Objs["[n] protein feature[s] [has] an EC number and a protein name of 'unknown protein' or 'hypothetical protein'"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true)).Fatal();
+        m_Objs["[n] protein feature[s] [has] an EC number and a protein name of 'unknown protein' or 'hypothetical protein'"].Add(*context.DiscrObj(*context.GetCurrentSeq_feat(), true)).Fatal();
     }
 }
 
@@ -228,7 +228,7 @@ DISCREPANCY_CASE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME, CSeqFeatData, eDisc | e
     }
     auto& names = prot.GetName();
     if (!names.empty() && NStr::FindNoCase(names.front(), "hypothetical protein") != string::npos) {
-        m_Objs["[n] hypothetical coding region[s] [has] a gene name"].Fatal().Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true, (CObject*)&*gene));
+        m_Objs["[n] hypothetical coding region[s] [has] a gene name"].Fatal().Add(*context.DiscrObj(*context.GetCurrentSeq_feat(), true, (CObject*)&*gene));
     }
 }
 
@@ -270,7 +270,7 @@ DISCREPANCY_CASE(DUPLICATE_LOCUS_TAGS, COverlappingFeatures, eDisc | eOncaller |
     CRef<CDiscrepancyObject> last_disc_obj;
     for (auto gene: genes) {
         if (gene->GetData().GetGene().IsSetLocus_tag()) {
-            CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(gene));
+            CRef<CDiscrepancyObject> this_disc_obj(context.DiscrObj(*gene));
             const string& this_locus_tag = gene->GetData().GetGene().GetLocus_tag();
             m_Objs[kEmptyStr][this_locus_tag].Add(*this_disc_obj);
             if (last_disc_obj && last_locus_tag == this_locus_tag) {

@@ -173,7 +173,7 @@ DISCREPANCY_CASE(_SPELL_CHECK, CSeqFeatData, 0, "Spell check")
             for (size_t n = 0; n < w.size(); n++) {
                 msg += " " + w[n] + "?";
             }
-            m_Objs[msg].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()));
+            m_Objs[msg].Add(*context.DiscrObj(*context.GetCurrentSeq_feat()));
         }
     }
 }

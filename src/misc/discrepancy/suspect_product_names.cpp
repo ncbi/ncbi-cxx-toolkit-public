@@ -217,7 +217,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
         if (!ContainsLetters(prot_name)) {
             const CSeq_feat* cds = sequence::GetCDSForProduct(*(context.GetCurrentBioseq()), &(context.GetScope()));
             CReportNode& node = m_Objs[kSuspectProductNames]["[*-1*]Product name does not contain letters"].Summ()["[n] feature[s] [does] not contain letters in product name"].Summ().Fatal();
-            node.Add(*context.NewDiscObj(cds ? CConstRef<CSeq_feat>(cds) : context.GetCurrentSeq_feat())).Fatal();
+            node.Add(*context.DiscrObj(cds ? *cds : *context.GetCurrentSeq_feat())).Fatal();
         }
         else {
             size_t rule_num = 1;
@@ -236,7 +236,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
                 string rule_text = leading_space + GetRuleMatch(**rule);
                 CReportNode& node = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
                 const CSeq_feat* cds = sequence::GetCDSForProduct(*(context.GetCurrentBioseq()), &(context.GetScope()));
-                node.Add(*context.NewDiscObj(cds ? CConstRef<CSeq_feat>(cds) : context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Severity((*rule)->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
+                node.Add(*context.DiscrObj(cds ? *cds : *context.GetCurrentSeq_feat(), (*rule)->CanGetReplace(), (CObject*)&**rule)).Severity((*rule)->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
             }
         }
     }
@@ -401,7 +401,7 @@ DISCREPANCY_CASE(ORGANELLE_PRODUCTS, CSeqFeatData, eOncaller, "Organelle product
             if (!(*rule)->StringMatchesSuspectProductRule(prot_name)) {
                 continue;
             }
-            m_Objs["[n] suspect product[s] not organelle"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Severity((*rule)->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
+            m_Objs["[n] suspect product[s] not organelle"].Add(*context.DiscrObj(*context.GetCurrentSeq_feat(), (*rule)->CanGetReplace(), (CObject*)&**rule)).Severity((*rule)->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
         }
     }
 }
@@ -559,7 +559,7 @@ DISCREPANCY_CASE(SUSPECT_RRNA_PRODUCTS, CSeq_feat, eDisc | eSubmitter | eSmart, 
             CNcbiOstrstream detailed_msg;
             detailed_msg << "[n] rRNA product name[s] ";
             s_SummarizeSuspectRule(detailed_msg, suspect_rule);
-            m_Objs[kMsg][(string)CNcbiOstrstreamToString(detailed_msg)].Ext().Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
+            m_Objs[kMsg][(string)CNcbiOstrstreamToString(detailed_msg)].Ext().Add(*context.DiscrObj(*context.GetCurrentSeq_feat()), false);
         }
     }
 }
@@ -578,7 +578,7 @@ DISCREPANCY_CASE(_SUSPECT_PRODUCT_NAMES, string, 0, "Suspect Product Names for a
     CConstRef<CSuspect_rule_set> rules = context.GetProductRules();
     if (!ContainsLetters(obj)) {
         CReportNode& node = m_Objs[kSuspectProductNames]["[*-1*]Product name does not contain letters"].Summ()["[n] feature[s] [does] not contain letters in product name"].Summ().Fatal();
-        node.Add(*context.NewStringObj(obj)).Fatal();
+        node.Add(*context.StringObj(obj)).Fatal();
     }
     size_t rule_num = 1;
     ITERATE(list<CRef<CSuspect_rule> >, rule, rules->Get()) {
@@ -595,7 +595,7 @@ DISCREPANCY_CASE(_SUSPECT_PRODUCT_NAMES, string, 0, "Suspect Product Names for a
         rule_name += NStr::NumericToString(rule_type) + "*]" + GetRuleText(**rule);
         string rule_text = leading_space + GetRuleMatch(**rule);
         CReportNode& node = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
-        node.Add(*context.NewStringObj(obj)).Severity((*rule)->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
+        node.Add(*context.StringObj(obj)).Severity((*rule)->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
     }
 }
 

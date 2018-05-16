@@ -86,7 +86,7 @@ DISCREPANCY_CASE(RRNA_NAME_CONFLICTS, CSeqFeatData, eDisc | eSubmitter | eSmart,
         }
     }
     CReportNode& node = m_Objs[rrna_name_conflicts_complain.Get()];
-    node.Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true)).Fatal();
+    node.Add(*context.DiscrObj(*context.GetCurrentSeq_feat(), true)).Fatal();
 }
 
 

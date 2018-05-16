@@ -228,7 +228,7 @@ DISCREPANCY_CASE(TITLE_AUTHOR_CONFLICT, CSeqdesc, eDisc | eOncaller | eSmart, "P
     if (NStr::IsBlank(title)) {
         return;
     }
-    m_Objs[kEmptyStr][title][authors].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel()));
+    m_Objs[kEmptyStr][title][authors].Add(*context.SeqdescObj(obj));
 }
 
 
@@ -381,9 +381,9 @@ DISCREPANCY_CASE(UNPUB_PUB_WITHOUT_TITLE, CPubdesc, eDisc | eOncaller | eSubmitt
 {
     if (HasUnpubWithoutTitle(obj)) {
         if (context.GetCurrentSeqdesc() != NULL) {
-            m_Objs[kUnpubPubWithoutTitle].Add(*context.NewSeqdescObj(context.GetCurrentSeqdesc(), context.GetCurrentBioseqLabel()), false).Fatal();
+            m_Objs[kUnpubPubWithoutTitle].Add(*context.SeqdescObj(*context.GetCurrentSeqdesc()), false).Fatal();
         } else if (context.GetCurrentSeq_feat() != NULL) {
-            m_Objs[kUnpubPubWithoutTitle].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false).Fatal();
+            m_Objs[kUnpubPubWithoutTitle].Add(*context.DiscrObj(*context.GetCurrentSeq_feat()), false).Fatal();
         }
     }
 }
@@ -442,9 +442,9 @@ DISCREPANCY_CASE(MISSING_AFFIL, CPubdesc, eDisc | eOncaller, "Missing affiliatio
 {
     if (IsCitSubMissingAffiliation(obj)) {
         if (context.GetCurrentSeqdesc() != NULL) {
-            m_Objs[kMissingAffil].Add(*context.NewSeqdescObj(context.GetCurrentSeqdesc(), context.GetCurrentBioseqLabel()), false).Fatal();
+            m_Objs[kMissingAffil].Add(*context.SeqdescObj(*context.GetCurrentSeqdesc()), false).Fatal();
         } else if (context.GetCurrentSeq_feat() != NULL) {
-            m_Objs[kMissingAffil].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false).Fatal();
+            m_Objs[kMissingAffil].Add(*context.DiscrObj(*context.GetCurrentSeq_feat()), false).Fatal();
         }
     }
 }
@@ -510,7 +510,7 @@ DISCREPANCY_CASE(CITSUBAFFIL_CONFLICT, CAuth_list, eDisc | eOncaller | eSmart, "
     if (pub && !pub->IsSub()) {
         return;
     }
-    CRef<CDiscrepancyObject> repobj = context.NewFeatOrDescOrSubmitBlockObj();
+    CRef<CDiscrepancyObject> repobj = context.FeatOrDescOrSubmitBlockObj();
     if (obj.IsSetAffil()) {
         const CAffil& affil = obj.GetAffil();
         if (affil.IsStr()) {
@@ -580,7 +580,7 @@ DISCREPANCY_SUMMARIZE(CITSUBAFFIL_CONFLICT)
 
 DISCREPANCY_CASE(SUBMITBLOCK_CONFLICT, CSubmit_block, eDisc | eOncaller | eSmart, "Records should have identical submit-blocks")
 {
-    m_Objs.Add(*context.NewSubmitBlockObj());
+    m_Objs.Add(*context.SubmitBlockObj());
 }
 
 #define COMPARE_FIELD(Field) if (A->CanGet##Field() != B->CanGet##Field() || (A->CanGet##Field() && A->Get##Field() != B->Get##Field())) { return false; }
@@ -653,7 +653,7 @@ DISCREPANCY_SUMMARIZE(SUBMITBLOCK_CONFLICT)
 DISCREPANCY_CASE(CONSORTIUM, CPerson_id, eOncaller, "Submitter blocks and publications have consortiums")
 {
     if (obj.IsConsortium()) {
-        m_Objs["[n] publication[s]/submitter block[s] [has] consortium"].Add(*context.NewFeatOrDescOrCitSubObj(eNoRef, true));
+        m_Objs["[n] publication[s]/submitter block[s] [has] consortium"].Add(*context.FeatOrDescOrCitSubObj(true));
     }
 }
 
@@ -728,13 +728,13 @@ DISCREPANCY_CASE(CHECK_AUTH_NAME, CAuth_list, eDisc | eOncaller | eSubmitter | e
     if (obj.IsSetNames() && obj.GetNames().IsStd()) {
         const CAuth_list::C_Names::TStd& names = obj.GetNames().GetStd();
         if (names.empty()) {
-            m_Objs[kMissingAuthorsName].Add(*context.NewFeatOrDescOrSubmitBlockObj());
+            m_Objs[kMissingAuthorsName].Add(*context.FeatOrDescOrSubmitBlockObj());
         }
         else {
             ITERATE (CAuth_list::C_Names::TStd, auth, obj.GetNames().GetStd()) {
                 if (!(*auth)->IsSetName() || ((*auth)->GetName().IsName() &&
                         (!(*auth)->GetName().GetName().CanGetFirst() || !(*auth)->GetName().GetName().CanGetLast() || (*auth)->GetName().GetName().GetFirst().empty() || (*auth)->GetName().GetName().GetLast().empty()))) {
-                    m_Objs[kMissingAuthorsName].Add(*context.NewFeatOrDescOrSubmitBlockObj());
+                    m_Objs[kMissingAuthorsName].Add(*context.FeatOrDescOrSubmitBlockObj());
                     break;
                 }
             }
@@ -835,7 +835,7 @@ DISCREPANCY_CASE(CITSUB_AFFIL_DUP_TEXT, CPubdesc, eOncaller, "Cit-sub affiliatio
 
         const CAffil& affil = cit_sub->GetAuthors().GetAffil();
         if (AffilStreetContainsDup(affil)) {
-            m_Objs["[n] Cit-sub pubs have duplicate affil text"].Add(*context.NewFeatOrDescOrSubmitBlockObj(eNoRef, true, const_cast<CCit_sub*>(cit_sub)));
+            m_Objs["[n] Cit-sub pubs have duplicate affil text"].Add(*context.FeatOrDescOrSubmitBlockObj(true, const_cast<CCit_sub*>(cit_sub)));
         }
     }
 }
@@ -1055,7 +1055,7 @@ DISCREPANCY_CASE(USA_STATE, CPubdesc, eDisc | eOncaller | eSmart, "For country U
                     report = !IsValidStateAbbreviation(state);
                 }
                 if (report) {
-                    m_Objs["[n] cit-sub[s] [is] missing state abbreviations"].Add(*context.NewFeatOrDescOrSubmitBlockObj(eNoRef, true, const_cast<CAffil*>(&affil)));
+                    m_Objs["[n] cit-sub[s] [is] missing state abbreviations"].Add(*context.FeatOrDescOrSubmitBlockObj(true, const_cast<CAffil*>(&affil)));
                 }
             }
         }
@@ -1224,7 +1224,7 @@ DISCREPANCY_CASE(CHECK_AUTH_CAPS, CAuth_list, eDisc | eOncaller | eSmart, "Check
                 }
 
                 if (!correct) {
-                    m_Objs[kIncorrectCap].Add(*context.NewFeatOrDescOrSubmitBlockObj(eNoRef, true, const_cast<CAuth_list*>(&obj)));
+                    m_Objs[kIncorrectCap].Add(*context.FeatOrDescOrSubmitBlockObj(true, const_cast<CAuth_list*>(&obj)));
                     break;
                 }
             }

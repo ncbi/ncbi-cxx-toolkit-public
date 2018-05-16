@@ -58,7 +58,7 @@ DISCREPANCY_CASE(RETROVIRIDAE_DNA, CSeqdesc_BY_BIOSEQ, eOncaller, "Retroviridae 
     const CBioSource& src = obj.GetSource();
     if (src.IsSetLineage() && context.HasLineage(src, src.GetLineage(), "Retroviridae")) {
         if (!src.IsSetGenome() || src.GetGenome() != CBioSource::eGenome_proviral) {
-            m_Objs[kGenomeNotProviral].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel()));
+            m_Objs[kGenomeNotProviral].Add(*context.SeqdescObj(obj));
         }
     }
 }
@@ -100,7 +100,7 @@ DISCREPANCY_CASE(NON_RETROVIRIDAE_PROVIRAL, CSeqdesc_BY_BIOSEQ, eOncaller, "Non-
     const CBioSource& src = obj.GetSource();
     if (src.IsSetLineage() && !context.HasLineage(src, src.GetLineage(), "Retroviridae")) {
         if (src.IsSetGenome() && src.GetGenome() == CBioSource::eGenome_proviral) {
-            m_Objs[kGenomeProviral].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel()));
+            m_Objs[kGenomeProviral].Add(*context.SeqdescObj(obj));
         }
     }
 }
@@ -125,7 +125,7 @@ DISCREPANCY_CASE(BAD_MRNA_QUAL, CSeqdesc_BY_BIOSEQ, eOncaller, "mRNA sequence co
     }
     ITERATE(CBioSource::TSubtype, s, src.GetSubtype()) {
         if ((*s)->IsSetSubtype() && ((*s)->GetSubtype() == CSubSource::eSubtype_germline || (*s)->GetSubtype() == CSubSource::eSubtype_rearranged)) {
-            m_Objs["[n] mRNA sequence[s] [has] germline or rearranged qualifier"].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel()));
+            m_Objs["[n] mRNA sequence[s] [has] germline or rearranged qualifier"].Add(*context.SeqdescObj(obj));
             return;
         }
     }
@@ -153,7 +153,7 @@ DISCREPANCY_CASE(ORGANELLE_NOT_GENOMIC, CSeqdesc_BY_BIOSEQ, eDisc | eOncaller, "
         return;
     }
     if (context.IsOrganelle()) {
-        m_Objs[kOrganelleNotGenomic].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel()));
+        m_Objs[kOrganelleNotGenomic].Add(*context.SeqdescObj(obj));
     }
 }
 
@@ -256,7 +256,7 @@ DISCREPANCY_CASE(SWITCH_STRUCTURED_COMMENT_PREFIX, CSeqdesc, eOncaller, "Suspici
             if (!errors.empty()) {
                 const CComment_rule* new_rule = FindAppropriateRule(*comment_rules, user);
                 if (new_rule) {
-                    m_Objs[kBadStructCommentPrefix].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel(), eNoRef, true, const_cast<CComment_rule*>(new_rule)));
+                    m_Objs[kBadStructCommentPrefix].Add(*context.SeqdescObj(obj, true, const_cast<CComment_rule*>(new_rule)));
                 }
             }
         }
@@ -317,7 +317,7 @@ DISCREPANCY_AUTOFIX(SWITCH_STRUCTURED_COMMENT_PREFIX)
 DISCREPANCY_CASE(MISMATCHED_COMMENTS, CSeqdesc, eDisc, "Mismatched Comments")
 {
     if (obj.IsComment() && !obj.GetComment().empty()) {
-        m_Objs[obj.GetComment()].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel(), eNoRef, true));
+        m_Objs[obj.GetComment()].Add(*context.SeqdescObj(obj, true));
     }
 }
 
@@ -365,7 +365,7 @@ DISCREPANCY_AUTOFIX(MISMATCHED_COMMENTS)
 DISCREPANCY_CASE(GENOMIC_MRNA, CSeqdesc, eOncaller | eSmart, "Genomic mRNA is legal, but not expected")
 {
     if (obj.IsMolinfo() && obj.GetMolinfo().IsSetBiomol() && obj.GetMolinfo().GetBiomol() == CMolInfo::eBiomol_genomic_mRNA) {
-        m_Objs["[n] biololecule[s] [is] genomic mRNA"].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel()));
+        m_Objs["[n] biololecule[s] [is] genomic mRNA"].Add(*context.SeqdescObj(obj));
     }
 }
 

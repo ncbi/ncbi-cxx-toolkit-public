@@ -306,7 +306,7 @@ template<typename T> void CDiscrepancyVisitor<T>::Call(const T& obj, CDiscrepanc
     }
     catch (CException& e) {
         string ss = "EXCEPTION caught: "; ss += e.what();
-        m_Objs[ss].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()));
+        m_Objs[ss].Add(*context.BioseqObj());
     }
 }
 
@@ -438,12 +438,7 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
     // Don't ENABLE_DISCREPANCY_TYPE(CSeq_annot), it is handled separately!
     // Don't ENABLE_DISCREPANCY_TYPE(CBioseq_set), it is handled separately!
 
-    m_TextMap.clear();
-    m_TextMapShort.clear();
-    m_FeatureTypeMap.clear();
-    m_ProductMap.clear();
-    m_LocationMap.clear();
-    m_LocusTagMap.clear();
+    m_DataMap.clear();
     m_IsPseudoMap.clear();
     m_GeneForFeatureMap.clear();
     m_ProdForFeatureMap.clear();
@@ -461,7 +456,7 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
             m_Count_Bioseq++;
             Update_Bioseq_set_Stack(i);
             if (m_Current_Bioseq->GetInst().IsNa()) {
-                m_NaSeqs.push_back(CRef<CReportObj>(NewBioseqObj(m_Current_Bioseq, &GetSeqSummary())));
+                m_NaSeqs.push_back(CRef<CReportObj>(BioseqObj()));
             }
             if (m_Current_Submit_block_StringObj && m_Current_Submit_block_StringObj->Value.empty()) {
                 string label;

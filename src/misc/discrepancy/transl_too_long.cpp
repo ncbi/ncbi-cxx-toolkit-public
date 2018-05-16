@@ -85,7 +85,7 @@ DISCREPANCY_CASE(TRANSL_TOO_LONG, CSeqFeatData, eDisc, "Transl_except longer tha
         }
     }
     if (found)
-        m_Objs["[n] feature[s] [has] translation exception[s] longer than 3 bp"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true));
+        m_Objs["[n] feature[s] [has] translation exception[s] longer than 3 bp"].Add(*context.DiscrObj(*context.GetCurrentSeq_feat(), true));
 }
 
 

@@ -110,34 +110,12 @@ protected:
 
 /// CDiscrepancyItem and CReportObject
 class CDiscrepancyContext;
+class CReportObjectData;
 
 class CDiscrepancyObject : public CReportObject
 {
 protected:
-    CDiscrepancyObject(CConstRef<CBioseq> obj, CScope& scope, size_t fileID, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_Fixed(false), m_More(more)
-    {
-        SetFileID(fileID);
-    }
-    CDiscrepancyObject(CConstRef<CSeqdesc> obj, CScope& scope, size_t fileID, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_Fixed(false), m_More(more)
-    {
-        SetFileID(fileID);
-    }
-    CDiscrepancyObject(CConstRef<CSeq_feat> obj, CScope& scope, size_t fileID, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_Fixed(false), m_More(more)
-    {
-        SetFileID(fileID);
-    }
-    CDiscrepancyObject(CConstRef<CSubmit_block> obj, CScope& scope, const string& text, size_t fileID, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope, text), m_Autofix(autofix), m_Fixed(false), m_More(more)
-    {
-        SetFileID(fileID);
-    }
-    CDiscrepancyObject(CConstRef<CBioseq_set> obj, CScope& scope, size_t fileID, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_Fixed(false), m_More(more)
-    {
-        SetFileID(fileID);
-    }
-    CDiscrepancyObject(const string& str, CScope& scope, size_t fileID, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(str, scope), m_Autofix(autofix), m_Fixed(false), m_More(more)
-    {
-        SetFileID(fileID);
-    }
+    CDiscrepancyObject(const CReportObjectData& data, bool autofix = false, CObject* more = 0) : CReportObject(data), m_Autofix(autofix), m_Fixed(false), m_More(more) {}
     CDiscrepancyObject(const CDiscrepancyObject& other) : CReportObject(other), m_Autofix(other.m_Autofix), m_Case(other.m_Case), m_More(other.m_More) {}
 
 public:
@@ -166,10 +144,10 @@ template<typename T> struct CSimpleTypeObject : public CObject
 class CSubmitBlockDiscObject : public CDiscrepancyObject
 {
 protected:
-    CSubmitBlockDiscObject(CConstRef<CSubmit_block> obj, CRef<CSimpleTypeObject<string> > label, CScope& scope, const string& text, size_t fileID, bool keep_ref, bool autofix = false, CObject* more = 0) : CDiscrepancyObject(obj, scope, text, fileID, keep_ref, autofix, more) { m_Label.Reset(label); }
+    CSubmitBlockDiscObject(const CReportObjectData& data, CRef<CSimpleTypeObject<string>> label,  bool autofix = false, CObject* more = 0) : CDiscrepancyObject(data, autofix, more) { m_Label.Reset(label); }
     CConstRef<CSimpleTypeObject<string> > m_Label;
 public:
-    virtual const string& GetText() const { return m_Label->Value.empty() ? m_Text : m_Label->Value; }
+    virtual const string& GetText() const { return m_Label->Value.empty() ? CDiscrepancyObject::GetText() : m_Label->Value; }
 friend class CDiscrepancyContext;
 };
 
@@ -224,7 +202,7 @@ struct CReportObjPtr
 {
     const CReportObj* P;
     CReportObjPtr(const CReportObj* p) : P(p) {}
-    bool operator<(const CReportObjPtr&) const;
+    bool operator<(const CReportObjPtr&other) const { return ((const CReportObject*)P)->m_Data < ((const CReportObject*)other.P)->m_Data; }
 };
 typedef set<CReportObjPtr> TReportObjectSet;
 
@@ -341,12 +319,6 @@ struct CSeqSummary
 
 /// CDiscrepancyContext - manage and run the list of tests
 
-enum EKeepRef {
-    eNoRef = 0,
-    eKeepRef = 1
-};
-
-
 // GENE_PRODUCT_CONFLICT
 typedef list<pair<CRef<CDiscrepancyObject>, string>> TGenesList;
 typedef map<string, TGenesList> TGeneLocusMap;
@@ -452,17 +424,16 @@ public:
     const vector<CConstRef<CSeq_feat> >& FeatMisc() { return m_FeatMisc; }
 
     sequence::ECompare Compare(const CSeq_loc& loc1, const CSeq_loc& loc2) const;
-    
-    CRef<CDiscrepancyObject> NewBioseqObj(CConstRef<CBioseq> obj, const CSeqSummary* info, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
-    CRef<CDiscrepancyObject> NewSeqdescObj(CConstRef<CSeqdesc> obj, const string& bslabel, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
-    CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CSeq_feat> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
-    CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CBioseq_set> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
-    CRef<CDiscrepancyObject> NewSubmitBlockObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
-    CRef<CDiscrepancyObject> NewCitSubObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
-    CRef<CDiscrepancyObject> NewStringObj(const string& str, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
-    CRef<CDiscrepancyObject> NewFeatOrDescObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
-    CRef<CDiscrepancyObject> NewFeatOrDescOrSubmitBlockObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
-    CRef<CDiscrepancyObject> NewFeatOrDescOrCitSubObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
+
+    CRef<CDiscrepancyObject> BioseqObj(bool autofix = false, CObject* more = 0);
+    CRef<CDiscrepancyObject> DiscrObj(const CSerialObject& obj, bool autofix = false, CObject* more = 0);
+    CRef<CDiscrepancyObject> SeqdescObj(const CSerialObject& obj, bool autofix = false, CObject* more = 0);
+    CRef<CDiscrepancyObject> SubmitBlockObj(bool autofix = false, CObject* more = 0);
+    CRef<CDiscrepancyObject> CitSubObj(bool autofix = false, CObject* more = 0);
+    CRef<CDiscrepancyObject> StringObj(const string& str, bool autofix = false, CObject* more = 0);
+    CRef<CDiscrepancyObject> FeatOrDescObj(bool autofix = false, CObject* more = 0);
+    CRef<CDiscrepancyObject> FeatOrDescOrSubmitBlockObj(bool autofix = false, CObject* more = 0);
+    CRef<CDiscrepancyObject> FeatOrDescOrCitSubObj(bool autofix = false, CObject* more = 0);
 
     // GENE_PRODUCT_CONFLICT
     TGeneLocusMap& GetGeneLocusMap() { return m_GeneLocusMap;}
@@ -502,16 +473,12 @@ protected:
     vector<CConstRef<CSeq_feat> > m_FeatExons;
     vector<CConstRef<CSeq_feat> > m_FeatIntrons;
     vector<CConstRef<CSeq_feat> > m_FeatMisc;
-    map<const CSerialObject*, string> m_TextMap;
-    map<const CSerialObject*, string> m_TextMapShort;
-    map<const CSerialObject*, string> m_FeatureTypeMap;
-    map<const CSerialObject*, string> m_ProductMap;
-    map<const CSerialObject*, string> m_LocationMap;
-    map<const CSerialObject*, string> m_LocusTagMap;
     map<const CSeq_feat*, bool> m_IsPseudoMap;
     map<const CSeq_feat*, const CSeq_feat*> m_GeneForFeatureMap;
     map<const CSeq_feat*, string> m_ProdForFeatureMap;
     bool x_IsPseudo(const CSeq_feat& feat);
+
+    map<const CSerialObject*, CConstRef<CReportObjectData>> m_DataMap;
 
     // GENE_PRODUCT_CONFLICT
     TGeneLocusMap m_GeneLocusMap;

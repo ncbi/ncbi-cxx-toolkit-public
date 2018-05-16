@@ -107,7 +107,7 @@ DISCREPANCY_CASE(MAP_CHROMOSOME_CONFLICT, CSeqdesc, eDisc | eOncaller | eSmart, 
     }
 
     if (has_map && !has_chromosome) {
-        m_Objs[kMapChromosomeConflict].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel()), false).Fatal();
+        m_Objs[kMapChromosomeConflict].Add(*context.SeqdescObj(obj), false).Fatal();
     }
 }
 
@@ -164,7 +164,7 @@ DISCREPANCY_CASE(INFLUENZA_DATE_MISMATCH, CBioSource, eOncaller, "Influenza Stra
         }
     }
     if (strain_year != collection_year) {
-        m_Objs["[n] influenza strain[s] conflict with collection date"].Add(*context.NewFeatOrDescObj());
+        m_Objs["[n] influenza strain[s] conflict with collection date"].Add(*context.FeatOrDescObj());
     }
 }
 
@@ -216,16 +216,16 @@ DISCREPANCY_CASE(INFLUENZA_QUALS, CBioSource, eOncaller, "Influenza must have st
         }
     }
     if (!found_strain) {
-        m_Objs["[n] Influenza biosource[s] [does] not have strain"].Add(*context.NewFeatOrDescObj());
+        m_Objs["[n] Influenza biosource[s] [does] not have strain"].Add(*context.FeatOrDescObj());
     }
     if (!found_host) {
-        m_Objs["[n] Influenza biosource[s] [does] not have host"].Add(*context.NewFeatOrDescObj());
+        m_Objs["[n] Influenza biosource[s] [does] not have host"].Add(*context.FeatOrDescObj());
     }
     if (!found_country) {
-        m_Objs["[n] Influenza biosource[s] [does] not have country"].Add(*context.NewFeatOrDescObj());
+        m_Objs["[n] Influenza biosource[s] [does] not have country"].Add(*context.FeatOrDescObj());
     }
     if (!found_collection_date) {
-        m_Objs["[n] Influenza biosource[s] [does] not have collection-date"].Add(*context.NewFeatOrDescObj());
+        m_Objs["[n] Influenza biosource[s] [does] not have collection-date"].Add(*context.FeatOrDescObj());
     }
 }
 
@@ -250,7 +250,7 @@ DISCREPANCY_CASE(INFLUENZA_SEROTYPE, CBioSource, eOncaller, "Influenza A virus m
             }
         }
     }
-    m_Objs["[n] Influenza A virus biosource[s] [does] not have serotype"].Add(*context.NewFeatOrDescObj());
+    m_Objs["[n] Influenza A virus biosource[s] [does] not have serotype"].Add(*context.FeatOrDescObj());
 }
 
 
@@ -271,7 +271,7 @@ DISCREPANCY_CASE(INFLUENZA_SEROTYPE_FORMAT, CBioSource, eOncaller, "Influenza A 
     if (obj.GetOrg().IsSetOrgname() && obj.GetOrg().GetOrgname().IsSetMod()) {
         ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
             if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_serotype && !rx.IsMatch((*it)->GetSubname())) {
-                m_Objs["[n] Influenza A virus serotype[s] [has] incorrect format"].Add(*context.NewFeatOrDescObj());
+                m_Objs["[n] Influenza A virus serotype[s] [has] incorrect format"].Add(*context.FeatOrDescObj());
             }
         }
     }
@@ -308,7 +308,7 @@ const string kUnculturedNotes = "[n] bio-source[s] [has] uncultured note[s]";
 DISCREPANCY_CASE(UNCULTURED_NOTES, CBioSource, eOncaller, "Uncultured Notes")
 {
     if (HasUnculturedNotes(obj)) {
-        m_Objs[kUnculturedNotes].Add(*context.NewFeatOrDescObj(), false).Fatal();
+        m_Objs[kUnculturedNotes].Add(*context.FeatOrDescObj(), false).Fatal();
     }
 }
 
@@ -357,13 +357,13 @@ DISCREPANCY_CASE(MISSING_VIRAL_QUALS, CBioSource, eOncaller, "Viruses should spe
     }
     if (!has_collection_date || !has_country || !has_specific_host) {
         if (!has_collection_date) {
-            m_Objs[kMissingViralQualsTop][kMissingViralQualsCollectionDate].Ext().Add(*context.NewFeatOrDescObj(), false);
+            m_Objs[kMissingViralQualsTop][kMissingViralQualsCollectionDate].Ext().Add(*context.FeatOrDescObj(), false);
         }
         if (!has_country) {
-            m_Objs[kMissingViralQualsTop][kMissingViralQualsCountry].Ext().Add(*context.NewFeatOrDescObj(), false);
+            m_Objs[kMissingViralQualsTop][kMissingViralQualsCountry].Ext().Add(*context.FeatOrDescObj(), false);
         }
         if (!has_specific_host) {
-            m_Objs[kMissingViralQualsTop][kMissingViralQualsSpecificHost].Ext().Add(*context.NewFeatOrDescObj(), false);
+            m_Objs[kMissingViralQualsTop][kMissingViralQualsSpecificHost].Ext().Add(*context.FeatOrDescObj(), false);
         }
     }
 }
@@ -465,7 +465,7 @@ DISCREPANCY_CASE(ATCC_CULTURE_CONFLICT, CBioSource, eDisc | eOncaller, "ATCC str
         }
     }
     if (report) {
-        m_Objs[kATCCCultureConflict].Add(*context.NewFeatOrDescObj());
+        m_Objs[kATCCCultureConflict].Add(*context.FeatOrDescObj());
     }
 }
 
@@ -567,7 +567,7 @@ DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE, CBioSource, eDisc | eOncaller
         }
     }
     if (has_bad_isolate) {
-        m_Objs["[n] bacterial biosource[s] [has] isolate"].Add(*context.NewFeatOrDescObj());
+        m_Objs["[n] bacterial biosource[s] [has] isolate"].Add(*context.FeatOrDescObj());
     }
 }
 
@@ -608,7 +608,7 @@ DISCREPANCY_CASE(MAG_SHOULD_NOT_HAVE_STRAIN, CBioSource, eDisc | eSmart, "Organi
     if (obj.IsSetOrg() && obj.GetOrg().IsSetOrgname() && obj.GetOrg().GetOrgname().IsSetMod()) {
         for (auto m : obj.GetOrg().GetOrgname().GetMod()) {
             if (m->IsSetSubtype() && m->GetSubtype() == COrgMod::eSubtype_strain) {
-                m_Objs["[n] organism[s] assembled from metagenome [has] strain"].Add(*context.NewFeatOrDescObj());
+                m_Objs["[n] organism[s] assembled from metagenome [has] strain"].Add(*context.FeatOrDescObj());
                 return;
             }
         }
@@ -659,7 +659,7 @@ DISCREPANCY_CASE(MAG_MISSING_ISOLATE, CBioSource, eDisc | eSmart, "Organism asse
         }
     }
     if (!has_isolate) {
-        m_Objs["[n] organism[s] assembled from metagenome [is] missing isolate"].Add(*context.NewFeatOrDescObj());
+        m_Objs["[n] organism[s] assembled from metagenome [is] missing isolate"].Add(*context.FeatOrDescObj());
     }
 }
 
@@ -689,7 +689,7 @@ DISCREPANCY_CASE(MULTISRC, CBioSource, eDisc | eOncaller, "Comma or semicolon ap
         }
     }
     if (report) {
-        m_Objs["[n] organism[s] [has] comma or semicolon in strain or isolate"].Add(*context.NewFeatOrDescObj());
+        m_Objs["[n] organism[s] [has] comma or semicolon in strain or isolate"].Add(*context.FeatOrDescObj());
     }
 }
 
@@ -711,7 +711,7 @@ DISCREPANCY_CASE(MULTIPLE_CULTURE_COLLECTION, CBioSource, eOncaller, "Multiple c
     ITERATE (COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
         if ((*m)->IsSetSubtype() && (*m)->GetSubtype() == COrgMod::eSubtype_culture_collection) {
             if (found) {
-                m_Objs["[n] organism[s] [has] multiple culture-collection qualifiers"].Add(*context.NewFeatOrDescObj());
+                m_Objs["[n] organism[s] [has] multiple culture-collection qualifiers"].Add(*context.FeatOrDescObj());
                 return;
             }
             found = true;
@@ -763,7 +763,7 @@ DISCREPANCY_CASE(REQUIRED_STRAIN, CBioSource, eDisc | eSubmitter | eSmart, "Bact
             }
         }
     }
-    m_Objs["[n] biosource[s] [is] missing required strain value"].Add(*context.NewFeatOrDescObj());
+    m_Objs["[n] biosource[s] [is] missing required strain value"].Add(*context.FeatOrDescObj());
 }
 
 
@@ -818,7 +818,7 @@ DISCREPANCY_CASE(STRAIN_CULTURE_COLLECTION_MISMATCH, CBioSource, eOncaller | eSm
         }
     }
     if (conflict) {
-        m_Objs["[n] organism[s] [has] conflicting strain and culture-collection values"].Add(*context.NewFeatOrDescObj());
+        m_Objs["[n] organism[s] [has] conflicting strain and culture-collection values"].Add(*context.FeatOrDescObj());
     }
 }
 
@@ -838,7 +838,7 @@ DISCREPANCY_CASE(SP_NOT_UNCULTURED, CBioSource, eOncaller, "Organism ending in s
     }
     const string& s = obj.GetOrg().GetTaxname();
     if (s.length() > 4 && s.substr(s.length() - 4) == " sp." && s.substr(0, 11) != "uncultured ") {
-        m_Objs["[n] biosource[s] [has] taxname[s] that end[S] with \' sp.\' but [does] not start with \'uncultured\'"].Add(*context.NewFeatOrDescObj());
+        m_Objs["[n] biosource[s] [has] taxname[s] that end[S] with \' sp.\' but [does] not start with \'uncultured\'"].Add(*context.FeatOrDescObj());
     }
 }
 
@@ -919,7 +919,7 @@ DISCREPANCY_CASE(FIND_STRAND_TRNAS, CBioSource, eDisc, "Find tRNAs on the same s
             const string& msg = (strand == eNa_strand_minus) ? kMinusStrand : kPlusStrand;
 
             for (auto trna = trnas.begin(); trna != trnas.end(); ++trna) {
-                m_Objs[msg].Add(*context.NewDiscObj(*trna), false);
+                m_Objs[msg].Add(*context.DiscrObj(**trna), false);
             }
         }
     }
@@ -1021,7 +1021,7 @@ DISCREPANCY_CASE(REQUIRED_CLONE, CBioSource, eOncaller, "Uncultured or environme
 //  ----------------------------------------------------------------------------
 {
     if (IsMissingRequiredClone(obj)) {
-        m_Objs[kMissingRequiredClone].Add(*context.NewFeatOrDescObj());
+        m_Objs[kMissingRequiredClone].Add(*context.FeatOrDescObj());
     }
 }
 
@@ -1042,7 +1042,7 @@ DISCREPANCY_CASE(STRAIN_TAXNAME_MISMATCH, CBioSource, eDisc | eOncaller, "BioSou
             if (om->IsSetSubtype() && om->GetSubtype() == COrgMod::eSubtype_strain && om->IsSetSubname()) {
                 const string strain = om->GetSubname();
                 if (!strain.empty()) {
-                    m_Objs[strain][obj.GetOrg().IsSetTaxname() ? obj.GetOrg().GetTaxname() : ""].Add(*context.NewFeatOrDescObj());
+                    m_Objs[strain][obj.GetOrg().IsSetTaxname() ? obj.GetOrg().GetTaxname() : ""].Add(*context.FeatOrDescObj());
                 }
             }
         }
@@ -1078,7 +1078,7 @@ DISCREPANCY_CASE(SPECVOUCHER_TAXNAME_MISMATCH, CBioSource, eOncaller | eSmart, "
             if (om->IsSetSubtype() && om->GetSubtype() == COrgMod::eSubtype_specimen_voucher && om->IsSetSubname()) {
                 const string strain = om->GetSubname();
                 if (!strain.empty()) {
-                    m_Objs[strain][obj.GetOrg().IsSetTaxname() ? obj.GetOrg().GetTaxname() : ""].Add(*context.NewFeatOrDescObj());
+                    m_Objs[strain][obj.GetOrg().IsSetTaxname() ? obj.GetOrg().GetTaxname() : ""].Add(*context.FeatOrDescObj());
                 }
             }
         }
@@ -1113,7 +1113,7 @@ DISCREPANCY_CASE(CULTURE_TAXNAME_MISMATCH, CBioSource, eOncaller, "Test BioSourc
             if (om->IsSetSubtype() && om->GetSubtype() == COrgMod::eSubtype_culture_collection && om->IsSetSubname()) {
                 const string strain = om->GetSubname();
                 if (!strain.empty()) {
-                    m_Objs[strain][obj.GetOrg().IsSetTaxname() ? obj.GetOrg().GetTaxname() : ""].Add(*context.NewFeatOrDescObj());
+                    m_Objs[strain][obj.GetOrg().IsSetTaxname() ? obj.GetOrg().GetTaxname() : ""].Add(*context.FeatOrDescObj());
                 }
             }
         }
@@ -1148,7 +1148,7 @@ DISCREPANCY_CASE(BIOMATERIAL_TAXNAME_MISMATCH, CBioSource, eOncaller | eSmart, "
             if (om->IsSetSubtype() && om->GetSubtype() == COrgMod::eSubtype_bio_material && om->IsSetSubname()) {
                 const string strain = om->GetSubname();
                 if (!strain.empty()) {
-                    m_Objs[strain][obj.GetOrg().IsSetTaxname() ? obj.GetOrg().GetTaxname() : ""].Add(*context.NewFeatOrDescObj());
+                    m_Objs[strain][obj.GetOrg().IsSetTaxname() ? obj.GetOrg().GetTaxname() : ""].Add(*context.FeatOrDescObj());
                 }
             }
         }
@@ -1229,7 +1229,7 @@ DISCREPANCY_CASE(ORGANELLE_ITS, CBioSource, eOncaller, "Test Bioseqs for suspect
                     if (!product.empty()) {
                         for (auto& pattern: suspectable_products) {
                             if (NStr::FindNoCase(product, pattern) != NPOS) {
-                                m_Objs[kSuspectITS].Add(*context.NewBioseqObj(bioseq, &context.GetSeqSummary()));
+                                m_Objs[kSuspectITS].Add(*context.BioseqObj());
                                 return;
                             }
                         }
@@ -1241,7 +1241,7 @@ DISCREPANCY_CASE(ORGANELLE_ITS, CBioSource, eOncaller, "Test Bioseqs for suspect
                         if (!comment.empty()) {
                             for (auto& pattern: suspectable_products) {
                                 if (NStr::FindNoCase(comment, pattern) != NPOS) {
-                                    m_Objs[kSuspectITS].Add(*context.NewBioseqObj(bioseq, &context.GetSeqSummary()));
+                                    m_Objs[kSuspectITS].Add(*context.BioseqObj());
                                     return;
                                 }
                             }
@@ -1485,8 +1485,8 @@ DISCREPANCY_CASE(INCONSISTENT_BIOSOURCE, CBioSource, eDisc | eSmart, "Inconsiste
         return;
     }
     CSeqdesc* seqdesc = const_cast<CSeqdesc*>(context.GetCurrentSeqdesc().GetPointer());
-    context.NewSeqdescObj(CConstRef<CSeqdesc>(seqdesc), context.GetCurrentBioseqLabel());    // this will cache the seqdesc name and allow using CConstRef<CBioseq>(0) in context.NewSeqdescObj()
-    m_Objs[kBioSource].Add(*context.NewBioseqObj(bioseq, &context.GetSeqSummary(), eNoRef, false, seqdesc), true);
+    context.SeqdescObj(*seqdesc);    // this will cache the seqdesc name and allow using CConstRef<CBioseq>(0) in context.NewSeqdescObj()
+    m_Objs[kBioSource].Add(*context.BioseqObj(false, seqdesc), true);
 }
 
 
@@ -1553,7 +1553,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_BIOSOURCE)
             string subcat = "[*" + subcat_num + "*][n/2] contig[s] [has] identical sources that do not match another contig source";
             ++subcat_index;
             for (auto bioseq_desc: item.second) {
-                m_Objs[subtype][subcat].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(bioseq_desc.second), kEmptyStr), false).Ext();
+                m_Objs[subtype][subcat].Add(*context.SeqdescObj(*bioseq_desc.second), false).Ext();
                 m_Objs[subtype][subcat].Add(*bioseq_desc.first, false).Ext();
             }
         }
@@ -1570,7 +1570,7 @@ static const string kOgRefs = "OrgRef";
 DISCREPANCY_CASE(TAX_LOOKUP_MISMATCH, CBioSource, eDisc, "Find Tax Lookup Mismatches")
 {
     if (obj.IsSetOrg()) {
-        m_Objs[kOgRefs].Add(*context.NewFeatOrDescObj(eNoRef, false, const_cast<COrg_ref*>(&obj.GetOrg())));
+        m_Objs[kOgRefs].Add(*context.FeatOrDescObj(false, const_cast<COrg_ref*>(&obj.GetOrg())));
     }
 }
 
@@ -1686,7 +1686,7 @@ static const string kTaxlookupMissing = "[n] tax name[s] [is] missing in taxonom
 DISCREPANCY_CASE(TAX_LOOKUP_MISSING, CBioSource, eDisc, "Find Missing Tax Lookup")
 {
     if (obj.IsSetOrg()) {
-        m_Objs[kOgRefs].Add(*context.NewFeatOrDescObj(eNoRef, false, const_cast<COrg_ref*>(&obj.GetOrg())));
+        m_Objs[kOgRefs].Add(*context.FeatOrDescObj(false, const_cast<COrg_ref*>(&obj.GetOrg())));
     }
 }
 
@@ -1745,7 +1745,7 @@ DISCREPANCY_CASE(UNNECESSARY_ENVIRONMENTAL, CBioSource, eOncaller, "Unnecessary 
             }
         }
     }
-    m_Objs["[n] biosource[s] [has] unnecessary environmental qualifier"].Add(*context.NewFeatOrDescObj());
+    m_Objs["[n] biosource[s] [has] unnecessary environmental qualifier"].Add(*context.FeatOrDescObj());
 }
 
 
@@ -1765,7 +1765,7 @@ DISCREPANCY_CASE(END_COLON_IN_COUNTRY, CBioSource, eOncaller, "Country name end 
         if ((*subtype)->IsSetSubtype() && (*subtype)->GetSubtype() == CSubSource::eSubtype_country) {
             const string& s = (*subtype)->GetName();
             if (s.length() && s[s.length()-1] == ':') {
-                m_Objs["[n] country source[s] end[S] with a colon."].Add(*context.NewFeatOrDescObj(eNoRef, true));
+                m_Objs["[n] country source[s] end[S] with a colon."].Add(*context.FeatOrDescObj(true));
             }
         }
     }
@@ -1821,7 +1821,7 @@ DISCREPANCY_CASE(COUNTRY_COLON, CBioSource, eOncaller, "Country description shou
                 if (s[i] == ':') {
                     count++;
                     if (count > 1) {
-                        m_Objs["[n] country source[s] [has] more than 1 colon."].Add(*context.NewFeatOrDescObj(eNoRef, true));
+                        m_Objs["[n] country source[s] [has] more than 1 colon."].Add(*context.FeatOrDescObj(true));
                         break;
                     }
                 }
@@ -1880,7 +1880,7 @@ DISCREPANCY_CASE(HUMAN_HOST, CBioSource, eDisc | eOncaller, "\'Human\' in host s
     }
     ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
         if ((*it)->CanGetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_nat_host && NStr::FindNoCase((*it)->GetSubname(), "human") != NPOS) {
-            m_Objs["[n] organism[s] [has] \'human\' host qualifiers"].Add(*context.NewFeatOrDescObj(eNoRef, true));
+            m_Objs["[n] organism[s] [has] \'human\' host qualifiers"].Add(*context.FeatOrDescObj(true));
         }
     }
 }
@@ -1951,7 +1951,7 @@ DISCREPANCY_CASE(CHECK_AUTHORITY, CBioSource, eDisc | eOncaller, "Authority and 
                 }
             }
             if (aut1 != tax1 || aut2 != tax2) {
-                m_Objs["[n] biosource[s] [has] taxname/authority conflict"].Add(*context.NewFeatOrDescObj());
+                m_Objs["[n] biosource[s] [has] taxname/authority conflict"].Add(*context.FeatOrDescObj());
             }
         }
     }
@@ -2008,7 +2008,7 @@ DISCREPANCY_CASE(TRINOMIAL_SHOULD_HAVE_QUALIFIER, CBioSource, eDisc | eOncaller 
                 string q = GetSrcQual(obj, srcqual_keywords[i].first);
                 string s = taxname.substr(n, q.length());
                 if (!q.length() || NStr::CompareNocase(s, q)) {
-                    m_Objs["[n] trinomial source[s] lack[S] corresponding qualifier"].Add(*context.NewFeatOrDescObj());
+                    m_Objs["[n] trinomial source[s] lack[S] corresponding qualifier"].Add(*context.FeatOrDescObj());
                 }
                 break;
             }
@@ -2050,7 +2050,7 @@ DISCREPANCY_CASE(AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE, CBioSource, eOncalle
         }
     }
     if (has_primer_note) {
-        m_Objs[kAmplifiedPrimers].Add(*context.NewFeatOrDescObj(eNoRef, true));
+        m_Objs[kAmplifiedPrimers].Add(*context.FeatOrDescObj(true));
     }
 }
 
@@ -2102,7 +2102,7 @@ DISCREPANCY_CASE(MISSING_PRIMER, CBioSource, eOncaller, "Missing values in prime
     }
     ITERATE (CPCRReactionSet::Tdata, pr, obj.GetPcr_primers().Get()) {
         if ((*pr)->CanGetForward() != (*pr)->CanGetReverse()) {
-            m_Objs[msg].Add(*context.NewFeatOrDescObj());
+            m_Objs[msg].Add(*context.FeatOrDescObj());
             return;
         }
         if (!(*pr)->CanGetForward()) {
@@ -2115,7 +2115,7 @@ DISCREPANCY_CASE(MISSING_PRIMER, CBioSource, eOncaller, "Missing values in prime
         while (fwd != fwdset.Get().end() && rev != revset.Get().end()) {
             if (((*fwd)->CanGetName() && !(*fwd)->GetName().Get().empty()) != ((*rev)->CanGetName() && !(*rev)->GetName().Get().empty())
                     || ((*fwd)->CanGetSeq() && !(*fwd)->GetSeq().Get().empty()) != ((*rev)->CanGetSeq() && !(*rev)->GetSeq().Get().empty())) {
-                m_Objs[msg].Add(*context.NewFeatOrDescObj());
+                m_Objs[msg].Add(*context.FeatOrDescObj());
                 return;
             }
             fwd++;
@@ -2181,7 +2181,7 @@ DISCREPANCY_CASE(DUPLICATE_PRIMER_SET, CBioSource, eOncaller, "Duplicate PCR pri
         CPCRReactionSet::Tdata::const_iterator jt = it;
         for (jt++; jt != data.end(); jt++) {
             if (FindDuplicatePrimers(**it, **jt)) {
-                m_Objs["[n] BioSource[s] [has] duplicate primer pairs."].Add(*context.NewFeatOrDescObj(eNoRef, true));
+                m_Objs["[n] BioSource[s] [has] duplicate primer pairs."].Add(*context.FeatOrDescObj(true));
                 return;
             }
         }
@@ -2221,7 +2221,7 @@ DISCREPANCY_CASE(METAGENOMIC, CBioSource, eDisc | eOncaller | eSmart, "Source ha
     if (obj.CanGetSubtype()) {
         ITERATE (CBioSource::TSubtype, it, obj.GetSubtype()) {
             if ((*it)->GetSubtype() == CSubSource::eSubtype_metagenomic) {
-                m_Objs["[n] biosource[s] [has] metagenomic qualifier"].Add(*context.NewFeatOrDescObj());
+                m_Objs["[n] biosource[s] [has] metagenomic qualifier"].Add(*context.FeatOrDescObj());
                 return;
             }
         }
@@ -2242,7 +2242,7 @@ DISCREPANCY_CASE(METAGENOME_SOURCE, CBioSource, eDisc | eOncaller | eSmart, "Sou
     if (obj.IsSetOrg() && obj.GetOrg().CanGetOrgname() && obj.GetOrg().GetOrgname().CanGetMod() && obj.GetOrg().IsSetTaxname() && !obj.GetOrg().GetTaxname().empty()) {
         ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
             if ((*it)->CanGetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_metagenome_source) {
-                m_Objs["[n] biosource[s] [has] metagenome_source qualifier"].Add(*context.NewFeatOrDescObj());
+                m_Objs["[n] biosource[s] [has] metagenome_source qualifier"].Add(*context.FeatOrDescObj());
                 return;
             }
         }
@@ -2361,7 +2361,7 @@ DISCREPANCY_CASE(DUP_SRC_QUAL, CBioSource, eDisc | eOncaller | eSmart, "Each qua
                 }
                 s += it.second[i];
             }
-            m_Objs[kDupSrc][s].Add(*context.NewFeatOrDescObj());
+            m_Objs[kDupSrc][s].Add(*context.FeatOrDescObj());
         }
     }
     if (bad) {
@@ -2418,7 +2418,7 @@ DISCREPANCY_CASE(UNUSUAL_ITS, CBioSource, eDisc | eOncaller, "Test Bioseqs for u
     }
 
     if (has_unusual) {
-        m_Objs[kUnusualITS].Add(*context.NewBioseqObj(bioseq, &context.GetSeqSummary()), false);
+        m_Objs[kUnusualITS].Add(*context.BioseqObj(), false);
     }
 }
 

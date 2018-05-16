@@ -65,6 +65,10 @@ BEGIN_SCOPE(NDiscrepancy)
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+
+// These four functions are not used in Discrepancy Report, but are called from somewhere in GBench.
+// It would make sebse to move them to some other place.
+
 string CReportObj::GetTextObjectDescription(const CSeq_feat& sf, CScope& scope)
 {
     return CReportObject::GetTextObjectDescription(sf, scope);
@@ -92,6 +96,39 @@ string CReportObj::GetTextObjectDescription(const CBioseq_set& bs, CScope& scope
 
 CConstRef<CSeq_id> GetBestId(const CBioseq& bioseq);
 
+CReportObjectData::CReportObjectData(const CSerialObject* obj, CScope& scope) : m_Obj(obj), m_Scope(scope)
+{
+    const CBioseq* bioseq = dynamic_cast<const CBioseq*>(obj);
+    const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(obj);
+    const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(obj);
+    const CBioseq_set* set = dynamic_cast<const CBioseq_set*>(obj);
+    if (bioseq) {
+        m_Type = CReportObj::eType_sequence;
+        CConstRef<CSeq_id> id = GetBestId(*bioseq);
+        id->GetLabel(&m_Text, CSeq_id::eContent);
+        m_ShortName = m_Text;
+    }
+    else if (feat) {
+        m_Type = CReportObj::eType_feature;
+        CReportObject::GetTextObjectDescription(*feat, scope, m_FeatureType, m_Product, m_Location, m_LocusTag);
+        m_Text = m_FeatureType + "\t" + m_Product + "\t" + m_Location + "\t" + m_LocusTag;
+    }
+    else if (desc) {
+        m_Type = CReportObj::eType_descriptor;
+        m_Text = CReportObject::GetTextObjectDescription(*desc);
+    }
+    else if (set) {
+        m_Type = CReportObj::eType_seq_set;
+        m_Text = CReportObject::GetTextObjectDescription(scope.GetBioseq_setHandle(*set));
+    }
+    else {
+        m_Type = CReportObj::eType_submit_block;
+        m_Text = "other type";
+    }
+}
+
+
+#if 0
 void CReportObject::SetText(CScope& scope, const string& label)
 {
     const CBioseq* Bioseq = dynamic_cast<const CBioseq*>(&*m_Obj);
@@ -117,7 +154,7 @@ void CReportObject::SetText(CScope& scope, const string& label)
         m_Text = GetTextObjectDescription(bssh);
     }
 }
-
+#endif
 
 string GetLocusTagForFeature(const CSeq_feat& seq_feat, CScope& scope)
 {
@@ -576,30 +613,30 @@ string CReportObject::GetTextObjectDescription(CBioseq_set_Handle bssh)
 }
 
 
-void CReportObject::DropReference()
-{
-    m_Obj.Reset();
-}
+//void CReportObject::DropReference()
+//{
+//    m_Obj.Reset();
+//}
 
 
-bool CReportObjPtr::operator<(const CReportObjPtr& other) const
-{
-    if (P == other.P) {
-        return false;
-    }
-    const CReportObject& A = (const CReportObject&)*P;
-    const CReportObject& B = (const CReportObject&)*other.P;
-    if (A.m_Obj || B.m_Obj) {
-        return A.m_Obj < B.m_Obj;
-    }
-    if (A.m_FileID != B.m_FileID) {
-        return A.m_FileID < B.m_FileID;
-    }
-    if (A.m_Text != B.m_Text) {
-        return A.m_Text < B.m_Text;
-    }
-    return false;
-}
+//bool CReportObjPtr::operator<(const CReportObjPtr& other) const
+//{
+//    if (P == other.P) {
+//        return false;
+//    }
+//    const CReportObject& A = (const CReportObject&)*P;
+//    const CReportObject& B = (const CReportObject&)*other.P;
+//    if (A.m_Obj || B.m_Obj) {
+//        return A.m_Obj < B.m_Obj;
+//    }
+//    if (A.m_FileID != B.m_FileID) {
+//        return A.m_FileID < B.m_FileID;
+//    }
+//    if (A.m_Text != B.m_Text) {
+//        return A.m_Text < B.m_Text;
+//    }
+//    return false;
+//}
 
 
 END_SCOPE(NDiscrepancy)
