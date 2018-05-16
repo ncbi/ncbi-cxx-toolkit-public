@@ -1,3 +1,19 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(xcompress)
+  NCBI_sources(
+    compress stream streambuf stream_util bzip2 zlib lzo reader_zlib tar
+    archive archive_ archive_zip
+  )
+  NCBI_optional_components(Z BZ2 LZO)
+  NCBI_project_watchers(ivanov)
+NCBI_end_lib()
+
+
+
+if(OFF)
 #
 #
 #
@@ -11,3 +27,4 @@ target_link_libraries(xcompress
     xutil
     ${BZ2_LIB} ${Z_LIB} ${LZO_LIB} ${BZ2_LIBS} ${Z_LIBS} ${LZO_LIBS}
 )
+endif()

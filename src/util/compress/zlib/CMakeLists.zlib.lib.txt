@@ -1,3 +1,19 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+
+NCBI_begin_lib(z)
+  NCBI_sources(
+    adler32 crc32 deflate infback inffast inflate inftrees trees zutil
+    ncbi_z_compress uncompr gzclose gzlib gzread gzwrite
+  )
+  NCBI_disable_pch()
+  NCBI_add_include_directories(${includedir}/util/compress/zlib)
+  NCBI_project_watchers(ivanov)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -7,4 +23,5 @@ add_library(z
 )
 
 include_directories(SYSTEM ${includedir}/util/compress/zlib)
+endif()
 

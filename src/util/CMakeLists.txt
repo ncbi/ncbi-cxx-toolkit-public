@@ -1,7 +1,14 @@
-##############################################################################
+#############################################################################
+# $Id$
+#############################################################################
 # 
 #
 
+if (NCBI_EXPERIMENTAL_CFG)
+NCBI_add_library(util)
+NCBI_add_subdirectory(regexp xregexp compress image)
+
+else()
 # Include projects from this directory
 include(CMakeLists.util.lib.txt)
 
@@ -19,3 +26,4 @@ add_subdirectory(qparse)
 add_subdirectory(lmdbxx)
 add_subdirectory(test )
 add_subdirectory(demo )
+endif()
