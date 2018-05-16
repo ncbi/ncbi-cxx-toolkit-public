@@ -5,7 +5,8 @@
     <link rel="stylesheet" href="https://www.ncbi.nlm.nih.gov/corehtml/ncbi.css">
   </head>
   <body>
-    <h1><@TITLE@> version <@VERSION@></h1>
+    <h1><@TITLE@> v<@VERSION@></h1>
+    <p>Decrypted string: <@SECRET@>
     <p>Your previous message:  <@MESSAGE@>
     <form method="post" action="<@SELF_URL@>">
       <p>Enter your new message here:  <INPUT TYPE="text" NAME="message" VALUE="">
@@ -13,7 +14,6 @@
     </form>
     <a href="/environment">Show environment variables</a>
     <a href="/crash">Crash</a>
-	 <p> Full version: <pre><@FULL_VERSION@></pre>
   </body>
 </html>
 
