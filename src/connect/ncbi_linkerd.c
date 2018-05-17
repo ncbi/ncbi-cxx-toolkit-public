@@ -173,6 +173,7 @@ static const char* x_Scheme(EBURLScheme scheme)
     case eURL_Unspec:
         return NULL;
     }
+    return NULL;
 }
 
 
