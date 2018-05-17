@@ -6436,9 +6436,15 @@ void CFileIO::CreateTemporary(const string& dir,
     }
 
 #  elif defined(NCBI_OS_MSWIN)
+    // MT-Safe protect
+    // To avoid to get access to the same temporary name/file from different threads
+    DEFINE_STATIC_FAST_MUTEX(s_CreateTemporaryMutex);
+    CFastMutexGuard LOCK(s_CreateTemporaryMutex);
+
     char buffer[PATH_MAX+1];
     srand((unsigned) time(0));
     unsigned long ofs = rand();
+    DWORD lasterr = 0;
 
     while (ofs < numeric_limits<unsigned long>::max()) {
         _ultoa((unsigned long)ofs, buffer, 24);
@@ -6450,9 +6456,11 @@ void CFileIO::CreateTemporary(const string& dir,
             break;
         ofs++;
     }
+    // Release adjust time mutex
+    LOCK.Release();
+
     if (m_Handle == INVALID_HANDLE_VALUE) {
-        NCBI_THROW(CFileErrnoException, eFileIO, 
-                   "Unable to create temporary file '" + m_Pathname + "'");
+        NCBI_THROW(CFileErrnoException, eFileIO, "Unable to create temporary file '" + m_Pathname + "'");
     }
 
 #  endif
