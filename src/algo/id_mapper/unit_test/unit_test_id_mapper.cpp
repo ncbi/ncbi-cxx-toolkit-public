@@ -122,10 +122,10 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscUnTest_Scaffold)
     CConstRef<CGC_Assembly> GenColl(
         GCService.GetAssembly("GCF_000003205.2", "SequenceNames")
     );
-
+    
     // Make a Spec
     CGencollIdMapper::SIdSpec MapSpec;
-    MapSpec.TypedChoice = CGC_TypedSeqId::e_Genbank;
+    MapSpec.TypedChoice = CGC_TypedSeqId::e_Refseq;
     MapSpec.Alias = CGC_SeqIdAlias::e_Gi;
 
     // Do a Map
@@ -136,32 +136,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscUnTest_Scaffold)
     CRef<CSeq_loc> Result = Mapper.Map(*OrigLoc, MapSpec);
 
     // Check that Map results meet expectations
-    BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), GI_CONST(112070986)); // AAFC03080232.1
-}
-
-
-BOOST_AUTO_TEST_CASE(TestCaseUcscUnTest_Comp)
-{
-    // Fetch Gencoll
-    CGenomicCollectionsService GCService;
-    CConstRef<CGC_Assembly> GenColl(
-        GCService.GetAssembly("GCF_000003205.2", "SequenceNames")
-    );
-
-    // Make a Spec
-    CGencollIdMapper::SIdSpec MapSpec;
-    MapSpec.TypedChoice = CGC_TypedSeqId::e_Genbank;
-    MapSpec.Alias = CGC_SeqIdAlias::e_Gi;
-
-    // Do a Map
-    CGencollIdMapper Mapper(GenColl);
-    CRef<CSeq_loc> OrigLoc(new CSeq_loc());
-    OrigLoc->SetWhole().SetLocal().SetStr("chrUn.004.10843");
-
-    CRef<CSeq_loc> Result = Mapper.Map(*OrigLoc, MapSpec);
-
-    // Check that Map results meet expectations
-    BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), GI_CONST(112070986)); // AAFC03080232.1
+    BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), GI_CONST(119941349)); // NW_001500741.1
 }
 
 
