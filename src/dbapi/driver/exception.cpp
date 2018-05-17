@@ -249,7 +249,12 @@ CDB_Exception::x_EndOfWhat(ostream& out) const
 //     out << GetMsg();
 //     out << ">>>";
     if ( !m_Params.Empty()  &&  !m_Params->params.empty() ) {
-        out << " [Parameters: ";
+        if (m_RowsInBatch <= 1) {
+            out << " [Parameters: ";
+        } else {
+            out << " [Error occurred somewhere in the " << m_RowsInBatch
+                << "-row BCP batch whose final row was ";
+        }
         const char* delim = kEmptyCStr;
         ITERATE (SParams::TParams, it, m_Params->params) {
             out << delim;
@@ -289,6 +294,7 @@ CDB_Exception::x_Assign(const CException& src)
     m_Context   = other.m_Context;
     m_SybaseSeverity = other.m_SybaseSeverity;
     m_Params = other.m_Params;
+    m_RowsInBatch = other.m_RowsInBatch;
 }
 
 CDB_Exception::SContext& CDB_Exception::x_SetContext(void)

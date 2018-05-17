@@ -73,9 +73,11 @@ CBaseCmd::CBaseCmd(impl::CConnection& conn,
 , m_OutParams(GetDefineParamsImpl())
 , m_Recompile(false)
 , m_HasFailed(false)
+, m_AtStartOfBatch(true)
 , m_IsOpen(false)
 , m_IsDeclared(false)
 , m_RowsSent(0)
+, m_RowsSentAtBatchStart(0)
 , m_BatchesSent(0)
 {
 }
@@ -89,10 +91,12 @@ CBaseCmd::CBaseCmd(impl::CConnection& conn,
 , m_OutParams(GetDefineParamsImpl())
 , m_Recompile(false)
 , m_HasFailed(false)
+, m_AtStartOfBatch(true)
 , m_IsOpen(false)
 , m_IsDeclared(false)
 , m_CmdName(cursor_name)
 , m_RowsSent(0)
+, m_RowsSentAtBatchStart(0)
 , m_BatchesSent(0)
 {
 }

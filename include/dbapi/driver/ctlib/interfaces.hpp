@@ -490,6 +490,8 @@ protected:
     virtual size_t GetTimeout(void) const;
     virtual size_t GetCancelTimeout(void) const;
 
+    virtual unsigned int GetRowsInCurrentBatch(void) const;
+
     size_t PrepareToCancel(void);
     void CancelFinished(size_t was_timeout);
     bool IsCancelInProgress(void) const { return m_CancelInProgress; }
@@ -1357,6 +1359,12 @@ const CTL_Connection::TDbgInfo& CTL_Connection::GetDbgInfo(void) const {
 inline
 const CDBParams* CTL_Connection::GetLastParams(void) const {
     return m_ActiveCmd ? m_ActiveCmd->GetLastParams() : NULL;
+}
+
+inline
+unsigned int CTL_Connection::GetRowsInCurrentBatch(void) const
+{
+    return m_ActiveCmd ? m_ActiveCmd->GetRowsInCurrentBatch() : 0U;
 }
 
 #ifdef FTDS_IN_USE

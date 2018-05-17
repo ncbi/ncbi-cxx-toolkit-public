@@ -1125,13 +1125,15 @@ void PassException(unique_ptr<CDB_Exception>& ex,
                    const string&              user_name,
                    CS_INT                     severity,
                    const CDBParams*           params,
-                   ERetriable                 retriable
+                   ERetriable                 retriable,
+                   unsigned int               rows_in_batch = 0
                    )
 {
     ex->SetServerName(server_name);
     ex->SetUserName(user_name);
     ex->SetSybaseSeverity(severity);
     ex->SetParams(params);
+    ex->SetRowsInBatch(rows_in_batch);
 
     impl::CDBExceptionStorage& ex_storage = GetCTLExceptionStorage();
     ex_storage.Accept(ex);
@@ -1268,10 +1270,12 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
 
         impl::CDBHandlerStack* handlers;
         const CDBParams*       params = NULL;
+        unsigned int           rows_in_batch = 0;
         if (ctl_conn) {
             handlers = &ctl_conn->GetMsgHandlers();
             message.context.Reset(&ctl_conn->GetDbgInfo());
             params = ctl_conn->GetLastParams();
+            rows_in_batch = ctl_conn->GetRowsInCurrentBatch();
         } else
             handlers = &ctl_ctx->GetCtxHandlerStack();
         if (handlers->HandleMessage(msg->severity, msg->msgnumber, msg->msgstring))
@@ -1294,7 +1298,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                                                     msg->msgnumber));
 
             PassException(ex, server_name, user_name, msg->severity, params,
-                          eRetriable_Yes);
+                          eRetriable_Yes, rows_in_batch);
             if (ctl_conn != NULL && ctl_conn->IsOpen()) {
 #if NCBI_FTDS_VERSION >= 95
                 if (ctl_conn->GetCancelTimedOut()) {
@@ -1322,7 +1326,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                                                     msg->msgnumber));
 
             PassException(ex, server_name, user_name, msg->severity, params,
-                          eRetriable_No);
+                          eRetriable_No, rows_in_batch);
             return CS_SUCCEED;
         }
 #endif
@@ -1338,7 +1342,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                                                     msg->msgnumber));
 
             PassException(ex, server_name, user_name, msg->severity, params,
-                          eRetriable_Yes);
+                          eRetriable_Yes, rows_in_batch);
 
             break;
         }
@@ -1350,7 +1354,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                                                     msg->msgnumber));
 
             PassException(ex, server_name, user_name, msg->severity, params,
-                          eRetriable_Yes);
+                          eRetriable_Yes, rows_in_batch);
 
             return HandleConnStatus(con, msg, server_name, user_name);
 
@@ -1370,7 +1374,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                                                     msg->msgnumber));
 
             PassException(ex, server_name, user_name, msg->severity, params,
-                          retriable);
+                          retriable, rows_in_batch);
 
             break;
         }
@@ -1383,7 +1387,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                                                     msg->msgnumber));
 
             PassException(ex, server_name, user_name, msg->severity, params,
-                          eRetriable_No);
+                          eRetriable_No, rows_in_batch);
 
             break;
         }
@@ -1483,6 +1487,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
 
         impl::CDBHandlerStack* handlers;
         const CDBParams*       params = NULL;
+        unsigned int           rows_in_batch = 0;
         if (ctl_conn)
             handlers = &ctl_conn->GetMsgHandlers();
         else
@@ -1494,6 +1499,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         if (ctl_conn) {
             message.context.Reset(&ctl_conn->GetDbgInfo());
             params = ctl_conn->GetLastParams();
+            rows_in_batch = ctl_conn->GetRowsInCurrentBatch();
             if (ctl_conn->IsCancelInProgress()
                 &&  (msg->msgnumber == 3618 /* Transaction has been aborted */
                      || msg->msgnumber == 4224 /* An interruption occurred */))
@@ -1509,7 +1515,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                                                     message));
 
             PassException(ex, server_name, user_name, msg->severity, params,
-                          eRetriable_Yes);
+                          eRetriable_Yes, rows_in_batch);
         }
         else if (msg->msgnumber == 1771  ||  msg->msgnumber == 1708) {
             // "Maximum row size exceeds allowable width. It is being rounded down to 32767 bytes."
@@ -1549,7 +1555,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                                                     (int) msg->line));
 
                 PassException(ex, server_name, user_name, msg->severity,
-                              params, eRetriable_No);
+                              params, eRetriable_No, rows_in_batch);
             }
             else if (msg->sqlstatelen > 1  &&
                      (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
@@ -1563,7 +1569,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                                                     (int) msg->line));
 
                 PassException(ex, server_name, user_name, msg->severity,
-                              params, eRetriable_No);
+                              params, eRetriable_No, rows_in_batch);
             }
             else {
                 unique_ptr<CDB_Exception> ex(new CDB_DSEx(
@@ -1574,7 +1580,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                                                     (int) msg->msgnumber));
 
                 PassException(ex, server_name, user_name, msg->severity,
-                              params, eRetriable_No);
+                              params, eRetriable_No, rows_in_batch);
             }
         }
     } catch (...) {

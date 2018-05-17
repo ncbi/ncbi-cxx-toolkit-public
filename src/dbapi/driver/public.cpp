@@ -971,7 +971,10 @@ bool CDB_BCPInCmd::SendRow()
     CHECK_COMMAND( m_CmdImpl );
     if (m_CmdImpl->m_RowsSent++ == 0) {
         TRACE_PARAMS(m_CmdImpl->GetBindParams());
+    } else if (m_CmdImpl->m_AtStartOfBatch) {
+        m_CmdImpl->m_RowsSentAtBatchStart = m_CmdImpl->m_RowsSent - 1;
     }
+    m_CmdImpl->m_AtStartOfBatch = false;
     m_CmdImpl->SaveInParams();
     return m_CmdImpl->Send();
 }
@@ -986,8 +989,10 @@ bool CDB_BCPInCmd::CompleteBatch()
 {
     CHECK_COMMAND( m_CmdImpl );
     if (m_CmdImpl->m_BatchesSent++ == 0  &&  m_CmdImpl->m_RowsSent > 1) {
-        _TRACE("Sent a batch of " << m_CmdImpl->m_RowsSent << " rows");
+        _TRACE("Sent a batch of " << m_CmdImpl->GetRowsInCurrentBatch()
+               << " rows");
     }
+    m_CmdImpl->m_AtStartOfBatch = true;
     return m_CmdImpl->CommitBCPTrans();
 }
 

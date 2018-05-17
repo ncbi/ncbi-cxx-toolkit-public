@@ -220,6 +220,9 @@ public:
     void SetParams(const CDBParams* params);
     void SetParams(const CDBParams& params) { SetParams(&params); }
     CConstRef<SParams> GetParams(void) const { return m_Params; }
+
+    void SetRowsInBatch(unsigned int n) { m_RowsInBatch = n; }
+    unsigned int GetRowsInBatch(void) const { return m_RowsInBatch; }
     
 
     /// WARNING !!! Sybase severity value can be provided by Sybase/FreeTDS
@@ -248,6 +251,7 @@ public:
         , m_DBErrCode(db_err_code)
         , m_Context(message.context)
         , m_SybaseSeverity(0)
+        , m_RowsInBatch(0)
         NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_Exception, CException);
 
 protected:
@@ -266,6 +270,7 @@ private:
     CConstRef<SContext> m_Context;
     int                 m_SybaseSeverity;
     CRef<SParams>       m_Params;
+    unsigned int        m_RowsInBatch;
 };
 
 inline

@@ -200,6 +200,11 @@ public:
     /// the table
     virtual bool EndBCP(void);
 
+    unsigned int GetRowsInCurrentBatch(void) const
+    {
+        return m_RowsSent - m_RowsSentAtBatchStart;
+    }
+
 protected:
     void DetachInterface(void);
 
@@ -314,6 +319,7 @@ private:
     CDBBindedParams m_OutParams;
     bool            m_Recompile; // Temporary. Should be deleted.
     bool            m_HasFailed;
+    bool            m_AtStartOfBatch;
 
     // Cursor-related data ...
     bool            m_IsOpen;
@@ -321,6 +327,7 @@ private:
     const string    m_CmdName;
 
     unsigned int    m_RowsSent;
+    unsigned int    m_RowsSentAtBatchStart;
     unsigned int    m_BatchesSent;
 
     unique_ptr<CDBParams> m_LastInParams;

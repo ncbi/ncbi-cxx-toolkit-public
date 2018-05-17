@@ -234,6 +234,8 @@ public:
 
     virtual string GetDriverName(void) const;
 
+    virtual unsigned int GetRowsInCurrentBatch(void) const { return 0; }
+
     CDBConnParams::EServerType GetServerType(void);
     CDB_BigDateTime::ESyntax GetDateTimeSyntax(void);
     
