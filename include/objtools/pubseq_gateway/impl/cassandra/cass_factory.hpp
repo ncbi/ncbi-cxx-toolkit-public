@@ -37,6 +37,8 @@
 #include "cass_driver.hpp"
 #include "IdCassScope.hpp"
 
+#include <corelib/ncbiargs.hpp>
+
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
