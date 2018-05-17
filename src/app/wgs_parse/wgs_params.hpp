@@ -184,6 +184,7 @@ private:
     friend const CParams& GetParams();
     friend bool SetParams(const CArgs& args);
     friend void SetScaffoldPrefix(const string& scaffold_prefix);
+    friend void SetAssemblyVersion(int version);
 
     CParams();
     CParams(const CParams&) = delete;
@@ -192,6 +193,7 @@ private:
 const CParams& GetParams();
 bool SetParams(const CArgs& args);
 void SetScaffoldPrefix(const string& scaffold_prefix);
+void SetAssemblyVersion(int version);
 
 }
 

@@ -441,7 +441,7 @@ const string& CParams::GetProjPrefix() const
         return TLS;
     }
     else if (IsTsa()) {
-        TSA;
+        return TSA;
     }
     return WGS;
 }
@@ -1094,6 +1094,16 @@ void SetScaffoldPrefix(const string& scaffold_prefix)
     if (params_imp.m_scaffold_prefix.empty()) {
         params_imp.m_scaffold_prefix = scaffold_prefix;
     }
+}
+
+void SetAssemblyVersion(int version)
+{
+    CParams_imp& params_imp = *params->m_imp;
+    params_imp.m_accession[MINOR_VERSION_POS] = (version % 10) + '0';
+    params_imp.m_accession[MAJOR_VERSION_POS] = (version / 10) + '0';
+
+    params_imp.m_proj_acc.clear();
+    params_imp.m_proj_acc_ver.clear();
 }
 
 }

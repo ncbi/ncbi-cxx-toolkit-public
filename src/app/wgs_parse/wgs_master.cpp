@@ -845,11 +845,16 @@ static bool CreateBiosource(CBioseq& bioseq, CBioSource& biosource, const list<C
         biosource.ResetGenome();
     }
 
-    // TODO
-
     CRef<CSeqdesc> descr(new CSeqdesc);
     descr->SetSource().Assign(biosource);
     bioseq.SetDescr().Set().push_back(descr);
+
+    if (GetParams().IsTsa() && biosource.IsSetOrg() && biosource.GetOrg().IsSetTaxname()) {
+
+        CRef<CSeqdesc> title(new CSeqdesc);
+        title->SetTitle("TSA: " + biosource.GetOrg().GetTaxname() + ", transcriptome shotgun assembly");
+        bioseq.SetDescr().Set().push_back(title);
+    }
 
     return true;
 }
@@ -866,9 +871,6 @@ static void AddField(CUser_object& user_obj, const string& label, const string& 
 static void CreateUserObject(const CMasterInfo& info, CBioseq& bioseq)
 {
     CRef<CUser_object> user_obj(new CUser_object);
-
-    // TODO update_extra_contigs
-
     CObject_id& obj_id = user_obj->SetType();
 
     static const string ACCESSION_FIRST("_accession_first");
@@ -881,6 +883,13 @@ static void CreateUserObject(const CMasterInfo& info, CBioseq& bioseq)
 
     int first = 1,
         last = info.m_num_of_entries;
+
+    if (GetParams().GetUpdateMode() == eUpdateExtraContigs) {
+
+        _ASSERT(info.m_current_master && "Should not be NULL in this mode");
+        first += info.m_current_master->m_last_contig;
+        last += info.m_current_master->m_last_contig;
+    }
 
     if (GetParams().IsTsa()) {
         obj_id.SetStr("TSA-RNA-List");
@@ -1516,6 +1525,7 @@ static void SortSequences(list<CEntryOrderInfo>& seq_order)
 
     if (sort_order != eUnsorted) {
 
+        // CR lambda assignment?
         typedef bool (*TSortPredicat)(const CEntryOrderInfo& , const CEntryOrderInfo& );
 
         TSortPredicat sort_predicat = nullptr;
@@ -1551,6 +1561,28 @@ static void BuildSortOrderMap(const list<CEntryOrderInfo>& seq_order, map<string
 static bool IsSubmitBlockSet(const CSeq_submit& seq_submit)
 {
     return seq_submit.IsSetSub() && seq_submit.GetSub().IsSetContact() && seq_submit.GetSub().GetContact().IsSetContact();
+}
+
+static void ReportVersionProblem(int master_accession_ver, int current_master_accession_ver, bool& reject)
+{
+    if (master_accession_ver < current_master_accession_ver) {
+        ERR_POST_EX(0, 0, Critical << "The assembly-version of current WGS master (" << ToStringLeadZeroes(current_master_accession_ver - 1, 2) <<
+                    ") is the same or higher than the assembly-version used for the contigs " << ToStringLeadZeroes(master_accession_ver, 2) << ".");
+        reject = true;
+    }
+    else {
+
+        if (GetParams().GetSource() != eNCBI && GetParams().IsDblinkOverride()) {
+            ERR_POST_EX(0, 0, Warning << "Non-sequential assembly-version " << ToStringLeadZeroes(master_accession_ver, 2) << " is used for contigs : Expected " <<
+                        ToStringLeadZeroes(current_master_accession_ver, 2) <<  ": Allowed, based on source or override switch.");
+            SetAssemblyVersion(master_accession_ver);
+        }
+        else {
+            ERR_POST_EX(0, 0, Critical << "Non-sequential assembly-version " << ToStringLeadZeroes(master_accession_ver, 2) << " is used for contigs : Expected " <<
+                        ToStringLeadZeroes(current_master_accession_ver, 2) << ".");
+            reject = true;
+        }
+    }
 }
 
 bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
@@ -1604,7 +1636,14 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
             }
 
             if (GetParams().GetUpdateMode() == eUpdateAssembly && master_info.m_accession_ver > 0 && GetParams().IsAccessionAssigned()) {
-                // TODO
+
+                _ASSERT(master_info.m_current_master && "Should not be NULL in this mode");
+                if (master_info.m_accession_ver == master_info.m_current_master->m_version) {
+                    SetAssemblyVersion(master_info.m_accession_ver);
+                }
+                else {
+                    ReportVersionProblem(master_info.m_accession_ver, master_info.m_current_master->m_version, master_info.m_reject);
+                }
             }
 
             if (!IsSubmitBlockSet(*seq_submit)) {
