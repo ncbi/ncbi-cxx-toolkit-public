@@ -2060,9 +2060,12 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
         // success!  nothing to report
     } else if (flags & CLatLonCountryId::fCountryMatch && NStr::IsBlank(province)) {
         if (check_state) {
-            errcode = eLatLonCountryErr_State;
-            error = "Lat_lon " + lat_lon + " is in " + id->GetFullGuess()
-                        + " (more specific than " + country + ")";
+            string full_guess = id->GetFullGuess();
+            if (!NStr::Equal(full_guess, country)) {
+                errcode = eLatLonCountryErr_State;
+                error = "Lat_lon " + lat_lon + " is in " + id->GetFullGuess()
+                    + " (more specific than " + country + ")";
+            }
         }
     } else if (!NStr::IsBlank(id->GetGuessWater())) {
         if (flags & (CLatLonCountryId::fCountryClosest | CLatLonCountryId::fProvinceClosest)) {

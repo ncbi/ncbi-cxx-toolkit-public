@@ -23309,3 +23309,23 @@ BOOST_AUTO_TEST_CASE(Test_VR_814)
     CLEAR_ERRORS
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_819)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, "Denmark: Aarhus Bay Station M5");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "56.1033 N 10.4578 E");
+
+    STANDARD_SETUP
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CSubSource::ELatLonCountryErr lcErr;
+    string latlon = "56.1033 N 10.4578 E";
+    string retval = CSubSource::ValidateLatLonCountry("Denmark: Aarhus Bay Station M5", latlon, true, lcErr);
+    string enumval = lcErr == CSubSource::eLatLonCountryErr_Value ? "eLatLonCountryErr_Value" : "not error enum";
+    BOOST_CHECK_EQUAL(retval, kEmptyStr);
+}
