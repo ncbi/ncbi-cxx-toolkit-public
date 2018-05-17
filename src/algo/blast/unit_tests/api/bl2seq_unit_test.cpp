@@ -1832,7 +1832,7 @@ BOOST_AUTO_TEST_CASE(MegablastGreedyTraceback2) {
     ITERATE(CSeq_align::TScore, itr, seqalign2.GetScore()) {
         BOOST_REQUIRE((*itr)->IsSetId());
         if ((*itr)->GetId().GetStr() == "score") {
-            BOOST_REQUIRE_EQUAL(6034, (*itr)->GetValue().GetInt());
+            BOOST_REQUIRE_EQUAL(6035, (*itr)->GetValue().GetInt());
             break;
         }
     }

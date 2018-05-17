@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE(testBLASTNTraceBack) {
     const int query_end_final[k_num_hsps_end] = { 6161, 6759, 5386, 7231, 5219, 7425, 3830};
     const int subject_offset_final[k_num_hsps_end] = { 104, 241, 16, 378, 0, 51, 71};
     const int subject_end_final[k_num_hsps_end] = { 241, 383, 107, 419, 20, 80, 83};
-    const int score_final[k_num_hsps_end] = { 252, 226, 182, 54, 40, 26, 24};
+    const int score_final[k_num_hsps_end] = { 252, 226, 182, 54, 40, 27, 24};
     const int context_final[k_num_hsps_end] = { 0, 0, 0, 0, 0, 1, 1};
     const int subject_frame_final[k_num_hsps_end] = { 1, 1, 1, 1, 1, 1, 1};
     const int query_gapped_start_final[k_num_hsps_end] = { 6035, 6625, 5295, 7193, 5199, 7409, 3819};
