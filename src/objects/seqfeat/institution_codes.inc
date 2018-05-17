@@ -359,6 +359,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "AZ\ts\tMuseu Carlos Machado, Natural History Department\t\t",
 "AZAN\ts\tAkademia Nauk Azerbaijana-Bulgarian Academy of Science of Azerbaijan\t\t",
 "AZB\ts\tHerbario Ruy Telles Palhinha - Universidade Dos Acores\t\t",
+"AZTI\ts\tAZTI Tecnalia\t\t",
 "AZU\ts\tUniversidade dos Acores, Departamento de Ciencias Agrarias\t\t",
 "AZUS\ts\tCitrus College, Biological Sciences Department\t\t",
 "B\ts\tBerlin Botanic Garden and Botanical Museum (Herbarium Berolinense)\tBGBM",
