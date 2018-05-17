@@ -170,6 +170,8 @@ DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
             br_loc->SetInt().SetFrom(rr.GetTo() - 2 + ovlp_len);
             br_loc->SetInt().SetTo(rr.GetTo());
         }
+        br_loc->SetPartialStart(false, eExtreme_Positional);
+        br_loc->SetPartialStop(false, eExtreme_Positional);
         code_break->SetLoc().Assign(*br_loc);
         code_break->SetAa().SetNcbieaa('*');
         string comment;
