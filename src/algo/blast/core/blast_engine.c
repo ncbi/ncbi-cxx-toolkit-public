@@ -675,7 +675,9 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
 
             /* For nucleotide search, if match score is = 2, the odd scores
                are rounded down to the nearest even number. */
+#if 0
             Blast_HSPListAdjustOddBlastnScores(hsp_list, score_options->gapped_calculation, gap_align->sbp);
+#endif
 
         }
 

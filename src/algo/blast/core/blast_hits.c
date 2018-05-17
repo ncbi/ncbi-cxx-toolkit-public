@@ -1798,6 +1798,7 @@ Int2 Blast_HSPListGetEvalues(EBlastProgramType program_number,
    Int4 hsp_cnt;
    Int4 index;
    Int4 kbp_context;
+   Int4 score;
    double gap_decay_divisor = 1.;
    Boolean isRPS = Blast_ProgramIsRpsBlast(program_number);
 
@@ -1816,8 +1817,9 @@ Int2 Blast_HSPListGetEvalues(EBlastProgramType program_number,
 
       ASSERT(hsp != NULL);
       ASSERT(scaling_factor != 0.0);
+#if 0
       ASSERT(sbp->round_down == FALSE || (hsp->score & 1) == 0);
-
+#endif
       /* Divide Lambda by the scaling factor, so e-value is
          calculated correctly from a scaled score. This is needed only
          for RPS BLAST, where scores are scaled, but Lambda is not. */
@@ -1834,24 +1836,32 @@ Int2 Blast_HSPListGetEvalues(EBlastProgramType program_number,
       ASSERT(kbp[kbp_context]);
       kbp[kbp_context]->Lambda /= scaling_factor;
 
+      /* Round score down to even number for E-value calculations only. */
+      /* Added 2018/5/16 by rackerst, SB-2303 */
+      score = hsp->score;
+      if (hsp_list  &&  hsp_list->hspcnt != 0
+              &&  gapped_calculation  &&  sbp->round_down) {
+          score &= ~1;
+      }
+
       if (sbp->gbp) {
           /* Only try Spouge's method if gumbel parameters are available */
           if (!isRPS) {
               hsp->evalue =
-                  BLAST_SpougeStoE(hsp->score, kbp[kbp_context], sbp->gbp,
+                  BLAST_SpougeStoE(score, kbp[kbp_context], sbp->gbp,
                                query_info->contexts[hsp->context].query_length,
                                subject_length);
           } else {
               /* for RPS blast, query and subject is swapped */
               hsp->evalue =
-                  BLAST_SpougeStoE(hsp->score, kbp[kbp_context], sbp->gbp,
+                  BLAST_SpougeStoE(score, kbp[kbp_context], sbp->gbp,
                                subject_length,
                                query_info->contexts[hsp->context].query_length);
           }
       } else {
           /* Get effective search space from the query information block */
           hsp->evalue =
-              BLAST_KarlinStoE_simple(hsp->score, kbp[kbp_context],
+              BLAST_KarlinStoE_simple(score, kbp[kbp_context],
                                query_info->contexts[hsp->context].eff_searchsp);
       }
 
@@ -1885,7 +1895,9 @@ Int2 Blast_HSPListGetBitScores(BlastHSPList* hsp_list,
    for (index=0; index<hsp_list->hspcnt; index++) {
       hsp = hsp_list->hsp_array[index];
       ASSERT(hsp != NULL);
+#if 0
       ASSERT(sbp->round_down == FALSE || (hsp->score & 1) == 0);
+#endif
       hsp->bit_score =
          (hsp->score*kbp[hsp->context]->Lambda - kbp[hsp->context]->logK) /
          NCBIMATH_LN2;

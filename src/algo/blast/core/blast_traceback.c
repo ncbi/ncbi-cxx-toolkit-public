@@ -227,7 +227,9 @@ s_HSPListPostTracebackUpdate(EBlastProgramType program_number,
 
       /* For nucleotide search, if match score is = 2, the odd scores
          are rounded down to the nearest even number. */
+#if 0
       Blast_HSPListAdjustOddBlastnScores(hsp_list, kGapped, sbp);
+#endif
 
       Blast_HSPListGetEvalues(program_number, query_info, subject_length,
                               hsp_list, kGapped, FALSE, sbp, 0,
