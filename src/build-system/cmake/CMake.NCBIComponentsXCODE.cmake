@@ -21,6 +21,7 @@ set(NCBI_ThirdPartyBasePath /netopt/ncbi_tools)
 
 set(NCBI_ThirdParty_Boost ${NCBI_ThirdPartyBasePath}/boost-1.62.0-ncbi1)
 set(NCBI_ThirdParty_LZO   ${NCBI_ThirdPartyBasePath}/lzo-2.05)
+set(NCBI_ThirdParty_LMDB  ${NCBI_ThirdPartyBasePath}/lmdb-0.9.18)
 set(NCBI_ThirdParty_JPEG  ${NCBI_ThirdPartyBasePath}/safe-sw)
 set(NCBI_ThirdParty_PNG   /opt/X11)
 set(NCBI_ThirdParty_TIFF  ${NCBI_ThirdPartyBasePath}/safe-sw)
@@ -69,26 +70,31 @@ endif()
 
 #############################################################################
 #LocalPCRE
-
-set(NCBI_COMPONENT_LocalPCRE_FOUND YES)
-set(NCBI_COMPONENT_LocalPCRE_INCLUDE ${includedir}/util/regexp)
-set(NCBI_COMPONENT_LocalPCRE_LIBS regexp)
-set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} LocalPCRE")
+if (EXISTS ${includedir}/util/regexp)
+  set(NCBI_COMPONENT_LocalPCRE_FOUND YES)
+  set(NCBI_COMPONENT_LocalPCRE_INCLUDE ${includedir}/util/regexp)
+  set(NCBI_COMPONENT_LocalPCRE_LIBS regexp)
+else()
+  set(NCBI_COMPONENT_LocalPCRE_FOUND NO)
+endif()
 
 #############################################################################
 # PCRE
 if(NOT NCBI_COMPONENT_PCRE_FOUND)
-  set(NCBI_COMPONENT_PCRE_FOUND YES)
+  set(NCBI_COMPONENT_PCRE_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
   set(NCBI_COMPONENT_PCRE_INCLUDE ${NCBI_COMPONENT_LocalPCRE_INCLUDE})
   set(NCBI_COMPONENT_PCRE_LIBS ${NCBI_COMPONENT_LocalPCRE_LIBS})
 endif()
 
 #############################################################################
 #LocalZ
-set(NCBI_COMPONENT_LocalZ_FOUND YES)
-set(NCBI_COMPONENT_LocalZ_INCLUDE ${includedir}/util/compress/zlib)
-set(NCBI_COMPONENT_LocalZ_LIBS z)
-set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} LocalZ")
+if (EXISTS ${includedir}/util/compress/zlib)
+  set(NCBI_COMPONENT_LocalZ_FOUND YES)
+  set(NCBI_COMPONENT_LocalZ_INCLUDE ${includedir}/util/compress/zlib)
+  set(NCBI_COMPONENT_LocalZ_LIBS z)
+else()
+  set(NCBI_COMPONENT_LocalZ_FOUND NO)
+endif()
 
 #############################################################################
 # Z
@@ -98,10 +104,13 @@ set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} Z")
 
 #############################################################################
 #LocalBZ2
-set(NCBI_COMPONENT_LocalBZ2_FOUND YES)
-set(NCBI_COMPONENT_LocalBZ2_INCLUDE ${includedir}/util/compress/bzip2)
-set(NCBI_COMPONENT_LocalBZ2_LIBS bz2)
-set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} LocalBZ2")
+if (EXISTS ${includedir}/util/compress/bzip2)
+  set(NCBI_COMPONENT_LocalBZ2_FOUND YES)
+  set(NCBI_COMPONENT_LocalBZ2_INCLUDE ${includedir}/util/compress/bzip2)
+  set(NCBI_COMPONENT_LocalBZ2_LIBS bz2)
+else()
+  set(NCBI_COMPONENT_LocalBZ2_FOUND NO)
+endif()
 
 #############################################################################
 #BZ2
@@ -114,6 +123,25 @@ set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} BZ2")
 NCBI_define_component(LZO liblzo2.a)
 
 #############################################################################
+#LocalLMDB
+if (EXISTS ${includedir}/util/lmdb)
+  set(NCBI_COMPONENT_LocalLMDB_FOUND YES)
+  set(NCBI_COMPONENT_LocalLMDB_INCLUDE ${includedir}//util/lmdb)
+  set(NCBI_COMPONENT_LocalLMDB_LIBS lmdb)
+else()
+  set(NCBI_COMPONENT_LocalLMDB_FOUND NO)
+endif()
+
+#############################################################################
+#LMDB
+NCBI_define_component(LMDB liblmdb.a)
+if(NOT NCBI_COMPONENT_LMDB_FOUND)
+  set(NCBI_COMPONENT_LMDB_FOUND ${NCBI_COMPONENT_LocalLMDB_FOUND})
+  set(NCBI_COMPONENT_LMDB_INCLUDE ${NCBI_COMPONENT_LocalLMDB_INCLUDE})
+  set(NCBI_COMPONENT_LMDB_LIBS ${NCBI_COMPONENT_LocalLMDB_LIBS})
+endif()
+
+#############################################################################
 # JPEG
 NCBI_define_component(JPEG libjpeg.a)
 
@@ -124,6 +152,7 @@ NCBI_define_component(PNG libpng.dylib)
 #############################################################################
 # GIF
 set(NCBI_COMPONENT_GIF_FOUND YES)
+set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} GIF")
 
 #############################################################################
 # TIFF
