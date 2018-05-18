@@ -1,4 +1,4 @@
-APP=sample.cgi
+APP=deployable_cgi.cgi
 SRC=sample process
 
 LIB=xcgi xhtml xconnect xutil xncbi
