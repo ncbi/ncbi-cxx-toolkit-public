@@ -41,7 +41,7 @@ int CCgiSampleApplication::ProcessPrintEnvironment(CCgiContext& ctx)
 
     auto_ptr<CHTMLPage> page;
     try {
-        page.reset(new CHTMLPage("Sample CGI", "./share/env.html"));
+        page.reset(new CHTMLPage("Sample CGI", "./share/deployable_cgi_env.html"));
     } catch (const exception& e) {
         ERR_POST("Failed to create Sample CGI HTML page: " << e.what());
         return 2;
@@ -141,10 +141,10 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     //  http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/doxyhtml/namespacexml.html
     ERR_POST("Before page reading");
 
-    // Create a HTML page (using template HTML file "cgi.html")
+    // Create a HTML page (using template HTML file "deployable_cgi.html")
     auto_ptr<CHTMLPage> page;
     try {
-        page.reset(new CHTMLPage("Sample CGI", "./share/cgi.html"));
+        page.reset(new CHTMLPage("Sample CGI", "./share/deployable_cgi.html"));
     } catch (const exception& e) {
         ERR_POST("Failed to create Sample CGI HTML page: " << e.what());
         return 2;
