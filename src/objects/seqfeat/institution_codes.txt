@@ -326,7 +326,7 @@ AYR	s	South Ayrshire Council
 AZ	s	Museu Carlos Machado, Natural History Department		
 AZAN	s	Akademia Nauk Azerbaijana-Bulgarian Academy of Science of Azerbaijan		
 AZB	s	Herbario Ruy Telles Palhinha - Universidade Dos Acores		
-AZTI	s	AZTI Tecnalia		
+AZTI	sc	AZTI Tecnalia		
 AZU	s	Universidade dos Acores, Departamento de Ciencias Agrarias		
 AZUS	s	Citrus College, Biological Sciences Department		
 B	s	Berlin Botanic Garden and Botanical Museum (Herbarium Berolinense)	BGBM
