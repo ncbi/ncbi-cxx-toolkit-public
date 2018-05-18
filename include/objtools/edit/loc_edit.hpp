@@ -174,6 +174,17 @@ NCBI_XOBJEDIT_EXPORT
 NCBI_XOBJEDIT_EXPORT
 bool CorrectIntervalOrder(CSeq_loc& loc);
 
+// This function will adjust the partial ends of a feature  so that it will
+// abut a gap or the end of the sequence if the end is currently
+// three or fewer nucleotides away
+NCBI_XOBJEDIT_EXPORT
+bool ExtendPartialFeatureEnds(CBioseq_Handle bsh);
+
+// This function will indicate whether a given feature would be extended by
+// the above function
+NCBI_XOBJEDIT_EXPORT
+bool IsExtendable(const CSeq_feat& cds, CScope& scope);
+
 
 END_SCOPE(edit)
 END_SCOPE(objects)

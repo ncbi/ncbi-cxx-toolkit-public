@@ -35,6 +35,10 @@
 #include <objtools/edit/cds_fix.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Seq_inst.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
@@ -732,6 +736,35 @@ CRef<CSeq_loc> CLocationEditPolicy::ConvertToOrder(const CSeq_loc& orig_loc, boo
     return new_loc;
 }
 
+void AdjustFrameFor5Extension(CSeq_feat& feat, size_t diff)
+{
+    // adjust frame to maintain consistency
+    if (diff % 3 > 0 && feat.GetData().IsCdregion()) {
+        int orig_frame = 1;
+        if (feat.GetData().GetCdregion().IsSetFrame()) {
+            if (feat.GetData().GetCdregion().GetFrame() == CCdregion::eFrame_two) {
+                orig_frame = 2;
+            } else if (feat.GetData().GetCdregion().GetFrame() == CCdregion::eFrame_three) {
+                orig_frame = 3;
+            }
+        }
+        CCdregion::EFrame new_frame = CCdregion::eFrame_not_set;
+        switch ((orig_frame + diff % 3) % 3) {
+            case 1:
+                new_frame = CCdregion::eFrame_not_set;
+                break;
+            case 2:
+                new_frame = CCdregion::eFrame_two;
+                break;
+            case 0:
+                new_frame = CCdregion::eFrame_three;
+                break;
+        }
+        feat.SetData().SetCdregion().SetFrame(new_frame);
+    }
+}
+
+
 bool CLocationEditPolicy::Extend5(CSeq_feat& feat, CScope& scope)
 {
     bool extend = false;
@@ -762,29 +795,7 @@ bool CLocationEditPolicy::Extend5(CSeq_feat& feat, CScope& scope)
         }
 
         // adjust frame to maintain consistency
-        if (diff % 3 > 0 && feat.GetData().IsCdregion()) {
-            int orig_frame = 1;
-            if (feat.GetData().GetCdregion().IsSetFrame()) {
-                if (feat.GetData().GetCdregion().GetFrame() == CCdregion::eFrame_two) {
-                    orig_frame = 2;
-                } else if (feat.GetData().GetCdregion().GetFrame() == CCdregion::eFrame_three) {
-                    orig_frame = 3;
-                }
-            }
-            CCdregion::EFrame new_frame = CCdregion::eFrame_not_set;
-            switch ((orig_frame + diff % 3) % 3) {
-                case 1:
-                    new_frame = CCdregion::eFrame_not_set;
-                    break;
-                case 2:
-                    new_frame = CCdregion::eFrame_two;
-                    break;
-                case 0:
-                    new_frame = CCdregion::eFrame_three;
-                    break;
-            }
-            feat.SetData().SetCdregion().SetFrame(new_frame);
-        }
+        AdjustFrameFor5Extension(feat, diff);
     }
     return extend;
 }
@@ -2319,6 +2330,260 @@ bool CorrectIntervalOrder(CSeq_loc& loc)
         case CSeq_loc::e_Packed_pnt:
             any_change = CorrectIntervalOrder(loc.SetPacked_pnt());
             break;
+    }
+    return any_change;
+}
+
+
+bool IsExtendableLeft(TSeqPos left, const CBioseq& seq, CScope* scope, TSeqPos& extend_len)
+{
+    bool rval = false;
+    if (left < 3) {
+        rval = true;
+        extend_len = left;
+    } else if (seq.IsSetInst() && seq.GetInst().IsSetRepr() &&
+               seq.GetInst().GetRepr() == CSeq_inst::eRepr_delta &&
+               seq.GetInst().IsSetExt() &&
+               seq.GetInst().GetExt().IsDelta()) {
+        TSeqPos offset = 0;
+        TSeqPos last_gap_stop = 0;
+        ITERATE(CDelta_ext::Tdata, it, seq.GetInst().GetExt().GetDelta().Get()) {
+            if ((*it)->IsLiteral()) {
+                offset += (*it)->GetLiteral().GetLength();
+                if (!(*it)->GetLiteral().IsSetSeq_data()) {
+                    last_gap_stop = offset;
+                } else if ((*it)->GetLiteral().GetSeq_data().IsGap()) {
+                    last_gap_stop = offset;
+                }
+            } else if ((*it)->IsLoc()) {
+                offset += sequence::GetLength((*it)->GetLoc(), scope);
+            }
+            if (offset > left) {
+                break;
+            }
+        }
+        if (left >= last_gap_stop && left - last_gap_stop <= 3) {
+            rval = true;
+            extend_len = left - last_gap_stop;
+        }
+    }
+    return rval;
+}
+
+
+bool IsExtendableRight(TSeqPos right, const CBioseq& seq, CScope* scope, TSeqPos& extend_len)
+{
+    bool rval = false;
+    if (right > seq.GetLength() - 5) {
+        rval = true;
+        extend_len = seq.GetLength() - right - 1;
+    } else if (seq.IsSetInst() && seq.GetInst().IsSetRepr() &&
+        seq.GetInst().GetRepr() == CSeq_inst::eRepr_delta &&
+        seq.GetInst().IsSetExt() &&
+        seq.GetInst().GetExt().IsDelta()) {
+        TSeqPos offset = 0;
+        TSeqPos next_gap_start = 0;
+        ITERATE(CDelta_ext::Tdata, it, seq.GetInst().GetExt().GetDelta().Get()) {
+            if ((*it)->IsLiteral()) {
+                if (!(*it)->GetLiteral().IsSetSeq_data()) {
+                    next_gap_start = offset;
+                } else if ((*it)->GetLiteral().GetSeq_data().IsGap()) {
+                    next_gap_start = offset;
+                }
+                offset += (*it)->GetLiteral().GetLength();
+            } else if ((*it)->IsLoc()) {
+                offset += sequence::GetLength((*it)->GetLoc(), scope);
+            }
+            if (offset > right + 4) {
+                break;
+            }
+        }
+        if (next_gap_start > right && next_gap_start - right - 1 <= 3) {
+            rval = true;
+            extend_len = next_gap_start - right - 1;
+        }
+    }
+    return rval;
+}
+
+
+bool AdjustFeatureEnd5(CSeq_feat& cds, vector<CRef<CSeq_feat> > related_features, CScope& scope)
+{
+    if (!cds.GetLocation().IsPartialStart(eExtreme_Biological)) {
+        return false;
+    }
+
+    bool rval = false;
+
+    CSeq_loc_CI first_l(cds.GetLocation());
+    CBioseq_Handle bsh = scope.GetBioseqHandle(first_l.GetSeq_id());
+    CConstRef<CBioseq> seq = bsh.GetCompleteBioseq();
+
+    TSeqPos start = cds.GetLocation().GetStart(eExtreme_Biological);
+    TSeqPos new_start = start;
+    TSeqPos extend_len = 0;
+    bool extendable = false;
+
+    if (!first_l.IsSetStrand() || first_l.GetStrand() != eNa_strand_minus) {
+        // positive strand
+        if (start > 0) {
+            extendable = IsExtendableLeft(start, *seq, &scope, extend_len);
+            new_start = start - extend_len;
+        }
+    } else {
+        if (start < seq->GetInst().GetLength() - 1) {
+            extendable = IsExtendableRight(start, *seq, &scope, extend_len);
+            new_start = start + extend_len;
+        }
+    }
+    if (extendable) {
+        CRef<CSeq_loc> cds_loc = SeqLocExtend5(cds.GetLocation(), new_start, &scope);
+        if (cds_loc) {
+            for (auto it : related_features) {
+                if (it->GetLocation().GetStart(eExtreme_Biological) == start) {
+                    CRef<CSeq_loc> related_loc = SeqLocExtend5(it->GetLocation(), start - extend_len, &scope);
+                    if (related_loc) {
+                        it->SetLocation().Assign(*related_loc);
+                        if (it->IsSetData() && it->GetData().IsCdregion()) {
+                            AdjustFrameFor5Extension(cds, extend_len);
+                        }
+                    }
+                }
+            }
+            cds.SetLocation().Assign(*cds_loc);
+            if (cds.IsSetData() && cds.GetData().IsCdregion()) {
+                AdjustFrameFor5Extension(cds, extend_len);
+            }
+
+            rval = true;
+        }
+    }
+
+    return rval;
+}
+
+
+bool AdjustFeatureEnd3(CSeq_feat& cds, vector<CRef<CSeq_feat> > related_features, CScope& scope)
+{
+    if (!cds.GetLocation().IsPartialStop(eExtreme_Biological)) {
+        return false;
+    }
+
+    bool rval = false;
+
+    CSeq_loc_CI last_l(cds.GetLocation());
+    size_t num_intervals = last_l.GetSize();
+    last_l.SetPos(num_intervals - 1);
+
+    CBioseq_Handle bsh = scope.GetBioseqHandle(last_l.GetSeq_id());
+    CConstRef<CBioseq> seq = bsh.GetCompleteBioseq();
+
+    TSeqPos stop = cds.GetLocation().GetStop(eExtreme_Biological);
+    TSeqPos new_stop = stop;
+    TSeqPos extend_len = 0;
+    bool extendable = false;
+
+    if (!last_l.IsSetStrand() || last_l.GetStrand() != eNa_strand_minus) {
+        // positive strand
+        if (stop < seq->GetInst().GetLength() - 1) {
+            extendable = IsExtendableRight(stop, *seq, &scope, extend_len);
+            new_stop = stop + extend_len;
+        }
+    } else {
+        if (stop > 0) {
+            extendable = IsExtendableLeft(stop, *seq, &scope, extend_len);
+            new_stop = stop - extend_len;
+        }
+    }
+    if (extendable) {
+        CRef<CSeq_loc> cds_loc = SeqLocExtend3(cds.GetLocation(), new_stop, &scope);
+        if (cds_loc) {
+            for (auto it : related_features) {
+                if (it->GetLocation().GetStart(eExtreme_Biological) == stop) {
+                    CRef<CSeq_loc> related_loc = SeqLocExtend3(it->GetLocation(), new_stop, &scope);
+                    if (related_loc) {
+                        it->SetLocation().Assign(*related_loc);
+                    }
+                }
+            }
+            cds.SetLocation().Assign(*cds_loc);
+            rval = true;
+        }
+    }
+
+    return rval;
+}
+
+
+bool IsExtendable(const CSeq_feat& cds, CScope& scope)
+{
+    if (cds.GetLocation().IsPartialStart(eExtreme_Positional)) {
+        CSeq_loc_CI first_l(cds.GetLocation());
+        CBioseq_Handle bsh = scope.GetBioseqHandle(first_l.GetSeq_id());
+        CConstRef<CBioseq> seq = bsh.GetCompleteBioseq();
+        TSeqPos extend_len = 0;
+        TSeqPos start = first_l.GetRange().GetFrom();
+        if (IsExtendableLeft(start, *seq, &scope, extend_len) && extend_len > 0) {
+            return true;
+        }
+    }
+    if (cds.GetLocation().IsPartialStop(eExtreme_Positional)) {
+        CSeq_loc_CI last_l(cds.GetLocation());
+        size_t num_intervals = last_l.GetSize();
+        last_l.SetPos(num_intervals - 1);
+        CBioseq_Handle bsh = scope.GetBioseqHandle(last_l.GetSeq_id());
+        CConstRef<CBioseq> seq = bsh.GetCompleteBioseq();
+
+        TSeqPos stop = cds.GetLocation().GetStop(eExtreme_Positional);
+        TSeqPos extend_len = 0;
+
+        if (IsExtendableRight(stop, *seq, &scope, extend_len) && extend_len > 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool ExtendPartialFeatureEnds(CBioseq_Handle bsh)
+{
+    bool any_change = false;
+    CFeat_CI f(bsh);
+    CRef<feature::CFeatTree> tr(new feature::CFeatTree(f));
+    while (f) {
+        if (f->GetData().IsCdregion()) {
+            CMappedFeat gene = tr->GetBestGene(*f);
+            CMappedFeat mRNA = tr->GetParent(*f, CSeqFeatData::eSubtype_mRNA);
+            vector<CRef<CSeq_feat> > related_features;
+            if (gene) {
+                CRef<CSeq_feat> new_gene(new CSeq_feat());
+                new_gene->Assign(*(gene.GetOriginalSeq_feat()));
+                related_features.push_back(new_gene);
+            }
+            if (mRNA) {
+                CRef<CSeq_feat> new_mRNA(new CSeq_feat());
+                new_mRNA->Assign(*(mRNA.GetOriginalSeq_feat()));
+                related_features.push_back(new_mRNA);
+            }
+            CRef<CSeq_feat> new_cds(new CSeq_feat());
+            new_cds->Assign(*(f->GetOriginalSeq_feat()));
+
+            if (AdjustFeatureEnd5(*new_cds, related_features, bsh.GetScope()) ||
+                AdjustFeatureEnd3(*new_cds, related_features, bsh.GetScope())) {
+                CSeq_feat_EditHandle feh(*f);
+                feh.Replace(*new_cds);
+                if (gene) {
+                    CSeq_feat_EditHandle geh(gene);
+                    geh.Replace(*(related_features.front()));
+                }
+                if (mRNA) {
+                    CSeq_feat_EditHandle meh(mRNA);
+                    meh.Replace(*(related_features.back()));
+                }
+                any_change = true;
+            }
+        }
+        ++f;
     }
     return any_change;
 }

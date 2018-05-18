@@ -399,7 +399,7 @@ int CTbl2AsnApp::Run(void)
 
     if (args["c"])
     {
-        if (args["c"].AsString().find_first_not_of("-befwsdD") != string::npos)
+        if (args["c"].AsString().find_first_not_of("-befwsdDx") != string::npos)
         {
             NCBI_THROW(CArgException, eConvert,
                 "Unrecognized cleanup type " + args["c"].AsString());

@@ -1777,6 +1777,164 @@ BOOST_AUTO_TEST_CASE(Test_GB_7703)
 
 }
 
+
+void CheckAdjustStart(TSeqPos start, TSeqPos expect_start, bool partial_start, CCdregion::EFrame frame, bool is_minus = false)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodDeltaSeq();
+
+    CRef<CSeq_feat> cds = unit_test_util::AddMiscFeature(entry);
+    cds->SetData().SetCdregion();
+    if (is_minus) {
+        cds->SetLocation().SetInt().SetFrom(0);
+        cds->SetLocation().SetInt().SetTo(start);
+        cds->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+    } else {
+        cds->SetLocation().SetInt().SetFrom(start);
+        cds->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength() - 1);
+    }
+    cds->SetLocation().SetPartialStart(partial_start, eExtreme_Biological);
+
+    STANDARD_SETUP
+
+    BOOST_CHECK_EQUAL(edit::IsExtendable(*cds, scope), (start != expect_start));
+
+    CBioseq_CI bi(seh);
+    BOOST_CHECK_EQUAL(edit::ExtendPartialFeatureEnds(*bi), (start != expect_start));
+    CFeat_CI c(*bi, CSeqFeatData::e_Cdregion);
+    BOOST_CHECK_EQUAL(c->GetLocation().GetStart(eExtreme_Biological), expect_start);
+    CCdregion::EFrame after_frame = c->GetData().GetCdregion().IsSetFrame() ? c->GetData().GetCdregion().GetFrame() : CCdregion::eFrame_one;
+    if (after_frame == CCdregion::eFrame_not_set) { 
+        after_frame = CCdregion::eFrame_not_set;
+    }
+    BOOST_CHECK_EQUAL(after_frame, frame);
+}
+
+
+void CheckAdjustStop(TSeqPos stop, TSeqPos expect_stop, bool partial_stop, bool is_minus = false)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodDeltaSeq();
+
+    CRef<CSeq_feat> cds = unit_test_util::AddMiscFeature(entry);
+    cds->SetData().SetCdregion();
+    if (is_minus) {
+        cds->SetLocation().SetInt().SetFrom(stop);
+        cds->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength() - 1);
+        cds->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+    } else {
+        cds->SetLocation().SetInt().SetFrom(0);
+        cds->SetLocation().SetInt().SetTo(stop);
+    }
+    cds->SetLocation().SetPartialStop(partial_stop, eExtreme_Biological);
+
+    STANDARD_SETUP
+
+    BOOST_CHECK_EQUAL(edit::IsExtendable(*cds, scope), (stop != expect_stop));
+
+    CBioseq_CI bi(seh);
+    BOOST_CHECK_EQUAL(edit::ExtendPartialFeatureEnds(*bi), (stop != expect_stop));
+    CFeat_CI c(*bi, CSeqFeatData::e_Cdregion);
+    BOOST_CHECK_EQUAL(c->GetLocation().GetStop(eExtreme_Biological), expect_stop);
+    CCdregion::EFrame after_frame = c->GetData().GetCdregion().IsSetFrame() ? c->GetData().GetCdregion().GetFrame() : CCdregion::eFrame_one;
+    if (after_frame == CCdregion::eFrame_not_set) { 
+        after_frame = CCdregion::eFrame_not_set;
+    }
+    BOOST_CHECK_EQUAL(after_frame, CCdregion::eFrame_one);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_RW_566)
+{
+    CheckAdjustStart(0, 0, false, CCdregion::eFrame_one);
+    CheckAdjustStart(0, 0, true, CCdregion::eFrame_one);
+    CheckAdjustStart(1, 1, false, CCdregion::eFrame_one);
+    CheckAdjustStart(1, 0, true, CCdregion::eFrame_two);
+    CheckAdjustStart(2, 2, false, CCdregion::eFrame_one);
+    CheckAdjustStart(2, 0, true, CCdregion::eFrame_three);
+    CheckAdjustStart(3, 3, false, CCdregion::eFrame_one);
+    CheckAdjustStart(3, 0, true, CCdregion::eFrame_one);
+    CheckAdjustStart(4, 4, false, CCdregion::eFrame_one);
+    CheckAdjustStart(4, 4, true, CCdregion::eFrame_one);
+    
+    CheckAdjustStart(22, 22, false, CCdregion::eFrame_one);
+    CheckAdjustStart(22, 22, true, CCdregion::eFrame_one);
+    CheckAdjustStart(23, 23, false, CCdregion::eFrame_one);
+    CheckAdjustStart(23, 22, true, CCdregion::eFrame_two);
+    CheckAdjustStart(24, 24, false, CCdregion::eFrame_one);
+    CheckAdjustStart(24, 22, true, CCdregion::eFrame_three);
+    CheckAdjustStart(25, 25, false, CCdregion::eFrame_one);
+    CheckAdjustStart(25, 22, true, CCdregion::eFrame_one);
+    CheckAdjustStart(26, 26, false, CCdregion::eFrame_one);
+    CheckAdjustStart(26, 26, true, CCdregion::eFrame_one);
+
+    CheckAdjustStart(33, 33, false, CCdregion::eFrame_one, true);
+    CheckAdjustStart(33, 33, true, CCdregion::eFrame_one, true);
+    CheckAdjustStart(32, 32, false, CCdregion::eFrame_one, true);
+    CheckAdjustStart(32, 33, true, CCdregion::eFrame_two, true);
+    CheckAdjustStart(31, 31, false, CCdregion::eFrame_one, true);
+    CheckAdjustStart(31, 33, true, CCdregion::eFrame_three, true);
+    CheckAdjustStart(30, 30, false, CCdregion::eFrame_one, true);
+    CheckAdjustStart(30, 33, true, CCdregion::eFrame_one, true);
+    CheckAdjustStart(29, 29, false, CCdregion::eFrame_one, true);
+    CheckAdjustStart(29, 29, true, CCdregion::eFrame_one, true);
+
+    CheckAdjustStart(11, 11, false, CCdregion::eFrame_one, true);
+    CheckAdjustStart(11, 11, true, CCdregion::eFrame_one, true);
+    CheckAdjustStart(10, 10, false, CCdregion::eFrame_one, true);
+    CheckAdjustStart(10, 11, true, CCdregion::eFrame_two, true);
+    CheckAdjustStart(9, 9, false, CCdregion::eFrame_one, true);
+    CheckAdjustStart(9, 11, true, CCdregion::eFrame_three, true);
+    CheckAdjustStart(8, 8, false, CCdregion::eFrame_one, true);
+    CheckAdjustStart(8, 11, true, CCdregion::eFrame_one, true);
+    CheckAdjustStart(7, 7, false, CCdregion::eFrame_one, true);
+    CheckAdjustStart(7, 7, true, CCdregion::eFrame_one, true);
+
+    CheckAdjustStop(33, 33, false, false);
+    CheckAdjustStop(33, 33, true, false);
+    CheckAdjustStop(32, 32, false, false);
+    CheckAdjustStop(32, 33, true, false);
+    CheckAdjustStop(31, 31, false, false);
+    CheckAdjustStop(31, 33, true, false);
+    CheckAdjustStop(30, 30, false, false);
+    CheckAdjustStop(30, 33, true, false);
+    CheckAdjustStop(29, 29, false, false);
+    CheckAdjustStop(29, 29, true, false);
+
+    CheckAdjustStop(11, 11, false, false);
+    CheckAdjustStop(11, 11, true, false);
+    CheckAdjustStop(10, 10, false, false);
+    CheckAdjustStop(10, 11, true, false);
+    CheckAdjustStop(9, 9, false, false);
+    CheckAdjustStop(9, 11, true, false);
+    CheckAdjustStop(8, 8, false, false);
+    CheckAdjustStop(8, 11, true, false);
+    CheckAdjustStop(7, 7, false, false);
+    CheckAdjustStop(7, 7, true, false);
+
+    CheckAdjustStop(0, 0, false, true);
+    CheckAdjustStop(0, 0, true, true);
+    CheckAdjustStop(1, 1, false, true);
+    CheckAdjustStop(1, 0, true, true);
+    CheckAdjustStop(2, 2, false, true);
+    CheckAdjustStop(2, 0, true, true);
+    CheckAdjustStop(3, 3, false, true);
+    CheckAdjustStop(3, 0, true, true);
+    CheckAdjustStop(4, 4, false, true);
+    CheckAdjustStop(4, 4, true, true);
+
+    CheckAdjustStop(22, 22, false, true);
+    CheckAdjustStop(22, 22, true, true);
+    CheckAdjustStop(23, 23, false, true);
+    CheckAdjustStop(23, 22, true, true);
+    CheckAdjustStop(24, 24, false, true);
+    CheckAdjustStop(24, 22, true, true);
+    CheckAdjustStop(25, 25, false, true);
+    CheckAdjustStop(25, 22, true, true);
+    CheckAdjustStop(26, 26, false, true);
+    CheckAdjustStop(26, 26, true, true);
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
