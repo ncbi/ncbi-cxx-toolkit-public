@@ -6442,7 +6442,7 @@ void CFileIO::CreateTemporary(const string& dir,
     CFastMutexGuard LOCK(s_CreateTemporaryMutex);
 
     char buffer[PATH_MAX+1];
-    srand((unsigned) time(0));
+    srand((unsigned) (time(0) ^ ::GetCurrentThreadId()));
     unsigned long ofs = rand();
     DWORD lasterr = 0;
 
