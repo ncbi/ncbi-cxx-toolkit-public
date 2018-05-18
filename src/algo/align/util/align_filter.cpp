@@ -193,14 +193,10 @@ void CAlignFilter::SetFilter(const string& filter)
 #ifdef NCBI_OS_UNIX
     CNcbiOfstream null_output("/dev/null");
 #else
-    CFile scratch_file(CFile::GetTmpName(CFile::eTmpFileCreate));
-    CNcbiOfstream null_output(scratch_file.GetPath().c_str());
+    CNcbiOstrstream null_output;
 #endif
+
     DryRun(null_output);
-#ifndef NCBI_OS_UNIX
-    null_output.close();
-    scratch_file.Remove();
-#endif
 }
 
 void CAlignFilter::SetScope(CScope& scope)
