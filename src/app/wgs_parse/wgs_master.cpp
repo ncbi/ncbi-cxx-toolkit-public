@@ -47,6 +47,10 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/biblio/Imprint.hpp>
@@ -1148,7 +1152,8 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
 
     bioseq->SetId().push_back(id);
     bioseq->SetInst().SetRepr(CSeq_inst::eRepr_virtual);
-    bioseq->SetInst().SetLength(info.m_num_of_entries);
+
+    bioseq->SetInst().SetLength(GetParams().GetIdChoice() == CSeq_id::e_Other ? info.m_whole_len : info.m_num_of_entries);
 
     SetMolInfo(*bioseq, biomol);
 
@@ -1585,6 +1590,163 @@ static void ReportVersionProblem(int master_accession_ver, int current_master_ac
     }
 }
 
+static TSeqPos AccumulateLength(const CSeq_entry& entry)
+{
+    TSeqPos ret = 0;
+    if (entry.IsSeq() && entry.GetSeq().IsNa() && entry.GetSeq().IsSetLength()) {
+        ret += entry.GetSeq().GetLength();
+    }
+
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.GetSet().GetSeq_set()) {
+            ret += AccumulateLength(*cur_entry);
+        }
+    }
+
+    return ret;
+}
+
+static bool IsValidDeltaSeq(const CSeq_entry& entry)
+{
+    return entry.GetSeq().IsSetInst() && entry.GetSeq().GetInst().IsSetRepr() && entry.GetSeq().GetInst().GetRepr() == CSeq_inst::eRepr_delta &&
+        entry.GetSeq().GetInst().IsSetExt() && entry.GetSeq().GetInst().GetExt().IsDelta() && entry.GetSeq().GetInst().GetExt().GetDelta().IsSet();
+}
+
+static bool IsValidAccessionType(const string& accession)
+{
+    CSeq_id::EAccessionInfo acc_info = CSeq_id::IdentifyAccession(accession);
+    CSeq_id::E_Choice acc_type = CSeq_id::GetAccType(acc_info);
+
+    return acc_type == CSeq_id::e_Genbank || acc_type == CSeq_id::e_Embl || acc_type == CSeq_id::e_Ddbj ||
+        (acc_type == CSeq_id::e_Other && GetParams().GetIdChoice() == CSeq_id::e_Other);
+}
+
+static bool IsValidDdbjEmblScaffold(const string& accession)
+{
+    static const size_t SCAFFOLD_PREFIX_LEN = 2;
+    static const size_t VALID_ACCESSION_LEN = 10;
+
+    bool ret = false;
+    if ((GetParams().GetSource() == eDDBJ || GetParams().GetSource() == eEMBL || IsScaffoldPrefix(accession, SCAFFOLD_PREFIX_LEN)) &&
+        isdigit(accession[SCAFFOLD_PREFIX_LEN]) && accession.size() == VALID_ACCESSION_LEN) {
+
+        ret = IsDigits(accession.begin() + SCAFFOLD_PREFIX_LEN, accession.end());
+    }
+
+    return ret;
+}
+
+static bool IsValidAccessionFormat(const string& accession, const CCurrentMasterInfo& info, const string& prefix, size_t no_prefix_acc_len)
+{
+    size_t start_of_prefix = 0;
+    if (NStr::StartsWith(accession, "NZ_")) {
+        start_of_prefix = 3;
+    }
+
+    size_t end_of_prefix = start_of_prefix;
+    for (; end_of_prefix < accession.size(); ++end_of_prefix) {
+        if (accession[end_of_prefix] < 'A' || accession[end_of_prefix] > 'Z') {
+            break;
+        }
+    }
+
+    static const size_t PREFIX_LEN = 4;
+    if (end_of_prefix - start_of_prefix != PREFIX_LEN || !NStr::StartsWith(accession, prefix) ||
+        accession.size() - start_of_prefix != no_prefix_acc_len ||
+        !IsDigits(accession.begin() + end_of_prefix, accession.end())) {
+        return false;
+    }
+
+    int version = (accession[end_of_prefix] - '0') * 10 + (accession[end_of_prefix + 1] - '0');
+    if (version != info.m_version) {
+        return false;
+    }
+
+    int contig_num = NStr::StringToInt(accession.substr(end_of_prefix + 2));
+    return contig_num <= info.m_last_contig;
+}
+
+static void CheckScaffoldsFarPointers(const CSeq_entry& entry, const CCurrentMasterInfo& info, bool& reject)
+{
+    if (entry.IsSeq() && entry.GetSeq().IsNa() && !GetParams().GetScaffoldPrefix().empty()) {
+
+        if (!IsValidDeltaSeq(entry)) {
+
+            ERR_POST_EX(0, 0, Critical << "Empty or incorrect sequence data for scaffolds provided.");
+            reject = true;
+            return;
+        }
+
+        const string& prefix = GetParams().GetIdPrefix();
+        size_t no_prefix_acc_len = info.GetNoPrefixAccessionLen();
+
+        bool bad_far_pointer = false;
+
+        for (auto& loc : entry.GetSeq().GetInst().GetExt().GetDelta().Get()) {
+
+            if (loc->IsLoc()) {
+                if (!loc->GetLoc().IsInt()) {
+                    ERR_POST_EX(0, 0, Warning << "Other than simple interval \"from..to\" encountered in scaffolds deltas.");
+                }
+
+                string cur_accession;
+                for (CSeq_loc_CI cur_loc(loc->GetLoc()); cur_loc; ++cur_loc) {
+                    
+                    cur_accession.clear();
+
+                    const CSeq_id& cur_id = cur_loc.GetSeq_id();
+                    if (cur_id.IsGi() && GetParams().IsDblinkOverride()) {
+                        continue;
+                    }
+
+                    if (HasTextAccession(cur_id)) {
+                        cur_accession = cur_id.GetTextseq_Id()->GetAccession();
+                    }
+                    else {
+                        bad_far_pointer = true;
+                        break;
+                    }
+
+                    if (GetParams().IsDblinkOverride() && !NStr::StartsWith(cur_accession, prefix)) {
+                        bad_far_pointer = !IsValidAccessionType(cur_accession);
+                        if (bad_far_pointer) {
+                            break;
+                        }
+                        continue;
+                    }
+                    
+                    if (IsValidDdbjEmblScaffold(cur_accession)) {
+                        continue;
+                    }
+
+                    bad_far_pointer = !IsValidAccessionFormat(cur_accession, info, prefix, no_prefix_acc_len);
+                    if (bad_far_pointer) {
+                        break;
+                    }
+                }
+
+                if (bad_far_pointer) {
+                    if (!cur_accession.empty()) {
+                        cur_accession = NStr::Quote(cur_accession);
+                        cur_accession += ' ';
+                    }
+                    ERR_POST_EX(0, 0, Critical << "Missing or incorrect far pointer OSLT " << cur_accession << "provided for scaffolds.");
+                    reject = true;
+                    return;
+                }
+            }
+        }
+    }
+
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.GetSet().GetSeq_set()) {
+            CheckScaffoldsFarPointers(*cur_entry, info, reject);
+        }
+    }
+}
+
 bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 {
     const list<string>& files = GetParams().GetInputFiles();
@@ -1787,14 +1949,14 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 
                 ++master_info.m_num_of_entries;
 
-                if (info.m_seqid_type == CSeq_id::e_Other) {
-                    // TODO
+                if (GetParams().GetIdChoice() == CSeq_id::e_Other) {
+                    master_info.m_whole_len += AccumulateLength(*entry);
                 }
 
                 AddOrderInfo(*entry, seq_order, cur_file_num);
 
-                if (GetParams().IsUpdateScaffoldsMode()) {
-                    // TODO
+                if (!master_info.m_reject && master_info.m_current_master && GetParams().IsUpdateScaffoldsMode()) {
+                    CheckScaffoldsFarPointers(*entry, *master_info.m_current_master, master_info.m_reject);
                 }
 
                 master_info.m_object_ids.splice(master_info.m_object_ids.end(), info.m_object_ids);

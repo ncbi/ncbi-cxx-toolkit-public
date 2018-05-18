@@ -497,4 +497,14 @@ CRef<CSeqdesc> BuildStructuredComment(const string& comment)
     return descr;
 }
 
+bool IsDigits(string::const_iterator start, string::const_iterator end)
+{
+    for (; start != end; ++start) {
+        if (!isdigit(*start))
+            return false;
+    }
+
+    return true;
+}
+
 }

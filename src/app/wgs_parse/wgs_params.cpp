@@ -519,16 +519,6 @@ const CParams& GetParams()
     return *params;
 }
 
-static bool IsDigits(string::const_iterator start, string::const_iterator end)
-{
-    for (; start != end; ++start) {
-        if (!isdigit(*start))
-            return false;
-    }
-
-    return true;
-}
-
 static const size_t MIN_BIOPROJECT_ID_SIZE = 6;
 static const size_t FIRST_BIOPROJECT_ID_DIGIT_INDEX = 6;
 

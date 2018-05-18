@@ -110,6 +110,7 @@ bool HasPubOfChoice(const CPubdesc& pub, CPub::E_Choice choice);
 CRef<CSeqdesc> CreateCitSub(const CCit_sub& cit_sub, const CContact_info* contact);
 
 CRef<CSeqdesc> BuildStructuredComment(const string& comment);
+bool IsDigits(string::const_iterator start, string::const_iterator end);
 
 CScope& GetScope();
 

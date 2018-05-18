@@ -907,7 +907,7 @@ static void CheckSeqIdStatus(const CBioseq::TId& ids, CSeq_id::E_Choice& choice,
     }
 }
 
-static bool IsScaffoldPrefix(const string& accession, size_t prefix_len)
+bool IsScaffoldPrefix(const string& accession, size_t prefix_len)
 {
     static string scaffold_prefs[] = { "CH", "CM", "DS", "EM", "EN", "EP", "EQ", "FA", "GG", "GJ", "GK", "GL", "JH", "KB", "KD", "KE", "KI", "KK", "KL", "KN", "KQ", "KV", "KZ" };
     static string* end_of_scaffold_prefs = scaffold_prefs + sizeof(scaffold_prefs) / sizeof(scaffold_prefs[0]);

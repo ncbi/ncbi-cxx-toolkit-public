@@ -232,6 +232,12 @@ struct CCurrentMasterInfo
         m_num_len(0),
         m_cit_sub_date(new CDate)
     {}
+
+    size_t GetNoPrefixAccessionLen() const
+    {
+        auto digit_pos = find_if(m_accession.begin(), m_accession.end(), [](char c) { return isdigit(c); } );
+        return m_accession.size() - (digit_pos - m_accession.begin());
+    }
 };
 
 
@@ -295,7 +301,8 @@ struct CMasterInfo
 
     map<string, int> m_order_of_entries; // string - current first Seq-id, int - order (to be used in accession assignment)
 
-    int m_num_of_entries;
+    TSeqPos m_num_of_entries;
+    TSeqPos m_whole_len;
     int m_accession_ver;
 
     string m_master_file_name;
@@ -331,6 +338,7 @@ struct CMasterInfo
         m_creation_date_issues(eDateNoIssues),
         m_need_to_remove_dates(false),
         m_num_of_entries(0),
+        m_whole_len(0),
         m_accession_ver(-1),
         m_keywords_set(false),
         m_num_of_prot_seq(0),
