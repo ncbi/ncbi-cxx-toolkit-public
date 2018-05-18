@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.1)
 
 PROJECT(example_cgi VERSION 1.2.4)
 
-INSTALL(PROGRAMS sample.cgi DESTINATION bin)
+INSTALL(PROGRAMS deployable_cgi.cgi DESTINATION bin)
 INSTALL(FILES cgi.html DESTINATION share)
 INSTALL(FILES env.html DESTINATION share)
 INSTALL(FILES pkg/Procfile DESTINATION .)
