@@ -128,34 +128,6 @@ CReportObjectData::CReportObjectData(const CSerialObject* obj, CScope& scope, bo
 }
 
 
-#if 0
-void CReportObject::SetText(CScope& scope, const string& label)
-{
-    const CBioseq* Bioseq = dynamic_cast<const CBioseq*>(&*m_Obj);
-    const CSeq_feat* Seq_feat = dynamic_cast<const CSeq_feat*>(&*m_Obj);
-    const CSeqdesc* Seqdesc = dynamic_cast<const CSeqdesc*>(&*m_Obj);
-    const CBioseq_set* Bioseq_set = dynamic_cast<const CBioseq_set*>(&*m_Obj);
-    if (Bioseq) {
-        m_Text = GetTextObjectDescription(*Bioseq, scope);
-        GetBestId(*Bioseq)->GetLabel(&m_ShortName, CSeq_id::eContent);
-    }
-    else if (Seq_feat) {
-        GetTextObjectDescription(*Seq_feat, scope, m_FeatureType, m_Product, m_Location, m_LocusTag);
-        m_Text = m_FeatureType + "\t" + m_Product + "\t" + m_Location + "\t" + m_LocusTag;
-    }
-    else if (Seqdesc) {
-        m_Text = GetTextObjectDescription(*Seqdesc);
-        if (!label.empty()) {
-            m_Text = label + ":" + m_Text;
-        }
-    }
-    else if (Bioseq_set) {
-        CBioseq_set_Handle bssh = scope.GetBioseq_setHandle(*Bioseq_set);
-        m_Text = GetTextObjectDescription(bssh);
-    }
-}
-#endif
-
 string GetLocusTagForFeature(const CSeq_feat& seq_feat, CScope& scope)
 {
     string tag(kEmptyStr);
@@ -366,12 +338,14 @@ string GetSeqLocDescription(const CSeq_loc& loc, CScope& scope)
     return location;
 }
 
+
 void CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &location, string &locus_tag)
 {
     location = GetSeqLocDescription(seq_feat.GetLocation(), scope);
     label = seq_feat.GetData().GetKey();
     locus_tag = GetLocusTagForFeature (seq_feat, scope);
 }
+
 
 string CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, const string& product)
 {
@@ -382,6 +356,7 @@ string CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope
     string rval = label + "\t" + product + "\t" + location + "\t" + locus_tag; // + "\n";
     return rval;
 }
+
 
 void CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &context, string &location, string &locus_tag)
 {
@@ -424,6 +399,7 @@ void CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& 
     }
     else GetSeqFeatLabel(seq_feat, context);
 }
+
 
 string CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope)
 {
@@ -522,35 +498,9 @@ string CReportObject::GetTextObjectDescription(const CBioseq& bs, CScope& scope)
     string rval;
     CConstRef<CSeq_id> id = GetBestId(bs);
     id->GetLabel(&rval, CSeq_id::eContent);
-/*
-    rval += " (length " + NStr::NumericToString(bs.GetInst().GetLength());
-    size_t num_other = 0;
-    size_t num_gap = 0;
-    CSeqVector vec(bs, &scope, CBioseq_Handle::eCoding_Iupac);
-    CSeqVector::const_iterator vi = vec.begin();
-    while (vi != vec.end()) {
-        if (*vi == 'A' || *vi == 'T' || *vi == 'G' || *vi == 'C') {
-            // normal
-        } else if (vi.IsInGap()) {
-            num_gap++;
-        } else {
-            num_other++;
-        }
-        ++vi;
-    }
-
-    if (num_other > 0 && bs.IsNa()) {
-        rval += ", " + NStr::NumericToString(num_other) + " other";
-    }
-
-    if (num_gap > 0) {
-        rval += ", " + NStr::NumericToString(num_gap) + " gap";
-    }
-
-    rval += ")";
-//*/
     return rval;
 }
+
 
 string CReportObject::GetTextObjectDescription(CBioseq_set_Handle bssh)
 {
@@ -611,32 +561,6 @@ string CReportObject::GetTextObjectDescription(CBioseq_set_Handle bssh)
 
     return (string)CNcbiOstrstreamToString(result_strm);
 }
-
-
-//void CReportObject::DropReference()
-//{
-//    m_Obj.Reset();
-//}
-
-
-//bool CReportObjPtr::operator<(const CReportObjPtr& other) const
-//{
-//    if (P == other.P) {
-//        return false;
-//    }
-//    const CReportObject& A = (const CReportObject&)*P;
-//    const CReportObject& B = (const CReportObject&)*other.P;
-//    if (A.m_Obj || B.m_Obj) {
-//        return A.m_Obj < B.m_Obj;
-//    }
-//    if (A.m_FileID != B.m_FileID) {
-//        return A.m_FileID < B.m_FileID;
-//    }
-//    if (A.m_Text != B.m_Text) {
-//        return A.m_Text < B.m_Text;
-//    }
-//    return false;
-//}
 
 
 END_SCOPE(NDiscrepancy)
