@@ -96,7 +96,7 @@ string CReportObj::GetTextObjectDescription(const CBioseq_set& bs, CScope& scope
 
 CConstRef<CSeq_id> GetBestId(const CBioseq& bioseq);
 
-CReportObjectData::CReportObjectData(const CSerialObject* obj, CScope& scope, bool keep) : m_Obj(keep ? obj : 0), m_Scope(scope)
+CReportObjectData::CReportObjectData(const CSerialObject* obj, CScope& scope, bool keep) : m_Obj(keep ? obj : 0)
 {
     const CBioseq* bioseq = dynamic_cast<const CBioseq*>(obj);
     const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(obj);

@@ -58,10 +58,9 @@ protected:
     string                 m_ShortName;
     CConstRef<CSerialObject> m_Obj;
     size_t                 m_FileID;
-    CScope&                m_Scope;
 
     CReportObjectData(const CSerialObject* obj, CScope& scope, bool keep);
-    CReportObjectData(const string& str, CScope& scope) : m_Type(CReportObj::eType_string), m_Text(str), m_Scope(scope) {}
+    CReportObjectData(const string& str) : m_Type(CReportObj::eType_string), m_Text(str) {}
 
 friend class CReportObject;
 friend struct CReportObjPtr;
@@ -83,7 +82,6 @@ public:
     const string& GetLocusTag() const { return m_Data->m_LocusTag; }
     const string& GetShort() const { return m_Data->m_ShortName; }
     EType GetType(void) const { return m_Data->m_Type; }
-    CScope& GetScope(void) const { return m_Data->m_Scope; }
     CConstRef<CSerialObject> GetObject(void) const { return m_Data->m_Obj; }
     CConstRef<CBioseq> GetBioseq() const { return CConstRef<CBioseq>(dynamic_cast<const CBioseq*>(&*m_Data->m_Obj)); }
     size_t GetFileID() const { return m_Data->m_FileID; }

@@ -59,7 +59,6 @@ public:
     virtual size_t GetFileID(void) const = 0;
     virtual EType GetType(void) const = 0;
     virtual CConstRef<CSerialObject> GetObject(void) const = 0;
-    virtual objects::CScope& GetScope(void) const = 0;
     virtual bool CanAutofix(void) const = 0;
     static string GetTextObjectDescription(const objects::CSeq_feat& sf, objects::CScope& scope);
     static string GetTextObjectDescription(const objects::CSeqdesc& sd, objects::CScope& scope);
