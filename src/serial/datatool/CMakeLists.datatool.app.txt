@@ -1,6 +1,28 @@
+#############################################################################
+# $Id$
+#############################################################################
 #
 #
 #
+
+NCBI_begin_app(datatool)
+  NCBI_sources(
+        datatool
+        type namespace statictype enumtype reftype unitype blocktype choicetype
+        typestr ptrstr stdstr classstr enumstr stlstr choicestr choiceptrstr
+        value mcontainer module moduleset generate filecode code
+        fileutil alexer aparser parser lexer exceptions comments srcutil
+        dtdaux dtdlexer dtdparser rpcgen aliasstr xsdlexer xsdparser
+        wsdllexer wsdlparser wsdlstr jsdlexer jsdparser
+        traversal_pattern_match_callback
+        traversal_code_generator traversal_merger
+        traversal_node traversal_spec_file_parser
+  )
+  NCBI_uses_toolkit_libraries(xser)
+  NCBI_project_watchers(gouriano)
+NCBI_end_app()
+
+if(OFF)
 add_executable(datatool-app
     datatool
 	type namespace statictype enumtype reftype unitype blocktype choicetype
@@ -19,4 +41,5 @@ set_target_properties(datatool-app PROPERTIES OUTPUT_NAME datatool)
 target_link_libraries(datatool-app
     xser
 )
+endif()
 

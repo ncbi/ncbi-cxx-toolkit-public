@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(xsoap_server)
+  NCBI_sources(soap_server)
+  NCBI_uses_toolkit_libraries(xcgi xsoap)
+  NCBI_project_watchers(gouriano)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -8,3 +19,4 @@ add_library(xsoap_server
 target_link_libraries(xsoap_server
     xcgi xsoap
 )
+endif()

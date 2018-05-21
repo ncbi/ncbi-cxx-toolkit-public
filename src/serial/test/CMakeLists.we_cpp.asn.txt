@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(we_cpp)
+  NCBI_dataspecs(we_cpp.asn)
+  NCBI_uses_toolkit_libraries(xser)
+  NCBI_project_watchers(gouriano)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -15,3 +26,4 @@ RunDatatool("${MODULE}" "${MODULE_IMPORT}")
 target_link_libraries(we_cpp
     xser
 )
+endif()
