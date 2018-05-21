@@ -4218,6 +4218,30 @@ bool sGetFeatureGeneBiotypeWrapper(
     // If CLASS=="other", then gene_biotype="ncRNA". 
     // If not, then gene_biotype=<CLASS>.
     //
+    vector<string> acceptedClasses = {
+        "antisense_RNA",
+        "autocatalytically_spliced_intron",
+        "guide_RNA",
+        "hammerhead_ribozyme",
+        "lncRNA",
+        "miRNA",
+        "ncRNA",
+        "other",
+        "piRNA",
+        "rasiRNA",
+        "ribozyme",
+        "RNase_MRP_RNA",
+        "RNase_P_RNA",
+        "scRNA",
+        "siRNA",
+        "snoRNA",
+        "snRNA",
+        "SRP_RNA",
+        "stRNA",
+        "telomerase_RNA",
+        "vault_RNA",
+        "Y_RNA"};
+
     if (singleSubtype == SUBTYPE(ncRNA) && nonPseudo) {
         const CRNA_ref& rna = nonPseudo.GetData().GetRna();
         if (!rna.IsSetExt()) {
@@ -4232,6 +4256,11 @@ bool sGetFeatureGeneBiotypeWrapper(
         if (ext.IsGen()  &&  ext.GetGen().IsSetClass()) {
             string rnaClass = ext.GetGen().GetClass();
             if (rnaClass == "other") {
+                biotype = "ncRNA";
+                return true;
+            }
+            if (std::find(acceptedClasses.begin(), acceptedClasses.end(), rnaClass) == 
+                    acceptedClasses.end()) {
                 biotype = "ncRNA";
                 return true;
             }
