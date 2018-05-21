@@ -1464,7 +1464,7 @@ public:
     /// Copy constructor.
     CErrnoTemplExceptionEx(
         const CErrnoTemplExceptionEx<TBase, PErrCode, PErrStr>& other)
-        : TBase( other)
+        : TBase(other)
     {
         m_Errno = other.m_Errno;
         this->x_Assign(other);
@@ -1499,19 +1499,9 @@ public:
     int GetErrno(void) const throw() { return m_Errno; }
 
 protected:
-    /// Constructor.
-    CErrnoTemplExceptionEx(const CDiagCompileInfo& info,
-                           const CException* prev_exception,
-                           const string& message, 
-                           EDiagSev severity = eDiag_Error,
-                           CException::TFlags flags = 0)
-          : TBase(info, prev_exception, message, severity, flags)
-     {
-        m_Errno = PErrCode();
-        this->x_Init(info, message, prev_exception, severity);
-    }
-
-    /// Constructor.
+    /// Constructor (with errno only).
+    /// It is unable to get correct error code after all base constructors initialization,
+    /// that can reset it, so error code should be provided as parameter.
     CErrnoTemplExceptionEx(const CDiagCompileInfo& info,
                            const CException* prev_exception,
                            const string& message,
@@ -1522,8 +1512,9 @@ protected:
     {
         this->x_Init(info, message, prev_exception, severity);
     }
-    /// Constructor.
+    /// Default constructor.
     CErrnoTemplExceptionEx(void) { m_Errno = PErrCode(); }
+
 
     /// Helper clone method.
     virtual const CException* x_Clone(void) const
@@ -1558,7 +1549,7 @@ public:
                                 typename CParent::EErrCode err_code,
                                 const string&              message,
                                 EDiagSev                   severity = eDiag_Error)
-        : CParent(info, prev_exception, message, severity, 0)
+        : CParent(info, prev_exception, message, NCBI_ERRNO_CODE_WRAPPER(), severity, 0)
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL_ERRNO(CErrnoTemplException<TBase>, CParent)
 
 protected:
@@ -1567,7 +1558,7 @@ protected:
                                 const string&              message,
                                 EDiagSev                   severity,
                                 CException::TFlags         flags)
-        : CParent(info, prev_exception, message, severity, flags) {
+        : CParent(info, prev_exception, message, NCBI_ERRNO_CODE_WRAPPER(), severity, flags) {
     }
 };
 
@@ -1588,7 +1579,7 @@ public:
                                     typename CParent::EErrCode err_code,
                                     const string&              message,
                                     EDiagSev                   severity = eDiag_Error)
-        : CParent(info, prev_exception, message, severity, 0)
+        : CParent(info, prev_exception, message, NCBI_LASTERROR_CODE_WRAPPER(), severity, 0)
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL_ERRNO(CErrnoTemplException_Win<TBase>, CParent)
 
 protected:
@@ -1597,7 +1588,7 @@ protected:
                                     const string&              message,
                                     EDiagSev                   severity,
                                     CException::TFlags         flags)
-        : CParent(info, prev_exception, message, severity, flags) {
+        : CParent(info, prev_exception, message, NCBI_LASTERROR_CODE_WRAPPER(), severity, flags) {
     }
 };
 #endif
