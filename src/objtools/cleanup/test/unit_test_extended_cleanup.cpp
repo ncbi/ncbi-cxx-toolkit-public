@@ -1823,3 +1823,37 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4507)
     TestParentPartial(true, true);
 }
 
+
+void TestCollectionDateCleanup(bool month_first, const string& desc_start, const string& desc_end, const string& feat_start, const string& feat_end)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, desc_start);
+    CRef<CSeq_feat> src_feat = unit_test_util::AddMiscFeature(entry);
+    src_feat->SetData().SetBiosrc().SetSubtype().push_back(
+        CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_collection_date, feat_start)));
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    BOOST_CHECK_EQUAL(CCleanup::CleanupCollectionDates(seh, month_first), true);
+    for (auto d : entry->GetSeq().GetDescr().Get()) {
+        if (d->IsSource()) {
+            BOOST_CHECK_EQUAL(d->GetSource().GetSubtype().back()->GetSubtype(), CSubSource::eSubtype_collection_date);
+            BOOST_CHECK_EQUAL(d->GetSource().GetSubtype().back()->GetName(), desc_end);
+        }
+    }
+
+    CFeat_CI src_f(seh, CSeqFeatData::e_Biosrc);
+    BOOST_CHECK_EQUAL(src_f->GetData().GetBiosrc().GetSubtype().front()->GetSubtype(), CSubSource::eSubtype_collection_date);
+    BOOST_CHECK_EQUAL(src_f->GetData().GetBiosrc().GetSubtype().front()->GetName(), feat_end);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_CleanupCollectionDates)
+{
+    TestCollectionDateCleanup(true, "1/7/99", "07-Jan-1999", "2/8/99", "08-Feb-1999");
+    TestCollectionDateCleanup(false, "1/7/99", "01-Jul-1999", "2/8/99", "02-Aug-1999");
+
+}
+
+

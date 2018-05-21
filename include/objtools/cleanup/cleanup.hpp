@@ -575,6 +575,9 @@ public:
 
     static bool CleanupAuthor(CAuthor& author, bool fix_initials = true);
 
+    // for cleaning up collection-date subsource qualifiers
+    static bool CleanupCollectionDates(CSeq_entry_Handle seh, bool month_first);
+
 private:
     // Prohibit copy constructor & assignment operator
     CCleanup(const CCleanup&);

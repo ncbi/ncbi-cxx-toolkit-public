@@ -90,6 +90,12 @@ void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_
             ++bi;
         }
     }
+
+    if (flags.find('d') != string::npos) {
+        CCleanup::CleanupCollectionDates(h_entry, true);
+    } else if (flags.find('D') != string::npos) {
+        CCleanup::CleanupCollectionDates(h_entry, false);
+    }
     
 
     CRef<CSeq_entry> entry((CSeq_entry*)(h_entry.GetEditHandle().GetCompleteSeq_entry().GetPointer()));

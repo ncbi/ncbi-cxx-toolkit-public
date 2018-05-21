@@ -4820,5 +4820,63 @@ bool CCleanup::FixRNAEditingCodingRegion(CSeq_feat& cds)
 }
 
 
+bool CCleanup::CleanupCollectionDates(CSeq_entry_Handle seh, bool month_first)
+{
+    bool any_changes = false;
+
+    vector<CRef<COrg_ref> > rq_list;
+    vector<const CSeqdesc* > src_descs;
+    vector<CConstRef<CSeq_feat> > src_feats;
+
+    GetSourceDescriptors(*(seh.GetCompleteSeq_entry()), src_descs);
+    vector<const CSeqdesc* >::iterator desc_it = src_descs.begin();
+    while (desc_it != src_descs.end()) {
+        if ((*desc_it)->GetSource().IsSetSubtype()) {
+            CSeqdesc* desc = const_cast<CSeqdesc*>(*desc_it);
+            for (auto s : desc->SetSource().SetSubtype()) {
+                if (s->IsSetSubtype() && s->GetSubtype() == CSubSource::eSubtype_collection_date
+                    && s->IsSetName()) {
+                    bool month_ambiguous = false;
+                    string new_date = CSubSource::FixDateFormat(s->GetName(), month_first, month_ambiguous);
+                    if (!NStr::Equal(new_date, s->GetName())) {
+                        s->SetName(new_date);
+                        any_changes = true;
+                    }
+                }
+            }
+        }
+        ++desc_it;
+    }
+
+    CFeat_CI feat(seh, SAnnotSelector(CSeqFeatData::e_Biosrc));
+    while (feat) {
+        if (feat->GetData().GetBiosrc().IsSetSubtype()) {
+            CRef<CSeq_feat> new_feat(new CSeq_feat());
+            new_feat->Assign(*(feat->GetOriginalSeq_feat()));
+            bool local_change = false;
+            for (auto s : new_feat->SetData().SetBiosrc().SetSubtype()) {
+                if (s->IsSetSubtype() && s->GetSubtype() == CSubSource::eSubtype_collection_date
+                    && s->IsSetName()) {
+                    bool month_ambiguous = false;
+                    string new_date = CSubSource::FixDateFormat(s->GetName(), month_first, month_ambiguous);
+                    if (!NStr::Equal(new_date, s->GetName())) {
+                        s->SetName(new_date);
+                        local_change = true;
+                    }
+                }
+            }
+            if (local_change) {
+                any_changes = true;
+                CSeq_feat_EditHandle efh(*feat);
+                efh.Replace(*new_feat);
+            }
+            ++feat;
+        }
+    }
+
+    return any_changes;    
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
