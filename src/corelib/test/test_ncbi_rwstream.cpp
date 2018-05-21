@@ -90,10 +90,10 @@ public:
     virtual ~CMyWriter() { /*noop*/ }
 
 protected:
-    unsigned char* m_Base;
-    size_t         m_Size;
-    size_t         m_Pos;
-    bool           m_Err;
+    unsigned char*       m_Base;
+    size_t               m_Size;
+    size_t               m_Pos;
+    bool                 m_Err;
 };
 
 
@@ -140,7 +140,7 @@ ERW_Result CMyReader::Read(void* buf, size_t count,
             n_read = x_read;
             result = eRW_Success;
         } else
-            result = n_read < count ? eRW_Eof : eRW_Success;
+            result = n_read < count ? eRW_Timeout : eRW_Success;
     } else {
         n_read = 0;
         if (!m_Eof) {

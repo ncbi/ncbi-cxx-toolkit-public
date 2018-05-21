@@ -157,7 +157,7 @@ CRWStreambuf::CRWStreambuf(IReaderWriter*       rw,
       m_Reader(rw, x_IfToOwnReader(rw, rw, f)),
       m_Writer(rw, x_IfToOwnWriter(rw, rw, f)), m_pBuf(0),
       x_GPos((CT_OFF_TYPE) 0), x_PPos((CT_OFF_TYPE) 0),
-      x_Err(false), x_ErrPos((CT_OFF_TYPE) 0)
+      x_Eof(false), x_Err(false), x_ErrPos((CT_OFF_TYPE) 0)
 {
     setbuf(n  &&  s ? s : 0,
            n        ? n : kDefaultBufSize << 1);
@@ -173,7 +173,7 @@ CRWStreambuf::CRWStreambuf(IReader*             r,
       m_Reader(r, x_IfToOwnReader(r, w, f)),
       m_Writer(w, x_IfToOwnWriter(r, w, f)), m_pBuf(0),
       x_GPos((CT_OFF_TYPE) 0), x_PPos((CT_OFF_TYPE) 0),
-      x_Err(false), x_ErrPos((CT_OFF_TYPE) 0)
+      x_Eof(false), x_Err(false), x_ErrPos((CT_OFF_TYPE) 0)
 {
     setbuf(n  &&  s ? s : 0,
            n        ? n : kDefaultBufSize << (m_Reader  &&  m_Writer ? 1 : 0));
@@ -203,6 +203,7 @@ ERW_Result CRWStreambuf::x_Pushback(void)
             throw IOS_BASE::failure("eRW_Error");
         if (result == eRW_Success)
             m_pBuf = 0;
+        x_Eof = false;
     }
     return result;
 }
@@ -463,6 +464,9 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
     if (!(m_Flags & fUntie)  &&  x_Sync() != 0)
         return CT_EOF;
 
+    if (x_Eof)
+        return CT_EOF;
+
 #ifdef NCBI_COMPILER_MIPSPRO
     if (m_MIPSPRO_ReadsomeGptrSetLevel  &&  m_MIPSPRO_ReadsomeGptr != gptr())
         return CT_EOF;
@@ -482,6 +486,8 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
         _ASSERT(result != eRW_Success);
         if (result == eRW_Error)
             throw IOS_BASE::failure("eRW_Error");
+        if (result == eRW_Eof)
+            x_Eof = true;
         return CT_EOF;
     }
 
@@ -523,6 +529,9 @@ streamsize CRWStreambuf::x_Read(CT_CHAR_TYPE* buf, streamsize m)
             buf += n_read;
     } else
         n_read = 0;
+
+    if (x_Eof)
+        return (streamsize) n_read;
 
     ERW_Result result;
 
@@ -566,6 +575,8 @@ streamsize CRWStreambuf::x_Read(CT_CHAR_TYPE* buf, streamsize m)
 
     if (!n_read  &&  result == eRW_Error)
         throw IOS_BASE::failure("eRW_Error");
+    else if (result == eRW_Eof)
+        x_Eof = true;
 
     return (streamsize) n_read;
 }
@@ -589,6 +600,9 @@ streamsize CRWStreambuf::showmanyc(void)
     // Flush output buffer, if tied up to it
     if (!(m_Flags & fUntie))
         x_Sync();
+
+    if (x_Eof)
+        return 0;
 
     size_t count = 0;
     ERW_Result result;

@@ -606,27 +606,33 @@ ERW_Result CStreamReader::Read(void*   buf,
         r = 0; // NB: WS6 is known to return -1 from sgetn() :-/
     }
 #endif //NCBI_COMPILER_WORKSHOP
+    ERW_Result result = eRW_Success;
     if ( bytes_read ) {
         *bytes_read = (size_t) r;
+    } else if ((size_t) r < count) {
+        result = eRW_Error;
     }
     if (!r) {
         m_Stream->setstate(!sb  ? NcbiBadbit
                            : ok ? NcbiEofbit : NcbiFailbit);
-        return ok ? eRW_Eof : eRW_Error;
+        result = ok ? eRW_Eof : eRW_Error;
     }
-    return eRW_Success;
+    return result;
 }
 
 
 ERW_Result CStreamReader::PendingCount(size_t* count)
 {
-    IOS_BASE::iostate iostate = m_Stream->rdstate();
-    if (!(iostate & ~NcbiEofbit)) {  // NB: good() OR eof()
-        if (iostate) {
-            return eRW_Eof;
+    streambuf* sb = m_Stream->rdbuf();
+    if (sb) {
+        IOS_BASE::iostate iostate = m_Stream->rdstate();
+        if (!(iostate & ~NcbiEofbit)) {  // NB: good() OR eof()
+            if (iostate) {
+                return eRW_Eof;
+            }
+            *count = (size_t) sb->in_avail();
+            return eRW_Success;
         }
-        *count = (size_t)m_Stream->rdbuf()->in_avail();
-        return eRW_Success;
     }
     return eRW_Error;
 }
@@ -653,15 +659,18 @@ ERW_Result CStreamWriter::Write(const void* buf,
 {
     streambuf* sb = m_Stream->rdbuf();
     bool       ok = sb  &&  m_Stream->good();
-    streamsize w = ok ? sb->sputn(static_cast<const char*>(buf), count) : 0;
+    streamsize w  = ok ? sb->sputn(static_cast<const char*>(buf), count) : 0;
+    ERW_Result result = eRW_Success;
     if ( bytes_written ) {
         *bytes_written = (size_t) w;
+    } else if ((size_t) w < count) {
+        result = eRW_Error;
     }
     if (!w) {
         m_Stream->setstate(!sb ? NcbiBadbit : NcbiFailbit);
-        return eRW_Error;
+        result = eRW_Error;
     }
-    return eRW_Success;
+    return result;
 }
  
 
@@ -701,7 +710,7 @@ ERW_Result CStringReader::Read(void* buf, size_t count, size_t* bytes_read)
     _ASSERT(m_String.size() >= m_Position);
 
     size_t n = min(count, size_t(m_String.size() - m_Position));
-    if( ! m_String.empty() ) {
+    if( !m_String.empty() ) {
         memcpy(buf, &m_String[m_Position], n);
     }
     m_Position += n;
@@ -711,7 +720,8 @@ ERW_Result CStringReader::Read(void* buf, size_t count, size_t* bytes_read)
     }
     if ( bytes_read ) {
         *bytes_read = n;
-    }
+    } else if (n < count)
+        return eRW_Error;
     return count  &&  !n ? eRW_Eof : eRW_Success;
 }
 

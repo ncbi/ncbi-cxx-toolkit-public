@@ -160,6 +160,7 @@ protected:
     CT_POS_TYPE       x_GPos;    ///< get position [for istream.tellg()]
     CT_POS_TYPE       x_PPos;    ///< put position [for ostream.tellp()]
 
+    bool              x_Eof;     ///< whether at EOF
     bool              x_Err;     ///< whether there was a _write_ error
     CT_POS_TYPE       x_ErrPos;  ///< position of the _write_ error (if x_Err)
 
