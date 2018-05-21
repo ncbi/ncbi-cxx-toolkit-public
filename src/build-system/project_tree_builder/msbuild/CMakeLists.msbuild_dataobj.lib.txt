@@ -1,13 +1,8 @@
 #############################################################################
 # $Id$
 #############################################################################
-#
-
-NCBI_add_app(project_tree_builder)
-NCBI_add_subdirectory(msbuild)
 
 # Include projects from this directory
-#include(CMakeLists.project_tree_builder.app.txt)
-
-# Recurse subdirectories
-#add_subdirectory(msbuild)
+NCBI_begin_lib(msbuild_dataobj)
+  NCBI_dataspecs(msbuild_dataobj.xsd)
+NCBI_end_lib()
