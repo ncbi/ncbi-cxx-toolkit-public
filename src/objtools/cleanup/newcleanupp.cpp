@@ -7621,6 +7621,16 @@ void CNewCleanup_imp::ProtrefBC (
         ChangeMade (CCleanupChange::eChangeQualifiers);
     }
 
+    if (prot_ref.IsSetName()) {
+        for (CProt_ref::TName::iterator it = prot_ref.SetName().begin();
+             it != prot_ref.SetName().end();
+             it++) {
+            ProtNameBC(*it);
+            x_CompressStringSpacesMarkChanged(*it);
+        }
+    }
+
+
     REMOVE_IF_EMPTY_NAME_ON_PROTREF(prot_ref);
 
     CLEAN_STRING_LIST (prot_ref, Ec);
@@ -9241,6 +9251,8 @@ void CNewCleanup_imp::x_MoveCdregionXrefsToProt (CCdregion& cds, CSeq_feat& seqf
                             while (xref != seqfeat.SetXref().end()) {
                                 if ((*xref)->IsSetData() && (*xref)->GetData().IsProt()) {
                                     CRef<CSeq_feat> pfeat(const_cast<CSeq_feat *>(fit.GetPointer()));
+                                    ProtrefBC(pfeat->SetData().SetProt());
+                                    ProtrefBC((*xref)->SetData().SetProt());
                                     s_CopyProtXrefToProtFeat(pfeat->SetData().SetProt(),
                                         (*xref)->SetData().SetProt());
                                     xref = seqfeat.SetXref().erase(xref);
