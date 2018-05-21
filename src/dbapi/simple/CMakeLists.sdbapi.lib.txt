@@ -6,13 +6,13 @@ add_library(sdbapi
 )
 
 target_link_libraries(sdbapi
-    dbapi ncbi_xdbapi_ftds ncbi_xdbapi_ftds64
+    dbapi dbapi_util_blobstore ncbi_xdbapi_ftds ncbi_xdbapi_ftds64
     ncbi_xdbapi_ftds95 ncbi_xdbapi_ftds100 xconnext xutil
 )
 
 if (SYBASE_FOUND)
    target_link_libraries(sdbapi
-    dbapi ncbi_xdbapi_ftds ncbi_xdbapi_ftds64
+    dbapi dbapi_util_blobstore ncbi_xdbapi_ftds ncbi_xdbapi_ftds64
     ncbi_xdbapi_ftds95 ncbi_xdbapi_ftds100 xconnext xutil
 )
 endif (SYBASE_FOUND)

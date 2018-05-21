@@ -36,6 +36,7 @@
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 #include <dbapi/driver/drivers.hpp>
 #include <dbapi/driver/impl/dbapi_impl_context.hpp>
+#include <dbapi/driver/util/blobstore.hpp>
 #include <dbapi/error_codes.hpp>
 
 #include "sdbapi_impl.hpp"
@@ -870,6 +871,23 @@ s_ConvertValue(const CVariant& from_var, string& to_val)
     }
 }
 
+
+static ECompressMethod s_CheckCompressionFlags(TNewBlobStoreFlags flags)
+{
+    if ((flags & (fNBS_ZLib | fNBS_BZLib)) == (fNBS_ZLib | fNBS_BZLib)) {
+        NCBI_THROW(CSDB_Exception, eWrongParams,
+                   "fNBS_ZLib and fNBS_BZLib are mutually incompatible; "
+                   "please specify at most one compression algorithm.");
+    } else if ((flags & fNBS_ZLib) != 0) {
+        return eZLib;
+    } else if ((flags & fNBS_BZLib) != 0) {
+        return eBZLib;
+    } else {
+        return eNone;
+    }
+}
+
+
 static const char kDefaultDriverName[] = "ftds";
 static AutoPtr<char, CDeleter<char> > s_DriverName;
 
@@ -1676,6 +1694,24 @@ CSDBAPI::UpdateMirror(const string& dbservice,
     return cnt_switches == 0? eMirror_Steady: eMirror_NewMaster;
 }
 
+CBlobStoreDynamic* CSDBAPI::NewBlobStore(const CSDB_ConnectionParam& param,
+                                         const string& table_name,
+                                         TNewBlobStoreFlags flags,
+                                         size_t image_limit)
+{
+    ECompressMethod cm = s_CheckCompressionFlags(flags);
+    if ((flags & fNBS_IsText) != 0) {
+        ERR_POST_X_ONCE(20, Warning << "Explicit fNBS_IsText flag passed to a"
+                        " variant of NewBlobStore that inspects column types"
+                        " itself.");
+    }
+    return new CBlobStoreDynamic(s_GetDBContext(),
+                                 param.Get(CSDB_ConnectionParam::eService),
+                                 param.Get(CSDB_ConnectionParam::eUsername),
+                                 param.Get(CSDB_ConnectionParam::ePassword),
+                                 table_name, cm, image_limit,
+                                 (flags & fNBS_LogIt) != 0);
+}
 
 
 bool CSDB_UserHandler::HandleMessage(int severity, int msgnum,
@@ -2036,6 +2072,40 @@ CDatabase::NewBookmark(const string& table_name, const string& column_name,
                                                        
     CRef<CBlobBookmarkImpl> bm(new CBlobBookmarkImpl(m_Impl, desc.release()));
     return CBlobBookmark(bm);
+}
+
+
+CBlobStoreStatic* CDatabase::NewBlobStore(const string& table_name,
+                                          TNewBlobStoreFlags flags,
+                                          size_t image_limit)
+{
+    ECompressMethod cm = s_CheckCompressionFlags(flags);
+    if ((flags & fNBS_IsText) != 0) {
+        ERR_POST_X_ONCE(20, Warning << "Explicit fNBS_IsText flag passed to a"
+                        " variant of NewBlobStore that inspects column types"
+                        " itself.");
+    }
+    CONNECT_AS_NEEDED();
+    return new CBlobStoreStatic(m_Impl->GetConnection()->GetCDB_Connection(),
+                                table_name, cm, image_limit,
+                                (flags & fNBS_LogIt) != 0);
+}
+
+
+CBlobStoreStatic* CDatabase::NewBlobStore(const string& table_name,
+                                          const string& key_col_name,
+                                          const string& num_col_name,
+                                          const vector<string> blob_col_names,
+                                          TNewBlobStoreFlags flags,
+                                          size_t image_limit)
+{
+    ECompressMethod cm = s_CheckCompressionFlags(flags);
+    CONNECT_AS_NEEDED();
+    return new CBlobStoreStatic(m_Impl->GetConnection()->GetCDB_Connection(),
+                                table_name, key_col_name, num_col_name,
+                                &blob_col_names[0], blob_col_names.size(),
+                                (flags & fNBS_IsText) != 0, cm, image_limit,
+                                (flags & fNBS_LogIt) != 0);
 }
 
 

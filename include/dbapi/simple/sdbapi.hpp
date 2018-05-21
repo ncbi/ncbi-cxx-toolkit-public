@@ -59,6 +59,8 @@ class CRemoteQFB;
 class CBlobBookmarkImpl;
 class IResultSet;
 struct SQueryRSMetaData;
+class CBlobStoreDynamic;
+class CBlobStoreStatic;
 
 
 /// Exception class used throughout the API
@@ -193,6 +195,16 @@ enum ESP_ParamType {
     eSP_In,     ///< Parameter is only passed to server, no return is expected
     eSP_InOut   ///< Parameter can be returned from stored procedure
 };
+
+/// Flags for NewBlobStore methods
+enum ENewBlobStoreFlags {
+    fNBS_ZLib   = 1 << 0, ///< Use zlib (gzip) compression
+    fNBS_BZLib  = 1 << 1, ///< Use bzlib (bzip2) compression
+    fNBS_LogIt  = 1 << 2, ///< Enable transaction logs
+    fNBS_IsText = 1 << 3  ///< Blob columns have type TEXT or [N]VARCHAR(MAX)
+};
+DECLARE_SAFE_FLAGS_TYPE(ENewBlobStoreFlags, TNewBlobStoreFlags);
+DECLARE_SAFE_FLAGS(ENewBlobStoreFlags);
 
 /// (S)DBAPI_TRANSACTION glue for CDatabase.
 CAutoTrans::CSubject DBAPI_MakeTrans(CDatabase& db);
@@ -1206,6 +1218,47 @@ public:
                               CBlobBookmark::EBlobType column_type
                                   = CBlobBookmark::eUnknown);
 
+    /// Get new CBlobStoreStatic object (to be owned by caller).
+    /// Automatically establish an initial connection if necessary,
+    /// but do not automatically reconnect.
+    ///
+    /// @param table_name
+    ///   Name of the table holding the blobs (structure to be deduced
+    ///   by inspection).
+    /// @param flags
+    ///   Flags governing compression and transaction logging.
+    /// @param image_limit
+    ///   Maximum size of a single blob (to be split across columns as
+    ///   needed).
+    CBlobStoreStatic* NewBlobStore(const string&      table_name,
+                                   TNewBlobStoreFlags flags = 0,
+                                   size_t             image_limit = 1 << 24);
+
+    /// Get new CBlobStoreStatic object (to be owned by caller).
+    /// Automatically establish an initial connection if necessary,
+    /// but do not automatically reconnect.
+    ///
+    /// @param table_name
+    ///   Name of the table holding the blobs (structure given explicitly
+    ///   via key_col_name, num_col_name, and blob_col_names).
+    /// @param key_col_name
+    ///   Name of the column holding keys with which blobs are associated.
+    /// @param num_col_name
+    ///   Name of the column holding the number of blob columns used.
+    /// @param blob_col_names
+    ///   Names of the actual blob columns.
+    /// @param flags
+    ///   Flags governing compression, transaction logging, and blob
+    ///   column textuality.
+    /// @param image_limit
+    ///   Maximum size of a single blob (to be split across columns as
+    ///   needed).
+    CBlobStoreStatic* NewBlobStore(const string&        table_name,
+                                   const string&        key_col_name,
+                                   const string&        num_col_name,
+                                   const vector<string> blob_col_names,
+                                   TNewBlobStoreFlags   flags = 0,
+                                   size_t               image_limit = 1 << 24);
 
 private:
     friend CAutoTrans::CSubject DBAPI_MakeTrans(CDatabase& db);
@@ -1283,6 +1336,24 @@ public:
     static EMirrorStatus UpdateMirror(const string& dbservice,
                                       list<string>* servers = NULL,
                                       string*       error_message = NULL);
+
+    /// Get new CBlobStoreDynamic object (to be owned by caller).
+    ///
+    /// @param param
+    ///   Connection parameters; only Service, Username, and Password apply
+    ///   here, though.
+    /// @param table_name
+    ///   Name of the table holding the blobs (structure to be deduced
+    ///   by inspection).
+    /// @param flags
+    ///   Flags governing compression and transaction logging.
+    /// @param image_limit
+    ///   Maximum size of a single blob (to be split across columns as
+    ///   needed).
+    static CBlobStoreDynamic* NewBlobStore(const CSDB_ConnectionParam& param,
+                                           const string& table_name,
+                                           TNewBlobStoreFlags flags = 0,
+                                           size_t image_limit = 1 << 24);
 
 private:
     CSDBAPI(void);
