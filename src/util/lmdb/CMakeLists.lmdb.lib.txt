@@ -1,0 +1,9 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(lmdb)
+  NCBI_sources(mdb midl)
+  NCBI_add_include_directories(${includedir}/util/lmdb)
+  NCBI_project_watchers(ivanov)
+NCBI_end_lib()
