@@ -319,6 +319,16 @@ void CDBLBClientApp::x_InitWhereIs(CArgDescriptions& arg_desc)
         }
     }
     arg_desc.SetConstraint("type", type_strings.release());
+
+    arg_desc.AddFlag("stateless",          "Stateless servers only"         );
+    arg_desc.AddFlag("reverse-dns",        "LB-DNS translation"             );
+    arg_desc.AddFlag("include-down",       "Include instances that are down");
+    arg_desc.AddFlag("include-standby",    "Include instances on standby"   );
+    arg_desc.AddFlag("include-reserved",   "Include reserved instances"     );
+    arg_desc.AddFlag("include-suppressed", "Include suppressed instances"   );
+    arg_desc.AddFlag("include-inactive",   "Include inactive instances"     );
+    arg_desc.AddFlag("include-private",    "Include private instances"      );
+    arg_desc.AddFlag("promiscuous",        "Include all of the above"       );
     
     arg_desc.AddPositional("service", "Service name",
                            CArgDescriptions::eString);
@@ -355,13 +365,22 @@ int CDBLBClientApp::x_RunWhereIs(void)
         _ASSERT(NStr::EqualNocase(type_str, "any"));
     }
 
+    if (args["stateless"])          { type |= fSERV_Stateless;         }
+    if (args["reverse-dns"])        { type |= fSERV_ReverseDns;        }
+    if (args["include-down"])       { type |= fSERV_IncludeDown;       }
+    if (args["include-standby"])    { type |= fSERV_IncludeStandby;    }
+    if (args["include-reserved"])   { type |= fSERV_IncludeReserved;   }
+    if (args["include-suppressed"]) { type |= fSERV_IncludeSuppressed; }
+    if (args["include-inactive"])   { type |= fSERV_IncludeInactive;   }
+    if (args["include-private"])    { type |= fSERV_IncludePrivate;    }
+    if (args["promiscuous"])        { type |= fSERV_Promiscuous;       }
+    
     AutoPtr<SConnNetInfo, SCNIDeleter> net_info
         (ConnNetInfo_Create(service.c_str()));
     // Unavailable instances aren't showing up even with fSERV_Promiscuous,
     // but aren't strictly necessary to mention anyway.
     AutoPtr<SSERV_IterTag, SServIterDeleter> iter
-        (SERV_Open(service.c_str(), type | fSERV_Promiscuous, SERV_ANYHOST,
-                   net_info.get()));
+        (SERV_Open(service.c_str(), type, SERV_ANYHOST, net_info.get()));
     for (;;) {
         SSERV_InfoCPtr serv_info = SERV_GetNextInfo(iter.get());
         if (serv_info == NULL) {
