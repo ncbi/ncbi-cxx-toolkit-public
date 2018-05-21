@@ -150,6 +150,7 @@ private:
     bool x_IsResolutionParamValid(const string &  param_name,
                                   const string &  param_value,
                                   string &  err_msg) const;
+    int x_PopulateSatToKeyspaceMap(void);
 
 private:
     string                              m_DbPath;

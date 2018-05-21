@@ -34,6 +34,8 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/request_ctx.hpp>
 
+#include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
+
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_exception.hpp"
 
@@ -129,15 +131,6 @@ void CPubseqGatewayApp::ParseArgs(void)
     m_CassConnectionFactory->LoadConfig(registry, "");
     m_CassConnectionFactory->SetLogging(GetDiagPostLevel());
 
-    list<string>    entries;
-    registry.EnumerateEntries("satnames", &entries);
-    for (const auto &  it : entries) {
-        size_t      idx = NStr::StringToNumeric<size_t>(it);
-        while (m_SatNames.size() <= idx)
-            m_SatNames.push_back("");
-        m_SatNames[idx] = registry.GetString("satnames", it, "");
-    }
-
     // It throws an exception in case of inability to start
     x_ValidateArgs();
 }
@@ -189,6 +182,9 @@ int CPubseqGatewayApp::Run(void)
 
     OpenDb(false, true);
     OpenCass();
+    int     ret = x_PopulateSatToKeyspaceMap();
+    if (ret != 0)
+        return ret;
 
     vector<HST::CHttpHandler<CPendingOperation>>    http_handler;
     HST::CHttpGetParser                             get_parser;
@@ -278,10 +274,6 @@ CPubseqGatewayRequestCounters &  CPubseqGatewayApp::GetRequestCounters(void)
 
 void CPubseqGatewayApp::x_ValidateArgs(void)
 {
-    if (m_SatNames.size() == 0)
-        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-                   "[satnames] section in ini file is empty");
-
     if (m_DbPath.empty())
         NCBI_THROW(CPubseqGatewayException, eConfigurationError,
                    "[LMDB_CACHE]/dbfile is not found in the ini file");
@@ -461,6 +453,31 @@ bool CPubseqGatewayApp::x_IsBoolParamValid(const string &  param_name,
         return false;
     }
     return true;
+}
+
+
+int CPubseqGatewayApp::x_PopulateSatToKeyspaceMap(void)
+{
+    try {
+        m_SatNames = FetchSatToKeyspaceMapping("sat_info", m_CassConnection);
+    } catch (const exception &  exc) {
+        ERR_POST(exc);
+        ERR_POST("Cannot populate the sat to keyspace mapping. "
+                 "PSG server cannot start.");
+        return 1;
+    } catch (...) {
+        ERR_POST("Unknown error while populating the sat to keyspace mapping. "
+                 "PSG server cannot start.");
+        return 1;
+    }
+
+    if (m_SatNames.empty()) {
+        ERR_POST("No sat to keyspace resolutions found "
+                 "in the sat_info keyspace. PSG server cannot start.");
+        return 1;
+    }
+
+    return 0;
 }
 
 
