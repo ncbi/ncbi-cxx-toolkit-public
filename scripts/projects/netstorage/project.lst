@@ -24,7 +24,7 @@ misc/netstorage
 dbapi$
 dbapi/driver$
 dbapi/driver/impl$
-dbapi/driver/util$ update-only
+dbapi/driver/util$
 dbapi/driver/odbc/unix_odbc$ update-only
 dbapi/driver/ctlib$
 dbapi/driver/ftds64$
