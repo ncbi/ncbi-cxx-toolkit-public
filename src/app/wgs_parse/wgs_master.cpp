@@ -1747,6 +1747,37 @@ static void CheckScaffoldsFarPointers(const CSeq_entry& entry, const CCurrentMas
     }
 }
 
+static CRef<CDate> GetMostRelevantDate(const map<string, pair<CRef<CDate>, size_t>>& dates_info)
+{
+    CRef<CDate> ret;
+    size_t date_freq = 0;
+
+    for (auto cur_date : dates_info) {
+        if (cur_date.second.second > date_freq) {
+            ret = cur_date.second.first;
+            date_freq = cur_date.second.second;
+        }
+        else if (cur_date.second.second == date_freq) {
+            if (cur_date.second.first->Compare(*ret) == CDate::eCompare_before) {
+                ret = cur_date.second.first;
+            }
+        }
+    }
+
+    return ret;
+}
+
+static void ReplaceDatesInCitSub(list<CPubDescriptionInfo>& common_pubs, const CDate& date)
+{
+    for (auto pub_info : common_pubs) {
+
+        CCit_sub* cit_sub = GetNonConstCitSub(*pub_info.m_pubdescr_lookup);
+        if (cit_sub && cit_sub->IsSetDate()) {
+            cit_sub->SetDate().Assign(date);
+        }
+    }
+}
+
 bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 {
     const list<string>& files = GetParams().GetInputFiles();
@@ -1992,7 +2023,9 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
         if (master_info.m_cit_sub_info.m_dates.size() > 1) {
             ERR_POST_EX(0, 0, Warning << "Encountered Cit-subs with date differences only. Using the most frequent/earliest one.");
         }
-        //TODO
+        
+        CRef<CDate> the_date = GetMostRelevantDate(master_info.m_cit_sub_info.m_dates);
+        ReplaceDatesInCitSub(master_info.m_common_pubs, *the_date);
     }
 
     master_info.m_reject = master_info.m_reject || DBLinkProblemReport(master_info);
