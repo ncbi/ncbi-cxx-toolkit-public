@@ -4424,6 +4424,7 @@ CNewCleanup_imp::x_SeqFeatCDSGBQualBC(CSeq_feat& feat, CCdregion& cds, const CGb
                         for (auto fit : ait->GetData().GetFtable()) {
                             if (fit->IsSetData() && fit->GetData().GetSubtype() == CSeqFeatData::eSubtype_prot) {
                                 prot_feat.Reset(const_cast<CSeq_feat*>(fit.GetPointer()));
+                                prot_ref.Reset(&(prot_feat->SetData().SetProt()));
                             }
                         }
                     }
