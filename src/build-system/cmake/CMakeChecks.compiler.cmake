@@ -5,6 +5,8 @@
 # This config is designed to capture all compiler and linker definitions and search parameters
 #
 
+set(NCBI_DEFAULT_PCH "ncbi_pch.hpp")
+
 if (NCBI_EXPERIMENTAL_CFG)
 
   set(CMAKE_CXX_STANDARD 11)
@@ -41,7 +43,6 @@ if (WIN32)
   endif()
 
   set(NCBI_DEFAULT_USEPCH ON)
-  set(NCBI_DEFAULT_PCH "ncbi_pch.hpp")
   set(NCBI_DEFAULT_PCH_DEFINE "NCBI_USE_PCH")
   set(NCBI_DEFAULT_RESOURCES "${NCBI_SRC_ROOT}//build-system/cmake/ncbi.rc")
 
