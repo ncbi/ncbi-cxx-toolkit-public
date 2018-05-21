@@ -367,6 +367,5 @@ BOOST_AUTO_TEST_CASE(NoDivisionMode)
     parser.Parse("false || 0.1.0/main/Group2/Test1/0.0.2");
     BOOST_CHECK_EQUAL(CExprValue::eBOOL, parser.GetResult().GetType());
     BOOST_CHECK_EQUAL(false, parser.GetResult().GetBool());
-
 }
 

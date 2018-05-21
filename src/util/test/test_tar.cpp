@@ -234,12 +234,17 @@ void CTarTest::Init(void)
     args->AddFlag("E", "Maintain equal types of files and archive entries");
     args->AddFlag("I", "Ignore unsupported entries (w/o extracting them)");
     args->AddFlag("z", "Use GZIP compression (aka tgz), subsumes NOT -r / -u");
-    args->AddFlag("s", "Use stream operations with archive [non-standard]");
-    args->AddFlag("S", "Stream archive through [non-standard]");
-    args->AddFlag("G", "Supplement long names with addtl header [non-std]");
-    args->AddFlag("Z", "No NCBI signature in headers [non-standard]");
+    args->AddFlag("s", "Use stream operations with archive"
+                  " [non-standard]");
+    args->AddFlag("S", "Stream archive through"
+                  " [non-standard]");
+    args->AddFlag("G", "Supplement long names with addtl header"
+                  " [non-stdandard]");
+    args->AddFlag("Z", "No NCBI signature in headers"
+                  " [non-standard]");
     args->AddFlag("v", "Turn on debugging information");
-    args->AddFlag("lfs", "Large File Support check [non-standard]");
+    args->AddFlag("lfs","Large File Support check; ignore all other parameters"
+                  " [non-standard]");
     args->AddExtra(0/*no mandatory*/, kMax_UInt/*unlimited optional*/,
                    "List of entries to process", CArgDescriptions::eString);
     args->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -551,7 +556,7 @@ int CTarTest::Run(void)
             if (zip  &&  pipethru) {
                 NCBI_THROW(CArgException, eInvalidArg, "Write-thru zip pipe");
             }
-            tar.reset(new CTestTar(*io, bfactor, listonfly));
+            tar.reset(new CTestTar(*io,  bfactor, listonfly));
         } else {
             tar.reset(new CTestTar(file, bfactor, listonfly));
         }
