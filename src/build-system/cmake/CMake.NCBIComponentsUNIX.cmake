@@ -789,6 +789,24 @@ endif (WIN32)
 #############################################################################
 
 #############################################################################
+# NCBI_C
+if(HAVE_NCBI_C)
+  message("NCBI_C found at ${NCBI_C_INCLUDE}")
+  set(NCBI_COMPONENT_NCBI_C_FOUND YES)
+  set(NCBI_COMPONENT_NCBI_C_INCLUDE ${NCBI_C_INCLUDE})
+
+  set(_c_libs  ncbi)
+  foreach( _lib IN LISTS _c_libs)
+    set(NCBI_COMPONENT_NCBI_C_LIBS ${NCBI_COMPONENT_NCBI_C_LIBS} "${NCBI_C_LIBPATH}/lib${_lib}.a")
+  endforeach()
+  set(NCBI_COMPONENT_NCBI_C_DEFINES HAVE_NCBI_C=1)
+message("NCBI_COMPONENT_NCBI_C_LIBS ${NCBI_COMPONENT_NCBI_C_LIBS}")
+else()
+  message("Component NCBI_C ERROR: ${NCBI_C_INCLUDE} not found")
+  set(NCBI_COMPONENT_NCBI_C_FOUND NO)
+endif()
+
+#############################################################################
 # Boost.Test.Included
 if(Boost_FOUND)
   set(NCBI_COMPONENT_Boost.Test.Included_FOUND YES)

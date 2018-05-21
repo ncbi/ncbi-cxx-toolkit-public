@@ -57,6 +57,10 @@ macro(NCBI_define_component _name _lib)
 endmacro()
 
 #############################################################################
+# NCBI_C
+set(NCBI_COMPONENT_NCBI_C_FOUND NO)
+
+#############################################################################
 # Boost.Test.Included
 if (EXISTS ${NCBI_ThirdParty_Boost}/include)
   message("Boost.Test.Included found at ${NCBI_ThirdParty_Boost}")
