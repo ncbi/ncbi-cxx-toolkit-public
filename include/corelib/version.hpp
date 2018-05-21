@@ -119,7 +119,7 @@ struct NCBI_XNCBI_EXPORT SBuildInfo
         .Extra(SBuildInfo::eStableComponentsVersion, NCBI_SC_VERSION_PROXY)
 #endif //NCBI_SRCTREE_NAME_PROXY
 
-#if defined(NCBI_USE_PCH)
+#if defined(NCBI_USE_PCH) && !defined(NCBI_TEAMCITY_BUILD_NUMBER)
 #define NCBI_SBUILDINFO_DEFAULT() SBuildInfo()
 #else
 #define NCBI_SBUILDINFO_DEFAULT() NCBI_SBUILDINFO_DEFAULT_IMPL()
