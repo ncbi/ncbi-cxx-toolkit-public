@@ -1,4 +1,13 @@
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(tables)
+  NCBI_sources(raw_scoremat)
+  NCBI_project_watchers(ucko)
+NCBI_end_lib()
+
+if (OFF)
 #
 #
 add_library(tables
@@ -6,3 +15,4 @@ add_library(tables
 )
 
 target_link_libraries(tables)
+endif()

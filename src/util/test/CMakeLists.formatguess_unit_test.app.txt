@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+
+NCBI_begin_app(formatguess_unit_test)
+  NCBI_sources(formatguess_unit_test)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(test_boost xutil)
+  NCBI_project_watchers(vakatov foleyjp)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +25,4 @@ set_target_properties(formatguess_unit_test-app PROPERTIES OUTPUT_NAME formatgue
 target_link_libraries(formatguess_unit_test-app
     test_boost xutil
 )
-
+endif()

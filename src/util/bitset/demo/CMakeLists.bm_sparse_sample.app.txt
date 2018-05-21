@@ -1,5 +1,14 @@
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(bm_sparse_sample)
+  NCBI_sources(bm_sparse_sample)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_project_watchers(kuznets)
+NCBI_end_app()
+
+if (OFF)
 #
 add_executable(bm_sparse_sample-app
     bm_sparse_sample
@@ -10,4 +19,4 @@ set_target_properties(bm_sparse_sample-app PROPERTIES OUTPUT_NAME bm_sparse_samp
 target_link_libraries(bm_sparse_sample-app
     xncbi
 )
-
+endif()

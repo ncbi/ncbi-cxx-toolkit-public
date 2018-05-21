@@ -1,3 +1,17 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+
+NCBI_begin_app(test_limited_map)
+  NCBI_sources(test_limited_map)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_project_watchers(vasilche)
+  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
+
 add_executable(test_limited_map
     test_limited_map
 )
@@ -5,3 +19,4 @@ add_executable(test_limited_map
 target_link_libraries(test_limited_map
     xncbi
 )
+endif()

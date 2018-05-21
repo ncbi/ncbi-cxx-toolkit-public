@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+
+NCBI_begin_app(example_value_convert)
+  NCBI_sources(example_value_convert)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_project_watchers(vakatov)
+  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +23,4 @@ set_target_properties(example_value_convert-app PROPERTIES OUTPUT_NAME example_v
 target_link_libraries(example_value_convert-app
     xncbi
 )
-
+endif()

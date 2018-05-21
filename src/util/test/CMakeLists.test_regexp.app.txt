@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+
+NCBI_begin_app(test_regexp)
+  NCBI_sources(test_regexp)
+  NCBI_uses_toolkit_libraries(xregexp)
+  NCBI_project_watchers(ivanov)
+  NCBI_add_test(test_regexp Abc Ef Ghh Ooo Pppk)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +25,4 @@ include_directories(SYSTEM ${PCRE_INCLUDE})
 target_link_libraries(test_regexp-app
     xregexp
 )
-
+endif()

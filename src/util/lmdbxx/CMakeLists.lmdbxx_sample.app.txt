@@ -1,4 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
 
+NCBI_begin_app(lmdbxx_sample)
+  NCBI_sources(example.cpp)
+  NCBI_add_include_directories(${includedir}/util/lmdbxx)
+  NCBI_project_tags(demo)
+  NCBI_project_watchers(ivanov)
+NCBI_end_app()
+
+if(OFF)
 add_executable(lmdbxx_sample-app
     example.cpp
 )
@@ -10,3 +21,4 @@ include_directories(SYSTEM ${includedir}/util/lmdbxx ${LMDB_INCLUDE})
 target_link_libraries(lmdbxx_sample-app
     ${LMDB_LIBS}
 )
+endif()

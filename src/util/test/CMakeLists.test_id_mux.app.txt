@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+
+NCBI_begin_app(test_id_mux)
+  NCBI_sources(test_id_mux)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_project_watchers(kuznets)
+  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +23,4 @@ set_target_properties(test_id_mux-app PROPERTIES OUTPUT_NAME test_id_mux)
 target_link_libraries(test_id_mux-app
     xncbi
 )
-
+endif()

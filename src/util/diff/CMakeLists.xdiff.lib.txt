@@ -1,4 +1,15 @@
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(xdiff)
+  NCBI_sources(diff)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_project_watchers(ivanov)
+NCBI_end_lib()
+
+
+if(OFF)
 #
 #
 add_library(xdiff
@@ -8,3 +19,4 @@ add_library(xdiff
 target_link_libraries(xdiff
     xncbi
 )
+endif()

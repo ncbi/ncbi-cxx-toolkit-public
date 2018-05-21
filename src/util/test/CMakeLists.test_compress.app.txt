@@ -1,3 +1,19 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+
+NCBI_begin_app(test_compress)
+  NCBI_sources(test_compress)
+  NCBI_headers(test_compress*.inl)
+  NCBI_uses_toolkit_libraries(xcompress)
+  NCBI_project_watchers(ivanov)
+  NCBI_add_test(test_compress z)
+  NCBI_add_test(test_compress bz2)
+  NCBI_add_test(test_compress lzo)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +28,4 @@ include_directories(SYSTEM ${CMPRS_INCLUDE})
 target_link_libraries(test_compress-app
     xcompress
 )
-
+endif()

@@ -1,3 +1,18 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+
+NCBI_begin_app(test_align)
+  NCBI_sources(test_align)
+  NCBI_headers(test_align.hpp)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(test_boost)
+  NCBI_project_watchers(todorov)
+  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -11,4 +26,4 @@ set_target_properties(test_align-app PROPERTIES OUTPUT_NAME test_align)
 target_link_libraries(test_align-app
     test_boost
 )
-
+endif()

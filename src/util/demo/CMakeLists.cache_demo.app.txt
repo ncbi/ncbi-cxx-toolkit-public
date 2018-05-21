@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(cache_demo)
+  NCBI_sources(cache_demo)
+  NCBI_uses_toolkit_libraries(xutil)
+  NCBI_project_watchers(grichenk)
+NCBI_end_app()
+
+if (OFF)
 #
 #
 #
@@ -10,4 +21,4 @@ set_target_properties(cache_demo-app PROPERTIES OUTPUT_NAME cache_demo)
 target_link_libraries(cache_demo-app
     xutil
 )
-
+endif()

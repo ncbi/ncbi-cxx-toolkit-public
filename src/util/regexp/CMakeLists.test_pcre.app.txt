@@ -5,7 +5,6 @@
 NCBI_begin_app(test_pcre)
   NCBI_sources(pcretest)
   NCBI_requires(LocalPCRE)
-  NCBI_add_include_directories(${NCBI_CURRENT_SOURCE_DIR}/..)
   NCBI_add_definitions(HAVE_CONFIG_H)
   NCBI_project_tags(test)
   NCBI_project_watchers(ivanov)

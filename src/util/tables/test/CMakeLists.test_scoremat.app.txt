@@ -1,5 +1,15 @@
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(test_scoremat)
+  NCBI_sources(test_scoremat)
+  NCBI_uses_toolkit_libraries(tables xncbi)
+  NCBI_project_watchers(ucko)
+NCBI_end_app()
+
+if (OFF)
+
 #
 add_executable(test_scoremat-app
     test_scoremat
@@ -10,4 +20,4 @@ set_target_properties(test_scoremat-app PROPERTIES OUTPUT_NAME test_scoremat)
 target_link_libraries(test_scoremat-app
     tables xncbi
 )
-
+endif()
