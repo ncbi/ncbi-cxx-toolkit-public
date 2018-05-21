@@ -1406,6 +1406,38 @@ bool CassValueConvert<bool>(const CassValue *  Val)
     return rv;
 }
 
+template<>
+int16_t CassValueConvert<int16_t>(const CassValue * Val)
+{
+    if (!Val) {
+        RAISE_DB_ERROR(eFetchFailed, string("failed to fetch int32: cass value is NULL"));
+    }
+
+    int16_t rv = 0;
+    CassError err;
+    CassValueType type = cass_value_type(Val);
+    switch (type) {
+        case CASS_VALUE_TYPE_SMALL_INT:
+            if ((err = cass_value_get_int16(Val, &rv)) != CASS_OK) {
+                RAISE_CASS_ERROR(err, eFetchFailed, string("failed to fetch int16 data"));
+            }
+            break;
+        default:
+            if (
+                type == CASS_VALUE_TYPE_UNKNOWN &&
+                (!Val || cass_value_is_null(Val))
+            ) {
+                return 0;
+            }
+            RAISE_DB_ERROR(eFetchFailed,
+               string("failed to convert to int32: unsupported (") +
+               NStr::NumericToString(static_cast<int>(type)) +
+               ") data type"
+           );
+    }
+    return rv;
+}
+
 
 template<>
 int32_t CassValueConvert<int32_t>(const CassValue *  Val)

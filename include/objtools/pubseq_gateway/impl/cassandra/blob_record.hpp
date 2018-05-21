@@ -56,10 +56,10 @@ public:
 public:
     CBlobRecord();
     CBlobRecord(TSatKey key);
-    CBlobRecord(CBlobRecord const &) = delete;
+    CBlobRecord(CBlobRecord const &) = default;
     CBlobRecord(CBlobRecord &&) = default;
 
-    CBlobRecord& operator=(CBlobRecord const &) = delete;
+    CBlobRecord& operator=(CBlobRecord const &) = default;
     CBlobRecord& operator=(CBlobRecord&&) = default;
 
     CBlobRecord& SetKey(TSatKey value);
@@ -73,10 +73,12 @@ public:
     CBlobRecord& SetHupDate(TTimestamp value);
 
     CBlobRecord& SetDiv(string value);
+    CBlobRecord& SetId2Info(string const & value);
     CBlobRecord& SetId2Info(int16_t sat, int32_t shell, int32_t info);
     CBlobRecord& SetUserName(string value);
 
     CBlobRecord& SetNChunks(int32_t value);
+    CBlobRecord& ResetNChunks();
     CBlobRecord& SetOwner(int32_t value);
     CBlobRecord& SetClass(int16_t value);
 
@@ -89,6 +91,7 @@ public:
     CBlobRecord& SetDead(bool value);
 
     CBlobRecord& AppendBlobChunk(TBlobChunk&& chunk);
+    CBlobRecord& InsertBlobChunk(size_t index, TBlobChunk&& chunk);
 
     //---------------Getters--------------------------
 

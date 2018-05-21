@@ -107,6 +107,12 @@ CBlobRecord& CBlobRecord::SetDiv(string value)
     return *this;
 }
 
+CBlobRecord& CBlobRecord::SetId2Info(string const & value)
+{
+    m_Id2Info = value;
+    return *this;
+}
+
 CBlobRecord& CBlobRecord::SetId2Info(int16_t sat, int32_t shell, int32_t info)
 {
     if (sat > 0) {
@@ -126,6 +132,12 @@ CBlobRecord& CBlobRecord::SetUserName(string value)
 CBlobRecord& CBlobRecord::SetNChunks(int32_t value)
 {
     m_NChunks = value;
+    return *this;
+}
+
+CBlobRecord& CBlobRecord::ResetNChunks()
+{
+    m_NChunks = m_BlobChunks.size();
     return *this;
 }
 
@@ -175,7 +187,17 @@ CBlobRecord& CBlobRecord::AppendBlobChunk(TBlobChunk&& chunk)
 {
     if (!chunk.empty()) {
         m_BlobChunks.emplace_back(move(chunk));
-        m_NChunks = m_BlobChunks.size();
+    }
+    return *this;
+}
+
+CBlobRecord& CBlobRecord::InsertBlobChunk(size_t index, TBlobChunk&& chunk)
+{
+    if (!chunk.empty()) {
+        if (index >= m_BlobChunks.size()) {
+            m_BlobChunks.resize(index + 1);
+        }
+        m_BlobChunks[index] = move(chunk);
     }
     return *this;
 }
@@ -187,6 +209,13 @@ bool CBlobRecord::NoData() const
 
 void CBlobRecord::VerifyBlobSize() const
 {
+    if (static_cast<size_t>(m_NChunks) != m_BlobChunks.size()) {
+        RAISE_DB_ERROR(eInconsistentData, string("BlobChunks count inconsistent with NChunks property. key: ") +
+            NStr::NumericToString(m_SatKey) +
+            ". BlobChunks count: " + NStr::NumericToString(m_BlobChunks.size()) +
+            ". m_NChunks: " + NStr::NumericToString(m_NChunks)
+        );
+    }
     TSize s = 0;
     for (auto c : m_BlobChunks) {
         s += c.size();

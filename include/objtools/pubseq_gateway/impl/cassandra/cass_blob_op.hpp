@@ -44,18 +44,17 @@
 #include "cass_util.hpp"
 #include "blob_record.hpp"
 
-
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
 class CCassBlobWaiter;
+class CCassBlobTaskLoadBlob;
 
 enum ECassTristate {
     eUnknown,
     eTrue,
     eFalse
 };
-
 
 typedef function<void(void *  context,
                       const unsigned char *  data,
@@ -254,6 +253,12 @@ protected:
         m_LastActivityMs = gettime() / 1000L;
     }
 
+    CassConsistency GetQueryConsistency(void)
+    {
+        return (m_RestartCounter > 0 && m_Conn->GetFallBackRdConsistency()) ?
+            CASS_CONSISTENCY_LOCAL_QUORUM : CASS_CONSISTENCY_ONE;
+    }
+
     bool CheckMaxActive(void);
     virtual void Wait1(void) = 0;
 
@@ -277,8 +282,6 @@ protected:
     vector<shared_ptr<CCassQuery>>  m_QueryArr;
 };
 
-
-
 class CCassBlobLoader: public CCassBlobWaiter
 {
 public:
@@ -287,79 +290,27 @@ public:
     CCassBlobLoader& operator=(const CCassBlobLoader&) = delete;
     CCassBlobLoader& operator=(CCassBlobLoader&&) = delete;
 
-    CCassBlobLoader(unsigned int  op_timeout_ms,
-                    shared_ptr<CCassConnection>  conn, const string &  keyspace,
-                    int32_t  key, bool  async, unsigned int  max_retries,
-                    void *  context,
-                    const DataChunkCB_t &  data_chunk_cb,
-                    const DataErrorCB_t &  DataErrorCB) :
-        CCassBlobWaiter(op_timeout_ms, conn, keyspace, key,
-                        async, max_retries, context, DataErrorCB),
-        m_StatLoaded(false),
-        m_DataCb(data_chunk_cb),
-        m_ExpectedSize(0),
-        m_RemainingSize(0),
-        m_LargeParts(0)
-    {
-        ERR_POST(Info << "CCassBlobLoader::CCassBlobLoader max_retries=" <<
-                 max_retries);
-    }
+    CCassBlobLoader(
+        unsigned int op_timeout_ms,
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        int32_t key,
+        bool async,
+        unsigned int max_retries,
+        void * context,
+        const DataChunkCB_t & data_chunk_cb,
+        const DataErrorCB_t & DataErrorCB
+    );
 
-    void SetDataChunkCB(DataChunkCB_t &&  datacb)
-    {
-        m_DataCb = std::move(datacb);
-    }
+    void SetDataChunkCB(DataChunkCB_t && datacb);
+    void SetDataReadyCB(DataReadyCB_t datareadycb, void * data);
 
-    void SetDataReadyCB(DataReadyCB_t  datareadycb, void *  data)
-    {
-        if (datareadycb && m_State != eInit)
-            NCBI_THROW(CCassandraException, eSeqFailed,
-                       "CCassBlobLoader: DataReadyCB can't be assigned "
-                       "after the loading process has started");
-        CCassBlobWaiter::SetDataReadyCB(datareadycb, data);
-    }
+    SBlobStat GetBlobStat(void) const;
+    uint64_t GetBlobSize(void) const;
+    int32_t GetTotalChunksInBlob(void) const;
 
-    SBlobStat GetBlobStat(void) const
-    {
-        if (!m_StatLoaded)
-            NCBI_THROW(CCassandraException, eSeqFailed,
-                       "CCassBlobLoader: Blob stat can't be read");
-        return m_BlobStat;
-    }
-
-    uint64_t GetBlobSize(void) const
-    {
-        if (!m_StatLoaded)
-            NCBI_THROW(CCassandraException, eSeqFailed,
-                       "CCassBlobLoader: Blob stat can't be read");
-        return m_ExpectedSize;
-
-    }
-
-    void Cancel(void)
-    {
-        if (m_State == eDone)
-            return;
-
-        m_Cancelled = true;
-        CloseAll();
-        m_State = eError;
-    }
-
-    virtual bool Restart(unsigned int  max_retries = 0) override
-    {
-        m_StatLoaded = false;
-        m_BlobStat.Reset();
-        m_ExpectedSize = 0;
-        m_RemainingSize = 0;
-        m_LargeParts = 0;
-        return CCassBlobWaiter::Restart(max_retries);
-    }
-
-    int32_t GetTotalChunksInBlob(void) const
-    {
-        return m_LargeParts;
-    }
+    void Cancel(void);
+    virtual bool Restart(unsigned int  max_retries = 0) override;
 
 protected:
     virtual void Wait1(void) override;
@@ -374,6 +325,15 @@ private:
         eError = CCassBlobWaiter::eError
     };
 
+    void x_RequestFlags(shared_ptr<CCassQuery> qry, bool with_data);
+    void x_RequestChunk(shared_ptr<CCassQuery> qry, int local_id);
+    void x_RequestChunksAhead(void);
+
+    void x_PrepareChunkRequests(void);
+    int x_GetReadyChunkNo(bool &  have_inactive, bool &  need_repeat);
+    bool x_AreAllChunksProcessed(void);
+    void x_MarkChunkProcessed(size_t  chunk_no);
+
     bool                m_StatLoaded;
     SBlobStat           m_BlobStat;
     DataChunkCB_t       m_DataCb;
@@ -381,97 +341,9 @@ private:
     int64_t             m_RemainingSize;
     int32_t             m_LargeParts;
 
-    void x_RequestFlags(shared_ptr<CCassQuery>  qry, bool  with_data);
-    void x_RequestChunk(shared_ptr<CCassQuery>  qry, int  local_id);
-    void x_RequestChunksAhead(void);
-
     // Support for sending chunks as soon as they are ready regardless of the
     // order they are delivered from Cassandra
-    vector<bool>        m_ProcessedChunks;
-    void x_PrepareChunkRequests(void);
-    int x_GetReadyChunkNo(bool &  have_inactive, bool &  need_repeat);
-    bool x_AreAllChunksProcessed(void);
-    void x_MarkChunkProcessed(size_t  chunk_no);
-};
-
-
-
-class CCassBlobInserter: public CCassBlobWaiter
-{
-public:
-    CCassBlobInserter(unsigned int  op_timeout_ms,
-                      shared_ptr<CCassConnection>  conn,
-                      const string &  keyspace, int32_t  key, CBlobRecord * blob,
-                      ECassTristate  is_new, int64_t  large_treshold,
-                      int64_t  large_chunk_sz, bool  async,
-                      unsigned int  max_retries, void *  context,
-                      const DataErrorCB_t &  data_error_cb) :
-        CCassBlobWaiter(op_timeout_ms, conn, keyspace, key, async,
-                        max_retries, context, data_error_cb),
-        m_LargeTreshold(large_treshold),
-        m_LargeChunkSize(large_chunk_sz),
-        m_LargeParts(0),
-        m_Blob(blob),
-        m_IsNew(is_new),
-        m_OldLargeParts(0),
-        m_OldFlags(0)
-    {}
-
-protected:
-    virtual void Wait1(void) override;
-
-private:
-    enum EBlobInserterState {
-        eInit = 0,
-        eFetchOldLargeParts,
-        eDeleteOldLargeParts,
-        eWaitDeleteOldLargeParts,
-        eInsert,
-        eWaitingInserted,
-        eUpdatingFlags,
-        eWaitingUpdateFlags,
-        eDone = CCassBlobWaiter::eDone,
-        eError = CCassBlobWaiter::eError
-    };
-
-    int64_t         m_LargeTreshold;
-    int64_t         m_LargeChunkSize;
-    int32_t         m_LargeParts;
-    CBlobRecord *   m_Blob;
-    ECassTristate   m_IsNew;
-    int32_t         m_OldLargeParts;
-    int64_t         m_OldFlags;
-};
-
-class CCassBlobDeleter: public CCassBlobWaiter
-{
-public:
-    CCassBlobDeleter(unsigned int  op_timeout_ms,
-                     shared_ptr<CCassConnection>  conn,
-                     const string &  keyspace, int32_t  key, bool  async,
-                     unsigned int  max_retries, void *  context,
-                     DataErrorCB_t  error_cb) :
-        CCassBlobWaiter(op_timeout_ms, conn, keyspace, key,
-                        async, max_retries, context, error_cb),
-        m_LargeParts(0)
-    {}
-
-protected:
-    virtual void Wait1(void) override;
-
-private:
-    enum EBlobDeleterState {
-        eInit = 0,
-        eReadingEntity,
-        eDeleteLargeEnt,
-        eWaitLargeEnt,
-        eDeleteEnt,
-        eWaitingDone,
-        eDone = CCassBlobWaiter::eDone,
-        eError = CCassBlobWaiter::eError
-    };
-
-    int32_t     m_LargeParts;
+    vector<bool> m_ProcessedChunks;
 };
 
 
@@ -550,6 +422,23 @@ public:
                          int32_t  key, unsigned int  max_retries,
                          const DataErrorCB_t & error_cb,
                          unique_ptr<CCassBlobWaiter> &  waiter);
+
+    unique_ptr<CCassBlobTaskLoadBlob> GetBlobExtended(
+        unsigned int op_timeout_ms,
+        unsigned int max_retries,
+        CBlobRecord::TSatKey sat_key,
+        bool load_chunks,
+        const DataErrorCB_t & error_cb
+    );
+
+    unique_ptr<CCassBlobTaskLoadBlob> GetBlobExtended(
+        unsigned int op_timeout_ms,
+        unsigned int max_retries,
+        CBlobRecord::TSatKey sat_key,
+        CBlobRecord::TTimestamp modified,
+        bool load_chunks,
+        const DataErrorCB_t & error_cb
+    );
 
     void UpdateBlobFlags(unsigned int  op_timeout_ms,
                          int32_t  key, uint64_t  flags, EBlopOpFlag  flag_op);

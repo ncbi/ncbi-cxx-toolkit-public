@@ -544,6 +544,7 @@ T CassValueConvert(const CassValue* Val)
 
 
 template<> bool CassValueConvert<bool>(const CassValue* Val);
+template<> int16_t CassValueConvert<int16_t>(const CassValue* Val);
 template<> int32_t CassValueConvert<int32_t>(const CassValue* Val);
 template<> int64_t CassValueConvert<int64_t>(const CassValue* Val);
 template<> double CassValueConvert<double>(const CassValue* Val);
@@ -918,6 +919,18 @@ public:
     bool FieldGetBoolValue(F ifld, bool _default)
     {
         return CassValueConvertDef<bool>(GetColumn(ifld), _default);
+    }
+
+    template <typename F = int>
+    int32_t FieldGetInt16Value(F ifld)
+    {
+        return CassValueConvert<int16_t>(GetColumn(ifld));
+    }
+
+    template <typename F = int>
+    int32_t FieldGetInt16Value(F ifld, int16_t _default)
+    {
+        return CassValueConvertDef<int16_t>(GetColumn(ifld), _default);
     }
 
     template <typename F = int>
