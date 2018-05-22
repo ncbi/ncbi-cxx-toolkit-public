@@ -21,14 +21,14 @@ ctg123	.	CDS	1201	1500	.	+	0	ID=cds00001;Parent=mRNA00002;gbkey=CDS;gff_source=.
 ctg123	.	CDS	3000	3902	.	+	0	ID=cds00001;Parent=mRNA00002;gbkey=CDS;gff_source=.;gff_type=CDS
 ctg123	.	CDS	5000	5500	.	+	0	ID=cds00001;Parent=mRNA00002;gbkey=CDS;gff_source=.;gff_type=CDS
 ctg123	.	CDS	7000	7600	.	+	0	ID=cds00001;Parent=mRNA00002;gbkey=CDS;gff_source=.;gff_type=CDS
-ctg123	.	CDS	1201	1500	.	+	0	ID=cds00001;Parent=mRNA00001;gbkey=CDS;gff_source=.;gff_type=CDS
-ctg123	.	CDS	3000	3902	.	+	0	ID=cds00001;Parent=mRNA00001;gbkey=CDS;gff_source=.;gff_type=CDS
-ctg123	.	CDS	5000	5500	.	+	0	ID=cds00001;Parent=mRNA00001;gbkey=CDS;gff_source=.;gff_type=CDS
-ctg123	.	CDS	7000	7600	.	+	0	ID=cds00001;Parent=mRNA00001;gbkey=CDS;gff_source=.;gff_type=CDS
+ctg123	.	CDS	1201	1500	.	+	0	ID=cds00001-2;Parent=mRNA00001;gbkey=CDS;gff_source=.;gff_type=CDS
+ctg123	.	CDS	3000	3902	.	+	0	ID=cds00001-2;Parent=mRNA00001;gbkey=CDS;gff_source=.;gff_type=CDS
+ctg123	.	CDS	5000	5500	.	+	0	ID=cds00001-2;Parent=mRNA00001;gbkey=CDS;gff_source=.;gff_type=CDS
+ctg123	.	CDS	7000	7600	.	+	0	ID=cds00001-2;Parent=mRNA00001;gbkey=CDS;gff_source=.;gff_type=CDS
 ctg123	.	CDS	1201	1500	.	+	0	ID=cds00002;Parent=mRNA00003;gbkey=CDS;gff_source=.;gff_type=CDS
 ctg123	.	CDS	5000	5500	.	+	0	ID=cds00002;Parent=mRNA00003;gbkey=CDS;gff_source=.;gff_type=CDS
 ctg123	.	CDS	7000	7600	.	+	0	ID=cds00002;Parent=mRNA00003;gbkey=CDS;gff_source=.;gff_type=CDS
-ctg123	.	CDS	1201	1500	.	+	0	ID=cds00002;Parent=mRNA00002;gbkey=CDS;gff_source=.;gff_type=CDS
-ctg123	.	CDS	5000	5500	.	+	0	ID=cds00002;Parent=mRNA00002;gbkey=CDS;gff_source=.;gff_type=CDS
-ctg123	.	CDS	7000	7600	.	+	0	ID=cds00002;Parent=mRNA00002;gbkey=CDS;gff_source=.;gff_type=CDS
+ctg123	.	CDS	1201	1500	.	+	0	ID=cds00002-2;Parent=mRNA00002;gbkey=CDS;gff_source=.;gff_type=CDS
+ctg123	.	CDS	5000	5500	.	+	0	ID=cds00002-2;Parent=mRNA00002;gbkey=CDS;gff_source=.;gff_type=CDS
+ctg123	.	CDS	7000	7600	.	+	0	ID=cds00002-2;Parent=mRNA00002;gbkey=CDS;gff_source=.;gff_type=CDS
 ###

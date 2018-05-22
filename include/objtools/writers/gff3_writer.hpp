@@ -345,11 +345,15 @@ protected:
     bool xAssignFeaturePhase(
         CGffFeatureRecord&,
         const CMappedFeat&);
-    bool xAssignFeatureAttributes(
+    virtual bool xAssignFeatureAttributesFormatIndependent(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
-        
+    virtual bool xAssignFeatureAttributesFormatSpecific(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
     bool xAssignFeatureAttributeCodeBreak(
         CGffFeatureRecord&,
         const CMappedFeat&);
@@ -414,6 +418,10 @@ protected:
         CGffFeatureRecord&,
         const CMappedFeat&);
     bool xAssignFeatureAttributeParent(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    bool xAssignFeatureAttributeID(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);

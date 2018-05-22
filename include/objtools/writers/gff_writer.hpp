@@ -40,6 +40,7 @@
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objtools/writers/gff2_write_data.hpp>
+#include <objtools/writers/gff_feature_record.hpp>
 #include <objtools/writers/writer.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -193,6 +194,21 @@ public:
 //    virtual SAnnotSelector& GetAnnotSelector();
 
 protected:
+    virtual bool xAssignFeatureAttributes(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
+    virtual bool xAssignFeatureAttributesFormatIndependent(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
+    virtual bool xAssignFeatureAttributesFormatSpecific(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
     virtual bool x_WriteSequenceHeader(
         CBioseq_Handle ) { return true; };
 

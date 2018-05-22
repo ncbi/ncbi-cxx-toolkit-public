@@ -465,4 +465,37 @@ bool CGff2Writer::x_WriteAssemblyInfo(
     return true;
 }
 
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xAssignFeatureAttributes(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    if (!xAssignFeatureAttributesFormatIndependent(record, fc, mf)) {
+        return false;
+    }
+    return xAssignFeatureAttributesFormatSpecific(record, fc, mf);
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xAssignFeatureAttributesFormatIndependent(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xAssignFeatureAttributesFormatSpecific(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    return true;
+}
+
 END_NCBI_SCOPE

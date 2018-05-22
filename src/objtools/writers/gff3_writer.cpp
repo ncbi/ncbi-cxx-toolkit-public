@@ -1413,8 +1413,7 @@ bool CGff3Writer::xWriteSource(
     if (!sdi) {
         return true; 
     }
-    CRef<CGffSourceRecord> pSource(
-        new CGffSourceRecord(m_idGenerator.GetGffId()));
+    CRef<CGffSourceRecord> pSource(new CGffSourceRecord());
     if (!xAssignSource(*pSource, bsh)) {
         return false;
     }
@@ -1489,9 +1488,7 @@ bool CGff3Writer::xWriteFeatureTrna(
 //  ----------------------------------------------------------------------------
 {
 
-    const string rnaId = m_idGenerator.GetGffId(mf, &fc.FeatTree());
-
-    CRef<CGffFeatureRecord> pRna( new CGffFeatureRecord(rnaId) );
+    CRef<CGffFeatureRecord> pRna( new CGffFeatureRecord() );
     if (!xAssignFeature(*pRna, fc, mf)) {
         return false;
 	}
@@ -1511,7 +1508,7 @@ bool CGff3Writer::xWriteFeatureTrna(
             return false;
         }
     }
-
+    const auto rnaId = pRna->ID();
 	const CSeq_loc& PackedInt = pRna->Location();
 
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
@@ -1741,72 +1738,66 @@ bool CGff3Writer::xAssignFeaturePhase(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Writer::xAssignFeatureAttributes(
+bool CGff3Writer::xAssignFeatureAttributesFormatIndependent(
     CGffFeatureRecord& record,
     CGffFeatureContext& fc,
     const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
-    if (!xAssignFeatureAttributeGbKey(record, mf)) {
+    if (!xAssignFeatureAttributeGbKey(record, mf) ||
+        !xAssignFeatureAttributesQualifiers(record, mf) ||
+        !xAssignFeatureAttributeProduct(record, mf) ||
+        !xAssignFeatureAttributePseudoGene(record, fc, mf) ||
+        !xAssignFeatureAttributePartial(record, mf) ||
+        !xAssignFeatureAttributeException(record, mf) ||
+        !xAssignFeatureAttributeExperiment(record, mf) ||
+        !xAssignFeatureAttributeFunction(record, mf) ||
+        !xAssignFeatureAttributesGoMarkup(record, mf) ||            
+        !xAssignFeatureAttributeExonNumber(record, mf)  ||
+        !xAssignFeatureAttributeEcNumbers(record, mf)  ||
+        !xAssignFeatureAttributePseudo(record, mf)  ||
+        !xAssignFeatureAttributeDbXref(record, fc, mf)  ||
+        !xAssignFeatureAttributeGene(record, fc, mf)  ||
+        !xAssignFeatureAttributeNote(record, mf)  ||
+        !xAssignFeatureAttributeModelEvidence(record, mf)  ||
+        !xAssignFeatureAttributeIsOrdered(record, mf)  ||
+        !xAssignFeatureAttributeRptFamily(record, mf) ||
+        !xAssignFeatureAttributeTranscriptId(record, mf)) {
         return false;
     }
-
-    //attributes common to all feature types:
-    if (!xAssignFeatureAttributesQualifiers(record, mf) ||
-            !xAssignFeatureAttributeProduct(record, mf) ||
-            !xAssignFeatureAttributeParent(record, fc, mf)  ||
-            !xAssignFeatureAttributePseudoGene(record, fc, mf) ||
-            !xAssignFeatureAttributePartial(record, mf) ||
-            !xAssignFeatureAttributeException(record, mf) ||
-            !xAssignFeatureAttributeExperiment(record, mf) ||
-            !xAssignFeatureAttributeFunction(record, mf) ||
-            !xAssignFeatureAttributesGoMarkup(record, mf) ||            
-            !xAssignFeatureAttributeExonNumber(record, mf)  ||
-            !xAssignFeatureAttributeEcNumbers(record, mf)  ||
-            !xAssignFeatureAttributePseudo(record, mf)  ||
-            !xAssignFeatureAttributeDbXref(record, fc, mf)  ||
-            !xAssignFeatureAttributeGene(record, fc, mf)  ||
-            !xAssignFeatureAttributeNote(record, mf)  ||
-            !xAssignFeatureAttributeModelEvidence(record, mf)  ||
-            !xAssignFeatureAttributeIsOrdered(record, mf)  ||
-            !xAssignFeatureAttributeRptFamily(record, mf) ||
-            !xAssignFeatureAttributeTranscriptId(record, mf)) {
-        return false;
-    }
-
     //attributes specific to certain feature types:
     switch(mf.GetData().GetSubtype()) {
-        default:
-            break;
+    default:
+        break;
 
-        case CSeqFeatData::eSubtype_gene:
-            if (!xAssignFeatureAttributeLocusTag(record, mf)  ||
-                    !xAssignFeatureAttributeGeneSynonym(record, mf)  ||
-                    !xAssignFeatureAttributeOldLocusTag(record, mf)  ||
-                    !xAssignFeatureAttributeGeneDesc(record, mf)  ||
-                    !xAssignFeatureAttributeGeneBiotype(record, fc, mf) ||
-                    !xAssignFeatureAttributeMapLoc(record, mf)) {
-                return false;
-            }
-            break;
+    case CSeqFeatData::eSubtype_gene:
+        if (!xAssignFeatureAttributeLocusTag(record, mf)  ||
+            !xAssignFeatureAttributeGeneSynonym(record, mf)  ||
+            !xAssignFeatureAttributeOldLocusTag(record, mf)  ||
+            !xAssignFeatureAttributeGeneDesc(record, mf)  ||
+            !xAssignFeatureAttributeGeneBiotype(record, fc, mf) ||
+            !xAssignFeatureAttributeMapLoc(record, mf)) {
+            return false;
+        }
+        break;
 
-        case CSeqFeatData::eSubtype_mRNA:
-            break;
+    case CSeqFeatData::eSubtype_mRNA:
+        break;
 
-        case CSeqFeatData::eSubtype_cdregion:
-            if (!xAssignFeatureAttributeProteinId(record, mf)  ||
-                    !xAssignFeatureAttributeTranslationTable(record, mf)  ||
-                    !xAssignFeatureAttributeCodeBreak(record, mf)) {
-                return false;
-            }
-            break;
+    case CSeqFeatData::eSubtype_cdregion:
+        if (!xAssignFeatureAttributeProteinId(record, mf)  ||
+            !xAssignFeatureAttributeTranslationTable(record, mf)  ||
+            !xAssignFeatureAttributeCodeBreak(record, mf)) {
+            return false;
+        }
+        break;
 
-        case CSeqFeatData::eSubtype_ncRNA:
-            //rw-234:
-            //if (!xAssignFeatureAttributeNcrnaClass(record, mf)) {
-            //    return false;
-            //}
-            break;
+    case CSeqFeatData::eSubtype_ncRNA:
+        //rw-234:
+        //if (!xAssignFeatureAttributeNcrnaClass(record, mf)) {
+        //    return false;
+        //}
+        break;
     }
 
     //  deriviate attributes --- depend on other attributes. Hence need to be
@@ -1814,7 +1805,22 @@ bool CGff3Writer::xAssignFeatureAttributes(
     if (!xAssignFeatureAttributeName(record, mf)) {
         return false;
     }
-    return true; 
+
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xAssignFeatureAttributesFormatSpecific(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+    //  ----------------------------------------------------------------------------
+{
+    if (!xAssignFeatureAttributeID(record, fc, mf)  ||
+            !xAssignFeatureAttributeParent(record, fc, mf)) {
+        return false;
+    }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -2711,8 +2717,16 @@ bool CGff3Writer::xAssignFeatureAttributeNcrnaClass(
     return true; 
 }
 
-
-
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xAssignFeatureAttributeID(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+    //  ----------------------------------------------------------------------------
+{
+    record.SetRecordId(m_idGenerator.GetGffId(mf, &fc.FeatTree()));
+    return true;
+}
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeParent(
@@ -2980,6 +2994,7 @@ bool CGff3Writer::xAssignSourceAttributes(
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
+    record.SetRecordId(m_idGenerator.GetGffId());
     return (xAssignSourceAttributeGbKey(record)  &&
         xAssignSourceAttributeMolType(record, bsh)  &&
         xAssignSourceAttributeIsCircular(record, bsh)  &&
@@ -3149,11 +3164,7 @@ bool CGff3Writer::xWriteFeatureGene(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGffFeatureRecord> pRecord( 
-        new CGffFeatureRecord(m_idGenerator.GetGffId(mf, &fc.FeatTree())));
-    if (pRecord->ID() == "gene-Dmel_CR32011") {
-        cerr << "";
-    }
+    CRef<CGffFeatureRecord> pRecord(new CGffFeatureRecord());
     if (!xAssignFeature(*pRecord, fc, mf)) {
         return false;
     }
@@ -3167,8 +3178,7 @@ bool CGff3Writer::xWriteFeatureCds(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGffFeatureRecord> pCds(
-        new CGffFeatureRecord(m_idGenerator.GetGffId(mf, &fc.FeatTree())));
+    CRef<CGffFeatureRecord> pCds(new CGffFeatureRecord());
     if (!xAssignFeature(*pCds, fc, mf)) {
         return false;
     }
@@ -3228,8 +3238,7 @@ bool CGff3Writer::xWriteFeatureRna(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGffFeatureRecord> pRna(
-        new CGffFeatureRecord(m_idGenerator.GetGffId(mf, &fc.FeatTree())));
+    CRef<CGffFeatureRecord> pRna(new CGffFeatureRecord());
     if (!xAssignFeature(*pRna, fc, mf)) {
         return false;
     }
@@ -3277,9 +3286,7 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    string id = m_idGenerator.GetGffId(mf, &fc.FeatTree());
-
-    CRef<CGffFeatureRecord> pSegment(new CGffFeatureRecord(id));
+    CRef<CGffFeatureRecord> pSegment(new CGffFeatureRecord());
 
     if (!xAssignFeature(*pSegment, fc, mf)) {
         return false;
@@ -3303,7 +3310,7 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
     }
     
     const CSeq_loc& PackedInt = pSegment->Location();
-
+    const auto parentId = pSegment->ID();
     if (PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
         list< CRef< CSeq_interval> >::const_iterator it;
@@ -3311,11 +3318,11 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
             const CSeq_interval& subint = **it;
             CRef<CGffFeatureRecord> pChild(
                 new CGffFeatureRecord(*pSegment));
-            pChild->SetRecordId(m_idGenerator.GetNextGffExonId(id));
+            pChild->SetRecordId(m_idGenerator.GetNextGffExonId(parentId));
             pChild->DropAttributes("Name");
             pChild->DropAttributes("start_range");
             pChild->DropAttributes("end_range");
-            pChild->SetAttribute("Parent", id);
+            pChild->SetAttribute("Parent", parentId);
             pChild->SetType("exon");
             pChild->SetLocation(subint);
             if (!xWriteRecord(*pChild)) {
@@ -3334,7 +3341,8 @@ bool CGff3Writer::xWriteFeatureGeneric(
 //  ----------------------------------------------------------------------------
 {
     CRef<CGffFeatureRecord> pParent(
-        new CGffFeatureRecord(m_idGenerator.GetGffId(mf, &fc.FeatTree())));
+        //new CGffFeatureRecord(m_idGenerator.GetGffId(mf, &fc.FeatTree())));
+        new CGffFeatureRecord());
     if (!xAssignFeature(*pParent, fc, mf)) {
         return false;
     }
