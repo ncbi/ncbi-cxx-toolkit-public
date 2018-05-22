@@ -1070,7 +1070,7 @@ static void CheckNucBioseqs(const CSeq_entry& entry, CSeqEntryInfo& info, CSeqEn
                                 break;
                             }
 
-                            // TODO aids
+                            common_info.m_acc_assigned.push_front(text_id->GetAccession());
                         }
                     }
                 }

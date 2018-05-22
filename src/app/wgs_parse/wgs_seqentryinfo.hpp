@@ -158,6 +158,8 @@ struct CSeqEntryCommonInfo
     bool m_nuc_warn;
     bool m_prot_warn;
 
+    list<string> m_acc_assigned;
+
     CSeqEntryCommonInfo() :
         m_nuc_warn(false),
         m_prot_warn(false)

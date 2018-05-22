@@ -67,6 +67,7 @@
 #include "wgs_tax.hpp"
 #include "wgs_seqentryinfo.hpp"
 #include "wgs_med.hpp"
+#include "wgs_text_accession.hpp"
 
 
 namespace wgsparse
@@ -1778,6 +1779,58 @@ static void ReplaceDatesInCitSub(list<CPubDescriptionInfo>& common_pubs, const C
     }
 }
 
+static bool CheckUniqueAccs(const list<string>& accs)
+{
+    if (accs.empty()) {
+        return true;
+    }
+
+    auto prev = accs.begin();
+    auto next = prev;
+
+    for (++next; next != accs.end(); ++next) {
+        if (*next == *prev) {
+            ERR_POST_EX(0, 0, Critical << "Found duplicated accession \"" << *prev << "\".");
+            return false;
+        }
+        ++prev;
+    }
+    return true;
+}
+
+static bool CheckAccLengths(const list<string>& accs)
+{
+    if (accs.empty()) {
+        return true;
+    }
+
+    auto prev = accs.begin();
+    auto next = prev;
+
+    CTextAccessionContainer prev_acc(*prev);
+
+    for (++next; next != accs.end(); ++next) {
+        if (next->size() != prev->size()) {
+
+            ERR_POST_EX(0, 0, Critical << "Contigs accessions have different lengths, hence different formats. The first pair is \"" << *prev << "\" and \"" << *next << "\".\n");
+            return false;
+        }
+
+        CTextAccessionContainer next_acc(*next);
+        if (next_acc.GetNumber() - prev_acc.GetNumber() != 1) {
+
+            ERR_POST_EX(0, 0, (GetParams().IsDblinkOverride() ? Warning : Critical) << "Contigs accessions are not contiguous. The first pair is \"" << *prev << "\" and \"" << *next << "\".\n");
+            if (!GetParams().IsDblinkOverride()) {
+                return false;
+            }
+        }
+
+        ++prev;
+        prev_acc.swap(next_acc);
+    }
+    return true;
+}
+
 bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 {
     const list<string>& files = GetParams().GetInputFiles();
@@ -2031,7 +2084,17 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
     master_info.m_reject = master_info.m_reject || DBLinkProblemReport(master_info);
 
     if (GetParams().IsAccessionAssigned()) {
-        // TODO
+        common_info.m_acc_assigned.sort();
+        if (!CheckUniqueAccs(common_info.m_acc_assigned)) {
+            master_info.m_reject = true;
+        }
+        else {
+            if (GetParams().GetUpdateMode() == eUpdateFull || GetParams().GetUpdateMode() == eUpdateNew || GetParams().GetUpdateMode() == eUpdateAssembly || GetParams().GetUpdateMode() == eUpdateExtraContigs) {
+                if (!CheckAccLengths(common_info.m_acc_assigned)) {
+                    master_info.m_reject = true;
+                }
+            }
+        }
     }
 
     if (IsDupIds(master_info.m_object_ids)) {
