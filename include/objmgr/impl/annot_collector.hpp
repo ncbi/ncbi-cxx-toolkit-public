@@ -478,6 +478,8 @@ private:
     bool x_MatchLocIndex(const SAnnotObject_Index& index) const;
 
     bool x_NoMoreObjects(void) const;
+    
+    bool x_FoundAllNamedAnnotAccessions(unique_ptr<SAnnotSelector>& local_sel);
 
     void x_AddPostMappings(void);
     void x_AddPostMappingsCvt(CSeq_loc_Conversion_Set& cvt);

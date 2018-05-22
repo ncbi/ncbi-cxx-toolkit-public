@@ -1818,6 +1818,36 @@ void CAnnot_Collector::x_StopSearchLimits(void)
 }
 
 
+bool CAnnot_Collector::x_FoundAllNamedAnnotAccessions(unique_ptr<SAnnotSelector>& local_sel)
+{
+    if ( !m_AnnotNames.get() ) {
+        return false;
+    }
+    set<string> found_accs;
+    for ( auto& n : *m_AnnotNames ) {
+        if ( !n.IsNamed() ) {
+            continue;
+        }
+        string acc;
+        ExtractZoomLevel(n.GetName(), &acc, 0);
+        if ( m_Selector->GetNamedAnnotAccessions().find(acc) !=
+             m_Selector->GetNamedAnnotAccessions().end() ) {
+            found_accs.insert(acc);
+        }
+    }
+    if ( !found_accs.empty() ) {
+        if ( !local_sel ) {
+            local_sel.reset(new SAnnotSelector(*m_Selector));
+            m_Selector = local_sel.get();
+        }
+        for ( auto& acc : found_accs ) {
+            local_sel->ExcludeNamedAnnotAccession(acc);
+        }
+    }
+    return !m_Selector->IsIncludedAnyNamedAnnotAccession();
+}
+
+
 static const bool kTraceFullCvt = false;
 
 void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
@@ -1859,9 +1889,17 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
         deeper =
             bh.GetFeatureFetchPolicy() != bh.eFeatureFetchPolicy_only_near;
     }
+    bool only_named_annot_accs = false;
+    unique_ptr<SAnnotSelector> local_sel;
     if ( deeper && adaptive_flags ) {
         m_CollectAnnotTypes &= m_UnseenAnnotTypes;
         deeper = m_CollectAnnotTypes.any();
+        if ( deeper && (adaptive_flags & SAnnotSelector::fAdaptive_ByNamedAcc)) {
+            only_named_annot_accs = selector.HasIncludedOnlyNamedAnnotAccessions();
+        }
+        if ( deeper && only_named_annot_accs && x_FoundAllNamedAnnotAccessions(local_sel) ) {
+            deeper = false;
+        }
     }
     if ( deeper ) {
         deeper = bh.GetSeqMap().HasSegmentOfType(CSeqMap::eSeqRef);
@@ -1888,6 +1926,9 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
             if ( deeper && adaptive_flags ) {
                 m_CollectAnnotTypes &= m_UnseenAnnotTypes;
                 deeper = m_CollectAnnotTypes.any();
+                if ( deeper && only_named_annot_accs && x_FoundAllNamedAnnotAccessions(local_sel) ) {
+                    deeper = false;
+                }
             }
         }
     }
@@ -2816,10 +2857,9 @@ bool CAnnot_Collector::x_SearchTSE2(const CTSE_Handle&    tseh,
         }
     }
     
-    if ( !m_Selector->m_IncludeAnnotsNames.empty() ) {
+    if ( m_Selector->HasExplicitAnnotsNames() ) {
         // only 'included' annots
-        ITERATE ( SAnnotSelector::TAnnotsNames, iter,
-                  m_Selector->m_IncludeAnnotsNames ) {
+        ITERATE ( SAnnotSelector::TAnnotsNames, iter, m_Selector->GetIncludedAnnotsNames() ) {
             if ( m_Selector->ExcludedAnnotName(*iter) ) {
                 // it may happen e.g. when another zoom level is selected
                 continue;
@@ -3553,13 +3593,7 @@ void CAnnot_Collector::x_SearchAll(const CSeq_entry_Info& entry_info)
 
 void CAnnot_Collector::x_SearchAll(const CSeq_annot_Info& annot_info)
 {
-    if ( !m_Selector->m_IncludeAnnotsNames.empty() ) {
-        // only included
-        if ( !m_Selector->IncludedAnnotName(annot_info.GetName()) ) {
-            return;
-        }
-    }
-    else if ( m_Selector->ExcludedAnnotName(annot_info.GetName()) ) {
+    if ( m_Selector->ExcludedAnnotName(annot_info.GetName()) ) {
         return;
     }
 
