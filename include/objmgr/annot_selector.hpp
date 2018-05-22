@@ -339,10 +339,12 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         fAdaptive_BySubtypes = 1<<2,
         fAdaptive_ByPolicy   = 1<<3,
         fAdaptive_BySeqClass = 1<<4,
+        fAdaptive_ByNamedAcc = 1<<5,
         kAdaptive_All        = (fAdaptive_ByTriggers | fAdaptive_BySubtypes |
-                                fAdaptive_ByPolicy | fAdaptive_BySeqClass),
+                                fAdaptive_ByPolicy | fAdaptive_BySeqClass |
+                                fAdaptive_ByNamedAcc),
         kAdaptive_DefaultBits= (fAdaptive_ByTriggers | fAdaptive_ByPolicy |
-                                fAdaptive_BySeqClass)
+                                fAdaptive_BySeqClass | fAdaptive_ByNamedAcc)
     };
     typedef Uint1 TAdaptiveDepthFlags;
     /// GetAdaptiveDepth() returns current value of 'adaptive depth' flag.
@@ -401,6 +403,12 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         {
             return m_AdaptiveDepthFlags;
         }
+
+    /// Get default set of adaptive depth flags
+    static TAdaptiveDepthFlags GetDefaultAdaptiveDepthFlags();
+
+    /// Set default set of adaptive depth flags
+    static void SetDefaultAdaptiveDepthFlags(TAdaptiveDepthFlags flags);
 
     /// SetAdaptiveTrigger() allows to change default set of adaptive trigger
     /// annotations.
@@ -651,8 +659,21 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         {
             return !m_IncludeAnnotsNames.empty();
         }
+    // There is a wildcard in some of included or excluded annot names,
+    // so direct string comparison is not enough
+    bool HasWildcardInAnnotsNames() const
+        {
+            return m_HasWildcardInAnnotsNames;
+        }
+    // Included annot names list is unambiguous and can be used for lookup
+    bool HasExplicitAnnotsNames() const
+        {
+            return !HasWildcardInAnnotsNames() && IsSetIncludedAnnotsNames();
+        }
     bool IncludedAnnotName(const CAnnotName& name) const;
     bool ExcludedAnnotName(const CAnnotName& name) const;
+    // check if only named annot accessions are included in annot names
+    bool HasIncludedOnlyNamedAnnotAccessions() const;
 
     /// Add named annot accession (NA*) in the search.
     SAnnotSelector& ResetNamedAnnotAccessions(void);
@@ -836,6 +857,7 @@ protected:
     bool                  m_CollectNames;
     bool                  m_CollectCostOfLoading;
     bool                  m_IgnoreStrand;
+    bool                  m_HasWildcardInAnnotsNames;
     TAdaptiveTriggers     m_AdaptiveTriggers;
     TTSE_Limits           m_ExcludedTSE;
     TAnnotTypesBitset     m_AnnotTypesBitset;

@@ -50,6 +50,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+static const size_t NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX_LEN = 2;
+
 ////////////////////////////////////////////////////////////////////
 //
 //  SAnnotSelector
@@ -79,6 +81,7 @@ SAnnotSelector::SAnnotSelector(TAnnotType annot,
       m_CollectNames(false),
       m_CollectCostOfLoading(false),
       m_IgnoreStrand(false),
+      m_HasWildcardInAnnotsNames(false),
       m_FilterMask(0),
       m_FilterBits(0)
 {
@@ -111,6 +114,7 @@ SAnnotSelector::SAnnotSelector(TFeatType feat,
       m_CollectNames(false),
       m_CollectCostOfLoading(false),
       m_IgnoreStrand(false),
+      m_HasWildcardInAnnotsNames(false),
       m_FilterMask(0),
       m_FilterBits(0)
 {
@@ -139,6 +143,7 @@ SAnnotSelector::SAnnotSelector(TFeatSubtype feat_subtype)
       m_CollectNames(false),
       m_CollectCostOfLoading(false),
       m_IgnoreStrand(false),
+      m_HasWildcardInAnnotsNames(false),
       m_FilterMask(0),
       m_FilterBits(0)
 {
@@ -184,6 +189,7 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
         m_CollectNames = sel.m_CollectNames;
         m_CollectCostOfLoading = sel.m_CollectCostOfLoading;
         m_IgnoreStrand = sel.m_IgnoreStrand;
+        m_HasWildcardInAnnotsNames = sel.m_HasWildcardInAnnotsNames;
         m_FilterMask = sel.m_FilterMask;
         m_FilterBits = sel.m_FilterBits;
         m_AdaptiveTriggers = sel.m_AdaptiveTriggers;
@@ -286,6 +292,19 @@ SAnnotSelector& SAnnotSelector::SetSearchExternal(const CBioseq_Handle& seq)
 
 
 namespace {
+    bool sx_HasWildcard(const CAnnotName& name, string* acc_ptr = 0)
+    {
+        if ( !name.IsNamed() ) {
+            return false;
+        }
+        const string& s = name.GetName();
+        if ( s.empty() || s.back() != '*' ) {
+            return false;
+        }
+        int zoom_level = 0;
+        return ExtractZoomLevel(s, acc_ptr, &zoom_level) && zoom_level == -1;
+    }
+    
     template<class TNames, class TName>
     inline bool sx_Has(const TNames& names, const TName& name)
     {
@@ -315,33 +334,100 @@ namespace {
 
 bool SAnnotSelector::IncludedAnnotName(const CAnnotName& name) const
 {
-    return sx_Has(m_IncludeAnnotsNames, name);
+    // check if there is a match to at least one name in 'included' list
+    string arg_acc;
+    int arg_level = 0;
+    if ( IsSetIncludedAnnotsNames() ) {
+        bool has_match = false;
+        string incl_acc;
+        for ( auto& n : m_IncludeAnnotsNames ) {
+            if ( name == n ) {
+                has_match = true;
+                break;
+            }
+            if ( name.IsNamed() && HasWildcardInAnnotsNames() && sx_HasWildcard(n, &incl_acc) ) {
+                // named annot may match by zoom_level wildcard
+                if ( arg_acc.empty() ) {
+                    ExtractZoomLevel(name.GetName(), &arg_acc, &arg_level);
+                }
+                if ( incl_acc == arg_acc ) {
+                    // same annot name -> matches wildcard
+                    has_match = true;
+                    break;
+                }
+            }
+        }
+        if ( !has_match ) {
+            // there is no match
+            return false;
+        }
+    }
+    
+    // check if NA zoom level matches
+    if ( name.IsNamed() && IsIncludedAnyNamedAnnotAccession() ) {
+        if ( arg_acc.empty() ) {
+            ExtractZoomLevel(name.GetName(), &arg_acc, &arg_level);
+        }
+
+        TNamedAnnotAccessions::const_iterator it = m_NamedAnnotAccessions->find(arg_acc);
+        if ( it != m_NamedAnnotAccessions->end() ) {
+            // annot accession is requested
+            int incl_level = it->second;
+            if ( incl_level != -1 && arg_level != incl_level ) {
+                // but with another zoom level
+                return false;
+            }
+        }
+    }
+
+    // check if there is no match to 'excluded' list
+    if ( true ) {
+        string incl_acc;
+        for ( auto& n : m_ExcludeAnnotsNames ) {
+            if ( name == n ) {
+                // explicitly excluded
+                return false;
+            }
+            if ( name.IsNamed() && HasWildcardInAnnotsNames() && sx_HasWildcard(n, &incl_acc) ) {
+                // named annot may match by zoom_level wildcard
+                if ( arg_acc.empty() ) {
+                    ExtractZoomLevel(name.GetName(), &arg_acc, &arg_level);
+                }
+                if ( incl_acc == arg_acc ) {
+                    // same annot name -> matches wildcard -> excluded
+                    return false;
+                }
+            }
+        }
+    }
+    
+    return true;
 }
 
 
 bool SAnnotSelector::ExcludedAnnotName(const CAnnotName& name) const
 {
-    if ( IsIncludedAnyNamedAnnotAccession() && name.IsNamed() ) {
+    return !IncludedAnnotName(name);
+}
+
+
+bool SAnnotSelector::HasIncludedOnlyNamedAnnotAccessions() const
+{
+    if ( !IsSetIncludedAnnotsNames() || !IsIncludedAnyNamedAnnotAccession() ) {
+        return false;
+    }
+    for ( auto& n : m_IncludeAnnotsNames ) {
+        if ( !n.IsNamed() ) {
+            return false;
+        }
         string acc;
-        int zoom_level;
-        ExtractZoomLevel(name.GetName(), &acc, &zoom_level);
-
-        int incl_level;
-        TNamedAnnotAccessions::const_iterator it =
-            m_NamedAnnotAccessions->find(acc);
-        if ( it != m_NamedAnnotAccessions->end() ) {
-            incl_level = it->second;
-        }
-        else {
-            incl_level = 0; // ? do we include non-listed annot accessions?
-        }
-
-        if ( incl_level != -1 && zoom_level != incl_level ) {
-            // excluded
-            return true;
+        ExtractZoomLevel(n.GetName(), &acc, 0);
+        if ( m_NamedAnnotAccessions->find(acc) == m_NamedAnnotAccessions->end() ) {
+            // annot name that's not a named annot accession
+            return false;
         }
     }
-    return sx_Has(m_ExcludeAnnotsNames, name);
+    return true;
 }
 
 
@@ -349,6 +435,7 @@ SAnnotSelector& SAnnotSelector::ResetAnnotsNames(void)
 {
     m_IncludeAnnotsNames.clear();
     m_ExcludeAnnotsNames.clear();
+    m_HasWildcardInAnnotsNames = false;
     return *this;
 }
 
@@ -382,6 +469,9 @@ SAnnotSelector& SAnnotSelector::ResetUnnamedAnnots(void)
 
 SAnnotSelector& SAnnotSelector::AddNamedAnnots(const CAnnotName& name)
 {
+    if ( !HasWildcardInAnnotsNames() && sx_HasWildcard(name) ) {
+        m_HasWildcardInAnnotsNames = true;
+    }
     sx_Add(m_IncludeAnnotsNames, name);
     sx_Del(m_ExcludeAnnotsNames, name);
     return *this;
@@ -402,6 +492,9 @@ SAnnotSelector& SAnnotSelector::AddUnnamedAnnots(void)
 
 SAnnotSelector& SAnnotSelector::ExcludeNamedAnnots(const CAnnotName& name)
 {
+    if ( !HasWildcardInAnnotsNames() && sx_HasWildcard(name) ) {
+        m_HasWildcardInAnnotsNames = true;
+    }
     sx_Add(m_ExcludeAnnotsNames, name);
     sx_Del(m_IncludeAnnotsNames, name);
     return *this;
@@ -529,11 +622,39 @@ SAnnotSelector& SAnnotSelector::SetAdaptiveDepth(bool value)
 }
 
 
+NCBI_PARAM_DECL(bool, OBJMGR, ADAPTIVE_BY_NAMED_ACCESSION);
+NCBI_PARAM_DEF(bool, OBJMGR, ADAPTIVE_BY_NAMED_ACCESSION, true);
+
+
+static
+SAnnotSelector::TAdaptiveDepthFlags s_DefaultAdaptiveDepthFlags = SAnnotSelector::kAdaptive_Default;
+
+
+SAnnotSelector::TAdaptiveDepthFlags SAnnotSelector::GetDefaultAdaptiveDepthFlags()
+{
+    TAdaptiveDepthFlags flags = s_DefaultAdaptiveDepthFlags;
+    if ( flags & fAdaptive_Default ) {
+        flags = kAdaptive_DefaultBits;
+        if ( !NCBI_PARAM_TYPE(OBJMGR, ADAPTIVE_BY_NAMED_ACCESSION)::GetDefault() ) {
+            flags &= ~fAdaptive_ByNamedAcc;
+        }
+        s_DefaultAdaptiveDepthFlags = flags;
+    }
+    return flags;
+}
+
+
+void SAnnotSelector::SetDefaultAdaptiveDepthFlags(TAdaptiveDepthFlags flags)
+{
+    s_DefaultAdaptiveDepthFlags = flags;
+}
+
+
 SAnnotSelector&
 SAnnotSelector::SetAdaptiveDepthFlags(TAdaptiveDepthFlags flags)
 {
     m_AdaptiveDepthFlags =
-        flags & fAdaptive_Default? kAdaptive_DefaultBits: flags;
+        flags & fAdaptive_Default? GetDefaultAdaptiveDepthFlags(): flags;
     return *this;
 }
 
@@ -843,7 +964,8 @@ bool ExtractZoomLevel(const string& full_name,
         if ( acc_ptr ) {
             *acc_ptr = full_name.substr(0, pos);
         }
-        SIZE_TYPE num_pos = pos+strlen(NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX);
+        SIZE_TYPE num_pos = pos + NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX_LEN;
+        // assuming single asterisk "*" as wildcard for all zoom levels
         if ( num_pos+1 == full_name.size() && full_name[num_pos] == '*' ) {
             if ( zoom_level_ptr ) {
                 *zoom_level_ptr = -1;
