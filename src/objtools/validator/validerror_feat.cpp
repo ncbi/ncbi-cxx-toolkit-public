@@ -4077,15 +4077,18 @@ void CValidError_feat::x_FeatLocHasBadStrandBoth(const CSeq_feat& feat, bool& bo
 }
 
 
-bool HasGeneIdXref(const CMappedFeat& sf, const CObject_id& tag)
+bool HasGeneIdXref(const CMappedFeat& sf, const CObject_id& tag, bool& has_parent_gene_id)
 {
+    has_parent_gene_id = false;
     if (!sf.IsSetDbxref()) {
         return false;
     }
     ITERATE(CSeq_feat::TDbxref, it, sf.GetDbxref()) {
-        if ((*it)->IsSetDb() && NStr::EqualNocase((*it)->GetDb(), "GeneID") &&
-            (*it)->IsSetTag() && (*it)->GetTag().Equals(tag)) {
-            return true;
+        if ((*it)->IsSetDb() && NStr::EqualNocase((*it)->GetDb(), "GeneID")) {
+            has_parent_gene_id = true;
+            if ((*it)->IsSetTag() && (*it)->GetTag().Equals(tag)) {
+                return true;
+            }
         }
     }
     return false;
@@ -5891,9 +5894,13 @@ void CSingleFeatValidator::x_ValidateGeneId()
             if (feat_tree) {
                 CMappedFeat parent = feat_tree->GetParent(mf);
                 while (parent) {
-                    if (!HasGeneIdXref(parent, (*it)->GetTag())) {
-                        PostErr(eDiag_Error, eErr_SEQ_FEAT_GeneIdMismatch,
-                            "GeneID mismatch");
+                    bool has_parent_gene_id = false;
+                    if (!HasGeneIdXref(parent, (*it)->GetTag(), has_parent_gene_id)) {
+                        if (has_parent_gene_id || 
+                            parent.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene) {
+                            PostErr(eDiag_Error, eErr_SEQ_FEAT_GeneIdMismatch,
+                                "GeneID mismatch");
+                        }
                     }
                     parent = feat_tree->GetParent(parent);
                 }
