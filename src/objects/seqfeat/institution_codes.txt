@@ -3841,10 +3841,10 @@ MCNPV	s	Fundacao Zoobotanica do Rio Grande do Sul	MCN
 MCNS	s	Universidad Nacional de Salta, Facultad de Ciencias Naturales		
 MCNV	s	Museo Civico di Storia Naturale, Venice		
 MCNZ	s	Porto Alegre, Museu de Ciencias Naturais da Fundacao Zoo-Botanica do Rio Grande do Sul		
-MCP<BRA>	s	Pontificia Universidade Catolica do Rio Grande do Sul		
+MCP<BRA>	s	Museu de Ciencias e Tecnologia, Pontificia Universidade Catolica do Rio Grande do Sul	MCPPV 
 MCP<USA-MA>	s	Massachusetts College of Pharmacy and Allied Health Sciences, Biological Sciences Department		
 MCPM	s	Milwaukee City Public Museum		
-MCPPV	s	Museu de Ciencias e Tecnologia	MCP
+MCPPV	s	Museu de Ciencias e Tecnologia	MCP<BRA>
 MCPUCRGS	s	Museu de Ciencias da Pontificia Universidade Catolica do Rio Grande do Sul		
 MCR	s	Manchester Literary and Philosophical Society		
 MCRA	s	Sezione Archeologia, Storia e Scienze Naturali		
