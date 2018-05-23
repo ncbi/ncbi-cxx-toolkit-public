@@ -114,7 +114,8 @@ public:
     bool CanGetLocation() const { return 0 != m_pLoc; };
     const CSeq_loc& GetLocation() const {
         return *m_pLoc; };
-    string ID() const;
+    string Id() const;
+    string Parent() const;
 
 
 protected:

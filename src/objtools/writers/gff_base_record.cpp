@@ -101,14 +101,6 @@ bool CGffBaseRecord::AddAttribute(
     if (value.empty()) {
         return false; //don't accept blank values 
     }
-    if (key == "ID") {
-        mRecordId = value;
-        return true;
-    }
-    if (key == "Parent") {
-        mParent = value;
-        return true;
-    }
     TAttrIt it = mAttributes.find(key);
     if (it == mAttributes.end()) {
         mAttributes[key] = vector<string>();
@@ -129,14 +121,6 @@ bool CGffBaseRecord::SetAttribute(
     if (value.empty()) {
         return false; //don't accept blank values 
     }
-    if (key == "ID") {
-        mRecordId = value;
-        return true;
-    }
-    if (key == "Parent") {
-        mParent = value;
-        return true;
-    }
     DropAttributes(key);
     return AddAttribute(key, value);
 }
@@ -147,16 +131,6 @@ bool CGffBaseRecord::GetAttributes(
     vector<string>& value ) const
 //  ----------------------------------------------------------------------------
 {
-    if (key == "ID") {
-        value.clear();
-        value.push_back(mRecordId);
-        return true;
-    }
-    if (key == "Parent") {
-        value.clear();
-        value.push_back(mParent);
-        return true;
-    }
     TAttrCit it = mAttributes.find(key);
     if (it == mAttributes.end()  ||  it->second.empty()) {
         return false;
@@ -171,12 +145,6 @@ bool CGffBaseRecord::AddAttributes(
     const vector<string>& values)
 //  ----------------------------------------------------------------------------
 {
-    if (key == "ID") {
-        return false;
-    }
-    if (key == "Parent") {
-        return false;
-    }
     if (values.empty()) {
         return true; //nothing to do 
     }
@@ -216,12 +184,6 @@ bool CGffBaseRecord::SetAttributes(
     const vector<string>& values)
 //  ----------------------------------------------------------------------------
 {
-    if (key == "ID") {
-        return false;
-    }
-    if (key == "Parent") {
-        return false;
-    }
     mAttributes[key] = vector<string>(values.begin(), values.end());
     return true;
 }
@@ -400,12 +362,18 @@ string CGffBaseRecord::StrPhase() const
     return mPhase;
 }
 
-
 //  ----------------------------------------------------------------------------
-string CGffBaseRecord::ID() const
+string CGffBaseRecord::Id() const
 //  ----------------------------------------------------------------------------
 {
     return this->mRecordId;
+}
+
+//  ----------------------------------------------------------------------------
+string CGffBaseRecord::Parent() const
+//  ----------------------------------------------------------------------------
+{
+    return this->mParent;
 }
 
 //  ----------------------------------------------------------------------------

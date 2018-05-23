@@ -1508,7 +1508,7 @@ bool CGff3Writer::xWriteFeatureTrna(
             return false;
         }
     }
-    const auto rnaId = pRna->ID();
+    const auto rnaId = pRna->Id();
 	const CSeq_loc& PackedInt = pRna->Location();
 
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
@@ -2811,16 +2811,23 @@ bool CGff3Writer::xAssignFeatureAttributesQualifiers(
             continue;
         }
         string key = qual->GetQual();
+        const string& value = qual->GetVal();
         if (key == "SO_type") { // RW-469
             continue;
         }
-
+        if (key == "ID") {
+            record.SetRecordId(value);
+            continue;
+        }
+        if (key == "Parent") {
+            record.SetParent(value);
+            continue;
+        }
         if (isupper(key.front()) && 
             gff3_attributes.find(key) == gff3_attributes.end()) {
             NStr::ToLower(key);
         }
 
-        const string& value = qual->GetVal();
         //CSeqFeatData::EQualifier equal = CSeqFeatData::GetQualifierType(key);
         //for now, retain all random junk:
         //if (!CSeqFeatData::IsLegalQualifier(subtype, equal)) {
@@ -3206,7 +3213,7 @@ bool CGff3Writer::xWriteFeatureCds(
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         list< CRef< CSeq_interval > > sublocs( PackedInt.GetPacked_int().Get() );
         list< CRef< CSeq_interval > >::const_iterator it;
-        string cdsId = pCds->ID();
+        string cdsId = pCds->Id();
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGffFeatureRecord> pExon(
@@ -3257,7 +3264,7 @@ bool CGff3Writer::xWriteFeatureRna(
     const CSeq_loc& PackedInt = pRna->Location();
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
-        auto parentId = pRna->ID();
+        auto parentId = pRna->Id();
         list< CRef< CSeq_interval > >::const_iterator it;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
@@ -3268,7 +3275,7 @@ bool CGff3Writer::xWriteFeatureRna(
             pChild->DropAttributes("start_range");
             pChild->DropAttributes("end_range");
             pChild->DropAttributes("model_evidence");
-            pChild->SetAttribute("Parent", parentId);
+            pChild->SetParent(parentId);
             pChild->SetType("exon");
             pChild->SetLocation(subint);
             if (!xWriteRecord(*pChild)) {
@@ -3310,7 +3317,7 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
     }
     
     const CSeq_loc& PackedInt = pSegment->Location();
-    const auto parentId = pSegment->ID();
+    const auto parentId = pSegment->Id();
     if (PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
         list< CRef< CSeq_interval> >::const_iterator it;
@@ -3322,7 +3329,7 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
             pChild->DropAttributes("Name");
             pChild->DropAttributes("start_range");
             pChild->DropAttributes("end_range");
-            pChild->SetAttribute("Parent", parentId);
+            pChild->SetParent(parentId);
             pChild->SetType("exon");
             pChild->SetLocation(subint);
             if (!xWriteRecord(*pChild)) {
@@ -3415,11 +3422,7 @@ bool CGff3Writer::xAssignFeatureAttributeParentGene(
     if (it == m_GeneMapNew.end()) {
         return false;
     }
-    vector<string> parentId;
-    if (!it->second->GetAttributes("ID", parentId)) {
-        return false;
-    }
-    record.SetParent(parentId.front());
+    record.SetParent(it->second->Id());
     return true;
 }
 
@@ -3444,11 +3447,7 @@ bool CGff3Writer::xAssignFeatureAttributeParentMrna(
     if (it == m_MrnaMapNew.end()) {
         return false;
     }
-    vector<string> parentId;
-    if (!it->second->GetAttributes("ID", parentId)) {
-        return false;
-    }
-    record.SetParent(parentId.front());
+    record.SetParent(it->second->Id());
     return true;
 }
 
@@ -3470,11 +3469,7 @@ bool CGff3Writer::xAssignFeatureAttributeParentpreRNA(
     if (it == m_PrernaMapNew.end()) {
         return false;
     }
-    vector<string> parentId;
-    if (!it->second->GetAttributes("ID", parentId)) {
-        return false;
-    }
-    record.SetParent(parentId.front());
+    record.SetParent(it->second->Id());
     return true;
 }
 
@@ -3501,11 +3496,7 @@ bool CGff3Writer::xAssignFeatureAttributeParentVDJsegmentCregion(
         if (parent) {
             auto it = m_VDJsegmentCregionMapNew.find(parent);
             if (it != m_VDJsegmentCregionMapNew.end()) {
-                vector<string> parentId;
-                if (!it->second->GetAttributes("ID", parentId)) {
-                    return false;
-                }
-                record.SetParent(parentId.front());
+                record.SetParent(it->second->Id());
                 return true; 
             }
         }
