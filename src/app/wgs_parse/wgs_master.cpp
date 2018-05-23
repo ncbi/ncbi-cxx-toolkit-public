@@ -1831,6 +1831,74 @@ static bool CheckAccLengths(const list<string>& accs)
     return true;
 }
 
+static bool GetScaffoldAccessionPrefix(const CSeq_entry& entry, string& prefix)
+{
+    if (entry.IsSeq() && entry.GetSeq().IsNa() && entry.GetSeq().IsSetId()) {
+        for (auto id : entry.GetSeq().GetId()) {
+
+            if (HasTextAccession(*id)) {
+                CTextAccessionContainer text_acc(id->GetTextseq_Id()->GetAccession());
+                if (text_acc.IsValid()) {
+                    prefix = text_acc.GetPrefix();
+                    return true;
+                }
+            }
+        }
+    }
+
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.GetSet().GetSeq_set()) {
+            if (GetScaffoldAccessionPrefix(*cur_entry, prefix)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+static bool IsScaffoldAccessionPrefixValid(const string& prefix)
+{
+    if (prefix.empty()) {
+
+        ERR_POST_EX(0, 0, Critical << "Scaffold submission is missing accession prefix.");
+        return false;
+    }
+
+    static const map<EScaffoldType, list<string>> POSSIBLE_PREFICIES = {
+        { eRegularGenomic, { "CH", "DS", "EM", "EN", "EP", "EQ", "FA", "GG", "GL", "JH", "KB", "KD", "KE", "KI", "KK", "KL", "KN", "KQ", "KV", "KZ" } },
+        { eRegularChromosomal, { "CM" } },
+        { eGenColGenomic, { "CH", "DS", "EM", "EN", "EP", "EQ", "FA", "GG", "GL", "JH", "KB", "KD", "KE", "KI", "KK", "KL", "KN", "KQ", "KV", "KZ" } },
+        { eTPAGenomic, { "GJ" } },
+        { eTPAChromosomal, { "GK" } }
+    };
+
+    static const map<EScaffoldType, string> SCAFFOLD_TYPE_NAMES = {
+        { eRegularGenomic, "regular" },
+        { eRegularChromosomal, "chromosomal" },
+        { eGenColGenomic, "regular GenCol" },
+        { eTPAGenomic, "regular TPA" },
+        { eTPAChromosomal, "chromosomal TPA" }
+    };
+
+    auto cur_preficies = POSSIBLE_PREFICIES.find(GetParams().GetScaffoldType());
+    string scaffold_type_str("unknown");
+
+    bool valid = false;
+    if (cur_preficies != POSSIBLE_PREFICIES.end()) {
+
+        scaffold_type_str = SCAFFOLD_TYPE_NAMES.at(GetParams().GetScaffoldType());
+        valid = find(cur_preficies->second.begin(), cur_preficies->second.end(), prefix) != cur_preficies->second.end();
+    }
+
+    if (!valid) {
+        ERR_POST_EX(0, 0, Critical << "Accession prefix \"" << prefix << "\" provided in input submissions do not match the type of scaffolds: \"" << scaffold_type_str << "\". Rejecting the whole set.");
+    }
+
+    return valid;
+}
+
 bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 {
     const list<string>& files = GetParams().GetInputFiles();
@@ -1948,7 +2016,14 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
             for (auto entry : seq_submit->GetData().GetEntrys()) {
 
                 if (NeedToGetAccessionPrefix()) {
-                    // TODO: should eventually call SetScaffoldPrefix
+
+                    string prefix;
+                    GetScaffoldAccessionPrefix(*entry, prefix);
+                    if (GetParams().GetSource() == eNCBI && !IsScaffoldAccessionPrefixValid(prefix)) {
+                        master_info.m_reject = true;
+                    }
+
+                    SetScaffoldPrefix(prefix);
                 }
 
                 if (GetParams().GetSource() == eNCBI) {
