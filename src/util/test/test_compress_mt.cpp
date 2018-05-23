@@ -162,7 +162,7 @@ bool CTest::Thread_Run(int idx)
         src_buf[i]   = (char)(65+(double)rand()/RAND_MAX*(90-65));
         // Make data more predictable for better compression,
         // especially for LZO, that is bad on a random data.
-        src_buf[i+1] = src_buf[i] + 1;
+        src_buf[i+1] = (char)(src_buf[i] + 1);
     }
     // Modify first bytes to fixed value, this possible will prevent decoders
     // to treat random text data as compressed data.

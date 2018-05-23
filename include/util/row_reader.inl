@@ -573,7 +573,7 @@ public:
             if (m_FieldsInfo[index].m_TypeInit == eTraitInitialized)
                 m_FieldsInfo[index].m_TypeInit = eNotInitialized;
             if (m_FieldsInfo[index].m_NameInit == eTraitInitialized) {
-                if (x_UpdateNameRef(index) == 1)
+                if (x_UpdateNameRef((TFieldNo)index) == 1)
                     m_FieldNamesIndex.erase(*m_FieldsInfo[index].m_FieldName);
                 m_FieldsInfo[index].m_NameInit = eNotInitialized;
                 m_FieldsInfo[index].m_FieldName = nullptr;
@@ -665,7 +665,7 @@ public:
     }
 
 private:
-    size_t  x_UpdateNameRef(TFieldNo  field)
+    size_t x_UpdateNameRef(TFieldNo  field)
     {
         const string* name_ptr = m_FieldsInfo[field].m_FieldName;
         size_t        use_count = 0;

@@ -186,7 +186,7 @@ int CTest::Run(void)
     // usually custom size is large enough to fit all data even due
     // a bad compression ratio.
     const size_t kDataLen   = custom_size ? custom_size : kRegDataLen;
-    const size_t kBufLen    = custom_size ? size_t(custom_size * 1.2) : kRegBufLen;
+    const size_t kBufLen    = custom_size ? size_t((double)custom_size * 1.2) : kRegBufLen;
     const size_t kTestCount = custom_size ? 1 : sizeof(kRegTests)/sizeof(kRegTests[0]);
     const auto&  kTests     = custom_size ? kCustomTests : kRegTests;
    
@@ -202,7 +202,7 @@ int CTest::Run(void)
         src_buf[i]   = (char)(65+(double)rand()/RAND_MAX*(90-65));
         // Make data more predictable for better compression,
         // especially for LZO, that is bad on a random data.
-        src_buf[i+1] = src_buf[i] + 1;
+        src_buf[i+1] = (char)(src_buf[i] + 1);
     }
 #else
     for (size_t i = 0; i < kDataLen; i++) {

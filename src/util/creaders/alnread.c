@@ -1585,7 +1585,7 @@ static TLineInfoPtr s_BuildTokenList (TLineInfoPtr line_list)
     char *       tmp;
     char *       piece;
     char *       last;
-    int          line_pos;
+    size_t       line_pos;
 
     first_token = NULL;
 
@@ -1600,7 +1600,7 @@ static TLineInfoPtr s_BuildTokenList (TLineInfoPtr line_list)
                                              line_pos);
                 piece = s_TokenizeString (NULL, " \t\r", &last);
             }
-            free (tmp);
+            free(tmp);
         }
     }
     return first_token;
@@ -1615,7 +1615,7 @@ static TLineInfoPtr s_BuildTokenList (TLineInfoPtr line_list)
 static char * s_LineInfoMergeAndStripSpaces (TLineInfoPtr list)
 {
     TLineInfoPtr lip;
-    int          len;
+    size_t       len;
     char *       result;
     char *       cp_to;
     char *       cp_from;
@@ -1626,10 +1626,10 @@ static char * s_LineInfoMergeAndStripSpaces (TLineInfoPtr list)
     len = 0;
     for (lip = list;  lip != NULL;  lip = lip->next) {
         if (lip->data != NULL) {
-            len += strlen (lip->data);
+            len += strlen(lip->data);
         }
     }
-    result = (char *) malloc (len + 1);
+    result = (char *) malloc(len + 1);
     if (result == NULL) {
         return result;
     }
@@ -1638,7 +1638,7 @@ static char * s_LineInfoMergeAndStripSpaces (TLineInfoPtr list)
         if (lip->data != NULL) {
             cp_from = lip->data;
             while (*cp_from != 0) {
-                if (! isspace ((unsigned char)*cp_from)) {
+                if (! isspace((unsigned char)*cp_from)) {
                     *cp_to = *cp_from;
                     cp_to ++;
                 }
@@ -2164,7 +2164,7 @@ s_GetOneNexusSizeComment
     char   buf[kMaxPrintedIntLenPlusOne];
     char * cpstart;
     char * cpend;
-    int    maxlen;
+    size_t maxlen;
 
     if (str == NULL  ||  valname == NULL  ||  val == NULL) {
         return eFalse;
@@ -2197,7 +2197,7 @@ s_GetOneNexusSizeComment
     if (maxlen > kMaxPrintedIntLen) 
         maxlen = kMaxPrintedIntLen;
 
-    strncpy (buf, cpstart, maxlen);
+    strncpy(buf, cpstart, maxlen);
     buf [maxlen] = 0;
     *val = atoi (buf);
     return eTrue;
@@ -3635,7 +3635,7 @@ s_ReadAlignFileRaw
     SLengthListPtr           pattern_list = NULL;
     SLengthListPtr           this_pattern, last_pattern = NULL;
     char *                   cp;
-    int                      len;
+    size_t                   len;
     TIntLinkPtr              new_offset;
     EBool                    in_bracketed_comment = eFalse;
     TBracketedCommentListPtr comment_list = NULL, last_comment = NULL;
@@ -5080,7 +5080,8 @@ s_CountCharactersBetweenOffsets
  int          distance,
  int          desired_num_chars)
 {
-    int          line_diff, num_chars, total_chars, pattern_length, num_starts;
+    int          line_diff;
+    size_t       num_chars, total_chars, pattern_length, num_starts;
     TLineInfoPtr lip;
     TIntLinkPtr  length_list, start_list, start_ptr, length;
     int          start_of_unknown;
@@ -5104,12 +5105,12 @@ s_CountCharactersBetweenOffsets
     }
     while (lip != NULL && line_diff < distance  &&  s_IsBlank (lip->data)) {
         lip = lip->next;
-        line_diff ++;
+        line_diff++;
     }
     /* skip over line we would need for ID */
     if (lip != NULL) {
         lip = lip->next;
-        line_diff ++;
+        line_diff++;
     }
   
     if (lip == NULL  ||  line_diff == distance) {

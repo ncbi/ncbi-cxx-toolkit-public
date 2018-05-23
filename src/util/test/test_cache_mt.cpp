@@ -106,7 +106,7 @@ bool s_TestCache(TCache&                    cache,
                  typename TCache::TSizeType cache_size)
 {
     typedef typename TCache::TSizeType TSize;
-    for (Uint8 i = 1; i < 2*cache_size; i++) {
+    for (Uint8 i = 1; i < 2*(Uint8)cache_size; i++) {
         if ( !cache.Get(i) ) {
             TElement elt(new CElement(size_t(data_size)));
             cache.Add(i, elt, TSize(i%5));
@@ -124,7 +124,7 @@ bool s_TestCache(TCache&                    cache,
             cache.Add(i, elt);
         }
     }
-    for (Uint8 i = 0; i < 3*cache_size; i++) {
+    for (Uint8 i = 0; i < 3*(Uint8)cache_size; i++) {
         cache.Get(i);
     }
     cache.SetCapacity(cache_size);

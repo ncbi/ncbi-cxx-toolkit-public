@@ -90,14 +90,14 @@ protected:
     struct CRegXChar : public CRegX  // /a/
     {
         CRegXChar(char c, bool neg = false) : m_Neg(neg) { m_Set.insert(c); }
-        CRegXChar(const set<char>& t, bool neg = false) : m_Neg(neg), m_Set(t) {}
-        void Set(const set<char>& t) { m_Set = t; }
+        CRegXChar(const set<unsigned char>& t, bool neg = false) : m_Neg(neg), m_Set(t) {}
+        void Set(const set<unsigned char>& t) { m_Set = t; }
         void SetCaseInsensitive();
         bool IsCaseInsensitive() const;
         void Print(ostream& out, size_t off) const;
         void Render(CRegExFSA& fsa, size_t from, size_t to) const;
         bool m_Neg;
-        set<char> m_Set;
+        set<unsigned char> m_Set;
     };
 
     struct CRegXTerm : public CRegX  // /a?/ /a+/ /a*/ /a{1,2}/
@@ -177,13 +177,13 @@ protected:
     unique_ptr<CRegX> x_ParseAtom();
     unique_ptr<CRegX> x_ParsePlain();
     bool x_ParseRepeat(int& from, int& to, bool& lazy);
-    void x_ParseSquare(set<char>& t);
-    char x_ParseEscape();
-    int x_ParseHex(int len = 0);
-    int x_ParseDec(int len = 0);
+    void x_ParseSquare(set<unsigned char>& t);
+    unsigned char x_ParseEscape();
+    int x_ParseHex(size_t len = 0);
+    int x_ParseDec(size_t len = 0);
     void x_ThrowUnexpectedCharacter();
     void x_ThrowUnexpectedEndOfLine();
-    void x_ThrowError(const string msg, int pos, int len);
+    void x_ThrowError(const string msg, size_t pos, size_t len);
     void x_Consume(char c);
 
     string m_Str;
@@ -201,7 +201,7 @@ class CRegExFSA
 {
     struct CRegExState
     {
-        unsigned char m_Type;
+        int m_Type;
         array<size_t, 256> m_Trans;
         set<size_t> m_Short;
         set<size_t> m_Emit;

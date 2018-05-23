@@ -140,7 +140,7 @@ static void s_PngWriteInit(png_structp& png_ptr,
         color_type = PNG_COLOR_TYPE_RGBA;
     }
     png_set_IHDR(png_ptr, info_ptr,
-                 width, height, 8, color_type,
+                 (png_uint_32)width, (png_uint_32)height, 8, color_type,
                  PNG_INTERLACE_NONE,
                  PNG_COMPRESSION_TYPE_BASE,
                  PNG_FILTER_TYPE_BASE);

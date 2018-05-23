@@ -1120,7 +1120,7 @@ CRR_Row<TTraits>::GetFieldsMetaInfo(TFieldNo from, TFieldNo to)
         if (field_info.IsInitialized()) {
             SFieldMetaInfo  info;
 
-            info.field_no = index;
+            info.field_no = (TFieldNo)index;
             info.is_name_initialized =
                 field_info.m_NameInit != CRR_MetaInfo<TTraits>::eNotInitialized;
             if (info.is_name_initialized)

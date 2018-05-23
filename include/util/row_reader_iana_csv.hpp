@@ -212,22 +212,19 @@ public:
 
         for (const auto& info : m_FieldsToValidate) {
             if (info.first < m_Tokens.size()) {
-                string                  translated;
-                ERR_TranslationResult   translation_result =
-                    this->Translate(info.first, m_ValidationTokens[info.first],
-                                    translated);
+                string translated;
+                ERR_TranslationResult translation_result =
+                    this->Translate((TFieldNo)info.first, m_ValidationTokens[info.first], translated);
                 if (translation_result == eRR_UseOriginal) {
                     CRR_Util::ValidateBasicTypeFieldValue(
                         m_ValidationTokens[info.first],
                         info.second.first, info.second.second);
                 } else {
                     CRR_Util::ValidateBasicTypeFieldValue(
-                        translated,
-                        info.second.first, info.second.second);
+                        translated, info.second.first, info.second.second);
                 }
             }
         }
-
         return eRR_Skip;
     }
 

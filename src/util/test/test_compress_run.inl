@@ -644,7 +644,7 @@
             
             if ( m_AllowStrstream ) {
                 stm.reset(new CNcbiStrstream(
-                              NCBI_STRSTREAM_INIT(dst_buf, (streamsize)buf_len), 
+                              NCBI_STRSTREAM_INIT(dst_buf, buf_len), 
                               ios::in | ios::out | ios::binary));
             } else {
                 fs = new CNcbiFstream(kFileName, ios::trunc | ios::in | ios::out | ios::binary);
@@ -714,7 +714,7 @@
                 int n = kCount[k];
 
                 INIT_BUFFERS;
-                CNcbiStrstream stm(NCBI_STRSTREAM_INIT(dst_buf, (streamsize)buf_len));
+                CNcbiStrstream stm(NCBI_STRSTREAM_INIT(dst_buf, buf_len));
                 CCompressionIOStream zip(stm,
                                          new TStreamDecompressor(),
                                          new TStreamCompressor(),

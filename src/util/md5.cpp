@@ -153,8 +153,11 @@ void CMD5::Finalize(unsigned char digest[16])
     }
 
     // Append length in bits and transform
-    reinterpret_cast<Uint4*>(m_In)[14] = static_cast<Uint4>(m_Bits);
-    reinterpret_cast<Uint4*>(m_In)[15] = static_cast<Uint4>(m_Bits >> 32);
+    
+    Uint4 bits = static_cast<Uint4>(m_Bits);
+    memcpy(m_In + 14*sizeof(bits), &bits, sizeof(bits));
+    bits = static_cast<Uint4>(m_Bits >> 32);
+    memcpy(m_In + 15*sizeof(bits), &bits, sizeof(bits));
 
     Transform();
 #ifdef WORDS_BIGENDIAN

@@ -84,7 +84,7 @@ void CRegEx::x_ThrowUnexpectedCharacter()
 }
 
 
-void CRegEx::x_ThrowError(const string msg, int pos, int len)
+void CRegEx::x_ThrowError(const string msg, size_t pos, size_t len)
 {
     ostringstream oss;
     oss << msg << " \'" << m_Str.substr(pos, len) << "\' in position " << (pos + 1);
@@ -276,17 +276,17 @@ bool CRegEx::x_ParseRepeat(int& from, int& to, bool& lazy)
 }
 
 
-static inline void InsertDigit(set<char>& t)
+static inline void InsertDigit(set<unsigned char>& t)
 {
-    for (char c = '0'; c <= '9'; c++) {
+    for (unsigned char c = '0'; c <= '9'; c++) {
         t.insert(c);
     }
 }
 
 
-static inline void InsertNoDigit(set<char>& t)
+static inline void InsertNoDigit(set<unsigned char>& t)
 {
-    for (int c = 1; c <= 255; c++) {
+    for (unsigned char c = 1; c <= 255; c++) {
         if (c < '0' || c > '9') {
             t.insert(c);
         }
@@ -294,24 +294,24 @@ static inline void InsertNoDigit(set<char>& t)
 }
 
 
-static inline void InsertAlpha(set<char>& t)
+static inline void InsertAlpha(set<unsigned char>& t)
 {
-    for (char c = '0'; c <= '9'; c++) {
+    for (unsigned char c = '0'; c <= '9'; c++) {
         t.insert(c);
     }
-    for (char c = 'A'; c <= 'Z'; c++) {
+    for (unsigned char c = 'A'; c <= 'Z'; c++) {
         t.insert(c);
     }
-    for (char c = 'a'; c <= 'z'; c++) {
+    for (unsigned char c = 'a'; c <= 'z'; c++) {
         t.insert(c);
     }
     t.insert('_');
 }
 
 
-static inline void InsertNoAlpha(set<char>& t)
+static inline void InsertNoAlpha(set<unsigned  char>& t)
 {
-    for (int c = 1; c <= 255; c++) {
+    for (unsigned char c = 1; c <= 255; c++) {
         if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_') {
             continue;
         }
@@ -320,7 +320,7 @@ static inline void InsertNoAlpha(set<char>& t)
 }
 
 
-static inline void InsertSpace(set<char>& t)
+static inline void InsertSpace(set<unsigned char>& t)
 {
     t.insert(' ');
     t.insert('\f');
@@ -331,9 +331,9 @@ static inline void InsertSpace(set<char>& t)
 }
 
 
-static inline void InsertNoSpace(set<char>& t)
+static inline void InsertNoSpace(set<unsigned char>& t)
 {
-    for (int c = 1; c <= 255; c++) {
+    for (unsigned char c = 1; c <= 255; c++) {
         if (c != ' ' && c != '\f' && c != '\n' && c != '\r' && c != '\t' && c != '\v') {
             t.insert(c);
         }
@@ -351,8 +351,8 @@ unique_ptr<CRegEx::CRegX> CRegEx::x_ParseAtom()  // single character or an expre
     case '.':
     {
         m_Cur++;
-        set<char> t;
-        for (int c = 1; c < 256; c++) {
+        set<unsigned char> t;
+        for (unsigned char c = 1; c < 256; c++) {
             t.insert(c);
         }
         return unique_ptr<CRegX>(new CRegXChar(t));
@@ -402,7 +402,7 @@ unique_ptr<CRegEx::CRegX> CRegEx::x_ParseAtom()  // single character or an expre
     {
         m_Cur++;
         bool neg = false;
-        set<char> t;
+        set<unsigned char> t;
         if (m_Cur + 1 < m_Str.length() && m_Str[m_Cur] == '^') {
             neg = true;
             m_Cur++;
@@ -426,21 +426,21 @@ unique_ptr<CRegEx::CRegX> CRegEx::x_ParseAtom()  // single character or an expre
         case 'd':
         case 'D':
         {
-            set<char> t;
+            set<unsigned char> t;
             InsertDigit(t);
             return unique_ptr<CRegX>(new CRegXChar(t, m_Str[m_Cur++] == 'D'));
         }
         case 'w':
         case 'W':
         {
-            set<char> t;
+            set<unsigned char> t;
             InsertAlpha(t);
             return unique_ptr<CRegX>(new CRegXChar(t, m_Str[m_Cur++] == 'W'));
         }
         case 's':
         case 'S':
         {
-            set<char> t;
+            set<unsigned char> t;
             InsertSpace(t);
             return unique_ptr<CRegX>(new CRegXChar(t, m_Str[m_Cur++] == 'S'));
         }
@@ -457,7 +457,7 @@ unique_ptr<CRegEx::CRegX> CRegEx::x_ParseAtom()  // single character or an expre
             return unique_ptr<CRegX>(new CRegXBackRef(m_Str[m_Cur++] - '0'));
         default:
         {
-            char c = x_ParseEscape();
+            unsigned char c = x_ParseEscape();
             return unique_ptr<CRegX>(new CRegXChar(c));
         }
         }
@@ -467,7 +467,7 @@ unique_ptr<CRegEx::CRegX> CRegEx::x_ParseAtom()  // single character or an expre
 }
 
 
-void CRegEx::x_ParseSquare(set<char>& t)
+void CRegEx::x_ParseSquare(set<unsigned char>& t)
 {
     unsigned char range = 0; // 0: initial; 1: valid begining; 2: dash; 3: valid ending;
     unsigned char curr = 0;
@@ -559,8 +559,8 @@ void CRegEx::x_ParseSquare(set<char>& t)
             if (prev > curr) {
                 x_ThrowError("invalid range:", prev_pos, m_Cur - prev_pos + 1);
             }
-            for (int n = prev; n <= curr; n++) {
-                t.insert(n);
+            for (unsigned int n = prev; n <= curr; n++) {
+                t.insert((unsigned char)n);
             }
             range = 0;
         }
@@ -574,7 +574,7 @@ void CRegEx::x_ParseSquare(set<char>& t)
 }
 
 
-char CRegEx::x_ParseEscape()
+unsigned char CRegEx::x_ParseEscape()
 {
     switch (m_Str[m_Cur]) {
     case '0':
@@ -587,10 +587,10 @@ char CRegEx::x_ParseEscape()
         m_Cur++;
         if (m_Cur < m_Str.length()) {
             if (m_Str[m_Cur] >= 'A' && m_Str[m_Cur] <= 'Z') {
-                return m_Str[m_Cur++] - 'A' + 1;
+                return (unsigned char)(m_Str[m_Cur++] - 'A' + 1);
             }
             if (m_Str[m_Cur] >= 'a' && m_Str[m_Cur] <= 'z') {
-                return m_Str[m_Cur++] - 'a' + 1;
+                return (unsigned char)(m_Str[m_Cur++] - 'a' + 1);
             }
         }
         return 'c';
@@ -614,7 +614,7 @@ char CRegEx::x_ParseEscape()
         if (m_Cur < m_Str.length()) {
             int n = x_ParseHex(2);
             if (n >= 0) {
-                return n;
+                return (unsigned char)n;
             }
         }
         return 'x';
@@ -630,7 +630,7 @@ char CRegEx::x_ParseEscape()
                     m_Unsupported = true;
                     return 0;
                 }
-                return n;
+                return (unsigned char)n;
             }
             m_Cur = k;
         }
@@ -641,7 +641,7 @@ char CRegEx::x_ParseEscape()
                     m_Unsupported = true;
                     return 0;
                 }
-                return n;
+                return (unsigned char)n;
             }
         }
         return 'u';
@@ -651,10 +651,10 @@ char CRegEx::x_ParseEscape()
 }
 
 
-int CRegEx::x_ParseHex(int len)
+int CRegEx::x_ParseHex(size_t len)
 {
     int x = 0;
-    for (int n = 0; n < len || !len; n++) {
+    for (size_t n = 0; n < len || !len; n++) {
         if (m_Cur < m_Str.length()) {
             char& c = m_Str[m_Cur];
             if (c >= '0' && c <= '9') {
@@ -679,10 +679,10 @@ int CRegEx::x_ParseHex(int len)
 }
 
 
-int CRegEx::x_ParseDec(int len)
+int CRegEx::x_ParseDec(size_t len)
 {
     int x = 0;
-    for (int n = 0; n < len || !len; n++) {
+    for (size_t n = 0; n < len || !len; n++) {
         if (m_Cur < m_Str.length()) {
             char& c = m_Str[m_Cur];
             if (c >= '0' && c <= '9') {
@@ -806,11 +806,11 @@ void CRegEx::CRegXAssert::Print(ostream& out, size_t off) const
 
 void CRegEx::CRegXChar::SetCaseInsensitive()
 {
-    for (char c = 'A'; c <= 'Z'; c++) {
+    for (unsigned char c = 'A'; c <= 'Z'; c++) {
         if (m_Set.find(c) != m_Set.end()) {
-            m_Set.insert(c + 32);
+            m_Set.insert((unsigned char)(c + 32));
         }
-        else if (m_Set.find(c + 32) != m_Set.end()) {
+        else if (m_Set.find((unsigned char)(c + 32)) != m_Set.end()) {
             m_Set.insert(c);
         }
     }
@@ -819,8 +819,8 @@ void CRegEx::CRegXChar::SetCaseInsensitive()
 
 bool CRegEx::CRegXChar::IsCaseInsensitive() const
 {
-    for (char c = 'A'; c <= 'Z'; c++) {
-        if ((m_Set.find(c) == m_Set.end()) != (m_Set.find(c + 32) == m_Set.end())) {
+    for (unsigned char c = 'A'; c <= 'Z'; c++) {
+        if ((m_Set.find(c) == m_Set.end()) != (m_Set.find((unsigned char)(c + 32)) == m_Set.end())) {
             return false;
         }
     }
@@ -840,7 +840,7 @@ void CRegEx::CRegXChar::Render(CRegExFSA& fsa, size_t from, size_t to) const
 {
     size_t x = fsa.AddState(eTypeStop | eTypeWord | eTypeNoWord);
     for (unsigned n = 1; n < 256; n++) {
-        char c = (char)n;
+        unsigned char c = (unsigned char)n;
         if ((m_Set.find(c) == m_Set.end()) == m_Neg) {
             fsa.Trans(from, c, x);
             fsa.Short(x, to);
@@ -924,16 +924,16 @@ void CRegEx::CRegX::DummyTrans(CRegExFSA& fsa, size_t x, unsigned char t)
     if (t & CRegEx::eTypeWord) {
         y = fsa.AddState(CRegEx::eTypeWord);
         for (unsigned n = 1; n < 256; n++) {
-            if (CRegEx::IsWordCharacter(n)) {
-                fsa.Trans(x, n, y);
+            if (CRegEx::IsWordCharacter((unsigned char)n)) {
+                fsa.Trans(x, (unsigned char)n, y);
             }
         }
     }
     if (t & CRegEx::eTypeNoWord) {
         y = fsa.AddState(CRegEx::eTypeNoWord);
         for (unsigned n = 1; n < 256; n++) {
-            if (!CRegEx::IsWordCharacter(n)) {
-                fsa.Trans(x, n, y);
+            if (!CRegEx::IsWordCharacter((unsigned char)n)) {
+                fsa.Trans(x, (unsigned char)n, y);
             }
         }
     }
@@ -998,7 +998,7 @@ CRegExFSA::CRegExFSA()
 
 void CRegExFSA::Add(const CRegEx& rx)
 {
-    int emit = m_Str.size();
+    size_t emit = m_Str.size();
     m_Str.push_back(rx.m_Str);
     if (!rx.m_RegX) {
         throw "Invalid Regular Expression: " + rx.m_Str + " -- " + rx.m_Err;

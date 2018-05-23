@@ -115,10 +115,9 @@ public:
 
         for (const auto& info : m_FieldsToValidate) {
             if (info.first < m_ValidationTokens.size()) {
-                string                  translated;
-                ERR_TranslationResult   translation_result =
-                    this->Translate(info.first, m_ValidationTokens[info.first],
-                                    translated);
+                string translated;
+                ERR_TranslationResult translation_result =
+                    this->Translate((TFieldNo)info.first, m_ValidationTokens[info.first], translated);
                 switch (translation_result) {
                     case eRR_UseOriginal:
                         CRR_Util::ValidateBasicTypeFieldValue(
@@ -127,8 +126,7 @@ public:
                         break;
                     case eRR_Translated:
                         CRR_Util::ValidateBasicTypeFieldValue(
-                            translated,
-                            info.second.first, info.second.second);
+                            translated, info.second.first, info.second.second);
                         break;
                     case eRR_Null:
                     default:
@@ -136,7 +134,6 @@ public:
                 }
             }
         }
-
         return eRR_Skip;
     }
 

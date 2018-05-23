@@ -770,8 +770,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
         // string
         {
-            string value;
-
+            string v;
+            
             //////////
             {
                 string value = NCBI_CONVERT_TO(ConvertSafe(value_Int8), string);
@@ -791,8 +791,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
                 value = ConvertSafe(value_Int8) + value;
             }
 
-            value = ConvertSafe(value_Int8).operator string();
-            BOOST_CHECK_EQUAL(value, str_Int8);
+            v = ConvertSafe(value_Int8).operator string();
+            BOOST_CHECK_EQUAL(v, str_Int8);
 
             //////////
             {
@@ -813,8 +813,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
                 value = ConvertSafe(value_Uint8) + value;
             }
 
-            value = ConvertSafe(value_Uint8).operator string();
-            BOOST_CHECK_EQUAL(value, str_Uint8);
+            v = ConvertSafe(value_Uint8).operator string();
+            BOOST_CHECK_EQUAL(v, str_Uint8);
 
             //////////
             {
@@ -835,8 +835,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
                 value = ConvertSafe(value_Int4) + value;
             }
 
-            value = ConvertSafe(value_Int4).operator string();
-            BOOST_CHECK_EQUAL(value, str_Int4);
+            v = ConvertSafe(value_Int4).operator string();
+            BOOST_CHECK_EQUAL(v, str_Int4);
 
             //////////
             {
@@ -857,8 +857,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
                 value = ConvertSafe(value_Uint4) + value;
             }
 
-            value = ConvertSafe(value_Uint4).operator string();
-            BOOST_CHECK_EQUAL(value, str_Uint4);
+            v = ConvertSafe(value_Uint4).operator string();
+            BOOST_CHECK_EQUAL(v, str_Uint4);
 
             //////////
             {
@@ -879,8 +879,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
                 value = ConvertSafe(value_Int2) + value;
             }
 
-            value = ConvertSafe(value_Int2).operator string();
-            BOOST_CHECK_EQUAL(value, str_Int2);
+            v = ConvertSafe(value_Int2).operator string();
+            BOOST_CHECK_EQUAL(v, str_Int2);
 
             //////////
             {
@@ -901,8 +901,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
                 value = ConvertSafe(value_Uint2) + value;
             }
 
-            value = ConvertSafe(value_Uint2).operator string();
-            BOOST_CHECK_EQUAL(value, str_Uint2);
+            v = ConvertSafe(value_Uint2).operator string();
+            BOOST_CHECK_EQUAL(v, str_Uint2);
 
             //////////
             {
@@ -923,8 +923,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
                 value = ConvertSafe(value_Int1) + value;
             }
 
-            value = ConvertSafe(value_Int1).operator string();
-            BOOST_CHECK_EQUAL(value, str_Int1);
+            v = ConvertSafe(value_Int1).operator string();
+            BOOST_CHECK_EQUAL(v, str_Int1);
 
             //////////
             {
@@ -945,8 +945,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
                 value = ConvertSafe(value_Uint1) + value;
             }
 
-            value = ConvertSafe(value_Uint1).operator string();
-            BOOST_CHECK_EQUAL(value, str_Uint1);
+            v = ConvertSafe(value_Uint1).operator string();
+            BOOST_CHECK_EQUAL(v, str_Uint1);
 
             //////////
             {
@@ -967,8 +967,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
                 value = ConvertSafe(value_bool) + value;
             }
 
-            value = ConvertSafe(value_bool).operator string();
-            BOOST_CHECK_EQUAL(value, str_bool);
+            v = ConvertSafe(value_bool).operator string();
+            BOOST_CHECK_EQUAL(v, str_bool);
 
             //////////
             {
@@ -989,8 +989,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
                 value = ConvertSafe(value_float) + value;
             }
 
-            value = ConvertSafe(value_float).operator string();
-            BOOST_CHECK_EQUAL(value, str_float);
+            v = ConvertSafe(value_float).operator string();
+            BOOST_CHECK_EQUAL(v, str_float);
 
             //////////
             {
@@ -1011,8 +1011,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
                 value = ConvertSafe(value_double) + value;
             }
 
-            value = ConvertSafe(value_double).operator string();
-            BOOST_CHECK_EQUAL(value, str_double);
+            v = ConvertSafe(value_double).operator string();
+            BOOST_CHECK_EQUAL(v, str_double);
 
             //////////
             {
@@ -1033,8 +1033,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
                 value = ConvertSafe(value_CTime) + value;
             }
 
-            value = ConvertSafe(value_CTime).operator string();;
-            BOOST_CHECK_EQUAL(value, value_CTime.AsString());
+            v = ConvertSafe(value_CTime).operator string();;
+            BOOST_CHECK_EQUAL(v, value_CTime.AsString());
         }
 
         // float
@@ -1849,12 +1849,12 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
         // string
         {
-            string value;
+            string v;
 
             //////////
             {
                 string value = NCBI_CONVERT_TO(Convert(value_Int8), string);
-                BOOST_CHECK_EQUAL(value, str_Int8);
+                BOOST_CHECK_EQUAL(v, str_Int8);
             }
 
             {
@@ -1863,8 +1863,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
                 BOOST_CHECK_EQUAL(value, str_Int8);
             }
 
-            value = Convert(value_Int8).operator string();
-            BOOST_CHECK_EQUAL(value, str_Int8);
+            v = Convert(value_Int8).operator string();
+            BOOST_CHECK_EQUAL(v, str_Int8);
 
             //////////
             {
@@ -1878,8 +1878,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
                 BOOST_CHECK_EQUAL(value, str_Uint8);
             }
 
-            value = Convert(value_Uint8).operator string();
-            BOOST_CHECK_EQUAL(value, str_Uint8);
+            v = Convert(value_Uint8).operator string();
+            BOOST_CHECK_EQUAL(v, str_Uint8);
 
             //////////
             {
@@ -1893,8 +1893,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
                 BOOST_CHECK_EQUAL(value, str_Int4);
             }
 
-            value = Convert(value_Int4).operator string();
-            BOOST_CHECK_EQUAL(value, str_Int4);
+            v = Convert(value_Int4).operator string();
+            BOOST_CHECK_EQUAL(v, str_Int4);
 
             //////////
             {
@@ -1908,8 +1908,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
                 BOOST_CHECK_EQUAL(value, str_Uint4);
             }
 
-            value = Convert(value_Uint4).operator string();
-            BOOST_CHECK_EQUAL(value, str_Uint4);
+            v = Convert(value_Uint4).operator string();
+            BOOST_CHECK_EQUAL(v, str_Uint4);
 
             //////////
             {
@@ -1923,8 +1923,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
                 BOOST_CHECK_EQUAL(value, str_Int2);
             }
 
-            value = Convert(value_Int2).operator string();
-            BOOST_CHECK_EQUAL(value, str_Int2);
+            v = Convert(value_Int2).operator string();
+            BOOST_CHECK_EQUAL(v, str_Int2);
 
             //////////
             {
@@ -1938,8 +1938,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
                 BOOST_CHECK_EQUAL(value, str_Uint2);
             }
 
-            value = Convert(value_Uint2).operator string();
-            BOOST_CHECK_EQUAL(value, str_Uint2);
+            v = Convert(value_Uint2).operator string();
+            BOOST_CHECK_EQUAL(v, str_Uint2);
 
             //////////
             {
@@ -1953,8 +1953,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
                 BOOST_CHECK_EQUAL(value, str_Int1);
             }
 
-            value = Convert(value_Int1).operator string();
-            BOOST_CHECK_EQUAL(value, str_Int1);
+            v = Convert(value_Int1).operator string();
+            BOOST_CHECK_EQUAL(v, str_Int1);
 
             //////////
             {
@@ -1968,8 +1968,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
                 BOOST_CHECK_EQUAL(value, str_Uint1);
             }
 
-            value = Convert(value_Uint1).operator string();
-            BOOST_CHECK_EQUAL(value, str_Uint1);
+            v = Convert(value_Uint1).operator string();
+            BOOST_CHECK_EQUAL(v, str_Uint1);
 
             //////////
             {
@@ -1983,8 +1983,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
                 BOOST_CHECK_EQUAL(value, str_bool);
             }
 
-            value = Convert(value_bool).operator string();
-            BOOST_CHECK_EQUAL(value, str_bool);
+            v = Convert(value_bool).operator string();
+            BOOST_CHECK_EQUAL(v, str_bool);
 
             //////////
             {
@@ -1998,8 +1998,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
                 BOOST_CHECK_EQUAL(value, str_float);
             }
 
-            value = Convert(value_float).operator string();
-            BOOST_CHECK_EQUAL(value, str_float);
+            v = Convert(value_float).operator string();
+            BOOST_CHECK_EQUAL(v, str_float);
 
             //////////
             {
@@ -2013,8 +2013,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
                 BOOST_CHECK_EQUAL(value, str_double);
             }
 
-            value = Convert(value_double).operator string();
-            BOOST_CHECK_EQUAL(value, str_double);
+            v = Convert(value_double).operator string();
+            BOOST_CHECK_EQUAL(v, str_double);
 
             //////////
             {
@@ -2028,8 +2028,8 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
                 BOOST_CHECK_EQUAL(value, value_CTime.AsString());
             }
 
-            value = Convert(value_CTime).operator string();;
-            BOOST_CHECK_EQUAL(value, value_CTime.AsString());
+            v = Convert(value_CTime).operator string();;
+            BOOST_CHECK_EQUAL(v, value_CTime.AsString());
         }
 
         // float
