@@ -1873,7 +1873,8 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
     int by_policy = adaptive_flags & SAnnotSelector::fAdaptive_ByPolicy;
     adaptive_flags &=
         SAnnotSelector::fAdaptive_ByTriggers |
-        SAnnotSelector::fAdaptive_BySubtypes;
+        SAnnotSelector::fAdaptive_BySubtypes |
+        SAnnotSelector::fAdaptive_ByNamedAcc;
 
     // main sequence
     bool deeper = true;
