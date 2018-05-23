@@ -51,12 +51,14 @@ CPendingOperation::CPendingOperation(const SBlobRequest &  blob_request,
                                     new SBlobRequestDetails(blob_request));
 
     details->m_Context.reset(new SOperationContext(blob_request.m_BlobId));
-    details->m_Loader.reset(new CCassBlobLoader(timeout, conn,
-                                               blob_request.m_BlobId.m_SatName,
-                                               blob_request.m_BlobId.m_SatKey,
-                                               true, max_retries,
-                                               details->m_Context.get(),
-                                               nullptr,  nullptr));
+    details->m_Loader.reset(new CCassBlobTaskLoadBlob(timeout,
+                                                      max_retries,
+                                                      conn,
+                                                      blob_request.m_BlobId.m_SatName,
+                                                      blob_request.m_BlobId.m_SatKey,
+                                                      true,
+                                                      nullptr));
+
     m_Requests.insert(make_pair(blob_request.m_BlobId, std::move(details)));
 }
 
@@ -73,6 +75,7 @@ CPendingOperation::CPendingOperation(
     m_Cancelled(false),
     m_RequestContext(request_context)
 {
+#if 0
     for (const auto &  blob_request: blob_requests) {
         unique_ptr<SBlobRequestDetails>     details(
                                     new SBlobRequestDetails(blob_request));
@@ -87,6 +90,7 @@ CPendingOperation::CPendingOperation(
                                             nullptr,  nullptr));
         m_Requests.insert(make_pair(blob_request.m_BlobId, std::move(details)));
     }
+#endif
 }
 
 
@@ -121,7 +125,7 @@ void CPendingOperation::Clear()
                  " m_Loader: " << request.second->m_Loader.get());
         request.second->m_Loader->SetDataReadyCB(nullptr, nullptr);
         request.second->m_Loader->SetErrorCB(nullptr);
-        request.second->m_Loader->SetDataChunkCB(nullptr);
+        request.second->m_Loader->SetChunkCallback(nullptr);
     }
     m_Requests.clear();
 
@@ -141,18 +145,18 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
         request.second->m_Loader->SetDataReadyCB(
                             HST::CHttpReply<CPendingOperation>::s_DataReady,
                             &resp);
+
+        auto    op_context = request.second->m_Context.get();
+
         request.second->m_Loader->SetErrorCB(
-        [this, &resp](void *  context,
-                      CRequestStatus::ECode  status,
-                      int  code,
-                      EDiagSev  severity,
-                      const string &  message)
+        [this, &resp, op_context](CRequestStatus::ECode  status,
+                                  int  code,
+                                  EDiagSev  severity,
+                                  const string &  message)
         {
             CRequestContextResetter     context_resetter;
             x_SetRequestContext();
 
-            SOperationContext *         op_context =
-                            reinterpret_cast<SOperationContext *>(context);
             auto    request_details = m_Requests.find(op_context->m_BlobId);
             if (request_details == m_Requests.end()) {
                 // Logic error, a blob which which was not ordered
@@ -209,17 +213,22 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
                 Peek(resp, false);
         }
         );
-        request.second->m_Loader->SetDataChunkCB(
-        [this, &resp](void *  context,
-                      const unsigned char *  data,
-                      unsigned int  size,
-                      int  chunk_no)
+
+        request.second->m_Loader->SetPropsCallback(
+        [this, &resp, op_context](CBlobRecord const & blob, bool isFound)
+        {
+            ERR_POST("BLOB Props callback: " << isFound);
+        }
+        );
+
+        request.second->m_Loader->SetChunkCallback(
+        [this, &resp, op_context](const unsigned char *  data,
+                                  unsigned int  size,
+                                  int  chunk_no)
         {
             CRequestContextResetter     context_resetter;
             x_SetRequestContext();
 
-            SOperationContext *         op_context =
-                            reinterpret_cast<SOperationContext *>(context);
             auto    request_details = m_Requests.find(op_context->m_BlobId);
             if (request_details == m_Requests.end()) {
                 // Logic error, a blob which which was not ordered
@@ -289,7 +298,7 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
         }
         );
 
-    request.second->m_Loader->Wait();
+        request.second->m_Loader->Wait();
     }
 }
 

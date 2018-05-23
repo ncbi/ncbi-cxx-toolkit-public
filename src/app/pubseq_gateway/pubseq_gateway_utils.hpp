@@ -79,6 +79,8 @@ enum EPubseqGatewayErrorCode {
 
 
 string  GetResolutionHeader(size_t  resolution_size);
+string  GetBioseqInfoHeader(size_t  blob_prop_size, const SBlobId &  blob_id);
+string  GetBlobPropHeader(size_t  blob_prop_size, const SBlobId &  blob_id);
 string  GetBlobChunkHeader(size_t  chunk_size, const SBlobId &  blob_id,
                            size_t  chunk_number);
 string  GetBlobCompletionHeader(const SBlobId &  blob_id,

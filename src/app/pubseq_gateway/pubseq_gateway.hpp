@@ -201,6 +201,7 @@ template<typename P>
 int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
                              HST::CHttpReply<P> &  resp)
 {
+#if 0
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -312,6 +313,7 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
     }
 
     x_PrintRequestStop(context, CRequestStatus::e200_Ok);
+#endif
     return 0;
 }
 
@@ -324,6 +326,7 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
     SRequestParameter   blob_id_param = x_GetParam(req, "blob_id");
+    SRequestParameter   last_modified_param = x_GetParam(req, "last_modified");
 
     if (blob_id_param.m_Found)
     {
@@ -340,10 +343,12 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
         }
 
         if (SatToSatName(blob_id.m_Sat, blob_id.m_SatName)) {
-            resp.Postpone(CPendingOperation(SBlobRequest(blob_id,
-                                                         eBySatAndSatKey),
-                                            0, m_CassConnection, m_TimeoutMs,
-                                            m_MaxRetries, context));
+            resp.Postpone(
+                    CPendingOperation(
+                        SBlobRequest(blob_id, last_modified_param.m_Value,
+                                     eBySatAndSatKey),
+                        0, m_CassConnection, m_TimeoutMs,
+                        m_MaxRetries, context));
 
             return 0;
         }

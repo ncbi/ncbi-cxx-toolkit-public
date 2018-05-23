@@ -38,7 +38,7 @@ using namespace std;
 
 #include <corelib/request_ctx.hpp>
 
-#include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 USING_IDBLOB_SCOPE;
 
@@ -73,11 +73,13 @@ enum EBlobIdentificationType {
 struct SBlobRequest
 {
     SBlobRequest(const SBlobId &  blob_id,
+                 const string &  last_modified,
                  EBlobIdentificationType  id_type) :
-        m_BlobId(blob_id), m_IdType(id_type)
+        m_BlobId(blob_id), m_LastModified(last_modified), m_IdType(id_type)
     {}
 
     SBlobId                     m_BlobId;
+    string                      m_LastModified;
     EBlobIdentificationType     m_IdType;
 };
 
@@ -122,12 +124,12 @@ private:
             m_TotalSentBlobChunks(0), m_FinishedRead(false)
         {}
 
-        EBlobIdentificationType         m_BlobIdType;
-        int32_t                         m_TotalSentBlobChunks;
-        bool                            m_FinishedRead;
+        EBlobIdentificationType             m_BlobIdType;
+        int32_t                             m_TotalSentBlobChunks;
+        bool                                m_FinishedRead;
 
-        unique_ptr<SOperationContext>   m_Context;
-        unique_ptr<CCassBlobLoader>     m_Loader;
+        unique_ptr<SOperationContext>       m_Context;
+        unique_ptr<CCassBlobTaskLoadBlob>   m_Loader;
     };
 
     bool x_AllFinishedRead(void) const;

@@ -106,6 +106,8 @@ static string   s_Severity = "severity=";
 static string   s_ReplyItem = "reply";
 static string   s_BlobItem = "blob";
 static string   s_ResolutionItem = "resolution";
+static string   s_BlobPropItem = "blob_prop";
+static string   s_BioseqInfoItem = "bioseq_info";
 static string   s_Data = "data";
 static string   s_Meta = "meta";
 static string   s_Error = "error";
@@ -128,6 +130,26 @@ string  GetResolutionHeader(size_t  resolution_size)
     return s_ReplyBegin + s_ResolutionItem +
            "&" + s_ChunkType + s_Data +
            "&" + s_Size + NStr::NumericToString(resolution_size) +
+           "\n";
+}
+
+
+string  GetBioseqInfoHeader(size_t  bioseq_info_size, const SBlobId &  blob_id)
+{
+    return s_ReplyBegin + s_BioseqInfoItem +
+           "&" + s_ChunkType + s_Data +
+           "&" + s_Size + NStr::NumericToString(bioseq_info_size) +
+           "&" + s_BlobId + GetBlobId(blob_id) +
+           "\n";
+}
+
+
+string  GetBlobPropHeader(size_t  blob_prop_size, const SBlobId &  blob_id)
+{
+    return s_ReplyBegin + s_BlobPropItem +
+           "&" + s_ChunkType + s_Data +
+           "&" + s_Size + NStr::NumericToString(blob_prop_size) +
+           "&" + s_BlobId + GetBlobId(blob_id) +
            "\n";
 }
 
