@@ -305,36 +305,7 @@ bool CGff2Writer::xWriteFeature(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-
-   
-
-
-    CRef<CGffWriteRecordFeature> pParent(new CGffWriteRecordFeature(context));
-    if ( ! pParent->AssignFromAsn( mf, m_uFlags ) ) {
-        return false;
-    }
-
-    CRef< CSeq_loc > pPackedInt( new CSeq_loc( CSeq_loc::e_Mix ) );
-    pPackedInt->Add( mf.GetLocation() );
-    pPackedInt->ChangeToPackedInt();
-
-    if ( pPackedInt->IsPacked_int() && pPackedInt->GetPacked_int().CanGet() ) {
-        const list< CRef< CSeq_interval > >& sublocs = pPackedInt->GetPacked_int().Get();
-        list< CRef< CSeq_interval > >::const_iterator it;
-        for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
-            const CSeq_interval& subint = **it;
-            CRef<CGffWriteRecord> pChild( new CGffWriteRecord( *pParent ) );
-            if(context.BioseqHandle()) {
-                pChild->CorrectLocation( *pParent, subint,
-                    context.BioseqHandle().GetInst().GetLength() );
-            }
-            if ( ! x_WriteRecord( pChild ) ) {
-                return false;
-            }
-        }
-        return true;
-    }
-    return x_WriteRecord( pParent );    
+    return false;
 }
 
 //  ----------------------------------------------------------------------------
@@ -414,22 +385,6 @@ bool CGff2Writer::x_WriteTrackLine(
     return true;
 }
 
-//  ----------------------------------------------------------------------------
-bool CGff2Writer::x_WriteRecord( 
-    const CGffWriteRecord* pRecord )
-//  ----------------------------------------------------------------------------
-{
-    m_Os << pRecord->StrId() << '\t';
-    m_Os << pRecord->StrSource() << '\t';
-    m_Os << pRecord->StrType() << '\t';
-    m_Os << pRecord->StrSeqStart() << '\t';
-    m_Os << pRecord->StrSeqStop() << '\t';
-    m_Os << pRecord->StrScore() << '\t';
-    m_Os << pRecord->StrStrand() << '\t';
-    m_Os << pRecord->StrPhase() << '\t';
-    m_Os << pRecord->StrAttributes() << '\n';
-    return true;
-}
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::WriteHeader()

@@ -80,10 +80,6 @@ public: //attribute management
         const string& );
 
 public:
-    void SetRecordId(
-        const string&);
-    void SetParent(
-        const string&);
     void SetSeqId(
         const string&);
     void SetMethod(
@@ -114,8 +110,6 @@ public:
     bool CanGetLocation() const { return 0 != m_pLoc; };
     const CSeq_loc& GetLocation() const {
         return *m_pLoc; };
-    string Id() const;
-    string Parent() const;
 
 
 protected:
@@ -138,8 +132,6 @@ protected:
     string mPhase;
     TAttributes mAttributes;
     TScores mExtraScores;
-    string mRecordId;
-    string mParent;
 };
 
 END_objects_SCOPE

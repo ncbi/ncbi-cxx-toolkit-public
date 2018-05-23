@@ -75,9 +75,6 @@
 
 #include <objtools/writers/writer_exception.hpp>
 #include <objtools/writers/write_util.hpp>
-#include <objtools/writers/gff3_write_data.hpp>
-#include <objtools/writers/gff3_source_data.hpp>
-#include <objtools/writers/gff3_alignment_data.hpp>
 #include <objects/seqalign/Score_set.hpp>
 #include <objtools/writers/gff3_writer.hpp>
 
@@ -1413,7 +1410,7 @@ bool CGff3Writer::xWriteSource(
     if (!sdi) {
         return true; 
     }
-    CRef<CGffSourceRecord> pSource(new CGffSourceRecord());
+    CRef<CGff3SourceRecord> pSource(new CGff3SourceRecord());
     if (!xAssignSource(*pSource, bsh)) {
         return false;
     }
@@ -1488,7 +1485,7 @@ bool CGff3Writer::xWriteFeatureTrna(
 //  ----------------------------------------------------------------------------
 {
 
-    CRef<CGffFeatureRecord> pRna( new CGffFeatureRecord() );
+    CRef<CGff3FeatureRecord> pRna( new CGff3FeatureRecord() );
     if (!xAssignFeature(*pRna, fc, mf)) {
         return false;
 	}
@@ -1516,7 +1513,7 @@ bool CGff3Writer::xWriteFeatureTrna(
         list< CRef< CSeq_interval > >::const_iterator it;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
-            CRef<CGffFeatureRecord> pChild(new CGffFeatureRecord(*pRna));
+            CRef<CGff3FeatureRecord> pChild(new CGff3FeatureRecord(*pRna));
             pChild->SetRecordId(m_idGenerator.GetNextGffExonId(rnaId));
             pChild->SetType("exon");
             pChild->SetLocation(subint);
@@ -1811,11 +1808,12 @@ bool CGff3Writer::xAssignFeatureAttributesFormatIndependent(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributesFormatSpecific(
-    CGffFeatureRecord& record,
+    CGffFeatureRecord& rec,
     CGffFeatureContext& fc,
     const CMappedFeat& mf )
     //  ----------------------------------------------------------------------------
 {
+    CGff3FeatureRecord& record = dynamic_cast<CGff3FeatureRecord&>(rec);
     if (!xAssignFeatureAttributeID(record, fc, mf)  ||
             !xAssignFeatureAttributeParent(record, fc, mf)) {
         return false;
@@ -2719,7 +2717,7 @@ bool CGff3Writer::xAssignFeatureAttributeNcrnaClass(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeID(
-    CGffFeatureRecord& record,
+    CGff3FeatureRecord& record,
     CGffFeatureContext& fc,
     const CMappedFeat& mf )
     //  ----------------------------------------------------------------------------
@@ -2730,7 +2728,7 @@ bool CGff3Writer::xAssignFeatureAttributeID(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeParent(
-    CGffFeatureRecord& record,
+    CGff3FeatureRecord& record,
     CGffFeatureContext& fc,
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
@@ -2794,11 +2792,12 @@ bool CGff3Writer::xAssignFeatureAttributeGeneBiotype(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributesQualifiers(
-    CGffFeatureRecord& record,
+    CGffFeatureRecord& rec,
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-
+    //FIX_ME
+    CGff3FeatureRecord& record = dynamic_cast<CGff3FeatureRecord&>(rec);
     static set<string> gff3_attributes = 
     {"ID", "Name", "Alias", "Parent", "Target", "Gap", "Derives_from",
      "Note", "Dbxref", "Ontology_term", "Is_circular"};
@@ -2915,7 +2914,7 @@ bool CGff3Writer::xAssignFeature(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSource(
-    CGffSourceRecord& record,
+    CGff3SourceRecord& record,
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
@@ -2928,7 +2927,7 @@ bool CGff3Writer::xAssignSource(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceType(
-    CGffSourceRecord& record)
+    CGff3SourceRecord& record)
 //  ----------------------------------------------------------------------------
 {
     record.SetType("region");
@@ -2937,7 +2936,7 @@ bool CGff3Writer::xAssignSourceType(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceSeqId(
-    CGffSourceRecord& record,
+    CGff3SourceRecord& record,
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
@@ -2969,7 +2968,7 @@ bool CGff3Writer::xAssignSourceSeqId(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceMethod(
-    CGffSourceRecord& record,
+    CGff3SourceRecord& record,
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
@@ -2981,7 +2980,7 @@ bool CGff3Writer::xAssignSourceMethod(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceEndpoints(
-    CGffSourceRecord& record,
+    CGff3SourceRecord& record,
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
@@ -2997,7 +2996,7 @@ bool CGff3Writer::xAssignSourceEndpoints(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceAttributes(
-    CGffSourceRecord& record,
+    CGff3SourceRecord& record,
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
@@ -3010,7 +3009,7 @@ bool CGff3Writer::xAssignSourceAttributes(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceAttributeGbKey(
-    CGffSourceRecord& record)
+    CGff3SourceRecord& record)
 //  ----------------------------------------------------------------------------
 {
     record.SetAttribute("gbkey", "Src");
@@ -3019,7 +3018,7 @@ bool CGff3Writer::xAssignSourceAttributeGbKey(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceAttributeMolType(
-    CGffSourceRecord& record,
+    CGff3SourceRecord& record,
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
@@ -3033,7 +3032,7 @@ bool CGff3Writer::xAssignSourceAttributeMolType(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceAttributeIsCircular(
-    CGffSourceRecord& record,
+    CGff3SourceRecord& record,
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
@@ -3046,7 +3045,7 @@ bool CGff3Writer::xAssignSourceAttributeIsCircular(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceAttributesBioSource(
-    CGffSourceRecord& record,
+    CGff3SourceRecord& record,
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
@@ -3064,7 +3063,7 @@ bool CGff3Writer::xAssignSourceAttributesBioSource(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceAttributeGenome(
-    CGffSourceRecord& record,
+    CGff3SourceRecord& record,
     const CBioSource& bioSrc)
 //  ----------------------------------------------------------------------------
 {
@@ -3078,7 +3077,7 @@ bool CGff3Writer::xAssignSourceAttributeGenome(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceAttributeName(
-    CGffSourceRecord& record,
+    CGff3SourceRecord& record,
     const CBioSource& bioSrc)
 //  ----------------------------------------------------------------------------
 {
@@ -3092,7 +3091,7 @@ bool CGff3Writer::xAssignSourceAttributeName(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceAttributeDbxref(
-    CGffSourceRecord& record,
+    CGff3SourceRecord& record,
     const CBioSource& bioSrc)
 //  ----------------------------------------------------------------------------
 {
@@ -3117,7 +3116,7 @@ bool CGff3Writer::xAssignSourceAttributeDbxref(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceAttributesOrgMod(
-    CGffSourceRecord& record,
+    CGff3SourceRecord& record,
     const CBioSource& bioSrc)
 //  ----------------------------------------------------------------------------
 {
@@ -3146,7 +3145,7 @@ bool CGff3Writer::xAssignSourceAttributesOrgMod(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceAttributesSubSource(
-    CGffSourceRecord& record,
+    CGff3SourceRecord& record,
     const CBioSource& bioSrc)
 //  ----------------------------------------------------------------------------
 {
@@ -3171,7 +3170,7 @@ bool CGff3Writer::xWriteFeatureGene(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGffFeatureRecord> pRecord(new CGffFeatureRecord());
+    CRef<CGff3FeatureRecord> pRecord(new CGff3FeatureRecord());
     if (!xAssignFeature(*pRecord, fc, mf)) {
         return false;
     }
@@ -3185,7 +3184,7 @@ bool CGff3Writer::xWriteFeatureCds(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGffFeatureRecord> pCds(new CGffFeatureRecord());
+    CRef<CGff3FeatureRecord> pCds(new CGff3FeatureRecord());
     if (!xAssignFeature(*pCds, fc, mf)) {
         return false;
     }
@@ -3216,8 +3215,7 @@ bool CGff3Writer::xWriteFeatureCds(
         string cdsId = pCds->Id();
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
-            CRef<CGffFeatureRecord> pExon(
-                new CGffFeatureRecord(*pCds));
+            CRef<CGff3FeatureRecord> pExon(new CGff3FeatureRecord(*pCds));
             pExon->SetRecordId(cdsId);
             pExon->SetType("CDS");
             pExon->DropAttributes("start_range");
@@ -3245,7 +3243,7 @@ bool CGff3Writer::xWriteFeatureRna(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGffFeatureRecord> pRna(new CGffFeatureRecord());
+    CRef<CGff3FeatureRecord> pRna(new CGff3FeatureRecord());
     if (!xAssignFeature(*pRna, fc, mf)) {
         return false;
     }
@@ -3268,8 +3266,7 @@ bool CGff3Writer::xWriteFeatureRna(
         list< CRef< CSeq_interval > >::const_iterator it;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
-            CRef<CGffFeatureRecord> pChild(
-                new CGffFeatureRecord(*pRna));
+            CRef<CGff3FeatureRecord> pChild(new CGff3FeatureRecord(*pRna));
             pChild->SetRecordId(m_idGenerator.GetNextGffExonId(parentId));
             pChild->DropAttributes("Name"); //explicitely not inherited
             pChild->DropAttributes("start_range");
@@ -3293,7 +3290,7 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGffFeatureRecord> pSegment(new CGffFeatureRecord());
+    CRef<CGff3FeatureRecord> pSegment(new CGff3FeatureRecord());
 
     if (!xAssignFeature(*pSegment, fc, mf)) {
         return false;
@@ -3323,8 +3320,7 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
         list< CRef< CSeq_interval> >::const_iterator it;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
-            CRef<CGffFeatureRecord> pChild(
-                new CGffFeatureRecord(*pSegment));
+            CRef<CGff3FeatureRecord> pChild(new CGff3FeatureRecord(*pSegment));
             pChild->SetRecordId(m_idGenerator.GetNextGffExonId(parentId));
             pChild->DropAttributes("Name");
             pChild->DropAttributes("start_range");
@@ -3347,9 +3343,7 @@ bool CGff3Writer::xWriteFeatureGeneric(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGffFeatureRecord> pParent(
-        //new CGffFeatureRecord(m_idGenerator.GetGffId(mf, &fc.FeatTree())));
-        new CGffFeatureRecord());
+    CRef<CGff3FeatureRecord> pParent(new CGff3FeatureRecord());
     if (!xAssignFeature(*pParent, fc, mf)) {
         return false;
     }
@@ -3393,11 +3387,11 @@ bool CGff3Writer::xWriteFeatureRecords(
 
 //  ============================================================================
 void CGff3Writer::xWriteAlignment( 
-    const CGffAlignmentRecord& record )
+    const CGffAlignRecord& record )
 //  ============================================================================
 {
     m_Os << record.StrId() << '\t';
-    m_Os << record.StrSource() << '\t';
+    m_Os << record.StrMethod() << '\t';
     m_Os << record.StrType() << '\t';
     m_Os << record.StrSeqStart() << '\t';
     m_Os << record.StrSeqStop() << '\t';
@@ -3409,7 +3403,7 @@ void CGff3Writer::xWriteAlignment(
 
 //  ============================================================================
 bool CGff3Writer::xAssignFeatureAttributeParentGene(
-    CGffFeatureRecord& record,
+    CGff3FeatureRecord& record,
     CGffFeatureContext& fc,
     const CMappedFeat& mf)
 //  ============================================================================
@@ -3428,7 +3422,7 @@ bool CGff3Writer::xAssignFeatureAttributeParentGene(
 
 //  ============================================================================
 bool CGff3Writer::xAssignFeatureAttributeParentMrna(
-    CGffFeatureRecord& record,
+    CGff3FeatureRecord& record,
     CGffFeatureContext& fc,
     const CMappedFeat& mf)
 //  ============================================================================
@@ -3453,7 +3447,7 @@ bool CGff3Writer::xAssignFeatureAttributeParentMrna(
 
 //  ============================================================================
 bool CGff3Writer::xAssignFeatureAttributeParentpreRNA(
-    CGffFeatureRecord& record,
+    CGff3FeatureRecord& record,
     CGffFeatureContext& fc,
     const CMappedFeat& mf)
 //  ============================================================================
@@ -3476,7 +3470,7 @@ bool CGff3Writer::xAssignFeatureAttributeParentpreRNA(
 
 //  ============================================================================
 bool CGff3Writer::xAssignFeatureAttributeParentVDJsegmentCregion(
-    CGffFeatureRecord& record,
+    CGff3FeatureRecord& record,
     CGffFeatureContext& fc,
     const CMappedFeat& mf)
 //  ============================================================================
@@ -3515,6 +3509,7 @@ bool CGff3Writer::xWriteRecord(
 //        cerr << "";
 //        bDebugHere = true;
 //    }
+
     auto id = record.StrSeqId();
     if (id == "."  &&  record.CanGetLocation()) {//one last desperate attempt--- 
         id = "";

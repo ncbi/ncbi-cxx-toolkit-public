@@ -226,4 +226,21 @@ bool CGvfWriter::xWriteFeatureVariationRef(
     return x_WriteRecord( pRecord );
 }
 
+//  ----------------------------------------------------------------------------
+bool CGvfWriter::x_WriteRecord( 
+    const CGffWriteRecord* pRecord )
+    //  ----------------------------------------------------------------------------
+{
+    m_Os << pRecord->StrId() << '\t';
+    m_Os << pRecord->StrSource() << '\t';
+    m_Os << pRecord->StrType() << '\t';
+    m_Os << pRecord->StrSeqStart() << '\t';
+    m_Os << pRecord->StrSeqStop() << '\t';
+    m_Os << pRecord->StrScore() << '\t';
+    m_Os << pRecord->StrStrand() << '\t';
+    m_Os << pRecord->StrPhase() << '\t';
+    m_Os << pRecord->StrAttributes() << '\n';
+    return true;
+}
+
 END_NCBI_SCOPE

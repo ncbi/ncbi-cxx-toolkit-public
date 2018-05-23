@@ -106,10 +106,13 @@ public:
     void
     FinalizeMatches();
 
+    string StrId() const { return mRecordId; };
     string StrTarget() const;
     string StrGap() const;
+    string StrAttributes() const;
 
 protected:
+    string mRecordId;
     string mAttrGap;
     bool mGapIsTrivial;
     unsigned int mAccumulatedMatches;

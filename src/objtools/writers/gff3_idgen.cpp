@@ -73,13 +73,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/feature_edit.hpp>
 
-#include <objtools/writers/writer_exception.hpp>
-#include <objtools/writers/write_util.hpp>
-#include <objtools/writers/gff3_write_data.hpp>
-#include <objtools/writers/gff3_source_data.hpp>
-#include <objtools/writers/gff3_alignment_data.hpp>
-#include <objects/seqalign/Score_set.hpp>
-#include <objtools/writers/gff3_writer.hpp>
+#include <objtools/writers/gff3_idgen.hpp>
 
 #include <array>
 #include <sstream>

@@ -40,7 +40,6 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objtools/writers/gff_writer.hpp>
-#include <objtools/writers/gff3_write_data.hpp>
 #include <objtools/writers/gff_feature_record.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
@@ -51,7 +50,90 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
-class CGffAlignmentRecord;
+
+//  ============================================================================
+class CGff3SourceRecord
+    //  ============================================================================
+    : public CGffSourceRecord
+{
+public:
+    CGff3SourceRecord()
+        : CGffSourceRecord("")  {};
+    CGff3SourceRecord(const CGff3SourceRecord& rhs)
+        : CGffSourceRecord(rhs), mRecordId(rhs.mRecordId)  {};
+    void SetRecordId(
+        const string& recordId) { mRecordId = recordId; };
+    string Id() const { return mRecordId; };
+
+    string StrAttributes() const {
+        string attributes;
+        attributes.reserve(256);
+
+        if (!mRecordId.empty()) {
+            attributes += "ID=";
+            attributes += mRecordId;
+        }
+        auto baseAttributes = CGffBaseRecord::StrAttributes();
+        if (!baseAttributes.empty()) {
+            attributes +=  ATTR_SEPARATOR;
+            attributes += baseAttributes;
+        }
+        return attributes;   
+    }
+protected:
+    string mRecordId;
+};
+
+//  ============================================================================
+class CGff3FeatureRecord
+//  ============================================================================
+    : public CGffFeatureRecord
+{
+public:
+    CGff3FeatureRecord()
+        : CGffFeatureRecord("") 
+    {};
+    
+    CGff3FeatureRecord(const CGff3FeatureRecord& rhs) 
+        : CGffFeatureRecord(rhs), mRecordId(rhs.mRecordId), mParent(rhs.mParent) 
+    {};
+
+    void SetRecordId(
+        const string& recordId) { mRecordId = recordId; };
+    void SetParent(
+        const string& parent) { mParent = parent; };
+    string Id() const { return mRecordId; };
+    string Parent() const { return mParent; };
+
+    string StrAttributes() const {
+        string attributes;
+        attributes.reserve(256);
+
+        if (!mRecordId.empty()) {
+            attributes += "ID=";
+            attributes += mRecordId;
+        }
+        if (!mParent.empty()) {
+            if (!attributes.empty()) {
+                attributes += ATTR_SEPARATOR;
+            }
+            attributes += "Parent=";
+            attributes += mParent;
+        }
+        auto baseAttributes = CGffBaseRecord::StrAttributes();
+        if (!baseAttributes.empty()) {
+            attributes +=  ATTR_SEPARATOR;
+            attributes += baseAttributes;
+        }
+        return attributes;   
+    }
+
+protected:
+    string mRecordId;
+    string mParent;
+
+};
+
 
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGff3Writer
@@ -115,26 +197,6 @@ protected:
         const CSeq_align&,
         const string& = "");
 
-    virtual bool xAssignFeatureAttributeParentGene(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat& );
-
-    virtual bool xAssignFeatureAttributeParentMrna(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat& );
-
-    virtual bool xAssignFeatureAttributeParentpreRNA(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&);
-
-    virtual bool xAssignFeatureAttributeParentVDJsegmentCregion(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&);
-
     virtual bool xWriteSequenceHeader(
         CBioseq_Handle );
     virtual bool xWriteSequenceHeader(
@@ -172,7 +234,7 @@ protected:
         const CGffBaseRecord& );
 
     void xWriteAlignment( 
-        const CGffAlignmentRecord& record );
+        const CGffAlignRecord& record );
 
     virtual bool xWriteFeatureRecords(
         const CGffFeatureRecord&,
@@ -269,48 +331,48 @@ protected:
     virtual void x_SortAlignments(TAlignCache& alignCache,
                                    CScope& scope);
     bool xAssignSource(
-        CGffSourceRecord&,
+        CGff3SourceRecord&,
         CBioseq_Handle);
     bool xAssignSourceType(
-        CGffSourceRecord&);
+        CGff3SourceRecord&);
     bool xAssignSourceSeqId(
-        CGffSourceRecord&,
+        CGff3SourceRecord&,
         CBioseq_Handle);
     bool xAssignSourceMethod(
-        CGffSourceRecord&,
+        CGff3SourceRecord&,
         CBioseq_Handle);
     bool xAssignSourceEndpoints(
-        CGffSourceRecord&,
+        CGff3SourceRecord&,
         CBioseq_Handle);
     bool xAssignSourceAttributes(
-        CGffSourceRecord&,
+        CGff3SourceRecord&,
         CBioseq_Handle);
     bool xAssignSourceAttributeGbKey(
-        CGffSourceRecord&);
+        CGff3SourceRecord&);
     bool xAssignSourceAttributeMolType(
-        CGffSourceRecord&,
+        CGff3SourceRecord&,
         CBioseq_Handle);
     bool xAssignSourceAttributeIsCircular(
-        CGffSourceRecord&,
+        CGff3SourceRecord&,
         CBioseq_Handle);
     bool xAssignSourceAttributesBioSource(
-        CGffSourceRecord&,
+        CGff3SourceRecord&,
         CBioseq_Handle);
 
     bool xAssignSourceAttributeGenome(
-        CGffSourceRecord&,
+        CGff3SourceRecord&,
         const CBioSource&);
     bool xAssignSourceAttributeName(
-        CGffSourceRecord&,
+        CGff3SourceRecord&,
         const CBioSource&);
     bool xAssignSourceAttributeDbxref(
-        CGffSourceRecord&,
+        CGff3SourceRecord&,
         const CBioSource&);
     bool xAssignSourceAttributesOrgMod(
-        CGffSourceRecord&,
+        CGff3SourceRecord&,
         const CBioSource&);
     bool xAssignSourceAttributesSubSource(
-        CGffSourceRecord&,
+        CGff3SourceRecord&,
         const CBioSource&);
 
     //begin mss-234//
@@ -345,14 +407,42 @@ protected:
     bool xAssignFeaturePhase(
         CGffFeatureRecord&,
         const CMappedFeat&);
+
     virtual bool xAssignFeatureAttributesFormatIndependent(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
+
     virtual bool xAssignFeatureAttributesFormatSpecific(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
+    bool xAssignFeatureAttributeParent(
+        CGff3FeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    bool xAssignFeatureAttributeID(
+        CGff3FeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    virtual bool xAssignFeatureAttributeParentMrna(
+        CGff3FeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat& );
+    virtual bool xAssignFeatureAttributeParentpreRNA(
+        CGff3FeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    virtual bool xAssignFeatureAttributeParentVDJsegmentCregion(
+        CGff3FeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    virtual bool xAssignFeatureAttributeParentGene(
+        CGff3FeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat& );
+
+
 
     bool xAssignFeatureAttributeCodeBreak(
         CGffFeatureRecord&,
@@ -417,14 +507,6 @@ protected:
     bool xAssignFeatureAttributeNcrnaClass(
         CGffFeatureRecord&,
         const CMappedFeat&);
-    bool xAssignFeatureAttributeParent(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&);
-    bool xAssignFeatureAttributeID(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&);
     bool xAssignFeatureAttributePartial(
         CGffFeatureRecord&,
         const CMappedFeat&);
@@ -458,21 +540,17 @@ protected:
         CGffFeatureRecord&,
         const CMappedFeat&);
 
-    //string xNextCdsId(
-    //    const CMappedFeat&);
     string xNextAlignId();
 
 protected:
     unsigned int m_uRecordId;
     string m_sDefaultMethod;
 
-    using TFeatureMap = map<CMappedFeat, CRef<CGffFeatureRecord>>;
+    using TFeatureMap = map<CMappedFeat, CRef<CGff3FeatureRecord>>;
 
-    //typedef map< CMappedFeat, CRef<CGffFeatureRecord> > TGeneMapNew;
     using TGeneMapNew  = TFeatureMap;
     TGeneMapNew m_GeneMapNew;
 
-  //  typedef map< CMappedFeat, CRef<CGffFeatureRecord> > TMrnaMapNew;
     using TMrnaMapNew = TFeatureMap;
     TMrnaMapNew m_MrnaMapNew;
 

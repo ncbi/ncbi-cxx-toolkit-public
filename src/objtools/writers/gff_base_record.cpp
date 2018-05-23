@@ -56,14 +56,9 @@ CGffBaseRecord::CGffBaseRecord(
     mSeqStop(0),
     mScore("."),
     mStrand("."),
-    mPhase("."),
-    mRecordId(""),
-    mParent("")
+    mPhase(".")
 //  ----------------------------------------------------------------------------
 {
-    if (!id.empty()) {
-        SetRecordId(id);
-    }
 };
 
 //  ----------------------------------------------------------------------------
@@ -77,9 +72,7 @@ CGffBaseRecord::CGffBaseRecord(
     mSeqStop(other.mSeqStop),
     mScore(other.mScore),
     mStrand(other.mStrand),
-    mPhase(other.mPhase),
-    mRecordId(other.mRecordId),
-    mParent(other.mParent)
+    mPhase(other.mPhase)
 {
     m_pLoc = other.m_pLoc;
     mAttributes.insert( 
@@ -186,22 +179,6 @@ bool CGffBaseRecord::SetAttributes(
 {
     mAttributes[key] = vector<string>(values.begin(), values.end());
     return true;
-}
-
-//  ----------------------------------------------------------------------------
-void CGffBaseRecord::SetRecordId(
-    const string& recordId)
-//  ----------------------------------------------------------------------------
-{
-    mRecordId = recordId;
-}
-
-//  ----------------------------------------------------------------------------
-void CGffBaseRecord::SetParent(
-    const string& parent)
-//  ----------------------------------------------------------------------------
-{
-    mParent = parent;
 }
 
 //  ----------------------------------------------------------------------------
@@ -363,20 +340,6 @@ string CGffBaseRecord::StrPhase() const
 }
 
 //  ----------------------------------------------------------------------------
-string CGffBaseRecord::Id() const
-//  ----------------------------------------------------------------------------
-{
-    return this->mRecordId;
-}
-
-//  ----------------------------------------------------------------------------
-string CGffBaseRecord::Parent() const
-//  ----------------------------------------------------------------------------
-{
-    return this->mParent;
-}
-
-//  ----------------------------------------------------------------------------
 bool lessAttrCit(
     const CGffBaseRecord::TAttrCit& lhs, const CGffBaseRecord::TAttrCit& rhs)
 //  ----------------------------------------------------------------------------
@@ -406,18 +369,6 @@ string CGffBaseRecord::StrAttributes() const
 
     string attributes;
 	attributes.reserve(256);
-
-    if (!mRecordId.empty()) {
-        attributes += "ID=";
-        attributes += mRecordId;
-    }
-    if (!mParent.empty()) {
-        if (!attributes.empty()) {
-            attributes += ATTR_SEPARATOR;
-        }
-        attributes += "Parent=";
-        attributes += mParent;
-    }
 
     typedef vector<TAttrCit> SORTATTRS;
     TAttrCit gapAttr = mAttributes.end();

@@ -244,9 +244,6 @@ protected:
     virtual bool x_WriteTrackLine(
         const CRef< CUser_object > );
 
-    virtual bool x_WriteRecord( 
-        const CGffWriteRecord* );
-
     // data:
     CRef<CScope> m_pScope;
     bool m_bHeaderWritten;

@@ -33,18 +33,7 @@
 #define OBJTOOLS_READERS___GFF3_IDGEN__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seq/Annotdesc.hpp>
-#include <objects/seqfeat/BioSource.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objtools/writers/gff_writer.hpp>
-#include <objtools/writers/gff3_write_data.hpp>
-#include <objtools/writers/gff_feature_record.hpp>
-#include <objtools/alnmgr/alnmap.hpp>
-#include <objects/seqalign/Spliced_seg.hpp>
-#include <objects/seqalign/Spliced_exon.hpp>
+#include <objtools/writers/write_util.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE

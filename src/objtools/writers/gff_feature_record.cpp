@@ -117,6 +117,7 @@ CGffAlignRecord::CGffAlignRecord(
     const string& id):
 //  ----------------------------------------------------------------------------
     CGffBaseRecord(id),
+    mRecordId(id),
     mGapIsTrivial(true),
     mAccumulatedMatches(0)
 {
@@ -212,6 +213,25 @@ void CGffAlignRecord::FinalizeMatches()
     if (!mGapIsTrivial) {
         SetAttribute("Gap", mAttrGap);
     }
+}
+
+//  -----------------------------------------------------------------------------
+string CGffAlignRecord::StrAttributes() const
+//  -----------------------------------------------------------------------------
+{
+    string attributes;
+    attributes.reserve(256);
+
+    if (!mRecordId.empty()) {
+        attributes += "ID=";
+        attributes += mRecordId;
+    }
+    auto baseAttributes = CGffBaseRecord::StrAttributes();
+    if (!baseAttributes.empty()) {
+        attributes +=  ATTR_SEPARATOR;
+        attributes += baseAttributes;
+    }
+    return attributes;   
 }
 
 END_objects_SCOPE
