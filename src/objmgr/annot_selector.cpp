@@ -617,13 +617,13 @@ bool SAnnotSelector::IsIncludedNamedAnnotAccession(const string& acc) const
 
 SAnnotSelector& SAnnotSelector::SetAdaptiveDepth(bool value)
 {
-    m_AdaptiveDepthFlags = value? kAdaptive_DefaultBits: kAdaptive_None;
+    m_AdaptiveDepthFlags = value? GetDefaultAdaptiveDepthFlags(): kAdaptive_None;
     return *this;
 }
 
 
-NCBI_PARAM_DECL(bool, OBJMGR, ADAPTIVE_BY_NAMED_ACCESSION);
-NCBI_PARAM_DEF(bool, OBJMGR, ADAPTIVE_BY_NAMED_ACCESSION, true);
+NCBI_PARAM_DECL(bool, OBJMGR, ADAPTIVE_DEPTH_BY_NAMED_ACC);
+NCBI_PARAM_DEF(bool, OBJMGR, ADAPTIVE_DEPTH_BY_NAMED_ACC, true);
 
 
 static
@@ -635,7 +635,7 @@ SAnnotSelector::TAdaptiveDepthFlags SAnnotSelector::GetDefaultAdaptiveDepthFlags
     TAdaptiveDepthFlags flags = s_DefaultAdaptiveDepthFlags;
     if ( flags & fAdaptive_Default ) {
         flags = kAdaptive_DefaultBits;
-        if ( !NCBI_PARAM_TYPE(OBJMGR, ADAPTIVE_BY_NAMED_ACCESSION)::GetDefault() ) {
+        if ( !NCBI_PARAM_TYPE(OBJMGR, ADAPTIVE_DEPTH_BY_NAMED_ACC)::GetDefault() ) {
             flags &= ~fAdaptive_ByNamedAcc;
         }
         s_DefaultAdaptiveDepthFlags = flags;
