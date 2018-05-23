@@ -203,19 +203,20 @@ void CCassBlobOp::GetBlobChunkTresholds(unsigned int  op_timeout_ms,
 void CCassBlobOp::GetBlob(unsigned int  op_timeout_ms,
                           int32_t  key, unsigned int  max_retries,
                           SBlobStat *  blob_stat,
-                          const DataChunkCB_t &  data_chunk_cb)
+                          TBlobChunkCallback data_chunk_cb)
 {
     string errmsg;
     bool is_error = false;
 
     CCassBlobLoader loader(
         op_timeout_ms, m_Conn, m_Keyspace, key, false, max_retries,
-        nullptr, data_chunk_cb,
-        [&is_error, &errmsg](void *  context,
-                             CRequestStatus::ECode  status,
-                             int  code, EDiagSev  severity,
-                             const string &  message)
-        {
+        move(data_chunk_cb),
+        [&is_error, &errmsg](
+            CRequestStatus::ECode status,
+            int code,
+            EDiagSev severity,
+            const string & message
+        ) {
             is_error = 1;
             errmsg = message;
         }
@@ -240,14 +241,14 @@ void CCassBlobOp::GetBlob(unsigned int  op_timeout_ms,
 
 void CCassBlobOp::GetBlobAsync(unsigned int  op_timeout_ms,
                                int32_t  key, unsigned int  max_retries,
-                               const DataChunkCB_t &  data_chunk_cb,
-                               const DataErrorCB_t & error_cb,
+                               TBlobChunkCallback data_chunk_cb,
+                               TDataErrorCallback error_cb,
                                unique_ptr<CCassBlobWaiter> &  Waiter)
 {
     Waiter.reset(new CCassBlobLoader(
         op_timeout_ms, m_Conn, m_Keyspace,
-        key, true, max_retries, nullptr,
-        data_chunk_cb, error_cb
+        key, true, max_retries,
+        move(data_chunk_cb), move(error_cb)
     ));
 }
 
@@ -256,7 +257,7 @@ void CCassBlobOp::InsertBlobAsync(unsigned int  op_timeout_ms,
                                   int32_t  key, unsigned int max_retries,
                                   CBlobRecord *  blob_rslt, ECassTristate  is_new,
                                   int64_t  LargeTreshold, int64_t LargeChunkSz,
-                                  const DataErrorCB_t & error_cb,
+                                  TDataErrorCallback error_cb,
                                   unique_ptr<CCassBlobWaiter> &  Waiter)
 {
     if (m_ExtendedSchema) {
@@ -264,7 +265,7 @@ void CCassBlobOp::InsertBlobAsync(unsigned int  op_timeout_ms,
             new CCassBlobTaskInsertExtended(
                 op_timeout_ms, m_Conn, m_Keyspace,
                 blob_rslt, true, max_retries,
-                nullptr, error_cb
+                move(error_cb)
             )
         );
     }
@@ -273,7 +274,7 @@ void CCassBlobOp::InsertBlobAsync(unsigned int  op_timeout_ms,
             new CCassBlobTaskInsert(op_timeout_ms, m_Conn, m_Keyspace,
                 key, blob_rslt, is_new, LargeTreshold,
                 LargeChunkSz, true, max_retries,
-                nullptr, error_cb)
+                move(error_cb))
         );
     }
 }
@@ -281,12 +282,12 @@ void CCassBlobOp::InsertBlobAsync(unsigned int  op_timeout_ms,
 
 void CCassBlobOp::DeleteBlobAsync(unsigned int  op_timeout_ms,
                                   int32_t  key, unsigned int  max_retries,
-                                  const DataErrorCB_t & error_cb,
+                                  TDataErrorCallback error_cb,
                                   unique_ptr<CCassBlobWaiter> &  Waiter)
 {
     Waiter.reset(new CCassBlobTaskDelete(
         op_timeout_ms, m_Conn, m_Keyspace, m_ExtendedSchema,
-        key, true, max_retries, nullptr, error_cb
+        key, true, max_retries, move(error_cb)
     ));
 }
 
@@ -295,7 +296,7 @@ unique_ptr<CCassBlobTaskLoadBlob> CCassBlobOp::GetBlobExtended(
     unsigned int max_retries,
     CBlobRecord::TSatKey sat_key,
     bool load_chunks,
-    const DataErrorCB_t & error_cb
+    TDataErrorCallback error_cb
 ) {
     return unique_ptr<CCassBlobTaskLoadBlob>(
         new CCassBlobTaskLoadBlob(
@@ -305,7 +306,7 @@ unique_ptr<CCassBlobTaskLoadBlob> CCassBlobOp::GetBlobExtended(
             m_Keyspace,
             sat_key,
             load_chunks,
-            error_cb
+            move(error_cb)
         )
     );
 }
@@ -316,7 +317,7 @@ unique_ptr<CCassBlobTaskLoadBlob> CCassBlobOp::GetBlobExtended(
     CBlobRecord::TSatKey sat_key,
     CBlobRecord::TTimestamp modified,
     bool load_chunks,
-    const DataErrorCB_t & error_cb
+    TDataErrorCallback error_cb
 ) {
     return unique_ptr<CCassBlobTaskLoadBlob>(
         new CCassBlobTaskLoadBlob(
@@ -327,7 +328,7 @@ unique_ptr<CCassBlobTaskLoadBlob> CCassBlobOp::GetBlobExtended(
             sat_key,
             modified,
             load_chunks,
-            error_cb
+            move(error_cb)
         )
     );
 }

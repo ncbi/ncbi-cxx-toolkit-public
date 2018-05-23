@@ -56,17 +56,16 @@ enum ECassTristate {
     eFalse
 };
 
-typedef function<void(void *  context,
-                      const unsigned char *  data,
-                      unsigned int  size,
-                      int  chunk_no)>               DataChunkCB_t;
-typedef function<void(void *  context,
-                      CRequestStatus::ECode  status,
-                      int  code,
-                      EDiagSev  severity,
-                      const string &  message)>     DataErrorCB_t;
-typedef void(*DataReadyCB_t)(void*);
-
+using TBlobChunkCallback =
+    function<void(const unsigned char * data, unsigned int size, int chunk_no)>;
+using TDataErrorCallback =
+    function<void(
+        CRequestStatus::ECode status,
+        int code,
+        EDiagSev severity,
+        const string & message
+    )>;
+using TDataReadyCallback = void(*)(void*);
 
 class CCassBlobWaiter
 {
@@ -76,27 +75,30 @@ public:
     CCassBlobWaiter(CCassBlobWaiter&&) = default;
     CCassBlobWaiter& operator=(CCassBlobWaiter&&) = default;
 
-    CCassBlobWaiter(unsigned int  op_timeout_ms,
-                    shared_ptr<CCassConnection>  conn,
-                    const string &  keyspace, int32_t  key, bool  async,
-                    unsigned int  max_retries, void *  context,
-                    DataErrorCB_t  error_cb) :
-        m_ErrorCb(error_cb),
-        m_DataReadyCb(nullptr),
-        m_DataReadyData(nullptr),
-        m_Conn(conn),
-        m_Keyspace(keyspace),
-        m_Key(key),
-        m_State(eInit),
-        m_OpTimeoutMs(op_timeout_ms),
-        m_LastActivityMs(gettime() / 1000L),
-        m_RestartCounter(0),
-        m_MaxRetries(max_retries), // 0 means no limit in auto-restart count,
+    CCassBlobWaiter(
+        unsigned int op_timeout_ms,
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        int32_t key,
+        bool async,
+        unsigned int max_retries,
+        TDataErrorCallback error_cb
+    )
+      : m_ErrorCb(move(error_cb))
+      ,  m_DataReadyCb(nullptr)
+      ,  m_DataReadyData(nullptr)
+      ,  m_Conn(conn)
+      ,  m_Keyspace(keyspace)
+      ,  m_Key(key)
+      ,  m_State(eInit)
+      ,  m_OpTimeoutMs(op_timeout_ms)
+      ,  m_LastActivityMs(gettime() / 1000L)
+      ,  m_RestartCounter(0)
+      ,  m_MaxRetries(max_retries) // 0 means no limit in auto-restart count,
                                    // any other positive value is the limit,
                                    // 1 means no 2nd start -> no re-starts at all
-        m_Async(async),
-        m_Cancelled(false),
-        m_Context(context)
+      ,  m_Async(async)
+      ,  m_Cancelled(false)
     {
         ERR_POST(Trace << "CCassBlobWaiter::CCassBlobWaiter this=" << this);
     }
@@ -155,22 +157,17 @@ public:
         return m_Key;
     }
 
-    void SetErrorCB(DataErrorCB_t &&  error_cb)
+    void SetErrorCB(TDataErrorCallback error_cb)
     {
         m_ErrorCb = std::move(error_cb);
     }
 
-    void SetDataReadyCB(DataReadyCB_t  datareadycb, void *  data)
+    void SetDataReadyCB(TDataReadyCallback datareadycb, void *  data)
     {
         ERR_POST(Trace << "CCassBlobWaiter::SetDataReadyCB this=" << this <<
                  " CB: " << datareadycb << ", DATA: " << data);
         m_DataReadyCb = datareadycb;
         m_DataReadyData = data;
-    }
-
-    void * GetContext(void)
-    {
-        return m_Context;
     }
 
 protected:
@@ -195,7 +192,7 @@ protected:
         assert(m_ErrorCb != nullptr);
         m_State = eError;
         m_LastError = message;
-        m_ErrorCb(m_Context, status, code, severity, message);
+        m_ErrorCb(status, code, severity, message);
     }
 
     bool IsTimedOut(void) const
@@ -263,8 +260,8 @@ protected:
     virtual void Wait1(void) = 0;
 
 protected:
-    DataErrorCB_t                   m_ErrorCb;
-    DataReadyCB_t                   m_DataReadyCb;
+    TDataErrorCallback              m_ErrorCb;
+    TDataReadyCallback              m_DataReadyCb;
     void *                          m_DataReadyData;
     shared_ptr<CCassConnection>     m_Conn;
     string                          m_Keyspace;
@@ -277,7 +274,6 @@ protected:
     unsigned int                    m_MaxRetries;
     bool                            m_Async;
     bool                            m_Cancelled;
-    void *                          m_Context;
 
     vector<shared_ptr<CCassQuery>>  m_QueryArr;
 };
@@ -297,13 +293,12 @@ public:
         int32_t key,
         bool async,
         unsigned int max_retries,
-        void * context,
-        const DataChunkCB_t & data_chunk_cb,
-        const DataErrorCB_t & DataErrorCB
+        TBlobChunkCallback data_chunk_cb,
+        TDataErrorCallback DataErrorCB
     );
 
-    void SetDataChunkCB(DataChunkCB_t && datacb);
-    void SetDataReadyCB(DataReadyCB_t datareadycb, void * data);
+    void SetDataChunkCB(TBlobChunkCallback chunk_callback);
+    void SetDataReadyCB(TDataReadyCallback datareadycb, void * data);
 
     SBlobStat GetBlobStat(void) const;
     uint64_t GetBlobSize(void) const;
@@ -336,7 +331,7 @@ private:
 
     bool                m_StatLoaded;
     SBlobStat           m_BlobStat;
-    DataChunkCB_t       m_DataCb;
+    TBlobChunkCallback  m_DataCb;
     int64_t             m_ExpectedSize;
     int64_t             m_RemainingSize;
     int32_t             m_LargeParts;
@@ -406,21 +401,21 @@ public:
 
     void GetBlob(unsigned int  op_timeout_ms,
                  int32_t  key, unsigned int  max_retries,
-                 SBlobStat *  blob_stat, const DataChunkCB_t &  data_chunk_cb);
+                 SBlobStat *  blob_stat, TBlobChunkCallback data_chunk_cb);
     void GetBlobAsync(unsigned int  op_timeout_ms,
                       int32_t  key, unsigned int  max_retries,
-                      const DataChunkCB_t &  data_chunk_cb,
-                      const DataErrorCB_t & error_cb,
+                      TBlobChunkCallback data_chunk_cb,
+                      TDataErrorCallback error_cb,
                       unique_ptr<CCassBlobWaiter> &  waiter);
     void InsertBlobAsync(unsigned int  op_timeout_ms,
                          int32_t  key, unsigned int  max_retries,
                          CBlobRecord *  blob_rslt, ECassTristate  is_new,
                          int64_t  LargeTreshold, int64_t  LargeChunkSz,
-                         const DataErrorCB_t & error_cb,
+                         TDataErrorCallback error_cb,
                          unique_ptr<CCassBlobWaiter> &  waiter);
     void DeleteBlobAsync(unsigned int  op_timeout_ms,
                          int32_t  key, unsigned int  max_retries,
-                         const DataErrorCB_t & error_cb,
+                         TDataErrorCallback error_cb,
                          unique_ptr<CCassBlobWaiter> &  waiter);
 
     unique_ptr<CCassBlobTaskLoadBlob> GetBlobExtended(
@@ -428,7 +423,7 @@ public:
         unsigned int max_retries,
         CBlobRecord::TSatKey sat_key,
         bool load_chunks,
-        const DataErrorCB_t & error_cb
+        TDataErrorCallback error_cb
     );
 
     unique_ptr<CCassBlobTaskLoadBlob> GetBlobExtended(
@@ -437,7 +432,7 @@ public:
         CBlobRecord::TSatKey sat_key,
         CBlobRecord::TTimestamp modified,
         bool load_chunks,
-        const DataErrorCB_t & error_cb
+        TDataErrorCallback error_cb
     );
 
     void UpdateBlobFlags(unsigned int  op_timeout_ms,

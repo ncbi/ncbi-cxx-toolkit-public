@@ -50,7 +50,7 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     const string & keyspace,
     CBlobRecord::TSatKey sat_key,
     bool load_chunks,
-    const DataErrorCB_t & data_error_cb
+    TDataErrorCallback data_error_cb
 )
     : CCassBlobTaskLoadBlob(
         op_timeout_ms,
@@ -73,11 +73,11 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     CBlobRecord::TSatKey sat_key,
     CBlobRecord::TTimestamp modified,
     bool load_chunks,
-    const DataErrorCB_t & data_error_cb
+    TDataErrorCallback data_error_cb
 )
     : CCassBlobWaiter(
         op_timeout_ms, conn, keyspace, sat_key, true,
-        max_retries, nullptr, data_error_cb
+        max_retries, move(data_error_cb)
       )
     , m_ChunkCallback(nullptr)
     , m_PropsCallback(nullptr)
@@ -96,12 +96,12 @@ bool CCassBlobTaskLoadBlob::IsBlobPropsFound() const
     return m_PropsFound;
 }
 
-void CCassBlobTaskLoadBlob::SetChunkCallback(DataChunkCB_t callback)
+void CCassBlobTaskLoadBlob::SetChunkCallback(TBlobChunkCallback callback)
 {
     m_ChunkCallback = move(callback);
 }
 
-void CCassBlobTaskLoadBlob::SetPropsCallback(TPropsCallback callback)
+void CCassBlobTaskLoadBlob::SetPropsCallback(TBlobPropsCallback callback)
 {
     m_PropsCallback = move(callback);
 }
@@ -119,7 +119,7 @@ void CCassBlobTaskLoadBlob::Wait1()
             case eInit: {
                 if (!m_ChunkCallback && m_LoadChunks) {
                     m_ChunkCallback =
-                        [this] (void *, const unsigned char * data, unsigned int size, int chunk_no) {
+                        [this] (const unsigned char * data, unsigned int size, int chunk_no) {
                             if (chunk_no >= 0) {
                                 this->m_Blob->InsertBlobChunk(chunk_no, CBlobRecord::TBlobChunk(data, data + size));
                             }
@@ -205,14 +205,23 @@ void CCassBlobTaskLoadBlob::Wait1()
                 }
                 if (m_LoadChunks) {
                     if (!m_PropsFound) {
-                        RAISE_DB_ERROR(eInconsistentData, string("Blob properties not found. Cannot load chunks for: ") +
-                            m_Keyspace + "." + NStr::NumericToString(m_Key)
-                        );
+                        if (!m_PropsCallback) {
+                            string msg = "Blob not found, key: " + m_Keyspace +
+                                "." + NStr::NumericToString(m_Key);
+                            // Call a CB which tells that a 404 reply should be sent
+                            Error(CRequestStatus::e404_NotFound, CCassandraException::eNotFound, eDiag_Error, msg.c_str());
+                        }
+                        else {
+                            m_State = eDone;
+                        }
+                        break;
                     }
-                    m_ProcessedChunks = vector<bool>(static_cast<size_t>(m_Blob->GetNChunks()), false);
-                    m_QueryArr.resize(static_cast<size_t>(m_Blob->GetNChunks()));
-                    m_State = eLoadingChunks;
-                    b_need_repeat = true;
+                    else {
+                        m_ProcessedChunks = vector<bool>(static_cast<size_t>(m_Blob->GetNChunks()), false);
+                        m_QueryArr.resize(static_cast<size_t>(m_Blob->GetNChunks()));
+                        m_State = eLoadingChunks;
+                        b_need_repeat = true;
+                    }
                 }
                 else {
                     m_State = eDone;
@@ -241,7 +250,7 @@ void CCassBlobTaskLoadBlob::Wait1()
                               eDiag_Error, msg);
                         break;
                     }
-                    m_ChunkCallback(m_Context, nullptr, 0, -1);
+                    m_ChunkCallback(nullptr, 0, -1);
                     m_State = eDone;
                 }
                 break;
@@ -326,7 +335,7 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
                                 return;
                             }
                             m_ProcessedChunks[chunk_no] = true;
-                            m_ChunkCallback(m_Context, rawdata, len, chunk_no);
+                            m_ChunkCallback(rawdata, len, chunk_no);
                             qry->Close();
                             qry = nullptr;
                             --m_ActiveQueries;
@@ -336,7 +345,9 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
                             continue;
                         }
                     }
-                    chunk_repeat = true;
+                    else {
+                        chunk_repeat = true;
+                    }
                 }
 
                 if (chunk_repeat) {

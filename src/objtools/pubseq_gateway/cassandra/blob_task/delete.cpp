@@ -49,11 +49,11 @@ CCassBlobTaskDelete::CCassBlobTaskDelete(
         bool extended,
         int32_t key,
         bool async,
-        unsigned int max_retries, void * context,
-        DataErrorCB_t error_cb
+        unsigned int max_retries,
+        TDataErrorCallback error_cb
 )
     : CCassBlobWaiter(op_timeout_ms, conn, keyspace, key,
-            async, max_retries, context, error_cb)
+            async, max_retries, move(error_cb))
     , m_ExtendedSchema(extended)
 {}
 

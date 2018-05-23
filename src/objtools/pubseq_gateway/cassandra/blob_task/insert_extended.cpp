@@ -45,12 +45,12 @@ USING_NCBI_SCOPE;
 CCassBlobTaskInsertExtended::CCassBlobTaskInsertExtended(
     unsigned int op_timeout_ms, shared_ptr<CCassConnection>  conn,
     const string & keyspace, CBlobRecord * blob,
-    bool async, unsigned int max_retries, void * context,
-    const DataErrorCB_t & data_error_cb
+    bool async, unsigned int max_retries,
+    TDataErrorCallback data_error_cb
 )
     : CCassBlobWaiter(
         op_timeout_ms, conn, keyspace, blob->GetKey(), async,
-        max_retries, context, data_error_cb
+        max_retries, move(data_error_cb)
     )
     , m_Blob(blob)
 {}

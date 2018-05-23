@@ -53,12 +53,11 @@ CCassBlobTaskInsert::CCassBlobTaskInsert(
         int64_t large_chunk_sz,
         bool async,
         unsigned int max_retries,
-        void * context,
-        const DataErrorCB_t & data_error_cb
+        TDataErrorCallback data_error_cb
 )
     : CCassBlobWaiter(
         op_timeout_ms, conn, keyspace, key, async,
-        max_retries, context, data_error_cb
+        max_retries, move(data_error_cb)
       )
     , m_LargeTreshold(large_treshold)
     , m_LargeChunkSize(large_chunk_sz)

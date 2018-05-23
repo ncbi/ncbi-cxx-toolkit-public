@@ -64,8 +64,7 @@ public:
         CBlobRecord * blob,
         bool async,
         unsigned int max_retries,
-        void * context,
-        const DataErrorCB_t & data_error_cb
+        TDataErrorCallback data_error_cb
     );
 
 protected:

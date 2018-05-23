@@ -53,8 +53,8 @@ public:
         bool extended,
         int32_t key,
         bool async,
-        unsigned int max_retries, void * context,
-        DataErrorCB_t error_cb
+        unsigned int max_retries,
+        TDataErrorCallback error_cb
     );
 
 protected:

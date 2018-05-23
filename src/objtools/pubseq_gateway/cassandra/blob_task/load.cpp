@@ -51,9 +51,8 @@ CCassBlobLoader::CCassBlobLoader(
     int32_t key,
     bool async,
     unsigned int max_retries,
-    void * context,
-    const DataChunkCB_t & data_chunk_cb,
-    const DataErrorCB_t & DataErrorCB
+    TBlobChunkCallback data_chunk_cb,
+    TDataErrorCallback data_error_cb
 )
     : CCassBlobWaiter(
         op_timeout_ms,
@@ -62,11 +61,10 @@ CCassBlobLoader::CCassBlobLoader(
         key,
         async,
         max_retries,
-        context,
-        DataErrorCB
+        move(data_error_cb)
     )
     , m_StatLoaded(false)
-    , m_DataCb(data_chunk_cb)
+    , m_DataCb(move(data_chunk_cb))
     , m_ExpectedSize(0)
     , m_RemainingSize(0)
     , m_LargeParts(0)
@@ -75,12 +73,12 @@ CCassBlobLoader::CCassBlobLoader(
              max_retries);
 }
 
-void CCassBlobLoader::SetDataChunkCB(DataChunkCB_t &&  datacb)
+void CCassBlobLoader::SetDataChunkCB(TBlobChunkCallback chunk_callback)
 {
-    m_DataCb = std::move(datacb);
+    m_DataCb = std::move(chunk_callback);
 }
 
-void CCassBlobLoader::SetDataReadyCB(DataReadyCB_t  datareadycb, void *  data)
+void CCassBlobLoader::SetDataReadyCB(TDataReadyCallback datareadycb, void * data)
 {
     if (datareadycb && m_State != eInit)
         NCBI_THROW(CCassandraException, eSeqFailed,
@@ -360,8 +358,8 @@ void CCassBlobLoader::Wait1(void)
                                       eDiag_Error, msg);
                             } else {
                                 m_State = eDone;
-                                m_DataCb(m_Context, rawdata, len, 0);
-                                m_DataCb(m_Context, nullptr, 0, -1);
+                                m_DataCb(rawdata, len, 0);
+                                m_DataCb(nullptr, 0, -1);
                             }
                             break;
                         } else { // multi-chunk
@@ -441,7 +439,7 @@ void CCassBlobLoader::Wait1(void)
                                 return;
                             }
 
-                            m_DataCb(m_Context, rawdata, len, ready_chunk_no);
+                            m_DataCb(rawdata, len, ready_chunk_no);
                             x_MarkChunkProcessed(ready_chunk_no);
                             x_RequestChunksAhead();
                             continue;
@@ -560,7 +558,7 @@ void CCassBlobLoader::Wait1(void)
                                   eDiag_Error, msg);
                         } else {
                             m_State = eDone;
-                            m_DataCb(m_Context, nullptr, 0, -1);
+                            m_DataCb(nullptr, 0, -1);
                         }
                     } else if (wr == ar_wait) {
                         break;

@@ -58,7 +58,7 @@ class CCassBlobTaskLoadBlob
 
 public:
 
-    using TPropsCallback = function<void(CBlobRecord const & blob, bool isFound)>;
+    using TBlobPropsCallback = function<void(CBlobRecord const & blob, bool isFound)>;
 
     CCassBlobTaskLoadBlob(
         unsigned int op_timeout_ms,
@@ -67,7 +67,7 @@ public:
         const string & keyspace,
         CBlobRecord::TSatKey sat_key,
         bool load_chunks,
-        const DataErrorCB_t & data_error_cb
+        TDataErrorCallback data_error_cb
     );
 
     CCassBlobTaskLoadBlob(
@@ -78,7 +78,7 @@ public:
         CBlobRecord::TSatKey sat_key,
         CBlobRecord::TTimestamp modified,
         bool load_chunks,
-        const DataErrorCB_t & data_error_cb
+        TDataErrorCallback data_error_cb
     );
 
     virtual ~CCassBlobTaskLoadBlob()
@@ -93,8 +93,8 @@ public:
 
     unique_ptr<CBlobRecord> ConsumeBlobRecord();
     bool IsBlobPropsFound() const;
-    void SetChunkCallback(DataChunkCB_t callback);
-    void SetPropsCallback(TPropsCallback callback);
+    void SetChunkCallback(TBlobChunkCallback callback);
+    void SetPropsCallback(TBlobPropsCallback callback);
 
     void Cancel(void);
     virtual bool Restart(unsigned int max_retries) override;
@@ -108,8 +108,8 @@ private:
     void x_RequestChunksAhead(void);
     void x_RequestChunk(CCassQuery& qry, int32_t chunk_no);
 
-    DataChunkCB_t m_ChunkCallback;
-    TPropsCallback m_PropsCallback;
+    TBlobChunkCallback m_ChunkCallback;
+    TBlobPropsCallback m_PropsCallback;
     unique_ptr<CBlobRecord> m_Blob;
     CBlobRecord::TTimestamp m_Modified;
     bool m_LoadChunks;
