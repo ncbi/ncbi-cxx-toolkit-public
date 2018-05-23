@@ -32,9 +32,18 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+
+#include <objtools/writers/write_util.hpp>
 #include <objtools/writers/gff_feature_record.hpp>
+#include <objmgr/mapped_feat.hpp>
+#include <objmgr/util/feature.hpp>
+#include <objmgr/util/sequence.hpp>
+
+#include <objects/general/Object_id.hpp>
+#include <objects/general/User_object.hpp>
 
 BEGIN_NCBI_SCOPE
+
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------

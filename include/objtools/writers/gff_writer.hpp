@@ -33,6 +33,12 @@
 #define OBJTOOLS_READERS___GFF_WRITER__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seq/Annotdesc.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 #include <objtools/writers/gff2_write_data.hpp>
 #include <objtools/writers/gff_feature_record.hpp>
 #include <objtools/writers/writer.hpp>

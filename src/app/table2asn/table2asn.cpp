@@ -948,6 +948,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         result = m_context.CreateSeqEntryFromTemplate(entry);
     else
         result = m_context.CreateSubmitFromTemplate(entry, submit);
+
     CSerialObject& submit_or_entry = submit.Empty() ? (CSerialObject&)*entry : (CSerialObject&)*submit;
 
     //m_context.MakeGenomeCenterId(*entry);

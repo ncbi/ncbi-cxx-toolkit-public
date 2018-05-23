@@ -25,60 +25,86 @@
  *
  * Authors:  Frank Ludwig
  *
- * File Description:  Write gff3 file
+ * File Description:  Write gff file
  *
  */
 
-#ifndef OBJTOOLS_READERS___GVF_WRITER__HPP
-#define OBJTOOLS_READERS___GVF_WRITER__HPP
+#ifndef OBJTOOLS_WRITERS___GFF_RECORD__HPP
+#define OBJTOOLS_READERS___GFF_RECORD__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
 #include <objects/seq/Seq_annot.hpp>
-#include <objects/seq/Annotdesc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objtools/writers/gff3_writer.hpp>
-#include <objtools/writers/gff3_write_data.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
-
-
 //  ============================================================================
-class NCBI_XOBJWRITE_EXPORT CGvfWriter
+class NCBI_XOBJWRITE_EXPORT CGffRecord
 //  ============================================================================
-    : public CGff3Writer
 {
 public:
-    CGvfWriter(
-        CScope&,
-        CNcbiOstream&,
-        unsigned int = fNormal );
-    CGvfWriter(
-        CNcbiOstream&,
-        unsigned int = fNormal );
-    virtual ~CGvfWriter();
-
-    virtual bool WriteHeader() override;
-    virtual bool WriteHeader(
-        const CSeq_annot& ) override;
-
+    CGffRecord();
+    ~CGffRecord() {};
+    
+    bool SetRecord(
+        const CSeq_annot&,
+        const CSeq_feat& );
+        
+    void DumpRecord(
+        CNcbiOstream& );
+        
 protected:
+    static string FeatIdString(
+        const CFeat_id& id );
 
-    virtual bool xWriteFeature(
-        CFeat_CI) override;
+    bool AssignType(
+        const CSeq_feat& );
+    bool AssignSeqId(
+        const CSeq_feat& );
+    bool AssignStart(
+        const CSeq_feat& );
+    bool AssignStop(
+        const CSeq_feat& );
+    bool AssignSource(
+        const CSeq_feat& );
+    bool AssignScore(
+        const CSeq_feat& );
+    bool AssignStrand(
+        const CSeq_feat& );
+    bool AssignPhase(
+        const CSeq_feat& );
+    bool AssignAttributesCore(
+        const CSeq_annot&,
+        const CSeq_feat& );
+    bool AssignAttributesExtended(
+        const CSeq_feat& );
 
-    virtual bool xWriteFeature(
-        CGffFeatureContext&,
-        const CMappedFeat& );
+    void AddAttribute( 
+        const string& key,
+        const string& value );
 
-    virtual bool xWriteFeatureVariationRef(
-        CGffFeatureContext&,
-        const CMappedFeat& );
+    static CSeq_feat::TData::ESubtype GetSubtypeOf(
+        const CSeq_annot&,
+        const CFeat_id& );
+        
+    static bool IsParentOf(
+        CSeq_feat::TData::ESubtype,
+        CSeq_feat::TData::ESubtype );
+        
+    string m_strSeqId;
+    string m_strSource;
+    string m_strType;
+    string m_strStart;
+    string m_strEnd;
+    string m_strScore;
+    string m_strStrand;
+    string m_strPhase;
+    string m_strAttributes;
+
+    map< string, CSeq_feat::TData::ESubtype > m_IdToTypeMap;
 };
 
 END_objects_SCOPE
 END_NCBI_SCOPE
 
-#endif  // OBJTOOLS_WRITERS___GVF_WRITER__HPP
+#endif  // OBJTOOLS_WRITERS___GFF_RECORD__HPP

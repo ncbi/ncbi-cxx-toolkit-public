@@ -31,11 +31,34 @@
 
 #include <ncbi_pch.hpp>
 
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Annot_id.hpp>
+#include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+
+#include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/seqfeat/Feat_id.hpp>
+#include <objects/seqfeat/Gb_qual.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqalign/Score.hpp>
+
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/mapped_feat.hpp>
+#include <objmgr/util/feature.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <objtools/writers/gvf_write_data.hpp>
 #include <objtools/writers/gvf_writer.hpp>
+#include <objtools/alnmgr/alnmap.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -166,6 +189,7 @@ bool CGvfWriter::xWriteFeature(
     if (!feat_it) {
         return false;
     }
+
     CGffFeatureContext fc(feat_it, CBioseq_Handle(), feat_it.GetAnnot());
     return xWriteFeature(fc, *feat_it);
 }
@@ -179,8 +203,10 @@ bool CGvfWriter::xWriteFeature(
     CGffFeatureContext dummy_fc;
 
     switch( mf.GetFeatSubtype() ) {
+
     default:
         return true;
+
     case CSeqFeatData::eSubtype_variation_ref:
         return xWriteFeatureVariationRef( dummy_fc, mf );
     }

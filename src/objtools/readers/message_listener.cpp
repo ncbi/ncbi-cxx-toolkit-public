@@ -34,7 +34,7 @@
 
 #include <objtools/readers/message_listener.hpp>
 
-BEGIN_NCBI_SCOPE 
+BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 void

@@ -33,7 +33,14 @@
 #ifndef OBJTOOLS_WRITERS___GFF_FEATURE_RECORD__HPP
 #define OBJTOOLS_WRITERS___GFF_FEATURE_RECORD__HPP
 
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/util/feature.hpp>
+
+#include <objtools/writers/write_util.hpp>
 #include <objtools/writers/gff_base_record.hpp>
+#include <objtools/writers/feature_context.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
