@@ -33,11 +33,6 @@
 #define OBJTOOLS_READERS___GVF_WRITER__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seq/Annotdesc.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
 #include <objtools/writers/gff3_writer.hpp>
 #include <objtools/writers/gff3_write_data.hpp>
 
@@ -72,6 +67,9 @@ protected:
     virtual bool xWriteFeature(
         CGffFeatureContext&,
         const CMappedFeat& );
+
+    virtual bool x_WriteRecord( 
+        const CGffWriteRecord* );
 
     virtual bool xWriteFeatureVariationRef(
         CGffFeatureContext&,
