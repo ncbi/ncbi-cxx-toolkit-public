@@ -44,6 +44,8 @@
 #include <objects/biblio/Cit_art.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 
+#include "wgs_text_accession.hpp"
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -153,12 +155,15 @@ struct CSeqEntryInfo
     {}
 };
 
+typedef pair<CTextAccessionContainer, CTextAccessionContainer> TAccessionRange;
+
 struct CSeqEntryCommonInfo
 {
     bool m_nuc_warn;
     bool m_prot_warn;
 
     list<string> m_acc_assigned;
+    list<TAccessionRange> m_acc_ranges;
 
     CSeqEntryCommonInfo() :
         m_nuc_warn(false),

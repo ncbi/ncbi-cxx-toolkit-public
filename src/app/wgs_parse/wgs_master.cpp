@@ -1899,6 +1899,95 @@ static bool IsScaffoldAccessionPrefixValid(const string& prefix)
     return valid;
 }
 
+static void ConvertAccessionsToRanges(const list<string>& accs, list<TAccessionRange>& ranges)
+{
+    TAccessionRange range;
+    CTextAccessionContainer last_acc;
+    for (auto acc : accs) {
+        if (!range.first.IsValid()) {
+            range.first.Set(acc);
+            last_acc.Set(acc);
+        }
+        else {
+            CTextAccessionContainer cur_acc(acc);
+            if (cur_acc.GetPrefix() != last_acc.GetPrefix() || last_acc.GetNumber() + 1 != cur_acc.GetNumber()) {
+                range.second.swap(last_acc);
+                ranges.push_back(range);
+
+                range.first.Set(acc);
+            }
+
+            last_acc.swap(cur_acc);
+        }
+    }
+
+    range.second.swap(last_acc);
+    ranges.push_back(range);
+}
+
+static bool CheckContigsAccessionsRange(const list<TAccessionRange>& ranges, TSeqPos num_of_entries)
+{
+    const CTextAccessionContainer& first = ranges.front().first;
+    const CTextAccessionContainer& last = ranges.back().second;
+
+    bool is_reject = false,
+         is_warning = false;
+
+    if (first.GetAccession().size() <= GetParams().GetAccession().size() || last.GetAccession().size() <= GetParams().GetAccession().size()) {
+        is_warning = is_reject = true;
+    }
+    else {
+        if (GetParams().GetSource() == eDDBJ || GetParams().GetSource() == eEMBL) {
+            if (last.GetNumber() - first.GetNumber() + 1 != num_of_entries) {
+                is_warning = true;
+                is_reject = !GetParams().IsDblinkOverride();
+            }
+        }
+        else if (first.GetNumber() != 1 && last.GetNumber() != num_of_entries) {
+            is_warning = true;
+            is_reject = !GetParams().IsDblinkOverride();
+        }
+    }
+
+    if (is_warning) {
+        ERR_POST_EX(0, 0, (is_reject ? Critical : Warning) << "The range of accessions in input data is incorrect.");
+    }
+
+    return is_reject;
+}
+
+static bool CheckScaffoldsAccessionsRange(const list<TAccessionRange>& ranges)
+{
+    static const size_t MAX_ACCESSION_NUMBER = 999999;
+    size_t starts_from_one = 0,
+           ends_with_max = 0;
+
+    for (auto range : ranges) {
+        if (range.first.GetNumber() == 1) {
+            ++starts_from_one;
+        }
+        else if (range.second.GetNumber() == MAX_ACCESSION_NUMBER) {
+            ++ends_with_max;
+        }
+    }
+
+    size_t bad_ranges = ranges.size() - min(starts_from_one, ends_with_max);
+
+    static const size_t MAX_BAD_RANGES = 10;
+    static const size_t MIN_BAD_RANGES = 2;
+
+    bool is_reject = false;
+    if (bad_ranges > MAX_BAD_RANGES) {
+        is_reject = true;
+        ERR_POST_EX(0, 0, Critical << "The number (" << bad_ranges << ") of non-contiguous scaffolds accession ranges exceeds the threshold of 10. Rejecting the whole set.");
+    }
+    else if (bad_ranges > MIN_BAD_RANGES) {
+        ERR_POST_EX(0, 0, Warning << "A total of " << bad_ranges << " non-contiguous scaffolds accession ranges exist for this WGS project. Usually there are no more than two.");
+    }
+
+    return is_reject;
+}
+
 bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 {
     const list<string>& files = GetParams().GetInputFiles();
@@ -1915,6 +2004,8 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
     list<CEntryOrderInfo> seq_order;
 
     size_t cur_file_num = 0;
+    EInputType input_type = eSeqSubmit;
+
     for (auto& file : files) {
 
         CNcbiIfstream in(file);
@@ -1925,7 +2016,6 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
             break;
         }
 
-        EInputType input_type = eSeqSubmit;
         GetInputTypeFromFile(in, input_type);
 
         bool first = true;
@@ -2158,8 +2248,8 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 
     master_info.m_reject = master_info.m_reject || DBLinkProblemReport(master_info);
 
+    common_info.m_acc_assigned.sort();
     if (GetParams().IsAccessionAssigned()) {
-        common_info.m_acc_assigned.sort();
         if (!CheckUniqueAccs(common_info.m_acc_assigned)) {
             master_info.m_reject = true;
         }
@@ -2179,17 +2269,47 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
     SortSequences(seq_order);
     BuildSortOrderMap(seq_order, master_info.m_order_of_entries);
 
-    // TODO some complicated error condition
+    static const string SCAFFOLD_PREFIX = "CM";
+    if (GetParams().GetUpdateMode() == eUpdateScaffoldsNew && GetParams().GetScaffoldPrefix() == SCAFFOLD_PREFIX && !GetParams().IsAccessionAssigned()) {
+        ERR_POST_EX(0, 0, Critical << "Command line switches \"-u 3\" and \"-j 1\" require \"-c T\": htgs database no longet assigning chromosomal accessions. Cannot proceed.");
+        master_info.m_reject = true;
+    }
 
-    // TODO...
+    // TODO Some HTGS code
+
+    if (!common_info.m_acc_assigned.empty()) {
+        ConvertAccessionsToRanges(common_info.m_acc_assigned, common_info.m_acc_ranges);
+
+        if (!master_info.m_reject) {
+            if (GetParams().GetUpdateMode() == eUpdateNew || GetParams().GetUpdateMode() == eUpdateAssembly) {
+                master_info.m_reject = CheckContigsAccessionsRange(common_info.m_acc_ranges, master_info.m_num_of_entries);
+            }
+            else if (GetParams().GetUpdateMode() == eUpdateScaffoldsNew) {
+                master_info.m_reject = CheckScaffoldsAccessionsRange(common_info.m_acc_ranges);
+            }
+        }
+    }
+
+    if (master_info.m_has_genome_project_id) {
+
+        bool is_reject = !GetParams().IsDblinkOverride();
+        ERR_POST_EX(0, 0, (is_reject ? Critical : Warning) <<
+                    "One or more of the contigs or scaffolds being processed makes use of the legacy GenomeProjectsDB User-object. A DBLink User-object with a BioProject Accession Number should be used instead. " <<
+                    (is_reject ? "Rejecting the whole project." : "They all will be removed."));
+
+        if (is_reject) {
+            master_info.m_reject = is_reject;
+        }
+    }
 
     CheckMasterDblink(master_info);
     if (master_info.m_reject) {
         return false;
     }
 
-
-    // TODO ...
+    if (master_cit_sub.Empty() && input_type == eSeqSubmit) {
+        same_submit = false;
+    }
 
     if (same_submit) {
         master_info.m_got_cit_sub = true;
