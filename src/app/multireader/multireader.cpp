@@ -776,7 +776,8 @@ CMultiReaderApp::xProcessSingleFile(
     } catch(...) {
         AutoPtr<ILineError> line_error_p =
             sCreateSimpleMessage(
-                eDiag_Fatal, "Unknown Fatal Error occurred");
+                eDiag_Fatal, 
+                FORMAT("Unknown Fatal Error occurred:"));
         m_pErrors->PutError(*line_error_p);
     }
     xDumpErrors( cerr );

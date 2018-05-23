@@ -2936,7 +2936,7 @@ bool CFormatGuess::IsLineGff2(
 {
     vector<string> tokens;
     const size_t num_cols = NStr::Split(line, " \t", tokens, NStr::fSplit_Tokenize).size();
-    if ( num_cols < 8 || num_cols > 9 ) {
+    if ( num_cols < 8 ) {
         return false;
     }
     if ( ! s_IsTokenPosInt( tokens[3] ) ) {

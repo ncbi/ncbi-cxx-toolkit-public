@@ -147,8 +147,9 @@ public:
     // more efficient than CompareKeys when you're just looking for equality.
     static bool EqualKeys(const CTempString& lhs, const CTempString& rhs);
 
+    //  ------------------------------------------------------------------------
     struct SMod {
-
+    //  ------------------------------------------------------------------------
         CConstRef<CSeq_id> seqid;
         string key;
         string value;
@@ -163,6 +164,8 @@ public:
         bool operator < (const SMod& rhs) const;
         string ToString(void) const;
     };
+    //  -----------------------------------------------------------------------
+
     typedef set<SMod>              TMods;
     typedef TMods::const_iterator  TModsCI;
     typedef pair<TModsCI, TModsCI> TModsRange;
