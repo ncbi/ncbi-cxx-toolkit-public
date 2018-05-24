@@ -179,6 +179,7 @@ echo
 
 $test_tar -C $test_base.2 -x    -f $test_base.tar                                        ||  exit 1
 
+echo
 echo "`date` *** Checking backup feature"
 echo
 
@@ -202,6 +203,7 @@ echo
 $test_tar -x -s -v -O -f $test_base.tar "*test_tar${exe}" | cmp -l - $test_tar_file | head -n 100 >$test_base.cmp  ||  exit 1
 cat $test_base.cmp  &&  test -s $test_base.cmp                                                                     &&  exit 1
 
+echo
 echo "`date` *** Checking multiple entry streaming feature"
 echo
 
@@ -297,6 +299,6 @@ if [ "`uname`" = "Linux" ]; then
 fi
 
 echo
-echo "`date` *** TEST COMPLETE"
+echo "`date` *** TEST COMPLETED SUCCESSFULLY ***"
 
 exit 0
