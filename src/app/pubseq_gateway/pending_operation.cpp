@@ -51,13 +51,27 @@ CPendingOperation::CPendingOperation(const SBlobRequest &  blob_request,
                                     new SBlobRequestDetails(blob_request));
 
     details->m_Context.reset(new SOperationContext(blob_request.m_BlobId));
-    details->m_Loader.reset(new CCassBlobTaskLoadBlob(timeout,
-                                                      max_retries,
-                                                      conn,
-                                                      blob_request.m_BlobId.m_SatName,
-                                                      blob_request.m_BlobId.m_SatKey,
-                                                      true,
-                                                      nullptr));
+
+    if (blob_request.m_LastModified.empty()) {
+        details->m_Loader.reset(
+                    new CCassBlobTaskLoadBlob(timeout,
+                                              max_retries,
+                                              conn,
+                                              blob_request.m_BlobId.m_SatName,
+                                              blob_request.m_BlobId.m_SatKey,
+                                              true,
+                                              nullptr));
+    } else {
+        details->m_Loader.reset(
+                    new CCassBlobTaskLoadBlob(timeout,
+                                              max_retries,
+                                              conn,
+                                              blob_request.m_BlobId.m_SatName,
+                                              blob_request.m_BlobId.m_SatKey,
+                                              NStr::StringToLong(blob_request.m_LastModified),
+                                              true,
+                                              nullptr));
+    }
 
     m_Requests.insert(make_pair(blob_request.m_BlobId, std::move(details)));
 }
@@ -75,22 +89,35 @@ CPendingOperation::CPendingOperation(
     m_Cancelled(false),
     m_RequestContext(request_context)
 {
-#if 0
     for (const auto &  blob_request: blob_requests) {
         unique_ptr<SBlobRequestDetails>     details(
                                     new SBlobRequestDetails(blob_request));
 
         details->m_Context.reset(new SOperationContext(blob_request.m_BlobId));
-        details->m_Loader.reset(new CCassBlobLoader(
-                                            timeout, conn,
-                                            blob_request.m_BlobId.m_SatName,
-                                            blob_request.m_BlobId.m_SatKey,
-                                            true, max_retries,
-                                            details->m_Context.get(),
-                                            nullptr,  nullptr));
+
+        if (blob_request.m_LastModified.empty()) {
+            details->m_Loader.reset(
+                        new CCassBlobTaskLoadBlob(timeout,
+                                                  max_retries,
+                                                  conn,
+                                                  blob_request.m_BlobId.m_SatName,
+                                                  blob_request.m_BlobId.m_SatKey,
+                                                  true,
+                                                  nullptr));
+        } else {
+            details->m_Loader.reset(
+                        new CCassBlobTaskLoadBlob(timeout,
+                                                  max_retries,
+                                                  conn,
+                                                  blob_request.m_BlobId.m_SatName,
+                                                  blob_request.m_BlobId.m_SatKey,
+                                                  NStr::StringToLong(blob_request.m_LastModified),
+                                                  true,
+                                                  nullptr));
+        }
+
         m_Requests.insert(make_pair(blob_request.m_BlobId, std::move(details)));
     }
-#endif
 }
 
 
@@ -215,9 +242,65 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
         );
 
         request.second->m_Loader->SetPropsCallback(
-        [this, &resp, op_context](CBlobRecord const & blob, bool isFound)
+        [this, &resp, op_context](CBlobRecord const &  blob, bool isFound)
         {
-            ERR_POST("BLOB Props callback: " << isFound);
+            CRequestContextResetter     context_resetter;
+            x_SetRequestContext();
+
+            auto    request_details = m_Requests.find(op_context->m_BlobId);
+            if (request_details == m_Requests.end()) {
+                // Logic error, a blob props which which were not ordered
+                ERR_POST("Logic error. Blob properties callback is called "
+                         "for the blob which was not requested: " <<
+                         op_context->m_BlobId.m_Sat << "." <<
+                         op_context->m_BlobId.m_SatKey);
+                return;
+            }
+
+            // It is a chunk about the blob, so increment the counter
+            ++request_details->second->m_TotalSentBlobChunks;
+            ++m_TotalSentReplyChunks;
+
+            if (isFound) {
+                // Found, send back as JSON
+                CJsonNode   json = BlobPropToJSON(blob);
+                string      content = json.Repr();
+                string      header = GetBlobPropHeader(content.size(),
+                                                       op_context->m_BlobId);
+
+                m_Chunks.push_back(resp.PrepareChunk(
+                            (const unsigned char *)(header.data()),
+                            header.size()));
+
+                m_Chunks.push_back(resp.PrepareChunk(
+                            (const unsigned char *)(content.data()),
+                            content.size()));
+            } else {
+                // Not found, i.e. report 404
+                CPubseqGatewayApp::GetInstance()->GetErrorCounters().
+                                                        IncGetBlobNotFound();
+
+                string  message = "Blob properties are not found";
+                string  blob_reply = GetBlobErrorHeader(
+                                            op_context->m_BlobId,
+                                            message.size(),
+                                            CRequestStatus::e404_NotFound,
+                                            CRequestStatus::e404_NotFound,
+                                            eDiag_Error);
+
+                m_Chunks.push_back(resp.PrepareChunk(
+                        (const unsigned char *)(blob_reply.data()),
+                        blob_reply.size()));
+                m_Chunks.push_back(resp.PrepareChunk(
+                        (const unsigned char *)(message.data()),
+                        message.size()));
+
+                request_details->second->m_FinishedRead = true;
+                x_SendReplyCompletion();
+            }
+
+            if (resp.IsOutputReady())
+                Peek(resp, false);
         }
         );
 

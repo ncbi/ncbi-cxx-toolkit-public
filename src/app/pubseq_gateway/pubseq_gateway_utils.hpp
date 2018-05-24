@@ -34,7 +34,10 @@
 
 #include <corelib/request_status.hpp>
 #include <corelib/ncbidiag.hpp>
+#include <connect/services/json_over_uttp.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/blob_record.hpp>
 USING_NCBI_SCOPE;
+USING_IDBLOB_SCOPE;
 
 #include <string>
 using namespace std;
@@ -70,6 +73,9 @@ SBlobId ParseBlobId(const string &  blob_id);
 
 
 // A few protocol utils
+CJsonNode  BlobPropToJSON(const CBlobRecord &  blob);
+
+
 enum EPubseqGatewayErrorCode {
     eUnknownSatellite = 300,
     eUnknownResolvedSatellite,

@@ -90,6 +90,28 @@ SBlobId ParseBlobId(const string &  blob_id)
 }
 
 
+CJsonNode  BlobPropToJSON(const CBlobRecord &  blob_prop)
+{
+    CJsonNode       json(CJsonNode::NewObjectNode());
+
+    json.SetInteger("Key", blob_prop.GetKey());
+    json.SetInteger("LastModified", blob_prop.GetModified());
+    json.SetInteger("Flags", blob_prop.GetFlags());
+    json.SetInteger("Size", blob_prop.GetSize());
+    json.SetInteger("SizeUnpacked", blob_prop.GetSizeUnpacked());
+    json.SetInteger("Class", blob_prop.GetClass());
+    json.SetInteger("DateAsn1", blob_prop.GetDateAsn1());
+    json.SetInteger("HupDate", blob_prop.GetHupDate());
+    json.SetString("Div", blob_prop.GetDiv());
+    json.SetString("Id2Info", blob_prop.GetId2Info());
+    json.SetInteger("Owner", blob_prop.GetOwner());
+    json.SetString("UserName", blob_prop.GetUserName());
+    json.SetInteger("NChunks", blob_prop.GetNChunks());
+
+    return json;
+}
+
+
 static string   s_ProtocolPrefix = "\n\nPSG-Reply-Chunk: ";
 static string   s_ItemType = "item_type=";
 static string   s_ChunkType = "chunk_type=";
