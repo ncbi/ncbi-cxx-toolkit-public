@@ -1854,7 +1854,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             //////////
             {
                 string value = NCBI_CONVERT_TO(Convert(value_Int8), string);
-                BOOST_CHECK_EQUAL(v, str_Int8);
+                BOOST_CHECK_EQUAL(value, str_Int8);
             }
 
             {
