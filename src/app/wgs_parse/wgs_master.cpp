@@ -978,6 +978,27 @@ static void CreateDbLink(CBioseq& bioseq, CUser_object& user_obj)
     bioseq.SetDescr().Set().push_back(descr);
 }
 
+static void UpdateDbLink(CBioseq& bioseq, CUser_object& user_obj)
+{
+    auto descrs = bioseq.SetDescr().Set();
+    for (auto descr = descrs.begin(); descr != descrs.end();) {
+
+        if (IsUserObjectOfType(**descr, "GenomeProjectsDB")) {
+            ERR_POST_EX(0, 0, Warning << "Removing GPID User-object in favour of BioProject.");
+            descr = descrs.erase(descr);
+        }
+        else if (IsUserObjectOfType(**descr, "DBLink")) {
+            (*descr)->SetUser(user_obj);
+            return;
+        }
+        else {
+            ++descr;
+        }
+    }
+
+    CreateDbLink(bioseq, user_obj);
+}
+
 static const string TPA_KEYWORD("TPA:assembly");
 
 static bool FixTpaKeyword(set<string>& keywords)
@@ -1280,7 +1301,7 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
     }
 
     if (info.m_dblink_state == eDblinkNoProblem && info.m_dblink.NotEmpty()) {
-        CreateDbLink(*bioseq, *info.m_dblink);
+        UpdateDbLink(*bioseq, *info.m_dblink);
     }
 
     ret.Reset(new CSeq_entry);
@@ -1988,6 +2009,143 @@ static bool CheckScaffoldsAccessionsRange(const list<TAccessionRange>& ranges)
     return is_reject;
 }
 
+static void MergeRanges(list<TAccessionRange>& ranges)
+{
+    if (!ranges.empty()) {
+
+        ranges.sort();
+
+        list<TAccessionRange> res;
+        CTextAccessionContainer start = ranges.front().first,
+                                end = ranges.front().second;
+
+        for (auto range : ranges) {
+            if (range.first.GetPrefix() != start.GetPrefix() || range.first.GetNumber() + 1 > end.GetNumber()) {
+                res.push_back({start, end});
+                start = range.first;
+                end = range.second;
+            }
+            else {
+                end = range.second;
+            }
+        }
+        res.push_back({ start, end });
+
+        ranges.swap(res);
+    }
+}
+
+static CRef<CSeqdesc> CreateScaffoldsUserObject(const TAccessionRange& range)
+{
+    CRef<CSeqdesc> descr(new CSeqdesc);
+
+    descr->SetUser().SetType().SetStr("WGS-Scaffold-List");
+    descr->SetUser().AddField("Accession_first", range.first.GetAccession());
+    descr->SetUser().AddField("Accession_last", range.second.GetAccession());
+    return descr;
+}
+
+static void CreateScaffoldsUserObjects(const list<TAccessionRange>& ranges, CSeq_descr::Tdata& descrs)
+{
+    // CR lambda assignment?
+    typedef bool(*TFindPredicat)(const CRef<CSeqdesc>&);
+
+    TFindPredicat predicat = nullptr;
+    if (GetParams().IsWgs()) {
+        predicat = [](const CRef<CSeqdesc>& descr) { return IsUserObjectOfType(*descr, "WGSProjects"); };
+    }
+    else if (GetParams().IsTls()) {
+        predicat = [](const CRef<CSeqdesc>& descr) { return IsUserObjectOfType(*descr, "TLSProjects"); };
+    }
+    else if (GetParams().IsTsa()) {
+        predicat = [](const CRef<CSeqdesc>& descr) { return IsUserObjectOfType(*descr, "TSA-RNA-List") || IsUserObjectOfType(*descr, "TSA-mRNA-List"); };
+    }
+
+    _ASSERT(predicat != nullptr && "predicat should have a valid function pointer");
+
+    CSeq_descr::Tdata::iterator insertion_point = find_if(descrs.begin(), descrs.end(), predicat);
+
+    for (auto range : ranges) {
+        CRef<CSeqdesc> descr = CreateScaffoldsUserObject(range);
+        insertion_point = descrs.insert(insertion_point, descr);
+        ++insertion_point;
+    }
+}
+
+static bool CheckScaffoldsOrganism(const CSeq_descr::Tdata& descrs, const CBioSource& biosource)
+{
+    if (!biosource.IsSetOrg() || !biosource.GetOrg().IsSetTaxname()) {
+        return false;
+    }
+
+    const string& taxname = biosource.GetOrg().GetTaxname();
+
+    auto biosrc_descr = find_if(descrs.begin(), descrs.end(),
+                                [&taxname](const CRef<CSeqdesc>& descr)
+                                {
+                                    return descr->IsSource() && descr->GetSource().IsSetOrg() &&
+                                        descr->GetSource().GetOrg().IsSetTaxname() && descr->GetSource().GetOrg().GetTaxname() == taxname;
+                                });
+
+    return biosrc_descr != descrs.end();
+}
+
+static CRef<CSeq_entry> AddScaffoldsToMaster(CMasterInfo& master_info, list<TAccessionRange>& ranges)
+{
+    CRef<CSeq_entry> ret;
+    if (master_info.m_id_master_bioseq.Empty() || !master_info.m_id_master_bioseq->IsSeq() || ranges.empty()) {
+        master_info.m_reject = true;
+        return ret;
+    }
+
+    auto descrs = master_info.m_id_master_bioseq->SetDescr().Set();
+    for (auto descr = descrs.begin(); descr != descrs.end();) {
+
+        bool to_remove = false;
+        if (IsUserObjectOfType(**descr, "WGS-Scaffold-List")) {
+
+            CConstRef<CUser_field> acc_first = (*descr)->GetUser().GetFieldRef("Accession_first");
+
+            if (acc_first.NotEmpty()) {
+
+                CConstRef<CUser_field> acc_last = (*descr)->GetUser().GetFieldRef("Accession_last");
+                if (acc_last.Empty()) {
+                    acc_last = acc_first;
+                }
+
+                if (acc_first->IsSetData() && acc_first->GetData().IsStr() && acc_last->IsSetData() && acc_last->GetData().IsStr()) {
+                    
+                    ranges.push_back({ acc_first->GetData().GetStr(), acc_last->GetData().GetStr() });
+                    to_remove = true;
+                }
+            }
+        }
+
+        if (to_remove) {
+            descr = descrs.erase(descr);
+        }
+        else {
+            ++descr;
+        }
+    }
+
+    MergeRanges(ranges);
+    CreateScaffoldsUserObjects(ranges, descrs);
+
+    if (!CheckScaffoldsOrganism(descrs, *master_info.m_biosource)) {
+        ERR_POST_EX(0, 0, Error << "One or more scaffolds have altered organisms.");
+    }
+
+    if (master_info.m_dblink_state == eDblinkNoProblem && master_info.m_dblink.NotEmpty()) {
+        UpdateDbLink(master_info.m_id_master_bioseq->SetSeq(), *master_info.m_dblink);
+    }
+
+    ret.Reset(new CSeq_entry);
+    ret->Assign(*master_info.m_id_master_bioseq);
+
+    return ret;
+}
+
 bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 {
     const list<string>& files = GetParams().GetInputFiles();
@@ -2320,7 +2478,8 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
     }
 
     if (GetParams().IsUpdateScaffoldsMode()) {
-        // TODO
+
+        master_info.m_master_bioseq = AddScaffoldsToMaster(master_info, common_info.m_acc_ranges);
     }
     else {
         master_info.m_master_bioseq = CreateMasterBioseq(master_info, master_cit_sub, master_contact_info, biomol);

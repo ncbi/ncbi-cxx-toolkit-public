@@ -122,4 +122,12 @@ void CTextAccessionContainer::swap(CTextAccessionContainer& other)
     ::swap(m_valid, other.m_valid);
 }
 
+bool CTextAccessionContainer::operator<(const CTextAccessionContainer& other) const
+{
+    if (GetPrefix() == other.GetPrefix()) {
+        return GetNumber() < other.GetNumber();
+    }
+    return GetPrefix() < other.GetPrefix();
+}
+
 }

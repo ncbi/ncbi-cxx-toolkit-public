@@ -55,6 +55,8 @@ public:
 
     void swap(CTextAccessionContainer& other);
 
+    bool operator<(const CTextAccessionContainer& other) const;
+
 private:
     string m_accession,
            m_prefix;
