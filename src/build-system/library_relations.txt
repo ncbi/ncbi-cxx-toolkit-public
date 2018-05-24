@@ -65,7 +65,6 @@ align_format needs xhtml
 aligndb_client needs $(SEQ_LIBS)
 aligndb_client needs pub
 aligndb_reader needs $(SDBAPI_LIB)
-aligndb_reader needs dbapi_util_blobstore
 aligndb_reader needs taxon1
 aligndb_reader needs xobjutil
 alndb_asnclient needs alndb_query
@@ -134,7 +133,6 @@ bdbasncli needs xconnect
 biblio needs general
 biocollect needs ncbi_xdbapi_ftds
 biosample needs $(SDBAPI_LIB)
-biosample needs dbapi_util_blobstore
 biosample needs xmlwrapp
 biosample needs xregexp
 biotree needs general
@@ -398,11 +396,9 @@ gnomon_access needs xqueryparse
 gnomon_access needs3party $(SQLITE3_LIBS)
 gnomon_asn_proc needs xobjutil
 gp_assm2xml needs $(SDBAPI_LIB)
-gp_assm2xml needs dbapi_util_blobstore
 gp_assm2xml needs gencoll_client
 gp_assm2xml needs xmlwrapp
 gpcgi needs $(SDBAPI_LIB)
-gpcgi needs dbapi_util_blobstore
 gpcgi needs xcgi
 gpcgi needs xmlwrapp
 gpcgi needs xregexp
@@ -415,7 +411,6 @@ gpinit needs gpinit_access
 gpinit needs gpinit_obj
 gpinit needs gpipe_objutil
 gpinit_access needs $(SDBAPI_LIB)
-gpinit_access needs dbapi_util_blobstore
 gpinit_access needs xconnect
 gpinit_bag_util needs bag_access
 gpinit_bag_util needs gpinit_access
@@ -458,7 +453,6 @@ gpipe_clean_prot_names needs macro
 gpipe_common needs $(SDBAPI_LIB)
 gpipe_common needs $(SOBJMGR_LIBS)
 gpipe_common needs $(SRAREAD_LIBS)
-gpipe_common needs dbapi_util_blobstore
 gpipe_common needs eutils_client
 gpipe_common needs xcgi
 gpipe_common needs xregexp
@@ -519,7 +513,6 @@ gpipe_sadb needs xmlwrapp
 gpipe_sqlite needs $(SDBAPI_LIB)
 gpipe_sqlite needs $(SEQ_LIBS)
 gpipe_sqlite needs $(SQLITE3_WRAPPER)
-gpipe_sqlite needs dbapi_util_blobstore
 gpipe_sqlite needs pub
 gpipe_sqlite needs xconnect
 gpipe_sqlite needs xregexp
@@ -647,7 +640,6 @@ ideo_gridcli needs trackmgrgridcli
 ideochr needs3party vibrant
 ideocli needs ideo
 ideocoord needs $(SDBAPI_LIB)
-ideocoord needs dbapi_util_blobstore
 ideocoord needs ideo_gridcli
 idgen needs dbassist
 idload needs3party ctutils
@@ -960,7 +952,6 @@ omssa needs $(SEQ_LIBS)
 omssa needs pub
 osutils needs3party ctutils
 pathogen_cluster_loader needs $(SDBAPI_LIB)
-pathogen_cluster_loader needs dbapi_util_blobstore
 pathogen_cluster_loader needs xasmcompare
 pathogen_cluster_loader needs xconnect
 pathogen_connection needs gpipe_common
@@ -1069,7 +1060,6 @@ seqdb needs3party $(LMDB_LIBS)
 seqedit needs seqset
 seqentry_comparator needs xobjwrite
 seqgapscan needs $(SDBAPI_LIB)
-seqgapscan needs dbapi_util_blobstore
 seqgapscan needs xconnect
 seqgapscan needs xobjutil
 seqmasks_io needs $(OBJREAD_LIBS)
@@ -1516,7 +1506,6 @@ xgp_manifest needs xser
 xgpgcreport needs gc_asn_access
 xgpgcreport needs gencoll_release_report
 xgpp_console needs $(SDBAPI_LIB)
-xgpp_console needs dbapi_util_blobstore
 xgpp_console needs xconnect
 xgpp_console_access needs xgpp_console_commands
 xgpp_console_commands needs gpipe_common
