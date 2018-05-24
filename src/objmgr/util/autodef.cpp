@@ -810,11 +810,6 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
     if (m_Options.GetSuppressMobileElementSubfeatures()) {
         main_clause.SuppressMobileElementAndInsertionSequenceSubfeatures();
     }
-
-    // if this is a segment, remove genes, mRNAs, and CDSs
-    // unless they end on this segment or have subclauses that need their protein/gene
-    // information
-    main_clause.RemoveNonSegmentClauses(range);
     
     main_clause.Label(m_Options.GetSuppressAlleles());
 

@@ -1080,25 +1080,6 @@ void CAutoDefFeatureClause_Base::GroupClauses(bool gene_cluster_opp_strand)
 }
 
 
-void CAutoDefFeatureClause_Base::RemoveNonSegmentClauses(CRange<TSeqPos> range)
-{
-    for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
-        if (m_ClauseList[k] != NULL && !m_ClauseList[k]->IsMarkedForDeletion()) {
-            m_ClauseList[k]->RemoveNonSegmentClauses(range);
-            unsigned int stop = m_ClauseList[k]->GetLocation()->GetStop(eExtreme_Positional);
-            if (stop < range.GetFrom() || stop > range.GetTo()) {
-                if (m_ClauseList[k]->GetNumSubclauses() == 0) {
-                    m_ClauseList[k]->MarkForDeletion();
-                } else {
-                    m_ClauseList[k]->SetInfoOnly(true);
-                }
-            }
-        }
-    }
-    RemoveDeletedSubclauses();
-}
-
-
 string CAutoDefFeatureClause_Base::FindGeneProductName(CAutoDefFeatureClause_Base *gene_clause)
 {
     if (gene_clause == NULL) {

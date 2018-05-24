@@ -79,7 +79,6 @@ public:
     virtual CAutoDefFeatureClause_Base *FindBestParentClause(CAutoDefFeatureClause_Base * subclause, bool gene_cluster_opp_strand);
     
     void GroupClauses(bool gene_cluster_opp_strand);
-    void RemoveNonSegmentClauses(CRange<TSeqPos> range);
     void GroupAltSplicedExons(CBioseq_Handle bh);
 
     virtual CRef<CSeq_loc> GetLocation();
