@@ -117,8 +117,8 @@ void CCassBlobTaskInsertExtended::Wait1()
                 if (!anyrunning) {
                     UpdateLastActivity();
                     CloseAll();
-
                     m_State = eInsertProps;
+                    b_need_repeat = true;
                 }
                 break;
             }

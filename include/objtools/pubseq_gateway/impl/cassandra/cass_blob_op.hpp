@@ -373,8 +373,6 @@ public:
     void GetBlobChunkTresholds(unsigned int  op_timeout_ms,
                                int64_t *  LargeTreshold,
                                int64_t *  LargeChunkSize);
-    void CassExecuteScript(const string &  scriptstr, CassConsistency  c);
-    void CreateScheme(const string &  filename, const string &  keyspace);
 
     void SetKeyspace(const string &  keyspace)
     {

@@ -75,34 +75,6 @@ static string KeySpaceDot(const string& keyspace)
     return keyspace.empty() ? keyspace : keyspace + ".";
 }
 
-static void StringFromFile(const string & filename, string & str)
-{
-    filebuf fb;
-    if (fb.open(filename.c_str(), ios::in | ios::binary)) {
-        streampos sz = fb.pubseekoff(0, ios_base::end);
-        fb.pubseekoff(0, ios_base::beg);
-        str.resize((size_t)sz);
-        if (sz > 0) {
-            fb.sgetn(&(str.front()), sz);
-        }
-        fb.close();
-    }
-}
-
-static void StringReplace(string & where, const string & what,
-                          const string & replace)
-{
-    size_t pos = 0;
-    while (pos < where.size()) {
-        size_t nx = where.find(what, pos);
-        if (nx == string::npos) {
-            break;
-        }
-        where.replace(nx, what.size(), replace);
-        pos = nx + what.size();
-    }
-}
-
 /** CCassBlobWaiter */
 
 bool CCassBlobWaiter::CheckMaxActive()
@@ -118,64 +90,6 @@ bool CCassBlobWaiter::CheckMaxActive()
 *****************************************************/
 
 /* CCassBlobOp */
-
-void CCassBlobOp::CassExecuteScript(const string &  scriptstr,
-                                    CassConsistency  c)
-{
-    if (scriptstr.empty())
-        return;
-
-    const char *        hd = scriptstr.c_str();
-    const char *        tl;
-
-    while (*hd != 0) {
-        while (*hd != 0 && (*hd == ' ' || *hd == '\t' || *hd == '\n' || *hd == '\r' ))
-            hd++;
-
-        tl = hd;
-        while (*hd != 0 && *hd != ';')
-            hd++;
-
-        int         sz = hd - tl;
-        if (sz > 0) {
-            string qry;
-            qry.assign(tl, sz);
-            shared_ptr<CCassQuery> query(m_Conn->NewQuery());
-            query->SetSQL(qry, 0);
-            query->Execute(c, false, false);
-        }
-        if (*hd != 0) hd++; // skip ';'
-    }
-}
-
-
-void CCassBlobOp::CreateScheme(const string &  filename,
-                               const string &  keyspace)
-{
-    ERR_POST(Message << "Checking/Creating Cassandra Scheme "
-             "id_blob_sync_cass.sql " << m_Keyspace);
-
-    string      scheme;
-    StringFromFile(filename, scheme);
-
-    if (scheme.empty())
-        NCBI_THROW(CCassandraException, eGeneric,
-                   "cassandra scheme not found or file is empty");
-    if (keyspace.empty())
-        NCBI_THROW(CCassandraException, eGeneric,
-                   "cassandra namespace is not specified");
-
-    StringReplace(scheme, "%KeySpace%", keyspace);
-    CassExecuteScript(scheme, CASS_CONSISTENCY_ALL);
-    m_Conn->SetKeyspace(keyspace);
-    ERR_POST(Message << "Updating default settings");
-    UpdateSetting(0, SETTING_LARGE_TRESHOLD,
-                  NStr::NumericToString(DFLT_LARGE_TRESHOLD));
-    UpdateSetting(0, SETTING_LARGE_CHUNK_SZ,
-                  NStr::NumericToString(DFLT_LARGE_CHUNK_SZ));
-    ERR_POST(Message << "Cassandra Scheme is ok");
-}
-
 
 void CCassBlobOp::GetBlobChunkTresholds(unsigned int  op_timeout_ms,
                                         int64_t *     LargeTreshold,
@@ -198,7 +112,6 @@ void CCassBlobOp::GetBlobChunkTresholds(unsigned int  op_timeout_ms,
                       NStr::NumericToString(*LargeChunkSize));
     }
 }
-
 
 void CCassBlobOp::GetBlob(unsigned int  op_timeout_ms,
                           int32_t  key, unsigned int  max_retries,

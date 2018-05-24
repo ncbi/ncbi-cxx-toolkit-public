@@ -82,6 +82,7 @@ void CCassBlobTaskDelete::Wait1()
                 }
                 else {
                     m_State = eDeleteData;
+                    b_need_repeat = true;
                 }
                 break;
             }
@@ -160,7 +161,6 @@ void CCassBlobTaskDelete::Wait1()
                 }
                 CloseAll();
                 m_State = eDone;
-                b_need_repeat = true;
                 break;
             }
 
