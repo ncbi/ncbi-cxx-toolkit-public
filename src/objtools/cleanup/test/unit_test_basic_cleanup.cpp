@@ -2267,3 +2267,19 @@ BOOST_AUTO_TEST_CASE(Test_MoveXrefToProt)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SQD_4516)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    SetSubSource(entry, CSubSource::eSubtype_country, "a:b:c");
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*entry);
+
+    CSeqdesc_CI src(seh, CSeqdesc::e_Source);
+    BOOST_CHECK_EQUAL(src->GetSource().GetSubtype().back()->GetName(), "a:b,c");
+}
