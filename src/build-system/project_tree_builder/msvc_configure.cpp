@@ -38,10 +38,14 @@
   #include <unistd.h>
 #endif
 
+#include <corelib/ncbiexec.hpp>
+#include <util/xregexp/regexp.hpp>
+
 BEGIN_NCBI_SCOPE
 
 
 CMsvcConfigure::CMsvcConfigure(void)
+    : m_HaveBuildVer(false)
 {
 }
 
@@ -164,10 +168,16 @@ void CMsvcConfigure::CreateConfH(
     const list<SConfigInfo>& configs,
     const string& root_dir)
 {
+    CMsvc7RegSettings::EMsvcPlatform platform = CMsvc7RegSettings::GetMsvcPlatform();
+
     ITERATE(list<SConfigInfo>, p, configs) {
-        WriteExtraDefines( site, root_dir, *p);
+        WriteExtraDefines(site, root_dir, *p);
+        // Windows only. On Unix and xCode build version header file generates by configure, not PTB.
+        if (platform < CMsvc7RegSettings::eUnix) {
+            WriteBuildVer(site, root_dir, *p);
+        }
     }
-    if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
+    if (platform == CMsvc7RegSettings::eUnix) {
         return;
     }
     _TRACE("*** Creating local ncbiconf headers ***");
@@ -241,7 +251,8 @@ bool CMsvcConfigure::ProcessDefine(const string& define,
     return true;
 }
 
-void CMsvcConfigure::WriteExtraDefines(CMsvcSite&  site, const string& root_dir, const SConfigInfo& config)
+
+void CMsvcConfigure::WriteExtraDefines(CMsvcSite& site, const string& root_dir, const SConfigInfo& config)
 {
     string cfg = CMsvc7RegSettings::GetConfigNameKeyword();
     string cfg_root_inc(root_dir);
@@ -260,10 +271,10 @@ void CMsvcConfigure::WriteExtraDefines(CMsvcSite&  site, const string& root_dir,
     CDirEntry::SplitPath(filename, &dir);
     CDir(dir).CreatePath();
 
-    CNcbiOfstream  ofs(filename.c_str(), IOS_BASE::out | IOS_BASE::trunc );
-    if ( !ofs )
+    CNcbiOfstream ofs(filename.c_str(), IOS_BASE::out | IOS_BASE::trunc);
+    if ( !ofs ) {
 	    NCBI_THROW(CProjBulderAppException, eFileCreation, filename);
-
+    }
     WriteNcbiconfHeader(ofs);
 
     CRandom rnd(CRandom::eGetRand_Sys);
@@ -278,6 +289,100 @@ void CMsvcConfigure::WriteExtraDefines(CMsvcSite&  site, const string& root_dir,
     }
     ofs << endl;
 }
+
+
+#if defined(NCBI_OS_MSWIN)
+#  if defined(_UNICODE)
+#    define NcbiSys_strdup   _wcsdup
+#  else
+#    define NcbiSys_strdup   strdup
+#  endif
+#else
+#  define NcbiSys_strdup     strdup
+#endif
+
+void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, const SConfigInfo& config)
+{
+    static TXChar* filename_cache = NULL;
+    
+    string cfg = CMsvc7RegSettings::GetConfigNameKeyword();
+    string cfg_root_inc(root_dir);
+    if (!cfg.empty()) {
+        NStr::ReplaceInPlace(cfg_root_inc, cfg, config.GetConfigFullName());
+    }
+    string extra = site.GetConfigureEntry("BuildVerPath");
+    string filename = CDirEntry::ConcatPath(cfg_root_inc, extra);
+
+    if (extra.empty()) {
+        return;
+    }
+
+    string dir;
+    CDirEntry::SplitPath(filename, &dir);
+    CDir(dir).CreatePath();
+
+    // Each file with build version information is the same for each configuration,
+    // so create it once and copy to each configuration on next calls.
+
+    if (filename_cache) {
+        CFile(filename_cache).Copy(filename, CFile::fCF_Overwrite);
+        return;
+    }
+
+    // Create file
+
+    CNcbiOfstream ofs(filename.c_str(), IOS_BASE::out | IOS_BASE::trunc);
+    if ( !ofs ) {
+	    NCBI_THROW(CProjBulderAppException, eFileCreation, filename);
+    }
+    WriteNcbiconfHeader(ofs);
+
+    string tc_ver   = GetApp().GetEnvironment().Get("TEAMCITY_VERSION");
+    string tc_build = GetApp().GetEnvironment().Get("BUILD_NUMBER");
+    string tc_prj   = GetApp().GetEnvironment().Get("TEAMCITY_PROJECT_NAME");
+    string tc_conf  = GetApp().GetEnvironment().Get("TEAMCITY_BUILDCONF_NAME");
+
+    string prefix("#define NCBI_");
+
+    if (!tc_ver.empty()  &&  !tc_build.empty()) {
+        ofs << prefix << "TEAMCITY_BUILD_NUMBER    " << tc_build << endl;
+        ofs << prefix << "TEAMCITY_PROJECT_NAME    " << "\"" << tc_prj  << "\"" << endl;
+        ofs << prefix << "TEAMCITY_BUILDCONF_NAME  " << "\"" << tc_conf << "\"" << endl;
+    }
+
+    string tree_root = GetApp().GetEnvironment().Get("TREE_ROOT");
+    if (!tree_root.empty()) {
+        // Get SVN info
+        string tmpfile = CFile::GetTmpName();
+        string cmd = "svn info " + CDir::ConcatPath(tree_root, "compilers") + " >> " + tmpfile;
+        if (!CExec::System(cmd.c_str())) {
+            return;
+        }
+        string info;
+        CNcbiIfstream is(tmpfile.c_str(), IOS_BASE::in);
+        NcbiStreamToString(&info, is);
+        CFile(tmpfile).Remove();
+        if (!info.empty()) {
+            CRegexp re("Revision: (\\d+)");
+            string s = re.GetMatch(info, 0, 1);
+            if (!s.empty()) {
+                ofs << prefix << "SUBVERSION_REVISION      " << s << endl;
+            }
+            re.Set("/production/components/[^/]*/(\\d+)");
+            s = re.GetMatch(info, 0, 1);
+            if (!s.empty()) {
+                ofs << prefix << "SC_VERSION               " << s << endl;
+            }
+        }
+    }
+    ofs << endl;
+
+    // Cache file name for the generated file
+    filename_cache = NcbiSys_strdup(_T_XCSTRING(filename));
+
+    m_HaveBuildVer = true;
+}
+
 
 void CMsvcConfigure::AnalyzeDefines(
     CMsvcSite& site, const string& root_dir,
@@ -305,6 +410,11 @@ void CMsvcConfigure::AnalyzeDefines(
             m_ConfigSite[define] = '0';
         }
     }
+    if (m_HaveBuildVer) {
+        // Add define that we have build version info file
+        m_ConfigSite["HAVE_COMMON_NCBI_BUILD_VER_H"] = '1';
+    }
+
     string signature;
     if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
         signature = "MSVC";
@@ -373,8 +483,6 @@ void CMsvcConfigure::AnalyzeDefines(
 
 CNcbiOfstream& CMsvcConfigure::WriteNcbiconfHeader(CNcbiOfstream& ofs) const
 {
-    ofs << endl;
-
     ofs <<"/* $" << "Id" << "$" << endl;
     ofs <<"* ===========================================================================" << endl;
     ofs <<"*" << endl;

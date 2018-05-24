@@ -34,8 +34,8 @@
 /// Configurator for msvc projects:
 
 #include "msvc_site.hpp"
-
 #include <corelib/ncbienv.hpp>
+
 BEGIN_NCBI_SCOPE
 
 class CMsvcConfigure
@@ -44,11 +44,11 @@ public:
     CMsvcConfigure(void);
     ~CMsvcConfigure(void);
     
-    void Configure(CMsvcSite&         site, 
+    void Configure(CMsvcSite&               site, 
                    const list<SConfigInfo>& configs,
                    const string&            root_dir);
 
-    void CreateConfH(CMsvcSite&         site, 
+    void CreateConfH(CMsvcSite&             site, 
                    const list<SConfigInfo>& configs,
                    const string&            root_dir);
 
@@ -56,26 +56,21 @@ private:
     string       m_ConfigureDefinesPath;
     list<string> m_ConfigureDefines;
     typedef map<string, char> TConfigSite;
-    TConfigSite m_ConfigSite;
+    TConfigSite  m_ConfigSite;
+    bool         m_HaveBuildVer;
 
     void InitializeFrom(const CMsvcSite& site);
-    bool ProcessDefine (const string&      define, 
-                        const CMsvcSite&   site, 
-                        const SConfigInfo& config) const;
-    void AnalyzeDefines(CMsvcSite&         site,
-                        const string&      root_dir,
-                        const SConfigInfo& config,
-                        const CBuildType&  build_type);
-    void WriteExtraDefines(CMsvcSite&      site,
-                           const string& root_dir,
-                           const SConfigInfo& config);
+    bool ProcessDefine (const string& define, const CMsvcSite& site, const SConfigInfo& config) const;
+    void AnalyzeDefines(CMsvcSite& site, const string& root_dir, const SConfigInfo& config, const CBuildType& build_type);
+
     CNcbiOfstream& WriteNcbiconfHeader(CNcbiOfstream& ofs) const;
-    void WriteNcbiconfMsvcSite(const string& full_path,
-                               const string& signature) const;
+    void WriteExtraDefines(CMsvcSite& site, const string& root_dir, const SConfigInfo& config);
+    void WriteBuildVer(CMsvcSite& site, const string& root_dir, const SConfigInfo& config);
+    void WriteNcbiconfMsvcSite(const string& full_path, const string& signature) const;
+
     // No value semantics
     CMsvcConfigure(const CMsvcConfigure&);
     CMsvcConfigure& operator= (CMsvcConfigure&);
-
 };
 
 END_NCBI_SCOPE
