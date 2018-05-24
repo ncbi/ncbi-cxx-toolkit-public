@@ -1124,7 +1124,7 @@ static const string sValidTypeMaterialPrefixes[] = {
     "reference strain",
     "neotype strain",
     "paralectotype",
-    "hapantotype"
+    "hapantotype",
     "allotype",
     "culture from reference material",
     "culture from type material",

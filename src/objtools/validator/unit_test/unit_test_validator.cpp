@@ -23329,3 +23329,15 @@ BOOST_AUTO_TEST_CASE(Test_VR_819)
     string enumval = lcErr == CSubSource::eLatLonCountryErr_Value ? "eLatLonCountryErr_Value" : "not error enum";
     BOOST_CHECK_EQUAL(retval, kEmptyStr);
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_824)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_type_material, "allotype of Bonnetina tenuiverpis");
+
+    STANDARD_SETUP
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+}
