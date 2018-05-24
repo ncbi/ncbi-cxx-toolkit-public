@@ -95,6 +95,7 @@ public:
     bool IsBlobPropsFound() const;
     void SetChunkCallback(TBlobChunkCallback callback);
     void SetPropsCallback(TBlobPropsCallback callback);
+    void SetDataReadyCB(TDataReadyCallback callback, void * data);
 
     void Cancel(void);
     virtual bool Restart(unsigned int max_retries) override;

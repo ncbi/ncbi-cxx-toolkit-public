@@ -106,6 +106,16 @@ void CCassBlobTaskLoadBlob::SetPropsCallback(TBlobPropsCallback callback)
     m_PropsCallback = move(callback);
 }
 
+void CCassBlobTaskLoadBlob::SetDataReadyCB(TDataReadyCallback callback, void * data)
+{
+    if (callback && m_State != eInit) {
+        NCBI_THROW(CCassandraException, eSeqFailed,
+           "CCassBlobTaskLoadBlob: DataReadyCB can't be assigned "
+           "after the loading process has started");
+    }
+    CCassBlobWaiter::SetDataReadyCB(callback, data);
+}
+
 void CCassBlobTaskLoadBlob::Wait1()
 {
     bool b_need_repeat;
@@ -156,6 +166,9 @@ void CCassBlobTaskLoadBlob::Wait1()
                     qry->BindInt64(1, m_Blob->GetModified());
                 }
 
+                if (m_DataReadyCb) {
+                    qry->SetOnData2(m_DataReadyCb, m_DataReadyData);
+                }
                 UpdateLastActivity();
                 qry->Query(GetQueryConsistency(), m_Async, true);
                 m_State = eWaitingForSelect;
@@ -402,6 +415,9 @@ void CCassBlobTaskLoadBlob::x_RequestChunk(CCassQuery& qry, int32_t chunk_no)
     qry.BindInt32(0, m_Key);
     qry.BindInt64(1, m_Blob->GetModified());
     qry.BindInt32(2, chunk_no);
+    if (m_DataReadyCb) {
+        qry.SetOnData2(m_DataReadyCb, m_DataReadyData);
+    }
     UpdateLastActivity();
     qry.Query(GetQueryConsistency(), true);
 }
