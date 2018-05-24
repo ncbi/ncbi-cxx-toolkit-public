@@ -2522,6 +2522,7 @@ bool CSubSource::x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(const strin
         "chromosome", // B.9
         "linkage group", // B.10
         "chr", // B.11
+        "linkage_group", // B.15
         "chrm", // B.16
         "chrom", // B.17
         "linkage-group" // B.18
@@ -2538,7 +2539,11 @@ bool CSubSource::x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(const strin
 
 bool CSubSource::IsChromosomeNameValid(const string& value, const string& taxname)
 {
-    return x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(value, taxname);
+    if (NStr::StartsWith(value, "LG", NStr::eNocase)) {
+        return false;
+    } else {
+        return x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(value, taxname);
+    }
 }
 
 

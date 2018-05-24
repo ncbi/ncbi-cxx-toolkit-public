@@ -23155,6 +23155,10 @@ void TestRepliconForbiddenWords(CSubSource::ESubtype subtype, bool expect_errs)
         expect_errs ? "BadPlasmidChromosomeLinkageName" : "", 
         eDiag_Error, "Problematic plasmid/chromosome/linkage group name 'linkage-group x'");
 
+    TestOneReplicon(subtype, "linkage_group x", 
+        expect_errs ? "BadPlasmidChromosomeLinkageName" : "", 
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name 'linkage_group x'");
+
     TestOneReplicon(subtype, "chry", 
         expect_errs ? "BadPlasmidChromosomeLinkageName" : "", 
         eDiag_Error, "Problematic plasmid/chromosome/linkage group name 'chry'");
@@ -23214,6 +23218,8 @@ BOOST_AUTO_TEST_CASE(Test_VR_793)
         eDiag_Error, "Problematic plasmid/chromosome/linkage group name '" + kMoreThan32 + "'");
     TestOneReplicon(CSubSource::eSubtype_chromosome, kMoreThan240, "BadPlasmidChromosomeLinkageName",
         eDiag_Error, "Problematic plasmid/chromosome/linkage group name '" + kMoreThan240 + "'");
+    TestOneReplicon(CSubSource::eSubtype_chromosome, "LG 123", "BadPlasmidChromosomeLinkageName",
+        eDiag_Error, "Problematic plasmid/chromosome/linkage group name 'LG 123'");
     TestRepliconTaxname(CSubSource::eSubtype_chromosome, true);
     TestRepliconForbiddenWords(CSubSource::eSubtype_chromosome, true);
 
