@@ -53,7 +53,7 @@ util
 -algo/blast/dbindex/makeindex
 -corelib/.*test_mt
 -dbapi/cache/admintool
--dbapi/driver/util
+-dbapi/driver/util/samples
 -dbapi/lang_bind
 -objtools/align
 -objtools/asniotest
