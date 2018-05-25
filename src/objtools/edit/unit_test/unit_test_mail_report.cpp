@@ -106,14 +106,21 @@ BOOST_AUTO_TEST_CASE(Test_MailReport)
     STANDARD_SETUP
 
     CRef<CSeq_table> table = edit::MakeMailReportPreReport(seh);
+    edit::MakeMailReportPostReport(*table, scope);
+    BOOST_CHECK_EQUAL(table->GetColumns()[1]->GetData().GetString()[0], "Sebaea microphylla");
+    BOOST_CHECK_EQUAL(table->GetColumns()[2]->GetData().GetInt()[0], 0);
+    BOOST_CHECK_EQUAL(table->GetColumns()[3]->GetData().GetString()[0], "Sebaea microphylla");
+    BOOST_CHECK_EQUAL(table->GetColumns()[4]->GetData().GetInt()[0], 592768);
+    BOOST_CHECK_EQUAL(table->GetColumns()[5]->GetData().GetInt()[0], 0);
 
+    table = edit::MakeMailReportPreReport(seh);
     unit_test_util::SetTaxname(entry, "Name1");
     edit::MakeMailReportPostReport(*table, scope);
 
     BOOST_CHECK_EQUAL(table->GetColumns()[1]->GetData().GetString()[0], "Sebaea microphylla");
     BOOST_CHECK_EQUAL(table->GetColumns()[2]->GetData().GetInt()[0], 0);
     BOOST_CHECK_EQUAL(table->GetColumns()[3]->GetData().GetString()[0], "Name1");
-    BOOST_CHECK_EQUAL(table->GetColumns()[4]->GetData().GetInt()[0], 592768);
+    BOOST_CHECK_EQUAL(table->GetColumns()[4]->GetData().GetInt()[0], 0);
     BOOST_CHECK_EQUAL(table->GetColumns()[5]->GetData().GetInt()[0], 0);
 
     unit_test_util::SetTech(entry, CMolInfo::eTech_barcode);
@@ -124,7 +131,7 @@ BOOST_AUTO_TEST_CASE(Test_MailReport)
     BOOST_CHECK_EQUAL(table->GetColumns()[1]->GetData().GetString()[0], "Name1");
     BOOST_CHECK_EQUAL(table->GetColumns()[2]->GetData().GetInt()[0], 1);
     BOOST_CHECK_EQUAL(table->GetColumns()[3]->GetData().GetString()[0], "Name2");
-    BOOST_CHECK_EQUAL(table->GetColumns()[4]->GetData().GetInt()[0], 592768);
+    BOOST_CHECK_EQUAL(table->GetColumns()[4]->GetData().GetInt()[0], 0);
     BOOST_CHECK_EQUAL(table->GetColumns()[5]->GetData().GetInt()[0], 0);
 
 }

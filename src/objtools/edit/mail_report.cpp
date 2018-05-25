@@ -107,20 +107,11 @@ void MakeMailReportPostReport(CSeq_table& table, CScope& scope)
             if (di->GetSource().GetOrg().IsSetTaxname()) {
                 taxname = di->GetSource().GetOrg().GetTaxname();
             }
-            if (di->GetSource().GetOrg().IsSetDb()) {
-                ITERATE(COrg_ref::TDb, db_it, di->GetSource().GetOrg().GetDb()) {
-                    if ((*db_it)->IsSetDb() && NStr::EqualNocase((*db_it)->GetDb(), "taxon")
-                        && (*db_it)->IsSetTag() && (*db_it)->GetTag().IsId()) {
-                        taxid = (*db_it)->GetTag().GetId();
-                    }
-                }
-            }
             org->Assign(di->GetSource().GetOrg());
         } else {
             org->SetTaxname("");
         }
         new_tax->SetData().SetString().push_back(taxname);
-        taxon->SetData().SetInt().push_back(taxid);
         org_ref_list.push_back(org);
     }
 
@@ -133,20 +124,34 @@ void MakeMailReportPostReport(CSeq_table& table, CScope& scope)
     if (reply) {
         ITERATE(CTaxon3_reply::TReply, reply_it, reply->GetReply()) {
             bool is_unpub = false;
-            if ((*reply_it)->IsData() && (*reply_it)->GetData().IsSetStatus()) {
-                ITERATE(CT3Reply::TData::TStatus, status_it, (*reply_it)->GetData().GetStatus()) {
-                    if ((*status_it)->IsSetProperty() 
-                         && NStr::EqualNocase((*status_it)->GetProperty(), "unpublished_name")) {
-                        is_unpub = true;
-                        break;
+            int taxid = 0;
+            if ((*reply_it)->IsData()) {
+                // find out if it's unpublished
+                if ((*reply_it)->GetData().IsSetStatus()) {
+                    ITERATE(CT3Reply::TData::TStatus, status_it, (*reply_it)->GetData().GetStatus()) {
+                        if ((*status_it)->IsSetProperty()
+                            && NStr::EqualNocase((*status_it)->GetProperty(), "unpublished_name")) {
+                            is_unpub = true;
+                            break;
+                        }
+                    }
+                }
+                if ((*reply_it)->GetData().IsSetOrg() && (*reply_it)->GetData().GetOrg().IsSetDb()) {
+                    ITERATE(COrg_ref::TDb, db_it, (*reply_it)->GetData().GetOrg().GetDb()) {
+                        if ((*db_it)->IsSetDb() && NStr::EqualNocase((*db_it)->GetDb(), "taxon")
+                            && (*db_it)->IsSetTag() && (*db_it)->GetTag().IsId()) {
+                            taxid = (*db_it)->GetTag().GetId();
+                        }
                     }
                 }
             }
+            taxon->SetData().SetInt().push_back(taxid);
             pub_stat->SetData().SetInt().push_back(is_unpub ? 1 : 0);
         }
     } else {
         for (size_t i = 0; i < table.GetColumn(0).GetData().GetSize(); i++) {
             pub_stat->SetData().SetInt().push_back(0);
+            taxon->SetData().SetInt().push_back(0);
         }
     }    
 }
