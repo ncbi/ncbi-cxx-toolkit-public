@@ -325,7 +325,7 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
     // so create it once and copy to each configuration on next calls.
 
     if (filename_cache) {
-        CFile(filename_cache).Copy(filename, CFile::fCF_Overwrite);
+        CFile(_T_STDSTRING(filename_cache)).Copy(filename, CFile::fCF_Overwrite);
         return;
     }
 
