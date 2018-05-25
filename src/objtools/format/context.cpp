@@ -474,6 +474,7 @@ bool CBioseqContext::IsCrossKingdom(void) const
         return m_IsCrossKingdom;
     }
 
+    x_SetTaxname();
     return m_IsCrossKingdom;
 }
 
