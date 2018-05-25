@@ -341,6 +341,8 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
     string tc_build = GetApp().GetEnvironment().Get("BUILD_NUMBER");
     string tc_prj   = GetApp().GetEnvironment().Get("TEAMCITY_PROJECT_NAME");
     string tc_conf  = GetApp().GetEnvironment().Get("TEAMCITY_BUILDCONF_NAME");
+    string sc_ver;
+    string sc_rev;
 
     string prefix("#define NCBI_");
 
@@ -351,28 +353,46 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
     }
 
     string tree_root = GetApp().GetEnvironment().Get("TREE_ROOT");
+
     if (!tree_root.empty()) {
         // Get SVN info
-        string tmpfile = CFile::GetTmpName();
-        string cmd = "svn info " + CDir::ConcatPath(tree_root, "compilers") + " >> " + tmpfile;
-        if (!CExec::System(cmd.c_str())) {
-            return;
+        string tmp_file = CFile::GetTmpName();
+        string cmd = "svn info " + CDir::ConcatPath(tree_root, "compilers") + " >> " + tmp_file;
+
+        TExitCode ret = CExec::System(cmd.c_str());
+        if (ret == 0) {
+            // SVN client present, parse results
+            string info;
+            CNcbiIfstream is(tmp_file.c_str(), IOS_BASE::in);
+            NcbiStreamToString(&info, is);
+            CFile(tmp_file).Remove();
+            if (!info.empty()) {
+                CRegexp re("Revision: (\\d+)");
+                sc_rev = re.GetMatch(info, 0, 1);
+                re.Set("/production/components/[^/]*/(\\d+)");
+                sc_ver = re.GetMatch(info, 0, 1);
+            }
         }
-        string info;
-        CNcbiIfstream is(tmpfile.c_str(), IOS_BASE::in);
-        NcbiStreamToString(&info, is);
-        CFile(tmpfile).Remove();
-        if (!info.empty()) {
-            CRegexp re("Revision: (\\d+)");
-            string s = re.GetMatch(info, 0, 1);
-            if (!s.empty()) {
-                ofs << prefix << "SUBVERSION_REVISION      " << s << endl;
+        else {
+            // Fallback
+            string sc_ver  = GetApp().GetEnvironment().Get("NCBI_SC_VERSION");
+            // try to get revision bumber from teamcity property file
+            string prop_file  = GetApp().GetEnvironment().Get("TEAMCITY_BUILD_PROPERTIES_FILE");
+            if (!prop_file.empty() && CFile(prop_file).Exists()) {
+                string info;
+                CNcbiIfstream is(prop_file.c_str(), IOS_BASE::in);
+                NcbiStreamToString(&info, is);
+                if (!info.empty()) {
+                    CRegexp re("build.vcs.number=(\\d+)");
+                    sc_rev = re.GetMatch(info, 0, 1);
+                }
             }
-            re.Set("/production/components/[^/]*/(\\d+)");
-            s = re.GetMatch(info, 0, 1);
-            if (!s.empty()) {
-                ofs << prefix << "SC_VERSION               " << s << endl;
-            }
+        }
+        if (!sc_rev.empty()) {
+            ofs << prefix << "SUBVERSION_REVISION      " << sc_rev << endl;
+        }
+        if (!sc_ver.empty()) {
+            ofs << prefix << "SC_VERSION               " << sc_ver << endl;
         }
     }
     ofs << endl;
