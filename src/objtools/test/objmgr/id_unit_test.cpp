@@ -657,30 +657,39 @@ BOOST_AUTO_TEST_CASE(CheckNAZoom)
     string id = "NC_000022.11";
     string na_acc = "NA000000270.4";
 
-    SAnnotSelector sel;
-    sel.IncludeNamedAnnotAccession(na_acc, -1);
-    sel.SetCollectNames();
+    for ( int t = 0; t < 4; ++t ) {
+        SAnnotSelector sel;
+        sel.IncludeNamedAnnotAccession(na_acc, -1);
+        if ( t&1 ) {
+            sel.AddNamedAnnots(CombineWithZoomLevel(na_acc, -1));
+        }
+        if ( t&2 ) {
+            sel.AddNamedAnnots(na_acc);
+            sel.AddNamedAnnots(CombineWithZoomLevel(na_acc, 100));
+        }
+        sel.SetCollectNames();
 
-    CRef<CSeq_loc> loc(new CSeq_loc);
-    loc->SetWhole().Set(id);
-    set<int> tracks;
-    CRef<CScope> scope = s_InitScope();
-    CGraph_CI it(*scope, *loc, sel);
-    ITERATE ( CGraph_CI::TAnnotNames, i, it.GetAnnotNames() ) {
-        if ( !i->IsNamed() ) {
-            continue;
+        CRef<CSeq_loc> loc(new CSeq_loc);
+        loc->SetWhole().Set(id);
+        set<int> tracks;
+        CRef<CScope> scope = s_InitScope();
+        CGraph_CI it(*scope, *loc, sel);
+        ITERATE ( CGraph_CI::TAnnotNames, i, it.GetAnnotNames() ) {
+            if ( !i->IsNamed() ) {
+                continue;
+            }
+            int zoom;
+            string acc;
+            if ( !ExtractZoomLevel(i->GetName(), &acc, &zoom) ) {
+                continue;
+            }
+            if ( acc != na_acc ) {
+                continue;
+            }
+            tracks.insert(zoom);
         }
-        int zoom;
-        string acc;
-        if ( !ExtractZoomLevel(i->GetName(), &acc, &zoom) ) {
-            continue;
-        }
-        if ( acc != na_acc ) {
-            continue;
-        }
-        tracks.insert(zoom);
+        BOOST_CHECK(tracks.count(100));
     }
-    BOOST_CHECK(tracks.count(100));
 }
 
 
@@ -694,10 +703,17 @@ BOOST_AUTO_TEST_CASE(CheckNAZoom10)
     string id = "NC_000022.11";
     string na_acc = "NA000000270.4";
 
-    SAnnotSelector sel;
-    sel.IncludeNamedAnnotAccession(na_acc, 10);
-    sel.AddNamedAnnots(CombineWithZoomLevel(na_acc, 10));
-    s_CheckGraph(sel, id);
+    for ( int t = 0; t < 2; ++t ) {
+        SAnnotSelector sel;
+        sel.IncludeNamedAnnotAccession(na_acc, 10);
+        if ( t&1 ) {
+            sel.AddNamedAnnots(CombineWithZoomLevel(na_acc, -1));
+        }
+        else {
+            sel.AddNamedAnnots(CombineWithZoomLevel(na_acc, 10));
+        }
+        s_CheckGraph(sel, id);
+    }
 }
 
 
