@@ -23355,9 +23355,11 @@ BOOST_AUTO_TEST_CASE(Test_VR_821)
     CRef<CSeq_feat> cds = AddMiscFeature(entry);
     cds->SetData().SetCdregion();
 
+#ifdef NCBI_FIX_IT_PLEASE
+
     WARNING: valid [SEQ_FEAT.CDSgeneRange] gene [mod(mdg4):[gnl|FlyBase|3R:c21377401-21370101, ~, 21365609-21370249, ~, c21365488-21362188, ~, 213
 60176-21362131, ~, c21359768-21350846]:Dmel_CG32491] overlaps CDS but does not completely contain it FEATURE: CDS: modifier of mdg4, isoform G
  <1>  [(gb|AE014297|:c21377032-21376819, c21376741-21376602, c21375912-21375060, c21355089-21354974, c21354694-21354524)] [gb|AE014297|: raw, 
 dna len= 32079331] -> [gb|AAN13863|]
-
+#endif
 }
