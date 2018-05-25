@@ -375,9 +375,9 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
         }
         else {
             // Fallback
-            string sc_ver  = GetApp().GetEnvironment().Get("NCBI_SC_VERSION");
+            sc_ver = GetApp().GetEnvironment().Get("NCBI_SC_VERSION");
             // try to get revision bumber from teamcity property file
-            string prop_file  = GetApp().GetEnvironment().Get("TEAMCITY_BUILD_PROPERTIES_FILE");
+            string prop_file = GetApp().GetEnvironment().Get("TEAMCITY_BUILD_PROPERTIES_FILE");
             if (!prop_file.empty() && CFile(prop_file).Exists()) {
                 string info;
                 CNcbiIfstream is(prop_file.c_str(), IOS_BASE::in);
