@@ -685,6 +685,7 @@ static void x_ShowDataLayout(void)
         "\tevent:     %3u (%u)\n"
 #  endif /*NCBI_OS_MSWIN*/
         "\tsession:   %3u (%u)\n"
+        "\tcred:      %3u (%u)\n"
         "\tr_tv:      %3u (%u)\n"
         "\tw_tv:      %3u (%u)\n"
         "\tc_tv:      %3u (%u)\n"
@@ -713,6 +714,7 @@ static void x_ShowDataLayout(void)
         infof(SOCK_struct,    myport),              \
         infof(SOCK_struct,    event),               \
         infof(SOCK_struct,    session),             \
+        infof(SOCK_struct,    cred),                \
         infof(SOCK_struct,    r_tv),                \
         infof(SOCK_struct,    w_tv),                \
         infof(SOCK_struct,    c_tv),                \
@@ -736,6 +738,7 @@ static void x_ShowDataLayout(void)
         infof(SOCK_struct,    port),                \
         infof(SOCK_struct,    myport),              \
         infof(SOCK_struct,    session),             \
+        infof(SOCK_struct,    cred),                \
         infof(SOCK_struct,    r_tv),                \
         infof(SOCK_struct,    w_tv),                \
         infof(SOCK_struct,    c_tv),                \
