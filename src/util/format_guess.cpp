@@ -668,7 +668,6 @@ CFormatGuess::EnsureStats()
                 }
                 if ( type & fLineEnd ) {
                     ++m_iStatsCountAlNumChars;
-                    --m_iStatsCountData;
                 }
             }
         }
