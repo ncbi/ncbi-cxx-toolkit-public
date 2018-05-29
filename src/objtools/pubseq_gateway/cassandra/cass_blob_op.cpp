@@ -627,6 +627,46 @@ void CCassBlobOp::UpdateBlobFlags(unsigned int  op_timeout_ms,
     );
 }
 
+void CCassBlobOp::UpdateBlobFlagsExtended(
+    unsigned int op_timeout_ms,
+    CBlobRecord::TSatKey key,
+    EBlobFlags flag,
+    bool set_flag
+) {
+    CCassConnection::Perform(
+        op_timeout_ms, nullptr, nullptr,
+        [this, key, flag,  set_flag] (bool) -> bool {
+            int64_t new_flags = 0;
+            CBlobRecord::TTimestamp last_modified;
+            shared_ptr<CCassQuery> qry = m_Conn->NewQuery();
+            string sql = "SELECT last_modified, flags FROM " + KeySpaceDot(m_Keyspace) + "blob_prop WHERE sat_key = ? limit 1";
+            qry->SetSQL(sql, 1);
+            qry->BindInt32(0, key);
+            qry->Query(CASS_CONSISTENCY_LOCAL_QUORUM);
+            if (!qry->IsEOF() && qry->NextRow() == ar_dataready) {
+                last_modified = qry->FieldGetInt64Value(0);
+                if (set_flag) {
+                    new_flags = qry->FieldGetInt64Value(1) | static_cast<TBlobFlagBase>(flag);
+                }
+                else {
+                    new_flags = qry->FieldGetInt64Value(1) & ~(static_cast<TBlobFlagBase>(flag));
+                }
+                qry->Close();
+            }
+            else {
+                return false;
+            }
+            sql = "UPDATE " + KeySpaceDot(m_Keyspace) + "blob_prop SET flags = ? WHERE sat_key = ? and last_modified = ?";
+            qry->SetSQL(sql, 3);
+            qry->BindInt64(0, new_flags);
+            qry->BindInt32(1, key);
+            qry->BindInt64(2, last_modified);
+            qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM);
+            return true;
+        }
+    );
+}
+
 /*****************************************************
 
                 IN-TABLE    SETTINGS

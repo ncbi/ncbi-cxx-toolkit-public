@@ -433,8 +433,19 @@ public:
         TDataErrorCallback error_cb
     );
 
-    void UpdateBlobFlags(unsigned int  op_timeout_ms,
-                         int32_t  key, uint64_t  flags, EBlopOpFlag  flag_op);
+    void UpdateBlobFlags(
+        unsigned int op_timeout_ms,
+        int32_t key,
+        uint64_t flags,
+        EBlopOpFlag flag_op
+    );
+
+    void UpdateBlobFlagsExtended(
+        unsigned int op_timeout_ms,
+        CBlobRecord::TSatKey key,
+        EBlobFlags flag,
+        bool set_flag
+    );
 
     bool GetSetting(unsigned int  op_timeout_ms,
                     const string &  name, string &  value);
