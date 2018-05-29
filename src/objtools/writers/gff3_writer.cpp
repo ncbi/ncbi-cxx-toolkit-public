@@ -61,8 +61,6 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
-#include <objects/seq/sofa_type.hpp>
-#include <objects/seq/sofa_map.hpp>
 
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/annot_ci.hpp>
@@ -83,8 +81,6 @@
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
-
-//bool bDebugHere = false;
 
 #define IS_INSERTION(sf, tf) \
     ( ((sf) &  CAlnMap::fSeq) && !((tf) &  CAlnMap::fSeq) )
@@ -3190,7 +3186,6 @@ bool CGff3Writer::xWriteFeatureCds(
     }
 
     const CSeq_feat& feature = mf.GetMappedFeature();
-
     const CSeq_loc& PackedInt = pCds->Location();
     bool bStrandAdjust = PackedInt.IsSetStrand()  
         &&  (PackedInt.GetStrand()  ==  eNa_strand_minus);
@@ -3333,7 +3328,6 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
             }
         }
     }
-
     return true;
 }
 
@@ -3368,7 +3362,7 @@ bool CGff3Writer::xWriteFeatureRecords(
     const list<CRef<CSeq_interval> >& sublocs = loc.GetPacked_int().Get();
     if (sublocs.size() == 1) {
         return xWriteRecord(record);
-    }//<<
+    }
     list<CRef<CSeq_interval> >::const_iterator it;
     string totIntervals = string("/") + NStr::NumericToString(sublocs.size());
     unsigned int curInterval = 1;
@@ -3454,7 +3448,6 @@ bool CGff3Writer::xAssignFeatureAttributeParentpreRNA(
 {
     CMappedFeat parent = feature::GetBestParentForFeat(
                 mf, CSeqFeatData::eSubtype_preRNA, &fc.FeatTree());
-
     if (!parent) {
         return false;
     }
@@ -3475,7 +3468,6 @@ bool CGff3Writer::xAssignFeatureAttributeParentVDJsegmentCregion(
     const CMappedFeat& mf)
 //  ============================================================================
 {
-
     static array<CSeqFeatData::ESubtype, 4> parent_types =
     { CSeqFeatData::eSubtype_C_region,
       CSeqFeatData::eSubtype_D_segment,
@@ -3505,11 +3497,6 @@ bool CGff3Writer::xWriteRecord(
     const CGffBaseRecord& record )
 //  ----------------------------------------------------------------------------
 {
-//    if (record.StrType() == "gene"  &&  record.StrSeqStart() == "15956") {
-//        cerr << "";
-//        bDebugHere = true;
-//    }
-
     auto id = record.StrSeqId();
     if (id == "."  &&  record.CanGetLocation()) {//one last desperate attempt--- 
         id = "";

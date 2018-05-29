@@ -31,20 +31,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seq/Annot_descr.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-
-#include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
-#include <objects/general/User_field.hpp>
-#include <objects/general/Dbtag.hpp>
-#include <objects/seqfeat/Feat_id.hpp>
-#include <objects/seqfeat/Gb_qual.hpp>
-#include <objects/seqfeat/Cdregion.hpp>
-#include <objects/seqfeat/SeqFeatXref.hpp>
-#include <objects/seqfeat/BioSource.hpp>
 
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
