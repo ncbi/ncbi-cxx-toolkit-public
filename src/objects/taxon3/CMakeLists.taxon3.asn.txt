@@ -1,6 +1,15 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(taxon3)
+  NCBI_dataspecs(taxon3.asn)
+  NCBI_uses_toolkit_libraries(seq xconnect)
+  NCBI_project_watchers(bollin holmesbr)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE taxon3)
 set(MODULE_IMPORT objects/seqfeat/seqfeat)
@@ -18,3 +27,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(taxon3
     seq xconnect
 )
+endif()

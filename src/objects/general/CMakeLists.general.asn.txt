@@ -1,7 +1,17 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
 
+if (NCBI_EXPERIMENTAL_CFG)
+NCBI_begin_lib(general)
+  NCBI_sources(uoconv)
+  NCBI_dataspecs(general.asn)
+  NCBI_uses_toolkit_libraries(xser)
+  NCBI_project_watchers(bollin)
+NCBI_end_lib()
+
+
+else()
 set(MODULE general)
 set(MODULE_IMPORT )
 set(MODULE_PATH )
@@ -17,3 +27,4 @@ target_link_libraries(general-lib
     xser
 )
 
+endif()

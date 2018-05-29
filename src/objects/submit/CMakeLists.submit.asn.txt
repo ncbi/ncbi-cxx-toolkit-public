@@ -1,6 +1,14 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(submit)
+  NCBI_dataspecs(submit.asn)
+  NCBI_uses_toolkit_libraries(general biblio seq seqset)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE submit)
 set(MODULE_IMPORT objects/general/general objects/biblio/biblio objects/seq/seq objects/seqset/seqset objects/seqloc/seqloc)
@@ -14,3 +22,4 @@ RunDatatool("${MODULE}" "${MODULE_IMPORT}")
 target_link_libraries(submit
     seqset
 )
+endif()

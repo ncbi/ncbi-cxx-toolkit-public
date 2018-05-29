@@ -1,6 +1,16 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(xnetblast)
+  NCBI_sources(names)
+  NCBI_dataspecs(blast.asn)
+  NCBI_uses_toolkit_libraries(scoremat seq seqset)
+  NCBI_project_watchers(camacho)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE blast)
 set(MODULE_IMPORT objects/scoremat/scoremat objects/seq/seq objects/seqset/seqset objects/seqloc/seqloc objects/seqalign/seqalign)
@@ -15,3 +25,4 @@ RunDatatool("${MODULE}" "${MODULE_IMPORT}")
 target_link_libraries(xnetblast
     scoremat
 )
+endif()

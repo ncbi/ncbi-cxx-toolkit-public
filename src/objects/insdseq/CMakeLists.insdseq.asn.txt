@@ -1,6 +1,14 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(insdseq)
+  NCBI_dataspecs(insdseq.asn)
+  NCBI_uses_toolkit_libraries(xser)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE insdseq)
 set(MODULE_IMPORT )
@@ -18,3 +26,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(insdseq
     xser
 )
+endif()

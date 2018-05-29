@@ -1,6 +1,15 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(id1)
+  NCBI_dataspecs(id1.asn)
+  NCBI_uses_toolkit_libraries(seqset seq)
+  NCBI_project_watchers(vasilche)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE id1)
 set(MODULE_IMPORT objects/seqloc/seqloc objects/seqset/seqset objects/seq/seq)
@@ -14,4 +23,4 @@ RunDatatool("${MODULE}" "${MODULE_IMPORT}")
 target_link_libraries(id1
     seqset
 )
-
+endif()

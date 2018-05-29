@@ -1,6 +1,17 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(gencoll_client)
+  NCBI_sources(genomic_collections_cli.cpp ${NCBI_CURRENT_SOURCE_DIR}/genomic_collections_cli_.cpp cached_assembly)
+  set_source_files_properties(${NCBI_CURRENT_SOURCE_DIR}/genomic_collections_cli_.cpp PROPERTIES GENERATED TRUE)
+  NCBI_dataspecs(gencoll_client.asn)
+  NCBI_uses_toolkit_libraries(genome_collection xcompress xconnect)
+  NCBI_project_watchers(shchekot dicuccio zherikov)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE gencoll_client)
 set(MODULE_IMPORT )
@@ -23,3 +34,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(gencoll_client
     genome_collection xcompress xconnect
 )
+endif()

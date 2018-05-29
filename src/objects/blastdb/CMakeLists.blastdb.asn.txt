@@ -1,6 +1,15 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(blastdb)
+  NCBI_dataspecs(blastdb.asn)
+  NCBI_uses_toolkit_libraries(seq xnetblast)
+  NCBI_project_watchers(camacho)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE blastdb)
 set(MODULE_IMPORT objects/seqloc/seqloc)
@@ -14,3 +23,4 @@ RunDatatool("${MODULE}" "${MODULE_IMPORT}")
 target_link_libraries(${MODULE}
     seq xnetblast
 )
+endif()

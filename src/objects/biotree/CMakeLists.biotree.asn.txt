@@ -1,6 +1,14 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(biotree)
+  NCBI_dataspecs(biotree.asn)
+  NCBI_uses_toolkit_libraries(general)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE biotree)
 set(MODULE_IMPORT objects/general/general)
@@ -18,3 +26,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(biotree
     general-lib
 )
+endif()

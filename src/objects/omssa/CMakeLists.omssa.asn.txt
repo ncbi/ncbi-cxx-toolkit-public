@@ -1,6 +1,14 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(omssa)
+  NCBI_dataspecs(omssa.asn)
+  NCBI_uses_toolkit_libraries(seq)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE omssa)
 set(MODULE_IMPORT objects/seq/seq)
@@ -18,3 +26,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(omssa
     seq
 )
+endif()

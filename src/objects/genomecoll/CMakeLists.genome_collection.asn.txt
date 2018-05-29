@@ -1,6 +1,15 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(genome_collection)
+  NCBI_dataspecs(genome_collection.asn)
+  NCBI_uses_toolkit_libraries(general seq)
+  NCBI_project_watchers(dicuccio shchekot zherikov)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE genome_collection)
 set(MODULE_IMPORT objects/general/general objects/seqloc/seqloc objects/seqfeat/seqfeat objects/seq/seq)
@@ -19,3 +28,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(genome_collection
     seq
 )
+endif()

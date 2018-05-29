@@ -1,6 +1,15 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(test_ncbimime)
+  NCBI_sources(test_ncbimime)
+  NCBI_uses_toolkit_libraries(medlars medline)
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()
+
+
+if(OFF)
 add_executable(test_ncbimime-app
     test_ncbimime
 )
@@ -10,4 +19,4 @@ set_target_properties(test_ncbimime-app PROPERTIES OUTPUT_NAME test_ncbimime)
 target_link_libraries(test_ncbimime-app
     medlars medline
 )
-
+endif()

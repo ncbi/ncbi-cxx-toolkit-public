@@ -1,6 +1,14 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(objcoords)
+  NCBI_dataspecs(objcoords.asn)
+  NCBI_uses_toolkit_libraries(xser)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE objcoords)
 set(MODULE_IMPORT )
@@ -19,3 +27,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(objcoords
     xser
 )
+endif()

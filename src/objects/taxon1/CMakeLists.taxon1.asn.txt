@@ -1,6 +1,16 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(taxon1)
+  NCBI_sources(taxon1 cache utils ctreecont)
+  NCBI_dataspecs(taxon1.asn)
+  NCBI_uses_toolkit_libraries(seq xconnect)
+  NCBI_project_watchers(domrach)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE taxon1)
 set(MODULE_IMPORT objects/seqfeat/seqfeat)
@@ -18,3 +28,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(taxon1
     seq xconnect
 )
+endif()

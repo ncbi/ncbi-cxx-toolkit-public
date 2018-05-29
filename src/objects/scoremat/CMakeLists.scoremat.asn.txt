@@ -1,6 +1,15 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(scoremat)
+  NCBI_dataspecs(scoremat.asn)
+  NCBI_uses_toolkit_libraries(seqset general)
+NCBI_end_lib()
+
+
+if(OFF)
+
 
 set(MODULE scoremat)
 set(MODULE_IMPORT objects/seqset/seqset objects/general/general)
@@ -18,3 +27,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(scoremat
     seqset
 )
+endif()

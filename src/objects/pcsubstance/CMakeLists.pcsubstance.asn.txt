@@ -1,6 +1,14 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(pcsubstance)
+  NCBI_dataspecs(pcsubstance.asn)
+  NCBI_uses_toolkit_libraries(general pub)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE pcsubstance)
 set(MODULE_IMPORT objects/general/general objects/pub/pub)
@@ -18,3 +26,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(pcsubstance
     pub
 )
+endif()

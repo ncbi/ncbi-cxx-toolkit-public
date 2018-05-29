@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(gbproj)
+  NCBI_dataspecs(gbproj.asn)
+  NCBI_uses_toolkit_libraries(seq seqset general submit xconnect)
+NCBI_end_lib()
+
+
+if(OFF)
 #
 #
 #
@@ -18,3 +29,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(gbproj
     submit xconnect
 )
+endif()

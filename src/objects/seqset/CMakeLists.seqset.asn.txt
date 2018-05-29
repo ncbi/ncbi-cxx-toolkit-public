@@ -1,6 +1,14 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(seqset)
+  NCBI_dataspecs(seqset.asn)
+  NCBI_uses_toolkit_libraries(general biblio medline seq)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE seqset)
 set(MODULE_IMPORT objects/general/general objects/ /biblio objects/medline/medline objects/seq/seq)
@@ -14,3 +22,4 @@ RunDatatool("${MODULE}" "${MODULE_IMPORT}")
 target_link_libraries(seqset
     seq
 )
+endif()

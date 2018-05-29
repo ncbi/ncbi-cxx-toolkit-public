@@ -1,6 +1,14 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(homologene)
+  NCBI_dataspecs(homologene.asn)
+  NCBI_uses_toolkit_libraries(general seq)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE homologene)
 set(MODULE_IMPORT objects/general/general objects/seqalign/seqalign objects/seqloc/seqloc)
@@ -18,3 +26,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(homologene
     seq
 )
+endif()

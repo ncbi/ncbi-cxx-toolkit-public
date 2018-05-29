@@ -1,6 +1,14 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(seqedit)
+  NCBI_dataspecs(seqedit.asn)
+  NCBI_uses_toolkit_libraries(general seq seqset)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE seqedit)
 set(MODULE_IMPORT objects/general/general objects/seqloc/seqloc objects/seqset/seqset objects/seq/seq objects/seqalign/seqalign objects/seqfeat/seqfeat objects/seqres/seqres)
@@ -14,3 +22,4 @@ RunDatatool("${MODULE}" "${MODULE_IMPORT}")
 target_link_libraries(seqedit
     seqset
 )
+endif()

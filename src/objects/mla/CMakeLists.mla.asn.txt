@@ -1,6 +1,14 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(mla)
+  NCBI_dataspecs(mla.asn)
+  NCBI_uses_toolkit_libraries(biblio medline medlars pubmed pub)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE mla)
 set(MODULE_IMPORT objects/ /biblio objects/medline/medline objects/medlars/medlars objects/pubmed/pubmed objects/pub/pub)
@@ -19,3 +27,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(mla
     medlars pub pubmed
 )
+endif()

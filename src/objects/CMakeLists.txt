@@ -1,9 +1,67 @@
-##############################################################################
-# 
-#
+#############################################################################
+# $Id$
+#############################################################################
 
 # Include projects from this directory
 
+NCBI_add_subdirectory(
+  access
+  biblio
+  biotree
+  blast
+  blastdb
+  blastxml
+  cdd
+  cn3d
+  coords
+  docsum
+  entrez2
+  entrezgene
+  featdef
+  gbproj
+  gbseq
+  general
+  genesbyloc
+  genomecoll
+  homologene
+  id1
+  id2
+  insdseq
+  macro
+  medlars
+  medline
+  mim
+  mla
+  mmdb
+  ncbimime
+  objprt
+  omssa
+  pcassay
+  pcsubstance
+  proj
+  pub
+  pubmed
+  remap
+  scoremat
+  seq
+  seqcode
+  seqedit
+  seqset
+  seqsplit
+  seqtest
+  submit
+  taxon1
+  taxon3
+  tinyseq
+  trackmgr
+  valerr
+  valid
+  variation
+  variation_libs
+  varrep
+)
+
+if(OFF)
 # Recurse subdirectories
 add_subdirectory(access)
 add_subdirectory(biblio)
@@ -103,4 +161,5 @@ add_dependencies(variation seq)
 add_dependencies(searchbyrsid general-lib trackmgr)
 add_dependencies(xnetblast seqset scoremat seq)
 
+endif()
 

@@ -1,6 +1,29 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(seq)
+  NCBI_sources(
+    seqport_util
+    seq_id_tree seq_id_handle seq_id_mapper
+    seq_loc_mapper_base seq_align_mapper_base seqlocinfo sofa_map so_map
+    seq_loc_from_string seq_loc_reverse_complementer
+  )
+  NCBI_dataspecs(
+    seq.asn 
+    ../seqalign/seqalign.asn
+    ../seqblock/seqblock.asn
+    ../seqfeat/seqfeat.asn
+    ../seqloc/seqloc.asn
+    ../seqres/seqres.asn
+    ../seqtable/seqtable.asn
+  )
+  NCBI_uses_toolkit_libraries(general biblio pub medline)
+  NCBI_project_watchers(vasilche grichenk bollin ludwigf)
+NCBI_end_lib()
+
+
+if(OFF)
 
 #set(MODULE_IMPORT objects/general/general objects/ /biblio objects/pub/pub objects/medline/medline objects/seqloc/seqloc objects/seqblock/seqblock objects/seqalign/seqalign objects/seqfeat/seqfeat objects/seqres/seqres objects/seqtable/seqtable)
 set(MODULE_EXT "asn")
@@ -23,4 +46,5 @@ add_library(seq ${MODULE_FILES}
 target_link_libraries(seq
     pub seqcode sequtil
 )
+endif()
 

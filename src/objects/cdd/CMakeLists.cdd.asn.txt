@@ -1,6 +1,14 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(cdd)
+  NCBI_dataspecs(cdd.asn)
+  NCBI_uses_toolkit_libraries(general biblio pub seqset seq mmdb cn3d scoremat)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE cdd)
 set(MODULE_IMPORT objects/general/general objects/biblio/biblio objects/pub/pub objects/seq/seq objects/seqset/seqset objects/seqloc/seqloc objects/seqfeat/seqfeat objects/seqalign/seqalign objects/mmdb1/mmdb1 objects/mmdb2/mmdb2 objects/mmdb3/mmdb3 objects/cn3d/cn3d objects/scoremat/scoremat)
@@ -18,3 +26,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(cdd
     cn3d scoremat
 )
+endif()

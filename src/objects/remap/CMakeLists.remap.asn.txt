@@ -1,6 +1,14 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(remap)
+  NCBI_dataspecs(remap.asn)
+  NCBI_uses_toolkit_libraries(seq)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE remap)
 set(MODULE_IMPORT objects/seqloc/seqloc)
@@ -19,3 +27,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(remap
     seq
 )
+endif()

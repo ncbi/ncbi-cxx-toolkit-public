@@ -1,6 +1,16 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(seq_loc_unit_test)
+  NCBI_sources(seq_loc_unit_test)
+  NCBI_uses_toolkit_libraries(seq test_boost)
+  NCBI_project_watchers(vasilche)
+  NCBI_add_test()
+NCBI_end_app()
+
+
+if(OFF)
 add_executable(seq_loc_unit_test-app
     seq_loc_unit_test
 )
@@ -12,4 +22,4 @@ set_target_properties(seq_loc_unit_test-app PROPERTIES OUTPUT_NAME seq_loc_unit_
 target_link_libraries(seq_loc_unit_test-app
     seq test_boost
 )
-
+endif()

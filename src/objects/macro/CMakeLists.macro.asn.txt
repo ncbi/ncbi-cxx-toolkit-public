@@ -1,6 +1,15 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(macro)
+  NCBI_dataspecs(macro.asn)
+  NCBI_uses_toolkit_libraries(seq)
+  NCBI_project_watchers(bollin kans)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE macro)
 set(MODULE_IMPORT )
@@ -22,3 +31,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(macro
     seq
 )
+endif()

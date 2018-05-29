@@ -1,6 +1,14 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(cn3d)
+  NCBI_dataspecs(cn3d.asn)
+  NCBI_uses_toolkit_libraries(mmdb)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE cn3d)
 set(MODULE_IMPORT objects/mmdb1/mmdb1)
@@ -18,3 +26,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(cn3d
     mmdb
 )
+endif()

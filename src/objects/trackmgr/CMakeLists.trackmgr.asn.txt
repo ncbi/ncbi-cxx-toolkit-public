@@ -1,6 +1,15 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(trackmgr)
+  NCBI_dataspecs(trackmgr.asn)
+  NCBI_uses_toolkit_libraries(seq general)
+  NCBI_project_watchers(meric clausen)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE trackmgr)
 set(MODULE_IMPORT objects/seqloc/seqloc objects/general/general)
@@ -19,3 +28,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(trackmgr
     seq
 )
+endif()

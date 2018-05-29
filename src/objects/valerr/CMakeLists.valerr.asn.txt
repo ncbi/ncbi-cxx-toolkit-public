@@ -1,6 +1,14 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(valerr)
+  NCBI_dataspecs(valerr.asn)
+  NCBI_uses_toolkit_libraries(xser)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE valerr)
 set(MODULE_IMPORT )
@@ -22,3 +30,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(valerr
     xser
 )
+endif()

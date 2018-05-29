@@ -1,6 +1,13 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(dbsnp_tooltip_service)
+  NCBI_dataspecs(dbsnp_tooltip_service.asn)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE dbsnp_tooltip_service)
 set(MODULE_IMPORT )
@@ -14,4 +21,4 @@ RunDatatool("${MODULE}" "${MODULE_IMPORT}")
 target_link_libraries(dbsnp_tooltip_service
     general-lib trackmgr
 )
-
+endif()

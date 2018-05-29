@@ -1,7 +1,16 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
 
+NCBI_begin_app(test_userfield)
+  NCBI_sources(test_userfield)
+  NCBI_requires(NCBI_C)
+  NCBI_uses_toolkit_libraries(general)
+  NCBI_project_watchers(gouriano)
+NCBI_end_app()
+
+
+if(OFF)
 
 include_directories(SYSTEM ${NCBI_C_INCLUDE})
 link_directories(${NCBI_C_LIBPATH})
@@ -16,4 +25,4 @@ target_link_libraries(test_userfield-app
     general-lib
     -lncbiobj ${NCBI_C_ncbi}
 )
-
+endif()

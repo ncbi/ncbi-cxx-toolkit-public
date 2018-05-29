@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(pcassay)
+  NCBI_dataspecs(pcassay.asn)
+  NCBI_uses_toolkit_libraries(general pub seq pcsubstance)
+NCBI_end_lib()
+
+
+if(OFF)
 #
 #
 #
@@ -18,3 +29,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(pcassay
     pcsubstance seq
 )
+endif()

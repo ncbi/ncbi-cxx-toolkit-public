@@ -1,6 +1,15 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(test_uoconv)
+  NCBI_sources(test_uoconv)
+  NCBI_uses_toolkit_libraries(general)
+  NCBI_project_watchers(ucko)
+NCBI_end_app()
+
+
+if(OFF)
 add_executable(test_uoconv-app
     test_uoconv
 )
@@ -10,4 +19,4 @@ set_target_properties(test_uoconv-app PROPERTIES OUTPUT_NAME test_uoconv)
 target_link_libraries(test_uoconv-app
     general-lib
 )
-
+endif()

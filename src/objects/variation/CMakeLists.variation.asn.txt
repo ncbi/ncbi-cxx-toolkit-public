@@ -1,6 +1,14 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(variation)
+  NCBI_dataspecs(variation.asn)
+  NCBI_uses_toolkit_libraries(seq general pub)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE variation)
 set(MODULE_IMPORT objects/seqfeat/seqfeat objects/general/general objects/seqloc/seqloc objects/pub/pub objects/seq/seq)
@@ -18,3 +26,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(variation
     seq
 )
+endif()

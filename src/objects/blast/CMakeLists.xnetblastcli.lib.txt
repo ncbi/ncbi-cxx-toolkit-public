@@ -1,6 +1,16 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(xnetblastcli)
+  NCBI_sources(${NCBI_CURRENT_SOURCE_DIR}/blastclient.cpp ${NCBI_CURRENT_SOURCE_DIR}/blastclient_.cpp)
+  set_source_files_properties(${NCBI_CURRENT_SOURCE_DIR}/blastclient.cpp ${NCBI_CURRENT_SOURCE_DIR}/blastclient_.cpp PROPERTIES GENERATED TRUE)
+  NCBI_uses_toolkit_libraries(xconnect xnetblast)
+NCBI_end_lib()
+
+
+if(OFF)
+
 add_library(xnetblastcli
     blastclient blastclient_
 )
@@ -10,3 +20,4 @@ add_library(xnetblastcli
 target_link_libraries(xnetblastcli
     xconnect xnetblast
 )
+endif()

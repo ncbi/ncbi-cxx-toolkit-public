@@ -1,6 +1,15 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(searchbyrsid)
+  NCBI_dataspecs(search_by_rsid.asn)
+  NCBI_uses_toolkit_libraries(general trackmgr)
+  NCBI_project_watchers(ivanchen)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE search_by_rsid)
 set(MODULE_IMPORT )
@@ -14,4 +23,5 @@ RunDatatool("${MODULE}" "${MODULE_IMPORT}")
 target_link_libraries(searchbyrsid
     general-lib trackmgr
 )
+endif()
 

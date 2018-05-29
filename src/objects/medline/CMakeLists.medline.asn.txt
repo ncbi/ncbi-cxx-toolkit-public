@@ -1,6 +1,14 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(medline)
+  NCBI_dataspecs(medline.asn)
+  NCBI_uses_toolkit_libraries(biblio general)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE medline)
 set(MODULE_IMPORT objects/general/general objects/biblio/biblio)
@@ -14,4 +22,4 @@ RunDatatool("${MODULE}" "${MODULE_IMPORT}")
 target_link_libraries(medline
     biblio
 )
-
+endif()

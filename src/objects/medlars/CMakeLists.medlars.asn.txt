@@ -1,6 +1,14 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(medlars)
+  NCBI_dataspecs(medlars.asn)
+  NCBI_uses_toolkit_libraries(general biblio)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE medlars)
 set(MODULE_IMPORT objects/general/general objects/biblio/biblio)
@@ -18,3 +26,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(medlars
     biblio
 )
+endif()

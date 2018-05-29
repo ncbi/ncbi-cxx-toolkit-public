@@ -1,6 +1,14 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(entrezgene)
+  NCBI_dataspecs(entrezgene.asn)
+  NCBI_uses_toolkit_libraries(seq general pub)
+NCBI_end_lib()
+
+
+if(OFF)
 
 set(MODULE entrezgene)
 set(MODULE_IMPORT objects/seqfeat/seqfeat objects/general/general objects/seqloc/seqloc objects/pub/pub)
@@ -18,3 +26,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(entrezgene
     seq
 )
+endif()
