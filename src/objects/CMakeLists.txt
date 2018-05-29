@@ -11,6 +11,7 @@ NCBI_add_subdirectory(
   blast
   blastdb
   blastxml
+  blastxml2
   cdd
   cn3d
   coords
