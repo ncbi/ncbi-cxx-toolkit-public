@@ -4,14 +4,13 @@
 # 
 #
 
-if (NCBI_EXPERIMENTAL_CFG)
 NCBI_add_library(util)
 NCBI_add_subdirectory(
   regexp xregexp compress diff image tables creaders
   sequtil bitset qparse lmdb lmdbxx test demo
 )
 
-else()
+if(OFF)
 # Include projects from this directory
 include(CMakeLists.util.lib.txt)
 
