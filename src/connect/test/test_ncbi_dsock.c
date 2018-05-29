@@ -83,6 +83,7 @@ static int s_Server(const char* sport)
     char*          buf;
     unsigned int   host;
     unsigned short port;
+    unsigned short myport;
     char           addr[32];
     SOCK           server;
     EIO_Status     status;
@@ -104,18 +105,18 @@ static int s_Server(const char* sport)
                                port, IO_StatusStr(status)));
         return 1;
     }
+    myport = port ? port : SOCK_GetLocalPort(server, eNH_HostByteOrder);
     if (!port  &&  sport[i]) {
         FILE* fp;
-        port = SOCK_GetLocalPort(server, eNH_HostByteOrder);
-        if (port  &&  (fp = fopen(sport, "w")) != 0) {
-            if (fprintf(fp, "%hu", port) < 1  ||  fflush(fp) != 0)
+        if (myport  &&  (fp = fopen(sport, "w")) != 0) {
+            if (fprintf(fp, "%hu", myport) < 1  ||  fflush(fp) != 0)
                 status = eIO_Unknown;
             fclose(fp);
         } else
             status = eIO_Unknown;
     }
 
-    CORE_LOGF(eLOG_Note, ("[Server]  DSOCK on port %hu", port));
+    CORE_LOGF(eLOG_Note, ("[Server]  DSOCK on port %hu", myport));
     assert(status == eIO_Success);
 
     for (;;) {
