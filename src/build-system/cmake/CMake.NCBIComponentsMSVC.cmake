@@ -15,6 +15,7 @@
 
 
 set(NCBI_ALL_COMPONENTS "")
+set(NCBI_COMPONENT_MSWin_FOUND YES)
 #############################################################################
 # common settings
 set(NCBI_ThirdPartyBasePath //snowman/win-coremake/Lib/ThirdParty)
@@ -40,8 +41,9 @@ else()
 endif()
 
 
-set(NCBI_ThirdParty_C_ncbi  //snowman/win-coremake/Lib/Ncbi/C/${NCBI_ThirdPartyCompiler}/c.current)
+set(NCBI_ThirdParty_NCBI_C  //snowman/win-coremake/Lib/Ncbi/C/${NCBI_ThirdPartyCompiler}/c.current)
 
+set(NCBI_ThirdParty_TLS   ${NCBI_ThirdPartyBasePath}/gnutls/${NCBI_ThirdPartyCompiler}/3.4.9)
 set(NCBI_ThirdParty_Boost ${NCBI_ThirdPartyBasePath}/boost/${NCBI_ThirdPartyCompiler}/1.61.0)
 set(NCBI_ThirdParty_PCRE  ${NCBI_ThirdPartyBasePath}/pcre/${NCBI_ThirdPartyCompiler}/7.9)
 set(NCBI_ThirdParty_Z     ${NCBI_ThirdPartyBasePath}/z/${NCBI_ThirdPartyCompiler}/1.2.8)
@@ -87,10 +89,10 @@ endmacro()
 
 #############################################################################
 # NCBI_C
-if (EXISTS ${NCBI_ThirdParty_C_ncbi}/include)
-  message("NCBI_C found at ${NCBI_ThirdParty_C_ncbi}")
+if (EXISTS ${NCBI_ThirdParty_NCBI_C}/include)
+  message("NCBI_C found at ${NCBI_ThirdParty_NCBI_C}")
   set(NCBI_COMPONENT_NCBI_C_FOUND YES)
-  set(NCBI_COMPONENT_NCBI_C_INCLUDE ${NCBI_ThirdParty_C_ncbi}/include)
+  set(NCBI_COMPONENT_NCBI_C_INCLUDE ${NCBI_ThirdParty_NCBI_C}/include)
 
   set(_c_libs  blast ddvlib medarch ncbi ncbiacc ncbicdr
                ncbicn3d ncbicn3d_ogl ncbidesk ncbiid1
@@ -100,12 +102,27 @@ if (EXISTS ${NCBI_ThirdParty_C_ncbi}/include)
                vibrant_ogl)
 
   foreach( _lib IN LISTS _c_libs)
-    set(NCBI_COMPONENT_NCBI_C_LIBS ${NCBI_COMPONENT_NCBI_C_LIBS} "${NCBI_ThirdParty_C_ncbi}/\$\(Configuration\)/${_lib}.lib")
+    set(NCBI_COMPONENT_NCBI_C_LIBS ${NCBI_COMPONENT_NCBI_C_LIBS} "${NCBI_ThirdParty_NCBI_C}/\$\(Configuration\)/${_lib}.lib")
   endforeach()
   set(NCBI_COMPONENT_NCBI_C_DEFINES HAVE_NCBI_C=1)
 else()
-  message("Component NCBI_C ERROR: ${NCBI_ThirdParty_C_ncbi}/include not found")
+  message("Component NCBI_C ERROR: ${NCBI_ThirdParty_NCBI_C}/include not found")
   set(NCBI_COMPONENT_NCBI_C_FOUND NO)
+endif()
+
+#############################################################################
+# local_lbsm
+set(NCBI_COMPONENT_local_lbsm_FOUND NO)
+
+#############################################################################
+# TLS
+if (EXISTS ${NCBI_ThirdParty_TLS}/include)
+  message("TLS found at ${NCBI_ThirdParty_TLS}")
+  set(NCBI_COMPONENT_TLS_FOUND YES)
+  set(NCBI_COMPONENT_TLS_INCLUDE ${NCBI_ThirdParty_TLS}/include)
+else()
+  message("Component TLS ERROR: ${NCBI_ThirdParty_TLS}/include not found")
+  set(NCBI_COMPONENT_TLS_FOUND NO)
 endif()
 
 #############################################################################

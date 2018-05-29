@@ -788,6 +788,9 @@ endif (WIN32)
 #############################################################################
 #############################################################################
 
+set(NCBI_COMPONENT_unix_FOUND YES)
+set(NCBI_COMPONENT_Linux_FOUND YES)
+
 #############################################################################
 # NCBI_C
 if(HAVE_NCBI_C)
@@ -803,6 +806,29 @@ if(HAVE_NCBI_C)
 else()
   message("Component NCBI_C ERROR: ${NCBI_C_INCLUDE} not found")
   set(NCBI_COMPONENT_NCBI_C_FOUND NO)
+endif()
+
+#############################################################################
+# local_lbsm
+if (EXISTS ${NCBI_SRC_ROOT}/connect/ncbi_lbsm.c)
+  message("local_lbsm found at ${NCBI_SRC_ROOT}/connect")
+  set(NCBI_COMPONENT_local_lbsm_FOUND YES)
+  set(HAVE_LOCAL_LBSM 1)
+else()
+  message("Component local_lbsm ERROR: not found")
+  set(NCBI_COMPONENT_local_lbsm_FOUND NO)
+endif()
+
+#############################################################################
+# TLS
+if(GnuTLS_FOUND)
+  message("TLS found at ${GNUTLS_INCLUDE}")
+  set(NCBI_COMPONENT_TLS_FOUND YES)
+  set(NCBI_COMPONENT_TLS_INCLUDE ${GNUTLS_INCLUDE})
+  set(NCBI_COMPONENT_TLS_LIBS ${GNUTLS_LIBS})
+  set(HAVE_LIBGNUTLS 1)
+else()
+  set(NCBI_COMPONENT_TLS_FOUND NO)
 endif()
 
 #############################################################################

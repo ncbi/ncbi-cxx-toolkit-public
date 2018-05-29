@@ -19,6 +19,7 @@ set(NCBI_ALL_COMPONENTS "")
 # common settings
 set(NCBI_ThirdPartyBasePath /netopt/ncbi_tools)
 
+set(NCBI_ThirdParty_TLS   ${NCBI_ThirdPartyBasePath}/gnutls-3.4.0
 set(NCBI_ThirdParty_Boost ${NCBI_ThirdPartyBasePath}/boost-1.62.0-ncbi1)
 set(NCBI_ThirdParty_LZO   ${NCBI_ThirdPartyBasePath}/lzo-2.05)
 set(NCBI_ThirdParty_LMDB  ${NCBI_ThirdPartyBasePath}/lmdb-0.9.18)
@@ -59,6 +60,28 @@ endmacro()
 #############################################################################
 # NCBI_C
 set(NCBI_COMPONENT_NCBI_C_FOUND NO)
+
+#############################################################################
+# local_lbsm
+if (EXISTS ${NCBI_SRC_ROOT}/src/connect/ncbi_lbsm.c)
+  message("local_lbsm found at ${NCBI_SRC_ROOT}/src/connect")
+  set(NCBI_COMPONENT_local_lbsm_FOUND YES)
+  set(HAVE_LOCAL_LBSM 1)
+else()
+  message("Component local_lbsm ERROR: not found")
+  set(NCBI_COMPONENT_local_lbsm_FOUND NO)
+endif()
+
+#############################################################################
+# TLS
+if (EXISTS ${NCBI_ThirdParty_TLS}/include)
+  message("TLS found at ${NCBI_ThirdParty_TLS}")
+  set(NCBI_COMPONENT_TLS_FOUND YES)
+  set(NCBI_COMPONENT_TLS_INCLUDE ${NCBI_ThirdParty_TLS}/include)
+else()
+  message("Component TLS ERROR: ${NCBI_ThirdParty_TLS}/include not found")
+  set(NCBI_COMPONENT_TLS_FOUND NO)
+endif()
 
 #############################################################################
 # Boost.Test.Included
