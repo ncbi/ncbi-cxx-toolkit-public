@@ -305,7 +305,8 @@ CTempString GetStringOfSourceQual(ESourceQualifier eSourceQualifier)
         TYPICAL_SQ(whole_replicon),
         { eSQ_zero_orgmod, "?" },
         { eSQ_one_orgmod, "?" },
-        { eSQ_zero_subsrc, "?" }
+        { eSQ_zero_subsrc, "?" },
+        TYPICAL_SQ(submitter_seqid)
 #undef TYPICAL_SQ
     };
     typedef const CStaticPairArrayMap<ESourceQualifier, const char*> TSourceQualToNameMap;

@@ -469,6 +469,20 @@ private:
 };
 
 
+class NCBI_FORMAT_EXPORT CFlatSubmitterSeqidQVal : public IFlatQVal
+{
+public:
+    typedef CMolInfo::TTech   TTech;
+
+    CFlatSubmitterSeqidQVal(TTech tech) : m_Tech(tech) { }
+    void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
+                TFlags flags) const;
+
+private:
+    TTech m_Tech;
+};
+
+
 class NCBI_FORMAT_EXPORT CFlatOrgModQVal : public IFlatQVal
 {
 public:

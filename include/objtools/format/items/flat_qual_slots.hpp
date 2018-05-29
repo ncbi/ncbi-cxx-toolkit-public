@@ -283,6 +283,7 @@ enum ESourceQualifier {
     eSQ_zero_orgmod,
     eSQ_one_orgmod,
     eSQ_zero_subsrc,
+    eSQ_submitter_seqid,
 
     // This must be last
     eSQ_NUM_SOURCE_QUALIFIERS,

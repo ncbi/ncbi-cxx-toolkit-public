@@ -5693,6 +5693,8 @@ void CSourceFeatureItem::x_AddQuals(CBioseqContext& ctx)
     // add various generic qualifiers...
     x_AddQual(eSQ_mol_type,
               new CFlatMolTypeQVal(ctx.GetBiomol(), ctx.GetMol()));
+    x_AddQual(eSQ_submitter_seqid,
+              new CFlatSubmitterSeqidQVal(ctx.GetTech()));
     if (m_Feat.IsSetComment()) {
         x_AddQual(eSQ_seqfeat_note, new CFlatStringQVal(m_Feat.GetComment()));
     }
@@ -5996,6 +5998,8 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(organelle);
 
     DO_QUAL(mol_type);
+
+    DO_QUAL(submitter_seqid);
 
     DO_QUAL(strain);
     DO_QUAL(substrain);
