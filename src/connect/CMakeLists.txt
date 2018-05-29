@@ -1,6 +1,6 @@
-##############################################################################
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
 
 #
 # The connect library uses a split between a shared C toolkit library and an
@@ -61,6 +61,11 @@ set(SRC_CXX
     )
 
 
+NCBI_disable_pch()
+NCBI_add_library(connect connssl xxconnect xconnect xthrserv)
+NCBI_add_subdirectory(services ext test daemons)
+
+if(OFF)
 # Include projects from this directory
 include(CMakeLists.connect.lib.txt)
 include(CMakeLists.connssl.lib.txt)
@@ -73,3 +78,4 @@ add_subdirectory(services)
 add_subdirectory(ext)
 add_subdirectory(test )
 add_subdirectory(daemons)
+endif()

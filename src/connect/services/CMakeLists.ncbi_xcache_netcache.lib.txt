@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(ncbi_xcache_netcache)
+  NCBI_sources(neticache_client)
+  NCBI_uses_toolkit_libraries(xconnserv)
+  NCBI_project_watchers(sadyrovr)
+NCBI_end_lib()
+
+
+if(OFF)
 #
 #
 #
@@ -7,3 +19,4 @@ add_library(ncbi_xcache_netcache
 target_link_libraries(ncbi_xcache_netcache
     xconnserv
 )
+endif()

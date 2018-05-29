@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(test_compound_id)
+  NCBI_sources(test_compound_id)
+  NCBI_uses_toolkit_libraries(xconnserv)
+  NCBI_project_watchers(sadyrovr)
+NCBI_end_app()
+
+
+if(OFF)
 #
 #
 #
@@ -11,4 +23,4 @@ set_target_properties(test_compound_id-app PROPERTIES OUTPUT_NAME test_compound_
 target_link_libraries(test_compound_id-app
     xconnserv
 )
-
+endif()

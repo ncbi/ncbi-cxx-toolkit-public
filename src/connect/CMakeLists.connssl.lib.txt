@@ -1,6 +1,17 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(connssl)
+  NCBI_sources(${SRC_TLS})
+  NCBI_headers(*.hpp)
+  NCBI_requires(TLS)
+  NCBI_uses_toolkit_libraries(connect)
+  NCBI_project_watchers(lavr)
+NCBI_end_lib()
+
+
+if(OFF)
 add_library(connssl
     ${SRC_TLS}
 )
@@ -11,3 +22,4 @@ link_directories(${NCBI_TOOLS_ROOT}/lib64)
 target_link_libraries(connssl
     connect ${GNUTLS_LIBS}
 )
+endif()

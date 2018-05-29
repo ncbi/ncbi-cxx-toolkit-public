@@ -1,3 +1,17 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(test_netcache_api)
+  NCBI_sources(test_netcache_api)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(test_boost xconnserv)
+  NCBI_project_watchers(sadyrovr gouriano fukanchi)
+  NCBI_add_test()
+NCBI_end_app()
+
+
+if(OFF)
 #
 #
 #
@@ -10,4 +24,4 @@ set_target_properties(test_netcache_api-app PROPERTIES OUTPUT_NAME test_netcache
 target_link_libraries(test_netcache_api-app
     test_boost xconnserv
 )
-
+endif()

@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(test_ncbi_sendmail)
+  NCBI_sources(test_ncbi_sendmail)
+  NCBI_uses_toolkit_libraries(connect)
+  NCBI_project_watchers(lavr)
+  NCBI_add_test()
+NCBI_end_app()
+
+
+if(OFF)
 #
 #
 #
@@ -10,4 +23,4 @@ set_target_properties(test_ncbi_sendmail-app PROPERTIES OUTPUT_NAME test_ncbi_se
 target_link_libraries(test_ncbi_sendmail-app
     connect
 )
-
+endif()

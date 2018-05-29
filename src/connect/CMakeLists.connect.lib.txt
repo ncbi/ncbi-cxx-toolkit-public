@@ -1,6 +1,17 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(connect)
+  NCBI_sources(${SRC_C})
+  NCBI_headers(*.h)
+  NCBI_uses_external_libraries(${ORIG_LIBS})
+  NCBI_project_tags(core mod_loadinfo mod_caf)
+  NCBI_project_watchers(lavr mcelhany)
+NCBI_end_lib()
+
+
+if(OFF)
 
 add_library(connect
     ${SRC_C}
@@ -9,3 +20,4 @@ add_library(connect
 target_link_libraries(connect
     ${NETWORK_LIBS} ${MATH_LIBS} ${LIBS}
 )
+endif()

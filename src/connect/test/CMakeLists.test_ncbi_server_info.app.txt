@@ -2,24 +2,8 @@
 # $Id$
 #############################################################################
 
-NCBI_begin_app(test_fw)
-  NCBI_sources(test_fw)
+NCBI_begin_app(test_ncbi_server_info)
+  NCBI_sources(test_ncbi_server_info)
   NCBI_uses_toolkit_libraries(connect)
   NCBI_project_watchers(lavr)
 NCBI_end_app()
-
-
-if(OFF)
-#
-#
-#
-add_executable(test_fw-app
-    test_fw
-)
-
-set_target_properties(test_fw-app PROPERTIES OUTPUT_NAME test_fw)
-
-target_link_libraries(test_fw-app
-    connect
-)
-endif()
