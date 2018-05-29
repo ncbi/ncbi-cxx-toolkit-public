@@ -46,7 +46,7 @@ if (WIN32)
   set(NCBI_DEFAULT_PCH_DEFINE "NCBI_USE_PCH")
   set(NCBI_DEFAULT_RESOURCES "${NCBI_SRC_ROOT}//build-system/cmake/ncbi.rc")
 
-  set(ORIG_LIBS dbghelp.lib)
+  set(ORIG_LIBS ws2_32.lib dbghelp.lib)
   return()
 
 #----------------------------------------------------------------------------
@@ -77,6 +77,7 @@ elseif (XCODE)
     add_definitions(-D_MT -D_REENTRANT -D_THREAD_SAFE)
     set(NCBI_POSIX_THREADS 1)
   endif (CMAKE_USE_PTHREADS_INIT)
+
   return()
 
 #----------------------------------------------------------------------------

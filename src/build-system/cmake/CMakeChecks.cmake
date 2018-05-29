@@ -13,8 +13,7 @@ if("${CMAKE_GENERATOR}" STREQUAL "Xcode")
   endif()
 endif()
 
-if(NOT NCBI_EXPERIMENTAL_CFG)
-if (WIN32)
+if (NOT WIN32 AND NOT XCODE)
     if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
         set(CMAKE_BUILD_TYPE Debug)
     endif()
@@ -23,7 +22,8 @@ if (WIN32)
     endif()
 endif()
 
-cmake_policy(SET CMP0054 OLD)
+if(NOT NCBI_EXPERIMENTAL_CFG)
+  cmake_policy(SET CMP0054 OLD)
 endif()
 
 #############################################################################

@@ -169,8 +169,18 @@ endfunction()
 
 #############################################################################
 macro(NCBI_begin_lib _name)
-  set(NCBI_PROJECT ${_name})
-  set(NCBI_${NCBI_PROJECT}_OUTPUT ${_name})
+  if(NCBI_EXPERIMENTAL_CFG)
+    set(NCBI_PROJECT ${_name})
+    set(NCBI_${NCBI_PROJECT}_OUTPUT ${_name})
+  else()
+    if("${_name}" STREQUAL "general")
+      set(NCBI_PROJECT ${_name}-lib)
+      set(NCBI_${NCBI_PROJECT}_OUTPUT ${_name})
+    else()
+      set(NCBI_PROJECT ${_name})
+      set(NCBI_${NCBI_PROJECT}_OUTPUT ${_name})
+    endif()
+  endif()
 #CMake global flag
   if(BUILD_SHARED_LIBS)
     set(NCBI_${NCBI_PROJECT}_TYPE SHARED)
@@ -253,7 +263,18 @@ endmacro()
 
 #############################################################################
 macro(NCBI_uses_toolkit_libraries)
-  set(NCBI_${NCBI_PROJECT}_NCBILIB ${NCBI_${NCBI_PROJECT}_NCBILIB} "${ARGV}")
+  set(_tk_libs "${ARGV}")
+  foreach(_tk_lib IN LISTS _tk_libs)
+    if("${_tk_lib}" STREQUAL general)
+      if(NCBI_EXPERIMENTAL_CFG)
+        set(NCBI_${NCBI_PROJECT}_NCBILIB ${NCBI_${NCBI_PROJECT}_NCBILIB} \$<1:general>)
+      else()
+        set(NCBI_${NCBI_PROJECT}_NCBILIB ${NCBI_${NCBI_PROJECT}_NCBILIB} general-lib)
+      endif()
+    else()
+      set(NCBI_${NCBI_PROJECT}_NCBILIB ${NCBI_${NCBI_PROJECT}_NCBILIB} ${_tk_lib})
+    endif()
+  endforeach()
 endmacro()
 
 #############################################################################
@@ -311,6 +332,7 @@ macro(NCBI_set_test_arguments)
     set(NCBI_${NCBI_TEST}_CMD ${NCBI_PROJECT})
   endif()
   set(NCBI_${NCBI_TEST}_ARG "${ARGV}")
+  set(NCBI_${NCBI_TEST}_DIR "${NCBI_CURRENT_SOURCE_DIR}")
 endmacro()
 
 ##############################################################################
@@ -489,21 +511,40 @@ function(NCBI_internal_add_dataspec)
     foreach(_dataspec ${NCBI_${NCBI_PROJECT}_DATASPEC})
 
       get_filename_component(_basename ${_dataspec} NAME_WE)
+      get_filename_component(_ext ${_dataspec} EXT)
       set(_filepath ${CMAKE_CURRENT_SOURCE_DIR}/${_dataspec})
       get_filename_component(_path ${_filepath} DIRECTORY)
       file(RELATIVE_PATH _relpath ${NCBI_SRC_ROOT} ${_path})
+      set(_module_imports "")
+      set(_imports "")
 
-      set_source_files_properties(${_basename}__.cpp ${_basename}___.cpp PROPERTIES GENERATED TRUE)
-      set(_srcfiles ${_srcfiles} ${_basename}__.cpp ${_basename}___.cpp)
+      if(EXISTS "${_path}/${_basename}.module")
+        FILE(READ "${_path}/${_basename}.module" _module_contents)
+        STRING(REGEX MATCH "MODULE_IMPORT *=[^\n]*[^ \n]" _tmp "${_module_contents}")
+        STRING(REGEX REPLACE "MODULE_IMPORT *= *" "" _tmp "${_tmp}")
+        STRING(REGEX REPLACE "  *$" "" _imp_list "${_tmp}")
+        STRING(REGEX REPLACE " " ";" _imp_list "${_imp_list}")
+
+        foreach(_module IN LISTS _imp_list)
+            set(_module_imports "${_module_imports} ${_module}${_ext}")
+        endforeach()
+        if (NOT "${_module_imports}" STREQUAL "")
+          set(_imports -M ${_module_imports})
+        endif()
+      endif()
+
+      set_source_files_properties(${_path}/${_basename}__.cpp ${_path}/${_basename}___.cpp PROPERTIES GENERATED TRUE)
+      set(_srcfiles ${_srcfiles} ${_path}/${_basename}__.cpp ${_path}/${_basename}___.cpp)
 
       set(_oc ${_basename})
-      set(_pch -pch ${NCBI_DEFAULT_PCH})
-      set(_od ${CMAKE_CURRENT_SOURCE_DIR}/${_basename}.def)
-      set(_oex "")
-      set(_cmd ${NCBI_DATATOOL} ${_pch} -m ${_filepath} -oA -oc ${_oc} -od ${_od} -odi -ocvs -or ${_relpath} -oR ${top_src_dir})
-#message("_cmd ${_cmd}")
+      if (NOT "${NCBI_DEFAULT_PCH}" STREQUAL "")
+        set(_pch -pch ${NCBI_DEFAULT_PCH})
+      endif()
+      set(_od ${_path}/${_basename}.def)
+      set(_oex -oex " ")
+      set(_cmd ${NCBI_DATATOOL} ${_oex} ${_pch} -m ${_filepath} -oA -oc ${_oc} -od ${_od} -odi -ocvs -or ${_relpath} -oR ${top_src_dir} ${_imports})
       add_custom_command(
-            OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/${_basename}__.cpp ${CMAKE_CURRENT_SOURCE_DIR}/${_basename}___.cpp
+            OUTPUT ${_path}/${_basename}__.cpp ${_path}/${_basename}___.cpp
             COMMAND ${_cmd} VERBATIM
             WORKING_DIRECTORY ${top_src_dir}
             COMMENT "Generate C++ classes from ${_filepath}"
@@ -723,11 +764,11 @@ endif()
 
   NCBI_internal_collect_sources(${CMAKE_CURRENT_SOURCE_DIR} ${NCBI_PROJECT}) 
   NCBI_internal_collect_headers(${CMAKE_CURRENT_SOURCE_DIR} ${NCBI_PROJECT}) 
-  NCBI_internal_add_resources(${NCBI_PROJECT})
   NCBI_internal_add_dataspec(${NCBI_PROJECT})
 
   if ("${NCBI_${NCBI_PROJECT}_TYPE}" STREQUAL "STATIC")
 
+#message("add_library ${NCBI_PROJECT}")
     set(NCBITMP_DEFINES  ${NCBITMP_DEFINES} "_LIB")
     add_library(${NCBI_PROJECT} STATIC ${NCBITMP_PROJECT_SOURCES} ${NCBITMP_PROJECT_HEADERS} ${NCBI_${NCBI_PROJECT}_DATASPEC})
     set(_suffix ${CMAKE_STATIC_LIBRARY_SUFFIX})
@@ -739,8 +780,10 @@ endif()
 
   elseif ("${NCBI_${NCBI_PROJECT}_TYPE}" STREQUAL "CONSOLEAPP")
 
+#message("add_executable ${NCBI_PROJECT}")
     if(NCBI_EXPERIMENTAL_CFG)
       set(NCBITMP_DEFINES  ${NCBITMP_DEFINES} "_CONSOLE")
+      NCBI_internal_add_resources(${NCBI_PROJECT})
       add_executable(${NCBI_PROJECT} ${NCBITMP_PROJECT_SOURCES} ${NCBITMP_PROJECT_HEADERS} ${NCBITMP_PROJECT_RESOURCES} ${NCBI_${NCBI_PROJECT}_DATASPEC})
       set(_suffix ${CMAKE_EXECUTABLE_SUFFIX})
     else()
@@ -768,6 +811,7 @@ endif()
 
   target_include_directories(${NCBI_PROJECT} PRIVATE ${NCBI_${NCBI_PROJECT}_INCLUDES} ${NCBITMP_INCLUDES})
   target_compile_definitions(${NCBI_PROJECT} PRIVATE ${NCBI_${NCBI_PROJECT}_DEFINES}  ${NCBITMP_DEFINES})
+#message("target_link_libraries: ${NCBI_PROJECT}         ${NCBI_${NCBI_PROJECT}_NCBILIB}  ${NCBITMP_LIBS}")
   target_link_libraries(     ${NCBI_PROJECT}         ${NCBI_${NCBI_PROJECT}_NCBILIB}  ${NCBITMP_LIBS})
 
   if (DEFINED _suffix)
@@ -777,7 +821,7 @@ endif()
 
   if (DEFINED NCBI_ALLTESTS)
     foreach(_test IN LISTS NCBI_ALLTESTS)
-#message("${NCBI_PROJECT} test = ${_test}, cmd = ${NCBI_${_test}_CMD}, arg = ${NCBI_${_test}_ARG}")
+#message("${NCBI_PROJECT} test = ${_test}, cmd = ${NCBI_${_test}_CMD}, arg = ${NCBI_${_test}_ARG}, dir = ${NCBI_${_test}_DIR}")
       add_test(NAME ${_test} COMMAND ${NCBI_${_test}_CMD} ${NCBI_${_test}_ARG} WORKING_DIRECTORY ${NCBI_${_test}_DIR})
     endforeach()
   endif()
