@@ -12,7 +12,7 @@
 #define HAVE_LIBFTGL 1
 #cmakedefine HAVE_LIBGIF 1
 #define HAVE_LIBGLEW 1
-#define HAVE_LIBGNUTLS 1
+#cmakedefine HAVE_LIBGNUTLS 1
 #cmakedefine HAVE_LIBJPEG 1
 #define HAVE_LIBLMDB 1
 #define HAVE_LIBLZO 1
