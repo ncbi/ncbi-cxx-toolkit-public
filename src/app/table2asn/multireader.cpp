@@ -267,21 +267,10 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
     if (m_context.m_allow_accession)
         m_iFlags |= CFastaReader::fParseRawID;
 
-    if (m_context.m_handle_as_aa)
-    {
-        m_iFlags |= CFastaReader::fAssumeProt 
-                 |  CFastaReader::fForceType;                   
-    }
-    else
-    if (m_context.m_handle_as_nuc)
-    {
-        m_iFlags |= CFastaReader::fAssumeNuc
-                 |  CFastaReader::fForceType;
-    }
-    else
-    {
-        m_iFlags |= CFastaReader::fAssumeNuc;
-    }
+
+    m_iFlags |= CFastaReader::fAssumeNuc
+             |  CFastaReader::fForceType;
+
 
 
     CStreamLineReader lr( instream );

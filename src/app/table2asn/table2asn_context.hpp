@@ -48,8 +48,6 @@ public:
     string m_single_source_qual_file;
     string m_Comment;
     string m_single_annot_file;
-    string m_find_open_read_frame;
-    string m_strain;
     string m_ft_url;
     string m_ft_url_mod;
     CTime m_HoldUntilPublish;
@@ -58,7 +56,6 @@ public:
     string m_genome_center_id;
     string m_validate;
     bool   m_delay_genprodset;
-    bool   m_copy_genid_to_note;
     string G;
     bool   R;
     bool   S;
@@ -84,21 +81,15 @@ public:
     objects::CBioseq_set::TClass m_ClassValue;
     bool   m_GenomicProductSet;
     bool   m_SetIDFromFile;
-    bool   m_NucProtSet;
     int    m_taxid;
-    bool   m_avoid_orf_lookup;
     TSeqPos m_gapNmin;
     TSeqPos m_gap_Unknown_length;
     TSeqPos m_minimal_sequence_length;
     set<int> m_gap_evidences;
     int    m_gap_type;
     bool   m_fcs_trim;
-    bool   m_avoid_submit_block;
     bool   m_split_log_files;
-    bool   m_optmap_use_locations;
     bool   m_postprocess_pubs;
-    bool   m_handle_as_aa;
-    bool   m_handle_as_nuc;
     string m_asn1_suffix;
     string m_locus_tag_prefix;
     bool   m_use_hypothetic_protein;

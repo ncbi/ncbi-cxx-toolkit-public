@@ -916,6 +916,7 @@ void CFeatureTableReader::_MergeCDSFeatures_impl(CSeq_entry& entry)
     }
 }
 
+//LCOV_EXCL_START
 void CFeatureTableReader::FindOpenReadingFrame(CSeq_entry& entry) const
 {
     switch(entry.Which())
@@ -939,6 +940,7 @@ void CFeatureTableReader::FindOpenReadingFrame(CSeq_entry& entry) const
         break;
     }
 }
+//LCOV_EXCL_STOP
 
 void CFeatureTableReader::_MoveCdRegions(CSeq_entry_Handle entry_h, const CBioseq& bioseq, CSeq_annot::TData::TFtable& seq_ftable, CSeq_annot::TData::TFtable& set_ftable)
 {

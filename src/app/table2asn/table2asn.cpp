@@ -208,10 +208,6 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddFlag("g", "Genomic Product Set");
     arg_desc->AddFlag("J", "Delayed Genomic Product Set ");                // done
-    arg_desc->AddOptionalKey                                               // removed
-        ("F", "String", "Feature ID Links\n\
-      o By Overlap\n\
-      p By Product", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey
         ("A", "String", "Accession", CArgDescriptions::eString);           // done
@@ -233,24 +229,12 @@ void CTbl2AsnApp::Init(void)
         ("f", "InFile", "Single 5 column table file or other annotations", CArgDescriptions::eInputFile);// done
 
     arg_desc->AddOptionalKey
-        ("k", "String", "CDS Flags (combine any of the following letters)\n\
-      c Annotate Longest ORF\n\
-      r Allow Runon ORFs\n\
-      m Allow Alternative Starts\n\
-      k Set Conflict on Mismatch", CArgDescriptions::eString);
-
-    arg_desc->AddOptionalKey
         ("V", "String", "Verification (combine any of the following letters)\n\
       v Validate with Normal Stringency\n\
-      r Validate without Country Check\n\
-      c BarCode Validation\n\
       b Generate GenBank Flatfile\n\
-      g Generate Gene Report\n\
       t Validate with TSA Check", CArgDescriptions::eString);
 
     arg_desc->AddFlag("q", "Seq ID from File Name");      // done
-    arg_desc->AddFlag("u", "GenProdSet to NucProtSet");   // done
-    arg_desc->AddFlag("I", "General ID to Note");         // done
 
     arg_desc->AddOptionalKey("G", "String", "Alignment Gap Flags (comma separated fields, e.g., p,-,-,-,?,. )\n\
       n Nucleotide or p Protein,\n\
@@ -264,7 +248,6 @@ void CTbl2AsnApp::Init(void)
       r RefSeq mRNA Titles", CArgDescriptions::eString);
 
     arg_desc->AddFlag("U", "Remove Unnecessary Gene Xref");
-    arg_desc->AddFlag("L", "Force Local protein_id/transcript_id");
     arg_desc->AddFlag("T", "Remote Taxonomy Lookup");               // done
     arg_desc->AddFlag("P", "Remote Publication Lookup");            // done
     arg_desc->AddFlag("W", "Log Progress");                         // done
@@ -298,8 +281,6 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey("w", "InFile", "Single Structured Comment File (overrides the use of -X C)", CArgDescriptions::eInputFile); //done
     arg_desc->AddOptionalKey("M", "String", "Master Genome Flags\n\
       n Normal\n\
-      b Big Sequence\n\
-      p Power Option\n\
       t TSA", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("l", "String", "Add type of evidence used to assert linkage across assembly gaps. May be used multiple times. Must be one of the following:\n\
@@ -328,11 +309,8 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey("m", "String", "Lineage to use for Discrepancy Report tests", CArgDescriptions::eString);
 
     // all new options are done
-    arg_desc->AddFlag("type-aa", "Treat sequence as amino acid");
-    arg_desc->AddFlag("type-nuc", "Treat sequence as nucleotide");
     arg_desc->AddOptionalKey("taxid", "Integer", "Organism taxonomy ID", CArgDescriptions::eInteger);
     arg_desc->AddOptionalKey("taxname", "String", "Taxonomy name", CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("strain-name", "String", "Strain name for OpGen optical map sequences", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("ft-url", "String", "FileTrack URL for the XML file retrieval", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("ft-url-mod", "String", "FileTrack URL for the XML file base modifications", CArgDescriptions::eString);
 
@@ -343,11 +321,9 @@ void CTbl2AsnApp::Init(void)
     //arg_desc->AddOptionalKey("min-threshold", "Integer", "minimum length of sequence", CArgDescriptions::eInteger);
     //arg_desc->AddOptionalKey("fcs-file", "FileName", "FCS report file", CArgDescriptions::eInputFile);
     //arg_desc->AddFlag("fcs-trim", "Trim FCS regions instead of annotate");
-    arg_desc->AddFlag("avoid-submit", "Avoid submit block for optical map");
-    arg_desc->AddFlag("map-use-loc", "Optical map: use locations instead of lengths of fragments");
     arg_desc->AddFlag("postprocess-pubs", "Postprocess pubs: convert authors to standard");
     arg_desc->AddOptionalKey("locus-tag-prefix", "String",  "Add prefix to locus tags in annotation files", CArgDescriptions::eString);
-    arg_desc->AddFlag("euk", "Assume eukariote");
+    arg_desc->AddFlag("euk", "Assume eukaryote, and create missing mRNA features");
     arg_desc->AddOptionalKey("suspect-rules", "String", "Path to a file containing suspect rules set. Overrides environment variable PRODUCT_RULES_LIST", CArgDescriptions::eString);
     arg_desc->AddFlag("allow-acc", "Allow accession recognition in sequence IDs. Default is local");
     arg_desc->AddFlag("augustus-fix", "Special handling of unusual problems in Augustus annotations");
@@ -392,7 +368,6 @@ int CTbl2AsnApp::Run(void)
     m_validator.Reset(new CTable2AsnValidator(m_context));
 
     m_context.m_GenomicProductSet = args["g"].AsBoolean();
-    m_context.m_NucProtSet = args["u"].AsBoolean();
     m_context.m_SetIDFromFile = args["q"].AsBoolean();
     m_context.m_allow_accession = args["allow-acc"].AsBoolean();
     m_context.m_delay_genprodset = args["J"].AsBoolean();
@@ -475,7 +450,6 @@ int CTbl2AsnApp::Run(void)
 
     m_context.m_asn1_suffix = args["out-suffix"].AsString();
 
-    m_context.m_copy_genid_to_note = args["I"].AsBoolean();
     m_context.m_save_bioseq_set = args["K"].AsBoolean();
     m_context.m_augustus_fix = args["augustus-fix"].AsBoolean();
 
@@ -483,8 +457,6 @@ int CTbl2AsnApp::Run(void)
         m_context.m_OrganismName = args["taxname"].AsString();
     if (args["taxid"])
         m_context.m_taxid = args["taxid"].AsInteger();
-    if (args["strain-name"])
-        m_context.m_strain = args["strain-name"].AsString();
     if (args["ft-url"])
         m_context.m_ft_url = args["ft-url"].AsString();
     if (args["ft-url-mod"])
@@ -498,17 +470,6 @@ int CTbl2AsnApp::Run(void)
     if (args["src-file"])
         m_context.m_single_source_qual_file = args["src-file"].AsString();
 
-    if (args["F"])
-    {
-        char f_arg = args["F"].AsString()[0];
-
-        if (args["F"].AsString().length() != 1 || 
-            !(f_arg == 'f' || f_arg == 'p'))
-        {
-            NCBI_THROW(CArgException, eConvert,
-                "Unrecognized feature link type " + args["F"].AsString());
-        }
-    }
     if (args["f"])
         m_context.m_single_annot_file = args["f"].AsString();
 
@@ -520,17 +481,6 @@ int CTbl2AsnApp::Run(void)
         m_context.m_postprocess_pubs = args["postprocess-pubs"].AsBoolean();
 
     m_context.m_RemoteTaxonomyLookup = args["T"].AsBoolean();
-
-    m_context.m_avoid_submit_block = args["avoid-submit"].AsBoolean();
-
-    m_context.m_optmap_use_locations = args["map-use-loc"].AsBoolean();
-
-    if (args["type-aa"] && args["type-nuc"])
-    {
-        NCBI_THROW(CArgException, eConstraint, "type-aa flag cannot be used with type-nuc");
-    }
-    m_context.m_handle_as_aa = args["type-aa"].AsBoolean();
-    m_context.m_handle_as_nuc = args["type-nuc"].AsBoolean();
 
     if (args["a"])
     {
@@ -627,9 +577,6 @@ int CTbl2AsnApp::Run(void)
 
     if (m_context.m_gapNmin == 0 || m_context.m_gap_Unknown_length < 0)
         m_context.m_gap_Unknown_length = 0;
-
-    if (args["k"])
-        m_context.m_find_open_read_frame = args["k"].AsString();
 
     if (args["H"])
     {
@@ -842,10 +789,10 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     CRef<CSeq_entry> entry;
     CRef<CSeq_submit> submit;
 
-    m_context.m_avoid_orf_lookup = false;
     bool avoid_submit_block = false;
     bool do_dates = false;
 
+#if 0
     if (m_context.m_current_file.substr(m_context.m_current_file.length() - 4).compare(".xml") == 0)
     {
         avoid_submit_block = m_context.m_avoid_submit_block;
@@ -856,6 +803,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     }
     else
     {
+#endif
 		CFormatGuess::EFormat format = m_reader->LoadFile(m_context.m_current_file, entry, submit);
         if (m_fcs_reader.get())
         {
@@ -877,7 +825,9 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         default:
             break;
         }
+#if 0
     }
+#endif
 
     m_context.ApplyAccession(*entry);
 
@@ -897,9 +847,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     ProcessSecretFiles1Phase(*entry);
 
     CFeatureTableReader fr(m_context);
-    // this may convert seq into seq-set
-    if (!m_context.m_avoid_orf_lookup && !m_context.m_find_open_read_frame.empty())
-        fr.FindOpenReadingFrame(*entry);
 
     if (m_context.m_RemoteTaxonomyLookup)
     {
@@ -919,9 +866,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     if (m_possible_proteins.NotEmpty())
         fr.AddProteins(*m_possible_proteins, *entry);
-
-    if (m_context.m_copy_genid_to_note)
-        m_context.CopyFeatureIdsToComments(*entry);
 
     if (m_context.m_GenomicProductSet)
     {

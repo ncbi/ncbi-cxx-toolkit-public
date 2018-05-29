@@ -175,7 +175,6 @@ void x_CorrectCollectionDates(CTable2AsnContext& context, _T& seq_or_set)
 CTable2AsnContext::CTable2AsnContext():
     m_output(0),
     m_delay_genprodset(false),
-    m_copy_genid_to_note(false),
     m_save_bioseq_set(false),
     m_disc_eucariote(false),
     m_flipped_struc_cmt(false),
@@ -185,20 +184,14 @@ CTable2AsnContext::CTable2AsnContext():
     m_ClassValue(CBioseq_set::eClass_genbank),
     m_GenomicProductSet(false),
     m_SetIDFromFile(false),
-    m_NucProtSet(false),
     m_taxid(0),
-    m_avoid_orf_lookup(false),
     m_gapNmin(0),
     m_gap_Unknown_length(0),
     m_minimal_sequence_length(0),
     m_gap_type(-1),
     m_fcs_trim(false),
-    m_avoid_submit_block(false),
     m_split_log_files(false),
-    m_optmap_use_locations(false),
     m_postprocess_pubs(false),
-    m_handle_as_aa(false),
-    m_handle_as_nuc(false),
     m_use_hypothetic_protein(false),
     m_eukariote(false),
     m_di_fasta(false),
@@ -457,6 +450,8 @@ void CTable2AsnContext::SetSeqId(CSeq_entry& entry) const
     // now it's good to rename features ....
 }
 
+
+//LCOV_EXCL_START
 void CTable2AsnContext::CopyFeatureIdsToComments(CSeq_entry& entry) const
 {
     CScope scope(*CObjectManager::GetInstance());
@@ -486,7 +481,9 @@ void CTable2AsnContext::CopyFeatureIdsToComments(CSeq_entry& entry) const
         }
     }
 }
+//LCOV_EXCL_STOP
 
+//LCOV_EXCL_START
 void CTable2AsnContext::SmartFeatureAnnotation(CSeq_entry& entry) const
 {
     CScope scope(*CObjectManager::GetInstance());
@@ -520,6 +517,7 @@ void CTable2AsnContext::SmartFeatureAnnotation(CSeq_entry& entry) const
         return;
 
 }
+//LCOV_EXCL_STOP
 
 void CTable2AsnContext::MakeGenomeCenterId(CSeq_entry& entry)
 {

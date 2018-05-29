@@ -69,6 +69,7 @@ BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
 
+//LCOV_EXCL_START
 namespace
 {
 
@@ -198,6 +199,7 @@ void COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& c
     points.reserve(it.m_fragments.size());
     
     TSeqPos addr = 0;
+#if 0
     // There are two approaches of specifying fragments: locations and lengths of fragments
     if (context.m_optmap_use_locations)
     {
@@ -244,6 +246,7 @@ void COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& c
             points.push_back(addr - 1);
         }
     }
+#endif
 
     inst.SetLength(addr);
 
@@ -260,11 +263,13 @@ void COpticalxml2asnOperatorImpl::SetOrganismData(CSeq_descr& SD, const string& 
         biosource.SetOrg().SetTaxname(context.m_OrganismName);
 
     // Get strain
+#if 0
     if (!context.m_strain.empty())
     {
         CRef<COrgMod> strain(new COrgMod(COrgMod::eSubtype_strain, context.m_strain));
         biosource.SetOrg().SetOrgname().SetMod().push_back(strain);
     }
+#endif
 
 }
 
@@ -385,5 +390,7 @@ size_t COpticalxml2asnOperatorImpl::GetOpticalXMLData(const string& FileIn)
     }
     return m_vchr.size();
 }
+
+//LCOV_EXCL_STOP
 
 END_NCBI_SCOPE
