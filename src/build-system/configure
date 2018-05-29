@@ -4824,6 +4824,9 @@ if test -n "$svnrev"; then
    { echo "$as_me:$LINENO: result: $svnrev" >&5
 echo "${ECHO_T}$svnrev" >&6; }
    NCBI_SUBVERSION_REVISION=$svnrev
+elif test -n "$NCBI_SUBVERSION_REVISION"; then
+   { echo "$as_me:$LINENO: result: $NCBI_SUBVERSION_REVISION" >&5
+echo "${ECHO_T}$NCBI_SUBVERSION_REVISION" >&6; }
 else
    { echo "$as_me:$LINENO: result: unknown" >&5
 echo "${ECHO_T}unknown" >&6; }
@@ -4838,6 +4841,9 @@ if test -n "$scver"; then
    { echo "$as_me:$LINENO: result: $scver" >&5
 echo "${ECHO_T}$scver" >&6; }
    NCBI_SC_VERSION=$scver
+elif test -n "$NCBI_SC_VERSION"; then
+   { echo "$as_me:$LINENO: result: $NCBI_SC_VERSION" >&5
+echo "${ECHO_T}$NCBI_SC_VERSION" >&6; }
 else
    { echo "$as_me:$LINENO: result: unknown" >&5
 echo "${ECHO_T}unknown" >&6; }

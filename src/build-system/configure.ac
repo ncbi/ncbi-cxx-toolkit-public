@@ -921,6 +921,8 @@ svnrev=`svn info "$srcdir" 2>/dev/null | sed -ne 's/^Revision: //p'`
 if test -n "$svnrev"; then
    AC_MSG_RESULT($svnrev)
    NCBI_SUBVERSION_REVISION=$svnrev
+elif test -n "$NCBI_SUBVERSION_REVISION"; then
+   AC_MSG_RESULT($NCBI_SUBVERSION_REVISION)
 else
    AC_MSG_RESULT(unknown)
    NCBI_SUBVERSION_REVISION=0
@@ -932,6 +934,8 @@ scver=`svn info "$srcdir/src/build-system" 2>/dev/null |
 if test -n "$scver"; then
    AC_MSG_RESULT($scver)
    NCBI_SC_VERSION=$scver
+elif test -n "$NCBI_SC_VERSION"; then
+   AC_MSG_RESULT($NCBI_SC_VERSION)
 else
    AC_MSG_RESULT(unknown)
    NCBI_SC_VERSION=0
