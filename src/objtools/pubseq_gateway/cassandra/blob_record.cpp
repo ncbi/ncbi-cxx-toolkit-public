@@ -229,7 +229,6 @@ void CBlobRecord::VerifyBlobSize() const
     }
 }
 
-//@todo Check it carefully
 bool CBlobRecord::IsDataEqual(CBlobRecord const & blob) const
 {
     size_t this_chunk = 0, blob_chunk = 0;
@@ -268,7 +267,7 @@ bool CBlobRecord::IsDataEqual(CBlobRecord const & blob) const
             }
         }
     }
-    return blob_chunk >= blob.m_BlobChunks.size();
+    return blob_chunk == blob.m_BlobChunks.size();
 }
 
 
