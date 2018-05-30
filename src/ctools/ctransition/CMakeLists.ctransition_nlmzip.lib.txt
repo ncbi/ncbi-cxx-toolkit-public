@@ -1,3 +1,19 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+
+NCBI_begin_lib(ctransition_nlmzip)
+  NCBI_sources(
+    ct_nlmzip_bits ct_nlmzip_dcompr ct_nlmzip_deflate  ct_nlmzip_inflate 
+    ct_nlmzip_streamprocs ct_nlmzip_trees ct_nlmzip_util
+  )
+  NCBI_uses_toolkit_libraries(ctransition)
+  NCBI_project_watchers(ivanov)
+NCBI_end_lib()
+
+if(OFF)
+
 add_library(ctransition_nlmzip
     ct_nlmzip_bits ct_nlmzip_dcompr ct_nlmzip_deflate  ct_nlmzip_inflate 
     ct_nlmzip_streamprocs ct_nlmzip_trees ct_nlmzip_util
@@ -7,3 +23,4 @@ target_link_libraries(ctransition_nlmzip
     ctransition
     xncbi
 )
+endif()

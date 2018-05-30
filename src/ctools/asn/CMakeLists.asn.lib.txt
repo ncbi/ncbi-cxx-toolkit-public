@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+
+NCBI_begin_lib(xasn)
+  NCBI_sources(asnio asnwrite)
+  NCBI_uses_toolkit_libraries(xhtml)
+  NCBI_project_watchers(gouriano)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -15,3 +27,4 @@ if (APPLE)
                          xhtml
                         )
 endif (APPLE)
+endif()

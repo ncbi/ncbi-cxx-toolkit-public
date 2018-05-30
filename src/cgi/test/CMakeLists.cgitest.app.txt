@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+
+NCBI_begin_app(cgitest)
+  NCBI_sources(cgitest)
+  NCBI_uses_toolkit_libraries(xcgi)
+  NCBI_project_watchers(grichenk)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +22,4 @@ set_target_properties(cgitest-app PROPERTIES OUTPUT_NAME cgitest)
 target_link_libraries(cgitest-app
     xcgi
 )
-
+endif()

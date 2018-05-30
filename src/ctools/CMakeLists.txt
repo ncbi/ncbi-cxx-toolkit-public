@@ -1,4 +1,11 @@
-##############################################################################
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_add_library(ctools)
+NCBI_add_subdirectory(asn test ctransition)
+
+if(OFF)
 # 
 #
 
@@ -13,3 +20,4 @@ include(CMakeLists.ctools.lib.txt)
 add_subdirectory(asn)
 add_subdirectory(ctransition)
 add_subdirectory(test)
+endif()
