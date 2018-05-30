@@ -747,19 +747,23 @@ set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} /opt/python-all/)
 
 find_package(PythonInterp 3)
 if (PYTHONINTERP_FOUND)
-    message(STATUS "Generating ${build_root}/run_with_cd_reporter.py...")
-    message(STATUS "Python3 path: ${PYTHON_EXECUTABLE}")
+    if (NOT "$ENV{TEAMCITY_VERSION}" STREQUAL "")
+        message(STATUS "Generating ${build_root}/run_with_cd_reporter.py...")
+        message(STATUS "Python3 path: ${PYTHON_EXECUTABLE}")
 
-    set(PYTHON3 ${PYTHON_EXECUTABLE})
-    set(CD_REPORTER "/am/ncbiapdata/bin/cd_reporter")
-    set(abs_top_srcdir ${abs_top_src_dir})
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/run_with_cd_reporter.py.in ${build_root}/build-system/run_with_cd_reporter.py)
+        set(PYTHON3 ${PYTHON_EXECUTABLE})
+        set(CD_REPORTER "/am/ncbiapdata/bin/cd_reporter")
+        set(abs_top_srcdir ${abs_top_src_dir})
+        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/run_with_cd_reporter.py.in ${build_root}/build-system/run_with_cd_reporter.py)
 
-# copy to build_root and set executable permissions (workaround because configure_file doesn't set permissions)
-    file(COPY ${build_root}/build-system/run_with_cd_reporter.py DESTINATION ${build_root}
-        FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+        # copy to build_root and set executable permissions (workaround because configure_file doesn't set permissions)
+        file(COPY ${build_root}/build-system/run_with_cd_reporter.py DESTINATION ${build_root}
+            FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ${build_root}/run_with_cd_reporter.py)
+        set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ${build_root}/run_with_cd_reporter.py)
+    else()
+        message(STATUS "Detected development build, cd_reported disabled")
+    endif()
 else(PYTHONINTERP_FOUND)
     message(STATUS "Could not find Python3. Disabling cd_reporter.")
 endif(PYTHONINTERP_FOUND)
