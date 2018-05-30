@@ -2,6 +2,8 @@
 # $Id$
 #############################################################################
 
+
+if(NCBI_EXPERIMENTAL_CFG)
 NCBI_begin_lib(taxon3)
   NCBI_dataspecs(taxon3.asn)
   NCBI_uses_toolkit_libraries(seq xconnect)
@@ -9,7 +11,7 @@ NCBI_begin_lib(taxon3)
 NCBI_end_lib()
 
 
-if(OFF)
+else()
 
 set(MODULE taxon3)
 set(MODULE_IMPORT objects/seqfeat/seqfeat)

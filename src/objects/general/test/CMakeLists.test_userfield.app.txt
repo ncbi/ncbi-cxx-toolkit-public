@@ -2,6 +2,8 @@
 # $Id$
 #############################################################################
 
+
+if (NCBI_EXPERIMENTAL_CFG)
 NCBI_begin_app(test_userfield)
   NCBI_sources(test_userfield)
   NCBI_requires(NCBI_C)
@@ -10,7 +12,7 @@ NCBI_begin_app(test_userfield)
 NCBI_end_app()
 
 
-if(OFF)
+else()
 
 include_directories(SYSTEM ${NCBI_C_INCLUDE})
 link_directories(${NCBI_C_LIBPATH})

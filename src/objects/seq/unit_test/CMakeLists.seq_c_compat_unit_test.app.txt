@@ -2,6 +2,7 @@
 # $Id$
 #############################################################################
 
+if (NCBI_EXPERIMENTAL_CFG)
 NCBI_begin_app(seq_c_compat_unit_test)
   NCBI_requires(NCBI_C)
   NCBI_sources(seq_c_compat_unit_test)
@@ -11,7 +12,7 @@ NCBI_begin_app(seq_c_compat_unit_test)
 NCBI_end_app()
 
 
-if(OFF)
+else()
 
 include_directories(SYSTEM ${NCBI_C_INCLUDE})
 link_directories(${NCBI_C_LIBPATH})
