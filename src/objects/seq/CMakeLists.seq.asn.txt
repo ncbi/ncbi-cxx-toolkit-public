@@ -18,7 +18,7 @@ NCBI_begin_lib(seq)
     ../seqres/seqres.asn
     ../seqtable/seqtable.asn
   )
-  NCBI_uses_toolkit_libraries(general biblio pub medline)
+  NCBI_uses_toolkit_libraries(general biblio pub medline seqcode sequtil)
   NCBI_project_watchers(vasilche grichenk bollin ludwigf)
 NCBI_end_lib()
 
