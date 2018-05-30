@@ -802,7 +802,7 @@ if(HAVE_NCBI_C)
   set(NCBI_COMPONENT_NCBI_C_FOUND YES)
   set(NCBI_COMPONENT_NCBI_C_INCLUDE ${NCBI_C_INCLUDE})
 
-  set(_c_libs  ncbi)
+  set(_c_libs  ncbiobj ncbi)
   foreach( _lib IN LISTS _c_libs)
     set(NCBI_COMPONENT_NCBI_C_LIBS ${NCBI_COMPONENT_NCBI_C_LIBS} "${NCBI_C_LIBPATH}/lib${_lib}.a")
   endforeach()
