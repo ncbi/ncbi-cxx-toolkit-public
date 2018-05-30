@@ -4141,6 +4141,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MNHM<DEU>\ts\tNaturhistorisches Museum Mainz/Landessammlung fuer Naturkunde Rheinland-Pfalz\t\t",
 "MNHM<USA-CO>\ts\tJohn May Museum of Natural History\t\t",
 "MNHN\ts\tMuseum National d'Histoire Naturelle\t\t",
+"MNHN:IA\ts\tMuseum National d'Histoire Naturelle,  Annelids, Polychaetes and Sipuncula Collection",
 "MNHN:IC\ts\tMuseum National d'Histoire Naturelle, Ichtyologie collection",
 "MNHN:IE\ts\tMuseum National d'Histoire Naturelle, Echinoderm collection",
 "MNHN:IK\ts\tMuseum National d'Histoire Naturelle,  Cnidarians Collection",
