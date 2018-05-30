@@ -762,7 +762,7 @@ if (PYTHONINTERP_FOUND)
 
         set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ${build_root}/run_with_cd_reporter.py)
     else()
-        message(STATUS "Detected development build, cd_reported disabled")
+        message(STATUS "Detected development build, cd_reporter disabled")
     endif()
 else(PYTHONINTERP_FOUND)
     message(STATUS "Could not find Python3. Disabling cd_reporter.")
