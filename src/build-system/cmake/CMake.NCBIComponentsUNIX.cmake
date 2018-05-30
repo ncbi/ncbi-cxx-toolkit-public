@@ -836,6 +836,17 @@ else()
 endif()
 
 #############################################################################
+# FASTCGI
+if(FASTCGI_FOUND)
+  message("FASTCGI found at ${FASTCGI_INCLUDE}")
+  set(NCBI_COMPONENT_FASTCGI_FOUND YES)
+  set(NCBI_COMPONENT_FASTCGI_INCLUDE ${FASTCGI_INCLUDE})
+  set(NCBI_COMPONENT_FASTCGI_LIBS ${FASTCGI_LIBS})
+else()
+  set(NCBI_COMPONENT_FASTCGI_FOUND NO)
+endif()
+
+#############################################################################
 # Boost.Test.Included
 if(Boost_FOUND)
   set(NCBI_COMPONENT_Boost.Test.Included_FOUND YES)

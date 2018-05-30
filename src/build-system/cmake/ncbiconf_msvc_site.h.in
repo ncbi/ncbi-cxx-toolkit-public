@@ -8,7 +8,7 @@
 /* #undef HAVE_ICU */
 #define HAVE_LIBCONNEXT 1
 #define HAVE_LIBEXSLT 1
-#define HAVE_LIBFASTCGI 1
+#cmakedefine HAVE_LIBFASTCGI 1
 #define HAVE_LIBFTGL 1
 #cmakedefine HAVE_LIBGIF 1
 #define HAVE_LIBGLEW 1

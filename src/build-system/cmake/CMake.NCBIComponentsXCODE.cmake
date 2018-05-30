@@ -84,6 +84,10 @@ else()
 endif()
 
 #############################################################################
+# FASTCGI
+set(NCBI_COMPONENT_FASTCGI_FOUND NO)
+
+#############################################################################
 # Boost.Test.Included
 if (EXISTS ${NCBI_ThirdParty_Boost}/include)
   message("Boost.Test.Included found at ${NCBI_ThirdParty_Boost}")
