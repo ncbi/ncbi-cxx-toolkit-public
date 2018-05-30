@@ -212,7 +212,7 @@ bool PerformMedlineLookup(CSeq_entry& entry)
 
         if (feat_table_it != annots->end()) {
 
-            auto feat_table = (*feat_table_it)->SetData().SetFtable();
+            auto& feat_table = (*feat_table_it)->SetData().SetFtable();
 
             for (auto& feat : feat_table) {
                 if (feat->IsSetData() && feat->GetData().IsPub()) {

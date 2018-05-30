@@ -92,10 +92,10 @@ enum EFixTech
 {
     eNoFix = 0,
     eFixMolBiomol = 1 << 0,
-    eFixBiomolMRNA = 1 << 1,
-    eFixBiomolRRNA = 1 << 2,
-    eFixBiomolNCRNA = 1 << 3,
-    eFixBiomolCRNA = 1 << 4,
+    eFixBiomol_mRNA = 1 << 1,
+    eFixBiomol_rRNA = 1 << 2,
+    eFixBiomol_ncRNA = 1 << 3,
+    eFixBiomol_cRNA = 1 << 4,
     eFixInstMolRNA = 1 << 5
 };
 

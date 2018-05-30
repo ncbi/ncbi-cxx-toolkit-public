@@ -473,14 +473,16 @@ static void GetContigNum(CConstRef<CUser_field>& field, int& contig, size_t& num
 
         if (NStr::StartsWith(accession, GetParams().GetIdPrefix())) {
 
-            const char* contig_num = accession.c_str() + GetParams().GetIdPrefix().size();
+            static const size_t VERSION_LENGTH = 2;
+
+            const char* contig_num = accession.c_str() + GetParams().GetIdPrefix().size() + VERSION_LENGTH;
             int value = NStr::StringToInt(contig_num, NStr::fAllowLeadingSymbols | NStr::fAllowTrailingSymbols);
             if (value > 0) {
                 contig = value;
             }
 
             if (num_len == 0) {
-                num_len = accession.size() - GetParams().GetIdPrefix().size();
+                num_len = accession.size() - GetParams().GetIdPrefix().size() - VERSION_LENGTH;
             }
         }
     }
@@ -642,7 +644,7 @@ static void GetCurrentMasterInfo(const CSeq_entry& entry, CCurrentMasterInfo& cu
     GetCurrentMasterPubsInfo(entry, current_master.m_cit_sub_date, current_master.m_cit_sub, current_master.m_cit_arts);
 }
 
-static bool SaveAccessionsRange(int first, int last, size_t num_len)
+static bool SaveAccessionsRange(const CCurrentMasterInfo& current_master)
 {
     CNcbiOfstream out;
     if (!OpenOutputFile(GetParams().GetAccFile(), "", out)) {
@@ -650,8 +652,10 @@ static bool SaveAccessionsRange(int first, int last, size_t num_len)
     }
 
     const string& prefix = GetParams().GetIdPrefix();
-    for (int i = first; i <= last; ++i) {
-        out << prefix << ToStringLeadZeroes(i, num_len) << '\n';
+    string version = ToStringLeadZeroes(current_master.m_version, 2);
+
+    for (int i = current_master.m_first_contig; i <= current_master.m_last_contig; ++i) {
+        out << prefix << version << ToStringLeadZeroes(i, current_master.m_num_len) << '\n';
     }
 
     return true;
@@ -1291,18 +1295,28 @@ static bool ReplaceOldCitSub(CRef<CSeq_entry>& id_entry, const CCit_sub& new_cit
                     GetParams().GetUpdateMode() == eUpdateFull && !IsFirstCitSubDateEarlier(*old_cit_sub, *cur_cit_sub) ||
                     GetParams().GetUpdateMode() != eUpdateFull && IsFirstCitSubDateEarlier(*old_cit_sub, *cur_cit_sub)) {
                     old_cit_sub = cur_cit_sub;
+                    before_cit_sub = descr;
                 }
             }
         }
     }
 
 
-    if (old_cit_sub) {
-        old_cit_sub->Assign(new_cit_sub);
+    CRef<CSeqdesc> cit_sub_descr = CreateCitSub(new_cit_sub, nullptr);
+
+    if (before_cit_sub != descrs.begin()) {
+        ++before_cit_sub;
     }
-    else {
-        CRef<CSeqdesc> cit_sub_descr = CreateCitSub(new_cit_sub, nullptr);
-        descrs.insert(before_cit_sub, cit_sub_descr);
+
+    before_cit_sub = descrs.insert(before_cit_sub, cit_sub_descr);
+    ++before_cit_sub;
+    for (auto descr = before_cit_sub; descr != descrs.end();) {
+        if ((*descr)->IsPub() && GetCitSub((*descr)->GetPub())) {
+            descr = descrs.erase(descr);
+        }
+        else {
+            ++descr;
+        }
     }
 
     return true;
@@ -1314,7 +1328,7 @@ static bool AddNewPubsToOldMaster(CRef<CSeq_entry>& id_entry, const CRef<CSeq_en
         return true;
     }
 
-    bool replace_cit_gen = GetParams().GetUpdateMode() != eUpdateFull || num_of_pubs != 1;
+    bool replace_cit_gen = GetParams().GetUpdateMode() == eUpdateFull && num_of_pubs == 1;
 
     CSeq_descr::Tdata other_pubs;
     const CCit_sub* new_cit_sub = nullptr;
@@ -1447,7 +1461,7 @@ int CWGSParseApp::Run(void)
                 }
 
                 if (!GetParams().IsTest() && !GetParams().GetAccFile().empty()) {
-                    if (!SaveAccessionsRange(current_master.m_first_contig, current_master.m_last_contig, current_master.m_num_len)) {
+                    if (!SaveAccessionsRange(current_master)) {
                         ERR_POST_EX(0, 0, Critical << "Failed to save the range of accessions from previous version master to file \"" << GetParams().GetAccFile() << "\".");
                         return ERROR_RET;
                     }
@@ -1625,7 +1639,3 @@ int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     return wgsparse::CWGSParseApp().AppMain(argc, argv);
 }
-
-
-// TODO
-// rep_locals - calculate in WGSParseSubmissions (based on WGSCheckNucBioseqs)

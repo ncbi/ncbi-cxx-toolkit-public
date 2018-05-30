@@ -381,7 +381,7 @@ static void FixOrigProtTransIds(CSeq_entry& entry)
 
     if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
 
-        for (auto cur_entry : entry.GetSet().GetSeq_set()) {
+        for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
             FixOrigProtTransIds(*cur_entry);
         }
     }
@@ -509,13 +509,13 @@ static void FixTechMolInfo(CMolInfo& mol_info, CSeq_inst::EMol& mol)
             mol = CSeq_inst::eMol_rna;
         }
 
-        if (GetParams().GetFixTech() & eFixBiomolMRNA) {
+        if (GetParams().GetFixTech() & eFixBiomol_mRNA) {
             mol_info.SetBiomol(CMolInfo::eBiomol_mRNA);
         }
-        else if (GetParams().GetFixTech() & eFixBiomolRRNA) {
+        else if (GetParams().GetFixTech() & eFixBiomol_rRNA) {
             mol_info.SetBiomol(CMolInfo::eBiomol_rRNA);
         }
-        else if (GetParams().GetFixTech() & eFixBiomolNCRNA) {
+        else if (GetParams().GetFixTech() & eFixBiomol_ncRNA) {
             mol_info.SetBiomol(CMolInfo::eBiomol_ncRNA);
         }
     }
@@ -530,7 +530,7 @@ static void FixTechMolInfo(CMolInfo& mol_info, CSeq_inst::EMol& mol)
 
         if (GetParams().IsWgs()) {
 
-            if (GetParams().GetFixTech() & eFixBiomolCRNA) {
+            if (GetParams().GetFixTech() & eFixBiomol_cRNA) {
                 mol_info.SetBiomol(CMolInfo::eBiomol_cRNA);
             }
 
@@ -587,7 +587,7 @@ static bool FixBioSources(CSeq_entry& entry, const CMasterInfo& master_info)
         for (auto feat_table_it : *annots) {
 
             if (feat_table_it->IsFtable()) {
-                auto feat_table = feat_table_it->SetData().SetFtable();
+                auto& feat_table = feat_table_it->SetData().SetFtable();
                 auto feat_source_it = find_if(feat_table.begin(), feat_table.end(), [](CRef<CSeq_feat>& feat) { return feat->IsSetData() && feat->GetData().IsBiosrc(); });
 
                 if (feat_source_it != feat_table.end() && PerformTaxLookup((*feat_source_it)->SetData().SetBiosrc(), master_info.m_org_refs, GetParams().IsTaxonomyLookup())) {
@@ -1203,7 +1203,7 @@ static string GetAssignedAccession(const CSeq_entry& entry)
     if (entry.IsSet()) {
 
         if (entry.GetSet().IsSetSeq_set()) {
-            auto seq_set = entry.GetSet().GetSeq_set();
+            auto& seq_set = entry.GetSet().GetSeq_set();
             auto nuc_seq = find_if(seq_set.begin(), seq_set.end(), [](const CRef<CSeq_entry>& cur_entry) { return cur_entry->IsSeq() && cur_entry->GetSeq().IsSetId(); });
 
             if (nuc_seq != seq_set.end()) {
@@ -1259,8 +1259,8 @@ static void FixGeneticCode(CSeq_entry& entry)
         for (auto feat_table_it: *annots) {
 
             if (feat_table_it->IsFtable()) {
-                auto feat_table = feat_table_it->SetData().SetFtable();
-                for (auto feat : feat_table) {
+                auto& feat_table = feat_table_it->SetData().SetFtable();
+                for (auto& feat : feat_table) {
                     if (feat->IsSetData() && feat->GetData().IsCdregion()) {
                         FixCDRegionGeneticCode(feat->SetData().SetCdregion());
                     }
@@ -1282,141 +1282,90 @@ static bool NeedToAddExtraAccessions(const CSeq_entry& entry)
     return entry.IsSeq() && entry.GetSeq().IsNa() && entry.GetSeq().IsSetInst() && entry.GetSeq().GetInst().IsSetRepr() && entry.GetSeq().GetInst().GetRepr() == CSeq_inst::eRepr_delta;
 }
 
-// CR architectural solution???
-class CBlockContainer
+class CBlockAdaptor
 {
 public:
-    virtual bool IsRequired(const CRef<CSeqdesc>&) const = 0;
-    virtual void StoreBlock(CSeqdesc& descr) = 0;
-    virtual bool IsBlockStored() const = 0;
-    virtual CRef<CSeqdesc> CreateBlock() = 0;
+    virtual bool ToBeProcessed(const CRef<CSeqdesc>&) const = 0;
 
-    virtual BOOL IsSetExtraAccessions() const = 0;
-    virtual const list<string>& GetExtraAccessions() const = 0;
-    virtual void AddExtraAccession(const string& accession) = 0;
+    virtual bool IsSetExtraAccessions(const CRef<CSeqdesc>& descr) const = 0;
+    virtual list<string>& SetExtraAccessions(CRef<CSeqdesc>& descr) const = 0;
 };
 
-class CGBBlockContainer : public CBlockContainer
+class CGBBlockAdaptor : public CBlockAdaptor
 {
 public:
 
-    CGBBlockContainer() : m_genbank_block(nullptr) {}
+    CGBBlockAdaptor() {}
 
-    virtual bool IsRequired(const CRef<CSeqdesc>& descr) const
+    virtual bool ToBeProcessed(const CRef<CSeqdesc>& descr) const
     {
-        return descr->IsGenbank();
+        return descr.NotEmpty() && descr->IsGenbank();
     }
 
-    virtual void StoreBlock(CSeqdesc& descr)
+    virtual bool IsSetExtraAccessions(const CRef<CSeqdesc>& descr) const
     {
-        m_genbank_block = &descr.SetGenbank();
+        return descr.NotEmpty() && descr->IsGenbank() && descr->GetGenbank().IsSetExtra_accessions();
     }
 
-    virtual bool IsBlockStored() const
+    virtual list<string>& SetExtraAccessions(CRef<CSeqdesc>& descr) const
     {
-        return m_genbank_block != nullptr;
+        _ASSERT(descr.NotEmpty() && descr->IsGenbank() && "Should be a valid GB-block");
+        return descr->SetGenbank().SetExtra_accessions();
     }
-
-    virtual CRef<CSeqdesc> CreateBlock()
-    {
-        CRef<CSeqdesc> descr(new CSeqdesc);
-        m_genbank_block = &descr->SetGenbank();
-        return descr;
-    }
-
-    virtual BOOL IsSetExtraAccessions() const
-    {
-        return m_genbank_block->IsSetExtra_accessions();
-    }
-
-    virtual const list<string>& GetExtraAccessions() const
-    {
-        return m_genbank_block->GetExtra_accessions();
-    }
-
-    virtual void AddExtraAccession(const string& accession)
-    {
-        m_genbank_block->SetExtra_accessions().push_back(accession);
-    }
-
-private:
-    CGB_block* m_genbank_block;
 };
 
-class CEMBLBlockContainer : public CBlockContainer
+class CEMBLBlockAdaptor : public CBlockAdaptor
 {
 public:
 
-    CEMBLBlockContainer() : m_embl_block(nullptr) {}
+    CEMBLBlockAdaptor() {}
 
-    virtual bool IsRequired(const CRef<CSeqdesc>& descr) const
+    virtual bool ToBeProcessed(const CRef<CSeqdesc>& descr) const
     {
-        return descr->IsEmbl();
+        return descr.NotEmpty() && descr->IsEmbl();
     }
 
-    virtual void StoreBlock(CSeqdesc& descr)
+    virtual bool IsSetExtraAccessions(const CRef<CSeqdesc>& descr) const
     {
-        m_embl_block = &descr.SetEmbl();
+        return descr.NotEmpty() && descr->IsEmbl() && descr->GetEmbl().IsSetExtra_acc();
     }
 
-    virtual bool IsBlockStored() const
+    virtual list<string>& SetExtraAccessions(CRef<CSeqdesc>& descr) const
     {
-        return m_embl_block != nullptr;
+        _ASSERT(descr.NotEmpty() && descr->IsEmbl() && "Should be a valid EMBL-block");
+        return descr->SetEmbl().SetExtra_acc();
     }
-
-    virtual CRef<CSeqdesc> CreateBlock()
-    {
-        CRef<CSeqdesc> descr(new CSeqdesc);
-        m_embl_block = &descr->SetEmbl();
-        return descr;
-    }
-
-    virtual BOOL IsSetExtraAccessions() const
-    {
-        return m_embl_block->IsSetExtra_acc();
-    }
-
-    virtual const list<string>& GetExtraAccessions() const
-    {
-        return m_embl_block->GetExtra_acc();
-    }
-
-    virtual void AddExtraAccession(const string& accession)
-    {
-        m_embl_block->SetExtra_acc().push_back(accession);
-    }
-
-private:
-    CEMBL_block* m_embl_block;
 };
 
 
-static void AddMasterToSecondary(CSeq_entry& entry, CBlockContainer& block)
+static void AddMasterToSecondary(CSeq_entry& entry, const CBlockAdaptor& block)
 {
     if (NeedToAddExtraAccessions(entry)) {
 
+        CRef<CSeqdesc> block_descr;
+
         if (entry.IsSetDescr() && entry.GetDescr().IsSet()) {
-            auto genbank_it = find_if(entry.SetDescr().Set().begin(), entry.SetDescr().Set().end(), [&block](const CRef<CSeqdesc>& descr) { return block.IsRequired(descr); });
-            if (genbank_it != entry.SetDescr().Set().end()) {
-                block.StoreBlock(**genbank_it);
+            auto descr_it = find_if(entry.SetDescr().Set().begin(), entry.SetDescr().Set().end(), [&block](const CRef<CSeqdesc>& descr) { return block.ToBeProcessed(descr); });
+            if (descr_it != entry.SetDescr().Set().end()) {
+                block_descr = *descr_it;
             }
         }
 
-        if (!block.IsBlockStored()) {
-            CRef<CSeqdesc> descr = block.CreateBlock();
-            entry.SetDescr().Set().push_back(descr);
+        if (!block_descr.Empty()) {
+            block_descr.Reset(new CSeqdesc);
+            entry.SetDescr().Set().push_back(block_descr);
         }
 
         const string& accession = GetParams().GetAccession();
-        if (block.IsSetExtraAccessions()) {
-            auto same = find_if(block.GetExtraAccessions().begin(), block.GetExtraAccessions().end(),
+        if (block.IsSetExtraAccessions(block_descr)) {
+            auto same = find_if(block.SetExtraAccessions(block_descr).begin(), block.SetExtraAccessions(block_descr).end(),
                                 [&accession](const string& cur_accession) { return accession == cur_accession; });
-            if (same != block.GetExtraAccessions().end()) {
+            if (same != block.SetExtraAccessions(block_descr).end()) {
                 return;
             }
         }
 
-        block.AddExtraAccession(accession);
+        block.SetExtraAccessions(block_descr).push_back(accession);
     }
     
     if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
@@ -1512,8 +1461,8 @@ static void ReplaceSeqId(const CBioseq& bioseq, string& title)
 {
     if (bioseq.IsSetId()) {
         
-        auto ids = bioseq.GetId();
-        auto& general_id = find_if(ids.begin(), ids.end(), [](const CRef<CSeq_id>& id) { return id->IsGeneral(); });
+        auto& ids = bioseq.GetId();
+        auto general_id = find_if(ids.begin(), ids.end(), [](const CRef<CSeq_id>& id) { return id->IsGeneral(); });
         if (general_id != ids.end()) {
             string seq_id = GetLocalOrGeneralIdStr(**general_id);
             ReplaceInTitle(title, "[Seq-id] ", seq_id);
@@ -1530,7 +1479,7 @@ static void RepTitles(CSeq_entry& entry, CTitleInfo& title_info)
              has_chromosome = title.find("[Chromosome]") != string::npos;
 
         if (entry.IsSetDescr() && entry.GetDescr().IsSet()) {
-            auto descrs = entry.SetDescr().Set();
+            auto& descrs = entry.SetDescr().Set();
             for (auto descr = descrs.begin(); descr != descrs.end();) {
                 if ((*descr)->IsTitle()) {
                     descr = descrs.erase(descr);
@@ -1539,6 +1488,7 @@ static void RepTitles(CSeq_entry& entry, CTitleInfo& title_info)
                     if ((*descr)->IsSource() && entry.IsSet()) {
                         GetSourceInfo((*descr)->GetSource(), title_info.m_organism, title_info.m_chromosome, has_organism, has_chromosome);
                     }
+                    ++descr;
                 }
             }
         }
@@ -1560,8 +1510,8 @@ static void RepTitles(CSeq_entry& entry, CTitleInfo& title_info)
             string organism,
                    chromosome;
             if (entry.IsSetDescr() && entry.GetDescr().IsSet()) {
-                auto descrs = entry.GetDescr().Get();
-                auto source = find_if(descrs.begin(), descrs.end(), [](CRef<CSeqdesc>& descr) { return descr->IsSource(); });
+                const CSeq_descr::Tdata& descrs = entry.GetDescr().Get();
+                auto source = find_if(descrs.begin(), descrs.end(), [](const CRef<CSeqdesc>& descr) { return descr->IsSource(); });
                 if (source != descrs.end()) {
                     GetSourceInfo((*source)->GetSource(), organism, chromosome, has_organism, has_chromosome);
                 }
@@ -1590,6 +1540,8 @@ static void RepTitles(CSeq_entry& entry, CTitleInfo& title_info)
 
                 ReplaceInTitle(new_title, "[Chromosome] ", chromosome);
             }
+
+            entry.SetSeq().SetDescr().Set().push_front(title_descr);
         }
     }
 
@@ -1699,10 +1651,10 @@ bool ParseSubmissions(CMasterInfo& master_info)
                     if (GetParams().IsUpdateScaffoldsMode()) {
 
                         if (GetParams().GetSource() == eEMBL) {
-                            AddMasterToSecondary(*entry, CEMBLBlockContainer());
+                            AddMasterToSecondary(*entry, CEMBLBlockAdaptor());
                         }
                         else {
-                            AddMasterToSecondary(*entry, CGBBlockContainer());
+                            AddMasterToSecondary(*entry, CGBBlockAdaptor());
                         }
                     }
 

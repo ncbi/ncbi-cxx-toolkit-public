@@ -793,17 +793,17 @@ static void SetMolInfo(CBioseq& bioseq, CMolInfo::TBiomol biomol)
 
         int fix_tech = GetParams().GetFixTech();
         CMolInfo::TBiomol cur_biomol = biomol;
-        if (fix_tech | eFixMolBiomol) {
+        if (fix_tech & eFixMolBiomol) {
             cur_biomol = CMolInfo::eBiomol_transcribed_RNA;
         }
 
-        if (fix_tech | eFixBiomolMRNA) {
+        if (fix_tech & eFixBiomol_mRNA) {
             cur_biomol = CMolInfo::eBiomol_mRNA;
         }
-        else if (fix_tech | eFixBiomolRRNA) {
+        else if (fix_tech & eFixBiomol_rRNA) {
             cur_biomol = CMolInfo::eBiomol_rRNA;
         }
-        else if (fix_tech | eFixBiomolNCRNA) {
+        else if (fix_tech & eFixBiomol_ncRNA) {
             cur_biomol = CMolInfo::eBiomol_ncRNA;
         }
 
@@ -980,7 +980,7 @@ static void CreateDbLink(CBioseq& bioseq, CUser_object& user_obj)
 
 static void UpdateDbLink(CBioseq& bioseq, CUser_object& user_obj)
 {
-    auto descrs = bioseq.SetDescr().Set();
+    auto& descrs = bioseq.SetDescr().Set();
     for (auto descr = descrs.begin(); descr != descrs.end();) {
 
         if (IsUserObjectOfType(**descr, "GenomeProjectsDB")) {
@@ -1277,7 +1277,7 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
         bioseq->SetDescr().Set().erase(pub_to_be_removed);
     }
     
-    if (num_of_subs == 0) {
+    if (num_of_subs == info.m_num_of_pubs) {
         info.m_num_of_pubs = 0;
     }
 
@@ -1577,9 +1577,9 @@ static void SortSequences(list<CEntryOrderInfo>& seq_order)
     }
 }
 
-static void BuildSortOrderMap(const list<CEntryOrderInfo>& seq_order, map<string, int>& order_of_entries)
+static void BuildSortOrderMap(const list<CEntryOrderInfo>& seq_order, map<string, int>& order_of_entries, int last_contig)
 {
-    int cur_num = 1;
+    int cur_num = last_contig + 1;
     for (auto seq_info : seq_order) {
         order_of_entries[seq_info.m_first_id_str] = cur_num++;
     }
@@ -2098,7 +2098,7 @@ static CRef<CSeq_entry> AddScaffoldsToMaster(CMasterInfo& master_info, list<TAcc
         return ret;
     }
 
-    auto descrs = master_info.m_id_master_bioseq->SetDescr().Set();
+    auto& descrs = master_info.m_id_master_bioseq->SetDescr().Set();
     for (auto descr = descrs.begin(); descr != descrs.end();) {
 
         bool to_remove = false;
@@ -2425,7 +2425,13 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
     }
 
     SortSequences(seq_order);
-    BuildSortOrderMap(seq_order, master_info.m_order_of_entries);
+
+    int last_contig = 0;
+    if (GetParams().GetUpdateMode() == eUpdateExtraContigs && master_info.m_current_master) {
+        last_contig = master_info.m_current_master->m_last_contig;
+    }
+
+    BuildSortOrderMap(seq_order, master_info.m_order_of_entries, last_contig);
 
     static const string SCAFFOLD_PREFIX = "CM";
     if (GetParams().GetUpdateMode() == eUpdateScaffoldsNew && GetParams().GetScaffoldPrefix() == SCAFFOLD_PREFIX && !GetParams().IsAccessionAssigned()) {
