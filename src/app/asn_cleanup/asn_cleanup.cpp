@@ -70,6 +70,7 @@
 
 #include <objtools/cleanup/cleanup.hpp>
 #include <objtools/edit/autodef_with_tax.hpp>
+#include <objtools/validator/tax_validation_and_cleanup.hpp>
 
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
@@ -1052,7 +1053,8 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
     bool any_changes = false;
 
     if (args["T"]) {
-        any_changes |= CCleanup::TaxonomyLookup(entry);
+        validator::CTaxValidationAndCleanup tval;
+        any_changes |= tval.DoTaxonomyUpdate(entry, true);
     }
 
     if (args["K"] && NStr::Find(args["K"].AsString(), "u") != string::npos) {

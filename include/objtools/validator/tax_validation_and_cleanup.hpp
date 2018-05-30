@@ -91,7 +91,7 @@ class CValidError_imp;
 // A single qualifier could have multiple strings to be sent to taxonomy
 // (try the whole value, try just the first two tokens, etc.). These will be
 // represented in m_ValuesToTry.
-class CQualifierRequest : public CObject
+class NCBI_VALIDATOR_EXPORT CQualifierRequest : public CObject
 {
 public:
     CQualifierRequest();
@@ -121,7 +121,7 @@ protected:
 
 // Specific host values can be classified as normal, ambiguous, or unrecognized.
 // We can also suggest a better value to use instead.
-class CSpecificHostRequest : public CQualifierRequest
+class NCBI_VALIDATOR_EXPORT CSpecificHostRequest : public CQualifierRequest
 {
 public:
     CSpecificHostRequest(const string& orig_val, const COrg_ref& org, bool for_fix = false);
@@ -151,7 +151,7 @@ private:
 };
 
 
-class CStrainRequest : public CQualifierRequest
+class NCBI_VALIDATOR_EXPORT CStrainRequest : public CQualifierRequest
 {
 public:
     CStrainRequest(const string& strain, const COrg_ref& org);
@@ -178,7 +178,7 @@ private:
 // The keys used may depend on just the qualifier value or may
 // be a combination of the qualifier value and other values from
 // the Org-ref (in the case of strain, this is sometimes taxname).
-class CQualLookupMap
+class NCBI_VALIDATOR_EXPORT CQualLookupMap
 {
 public:
     CQualLookupMap(COrgMod::ESubtype subtype) : m_Subtype(subtype), m_Populated(false) {};
@@ -245,7 +245,7 @@ protected:
 };
 
 
-class CSpecificHostMap : public CQualLookupMap
+class NCBI_VALIDATOR_EXPORT CSpecificHostMap : public CQualLookupMap
 {
 public:
     CSpecificHostMap() : CQualLookupMap(COrgMod::eSubtype_nat_host) {};
@@ -258,7 +258,7 @@ protected:
     virtual CRef<CQualifierRequest> x_MakeNewRequest(const string& orig_val, const COrg_ref& org);
 };
 
-class CSpecificHostMapForFix : public CQualLookupMap
+class NCBI_VALIDATOR_EXPORT CSpecificHostMapForFix : public CQualLookupMap
 {
 public:
     CSpecificHostMapForFix() : CQualLookupMap(COrgMod::eSubtype_nat_host) {};
@@ -273,7 +273,7 @@ protected:
 };
 
 
-class CStrainMap : public CQualLookupMap
+class NCBI_VALIDATOR_EXPORT CStrainMap : public CQualLookupMap
 {
 public:
     CStrainMap() : CQualLookupMap(COrgMod::eSubtype_strain) {};
