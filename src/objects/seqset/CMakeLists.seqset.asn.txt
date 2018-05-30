@@ -4,6 +4,7 @@
 
 NCBI_begin_lib(seqset)
   NCBI_dataspecs(seqset.asn)
+  NCBI_sources(gb_release_file)
   NCBI_uses_toolkit_libraries(general biblio medline seq)
 NCBI_end_lib()
 
