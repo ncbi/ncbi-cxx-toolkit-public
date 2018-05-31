@@ -212,6 +212,8 @@ void CSourceQualifiersReader::x_LoadSourceQualifiers(TSrcQuals& quals, const str
                 NStr::Split(newline, "\t", quals.m_cols, 0);
                 if (!opt_map_filename.empty())
                 {
+                    //LCOV_EXCL_START
+                    // optical maps are no longer supported
                     ITERATE(vector<CTempString>, it, quals.m_cols)
                     {
                         if (*it == "id" ||
@@ -223,6 +225,7 @@ void CSourceQualifiersReader::x_LoadSourceQualifiers(TSrcQuals& quals, const str
                             break;
                         }
                     }
+                    //LCOV_EXCL_STOP
                 }
             }
             // parse regular line
