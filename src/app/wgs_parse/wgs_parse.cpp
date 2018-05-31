@@ -1513,7 +1513,15 @@ int CWGSParseApp::Run(void)
             UpdateCitArt(*master_info.m_id_master_bioseq, *master_info.m_master_bioseq);
         }
 
-        // TODO ...
+        if (!master_info.m_got_cit_sub && (master_info.m_input_type != eSeqSubmit || GetParams().GetSource() != eNCBI)) {
+            if (GetParams().IsDiffCitSubAllowed()) {
+                ERR_POST_EX(0, 0, Warning << "No common CitSub found amongst the data. Keep them all on the contigs.");
+            }
+            else {
+                ERR_POST_EX(0, 0, Critical << "No common CitSub found amongst the data. Reject the whole set.");
+                return ERROR_RET;
+            }
+        }
 
         cleanup.ExtendedCleanup(*master_info.m_master_bioseq);
 

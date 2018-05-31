@@ -45,6 +45,7 @@
 #include <objects/pub/Pub.hpp>
 #include <objects/submit/Contact_info.hpp>
 
+#include "wgs_enums.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -54,14 +55,6 @@ namespace wgsparse
 
 typedef void (CSeq_id::*TSetSeqIdFunc)(CTextseq_id&);
 TSetSeqIdFunc FindSetTextSeqIdFunc(CSeq_id::E_Choice choice);
-
-enum EInputType
-{
-    eSeqSubmit,
-    eBioseqSet,
-    eSeqEntry
-};
-
 
 template <typename T> string ToStringLeadZeroes(T num, size_t width)
 {

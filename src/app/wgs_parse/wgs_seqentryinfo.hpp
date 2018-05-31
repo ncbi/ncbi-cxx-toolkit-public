@@ -45,6 +45,7 @@
 #include <objects/pub/Pub_equiv.hpp>
 
 #include "wgs_text_accession.hpp"
+#include "wgs_enums.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -265,6 +266,7 @@ struct CCitSubInfo
     }
 };
 
+
 struct CMasterInfo
 {
     size_t m_num_of_pubs;
@@ -322,6 +324,8 @@ struct CMasterInfo
     CCurrentMasterInfo* m_current_master;
 
     CCitSubInfo m_cit_sub_info;
+    EInputType m_input_type;
+
 
     CMasterInfo() :
         m_num_of_pubs(0),
@@ -349,7 +353,8 @@ struct CMasterInfo
         m_accession_ver(-1),
         m_keywords_set(false),
         m_num_of_prot_seq(0),
-        m_current_master(nullptr)
+        m_current_master(nullptr),
+        m_input_type(eUnknownType)
     {}
 
     void SetDblinkEmpty(const string& file, const string& id)

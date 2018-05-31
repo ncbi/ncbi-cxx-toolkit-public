@@ -2162,7 +2162,6 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
     list<CEntryOrderInfo> seq_order;
 
     size_t cur_file_num = 0;
-    EInputType input_type = eSeqSubmit;
 
     for (auto& file : files) {
 
@@ -2174,16 +2173,18 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
             break;
         }
 
-        GetInputTypeFromFile(in, input_type);
+        if (master_info.m_input_type == eUnknownType) {
+            GetInputTypeFromFile(in, master_info.m_input_type);
+        }
 
         bool first = true;
         while (in && !in.eof()) {
 
-            CRef<CSeq_submit> seq_submit = GetSeqSubmit(in, input_type);
+            CRef<CSeq_submit> seq_submit = GetSeqSubmit(in, master_info.m_input_type);
             if (seq_submit.Empty()) {
 
                 if (first) {
-                    ERR_POST_EX(0, 0, "Failed to read " << GetSeqSubmitTypeName(input_type) << " from file \"" << file << "\". Cannot proceed.");
+                    ERR_POST_EX(0, 0, "Failed to read " << GetSeqSubmitTypeName(master_info.m_input_type) << " from file \"" << file << "\". Cannot proceed.");
                     ret = false;
                 }
                 break;
@@ -2209,14 +2210,14 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
             }
 
             if (!IsSubmitBlockSet(*seq_submit)) {
-                if (input_type == eSeqSubmit) {
+                if (master_info.m_input_type == eSeqSubmit) {
                     ERR_POST_EX(0, 0, "Submission \"" << file << "\" is missing Submit-block.");
                 }
                 else if (same_submit) {
                     same_submit = CheckCitSubsInBioseqSet(master_info.m_cit_sub_info, *seq_submit);
                 }
             }
-            else if (input_type != eSeqSubmit || GetParams().GetSource() == eNCBI) {
+            else if (master_info.m_input_type != eSeqSubmit || GetParams().GetSource() == eNCBI) {
 
                 CSubmit_block& submit_block = seq_submit->SetSub();
                 submit_block.ResetTool();
@@ -2471,7 +2472,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
         return false;
     }
 
-    if (master_cit_sub.Empty() && input_type == eSeqSubmit) {
+    if (master_cit_sub.Empty() && master_info.m_input_type == eSeqSubmit) {
         same_submit = false;
     }
 

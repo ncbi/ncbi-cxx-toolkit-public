@@ -1568,18 +1568,19 @@ bool ParseSubmissions(CMasterInfo& master_info)
             break;
         }
 
-        EInputType input_type = eSeqSubmit;
-        GetInputTypeFromFile(in, input_type);
+        if (master_info.m_input_type == eUnknownType) {
+            GetInputTypeFromFile(in, master_info.m_input_type);
+        }
 
         CRef<CBioseq_set> bioseq_set;
 
         bool first = true;
         while (in && !in.eof()) {
-            CRef<CSeq_submit> seq_submit = GetSeqSubmit(in, input_type);
+            CRef<CSeq_submit> seq_submit = GetSeqSubmit(in, master_info.m_input_type);
             if (seq_submit.Empty()) {
 
                 if (first) {
-                    ERR_POST_EX(0, 0, "Failed to read " << GetSeqSubmitTypeName(input_type) << " from file \"" << file << "\". Cannot proceed.");
+                    ERR_POST_EX(0, 0, "Failed to read " << GetSeqSubmitTypeName(master_info.m_input_type) << " from file \"" << file << "\". Cannot proceed.");
                     ret = false;
                 }
                 break;
@@ -1595,7 +1596,7 @@ bool ParseSubmissions(CMasterInfo& master_info)
                     seq_submit->SetSub().SetCit().SetDate().SetStd().Assign(GetParams().GetSubmissionDate());
                 }
 
-                if (!master_info.m_got_cit_sub && (input_type != eSeqSubmit || GetParams().GetSource() == eNCBI)) {
+                if (!master_info.m_got_cit_sub && (master_info.m_input_type != eSeqSubmit || GetParams().GetSource() == eNCBI)) {
                     const CContact_info* contact = nullptr;
                     if (seq_submit->GetSub().IsSetContact()) {
                         contact = &seq_submit->GetSub().GetContact();

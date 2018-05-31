@@ -320,6 +320,11 @@ bool CParams::IsStripAuthors() const
     return m_imp->m_strip_authors;
 }
 
+bool CParams::IsDiffCitSubAllowed() const
+{
+    return m_imp->m_allow_diff_citsubs;
+}
+
 const string& CParams::GetNewNucTitle() const
 {
     return m_imp->m_new_nuc_title;

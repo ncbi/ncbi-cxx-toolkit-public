@@ -136,6 +136,7 @@ public:
     bool IsBinaryOutput() const;
     bool IsCitArtFromMaster() const;
     bool IsStripAuthors() const;
+    bool IsDiffCitSubAllowed() const;
 
     const string& GetNewNucTitle() const;
 
