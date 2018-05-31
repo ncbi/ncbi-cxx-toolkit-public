@@ -352,8 +352,8 @@ unique_ptr<CRegEx::CRegX> CRegEx::x_ParseAtom()  // single character or an expre
     {
         m_Cur++;
         set<unsigned char> t;
-        for (unsigned char c = 1; c < 256; c++) {
-            t.insert(c);
+        for (int c = 1; c < 256; c++) {
+            t.insert((unsigned char)c);
         }
         return unique_ptr<CRegX>(new CRegXChar(t));
     }
