@@ -1,6 +1,6 @@
 # $Id$
 
-ASN_DEP = seqset seq
+ASN_DEP = seqset
 
 LIB = xobjwrite
 SRC = agp_write \
