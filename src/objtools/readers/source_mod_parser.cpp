@@ -848,7 +848,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
             if (bsrc->GetOrg().IsSetTaxname())
             {
                 bsrc->ResetOrg();
-                bsrc->ResetSubtype();
+//                bsrc->ResetSubtype();
             }
             bsrc->SetOrg().SetTaxname(organism);
             reset_taxid = true;
