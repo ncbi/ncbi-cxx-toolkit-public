@@ -485,47 +485,29 @@ int CTbl2AsnApp::Run(void)
     if (args["a"])
     {
         const string& a_arg = args["a"].AsString();
-        if (a_arg.length() > 2 && a_arg[0] == 'r')
+        if (a_arg == "s" || a_arg == "z")
         {
-            switch (*(a_arg.end() - 1))
-            {
-            case 'u':
-                m_context.m_gap_Unknown_length = 100; // yes, it's hardcoded value
-                // do not put break statement here
-            case 'k':
-                m_context.m_gapNmin = NStr::StringToUInt(a_arg.substr(1, a_arg.length() - 2));
-                break;
-            default:
-                // error
-                break;
-            }
+            m_context.m_HandleAsSet = true;
+        } else if (a_arg == "s1") {
+            m_context.m_HandleAsSet = true;
+            m_context.m_ClassValue = CBioseq_set::eClass_pop_set;
+        } else if (a_arg == "s2") {
+            m_context.m_HandleAsSet = true;
+            m_context.m_ClassValue = CBioseq_set::eClass_phy_set;
+        } else if (a_arg == "s3") {
+            m_context.m_HandleAsSet = true;
+            m_context.m_ClassValue = CBioseq_set::eClass_mut_set;
+        } else if (a_arg == "s4") {
+            m_context.m_HandleAsSet = true;
+            m_context.m_ClassValue = CBioseq_set::eClass_eco_set;
+        } else if (a_arg == "s9") {
+            m_context.m_HandleAsSet = true;
+            m_context.m_ClassValue = CBioseq_set::eClass_small_genome_set;
         }
         else
+        if (a_arg == "di")
         {
-            if (a_arg == "s" || a_arg == "z")
-            {
-                m_context.m_HandleAsSet = true;
-            } else if (a_arg == "s1") {
-                m_context.m_HandleAsSet = true;
-                m_context.m_ClassValue = CBioseq_set::eClass_pop_set;
-            } else if (a_arg == "s2") {
-                m_context.m_HandleAsSet = true;
-                m_context.m_ClassValue = CBioseq_set::eClass_phy_set;
-            } else if (a_arg == "s3") {
-                m_context.m_HandleAsSet = true;
-                m_context.m_ClassValue = CBioseq_set::eClass_mut_set;
-            } else if (a_arg == "s4") {
-                m_context.m_HandleAsSet = true;
-                m_context.m_ClassValue = CBioseq_set::eClass_eco_set;
-            } else if (a_arg == "s9") {
-                m_context.m_HandleAsSet = true;
-                m_context.m_ClassValue = CBioseq_set::eClass_small_genome_set;
-            }
-            else
-            if (a_arg == "di")
-            {
-                m_context.m_di_fasta = true;
-            }
+            m_context.m_di_fasta = true;
         }
     }
     if (args["gaps-min"])
