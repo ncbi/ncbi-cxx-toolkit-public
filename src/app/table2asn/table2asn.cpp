@@ -1249,7 +1249,13 @@ void CTbl2AsnApp::ProcessPRTFile(const string& pathname, CSeq_entry& entry)
 void CTbl2AsnApp::ProcessAnnotFile(const string& pathname, CSeq_entry& entry)
 {
     CFile file(pathname);
-    if (!file.Exists() || file.GetLength() == 0) return;
+    if (!file.Exists()) return;
+    if (file.GetLength() == 0) {
+        m_logger->PutError(*auto_ptr<CLineError>(
+            CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
+            "Empty file: " + pathname)));
+        return;
+    }
 
 	m_reader->LoadAnnot(entry, pathname);
 }
