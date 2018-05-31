@@ -73,7 +73,75 @@ public:
         const CSeq_annot& annot) override { return CGff2Writer::WriteHeader(annot); };
 
 protected:
-    bool x_WriteRecord( 
+    virtual bool xAssignFeatureType(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
+    virtual bool xAssignFeatureMethod(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
+    virtual bool xAssignFeatureAttributesFormatSpecific(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&) override;
+    virtual bool xAssignFeatureAttributeGeneId(
+        CGtfRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    virtual bool xAssignFeatureAttributeTranscriptId(
+        CGtfRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    virtual bool xAssignFeatureAttributePartial(
+        CGtfRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    virtual bool xAssignFeatureAttributePseudo(
+        CGtfRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    virtual bool xAssignFeatureAttributeNote(
+        CGtfRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    virtual bool xAssignFeatureAttributeDbxref(
+        CGtfRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    virtual bool xAssignFeatureAttributeProduct(
+        CGtfRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    virtual bool xAssignFeatureAttributeGeneSynonym(
+        CGtfRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    virtual bool xAssignFeatureAttributeProteinId(
+        CGtfRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    virtual bool xAssignFeatureAttributeRibosomalSlippage(
+        CGtfRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    virtual bool xAssignFeatureAttributeTranslTable(
+        CGtfRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    virtual bool xAssignFeatureAttributeQualifiers(
+        CGtfRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
+    static std::string xGenericGeneId(
+        const CMappedFeat&);
+    static std::string xGenericTranscriptId(
+        const CMappedFeat&);
+
+    bool xWriteRecord( 
         const CGffWriteRecord* );
 
     virtual bool xWriteFeature(
@@ -82,21 +150,21 @@ protected:
     virtual bool xWriteFeature(
         CGffFeatureContext&,
         const CMappedFeat& );
-    virtual bool x_WriteFeatureGene(
+    virtual bool xWriteFeatureGene(
         CGffFeatureContext&,
         const CMappedFeat& );
-    virtual bool x_WriteFeatureMrna(
+    virtual bool xWriteFeatureMrna(
         CGffFeatureContext&,
         const CMappedFeat& );
-    virtual bool x_WriteFeatureCds(
+    virtual bool xWriteFeatureCds(
         CGffFeatureContext&,
         const CMappedFeat& );
-    virtual bool x_WriteFeatureCdsFragments(
+    virtual bool xWriteFeatureCdsFragments(
         CGtfRecord&,
 		const CSeq_loc&,
         const CMappedFeat& );							//mRNA parent
 
-    bool x_SplitCdsLocation(
+    bool xSplitCdsLocation(
         const CMappedFeat&,
         CRef< CSeq_loc >&,
         CRef< CSeq_loc >&,

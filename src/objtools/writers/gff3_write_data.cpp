@@ -116,7 +116,7 @@ CGff3WriteRecordFeature::CGff3WriteRecordFeature(
     CGffFeatureContext& fc,
     const string& id )
 //  ----------------------------------------------------------------------------
-    : CGffWriteRecordFeature(fc, id)
+    : CGtfFeatureRecord(fc, id)
 {
 };
 
@@ -124,7 +124,7 @@ CGff3WriteRecordFeature::CGff3WriteRecordFeature(
 CGff3WriteRecordFeature::CGff3WriteRecordFeature(
     const CGff3WriteRecordFeature& other )
 //  ----------------------------------------------------------------------------
-    : CGffWriteRecordFeature( other )
+    : CGtfFeatureRecord( other )
 {
 };
 
@@ -140,7 +140,7 @@ bool CGff3WriteRecordFeature::AssignFromAsnLinear(
     unsigned int flags )
 //  ----------------------------------------------------------------------------
 {
-    return CGffWriteRecordFeature::AssignFromAsn(mf, flags);
+    return CGtfFeatureRecord::AssignFromAsn(mf, flags);
 }
 
 //  ----------------------------------------------------------------------------
@@ -155,7 +155,7 @@ bool CGff3WriteRecordFeature::AssignFromAsn(
 
     CBioseq_Handle bsh = m_fc.BioseqHandle();
     if (!CWriteUtil::IsSequenceCircular(bsh)) {
-        return CGffWriteRecordFeature::AssignFromAsn(mf, flags);
+        return CGtfFeatureRecord::AssignFromAsn(mf, flags);
     }
 
     //  intervals wrapping around the origin extend beyond the sequence length
@@ -164,7 +164,7 @@ bool CGff3WriteRecordFeature::AssignFromAsn(
     unsigned int len = bsh.GetInst().GetLength();
     list< CRef< CSeq_interval > >& sublocs = m_pLoc->SetPacked_int().Set();
     if (sublocs.size() < 2) {
-        return CGffWriteRecordFeature::AssignFromAsn(mf, flags);
+        return CGtfFeatureRecord::AssignFromAsn(mf, flags);
     }
 
     list< CRef< CSeq_interval > >::iterator it, it_ceil=sublocs.end(), 
@@ -189,7 +189,7 @@ bool CGff3WriteRecordFeature::AssignFromAsn(
         sublocs.erase(it_floor);
     }
 
-    return CGffWriteRecordFeature::AssignFromAsn(mf, flags);
+    return CGtfFeatureRecord::AssignFromAsn(mf, flags);
 };
     
 //  ----------------------------------------------------------------------------
@@ -204,7 +204,7 @@ bool CGff3WriteRecordFeature::x_AssignType(
         for ( ; cit != quals.end(); cit++) {
             const CGb_qual& qual = **cit;
             if (qual.GetQual() == "gff_type") {
-                m_strType = qual.GetVal();
+                mType = qual.GetVal();
                 return true;
             }
         }
@@ -213,9 +213,9 @@ bool CGff3WriteRecordFeature::x_AssignType(
     static CSafeStatic<CSofaMap> SOFAMAP;
 
     if ( ! mf.IsSetData() ) {
-        m_strType = SOFAMAP->DefaultName();
+        mType = SOFAMAP->DefaultName();
     }
-    m_strType = SOFAMAP->FeatureToSofaType(mf.GetOriginalFeature());
+    mType = SOFAMAP->FeatureToSofaType(mf.GetOriginalFeature());
     return true;
 };
 
@@ -319,14 +319,14 @@ bool CGff3WriteRecordFeature::x_AssignStart(
     if ( m_pLoc ) {
         if (sIsTransspliced(mapped_feat)) {
             
-            if (!sGetTranssplicedInPoint(*m_pLoc, m_uSeqStart)) {
+            if (!sGetTranssplicedInPoint(*m_pLoc, mSeqStart)) {
                 return false;
             }
         }
         else {
-            m_uSeqStart = m_pLoc->GetStart(eExtreme_Positional);
+            mSeqStart = m_pLoc->GetStart(eExtreme_Positional);
             if (m_pLoc->IsPartialStart(eExtreme_Biological)) {
-                string min = NStr::IntToString(m_uSeqStart + 1);
+                string min = NStr::IntToString(mSeqStart + 1);
                 SetAttribute("start_range", string(".,") + min);
             }
         }
@@ -341,14 +341,14 @@ bool CGff3WriteRecordFeature::x_AssignStart(
 
     ENa_strand strand = m_pLoc->GetStrand();
     if (strand == eNa_strand_minus) {
-        if (m_uSeqStart < bstop) {
-            m_uSeqStart += bsh.GetInst().GetLength();
+        if (mSeqStart < bstop) {
+            mSeqStart += bsh.GetInst().GetLength();
         }
         return true;
     }
     //everything else considered eNa_strand_plus
-    if (m_uSeqStart < bstart) {
-        m_uSeqStart += bsh.GetInst().GetLength();
+    if (mSeqStart < bstart) {
+        mSeqStart += bsh.GetInst().GetLength();
     }
     return true;
 }
@@ -360,14 +360,14 @@ bool CGff3WriteRecordFeature::x_AssignStop(
 {
     if ( m_pLoc ) {
         if (sIsTransspliced(mapped_feat)) {
-            if (!sGetTranssplicedOutPoint(*m_pLoc, m_uSeqStop)) {
+            if (!sGetTranssplicedOutPoint(*m_pLoc, mSeqStop)) {
                 return false;
             }
         }
         else {
-            m_uSeqStop = m_pLoc->GetStop(eExtreme_Positional);
+            mSeqStop = m_pLoc->GetStop(eExtreme_Positional);
             if (m_pLoc->IsPartialStop(eExtreme_Biological)) {
-                string max = NStr::IntToString(m_uSeqStop + 1);
+                string max = NStr::IntToString(mSeqStop + 1);
                 SetAttribute("end_range", max + string(",."));
             }
         }
@@ -382,14 +382,14 @@ bool CGff3WriteRecordFeature::x_AssignStop(
 
     ENa_strand strand = m_pLoc->GetStrand();
     if (strand == eNa_strand_minus) {
-        if (m_uSeqStop < bstop) {
-            m_uSeqStop += bsh.GetInst().GetLength();
+        if (mSeqStop < bstop) {
+            mSeqStop += bsh.GetInst().GetLength();
         }
         return true;
     }
     //everything else considered eNa_strand_plus
-    if (m_uSeqStop < bstart) {
-        m_uSeqStop += bsh.GetInst().GetLength();
+    if (mSeqStop < bstart) {
+        mSeqStop += bsh.GetInst().GetLength();
     }
     return true;
 }
@@ -541,8 +541,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributesExtraQuals(
         if (key == "exon_number"  &&  mf.GetData().IsGene()) {
             continue;
         }
-        TAttrCit fit = this->m_Attributes.find(key);
-        if (fit == m_Attributes.end()) {
+        TAttrCit fit = mAttributes.find(key);
+        if (fit == mAttributes.end()) {
             SetAttribute(key, qual.GetVal());
         }
     }
@@ -857,25 +857,25 @@ bool CGff3WriteRecordFeature::x_AssignAttributeName(
             break;
 
         case CSeqFeatData::eSubtype_gene:
-            if (GetAttribute("gene", value)) {
+            if (GetAttributes("gene", value)) {
                 SetAttribute("Name", value.front());
                 return true;
             }
-            if (GetAttribute("locus_tag", value)) {
+            if (GetAttributes("locus_tag", value)) {
                 SetAttribute("Name", value.front());
                 return true;
             }
             return true;
 
         case CSeqFeatData::eSubtype_cdregion:
-            if (GetAttribute("protein_id", value)) {
+            if (GetAttributes("protein_id", value)) {
                 SetAttribute("Name", value.front());
                 return true;
             }
             return true;
     }
 
-    if (GetAttribute("transcript_id", value)) {
+    if (GetAttributes("transcript_id", value)) {
         SetAttribute("Name", value.front());
         return true;
     }
@@ -1302,11 +1302,11 @@ bool CGff3WriteRecordFeature::AssignParent(
 //  ----------------------------------------------------------------------------
 {
     vector<string> parentId;
-    if ( !parent.GetAttribute("ID", parentId) ) {
+    if ( !parent.GetAttributes("ID", parentId) ) {
         cerr << "Fix me: Parent record without GFF3 ID tag!" << endl;
         return false;
     }
-    DropAttribute("Parent");
+    DropAttributes("Parent");
     for (vector<string>::iterator it = parentId.begin(); it != parentId.end();
             ++it) {
         SetAttribute("Parent", *it);
@@ -1319,7 +1319,7 @@ void CGff3WriteRecordFeature::ForceAttributeID(
     const string& strId )
 //  ----------------------------------------------------------------------------
 {
-    DropAttribute("ID");
+    DropAttributes("ID");
     SetAttribute("ID", strId);
 }  
 

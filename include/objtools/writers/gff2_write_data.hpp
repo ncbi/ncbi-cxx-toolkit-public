@@ -40,6 +40,7 @@
 
 #include <objtools/writers/write_util.hpp>
 #include <objtools/writers/feature_context.hpp>
+#include <objtools/writers/gff_feature_record.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -47,7 +48,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGffWriteRecord
 //  ============================================================================
-    : public CObject
+    : public CGffFeatureRecord
 {
 public:
     typedef map<string, vector<string> > TAttributes;
@@ -72,7 +73,7 @@ public:
 
     bool CorrectType(
         const string& strType ) {
-        m_strType = strType;
+        mType = strType;
         return true;
     };
 
@@ -83,31 +84,7 @@ public:
         unsigned int,
         const string& = "" );
 
-    virtual string StrType() const;
-    virtual string StrAttributes() const;
-    virtual string StrId() const;
-    virtual string StrSource() const;
-    virtual string StrSeqStart() const;
-    virtual string StrSeqStop() const;
-    virtual string StrScore() const;
-    virtual string StrStrand() const;
-    virtual string StrPhase() const;
     virtual string StrStructibutes() const { return ""; };
-
-    const TAttributes& Attributes() const { 
-        return m_Attributes; 
-    };
-
-    bool SetAttribute(
-        const string&,
-        const string& );
-
-    bool GetAttribute(
-        const string&,
-        vector<string>& ) const;
-
-    bool DropAttribute(
-        const string& );
 
     virtual bool NeedsQuoting(
         const string& str) const {return CWriteUtil::NeedsQuoting(str);};
@@ -122,27 +99,16 @@ protected:
 
     CGffFeatureContext& m_fc;
 
-    string m_strId;
-    unsigned int m_uSeqStart;
-    unsigned int m_uSeqStop;
-    string m_strSource;
-    string m_strType;
-    string* m_pScore;
-    ENa_strand* m_peStrand;
-    unsigned int* m_puPhase;
-    string m_strAttributes;    
-    TAttributes m_Attributes;
-
     static const char* ATTR_SEPARATOR;
 };
 
 //  ============================================================================
-class CGffWriteRecordFeature
+class CGtfFeatureRecord
 //  ============================================================================
     : public CGffWriteRecord
 {
 public:
-    CGffWriteRecordFeature(
+    CGtfFeatureRecord(
         CGffFeatureContext& fc,
         const string& id="" ): CGffWriteRecord(fc, id){};
 
@@ -151,27 +117,12 @@ public:
         unsigned int =0);
 
 protected:
-    virtual bool x_AssignType(
-        const CMappedFeat&,
-        unsigned int =0 );
-    virtual bool x_AssignSeqId(
-        const CMappedFeat& );
-    virtual bool x_AssignStart(
-        const CMappedFeat& );
-    virtual bool x_AssignStop(
-        const CMappedFeat& );
-    virtual bool x_AssignSource(
-        const CMappedFeat& );
-    virtual bool x_AssignScore(
-        const CMappedFeat& );
-    virtual bool x_AssignStrand(
-        const CMappedFeat& );
-    virtual bool x_AssignPhase(
-        const CMappedFeat& );
     virtual bool x_AssignAttributes(
         const CMappedFeat&,
         unsigned int =0);
 };
+
+using CGffWriteRecordFeature = CGtfFeatureRecord;
 
 END_objects_SCOPE
 END_NCBI_SCOPE

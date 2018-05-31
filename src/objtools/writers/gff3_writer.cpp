@@ -1525,6 +1525,7 @@ bool CGff3Writer::xWriteFeatureTrna(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureType(
     CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
@@ -1538,20 +1539,6 @@ bool CGff3Writer::xAssignFeatureType(
 
     //fallback
     record.SetType("region");
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3Writer::xAssignFeatureSeqId(
-    CGffFeatureRecord& record,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    string bestId;
-    if (!CWriteUtil::GetBestId(mf, bestId)) {
-        bestId = ".";
-    }
-    record.SetSeqId(bestId);
     return true;
 }
 
@@ -1700,17 +1687,9 @@ bool CGff3Writer::xAssignFeatureEndpoints(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Writer::xAssignFeatureScore(
-    CGffFeatureRecord& record,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureStrand(
     CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
@@ -1721,6 +1700,7 @@ bool CGff3Writer::xAssignFeatureStrand(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeaturePhase(
     CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
@@ -1972,7 +1952,9 @@ bool CGff3Writer::xAssignFeatureAttributeGene(
     if (mf.GetData().Which() == CSeq_feat::TData::e_Gene) {
         const CGene_ref& gene_ref = mf.GetData().GetGene();
         CWriteUtil::GetGeneRefGene(gene_ref, strGene);
-        record.SetAttribute("gene", strGene);
+        if (!strGene.empty()) {
+            record.SetAttribute("gene", strGene);
+        }
         return true;
     }
 
@@ -1984,7 +1966,9 @@ bool CGff3Writer::xAssignFeatureAttributeGene(
             const CSeqFeatXref& xref = **it;
             if (xref.CanGetData() && xref.GetData().IsGene()) {
                 CWriteUtil::GetGeneRefGene(xref.GetData().GetGene(), strGene);
-                record.SetAttribute("gene", strGene);
+                if (!strGene.empty()) {
+                    record.SetAttribute("gene", strGene);
+                }
                 return true;
             }
         }
@@ -1993,7 +1977,9 @@ bool CGff3Writer::xAssignFeatureAttributeGene(
     CMappedFeat gene = fc.FindBestGeneParent(mf);
     if (gene  &&  gene.IsSetData()  &&  gene.GetData().IsGene()) {
         CWriteUtil::GetGeneRefGene(gene.GetData().GetGene(), strGene);
-        record.SetAttribute("gene", strGene);
+        if (!strGene.empty()) {
+            record.SetAttribute("gene", strGene);
+        }
         return true; 
     }
     return true; 
@@ -2092,7 +2078,9 @@ bool CGff3Writer::xAssignFeatureAttributeNote(
     else {
         note = comment;
     }
-    record.SetAttribute("Note", note);
+    if (!note.empty()) {
+        record.SetAttribute("Note", note);
+    }
     return true; 
 }
 
@@ -2831,23 +2819,6 @@ bool CGff3Writer::xAssignFeatureAttributesQualifiers(
         record.SetAttribute(key, value);
     } 
     return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3Writer::xAssignFeatureBasic(
-    CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    return (xAssignFeatureType(record, mf)  &&
-        xAssignFeatureSeqId(record, mf)  &&
-        xAssignFeatureMethod(record, fc, mf)  &&
-        xAssignFeatureEndpoints(record, fc, mf)  &&
-        xAssignFeatureScore(record, mf)  &&
-        xAssignFeatureStrand(record, mf)  &&
-        xAssignFeaturePhase(record, mf)  &&
-        xAssignFeatureAttributes(record, fc, mf));
 }
 
 //  ----------------------------------------------------------------------------

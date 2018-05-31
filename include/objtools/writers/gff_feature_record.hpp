@@ -54,6 +54,10 @@ public:
         const CSeq_loc&);
     void SetLocation(
         const CSeq_interval&);
+    void SetEndpoints(
+        unsigned int start,
+        unsigned int stop,
+        ENa_strand strand);
 
     const CSeq_loc& Location() const {
         return *m_pLoc;

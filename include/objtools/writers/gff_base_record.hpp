@@ -61,6 +61,9 @@ public:
     virtual ~CGffBaseRecord();
 
 public: //attribute management
+    const TAttributes& Attributes() const { 
+        return mAttributes; 
+    };
     bool AddAttribute(
         const string&,
         const string&);
@@ -94,6 +97,8 @@ public:
         ENa_strand);
     void SetScore(
         const CScore&);
+    void SetScore(
+        const std::string&);
     void SetPhase(
         unsigned int);
 

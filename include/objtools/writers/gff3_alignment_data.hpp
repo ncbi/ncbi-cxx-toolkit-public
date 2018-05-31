@@ -54,8 +54,8 @@ public:
         m_uFlags(uFlags),
         m_bIsTrivial(true)
     {
-        m_strType = "match";
-        m_strAttributes = string( "ID=" ) + NStr::UIntToString( uRecordId );
+        mType = "match";
+        mIdAttribute = string( "ID=" ) + NStr::UIntToString( uRecordId );
     };
 
     virtual ~CGffAlignmentRecord() {};
@@ -72,6 +72,7 @@ public:
 protected:
     static CGffFeatureContext sDummyContext;
     unsigned int m_uFlags;
+    string mIdAttribute;
     string m_strAlignment;
     string m_strOtherScores;
 

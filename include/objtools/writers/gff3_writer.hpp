@@ -376,47 +376,40 @@ protected:
         const CBioSource&);
 
     //begin mss-234//
-    bool xAssignFeature(
+    virtual bool xAssignFeature(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        const CMappedFeat&);
-    bool xAssignFeatureBasic(
+        const CMappedFeat&) override;
+    virtual bool xAssignFeatureType(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        const CMappedFeat&);
-    bool xAssignFeatureType(
-        CGffFeatureRecord&,
-        const CMappedFeat&);
-    bool xAssignFeatureSeqId(
-        CGffFeatureRecord&,
-        const CMappedFeat&);
-    bool xAssignFeatureMethod(
+        const CMappedFeat&) override;
+    virtual bool xAssignFeatureMethod(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        const CMappedFeat&);
-    bool xAssignFeatureEndpoints(
+        const CMappedFeat&) override;
+    virtual bool xAssignFeatureEndpoints(
         CGffFeatureRecord& record,
         CGffFeatureContext&,
-        const CMappedFeat& mapped_feat);
-    bool xAssignFeatureScore(
+        const CMappedFeat& mapped_feat) override;
+    virtual bool xAssignFeatureStrand(
         CGffFeatureRecord&,
+        CGffFeatureContext&,
         const CMappedFeat&);
-    bool xAssignFeatureStrand(
+    virtual bool xAssignFeaturePhase(
         CGffFeatureRecord&,
-        const CMappedFeat&);
-    bool xAssignFeaturePhase(
-        CGffFeatureRecord&,
-        const CMappedFeat&);
+        CGffFeatureContext&,
+        const CMappedFeat&) override;
 
     virtual bool xAssignFeatureAttributesFormatIndependent(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        const CMappedFeat&);
+        const CMappedFeat&) override;
 
     virtual bool xAssignFeatureAttributesFormatSpecific(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        const CMappedFeat&);
+        const CMappedFeat&) override;
     bool xAssignFeatureAttributeParent(
         CGff3FeatureRecord&,
         CGffFeatureContext&,
@@ -441,8 +434,6 @@ protected:
         CGff3FeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat& );
-
-
 
     bool xAssignFeatureAttributeCodeBreak(
         CGffFeatureRecord&,

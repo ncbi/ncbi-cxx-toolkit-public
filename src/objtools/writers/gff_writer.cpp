@@ -408,6 +408,149 @@ bool CGff2Writer::x_WriteAssemblyInfo(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGff2Writer::xAssignFeature(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+    //  ----------------------------------------------------------------------------
+{
+    return xAssignFeatureBasic(record, fc, mf);
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xAssignFeatureBasic(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+    //  ----------------------------------------------------------------------------
+{
+    if (!xAssignFeatureType(record, fc, mf)) {
+        return false;
+    }
+    if (!xAssignFeatureSeqId(record, fc, mf)) {
+        return false;
+    }
+    if (!xAssignFeatureMethod(record, fc, mf)) {
+        return false;
+    }
+    if (!xAssignFeatureEndpoints(record, fc, mf)) {
+        return false;
+    }
+    if (!xAssignFeatureScore(record, fc, mf)) {
+        return false;
+    }
+    if (!xAssignFeatureStrand(record, fc, mf)) {
+        return false;
+    }
+    if (!xAssignFeaturePhase(record, fc, mf)) {
+        return false;
+    }
+    if (!xAssignFeatureAttributes(record, fc, mf)) {
+        return false;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xAssignFeatureSeqId(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+    //  ----------------------------------------------------------------------------
+{
+    string bestId;
+    if (!CWriteUtil::GetBestId(mf, bestId)) {
+        bestId = ".";
+    }
+    record.SetSeqId(bestId);
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xAssignFeatureScore(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+    //  ----------------------------------------------------------------------------
+{
+    if ( !mf.IsSetQual() ) {
+        return true;
+    }
+    const vector< CRef< CGb_qual > >& quals = mf.GetQual();
+    vector< CRef< CGb_qual > >::const_iterator it = quals.begin();
+    for ( ; it != quals.end(); ++it ) {
+        if ( !(*it)->CanGetQual() || !(*it)->CanGetVal() ) {
+            continue;
+        }
+        if ( (*it)->GetQual() == "gff_score" ) {
+            record.SetScore((*it)->GetVal());
+            return true;
+        }
+    }
+    return true;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xAssignFeaturePhase(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+    //  ----------------------------------------------------------------------------
+{
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xAssignFeatureType(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+    //  ----------------------------------------------------------------------------
+{
+    record.SetType(".");
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xAssignFeatureStrand(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+    //  ----------------------------------------------------------------------------
+{
+    const auto& location = mf.GetLocation();
+    record.SetStrand(
+        location.IsSetStrand() ? location.GetStrand() : eNa_strand_plus);
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xAssignFeatureMethod(
+    CGffFeatureRecord& record,
+    CGffFeatureContext&,
+    const CMappedFeat& mf )
+    //  ----------------------------------------------------------------------------
+{
+    record.SetMethod(".");
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xAssignFeatureEndpoints(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+    //  ----------------------------------------------------------------------------
+{
+    auto start = mf.GetLocation().GetStart(eExtreme_Positional);
+    auto stop = mf.GetLocation().GetStop(eExtreme_Positional);
+    auto strand = mf.GetLocation().GetStrand();
+    record.SetEndpoints(start, stop, strand);
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureAttributes(
     CGffFeatureRecord& record,
     CGffFeatureContext& fc,

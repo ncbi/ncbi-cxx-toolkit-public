@@ -194,26 +194,29 @@ bool CGvfWriter::xWriteFeatureVariationRef(
 {
     CRef<CGvfWriteRecord> pRecord( new CGvfWriteRecord( fc ) );
 
+    if (!xAssignFeature(*pRecord, fc, mf)) {
+        return false;
+    }
     if ( ! pRecord->AssignFromAsn( mf ) ) {
         return false;
     }
-    return x_WriteRecord( pRecord );
+    return xWriteRecord(*pRecord);
 }
 
 //  ----------------------------------------------------------------------------
-bool CGvfWriter::x_WriteRecord( 
-    const CGffWriteRecord* pRecord )
-    //  ----------------------------------------------------------------------------
+bool CGvfWriter::xWriteRecord( 
+    const CGffBaseRecord& pRecord )
+//  ----------------------------------------------------------------------------
 {
-    m_Os << pRecord->StrId() << '\t';
-    m_Os << pRecord->StrSource() << '\t';
-    m_Os << pRecord->StrType() << '\t';
-    m_Os << pRecord->StrSeqStart() << '\t';
-    m_Os << pRecord->StrSeqStop() << '\t';
-    m_Os << pRecord->StrScore() << '\t';
-    m_Os << pRecord->StrStrand() << '\t';
-    m_Os << pRecord->StrPhase() << '\t';
-    m_Os << pRecord->StrAttributes() << '\n';
+    m_Os << pRecord.StrSeqId() << '\t';
+    m_Os << pRecord.StrMethod() << '\t';
+    m_Os << pRecord.StrType() << '\t';
+    m_Os << pRecord.StrSeqStart() << '\t';
+    m_Os << pRecord.StrSeqStop() << '\t';
+    m_Os << pRecord.StrScore() << '\t';
+    m_Os << pRecord.StrStrand() << '\t';
+    m_Os << pRecord.StrPhase() << '\t';
+    m_Os << pRecord.StrAttributes() << '\n';
     return true;
 }
 

@@ -68,8 +68,8 @@ protected:
         CGffFeatureContext&,
         const CMappedFeat& );
 
-    virtual bool x_WriteRecord( 
-        const CGffWriteRecord* );
+    virtual bool xWriteRecord( 
+        const CGffBaseRecord& );
 
     virtual bool xWriteFeatureVariationRef(
         CGffFeatureContext&,

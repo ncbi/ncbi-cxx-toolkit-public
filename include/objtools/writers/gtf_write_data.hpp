@@ -64,6 +64,11 @@ public:
         const CSeq_interval&,
         unsigned int = 0 );
 
+    void SetGeneId(
+        const std::string& geneId) { m_strGeneId = geneId; };
+    void SetTranscriptId(
+        const std::string& transcriptId) { m_strTranscriptId = transcriptId; };
+
     string StrAttributes() const;
     string StrStructibutes() const;
 
@@ -73,86 +78,6 @@ public:
     feature::CFeatTree& FeatTree() { return m_fc.FeatTree(); };
 
 protected:
-    virtual bool x_AssignAttributes(
-        const CMappedFeat&,
-        unsigned int =0 );
-    virtual bool x_AssignAttributesFromAsnCore(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributesFromAsnExtended(
-        const CMappedFeat& );
-
-    static string x_GenericTranscriptId(
-        const CMappedFeat& );
-
-    static string x_GenericGeneId(
-        const CMappedFeat& );
-
-/////
-
-    CMappedFeat x_CdsFeatureToMrnaParent(
-        const CMappedFeat& ) /* throws !*/;
-
-    CMappedFeat x_CdsFeatureToGeneParent(
-        const CMappedFeat& ) /* throws !*/;
-
-    CMappedFeat x_MrnaFeatureToGeneParent(
-        const CMappedFeat& ) /* throws !*/;
-
-/////
-
-    string x_FeatureToDbxref(
-        const CMappedFeat& );
-
-    string x_FeatureToNote(
-        const CMappedFeat& );
-
-    bool x_FeatureToPseudo(
-        const CMappedFeat& );
-
-    bool x_FeatureToPartial(
-        const CMappedFeat& );
-
-///
-
-    string x_GeneToGeneId(
-        const CMappedFeat& );
-
-    string x_GeneToGeneSyn(
-        const CMappedFeat& );
-
-///
-
-    string x_MrnaToGeneId(
-        const CMappedFeat& );
-
-    string x_MrnaToTranscriptId(
-        const CMappedFeat& );
-
-    string x_MrnaToProduct(
-        const CMappedFeat& );
-
-///
-
-    string x_CdsToGeneId(
-        const CMappedFeat& );
-
-    string x_CdsToTranscriptId(
-        const CMappedFeat& );
-
-    string x_CdsToProteinId(
-        const CMappedFeat& );
-
-    bool x_CdsToRibosomalSlippage(
-        const CMappedFeat& );
-
-    string x_CdsToProduct(
-        const CMappedFeat& );
-
-    string x_CdsToCode(
-        const CMappedFeat& );
-
-/////
-
     static string x_AttributeToString(
         const string&,
         const string& );

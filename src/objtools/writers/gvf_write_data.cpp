@@ -93,14 +93,14 @@ bool CGvfWriteRecord::x_AssignSource(
     const CMappedFeat& mapped_feat )
 //  ----------------------------------------------------------------------------
 {
-    m_strSource = ".";
+    mMethod = ".";
     if ( mapped_feat.IsSetExt() ) {
         const CSeq_feat::TExt& ext = mapped_feat.GetExt();
         if ( ext.IsSetType() && ext.GetType().IsStr() && 
             ext.GetType().GetStr() == "GvfAttributes" ) 
         {
             if ( ext.HasField( "source" ) ) {
-                m_strSource = ext.GetField( "source" ).GetData().GetStr();
+                mMethod = ext.GetField( "source" ).GetData().GetStr();
                 return true;
             }
         }
@@ -111,7 +111,7 @@ bool CGvfWriteRecord::x_AssignSource(
     }
     const CVariation_ref& variation = mapped_feat.GetData().GetVariation();
     if ( variation.IsSetId() ) {
-        m_strSource = variation.GetId().GetDb();
+        mMethod = variation.GetId().GetDb();
         return true;
     }
     return true;
@@ -123,14 +123,14 @@ bool CGvfWriteRecord::x_AssignType(
     unsigned int )
 //  ----------------------------------------------------------------------------
 {
-    m_strType = ".";
+    mType = ".";
     if ( mapped_feat.IsSetExt() ) {
         const CSeq_feat::TExt& ext = mapped_feat.GetExt();
         if ( ext.IsSetType() && ext.GetType().IsStr() && 
             ext.GetType().GetStr() == "GvfAttributes" ) 
         {
             if ( ext.HasField( "orig-var-type" ) ) {
-                m_strType = ext.GetField( "orig-var-type" ).GetData().GetStr();
+                mType = ext.GetField( "orig-var-type" ).GetData().GetStr();
                 return true;
             }
         }
@@ -142,11 +142,11 @@ bool CGvfWriteRecord::x_AssignType(
 
     const CVariation_ref& var_ref = mapped_feat.GetData().GetVariation();
     if ( var_ref.IsComplex() ) {
-        m_strType = "complex_structural_alteration";
+        mType = "complex_structural_alteration";
         return true;
     }
     if ( var_ref.IsGain() ) {
-        m_strType = "copy_number_gain";
+        mType = "copy_number_gain";
         return true;
     }
     if ( var_ref.IsLoss() ) {
@@ -156,16 +156,16 @@ bool CGvfWriteRecord::x_AssignType(
                 cit != consequences.end(); ++cit ) 
             {
                 if ( (*cit)->IsLoss_of_heterozygosity() ) {
-                    m_strType = "loss_of_heterozygosity";
+                    mType = "loss_of_heterozygosity";
                     return true;
                 }
             } 
         }
-        m_strType = "copy_number_loss";
+        mType = "copy_number_loss";
         return true;
     }
     if ( var_ref.IsCNV() ) {
-        m_strType = "copy_number_variation";
+        mType = "copy_number_variation";
         return true;
     }
 
@@ -177,7 +177,7 @@ bool CGvfWriteRecord::x_AssignType(
     default:
         return true;
     case CVariation_inst::eType_snv:
-        m_strType = "single_nucleotide_variation";
+        mType = "single_nucleotide_variation";
         return true;
     }
 
@@ -441,7 +441,7 @@ bool CGvfWriteRecord::x_AssignAttributeEndRange(
 string CGvfWriteRecord::StrAttributes() const
 //  ----------------------------------------------------------------------------
 {
-    TAttributes temp_attrs( m_Attributes.begin(), m_Attributes.end() );
+    TAttributes temp_attrs( mAttributes.begin(), mAttributes.end() );
     string strAttributes;
 
     TAttrIt priority = temp_attrs.find("ID");

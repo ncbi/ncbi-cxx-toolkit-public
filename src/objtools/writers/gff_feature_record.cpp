@@ -65,6 +65,16 @@ void CGffFeatureRecord::InitLocation(
 }
 
 //  ----------------------------------------------------------------------------
+void CGffFeatureRecord::SetEndpoints(
+    unsigned int start,
+    unsigned int stop,
+    ENa_strand strand)
+//  ----------------------------------------------------------------------------
+{
+    CGffBaseRecord::SetLocation(start, stop, strand);
+}
+
+//  ----------------------------------------------------------------------------
 void CGffFeatureRecord::SetLocation(
     const CSeq_interval& interval) 
 //  ----------------------------------------------------------------------------

@@ -188,6 +188,51 @@ public:
 //    virtual SAnnotSelector& GetAnnotSelector();
 
 protected:
+    virtual bool xAssignFeature(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
+    virtual bool xAssignFeatureBasic(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
+    virtual bool xAssignFeatureType(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
+    virtual bool xAssignFeatureSeqId(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
+    virtual bool xAssignFeatureMethod(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
+    virtual bool xAssignFeatureEndpoints(
+        CGffFeatureRecord& record,
+        CGffFeatureContext&,
+        const CMappedFeat& mapped_feat);
+
+    virtual bool xAssignFeatureScore(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
+    virtual bool xAssignFeatureStrand(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
+    virtual bool xAssignFeaturePhase(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
     virtual bool xAssignFeatureAttributes(
         CGffFeatureRecord&,
         CGffFeatureContext&,

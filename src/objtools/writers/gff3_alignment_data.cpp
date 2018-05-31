@@ -55,7 +55,7 @@ CGffFeatureContext CGffAlignmentRecord::sDummyContext;
 string CGffAlignmentRecord::StrAttributes() const 
 //  ----------------------------------------------------------------------------
 {
-    string str = m_strAttributes;
+    string str = mIdAttribute;
     if ( !m_strOtherScores.empty() ) {
         str += ";";
         str += m_strOtherScores;
@@ -84,7 +84,7 @@ void CGffAlignmentRecord::SetScore(
         value = NStr::DoubleToString(score.GetValue().GetReal());
     }
     if ( key == "score" ) {
-        m_pScore = new string(value);
+        mScore = value;
     }
     else {
         if ( ! m_strOtherScores.empty() ) {
@@ -111,23 +111,23 @@ void CGffAlignmentRecord::SetMatchType(
     CSeq_id::EAccessionInfo target_info = target.IdentifyAccession();
 
     if (target_info & CSeq_id::fAcc_prot) {
-        m_strType = strProtMatch;
+        mType = strProtMatch;
         return;
     }
     if ((target_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est) {
-        m_strType = strEstMatch;
+        mType = strEstMatch;
         return;
     }
     if ((target_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_mrna) {
-        m_strType = strCdnaMatch;
+        mType = strCdnaMatch;
         return;
     }
     if ((target_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_tsa) {
-        m_strType = strCdnaMatch;
+        mType = strCdnaMatch;
         return;
     }
     if (source_info & CSeq_id::fAcc_prot) {
-        m_strType = strTransNucMatch;
+        mType = strTransNucMatch;
         return;
     }
     //m_strType = "match";

@@ -91,9 +91,6 @@ bool CGffBaseRecord::AddAttribute(
     const string& value )
 //  ----------------------------------------------------------------------------
 {
-    if (value.empty()) {
-        return false; //don't accept blank values 
-    }
     TAttrIt it = mAttributes.find(key);
     if (it == mAttributes.end()) {
         mAttributes[key] = vector<string>();
@@ -111,9 +108,6 @@ bool CGffBaseRecord::SetAttribute(
     const string& value )
 //  ----------------------------------------------------------------------------
 {
-    if (value.empty()) {
-        return false; //don't accept blank values 
-    }
     DropAttributes(key);
     return AddAttribute(key, value);
 }
@@ -250,9 +244,6 @@ void CGffBaseRecord::SetStrand(
     case objects::eNa_strand_minus:
         mStrand = "-";
         break;
-    //case objects::eNa_strand_unknown:
-    //    mStrand = "?";
-    //    break;
     case objects::eNa_strand_both:
     case objects::eNa_strand_both_rev:
         mStrand = ".";
@@ -295,6 +286,15 @@ void CGffBaseRecord::SetScore(
     }
     mExtraScores[key] = value;
 }
+
+//  ----------------------------------------------------------------------------
+void CGffBaseRecord::SetScore(
+    const string& score)
+//  ----------------------------------------------------------------------------
+{
+    mScore = score;
+}
+
 
 //  ----------------------------------------------------------------------------
 void CGffBaseRecord::SetPhase(
