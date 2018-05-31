@@ -2568,6 +2568,7 @@ CNCMessageHandler::x_ReadCommand(void)
             return &CNCMessageHandler::x_SaveStatsAndClose;
         }
     } else {
+        m_ClientParams.erase("key");
         list<CTempString> arr;
         ncbi_NStr_Split(cmd_line, " ", arr);
         bool good = false;
