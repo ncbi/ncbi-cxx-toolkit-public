@@ -5153,13 +5153,20 @@ static void s_GetGeneTextLabel(const CSeq_feat& feat, string& label)
 void CValidError_bioseq::ValidateBadGeneOverlap(const CSeq_feat& feat)
 {
     const CGene_ref* grp = feat.GetGeneXref();
-    if ( grp != 0) {
+    if ( grp != 0 && grp->IsSuppressed()) {
         return;
     }
 
     CConstRef<CSeq_feat> connected_gene = m_Imp.GetCachedGene(&feat);
     if (connected_gene) {
-        if (TestForOverlapEx(connected_gene->GetLocation(), feat.GetLocation(), eOverlap_Contained, m_Scope) < 0) {
+        EOverlapType overlap_type = eOverlap_Contained;
+        if (feat.IsSetExcept_text() &&
+            NStr::FindNoCase(feat.GetExcept_text(), "trans-splicing") != string::npos) {
+            overlap_type = eOverlap_Subset;
+        }
+
+        if (TestForOverlapEx(connected_gene->GetLocation(), feat.GetLocation(),
+                             overlap_type, m_Scope) < 0) {
 
             string gene_label;
             s_GetGeneTextLabel(*connected_gene, gene_label);

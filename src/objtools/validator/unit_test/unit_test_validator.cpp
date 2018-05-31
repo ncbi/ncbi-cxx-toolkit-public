@@ -13468,7 +13468,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PeptideFeatOutOfFrame)
 }
 
 
-// insertion point
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSgeneRange)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
@@ -13481,6 +13480,82 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSgeneRange)
 
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSgeneRange", 
                       "gene [gene locus:lcl|nuc:2-27] overlaps CDS but does not completely contain it"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    gene->SetId().SetLocal().SetId(1);
+    cds->SetId().SetLocal().SetId(2);
+    CRef<CSeqFeatXref> gene_xref(new CSeqFeatXref());
+    gene_xref->SetId().SetLocal().SetId(1);
+    cds->SetXref().push_back(gene_xref);
+    CRef<CSeqFeatXref> cds_xref(new CSeqFeatXref());
+    cds_xref->SetId().SetLocal().SetId(2);
+    gene->SetXref().push_back(cds_xref);
+
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSgeneRange", 
+                      "gene [gene locus:lcl|nuc:2-27] overlaps CDS but does not completely contain it"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // for VR-821
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> prot = unit_test_util::GetProteinSequenceFromGoodNucProtSet(entry);
+
+    CRef<CSeq_loc> cl1(new CSeq_loc());
+    cl1->SetInt().SetFrom(0);
+    cl1->SetInt().SetTo(8);
+    cl1->SetInt().SetId().Assign(*(nuc->GetSeq().GetId().front()));
+    CRef<CSeq_loc> cl2(new CSeq_loc());
+    cl2->SetInt().SetFrom(21);
+    cl2->SetInt().SetTo(26);
+    cl2->SetInt().SetId().Assign(*(nuc->GetSeq().GetId().front()));
+    CRef<CSeq_loc> gl1(new CSeq_loc());
+    gl1->Assign(*cl2);
+    CRef<CSeq_loc> gl2(new CSeq_loc());
+    gl2->Assign(*cl1);
+
+    cds->SetLocation().SetMix().Set().push_back(cl1);
+    cds->SetLocation().SetMix().Set().push_back(cl2);
+
+    gene->SetLocation().SetMix().Set().push_back(gl1);
+    gene->SetLocation().SetMix().Set().push_back(gl2);
+
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAGTAACAGAGAAGAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
+
+    prot->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MPRN");
+    prot->SetSeq().SetInst().SetLength(4);
+    CRef<CSeq_feat> prot_feat = unit_test_util::GetProtFeatFromGoodNucProtSet(entry);
+    prot_feat->SetLocation().SetInt().SetTo(3);
+
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning,
+        "MultiIntervalGene", "Gene feature on non-segmented sequence should not have multiple intervals"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning,
+        "CDSgeneRange", "gene [gene locus:[lcl|nuc:22-27, 1-9]] overlaps CDS but does not completely contain it"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error,
+        "SeqLocOrder", "Location: Intervals out of order in SeqLoc [(lcl|nuc:22-27, 1-9)]"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // no CDSGeneRange error if trans-spliced
+    cds->SetExcept(true);
+    cds->SetExcept_text("trans-splicing");
+
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning,
+        "MultiIntervalGene", "Gene feature on non-segmented sequence should not have multiple intervals"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error,
+        "SeqLocOrder", "Location: Intervals out of order in SeqLoc [(lcl|nuc:22-27, 1-9)]"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
