@@ -264,8 +264,11 @@ void CSourceQualifiersReader::x_LoadSourceQualifiers(TSrcQuals& quals, const str
                     }
                     else
                     {
+                        //LCOV_EXCL_START
+                        // optical maps are no longer supported
                         TSrcQualParsed& ref = quals.m_lines_map[id_text];
                         ref.m_unparsed = newline;
+                        //LCOV_EXCL_STOP
                     }
                 }
             }
@@ -302,8 +305,11 @@ void CSourceQualifiersReader::ProcessSourceQualifiers(CSeq_entry& entry, const s
         }
         else
         {
+            //LCOV_EXCL_START
+            // optical maps are no longer supported
             handled |= m_quals[0].AddQualifiers(mod, opt_map_filename);
             handled |= m_quals[1].AddQualifiers(mod, opt_map_filename);
+            //LCOV_EXCL_STOP
         }
 
         if (!x_ApplyAllQualifiers(mod, *dest))
@@ -330,6 +336,8 @@ void CSourceQualifiersReader::ProcessSourceQualifiers(CSeq_entry& entry, const s
 }
 
 
+//LCOV_EXCL_START
+// no longer used
 void CSourceQualifiersReader::x_AddQualifiers(CSourceModParser& mod, const string& filename)
 {
     CRef<ILineReader> reader(ILineReader::New(filename));
@@ -393,6 +401,7 @@ void CSourceQualifiersReader::x_AddQualifiers(CSourceModParser& mod, const strin
         //x_AddQualifiers(mod, cols, values);
     }
 }
+//LCOV_EXCL_STOP
 
 bool CSourceQualifiersReader::x_ParseAndAddTracks(CBioseq& container, const string& name, const string& value)
 {
