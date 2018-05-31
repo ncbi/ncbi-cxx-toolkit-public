@@ -1138,7 +1138,10 @@ void CLDS2_Manager::x_ParseFile(const SLDS2_File&      info,
     // Always open file as binary. Otherwise on Win32 file positions will
     // be invalid.
     auto_ptr<CNcbiIstream> in(handler.OpenStream(info, 0, m_Db));
-    _ASSERT(in.get());
+    if (!in.get()) {
+        LDS2_THROW(eFileNotFound,
+            "Failed to open file '" +info.name + "'");
+    }
     int parsed_entries = 0;
     switch ( info.format ) {
     case CFormatGuess::eBinaryASN:

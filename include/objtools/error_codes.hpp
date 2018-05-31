@@ -82,7 +82,7 @@ NCBI_DEFINE_ERRCODE_X(Objtools_Rd_GICache,  1438,  0);
 NCBI_DEFINE_ERRCODE_X(Objtools_Fmt_CIGAR,   1439,  1);
 NCBI_DEFINE_ERRCODE_X(Objtools_Fmt_SAM,     1440,  0);
 NCBI_DEFINE_ERRCODE_X(Objtools_LDS2,        1441,  10);
-NCBI_DEFINE_ERRCODE_X(Objtools_LDS2_Loader, 1442,  2);
+NCBI_DEFINE_ERRCODE_X(Objtools_LDS2_Loader, 1442,  3);
 NCBI_DEFINE_ERRCODE_X(Objtools_Fmt_Genbank, 1443,  2);
 
 

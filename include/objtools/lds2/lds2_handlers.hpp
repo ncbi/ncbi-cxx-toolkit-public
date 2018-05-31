@@ -68,6 +68,7 @@ public:
     /// The stream will be deleted by the caller.
     /// Database is provided so that the handler can fetch
     /// information about chunks.
+    /// Return NULL on error (e.g. the file does not exist).
     virtual CNcbiIstream* OpenStream(const SLDS2_File& /*file_info*/,
                                      Int8              /*stream_pos*/,
                                      CLDS2_Database*   /*db*/) = 0;

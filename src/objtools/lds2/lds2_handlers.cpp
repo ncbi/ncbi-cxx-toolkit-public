@@ -62,6 +62,9 @@ SLDS2_File::TFormat
 CLDS2_UrlHandler_Base::GetFileFormat(const SLDS2_File& file_info)
 {
     auto_ptr<CNcbiIstream> in(OpenStream(file_info, 0, NULL));
+    if (!in.get()) {
+        return CFormatGuess::eUnknown;
+    }
     return CFormatGuess::Format(*in);
 }
 
@@ -87,6 +90,9 @@ CLDS2_UrlHandler_File::OpenStream(const SLDS2_File& file_info,
 {
     auto_ptr<CNcbiIfstream> in(
         new CNcbiIfstream(file_info.name.c_str(), ios::binary));
+    if (!in->is_open()) {
+        return nullptr;
+    }
     // Chunks are not supported for regular files,
     /// offset is relative to the file start.
     if (stream_pos > 0) {
@@ -185,7 +191,7 @@ CLDS2_UrlHandler_GZipFile::OpenStream(const SLDS2_File& file_info,
     auto_ptr<CNcbiIfstream> in(
         new CNcbiIfstream(file_info.name.c_str(), ios::binary));
     if ( !in->is_open() ) {
-        return NULL;
+        return nullptr;
     }
     if ( db ) {
         // Try to use chunks information to optimize loading

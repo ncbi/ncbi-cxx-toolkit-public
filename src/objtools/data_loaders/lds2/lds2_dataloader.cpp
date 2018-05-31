@@ -308,7 +308,10 @@ void CLDS2_DataLoader::x_LoadTSE(CTSE_LoadLock& load_lock,
         return;
     }
     auto_ptr<CNcbiIstream> in(handler->OpenStream(finfo, blob.file_pos, m_Db));
-    _ASSERT(in.get());
+    if (!in.get()) {
+        ERR_POST_X(3, "Failed to open file '" << finfo.name << "'");
+        return;
+    }
     if (finfo.format == CFormatGuess::eFasta) {
         entry = x_LoadFastaTSE(*in, blob);
         if ( entry ) {
