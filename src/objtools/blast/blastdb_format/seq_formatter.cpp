@@ -457,12 +457,29 @@ int CBlastDB_FastaFormatter::Write(CSeqDB::TOID oid, const CBlastDB_FormatterCon
     		m_fasta.Write(scope.AddBioseq(*bioseq));
     	}
     	else {
+    	    if (config.m_Strand == eNa_strand_minus) {
+    	        range.GetPointer()->SetStrand(eNa_strand_minus);
+    	    }
     		m_fasta.Write(scope.AddBioseq(*bioseq), range.GetPointer());
     	}
     }
     else {
     	string fasta_deflines = kEmptyStr;
-    	CBlastDeflineUtil::ProcessFastaDeflines(*bioseq, fasta_deflines, config.m_UseCtrlA);
+    	if (range.Empty()) {
+            CBlastDeflineUtil::ProcessFastaDeflines(
+                    *bioseq,
+                    fasta_deflines,
+                    config.m_UseCtrlA
+            );
+    	} else {
+            CBlastDeflineUtil::ProcessFastaDeflines(
+                    *bioseq,
+                    fasta_deflines,
+                    config.m_UseCtrlA,
+                    range.GetPointer(),
+                    config.m_Strand
+            );
+    	}
     	m_Out << fasta_deflines;
     	CScope scope(*CObjectManager::GetInstance());
     	if(range.Empty()) {

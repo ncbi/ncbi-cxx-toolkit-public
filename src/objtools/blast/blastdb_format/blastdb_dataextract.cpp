@@ -645,10 +645,10 @@ s_ConfigureDeflineTitle(const string& title, bool use_ctrl_a)
         SIZE_TYPE pos = token.find(' ');
         const string kPossibleId(token, 0, pos != NPOS ? pos : token.length());
         CBioseq::TId seqids;
-        
-        try { 
+
+        try {
             CSeq_id::ParseIDs(seqids, kPossibleId, CSeq_id::fParse_PartialOK);
-        } catch (const CException&) {} 
+        } catch (const CException&) {}
 
         if (!seqids.empty()) {
             retval += kSeparator;
@@ -704,17 +704,17 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
         fasta.SetMask(kMaskType, masks);
     }
 
-    try { 
+    try {
         if (m_UseLongSeqIds) {
             if (seqid->IsLocal()) {
                 string lcl_tmp = seqid->AsFastaString();
                 lcl_tmp = lcl_tmp.erase(0, 4);
                 out << ">" << lcl_tmp << " " << s_GetTitle(*m_Bioseq) << '\n';
                 CScope scope(*CObjectManager::GetInstance());
-                fasta.WriteSequence(scope.AddBioseq(*m_Bioseq), range); 
+                fasta.WriteSequence(scope.AddBioseq(*m_Bioseq), range);
             }
             else  {
-                fasta.Write(*m_Bioseq, range); 
+                fasta.Write(*m_Bioseq, range);
             }
         }
         else {
@@ -728,7 +728,7 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
             out << endl;
 
             CScope scope(*CObjectManager::GetInstance());
-            fasta.WriteSequence(scope.AddBioseq(*m_Bioseq), range); 
+            fasta.WriteSequence(scope.AddBioseq(*m_Bioseq), range);
         }
     }
     catch (const CObjmgrUtilException& e) {
@@ -975,32 +975,79 @@ void CBlastDeflineUtil::ExtractDataFromBlastDefline(const CBlast_def_line & dl,
 	}
 }
 
-void CBlastDeflineUtil::ProcessFastaDeflines(CBioseq & bioseq, string & out, bool use_ctrla)
+void CBlastDeflineUtil::ProcessFastaDeflines(
+        CBioseq & bioseq,
+        string & out,
+        bool use_ctrla
+)
 {
-	out = kEmptyStr;
+    out = kEmptyStr;
     const CSeq_id* id = bioseq.GetFirstId();
     if (!id) {
         return;
     }
-     if (id->IsGeneral() &&
-         id->GetGeneral().GetDb() == "BL_ORD_ID") {
-         out = ">"  + s_GetTitle(bioseq) + '\n';
-     }
-     else if (id->IsLocal()) {
-         string lcl_tmp = id->AsFastaString();
-         lcl_tmp = lcl_tmp.erase(0,4);
-         out = ">" + lcl_tmp + " " + s_GetTitle(bioseq) + '\n';
-     }
-     else {
-
+    if (id->IsGeneral() && id->GetGeneral().GetDb() == "BL_ORD_ID") {
+        out = ">" + s_GetTitle(bioseq) + '\n';
+    }
+    else if (id->IsLocal()) {
+        string lcl_tmp = id->AsFastaString();
+        lcl_tmp = lcl_tmp.erase(0,4);
+        out = ">" + lcl_tmp + s_GetTitle(bioseq) + '\n';
+    } else {
         out = '>';
         id = FindBestChoice(bioseq.GetId(), CSeq_id::Score);
-        out += GetBareId(*id) + ' ';
+        out += GetBareId(*id);
 
         string title = s_GetTitle(bioseq);
         out += s_ConfigureDeflineTitle(title, use_ctrla);
         out += '\n';
-     }
+    }
+}
+
+void CBlastDeflineUtil::ProcessFastaDeflines(
+        CBioseq & bioseq,
+        string & out,
+        bool use_ctrla,
+        const CSeq_loc* location,
+        ENa_strand strand
+)
+{
+    out = kEmptyStr;
+    const CSeq_id* id = bioseq.GetFirstId();
+    if (!id) {
+        return;
+    }
+    string range;
+    if (location != NULL) {
+        TSeqPos start = location->GetStart(eExtreme_Biological) + 1;
+        TSeqPos stop = location->GetStop(eExtreme_Biological) + 1;
+        if (strand == eNa_strand_minus) {
+            range = "|:c"
+                    + NStr::IntToString(stop) + "-" + NStr::IntToString(start)
+                    + " ";
+        } else {
+            range = "|:"
+                    + NStr::IntToString(start) + "-" + NStr::IntToString(stop)
+                    + " ";
+        }
+    }
+    if (id->IsGeneral() && id->GetGeneral().GetDb() == "BL_ORD_ID") {
+        out = ">" + range + s_GetTitle(bioseq) + '\n';
+    }
+    else if (id->IsLocal()) {
+        string lcl_tmp = id->AsFastaString();
+        lcl_tmp = lcl_tmp.erase(0,4);
+        out = ">" + lcl_tmp + (range.empty() ? " " : range)
+                + s_GetTitle(bioseq) + '\n';
+    } else {
+        out = '>';
+        id = FindBestChoice(bioseq.GetId(), CSeq_id::Score);
+        out += GetBareId(*id) + (range.empty() ? " " : range);
+
+        string title = s_GetTitle(bioseq);
+        out += s_ConfigureDeflineTitle(title, use_ctrla);
+        out += '\n';
+    }
 }
 
 // Calculates hash for a buffer in IUPACna (NCBIeaa for proteins) format.

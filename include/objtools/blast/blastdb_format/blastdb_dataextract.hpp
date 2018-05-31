@@ -222,7 +222,15 @@ public:
 				                            BlastDeflineFields fields,
 				                            bool use_long_id);
 
-	static void ProcessFastaDeflines(CBioseq & bioseq, string & out, bool use_ctrla);
+    static void ProcessFastaDeflines(CBioseq & bioseq,
+                                     string & out,
+                                     bool use_ctrla);
+
+	static void ProcessFastaDeflines(CBioseq & bioseq,
+	                                 string & out,
+	                                 bool use_ctrla,
+	                                 const CSeq_loc* location,
+	                                 ENa_strand strand);
 };
 
 class NCBI_BLASTDB_FORMAT_EXPORT CBlastSeqUtil
