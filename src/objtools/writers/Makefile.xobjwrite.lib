@@ -1,6 +1,6 @@
 # $Id$
 
-ASN_DEP = seqset
+ASN_DEP = seqset seq
 
 LIB = xobjwrite
 SRC = agp_write \
@@ -24,4 +24,4 @@ DLL_LIB = variation_utils $(XFORMAT_LIBS) $(OBJEDIT_LIBS)
 WATCHERS = ludwigf boukn gotvyans foleyjp
 
 USES_LIBRARIES =  \
-    $(OBJREAD_LIBS) $(OBJEDIT_LIBS) variation_utils xalnmgr xformat 
+    $(OBJREAD_LIBS) $(OBJEDIT_LIBS) variation_utils xalnmgr xformat
