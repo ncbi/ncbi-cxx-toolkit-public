@@ -43,7 +43,7 @@
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
-#include <objects/seqfeat/Rna_ref.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/seqfeat/Code_break.hpp>
