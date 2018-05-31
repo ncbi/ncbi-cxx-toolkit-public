@@ -93,9 +93,9 @@ BEGIN
 EXPORTS DbsnpTooltipServiceReply;
 
 -- Payload of the tooltip service.
-TooltipData ::= SEQUENCE OF TooltipSection
+DbsnpTooltipData ::= SEQUENCE OF DbsnpTooltipSection
 
-TooltipSectionValue ::= SEQUENCE {
+DbsnpTooltipSectionValue ::= SEQUENCE {
 
     -- Short description of the value.
     key VisibleString,
@@ -108,17 +108,17 @@ TooltipSectionValue ::= SEQUENCE {
     url VisibleString OPTIONAL
 }
 
-TooltipSection ::= SEQUENCE {
+DbsnpTooltipSection ::= SEQUENCE {
 
     -- Section name.
     section VisibleString OPTIONAL,
 
     -- A list of values pertaining to this section.
-    values SEQUENCE OF TooltipSectionValue
+    values SEQUENCE OF DbsnpTooltipSectionValue
 }
 
 -- In case of an error, the service will return this object.
-Error ::= SEQUENCE {
+DbsnpTooltipServiceError ::= SEQUENCE {
 
     -- Error description.
     message VisibleString,
@@ -131,10 +131,10 @@ Error ::= SEQUENCE {
 DbsnpTooltipServiceReply ::= CHOICE {
 
     -- On success, tooltip fields will be placed here.
-    tooltip-data TooltipData,
+    tooltip-data DbsnpTooltipData,
 
     -- On failure, error details will be placed here.
-    error Error
+    error DbsnpTooltipServiceError
 }
 
 END
