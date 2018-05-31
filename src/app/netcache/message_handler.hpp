@@ -319,6 +319,7 @@ private:
     Uint2                     m_LocalPort;
     /// 
     TStringMap                m_ClientParams;
+    TStringMap                m_CmdParams;
     ///
     const SNCSpecificParams*  m_AppSetup;
     ///

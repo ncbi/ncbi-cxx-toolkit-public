@@ -1961,6 +1961,7 @@ CNCMessageHandler::x_AssignCmdParams(void)
     m_ForceLocal = false;
     m_AgeMax = m_AgeCur = 0;
     m_SlotsDone.clear();
+    m_CmdParams.clear();
     bool quorum_was_set = false;
     bool search_was_set = false;
 
@@ -2265,14 +2266,14 @@ CNCMessageHandler::x_AssignCmdParams(void)
         if (headers.find("NCBI-SID") != headers.end()) {
             NStr::Split( headers.at("NCBI-SID"), ", \t", arr, NStr::fSplit_Tokenize);
             if (!arr.empty()) {
-                m_ClientParams["sid"] = arr.back();
+                m_CmdParams["sid"] = arr.back();
             }
         }
         arr.clear();
         if (headers.find("NCBI-PHID") != headers.end()) {
             NStr::Split( headers.at("NCBI-PHID"), ", \t", arr, NStr::fSplit_Tokenize);
             if (!arr.empty()) {
-                m_ClientParams["ncbi_phid"] = arr.back();
+                m_CmdParams["ncbi_phid"] = arr.back();
             }
         }
         arr.clear();
@@ -2281,9 +2282,9 @@ CNCMessageHandler::x_AssignCmdParams(void)
             NStr::Split( client_ip, ", \t", arr, NStr::fSplit_Tokenize);
         }
         if (!arr.empty()) {
-            m_ClientParams["ip"] = arr.front();
+            m_CmdParams["ip"] = arr.front();
         } else {
-            m_ClientParams["ip"] = m_ClientParams["peer"];
+            m_CmdParams["ip"] = m_ClientParams["peer"];
         }
     }
 
@@ -2318,6 +2319,9 @@ CNCMessageHandler::x_PrintRequestStart(CSrvDiagMsg& diag_msg)
     diag_msg.PrintParam("client", m_ClientParams["client"]);
     diag_msg.PrintParam("conn", m_ConnReqId);
     ITERATE(TNSProtoParams, it, m_ParsedCmd.params) {
+        diag_msg.PrintParam(it->first, it->second);
+    }
+    ITERATE(TStringMap, it, m_CmdParams) {
         diag_msg.PrintParam(it->first, it->second);
     }
     if (!m_BlobPass.empty()) {
