@@ -533,15 +533,15 @@ void CObjectIStreamAsn::SkipAnyContent(void)
     char to = GetChar(true);
     if (to == '{') {
         to = '}';
-    } else if (to == '\"') {
+    } else if (to == '\"' || to == '\'') {
     } else {
         to = '\0';
     }
     for (char c = m_Input.PeekChar(); ; c = m_Input.PeekChar()) {
-        if (to != '\"') {
+        if (to != '\"' && to != '\'') {
             if (to != '}' && (c == '\n' || c == ',' || c == '}')) {
                 return;
-            } else if (c == '\"' || c == '{') {
+            } else if (c == '\"' || c == '\'' || c == '{') {
                 SkipAnyContent();
                 continue;
             }
@@ -553,7 +553,7 @@ void CObjectIStreamAsn::SkipAnyContent(void)
             }
             return;
         }
-        if (c == '\"' || (c == '{' && to != '\"')) {
+        if (c == '\"' || c == '\'' || (c == '{' && to != '\"')) {
             SkipAnyContent();
             continue;
         }
