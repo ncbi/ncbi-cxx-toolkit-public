@@ -51463,10 +51463,10 @@ if test "$with_aws_sdk" != "no"; then
     AWS_SDK_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       AWS_SDK_LIBS="$AWS_SDK_LIBPATH -laws-cpp-sdk-s3 -laws-cpp-sdk-core"
+       AWS_SDK_LIBS="$AWS_SDK_LIBPATH -laws-cpp-sdk-s3 -laws-cpp-sdk-ec2 -laws-cpp-sdk-core"
     else
        AWS_SDK_INCLUDE=""
-       AWS_SDK_LIBS="-laws-cpp-sdk-s3 -laws-cpp-sdk-core"
+       AWS_SDK_LIBS="-laws-cpp-sdk-s3 -laws-cpp-sdk-ec2 -laws-cpp-sdk-core"
        in_path=
     fi
     { echo "$as_me:$LINENO: checking for libaws-cpp-sdk-s3$in_path" >&5
@@ -51483,10 +51483,12 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <aws/s3/S3Client.h>
+                      #include <aws/ec2/EC2Client.h>
 int
 main ()
 {
 Aws::S3::S3Client s3cli;
+         Aws::EC2::EC2Client ec2cli;
   ;
   return 0;
 }
@@ -51564,7 +51566,7 @@ _ACEOF
 
 if test "$with_aws_sdk" != no -a \
      -f "$AWS_SDK_PATH/lib$bit64_sfx/libaws-cpp-sdk-s3-static.a"; then
-    AWS_SDK_STATIC_LIBS="-L$AWS_SDK_PATH/lib -laws-cpp-sdk-s3-static -laws-cpp-sdk-core-static"
+    AWS_SDK_STATIC_LIBS="-L$AWS_SDK_PATH/lib -laws-cpp-sdk-s3-static -laws-cpp-sdk-ec2-static -laws-cpp-sdk-core-static"
 else
     AWS_SDK_STATIC_LIBS=$AWS_SDK_LIBS
 fi

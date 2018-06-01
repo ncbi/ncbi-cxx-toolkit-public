@@ -8013,12 +8013,14 @@ if test -d "$AWS_SDK_PATH"; then
    done
 fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(aws_sdk, AWS_SDK, aws-cpp-sdk-s3,
-   [AC_LANG_PROGRAM([[#include <aws/s3/S3Client.h>]],
-       [[Aws::S3::S3Client s3cli;]])],
-   [-laws-cpp-sdk-core], [$CURL_LIBS $OPENSSL_LIBS $Z_LIBS])
+   [AC_LANG_PROGRAM([[#include <aws/s3/S3Client.h>
+                      #include <aws/ec2/EC2Client.h>]],
+       [[Aws::S3::S3Client s3cli;
+         Aws::EC2::EC2Client ec2cli;]])],
+   [-laws-cpp-sdk-ec2 -laws-cpp-sdk-core], [$CURL_LIBS $OPENSSL_LIBS $Z_LIBS])
 if test "$with_aws_sdk" != no -a \
      -f "$AWS_SDK_PATH/lib$bit64_sfx/libaws-cpp-sdk-s3-static.a"; then
-    AWS_SDK_STATIC_LIBS="-L$AWS_SDK_PATH/lib -laws-cpp-sdk-s3-static -laws-cpp-sdk-core-static"
+    AWS_SDK_STATIC_LIBS="-L$AWS_SDK_PATH/lib -laws-cpp-sdk-s3-static -laws-cpp-sdk-ec2-static -laws-cpp-sdk-core-static"
 else
     AWS_SDK_STATIC_LIBS=$AWS_SDK_LIBS
 fi
