@@ -67,6 +67,7 @@ aligndb_client needs pub
 aligndb_reader needs $(SDBAPI_LIB)
 aligndb_reader needs taxon1
 aligndb_reader needs xobjutil
+aligndb_reader needs3party $(SDBAPI_LIBS)
 alndb_asnclient needs alndb_query
 alndb_query needs $(SEQ_LIBS)
 alndb_query needs pub
@@ -136,6 +137,7 @@ biocollect needs ncbi_xdbapi_ftds
 biosample needs $(SDBAPI_LIB)
 biosample needs xmlwrapp
 biosample needs xregexp
+biosample needs3party $(SDBAPI_LIBS)
 biotree needs general
 biotree_db needs biotree
 biotree_db needs gpipe_common
@@ -402,10 +404,12 @@ gnomon_asn_proc needs xobjutil
 gp_assm2xml needs $(SDBAPI_LIB)
 gp_assm2xml needs gencoll_client
 gp_assm2xml needs xmlwrapp
+gp_assm2xml needs3party $(SDBAPI_LIBS)
 gpcgi needs $(SDBAPI_LIB)
 gpcgi needs xcgi
 gpcgi needs xmlwrapp
 gpcgi needs xregexp
+gpcgi needs3party $(SDBAPI_LIBS)
 gpexec_query needs gpipe_common
 gpexec_query needs monitor_buildrun
 gpg-error needs3party $(ORIG_LIBS)
@@ -416,6 +420,7 @@ gpinit needs gpinit_obj
 gpinit needs gpipe_objutil
 gpinit_access needs $(SDBAPI_LIB)
 gpinit_access needs xconnect
+gpinit_access needs3party $(SDBAPI_LIBS)
 gpinit_bag_util needs bag_access
 gpinit_bag_util needs gpinit_access
 gpinit_obj needs general
@@ -460,6 +465,7 @@ gpipe_common needs $(SRAREAD_LIBS)
 gpipe_common needs eutils_client
 gpipe_common needs xcgi
 gpipe_common needs xregexp
+gpipe_common needs3party $(SDBAPI_LIBS)
 gpipe_curl needs xncbi
 gpipe_curl needs3party $(CURL_LIBS)
 gpipe_dateutil needs xregexp
@@ -519,6 +525,7 @@ gpipe_sqlite needs $(SQLITE3_WRAPPER)
 gpipe_sqlite needs pub
 gpipe_sqlite needs xconnect
 gpipe_sqlite needs xregexp
+gpipe_sqlite needs3party $(SDBAPI_LIBS)
 gpipe_sqlite needs3party $(SQLITE3_LIBS)
 gpipe_standalone needs gpipe_an_base
 gpipe_teamcity needs gpipe_common
@@ -644,6 +651,7 @@ ideochr needs3party vibrant
 ideocli needs ideo
 ideocoord needs $(SDBAPI_LIB)
 ideocoord needs ideo_gridcli
+ideocoord needs3party $(SDBAPI_LIBS)
 idgen needs dbassist
 idload needs3party ctutils
 idload_utils needs gpipe_objutil
@@ -957,6 +965,7 @@ osutils needs3party ctutils
 pathogen_cluster_loader needs $(SDBAPI_LIB)
 pathogen_cluster_loader needs xasmcompare
 pathogen_cluster_loader needs xconnect
+pathogen_cluster_loader needs3party $(SDBAPI_LIBS)
 pathogen_connection needs gpipe_common
 pathogen_connection needs gpipe_dateutil
 pathogen_connection needs taxon1
@@ -1065,6 +1074,7 @@ seqentry_comparator needs xobjwrite
 seqgapscan needs $(SDBAPI_LIB)
 seqgapscan needs xconnect
 seqgapscan needs xobjutil
+seqgapscan needs3party $(SDBAPI_LIBS)
 seqmasks_io needs $(OBJREAD_LIBS)
 seqmasks_io needs seqdb
 seqmasks_io needs xobjutil
@@ -1509,6 +1519,7 @@ xgpgcreport needs gc_asn_access
 xgpgcreport needs gencoll_release_report
 xgpp_console needs $(SDBAPI_LIB)
 xgpp_console needs xconnect
+xgpp_console needs3party $(SDBAPI_LIBS)
 xgpp_console_access needs xgpp_console_commands
 xgpp_console_commands needs gpipe_common
 xgpp_console_commands needs xgpp_console
