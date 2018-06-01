@@ -2862,7 +2862,7 @@ void CValidError_feat::ValidateImp(
     }
 
     if ( feat.CanGetQual() ) {
-        ValidateImpGbquals(imp, feat);
+        //ValidateImpGbquals(imp, feat);
     }
     
     // Make sure a feature has its mandatory qualifiers
@@ -2918,7 +2918,7 @@ void CValidError_feat::ValidateNonImpFeat (
 
     CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();
 
-    ValidateNonImpFeatGbquals (feat);
+    //ValidateNonImpFeatGbquals (feat);
 
     // look for mandatory qualifiers
     EDiagSev sev = eDiag_Warning;
@@ -5686,6 +5686,14 @@ void CSingleFeatValidator::Validate()
     }
 
     x_ValidateExcept();
+
+    x_ValidateGbquals();
+
+//    if (m_Feat.GetData().IsImp()) {
+//        x_ValidateImpFeatGbquals();
+//    } else {
+//        x_ValidateNonImpFeatGbquals();
+//    }
 }
 
 void CSingleFeatValidator::PostErr(EDiagSev sv, EErrType et, const string& msg)
@@ -6827,6 +6835,619 @@ void CSingleFeatValidator::x_ValidateExceptText(const string& text)
         if (!has_inference) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_ExceptionProblem,
                 "Annotated by transcript or proteomic data exception does not have the required inference qualifier");
+        }
+    }
+}
+
+
+void CSingleFeatValidator::x_ValidateGbquals()
+{
+    if (!m_Feat.IsSetQual()) {
+        return;
+    }
+    string key;
+    bool is_imp = false;
+    CSeqFeatData::ESubtype ftype = m_Feat.GetData().GetSubtype();
+
+    if (m_Feat.IsSetData() && m_Feat.GetData().IsImp()) {
+        is_imp = true;
+        key = m_Feat.GetData().GetImp().GetKey();
+        if (ftype == CSeqFeatData::eSubtype_imp && NStr::EqualNocase (key, "gene")) {
+            ftype = CSeqFeatData::eSubtype_gene;
+        } else if (ftype == CSeqFeatData::eSubtype_imp) { 
+            ftype = CSeqFeatData::eSubtype_bad;
+        } else if (ftype == CSeqFeatData::eSubtype_Imp_CDS 
+                   || ftype == CSeqFeatData::eSubtype_site_ref
+                   || ftype == CSeqFeatData::eSubtype_org) {
+            ftype = CSeqFeatData::eSubtype_bad;
+        }
+    }
+    else {
+        key = m_Feat.GetData().GetKey();
+        if (NStr::Equal (key, "Gene")) {
+            key = "gene";
+        }
+    }
+
+    for (auto gbq : m_Feat.GetQual()) {
+        const string& qual_str = gbq->GetQual();
+
+        if ( NStr::Equal (qual_str, "gsdb_id")) {
+            continue;
+        }
+        CSeqFeatData::EQualifier gbqual = CSeqFeatData::GetQualifierType(qual_str);
+
+        if ( gbqual == CSeqFeatData::eQual_bad ) {
+            if (is_imp) {
+                if (!gbq->IsSetQual() || NStr::IsBlank(gbq->GetQual())) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnknownImpFeatQual,
+                        "NULL qualifier");
+                }
+                else {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnknownImpFeatQual,
+                        "Unknown qualifier " + qual_str);
+                }
+            } else {
+                CSeqFeatData::E_Choice chs = m_Feat.GetData().Which();
+                if (chs == CSeqFeatData::e_Gene) {
+                    if (NStr::Equal(qual_str, "gen_map")
+                        || NStr::Equal(qual_str, "cyt_map")
+                        || NStr::Equal(qual_str, "rad_map")) {
+                        continue;
+                    }
+                } else if (chs == CSeqFeatData::e_Cdregion) {
+                    if (NStr::Equal(qual_str, "orig_transcript_id")) {
+                        continue;
+                    }
+                } else if (chs == CSeqFeatData::e_Rna) {
+                    if (NStr::Equal(qual_str, "orig_protein_id")
+                        || NStr::Equal(qual_str, "orig_transcript_id")) {
+                        continue;
+                    }
+                }
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnknownFeatureQual, "Unknown qualifier " + qual_str);
+            }
+        } else {
+            if ( ftype != CSeqFeatData::eSubtype_bad && !CSeqFeatData::IsLegalQualifier(ftype, gbqual) ) {
+                PostErr(eDiag_Warning, 
+                    is_imp ? eErr_SEQ_FEAT_WrongQualOnImpFeat : eErr_SEQ_FEAT_WrongQualOnFeature,
+                    "Wrong qualifier " + qual_str + " for feature " + 
+                    key);
+            }
+
+            if (gbq->IsSetVal() && !NStr::IsBlank(gbq->GetVal())) {
+                // validate value of gbqual
+                const string& val = gbq->GetVal();
+                switch (gbqual) {
+
+                    case CSeqFeatData::eQual_rpt_type:
+                        if (!CGb_qual::IsValidRptTypeValue(val)) {
+                            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                                val + " is not a legal value for qualifier " + qual_str);
+                        }          
+                        break;
+                
+                    case CSeqFeatData::eQual_rpt_unit:                
+                        x_ValidateRptUnitVal (val, key);
+                        break;
+
+                    case CSeqFeatData::eQual_rpt_unit_seq:
+                        x_ValidateRptUnitSeqVal (val, key);
+                        break;
+
+                    case CSeqFeatData::eQual_rpt_unit_range:
+                        x_ValidateRptUnitRangeVal (val);
+                        break;
+
+                    case CSeqFeatData::eQual_label:
+                        x_ValidateLabelVal (val);
+                        break;
+            
+                    case CSeqFeatData::eQual_replace:
+                        if (is_imp) {
+                            x_ValidateReplaceQual(key, qual_str, val);
+                        }
+                        break;
+
+                    case CSeqFeatData::eQual_mobile_element:
+                        if (is_imp && !CGb_qual::IsLegalMobileElementValue(val)) {
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_MobileElementInvalidQualifier,
+                                  val + " is not a legal value for qualifier " + qual_str);
+                        }
+                        break;
+
+                    case CSeqFeatData::eQual_compare:
+                        x_ValidateCompareVal (val);
+                        break;
+
+                    case CSeqFeatData::eQual_standard_name:
+                        if (is_imp && ftype == CSeqFeatData::eSubtype_misc_feature
+                            && NStr::EqualCase (val, "Vector Contamination")) {
+                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_VectorContamination, 
+                                     "Vector Contamination region should be trimmed from sequence");
+                        }                
+                        break;
+
+                    case CSeqFeatData::eQual_product:
+                        if (!is_imp) {
+                            CSeqFeatData::E_Choice chs = m_Feat.GetData().Which();
+                            if (chs == CSeqFeatData::e_Gene) {
+                                PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidProductOnGene,
+                                    "A product qualifier is not used on a gene feature");
+                            }
+                        }
+                        break;
+            
+                    default:
+                        break;
+                } // end of switch statement
+            }
+        }
+    }
+}
+
+
+void CSingleFeatValidator::x_ValidateImpFeatGbquals()
+{
+    if (!m_Feat.GetData().IsImp() || !m_Feat.IsSetQual()) {
+        return;
+    }
+    const CImp_feat& imp = m_Feat.GetData().GetImp();
+    CSeqFeatData::ESubtype ftype = m_Feat.GetData().GetSubtype();
+    const string& key = imp.GetKey();
+    if (ftype == CSeqFeatData::eSubtype_imp && NStr::EqualNocase (key, "gene")) {
+        ftype = CSeqFeatData::eSubtype_gene;
+    } else if (ftype == CSeqFeatData::eSubtype_imp) { 
+        ftype = CSeqFeatData::eSubtype_bad;
+    } else if (ftype == CSeqFeatData::eSubtype_Imp_CDS 
+               || ftype == CSeqFeatData::eSubtype_site_ref
+               || ftype == CSeqFeatData::eSubtype_org) {
+        ftype = CSeqFeatData::eSubtype_bad;
+    }
+
+    FOR_EACH_GBQUAL_ON_FEATURE (qual, m_Feat) {
+
+        const string& qual_str = (*qual)->GetQual();
+
+        if ( NStr::Equal (qual_str, "gsdb_id")) {
+            continue;
+        }
+        CSeqFeatData::EQualifier gbqual = CSeqFeatData::GetQualifierType(qual_str);
+        
+        if ( gbqual == CSeqFeatData::eQual_bad ) {
+            if (!(*qual)->IsSetQual() || NStr::IsBlank((*qual)->GetQual())) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnknownImpFeatQual,
+                    "NULL qualifier");
+            } else {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnknownImpFeatQual,
+                    "Unknown qualifier " + qual_str);
+            }
+        } else {
+            if ( ftype != CSeqFeatData::eSubtype_bad && !CSeqFeatData::IsLegalQualifier(ftype, gbqual) ) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnImpFeat,
+                    "Wrong qualifier " + qual_str + " for feature " + 
+                    key);
+            }
+            
+            string val = (*qual)->GetVal();
+            
+            bool error = false;
+            switch ( gbqual ) {
+            case CSeqFeatData::eQual_rpt_type:
+                {{
+                    error = !CGb_qual::IsValidRptTypeValue(val);
+                }}
+                break;
+                
+            case CSeqFeatData::eQual_rpt_unit:
+                {{
+                    x_ValidateRptUnitVal (val, key);
+                }}
+                break;
+
+            case CSeqFeatData::eQual_rpt_unit_seq:
+                {{
+                    x_ValidateRptUnitSeqVal (val, key);
+                }}
+                break;
+
+            case CSeqFeatData::eQual_rpt_unit_range:
+                {{
+                    x_ValidateRptUnitRangeVal (val);
+                }}
+                break;
+            case CSeqFeatData::eQual_label:
+                {{
+                    x_ValidateLabelVal (val);
+                }}
+                break;
+            case CSeqFeatData::eQual_replace:
+                {{
+                    if (m_LocationBioseq) {
+                        if (m_LocationBioseq.IsNa()) {
+                            if (NStr::Equal(key, "variation")) {
+                                if (!s_StringConsistsOf (val, "acgtACGT")) {
+                                    PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidVariationReplace,
+                                             val + " is not a legal value for qualifier " + qual_str
+                                             + " - should only be composed of acgt unambiguous nucleotide bases");
+                                }
+                            } else if (!s_StringConsistsOf (val, "acgtmrwsykvhdbn")) {
+                                  PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidReplace,
+                                           val + " is not a legal value for qualifier " + qual_str
+                                           + " - should only be composed of acgtmrwsykvhdbn nucleotide bases");
+                            }
+                        } else if (m_LocationBioseq.IsAa()) {
+                            if (!s_StringConsistsOf (val, "acdefghiklmnpqrstuvwy*")) {
+                                PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidReplace,
+                                         val + " is not a legal value for qualifier " + qual_str
+                                         + " - should only be composed of acdefghiklmnpqrstuvwy* amino acids");
+                            }
+                        }
+
+                        // if no point in location with fuzz, info if text matches sequence
+                        bool has_fuzz = false;
+                        for( objects::CSeq_loc_CI it(m_Feat.GetLocation()); it && !has_fuzz; ++it) {
+                            if (it.IsPoint() && (it.GetFuzzFrom() != NULL || it.GetFuzzTo() != NULL)) {
+                                has_fuzz = true;
+                            }
+                        }
+                        if (!has_fuzz && val.length() == GetLength (m_Feat.GetLocation(), &m_Scope)) {
+                            try {
+                                CSeqVector nuc_vec(m_Feat.GetLocation(), m_Scope, CBioseq_Handle::eCoding_Iupac);
+                                string bases = "";
+                                nuc_vec.GetSeqData(0, nuc_vec.size(), bases);
+                                if (NStr::EqualNocase(val, bases)) {
+                                    PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidMatchingReplace,
+                                             "/replace already matches underlying sequence (" + val + ")");
+                                }
+                            } catch (CException ) {
+                            } catch (std::exception ) {
+                            }
+                        }
+                    }
+                }}
+                break;
+
+            case CSeqFeatData::eQual_mobile_element:
+                {{
+                    if (!CGb_qual::IsLegalMobileElementValue(val)) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_MobileElementInvalidQualifier,
+                                  val + " is not a legal value for qualifier " + qual_str);
+                    }
+                }}
+                break;
+
+            case CSeqFeatData::eQual_compare:
+                {{
+                    x_ValidateCompareVal (val);
+                }}
+                break;
+
+            case CSeqFeatData::eQual_standard_name:
+                {{
+                    if (ftype == CSeqFeatData::eSubtype_misc_feature
+                        && NStr::EqualCase (val, "Vector Contamination")) {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_VectorContamination, 
+                                 "Vector Contamination region should be trimmed from sequence");
+                    }
+                }}
+                break;
+
+            default:
+                break;
+            } // end of switch statement
+            if ( error ) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                    val + " is not a legal value for qualifier " + qual_str);
+            }
+        }
+    }  // end of ITERATE 
+}
+
+
+void CSingleFeatValidator::x_ValidateNonImpFeatGbquals ()
+{
+    string key = m_Feat.GetData().GetKey();
+
+    if (NStr::Equal (key, "Gene")) {
+        key = "gene";
+    }
+
+    CSeqFeatData::ESubtype ftype = m_Feat.GetData().GetSubtype();
+
+    FOR_EACH_GBQUAL_ON_FEATURE (qual, m_Feat) {
+        if (!(*qual)->IsSetQual() || NStr::IsBlank ((*qual)->GetQual())) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnknownFeatureQual, "NULL qualifier");
+            continue;
+        }
+            
+        const string& qual_str = (*qual)->GetQual();
+
+        if (NStr::Equal (qual_str, "gsdb_id")) {
+            continue;
+        }
+
+        CSeqFeatData::EQualifier gbqual = CSeqFeatData::GetQualifierType(qual_str);
+
+        if ( gbqual == CSeqFeatData::eQual_bad ) {
+            CSeqFeatData::E_Choice chs = m_Feat.GetData().Which();
+            if (chs == CSeqFeatData::e_Gene) {
+                if (NStr::Equal (qual_str, "gen_map")
+                    || NStr::Equal (qual_str, "cyt_map")
+                    || NStr::Equal (qual_str, "rad_map")) {
+                    continue;
+                }
+            } else if (chs == CSeqFeatData::e_Cdregion) {
+                if (NStr::Equal (qual_str, "orig_transcript_id")) {
+                    continue;
+                }
+            } else if (chs == CSeqFeatData::e_Rna) {
+                if (NStr::Equal (qual_str, "orig_protein_id")
+                    || NStr::Equal (qual_str, "orig_transcript_id")) {
+                    continue;
+                }
+            }
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnknownFeatureQual, "Unknown qualifier " + qual_str);
+        } else if (ftype != CSeqFeatData::eSubtype_bad) { 
+            if (!m_Feat.GetData().IsLegalQualifier(gbqual)) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
+                    "Wrong qualifier " + qual_str + " for feature " + 
+                    key);
+            }
+
+            if ((*qual)->IsSetVal() && !NStr::IsBlank ((*qual)->GetVal())) {
+                const string& val = (*qual)->GetVal();
+                switch ( gbqual ) {
+                case CSeqFeatData::eQual_rpt_type:
+                    {{
+                        if (!CGb_qual::IsValidRptTypeValue(val)) {
+                            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue, 
+                                    val + " is not a legal value for qualifier " + qual_str);
+                        }
+                    }}
+                    break;
+                case CSeqFeatData::eQual_rpt_unit:
+                    {{
+                        x_ValidateRptUnitVal (val, key);
+                    }}
+                    break;
+
+                case CSeqFeatData::eQual_rpt_unit_seq:
+                    {{
+                        x_ValidateRptUnitSeqVal (val, key);
+                    }}
+                    break;
+
+                case CSeqFeatData::eQual_rpt_unit_range:
+                    {{
+                        x_ValidateRptUnitRangeVal (val);
+                    }}
+                    break;
+
+                case CSeqFeatData::eQual_label:
+                    {{
+                        x_ValidateLabelVal (val);
+                    }}
+                    break;
+                case CSeqFeatData::eQual_compare:
+                    {{
+                        x_ValidateCompareVal (val);
+                    }}
+                    break;
+
+                case CSeqFeatData::eQual_product:
+                    {{
+                        CSeqFeatData::E_Choice chs = m_Feat.GetData().Which();
+                        if (chs == CSeqFeatData::e_Gene) {
+                            PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidProductOnGene,
+                                    "A product qualifier is not used on a gene feature");
+                        }
+                    }}
+                    break;
+
+                  default:
+                      break;
+                }
+            }
+        }
+    }
+}
+
+
+void CSingleFeatValidator::x_ValidateRptUnitVal (const string& val, const string& key)
+{
+    bool /* found = false, */ multiple_rpt_unit = false;
+    ITERATE(string, it, val) {
+        if ( *it <= ' ' ) {
+            /* found = true; */
+        } else if ( *it == '('  ||  *it == ')'  ||
+            *it == ','  ||  *it == '.'  ||
+            isdigit((unsigned char)(*it)) ) {
+            multiple_rpt_unit = true;
+        }
+    }
+    /*
+    if ( found || 
+    (!multiple_rpt_unit && val.length() > 48) ) {
+    error = true;
+    }
+    */
+    if ( NStr::CompareNocase(key, "repeat_region") == 0  &&
+         !multiple_rpt_unit ) {
+        if (val.length() <= GetLength(m_Feat.GetLocation(), &m_Scope) ) {
+            bool just_nuc_letters = true;
+            static const string nuc_letters = "ACGTNacgtn";
+            
+            ITERATE(string, it, val) {
+                if ( nuc_letters.find(*it) == NPOS ) {
+                    just_nuc_letters = false;
+                    break;
+                }
+            }
+            
+            if ( just_nuc_letters ) {
+                CSeqVector vec = GetSequenceFromFeature(m_Feat, m_Scope);
+                if ( !vec.empty() ) {
+                    string vec_data;
+                    vec.GetSeqData(0, vec.size(), vec_data);
+                    if (NStr::FindNoCase (vec_data, val) == string::npos) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_RepeatSeqDoNotMatch,
+                            "repeat_region /rpt_unit and underlying "
+                            "sequence do not match");
+                    }
+                }
+            }
+        } else {
+            PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidRepeatUnitLength,
+                "Length of rpt_unit_seq is greater than feature length");
+        }                            
+    }
+}
+
+
+void CSingleFeatValidator::x_ValidateRptUnitSeqVal (const string& val, const string& key)
+{
+    // do validation common to rpt_unit
+    x_ValidateRptUnitVal (val, key);
+
+    // do the validation specific to rpt_unit_seq
+    const char *cp = val.c_str();
+    bool badchars = false;
+    while (*cp != 0 && !badchars) {
+        if (*cp < ' ') {
+            badchars = true;
+        } else if (*cp != '(' && *cp != ')' 
+                   && !isdigit (*cp) && !isalpha (*cp) 
+                   && *cp != ',' && *cp != ';') {
+            badchars = true;
+        }
+        cp++;
+    }
+    if (badchars) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidRptUnitSeqCharacters,
+            "/rpt_unit_seq has illegal characters");
+    }
+}
+
+
+void CSingleFeatValidator::x_ValidateRptUnitRangeVal (const string& val)
+{
+    TSeqPos from = kInvalidSeqPos, to = kInvalidSeqPos;
+    if (!s_RptUnitIsBaseRange(val, from, to)) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidRptUnitRange,
+                 "/rpt_unit_range is not a base range");
+    } else {
+        CSeq_loc::TRange range = m_Feat.GetLocation().GetTotalRange();
+        if (from - 1 < range.GetFrom() || from - 1> range.GetTo() || to - 1 < range.GetFrom() || to - 1 > range.GetTo()) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_RptUnitRangeProblem,
+                     "/rpt_unit_range is not within sequence length");   
+        } else {
+            bool nulls_between = false;
+            for ( CTypeConstIterator<CSeq_loc> lit = ConstBegin(m_Feat.GetLocation()); lit; ++lit ) {
+                if ( lit->Which() == CSeq_loc::e_Null ) {
+                    nulls_between = true;
+                }
+            }
+            if (nulls_between) {
+                bool in_range = false;
+                for ( CSeq_loc_CI it(m_Feat.GetLocation()); it; ++it ) {
+                    range = it.GetEmbeddingSeq_loc().GetTotalRange();
+                    if (from - 1 < range.GetFrom() || from - 1> range.GetTo() || to - 1 < range.GetFrom() || to - 1 > range.GetTo()) {
+                    } else {
+                        in_range = true;
+                    }
+                }
+                if (! in_range) {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_RptUnitRangeProblem,
+                             "/rpt_unit_range is not within ordered intervals");   
+                }
+            }
+        }
+    }
+}
+
+
+void CSingleFeatValidator::x_ValidateLabelVal (const string& val)
+{
+    bool only_digits = true,
+        has_spaces = false;
+    
+    ITERATE(string, it, val) {
+        if ( isspace((unsigned char)(*it)) ) {
+            has_spaces = true;
+        }
+        if ( !isdigit((unsigned char)(*it)) ) {
+            only_digits = false;
+        }
+    }
+    if (only_digits  ||  has_spaces) {
+        PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue, "Illegal value for qualifier label");
+    }
+}
+
+
+void CSingleFeatValidator::x_ValidateCompareVal (const string& val)
+{
+    if (!NStr::StartsWith (val, "(")) {
+        EAccessionFormatError valid_accession = ValidateAccessionString (val, true);  
+        if (valid_accession == eAccessionFormat_missing_version) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidCompareMissingVersion,
+                     val + " accession missing version for qualifier compare");
+        } else if (valid_accession == eAccessionFormat_bad_version) {
+            PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                     val + " accession has bad version for qualifier compare");
+        } else if (valid_accession != eAccessionFormat_valid) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidCompareBadAccession,
+                     val + " is not a legal accession for qualifier compare");
+        } else if (m_Imp.IsINSDInSep() && NStr::Find (val, "_") != string::npos) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidCompareRefSeqAccession,
+                     "RefSeq accession " + val + " cannot be used for qualifier compare");
+        }
+    }
+}
+
+void CSingleFeatValidator::x_ValidateReplaceQual(const string& key, const string& qual_str, const string& val)
+{
+    if (m_LocationBioseq) {
+        if (m_LocationBioseq.IsNa()) {
+            if (NStr::Equal(key, "variation")) {
+                if (!s_StringConsistsOf (val, "acgtACGT")) {
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidVariationReplace,
+                                val + " is not a legal value for qualifier " + qual_str
+                                + " - should only be composed of acgt unambiguous nucleotide bases");
+                }
+            } else if (!s_StringConsistsOf (val, "acgtmrwsykvhdbn")) {
+                    PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidReplace,
+                            val + " is not a legal value for qualifier " + qual_str
+                            + " - should only be composed of acgtmrwsykvhdbn nucleotide bases");
+            }
+        } else if (m_LocationBioseq.IsAa()) {
+            if (!s_StringConsistsOf (val, "acdefghiklmnpqrstuvwy*")) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidReplace,
+                            val + " is not a legal value for qualifier " + qual_str
+                            + " - should only be composed of acdefghiklmnpqrstuvwy* amino acids");
+            }
+        }
+
+        // if no point in location with fuzz, info if text matches sequence
+        bool has_fuzz = false;
+        for( objects::CSeq_loc_CI it(m_Feat.GetLocation()); it && !has_fuzz; ++it) {
+            if (it.IsPoint() && (it.GetFuzzFrom() != NULL || it.GetFuzzTo() != NULL)) {
+                has_fuzz = true;
+            }
+        }
+        if (!has_fuzz && val.length() == GetLength (m_Feat.GetLocation(), &m_Scope)) {
+            try {
+                CSeqVector nuc_vec(m_Feat.GetLocation(), m_Scope, CBioseq_Handle::eCoding_Iupac);
+                string bases = "";
+                nuc_vec.GetSeqData(0, nuc_vec.size(), bases);
+                if (NStr::EqualNocase(val, bases)) {
+                    PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidMatchingReplace,
+                                "/replace already matches underlying sequence (" + val + ")");
+                }
+            } catch (CException ) {
+            } catch (std::exception ) {
+            }
         }
     }
 }

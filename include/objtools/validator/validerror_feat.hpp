@@ -316,6 +316,16 @@ protected:
     void x_ValidateExcept();
     virtual void x_ValidateExceptText(const string& text);
 
+    void x_ValidateGbquals();
+    void x_ValidateNonImpFeatGbquals();
+    void x_ValidateImpFeatGbquals();
+    void x_ValidateRptUnitVal(const string& val, const string& key);
+    void x_ValidateRptUnitSeqVal(const string& val, const string& key);
+    void x_ValidateRptUnitRangeVal(const string& val);
+    void x_ValidateLabelVal(const string& val);
+    void x_ValidateCompareVal(const string& val);
+    void x_ValidateReplaceQual(const string& key, const string& qual_str, const string& val);
+
     CBioseq_Handle x_GetFeatureProduct(bool look_far, bool& is_far);
     CBioseq_Handle x_GetFeatureProduct(bool& is_far);
 
