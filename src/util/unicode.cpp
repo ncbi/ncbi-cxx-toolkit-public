@@ -358,7 +358,7 @@ UnicodeToAscii(TUnicode character, const TUnicodeTable* table,
 TUnicode UTF8ToUnicode( const char* theUTF )
 {
     const char *p = theUTF;
-    int counter = *p++;
+    char counter = *p++;
 
     if ( ((*theUTF) & 0xC0) != 0xC0 ) {
         TUnicode RC = 0;
@@ -383,7 +383,7 @@ TUnicode UTF8ToUnicode( const char* theUTF )
 size_t UTF8ToUnicode( const char* theUTF, TUnicode* theUnicode )
 {
     const char *p = theUTF;
-    int counter = *p++;
+    char counter = *p++;
 
     if ( (unsigned char)theUTF[0] < 0x80 ) {
         // This is one character UTF8. I.e. regular character.
