@@ -324,3 +324,7 @@ January 23, 2018
 version 4.3.0, CXX-9867
 Added support for VS2017
 
+May 31, 2018
+version 4.4.0, CXX-10052
+Added generation of build information macros.
+
