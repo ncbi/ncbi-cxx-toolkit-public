@@ -84,10 +84,18 @@ BOOST_AUTO_TEST_CASE(TestSearchHistoryIterate)
     int query_key = (items.size() > 0) ? NStr::StringToNumeric<int>(items.begin()->get_content()) : 0;
 
     if ( !web_env.empty() && query_key > 0 ) {
-        int count = NStr::StringToNumeric<int>(root.run_xpath_query("./Count/text()").begin()->get_content());
+        items = root.run_xpath_query("./Count/text()");
+        BOOST_CHECK ( 1 == items.size() );
+        int count = NStr::StringToNumeric<int>(items.size() ? items.begin()->get_content() : "0");
 
-        int retmax = NStr::StringToNumeric<int>(root.run_xpath_query("./RetMax/text()").begin()->get_content());
-        int retstart = NStr::StringToNumeric<int>(root.run_xpath_query("./RetStart/text()").begin()->get_content());
+        items = root.run_xpath_query("./RetMax/text()");
+        BOOST_CHECK ( 1 == items.size() );
+        int retmax = NStr::StringToNumeric<int>(items.size() ? items.begin()->get_content() : "0");
+
+        items = root.run_xpath_query("./RetStart/text()");
+        BOOST_CHECK ( 1 == items.size() );
+ 
+        int retstart = NStr::StringToNumeric<int>(items.size() ? items.begin()->get_content() : "0");
         BOOST_CHECK ( retstart + retmax <= count );
 
         // Get next chunk from the history server.
