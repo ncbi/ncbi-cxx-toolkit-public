@@ -286,9 +286,13 @@ static bool DescrProcUser(const CSeqdesc& descr, bool first)
             ret = true;
         }
         else if (first && type != "NcbiCleanup") {
+
+            bool is_error = true;
             if (type == "Submission" && GetParams().GetSource() == eNCBI && GetParams().IsTsa()) {
-                ERR_POST_EX(0, 0, "Unexpected User-object descriptor of type \"" << type << "\" found on top of GenBank set. Descriptor dropped.");
+                is_error = false;
             }
+
+            ERR_POST_EX(0, 0, (is_error ? Error : Info) << "Unexpected User-object descriptor of type \"" << type << "\" found on top of GenBank set. Descriptor dropped.");
         }
     }
     else {

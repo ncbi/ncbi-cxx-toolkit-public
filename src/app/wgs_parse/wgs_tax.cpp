@@ -271,7 +271,7 @@ bool PerformTaxLookup(CBioSource& biosource, const list<COrgRefInfo>& org_refs, 
         }
     }
 
-    // TODO
+    // TODO figure out how it is possible to reach this point
     if (is_tax_lookup) {
     }
     return false;
