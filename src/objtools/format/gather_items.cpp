@@ -2915,6 +2915,10 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
                 }
             }
 
+            if (has_gap && gap_start == feat_start && feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gap) {
+                return; // continue;
+            }
+
             item.Reset( x_NewFeatureItem(mf, ctx, feat_loc, m_Feat_Tree) );
             out << item;
 
