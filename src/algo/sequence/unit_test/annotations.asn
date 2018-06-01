@@ -7467,7 +7467,7 @@ Seq-annot ::= {
       },
       comment "mir-2279-RA; Dmel\mir-2279-RA; CR42911-RA; Dmel\CR42911-RA",
       location int {
-        from 1322895,
+        from 1322893,
         to 1322914,
         strand minus,
         id other {
@@ -7514,7 +7514,7 @@ Seq-annot ::= {
       },
       comment "mir-2279-RB; Dmel\mir-2279-RB; CR42911-RB; Dmel\CR42911-RB",
       location int {
-        from 1322859,
+        from 1322857,
         to 1322878,
         strand minus,
         id other {
