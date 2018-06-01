@@ -551,6 +551,10 @@ void CObjectIStreamAsn::SkipAnyContent(void)
             if (c == '\n') {
                 SkipEndOfLine(c);
             }
+            if (to == '\'') {
+                to = '\0';
+                continue;
+            }
             return;
         }
         if (c == '\"' || c == '\'' || (c == '{' && to != '\"')) {
