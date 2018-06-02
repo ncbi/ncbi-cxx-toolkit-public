@@ -478,6 +478,9 @@ protected:
     map<const CSeq_feat*, string> m_ProdForFeatureMap;
     bool x_IsPseudo(const CSeq_feat& feat);
 
+    CRef<CDiscrepancyGroup> m_Order;
+    const CDiscrepancyGroup& x_OutputOrder();
+
     map<const CSerialObject*, CConstRef<CReportObjectData>> m_DataMap;
 
     // GENE_PRODUCT_CONFLICT

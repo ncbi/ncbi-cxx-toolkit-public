@@ -186,6 +186,7 @@ public:
     CDiscrepancyGroup(const string& name = "", const string& test = "") : m_Name(name), m_Test(test) {}
     void Add(CRef<CDiscrepancyGroup> child) { m_List.push_back(child); }
     TReportItemList Collect(TDiscrepancyCaseMap& tests, bool all = true) const;
+    const CDiscrepancyGroup& operator[](size_t n) const { return *m_List[n]; }
 
 protected:
     string m_Name;
