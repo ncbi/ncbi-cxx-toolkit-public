@@ -211,7 +211,7 @@ if (NCBI_EXPERIMENTAL_CFG)
 else (NCBI_EXPERIMENTAL_CFG)
 
 # This file holds information about the build version
-message(STATUS "Generating ${build_root}/inc/ncbi_build_ver.h...")
+message(STATUS "Generating ${includedir}/common/ncbi_build_ver.h")
 configure_file(${includedir}/common/ncbi_build_ver.h.in ${includedir}/common/ncbi_build_ver.h)
 
 # OS-specific generated header configs
