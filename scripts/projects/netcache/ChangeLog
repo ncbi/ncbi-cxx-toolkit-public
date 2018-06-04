@@ -249,5 +249,10 @@ Corrected errors in handling missing database files.
 Fixed error in thread synchronization.
 Added prioritization of certain tasks to reduce CPU consumption and improve responce time.
 
+June 01, 2018
+version 6.14.4 (CXX-10058)
+Added missing optional arguments into some commands
+Added extraction from HTTP header and logging of ip,sid, phid parameters.
+Fixed problem in handling consequent POST commands.
 
 
