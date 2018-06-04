@@ -232,7 +232,7 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, const vector
                     out << " feature_type=\"" << NStr::XmlEncode(obj->GetFeatureType()) << "\"";
                 }
                 if (!obj->GetProductName().empty()) {
-                    out << " product=\"" << NStr::XmlEncode(obj->GetProductName()) << "\"";
+                    out << (obj->GetFeatureType() == "Gene" ? " symbol=\"" : " product=\"") << NStr::XmlEncode(obj->GetProductName()) << "\"";
                 }
                 if (!obj->GetLocation().empty()) {
                     out << " location=\"" << NStr::XmlEncode(obj->GetLocation()) << "\"";
