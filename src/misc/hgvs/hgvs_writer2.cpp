@@ -156,6 +156,46 @@ CConstRef<CSeq_literal> CHgvsParser::x_FindAssertedSequence(const CVariation& v)
     return asserted_seq;
 }
 
+namespace{
+    bool s_IsInv(const CVariation& var)
+    {
+        return var.GetData().IsInstance() &&
+            var.GetData().GetInstance().GetType() == CVariation_inst::eType_inv;
+    }
+
+    // Determines if the variation's an inverted duplication
+    bool s_IsInvDup(const CVariation& var)
+    {
+        if (!var.GetData().IsSet()) {
+            return false;
+        }
+
+        const CVariation::TData::TSet& vset = var.GetData().GetSet();
+
+        if (vset.GetType() != CVariation::TData::TSet::eData_set_type_compound ||
+            vset.GetVariations().size() != 2u) { // i.e., ins and inv
+            return false;
+        }
+
+        // Check that the first one is of type insertion
+        const auto& first_var_data = vset.GetVariations().front()->GetData();
+        if (!first_var_data.IsInstance() ||
+            first_var_data.GetInstance().GetType() != CVariation_inst::eType_ins) {
+            return false;
+        }
+
+        // Check that the second one is of type inversion
+        return s_IsInv(*vset.GetVariations().back());
+    }
+
+    // Determines if the parent of the passed variation is an inverted duplication
+    bool s_ParentIsInvDup(const CVariation& var)
+    {
+        return var.GetParent() &&
+            s_IsInv(var) &&
+            s_IsInvDup(*var.GetParent());
+    }
+}
 
 string CHgvsParser::AsHgvsExpression(const CVariation& variation,  CConstRef<CSeq_id> seq_id)
 {
@@ -252,24 +292,24 @@ string CHgvsParser::x_AsHgvsExpression(
               : "(;)";
 
         string delim = "";
-        ITERATE(CVariation::TData::TSet::TVariations, it, variation.GetData().GetSet().GetVariations()) {
+        ITERATE(CVariation::TData::TSet::TVariations, it, vset.GetVariations()) {
             const CVariation& v2 = **it;
 
             //asserted or reference instances don't participate in HGVS expressions as individual subvariation expressions
             //Exception: it is the only member of the set: (JIRA: VAR-626)
             if(v2.GetData().IsInstance()
-               && variation.GetData().GetSet().GetVariations().size() > 1
+               && vset.GetVariations().size() > 1
                && v2.GetData().GetInstance().IsSetObservation()
                && !(v2.GetData().GetInstance().GetObservation() & CVariation_inst::eObservation_variant))
             {
                 continue;
             }
 
-            string subvariation_expr = x_AsHgvsExpression(**it, seq_id, asserted_seq);
+            string subvariation_expr = x_AsHgvsExpression(v2, seq_id, asserted_seq);
 
             hgvs_data_str += delim + subvariation_expr;
             delim = delim_type;
-            subvariation_count++;
+            ++subvariation_count;
         }
     } else if(variation.GetData().IsInstance()) {
         if(placement) {
@@ -873,7 +913,7 @@ string CHgvsParser::x_AsHgvsInstExpression(
     if(   inst.GetType() == CVariation_inst::eType_identity
        || inst.GetType() == CVariation_inst::eType_prot_silent)
     {
-        //Prepend the asserted sequence, but only if its lengh is under threshold.
+        //Prepend the asserted sequence, but only if its length is under threshold.
         //If it is too long, it can't be used, as it will be represented by a number, and
         //the preceding context also ends with a number (location): e.g
         //  NC_000001:g.100000A=        - correct
@@ -884,6 +924,8 @@ string CHgvsParser::x_AsHgvsInstExpression(
                     && asserted_seq->IsSetSeq_data()
                     && !is_prot ? asserted_seq_str : "")
                   + "=";
+    } else if(!asserted_seq_str.empty() && s_ParentIsInvDup(variation)) {
+        inst_str = "inv";
     } else if(inst.GetType() == CVariation_inst::eType_inv) {
         inst_str = "inv" + asserted_seq_str;
     } else if(inst.GetType() == CVariation_inst::eType_snv) {
