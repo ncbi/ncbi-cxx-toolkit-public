@@ -120,8 +120,6 @@ add_subdirectory(variation)
 add_subdirectory(variation_libs)
 add_subdirectory(varrep)
 
-endif()
-
 #
 # ASN dependencies:
 # All centralized below
@@ -165,3 +163,4 @@ add_dependencies(valerr seqset)
 add_dependencies(searchbyrsid general-lib trackmgr)
 add_dependencies(xnetblast seqset scoremat seq)
 
+endif()
