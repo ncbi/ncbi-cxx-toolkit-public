@@ -528,45 +528,45 @@ void CObjectIStreamAsn::ReadAnyContentObject(CAnyContentObject& obj)
     obj.SetValue(CUtf8::AsUTF8(value,eEncoding_UTF8));
 }
 
-void CObjectIStreamAsn::SkipAnyContent(void)
-{
-    char to = GetChar(true);
-    if (to == '{') {
-        to = '}';
-    } else if (to == '\"' || to == '\'') {
-    } else {
-        to = '\0';
-    }
-    for (char c = m_Input.PeekChar(); ; c = m_Input.PeekChar()) {
-        if (to != '\"' && to != '\'') {
-            if (to != '}' && (c == '\n' || c == ',' || c == '}')) {
-                return;
-            } else if (c == '\"' || c == '\'' || c == '{') {
-                SkipAnyContent();
-                continue;
-            }
+void CObjectIStreamAsn::SkipAnyContent(void) 
+{ 
+    bool ap = false;
+    char to = GetChar(true); 
+    if (to == '{') { 
+        to = '}'; 
+    } else if (to == '\"') { 
+    } else if (to == '\'') { 
+        ap = true;
+        to = '\0'; 
+    } else { 
+        to = '\0'; 
+    } 
+    for (char c = m_Input.PeekChar(); ; c = m_Input.PeekChar()) { 
+        if (!ap && to != '\"') { 
+            if (to != '}' && (c == '\n' || c == ',' || c == '}')) { 
+                return; 
+            } else if (c == '\"' || c == '{') { 
+                SkipAnyContent(); 
+                continue; 
+            } 
+        } 
+        if (c == to) { 
+            m_Input.SkipChar(); 
+            return; 
+        } 
+        if (c == '\"' || (c == '{' && to != '\"')) { 
+            SkipAnyContent(); 
+            continue; 
+        } 
+        if (c == '\'' && to != '\"') {
+            ap = !ap;
         }
-        if (c == to) {
-            m_Input.SkipChar();
-            if (c == '\n') {
-                SkipEndOfLine(c);
-            }
-            if (to == '\'') {
-                to = '\0';
-                continue;
-            }
-            return;
-        }
-        if (c == '\"' || c == '\'' || (c == '{' && to != '\"')) {
-            SkipAnyContent();
-            continue;
-        }
-        m_Input.SkipChar();
-        if (c == '\n') {
-            SkipEndOfLine(c);
-        }
-    }
-}
+        m_Input.SkipChar(); 
+        if (c == '\n') { 
+            SkipEndOfLine(c); 
+        } 
+    } 
+} 
 
 void CObjectIStreamAsn::SkipAnyContentObject(void)
 {
