@@ -117,7 +117,7 @@ void CCassBlobLoader::Cancel(void)
 bool CCassBlobLoader::Restart(unsigned int max_retries)
 {
     m_StatLoaded = false;
-    m_BlobStat.Reset();
+    m_BlobStat = SBlobStat();
     m_ExpectedSize = 0;
     m_RemainingSize = 0;
     m_LargeParts = 0;

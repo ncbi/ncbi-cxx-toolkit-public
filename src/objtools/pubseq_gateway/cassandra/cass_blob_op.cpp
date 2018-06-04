@@ -63,7 +63,7 @@ USING_NCBI_SCOPE;
 
 #define ASYNC_QUEUE_TIMESLICE_MKS 300
 
-#define KEYLOAD_SPLIT_COUNT 1000
+#define KEYLOAD_SPLIT_COUNT 500
 #define KEYLOAD_CONCURRENCY 512
 #define KEYLOAD_CONSISTENCY CassConsistency::CASS_CONSISTENCY_LOCAL_QUORUM
 #define KEYLOAD_PAGESIZE 4096
@@ -254,9 +254,8 @@ struct SLoadKeysContext
     atomic_ulong                                m_fetched;
     vector<pair<int64_t, int64_t>> const &      m_ranges;
     string                                      m_sql;
-    CBlobFullStatMap *                          m_keys;
+    TBlobFullStatVec *                          m_keys;
     CFutex                                      m_wakeup;
-    function<void()>                            m_tick;
 
     SLoadKeysContext() = delete;
     SLoadKeysContext(SLoadKeysContext&&) = delete;
@@ -267,15 +266,14 @@ struct SLoadKeysContext
                      unsigned long  fetched,
                      vector< pair<int64_t, int64_t> > const &  ranges,
                      string const &  sql,
-                     CBlobFullStatMap *  keys,
+                     TBlobFullStatVec *  keys,
                      function<void()>  tick) :
         m_max_running(max_running),
         m_running_count(running_count),
         m_fetched(fetched),
         m_ranges(ranges),
         m_sql(sql),
-        m_keys(keys),
-        m_tick(tick)
+        m_keys(keys)
     {}
 
     int64_t getStep(size_t  range_id) const
@@ -295,22 +293,25 @@ struct SLoadKeysContext
 
 struct SLoadKeysOnDataContext
 {
-    SLoadKeysContext &                      common;
-    int64_t                                 lower_bound;
-    int64_t                                 upper_bound;
-    size_t                                  range_offset;
-    unsigned int                            run_id;
-    unsigned int                            restart_count;
-    atomic_bool                             data_triggered;
-    vector<pair<int32_t, SBlobFullStat>>    keys;
+    SLoadKeysContext & common;
+    int64_t lower_bound;
+    int64_t upper_bound;
+    size_t range_offset;
+    unsigned int run_id;
+    unsigned int restart_count;
+    atomic_bool data_triggered;
 
     SLoadKeysOnDataContext() = delete;
     SLoadKeysOnDataContext(SLoadKeysOnDataContext&&) = delete;
     SLoadKeysOnDataContext(const SLoadKeysOnDataContext&) = delete;
 
-    SLoadKeysOnDataContext(SLoadKeysContext &  v_common,
-                           int64_t  v_lower_bound, int64_t  v_upper_bound,
-                           size_t  v_range_offset, unsigned int  v_run_id) :
+    SLoadKeysOnDataContext(
+        SLoadKeysContext & v_common,
+        int64_t v_lower_bound,
+        int64_t v_upper_bound,
+        size_t v_range_offset,
+        unsigned int  v_run_id
+    ) :
         common(v_common),
         lower_bound(v_lower_bound),
         upper_bound(v_upper_bound),
@@ -325,72 +326,73 @@ struct SLoadKeysOnDataContext
 
 static void InternalLoadKeys_ondata(CCassQuery &  query, void *  data)
 {
-    SLoadKeysOnDataContext *    context = static_cast<SLoadKeysOnDataContext*>(data);
+    SLoadKeysOnDataContext * context = static_cast<SLoadKeysOnDataContext*>(data);
 
     ERR_POST(Trace << "Query[" << context->run_id << "] wake: " << &query);
     context->data_triggered = true;
     context->common.m_wakeup.Inc();
 }
 
-
-void CCassBlobOp::x_LoadKeysScheduleNext(CCassQuery &  query, void *  data)
+void CCassBlobOp::x_LoadKeysScheduleNext(CCassQuery & query, void * data)
 {
-    SLoadKeysOnDataContext *    context = static_cast<SLoadKeysOnDataContext*>(data);
-    bool                        restart_request = false;
-    int32_t                     ent_current = 0;
-    bool                        is_eof = false;
+    SLoadKeysOnDataContext * context = static_cast<SLoadKeysOnDataContext*>(data);
+    bool restart_request = false;
+    int32_t ent_current = 0;
+    bool is_eof = false;
 
     try {
-        unsigned int    counter = 0;
-        while (true) {
-            async_rslt_t    wr;
-
-            if ((wr = query.NextRow()) == ar_dataready) {
-                pair<int32_t, SBlobFullStat> row;
-                row.first = query.FieldGetInt32Value(0);
-                ent_current = row.first;
-                row.second.modified = query.FieldIsNull(1) ?
-                                        0 : query.FieldGetInt64Value(1);
-                row.second.size = query.FieldIsNull(2) ?
-                                        0 : query.FieldGetInt64Value(2);
-                row.second.flags = query.FieldIsNull(3) ?
-                                        (bfCheckFailed | bfComplete) :
-                                        query.FieldGetInt64Value(3);
-                row.second.seen = false;
-                ERR_POST(Trace << "CASS got key=" <<
-                         query.GetConnection()->Keyspace() << ":" <<
-                         row.first <<" mod=" << row.second.modified <<
-                         " sz=" << row.second.size <<
-                         " flags=" << row.second.flags);
-                context->keys.push_back(std::move(row));
-
-                ++(context->common.m_fetched);
-                ++counter;
-                //ERR_POST(Message << "Fetched blob with key: " << key);
-            } else if (wr == ar_wait) {
-                ERR_POST(Trace << "Query[" << context->run_id << "] ar_wait:" << &query);
-                break; // expecting next data event triggered on
-                       // this same query rowset
-            } else if (wr == ar_done) {
-                is_eof = true;
-                break; // EOF
-            } else {
-                NCBI_THROW(CCassandraException, eGeneric, "CASS unexpected condition");
+        using TRowType = SBlobFullStat;
+        unsigned int counter = 0;
+        async_rslt_t wr = ar_dataready;
+        vector<TRowType> record_buffer;
+        record_buffer.reserve(2 * KEYLOAD_PAGESIZE);
+        while (wr == ar_dataready) {
+            wr = query.NextRow();
+            switch(wr) {
+                case ar_dataready: {
+                    auto & key_map = *(context->common.m_keys);
+                    key_map.resize(key_map.size() + 1);
+                    auto& row = key_map[key_map.size() - 1];
+                    row.sat_key = ent_current = query.FieldGetInt32Value(0);
+                    row.modified = query.FieldGetInt64Value(1, 0);
+                    row.size = query.FieldGetInt64Value(2, 0);
+                    row.flags = query.FieldGetInt64Value(3, 0);
+                    ERR_POST(Trace << "CASS got key=" << query.GetConnection()->Keyspace() <<
+                        ":" << ent_current << " mod=" << row.modified <<
+                        " sz=" << row.size << " flags=" << row.flags
+                    );
+                    ++(context->common.m_fetched);
+                    ++counter;
+                    //ERR_POST(Message << "Fetched blob with key: " << key);
+                    break;
+                }
+                case ar_wait:
+                    ERR_POST(Trace << "Query[" << context->run_id << "] ar_wait:" << &query);
+                    // expecting next data event triggered on this same query rowset
+                    break;
+                case ar_done:
+                    is_eof = true;
+                    break;
+                default:
+                    NCBI_THROW(CCassandraException, eGeneric, "CASS unexpected condition");
             }
         }
         context->restart_count = 0;
 
         ERR_POST(Trace << "Fetched records by one query: " << counter);
-        if (!is_eof)
+        if (!is_eof) {
             return;
+        }
     } catch (const CCassandraException& e) {
-        if ((e.GetErrCode() == CCassandraException::eQueryTimeout ||
-             e.GetErrCode() == CCassandraException::eQueryFailedRestartable) &&
-                context->restart_count < 5) {
+        if ((
+                e.GetErrCode() == CCassandraException::eQueryTimeout
+                || e.GetErrCode() == CCassandraException::eQueryFailedRestartable
+            )
+            && context->restart_count < 5
+        ) {
             restart_request = true;
         } else {
-            ERR_POST(Info << "LoadKeys ... exception for entity: " <<
-                     ent_current << ", " << e.what());
+            ERR_POST(Info << "LoadKeys ... exception for entity: " << ent_current << ", " << e.what());
             throw;
         }
     } catch(...) {
@@ -401,22 +403,26 @@ void CCassBlobOp::x_LoadKeysScheduleNext(CCassQuery &  query, void *  data)
     query.Close();
 
     if (restart_request) {
-        ERR_POST(Info << "QUERY TIMEOUT! Offset " << context->lower_bound <<
-                 " - " << context->upper_bound << ". Error count " <<
-                 context->restart_count);
+        ERR_POST(
+            Info << "QUERY TIMEOUT! Offset " << context->lower_bound
+            << " - " << context->upper_bound << ". Error count "
+            << context->restart_count
+        );
         query.SetSQL(context->common.m_sql, 2);
         query.BindInt64(0, context->lower_bound);
         query.BindInt64(1, context->upper_bound);
         query.Query(KEYLOAD_CONSISTENCY, true, true, KEYLOAD_PAGESIZE);
         ++(context->restart_count);
     } else {
-        int64_t     upper_bound = context->common.m_ranges[context->range_offset].second;
-        int64_t     step = context->common.getStep(context->range_offset);
+        int64_t upper_bound = context->common.m_ranges[context->range_offset].second;
+        int64_t step = context->common.getStep(context->range_offset);
 
         query.SetSQL(context->common.m_sql, 2);
         if (context->upper_bound < upper_bound) {
-            int64_t     new_upper_bound = (upper_bound - context->upper_bound > step) ?
-                                     context->upper_bound + step : upper_bound;
+            int64_t new_upper_bound =
+                (upper_bound - context->upper_bound > step)
+                ? context->upper_bound + step
+                : upper_bound;
 
             context->lower_bound = context->upper_bound;
             context->upper_bound = new_upper_bound;
@@ -427,7 +433,7 @@ void CCassBlobOp::x_LoadKeysScheduleNext(CCassQuery &  query, void *  data)
             //          " " << context->lower_bound << " - " <<
             //          context->upper_bound);
         } else {
-            bool    need_run = false;
+            bool need_run = false;
             {
                 if( (context->common.m_max_running + 1) < context->common.m_ranges.size()) {
                     context->range_offset = ++(context->common.m_max_running);
@@ -457,15 +463,20 @@ void CCassBlobOp::x_LoadKeysScheduleNext(CCassQuery &  query, void *  data)
 }
 
 
-void CCassBlobOp::LoadKeys(CBlobFullStatMap *  keys,
+void CCassBlobOp::LoadKeys(TBlobFullStatVec * keys,
                            function<void()>  tick)
 {
-    unsigned int                        run_id;
-    vector< pair<int64_t, int64_t> >    ranges;
+    unsigned int run_id;
+    vector< pair<int64_t, int64_t> > ranges;
     m_Conn->getTokenRanges(ranges);
 
-    unsigned int concurrent = min<unsigned int>(KEYLOAD_CONCURRENCY,
-                                                   static_cast<unsigned int>(ranges.size()));
+    unsigned int concurrent = min<unsigned int>(
+        KEYLOAD_CONCURRENCY,
+        static_cast<unsigned int>(ranges.size())
+    );
+    if (!tick) {
+        tick = [](){};
+    }
 
     string common;
     string fsql;
@@ -482,8 +493,7 @@ void CCassBlobOp::LoadKeys(CBlobFullStatMap *  keys,
         sql = common + " TOKEN(ent) > ? and TOKEN(ent) <= ?";
     }
 
-    SLoadKeysContext loadkeys_context(0, concurrent, 0, ranges,
-                                                     sql, keys, tick);
+    SLoadKeysContext loadkeys_context(0, concurrent, 0, ranges, sql, keys, tick);
     int val = loadkeys_context.m_wakeup.Value();
     vector<shared_ptr<CCassQuery>> queries;
     list<SLoadKeysOnDataContext> contexts;
@@ -529,6 +539,7 @@ void CCassBlobOp::LoadKeys(CBlobFullStatMap *  keys,
                     x_LoadKeysScheduleNext(*(queries[run_id].get()), &it);
                 }
             }
+            tick();
         }
         if (SSignalHandler::s_CtrlCPressed())
             NCBI_THROW(CCassandraException, eFatal, "SIGINT delivered");
@@ -543,27 +554,6 @@ void CCassBlobOp::LoadKeys(CBlobFullStatMap *  keys,
             it->Close();
         }
         NCBI_THROW(CCassandraException, eGeneric, error);
-    }
-
-    ERR_POST(Trace << "LoadKeys: reloading keys from vectors to map");
-    for (auto &  it: contexts) {
-        CBlobFullStatMap * all_keys = it.common.m_keys;
-        if (!it.keys.empty()) {
-            for (auto const & row: it.keys) {
-                auto it = all_keys->find(row.first);
-                if (it != all_keys->end()) {
-                    // Extended schema can have multiple versions
-                    //  of blob_prop record with different 'modified' field
-                    if (it->second.modified < row.second.modified) {
-                        it->second = row.second;
-                    }
-                } else {
-                    all_keys->insert(row);
-                }
-            }
-            it.keys.clear();
-            it.keys.resize(0);
-        }
     }
 
     ERR_POST(Info << "LoadKeys: finished");

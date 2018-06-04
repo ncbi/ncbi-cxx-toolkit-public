@@ -394,8 +394,7 @@ public:
         return m_Keyspace;
     }
 
-    void LoadKeys(CBlobFullStatMap *  keys,
-                  function<void()> tick = nullptr);
+    void LoadKeys(TBlobFullStatVec * keys, function<void()> tick = nullptr);
 
     void GetBlob(unsigned int  op_timeout_ms,
                  int32_t  key, unsigned int  max_retries,

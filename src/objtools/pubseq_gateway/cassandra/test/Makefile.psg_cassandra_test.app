@@ -2,6 +2,7 @@ APP = psg_cassandra_test
 SRC = psg_cassandra_test blob_record_test
 
 WATCHERS=saprykin
+REQUIRES = CASSANDRA MT Linux GCC
 
 #COVERAGE_FLAGS=-fprofile-arcs -ftest-coverage
 CPPFLAGS=$(ORIG_CPPFLAGS) $(GMOCK_INCLUDE) $(COVERAGE_FLAGS)

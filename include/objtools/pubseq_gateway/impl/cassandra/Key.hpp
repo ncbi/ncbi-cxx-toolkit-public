@@ -36,6 +36,7 @@
 
 #include <unordered_map>
 #include <vector>
+#include <bitset>
 #include <corelib/ncbistd.hpp>
 
 #include "cass_exception.hpp"
@@ -51,60 +52,22 @@ USING_NCBI_SCOPE;
 #define bfPacked        0x0000000002
 #define bfCheckFailed   0x0000000004
 
-
 struct SBlobStat
 {
-    SBlobStat() :
-        modified(0),
-        flags(0)
-    {}
-
-    void Reset(void)
-    {
-        modified = 0;
-        flags = 0;
-    }
-
-    int64_t     modified;
-    int64_t     flags;
+    int64_t modified = 0;
+    int64_t flags = 0;
 };
 
 struct SBlobFullStat
 {
-    void Reset()
-    {
-        modified = 0;
-        flags = 0;
-        size = 0;
-        seen = false;
-    }
-
-    int64_t     modified;
-    int64_t     flags;
-    int64_t     size;
-    bool        seen;
+    int64_t modified = 0;
+    int64_t flags = 0;
+    int64_t size = 0;
+    int32_t sat_key = 0;
+    bool    seen = false;
 };
 
-
-class CBlobFullStatMap;
-
-class CBlobFullStatVec: public deque<pair<int32_t, SBlobFullStat>>
-{
-public:
-    void Copy(const CBlobFullStatMap &  src);
-    void Append(const CBlobFullStatMap &  src);
-    void Append(const CBlobFullStatVec &  src);
-};
-
-typedef vector<int32_t> TKeyList;
-
-class CBlobFullStatMap: public unordered_map<int32_t, SBlobFullStat>
-{
-public:
-    void Copy(const CBlobFullStatMap &  src);
-    void Append(const CBlobFullStatMap &  src);
-    void Append(const CBlobFullStatVec &  src);
-};
+using TBlobFullStatVec = deque<SBlobFullStat>;
 
 END_IDBLOB_SCOPE
 #endif
