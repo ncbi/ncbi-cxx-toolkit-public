@@ -103,14 +103,14 @@ string& CDiscRepArgDescriptions::PrintUsage(string& str, bool detailed) const
     {
         str+="TESTS\n";
         const vector<string> Name = GetDiscrepancyNames();
-        for (auto nm: Name) {
+        for (auto& nm: Name) {
             if (nm[0] == '_') {
                 continue;
             }
             str += "   ";
             str += nm;
             const vector<string> Alias = GetDiscrepancyAliases(nm);
-            for (auto al: Alias) {
+            for (auto& al: Alias) {
                 str += " / ";
                 str += al;
             }
@@ -249,7 +249,7 @@ void CDiscRepApp::x_ProcessFile(const string& fname, CDiscrepancySet& tests)
                 CRef<CSeq_submit> ss(new CSeq_submit);
                 in->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
                 if (ss->IsSetData() && ss->GetData().IsEntrys()) {
-                    for (auto it: ss->SetData().SetEntrys()) {
+                    for (auto& it: ss->SetData().SetEntrys()) {
                         m_Scope->AddTopLevelSeqEntry(*it);
                     }
                 }
@@ -307,7 +307,7 @@ void CDiscRepApp::x_ParseDirectory(const string& name, bool recursive)
     }
     if (!Dir.Exists() || !Dir.IsDir()) return;
     CDir::TEntries Entries = Dir.GetEntries();
-    for (auto entry: Entries) {
+    for (auto& entry: Entries) {
         if (entry->GetName() == "." || entry->GetName() == "..") continue;
         if (recursive && entry->IsDir()) x_ParseDirectory(entry->GetPath(), true);
         if (entry->IsFile() && entry->GetExt() == ext) m_Files.push_back(entry->GetPath());
@@ -330,7 +330,7 @@ void CDiscRepApp::x_ProcessOne(const string& fname)
         Tests->Summarize();
     }
     else {
-        for (auto tname: m_Tests) {
+        for (auto& tname: m_Tests) {
             Tests->AddTest(tname);
         }
         Tests->SetKeepRef(m_AutoFix);
@@ -358,7 +358,7 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
     Tests->SetSuspectRules(m_SuspectRules, false);
     if (m_SuspectProductNames) {
         Tests->AddTest("_SUSPECT_PRODUCT_NAMES");
-        for (auto fname: m_Files) {
+        for (auto& fname: m_Files) {
             ++count;
             if (m_Files.size() > 1) {
                 LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
@@ -374,12 +374,12 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
         Tests->Summarize();
     }
     else {
-        for (auto tname: m_Tests) {
+        for (auto& tname: m_Tests) {
             Tests->AddTest(tname);
         }
         Tests->SetKeepRef(m_AutoFix);
         Tests->SetLineage(m_Lineage);
-        for (auto fname: m_Files) {
+        for (auto& fname: m_Files) {
             ++count;
             if (m_Files.size() > 1) {
                 LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
@@ -390,7 +390,7 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
         Tests->Summarize();
         if (m_AutoFix) {
             x_Autofix(Tests->GetTests());
-            for (auto it: m_Objects) {
+            for (auto& it: m_Objects) {
                 x_OutputObject(x_ConstructAutofixName(it.first), *it.second);
             }
         }
@@ -419,9 +419,9 @@ void CDiscRepApp::x_OutputXml(const string& filename, CDiscrepancySet& tests)
 
 void CDiscRepApp::x_Autofix(const TDiscrepancyCaseMap& tests)
 {
-    for (auto tst: tests) {
+    for (auto& tst: tests) {
         const TReportItemList& list = tst.second->GetReport();
-        for (auto it: list) {
+        for (auto& it: list) {
             it->Autofix(*m_Scope);
         }
     }
@@ -476,7 +476,7 @@ int CDiscRepApp::Run(void)
         }
         list<string> List;
         NStr::Split(args["e"].AsString(), ", ", List, NStr::fSplit_Tokenize);
-        for (auto s: List) {
+        for (auto& s: List) {
             string name = GetDiscrepancyCaseName(s);
             if (name.empty()) {
                 ERR_POST("Test name not found: " + s);
@@ -515,7 +515,7 @@ int CDiscRepApp::Run(void)
         }
         list<string> List;
         NStr::Split(args["d"].AsString(), ", ", List, NStr::fSplit_Tokenize);
-        for (auto s: List) {
+        for (auto& s: List) {
             string name = GetDiscrepancyCaseName(s);
             if (name.empty()) {
                 ERR_POST("Test name not found: " + s);
@@ -539,7 +539,7 @@ int CDiscRepApp::Run(void)
     if (args["X"]) {
         list<string> List;
         NStr::Split(args["X"].AsString(), ", ", List, NStr::fSplit_Tokenize);
-        for (auto s: List) {
+        for (auto& s: List) {
             if (s != "ALL") {
                 ERR_POST("Unknown option: " + s);
                 return 1;
@@ -592,7 +592,7 @@ int CDiscRepApp::Run(void)
     }
     else {
         int count = 0;
-        for (auto f: m_Files) {
+        for (auto& f: m_Files) {
             ++count;
             if (m_Files.size() > 1) {
                 LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
