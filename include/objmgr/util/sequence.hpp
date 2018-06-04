@@ -742,7 +742,7 @@ END_SCOPE(sequence)
 
 class NCBI_XOBJUTIL_EXPORT CFastaOstream {
 public:
-    enum EFlags {
+    enum EFlags : long {
         fAssembleParts      = 1 <<  0, ///< assemble FAR delta sequences; on by dflt
         fInstantiateGaps    = 1 <<  1, ///< honor specifed gap mode; on by default
         fSuppressRange      = 1 <<  2, ///< never include location details in defline
@@ -759,11 +759,12 @@ public:
         fEnableGI           = 1 << 13, ///< Use this flag to enable GI output in the defline
         fHideGenBankPrefix  = 1 << 14, ///< Hide gb| prefix for genbank only seq_id's 
         fHTMLEncode         = 1 << 15, ///< Encode the title string for HTML display
+        fIgnoreOriginalID   = 1 << 16, ///< Disregard original ID when constructing defline
         // historically misnamed as eFlagName
         eAssembleParts   = fAssembleParts,
         eInstantiateGaps = fInstantiateGaps
     };
-    typedef int TFlags; ///< binary OR of EFlags
+    typedef long TFlags; ///< binary OR of EFlags
 
     /// How to represent gaps with fInstantiateGaps enabled, as it is
     /// by default.  (Disabling fInstantiateGaps is equivalent to

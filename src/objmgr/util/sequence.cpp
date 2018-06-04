@@ -2789,7 +2789,8 @@ void CFastaOstream::x_WriteSeqIds(const CBioseq& bioseq,
     }
 
     m_Out << '>';
-    if (s_ShouldUseOriginalID(bioseq)) {
+    if (!(m_Flags & fIgnoreOriginalID) && 
+            s_ShouldUseOriginalID(bioseq)) {
         string origID = s_FastaGetOriginalID(bioseq);
         if (! NStr::IsBlank(origID)) {
             m_Out << "lcl|" << origID;
