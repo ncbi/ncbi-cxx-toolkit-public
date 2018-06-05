@@ -11,6 +11,6 @@ include_directories(SYSTEM ${SRA_INCLUDE})
 
 target_link_libraries(prime_cache-app
     asn_cache ncbi_xloader_genbank sraread
-    taxon1 xobjread xobjutil
+    local_taxon taxon1 xobjread xobjutil
 )
 

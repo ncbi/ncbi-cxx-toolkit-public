@@ -55,6 +55,7 @@
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/taxon1/taxon1.hpp>
+#include <objects/taxon1/local_taxon.hpp>
 #include <objects/submit/Submit_block.hpp>
 #include <objects/general/Object_id.hpp>
 
@@ -300,6 +301,7 @@ void CPrimeCacheApplication::Init(void)
     arg_desc->AddOptionalKey("taxid", "Taxid",
                              "Taxid of input FASTA sequences",
                              CArgDescriptions::eInteger);
+    CLocalTaxon::AddArguments(*arg_desc);
 
     arg_desc->AddOptionalKey("molinfo", "Molinfo",
                              "Type of molecule that sequences represent",
@@ -378,7 +380,6 @@ void CPrimeCacheApplication::Init(void)
                              CArgDescriptions::eInteger);
     arg_desc->SetDependency("delta-level",
                             CArgDescriptions::eRequires, "extract-delta");
-
 
     // Setup arg.descriptions for this application
     arg_desc->SetCurrentGroup("Default application arguments");
@@ -900,20 +901,14 @@ int CPrimeCacheApplication::Run(void)
     }
 
     if (args["taxid"]) {
-        CTaxon1 taxon;
-        taxon.Init();
-        bool is_species;
-        bool is_uncultured;
-        string blast_name;
-
+        CLocalTaxon taxon(args);
         int taxid = args["taxid"].AsInteger();
         CConstRef<COrg_ref> ref =
-            taxon.GetOrgRef(taxid, is_species,
-                            is_uncultured, blast_name);
+            taxon.GetOrgRef(taxid);
         if ( !ref ) {
             NCBI_THROW(CException, eUnknown,
-                       "failed to find Org-ref for taxid " +
-                       NStr::IntToString(taxid));
+                        "failed to find Org-ref for taxid " +
+                        NStr::IntToString(taxid));
         }
 
         m_Biosource.Reset(new CSeqdesc);
