@@ -25,6 +25,7 @@ internal/variation/snp/snphgvs
 internal/variation/snp/common
 internal/variation/utils
 internal/objects/ads
+internal/grpcapi/ncbi/grpcapi/dbsnp
 internal/aligndb
 internal/refgene/refseq_aln_source
 internal/asn_cache
