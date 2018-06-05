@@ -300,15 +300,15 @@ void CSourceQualifiersReader::ProcessSourceQualifiers(CSeq_entry& entry, const s
 
         if (opt_map_filename.empty())
         {
-            handled |= m_quals[0].AddQualifiers(mod, *dest);
             handled |= m_quals[1].AddQualifiers(mod, *dest);
+            handled |= m_quals[0].AddQualifiers(mod, *dest);
         }
         else
         {
             //LCOV_EXCL_START
             // optical maps are no longer supported
-            handled |= m_quals[0].AddQualifiers(mod, opt_map_filename);
             handled |= m_quals[1].AddQualifiers(mod, opt_map_filename);
+            handled |= m_quals[0].AddQualifiers(mod, opt_map_filename);
             //LCOV_EXCL_STOP
         }
 
