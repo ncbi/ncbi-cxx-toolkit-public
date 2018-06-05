@@ -1,0 +1,13 @@
+#
+#
+#
+add_library(local_taxon
+    local_taxon
+)
+
+include_directories(SYSTEM ${SQLITE3_INCLUDE})
+
+target_link_libraries(local_taxon
+    taxon1 sqlitewrapp
+)
+
