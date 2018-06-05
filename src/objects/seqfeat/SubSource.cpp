@@ -185,7 +185,8 @@ bool CSubSource::IsMultipleValuesAllowed(TSubtype subtype)
         && subtype != eSubtype_fwd_primer_name
         && subtype != eSubtype_rev_primer_name
         && subtype != eSubtype_metagenomic
-        && subtype != eSubtype_altitude;
+        && subtype != eSubtype_altitude
+        && subtype != eSubtype_clone;
 }
 
 
