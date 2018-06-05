@@ -21,6 +21,7 @@ internal/demo/misc/xmlwrapp
 
 #define  LST_COMMENT5    Make it independent on the pre-installed PTB
 util$
+util/cache$
 util/regexp$
 util/regexp/testdata$
 util/xregexp$
