@@ -1446,8 +1446,6 @@ CTabularFormatter_OrgName::CTabularFormatter_OrgName(int row, EField field)
     : m_Row(row)
     , m_Field(field)
 {
-    m_Taxon1.reset(new CTaxon1);
-    m_Taxon1->Init(100000);
 }
 
 
@@ -1506,6 +1504,11 @@ void CTabularFormatter_OrgName::Print(CNcbiOstream& ostr,
         NCBI_THROW(CException, eUnknown,
                    "indexing past the end of available "
                    "sequences in an alignment");
+    }
+
+    if (!m_Taxon1.get()) {
+        m_Taxon1.reset(new CTaxon1);
+        m_Taxon1->Init(100000);
     }
 
     int taxid = 
