@@ -1369,12 +1369,31 @@ static bool IsDatePresent(const CSeq_entry& entry, CSeqdesc::E_Choice choice)
     return false;
 }
 
+static bool GetFastaSeqIdLabel(const CSeq_entry& entry, string& label)
+{
+    if (entry.IsSeq()) {
+        if (entry.GetSeq().IsNa()) {
+            entry.GetLabel(&label, CSeq_entry::eContent);
+            return true;
+        }
+    }
+    else if (entry.IsSet()) {
+        if (entry.GetSet().IsSetSeq_set()) {
+            for (auto& cur_entry : entry.GetSet().GetSeq_set()) {
+                if (GetFastaSeqIdLabel(*cur_entry, label)) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
 static void ReportMissingOrDiffCitSub(const CSeq_entry& entry, bool missing)
 {
     string label;
-    entry.GetLabel(&label, CSeq_entry::eBoth);
-
-    if (label.empty()) {
+    if (!GetFastaSeqIdLabel(entry, label)) {
         label = "Unknown";
     }
 
