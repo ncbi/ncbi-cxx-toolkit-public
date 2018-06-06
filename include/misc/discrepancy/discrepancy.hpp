@@ -147,7 +147,7 @@ public:
     virtual void Summarize(void) = 0;
     virtual void AutofixAll(void) = 0;
     virtual const TDiscrepancyCaseMap& GetTests(void) = 0;
-    virtual void OutputText(CNcbiOstream& out, bool fatal = false, bool summary = false, bool ext = false, bool big = false) = 0;
+    virtual void OutputText(CNcbiOstream& out, bool fatal = false, bool summary = false, bool ext = false, char group = 0) = 0;
     virtual void OutputXML(CNcbiOstream& out, bool ext = false) = 0;
 
     bool IsGui(void) const { return m_Gui;}

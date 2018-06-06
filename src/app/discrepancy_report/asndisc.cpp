@@ -74,17 +74,17 @@ protected:
     vector<string> m_Tests;
     map<string, CRef<CSerialObject> > m_Objects;
 
+    char m_Group;
     bool m_SuspectProductNames;
     bool m_Ext;
     bool m_Fat;
-    bool m_Big;
     bool m_AutoFix;
     bool m_Xml;
     bool m_Print;
 };
 
 
-CDiscRepApp::CDiscRepApp(void) : m_SuspectProductNames(false), m_Ext(false), m_Fat(false), m_Big(false), m_AutoFix(false), m_Xml(false), m_Print(false)
+CDiscRepApp::CDiscRepApp(void) : m_SuspectProductNames(false), m_Group(0), m_Ext(false), m_Fat(false), m_AutoFix(false), m_Xml(false), m_Print(false)
 {
 }
 
@@ -406,7 +406,7 @@ void CDiscRepApp::x_Output(const string& filename, CDiscrepancySet& tests)
 {
     bool summary = GetArgs()["S"].AsBoolean();
     CNcbiOfstream out(filename.c_str(), ofstream::out);
-    tests.OutputText(out, m_Fat, summary, m_Ext, m_Big);
+    tests.OutputText(out, m_Fat, summary, m_Ext, m_Group);
 }
 
 
@@ -439,9 +439,6 @@ int CDiscRepApp::Run(void)
 {
     const CArgs& args = GetArgs();
 
-    //EGroup group = eNone;
-    char group = 0;
-
     if (args["P"]) {
         const string& s = args["P"].AsString();
         for (size_t i = 0; i < s.length(); i++) {
@@ -453,11 +450,11 @@ int CDiscRepApp::Run(void)
                 m_Fat = true;
             }
             else if (s[i] == 'q' || s[i] == 'b' || s[i] == 'u') {
-                if (group && group != s[i]) {
-                    ERR_POST(string("-P options are not compatible: ") + group + " and " + s[i]);
+                if (m_Group && m_Group != s[i]) {
+                    ERR_POST(string("-P options are not compatible: ") + m_Group + " and " + s[i]);
                     return 1;
                 }
-                group = s[i];
+                m_Group = s[i];
                 m_Fat = true;
             }
             else {
@@ -485,23 +482,22 @@ int CDiscRepApp::Run(void)
                 Tests.insert(name);
             }
         }
-        if (group) {
-            LOG_POST(string("Option ignored: -P ") + group);
+        if (m_Group) {
+            LOG_POST(string("Option ignored: -P ") + m_Group);
+            m_Group = 0;
         }
     }
     else if (!args["N"]) {
         vector<string> AllTests;
-        switch (group) {
+        switch (m_Group) {
             case 'q':
                 AllTests = GetDiscrepancyNames(eSmart);
                 break;
             case 'u':
                 AllTests = GetDiscrepancyNames(eSubmitter);
-                m_Big = true;
                 break;
             case 'b':
                 AllTests = GetDiscrepancyNames(eBig);
-                m_Big = true;
                 break;
             default:
                 AllTests = GetDiscrepancyNames();

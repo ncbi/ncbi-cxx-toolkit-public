@@ -139,9 +139,21 @@ static bool RecursiveFatalSummary(ostream& out, const TReportItemList& list, siz
 }
 
 
-void CDiscrepancyContext::OutputText(ostream& out, bool fatal, bool summary, bool ext, bool big)
+void CDiscrepancyContext::OutputText(ostream& out, bool fatal, bool summary, bool ext, char group)
 {
-    out << (big ? "Discrepancy Report Results (due to the large size of the file some checks may not have run)\n\n" : "Discrepancy Report Results\n\n");
+    switch (group) {
+        case 'b':
+            out << "Discrepancy Report Results (due to the large size of the file some checks may not have run)\n\n";
+            break;
+        case 'q':
+            out << "Discrepancy Report Results (SMART set of checks)\n\n";
+            break;
+        case 'u':
+            out << "Discrepancy Report Results (submitter set of checks)\n\n";
+            break;
+        default:
+            out << "Discrepancy Report Results\n\n";
+    }
 
     out << "Summary\n";
     const CDiscrepancyGroup& order = x_OutputOrder();

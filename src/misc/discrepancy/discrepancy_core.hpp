@@ -358,7 +358,7 @@ public:
     void Summarize(void);
     void AutofixAll(void);
     const TDiscrepancyCaseMap& GetTests(void){ return m_Tests; }
-    void OutputText(ostream& out, bool fatal, bool summary, bool ext, bool big);
+    void OutputText(ostream& out, bool fatal, bool summary, bool ext, char group);
     void OutputXML(ostream& out, bool ext);
 
     template<typename T> void Call(CDiscrepancyVisitor<T>& disc, const T& obj){ disc.Call(obj, *this);}
