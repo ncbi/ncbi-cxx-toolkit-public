@@ -122,10 +122,10 @@ void CSoapFault_Base::Reset(void)
 BEGIN_NAMED_BASE_CLASS_INFO("Fault", CSoapFault)
 {
     SET_CLASS_MODULE("soap_11");
-    SET_NAMESPACE("http://schemas.xmlsoap.org/soap/envelope/")->SetNsQualified(false);
-    ADD_NAMED_STD_MEMBER("faultcode", m_Faultcode)->SetSetFlag(MEMBER_PTR(m_set_State[0]))->SetNoPrefix();
-    ADD_NAMED_STD_MEMBER("faultstring", m_Faultstring)->SetSetFlag(MEMBER_PTR(m_set_State[0]))->SetNoPrefix();
-    ADD_NAMED_STD_MEMBER("faultactor", m_Faultactor)->SetOptional()->SetSetFlag(MEMBER_PTR(m_set_State[0]))->SetNoPrefix();
+    SET_NAMESPACE("http://schemas.xmlsoap.org/soap/envelope/");
+    ADD_NAMED_STD_MEMBER("faultcode", m_Faultcode)->SetSetFlag(MEMBER_PTR(m_set_State[0]))->SetNoPrefix()->SetNsQualified(false);
+    ADD_NAMED_STD_MEMBER("faultstring", m_Faultstring)->SetSetFlag(MEMBER_PTR(m_set_State[0]))->SetNoPrefix()->SetNsQualified(false);
+    ADD_NAMED_STD_MEMBER("faultactor", m_Faultactor)->SetOptional()->SetSetFlag(MEMBER_PTR(m_set_State[0]))->SetNoPrefix()->SetNsQualified(false);
     ADD_NAMED_REF_MEMBER("detail", m_Detail, C_Detail)->SetOptional()->SetNoPrefix();
     info->RandomOrder();
 }
