@@ -155,9 +155,19 @@ namespace
 
 CFormatGuess::EFormat CMultiReader::xReadFile(CNcbiIstream& istr, CRef<CSeq_entry>& entry, CRef<CSeq_submit>& submit)
 {
-    CFormatGuess::EFormat uFormat = xGetFormat(istr);
     m_iFlags = 0;
     m_iFlags |= CFastaReader::fNoUserObjs;
+
+
+    CFormatGuess::EFormat uFormat = xGetFormat(istr);
+
+    if (xGetFormat(istr) == CFormatGuess::eTextASN) {
+        xReadASN1(uFormat, istr, entry, submit);
+    }
+    else { // RW-616 - Assume FASTA
+        entry = xReadFasta(istr);
+    }
+/*
 
     switch (uFormat)
     {
@@ -170,7 +180,7 @@ CFormatGuess::EFormat CMultiReader::xReadFile(CNcbiIstream& istr, CRef<CSeq_entr
     default:
         entry.Reset();
     }
-
+*/
     if (entry.Empty())
         NCBI_THROW2(CObjReaderParseException, eFormat,
         "File format not recognized", 0);
