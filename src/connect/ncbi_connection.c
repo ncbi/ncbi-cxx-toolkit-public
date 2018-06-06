@@ -377,7 +377,7 @@ static EIO_Status s_Open(CONN conn)
     } else
         status  = eIO_NotSupported;
     if (status == eIO_Success) {
-        conn->flags   &= ~fCONN_Flush;
+        conn->flags   &= (TCONN_Flags)(~fCONN_Flush);
         conn->r_status = eIO_Success;
         conn->w_status = eIO_Success;
         conn->state    = eCONN_Open;
@@ -406,7 +406,7 @@ extern EIO_Status CONN_CreateEx
         conn = (SConnection*) calloc(1, sizeof(SConnection));
 
         if (conn) {
-            conn->flags     = flags & ~fCONN_Flush;
+            conn->flags     = flags & (TCONN_Flags)(~fCONN_Flush);
             conn->state     = eCONN_Unusable;
             conn->o_timeout = kDefaultTimeout;
             conn->r_timeout = kDefaultTimeout;
@@ -683,7 +683,7 @@ static EIO_Status s_CONN_Write
 
         if (*n_written) {
             conn->w_pos += *n_written;
-            conn->flags &= ~fCONN_Flush;
+            conn->flags &= (TCONN_Flags)(~fCONN_Flush);
             break;
         }
         if (!size  ||  status != eIO_Timeout)
@@ -1195,7 +1195,7 @@ extern EIO_Status CONN_SetFlags(CONN conn, TCONN_Flags flags)
     if (!conn)
         return eIO_InvalidArg;
 
-    flags &=              ~fCONN_Flush;
+    flags &= (TCONN_Flags)(~fCONN_Flush);
     flags |= conn->flags & fCONN_Flush;
     conn->flags = flags;
     return eIO_Success;
@@ -1206,7 +1206,7 @@ extern TCONN_Flags CONN_GetFlags(CONN conn)
 {
     CONN_CALLTRACE(GetFlags);
 
-    return conn ? conn->flags & ~fCONN_Flush : 0;
+    return conn ? conn->flags & (TCONN_Flags)(~fCONN_Flush) : 0;
 }
 
 

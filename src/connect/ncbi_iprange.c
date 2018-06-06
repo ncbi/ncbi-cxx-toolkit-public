@@ -63,8 +63,8 @@ extern int/*bool*/ NcbiIsInIPRange(const SIPRange*       range,
             assert(ip  &&  a < b);
             return a <= ip  &&  ip <= b;
         case eIPRange_Network:
-            a = NcbiIsIPv4(&range->a);
-            b = NcbiIsIPv4(addr);
+            a = (unsigned int)NcbiIsIPv4(&range->a);
+            b = (unsigned int)NcbiIsIPv4(addr);
             if (!(a & b)) {
                 return a ^ b
                     ? 0/*false*/
@@ -248,7 +248,7 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
                         return 1/*success*/;
                     }
                     addr = SOCK_NetToHostLong(NcbiIPv6ToIPv4(&range->a, 0));
-                    temp = ~0UL << (32 - d);
+                    temp = (unsigned int)(~0UL << (32 - d));
                     range->b    = SOCK_HostToNetLong(temp);
                     range->type = eIPRange_Network;
                     return addr  &&  !(addr & ~temp);
@@ -258,9 +258,9 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
                         range->type = eIPRange_Host;
                         return 1/*success*/;
                     }
-                    range->b    = d;
+                    range->b    = (unsigned int)d; /* d > 0 */
                     range->type = eIPRange_Network;
-                    d = (sizeof(range->a.octet) << 3) - d;
+                    d = (long)(sizeof(range->a.octet) << 3) - d;
                     for (n = sizeof(range->a.octet);  n > 0;  --n) {
                         if (d >= 8) {
                             if (range->a.octet[n - 1] & ~0)
@@ -296,10 +296,10 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
                 }
                 p = e;
             } else if (!*++p  &&  dots) {
-                temp = (4 - dots) << 3;
+                temp = (unsigned int)((4 - dots) << 3);
                 addr <<= temp;
                 NcbiIPv4ToIPv6(&range->a, SOCK_HostToNetLong(addr), 0);
-                range->b    = SOCK_HostToNetLong(~0UL << temp);
+                range->b    = SOCK_HostToNetLong((unsigned int)(~0UL << temp));
                 range->type = eIPRange_Network;
                 return 1/*success*/;
             } else
@@ -307,7 +307,7 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
             switch (range->type) {
             case eIPRange_Host:
                 addr <<= 8;
-                addr  |= d;
+                addr  |= (unsigned int)d;
                 if (*p != '.') {
                     addr <<= (3 - dots) << 3;
                     switch (*p) {
@@ -341,9 +341,9 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
                 if (*p)
                     goto out;
                 temp  = dots > 0 ? addr : 0;
-                temp &= ~((1 << ((4 - dots) << 3)) - 1);
-                temp |=    d << ((3 - dots) << 3);
-                temp |=   (1 << ((3 - dots) << 3)) - 1;
+                temp &= (unsigned int)(~((1 << ((4 - dots) << 3)) - 1));
+                temp |= (unsigned int)   (d << ((3 - dots) << 3));
+                temp |= (unsigned int)  ((1 << ((3 - dots) << 3)) - 1);
                 NcbiIPv4ToIPv6(&range->a, SOCK_HostToNetLong(addr), 0);
                 if (addr == temp) {
                     range->b    = 0;
@@ -361,7 +361,7 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
                     range->type = eIPRange_Host;
                     return 1/*success*/;
                 }
-                temp = ~0UL << (32 - d);
+                temp = (unsigned int)(~0UL << (32 - d));
                 range->b = SOCK_HostToNetLong(temp);
                 return addr  &&  !(addr & ~temp);
             default:
@@ -373,7 +373,6 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
         /* last resort (and maybe expensive one): try as a regular host name */
         ;
     } else { /* NB: SOCK_gethostbyname() returns 0 on an unknown host */
-        size_t n;
         if (strcasecmp(str, "255.255.255.255") == 0) {
             addr = (unsigned int)(~0UL);
             NcbiIPv4ToIPv6(&range->a, addr, 0);

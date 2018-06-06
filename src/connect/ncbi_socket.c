@@ -404,8 +404,8 @@ static const char* s_ID(const SOCK sock, char buf[MAXIDLEN])
         addr[0] = '\0';
         n = sock->myport ? sprintf(addr, "(:%hu)", sock->myport) : 0;
         if (sock->host  ||  sock->port) {
-            SOCK_HostPortToString(sock->host, sock->port,
-                                  addr + n, sizeof(addr) - n);
+            SOCK_HostPortToString(sock->host, sock->port, addr + n,
+                                  sizeof(addr) - (size_t)n);
         }
         cp = addr;
         break;
@@ -1035,7 +1035,7 @@ static int s_gethostname(char* name, size_t namesize, ESwitch log)
     CORE_TRACE("[SOCK::gethostname]");
 
     name[0] = name[namesize - 1] = '\0';
-    if (gethostname(name, (int) namesize) != 0) {
+    if (gethostname(name, namesize) != 0) {
         if (log) {
             int error = SOCK_ERRNO;
             const char* strerr = SOCK_STRERROR(error);
@@ -8151,7 +8151,7 @@ extern int SOCK_ntoa(unsigned int host,
         int len = sprintf(x_buf, "%u.%u.%u.%u", b[0], b[1], b[2], b[3]);
         assert(0 < len  &&  (size_t) len < sizeof(x_buf));
         if ((size_t) len < bufsize) {
-            memcpy(buf, x_buf, len + 1);
+            memcpy(buf, x_buf, (size_t)len + 1);
             return 0/*success*/;
         }
         buf[0] = '\0';
@@ -8407,8 +8407,12 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
         return 0;
     } else
         len = strlen(x_buf);
-    if (port  ||  !host)
-        len += sprintf(x_buf + len, ":%hu", port);
+    if (port  ||  !host) {
+        int n;
+        n = sprintf(x_buf + len, ":%hu", port);
+        assert(n >= 0);
+        len += n;
+    }
     assert(len < sizeof(x_buf));
     if (len >= bufsize) {
         *buf = '\0';

@@ -1132,14 +1132,14 @@ static char* s_GetDtabHeaderFromBuf(const char* buf)
         while (*end  &&  *end != '\r'  &&  *end != '\n') ++end;
 
         /* clone the header value */
-        dup_hdr = (char*)malloc(end - start + 1);
+        dup_hdr = (char*)malloc((size_t)(end - start + 1));
         if ( ! dup_hdr) {
             CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
                        "Couldn't alloc for dtab header value.");
             TOUT("s_GetDtabHeaderFromBuf() -- bad alloc");
             return NULL;
         }
-        memcpy(dup_hdr, start, end - start);
+        memcpy(dup_hdr, start, (size_t)(end - start));
         dup_hdr[end - start] = NIL;
         TOUT1("s_GetDtabHeaderFromBuf() -- got dtab header \"%s\"", dup_hdr);
         return dup_hdr;

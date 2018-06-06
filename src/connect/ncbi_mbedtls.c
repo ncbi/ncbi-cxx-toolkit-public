@@ -432,7 +432,7 @@ static int x_MbedTlsPush(void* ctx, const unsigned char* data, size_t size)
             } else {
                 assert(status == eIO_Success);
                 assert(x_written <= size);
-                n_written += x_written;
+                n_written += (ssize_t)x_written;
                 size      -= x_written;
                 data       = data + x_written;
             }
@@ -514,7 +514,7 @@ static EIO_Status s_MbedTlsRead(void* session, void* buf, size_t n_todo,
     } else
         status = eIO_Success;
 
-    *n_done = x_read;
+    *n_done = (size_t)x_read;
     return status;
 }
 
@@ -538,7 +538,7 @@ static EIO_Status x_MbedTlsWrite(void* session, const void* data,
     } else
         status = eIO_Success;
 
-    *n_done = x_written;
+    *n_done = (size_t)x_written;
     return status;
 }
 

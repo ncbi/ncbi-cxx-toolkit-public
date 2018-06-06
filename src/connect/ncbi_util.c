@@ -262,14 +262,14 @@ extern char* UTIL_PrintableString(const char* data, size_t size,
                 *d++     = '\\';
                 v =  *s >> 6;
                 if (v  ||  !reduce) {
-                    *d++ = '0' + v;
+                    *d++ = (unsigned char)('0' + v);
                     reduce = 0;
                 }
                 v = (*s >> 3) & 7;
                 if (v  ||  !reduce)
-                    *d++ = '0' + v;
-                v =  *s       & 7;
-                *d++     = '0' + v;
+                    *d++ = (unsigned char)('0' + v);
+                v = *s & 7;
+                *d++ = (unsigned char)('0' + v);
                 continue;
             }
             break;
@@ -342,8 +342,12 @@ extern const char* NcbiMessagePlusError
     memcpy(buf + mlen, "{error=", 7);
     mlen += 7;
 
-    if (error)
-        mlen += sprintf(buf + mlen, "%d%s", error, &","[!*descr]);
+    if (error) {
+        int n;
+        n = sprintf(buf + mlen, "%d%s", error, &","[!*descr]);
+        assert(n > 0);
+        mlen += (size_t)n;
+   }
 
     memcpy((char*) memcpy(buf + mlen, descr, dlen) + dlen, "}", 2);
     if (release)
@@ -953,8 +957,8 @@ extern void CORE_Msdelay(unsigned long ms)
 #elif defined(NCBI_OS_UNIX)
 #  if    defined(HAVE_NANOSLEEP)
     struct timespec ts;
-    ts.tv_sec  =  ms / 1000;
-    ts.tv_nsec = (ms % 1000) * 1000000;
+    ts.tv_sec  = (time_t)(ms / 1000);
+    ts.tv_nsec = (long)((ms % 1000) * 1000000);
     nanosleep(&ts, 0);
 #  elif !defined(NCBI_OS_DARWIN)  &&  defined(HAVE_POLL_H)
     poll(0, 0, ms);
@@ -1243,8 +1247,8 @@ extern int/*bool*/ UTIL_MatchesMaskEx(const char* name, const char* mask,
         } else {
             d = *name++;
             if (ignore_case) {
-                c = tolower((unsigned char) c);
-                d = tolower((unsigned char) d);
+                c = (char)tolower((unsigned char) c);
+                d = (char)tolower((unsigned char) d);
             }
             if (c != d)
                 return 0/*false*/;

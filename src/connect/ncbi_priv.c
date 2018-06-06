@@ -48,7 +48,7 @@ TCORE_Set           g_CORE_Set               = 0;
 MT_LOCK             g_CORE_MT_Lock           = &g_CORE_MT_Lock_default;
 LOG                 g_CORE_Log               = 0;
 REG                 g_CORE_Registry          = 0;
-int                 g_NCBI_ConnectRandomSeed = 0;
+unsigned int        g_NCBI_ConnectRandomSeed = 0;
 FNcbiGetAppName     g_CORE_GetAppName        = 0;
 FNcbiGetRequestID   g_CORE_GetRequestID      = 0;
 FNcbiGetRequestDtab g_CORE_GetRequestDtab    = 0;
@@ -63,12 +63,12 @@ FSockHasSocket      g_MONKEY_SockHasSocket   = 0;
 #endif /*NCBI_MONKEY*/
 
 
-extern int g_NCBI_ConnectSrandAddend(void)
+extern unsigned int g_NCBI_ConnectSrandAddend(void)
 {
 #if   defined(NCBI_OS_UNIX)
-    return (int) getpid(); 
+    return (unsigned int) getpid(); 
 #elif defined(NCBI_OS_MSWIN)
-    return (int) GetCurrentProcessId();
+    return (unsigned int) GetCurrentProcessId();
 #else
     return SOCK_GetLocalHostAddress(eDefault);
 #endif /*NCBI_OS*/ 
