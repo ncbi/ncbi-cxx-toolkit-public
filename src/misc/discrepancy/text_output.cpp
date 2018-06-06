@@ -81,7 +81,6 @@ static void RecursiveText(ostream& out, const TReportItemList& list, const vecto
                 }
                 out << obj->GetText() << "\n";
             }
-            out << "\n";
         }
     }
 }
@@ -149,13 +148,10 @@ void CDiscrepancyContext::OutputText(ostream& out, bool fatal, bool summary, boo
     TReportItemList group0 = order[0].Collect(m_Tests, false);
     TReportItemList group1 = order[1].Collect(m_Tests, true);
     RecursiveSummary(out, group0, fatal);
-    if (group1.size()) {
-        out << "\n";
-        if (fatal && RecursiveFatalSummary(out, group1)) {
-            out << "\n";
-        }
-        RecursiveSummary(out, group1, fatal);
+    if (fatal) {
+        RecursiveFatalSummary(out, group1);
     }
+    RecursiveSummary(out, group1, fatal);
 
     if (summary) return;
     
