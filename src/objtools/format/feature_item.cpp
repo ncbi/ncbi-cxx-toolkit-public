@@ -1652,8 +1652,10 @@ void CFeatureItem::x_AddQualsIdx(
                 CRef<CFeatureIndex> fsx = ft->GetBestGene();
                 if (fsx) {
                     const CMappedFeat mf = fsx->GetMappedFeat();
-                    gene_feat = &(mf.GetMappedFeature());
-                    gene_ref = &(mf.GetData().GetGene());
+                    if (subtype != CSeqFeatData::eSubtype_primer_bind || feat_gene_xref) {
+                        gene_feat = &(mf.GetMappedFeature());
+                        gene_ref = &(mf.GetData().GetGene());
+                    }
                 }
             }
         }
