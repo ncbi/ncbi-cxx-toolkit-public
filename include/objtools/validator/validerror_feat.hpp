@@ -210,15 +210,6 @@ private:
 
     void ValidateImp(const CImp_feat& imp, const CSeq_feat& feat);
     void ValidateNonImpFeat (const CSeq_feat& feat);
-    void ValidateImpGbquals(const CImp_feat& imp, const CSeq_feat& feat);
-    void ValidateNonImpFeatGbquals(const CSeq_feat& feat);
-
-    // these functions are for validating individual genbank qualifier values
-    void ValidateRptUnitVal (const string& val, const string& key, const CSeq_feat& feat);
-    void ValidateRptUnitSeqVal (const string& val, const string& key, const CSeq_feat& feat);
-    void ValidateRptUnitRangeVal (const string& val, const CSeq_feat& feat);
-    void ValidateLabelVal (const string& val, const CSeq_feat& feat);
-    void ValidateCompareVal (const string& val, const CSeq_feat& feat);
 
     void ValidateGapFeature (const CSeq_feat& feat);
 
@@ -317,8 +308,6 @@ protected:
     virtual void x_ValidateExceptText(const string& text);
 
     void x_ValidateGbquals();
-    void x_ValidateNonImpFeatGbquals();
-    void x_ValidateImpFeatGbquals();
     void x_ValidateRptUnitVal(const string& val, const string& key);
     void x_ValidateRptUnitSeqVal(const string& val, const string& key);
     void x_ValidateRptUnitRangeVal(const string& val);
