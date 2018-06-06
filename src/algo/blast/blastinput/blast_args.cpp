@@ -215,9 +215,11 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetConstraint(kArgEffSearchSpace,
                            new CArgAllowValuesGreaterThanOrEqual(0));
 
-    arg_desc.AddOptionalKey(kArgSumStats, "bool_value",
+    if (!m_SuppressSumStats) {
+        arg_desc.AddOptionalKey(kArgSumStats, "bool_value",
                      	 	"Use sum statistics",
                      	 	CArgDescriptions::eBoolean);
+    }
 
     arg_desc.SetCurrentGroup("");
 }

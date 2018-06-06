@@ -67,7 +67,8 @@ CBlastpAppArgs::CBlastpAppArgs()
     arg.Reset(m_StdCmdLineArgs);
     m_Args.push_back(arg);
 
-    arg.Reset(new CGenericSearchArgs(kQueryIsProtein));
+    arg.Reset(new CGenericSearchArgs(kQueryIsProtein, false, false,
+                                     false, false, true));
     m_Args.push_back(arg);
 
     arg.Reset(new CFilteringArgs(kQueryIsProtein, kFilterByDefault));

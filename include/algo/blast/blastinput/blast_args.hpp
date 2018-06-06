@@ -285,10 +285,10 @@ public:
      */
     CGenericSearchArgs(bool query_is_protein = true, bool is_rpsblast = false,
                        bool show_perc_identity = false, bool is_tblastx = false,
-                       bool is_igblast = false)
+                       bool is_igblast = false, bool suppress_sum_stats = false)
         : m_QueryIsProtein(query_is_protein), m_IsRpsBlast(is_rpsblast),
           m_ShowPercentIdentity(show_perc_identity), m_IsTblastx(is_tblastx),
-          m_IsIgBlast(is_igblast) {}
+          m_IsIgBlast(is_igblast), m_SuppressSumStats(suppress_sum_stats) {}
 
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
@@ -302,6 +302,7 @@ private:
                                  be shown */
     bool m_IsTblastx; /**< true if the search is tblastx */
     bool m_IsIgBlast; /**< true if the search is igblast */
+    bool m_SuppressSumStats; /**< true if search is blastn or blastp */
 };
 
 /** Argument class for collecting filtering options */
