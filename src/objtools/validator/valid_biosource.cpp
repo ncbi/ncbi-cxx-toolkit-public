@@ -718,6 +718,9 @@ const CSeq_entry *ctx)
             qual = "metagenomic"; break;
         case CSubSource::eSubtype_altitude:
             qual = "altitude"; break;
+        default:
+            qual = CSubSource::GetSubtypeName(it->first);
+            break;
         }
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, "Multiple " + qual + " qualifiers present", obj, ctx);
     }
