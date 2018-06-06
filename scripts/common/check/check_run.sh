@@ -87,6 +87,8 @@ esac
 
 
 # Launch the tests
+echo "Testing, please wait..."
+echo
 $CHECK_RUN_FILE run
 result=$?
 
