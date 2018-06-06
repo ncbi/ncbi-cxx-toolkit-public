@@ -6541,7 +6541,12 @@ void CSingleFeatValidator::x_ValidateGbquals()
                             }
                         }
                         break;
-            
+
+                    // for VR-825
+                    case CSeqFeatData::eQual_locus_tag:
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature, 
+                            "locus-tag values should be on genes");
+                        break;
                     default:
                         break;
                 } // end of switch statement

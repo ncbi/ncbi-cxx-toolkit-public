@@ -89,6 +89,10 @@ static void s_TestOneWrongQual(const string qual, const string val, const string
         expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "OldLocusTagWithoutLocusTag", 
                                   "old_locus_tag without inherited locus_tag"));
     }
+    if (NStr::Equal(qual, "locus_tag")) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "WrongQualOnFeature",
+            "locus-tag values should be on genes"));
+    }
     CConstRef<CValidError> eval = validator.Validate(*misc_feat, scope, options);
     CheckErrors (*eval, expected_errors);
     misc_feat->SetQual().pop_back();
