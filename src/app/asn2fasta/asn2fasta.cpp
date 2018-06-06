@@ -282,6 +282,8 @@ void CAsn2FastaApp::Init(void)
             "Quality score output file name", CArgDescriptions::eOutputFile);
         arg_desc->AddFlag("enable-gi", "Enable GI output in defline");
 
+        arg_desc->AddFlag("ignore-origid", "Ignore OriginalID descriptor when constructing defline");
+
     }}
 
     // misc
@@ -336,6 +338,11 @@ CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const st
     if (GetArgs()["enable-gi"])
     {
         fasta_os->SetFlag(CFastaOstreamEx::fEnableGI);
+    }
+
+    if (GetArgs()["ignore-origid"]) 
+    {
+        fasta_os->SetFlag(CFastaOstreamEx::fIgnoreOriginalID);
     }
 
     if( GetArgs()["gap-mode"] ) {
