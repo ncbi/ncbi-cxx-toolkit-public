@@ -1041,10 +1041,7 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
                 buflen = sizeof(kUsedServerInfo) - 1;
                 memcpy(buffer, kUsedServerInfo, buflen);
             } else {
-                int n;
-                n = sprintf(buffer, kSkipInfo, (unsigned) i + 1);
-                assert(n > 0);
-                buflen = (size_t)n;
+                buflen = (size_t)sprintf(buffer, kSkipInfo, (unsigned) i + 1);
             }
             assert(buflen < sizeof(buffer) - 1);
             if (!BUF_Write(&buf, buffer, buflen)                ||

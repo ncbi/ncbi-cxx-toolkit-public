@@ -1537,25 +1537,16 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
 
     url = (char*) malloc(len);
     if (url) {
-        int n;
         assert(scheme  &&  args);
         strlwr((char*) memcpy(url, scheme, schlen + 1));
         len = schlen;
-        n = sprintf(url + len, &"://%s"[schlen
+        len += (size_t)sprintf(url + len, &"://%s"[schlen
                                            ? 0
                                            : req_method == eReqMethod_Connect
                                            ? 3
                                            : 1], info->host);
-        if ( n < 0 ) {
-            return 0/*failed*/;
-        }
-        len += (size_t)n;
         if (info->port  ||  !path/*req_method == eReqMethod_Connect*/) {
-            n = sprintf(url + len, ":%hu", info->port);
-            if ( n < 0 ) {
-                return 0/*failed*/;
-            }
-            len += (size_t)n;
+            len += (size_t)sprintf(url + len, ":%hu", info->port);
         }
         sprintf(url + len, "%s%s%s%s",
                 &"/"[! path  ||  *path == '/'], path ? path : "",

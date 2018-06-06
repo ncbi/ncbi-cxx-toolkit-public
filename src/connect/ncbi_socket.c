@@ -8407,12 +8407,8 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
         return 0;
     } else
         len = strlen(x_buf);
-    if (port  ||  !host) {
-        int n;
-        n = sprintf(x_buf + len, ":%hu", port);
-        assert(n >= 0);
-        len += n;
-    }
+    if (port  ||  !host)
+        len += (size_t)sprintf(x_buf + len, ":%hu", port);
     assert(len < sizeof(x_buf));
     if (len >= bufsize) {
         *buf = '\0';
