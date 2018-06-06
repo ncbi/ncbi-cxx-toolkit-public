@@ -11272,6 +11272,7 @@ void CNewCleanup_imp::x_RemoveEmptyFeatures( CSeq_annot & seq_annot )
                     CSeq_feat_EditHandle eh(fh);
                     eh.Remove();
                     any_erasures = true;
+                    ChangeMade(CCleanupChange::eRemoveFeat);
                     break;
                 } else if (changed) {
                     CSeq_feat_Handle fh = m_Scope->GetSeq_featHandle(**it);
