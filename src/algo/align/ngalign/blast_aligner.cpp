@@ -217,7 +217,6 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
                                                    TAlignResultsRef AccumResults)
 {
     TAlignResultsRef Results(new CAlignResultsSet);
-
     CRef<IQueryFactory> Querys;
     CRef<CLocalDbAdapter> Subjects;
 
@@ -244,7 +243,11 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
         ERR_POST(Info << "Blast Warning: Empty Query Set");
         return Results;
     }
-
+    if(Subjects.IsNull()) {
+        ERR_POST(Info << "Blast Warning: Empty Subject Set");
+        return Results;
+    }
+    
     _TRACE("Running Blast Filter: " << m_Filter);
 
     CRef<CSearchResultSet> BlastResults;
@@ -276,8 +279,12 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
     TSeqPos AlignCount = 0;
     CSeq_align_set FilteredResults;
     NON_CONST_ITERATE(CSearchResultSet, SetIter, *BlastResults) {
+        if(SetIter->IsNull())
+            continue;
         CSearchResults& Results = **SetIter;
         CConstRef<CSeq_align_set> AlignSet = Results.GetSeqAlign();
+        if(AlignSet.IsNull()) 
+            continue;
         if(!AlignSet->IsEmpty()) {
             typedef map<CSeq_id_Handle, list<CRef<CSeq_align> >,
                         CSeq_id_Handle::PLessOrdered > TSubjectMap;
