@@ -208,7 +208,7 @@ static void RemoveDupPubs(CSeq_descr& descrs)
         // Removes pubs with the same pmid
         set<int> pmids;
         CSeq_descr::Tdata& descr_list = descrs.Set();
-        for (auto& descr = descr_list.begin(); descr != descr_list.end();) {
+        for (auto descr = descr_list.begin(); descr != descr_list.end();) {
 
             bool increment = true;
             if ((*descr)->IsPub()) {
@@ -229,12 +229,12 @@ static void RemoveDupPubs(CSeq_descr& descrs)
 
         // Remove duplicate pubs
         CSeq_descr::Tdata pubs;
-        for (auto& descr = descr_list.begin(); descr != descr_list.end();) {
+        for (auto descr = descr_list.begin(); descr != descr_list.end();) {
 
             bool increment = true;
             if ((*descr)->IsPub()) {
 
-                auto& dup = find_if(pubs.begin(), pubs.end(), [&descr](const CRef<CSeqdesc>& cur_pub) { return cur_pub->Equals(**descr); });
+                auto dup = find_if(pubs.begin(), pubs.end(), [&descr](const CRef<CSeqdesc>& cur_pub) { return cur_pub->Equals(**descr); });
                 if (dup != pubs.end()) {
 
                     descr = descr_list.erase(descr);
@@ -419,7 +419,7 @@ static bool GetAccessionIdInfo(const CSeq_id& id, string& accession, int& versio
         if (text_id && text_id->IsSetName()) {
 
             const string& cur_name = text_id->GetName();
-            auto& digits = find_if(cur_name.begin(), cur_name.end(), [](char c){ return isdigit(c); });
+            auto digits = find_if(cur_name.begin(), cur_name.end(), [](char c){ return isdigit(c); });
 
             if (digits != cur_name.end()) {
                 string version_str = cur_name.substr(digits - cur_name.begin());
@@ -502,12 +502,12 @@ static void GetDescriptorsInfo(const CSeq_entry& entry, const vector<string>& us
                         const CUser_object& cur_obj = descr->GetUser();
 
                         {
-                            auto& contig = cur_obj.GetFieldRef(first_contig_field);
+                            auto contig = cur_obj.GetFieldRef(first_contig_field);
                             GetContigNum(contig, first_contig, num_len);
                         }
 
                         {
-                            auto& contig = cur_obj.GetFieldRef(last_contig_field);
+                            auto contig = cur_obj.GetFieldRef(last_contig_field);
                             GetContigNum(contig, last_contig, num_len);
                         }
                     }
@@ -795,7 +795,7 @@ static void RemoveDescriptors(CSeq_entry& entry, TDescrPredicat to_remove)
     if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
 
         auto& descr_cont = descrs->Set();
-        for (auto& descr = descr_cont.begin(); descr != descr_cont.end();) {
+        for (auto descr = descr_cont.begin(); descr != descr_cont.end();) {
             if (to_remove(**descr)) {
                 descr = descr_cont.erase(descr);
             }
@@ -1213,7 +1213,7 @@ static void RemoveOldCitGen(CRef<CSeq_entry>& id_entry)
     if (id_entry->GetSeq().IsSetDescr() && id_entry->GetSeq().GetDescr().IsSet()) {
         CSeq_descr::Tdata& descrs = id_entry->SetSeq().SetDescr().Set();
         auto cit_gen = descrs.end();
-        for (auto& descr = descrs.begin(); descr != descrs.end(); ++descr) {
+        for (auto descr = descrs.begin(); descr != descrs.end(); ++descr) {
 
             if ((*descr)->IsPub()) {
 

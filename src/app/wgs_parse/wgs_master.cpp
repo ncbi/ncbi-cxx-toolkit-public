@@ -121,10 +121,10 @@ static size_t CheckPubs(const CSeq_entry& entry, const string& file, list<CPubDe
     }
     else {
 
-        for (auto& common_pub = common_pubs.begin(); common_pub != common_pubs.end();) {
+        for (auto common_pub = common_pubs.begin(); common_pub != common_pubs.end();) {
 
             bool found = false;
-            for (auto& pub = pubs.begin(); pub != pubs.end(); ++pub) {
+            for (auto pub = pubs.begin(); pub != pubs.end(); ++pub) {
                 auto synonym = find_if(common_pub->m_pubdescr_synonyms.begin(), common_pub->m_pubdescr_synonyms.end(),
                                        [&pub](const CRef<CPubdesc>& synonym) { return (*pub)->Equals(*synonym); });
 
@@ -315,7 +315,7 @@ static bool CheckBioSource(const CSeq_entry& entry, CMasterInfo& info, const str
             }
             else {
 
-                auto& biosource_it = find_if(descrs->Get().begin(), descrs->Get().end(), is_biosource);
+                auto biosource_it = find_if(descrs->Get().begin(), descrs->Get().end(), is_biosource);
                 if (info.m_biosource.Empty()) {
                     info.m_biosource.Reset(new CBioSource);
                     info.m_biosource->Assign((*biosource_it)->GetSource());
@@ -435,8 +435,8 @@ static bool CheckGPID(const CSeq_entry& entry)
 
     if (!ret && entry.IsSet()) {
         if (entry.GetSet().IsSetSeq_set()) {
-            auto& entry_it = find_if(entry.GetSet().GetSeq_set().begin(), entry.GetSet().GetSeq_set().end(),
-                                     [](const CRef<CSeq_entry>& cur_entry) { return CheckGPID(*cur_entry); });
+            auto entry_it = find_if(entry.GetSet().GetSeq_set().begin(), entry.GetSet().GetSeq_set().end(),
+                                    [](const CRef<CSeq_entry>& cur_entry) { return CheckGPID(*cur_entry); });
             ret = entry_it != entry.GetSet().GetSeq_set().end();
         }
     }
@@ -488,7 +488,7 @@ static bool CheckSameOrgRefs(list<COrgRefInfo>& org_refs)
         return true;
     }
 
-    auto& cur_org_ref = org_refs.begin();
+    auto cur_org_ref = org_refs.begin();
     CRef<COrg_ref>& first_org_ref = cur_org_ref->m_org_ref;
     SortOrgRef(*first_org_ref);
 
@@ -550,7 +550,7 @@ static void CheckSetOfIds(CRef<CUser_object>& user_obj, const string& tag, const
     TIdContainer cur_ids;
 
     if (user_obj.NotEmpty() && user_obj->IsSetData()) {
-        auto& tag_field = user_obj->GetFieldRef(tag);
+        auto tag_field = user_obj->GetFieldRef(tag);
         if (tag_field.NotEmpty() && tag_field->IsSetData() && tag_field->GetData().IsStrs()) {
 
             for (auto& id : tag_field->GetData().GetStrs()) {
@@ -589,7 +589,7 @@ static CUser_object* GetDBLinkFromIdMasterBioseq(CRef<CSeq_entry>& bioseq)
     CUser_object* dblink_user_obj = nullptr;
     if (bioseq.NotEmpty() && bioseq->IsSetDescr() && bioseq->GetDescr().IsSet()) {
 
-        auto& dblink_user_obj_it = find_if(bioseq->SetDescr().Set().begin(), bioseq->SetDescr().Set().end(), [](const CRef<CSeqdesc>& descr) { return IsUserObjectOfType(*descr, "DBLink"); });
+        auto dblink_user_obj_it = find_if(bioseq->SetDescr().Set().begin(), bioseq->SetDescr().Set().end(), [](const CRef<CSeqdesc>& descr) { return IsUserObjectOfType(*descr, "DBLink"); });
         if (dblink_user_obj_it != bioseq->GetDescr().Get().end()) {
 
             dblink_user_obj = &(*dblink_user_obj_it)->SetUser();
@@ -652,7 +652,7 @@ static void CheckCurrentDBLinkConsistency(const CUser_object& first, const CUser
                 id_field->IsSetData() && id_field->GetData().IsStrs()) {
 
                 auto& tag = id_field->GetLabel().GetStr();
-                auto& cur_field = second.GetFieldRef(tag);
+                auto cur_field = second.GetFieldRef(tag);
                 if (cur_field.Empty()) {
 
                     reportAll(tag, id_field->GetData().GetStrs(), reject);
@@ -662,7 +662,7 @@ static void CheckCurrentDBLinkConsistency(const CUser_object& first, const CUser
                     auto& cur_vals = cur_field->GetData().GetStrs();
                     for (auto& val : id_field->GetData().GetStrs()) {
 
-                        auto& cur_val = find_if(cur_vals.begin(), cur_vals.end(), [&val](const string& item) { return item == val; });
+                        auto cur_val = find_if(cur_vals.begin(), cur_vals.end(), [&val](const string& item) { return item == val; });
                         if (cur_val == cur_vals.end()) {
                             report(tag, val, reject);
                         }
@@ -700,7 +700,7 @@ static void CheckMasterDblink(CMasterInfo& info)
     CUser_object* id_dblink_user_obj = GetDBLinkFromIdMasterBioseq(info.m_id_master_bioseq);
     if (GetParams().IsDblinkOverride() && id_dblink_user_obj && info.m_dblink->GetFieldRef("BioSample").Empty()) {
 
-        auto& biosample_field = id_dblink_user_obj->GetFieldRef("BioSample");
+        auto biosample_field = id_dblink_user_obj->GetFieldRef("BioSample");
         if (biosample_field.NotEmpty() && biosample_field->IsSetData() && biosample_field->GetData().IsStrs()) {
             ERR_POST_EX(0, 0, Warning << "The DBLink User-object content from the files being processed lacks BioSample link that is present in the current WGS-Master for this WGS project. Using the one from the current Master.");
             info.m_dblink->AddField("BioSample", biosample_field->GetData().GetStrs());
@@ -1588,6 +1588,8 @@ static void SortSequences(list<CEntryOrderInfo>& seq_order)
             case eSeqLenAsc:
                 sort_predicat = [](const CEntryOrderInfo& a, const CEntryOrderInfo& b){ return a.m_seq_len < b.m_seq_len; };
                 break;
+            default:
+                ;
         }
 
         _ASSERT(sort_predicat != nullptr && "sort_predicat should have a valid function pointer");

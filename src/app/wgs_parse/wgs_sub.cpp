@@ -175,7 +175,7 @@ static void RemovePubs(CSeq_entry& entry, const list<CPubDescriptionInfo>& commo
     CSeq_descr* descrs = nullptr;
     if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
 
-        for (auto& cur_descr = descrs->Set().begin(); cur_descr != descrs->Set().end();) {
+        for (auto cur_descr = descrs->Set().begin(); cur_descr != descrs->Set().end();) {
 
             bool removed = false;
             if ((*cur_descr)->IsPub()) {
@@ -895,7 +895,7 @@ static void RemoveBioSources(CSeq_entry& entry)
     CSeq_descr* descrs = nullptr;
     if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
 
-        for (auto& descr = descrs->Set().begin(); descr != descrs->Set().end();) {
+        for (auto descr = descrs->Set().begin(); descr != descrs->Set().end();) {
 
             if ((*descr)->IsSource()) {
                 descr = descrs->Set().erase(descr);
@@ -992,13 +992,13 @@ static void RemoveKeywords(CSeq_entry& entry, const set<string>& keywords)
     CSeq_descr* descrs = nullptr;
     if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
 
-        for (auto& descr = descrs->Set().begin(); descr != descrs->Set().end();) {
+        for (auto descr = descrs->Set().begin(); descr != descrs->Set().end();) {
 
             bool removed = false;
             if ((*descr)->IsGenbank() && (*descr)->GetGenbank().IsSetKeywords()) {
 
                 CGB_block& gb_block = (*descr)->SetGenbank();
-                for (auto& keyword = gb_block.SetKeywords().begin(); keyword != gb_block.SetKeywords().end();) {
+                for (auto keyword = gb_block.SetKeywords().begin(); keyword != gb_block.SetKeywords().end();) {
                     if (keywords.find(*keyword) != keywords.end()) {
                         keyword = gb_block.SetKeywords().erase(keyword);
                     }
@@ -1055,7 +1055,7 @@ static void RemoveComments(CSeq_entry& entry, const list<string>& comments, GetC
     if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
 
         CDataChecker checker(false, comments);
-        for (auto& descr = descrs->Set().begin(); descr != descrs->Set().end();) {
+        for (auto descr = descrs->Set().begin(); descr != descrs->Set().end();) {
 
             bool removed = false;
             const string& comment = getComment(**descr);
@@ -1096,7 +1096,7 @@ static void PropagateTPAKeyword(CSeq_entry& entry)
         }
 
         CGB_block& gb_block = (*gb_block_descr)->SetGenbank();
-        for (auto& keyword = gb_block.SetKeywords().begin(); keyword != gb_block.SetKeywords().end();) {
+        for (auto keyword = gb_block.SetKeywords().begin(); keyword != gb_block.SetKeywords().end();) {
             if (*keyword == "TPA" || NStr::StartsWith(*keyword, "TPA:")) {
                 keyword = gb_block.SetKeywords().erase(keyword);
             }
@@ -1122,7 +1122,7 @@ static void CleanupProtGbblock(CSeq_entry& entry)
 
         CSeq_descr& descrs = entry.SetSeq().SetDescr();
 
-        for (auto& descr = descrs.Set().begin(); descr != descrs.Set().end();) {
+        for (auto descr = descrs.Set().begin(); descr != descrs.Set().end();) {
 
             bool removed = false;
             if ((*descr)->IsGenbank()) {
@@ -1162,7 +1162,7 @@ static void RemoveDblinkGPID(CSeq_entry& entry, size_t& dblink_order_num)
     if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
 
         size_t order = 0;
-        for (auto& descr = descrs->Set().begin(); descr != descrs->Set().end();) {
+        for (auto descr = descrs->Set().begin(); descr != descrs->Set().end();) {
 
             ++order;
             if (IsUserObjectOfType(**descr, "GenomeProjectsDB") || IsUserObjectOfType(**descr, "DBLink")) {
@@ -1698,7 +1698,8 @@ bool ParseSubmissions(CMasterInfo& master_info)
                     }
 
                     if (!GetParams().GetNewNucTitle().empty()) {
-                        RepTitles(*entry, CTitleInfo());
+                        CTitleInfo title_info;
+                        RepTitles(*entry, title_info);
                     }
 
                     FixGbblockSource(*entry);

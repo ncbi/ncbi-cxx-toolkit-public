@@ -205,7 +205,7 @@ TSetSeqIdFunc FindSetTextSeqIdFunc(CSeq_id::E_Choice choice)
         { CSeq_id::e_Other, &CSeq_id::SetOther }
     };
 
-    auto& set_fun = SET_TEXT_ID.find(choice);
+    auto set_fun = SET_TEXT_ID.find(choice);
     if (set_fun == SET_TEXT_ID.end()) {
         return nullptr;
     }
@@ -321,7 +321,7 @@ string GetSeqIdAccession(const CBioseq& bioseq)
     string ret;
     if (bioseq.IsSetId()) {
 
-        auto& cur_id = find_if(bioseq.GetId().begin(), bioseq.GetId().end(), [](const CRef<CSeq_id>& id) { return HasTextAccession(*id); });
+        auto cur_id = find_if(bioseq.GetId().begin(), bioseq.GetId().end(), [](const CRef<CSeq_id>& id) { return HasTextAccession(*id); });
         if (cur_id != bioseq.GetId().end()) {
             ret = (*cur_id)->GetTextseq_Id()->GetAccession();
         }
@@ -345,7 +345,7 @@ string GetSeqIdLocalOrGeneral(const CBioseq& bioseq)
     string ret;
     if (bioseq.IsSetId()) {
 
-        auto& cur_id = find_if(bioseq.GetId().begin(), bioseq.GetId().end(), [](const CRef<CSeq_id>& id) { return IsLocalOrGeneralId(*id); });
+        auto cur_id = find_if(bioseq.GetId().begin(), bioseq.GetId().end(), [](const CRef<CSeq_id>& id) { return IsLocalOrGeneralId(*id); });
         if (cur_id != bioseq.GetId().end()) {
             ret = GetLocalOrGeneralIdStr(**cur_id);
         }
