@@ -124,7 +124,7 @@ struct SInfo_tag {
     TNcbiLog_PID      pid;                      /**< Process ID                                          */
     TNcbiLog_Counter  rid;                      /**< Request ID (e.g. iteration number in case of a CGI) */
     ENcbiLog_AppState state;                    /**< Application state                                   */
-    TNcbiLog_Int8     guid;                     /**< Globally unique process ID                          */
+    TNcbiLog_UInt8    guid;                     /**< Globally unique process ID                          */
     TNcbiLog_Counter  psn;                      /**< Serial number of the posting within the process     */
     STime             post_time;                /**< GMT time at which the message was posted, 
                                                      use current time if it is not specified (equal to 0)*/
@@ -232,7 +232,8 @@ extern int /*bool*/ NcbiLogP_DisableChecks(int /*bool*/ disable);
  *  http://ncbi.github.io/cxx-toolkit/pages/ch_log#ch_core.Where_Diagnostic_Messages_Go
  *  @sa NcbiLog_SetDestination, ENcbiLog_Destination, NcbiLog_Init
  */
-extern ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds, unsigned int port, const char* logsite);
+extern ENcbiLog_Destination
+NcbiLogP_SetDestination(ENcbiLog_Destination ds, unsigned int port, const char* logsite);
 
 
 /** Redefine value of $SERVER_PORT environment variable.

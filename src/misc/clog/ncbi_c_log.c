@@ -636,18 +636,18 @@ static TNcbiLog_TID s_GetTID(void)
 /** Create unique process ID.
  *  Adapted from C++ Toolkit code: see CDiagContect::x_CreateUID().
  */
-static TNcbiLog_Int8 s_CreateUID(void)
+static TNcbiLog_UInt8 s_CreateUID(void)
 {
     TNcbiLog_PID   pid = s_GetPID();
-    time_t         t = time(0);
+    TNcbiLog_UInt8 t = (TNcbiLog_UInt8)time(0);
     const char*    host = NcbiLog_GetHostName();
     const char*    s;
-    TNcbiLog_Int8  h = 212;
+    TNcbiLog_UInt8 h = 212;
 
     /* Use host name */
     if ( host ) {
         for (s = host;  *s != '\0';  s++) {
-            h = h*1265 + *s;
+            h = h*1265 + (unsigned char)(*s);
         }
     }
     h &= 0xFFFF;
@@ -656,9 +656,9 @@ static TNcbiLog_Int8 s_CreateUID(void)
        but assign new version number to distinguish the NCBI C logging API
        from the C++ API.
     */
-    return ((TNcbiLog_Int8)h << 48) |
-           (((TNcbiLog_Int8)pid & 0xFFFF) << 32) |
-           (((TNcbiLog_Int8)t & 0xFFFFFFF) << 4) |
+    return (h << 48) |
+           ((pid & 0xFFFF) << 32) |
+           ((t & 0xFFFFFFF) << 4) |
            3; 
 }
 
@@ -1770,7 +1770,7 @@ static char* s_GenerateHitID_Str_Ex(char* dst, int /*bool*/ use_logging_api, TNc
         if (!sx_Info->guid) {
             sx_Info->guid = uid ? uid : s_CreateUID();
         }
-        hi = sx_Info->guid;
+        hi  = sx_Info->guid;
         rid = (TNcbiLog_UInt8)(sx_Info->rid & 0xFFFFFF) << 16;
     } else {
         hi = uid ? uid : s_CreateUID();
@@ -2146,7 +2146,6 @@ static const char* sx_SeverityStr[] = {
 static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg)
 {
     TNcbiLog_Context  ctx;
-    int               n;
     size_t            pos, r_len, w_len;
     char*             buf;
     ENcbiLog_DiagFile diag = eDiag_Trace;
@@ -2180,9 +2179,8 @@ static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg)
     VERIFY(pos);
 
     /* Severity */
-    n = sprintf(buf + pos, "%s: ", sx_SeverityStr[severity]);
-    VERIFY(n > 0);
-    pos += (size_t)n;
+    pos += (size_t) sprintf(buf + pos, "%s: ", sx_SeverityStr[severity]);
+
     /* Message */
     s_Sanitize(msg, strlen(msg), &r_len, buf + pos, NCBILOG_ENTRY_MAX - pos, &w_len);
     pos += w_len;
@@ -2544,7 +2542,9 @@ extern ENcbiLog_Destination NcbiLog_SetDestination(ENcbiLog_Destination ds)
 }
 
 
-extern ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds, unsigned int port, const char* logsite)
+extern ENcbiLog_Destination 
+NcbiLogP_SetDestination(ENcbiLog_Destination ds,
+                        unsigned int port, const char* logsite)
 {
     char* logfile = NULL;
     MT_LOCK_API;
@@ -2988,7 +2988,6 @@ extern ENcbiLog_AppState NcbiLog_GetState(void)
  */
 static void s_AppStart(TNcbiLog_Context ctx, const char* argv[])
 {
-    int    i, n;
     size_t pos;
     char*  buf;
 
@@ -3024,15 +3023,13 @@ static void s_AppStart(TNcbiLog_Context ctx, const char* argv[])
     sx_Info->app_start_time.ns  = sx_Info->post_time.ns;
 
     /* Event name */
-    n = sprintf(buf + pos, "%-13s", "start");
-    VERIFY(n > 0);
-    pos += (size_t)n;
+    pos += (size_t) sprintf(buf + pos, "%-13s", "start");
+
     /* Walk through list of arguments */
     if (argv) {
+        int i;
         for (i = 0; argv[i] != NULL; ++i) {
-            n = sprintf(buf + pos, " %s", argv[i]);
-            VERIFY(n > 0);
-            pos += (size_t)n;
+            pos += (size_t) sprintf(buf + pos, " %s", argv[i]);
         }
     }
     /* Post a message */
@@ -3098,7 +3095,6 @@ extern void NcbiLog_AppStopSignal(int exit_status, int exit_signal)
 extern void NcbiLogP_AppStop(int exit_status, int exit_signal, double execution_time)
 {
     TNcbiLog_Context ctx = NULL;
-    int    n;
     size_t pos;
 
     MT_LOCK_API;
@@ -3115,13 +3111,12 @@ extern void NcbiLogP_AppStop(int exit_status, int exit_signal, double execution_
         execution_time = s_DiffTime(sx_Info->app_start_time, sx_Info->post_time);
     }
     if ( exit_signal ) {
-        n = sprintf(sx_Info->message + pos, "%-13s %d %.3f SIG=%d",
-                    "stop", exit_status, execution_time, exit_signal);
+        sprintf(sx_Info->message + pos, "%-13s %d %.3f SIG=%d",
+                "stop", exit_status, execution_time, exit_signal);
     } else {
-        n = sprintf(sx_Info->message + pos, "%-13s %d %.3f",
-                    "stop", exit_status, execution_time);
+        sprintf(sx_Info->message + pos, "%-13s %d %.3f",
+                "stop", exit_status, execution_time);
     }
-    VERIFY(n > 0);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
 
@@ -3330,7 +3325,6 @@ extern void NcbiLog_ReqRun(void)
 extern void NcbiLog_ReqStop(int status, size_t bytes_rd, size_t bytes_wr)
 {
     TNcbiLog_Context ctx = NULL;
-    int    n;
     size_t pos;
     double timespan;
 
@@ -3344,10 +3338,9 @@ extern void NcbiLog_ReqStop(int status, size_t bytes_rd, size_t bytes_wr)
     VERIFY(pos);
     /* We already have current time in sx_Info->post_time */
     timespan = s_DiffTime(ctx->req_start_time, sx_Info->post_time);
-    n = sprintf(sx_Info->message + pos, "%-13s %d %.3f %lu %lu",
-                "request-stop", status, timespan,
-                (unsigned long)bytes_rd, (unsigned long)bytes_wr);
-    VERIFY(n > 0);
+    sprintf(sx_Info->message + pos, "%-13s %d %.3f %lu %lu",
+            "request-stop", status, timespan,
+            (unsigned long)bytes_rd, (unsigned long)bytes_wr);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
     /* Reset state */
@@ -3365,7 +3358,6 @@ extern void NcbiLog_ReqStop(int status, size_t bytes_rd, size_t bytes_wr)
 
 static void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params)
 {
-    int    n;
     size_t pos;
     char*  buf;
 
@@ -3374,9 +3366,7 @@ static void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params)
     pos = s_PrintCommonPrefix(ctx);
     VERIFY(pos);
     /* Event name */
-    n = sprintf(buf + pos, "%-13s ", "extra");
-    VERIFY(n > 0);
-    pos += (size_t)n;
+    pos += (size_t) sprintf(buf + pos, "%-13s ", "extra");
     /* Parameters */
     pos = s_PrintParams(buf, pos, params);
     VERIFY(pos);
@@ -3387,7 +3377,6 @@ static void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params)
 
 static void s_ExtraStr(TNcbiLog_Context ctx, const char* params)
 {
-    int    n;
     size_t pos;
     char*  buf;
 
@@ -3396,9 +3385,7 @@ static void s_ExtraStr(TNcbiLog_Context ctx, const char* params)
     pos = s_PrintCommonPrefix(ctx);
     VERIFY(pos);
     /* Event name */
-    n = sprintf(buf + pos, "%-13s ", "extra");
-    VERIFY(n > 0);
-    pos += (size_t)n;
+    pos += (size_t) sprintf(buf + pos, "%-13s ", "extra");
     /* Parameters */
     pos = s_PrintParamsStr(buf, pos, params);
     VERIFY(pos);
@@ -3433,7 +3420,6 @@ extern void NcbiLog_Perf(int status, double timespan,
                          const SNcbiLog_Param* params)
 {
     TNcbiLog_Context ctx = NULL;
-    int    n;
     size_t pos, pos_prev;
     char*  buf;
     char*  hit_id = NULL;
@@ -3448,9 +3434,7 @@ extern void NcbiLog_Perf(int status, double timespan,
     VERIFY(pos);
 
     /* Print event name, status and timespan */
-    n = sprintf(buf + pos, "%-13s %d %f ", "perf", status, timespan);
-    VERIFY(n > 0);
-    pos += (size_t)n;
+    pos += (size_t) sprintf(buf + pos, "%-13s %d %f ", "perf", status, timespan);
 
     /* Parameters */
     pos_prev = pos;
@@ -3482,7 +3466,6 @@ extern void NcbiLog_Perf(int status, double timespan,
 extern void NcbiLogP_PerfStr(int status, double timespan, const char* params)
 {
     TNcbiLog_Context ctx = NULL;
-    int    n;
     size_t pos, pos_prev;
     char*  buf;
     char*  hit_id = NULL;
@@ -3497,9 +3480,7 @@ extern void NcbiLogP_PerfStr(int status, double timespan, const char* params)
     VERIFY(pos);
 
     /* Print event name, status and timespan */
-    n = sprintf(buf + pos, "%-13s %d %f ", "perf", status, timespan);
-    VERIFY(n > 0);
-    pos += (size_t)n;
+    pos += (size_t) sprintf(buf + pos, "%-13s %d %f ", "perf", status, timespan);
 
     /* Parameters */
     pos_prev = pos;
@@ -3690,7 +3671,7 @@ extern void NcbiLog_UpdateOnFork(TNcbiLog_OnForkFlags flags)
         "action=fork&parent_guid=%08X%08X&parent_pid=%05" NCBILOG_UINT8_FORMAT_SPEC, 
         old_guid_hi, old_guid_lo, old_pid);
 
-    VERIFY(n > 0  && n < 128);
+    VERIFY(n < 128);
     s_ExtraStr(ctx, buf);
 
     if (flags & fNcbiLog_OnFork_PrintStart) {
