@@ -272,6 +272,12 @@ dbldasn_g needs splitdbasn_g
 dbloadb needs asnmuxdblb
 dbloadb needs tea_crypt
 dbloadb_asn needs asngendefs
+dbsnp_primary_track needs $(Z_LIB)
+dbsnp_primary_track needs3party $(GRPC_LIBS)
+dbsnp_primary_track needs3party $(KRB5_LIBS)
+dbsnp_primary_track needs3party $(NETWORK_LIBS)
+dbsnp_primary_track needs3party $(ORIG_LIBS)
+dbsnp_primary_track needs3party $(Z_LIBS)
 dbsnp_tooltip_service needs xser
 ddvlib needs3party ncbidesk
 distance needs xalgophytree
