@@ -36,6 +36,9 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 
 #include <unistd.h>
+#include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/cass_exception.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/cass_util.hpp>
 
 #include <atomic>
 #include <memory>
@@ -47,10 +50,6 @@
 #include "corelib/ncbitime.hpp"
 #include "corelib/ncbistr.hpp"
 
-#include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/cass_exception.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/cass_util.hpp>
-
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
@@ -60,7 +59,7 @@ USING_NCBI_SCOPE;
 #define IO_THREADS                      32
 #define CORE_MAX_REQ_PER_FLUSH          128
 
-const unsigned int      CCassQuery::DEFAULT_PAGE_SIZE = 4096;
+const unsigned int CCassQuery::DEFAULT_PAGE_SIZE = 4096;
 
 
 bool CCassConnection::m_LoggingInitialized = false;
@@ -94,6 +93,25 @@ static void LogCallback(const CassLogMessage *  message, void *  data)
 
 
 /** CCassConnection */
+
+CCassConnection::CCassConnection()
+    : m_port(0)
+    , m_cluster(nullptr)
+    , m_session(nullptr)
+    , m_ctimeoutms(0)
+    , m_qtimeoutms(0)
+    , m_last_query_cnt(0)
+    , m_loadbalancing(LB_DCAWARE)
+    , m_tokenaware(true)
+    , m_latencyaware(false)
+    , m_numThreadsIo(0)
+    , m_numConnPerHost(0)
+    , m_maxConnPerHost(0)
+    , m_keepalive(0)
+    , m_fallback_readconsistency(false)
+    , m_FallbackWriteConsistency(0)
+    , m_active_statements(0)
+{}
 
 
 static CassLogLevel s_MapFromToolkitSeverity(EDiagSev  severity)
@@ -146,6 +164,29 @@ void CCassConnection::UpdateLogging(void)
     }
 }
 
+unsigned int CCassConnection::QryTimeout(void) const
+{
+    return m_qtimeoutms;
+}
+
+unsigned int CCassConnection::QryTimeoutMks(void) const
+{
+    return QryTimeout() * 1000;
+}
+
+void CCassConnection::SetRtLimits(unsigned int  numThreadsIo, unsigned int  numConnPerHost,
+                 unsigned int  maxConnPerHost)
+{
+    m_numThreadsIo = numThreadsIo;
+    m_numConnPerHost = numConnPerHost;
+    m_maxConnPerHost = maxConnPerHost;
+}
+
+void CCassConnection::SetKeepAlive(unsigned int keepalive)
+{
+    m_keepalive = keepalive;
+}
+
 
 shared_ptr<CCassConnection> CCassConnection::Create()
 {
@@ -168,6 +209,46 @@ void CCassConnection::SetTokenAware(bool  value)
 void CCassConnection::SetLatencyAware(bool  value)
 {
     m_latencyaware = value;
+}
+
+void CCassConnection::SetTimeouts(unsigned int ConnTimeoutMs)
+{
+    SetTimeouts(ConnTimeoutMs, CASS_DRV_TIMEOUT_MS);
+}
+
+void CCassConnection::SetTimeouts(unsigned int ConnTimeoutMs, unsigned int QryTimeoutMs)
+{
+    if (ConnTimeoutMs == 0 || ConnTimeoutMs > kCassMaxTimeout) {
+        ConnTimeoutMs = kCassMaxTimeout;
+    }
+    if (QryTimeoutMs == 0 || QryTimeoutMs > kCassMaxTimeout) {
+        QryTimeoutMs = kCassMaxTimeout;
+    }
+    m_qtimeoutms = QryTimeoutMs;
+    m_ctimeoutms = ConnTimeoutMs;
+    if (m_cluster) {
+        cass_cluster_set_request_timeout(m_cluster, m_qtimeoutms);
+    }
+}
+
+void CCassConnection::SetFallBackRdConsistency(bool value)
+{
+    m_fallback_readconsistency = value;
+}
+
+bool CCassConnection::GetFallBackRdConsistency(void) const
+{
+    return m_fallback_readconsistency;
+}
+
+void CCassConnection::SetFallBackWrConsistency(unsigned int  value)
+{
+    m_FallbackWriteConsistency = value;
+}
+
+unsigned int CCassConnection::GetFallBackWrConsistency(void) const
+{
+    return m_FallbackWriteConsistency;
 }
 
 
@@ -255,28 +336,28 @@ void CCassConnection::Connect()
 void CCassConnection::CloseSession()
 {
     {
-        CSpinGuard      guard(m_prepared_mux);
-        NON_CONST_ITERATE(typename preparedlist_t, it, m_prepared) {
-            if (it->second) {
-                cass_prepared_free(it->second);
-                it->second = nullptr;
+        CSpinGuard guard(m_prepared_mux);
+        for(auto & item : m_prepared) {
+            if (item.second) {
+                cass_prepared_free(item.second);
+                item.second = nullptr;
             }
         }
         m_prepared.clear();
     }
 
     if (m_session) {
-        CassFuture *    close_future;
-        bool            free = false;
-
+        CassFuture * close_future;
+        bool free = false;
         close_future = cass_session_close(m_session);
         if (close_future) {
-            free = cass_future_wait_timed(close_future,
-                                          DISCONNECT_TIMEOUT_MS * 1000L);
+            free = cass_future_wait_timed(close_future, DISCONNECT_TIMEOUT_MS * 1000L);
             cass_future_free(close_future);
         }
-        if (free) // otherwise we can't free it, let better leak than crash
+        // otherwise we can't free it, let better leak than crash
+        if (free) {
             cass_session_free(m_session);
+        }
         m_session = nullptr;
     }
 }
@@ -333,6 +414,40 @@ void CCassConnection::Close()
     }
 }
 
+bool CCassConnection::IsConnected(void)
+{
+    return (m_cluster || m_session);
+}
+
+int64_t CCassConnection::GetActiveStatements(void) const
+{
+    return m_active_statements;
+}
+
+CassMetrics CCassConnection::GetMetrics(void)
+{
+    CassMetrics metrics;
+    if(m_session) {
+        cass_session_get_metrics(m_session, &metrics);
+    }
+    return metrics;
+}
+
+void CCassConnection::SetConnProp(
+    const string & host,
+    const string & user,
+    const string & pwd,
+    int16_t port)
+{
+    m_host = host;
+    m_user = user;
+    m_pwd = pwd;
+    m_port = port;
+    if (IsConnected()) {
+        Close();
+    }
+}
+
 
 void CCassConnection::SetKeyspace(const string &  keyspace)
 {
@@ -344,6 +459,11 @@ void CCassConnection::SetKeyspace(const string &  keyspace)
         }
         m_keyspace = keyspace;
     }
+}
+
+string CCassConnection::Keyspace(void) const
+{
+    return m_keyspace;
 }
 
 
@@ -686,6 +806,26 @@ void CCassPrm::Bind(CassStatement *  statement, unsigned int  idx)
 
 
 /**  CCassQuery */
+
+void CCassQuery::SetTimeout()
+{
+    SetTimeout(CASS_DRV_TIMEOUT_MS);
+}
+
+void CCassQuery::SetTimeout(unsigned int t)
+{
+    m_qtimeoutms = t;
+}
+
+unsigned int CCassQuery::Timeout(void) const
+{
+    return m_qtimeoutms;
+}
+
+void CCassQuery::Close(void)
+{
+    InternalClose(true);
+}
 
 CCassQuery::~CCassQuery()
 {
@@ -1347,88 +1487,97 @@ async_rslt_t  CCassQuery::NextRow()
                                           "cassandra query result row"));
                 return ar_dataready;
             }
-        } else
+        } else {
             NCBI_THROW(CCassandraException, eSeqFailed,
                        "invalid sequence of operations, "
                        "attempt to fetch next row on a closed query");
+        }
     }
 }
 
 
 template<>
-const CassValue *  CCassQuery::GetColumn(int  ifld)
+const CassValue * CCassQuery::GetColumn(int ifld) const
 {
-    if (!m_row)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "query row is not fetched");
-
-    const CassValue *   clm = cass_row_get_column(m_row, ifld);
-    if (!clm)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "column is not fetched (index " +
-                   NStr::NumericToString(ifld) + " beyound the range?)");
-    return clm;
-}
-
-
-template<>
-const CassValue *  CCassQuery::GetColumn(const string &  name)
-{
-    if (!m_row)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "query row is not fetched");
-
-    const CassValue *   clm = cass_row_get_column_by_name_n(m_row,
-                                                            name.c_str(),
-                                                            name.size());
-    if (!clm)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "column " + name + " is not available");
-    return clm;
-}
-
-
-template<>
-const CassValue *  CCassQuery::GetColumn(const char *  name)
-{
-    if (!m_row)
+    if (!m_row) {
         NCBI_THROW(CCassandraException, eSeqFailed, "query row is not fetched");
+    }
 
-    const CassValue *   clm = cass_row_get_column_by_name(m_row, name);
-    if (!clm)
+    const CassValue * clm = cass_row_get_column(m_row, ifld);
+    if (!clm) {
         NCBI_THROW(CCassandraException, eSeqFailed,
-                   "column " + string(name) + " is not available");
+            "column is not fetched (index " +
+            NStr::NumericToString(ifld) + " beyound the range?)"
+        );
+    }
     return clm;
 }
 
 
-const CassValue *  CCassQuery::GetTupleIteratorValue(CassIterator *  itr)
+template<>
+const CassValue * CCassQuery::GetColumn(const string & name) const
 {
-    if (!m_row)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "query row is not fetched");
-    if (!cass_iterator_next(itr))
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "cass tuple iterator next failed");
+    if (!m_row) {
+        NCBI_THROW(CCassandraException, eSeqFailed, "query row is not fetched");
+    }
 
-    const CassValue *   value = cass_iterator_get_value(itr);
-    if (!value)
-        NCBI_THROW(CCassandraException, eSeqFailed,
-                   "cass tuple iterator fetch failed");
+    const CassValue * clm = cass_row_get_column_by_name_n(m_row, name.c_str(), name.size());
+    if (!clm) {
+        NCBI_THROW(CCassandraException, eSeqFailed, "column " + name + " is not available");
+    }
+    return clm;
+}
+
+template<>
+const CassValue * CCassQuery::GetColumn(const char * name) const
+{
+    if (!m_row) {
+        NCBI_THROW(CCassandraException, eSeqFailed, "query row is not fetched");
+    }
+
+    const CassValue * clm = cass_row_get_column_by_name(m_row, name);
+    if (!clm) {
+        NCBI_THROW(CCassandraException, eSeqFailed, "column " + string(name) + " is not available");
+    }
+    return clm;
+}
+
+const CassValue * CCassQuery::GetTupleIteratorValue(CassIterator * itr) const
+{
+    if (!m_row) {
+        NCBI_THROW(CCassandraException, eSeqFailed, "query row is not fetched");
+    }
+    if (!cass_iterator_next(itr)) {
+        NCBI_THROW(CCassandraException, eSeqFailed, "cass tuple iterator next failed");
+    }
+
+    const CassValue * value = cass_iterator_get_value(itr);
+    if (!value) {
+        NCBI_THROW(CCassandraException, eSeqFailed, "cass tuple iterator fetch failed");
+    }
     return value;
 }
 
-
-string CCassQuery::ToString()
+string CCassQuery::ToString() const
 {
     return m_sql.empty() ? "<>" : m_sql;
+}
+
+bool CCassQuery::IsEOF(void) const
+{
+    return m_EOF;
+}
+
+bool CCassQuery::IsAsync(void) const
+{
+    return m_async;
 }
 
 
 /* Value conversion routines */
 
 template<>
-bool CassValueConvert<bool>(const CassValue *  Val)
+bool CassValueConvert<bool>(const CassValue * Val)
 {
     if (!Val)
         RAISE_DB_ERROR(eFetchFailed,

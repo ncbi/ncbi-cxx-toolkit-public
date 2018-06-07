@@ -1,6 +1,3 @@
-#ifndef CASS_DRIVER__HPP
-#define CASS_DRIVER__HPP
-
 /*  $Id$
  * ===========================================================================
  *
@@ -34,6 +31,15 @@
  *
  */
 
+#ifndef OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__CASS_DRIVER_HPP_
+#define OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__CASS_DRIVER_HPP_
+
+#include <cassandra.h>
+#include <corelib/ncbistre.hpp>
+#include <corelib/ncbistr.hpp>
+#include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbimtx.hpp>
+
 #include <string>
 #include <memory>
 #include <unordered_map>
@@ -42,12 +48,7 @@
 #include <atomic>
 #include <utility>
 #include <vector>
-
-#include <cassandra.h>
-#include <corelib/ncbistre.hpp>
-#include <corelib/ncbistr.hpp>
-#include <corelib/ncbiexpt.hpp>
-#include <corelib/ncbimtx.hpp>
+#include <limits>
 
 #include "IdCassScope.hpp"
 #include "cass_exception.hpp"
@@ -58,12 +59,6 @@ USING_NCBI_SCOPE;
 #define CASS_PREPARED_Q 1
 #define CASS_DRV_TIMEOUT_MS 2000U
 #define CASS_ERROR_SERVER_CONSISTENCY_NOT_ACHIEVED 0xC40063C0
-
-
-// cass_cluster_set_request_timeout takes in ms while
-// cass_future_wait_timed takes in mks
-// to avoid overflow we have to adjust to mks
-#define CASS_MAX_TIMEOUT_MS (0x7fffffff / 1000)
 
 #define ASYNC_RESULT_MAP(XX) \
     XX(ar_wait, "Wait") \
@@ -105,163 +100,85 @@ class CCassQuery;
 class CCassQueryCbRef;
 class CCassConnection;
 
+using TCassQueryOnDataCallback = void(*)(CCassQuery&, void *);
+using TCassQueryOnExecuteCallback = void(*)(CCassQuery&, void *);
+using TCassQueryOnData2Callback = void(*)(void *);
+
 
 class CCassConnection: public std::enable_shared_from_this<CCassConnection>
 {
-private:
-    CCassConnection(const CCassConnection&) = delete;
-    CCassConnection& operator=(const CCassConnection&) = delete;
+    // cass_cluster_set_request_timeout takes in ms while
+    // cass_future_wait_timed takes in mks
+    // to avoid overflow we have to adjust to mks
+    // ~35minutes
+    static const unsigned int kCassMaxTimeout = numeric_limits<unsigned int>::max() / 1000;
+
+    using TPreparedList = unordered_map<string, const CassPrepared *>;
 
     friend class CCassQuery;
     friend class CCassConnectionFactory;
 
-private:
-    typedef unordered_map<string,
-                          const CassPrepared *>     preparedlist_t;
-
     void CloseSession(void);
 
-protected:
-    CCassConnection() :
-        m_port(0),
-        m_cluster(nullptr),
-        m_session(nullptr),
-        m_ctimeoutms(0),
-        m_qtimeoutms(0),
-        m_last_query_cnt(0),
-        m_loadbalancing(LB_DCAWARE),
-        m_tokenaware(true),
-        m_latencyaware(false),
-        m_numThreadsIo(0),
-        m_numConnPerHost(0),
-        m_maxConnPerHost(0),
-        m_keepalive(0),
-        m_fallback_readconsistency(false),
-        m_FallbackWriteConsistency(0),
-        m_active_statements(0)
-    {}
+ protected:
+    CCassConnection();
+    const CassPrepared * Prepare(const string & sql);
 
-    const CassPrepared *  Prepare(const string &  sql);
+ public:
+    CCassConnection(const CCassConnection&) = delete;
+    CCassConnection& operator=(const CCassConnection&) = delete;
 
-public:
     static shared_ptr<CCassConnection> Create(void);
     virtual ~CCassConnection(void);
     void Connect(void);
     void Reconnect(void);
     void Close(void);
 
-    bool IsConnected(void)
-    {
-        return (m_cluster || m_session);
-    }
-
-    int64_t GetActiveStatements(void) const
-    {
-        return m_active_statements;
-    }
-
-    CassMetrics GetMetrics(void)
-    {
-        CassMetrics metrics;
-        if(m_session) {
-            cass_session_get_metrics(m_session, &metrics);
-        }
-        return metrics;
-    }
-
-    void SetConnProp(const string &  host, const string &  user,
-                     const string &  pwd, short  port = 0)
-    {
-        m_host = host;
-        m_user = user;
-        m_pwd = pwd;
-        m_port = port;
-        if (IsConnected())
-            Close();
-    }
+    bool IsConnected(void);
+    int64_t GetActiveStatements(void) const;
+    CassMetrics GetMetrics(void);
+    void SetConnProp(const string & host, const string & user, const string & pwd, int16_t port = 0);
 
     void SetLoadBalancing(loadbalancing_policy_t policy);
     void SetTokenAware(bool value);
     void SetLatencyAware(bool value);
 
-    void SetTimeouts(unsigned int  ConnTimeoutMs,
-                     unsigned int  QryTimeoutMs = CASS_DRV_TIMEOUT_MS)
-    {
-        if (ConnTimeoutMs == 0 || ConnTimeoutMs > CASS_MAX_TIMEOUT_MS)
-            ConnTimeoutMs = CASS_MAX_TIMEOUT_MS; // ~35minutes
-        if (QryTimeoutMs == 0 || QryTimeoutMs > CASS_MAX_TIMEOUT_MS)
-            QryTimeoutMs = CASS_MAX_TIMEOUT_MS; // ~35minutes
-        m_qtimeoutms = QryTimeoutMs;
-        m_ctimeoutms = ConnTimeoutMs;
-        if (m_cluster) {
-            cass_cluster_set_request_timeout(m_cluster, m_qtimeoutms);
-        }
-    }
+    void SetTimeouts(unsigned int ConnTimeoutMs);
+    void SetTimeouts(unsigned int ConnTimeoutMs, unsigned int QryTimeoutMs);
 
-    void SetFallBackRdConsistency(bool value)
-    {
-        m_fallback_readconsistency = value;
-    }
+    void SetFallBackRdConsistency(bool value);
+    bool GetFallBackRdConsistency(void) const;
 
-    bool GetFallBackRdConsistency(void) const
-    {
-        return m_fallback_readconsistency;
-    }
-
-    void SetFallBackWrConsistency(unsigned int  value)
-    {
-        m_FallbackWriteConsistency = value;
-    }
-
-    unsigned int GetFallBackWrConsistency(void) const
-    {
-        return m_FallbackWriteConsistency;
-    }
+    void SetFallBackWrConsistency(unsigned int  value);
+    unsigned int GetFallBackWrConsistency(void) const;
 
     static void SetLogging(EDiagSev  severity);
     static void DisableLogging(void);
     static void UpdateLogging(void);
 
-    unsigned int QryTimeout(void) const
-    {
-        return m_qtimeoutms;
-    }
+    unsigned int QryTimeout(void) const;
+    unsigned int QryTimeoutMks(void) const;
+    void SetRtLimits(unsigned int numThreadsIo, unsigned int numConnPerHost, unsigned int maxConnPerHost);
 
-    unsigned int QryTimeoutMks(void) const
-    {
-        return m_qtimeoutms * 1000;
-    }
+    void SetKeepAlive(unsigned int keepalive);
 
-    void SetRtLimits(unsigned int  numThreadsIo, unsigned int  numConnPerHost,
-                     unsigned int  maxConnPerHost)
-    {
-        m_numThreadsIo = numThreadsIo;
-        m_numConnPerHost = numConnPerHost;
-        m_maxConnPerHost = maxConnPerHost;
-    }
+    void SetKeyspace(const string & keyspace);
+    string Keyspace(void) const;
 
-    void SetKeepAlive(unsigned int keepalive)
-    {
-        m_keepalive = keepalive;
-    }
-
-    void SetKeyspace(const string &  keyspace);
-    string Keyspace(void) const
-    {
-        return m_keyspace;
-    }
     shared_ptr<CCassQuery> NewQuery();
     void getTokenRanges(vector< pair<int64_t,int64_t> > &ranges);
     vector<string> GetPartitionKeyColumnNames(string const & keyspace, string const & table);
     static string NewTimeUUID();
-    static void Perform(unsigned int  optimeoutms,
-                        const std::function<bool()>&  PreLoopCB,
-                        const std::function<void(const CCassandraException&)>&  DbExceptCB,
-                        const std::function<bool(bool)>&  OpCB);
+    static void Perform(
+        unsigned int optimeoutms,
+        const std::function<bool()>& PreLoopCB,
+        const std::function<void(const CCassandraException&)>& DbExceptCB,
+        const std::function<bool(bool)>& OpCB
+    );
 
-private:
+ private:
     string                          m_host;
-    short                           m_port;
+    int16_t                         m_port;
     string                          m_user;
     string                          m_pwd;
     string                          m_keyspace;
@@ -281,7 +198,7 @@ private:
     unsigned int                    m_FallbackWriteConsistency;
     static atomic<CassUuidGen*>     m_CassUuidGen;
     CSpinLock                       m_prepared_mux;
-    preparedlist_t                  m_prepared;
+    TPreparedList                   m_prepared;
     atomic<int64_t>                 m_active_statements;
 
     static bool                     m_LoggingInitialized;
@@ -306,7 +223,7 @@ template<> void CassDataToCollection<string>(CassCollection* coll, const string&
 
 class CCassPrm
 {
-protected:
+ protected:
     CassValueType   m_type;
     bool            m_assigned;
 
@@ -325,7 +242,7 @@ protected:
 
     void Bind(CassStatement *  statement, unsigned int  idx);
 
-public:
+ public:
     CCassPrm() :
         m_simpleval(), m_collection(nullptr, nullptr)
     {
@@ -420,7 +337,7 @@ public:
                             cass_collection_free(coll);
                          });
 
-        for ( ;begin != end; ++begin) {
+        for (; begin != end; ++begin) {
             CassDataToCollection(m_collection.get(), *begin);
         }
         m_assigned = true;
@@ -469,6 +386,7 @@ public:
                     RAISE_DB_ERROR(eBindFailed,
                                    string("Can't convert Param to int32"));
             }
+            // no break
             default:
                 RAISE_DB_ERROR(eBindFailed,
                                string("Can't convert Param to int32"));
@@ -490,30 +408,33 @@ public:
                     RAISE_DB_ERROR(eBindFailed,
                                    string("Can't convert Param to int64"));
             }
+            // no break
             default:
                 RAISE_DB_ERROR(eBindFailed,
                                string("Can't convert Param to int64"));
         }
     }
 
-    void AsString(string &  value) const
+    void AsString(string & value) const
     {
         switch (m_type) {
             case CASS_VALUE_TYPE_INT:
                 value = NStr::NumericToString(m_simpleval.i32);
+                // no break
             case CASS_VALUE_TYPE_BIGINT:
                 value = NStr::NumericToString(m_simpleval.i64);
+                // no break
             case CASS_VALUE_TYPE_VARCHAR:
                 value = m_bytes;
+                // no break
             default:
-                RAISE_DB_ERROR(eBindFailed,
-                               string("Can't convert Param to string"));
+                RAISE_DB_ERROR(eBindFailed, string("Can't convert Param to string"));
         }
     }
 
     friend class CCassQuery;
 
-private:
+ private:
     void AssignTupleItem(const Int4 &  v, size_t  idx)
     {
         cass_tuple_set_int32(m_tuple.get(), idx, v);
@@ -566,13 +487,13 @@ T CassValueConvertDef(const CassValue* Val, const T& _default)
 
 class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
 {
-public:
-    CCassQueryCbRef(shared_ptr<CCassQuery> query) :
-        m_ondata(nullptr),
-        m_data(nullptr),
-        m_ondata2(nullptr),
-        m_data2(nullptr),
-        m_query(query)
+ public:
+    explicit CCassQueryCbRef(shared_ptr<CCassQuery> query)
+        : m_ondata(nullptr)
+        , m_data(nullptr)
+        , m_ondata2(nullptr)
+        , m_data2(nullptr)
+        , m_query(query)
     {
         ERR_POST(Trace << "CCassQueryCbRef::CCassQueryCbRef " << this);
     }
@@ -631,11 +552,13 @@ public:
         }
     }
 
-private:
-    void (*m_ondata)(CCassQuery&, void *data);
+ private:
+    TCassQueryOnDataCallback        m_ondata;
     void*                           m_data;
-    void (*m_ondata2)(void *data);
+
+    TCassQueryOnData2Callback       m_ondata2;
     void*                           m_data2;
+
     weak_ptr<CCassQuery>            m_query;
     shared_ptr<CCassQueryCbRef>     m_self;
 };
@@ -643,14 +566,14 @@ private:
 
 class CCassQuery: public std::enable_shared_from_this<CCassQuery>
 {
-private:
+ private:
     CCassQuery(const CCassQuery&) = delete;
     CCassQuery& operator=(const CCassQuery&) = delete;
 
     friend class CCassConnection;
     friend class CCassQueryCbRef;
 
-private:
+ private:
     shared_ptr<CCassConnection>     m_connection;
     unsigned int                    m_qtimeoutms;
     int64_t                         m_futuretime;
@@ -673,41 +596,42 @@ private:
 
     shared_ptr<CCassQueryCbRef>     m_cb_ref;
 
-    void (*m_ondata)(CCassQuery&, void *Data);
-    void* m_ondata_data;
-    void (*m_ondata2)(void *Data);
-    void* m_ondata2_data;
-    void (*m_onexecute)(CCassQuery&, void *Data);
-    void* m_onexecute_data;
+    TCassQueryOnDataCallback        m_ondata;
+    void*                           m_ondata_data;
+
+    TCassQueryOnData2Callback       m_ondata2;
+    void*                           m_ondata2_data;
+
+    TCassQueryOnExecuteCallback     m_onexecute;
+    void*                           m_onexecute_data;
 
     async_rslt_t Wait(unsigned int timeoutmks);
     void Bind(void);
 
     template<typename F>
-    const CassValue* GetColumn(F ifld)
+    const CassValue* GetColumn(F ifld) const
     {
-        static_assert(sizeof(F) == 0,
-                      "Columns can be accessed by either index or name");
+        static_assert(sizeof(F) == 0, "Columns can be accessed by either index or name");
         return CNotImplemented<F>::GetColumn_works_by_name_and_by_index();
     }
 
     template <typename F = int>
-    CassIterator* GetTupleIterator(F ifld)
+    CassIterator* GetTupleIterator(F ifld) const
     {
         if (!m_row)
-            NCBI_THROW(CCassandraException, eSeqFailed,
-                       "query row is not fetched");
+            NCBI_THROW(CCassandraException, eSeqFailed, "query row is not fetched");
         CassIterator* it = cass_iterator_from_tuple(GetColumn(ifld));
-        if (!it)
+        if (!it) {
             NCBI_THROW(CCassandraException, eSeqFailed,
-                       "cannot resolve tuple iterator for column");
+                "cannot resolve tuple iterator for column");
+        }
         return it;
     }
 
-    const CassValue* GetTupleIteratorValue(CassIterator* itr);
+    const CassValue* GetTupleIteratorValue(CassIterator* itr) const;
 
     template<typename T, size_t C, size_t N>
-    void FieldGetTupleValue(CassIterator* itr, T& t, Int8)
+    void FieldGetTupleValue(CassIterator* itr, T& t, Int8) const
     {
         typedef typename tuple_element< C, T >::type TItemType;
         get<C>(t) = CassValueConvert< TItemType >(GetTupleIteratorValue(itr));
@@ -716,7 +640,7 @@ private:
     }
 
     template<typename T, size_t C, size_t N>
-    void FieldGetTupleValue(CassIterator*, T&, char)
+    void FieldGetTupleValue(CassIterator*, T&, char) const
     {
     }
 
@@ -730,8 +654,8 @@ private:
     class CNotImplemented
     {};
 
-protected:
-    CCassQuery(const shared_ptr<CCassConnection>& connection) :
+ protected:
+    explicit CCassQuery(const shared_ptr<CCassConnection>& connection) :
         m_connection(connection),
         m_qtimeoutms(0),
         m_futuretime(0),
@@ -757,27 +681,19 @@ protected:
         m_onexecute_data(nullptr)
     {
         ERR_POST(Trace << "CCassQuery::CCassQuery this=" << this);
-        if (!m_connection)
-            NCBI_THROW(CCassandraException, eFatal,
-                       "Cassandra connection is not established");
+        if (!m_connection) {
+            NCBI_THROW(CCassandraException, eFatal, "Cassandra connection is not established");
+        }
     }
 
-public:
+ public:
     virtual ~CCassQuery();
-    virtual void Close(void)
-    {
-        InternalClose(true);
-    }
+    virtual void Close(void);
 
-    void SetTimeout(unsigned int t = CASS_DRV_TIMEOUT_MS)
-    {
-        m_qtimeoutms = t;
-    }
+    void SetTimeout();
+    void SetTimeout(unsigned int t);
 
-    unsigned int Timeout(void) const
-    {
-        return m_qtimeoutms;
-    }
+    unsigned int Timeout(void) const;
 
     bool IsReady(void);
     void NewBatch(void);
@@ -795,24 +711,14 @@ public:
 
     bool IsActive(void) const
     {
-        return (m_row != nullptr) ||
-               (m_statement != nullptr) ||
-               (m_batch != nullptr);
+        return (m_row != nullptr) || (m_statement != nullptr) || (m_batch != nullptr);
     }
 
     virtual async_rslt_t WaitAsync(unsigned int timeoutmks);
+    virtual string ToString(void) const;
 
-    virtual string ToString(void);
-
-    virtual bool IsEOF(void) const
-    {
-        return m_EOF;
-    }
-
-    virtual bool IsAsync(void)
-    {
-        return m_async;
-    }
+    virtual bool IsEOF(void) const;
+    virtual bool IsAsync(void) const;
 
     void BindNull(int iprm);
     void BindInt16(int iprm, int16_t value);
@@ -859,14 +765,14 @@ public:
     async_rslt_t NextRow();
 
     template <typename F = int>
-    bool FieldIsNull(F ifld)
+    bool FieldIsNull(F ifld) const
     {
         const CassValue* clm = GetColumn(ifld);
         return !clm || cass_value_is_null(clm);
     }
 
     template <typename F = int>
-    CCassDataType FieldType(F ifld)
+    CCassDataType FieldType(F ifld) const
     {
         if (FieldIsNull(ifld))
             return dtNull;
@@ -913,82 +819,82 @@ public:
     }
 
     template <typename F = int>
-    bool FieldGetBoolValue(F ifld)
+    bool FieldGetBoolValue(F ifld) const
     {
         return CassValueConvert<bool>(GetColumn(ifld));
     }
 
     template <typename F = int>
-    bool FieldGetBoolValue(F ifld, bool _default)
+    bool FieldGetBoolValue(F ifld, bool _default) const
     {
         return CassValueConvertDef<bool>(GetColumn(ifld), _default);
     }
 
     template <typename F = int>
-    int32_t FieldGetInt16Value(F ifld)
+    int32_t FieldGetInt16Value(F ifld) const
     {
         return CassValueConvert<int16_t>(GetColumn(ifld));
     }
 
     template <typename F = int>
-    int32_t FieldGetInt16Value(F ifld, int16_t _default)
+    int32_t FieldGetInt16Value(F ifld, int16_t _default) const
     {
         return CassValueConvertDef<int16_t>(GetColumn(ifld), _default);
     }
 
     template <typename F = int>
-    int32_t FieldGetInt32Value(F ifld)
+    int32_t FieldGetInt32Value(F ifld) const
     {
         return CassValueConvert<int32_t>(GetColumn(ifld));
     }
 
     template <typename F = int>
-    int32_t FieldGetInt32Value(F ifld, int32_t _default)
+    int32_t FieldGetInt32Value(F ifld, int32_t _default) const
     {
         return CassValueConvertDef<int32_t>(GetColumn(ifld), _default);
     }
 
     template <typename F = int>
-    int64_t FieldGetInt64Value(F ifld)
+    int64_t FieldGetInt64Value(F ifld) const
     {
         return CassValueConvert<int64_t>(GetColumn(ifld));
     }
 
     template <typename F = int>
-    int64_t FieldGetInt64Value(F ifld, int64_t _default)
+    int64_t FieldGetInt64Value(F ifld, int64_t _default) const
     {
         return CassValueConvertDef<int64_t>(GetColumn(ifld), _default);
     }
 
     template <typename F = int>
-    double FieldGetFloatValue(F ifld)
+    double FieldGetFloatValue(F ifld) const
     {
         return CassValueConvert<double>(GetColumn(ifld));
     }
 
     template <typename F = int>
-    double FieldGetFloatValue(F ifld, double _default)
+    double FieldGetFloatValue(F ifld, double _default) const
     {
         return CassValueConvertDef<double>(GetColumn(ifld), _default);
     }
 
     template <typename F = int>
-    string FieldGetStrValue(F ifld)
+    string FieldGetStrValue(F ifld) const
     {
         return CassValueConvert<string>(GetColumn(ifld));
     }
 
     template <typename F = int>
-    string FieldGetStrValueDef(F ifld, const string& _default)
+    string FieldGetStrValueDef(F ifld, const string& _default) const
     {
         return CassValueConvertDef<string>(GetColumn(ifld), _default);
     }
 
     template <typename I, typename F = int>
-    void FieldGetContainerValue(F  ifld, I  insert_iterator)
+    void FieldGetContainerValue(F  ifld, I  insert_iterator) const
     {
-        const CassValue *   clm = GetColumn(ifld);
-        CassValueType       type = cass_value_type(clm);
+        const CassValue * clm = GetColumn(ifld);
+        CassValueType type = cass_value_type(clm);
 
         switch (type) {
             case CASS_COLLECTION_TYPE_LIST:
@@ -1023,35 +929,31 @@ public:
     }
 
     template <typename F = int>
-    void FieldGetStrValue(F ifld, string &  value)
+    void FieldGetStrValue(F ifld, string & value) const
     {
         value = FieldGetStrValue(ifld);
     }
 
     template <typename F = int>
-    void FieldGetStrValueDef(F ifld, string &  value, const string &  _default)
+    void FieldGetStrValueDef(F ifld, string & value, const string & _default) const
     {
         value = FieldGetStrValueDef(ifld, _default);
     }
 
     template<typename T, typename F = int>
-    T FieldGetTupleValue(F ifld)
+    T FieldGetTupleValue(F ifld) const
     {
         if (!cass_value_is_null(GetColumn(ifld))) {
-            T   t;
-            typedef typename
-                conditional<tuple_size<T>::value == 0,
-                            char, Int8>::type              TSwitch;
-            FieldGetTupleValue< decltype(t),
-                                0, tuple_size<T>::value > (
-                                        GetTupleIterator(ifld), t, TSwitch());
+            T t;
+            using TSwitch = typename conditional<tuple_size<T>::value == 0, char, Int8>::type;
+            FieldGetTupleValue< T, 0, tuple_size<T>::value > (GetTupleIterator(ifld), t, TSwitch());
             return t;
         }
         return T();
     }
 
     template<typename T, typename F = int>
-    void FieldGetSetValues(F ifld, std::vector<T>& values)
+    void FieldGetSetValues(F ifld, std::vector<T>& values) const
     {
         const CassValue *   clm = GetColumn(ifld);
         CassValueType       type = cass_value_type(clm);
@@ -1059,28 +961,31 @@ public:
         switch (type) {
             case CASS_VALUE_TYPE_SET: {
                 CassIterator* items_iterator = cass_iterator_from_collection(clm);
-                unique_ptr<CassIterator,
-                           function<void(CassIterator*)> > items_iterator_ptr(
-                                   items_iterator,
-                                   [](CassIterator* itr)
-                                   {
-                                        cass_iterator_free(itr);
-                                   });
-                while (cass_iterator_next(items_iterator))
-                    values.emplace_back(CassValueConvert<T>(
-                                cass_iterator_get_value(items_iterator)));
+                unique_ptr<CassIterator, function<void(CassIterator*)> > items_iterator_ptr(
+                    items_iterator,
+                    [](CassIterator* itr)
+                    {
+                        cass_iterator_free(itr);
+                    }
+                );
+                while (cass_iterator_next(items_iterator)) {
+                    values.emplace_back(
+                        CassValueConvert<T>(cass_iterator_get_value(items_iterator))
+                    );
+                }
                 break;
             }
             default:
                 RAISE_DB_ERROR(eFetchFailed,
-                               string("failed to fetch: unsupported (") +
-                               NStr::NumericToString(static_cast<int>(type)) +
-                               ") data type");
+                    string("failed to fetch: unsupported (") +
+                    NStr::NumericToString(static_cast<int>(type)) +
+                    ") data type"
+                );
         }
     }
 
     template <typename K, typename V, typename F = int>
-    void FieldGetMapValue(F ifld, map<K, V>& result)
+    void FieldGetMapValue(F ifld, map<K, V>& result) const
     {
         const CassValue *   clm = GetColumn(ifld);
         CassValueType       type = cass_value_type(clm);
@@ -1112,56 +1017,60 @@ public:
     }
 
     template<typename F = int>
-    size_t FieldGetBlobValue(F ifld, unsigned char* buf, size_t len)
+    size_t FieldGetBlobValue(F ifld, unsigned char* buf, size_t len) const
     {
-        const CassValue *       clm = GetColumn(ifld);
-        const unsigned char *   output = nullptr;
-        size_t                  outlen = 0;
-
-        if (cass_value_get_bytes(clm, &output, &outlen) != CASS_OK)
+        const CassValue *  clm = GetColumn(ifld);
+        const unsigned char * output = nullptr;
+        size_t outlen = 0;
+        if (cass_value_get_bytes(clm, &output, &outlen) != CASS_OK) {
             RAISE_DB_ERROR(eFetchFailed, string("failed to fetch blob data"));
-        if (len < outlen)
+        }
+        if (len < outlen) {
             RAISE_DB_ERROR(eFetchFailed,
-                           string("failed to fetch blob data, "
-                                  "insufficient buffer provided"));
+                string("failed to fetch blob data, insufficient buffer provided")
+           );
+        }
         memcpy(buf, output, outlen);
         return outlen;
     }
 
     template<typename F = int>
-    size_t FieldGetBlobRaw(F ifld, const unsigned char** rawbuf)
+    size_t FieldGetBlobRaw(F ifld, const unsigned char** rawbuf) const
     {
-        if (rawbuf)
+        if (rawbuf) {
             *rawbuf = nullptr;
+        }
 
-        const CassValue *       clm = GetColumn(ifld);
-        const unsigned char *   output = nullptr;
-        size_t                  outlen = 0;
-        CassError               rc = cass_value_get_bytes(clm, &output, &outlen);
+        const CassValue * clm = GetColumn(ifld);
+        const unsigned char * output = nullptr;
+        size_t outlen = 0;
+        CassError rc = cass_value_get_bytes(clm, &output, &outlen);
 
-        if (rc == CASS_ERROR_LIB_NULL_VALUE)
+        if (rc == CASS_ERROR_LIB_NULL_VALUE) {
             return 0;
+        }
 
-        if (rc != CASS_OK)
+        if (rc != CASS_OK) {
             RAISE_DB_ERROR(eFetchFailed, string("failed to fetch blob data"));
-        if (rawbuf)
+        }
+        if (rawbuf) {
             *rawbuf = output;
+        }
         return outlen;
     }
 
     template<typename F = int>
-    size_t FieldGetBlobSize(F ifld)
+    size_t FieldGetBlobSize(F ifld) const
     {
-        const CassValue *       clm = GetColumn(ifld);
-        const unsigned char *   output = nullptr;
-        size_t                  outlen = 0;
-        CassError               rc = cass_value_get_bytes(clm, &output, &outlen);
-
-        if (rc == CASS_ERROR_LIB_NULL_VALUE)
-            return 0;
-
-        if (rc != CASS_OK)
-            RAISE_DB_ERROR(eFetchFailed, string("failed to fetch blob data"));
+        const CassValue * clm = GetColumn(ifld);
+        const unsigned char * output = nullptr;
+        size_t outlen = 0;
+        CassError rc = cass_value_get_bytes(clm, &output, &outlen);
+        if (rc != CASS_ERROR_LIB_NULL_VALUE) {
+            if (rc != CASS_OK) {
+                RAISE_DB_ERROR(eFetchFailed, string("failed to fetch blob data"));
+            }
+        }
         return outlen;
     }
 
@@ -1170,40 +1079,46 @@ public:
         return m_connection;
     }
 
-    void SetOnData(void (*Cb)(CCassQuery&, void*), void* Data)
+    void SetOnData(TCassQueryOnDataCallback cb, void* data)
     {
-        if (m_ondata == Cb && m_ondata_data == Data)
+        if (m_ondata == cb && m_ondata_data == data) {
             return;
+        }
 
         if (m_future) {
-            if (m_ondata)
+            if (m_ondata) {
                 NCBI_THROW(CCassandraException, eSeqFailed,
-                           "Future callback has already been assigned");
-            if (!Cb && m_future)
+                    "Future callback has already been assigned");
+            }
+            if (!cb && m_future) {
                 NCBI_THROW(CCassandraException, eSeqFailed,
-                           "Future callback can not be reset");
+                    "Future callback can not be reset");
+            }
         }
-        m_ondata = Cb;
-        m_ondata_data = Data;
+        m_ondata = move(cb);
+        m_ondata_data = data;
         if (m_future) {
             SetupOnDataCallback();
         }
     }
 
-    void SetOnData2(void (*Cb)(void*), void* Data)
+    void SetOnData2(TCassQueryOnData2Callback cb, void* Data)
     {
-        if (m_ondata2 == Cb && m_ondata2_data == Data)
+        if (m_ondata2 == cb && m_ondata2_data == Data) {
             return;
+        }
 
         if (m_future) {
-            if (m_ondata2)
+            if (m_ondata2) {
                 NCBI_THROW(CCassandraException, eSeqFailed,
                            "Future callback has already been assigned");
-            if (!Cb)
+            }
+            if (!cb) {
                 NCBI_THROW(CCassandraException, eSeqFailed,
                            "Future callback can not be reset");
+            }
         }
-        m_ondata2 = Cb;
+        m_ondata2 = cb;
         m_ondata2_data = Data;
         if (m_future) {
             SetupOnDataCallback();
@@ -1220,12 +1135,12 @@ public:
 };
 
 template<>
-const CassValue* CCassQuery::GetColumn(int ifld);
+const CassValue* CCassQuery::GetColumn(int ifld) const;
 template<>
-const CassValue* CCassQuery::GetColumn(const string& name);
+const CassValue* CCassQuery::GetColumn(const string& name) const;
 template<>
-const CassValue* CCassQuery::GetColumn(const char* name);
+const CassValue* CCassQuery::GetColumn(const char* name) const;
 
 END_IDBLOB_SCOPE
 
-#endif
+#endif // OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__CASS_DRIVER_HPP_
