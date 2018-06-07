@@ -26,7 +26,7 @@
 * Author:  Dmitrii Saprykin, NCBI
 *
 * File Description:
-*   Entry point for psg_cassandra library unit tests
+*   Unit test suite to check CBlobRecord class
 *
 * ===========================================================================
 */
@@ -35,7 +35,7 @@
 
 #include <objtools/pubseq_gateway/impl/cassandra/blob_record.hpp>
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 namespace {
     USING_NCBI_SCOPE;
@@ -57,21 +57,20 @@ namespace {
             CBlobRecord a, b;
             a.AppendBlobChunk({'a'});
             a.AppendBlobChunk({'b'});
-            a.AppendBlobChunk({'c','d'});
-            b.AppendBlobChunk({'a','b','c','d'});
+            a.AppendBlobChunk({'c', 'd'});
+            b.AppendBlobChunk({'a', 'b', 'c', 'd'});
             EXPECT_TRUE(a.IsDataEqual(b));
             EXPECT_TRUE(b.IsDataEqual(a));
         }
 
         {
             CBlobRecord a, b;
-            a.AppendBlobChunk({'a','b','c','d'});
-            b.AppendBlobChunk({'a','b','c','d'});
-            a.AppendBlobChunk({'e','f','g','h'});
-            b.AppendBlobChunk({'e','f','g','z'});
+            a.AppendBlobChunk({'a', 'b', 'c', 'd'});
+            b.AppendBlobChunk({'a', 'b', 'c', 'd'});
+            a.AppendBlobChunk({'e', 'f', 'g', 'h'});
+            b.AppendBlobChunk({'e', 'f', 'g', 'z'});
             EXPECT_FALSE(a.IsDataEqual(b));
             EXPECT_FALSE(b.IsDataEqual(a));
         }
     }
-}
-
+}  // namespace

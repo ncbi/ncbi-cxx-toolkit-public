@@ -40,6 +40,8 @@
 #include <tuple>
 #include <cassert>
 #include <atomic>
+#include <utility>
+#include <vector>
 
 #include <cassandra.h>
 #include <corelib/ncbistre.hpp>
@@ -250,6 +252,7 @@ public:
     }
     shared_ptr<CCassQuery> NewQuery();
     void getTokenRanges(vector< pair<int64_t,int64_t> > &ranges);
+    vector<string> GetPartitionKeyColumnNames(string const & keyspace, string const & table);
     static string NewTimeUUID();
     static void Perform(unsigned int  optimeoutms,
                         const std::function<bool()>&  PreLoopCB,

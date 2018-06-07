@@ -33,16 +33,20 @@
 
 #include <ncbi_pch.hpp>
 
+#include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
+
+#include <unistd.h>
+
 #include <atomic>
 #include <memory>
 #include <sstream>
 #include <set>
-#include <unistd.h>
+#include <vector>
+#include <string>
 
 #include "corelib/ncbitime.hpp"
 #include "corelib/ncbistr.hpp"
 
-#include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_exception.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_util.hpp>
@@ -355,7 +359,7 @@ shared_ptr<CCassQuery> CCassConnection::NewQuery()
 }
 
 
-void CCassConnection::getTokenRanges(vector< pair<int64_t,int64_t> > &ranges)
+void CCassConnection::getTokenRanges(vector< pair<int64_t, int64_t> > &ranges)
 {
     set<int64_t>                    cluster_tokens;
     map<string, vector<int64_t> >   peer_tokens;
@@ -450,6 +454,53 @@ void CCassConnection::getTokenRanges(vector< pair<int64_t,int64_t> > &ranges)
     ranges.push_back(make_pair(lower_bound, INT64_MAX));
 }
 
+vector<string> CCassConnection::GetPartitionKeyColumnNames(string const & keyspace, string const & table)
+{
+    if (!m_session) {
+        NCBI_THROW(CCassandraException, eSeqFailed,
+           "invalid sequence of operations, driver is not connected");
+    }
+    using TMeta = const CassSchemaMeta;
+    unique_ptr<TMeta, function<void(TMeta*)>> schema_meta(
+        cass_session_get_schema_meta(m_session),
+        [](TMeta* meta)->void {
+            cass_schema_meta_free(meta);
+        }
+    );
+    if (!schema_meta) {
+        NCBI_THROW(CCassandraException, eFatal, "Cluster metadata is not resolved");
+    }
+
+    const CassKeyspaceMeta* keyspace_meta = cass_schema_meta_keyspace_by_name_n(
+        schema_meta.get(), keyspace.c_str(), keyspace.size()
+    );
+    if (!keyspace_meta) {
+        NCBI_THROW(CCassandraException, eNotFound, "Keyspace not found");
+    }
+
+    const CassTableMeta* table_meta = cass_keyspace_meta_table_by_name_n(
+        keyspace_meta, table.c_str(), table.size()
+    );
+    if (!table_meta) {
+        NCBI_THROW(CCassandraException, eNotFound, "Table not found");
+    }
+
+    size_t partition_key_count = cass_table_meta_partition_key_count(table_meta);
+    vector<string> result;
+    result.reserve(partition_key_count);
+    for (size_t i = 0; i < partition_key_count; ++i) {
+        const CassColumnMeta* column_meta = cass_table_meta_partition_key(table_meta, i);
+        if (column_meta) {
+            const char* name;
+            size_t name_length;
+
+            cass_column_meta_name(column_meta, &name, &name_length);
+            result.emplace_back(name, name_length);
+        }
+    }
+
+    return result;
+}
 
 const CassPrepared *  CCassConnection::Prepare(const string &  sql)
 {
